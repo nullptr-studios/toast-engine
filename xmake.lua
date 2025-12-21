@@ -28,8 +28,13 @@ target("toast.engine", function()
 	add_headerfiles("inc/**.hpp", "inc/**.h")
 	add_includedirs("inc", {public = true})
 	add_includedirs("src")
-	set_pcxxheader("src/pch.h")
+	set_pcxxheader("pch.h")
 	add_defines("TOAST_EDITOR") -- Deprecated
+
+	before_build(function (target)
+		os.exec("xmake format toast.engine")
+		cprint("${green} [pre]: ${cyan}clang-format.formating project toast.engine")
+	end)
 
 	add_packages(
 		"glfw", "glm", "nlohmann_json", "spdlog", "lz4", "tracy", "glad", "stb",
@@ -42,4 +47,23 @@ target("toast.engine", function()
 	elseif is_plat("linux") then
 		add_syslinks("X11", "pthread", "dl", "GL")
 	end
+end)
+
+target("toast.test", function()
+	set_kind("binary")
+	add_files("tests/**.cpp")
+	add_headerfiles("tests/**.hpp")
+	set_pcxxheader("pch.h")
+	add_deps("toast.engine")
+	set_default(false)
+
+	before_build(function (target)
+		os.exec("xmake format test")
+		cprint("${green} [pre]: ${cyan}clang-format.formating project toast.test")
+	end)
+
+	after_build(function (target)
+		os.cp("assets", target:targetdir())
+		cprint("${green}[post]: ${cyan}action.copy assets to " .. target:targetdir())
+	end)
 end)
