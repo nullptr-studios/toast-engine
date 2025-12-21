@@ -1,0 +1,38 @@
+/**
+ * @class inpit::InputSystem
+ * This class handles all the backend for our Input System. It loads and stores
+ * all the actions currently available and manages changes on the layouts. For
+ * using the Input System on an object see @c PlayerController
+ *
+ * To initialize the InputSystem just create this class on the main engine class.
+ *
+ * @see input::SetActiveLayout(const std::string& name)
+ * @see input::EnableAction(const std::string& name, bool enabled)
+ * @see input::PlayerController
+ * @see input::Action
+ */
+
+/**
+ * @fn input::SetActiveLayout(const std::string& name)
+ * This function changes the Layout currently being used by the system
+ *
+ * All the layouts are preloaded from the start so you only need to change
+ * between them whenever you need them. You MUST set an active layout
+ * before you start using the input system.
+ *
+ * Changing layout is prefered to enabling and disabling specific actions
+ * most of the times
+ */
+
+/**
+ * @fn input::EnableAction(const std::string& name, bool enabled)
+ * This function disables or enables an specific Action
+ *
+ * Most of the times it's prefered to have different layouts rather than
+ * enabling and disabling a lot of Actins
+ */
+
+/**
+ * @fn input::GetLayout()
+ * @return The Layout that is currently active
+ */

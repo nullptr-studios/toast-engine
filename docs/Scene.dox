@@ -1,0 +1,17 @@
+/// @class toast::SScene
+/// @brief Base Scene class
+///
+/// A scene is an object that contains all the actors that are going to be
+/// presented to the player. It also handles the Setup, Ticking and
+/// destruction of those Actors and their respective components.
+///
+/// A scene can be enabled or disabled and that will allow you to have
+/// complete scenes loaded in memory without being presented to the player so
+/// changing between them is more seamless. By default, a scene is disabled
+/// when it's created, and you have to activate it manually
+///
+/// Use this class as a base for all the scenes that will be in the game,
+/// you can also write code that affects the whole scene on the Begin, Tick and
+/// Destroy functions, although most of the stuff (like actors) are going to be
+/// serialized and available to change with the editor so only use inheritance
+/// of scenes for very special cases

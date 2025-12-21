@@ -1,0 +1,93 @@
+/// @class Log
+/// @brief This class is in charged of managing the logs in the console and file.
+///
+/// This class manages both the logging that occurs on the console and on the generated file on the @c log/ folder. By
+/// default, this class creates two loggers: the Toast logger, used at an engine level, and the Client logger, ment to
+/// be used by the game or editor. Both loggers are set to @c trace level by default, which means that all messages will
+/// be displayed.
+///
+/// The loggers can be configured to different levels (more information on the @c Level enum), which are: @c Trace,
+/// @c Info, @c Warning, @c Error and @c Critical. As a general rule, this is how the different logging levels are ment
+/// to be used:
+/// 1. **Trace**: This is the most verbose logging level. It is meant to be used to show trivial information. It is also
+/// meant to be used as the debugging level for the game. Things like `Player Velocity: 0, 0`, `Obtained two physical devices`,
+/// or `Enemy changed to "Follow Player" state` are good examples of use cases of trace.
+/// 2. **Info**: This level is used to show tasks that are being done by the engine or game. Examples of this could be
+/// `Finding best route for Enemy 1` or `Compiling shader "default.vert"`.
+/// 3. **Warning**: This level indicates things that should be fixed at some point but that are not critical. Good examples
+/// could be `Default player weapon not set. Player will spawn with Basic_Melee` or `No spawn position set, using {0,0,0}`.
+/// 4. **Error**: This level indicates things that failed but that don't result in a crash. The game can coontinue to run
+/// but output may not be as expected. Usually, most things here will be best to be handled with exceptions as using
+/// catches as backup if the task fails will be very beneficial to improve the overall stability of the engine. Good
+/// examples for this could be `Failed to load shader for tree_01, using backup shader as fallback`, or
+/// `PlayerController component not found, disabling input`.
+/// 5. **Critical**: This is the highest logging level. A critical error means the game or engine is not able to continue
+/// working as intended and therefore crashing is the best possible outcome. Note that you are not able to use a critical
+/// log directly; instead, you should use a `TOAST_ASSERT()` that will only run if the condition of the assert fails.
+/// Good examples of critical errors are `Failed to create an OpenGL renderer` or `Scene data corrupted. Cannot be loaded`.
+/// Please, try to use this types of errors as little as possible as they are very severe and will terminate the project.
+/// A guide on when to use Asserts vs Exceptions will be written at some point to help you choose the best for each case.
+///
+/// ## How to Log
+/// This class is mostly static, which make it very easy and convenient to use. Note that all the logs are also saved to
+/// a text file with the corresponding date and time the program has been run. This file is located on the `logs/` folder
+/// near the executable.
+///
+/// There are two loggers which are called the @c Toast logger and the @c Client logger. The code will show the macros
+/// to log text for the @c Toast logger, but the exact same functions can be applied for the @c Client logger. Always use
+/// the macros for logging as it's more clean and also takes care of the breakpoints and other logic the system has.
+///
+/// @code
+/// // This trace will appear "TOAST: This is a trace message!" on the terminal
+/// TOAST_TRACE("This is a trace message");
+///
+/// // This info will appear "TOAST: This is an info message!" on the terminal
+/// // It will be colored green
+/// TOAST_INFO("This is an info message");
+///
+/// // You can also print variables on the logs by puting {id} where you want the variable to be printed
+/// // The logging systen uses fmt so you can define custom logging properties for your classes by just configuring a
+/// // custom fmt output
+/// float cuteness_level = 99.99f;
+/// bool is_toast_cute = true;
+/// // This trace will appear "TOAST: Is toast cute? true. Level of cuteness: 99.99%"
+/// TOAST_TRACE("Is toast cute? {0}. Level of cutensess: {1}%", is_toast_cute, cuteness_level);
+///
+/// // This warning will appear "TOAST: Not enough VRAM on device 1" on the terminal
+/// // It will be colored yellow
+/// unsigned device_id = GetVulkanDeviceID();
+/// TOAST_WARN("Not enough VRAM on device {0}", device_id);
+///
+/// // this error will appear "TOAST: shader 'shaders/TextMovement.frag' failed to compile"
+/// // It will be colored red
+/// std::string shader_path = "shaders/TextMovement.frag"
+/// TOAST_ERROR("shader '{0}' failed to compile", shader_path);
+///
+/// // This assert will write "TOAST: Unnable to create a Vulkan Surface" and will crash the program
+/// // It will be colored white with a red highlight
+/// vk::Result result = vk::CreateSureface(&m_vkDevice);
+/// if (result == vk.Success, "Unable to create a Vulkan Surface");
+/// // Note that for the assert to appear the condition MUST NOT BE ACCOMPLISHED
+/// @endcode
+///
+/// You can also change the severity level that will be logged into both the console and the file by just using the
+/// following function
+///
+/// @code
+/// // This will set the Toast logger to only show warnings or greater (warning, error or critical)
+/// Log::ChangeLevel(GetEngine(), Log::Level::Warning);
+/// @endcode
+///
+/// To make sure the logging system works, just call @c Log::Init() at the beginning of your program. This will set up
+/// the sinks needed for the system to work. If not called, an exception will be thrown when trying to log something.
+
+/// @enum Level
+/// This enum defines the different levels of logging that can be use to categorize messages by their importance
+/// or severity.
+///
+/// @var Trace    Fine-grained debug info.
+/// @var Info     General info messages.
+/// @var Warning  Something unexpected, not critical.
+/// @var Error    Recoverable error condition.
+/// @var Critical Serious error, may abort.
+

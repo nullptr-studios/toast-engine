@@ -1,0 +1,42 @@
+
+/// @class toast::Factory
+/// @brief Handles all the logic for creating and destroying Actors
+///
+/// All the actors that exist in the Game World should be created using the
+/// factory class, as they need to perform some additional logic aside from
+/// just allocating the memory
+///
+/// Use the factory to create or destroy any Actor
+
+/// @fn toast::Factory::Create(std::string name)
+/// @brief Creates an Actor in the main scene
+/// @tparam T Class of the new Actor
+/// @param name Name of the new Actor, Unnamed Object by default
+/// @return A pointer to the created Actor
+///
+/// This function creates a new actor for the current main scene regardless
+/// from where is created, in most cases this is what you will need to use
+
+/// @fn toast::Factory::Create(unsigned scene_id, std::string actor_name)
+/// @brief Creates an Actor specifying the scene
+/// @tparam T Class of the new Actor
+/// @param scene_id Scene to add the new object to
+/// @param actor_name Name of the new Actor
+/// @return A pointer to the created Actor
+
+/// @fn toast::Factory::Create(std::string scene_name, std::string actor_name)
+/// @brief Creates an Actor specifying the scene
+/// @tparam T Class of the new Actor
+/// @param scene_name Name of the scene to add the new object to
+/// @param actor_name Name of the new Actor
+/// @return A pointer to the created Actor
+///
+/// Note that ID based searches are more performant than name based ones
+/// since ID searches are O(1) while name searches are O(n)
+
+/// @fn toast::Factory::Destroy(const ActorLookup& query)
+/// @brief Destroys a specific Actor by using a Lookup
+///
+/// For information about how to use the lookup see @c ActorLookup
+/// @see toast::ActorLookup
+

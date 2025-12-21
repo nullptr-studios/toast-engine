@@ -1,0 +1,105 @@
+/// @class toast::StateMachine
+/// @brief Simple Finite State Machine for managing named logic states.
+///
+/// The StateMachine provides an easy way to organize and control gameplay and anim logic,
+/// allowing objects such as players, enemies, or AI agents to move between discrete
+/// behaviors (e.g., "Idle", "Run", "InAir" etc.)
+///
+/// Each state contains three optional callbacks:
+/// - `onBegin()`          - called once when the state becomes active
+/// - `onTick()`           - called every frame while the state is active
+/// - `OnExit()`           - called once before switching to another state
+///
+/// Internally, states are stored in an unordered map (`std::unordered_map<std::string, State>`)
+/// and identified by a unique string name.
+///
+/// ---
+///
+/// ### How to use
+///
+/// 1. First you will need too Create an instance of `toast::StateMachine`
+/// 2. Then define your states using `toast::State` objects.
+/// 3. Add them to the state machine with `AddState("StateName", state)`
+/// 4. Switch between states using the `SetState("Name")` function
+/// 5. Call `Tick()` each frame to run the current state's logic on update
+///
+/// ---
+///
+/// ### Example
+/// @code
+/// #include <Engine/Toast/StateMachine.hpp>
+/// #include <iostream>
+///
+/// class Player
+/// {
+/// public:
+///     Player()
+///     {
+///         toast::State idle;
+///         idle.onBegin = []() { std::cout << "I AM IDLE NOW T\n"; };
+///         idle.onTick = []() { std::cout << "I am just Idling... " << Time::Delta() << "\n"; };
+///         idle.onExit = []() { std::cout << "I don't want to be Idle anymore\n"; };
+///
+///         toast::State run;
+///         run.onBegin = []() { std::cout << "Start Running\n"; };
+///         run.onTick = []() { std::cout << "Running... " << Time::Delta() << "\n"; };
+///         run.onExit = []() { std::cout << "Stop Running\n"; };
+///
+///         m_fsm.AddState("Idle", idle);
+///         m_fsm.AddState("Run", run);
+///         m_fsm.SetState("Idle");
+///     }
+///
+///     void Tick()
+///     {
+///         m_fsm.Tick(); // Time::Delta()
+///     }
+///
+///     void StartRunning()
+///     {
+///         m_fsm.SetState("Run");
+///     }
+///
+/// private:
+///     toast::StateMachine m_fsm;
+/// };
+/// @endcode
+///
+/// ---
+///
+/// ### Notes
+/// - The class is designed for simplicity and readability; It currently does not handle nested states or transitions.
+/// - Using string names makes debugging and readability easier.
+/// - You can freely use lambdas or regular functions for your callbacks.
+///
+/// ---
+///
+/// ### toast::State
+///
+/// The **State** struct defines what happens when a state is entered, updated, or exited.
+///
+/// @code
+/// struct State
+/// {
+///     std::function<void()> onBegin;       // called when entering the state
+///     std::function<void()> onTick;        // called each frame (with Time::Delta())
+///     std::function<void()> onExit;        // called when leaving the state
+/// };
+/// @endcode
+///
+/// You can assign lambdas or normal functions to each callback:
+///
+/// @code
+/// toast::State attack;
+/// attack.onBegin = []() { std::cout << "Prepare attack!\n"; };
+/// attack.onTick = []() { std::cout << "Attacking...\n"; };
+/// attack.onExit = []() { std::cout << "Attack finished.\n"; };
+/// @endcode
+///
+/// ---
+///
+/// ### Notes
+/// - States are identified by **string names** for readability.
+///   You can later switch to enums or hashed IDs if performance is critical.
+/// - All callbacks are **optional** - if a function isn’t set, it simply won’t run.
+/// - The system is header-only friendly, minimal, and has no dependencies beyond the STL.

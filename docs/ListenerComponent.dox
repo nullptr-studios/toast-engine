@@ -1,0 +1,61 @@
+/**
+ * @class event::OListenerComponent
+ * @brief Object that gets notified from events
+ *
+ * A listener is an object that is notified when an event (or different ones) are called. Every time you want to receive
+ * an event, you must use a listener. The best practice is to aggregate a Listener to the object you want to use events
+ * with (Note that anything that inherits from the base Object class will have an empty listener).
+ *
+ * Using a listener is very simple: you only need to use two functions: the @c Subscribe and @c Unsubscribe. The subscribe
+ * function will add a function that will be called when the event is dispatched and the unsubscribe function will
+ * remove a function or an entire event from the callback list.
+ *
+ * The destructor will automatically unsubscribe from all remaining events.
+ */
+
+/**
+ * @fn void event::OListenerComponent::Subscribe(std::string name, std::function<bool(TEvent*)> callback, unsigned char priority)
+ * @tparam TEvent Event you want to subscribe to
+ * @param  name Name of the callback function
+ * @param  callback Function you want to use as callback
+ * @param  priority Order in which the function will be called
+ *
+ * When you want to subscribe to an event, you need to put that event type as the template and then pass a name and
+ * function. This will be added to the @c m_callback map that is stored on the listener. The name is used for
+ * unsubscribing only from one function as comparing std::functions (specially lambdas) is very error prone.
+ *
+ * When you create an event callback, it MUST have this format
+ * @code
+ * bool OpenPauseMenu(KeyPressedEvent* e);
+ * @endcode
+ * The most important things to look here are the return value and the arguments.
+ * - The return value should be a bool that tells if the event has been handled or not. Returning false will make the
+ *   event system continue to dispatch the event and propagate to the listeners that are after this functions. Returning
+ *   true will make the system destroy the event and not continue passing it to other members.
+ * - The parameter is a pointer to the event type we want to subscribe the function. DO NOT include any other parameter
+ *
+ * Optionally you can also include a priority to the subscribe, that will ensure this function is called before other
+ * the other ones. Callbacks with the highest number will be called before than callbacks with the lowest number. Note
+ * that priorities goes from 0 to 255. The default priority is 1 so you can still put priority 0 if you want an event
+ * to always be last.
+ *
+ * @note It is important to know that priorities work on a Listener level, not a callback level, so when changing the
+ * priority all the callbacks of that specific listener will be set to that priority
+ */
+
+/**
+ * @fn void event::OListenerComponent::Unsubscribe()
+ * @tparam TEvent Event to unsubscribe from
+ *
+ * Unsubscribes ALL callbacks asociated with the event
+ */
+
+/**
+ * @fn void event::OListenerComponent::Unsubscribe(std::string name)
+ * @tparam TEvent Event to unsubscribe from
+ * @param  name Name of the callback you want to remove from the list
+ *
+ * Unsubscribes all callbacks named the same as the specified name. In case of not removing any functions with that
+ * name, a warning will show in the console asking if you wrote the name correctly.
+ */
+

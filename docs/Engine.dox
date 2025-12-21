@@ -1,0 +1,42 @@
+/// @class toast::Engine
+/// @brief Main Bloom engine class
+///
+/// This class contains the core engine code and is responsible for running the game loop.
+///
+/// How to use:
+/// For any project, you will need to create a class that inherits from Engine and override the Begin, Tick, Render, and
+/// End methods. You don't need to add functionality to the methods but they are there in case it's needed. Since the
+/// entrypoint exist on the @c Engine rather than on the @c Application class, you will need to create a function that
+/// handles the creation of an @c Application instance. More info about this on @c CreateApplication.
+///
+/// Example of how to create a basic application:
+/// @code
+/// #pragma once
+/// #include <Toast.h>
+///
+/// namespace game {
+/// class Application : public Engine {
+///   void begin() override {
+///     Engine()::Begin();
+///     std::print("[APPLICATION] Hello, Toast!\n");
+///  }
+/// }
+/// }
+///
+/// toast::Engine* toast::CreateApplication() {
+///   return new game::Application();
+/// }
+/// @endcode
+
+/// @fn CreateApplication
+/// For the engine to run, we need a function that returns a pointer to the engine architecture. By default this
+/// function is pure virtual and the Application class must implement it. The project will @b NOT compile without a
+/// definition of this function, as this ensures that an application is always implemented by the end user.
+///
+/// To create a simple @c CreateApplication, you just need to return a new pointer to the application class. This can be
+/// done very easily like this: 
+/// @code
+/// toast::Engine* toast::CreateApplication() {
+///   return new game::Application();
+/// }
+/// @endcode

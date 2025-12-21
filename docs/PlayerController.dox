@@ -1,0 +1,54 @@
+/**
+ * @class input::PlayerController
+ * The Player Controller is used to bind functions on your object to different
+ * @c Actions. It should be added via aggregation to whichever object you'd
+ * like the player to be able to controll. This will already be implemented on
+ * the character class.
+ *
+ * You must first set the active input layout before you start getting callbacks
+ * from actions
+ *
+ * While not in depth, the functionality of the input system will be explained
+ * here:
+ *
+ * To bind an event you just have to call the @c Subscribe function like this
+ * @code
+ * m_playerController.Subscribe("move", [&](Action* a){return OnMove(a);});
+ * @endcode
+ *
+ * Similarly to our event system, the function should have the following format:
+ * - It should return a bool (this is currently not implemented but will be on
+ *   the future)
+ * - It should ask for an @c Action pointer
+ *
+ * @code
+ * void OnMove(Action* action) {
+ *   // Here you can use all the data on the action to perform whatever you
+ *   // need to do
+ *   if (action->device != input::Controller) { return; }
+ *
+ *   action.GetData(&m_direction);
+ * }
+ * @endcode
+ *
+ * To see all the data contained on the actor struct look at @c Action
+ *
+ * The actions will correspond with the ones in the active input layout. To
+ * change the current active layout just do
+ * @code
+ * input::ChangeLayout("gameplay");
+ * @endcode
+ *
+ * Keep in mind that the layouts available are the ones stored on the path set
+ * on the project settings
+ *
+ * @see input::Action
+ * @see input::InputSystem
+ * @see file_input_layout
+ */
+
+ /**
+  * @fn Subscribe(std::string name, std::function<bool(Action*)> callback)
+  * @param name Name of the input action to bind
+  * @param callback Bind to the function
+  */

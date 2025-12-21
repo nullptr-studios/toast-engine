@@ -1,0 +1,38 @@
+/**
+ * @class event::EventSystem
+ * @brief Dispatches the events and controls the Event System
+ *
+ * This class is used for dispatching the events. It is a core part of the Event System and should be on the main engine.
+ * The events will not work at all without this class.
+ *
+ * To use it, just create it as a regular or unique pointer and call the @c PollEvents function when you want the events
+ * that exist on the queue to be dispatched. This is done this way to not disrupt the flow of the game.
+ *
+ * This class is a Singleton, but cannot be used as such, instead using the @c SendEvent function will use the static
+ * instance of the class. Initializing an event system more than once will throw an exception
+ */
+
+/**
+ * @fn void Listener::PollEvents()
+ * Dispatches all of the events that exist on the event queue, call it at the begining of the game loop:
+ *
+ * @code
+ * while (!m_window.ShouldClose()) {
+ *   m_eventSystem.PollEvents();
+ *
+ *   // {...} Rest of the game loop
+ * }
+ * @endcode
+ */
+
+/**
+ * @fn void event::Send(IEvent* event)
+ * @param event Event to send
+ *
+ * This function will add the event you pass to the event queue, and will be dispatched when the next frame starts. To
+ * use this function you can simply do:
+ * @code
+ * event::Send(new KeyPressedEvent(10, 0));
+ * @endcode
+ */
+

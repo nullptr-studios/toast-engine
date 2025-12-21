@@ -1,0 +1,69 @@
+/**
+ * @struct event::IEvent
+ *
+ * This interface is NOT ment to be used by the end-user to create an event. To use the event system you should inherit
+ * from the @c Event struct.
+ *
+ * This interface should be used if, for some reason you need to store events of different types. Since the struct
+ * @c Event is templated, you cannot have them on the same list.
+ */
+
+/**
+ * @struct event::Event
+ * This struct contains all the information an event will have. The event also contains, by default, two members: a
+ * @c subscribers map and the @c Notify() function. The @c subscribers map simply holds all the listeners that are
+ * subscribed to this event at any given time, and the @c Notify() dispatches the event when called.
+ *
+ * To use the Event system, you need to create your own event inheriting from this one. Since the @c subscribers list
+ * is static, we need to use a workarround called the "Curiously Recurring Template Pattern" (CRTP), you can search for
+ * more information about this on @c cppreference.com. What this means for us is that when we create an event, the base
+ * event class template needs to be the class we are creating (this is more clear on the example below). At first, it's
+ * a bit contradicting doing it that way, but this ensures the subscribers list is unique on all our events unless we
+ * specifically want it not to be (by setting the template to the same as other function). An example of how to create
+ * our own event:
+ *
+ * @code
+ * struct KeyPressedEvent : Event<KeyPressedEvent> {
+ *  // We write here whatever data we want on our event
+ *  int keyCode;
+ *  int repeatTimes;
+ *
+ *  // While not necessary, I recomend creating a constructor so we cannot create an event without information
+ *  KeyPressedEvent(int keyCode, int repeatTimes) {
+ *    this->keyCode = keyCode;
+ *    this->repeatTimes = repeatTimes;
+ *  }
+ * }
+ * @endcode
+ *
+ * While more information about how to use listeners and how to send events will be provided in their respective
+ * documentations here is a general explanation of how to use the system:
+ *
+ * On the @c Listener we want to receive the event, we subscribe to this event by using the subscribe method. This is as
+ * simple as writing 
+ * @code
+ * m_listener.Subscribe<KeyPressedEvent>("OpenPauseMenu", [&](KeyPressedEvent* e)->bool { return OpenPauseMenuFn(e); });
+ *
+ * // Note that OpenPauseMenuFn NEEDS to have this shape
+ * bool OpenPauseMenuFn(KeyPressedEvent* e) {
+ *   // We can very easily access the event data like this
+ *   if (e->keyCode == 10) {
+ *     m_menuUI.Show(true);
+ *     return true;
+ *   }
+ *
+ *   return false;
+ * }
+ * @endcode
+ *
+ * Then, we will just need to send an event by using the static method @c event::Send() like this
+ * @code
+ * event::Send(new KeyPressedEvent(10, 0));
+ * @endcode
+ *
+ * Doing that will call the OpenPauseMenuFn function we binded and will pass the event as a parameter
+ *
+ * @see event::Listener
+ * @see event::EventSystem
+ */
+

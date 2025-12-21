@@ -1,0 +1,15 @@
+/**
+ * @class toast::Window
+ * This class is the main window class for the Toast Engine. It is a wrapper over the [GLFW library](https://www.glfw.org/documentation).
+ *
+ * To create a window simply call the constructor passing the window size and the name. There are a lot of features left
+ * to implement so if anything is needed that doesn't have a proper function expand the class wraping the function you
+ * need from GLFW. You should never use GLFW outside the HID module.
+ */
+
+/**
+ * @fn toast::Window::GetFramebufferSize()
+ * @return An @c std::pair with the width and heigth of the framebuffer
+ *
+ * For easier use of this function considering doing @code auto [width, height] = GetFramebufferSize(); @endcode
+ */

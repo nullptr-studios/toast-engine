@@ -1,0 +1,29 @@
+/// @class toast::Object
+/// @brief Base from all the tickable objects on the engine
+/// An object is the most basic unit of our engine. It represents anything that
+/// can be ticked. It is not ment to be instantiated alone, that's why the constructor
+/// is private.
+///
+/// The main tick functions are Init(), Begin(), Tick() and Destroy(), with more info
+/// about this on the respective functions on their implementation.
+///
+/// Objects are assigned an ID when created by the Factory and that ID won't change during
+/// their lifetime. The number is completely unique, meaning that during the lifetime of the
+/// program no other object will share the same ID at any point. You can retrieve the ID by
+/// using the id() function.
+///
+/// Objects can also be enabled or disabled by using the enabled(bool enabled) function. When
+/// an object gets disabled, its tick functions won't be run at all until enabled. You can also
+/// add custom logic that happens when the object gets enabled or disabled by using the OnEnable()
+/// or OnDisable() functions.
+///
+/// The main categories that appear from object are Actor, Component and Scene which you should
+/// read in order to understand the hierarchy of the engine. @see toast::Actor @see toast::Component
+/// @see toast::Scene Most of the time, if you want to create a new Game Object type, you should
+/// inherit from those instead of from the base Object class. This class is ment to work similar
+/// to an interface to most complex types like the ones discussed above.
+///
+/// You will see some functions prefixed with an underscore, those functions are used to provide
+/// a way of adding extra checks before or after calling the actual tick function. ONLY THE ENGINE
+/// should use those function, and they are not ment to be overridden or called by the game at any
+/// point. The user should use the version of the functions that doesn't have an underscore.

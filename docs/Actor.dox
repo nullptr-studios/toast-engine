@@ -1,0 +1,87 @@
+/// @class Actor
+/// @brief The simplest Object that exists on the game world
+/// An actor is the most basic game object that can be spawned into the game world. It is the base for
+/// all the things that exist in game. The main difference with the Object class is the ability to have
+/// both child Actors and Components. The object philosophy follows a tree with top-left traversal where
+/// the children are managed by their respective parents. Each actor class is responsible for the
+/// ownership, creation, destruction and ticking of all the children it has.
+///
+/// Actors also have a name that can be used to search for them (with a cost on speed) and a reference
+/// to their parent (if it exist) and the scene they live in.
+///
+/// An actor by default has a Transform component that allows it to exist on the game world and an
+/// Event Listener component that allows it to receive events.
+///
+/// ## Using children and components
+/// Children are managed by our custom toast::ChildMap class, which provides functions for creating,
+/// destroying and traversing across the tree. The most useful functions are Get(), Add() and Remove(),
+/// which are all able to work by id or by name. @see toast::ChildMap
+///
+/// Components are not abstracted, but they behave very similar. You also have the GetComponent(),
+/// AddComponent() and RemoveComponent() functions. The difference is that rather than accessing them
+/// by name, you can access them by ID or by type, as only one type of component per Actor is allowed.
+/// Trying to create more than one of them will log a warning into the console.
+///
+/// ## Creating a subclass
+///
+/// This class is thought with the mind that you will need to expand it at some point to add custom
+/// game logic, so these are the basis for inheriting from it.
+/// @code
+///	class Cat : public toast::Actor {
+///	public:
+///		// This thing here is important for the RTTI to work
+///		REGISTER_TYPE(Cat);
+///
+///		// Try to not use constructors and destructors a lot while coding your own logic
+///		// Instead use the Init() and Destroy() functions for that
+///		Cat() = default;
+///		virtual ~Cat() = default;
+///
+///		// You can use now any of the tick functions you want or create your own
+///		void Begin() override;
+///		void Tick() override;
+///		void Destroy() override;
+///		void Meow();
+///
+///	private:
+///		// You can also create any member variable you want on the class
+///		unsigned m_count = 0;
+///	};
+///	@endcode
+///
+///	The implementation of the class could look a bit like this:
+///	@code
+///	void Cat::Begin() {
+///		// It is good practice to always call the parent's implementation just in case it has some logic
+///		Actor::Begin();
+///		TOAST_TRACE("Cat will start meowing");
+///	}
+///
+///	void Cat::Tick() {
+///		Actor::Tick();
+///		Meow();
+///	}
+///
+///	void Cat::Destroy() {
+///		Actor::Destroy();
+///		TOAST_TRACE("The cat meowed {0} times.", m_count);
+///	}
+///
+///	void Cat::Meow() {
+///		TOAST_INFO("Meow");
+///		m_count++;
+///	}
+///	@endcode
+///
+///	## When to put logic on an Actor or on a Component
+///
+///	One of the main decisions when creating logic for the game would be if you need to put it inside of
+///	the Actor or create a Component for it. The answer is to stop and analyze for a bit what you are
+///	trying to achieve.
+///
+///	Logic in the actor should be there when it is only for that particular Actor or when it is also
+///	needed for its children. However, if some logic needs to be shared between some objects that would
+///	otherwise not have a relationship between each other, you should create a Component for that. The key
+///	for choosing this correctly is to ask yourself if the code you are writing needs to also be used for
+///	an Actor completely unrelated to this one. With that being said, try to not overuse the components
+///	as having 50 different components in an Actor is no fun. @see toast::Component

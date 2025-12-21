@@ -1,0 +1,34 @@
+/// @struct toast::ActorLookup
+/// @brief Struct used to search for actors in scenes
+///
+/// To use this ActorLookup we make use of the
+/// [Designated Initializers](https://en.cppreference.com/w/cpp/language/aggregate_initialization.html#Designated_initializers)
+/// added in C++ 20. This allows us to just have one function that handles all
+/// the different searching syntaxes (by id or by name) instead of having
+/// multiple functions overridden. The usage of this is very simple:
+/// @code
+/// // This will all return the same
+/// World::GetActor({.sceneName = "testScene", .actorName = "Player"});
+/// World::GetActor({.sceneID = 0, .actorName = "Player"});
+///
+/// // If you don't enter a scene, the system will assume you are referring to the main scene
+/// World::GetActor({.actorName = "Player"});
+///
+/// // If you enter both a name or an ID the system will use the ID since it's more performant
+/// World::GetActor({.sceneID = 0, .sceneName = "testScene", .actorName = "Player"});
+/// @endcode
+
+/// @class toast::World
+/// @brief Class that contains all the loaded scenes on the game
+///
+/// The World class is a Singleton that contains all the currently loaded
+/// scenes on the engine and is in charge of managing and ticking them. The
+/// client interacts with this class to load and unload scenes and to enable
+/// or disable them. It is also used to search for game objects between all
+/// the scenes
+
+/// @fn toast::World::GetMainScene()
+/// The main scene is a scene that needs to be activated and is used as the
+/// default for looking for actors and provides easy access to that scene.
+/// The convention is to set the scene that is currently being played as
+/// the main scene. Doing that will also activate the scene if it's disabled

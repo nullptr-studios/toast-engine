@@ -1,0 +1,22 @@
+/**
+ * @struct input::Action
+ * An Input Action is a struct that contains all the information about any
+ * action the player can perform. They are used as the parameter for the action
+ * callback and contain all the information we might need about the button
+ * press.
+ *
+ * To use them just get the information you need directly from the struct.
+ * To get the actual value see GetValue(glm::vec2* variable)
+ *
+ * @see input::Bind
+ */
+
+/**
+ * @fn input::Action::GetValue(glm::vec2* variable)
+ * Used to get the raw value from the input. Instead of returning the value,
+ * this function requires a reference to the variable you need to allow for
+ * overloading different types of results.
+ *
+ * You can use this function to get a float for button and 1D axis actions or
+ * a 2D vector or two floats for a 2D axis action.
+ */

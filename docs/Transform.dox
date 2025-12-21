@@ -1,0 +1,17 @@
+/// @class toast::OTransform
+/// @brief Basic component with a transform
+///
+/// Any object with this component exists on a game scene. This component
+/// is used to store the position, rotation and scale of the Actor and can
+/// be set as its root. All the different mesh components using to render
+/// anything into the screen will be derived from this one.
+///
+/// This component is called a Transform component by the Unity Game Engine
+
+/// @fn toast::OTransform::GetMatrix()
+/// Performs a T * R * S matrix multiplication to give the
+/// transformation matrix in homogeneous coordinates (vec4)
+
+/// @fn toast::OTransform::GetInverse()
+/// Gets the inverse of the transformation matrix by doing
+/// a S^-1 * R^-1 * T^-1 matrix multiplication

@@ -1,0 +1,19 @@
+# Ignore binary files
+[Bb]in/
+*[Bb]uild*/
+[Oo]ut/
+
+# IDE Files
+.cache/
+.idea/
+.vs/
+.vscode/
+.xmake/
+
+# Files to ignore
+*/[Ll]og
+*.log
+imgui.ini
+compile_commands.json
+CMakeSettings.json # Generated VS file when you open the solution
+CMakeLists.txt     # Generated via xmake
