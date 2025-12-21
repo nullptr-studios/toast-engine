@@ -32,8 +32,8 @@ target("toast.engine", function()
 	add_defines("TOAST_EDITOR") -- Deprecated
 
 	before_build(function (target)
-		os.exec("xmake format toast.engine")
-		cprint("${green} [pre]: ${cyan}clang-format.formating project toast.engine")
+		os.exec("xmake format -q toast.engine")
+		cprint("${green}[ pre]: ${cyan}clang-format.formating project toast.engine")
 	end)
 
 	add_packages(
@@ -58,8 +58,8 @@ target("toast.test", function()
 	set_default(false)
 
 	before_build(function (target)
-		os.exec("xmake format test")
-		cprint("${green} [pre]: ${cyan}clang-format.formating project toast.test")
+		os.exec("xmake format -q toast.test")
+		cprint("${green}[ pre]: ${cyan}clang-format.formating project toast.test")
 	end)
 
 	after_build(function (target)

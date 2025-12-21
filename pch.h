@@ -6,7 +6,6 @@
 
 #pragma once
 
-///
 #include <algorithm>
 #include <exception>
 #include <filesystem>
@@ -18,7 +17,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <thread>
-///
+
 #include <array>
 #include <deque>
 #include <list>
@@ -28,7 +27,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-///
 
 // #if defined(_MSC_VER)
 // #define DEBUG_BREAK() __debugbreak()

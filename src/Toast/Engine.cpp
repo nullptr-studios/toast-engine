@@ -139,9 +139,6 @@ void Engine::Init() {
 	// Create the Game World
 	m_gameWorld = std::make_unique<World>();
 
-	// Create the physics system
-	m_physicsSystem = std::make_unique<physics::PhysicsSystem>();
-
 	// Create the Factory
 	m_factory = std::make_unique<Factory>();
 

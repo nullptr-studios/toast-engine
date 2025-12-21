@@ -6,7 +6,6 @@
 #pragma once
 
 #include "../src/Input/InputSystem.hpp"
-#include "../src/Physics/PhysicsSystem.hpp"
 #include "Engine/Resources/ResourceManager.hpp"
 
 #include <Engine/Core/Time.hpp>
@@ -74,8 +73,6 @@ protected:
 	std::unique_ptr<Factory> m_factory;
 
 	std::unique_ptr<resource::ResourceManager> m_resourceManager;
-
-	std::unique_ptr<physics::PhysicsSystem> m_physicsSystem;
 
 	std::unique_ptr<ProjectSettings> m_projectSettings;
 };

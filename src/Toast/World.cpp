@@ -1,4 +1,3 @@
-#include "../../src/Physics/PhysicsSystem.hpp"
 #include "Engine/Toast/Objects/Scene.hpp"
 #include "spine-cpp-lite.h"
 
@@ -246,9 +245,6 @@ void World::UnloadScene(const unsigned id) {
 	// Remove from tickables immediately so it stops being processed
 	w->m_tickableScenes.erase(id);
 
-	// Request physics halt
-	physics::PhysicsSystem::RequestHaltSimulation();
-
 	// Just schedule for destruction
 	w->ScheduleDestroy(scene);
 }
@@ -477,28 +473,7 @@ void World::RunDestroyQueue() {
 			obj->parent()->children.erase(obj->id());
 		} else {
 			// If it's a root-level object (likely a scene), remove from world's children
-			if (obj->base_type() == SceneT) {
-				// Wait for physics confirmation (with timeout to avoid infinite rescheduling)
-				int retries = 0;
-				const int MAX_RETRIES = 100;
-				while (!physics::PhysicsSystem::WaitForAnswer() && retries < MAX_RETRIES) {
-					retries++;
-					// Busy wait for physics
-				}
-
-				if (retries >= MAX_RETRIES) {
-					// Physics didn't respond - force erase anyway
-					TOAST_WARN("Physics didn't respond after {0} retries, force erasing scene {1}", MAX_RETRIES, obj->id());
-					m_children.erase(obj->id());
-				} else {
-					// Physics confirmed
-					m_children.erase(obj->id());
-					physics::PhysicsSystem::ReceivedAnswer();
-				}
-			} else {
-				// Unexpected: object without parent that's not a scene - still attempt to erase from world
-				m_children.erase(obj->id());
-			}
+			m_children.erase(obj->id());
 		}
 	}
 }
