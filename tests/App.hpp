@@ -1,4 +1,4 @@
-/// @file App.hpp
+// @file App.hpp
 /// @author Xein
 /// @date 21 Dec 2025
 

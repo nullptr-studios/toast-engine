@@ -1,7 +1,9 @@
 #include "App.hpp"
+#include "Engine/Toast/World.hpp"
+#include "TestScene.hpp"
 
 #include <Engine/Core/Log.hpp>
 
 void Test::Begin() {
-	TOAST_INFO("Hello Toast!");
+	toast::World::New<TestScene>("TestScene");
 }

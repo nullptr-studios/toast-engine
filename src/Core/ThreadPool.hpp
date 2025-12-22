@@ -1,6 +1,6 @@
 /// @file ThreadPool.hpp
 /// @author Xein
-/// @date 6/11/25
+/// @date 6 Nov 2025
 
 #pragma once
 #include <condition_variable>
