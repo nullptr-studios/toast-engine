@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "../src/Input/InputSystem.hpp"
 #include "Engine/Resources/ResourceManager.hpp"
 
 #include <Engine/Core/Time.hpp>
@@ -16,6 +15,10 @@
 #include <Engine/Toast/ProjectSettings.hpp>
 #include <Engine/Toast/World.hpp>
 #include <Engine/Window/Window.hpp>
+
+namespace input {
+class InputSystem;
+}
 
 namespace toast {
 
@@ -62,7 +65,7 @@ protected:
 	std::unique_ptr<Window> m_window;
 	std::atomic<bool> m_windowShouldClose = false;
 
-	std::unique_ptr<input::InputSystem> m_inputSystem;
+	input::InputSystem* m_inputSystem;
 
 	std::unique_ptr<World> m_gameWorld;
 

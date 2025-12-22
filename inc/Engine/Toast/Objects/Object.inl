@@ -20,10 +20,12 @@ template<typename T>
 T* Object::Children::Get() {
 	static_assert(std::is_base_of_v<Object, T>, "Object must derive from Object");
 	for (const auto& child : m_children | std::views::values) {
-		if (T* casted = dynamic_cast<T*>(child.get())) { return casted; }
+		if (T* casted = dynamic_cast<T*>(child.get())) {
+			return casted;
+		}
 	}
 
-	//TOAST_WARN("Object of type {0} not found", T::static_type());
+	// TOAST_WARN("Object of type {0} not found", T::static_type());
 	return nullptr;
 }
 
@@ -45,8 +47,11 @@ T* Object::Children::_CreateObject(std::optional<unsigned> id) {
 	// Create an uptr and assign it an id
 	std::unique_ptr<Object> obj = std::make_unique<T>();
 	unsigned obj_id = 0;
-	if (id.has_value()) obj_id = *id;
-	else obj_id = Factory::AssignId();
+	if (id.has_value()) {
+		obj_id = *id;
+	} else {
+		obj_id = Factory::AssignId();
+	}
 	obj->m_id = obj_id;
 
 	// Push it to the children list and return a rptr
@@ -64,7 +69,7 @@ T* Object::Children::Add(std::optional<std::string_view> name, std::optional<jso
 }
 
 template<typename T>
-T* Object::Children::AddRequired(std::optional<std::string_view>name, std::optional<json_t> file) {
+T* Object::Children::AddRequired(std::optional<std::string_view> name, std::optional<json_t> file) {
 	if (auto* o = Get<T>()) {
 		return o;
 	}

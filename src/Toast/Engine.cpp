@@ -1,5 +1,6 @@
 #include "Engine/Renderer/DebugDrawLayer.hpp"
 #include "Engine/Renderer/OpenGL/OpenGLRenderer.hpp"
+#include "Input/InputSystem.hpp"
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
@@ -134,7 +135,8 @@ void Engine::Init() {
 	m_renderer = std::make_unique<renderer::OpenGLRenderer>();
 
 	// Create input system
-	m_inputSystem = std::make_unique<input::InputSystem>();
+	// This gets leaked but since it will be used all program is ok
+	m_inputSystem = new input::InputSystem;
 
 	// Create the Game World
 	m_gameWorld = std::make_unique<World>();

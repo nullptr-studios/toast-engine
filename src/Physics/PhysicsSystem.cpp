@@ -1,8 +1,8 @@
 #include "PhysicsSystem.hpp"
-#include <Engine/Physics/Rigidbody.hpp>
 
 #include <Engine/Core/Log.hpp>
 #include <Engine/Core/Time.hpp>
+#include <Engine/Physics/Rigidbody.hpp>
 #include <Engine/Toast/World.hpp>
 #include <memory>
 #include <optional>
@@ -27,11 +27,11 @@ auto PhysicsSystem::create() -> std::optional<std::unique_ptr<PhysicsSystem>> {
 		return std::nullopt;
 	}
 
-	std::unique_ptr physics = std::make_unique<PhysicsSystem>(Key{});
+	std::unique_ptr physics = std::make_unique<PhysicsSystem>(Key {});
 	physics->m.threadPool.Init(1);
 
 	// TODO: Move later to a place that can be started/ended properly
-	physics->m.threadPool.QueueJob([physics = physics.get()](){
+	physics->m.threadPool.QueueJob([physics = physics.get()]() {
 		while (true) {
 			Time::GetInstance()->PhysTick();
 			physics->Tick();
@@ -50,13 +50,17 @@ void PhysicsSystem::Wait() const {
 	const double delta = Time::raw_fixed_delta();
 	const double remaining = target_dt - delta;
 
-	if (remaining <= 0.0f) { return; }
+	if (remaining <= 0.0f) {
+		return;
+	}
 	std::this_thread::sleep_for(std::chrono::duration<double>(remaining));
 }
 
 void PhysicsSystem::AddRigidbody(Rigidbody* rb) {
 	auto try_get = get();
-	if (!try_get.has_value()) return;
+	if (!try_get.has_value()) {
+		return;
+	}
 	auto& list = try_get.value()->m.rigidbodies;
 
 #ifdef _DEBUG
@@ -82,7 +86,7 @@ void PhysicsSystem::Tick() {
 		rb->UpdatePosition();
 	}
 
-	for (int i = 0; i < m.collisionResolutionCount ; i++) {
+	for (int i = 0; i < m.collisionResolutionCount; i++) {
 		// physics_collision_detection();
 		// physics_collision_resolution();
 	}

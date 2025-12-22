@@ -7,7 +7,7 @@
 class Children;
 
 // Changed FactoryFunction to accept a run_init flag so callers can create prototype objects without running Init.
-using FactoryFunction = std::function<Object*(Children&,std::optional<unsigned>)>;
+using FactoryFunction = std::function<Object*(Children&, std::optional<unsigned>)>;
 
 static std::unordered_map<std::string, FactoryFunction>& getRegistry() {
 	static std::unordered_map<std::string, FactoryFunction> instance;
@@ -128,8 +128,8 @@ public:
 	template<typename T>
 	T* _CreateObject(std::optional<unsigned> id);
 	void _ConfigureObject(Object* obj, const std::optional<std::string_view>& name = {}, const std::optional<json_t>& file = {}) const;
-public:
 
+public:
 	// Remove /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	template<typename T>
 	void Remove();
@@ -148,31 +148,50 @@ public:
 	// Misc ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// @brief Returns the number of children
 	[[nodiscard]]
-	unsigned size() const { return m_children.size(); }
+	unsigned size() const {
+		return m_children.size();
+	}
 
 	[[nodiscard]]
 	Scene* scene() const;
-	void scene(Scene* scene) { m_scene = scene; }
+
+	void scene(Scene* scene) {
+		m_scene = scene;
+	}
 
 	[[nodiscard]]
 	Object* parent() const;
-	void parent(Object* parent) { m_parent = parent; }
 
-	child_list::iterator begin() { return m_children.begin(); }
-	child_list::iterator end() { return m_children.end(); }
+	void parent(Object* parent) {
+		m_parent = parent;
+	}
 
-	child_list::const_iterator begin() const { return m_children.begin(); }
-	child_list::const_iterator end() const { return m_children.end(); }
+	child_list::iterator begin() {
+		return m_children.begin();
+	}
+
+	child_list::iterator end() {
+		return m_children.end();
+	}
+
+	child_list::const_iterator begin() const {
+		return m_children.begin();
+	}
+
+	child_list::const_iterator end() const {
+		return m_children.end();
+	}
 
 private:
 	template<typename T>
 	bool HasObject();
 
-	void erase(const unsigned id) { m_children.erase(id); }
+	void erase(const unsigned id) {
+		m_children.erase(id);
+	}
 
 	child_list m_children;
 
 	std::optional<Object*> m_parent;
 	std::optional<Scene*> m_scene;
-
 };

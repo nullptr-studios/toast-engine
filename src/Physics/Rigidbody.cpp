@@ -1,7 +1,8 @@
 #include "Engine/Physics/Rigidbody.hpp"
+
+#include "Engine/Core/Time.hpp"
 #include "Engine/Toast/Objects/Actor.hpp"
 #include "PhysicsSystem.hpp"
-#include "Engine/Core/Time.hpp"
 
 using namespace physics;
 
@@ -18,5 +19,5 @@ void Rigidbody::UpdatePosition() {
 	position.x += velocity.x * Time::fixed_delta();
 	position.y += velocity.y * Time::fixed_delta();
 
-	transform->position({position.x, position.y, transform->position().z});
+	transform->position({ position.x, position.y, transform->position().z });
 }
