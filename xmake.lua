@@ -14,7 +14,7 @@ end
 add_requires(
 	"glfw 3.4", "glm", "nlohmann_json", "spdlog", "lz4", "tracy", "glad", "stb",
 	"yaml-cpp", "sol2", "tinyobjloader v2.0.0rc13", "imgui v1.92.5-docking",
-	"imguizmo 1.91.3+wip", "spine-runtimes 4.2"
+	"imguizmo 1.91.3+wip", "spine 4.2"
 )
 
 add_requireconfs("glfw", {configs = {shared = false}})
@@ -25,7 +25,7 @@ add_requireconfs("imgui", {configs = {glfw = true, opengl3 = true}})
 target("toast.engine", function()
 	set_kind("static")
 	add_files("src/**.cpp")
-	add_headerfiles("inc/(**.hpp)", "inc/(**.h)")
+	add_headerfiles("inc/(**.hpp)", "inc/(**.h)", "inc/(**.inl)")
 	add_includedirs("inc", {public = true})
 	add_includedirs("src")
 	set_pcxxheader("pch.h")
@@ -38,7 +38,7 @@ target("toast.engine", function()
 
 	add_packages(
 		"glfw", "glm", "nlohmann_json", "spdlog", "lz4", "tracy", "glad", "stb",
-		"yaml-cpp", "sol2", "tinyobjloader", "imgui", "imguizmo", "spine-runtimes",
+		"yaml-cpp", "sol2", "tinyobjloader", "imgui", "imguizmo", "spine",
 		{public = true}
 	)
 
