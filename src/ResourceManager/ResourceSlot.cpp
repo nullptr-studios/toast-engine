@@ -196,7 +196,7 @@ void editor::ResourceSlot::RenderThumbnailArea() {
 	// Center the image
 	void* texture_id = m_selectedEntry.icon ? reinterpret_cast<void*>(static_cast<intptr_t>(m_selectedEntry.icon->id())) : nullptr;
 
-	ImGui::ImageButton("##thumb_img", static_cast<ImTextureID>(texture_id), thumbnail_size, ImVec2(0, 1), ImVec2(1, 0));
+	ImGui::ImageButton("##thumb_img", reinterpret_cast<ImTextureID>(texture_id), thumbnail_size, ImVec2(0, 1), ImVec2(1, 0));
 
 	// Now the image button is the drop target
 	if (ImGui::BeginDragDropTarget()) {
