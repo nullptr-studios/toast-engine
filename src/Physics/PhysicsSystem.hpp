@@ -8,6 +8,7 @@
 namespace physics {
 
 class Rigidbody;
+class Box;
 
 class PhysicsSystem {
 public:
@@ -19,6 +20,7 @@ public:
 	~PhysicsSystem();
 
 	static void AddRigidbody(Rigidbody* rb);
+	static void AddBox(Box* box);
 
 private:
 	PhysicsSystem() = default;
@@ -34,6 +36,7 @@ private:
 		const unsigned collisionResolutionCount = 1;
 
 		std::list<Rigidbody*> rigidbodies;
+		Box* box = nullptr;
 	} m;
 };
 
