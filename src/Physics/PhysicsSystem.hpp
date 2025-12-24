@@ -20,6 +20,7 @@ public:
 	~PhysicsSystem();
 
 	static void AddRigidbody(Rigidbody* rb);
+	static void RemoveRigidbody(Rigidbody* rb);
 	static void AddBox(Box* box);
 
 private:

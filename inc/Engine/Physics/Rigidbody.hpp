@@ -21,6 +21,7 @@ public:
 protected:
 	void Init() override;
 	void Inspector() override;
+	void Destroy() override;
 
 private:
 	friend class PhysicsSystem;

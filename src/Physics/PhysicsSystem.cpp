@@ -1,8 +1,8 @@
 #include "PhysicsSystem.hpp"
-#include <Engine/Physics/Box.hpp>
 
 #include <Engine/Core/Log.hpp>
 #include <Engine/Core/Time.hpp>
+#include <Engine/Physics/Box.hpp>
 #include <Engine/Physics/Rigidbody.hpp>
 #include <Engine/Toast/World.hpp>
 #include <optional>
@@ -46,7 +46,7 @@ auto PhysicsSystem::create() -> std::optional<PhysicsSystem*> {
 	return physics;
 }
 
-void PhysicsSystem::AddBox(Box *box) {
+void PhysicsSystem::AddBox(Box* box) {
 	get().value()->m.box = box;
 }
 
@@ -81,6 +81,15 @@ void PhysicsSystem::AddRigidbody(Rigidbody* rb) {
 	list.emplace_back(rb);
 }
 
+void PhysicsSystem::RemoveRigidbody(Rigidbody* rb) {
+	auto try_get = get();
+	if (!try_get.has_value()) {
+		return;
+	}
+	auto& list = try_get.value()->m.rigidbodies;
+	list.remove(rb);
+}
+
 static bool _circle_line(glm::vec2 position, float radius, glm::vec2 lin_pos, glm::vec2 lin_normal) {
 	float distance = glm::dot(position - lin_pos, lin_normal);
 	return distance < radius;
@@ -99,16 +108,21 @@ void PhysicsSystem::Tick() {
 	for (auto& rb : m.rigidbodies) {
 		// rb->UpdatePosition();
 		glm::vec2 position = rb->GetPosition();
-		rb->velocity.y -= 9.81f;
 
 		// TODO: This is temporary
-		if (m.box == nullptr) goto update_position; // NOLINT
+		if (m.box == nullptr) {
+			goto update_position;    // NOLINT
+		}
+		if (!m.box->enabled()) {
+			return;
+		}
+		rb->velocity.y -= 9.81f;
 
 		for (int i = 0; i < 4; i++) {
 			glm::vec2 p1 = m.box->points[i];
-			glm::vec2 p2 = m.box->points[(i+1)%4];
-			glm::vec2 tangent = glm::normalize(p2-p1);
-			glm::vec2 normal = {tangent.y, -tangent.x};
+			glm::vec2 p2 = m.box->points[(i + 1) % 4];
+			glm::vec2 tangent = glm::normalize(p2 - p1);
+			glm::vec2 normal = { tangent.y, -tangent.x };
 
 			if (_circle_line(position, rb->radius, p1, normal)) {
 				float normal_velocity = glm::dot(rb->velocity, normal);

@@ -7,6 +7,7 @@
 #include "Engine/Input/InputListener.hpp"
 #include "Engine/Renderer/DebugDrawLayer.hpp"
 #include "Physics/PhysicsSystem.hpp"
+
 #include <Engine/Toast/Objects/Actor.hpp>
 #include <glm/glm.hpp>
 #include <imgui.h>
@@ -16,14 +17,14 @@ namespace physics {
 class Box : public toast::Actor {
 public:
 	REGISTER_TYPE(Box);
-	glm::vec2 size = {10.0f, 10.0f};
+	glm::vec2 size = { 10.0f, 10.0f };
 	float rotation = 0.0f;
 	float rotationSpeed = 3.14f;
 	std::array<glm::vec2, 4> points;
 
 	void Init() override {
 		CalculatePoints();
-		input.Subscribe1D("rotate", [this](const input::Action1D* a){
+		input.Subscribe1D("rotate", [this](const input::Action1D* a) {
 			rotation += a->value * rotationSpeed * Time::delta();
 			CalculatePoints();
 		});
@@ -42,7 +43,7 @@ public:
 			CalculatePoints();
 		}
 
-	ImGui::DragFloat("Rotate Speed", &rotationSpeed);
+		ImGui::DragFloat("Rotate Speed", &rotationSpeed);
 	}
 
 	void EditorTick() override {
@@ -59,8 +60,8 @@ private:
 		float s = std::sin(rotation);
 		float c = std::cos(rotation);
 
-		std::array<float, 4> x_coords = {-size.x,  size.x, size.x, -size.x};
-		std::array<float, 4> y_coords = { size.y,  size.y, -size.y, -size.y};
+		std::array<float, 4> x_coords = { -size.x, size.x, size.x, -size.x };
+		std::array<float, 4> y_coords = { size.y, size.y, -size.y, -size.y };
 
 		for (int i = 0; i < 4; i++) {
 			float px = x_coords[i];

@@ -12,13 +12,17 @@ glm::vec2 Rigidbody::GetPosition() {
 
 void Rigidbody::SetPosition(glm::vec2 position) {
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
-	transform->position({position.x, position.y, transform->position().z});
+	transform->position({ position.x, position.y, transform->position().z });
 }
 
 void Rigidbody::Init() {
 	toast::Component::Init();
 
 	PhysicsSystem::AddRigidbody(this);
+}
+
+void Rigidbody::Destroy() {
+	PhysicsSystem::RemoveRigidbody(this);
 }
 
 void Rigidbody::Inspector() {
