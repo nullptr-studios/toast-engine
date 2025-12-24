@@ -4,7 +4,6 @@
 #include <Engine/Core/Time.hpp>
 #include <Engine/Physics/Rigidbody.hpp>
 #include <Engine/Toast/World.hpp>
-#include <memory>
 #include <optional>
 #include <thread>
 
@@ -21,17 +20,18 @@ auto PhysicsSystem::get() -> std::optional<PhysicsSystem*> {
 	return m_instance;
 }
 
-auto PhysicsSystem::create() -> std::optional<std::unique_ptr<PhysicsSystem>> {
+auto PhysicsSystem::create() -> std::optional<PhysicsSystem*> {
 	if (m_instance != nullptr) {
 		TOAST_ERROR("Trying to create Physics System but it already exists");
 		return std::nullopt;
 	}
 
-	std::unique_ptr physics = std::make_unique<PhysicsSystem>(Key {});
+	// creating a temp clone of m_instance for readability
+	auto* physics = m_instance = new PhysicsSystem;
 	physics->m.threadPool.Init(1);
 
 	// TODO: Move later to a place that can be started/ended properly
-	physics->m.threadPool.QueueJob([physics = physics.get()]() {
+	physics->m.threadPool.QueueJob([physics]() {
 		while (true) {
 			Time::GetInstance()->PhysTick();
 			physics->Tick();
@@ -43,6 +43,10 @@ auto PhysicsSystem::create() -> std::optional<std::unique_ptr<PhysicsSystem>> {
 
 	TOAST_INFO("Created Physics System");
 	return physics;
+}
+
+PhysicsSystem::~PhysicsSystem() {
+	m_instance = nullptr;
 }
 
 void PhysicsSystem::Wait() const {

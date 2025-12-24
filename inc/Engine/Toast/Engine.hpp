@@ -20,6 +20,10 @@ namespace input {
 class InputSystem;
 }
 
+namespace physics {
+class PhysicsSystem;
+}
+
 namespace toast {
 
 class Engine {
@@ -78,6 +82,8 @@ protected:
 	std::unique_ptr<resource::ResourceManager> m_resourceManager;
 
 	std::unique_ptr<ProjectSettings> m_projectSettings;
+
+	physics::PhysicsSystem* m_physicsSystem;
 };
 
 }

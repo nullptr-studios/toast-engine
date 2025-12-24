@@ -6,5 +6,7 @@
 #include <Engine/Core/Log.hpp>
 
 void Test::Begin() {
-	toast::World::New<TestScene>("TestScene");
+	toast::World::New("TestScene", "Test_Scene", std::nullopt, [](toast::Scene* s) {
+		s->enabled(true);
+	});
 }

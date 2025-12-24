@@ -12,14 +12,16 @@ class Rigidbody;
 class PhysicsSystem {
 public:
 	static auto get() -> std::optional<PhysicsSystem*>;
-	static auto create() -> std::optional<std::unique_ptr<PhysicsSystem>>;
+	static auto create() -> std::optional<PhysicsSystem*>;
 
 	PhysicsSystem(const PhysicsSystem&) = delete;
 	PhysicsSystem& operator=(const PhysicsSystem&) = delete;
+	~PhysicsSystem();
 
 	static void AddRigidbody(Rigidbody* rb);
 
 private:
+	PhysicsSystem() = default;
 	static PhysicsSystem* m_instance;
 	struct Key { explicit Key() = default; };
 
@@ -33,10 +35,6 @@ private:
 
 		std::list<Rigidbody*> rigidbodies;
 	} m;
-
-public:
-	PhysicsSystem(Key);
-
 };
 
 }

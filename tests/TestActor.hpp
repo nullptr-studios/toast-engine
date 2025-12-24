@@ -11,13 +11,11 @@ public:
 	REGISTER_TYPE(TestActor)
 
 	void Init() override {
-		Actor::Init();
 		rb = children.Add<physics::Rigidbody>("Rigidbody");
 		mesh = children.Add<toast::MeshRendererComponent>("Mesh");
 	}
 
 	void Begin() override {
-		Actor::Begin();
 		mesh->SetMesh("models/quad.obj");
 		mesh->SetMaterial("shaders/default.shader");
 

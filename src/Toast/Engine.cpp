@@ -1,6 +1,7 @@
 #include "Engine/Renderer/DebugDrawLayer.hpp"
 #include "Engine/Renderer/OpenGL/OpenGLRenderer.hpp"
 #include "Input/InputSystem.hpp"
+#include "Physics/PhysicsSystem.hpp"
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
@@ -146,6 +147,8 @@ void Engine::Init() {
 
 	// Imguilayer testing purposes
 	m_layerStack->PushLayer(new renderer::DebugDrawLayer());
+
+	m_physicsSystem = physics::PhysicsSystem::create().value_or(nullptr);
 
 	Begin();
 }
