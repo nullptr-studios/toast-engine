@@ -90,9 +90,9 @@ void PhysicsSystem::RemoveRigidbody(Rigidbody* rb) {
 	list.remove(rb);
 }
 
-static bool _circle_line(glm::vec2 position, float radius, glm::vec2 lin_pos, glm::vec2 lin_normal) {
+static float _get_penetration(glm::vec2 position, float radius, glm::vec2 lin_pos, glm::vec2 lin_normal) {
 	float distance = glm::dot(position - lin_pos, lin_normal);
-	return distance < radius;
+	return radius - distance;
 }
 
 void PhysicsSystem::Tick() {
@@ -114,26 +114,35 @@ void PhysicsSystem::Tick() {
 			goto update_position;    // NOLINT
 		}
 		if (!m.box->enabled()) {
-			return;
+			continue;
 		}
-		rb->velocity.y -= 9.81f;
+		
+		// Apply gravity
+		rb->velocity.y -= 9.81f * Time::fixed_delta();
 
 		for (int i = 0; i < 4; i++) {
 			glm::vec2 p1 = m.box->points[i];
 			glm::vec2 p2 = m.box->points[(i + 1) % 4];
+			
 			glm::vec2 tangent = glm::normalize(p2 - p1);
 			glm::vec2 normal = { tangent.y, -tangent.x };
 
-			if (_circle_line(position, rb->radius, p1, normal)) {
+			float penetration = _get_penetration(position, rb->radius, p1, normal);
+
+			if (penetration > 0) { // Collision detected
 				float normal_velocity = glm::dot(rb->velocity, normal);
 				float tangent_velocity = glm::dot(rb->velocity, tangent);
 
 				const float restitution = 0.8f;
 				const float friction = 0.2f;
 
-				if (normal_velocity <= 0) {
+				// Velocity Resolution
+				if (normal_velocity < 0) {
 					rb->velocity = (-normal_velocity * restitution * normal) + (tangent_velocity * (1.0f - friction) * tangent);
 				}
+
+				// Positional Resolution
+				position += normal * penetration;
 			}
 		}
 
