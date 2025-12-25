@@ -25,8 +25,7 @@ public:
 	void Init() override {
 		CalculatePoints();
 		input.Subscribe1D("rotate", [this](const input::Action1D* a) {
-			rotation += a->value * rotationSpeed * Time::delta();
-			CalculatePoints();
+				direction = a->value;
 		});
 		input::SetLayout("test");
 		physics::PhysicsSystem::AddBox(this);
@@ -51,10 +50,16 @@ public:
 		renderer::DebugLine(points[1], points[2]);
 		renderer::DebugLine(points[2], points[3]);
 		renderer::DebugLine(points[3], points[0]);
+
+		if (direction != 0.0f) {
+			rotation += direction * rotationSpeed * Time::delta();
+			CalculatePoints();
+		}
 	}
 
 private:
 	input::Listener input;
+	float direction;
 
 	void CalculatePoints() {
 		float s = std::sin(rotation);
