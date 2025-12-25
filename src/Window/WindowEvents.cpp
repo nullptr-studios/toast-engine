@@ -1,6 +1,6 @@
 #include "GLFW/glfw3.h"
 
-#include <Engine/Event/EventSystem.hpp>
+#include <Engine/Event/ListenerComponent.hpp>
 #include <Engine/Window/WindowEvents.hpp>
 
 namespace event {

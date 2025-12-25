@@ -3,6 +3,7 @@
 #include <Engine/Core/Log.hpp>
 #include <Engine/Core/Time.hpp>
 #include <Engine/Physics/Box.hpp>
+#include <Engine/Physics/Collider.hpp>
 #include <Engine/Physics/Rigidbody.hpp>
 #include <Engine/Toast/World.hpp>
 #include <optional>
@@ -108,6 +109,8 @@ void PhysicsSystem::Tick() {
 	for (auto& rb : m.rigidbodies) {
 		// rb->UpdatePosition();
 		glm::vec2 position = rb->GetPosition();
+
+		Collider* collider = nullptr;
 
 		// TODO: This is temporary
 		if (m.box == nullptr) {

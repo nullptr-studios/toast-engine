@@ -2,7 +2,6 @@
 #include "Objects/Object.hpp"
 
 #include <Engine/Core/ThreadPool.hpp>
-#include <Engine/Event/EventSystem.hpp>
 #include <Engine/Event/ListenerComponent.hpp>
 #include <Engine/Toast/SceneLoadedEvent.hpp>
 #include <mutex>

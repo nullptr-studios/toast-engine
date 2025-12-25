@@ -1,12 +1,6 @@
-//
-// Created by xein on 10/2/25.
-//
+#include "Engine/Event/ListenerComponent.hpp"
 
-#ifdef TOAST_EDITOR
-#include "imgui.h"
-#endif
-
-#include <Engine/Event/ListenerComponent.hpp>
+#include "EventSystem.hpp"
 
 namespace event {
 
@@ -28,12 +22,9 @@ ListenerComponent::~ListenerComponent() {
 		}
 	}
 }
-#ifdef TOAST_EDITOR
-void ListenerComponent::Inspector() {
-	Component::Inspector();
-	ImGui::Text("Listening to %i events", m_events.size());
-	ImGui::Text("%i callbacks subscribed", m_callbacks.size());
+
+void Send(IEvent* event) {
+	EventSystem::SendEvent(event);
 }
-#endif
 
 }

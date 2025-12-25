@@ -33,6 +33,4 @@ private:
 	std::mutex m_queueMutex;
 };
 
-void Send(IEvent* event);
-
 }
