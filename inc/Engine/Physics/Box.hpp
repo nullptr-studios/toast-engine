@@ -25,7 +25,7 @@ public:
 	void Init() override {
 		CalculatePoints();
 		input.Subscribe1D("rotate", [this](const input::Action1D* a) {
-				direction = a->value;
+			direction = a->value;
 		});
 		input::SetLayout("test");
 		physics::PhysicsSystem::AddBox(this);

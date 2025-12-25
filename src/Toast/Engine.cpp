@@ -1,22 +1,41 @@
-#include "Engine/Renderer/DebugDrawLayer.hpp"
-#include "Engine/Renderer/OpenGL/OpenGLRenderer.hpp"
-#include "Input/InputSystem.hpp"
-#include "Physics/PhysicsSystem.hpp"
-
-#ifdef TOAST_EDITOR
-#include "imgui.h"
-#endif
-
 #include <Engine/Core/Log.hpp>
+#include <Engine/Core/Time.hpp>
+#include <Engine/Event/EventSystem.hpp>
+#include <Engine/Renderer/DebugDrawLayer.hpp>
+#include <Engine/Renderer/IRendererBase.hpp>
+#include <Engine/Renderer/LayerStack.hpp>
+#include <Engine/Renderer/OpenGL/OpenGLRenderer.hpp>
 #include <Engine/Toast/Engine.hpp>
 #include <Engine/Toast/Factory.hpp>
 #include <Engine/Toast/Objects/Scene.hpp>
+#include <Engine/Toast/ProjectSettings.hpp>
 #include <Engine/Toast/World.hpp>
+#include <Engine/Window/Window.hpp>
+#include <Input/InputSystem.hpp>
+#include <Physics/PhysicsSystem.hpp>
+
+#ifdef TOAST_EDITOR
+#include <imgui.h>
+#endif
 
 namespace toast {
 
 Engine* Engine::m_instance;
 float Engine::purge_timer = 0.0f;
+
+struct Engine::Pimpl {
+	std::unique_ptr<Time> time;
+	std::unique_ptr<event::EventSystem> eventSystem;
+	std::unique_ptr<Window> window;
+	std::unique_ptr<input::InputSystem> inputSystem;
+	std::unique_ptr<World> gameWorld;
+	std::unique_ptr<renderer::IRendererBase> renderer;
+	std::unique_ptr<renderer::LayerStack> layerStack;
+	std::unique_ptr<Factory> factory;
+	std::unique_ptr<resource::ResourceManager> resourceManager;
+	std::unique_ptr<ProjectSettings> projectSettings;
+	physics::PhysicsSystem* physicsSystem = nullptr;
+};
 
 void Engine::Run(int argc, char** argv) {
 	// Before starting the engine we store the arguments 0x
@@ -30,66 +49,68 @@ void Engine::Run(int argc, char** argv) {
 	Init();
 	purge_timer = 0.0f;
 
+	auto* window = m->window.get();
+	auto* world = m->gameWorld.get();
 	while (!GetShouldClose()) {
 		// This is our frame 0x
 		PROFILE_ZONE_N("Frame");
 
 		// avoid heavy work if minimized
-		if (m_window->IsMinimized()) {
+		if (window->IsMinimized()) {
 			// Still poll events
-			m_window->PollEventsOnly();
-			m_windowShouldClose.store(m_window->ShouldClose(), std::memory_order_relaxed);
+			window->PollEventsOnly();
+			m_windowShouldClose.store(window->ShouldClose(), std::memory_order_relaxed);
 			// Back off a bit to avoid busy-waiting while minimized
-			m_window->WaitEventsTimeout(0.016);    // ~60 FPS
+			window->WaitEventsTimeout(0.016);    // ~60 FPS
 			PROFILE_FRAME;
 			continue;
 		}
 
 		// Poll OS events early in the frame to reduce input latency
-		m_window->PollEventsOnly();
+		window->PollEventsOnly();
 
-		m_time->Tick();
+		m->time->Tick();
 
-		m_resourceManager->LoadResourcesMainThread();
+		m->resourceManager->LoadResourcesMainThread();
 
 		// Ensure any pending Begin calls are executed as early as possible in the frame
-		m_gameWorld->RunBeginQueue();
+		world->RunBeginQueue();
 
-		m_eventSystem->PollEvents();
-		m_inputSystem->Tick();
+		m->eventSystem->PollEvents();
+		m->inputSystem->Tick();
 
-		m_gameWorld->EarlyTick();
-		m_gameWorld->Tick();
-		m_gameWorld->LateTick();
+		world->EarlyTick();
+		world->Tick();
+		world->LateTick();
 
 #ifdef TOAST_EDITOR
-		m_gameWorld->EditorTick();
+		world->EditorTick();
 #endif
 
-		m_layerStack->TickLayers();
+		m->layerStack->TickLayers();
 
 		Render();
 
 		// Start the ImGui frame, only for editor
 #ifdef TOAST_EDITOR
-		m_renderer->StartImGuiFrame();
+		m->renderer->StartImGuiFrame();
 		EditorTick();
-		m_renderer->EndImGuiFrame();
+		m->renderer->EndImGuiFrame();
 #endif
 
 		// Swap after all rendering and UI is done
-		m_window->SwapBuffers();
+		window->SwapBuffers();
 
 		// DestroyQueue also removes scenes 0x
-		m_gameWorld->RunDestroyQueue();
+		world->RunDestroyQueue();
 
-		m_windowShouldClose.store(m_window->ShouldClose(), std::memory_order_relaxed);
+		m_windowShouldClose.store(window->ShouldClose(), std::memory_order_relaxed);
 
 		// Purge unused resources from the cache
 		if (purge_timer >= 120.0f) {
 			purge_timer = 0.0f;
 			TOAST_TRACE("Purging unused resources...");
-			m_resourceManager->PurgeResources();
+			m->resourceManager->PurgeResources();
 		}
 		purge_timer += Time::delta();
 
@@ -102,7 +123,7 @@ bool Engine::GetShouldClose() const {
 	return m_windowShouldClose.load(std::memory_order_relaxed);
 }
 
-Engine* Engine::GetInstance() {
+Engine* Engine::get() {
 	return m_instance;
 }
 
@@ -111,6 +132,7 @@ Engine::Engine() {
 		throw ToastException("There is already an instance of Engine");
 	}
 	m_instance = this;
+	m = new Pimpl;
 }
 
 void Engine::Init() {
@@ -121,34 +143,33 @@ void Engine::Init() {
 		TOAST_TRACE("Called with {0} arguments", m_arguments.size());
 	}
 
-	m_resourceManager = std::make_unique<resource::ResourceManager>(false);
-	m_projectSettings = std::make_unique<ProjectSettings>();
+	m->resourceManager = std::make_unique<resource::ResourceManager>(false);
+	m->projectSettings = std::make_unique<ProjectSettings>();
 
 	// Starting time tracking
-	m_time = std::make_unique<Time>();
+	m->time = std::make_unique<Time>();
 
 	// Starting event system
-	m_eventSystem = std::make_unique<event::EventSystem>();
+	m->eventSystem = std::make_unique<event::EventSystem>();
 
 	// Create window
-	m_window = std::make_unique<Window>(1920, 1080, "ToastEngine");
-	m_layerStack = std::make_unique<renderer::LayerStack>();
-	m_renderer = std::make_unique<renderer::OpenGLRenderer>();
+	m->window = std::make_unique<Window>(1920, 1080, "ToastEngine");
+	m->layerStack = std::make_unique<renderer::LayerStack>();
+	m->renderer = std::make_unique<renderer::OpenGLRenderer>();
 
 	// Create input system
-	// This gets leaked but since it will be used all program is ok
-	m_inputSystem = new input::InputSystem;
+	m->inputSystem = std::make_unique<input::InputSystem>();
 
 	// Create the Game World
-	m_gameWorld = std::make_unique<World>();
+	m->gameWorld = std::make_unique<World>();
 
 	// Create the Factory
-	m_factory = std::make_unique<Factory>();
+	m->factory = std::make_unique<Factory>();
 
 	// Imguilayer testing purposes
-	m_layerStack->PushLayer(new renderer::DebugDrawLayer());
+	m->layerStack->PushLayer(new renderer::DebugDrawLayer());
 
-	m_physicsSystem = physics::PhysicsSystem::create().value_or(nullptr);
+	m->physicsSystem = physics::PhysicsSystem::create().value_or(nullptr);
 
 	Begin();
 }
@@ -157,10 +178,15 @@ void Engine::EditorTick() { }
 
 void Engine::Render() {
 	PROFILE_ZONE;
-
-	m_renderer->Render();
+	m->renderer->Render();
 }
 
-void Engine::Close() { }
+void Engine::Close() {
+	delete m;
+}
+
+void Engine::ForcePurgeResources() {
+	purge_timer = UINT8_MAX;
+}
 
 }

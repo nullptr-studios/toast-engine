@@ -116,20 +116,20 @@ void PhysicsSystem::Tick() {
 		if (!m.box->enabled()) {
 			continue;
 		}
-		
+
 		// Apply gravity
 		rb->velocity.y -= 9.81f * Time::fixed_delta();
 
 		for (int i = 0; i < 4; i++) {
 			glm::vec2 p1 = m.box->points[i];
 			glm::vec2 p2 = m.box->points[(i + 1) % 4];
-			
+
 			glm::vec2 tangent = glm::normalize(p2 - p1);
 			glm::vec2 normal = { tangent.y, -tangent.x };
 
 			float penetration = _get_penetration(position, rb->radius, p1, normal);
 
-			if (penetration > 0) { // Collision detected
+			if (penetration > 0) {    // Collision detected
 				float normal_velocity = glm::dot(rb->velocity, normal);
 				float tangent_velocity = glm::dot(rb->velocity, tangent);
 
