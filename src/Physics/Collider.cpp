@@ -11,8 +11,8 @@ using namespace physics;
 void Collider::CalculateLines() {
 	m.lines.clear();
 
-	for (int i = 1; i < m.points.size(); i++) {
-		glm::vec2 tangent = glm::normalize(m.points[i] - m.points[i - 1]);
+	for (int i = 1; i <= m.points.size(); i++) {
+		glm::vec2 tangent = glm::normalize(m.points[i % m.points.size()] - m.points[i - 1]);
 		const glm::vec2 world = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
 
 		m.lines.emplace_back(
@@ -20,7 +20,7 @@ void Collider::CalculateLines() {
 				.point = m.points[i - 1] + world,
 				.tangent = tangent,
 				.normal = { -tangent.y, tangent.x },
-				.length = glm::distance(m.points[i], m.points[i - 1])
+				.length = glm::distance(m.points[i % m.points.size()], m.points[i - 1])
 			}
 		);
 	}

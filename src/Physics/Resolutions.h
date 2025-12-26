@@ -12,7 +12,6 @@ void _rb_line_collision(physics::RigidbodyData& rb, physics::Line& l) {
 	double distance_along_line = glm::dot(rb.position - l.point, l.tangent);
 	renderer::DebugCircle(l.point, 0.1f);
 	renderer::DebugCircle(rb.position, 0.1f, {1.0f, 1.0f, 0.0f, 1.0f});
-	renderer::DebugLine(l.point, rb.position, {1.0f, 0.0f, 1.0f, 0.5f});
 	glm::dvec2 tan2 = l.tangent + glm::dvec2{0.0f, 1.0f};
 	renderer::DebugLine(l.point, l.point + (l.tangent * distance_along_line), {1.0f, 0.0f, 1.0f, 1.0f});
 
