@@ -3,12 +3,12 @@
 /// @date 22 Dec 2025
 
 #pragma once
+#include <Engine/Physics/Line.hpp>
 
-#include <Engine/Core/ThreadPool.hpp>
 namespace physics {
 
 class Rigidbody;
-class Box;
+class Collider;
 
 class PhysicsSystem {
 public:
@@ -21,24 +21,28 @@ public:
 
 	static void AddRigidbody(Rigidbody* rb);
 	static void RemoveRigidbody(Rigidbody* rb);
-	static void AddBox(Box* box);
+	static void AddCollider(Collider* c);
+	static void RemoveCollider(Collider* c);
 
 private:
 	PhysicsSystem() = default;
 	static PhysicsSystem* m_instance;
-	struct Key { explicit Key() = default; };
 
 	void Tick();
 	void Wait() const;
 
+	[[nodiscard]]
+	auto GetColliderLines() -> std::vector<Line>;
+
 	struct M {
-		toast::ThreadPool threadPool;
+		std::jthread physicsThread;
 		const double frameTarget = 50.f;
 		const unsigned collisionResolutionCount = 1;
 
 		std::list<Rigidbody*> rigidbodies;
-		Box* box = nullptr;
+		std::list<Collider*> colliders;
 	} m;
+
 };
 
 }

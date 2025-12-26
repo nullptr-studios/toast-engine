@@ -6,13 +6,15 @@
 
 using namespace physics;
 
-glm::vec2 Rigidbody::GetPosition() {
-	return static_cast<toast::Actor*>(parent())->transform()->position();
+auto Rigidbody::data() const -> RigidbodyData {
+	return { .position = static_cast<toast::Actor*>(parent())->transform()->position(), .velocity = velocity, .radius = radius };
 }
 
-void Rigidbody::SetPosition(glm::vec2 position) {
+void Rigidbody::data(const RigidbodyData& data) {
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
-	transform->position({ position.x, position.y, transform->position().z });
+	transform->position({ data.position.x, data.position.y, transform->position().z });
+	velocity = data.velocity;
+	radius = data.radius;
 }
 
 void Rigidbody::Init() {
@@ -31,8 +33,6 @@ void Rigidbody::Inspector() {
 	}
 
 	ImGui::DragFloat2("Velocity", &velocity.x);
-
-	ImGui::DragFloat2("Bounds", &bounds.x);
 	ImGui::DragFloat("Radius", &radius);
 }
 

@@ -1,11 +1,13 @@
 #include "PhysicsSystem.hpp"
 
+#include "Resolutions.h"
+
 #include <Engine/Core/Log.hpp>
 #include <Engine/Core/Time.hpp>
-#include <Engine/Physics/Box.hpp>
 #include <Engine/Physics/Collider.hpp>
 #include <Engine/Physics/Rigidbody.hpp>
 #include <Engine/Toast/World.hpp>
+#include <numeric>
 #include <optional>
 #include <thread>
 
@@ -30,10 +32,9 @@ auto PhysicsSystem::create() -> std::optional<PhysicsSystem*> {
 
 	// creating a temp clone of m_instance for readability
 	auto* physics = m_instance = new PhysicsSystem;
-	physics->m.threadPool.Init(1);
 
 	// TODO: Move later to a place that can be started/ended properly
-	physics->m.threadPool.QueueJob([physics]() {
+	physics->m.physicsThread = std::jthread([physics]() {
 		while (true) {
 			Time::GetInstance()->PhysTick();
 			physics->Tick();
@@ -45,10 +46,6 @@ auto PhysicsSystem::create() -> std::optional<PhysicsSystem*> {
 
 	TOAST_INFO("Created Physics System");
 	return physics;
-}
-
-void PhysicsSystem::AddBox(Box* box) {
-	get().value()->m.box = box;
 }
 
 PhysicsSystem::~PhysicsSystem() {
@@ -77,6 +74,7 @@ void PhysicsSystem::AddRigidbody(Rigidbody* rb) {
 	// Just to check, but shouldn't happen at all
 	if (std::ranges::find(list, rb) != list.end()) {
 		TOAST_WARN("Rigidbody from {} already on the list", rb->parent()->name());
+		return;
 	}
 #endif
 	list.emplace_back(rb);
@@ -91,9 +89,37 @@ void PhysicsSystem::RemoveRigidbody(Rigidbody* rb) {
 	list.remove(rb);
 }
 
-static float _get_penetration(glm::vec2 position, float radius, glm::vec2 lin_pos, glm::vec2 lin_normal) {
-	float distance = glm::dot(position - lin_pos, lin_normal);
-	return radius - distance;
+void PhysicsSystem::AddCollider(Collider* c) {
+	auto try_get = get();
+	if (!try_get.has_value()) {
+		return;
+	}
+	auto& list = try_get.value()->m.colliders;
+
+#ifdef _DEBUG
+	// Just to check, but shouldn't happen at all
+	if (std::ranges::find(list, c) != list.end()) {
+		TOAST_WARN("Collider from {} already on the list", c->parent()->name());
+		return;
+	}
+#endif
+	list.emplace_back(c);
+}
+
+void PhysicsSystem::RemoveCollider(Collider* c) {
+	auto try_get = get();
+	if (!try_get.has_value()) {
+		return;
+	}
+	auto& list = try_get.value()->m.colliders;
+	list.remove(c);
+}
+
+auto PhysicsSystem::GetColliderLines() -> std::vector<Line> {
+	return m.colliders | std::views::transform([](const auto& c) {
+		       return c->GetLines();
+	       }) |
+	       std::views::join | std::ranges::to<std::vector<Line>>();
 }
 
 void PhysicsSystem::Tick() {
@@ -106,53 +132,17 @@ void PhysicsSystem::Tick() {
 
 	toast::World::Instance()->PhysTick();
 
-	for (auto& rb : m.rigidbodies) {
-		// rb->UpdatePosition();
-		glm::vec2 position = rb->GetPosition();
+	std::vector lines = GetColliderLines();
+	for (auto& rigidbody : m.rigidbodies) {
+		auto rb = rigidbody->data();
+		rb.velocity.y -= 9.81f * Time::fixed_delta();
 
-		Collider* collider = nullptr;
-
-		// TODO: This is temporary
-		if (m.box == nullptr) {
-			goto update_position;    // NOLINT
-		}
-		if (!m.box->enabled()) {
-			continue;
+		for (auto& l : lines) {
+			_rb_line_collision(rb, l);
 		}
 
-		// Apply gravity
-		rb->velocity.y -= 9.81f * Time::fixed_delta();
-
-		for (int i = 0; i < 4; i++) {
-			glm::vec2 p1 = m.box->points[i];
-			glm::vec2 p2 = m.box->points[(i + 1) % 4];
-
-			glm::vec2 tangent = glm::normalize(p2 - p1);
-			glm::vec2 normal = { tangent.y, -tangent.x };
-
-			float penetration = _get_penetration(position, rb->radius, p1, normal);
-
-			if (penetration > 0) {    // Collision detected
-				float normal_velocity = glm::dot(rb->velocity, normal);
-				float tangent_velocity = glm::dot(rb->velocity, tangent);
-
-				const float restitution = 0.8f;
-				const float friction = 0.2f;
-
-				// Velocity Resolution
-				if (normal_velocity < 0) {
-					rb->velocity = (-normal_velocity * restitution * normal) + (tangent_velocity * (1.0f - friction) * tangent);
-				}
-
-				// Positional Resolution
-				position += normal * penetration;
-			}
-		}
-
-update_position:
-		position.x += rb->velocity.x * Time::fixed_delta();
-		position.y += rb->velocity.y * Time::fixed_delta();
-		rb->SetPosition(position);
+		rb.position += rb.velocity * Time::fixed_delta();
+		rigidbody->data(rb);
 	}
 
 	for (int i = 0; i < m.collisionResolutionCount; i++) {

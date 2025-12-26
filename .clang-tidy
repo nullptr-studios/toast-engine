@@ -125,13 +125,9 @@ CheckOptions:
 
   - key: readability-identifier-naming.PrivateMemberCase
     value: camelBack
-  - key: readability-identifier-naming.PrivateMemberPrefix
-    value: 'm_'
 
   - key: readability-identifier-naming.ProtectedMemberCase
     value: camelBack
-  - key: readability-identifier-naming.ProtectedMemberPrefix
-    value: 'm_'
 
   - key: readability-identifier-naming.ConstexprVariableCase
     value: UPPER_CASE

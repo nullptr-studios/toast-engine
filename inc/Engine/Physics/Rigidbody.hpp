@@ -3,6 +3,8 @@
 /// @date 22 Dec 2025
 
 #pragma once
+#include "Engine/Physics/Line.hpp"
+
 #include <Engine/Toast/Components/Component.hpp>
 #include <glm/glm.hpp>
 
@@ -12,11 +14,10 @@ class Rigidbody : public toast::Component {
 public:
 	REGISTER_TYPE(Rigidbody);
 	glm::vec2 velocity = { 0.0f, 0.0f };
-	glm::vec2 bounds = { 20.0f, 10.0f };
 	float radius = 1.0f;
 
-	glm::vec2 GetPosition();
-	void SetPosition(glm::vec2 position);
+	auto data() const -> RigidbodyData;
+	void data(const RigidbodyData& data);
 
 protected:
 	void Init() override;

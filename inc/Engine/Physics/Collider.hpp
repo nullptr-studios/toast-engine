@@ -1,4 +1,10 @@
+/// @file Collider.hpp
+/// @author Xein
+/// @date 25 Dec 2025
+
 #pragma once
+#include "Line.hpp"
+
 #include <Engine/Toast/Components/Component.hpp>
 #include <glm/glm.hpp>
 
@@ -11,17 +17,26 @@ public:
 	void Inspector() override;
 	void EditorTick() override;
 
-	void AddPoint(glm::vec2 position = {0.0f, 0.0f});
+	void Init() override;
+	void Destroy() override;
+
+	// TODO: Save and load
+
+	void AddPoint(glm::vec2 position = { 0.0f, 0.0f });
 	void SetPoints(const std::vector<glm::vec2>& points);
-	const std::vector<glm::vec2>& GetPoints() const { return m.points; }
+	auto GetPoint(std::size_t index) const -> glm::vec2;
+	auto GetLines() const -> const std::vector<Line>&;
+	auto GetLineCount() const -> std::size_t;
 	void ClearPoints();
 
 private:
 	void SwapPoints(std::size_t a, std::size_t b);
+	void CalculateLines();
 
 	struct M {
 		std::vector<glm::vec2> points;
-		glm::vec2 newPointPosition {0.0f, 0.0f};
+		std::vector<Line> lines;
+		glm::vec2 newPointPosition { 0.0f, 0.0f };
 		int draggingIndex = -1;
 		float gizmoRadius = 8.0f;
 	} m;
