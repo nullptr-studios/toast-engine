@@ -20,7 +20,9 @@ public:
 	void Init() override;
 	void Destroy() override;
 
-	// TODO: Save and load
+	[[nodiscard]]
+	json_t Save() const override;
+	void Load(json_t j, bool force_create = true) override;
 
 	void AddPoint(glm::vec2 position = { 0.0f, 0.0f });
 	void SetPoints(const std::vector<glm::vec2>& points);

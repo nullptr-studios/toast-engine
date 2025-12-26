@@ -15,6 +15,7 @@ public:
 	REGISTER_TYPE(Rigidbody);
 	glm::vec2 velocity = { 0.0f, 0.0f };
 	float radius = 1.0f;
+	bool simulate = false;
 
 	auto data() const -> RigidbodyData;
 	void data(const RigidbodyData& data);
@@ -26,7 +27,6 @@ protected:
 
 private:
 	friend class PhysicsSystem;
-	void UpdatePosition();
 };
 
 }

@@ -7,10 +7,11 @@
 using namespace physics;
 
 auto Rigidbody::data() const -> RigidbodyData {
-	return { .position = static_cast<toast::Actor*>(parent())->transform()->position(), .velocity = velocity, .radius = radius };
+	return { .position = static_cast<toast::Actor*>(parent())->transform()->worldPosition(), .velocity = velocity, .radius = radius };
 }
 
 void Rigidbody::data(const RigidbodyData& data) {
+	if (!simulate) return;
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
 	transform->position({ data.position.x, data.position.y, transform->position().z });
 	velocity = data.velocity;
@@ -34,30 +35,5 @@ void Rigidbody::Inspector() {
 
 	ImGui::DragFloat2("Velocity", &velocity.x);
 	ImGui::DragFloat("Radius", &radius);
-}
-
-void Rigidbody::UpdatePosition() {
-	// auto* transform = static_cast<toast::Actor*>(parent())->transform();
-	// glm::vec2 position = { transform->position().x, transform->position().y };
-	//
-	// if (position.y + radius > bounds.y) {
-	// 	position.y = bounds.y - radius;
-	// 	velocity.y = -velocity.y;
-	// } else if (position.y - radius < -bounds.y) {
-	// 	position.y = -bounds.y + radius;
-	// 	velocity.y = -velocity.y;
-	// }
-	//
-	// if (position.x + radius > bounds.x) {
-	// 	position.x = bounds.x - radius;
-	// 	velocity.x = -velocity.x;
-	// } else if (position.x - radius < -bounds.x) {
-	// 	position.x = -bounds.x + radius;
-	// 	velocity.x = -velocity.x;
-	// }
-	//
-	// position.x += velocity.x * Time::fixed_delta();
-	// position.y += velocity.y * Time::fixed_delta();
-	//
-	// transform->position({ position.x, position.y, transform->position().z });
+	ImGui::Checkbox("Enable simulation", &simulate);
 }

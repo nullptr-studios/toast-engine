@@ -1,5 +1,6 @@
 #include "Physics/PhysicsSystem.hpp"
 
+#include <Engine/Core/GlmJson.hpp>
 #include <Engine/Physics/Collider.hpp>
 #include <Engine/Renderer/DebugDrawLayer.hpp>
 #include <Engine/Toast/Objects/Actor.hpp>
@@ -12,18 +13,43 @@ void Collider::CalculateLines() {
 
 	for (int i = 1; i < m.points.size(); i++) {
 		glm::vec2 tangent = glm::normalize(m.points[i] - m.points[i - 1]);
+		const glm::vec2 world = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
 
 		m.lines.emplace_back(
-		    Line {
-		      .point = m.points[i - 1], .tangent = tangent, .normal = { -tangent.y, tangent.x },
-                    .length = glm::distance(m.points[i], m.points[i - 1])
-    }
+			Line {
+				.point = m.points[i - 1] + world,
+				.tangent = tangent,
+				.normal = { -tangent.y, tangent.x },
+				.length = glm::distance(m.points[i], m.points[i - 1])
+			}
 		);
 	}
 }
 
 void Collider::Init() {
 	PhysicsSystem::AddCollider(this);
+}
+
+json_t Collider::Save() const {
+	json_t json = Component::Save();
+
+	for (int i = 0; i < m.points.size(); i++) {
+		json["points"][i] = m.points[i];
+	}
+
+	return json;
+}
+
+void Collider::Load(json_t j, bool force_create) {
+	Component::Load(j, force_create);
+
+	if (j.contains("points")) {
+		for (const auto& j_point : j["points"]) {
+			AddPoint(j_point);
+		}
+	}
+
+	CalculateLines();
 }
 
 void Collider::Destroy() {
@@ -73,6 +99,10 @@ void Collider::Inspector() {
 		ImGui::Separator();
 		ImGui::PopID();
 	}
+
+	if (ImGui::Button("Update lines")) {
+		CalculateLines();
+	}
 }
 
 void Collider::EditorTick() {
@@ -82,6 +112,8 @@ void Collider::EditorTick() {
 		    m.points[i] + static_cast<glm::vec2>(world), m.points[(i + 1) % m.points.size()] + static_cast<glm::vec2>(world), { 0.0f, 1.0f, 0.0f, 1.0f }
 		);
 	}
+
+	for (const auto& l : m.lines) renderer::DebugLine(l.point, l.point + l.normal, {1.0f, 0.0f, 0.0f, 0.5f});
 }
 
 void Collider::AddPoint(glm::vec2 position) {

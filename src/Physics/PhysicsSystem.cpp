@@ -7,7 +7,6 @@
 #include <Engine/Physics/Collider.hpp>
 #include <Engine/Physics/Rigidbody.hpp>
 #include <Engine/Toast/World.hpp>
-#include <numeric>
 #include <optional>
 #include <thread>
 
@@ -61,6 +60,37 @@ void PhysicsSystem::Wait() const {
 		return;
 	}
 	std::this_thread::sleep_for(std::chrono::duration<double>(remaining));
+}
+
+void PhysicsSystem::Tick() {
+	// We should apply the physics tick resolution in the following order:
+	//		1) PhysTick calls from all objects
+	//		2) Rigidbody dynamics
+	//		3) Collision detection
+	//		4) Collision resolution
+	//		5) Dispatching of callbacks
+
+	toast::World::Instance()->PhysTick();
+
+	std::vector lines = GetColliderLines();
+	for (auto& rigidbody : m.rigidbodies) {
+		auto rb = rigidbody->data();
+		rb.velocity.y -= 9.81f * Time::fixed_delta();
+
+		for (auto& l : lines) {
+			_rb_line_collision(rb, l);
+		}
+
+		rb.position += rb.velocity * Time::fixed_delta();
+		rigidbody->data(rb);
+	}
+
+	for (int i = 0; i < m.collisionResolutionCount; i++) {
+		// physics_collision_detection();
+		// physics_collision_resolution();
+	}
+
+	// physics_callback_dispatch();
 }
 
 void PhysicsSystem::AddRigidbody(Rigidbody* rb) {
@@ -120,35 +150,4 @@ auto PhysicsSystem::GetColliderLines() -> std::vector<Line> {
 		       return c->GetLines();
 	       }) |
 	       std::views::join | std::ranges::to<std::vector<Line>>();
-}
-
-void PhysicsSystem::Tick() {
-	// We should apply the physics tick resolution in the following order:
-	//		1) PhysTick calls from all objects
-	//		2) Rigidbody dynamics
-	//		3) Collision detection
-	//		4) Collision resolution
-	//		5) Dispatching of callbacks
-
-	toast::World::Instance()->PhysTick();
-
-	std::vector lines = GetColliderLines();
-	for (auto& rigidbody : m.rigidbodies) {
-		auto rb = rigidbody->data();
-		rb.velocity.y -= 9.81f * Time::fixed_delta();
-
-		for (auto& l : lines) {
-			_rb_line_collision(rb, l);
-		}
-
-		rb.position += rb.velocity * Time::fixed_delta();
-		rigidbody->data(rb);
-	}
-
-	for (int i = 0; i < m.collisionResolutionCount; i++) {
-		// physics_collision_detection();
-		// physics_collision_resolution();
-	}
-
-	// physics_callback_dispatch();
 }
