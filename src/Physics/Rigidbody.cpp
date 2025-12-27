@@ -11,7 +11,9 @@ auto Rigidbody::data() const -> RigidbodyData {
 }
 
 void Rigidbody::data(const RigidbodyData& data) {
-	if (!simulate) return;
+	if (!simulate) {
+		return;
+	}
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
 	transform->position({ data.position.x, data.position.y, transform->position().z });
 	velocity = data.velocity;

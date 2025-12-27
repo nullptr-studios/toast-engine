@@ -7,6 +7,7 @@
 #include <Engine/Physics/Collider.hpp>
 #include <Engine/Physics/Rigidbody.hpp>
 #include <Engine/Toast/World.hpp>
+#include <chrono>
 #include <optional>
 #include <thread>
 
@@ -35,11 +36,26 @@ auto PhysicsSystem::create() -> std::optional<PhysicsSystem*> {
 	// TODO: Move later to a place that can be started/ended properly
 	physics->m.physicsThread = std::jthread([physics]() {
 		while (true) {
-			Time::GetInstance()->PhysTick();
-			physics->Tick();
+			using clock = std::chrono::steady_clock;
+			std::chrono::duration<double> target { 1.0f / physics->m.frameTarget };
+			auto begin = clock::now();
+
+			for (int i = 0; i < physics->m.collisionResolutionCount; i++) {
+				Time::GetInstance()->PhysTick();
+				physics->Tick();
+
+				auto elapsed = clock::now() - begin;
+				if (elapsed >= target) {
+					TOAST_WARN("Breaking at {} iterations because phhysics delta is bigger than target", i);
+					break;
+				}
+			}
 
 			// Wait for the physics to reach its target frame time
-			physics->Wait();
+			auto elapsed = clock::now() - begin;
+			if (elapsed < target) {
+				std::this_thread::sleep_for(target - elapsed);
+			}
 		}
 	});
 
@@ -85,9 +101,14 @@ void PhysicsSystem::Tick() {
 		rigidbody->data(rb);
 	}
 
-	for (int i = 0; i < m.collisionResolutionCount; i++) {
-		// physics_collision_detection();
-		// physics_collision_resolution();
+	for (auto it_1 = m.rigidbodies.begin(); it_1 != m.rigidbodies.end(); ++it_1) {
+		for (auto it_2 = std::next(it_1); it_2 != m.rigidbodies.end(); ++it_2) {
+			auto rb_1 = (*it_1)->data();
+			auto rb_2 = (*it_2)->data();
+			_rb_rb_collision(rb_1, rb_2);
+			(*it_1)->data(rb_1);
+			(*it_2)->data(rb_2);
+		}
 	}
 
 	// physics_callback_dispatch();

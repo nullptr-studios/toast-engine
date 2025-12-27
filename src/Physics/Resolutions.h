@@ -6,15 +6,12 @@
 #include "Engine/Renderer/DebugDrawLayer.hpp"
 #include <Engine/Physics/Line.hpp>
 #include <Engine/Physics/Rigidbody.hpp>
+#include <algorithm>
+#include <algorithm>
 
 void _rb_line_collision(physics::RigidbodyData& rb, physics::Line& l) {
 	// calculate normal of the segment
 	double distance_along_line = glm::dot(rb.position - l.point, l.tangent);
-	renderer::DebugCircle(l.point, 0.1f);
-	renderer::DebugCircle(rb.position, 0.1f, {1.0f, 1.0f, 0.0f, 1.0f});
-	glm::dvec2 tan2 = l.tangent + glm::dvec2{0.0f, 1.0f};
-	renderer::DebugLine(l.point, l.point + (l.tangent * distance_along_line), {1.0f, 0.0f, 1.0f, 1.0f});
-
 	// Clamp to segment and get closest point
 	double t = glm::clamp(distance_along_line, 0.0, l.length);
 	glm::dvec2 closest = l.point + t * l.tangent;
@@ -30,8 +27,6 @@ void _rb_line_collision(physics::RigidbodyData& rb, physics::Line& l) {
 
 	// Get the penetration
 	double penetration = rb.radius - dist;
-
-	renderer::DebugLine(closest, closest + normal, {0.0f, 1.0f, 1.0f, 0.5f});
 
 	// if the penetration is 0 or less it means theres no intersection with the line
 	// TODO: we will maybe need substeping for this if the speed is really high
@@ -52,4 +47,60 @@ void _rb_line_collision(physics::RigidbodyData& rb, physics::Line& l) {
 
 	// Positional resolution
 	rb.position += normal * penetration;
+}
+
+void _rb_rb_collision(physics::RigidbodyData& rb_1, physics::RigidbodyData& rb_2) {
+		glm::dvec2 delta = rb_2.position - rb_1.position;
+		double dist = glm::length(delta);
+		if (dist < 1e-12) return; // avoid NaN
+		glm::dvec2 normal = delta / dist;
+		glm::dvec2 tangent{ normal.y, -normal.x };
+
+		double penetration = (rb_1.radius + rb_2.radius) - dist;
+
+		// Relative velocity
+		glm::dvec2 rv = rb_1.velocity - rb_2.velocity;
+		double rel_norm = glm::dot(rv, normal);
+		double rel_tan  = glm::dot(rv, tangent);
+
+		// Replace with your masses; keep as 1.0 if you assume unit mass
+		const double inv_mass1 = 1.0;
+		const double inv_mass2 = 1.0;
+		const double inv_mass_sum = inv_mass1 + inv_mass2;
+
+		constexpr double RESTITUTION = 0.6;  // bounciness
+		constexpr double FRICTION    = 0.05; // Coulomb coefficient
+
+		// Normal impulse only if closing
+		double jn = 0.0;
+		if (rel_norm < 0.0) {
+				jn = -(1.0 + RESTITUTION) * rel_norm / inv_mass_sum;
+		}
+
+		// Tangential (friction) impulse, clamped by Coulomb
+		double jt = -rel_tan / inv_mass_sum;
+		double max_friction = FRICTION * jn;
+		jt = std::min(jt, max_friction);
+		jt = std::max(jt, -max_friction);
+
+		glm::dvec2 impulse = jn * normal + jt * tangent;
+
+		// Apply impulses (note signs)
+		rb_1.velocity += impulse * inv_mass1;
+		rb_2.velocity -= impulse * inv_mass2;
+
+		// Debug draw
+		renderer::DebugLine(rb_1.position, rb_1.position + impulse, {1.0f, 0.0f, 1.0f, 1.0f});
+		renderer::DebugLine(rb_2.position, rb_2.position - impulse, {1.0f, 0.0f, 1.0f, 1.0f});
+
+		// Positional correction (Baumgarte-style) to prevent sinking
+		if (penetration > 0.0) {
+				constexpr double PERCENT = 0.8;     // push-out strength
+				constexpr double SLOP    = 1e-4;    // allow tiny overlap
+				double correction_mag = PERCENT * (penetration - SLOP) / inv_mass_sum;
+				correction_mag = std::max(correction_mag, 0.0);
+				glm::dvec2 correction = correction_mag * normal;
+				rb_1.position -= correction * inv_mass1;
+				rb_2.position += correction * inv_mass2;
+		}
 }

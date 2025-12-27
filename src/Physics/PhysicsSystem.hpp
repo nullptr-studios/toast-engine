@@ -4,6 +4,7 @@
 
 #pragma once
 #include <Engine/Physics/Line.hpp>
+#include <chrono>
 
 namespace physics {
 
@@ -37,7 +38,7 @@ private:
 	struct M {
 		std::jthread physicsThread;
 		const double frameTarget = 50.f;
-		const unsigned collisionResolutionCount = 1;
+		const unsigned collisionResolutionCount = 20;
 
 		std::list<Rigidbody*> rigidbodies;
 		std::list<Collider*> colliders;

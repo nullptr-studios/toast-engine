@@ -16,12 +16,12 @@ void Collider::CalculateLines() {
 		const glm::vec2 world = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
 
 		m.lines.emplace_back(
-			Line {
-				.point = m.points[i - 1] + world,
-				.tangent = tangent,
-				.normal = { -tangent.y, tangent.x },
-				.length = glm::distance(m.points[i % m.points.size()], m.points[i - 1])
-			}
+		    Line {
+		      .point = m.points[i - 1] + world,
+		      .tangent = tangent,
+		      .normal = { -tangent.y, tangent.x },
+		      .length = glm::distance(m.points[i % m.points.size()], m.points[i - 1])
+    }
 		);
 	}
 }
@@ -113,7 +113,9 @@ void Collider::EditorTick() {
 		);
 	}
 
-	for (const auto& l : m.lines) renderer::DebugLine(l.point, l.point + l.normal, {1.0f, 0.0f, 0.0f, 0.5f});
+	for (const auto& l : m.lines) {
+		renderer::DebugLine(l.point, l.point + l.normal, { 1.0f, 0.0f, 0.0f, 0.5f });
+	}
 }
 
 void Collider::AddPoint(glm::vec2 position) {
