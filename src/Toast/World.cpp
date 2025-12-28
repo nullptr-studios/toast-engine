@@ -1,4 +1,5 @@
 #include "Engine/Toast/Objects/Scene.hpp"
+#include "Physics/PhysicsSystem.hpp"
 
 #include <Engine/Core/Log.hpp>
 #include <Engine/Core/Profiler.hpp>
@@ -73,8 +74,11 @@ World::World() {
 				    m.loadedScenes.insert({ s->id(), scene->json_path() });
 				    m.loadedScenesStatus.insert({ s->id(), s->enabled() });
 			    }
+
+					physics::PhysicsSystem::start();
 		    } else {
 			    // Logic for pause logic
+					physics::PhysicsSystem::stop();
 			    m.editorScene->_Begin();    // Rerun to set editor camera
 
 			    for (auto& s : m.children | std::views::values) {
