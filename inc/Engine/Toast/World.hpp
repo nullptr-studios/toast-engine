@@ -1,12 +1,13 @@
 #pragma once
 #include "Objects/Object.hpp"
 
-#include <Engine/Core/ThreadPool.hpp>
 #include <Engine/Event/ListenerComponent.hpp>
 #include <Engine/Toast/SceneLoadedEvent.hpp>
 #include <mutex>
 
 namespace toast {
+
+class ThreadPool;
 
 class World {
 public:
@@ -22,13 +23,10 @@ public:
 	static World* Instance();
 
 	template<typename T>
-	static unsigned
-	    New(const std::optional<std::string_view>& name = std::nullopt, const std::optional<json_t>& j = std::nullopt,
-	        const std::function<void(Scene*)>& init_callback = {});
-	static unsigned
-	    New(const std::string& type, const std::optional<std::string>& name = std::nullopt, const std::optional<json_t>& j = std::nullopt,
-	        const std::function<void(Scene*)>& init_callback = {});
-	static void LoadScene(std::string_view path, std::optional<std::function<void(Scene*)>>&& load_callback = {});
+	static auto New(const std::optional<std::string>& name = std::nullopt) -> T*;
+	static auto New(const std::string& type, const std::optional<std::string>& name = std::nullopt) -> Object*;
+	static void LoadScene(std::string_view path);        ///< Loads scene on the init thread, scene disabld after load
+	static void LoadSceneSync(std::string_view path);    ///< Loads scene on the main thread, scene enabled after load
 	static void UnloadScene(unsigned id);
 	static void UnloadScene(const std::string& name);
 	static void EnableScene(unsigned id);
@@ -80,79 +78,51 @@ public:
 #endif
 
 private:
-	static World* m_instance;
-	Object::Children m_children;
-	std::unique_ptr<event::ListenerComponent> m_listener;
+	void OnSimulateWorld(bool value);
 
-	std::unordered_map<unsigned, Scene*> m_tickableScenes {};
-	std::unordered_map<unsigned, unsigned> m_sceneDestroyTimers {};
+	static World* m_instance;
 	constexpr static unsigned char DESTROY_SCENE_DELAY = 10;
 	constexpr static size_t POOL_SIZE = 2;
-	ThreadPool* m_threadPool = nullptr;
 
-	bool m_simulateWorld = true;
-	std::map<unsigned, std::string> m_loadedScenes;
-	std::map<unsigned, bool> m_loadedScenesStatus;
-
-	std::list<Object*> m_beginQueue {};
-	std::list<Object*> m_destroyQueue {};
-	std::mutex m_queueMutex {};
-
-#ifdef TOAST_EDITOR
-	Object* m_editorScene = nullptr;
-	void OnSimulateWorld(bool value);
-#endif
+	struct M {
+		Object::Children children;
+		std::unique_ptr<event::ListenerComponent> listener;
+		std::unordered_map<unsigned, Scene*> tickableScenes;
+		std::unordered_map<unsigned, unsigned> sceneDestroyTimers;
+		ThreadPool* threadPool = nullptr;
+		bool simulateWorld = true;
+		std::map<unsigned, std::string> loadedScenes;
+		std::map<unsigned, bool> loadedScenesStatus;
+		std::list<Object*> beginQueue;
+		std::list<Object*> destroyQueue;
+		std::mutex queueMutex;
+		Object* editorScene = nullptr;
+	} m;
 };
 
 template<typename T>
-unsigned World::New(const std::optional<std::string_view>& name, const std::optional<json_t>& j, const std::function<void(Scene*)>& init_callback) {
-	unsigned obj_id = Factory::AssignId();
+auto World::New(const std::optional<std::string>& name) -> T* {
+	auto* world = Instance();
+	Object* obj = world->m.children._CreateObject<T>(std::nullopt);
+	obj->m_name = name.value_or(std::format("{}_{}", T::static_type(), obj->id()));
 
-	Instance()->m_threadPool->QueueJob([name, j, init_callback, obj_id]<T> {
-		auto* world = Instance();
-		std::string obj_name {};
-		{
-			auto obj = world->m_children._CreateObject<T>();
-			// Yes, this needed to be done
-			obj->m_id = obj_id;
-			if (std::is_base_of_v<T, Scene>()) {
-				world->m_tickableScenes[obj_id] = static_cast<Scene*>(obj.get());
-			}
+	obj->m_parent = nullptr;
+	obj->m_scene = nullptr;
+	obj->children.parent(obj);
+	obj->children.scene(nullptr);
 
-			// Add name to the scene
-			if (name.has_value()) {
-				obj->name(*name);
-			} else {
-				obj->name(std::format("{0}_{1}", obj->type(), obj->id()));
-			}
-			obj_name = obj->name();
+	// Run load and init
+	obj->_Init();
 
-			// Set values to the parent() and scene() functions
-			obj->m_parent = nullptr;
-			obj->m_scene = dynamic_cast<Scene*>(obj);
-			obj->children.parent(obj);
-			obj->children.scene(dynamic_cast<Scene*>(obj));
+	// Schedule the Begin
+	ScheduleBegin(obj);
 
-			// Run load and init
-			if (j.has_value()) {
-				obj->Load(*j);
-			}
-			obj->_Init();
+	if (obj->base_type() == SceneT) {
+		auto* e = new SceneLoadedEvent { obj->id(), obj->name() };
+		event::Send(e);
+	}
 
-			// Schedule the Begin
-			ScheduleBegin(obj);
-		}
-
-		if (std::is_base_of_v<T, Scene>()) {
-			auto* e = new SceneLoadedEvent { obj_id, obj_name };
-			if (init_callback) {
-				e->loadCallback = init_callback;
-			}
-			event::Send(new SceneLoadedEvent { obj_id, obj_name });
-		}
-	});
-
-	return obj_id;
+	return obj;
 }
 
 }
