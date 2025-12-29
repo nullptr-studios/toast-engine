@@ -13,16 +13,26 @@ ConvexCollider::ConvexCollider(const point_list& points) {
 	for (const auto& [point, _] : points) {
 		// Add the point to the vertices list
 		vertices.emplace_back(point);
+	}
 
+	std::list<glm::vec2> vertices_list { vertices.begin(), vertices.end() };
+	double sign = ShoelaceArea(vertices_list) <= 0 ? 1.0 : -1.0;
+
+	for (const auto& [point, _] : points) {
 		// Compute the edge and add it to its list
 		auto it = std::ranges::find(points, std::pair { point, _ });
 		auto prev_it = it != points.begin() ? std::prev(it) : std::prev(points.end());
 		vec2 prev = prev_it->first;
 
 		dvec2 edge = point - prev;
-		edges.emplace_back(
-		    Line { .p1 = prev, .p2 = point, .normal = normalize(dvec2 { -edge.y, edge.x }), .tangent = normalize(edge), .length = length(edge) }
-		);
+		// clang-format off
+		edges.emplace_back(Line {
+				.p1 = prev,
+				.p2 = point,
+				.normal = sign * normalize(dvec2 { -edge.y, edge.x }),
+				.tangent = normalize(edge), .length = length(edge)
+		});
+		// clang-format on
 	}
 
 	PhysicsSystem::AddCollider(this);

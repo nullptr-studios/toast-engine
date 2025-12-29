@@ -22,24 +22,6 @@ void Collider::DeletePoint(glm::vec2 point) {
 	m.points.erase(it);
 }
 
-float Collider::ShoelaceArea() {
-	float area = 0.0f;
-
-	for (auto it = m.points.begin(); it != m.points.end(); ++it) {
-		auto it2 = std::next(it);
-		if (it2 == m.points.end()) {
-			it2 = m.points.begin();
-		}
-		glm::vec2 p1 = *it;
-		glm::vec2 p2 = *it2;
-
-		glm::mat2 mat { p1, p2 };
-		area += glm::determinant(mat);
-	}
-
-	return area;
-}
-
 void Collider::CalculatePoints() {
 	// We require at leats 3 points to make a mesh
 	if (m.points.size() < 3) {
@@ -56,7 +38,7 @@ void Collider::CalculatePoints() {
 	simple_mesh start_mesh;
 
 	// Figure out which points are concave
-	int sign = ShoelaceArea() >= 0 ? 1 : -1;
+	int sign = ShoelaceArea(m.points) >= 0 ? 1 : -1;
 	std::list<std::list<glm::vec2>::iterator> concave_points;
 	for (auto it = m.points.begin(); it != m.points.end(); ++it) {
 		auto it_prev = it != m.points.begin() ? std::prev(it) : std::prev(m.points.end());

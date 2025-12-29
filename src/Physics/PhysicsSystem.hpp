@@ -22,8 +22,8 @@ public:
 	static void AddCollider(ConvexCollider* c);
 	static void RemoveCollider(ConvexCollider* c);
 
-	PhysicsSystem() = default;
-	~PhysicsSystem() = default;
+	PhysicsSystem();
+	~PhysicsSystem();
 
 	PhysicsSystem(const PhysicsSystem&) = delete;
 	PhysicsSystem& operator=(const PhysicsSystem&) = delete;

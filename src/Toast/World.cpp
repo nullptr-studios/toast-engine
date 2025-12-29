@@ -49,12 +49,6 @@ World::World() {
 		    }
 #endif
 
-		    // call the load callback if there is one
-		    if (e->loadCallback.has_value()) {
-			    auto* scene_ptr = static_cast<Scene*>(scene);
-			    (*e->loadCallback)(scene_ptr);
-		    }
-
 		    return true;
 	    },
 	    2

@@ -1,3 +1,5 @@
+#include "Physics/PhysicsSystem.hpp"
+
 #include <Engine/Core/Log.hpp>
 #include <Engine/Core/Time.hpp>
 #include <Engine/Renderer/DebugDrawLayer.hpp>
@@ -12,6 +14,7 @@
 #include <Engine/Window/Window.hpp>
 #include <Event/EventSystem.hpp>
 #include <Input/InputSystem.hpp>
+#include <memory>
 
 #ifdef TOAST_EDITOR
 #include <imgui.h>
@@ -33,6 +36,7 @@ struct Engine::Pimpl {
 	std::unique_ptr<Factory> factory;
 	std::unique_ptr<resource::ResourceManager> resourceManager;
 	std::unique_ptr<ProjectSettings> projectSettings;
+	std::unique_ptr<physics::PhysicsSystem> physicsSystem;
 };
 
 void Engine::Run(int argc, char** argv) {
@@ -166,6 +170,9 @@ void Engine::Init() {
 
 	// Imguilayer testing purposes
 	m->layerStack->PushLayer(new renderer::DebugDrawLayer());
+
+	// Physics System
+	m->physicsSystem = std::make_unique<physics::PhysicsSystem>();
 
 	Begin();
 }

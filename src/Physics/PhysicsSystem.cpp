@@ -1,7 +1,7 @@
 #include "PhysicsSystem.hpp"
 
-#include "RigidbodyDynamics.hpp"
 #include "Engine/Physics/Collider.hpp"
+#include "RigidbodyDynamics.hpp"
 
 #include <Engine/Core/Log.hpp>
 #include <Engine/Core/Profiler.hpp>
@@ -15,6 +15,14 @@ using namespace glm;
 #pragma region START_AND_END
 
 PhysicsSystem* PhysicsSystem::instance = nullptr;
+
+PhysicsSystem::PhysicsSystem() {
+	instance = this;
+}
+
+PhysicsSystem::~PhysicsSystem() {
+	instance = nullptr;
+}
 
 auto PhysicsSystem::get() noexcept -> std::optional<PhysicsSystem*> {
 	if (instance == nullptr) {
@@ -36,7 +44,9 @@ void PhysicsSystem::start() {
 
 	// TODO: remove at some point
 	Collider* test = nullptr;
-	if (!test) TOAST_TRACE("false");
+	if (test) {
+		TOAST_TRACE("false");
+	}
 
 	(*i)->thread = std::jthread([physics = (*i)](std::stop_token token) {    // NOLINT
 		while (!token.stop_requested()) {
@@ -71,8 +81,13 @@ void PhysicsSystem::stop() {
 		return;
 	}
 
-	(*i)->thread.request_stop();
-	(*i)->thread.join();
+	auto* physics = *i;
+
+	// If the thread is not running, skip
+	if (!physics->thread.joinable()) return;
+
+	physics->thread.request_stop();
+	physics->thread.join();
 }
 
 #pragma endregion
@@ -159,4 +174,8 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 	// 		RbRbResolution(rb, *it, manifold.value());
 	// 	}
 	// }
+	
+	for (auto* c : m.colliders) {
+		RbMeshCollision(rb, c);
+	}
 }

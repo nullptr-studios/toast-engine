@@ -31,8 +31,6 @@ public:
 	void DeletePoint(glm::vec2 point);
 
 private:
-	float ShoelaceArea();
-
 	struct {
 		std::vector<ConvexCollider*> convexShapes;
 		std::list<glm::vec2> points;
