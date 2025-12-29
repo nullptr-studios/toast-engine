@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Engine/Toast/Components/TransformComponent.hpp"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
@@ -13,16 +14,17 @@ class Actor;
 
 class TransformImpl {
 	friend struct Transform2;
-public:
-	auto position() const noexcept -> glm::vec3; // NOLINT
-	auto position() noexcept -> glm::vec3&; // NOLINT
-	auto rotation() const noexcept -> glm::quat; // NOLINT
-	auto rotation() noexcept -> glm::quat&; // NOLINT
-	auto scale() const noexcept -> glm::vec3; // NOLINT
-	auto scale() noexcept -> glm::vec3&; // NOLINT
 
-	auto rotationRadians() const noexcept -> glm::vec3; // NOLINT
-	auto rotationDegrees() const noexcept -> glm::vec3; // NOLINT
+public:
+	auto position() const noexcept -> glm::vec3;           // NOLINT
+	auto position() noexcept -> glm::vec3&;                // NOLINT
+	auto rotation() const noexcept -> glm::quat;           // NOLINT
+	auto rotation() noexcept -> glm::quat&;                // NOLINT
+	auto scale() const noexcept -> glm::vec3;              // NOLINT
+	auto scale() noexcept -> glm::vec3&;                   // NOLINT
+
+	auto rotationRadians() const noexcept -> glm::vec3;    // NOLINT
+	auto rotationDegrees() const noexcept -> glm::vec3;    // NOLINT
 
 	[[nodiscard]]
 	auto matrix() const noexcept -> glm::mat4;
@@ -48,15 +50,15 @@ private:
 
 struct Transform2 {
 	// get local by just doing transform.position()
-	auto position() const noexcept -> glm::vec3; // NOLINT
-	auto position() noexcept -> glm::vec3&; // NOLINT
-	auto rotation() const noexcept -> glm::quat; // NOLINT
-	auto rotation() noexcept -> glm::quat&; // NOLINT
-	auto scale() const noexcept -> glm::vec3; // NOLINT
-	auto scale() noexcept -> glm::vec3&; // NOLINT
+	auto position() const noexcept -> glm::vec3;           // NOLINT
+	auto position() noexcept -> glm::vec3&;                // NOLINT
+	auto rotation() const noexcept -> glm::quat;           // NOLINT
+	auto rotation() noexcept -> glm::quat&;                // NOLINT
+	auto scale() const noexcept -> glm::vec3;              // NOLINT
+	auto scale() noexcept -> glm::vec3&;                   // NOLINT
 
-	auto rotationRadians() const noexcept -> glm::vec3; // NOLINT
-	auto rotationDegrees() const noexcept -> glm::vec3; // NOLINT
+	auto rotationRadians() const noexcept -> glm::vec3;    // NOLINT
+	auto rotationDegrees() const noexcept -> glm::vec3;    // NOLINT
 
 	TransformImpl local;
 	TransformImpl world;
@@ -74,30 +76,46 @@ struct Transform2 {
 template<>
 struct std::formatter<toast::Transform2> {
 	constexpr auto parse(std::format_parse_context& ctx) {
-		return ctx.begin(); 
+		return ctx.begin();
 	}
 
 	auto format(const toast::Transform2& t, std::format_context& ctx) const {
-		return std::format_to(ctx.out(),
-			"Transform(\n\tpos: ({:.2f}, {:.2f}, {:.2f}),\n\trot: ({:.2f}, {:.2f}, {:.2f}),\n\tscl: ({:.2f}, {:.2f}, {:.2f})\n)",
-			t.position().x, t.position().y, t.position().z,
-			t.rotationDegrees().x, t.rotationDegrees().y, t.rotationDegrees().z,
-			t.scale().x, t.scale().y, t.scale().z);
+		return std::format_to(
+		    ctx.out(),
+		    "Transform(\n\tpos: ({:.2f}, {:.2f}, {:.2f}),\n\trot: ({:.2f}, {:.2f}, {:.2f}),\n\tscl: ({:.2f}, {:.2f}, {:.2f})\n)",
+		    t.position().x,
+		    t.position().y,
+		    t.position().z,
+		    t.rotationDegrees().x,
+		    t.rotationDegrees().y,
+		    t.rotationDegrees().z,
+		    t.scale().x,
+		    t.scale().y,
+		    t.scale().z
+		);
 	}
 };
 
 template<>
 struct std::formatter<toast::TransformImpl> {
 	constexpr auto parse(std::format_parse_context& ctx) {
-		return ctx.begin(); 
+		return ctx.begin();
 	}
 
 	auto format(const toast::TransformImpl& t, std::format_context& ctx) const {
-		return std::format_to(ctx.out(),
-			"Transform(\n\tpos: ({:.2f}, {:.2f}, {:.2f}),\n\trot: ({:.2f}, {:.2f}, {:.2f}),\n\tscl: ({:.2f}, {:.2f}, {:.2f})\n)",
-			t.position().x, t.position().y, t.position().z,
-			t.rotationDegrees().x, t.rotationDegrees().y, t.rotationDegrees().z,
-			t.scale().x, t.scale().y, t.scale().z);
+		return std::format_to(
+		    ctx.out(),
+		    "Transform(\n\tpos: ({:.2f}, {:.2f}, {:.2f}),\n\trot: ({:.2f}, {:.2f}, {:.2f}),\n\tscl: ({:.2f}, {:.2f}, {:.2f})\n)",
+		    t.position().x,
+		    t.position().y,
+		    t.position().z,
+		    t.rotationDegrees().x,
+		    t.rotationDegrees().y,
+		    t.rotationDegrees().z,
+		    t.scale().x,
+		    t.scale().y,
+		    t.scale().z
+		);
 	}
 };
 

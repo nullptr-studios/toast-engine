@@ -75,10 +75,10 @@ World::World() {
 				    m.loadedScenesStatus.insert({ s->id(), s->enabled() });
 			    }
 
-					physics::PhysicsSystem::start();
+			    physics::PhysicsSystem::start();
 		    } else {
 			    // Logic for pause logic
-					physics::PhysicsSystem::stop();
+			    physics::PhysicsSystem::stop();
 			    m.editorScene->_Begin();    // Rerun to set editor camera
 
 			    for (auto& s : m.children | std::views::values) {
