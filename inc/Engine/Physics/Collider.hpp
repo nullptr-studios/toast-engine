@@ -3,6 +3,8 @@
 /// @date 28 Dec 2025
 
 #pragma once
+#include "ColliderData.hpp"
+
 #include <Engine/Toast/Components/Component.hpp>
 #include <glm/glm.hpp>
 
@@ -29,6 +31,8 @@ public:
 	void AddPoint(glm::vec2 point);
 	void SwapPoints(glm::vec2 lhs, glm::vec2 rhs);
 	void DeletePoint(glm::vec2 point);
+
+	ColliderData data;
 
 private:
 	struct {

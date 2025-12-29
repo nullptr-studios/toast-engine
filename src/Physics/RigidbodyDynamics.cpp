@@ -24,7 +24,6 @@ static void DebugManifold(const Manifold& m) {
 
 void RbKinematics(Rigidbody* rb) {
 	dvec2 velocity = rb->velocity;
-	dvec2 position = rb->GetPosition();
 
 	// Deal forces
 	dvec2 forces_sum = std::ranges::fold_left(rb->forces, glm::dvec2(0.0f), std::plus {});
@@ -34,9 +33,12 @@ void RbKinematics(Rigidbody* rb) {
 	// Integrate
 	velocity += accel_sum * Time::fixed_delta();
 	velocity *= (1 - rb->linearDrag);
-	position += velocity * Time::fixed_delta();
+}
 
-	rb->SetPosition(position);
+void RbIntegration(Rigidbody* rb) {
+	dvec2 pos = rb->GetPosition();
+	pos += rb->velocity * Time::fixed_delta();
+	rb->SetPosition(pos);
 }
 
 auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
@@ -134,6 +136,62 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 	return best;
 }
 
-void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) { }
+void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
+	// Current linear velocity and position of the rigidbody
+	dvec2 current_velocity = rb->velocity;
+	dvec2 current_position = rb->GetPosition();
+
+	// Early out if body is effectively infinite mass
+	if (rb->mass <= 0.0) {
+		// integrate using the pre-step velocity; swap to corrected velocity if desired
+		current_position += current_velocity * Time::fixed_delta();
+		rb->SetPosition(current_position);
+		return;
+	}
+
+	double inv_mass = 1.0 / rb->mass;
+
+	// Contact basis: tangent is perpendicular to normal
+	dvec2 contact_tangent = { -manifold.normal.y, manifold.normal.x };
+
+	// unfold velocity in normal and tangencial
+	double normal_speed = dot(current_velocity, manifold.normal);
+	double tangent_speed = dot(current_velocity, contact_tangent);
+	// only apply restitution if we're moving faster than the restitution threshold
+	double contact_restitution = (std::abs(normal_speed) < rb->restitutionThreshold) ? 0.0 : rb->restitution;
+
+	// only resolve if we're going towards the object
+	if (normal_speed < 0.0) {
+		// Normal impulse (bounce response), single dynamic body vs static collider:
+		// Jn = -(1 + e) * vn / invMass = -(1 + e) * vn * mass
+		double normal_impulse = -(1.0 + contact_restitution) * normal_speed / inv_mass;
+
+		// Coulomb friction
+		double friction_coefficient = c->friction;
+		double max_friction_impulse = friction_coefficient * std::abs(normal_impulse);
+
+		// calculate tangential impulse to cancel tangential speed
+		double tangential_impulse = -tangent_speed / inv_mass;
+		tangential_impulse = clamp(tangential_impulse, -max_friction_impulse, max_friction_impulse);
+
+		// Apply impulses to velocity
+		rb->velocity += (normal_impulse * inv_mass) * manifold.normal + (tangential_impulse * inv_mass) * contact_tangent;
+	}
+
+	// positional correction
+	constexpr double POS_CORRECT_SLOP = 1e-3;
+	constexpr double POS_CORRECT_PCT = 0.3;
+	double penetration_correction = std::max(manifold.depth - POS_CORRECT_SLOP, 0.0) * POS_CORRECT_PCT;
+	current_position += penetration_correction * manifold.normal;
+
+	// velocity correction
+	double residual_normal_speed = glm::dot(rb->velocity, manifold.normal);
+	if (residual_normal_speed < 0.0) {
+		current_velocity -= residual_normal_speed * manifold.normal;
+	}
+	rb->velocity = current_velocity;
+
+	rb->SetPosition(current_position);
+}
 
 }

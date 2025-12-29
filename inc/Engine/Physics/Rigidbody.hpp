@@ -19,10 +19,14 @@ public:
 	double radius = 1.0;
 	double mass = 1.0;
 
+	double friction = 0.2;
+	double linearDrag = 0.2;
+	double restitution = 0.6;
+	double restitutionThreshold = 0.5;
+
 	glm::dvec2 velocity = { 1.0, 1.0 };
 	glm::dvec2 gravityScale { 1.0, 1.0 };
 	std::deque<glm::dvec2> forces;
-	double linearDrag = 0.2;
 
 	glm::dvec2 GetPosition();
 	void SetPosition(glm::dvec2);

@@ -84,7 +84,9 @@ void PhysicsSystem::stop() {
 	auto* physics = *i;
 
 	// If the thread is not running, skip
-	if (!physics->thread.joinable()) return;
+	if (!physics->thread.joinable()) {
+		return;
+	}
 
 	physics->thread.request_stop();
 	physics->thread.join();
@@ -165,17 +167,24 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 	PROFILE_ZONE;
 	PROFILE_TEXT(rb->parent()->name(), rb->parent()->name().size());
 
-	// RbKinematics(rb);
-	//
-	// // Collision loops
+	RbKinematics(rb);
+
+	// Collision loops
+
 	// for (auto it = ++std::ranges::find(m.rigidbodies, rb); it != m.rigidbodies.end(); ++it) {
 	// 	auto manifold = RbRbCollision(rb, *it);
 	// 	if (manifold.has_value()) {
 	// 		RbRbResolution(rb, *it, manifold.value());
 	// 	}
 	// }
-	
+
 	for (auto* c : m.colliders) {
-		RbMeshCollision(rb, c);
+		auto manifold = RbMeshCollision(rb, c);
+		if (manifold.has_value()) {
+			RbMeshResolution(rb, c, manifold.value());
+		}
 	}
+
+	// Final position integration
+	RbIntegration(rb);
 }

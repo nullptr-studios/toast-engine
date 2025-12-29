@@ -6,7 +6,7 @@
 using namespace physics;
 using namespace glm;
 
-ConvexCollider::ConvexCollider(const point_list& points) {
+ConvexCollider::ConvexCollider(const point_list& points, const ColliderData& data) {
 	edges.reserve(points.size() - 1);
 	vertices.reserve(points.size());
 
@@ -34,6 +34,8 @@ ConvexCollider::ConvexCollider(const point_list& points) {
 		});
 		// clang-format on
 	}
+
+	friction = data.friction;
 
 	PhysicsSystem::AddCollider(this);
 }

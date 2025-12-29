@@ -219,7 +219,7 @@ void Collider::CalculatePoints() {
 
 	// Finally, create convex colliders for every convex mesh we produced
 	for (const auto& points : meshes_list) {
-		m.convexShapes.emplace_back(new ConvexCollider(points));
+		m.convexShapes.emplace_back(new ConvexCollider(points, data));
 	}
 }
 

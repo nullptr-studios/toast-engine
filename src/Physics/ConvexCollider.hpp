@@ -3,6 +3,7 @@
 /// @date 29 Dec 2025
 
 #pragma once
+#include <Engine/Physics/ColliderData.hpp>
 #include <glm/glm.hpp>
 
 namespace physics {
@@ -15,10 +16,10 @@ struct Line {
 	double length;
 };
 
-class ConvexCollider {
+class ConvexCollider : public ColliderData {
 public:
 	using point_list = std::list<std::pair<glm::vec2, bool>>;
-	explicit ConvexCollider(const point_list& points);
+	explicit ConvexCollider(const point_list& points, const ColliderData& data);
 	~ConvexCollider();
 
 	std::vector<Line> edges;
