@@ -15,10 +15,10 @@ using namespace glm;
 
 static void DebugManifold(const Manifold& m) {
 	renderer::DebugCircle(m.contact1, 0.1, { 0.0f, 1.0f, 0.0f, 1.0f });
-	renderer::DebugLine(m.contact1, m.contact1 + (m.normal * m.depth));
+	renderer::DebugLine(m.contact1, m.contact1 + (m.normal * m.depth), {1.0f, 0.0f, 1.0f, 1.0f});
 	if (m.contactCount == 2) {
 		renderer::DebugCircle(m.contact2, 0.1, { 0.0f, 1.0f, 0.0f, 1.0f });
-		renderer::DebugLine(m.contact2, m.contact2 + (m.normal * m.depth));
+		renderer::DebugLine(m.contact2, m.contact2 + (m.normal * m.depth), {1.0f, 0.0f, 1.0f, 1.0f});
 	}
 }
 
@@ -43,12 +43,14 @@ void RbKinematics(Rigidbody* rb) {
 }
 
 void RbIntegration(Rigidbody* rb) {
+	// Integrate position
 	dvec2 pos = rb->GetPosition();
 	pos += rb->velocity * Time::fixed_delta();
 	rb->SetPosition(pos);
 }
 
 void RbResetVelocity(Rigidbody* rb) {
+	// Set the velocity to 0 at the start of the simulation
 	rb->velocity = { 0.0, 0.0 };
 }
 
@@ -63,11 +65,23 @@ auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
 		return std::nullopt;
 	}
 
-	return {};
-	// return {
-	// 	.penetration = penetration,
-	// 	.normal = normalize(pos2 - pos1)
-	// };
+	auto manifold = Manifold {
+		.normal = normalize(pos1 - pos2),
+		.depth = penetration
+	};
+
+	// tangent direction perpendicular to normal
+	dvec2 base_point = pos2 + manifold.normal * (rb2->radius - manifold.depth);
+	manifold.contact1 = base_point;
+	manifold.contact2 = base_point;
+	manifold.contactCount = 1;
+
+	DebugManifold(manifold);
+	return manifold;
+}
+
+void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
+
 }
 
 auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold> {
@@ -151,11 +165,7 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	dvec2 position = rb->GetPosition();
 
 	// Early out if body is effectively infinite mass
-	if (rb->mass <= 0.0) {
-		position += velocity * Time::fixed_delta();
-		rb->SetPosition(position);
-		return;
-	}
+	if (rb->mass <= 0.0) return;
 
 	double inv_mass = 1.0 / rb->mass;
 

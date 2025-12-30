@@ -217,12 +217,12 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 
 	// Collision loops
 
-	// for (auto it = ++std::ranges::find(m.rigidbodies, rb); it != m.rigidbodies.end(); ++it) {
-	// 	auto manifold = RbRbCollision(rb, *it);
-	// 	if (manifold.has_value()) {
-	// 		RbRbResolution(rb, *it, manifold.value());
-	// 	}
-	// }
+	for (auto it = ++std::ranges::find(m.rigidbodies, rb); it != m.rigidbodies.end(); ++it) {
+		auto manifold = RbRbCollision(rb, *it);
+		if (manifold.has_value()) {
+			RbRbResolution(rb, *it, manifold.value());
+		}
+	}
 
 	for (auto* c : m.colliders) {
 		auto manifold = RbMeshCollision(rb, c);
