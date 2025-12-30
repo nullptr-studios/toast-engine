@@ -81,7 +81,71 @@ auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
 }
 
 void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
+	dvec2 velocity1 = rb1->velocity;
+	dvec2 velocity2 = rb2->velocity;
 
+	dvec2 position1 = rb1->GetPosition();
+	dvec2 position2 = rb2->GetPosition();
+
+	// Early out if both bodies have infinite mass
+	if (rb1->mass <= 0.0 && rb2->mass <= 0.0) return;
+
+	double inv_mass1 = (rb1->mass > 0.0) ? 1.0 / rb1->mass : 0.0;
+	double inv_mass2 = (rb2->mass > 0.0) ? 1.0 / rb2->mass : 0.0;
+
+	double inv_mass_sum = inv_mass1 + inv_mass2;
+	if (inv_mass_sum <= 0.0) return;
+
+	dvec2 normal = manifold.normal;
+	dvec2 contact_tangent = { -normal.y, normal.x };
+
+	// Relative velocity
+	dvec2 relative_velocity = velocity1 - velocity2;
+
+	// Unfold velocity in normal and tangential components
+	double normal_speed = dot(relative_velocity, normal);
+	double tangent_speed = dot(relative_velocity, contact_tangent);
+
+	// Only resolve if bodies are moving towards each other
+	if (normal_speed < 0.0) {
+		// Restitution disabled below threshold to prevent jitter
+		double restitution1 = (std::abs(normal_speed) < rb1->restitutionThreshold) ? 0.0 : rb1->restitution;
+		double restitution2 = (std::abs(normal_speed) < rb2->restitutionThreshold) ? 0.0 : rb2->restitution;
+
+		double restitution = std::min(restitution1, restitution2);
+
+		// Normal impulse
+		// Jn = -(1 + e) * vn / (invMass1 + invMass2)
+		double normal_impulse = -(1.0 + restitution) * normal_speed / inv_mass_sum;
+
+		// Friction impulse
+		double friction = std::sqrt(rb1->friction * rb2->friction);
+		double max_friction_impulse = friction * std::abs(normal_impulse);
+
+		// Tangential impulse needed to cancel tangential speed
+		double tangential_impulse = -tangent_speed / inv_mass_sum;
+		tangential_impulse = clamp(tangential_impulse, -max_friction_impulse, max_friction_impulse);
+
+		// Apply impulses
+		dvec2 impulse = normal_impulse * normal + tangential_impulse * contact_tangent;
+
+		velocity1 += impulse * inv_mass1;
+		velocity2 -= impulse * inv_mass2;
+	}
+
+	// Positional correction
+	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
+	dvec2 correction = (penetration_correction / inv_mass_sum) * normal;
+
+	position1 += correction * inv_mass1;
+	position2 -= correction * inv_mass2;
+
+	// Velocity correction
+	rb1->velocity = velocity1;
+	rb2->velocity = velocity2;
+
+	rb1->SetPosition(position1);
+	rb2->SetPosition(position2);
 }
 
 auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold> {
@@ -160,7 +224,6 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 }
 
 void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
-	// Current linear velocity and position of the rigidbody
 	dvec2 velocity = rb->velocity;
 	dvec2 position = rb->GetPosition();
 
