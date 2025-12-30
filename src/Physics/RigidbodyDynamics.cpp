@@ -32,7 +32,7 @@ void RbKinematics(Rigidbody* rb) {
 
 	// Sum forces
 	glm::dvec2 forces_sum = std::ranges::fold_left(rb->forces, glm::dvec2(0.0), std::plus {});
-	glm::dvec2 accel = (forces_sum / rb->mass) + (PhysicsSystem::gravity() * rb->gravityScale);
+	glm::dvec2 accel = (forces_sum / rb->mass) + (PhysicsSystem::gravity() * dvec2{rb->gravityScale});
 
 	// Integrate velocity
 	velocity += accel * Time::fixed_delta();

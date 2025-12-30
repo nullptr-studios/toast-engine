@@ -2,7 +2,9 @@
 
 #include "ConvexCollider.hpp"
 
+#include <Engine/Core/GlmJson.hpp>
 #include <Engine/Renderer/DebugDrawLayer.hpp>
+#include <Engine/Toast/Objects/Actor.hpp>
 #include <imgui.h>
 
 using namespace physics;
@@ -27,6 +29,10 @@ void Collider::CalculatePoints() {
 	if (m.points.size() < 3) {
 		return;
 	}
+
+	// update world position data
+	glm::vec2 world_position = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
+	data.worldPosition = world_position;
 
 	for (auto* c : m.convexShapes) {
 		delete c;
@@ -232,11 +238,21 @@ void Collider::Destroy() {
 #pragma region EDITOR
 
 void Collider::Inspector() {
+	ImGui::Spacing();
+	ImGui::SeparatorText("Properties");
+
+	const double min = 0.0;
+	const double max = 1.5;
+	ImGui::SliderScalar("Friction", ImGuiDataType_Double, &data.friction, &min, &max);
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Points");
+
 	if (ImGui::Button("Add")) {
-		AddPoint(m.newPointPosition);
+		AddPoint(debug.newPointPosition);
 	}
 	ImGui::SameLine();
-	ImGui::DragFloat2("Position", &m.newPointPosition.x);
+	ImGui::DragFloat2("Position", &debug.newPointPosition.x);
 
 	ImGui::Separator();
 	ImGui::Spacing();
@@ -294,16 +310,75 @@ void Collider::Inspector() {
 	if (ImGui::Button("Calculate mesh")) {
 		CalculatePoints();
 	}
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Debug");
+
+	ImGui::Checkbox("Show points", &debug.showPoints);
+	ImGui::Checkbox("Show colliders", &debug.showColliders);
+	ImGui::Checkbox("Show normals", &data.debugNormals);
 }
 
 void Collider::EditorTick() {
-	for (glm::vec2 p : m.points) {
-		renderer::DebugCircle(p, 0.1f);
+	glm::vec2 world_position = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
+
+	if (debug.showPoints) {
+		renderer::DebugCircle(debug.newPointPosition + world_position, 0.1f, { 1.0f, 0.5f, 0.0f, 1.0f });
+
+		for (glm::vec2 p : m.points) {
+			renderer::DebugCircle(p + world_position, 0.1f);
+		}
 	}
 
-	for (auto& c : m.convexShapes) {
-		c->Debug();
+	if (debug.showColliders) {
+		for (auto& c : m.convexShapes) {
+			c->Debug();
+		}
 	}
 }
 
 #pragma endregion
+
+json_t Collider::Save() const {
+	json_t j = Component::Save();
+
+	for (const auto& p : m.points) {
+		j["points"].push_back(p);
+	}
+
+	j["friction"] = data.friction;
+
+	j["debug.showPoints"] = debug.showPoints;
+	j["debug.showColliders"] = debug.showColliders;
+	j["debug.showNormals"] = data.debugNormals;
+
+	return j;
+}
+
+void Collider::Load(json_t j, bool propagate) {
+	if (j.contains("points")) {
+		for (const auto& p : j["points"]) {
+			AddPoint(p);
+		}
+	}
+
+	if (j.contains("friction")) {
+		data.friction = j["friction"];
+	}
+
+	if (j.contains("debug.showPoints")) {
+		debug.showPoints = j["debug.showPoints"];
+	}
+	if (j.contains("debug.showColliders")) {
+		debug.showColliders = j["debug.showColliders"];
+	}
+	if (j.contains("debug.showNormals")) {
+		data.debugNormals = j["debug.showNormals"];
+	}
+
+	if (!m.points.empty()) {
+		CalculatePoints();
+	}
+
+	Component::Load(j, propagate);
+}

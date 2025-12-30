@@ -1,9 +1,11 @@
 #include "Engine/Physics/Rigidbody.hpp"
 
-#include "Engine/Renderer/DebugDrawLayer.hpp"
-#include "Engine/Toast/Objects/Actor.hpp"
 #include "PhysicsSystem.hpp"
-#include "imgui.h"
+
+#include <Engine/Core/GlmJson.hpp>
+#include <Engine/Renderer/DebugDrawLayer.hpp>
+#include <Engine/Toast/Objects/Actor.hpp>
+#include <imgui.h>
 
 using namespace physics;
 
@@ -25,7 +27,7 @@ void Rigidbody::Inspector() {
 	ImGui::Spacing();
 	ImGui::SeparatorText("Simulation");
 
-	ImGui::DragScalarN("Gravity Scale", ImGuiDataType_Double, &gravityScale.x, 2);
+	ImGui::DragScalarN("Gravity Scale", ImGuiDataType_Float, &gravityScale.x, 2);
 	ImGui::DragScalar("Restitution", ImGuiDataType_Double, &restitution);
 	ImGui::DragScalar("Restitution Threshold", ImGuiDataType_Double, &restitutionThreshold);
 	ImGui::DragScalar("Linear Drag", ImGuiDataType_Double, &linearDrag);
@@ -33,9 +35,9 @@ void Rigidbody::Inspector() {
 	ImGui::Spacing();
 	ImGui::SeparatorText("Debug");
 
-	ImGui::Checkbox("Draw", &debug);
-	ImGui::ColorEdit4("Default color", &defaultColor.r);
-	ImGui::ColorEdit4("Colliding color", &collidingColor.r);
+	ImGui::Checkbox("Draw", &debug.show);
+	ImGui::ColorEdit4("Default color", &debug.defaultColor.r);
+	ImGui::ColorEdit4("Colliding color", &debug.collidingColor.r);
 
 	ImGui::Spacing();
 
@@ -49,17 +51,71 @@ void Rigidbody::Inspector() {
 	ImGui::Spacing();
 
 	if (ImGui::Button("Add force")) {
-		AddForce(addForceDebug);
+		AddForce(debug.addForce);
 	}
 	ImGui::SameLine();
-	ImGui::DragFloat2("Debug force", &addForceDebug.x);
+	ImGui::DragFloat2("Debug force", &debug.addForce.x);
 }
 
 void Rigidbody::EditorTick() {
-	if (!debug) {
+	if (!debug.show) {
 		return;
 	}
-	renderer::DebugCircle(GetPosition(), radius, defaultColor);
+	renderer::DebugCircle(GetPosition(), radius, debug.defaultColor);
+}
+
+json_t Rigidbody::Save() const {
+	json_t j = Component::Save();
+
+	j["radius"] = radius;
+	j["mass"] = mass;
+	j["friction"] = friction;
+	j["gravityScale"] = gravityScale;
+	j["linearDrag"] = linearDrag;
+	j["restitution"] = restitution;
+	j["restitutionThreshold"] = restitutionThreshold;
+
+	j["debug.show"] = debug.show;
+	j["debug.defaultColor"] = debug.defaultColor;
+	j["debug.collidingColor"] = debug.collidingColor;
+
+	return j;
+}
+
+void Rigidbody::Load(json_t j, bool propagate) {
+	if (j.contains("radius")) {
+		radius = j["radius"];
+	}
+	if (j.contains("mass")) {
+		mass = j["mass"];
+	}
+	if (j.contains("friction")) {
+		friction = j["friction"];
+	}
+	if (j.contains("gravityScale")) {
+		gravityScale = j["gravityScale"];
+	}
+	if (j.contains("linearDrag")) {
+		linearDrag = j["linearDrag"];
+	}
+	if (j.contains("restitution")) {
+		restitution = j["restitution"];
+	}
+	if (j.contains("restitutionThreshold")) {
+		restitutionThreshold = j["restitutionThreshold"];
+	}
+
+	if (j.contains("debug.show")) {
+		debug.show = j["debug.show"];
+	}
+	if (j.contains("debug.defaultColor")) {
+		debug.defaultColor = j["debug.defaultColor"];
+	}
+	if (j.contains("debug.collidingColor")) {
+		debug.collidingColor = j["debug.collidingColor"];
+	}
+
+	Component::Load(j, propagate);
 }
 
 glm::dvec2 Rigidbody::GetPosition() const {

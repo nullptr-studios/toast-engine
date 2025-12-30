@@ -22,8 +22,7 @@ struct UpdatePhysicsDefaults : event::Event<UpdatePhysicsDefaults> {
 	      positionCorrectionPtc(ptc),
 	      eps(eps),
 	      epsSmall(eps_small),
-				iterationCount(it)
-	{ }
+	      iterationCount(it) { }
 };
 
 }

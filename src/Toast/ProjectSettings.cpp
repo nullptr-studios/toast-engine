@@ -39,7 +39,7 @@ ProjectSettings::ProjectSettings() : m_version(0, 0, 0) {
 	    config["physics"]["positionCorrection"]["slop"].as<double>(),
 	    config["physics"]["eps"].as<double>(),
 	    config["physics"]["epsSmall"].as<double>(),
-			config["physics"]["iterationCount"].as<unsigned>()
+	    config["physics"]["iterationCount"].as<unsigned>()
 	));
 }
 

@@ -24,6 +24,9 @@ public:
 	void EditorTick() override;
 	void Destroy() override;
 
+	json_t Save() const override;
+	void Load(json_t j, bool propagate) override;
+
 	void CalculatePoints();
 
 	template<typename... Args>
@@ -38,8 +41,13 @@ private:
 	struct {
 		std::vector<ConvexCollider*> convexShapes;
 		std::list<glm::vec2> points;
-		glm::vec2 newPointPosition;
 	} m;
+
+	struct {
+		bool showPoints = true;
+		bool showColliders = true;
+		glm::vec2 newPointPosition;
+	} debug;
 };
 
 template<typename... Args>
