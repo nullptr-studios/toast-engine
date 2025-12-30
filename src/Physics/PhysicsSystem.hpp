@@ -3,6 +3,7 @@
 /// @date 28 Dec 2025
 
 #pragma once
+#include "Engine/Event/ListenerComponent.hpp"
 #include <glm/glm.hpp>
 
 namespace physics {
@@ -16,6 +17,10 @@ public:
 	static void stop();
 
 	static auto gravity() -> glm::dvec2;
+	static auto pos_slop() -> double;
+	static auto pos_ptc() -> double;
+	static auto eps() -> double;
+	static auto eps_small() -> double;
 
 	static void AddRigidbody(Rigidbody* rb);
 	static void RemoveRigidbody(Rigidbody* rb);
@@ -44,6 +49,12 @@ private:
 		std::list<Rigidbody*> rigidbodies;
 		std::list<ConvexCollider*> colliders;
 		glm::dvec2 gravity = {0.0, -9.81};
+		double positionCorrectionSlop = 1.0e-3;
+		double positionCorrectionPtc = 0.4;
+		double eps = 1.0e-6;
+		double epsSmall = 1.0e-9;
+
+		event::ListenerComponent eventListener;
 	} m;
 
 	// out of the struct to make sure this is ALWAYS the last

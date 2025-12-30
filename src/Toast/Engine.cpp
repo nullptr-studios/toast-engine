@@ -146,13 +146,14 @@ void Engine::Init() {
 	}
 
 	m->resourceManager = std::make_unique<resource::ResourceManager>(false);
-	m->projectSettings = std::make_unique<ProjectSettings>();
 
 	// Starting time tracking
 	m->time = std::make_unique<Time>();
 
 	// Starting event system
 	m->eventSystem = std::make_unique<event::EventSystem>();
+
+	m->projectSettings = std::make_unique<ProjectSettings>();
 
 	// Create window
 	m->window = std::make_unique<Window>(1920, 1080, "ToastEngine");

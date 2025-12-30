@@ -1,11 +1,11 @@
 #include "PhysicsSystem.hpp"
 
-#include "Engine/Physics/Collider.hpp"
 #include "RigidbodyDynamics.hpp"
 
 #include <Engine/Core/Log.hpp>
 #include <Engine/Core/Profiler.hpp>
 #include <Engine/Core/Time.hpp>
+#include <Engine/Physics/PhysicsEvents.hpp>
 #include <Engine/Toast/World.hpp>
 #include <chrono>
 
@@ -18,6 +18,15 @@ PhysicsSystem* PhysicsSystem::instance = nullptr;
 
 PhysicsSystem::PhysicsSystem() {
 	instance = this;
+
+	m.eventListener.Subscribe<UpdatePhysicsDefaults>([this](auto* e) {
+		m.gravity = e->gravity;
+		m.positionCorrectionPtc = e->positionCorrectionPtc;
+		m.positionCorrectionSlop = e->positionCorrectionSlop;
+		m.eps = e->eps;
+		m.epsSmall = e->epsSmall;
+		return true;
+	});
 }
 
 PhysicsSystem::~PhysicsSystem() {
@@ -38,17 +47,12 @@ void PhysicsSystem::start() {
 	if (!i.has_value()) {
 		return;
 	}
-	if ((*i)->thread.joinable()) {
+	auto* physics = i.value();
+	if (physics->thread.joinable()) {
 		return;
 	}
 
-	// TODO: remove at some point
-	Collider* test = nullptr;
-	if (test) {
-		TOAST_TRACE("false");
-	}
-
-	(*i)->thread = std::jthread([physics = (*i)](std::stop_token token) {    // NOLINT
+	physics->thread = std::jthread([physics](std::stop_token token) {    // NOLINT
 		while (!token.stop_requested()) {
 			using namespace std::chrono;
 			time_point begin = steady_clock::now();
@@ -66,11 +70,17 @@ void PhysicsSystem::start() {
 				}
 			}
 
+			// Handle constant frame time
 			duration elapsed = steady_clock::now() - begin;
 			if (elapsed < physics->m.targetFrametime) {
 				PROFILE_ZONE_NC("physics::wait", 0x404040);
 				std::this_thread::sleep_for(physics->m.targetFrametime - elapsed);
 			}
+		}
+
+		// When we stop the physics thread, restore rigidbody velocities
+		for (auto* rb : physics->m.rigidbodies) {
+			RbResetVelocity(rb);
 		}
 	});
 }
@@ -161,6 +171,41 @@ dvec2 PhysicsSystem::gravity() {
 	return (*i)->m.gravity;
 }
 
+double PhysicsSystem::pos_slop() {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return 0.0;
+	}
+
+	return (*i)->m.positionCorrectionSlop;
+}
+
+double PhysicsSystem::pos_ptc() {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return 0.0;
+	}
+
+	return (*i)->m.positionCorrectionPtc;
+}
+
+double PhysicsSystem::eps() {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return 0.0;
+	}
+
+	return (*i)->m.eps;
+}
+
+double PhysicsSystem::eps_small() {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return 0.0;
+	}
+
+	return (*i)->m.epsSmall;
+}
 #pragma endregion
 
 void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {

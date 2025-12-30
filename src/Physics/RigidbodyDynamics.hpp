@@ -22,6 +22,7 @@ class Trigger;
 
 void RbKinematics(Rigidbody* rb);
 void RbIntegration(Rigidbody* rb);
+void RbResetVelocity(Rigidbody* rb);
 auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold>;
 void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold);
 auto RbBoxCollision(Rigidbody* rb1, BoxRigidbody* rb2) -> std::optional<Manifold>;
