@@ -32,4 +32,6 @@ void RbTriggerResolution(Rigidbody* rb1, Trigger* rb2, Manifold manifold);
 auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold>;
 void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold);
 
+void DebugManifold(const Manifold& m);
+
 }

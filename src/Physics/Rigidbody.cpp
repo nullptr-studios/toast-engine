@@ -41,6 +41,10 @@ void Rigidbody::Inspector() {
 
 	ImGui::Spacing();
 
+	ImGui::Checkbox("Draw manifolds", &debug.showManifolds);
+
+	ImGui::Spacing();
+
 	if (ImGui::Button("Reset")) {
 		SetPosition({ 0.0, 0.0 });
 		velocity = { 0.0, 0.0 };

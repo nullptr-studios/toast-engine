@@ -13,12 +13,12 @@
 namespace physics {
 using namespace glm;
 
-static void DebugManifold(const Manifold& m) {
+void DebugManifold(const Manifold& m) {
 	renderer::DebugCircle(m.contact1, 0.1, { 0.0f, 1.0f, 0.0f, 1.0f });
-	renderer::DebugLine(m.contact1, m.contact1 + (m.normal * m.depth), {1.0f, 0.0f, 1.0f, 1.0f});
+	renderer::DebugLine(m.contact1, m.contact1 + (m.normal * m.depth), { 1.0f, 0.0f, 1.0f, 1.0f });
 	if (m.contactCount == 2) {
 		renderer::DebugCircle(m.contact2, 0.1, { 0.0f, 1.0f, 0.0f, 1.0f });
-		renderer::DebugLine(m.contact2, m.contact2 + (m.normal * m.depth), {1.0f, 0.0f, 1.0f, 1.0f});
+		renderer::DebugLine(m.contact2, m.contact2 + (m.normal * m.depth), { 1.0f, 0.0f, 1.0f, 1.0f });
 	}
 }
 
@@ -32,7 +32,7 @@ void RbKinematics(Rigidbody* rb) {
 
 	// Sum forces
 	glm::dvec2 forces_sum = std::ranges::fold_left(rb->forces, glm::dvec2(0.0), std::plus {});
-	glm::dvec2 accel = (forces_sum / rb->mass) + (PhysicsSystem::gravity() * dvec2{rb->gravityScale});
+	glm::dvec2 accel = (forces_sum / rb->mass) + (PhysicsSystem::gravity() * dvec2 { rb->gravityScale });
 
 	// Integrate velocity
 	velocity += accel * Time::fixed_delta();
@@ -65,10 +65,7 @@ auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
 		return std::nullopt;
 	}
 
-	auto manifold = Manifold {
-		.normal = normalize(pos1 - pos2),
-		.depth = penetration
-	};
+	auto manifold = Manifold { .normal = normalize(pos1 - pos2), .depth = penetration };
 
 	// tangent direction perpendicular to normal
 	dvec2 base_point = pos2 + manifold.normal * (rb2->radius - manifold.depth);
@@ -76,7 +73,9 @@ auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
 	manifold.contact2 = base_point;
 	manifold.contactCount = 1;
 
-	DebugManifold(manifold);
+	if (rb1->debug.showManifolds) {
+		DebugManifold(manifold);
+	}
 	return manifold;
 }
 
@@ -88,13 +87,17 @@ void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
 	dvec2 position2 = rb2->GetPosition();
 
 	// Early out if both bodies have infinite mass
-	if (rb1->mass <= 0.0 && rb2->mass <= 0.0) return;
+	if (rb1->mass <= 0.0 && rb2->mass <= 0.0) {
+		return;
+	}
 
 	double inv_mass1 = (rb1->mass > 0.0) ? 1.0 / rb1->mass : 0.0;
 	double inv_mass2 = (rb2->mass > 0.0) ? 1.0 / rb2->mass : 0.0;
 
 	double inv_mass_sum = inv_mass1 + inv_mass2;
-	if (inv_mass_sum <= 0.0) return;
+	if (inv_mass_sum <= 0.0) {
+		return;
+	}
 
 	dvec2 normal = manifold.normal;
 	dvec2 contact_tangent = { -normal.y, normal.x };
@@ -219,7 +222,10 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 		best.contactCount = 2;
 	}
 
-	DebugManifold(best);
+	if (rb->debug.showManifolds) {
+		DebugManifold(best);
+	}
+
 	return best;
 }
 
@@ -228,7 +234,9 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	dvec2 position = rb->GetPosition();
 
 	// Early out if body is effectively infinite mass
-	if (rb->mass <= 0.0) return;
+	if (rb->mass <= 0.0) {
+		return;
+	}
 
 	double inv_mass = 1.0 / rb->mass;
 

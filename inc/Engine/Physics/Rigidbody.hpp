@@ -41,10 +41,10 @@ public:
 	glm::dvec2 velocity = { 0.0, 0.0 };
 	std::deque<glm::dvec2> forces;
 
-private:
 	// debug stuff
 	struct {
 		bool show = true;
+		bool showManifolds = false;
 		glm::vec2 addForce = { 0.0f, 0.0f };
 		glm::vec4 defaultColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 		glm::vec4 collidingColor = { 0.0f, 1.0f, 0.0f, 1.0f };

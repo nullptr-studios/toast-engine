@@ -357,9 +357,16 @@ json_t Collider::Save() const {
 
 void Collider::Load(json_t j, bool propagate) {
 	if (j.contains("points")) {
+		// we need to clear the points before loading so we don't have duplicates
+		if (!m.points.empty()) {
+			m.points.clear();
+		}
+
 		for (const auto& p : j["points"]) {
 			AddPoint(p);
 		}
+
+		CalculatePoints();
 	}
 
 	if (j.contains("friction")) {
@@ -374,10 +381,6 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("debug.showNormals")) {
 		data.debugNormals = j["debug.showNormals"];
-	}
-
-	if (!m.points.empty()) {
-		CalculatePoints();
 	}
 
 	Component::Load(j, propagate);
