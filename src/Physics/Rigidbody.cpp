@@ -36,12 +36,10 @@ void Rigidbody::Inspector() {
 	ImGui::SeparatorText("Debug");
 
 	ImGui::Checkbox("Draw", &debug.show);
+	ImGui::Checkbox("Draw manifolds", &debug.showManifolds);
 	ImGui::ColorEdit4("Default color", &debug.defaultColor.r);
 	ImGui::ColorEdit4("Colliding color", &debug.collidingColor.r);
 
-	ImGui::Spacing();
-
-	ImGui::Checkbox("Draw manifolds", &debug.showManifolds);
 
 	ImGui::Spacing();
 

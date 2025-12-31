@@ -40,6 +40,10 @@ void RbKinematics(Rigidbody* rb) {
 	// Apply drag
 	const double damping = std::exp(-rb->linearDrag * Time::fixed_delta());
 	velocity *= damping;
+
+	if (all(lessThan(abs(velocity), rb->minimumVelocity))) {
+		velocity = {0.0, 0.0};
+	}
 }
 
 void RbIntegration(Rigidbody* rb) {
@@ -179,7 +183,19 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 		}
 
 		// compute overlap along the axis to store as penetration depth candidate
-		const double overlap = std::min(max_proj - rb_min_proj, rb_max_proj - min_proj);
+		double overlap = std::min(max_proj - rb_min_proj, rb_max_proj - min_proj);
+
+		// find closest point on the edge segment to the rigidbody
+		dvec2 a = edge.p1;
+		dvec2 b = edge.p2;
+		dvec2 ab = b - a;
+		double t = dot(rb_pos - a, ab) / dot(ab, ab);
+		t = std::clamp(t, 0.0, 1.0);
+		dvec2 closest = a + ab * t;
+
+		// bias depth so nearer parallel edges win
+		double dist = length(rb_pos - closest);
+		overlap += PhysicsSystem::eps() * (dist * dist);
 
 		// if there is we will generate a manifold to compare later on
 		// clang-format off
