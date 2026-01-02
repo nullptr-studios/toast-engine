@@ -1,0 +1,34 @@
+{
+  "format": "scene",
+  "type": "Scene",
+  "name": "PhysicsTest",
+  "enabled": false,
+  "children": [
+    {
+      "type": "Actor",
+      "name": "TestActor",
+      "enabled": true,
+      "children": [
+        {
+          "type": "MeshRendererComponent",
+          "name": "Mesh",
+          "enabled": true,
+          "children": null,
+          "position": [ 0.0, 0.0, 0.0 ],
+          "rotation": [ 1.0, 0.0, 0.0, 0.0 ],
+          "scale": [ 1.0, 1.0, 1.0 ],
+          "materialPath" : "materials/default.mat",
+          "meshPath": "models/quad.obj"
+        }
+      ],
+      "transform": { "position": [ 0.0, 0.0, 0.0 ], "rotation": [ 1.0, 0.0, 0.0, 0.0 ], "scale": [ 1.0, 1.0, 1.0 ] }
+    },
+    {
+      "type": "Camera",
+      "name": "Main Camera",
+      "enabled": true,
+      "children": null,
+      "transform": { "position": [ 0.0, 0.0, 5.0 ], "rotation": [ 1.0, 0.0, 0.0, 0.0 ], "scale": [ 1.0, 1.0, 1.0 ] }
+    }
+  ]
+}

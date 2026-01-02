@@ -15,7 +15,6 @@ struct SceneLoadedEvent final : public event::Event<SceneLoadedEvent> {
 
 	unsigned id;
 	std::string name;
-	std::optional<std::function<void(Scene*)>> loadCallback = {};
 };
 
 class BadScene : std::exception {

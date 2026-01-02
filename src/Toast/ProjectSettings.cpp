@@ -1,6 +1,7 @@
 #include "Engine/Resources/ResourceManager.hpp"
 
 #include <Engine/Core/Log.hpp>
+#include <Engine/Physics/PhysicsEvents.hpp>
 #include <Engine/Toast/ProjectSettings.hpp>
 #include <nlohmann/json.hpp>
 #include <yaml-cpp/yaml.h>
@@ -29,6 +30,17 @@ ProjectSettings::ProjectSettings() : m_version(0, 0, 0) {
 	for (int i = 0; i < m_inputLayouts.size(); i++) {
 		m_inputLayouts[i] = config["input"]["layouts"][i].as<std::string>();
 	}
+
+	double gr_x = config["physics"]["gravity"][0].as<double>();
+	double gr_y = config["physics"]["gravity"][1].as<double>();
+	event::Send(new physics::UpdatePhysicsDefaults(
+	    { gr_x, gr_y },
+	    config["physics"]["positionCorrection"]["ptc"].as<double>(),
+	    config["physics"]["positionCorrection"]["slop"].as<double>(),
+	    config["physics"]["eps"].as<double>(),
+	    config["physics"]["epsSmall"].as<double>(),
+	    config["physics"]["iterationCount"].as<unsigned>()
+	));
 }
 
 std::string ProjectSettings::name() {

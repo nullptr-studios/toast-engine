@@ -1,9 +1,9 @@
-#include "../../src/Physics/PhysicsSystem.hpp"
 #include "Engine/Toast/Objects/Scene.hpp"
-#include "spine-cpp-lite.h"
+#include "Physics/PhysicsSystem.hpp"
 
 #include <Engine/Core/Log.hpp>
 #include <Engine/Core/Profiler.hpp>
+#include <Engine/Core/ThreadPool.hpp>
 #include <Engine/Resources/ResourceManager.hpp>
 #include <Engine/Toast/SimulateWorldEvent.hpp>
 #include <Engine/Toast/World.hpp>
@@ -26,78 +26,74 @@ World::World() {
 	m_instance = this;
 
 	// Event handling
-	m_listener = std::make_unique<event::ListenerComponent>();
-	m_listener->Subscribe<SceneLoadedEvent>(
+	m.listener = std::make_unique<event::ListenerComponent>();
+	m.listener->Subscribe<SceneLoadedEvent>(
 	    [this](const SceneLoadedEvent* e) {
 		    // Check if scene still exists
-		    if (!m_children.Has(e->id)) {
+		    if (!m.children.Has(e->id)) {
 			    return true;
 		    }
 
-		    auto* scene = m_children.Get(e->id);
+		    auto* scene = m.children.Get(e->id);
 		    if (!scene) {
 			    return true;    // Scene is being destroyed
 		    }
 
 		    // set the scene as loaded in the list
-		    m_tickableScenes[e->id] = dynamic_cast<Scene*>(scene);
+		    m.tickableScenes[e->id] = dynamic_cast<Scene*>(scene);
 
 #ifdef TOAST_EDITOR
 		    {
-			    auto* scenePtr = static_cast<Scene*>(scene);
-			    scenePtr->_LoadTextures();
+			    auto* scene_ptr = static_cast<Scene*>(scene);
+			    scene_ptr->_LoadTextures();
 		    }
 #endif
-
-		    // call the load callback if there is one
-		    if (e->loadCallback.has_value()) {
-			    auto* scenePtr = static_cast<Scene*>(scene);
-			    (*e->loadCallback)(scenePtr);
-		    }
 
 		    return true;
 	    },
 	    2
 	);
 #ifdef TOAST_EDITOR
-	m_listener->Subscribe<SimulateWorldEvent>(
+	m.listener->Subscribe<SimulateWorldEvent>(
 	    [this](const SimulateWorldEvent* e) {
 		    OnSimulateWorld(e->value);
 
 		    auto simulate = e->value;
 		    if (simulate) {
 			    // Logic for play logic
-			    for (auto& s : m_children | std::views::values) {
+			    for (auto& s : m.children | std::views::values) {
 				    auto* scene = static_cast<Scene*>(s.get());
 				    s->SoftSave();
 				    s->RefreshBegin(true);
-				    m_loadedScenes.insert({ s->id(), scene->json_path() });
-				    m_loadedScenesStatus.insert({ s->id(), s->enabled() });
+				    m.loadedScenes.insert({ s->id(), scene->json_path() });
+				    m.loadedScenesStatus.insert({ s->id(), s->enabled() });
 			    }
+
+			    physics::PhysicsSystem::start();
 		    } else {
 			    // Logic for pause logic
-			    m_editorScene->_Begin();    // Rerun to set editor camera
+			    physics::PhysicsSystem::stop();
+			    m.editorScene->_Begin();    // Rerun to set editor camera
 
-			    for (auto& s : m_children | std::views::values) {
-				    if (!m_loadedScenes.contains(s->id())) {
+			    for (auto& s : m.children | std::views::values) {
+				    if (!m.loadedScenes.contains(s->id())) {
 					    // If the scene didn't exist on runtime, we remove it
 					    UnloadScene(s->id());
 					    continue;
 				    }
+
 				    s->SoftLoad();
-				    s->enabled(m_loadedScenesStatus[s->id()]);
-				    m_loadedScenes.erase(s->id());
+				    s->enabled(m.loadedScenesStatus[s->id()]);
+				    m.loadedScenes.erase(s->id());
 			    }
 
-			    for (const auto& [_, path] : m_loadedScenes) {
+			    for (const auto& [_, path] : m.loadedScenes) {
 				    // Create again the remaining scenes
-				    LoadScene(path, [](const Scene* s) {
-					    EnableScene(s->id());
-				    });
+				    LoadSceneSync(path);
 			    }
 
-			    m_loadedScenes.clear();
-			    m_loadedScenesStatus.clear();
+			    m.loadedScenes.clear();
+			    m.loadedScenesStatus.clear();
 		    }
 
 		    return true;
@@ -108,24 +104,22 @@ World::World() {
 
 	// rptr chosen instead of uptr so there is no need of including
 	// ThreadPool.hpp on the header, since it's private to the engine
-	m_threadPool = new ThreadPool();
-	m_threadPool->Init(POOL_SIZE);
+	m.threadPool = new ThreadPool();
+	m.threadPool->Init(POOL_SIZE);
 }
 
 World::~World() {
-	while (m_threadPool->busy()) { }
-	m_threadPool->Destroy();
-	delete m_threadPool;
+	while (m.threadPool->busy()) { }
+	m.threadPool->Destroy();
+	delete m.threadPool;
 }
 
-unsigned World::New(
-    const std::string& type, const std::optional<std::string>& name, const std::optional<json_t>& j, const std::function<void(Scene*)>& init_callback
-) {
+Object* World::New(const std::string& type, const std::optional<std::string>& name) {
 	auto* world = Instance();
 	std::string obj_name {};
 
 	auto reg = Object::getRegistry();
-	auto* obj = reg[type](world->m_children, std::nullopt);
+	auto* obj = reg[type](world->m.children, std::nullopt);
 	auto obj_id = obj->id();
 
 	// Add name to the scene
@@ -143,9 +137,6 @@ unsigned World::New(
 	obj->children.scene(dynamic_cast<Scene*>(obj));
 
 	// Run load and init
-	if (j.has_value()) {
-		obj->Load(*j);
-	}
 	obj->_Init();
 
 	// Schedule the Begin
@@ -153,28 +144,25 @@ unsigned World::New(
 
 	if (obj->base_type() == SceneT) {
 		auto* e = new SceneLoadedEvent { obj_id, obj_name };
-		if (init_callback) {
-			e->loadCallback = init_callback;
-		}
 		event::Send(e);
 	}
 
-	return obj_id;
+	return obj;
 }
 
-void World::LoadScene(std::string_view path, std::optional<std::function<void(Scene*)>>&& load_callback) {
+void World::LoadScene(std::string_view path) {
 	std::string p { path };
-	Instance()->m_threadPool->QueueJob([path = p, load_callback = std::move(load_callback)] {
+	Instance()->m.threadPool->QueueJob([path = p] {
 		// Load scene file
-		// Use shared_ptr to keep JSON alive until event is processed
-		auto j_ptr = std::make_shared<json_t>();
+		json_t j;
 		try {
-			*j_ptr = json_t::parse(*resource::Open(path));
+			j = json_t::parse(*resource::Open(path));
 		} catch (const std::exception& e) {
 			TOAST_ERROR("Failed opening scene with path \"{0}\"\n{1}", path, e.what());
 			return;
 		}
-		if (j_ptr->empty() || !j_ptr->contains("format") || (*j_ptr)["format"] != "scene") {
+
+		if (j.empty() || !j.contains("format") || j["format"] != "scene") {
 			TOAST_ERROR("Scene \"{0}\" is empty or invalid", path);
 			return;
 		}
@@ -185,14 +173,14 @@ void World::LoadScene(std::string_view path, std::optional<std::function<void(Sc
 		{
 			// Creating scene from the registry
 			// Force string copy to avoid string_view references to JSON
-			const std::string scene_type = (*j_ptr)["type"].get<std::string>();
+			const std::string scene_type = j["type"].get<std::string>();
 			auto create_registry = Object::getRegistry();
-			auto* scene = static_cast<Scene*>(create_registry[scene_type](world->m_children, std::nullopt));
+			auto* scene = static_cast<Scene*>(create_registry[scene_type](world->m.children, std::nullopt));
 			scene_id = scene->id();
 
 			// Add name to the scene - force copy
-			std::string name_copy = (*j_ptr)["name"].get<std::string>();
-			scene->name(std::move(name_copy));
+			std::string name = j["name"].get<std::string>();
+			scene->name(std::move(name));
 			scene_name = scene->name();
 
 			scene->m_parent = nullptr;
@@ -201,7 +189,7 @@ void World::LoadScene(std::string_view path, std::optional<std::function<void(Sc
 			scene->children.scene(scene);
 
 			// Run load and init
-			const std::string p_str { path };
+			const std::string& p_str { path };
 			scene->Load(p_str);
 			scene->_Init();
 			scene->enabled(false);
@@ -211,29 +199,71 @@ void World::LoadScene(std::string_view path, std::optional<std::function<void(Sc
 		}
 
 		auto* e = new SceneLoadedEvent { scene_id, scene_name };
-		if (load_callback.has_value()) {
-			// If the client added custom logic for the load scene,
-			// send the lambda to the event
-			e->loadCallback = load_callback;
-		}
-
-		// Keep JSON alive by capturing it in the event callback
 		event::Send(e);
-
-		// j_ptr will be destroyed here
 	});
+}
+
+void World::LoadSceneSync(std::string_view path) {
+	std::string p { path };
+
+	// Load scene file
+	json_t j;
+	try {
+		j = json_t::parse(*resource::Open(p));
+	} catch (const std::exception& e) {
+		TOAST_ERROR("Failed opening scene with path \"{0}\"\n{1}", path, e.what());
+		return;
+	}
+
+	if (j.empty() || !j.contains("format") || j["format"] != "scene") {
+		TOAST_ERROR("Scene \"{0}\" is empty or invalid", path);
+		return;
+	}
+
+	auto* world = Instance();
+	unsigned scene_id = 0;
+	std::string scene_name {};
+	{
+		// Creating scene from the registry
+		// Force string copy to avoid string_view references to JSON
+		const std::string scene_type = j["type"].get<std::string>();
+		auto create_registry = Object::getRegistry();
+		auto* scene = static_cast<Scene*>(create_registry[scene_type](world->m.children, std::nullopt));
+		scene_id = scene->id();
+
+		std::string name = j["name"].get<std::string>();
+		scene->name(std::move(name));
+		scene_name = scene->name();
+
+		scene->m_parent = nullptr;
+		scene->m_scene = scene;
+		scene->children.parent(scene);
+		scene->children.scene(scene);
+
+		// Run load and init
+		const std::string p_str { path };
+		scene->Load(p_str);
+		scene->_Init();
+		scene->enabled(false);
+
+		// Schedule the Begin
+		ScheduleBegin(scene);
+	}
+
+	auto* e = new SceneLoadedEvent { scene_id, scene_name };
+	event::Send(e);
 }
 
 void World::UnloadScene(const unsigned id) {
 	auto* w = Instance();
 
 	// Check if scene still exists
-	if (!w->m_children.Has(id)) {
+	if (!w->m.children.Has(id)) {
 		return;    // Already unloaded, nothing to do
 	}
 
 	// Get scene safely
-	auto* scene = w->m_children.Get(id);
+	auto* scene = w->m.children.Get(id);
 	if (!scene) {
 		return;    // Scene doesn't exist or is being destroyed
 	}
@@ -244,17 +274,14 @@ void World::UnloadScene(const unsigned id) {
 	}
 
 	// Remove from tickables immediately so it stops being processed
-	w->m_tickableScenes.erase(id);
-
-	// Request physics halt
-	physics::PhysicsSystem::RequestHaltSimulation();
+	w->m.tickableScenes.erase(id);
 
 	// Just schedule for destruction
-	w->ScheduleDestroy(scene);
+	toast::World::ScheduleDestroy(scene);
 }
 
 void World::UnloadScene(const std::string& name) {
-	const auto obj = dynamic_cast<Scene*>(Get(name));
+	auto* const obj = dynamic_cast<Scene*>(Get(name));
 	if (!obj) {
 		TOAST_ERROR("Object {0} is not a Scene", name);
 		return;
@@ -264,7 +291,7 @@ void World::UnloadScene(const std::string& name) {
 
 void World::EnableScene(const std::string& name) {
 	auto* w = Instance();
-	auto* scene = w->m_children.Get(name);
+	auto* scene = w->m.children.Get(name);
 	if (!scene) {
 		TOAST_ERROR("Tried to enable scene \"{0}\" but it doesn't exist", name);
 		return;
@@ -274,18 +301,18 @@ void World::EnableScene(const std::string& name) {
 
 void World::EnableScene(unsigned id) {
 	auto* w = Instance();
-	if (!w->m_children.Has(id)) {
+	if (!w->m.children.Has(id)) {
 		TOAST_ERROR("Tried to activate scene {0} but it doesn't exist", id);
 		return;
 	}
 
 	// We will throw an exception if the scene hasn't finished loaded so that
 	// anyone can implement a custom action for when that happens (i.e. loading screen)
-	if (!w->m_tickableScenes.contains(id)) {
+	if (!w->m.tickableScenes.contains(id)) {
 		throw BadScene(id);
 	}
 
-	auto* scene = w->m_children.Get(id);
+	auto* scene = w->m.children.Get(id);
 	if (!scene) {
 		return;    // Scene is being destroyed
 	}
@@ -300,7 +327,7 @@ void World::EnableScene(unsigned id) {
 
 void World::DisableScene(const std::string& name) {
 	auto* w = Instance();
-	auto* scene = w->m_children.Get(name);
+	auto* scene = w->m.children.Get(name);
 	if (!scene) {
 		TOAST_ERROR("Tried to disable scene \"{0}\" but it doesn't exist", name);
 		return;
@@ -310,12 +337,12 @@ void World::DisableScene(const std::string& name) {
 
 void World::DisableScene(unsigned id) {
 	auto* w = Instance();
-	if (!w->m_children.Has(id)) {
+	if (!w->m.children.Has(id)) {
 		TOAST_ERROR("Tried to deactivate scene {0} but it doesn't exist", id);
 		return;
 	}
 
-	auto* scene = w->m_children.Get(id);
+	auto* scene = w->m.children.Get(id);
 	if (!scene) {
 		return;    // Scene is being destroyed
 	}
@@ -330,69 +357,63 @@ void World::DisableScene(unsigned id) {
 
 #ifdef TOAST_EDITOR
 void World::OnSimulateWorld(const bool value) {
-	m_simulateWorld = value;
-	// TODO: Handle soft saving and loading
-	if (value) {
-		// Logic for initiating play logic
-	} else {
-		// Logic for initiating end logic
-	}
+	m.simulateWorld = value;
 }
 #endif
 
 #pragma region OBJECT_LOOPS
 
 void World::EarlyTick() {
-	if (!m_simulateWorld) {
+	if (!m.simulateWorld) {
 		return;
 	}
 
 	PROFILE_ZONE;
 
-	for (const auto& [_, s] : m_tickableScenes) {
+	for (const auto& [_, s] : m.tickableScenes) {
 		s->_EarlyTick();
 	}
 }
 
 void World::Tick() {
-	if (!m_simulateWorld) {
+	if (!m.simulateWorld) {
 		return;
 	}
 
 	PROFILE_ZONE;
 
-	for (const auto& [_, s] : m_tickableScenes) {
+	for (const auto& [_, s] : m.tickableScenes) {
 		s->_Tick();
 	}
 }
 
 void World::LateTick() {
-	if (!m_simulateWorld) {
+	if (!m.simulateWorld) {
 		return;
 	}
 
 	PROFILE_ZONE;
 
-	for (const auto& [_, s] : m_tickableScenes) {
+	for (const auto& [_, s] : m.tickableScenes) {
 		s->_LateTick();
 	}
 }
 
 void World::PhysTick() {
-	if (!m_simulateWorld) {
+	if (!m.simulateWorld) {
 		return;
 	}
 
 	PROFILE_ZONE;
 
-	for (const auto& [_, s] : m_tickableScenes) {
+	for (const auto& [_, s] : m.tickableScenes) {
 		s->_PhysTick();
 	}
 
 #ifdef TOAST_EDITOR
 	// NOTE: Idk if we should tick physics on the editor scene -x
-	if (m_editorScene != nullptr) {
-		m_editorScene->_PhysTick();
+	if (m.editorScene != nullptr) {
+		m.editorScene->_PhysTick();
 	}
 #endif
 }
@@ -401,22 +422,22 @@ void World::PhysTick() {
 void World::EditorTick() {
 	PROFILE_ZONE;
 
-	if (m_editorScene != nullptr) {
-		m_editorScene->_EarlyTick();
-		m_editorScene->_Tick();
-		m_editorScene->_EditorTick();
-		m_editorScene->_LateTick();
+	if (m.editorScene != nullptr) {
+		m.editorScene->_EarlyTick();
+		m.editorScene->_Tick();
+		m.editorScene->_EditorTick();
+		m.editorScene->_LateTick();
 	}
 
 	// ReSharper disable once CppUseElementsView
-	for (const auto& [_, s] : m_children) {
+	for (const auto& [_, s] : m.children) {
 		s->_EditorTick();
 	}
 }
 #endif
 
 void World::RunBeginQueue() {
-	if (!m_simulateWorld) {
+	if (!m.simulateWorld) {
 		return;
 	}
 
@@ -425,8 +446,8 @@ void World::RunBeginQueue() {
 	// Swap the queue into a local list under lock so other threads can enqueue while we process
 	std::list<Object*> local {};
 	{
-		std::lock_guard lock(m_queueMutex);
-		local.swap(m_beginQueue);
+		std::lock_guard lock(m.queueMutex);
+		local.swap(m.beginQueue);
 	}
 
 	for (auto* obj : local) {
@@ -435,17 +456,17 @@ void World::RunBeginQueue() {
 		}
 
 		// We need to check this so scene begin is not run while the scene is being loaded
-		if (!m_tickableScenes.contains(obj->scene()->id())) {
-			std::lock_guard lock(m_queueMutex);
-			m_beginQueue.push_back(obj);
+		if (!m.tickableScenes.contains(obj->scene()->id())) {
+			std::lock_guard lock(m.queueMutex);
+			m.beginQueue.push_back(obj);
 			continue;
 		}
 
 		obj->_Begin();
 		// If begin didn't run, reschedule it for later
 		if (!obj->has_run_begin()) {
-			std::lock_guard lock(m_queueMutex);
-			m_beginQueue.push_back(obj);
+			std::lock_guard lock(m.queueMutex);
+			m.beginQueue.push_back(obj);
 		}
 	}
 }
@@ -456,8 +477,8 @@ void World::RunDestroyQueue() {
 	// Move the destroy queue into a local list under lock and process without holding the lock
 	std::list<Object*> local {};
 	{
-		std::lock_guard lock(m_queueMutex);
-		local.swap(m_destroyQueue);
+		std::lock_guard lock(m.queueMutex);
+		local.swap(m.destroyQueue);
 	}
 
 	if (local.empty()) {
@@ -477,28 +498,7 @@ void World::RunDestroyQueue() {
 			obj->parent()->children.erase(obj->id());
 		} else {
 			// If it's a root-level object (likely a scene), remove from world's children
-			if (obj->base_type() == SceneT) {
-				// Wait for physics confirmation (with timeout to avoid infinite rescheduling)
-				int retries = 0;
-				const int MAX_RETRIES = 100;
-				while (!physics::PhysicsSystem::WaitForAnswer() && retries < MAX_RETRIES) {
-					retries++;
-					// Busy wait for physics
-				}
-
-				if (retries >= MAX_RETRIES) {
-					// Physics didn't respond - force erase anyway
-					TOAST_WARN("Physics didn't respond after {0} retries, force erasing scene {1}", MAX_RETRIES, obj->id());
-					m_children.erase(obj->id());
-				} else {
-					// Physics confirmed
-					m_children.erase(obj->id());
-					physics::PhysicsSystem::ReceivedAnswer();
-				}
-			} else {
-				// Unexpected: object without parent that's not a scene - still attempt to erase from world
-				m_children.erase(obj->id());
-			}
+			m.children.erase(obj->id());
 		}
 	}
 }
@@ -508,8 +508,8 @@ void World::ScheduleBegin(Object* obj) {
 		return;
 	}
 	auto* w = Instance();
-	std::lock_guard lock(w->m_queueMutex);
-	w->m_beginQueue.push_back(obj);
+	std::lock_guard lock(w->m.queueMutex);
+	w->m.beginQueue.push_back(obj);
 }
 
 void World::CancelBegin(Object* obj) {
@@ -517,10 +517,10 @@ void World::CancelBegin(Object* obj) {
 		return;
 	}
 	auto* w = Instance();
-	const auto it = std::ranges::find(w->m_beginQueue, obj);
-	if (it != w->m_beginQueue.end()) {
-		std::lock_guard lock(w->m_queueMutex);
-		w->m_beginQueue.erase(it);
+	const auto it = std::ranges::find(w->m.beginQueue, obj);
+	if (it != w->m.beginQueue.end()) {
+		std::lock_guard lock(w->m.queueMutex);
+		w->m.beginQueue.erase(it);
 	}
 }
 
@@ -529,17 +529,17 @@ void World::ScheduleDestroy(Object* obj) {
 		return;
 	}
 	auto* w = Instance();
-	std::lock_guard lock(w->m_queueMutex);
-	w->m_destroyQueue.push_back(obj);
+	std::lock_guard lock(w->m.queueMutex);
+	w->m.destroyQueue.push_back(obj);
 }
 
 const std::list<Object*>& World::begin_queue() const {
-	return m_beginQueue;
+	return m.beginQueue;
 }
 
 #ifdef TOAST_EDITOR
 void World::SetEditorScene(Object* obj) {
-	m_editorScene = obj;
+	m.editorScene = obj;
 
 	obj->m_name = "EditorScene";
 	obj->m_id = Factory::AssignId();
@@ -549,31 +549,31 @@ void World::SetEditorScene(Object* obj) {
 	obj->children.parent(obj);
 	obj->children.scene(dynamic_cast<Scene*>(obj));
 
-	m_editorScene->_Init();
-	m_editorScene->_LoadTextures();
-	m_editorScene->enabled(true);
-	m_editorScene->_Begin(true);
+	m.editorScene->_Init();
+	m.editorScene->_LoadTextures();
+	m.editorScene->enabled(true);
+	m.editorScene->_Begin(true);
 }
 #endif
 
 Object* World::Get(const unsigned id) {
-	return Instance()->m_children.Get(id);
+	return Instance()->m.children.Get(id);
 }
 
 Object* World::Get(const std::string& name) {
-	return Instance()->m_children.Get(name);
+	return Instance()->m.children.Get(name);
 }
 
 bool World::Has(const unsigned id) {
-	return Instance()->m_children.Has(id);
+	return Instance()->m.children.Has(id);
 }
 
 bool World::Has(const std::string& name) {
-	return Instance()->m_children.Has(name);
+	return Instance()->m.children.Has(name);
 }
 
 Object::Children& World::GetChildren() {
-	return Instance()->m_children;
+	return Instance()->m.children;
 }
 
 #pragma endregion

@@ -1,10 +1,8 @@
-/// @file   EventSystem.cpp
-/// @author Xein
+#include "EventSystem.hpp"
 
 #include <Engine/Core/Log.hpp>
 #include <Engine/Core/Profiler.hpp>
 #include <Engine/Event/Event.hpp>
-#include <Engine/Event/EventSystem.hpp>
 
 namespace event {
 
@@ -42,10 +40,6 @@ void EventSystem::SendEvent(IEvent* event) {
 		std::lock_guard<std::mutex> lock(m_instance->m_queueMutex);
 		m_instance->m_eventQueue.push(event);
 	}
-}
-
-void Send(IEvent* event) {
-	EventSystem::SendEvent(event);
 }
 
 void EventSystem::PollEvents() {

@@ -1,6 +1,5 @@
-#include "ThreadPool.hpp"
-
 #include <Engine/Core/Log.hpp>
+#include <Engine/Core/ThreadPool.hpp>
 
 namespace toast {
 

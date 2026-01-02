@@ -1,14 +1,12 @@
 /// @file   ListenerComponent.hpp
 /// @author Xein
-/// @date   14/04/25
-/// @brief  Code that contains the listener of the Event System
+/// @date   14 Apr 2025
 
 #pragma once
 
 #include <Engine/Core/Log.hpp>
 #include <Engine/Toast/Components/Component.hpp>
 #include <any>
-#include <ranges>
 #include <type_traits>
 #include <typeindex>
 
@@ -17,6 +15,8 @@ struct IEvent;
 
 // Global mutex that protects access to all Event subscriber maps
 static inline std::mutex s_eventMutex;
+
+void Send(IEvent* event);
 
 class ListenerComponent : public toast::Component {
 	friend struct IEvent;
@@ -32,10 +32,6 @@ public:
 
 	ListenerComponent(const ListenerComponent&) = delete;
 	ListenerComponent& operator=(const ListenerComponent&) = delete;
-
-#ifdef TOAST_EDITOR
-	void Inspector() override;
-#endif
 
 	/// @brief Subscribes a function to a specific event
 	template<typename TEvent>
@@ -72,7 +68,7 @@ void ListenerComponent::Subscribe(
 ) {    // NOLINT(readability-function-size)
 	static_assert(std::is_base_of_v<IEvent, TEvent>, "Event T is not inherited from IEvent");
 	if (parent()) {
-		TOAST_INFO("Subscribing {1} to event {0}", typeid(TEvent).name(), parent()->name().c_str());
+		TOAST_INFO("Subscribing {1} to event {0}", typeid(TEvent).name(), parent()->name());
 	} else {
 		TOAST_INFO("Subscribing listener to event {0}", typeid(TEvent).name());
 	}
