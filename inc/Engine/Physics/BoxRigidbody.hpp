@@ -3,6 +3,7 @@
 /// @date 1 Jan 2026
 
 #pragma once
+#include "Line.hpp"
 #include <Engine/Toast/Components/Component.hpp>
 #include <glm/glm.hpp>
 
@@ -28,7 +29,7 @@ public:
 	void AddForce(glm::dvec2 force);
 
 	auto GetPoints() const -> std::vector<glm::vec2>;
-	auto GetEdges() const -> std::vector<glm::vec2>;
+	auto GetEdges() const -> std::vector<Line>;
 
 	// properties
 	glm::dvec2 size;

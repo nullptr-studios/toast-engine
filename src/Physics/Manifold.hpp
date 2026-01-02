@@ -17,4 +17,16 @@ struct Manifold{
 	void Debug() const;
 };
 
+struct BoxManifold {
+	glm::dvec2 normal;
+	glm::dvec2 contact1;
+	glm::dvec2 contact2;
+	int contactCount;
+	double depth;
+	int colliderEdgeIndex;
+	int boxEdgeIndex;
+
+	void Debug() const;
+};
+
 }

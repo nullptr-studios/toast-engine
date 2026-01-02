@@ -5,9 +5,19 @@
 
 #include <Engine/Core/Time.hpp>
 #include <Engine/Physics/BoxRigidbody.hpp>
+#include <Engine/Renderer/DebugDrawLayer.hpp>
 
 namespace physics {
 using namespace glm;
+
+void BoxManifold::Debug() const {
+	renderer::DebugCircle(contact1, 0.1, { 0.0f, 1.0f, 0.0f, 1.0f });
+	renderer::DebugLine(contact1, contact1 + (normal * depth), { 1.0f, 0.0f, 1.0f, 1.0f });
+	if (contactCount == 2) {
+		renderer::DebugCircle(contact2, 0.1, { 0.0f, 1.0f, 0.0f, 1.0f });
+		renderer::DebugLine(contact2, contact2 + (normal * depth), { 1.0f, 0.0f, 1.0f, 1.0f });
+	}
+}
 
 void BoxKinematics(BoxRigidbody* rb) {
 	auto& velocity = rb->velocity;
@@ -62,16 +72,17 @@ void BoxResetVelocity(BoxRigidbody* rb) {
 	rb->angularVelocity = 0.0;
 }
 
-auto BoxBoxCollision(BoxRigidbody* rb1, BoxRigidbody* rb2) -> std::optional<Manifold> {
+auto BoxBoxCollision(BoxRigidbody* rb1, BoxRigidbody* rb2) -> std::optional<BoxManifold> {
 	return std::nullopt;
 }
 
-void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, Manifold manifold) { }
+void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold) { }
 
-auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<Manifold> {
+auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxManifold> {
 	dvec2 rb_pos = rb->GetPosition();
-	std::list<Manifold> manifolds;
+	std::list<BoxManifold> manifolds;
 
+	int edge_count = 0;
 	// This method will use the SAT algorithm
 	for (const auto& edge : c->edges) {
 		// get the maximum and minimum points of the collider projected onto the edge normal
@@ -124,100 +135,78 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<Mani
 
 		// store candidate manifold
 		// clang-format off
-		manifolds.emplace_back(Manifold{
+		manifolds.emplace_back(BoxManifold{
 			.normal = edge.normal,
 			.contact1 = {0.0, 0.0},
 			.contact2 = {0.0, 0.0},
 			.contactCount = -1,
-			.depth = overlap
+			.depth = overlap,
+			.colliderEdgeIndex = edge_count,
+			.boxEdgeIndex = -1
 		});
 		// clang-format on
-	}
-
-	// We also need to do SAT for the rigidbody normals
-	std::vector<vec2> rb_normals = rb->GetEdges();
-	for (dvec2 normal : rb_normals) {
-		// project collider vertices onto the rigidbody normal
-		double min_collider = dot(dvec2 { c->vertices[0] }, normal);
-		double max_collider = min_collider;
-
-		for (int i = 1; i < c->vertices.size(); i++) {
-			double proj = dot(dvec2 { c->vertices[i] }, normal);
-			min_collider = std::min(proj, min_collider);
-			max_collider = std::max(proj, max_collider);
-		}
-
-		// project rigidbody vertices onto the same normal
-		std::vector<vec2> rb_points = rb->GetPoints();
-		double min_rb = dot(dvec2 { rb_points[0] }, normal);
-		double max_rb = min_rb;
-
-		for (int i = 1; i < rb_points.size(); i++) {
-			double proj = dot(dvec2 { rb_points[i] }, normal);
-			min_rb = std::min(proj, min_rb);
-			max_rb = std::max(proj, max_rb);
-		}
-
-		// separating axis test
-		if (max_rb < min_collider || min_rb > max_collider) {
-			return std::nullopt;
-		}
-
-		// penetration depth along this axis
-		double overlap = std::min(max_collider - min_rb, max_rb - min_collider);
-
-		// store candidate manifold
-		// clang-format off
-		manifolds.emplace_back(Manifold{
-			.normal = normal,
-			.contact1 = {0.0, 0.0},
-			.contact2 = {0.0, 0.0},
-			.contactCount = -1,
-			.depth = overlap
-		});
-		// clang-format on
+		
+		edge_count++;
 	}
 
 	// select the axis with the least penetration depth
-	auto it = std::ranges::min_element(manifolds, {}, &Manifold::depth);
+	auto it = std::ranges::min_element(manifolds, {}, &BoxManifold::depth);
 	if (it == manifolds.end()) {
 		return std::nullopt;
 	}
 	auto best = *it;
 
 	// compute contact information for the chosen manifold
-	// collect rigidbody vertices that are deepest along the collision normal
-	std::vector<dvec2> contacts;
-	double max_proj = -std::numeric_limits<double>::max();
+	// edge–edge contact: clip incident edge against reference edge
 
-	for (dvec2 p : rb->GetPoints()) {
-		double proj = dot(p, best.normal);
-		if (proj > max_proj + PhysicsSystem::eps()) {
-			contacts.clear();
-			contacts.push_back(p);
-			max_proj = proj;
-		} else if (std::abs(proj - max_proj) <= PhysicsSystem::eps()) {
-			contacts.push_back(p);
+	// find reference edge on collider (normal match)
+	const Line* ref = nullptr;
+	for (const auto& e : c->edges) {
+		if (dot(e.normal, best.normal) > 1.0 - PhysicsSystem::eps()) {
+			ref = &e;
+			break;
+		}
+	}
+	if (!ref) {
+		return best;
+	}
+
+	// TODO: get the vertices of the rigidbody that are inside the collider
+	// TODO: get their normal
+	// TODO: set the contact point as vertices + (vertices_normal * distance_from_vertex_to_edge_on_normal_direction)
+
+	if (best.colliderEdgeIndex != -1) {
+		renderer::DebugCircle(c->edges[best.colliderEdgeIndex].p1, 0.1f, {1.0f, 0.0f, 0.0f, 1.0f});
+		renderer::DebugCircle(c->edges[best.colliderEdgeIndex].p2, 0.1f, {1.0f, 0.0f, 0.0f, 1.0f});
+	}
+
+	std::list<glm::dvec2> points;
+	glm::dvec2 a = c->edges[best.colliderEdgeIndex].p1;
+	glm::dvec2 b = c->edges[best.colliderEdgeIndex].p2;
+
+	auto rb_edges = rb->GetEdges();
+	for (const auto& rb_e : rb_edges) {
+		glm::dvec2 c = rb_e.p1;
+		glm::dvec2 d = rb_e.p2;
+
+		double oa = glm::determinant(glm::mat2((d - a), (c - a)));
+		double ob = glm::determinant(glm::mat2((d - c), (b - c)));
+		double oc = glm::determinant(glm::mat2((b - a), (c - a)));
+		double od = glm::determinant(glm::mat2((b - a), (d - a)));
+
+		// Proper intersection exists iff opposite signs
+		if (oa*ob < 0 && oc*od < 0) {
+			points.emplace_back((a*ob - b*oa) / (ob-oa));
 		}
 	}
 
-	// fill contact data
-	if (contacts.size() == 1) {
-		best.contact1 = contacts[0];
-		best.contact2 = contacts[0];
-		best.contactCount = 1;
-	} else {
-		best.contact1 = contacts[0];
-		best.contact2 = contacts[1];
-		best.contactCount = 2;
+	for (const auto& p : points) {
+		renderer::DebugCircle(p, 0.1f, {0.0f, 1.0f, 0.0f, 1.0f});
 	}
 
-	if (rb->debug.showManifolds) {
-		best.Debug();
-	}
 	return best;
 }
 
-void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, Manifold manifold) { }
+void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold) { }
 
 }

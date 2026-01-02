@@ -206,10 +206,10 @@ auto BoxRigidbody::GetPoints() const -> std::vector<glm::vec2> {
 	return points;
 }
 
-auto BoxRigidbody::GetEdges() const -> std::vector<glm::vec2> {
+auto BoxRigidbody::GetEdges() const -> std::vector<Line> {
 	std::vector<glm::vec2> points = GetPoints();
-	std::vector<glm::vec2> normals;
-	normals.reserve(points.size());
+	std::vector<Line> lines;
+	lines.reserve(points.size());
 
 	for (int i = 0; i < points.size(); i++) {
 		const glm::vec2& p1 = points[i];
@@ -221,10 +221,18 @@ auto BoxRigidbody::GetEdges() const -> std::vector<glm::vec2> {
 		// compute perpendicular vector
 		glm::vec2 normal = glm::normalize(glm::vec2 { -edge.y, edge.x });
 
-		normals.emplace_back(normal);
+		// clang-format off
+		lines.emplace_back(Line {
+			.p1 = p1,
+			.p2 = p2,
+			.normal = normal,
+			.tangent = {-normal.y, normal.x},
+			.length = glm::distance(p1, p2)
+		});
+		// clang-format on
 	}
 
-	return normals;
+	return lines;
 }
 
 void BoxRigidbody::AddForce(glm::dvec2 force) {
