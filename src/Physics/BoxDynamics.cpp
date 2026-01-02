@@ -78,6 +78,27 @@ auto BoxBoxCollision(BoxRigidbody* rb1, BoxRigidbody* rb2) -> std::optional<BoxM
 
 void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold) { }
 
+static auto ClipLineSegmentToLine(dvec2 p1, dvec2 p2, dvec2 normal, dvec2 offset) -> std::vector<dvec2> {
+	std::vector<dvec2> points;
+	points.reserve(2);
+
+	double distance1 = dot(p1 - offset, normal);
+	double distance2 = dot(p2 - offset, normal);
+
+	// if the points are behind the plane, don't clip
+	if (distance1 <= 0.0) points.emplace_back(p1);
+	if (distance2 <= 0.0) points.emplace_back(p2);
+
+	// if one is in front of the plane, clip it to the intersection point
+	if (std::signbit(distance1) != std::signbit(distance2) && points.size() < 2) {
+		const double pct_across = distance2 / (distance2 - distance1);
+		const dvec2 intersection_point = (p1 - p2) * pct_across;
+		points.emplace_back(intersection_point);
+	}
+
+	return points;
+}
+
 auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxManifold> {
 	dvec2 rb_pos = rb->GetPosition();
 	std::list<BoxManifold> manifolds;
@@ -135,18 +156,39 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 
 		// store candidate manifold
 		// clang-format off
-		manifolds.emplace_back(BoxManifold{
+		auto manifold = BoxManifold{
 			.normal = edge.normal,
 			.contact1 = {0.0, 0.0},
 			.contact2 = {0.0, 0.0},
 			.contactCount = -1,
-			.depth = overlap,
-			.colliderEdgeIndex = edge_count,
-			.boxEdgeIndex = -1
-		});
+			.depth = overlap
+		};
 		// clang-format on
-		
-		edge_count++;
+
+		auto rb_edges = rb->GetEdges();
+		Line lowest_edge = rb_edges[0];
+		double lowest_dot = dot(lowest_edge.normal, edge.normal);
+		for (int i = 1; i < rb_edges.size(); i++) {
+			double dotp = dot(rb_edges[1].normal, edge.normal);
+			if (dotp < lowest_dot) {
+				lowest_edge = rb_edges[1];
+				lowest_dot = dotp;
+			}
+		}
+
+		std::vector points = ClipLineSegmentToLine(lowest_edge.p1, lowest_edge.p2, edge.normal, edge.tangent);
+		if (points.size() >= 2) {
+			manifold.contact1 = points[0];
+			manifold.contact2 = points[1];
+			manifold.contactCount = 2;
+		renderer::DebugCircle(manifold.contact1, 0.1f, {0.0, 1.0, 0.0, 1.0});
+		renderer::DebugCircle(manifold.contact2, 0.1f, {0.0, 1.0, 0.0, 1.0});
+		} else if (points.size() == 1) {
+			manifold.contact1 = points[0];
+			manifold.contactCount = 1;
+		}
+
+		return manifold;
 	}
 
 	// select the axis with the least penetration depth
@@ -156,54 +198,7 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 	}
 	auto best = *it;
 
-	// compute contact information for the chosen manifold
-	// edge–edge contact: clip incident edge against reference edge
-
-	// find reference edge on collider (normal match)
-	const Line* ref = nullptr;
-	for (const auto& e : c->edges) {
-		if (dot(e.normal, best.normal) > 1.0 - PhysicsSystem::eps()) {
-			ref = &e;
-			break;
-		}
-	}
-	if (!ref) {
-		return best;
-	}
-
-	// TODO: get the vertices of the rigidbody that are inside the collider
-	// TODO: get their normal
-	// TODO: set the contact point as vertices + (vertices_normal * distance_from_vertex_to_edge_on_normal_direction)
-
-	if (best.colliderEdgeIndex != -1) {
-		renderer::DebugCircle(c->edges[best.colliderEdgeIndex].p1, 0.1f, {1.0f, 0.0f, 0.0f, 1.0f});
-		renderer::DebugCircle(c->edges[best.colliderEdgeIndex].p2, 0.1f, {1.0f, 0.0f, 0.0f, 1.0f});
-	}
-
-	std::list<glm::dvec2> points;
-	glm::dvec2 a = c->edges[best.colliderEdgeIndex].p1;
-	glm::dvec2 b = c->edges[best.colliderEdgeIndex].p2;
-
-	auto rb_edges = rb->GetEdges();
-	for (const auto& rb_e : rb_edges) {
-		glm::dvec2 c = rb_e.p1;
-		glm::dvec2 d = rb_e.p2;
-
-		double oa = glm::determinant(glm::mat2((d - a), (c - a)));
-		double ob = glm::determinant(glm::mat2((d - c), (b - c)));
-		double oc = glm::determinant(glm::mat2((b - a), (c - a)));
-		double od = glm::determinant(glm::mat2((b - a), (d - a)));
-
-		// Proper intersection exists iff opposite signs
-		if (oa*ob < 0 && oc*od < 0) {
-			points.emplace_back((a*ob - b*oa) / (ob-oa));
-		}
-	}
-
-	for (const auto& p : points) {
-		renderer::DebugCircle(p, 0.1f, {0.0f, 1.0f, 0.0f, 1.0f});
-	}
-
+	if (rb->debug.showManifolds) best.Debug();
 	return best;
 }
 
