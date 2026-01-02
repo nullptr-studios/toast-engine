@@ -1,5 +1,6 @@
 #include "Engine/Physics/BoxRigidbody.hpp"
 
+#include "Engine/Core/GlmJson.hpp"
 #include "Engine/Renderer/DebugDrawLayer.hpp"
 #include "Engine/Toast/Objects/Actor.hpp"
 #include "PhysicsSystem.hpp"
@@ -67,32 +68,92 @@ void BoxRigidbody::EditorTick() {
 		return;
 	}
 
-	glm::dvec2 position = GetPosition();
-	double rotation = GetRotation();
-	glm::dvec2 scale = size;
-
 	std::vector<glm::vec2> points = GetPoints();
+	renderer::DebugPoly(points, debug.defaultColor);
+}
 
-	// Half-extents for centering
-	glm::dvec2 h = scale * 0.5;
-	double cos_r = std::cos(rotation);
-	double sin_r = std::sin(rotation);
+json_t BoxRigidbody::Save() const {
+	json_t j = Component::Save();
 
-	// Define local corners relative to center
-	std::array<glm::dvec2, 4> corners = {
-		glm::dvec2 { -h.x, -h.y },
-     glm::dvec2 {  h.x, -h.y },
-     glm::dvec2 {  h.x,  h.y },
-     glm::dvec2 { -h.x,  h.y }
-	};
+	j["size"] = size;
+	j["offset"] = offset;
+	// j["rotation"] = rotation;
+	j["mass"] = mass;
+	j["friction"] = friction;
+	j["gravityScale"] = gravityScale;
+	j["linearDrag"] = linearDrag;
+	j["angularDrag"] = angularDrag;
+	j["restitution"] = restitution;
+	j["restitutionThreshold"] = restitutionThreshold;
 
-	for (int i = 0; i < 4; i++) {
-		// Rotation -> Position
-		points[i].x = (float)((corners[i].x * cos_r) - (corners[i].y * sin_r) + position.x);
-		points[i].y = (float)((corners[i].x * sin_r) + (corners[i].y * cos_r) + position.y);
+	j["minimumVelocity"] = minimumVelocity;
+	j["minimumAngularVelocity"] = minimumAngularVelocity;
+	j["disableAngular"] = disableAngular;
+
+	j["debug.show"] = debug.show;
+	j["debug.defaultColor"] = debug.defaultColor;
+	j["debug.collidingColor"] = debug.collidingColor;
+	j["debug.showManifolds"] = debug.showManifolds;
+
+	return j;
+}
+
+void BoxRigidbody::Load(json_t j, bool b) {
+	if (j.contains("size")) {
+		size = j["size"];
+	}
+	if (j.contains("offset")) {
+		offset = j["offset"];
+	}
+	// if (j.contains("rotation")) {
+	// 	rotation = j["rotation"];
+	// }
+	if (j.contains("mass")) {
+		mass = j["mass"];
+	}
+	if (j.contains("friction")) {
+		friction = j["friction"];
 	}
 
-	renderer::DebugPoly(points, debug.defaultColor);
+	if (j.contains("linearDrag")) {
+		linearDrag = j["linearDrag"];
+	}
+	if (j.contains("angularDrag")) {
+		angularDrag = j["angularDrag"];
+	}
+	if (j.contains("restitution")) {
+		restitution = j["restitution"];
+	}
+	if (j.contains("restitutionThreshold")) {
+		restitutionThreshold = j["restitutionThreshold"];
+	}
+	if (j.contains("gravityScale")) {
+		gravityScale = j["gravityScale"];
+	}
+	if (j.contains("minimumVelocity")) {
+		minimumVelocity = j["minimumVelocity"];
+	}
+	if (j.contains("minimumAngularVelocity")) {
+		minimumAngularVelocity = j["minimumAngularVelocity"];
+	}
+	if (j.contains("disableAngular")) {
+		disableAngular = j["disableAngular"];
+	}
+
+	if (j.contains("debug.show")) {
+		debug.show = j["debug.show"];
+	}
+	if (j.contains("debug.showManifolds")) {
+		debug.showManifolds = j["debug.showManifolds"];
+	}
+	if (j.contains("debug.defaultColor")) {
+		debug.defaultColor = j["debug.defaultColor"];
+	}
+	if (j.contains("debug.collidingColor")) {
+		debug.collidingColor = j["debug.collidingColor"];
+	}
+
+	Component::Load(j, b);
 }
 
 auto BoxRigidbody::GetPosition() const -> glm::dvec2 {
@@ -164,6 +225,10 @@ auto BoxRigidbody::GetEdges() const -> std::vector<glm::vec2> {
 	}
 
 	return normals;
+}
+
+void BoxRigidbody::AddForce(glm::dvec2 force) {
+	forces.emplace_back(force);
 }
 
 }

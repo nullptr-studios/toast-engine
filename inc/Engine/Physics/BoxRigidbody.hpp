@@ -3,8 +3,6 @@
 /// @date 1 Jan 2026
 
 #pragma once
-#include "Engine/Toast/RTTIMacros.h"
-
 #include <Engine/Toast/Components/Component.hpp>
 #include <glm/glm.hpp>
 
@@ -20,14 +18,14 @@ public:
 	void EditorTick() override;
 
 	json_t Save() const override;
-	void Load(json_t j, bool) override;
+	void Load(json_t j, bool b) override;
 
 	auto GetPosition() const -> glm::dvec2;
 	void SetPosition(glm::dvec2);
 	auto GetRotation() const -> double;
 	void SetRotation(double);
 
-	void AddForce(glm::dvec2);
+	void AddForce(glm::dvec2 force);
 
 	auto GetPoints() const -> std::vector<glm::vec2>;
 	auto GetEdges() const -> std::vector<glm::vec2>;
