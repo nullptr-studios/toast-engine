@@ -1,5 +1,6 @@
 #include "PhysicsSystem.hpp"
 
+#include "Physics/BoxDynamics.hpp"
 #include "RigidbodyDynamics.hpp"
 
 #include <Engine/Core/Log.hpp>
@@ -9,7 +10,7 @@
 #include <Engine/Toast/World.hpp>
 #include <chrono>
 
-using namespace physics;
+namespace physics {
 using namespace glm;
 
 #pragma region START_AND_END
@@ -82,6 +83,10 @@ void PhysicsSystem::start() {
 		for (auto* rb : physics->m.rigidbodies) {
 			RbResetVelocity(rb);
 		}
+
+		for (auto* rb : physics->m.boxes) {
+			BoxResetVelocity(rb);
+		}
 	});
 }
 
@@ -113,6 +118,11 @@ void PhysicsSystem::Tick() {
 	// Handle Rigidbody physics
 	for (auto* rb : m.rigidbodies) {
 		RigidbodyPhysics(rb);
+	}
+
+	// Handle Box physics
+	for (auto* rb : m.boxes) {
+		BoxPhysics(rb);
 	}
 }
 
@@ -160,6 +170,28 @@ void PhysicsSystem::RemoveCollider(ConvexCollider* c) {
 		return;
 	}
 	(*i)->m.colliders.remove(c);
+}
+
+void PhysicsSystem::AddBox(BoxRigidbody* rb) {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return;
+	}
+	auto& list = (*i)->m.boxes;
+
+	// Return if the rigidbody is already registered on the list
+	if (std::ranges::find(list, rb) != list.end()) {
+		return;
+	}
+	list.emplace_back(rb);
+}
+
+void PhysicsSystem::RemoveBox(BoxRigidbody* rb) {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return;
+	}
+	(*i)->m.boxes.remove(rb);
 }
 
 dvec2 PhysicsSystem::gravity() {
@@ -224,6 +256,10 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 		}
 	}
 
+	// TODO: Collision with Boxes
+
+	// TODO: Collision with Triggers
+
 	for (auto* c : m.colliders) {
 		auto manifold = RbMeshCollision(rb, c);
 		if (manifold.has_value()) {
@@ -233,4 +269,24 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 
 	// Final position integration
 	RbIntegration(rb);
+}
+
+void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
+	PROFILE_ZONE;
+	PROFILE_TEXT(rb->parent()->name(), rb->parent()->name().size());
+
+	BoxKinematics(rb);
+
+	// Collision loops
+	for (auto* c : m.colliders) {
+		auto manifold = BoxMeshCollision(rb, c);
+		if (manifold.has_value()) {
+			BoxMeshResolution(rb, c, manifold.value());
+		}
+	}
+
+	// Final position integration
+	BoxIntegration(rb);
+}
+
 }

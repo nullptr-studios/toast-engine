@@ -40,7 +40,6 @@ void Rigidbody::Inspector() {
 	ImGui::ColorEdit4("Default color", &debug.defaultColor.r);
 	ImGui::ColorEdit4("Colliding color", &debug.collidingColor.r);
 
-
 	ImGui::Spacing();
 
 	if (ImGui::Button("Reset")) {
