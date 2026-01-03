@@ -202,7 +202,7 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 			manifold.contactCount = 1;
 		}
 
-		return manifold;
+		manifolds.emplace_back(manifold);
 	}
 
 	// select the axis with the least penetration depth
