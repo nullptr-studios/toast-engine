@@ -239,4 +239,21 @@ void BoxRigidbody::AddForce(glm::dvec2 force) {
 	forces.emplace_back(force);
 }
 
+void BoxRigidbody::AddTorque(double torque) {
+	torques.emplace_back(torque);
+}
+
+void BoxRigidbody::AddForce(glm::dvec2 force, glm::dvec2 position) {
+	// Get position with [0, 0] as center of mass
+	glm::dvec2 rel_pos = position - GetPosition();
+
+	// Decompose into force + torque
+	// Linear force always apply
+	AddForce(force);
+
+	// torque = cross product position and force
+	glm::dmat2 mat = { rel_pos, force };
+	AddTorque(glm::determinant(mat));
+}
+
 }

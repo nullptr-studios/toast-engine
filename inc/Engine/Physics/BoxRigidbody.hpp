@@ -27,6 +27,8 @@ public:
 	void SetRotation(double);
 
 	void AddForce(glm::dvec2 force);
+	void AddForce(glm::dvec2 force, glm::dvec2 position);
+	void AddTorque(double torque);
 
 	auto GetPoints() const -> std::vector<glm::vec2>;
 	auto GetEdges() const -> std::vector<Line>;
@@ -52,6 +54,7 @@ public:
 	glm::dvec2 velocity = { 0.0, 0.0 };
 	double angularVelocity = 0.0;
 	std::deque<glm::dvec2> forces;
+	std::deque<double> torques;
 
 	// debug stuff
 	struct {

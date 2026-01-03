@@ -53,15 +53,22 @@ void BoxKinematics(BoxRigidbody* rb) {
 		rb->mass = 1.0;
 	}
 
+	// Sum torques
+	double torques = std::ranges::fold_left(rb->torques, 0.0, std::plus{});
+	// Compute inertia
+	dvec2 half_size = rb->size / 2.0;
+	double inertia = (rb->mass * (half_size.x * half_size.x + half_size.y * half_size.y)) / 12.0;
+	inertia = (inertia < 0.001) ? 1.0 : inertia;
+	// Calculate angular acceleration
+	double angular_accel = torques / inertia;
+
 	// Sum forces
 	glm::dvec2 forces = std::ranges::fold_left(rb->forces, glm::dvec2 { 0.0 }, std::plus {});
-	// TODO: Handle rotation at some point
-
 	glm::dvec2 accel = (forces / rb->mass) + (PhysicsSystem::gravity() * dvec2 { rb->gravityScale });
 
 	// Integrate velocities
 	velocity += accel * Time::fixed_delta();
-	// angular_velocity += angular_accle * Time::fixed_delta();
+	angular_velocity += angular_accel * Time::fixed_delta();
 
 	// Apply drag
 	const double damping = std::exp(-rb->linearDrag * Time::fixed_delta());
@@ -232,17 +239,26 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 	if (rb->mass <= 0.0) return;
 	double inv_mass = 1.0 / rb->mass;
 
+	// moment of inertia for box
+	double width = rb->size.x / 2;
+	double height = rb->size.y / 2;
+	double inertia = (rb->mass * (width * width + height * height)) / 12.0;
+	double inv_inertia = inertia > 0.0 ? 1.0 / inertia : 0.0;
+
+	dvec2 contact = (manifold.contactCount == 2) ? (manifold.contact1 + manifold.contact2) * 0.5 : manifold.contact1;
+	dvec2 r = contact - position;
+
 	// unfold velocity in normal and tangencial
-	dvec2 contact_tangent = {-manifold.normal.y, manifold.normal.x};
+	dvec2 contact_tangent = { -manifold.normal.y, manifold.normal.x };
 	double normal_speed = dot(velocity, manifold.normal);
 	double tangent_speed = dot(velocity, contact_tangent);
+
 	// only apply restitution if we're moving faster than the restitution threshold
 	double restitution = (std::abs(normal_speed) < rb->restitutionThreshold) ? 0.0 : rb->restitution;
 
 	// only resolve if we're going towards the object
 	if (normal_speed < 0.0) {
 		// Normal impulse (bounce response)
-		// Jn = -(1 + e) * vn / invMass = -(1 + e) * vn * mass
 		double normal_impulse = -(1.0 + restitution) * normal_speed / inv_mass;
 
 		// Coulomb friction
@@ -252,12 +268,22 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 		double tangential_impulse = -tangent_speed / inv_mass;
 		tangential_impulse = clamp(tangential_impulse, -max_friction_impulse, max_friction_impulse);
 
+		// total impulse
+		dvec2 impulse = normal_impulse * manifold.normal + tangential_impulse * contact_tangent;
+
 		// Apply impulses to velocity
-		velocity += (normal_impulse * inv_mass) * manifold.normal + (tangential_impulse * inv_mass) * contact_tangent;
+		velocity += impulse * inv_mass;
+
+		// Apply angular impulse
+		dmat2 torque_mat = { r, impulse };
+		double torque_impulse = determinant(torque_mat);
+		angular_velocity += torque_impulse * inv_inertia;
 	}
 
 	// positional correction
-	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
+	double penetration_correction =
+		std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) *
+		PhysicsSystem::pos_ptc();
 	position += penetration_correction * manifold.normal;
 	rb->SetPosition(position);
 
