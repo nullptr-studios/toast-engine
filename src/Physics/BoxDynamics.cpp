@@ -129,9 +129,7 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 			max_rb = std::max(proj, max_rb);
 		}
 
-		// dvec2 edge_midpoint = 0.5 * dvec2{ edge.p1 + edge.p2 };
-		dvec2 displacement = edge.tangent * -3.0;
-		dvec2 draw_pt = dvec2{ edge.p1 } - displacement;
+		dvec2 draw_pt = 0.5 * dvec2{ edge.p1 + edge.p2 };
 
 		// debug normals
 		renderer::DebugLine(draw_pt, draw_pt + (edge.normal * 10.0), {1, 0, 0, 1});
