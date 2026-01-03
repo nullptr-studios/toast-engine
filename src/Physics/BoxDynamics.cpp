@@ -129,6 +129,22 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 			max_rb = std::max(proj, max_rb);
 		}
 
+		// dvec2 edge_midpoint = 0.5 * dvec2{ edge.p1 + edge.p2 };
+		dvec2 displacement = edge.tangent * -3.0;
+		dvec2 draw_pt = dvec2{ edge.p1 } - displacement;
+
+		// debug normals
+		renderer::DebugLine(draw_pt, draw_pt + (edge.normal * 10.0), {1, 0, 0, 1});
+		renderer::DebugLine(draw_pt, draw_pt - (edge.normal * 10.0), {1, 0, 0, 1});
+
+		// debug points
+		// collider
+		renderer::DebugCircle(draw_pt + (edge.normal * min_collider), 0.1, {0, 0, 1, 1});
+		renderer::DebugCircle(draw_pt + (edge.normal * max_collider), 0.1, {0, 0, 1, 1});
+		// rb
+		renderer::DebugCircle(draw_pt + (edge.normal * min_rb), 0.1, {0, 1, 0, 1});
+		renderer::DebugCircle(draw_pt + (edge.normal * max_rb), 0.1, {0, 1, 0, 1});
+
 		// if theres no overlap on this axis, there is no collision at all
 		if (max_rb < min_collider || min_rb > max_collider) {
 			return std::nullopt;
