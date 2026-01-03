@@ -223,6 +223,49 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 	return best;
 }
 
-void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold) { }
+void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold) {
+	dvec2 position = rb->GetPosition();
+	dvec2& velocity = rb->velocity;
+	double& angular_velocity = rb->angularVelocity;
+
+	// Skip if body has infinite mass
+	if (rb->mass <= 0.0) return;
+	double inv_mass = 1.0 / rb->mass;
+
+	// unfold velocity in normal and tangencial
+	dvec2 contact_tangent = {-manifold.normal.y, manifold.normal.x};
+	double normal_speed = dot(velocity, manifold.normal);
+	double tangent_speed = dot(velocity, contact_tangent);
+	// only apply restitution if we're moving faster than the restitution threshold
+	double restitution = (std::abs(normal_speed) < rb->restitutionThreshold) ? 0.0 : rb->restitution;
+
+	// only resolve if we're going towards the object
+	if (normal_speed < 0.0) {
+		// Normal impulse (bounce response)
+		// Jn = -(1 + e) * vn / invMass = -(1 + e) * vn * mass
+		double normal_impulse = -(1.0 + restitution) * normal_speed / inv_mass;
+
+		// Coulomb friction
+		double max_friction_impulse = c->friction * std::abs(normal_impulse);
+
+		// calculate tangential impulse to cancel tangential speed
+		double tangential_impulse = -tangent_speed / inv_mass;
+		tangential_impulse = clamp(tangential_impulse, -max_friction_impulse, max_friction_impulse);
+
+		// Apply impulses to velocity
+		velocity += (normal_impulse * inv_mass) * manifold.normal + (tangential_impulse * inv_mass) * contact_tangent;
+	}
+
+	// positional correction
+	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
+	position += penetration_correction * manifold.normal;
+	rb->SetPosition(position);
+
+	// velocity correction
+	double residual_normal_speed = dot(velocity, manifold.normal);
+	if (residual_normal_speed < 0.0) {
+		velocity -= residual_normal_speed * manifold.normal;
+	}
+}
 
 }
