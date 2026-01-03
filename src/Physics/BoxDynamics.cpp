@@ -19,6 +19,31 @@ void BoxManifold::Debug() const {
 	}
 }
 
+std::optional<glm::dvec2> LineLineCollision(const Line& a, const Line& b) {
+	// directions
+	glm::dvec2 a_vec = a.p2 - a.p1;
+	glm::dvec2 b_vec = b.p2 - b.p1;
+
+	glm::dvec2 start_delta = b.p1 - a.p1;
+
+	double cross_a_b = determinant(dmat2{ a_vec, b_vec });           // a_vec x b_vec
+	double cross_delta_b = determinant(dmat2{ start_delta, b_vec }); // (b_start - a_start) x b_vec
+	double cross_delta_a = determinant(dmat2{ start_delta, a_vec }); // (b_start - a_start) x a_vec
+
+	// Parallel (including colinear)
+	if (std::abs(cross_a_b) < PhysicsSystem::eps_small()) {
+		return std::nullopt;
+	}
+
+	double t_on_a = cross_delta_b / cross_a_b; // position along segment a
+	double t_on_b = cross_delta_a / cross_a_b; // position along segment b
+
+	// Intersection must lie within both segments
+	if (t_on_a < 0.0 || t_on_a > 1.0 || t_on_b < 0.0 || t_on_b > 1.0) return std::nullopt;
+
+	return dvec2 { a.p1 } + t_on_a * a_vec;
+}
+
 void BoxKinematics(BoxRigidbody* rb) {
 	auto& velocity = rb->velocity;
 	auto& angular_velocity = rb->angularVelocity;
@@ -129,20 +154,6 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 			max_rb = std::max(proj, max_rb);
 		}
 
-		dvec2 draw_pt = 0.5 * dvec2{ edge.p1 + edge.p2 };
-
-		// debug normals
-		renderer::DebugLine(draw_pt, draw_pt + (edge.normal * 10.0), {1, 0, 0, 1});
-		renderer::DebugLine(draw_pt, draw_pt - (edge.normal * 10.0), {1, 0, 0, 1});
-
-		// debug points
-		// collider
-		renderer::DebugCircle(draw_pt + (edge.normal * min_collider), 0.1, {0, 0, 1, 1});
-		renderer::DebugCircle(draw_pt + (edge.normal * max_collider), 0.1, {0, 0, 1, 1});
-		// rb
-		renderer::DebugCircle(draw_pt + (edge.normal * min_rb), 0.1, {0, 1, 0, 1});
-		renderer::DebugCircle(draw_pt + (edge.normal * max_rb), 0.1, {0, 1, 0, 1});
-
 		// if theres no overlap on this axis, there is no collision at all
 		if (max_rb < min_collider || min_rb > max_collider) {
 			return std::nullopt;
@@ -179,24 +190,22 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 		};
 		// clang-format on
 
-		auto rb_edges = rb->GetEdges();
-		Line lowest_edge = rb_edges[0];
-		double lowest_dot = dot(lowest_edge.normal, edge.normal);
-		for (int i = 1; i < rb_edges.size(); i++) {
-			double dotp = dot(rb_edges[1].normal, edge.normal);
-			if (dotp < lowest_dot) {
-				lowest_edge = rb_edges[1];
-				lowest_dot = dotp;
-			}
+		std::vector<dvec2> points;
+		for (const auto& e : rb->GetEdges()) {
+			auto p = LineLineCollision(e, edge);
+			if (p.has_value()) points.emplace_back(p.value());
 		}
 
-		std::vector points = ClipLineSegmentToLine(lowest_edge.p1, lowest_edge.p2, edge.normal, edge.tangent);
 		if (points.size() >= 2) {
 			manifold.contact1 = points[0];
 			manifold.contact2 = points[1];
 			manifold.contactCount = 2;
 		} else if (points.size() == 1) {
 			manifold.contact1 = points[0];
+			manifold.contactCount = 1;
+		} else {
+			manifold.contact1 = rb->GetPosition();
+			manifold.contact2 = rb->GetPosition();
 			manifold.contactCount = 1;
 		}
 
@@ -210,19 +219,7 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 	}
 	auto best = *it;
 
-	if (best.contactCount == 2) {
-		renderer::DebugCircle(best.contact1, 0.1f, {0, 1, 1, 1});
-		renderer::DebugCircle(best.contact2, 0.1f, {0, 1, 1, 1});
-	}
-
-	Line edge = *std::ranges::find_if(c->edges, [best](const Line& l)->bool{return best.normal == l.normal;});
-	dvec2 mp = 0.5 * dvec2 { edge.p1 + edge.p2 };
-	renderer::DebugLine(mp, mp + (edge.normal * 10.0), {1, 1, 0, 1});
-	renderer::DebugLine(mp, mp - (edge.normal * 10.0), {1, 1, 0, 1});
-	renderer::DebugCircle(edge.p1, 0.1, {1, 1, 0, 1});
-	renderer::DebugCircle(edge.p2, 0.1, {1, 1, 0, 1});
-
-	// if (rb->debug.showManifolds) best.Debug();
+	if (rb->debug.showManifolds) best.Debug();
 	return best;
 }
 

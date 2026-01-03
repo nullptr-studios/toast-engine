@@ -10,7 +10,9 @@ namespace physics {
 class BoxRigidbody;
 class ConvexCollider;
 class Trigger;
+struct Line;
 
+auto LineLineCollision(const Line& a, const Line& b) -> std::optional<glm::dvec2>;
 void BoxKinematics(BoxRigidbody* rb);
 void BoxIntegration(BoxRigidbody* rb);
 void BoxResetVelocity(BoxRigidbody* rb);
