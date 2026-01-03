@@ -195,8 +195,8 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 			manifold.contact1 = points[0];
 			manifold.contact2 = points[1];
 			manifold.contactCount = 2;
-		renderer::DebugCircle(manifold.contact1, 0.1f, {0.0, 1.0, 0.0, 1.0});
-		renderer::DebugCircle(manifold.contact2, 0.1f, {0.0, 1.0, 0.0, 1.0});
+			renderer::DebugCircle(manifold.contact1, 0.1f, {0, 1, 1, 1});
+			renderer::DebugCircle(manifold.contact2, 0.1f, {0, 1, 1, 1});
 		} else if (points.size() == 1) {
 			manifold.contact1 = points[0];
 			manifold.contactCount = 1;
