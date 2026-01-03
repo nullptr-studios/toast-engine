@@ -215,6 +215,13 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 		renderer::DebugCircle(best.contact2, 0.1f, {0, 1, 1, 1});
 	}
 
+	Line edge = *std::ranges::find_if(c->edges, [best](const Line& l)->bool{return best.normal == l.normal;});
+	dvec2 mp = 0.5 * dvec2 { edge.p1 + edge.p2 };
+	renderer::DebugLine(mp, mp + (edge.normal * 10.0), {1, 1, 0, 1});
+	renderer::DebugLine(mp, mp - (edge.normal * 10.0), {1, 1, 0, 1});
+	renderer::DebugCircle(edge.p1, 0.1, {1, 1, 0, 1});
+	renderer::DebugCircle(edge.p2, 0.1, {1, 1, 0, 1});
+
 	// if (rb->debug.showManifolds) best.Debug();
 	return best;
 }
