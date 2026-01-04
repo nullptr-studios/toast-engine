@@ -13,12 +13,12 @@
 namespace physics {
 using namespace glm;
 
-void DebugManifold(const Manifold& m) {
-	renderer::DebugCircle(m.contact1, 0.1, { 0.0f, 1.0f, 0.0f, 1.0f });
-	renderer::DebugLine(m.contact1, m.contact1 + (m.normal * m.depth), { 1.0f, 0.0f, 1.0f, 1.0f });
-	if (m.contactCount == 2) {
-		renderer::DebugCircle(m.contact2, 0.1, { 0.0f, 1.0f, 0.0f, 1.0f });
-		renderer::DebugLine(m.contact2, m.contact2 + (m.normal * m.depth), { 1.0f, 0.0f, 1.0f, 1.0f });
+void Manifold::Debug() const {
+	renderer::DebugCircle(contact1, 0.1, { 0.0f, 1.0f, 0.0f, 1.0f });
+	renderer::DebugLine(contact1, contact1 + (normal * depth), { 1.0f, 0.0f, 1.0f, 1.0f });
+	if (contactCount == 2) {
+		renderer::DebugCircle(contact2, 0.1, { 0.0f, 1.0f, 0.0f, 1.0f });
+		renderer::DebugLine(contact2, contact2 + (normal * depth), { 1.0f, 0.0f, 1.0f, 1.0f });
 	}
 }
 
@@ -42,7 +42,7 @@ void RbKinematics(Rigidbody* rb) {
 	velocity *= damping;
 
 	if (all(lessThan(abs(velocity), rb->minimumVelocity))) {
-		velocity = {0.0, 0.0};
+		velocity = { 0.0, 0.0 };
 	}
 }
 
@@ -78,7 +78,7 @@ auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
 	manifold.contactCount = 1;
 
 	if (rb1->debug.showManifolds) {
-		DebugManifold(manifold);
+		manifold.Debug();
 	}
 	return manifold;
 }
@@ -239,7 +239,7 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 	}
 
 	if (rb->debug.showManifolds) {
-		DebugManifold(best);
+		best.Debug();
 	}
 
 	return best;

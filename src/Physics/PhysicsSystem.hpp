@@ -9,6 +9,7 @@
 namespace physics {
 
 class Rigidbody;
+class BoxRigidbody;
 class ConvexCollider;
 
 class PhysicsSystem {
@@ -26,6 +27,8 @@ public:
 	static void RemoveRigidbody(Rigidbody* rb);
 	static void AddCollider(ConvexCollider* c);
 	static void RemoveCollider(ConvexCollider* c);
+	static void AddBox(BoxRigidbody* rb);
+	static void RemoveBox(BoxRigidbody* rb);
 
 	PhysicsSystem();
 	~PhysicsSystem();
@@ -42,11 +45,13 @@ private:
 	void Tick();
 
 	void RigidbodyPhysics(Rigidbody* rb);
+	void BoxPhysics(BoxRigidbody* rb);
 
 	struct M {
 		std::chrono::duration<double> targetFrametime {1.0/50.0};
 		unsigned char tickCount = 1;
 		std::list<Rigidbody*> rigidbodies;
+		std::list<BoxRigidbody*> boxes;
 		std::list<ConvexCollider*> colliders;
 		glm::dvec2 gravity = {0.0, -9.81};
 		double positionCorrectionSlop = 1.0e-3;

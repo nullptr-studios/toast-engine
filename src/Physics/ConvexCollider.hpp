@@ -3,18 +3,11 @@
 /// @date 29 Dec 2025
 
 #pragma once
+#include <Engine/Physics/Line.hpp>
 #include <Engine/Physics/ColliderData.hpp>
 #include <glm/glm.hpp>
 
 namespace physics {
-
-struct Line {
-	glm::vec2 p1;
-	glm::vec2 p2;
-	glm::dvec2 normal;
-	glm::dvec2 tangent;
-	double length;
-};
 
 class ConvexCollider : public ColliderData {
 public:
