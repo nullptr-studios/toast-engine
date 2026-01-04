@@ -258,14 +258,19 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 
 	// only resolve if we're going towards the object
 	if (normal_speed < 0.0) {
+		double normal_lever_arm = determinant(dmat2{ r, manifold.normal });
+		double tangent_lever_arm = determinant(dmat2{ r, contact_tangent });
+		double normal_effective_mass = inv_mass + (normal_lever_arm * normal_lever_arm * inv_inertia);
+		double tangent_effective_mass = inv_mass + (tangent_lever_arm * tangent_lever_arm * inv_inertia);
+
 		// Normal impulse (bounce response)
-		double normal_impulse = -(1.0 + restitution) * normal_speed / inv_mass;
+		double normal_impulse = -(1.0 + restitution) * normal_speed / normal_effective_mass;
 
 		// Coulomb friction
 		double max_friction_impulse = c->friction * std::abs(normal_impulse);
 
 		// calculate tangential impulse to cancel tangential speed
-		double tangential_impulse = -tangent_speed / inv_mass;
+		double tangential_impulse = -tangent_speed / tangent_effective_mass;
 		tangential_impulse = clamp(tangential_impulse, -max_friction_impulse, max_friction_impulse);
 
 		// total impulse
@@ -274,10 +279,11 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 		// Apply impulses to velocity
 		velocity += impulse * inv_mass;
 
-		// Apply angular impulse
+		// Apply angular impulse with slight damping to smooth spikes
 		dmat2 torque_mat = { r, impulse };
 		double torque_impulse = determinant(torque_mat);
-		angular_velocity += torque_impulse * inv_inertia;
+		const double angular_impulse_blend = 0.6;
+		angular_velocity += torque_impulse * inv_inertia * angular_impulse_blend;
 	}
 
 	// positional correction
