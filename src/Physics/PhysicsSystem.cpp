@@ -6,6 +6,7 @@
 #include <Engine/Core/Profiler.hpp>
 #include <Engine/Core/Time.hpp>
 #include <Engine/Physics/PhysicsEvents.hpp>
+#include <Engine/Physics/Rigidbody.hpp>
 #include <Engine/Toast/World.hpp>
 #include <chrono>
 
@@ -211,7 +212,8 @@ double PhysicsSystem::eps_small() {
 
 void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 	PROFILE_ZONE;
-	PROFILE_TEXT(rb->parent()->name(), rb->parent()->name().size());
+	const auto& name = rb->parent()->name();
+	PROFILE_TEXT(name.c_str(), name.size());
 
 	RbKinematics(rb);
 
