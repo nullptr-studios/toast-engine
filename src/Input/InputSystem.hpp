@@ -3,11 +3,11 @@
 /// @author Xein
 
 #pragma once
-#include "Toast/Input/Layout.hpp"
+#include "Toast/Event/ListenerComponent.hpp"
 #include "Toast/Input/InputListener.hpp"
+#include "Toast/Input/Layout.hpp"
+#include "Toast/Window/WindowEvents.hpp"
 
-#include <Toast/Event/ListenerComponent.hpp>
-#include <Toast/Window/WindowEvents.hpp>
 #include <algorithm>
 #include <list>
 
@@ -21,7 +21,8 @@ struct GamepadState {
 class InputSystem {
 public:
 	InputSystem();
-	[[nodiscard]] static InputSystem* get();
+	[[nodiscard]]
+	static InputSystem* get();
 
 	InputSystem(const InputSystem&) = delete;
 	InputSystem& operator=(const InputSystem&) = delete;
@@ -49,10 +50,8 @@ private:
 			const auto& name = a->name;
 
 			a->CalculateValue();
-			std::erase_if(a->m.pressedKeys, [](const auto& v){
-				return v.first == MOUSE_SCROLL_Y_CODE
-					|| v.first == MOUSE_SCROLL_X_CODE
-					|| v.first == MOUSE_POSITION_CODE;
+			std::erase_if(a->m.pressedKeys, [](const auto& v) {
+				return v.first == MOUSE_SCROLL_Y_CODE || v.first == MOUSE_SCROLL_X_CODE || v.first == MOUSE_POSITION_CODE;
 			});
 
 			for (auto* l : m.subscribers) {
@@ -68,7 +67,9 @@ private:
 
 	template<typename ActionType>
 	void AddToQueue(std::deque<ActionType*>& queue, ActionType* action) {
-		if (std::ranges::find(queue, action) != queue.end()) return;
+		if (std::ranges::find(queue, action) != queue.end()) {
+			return;
+		}
 		queue.emplace_back(action);
 	}
 

@@ -6,9 +6,8 @@
 #pragma once
 
 #include "Object.hpp"
-
-#include <Toast/Event/ListenerComponent.hpp>
-#include <Toast/Components/TransformComponent.hpp>
+#include "Toast/Components/TransformComponent.hpp"
+#include "Toast/Event/ListenerComponent.hpp"
 
 namespace toast {
 

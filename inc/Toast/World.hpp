@@ -1,8 +1,8 @@
 #pragma once
 #include "Objects/Object.hpp"
+#include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/SceneLoadedEvent.hpp"
 
-#include <Toast/Event/ListenerComponent.hpp>
-#include <Toast/SceneLoadedEvent.hpp>
 #include <mutex>
 
 namespace toast {

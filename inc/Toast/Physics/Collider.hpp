@@ -4,8 +4,8 @@
 
 #pragma once
 #include "ColliderData.hpp"
+#include "Toast/Components/Component.hpp"
 
-#include <Toast/Components/Component.hpp>
 #include <glm/glm.hpp>
 
 namespace toast {

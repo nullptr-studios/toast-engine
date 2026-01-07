@@ -4,9 +4,8 @@
 #pragma once
 
 #include "Toast/Renderer/Framebuffer.hpp"
-
-#include <Toast/Renderer/IRendererBase.hpp>
-#include <Toast/Renderer/Lights/GlobalLight.hpp>
+#include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/Lights/GlobalLight.hpp"
 
 namespace renderer {
 class LayerStack;

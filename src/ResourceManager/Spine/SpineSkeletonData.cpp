@@ -2,13 +2,13 @@
 /// @author dario
 /// @date 23/10/2025.
 
+#include "Toast/Resources/Spine/SpineSkeletonData.hpp"
+
+#include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/Resources/Spine/SpineAtlas.hpp"
+#include "Toast/Resources/Texture.hpp"
 #include "spine/SkeletonBinary.h"
 #include "spine/SkeletonJson.h"
-
-#include <Toast/Resources/ResourceManager.hpp>
-#include <Toast/Resources/Spine/SpineSkeletonData.hpp>
-#include <Toast/Resources/Texture.hpp>
 
 SpineSkeletonData::~SpineSkeletonData() {
 	delete m_skeletonData;

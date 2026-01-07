@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include <Toast/Log.hpp>
-#include <Toast/Components/Component.hpp>
+#include "Toast/Components/Component.hpp"
+#include "Toast/Log.hpp"
+
 #include <any>
 #include <type_traits>
 #include <typeindex>

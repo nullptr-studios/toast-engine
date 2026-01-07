@@ -1,4 +1,4 @@
-#include <Toast/Entrypoint.hpp>
+#include "Toast/Entrypoint.hpp"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include "Windows.inl"

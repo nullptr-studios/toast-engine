@@ -7,7 +7,7 @@
 
 namespace physics {
 
-struct Manifold{
+struct Manifold {
 	glm::dvec2 normal;
 	glm::dvec2 contact1;
 	glm::dvec2 contact2;

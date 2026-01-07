@@ -1,10 +1,11 @@
 #pragma once
 
-#include "Toast/Physics/Rigidbody.hpp"
-#include "Toast/Renderer/DebugDrawLayer.hpp"
-#include "Toast/Components/MeshRendererComponent.hpp"
-#include "Toast/Objects/Actor.hpp"
 #include "glm/fwd.hpp"
+
+#include <Toast/Components/MeshRendererComponent.hpp>
+#include <Toast/Objects/Actor.hpp>
+#include <Toast/Physics/Rigidbody.hpp>
+#include <Toast/Renderer/DebugDrawLayer.hpp>
 
 class TestActor : public toast::Actor {
 public:

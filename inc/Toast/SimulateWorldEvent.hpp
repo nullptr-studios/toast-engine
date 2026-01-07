@@ -4,8 +4,8 @@
 
 #pragma once
 #ifdef TOAST_EDITOR
-#include <Toast/Log.hpp>
-#include <Toast/Event/Event.hpp>
+#include "Toast/Event/Event.hpp"
+#include "Toast/Log.hpp"
 
 namespace toast {
 

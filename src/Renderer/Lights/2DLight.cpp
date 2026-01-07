@@ -8,7 +8,7 @@
 #include "imgui.h"
 #endif
 
-#include <Toast/Renderer/Lights/2DLight.hpp>
+#include "Toast/Renderer/Lights/2DLight.hpp"
 
 void Light2D::Init() {
 	// Load quad mesh for light rendering

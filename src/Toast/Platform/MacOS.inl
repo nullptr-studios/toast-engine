@@ -5,7 +5,7 @@
 
 #ifndef WIN32
 #pragma once
-#include <Toast/Engine.hpp>
+#include "Toast/Engine.hpp"
 
 int main(int argc, char** argv) {
 	// Sets the .so path to ./modules

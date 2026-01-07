@@ -3,10 +3,9 @@
 /// @date 22/11/2025.
 
 #pragma once
-#include "Toast/Resources/Mesh.hpp"
 #include "Toast/Objects/Actor.hpp"
-
-#include <Toast/Renderer/Shader.hpp>
+#include "Toast/Renderer/Shader.hpp"
+#include "Toast/Resources/Mesh.hpp"
 
 class Light2D : public toast::Actor {
 public:

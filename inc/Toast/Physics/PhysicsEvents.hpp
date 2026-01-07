@@ -3,7 +3,8 @@
 /// @date 30 Dec 2025
 
 #pragma once
-#include <Toast/Event/Event.hpp>
+#include "Toast/Event/Event.hpp"
+
 #include <glm/glm.hpp>
 
 namespace physics {

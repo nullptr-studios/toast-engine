@@ -1,5 +1,5 @@
 // src/Core/Log.cpp
-#include <Toast/Log.hpp>
+#include "Toast/Log.hpp"
 
 // clang-format off
 // private: spdlog includes

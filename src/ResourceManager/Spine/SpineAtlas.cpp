@@ -2,10 +2,10 @@
 /// @author dario
 /// @date 23/10/2025.
 
-#include "Toast/Resources/ResourceManager.hpp"
-#include "SpineTextureLoader.hpp"
+#include "Toast/Resources/Spine/SpineAtlas.hpp"
 
-#include <Toast/Resources/Spine/SpineAtlas.hpp>
+#include "SpineTextureLoader.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
 
 SpineAtlas::~SpineAtlas() {
 	delete m_atlas;

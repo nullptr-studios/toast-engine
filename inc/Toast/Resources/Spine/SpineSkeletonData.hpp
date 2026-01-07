@@ -3,8 +3,8 @@
 /// @date 23/10/2025.
 
 #pragma once
-#include "Toast/Resources/IResource.hpp"
 #include "SpineAtlas.hpp"
+#include "Toast/Resources/IResource.hpp"
 #include "spine/SkeletonData.h"
 
 #include <string>

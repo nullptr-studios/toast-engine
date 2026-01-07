@@ -2,12 +2,12 @@
 
 #include "ConvexCollider.hpp"
 #include "PhysicsSystem.hpp"
+#include "Toast/Log.hpp"
+#include "Toast/Physics/Rigidbody.hpp"
+#include "Toast/Profiler.hpp"
+#include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/Time.hpp"
 
-#include <Toast/Log.hpp>
-#include <Toast/Profiler.hpp>
-#include <Toast/Time.hpp>
-#include <Toast/Physics/Rigidbody.hpp>
-#include <Toast/Renderer/DebugDrawLayer.hpp>
 #include <glm/glm.hpp>
 
 namespace physics {
@@ -42,7 +42,7 @@ void RbKinematics(Rigidbody* rb) {
 	velocity *= damping;
 
 	if (all(lessThan(abs(velocity), rb->minimumVelocity))) {
-		velocity = {0.0, 0.0};
+		velocity = { 0.0, 0.0 };
 	}
 }
 

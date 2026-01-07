@@ -4,7 +4,7 @@
 /// @brief Base component class
 
 #pragma once
-#include <Toast/Objects/Object.hpp>
+#include "Toast/Objects/Object.hpp"
 
 namespace toast {
 

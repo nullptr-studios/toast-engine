@@ -2,9 +2,11 @@
 // Created by dario on 17/09/2025.
 //
 
-#include <Toast/Log.hpp>
-#include <Toast/Renderer/Shader.hpp>
-#include <Toast/Resources/ResourceManager.hpp>
+#include "Toast/Renderer/Shader.hpp"
+
+#include "Toast/Log.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
+
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <sstream>

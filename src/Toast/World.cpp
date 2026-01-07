@@ -1,12 +1,12 @@
-#include "Toast/Objects/Scene.hpp"
-#include "Physics/PhysicsSystem.hpp"
+#include "Toast/World.hpp"
 
-#include <Toast/Log.hpp>
-#include <Toast/Profiler.hpp>
-#include <Toast/ThreadPool.hpp>
-#include <Toast/Resources/ResourceManager.hpp>
-#include <Toast/SimulateWorldEvent.hpp>
-#include <Toast/World.hpp>
+#include "Physics/PhysicsSystem.hpp"
+#include "Toast/Log.hpp"
+#include "Toast/Objects/Scene.hpp"
+#include "Toast/Profiler.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/SimulateWorldEvent.hpp"
+#include "Toast/ThreadPool.hpp"
 
 namespace toast {
 
@@ -144,7 +144,7 @@ Object* World::New(const std::string& type, const std::optional<std::string>& na
 
 	if (obj->base_type() == SceneT) {
 		auto* e = new SceneLoadedEvent { obj_id, obj_name };
-		event::Send(e);
+		event::Send(reinterpret_cast<event::IEvent*>(e));
 	}
 
 	return obj;
@@ -199,7 +199,7 @@ void World::LoadScene(std::string_view path) {
 		}
 
 		auto* e = new SceneLoadedEvent { scene_id, scene_name };
-		event::Send(e);
+		event::Send(reinterpret_cast<event::IEvent*>(e));
 	});
 }
 
@@ -251,7 +251,7 @@ void World::LoadSceneSync(std::string_view path) {
 	}
 
 	auto* e = new SceneLoadedEvent { scene_id, scene_name };
-	event::Send(e);
+	event::Send(reinterpret_cast<event::IEvent*>(e));
 }
 
 void World::UnloadScene(const unsigned id) {

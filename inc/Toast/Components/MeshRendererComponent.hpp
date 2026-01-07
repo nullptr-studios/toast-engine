@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "Toast/Components/TransformComponent.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/Material.hpp"
 #include "Toast/Renderer/Shader.hpp"
@@ -12,7 +13,6 @@
 #include "Toast/Resources/ResourceSlot.hpp"
 #include "Toast/Resources/Texture.hpp"
 
-#include <Toast/Components/TransformComponent.hpp>
 #include <glm/glm.hpp>
 #include <memory>
 

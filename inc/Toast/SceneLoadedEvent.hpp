@@ -4,8 +4,9 @@
 /// @brief An event sent when the scene finishes being loaded
 
 #pragma once
-#include <Toast/Log.hpp>
-#include <Toast/Event/Event.hpp>
+#include "Toast/Event/Event.hpp"
+#include "Toast/Log.hpp"
+
 #include <format>
 
 namespace toast {

@@ -2,15 +2,16 @@
 /// @author dario
 /// @date 21/11/2025.
 
+#include "Toast/Components/AtlasRendererComponent.hpp"
+
+#include "ResourceManager/Spine/SpineSkeletonRenderer.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
-#include "ResourceManager/Spine/SpineSkeletonRenderer.hpp"
 #include "spine/SkeletonRenderer.h"
 #include "spine/Skin.h"
 #include "spine/Slot.h"
 #include "spine/SlotData.h"
 
-#include <Toast/Components/AtlasRendererComponent.hpp>
 #include <algorithm>
 #include <unordered_set>
 

@@ -6,7 +6,7 @@
 // TODO: Handle vsync
 
 #pragma once
-#include <Toast/Event/Event.hpp>
+#include "Toast/Event/Event.hpp"
 
 struct GLFWwindow;
 

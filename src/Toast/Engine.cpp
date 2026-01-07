@@ -1,19 +1,20 @@
-#include "Physics/PhysicsSystem.hpp"
+#include "Toast/Engine.hpp"
 
-#include <Toast/Log.hpp>
-#include <Toast/Time.hpp>
-#include <Toast/Renderer/DebugDrawLayer.hpp>
-#include <Toast/Renderer/IRendererBase.hpp>
-#include <Toast/Renderer/LayerStack.hpp>
-#include <Toast/Renderer/OpenGL/OpenGLRenderer.hpp>
-#include <Toast/Engine.hpp>
-#include <Toast/Factory.hpp>
-#include <Toast/Objects/Scene.hpp>
-#include <Toast/ProjectSettings.hpp>
-#include <Toast/World.hpp>
-#include <Toast/Window/Window.hpp>
-#include <Event/EventSystem.hpp>
-#include <Input/InputSystem.hpp>
+#include "Event/EventSystem.hpp"
+#include "Input/InputSystem.hpp"
+#include "Physics/PhysicsSystem.hpp"
+#include "Toast/Factory.hpp"
+#include "Toast/Log.hpp"
+#include "Toast/Objects/Scene.hpp"
+#include "Toast/ProjectSettings.hpp"
+#include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/LayerStack.hpp"
+#include "Toast/Renderer/OpenGL/OpenGLRenderer.hpp"
+#include "Toast/Time.hpp"
+#include "Toast/Window/Window.hpp"
+#include "Toast/World.hpp"
+
 #include <memory>
 
 #ifdef TOAST_EDITOR

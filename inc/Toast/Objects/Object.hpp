@@ -6,9 +6,9 @@
 #pragma once
 
 #include "../RTTIMacros.h"
-#include "Toast/Log.hpp"
 #include "Toast/Factory.hpp"
 #include "Toast/ISerializable.hpp"
+#include "Toast/Log.hpp"
 
 #include <ranges>
 #include <string_view>

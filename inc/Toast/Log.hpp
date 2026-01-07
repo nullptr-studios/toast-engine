@@ -1,6 +1,7 @@
 #pragma once
 
-#include <Toast/Profiler.hpp>
+#include "Toast/Profiler.hpp"
+
 #include <cassert>
 #include <format>
 #include <memory>

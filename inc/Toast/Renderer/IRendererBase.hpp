@@ -6,12 +6,12 @@
 #pragma once
 
 #include "Camera.hpp"
+#include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/Renderer/Framebuffer.hpp"
+#include "Toast/Renderer/IRenderable.hpp"
+#include "Toast/Renderer/Lights/2DLight.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
 
-#include <Toast/Event/ListenerComponent.hpp>
-#include <Toast/Renderer/Framebuffer.hpp>
-#include <Toast/Renderer/IRenderable.hpp>
-#include <Toast/Renderer/Lights/2DLight.hpp>
 #include <array>
 #include <glm/glm.hpp>
 #include <vector>

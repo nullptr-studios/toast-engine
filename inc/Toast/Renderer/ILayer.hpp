@@ -4,7 +4,7 @@
 /// @brief Base class for layers
 
 #pragma once
-#include <Toast/Event/Event.hpp>
+#include "Toast/Event/Event.hpp"
 
 namespace renderer {
 

@@ -1,7 +1,8 @@
-#include <Toast/Log.hpp>
-#include <Toast/Profiler.hpp>
-#include <Toast/Window/Window.hpp>
-#include <Toast/Window/WindowEvents.hpp>
+#include "Toast/Window/Window.hpp"
+
+#include "Toast/Log.hpp"
+#include "Toast/Profiler.hpp"
+#include "Toast/Window/WindowEvents.hpp"
 
 // clang-format off
 #include <glad/glad.h>

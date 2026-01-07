@@ -10,9 +10,9 @@
 #endif
 
 #include "Toast/Renderer/Material.hpp"
+#include "Toast/Resources/ResourceSlot.hpp"
 #include "Toast/Resources/Spine/SpineAtlas.hpp"
 
-#include <Toast/Resources/ResourceSlot.hpp>
 #include <algorithm>
 #include <cctype>
 #include <functional>

@@ -3,11 +3,11 @@
 ///@date 17/09/25
 
 #pragma once
-#include "Toast/Renderer/Shader.hpp"
 #include "ResourceSlot.hpp"
 #include "Texture.hpp"
+#include "Toast/Log.hpp"
+#include "Toast/Renderer/Shader.hpp"
 
-#include <Toast/Log.hpp>
 #include <optional>
 #include <string>
 #include <thread>

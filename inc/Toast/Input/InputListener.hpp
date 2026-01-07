@@ -5,8 +5,8 @@
 #pragma once
 
 #include "Action.hpp"
+#include "Toast/Log.hpp"
 
-#include <Toast/Log.hpp>
 #include <functional>
 #include <string>
 #include <unordered_map>

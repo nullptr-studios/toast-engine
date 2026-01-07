@@ -9,9 +9,8 @@
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #endif
+#include "Toast/Components/MeshRendererComponent.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
-
-#include <Toast/Components/MeshRendererComponent.hpp>
 
 namespace toast {
 

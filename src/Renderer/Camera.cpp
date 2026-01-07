@@ -2,11 +2,11 @@
 // Created by dario on 17/09/2025.
 //
 
+#include "Toast/Renderer/Camera.hpp"
+
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "glm/ext/matrix_transform.hpp"
-
-#include <Toast/Renderer/Camera.hpp>
 
 void toast::Camera::Init() {
 	Actor::Init();

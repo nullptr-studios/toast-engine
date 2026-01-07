@@ -5,8 +5,8 @@
 
 #pragma once
 #include "Bind.hpp"
-#include "Toast/Log.hpp"
 #include "KeyCodes.hpp"
+#include "Toast/Log.hpp"
 
 #include <glm/glm.hpp>
 #include <numeric>

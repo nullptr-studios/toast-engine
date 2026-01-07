@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Toast/Event/ListenerComponent.hpp"
+
 #include <glm/glm.hpp>
 
 namespace physics {
@@ -44,11 +45,11 @@ private:
 	void RigidbodyPhysics(Rigidbody* rb);
 
 	struct M {
-		std::chrono::duration<double> targetFrametime {1.0/50.0};
+		std::chrono::duration<double> targetFrametime { 1.0 / 50.0 };
 		unsigned char tickCount = 1;
 		std::list<Rigidbody*> rigidbodies;
 		std::list<ConvexCollider*> colliders;
-		glm::dvec2 gravity = {0.0, -9.81};
+		glm::dvec2 gravity = { 0.0, -9.81 };
 		double positionCorrectionSlop = 1.0e-3;
 		double positionCorrectionPtc = 0.4;
 		double eps = 1.0e-6;

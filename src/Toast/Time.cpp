@@ -1,5 +1,7 @@
-#include <Toast/Log.hpp>
-#include <Toast/Time.hpp>
+#include "Toast/Time.hpp"
+
+#include "Toast/Log.hpp"
+
 #include <chrono>
 
 Time* Time::m_instance = nullptr;

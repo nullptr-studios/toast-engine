@@ -3,8 +3,8 @@
 /// @date 21 Dec 2025
 
 #pragma once
-#include <Toast/Entrypoint.hpp>
 #include <Toast/Engine.hpp>
+#include <Toast/Entrypoint.hpp>
 
 class Test final : public toast::Engine {
 	void Begin() override;

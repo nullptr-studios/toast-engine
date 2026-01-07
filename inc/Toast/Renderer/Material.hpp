@@ -3,8 +3,8 @@
 /// @date 05/11/2025.
 
 #pragma once
-#include "Toast/Resources/Texture.hpp"
 #include "Shader.hpp"
+#include "Toast/Resources/Texture.hpp"
 
 #include <any>
 #include <memory>

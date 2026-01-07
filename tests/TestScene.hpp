@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Toast/Objects/Scene.hpp"
 #include "TestActor.hpp"
+
+#include <Toast/Objects/Scene.hpp>
 
 class TestScene : public toast::Scene {
 public:

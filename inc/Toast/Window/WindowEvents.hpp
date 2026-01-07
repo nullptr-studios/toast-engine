@@ -4,7 +4,7 @@
 /// @brief Stores all the different events a function has
 
 #pragma once
-#include <Toast/Event/Event.hpp>
+#include "Toast/Event/Event.hpp"
 
 struct GLFWwindow;
 

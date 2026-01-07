@@ -1,5 +1,6 @@
-#include <Toast/Log.hpp>
-#include <Toast/ThreadPool.hpp>
+#include "Toast/ThreadPool.hpp"
+
+#include "Toast/Log.hpp"
 
 namespace toast {
 
