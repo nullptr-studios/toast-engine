@@ -1,5 +1,5 @@
-#include <Engine/Core/Log.hpp>
-#include <Engine/Toast/Factory.hpp>
+#include <Toast/Log.hpp>
+#include <Toast/Factory.hpp>
 
 namespace toast {
 Factory* Factory::m_instance = nullptr;

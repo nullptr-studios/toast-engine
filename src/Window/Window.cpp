@@ -1,7 +1,7 @@
-#include <Engine/Core/Log.hpp>
-#include <Engine/Core/Profiler.hpp>
-#include <Engine/Window/Window.hpp>
-#include <Engine/Window/WindowEvents.hpp>
+#include <Toast/Log.hpp>
+#include <Toast/Profiler.hpp>
+#include <Toast/Window/Window.hpp>
+#include <Toast/Window/WindowEvents.hpp>
 
 // clang-format off
 #include <glad/glad.h>

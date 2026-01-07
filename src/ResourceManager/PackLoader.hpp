@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Engine/Core/Log.hpp"
+#include "Toast/Log.hpp"
 
-#include <Engine/Core/Profiler.hpp>
+#include <Toast/Profiler.hpp>
 #include <algorithm>
 #include <cstring>
 #include <filesystem>

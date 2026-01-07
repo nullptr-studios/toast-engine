@@ -1,6 +1,6 @@
-#include "../../inc/Engine/Toast/StateMachine.hpp"
+#include "../../inc/Toast/StateMachine.hpp"
 
-#include "../../inc/Engine/Core/Time.hpp"
+#include "../../inc/Toast/Time.hpp"
 
 namespace toast {
 

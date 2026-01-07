@@ -3,7 +3,7 @@
 /// @date 25/10/2025.
 
 #pragma once
-#include "Engine/Core/Log.hpp"
+#include "Toast/Log.hpp"
 #include "spine/SkeletonRenderer.h"
 
 /// just expose it as a singelton

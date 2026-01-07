@@ -2,8 +2,8 @@
 // Created by dario on 15/09/2025.
 //
 
-#include <Engine/Core/Profiler.hpp>
-#include <Engine/Renderer/LayerStack.hpp>
+#include <Toast/Profiler.hpp>
+#include <Toast/Renderer/LayerStack.hpp>
 
 namespace renderer {
 

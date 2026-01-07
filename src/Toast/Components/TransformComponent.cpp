@@ -1,6 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
-#include "Engine/Toast/Objects/Actor.hpp"
+#include "Toast/Objects/Actor.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/gtx/quaternion.hpp"
 
@@ -8,10 +8,10 @@
 #include "imgui.h"
 #endif
 
-#include "Engine/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
 
-#include <Engine/Core/GlmJson.hpp>
-#include <Engine/Toast/Components/TransformComponent.hpp>
+#include <Toast/GlmJson.hpp>
+#include <Toast/Components/TransformComponent.hpp>
 
 using namespace glm;
 

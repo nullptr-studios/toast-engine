@@ -4,9 +4,9 @@
 
 #include "PackLoader.hpp"
 
-#include <Engine/Core/Log.hpp>
-#include <Engine/Core/Profiler.hpp>
-#include <Engine/Resources/ResourceManager.hpp>
+#include <Toast/Log.hpp>
+#include <Toast/Profiler.hpp>
+#include <Toast/Resources/ResourceManager.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>

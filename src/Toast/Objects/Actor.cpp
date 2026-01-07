@@ -1,15 +1,15 @@
-#include "Engine/Toast/Objects/Object.hpp"
+#include "Toast/Objects/Object.hpp"
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
 #endif
 
-#include "Engine/Renderer/DebugDrawLayer.hpp"
+#include "Toast/Renderer/DebugDrawLayer.hpp"
 
-#include <Engine/Core/GlmJson.hpp>
-#include <Engine/Event/ListenerComponent.hpp>
-#include <Engine/Toast/Components/TransformComponent.hpp>
-#include <Engine/Toast/Objects/Actor.hpp>
+#include <Toast/GlmJson.hpp>
+#include <Toast/Event/ListenerComponent.hpp>
+#include <Toast/Components/TransformComponent.hpp>
+#include <Toast/Objects/Actor.hpp>
 
 namespace toast {
 

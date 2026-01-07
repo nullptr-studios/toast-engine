@@ -2,13 +2,13 @@
 /// @author dario
 /// @date 22/11/2025.
 
-#include "Engine/Renderer/IRendererBase.hpp"
-#include "Engine/Resources/ResourceManager.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
 #ifdef TOAST_EDITOR
 #include "imgui.h"
 #endif
 
-#include <Engine/Renderer/Lights/2DLight.hpp>
+#include <Toast/Renderer/Lights/2DLight.hpp>
 
 void Light2D::Init() {
 	// Load quad mesh for light rendering

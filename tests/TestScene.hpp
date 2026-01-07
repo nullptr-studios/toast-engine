@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/Toast/Objects/Scene.hpp"
+#include "Toast/Objects/Scene.hpp"
 #include "TestActor.hpp"
 
 class TestScene : public toast::Scene {

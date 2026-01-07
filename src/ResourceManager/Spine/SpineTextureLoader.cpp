@@ -4,8 +4,8 @@
 
 #include "SpineTextureLoader.hpp"
 
-#include "Engine/Resources/ResourceManager.hpp"
-#include "Engine/Resources/Texture.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Resources/Texture.hpp"
 #include "spine/Atlas.h"
 #include "spine/SpineString.h"
 

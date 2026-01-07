@@ -7,7 +7,7 @@
 
 #include "CrashHandler.hpp"
 
-#include <Engine/Toast/Engine.hpp>
+#include <Toast/Engine.hpp>
 
 // Export variables to enable high performance graphics on laptops with dual GPUs
 extern "C" {

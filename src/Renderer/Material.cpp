@@ -2,10 +2,10 @@
 /// @author dario
 /// @date 05/11/2025.
 
-#include "Engine/Resources/ResourceManager.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
 
-#include <Engine/Core/GlmJson.hpp>
-#include <Engine/Renderer/Material.hpp>
+#include <Toast/GlmJson.hpp>
+#include <Toast/Renderer/Material.hpp>
 #include <algorithm>
 #include <any>
 #include <typeinfo>
