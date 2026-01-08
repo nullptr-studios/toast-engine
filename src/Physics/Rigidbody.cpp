@@ -1,10 +1,10 @@
-#include "Engine/Physics/Rigidbody.hpp"
+#include "Toast/Physics/Rigidbody.hpp"
 
 #include "PhysicsSystem.hpp"
+#include "Toast/GlmJson.hpp"
+#include "Toast/Objects/Actor.hpp"
+#include "Toast/Renderer/DebugDrawLayer.hpp"
 
-#include <Engine/Core/GlmJson.hpp>
-#include <Engine/Renderer/DebugDrawLayer.hpp>
-#include <Engine/Toast/Objects/Actor.hpp>
 #include <imgui.h>
 
 using namespace physics;
@@ -39,7 +39,6 @@ void Rigidbody::Inspector() {
 	ImGui::Checkbox("Draw manifolds", &debug.showManifolds);
 	ImGui::ColorEdit4("Default color", &debug.defaultColor.r);
 	ImGui::ColorEdit4("Colliding color", &debug.collidingColor.r);
-
 
 	ImGui::Spacing();
 

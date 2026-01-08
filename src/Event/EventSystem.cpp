@@ -1,8 +1,8 @@
 #include "EventSystem.hpp"
 
-#include <Engine/Core/Log.hpp>
-#include <Engine/Core/Profiler.hpp>
-#include <Engine/Event/Event.hpp>
+#include "Toast/Event/Event.hpp"
+#include "Toast/Log.hpp"
+#include "Toast/Profiler.hpp"
 
 namespace event {
 

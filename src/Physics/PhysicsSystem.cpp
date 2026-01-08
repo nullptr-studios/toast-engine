@@ -1,12 +1,13 @@
 #include "PhysicsSystem.hpp"
 
 #include "RigidbodyDynamics.hpp"
+#include "Toast/Log.hpp"
+#include "Toast/Physics/PhysicsEvents.hpp"
+#include "Toast/Physics/Rigidbody.hpp"
+#include "Toast/Profiler.hpp"
+#include "Toast/Time.hpp"
+#include "Toast/World.hpp"
 
-#include <Engine/Core/Log.hpp>
-#include <Engine/Core/Profiler.hpp>
-#include <Engine/Core/Time.hpp>
-#include <Engine/Physics/PhysicsEvents.hpp>
-#include <Engine/Toast/World.hpp>
 #include <chrono>
 
 using namespace physics;
@@ -211,7 +212,8 @@ double PhysicsSystem::eps_small() {
 
 void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 	PROFILE_ZONE;
-	PROFILE_TEXT(rb->parent()->name(), rb->parent()->name().size());
+	const auto& name = rb->parent()->name();
+	PROFILE_TEXT(name.c_str(), name.size());
 
 	RbKinematics(rb);
 

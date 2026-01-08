@@ -2,11 +2,11 @@
 /// @author dario
 /// @date 18/09/2025.
 
-#include "PackLoader.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
 
-#include <Engine/Core/Log.hpp>
-#include <Engine/Core/Profiler.hpp>
-#include <Engine/Resources/ResourceManager.hpp>
+#include "PackLoader.hpp"
+#include "Toast/Log.hpp"
+#include "Toast/Profiler.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>

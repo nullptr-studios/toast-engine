@@ -2,17 +2,17 @@
 /// @author dario
 /// @date 27/10/2025.
 
-#include "Engine/Core/Log.hpp"
-#include "Engine/Resources/Mesh.hpp"
-#include "Engine/Resources/ResourceManager.hpp"
+#include "Toast/Log.hpp"
+#include "Toast/Resources/Mesh.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
 #ifdef TOAST_EDITOR
 #include "imgui.h"
 #endif
 
-#include "Engine/Renderer/Material.hpp"
-#include "Engine/Resources/Spine/SpineAtlas.hpp"
+#include "Toast/Renderer/Material.hpp"
+#include "Toast/Resources/ResourceSlot.hpp"
+#include "Toast/Resources/Spine/SpineAtlas.hpp"
 
-#include <Engine/Resources/ResourceSlot.hpp>
 #include <algorithm>
 #include <cctype>
 #include <functional>

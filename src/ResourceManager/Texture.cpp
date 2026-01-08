@@ -2,10 +2,12 @@
 /// @author dario
 /// @date 20/09/2025.
 
-#include <Engine/Core/Log.hpp>
-#include <Engine/Core/Profiler.hpp>
-#include <Engine/Resources/ResourceManager.hpp>
-#include <Engine/Resources/Texture.hpp>
+#include "Toast/Resources/Texture.hpp"
+
+#include "Toast/Log.hpp"
+#include "Toast/Profiler.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
+
 #include <glad/glad.h>
 #include <stb/stb_image.h>
 
