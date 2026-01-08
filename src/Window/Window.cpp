@@ -1,7 +1,8 @@
-#include <Engine/Core/Log.hpp>
-#include <Engine/Core/Profiler.hpp>
-#include <Engine/Window/Window.hpp>
-#include <Engine/Window/WindowEvents.hpp>
+#include "Toast/Window/Window.hpp"
+
+#include "Toast/Log.hpp"
+#include "Toast/Profiler.hpp"
+#include "Toast/Window/WindowEvents.hpp"
 
 // clang-format off
 #include <glad/glad.h>
@@ -34,7 +35,7 @@ Window::Window(unsigned width, unsigned height, const std::string& name) {
 	m_glfwWindow = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
 
 	glfwMakeContextCurrent(m_glfwWindow);
-	glfwSwapInterval(0);
+	glfwSwapInterval(1);    // do v-sync
 
 	// Bind the close event to actually close the window
 	m_listener.Subscribe<event::WindowClose>([&](event::WindowClose* e) -> bool {

@@ -6,9 +6,9 @@
 #include "imgui.h"
 #endif
 
-#include <Engine/Core/GlmJson.hpp>
-#include <Engine/Renderer/IRendererBase.hpp>
-#include <Engine/Renderer/Lights/GlobalLight.hpp>
+#include "Toast/GlmJson.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/Lights/GlobalLight.hpp"
 
 void GlobalLight::Init() {
 	Object::Init();

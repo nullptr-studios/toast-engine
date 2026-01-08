@@ -2,14 +2,15 @@
 /// @author dario
 /// @date 07/10/2025.
 
-#include "Engine/Renderer/OclussionVolume.hpp"
+#include "Toast/Renderer/OclussionVolume.hpp"
 #ifdef TOAST_EDITOR
 #include "imgui.h"
 #endif
 
-#include <Engine/Renderer/DebugDrawLayer.hpp>
-#include <Engine/Renderer/IRendererBase.hpp>
-#include <Engine/Resources/ResourceManager.hpp>
+#include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
+
 #include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
 

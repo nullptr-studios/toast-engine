@@ -1,11 +1,11 @@
 #include "InputSystem.hpp"
 
-#include "Engine/Input/KeyCodes.hpp"
+#include "Toast/Input/KeyCodes.hpp"
+#include "Toast/Log.hpp"
+#include "Toast/ProjectSettings.hpp"
+#include "Toast/Window/Window.hpp"
+#include "Toast/Window/WindowEvents.hpp"
 
-#include <Engine/Core/Log.hpp>
-#include <Engine/Toast/ProjectSettings.hpp>
-#include <Engine/Window/Window.hpp>
-#include <Engine/Window/WindowEvents.hpp>
 #include <ranges>
 
 namespace input {

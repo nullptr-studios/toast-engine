@@ -2,16 +2,15 @@
 /// @author dario
 /// @date 28/09/2025.
 
-#include "Engine/Renderer/IRendererBase.hpp"
-#include "Engine/Resources/ResourceManager.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #endif
-#include "Engine/Renderer/OclussionVolume.hpp"
-
-#include <Engine/Toast/Components/MeshRendererComponent.hpp>
+#include "Toast/Components/MeshRendererComponent.hpp"
+#include "Toast/Renderer/OclussionVolume.hpp"
 
 namespace toast {
 

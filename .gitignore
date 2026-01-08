@@ -10,10 +10,12 @@
 .vscode/
 .xmake/
 
+# External dependencies
+external/
+
 # Files to ignore
 */[Ll]og
 *.log
 imgui.ini
 compile_commands.json
 CMakeSettings.json # Generated VS file when you open the solution
-CMakeLists.txt     # Generated via xmake

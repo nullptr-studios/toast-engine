@@ -1,7 +1,7 @@
-#include "GLFW/glfw3.h"
+#include "Toast/Window/WindowEvents.hpp"
 
-#include <Engine/Event/EventSystem.hpp>
-#include <Engine/Window/WindowEvents.hpp>
+#include "GLFW/glfw3.h"
+#include "Toast/Event/ListenerComponent.hpp"
 
 namespace event {
 

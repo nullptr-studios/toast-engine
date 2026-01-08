@@ -2,17 +2,17 @@
 /// @author dario
 /// @date 27/10/2025.
 
-#include "Engine/Core/Log.hpp"
-#include "Engine/Resources/Mesh.hpp"
-#include "Engine/Resources/ResourceManager.hpp"
+#include "Toast/Log.hpp"
+#include "Toast/Resources/Mesh.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
 #ifdef TOAST_EDITOR
 #include "imgui.h"
 #endif
 
-#include "Engine/Renderer/Material.hpp"
-#include "Engine/Resources/Spine/SpineAtlas.hpp"
+#include "Toast/Renderer/Material.hpp"
+#include "Toast/Resources/ResourceSlot.hpp"
+#include "Toast/Resources/Spine/SpineAtlas.hpp"
 
-#include <Engine/Resources/ResourceSlot.hpp>
 #include <algorithm>
 #include <cctype>
 #include <functional>
@@ -196,7 +196,7 @@ void editor::ResourceSlot::RenderThumbnailArea() {
 	// Center the image
 	void* texture_id = m_selectedEntry.icon ? reinterpret_cast<void*>(static_cast<intptr_t>(m_selectedEntry.icon->id())) : nullptr;
 
-	ImGui::ImageButton("##thumb_img", texture_id, thumbnail_size, ImVec2(0, 1), ImVec2(1, 0));
+	ImGui::ImageButton("##thumb_img", reinterpret_cast<ImTextureID>(texture_id), thumbnail_size, ImVec2(0, 1), ImVec2(1, 0));
 
 	// Now the image button is the drop target
 	if (ImGui::BeginDragDropTarget()) {
