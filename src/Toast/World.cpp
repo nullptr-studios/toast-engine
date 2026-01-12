@@ -244,7 +244,9 @@ void World::LoadSceneSync(std::string_view path) {
 		const std::string p_str { path };
 		scene->Load(p_str);
 		scene->_Init();
-		scene->enabled(false);
+
+		// Load Sync should enable the scene by default
+		scene->enabled(true);
 
 		// Schedule the Begin
 		ScheduleBegin(scene);
