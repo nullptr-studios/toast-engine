@@ -3,16 +3,15 @@
 /// @date 23/10/2025.
 
 #pragma once
+#include "Toast/Resources/Spine/SpineEventHandler.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
+#include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/Mesh.hpp"
 #include "Toast/Resources/ResourceSlot.hpp"
-#include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/Spine/SpineSkeletonData.hpp"
 #include "spine/AnimationState.h"
 #include "spine/AnimationStateData.h"
 #include "spine/Skeleton.h"
-
-#include "ResourceManager/Spine/SpineEventHandler.hpp"
 
 class SpineRendererComponent : public IRenderable {
 public:

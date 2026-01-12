@@ -2,7 +2,7 @@
 /// @author dario
 /// @date 12/01/2026.
 
-#include "SpineEventHandler.hpp"
+#include "Toast/Resources/Spine/SpineEventHandler.hpp"
 
 #include "Toast/Components/SpineRendererComponent.hpp"
 #include "spine/Animation.h"
