@@ -1,6 +1,6 @@
-#include "Engine/Resources/ResourceManager.hpp"
+#include "Toast/Objects/Scene.hpp"
 
-#include <Engine/Toast/Objects/Scene.hpp>
+#include "Toast/Resources/ResourceManager.hpp"
 
 namespace toast {
 

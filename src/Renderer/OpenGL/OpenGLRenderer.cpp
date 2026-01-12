@@ -2,19 +2,19 @@
 // Created by dario on 14/09/2025.
 //
 
-#include "Engine/Renderer/LayerStack.hpp"
-#include "Engine/Resources/ResourceManager.hpp"
+#include "Toast/Renderer/OpenGL/OpenGLRenderer.hpp"
 
-#include <Engine/Core/GlmJson.hpp>
-#include <Engine/Core/Log.hpp>
-#include <Engine/Core/Profiler.hpp>
-#include <Engine/Core/Time.hpp>
-#include <Engine/Renderer/OpenGL/OpenGLRenderer.hpp>
-#include <Engine/Renderer/Shader.hpp>
-#include <Engine/Resources/Mesh.hpp>
-#include <Engine/Resources/ResourceManager.hpp>
-#include <Engine/Window/Window.hpp>
-#include <Engine/Window/WindowEvents.hpp>
+#include "Toast/GlmJson.hpp"
+#include "Toast/Log.hpp"
+#include "Toast/Profiler.hpp"
+#include "Toast/Renderer/LayerStack.hpp"
+#include "Toast/Renderer/Shader.hpp"
+#include "Toast/Resources/Mesh.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Time.hpp"
+#include "Toast/Window/Window.hpp"
+#include "Toast/Window/WindowEvents.hpp"
+
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 #include <glm/ext/matrix_transform.hpp>
@@ -29,7 +29,8 @@
 // clang-format on
 #endif
 
-#include <Engine/Renderer/OclussionVolume.hpp>
+#include "Toast/Renderer/OclussionVolume.hpp"
+
 #include <stb/stb_image.h>
 
 #ifdef TRACY_ENABLE

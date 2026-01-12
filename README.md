@@ -16,16 +16,13 @@ Technology.
 **Requirements**
 
 **Windows**
-- Visual Studio 2022 or higher
+- Visual Studio 17 2022 or Visual Studio 18 2026
 - CMake 3.15 or higher
-- Xmake
 
 **Linux**
 - GCC or Clang
 - CMake 3.15 or higher
-- Xmake
 
 **Instructions**
-1. `xmake f -m debug` to enter debug mode instead of release
-2. `xmake run` to run the editor
-    If you want to run the test app just do `xmake run toast.test`
+1. `cmake -B build -S . -G "Visual Studio 18 2026"`
+2. `cmake --build build --config Debug --parallel 8`
