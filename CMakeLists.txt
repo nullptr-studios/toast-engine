@@ -233,6 +233,7 @@ FetchContent_Declare(
 )
 
 # Make all content available
+message("Fetching external dependencies... please wait...")
 FetchContent_MakeAvailable(glfw glm nlohmann_json spdlog lz4 tracy yaml-cpp tinyobjloader)
 
 # Handle STB
@@ -362,3 +363,10 @@ add_custom_command(TARGET toast.test POST_BUILD
     $<TARGET_FILE_DIR:toast.test>/assets
     COMMENT "Copying assets to build directory"
 )
+
+
+message("Compiling Toast Packer and Unpacker tools...")
+add_executable(toast.packer tools/ToastPacker/Packer.cpp)
+target_link_libraries(toast.packer lz4)
+add_executable(toast.unpacker tools/ToastPacker/Unpacker.cpp)
+target_link_libraries(toast.unpacker lz4)

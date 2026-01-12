@@ -6,10 +6,13 @@
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Resources/Mesh.hpp"
 #include "Toast/Resources/ResourceSlot.hpp"
+#include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/Spine/SpineSkeletonData.hpp"
 #include "spine/AnimationState.h"
 #include "spine/AnimationStateData.h"
 #include "spine/Skeleton.h"
+
+#include "ResourceManager/Spine/SpineEventHandler.hpp"
 
 class SpineRendererComponent : public IRenderable {
 public:
@@ -45,8 +48,23 @@ public:
 
 	glm::vec2 GetBoneLocalPosition(const std::string_view& boneName) const;
 	void SetBoneLocalPosition(const std::string_view& boneName, const glm::vec2& position) const;
+	
+	
+	// Events
+	virtual void OnAnimationStart(const std::string_view& animationName, int track) {}
+	virtual void OnAnimationCompleted(const std::string_view& animationName, int track) {}
+	virtual void OnAnimationEnd(const std::string_view& animationName, int track) {}
+	virtual void OnAnimationInterrupted(const std::string_view& animationName, int track) {}
+	virtual void OnAnimationDispose(const std::string_view& animationName, int track) {}
+	virtual void OnAnimationEvent(const std::string_view& animationName, int track, const std::string_view& eventName) {}
+	
 
 private:
+	
+	void HandleSpineEvents(spine::AnimationState* state, spine::EventType type, spine::TrackEntry* entry, spine::Event* event);
+	
+	std::unique_ptr<SpineEventHandler> m_eventHandler;
+	
 	editor::ResourceSlot m_atlasResource { resource::ResourceType::SPINE_ATLAS };
 	editor::ResourceSlot m_skeletonDataResource { resource::ResourceType::SPINE_SKELETON_DATA };
 
