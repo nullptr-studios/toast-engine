@@ -20,14 +20,15 @@ struct Vertex {
 	glm::vec3 position;
 	glm::vec3 normal;
 	glm::vec2 texCoord;
-	glm::vec4 tangent;    // xyz = tangent, w = handedness
+	glm::vec4 tangent; // xyz = tangent, w = handedness
 };
 
 struct SpineVertex {
 	glm::vec3 position;
 	glm::vec2 texCoord;
-	uint32_t colorABGR;
+	uint32_t  colorABGR;
 };
+
 
 ///@class Mesh
 ///@brief Mesh resource class
@@ -66,27 +67,24 @@ public:
 	}
 
 	void InitDynamicSpine();
-	void UpdateDynamicSpine(const SpineVertex* vertices, size_t num_vertices, const uint16_t* indices, size_t num_indices) const;
+	void UpdateDynamicSpine(const SpineVertex* vertices, size_t num_vertices,
+					const uint16_t* indices, size_t num_indices) const;
 	void DrawDynamicSpine(size_t num_indices) const;
 
-	void setHasVertexColor(bool v) {
-		m_hasVertexColor = v;
-	}
-
+	void setHasVertexColor(bool v) { m_hasVertexColor = v; }
 	[[nodiscard]]
-	bool hasVertexColor() const {
-		return m_hasVertexColor;
-	}
+	bool hasVertexColor() const { return m_hasVertexColor; }
 
 	// Return mesh centroid in object/model space (computed at load time)
 	[[nodiscard]]
-	const glm::vec3& centroid() const {
-		return m_centroid;
-	}
+	const glm::vec3& centroid() const { return m_centroid; }
 
 private:
-	void ComputeTangents(std::vector<Vertex>& verts);
+	
+	void LoadErrMeshPlaceholder();
 
+	void ComputeTangents(std::vector<Vertex>& verts);
+	
 	std::vector<Vertex> m_vertices;
 
 	// GPU handles

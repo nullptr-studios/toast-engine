@@ -2,12 +2,10 @@
 /// @author dario
 /// @date 20/09/2025.
 
-#include "Toast/Resources/Texture.hpp"
-
-#include "Toast/Log.hpp"
-#include "Toast/Profiler.hpp"
-#include "Toast/Resources/ResourceManager.hpp"
-
+#include <Toast/Log.hpp>
+#include <Toast/Profiler.hpp>
+#include <Toast/Resources/ResourceManager.hpp>
+#include <Toast/Resources/Texture.hpp>
 #include <glad/glad.h>
 #include <stb/stb_image.h>
 
@@ -88,10 +86,64 @@ void Texture::Load() {
 
 // Load OpenGl on the main thread
 void Texture::LoadMainThread() {
-	CreateOpenGLTexture();
+	if (GetResourceState() != resource::ResourceState::FAILED)
+		CreateOpenGLTexture();
+	else
+		LoadPlaceholderTexture(); // Load a placeholder texture if loading failed
 }
 
-void Texture::CreateOpenGLTexture(unsigned int slot) {
+void Texture::LoadPlaceholderTexture()
+{
+	// generate a raw array of pixeles and upload directly to opengl
+	// generate a checkerdoabr purple and black pattern 32x32
+	constexpr int size = 32;
+	constexpr int channels = 4;
+	unsigned char pixels[size * size * channels];
+	for (int y = 0; y < size; ++y)
+	{
+		for (int x = 0; x < size; ++x)
+		{
+			int index = (y * size + x) * channels;
+			if (((x / 4) + (y / 4)) % 2 == 0) {
+				// purple
+				pixels[index + 0] = 255; // R
+				pixels[index + 1] = 0;   // G
+				pixels[index + 2] = 255; // B
+				pixels[index + 3] = 255; // A
+			} else
+			{
+				// black
+				pixels[index + 0] = 0;   // R
+				pixels[index + 1] = 0;   // G
+				pixels[index + 2] = 0;   // B
+				pixels[index + 3] = 255; // A
+			}
+		}
+	}
+	m_width = size;
+	m_height = size;
+	m_channels = channels;
+	
+	// Create OpenGL texture
+	glActiveTexture(GL_TEXTURE0);
+	glGenTextures(1, const_cast<GLuint*>(&m_textureId));
+	glBindTexture(GL_TEXTURE_2D, m_textureId);
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<void*>(pixels));
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	
+	// No CPU pixel data to free since we generated it here
+}
+
+void Texture::CreateOpenGLTexture() {
 	PROFILE_ZONE;
 	if (m_textureId) {
 		TOAST_ERROR("Tried to generate a texture but it was already generated!?!?!?");
@@ -102,7 +154,9 @@ void Texture::CreateOpenGLTexture(unsigned int slot) {
 
 	if (m_pixels == nullptr) {
 		SetResourceState(resource::ResourceState::FAILED);
-		throw ToastException("Trying to create OpenGL texture but no pixel data is available!?!");
+		TOAST_ERROR("Trying to create OpenGL texture but no pixel data is available!?!");
+		LoadPlaceholderTexture();
+		return;
 	}
 
 	// Determine appropriate GL formats
@@ -130,11 +184,12 @@ void Texture::CreateOpenGLTexture(unsigned int slot) {
 			SetResourceState(resource::ResourceState::FAILED);
 			stbi_image_free(m_pixels);
 			m_pixels = nullptr;
+			LoadPlaceholderTexture();
 			return;
 		}
 	}
 
-	glActiveTexture(GL_TEXTURE0 + slot);
+	glActiveTexture(GL_TEXTURE0);
 	glGenTextures(1, const_cast<GLuint*>(&m_textureId));
 	glBindTexture(GL_TEXTURE_2D, m_textureId);
 
