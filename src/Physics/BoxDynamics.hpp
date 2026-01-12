@@ -21,4 +21,6 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxManifold>;
 void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold);
 
+
+
 }

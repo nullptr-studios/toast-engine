@@ -12,6 +12,7 @@ namespace physics {
 class Rigidbody;
 class BoxRigidbody;
 class ConvexCollider;
+class Line;
 
 class PhysicsSystem {
 public:
@@ -30,6 +31,7 @@ public:
 	static void RemoveCollider(ConvexCollider* c);
 	static void AddBox(BoxRigidbody* rb);
 	static void RemoveBox(BoxRigidbody* rb);
+	std::optional<ConvexCollider> RayCollision(Line* ray);
 
 	PhysicsSystem();
 	~PhysicsSystem();

@@ -1,7 +1,10 @@
 #include "ConvexCollider.hpp"
 
+#include "BoxDynamics.hpp"
 #include "Physics/PhysicsSystem.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "glm/gtx/fast_square_root.hpp"
+#include "glm/gtx/quaternion.hpp"
 
 using namespace physics;
 using namespace glm;
@@ -54,4 +57,14 @@ void ConvexCollider::Debug() {
 			renderer::DebugLine(mp, mp + static_cast<glm::vec2>(e.normal), { 0.0f, 0.5f, 1.0f, 1.0f });
 		}
 	}
+}
+
+auto ConvexRayCollision(Line* ray, ConvexCollider* c) -> std::optional<glm::dvec2> {
+	std::optional<dvec2> result = std::nullopt;
+	for (Line& l : c->edges) {
+		auto curDist = LineLineCollision(*ray, l);
+		if (curDist != std::nullopt && (length2(curDist.value() - ray->p1) < length2(result.value() - ray->p1) || result != std::nullopt))
+			result = curDist;
+	}
+	return result;
 }

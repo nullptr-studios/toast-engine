@@ -8,8 +8,8 @@
 namespace physics {
 
 struct Line {
-	glm::vec2 p1;
-	glm::vec2 p2;
+	glm::dvec2 p1;
+	glm::dvec2 p2;
 	glm::dvec2 normal;
 	glm::dvec2 tangent;
 	double length;

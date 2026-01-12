@@ -1,6 +1,7 @@
 #include "PhysicsSystem.hpp"
 
 #include "Physics/BoxDynamics.hpp"
+#include "Toast/Physics/BoxRigidbody.hpp"
 #include "RigidbodyDynamics.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Physics/PhysicsEvents.hpp"
@@ -275,7 +276,7 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 
 void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 	PROFILE_ZONE;
-	PROFILE_TEXT(rb->parent()->name(), rb->parent()->name().size());
+	//PROFILE_TEXT(rb->parent()->name(), rb->parent()->name().size());
 
 	BoxKinematics(rb);
 
@@ -291,4 +292,9 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 	BoxIntegration(rb);
 }
 
+std::optional<ConvexCollider> PhysicsSystem::RayCollision(Line* ray) {
+	for (auto* c : m.colliders) {
+		auto manifold = ConvexRayCollision(ray, c);
+	}
+}
 }
