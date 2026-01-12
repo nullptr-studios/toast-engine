@@ -44,6 +44,9 @@ void RbKinematics(Rigidbody* rb) {
 	if (all(lessThan(abs(velocity), rb->minimumVelocity))) {
 		velocity = { 0.0, 0.0 };
 	}
+
+	// Remove the forces after integrating
+	rb->forces.clear();
 }
 
 void RbIntegration(Rigidbody* rb) {
