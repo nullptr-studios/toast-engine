@@ -5,6 +5,7 @@
 #pragma once
 #include "KeyCodes.hpp"
 
+#include <optional>
 #include <glm/glm.hpp>
 #include <sol/sol.hpp>
 
