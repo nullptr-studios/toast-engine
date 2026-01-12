@@ -9,11 +9,12 @@ if(POLICY CMP0169)
     cmake_policy(SET CMP0169 OLD)
 endif()
 
-project(toast_engine VERSION 1.0.0 LANGUAGES CXX)
+project(toast_engine VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Set default build type to Debug if not specified
 if(NOT CMAKE_BUILD_TYPE)
@@ -196,6 +197,7 @@ if(NOT sol2_POPULATED)
     FetchContent_Populate(sol2)
     add_library(sol2 INTERFACE)
     target_include_directories(sol2 INTERFACE "${sol2_SOURCE_DIR}/include")
+    target_compile_definitions(sol2 INTERFACE SOL_USE_CXX17_IF_AVAILABLE=1 SOL_USING_CXX_OPTIONAL=1)
     target_link_libraries(sol2 INTERFACE lua_static)
 endif()
 
