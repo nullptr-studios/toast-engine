@@ -1,14 +1,16 @@
 #include "PhysicsSystem.hpp"
 
+#include "ConvexCollider.hpp"
 #include "Physics/BoxDynamics.hpp"
-#include "Toast/Physics/BoxRigidbody.hpp"
 #include "RigidbodyDynamics.hpp"
 #include "Toast/Log.hpp"
+#include "Toast/Physics/BoxRigidbody.hpp"
 #include "Toast/Physics/PhysicsEvents.hpp"
 #include "Toast/Physics/Rigidbody.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Time.hpp"
 #include "Toast/World.hpp"
+#include "glm/gtx/quaternion.hpp"
 
 #include <chrono>
 
@@ -293,8 +295,13 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 }
 
 std::optional<ConvexCollider> PhysicsSystem::RayCollision(Line* ray) {
+	std::optional<ConvexCollider> result;
 	for (auto* c : m.colliders) {
-		auto manifold = ConvexRayCollision(ray, c);
+		auto cur_dist = ConvexRayCollision(ray, c);
+		if (cur_dist != std::nullopt && (length2(cur_dist.value() - ray->p1) < length2(result->worldPosition - ray->p1) || result == std::nullopt))
+			result = *c;
 	}
+
+	return result;
 }
 }

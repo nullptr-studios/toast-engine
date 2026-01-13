@@ -59,12 +59,12 @@ void ConvexCollider::Debug() {
 	}
 }
 
-auto ConvexRayCollision(Line* ray, ConvexCollider* c) -> std::optional<glm::dvec2> {
+auto ConvexRayCollision(Line* ray, ConvexCollider* c) -> std::optional<dvec2> {
 	std::optional<dvec2> result = std::nullopt;
 	for (Line& l : c->edges) {
-		auto curDist = LineLineCollision(*ray, l);
-		if (curDist != std::nullopt && (length2(curDist.value() - ray->p1) < length2(result.value() - ray->p1) || result != std::nullopt))
-			result = curDist;
+		auto cur_dist = LineLineCollision(*ray, l);
+		if (cur_dist != std::nullopt && (length2(cur_dist.value() - ray->p1) < length2(result.value() - ray->p1) || result == std::nullopt))
+			result = cur_dist;
 	}
 	return result;
 }
