@@ -1,17 +1,31 @@
-name: Doxygen Documentation Deploy Actition
+name: Doxygen Documentation Deploy Action
 
 on:
   push:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+
     steps:
-      - uses: DenverCoder1/doxygen-github-pages-action@v2.0.0
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Doxygen
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+
+      - name: Generate documentation
+        run: doxygen Doxyfile
+
+      # Deploy only generated files to docs branch
+      - name: Deploy to docs branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.PUSH_TOKEN }}
-          branch: docs
+          publish_branch: docs
+          force_orphan: true
