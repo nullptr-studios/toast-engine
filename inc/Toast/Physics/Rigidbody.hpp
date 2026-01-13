@@ -12,7 +12,7 @@ namespace physics {
 
 class Rigidbody : public toast::Component {
 public:
-	REGISTER_ABSTRACT(Rigidbody);
+	REGISTER_TYPE(Rigidbody);
 
 	void Init() override;
 	void Destroy() override;
@@ -34,7 +34,7 @@ public:
 
 	// simulation
 	glm::vec2 gravityScale { 1.0, 1.0 };          // How much gravity affects the object
-	double linearDrag = 0.5;                      // Atmospheric drag for linear movement
+	glm::vec2 drag = {0.5, 0.5};                  // Anisotropic drag for linear movement
 	double restitution = 0.6;                     // Bounciness
 	double restitutionThreshold = 0.5;            // Minimum speed for restitution to take place
 	glm::dvec2 minimumVelocity { 0.01, 0.01 };    // Object velocity will be set to 0.0 if less than this

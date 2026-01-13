@@ -30,7 +30,7 @@ void Rigidbody::Inspector() {
 	ImGui::DragScalarN("Gravity Scale", ImGuiDataType_Float, &gravityScale.x, 2);
 	ImGui::DragScalar("Restitution", ImGuiDataType_Double, &restitution);
 	ImGui::DragScalar("Restitution Threshold", ImGuiDataType_Double, &restitutionThreshold);
-	ImGui::DragScalar("Linear Drag", ImGuiDataType_Double, &linearDrag);
+	ImGui::DragScalarN("Drag", ImGuiDataType_Double, &drag.x, 2);
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Debug");
@@ -72,7 +72,7 @@ json_t Rigidbody::Save() const {
 	j["mass"] = mass;
 	j["friction"] = friction;
 	j["gravityScale"] = gravityScale;
-	j["linearDrag"] = linearDrag;
+	j["drag"] = drag;
 	j["restitution"] = restitution;
 	j["restitutionThreshold"] = restitutionThreshold;
 
@@ -96,8 +96,8 @@ void Rigidbody::Load(json_t j, bool propagate) {
 	if (j.contains("gravityScale")) {
 		gravityScale = j["gravityScale"];
 	}
-	if (j.contains("linearDrag")) {
-		linearDrag = j["linearDrag"];
+	if (j.contains("drag")) {
+		drag = j["drag"];
 	}
 	if (j.contains("restitution")) {
 		restitution = j["restitution"];
