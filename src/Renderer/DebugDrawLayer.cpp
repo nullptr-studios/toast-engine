@@ -11,7 +11,7 @@
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace renderer {

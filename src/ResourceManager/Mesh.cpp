@@ -12,7 +12,7 @@
 #include <glm/glm.hpp>
 #include <tiny_obj_loader.h>
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 // for error placeholder
 #include "ErrorMdl.hpp"

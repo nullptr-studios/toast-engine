@@ -10,9 +10,6 @@
 .vscode/
 .xmake/
 
-# External dependencies
-external/
-
 # Files to ignore
 */[Ll]og
 *.log

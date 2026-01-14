@@ -6,8 +6,8 @@
 #include <Toast/Profiler.hpp>
 #include <Toast/Resources/ResourceManager.hpp>
 #include <Toast/Resources/Texture.hpp>
-#include <glad/glad.h>
-#include <stb/stb_image.h>
+#include <glad/gl.h>
+#include <stb_image.h>
 
 Texture::~Texture() {
 	if (m_pixels) {
