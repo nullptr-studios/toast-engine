@@ -42,7 +42,6 @@ void Rigidbody::Inspector() {
 	ImGui::ColorEdit4("Colliding color", &debug.collidingColor.r);
 
 	ImGui::Spacing();
-	ImGui::Checkbox("RayCast Test", &debug.rayTest);
 
 	if (ImGui::Button("Reset")) {
 		SetPosition({ 0.0, 0.0 });
@@ -82,7 +81,6 @@ json_t Rigidbody::Save() const {
 	j["debug.show"] = debug.show;
 	j["debug.defaultColor"] = debug.defaultColor;
 	j["debug.collidingColor"] = debug.collidingColor;
-	j["debug.rayTest"] = debug.rayTest;
 	return j;
 }
 
@@ -117,9 +115,6 @@ void Rigidbody::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("debug.collidingColor")) {
 		debug.collidingColor = j["debug.collidingColor"];
-	}
-	if (j.contains("debug.rayTest")) {
-		debug.rayTest = j["debug.rayTest"];
 	}
 
 	Component::Load(j, propagate);
