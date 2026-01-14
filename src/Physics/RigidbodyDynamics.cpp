@@ -150,12 +150,26 @@ void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
 	position1 += correction * inv_mass1;
 	position2 -= correction * inv_mass2;
 
-	// Velocity correction
-	rb1->velocity = velocity1;
-	rb2->velocity = velocity2;
-
 	rb1->SetPosition(position1);
 	rb2->SetPosition(position2);
+
+	// Velocity correction
+	auto velocity_correction = [&](Rigidbody* rb, dvec2 v)-> dvec2 {
+		double normal_velocity = dot(v, normal);
+		if (std::abs(normal_velocity) < rb->minimumVelocity.y) {
+			// Kill tiny normal velocity
+			v -= normal_velocity * normal;
+		}
+
+		if (all(lessThan(abs(v), rb->minimumVelocity))) {
+			v = { 0.0, 0.0 };
+		}
+
+		return v;
+	}
+
+	rb1->velocity = velocity_correction(rb1, velocity1);
+	rb2->velocity = velocity_correction(rb2, velocity2);
 }
 
 auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold> {
@@ -287,15 +301,24 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	// positional correction
 	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
 	position += penetration_correction * manifold.normal;
+	rb->SetPosition(position);
 
 	// velocity correction
-	double residual_normal_speed = glm::dot(velocity, manifold.normal);
-	if (residual_normal_speed < 0.0) {
-		velocity -= residual_normal_speed * manifold.normal;
+	double normal_speed = glm::dot(velocity, manifold.normal);
+	if (normal_speed < 0.0) {
+		velocity -= normal_speed * manifold.normal;
 	}
+
+	// Damp tiny bounce so gravity doesn't cause endless hopping
+	if (std::abs(normal_speed) < rb->minimumVelocity.y) {
+		velocity -= normal_speed * manifold.normal;
+	}
+	if (all(lessThan(abs(velocity), rb->minimumVelocity))) {
+		velocity = { 0.0, 0.0 };
+	}
+
 	rb->velocity = velocity;
 
-	rb->SetPosition(position);
 }
 
 }

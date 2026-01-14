@@ -7,7 +7,7 @@
 
 #include <imgui.h>
 
-using namespace physics;
+namespace physics {
 
 void Rigidbody::Init() {
 	PhysicsSystem::AddRigidbody(this);
@@ -31,6 +31,9 @@ void Rigidbody::Inspector() {
 	ImGui::DragScalar("Restitution", ImGuiDataType_Double, &restitution);
 	ImGui::DragScalar("Restitution Threshold", ImGuiDataType_Double, &restitutionThreshold);
 	ImGui::DragScalarN("Drag", ImGuiDataType_Double, &drag.x, 2);
+
+	ImGui::Spacing();
+	ImGui::DragScalarN("Minimum Velocity", ImGuiDataType_Double, &minimumVelocity.x, 2);
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Debug");
@@ -75,6 +78,7 @@ json_t Rigidbody::Save() const {
 	j["drag"] = drag;
 	j["restitution"] = restitution;
 	j["restitutionThreshold"] = restitutionThreshold;
+	j["minimumVelocity"] = minimumVelocity;
 
 	j["debug.show"] = debug.show;
 	j["debug.defaultColor"] = debug.defaultColor;
@@ -105,6 +109,9 @@ void Rigidbody::Load(json_t j, bool propagate) {
 	if (j.contains("restitutionThreshold")) {
 		restitutionThreshold = j["restitutionThreshold"];
 	}
+	if (j.contains("minumumVelocity")) {
+		minimumVelocity = j["minimumVelocity"];
+	}
 
 	if (j.contains("debug.show")) {
 		debug.show = j["debug.show"];
@@ -131,4 +138,6 @@ void Rigidbody::SetPosition(glm::dvec2 pos) {
 
 void Rigidbody::AddForce(glm::dvec2 force) {
 	forces.emplace_back(force);
+}
+
 }
