@@ -1,13 +1,13 @@
+#define GLM_ENABLE_EXPERIMENTAL
 #include "ConvexCollider.hpp"
-
 #include "BoxDynamics.hpp"
 #include "Physics/PhysicsSystem.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 #include "glm/gtx/fast_square_root.hpp"
 #include "glm/gtx/quaternion.hpp"
 
-using namespace physics;
 using namespace glm;
+namespace physics {
 
 ConvexCollider::ConvexCollider(const point_list& points, const ColliderData& data) {
 	edges.reserve(points.size() - 1);
@@ -67,4 +67,6 @@ auto ConvexRayCollision(Line* ray, ConvexCollider* c) -> std::optional<dvec2> {
 			result = cur_dist;
 	}
 	return result;
+}
+
 }

@@ -6,7 +6,7 @@
  */
 #pragma once
 #include "glm/vec2.hpp"
-#include "src/Physics/ConvexCollider.hpp"
+#include "../src/Physics/ConvexCollider.hpp"
 
 namespace physics {
 class ConvexCollider;

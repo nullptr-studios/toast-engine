@@ -1,5 +1,5 @@
+#define GLM_ENABLE_EXPERIMENTAL
 #include "PhysicsSystem.hpp"
-
 #include "ConvexCollider.hpp"
 #include "Physics/BoxDynamics.hpp"
 #include "RigidbodyDynamics.hpp"
@@ -296,9 +296,13 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 
 std::optional<ConvexCollider> PhysicsSystem::RayCollision(Line* ray) {
 	std::optional<ConvexCollider> result;
-	for (auto* c : m.colliders) {
-		auto cur_dist = ConvexRayCollision(ray, c);
-		if (cur_dist != std::nullopt && (length2(cur_dist.value() - ray->p1) < length2(result->worldPosition - ray->p1) || result == std::nullopt))
+	auto ps = PhysicsSystem::get();
+	if (ps == std::nullopt)
+		return std::nullopt;
+
+	for (auto* c : ps.value()->m.colliders) {
+		std::optional<dvec2> cur_dist = ConvexRayCollision(ray, c);
+		if (cur_dist != std::nullopt && (length2(cur_dist.value() - ray->p1) < length2(dvec2(result->worldPosition) - ray->p1) || result == std::nullopt))
 			result = *c;
 	}
 

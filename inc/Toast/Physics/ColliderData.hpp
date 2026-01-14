@@ -9,7 +9,7 @@ namespace physics {
 
 struct ColliderData {
 	double friction = 0.4;
-	glm::dvec2 worldPosition;
+	glm::vec2 worldPosition;
 
 	bool debugNormals = false;
 };

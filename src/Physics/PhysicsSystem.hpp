@@ -31,7 +31,7 @@ public:
 	static void RemoveCollider(ConvexCollider* c);
 	static void AddBox(BoxRigidbody* rb);
 	static void RemoveBox(BoxRigidbody* rb);
-	std::optional<ConvexCollider> RayCollision(Line* ray);
+	static std::optional<ConvexCollider> RayCollision(Line* ray);
 
 	PhysicsSystem();
 	~PhysicsSystem();
@@ -50,7 +50,7 @@ private:
 	void RigidbodyPhysics(Rigidbody* rb);
 	void BoxPhysics(BoxRigidbody* rb);
 
-	struct M {
+	 struct M {
 		std::chrono::duration<double> targetFrametime { 1.0 / 50.0 };
 		unsigned char tickCount = 1;
 		std::list<Rigidbody*> rigidbodies;
