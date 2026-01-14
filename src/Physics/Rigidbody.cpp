@@ -3,6 +3,7 @@
 #include "PhysicsSystem.hpp"
 #include "Toast/GlmJson.hpp"
 #include "Toast/Objects/Actor.hpp"
+#include "Toast/Physics/Raycast.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
 #include <imgui.h>
@@ -41,6 +42,7 @@ void Rigidbody::Inspector() {
 	ImGui::ColorEdit4("Colliding color", &debug.collidingColor.r);
 
 	ImGui::Spacing();
+	ImGui::Checkbox("RayCast Test", &debug.rayTest);
 
 	if (ImGui::Button("Reset")) {
 		SetPosition({ 0.0, 0.0 });
@@ -63,6 +65,21 @@ void Rigidbody::EditorTick() {
 		return;
 	}
 	renderer::DebugCircle(GetPosition(), radius, debug.defaultColor);
+
+	if (debug.rayTest) {
+		RayCast(GetPosition(), glm::vec2(1.0f,0.0f));
+		RayCast(GetPosition(), glm::vec2(0.5f, 1.73f));
+		RayCast(GetPosition(), glm::vec2(1.73f,0.5f));
+		RayCast(GetPosition(), glm::vec2(0,1));
+		RayCast(GetPosition(), glm::vec2(-1.73f,0.5f));
+		RayCast(GetPosition(), glm::vec2(-0.5,1.73f));
+		RayCast(GetPosition(), glm::vec2(-1.0f,0.0f));
+		RayCast(GetPosition(), glm::vec2(-0.5,-1.73f));
+		RayCast(GetPosition(), glm::vec2(-1.73f,-0.5f));
+		RayCast(GetPosition(), glm::vec2(0.0f,-1.0f));
+		RayCast(GetPosition(), glm::vec2(0.5f,-1.73f));
+		RayCast(GetPosition(), glm::vec2(1.73f,-0.5f));
+	}
 }
 
 json_t Rigidbody::Save() const {
@@ -79,7 +96,7 @@ json_t Rigidbody::Save() const {
 	j["debug.show"] = debug.show;
 	j["debug.defaultColor"] = debug.defaultColor;
 	j["debug.collidingColor"] = debug.collidingColor;
-
+	j["debug.rayTest"] = debug.rayTest;
 	return j;
 }
 
@@ -114,6 +131,9 @@ void Rigidbody::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("debug.collidingColor")) {
 		debug.collidingColor = j["debug.collidingColor"];
+	}
+	if (j.contains("debug.rayTest")) {
+		debug.rayTest = j["debug.rayTest"];
 	}
 
 	Component::Load(j, propagate);

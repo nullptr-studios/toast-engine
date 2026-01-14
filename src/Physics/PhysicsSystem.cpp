@@ -1,5 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "PhysicsSystem.hpp"
+
 #include "ConvexCollider.hpp"
 #include "Physics/BoxDynamics.hpp"
 #include "RigidbodyDynamics.hpp"
@@ -8,6 +9,8 @@
 #include "Toast/Physics/PhysicsEvents.hpp"
 #include "Toast/Physics/Rigidbody.hpp"
 #include "Toast/Profiler.hpp"
+#include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/Renderer/OpenGL/OpenGLRenderer.hpp"
 #include "Toast/Time.hpp"
 #include "Toast/World.hpp"
 #include "glm/gtx/quaternion.hpp"
@@ -305,7 +308,10 @@ std::optional<ConvexCollider> PhysicsSystem::RayCollision(Line* ray) {
 		if (cur_dist != std::nullopt && (length2(cur_dist.value() - ray->p1) < length2(dvec2(result->worldPosition) - ray->p1) || result == std::nullopt))
 			result = *c;
 	}
-
+	if (result != std::nullopt)
+		renderer::DebugLine(ray->p1, result->worldPosition, vec4(0.0f, 0.0f, 1.0f, 1.0f));
+	else
+		renderer::DebugLine(ray->p1, ray->p2, vec4(1.0f, 0.0f, 0.0f, 1.0f));
 	return result;
 }
 }
