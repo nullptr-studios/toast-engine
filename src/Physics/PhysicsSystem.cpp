@@ -305,7 +305,7 @@ std::optional<ConvexCollider> PhysicsSystem::RayCollision(Line* ray) {
 
 	for (auto* c : ps.value()->m.colliders) {
 		std::optional<dvec2> cur_dist = ConvexRayCollision(ray, c);
-		if (cur_dist != std::nullopt && (length2(cur_dist.value() - ray->p1) < length2(dvec2(result->worldPosition) - ray->p1) || result == std::nullopt))
+		if (cur_dist != std::nullopt && (length2(cur_dist.value() - ray->p1) < length2(dvec2(result->worldPosition) - ray->p1)))
 			result = *c;
 	}
 	if (result != std::nullopt)

@@ -66,20 +66,6 @@ void Rigidbody::EditorTick() {
 	}
 	renderer::DebugCircle(GetPosition(), radius, debug.defaultColor);
 
-	if (debug.rayTest) {
-		RayCast(GetPosition(), glm::vec2(1.0f,0.0f));
-		RayCast(GetPosition(), glm::vec2(0.5f, 1.73f));
-		RayCast(GetPosition(), glm::vec2(1.73f,0.5f));
-		RayCast(GetPosition(), glm::vec2(0,1));
-		RayCast(GetPosition(), glm::vec2(-1.73f,0.5f));
-		RayCast(GetPosition(), glm::vec2(-0.5,1.73f));
-		RayCast(GetPosition(), glm::vec2(-1.0f,0.0f));
-		RayCast(GetPosition(), glm::vec2(-0.5,-1.73f));
-		RayCast(GetPosition(), glm::vec2(-1.73f,-0.5f));
-		RayCast(GetPosition(), glm::vec2(0.0f,-1.0f));
-		RayCast(GetPosition(), glm::vec2(0.5f,-1.73f));
-		RayCast(GetPosition(), glm::vec2(1.73f,-0.5f));
-	}
 }
 
 json_t Rigidbody::Save() const {

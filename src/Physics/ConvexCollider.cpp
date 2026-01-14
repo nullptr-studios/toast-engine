@@ -63,7 +63,7 @@ auto ConvexRayCollision(Line* ray, ConvexCollider* c) -> std::optional<dvec2> {
 	std::optional<dvec2> result = std::nullopt;
 	for (Line& l : c->edges) {
 		auto cur_dist = LineLineCollision(*ray, l);
-		if (cur_dist != std::nullopt && (length2(cur_dist.value() - ray->p1) < length2(result.value() - ray->p1) || result == std::nullopt))
+		if (cur_dist != std::nullopt && (length2(cur_dist.value() - ray->p1) < length2(result.value() - ray->p1)))
 			result = cur_dist;
 	}
 	return result;
