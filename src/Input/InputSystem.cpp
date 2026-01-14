@@ -13,7 +13,7 @@ namespace input {
 InputSystem* InputSystem::m_instance = nullptr;
 
 InputSystem* InputSystem::get() {
-	if (!m_instance) {
+	if (not m_instance) {
 		throw ToastException("Tried to access Input System but it's not created yet");
 	}
 	return m_instance;
@@ -30,7 +30,7 @@ InputSystem::InputSystem() {
 	m.layouts.reserve(layout_paths.size());
 	for (const auto& path : layout_paths) {
 		auto layout = Layout::create(path);
-		if (!layout) {
+		if (not layout) {
 			TOAST_WARN("Couldn't create layout {}, skipping...", path);
 			continue;
 		}
@@ -38,6 +38,14 @@ InputSystem::InputSystem() {
 	}
 
 	TOAST_INFO("Created {} layouts", m.layouts.size());
+
+	// Check for connected controllers when the game starts
+	for (int i = 0; i < 16; i++) {
+		// yes im using not and or to spice things up a bit
+		if (not glfwJoystickPresent(i) || not glfwJoystickIsGamepad(i)) continue;
+		m.controllers[i] = GamepadState {};
+		TOAST_INFO("Controller {} connected: {}", i, glfwGetGamepadName(i));
+	}
 
 	// No active layout by default
 	m.activeLayout = m.layouts.end();
