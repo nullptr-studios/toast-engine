@@ -298,15 +298,16 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 }
 
 std::optional<ConvexCollider> PhysicsSystem::RayCollision(Line* ray) {
-	std::optional<ConvexCollider> result;
+	std::optional<ConvexCollider> result = std::nullopt;
 	auto ps = PhysicsSystem::get();
 	if (ps == std::nullopt)
 		return std::nullopt;
 
 	for (auto* c : ps.value()->m.colliders) {
 		std::optional<dvec2> cur_dist = ConvexRayCollision(ray, c);
-		if (cur_dist != std::nullopt && (length2(cur_dist.value() - ray->p1) < length2(dvec2(result->worldPosition) - ray->p1)))
-			result = *c;
+		if (cur_dist != std::nullopt)
+			if (result == std::nullopt || length2(cur_dist.value() - ray->p1) < length2(dvec2(result->worldPosition) - ray->p1))
+				result = *c;
 	}
 	if (result != std::nullopt)
 		renderer::DebugLine(ray->p1, result->worldPosition, vec4(0.0f, 0.0f, 1.0f, 1.0f));
