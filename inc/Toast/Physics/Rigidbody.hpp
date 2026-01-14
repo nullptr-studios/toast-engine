@@ -37,7 +37,7 @@ public:
 	glm::vec2 drag = {0.5, 0.5};                  // Anisotropic drag for linear movement
 	double restitution = 0.6;                     // Bounciness
 	double restitutionThreshold = 0.5;            // Minimum speed for restitution to take place
-	glm::dvec2 minimumVelocity { 0.1, 0.1 };    // Object velocity will be set to 0.0 if less than this
+	glm::vec2 minimumVelocity { 0.1, 0.1 };    // Object velocity will be set to 0.0 if less than this
 
 	// internal
 	glm::dvec2 velocity = { 0.0, 0.0 };

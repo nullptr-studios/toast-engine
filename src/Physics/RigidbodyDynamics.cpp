@@ -41,7 +41,7 @@ void RbKinematics(Rigidbody* rb) {
 	const dvec2 damping = exp(dvec2{-rb->drag} * Time::fixed_delta());
 	velocity *= damping;
 
-	if (all(lessThan(abs(velocity), rb->minimumVelocity))) {
+	if (all(lessThan(abs(velocity), dvec2{rb->minimumVelocity}))) {
 		velocity = { 0.0, 0.0 };
 	}
 
@@ -161,12 +161,12 @@ void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
 			v -= normal_velocity * normal;
 		}
 
-		if (all(lessThan(abs(v), rb->minimumVelocity))) {
+		if (all(lessThan(abs(v), dvec2{rb->minimumVelocity}))) {
 			v = { 0.0, 0.0 };
 		}
 
 		return v;
-	}
+	};
 
 	rb1->velocity = velocity_correction(rb1, velocity1);
 	rb2->velocity = velocity_correction(rb2, velocity2);
@@ -304,7 +304,7 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	rb->SetPosition(position);
 
 	// velocity correction
-	double normal_speed = glm::dot(velocity, manifold.normal);
+	normal_speed = glm::dot(velocity, manifold.normal); // update normal speed
 	if (normal_speed < 0.0) {
 		velocity -= normal_speed * manifold.normal;
 	}
@@ -313,7 +313,7 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	if (std::abs(normal_speed) < rb->minimumVelocity.y) {
 		velocity -= normal_speed * manifold.normal;
 	}
-	if (all(lessThan(abs(velocity), rb->minimumVelocity))) {
+	if (all(lessThan(abs(velocity), dvec2{rb->minimumVelocity}))) {
 		velocity = { 0.0, 0.0 };
 	}
 
