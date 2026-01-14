@@ -15,6 +15,7 @@
 #include "Toast/Components/AtlasRendererComponent.hpp"
 #include "Toast/Components/SpineRendererComponent.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
+#include "Toast/Resources/Spine/SpineEvent.hpp"
 #include "spine/Animation.h"
 #include "spine/Attachment.h"
 #include "spine/Bone.h"
@@ -410,7 +411,7 @@ void SpineRendererComponent::SetBoneLocalPosition(const std::string_view& boneNa
 	bone->setY(position.y);
 }
 
-void SpineRendererComponent::HandleSpineEvents(spine::AnimationState* state, spine::EventType type, spine::TrackEntry* entry, spine::Event* event) {
-
-	
+void SpineRendererComponent::OnAnimationEvent(const std::string_view& animationName, int track, const std::string_view& eventName) {
+	event::Send(new SpineEvent(animationName, track, eventName));
+	TOAST_TRACE("Spine Event Sent!");
 }

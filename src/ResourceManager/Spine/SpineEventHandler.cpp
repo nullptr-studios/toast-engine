@@ -15,7 +15,7 @@ void SpineEventHandler::callback(spine::AnimationState* state, spine::EventType 
 	switch (type) {
 		case spine::EventType_Start:
 			context->OnAnimationStart(entry->getAnimation()->getName().buffer(), entry->getTrackIndex());
-			TOAST_TRACE("Spine: Animation started: %s\n", entry->getAnimation()->getName().buffer());
+			TOAST_TRACE("Spine: Animation started: {}", entry->getAnimation()->getName().buffer());
 			break;
 		case spine::EventType_Interrupt:
 			context->OnAnimationInterrupted(entry->getAnimation()->getName().buffer(), entry->getTrackIndex());
@@ -39,7 +39,9 @@ void SpineEventHandler::callback(spine::AnimationState* state, spine::EventType 
 				std::string name = event->getData().getName().buffer();
 				TOAST_TRACE("Spine Event: {}", name.c_str());
 				context->OnAnimationEvent(entry->getAnimation()->getName().buffer(), entry->getTrackIndex(), name);
-
+				
+				
+				
 				// Access event data
 				int intValue = event->getIntValue();
 				float floatValue = event->getFloatValue();

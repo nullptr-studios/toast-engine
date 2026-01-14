@@ -55,12 +55,10 @@ public:
 	virtual void OnAnimationEnd(const std::string_view& animationName, int track) {}
 	virtual void OnAnimationInterrupted(const std::string_view& animationName, int track) {}
 	virtual void OnAnimationDispose(const std::string_view& animationName, int track) {}
-	virtual void OnAnimationEvent(const std::string_view& animationName, int track, const std::string_view& eventName) {}
+	virtual void OnAnimationEvent(const std::string_view& animationName, int track, const std::string_view& eventName);
 	
 
 private:
-	
-	void HandleSpineEvents(spine::AnimationState* state, spine::EventType type, spine::TrackEntry* entry, spine::Event* event);
 	
 	std::unique_ptr<SpineEventHandler> m_eventHandler;
 	
