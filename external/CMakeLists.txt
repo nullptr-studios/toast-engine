@@ -225,10 +225,10 @@ endif()
 
 # glad
 add_library(glad STATIC
-        ${CMAKE_SOURCE_DIR}/external/glad/src/gl.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/glad/src/gl.c
 )
 
 target_include_directories(glad PUBLIC
-        ${CMAKE_SOURCE_DIR}/external/glad/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/glad/include
 )
 

@@ -29,25 +29,25 @@ add_subdirectory(external)
 
 # Sources
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS
-        ${CMAKE_SOURCE_DIR}/src/*.cpp
-        ${CMAKE_SOURCE_DIR}/src/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
 )
 file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
-        ${CMAKE_SOURCE_DIR}/inc/*.hpp
-        ${CMAKE_SOURCE_DIR}/inc/*.h
-        ${CMAKE_SOURCE_DIR}/inc/*.inl
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc/*.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc/*.inl
 )
 
 add_library(toast.engine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 
 target_include_directories(toast.engine
-        PUBLIC ${CMAKE_SOURCE_DIR}/inc
-        PRIVATE ${CMAKE_SOURCE_DIR}/src
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 # Precompiled header
-if(EXISTS "${CMAKE_SOURCE_DIR}/pch.h")
-    target_precompile_headers(toast.engine PRIVATE ${CMAKE_SOURCE_DIR}/pch.h)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/pch.h")
+    target_precompile_headers(toast.engine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/pch.h)
 endif()
 
 # Compile definitions per-config
