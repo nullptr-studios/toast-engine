@@ -8,6 +8,7 @@
 #include "Toast/Input/Layout.hpp"
 #include "Toast/Window/WindowEvents.hpp"
 
+#include <glm/glm.hpp>
 #include <algorithm>
 #include <list>
 
@@ -51,7 +52,9 @@ private:
 
 			a->CalculateValue();
 			std::erase_if(a->m.pressedKeys, [](const auto& v) {
-				return v.first == MOUSE_SCROLL_Y_CODE || v.first == MOUSE_SCROLL_X_CODE || v.first == MOUSE_POSITION_CODE;
+				// if the other one doesn't work this should -x
+				// return v.first == MOUSE_SCROLL_Y_CODE || v.first == MOUSE_SCROLL_X_CODE || v.first == MOUSE_POSITION_CODE || v.first == MOUSE_RAW_CODE || v.first == MOUSE_DELTA_CODE;
+				return v.first >= MOUSE_DELTA_CODE;
 			});
 
 			for (auto* l : m.subscribers) {
@@ -109,6 +112,8 @@ private:
 		std::deque<Action2D*> dispatch2DQueue;
 
 		std::map<int, GamepadState> controllers;
+
+		glm::vec2 oldMousePosition = {0.0f, 0.0f};
 	} m;
 };
 

@@ -122,7 +122,6 @@ void InputSystem::UnregisterListener(Listener* ptr) {
 
 #pragma endregion
 
-// -------------------- shared button/key handling --------------------
 bool InputSystem::Handle0DAction(int key_code, int action, int mods) {
 	// Map button/keypress to 0D actions (boolean-like)
 	for (auto& act : m.activeLayout->m.actions0d) {
@@ -244,32 +243,54 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 				continue;
 			}
 			for (const auto& [key, _] : bind.keys) {
-				if (key != MOUSE_POSITION_CODE) {
-					continue;
-				}
+				if (key == MOUSE_POSITION_CODE) {
+					action.device = bind.device;
+					action.state = Action2D::Ongoing;
 
-				action.device = bind.device;
-				action.state = Action2D::Ongoing;
-
-				glm::vec2 value = { e->x, e->y };
+					glm::vec2 value = { e->x, e->y };
 
 #if defined(__linux__)
-				// Adjust for display scale on Linux
-				const auto [sx, sy] = toast::Window::GetInstance()->GetDisplayScale();
-				value.x *= sx;
-				value.y *= sy;
+					// Adjust for display scale on Linux
+					const auto [sx, sy] = toast::Window::GetInstance()->GetDisplayScale();
+					value.x *= sx;
+					value.y *= sy;
 #endif
 
-				// Convert screen coords to NDC [-1, 1]
-				const auto [w, h] = toast::Window::GetInstance()->GetFramebufferSize();
-				value.x = (value.x / w) - 0.5f;
-				value.y = (value.y / h) - 0.5f;
-				value *= 2.0f;
-				value.y *= -1.0f;    // y up
+					// Convert screen coords to NDC [-1, 1]
+					const auto [w, h] = toast::Window::GetInstance()->GetFramebufferSize();
+					value.x = (value.x / w) - 0.5f;
+					value.y = (value.y / h) - 0.5f;
+					value *= 2.0f;
+					value.y *= -1.0f;    // y up
 
-				action.m.pressedKeys.emplace(MOUSE_POSITION_CODE, value);
-				AddToQueue(m.dispatch2DQueue, &action);
-				return true;
+					action.m.pressedKeys.emplace(MOUSE_POSITION_CODE, value);
+					AddToQueue(m.dispatch2DQueue, &action);
+					return true;
+				}
+				
+				if (key == MOUSE_RAW_CODE) {
+					action.device = bind.device;
+					action.state = Action2D::Ongoing;
+
+					glm::vec2 value = { e->x, e->y };
+
+					action.m.pressedKeys.emplace(MOUSE_RAW_CODE, value);
+					AddToQueue(m.dispatch2DQueue, &action);
+					return true;
+				}
+
+				if (key == MOUSE_DELTA_CODE) {
+					action.device = bind.device;
+					action.state = Action2D::Ongoing;
+
+					glm::vec2 new_position = { e->x, e->y };
+					glm::vec2 value = new_position - m.oldMousePosition;
+					m.oldMousePosition = new_position;
+
+					action.m.pressedKeys.emplace(MOUSE_DELTA_CODE, value);
+					AddToQueue(m.dispatch2DQueue, &action);
+					return true;
+				}
 			}
 		}
 	}
