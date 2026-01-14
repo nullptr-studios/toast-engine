@@ -8,6 +8,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if(MSVC)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+endif()
+
 # TODO: add option to compile without editor features (TOAST_EDITOR, ImGui, ImGuizmo, tracy, etc.)
 
 # If single-config generator, default to Debug when not set.
