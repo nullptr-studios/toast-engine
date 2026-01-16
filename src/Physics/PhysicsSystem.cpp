@@ -316,14 +316,14 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
 			}
 	}
 
-	for (auto* r : ps.value()->m.rigidbodies) {
-		std::optional<dvec2> cur_dist = RbRayCollision(ray, r);
-		if (cur_dist != std::nullopt)
-			if (rb_hit == std::nullopt || length2(cur_dist.value() - ray->p1) < length2(rb_hit.value() - ray->p1)) {
-				temp.rigid = r;
-				rb_hit = cur_dist.value();
-			}
-	}
+	//for (auto* r : ps.value()->m.rigidbodies) {
+	//	std::optional<dvec2> cur_dist = RbRayCollision(ray, r);
+	//	if (cur_dist != std::nullopt)
+	//		if (rb_hit == std::nullopt || length2(cur_dist.value() - ray->p1) < length2(rb_hit.value() - ray->p1)) {
+	//			temp.rigid = r;
+	//			rb_hit = cur_dist.value();
+	//		}
+	//}
 
 	if (temp.rigid != nullptr && temp.collider != nullptr) {
 		result = temp;
