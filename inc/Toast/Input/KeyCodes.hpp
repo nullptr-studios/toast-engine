@@ -36,6 +36,8 @@ enum class Device : uint8_t {
 constexpr unsigned MOUSE_POSITION_CODE = -1;
 constexpr unsigned MOUSE_SCROLL_X_CODE = -2;
 constexpr unsigned MOUSE_SCROLL_Y_CODE = -3;
+constexpr unsigned MOUSE_RAW_CODE = -4;
+constexpr unsigned MOUSE_DELTA_CODE = -5;
 
 // Helpers: trim and lowercase/normalize
 static void trim_inplace(std::string& s) {
@@ -383,9 +385,7 @@ inline auto MouseKeycodeFromString(std::string& str) -> std::optional<int> {
 		return std::nullopt;
 	}
 
-	// mouse/position -> sentinel -1
-	// mouse/x -> sentinel -2
-	// mouse/y -> sentinel -3
+	// sentilen parsing
 	if (key == "position" || key == "pos") {
 		return MOUSE_POSITION_CODE;
 	}
@@ -394,6 +394,12 @@ inline auto MouseKeycodeFromString(std::string& str) -> std::optional<int> {
 	}
 	if (key == "scrolly" || key == "scroll" || key == "y") {
 		return MOUSE_SCROLL_Y_CODE;
+	}
+	if (key == "raw") {
+		return MOUSE_RAW_CODE;
+	}
+	if (key == "delta") {
+		return MOUSE_DELTA_CODE;
 	}
 
 	// common names
