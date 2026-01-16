@@ -87,11 +87,11 @@ private:
 	bool OnInputDevice(event::WindowInputDevice* e);
 
 	// Shared helpers for buttons/keys (press & release)
-	bool HandleButtonLikeInput(int key_code, int action, int mods);
+	bool HandleButtonLikeInput(int key_code, int action, int mods, Device device);
 
-	bool Handle0DAction(int key_code, int action, int mods);
-	bool Handle1DAction(int key_code, int action, int mods);
-	bool Handle2DAction(int key_code, int action, int mods);
+	bool Handle0DAction(int key_code, int action, int mods, Device device);
+	bool Handle1DAction(int key_code, int action, int mods, Device device);
+	bool Handle2DAction(int key_code, int action, int mods, Device device);
 
 	// Scroll helpers
 	bool HandleScroll0D(event::WindowMouseScroll* e);

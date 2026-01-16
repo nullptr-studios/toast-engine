@@ -138,13 +138,14 @@ auto InputSystem::GetMouseDelta() -> glm::vec2 {
 
 #pragma endregion
 
-bool InputSystem::Handle0DAction(int key_code, int action, int mods) {
+bool InputSystem::Handle0DAction(int key_code, int action, int mods, Device device) {
 	// Map button/keypress to 0D actions (boolean-like)
 	for (auto& act : m.activeLayout->m.actions0d) {
 		if (!act.CheckState(m.currentState)) {
 			continue;
 		}
 		for (const auto& bind : act.m.binds) {
+			if (bind.device != device) continue;
 			if (!bind.keys.contains(key_code) || action == 2) {
 				continue;
 			}
@@ -166,13 +167,14 @@ bool InputSystem::Handle0DAction(int key_code, int action, int mods) {
 	return false;
 }
 
-bool InputSystem::Handle1DAction(int key_code, int action, int mods) {
+bool InputSystem::Handle1DAction(int key_code, int action, int mods, Device device) {
 	// Map button/keypress to 1D actions (float-like)
 	for (auto& act : m.activeLayout->m.actions1d) {
 		if (!act.CheckState(m.currentState)) {
 			continue;
 		}
 		for (const auto& bind : act.m.binds) {
+			if (bind.device != device) continue;
 			for (const auto& [key, direction] : bind.keys) {
 				if (key != key_code || action == 2) {
 					continue;
@@ -195,13 +197,14 @@ bool InputSystem::Handle1DAction(int key_code, int action, int mods) {
 	return false;
 }
 
-bool InputSystem::Handle2DAction(int key_code, int action, int mods) {
+bool InputSystem::Handle2DAction(int key_code, int action, int mods, Device device) {
 	// Map button/keypress to 2D actions (vec2-like)
 	for (auto& act : m.activeLayout->m.actions2d) {
 		if (!act.CheckState(m.currentState)) {
 			continue;
 		}
 		for (const auto& bind : act.m.binds) {
+			if (bind.device != device) { continue; }
 			for (const auto& [key, direction] : bind.keys) {
 				if (key != key_code || action == 2) {
 					continue;
@@ -224,24 +227,24 @@ bool InputSystem::Handle2DAction(int key_code, int action, int mods) {
 	return false;
 }
 
-bool InputSystem::HandleButtonLikeInput(int key_code, int action, int mods) {
+bool InputSystem::HandleButtonLikeInput(int key_code, int action, int mods, Device device) {
 	// Try each action dimension until one matches
 	if (!HasActiveLayout()) {
 		return false;
 	}
-	return Handle0DAction(key_code, action, mods) || Handle1DAction(key_code, action, mods) || Handle2DAction(key_code, action, mods);
+	return Handle0DAction(key_code, action, mods, device) || Handle1DAction(key_code, action, mods, device) || Handle2DAction(key_code, action, mods, device);
 }
 
 bool InputSystem::OnKeyPress(event::WindowKey* e) {
 	// Keyboard key press/release
-	return HandleButtonLikeInput(e->key, e->action, e->mods);
+	return HandleButtonLikeInput(e->key, e->action, e->mods, Device::Keyboard);
 }
 
 #pragma region mouse
 
 bool InputSystem::OnMouseButton(event::WindowMouseButton* e) {
 	// Mouse button press/release
-	return HandleButtonLikeInput(e->button, e->action, e->mods);
+	return HandleButtonLikeInput(e->button, e->action, e->mods, Device::Mouse);
 }
 
 bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
