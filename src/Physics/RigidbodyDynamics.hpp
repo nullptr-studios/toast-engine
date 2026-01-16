@@ -3,17 +3,10 @@
 /// @date 28 Dec 2025
 
 #pragma once
-#include <glm/glm.hpp>
+#include "Manifold.hpp"
 
 namespace physics {
-
-struct Manifold {
-	glm::dvec2 normal;
-	glm::dvec2 contact1;
-	glm::dvec2 contact2;
-	int contactCount;
-	double depth;
-};
+struct Line;
 
 class Rigidbody;
 class BoxRigidbody;
@@ -31,7 +24,6 @@ auto RbTriggerCollision(Rigidbody* rb1, Trigger* rb2) -> std::optional<Manifold>
 void RbTriggerResolution(Rigidbody* rb1, Trigger* rb2, Manifold manifold);
 auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold>;
 void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold);
-
-void DebugManifold(const Manifold& m);
+std::optional<glm::dvec2> RbRayCollision(Line* ray, Rigidbody* rb);
 
 }

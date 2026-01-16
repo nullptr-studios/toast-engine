@@ -8,6 +8,7 @@
 #include "Toast/Input/Layout.hpp"
 #include "Toast/Window/WindowEvents.hpp"
 
+#include <glm/glm.hpp>
 #include <algorithm>
 #include <list>
 
@@ -34,6 +35,9 @@ public:
 	static void RegisterListener(Listener* ptr);
 	static void UnregisterListener(Listener* ptr);
 
+	static auto GetMousePosition() -> glm::vec2;
+	static auto GetMouseDelta() -> glm::vec2;
+
 	void Tick();
 
 private:
@@ -51,7 +55,9 @@ private:
 
 			a->CalculateValue();
 			std::erase_if(a->m.pressedKeys, [](const auto& v) {
-				return v.first == MOUSE_SCROLL_Y_CODE || v.first == MOUSE_SCROLL_X_CODE || v.first == MOUSE_POSITION_CODE;
+				// if the other one doesn't work this should -x
+				// return v.first == MOUSE_SCROLL_Y_CODE || v.first == MOUSE_SCROLL_X_CODE || v.first == MOUSE_POSITION_CODE || v.first == MOUSE_RAW_CODE || v.first == MOUSE_DELTA_CODE;
+				return v.first >= MOUSE_DELTA_CODE;
 			});
 
 			for (auto* l : m.subscribers) {
@@ -81,11 +87,11 @@ private:
 	bool OnInputDevice(event::WindowInputDevice* e);
 
 	// Shared helpers for buttons/keys (press & release)
-	bool HandleButtonLikeInput(int key_code, int action, int mods);
+	bool HandleButtonLikeInput(int key_code, int action, int mods, Device device);
 
-	bool Handle0DAction(int key_code, int action, int mods);
-	bool Handle1DAction(int key_code, int action, int mods);
-	bool Handle2DAction(int key_code, int action, int mods);
+	bool Handle0DAction(int key_code, int action, int mods, Device device);
+	bool Handle1DAction(int key_code, int action, int mods, Device device);
+	bool Handle2DAction(int key_code, int action, int mods, Device device);
 
 	// Scroll helpers
 	bool HandleScroll0D(event::WindowMouseScroll* e);
@@ -109,6 +115,12 @@ private:
 		std::deque<Action2D*> dispatch2DQueue;
 
 		std::map<int, GamepadState> controllers;
+
+		glm::vec2 oldMousePosition = {0.0f, 0.0f};
+		glm::vec2 mouseDelta = {0.0f, 0.0f};
+		glm::vec2 mousePosition = {0.0f, 0.0f};
+
+		float triggerDeadzone = 0.2f;
 	} m;
 };
 

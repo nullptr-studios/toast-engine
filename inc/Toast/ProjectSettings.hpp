@@ -44,12 +44,14 @@ public:
 	static std::string name();
 	static Version version();
 	static const std::vector<std::string>& input_layouts();
+	static const float input_deadzone();
 
 private:
 	static ProjectSettings* m_instance;
 	std::string m_projectName;
 	Version m_version;
 	std::vector<std::string> m_inputLayouts;
+	float m_inputDeadzone = 0.2;
 };
 
 }

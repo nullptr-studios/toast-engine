@@ -12,6 +12,14 @@ void SetState(std::string_view state) {
 	InputSystem::SetState(state);
 }
 
+auto GetMousePosition() -> glm::vec2 {
+	return InputSystem::GetMousePosition();
+}
+
+auto GetMouseDelta() -> glm::vec2 {
+	return InputSystem::GetMouseDelta();
+}
+
 Listener::Listener() {
 	InputSystem::RegisterListener(this);
 }
