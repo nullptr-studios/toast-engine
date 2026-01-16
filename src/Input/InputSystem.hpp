@@ -35,6 +35,9 @@ public:
 	static void RegisterListener(Listener* ptr);
 	static void UnregisterListener(Listener* ptr);
 
+	static auto GetMousePosition() -> glm::vec2;
+	static auto GetMouseDelta() -> glm::vec2;
+
 	void Tick();
 
 private:
@@ -114,6 +117,8 @@ private:
 		std::map<int, GamepadState> controllers;
 
 		glm::vec2 oldMousePosition = {0.0f, 0.0f};
+		glm::vec2 mouseDelta = {0.0f, 0.0f};
+		glm::vec2 mousePosition = {0.0f, 0.0f};
 	} m;
 };
 

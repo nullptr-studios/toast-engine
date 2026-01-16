@@ -128,6 +128,14 @@ void InputSystem::UnregisterListener(Listener* ptr) {
 	}
 }
 
+auto InputSystem::GetMousePosition() -> glm::vec2 {
+	return get()->m.mousePosition;
+}
+
+auto InputSystem::GetMouseDelta() -> glm::vec2 {
+	return get()->m.mouseDelta;
+}
+
 #pragma endregion
 
 bool InputSystem::Handle0DAction(int key_code, int action, int mods) {
@@ -237,6 +245,8 @@ bool InputSystem::OnMouseButton(event::WindowMouseButton* e) {
 }
 
 bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
+	m.mousePosition = glm::vec2{ e->x, e->y };
+
 	// Mouse position as a 2D action (normalized to NDC)
 	if (!HasActiveLayout()) {
 		return false;
@@ -275,7 +285,7 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 					AddToQueue(m.dispatch2DQueue, &action);
 					return true;
 				}
-				
+
 				if (key == MOUSE_RAW_CODE) {
 					action.device = bind.device;
 					action.state = Action2D::Ongoing;
@@ -294,6 +304,7 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 					glm::vec2 new_position = { e->x, e->y };
 					glm::vec2 value = new_position - m.oldMousePosition;
 					m.oldMousePosition = new_position;
+					m.mouseDelta = value;
 
 					action.m.pressedKeys.emplace(MOUSE_DELTA_CODE, value);
 					AddToQueue(m.dispatch2DQueue, &action);
