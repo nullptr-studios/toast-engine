@@ -3,19 +3,11 @@
 /// @date 29 Dec 2025
 
 #pragma once
-#include "Toast/Physics/ColliderData.hpp"
-
+#include <Toast/Physics/Line.hpp>
+#include <Toast/Physics/ColliderData.hpp>
 #include <glm/glm.hpp>
 
 namespace physics {
-
-struct Line {
-	glm::vec2 p1;
-	glm::vec2 p2;
-	glm::dvec2 normal;
-	glm::dvec2 tangent;
-	double length;
-};
 
 class ConvexCollider : public ColliderData {
 public:
@@ -46,5 +38,7 @@ inline float ShoelaceArea(const std::list<glm::vec2>& points) {
 
 	return area;
 }
+
+auto ConvexRayCollision(Line* ray, ConvexCollider* c) -> std::optional<glm::dvec2>;
 
 }
