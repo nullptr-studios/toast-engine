@@ -250,7 +250,10 @@ bool InputSystem::OnMouseButton(event::WindowMouseButton* e) {
 }
 
 bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
+	// Store mouse delta and mouse position
+	m.oldMousePosition = m.mousePosition;
 	m.mousePosition = glm::vec2{ e->x, e->y };
+	m.mouseDelta = m.mousePosition - m.oldMousePosition;
 
 	// Mouse position as a 2D action (normalized to NDC)
 	if (!HasActiveLayout()) {
@@ -270,7 +273,7 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 					action.device = bind.device;
 					action.state = Action2D::Ongoing;
 
-					glm::vec2 value = { e->x, e->y };
+					glm::vec2 value = m.mousePosition;
 
 #if defined(__linux__)
 					// Adjust for display scale on Linux
@@ -294,10 +297,7 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 				if (key == MOUSE_RAW_CODE) {
 					action.device = bind.device;
 					action.state = Action2D::Ongoing;
-
-					glm::vec2 value = { e->x, e->y };
-
-					action.m.pressedKeys.emplace(MOUSE_RAW_CODE, value);
+					action.m.pressedKeys.emplace(MOUSE_RAW_CODE, m.mousePosition);
 					AddToQueue(m.dispatch2DQueue, &action);
 					return true;
 				}
@@ -305,13 +305,7 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 				if (key == MOUSE_DELTA_CODE) {
 					action.device = bind.device;
 					action.state = Action2D::Ongoing;
-
-					glm::vec2 new_position = { e->x, e->y };
-					glm::vec2 value = new_position - m.oldMousePosition;
-					m.oldMousePosition = new_position;
-					m.mouseDelta = value;
-
-					action.m.pressedKeys.emplace(MOUSE_DELTA_CODE, value);
+					action.m.pressedKeys.emplace(MOUSE_DELTA_CODE, m.mouseDelta);
 					AddToQueue(m.dispatch2DQueue, &action);
 					return true;
 				}
