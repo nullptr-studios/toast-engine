@@ -333,7 +333,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
 		}
 		else {
 			result->colOrRb = false;
-			renderer::DebugLine(ray->p1, rb_hit.value(), vec4(0.0f, 0.0f, 1.0f, 1.0f));
+			renderer::DebugLine(ray->p1, rb_hit.value(), vec4(1.0f, 0.0f, 0.0f, 1.0f));
 		}
 		return result;
 	}
@@ -341,7 +341,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
 	if (temp.rigid != nullptr) {
 		result = temp;
 		result->colOrRb = false;
-		renderer::DebugLine(ray->p1, rb_hit.value(), vec4(0.0f, 0.0f, 1.0f, 1.0f));
+		renderer::DebugLine(ray->p1, rb_hit.value(), vec4(1.0f, 0.0f, 0.0f, 1.0f));
 		return result;
 	}
 
