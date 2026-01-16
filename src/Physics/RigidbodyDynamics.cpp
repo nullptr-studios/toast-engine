@@ -7,8 +7,10 @@
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 #include "Toast/Time.hpp"
+#include "glm/gtx/norm.hpp"
 
 #include <glm/glm.hpp>
+
 
 namespace physics {
 using namespace glm;
@@ -293,6 +295,19 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	rb->velocity = velocity;
 
 	rb->SetPosition(position);
+}
+
+std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
+	std::optional<dvec2> result = std::nullopt;
+	dvec2 pt1 = ray->p1 - rb->GetPosition();
+	dvec2 pt2 = ray->p2 - rb->GetPosition();
+  dvec2 min_distance = cross(dvec3(pt1.x, pt1.y, 0.0f), dvec3(pt2.x, pt2.y, 0.0f)) / length(pt2 - pt1);
+
+	if (length2(min_distance) >= rb->radius * rb->radius)
+		return std::nullopt;
+
+	result = min_distance;
+	return result;
 }
 
 }

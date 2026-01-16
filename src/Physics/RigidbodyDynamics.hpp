@@ -6,6 +6,7 @@
 #include "Manifold.hpp"
 
 namespace physics {
+struct Line;
 
 class Rigidbody;
 class BoxRigidbody;
@@ -23,5 +24,6 @@ auto RbTriggerCollision(Rigidbody* rb1, Trigger* rb2) -> std::optional<Manifold>
 void RbTriggerResolution(Rigidbody* rb1, Trigger* rb2, Manifold manifold);
 auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold>;
 void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold);
+std::optional<glm::dvec2> RbRayCollision(Line* ray, Rigidbody* rb);
 
 }

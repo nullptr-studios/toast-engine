@@ -5,10 +5,21 @@
  *
  */
 #pragma once
-#include "glm/vec2.hpp"
 #include "../src/Physics/ConvexCollider.hpp"
+#include "Rigidbody.hpp"
+#include "Toast/Objects/Actor.hpp"
+#include "glm/vec2.hpp"
 
 namespace physics {
 class ConvexCollider;
-std::optional<ConvexCollider> RayCast(glm::vec2 point, glm::vec2 dir);
+struct RayResult {
+	ConvexCollider* collider = nullptr;
+	Rigidbody* rigid = nullptr;
+
+	//if false collider, otherwise rigidbody
+	bool colOrRb = false;;
+};
+
+std::optional<RayResult> RayCast(glm::vec2 point, glm::vec2 dir);
+
 }

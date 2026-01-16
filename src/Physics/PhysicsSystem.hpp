@@ -8,6 +8,10 @@
 #include <glm/glm.hpp>
 
 namespace physics {
+struct RayResult;
+}
+
+namespace physics {
 
 class Rigidbody;
 class BoxRigidbody;
@@ -31,7 +35,7 @@ public:
 	static void RemoveCollider(ConvexCollider* c);
 	static void AddBox(BoxRigidbody* rb);
 	static void RemoveBox(BoxRigidbody* rb);
-	static std::optional<ConvexCollider> RayCollision(Line* ray);
+	static std::optional<RayResult> RayCollision(Line* ray);
 
 	PhysicsSystem();
 	~PhysicsSystem();

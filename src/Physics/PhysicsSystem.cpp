@@ -7,6 +7,7 @@
 #include "Toast/Log.hpp"
 #include "Toast/Physics/BoxRigidbody.hpp"
 #include "Toast/Physics/PhysicsEvents.hpp"
+#include "Toast/Physics/Raycast.hpp"
 #include "Toast/Physics/Rigidbody.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
@@ -297,9 +298,11 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 	BoxIntegration(rb);
 }
 
-std::optional<ConvexCollider> PhysicsSystem::RayCollision(Line* ray) {
-	std::optional<ConvexCollider> result = std::nullopt;
-	std::optional<dvec2> hit;
+std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
+	std::optional<RayResult> result = std::nullopt;
+	RayResult temp;
+	std::optional<dvec2> col_hit;
+	std::optional<dvec2> rb_hit;
 	auto ps = PhysicsSystem::get();
 	if (ps == std::nullopt)
 		return std::nullopt;
@@ -307,15 +310,42 @@ std::optional<ConvexCollider> PhysicsSystem::RayCollision(Line* ray) {
 	for (auto* c : ps.value()->m.colliders) {
 		std::optional<dvec2> cur_dist = ConvexRayCollision(ray, c);
 		if (cur_dist != std::nullopt)
-			if (hit == std::nullopt || length2(cur_dist.value() - ray->p1) < length2(hit.value() - ray->p1)) {
-				result = *c;
-				hit = cur_dist.value();
+			if (col_hit == std::nullopt || length2(cur_dist.value() - ray->p1) < length2(col_hit.value() - ray->p1)) {
+				temp.collider = c;
+				col_hit = cur_dist.value();
 			}
 	}
-	if (result != std::nullopt)
-		renderer::DebugLine(ray->p1, hit.value(), vec4(0.0f, 0.0f, 1.0f, 1.0f));
-	else
-		renderer::DebugLine(ray->p1, ray->p2, vec4(1.0f, 0.0f, 0.0f, 1.0f));
-	return result;
+
+	for (auto* r : ps.value()->m.rigidbodies) {
+		std::optional<dvec2> cur_dist = RbRayCollision(ray, r);
+		if (cur_dist != std::nullopt)
+			if (rb_hit == std::nullopt || length2(cur_dist.value() - ray->p1) < length2(rb_hit.value() - ray->p1)) {
+				temp.rigid = r;
+				rb_hit = cur_dist.value();
+			}
+	}
+
+	if (temp.rigid != nullptr && temp.collider != nullptr) {
+		result = temp;
+		if (length2(col_hit.value() - ray->p1) < length2(rb_hit.value() - ray->p1))
+			result->colOrRb = true;
+		else
+      result->colOrRb = false;
+		return result;
+	}
+
+	if (temp.rigid != nullptr) {
+		result = temp;
+		result->colOrRb = false;
+		return result;
+	}
+
+	if (temp.collider != nullptr) {
+		result = temp;
+		result->colOrRb = true;
+		return result;
+	}
+
+	return std::nullopt;
 }
 }
