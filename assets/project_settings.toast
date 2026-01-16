@@ -3,6 +3,7 @@ projectName: Engine Tests
 projectVersion: [1, 0, 0]
 
 input:
+  deadzone: 0.2
   layouts:
 
 physics:

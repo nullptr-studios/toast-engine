@@ -25,6 +25,8 @@ InputSystem::InputSystem() {
 	}
 	m_instance = this;
 
+	m.triggerDeadzone = toast::ProjectSettings::input_deadzone();
+
 	// Load all layouts defined in project settings
 	const auto& layout_paths = toast::ProjectSettings::input_layouts();
 	m.layouts.reserve(layout_paths.size());
@@ -602,9 +604,12 @@ void InputSystem::ControllerAxis(int id, std::array<float, 6> axes) {
 					if (key == 0 && (id == 0 || id == 1)) {
 						action.device = Device::ControllerStick;
 						glm::vec2 value = { axes[0], -axes[1] };
-						if (value != glm::vec2 { 0.0f, 0.0f }) {
+						if (abs(value.x) > m.triggerDeadzone || abs(value.y) > m.triggerDeadzone) {
+							action.state = Action2D::Ongoing;
 							action.m.pressedKeys[id + 2e8] = value;
 						} else {
+							action.state = Action2D::Finished;
+							action.value = {0.0f, 0.0f};
 							action.m.pressedKeys.erase(id + 2e8);
 						}
 						AddToQueue(m.dispatch2DQueue, &action);

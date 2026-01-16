@@ -119,6 +119,8 @@ private:
 		glm::vec2 oldMousePosition = {0.0f, 0.0f};
 		glm::vec2 mouseDelta = {0.0f, 0.0f};
 		glm::vec2 mousePosition = {0.0f, 0.0f};
+
+		float triggerDeadzone = 0.2f;
 	} m;
 };
 
