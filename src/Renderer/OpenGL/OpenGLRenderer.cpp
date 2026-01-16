@@ -16,7 +16,7 @@
 #include "Toast/Window/WindowEvents.hpp"
 
 #include <GLFW/glfw3.h>
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -31,7 +31,7 @@
 
 #include "Toast/Renderer/OclussionVolume.hpp"
 
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
 #ifdef TRACY_ENABLE
 #include <tracy/TracyOpenGL.hpp>
@@ -157,12 +157,12 @@ OpenGLRenderer::OpenGLRenderer() {
 	}
 
 	// Load OpenGL functions using GLAD
-	int version = gladLoadGL();
+	int version = gladLoadGL(glfwGetProcAddress);
 	if (!version) {
 		TOAST_ERROR("Failed to initialize OpenGL context");
 	}
 	// Successfully loaded OpenGL
-	TOAST_INFO("Loaded OpenGL {0}.{1}", GLVersion.major, GLVersion.minor);
+	TOAST_INFO("Loaded OpenGL {0}.{1}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
 
 #ifdef TRACY_ENABLE
 	TracyGpuContext;

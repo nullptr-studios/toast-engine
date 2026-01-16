@@ -6,7 +6,7 @@
 
 #include "Toast/Log.hpp"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 Framebuffer::Framebuffer(const Specs& specs) : m_specs(specs) {
 	glGenFramebuffers(1, &m_fbo);
