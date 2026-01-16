@@ -3,11 +3,12 @@
 #include "PhysicsSystem.hpp"
 #include "Toast/GlmJson.hpp"
 #include "Toast/Objects/Actor.hpp"
+#include "Toast/Physics/Raycast.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
 #include <imgui.h>
 
-using namespace physics;
+namespace physics {
 
 void Rigidbody::Init() {
 	PhysicsSystem::AddRigidbody(this);
@@ -30,7 +31,10 @@ void Rigidbody::Inspector() {
 	ImGui::DragScalarN("Gravity Scale", ImGuiDataType_Float, &gravityScale.x, 2);
 	ImGui::DragScalar("Restitution", ImGuiDataType_Double, &restitution);
 	ImGui::DragScalar("Restitution Threshold", ImGuiDataType_Double, &restitutionThreshold);
-	ImGui::DragScalar("Linear Drag", ImGuiDataType_Double, &linearDrag);
+	ImGui::DragScalarN("Drag", ImGuiDataType_Double, &drag.x, 2);
+
+	ImGui::Spacing();
+	ImGui::DragScalarN("Minimum Velocity", ImGuiDataType_Double, &minimumVelocity.x, 2);
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Debug");
@@ -63,6 +67,7 @@ void Rigidbody::EditorTick() {
 		return;
 	}
 	renderer::DebugCircle(GetPosition(), radius, debug.defaultColor);
+
 }
 
 json_t Rigidbody::Save() const {
@@ -72,14 +77,14 @@ json_t Rigidbody::Save() const {
 	j["mass"] = mass;
 	j["friction"] = friction;
 	j["gravityScale"] = gravityScale;
-	j["linearDrag"] = linearDrag;
+	j["drag"] = drag;
 	j["restitution"] = restitution;
 	j["restitutionThreshold"] = restitutionThreshold;
+	j["minimumVelocity"] = minimumVelocity;
 
 	j["debug.show"] = debug.show;
 	j["debug.defaultColor"] = debug.defaultColor;
 	j["debug.collidingColor"] = debug.collidingColor;
-
 	return j;
 }
 
@@ -96,14 +101,17 @@ void Rigidbody::Load(json_t j, bool propagate) {
 	if (j.contains("gravityScale")) {
 		gravityScale = j["gravityScale"];
 	}
-	if (j.contains("linearDrag")) {
-		linearDrag = j["linearDrag"];
+	if (j.contains("drag")) {
+		drag = j["drag"];
 	}
 	if (j.contains("restitution")) {
 		restitution = j["restitution"];
 	}
 	if (j.contains("restitutionThreshold")) {
 		restitutionThreshold = j["restitutionThreshold"];
+	}
+	if (j.contains("minumumVelocity")) {
+		minimumVelocity = j["minimumVelocity"];
 	}
 
 	if (j.contains("debug.show")) {
@@ -131,4 +139,6 @@ void Rigidbody::SetPosition(glm::dvec2 pos) {
 
 void Rigidbody::AddForce(glm::dvec2 force) {
 	forces.emplace_back(force);
+}
+
 }

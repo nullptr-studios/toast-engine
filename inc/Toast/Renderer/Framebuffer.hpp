@@ -3,7 +3,7 @@
 /// @date 11/10/2025.
 
 #pragma once
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <iostream>
 #include <string>
 #include <vector>

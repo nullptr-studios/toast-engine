@@ -15,9 +15,12 @@
 #include "Toast/Components/AtlasRendererComponent.hpp"
 #include "Toast/Components/SpineRendererComponent.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
+#include "Toast/Resources/Spine/SpineEvent.hpp"
 #include "spine/Animation.h"
 #include "spine/Attachment.h"
 #include "spine/Bone.h"
+
+
 
 /// TODO:SPINE RESOURCE SLOTS
 void SpineRendererComponent::Init() {
@@ -28,6 +31,10 @@ void SpineRendererComponent::Init() {
 	// Reserve temp buffers to avoid allocations
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
 	m_tempIndices.reserve(INITIAL_VERT_RESERVE * 3);
+	
+	m_eventHandler = std::make_unique<SpineEventHandler>(this);
+	
+
 
 	// Load resources either from persisted paths (preferred) or fallback to defaults
 	if (!m_atlasPath.empty() && !m_skeletonDataPath.empty()) {
@@ -47,6 +54,7 @@ void SpineRendererComponent::Init() {
 		m_animationStateData = std::make_unique<spine::AnimationStateData>(m_skeletonData->GetSkeletonData());
 		m_animationStateData->setDefaultMix(.5f);
 		m_animationState = std::make_unique<spine::AnimationState>(m_animationStateData.get());
+		m_animationState->setListener(m_eventHandler.get());
 
 		// Initial update to ensure world transforms are valid
 		m_skeleton->update(0.0f);
@@ -58,6 +66,9 @@ void SpineRendererComponent::Init() {
 			m_selectedAnimation = 0;
 			m_animationState->setAnimation(0, m_animationNames[m_selectedAnimation].c_str(), m_loopAnimation);
 		}
+		
+		m_atlasResource.name("Atlas Resource");
+		m_skeletonDataResource.name("Skeleton Data Resource");
 #endif
 	}
 
@@ -152,6 +163,7 @@ void SpineRendererComponent::Inspector() {
 		m_skeleton = std::make_unique<spine::Skeleton>(m_skeletonData->GetSkeletonData());
 		m_animationStateData = std::make_unique<spine::AnimationStateData>(m_skeletonData->GetSkeletonData());
 		m_animationState = std::make_unique<spine::AnimationState>(m_animationStateData.get());
+		m_animationState->setListener(m_eventHandler.get());
 
 		// Tick once
 		double dt = Time::delta();
@@ -402,4 +414,9 @@ void SpineRendererComponent::SetBoneLocalPosition(const std::string_view& boneNa
 	}
 	bone->setX(position.x);
 	bone->setY(position.y);
+}
+
+void SpineRendererComponent::OnAnimationEvent(const std::string_view& animationName, int track, const std::string_view& eventName) {
+	event::Send(new SpineEvent(animationName, track, eventName));
+	TOAST_TRACE("Spine Event Sent!");
 }
