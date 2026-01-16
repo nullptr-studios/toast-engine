@@ -306,7 +306,7 @@ std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 	if (length2(min_distance) >= rb->radius * rb->radius)
 		return std::nullopt;
 
-	result = min_distance;
+	result = rb->GetPosition();
 	return result;
 }
 
