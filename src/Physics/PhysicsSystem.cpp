@@ -327,22 +327,28 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
 
 	if (temp.rigid != nullptr && temp.collider != nullptr) {
 		result = temp;
-		if (length2(col_hit.value() - ray->p1) < length2(rb_hit.value() - ray->p1))
+		if (length2(col_hit.value() - ray->p1) < length2(rb_hit.value() - ray->p1)) {
 			result->colOrRb = true;
-		else
-      result->colOrRb = false;
+			renderer::DebugLine(ray->p1, col_hit.value(), vec4(0.0f, 0.0f, 1.0f, 1.0f));
+		}
+		else {
+			result->colOrRb = false;
+			renderer::DebugLine(ray->p1, rb_hit.value(), vec4(0.0f, 0.0f, 1.0f, 1.0f));
+		}
 		return result;
 	}
 
 	if (temp.rigid != nullptr) {
 		result = temp;
 		result->colOrRb = false;
+		renderer::DebugLine(ray->p1, rb_hit.value(), vec4(0.0f, 0.0f, 1.0f, 1.0f));
 		return result;
 	}
 
 	if (temp.collider != nullptr) {
 		result = temp;
 		result->colOrRb = true;
+		renderer::DebugLine(ray->p1, col_hit.value(), vec4(0.0f, 0.0f, 1.0f, 1.0f));
 		return result;
 	}
 
