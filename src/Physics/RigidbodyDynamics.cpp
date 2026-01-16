@@ -1,5 +1,5 @@
+#define GLM_ENABLE_EXPERIMENTAL
 #include "RigidbodyDynamics.hpp"
-
 #include "ConvexCollider.hpp"
 #include "PhysicsSystem.hpp"
 #include "Toast/Log.hpp"
