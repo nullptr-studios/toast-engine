@@ -1,0 +1,6 @@
+<map id="event::WindowChar" name="event::WindowChar">
+<area shape="rect" id="node1" title="Event sent when user presses a character." alt="" coords="39,243,188,268"/>
+<area shape="rect" id="node2" href="$d7/d51/structevent_1_1Event.html" title=" " alt="" coords="5,168,221,193"/>
+<area shape="rect" id="node3" href="$da/ddb/structevent_1_1IEvent.html" title="Core components of the event struct." alt="" coords="54,5,162,31"/>
+<area shape="rect" id="node4" href="$d7/d51/structevent_1_1Event.html" title="Base class for all the Events." alt="" coords="130,80,331,105"/>
+</map>

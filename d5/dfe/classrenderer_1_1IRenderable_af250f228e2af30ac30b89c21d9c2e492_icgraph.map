@@ -1,0 +1,5 @@
+<map id="renderer::IRenderable::GetDepth" name="renderer::IRenderable::GetDepth">
+<area shape="rect" id="node1" title="Gets the Z&#45;depth of this renderable for sorting purposes." alt="" coords="491,5,653,45"/>
+<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#aaa760df2f9d791a8088fb27cc9dc84b5" title=" " alt="" coords="248,5,443,45"/>
+<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,5,200,45"/>
+</map>

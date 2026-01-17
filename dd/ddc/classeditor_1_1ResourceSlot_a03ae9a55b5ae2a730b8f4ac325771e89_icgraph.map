@@ -1,0 +1,4 @@
+<map id="editor::ResourceSlot::ToForwardSlashes" name="editor::ResourceSlot::ToForwardSlashes">
+<area shape="rect" id="node1" title=" " alt="" coords="207,5,360,45"/>
+<area shape="rect" id="node2" href="$dd/ddc/classeditor_1_1ResourceSlot.html#afa6b739f61b8d461e4b8bb2baa8065b3" title="this returns the currently selected resource (can be empty!!) Yes its a string path bc thats how reso..." alt="" coords="5,5,159,45"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="renderer::IRendererBase::RemoveLight" name="renderer::IRendererBase::RemoveLight">
+<area shape="rect" id="node1" title="Removes a 2D light from the lighting system." alt="" coords="184,5,364,45"/>
+<area shape="rect" id="node2" href="$d0/db0/classLight2D.html#aba3ddfa8edeeac944158a97efe965800" title="This function runs when the object is set to be destroyed." alt="" coords="5,13,136,38"/>
+</map>

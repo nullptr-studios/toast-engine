@@ -1,0 +1,128 @@
+var annotated_dup =
+[
+    [ "editor", "db/d4c/namespaceeditor.html", [
+      [ "ResourceSlot", "dd/ddc/classeditor_1_1ResourceSlot.html", "dd/ddc/classeditor_1_1ResourceSlot" ]
+    ] ],
+    [ "event", "dc/dd0/namespaceevent.html", [
+      [ "Event", "d7/d51/structevent_1_1Event.html", "d7/d51/structevent_1_1Event" ],
+      [ "EventSystem", "dd/d6f/classevent_1_1EventSystem.html", "dd/d6f/classevent_1_1EventSystem" ],
+      [ "IEvent", "da/ddb/structevent_1_1IEvent.html", "da/ddb/structevent_1_1IEvent" ],
+      [ "ListenerComponent", "d8/d7b/classevent_1_1ListenerComponent.html", "d8/d7b/classevent_1_1ListenerComponent" ],
+      [ "WindowChar", "db/db9/structevent_1_1WindowChar.html", "db/db9/structevent_1_1WindowChar" ],
+      [ "WindowClose", "db/d11/structevent_1_1WindowClose.html", null ],
+      [ "WindowDrop", "d0/d30/structevent_1_1WindowDrop.html", "d0/d30/structevent_1_1WindowDrop" ],
+      [ "WindowInputDevice", "df/d2c/structevent_1_1WindowInputDevice.html", "df/d2c/structevent_1_1WindowInputDevice" ],
+      [ "WindowKey", "d1/d90/structevent_1_1WindowKey.html", "d1/d90/structevent_1_1WindowKey" ],
+      [ "WindowMouseButton", "d2/dd1/structevent_1_1WindowMouseButton.html", "d2/dd1/structevent_1_1WindowMouseButton" ],
+      [ "WindowMousePosition", "de/d75/structevent_1_1WindowMousePosition.html", "de/d75/structevent_1_1WindowMousePosition" ],
+      [ "WindowMouseScroll", "d4/d30/structevent_1_1WindowMouseScroll.html", "d4/d30/structevent_1_1WindowMouseScroll" ],
+      [ "WindowResize", "df/d3f/structevent_1_1WindowResize.html", "df/d3f/structevent_1_1WindowResize" ]
+    ] ],
+    [ "input", "dc/d73/namespaceinput.html", [
+      [ "Action", "da/d9c/structinput_1_1Action.html", "da/d9c/structinput_1_1Action" ],
+      [ "Bind", "dd/d43/structinput_1_1Bind.html", "dd/d43/structinput_1_1Bind" ],
+      [ "GamepadState", "dd/d8c/structinput_1_1GamepadState.html", "dd/d8c/structinput_1_1GamepadState" ],
+      [ "IModifier", "d0/d35/structinput_1_1IModifier.html", "d0/d35/structinput_1_1IModifier" ],
+      [ "InputSystem", "da/d0b/classinput_1_1InputSystem.html", "da/d0b/classinput_1_1InputSystem" ],
+      [ "Layout", "d2/d00/classinput_1_1Layout.html", "d2/d00/classinput_1_1Layout" ],
+      [ "Listener", "dc/d06/classinput_1_1Listener.html", "dc/d06/classinput_1_1Listener" ]
+    ] ],
+    [ "physics", "d5/dd0/namespacephysics.html", [
+      [ "BoxManifold", "de/d3a/structphysics_1_1BoxManifold.html", "de/d3a/structphysics_1_1BoxManifold" ],
+      [ "BoxRigidbody", "d4/db0/classphysics_1_1BoxRigidbody.html", "d4/db0/classphysics_1_1BoxRigidbody" ],
+      [ "Collider", "db/d71/classphysics_1_1Collider.html", "db/d71/classphysics_1_1Collider" ],
+      [ "ColliderData", "d5/ddb/structphysics_1_1ColliderData.html", "d5/ddb/structphysics_1_1ColliderData" ],
+      [ "ConvexCollider", "dd/d88/classphysics_1_1ConvexCollider.html", "dd/d88/classphysics_1_1ConvexCollider" ],
+      [ "Line", "d1/d1d/structphysics_1_1Line.html", "d1/d1d/structphysics_1_1Line" ],
+      [ "Manifold", "da/dc2/structphysics_1_1Manifold.html", "da/dc2/structphysics_1_1Manifold" ],
+      [ "PhysicsSystem", "d6/dd8/classphysics_1_1PhysicsSystem.html", "d6/dd8/classphysics_1_1PhysicsSystem" ],
+      [ "RayResult", "db/d69/structphysics_1_1RayResult.html", "db/d69/structphysics_1_1RayResult" ],
+      [ "Rigidbody", "d6/d41/classphysics_1_1Rigidbody.html", "d6/d41/classphysics_1_1Rigidbody" ],
+      [ "UpdatePhysicsDefaults", "d8/d25/structphysics_1_1UpdatePhysicsDefaults.html", "d8/d25/structphysics_1_1UpdatePhysicsDefaults" ]
+    ] ],
+    [ "renderer", "d0/db9/namespacerenderer.html", [
+      [ "DebugDrawLayer", "df/daf/classrenderer_1_1DebugDrawLayer.html", "df/daf/classrenderer_1_1DebugDrawLayer" ],
+      [ "DebugVertex", "da/d9a/structrenderer_1_1DebugVertex.html", "da/d9a/structrenderer_1_1DebugVertex" ],
+      [ "ILayer", "d4/deb/classrenderer_1_1ILayer.html", "d4/deb/classrenderer_1_1ILayer" ],
+      [ "IRenderable", "d5/dfe/classrenderer_1_1IRenderable.html", "d5/dfe/classrenderer_1_1IRenderable" ],
+      [ "IRendererBase", "d9/dc4/classrenderer_1_1IRendererBase.html", "d9/dc4/classrenderer_1_1IRendererBase" ],
+      [ "LayerStack", "d3/d86/classrenderer_1_1LayerStack.html", "d3/d86/classrenderer_1_1LayerStack" ],
+      [ "Material", "d4/de6/classrenderer_1_1Material.html", "d4/de6/classrenderer_1_1Material" ],
+      [ "Mesh", "d4/d8c/classrenderer_1_1Mesh.html", "d4/d8c/classrenderer_1_1Mesh" ],
+      [ "OpenGLRenderer", "da/d32/classrenderer_1_1OpenGLRenderer.html", "da/d32/classrenderer_1_1OpenGLRenderer" ],
+      [ "Shader", "d9/d50/classrenderer_1_1Shader.html", "d9/d50/classrenderer_1_1Shader" ],
+      [ "SpineVertex", "d1/d64/structrenderer_1_1SpineVertex.html", "d1/d64/structrenderer_1_1SpineVertex" ],
+      [ "Vertex", "d1/d6e/structrenderer_1_1Vertex.html", "d1/d6e/structrenderer_1_1Vertex" ]
+    ] ],
+    [ "resource", "d8/d5c/namespaceresource.html", [
+      [ "PackFile", "d1/dfb/classresource_1_1PackFile.html", "d1/dfb/classresource_1_1PackFile" ],
+      [ "PackHeader", "d5/d79/structresource_1_1PackHeader.html", "d5/d79/structresource_1_1PackHeader" ],
+      [ "ResourceManager", "d9/d07/classresource_1_1ResourceManager.html", "d9/d07/classresource_1_1ResourceManager" ]
+    ] ],
+    [ "spine", "da/dd2/namespacespine.html", [
+      [ "EngineSpineExtension", "db/d95/classspine_1_1EngineSpineExtension.html", "db/d95/classspine_1_1EngineSpineExtension" ]
+    ] ],
+    [ "std", null, [
+      [ "formatter< toast::Transform2 >", "d6/d79/structstd_1_1formatter_3_01toast_1_1Transform2_01_4.html", "d6/d79/structstd_1_1formatter_3_01toast_1_1Transform2_01_4" ],
+      [ "formatter< toast::TransformImpl >", "d5/d2e/structstd_1_1formatter_3_01toast_1_1TransformImpl_01_4.html", "d5/d2e/structstd_1_1formatter_3_01toast_1_1TransformImpl_01_4" ]
+    ] ],
+    [ "toast", "d7/d01/namespacetoast.html", [
+      [ "memory", "d0/de3/namespacetoast_1_1memory.html", [
+        [ "BucketUsage", "d7/d98/structtoast_1_1memory_1_1BucketUsage.html", "d7/d98/structtoast_1_1memory_1_1BucketUsage" ],
+        [ "Stats", "db/da0/structtoast_1_1memory_1_1Stats.html", "db/da0/structtoast_1_1memory_1_1Stats" ]
+      ] ],
+      [ "Actor", "d8/d92/classtoast_1_1Actor.html", "d8/d92/classtoast_1_1Actor" ],
+      [ "BadObject", "d2/d70/classtoast_1_1BadObject.html", "d2/d70/classtoast_1_1BadObject" ],
+      [ "BadScene", "d9/da2/classtoast_1_1BadScene.html", "d9/da2/classtoast_1_1BadScene" ],
+      [ "Camera", "d8/db9/classtoast_1_1Camera.html", "d8/db9/classtoast_1_1Camera" ],
+      [ "Component", "d3/d63/classtoast_1_1Component.html", "d3/d63/classtoast_1_1Component" ],
+      [ "Engine", "d9/d4f/classtoast_1_1Engine.html", "d9/d4f/classtoast_1_1Engine" ],
+      [ "Factory", "d9/de7/classtoast_1_1Factory.html", "d9/de7/classtoast_1_1Factory" ],
+      [ "ISerializable", "dd/d8b/classtoast_1_1ISerializable.html", "dd/d8b/classtoast_1_1ISerializable" ],
+      [ "Log", "dc/d5c/classtoast_1_1Log.html", "dc/d5c/classtoast_1_1Log" ],
+      [ "MeshRendererComponent", "de/da0/classtoast_1_1MeshRendererComponent.html", "de/da0/classtoast_1_1MeshRendererComponent" ],
+      [ "Object", "d1/da3/classtoast_1_1Object.html", "d1/da3/classtoast_1_1Object" ],
+      [ "ProjectSettings", "d4/ddb/structtoast_1_1ProjectSettings.html", "d4/ddb/structtoast_1_1ProjectSettings" ],
+      [ "Scene", "d6/dd4/classtoast_1_1Scene.html", "d6/dd4/classtoast_1_1Scene" ],
+      [ "SceneLoadedEvent", "dc/d36/structtoast_1_1SceneLoadedEvent.html", "dc/d36/structtoast_1_1SceneLoadedEvent" ],
+      [ "State", "d8/d9c/structtoast_1_1State.html", "d8/d9c/structtoast_1_1State" ],
+      [ "StateMachine", "db/d5b/classtoast_1_1StateMachine.html", "db/d5b/classtoast_1_1StateMachine" ],
+      [ "ThreadPool", "d3/dd6/classtoast_1_1ThreadPool.html", "d3/dd6/classtoast_1_1ThreadPool" ],
+      [ "Transform2", "d5/d10/structtoast_1_1Transform2.html", "d5/d10/structtoast_1_1Transform2" ],
+      [ "TransformComponent", "d0/dd9/classtoast_1_1TransformComponent.html", "d0/dd9/classtoast_1_1TransformComponent" ],
+      [ "TransformImpl", "d8/d63/classtoast_1_1TransformImpl.html", "d8/d63/classtoast_1_1TransformImpl" ],
+      [ "Version", "d1/df3/structtoast_1_1Version.html", "d1/df3/structtoast_1_1Version" ],
+      [ "Window", "d8/d8e/classtoast_1_1Window.html", "d8/d8e/classtoast_1_1Window" ],
+      [ "WindowException", "de/db0/classtoast_1_1WindowException.html", "de/db0/classtoast_1_1WindowException" ],
+      [ "WindowProps", "dc/d26/structtoast_1_1WindowProps.html", "dc/d26/structtoast_1_1WindowProps" ],
+      [ "World", "d6/d7d/classtoast_1_1World.html", "d6/d7d/classtoast_1_1World" ]
+    ] ],
+    [ "Actor", "df/d6a/classActor.html", null ],
+    [ "ActorLookup", "da/d99/structtoast_1_1ActorLookup.html", null ],
+    [ "AtlasRendererComponent", "dd/d75/classAtlasRendererComponent.html", "dd/d75/classAtlasRendererComponent" ],
+    [ "Children", "d8/d87/classChildren.html", "d8/d87/classChildren" ],
+    [ "Framebuffer", "dc/d58/classFramebuffer.html", "dc/d58/classFramebuffer" ],
+    [ "GlobalLight", "d8/d72/classGlobalLight.html", "d8/d72/classGlobalLight" ],
+    [ "InputSystem", "de/d88/classinpit_1_1InputSystem.html", null ],
+    [ "IResource", "d9/d0a/classIResource.html", "d9/d0a/classIResource" ],
+    [ "Light2D", "d0/db0/classLight2D.html", "d0/db0/classLight2D" ],
+    [ "Log", "d0/d77/classLog.html", null ],
+    [ "OclussionVolume", "d8/dfe/structOclussionVolume.html", "d8/dfe/structOclussionVolume" ],
+    [ "OListenerComponent", "df/d96/classevent_1_1OListenerComponent.html", null ],
+    [ "OTransform", "d5/d35/classtoast_1_1OTransform.html", null ],
+    [ "PackFile", "d8/d19/classPackFile.html", "d8/d19/classPackFile" ],
+    [ "PackHeader", "d6/d09/structPackHeader.html", "d6/d09/structPackHeader" ],
+    [ "PlayerController", "d4/da8/classinput_1_1PlayerController.html", null ],
+    [ "ResourceHandler", "d9/dc4/structResourceHandler.html", "d9/dc4/structResourceHandler" ],
+    [ "SpineAtlas", "d6/daf/classSpineAtlas.html", "d6/daf/classSpineAtlas" ],
+    [ "SpineEvent", "d7/d44/structSpineEvent.html", "d7/d44/structSpineEvent" ],
+    [ "SpineEventHandler", "d9/d94/classSpineEventHandler.html", "d9/d94/classSpineEventHandler" ],
+    [ "SpineRendererComponent", "d0/dc7/classSpineRendererComponent.html", "d0/dc7/classSpineRendererComponent" ],
+    [ "SpineSkeletonData", "de/d02/classSpineSkeletonData.html", "de/d02/classSpineSkeletonData" ],
+    [ "SpineSkeletonRenderer", "d9/d0a/classSpineSkeletonRenderer.html", "d9/d0a/classSpineSkeletonRenderer" ],
+    [ "SpineTextureLoader", "da/d7d/classSpineTextureLoader.html", "da/d7d/classSpineTextureLoader" ],
+    [ "SScene", "da/da4/classtoast_1_1SScene.html", null ],
+    [ "Texture", "d6/d97/classTexture.html", "d6/d97/classTexture" ],
+    [ "Time", "da/d66/classTime.html", "da/d66/classTime" ],
+    [ "ToastException", "d6/d05/classToastException.html", "d6/d05/classToastException" ]
+];

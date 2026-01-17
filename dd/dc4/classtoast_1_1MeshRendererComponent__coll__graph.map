@@ -1,0 +1,13 @@
+<map id="toast::MeshRendererComponent" name="toast::MeshRendererComponent">
+<area shape="rect" id="node1" title=" " alt="" coords="199,475,431,500"/>
+<area shape="rect" id="node2" href="$d5/dfe/classrenderer_1_1IRenderable.html" title="Interface for objects that can be rendered by the rendering system." alt="" coords="190,372,290,397"/>
+<area shape="rect" id="node3" href="$d0/dd9/classtoast_1_1TransformComponent.html" title=" " alt="" coords="107,277,309,302"/>
+<area shape="rect" id="node4" href="$d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="5,181,144,207"/>
+<area shape="rect" id="node5" href="$d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="155,93,261,119"/>
+<area shape="rect" id="node8" href="$d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="169,181,271,207"/>
+<area shape="rect" id="node9" href="$d8/d92/classtoast_1_1Actor.html" title=" " alt="" coords="295,181,393,207"/>
+<area shape="rect" id="node6" href="$dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="70,5,213,31"/>
+<area shape="rect" id="node7" href="$d8/d87/classChildren.html" title=" " alt="" coords="237,5,313,31"/>
+<area shape="rect" id="node10" href="$dd/ddc/classeditor_1_1ResourceSlot.html" title=" " alt="" coords="327,372,481,397"/>
+<area shape="rect" id="node11" href="$d0/d62/structeditor_1_1ResourceSlot_1_1Entry.html" title=" " alt="" coords="334,269,487,309"/>
+</map>

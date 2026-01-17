@@ -1,0 +1,4 @@
+<map id="renderer::IRendererBase::SetViewMatrix" name="renderer::IRendererBase::SetViewMatrix">
+<area shape="rect" id="node1" title="Sets the view matrix directly." alt="" coords="248,5,428,45"/>
+<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,5,200,45"/>
+</map>

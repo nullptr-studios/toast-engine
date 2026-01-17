@@ -1,0 +1,20 @@
+<map id="inc/Toast/Objects/Scene.hpp" name="inc/Toast/Objects/Scene.hpp">
+<area shape="rect" id="node1" title="A collection of Actors." alt="" coords="549,5,751,31"/>
+<area shape="rect" id="node2" href="$d7/d3f/Object_8hpp.html" title="Base Object Class." alt="" coords="604,79,696,104"/>
+<area shape="rect" id="node3" href="$d7/d5a/RTTIMacros_8h.html" title=" " alt="" coords="5,152,127,177"/>
+<area shape="rect" id="node4" href="$d5/d03/Factory_8hpp.html" title="Class in charge of Object creation (not anmymore)" alt="" coords="151,152,285,177"/>
+<area shape="rect" id="node5" href="$df/da3/ISerializable_8hpp.html" title="[Brief description of the file&#39;s purpose]" alt="" coords="309,152,477,177"/>
+<area shape="rect" id="node7" href="$d0/d82/Log_8hpp.html" title=" " alt="" coords="501,152,612,177"/>
+<area shape="rect" id="node14" title=" " alt="" coords="852,225,949,251"/>
+<area shape="rect" id="node15" title=" " alt="" coords="687,152,754,177"/>
+<area shape="rect" id="node16" title=" " alt="" coords="779,152,839,177"/>
+<area shape="rect" id="node17" href="$da/d8d/Children_8inl.html" title=" " alt="" coords="863,152,959,177"/>
+<area shape="rect" id="node18" href="$de/d16/Object_8inl.html" title=" " alt="" coords="984,152,1068,177"/>
+<area shape="rect" id="node6" title=" " alt="" coords="6,225,153,251"/>
+<area shape="rect" id="node8" href="$dc/dbc/Profiler_8hpp.html" title="Wrapper of the Tracy Profiler." alt="" coords="177,225,310,251"/>
+<area shape="rect" id="node9" title=" " alt="" coords="334,225,403,251"/>
+<area shape="rect" id="node10" title=" " alt="" coords="427,225,494,251"/>
+<area shape="rect" id="node11" title=" " alt="" coords="518,225,595,251"/>
+<area shape="rect" id="node12" title=" " alt="" coords="620,225,744,251"/>
+<area shape="rect" id="node13" title=" " alt="" coords="769,225,827,251"/>
+</map>

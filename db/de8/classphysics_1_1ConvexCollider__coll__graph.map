@@ -1,0 +1,4 @@
+<map id="physics::ConvexCollider" name="physics::ConvexCollider">
+<area shape="rect" id="node1" title=" " alt="" coords="5,79,184,104"/>
+<area shape="rect" id="node2" href="$d5/ddb/structphysics_1_1ColliderData.html" title=" " alt="" coords="15,5,175,31"/>
+</map>

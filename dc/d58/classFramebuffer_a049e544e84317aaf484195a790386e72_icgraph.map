@@ -1,0 +1,7 @@
+<map id="Framebuffer::GetColorTexture" name="Framebuffer::GetColorTexture">
+<area shape="rect" id="node1" title=" " alt="" coords="491,99,705,125"/>
+<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a0a8505f22fa05954b99b767e28de37a3" title=" " alt="" coords="248,5,443,45"/>
+<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,63,200,103"/>
+<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="248,120,443,160"/>
+<area shape="rect" id="node5" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="273,185,417,210"/>
+</map>

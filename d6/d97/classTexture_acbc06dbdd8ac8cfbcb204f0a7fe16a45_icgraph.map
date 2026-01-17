@@ -1,0 +1,4 @@
+<map id="Texture::CreateOpenGLTexture" name="Texture::CreateOpenGLTexture">
+<area shape="rect" id="node1" title=" " alt="" coords="240,5,459,31"/>
+<area shape="rect" id="node2" href="$d6/d97/classTexture.html#a46824bbbf411168bced4cde7c980d1e7" title="loads the resource into GPU memory, only if m_gpu is true" alt="" coords="5,5,192,31"/>
+</map>

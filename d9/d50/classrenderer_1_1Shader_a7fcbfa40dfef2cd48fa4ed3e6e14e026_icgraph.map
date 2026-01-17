@@ -1,0 +1,4 @@
+<map id="renderer::Shader::CreateFromFiles" name="renderer::Shader::CreateFromFiles">
+<area shape="rect" id="node1" title="Create shader from files (stage, path)" alt="" coords="223,5,404,45"/>
+<area shape="rect" id="node2" href="$d9/d50/classrenderer_1_1Shader.html#aae684c567923430746044428b4215574" title="loads the resource into CPU memory" alt="" coords="5,13,175,38"/>
+</map>

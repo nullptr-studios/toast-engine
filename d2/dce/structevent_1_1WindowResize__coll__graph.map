@@ -1,0 +1,6 @@
+<map id="event::WindowResize" name="event::WindowResize">
+<area shape="rect" id="node1" title="Event sent when the window framebuffer is resized." alt="" coords="39,243,201,268"/>
+<area shape="rect" id="node2" href="$d7/d51/structevent_1_1Event.html" title=" " alt="" coords="5,168,235,193"/>
+<area shape="rect" id="node3" href="$da/ddb/structevent_1_1IEvent.html" title="Core components of the event struct." alt="" coords="61,5,169,31"/>
+<area shape="rect" id="node4" href="$d7/d51/structevent_1_1Event.html" title="Base class for all the Events." alt="" coords="137,80,338,105"/>
+</map>

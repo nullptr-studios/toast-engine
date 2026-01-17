@@ -1,0 +1,6 @@
+<map id="renderer::IRendererBase::SetActiveCamera" name="renderer::IRendererBase::SetActiveCamera">
+<area shape="rect" id="node1" title="Sets the active camera used for rendering." alt="" coords="237,47,417,87"/>
+<area shape="rect" id="node2" href="$d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="18,5,177,31"/>
+<area shape="rect" id="node3" href="$d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5" title="This function runs when the object is set to be destroyed." alt="" coords="11,55,184,80"/>
+<area shape="rect" id="node4" href="$d8/db9/classtoast_1_1Camera.html#a075ce438f3311ef921bf26661358d60c" title=" " alt="" coords="5,105,189,145"/>
+</map>

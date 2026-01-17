@@ -1,0 +1,11 @@
+<map id="IResource::SetResourceState" name="IResource::SetResourceState">
+<area shape="rect" id="node1" title=" " alt="" coords="507,129,716,155"/>
+<area shape="rect" id="node2" href="$d6/d97/classTexture.html#acbc06dbdd8ac8cfbcb204f0a7fe16a45" title=" " alt="" coords="240,5,459,31"/>
+<area shape="rect" id="node4" href="$d9/d50/classrenderer_1_1Shader.html#aae684c567923430746044428b4215574" title="loads the resource into CPU memory" alt="" coords="265,55,434,80"/>
+<area shape="rect" id="node5" href="$d6/daf/classSpineAtlas.html#a6df4335c7930ed00433f8b958e54bfcd" title="loads the resource into CPU memory" alt="" coords="284,104,415,129"/>
+<area shape="rect" id="node6" href="$de/d02/classSpineSkeletonData.html#a987a79a15788aaea9b15828c4182126f" title="loads the resource into CPU memory" alt="" coords="257,153,441,179"/>
+<area shape="rect" id="node7" href="$d6/d97/classTexture.html#aed73817411e8a93bc03a8e54b4a935ad" title="loads the resource into CPU memory" alt="" coords="295,203,404,228"/>
+<area shape="rect" id="node8" href="$d9/d50/classrenderer_1_1Shader.html#a266997650c24d4b0ac35e9c9ccc8d113" title="loads the resource into GPU memory, only if m_gpu is true" alt="" coords="249,253,450,293"/>
+<area shape="rect" id="node3" href="$d6/d97/classTexture.html#a46824bbbf411168bced4cde7c980d1e7" title="loads the resource into GPU memory, only if m_gpu is true" alt="" coords="5,5,192,31"/>
+<area shape="rect" id="node9" href="$d9/d50/classrenderer_1_1Shader.html#a50e96a5b642048382df643fc0246069a" title="Activate the shader." alt="" coords="17,260,180,285"/>
+</map>

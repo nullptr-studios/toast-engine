@@ -1,0 +1,4 @@
+<map id="renderer::IRendererBase::AddLight" name="renderer::IRendererBase::AddLight">
+<area shape="rect" id="node1" title="Adds a 2D light to the lighting system." alt="" coords="155,5,335,45"/>
+<area shape="rect" id="node2" href="$d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,13,107,38"/>
+</map>

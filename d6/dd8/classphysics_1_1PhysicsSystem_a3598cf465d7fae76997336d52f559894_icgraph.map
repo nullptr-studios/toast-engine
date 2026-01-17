@@ -1,0 +1,4 @@
+<map id="physics::PhysicsSystem::AddRigidbody" name="physics::PhysicsSystem::AddRigidbody">
+<area shape="rect" id="node1" title=" " alt="" coords="197,5,375,45"/>
+<area shape="rect" id="node2" href="$d6/d41/classphysics_1_1Rigidbody.html#a462a8f1bf385bb9e88e17494cdf7d9b8" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,149,45"/>
+</map>

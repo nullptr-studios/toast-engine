@@ -1,0 +1,16 @@
+<map id="resource::ResourceManager::LoadResource" name="resource::ResourceManager::LoadResource">
+<area shape="rect" id="node1" title="Loads a resource of type R from the given path." alt="" coords="565,312,768,352"/>
+<area shape="rect" id="node2" href="$d9/d07/classresource_1_1ResourceManager.html#a38cd7a05776e6089beefba6f283033d6" title=" " alt="" coords="300,5,503,45"/>
+<area shape="rect" id="node3" href="$dd/d75/classAtlasRendererComponent.html#a6c2703c4082252a0572931db24b5a0fd" title="This function runs just after the object is created (scene load thread)" alt="" coords="307,69,496,109"/>
+<area shape="rect" id="node4" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a6c0554ccc0f646263c59529ba8ee8bea" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,252,237,292"/>
+<area shape="rect" id="node5" href="$d0/dc7/classSpineRendererComponent.html#ad1952cbfc3a232ad54536c0170b36f39" title="TODO:SPINE RESOURCE SLOTS." alt="" coords="305,197,497,237"/>
+<area shape="rect" id="node6" href="$d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="351,262,452,287"/>
+<area shape="rect" id="node7" href="$da/d7d/classSpineTextureLoader.html#a62da76c8ae7d93ba30e38ef284e8811f" title=" " alt="" coords="326,312,477,352"/>
+<area shape="rect" id="node8" href="$d4/de6/classrenderer_1_1Material.html#a46c255645ed8314386ee98e87bf8c9d2" title=" " alt="" coords="332,555,471,595"/>
+<area shape="rect" id="node11" href="$df/daf/classrenderer_1_1DebugDrawLayer.html#aa1b958dc22ad7a0c70faf45a9ba97851" title=" " alt="" coords="303,427,500,467"/>
+<area shape="rect" id="node12" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="304,491,499,531"/>
+<area shape="rect" id="node13" href="$de/da0/classtoast_1_1MeshRendererComponent.html#aeb94c065b4cf1a7f341b48610b02d54f" title=" " alt="" coords="285,133,517,173"/>
+<area shape="rect" id="node14" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a4f81e014fd09e5d5fda75a2b7c84b8fd" title=" " alt="" coords="285,619,517,659"/>
+<area shape="rect" id="node9" href="$d4/de6/classrenderer_1_1Material.html#a028edabd522ccbddf4af84589ab161d3" title="loads the resource into GPU memory, only if m_gpu is true" alt="" coords="52,587,191,627"/>
+<area shape="rect" id="node10" href="$d4/de6/classrenderer_1_1Material.html#a0e4285ae426362c5e03b56568323d5dd" title=" " alt="" coords="52,523,191,563"/>
+</map>

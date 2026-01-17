@@ -1,0 +1,6 @@
+<map id="event::WindowMouseButton" name="event::WindowMouseButton">
+<area shape="rect" id="node1" title="Event sent when user clicks a button on the mouse." alt="" coords="10,257,215,283"/>
+<area shape="rect" id="node2" href="$d7/d51/structevent_1_1Event.html" title=" " alt="" coords="5,168,220,208"/>
+<area shape="rect" id="node3" href="$da/ddb/structevent_1_1IEvent.html" title="Core components of the event struct." alt="" coords="53,5,161,31"/>
+<area shape="rect" id="node4" href="$d7/d51/structevent_1_1Event.html" title="Base class for all the Events." alt="" coords="129,80,331,105"/>
+</map>

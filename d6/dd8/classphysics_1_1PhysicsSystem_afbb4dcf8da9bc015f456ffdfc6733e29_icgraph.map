@@ -1,0 +1,4 @@
+<map id="physics::PhysicsSystem::RemoveBox" name="physics::PhysicsSystem::RemoveBox">
+<area shape="rect" id="node1" title=" " alt="" coords="223,5,400,45"/>
+<area shape="rect" id="node2" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a7549182afe912f14f810ed8c6ee8fe5d" title="This function runs when the object is set to be destroyed." alt="" coords="5,5,175,45"/>
+</map>

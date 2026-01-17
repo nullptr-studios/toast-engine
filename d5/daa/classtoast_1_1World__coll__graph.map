@@ -1,0 +1,9 @@
+<map id="toast::World" name="toast::World">
+<area shape="rect" id="node1" title="Class that contains all the loaded scenes on the game." alt="" coords="81,269,181,295"/>
+<area shape="rect" id="node2" href="$da/d62/structtoast_1_1World_1_1M.html" title=" " alt="" coords="71,181,191,207"/>
+<area shape="rect" id="node3" href="$d3/dd6/classtoast_1_1ThreadPool.html" title=" " alt="" coords="5,93,141,119"/>
+<area shape="rect" id="node4" href="$d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="227,93,333,119"/>
+<area shape="rect" id="node7" href="$d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="250,181,353,207"/>
+<area shape="rect" id="node5" href="$dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="142,5,285,31"/>
+<area shape="rect" id="node6" href="$d8/d87/classChildren.html" title=" " alt="" coords="309,5,385,31"/>
+</map>

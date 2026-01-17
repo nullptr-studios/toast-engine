@@ -1,0 +1,10 @@
+<map id="toast::Window" name="toast::Window">
+<area shape="rect" id="node1" title="Main window class of the engine." alt="" coords="83,344,198,369"/>
+<area shape="rect" id="node2" href="$dc/d26/structtoast_1_1WindowProps.html" title="Holds all window properties." alt="" coords="5,256,156,281"/>
+<area shape="rect" id="node3" href="$d8/d7b/classevent_1_1ListenerComponent.html" title=" " alt="" coords="181,256,375,281"/>
+<area shape="rect" id="node4" href="$d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="209,181,347,207"/>
+<area shape="rect" id="node5" href="$d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="327,93,432,119"/>
+<area shape="rect" id="node8" href="$d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="372,181,475,207"/>
+<area shape="rect" id="node6" href="$dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="241,5,384,31"/>
+<area shape="rect" id="node7" href="$d8/d87/classChildren.html" title=" " alt="" coords="408,5,484,31"/>
+</map>

@@ -1,0 +1,8 @@
+<map id="physics::BoxRigidbody::GetRotation" name="physics::BoxRigidbody::GetRotation">
+<area shape="rect" id="node1" title=" " alt="" coords="453,41,623,81"/>
+<area shape="rect" id="node2" href="$d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="231,17,405,42"/>
+<area shape="rect" id="node4" href="$d4/db0/classphysics_1_1BoxRigidbody.html#ace0ee6b77ef84882d1f83dd38147df99" title=" " alt="" coords="233,69,403,109"/>
+<area shape="rect" id="node3" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="5,5,183,45"/>
+<area shape="rect" id="node5" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a9544adc0b4bfe621025d3fc28ad0dd84" title="This function runs every frame in the editor." alt="" coords="9,69,179,109"/>
+<area shape="rect" id="node6" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a94503868157c1c683a53d49ae9c4c5d5" title=" " alt="" coords="9,133,179,173"/>
+</map>

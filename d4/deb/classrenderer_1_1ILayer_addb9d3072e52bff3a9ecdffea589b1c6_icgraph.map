@@ -1,0 +1,5 @@
+<map id="renderer::ILayer::OnDetach" name="renderer::ILayer::OnDetach">
+<area shape="rect" id="node1" title=" " alt="" coords="211,45,408,70"/>
+<area shape="rect" id="node2" href="$d3/d86/classrenderer_1_1LayerStack.html#afb5361076fa86dabfa2df7363e6b31eb" title="Pops a layer from the stack." alt="" coords="5,5,163,45"/>
+<area shape="rect" id="node3" href="$d3/d86/classrenderer_1_1LayerStack.html#a1d6b98bca79c45fc4dd5e3966031f209" title="Pops an overlay from the stack." alt="" coords="5,69,163,109"/>
+</map>

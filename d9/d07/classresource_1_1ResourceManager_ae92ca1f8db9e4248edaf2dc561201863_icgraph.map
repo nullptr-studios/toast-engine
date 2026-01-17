@@ -1,0 +1,6 @@
+<map id="resource::ResourceManager::SaveFile" name="resource::ResourceManager::SaveFile">
+<area shape="rect" id="node1" title="saves a file to disk" alt="" coords="435,37,637,77"/>
+<area shape="rect" id="node2" href="$d4/de6/classrenderer_1_1Material.html#aaa539180c1c05e42e926889cf484eccf" title=" " alt="" coords="220,5,359,45"/>
+<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#aecb18ef668ed67dab42662053d81fb51" title="Saves current render settings to project settings." alt="" coords="192,69,387,109"/>
+<area shape="rect" id="node3" href="$d4/de6/classrenderer_1_1Material.html#a0e4285ae426362c5e03b56568323d5dd" title=" " alt="" coords="5,5,144,45"/>
+</map>

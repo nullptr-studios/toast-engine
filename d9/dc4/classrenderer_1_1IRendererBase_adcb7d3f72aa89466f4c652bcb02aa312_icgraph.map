@@ -1,0 +1,16 @@
+<map id="renderer::IRendererBase::GetInstance" name="renderer::IRendererBase::GetInstance">
+<area shape="rect" id="node1" title="Gets the singleton instance of the active renderer." alt="" coords="285,339,465,379"/>
+<area shape="rect" id="node2" href="$d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="42,5,201,31"/>
+<area shape="rect" id="node3" href="$dd/d75/classAtlasRendererComponent.html#a6f50d08eab5a0109937a65b3f4ee19d8" title="This function runs when the object is set to be destroyed." alt="" coords="27,55,216,95"/>
+<area shape="rect" id="node4" href="$de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40" title="This function runs when the object is set to be destroyed." alt="" coords="5,119,237,159"/>
+<area shape="rect" id="node5" href="$d0/dc7/classSpineRendererComponent.html#a75af091cad96a920a74a062f4701a1d9" title="This function runs when the object is set to be destroyed." alt="" coords="25,183,217,223"/>
+<area shape="rect" id="node6" href="$d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5" title="This function runs when the object is set to be destroyed." alt="" coords="35,248,208,273"/>
+<area shape="rect" id="node7" href="$d0/db0/classLight2D.html#aba3ddfa8edeeac944158a97efe965800" title="This function runs when the object is set to be destroyed." alt="" coords="56,297,187,323"/>
+<area shape="rect" id="node8" href="$d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="71,347,172,372"/>
+<area shape="rect" id="node9" href="$d8/d72/classGlobalLight.html#a54a7de33527e0673b7cfa4c13b04da28" title="This function runs just after the object is created (scene load thread)" alt="" coords="59,396,184,421"/>
+<area shape="rect" id="node10" href="$dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b" title=" " alt="" coords="27,446,216,486"/>
+<area shape="rect" id="node11" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="5,510,237,550"/>
+<area shape="rect" id="node12" href="$d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68" title=" " alt="" coords="25,574,217,614"/>
+<area shape="rect" id="node13" href="$df/daf/classrenderer_1_1DebugDrawLayer.html#aa1b958dc22ad7a0c70faf45a9ba97851" title=" " alt="" coords="23,638,220,678"/>
+<area shape="rect" id="node14" href="$d8/db9/classtoast_1_1Camera.html#a075ce438f3311ef921bf26661358d60c" title=" " alt="" coords="29,702,213,742"/>
+</map>

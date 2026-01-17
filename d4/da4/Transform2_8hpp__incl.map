@@ -1,0 +1,24 @@
+<map id="inc/Toast/Transform2.hpp" name="inc/Toast/Transform2.hpp">
+<area shape="rect" id="node1" title=" " alt="" coords="805,5,989,31"/>
+<area shape="rect" id="node2" href="$d9/da8/TransformComponent_8hpp.html" title="Contains the Transform2D and Transform 3D objects." alt="" coords="649,79,859,119"/>
+<area shape="rect" id="node21" title=" " alt="" coords="787,167,891,192"/>
+<area shape="rect" id="node22" title=" " alt="" coords="915,167,1089,192"/>
+<area shape="rect" id="node3" href="$df/d1f/Component_8hpp.html" title="Base component class." alt="" coords="638,167,763,192"/>
+<area shape="rect" id="node4" href="$d7/d3f/Object_8hpp.html" title="Base Object Class." alt="" coords="559,240,741,265"/>
+<area shape="rect" id="node5" href="$d7/d5a/RTTIMacros_8h.html" title=" " alt="" coords="5,313,127,339"/>
+<area shape="rect" id="node6" href="$d5/d03/Factory_8hpp.html" title="Class in charge of Object creation (not anmymore)" alt="" coords="151,313,285,339"/>
+<area shape="rect" id="node7" href="$df/da3/ISerializable_8hpp.html" title="[Brief description of the file&#39;s purpose]" alt="" coords="309,313,477,339"/>
+<area shape="rect" id="node9" href="$d0/d82/Log_8hpp.html" title=" " alt="" coords="501,313,612,339"/>
+<area shape="rect" id="node16" title=" " alt="" coords="852,387,949,412"/>
+<area shape="rect" id="node17" title=" " alt="" coords="687,313,754,339"/>
+<area shape="rect" id="node18" title=" " alt="" coords="779,313,839,339"/>
+<area shape="rect" id="node19" href="$da/d8d/Children_8inl.html" title=" " alt="" coords="863,313,959,339"/>
+<area shape="rect" id="node20" href="$de/d16/Object_8inl.html" title=" " alt="" coords="984,313,1068,339"/>
+<area shape="rect" id="node8" title=" " alt="" coords="6,387,153,412"/>
+<area shape="rect" id="node10" href="$dc/dbc/Profiler_8hpp.html" title="Wrapper of the Tracy Profiler." alt="" coords="177,387,310,412"/>
+<area shape="rect" id="node11" title=" " alt="" coords="334,387,403,412"/>
+<area shape="rect" id="node12" title=" " alt="" coords="427,387,494,412"/>
+<area shape="rect" id="node13" title=" " alt="" coords="518,387,595,412"/>
+<area shape="rect" id="node14" title=" " alt="" coords="620,387,744,412"/>
+<area shape="rect" id="node15" title=" " alt="" coords="769,387,827,412"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="toast::ThreadPool::QueueJob" name="toast::ThreadPool::QueueJob">
+<area shape="rect" id="node1" title="Adds a job to the queue to be picked by a worker." alt="" coords="232,5,376,45"/>
+<area shape="rect" id="node2" href="$d6/d7d/classtoast_1_1World.html#ac5c3dc60522b314ca5e13a0b2083e79e" title="Loads scene on the init thread, scene disabld after load." alt="" coords="5,13,184,38"/>
+</map>

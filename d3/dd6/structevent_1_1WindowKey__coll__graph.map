@@ -1,0 +1,6 @@
+<map id="event::WindowKey" name="event::WindowKey">
+<area shape="rect" id="node1" title="Event sent when user presses a key." alt="" coords="39,243,182,268"/>
+<area shape="rect" id="node2" href="$d7/d51/structevent_1_1Event.html" title=" " alt="" coords="5,168,216,193"/>
+<area shape="rect" id="node3" href="$da/ddb/structevent_1_1IEvent.html" title="Core components of the event struct." alt="" coords="51,5,159,31"/>
+<area shape="rect" id="node4" href="$d7/d51/structevent_1_1Event.html" title="Base class for all the Events." alt="" coords="127,80,329,105"/>
+</map>

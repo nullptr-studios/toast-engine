@@ -1,0 +1,9 @@
+<map id="toast::Actor::transform" name="toast::Actor::transform">
+<area shape="rect" id="node1" title=" " alt="" coords="491,120,660,145"/>
+<area shape="rect" id="node2" href="$d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="295,5,396,31"/>
+<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="248,55,443,95"/>
+<area shape="rect" id="node5" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="273,120,417,145"/>
+<area shape="rect" id="node6" href="$d0/db0/classLight2D.html#a21d10d0a00f1ac024c4c1f393f8eda50" title=" " alt="" coords="273,169,418,195"/>
+<area shape="rect" id="node7" href="$d5/d10/structtoast_1_1Transform2.html#ad1c1969f56ed7c1efe51f3b5e8776084" title=" " alt="" coords="260,219,431,259"/>
+<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,55,200,95"/>
+</map>

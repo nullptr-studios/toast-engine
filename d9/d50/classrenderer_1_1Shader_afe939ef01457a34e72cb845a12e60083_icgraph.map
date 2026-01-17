@@ -1,0 +1,7 @@
+<map id="renderer::Shader::ClearProgram" name="renderer::Shader::ClearProgram">
+<area shape="rect" id="node1" title=" " alt="" coords="733,42,960,67"/>
+<area shape="rect" id="node2" href="$d9/d50/classrenderer_1_1Shader.html#ac317207ca6452256356c444699fbf598" title=" " alt="" coords="465,13,685,38"/>
+<area shape="rect" id="node5" href="$d9/d50/classrenderer_1_1Shader.html#a417556e7e41cd4da6375417dff301ea8" title=" " alt="" coords="506,63,645,103"/>
+<area shape="rect" id="node3" href="$d9/d50/classrenderer_1_1Shader.html#a266997650c24d4b0ac35e9c9ccc8d113" title="loads the resource into GPU memory, only if m_gpu is true" alt="" coords="216,5,417,45"/>
+<area shape="rect" id="node4" href="$d9/d50/classrenderer_1_1Shader.html#a50e96a5b642048382df643fc0246069a" title="Activate the shader." alt="" coords="5,13,168,38"/>
+</map>

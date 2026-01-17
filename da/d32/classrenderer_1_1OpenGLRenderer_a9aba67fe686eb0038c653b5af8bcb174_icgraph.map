@@ -1,0 +1,5 @@
+<map id="renderer::OpenGLRenderer::Clear" name="renderer::OpenGLRenderer::Clear">
+<area shape="rect" id="node1" title="Clears the current render target." alt="" coords="491,5,685,45"/>
+<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#aaa760df2f9d791a8088fb27cc9dc84b5" title=" " alt="" coords="248,5,443,45"/>
+<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,5,200,45"/>
+</map>

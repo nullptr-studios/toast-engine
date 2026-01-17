@@ -1,0 +1,6 @@
+<map id="event::WindowClose" name="event::WindowClose">
+<area shape="rect" id="node1" title="Send this event to tell the engine to close the window." alt="" coords="39,243,194,268"/>
+<area shape="rect" id="node2" href="$d7/d51/structevent_1_1Event.html" title=" " alt="" coords="5,168,228,193"/>
+<area shape="rect" id="node3" href="$da/ddb/structevent_1_1IEvent.html" title="Core components of the event struct." alt="" coords="57,5,165,31"/>
+<area shape="rect" id="node4" href="$d7/d51/structevent_1_1Event.html" title="Base class for all the Events." alt="" coords="133,80,335,105"/>
+</map>

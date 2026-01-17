@@ -1,0 +1,4 @@
+<map id="toast::Component::Init" name="toast::Component::Init">
+<area shape="rect" id="node1" title="This function runs just after the object is created (scene load thread)" alt="" coords="285,13,452,38"/>
+<area shape="rect" id="node2" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a6c0554ccc0f646263c59529ba8ee8bea" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,237,45"/>
+</map>

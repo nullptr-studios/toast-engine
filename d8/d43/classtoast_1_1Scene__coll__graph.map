@@ -1,0 +1,6 @@
+<map id="toast::Scene" name="toast::Scene">
+<area shape="rect" id="node1" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="5,5,108,31"/>
+<area shape="rect" id="node2" href="$d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="129,93,235,119"/>
+<area shape="rect" id="node3" href="$dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="132,5,275,31"/>
+<area shape="rect" id="node4" href="$d8/d87/classChildren.html" title=" " alt="" coords="299,5,375,31"/>
+</map>
