@@ -40,12 +40,15 @@ void RbKinematics(Rigidbody* rb) {
 	velocity += accel * Time::fixed_delta();
 
 	// Apply drag
-	const double damping = std::exp(-rb->linearDrag * Time::fixed_delta());
+	const dvec2 damping = exp(dvec2{-rb->drag} * Time::fixed_delta());
 	velocity *= damping;
 
-	if (all(lessThan(abs(velocity), rb->minimumVelocity))) {
+	if (all(lessThan(abs(velocity), dvec2{rb->minimumVelocity}))) {
 		velocity = { 0.0, 0.0 };
 	}
+
+	// Remove the forces after integrating
+	rb->forces.clear();
 }
 
 void RbIntegration(Rigidbody* rb) {
@@ -149,12 +152,26 @@ void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
 	position1 += correction * inv_mass1;
 	position2 -= correction * inv_mass2;
 
-	// Velocity correction
-	rb1->velocity = velocity1;
-	rb2->velocity = velocity2;
-
 	rb1->SetPosition(position1);
 	rb2->SetPosition(position2);
+
+	// Velocity correction
+	auto velocity_correction = [&](Rigidbody* rb, dvec2 v)-> dvec2 {
+		double normal_velocity = dot(v, normal);
+		if (std::abs(normal_velocity) < rb->minimumVelocity.y) {
+			// Kill tiny normal velocity
+			v -= normal_velocity * normal;
+		}
+
+		if (all(lessThan(abs(v), dvec2{rb->minimumVelocity}))) {
+			v = { 0.0, 0.0 };
+		}
+
+		return v;
+	};
+
+	rb1->velocity = velocity_correction(rb1, velocity1);
+	rb2->velocity = velocity_correction(rb2, velocity2);
 }
 
 auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold> {
@@ -286,15 +303,24 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	// positional correction
 	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
 	position += penetration_correction * manifold.normal;
+	rb->SetPosition(position);
 
 	// velocity correction
-	double residual_normal_speed = glm::dot(velocity, manifold.normal);
-	if (residual_normal_speed < 0.0) {
-		velocity -= residual_normal_speed * manifold.normal;
+	normal_speed = glm::dot(velocity, manifold.normal); // update normal speed
+	if (normal_speed < 0.0) {
+		velocity -= normal_speed * manifold.normal;
 	}
+
+	// Damp tiny bounce so gravity doesn't cause endless hopping
+	if (std::abs(normal_speed) < rb->minimumVelocity.y) {
+		velocity -= normal_speed * manifold.normal;
+	}
+	if (all(lessThan(abs(velocity), dvec2{rb->minimumVelocity}))) {
+		velocity = { 0.0, 0.0 };
+	}
+
 	rb->velocity = velocity;
 
-	rb->SetPosition(position);
 }
 
 std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {

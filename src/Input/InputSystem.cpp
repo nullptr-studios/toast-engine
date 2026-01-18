@@ -13,7 +13,7 @@ namespace input {
 InputSystem* InputSystem::m_instance = nullptr;
 
 InputSystem* InputSystem::get() {
-	if (!m_instance) {
+	if (not m_instance) {
 		throw ToastException("Tried to access Input System but it's not created yet");
 	}
 	return m_instance;
@@ -25,12 +25,14 @@ InputSystem::InputSystem() {
 	}
 	m_instance = this;
 
+	m.triggerDeadzone = toast::ProjectSettings::input_deadzone();
+
 	// Load all layouts defined in project settings
 	const auto& layout_paths = toast::ProjectSettings::input_layouts();
 	m.layouts.reserve(layout_paths.size());
 	for (const auto& path : layout_paths) {
 		auto layout = Layout::create(path);
-		if (!layout) {
+		if (not layout) {
 			TOAST_WARN("Couldn't create layout {}, skipping...", path);
 			continue;
 		}
@@ -38,6 +40,14 @@ InputSystem::InputSystem() {
 	}
 
 	TOAST_INFO("Created {} layouts", m.layouts.size());
+
+	// Check for connected controllers when the game starts
+	for (int i = 0; i < 16; i++) {
+		// yes im using not and or to spice things up a bit
+		if (not glfwJoystickPresent(i) || not glfwJoystickIsGamepad(i)) continue;
+		m.controllers[i] = GamepadState {};
+		TOAST_INFO("Controller {} connected: {}", i, glfwGetGamepadName(i));
+	}
 
 	// No active layout by default
 	m.activeLayout = m.layouts.end();
@@ -120,16 +130,24 @@ void InputSystem::UnregisterListener(Listener* ptr) {
 	}
 }
 
+auto InputSystem::GetMousePosition() -> glm::vec2 {
+	return get()->m.mousePosition;
+}
+
+auto InputSystem::GetMouseDelta() -> glm::vec2 {
+	return get()->m.mouseDelta;
+}
+
 #pragma endregion
 
-// -------------------- shared button/key handling --------------------
-bool InputSystem::Handle0DAction(int key_code, int action, int mods) {
+bool InputSystem::Handle0DAction(int key_code, int action, int mods, Device device) {
 	// Map button/keypress to 0D actions (boolean-like)
 	for (auto& act : m.activeLayout->m.actions0d) {
 		if (!act.CheckState(m.currentState)) {
 			continue;
 		}
 		for (const auto& bind : act.m.binds) {
+			if (bind.device != device) continue;
 			if (!bind.keys.contains(key_code) || action == 2) {
 				continue;
 			}
@@ -151,13 +169,14 @@ bool InputSystem::Handle0DAction(int key_code, int action, int mods) {
 	return false;
 }
 
-bool InputSystem::Handle1DAction(int key_code, int action, int mods) {
+bool InputSystem::Handle1DAction(int key_code, int action, int mods, Device device) {
 	// Map button/keypress to 1D actions (float-like)
 	for (auto& act : m.activeLayout->m.actions1d) {
 		if (!act.CheckState(m.currentState)) {
 			continue;
 		}
 		for (const auto& bind : act.m.binds) {
+			if (bind.device != device) continue;
 			for (const auto& [key, direction] : bind.keys) {
 				if (key != key_code || action == 2) {
 					continue;
@@ -180,13 +199,14 @@ bool InputSystem::Handle1DAction(int key_code, int action, int mods) {
 	return false;
 }
 
-bool InputSystem::Handle2DAction(int key_code, int action, int mods) {
+bool InputSystem::Handle2DAction(int key_code, int action, int mods, Device device) {
 	// Map button/keypress to 2D actions (vec2-like)
 	for (auto& act : m.activeLayout->m.actions2d) {
 		if (!act.CheckState(m.currentState)) {
 			continue;
 		}
 		for (const auto& bind : act.m.binds) {
+			if (bind.device != device) { continue; }
 			for (const auto& [key, direction] : bind.keys) {
 				if (key != key_code || action == 2) {
 					continue;
@@ -209,27 +229,32 @@ bool InputSystem::Handle2DAction(int key_code, int action, int mods) {
 	return false;
 }
 
-bool InputSystem::HandleButtonLikeInput(int key_code, int action, int mods) {
+bool InputSystem::HandleButtonLikeInput(int key_code, int action, int mods, Device device) {
 	// Try each action dimension until one matches
 	if (!HasActiveLayout()) {
 		return false;
 	}
-	return Handle0DAction(key_code, action, mods) || Handle1DAction(key_code, action, mods) || Handle2DAction(key_code, action, mods);
+	return Handle0DAction(key_code, action, mods, device) || Handle1DAction(key_code, action, mods, device) || Handle2DAction(key_code, action, mods, device);
 }
 
 bool InputSystem::OnKeyPress(event::WindowKey* e) {
 	// Keyboard key press/release
-	return HandleButtonLikeInput(e->key, e->action, e->mods);
+	return HandleButtonLikeInput(e->key, e->action, e->mods, Device::Keyboard);
 }
 
 #pragma region mouse
 
 bool InputSystem::OnMouseButton(event::WindowMouseButton* e) {
 	// Mouse button press/release
-	return HandleButtonLikeInput(e->button, e->action, e->mods);
+	return HandleButtonLikeInput(e->button, e->action, e->mods, Device::Mouse);
 }
 
 bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
+	// Store mouse delta and mouse position
+	m.oldMousePosition = m.mousePosition;
+	m.mousePosition = glm::vec2{ e->x, e->y };
+	m.mouseDelta = m.mousePosition - m.oldMousePosition;
+
 	// Mouse position as a 2D action (normalized to NDC)
 	if (!HasActiveLayout()) {
 		return false;
@@ -244,32 +269,46 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 				continue;
 			}
 			for (const auto& [key, _] : bind.keys) {
-				if (key != MOUSE_POSITION_CODE) {
-					continue;
-				}
+				if (key == MOUSE_POSITION_CODE) {
+					action.device = bind.device;
+					action.state = Action2D::Ongoing;
 
-				action.device = bind.device;
-				action.state = Action2D::Ongoing;
-
-				glm::vec2 value = { e->x, e->y };
+					glm::vec2 value = m.mousePosition;
 
 #if defined(__linux__)
-				// Adjust for display scale on Linux
-				const auto [sx, sy] = toast::Window::GetInstance()->GetDisplayScale();
-				value.x *= sx;
-				value.y *= sy;
+					// Adjust for display scale on Linux
+					const auto [sx, sy] = toast::Window::GetInstance()->GetDisplayScale();
+					value.x *= sx;
+					value.y *= sy;
 #endif
 
-				// Convert screen coords to NDC [-1, 1]
-				const auto [w, h] = toast::Window::GetInstance()->GetFramebufferSize();
-				value.x = (value.x / w) - 0.5f;
-				value.y = (value.y / h) - 0.5f;
-				value *= 2.0f;
-				value.y *= -1.0f;    // y up
+					// Convert screen coords to NDC [-1, 1]
+					const auto [w, h] = toast::Window::GetInstance()->GetFramebufferSize();
+					value.x = (value.x / w) - 0.5f;
+					value.y = (value.y / h) - 0.5f;
+					value *= 2.0f;
+					value.y *= -1.0f;    // y up
 
-				action.m.pressedKeys.emplace(MOUSE_POSITION_CODE, value);
-				AddToQueue(m.dispatch2DQueue, &action);
-				return true;
+					action.m.pressedKeys.emplace(MOUSE_POSITION_CODE, value);
+					AddToQueue(m.dispatch2DQueue, &action);
+					return true;
+				}
+
+				if (key == MOUSE_RAW_CODE) {
+					action.device = bind.device;
+					action.state = Action2D::Ongoing;
+					action.m.pressedKeys.emplace(MOUSE_RAW_CODE, m.mousePosition);
+					AddToQueue(m.dispatch2DQueue, &action);
+					return true;
+				}
+
+				if (key == MOUSE_DELTA_CODE) {
+					action.device = bind.device;
+					action.state = Action2D::Ongoing;
+					action.m.pressedKeys.emplace(MOUSE_DELTA_CODE, m.mouseDelta);
+					AddToQueue(m.dispatch2DQueue, &action);
+					return true;
+				}
 			}
 		}
 	}
@@ -559,9 +598,12 @@ void InputSystem::ControllerAxis(int id, std::array<float, 6> axes) {
 					if (key == 0 && (id == 0 || id == 1)) {
 						action.device = Device::ControllerStick;
 						glm::vec2 value = { axes[0], -axes[1] };
-						if (value != glm::vec2 { 0.0f, 0.0f }) {
+						if (abs(value.x) > m.triggerDeadzone || abs(value.y) > m.triggerDeadzone) {
+							action.state = Action2D::Ongoing;
 							action.m.pressedKeys[id + 2e8] = value;
 						} else {
+							action.state = Action2D::Finished;
+							action.value = {0.0f, 0.0f};
 							action.m.pressedKeys.erase(id + 2e8);
 						}
 						AddToQueue(m.dispatch2DQueue, &action);

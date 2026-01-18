@@ -4,14 +4,15 @@
 
 #pragma once
 #include "ResourceSlot.hpp"
-#include "Texture.hpp"
-#include "Toast/Log.hpp"
 #include "Toast/Renderer/Shader.hpp"
+#include "Texture.hpp"
 
-#include <optional>
+#include <Toast/Log.hpp>
 #include <string>
 #include <thread>
 #include <vector>
+
+#include "Mesh.hpp"
 
 namespace resource {
 
@@ -36,7 +37,7 @@ public:
 	void PurgeResources();
 
 	///@brief Loads a resource of type R from the given path
-	template<typename R, typename... Args>
+	template<typename R, typename ... Args>
 	std::shared_ptr<R> LoadResource(const std::string& path, Args&&... args);
 
 	// std::shared_ptr<renderer::Shader> LoadShader(std::string name);
@@ -56,6 +57,16 @@ public:
 	}
 
 private:
+	
+	
+	// helpers
+	[[nodiscard]]
+	inline std::string ToForwardSlashes(const std::string& s) const {
+		std::string result = s;
+		std::ranges::replace(result, '\\', '/');
+		return result;
+	}
+	
 	std::mutex m_mtx;
 	std::mutex m_uploadMtx;
 
@@ -89,12 +100,15 @@ template<typename R, typename... Args>
 std::shared_ptr<R> ResourceManager::LoadResource(const std::string& path, Args&&... args) {
 	static_assert(std::is_base_of_v<IResource, R>, "Must be IResource type");
 
-	TOAST_INFO("Loading resource: {0}", path);
+	// Normalize path to use forward slashes
+	std::string formattedPath = ToForwardSlashes(path);
+	
+	TOAST_INFO("Loading resource: {0}", formattedPath);
 
 	// Fast path: try to return cached
 	{
 		std::lock_guard lock(m_mtx);
-		auto it = m_cachedResources.find(path);
+		auto it = m_cachedResources.find(formattedPath);
 		if (it != m_cachedResources.end()) {
 			// lock the base weak_ptr to get a shared_ptr<IResource>
 			if (auto baseSp = it->second) {
@@ -110,13 +124,13 @@ std::shared_ptr<R> ResourceManager::LoadResource(const std::string& path, Args&&
 	}
 
 	// Create the object first (owning pointer) - perfect-forward extra args (optional)
-	auto res = std::make_shared<R>(path, std::forward<Args>(args)...);
+	auto res = std::make_shared<R>(formattedPath, std::forward<Args>(args)...);
 
 	// Insert weak_ptr into cache BEFORE performing the expensive load so other threads see it.
 	// Important: don't std::move(res) here — we still need the shared_ptr locally to call Load().
 	{
 		std::lock_guard lock(m_mtx);
-		m_cachedResources[path] = res;    // constructs weak_ptr<IResource> from shared_ptr<R>
+		m_cachedResources[formattedPath] = res;    // constructs weak_ptr<IResource> from shared_ptr<R>
 	}
 
 	// Now load without holding the resource map mutex.

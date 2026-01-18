@@ -1,4 +1,4 @@
-name: Doxygen Documentation Deploy Actition
+name: Doxygen Documentation Deploy Action
 
 on:
   push:

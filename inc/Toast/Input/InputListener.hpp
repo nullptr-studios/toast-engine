@@ -7,6 +7,7 @@
 #include "Action.hpp"
 #include "Toast/Log.hpp"
 
+#include <glm/glm.hpp>
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -44,5 +45,8 @@ private:
 
 void SetLayout(std::string_view name);    ///< @brief Change the current input layout
 void SetState(std::string_view state);    ///< @brief Change the current input state
+
+auto GetMousePosition() -> glm::vec2;     ///< @brief Returns the last mouse position
+auto GetMouseDelta() -> glm::vec2;        ///< @brief Returns the last mouse delta
 
 }

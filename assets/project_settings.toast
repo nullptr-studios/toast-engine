@@ -3,6 +3,7 @@ projectName: Demo Project
 projectVersion: [0, 2, 0]
 
 input:
+  deadzone: 0.2
   layouts:
     - layouts/game.lua
     - layouts/editor.lua
