@@ -299,31 +299,53 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 }
 
 std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
+	if (not get().has_value()) {
+		TOAST_WARN("Raycast skipped because physics system doesn't exist");
+		return std::nullopt;
+	}
+	auto* physics = get().value();
+
 	std::optional<RayResult> result = std::nullopt;
-	RayResult temp;
 	std::optional<dvec2> col_hit;
 	std::optional<dvec2> rb_hit;
-	auto ps = PhysicsSystem::get();
-	if (ps == std::nullopt)
-		return std::nullopt;
 
-	for (auto* c : ps.value()->m.colliders) {
-		std::optional<dvec2> cur_dist = ConvexRayCollision(ray, c);
-		if (cur_dist != std::nullopt)
-			if (col_hit == std::nullopt || length2(cur_dist.value() - ray->p1) < length2(col_hit.value() - ray->p1)) {
-				temp.collider = c;
-				col_hit = cur_dist.value();
-			}
+	for (auto* c : physics->m.colliders) {
+		std::optional<dvec2> collision = ConvexRayCollision(ray, c);
+		if (not collision.has_value()) { continue; }
+
+		if (not col_hit.has_value() || length2(*collision - ray->p1) < length2(*col_hit - ray->p1)) {
+			col_hit = collision.value();
+			const float d = static_cast<float>(distance(*col_hit, ray->p1));
+
+			// same as below
+			if (result && result.value().distance < d) continue;
+			result = {
+				.type = RayResult::Collider,
+				.point = *col_hit,
+				.distance = d,
+				.other = c->parent
+			};
+		}
 	}
 
-	//for (auto* r : ps.value()->m.rigidbodies) {
-	//	std::optional<dvec2> cur_dist = RbRayCollision(ray, r);
-	//	if (cur_dist != std::nullopt)
-	//		if (rb_hit == std::nullopt || length2(cur_dist.value() - ray->p1) < length2(rb_hit.value() - ray->p1)) {
-	//			temp.rigid = r;
-	//			rb_hit = cur_dist.value();
-	//		}
-	//}
+	for (auto* r : physics->m.rigidbodies) {
+		std::optional<dvec2> collision = RbRayCollision(ray, r);
+		if (not collision.has_value()) { continue; }
+
+		if (not rb_hit.has_value() || length(*collision - ray->p1) < length2(*rb_hit - ray->p1)) {
+			rb_hit = collision.value();
+			const float d = static_cast<float>(distance(*rb_hit, ray->p1));
+
+			// Do not modify result if theres already one with less distance
+			if (result && result.value().distance < d) continue;
+			result = {
+				.type = RayResult::Rigidbody,
+				.point = *rb_hit,
+				.distance = d,
+				.other = r->parent()
+			};
+		}
+	}
 
 	if (temp.rigid != nullptr && temp.collider != nullptr) {
 		result = temp;
