@@ -33,10 +33,10 @@ public:
 	double friction = 0.2;    // How it deals frictions onto other objects (not itself)
 
 	// simulation
-	glm::vec2 gravityScale { 1.0, 1.0 };          // How much gravity affects the object
-	glm::vec2 drag = {0.5, 0.5};                  // Anisotropic drag for linear movement
-	double restitution = 0.6;                     // Bounciness
-	double restitutionThreshold = 0.5;            // Minimum speed for restitution to take place
+	glm::vec2 gravityScale { 1.0, 1.0 };       // How much gravity affects the object
+	glm::vec2 drag = { 0.5, 0.5 };             // Anisotropic drag for linear movement
+	double restitution = 0.6;                  // Bounciness
+	double restitutionThreshold = 0.5;         // Minimum speed for restitution to take place
 	glm::vec2 minimumVelocity { 0.1, 0.1 };    // Object velocity will be set to 0.0 if less than this
 
 	// internal
@@ -52,6 +52,5 @@ public:
 		glm::vec4 collidingColor = { 0.0f, 1.0f, 0.0f, 1.0f };    // Color when colliding (not implemented)
 	} debug;
 };
-
 
 }

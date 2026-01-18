@@ -29,8 +29,10 @@
 // clang-format on
 #endif
 
+#include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
 
+#include <sstream>
 #include <stb_image.h>
 
 #ifdef TRACY_ENABLE
@@ -261,6 +263,7 @@ OpenGLRenderer::OpenGLRenderer() {
 
 OpenGLRenderer::~OpenGLRenderer() {
 	TOAST_INFO("Shutting down OpenGL Renderer...");
+
 	delete m_geometryFramebuffer;
 	delete m_lightFramebuffer;
 	delete m_outputFramebuffer;
@@ -328,6 +331,8 @@ void OpenGLRenderer::Render() {
 
 	// Compute combined matrix once
 	m_multipliedMatrix = m_projectionMatrix * m_viewMatrix;
+
+	// ParticleSystems are updated by the scene/world tick; renderer doesn't tick them directly
 
 	// Geometry
 	GeometryPass();
@@ -399,6 +404,9 @@ void OpenGLRenderer::GeometryPass() {
 			r->OnRender(m_multipliedMatrix);
 		}
 	}
+
+	// ParticleSystems are Actors and will render themselves as part of layer/scene rendering
+
 	// Don't unbind here - will be unbound when next framebuffer is bound
 }
 

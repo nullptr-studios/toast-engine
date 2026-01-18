@@ -1,5 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "RigidbodyDynamics.hpp"
+
 #include "ConvexCollider.hpp"
 #include "PhysicsSystem.hpp"
 #include "Toast/Log.hpp"
@@ -10,7 +11,6 @@
 #include "glm/gtx/norm.hpp"
 
 #include <glm/glm.hpp>
-
 
 namespace physics {
 using namespace glm;
@@ -40,10 +40,10 @@ void RbKinematics(Rigidbody* rb) {
 	velocity += accel * Time::fixed_delta();
 
 	// Apply drag
-	const dvec2 damping = exp(dvec2{-rb->drag} * Time::fixed_delta());
+	const dvec2 damping = exp(dvec2 { -rb->drag } * Time::fixed_delta());
 	velocity *= damping;
 
-	if (all(lessThan(abs(velocity), dvec2{rb->minimumVelocity}))) {
+	if (all(lessThan(abs(velocity), dvec2 { rb->minimumVelocity }))) {
 		velocity = { 0.0, 0.0 };
 	}
 
@@ -156,14 +156,14 @@ void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
 	rb2->SetPosition(position2);
 
 	// Velocity correction
-	auto velocity_correction = [&](Rigidbody* rb, dvec2 v)-> dvec2 {
+	auto velocity_correction = [&](Rigidbody* rb, dvec2 v) -> dvec2 {
 		double normal_velocity = dot(v, normal);
 		if (std::abs(normal_velocity) < rb->minimumVelocity.y) {
 			// Kill tiny normal velocity
 			v -= normal_velocity * normal;
 		}
 
-		if (all(lessThan(abs(v), dvec2{rb->minimumVelocity}))) {
+		if (all(lessThan(abs(v), dvec2 { rb->minimumVelocity }))) {
 			v = { 0.0, 0.0 };
 		}
 
@@ -306,7 +306,7 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	rb->SetPosition(position);
 
 	// velocity correction
-	normal_speed = glm::dot(velocity, manifold.normal); // update normal speed
+	normal_speed = glm::dot(velocity, manifold.normal);    // update normal speed
 	if (normal_speed < 0.0) {
 		velocity -= normal_speed * manifold.normal;
 	}
@@ -315,22 +315,22 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	if (std::abs(normal_speed) < rb->minimumVelocity.y) {
 		velocity -= normal_speed * manifold.normal;
 	}
-	if (all(lessThan(abs(velocity), dvec2{rb->minimumVelocity}))) {
+	if (all(lessThan(abs(velocity), dvec2 { rb->minimumVelocity }))) {
 		velocity = { 0.0, 0.0 };
 	}
 
 	rb->velocity = velocity;
-
 }
 
 std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 	std::optional<dvec2> result = std::nullopt;
 	dvec2 pt1 = ray->p1 - rb->GetPosition();
 	dvec2 pt2 = ray->p2 - rb->GetPosition();
-  dvec2 min_distance = cross(dvec3(pt1.x, pt1.y, 0.0f), dvec3(pt2.x, pt2.y, 0.0f)) / length(pt2 - pt1);
+	dvec2 min_distance = cross(dvec3(pt1.x, pt1.y, 0.0f), dvec3(pt2.x, pt2.y, 0.0f)) / length(pt2 - pt1);
 
-	if (length2(min_distance) >= rb->radius * rb->radius)
+	if (length2(min_distance) >= rb->radius * rb->radius) {
 		return std::nullopt;
+	}
 
 	result = rb->GetPosition();
 	return result;

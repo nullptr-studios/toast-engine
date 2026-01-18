@@ -50,7 +50,7 @@ void DebugDrawLayer::OnAttach() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// reserve to avoid reallocation very often
-	m_vertices.reserve(4096*3);
+	m_vertices.reserve(4096 * 3);
 
 	m_renderer = IRendererBase::GetInstance();
 }

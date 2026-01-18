@@ -44,7 +44,9 @@ InputSystem::InputSystem() {
 	// Check for connected controllers when the game starts
 	for (int i = 0; i < 16; i++) {
 		// yes im using not and or to spice things up a bit
-		if (not glfwJoystickPresent(i) || not glfwJoystickIsGamepad(i)) continue;
+		if (not glfwJoystickPresent(i) || not glfwJoystickIsGamepad(i)) {
+			continue;
+		}
 		m.controllers[i] = GamepadState {};
 		TOAST_INFO("Controller {} connected: {}", i, glfwGetGamepadName(i));
 	}
@@ -147,7 +149,9 @@ bool InputSystem::Handle0DAction(int key_code, int action, int mods, Device devi
 			continue;
 		}
 		for (const auto& bind : act.m.binds) {
-			if (bind.device != device) continue;
+			if (bind.device != device) {
+				continue;
+			}
 			if (!bind.keys.contains(key_code) || action == 2) {
 				continue;
 			}
@@ -176,7 +180,9 @@ bool InputSystem::Handle1DAction(int key_code, int action, int mods, Device devi
 			continue;
 		}
 		for (const auto& bind : act.m.binds) {
-			if (bind.device != device) continue;
+			if (bind.device != device) {
+				continue;
+			}
 			for (const auto& [key, direction] : bind.keys) {
 				if (key != key_code || action == 2) {
 					continue;
@@ -206,7 +212,9 @@ bool InputSystem::Handle2DAction(int key_code, int action, int mods, Device devi
 			continue;
 		}
 		for (const auto& bind : act.m.binds) {
-			if (bind.device != device) { continue; }
+			if (bind.device != device) {
+				continue;
+			}
 			for (const auto& [key, direction] : bind.keys) {
 				if (key != key_code || action == 2) {
 					continue;
@@ -234,7 +242,8 @@ bool InputSystem::HandleButtonLikeInput(int key_code, int action, int mods, Devi
 	if (!HasActiveLayout()) {
 		return false;
 	}
-	return Handle0DAction(key_code, action, mods, device) || Handle1DAction(key_code, action, mods, device) || Handle2DAction(key_code, action, mods, device);
+	return Handle0DAction(key_code, action, mods, device) || Handle1DAction(key_code, action, mods, device) ||
+	       Handle2DAction(key_code, action, mods, device);
 }
 
 bool InputSystem::OnKeyPress(event::WindowKey* e) {
@@ -252,7 +261,7 @@ bool InputSystem::OnMouseButton(event::WindowMouseButton* e) {
 bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 	// Store mouse delta and mouse position
 	m.oldMousePosition = m.mousePosition;
-	m.mousePosition = glm::vec2{ e->x, e->y };
+	m.mousePosition = glm::vec2 { e->x, e->y };
 	m.mouseDelta = m.mousePosition - m.oldMousePosition;
 
 	// Mouse position as a 2D action (normalized to NDC)
@@ -603,7 +612,7 @@ void InputSystem::ControllerAxis(int id, std::array<float, 6> axes) {
 							action.m.pressedKeys[id + 2e8] = value;
 						} else {
 							action.state = Action2D::Finished;
-							action.value = {0.0f, 0.0f};
+							action.value = { 0.0f, 0.0f };
 							action.m.pressedKeys.erase(id + 2e8);
 						}
 						AddToQueue(m.dispatch2DQueue, &action);

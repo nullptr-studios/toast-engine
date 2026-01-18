@@ -1,0 +1,54 @@
+#version 430 core
+
+layout(local_size_x = 256) in;
+
+struct Particle {
+    vec4 pos; // xyz = position; w = startSize
+    vec4 vel; // xyz = velocity; w = rotation
+    vec4 color; // startColor rgba (also used as current color)
+    vec4 end; // endColor rgba
+    vec4 misc; // x = lifeRemaining; y = lifeMax; z = seed/id; w = endSize
+};
+
+layout(std430, binding = 0) readonly buffer PartIn { Particle particlesIn[]; };
+layout(std430, binding = 1) writeonly buffer PartOut { Particle particlesOut[]; };
+layout(std430, binding = 2) buffer EmitReqs { uint requests[]; };
+layout(std430, binding = 3) buffer Counters { uint inCount; uint outCount; uint spawnCount; uint pad; };
+layout(std140, binding = 4) uniform FrameParams { float dt; vec3 gravity; uint maxParticles; };
+
+void main() {
+    uint gid = gl_GlobalInvocationID.x;
+    uint n = inCount;
+    if (gid < n) {
+        Particle p = particlesIn[gid];
+
+        // integrate
+        p.vel.xyz += gravity * dt;
+        p.pos.xyz += p.vel.xyz * dt;
+        p.misc.x -= dt; // life remaining
+
+        if (p.misc.x > 0.0) {
+            // interpolate color and size based on life fraction
+            float lifeMax = max(p.misc.y, 0.0001);
+            float t = 1.0 - (p.misc.x / lifeMax); // 0 at birth, 1 at death
+            // lerp color (full rgba)
+            vec4 startCol = p.color;
+            vec4 endCol = p.end;
+            vec4 interpCol = mix(startCol, endCol, t);
+            p.color = interpCol;
+            // lerp size between start in pos.w and endSize stored in misc.w
+            float startSize = p.pos.w;
+            float endSize = p.misc.w;
+            p.pos.w = mix(startSize, endSize, t);
+
+            uint idx = atomicAdd(outCount, 1);
+            if (idx < maxParticles) {
+                particlesOut[idx] = p;
+            }
+        }
+    }
+
+    // Spawn handling: first invocation(s) will append spawn requests
+    // For simplicity, treat requests as pairs: [count, seed, ...] written by CPU
+    // This simple shader only handles existing particles; spawn pass will be done by CPU filling part of Out buffer.
+}

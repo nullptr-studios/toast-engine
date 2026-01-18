@@ -33,6 +33,6 @@ public:
 private:
 	bool m_isActiveCamera = false;
 
-	glm::mat4 m_viewMatrix = glm::mat4(1.0f);
+	alignas(16) glm::mat4 m_viewMatrix = glm::mat4(1.0f);
 };
 }
