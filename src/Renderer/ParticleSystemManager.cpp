@@ -166,7 +166,7 @@ void ParticleSystemManager::Tick(float dt) {
 					f[9] = e->startColor.g;
 					f[10] = e->startColor.b;
 					f[11] = e->startColor.a;
-					// endColor + endSize packed in .w (f[12-15])
+					// endColor (f[12-15])
 					f[12] = e->endColor.r;
 					f[13] = e->endColor.g;
 					f[14] = e->endColor.b;
@@ -189,68 +189,82 @@ void ParticleSystemManager::Tick(float dt) {
 			}
 			glUnmapNamedBuffer(m_ssboOut);
 
-			// Set counters: inCount (existing), outCount = spawnWriteTotal (initial), spawnCount = spawnWriteTotal
-			std::array<uint32_t, 4> countersVals = { m_inCount, spawnWriteTotal, spawnWriteTotal, 0 };
+			// Set counters: inCount (existing), outCount=spawnWriteTotal (initial), spawnCount=spawnWriteTotal
+			std::array<uint32_t,4> countersVals = { m_inCount, spawnWriteTotal, spawnWriteTotal, 0 };
 			glNamedBufferSubData(m_counters, 0, static_cast<GLsizeiptr>(sizeof(countersVals)), countersVals.data());
 		}
 	} else {
 		// ensure counters.inCount has current inCount
-		std::array<uint32_t, 4> countersVals = { m_inCount, 0, 0, 0 };
+		std::array<uint32_t,4> countersVals = { m_inCount, 0, 0, 0 };
 		glNamedBufferSubData(m_counters, 0, static_cast<GLsizeiptr>(sizeof(countersVals)), countersVals.data());
 	}
 
+	// store dt for use during Render dispatch
+	m_lastDt = dt;
+}
+
+void ParticleSystemManager::Render(const glm::mat4& viewProj) {
+	PROFILE_ZONE;
+
+	// Compute pass 
+	// run particle update on GPU using last tick's dt
+	
 	// Bind buffers to the layout expected by the compute shader
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_ssboIn);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_ssboOut);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, m_emitRequests);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, m_counters);
 
-	// Upload FrameParams UBO
-	FrameParamsStd140 fp {};
-	fp.dt = dt;
-	fp.gravity[0] = m_gravity.x;
-	fp.gravity[1] = m_gravity.y;
-	fp.gravity[2] = m_gravity.z;
-	fp.gravity[3] = 0.0f;
+	// Upload FrameParams UBO (std140)
+	FrameParamsStd140 fp{};
+	fp.dt = m_lastDt;
+	fp.gravity[0] = m_gravity.x; fp.gravity[1] = m_gravity.y; fp.gravity[2] = m_gravity.z; fp.gravity[3] = 0.0f;
 	fp.maxParticles = m_maxParticles;
 	glNamedBufferSubData(m_uboFrameParams, 0, static_cast<GLsizeiptr>(sizeof(fp)), &fp);
 
-	// dispatch groups based on current inCount, if inCount == 0, still dispatch a small group to handle spawns
-	uint32_t groups = (std::max<uint32_t>(1, (m_inCount + 255) / 256));
-	glDispatchCompute(groups, 1, 1);
+	// Ensure compute shader is bound before dispatch
+	bool canDispatch = true;
+	if (m_computeShader) {
+		try { m_computeShader->Use(); } catch (const std::exception& ex) { TOAST_ERROR("Compute shader failed to use: {0}", ex.what()); canDispatch = false; }
+	} else { TOAST_WARN("No compute shader resource available"); canDispatch = false; }
 
-	// Ensure writes are visible to vertex stage
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+	if (canDispatch) {
+		// dispatch groups: cover the full particle capacity so compute invocations are valid and shader can guard with inCount
+		uint32_t groups = std::max<uint32_t>(1, (m_maxParticles + 255) / 256);
+
+		// Clamp groups to GL_MAX_COMPUTE_WORK_GROUP_COUNT
+		GLint maxGroupsX = 0; glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &maxGroupsX);
+		if (static_cast<GLint>(groups) > maxGroupsX) { TOAST_WARN("Requested compute groups %u exceeds device limit %d, clamping", groups, maxGroupsX); groups = static_cast<uint32_t>(maxGroupsX); }
+		glDispatchCompute(groups, 1, 1);
+
+		// Ensure writes are visible to vertex stage
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+	} else {
+		glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+	}
 
 	// After compute, swap buffers so next frame reads from updated buffer
 	SwapBuffers();
 
-	// Read back counters.outCount to update m_inCount for next frame every 5 frames
+	// Read back counters.outCount to update m_inCount for next frame every m_readbackInterval frames
 	m_readbackCounter = (m_readbackCounter + 1) % std::max(1, m_readbackInterval);
 	if (m_readbackCounter == 0) {
-		std::array<uint32_t, 4> countersRead = { 0u, 0u, 0u, 0u };
+		std::array<uint32_t,4> countersRead = {0u,0u,0u,0u};
 		glGetNamedBufferSubData(m_counters, 0, static_cast<GLsizeiptr>(sizeof(countersRead)), countersRead.data());
 		m_inCount = countersRead[1];
 	}
-	// else keep m_inCount unchanged
-}
 
-void ParticleSystemManager::Render(const glm::mat4& viewProj) {
-	PROFILE_ZONE;
-	if (!m_renderShader) {
-		return;
-	}
-	
-	glm::mat4 inv = glm::inverse(viewProj);
-	glm::vec3 camRight = glm::normalize(glm::vec3(inv[0][0], inv[1][0], inv[2][0]));
-	glm::vec3 camUp = glm::normalize(glm::vec3(inv[0][1], inv[1][1], inv[2][1]));
+	// render pass
+	if (!m_renderShader) { TOAST_WARN("Render shader not available, skipping particle render"); return; }
+	try { m_renderShader->LoadMainThread(); } catch (const std::exception& ex) { TOAST_ERROR("Failed to load render shader: {0}", ex.what()); return; }
+	if (!m_renderShader->valid()) { TOAST_ERROR("Render shader program invalid after load, skipping particle render"); return; }
 
-	
-	DefaultTexture->Bind(1);    // TODO fix hardcoded texture test
-	m_renderShader->Use();
+	if (!DefaultTexture) TOAST_WARN("Default particle texture not loaded"); else DefaultTexture->Bind(1);
+	try { m_renderShader->Use(); } catch (const std::exception& ex) { TOAST_ERROR("Failed to use render shader: {0}", ex.what()); return; }
+
 	m_renderShader->Set("u_ViewProj", viewProj);
-	m_renderShader->Set("u_CamRight", camRight);
-	m_renderShader->Set("u_CamUp", camUp);
+	m_renderShader->Set("u_CamRight", glm::normalize(glm::vec3(glm::inverse(viewProj)[0])));
+	m_renderShader->Set("u_CamUp", glm::normalize(glm::vec3(glm::inverse(viewProj)[1])));
 
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_ssboIn);
 	m_renderShader->SetSampler("u_Tex", 1);
