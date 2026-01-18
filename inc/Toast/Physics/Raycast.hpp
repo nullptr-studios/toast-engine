@@ -15,6 +15,7 @@ class ConvexCollider;
 struct RayResult {
 	ConvexCollider* collider = nullptr;
 	Rigidbody* rigid = nullptr;
+	glm::dvec2 point;
 
 	//if false collider, otherwise rigidbody
 	bool colOrRb = false;;
