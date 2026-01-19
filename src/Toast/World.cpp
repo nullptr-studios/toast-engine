@@ -35,27 +35,21 @@ World::World() {
 
 		auto file = resource::Open("scenes.lua");
 		if (!file.has_value()) {
-			TOAST_ERROR("Input layout file couldn't be open");
-			throw;
+			TOAST_ERROR("File couldn't be open");
+			throw sol::error("scenes.lua does not exist or cannot be opened");
 		}
 
 		sol::optional<sol::table> result = lua.script(*file);
 		if (!result.has_value()) {
-			TOAST_ERROR("Input layout file didn't return anything");
-			throw;
+			TOAST_ERROR("Lua file didn't return anything");
+			throw sol::error("scenes.lua did not return a lua table???");
 		}
 		lua_table = *result;
 
 		m.worldList = lua_table.as<std::vector<std::vector<std::string>>>();
-		for (auto& a : m.worldList) {
-			for (auto& b : a) {
-				TOAST_INFO("{}, ", b);
-			}
-		}
 
 	} catch (const sol::error& e) {
-		TOAST_ERROR("Input layout file failed to compile: {}", e.what());
-		throw;
+		TOAST_WARN("Scenes.lua file failed to do something: {}", e.what());
 	}
 	// Event handling
 	m.listener = std::make_unique<event::ListenerComponent>();
