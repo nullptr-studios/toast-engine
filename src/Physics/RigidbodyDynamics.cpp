@@ -334,22 +334,13 @@ std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 		return std::nullopt;
 
 	double distance = std::max(0.0, rb->radius - length(closest_point - rb->GetPosition()));
-	dvec2 tangent = normalize(closest_point - ray->p1);
 
-	double chord_half = std::sqrt(std::max(0.0, (rb->radius * rb->radius) - (distance * distance)));
-
-	dvec2 base_point = rb->GetPosition() - ray->normal * distance;
-
-	if (chord_half <= PhysicsSystem::eps())
-		result = base_point;
-	else {
-		dvec2 pt1 = base_point - tangent * chord_half;
-		dvec2 pt2 = base_point + tangent * chord_half;
-		if (length2(pt2 - ray->p1) > length2(pt1 - ray->p1))
-			result = pt1;
-		else
-			result = pt2;
-	}
+	dvec2 pt1 = closest_point - ray->tangent * distance;
+	dvec2 pt2 = closest_point + ray->tangent * distance;
+	if (length2(pt2 - ray->p1) > length2(pt1 - ray->p1))
+		result = pt1;
+	else
+		result = pt2;
 
 	return result;
 }
