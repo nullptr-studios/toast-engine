@@ -327,12 +327,12 @@ std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 	std::optional<dvec2> result = std::nullopt;
 	dvec2 pt1 = ray->p1 - rb->GetPosition();
 	dvec2 pt2 = ray->p2 - rb->GetPosition();
-  dvec2 min_distance = cross(dvec3(pt1.x, pt1.y, 0.0f), dvec3(pt2.x, pt2.y, 0.0f)) / length(pt2 - pt1);
+	dvec2 min_distance = cross(dvec3(pt1.x, pt1.y, 0.0f), dvec3(pt2.x, pt2.y, 0.0f));
 
 	if (length2(min_distance) >= rb->radius * rb->radius)
 		return std::nullopt;
 
-	result = rb->GetPosition();
+	result = min_distance;
 	return result;
 }
 
