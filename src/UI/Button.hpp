@@ -9,7 +9,7 @@
 #include "Toast/Objects/Actor.hpp"
 
 class Button : public toast::Actor {
-
+  public:
   REGISTER_TYPE(Button);
 
   void Init() override {}
