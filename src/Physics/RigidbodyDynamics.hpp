@@ -27,8 +27,7 @@ auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold>;
 void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold);
 auto RbBoxCollision(Rigidbody* rb1, BoxRigidbody* rb2) -> std::optional<Manifold>;
 void RbBoxResolution(Rigidbody* rb1, BoxRigidbody* rb2, Manifold manifold);
-auto RbTriggerCollision(Rigidbody* rb1, Trigger* rb2) -> std::optional<Manifold>;
-void RbTriggerResolution(Rigidbody* rb1, Trigger* rb2, Manifold manifold);
+void RbTriggerCollision(Rigidbody* rb1, Trigger* t);
 auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold>;
 void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold);
 

@@ -11,6 +11,7 @@ namespace physics {
 
 class Rigidbody;
 class ConvexCollider;
+class Trigger;
 
 class PhysicsSystem {
 public:
@@ -27,6 +28,8 @@ public:
 	static void RemoveRigidbody(Rigidbody* rb);
 	static void AddCollider(ConvexCollider* c);
 	static void RemoveCollider(ConvexCollider* c);
+	static void AddTrigger(Trigger* t);
+	static void RemoveTriccer(Trigger* t);
 
 	PhysicsSystem();
 	~PhysicsSystem();
@@ -49,6 +52,7 @@ private:
 		unsigned char tickCount = 1;
 		std::list<Rigidbody*> rigidbodies;
 		std::list<ConvexCollider*> colliders;
+		std::list<Trigger*> triggers;
 		glm::dvec2 gravity = { 0.0, -9.81 };
 		double positionCorrectionSlop = 1.0e-3;
 		double positionCorrectionPtc = 0.4;
