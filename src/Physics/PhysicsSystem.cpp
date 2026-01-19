@@ -306,14 +306,14 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
 	auto* physics = get().value();
 
 	std::optional<RayResult> result = std::nullopt;
-	std::optional<dvec2> col_hit;
-	std::optional<dvec2> rb_hit;
+	std::optional<dvec2> col_hit = std::nullopt;
+	std::optional<dvec2> rb_hit = std::nullopt;
 
 	for (auto* c : physics->m.colliders) {
 		std::optional<dvec2> collision = ConvexRayCollision(ray, c);
-		if (not collision.has_value()) { continue; }
+		if (collision == std::nullopt) { continue; }
 
-		if (not col_hit.has_value() || length2(*collision - ray->p1) < length2(*col_hit - ray->p1)) {
+		if (col_hit == std::nullopt || length2(*collision - ray->p1) < length2(*col_hit - ray->p1)) {
 			col_hit = collision.value();
 			const float d = static_cast<float>(distance(*col_hit, ray->p1));
 
