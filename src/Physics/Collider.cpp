@@ -274,6 +274,11 @@ void Collider::Inspector() {
 	}
 
 	m.flags = static_cast<ColliderFlags>(cur);
+	data.flags = static_cast<ColliderFlags>(cur);
+	for (auto* c : m.convexShapes) {
+		c->flags = static_cast<ColliderFlags>(cur);
+	}
+
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Points");
