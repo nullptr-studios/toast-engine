@@ -25,7 +25,7 @@ World::World() {
 		throw ToastException("Having more than one world is not allowed");
 	}
 	m_instance = this;
-  
+
 	sol::state lua;
 	sol::table lua_table;
 
@@ -46,7 +46,12 @@ World::World() {
 		}
 		lua_table = *result;
 
-    m.worldList = lua_table.as<std::vector<std::vector<std::string>>>();
+		m.worldList = lua_table.as<std::vector<std::vector<std::string>>>();
+		for (auto& a : m.worldList) {
+			for (auto& b : a) {
+				TOAST_INFO("{}, ", b);
+			}
+		}
 
 	} catch (const sol::error& e) {
 		TOAST_ERROR("Input layout file failed to compile: {}", e.what());
