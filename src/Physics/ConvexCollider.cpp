@@ -59,8 +59,8 @@ void ConvexCollider::Debug() {
 	}
 }
 
-auto ConvexRayCollision(Line* ray, ConvexCollider* c) -> std::optional<dvec2> {
-	std::optional<dvec2> result = std::nullopt;
+auto ConvexRayCollision(Line* ray, ConvexCollider* c) -> std::optional<std::pair<dvec2, dvec2>> {
+	std::optional<std::pair<dvec2, dvec2>> result = std::nullopt;
 	double min_distance_sq = std::numeric_limits<double>::max();
 
 	for (Line& l : c->edges) {
@@ -71,7 +71,7 @@ auto ConvexRayCollision(Line* ray, ConvexCollider* c) -> std::optional<dvec2> {
 			const double dist_sq = length2(intersection.value() - ray->p1);
 			if (dist_sq < min_distance_sq) {
 				min_distance_sq = dist_sq;
-				result = intersection;
+				result = { *intersection, l.normal };
 			}
 		}
 	}

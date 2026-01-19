@@ -311,11 +311,11 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 
 	for (auto* c : physics->m.colliders) {
 		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(c->flags)) == 0u) continue;
-		std::optional<dvec2> collision = ConvexRayCollision(ray, c);
+		auto collision = ConvexRayCollision(ray, c);
 		if (not collision.has_value()) { continue; }
 
-		if (not col_hit.has_value() || length2(*collision - ray->p1) < length2(*col_hit - ray->p1)) {
-			col_hit = collision.value();
+		if (not col_hit.has_value() || length2(collision->first - ray->p1) < length2(*col_hit - ray->p1)) {
+			col_hit = collision->first;
 			const float d = static_cast<float>(distance(*col_hit, ray->p1));
 
 			// same as below
@@ -323,6 +323,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 			result = {
 				.type = RayResult::Collider,
 				.point = *col_hit,
+				.normal = collision->second,
 				.distance = d,
 				.other = c->parent
 			};
@@ -343,6 +344,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 			result = {
 				.type = RayResult::Rigidbody,
 				.point = *rb_hit,
+				.normal = ray->tangent,
 				.distance = d,
 				.other = r->parent()
 			};

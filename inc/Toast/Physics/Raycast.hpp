@@ -21,6 +21,7 @@ struct RayResult {
 
 	Type type = Collider;
 	glm::vec2 point = {0.0f, 0.0f};
+	glm::vec2 normal = {0.0f, 0.0f};
 	float distance = 0.0f;
 	toast::Object* other = nullptr;
 };
