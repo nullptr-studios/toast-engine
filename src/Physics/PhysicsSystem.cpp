@@ -346,6 +346,8 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
 			};
 		}
 	}
+	if (result != std::nullopt)
+		renderer::DebugLine(ray->p1,  result->point, vec4(0.0f, 0.0f, 1.0f, 1.0f));
 
 	return std::nullopt;
 }
