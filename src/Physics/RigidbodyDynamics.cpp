@@ -334,7 +334,7 @@ std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 		return std::nullopt;
 
 	double distance = std::max(0.0, rb->radius - length(closest_point - rb->GetPosition()));
-	dvec2 tangent = normalize(dvec2(-ray->normal.y, ray->normal.x));
+	dvec2 tangent = normalize(closest_point - ray->p1);
 
 	double chord_half = std::sqrt(std::max(0.0, (rb->radius * rb->radius) - (distance * distance)));
 
