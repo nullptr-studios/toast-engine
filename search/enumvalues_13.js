@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['y_0',['y',['../dc/d73/namespaceinput.html#ae7a6d9f45bbb460291576bc22e96ff47a415290769594460e2e485922904f345d',1,'input']]]
+  ['warning_0',['Warning',['../dc/d5c/classtoast_1_1Log.html#aaf43c99a119326de0837e404cf685c79a1905b2ccdc8af077b90417d88960fc7c',1,'toast::Log']]]
 ];

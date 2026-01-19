@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['off_0',['Off',['../dc/d5c/classtoast_1_1Log.html#aaf43c99a119326de0837e404cf685c79a04fcd3fc71ce4d4b87f9f427d4f6fcfa',1,'toast::Log']]],
-  ['ongoing_1',['Ongoing',['../da/d9c/structinput_1_1Action.html#acdea4e9a7d78e342be3f23e7753996cea6b1bf8e45bc0beb86ef9a2a7bcbd8989',1,'input::Action']]]
+  ['none_0',['None',['../dc/d58/classFramebuffer.html#a43f6e18926c19adc72878c35fa37c34aa6adf97f83acf6453d4a6a4b1070f3754',1,'Framebuffer::None()'],['../dc/d73/namespaceinput.html#a1e6e3b3649b55b03da60a1868fe936f0a6adf97f83acf6453d4a6a4b1070f3754',1,'input::None()']]],
+  ['null_1',['Null',['../da/d9c/structinput_1_1Action.html#acdea4e9a7d78e342be3f23e7753996cea790dad0d425808ddbfb7f9190423127d',1,'input::Action::Null()'],['../dc/d73/namespaceinput.html#ae7a6d9f45bbb460291576bc22e96ff47abbb93ef26e3c101ff11cdd21cab08a94',1,'input::Null()'],['../dc/d73/namespaceinput.html#ad495ea0070fcea929e5e4c493eeb5342abbb93ef26e3c101ff11cdd21cab08a94',1,'input::Null()']]]
 ];

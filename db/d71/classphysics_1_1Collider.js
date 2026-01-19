@@ -14,6 +14,7 @@ var classphysics_1_1Collider =
     [ "convexShapes", "db/d71/classphysics_1_1Collider.html#a870b64e3b9e6e23f47c435ac2597a7ec", null ],
     [ "data", "db/d71/classphysics_1_1Collider.html#a938dff97f8d610f5252b5260dc38d6d0", null ],
     [ "debug", "db/d71/classphysics_1_1Collider.html#adeb12c62230f0923e956cc668a8eef4f", null ],
+    [ "flags", "db/d71/classphysics_1_1Collider.html#aa74aaf447ac4e2c8d97d3e3404ed4285", null ],
     [ "m", "db/d71/classphysics_1_1Collider.html#a3a1152c9c6ab693244b4a21849f1c86d", null ],
     [ "newPointPosition", "db/d71/classphysics_1_1Collider.html#a1e40387e0bd020d1d3698e109c1ebfda", null ],
     [ "points", "db/d71/classphysics_1_1Collider.html#aa24ad5b417cc3ae8c38f63aa3ee73259", null ],

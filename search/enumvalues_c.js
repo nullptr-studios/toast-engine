@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['renderbuffer_0',['Renderbuffer',['../dc/d58/classFramebuffer.html#a43f6e18926c19adc72878c35fa37c34aa9b26116983c7b186b79c1528ed40afb1',1,'Framebuffer']]],
-  ['right_1',['Right',['../dc/d73/namespaceinput.html#ae7a6d9f45bbb460291576bc22e96ff47a92b09c7c48c520c3c55e497875da437c',1,'input']]]
+  ['off_0',['Off',['../dc/d5c/classtoast_1_1Log.html#aaf43c99a119326de0837e404cf685c79a04fcd3fc71ce4d4b87f9f427d4f6fcfa',1,'toast::Log']]],
+  ['ongoing_1',['Ongoing',['../da/d9c/structinput_1_1Action.html#acdea4e9a7d78e342be3f23e7753996cea6b1bf8e45bc0beb86ef9a2a7bcbd8989',1,'input::Action']]]
 ];

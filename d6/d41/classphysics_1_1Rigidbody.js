@@ -15,6 +15,7 @@ var classphysics_1_1Rigidbody =
     [ "debug", "d6/d41/classphysics_1_1Rigidbody.html#a4ad36bea34c65e7d065effe3da946488", null ],
     [ "defaultColor", "d6/d41/classphysics_1_1Rigidbody.html#a460b8ea3cd7c38f51a06719bab5c7335", null ],
     [ "drag", "d6/d41/classphysics_1_1Rigidbody.html#a38157d2909b9b670c5db8658372ba94f", null ],
+    [ "flags", "d6/d41/classphysics_1_1Rigidbody.html#ae833768540d886947197ca6e58bd9836", null ],
     [ "forces", "d6/d41/classphysics_1_1Rigidbody.html#a9e920ca6151b0380ce8a9d5916e51e07", null ],
     [ "friction", "d6/d41/classphysics_1_1Rigidbody.html#ae8a34da33c201273c5edd374dd5a4010", null ],
     [ "gravityScale", "d6/d41/classphysics_1_1Rigidbody.html#a97d5a6b987ec8ed7581538b7aba7177e", null ],

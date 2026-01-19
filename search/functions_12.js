@@ -2,8 +2,8 @@ var searchData=
 [
   ['raw_5fdelta_0',['raw_delta',['../da/d66/classTime.html#ac9d984d214673c9f82337fdaa83b825e',1,'Time']]],
   ['raw_5ffixed_5fdelta_1',['raw_fixed_delta',['../da/d66/classTime.html#ae5fe8836c95bb6ccbddd956650e0899e',1,'Time']]],
-  ['raycast_2',['RayCast',['../d5/dd0/namespacephysics.html#a0c08dec4f9bb4d55fb317e79ab54458e',1,'physics::RayCast(vec2 point, vec2 dir)'],['../d5/dd0/namespacephysics.html#a95efc51875aeafb6e9d608f5311f211a',1,'physics::RayCast(glm::vec2 point, glm::vec2 dir)']]],
-  ['raycollision_3',['RayCollision',['../d6/dd8/classphysics_1_1PhysicsSystem.html#a46886cc630bbde6692056f13c6ba32a4',1,'physics::PhysicsSystem']]],
+  ['raycast_2',['RayCast',['../d5/dd0/namespacephysics.html#a9bf58af059ac112e456dc6cd15d23c99',1,'physics::RayCast(const vec2 point, const vec2 dir, ColliderFlags flags)'],['../d5/dd0/namespacephysics.html#ac6056f6f70f24259b9d9533e75d9f668',1,'physics::RayCast(glm::vec2 point, glm::vec2 dir, ColliderFlags flags=ColliderFlags::Default) -&gt; std::optional&lt; RayResult &gt;']]],
+  ['raycollision_3',['RayCollision',['../d6/dd8/classphysics_1_1PhysicsSystem.html#aa25ace6e8dfe7a75026f8ca430bcf062',1,'physics::PhysicsSystem']]],
   ['rbboxcollision_4',['RbBoxCollision',['../d5/dd0/namespacephysics.html#ae7051f57845ca7267e232f0eeb73ff99',1,'physics']]],
   ['rbboxresolution_5',['RbBoxResolution',['../d5/dd0/namespacephysics.html#aa70a3effdf01388626ffda84731e1a56',1,'physics']]],
   ['rbintegration_6',['RbIntegration',['../d5/dd0/namespacephysics.html#ab5bb62de13325b81f45958620bc2b988',1,'physics']]],
