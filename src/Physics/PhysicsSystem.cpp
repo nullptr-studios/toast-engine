@@ -298,7 +298,7 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 	BoxIntegration(rb);
 }
 
-std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
+std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags flags) {
 	if (not get().has_value()) {
 		TOAST_WARN("Raycast skipped because physics system doesn't exist");
 		return std::nullopt;
@@ -310,6 +310,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
 	std::optional<dvec2> rb_hit;
 
 	for (auto* c : physics->m.colliders) {
+		if (c->flags & flags) continue;
 		std::optional<dvec2> collision = ConvexRayCollision(ray, c);
 		if (not collision.has_value()) { continue; }
 
@@ -329,6 +330,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
 	}
 
 	for (auto* r : physics->m.rigidbodies) {
+		if (flags & r->flags) continue;
 		std::optional<dvec2> collision = RbRayCollision(ray, r);
 		if (not collision.has_value()) { continue; }
 

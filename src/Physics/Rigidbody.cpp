@@ -45,6 +45,12 @@ void Rigidbody::Inspector() {
 	ImGui::ColorEdit4("Colliding color", &debug.collidingColor.r);
 
 	ImGui::Spacing();
+	ImGui::SeparatorText("Colliding Flags");
+	ImGui::SeparatorText("Colliding Flags");
+	ImGui::SeparatorText("Colliding Flags");
+	ImGui::SeparatorText("Colliding Flags");
+
+	ImGui::Spacing();
 
 	if (ImGui::Button("Reset")) {
 		SetPosition({ 0.0, 0.0 });

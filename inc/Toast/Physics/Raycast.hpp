@@ -5,7 +5,10 @@
  *
  */
 #pragma once
+#include "Physics/ColliderFlags.hpp"
 #include "glm/vec2.hpp"
+
+enum class ColliderFlags : uint8_t;
 
 namespace toast { class Object; }
 
@@ -22,6 +25,6 @@ struct RayResult {
 	toast::Object* other = nullptr;
 };
 
-auto RayCast(glm::vec2 point, glm::vec2 dir) -> std::optional<RayResult>;
+auto RayCast(glm::vec2 point, glm::vec2 dir, ColliderFlags flags = ColliderFlags::Default) -> std::optional<RayResult>;
 
 }

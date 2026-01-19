@@ -6,7 +6,7 @@
 namespace physics {
 using namespace glm;
 
-std::optional<RayResult> RayCast(const vec2 point, const vec2 dir) {
+std::optional<RayResult> RayCast(const vec2 point, const vec2 dir, ColliderFlags flags) {
 	// Construct line to send to collision
 	const vec2 direction = normalize(dir);
 	const vec2 normal = { -direction.y, direction.x };
@@ -17,7 +17,7 @@ std::optional<RayResult> RayCast(const vec2 point, const vec2 dir) {
 		.tangent = direction
 	};
 
-	return PhysicsSystem::RayCollision(&ray);
+	return PhysicsSystem::RayCollision(&ray, flags);
 }
 
 }
