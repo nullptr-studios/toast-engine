@@ -4,7 +4,7 @@
 
 #pragma once
 #include "ColliderData.hpp"
-#include "../src/Physics/ColliderFlags.hpp"
+#include "ColliderFlags.hpp"
 #include "Toast/Components/Component.hpp"
 
 #include <glm/glm.hpp>

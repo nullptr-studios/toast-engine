@@ -3,7 +3,7 @@
 /// @date 28 Dec 2025
 
 #pragma once
-#include "ColliderFlags.hpp"
+#include "Toast/Physics/ColliderFlags.hpp"
 #include "Toast/Event/ListenerComponent.hpp"
 
 #include <glm/glm.hpp>

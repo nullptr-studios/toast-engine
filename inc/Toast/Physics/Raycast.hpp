@@ -5,7 +5,7 @@
  *
  */
 #pragma once
-#include "../src/Physics/ColliderFlags.hpp"
+#include "ColliderFlags.hpp"
 #include "glm/vec2.hpp"
 
 enum class ColliderFlags : uint8_t;
