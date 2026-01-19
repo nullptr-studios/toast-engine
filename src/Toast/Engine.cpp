@@ -14,6 +14,7 @@
 #include "Toast/Time.hpp"
 #include "Toast/Window/Window.hpp"
 #include "Toast/World.hpp"
+#include "UI/Layer.hpp"
 
 #include <memory>
 
@@ -171,7 +172,8 @@ void Engine::Init() {
 	m->factory = std::make_unique<Factory>();
 
 	// Imguilayer testing purposes
-	m->layerStack->PushLayer(new renderer::DebugDrawLayer());
+	m->layerStack->PushOverlay(new renderer::DebugDrawLayer());
+	m->layerStack->PushLayer(new ui::UiLayer);
 
 	// Physics System
 	m->physicsSystem = std::make_unique<physics::PhysicsSystem>();

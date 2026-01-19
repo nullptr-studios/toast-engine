@@ -1,8 +1,23 @@
 #include "Toast/Objects/Scene.hpp"
 
+#include "Toast/Objects/Object.hpp"
+#include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#ifdef TOAST_EDITOR
+#include <imgui.h>
+#endif
 
 namespace toast {
+
+#ifdef TOAST_EDITOR
+void Scene::Inspector() {
+	if (ImGui::Checkbox("Ui Scene", &m_isUiScene)) {
+	   if (children.size() != 0) {
+	     m_isUiScene = !m_isUiScene;
+	   }
+	}
+}
+#endif
 
 void Scene::Load(json_t j, bool force_create) {
 	if (j["format"].get<std::string>() != "scene") {
