@@ -98,7 +98,7 @@ json_t Rigidbody::Save() const {
 	j["debug.show"] = debug.show;
 	j["debug.defaultColor"] = debug.defaultColor;
 	j["debug.collidingColor"] = debug.collidingColor;
-	j["flags"] = flags;
+	j["flags"] = static_cast<unsigned int>(flags);
 	return j;
 }
 
@@ -138,7 +138,7 @@ void Rigidbody::Load(json_t j, bool propagate) {
 		debug.collidingColor = j["debug.collidingColor"];
 	}
 	if (j.contains("flags")) {
-		flags = j["flags"];
+		flags = static_cast<ColliderFlags>(j["flags"].get<unsigned int>());
 	}
 
 	Component::Load(j, propagate);

@@ -32,7 +32,7 @@ public:
 	double radius = 1.0;      // This is not affected by parent.scale()
 	double mass = 1.0;        // Weight in kg
 	double friction = 0.2;    // How it deals frictions onto other objects (not itself)
-	ColliderFlags flags{};
+	ColliderFlags flags = ColliderFlags::Default;
 
 	// simulation
 	glm::vec2 gravityScale { 1.0, 1.0 };          // How much gravity affects the object
