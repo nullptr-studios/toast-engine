@@ -273,6 +273,8 @@ void Collider::Inspector() {
 		else cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
 	}
 
+	m.flags = static_cast<ColliderFlags>(cur);
+
 	ImGui::Spacing();
 	ImGui::SeparatorText("Points");
 
