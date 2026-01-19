@@ -13,12 +13,44 @@ enum class ColliderFlags : uint8_t {
 	Enemy = 0b0100
 };
 
-inline bool operator|(ColliderFlags lhs, ColliderFlags rhs) {
-	return static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs);
+inline const char* to_string(ColliderFlags e) {
+	switch (e) {
+		case ColliderFlags::Default: return "Default";
+		case ColliderFlags::Ground: return "Ground";
+		case ColliderFlags::Player: return "Player";
+		case ColliderFlags::Enemy: return "Enemy";
+		default: return "unknown";
+	}
 }
 
-inline bool operator&(ColliderFlags lhs, ColliderFlags rhs) {
-	return static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs);
+inline ColliderFlags operator|(ColliderFlags a, ColliderFlags b) {
+	using T = std::underlying_type_t<ColliderFlags>;
+	return static_cast<ColliderFlags>(
+			static_cast<T>(a) | static_cast<T>(b)
+	);
+}
+
+inline ColliderFlags operator&(ColliderFlags a, ColliderFlags b) {
+	using T = std::underlying_type_t<ColliderFlags>;
+	return static_cast<ColliderFlags>(
+			static_cast<T>(a) & static_cast<T>(b)
+	);
+}
+
+inline ColliderFlags operator~(ColliderFlags a) {
+	using T = std::underlying_type_t<ColliderFlags>;
+	return static_cast<ColliderFlags>(~static_cast<T>(a));
+}
+
+// Compound assignment operators (optional but convenient)
+inline ColliderFlags& operator|=(ColliderFlags& a, ColliderFlags b) {
+	a = a | b;
+	return a;
+}
+
+inline ColliderFlags& operator&=(ColliderFlags& a, ColliderFlags b) {
+	a = a & b;
+	return a;
 }
 
 

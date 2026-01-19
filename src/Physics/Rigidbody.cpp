@@ -45,10 +45,17 @@ void Rigidbody::Inspector() {
 	ImGui::ColorEdit4("Colliding color", &debug.collidingColor.r);
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Colliding Flags");
-	ImGui::SeparatorText("Colliding Flags");
-	ImGui::SeparatorText("Colliding Flags");
-	ImGui::SeparatorText("Colliding Flags");
+	ImGui::SeparatorText("Collider Flags");
+	const unsigned int cur = static_cast<unsigned int>(flags);
+	bool c_default = (cur & static_cast<unsigned int>(ColliderFlags::Default)) != 0;
+	bool c_ground = (cur & static_cast<unsigned int>(ColliderFlags::Ground)) != 0;
+	bool c_player = (cur & static_cast<unsigned int>(ColliderFlags::Player)) != 0;
+	bool c_enemy = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
+
+	ImGui::Checkbox("Default",  &c_default);
+	ImGui::Checkbox("Ground",  &c_ground);
+	ImGui::Checkbox("Player",  &c_player);
+	ImGui::Checkbox("Enemy",  &c_enemy);
 
 	ImGui::Spacing();
 
@@ -91,6 +98,7 @@ json_t Rigidbody::Save() const {
 	j["debug.show"] = debug.show;
 	j["debug.defaultColor"] = debug.defaultColor;
 	j["debug.collidingColor"] = debug.collidingColor;
+	j["flags"] = flags;
 	return j;
 }
 
@@ -128,6 +136,9 @@ void Rigidbody::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("debug.collidingColor")) {
 		debug.collidingColor = j["debug.collidingColor"];
+	}
+	if (j.contains("flags")) {
+		flags = j["flags"];
 	}
 
 	Component::Load(j, propagate);

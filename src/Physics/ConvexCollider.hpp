@@ -3,7 +3,6 @@
 /// @date 29 Dec 2025
 
 #pragma once
-#include "ColliderFlags.hpp"
 #include <Toast/Physics/ColliderData.hpp>
 #include <Toast/Physics/Line.hpp>
 #include <glm/glm.hpp>
@@ -16,7 +15,6 @@ public:
 	explicit ConvexCollider(const point_list& points, const ColliderData& data);
 	~ConvexCollider();
 
-	ColliderFlags flags{};
 	std::vector<Line> edges;
 	std::vector<glm::vec2> vertices;
 

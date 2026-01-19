@@ -223,6 +223,7 @@ void Collider::CalculatePoints() {
 		}
 	}
 
+	data.flags = m.flags;
 	data.parent = parent();
 
 	// Finally, create convex colliders for every convex mesh we produced
@@ -246,6 +247,19 @@ void Collider::Inspector() {
 	const double min = 0.0;
 	const double max = 1.5;
 	ImGui::SliderScalar("Friction", ImGuiDataType_Double, &data.friction, &min, &max);
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Collider Flags");
+	const unsigned int cur = static_cast<unsigned int>(m.flags);
+	bool c_default = (cur & static_cast<unsigned int>(ColliderFlags::Default)) != 0;
+	bool c_ground = (cur & static_cast<unsigned int>(ColliderFlags::Ground)) != 0;
+	bool c_player = (cur & static_cast<unsigned int>(ColliderFlags::Player)) != 0;
+	bool c_enemy = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
+
+	ImGui::Checkbox("Default",  &c_default);
+	ImGui::Checkbox("Ground",  &c_ground);
+	ImGui::Checkbox("Player",  &c_player);
+	ImGui::Checkbox("Enemy",  &c_enemy);
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Points");
@@ -353,6 +367,7 @@ json_t Collider::Save() const {
 	j["debug.showPoints"] = debug.showPoints;
 	j["debug.showColliders"] = debug.showColliders;
 	j["debug.showNormals"] = data.debugNormals;
+	j["flags"] = m.flags;
 
 	return j;
 }
@@ -383,6 +398,9 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("debug.showNormals")) {
 		data.debugNormals = j["debug.showNormals"];
+	}
+	if (j.contains("flags")) {
+		m.flags = j["flags"];
 	}
 
 	Component::Load(j, propagate);
