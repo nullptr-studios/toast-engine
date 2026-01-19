@@ -1,4 +1,4 @@
-# Doxyfile 1.14.0
+    # Doxyfile 1.14.0
 
 # This file describes the settings to be used by the documentation system
 # Doxygen (www.doxygen.org) for a project.
@@ -993,12 +993,13 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = src \
+                         inc/Toast \
                          md \
                          scripts \
+                         tools\
                          shaders \
                          README.md \
                          docs \
-                         inc/ToastEngine
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses

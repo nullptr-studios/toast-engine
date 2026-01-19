@@ -31,6 +31,7 @@ ProjectSettings::ProjectSettings() : m_version(0, 0, 0) {
 	for (int i = 0; i < m_inputLayouts.size(); i++) {
 		m_inputLayouts[i] = config["input"]["layouts"][i].as<std::string>();
 	}
+	m_inputDeadzone = config["input"]["deadzone"].as<float>();
 
 	double gr_x = config["physics"]["gravity"][0].as<double>();
 	double gr_y = config["physics"]["gravity"][1].as<double>();
@@ -54,6 +55,10 @@ Version ProjectSettings::version() {
 
 const std::vector<std::string>& ProjectSettings::input_layouts() {
 	return m_instance->m_inputLayouts;
+}
+
+const float ProjectSettings::input_deadzone() {
+	return m_instance->m_inputDeadzone;
 }
 
 }

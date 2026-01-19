@@ -41,16 +41,20 @@ public:
 	}
 
 	static void FlipVertically(bool flip);
+	
 
 	void Load() override;
 	void LoadMainThread() override;
 
 private:
-	void CreateOpenGLTexture(unsigned int slot = 0);
+	
+	void LoadPlaceholderTexture();
+	
+	void CreateOpenGLTexture();
 
 	int m_width = 0;
 	int m_height = 0;
-	int m_channels = 0;                   // number of channels loaded from file
-	unsigned char* m_pixels = nullptr;    // stbi allocated buffer
+	int m_channels = 0; // number of channels loaded from file
+	unsigned char* m_pixels = nullptr; // stbi allocated buffer
 	unsigned int m_textureId = 0;
 };

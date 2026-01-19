@@ -1,15 +1,20 @@
 format: projectData
-projectName: Engine Tests
-projectVersion: [1, 0, 0]
+projectName: Demo Project
+projectVersion: [0, 2, 0]
 
 input:
+  deadzone: 0.2
   layouts:
+    - layouts/game.lua
+    - layouts/editor.lua
+    - layouts/player.lua
+    - layouts/test.lua
 
 physics:
-  iterationCount: 1
+  iterationCount: 10
   gravity: [0.0, -9.81]
   positionCorrection:
     slop: 1.0e-3
     ptc: 0.4
   eps: 1.0e-6
-  eps_small: 1.0e-9
+  epsSmall: 1.0e-9

@@ -5,7 +5,7 @@
 #include "Toast/Window/WindowEvents.hpp"
 
 // clang-format off
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 // clang-format on
 

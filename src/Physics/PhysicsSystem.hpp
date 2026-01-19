@@ -8,10 +8,16 @@
 #include <glm/glm.hpp>
 
 namespace physics {
+struct RayResult;
+}
+
+namespace physics {
 
 class Rigidbody;
+class BoxRigidbody;
 class ConvexCollider;
 class Trigger;
+class Line;
 
 class PhysicsSystem {
 public:
@@ -29,7 +35,10 @@ public:
 	static void AddCollider(ConvexCollider* c);
 	static void RemoveCollider(ConvexCollider* c);
 	static void AddTrigger(Trigger* t);
-	static void RemoveTriccer(Trigger* t);
+	static void RemoveTrigger(Trigger* t);
+	static void AddBox(BoxRigidbody* rb);
+	static void RemoveBox(BoxRigidbody* rb);
+	static std::optional<RayResult> RayCollision(Line* ray);
 
 	PhysicsSystem();
 	~PhysicsSystem();
@@ -46,11 +55,13 @@ private:
 	void Tick();
 
 	void RigidbodyPhysics(Rigidbody* rb);
+	void BoxPhysics(BoxRigidbody* rb);
 
-	struct M {
+	 struct M {
 		std::chrono::duration<double> targetFrametime { 1.0 / 50.0 };
 		unsigned char tickCount = 1;
 		std::list<Rigidbody*> rigidbodies;
+		std::list<BoxRigidbody*> boxes;
 		std::list<ConvexCollider*> colliders;
 		std::list<Trigger*> triggers;
 		glm::dvec2 gravity = { 0.0, -9.81 };
