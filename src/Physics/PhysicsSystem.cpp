@@ -328,24 +328,24 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
 		}
 	}
 
-	//for (auto* r : physics->m.rigidbodies) {
-	//	std::optional<dvec2> collision = RbRayCollision(ray, r);
-	//	if (not collision.has_value()) { continue; }
+	for (auto* r : physics->m.rigidbodies) {
+		std::optional<dvec2> collision = RbRayCollision(ray, r);
+		if (not collision.has_value()) { continue; }
 
-	//	if (not rb_hit.has_value() || length(*collision - ray->p1) < length2(*rb_hit - ray->p1)) {
-	//		rb_hit = collision.value();
-	//		const float d = static_cast<float>(distance(*rb_hit, ray->p1));
+		if (not rb_hit.has_value() || length(*collision - ray->p1) < length2(*rb_hit - ray->p1)) {
+			rb_hit = collision.value();
+			const float d = static_cast<float>(distance(*rb_hit, ray->p1));
 
 			// Do not modify result if theres already one with less distance
-	//		if (result && result.value().distance < d) continue;
-	//		result = {
-	//			.type = RayResult::Rigidbody,
-	//			.point = *rb_hit,
-	//			.distance = d,
-	//			.other = r->parent()
-	//		};
-	//	}
-	//}
+			if (result && result.value().distance < d) continue;
+			result = {
+				.type = RayResult::Rigidbody,
+				.point = *rb_hit,
+				.distance = d,
+				.other = r->parent()
+			};
+		}
+	}
 	if (result != std::nullopt)
 		renderer::DebugLine(ray->p1,  result->point, vec4(0.0f, 0.0f, 1.0f, 1.0f));
 
