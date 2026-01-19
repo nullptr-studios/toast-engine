@@ -97,6 +97,7 @@ private:
 		std::list<Object*> destroyQueue;
 		std::mutex queueMutex;
 		Object* editorScene = nullptr;
+		std::vector<std::vector<std::string>> worldList;
 	} m;
 };
 

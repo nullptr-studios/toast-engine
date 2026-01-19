@@ -7,6 +7,7 @@
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/SimulateWorldEvent.hpp"
 #include "Toast/ThreadPool.hpp"
+#include "sol/state.hpp"
 
 namespace toast {
 
@@ -24,7 +25,33 @@ World::World() {
 		throw ToastException("Having more than one world is not allowed");
 	}
 	m_instance = this;
+  
+	sol::state lua;
+	sol::table lua_table;
 
+	try {
+		// Loading the lua file
+		lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
+
+		auto file = resource::Open("scenes.lua");
+		if (!file.has_value()) {
+			TOAST_ERROR("Input layout file couldn't be open");
+			throw;
+		}
+
+		sol::optional<sol::table> result = lua.script(*file);
+		if (!result.has_value()) {
+			TOAST_ERROR("Input layout file didn't return anything");
+			throw;
+		}
+		lua_table = *result;
+
+    m.worldList = lua_table.as<std::vector<std::vector<std::string>>>();
+
+	} catch (const sol::error& e) {
+		TOAST_ERROR("Input layout file failed to compile: {}", e.what());
+		throw;
+	}
 	// Event handling
 	m.listener = std::make_unique<event::ListenerComponent>();
 	m.listener->Subscribe<SceneLoadedEvent>(
