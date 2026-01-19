@@ -45,6 +45,33 @@ void Rigidbody::Inspector() {
 	ImGui::ColorEdit4("Colliding color", &debug.collidingColor.r);
 
 	ImGui::Spacing();
+	ImGui::SeparatorText("Collider Flags");
+	unsigned int cur = static_cast<unsigned int>(flags);
+	bool default_flag = (cur & static_cast<unsigned int>(ColliderFlags::Default)) != 0;
+	bool ground_flag = (cur & static_cast<unsigned int>(ColliderFlags::Ground)) != 0;
+	bool player_flag = (cur & static_cast<unsigned int>(ColliderFlags::Player)) != 0;
+	bool enemy_flag = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
+
+	if (ImGui::Checkbox("Default", &default_flag)) {
+		if (default_flag) cur |= static_cast<unsigned int>(ColliderFlags::Default);
+		else cur &= ~static_cast<unsigned int>(ColliderFlags::Default);
+	}
+	if (ImGui::Checkbox("Ground", &ground_flag)) {
+		if (ground_flag) cur |= static_cast<unsigned int>(ColliderFlags::Ground);
+		else cur &= ~static_cast<unsigned int>(ColliderFlags::Ground);
+	}
+	if (ImGui::Checkbox("Enemy", &enemy_flag)) {
+		if (enemy_flag) cur |= static_cast<unsigned int>(ColliderFlags::Enemy);
+		else cur &= ~static_cast<unsigned int>(ColliderFlags::Enemy);
+	}
+	if (ImGui::Checkbox("Player", &player_flag)) {
+		if (player_flag) cur |= static_cast<unsigned int>(ColliderFlags::Player);
+		else cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
+	}
+
+	flags = static_cast<ColliderFlags>(cur);
+
+	ImGui::Spacing();
 
 	if (ImGui::Button("Reset")) {
 		SetPosition({ 0.0, 0.0 });
@@ -85,6 +112,7 @@ json_t Rigidbody::Save() const {
 	j["debug.show"] = debug.show;
 	j["debug.defaultColor"] = debug.defaultColor;
 	j["debug.collidingColor"] = debug.collidingColor;
+	j["flags"] = static_cast<unsigned int>(flags);
 	return j;
 }
 
@@ -122,6 +150,9 @@ void Rigidbody::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("debug.collidingColor")) {
 		debug.collidingColor = j["debug.collidingColor"];
+	}
+	if (j.contains("flags")) {
+		flags = static_cast<ColliderFlags>(j["flags"].get<unsigned int>());
 	}
 
 	Component::Load(j, propagate);
