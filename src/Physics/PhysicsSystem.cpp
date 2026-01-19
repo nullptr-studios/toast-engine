@@ -310,7 +310,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	std::optional<dvec2> rb_hit;
 
 	for (auto* c : physics->m.colliders) {
-		if (c->flags & flags) continue;
+		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(c->flags)) == 0u) continue;
 		std::optional<dvec2> collision = ConvexRayCollision(ray, c);
 		if (not collision.has_value()) { continue; }
 
@@ -330,7 +330,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	}
 
 	for (auto* r : physics->m.rigidbodies) {
-		if (flags & r->flags) continue;
+		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(r->flags)) == 0u) continue;
 		std::optional<dvec2> collision = RbRayCollision(ray, r);
 		if (not collision.has_value()) { continue; }
 
