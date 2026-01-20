@@ -13,6 +13,49 @@
 
 namespace renderer {
 
+/// @struct BoundingBox
+/// @brief Axis-aligned bounding box for mesh geometry
+struct BoundingBox {
+	glm::vec3 min = glm::vec3(std::numeric_limits<float>::max());
+	glm::vec3 max = glm::vec3(std::numeric_limits<float>::lowest());
+
+	/// Returns the center of the bounding box
+	[[nodiscard]]
+	glm::vec3 center() const {
+		return (min + max) * 0.5f;
+	}
+
+	/// Returns the size (extents) of the bounding box
+	[[nodiscard]]
+	glm::vec3 size() const {
+		return max - min;
+	}
+
+	/// Returns the half-extents of the bounding box
+	[[nodiscard]]
+	glm::vec3 halfExtents() const {
+		return size() * 0.5f;
+	}
+
+	/// Returns the radius of the bounding sphere that encompasses the box
+	[[nodiscard]]
+	float boundingSphereRadius() const {
+		return glm::length(halfExtents());
+	}
+
+	/// Expands the bounding box to include a point
+	void expand(const glm::vec3& point) {
+		min = glm::min(min, point);
+		max = glm::max(max, point);
+	}
+
+	/// Returns true if the bounding box is valid (min <= max)
+	[[nodiscard]]
+	bool isValid() const {
+		return min.x <= max.x && min.y <= max.y && min.z <= max.z;
+	}
+};
+
 ///@enum Vertex
 ///@brief Vertex structure used for meshes
 ///@TODO: add color support
@@ -69,6 +112,16 @@ public:
 	void UpdateDynamicSpine(const SpineVertex* vertices, size_t num_vertices, const uint16_t* indices, size_t num_indices) const;
 	void DrawDynamicSpine(size_t num_indices) const;
 
+	/// Computes bounding box from an array of SpineVertex (for dynamic meshes)
+	/// Returns the computed bounding box and also caches it internally
+	BoundingBox ComputeSpineBoundingBox(const SpineVertex* vertices, size_t num_vertices);
+
+	/// Returns the last computed dynamic bounding box (from ComputeSpineBoundingBox)
+	[[nodiscard]]
+	const BoundingBox& dynamicBoundingBox() const {
+		return m_dynamicBoundingBox;
+	}
+
 	void setHasVertexColor(bool v) {
 		m_hasVertexColor = v;
 	}
@@ -82,6 +135,12 @@ public:
 	[[nodiscard]]
 	const glm::vec3& centroid() const {
 		return m_centroid;
+	}
+
+	// Return mesh bounding box in object/model space (computed at load time)
+	[[nodiscard]]
+	const BoundingBox& boundingBox() const {
+		return m_boundingBox;
 	}
 
 	// Return number of vertices
@@ -109,6 +168,12 @@ private:
 
 	// Mesh centroid in object space (computed during Load)
 	glm::vec3 m_centroid = glm::vec3(0.0f);
+
+	// Mesh bounding box in object space (computed during Load)
+	BoundingBox m_boundingBox;
+
+	// Dynamic bounding box for spine/animated meshes (computed per-frame via ComputeSpineBoundingBox)
+	BoundingBox m_dynamicBoundingBox;
 };
 
 }    // namespace renderer

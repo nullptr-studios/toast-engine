@@ -6,6 +6,7 @@
 
 #include "ResourceManager/Spine/SpineSkeletonRenderer.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 #include "spine/SkeletonRenderer.h"
 #include "spine/Skin.h"
@@ -100,7 +101,7 @@ void AtlasRendererComponent::EnumerateAttachmentNames() {
 	}
 }
 
-void AtlasRendererComponent::SetOnlyAttachmentByName(const std::string& name) const {
+void AtlasRendererComponent::SetOnlyAttachmentByName(const std::string& name) {
 	if (!m_skeleton || !m_skeletonData) {
 		return;
 	}
@@ -120,8 +121,7 @@ void AtlasRendererComponent::SetOnlyAttachmentByName(const std::string& name) co
 		auto* const skin = data->getSkins()[s];
 		auto i = skin->getAttachments();
 		while (i.hasNext()) {
-			auto& entry = i.next();
-			if (entry._name.buffer() && name == entry._name.buffer()) {
+			if (auto& entry = i.next(); entry._name.buffer() && name == entry._name.buffer()) {
 				int slot_index = entry._slotIndex;
 				spine::Slot* slot = nullptr;
 				if (slot_index >= 0 && slot_index < m_skeleton->getSlots().size()) {
@@ -130,6 +130,7 @@ void AtlasRendererComponent::SetOnlyAttachmentByName(const std::string& name) co
 				if (slot) {
 					slot->setAttachment(entry._attachment);
 					m_skeleton->updateWorldTransform(spine::Physics_None);
+					UpdateMeshBounds();
 					return;
 				}
 			}
@@ -140,9 +141,10 @@ void AtlasRendererComponent::SetOnlyAttachmentByName(const std::string& name) co
 		auto* slot = m_skeleton->getSlots()[i];
 		if (slot->getData().getName().buffer() && name == slot->getData().getName().buffer()) {
 			// attempt to get attachment with same name
-			if (const auto att = m_skeleton->getAttachment(slot->getData().getName().buffer(), name.c_str())) {
+			if (auto *const att = m_skeleton->getAttachment(slot->getData().getName().buffer(), name.c_str())) {
 				slot->setAttachment(att);
 				m_skeleton->updateWorldTransform(spine::Physics_None);
+				UpdateMeshBounds();
 				return;
 			}
 		}
@@ -154,19 +156,28 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		return;
 	}
 
-	PROFILE_ZONE;
-
 	if (!m_skeleton) {
 		return;
 	}
+	
+	const glm::mat4 model = GetWorldMatrix();
+	
+	// Frustum culling using the dynamic AABB
+	const auto& frustumPlanes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes();
+	if (!OclussionVolume::isTransformedAABBOnPlanes(frustumPlanes, m_dynamicMesh.dynamicBoundingBox(), model)) {
+		return;    // Outside frustum, skip rendering
+	}
 
-	const spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
+	PROFILE_ZONE;
 
-	const float z_step = 0.01f;    // z offset step
+	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
+
+	const float z_step_cmd = 0.01f;       // inter-command z offset step
+	const float z_step_vertex = 1e-4f;    // per-triangle/vertex z offset step
 	float z_offset = 0.0f;
 
-	const glm::mat4 model = GetWorldMatrix();
 	const glm::mat4 mvp = precomputed_mat * model;
+	
 
 	m_shader->Use();
 	m_shader->Set("transform", mvp);
@@ -200,8 +211,8 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		}
 
 		// Determine command texture
-		const std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(command->texture);
-		const unsigned int tex_id = tex_ptr->get()->id();
+		std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(command->texture);
+		unsigned int tex_id = tex_ptr->get()->id();
 
 		if (tex_id != m_lastBoundTexture && !m_tempIndices.empty()) {
 			flush_batch();
@@ -220,7 +231,7 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		m_tempVerts.resize(start_vert + command->numVertices);
 		for (int i = 0; i < command->numVertices; ++i) {
 			auto& v = m_tempVerts[start_vert + i];
-			v.position = glm::vec3(command->positions[(i * 2) + 0], command->positions[(i * 2) + 1], z_offset);
+			v.position = glm::vec3(command->positions[(i * 2) + 0], command->positions[(i * 2) + 1], 0.0f);
 			v.texCoord = glm::vec2(command->uvs[(i * 2) + 0], command->uvs[(i * 2) + 1]);
 			v.colorABGR = command->colors[i];
 		}
@@ -232,8 +243,20 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 			m_tempIndices[start_idx + i] = static_cast<uint16_t>(command->indices[i] + start_vert);
 		}
 
-		// Increment Z
-		z_offset += z_step;
+		// Per-triangle Z layering
+		for (size_t i = 0; i + 2 < command->numIndices; i += 3) {
+			uint16_t ia = static_cast<uint16_t>(command->indices[i + 0] + start_vert);
+			uint16_t ib = static_cast<uint16_t>(command->indices[i + 1] + start_vert);
+			uint16_t ic = static_cast<uint16_t>(command->indices[i + 2] + start_vert);
+			float z = z_offset;
+			m_tempVerts[ia].position.z = z;
+			m_tempVerts[ib].position.z = z;
+			m_tempVerts[ic].position.z = z;
+			z_offset += z_step_vertex;
+		}
+
+		// Increment Z between commands
+		z_offset += z_step_cmd;
 
 		command = command->next;
 	}
@@ -363,6 +386,42 @@ void AtlasRendererComponent::Inspector() {
 			ImGui::EndCombo();
 		}
 	}
+}
+
+void AtlasRendererComponent::UpdateMeshBounds() {
+	
+	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
+	// collect all vertices to compute bounding box for frustum culling
+	{
+		spine::RenderCommand* cmd = command;
+		size_t totalVerts = 0;
+		while (cmd) {
+			totalVerts += cmd->numVertices;
+			cmd = cmd->next;
+		}
+
+		// Build temporary vertex positions for bounding box computation
+		m_tempVerts.reserve(totalVerts);
+		cmd = command;
+		while (cmd) {
+			for (int i = 0; i < cmd->numVertices; ++i) {
+				renderer::SpineVertex v{};
+				v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
+				v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], cmd->uvs[(i * 2) + 1]);
+				v.colorABGR = cmd->colors[i];
+				m_tempVerts.push_back(v);
+			}
+			cmd = cmd->next;
+		}
+
+		// Compute dynamic bounding box
+		m_dynamicMesh.ComputeSpineBoundingBox(m_tempVerts.data(), m_tempVerts.size());
+		
+	}
+
+	// Reset buffers for actual rendering pass
+	m_tempVerts.clear();
+	m_tempIndices.clear();
 }
 
 #endif

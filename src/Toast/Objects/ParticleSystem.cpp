@@ -3,9 +3,11 @@
 /// @brief GPU-based Particle System implementation
 
 #include "Toast/Objects/ParticleSystem.hpp"
+
 #include "Toast/Log.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/Time.hpp"
 
@@ -246,6 +248,11 @@ void ParticleSystem::CleanupGPUResources() {
 
 void ParticleSystem::UpdateAndRender(const glm::mat4& viewProjection) {
 	if (!m_gpuInitialized || !m_computeShader || !m_renderShader) {
+		return;
+	}
+	
+	if (OclussionVolume::isSphereOnPlanes(renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), worldPosition(), m_cullingRadius)) {
+		// Not visible, skip update and render
 		return;
 	}
 	
@@ -549,6 +556,8 @@ glm::vec3 ParticleSystem::RandomDirection() {
 #ifdef TOAST_EDITOR
 void ParticleSystem::Inspector() {
 	TransformComponent::Inspector();
+	
+	ImGui::DragInt("Culling Radius", &m_cullingRadius, 1, 1, 1000);
 	
 	ImGui::Separator();
 	ImGui::Text("Particle System");

@@ -223,6 +223,9 @@ private:
 	std::mt19937 m_rng;
 	std::uniform_real_distribution<float> m_dist { 0.0f, 1.0f };
 	
+	
+	int m_cullingRadius = 20; ///< Radius for frustum culling
+	
 	// IRenderable implementation
 	void OnRender(const glm::mat4& viewProjection) noexcept override;
 	
