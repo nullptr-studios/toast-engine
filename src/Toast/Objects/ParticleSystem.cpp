@@ -251,7 +251,7 @@ void ParticleSystem::UpdateAndRender(const glm::mat4& viewProjection) {
 		return;
 	}
 	
-	if (OclussionVolume::isSphereOnPlanes(renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), worldPosition(), m_cullingRadius)) {
+	if (!OclussionVolume::isSphereOnPlanes(renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), worldPosition(), m_cullingRadius)) {
 		// Not visible, skip update and render
 		return;
 	}

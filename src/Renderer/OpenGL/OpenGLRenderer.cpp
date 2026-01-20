@@ -332,6 +332,9 @@ void OpenGLRenderer::Render() {
 	// Compute combined matrix once
 	m_multipliedMatrix = m_projectionMatrix * m_viewMatrix;
 
+	// Extract frustum planes for culling
+	OclussionVolume::extractFrustumPlanesNormalized(m_multipliedMatrix, m_frustumPlanes);
+
 	// ParticleSystems are updated by the scene/world tick; renderer doesn't tick them directly
 
 	// Geometry
