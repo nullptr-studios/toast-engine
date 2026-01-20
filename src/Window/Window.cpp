@@ -35,7 +35,7 @@ Window::Window(unsigned width, unsigned height, const std::string& name) {
 	m_glfwWindow = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
 
 	glfwMakeContextCurrent(m_glfwWindow);
-	glfwSwapInterval(1);    // do v-sync
+	glfwSwapInterval(0);    // do v-sync
 
 	// Bind the close event to actually close the window
 	m_listener.Subscribe<event::WindowClose>([&](event::WindowClose* e) -> bool {
