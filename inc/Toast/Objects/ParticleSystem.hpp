@@ -207,6 +207,7 @@ private:
 	
 	GLuint m_particleBuffers[2] = { 0, 0 };  ///< Double-buffered particle SSBOs
 	GLuint m_counterBuffer = 0;               ///< Atomic counters SSBO
+	uint32_t* m_counterBufferPtr = nullptr;   ///< Persistent mapped pointer to counter buffer
 	GLuint m_frameParamsUBO = 0;              ///< Frame parameters UBO
 	GLuint m_quadVAO = 0;                     ///< Quad VAO for rendering
 	GLuint m_quadVBO = 0;                     ///< Quad VBO for rendering

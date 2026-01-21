@@ -125,12 +125,12 @@ void ParticleSystem::Stop() {
 		burst.triggered = false;
 	}
 	
-	// Clear GPU buffer by resetting counter
-	if (m_counterBuffer) {
-		uint32_t zeros[4] = { 0, 0, 0, 0 };
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_counterBuffer);
-		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(zeros), zeros);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	// Clear GPU buffer by resetting counter using persistent mapped pointer
+	if (m_counterBufferPtr) {
+		m_counterBufferPtr[0] = 0;  // inCount
+		m_counterBufferPtr[1] = 0;  // outCount
+		m_counterBufferPtr[2] = 0;  // spawnCount
+		m_counterBufferPtr[3] = 0;  // pad
 	}
 }
 
@@ -173,11 +173,22 @@ void ParticleSystem::InitGPUResources() {
 		glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, nullptr, GL_DYNAMIC_DRAW);
 	}
 	
-	// Create counter buffer: [inCount, outCount, spawnCount, pad]
+	// Create counter buffer with persistent mapping for async readback: [inCount, outCount, spawnCount, pad]
 	glGenBuffers(1, &m_counterBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_counterBuffer);
-	uint32_t initialCounters[4] = { 0, 0, 0, 0 };
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(initialCounters), initialCounters, GL_DYNAMIC_DRAW);
+	
+	GLbitfield storageFlags = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t) * 4, nullptr, storageFlags);
+	m_counterBufferPtr = static_cast<uint32_t*>(glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t) * 4, storageFlags));
+	
+	if (m_counterBufferPtr) {
+		m_counterBufferPtr[0] = 0;  // inCount
+		m_counterBufferPtr[1] = 0;  // outCount
+		m_counterBufferPtr[2] = 0;  // spawnCount
+		m_counterBufferPtr[3] = 0;  // pad
+	} else {
+		TOAST_ERROR("Failed to create persistent mapped counter buffer for ParticleSystem");
+	}
 	
 	// Create frame parameters UBO
 	glGenBuffers(1, &m_frameParamsUBO);
@@ -217,6 +228,13 @@ void ParticleSystem::InitGPUResources() {
 
 void ParticleSystem::CleanupGPUResources() {
 	if (!m_gpuInitialized) return;
+	
+	// Unmap counter buffer before deleting
+	if (m_counterBuffer && m_counterBufferPtr) {
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_counterBuffer);
+		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+		m_counterBufferPtr = nullptr;
+	}
 	
 	if (m_quadVAO) {
 		glDeleteVertexArrays(1, &m_quadVAO);
@@ -317,13 +335,11 @@ void ParticleSystem::UpdateAndRender(const glm::mat4& viewProjection) {
 	glBindBuffer(GL_UNIFORM_BUFFER, m_frameParamsUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(params), &params);
 	
-	// Reset output counter
-	uint32_t zero = 0;
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_counterBuffer);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), sizeof(uint32_t), &zero);  // outCount = 0
-	
-	// Set input count
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &m_aliveCount);  // inCount = current alive
+	// Reset output counter using persistent mapped pointer
+	if (m_counterBufferPtr) {
+		m_counterBufferPtr[1] = 0;          // outCount = 0
+		m_counterBufferPtr[0] = m_aliveCount;  // inCount = current alive
+	}
 	
 	// Bind buffers for compute
 	const int readBuffer = m_currentBuffer;
@@ -340,12 +356,13 @@ void ParticleSystem::UpdateAndRender(const glm::mat4& viewProjection) {
 	const uint32_t workGroups = (m_aliveCount + 255) / 256;
 	glDispatchCompute(workGroups, 1, 1);
 	
-	// Memory barrier before reading results
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	// Memory barrier before reading results (include client mapped buffer barrier)
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
 	
-	// Read back new alive count
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_counterBuffer);
-	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), sizeof(uint32_t), &m_aliveCount);
+	// Read back new alive count directly from persistent mapped pointer
+	if (m_counterBufferPtr) {
+		m_aliveCount = m_counterBufferPtr[1];
+	}
 	
 	// Swap buffers
 	m_currentBuffer = writeBuffer;
