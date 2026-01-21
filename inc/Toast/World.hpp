@@ -3,7 +3,9 @@
 #include "Toast/Event/ListenerComponent.hpp"
 #include "Toast/SceneLoadedEvent.hpp"
 
+#include <future>
 #include <mutex>
+#include <optional>
 
 namespace toast {
 
@@ -25,7 +27,7 @@ public:
 	template<typename T>
 	static auto New(const std::optional<std::string>& name = std::nullopt) -> T*;
 	static auto New(const std::string& type, const std::optional<std::string>& name = std::nullopt) -> Object*;
-	static void LoadScene(std::string_view path);        ///< Loads scene on the init thread, scene disabld after load
+	static auto LoadScene(std::string_view path) -> std::future<unsigned>;        ///< Loads scene on the init thread, scene disabld after load
 	static void LoadSceneSync(std::string_view path);    ///< Loads scene on the main thread, scene enabled after load
 	static void UnloadScene(unsigned id);
 	static void UnloadScene(const std::string& name);
@@ -33,6 +35,8 @@ public:
 	static void EnableScene(const std::string& name);
 	static void DisableScene(unsigned id);
 	static void DisableScene(const std::string& name);
+  static void NextLevel();
+  static void NextWorld();
 
 	void EarlyTick();
 	void Tick();
@@ -98,6 +102,11 @@ private:
 		std::mutex queueMutex;
 		Object* editorScene = nullptr;
 		std::vector<std::vector<std::string>> worldList;
+		struct { 
+      int world = 0; 
+      int level = 0; 
+      std::optional<unsigned> prevLevel = std::nullopt;
+    } worldState;
 	} m;
 };
 
