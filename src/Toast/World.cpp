@@ -212,10 +212,10 @@ Object* World::New(const std::string& type, const std::optional<std::string>& na
 }
 
 auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
-	std::promise<unsigned> promis;
-	std::future<unsigned> futur = promis.get_future();
+	auto *promis = new std::promise<unsigned>();
+	std::future<unsigned> futur = promis->get_future();
 	std::string p { path };
-	Instance()->m.threadPool->QueueJob([path = p, promis = std::move(promis)] mutable {
+	Instance()->m.threadPool->QueueJob([path = p, &promis] mutable {
 		// Load scene file
 		json_t j;
 		try {
@@ -240,7 +240,8 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 			auto create_registry = Object::getRegistry();
 			auto* scene = static_cast<Scene*>(create_registry[scene_type](world->m.children, std::nullopt));
 			scene_id = scene->id();
-      promis.set_value(scene_id);
+      promis->set_value(scene_id);
+      delete promis;
 
 			// Add name to the scene - force copy
 			std::string name = j["name"].get<std::string>();
