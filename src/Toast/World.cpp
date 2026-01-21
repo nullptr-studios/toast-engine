@@ -158,8 +158,8 @@ void World::NextLevel() {
 		auto new_scene = instance->m.worldList[instance->m.worldState.world][instance->m.worldState.level];
 		auto futu = World::LoadScene(new_scene);
 
-    futu.wait();
-    instance->m.worldState.prevLevel = futu.get();
+    // futu.wait();
+    // instance->m.worldState.prevLevel = futu.get();
 	}
 }
 
