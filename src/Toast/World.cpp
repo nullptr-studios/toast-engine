@@ -144,7 +144,9 @@ World::~World() {
 
 void World::NextLevel() {
 	auto* instance = Instance();
-	instance->m.worldState.level++;
+	if (instance->m.worldState.prevLevel.has_value()) {
+		instance->m.worldState.level++;
+	}
 	if (static_cast<std::size_t>(instance->m.worldState.level) == instance->m.worldList[instance->m.worldState.world].size()) {
 		TOAST_WARN("No More Levels In World Moving To Next World");
 	} else {
@@ -153,15 +155,11 @@ void World::NextLevel() {
 			auto* prev_level = World::Get(instance->m.worldState.prevLevel.value());
 			prev_level->Nuke();
 		}
-    auto new_scene = instance->m.worldList[instance->m.worldState.world][instance->m.worldState.level];
+		auto new_scene = instance->m.worldList[instance->m.worldState.world][instance->m.worldState.level];
 		auto futu = World::LoadScene(new_scene);
 
-		instance->m.listener->Subscribe<toast::SceneLoadedEvent>([new_scene](toast::SceneLoadedEvent* e) {
-      if (new_scene.contains(e->name)) {
-      }
-      World::Instance()->m.worldState.prevLevel = e->id;
-			return false;
-		});
+    futu.wait();
+    instance->m.worldState.prevLevel = futu.get();
 	}
 }
 
@@ -213,9 +211,9 @@ Object* World::New(const std::string& type, const std::optional<std::string>& na
 	return obj;
 }
 
-auto World::LoadScene(std::string_view path) -> std::future<unsigned>{
-  std::promise<unsigned> promis;
-  std::future<unsigned> futur = promis.get_future();
+auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
+	std::promise<unsigned> promis;
+	std::future<unsigned> futur = promis.get_future();
 	std::string p { path };
 	Instance()->m.threadPool->QueueJob([path = p, &promis] {
 		// Load scene file
@@ -242,7 +240,7 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned>{
 			auto create_registry = Object::getRegistry();
 			auto* scene = static_cast<Scene*>(create_registry[scene_type](world->m.children, std::nullopt));
 			scene_id = scene->id();
-      promis.set_value(scene_id);
+			promis.set_value(scene_id);
 
 			// Add name to the scene - force copy
 			std::string name = j["name"].get<std::string>();
@@ -267,7 +265,7 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned>{
 		auto* e = new SceneLoadedEvent { scene_id, scene_name };
 		event::Send(reinterpret_cast<event::IEvent*>(e));
 	});
-  return futur;
+	return futur;
 }
 
 void World::LoadSceneSync(std::string_view path) {
