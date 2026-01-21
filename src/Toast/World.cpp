@@ -215,7 +215,7 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 	std::promise<unsigned> promis;
 	std::future<unsigned> futur = promis.get_future();
 	std::string p { path };
-	Instance()->m.threadPool->QueueJob([path = p, &promis] {
+	Instance()->m.threadPool->QueueJob([path = p, promis = std::move(promis)] mutable {
 		// Load scene file
 		json_t j;
 		try {
