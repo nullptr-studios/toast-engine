@@ -341,6 +341,9 @@ void ParticleSystem::UpdateAndRender(const glm::mat4& viewProjection) {
 		m_counterBufferPtr[0] = m_aliveCount;  // inCount = current alive
 	}
 	
+	// Ensure CPU writes to persistent mapped buffer are visible to GPU
+	glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+	
 	// Bind buffers for compute
 	const int readBuffer = m_currentBuffer;
 	const int writeBuffer = 1 - m_currentBuffer;
@@ -358,6 +361,11 @@ void ParticleSystem::UpdateAndRender(const glm::mat4& viewProjection) {
 	
 	// Memory barrier before reading results (include client mapped buffer barrier)
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+	
+	// Use fence sync to ensure GPU has finished writing before CPU reads
+	GLsync sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
+	glDeleteSync(sync);
 	
 	// Read back new alive count directly from persistent mapped pointer
 	if (m_counterBufferPtr) {
@@ -484,6 +492,9 @@ void ParticleSystem::SpawnParticles(uint32_t count) {
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size), newParticles.data());
 	
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	
+	// Ensure particle data is visible to compute shader
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	
 	m_aliveCount += count;
 }
