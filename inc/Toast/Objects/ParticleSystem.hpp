@@ -11,6 +11,7 @@
 
 #include <glad/gl.h>
 #include <glm/glm.hpp>
+#include <sol/sol.hpp>
 
 namespace toast {
 
@@ -34,6 +35,9 @@ struct ParticleBurst {
 	uint32_t count = 10;         ///< Number of particles to emit
 	float cycleInterval = 0.0f;  ///< If > 0, burst repeats at this interval
 	bool triggered = false;      ///< Internal: has this burst been triggered this cycle
+	
+	/// @brief Load burst from Lua table
+	void LoadFromLua(const sol::table& table);
 };
 
 /// @brief Range helper for random values
@@ -45,10 +49,36 @@ struct Range {
 	Range() = default;
 	Range(T val) : min(val), max(val) {}
 	Range(T minVal, T maxVal) : min(minVal), max(maxVal) {}
+	
+	/// @brief Load range from Lua table {min, max}
+	void LoadFromLua(const sol::table& table) {
+		if (table.size() >= 2) {
+			sol::optional<T> minOpt = table[1];
+			sol::optional<T> maxOpt = table[2];
+			if (minOpt) min = *minOpt;
+			if (maxOpt) max = *maxOpt;
+		} else if (table.size() == 1) {
+			sol::optional<T> valOpt = table[1];
+			if (valOpt) min = max = *valOpt;
+		}
+	}
+	
+	/// @brief Load range from Lua (single value or table)
+	void LoadFromLua(const sol::object& obj) {
+		if (obj.is<sol::table>()) {
+			LoadFromLua(obj.as<sol::table>());
+		} else if (obj.is<T>()) {
+			min = max = obj.as<T>();
+		}
+	}
 };
 
 /// @brief Configuration for a particle emitter
 struct ParticleEmitterConfig {
+	// Emitter identification
+	std::string name = "Emitter";
+	bool enabled = true;
+	
 	// Emission
 	EmissionMode emissionMode = EmissionMode::Continuous;
 	float emissionRate = 10.0f;               ///< Particles per second (continuous mode)
@@ -58,6 +88,9 @@ struct ParticleEmitterConfig {
 	EmitterShape shape = EmitterShape::Point;
 	glm::vec3 shapeSize = glm::vec3(1.0f);    ///< Size of emission shape (sphere radius, box dimensions, etc.)
 	float coneAngle = 45.0f;                  ///< Cone half-angle in degrees
+	
+	// Offset from particle system position
+	glm::vec3 localOffset = glm::vec3(0.0f);
 	
 	// Lifetime
 	Range<float> lifetime = { 1.0f, 2.0f };
@@ -90,6 +123,15 @@ struct ParticleEmitterConfig {
 	std::string texturePath = "";
 	bool useTexture = false;
 	bool additiveBlending = false;
+	
+	// Max particles for this emitter
+	uint32_t maxParticles = 10000;
+	
+	/// @brief Load configuration from Lua table
+	void LoadFromLua(const sol::table& table);
+	
+	/// @brief Apply a preset configuration
+	void ApplyPreset(const std::string& presetName);
 };
 
 /// @brief GPU particle data structure
@@ -99,9 +141,114 @@ struct alignas(16) GPUParticle {
 	glm::vec4 color;    ///< current color RGBA (interpolated)
 	glm::vec4 end;      ///< end color RGBA
 	glm::vec4 misc;     ///< x = lifeRemaining, y = lifeMax, z = seed, w = endSize
-	glm::vec4 extra;    ///< x = startSize, y = rotationSpeed, z = drag, w = unused
+	glm::vec4 extra;    ///< x = startSize, y = rotationSpeed, z = drag, w = emitterIndex
 };
 
+/// @brief Individual particle emitter with its own GPU resources
+class ParticleEmitter {
+public:
+	ParticleEmitter();
+	~ParticleEmitter();
+	
+	ParticleEmitter(const ParticleEmitter&) = delete;
+	ParticleEmitter& operator=(const ParticleEmitter&) = delete;
+	ParticleEmitter(ParticleEmitter&& other) noexcept;
+	ParticleEmitter& operator=(ParticleEmitter&& other) noexcept;
+	
+	/// @brief Initialize GPU resources for this emitter
+	void InitGPUResources(const std::shared_ptr<renderer::Shader>& computeShader,
+	                      const std::shared_ptr<renderer::Shader>& renderShader);
+	
+	/// @brief Cleanup GPU resources
+	void CleanupGPUResources();
+	
+	/// @brief Update and render this emitter's particles
+	void UpdateAndRender(const glm::mat4& viewProjection, 
+	                     const glm::vec3& worldPos,
+	                     const glm::vec3& camRight,
+	                     const glm::vec3& camUp,
+	                     float deltaTime);
+	
+	/// @brief Spawn particles for this emitter
+	void SpawnParticles(uint32_t count, const glm::vec3& worldPos);
+	
+	/// @brief Play/resume emission
+	void Play() { m_isPlaying = true; }
+	
+	/// @brief Pause emission
+	void Pause() { m_isPlaying = false; }
+	
+	/// @brief Stop and clear all particles
+	void Stop();
+	
+	/// @brief Emit a burst
+	void EmitBurst(uint32_t count, const glm::vec3& worldPos) { SpawnParticles(count, worldPos); }
+	
+	/// @brief Check if playing
+	[[nodiscard]]
+	bool IsPlaying() const { return m_isPlaying; }
+	
+	/// @brief Get particle count
+	[[nodiscard]]
+	uint32_t GetParticleCount() const { return m_aliveCount; }
+	
+	/// @brief Load texture based on config
+	void LoadTexture();
+	
+	/// @brief Get/set configuration
+	ParticleEmitterConfig& GetConfig() { return m_config; }
+	const ParticleEmitterConfig& GetConfig() const { return m_config; }
+	
+	/// @brief Check if GPU is initialized
+	[[nodiscard]]
+	bool IsGPUInitialized() const { return m_gpuInitialized; }
+	
+private:
+	/// @brief Generate spawn position based on shape
+	[[nodiscard]]
+	glm::vec3 GenerateSpawnPosition();
+	
+	/// @brief Generate spawn velocity
+	[[nodiscard]]
+	glm::vec3 GenerateSpawnVelocity();
+	
+	/// @brief Random float in range
+	[[nodiscard]]
+	float RandomFloat(float min, float max);
+	
+	/// @brief Random direction on unit sphere
+	[[nodiscard]]
+	glm::vec3 RandomDirection();
+	
+	ParticleEmitterConfig m_config;
+	
+	// Playback state
+	bool m_isPlaying = true;
+	bool m_gpuInitialized = false;
+	float m_systemTime = 0.0f;
+	float m_emissionAccumulator = 0.0f;
+	uint32_t m_aliveCount = 0;
+	
+	// GPU resources
+	GLuint m_particleBuffers[2] = { 0, 0 };
+	GLuint m_counterBuffer = 0;
+	uint32_t* m_counterBufferPtr = nullptr;
+	GLuint m_frameParamsUBO = 0;
+	int m_currentBuffer = 0;
+	
+	// Shared shaders (from ParticleSystem)
+	std::shared_ptr<renderer::Shader> m_computeShader;
+	std::shared_ptr<renderer::Shader> m_renderShader;
+	
+	// Per-emitter texture
+	std::shared_ptr<Texture> m_texture;
+	
+	// RNG
+	std::mt19937 m_rng;
+	std::uniform_real_distribution<float> m_dist { 0.0f, 1.0f };
+};
+
+/// @brief Multi-emitter GPU particle system with Lua serialization support
 class ParticleSystem : public renderer::IRenderable {
 public:
 	REGISTER_TYPE(ParticleSystem);
@@ -116,120 +263,100 @@ public:
 	void Load(json_t j, bool force_create = true) override;
 	[[nodiscard]]
 	json_t Save() const override;
+	
+	/// @brief Load particle system configuration from a Lua file
+	/// @param luaPath Path to the Lua configuration file
+	/// @return true if loaded successfully
+	bool LoadFromLua(const std::string& luaPath);
+	
+	/// @brief Save particle system configuration to a Lua file
+	/// @param luaPath Path to save the configuration
+	/// @return true if saved successfully
+	bool SaveToLua(const std::string& luaPath) const;
 
 #ifdef TOAST_EDITOR
 	void Inspector() override;
 #endif
 
-	// Particle System Control
+	// Particle System Control (affects all emitters)
 	
-	/// @brief Start/resume the particle system
+	/// @brief Start/resume all emitters
 	void Play();
 	
-	/// @brief Pause emission
+	/// @brief Pause all emitters
 	void Pause();
 	
 	/// @brief Stop and clear all particles
 	void Stop();
 	
-	/// @brief Emit a burst of particles immediately
-	/// @param count Number of particles to emit
+	/// @brief Emit a burst from all emitters
 	void EmitBurst(uint32_t count);
 	
 	/// @brief Check if the system is playing
 	[[nodiscard]]
 	bool IsPlaying() const { return m_isPlaying; }
 	
-	/// @brief Get current particle count
+	/// @brief Get total particle count across all emitters
 	[[nodiscard]]
-	uint32_t GetParticleCount() const { return m_aliveCount; }
+	uint32_t GetParticleCount() const;
 	
-	// Config
+	// Emitter Management
 	
-	/// @brief Get the emitter configuration
+	/// @brief Add a new emitter
+	/// @return Reference to the new emitter
+	ParticleEmitter& AddEmitter();
+	
+	/// @brief Add a new emitter with a preset
+	/// @param presetName Name of the preset (Smoke, Fire, Sparks, Snow, Explosion)
+	/// @return Reference to the new emitter
+	ParticleEmitter& AddEmitterWithPreset(const std::string& presetName);
+	
+	/// @brief Remove an emitter by index
+	void RemoveEmitter(size_t index);
+	
+	/// @brief Get emitter count
 	[[nodiscard]]
-	ParticleEmitterConfig& GetConfig() { return m_config; }
+	size_t GetEmitterCount() const { return m_emitters.size(); }
 	
-	/// @brief Get the emitter configuration (const)
-	[[nodiscard]]
-	const ParticleEmitterConfig& GetConfig() const { return m_config; }
+	/// @brief Get emitter by index
+	ParticleEmitter& GetEmitter(size_t index) { return m_emitters[index]; }
+	const ParticleEmitter& GetEmitter(size_t index) const { return m_emitters[index]; }
 	
-	/// @brief Set maximum particles
-	void SetMaxParticles(uint32_t max);
+	/// @brief Get all emitters
+	std::vector<ParticleEmitter>& GetEmitters() { return m_emitters; }
+	const std::vector<ParticleEmitter>& GetEmitters() const { return m_emitters; }
 	
-	/// @brief Get maximum particles
-	[[nodiscard]]
-	uint32_t GetMaxParticles() const { return m_maxParticles; }
+	/// @brief Get/set Lua config path
+	const std::string& GetLuaConfigPath() const { return m_luaConfigPath; }
+	void SetLuaConfigPath(const std::string& path) { m_luaConfigPath = path; }
 
 private:
+	/// @brief Initialize shared resources (shaders, quad VAO)
+	void InitSharedResources();
 	
-	/// @brief Initialize GPU resources
-	void InitGPUResources();
-	
-	/// @brief Cleanup GPU resources
-	void CleanupGPUResources();
-	
-	/// @brief Update particles using compute shader and render
-	void UpdateAndRender(const glm::mat4& viewProjection);
-	
-	/// @brief Spawn new particles on CPU and upload to GPU
-	void SpawnParticles(uint32_t count);
-	
-	/// @brief Generate a random position based on emitter shape
-	[[nodiscard]]
-	glm::vec3 GenerateSpawnPosition();
-	
-	/// @brief Generate a random velocity based on emitter settings
-	[[nodiscard]]
-	glm::vec3 GenerateSpawnVelocity();
-	
-	/// @brief Random float in range [min, max]
-	[[nodiscard]]
-	float RandomFloat(float min, float max);
-	
-	/// @brief Random vec3 with each component in [-1, 1]
-	[[nodiscard]]
-	glm::vec3 RandomDirection();
-	
-	
-	
-
-	ParticleEmitterConfig m_config;
-	uint32_t m_maxParticles = 10000;
-	
-
-	bool m_isPlaying = true;
-	bool m_gpuInitialized = false;
-	float m_systemTime = 0.0f;
-	float m_emissionAccumulator = 0.0f;
-	uint32_t m_aliveCount = 0;
-	
-	
-	GLuint m_particleBuffers[2] = { 0, 0 };  ///< Double-buffered particle SSBOs
-	GLuint m_counterBuffer = 0;               ///< Atomic counters SSBO
-	uint32_t* m_counterBufferPtr = nullptr;   ///< Persistent mapped pointer to counter buffer
-	GLuint m_frameParamsUBO = 0;              ///< Frame parameters UBO
-	GLuint m_quadVAO = 0;                     ///< Quad VAO for rendering
-	GLuint m_quadVBO = 0;                     ///< Quad VBO for rendering
-	int m_currentBuffer = 0;                  ///< Current read buffer index
-	
-
-	std::shared_ptr<renderer::Shader> m_computeShader;
-	std::shared_ptr<renderer::Shader> m_renderShader;
-	
-
-	std::shared_ptr<Texture> m_texture;
-	
-
-	std::mt19937 m_rng;
-	std::uniform_real_distribution<float> m_dist { 0.0f, 1.0f };
-	
-	
-	int m_cullingRadius = 20; ///< Radius for frustum culling
+	/// @brief Cleanup shared resources
+	void CleanupSharedResources();
 	
 	// IRenderable implementation
 	void OnRender(const glm::mat4& viewProjection) noexcept override;
 	
+	// Emitters
+	std::vector<ParticleEmitter> m_emitters;
+	
+	// Shared resources
+	std::shared_ptr<renderer::Shader> m_computeShader;
+	std::shared_ptr<renderer::Shader> m_renderShader;
+	GLuint m_quadVAO = 0;
+	GLuint m_quadVBO = 0;
+	
+	bool m_isPlaying = true;
+	bool m_sharedResourcesInitialized = false;
+	
+	// Serialization
+	std::string m_luaConfigPath;  ///< Path to Lua config file (for reloading)
+	
+	// Culling
+	int m_cullingRadius = 20;
 };
 
 }    // namespace toast
