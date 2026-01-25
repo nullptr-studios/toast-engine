@@ -47,7 +47,7 @@ IRendererBase* IRendererBase::m_instance = nullptr;
 static GLFWwindow* g_backup_current_context = nullptr;
 #endif
 
-#ifndef TOAST_EDITOR
+#ifndef NDEBUG
 void DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* user_param) {
 	// ignore non-significant error/warning codes
 	if (id == 131169 || id == 131185 || id == 131218 || id == 131204) {
@@ -183,7 +183,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Debug output
-#ifndef _NDEBUG
+#ifndef NDEBUG
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(DebugCallback, nullptr);
 #endif
@@ -391,11 +391,12 @@ void OpenGLRenderer::GeometryPass() {
 	TracyGpuZone("Geometry Pass");
 #endif
 
-	// Sort by depth (front-to-back) only when necessary.
-	if (m_renderables.size() > 1) {
+	// Sort by depth (front-to-back) only when list has changed
+	if (m_renderablesSortDirty && m_renderables.size() > 1) {
 		std::ranges::stable_sort(m_renderables, [](IRenderable* a, IRenderable* b) {
 			return a->GetDepth() < b->GetDepth();
 		});
+		m_renderablesSortDirty = false;
 	}
 
 	m_geometryFramebuffer->bind();
@@ -424,10 +425,11 @@ void OpenGLRenderer::LightingPass() {
 	}
 
 	// Sort lights by z to ensure correct accumulation ordering when needed
-	if (m_lights.size() > 1) {
+	if (m_lightsSortDirty && m_lights.size() > 1) {
 		std::ranges::stable_sort(m_lights, [](Light2D* a, Light2D* b) {
 			return a->transform()->position().z < b->transform()->position().z;
 		});
+		m_lightsSortDirty = false;
 	}
 
 	// Render lights at their own resolution
@@ -555,18 +557,22 @@ void OpenGLRenderer::Resize(unsigned int width, unsigned int height) {
 
 void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
 	m_renderables.push_back(renderable);
+	m_renderablesSortDirty = true;
 }
 
 void OpenGLRenderer::RemoveRenderable(IRenderable* renderable) {
 	m_renderables.erase(std::ranges::find(m_renderables, renderable));
+	m_renderablesSortDirty = true;
 }
 
 void OpenGLRenderer::AddLight(Light2D* light) {
 	m_lights.push_back(light);
+	m_lightsSortDirty = true;
 }
 
 void OpenGLRenderer::RemoveLight(Light2D* light) {
 	m_lights.erase(std::ranges::find(m_lights, light));
+	m_lightsSortDirty = true;
 }
 
 void OpenGLRenderer::LoadRenderSettings() {

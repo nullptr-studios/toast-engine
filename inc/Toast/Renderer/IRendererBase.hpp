@@ -237,6 +237,8 @@ protected:
 	// ========== Scene Objects ==========
 	std::vector<IRenderable*> m_renderables;    ///< All renderable objects in the scene
 	std::vector<Light2D*> m_lights;             ///< All 2D lights in the scene
+	bool m_renderablesSortDirty = true;         ///< True when renderables need re-sorting
+	bool m_lightsSortDirty = true;              ///< True when lights need re-sorting
 
 	// ========== Transform Matrices ==========
 	glm::mat4 m_projectionMatrix = glm::mat4(1.0f);    ///< Camera projection matrix

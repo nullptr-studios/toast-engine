@@ -69,8 +69,9 @@ void Time::PhysTick() noexcept {
 	m_previousPhys = m_nowPhys;
 	m_nowPhys = clock_t::now();
 	std::chrono::duration<double> t = m_nowPhys - m_previousPhys;
-	m_deltaFixedRaw = t.count();
-	m_deltaFixed = std::min(m_deltaFixedRaw / m_deltaScale, MAX_FIXED);
+	m_deltaFixedRaw = static_cast<float>(t.count());
+	// Multiply by scale (not divide) so scale < 1 slows time, scale > 1 speeds it up
+	m_deltaFixed = std::min(m_deltaFixedRaw * m_deltaScale, MAX_FIXED);
 }
 
 double Time::uptime() noexcept {

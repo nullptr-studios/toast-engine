@@ -34,7 +34,7 @@ protected:
 private:
 	void Init();
 	static Engine* m_instance;
-	static float purge_timer;
+	static double purge_timer;
 };
 
 }
