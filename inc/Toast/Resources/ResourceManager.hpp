@@ -1,6 +1,12 @@
-///@file ResourceManager.hpp
-///@author Dario
-///@date 17/09/25
+/**
+ * @file ResourceManager.hpp
+ * @author Dario
+ * @date 17/09/25
+ * @brief Resource loading and caching system.
+ *
+ * This file provides the ResourceManager class which handles loading,
+ * caching, and managing all game resources (textures, meshes, shaders, etc.).
+ */
 
 #pragma once
 #include "Mesh.hpp"
@@ -15,48 +21,147 @@
 
 namespace resource {
 
-///@class ResourceManager
-///@brief Manager of every resource in the engine
+/**
+ * @class ResourceManager
+ * @brief Singleton manager for loading and caching game resources.
+ *
+ * The ResourceManager provides centralized resource loading with automatic
+ * caching to prevent duplicate loads. It supports loading from the filesystem
+ * or from a packed (.pkg) file for distribution.
+ *
+ * @par Features:
+ * - Automatic caching of loaded resources
+ * - Background loading with main-thread GPU upload
+ * - Support for packed resource files (.pkg)
+ * - Automatic resource purging when unused
+ *
+ * @par Supported Resource Types:
+ * - Texture: Images (.png, .jpg)
+ * - Mesh: 3D models (.obj)
+ * - Shader: GPU shader programs
+ * - Material: Shader + texture combinations
+ *
+ * @par Usage Example:
+ * @code
+ * auto* rm = ResourceManager::GetInstance();
+ *
+ * // Load a texture (cached automatically)
+ * auto texture = rm->LoadResource<Texture>("textures/player.png");
+ *
+ * // Load same texture again - returns cached version
+ * auto sameTexture = rm->LoadResource<Texture>("textures/player.png");
+ *
+ * // Load a shader
+ * auto shader = rm->LoadResource<Shader>("shaders/standard.shader");
+ *
+ * // Read raw file data
+ * auto contents = resource::Open("data/config.json");
+ * @endcode
+ *
+ * @note GPU resources are automatically uploaded on the main thread.
+ * @warning ResourceManager must be created before loading any resources.
+ *
+ * @see IResource, Texture, Mesh, Shader
+ */
 class ResourceManager {
 public:
-	///@brief enable pkg file reading
-	///@param pkg true to enable, false to disable
+	/**
+	 * @brief Constructs the ResourceManager.
+	 * @param pkg If true, reads from game.pkg instead of filesystem.
+	 */
 	ResourceManager(bool pkg = false);
+
 	~ResourceManager();
 
+	/**
+	 * @brief Gets the singleton instance.
+	 * @return Pointer to the ResourceManager.
+	 */
 	[[nodiscard]]
 	static ResourceManager* GetInstance();
 
-	///@brief Loads the resources tagged as GPU resources on the main thread
-	/// This function should be called once per frame on the main thread
+	/**
+	 * @brief Uploads pending GPU resources on the main thread.
+	 *
+	 * Call this once per frame from the main thread to upload
+	 * textures and other GPU resources that were loaded in the background.
+	 */
 	void LoadResourcesMainThread();
 
-	///@brief Purges unused resources from the cache
-	/// gets called every 20 seconds
+	/**
+	 * @brief Purges unused resources from the cache.
+	 *
+	 * Removes resources with no external references. Called automatically
+	 * by the engine every 120 seconds.
+	 */
 	void PurgeResources();
 
-	///@brief Loads a resource of type R from the given path
+	/**
+	 * @brief Loads a resource of the specified type.
+	 *
+	 * If the resource is already cached, returns the cached version.
+	 * Otherwise, loads from disk (or pkg) and caches it.
+	 *
+	 * @tparam R Resource type (must inherit from IResource).
+	 * @tparam Args Additional constructor argument types.
+	 * @param path Path to the resource file (relative to assets/).
+	 * @param args Additional arguments passed to the resource constructor.
+	 * @return Shared pointer to the loaded resource.
+	 *
+	 * @par Example:
+	 * @code
+	 * auto texture = rm->LoadResource<Texture>("textures/player.png");
+	 * auto mesh = rm->LoadResource<Mesh>("models/cube.obj");
+	 * @endcode
+	 */
 	template<typename R, typename... Args>
 	std::shared_ptr<R> LoadResource(const std::string& path, Args&&... args);
 
-	// std::shared_ptr<renderer::Shader> LoadShader(std::string name);
-
-	///@brief opens a file from disk or pkg
+	/**
+	 * @brief Opens a file and returns its contents as a string stream.
+	 * @param path File path (relative to assets/).
+	 * @param data_out Output string stream with file contents.
+	 * @return true if file was opened successfully.
+	 */
 	bool OpenFile(const std::string& path, std::istringstream& data_out) const;
-	///@brief opens a file from disk or pkg
+
+	/**
+	 * @brief Opens a file and returns its contents as bytes.
+	 * @param path File path (relative to assets/).
+	 * @param data Output vector with file bytes.
+	 * @return true if file was opened successfully.
+	 */
 	bool OpenFile(const std::string& path, std::vector<uint8_t>& data) const;
 
-	///@brief saves a file to disk
+	/**
+	 * @brief Saves content to a file on disk.
+	 * @param path File path (relative to assets/).
+	 * @param content Content to write.
+	 * @return true if file was saved successfully.
+	 */
 	static bool SaveFile(const std::string& path, const std::string& content);
 
+	/**
+	 * @brief Creates a resource slot entry for the editor.
+	 * @param path Path to the resource file.
+	 * @return ResourceSlot entry for editor display.
+	 */
 	static editor::ResourceSlot::Entry CreateResourceSlotEntry(const std::filesystem::path& path);
 
+	/**
+	 * @brief Gets the cached resources map.
+	 * @return Reference to the cache map.
+	 */
 	std::unordered_map<std::string, std::shared_ptr<IResource>>& GetCachedResources() {
 		return m_cachedResources;
 	}
 
 private:
-	// helpers
+	/**
+	 * @brief Converts backslashes to forward slashes.
+	 * @param s Input path string.
+	 * @return Normalized path string.
+	 */
 	[[nodiscard]]
 	inline std::string ToForwardSlashes(const std::string& s) const {
 		std::string result = s;
@@ -64,23 +169,41 @@ private:
 		return result;
 	}
 
+	/// @brief Mutex protecting the resource cache.
 	std::mutex m_mtx;
+
+	/// @brief Mutex protecting the upload queue.
 	std::mutex m_uploadMtx;
 
+	/// @brief ID of the main thread for GPU upload checks.
 	std::thread::id m_mainThreadId;
 
+	/// @brief Singleton instance pointer.
 	static ResourceManager* m_instance;
 
-	// Resources that need to be uploaded to the GPU on the main thread
+	/// @brief Queue of resources pending GPU upload.
 	std::vector<std::weak_ptr<IResource>> m_uploadResources;
 
-	// Cached resources
+	/// @brief Cache of loaded resources.
 	std::unordered_map<std::string, std::shared_ptr<IResource>> m_cachedResources;
 
-	// Internal file reading
+	/// @brief Whether to read from .pkg file.
 	bool m_pkg = false;
 };
 
+/**
+ * @brief Convenience function to open and read a file.
+ *
+ * @param path File path (relative to assets/).
+ * @return Optional containing file contents, or nullopt on failure.
+ *
+ * @par Example:
+ * @code
+ * if (auto contents = resource::Open("config.json")) {
+ *     auto json = nlohmann::json::parse(*contents);
+ * }
+ * @endcode
+ */
 [[nodiscard]]
 inline auto Open(const std::string& path) -> std::optional<std::string> {
 	std::istringstream s;
