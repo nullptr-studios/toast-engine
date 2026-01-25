@@ -47,7 +47,7 @@ IRendererBase* IRendererBase::m_instance = nullptr;
 static GLFWwindow* g_backup_current_context = nullptr;
 #endif
 
-#ifndef _NDEBUG
+#ifndef TOAST_EDITOR
 void DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* user_param) {
 	// ignore non-significant error/warning codes
 	if (id == 131169 || id == 131185 || id == 131218 || id == 131204) {

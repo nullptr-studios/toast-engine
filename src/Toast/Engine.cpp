@@ -15,6 +15,8 @@
 #include "Toast/Window/Window.hpp"
 #include "Toast/World.hpp"
 
+#include "ForceLink.cpp"
+
 #include <memory>
 
 #ifdef TOAST_EDITOR

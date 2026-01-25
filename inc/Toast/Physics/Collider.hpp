@@ -20,7 +20,9 @@ class Collider : public toast::Component {
 public:
 	REGISTER_TYPE(Collider);
 
+#ifdef TOAST_EDITOR
 	void Inspector() override;
+#endif
 	void EditorTick() override;
 	void Destroy() override;
 

@@ -298,6 +298,42 @@ void AtlasRendererComponent::Load(json_t j, bool force_create) {
 	}
 }
 
+void AtlasRendererComponent::UpdateMeshBounds() {
+	
+	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
+	// collect all vertices to compute bounding box for frustum culling
+	{
+		spine::RenderCommand* cmd = command;
+		size_t totalVerts = 0;
+		while (cmd) {
+			totalVerts += cmd->numVertices;
+			cmd = cmd->next;
+		}
+
+		// Build temporary vertex positions for bounding box computation
+		m_tempVerts.reserve(totalVerts);
+		cmd = command;
+		while (cmd) {
+			for (int i = 0; i < cmd->numVertices; ++i) {
+				renderer::SpineVertex v{};
+				v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
+				v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], cmd->uvs[(i * 2) + 1]);
+				v.colorABGR = cmd->colors[i];
+				m_tempVerts.push_back(v);
+			}
+			cmd = cmd->next;
+		}
+
+		// Compute dynamic bounding box
+		m_dynamicMesh.ComputeSpineBoundingBox(m_tempVerts.data(), m_tempVerts.size());
+		
+	}
+
+	// Reset buffers for actual rendering pass
+	m_tempVerts.clear();
+	m_tempIndices.clear();
+}
+
 #ifdef TOAST_EDITOR
 
 // ImGui helper
@@ -386,42 +422,6 @@ void AtlasRendererComponent::Inspector() {
 			ImGui::EndCombo();
 		}
 	}
-}
-
-void AtlasRendererComponent::UpdateMeshBounds() {
-	
-	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
-	// collect all vertices to compute bounding box for frustum culling
-	{
-		spine::RenderCommand* cmd = command;
-		size_t totalVerts = 0;
-		while (cmd) {
-			totalVerts += cmd->numVertices;
-			cmd = cmd->next;
-		}
-
-		// Build temporary vertex positions for bounding box computation
-		m_tempVerts.reserve(totalVerts);
-		cmd = command;
-		while (cmd) {
-			for (int i = 0; i < cmd->numVertices; ++i) {
-				renderer::SpineVertex v{};
-				v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
-				v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], cmd->uvs[(i * 2) + 1]);
-				v.colorABGR = cmd->colors[i];
-				m_tempVerts.push_back(v);
-			}
-			cmd = cmd->next;
-		}
-
-		// Compute dynamic bounding box
-		m_dynamicMesh.ComputeSpineBoundingBox(m_tempVerts.data(), m_tempVerts.size());
-		
-	}
-
-	// Reset buffers for actual rendering pass
-	m_tempVerts.clear();
-	m_tempIndices.clear();
 }
 
 #endif
