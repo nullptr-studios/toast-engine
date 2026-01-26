@@ -151,7 +151,7 @@ void World::NextLevel() {
 	}
 	if (static_cast<std::size_t>(instance->m.worldState.level) >= instance->m.worldList[instance->m.worldState.world].size()) {
 		TOAST_WARN("No More Levels In World Moving To Next World");
-
+    NextWorld();
 	} else {
 		if (instance->m.worldState.prevLevel.has_value()) {
 			auto* prev_level = World::Get(instance->m.worldState.prevLevel.value());
