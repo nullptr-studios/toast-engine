@@ -1,6 +1,7 @@
 #pragma once
 #include "Objects/Object.hpp"
 #include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/GameFlow.hpp"
 #include "Toast/SceneLoadedEvent.hpp"
 
 #include <future>
@@ -35,16 +36,9 @@ public:
 	static void EnableScene(const std::string& name);
 	static void DisableScene(unsigned id);
 	static void DisableScene(const std::string& name);
-	// static void NextLevel();
-	// static void NextWorld();
+	static void NextLevel() {Instance()->m.gameFlow.NextLevel();}
+	static void NextWorld() {Instance()->m.gameFlow.NextWorld();}
 
-	// static auto GetWorld() -> unsigned {
-	// 	return Instance()->m.worldState.nextWorld;
-	// }
-	//
-	// static auto GetLevel() -> unsigned {
-	// 	return Instance()->m.worldState.nextLevel;
-	// }
 
 	void EarlyTick();
 	void Tick();
@@ -110,7 +104,7 @@ private:
 		std::mutex queueMutex;
 		Object* editorScene = nullptr;
 		std::vector<std::vector<std::string>> worldList;
-
+    GameFlow gameFlow;
 	} m;
 };
 

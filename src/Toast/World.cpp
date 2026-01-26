@@ -7,12 +7,9 @@
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/SimulateWorldEvent.hpp"
 #include "Toast/ThreadPool.hpp"
-#include "sol/state.hpp"
-#include "spdlog/fmt/bundled/core.h"
 
 #include <functional>
 #include <future>
-#include <iterator>
 #include <memory>
 
 namespace toast {
@@ -121,56 +118,6 @@ World::~World() {
 	delete m.threadPool;
 }
 
-// void World::NextLevel() {
-// 	auto* instance = Instance();
-// 	if (instance->m.worldState.loadedLevelId != std::nullopt) {
-// 		instance->m.worldState.nextLevel++;
-// 	}
-// 	if (static_cast<std::size_t>(instance->m.worldState.nextLevel) >= instance->m.worldList[instance->m.worldState.nextWorld].size()) {
-// 		TOAST_WARN("No More Levels In World Moving To Next World");
-// 		NextWorld();
-// 	} else {
-//     if (instance->m.worldState.loadedLevelId.has_value()) {
-//       auto* loaded_level = World::Get(instance->m.worldState.loadedLevelId.value());
-//       loaded_level->Nuke();
-//     }
-// 		if (instance->m.worldState.nextLevelId.has_value()) {
-// 			auto* next_level = World::Get(instance->m.worldState.nextLevelId.value());
-//       next_level->enabled(true);
-//       instance->m.worldState.loadedLevelId = next_level->id();
-// 		}
-// 		auto new_scene = instance->m.worldList[instance->m.worldState.nextWorld][instance->m.worldState.nextLevel];
-// 		TOAST_WARN("Load Next Level {}", new_scene);
-// 		auto futu = World::LoadScene(new_scene);
-//
-// 		futu.wait();
-// 		instance->m.worldState.nextLevelId = futu.get();
-// 	}
-// }
-//
-// void World::NextWorld() {
-// 	auto* instance = Instance();
-// 	instance->m.worldState.nextWorld++;
-// 	instance->m.worldState.nextLevel = -1;
-// 	if (static_cast<std::size_t>(instance->m.worldState.nextWorld) >= instance->m.worldList.size()) {
-// 		TOAST_WARN("No More Worlds???");
-// 		instance->m.worldState.nextWorld = 0;
-// 		instance->m.worldState.nextLevel = 0;
-// 		if (instance->m.worldState.loadedLevelId.has_value()) {
-// 			auto* prev_level = World::Get(instance->m.worldState.loadedLevelId.value());
-// 			prev_level->Nuke();
-// 			instance->m.worldState.loadedLevelId = std::nullopt;
-// 		}
-// 		if (instance->m.worldState.nextLevelId.has_value()) {
-// 			auto* prev_level = World::Get(instance->m.worldState.nextLevelId.value());
-// 			prev_level->Nuke();
-// 			instance->m.worldState.nextLevelId = std::nullopt;
-// 		}
-// 	} else {
-// 		TOAST_WARN("Load Next World or smth");
-// 		NextLevel();
-// 	}
-// }
 
 Object* World::New(const std::string& type, const std::optional<std::string>& name) {
 	auto* world = Instance();
