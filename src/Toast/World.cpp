@@ -261,7 +261,6 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 			auto create_registry = Object::getRegistry();
 			auto* scene = static_cast<Scene*>(create_registry[scene_type](world->m.children, std::nullopt));
 			scene_id = scene->id();
-			promis->set_value(scene_id);
 
 			// Add name to the scene - force copy
 			std::string name = j["name"].get<std::string>();
@@ -283,6 +282,7 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 			ScheduleBegin(scene);
 		}
 
+    promis->set_value(scene_id);
 		auto* e = new SceneLoadedEvent { scene_id, scene_name };
 		event::Send(reinterpret_cast<event::IEvent*>(e));
 	});
