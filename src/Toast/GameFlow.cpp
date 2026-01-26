@@ -122,14 +122,14 @@ void GameFlow::NextLevel() {
 	m.level = m.level.value() + 1;
 
 	// Load & Enable New Level
-	m.currentLevel = std::move(m.nextLevel).or_else([this] {
-		return std::optional<std::future<unsigned>>(toast::World::LoadScene(m.levelList[m.level.value()]));
+	m.currentLevel = std::move(m.nextLevel).or_else([this] -> std::optional<std::future<unsigned>> {
+		return toast::World::LoadScene(m.levelList[m.level.value()]);
 	});
 	m.currentLevel->wait();
 	auto* scene = toast::World::Get(m.currentLevel->get());
 	scene->enabled(true);
 
-	// Pre Load Next Level
+	// Pre Load Next Level :3
 	if (m.levelList.size() <= m.level.value() + 1) {
 		m.nextLevel = toast::World::LoadScene(m.levelList[m.level.value() + 1]);
 	} else {
@@ -138,7 +138,7 @@ void GameFlow::NextLevel() {
 }
 
 void GameFlow::NextWorld() {
-  // Loads Next World Unless Next World unless no worlds are loaded (loads the first world)
+	// Loads Next World Unless Next World unless no worlds are loaded (loads the first world)
 	// clang-format off
 	LoadWorld(
     m.world.transform([](unsigned val) {
