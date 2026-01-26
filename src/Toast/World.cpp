@@ -146,7 +146,7 @@ World::~World() {
 
 void World::NextLevel() {
 	auto* instance = Instance();
-	if (instance->m.worldState.prevLevel == std::nullopt) {
+	if (instance->m.worldState.prevLevel != std::nullopt) {
 		instance->m.worldState.level++;
 	}
 	if (static_cast<std::size_t>(instance->m.worldState.level) >= instance->m.worldList[instance->m.worldState.world].size()) {
