@@ -21,6 +21,10 @@ class Collider : public toast::Component {
 public:
 	REGISTER_TYPE(Collider);
 
+	void Init() override {
+		Component::Init();
+		m.flags = ColliderFlags::Ground;
+	}
 	void Inspector() override;
 	void EditorTick() override;
 	void Destroy() override;
