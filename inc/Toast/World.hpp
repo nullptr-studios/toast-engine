@@ -114,7 +114,8 @@ private:
 		struct {
 			int world = 0;
 			int level = 0;
-			std::optional<unsigned> prevLevel = std::nullopt;
+			std::optional<unsigned> loadedLevel = std::nullopt;
+			std::optional<unsigned> nextLevel = std::nullopt;
 		} worldState;
 	} m;
 };

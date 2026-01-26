@@ -146,23 +146,28 @@ World::~World() {
 
 void World::NextLevel() {
 	auto* instance = Instance();
-	if (instance->m.worldState.prevLevel != std::nullopt) {
+	if (instance->m.worldState.loadedLevel != std::nullopt) {
 		instance->m.worldState.level++;
 	}
 	if (static_cast<std::size_t>(instance->m.worldState.level) >= instance->m.worldList[instance->m.worldState.world].size()) {
 		TOAST_WARN("No More Levels In World Moving To Next World");
-    NextWorld();
+		NextWorld();
 	} else {
-		if (instance->m.worldState.prevLevel.has_value()) {
-			auto* prev_level = World::Get(instance->m.worldState.prevLevel.value());
-			prev_level->Nuke();
+    if (instance->m.worldState.loadedLevel.has_value()) {
+      auto* loaded_level = World::Get(instance->m.worldState.loadedLevel.value());
+      loaded_level->Nuke();
+    }
+		if (instance->m.worldState.nextLevel.has_value()) {
+			auto* next_level = World::Get(instance->m.worldState.nextLevel.value());
+      next_level->enabled(true);
+      instance->m.worldState.loadedLevel = next_level->id();
 		}
 		auto new_scene = instance->m.worldList[instance->m.worldState.world][instance->m.worldState.level];
 		TOAST_WARN("Load Next Level {}", new_scene);
 		auto futu = World::LoadScene(new_scene);
 
 		futu.wait();
-		instance->m.worldState.prevLevel = futu.get();
+		instance->m.worldState.nextLevel = futu.get();
 	}
 }
 
@@ -172,12 +177,17 @@ void World::NextWorld() {
 	instance->m.worldState.level = -1;
 	if (static_cast<std::size_t>(instance->m.worldState.world) >= instance->m.worldList.size()) {
 		TOAST_WARN("No More Worlds???");
-    instance->m.worldState.world = 0;
-    instance->m.worldState.level = 0;
-		if (instance->m.worldState.prevLevel.has_value()) {
-			auto* prev_level = World::Get(instance->m.worldState.prevLevel.value());
+		instance->m.worldState.world = 0;
+		instance->m.worldState.level = 0;
+		if (instance->m.worldState.loadedLevel.has_value()) {
+			auto* prev_level = World::Get(instance->m.worldState.loadedLevel.value());
 			prev_level->Nuke();
-      instance->m.worldState.prevLevel = std::nullopt;
+			instance->m.worldState.loadedLevel = std::nullopt;
+		}
+		if (instance->m.worldState.nextLevel.has_value()) {
+			auto* prev_level = World::Get(instance->m.worldState.nextLevel.value());
+			prev_level->Nuke();
+			instance->m.worldState.nextLevel = std::nullopt;
 		}
 	} else {
 		TOAST_WARN("Load Next World or smth");
@@ -222,10 +232,10 @@ Object* World::New(const std::string& type, const std::optional<std::string>& na
 }
 
 auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
-  std::shared_ptr<std::promise<unsigned>> promis = std::make_shared<std::promise<unsigned>>();
+	std::shared_ptr<std::promise<unsigned>> promis = std::make_shared<std::promise<unsigned>>();
 	std::future<unsigned> futur = promis->get_future();
 	std::string p { path };
-  std::function<void()> llambda = []() mutable {};
+	std::function<void()> llambda = []() mutable { };
 	Instance()->m.threadPool->QueueJob([path = p, promis] {
 		// Load scene file
 		json_t j;
