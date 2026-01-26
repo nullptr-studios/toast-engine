@@ -16,6 +16,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
 
+#include <random>
+
 #ifdef TOAST_EDITOR
 #include "imgui.h"
 #include "imgui_stdlib.h"
