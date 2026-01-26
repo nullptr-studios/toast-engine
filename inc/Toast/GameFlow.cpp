@@ -6,12 +6,15 @@
 #include "sol/state.hpp"
 
 #include <future>
+#include <optional>
 
 namespace toast {
 
 GameFlow::GameFlow() {
 	sol::state lua;
 	sol::table lua_table;
+
+  std::vector<std::string> world_list;
 
 	try {
 		// Loading the lua file
@@ -30,11 +33,19 @@ GameFlow::GameFlow() {
 		}
 		lua_table = *result;
 
-		m.worldList = lua_table.as<std::vector<std::string>>();
+		world_list = lua_table.as<std::vector<std::string>>();
 
 	} catch (const sol::error& e) {    //
 		TOAST_WARN("Scenes.lua file failed to do something: {}", e.what());
 	}
+  m = {
+    .worldList = world_list,
+    .levelList = {},
+    .world = std::nullopt,
+    .level = std::nullopt,
+    .currentLevel = std::nullopt,
+    .nextLevel = std::nullopt,
+  };
 }
 
 void GameFlow::LoadWorld(unsigned world) {
