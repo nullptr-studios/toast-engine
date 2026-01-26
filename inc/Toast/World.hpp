@@ -90,7 +90,7 @@ private:
 	constexpr static unsigned char DESTROY_SCENE_DELAY = 10;
 	constexpr static size_t POOL_SIZE = 2;
 
-	struct M {
+	struct {
 		Object::Children children;
 		std::unique_ptr<event::ListenerComponent> listener;
 		std::unordered_map<unsigned, Scene*> tickableScenes;

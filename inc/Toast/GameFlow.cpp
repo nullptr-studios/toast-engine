@@ -39,7 +39,7 @@ GameFlow::GameFlow() {
 		TOAST_WARN("Scenes.lua file failed to do something: {}", e.what());
 	}
   m = {
-    .worldList = world_list,
+    .worldList = std::move(world_list),
     .levelList = {},
     .world = std::nullopt,
     .level = std::nullopt,
