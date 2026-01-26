@@ -14,7 +14,7 @@ GameFlow::GameFlow() {
 	sol::state lua;
 	sol::table lua_table;
 
-  std::vector<std::string> world_list;
+	std::vector<std::string> world_list;
 
 	try {
 		// Loading the lua file
@@ -38,14 +38,14 @@ GameFlow::GameFlow() {
 	} catch (const sol::error& e) {    //
 		TOAST_WARN("Scenes.lua file failed to do something: {}", e.what());
 	}
-  m = {
-    .worldList = std::move(world_list),
-    .levelList = {},
-    .world = std::nullopt,
-    .level = std::nullopt,
-    .currentLevel = std::nullopt,
-    .nextLevel = std::nullopt,
-  };
+	m = {
+		.worldList = std::move(world_list),
+		.levelList = {},
+		.world = std::nullopt,
+		.level = std::nullopt,
+		.currentLevel = std::nullopt,
+		.nextLevel = std::nullopt,
+	};
 }
 
 void GameFlow::LoadWorld(unsigned world) {
@@ -109,9 +109,11 @@ void GameFlow::NextLevel() {
 	});
 
 	// Nuke Loaded Level
-	auto* scene = toast::World::Get(m.currentLevel->get());
-	scene->Nuke();
-	m.currentLevel = std::nullopt;
+	if (m.currentLevel.has_value()) {
+		auto* scene = toast::World::Get(m.currentLevel->get());
+		scene->Nuke();
+		m.currentLevel = std::nullopt;
+	}
 
 	// Increment Level
 	if (m.levelList.size() <= m.level.value() + 1) {
@@ -126,7 +128,7 @@ void GameFlow::NextLevel() {
 		return std::optional<std::future<unsigned>>(toast::World::LoadScene(m.levelList[m.level.value()]));
 	});
 	m.currentLevel->wait();
-	scene = toast::World::Get(m.currentLevel->get());
+	auto* scene = toast::World::Get(m.currentLevel->get());
 	scene->enabled(true);
 
 	// Pre Load Next Level
