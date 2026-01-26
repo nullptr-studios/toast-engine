@@ -35,16 +35,16 @@ public:
 	static void EnableScene(const std::string& name);
 	static void DisableScene(unsigned id);
 	static void DisableScene(const std::string& name);
-	static void NextLevel();
-	static void NextWorld();
+	// static void NextLevel();
+	// static void NextWorld();
 
-	static auto GetWorld() -> unsigned {
-		return Instance()->m.worldState.nextWorld;
-	}
-
-	static auto GetLevel() -> unsigned {
-		return Instance()->m.worldState.nextLevel;
-	}
+	// static auto GetWorld() -> unsigned {
+	// 	return Instance()->m.worldState.nextWorld;
+	// }
+	//
+	// static auto GetLevel() -> unsigned {
+	// 	return Instance()->m.worldState.nextLevel;
+	// }
 
 	void EarlyTick();
 	void Tick();
@@ -111,12 +111,6 @@ private:
 		Object* editorScene = nullptr;
 		std::vector<std::vector<std::string>> worldList;
 
-		struct {
-			int nextWorld = 0;
-			int nextLevel = 0;
-			std::optional<unsigned> loadedLevelId = std::nullopt;
-			std::optional<unsigned> nextLevelId = std::nullopt;
-		} worldState;
 	} m;
 };
 
