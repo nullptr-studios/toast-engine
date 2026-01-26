@@ -443,6 +443,6 @@ void SpineRendererComponent::SetBoneLocalPosition(const std::string_view& boneNa
 }
 
 void SpineRendererComponent::OnAnimationEvent(const std::string_view& animationName, int track, const std::string_view& eventName, int intValue, float floatValue, const std::string_view& stringValue) {
-	event::Send(new SpineEvent(animationName, track, eventName, intValue, floatValue, stringValue));
+	event::Send(new SpineEvent(id(), animationName, track, eventName, intValue, floatValue, stringValue));
 	TOAST_TRACE("Spine Event Sent!");
 }

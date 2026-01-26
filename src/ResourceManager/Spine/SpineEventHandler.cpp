@@ -46,7 +46,15 @@ void SpineEventHandler::callback(spine::AnimationState* state, spine::EventType 
 				
 				context->OnAnimationEvent(entry->getAnimation()->getName().buffer(), entry->getTrackIndex(), name, intValue, floatValue, stringValue);
 				
-
+				if (name == "PlayFx") {
+					TOAST_TRACE("Spine PlayFx: {}", stringValue);
+					//@TODO
+					// context->PlayFxEvent(intValue, floatValue, stringValue);
+				} else if (name == "PlaySound") {
+					TOAST_TRACE("Spine PlaySound: {}", stringValue);
+					//@TODO
+					// context->SpawnParticleEvent(intValue, floatValue, stringValue);
+				}
 
 			}
 			break;
