@@ -418,8 +418,9 @@ void Collider::Load(json_t j, bool propagate) {
 	if (j.contains("debug.showNormals")) {
 		data.debugNormals = j["debug.showNormals"];
 	}
+
 	if (j.contains("flags")) {
-		m.flags = static_cast<ColliderFlags>(j["flags"].get<unsigned int>());
+		m.flags = static_cast<ColliderFlags>(j["flags"]);
 	}
 
 	Component::Load(j, propagate);

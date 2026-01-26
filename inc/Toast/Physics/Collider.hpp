@@ -46,7 +46,7 @@ private:
 	struct {
 		std::vector<ConvexCollider*> convexShapes;
 		std::list<glm::vec2> points;
-		ColliderFlags flags = ColliderFlags::Default;
+		ColliderFlags flags;
 	} m;
 
 	struct {
