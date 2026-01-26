@@ -3,6 +3,7 @@
 /// @date 28 Dec 2025
 
 #pragma once
+#include "Toast/Physics/ColliderFlags.hpp"
 #include "Toast/Event/ListenerComponent.hpp"
 
 #include <glm/glm.hpp>
@@ -38,7 +39,7 @@ public:
 	static void RemoveTrigger(Trigger* t);
 	static void AddBox(BoxRigidbody* rb);
 	static void RemoveBox(BoxRigidbody* rb);
-	static std::optional<RayResult> RayCollision(Line* ray);
+	static std::optional<RayResult> RayCollision(Line* ray, ColliderFlags flags);
 
 	PhysicsSystem();
 	~PhysicsSystem();

@@ -326,14 +326,23 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 
 std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 	std::optional<dvec2> result = std::nullopt;
-	dvec2 pt1 = ray->p1 - rb->GetPosition();
-	dvec2 pt2 = ray->p2 - rb->GetPosition();
-  dvec2 min_distance = cross(dvec3(pt1.x, pt1.y, 0.0f), dvec3(pt2.x, pt2.y, 0.0f)) / length(pt2 - pt1);
+	dvec2 line = ray->p2 - ray->p1;
+	double t = dot(rb->GetPosition() - ray->p1, line) / dot(line, line);
+	t = clamp(t, 0.0, 1.0);
+	dvec2 closest_point = ray->p1 + t * line;
 
-	if (length2(min_distance) >= rb->radius * rb->radius)
+	if (length2(closest_point - rb->GetPosition()) > rb->radius * rb->radius)
 		return std::nullopt;
 
-	result = rb->GetPosition();
+	double distance = std::max(0.0, rb->radius - length(closest_point - rb->GetPosition()));
+
+	dvec2 pt1 = closest_point - ray->tangent * distance;
+	dvec2 pt2 = closest_point + ray->tangent * distance;
+	if (length2(pt2 - ray->p1) > length2(pt1 - ray->p1))
+		result = pt1;
+	else
+		result = pt2;
+
 	return result;
 }
 

@@ -5,21 +5,27 @@
  *
  */
 #pragma once
-#include "../src/Physics/ConvexCollider.hpp"
-#include "Rigidbody.hpp"
-#include "Toast/Objects/Actor.hpp"
+#include "ColliderFlags.hpp"
 #include "glm/vec2.hpp"
 
-namespace physics {
-class ConvexCollider;
-struct RayResult {
-	ConvexCollider* collider = nullptr;
-	Rigidbody* rigid = nullptr;
+enum class ColliderFlags : uint8_t;
 
-	//if false collider, otherwise rigidbody
-	bool colOrRb = false;;
+namespace toast { class Object; }
+
+namespace physics {
+
+struct RayResult {
+	enum Type : uint8_t {
+		Collider, Rigidbody, Box
+	};
+
+	Type type = Collider;
+	glm::vec2 point = {0.0f, 0.0f};
+	glm::vec2 normal = {0.0f, 0.0f};
+	float distance = 0.0f;
+	toast::Object* other = nullptr;
 };
 
-std::optional<RayResult> RayCast(glm::vec2 point, glm::vec2 dir);
+auto RayCast(glm::vec2 point, glm::vec2 dir, ColliderFlags flags = ColliderFlags::Default) -> std::optional<RayResult>;
 
 }
