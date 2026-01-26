@@ -146,48 +146,48 @@ World::~World() {
 
 void World::NextLevel() {
 	auto* instance = Instance();
-	if (instance->m.worldState.loadedLevel != std::nullopt) {
+	if (instance->m.worldState.loadedLevelId != std::nullopt) {
 		instance->m.worldState.level++;
 	}
-	if (static_cast<std::size_t>(instance->m.worldState.level) >= instance->m.worldList[instance->m.worldState.world].size()) {
+	if (static_cast<std::size_t>(instance->m.worldState.level) >= instance->m.worldList[instance->m.worldState.nextWorld].size()) {
 		TOAST_WARN("No More Levels In World Moving To Next World");
 		NextWorld();
 	} else {
-    if (instance->m.worldState.loadedLevel.has_value()) {
-      auto* loaded_level = World::Get(instance->m.worldState.loadedLevel.value());
+    if (instance->m.worldState.loadedLevelId.has_value()) {
+      auto* loaded_level = World::Get(instance->m.worldState.loadedLevelId.value());
       loaded_level->Nuke();
     }
-		if (instance->m.worldState.nextLevel.has_value()) {
-			auto* next_level = World::Get(instance->m.worldState.nextLevel.value());
+		if (instance->m.worldState.nextLevel_id.has_value()) {
+			auto* next_level = World::Get(instance->m.worldState.nextLevel_id.value());
       next_level->enabled(true);
-      instance->m.worldState.loadedLevel = next_level->id();
+      instance->m.worldState.loadedLevelId = next_level->id();
 		}
-		auto new_scene = instance->m.worldList[instance->m.worldState.world][instance->m.worldState.level];
+		auto new_scene = instance->m.worldList[instance->m.worldState.nextWorld][instance->m.worldState.level];
 		TOAST_WARN("Load Next Level {}", new_scene);
 		auto futu = World::LoadScene(new_scene);
 
 		futu.wait();
-		instance->m.worldState.nextLevel = futu.get();
+		instance->m.worldState.nextLevel_id = futu.get();
 	}
 }
 
 void World::NextWorld() {
 	auto* instance = Instance();
-	instance->m.worldState.world++;
+	instance->m.worldState.nextWorld++;
 	instance->m.worldState.level = -1;
-	if (static_cast<std::size_t>(instance->m.worldState.world) >= instance->m.worldList.size()) {
+	if (static_cast<std::size_t>(instance->m.worldState.nextWorld) >= instance->m.worldList.size()) {
 		TOAST_WARN("No More Worlds???");
-		instance->m.worldState.world = 0;
+		instance->m.worldState.nextWorld = 0;
 		instance->m.worldState.level = 0;
-		if (instance->m.worldState.loadedLevel.has_value()) {
-			auto* prev_level = World::Get(instance->m.worldState.loadedLevel.value());
+		if (instance->m.worldState.loadedLevelId.has_value()) {
+			auto* prev_level = World::Get(instance->m.worldState.loadedLevelId.value());
 			prev_level->Nuke();
-			instance->m.worldState.loadedLevel = std::nullopt;
+			instance->m.worldState.loadedLevelId = std::nullopt;
 		}
-		if (instance->m.worldState.nextLevel.has_value()) {
-			auto* prev_level = World::Get(instance->m.worldState.nextLevel.value());
+		if (instance->m.worldState.nextLevel_id.has_value()) {
+			auto* prev_level = World::Get(instance->m.worldState.nextLevel_id.value());
 			prev_level->Nuke();
-			instance->m.worldState.nextLevel = std::nullopt;
+			instance->m.worldState.nextLevel_id = std::nullopt;
 		}
 	} else {
 		TOAST_WARN("Load Next World or smth");

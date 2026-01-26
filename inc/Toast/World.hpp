@@ -39,11 +39,11 @@ public:
 	static void NextWorld();
 
 	static auto GetWorld() -> unsigned {
-		return Instance()->m.worldState.world;
+		return Instance()->m.worldState.nextWorld;
 	}
 
 	static auto GetLevel() -> unsigned {
-		return Instance()->m.worldState.level;
+		return Instance()->m.worldState.nextLevel;
 	}
 
 	void EarlyTick();
@@ -112,10 +112,10 @@ private:
 		std::vector<std::vector<std::string>> worldList;
 
 		struct {
-			int world = 0;
-			int level = 0;
-			std::optional<unsigned> loadedLevel = std::nullopt;
-			std::optional<unsigned> nextLevel = std::nullopt;
+			int nextWorld = 0;
+			int nextLevel = 0;
+			std::optional<unsigned> loadedLevelId = std::nullopt;
+			std::optional<unsigned> nextLevelId = std::nullopt;
 		} worldState;
 	} m;
 };
