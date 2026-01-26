@@ -160,8 +160,8 @@ void World::NextLevel() {
 		TOAST_WARN("Load Next Level {}", new_scene);
 		auto futu = World::LoadScene(new_scene);
 
-		// futu.wait();
-		// instance->m.worldState.prevLevel = futu.get();
+		futu.wait();
+		instance->m.worldState.prevLevel = futu.get();
 	}
 }
 
