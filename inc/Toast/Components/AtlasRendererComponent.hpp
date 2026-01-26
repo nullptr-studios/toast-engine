@@ -35,6 +35,9 @@ public:
 #endif
 
 private:
+	
+	void UpdateMeshBounds();
+	
 	// Editor resource slots
 	editor::ResourceSlot m_atlasResource { resource::ResourceType::SPINE_ATLAS };
 	editor::ResourceSlot m_skeletonDataResource { resource::ResourceType::SPINE_SKELETON_DATA };
@@ -63,5 +66,5 @@ private:
 	int m_selectedAttachment = -1;
 
 	void EnumerateAttachmentNames();
-	void SetOnlyAttachmentByName(const std::string& name) const;
+	void SetOnlyAttachmentByName(const std::string& name);
 };

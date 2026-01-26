@@ -1,0 +1,81 @@
+#version 430 core
+
+layout(local_size_x = 256) in;
+
+struct Particle {
+    vec4 pos;      // xyz = position; w = currentSize
+    vec4 vel;      // xyz = velocity; w = rotation
+    vec4 color;    // current interpolated color rgba
+    vec4 end;      // endColor rgba
+    vec4 misc;     // x = lifeRemaining; y = lifeMax; z = seed/id; w = endSize
+    vec4 extra;    // x = startSize; y = rotationSpeed; z = drag; w = unused
+};
+
+layout(std430, binding = 0) readonly buffer PartIn { Particle particlesIn[]; };
+layout(std430, binding = 1) writeonly buffer PartOut { Particle particlesOut[]; };
+layout(std430, binding = 2) buffer Counters { uint inCount; uint outCount; uint spawnCount; uint pad; };
+
+layout(std140, binding = 4) uniform FrameParams { 
+    float dt;
+    float gravityX;
+    float gravityY;
+    float gravityZ;
+    uint maxParticles;
+    float globalDrag;
+    float pad1;
+    float pad2;
+};
+
+void main() {
+    uint gid = gl_GlobalInvocationID.x;
+    uint n = inCount;
+    
+    if (gid >= n) {
+        return;
+    }
+    
+    Particle p = particlesIn[gid];
+    
+    // Get particle-specific drag
+    float drag = p.extra.z;
+    
+    // Apply gravity
+    vec3 gravity = vec3(gravityX, gravityY, gravityZ);
+    p.vel.xyz += gravity * dt;
+    
+    // Apply drag (velocity damping)
+    if (drag > 0.0) {
+        float dampFactor = max(0.0, 1.0 - drag * dt);
+        p.vel.xyz *= dampFactor;
+    }
+    
+    // Integrate position
+    p.pos.xyz += p.vel.xyz * dt;
+    
+    // Update rotation
+    float rotSpeed = p.extra.y;
+    p.vel.w += rotSpeed * dt;
+    
+    // Update life
+    p.misc.x -= dt;
+    
+    // Check if particle is still alive
+    if (p.misc.x > 0.0) {
+        // Calculate life progress (0 at birth, 1 at death)
+        float lifeMax = max(p.misc.y, 0.0001);
+        float t = 1.0 - (p.misc.x / lifeMax);
+        
+        // Interpolate size: startSize -> endSize
+        float startSize = p.extra.x;
+        float endSize = p.misc.w;
+        float currentSize = mix(startSize, endSize, t);
+        p.pos.w = currentSize;
+        
+        // Atomic add to output count and write particle
+        uint idx = atomicAdd(outCount, 1);
+        if (idx < maxParticles) {
+            particlesOut[idx] = p;
+        }
+    }
+    // Dead particles are simply not written to output
+}
