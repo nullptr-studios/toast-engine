@@ -386,7 +386,7 @@ json_t Collider::Save() const {
 	j["debug.showPoints"] = debug.showPoints;
 	j["debug.showColliders"] = debug.showColliders;
 	j["debug.showNormals"] = data.debugNormals;
-	j["flags"] = static_cast<unsigned int>(m.flags);
+	j["flags"] = m.flags;
 
 	return j;
 }
