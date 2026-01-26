@@ -71,8 +71,35 @@ InputSystem::InputSystem() {
 }
 
 void InputSystem::Tick() {
-	// Poll controller state and dispatch any queued actions
+	// Poll controller state
 	PollControllers();
+	
+	// For held keys, we need to dispatch Ongoing events every frame
+	// Add all actions with pressed keys to the dispatch queue
+	if (HasActiveLayout()) {
+		// 0D actions that are held
+		for (auto& action : m.activeLayout->m.actions0d) {
+			if (!action.m.pressedKeys.empty() && action.CheckState(m.currentState)) {
+				AddToQueue(m.dispatch0DQueue, &action);
+			}
+		}
+		
+		// 1D actions that are held
+		for (auto& action : m.activeLayout->m.actions1d) {
+			if (!action.m.pressedKeys.empty() && action.CheckState(m.currentState)) {
+				AddToQueue(m.dispatch1DQueue, &action);
+			}
+		}
+		
+		// 2D actions that are held
+		for (auto& action : m.activeLayout->m.actions2d) {
+			if (!action.m.pressedKeys.empty() && action.CheckState(m.currentState)) {
+				AddToQueue(m.dispatch2DQueue, &action);
+			}
+		}
+	}
+	
+	// Dispatch all queued actions
 	DispatchQueue(m.dispatch0DQueue, &Listener::M::callbacks0d);
 	DispatchQueue(m.dispatch1DQueue, &Listener::M::callbacks1d);
 	DispatchQueue(m.dispatch2DQueue, &Listener::M::callbacks2d);
@@ -141,6 +168,12 @@ auto InputSystem::GetMouseDelta() -> glm::vec2 {
 #pragma endregion
 
 bool InputSystem::Handle0DAction(int key_code, int action, int mods, Device device) {
+	// Ignore OS key repeat events (action == 2 = GLFW_REPEAT)
+	// We handle held keys ourselves by dispatching every frame in Tick()
+	if (action == 2) {
+		return false;
+	}
+	
 	// Map button/keypress to 0D actions (boolean-like)
 	for (auto& act : m.activeLayout->m.actions0d) {
 		if (!act.CheckState(m.currentState)) {
@@ -148,20 +181,23 @@ bool InputSystem::Handle0DAction(int key_code, int action, int mods, Device devi
 		}
 		for (const auto& bind : act.m.binds) {
 			if (bind.device != device) continue;
-			if (!bind.keys.contains(key_code) || action == 2) {
+			if (!bind.keys.contains(key_code)) {
 				continue;
 			}
 
 			act.device = bind.device;
 			act.modifiers = static_cast<ModifierKey>(mods);
 
-			// 0 = release, 1 = press
+			// action: 0 = release, 1 = press
 			if (action == 0) {
+				// Key released - remove from pressed keys
 				act.m.pressedKeys.erase(key_code);
 			} else if (action == 1) {
+				// Key pressed - add to pressed keys
 				act.m.pressedKeys.emplace(key_code, true);
 			}
 
+			// Add to queue - will be dispatched in Tick()
 			AddToQueue(m.dispatch0DQueue, &act);
 			return true;
 		}
@@ -170,6 +206,11 @@ bool InputSystem::Handle0DAction(int key_code, int action, int mods, Device devi
 }
 
 bool InputSystem::Handle1DAction(int key_code, int action, int mods, Device device) {
+	// Ignore OS key repeat events
+	if (action == 2) {
+		return false;
+	}
+	
 	// Map button/keypress to 1D actions (float-like)
 	for (auto& act : m.activeLayout->m.actions1d) {
 		if (!act.CheckState(m.currentState)) {
@@ -178,7 +219,7 @@ bool InputSystem::Handle1DAction(int key_code, int action, int mods, Device devi
 		for (const auto& bind : act.m.binds) {
 			if (bind.device != device) continue;
 			for (const auto& [key, direction] : bind.keys) {
-				if (key != key_code || action == 2) {
+				if (key != key_code) {
 					continue;
 				}
 
@@ -186,8 +227,10 @@ bool InputSystem::Handle1DAction(int key_code, int action, int mods, Device devi
 				act.modifiers = static_cast<ModifierKey>(mods);
 
 				if (action == 0) {
+					// Key released
 					act.m.pressedKeys.erase(key_code);
 				} else if (action == 1) {
+					// Key pressed - store the directional value
 					act.m.pressedKeys.emplace(key_code, bind.GetFloatValue(direction));
 				}
 
@@ -200,6 +243,11 @@ bool InputSystem::Handle1DAction(int key_code, int action, int mods, Device devi
 }
 
 bool InputSystem::Handle2DAction(int key_code, int action, int mods, Device device) {
+	// Ignore OS key repeat events
+	if (action == 2) {
+		return false;
+	}
+	
 	// Map button/keypress to 2D actions (vec2-like)
 	for (auto& act : m.activeLayout->m.actions2d) {
 		if (!act.CheckState(m.currentState)) {
@@ -208,7 +256,7 @@ bool InputSystem::Handle2DAction(int key_code, int action, int mods, Device devi
 		for (const auto& bind : act.m.binds) {
 			if (bind.device != device) { continue; }
 			for (const auto& [key, direction] : bind.keys) {
-				if (key != key_code || action == 2) {
+				if (key != key_code) {
 					continue;
 				}
 
@@ -216,8 +264,10 @@ bool InputSystem::Handle2DAction(int key_code, int action, int mods, Device devi
 				act.modifiers = static_cast<ModifierKey>(mods);
 
 				if (action == 0) {
+					// Key released
 					act.m.pressedKeys.erase(key_code);
 				} else if (action == 1) {
+					// Key pressed - store the directional vec2 value
 					act.m.pressedKeys.emplace(key_code, bind.GetVec2Value(direction));
 				}
 
@@ -256,6 +306,8 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 	m.mouseDelta = m.mousePosition - m.oldMousePosition;
 
 	// Mouse position as a 2D action (normalized to NDC)
+	// NOTE: Mouse position should NOT have Started/Ongoing states like keys
+	// It's a continuous value that updates every frame
 	if (!HasActiveLayout()) {
 		return false;
 	}
@@ -269,9 +321,9 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 				continue;
 			}
 			for (const auto& [key, _] : bind.keys) {
+				// Mouse position in normalized device coordinates [-1, 1]
 				if (key == MOUSE_POSITION_CODE) {
 					action.device = bind.device;
-					action.state = Action2D::Ongoing;
 
 					glm::vec2 value = m.mousePosition;
 
@@ -287,25 +339,25 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 					value.x = (value.x / w) - 0.5f;
 					value.y = (value.y / h) - 0.5f;
 					value *= 2.0f;
-					value.y *= -1.0f;    // y up
 
-					action.m.pressedKeys.emplace(MOUSE_POSITION_CODE, value);
+					// Store as transient input (will be cleared after dispatch)
+					action.m.pressedKeys[MOUSE_POSITION_CODE] = value;
 					AddToQueue(m.dispatch2DQueue, &action);
 					return true;
 				}
 
+				// Raw mouse position (screen coordinates)
 				if (key == MOUSE_RAW_CODE) {
 					action.device = bind.device;
-					action.state = Action2D::Ongoing;
-					action.m.pressedKeys.emplace(MOUSE_RAW_CODE, m.mousePosition);
+					action.m.pressedKeys[MOUSE_RAW_CODE] = m.mousePosition;
 					AddToQueue(m.dispatch2DQueue, &action);
 					return true;
 				}
 
+				// Mouse delta (movement since last frame)
 				if (key == MOUSE_DELTA_CODE) {
 					action.device = bind.device;
-					action.state = Action2D::Ongoing;
-					action.m.pressedKeys.emplace(MOUSE_DELTA_CODE, m.mouseDelta);
+					action.m.pressedKeys[MOUSE_DELTA_CODE] = m.mouseDelta;
 					AddToQueue(m.dispatch2DQueue, &action);
 					return true;
 				}
@@ -316,7 +368,7 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 }
 
 bool InputSystem::HandleScroll0D(event::WindowMouseScroll* e) {
-	// Scroll mapped to 0D actions (just ongoing flag)
+	// Scroll mapped to 0D actions (one-frame boolean event)
 	for (auto& action : m.activeLayout->m.actions0d) {
 		if (!action.CheckState(m.currentState)) {
 			continue;
@@ -331,8 +383,8 @@ bool InputSystem::HandleScroll0D(event::WindowMouseScroll* e) {
 				}
 
 				action.device = bind.device;
-				action.state = Action0D::Ongoing;
-				action.m.pressedKeys.emplace(key, true);
+				// Store as transient input (will be cleared after dispatch)
+				action.m.pressedKeys[key] = true;
 				AddToQueue(m.dispatch0DQueue, &action);
 				return true;
 			}
@@ -342,7 +394,7 @@ bool InputSystem::HandleScroll0D(event::WindowMouseScroll* e) {
 }
 
 bool InputSystem::HandleScroll1D(event::WindowMouseScroll* e) {
-	// Scroll mapped to 1D actions (x/y as float)
+	// Scroll mapped to 1D actions (x/y as float, one-frame event)
 	for (auto& action : m.activeLayout->m.actions1d) {
 		if (!action.CheckState(m.currentState)) {
 			continue;
@@ -354,15 +406,14 @@ bool InputSystem::HandleScroll1D(event::WindowMouseScroll* e) {
 			for (const auto& [key, direction] : bind.keys) {
 				if (key == MOUSE_SCROLL_X_CODE) {
 					action.device = bind.device;
-					action.state = Action1D::Ongoing;
-					action.m.pressedKeys.emplace(MOUSE_SCROLL_X_CODE, static_cast<float>(e->x));
+					// Store as transient input (will be cleared after dispatch)
+					action.m.pressedKeys[MOUSE_SCROLL_X_CODE] = static_cast<float>(e->x);
 					AddToQueue(m.dispatch1DQueue, &action);
 					return true;
 				}
 				if (key == MOUSE_SCROLL_Y_CODE) {
 					action.device = bind.device;
-					action.state = Action1D::Ongoing;
-					action.m.pressedKeys.emplace(MOUSE_SCROLL_Y_CODE, static_cast<float>(e->y));
+					action.m.pressedKeys[MOUSE_SCROLL_Y_CODE] = static_cast<float>(e->y);
 					AddToQueue(m.dispatch1DQueue, &action);
 					return true;
 				}
@@ -373,7 +424,7 @@ bool InputSystem::HandleScroll1D(event::WindowMouseScroll* e) {
 }
 
 bool InputSystem::HandleScroll2D(event::WindowMouseScroll* e) {
-	// Scroll mapped to 2D actions (x,y packed in vec2)
+	// Scroll mapped to 2D actions (x,y packed in vec2, one-frame event)
 	for (auto& action : m.activeLayout->m.actions2d) {
 		if (!action.CheckState(m.currentState)) {
 			continue;
@@ -388,8 +439,8 @@ bool InputSystem::HandleScroll2D(event::WindowMouseScroll* e) {
 				}
 
 				action.device = bind.device;
-				action.state = Action2D::Ongoing;
-				action.m.pressedKeys.emplace(MOUSE_SCROLL_X_CODE, glm::vec2 { e->x, e->y });
+				// Store as transient input (will be cleared after dispatch)
+				action.m.pressedKeys[MOUSE_SCROLL_X_CODE] = glm::vec2 { e->x, e->y };
 				AddToQueue(m.dispatch2DQueue, &action);
 				return true;
 			}

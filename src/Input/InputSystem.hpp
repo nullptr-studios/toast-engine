@@ -53,13 +53,10 @@ private:
 			ActionType* a = queue.front();
 			const auto& name = a->name;
 
+			// Calculate the action value and state based on current pressed keys
 			a->CalculateValue();
-			std::erase_if(a->m.pressedKeys, [](const auto& v) {
-				// if the other one doesn't work this should -x
-				// return v.first == MOUSE_SCROLL_Y_CODE || v.first == MOUSE_SCROLL_X_CODE || v.first == MOUSE_POSITION_CODE || v.first == MOUSE_RAW_CODE || v.first == MOUSE_DELTA_CODE;
-				return v.first >= MOUSE_DELTA_CODE;
-			});
-
+			
+			// Call all registered callbacks for this action
 			for (auto* l : m.subscribers) {
 				auto& callbacks_map = l->m.*map_ptr;
 				const auto range = callbacks_map.equal_range(name);
@@ -67,6 +64,13 @@ private:
 					it->second(a);
 				}
 			}
+			
+			// Remove transient inputs after dispatch (mouse scroll/position/delta)
+			// These are one-frame events and should not persist
+			std::erase_if(a->m.pressedKeys, [](const auto& v) {
+				return v.first >= MOUSE_DELTA_CODE;
+			});
+			
 			queue.pop_front();
 		}
 	}
