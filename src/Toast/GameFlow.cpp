@@ -78,9 +78,7 @@ void GameFlow::LoadWorld(unsigned world) {
 
 		m.levelList = lua_table.as<std::vector<std::string>>();
 
-	} catch (const sol::error& e) {    //
-		TOAST_WARN("Scenes.lua file failed to do something: {}", e.what());
-	}
+	} catch (const sol::error& e) { TOAST_WARN("Scenes.lua file failed to do something: {}", e.what()); }
 
 	m.nextLevel = toast::World::LoadScene(m.levelList[0]);
 }
@@ -104,7 +102,7 @@ void GameFlow::LoadLevel(unsigned world, unsigned level) {
 }
 
 void GameFlow::NextLevel() {
-	m.level = m.level.or_else([]() {
+	m.level = m.level.or_else([] {
 		return std::optional<unsigned>(0);
 	});
 
@@ -140,6 +138,13 @@ void GameFlow::NextLevel() {
 }
 
 void GameFlow::NextWorld() {
-	this->LoadWorld(m.world.value() + 1);
+  // Loads Next World Unless Next World unless no worlds are loaded (loads the first world)
+	// clang-format off
+	LoadWorld(
+    m.world.transform([](unsigned val) {
+      return val + 1;
+    }).value_or(0)
+  );
+	// clang-format on
 }
 }
