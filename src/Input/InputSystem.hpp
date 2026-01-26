@@ -47,16 +47,21 @@ private:
 
 	bool HasActiveLayout() const;
 
+	/// @brief Dispatches all actions in the queue to registered listeners
+	/// @tparam ActionType The action type (Action0D, Action1D, or Action2D)
+	/// @tparam CallbackType The callback map type for this action dimension
+	/// @param queue The dispatch queue containing actions to process
+	/// @param map_ptr Pointer to the callback map in Listener::M
 	template<typename ActionType, typename CallbackType>
 	void DispatchQueue(std::deque<ActionType*>& queue, CallbackType Listener::M::* map_ptr) {
 		while (!queue.empty()) {
 			ActionType* a = queue.front();
 			const auto& name = a->name;
 
-			// Calculate the action value and state based on current pressed keys
 			a->CalculateValue();
 			
-			// Call all registered callbacks for this action
+			// Call registered callbacks for this action name
+			// Each listener can have multiple callbacks for the same action
 			for (auto* l : m.subscribers) {
 				auto& callbacks_map = l->m.*map_ptr;
 				const auto range = callbacks_map.equal_range(name);
@@ -65,8 +70,8 @@ private:
 				}
 			}
 			
-			// Remove transient inputs after dispatch (mouse scroll/position/delta)
-			// These are one-frame events and should not persist
+			// Remove one-frame events (mouse scroll/position/delta) after dispatch
+			// These inputs should not persist across frames
 			std::erase_if(a->m.pressedKeys, [](const auto& v) {
 				return v.first >= MOUSE_DELTA_CODE;
 			});
@@ -75,6 +80,8 @@ private:
 		}
 	}
 
+	/// @brief Adds an action to the dispatch queue if not already present
+	/// Prevents duplicate entries in the same frame
 	template<typename ActionType>
 	void AddToQueue(std::deque<ActionType*>& queue, ActionType* action) {
 		if (std::ranges::find(queue, action) != queue.end()) {

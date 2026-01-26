@@ -71,7 +71,7 @@ InputSystem::InputSystem() {
 }
 
 void InputSystem::Tick() {
-	// Poll controller state
+	// Check all connected controllers for button/axis changes
 	PollControllers();
 	
 	// For held keys, we need to dispatch Ongoing events every frame
@@ -483,7 +483,7 @@ void InputSystem::PollControllers() {
 	}
 
 	for (auto& [jid, state] : m.controllers) {
-		// Refresh controller state
+		// Refresh controller state from GLFW
 		state.previous = state.current;
 		glfwGetGamepadState(jid, &state.current);
 
@@ -501,19 +501,34 @@ void InputSystem::PollControllers() {
 		// Axis changes (with deadzone and normalization)
 		std::array<float, 6> axes {};
 		for (int i = 0; i <= GLFW_GAMEPAD_AXIS_LAST; ++i) {
+			// Apply deadzone to previous and current values
 			const float prev = std::abs(state.previous.axes[i]) > AXIS_DEADZONE ? state.previous.axes[i] : 0.0f;
 			const float curr = std::abs(state.current.axes[i]) > AXIS_DEADZONE ? state.current.axes[i] : 0.0f;
+			
+			// Only process if the axis value changed meaningfully
+			// The 0.001f threshold prevents micro-jitter
 			if (std::abs(curr - prev) > 0.001f) {
+				// Copy all axes and apply transformations
 				std::ranges::copy(state.current.axes, axes.begin());
-				axes[1] *= -1;                        // invert Y on left stick
-				axes[3] *= -1;                        // invert Y on right stick
-				axes[4] = (axes[4] * 0.5f) + 0.5f;    // trigger L2 to [0,1]
-				axes[5] = (axes[5] * 0.5f) + 0.5f;    // trigger R2 to [0,1]
+				
+				// Invert Y axes to match standard coordinate system (up = positive)
+				axes[1] *= -1.0f;  // Left stick Y
+				axes[3] *= -1.0f;  // Right stick Y
+				
+				// Normalize trigger values from [-1, 1] to [0, 1]
+				// GLFW reports triggers as axis values but they should be unidirectional
+				axes[4] = (axes[4] * 0.5f) + 0.5f;  // Left trigger (L2)
+				axes[5] = (axes[5] * 0.5f) + 0.5f;  // Right trigger (R2)
+				
+				// Apply deadzone to all processed axes
+				// This ensures values below threshold are clamped to zero
 				std::ranges::for_each(axes, [](float& ax) {
 					if (std::abs(ax) < AXIS_DEADZONE) {
 						ax = 0.0f;
 					}
 				});
+				
+				// Route axis changes to appropriate action handlers
 				ControllerAxis(i, axes);
 			}
 		}
@@ -612,10 +627,16 @@ void InputSystem::ControllerAxis(int id, std::array<float, 6> axes) {
 				}
 				action.device = bind.device;
 				const float value = axes[id];
+				
+				// Key offset: Add large constant to avoid collision with other input types
+				const int key_code = id + static_cast<int>(2e7);
+				
 				if (value != 0.0f) {
-					action.m.pressedKeys[id + 2e7] = bind.GetFloatValue(direction) * value;
+					// Axis is active - store the scaled value
+					action.m.pressedKeys[key_code] = bind.GetFloatValue(direction) * value;
 				} else {
-					action.m.pressedKeys.erase(id + 2e7);
+					// Axis returned to neutral - clear it
+					action.m.pressedKeys.erase(key_code);
 				}
 				AddToQueue(m.dispatch1DQueue, &action);
 				return;
@@ -636,26 +657,45 @@ void InputSystem::ControllerAxis(int id, std::array<float, 6> axes) {
 				if (bind.device == Device::ControllerAxis && key == id) {
 					action.device = bind.device;
 					const float value = axes[id];
+					
+					// Key offset for single axis
+					const int key_code = id + static_cast<int>(2e7);
+					
 					if (value != 0.0f) {
-						action.m.pressedKeys.emplace(id + 2e7, bind.GetVec2Value(direction) * value);
+						// Store scaled 2D value
+						action.m.pressedKeys[key_code] = bind.GetVec2Value(direction) * value;
 					} else {
-						action.m.pressedKeys.erase(id + 2e7);
+						// Clear when axis returns to neutral
+						action.m.pressedKeys.erase(key_code);
 					}
 					AddToQueue(m.dispatch2DQueue, &action);
 					return;
 				}
 				if (bind.device == Device::ControllerStick) {
-					// Left stick (axes 0,1) mapped when key == 0
+					// Left Stick: axes 0 (X) and 1 (Y)
+					// Key 0 indicates left stick binding
 					if (key == 0 && (id == 0 || id == 1)) {
 						action.device = Device::ControllerStick;
-						glm::vec2 value = { axes[0], -axes[1] };
-						if (abs(value.x) > m.triggerDeadzone || abs(value.y) > m.triggerDeadzone) {
-							action.state = Action2D::Ongoing;
-							action.m.pressedKeys[id + 2e8] = value;
+						
+						// Construct 2D vector from both stick axes
+						// Note: axes[1] is already inverted in PollControllers()
+						glm::vec2 value = { axes[0], axes[1] };
+						
+						// Key offsets for left stick X and Y
+						const int key_code_x = static_cast<int>(2e8);
+						const int key_code_y = static_cast<int>(2e8) + 1;
+						
+						// Check if stick is outside deadzone (any axis active)
+						if (std::abs(value.x) > m.triggerDeadzone || std::abs(value.y) > m.triggerDeadzone) {
+							// Stick is active - store both axes
+							// We store both components to ensure the full 2D value is captured
+							action.m.pressedKeys[key_code_x] = value;
+							action.m.pressedKeys[key_code_y] = value;
 						} else {
-							action.state = Action2D::Finished;
-							action.value = {0.0f, 0.0f};
-							action.m.pressedKeys.erase(id + 2e8);
+							// Stick returned to neutral
+							// Clear BOTH axes to prevent stuck values
+							action.m.pressedKeys.erase(key_code_x);
+							action.m.pressedKeys.erase(key_code_y);
 						}
 						AddToQueue(m.dispatch2DQueue, &action);
 						return;
@@ -663,11 +703,25 @@ void InputSystem::ControllerAxis(int id, std::array<float, 6> axes) {
 					// Right stick (axes 2,3) mapped when key == 1
 					if (key == 1 && (id == 2 || id == 3)) {
 						action.device = Device::ControllerStick;
-						glm::vec2 value = { axes[2], -axes[3] };
-						if (value != glm::vec2 { 0.0f, 0.0f }) {
-							action.m.pressedKeys[id + 2e8] = value;
+						
+						// Construct 2D vector from both stick axes
+						// Note: axes[3] is already inverted in PollControllers()
+						glm::vec2 value = { axes[2], axes[3] };
+						
+						// Key offsets for right stick X and Y
+						const int key_code_x = static_cast<int>(2e8) + 2;
+						const int key_code_y = static_cast<int>(2e8) + 3;
+						
+						// Check if stick is outside deadzone (any axis active)
+						if (std::abs(value.x) > m.triggerDeadzone || std::abs(value.y) > m.triggerDeadzone) {
+							// Stick is active - store both axes
+							action.m.pressedKeys[key_code_x] = value;
+							action.m.pressedKeys[key_code_y] = value;
 						} else {
-							action.m.pressedKeys.erase(id + 2e8);
+							// Stick returned to neutral
+							// Clear BOTH axes to prevent stuck values
+							action.m.pressedKeys.erase(key_code_x);
+							action.m.pressedKeys.erase(key_code_y);
 						}
 						AddToQueue(m.dispatch2DQueue, &action);
 						return;
