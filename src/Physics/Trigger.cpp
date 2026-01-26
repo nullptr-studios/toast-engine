@@ -13,6 +13,8 @@ namespace physics {
 void Trigger::Begin() {
 	Actor::Begin();
 	PhysicsSystem::AddTrigger(this);
+	enterCallback = OnEnter;
+	exitCallback = OnExit;
 }
 
 void Trigger::Destroy() {

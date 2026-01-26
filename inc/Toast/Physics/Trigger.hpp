@@ -29,8 +29,8 @@ public:
 	std::function<void(toast::Object*)> enterCallback;
 	std::function<void(toast::Object*)> exitCallback;
 
-	virtual void OnEnter(toast::Object*) = 0;
-	virtual void OnExit(toast::Object*) = 0;
+	virtual void OnEnter(toast::Object*) {}
+	virtual void OnExit(toast::Object*) {}
 
 	struct M {
 		glm::vec4 color = {0.0f, 1.0f, 1.0f, 0.5f};
