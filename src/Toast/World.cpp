@@ -184,10 +184,10 @@ void World::NextWorld() {
 			prev_level->Nuke();
 			instance->m.worldState.loadedLevelId = std::nullopt;
 		}
-		if (instance->m.worldState.nextLevel_id.has_value()) {
-			auto* prev_level = World::Get(instance->m.worldState.nextLevel_id.value());
+		if (instance->m.worldState.nextLevelId.has_value()) {
+			auto* prev_level = World::Get(instance->m.worldState.nextLevelId.value());
 			prev_level->Nuke();
-			instance->m.worldState.nextLevel_id = std::nullopt;
+			instance->m.worldState.nextLevelId = std::nullopt;
 		}
 	} else {
 		TOAST_WARN("Load Next World or smth");
