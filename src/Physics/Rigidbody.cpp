@@ -14,6 +14,13 @@ namespace physics {
 
 void Rigidbody::Init() {
 	PhysicsSystem::AddRigidbody(this);
+	
+	// Initialize interpolation positions from the current transform
+	auto* transform = static_cast<toast::Actor*>(parent())->transform();
+	glm::vec3 worldPos = transform->worldPosition();
+	m_currentPosition = glm::dvec2(worldPos.x, worldPos.y);
+	m_previousPosition = m_currentPosition;
+	m_hasValidPreviousPosition = true;
 }
 
 void Rigidbody::Destroy() {
@@ -162,13 +169,48 @@ void Rigidbody::Load(json_t j, bool propagate) {
 }
 
 glm::dvec2 Rigidbody::GetPosition() const {
-	return static_cast<toast::Actor*>(parent())->transform()->worldPosition();
+	return m_currentPosition;
 }
 
 void Rigidbody::SetPosition(glm::dvec2 pos) {
+	m_currentPosition = pos;
+	
+	// Initialize previous position on first call to avoid teleporting
+	if (!m_hasValidPreviousPosition) {
+		m_previousPosition = pos;
+		m_hasValidPreviousPosition = true;
+	}
+	
+	//@Note: Visual transform is updated by PhysicsSystem::UpdateVisualInterpolation()
+}
+
+glm::dvec2 Rigidbody::GetInterpolatedPosition() const {
+	if (!m_hasValidPreviousPosition) {
+		return m_currentPosition;
+	}
+	return glm::mix(m_previousPosition, m_currentPosition, s_interpolationAlpha);
+}
+
+void Rigidbody::StorePreviousPosition() {
+	m_previousPosition = m_currentPosition;
+	m_hasValidPreviousPosition = true;
+}
+
+void Rigidbody::UpdateVisualTransform() {
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
 	float z = transform->worldPosition().z;
-	transform->worldPosition({ pos.x, pos.y, z });
+	
+	// Apply interpolated position to the transform for rendering
+	glm::dvec2 interpPos = GetInterpolatedPosition();
+	transform->worldPosition({ interpPos.x, interpPos.y, z });
+}
+
+void Rigidbody::UpdateInterpolationAlpha(double alpha) {
+	s_interpolationAlpha = glm::clamp(alpha, 0.0, 1.0);
+}
+
+double Rigidbody::GetInterpolationAlpha() {
+	return s_interpolationAlpha;
 }
 
 void Rigidbody::AddForce(glm::dvec2 force) {

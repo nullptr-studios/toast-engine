@@ -120,6 +120,11 @@ void PhysicsSystem::stop() {
 void PhysicsSystem::Tick() {
 	PROFILE_ZONE;
 
+	// Store previous positions for interpolation before physics step
+	for (auto* rb : m.rigidbodies) {
+		rb->StorePreviousPosition();
+	}
+
 	// Propagate the PhysTick down the object tree as first
 	toast::World::Instance()->PhysTick();
 
@@ -132,6 +137,10 @@ void PhysicsSystem::Tick() {
 	for (auto* rb : m.boxes) {
 		BoxPhysics(rb);
 	}
+	
+	// Record the time of this physics step for interpolation
+	m.lastPhysicsTime.store(std::chrono::steady_clock::now(), std::memory_order_release);
+
 }
 
 #pragma region HELPER_FUNCTIONS
@@ -248,6 +257,40 @@ double PhysicsSystem::eps_small() {
 }
 
 #pragma endregion
+
+
+void PhysicsSystem::UpdateVisualInterpolation() {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return;
+	}
+	auto* physics = *i;
+	
+	// Calculate time elapsed since last physics step
+	auto now = std::chrono::steady_clock::now();
+	auto lastPhysics = physics->m.lastPhysicsTime.load(std::memory_order_acquire);
+	std::chrono::duration<double> elapsed = now - lastPhysics;
+	
+	// Calculate interpolation alpha
+	double fixedDt = physics->m.targetFrametime.count();
+	double alpha = glm::clamp(elapsed.count() / fixedDt, 0.0, 1.0);
+	
+	// Update global interpolation alpha
+	Rigidbody::UpdateInterpolationAlpha(alpha);
+	
+	// Update all rigidbody visual transforms
+	for (auto* rb : physics->m.rigidbodies) {
+		rb->UpdateVisualTransform();
+	}
+}
+
+double PhysicsSystem::GetFixedTimestep() {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return 1.0 / 50.0;
+	}
+	return (*i)->m.targetFrametime.count();
+}
 
 void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 	PROFILE_ZONE;
