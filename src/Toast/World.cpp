@@ -146,7 +146,7 @@ World::~World() {
 
 void World::NextLevel() {
 	auto* instance = Instance();
-	if (instance->m.worldState.level != 0) {
+	if (instance->m.worldState.level) {
 		instance->m.worldState.level++;
 	}
 	if (static_cast<std::size_t>(instance->m.worldState.level) >= instance->m.worldList[instance->m.worldState.world].size()) {
@@ -169,10 +169,16 @@ void World::NextLevel() {
 void World::NextWorld() {
 	auto* instance = Instance();
 	instance->m.worldState.world++;
-	instance->m.worldState.level = 0;
+	instance->m.worldState.level = -1;
 	if (static_cast<std::size_t>(instance->m.worldState.world) >= instance->m.worldList.size()) {
 		TOAST_WARN("No More Worlds???");
-	instance->m.worldState.world = 0;
+    instance->m.worldState.world = 0;
+    instance->m.worldState.level = 0;
+		if (instance->m.worldState.prevLevel.has_value()) {
+			auto* prev_level = World::Get(instance->m.worldState.prevLevel.value());
+			prev_level->Nuke();
+      instance->m.worldState.prevLevel = std::nullopt;
+		}
 	} else {
 		TOAST_WARN("Load Next World or smth");
 		NextLevel();
