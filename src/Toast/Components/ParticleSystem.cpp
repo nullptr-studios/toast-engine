@@ -12,11 +12,9 @@
 #include "Toast/Time.hpp"
 
 #include <glad/gl.h>
-#include <glm/gtc/matrix_inverse.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <fstream>
-
-#include <random>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtx/euler_angles.hpp>
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
@@ -111,8 +109,9 @@ void ParticleEmitterConfig::LoadFromLua(const sol::table& table) {
 	sol::optional<float> coneAngleOpt = table["coneAngle"];
 	coneAngle = coneAngleOpt.value_or(45.0f);
 	
-	// Offset
+	// Offset and rotation
 	localOffset = ParseVec3FromLua(table["localOffset"], glm::vec3(0.0f));
+	localRotation = ParseVec3FromLua(table["localRotation"], glm::vec3(0.0f));
 	
 	// Lifetime
 	sol::optional<sol::object> lifetimeObj = table["lifetime"];
@@ -425,12 +424,24 @@ void ParticleEmitter::Stop() {
 
 void ParticleEmitter::UpdateAndRender(const glm::mat4& viewProjection,
                                       const glm::vec3& worldPos,
+                                      const glm::mat3& parentRotation,
                                       const glm::vec3& camRight,
                                       const glm::vec3& camUp,
                                       float deltaTime) {
 	if (!m_gpuInitialized || !m_computeShader || !m_renderShader || !m_config.enabled) {
 		return;
 	}
+	
+	// Calculate combined rotation (parent rotation + local emitter rotation)
+	glm::mat3 localRot = glm::mat3(glm::eulerAngleYXZ(
+		glm::radians(m_config.localRotation.y),
+		glm::radians(m_config.localRotation.x),
+		glm::radians(m_config.localRotation.z)));
+	glm::mat3 combinedRotation = parentRotation * localRot;
+	
+	// Transform local offset by parent rotation
+	glm::vec3 transformedOffset = parentRotation * m_config.localOffset;
+	glm::vec3 emitterWorldPos = worldPos + transformedOffset;
 	
 	// Update system time and handle emission
 	if (m_isPlaying) {
@@ -440,20 +451,20 @@ void ParticleEmitter::UpdateAndRender(const glm::mat4& viewProjection,
 			m_emissionAccumulator += m_config.emissionRate * deltaTime;
 			const uint32_t toSpawn = static_cast<uint32_t>(m_emissionAccumulator);
 			if (toSpawn > 0) {
-				SpawnParticles(toSpawn, worldPos + m_config.localOffset);
+				SpawnParticles(toSpawn, emitterWorldPos, combinedRotation);
 				m_emissionAccumulator -= static_cast<float>(toSpawn);
 			}
 		}
 		
 		for (auto& burst : m_config.bursts) {
 			if (!burst.triggered && m_systemTime >= burst.time) {
-				SpawnParticles(burst.count, worldPos + m_config.localOffset);
+				SpawnParticles(burst.count, emitterWorldPos, combinedRotation);
 				burst.triggered = true;
 			}
 			if (burst.cycleInterval > 0.0f && burst.triggered) {
 				const float cycleTime = fmod(m_systemTime - burst.time, burst.cycleInterval);
 				if (cycleTime < deltaTime) {
-					SpawnParticles(burst.count, worldPos + m_config.localOffset);
+					SpawnParticles(burst.count, emitterWorldPos, combinedRotation);
 				}
 			}
 		}
@@ -530,6 +541,10 @@ void ParticleEmitter::UpdateAndRender(const glm::mat4& viewProjection,
 	m_renderShader->Set("u_CamRight", camRight);
 	m_renderShader->Set("u_CamUp", camUp);
 	
+	// Set texture usage flag per-emitter
+	int useTexture = (m_texture && m_config.useTexture) ? 1 : 0;
+	m_renderShader->Set("u_UseTexture", useTexture);
+	
 	if (m_texture && m_config.useTexture) {
 		m_texture->Bind(1);
 		m_renderShader->SetSampler("u_Tex", 1);
@@ -538,7 +553,7 @@ void ParticleEmitter::UpdateAndRender(const glm::mat4& viewProjection,
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_particleBuffers[m_currentBuffer]);
 }
 
-void ParticleEmitter::SpawnParticles(uint32_t count, const glm::vec3& worldPos) {
+void ParticleEmitter::SpawnParticles(uint32_t count, const glm::vec3& worldPos, const glm::mat3& parentRotation) {
 	if (!m_gpuInitialized || count == 0) return;
 	
 	const uint32_t available = m_config.maxParticles - m_aliveCount;
@@ -551,7 +566,8 @@ void ParticleEmitter::SpawnParticles(uint32_t count, const glm::vec3& worldPos) 
 	for (uint32_t i = 0; i < count; ++i) {
 		GPUParticle& p = newParticles[i];
 		
-		glm::vec3 spawnOffset = GenerateSpawnPosition();
+		// Generate spawn offset and transform by rotation
+		glm::vec3 spawnOffset = GenerateSpawnPosition(parentRotation);
 		glm::vec3 pos = worldPos + spawnOffset;
 		
 		float startSize = RandomFloat(m_config.startSize.min, m_config.startSize.max);
@@ -559,7 +575,8 @@ void ParticleEmitter::SpawnParticles(uint32_t count, const glm::vec3& worldPos) 
 		
 		p.pos = glm::vec4(pos, startSize);
 		
-		glm::vec3 vel = GenerateSpawnVelocity();
+		// Generate velocity - transformed by rotation (except gravity is world space)
+		glm::vec3 vel = GenerateSpawnVelocity(parentRotation);
 		float rotation = glm::radians(RandomFloat(m_config.startRotation.min, m_config.startRotation.max));
 		p.vel = glm::vec4(vel, rotation);
 		
@@ -596,7 +613,8 @@ void ParticleEmitter::SpawnParticles(uint32_t count, const glm::vec3& worldPos) 
 	m_aliveCount += count;
 }
 
-glm::vec3 ParticleEmitter::GenerateSpawnPosition() {
+glm::vec3 ParticleEmitter::GenerateSpawnPosition(const glm::mat3& rotation) {
+	glm::vec3 localPos;
 	switch (m_config.shape) {
 		case EmitterShape::Sphere: {
 			glm::vec3 p;
@@ -607,24 +625,30 @@ glm::vec3 ParticleEmitter::GenerateSpawnPosition() {
 					RandomFloat(-1.0f, 1.0f)
 				);
 			} while (glm::dot(p, p) > 1.0f);
-			return p * m_config.shapeSize.x;
+			localPos = p * m_config.shapeSize.x;
+			break;
 		}
 		
 		case EmitterShape::Box:
-			return glm::vec3(
+			localPos = glm::vec3(
 				RandomFloat(-m_config.shapeSize.x, m_config.shapeSize.x),
 				RandomFloat(-m_config.shapeSize.y, m_config.shapeSize.y),
 				RandomFloat(-m_config.shapeSize.z, m_config.shapeSize.z)
 			) * 0.5f;
+			break;
 		
 		case EmitterShape::Point:
 		case EmitterShape::Cone:
 		default:
-			return glm::vec3(0.0f);
+			localPos = glm::vec3(0.0f);
+			break;
 	}
+	
+	// Transform by rotation
+	return rotation * localPos;
 }
 
-glm::vec3 ParticleEmitter::GenerateSpawnVelocity() {
+glm::vec3 ParticleEmitter::GenerateSpawnVelocity(const glm::mat3& rotation) {
 	const float speed = RandomFloat(m_config.speed.min, m_config.speed.max);
 	
 	glm::vec3 dir = glm::normalize(m_config.direction);
@@ -651,6 +675,9 @@ glm::vec3 ParticleEmitter::GenerateSpawnVelocity() {
 		glm::vec3 randomDir = RandomDirection();
 		dir = glm::normalize(glm::mix(dir, randomDir, m_config.directionRandomness));
 	}
+	
+	// Transform direction by parent rotation (velocity direction should follow emitter rotation)
+	dir = rotation * dir;
 	
 	return dir * speed;
 }
@@ -686,14 +713,32 @@ void ParticleSystem::OnRender(const glm::mat4& viewProjection) noexcept {
 	glm::mat4 viewMatrix = renderer::IRendererBase::GetInstance()->GetViewMatrix();
 	glm::vec3 camRight = glm::vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
 	glm::vec3 camUp = glm::vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
+	glm::vec3 camPos = glm::vec3(glm::inverse(viewMatrix)[3]);
+	
+	// Get parent rotation from transform (quaternion to mat3)
+	glm::mat3 parentRotation = glm::mat3_cast(worldRotationQuat());
+	
+	// Sort emitters by distance to camera (back to front for proper blending)
+	std::vector<size_t> emitterOrder(m_emitters.size());
+	for (size_t i = 0; i < emitterOrder.size(); ++i) {
+		emitterOrder[i] = i;
+	}
+	std::sort(emitterOrder.begin(), emitterOrder.end(), [&](size_t a, size_t b) {
+		glm::vec3 posA = worldPos + parentRotation * m_emitters[a].GetConfig().localOffset;
+		glm::vec3 posB = worldPos + parentRotation * m_emitters[b].GetConfig().localOffset;
+		float distA = glm::distance(camPos, posA);
+		float distB = glm::distance(camPos, posB);
+		return distA > distB;  // Back to front
+	});
 	
 	// Bind shared quad VAO once
 	glBindVertexArray(m_quadVAO);
 	
-	for (auto& emitter : m_emitters) {
+	for (size_t idx : emitterOrder) {
+		auto& emitter = m_emitters[idx];
 		if (!emitter.IsGPUInitialized()) continue;
 		
-		emitter.UpdateAndRender(viewProjection, worldPos, camRight, camUp, dt);
+		emitter.UpdateAndRender(viewProjection, worldPos, parentRotation, camRight, camUp, dt);
 		
 		// Draw this emitter's particles
 		uint32_t count = emitter.GetParticleCount();
@@ -840,65 +885,155 @@ bool ParticleSystem::LoadFromLua(const std::string& luaPath) {
 }
 
 bool ParticleSystem::SaveToLua(const std::string& luaPath) const {
-	// Generate Lua file content
-	std::ostringstream lua;
-	lua << "-- Particle System Configuration\n";
-	lua << "-- Auto-generated\n\n";
-	lua << "return {\n";
-	lua << "    format = \"particle_system\",\n";
-	lua << "    emitters = {\n";
+	sol::state lua;
+	lua.open_libraries(sol::lib::base, sol::lib::table);
+	
+	// Create the main config table
+	sol::table config = lua.create_table();
+	config["format"] = "particle_system";
+	
+	// Create emitters table
+	sol::table emittersTable = lua.create_table();
 	
 	for (size_t i = 0; i < m_emitters.size(); ++i) {
-		const auto& config = m_emitters[i].GetConfig();
-		lua << "        {\n";
-		lua << "            name = \"" << config.name << "\",\n";
-		lua << "            enabled = " << (config.enabled ? "true" : "false") << ",\n";
-		lua << "            emissionMode = \"" << (config.emissionMode == EmissionMode::Burst ? "burst" : "continuous") << "\",\n";
-		lua << "            emissionRate = " << config.emissionRate << ",\n";
+		const auto& emitterConfig = m_emitters[i].GetConfig();
+		sol::table emitterTable = lua.create_table();
+		
+		// Identification
+		emitterTable["name"] = emitterConfig.name;
+		emitterTable["enabled"] = emitterConfig.enabled;
+		
+		// Emission
+		emitterTable["emissionMode"] = (emitterConfig.emissionMode == EmissionMode::Burst) ? "burst" : "continuous";
+		emitterTable["emissionRate"] = emitterConfig.emissionRate;
+		
+		// Bursts
+		if (!emitterConfig.bursts.empty()) {
+			sol::table burstsTable = lua.create_table();
+			for (size_t j = 0; j < emitterConfig.bursts.size(); ++j) {
+				sol::table burstTable = lua.create_table();
+				burstTable["time"] = emitterConfig.bursts[j].time;
+				burstTable["count"] = emitterConfig.bursts[j].count;
+				burstTable["cycleInterval"] = emitterConfig.bursts[j].cycleInterval;
+				burstsTable[j + 1] = burstTable;
+			}
+			emitterTable["bursts"] = burstsTable;
+		}
 		
 		// Shape
 		std::string shapeStr = "point";
-		if (config.shape == EmitterShape::Sphere) shapeStr = "sphere";
-		else if (config.shape == EmitterShape::Box) shapeStr = "box";
-		else if (config.shape == EmitterShape::Cone) shapeStr = "cone";
-		lua << "            shape = \"" << shapeStr << "\",\n";
-		lua << "            shapeSize = {" << config.shapeSize.x << ", " << config.shapeSize.y << ", " << config.shapeSize.z << "},\n";
-		lua << "            coneAngle = " << config.coneAngle << ",\n";
-		lua << "            localOffset = {" << config.localOffset.x << ", " << config.localOffset.y << ", " << config.localOffset.z << "},\n";
+		if (emitterConfig.shape == EmitterShape::Sphere) shapeStr = "sphere";
+		else if (emitterConfig.shape == EmitterShape::Box) shapeStr = "box";
+		else if (emitterConfig.shape == EmitterShape::Cone) shapeStr = "cone";
+		emitterTable["shape"] = shapeStr;
+		emitterTable["shapeSize"] = lua.create_table_with(1, emitterConfig.shapeSize.x, 2, emitterConfig.shapeSize.y, 3, emitterConfig.shapeSize.z);
+		emitterTable["coneAngle"] = emitterConfig.coneAngle;
+		
+		// Transform
+		emitterTable["localOffset"] = lua.create_table_with(1, emitterConfig.localOffset.x, 2, emitterConfig.localOffset.y, 3, emitterConfig.localOffset.z);
+		emitterTable["localRotation"] = lua.create_table_with(1, emitterConfig.localRotation.x, 2, emitterConfig.localRotation.y, 3, emitterConfig.localRotation.z);
 		
 		// Lifetime/Speed
-		lua << "            lifetime = {" << config.lifetime.min << ", " << config.lifetime.max << "},\n";
-		lua << "            speed = {" << config.speed.min << ", " << config.speed.max << "},\n";
-		lua << "            direction = {" << config.direction.x << ", " << config.direction.y << ", " << config.direction.z << "},\n";
-		lua << "            directionRandomness = " << config.directionRandomness << ",\n";
+		emitterTable["lifetime"] = lua.create_table_with(1, emitterConfig.lifetime.min, 2, emitterConfig.lifetime.max);
+		emitterTable["speed"] = lua.create_table_with(1, emitterConfig.speed.min, 2, emitterConfig.speed.max);
+		emitterTable["direction"] = lua.create_table_with(1, emitterConfig.direction.x, 2, emitterConfig.direction.y, 3, emitterConfig.direction.z);
+		emitterTable["directionRandomness"] = emitterConfig.directionRandomness;
 		
 		// Size
-		lua << "            startSize = {" << config.startSize.min << ", " << config.startSize.max << "},\n";
-		lua << "            endSize = {" << config.endSize.min << ", " << config.endSize.max << "},\n";
+		emitterTable["startSize"] = lua.create_table_with(1, emitterConfig.startSize.min, 2, emitterConfig.startSize.max);
+		emitterTable["endSize"] = lua.create_table_with(1, emitterConfig.endSize.min, 2, emitterConfig.endSize.max);
 		
 		// Rotation
-		lua << "            startRotation = {" << config.startRotation.min << ", " << config.startRotation.max << "},\n";
-		lua << "            rotationSpeed = {" << config.rotationSpeed.min << ", " << config.rotationSpeed.max << "},\n";
+		emitterTable["startRotation"] = lua.create_table_with(1, emitterConfig.startRotation.min, 2, emitterConfig.startRotation.max);
+		emitterTable["rotationSpeed"] = lua.create_table_with(1, emitterConfig.rotationSpeed.min, 2, emitterConfig.rotationSpeed.max);
 		
 		// Color
-		lua << "            startColor = {" << config.startColor.r << ", " << config.startColor.g << ", " << config.startColor.b << ", " << config.startColor.a << "},\n";
-		lua << "            endColor = {" << config.endColor.r << ", " << config.endColor.g << ", " << config.endColor.b << ", " << config.endColor.a << "},\n";
+		emitterTable["startColor"] = lua.create_table_with(1, emitterConfig.startColor.r, 2, emitterConfig.startColor.g, 3, emitterConfig.startColor.b, 4, emitterConfig.startColor.a);
+		emitterTable["endColor"] = lua.create_table_with(1, emitterConfig.endColor.r, 2, emitterConfig.endColor.g, 3, emitterConfig.endColor.b, 4, emitterConfig.endColor.a);
+		emitterTable["randomizeStartColor"] = emitterConfig.randomizeStartColor;
+		emitterTable["startColorRangeMin"] = lua.create_table_with(1, emitterConfig.startColorRangeMin.r, 2, emitterConfig.startColorRangeMin.g, 3, emitterConfig.startColorRangeMin.b, 4, emitterConfig.startColorRangeMin.a);
+		emitterTable["startColorRangeMax"] = lua.create_table_with(1, emitterConfig.startColorRangeMax.r, 2, emitterConfig.startColorRangeMax.g, 3, emitterConfig.startColorRangeMax.b, 4, emitterConfig.startColorRangeMax.a);
 		
 		// Physics
-		lua << "            gravity = {" << config.gravity.x << ", " << config.gravity.y << ", " << config.gravity.z << "},\n";
-		lua << "            drag = " << config.drag << ",\n";
+		emitterTable["gravity"] = lua.create_table_with(1, emitterConfig.gravity.x, 2, emitterConfig.gravity.y, 3, emitterConfig.gravity.z);
+		emitterTable["drag"] = emitterConfig.drag;
 		
 		// Texture
-		lua << "            texturePath = \"" << config.texturePath << "\",\n";
-		lua << "            useTexture = " << (config.useTexture ? "true" : "false") << ",\n";
-		lua << "            additiveBlending = " << (config.additiveBlending ? "true" : "false") << ",\n";
+		emitterTable["texturePath"] = emitterConfig.texturePath;
+		emitterTable["useTexture"] = emitterConfig.useTexture;
+		emitterTable["additiveBlending"] = emitterConfig.additiveBlending;
 		
-		lua << "            maxParticles = " << config.maxParticles << ",\n";
-		lua << "        },\n";
+		// Max particles
+		emitterTable["maxParticles"] = emitterConfig.maxParticles;
+		
+		emittersTable[i + 1] = emitterTable;
 	}
 	
-	lua << "    },\n";
-	lua << "}\n";
+	config["emitters"] = emittersTable;
+	
+	// Helper function to serialize a sol::table to Lua string
+	auto serializeTable = [](sol::state& lua, const sol::table& table, int indent = 0) -> std::string {
+		std::function<std::string(const sol::table&, int)> serialize = [&](const sol::table& t, int ind) -> std::string {
+			std::ostringstream ss;
+			std::string indentStr(ind * 4, ' ');
+			std::string indentStrInner((ind + 1) * 4, ' ');
+			
+			ss << "{\n";
+			
+			// Collect keys to determine if table is array-like
+			bool isArray = true;
+			size_t expectedIndex = 1;
+			std::vector<std::pair<sol::object, sol::object>> pairs;
+			for (auto& kv : t) {
+				pairs.push_back({kv.first, kv.second});
+				if (!kv.first.is<size_t>() || kv.first.as<size_t>() != expectedIndex) {
+					isArray = false;
+				}
+				expectedIndex++;
+			}
+			
+			for (size_t i = 0; i < pairs.size(); ++i) {
+				auto& [key, value] = pairs[i];
+				
+				ss << indentStrInner;
+				
+				// Write key
+				if (!isArray) {
+					if (key.is<std::string>()) {
+						ss << key.as<std::string>() << " = ";
+					} else if (key.is<int>()) {
+						ss << "[" << key.as<int>() << "] = ";
+					}
+				}
+				
+				// Write value
+				if (value.is<sol::table>()) {
+					ss << serialize(value.as<sol::table>(), ind + 1);
+				} else if (value.is<std::string>()) {
+					ss << "\"" << value.as<std::string>() << "\"";
+				} else if (value.is<bool>()) {
+					ss << (value.as<bool>() ? "true" : "false");
+				} else if (value.is<double>()) {
+					ss << value.as<double>();
+				} else if (value.is<int>()) {
+					ss << value.as<int>();
+				}
+				
+				ss << ",\n";
+			}
+			
+			ss << indentStr << "}";
+			return ss.str();
+		};
+		
+		return serialize(table, indent);
+	};
+	
+	// Generate Lua file content
+	std::ostringstream luaFile;
+	luaFile << "-- Particle System Configuration\n";
+	luaFile << "-- Auto-generated using sol library\n\n";
+	luaFile << "return " << serializeTable(lua, config, 0) << "\n";
 	
 	// Write to file
 	std::ofstream file(luaPath);
@@ -907,7 +1042,7 @@ bool ParticleSystem::SaveToLua(const std::string& luaPath) const {
 		return false;
 	}
 	
-	file << lua.str();
+	file << luaFile.str();
 	file.close();
 	
 	TOAST_INFO("Saved particle system config to: {}", luaPath);
@@ -993,8 +1128,10 @@ void ParticleSystem::Stop() {
 
 void ParticleSystem::EmitBurst(uint32_t count) {
 	const glm::vec3 worldPos = worldPosition();
+	glm::mat3 parentRotation = glm::mat3_cast(worldRotationQuat());
 	for (auto& emitter : m_emitters) {
-		emitter.EmitBurst(count, worldPos + emitter.GetConfig().localOffset);
+		glm::vec3 transformedOffset = parentRotation * emitter.GetConfig().localOffset;
+		emitter.EmitBurst(count, worldPos + transformedOffset, parentRotation);
 	}
 }
 
@@ -1043,12 +1180,7 @@ void ParticleSystem::Inspector() {
 	ImGui::Separator();
 	
 	// Lua config path
-	char luaPath[256];
-	strncpy(luaPath, m_luaConfigPath.c_str(), sizeof(luaPath) - 1);
-	luaPath[sizeof(luaPath) - 1] = '\0';
-	if (ImGui::InputText("Lua Config Path", luaPath, sizeof(luaPath))) {
-		m_luaConfigPath = luaPath;
-	}
+	ImGui::InputText("Lua Config Path", &m_luaConfigPath);
 	ImGui::SameLine();
 	if (ImGui::Button("Load")) {
 		LoadFromLua(m_luaConfigPath);
@@ -1108,17 +1240,19 @@ void ParticleSystem::Inspector() {
 			ImGui::Indent(10);
 			
 			// Emitter name and enable
-			char nameBuf[128];
-			strncpy(nameBuf, config.name.c_str(), sizeof(nameBuf) - 1);
-			nameBuf[sizeof(nameBuf) - 1] = '\0';
-			if (ImGui::InputText("Name", nameBuf, sizeof(nameBuf))) {
-				config.name = nameBuf;
-			}
+			ImGui::InputText("Name", &config.name);
 			
 			ImGui::Checkbox("Enabled", &config.enabled);
 			ImGui::SameLine();
 			if (ImGui::Button("Remove")) {
 				emitterToRemove = static_cast<int>(i);
+			}
+			
+			// Transform
+			if (ImGui::TreeNode("Transform")) {
+				ImGui::DragFloat3("Offset", &config.localOffset.x, 0.1f);
+				ImGui::DragFloat3("Rotation", &config.localRotation.x, 1.0f, -180.0f, 180.0f);
+				ImGui::TreePop();
 			}
 			
 			// Emission
@@ -1133,8 +1267,7 @@ void ParticleSystem::Inspector() {
 					ImGui::DragFloat("Rate", &config.emissionRate, 0.5f, 0.0f, 1000.0f, "%.1f/s");
 				}
 				
-				ImGui::DragFloat3("Offset", &config.localOffset.x, 0.1f);
-				
+
 				int maxP = static_cast<int>(config.maxParticles);
 				if (ImGui::DragInt("Max Particles", &maxP, 100, 100, 100000)) {
 					config.maxParticles = static_cast<uint32_t>(maxP);
@@ -1188,10 +1321,22 @@ void ParticleSystem::Inspector() {
 				ImGui::TreePop();
 			}
 			
+			// Rotation (particle rotation, not emitter rotation)
+			if (ImGui::TreeNode("Particle Rotation")) {
+				ImGui::DragFloatRange2("Start Rotation", &config.startRotation.min, &config.startRotation.max, 1.0f, 0.0f, 360.0f);
+				ImGui::DragFloatRange2("Rotation Speed", &config.rotationSpeed.min, &config.rotationSpeed.max, 1.0f, -360.0f, 360.0f);
+				ImGui::TreePop();
+			}
+			
 			// Color
 			if (ImGui::TreeNode("Color")) {
 				ImGui::ColorEdit4("Start", &config.startColor.r);
 				ImGui::ColorEdit4("End", &config.endColor.r);
+				ImGui::Checkbox("Randomize Start Color", &config.randomizeStartColor);
+				if (config.randomizeStartColor) {
+					ImGui::ColorEdit4("Random Min", &config.startColorRangeMin.r);
+					ImGui::ColorEdit4("Random Max", &config.startColorRangeMax.r);
+				}
 				ImGui::TreePop();
 			}
 			
@@ -1206,12 +1351,7 @@ void ParticleSystem::Inspector() {
 			if (ImGui::TreeNode("Rendering")) {
 				ImGui::Checkbox("Use Texture", &config.useTexture);
 				if (config.useTexture) {
-					char texPath[256];
-					strncpy(texPath, config.texturePath.c_str(), sizeof(texPath) - 1);
-					texPath[sizeof(texPath) - 1] = '\0';
-					if (ImGui::InputText("Texture", texPath, sizeof(texPath))) {
-						config.texturePath = texPath;
-					}
+					ImGui::InputText("Texture", &config.texturePath);
 					if (ImGui::Button("Reload Texture")) {
 						emitter.LoadTexture();
 					}

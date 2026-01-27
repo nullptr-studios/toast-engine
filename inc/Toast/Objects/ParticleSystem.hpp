@@ -91,6 +91,7 @@ struct ParticleEmitterConfig {
 	
 	// Offset from particle system position
 	glm::vec3 localOffset = glm::vec3(0.0f);
+	glm::vec3 localRotation = glm::vec3(0.0f);  ///< Local rotation (euler angles in degrees)
 	
 	// Lifetime
 	Range<float> lifetime = { 1.0f, 2.0f };
@@ -165,12 +166,13 @@ public:
 	/// @brief Update and render this emitter's particles
 	void UpdateAndRender(const glm::mat4& viewProjection, 
 	                     const glm::vec3& worldPos,
+	                     const glm::mat3& parentRotation,
 	                     const glm::vec3& camRight,
 	                     const glm::vec3& camUp,
 	                     float deltaTime);
 	
 	/// @brief Spawn particles for this emitter
-	void SpawnParticles(uint32_t count, const glm::vec3& worldPos);
+	void SpawnParticles(uint32_t count, const glm::vec3& worldPos, const glm::mat3& parentRotation);
 	
 	/// @brief Play/resume emission
 	void Play() { m_isPlaying = true; }
@@ -182,7 +184,7 @@ public:
 	void Stop();
 	
 	/// @brief Emit a burst
-	void EmitBurst(uint32_t count, const glm::vec3& worldPos) { SpawnParticles(count, worldPos); }
+	void EmitBurst(uint32_t count, const glm::vec3& worldPos, const glm::mat3& parentRotation) { SpawnParticles(count, worldPos, parentRotation); }
 	
 	/// @brief Check if playing
 	[[nodiscard]]
@@ -206,11 +208,11 @@ public:
 private:
 	/// @brief Generate spawn position based on shape
 	[[nodiscard]]
-	glm::vec3 GenerateSpawnPosition();
+	glm::vec3 GenerateSpawnPosition(const glm::mat3& rotation);
 	
 	/// @brief Generate spawn velocity
 	[[nodiscard]]
-	glm::vec3 GenerateSpawnVelocity();
+	glm::vec3 GenerateSpawnVelocity(const glm::mat3& rotation);
 	
 	/// @brief Random float in range
 	[[nodiscard]]
