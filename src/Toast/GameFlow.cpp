@@ -102,10 +102,6 @@ void GameFlow::LoadLevel(unsigned world, unsigned level) {
 }
 
 void GameFlow::NextLevel() {
-	m.level = m.level.or_else([] {
-		return std::optional<unsigned>(0);
-	});
-
 	// Nuke Loaded Level
 	if (m.currentLevel.has_value()) {
 		auto* scene = toast::World::Get(m.currentLevel->get());
@@ -114,12 +110,17 @@ void GameFlow::NextLevel() {
 	}
 
 	// Increment Level
+	// clang-format off
+	m.level = m.level.transform([](unsigned val) {
+    return val + 1;
+  }).value_or(0);
+	// clang-format on
+
 	if (m.levelList.size() <= m.level.value() + 1) {
 		TOAST_WARN("End Of the World...");
 		m.level = std::nullopt;
 		return;
 	}
-	m.level = m.level.value() + 1;
 
 	// Load & Enable New Level
 	m.currentLevel = std::move(m.nextLevel).or_else([this] -> std::optional<std::future<unsigned>> {
