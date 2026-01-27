@@ -20,6 +20,7 @@ void Rigidbody::Init() {
 	glm::vec3 worldPos = transform->worldPosition();
 	m_currentPosition = glm::dvec2(worldPos.x, worldPos.y);
 	m_previousPosition = m_currentPosition;
+	m_lastKnownTransformPos = worldPos;
 	m_hasValidPreviousPosition = true;
 }
 
@@ -181,6 +182,11 @@ void Rigidbody::SetPosition(glm::dvec2 pos) {
 		m_hasValidPreviousPosition = true;
 	}
 	
+	// Update tracked transform position so we don't trigger a manual change detection
+	auto* transform = static_cast<toast::Actor*>(parent())->transform();
+	float z = transform->worldPosition().z;
+	m_lastKnownTransformPos = glm::vec3(pos.x, pos.y, z);
+	
 	//@Note: Visual transform is updated by PhysicsSystem::UpdateVisualInterpolation()
 }
 
@@ -198,11 +204,37 @@ void Rigidbody::StorePreviousPosition() {
 
 void Rigidbody::UpdateVisualTransform() {
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
-	float z = transform->worldPosition().z;
+	glm::vec3 currentTransformPos = transform->worldPosition();
+	float z = currentTransformPos.z;
 	
-	// Apply interpolated position to the transform for rendering
-	glm::dvec2 interpPos = GetInterpolatedPosition();
-	transform->worldPosition({ interpPos.x, interpPos.y, z });
+	// Check if transform was manually modified
+	const double epsilon = 1e-6;
+	bool transformManuallyChanged = 
+		std::abs(currentTransformPos.x - m_lastKnownTransformPos.x) > epsilon ||
+		std::abs(currentTransformPos.y - m_lastKnownTransformPos.y) > epsilon;
+	
+	if (transformManuallyChanged) {
+		SyncFromTransform();
+	} else {
+		// interp
+		glm::dvec2 interpPos = GetInterpolatedPosition();
+		glm::vec3 newPos = { interpPos.x, interpPos.y, z };
+		transform->worldPosition(newPos);
+		m_lastKnownTransformPos = newPos;
+	}
+}
+
+void Rigidbody::SyncFromTransform() {
+	auto* transform = static_cast<toast::Actor*>(parent())->transform();
+	glm::vec3 worldPos = transform->worldPosition();
+	
+	// Update rigidbody position to match transform
+	m_currentPosition = glm::dvec2(worldPos.x, worldPos.y);
+	m_previousPosition = m_currentPosition;
+	m_lastKnownTransformPos = worldPos;
+	m_hasValidPreviousPosition = true;
+	
+	//velocity = { 0.0, 0.0 };
 }
 
 void Rigidbody::UpdateInterpolationAlpha(double alpha) {

@@ -39,6 +39,9 @@ public:
 	/// @brief Update the visual transform using interpolated position (call from Tick/LateTick)
 	void UpdateVisualTransform();
 	
+	/// @brief Sync rigidbody position from transform
+	void SyncFromTransform();
+	
 	/// @brief Update interpolation alpha based on time since last physics step
 	static void UpdateInterpolationAlpha(double alpha);
 	
@@ -68,6 +71,7 @@ public:
 	// interpolation
 	glm::dvec2 m_previousPosition = { 0.0, 0.0 };
 	glm::dvec2 m_currentPosition = { 0.0, 0.0 };
+	glm::dvec3 m_lastKnownTransformPos = { 0.0, 0.0, 0.0 };  // Track transform position to detect manual changes
 	bool m_hasValidPreviousPosition = false;
 	static inline double s_interpolationAlpha = 1.0;
 
