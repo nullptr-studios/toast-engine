@@ -33,15 +33,13 @@ void RbKinematics(Rigidbody* rb) {
 	}
 
 	// Sum forces
-	// Copy forces under lock
-	std::deque<glm::dvec2> local_forces;
-	{
-		std::lock_guard lock(rb->forcesMutex);
-		local_forces = rb->forces; // copy
-		rb->forces.clear();       // clear
-	}
-	
-	glm::dvec2 forces_sum = std::accumulate(local_forces.begin(), local_forces.end(), glm::dvec2(0.0), std::plus<>());
+	// Copy and clear under lock
+	rb->forcesMutex.lock();
+	std::deque<glm::dvec2> local_forces = rb->forces;
+	rb->forces.clear();
+	rb->forcesMutex.unlock();
+
+	glm::dvec2 forces_sum = std::accumulate(local_forces.begin(), local_forces.end(), glm::dvec2(0.0), std::plus());
 	glm::dvec2 accel = (forces_sum / rb->mass) + (PhysicsSystem::gravity() * dvec2 { rb->gravityScale });
 
 	// Integrate velocity
