@@ -97,6 +97,7 @@ void GameFlow::LoadLevel(unsigned world, unsigned level) {
 		m.nextLevel = std::nullopt;
 	}
 	m.currentLevel->wait();
+
 	auto* scene = toast::World::Get(m.currentLevel->get());
 	scene->enabled(true);
 }
