@@ -677,25 +677,21 @@ void InputSystem::ControllerAxis(int id, std::array<float, 6> axes) {
 					if (key == 0 && (id == 0 || id == 1)) {
 						action.device = Device::ControllerStick;
 						
-						// Construct 2D vector from both stick axes
+						// Get individual axis values
 						// Note: axes[1] is already inverted in PollControllers()
-						glm::vec2 value = { axes[0], axes[1] };
+						const float x_value = axes[0];
+						const float y_value = axes[1];
 						
-						// Key offsets for left stick X and Y
-						const int key_code_x = static_cast<int>(2e8);
-						const int key_code_y = static_cast<int>(2e8) + 1;
+						const int key_code = static_cast<int>(2e8);
 						
 						// Check if stick is outside deadzone (any axis active)
-						if (std::abs(value.x) > m.triggerDeadzone || std::abs(value.y) > m.triggerDeadzone) {
-							// Stick is active - store both axes
-							// We store both components to ensure the full 2D value is captured
-							action.m.pressedKeys[key_code_x] = value;
-							action.m.pressedKeys[key_code_y] = value;
+						if (std::abs(x_value) > m.triggerDeadzone || std::abs(y_value) > m.triggerDeadzone) {
+							// Stick is active - store the full 2D vector as a single entry
+							// This ensures accurate analog values without artificial clamping
+							action.m.pressedKeys[key_code] = glm::vec2{ x_value, y_value };
 						} else {
-							// Stick returned to neutral
-							// Clear BOTH axes to prevent stuck values
-							action.m.pressedKeys.erase(key_code_x);
-							action.m.pressedKeys.erase(key_code_y);
+							// Stick returned to neutral, clear the entry
+							action.m.pressedKeys.erase(key_code);
 						}
 						AddToQueue(m.dispatch2DQueue, &action);
 						return;
@@ -704,24 +700,21 @@ void InputSystem::ControllerAxis(int id, std::array<float, 6> axes) {
 					if (key == 1 && (id == 2 || id == 3)) {
 						action.device = Device::ControllerStick;
 						
-						// Construct 2D vector from both stick axes
+						// Get individual axis values
 						// Note: axes[3] is already inverted in PollControllers()
-						glm::vec2 value = { axes[2], axes[3] };
+						const float x_value = axes[2];
+						const float y_value = axes[3];
 						
-						// Key offsets for right stick X and Y
-						const int key_code_x = static_cast<int>(2e8) + 2;
-						const int key_code_y = static_cast<int>(2e8) + 3;
+						// Use a single key for the stick
+						const int key_code = static_cast<int>(2e8) + 1;
 						
 						// Check if stick is outside deadzone (any axis active)
-						if (std::abs(value.x) > m.triggerDeadzone || std::abs(value.y) > m.triggerDeadzone) {
-							// Stick is active - store both axes
-							action.m.pressedKeys[key_code_x] = value;
-							action.m.pressedKeys[key_code_y] = value;
+						if (std::abs(x_value) > m.triggerDeadzone || std::abs(y_value) > m.triggerDeadzone) {
+							// Stick is active - store the full 2D vector as a single entry
+							action.m.pressedKeys[key_code] = glm::vec2{ x_value, y_value };
 						} else {
-							// Stick returned to neutral
-							// Clear BOTH axes to prevent stuck values
-							action.m.pressedKeys.erase(key_code_x);
-							action.m.pressedKeys.erase(key_code_y);
+							// Stick returned to neutral - clear the entry
+							action.m.pressedKeys.erase(key_code);
 						}
 						AddToQueue(m.dispatch2DQueue, &action);
 						return;
