@@ -347,12 +347,13 @@ void ParticleEmitter::InitGPUResources(const std::shared_ptr<renderer::Shader>& 
 	}
 	
 	// Create double-buffered particle SSBOs
-	const size_t bufferSize = sizeof(GPUParticle) * m_config.maxParticles;
+	size_t bufferSize = sizeof(GPUParticle) * m_config.maxParticles;
 	
-	// Check if buffer size is reasonable (max ~400MB for 100k particles with 96 bytes each)
-	if (bufferSize > 500 * 1024 * 1024) {
-		TOAST_ERROR("Particle buffer size too large: {} bytes. Capping to 50000 particles.", bufferSize);
-		m_config.maxParticles = 50000;
+	const size_t maxBufferSize = 250 * 1024 * 1024; // 250MB per buffer
+	if (bufferSize > maxBufferSize) {
+		m_config.maxParticles = static_cast<uint32_t>(maxBufferSize / sizeof(GPUParticle));
+		bufferSize = sizeof(GPUParticle) * m_config.maxParticles;
+		TOAST_WARN("Particle buffer size capped to {} particles ({} bytes)", m_config.maxParticles, bufferSize);
 	}
 	
 	glGenBuffers(2, m_particleBuffers);

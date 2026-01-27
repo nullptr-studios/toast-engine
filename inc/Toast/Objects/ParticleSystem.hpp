@@ -128,7 +128,7 @@ struct ParticleEmitterConfig {
 	bool additiveBlending = false;
 	
 	// Max particles for this emitter
-	static constexpr uint32_t MAX_PARTICLES_LIMIT = 10000000;
+	static constexpr uint32_t MAX_PARTICLES_LIMIT = 1000000;  // 1 million particles (96MB per buffer)
 	uint32_t maxParticles = 10000;
 	
 	/// @brief Load configuration from Lua table
