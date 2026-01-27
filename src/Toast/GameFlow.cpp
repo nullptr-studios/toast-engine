@@ -21,7 +21,7 @@ GameFlow::GameFlow() {
 
 	auto file = resource::Open("gameflow.lua");
 	if (!file.has_value()) {
-		TOAST_ERROR("File couldn't be open");
+		TOAST_ERROR("File gameflow.lua couldn't be open");
 		return;
 	}
 
@@ -50,32 +50,42 @@ void GameFlow::LoadWorld(unsigned world) {
 		return;
 	}
 
+	if (m.currentLevel.has_value()) {
+    m.currentLevel->wait();
+		auto* scene = toast::World::Get(m.currentLevel->get());
+		scene->Nuke();
+		m.currentLevel = std::nullopt;
+	}
+
+	if (m.nextLevel.has_value()) {
+    m.nextLevel->wait();
+		auto* scene = toast::World::Get(m.nextLevel->get());
+		scene->Nuke();
+		m.nextLevel = std::nullopt;
+	}
+
 	m.world = world;
 	m.level = std::nullopt;
 
 	sol::state lua;
-	sol::table lua_table;
 
-	try {
-		// Loading the lua file
-		lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
+	lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
 
-		auto file = resource::Open(m.worldList[world]);
-		if (!file.has_value()) {
-			TOAST_ERROR("File couldn't be open");
-			throw sol::error("scenes.lua does not exist or cannot be opened");
-		}
+	auto file = resource::Open(m.worldList[world]);
+	if (!file.has_value()) {
+		TOAST_ERROR("File {} couldn't be open", m.worldList[world]);
+		return;
+	}
 
-		sol::optional<sol::table> result = lua.script(*file);
-		if (!result.has_value()) {
-			TOAST_ERROR("Lua file didn't return anything");
-			throw sol::error("scenes.lua did not return a lua table???");
-		}
-		lua_table = *result;
+	auto result = lua.script(*file);
+	if (not result.valid()) {
+		sol::error err = result;
+		TOAST_WARN("{} failed: {}", m.worldList[world], err.what());
+		return;
+	}
 
-		m.levelList = lua_table.as<std::vector<std::string>>();
-
-	} catch (const sol::error& e) { TOAST_WARN("Scenes.lua file failed to do something: {}", e.what()); }
+	sol::table table = result;
+	m.levelList = table.as<std::vector<std::string>>();
 
 	m.nextLevel = toast::World::LoadScene(m.levelList[0]);
 }
