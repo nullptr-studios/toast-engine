@@ -14,6 +14,7 @@
 #include <glad/gl.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
 #ifdef TOAST_EDITOR
@@ -100,6 +101,12 @@ void ParticleEmitterConfig::LoadFromLua(const sol::table& table) {
 		}
 	}
 	
+	// Looping and duration
+	sol::optional<bool> loopingOpt = table["looping"];
+	looping = loopingOpt.value_or(true);
+	sol::optional<float> durationOpt = table["duration"];
+	duration = durationOpt.value_or(5.0f);
+	
 	// Shape
 	sol::optional<std::string> shapeStr = table["shape"];
 	if (shapeStr) {
@@ -168,9 +175,9 @@ void ParticleEmitterConfig::LoadFromLua(const sol::table& table) {
 	sol::optional<bool> additiveOpt = table["additiveBlending"];
 	additiveBlending = additiveOpt.value_or(false);
 	
-	// Max particles
+	// Max particles (clamped to limit)
 	sol::optional<uint32_t> maxParticlesOpt = table["maxParticles"];
-	maxParticles = maxParticlesOpt.value_or(10000);
+	maxParticles = std::min(maxParticlesOpt.value_or(10000u), MAX_PARTICLES_LIMIT);
 }
 
 void ParticleEmitterConfig::ApplyPreset(const std::string& presetName) {
@@ -333,8 +340,20 @@ void ParticleEmitter::InitGPUResources(const std::shared_ptr<renderer::Shader>& 
 	// Load texture
 	LoadTexture();
 	
+	// Clamp max particles to safe limit
+	m_config.maxParticles = std::min(m_config.maxParticles, ParticleEmitterConfig::MAX_PARTICLES_LIMIT);
+	if (m_config.maxParticles < 100) {
+		m_config.maxParticles = 100;
+	}
+	
 	// Create double-buffered particle SSBOs
 	const size_t bufferSize = sizeof(GPUParticle) * m_config.maxParticles;
+	
+	// Check if buffer size is reasonable (max ~400MB for 100k particles with 96 bytes each)
+	if (bufferSize > 500 * 1024 * 1024) {
+		TOAST_ERROR("Particle buffer size too large: {} bytes. Capping to 50000 particles.", bufferSize);
+		m_config.maxParticles = 50000;
+	}
 	
 	glGenBuffers(2, m_particleBuffers);
 	for (int i = 0; i < 2; ++i) {
@@ -396,6 +415,26 @@ void ParticleEmitter::CleanupGPUResources() {
 	m_gpuInitialized = false;
 }
 
+void ParticleEmitter::ReinitializeBuffers() {
+	if (!m_gpuInitialized) return;
+	
+	// Store current shaders
+	auto computeShader = m_computeShader;
+	auto renderShader = m_renderShader;
+	
+	// Cleanup and reinitialize
+	CleanupGPUResources();
+	InitGPUResources(computeShader, renderShader);
+	
+	// Reset state
+	m_aliveCount = 0;
+	m_systemTime = 0.0f;
+	m_emissionAccumulator = 0.0f;
+	for (auto& burst : m_config.bursts) {
+		burst.triggered = false;
+	}
+}
+
 void ParticleEmitter::LoadTexture() {
 	if (m_config.useTexture && !m_config.texturePath.empty()) {
 		m_texture = resource::ResourceManager::GetInstance()->LoadResource<Texture>(m_config.texturePath);
@@ -447,24 +486,37 @@ void ParticleEmitter::UpdateAndRender(const glm::mat4& viewProjection,
 	if (m_isPlaying) {
 		m_systemTime += deltaTime;
 		
-		if (m_config.emissionMode == EmissionMode::Continuous) {
-			m_emissionAccumulator += m_config.emissionRate * deltaTime;
-			const uint32_t toSpawn = static_cast<uint32_t>(m_emissionAccumulator);
-			if (toSpawn > 0) {
-				SpawnParticles(toSpawn, emitterWorldPos, combinedRotation);
-				m_emissionAccumulator -= static_cast<float>(toSpawn);
+		// Check if non-looping emitter has finished its duration
+		bool canEmit = true;
+		if (!m_config.looping && m_systemTime >= m_config.duration) {
+			canEmit = false;
+			// Auto-stop when duration is reached and no particles remain
+			if (m_aliveCount == 0) {
+				m_isPlaying = false;
 			}
 		}
 		
-		for (auto& burst : m_config.bursts) {
-			if (!burst.triggered && m_systemTime >= burst.time) {
-				SpawnParticles(burst.count, emitterWorldPos, combinedRotation);
-				burst.triggered = true;
+		if (canEmit) {
+			if (m_config.emissionMode == EmissionMode::Continuous) {
+				m_emissionAccumulator += m_config.emissionRate * deltaTime;
+				const uint32_t toSpawn = static_cast<uint32_t>(m_emissionAccumulator);
+				if (toSpawn > 0) {
+					SpawnParticles(toSpawn, emitterWorldPos, combinedRotation);
+					m_emissionAccumulator -= static_cast<float>(toSpawn);
+				}
 			}
-			if (burst.cycleInterval > 0.0f && burst.triggered) {
-				const float cycleTime = fmod(m_systemTime - burst.time, burst.cycleInterval);
-				if (cycleTime < deltaTime) {
+			
+			for (auto& burst : m_config.bursts) {
+				if (!burst.triggered && m_systemTime >= burst.time) {
 					SpawnParticles(burst.count, emitterWorldPos, combinedRotation);
+					burst.triggered = true;
+				}
+				// Only repeat bursts if looping or within duration
+				if (burst.cycleInterval > 0.0f && burst.triggered && m_config.looping) {
+					const float cycleTime = fmod(m_systemTime - burst.time, burst.cycleInterval);
+					if (cycleTime < deltaTime) {
+						SpawnParticles(burst.count, emitterWorldPos, combinedRotation);
+					}
 				}
 			}
 		}
@@ -906,6 +958,8 @@ bool ParticleSystem::SaveToLua(const std::string& luaPath) const {
 		// Emission
 		emitterTable["emissionMode"] = (emitterConfig.emissionMode == EmissionMode::Burst) ? "burst" : "continuous";
 		emitterTable["emissionRate"] = emitterConfig.emissionRate;
+		emitterTable["looping"] = emitterConfig.looping;
+		emitterTable["duration"] = emitterConfig.duration;
 		
 		// Bursts
 		if (!emitterConfig.bursts.empty()) {
@@ -1263,14 +1317,91 @@ void ParticleSystem::Inspector() {
 					config.emissionMode = static_cast<EmissionMode>(currentMode);
 				}
 				
+				// Looping and duration
+				ImGui::Checkbox("Looping", &config.looping);
+				if (!config.looping) {
+					ImGui::DragFloat("Duration", &config.duration, 0.1f, 0.1f, 60.0f, "%.1f s");
+				}
+				
 				if (config.emissionMode == EmissionMode::Continuous) {
 					ImGui::DragFloat("Rate", &config.emissionRate, 0.5f, 0.0f, 1000.0f, "%.1f/s");
 				}
 				
-
+				// Burst configuration
+				if (ImGui::TreeNode("Bursts")) {
+					// Add burst button
+					if (ImGui::Button("Add Burst")) {
+						config.bursts.push_back({ 0.0f, 10, 0.0f, false });
+					}
+					
+					int burstToRemove = -1;
+					for (size_t b = 0; b < config.bursts.size(); ++b) {
+						ImGui::PushID(static_cast<int>(b));
+						
+						ImGui::Separator();
+						ImGui::Text("Burst %zu", b + 1);
+						
+						ImGui::DragFloat("Time", &config.bursts[b].time, 0.1f, 0.0f, 60.0f, "%.2f s");
+						
+						int burstCount = static_cast<int>(config.bursts[b].count);
+						if (ImGui::DragInt("Count", &burstCount, 1, 1, 10000)) {
+							config.bursts[b].count = static_cast<uint32_t>(std::max(1, burstCount));
+						}
+						
+						ImGui::DragFloat("Repeat Interval", &config.bursts[b].cycleInterval, 0.1f, 0.0f, 60.0f, "%.2f s");
+						if (config.bursts[b].cycleInterval > 0.0f) {
+							ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.3f, 1.0f), "Repeats every %.2f s", config.bursts[b].cycleInterval);
+						}
+						
+						if (ImGui::Button("Remove")) {
+							burstToRemove = static_cast<int>(b);
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Trigger Now")) {
+							config.bursts[b].triggered = false;
+						}
+						
+						ImGui::PopID();
+					}
+					
+					if (burstToRemove >= 0) {
+						config.bursts.erase(config.bursts.begin() + burstToRemove);
+					}
+					
+					ImGui::TreePop();
+				}
+				
+				// Max particles with validation
 				int maxP = static_cast<int>(config.maxParticles);
-				if (ImGui::DragInt("Max Particles", &maxP, 100, 100, 100000)) {
-					config.maxParticles = static_cast<uint32_t>(maxP);
+				if (ImGui::DragInt("Max Particles", &maxP, 100, 100, static_cast<int>(ParticleEmitterConfig::MAX_PARTICLES_LIMIT))) {
+					config.maxParticles = static_cast<uint32_t>(std::clamp(maxP, 100, static_cast<int>(ParticleEmitterConfig::MAX_PARTICLES_LIMIT)));
+				}
+				if (config.maxParticles > 50000) {
+					ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "Warning: High particle count may affect performance");
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Apply##maxparticles")) {
+					emitter.ReinitializeBuffers();
+				}
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip("Reinitialize GPU buffers with new max particles value.\nThis will clear all current particles.");
+				}
+				
+				// Playback controls for this emitter
+				ImGui::Separator();
+				ImGui::Text("Emitter Playback");
+				if (ImGui::Button(emitter.IsPlaying() ? "Pause##emitter" : "Play##emitter")) {
+					if (emitter.IsPlaying()) emitter.Pause();
+					else emitter.Play();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Stop##emitter")) {
+					emitter.Stop();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Restart##emitter")) {
+					emitter.Stop();
+					emitter.Play();
 				}
 				
 				ImGui::TreePop();
