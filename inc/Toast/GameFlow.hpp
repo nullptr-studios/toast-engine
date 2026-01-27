@@ -16,8 +16,9 @@ class GameFlow final {
     std::optional<unsigned> world;
     std::optional<unsigned> level;
 
-		std::optional<std::future<unsigned>> currentLevel;
-		std::optional<std::future<unsigned>> nextLevel;
+		std::optional<std::shared_future<unsigned>> currentLevel;
+		std::optional<std::shared_future<unsigned>> nextLevel;
+    
 	} m;
 
 
