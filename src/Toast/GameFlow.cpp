@@ -3,6 +3,7 @@
 #include "Toast/Log.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/World.hpp"
+#include "sol/forward.hpp"
 #include "sol/state.hpp"
 
 #include <future>
@@ -12,32 +13,28 @@ namespace toast {
 
 GameFlow::GameFlow() {
 	sol::state lua;
-	sol::table lua_table;
 
 	std::vector<std::string> world_list;
 
-	try {
-		// Loading the lua file
-		lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
+	// Loading the lua file
+	lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
 
-		auto file = resource::Open("gameflow.lua");
-		if (!file.has_value()) {
-			TOAST_ERROR("File couldn't be open");
-			throw sol::error("scenes.lua does not exist or cannot be opened");
-		}
-
-		sol::optional<sol::table> result = lua.script(*file);
-		if (!result.has_value()) {
-			TOAST_ERROR("Lua file didn't return anything");
-			throw sol::error("scenes.lua did not return a lua table???");
-		}
-		lua_table = *result;
-
-		world_list = lua_table.as<std::vector<std::string>>();
-
-	} catch (const sol::error& e) {    //
-		TOAST_WARN("Scenes.lua file failed to do something: {}", e.what());
+	auto file = resource::Open("gameflow.lua");
+	if (!file.has_value()) {
+		TOAST_ERROR("File couldn't be open");
+		return;
 	}
+
+	auto result = lua.script(*file);
+	if (not result.valid()) {
+		sol::error err = result;
+		TOAST_WARN("gameflow.lua failed: {}", err.what());
+		return;
+	}
+
+	sol::table table = result;
+	world_list = table.as<std::vector<std::string>>();
+
 	m = {
 		.worldList = std::move(world_list),
 		.levelList = {},
