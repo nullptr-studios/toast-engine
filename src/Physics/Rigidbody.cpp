@@ -182,11 +182,6 @@ void Rigidbody::SetPosition(glm::dvec2 pos) {
 		m_hasValidPreviousPosition = true;
 	}
 	
-	// Update tracked transform position so we don't trigger a manual change detection
-	auto* transform = static_cast<toast::Actor*>(parent())->transform();
-	float z = transform->worldPosition().z;
-	m_lastKnownTransformPos = glm::vec3(pos.x, pos.y, z);
-	
 	//@Note: Visual transform is updated by PhysicsSystem::UpdateVisualInterpolation()
 }
 
