@@ -214,6 +214,7 @@ double Rigidbody::GetInterpolationAlpha() {
 }
 
 void Rigidbody::AddForce(glm::dvec2 force) {
+	forcesMutex.lock();
 	forces.emplace_back(force);
 }
 

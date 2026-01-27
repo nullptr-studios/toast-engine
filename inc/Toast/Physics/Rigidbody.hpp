@@ -63,6 +63,7 @@ public:
 	// internal
 	glm::dvec2 velocity = { 0.0, 0.0 };
 	std::deque<glm::dvec2> forces;
+	std::mutex forcesMutex; // protect access to forces
 	
 	// interpolation
 	glm::dvec2 m_previousPosition = { 0.0, 0.0 };
