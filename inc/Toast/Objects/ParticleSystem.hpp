@@ -83,6 +83,8 @@ struct ParticleEmitterConfig {
 	EmissionMode emissionMode = EmissionMode::Continuous;
 	float emissionRate = 10.0f;               ///< Particles per second (continuous mode)
 	std::vector<ParticleBurst> bursts;        ///< Burst configurations
+	bool looping = true;                      ///< If false, emitter plays once then stops
+	float duration = 5.0f;                    ///< Duration of one emission cycle (for non-looping)
 	
 	// Shape
 	EmitterShape shape = EmitterShape::Point;
@@ -126,6 +128,7 @@ struct ParticleEmitterConfig {
 	bool additiveBlending = false;
 	
 	// Max particles for this emitter
+	static constexpr uint32_t MAX_PARTICLES_LIMIT = 10000000;
 	uint32_t maxParticles = 10000;
 	
 	/// @brief Load configuration from Lua table
@@ -162,6 +165,9 @@ public:
 	
 	/// @brief Cleanup GPU resources
 	void CleanupGPUResources();
+	
+	/// @brief Reinitialize GPU buffers (call when maxParticles changes)
+	void ReinitializeBuffers();
 	
 	/// @brief Update and render this emitter's particles
 	void UpdateAndRender(const glm::mat4& viewProjection, 
