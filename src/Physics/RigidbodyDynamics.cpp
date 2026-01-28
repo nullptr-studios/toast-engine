@@ -369,7 +369,7 @@ void RbTriggerCollision(Rigidbody* rb1, Trigger* t) {
 	if (std::ranges::find(t->rigidbodies, rb1) != t->rigidbodies.end()) return;
 
 	t->rigidbodies.emplace_back(rb1);
-	t->enterCallback(rb1);
+	t->enterCallback(rb1->parent());
 	t->m.color = t->debug.collideColor;
 
 	if (t->debug.log) {
