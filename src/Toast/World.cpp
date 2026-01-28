@@ -276,6 +276,7 @@ void World::UnloadScene(const unsigned id) {
 
   // Check if scene has finished loading
   if (not w->m.tickableScenes.contains(id)) {
+    TOAST_WARN("Tried To Destroy Not Fully Loaded Scene");
     return;
   }
 
