@@ -205,9 +205,9 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 			ScheduleBegin(scene);
 		}
 
-		promis->set_value(scene_id);
 		auto* e = new SceneLoadedEvent { scene_id, scene_name };
 		event::Send(reinterpret_cast<event::IEvent*>(e));
+    promis->set_value(scene_id);
 	});
 	return futur;
 }
