@@ -118,7 +118,6 @@ World::~World() {
 	delete m.threadPool;
 }
 
-
 Object* World::New(const std::string& type, const std::optional<std::string>& name) {
 	auto* world = Instance();
 	std::string obj_name {};
@@ -206,7 +205,7 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 			ScheduleBegin(scene);
 		}
 
-    promis->set_value(scene_id);
+		promis->set_value(scene_id);
 		auto* e = new SceneLoadedEvent { scene_id, scene_name };
 		event::Send(reinterpret_cast<event::IEvent*>(e));
 	});
@@ -273,12 +272,6 @@ void World::UnloadScene(const unsigned id) {
 	if (!w->m.children.Has(id)) {
 		return;    // Already unloaded, nothing to do
 	}
-
-  // Check if scene has finished loading
-  if (not w->m.tickableScenes.contains(id)) {
-    TOAST_WARN("Tried To Destroy Not Fully Loaded Scene");
-    return;
-  }
 
 	// Get scene safely
 	auto* scene = w->m.children.Get(id);
@@ -505,6 +498,12 @@ void World::RunDestroyQueue() {
 
 	for (auto* obj : local) {
 		if (!obj) {
+			continue;
+		}
+
+		// Check if scene has finished loading
+		if (not m.tickableScenes.contains(obj->id())) {
+			TOAST_WARN("Tried To Destroy Not Fully Loaded Scene");
 			continue;
 		}
 
