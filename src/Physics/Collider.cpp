@@ -225,6 +225,9 @@ void Collider::CalculatePoints() {
 		}
 	}
 
+	data.flags = m.flags;
+	data.parent = parent();
+
 	// Finally, create convex colliders for every convex mesh we produced
 	for (const auto& points : meshes_list) {
 		m.convexShapes.emplace_back(new ConvexCollider(points, data));
@@ -247,6 +250,38 @@ void Collider::Inspector() {
 	const double min = 0.0;
 	const double max = 1.5;
 	ImGui::SliderScalar("Friction", ImGuiDataType_Double, &data.friction, &min, &max);
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Collider Flags");
+	unsigned int cur = static_cast<unsigned int>(m.flags);
+	bool default_flag = (cur & static_cast<unsigned int>(ColliderFlags::Default)) != 0;
+	bool ground_flag = (cur & static_cast<unsigned int>(ColliderFlags::Ground)) != 0;
+	bool player_flag = (cur & static_cast<unsigned int>(ColliderFlags::Player)) != 0;
+	bool enemy_flag = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
+
+	if (ImGui::Checkbox("Default", &default_flag)) {
+		if (default_flag) cur |= static_cast<unsigned int>(ColliderFlags::Default);
+		else cur &= ~static_cast<unsigned int>(ColliderFlags::Default);
+	}
+	if (ImGui::Checkbox("Ground", &ground_flag)) {
+		if (ground_flag) cur |= static_cast<unsigned int>(ColliderFlags::Ground);
+		else cur &= ~static_cast<unsigned int>(ColliderFlags::Ground);
+	}
+	if (ImGui::Checkbox("Enemy", &enemy_flag)) {
+		if (enemy_flag) cur |= static_cast<unsigned int>(ColliderFlags::Enemy);
+		else cur &= ~static_cast<unsigned int>(ColliderFlags::Enemy);
+	}
+	if (ImGui::Checkbox("Player", &player_flag)) {
+		if (player_flag) cur |= static_cast<unsigned int>(ColliderFlags::Player);
+		else cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
+	}
+
+	m.flags = static_cast<ColliderFlags>(cur);
+	data.flags = static_cast<ColliderFlags>(cur);
+	for (auto* c : m.convexShapes) {
+		c->flags = static_cast<ColliderFlags>(cur);
+	}
+
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Points");
@@ -355,6 +390,7 @@ json_t Collider::Save() const {
 	j["debug.showPoints"] = debug.showPoints;
 	j["debug.showColliders"] = debug.showColliders;
 	j["debug.showNormals"] = data.debugNormals;
+	j["flags"] = static_cast<unsigned int>(m.flags);
 
 	return j;
 }
@@ -385,6 +421,9 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("debug.showNormals")) {
 		data.debugNormals = j["debug.showNormals"];
+	}
+	if (j.contains("flags")) {
+		m.flags = static_cast<ColliderFlags>(j["flags"].get<unsigned int>());
 	}
 
 	Component::Load(j, propagate);

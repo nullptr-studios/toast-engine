@@ -4,6 +4,7 @@
 
 #pragma once
 #include "ColliderData.hpp"
+#include "ColliderFlags.hpp"
 #include "Toast/Components/Component.hpp"
 
 #include <glm/glm.hpp>
@@ -43,6 +44,7 @@ private:
 	struct {
 		std::vector<ConvexCollider*> convexShapes;
 		std::list<glm::vec2> points;
+		ColliderFlags flags = ColliderFlags::Default;
 	} m;
 
 	struct {

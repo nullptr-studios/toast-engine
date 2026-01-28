@@ -39,6 +39,6 @@ inline float ShoelaceArea(const std::list<glm::vec2>& points) {
 	return area;
 }
 
-auto ConvexRayCollision(Line* ray, ConvexCollider* c) -> std::optional<glm::dvec2>;
+auto ConvexRayCollision(Line* ray, ConvexCollider* c) -> std::optional<std::pair<glm::dvec2, glm::dvec2>>;
 
 }

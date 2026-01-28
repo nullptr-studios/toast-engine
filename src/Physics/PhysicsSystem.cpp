@@ -180,6 +180,28 @@ void PhysicsSystem::RemoveCollider(ConvexCollider* c) {
 	(*i)->m.colliders.remove(c);
 }
 
+void PhysicsSystem::AddTrigger(Trigger* t) {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return;
+	}
+	auto& list = (*i)->m.triggers;
+
+	// Return if the rigidbody is already registered on the list
+	if (std::ranges::find(list, t) != list.end()) {
+		return;
+	}
+	list.emplace_back(t);
+}
+
+void PhysicsSystem::RemoveTrigger(Trigger* t) {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return;
+	}
+	(*i)->m.triggers.remove(t);
+}
+
 void PhysicsSystem::AddBox(BoxRigidbody* rb) {
 	auto i = PhysicsSystem::get();
 	if (!i.has_value()) {
@@ -276,13 +298,17 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 		}
 	}
 
+	for (auto* t : m.triggers) {
+		RbTriggerCollision(rb, t);
+	}
+
 	// Final position integration
 	RbIntegration(rb);
 }
 
 void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 	PROFILE_ZONE;
-	// PROFILE_TEXT(rb->parent()->name(), rb->parent()->name().size());
+	//PROFILE_TEXT(rb->parent()->name(), rb->parent()->name().size());
 
 	BoxKinematics(rb);
 
@@ -298,61 +324,61 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 	BoxIntegration(rb);
 }
 
-std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
-	std::optional<RayResult> result = std::nullopt;
-	RayResult temp;
-	std::optional<dvec2> col_hit;
-	std::optional<dvec2> rb_hit;
-	auto ps = PhysicsSystem::get();
-	if (ps == std::nullopt) {
+std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags flags) {
+	if (not get().has_value()) {
+		TOAST_WARN("Raycast skipped because physics system doesn't exist");
 		return std::nullopt;
 	}
+	auto* physics = get().value();
 
-	for (auto* c : ps.value()->m.colliders) {
-		std::optional<dvec2> cur_dist = ConvexRayCollision(ray, c);
-		if (cur_dist != std::nullopt) {
-			if (col_hit == std::nullopt || length2(cur_dist.value() - ray->p1) < length2(col_hit.value() - ray->p1)) {
-				temp.collider = c;
-				col_hit = cur_dist.value();
-			}
+	std::optional<RayResult> result = std::nullopt;
+	std::optional<dvec2> col_hit;
+	std::optional<dvec2> rb_hit;
+
+	for (auto* c : physics->m.colliders) {
+		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(c->flags)) == 0u) continue;
+		auto collision = ConvexRayCollision(ray, c);
+		if (not collision.has_value()) { continue; }
+
+		if (not col_hit.has_value() || length2(collision->first - ray->p1) < length2(*col_hit - ray->p1)) {
+			col_hit = collision->first;
+			const float d = static_cast<float>(distance(*col_hit, ray->p1));
+
+			// same as below
+			if (result && result.value().distance < d) continue;
+			result = {
+				.type = RayResult::Collider,
+				.point = *col_hit,
+				.normal = collision->second,
+				.distance = d,
+				.other = c->parent
+			};
 		}
 	}
 
-	// for (auto* r : ps.value()->m.rigidbodies) {
-	//	std::optional<dvec2> cur_dist = RbRayCollision(ray, r);
-	//	if (cur_dist != std::nullopt)
-	//		if (rb_hit == std::nullopt || length2(cur_dist.value() - ray->p1) < length2(rb_hit.value() - ray->p1)) {
-	//			temp.rigid = r;
-	//			rb_hit = cur_dist.value();
-	//		}
-	// }
+	for (auto* r : physics->m.rigidbodies) {
+		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(r->flags)) == 0u) continue;
+		std::optional<dvec2> collision = RbRayCollision(ray, r);
+		if (not collision.has_value()) { continue; }
 
-	if (temp.rigid != nullptr && temp.collider != nullptr) {
-		result = temp;
-		if (length2(col_hit.value() - ray->p1) < length2(rb_hit.value() - ray->p1)) {
-			result->colOrRb = true;
-			renderer::DebugLine(ray->p1, col_hit.value(), vec4(0.0f, 0.0f, 1.0f, 1.0f));
-		} else {
-			result->colOrRb = false;
-			renderer::DebugLine(ray->p1, rb_hit.value(), vec4(1.0f, 0.0f, 0.0f, 1.0f));
+		if (not rb_hit.has_value() || length(*collision - ray->p1) < length2(*rb_hit - ray->p1)) {
+			rb_hit = collision.value();
+			const float d = static_cast<float>(distance(*rb_hit, ray->p1));
+
+			// Do not modify result if theres already one with less distance
+			if (result && result.value().distance < d) continue;
+			result = {
+				.type = RayResult::Rigidbody,
+				.point = *rb_hit,
+				.normal = ray->tangent,
+				.distance = d,
+				.other = r->parent()
+			};
 		}
-		return result;
 	}
+	if (result != std::nullopt)
+		renderer::DebugLine(ray->p1,  result->point, vec4(0.0f, 0.0f, 1.0f, 1.0f));
 
-	if (temp.rigid != nullptr) {
-		result = temp;
-		result->colOrRb = false;
-		renderer::DebugLine(ray->p1, rb_hit.value(), vec4(1.0f, 0.0f, 0.0f, 1.0f));
-		return result;
-	}
-
-	if (temp.collider != nullptr) {
-		result = temp;
-		result->colOrRb = true;
-		renderer::DebugLine(ray->p1, col_hit.value(), vec4(0.0f, 0.0f, 1.0f, 1.0f));
-		return result;
-	}
-
-	return std::nullopt;
+	return result;
 }
 }

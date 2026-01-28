@@ -1,6 +1,5 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "ConvexCollider.hpp"
-
 #include "BoxDynamics.hpp"
 #include "Physics/PhysicsSystem.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
@@ -8,7 +7,6 @@
 #include "glm/gtx/quaternion.hpp"
 
 using namespace glm;
-
 namespace physics {
 
 ConvexCollider::ConvexCollider(const point_list& points, const ColliderData& data) {
@@ -61,16 +59,23 @@ void ConvexCollider::Debug() {
 	}
 }
 
-auto ConvexRayCollision(Line* ray, ConvexCollider* c) -> std::optional<dvec2> {
-	std::optional<dvec2> result = std::nullopt;
+auto ConvexRayCollision(Line* ray, ConvexCollider* c) -> std::optional<std::pair<dvec2, dvec2>> {
+	std::optional<std::pair<dvec2, dvec2>> result = std::nullopt;
+	double min_distance_sq = std::numeric_limits<double>::max();
+
 	for (Line& l : c->edges) {
-		auto cur_dist = LineLineCollision(*ray, l);
-		if (cur_dist != std::nullopt) {
-			if (result == std::nullopt || length2(cur_dist.value() - ray->p1) < length2(result.value() - ray->p1)) {
-				result = cur_dist;
+		auto intersection = LineLineCollision(*ray, l);
+
+		if (intersection.has_value()) {
+			// Calculate squared distance
+			const double dist_sq = length2(intersection.value() - ray->p1);
+			if (dist_sq < min_distance_sq) {
+				min_distance_sq = dist_sq;
+				result = { *intersection, l.normal };
 			}
 		}
 	}
+
 	return result;
 }
 
