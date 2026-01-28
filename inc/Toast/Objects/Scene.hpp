@@ -38,20 +38,12 @@ public:
 		m_jsonPath = path;
 	}
 
-	bool IsUi() {
-		return m_isUiScene;
-	}
-
-#ifdef TOAST_EDITOR
-	void Inspector() override;
-#endif
 
 private:
 	// Scenes should pass the path rather than the object
 	void Load(json_t j, bool force_create = true) override;
 	mutable std::string m_jsonPath;
 
-	bool m_isUiScene = false;
 
 	constexpr BaseType base_type() const noexcept final {
 		return SceneT;
