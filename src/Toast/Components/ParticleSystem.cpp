@@ -921,7 +921,7 @@ bool ParticleSystem::LoadFromLua(const std::string& luaPath) {
 		// Load emitters
 		sol::optional<sol::table> emittersTable = config["emitters"];
 		if (emittersTable) {
-			for (auto& emitterObj : *emittersTable | std::views::values) {
+			for (auto& [_, emitterObj] : *emittersTable) {
 				if (emitterObj.is<sol::table>()) {
 					ParticleEmitter& emitter = AddEmitter();
 					emitter.GetConfig().LoadFromLua(emitterObj.as<sol::table>());
