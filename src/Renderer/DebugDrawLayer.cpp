@@ -91,7 +91,7 @@ void DebugDrawLayer::Flush() const {
 
 	size_t byte_size = m_vertices.size() * sizeof(DebugVertex);
 
-	static size_t capacity_bytes = 2048 * sizeof(DebugVertex);
+	static size_t capacity_bytes = 1024 * sizeof(DebugVertex);
 	if (byte_size > capacity_bytes) {
 		capacity_bytes = byte_size;
 		glBufferData(GL_ARRAY_BUFFER, capacity_bytes, nullptr, GL_STREAM_DRAW);
