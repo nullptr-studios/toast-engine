@@ -182,8 +182,8 @@ OpenGLRenderer::OpenGLRenderer() {
 
 	// Debug output
 #ifndef _NDEBUG
-	// glEnable(GL_DEBUG_OUTPUT);
-	// glDebugMessageCallback(DebugCallback, nullptr);
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(DebugCallback, nullptr);
 #endif
 
 	// Default projection matrix
