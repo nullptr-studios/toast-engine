@@ -274,6 +274,11 @@ void World::UnloadScene(const unsigned id) {
 		return;    // Already unloaded, nothing to do
 	}
 
+  // Check if scene has finished loading
+  if (not w->m.tickableScenes.contains(id)) {
+    return;
+  }
+
 	// Get scene safely
 	auto* scene = w->m.children.Get(id);
 	if (!scene) {
