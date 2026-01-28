@@ -47,7 +47,6 @@ void RbKinematics(Rigidbody* rb) {
 	velocity += accel * Time::fixed_delta();
 
 	// Apply drag
-	TOAST_TRACE("Drag: x{} y{}", rb->drag.x, rb->drag.y);
 	const dvec2 damping = exp(dvec2 { -rb->drag } * Time::fixed_delta());
 	velocity *= damping;
 
