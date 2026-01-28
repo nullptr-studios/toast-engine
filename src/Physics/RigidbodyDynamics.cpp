@@ -1,5 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "RigidbodyDynamics.hpp"
+
 #include "ConvexCollider.hpp"
 #include "PhysicsSystem.hpp"
 #include "Toast/Log.hpp"
@@ -10,7 +11,6 @@
 #include "glm/gtx/norm.hpp"
 
 #include <glm/glm.hpp>
-
 
 namespace physics {
 using namespace glm;
@@ -33,22 +33,27 @@ void RbKinematics(Rigidbody* rb) {
 	}
 
 	// Sum forces
-	glm::dvec2 forces_sum = std::ranges::fold_left(rb->forces, glm::dvec2(0.0), std::plus {});
+	// Copy and clear under lock
+	std::deque<glm::dvec2> local_forces{};
+	{
+		std::lock_guard lock(rb->forcesMutex);
+		local_forces.swap(rb->forces);
+	}
+
+	glm::dvec2 forces_sum = std::accumulate(local_forces.begin(), local_forces.end(), glm::dvec2(0.0), std::plus());
 	glm::dvec2 accel = (forces_sum / rb->mass) + (PhysicsSystem::gravity() * dvec2 { rb->gravityScale });
 
 	// Integrate velocity
 	velocity += accel * Time::fixed_delta();
 
 	// Apply drag
-	const dvec2 damping = exp(dvec2{-rb->drag} * Time::fixed_delta());
+	const dvec2 damping = exp(dvec2 { -rb->drag } * Time::fixed_delta());
 	velocity *= damping;
 
-	if (all(lessThan(abs(velocity), dvec2{rb->minimumVelocity}))) {
+	if (all(lessThan(abs(velocity), dvec2 { rb->minimumVelocity }))) {
 		velocity = { 0.0, 0.0 };
 	}
 
-	// Remove the forces after integrating
-	rb->forces.clear();
 }
 
 void RbIntegration(Rigidbody* rb) {
@@ -156,14 +161,14 @@ void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
 	rb2->SetPosition(position2);
 
 	// Velocity correction
-	auto velocity_correction = [&](Rigidbody* rb, dvec2 v)-> dvec2 {
+	auto velocity_correction = [&](Rigidbody* rb, dvec2 v) -> dvec2 {
 		double normal_velocity = dot(v, normal);
 		if (std::abs(normal_velocity) < rb->minimumVelocity.y) {
 			// Kill tiny normal velocity
 			v -= normal_velocity * normal;
 		}
 
-		if (all(lessThan(abs(v), dvec2{rb->minimumVelocity}))) {
+		if (all(lessThan(abs(v), dvec2 { rb->minimumVelocity }))) {
 			v = { 0.0, 0.0 };
 		}
 
@@ -306,7 +311,7 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	rb->SetPosition(position);
 
 	// velocity correction
-	normal_speed = glm::dot(velocity, manifold.normal); // update normal speed
+	normal_speed = glm::dot(velocity, manifold.normal);    // update normal speed
 	if (normal_speed < 0.0) {
 		velocity -= normal_speed * manifold.normal;
 	}
@@ -315,24 +320,33 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	if (std::abs(normal_speed) < rb->minimumVelocity.y) {
 		velocity -= normal_speed * manifold.normal;
 	}
-	if (all(lessThan(abs(velocity), dvec2{rb->minimumVelocity}))) {
+	if (all(lessThan(abs(velocity), dvec2 { rb->minimumVelocity }))) {
 		velocity = { 0.0, 0.0 };
 	}
 
 	rb->velocity = velocity;
-
 }
 
 std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 	std::optional<dvec2> result = std::nullopt;
-	dvec2 pt1 = ray->p1 - rb->GetPosition();
-	dvec2 pt2 = ray->p2 - rb->GetPosition();
-  dvec2 min_distance = cross(dvec3(pt1.x, pt1.y, 0.0f), dvec3(pt2.x, pt2.y, 0.0f)) / length(pt2 - pt1);
+	dvec2 line = ray->p2 - ray->p1;
+	double t = dot(rb->GetPosition() - ray->p1, line) / dot(line, line);
+	t = clamp(t, 0.0, 1.0);
+	dvec2 closest_point = ray->p1 + t * line;
 
-	if (length2(min_distance) >= rb->radius * rb->radius)
+	if (length2(closest_point - rb->GetPosition()) > rb->radius * rb->radius)
 		return std::nullopt;
+	
 
-	result = rb->GetPosition();
+	double distance = std::max(0.0, rb->radius - length(closest_point - rb->GetPosition()));
+
+	dvec2 pt1 = closest_point - ray->tangent * distance;
+	dvec2 pt2 = closest_point + ray->tangent * distance;
+	if (length2(pt2 - ray->p1) > length2(pt1 - ray->p1))
+		result = pt1;
+	else
+		result = pt2;
+
 	return result;
 }
 

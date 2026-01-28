@@ -20,8 +20,6 @@
 #include "spine/Attachment.h"
 #include "spine/Bone.h"
 
-
-
 /// TODO:SPINE RESOURCE SLOTS
 void SpineRendererComponent::Init() {
 	TransformComponent::Init();
@@ -31,10 +29,8 @@ void SpineRendererComponent::Init() {
 	// Reserve temp buffers to avoid allocations
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
 	m_tempIndices.reserve(INITIAL_VERT_RESERVE * 3);
-	
-	m_eventHandler = std::make_unique<SpineEventHandler>(this);
-	
 
+	m_eventHandler = std::make_unique<SpineEventHandler>(this);
 
 	// Load resources either from persisted paths (preferred) or fallback to defaults
 	if (!m_atlasPath.empty() && !m_skeletonDataPath.empty()) {
@@ -66,7 +62,7 @@ void SpineRendererComponent::Init() {
 			m_selectedAnimation = 0;
 			m_animationState->setAnimation(0, m_animationNames[m_selectedAnimation].c_str(), m_loopAnimation);
 		}
-		
+
 		m_atlasResource.name("Atlas Resource");
 		m_skeletonDataResource.name("Skeleton Data Resource");
 #endif
@@ -254,13 +250,6 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		return;
 	}
 
-	// dont tick if outside frustum
-	// if (!OclussionVolume::isSphereOnPlanes(
-	//         renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), worldPosition(), 10.0f * glm::length(scale()) / 2.0f
-	//     )) {
-	// 	return;
-	// }
-
 	PROFILE_ZONE;
 
 	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
@@ -276,6 +265,43 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 	m_shader->Set("transform", mvp);
 
 	// Reuse temporary buffers
+	m_tempVerts.clear();
+	m_tempIndices.clear();
+
+	// First pass: collect all vertices to compute bounding box for frustum culling
+	{
+		spine::RenderCommand* cmd = command;
+		size_t totalVerts = 0;
+		while (cmd) {
+			totalVerts += cmd->numVertices;
+			cmd = cmd->next;
+		}
+
+		// Build temporary vertex positions for bounding box computation
+		m_tempVerts.reserve(totalVerts);
+		cmd = command;
+		while (cmd) {
+			for (int i = 0; i < cmd->numVertices; ++i) {
+				renderer::SpineVertex v{};
+				v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
+				v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], cmd->uvs[(i * 2) + 1]);
+				v.colorABGR = cmd->colors[i];
+				m_tempVerts.push_back(v);
+			}
+			cmd = cmd->next;
+		}
+
+		// Compute dynamic bounding box
+		m_dynamicMesh.ComputeSpineBoundingBox(m_tempVerts.data(), m_tempVerts.size());
+
+		// Frustum culling using the dynamic AABB
+		const auto& frustumPlanes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes();
+		if (!OclussionVolume::isTransformedAABBOnPlanes(frustumPlanes, m_dynamicMesh.dynamicBoundingBox(), model)) {
+			return;    // Outside frustum, skip rendering
+		}
+	}
+
+	// Reset buffers for actual rendering pass
 	m_tempVerts.clear();
 	m_tempIndices.clear();
 
@@ -416,7 +442,7 @@ void SpineRendererComponent::SetBoneLocalPosition(const std::string_view& boneNa
 	bone->setY(position.y);
 }
 
-void SpineRendererComponent::OnAnimationEvent(const std::string_view& animationName, int track, const std::string_view& eventName) {
-	event::Send(new SpineEvent(animationName, track, eventName));
+void SpineRendererComponent::OnAnimationEvent(const std::string_view& animationName, int track, const std::string_view& eventName, int intValue, float floatValue, const std::string_view& stringValue) {
+	event::Send(new SpineEvent(id(), animationName, track, eventName, intValue, floatValue, stringValue));
 	TOAST_TRACE("Spine Event Sent!");
 }

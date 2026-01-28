@@ -58,7 +58,6 @@ void ResourceManager::LoadResourcesMainThread() {
 	PROFILE_ZONE;
 	// safe swap under lock to drain the queue
 	std::vector<std::weak_ptr<IResource>> local;
-	local.reserve(m_uploadResources.size());
 	{
 		std::lock_guard<std::mutex> lg(m_uploadMtx);
 		local.swap(m_uploadResources);

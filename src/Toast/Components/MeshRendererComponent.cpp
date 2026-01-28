@@ -105,9 +105,13 @@ void MeshRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept 
 		return;
 	}
 
-	// if (!OclussionVolume::isSphereOnPlanes(renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), worldPosition(), 10.0f *
-	// glm::length(scale()))) { 	return;
-	// }
+	if (!OclussionVolume::isTransformedAABBOnPlanes(
+		renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), 
+		m_mesh->boundingBox(), 
+		GetWorldMatrix())) 
+		{ 	
+		return;
+	}
 
 	// guard against null pointers (material or mesh might have failed to load)
 	if (m_material == nullptr) {

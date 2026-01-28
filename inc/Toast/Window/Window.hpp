@@ -1,9 +1,12 @@
-/// @file Window.hpp
-/// @author Xein
-/// @date 03/05/25
-/// @brief Contains the main window class, the window exceptions and the window properties
-
-// TODO: Handle vsync
+/**
+ * @file Window.hpp
+ * @author Xein
+ * @date 03/05/25
+ * @brief Window management for the Toast Engine.
+ *
+ * This file provides the Window class which manages the application window,
+ * OpenGL context, and OS event handling through GLFW.
+ */
 
 #pragma once
 #include "Toast/Event/Event.hpp"
@@ -12,87 +15,205 @@ struct GLFWwindow;
 
 namespace toast {
 
-/// @brief Holds all window properties
+/**
+ * @struct WindowProps
+ * @brief Properties describing a window's configuration.
+ */
 struct WindowProps {
-	unsigned width = -1;
-	unsigned height = -1;
-	std::string name = "-1";
-
-	// bool vsync = false;
+	unsigned width = -1;     ///< Window width in pixels.
+	unsigned height = -1;    ///< Window height in pixels.
+	std::string name = "-1"; ///< Window title.
 };
 
-/// @brief Main window class of the engine
+/**
+ * @class Window
+ * @brief Singleton class managing the application window.
+ *
+ * The Window class wraps GLFW to provide window creation, event handling,
+ * and OpenGL context management. It follows the singleton pattern as only
+ * one window is supported.
+ *
+ * @par Features:
+ * - Window creation and destruction
+ * - Double-buffered rendering with buffer swap
+ * - OS event polling (keyboard, mouse, window events)
+ * - Framebuffer size queries
+ * - Display scaling for HiDPI support
+ *
+ * @par Usage Example:
+ * @code
+ * // Window is created automatically by Engine
+ * auto* window = Window::GetInstance();
+ *
+ * // Check framebuffer size
+ * auto [width, height] = window->GetFramebufferSize();
+ *
+ * // Check if minimized
+ * if (window->IsMinimized()) {
+ *     // Skip rendering
+ * }
+ * @endcode
+ *
+ * @note The window is created and managed by the Engine class.
+ * @warning Only one Window instance can exist at a time.
+ *
+ * @see Engine, WindowException
+ */
 class Window {
 public:
-	/// @brief Creates a window with a given size
+	/**
+	 * @brief Creates a window with the specified dimensions.
+	 * @param width Initial window width in pixels.
+	 * @param height Initial window height in pixels.
+	 * @param name Window title.
+	 * @throws ToastException if a window already exists.
+	 */
 	Window(unsigned width = 800, unsigned height = 600, const std::string& name = "Toast Engine");
+
+	/**
+	 * @brief Destroys the window and terminates GLFW.
+	 */
 	~Window();
 
 	Window(const Window&) = delete;
 	Window& operator=(const Window&) = delete;
 
+	/**
+	 * @brief Gets the singleton window instance.
+	 * @return Pointer to the window, or nullptr if not created.
+	 */
 	static Window* GetInstance() {
 		return m_instance;
 	}
 
-	/// @brief Swaps the window buffers only (no event polling)
+	/**
+	 * @brief Swaps the front and back buffers.
+	 *
+	 * Call this at the end of each frame after rendering to display
+	 * the rendered content.
+	 */
 	void SwapBuffers();
 
+	/**
+	 * @brief Checks if the window should close.
+	 * @return true if close was requested (X button, Alt+F4, etc.).
+	 */
 	[[nodiscard]]
-	/// @return @c true if the engine is asking for the window to close
 	bool ShouldClose() const;
 
+	/**
+	 * @brief Gets the framebuffer dimensions.
+	 *
+	 * The framebuffer size may differ from the window size on HiDPI displays.
+	 *
+	 * @return Pair of (width, height) in pixels.
+	 */
 	[[nodiscard]]
-	/// @brief Returns the width and height of the framebuffer
 	std::pair<unsigned, unsigned> GetFramebufferSize() const;
 
+	/**
+	 * @brief Gets the display scale factors.
+	 *
+	 * Returns the content scale for HiDPI displays (e.g., 2.0 for Retina).
+	 *
+	 * @return Pair of (scaleX, scaleY) factors.
+	 */
 	[[nodiscard]]
-	/// @brief Returns the user window scaling
 	std::pair<float, float> GetDisplayScale() const;
 
-	/// @brief Gets the time passed since the window was created
+	/**
+	 * @brief Gets time since window creation.
+	 * @return Time in seconds since the window was created.
+	 */
 	double GetTime();
 
-	/// @brief Returns the text stored on the user's clipboard
+	/**
+	 * @brief Gets the clipboard contents.
+	 * @return Text currently in the system clipboard.
+	 */
 	std::string GetClipboard();
 
-	/// @brief Returns true if the window is minimized/iconified or has a zero-sized framebuffer
-	/// @note This can be used to skip heavy per-frame work when the window is not visible
+	/**
+	 * @brief Checks if the window is minimized.
+	 *
+	 * Use this to skip rendering when the window is not visible.
+	 *
+	 * @return true if the window is minimized or has zero size.
+	 */
 	bool IsMinimized() const;
 
-	/// @brief Poll OS events without swapping buffers
+	/**
+	 * @brief Polls OS events without swapping buffers.
+	 *
+	 * Processes pending window events (input, resize, etc.).
+	 * Called automatically by the engine.
+	 */
 	void PollEventsOnly();
 
-	/// @brief Block and wait for OS events for up to the given timeout in seconds
+	/**
+	 * @brief Waits for events with a timeout.
+	 *
+	 * Blocks until an event occurs or the timeout expires.
+	 * Useful for reducing CPU usage in idle applications.
+	 *
+	 * @param seconds Maximum time to wait in seconds.
+	 */
 	void WaitEventsTimeout(double seconds);
 
+	/**
+	 * @brief Gets the underlying GLFW window handle.
+	 * @return Raw GLFW window pointer.
+	 */
 	[[nodiscard]]
 	GLFWwindow* GetWindow() const {
 		return m_glfwWindow;
 	}
 
 private:
+	/// @brief Singleton instance pointer.
 	static Window* m_instance;
 
-	GLFWwindow* m_glfwWindow;    /// @brief Raw GLFW window pointer
-	WindowProps m_properties;    /// @brief Struct containing all the window properties
+	/// @brief Raw GLFW window pointer.
+	GLFWwindow* m_glfwWindow;
 
+	/// @brief Window configuration properties.
+	WindowProps m_properties;
+
+	/// @brief Event listener for window events.
 	event::ListenerComponent m_listener;
 
+	/**
+	 * @brief GLFW error callback handler.
+	 * @param error GLFW error code.
+	 * @param description Error description string.
+	 */
 	static void ErrorCallback(int error, const char* description);
 };
 
-/// @brief Exception to handle all GLFW error callbacks
+/**
+ * @class WindowException
+ * @brief Exception thrown when a GLFW error occurs.
+ *
+ * This exception wraps GLFW error codes and descriptions for
+ * proper error handling and reporting.
+ */
 class WindowException : public std::exception {
 public:
-	/// @param error GLFW error code
-	/// @param description Description of the error
+	/**
+	 * @brief Constructs a window exception.
+	 * @param error GLFW error code.
+	 * @param description Error description from GLFW.
+	 */
 	WindowException(int error, const char* description);
 
-	int error;
-	const char* description;
-	std::string message;
+	int error;               ///< GLFW error code.
+	const char* description; ///< Error description from GLFW.
+	std::string message;     ///< Formatted error message.
 
+	/**
+	 * @brief Gets the error message.
+	 * @return Formatted error string.
+	 */
 	[[nodiscard]]
 	const char* what() const noexcept override;
 };

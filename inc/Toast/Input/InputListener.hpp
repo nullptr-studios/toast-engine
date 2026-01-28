@@ -7,8 +7,8 @@
 #include "Action.hpp"
 #include "Toast/Log.hpp"
 
-#include <glm/glm.hpp>
 #include <functional>
+#include <glm/glm.hpp>
 #include <string>
 #include <unordered_map>
 
