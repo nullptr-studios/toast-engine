@@ -74,10 +74,9 @@ private:
 		double positionCorrectionPtc = 0.4;
 		double eps = 1.0e-6;
 		double epsSmall = 1.0e-9;
-		
+
 		// Interpolation thingi
 		std::atomic<std::chrono::steady_clock::time_point> lastPhysicsTime { std::chrono::steady_clock::now() };
-
 
 		event::ListenerComponent eventListener;
 	} m;

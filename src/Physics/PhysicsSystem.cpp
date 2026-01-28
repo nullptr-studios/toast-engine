@@ -268,12 +268,12 @@ void PhysicsSystem::UpdateVisualInterpolation() {
 	
 	// Calculate time elapsed since last physics step
 	auto now = std::chrono::steady_clock::now();
-	auto lastPhysics = physics->m.lastPhysicsTime.load(std::memory_order_acquire);
-	std::chrono::duration<double> elapsed = now - lastPhysics;
+	auto last_physics = physics->m.lastPhysicsTime.load(std::memory_order_acquire);
+	std::chrono::duration<double> elapsed = now - last_physics;
 	
 	// Calculate interpolation alpha
-	double fixedDt = physics->m.targetFrametime.count();
-	double alpha = glm::clamp(elapsed.count() / fixedDt, 0.0, 1.0);
+	double fixed_dt = physics->m.targetFrametime.count();
+	double alpha = glm::clamp(elapsed.count() / fixed_dt, 0.0, 1.0);
 	
 	// Update global interpolation alpha
 	Rigidbody::UpdateInterpolationAlpha(alpha);
@@ -398,4 +398,5 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 
 	return result;
 }
+
 }
