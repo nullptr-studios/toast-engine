@@ -131,6 +131,8 @@ void Object::Nuke() {
 		}
 		TOAST_WARN("Scene \"{0}\" (id {1}) was nuked", name(), id());
 		World::UnloadScene(id());
+
+    World
 	}
 }
 
@@ -290,14 +292,15 @@ void Object::Children::_ConfigureObject(Object* obj, const std::optional<std::st
 		obj->Load(*file);
 	}
 
-	// Add to begin queue
-	World::ScheduleBegin(obj);
-
 	// Run initialization
 	obj->_Init();
 	if (!file.has_value()) {
 		obj->enabled(true);
 	}
+
+	// Add to begin queue
+	World::ScheduleBegin(obj);
+
 }
 
 void Object::Children::Remove(unsigned id) {

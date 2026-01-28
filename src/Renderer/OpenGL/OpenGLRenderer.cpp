@@ -549,7 +549,7 @@ void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
 void OpenGLRenderer::RemoveRenderable(IRenderable* renderable) {
   auto iter = std::ranges::find(m_renderables, renderable);
   if (iter == m_renderables.end()) {
-    throw ToastException("Removing Renderable Before Its Even Added to the Renderables");
+    throw ToastException("Removing Renderable That Doesnt Exist on m_renderables");
   }
 	m_renderables.erase(iter);
 }
