@@ -131,8 +131,6 @@ void Object::Nuke() {
 		}
 		TOAST_WARN("Scene \"{0}\" (id {1}) was nuked", name(), id());
 		World::UnloadScene(id());
-
-    World
 	}
 }
 
