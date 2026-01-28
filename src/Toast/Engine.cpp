@@ -14,7 +14,6 @@
 #include "Toast/Time.hpp"
 #include "Toast/Window/Window.hpp"
 #include "Toast/World.hpp"
-#include "UI/Layer.hpp"
 
 #include <memory>
 
