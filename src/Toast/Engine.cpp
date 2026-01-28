@@ -173,7 +173,6 @@ void Engine::Init() {
 
 	// Imguilayer testing purposes
 	m->layerStack->PushOverlay(new renderer::DebugDrawLayer());
-	m->layerStack->PushLayer(new ui::UiLayer);
 
 	// Physics System
 	m->physicsSystem = std::make_unique<physics::PhysicsSystem>();
