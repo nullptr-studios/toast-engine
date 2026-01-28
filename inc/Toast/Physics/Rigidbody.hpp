@@ -20,7 +20,6 @@ public:
 	void Inspector() override;
 	void EditorTick() override;
 #endif
-	
 
 	json_t Save() const override;
 	void Load(json_t j, bool propagate) override;

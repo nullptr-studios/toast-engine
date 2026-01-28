@@ -1,6 +1,7 @@
 #include "Toast/Engine.hpp"
 
 #include "Event/EventSystem.hpp"
+#include "ForceLink.cpp"
 #include "Input/InputSystem.hpp"
 #include "Physics/PhysicsSystem.hpp"
 #include "Toast/Factory.hpp"
@@ -14,8 +15,6 @@
 #include "Toast/Time.hpp"
 #include "Toast/Window/Window.hpp"
 #include "Toast/World.hpp"
-
-#include "ForceLink.cpp"
 
 #include <memory>
 

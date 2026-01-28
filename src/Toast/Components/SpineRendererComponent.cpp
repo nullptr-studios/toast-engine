@@ -282,7 +282,7 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		cmd = command;
 		while (cmd) {
 			for (int i = 0; i < cmd->numVertices; ++i) {
-				renderer::SpineVertex v{};
+				renderer::SpineVertex v {};
 				v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
 				v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], cmd->uvs[(i * 2) + 1]);
 				v.colorABGR = cmd->colors[i];
@@ -442,7 +442,10 @@ void SpineRendererComponent::SetBoneLocalPosition(const std::string_view& boneNa
 	bone->setY(position.y);
 }
 
-void SpineRendererComponent::OnAnimationEvent(const std::string_view& animationName, int track, const std::string_view& eventName, int intValue, float floatValue, const std::string_view& stringValue) {
+void SpineRendererComponent::OnAnimationEvent(
+    const std::string_view& animationName, int track, const std::string_view& eventName, int intValue, float floatValue,
+    const std::string_view& stringValue
+) {
 	event::Send(new SpineEvent(id(), animationName, track, eventName, intValue, floatValue, stringValue));
 	TOAST_TRACE("Spine Event Sent!");
 }

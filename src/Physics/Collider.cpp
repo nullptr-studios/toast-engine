@@ -343,7 +343,6 @@ void Collider::EditorTick() {
 #pragma endregion
 #endif
 
-
 json_t Collider::Save() const {
 	json_t j = Component::Save();
 

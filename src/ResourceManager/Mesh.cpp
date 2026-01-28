@@ -32,7 +32,7 @@ renderer::Mesh::Mesh(Mesh&& o) noexcept
 	o.m_ebo = 0;
 	o.m_hasVertexColor = false;
 	o.m_centroid = glm::vec3(0.0f);
-	o.m_boundingBox = BoundingBox{};
+	o.m_boundingBox = BoundingBox {};
 }
 
 renderer::Mesh& renderer::Mesh::operator=(Mesh&& o) noexcept {
@@ -53,7 +53,7 @@ renderer::Mesh& renderer::Mesh::operator=(Mesh&& o) noexcept {
 		o.m_ebo = 0;
 		o.m_hasVertexColor = false;
 		o.m_centroid = glm::vec3(0.0f);
-		o.m_boundingBox = BoundingBox{};
+		o.m_boundingBox = BoundingBox {};
 	}
 	return *this;
 }
@@ -242,8 +242,6 @@ void renderer::Mesh::UpdateDynamicSpine(const SpineVertex* vertices, size_t num_
 	}
 
 	glBindVertexArray(0);
-	
-	
 }
 
 void renderer::Mesh::DrawDynamicSpine(size_t num_indices) const {
@@ -259,7 +257,7 @@ void renderer::Mesh::DrawDynamicSpine(size_t num_indices) const {
 }
 
 renderer::BoundingBox renderer::Mesh::ComputeSpineBoundingBox(const SpineVertex* vertices, size_t num_vertices) {
-	m_dynamicBoundingBox = BoundingBox{};    // Reset to default extremes
+	m_dynamicBoundingBox = BoundingBox {};    // Reset to default extremes
 
 	if (vertices == nullptr || num_vertices == 0) {
 		return m_dynamicBoundingBox;

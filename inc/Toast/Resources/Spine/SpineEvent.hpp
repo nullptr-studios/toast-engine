@@ -8,21 +8,24 @@
 #include <utility>
 
 struct SpineEvent : public event::Event<SpineEvent> {
-	SpineEvent(unsigned int uniqueID, const std::string_view& animationName, int track, const std::string_view& eventName, int intValue, float floatValue, const std::string_view& stringValue)
+	SpineEvent(
+	    unsigned int uniqueID, const std::string_view& animationName, int track, const std::string_view& eventName, int intValue, float floatValue,
+	    const std::string_view& stringValue
+	)
 	    : uniqueID(uniqueID),
-				eventName(std::move(eventName)),
+	      eventName(std::move(eventName)),
 	      animationName(std::move(animationName)),
 	      track(track),
-				intValue(intValue),
-				floatValue(floatValue),
-				stringValue(stringValue) { }
-	
+	      intValue(intValue),
+	      floatValue(floatValue),
+	      stringValue(stringValue) { }
+
 	unsigned int uniqueID = 0;
 
 	std::string eventName;
 	std::string animationName;
 	int track = -1;
-	
+
 	int intValue = 0;
 	float floatValue = 0.0f;
 	std::string stringValue;

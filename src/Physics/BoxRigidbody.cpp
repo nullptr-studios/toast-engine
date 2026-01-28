@@ -67,7 +67,6 @@ void BoxRigidbody::Inspector() {
 }
 #endif
 
-
 void BoxRigidbody::EditorTick() {
 	if (!debug.show) {
 		return;

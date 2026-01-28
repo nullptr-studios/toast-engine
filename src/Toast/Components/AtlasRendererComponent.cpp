@@ -141,7 +141,7 @@ void AtlasRendererComponent::SetOnlyAttachmentByName(const std::string& name) {
 		auto* slot = m_skeleton->getSlots()[i];
 		if (slot->getData().getName().buffer() && name == slot->getData().getName().buffer()) {
 			// attempt to get attachment with same name
-			if (auto *const att = m_skeleton->getAttachment(slot->getData().getName().buffer(), name.c_str())) {
+			if (auto* const att = m_skeleton->getAttachment(slot->getData().getName().buffer(), name.c_str())) {
 				slot->setAttachment(att);
 				m_skeleton->updateWorldTransform(spine::Physics_None);
 				UpdateMeshBounds();
@@ -159,9 +159,9 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 	if (!m_skeleton) {
 		return;
 	}
-	
+
 	const glm::mat4 model = GetWorldMatrix();
-	
+
 	// Frustum culling using the dynamic AABB
 	const auto& frustumPlanes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes();
 	if (!OclussionVolume::isTransformedAABBOnPlanes(frustumPlanes, m_dynamicMesh.dynamicBoundingBox(), model)) {
@@ -177,7 +177,6 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 	float z_offset = 0.0f;
 
 	const glm::mat4 mvp = precomputed_mat * model;
-	
 
 	m_shader->Use();
 	m_shader->Set("transform", mvp);
@@ -299,7 +298,6 @@ void AtlasRendererComponent::Load(json_t j, bool force_create) {
 }
 
 void AtlasRendererComponent::UpdateMeshBounds() {
-	
 	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
 	// collect all vertices to compute bounding box for frustum culling
 	{
@@ -315,7 +313,7 @@ void AtlasRendererComponent::UpdateMeshBounds() {
 		cmd = command;
 		while (cmd) {
 			for (int i = 0; i < cmd->numVertices; ++i) {
-				renderer::SpineVertex v{};
+				renderer::SpineVertex v {};
 				v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
 				v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], cmd->uvs[(i * 2) + 1]);
 				v.colorABGR = cmd->colors[i];
@@ -326,7 +324,6 @@ void AtlasRendererComponent::UpdateMeshBounds() {
 
 		// Compute dynamic bounding box
 		m_dynamicMesh.ComputeSpineBoundingBox(m_tempVerts.data(), m_tempVerts.size());
-		
 	}
 
 	// Reset buffers for actual rendering pass

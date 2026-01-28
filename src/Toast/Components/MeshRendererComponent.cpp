@@ -106,10 +106,8 @@ void MeshRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept 
 	}
 
 	if (!OclussionVolume::isTransformedAABBOnPlanes(
-		renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), 
-		m_mesh->boundingBox(), 
-		GetWorldMatrix())) 
-		{ 	
+	        renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), m_mesh->boundingBox(), GetWorldMatrix()
+	    )) {
 		return;
 	}
 

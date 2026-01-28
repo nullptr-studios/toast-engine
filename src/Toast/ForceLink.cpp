@@ -7,8 +7,8 @@
 // Objects
 #include <Toast/Objects/Actor.hpp>
 #include <Toast/Objects/Object.hpp>
-#include <Toast/Objects/Scene.hpp>
 #include <Toast/Objects/ParticleSystem.hpp>
+#include <Toast/Objects/Scene.hpp>
 
 // Renderer
 #include <Toast/Renderer/Camera.hpp>
