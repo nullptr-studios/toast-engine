@@ -504,6 +504,7 @@ void World::RunDestroyQueue() {
 		// Check if scene has finished loading
 		if (not m.tickableScenes.contains(obj->id())) {
 			TOAST_WARN("Tried To Destroy Not Fully Loaded Scene");
+			ScheduleDestroy(obj);
 			continue;
 		}
 
