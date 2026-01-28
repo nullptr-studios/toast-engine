@@ -501,13 +501,6 @@ void World::RunDestroyQueue() {
 			continue;
 		}
 
-		// Check if scene has finished loading
-		if (std::ranges::find(m.beginQueue, obj) == m.beginQueue.end()) {
-			TOAST_WARN("Tried To Destroy Not Fully Loaded Scene");
-			ScheduleDestroy(obj);
-			continue;
-		}
-
 		// Call _Destroy() - it will handle double-destruction internally
 		obj->_Destroy();
 
