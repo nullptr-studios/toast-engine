@@ -7,6 +7,8 @@
 #include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/Mesh.hpp"
 
+class Framebuffer;
+
 class Light2D : public toast::Actor {
 public:
 	REGISTER_TYPE(Light2D);

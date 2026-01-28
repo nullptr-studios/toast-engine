@@ -5,8 +5,8 @@
 #pragma once
 #include "KeyCodes.hpp"
 
-#include <optional>
 #include <glm/glm.hpp>
+#include <optional>
 #include <sol/sol.hpp>
 
 namespace input {

@@ -17,6 +17,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <thread>
+#include <random>
 
 #include <array>
 #include <deque>

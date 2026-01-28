@@ -1,18 +1,20 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(toast_engine VERSION 1.0.0 LANGUAGES C CXX)
+project(toast_engine VERSION 1.0.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+
+option(TOAST_EDITOR "Build TOAST ENGINE with editor features" ON)
+
 
 if(MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif()
 
-# TODO: add option to compile without editor features (TOAST_EDITOR, ImGui, ImGuizmo, tracy, etc.)
 
 # If single-config generator, default to Debug when not set.
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
@@ -53,7 +55,6 @@ endif()
 # Compile definitions per-config
 target_compile_definitions(toast.engine PRIVATE
         NOMINMAX
-        TOAST_EDITOR # TODO: add option to disable
         $<$<CONFIG:Debug>:_DEBUG>
         $<$<CONFIG:Release>:NDEBUG>
         $<$<CONFIG:RelWithDebInfo>:NDEBUG>
@@ -64,23 +65,44 @@ target_compile_options(toast.engine PRIVATE
         $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra>
 )
 
-# Link libraries
-target_link_libraries(toast.engine PUBLIC
-        glfw
-        glm::glm
-        nlohmann_json::nlohmann_json
-        spdlog::spdlog
-        lz4_static
-        Tracy::TracyClient
-        glad
-        stb
-        yaml-cpp
-        sol2
-        tinyobjloader
-        imgui
-        imguizmo
-        spine-cpp
-)
+if (TOAST_EDITOR)
+    target_compile_definitions(toast.engine PRIVATE TOAST_EDITOR)
+    
+    target_link_libraries(toast.engine PUBLIC
+            glfw
+            glm::glm
+            nlohmann_json::nlohmann_json
+            spdlog::spdlog
+            lz4_static
+            Tracy::TracyClient
+            glad
+            stb
+            yaml-cpp
+            sol2
+            tinyobjloader
+            imgui
+            imguizmo
+            spine-cpp
+    )
+else ()
+    target_link_libraries(toast.engine PUBLIC
+            glfw
+            glm::glm
+            nlohmann_json::nlohmann_json
+            spdlog::spdlog
+            lz4_static
+            # Tracy::TracyClient
+            glad
+            stb
+            yaml-cpp
+            sol2
+            tinyobjloader
+            # imgui
+            # imguizmo
+            spine-cpp
+    )
+endif ()
+
 
 # Platform system libs
 if(WIN32)

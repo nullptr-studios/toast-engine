@@ -77,9 +77,8 @@ void ListenerComponent::Subscribe(
 	// Add function to callback map
 	std::pair callback_pair = { name, callback };
 	m_callbacks.emplace(typeid(TEvent), callback_pair);
-	// Lock while modifying callbacks and subscribers to avoid races with Dispatch
+	// Lock while modifying subscribers to avoid races with Dispatch
 	{
-		m_callbacks.emplace(typeid(TEvent), callback_pair);
 		std::lock_guard<std::mutex> lock(s_eventMutex);
 
 		// If the old priority is less than the new priority, we remove the old key to add it again with the new one 0x
