@@ -63,7 +63,7 @@ struct Range {
 		}
 	}
 	
-	/// @brief Load range from Lua (single value or table)
+	/// @brief Load range from Lua
 	void LoadFromLua(const sol::object& obj) {
 		if (obj.is<sol::table>()) {
 			LoadFromLua(obj.as<sol::table>());
@@ -84,16 +84,16 @@ struct ParticleEmitterConfig {
 	float emissionRate = 10.0f;               ///< Particles per second (continuous mode)
 	std::vector<ParticleBurst> bursts;        ///< Burst configurations
 	bool looping = true;                      ///< If false, emitter plays once then stops
-	float duration = 5.0f;                    ///< Duration of one emission cycle (for non-looping)
+	float duration = 5.0f;                    ///< Duration of one emission cycle
 	
 	// Shape
 	EmitterShape shape = EmitterShape::Point;
-	glm::vec3 shapeSize = glm::vec3(1.0f);    ///< Size of emission shape (sphere radius, box dimensions, etc.)
+	glm::vec3 shapeSize = glm::vec3(1.0f);    ///< Size of emission shape
 	float coneAngle = 45.0f;                  ///< Cone half-angle in degrees
 	
 	// Offset from particle system position
 	glm::vec3 localOffset = glm::vec3(0.0f);
-	glm::vec3 localRotation = glm::vec3(0.0f);  ///< Local rotation (euler angles in degrees)
+	glm::vec3 localRotation = glm::vec3(0.0f);  ///< Local rotation
 	
 	// Lifetime
 	Range<float> lifetime = { 1.0f, 2.0f };
@@ -166,7 +166,7 @@ public:
 	/// @brief Cleanup GPU resources
 	void CleanupGPUResources();
 	
-	/// @brief Reinitialize GPU buffers (call when maxParticles changes)
+	/// @brief Reinitialize GPU buffers
 	void ReinitializeBuffers();
 	
 	/// @brief Update and render this emitter's particles
@@ -244,7 +244,7 @@ private:
 	GLuint m_frameParamsUBO = 0;
 	int m_currentBuffer = 0;
 	
-	// Shared shaders (from ParticleSystem)
+	// Shared shaders
 	std::shared_ptr<renderer::Shader> m_computeShader;
 	std::shared_ptr<renderer::Shader> m_renderShader;
 	
@@ -256,7 +256,6 @@ private:
 	std::uniform_real_distribution<float> m_dist { 0.0f, 1.0f };
 };
 
-/// @brief Multi-emitter GPU particle system with Lua serialization support
 class ParticleSystem : public renderer::IRenderable {
 public:
 	REGISTER_TYPE(ParticleSystem);
@@ -272,13 +271,13 @@ public:
 	[[nodiscard]]
 	json_t Save() const override;
 	
-	/// @brief Load particle system configuration from a Lua file
-	/// @param luaPath Path to the Lua configuration file
+	/// @brief Load particle system config from a Lua file
+	/// @param luaPath Path to the Lua config
 	/// @return true if loaded successfully
 	bool LoadFromLua(const std::string& luaPath);
 	
-	/// @brief Save particle system configuration to a Lua file
-	/// @param luaPath Path to save the configuration
+	/// @brief Save particle system config to a Lua file
+	/// @param luaPath Path to save the config
 	/// @return true if saved successfully
 	bool SaveToLua(const std::string& luaPath) const;
 
@@ -286,7 +285,7 @@ public:
 	void Inspector() override;
 #endif
 
-	// Particle System Control (affects all emitters)
+	// Particle System Control
 	
 	/// @brief Start/resume all emitters
 	void Play();
@@ -315,7 +314,7 @@ public:
 	ParticleEmitter& AddEmitter();
 	
 	/// @brief Add a new emitter with a preset
-	/// @param presetName Name of the preset (Smoke, Fire, Sparks, Snow, Explosion)
+	/// @param presetName Name of the preset
 	/// @return Reference to the new emitter
 	ParticleEmitter& AddEmitterWithPreset(const std::string& presetName);
 	
@@ -339,7 +338,7 @@ public:
 	void SetLuaConfigPath(const std::string& path) { m_luaConfigPath = path; }
 
 private:
-	/// @brief Initialize shared resources (shaders, quad VAO)
+	/// @brief Initialize shared resources
 	void InitSharedResources();
 	
 	/// @brief Cleanup shared resources
@@ -361,7 +360,7 @@ private:
 	bool m_sharedResourcesInitialized = false;
 	
 	// Serialization
-	std::string m_luaConfigPath;  ///< Path to Lua config file (for reloading)
+	std::string m_luaConfigPath;  ///< Path to Lua config file
 	
 	// Culling
 	int m_cullingRadius = 20;

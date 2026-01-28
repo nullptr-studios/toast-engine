@@ -1,6 +1,6 @@
 /// @file ParticleSystem.cpp
 /// @date 01/20/2026
-/// @brief GPU-based Particle System implementation with multi-emitter and Lua serialization
+/// @brief compute Particle System
 
 #include "Toast/Objects/ParticleSystem.hpp"
 
@@ -337,16 +337,15 @@ void ParticleEmitter::InitGPUResources(const std::shared_ptr<renderer::Shader>& 
 	m_computeShader = computeShader;
 	m_renderShader = renderShader;
 	
-	// Load texture
 	LoadTexture();
 	
-	// Clamp max particles to safe limit
+	// Clamp max particles
 	m_config.maxParticles = std::min(m_config.maxParticles, ParticleEmitterConfig::MAX_PARTICLES_LIMIT);
 	if (m_config.maxParticles < 100) {
 		m_config.maxParticles = 100;
 	}
 	
-	// Create double-buffered particle SSBOs
+	// Create double buffered particle SSBOs
 	size_t bufferSize = sizeof(GPUParticle) * m_config.maxParticles;
 	
 	const size_t maxBufferSize = 250 * 1024 * 1024; // 250MB per buffer
@@ -362,7 +361,7 @@ void ParticleEmitter::InitGPUResources(const std::shared_ptr<renderer::Shader>& 
 		glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, nullptr, GL_DYNAMIC_DRAW);
 	}
 	
-	// Create counter buffer with persistent mapping
+	// persistent mapping counter
 	glGenBuffers(1, &m_counterBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_counterBuffer);
 	
@@ -423,7 +422,7 @@ void ParticleEmitter::ReinitializeBuffers() {
 	auto computeShader = m_computeShader;
 	auto renderShader = m_renderShader;
 	
-	// Cleanup and reinitialize
+	// Cleanup
 	CleanupGPUResources();
 	InitGPUResources(computeShader, renderShader);
 	
@@ -472,7 +471,7 @@ void ParticleEmitter::UpdateAndRender(const glm::mat4& viewProjection,
 		return;
 	}
 	
-	// Calculate combined rotation (parent rotation + local emitter rotation)
+	// combined rotation
 	glm::mat3 localRot = glm::mat3(glm::eulerAngleYXZ(
 		glm::radians(m_config.localRotation.y),
 		glm::radians(m_config.localRotation.x),
@@ -483,15 +482,14 @@ void ParticleEmitter::UpdateAndRender(const glm::mat4& viewProjection,
 	glm::vec3 transformedOffset = parentRotation * m_config.localOffset;
 	glm::vec3 emitterWorldPos = worldPos + transformedOffset;
 	
-	// Update system time and handle emission
 	if (m_isPlaying) {
 		m_systemTime += deltaTime;
 		
-		// Check if non-looping emitter has finished its duration
+		// Check if non-looping emitter has finished
 		bool canEmit = true;
 		if (!m_config.looping && m_systemTime >= m_config.duration) {
 			canEmit = false;
-			// Auto-stop when duration is reached and no particles remain
+			// Auto-stop
 			if (m_aliveCount == 0) {
 				m_isPlaying = false;
 			}
@@ -512,7 +510,7 @@ void ParticleEmitter::UpdateAndRender(const glm::mat4& viewProjection,
 					SpawnParticles(burst.count, emitterWorldPos, combinedRotation);
 					burst.triggered = true;
 				}
-				// Only repeat bursts if looping or within duration
+				// Only repeat if looping or has duration
 				if (burst.cycleInterval > 0.0f && burst.triggered && m_config.looping) {
 					const float cycleTime = fmod(m_systemTime - burst.time, burst.cycleInterval);
 					if (cycleTime < deltaTime) {
@@ -594,7 +592,7 @@ void ParticleEmitter::UpdateAndRender(const glm::mat4& viewProjection,
 	m_renderShader->Set("u_CamRight", camRight);
 	m_renderShader->Set("u_CamUp", camUp);
 	
-	// Set texture usage flag per-emitter
+	// Set texture usage flag
 	int useTexture = (m_texture && m_config.useTexture) ? 1 : 0;
 	m_renderShader->Set("u_UseTexture", useTexture);
 	
@@ -628,7 +626,7 @@ void ParticleEmitter::SpawnParticles(uint32_t count, const glm::vec3& worldPos, 
 		
 		p.pos = glm::vec4(pos, startSize);
 		
-		// Generate velocity - transformed by rotation (except gravity is world space)
+		// Generate velocity
 		glm::vec3 vel = GenerateSpawnVelocity(parentRotation);
 		float rotation = glm::radians(RandomFloat(m_config.startRotation.min, m_config.startRotation.max));
 		p.vel = glm::vec4(vel, rotation);
@@ -729,7 +727,6 @@ glm::vec3 ParticleEmitter::GenerateSpawnVelocity(const glm::mat3& rotation) {
 		dir = glm::normalize(glm::mix(dir, randomDir, m_config.directionRandomness));
 	}
 	
-	// Transform direction by parent rotation (velocity direction should follow emitter rotation)
 	dir = rotation * dir;
 	
 	return dir * speed;
@@ -768,10 +765,10 @@ void ParticleSystem::OnRender(const glm::mat4& viewProjection) noexcept {
 	glm::vec3 camUp = glm::vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
 	glm::vec3 camPos = glm::vec3(glm::inverse(viewMatrix)[3]);
 	
-	// Get parent rotation from transform (quaternion to mat3)
+	// Get parent rotation from transform
 	glm::mat3 parentRotation = glm::mat3_cast(worldRotationQuat());
 	
-	// Sort emitters by distance to camera (back to front for proper blending)
+	// Sort emitters by distance to camera
 	std::vector<size_t> emitterOrder(m_emitters.size());
 	for (size_t i = 0; i < emitterOrder.size(); ++i) {
 		emitterOrder[i] = i;
@@ -855,6 +852,15 @@ void ParticleSystem::Load(json_t j, bool force_create) {
 		}
 	}
 	
+	if (j.contains("playing")) {
+		bool playing = j["playing"].get<bool>();
+		if (playing) {
+			Play();
+		}else {
+			Stop();
+		}
+	}
+	
 	// Load culling radius
 	if (j.contains("cullingRadius")) {
 		m_cullingRadius = j["cullingRadius"].get<int>();
@@ -866,6 +872,7 @@ json_t ParticleSystem::Save() const {
 	
 	// Just save the Lua config path
 	j["luaConfigPath"] = m_luaConfigPath;
+	j["playing"] = m_isPlaying;
 	j["cullingRadius"] = m_cullingRadius;
 	
 	return j;
@@ -914,12 +921,12 @@ bool ParticleSystem::LoadFromLua(const std::string& luaPath) {
 		// Load emitters
 		sol::optional<sol::table> emittersTable = config["emitters"];
 		if (emittersTable) {
-			for (auto& [_, emitterObj] : *emittersTable) {
+			for (auto& emitterObj : *emittersTable | std::views::values) {
 				if (emitterObj.is<sol::table>()) {
 					ParticleEmitter& emitter = AddEmitter();
 					emitter.GetConfig().LoadFromLua(emitterObj.as<sol::table>());
 					
-					// Reinitialize with new config if GPU resources already initialized
+					// Reinitialize with new config
 					if (m_sharedResourcesInitialized) {
 						emitter.CleanupGPUResources();
 						emitter.InitGPUResources(m_computeShader, m_renderShader);
@@ -1026,7 +1033,7 @@ bool ParticleSystem::SaveToLua(const std::string& luaPath) const {
 	
 	config["emitters"] = emittersTable;
 	
-	// Helper function to serialize a sol::table to Lua string
+	// Helper function
 	auto serializeTable = [](sol::state& lua, const sol::table& table, int indent = 0) -> std::string {
 		std::function<std::string(const sol::table&, int)> serialize = [&](const sol::table& t, int ind) -> std::string {
 			std::ostringstream ss;
@@ -1086,12 +1093,11 @@ bool ParticleSystem::SaveToLua(const std::string& luaPath) const {
 	
 	// Generate Lua file content
 	std::ostringstream luaFile;
-	luaFile << "-- Particle System Configuration\n";
-	luaFile << "-- Auto-generated using sol library\n\n";
+	luaFile << "-- Particle System Configuration\n\n";
 	luaFile << "return " << serializeTable(lua, config, 0) << "\n";
 	
 	// Write to file
-	std::ofstream file(luaPath);
+	std::ofstream file(".\\assets\\" + luaPath);
 	if (!file.is_open()) {
 		TOAST_ERROR("Failed to save particle system config to: {}", luaPath);
 		return false;
@@ -1111,7 +1117,7 @@ void ParticleSystem::InitSharedResources() {
 	m_computeShader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/particles_compute.shader");
 	m_renderShader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/particles_render.shader");
 	
-	// Create shared quad VAO/VBO
+	// Create shared quad
 	float quadVertices[] = {
 		-0.5f, -0.5f,
 		 0.5f, -0.5f,
@@ -1136,7 +1142,7 @@ void ParticleSystem::InitSharedResources() {
 	
 	m_sharedResourcesInitialized = true;
 	
-	// Initialize GPU resources for all emitters
+	// Initialize GPU resources
 	for (auto& emitter : m_emitters) {
 		emitter.InitGPUResources(m_computeShader, m_renderShader);
 	}
@@ -1235,7 +1241,7 @@ void ParticleSystem::Inspector() {
 	ImGui::Separator();
 	
 	// Lua config path
-	ImGui::InputText("Lua Config Path", &m_luaConfigPath);
+	ImGui::InputText("Lua Config name", &m_luaConfigPath);
 	ImGui::SameLine();
 	if (ImGui::Button("Load")) {
 		LoadFromLua(m_luaConfigPath);
@@ -1288,8 +1294,11 @@ void ParticleSystem::Inspector() {
 		
 		ImGui::PushID(static_cast<int>(i));
 		
-		std::string headerLabel = config.name + " (" + std::to_string(emitter.GetParticleCount()) + " particles)";
+		std::string headerLabel = config.name;
 		bool open = ImGui::CollapsingHeader(headerLabel.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+		
+		ImGui::SameLine();
+		ImGui::TextDisabled("(%u particles)", emitter.GetParticleCount());
 		
 		if (open) {
 			ImGui::Indent(10);
@@ -1453,7 +1462,7 @@ void ParticleSystem::Inspector() {
 				ImGui::TreePop();
 			}
 			
-			// Rotation (particle rotation, not emitter rotation)
+			// Rotation
 			if (ImGui::TreeNode("Particle Rotation")) {
 				ImGui::DragFloatRange2("Start Rotation", &config.startRotation.min, &config.startRotation.max, 1.0f, 0.0f, 360.0f);
 				ImGui::DragFloatRange2("Rotation Speed", &config.rotationSpeed.min, &config.rotationSpeed.max, 1.0f, -360.0f, 360.0f);
