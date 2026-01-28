@@ -547,7 +547,11 @@ void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
 }
 
 void OpenGLRenderer::RemoveRenderable(IRenderable* renderable) {
-	m_renderables.erase(std::ranges::find(m_renderables, renderable));
+  auto iter = std::ranges::find(m_renderables, renderable);
+  if (iter == m_renderables.end()) {
+    throw ToastException("Removing Renderable Before Its Even Added to the Renderables");
+  }
+	m_renderables.erase(iter);
 }
 
 void OpenGLRenderer::AddLight(Light2D* light) {
