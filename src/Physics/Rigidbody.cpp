@@ -42,9 +42,7 @@ void Rigidbody::Inspector() {
 	ImGui::DragScalarN("Gravity Scale", ImGuiDataType_Float, &gravityScale.x, 2);
 	ImGui::DragScalar("Restitution", ImGuiDataType_Double, &restitution);
 	ImGui::DragScalar("Restitution Threshold", ImGuiDataType_Double, &restitutionThreshold);
-	ImGui::DragScalarN("Drag", ImGuiDataType_Double, &drag.x, 2);
-	ImGui::DragScalar("Drag x", ImGuiDataType_Double, &drag.x);
-	ImGui::DragScalar("Drag y", ImGuiDataType_Double, &drag.y);
+	ImGui::DragScalarN("Drag", ImGuiDataType_Float, &drag.x, 2);
 
 	ImGui::Spacing();
 	ImGui::DragScalarN("Minimum Velocity", ImGuiDataType_Double, &minimumVelocity.x, 2);
