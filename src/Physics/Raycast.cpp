@@ -5,6 +5,7 @@
 
 namespace physics {
 using namespace glm;
+
 std::optional<RayResult> RayCast(vec2 point, vec2 dir) {
 	Line ray;
 	ray.p1 = point;

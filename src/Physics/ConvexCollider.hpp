@@ -3,8 +3,8 @@
 /// @date 29 Dec 2025
 
 #pragma once
-#include <Toast/Physics/Line.hpp>
 #include <Toast/Physics/ColliderData.hpp>
+#include <Toast/Physics/Line.hpp>
 #include <glm/glm.hpp>
 
 namespace physics {

@@ -23,11 +23,11 @@ public:
 
 	void OnTick() override { }
 
-	void OnRender() override { 
-    for (auto& ui_element : m.renerables) {
-      ui_element->OnRender({});
-    }
-  }
+	void OnRender() override {
+		for (auto& ui_element : m.renerables) {
+			ui_element->OnRender({});
+		}
+	}
 
 	void Push(renderer::IRenderable* ptr) {
 		m.renerables.push_back(ptr);

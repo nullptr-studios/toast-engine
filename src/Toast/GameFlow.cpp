@@ -51,14 +51,14 @@ void GameFlow::LoadWorld(unsigned world) {
 	}
 
 	if (m.currentLevel.has_value()) {
-    m.currentLevel->wait();
+		m.currentLevel->wait();
 		auto* scene = toast::World::Get(m.currentLevel->get());
 		scene->Nuke();
 		m.currentLevel = std::nullopt;
 	}
 
 	if (m.nextLevel.has_value()) {
-    m.nextLevel->wait();
+		m.nextLevel->wait();
 		auto* scene = toast::World::Get(m.nextLevel->get());
 		scene->Nuke();
 		m.nextLevel = std::nullopt;

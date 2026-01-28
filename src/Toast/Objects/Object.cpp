@@ -298,7 +298,6 @@ void Object::Children::_ConfigureObject(Object* obj, const std::optional<std::st
 
 	// Add to begin queue
 	World::ScheduleBegin(obj);
-
 }
 
 void Object::Children::Remove(unsigned id) {

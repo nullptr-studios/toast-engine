@@ -36,9 +36,14 @@ public:
 	static void EnableScene(const std::string& name);
 	static void DisableScene(unsigned id);
 	static void DisableScene(const std::string& name);
-	static void NextLevel() {Instance()->m.gameFlow.NextLevel();}
-	static void NextWorld() {Instance()->m.gameFlow.NextWorld();}
 
+	static void NextLevel() {
+		Instance()->m.gameFlow.NextLevel();
+	}
+
+	static void NextWorld() {
+		Instance()->m.gameFlow.NextWorld();
+	}
 
 	void EarlyTick();
 	void Tick();
@@ -104,7 +109,7 @@ private:
 		std::mutex queueMutex;
 		Object* editorScene = nullptr;
 		std::vector<std::vector<std::string>> worldList;
-    GameFlow gameFlow;
+		GameFlow gameFlow;
 	} m;
 };
 

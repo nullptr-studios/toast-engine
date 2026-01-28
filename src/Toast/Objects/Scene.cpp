@@ -12,9 +12,9 @@ namespace toast {
 #ifdef TOAST_EDITOR
 void Scene::Inspector() {
 	if (ImGui::Checkbox("Ui Scene", &m_isUiScene)) {
-	   if (children.size() != 0) {
-	     m_isUiScene = !m_isUiScene;
-	   }
+		if (children.size() != 0) {
+			m_isUiScene = !m_isUiScene;
+		}
 	}
 }
 #endif

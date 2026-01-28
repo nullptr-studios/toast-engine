@@ -12,12 +12,14 @@
 
 namespace physics {
 class ConvexCollider;
+
 struct RayResult {
 	ConvexCollider* collider = nullptr;
 	Rigidbody* rigid = nullptr;
 
-	//if false collider, otherwise rigidbody
-	bool colOrRb = false;;
+	// if false collider, otherwise rigidbody
+	bool colOrRb = false;
+	;
 };
 
 std::optional<RayResult> RayCast(glm::vec2 point, glm::vec2 dir);

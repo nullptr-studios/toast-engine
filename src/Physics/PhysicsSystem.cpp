@@ -282,7 +282,7 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 
 void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 	PROFILE_ZONE;
-	//PROFILE_TEXT(rb->parent()->name(), rb->parent()->name().size());
+	// PROFILE_TEXT(rb->parent()->name(), rb->parent()->name().size());
 
 	BoxKinematics(rb);
 
@@ -304,34 +304,35 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray) {
 	std::optional<dvec2> col_hit;
 	std::optional<dvec2> rb_hit;
 	auto ps = PhysicsSystem::get();
-	if (ps == std::nullopt)
+	if (ps == std::nullopt) {
 		return std::nullopt;
+	}
 
 	for (auto* c : ps.value()->m.colliders) {
 		std::optional<dvec2> cur_dist = ConvexRayCollision(ray, c);
-		if (cur_dist != std::nullopt)
+		if (cur_dist != std::nullopt) {
 			if (col_hit == std::nullopt || length2(cur_dist.value() - ray->p1) < length2(col_hit.value() - ray->p1)) {
 				temp.collider = c;
 				col_hit = cur_dist.value();
 			}
+		}
 	}
 
-	//for (auto* r : ps.value()->m.rigidbodies) {
+	// for (auto* r : ps.value()->m.rigidbodies) {
 	//	std::optional<dvec2> cur_dist = RbRayCollision(ray, r);
 	//	if (cur_dist != std::nullopt)
 	//		if (rb_hit == std::nullopt || length2(cur_dist.value() - ray->p1) < length2(rb_hit.value() - ray->p1)) {
 	//			temp.rigid = r;
 	//			rb_hit = cur_dist.value();
 	//		}
-	//}
+	// }
 
 	if (temp.rigid != nullptr && temp.collider != nullptr) {
 		result = temp;
 		if (length2(col_hit.value() - ray->p1) < length2(rb_hit.value() - ray->p1)) {
 			result->colOrRb = true;
 			renderer::DebugLine(ray->p1, col_hit.value(), vec4(0.0f, 0.0f, 1.0f, 1.0f));
-		}
-		else {
+		} else {
 			result->colOrRb = false;
 			renderer::DebugLine(ray->p1, rb_hit.value(), vec4(1.0f, 0.0f, 0.0f, 1.0f));
 		}

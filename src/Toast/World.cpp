@@ -207,7 +207,7 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 
 		auto* e = new SceneLoadedEvent { scene_id, scene_name };
 		event::Send(reinterpret_cast<event::IEvent*>(e));
-    promis->set_value(scene_id);
+		promis->set_value(scene_id);
 	});
 	return futur;
 }
@@ -502,7 +502,7 @@ void World::RunDestroyQueue() {
 		}
 
 		// Check if scene has finished loading
-		if (std::ranges::find(m.beginQueue,obj) == m.beginQueue.end()) {
+		if (std::ranges::find(m.beginQueue, obj) == m.beginQueue.end()) {
 			TOAST_WARN("Tried To Destroy Not Fully Loaded Scene");
 			ScheduleDestroy(obj);
 			continue;
