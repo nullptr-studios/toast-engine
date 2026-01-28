@@ -1,8 +1,11 @@
 #include "Toast/Objects/Scene.hpp"
 
+#include "Toast/Objects/Object.hpp"
+#include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 
 namespace toast {
+
 
 void Scene::Load(json_t j, bool force_create) {
 	if (j["format"].get<std::string>() != "scene") {

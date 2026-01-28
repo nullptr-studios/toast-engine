@@ -3,16 +3,15 @@
 ///@date 17/09/25
 
 #pragma once
+#include "Mesh.hpp"
 #include "ResourceSlot.hpp"
-#include "Toast/Renderer/Shader.hpp"
 #include "Texture.hpp"
+#include "Toast/Renderer/Shader.hpp"
 
 #include <Toast/Log.hpp>
 #include <string>
 #include <thread>
 #include <vector>
-
-#include "Mesh.hpp"
 
 namespace resource {
 
@@ -37,7 +36,7 @@ public:
 	void PurgeResources();
 
 	///@brief Loads a resource of type R from the given path
-	template<typename R, typename ... Args>
+	template<typename R, typename... Args>
 	std::shared_ptr<R> LoadResource(const std::string& path, Args&&... args);
 
 	// std::shared_ptr<renderer::Shader> LoadShader(std::string name);
@@ -57,8 +56,6 @@ public:
 	}
 
 private:
-	
-	
 	// helpers
 	[[nodiscard]]
 	inline std::string ToForwardSlashes(const std::string& s) const {
@@ -66,7 +63,7 @@ private:
 		std::ranges::replace(result, '\\', '/');
 		return result;
 	}
-	
+
 	std::mutex m_mtx;
 	std::mutex m_uploadMtx;
 
@@ -102,7 +99,7 @@ std::shared_ptr<R> ResourceManager::LoadResource(const std::string& path, Args&&
 
 	// Normalize path to use forward slashes
 	std::string formattedPath = ToForwardSlashes(path);
-	
+
 	TOAST_INFO("Loading resource: {0}", formattedPath);
 
 	// Fast path: try to return cached

@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Line.hpp"
+
 #include <Toast/Components/Component.hpp>
 #include <glm/glm.hpp>
 

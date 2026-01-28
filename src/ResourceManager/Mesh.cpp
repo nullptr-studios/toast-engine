@@ -9,14 +9,12 @@
 #include "glm/gtx/norm.hpp"
 
 #include <Toast/Resources/Mesh.hpp>
+#include <glad/gl.h>
 #include <glm/glm.hpp>
 #include <tiny_obj_loader.h>
 
-#include <glad/gl.h>
-
 // for error placeholder
 #include "ErrorMdl.hpp"
-
 
 renderer::Mesh::Mesh(Mesh&& o) noexcept
     : m_vertices(o.m_vertices),
@@ -130,7 +128,7 @@ void renderer::Mesh::Load() {
 
 void renderer::Mesh::LoadMainThread() {
 	PROFILE_ZONE;
-	
+
 	SetResourceState(resource::ResourceState::UPLOADING);
 	if (m_vertices.empty()) {
 		TOAST_ERROR("Mesh: Failed to load mesh");
@@ -239,26 +237,24 @@ void renderer::Mesh::DrawDynamicSpine(size_t num_indices) const {
 	glBindVertexArray(0);
 }
 
-void renderer::Mesh::LoadErrMeshPlaceholder()
-{
+void renderer::Mesh::LoadErrMeshPlaceholder() {
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 	std::string warn;
 	std::string err;
-	//bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, errorMdl);
-	
+	// bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, errorMdl);
+
 	tinyobj::ObjReaderConfig config;
 	config.triangulate = true;
-	config.mtl_search_path = ""; // none
-	
+	config.mtl_search_path = "";    // none
+
 	tinyobj::ObjReader reader;
-	reader.ParseFromString(errorMdl,"", config);
-	
+	reader.ParseFromString(errorMdl, "", config);
+
 	bool ret = reader.Valid();
 	attrib = reader.GetAttrib();
 	shapes = reader.GetShapes();
-	
 
 	if (!warn.empty()) {
 		TOAST_WARN("TinyObjLoader warning: {0}", warn);
@@ -284,13 +280,13 @@ void renderer::Mesh::LoadErrMeshPlaceholder()
 
 			if (idx.vertex_index >= 0) {
 				position = { attrib.vertices[(3 * idx.vertex_index) + 0],
-							   attrib.vertices[(3 * idx.vertex_index) + 1],
-							   attrib.vertices[(3 * idx.vertex_index) + 2] };
+					           attrib.vertices[(3 * idx.vertex_index) + 1],
+					           attrib.vertices[(3 * idx.vertex_index) + 2] };
 			}
 			if (idx.normal_index >= 0) {
 				normal = { attrib.normals[(3 * idx.normal_index) + 0],
-							 attrib.normals[(3 * idx.normal_index) + 1],
-							 attrib.normals[(3 * idx.normal_index) + 2] };
+					         attrib.normals[(3 * idx.normal_index) + 1],
+					         attrib.normals[(3 * idx.normal_index) + 2] };
 			}
 			if (idx.texcoord_index >= 0) {
 				tex_coord = { attrib.texcoords[(2 * idx.texcoord_index) + 0], attrib.texcoords[(2 * idx.texcoord_index) + 1] };

@@ -67,7 +67,6 @@ void Rigidbody::EditorTick() {
 		return;
 	}
 	renderer::DebugCircle(GetPosition(), radius, debug.defaultColor);
-
 }
 
 json_t Rigidbody::Save() const {
