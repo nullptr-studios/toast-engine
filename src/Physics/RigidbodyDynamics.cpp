@@ -34,7 +34,7 @@ void RbKinematics(Rigidbody* rb) {
 
 	// Sum forces
 	// Copy and clear under lock
-	std::deque<glm::dvec2> local_forces{};
+	std::deque<glm::dvec2> local_forces {};
 	{
 		std::lock_guard lock(rb->forcesMutex);
 		local_forces.swap(rb->forces);
@@ -53,7 +53,6 @@ void RbKinematics(Rigidbody* rb) {
 	if (all(lessThan(abs(velocity), dvec2 { rb->minimumVelocity }))) {
 		velocity = { 0.0, 0.0 };
 	}
-
 }
 
 void RbIntegration(Rigidbody* rb) {
@@ -334,18 +333,19 @@ std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 	t = clamp(t, 0.0, 1.0);
 	dvec2 closest_point = ray->p1 + t * line;
 
-	if (length2(closest_point - rb->GetPosition()) > rb->radius * rb->radius)
+	if (length2(closest_point - rb->GetPosition()) > rb->radius * rb->radius) {
 		return std::nullopt;
-	
+	}
 
 	double distance = std::max(0.0, rb->radius - length(closest_point - rb->GetPosition()));
 
 	dvec2 pt1 = closest_point - ray->tangent * distance;
 	dvec2 pt2 = closest_point + ray->tangent * distance;
-	if (length2(pt2 - ray->p1) > length2(pt1 - ray->p1))
+	if (length2(pt2 - ray->p1) > length2(pt1 - ray->p1)) {
 		result = pt1;
-	else
+	} else {
 		result = pt2;
+	}
 
 	return result;
 }

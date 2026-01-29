@@ -8,8 +8,8 @@
 #include "Toast/Input/Layout.hpp"
 #include "Toast/Window/WindowEvents.hpp"
 
-#include <glm/glm.hpp>
 #include <algorithm>
+#include <glm/glm.hpp>
 #include <list>
 
 namespace input {
@@ -59,7 +59,7 @@ private:
 			const auto& name = a->name;
 
 			a->CalculateValue();
-			
+
 			// Call registered callbacks for this action name
 			// Each listener can have multiple callbacks for the same action
 			for (auto* l : m.subscribers) {
@@ -69,13 +69,13 @@ private:
 					it->second(a);
 				}
 			}
-			
+
 			// Remove one-frame events (mouse scroll/position/delta) after dispatch
 			// These inputs should not persist across frames
 			std::erase_if(a->m.pressedKeys, [](const auto& v) {
 				return v.first >= MOUSE_DELTA_CODE;
 			});
-			
+
 			queue.pop_front();
 		}
 	}
@@ -127,9 +127,9 @@ private:
 
 		std::map<int, GamepadState> controllers;
 
-		glm::vec2 oldMousePosition = {0.0f, 0.0f};
-		glm::vec2 mouseDelta = {0.0f, 0.0f};
-		glm::vec2 mousePosition = {0.0f, 0.0f};
+		glm::vec2 oldMousePosition = { 0.0f, 0.0f };
+		glm::vec2 mouseDelta = { 0.0f, 0.0f };
+		glm::vec2 mousePosition = { 0.0f, 0.0f };
 
 		float triggerDeadzone = 0.2f;
 	} m;

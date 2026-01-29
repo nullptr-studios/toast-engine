@@ -20,9 +20,9 @@ namespace toast {
  * @brief Properties describing a window's configuration.
  */
 struct WindowProps {
-	unsigned width = -1;     ///< Window width in pixels.
-	unsigned height = -1;    ///< Window height in pixels.
-	std::string name = "-1"; ///< Window title.
+	unsigned width = -1;        ///< Window width in pixels.
+	unsigned height = -1;       ///< Window height in pixels.
+	std::string name = "-1";    ///< Window title.
 };
 
 /**
@@ -206,9 +206,9 @@ public:
 	 */
 	WindowException(int error, const char* description);
 
-	int error;               ///< GLFW error code.
-	const char* description; ///< Error description from GLFW.
-	std::string message;     ///< Formatted error message.
+	int error;                  ///< GLFW error code.
+	const char* description;    ///< Error description from GLFW.
+	std::string message;        ///< Formatted error message.
 
 	/**
 	 * @brief Gets the error message.

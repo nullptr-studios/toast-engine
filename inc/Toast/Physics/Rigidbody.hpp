@@ -21,30 +21,28 @@ public:
 	void Inspector() override;
 	void EditorTick() override;
 #endif
-	
 
 	json_t Save() const override;
 	void Load(json_t j, bool propagate) override;
 
 	auto GetPosition() const -> glm::dvec2;
 	void SetPosition(glm::dvec2);
-	
-		
+
 	/// @brief Get interpolated position for rendering (call from render/late tick)
 	auto GetInterpolatedPosition() const -> glm::dvec2;
-	
+
 	/// @brief Store current position as previous (call before physics step)
 	void StorePreviousPosition();
-	
+
 	/// @brief Update the visual transform using interpolated position (call from Tick/LateTick)
 	void UpdateVisualTransform();
-	
+
 	/// @brief Sync rigidbody position from transform
 	void SyncFromTransform();
-	
+
 	/// @brief Update interpolation alpha based on time since last physics step
 	static void UpdateInterpolationAlpha(double alpha);
-	
+
 	/// @brief Get the current interpolation alpha
 	static auto GetInterpolationAlpha() -> double;
 
@@ -66,12 +64,12 @@ public:
 	// internal
 	glm::dvec2 velocity = { 0.0, 0.0 };
 	std::deque<glm::dvec2> forces;
-	std::mutex forcesMutex; // protect access to forces
-	
+	std::mutex forcesMutex;    // protect access to forces
+
 	// interpolation
 	glm::dvec2 m_previousPosition = { 0.0, 0.0 };
 	glm::dvec2 m_currentPosition = { 0.0, 0.0 };
-	glm::dvec3 m_lastKnownTransformPos = { 0.0, 0.0, 0.0 };  // Track transform position to detect manual changes
+	glm::dvec3 m_lastKnownTransformPos = { 0.0, 0.0, 0.0 };    // Track transform position to detect manual changes
 	bool m_hasValidPreviousPosition = false;
 	static inline double s_interpolationAlpha = 1.0;
 

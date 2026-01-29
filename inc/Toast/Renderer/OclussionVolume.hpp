@@ -21,9 +21,8 @@ struct OclussionVolume {
 	static inline bool isAABBOnPlanes(const std::array<glm::vec4, 6>& planes, const renderer::BoundingBox& aabb);
 
 	/// Tests if a local-space AABB transformed by worldTransform is visible in the frustum
-	static inline bool isTransformedAABBOnPlanes(
-	    const std::array<glm::vec4, 6>& planes, const renderer::BoundingBox& localAABB, const glm::mat4& worldTransform
-	);
+	static inline bool
+	    isTransformedAABBOnPlanes(const std::array<glm::vec4, 6>& planes, const renderer::BoundingBox& localAABB, const glm::mat4& worldTransform);
 
 	static inline void extractFrustumPlanesNormalized(const glm::mat4& clip, std::array<glm::vec4, 6>& outPlanes);
 };
@@ -112,14 +111,10 @@ inline bool OclussionVolume::isTransformedAABBOnPlanes(
 	// Transform AABB to world space by transforming all 8 corners and computing a new AABB
 	// This is a conservative approximation but fast
 	glm::vec3 corners[8] = {
-		glm::vec3(localAABB.min.x, localAABB.min.y, localAABB.min.z),
-		glm::vec3(localAABB.max.x, localAABB.min.y, localAABB.min.z),
-		glm::vec3(localAABB.min.x, localAABB.max.y, localAABB.min.z),
-		glm::vec3(localAABB.max.x, localAABB.max.y, localAABB.min.z),
-		glm::vec3(localAABB.min.x, localAABB.min.y, localAABB.max.z),
-		glm::vec3(localAABB.max.x, localAABB.min.y, localAABB.max.z),
-		glm::vec3(localAABB.min.x, localAABB.max.y, localAABB.max.z),
-		glm::vec3(localAABB.max.x, localAABB.max.y, localAABB.max.z),
+		glm::vec3(localAABB.min.x, localAABB.min.y, localAABB.min.z), glm::vec3(localAABB.max.x, localAABB.min.y, localAABB.min.z),
+		glm::vec3(localAABB.min.x, localAABB.max.y, localAABB.min.z), glm::vec3(localAABB.max.x, localAABB.max.y, localAABB.min.z),
+		glm::vec3(localAABB.min.x, localAABB.min.y, localAABB.max.z), glm::vec3(localAABB.max.x, localAABB.min.y, localAABB.max.z),
+		glm::vec3(localAABB.min.x, localAABB.max.y, localAABB.max.z), glm::vec3(localAABB.max.x, localAABB.max.y, localAABB.max.z),
 	};
 
 	renderer::BoundingBox worldAABB;
@@ -130,4 +125,3 @@ inline bool OclussionVolume::isTransformedAABBOnPlanes(
 
 	return isAABBOnPlanes(planes, worldAABB);
 }
-

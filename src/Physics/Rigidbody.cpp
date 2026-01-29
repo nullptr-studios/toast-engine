@@ -14,7 +14,7 @@ namespace physics {
 
 void Rigidbody::Init() {
 	PhysicsSystem::AddRigidbody(this);
-	
+
 	// Initialize interpolation positions from the current transform
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
 	glm::vec3 worldPos = transform->worldPosition();
@@ -64,20 +64,32 @@ void Rigidbody::Inspector() {
 	bool enemy_flag = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
 
 	if (ImGui::Checkbox("Default", &default_flag)) {
-		if (default_flag) cur |= static_cast<unsigned int>(ColliderFlags::Default);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Default);
+		if (default_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Default);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Default);
+		}
 	}
 	if (ImGui::Checkbox("Ground", &ground_flag)) {
-		if (ground_flag) cur |= static_cast<unsigned int>(ColliderFlags::Ground);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Ground);
+		if (ground_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Ground);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Ground);
+		}
 	}
 	if (ImGui::Checkbox("Enemy", &enemy_flag)) {
-		if (enemy_flag) cur |= static_cast<unsigned int>(ColliderFlags::Enemy);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Enemy);
+		if (enemy_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Enemy);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Enemy);
+		}
 	}
 	if (ImGui::Checkbox("Player", &player_flag)) {
-		if (player_flag) cur |= static_cast<unsigned int>(ColliderFlags::Player);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
+		if (player_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Player);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
+		}
 	}
 
 	flags = static_cast<ColliderFlags>(cur);
@@ -175,13 +187,13 @@ glm::dvec2 Rigidbody::GetPosition() const {
 
 void Rigidbody::SetPosition(glm::dvec2 pos) {
 	m_currentPosition = pos;
-	
+
 	// Initialize previous position on first call to avoid teleporting
 	if (!m_hasValidPreviousPosition) {
 		m_previousPosition = pos;
 		m_hasValidPreviousPosition = true;
 	}
-	
+
 	//@Note: Visual transform is updated by PhysicsSystem::UpdateVisualInterpolation()
 }
 
@@ -201,13 +213,12 @@ void Rigidbody::UpdateVisualTransform() {
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
 	glm::vec3 currentTransformPos = transform->worldPosition();
 	float z = currentTransformPos.z;
-	
+
 	// Check if transform was manually modified
 	const double epsilon = 1e-6;
-	bool transformManuallyChanged = 
-		std::abs(currentTransformPos.x - m_lastKnownTransformPos.x) > epsilon ||
-		std::abs(currentTransformPos.y - m_lastKnownTransformPos.y) > epsilon;
-	
+	bool transformManuallyChanged =
+	    std::abs(currentTransformPos.x - m_lastKnownTransformPos.x) > epsilon || std::abs(currentTransformPos.y - m_lastKnownTransformPos.y) > epsilon;
+
 	if (transformManuallyChanged) {
 		SyncFromTransform();
 	} else {
@@ -222,14 +233,14 @@ void Rigidbody::UpdateVisualTransform() {
 void Rigidbody::SyncFromTransform() {
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
 	glm::vec3 worldPos = transform->worldPosition();
-	
+
 	// Update rigidbody position to match transform
 	m_currentPosition = glm::dvec2(worldPos.x, worldPos.y);
 	m_previousPosition = m_currentPosition;
 	m_lastKnownTransformPos = worldPos;
 	m_hasValidPreviousPosition = true;
-	
-	//velocity = { 0.0, 0.0 };
+
+	// velocity = { 0.0, 0.0 };
 }
 
 void Rigidbody::UpdateInterpolationAlpha(double alpha) {

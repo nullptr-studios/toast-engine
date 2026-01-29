@@ -44,7 +44,9 @@ InputSystem::InputSystem() {
 	// Check for connected controllers when the game starts
 	for (int i = 0; i < 16; i++) {
 		// yes im using not and or to spice things up a bit
-		if (not glfwJoystickPresent(i) || not glfwJoystickIsGamepad(i)) continue;
+		if (not glfwJoystickPresent(i) || not glfwJoystickIsGamepad(i)) {
+			continue;
+		}
 		m.controllers[i] = GamepadState {};
 		TOAST_INFO("Controller {} connected: {}", i, glfwGetGamepadName(i));
 	}
@@ -73,7 +75,7 @@ InputSystem::InputSystem() {
 void InputSystem::Tick() {
 	// Check all connected controllers for button/axis changes
 	PollControllers();
-	
+
 	// For held keys, we need to dispatch Ongoing events every frame
 	// Add all actions with pressed keys to the dispatch queue
 	if (HasActiveLayout()) {
@@ -83,14 +85,14 @@ void InputSystem::Tick() {
 				AddToQueue(m.dispatch0DQueue, &action);
 			}
 		}
-		
+
 		// 1D actions that are held
 		for (auto& action : m.activeLayout->m.actions1d) {
 			if (!action.m.pressedKeys.empty() && action.CheckState(m.currentState)) {
 				AddToQueue(m.dispatch1DQueue, &action);
 			}
 		}
-		
+
 		// 2D actions that are held
 		for (auto& action : m.activeLayout->m.actions2d) {
 			if (!action.m.pressedKeys.empty() && action.CheckState(m.currentState)) {
@@ -98,7 +100,7 @@ void InputSystem::Tick() {
 			}
 		}
 	}
-	
+
 	// Dispatch all queued actions
 	DispatchQueue(m.dispatch0DQueue, &Listener::M::callbacks0d);
 	DispatchQueue(m.dispatch1DQueue, &Listener::M::callbacks1d);
@@ -173,14 +175,16 @@ bool InputSystem::Handle0DAction(int key_code, int action, int mods, Device devi
 	if (action == 2) {
 		return false;
 	}
-	
+
 	// Map button/keypress to 0D actions (boolean-like)
 	for (auto& act : m.activeLayout->m.actions0d) {
 		if (!act.CheckState(m.currentState)) {
 			continue;
 		}
 		for (const auto& bind : act.m.binds) {
-			if (bind.device != device) continue;
+			if (bind.device != device) {
+				continue;
+			}
 			if (!bind.keys.contains(key_code)) {
 				continue;
 			}
@@ -210,14 +214,16 @@ bool InputSystem::Handle1DAction(int key_code, int action, int mods, Device devi
 	if (action == 2) {
 		return false;
 	}
-	
+
 	// Map button/keypress to 1D actions (float-like)
 	for (auto& act : m.activeLayout->m.actions1d) {
 		if (!act.CheckState(m.currentState)) {
 			continue;
 		}
 		for (const auto& bind : act.m.binds) {
-			if (bind.device != device) continue;
+			if (bind.device != device) {
+				continue;
+			}
 			for (const auto& [key, direction] : bind.keys) {
 				if (key != key_code) {
 					continue;
@@ -247,14 +253,16 @@ bool InputSystem::Handle2DAction(int key_code, int action, int mods, Device devi
 	if (action == 2) {
 		return false;
 	}
-	
+
 	// Map button/keypress to 2D actions (vec2-like)
 	for (auto& act : m.activeLayout->m.actions2d) {
 		if (!act.CheckState(m.currentState)) {
 			continue;
 		}
 		for (const auto& bind : act.m.binds) {
-			if (bind.device != device) { continue; }
+			if (bind.device != device) {
+				continue;
+			}
 			for (const auto& [key, direction] : bind.keys) {
 				if (key != key_code) {
 					continue;
@@ -284,7 +292,8 @@ bool InputSystem::HandleButtonLikeInput(int key_code, int action, int mods, Devi
 	if (!HasActiveLayout()) {
 		return false;
 	}
-	return Handle0DAction(key_code, action, mods, device) || Handle1DAction(key_code, action, mods, device) || Handle2DAction(key_code, action, mods, device);
+	return Handle0DAction(key_code, action, mods, device) || Handle1DAction(key_code, action, mods, device) ||
+	       Handle2DAction(key_code, action, mods, device);
 }
 
 bool InputSystem::OnKeyPress(event::WindowKey* e) {
@@ -302,7 +311,7 @@ bool InputSystem::OnMouseButton(event::WindowMouseButton* e) {
 bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 	// Store mouse delta and mouse position
 	m.oldMousePosition = m.mousePosition;
-	m.mousePosition = glm::vec2{ e->x, e->y };
+	m.mousePosition = glm::vec2 { e->x, e->y };
 	m.mouseDelta = m.mousePosition - m.oldMousePosition;
 
 	// Mouse position as a 2D action (normalized to NDC)
@@ -504,22 +513,22 @@ void InputSystem::PollControllers() {
 			// Apply deadzone to previous and current values
 			const float prev = std::abs(state.previous.axes[i]) > AXIS_DEADZONE ? state.previous.axes[i] : 0.0f;
 			const float curr = std::abs(state.current.axes[i]) > AXIS_DEADZONE ? state.current.axes[i] : 0.0f;
-			
+
 			// Only process if the axis value changed meaningfully
 			// The 0.001f threshold prevents micro-jitter
 			if (std::abs(curr - prev) > 0.001f) {
 				// Copy all axes and apply transformations
 				std::ranges::copy(state.current.axes, axes.begin());
-				
+
 				// Invert Y axes to match standard coordinate system (up = positive)
-				axes[1] *= -1.0f;  // Left stick Y
-				axes[3] *= -1.0f;  // Right stick Y
-				
+				axes[1] *= -1.0f;    // Left stick Y
+				axes[3] *= -1.0f;    // Right stick Y
+
 				// Normalize trigger values from [-1, 1] to [0, 1]
 				// GLFW reports triggers as axis values but they should be unidirectional
-				axes[4] = (axes[4] * 0.5f) + 0.5f;  // Left trigger (L2)
-				axes[5] = (axes[5] * 0.5f) + 0.5f;  // Right trigger (R2)
-				
+				axes[4] = (axes[4] * 0.5f) + 0.5f;    // Left trigger (L2)
+				axes[5] = (axes[5] * 0.5f) + 0.5f;    // Right trigger (R2)
+
 				// Apply deadzone to all processed axes
 				// This ensures values below threshold are clamped to zero
 				std::ranges::for_each(axes, [](float& ax) {
@@ -527,7 +536,7 @@ void InputSystem::PollControllers() {
 						ax = 0.0f;
 					}
 				});
-				
+
 				// Route axis changes to appropriate action handlers
 				ControllerAxis(i, axes);
 			}
@@ -627,10 +636,10 @@ void InputSystem::ControllerAxis(int id, std::array<float, 6> axes) {
 				}
 				action.device = bind.device;
 				const float value = axes[id];
-				
+
 				// Key offset: Add large constant to avoid collision with other input types
 				const int key_code = id + static_cast<int>(2e7);
-				
+
 				if (value != 0.0f) {
 					// Axis is active - store the scaled value
 					action.m.pressedKeys[key_code] = bind.GetFloatValue(direction) * value;
@@ -657,10 +666,10 @@ void InputSystem::ControllerAxis(int id, std::array<float, 6> axes) {
 				if (bind.device == Device::ControllerAxis && key == id) {
 					action.device = bind.device;
 					const float value = axes[id];
-					
+
 					// Key offset for single axis
 					const int key_code = id + static_cast<int>(2e7);
-					
+
 					if (value != 0.0f) {
 						// Store scaled 2D value
 						action.m.pressedKeys[key_code] = bind.GetVec2Value(direction) * value;
@@ -676,19 +685,19 @@ void InputSystem::ControllerAxis(int id, std::array<float, 6> axes) {
 					// Key 0 indicates left stick binding
 					if (key == 0 && (id == 0 || id == 1)) {
 						action.device = Device::ControllerStick;
-						
+
 						// Get individual axis values
 						// Note: axes[1] is already inverted in PollControllers()
 						const float x_value = axes[0];
 						const float y_value = axes[1];
-						
+
 						const int key_code = static_cast<int>(2e8);
-						
+
 						// Check if stick is outside deadzone (any axis active)
 						if (std::abs(x_value) > m.triggerDeadzone || std::abs(y_value) > m.triggerDeadzone) {
 							// Stick is active - store the full 2D vector as a single entry
 							// This ensures accurate analog values without artificial clamping
-							action.m.pressedKeys[key_code] = glm::vec2{ x_value, y_value };
+							action.m.pressedKeys[key_code] = glm::vec2 { x_value, y_value };
 						} else {
 							// Stick returned to neutral, clear the entry
 							action.m.pressedKeys.erase(key_code);
@@ -699,19 +708,19 @@ void InputSystem::ControllerAxis(int id, std::array<float, 6> axes) {
 					// Right stick (axes 2,3) mapped when key == 1
 					if (key == 1 && (id == 2 || id == 3)) {
 						action.device = Device::ControllerStick;
-						
+
 						// Get individual axis values
 						// Note: axes[3] is already inverted in PollControllers()
 						const float x_value = axes[2];
 						const float y_value = axes[3];
-						
+
 						// Use a single key for the stick
 						const int key_code = static_cast<int>(2e8) + 1;
-						
+
 						// Check if stick is outside deadzone (any axis active)
 						if (std::abs(x_value) > m.triggerDeadzone || std::abs(y_value) > m.triggerDeadzone) {
 							// Stick is active - store the full 2D vector as a single entry
-							action.m.pressedKeys[key_code] = glm::vec2{ x_value, y_value };
+							action.m.pressedKeys[key_code] = glm::vec2 { x_value, y_value };
 						} else {
 							// Stick returned to neutral - clear the entry
 							action.m.pressedKeys.erase(key_code);

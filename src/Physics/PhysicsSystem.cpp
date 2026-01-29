@@ -137,10 +137,9 @@ void PhysicsSystem::Tick() {
 	for (auto* rb : m.boxes) {
 		BoxPhysics(rb);
 	}
-	
+
 	// Record the time of this physics step for interpolation
 	m.lastPhysicsTime.store(std::chrono::steady_clock::now(), std::memory_order_release);
-
 }
 
 #pragma region HELPER_FUNCTIONS
@@ -258,26 +257,25 @@ double PhysicsSystem::eps_small() {
 
 #pragma endregion
 
-
 void PhysicsSystem::UpdateVisualInterpolation() {
 	auto i = PhysicsSystem::get();
 	if (!i.has_value()) {
 		return;
 	}
 	auto* physics = *i;
-	
+
 	// Calculate time elapsed since last physics step
 	auto now = std::chrono::steady_clock::now();
 	auto last_physics = physics->m.lastPhysicsTime.load(std::memory_order_acquire);
 	std::chrono::duration<double> elapsed = now - last_physics;
-	
+
 	// Calculate interpolation alpha
 	double fixed_dt = physics->m.targetFrametime.count();
 	double alpha = glm::clamp(elapsed.count() / fixed_dt, 0.0, 1.0);
-	
+
 	// Update global interpolation alpha
 	Rigidbody::UpdateInterpolationAlpha(alpha);
-	
+
 	// Update all rigidbody visual transforms
 	for (auto* rb : physics->m.rigidbodies) {
 		rb->UpdateVisualTransform();
@@ -325,7 +323,7 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 
 void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 	PROFILE_ZONE;
-	//PROFILE_TEXT(rb->parent()->name(), rb->parent()->name().size());
+	// PROFILE_TEXT(rb->parent()->name(), rb->parent()->name().size());
 
 	BoxKinematics(rb);
 
@@ -353,48 +351,49 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	std::optional<dvec2> rb_hit;
 
 	for (auto* c : physics->m.colliders) {
-		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(c->flags)) == 0u) continue;
+		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(c->flags)) == 0u) {
+			continue;
+		}
 		auto collision = ConvexRayCollision(ray, c);
-		if (not collision.has_value()) { continue; }
+		if (not collision.has_value()) {
+			continue;
+		}
 
 		if (not col_hit.has_value() || length2(collision->first - ray->p1) < length2(*col_hit - ray->p1)) {
 			col_hit = collision->first;
 			const float d = static_cast<float>(distance(*col_hit, ray->p1));
 
 			// same as below
-			if (result && result.value().distance < d) continue;
-			result = {
-				.type = RayResult::Collider,
-				.point = *col_hit,
-				.normal = collision->second,
-				.distance = d,
-				.other = c->parent
-			};
+			if (result && result.value().distance < d) {
+				continue;
+			}
+			result = { .type = RayResult::Collider, .point = *col_hit, .normal = collision->second, .distance = d, .other = c->parent };
 		}
 	}
 
 	for (auto* r : physics->m.rigidbodies) {
-		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(r->flags)) == 0u) continue;
+		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(r->flags)) == 0u) {
+			continue;
+		}
 		std::optional<dvec2> collision = RbRayCollision(ray, r);
-		if (not collision.has_value()) { continue; }
+		if (not collision.has_value()) {
+			continue;
+		}
 
 		if (not rb_hit.has_value() || length(*collision - ray->p1) < length2(*rb_hit - ray->p1)) {
 			rb_hit = collision.value();
 			const float d = static_cast<float>(distance(*rb_hit, ray->p1));
 
 			// Do not modify result if theres already one with less distance
-			if (result && result.value().distance < d) continue;
-			result = {
-				.type = RayResult::Rigidbody,
-				.point = *rb_hit,
-				.normal = ray->tangent,
-				.distance = d,
-				.other = r->parent()
-			};
+			if (result && result.value().distance < d) {
+				continue;
+			}
+			result = { .type = RayResult::Rigidbody, .point = *rb_hit, .normal = ray->tangent, .distance = d, .other = r->parent() };
 		}
 	}
-	if (result != std::nullopt)
-		renderer::DebugLine(ray->p1,  result->point, vec4(0.0f, 0.0f, 1.0f, 1.0f));
+	if (result != std::nullopt) {
+		renderer::DebugLine(ray->p1, result->point, vec4(0.0f, 0.0f, 1.0f, 1.0f));
+	}
 
 	return result;
 }

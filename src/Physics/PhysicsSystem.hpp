@@ -3,11 +3,11 @@
 /// @date 28 Dec 2025
 
 #pragma once
+#include "Toast/Event/ListenerComponent.hpp"
 #include "Toast/Physics/ColliderFlags.hpp"
-#include "Toast/Event/ListenerComponent.hpp" 
 
-#include <glm/glm.hpp>
 #include <atomic>
+#include <glm/glm.hpp>
 
 namespace physics {
 struct RayResult;
@@ -30,11 +30,10 @@ public:
 	static auto pos_ptc() -> double;
 	static auto eps() -> double;
 	static auto eps_small() -> double;
-	
-	
+
 	/// @brief Call from render thread (Tick/LateTick) to update visual transforms with interpolation
 	static void UpdateVisualInterpolation();
-	
+
 	/// @brief Get the fixed timestep in seconds (1/50 = 0.02)
 	static auto GetFixedTimestep() -> double;
 
