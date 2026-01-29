@@ -5,6 +5,7 @@
 #include "PhysicsSystem.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Physics/Rigidbody.hpp"
+#include "Toast/Physics/Trigger.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 #include "Toast/Time.hpp"
@@ -348,6 +349,56 @@ std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 	}
 
 	return result;
+}
+
+void RbTriggerCollision(Rigidbody* rb1, Trigger* t) {
+	// calculate points
+	const auto& tr = t->transform();
+	double left = tr->worldPosition().x - (tr->scale().x / 2);
+	double right = tr->worldPosition().x + (tr->scale().x / 2);
+	double top = tr->worldPosition().y + (tr->scale().y / 2);
+	double bottom = tr->worldPosition().y - (tr->scale().y / 2);
+
+	const auto& pos = rb1->GetPosition();
+	const double scl = rb1->radius;
+	float x_min = pos.x - scl;
+	float y_min = pos.y - scl;
+	float x_max = pos.x + scl;
+	float y_max = pos.y + scl;
+
+	// Actual collision check
+	if (x_min > right || x_max < left) {
+		goto NO_COLLISION;    // NOLINT
+	}
+	if (y_min > top || y_max < bottom) {
+		goto NO_COLLISION;    // NOLINT
+	}
+
+	// Dont dispatch callback if the rigidbody is already there
+	if (std::ranges::find(t->rigidbodies, rb1) != t->rigidbodies.end()) {
+		return;
+	}
+
+	t->rigidbodies.emplace_back(rb1);
+	t->enterCallback(rb1->parent());
+	t->m.color = t->debug.collideColor;
+
+	if (t->debug.log) {
+		TOAST_INFO("{} entered the trigger {}", rb1->parent()->name(), t->name());
+	}
+	return;
+
+NO_COLLISION:
+	if (std::ranges::find(t->rigidbodies, rb1) != t->rigidbodies.end()) {
+		t->rigidbodies.remove(rb1);
+		t->exitCallback(rb1->parent());
+		if (t->rigidbodies.empty()) {
+			t->m.color = t->debug.defaultColor;
+		}
+		if (t->debug.log) {
+			TOAST_INFO("{} exited the trigger {}", rb1->parent()->name(), t->name());
+		}
+	}
 }
 
 }

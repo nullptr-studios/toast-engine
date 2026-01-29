@@ -188,6 +188,28 @@ void PhysicsSystem::RemoveCollider(ConvexCollider* c) {
 	(*i)->m.colliders.remove(c);
 }
 
+void PhysicsSystem::AddTrigger(Trigger* t) {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return;
+	}
+	auto& list = (*i)->m.triggers;
+
+	// Return if the rigidbody is already registered on the list
+	if (std::ranges::find(list, t) != list.end()) {
+		return;
+	}
+	list.emplace_back(t);
+}
+
+void PhysicsSystem::RemoveTrigger(Trigger* t) {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return;
+	}
+	(*i)->m.triggers.remove(t);
+}
+
 void PhysicsSystem::AddBox(BoxRigidbody* rb) {
 	auto i = PhysicsSystem::get();
 	if (!i.has_value()) {
@@ -315,6 +337,10 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 		if (manifold.has_value()) {
 			RbMeshResolution(rb, c, manifold.value());
 		}
+	}
+
+	for (auto* t : m.triggers) {
+		RbTriggerCollision(rb, t);
 	}
 
 	// Final position integration
