@@ -10,16 +10,17 @@
 
 namespace toast {
 class GameFlow final {
+	using level_id = unsigned;
+
 	struct {
 		std::vector<std::string> worldList;
 		std::vector<std::string> levelList;
 
-		std::optional<unsigned> world;
-		std::optional<unsigned> level;
+		std::optional<level_id> world;
+		std::optional<level_id> level;
 
-		std::optional<std::shared_future<unsigned>> currentLevel;
-		std::optional<std::shared_future<unsigned>> nextLevel;
-
+		std::optional<std::shared_future<level_id>> currentLevel;
+		std::optional<std::shared_future<level_id>> nextLevel;
 	} m;
 
 public:
