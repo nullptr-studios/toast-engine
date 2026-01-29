@@ -7,7 +7,9 @@
 
 #include <glm/glm.hpp>
 
-namespace toast { class Object; }
+namespace toast {
+class Object;
+}
 
 namespace physics {
 
@@ -29,18 +31,19 @@ public:
 	std::function<void(toast::Object*)> enterCallback;
 	std::function<void(toast::Object*)> exitCallback;
 
-	virtual void OnEnter(toast::Object*) {}
-	virtual void OnExit(toast::Object*) {}
+	virtual void OnEnter(toast::Object*) { }
+
+	virtual void OnExit(toast::Object*) { }
 
 	struct M {
-		glm::vec4 color = {0.0f, 1.0f, 1.0f, 0.5f};
+		glm::vec4 color = { 0.0f, 1.0f, 1.0f, 0.5f };
 	} m;
 
 	struct {
 		bool draw = true;
 		bool log = false;
-		glm::vec4 defaultColor = {0.0f, 1.0f, 1.0f, 0.5f};
-		glm::vec4 collideColor = {1.0f, 0.0f, 0.0f, 0.5f};
+		glm::vec4 defaultColor = { 0.0f, 1.0f, 1.0f, 0.5f };
+		glm::vec4 collideColor = { 1.0f, 0.0f, 0.0f, 0.5f };
 	} debug;
 };
 

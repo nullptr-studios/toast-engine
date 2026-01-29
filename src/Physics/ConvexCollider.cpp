@@ -1,5 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "ConvexCollider.hpp"
+
 #include "BoxDynamics.hpp"
 #include "Physics/PhysicsSystem.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
@@ -7,6 +8,7 @@
 #include "glm/gtx/quaternion.hpp"
 
 using namespace glm;
+
 namespace physics {
 
 ConvexCollider::ConvexCollider(const point_list& points, const ColliderData& data) {

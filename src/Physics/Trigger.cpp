@@ -1,20 +1,26 @@
 #include "Toast/Physics/Trigger.hpp"
+
 #include "PhysicsSystem.hpp"
 #include "Toast/GlmJson.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
 #define SAVE(name) j[#name] = name;
-#define LOAD(name) if (j.contains(#name)) { \
-										name = j[#name];        \
-									 }
+#define LOAD(name)         \
+	if (j.contains(#name)) { \
+		name = j[#name];       \
+	}
 
 namespace physics {
 
 void Trigger::Begin() {
 	Actor::Begin();
 	PhysicsSystem::AddTrigger(this);
-	enterCallback = [this](Object* o) { OnEnter(o); };
-	exitCallback = [this](Object* o) { OnExit(o); };
+	enterCallback = [this](Object* o) {
+		OnEnter(o);
+	};
+	exitCallback = [this](Object* o) {
+		OnExit(o);
+	};
 }
 
 void Trigger::Destroy() {

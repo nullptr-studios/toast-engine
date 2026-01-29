@@ -3,9 +3,9 @@
 #include "ConvexCollider.hpp"
 #include "PhysicsSystem.hpp"
 
-#include <Toast/Time.hpp>
 #include <Toast/Physics/BoxRigidbody.hpp>
 #include <Toast/Renderer/DebugDrawLayer.hpp>
+#include <Toast/Time.hpp>
 
 namespace physics {
 using namespace glm;
@@ -26,20 +26,22 @@ std::optional<glm::dvec2> LineLineCollision(const Line& a, const Line& b) {
 
 	glm::dvec2 start_delta = b.p1 - a.p1;
 
-	double cross_a_b = determinant(dmat2{ a_vec, b_vec });           // a_vec x b_vec
-	double cross_delta_b = determinant(dmat2{ start_delta, b_vec }); // (b_start - a_start) x b_vec
-	double cross_delta_a = determinant(dmat2{ start_delta, a_vec }); // (b_start - a_start) x a_vec
+	double cross_a_b = determinant(dmat2 { a_vec, b_vec });              // a_vec x b_vec
+	double cross_delta_b = determinant(dmat2 { start_delta, b_vec });    // (b_start - a_start) x b_vec
+	double cross_delta_a = determinant(dmat2 { start_delta, a_vec });    // (b_start - a_start) x a_vec
 
 	// Parallel (including colinear)
 	if (std::abs(cross_a_b) < PhysicsSystem::eps_small()) {
 		return std::nullopt;
 	}
 
-	double t_on_a = cross_delta_b / cross_a_b; // position along segment a
-	double t_on_b = cross_delta_a / cross_a_b; // position along segment b
+	double t_on_a = cross_delta_b / cross_a_b;    // position along segment a
+	double t_on_b = cross_delta_a / cross_a_b;    // position along segment b
 
 	// Intersection must lie within both segments
-	if (t_on_a < 0.0 || t_on_a > 1.0 || t_on_b < 0.0 || t_on_b > 1.0) return std::nullopt;
+	if (t_on_a < 0.0 || t_on_a > 1.0 || t_on_b < 0.0 || t_on_b > 1.0) {
+		return std::nullopt;
+	}
 
 	return dvec2 { a.p1 } + t_on_a * a_vec;
 }
@@ -54,7 +56,7 @@ void BoxKinematics(BoxRigidbody* rb) {
 	}
 
 	// Sum torques
-	double torques = std::ranges::fold_left(rb->torques, 0.0, std::plus{});
+	double torques = std::ranges::fold_left(rb->torques, 0.0, std::plus {});
 	// Compute inertia
 	dvec2 half_size = rb->size / 2.0;
 	double inertia = (rb->mass * (half_size.x * half_size.x + half_size.y * half_size.y)) / 12.0;
@@ -118,8 +120,12 @@ static auto ClipLineSegmentToLine(dvec2 p1, dvec2 p2, dvec2 normal, dvec2 offset
 	double distance2 = dot(p2 - offset, normal);
 
 	// if the points are behind the plane, don't clip
-	if (distance1 <= 0.0) points.emplace_back(p1);
-	if (distance2 <= 0.0) points.emplace_back(p2);
+	if (distance1 <= 0.0) {
+		points.emplace_back(p1);
+	}
+	if (distance2 <= 0.0) {
+		points.emplace_back(p2);
+	}
 
 	// if one is in front of the plane, clip it to the intersection point
 	if (std::signbit(distance1) != std::signbit(distance2) && points.size() < 2) {
@@ -200,7 +206,9 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 		std::vector<dvec2> points;
 		for (const auto& e : rb->GetEdges()) {
 			auto p = LineLineCollision(e, edge);
-			if (p.has_value()) points.emplace_back(p.value());
+			if (p.has_value()) {
+				points.emplace_back(p.value());
+			}
 		}
 
 		if (points.size() >= 2) {
@@ -226,7 +234,9 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 	}
 	auto best = *it;
 
-	if (rb->debug.showManifolds) best.Debug();
+	if (rb->debug.showManifolds) {
+		best.Debug();
+	}
 	return best;
 }
 
@@ -236,7 +246,9 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 	double& angular_velocity = rb->angularVelocity;
 
 	// Skip if body has infinite mass
-	if (rb->mass <= 0.0) return;
+	if (rb->mass <= 0.0) {
+		return;
+	}
 	double inv_mass = 1.0 / rb->mass;
 
 	// moment of inertia for box
@@ -258,8 +270,8 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 
 	// only resolve if we're going towards the object
 	if (normal_speed < 0.0) {
-		double normal_lever_arm = determinant(dmat2{ r, manifold.normal });
-		double tangent_lever_arm = determinant(dmat2{ r, contact_tangent });
+		double normal_lever_arm = determinant(dmat2 { r, manifold.normal });
+		double tangent_lever_arm = determinant(dmat2 { r, contact_tangent });
 		double normal_effective_mass = inv_mass + (normal_lever_arm * normal_lever_arm * inv_inertia);
 		double tangent_effective_mass = inv_mass + (tangent_lever_arm * tangent_lever_arm * inv_inertia);
 
@@ -287,9 +299,7 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 	}
 
 	// positional correction
-	double penetration_correction =
-		std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) *
-		PhysicsSystem::pos_ptc();
+	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
 	position += penetration_correction * manifold.normal;
 	rb->SetPosition(position);
 

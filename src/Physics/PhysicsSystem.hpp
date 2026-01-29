@@ -3,8 +3,8 @@
 /// @date 28 Dec 2025
 
 #pragma once
-#include "Toast/Physics/ColliderFlags.hpp"
 #include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/Physics/ColliderFlags.hpp"
 
 #include <glm/glm.hpp>
 
@@ -58,7 +58,7 @@ private:
 	void RigidbodyPhysics(Rigidbody* rb);
 	void BoxPhysics(BoxRigidbody* rb);
 
-	 struct M {
+	struct M {
 		std::chrono::duration<double> targetFrametime { 1.0 / 50.0 };
 		unsigned char tickCount = 1;
 		std::list<Rigidbody*> rigidbodies;
