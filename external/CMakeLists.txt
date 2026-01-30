@@ -222,6 +222,73 @@ if(NOT spine_POPULATED)
     )
 endif()
 
+# FMOD
+if(WIN32)
+    set(FMOD_PLATFORM "windows")
+    set(FMOD_ARCH "x64")
+elseif(UNIX AND NOT APPLE)
+    set(FMOD_PLATFORM "linux")
+    set(FMOD_ARCH "x86_64")
+endif()
+
+set(FMOD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/fmod")
+set(FMOD_LIB_DIR "${FMOD_DIR}/lib/${FMOD_PLATFORM}")
+set(FMOD_INCLUDE_DIR "${FMOD_DIR}/inc")
+
+# FMOD Core Library
+add_library(fmod SHARED IMPORTED)
+if(WIN32)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set_target_properties(fmod PROPERTIES
+            IMPORTED_LOCATION "${FMOD_LIB_DIR}/fmodL.dll"
+            IMPORTED_IMPLIB "${FMOD_LIB_DIR}/fmodL_vc.lib"
+        )
+    else()
+        set_target_properties(fmod PROPERTIES
+            IMPORTED_LOCATION "${FMOD_LIB_DIR}/fmod.dll"
+            IMPORTED_IMPLIB "${FMOD_LIB_DIR}/fmod_vc.lib"
+        )
+    endif()
+elseif(UNIX AND NOT APPLE)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set_target_properties(fmod PROPERTIES
+            IMPORTED_LOCATION "${FMOD_LIB_DIR}/${FMOD_ARCH}/libfmodL.so"
+        )
+    else()
+        set_target_properties(fmod PROPERTIES
+            IMPORTED_LOCATION "${FMOD_LIB_DIR}/${FMOD_ARCH}/libfmod.so"
+        )
+    endif()
+endif()
+target_include_directories(fmod INTERFACE ${FMOD_INCLUDE_DIR})
+
+# FMOD Studio Library
+add_library(fmod_studio SHARED IMPORTED)
+if(WIN32)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set_target_properties(fmod_studio PROPERTIES
+            IMPORTED_LOCATION "${FMOD_LIB_DIR}/fmodstudioL.dll"
+            IMPORTED_IMPLIB "${FMOD_LIB_DIR}/fmodstudioL_vc.lib"
+        )
+    else()
+        set_target_properties(fmod_studio PROPERTIES
+            IMPORTED_LOCATION "${FMOD_LIB_DIR}/fmodstudio.dll"
+            IMPORTED_IMPLIB "${FMOD_LIB_DIR}/fmodstudio_vc.lib"
+        )
+    endif()
+elseif(UNIX AND NOT APPLE)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set_target_properties(fmod_studio PROPERTIES
+            IMPORTED_LOCATION "${FMOD_LIB_DIR}/${FMOD_ARCH}/libfmodstudioL.so"
+        )
+    else()
+        set_target_properties(fmod_studio PROPERTIES
+            IMPORTED_LOCATION "${FMOD_LIB_DIR}/${FMOD_ARCH}/libfmodstudio.so"
+        )
+    endif()
+endif()
+target_include_directories(fmod_studio INTERFACE ${FMOD_INCLUDE_DIR})
+target_link_libraries(fmod_studio INTERFACE fmod)
 
 # glad
 add_library(glad STATIC
@@ -231,4 +298,3 @@ add_library(glad STATIC
 target_include_directories(glad PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/glad/include
 )
-
