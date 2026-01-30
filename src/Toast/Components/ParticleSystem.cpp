@@ -53,9 +53,9 @@ static EmissionMode ParseEmissionMode(const std::string& mode) {
 
 static EmitterShape ParseEmitterShape(std::string& shape) {
 	std::ranges::for_each(shape, [](char& c) {
-			 c = tolower(c);
-	 });
-	
+		c = tolower(c);
+	});
+
 	if (shape == "sphere") {
 		return EmitterShape::Sphere;
 	}
@@ -786,7 +786,7 @@ void ParticleSystem::OnRender(const glm::mat4& viewProjection) noexcept {
 		emitterDist2[i] = glm::length2(camPos - pos);
 	}
 	std::sort(emitterOrder.begin(), emitterOrder.end(), [&](size_t a, size_t b) {
-		return emitterDist2[a] > emitterDist2[b]; // Back to front
+		return emitterDist2[a] > emitterDist2[b];    // Back to front
 	});
 
 	// Bind shared quad VAO once

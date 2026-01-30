@@ -156,7 +156,6 @@ public:
 	}
 
 private:
-	
 	/**
 	 * @brief Converts backslashes to forward slashes.
 	 * @param s Input path string.
@@ -191,20 +190,20 @@ private:
 	bool m_pkg = false;
 };
 
-inline auto Open(std::string const& path) -> std::optional<std::string> {
+inline auto Open(const std::string& path) -> std::optional<std::string> {
 	std::istringstream fileStream;
 	if (!ResourceManager::GetInstance()->OpenFile(path, fileStream)) {
 		return std::nullopt;
 	}
-	
+
 	return fileStream.str();
 }
 
-inline auto Open(std::string const& path, std::istringstream& data) {
+inline auto Open(const std::string& path, std::istringstream& data) {
 	return ResourceManager::GetInstance()->OpenFile(path, data);
 }
 
-inline auto Open(std::string const& path, std::vector<uint8_t>& data_out) {
+inline auto Open(const std::string& path, std::vector<uint8_t>& data_out) {
 	return ResourceManager::GetInstance()->OpenFile(path, data_out);
 }
 

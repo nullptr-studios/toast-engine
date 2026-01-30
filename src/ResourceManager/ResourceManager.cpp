@@ -11,7 +11,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-
 resource::ResourceManager* resource::ResourceManager::m_instance = nullptr;
 
 namespace resource {
@@ -31,8 +30,6 @@ auto Open(std::string& path) -> std::optional<std::string> {
 	std::string str = s.str();
 	return str;
 }
-
-
 
 //@TODO: Instead of passing a bool, detect if a .pkg is in the root folder
 ResourceManager::ResourceManager(bool pkg) : m_pkg(pkg) {
@@ -104,7 +101,6 @@ void ResourceManager::PurgeResources() {
 		r.reset();
 	}
 }
-
 
 bool ResourceManager::OpenFile(const std::string& path, std::istringstream& data_out) const {
 	std::vector<uint8_t> d {};

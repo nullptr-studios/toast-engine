@@ -4,11 +4,11 @@
 
 #pragma once
 
+#include "Toast/Components/TransformComponent.hpp"
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/Texture.hpp"
-#include "Toast/Components/TransformComponent.hpp"
 
 #include <glad/gl.h>
 #include <glm/glm.hpp>
