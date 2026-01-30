@@ -6,6 +6,7 @@
 
 #include "ResourceManager/Spine/SpineSkeletonRenderer.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 #include "spine/SkeletonRenderer.h"
 #include "spine/Skin.h"
@@ -20,15 +21,15 @@
 #endif
 
 void AtlasRendererComponent::Init() {
-	m_shader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/spine.shader");
+	m_shader = resource::LoadResource<renderer::Shader>("shaders/spine.shader");
 
 	// Reserve temp buffers to avoid allocations
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
 	m_tempIndices.reserve(INITIAL_VERT_RESERVE * 3);
 
 	if (!m_atlasPath.empty() && !m_skeletonDataPath.empty()) {
-		auto atlas = resource::ResourceManager::GetInstance()->LoadResource<SpineAtlas>(m_atlasPath);
-		m_skeletonData = resource::ResourceManager::GetInstance()->LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
+		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
+		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
 		m_skeleton = std::make_unique<spine::Skeleton>(m_skeletonData->GetSkeletonData());
 
 		// enumerate attachments
@@ -100,7 +101,7 @@ void AtlasRendererComponent::EnumerateAttachmentNames() {
 	}
 }
 
-void AtlasRendererComponent::SetOnlyAttachmentByName(const std::string& name) const {
+void AtlasRendererComponent::SetOnlyAttachmentByName(const std::string& name) {
 	if (!m_skeleton || !m_skeletonData) {
 		return;
 	}
@@ -120,8 +121,7 @@ void AtlasRendererComponent::SetOnlyAttachmentByName(const std::string& name) co
 		auto* const skin = data->getSkins()[s];
 		auto i = skin->getAttachments();
 		while (i.hasNext()) {
-			auto& entry = i.next();
-			if (entry._name.buffer() && name == entry._name.buffer()) {
+			if (auto& entry = i.next(); entry._name.buffer() && name == entry._name.buffer()) {
 				int slot_index = entry._slotIndex;
 				spine::Slot* slot = nullptr;
 				if (slot_index >= 0 && slot_index < m_skeleton->getSlots().size()) {
@@ -130,6 +130,7 @@ void AtlasRendererComponent::SetOnlyAttachmentByName(const std::string& name) co
 				if (slot) {
 					slot->setAttachment(entry._attachment);
 					m_skeleton->updateWorldTransform(spine::Physics_None);
+					UpdateMeshBounds();
 					return;
 				}
 			}
@@ -140,9 +141,10 @@ void AtlasRendererComponent::SetOnlyAttachmentByName(const std::string& name) co
 		auto* slot = m_skeleton->getSlots()[i];
 		if (slot->getData().getName().buffer() && name == slot->getData().getName().buffer()) {
 			// attempt to get attachment with same name
-			if (const auto att = m_skeleton->getAttachment(slot->getData().getName().buffer(), name.c_str())) {
+			if (auto* const att = m_skeleton->getAttachment(slot->getData().getName().buffer(), name.c_str())) {
 				slot->setAttachment(att);
 				m_skeleton->updateWorldTransform(spine::Physics_None);
+				UpdateMeshBounds();
 				return;
 			}
 		}
@@ -154,18 +156,26 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		return;
 	}
 
-	PROFILE_ZONE;
-
 	if (!m_skeleton) {
 		return;
 	}
 
-	const spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
+	const glm::mat4 model = GetWorldMatrix();
 
-	const float z_step = 0.01f;    // z offset step
+	// Frustum culling using the dynamic AABB
+	const auto& frustumPlanes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes();
+	if (!OclussionVolume::isTransformedAABBOnPlanes(frustumPlanes, m_dynamicMesh.dynamicBoundingBox(), model)) {
+		return;    // Outside frustum, skip rendering
+	}
+
+	PROFILE_ZONE;
+
+	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
+
+	const float z_step_cmd = 0.01f;       // inter-command z offset step
+	const float z_step_vertex = 1e-4f;    // per-triangle/vertex z offset step
 	float z_offset = 0.0f;
 
-	const glm::mat4 model = GetWorldMatrix();
 	const glm::mat4 mvp = precomputed_mat * model;
 
 	m_shader->Use();
@@ -200,8 +210,8 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		}
 
 		// Determine command texture
-		const std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(command->texture);
-		const unsigned int tex_id = tex_ptr->get()->id();
+		std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(command->texture);
+		unsigned int tex_id = tex_ptr->get()->id();
 
 		if (tex_id != m_lastBoundTexture && !m_tempIndices.empty()) {
 			flush_batch();
@@ -220,7 +230,7 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		m_tempVerts.resize(start_vert + command->numVertices);
 		for (int i = 0; i < command->numVertices; ++i) {
 			auto& v = m_tempVerts[start_vert + i];
-			v.position = glm::vec3(command->positions[(i * 2) + 0], command->positions[(i * 2) + 1], z_offset);
+			v.position = glm::vec3(command->positions[(i * 2) + 0], command->positions[(i * 2) + 1], 0.0f);
 			v.texCoord = glm::vec2(command->uvs[(i * 2) + 0], command->uvs[(i * 2) + 1]);
 			v.colorABGR = command->colors[i];
 		}
@@ -232,8 +242,20 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 			m_tempIndices[start_idx + i] = static_cast<uint16_t>(command->indices[i] + start_vert);
 		}
 
-		// Increment Z
-		z_offset += z_step;
+		// Per-triangle Z layering
+		for (size_t i = 0; i + 2 < command->numIndices; i += 3) {
+			uint16_t ia = static_cast<uint16_t>(command->indices[i + 0] + start_vert);
+			uint16_t ib = static_cast<uint16_t>(command->indices[i + 1] + start_vert);
+			uint16_t ic = static_cast<uint16_t>(command->indices[i + 2] + start_vert);
+			float z = z_offset;
+			m_tempVerts[ia].position.z = z;
+			m_tempVerts[ib].position.z = z;
+			m_tempVerts[ic].position.z = z;
+			z_offset += z_step_vertex;
+		}
+
+		// Increment Z between commands
+		z_offset += z_step_cmd;
 
 		command = command->next;
 	}
@@ -275,6 +297,40 @@ void AtlasRendererComponent::Load(json_t j, bool force_create) {
 	}
 }
 
+void AtlasRendererComponent::UpdateMeshBounds() {
+	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
+	// collect all vertices to compute bounding box for frustum culling
+	{
+		spine::RenderCommand* cmd = command;
+		size_t totalVerts = 0;
+		while (cmd) {
+			totalVerts += cmd->numVertices;
+			cmd = cmd->next;
+		}
+
+		// Build temporary vertex positions for bounding box computation
+		m_tempVerts.reserve(totalVerts);
+		cmd = command;
+		while (cmd) {
+			for (int i = 0; i < cmd->numVertices; ++i) {
+				renderer::SpineVertex v {};
+				v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
+				v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], cmd->uvs[(i * 2) + 1]);
+				v.colorABGR = cmd->colors[i];
+				m_tempVerts.push_back(v);
+			}
+			cmd = cmd->next;
+		}
+
+		// Compute dynamic bounding box
+		m_dynamicMesh.ComputeSpineBoundingBox(m_tempVerts.data(), m_tempVerts.size());
+	}
+
+	// Reset buffers for actual rendering pass
+	m_tempVerts.clear();
+	m_tempIndices.clear();
+}
+
 #ifdef TOAST_EDITOR
 
 // ImGui helper
@@ -307,8 +363,8 @@ void AtlasRendererComponent::Inspector() {
 		m_skeletonDataPath = m_skeletonDataResource.GetResourcePath();
 		m_atlasPath = m_atlasResource.GetResourcePath();
 
-		auto atlas = resource::ResourceManager::GetInstance()->LoadResource<SpineAtlas>(m_atlasResource.GetResourcePath());
-		m_skeletonData = resource::ResourceManager::GetInstance()->LoadResource<SpineSkeletonData>(m_skeletonDataResource.GetResourcePath(), atlas);
+		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasResource.GetResourcePath());
+		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataResource.GetResourcePath(), atlas);
 		if (m_skeletonData->GetResourceState() == resource::ResourceState::FAILED) {
 			TOAST_ERROR("AtlasRendererComponent::Inspector() Failed loading SpineSkeletonData from path \"{0}\"", m_skeletonDataResource.GetResourcePath());
 			return;

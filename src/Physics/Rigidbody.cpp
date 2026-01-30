@@ -6,7 +6,9 @@
 #include "Toast/Physics/Raycast.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
+#ifdef TOAST_EDITOR
 #include <imgui.h>
+#endif
 
 namespace physics {
 
@@ -18,6 +20,7 @@ void Rigidbody::Destroy() {
 	PhysicsSystem::RemoveRigidbody(this);
 }
 
+#ifdef TOAST_EDITOR
 void Rigidbody::Inspector() {
 	ImGui::SeparatorText("Properties");
 
@@ -107,6 +110,7 @@ void Rigidbody::EditorTick() {
 	}
 	renderer::DebugCircle(GetPosition(), radius, debug.defaultColor);
 }
+#endif
 
 json_t Rigidbody::Save() const {
 	json_t j = Component::Save();

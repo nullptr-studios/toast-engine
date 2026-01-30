@@ -16,7 +16,9 @@ public:
 
 	void Init() override;
 	void Destroy() override;
+#ifdef TOAST_EDITOR
 	void Inspector() override;
+#endif
 	void EditorTick() override;
 
 	json_t Save() const override;

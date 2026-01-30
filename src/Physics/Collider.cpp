@@ -5,7 +5,9 @@
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
+#ifdef TOAST_EDITOR
 #include <imgui.h>
+#endif
 
 using namespace physics;
 
@@ -238,6 +240,7 @@ void Collider::Destroy() {
 	}
 }
 
+#ifdef TOAST_EDITOR
 #pragma region EDITOR
 
 void Collider::Inspector() {
@@ -384,6 +387,7 @@ void Collider::EditorTick() {
 }
 
 #pragma endregion
+#endif
 
 json_t Collider::Save() const {
 	json_t j = Component::Save();

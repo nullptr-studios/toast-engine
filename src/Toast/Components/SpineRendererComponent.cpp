@@ -25,7 +25,7 @@ void SpineRendererComponent::Init() {
 	TransformComponent::Init();
 
 	// shader and buffers
-	m_shader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/spine.shader");
+	m_shader = resource::LoadResource<renderer::Shader>("shaders/spine.shader");
 	// Reserve temp buffers to avoid allocations
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
 	m_tempIndices.reserve(INITIAL_VERT_RESERVE * 3);
@@ -34,15 +34,15 @@ void SpineRendererComponent::Init() {
 
 	// Load resources either from persisted paths (preferred) or fallback to defaults
 	if (!m_atlasPath.empty() && !m_skeletonDataPath.empty()) {
-		auto atlas = resource::ResourceManager::GetInstance()->LoadResource<SpineAtlas>(m_atlasPath);
-		m_skeletonData = resource::ResourceManager::GetInstance()->LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
+		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
+		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
 	} else {
 		m_atlasPath = "animations/player/Player-unfinished.atlas";
 		m_skeletonDataPath = "animations/player/Player-unfinished.json";
 
 		// Fallback to legacy defaults to keep previous behavior
-		auto atlas = resource::ResourceManager::GetInstance()->LoadResource<SpineAtlas>(m_atlasPath);
-		m_skeletonData = resource::ResourceManager::GetInstance()->LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
+		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
+		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
 	}
 
 	if (m_skeletonData) {
@@ -154,8 +154,8 @@ void SpineRendererComponent::Inspector() {
 		m_atlasPath = m_atlasResource.GetResourcePath();
 		m_skeletonDataPath = m_skeletonDataResource.GetResourcePath();
 
-		auto atlas = resource::ResourceManager::GetInstance()->LoadResource<SpineAtlas>(m_atlasPath);
-		m_skeletonData = resource::ResourceManager::GetInstance()->LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
+		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
+		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
 		m_skeleton = std::make_unique<spine::Skeleton>(m_skeletonData->GetSkeletonData());
 		m_animationStateData = std::make_unique<spine::AnimationStateData>(m_skeletonData->GetSkeletonData());
 		m_animationState = std::make_unique<spine::AnimationState>(m_animationStateData.get());
@@ -250,13 +250,6 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		return;
 	}
 
-	// dont tick if outside frustum
-	// if (!OclussionVolume::isSphereOnPlanes(
-	//         renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), worldPosition(), 10.0f * glm::length(scale()) / 2.0f
-	//     )) {
-	// 	return;
-	// }
-
 	PROFILE_ZONE;
 
 	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
@@ -272,6 +265,43 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 	m_shader->Set("transform", mvp);
 
 	// Reuse temporary buffers
+	m_tempVerts.clear();
+	m_tempIndices.clear();
+
+	// First pass: collect all vertices to compute bounding box for frustum culling
+	{
+		spine::RenderCommand* cmd = command;
+		size_t totalVerts = 0;
+		while (cmd) {
+			totalVerts += cmd->numVertices;
+			cmd = cmd->next;
+		}
+
+		// Build temporary vertex positions for bounding box computation
+		m_tempVerts.reserve(totalVerts);
+		cmd = command;
+		while (cmd) {
+			for (int i = 0; i < cmd->numVertices; ++i) {
+				renderer::SpineVertex v {};
+				v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
+				v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], cmd->uvs[(i * 2) + 1]);
+				v.colorABGR = cmd->colors[i];
+				m_tempVerts.push_back(v);
+			}
+			cmd = cmd->next;
+		}
+
+		// Compute dynamic bounding box
+		m_dynamicMesh.ComputeSpineBoundingBox(m_tempVerts.data(), m_tempVerts.size());
+
+		// Frustum culling using the dynamic AABB
+		const auto& frustumPlanes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes();
+		if (!OclussionVolume::isTransformedAABBOnPlanes(frustumPlanes, m_dynamicMesh.dynamicBoundingBox(), model)) {
+			return;    // Outside frustum, skip rendering
+		}
+	}
+
+	// Reset buffers for actual rendering pass
 	m_tempVerts.clear();
 	m_tempIndices.clear();
 
@@ -412,7 +442,10 @@ void SpineRendererComponent::SetBoneLocalPosition(const std::string_view& boneNa
 	bone->setY(position.y);
 }
 
-void SpineRendererComponent::OnAnimationEvent(const std::string_view& animationName, int track, const std::string_view& eventName) {
-	event::Send(new SpineEvent(animationName, track, eventName));
+void SpineRendererComponent::OnAnimationEvent(
+    const std::string_view& animationName, int track, const std::string_view& eventName, int intValue, float floatValue,
+    const std::string_view& stringValue
+) {
+	event::Send(new SpineEvent(id(), animationName, track, eventName, intValue, floatValue, stringValue));
 	TOAST_TRACE("Spine Event Sent!");
 }

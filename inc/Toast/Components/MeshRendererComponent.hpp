@@ -39,7 +39,7 @@ public:
 	void SetMaterial(const std::string& path) {
 		// m_materialSlot.SetResource(path);
 		m_materialPath = path;
-		m_material = resource::ResourceManager::GetInstance()->LoadResource<renderer::Material>(path);
+		m_material = resource::LoadResource<renderer::Material>(path);
 	}
 
 	[[nodiscard]]
@@ -83,7 +83,7 @@ public:
 
 	void SetMesh(const std::string_view& path) {
 		m_meshPath = path;
-		m_mesh = resource::ResourceManager::GetInstance()->LoadResource<renderer::Mesh>(m_meshPath);
+		m_mesh = resource::LoadResource<renderer::Mesh>(m_meshPath);
 	}
 
 	// Vertex color controls the generic vertex attribute (location = 3) used by the shaders

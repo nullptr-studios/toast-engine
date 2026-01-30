@@ -55,7 +55,7 @@ void Texture::Load() {
 	SetResourceState(resource::ResourceState::LOADING);
 
 	std::vector<uint8_t> f {};
-	if (!resource::ResourceManager::GetInstance()->OpenFile(m_path, f)) {
+	if (!resource::Open(m_path, f)) {
 		TOAST_ERROR("Failed to load texture: {0}", m_path);
 		SetResourceState(resource::ResourceState::FAILED);
 		return;
