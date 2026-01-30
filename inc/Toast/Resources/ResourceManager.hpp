@@ -9,7 +9,9 @@
  */
 
 #pragma once
+#include "Mesh.hpp"
 #include "ResourceSlot.hpp"
+#include "Texture.hpp"
 #include "Toast/Renderer/Shader.hpp"
 
 #include <Toast/Log.hpp>

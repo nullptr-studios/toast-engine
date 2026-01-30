@@ -260,20 +260,32 @@ void Collider::Inspector() {
 	bool enemy_flag = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
 
 	if (ImGui::Checkbox("Default", &default_flag)) {
-		if (default_flag) cur |= static_cast<unsigned int>(ColliderFlags::Default);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Default);
+		if (default_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Default);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Default);
+		}
 	}
 	if (ImGui::Checkbox("Ground", &ground_flag)) {
-		if (ground_flag) cur |= static_cast<unsigned int>(ColliderFlags::Ground);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Ground);
+		if (ground_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Ground);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Ground);
+		}
 	}
 	if (ImGui::Checkbox("Enemy", &enemy_flag)) {
-		if (enemy_flag) cur |= static_cast<unsigned int>(ColliderFlags::Enemy);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Enemy);
+		if (enemy_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Enemy);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Enemy);
+		}
 	}
 	if (ImGui::Checkbox("Player", &player_flag)) {
-		if (player_flag) cur |= static_cast<unsigned int>(ColliderFlags::Player);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
+		if (player_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Player);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
+		}
 	}
 
 	m.flags = static_cast<ColliderFlags>(cur);
@@ -281,7 +293,6 @@ void Collider::Inspector() {
 	for (auto* c : m.convexShapes) {
 		c->flags = static_cast<ColliderFlags>(cur);
 	}
-
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Points");

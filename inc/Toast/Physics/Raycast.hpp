@@ -10,18 +10,22 @@
 
 enum class ColliderFlags : uint8_t;
 
-namespace toast { class Object; }
+namespace toast {
+class Object;
+}
 
 namespace physics {
 
 struct RayResult {
 	enum Type : uint8_t {
-		Collider, Rigidbody, Box
+		Collider,
+		Rigidbody,
+		Box
 	};
 
 	Type type = Collider;
-	glm::vec2 point = {0.0f, 0.0f};
-	glm::vec2 normal = {0.0f, 0.0f};
+	glm::vec2 point = { 0.0f, 0.0f };
+	glm::vec2 normal = { 0.0f, 0.0f };
 	float distance = 0.0f;
 	toast::Object* other = nullptr;
 };
