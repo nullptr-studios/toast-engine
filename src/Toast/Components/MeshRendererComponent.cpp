@@ -68,9 +68,9 @@ void MeshRendererComponent::Inspector() {
 void MeshRendererComponent::Init() {
 	TransformComponent::Init();
 	// init just for loading
-	m_material = resource::ResourceManager::GetInstance()->LoadResource<renderer::Material>(m_materialPath);
+	m_material = resource::LoadResource<renderer::Material>(m_materialPath);
 	// m_texture = resource::ResourceManager::GetInstance()->LoadResource<Texture>(m_texturePath);
-	m_mesh = resource::ResourceManager::GetInstance()->LoadResource<renderer::Mesh>(m_meshPath);
+	m_mesh = resource::LoadResource<renderer::Mesh>(m_meshPath);
 
 #ifdef TOAST_EDITOR
 	m_materialSlot.SetOnDroppedLambda([this](const std::string& p) {

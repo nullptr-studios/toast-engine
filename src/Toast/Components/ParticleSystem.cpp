@@ -443,7 +443,7 @@ void ParticleEmitter::ReinitializeBuffers() {
 
 void ParticleEmitter::LoadTexture() {
 	if (m_config.useTexture && !m_config.texturePath.empty()) {
-		m_texture = resource::ResourceManager::GetInstance()->LoadResource<Texture>(m_config.texturePath);
+		m_texture = resource::LoadResource<Texture>(m_config.texturePath);
 	} else {
 		m_texture.reset();
 	}
@@ -1148,8 +1148,8 @@ void ParticleSystem::InitSharedResources() {
 	}
 
 	// Load shared shaders
-	m_computeShader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/particles_compute.shader");
-	m_renderShader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/particles_render.shader");
+	m_computeShader = resource::LoadResource<renderer::Shader>("shaders/particles_compute.shader");
+	m_renderShader = resource::LoadResource<renderer::Shader>("shaders/particles_render.shader");
 
 	// Create shared quad
 	float quadVertices[] = { -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f };

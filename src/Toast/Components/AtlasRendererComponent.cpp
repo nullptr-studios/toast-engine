@@ -21,15 +21,15 @@
 #endif
 
 void AtlasRendererComponent::Init() {
-	m_shader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/spine.shader");
+	m_shader = resource::LoadResource<renderer::Shader>("shaders/spine.shader");
 
 	// Reserve temp buffers to avoid allocations
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
 	m_tempIndices.reserve(INITIAL_VERT_RESERVE * 3);
 
 	if (!m_atlasPath.empty() && !m_skeletonDataPath.empty()) {
-		auto atlas = resource::ResourceManager::GetInstance()->LoadResource<SpineAtlas>(m_atlasPath);
-		m_skeletonData = resource::ResourceManager::GetInstance()->LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
+		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
+		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
 		m_skeleton = std::make_unique<spine::Skeleton>(m_skeletonData->GetSkeletonData());
 
 		// enumerate attachments
@@ -363,8 +363,8 @@ void AtlasRendererComponent::Inspector() {
 		m_skeletonDataPath = m_skeletonDataResource.GetResourcePath();
 		m_atlasPath = m_atlasResource.GetResourcePath();
 
-		auto atlas = resource::ResourceManager::GetInstance()->LoadResource<SpineAtlas>(m_atlasResource.GetResourcePath());
-		m_skeletonData = resource::ResourceManager::GetInstance()->LoadResource<SpineSkeletonData>(m_skeletonDataResource.GetResourcePath(), atlas);
+		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasResource.GetResourcePath());
+		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataResource.GetResourcePath(), atlas);
 		if (m_skeletonData->GetResourceState() == resource::ResourceState::FAILED) {
 			TOAST_ERROR("AtlasRendererComponent::Inspector() Failed loading SpineSkeletonData from path \"{0}\"", m_skeletonDataResource.GetResourcePath());
 			return;

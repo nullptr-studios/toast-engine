@@ -115,7 +115,7 @@ void Engine::Run(int argc, char** argv) {
 		if (current_uptime - purge_timer >= 120.0) {
 			purge_timer = current_uptime;
 			TOAST_TRACE("Purging unused resources...");
-			m->resourceManager->PurgeResources();
+			resource::PurgeResources();
 		}
 
 		PROFILE_FRAME;

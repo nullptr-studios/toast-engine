@@ -252,10 +252,10 @@ OpenGLRenderer::OpenGLRenderer() {
 	m_layerStack = LayerStack::GetInstance();
 
 	// setup default resources
-	m_quad = resource::ResourceManager::GetInstance()->LoadResource<renderer::Mesh>("models/quad.obj");
-	m_screenShader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/screen.shader");
-	m_combineLightShader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/combineLight.shader");
-	m_globalLightShader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/globalLight.shader");
+	m_quad = resource::LoadResource<Mesh>("models/quad.obj");
+	m_screenShader = resource::LoadResource<Shader>("shaders/screen.shader");
+	m_combineLightShader = resource::LoadResource<Shader>("shaders/combineLight.shader");
+	m_globalLightShader = resource::LoadResource<Shader>("shaders/globalLight.shader");
 
 	// Set once, change and reset state if needed
 	stbi_set_flip_vertically_on_load(1);
@@ -578,7 +578,7 @@ void OpenGLRenderer::RemoveLight(Light2D* light) {
 void OpenGLRenderer::LoadRenderSettings() {
 	json_t settings {};
 	std::istringstream ss;
-	if (!resource::ResourceManager::GetInstance()->OpenFile("renderer_settings.toast", ss)) {
+	if (!resource::Open("renderer_settings.toast", ss)) {
 		throw ToastException("Failed to find project_settings.toast");
 	}
 

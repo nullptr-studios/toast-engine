@@ -53,7 +53,7 @@ public:
 	char* _readFile(const String& path, int* length) override {
 		// Basic file loader (UTF-8 safe, binary mode)
 		std::vector<uint8_t> data;
-		resource::ResourceManager::GetInstance()->OpenFile(path.buffer(), data);
+		resource::Open(path.buffer(), data);
 		if (length) {
 			*length = static_cast<int>(data.size());
 		}

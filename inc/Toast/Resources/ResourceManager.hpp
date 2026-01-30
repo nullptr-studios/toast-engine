@@ -9,9 +9,7 @@
  */
 
 #pragma once
-#include "Mesh.hpp"
 #include "ResourceSlot.hpp"
-#include "Texture.hpp"
 #include "Toast/Renderer/Shader.hpp"
 
 #include <Toast/Log.hpp>
@@ -20,7 +18,6 @@
 #include <vector>
 
 namespace resource {
-
 /**
  * @class ResourceManager
  * @brief Singleton manager for loading and caching game resources.
@@ -157,6 +154,7 @@ public:
 	}
 
 private:
+	
 	/**
 	 * @brief Converts backslashes to forward slashes.
 	 * @param s Input path string.
@@ -191,29 +189,34 @@ private:
 	bool m_pkg = false;
 };
 
-/**
- * @brief Convenience function to open and read a file.
- *
- * @param path File path (relative to assets/).
- * @return Optional containing file contents, or nullopt on failure.
- *
- * @par Example:
- * @code
- * if (auto contents = resource::Open("config.json")) {
- *     auto json = nlohmann::json::parse(*contents);
- * }
- * @endcode
- */
-[[nodiscard]]
-inline auto Open(const std::string& path) -> std::optional<std::string> {
-	std::istringstream s;
-	if (!ResourceManager::GetInstance()->OpenFile(path, s)) {
-		TOAST_WARN("File {} could not be opened", path);
+inline auto Open(std::string const& path) -> std::optional<std::string> {
+	std::istringstream fileStream;
+	if (!ResourceManager::GetInstance()->OpenFile(path, fileStream)) {
 		return std::nullopt;
 	}
+	
+	return fileStream.str();
+}
 
-	std::string str = s.str();
-	return str;
+inline auto Open(std::string const& path, std::istringstream& data) {
+	return ResourceManager::GetInstance()->OpenFile(path, data);
+}
+
+inline auto Open(std::string const& path, std::vector<uint8_t>& data_out) {
+	return ResourceManager::GetInstance()->OpenFile(path, data_out);
+}
+
+template<typename R, typename... Args>
+inline auto LoadResource(const std::string& path, Args&&... args) {
+	return ResourceManager::GetInstance()->LoadResource<R>(path, std::forward<Args>(args)...);
+}
+
+inline auto SaveFile(const std::string& path, const std::string& content) -> bool {
+	return ResourceManager::SaveFile(path, content);
+}
+
+inline auto PurgeResources() {
+	ResourceManager::GetInstance()->PurgeResources();
 }
 
 template<typename R, typename... Args>
@@ -270,5 +273,4 @@ std::shared_ptr<R> ResourceManager::LoadResource(const std::string& path, Args&&
 	// Return the shared_ptr<R> for the caller
 	return res;
 }
-
 }

@@ -75,7 +75,7 @@ void renderer::Mesh::Load() {
 	SetResourceState(resource::ResourceState::LOADING);
 
 	std::istringstream stream {};
-	if (!resource::ResourceManager::GetInstance()->OpenFile(m_path, stream)) {
+	if (!resource::Open(m_path, stream)) {
 		TOAST_ERROR("Mesh: Failed to open mesh file: {}", m_path);
 		SetResourceState(resource::ResourceState::FAILED);
 		LoadErrMeshPlaceholder();

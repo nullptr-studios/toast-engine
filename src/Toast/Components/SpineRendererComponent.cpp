@@ -25,7 +25,7 @@ void SpineRendererComponent::Init() {
 	TransformComponent::Init();
 
 	// shader and buffers
-	m_shader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/spine.shader");
+	m_shader = resource::LoadResource<renderer::Shader>("shaders/spine.shader");
 	// Reserve temp buffers to avoid allocations
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
 	m_tempIndices.reserve(INITIAL_VERT_RESERVE * 3);
@@ -34,15 +34,15 @@ void SpineRendererComponent::Init() {
 
 	// Load resources either from persisted paths (preferred) or fallback to defaults
 	if (!m_atlasPath.empty() && !m_skeletonDataPath.empty()) {
-		auto atlas = resource::ResourceManager::GetInstance()->LoadResource<SpineAtlas>(m_atlasPath);
-		m_skeletonData = resource::ResourceManager::GetInstance()->LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
+		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
+		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
 	} else {
 		m_atlasPath = "animations/player/Player-unfinished.atlas";
 		m_skeletonDataPath = "animations/player/Player-unfinished.json";
 
 		// Fallback to legacy defaults to keep previous behavior
-		auto atlas = resource::ResourceManager::GetInstance()->LoadResource<SpineAtlas>(m_atlasPath);
-		m_skeletonData = resource::ResourceManager::GetInstance()->LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
+		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
+		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
 	}
 
 	if (m_skeletonData) {
@@ -154,8 +154,8 @@ void SpineRendererComponent::Inspector() {
 		m_atlasPath = m_atlasResource.GetResourcePath();
 		m_skeletonDataPath = m_skeletonDataResource.GetResourcePath();
 
-		auto atlas = resource::ResourceManager::GetInstance()->LoadResource<SpineAtlas>(m_atlasPath);
-		m_skeletonData = resource::ResourceManager::GetInstance()->LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
+		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
+		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
 		m_skeleton = std::make_unique<spine::Skeleton>(m_skeletonData->GetSkeletonData());
 		m_animationStateData = std::make_unique<spine::AnimationStateData>(m_skeletonData->GetSkeletonData());
 		m_animationState = std::make_unique<spine::AnimationState>(m_animationStateData.get());

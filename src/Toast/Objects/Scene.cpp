@@ -32,8 +32,10 @@ void Scene::Load(const std::string& json_path) {
 	m_jsonPath = json_path;
 	std::istringstream iss;
 	json_t j;
-	resource::ResourceManager::GetInstance()->OpenFile(json_path, iss);
-	iss >> j;
+	if (resource::Open(json_path, iss))
+		iss >> j;
+	else
+		throw ToastException("Cannot open scene file: " + json_path);
 
 	Load(j);
 }
