@@ -1,5 +1,6 @@
 #include "Toast/Engine.hpp"
 
+#include "Audio/AudioSystem.hpp"
 #include "Event/EventSystem.hpp"
 #include "Input/InputSystem.hpp"
 #include "Physics/PhysicsSystem.hpp"
@@ -38,6 +39,7 @@ struct Engine::Pimpl {
 	std::unique_ptr<resource::ResourceManager> resourceManager;
 	std::unique_ptr<ProjectSettings> projectSettings;
 	std::unique_ptr<physics::PhysicsSystem> physicsSystem;
+	audio::AudioSystem* audioSystem;
 };
 
 void Engine::Run(int argc, char** argv) {
@@ -100,6 +102,8 @@ void Engine::Run(int argc, char** argv) {
 		EditorTick();
 		m->renderer->EndImGuiFrame();
 #endif
+
+		m->audioSystem->Tick();
 
 		// Swap after all rendering and UI is done
 		window->SwapBuffers();
@@ -175,6 +179,9 @@ void Engine::Init() {
 
 	// Physics System
 	m->physicsSystem = std::make_unique<physics::PhysicsSystem>();
+
+	// Audio
+	m->audioSystem = audio::AudioSystem::create();
 
 	Begin();
 }
