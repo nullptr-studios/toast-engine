@@ -228,6 +228,9 @@ void Collider::CalculatePoints() {
 	data.flags = m.flags;
 	data.parent = parent();
 
+	data.flags = m.flags;
+	data.parent = parent();
+
 	// Finally, create convex colliders for every convex mesh we produced
 	for (const auto& points : meshes_list) {
 		m.convexShapes.emplace_back(new ConvexCollider(points, data));

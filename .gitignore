@@ -10,6 +10,14 @@
 .vscode/
 .xmake/
 
+# External files
+external/*
+!external/CMakeLists.txt
+!external/glad/
+!external/glad/**
+!external/fmod/
+!external/fmod/**
+
 # Files to ignore
 */[Ll]og
 *.log

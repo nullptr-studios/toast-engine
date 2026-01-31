@@ -25,12 +25,16 @@ inline const char* to_string(ColliderFlags e) {
 
 inline ColliderFlags operator|(ColliderFlags a, ColliderFlags b) {
 	using T = std::underlying_type_t<ColliderFlags>;
-	return static_cast<ColliderFlags>(static_cast<T>(a) | static_cast<T>(b));
+	return static_cast<ColliderFlags>(
+			static_cast<T>(a) | static_cast<T>(b)
+	);
 }
 
 inline ColliderFlags operator&(ColliderFlags a, ColliderFlags b) {
 	using T = std::underlying_type_t<ColliderFlags>;
-	return static_cast<ColliderFlags>(static_cast<T>(a) & static_cast<T>(b));
+	return static_cast<ColliderFlags>(
+			static_cast<T>(a) & static_cast<T>(b)
+	);
 }
 
 inline ColliderFlags operator~(ColliderFlags a) {
