@@ -409,6 +409,9 @@ void OpenGLRenderer::GeometryPass() {
 		});
 		m_renderablesSortDirty = false;
 	}
+	
+	glViewport(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
+	glScissor(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
 
 	m_geometryFramebuffer->bind();
 	Clear();
@@ -558,8 +561,7 @@ void OpenGLRenderer::Clear() {
 void OpenGLRenderer::Resize(glm::uvec2 size) {
 	unsigned width = size.x;
 	unsigned height = size.y;
-	glViewport(0, 0, width, height);
-	glScissor(0, 0, width, height);
+
 	m_geometryFramebuffer->Resize(width * m_rendererConfig.resolutionScale, height * m_rendererConfig.resolutionScale);
 
 	m_lightFramebuffer->Resize(static_cast<unsigned int>(width * m_rendererConfig.lightResolutionScale), static_cast<unsigned int>(height * m_rendererConfig.lightResolutionScale));
