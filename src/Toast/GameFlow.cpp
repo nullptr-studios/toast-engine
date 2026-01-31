@@ -119,7 +119,7 @@ void GameFlow::NextLevel() {
 
 	// Increment Level
 	// clang-format off
-	m.level = m.level.transform([](level_id val) {
+	m.level = m.level.transform([](unsigned val) {
     return val + 1;
   }).value_or(0);
 	// clang-format on
@@ -131,7 +131,7 @@ void GameFlow::NextLevel() {
 	}
 
 	// Load & Enable New Level
-	m.currentLevel = std::move(m.nextLevel).or_else([this] -> std::optional<std::shared_future<level_id>> {
+	m.currentLevel = std::move(m.nextLevel).or_else([this] -> std::optional<std::shared_future<unsigned>> {
 		return toast::World::LoadScene(m.levelList[m.level.value()]);
 	});
 	m.currentLevel->wait();
@@ -150,7 +150,7 @@ void GameFlow::NextWorld() {
 	// Loads Next World Unless Next World unless no worlds are loaded (loads the first world)
 	// clang-format off
 	LoadWorld(
-    m.world.transform([](level_id val) {
+    m.world.transform([](unsigned val) {
       return val + 1;
     }).value_or(0)
   );
