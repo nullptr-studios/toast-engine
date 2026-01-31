@@ -172,7 +172,7 @@ void Engine::Init() {
 	m->factory = std::make_unique<Factory>();
 
 	// Imguilayer testing purposes
-	m->layerStack->PushLayer(new renderer::DebugDrawLayer());
+	m->layerStack->PushOverlay(new renderer::DebugDrawLayer());
 
 	// Physics System
 	m->physicsSystem = std::make_unique<physics::PhysicsSystem>();
