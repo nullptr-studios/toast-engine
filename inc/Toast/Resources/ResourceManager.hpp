@@ -21,48 +21,8 @@
 
 namespace resource {
 
-/**
- * @class ResourceManager
- * @brief Singleton manager for loading and caching game resources.
- *
- * The ResourceManager provides centralized resource loading with automatic
- * caching to prevent duplicate loads. It supports loading from the filesystem
- * or from a packed (.pkg) file for distribution.
- *
- * @par Features:
- * - Automatic caching of loaded resources
- * - Background loading with main-thread GPU upload
- * - Support for packed resource files (.pkg)
- * - Automatic resource purging when unused
- *
- * @par Supported Resource Types:
- * - Texture: Images (.png, .jpg)
- * - Mesh: 3D models (.obj)
- * - Shader: GPU shader programs
- * - Material: Shader + texture combinations
- *
- * @par Usage Example:
- * @code
- * auto* rm = ResourceManager::GetInstance();
- *
- * // Load a texture (cached automatically)
- * auto texture = rm->LoadResource<Texture>("textures/player.png");
- *
- * // Load same texture again - returns cached version
- * auto sameTexture = rm->LoadResource<Texture>("textures/player.png");
- *
- * // Load a shader
- * auto shader = rm->LoadResource<Shader>("shaders/standard.shader");
- *
- * // Read raw file data
- * auto contents = resource::Open("data/config.json");
- * @endcode
- *
- * @note GPU resources are automatically uploaded on the main thread.
- * @warning ResourceManager must be created before loading any resources.
- *
- * @see IResource, Texture, Mesh, Shader
- */
+///@class ResourceManager
+///@brief Manager of every resource in the engine
 class ResourceManager {
 public:
 	/**
@@ -206,14 +166,33 @@ private:
  */
 [[nodiscard]]
 inline auto Open(const std::string& path) -> std::optional<std::string> {
-	std::istringstream s;
-	if (!ResourceManager::GetInstance()->OpenFile(path, s)) {
-		TOAST_WARN("File {} could not be opened", path);
+	std::istringstream fileStream;
+	if (!ResourceManager::GetInstance()->OpenFile(path, fileStream)) {
 		return std::nullopt;
 	}
 
-	std::string str = s.str();
-	return str;
+	return fileStream.str();
+}
+
+inline auto Open(const std::string& path, std::istringstream& data) {
+	return ResourceManager::GetInstance()->OpenFile(path, data);
+}
+
+inline auto Open(const std::string& path, std::vector<uint8_t>& data_out) {
+	return ResourceManager::GetInstance()->OpenFile(path, data_out);
+}
+
+template<typename R, typename... Args>
+inline auto LoadResource(const std::string& path, Args&&... args) {
+	return ResourceManager::GetInstance()->LoadResource<R>(path, std::forward<Args>(args)...);
+}
+
+inline auto SaveFile(const std::string& path, const std::string& content) -> bool {
+	return ResourceManager::SaveFile(path, content);
+}
+
+inline auto PurgeResources() {
+	ResourceManager::GetInstance()->PurgeResources();
 }
 
 template<typename R, typename... Args>
@@ -270,5 +249,4 @@ std::shared_ptr<R> ResourceManager::LoadResource(const std::string& path, Args&&
 	// Return the shared_ptr<R> for the caller
 	return res;
 }
-
 }

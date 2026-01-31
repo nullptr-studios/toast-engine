@@ -11,8 +11,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-//@TODO: Improve error handling and log
-
 resource::ResourceManager* resource::ResourceManager::m_instance = nullptr;
 
 namespace resource {
@@ -21,6 +19,17 @@ PackFile g_packFile;
 std::shared_ptr<Texture> g_fileIcon;
 std::shared_ptr<Texture> g_jsonIcon;
 std::shared_ptr<Texture> g_objIcon;
+
+auto Open(std::string& path) -> std::optional<std::string> {
+	std::istringstream s;
+	if (!ResourceManager::GetInstance()->OpenFile(path, s)) {
+		TOAST_WARN("File {} could not be opened", path);
+		return std::nullopt;
+	}
+
+	std::string str = s.str();
+	return str;
+}
 
 //@TODO: Instead of passing a bool, detect if a .pkg is in the root folder
 ResourceManager::ResourceManager(bool pkg) : m_pkg(pkg) {
@@ -163,9 +172,9 @@ bool ResourceManager::SaveFile(const std::string& path, const std::string& conte
 
 editor::ResourceSlot::Entry ResourceManager::CreateResourceSlotEntry(const std::filesystem::path& path) {
 	if (!g_fileIcon) {
-		g_fileIcon = resource::ResourceManager::GetInstance()->LoadResource<Texture>("editor/icons/genericFile.png");
-		g_jsonIcon = resource::ResourceManager::GetInstance()->LoadResource<Texture>("editor/icons/jsonFile.png");
-		g_objIcon = resource::ResourceManager::GetInstance()->LoadResource<Texture>("editor/icons/objFile.png");
+		g_fileIcon = resource::LoadResource<Texture>("editor/icons/genericFile.png");
+		g_jsonIcon = resource::LoadResource<Texture>("editor/icons/jsonFile.png");
+		g_objIcon = resource::LoadResource<Texture>("editor/icons/objFile.png");
 	}
 
 	editor::ResourceSlot::Entry e;
@@ -182,7 +191,7 @@ editor::ResourceSlot::Entry ResourceManager::CreateResourceSlotEntry(const std::
 	if (e.extension == ".png" || e.extension == ".jpg") {
 		std::string normalized = e.relativePath.string();
 		std::replace(normalized.begin(), normalized.end(), '\\', '/');
-		e.icon = resource::ResourceManager::GetInstance()->LoadResource<Texture>(normalized);
+		e.icon = resource::LoadResource<Texture>(normalized);
 	} else if (e.extension == ".json") {
 		e.icon = g_jsonIcon;
 	} else if (e.extension == ".obj") {

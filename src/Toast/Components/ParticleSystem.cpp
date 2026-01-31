@@ -13,6 +13,8 @@
 
 #include <glad/gl.h>
 #define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/quaternion.hpp"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
@@ -49,14 +51,18 @@ static EmissionMode ParseEmissionMode(const std::string& mode) {
 	return EmissionMode::Continuous;
 }
 
-static EmitterShape ParseEmitterShape(const std::string& shape) {
-	if (shape == "sphere" || shape == "Sphere") {
+static EmitterShape ParseEmitterShape(std::string& shape) {
+	std::ranges::for_each(shape, [](char& c) {
+		c = tolower(c);
+	});
+
+	if (shape == "sphere") {
 		return EmitterShape::Sphere;
 	}
-	if (shape == "box" || shape == "Box") {
+	if (shape == "box") {
 		return EmitterShape::Box;
 	}
-	if (shape == "cone" || shape == "Cone") {
+	if (shape == "cone") {
 		return EmitterShape::Cone;
 	}
 	return EmitterShape::Point;
@@ -342,10 +348,7 @@ void ParticleEmitter::InitGPUResources(
 	LoadTexture();
 
 	// Clamp max particles
-	m_config.maxParticles = std::min(m_config.maxParticles, ParticleEmitterConfig::MAX_PARTICLES_LIMIT);
-	if (m_config.maxParticles < 100) {
-		m_config.maxParticles = 100;
-	}
+	m_config.maxParticles = std::clamp(m_config.maxParticles, 100u, ParticleEmitterConfig::MAX_PARTICLES_LIMIT);
 
 	// Create double buffered particle SSBOs
 	size_t bufferSize = sizeof(GPUParticle) * m_config.maxParticles;
@@ -443,7 +446,7 @@ void ParticleEmitter::ReinitializeBuffers() {
 
 void ParticleEmitter::LoadTexture() {
 	if (m_config.useTexture && !m_config.texturePath.empty()) {
-		m_texture = resource::ResourceManager::GetInstance()->LoadResource<Texture>(m_config.texturePath);
+		m_texture = resource::LoadResource<Texture>(m_config.texturePath);
 	} else {
 		m_texture.reset();
 	}
@@ -776,12 +779,14 @@ void ParticleSystem::OnRender(const glm::mat4& viewProjection) noexcept {
 	for (size_t i = 0; i < emitterOrder.size(); ++i) {
 		emitterOrder[i] = i;
 	}
+	// Precompute squared distances per emitter to avoid repeated math inside the comparator
+	std::vector<float> emitterDist2(m_emitters.size());
+	for (size_t i = 0; i < m_emitters.size(); ++i) {
+		const glm::vec3 pos = worldPos + parentRotation * m_emitters[i].GetConfig().localOffset;
+		emitterDist2[i] = glm::length2(camPos - pos);
+	}
 	std::sort(emitterOrder.begin(), emitterOrder.end(), [&](size_t a, size_t b) {
-		glm::vec3 posA = worldPos + parentRotation * m_emitters[a].GetConfig().localOffset;
-		glm::vec3 posB = worldPos + parentRotation * m_emitters[b].GetConfig().localOffset;
-		float distA = glm::distance(camPos, posA);
-		float distB = glm::distance(camPos, posB);
-		return distA > distB;    // Back to front
+		return emitterDist2[a] > emitterDist2[b];    // Back to front
 	});
 
 	// Bind shared quad VAO once
@@ -885,68 +890,75 @@ json_t ParticleSystem::Save() const {
 
 bool ParticleSystem::LoadFromLua(const std::string& luaPath) {
 	sol::state lua;
+	lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
 
-	try {
-		lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
+	auto file = resource::Open(luaPath);
+	if (!file.has_value()) {
+		TOAST_ERROR("Particle system config file couldn't be opened: {}", luaPath);
+		return false;
+	}
 
-		std::string current_path = lua["package"]["path"];
-		std::string custom_path = ";./assets/?.lua;./assets/particles/?.lua";
-		lua["package"]["path"] = current_path + custom_path;
+	// Compile the script first
+	sol::load_result lr = lua.load(*file);
+	if (!lr.valid()) {
+		sol::error err = lr;
+		TOAST_ERROR("Failed to compile particle system Lua config: {}", err.what());
+		return false;
+	}
 
-		auto file = resource::Open(luaPath);
-		if (!file.has_value()) {
-			TOAST_ERROR("Particle system config file couldn't be opened: {}", luaPath);
-			return false;
-		}
+	// Execute safely
+	sol::protected_function pf = lr;
+	sol::protected_function_result pr = pf();
+	if (!pr.valid()) {
+		sol::error err = pr;
+		TOAST_ERROR("Failed to execute particle system Lua config: {}", err.what());
+		return false;
+	}
 
-		sol::optional<sol::table> result = lua.script(*file);
-		if (!result.has_value()) {
-			TOAST_ERROR("Particle system config file didn't return anything: {}", luaPath);
-			return false;
-		}
+	// Extract the returned object
+	sol::object result = pr.get<sol::object>();
+	if (!result.is<sol::table>()) {
+		TOAST_ERROR("Particle system config file didn't return a table: {}", luaPath);
+		return false;
+	}
 
-		sol::table config = *result;
+	sol::table config = result.as<sol::table>();
 
-		// Verify format
-		sol::optional<std::string> format = config["format"];
-		if (!format.has_value() || *format != "particle_system") {
-			TOAST_ERROR("Particle system config has incorrect format, expected 'particle_system'");
-			return false;
-		}
+	// Verify format
+	sol::optional<std::string> format = config["format"];
+	if (!format.has_value() || *format != "particle_system") {
+		TOAST_ERROR("Particle system config has incorrect format, expected 'particle_system'");
+		return false;
+	}
 
-		// Store path for reloading
-		m_luaConfigPath = luaPath;
+	// Store path for reloading
+	m_luaConfigPath = luaPath;
 
-		// Clear existing emitters
-		for (auto& emitter : m_emitters) {
-			emitter.CleanupGPUResources();
-		}
-		m_emitters.clear();
+	// Clear existing emitters
+	for (auto& emitter : m_emitters) {
+		emitter.CleanupGPUResources();
+	}
+	m_emitters.clear();
 
-		// Load emitters
-		sol::optional<sol::table> emittersTable = config["emitters"];
-		if (emittersTable) {
-			for (auto& [_, emitterObj] : *emittersTable) {
-				if (emitterObj.is<sol::table>()) {
-					ParticleEmitter& emitter = AddEmitter();
-					emitter.GetConfig().LoadFromLua(emitterObj.as<sol::table>());
+	// Load emitters
+	sol::optional<sol::table> emittersTable = config["emitters"];
+	if (emittersTable) {
+		for (auto& [_, emitterObj] : *emittersTable) {
+			if (emitterObj.is<sol::table>()) {
+				ParticleEmitter& emitter = AddEmitter();
+				emitter.GetConfig().LoadFromLua(emitterObj.as<sol::table>());
 
-					// Reinitialize with new config
-					if (m_sharedResourcesInitialized) {
-						emitter.CleanupGPUResources();
-						emitter.InitGPUResources(m_computeShader, m_renderShader);
-					}
+				// Reinitialize with new config
+				if (m_sharedResourcesInitialized) {
+					emitter.CleanupGPUResources();
+					emitter.InitGPUResources(m_computeShader, m_renderShader);
 				}
 			}
 		}
-
-		TOAST_INFO("Loaded particle system config from Lua: {} ({} emitters)", luaPath, m_emitters.size());
-		return true;
-
-	} catch (const sol::error& e) {
-		TOAST_ERROR("Failed to parse particle system Lua config: {}", e.what());
-		return false;
 	}
+
+	TOAST_INFO("Loaded particle system config from Lua: {} ({} emitters)", luaPath, m_emitters.size());
+	return true;
 }
 
 bool ParticleSystem::SaveToLua(const std::string& luaPath) const {
@@ -1148,8 +1160,8 @@ void ParticleSystem::InitSharedResources() {
 	}
 
 	// Load shared shaders
-	m_computeShader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/particles_compute.shader");
-	m_renderShader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/particles_render.shader");
+	m_computeShader = resource::LoadResource<renderer::Shader>("shaders/particles_compute.shader");
+	m_renderShader = resource::LoadResource<renderer::Shader>("shaders/particles_render.shader");
 
 	// Create shared quad
 	float quadVertices[] = { -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f };

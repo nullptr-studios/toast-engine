@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "Toast/Components/TransformComponent.hpp"
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/Shader.hpp"
