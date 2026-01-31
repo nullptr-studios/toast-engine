@@ -401,7 +401,7 @@ json_t Collider::Save() const {
 	j["debug.showPoints"] = debug.showPoints;
 	j["debug.showColliders"] = debug.showColliders;
 	j["debug.showNormals"] = data.debugNormals;
-	j["flags"] = static_cast<unsigned int>(m.flags);
+	j["flags"] = m.flags;
 
 	return j;
 }
@@ -435,6 +435,14 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("flags")) {
 		m.flags = static_cast<ColliderFlags>(j["flags"].get<unsigned int>());
+	}
+
+	if (j.contains("flags")) {
+		for (auto* c : m.convexShapes) {
+			c->flags = static_cast<ColliderFlags>(j["flags"]);
+		}
+		m.flags = static_cast<ColliderFlags>(j["flags"]);
+		data.flags = static_cast<ColliderFlags>(j["flags"]);
 	}
 
 	Component::Load(j, propagate);

@@ -84,6 +84,10 @@ void Engine::Run(int argc, char** argv) {
 		m->inputSystem->Tick();
 
 		world->EarlyTick();
+
+		// Interpolate rb transforms before rendering
+		physics::PhysicsSystem::UpdateVisualInterpolation();
+
 		world->Tick();
 		world->LateTick();
 
