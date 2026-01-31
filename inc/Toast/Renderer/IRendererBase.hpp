@@ -7,16 +7,39 @@
 
 #include "Camera.hpp"
 #include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/GlmJson.hpp"
 #include "Toast/Renderer/Framebuffer.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/Lights/2DLight.hpp"
+#include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Window/Window.hpp"
+
 #include "glm/ext/matrix_clip_space.hpp"
 
 #include <array>
 #include <glm/glm.hpp>
+#include <pplwin.h>
 #include <vector>
 
 namespace renderer {
+
+
+/**
+ * @struct RendererConfig
+ * @brief Configuration settings for the renderer.
+ */
+struct RendererConfig {
+	glm::uvec2 resolution = glm::uvec2(1920, 1080); 	///< Initial rendering resolution
+	bool vSync = true;                            				///< Enable/disable vertical sync
+	toast::DisplayMode currentDisplayMode = toast::DisplayMode::WINDOWED;		///< Start in b orderless mode
+	//bool hdr = false;
+	
+	float resolutionScale = 1.0f;											///< Scale factor for main framebuffer resolution
+	float lightResolutionScale = .75f;								///< Scale factor for light framebuffer resolution
+	
+	unsigned maxFPS = 500;                      			///< Maximum FPS cap (0 = uncapped)
+	
+};
 
 /// @class IRendererBase
 /// @brief Abstract base class for all renderer implementations
@@ -183,10 +206,67 @@ public:
 
 	// ========== Render Settings ==========
 
-	virtual void LoadRenderSettings() = 0;    ///< Loads render settings from project settings
-	virtual void SaveRenderSettings() = 0;    ///< Saves current render settings to project settings
+	void LoadRenderSettings() {
+		std::string configData;
+		if (!resource::ResourceManager::LoadConfig(".\\config\\Renderer.settings", configData)) {
+			TOAST_WARN("Failed to load renderer settings file... creating a default one!");
+			SaveRenderSettings();
+			ApplyRenderSettings();
+			return;
+		}
+		
+		try {
+			auto j = json_t::parse(configData);
+			if (j.contains("resolutionScale")) {
+				m_rendererConfig.resolutionScale = j["resolutionScale"].get<float>();
+			}
+			if (j.contains("lightResolutionScale")) {
+				m_rendererConfig.lightResolutionScale = j["lightResolutionScale"].get<float>();
+			}
+			if (j.contains("vSync")) {
+				m_rendererConfig.vSync = j["vSync"].get<bool>();
+			}
+			if (j.contains("fullscreen")) {
+				m_rendererConfig.currentDisplayMode = j["fullscreen"].get<toast::DisplayMode>();
+			}
+			if (j.contains("maxFPS")) {
+				m_rendererConfig.maxFPS = j["maxFPS"].get<unsigned>();
+			}
+			if (j.contains("resolution")) {
+				m_rendererConfig.resolution = j["resolution"].get<glm::uvec2>();
+			}
+			TOAST_TRACE("SUCCESFULLY LOADED RENDERER SETTINGS!... now applying");
+			ApplyRenderSettings();
+			
+		} catch (const std::exception& e) {
+			TOAST_ERROR("Error parsing renderer settings: {0}", e.what());
+		}
+	}
+	
+	void SaveRenderSettings() {
+		json_t j {};
+		j["resolutionScale"] = m_rendererConfig.resolutionScale;
+		j["lightResolutionScale"] = m_rendererConfig.lightResolutionScale;
+		j["vSync"] = m_rendererConfig.vSync;
+		j["fullscreen"] = m_rendererConfig.currentDisplayMode;
+		j["maxFPS"] = m_rendererConfig.maxFPS;
+		j["resolution"] = m_rendererConfig.resolution;
+		
+		if (!resource::ResourceManager::SaveConfig(".\\config\\Renderer.settings", j.dump(1))) {
+			TOAST_ERROR("Failed to save renderer settings file!");
+		} else {
+			TOAST_TRACE("SUCCESFULLY SAVED RENDERER SETTINGS!");
+		}
+	}
+	
+	virtual void ApplyRenderSettings() = 0;    ///< Applies current render settings to the renderer implementation
 
-	                                          // ========== Global Light Settings ==========
+	[[nodiscard]]
+	const RendererConfig& GetRendererConfig() const noexcept {
+		return m_rendererConfig;
+	}
+
+	// ========== Global Light Settings ==========
 
 	[[nodiscard]]
 	glm::vec3 GetGlobalLightColor() const noexcept {
@@ -253,7 +333,17 @@ protected:
 	float m_globalLightIntensity = 1.f;                ///< Intensity of the global
 
 	bool m_globalLightEnabled = true;                  ///< Whether global light is enabled
-	float m_globalLightResolution = 0.50f;             ///< Resolution scale for global light calculations
+	
+	// ========== Render Settings ==========
+	RendererConfig m_rendererConfig;                   ///< Current renderer configuration
 };
+
+inline void LoadRendererSettings() {
+	IRendererBase::GetInstance()->LoadRenderSettings();
+}
+
+inline void SaveRendererSettings() {
+	IRendererBase::GetInstance()->SaveRenderSettings();
+}
 
 }    // namespace renderer

@@ -170,6 +170,49 @@ bool ResourceManager::SaveFile(const std::string& path, const std::string& conte
 	return ofs.good();
 }
 
+bool ResourceManager::SaveConfig(const std::string& path, const std::string& content) {
+	TOAST_INFO("Saving File {}", path);
+	std::string pat = path;
+
+	namespace fs = std::filesystem;
+
+	// Ensure parent directories exist
+	try {
+		if (const fs::path p(pat); p.has_parent_path()) {
+			fs::create_directories(p.parent_path());
+		}
+	} catch (const fs::filesystem_error&) {
+		// failed to create parent directories
+		return false;
+	}
+
+	// Open file for writing in binary mode
+	std::ofstream ofs(pat, std::ios::binary | std::ios::out | std::ios::trunc);
+	if (!ofs.is_open()) {
+		return false;
+	}
+
+	ofs.write(content.data(), static_cast<std::streamsize>(content.size()));
+	return ofs.good();
+}
+
+bool ResourceManager::LoadConfig(const std::string& path, std::string& content) {
+	PROFILE_ZONE;
+
+	std::string p = path;
+
+	std::ifstream ifs(p, std::ios::binary);
+	if (!ifs) {
+		return false;
+	}
+	ifs.seekg(0, std::ios::end);
+	size_t size = ifs.tellg();
+	ifs.seekg(0, std::ios::beg);
+	content.resize(size);
+	ifs.read((content.data()), static_cast<std::streamsize>(size));
+	return true;
+}
+
 editor::ResourceSlot::Entry ResourceManager::CreateResourceSlotEntry(const std::filesystem::path& path) {
 	if (!g_fileIcon) {
 		g_fileIcon = resource::LoadResource<Texture>("editor/icons/genericFile.png");

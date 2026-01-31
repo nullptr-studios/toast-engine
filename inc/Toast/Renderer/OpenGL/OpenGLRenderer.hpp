@@ -38,9 +38,8 @@ public:
 
 	void AddLight(Light2D* light) override;
 	void RemoveLight(Light2D* light) override;
-
-	void LoadRenderSettings() override;
-	void SaveRenderSettings() override;
+	
+	void ApplyRenderSettings() override;
 
 private:
 	LayerStack* m_layerStack = nullptr;

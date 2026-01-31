@@ -10,6 +10,7 @@
 
 #pragma once
 #include "Toast/Event/Event.hpp"
+#include "glm/vec2.hpp"
 
 struct GLFWwindow;
 
@@ -23,6 +24,11 @@ struct WindowProps {
 	unsigned width = -1;        ///< Window width in pixels.
 	unsigned height = -1;       ///< Window height in pixels.
 	std::string name = "-1";    ///< Window title.
+};
+
+enum class DisplayMode : uint8_t {
+	WINDOWED = 0,
+	FULLSCREEN = 1
 };
 
 /**
@@ -159,6 +165,10 @@ public:
 	 * @param seconds Maximum time to wait in seconds.
 	 */
 	void WaitEventsTimeout(double seconds);
+	
+	void SetDisplayMode(DisplayMode mode);
+	
+	void SetResolution(unsigned width, unsigned height);
 
 	/**
 	 * @brief Gets the underlying GLFW window handle.
@@ -181,6 +191,11 @@ private:
 
 	/// @brief Event listener for window events.
 	event::ListenerComponent m_listener;
+	
+	toast::DisplayMode m_currentDisplayMode = toast::DisplayMode::WINDOWED;
+	
+	glm::uvec2 m_windowedSize {};
+	glm::ivec2 m_windowedPos {};
 
 	/**
 	 * @brief GLFW error callback handler.

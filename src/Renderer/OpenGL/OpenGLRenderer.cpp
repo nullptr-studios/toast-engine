@@ -549,7 +549,7 @@ void OpenGLRenderer::Resize(unsigned int width, unsigned int height) {
 	glScissor(0, 0, width, height);
 	m_geometryFramebuffer->Resize(width, height);
 
-	m_lightFramebuffer->Resize(static_cast<unsigned int>(width * m_globalLightResolution), static_cast<unsigned int>(height * m_globalLightResolution));
+	m_lightFramebuffer->Resize(static_cast<unsigned int>(width * m_rendererConfig.lightResolutionScale), static_cast<unsigned int>(height * m_rendererConfig.lightResolutionScale));
 	m_outputFramebuffer->Resize(width, height);
 	// Update projection matrix to maintain aspect ratio
 	SetProjectionMatrix(glm::radians(90.0f), static_cast<float>(width) / static_cast<float>(height), 0.1f, 1000.0f);
@@ -575,29 +575,8 @@ void OpenGLRenderer::RemoveLight(Light2D* light) {
 	m_lightsSortDirty = true;
 }
 
-void OpenGLRenderer::LoadRenderSettings() {
-	json_t settings {};
-	std::istringstream ss;
-	if (!resource::Open("renderer_settings.toast", ss)) {
-		throw ToastException("Failed to find project_settings.toast");
-	}
-
-	ss >> settings;
-
-	m_globalLightEnabled = settings["GlobalIllumination"]["enabled"].get<bool>();
-	m_globalLightIntensity = settings["GlobalIllumination"]["intensity"].get<float>();
-	m_globalLightColor = settings["GlobalIllumination"]["color"].get<glm::vec3>();
-	m_globalLightResolution = settings["GlobalIllumination"]["resolution"].get<float>();
-}
-
-void OpenGLRenderer::SaveRenderSettings() {
-	json_t settings {};
-	settings["GlobalIllumination"]["enabled"] = m_globalLightEnabled;
-	settings["GlobalIllumination"]["intensity"] = m_globalLightIntensity;
-	settings["GlobalIllumination"]["color"] = m_globalLightColor;
-	settings["GlobalIllumination"]["resolution"] = m_globalLightResolution;
-
-	resource::ResourceManager::SaveFile("renderer_settings.toast", settings.dump(2));
+void OpenGLRenderer::ApplyRenderSettings() {
+	toast::Window::GetInstance()->SetDisplayMode(m_rendererConfig.currentDisplayMode);
 }
 
 }
