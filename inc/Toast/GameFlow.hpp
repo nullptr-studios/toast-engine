@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "Toast/Event/Event.hpp"
 #include "Toast/Event/ListenerComponent.hpp"
 
 #include <future>
@@ -27,12 +26,12 @@ class GameFlow final {
 		std::optional<std::shared_future<unsigned>> nextLevel;
 	} m;
 
+	void LoadWorld(unsigned world);
+	void LoadLevel(unsigned world, unsigned level);
 
-  void LoadWorld(unsigned world);
-  void LoadLevel(unsigned world, unsigned level);
+	void NextLevel();
+	void NextWorld();
 
-  void NextLevel();
-  void NextWorld();
 public:
 	GameFlow();
 };

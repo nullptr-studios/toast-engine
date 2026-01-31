@@ -37,7 +37,6 @@ public:
 	static void DisableScene(unsigned id);
 	static void DisableScene(const std::string& name);
 
-
 	void EarlyTick();
 	void Tick();
 	void LateTick();
