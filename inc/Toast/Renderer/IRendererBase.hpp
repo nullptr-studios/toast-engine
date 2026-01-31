@@ -261,6 +261,19 @@ public:
 	
 	virtual void ApplyRenderSettings() = 0;    ///< Applies current render settings to the renderer implementation
 
+	
+	void ToggleFullscreen() {
+		auto* window = toast::Window::GetInstance();
+		if (window->GetDisplayMode() == toast::DisplayMode::FULLSCREEN) {
+			window->SetDisplayMode(toast::DisplayMode::WINDOWED);
+			m_rendererConfig.currentDisplayMode = toast::DisplayMode::WINDOWED;
+		} else {
+			window->SetDisplayMode(toast::DisplayMode::FULLSCREEN);
+			m_rendererConfig.currentDisplayMode = toast::DisplayMode::FULLSCREEN;
+		}
+		SaveRenderSettings();
+	}
+	
 	[[nodiscard]]
 	const RendererConfig& GetRendererConfig() const noexcept {
 		return m_rendererConfig;

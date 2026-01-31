@@ -167,9 +167,25 @@ public:
 	void WaitEventsTimeout(double seconds);
 	
 	void SetDisplayMode(DisplayMode mode);
+	
+	[[nodiscard]]
 	DisplayMode GetDisplayMode() const;
 	
 	void SetResolution(glm::uvec2 res) const;
+	
+	void SetVSync(bool vsync);
+	
+	[[nodiscard]]
+	bool GetVSync() const noexcept {
+		return m_vsync;
+	}
+	
+	void SetMaxFPS(unsigned fps);
+	
+	[[nodiscard]]
+	unsigned GetMaxFPS() const noexcept {
+		return m_maxFPS;
+	}
 
 	/**
 	 * @brief Gets the underlying GLFW window handle.
@@ -197,6 +213,10 @@ private:
 	
 	glm::uvec2 m_windowedSize {};
 	glm::ivec2 m_windowedPos {};
+	
+	bool m_vsync = true;
+	
+	unsigned m_maxFPS = 0;
 
 	/**
 	 * @brief GLFW error callback handler.

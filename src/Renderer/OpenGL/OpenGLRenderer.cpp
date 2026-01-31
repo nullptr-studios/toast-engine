@@ -233,9 +233,6 @@ OpenGLRenderer::OpenGLRenderer() {
 		return false;
 	});
 	
-	auto window = toast::Window::GetInstance();
-	window->SetResolution({100u,100u});
-	
 
 	// call resize once at start
 	{
@@ -592,19 +589,17 @@ void OpenGLRenderer::RemoveLight(Light2D* light) {
 }
 
 void OpenGLRenderer::ApplyRenderSettings() {
-	toast::Window::GetInstance()->SetDisplayMode(m_rendererConfig.currentDisplayMode);
-}
-
-void OpenGLRenderer::ToggleFullscreen() {
-	auto* window = toast::Window::GetInstance();
-	if (window->GetDisplayMode() == toast::DisplayMode::FULLSCREEN) {
-		window->SetDisplayMode(toast::DisplayMode::WINDOWED);
-		m_rendererConfig.currentDisplayMode = toast::DisplayMode::WINDOWED;
-	} else {
-		window->SetDisplayMode(toast::DisplayMode::FULLSCREEN);
-		m_rendererConfig.currentDisplayMode = toast::DisplayMode::FULLSCREEN;
-	}
-	SaveRenderSettings();
+	auto window = toast::Window::GetInstance();
+	window->SetDisplayMode(m_rendererConfig.currentDisplayMode);
+	
+	// resolution
+	window->SetResolution(m_rendererConfig.resolution);
+	
+	// vsync
+	window->SetVSync(m_rendererConfig.vSync);
+	
+	window->SetMaxFPS(m_rendererConfig.maxFPS);
+	
 }
 
 }
