@@ -222,6 +222,16 @@ OpenGLRenderer::OpenGLRenderer() {
 		Resize(e->width, e->height);
 		return true;
 	});
+	
+	m_listener.Subscribe<event::WindowKey>([this](event::WindowKey* e) -> bool {
+		
+		// Toggle Fullscreen F11
+		if (e->key == GLFW_KEY_F11 && e->action == GLFW_PRESS) {
+			ToggleFullscreen();
+		}
+		
+		return false;
+	});
 
 	// call resize once at start
 	{
@@ -577,6 +587,18 @@ void OpenGLRenderer::RemoveLight(Light2D* light) {
 
 void OpenGLRenderer::ApplyRenderSettings() {
 	toast::Window::GetInstance()->SetDisplayMode(m_rendererConfig.currentDisplayMode);
+}
+
+void OpenGLRenderer::ToggleFullscreen() {
+	auto* window = toast::Window::GetInstance();
+	if (window->GetDisplayMode() == toast::DisplayMode::FULLSCREEN) {
+		window->SetDisplayMode(toast::DisplayMode::WINDOWED);
+		m_rendererConfig.currentDisplayMode = toast::DisplayMode::WINDOWED;
+	} else {
+		window->SetDisplayMode(toast::DisplayMode::FULLSCREEN);
+		m_rendererConfig.currentDisplayMode = toast::DisplayMode::FULLSCREEN;
+	}
+	SaveRenderSettings();
 }
 
 }

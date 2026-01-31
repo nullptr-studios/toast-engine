@@ -138,6 +138,10 @@ void Window::SetDisplayMode(DisplayMode modeScreen) {
  m_currentDisplayMode = modeScreen;
 }
 
+DisplayMode Window::GetDisplayMode() const {
+	 return m_currentDisplayMode;
+}
+
 bool Window::IsMinimized() const {
  auto [w, h] = GetFramebufferSize();
  return w == 0 || h == 0;

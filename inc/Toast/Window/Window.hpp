@@ -167,6 +167,7 @@ public:
 	void WaitEventsTimeout(double seconds);
 	
 	void SetDisplayMode(DisplayMode mode);
+	DisplayMode GetDisplayMode() const;
 	
 	void SetResolution(unsigned width, unsigned height);
 

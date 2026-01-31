@@ -40,6 +40,8 @@ public:
 	void RemoveLight(Light2D* light) override;
 	
 	void ApplyRenderSettings() override;
+	
+	void ToggleFullscreen();
 
 private:
 	LayerStack* m_layerStack = nullptr;
