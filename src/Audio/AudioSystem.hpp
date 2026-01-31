@@ -3,7 +3,7 @@
 /// @date 30 Jan 2026
 
 #pragma once
-#include <Toast/Audio/Data.hpp>
+#include <Toast/Audio/AudioData.hpp>
 #include <Toast/Audio/AudioError.hpp>
 #include <expected>
 #include <string_view>

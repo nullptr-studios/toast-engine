@@ -4,7 +4,7 @@
 #pragma once
 
 #include <Toast/Audio/AudioError.hpp>
-#include <Toast/Audio/Data.hpp>
+#include <Toast/Audio/AudioData.hpp>
 
 #include <expected>
 #include <glm/vec3.hpp>
