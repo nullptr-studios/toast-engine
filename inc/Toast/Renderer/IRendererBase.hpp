@@ -37,6 +37,8 @@ struct RendererConfig {
 	float resolutionScale = 1.0f;											///< Scale factor for main framebuffer resolution
 	float lightResolutionScale = .75f;								///< Scale factor for light framebuffer resolution
 	
+	
+	//@FIXME: NOT WORKING!!
 	unsigned maxFPS = 500;                      			///< Maximum FPS cap (0 = uncapped)
 	
 };

@@ -142,6 +142,20 @@ DisplayMode Window::GetDisplayMode() const {
 	 return m_currentDisplayMode;
 }
 
+std::vector<glm::uvec2> Window::GetMonitorSupportedSizes() {
+	std::vector<glm::uvec2> sizes;
+	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+	if (monitor) {
+		int count;
+		const GLFWvidmode* modes = glfwGetVideoModes(monitor, &count);
+		sizes.reserve(count);
+		for (int i = 0; i < count; ++i) {
+			sizes.emplace_back(static_cast<unsigned>(modes[i].width), static_cast<unsigned>(modes[i].height));
+		}
+	}
+	return sizes;
+}
+
 void Window::SetResolution(glm::uvec2 res) const {
 	 glfwSetWindowSize(m_glfwWindow, static_cast<int>(res.x), static_cast<int>(res.y));
 }

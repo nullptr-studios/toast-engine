@@ -560,7 +560,7 @@ void OpenGLRenderer::Resize(glm::uvec2 size) {
 	unsigned height = size.y;
 	glViewport(0, 0, width, height);
 	glScissor(0, 0, width, height);
-	m_geometryFramebuffer->Resize(width, height);
+	m_geometryFramebuffer->Resize(width * m_rendererConfig.resolutionScale, height * m_rendererConfig.resolutionScale);
 
 	m_lightFramebuffer->Resize(static_cast<unsigned int>(width * m_rendererConfig.lightResolutionScale), static_cast<unsigned int>(height * m_rendererConfig.lightResolutionScale));
 	m_outputFramebuffer->Resize(width, height);
@@ -590,15 +590,19 @@ void OpenGLRenderer::RemoveLight(Light2D* light) {
 
 void OpenGLRenderer::ApplyRenderSettings() {
 	auto window = toast::Window::GetInstance();
-	window->SetDisplayMode(m_rendererConfig.currentDisplayMode);
-	
-	// resolution
-	window->SetResolution(m_rendererConfig.resolution);
+
 	
 	// vsync
 	window->SetVSync(m_rendererConfig.vSync);
 	
 	window->SetMaxFPS(m_rendererConfig.maxFPS);
+	
+	
+	window->SetDisplayMode(m_rendererConfig.currentDisplayMode);
+	
+	// resolution (Framebuffer scale is handled in Resize)
+	window->SetResolution(m_rendererConfig.resolution);
+	
 	
 }
 

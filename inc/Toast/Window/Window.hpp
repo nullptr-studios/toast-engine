@@ -170,6 +170,8 @@ public:
 	
 	[[nodiscard]]
 	DisplayMode GetDisplayMode() const;
+
+	static std::vector<glm::uvec2> GetMonitorSupportedSizes();
 	
 	void SetResolution(glm::uvec2 res) const;
 	
@@ -180,6 +182,7 @@ public:
 		return m_vsync;
 	}
 	
+	//@FIXME: Seems to not work properly
 	void SetMaxFPS(unsigned fps);
 	
 	[[nodiscard]]
