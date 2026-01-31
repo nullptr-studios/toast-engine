@@ -115,7 +115,7 @@ public:
 	 * @return Pair of (width, height) in pixels.
 	 */
 	[[nodiscard]]
-	std::pair<unsigned, unsigned> GetFramebufferSize() const;
+	glm::uvec2 GetFramebufferSize() const;
 
 	/**
 	 * @brief Gets the display scale factors.
@@ -169,7 +169,7 @@ public:
 	void SetDisplayMode(DisplayMode mode);
 	DisplayMode GetDisplayMode() const;
 	
-	void SetResolution(unsigned width, unsigned height);
+	void SetResolution(glm::uvec2 res) const;
 
 	/**
 	 * @brief Gets the underlying GLFW window handle.

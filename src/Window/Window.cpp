@@ -64,7 +64,7 @@ bool Window::ShouldClose() const {
  return glfwWindowShouldClose(m_glfwWindow);
 }
 
-std::pair<unsigned, unsigned> Window::GetFramebufferSize() const {
+glm::uvec2 Window::GetFramebufferSize() const {
  int w = 0, h = 0;
  glfwGetFramebufferSize(m_glfwWindow, &w, &h);
  return { static_cast<unsigned>(w), static_cast<unsigned>(h) };
@@ -142,9 +142,13 @@ DisplayMode Window::GetDisplayMode() const {
 	 return m_currentDisplayMode;
 }
 
+void Window::SetResolution(glm::uvec2 res) const {
+	 glfwSetWindowSize(m_glfwWindow, static_cast<int>(res.x), static_cast<int>(res.y));
+}
+
 bool Window::IsMinimized() const {
- auto [w, h] = GetFramebufferSize();
- return w == 0 || h == 0;
+ auto s = GetFramebufferSize();
+ return s.x == 0 || s.y == 0;
 }
 
 #pragma region Error_Handling

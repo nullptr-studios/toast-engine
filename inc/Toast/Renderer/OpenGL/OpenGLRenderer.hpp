@@ -31,7 +31,7 @@ public:
 	void CombinedRenderPass() const;
 
 	void Clear() override;
-	void Resize(unsigned int width, unsigned int height) override;
+	void Resize(glm::uvec2 size) override;
 
 	void AddRenderable(IRenderable* renderable) override;
 	void RemoveRenderable(IRenderable* renderable) override;

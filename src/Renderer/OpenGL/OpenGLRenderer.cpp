@@ -219,7 +219,7 @@ OpenGLRenderer::OpenGLRenderer() {
 			return true;
 		}
 		// Update viewport and projection matrix
-		Resize(e->width, e->height);
+		Resize({ static_cast<unsigned>(e->width), static_cast<unsigned>(e->height) });
 		return true;
 	});
 	
@@ -232,11 +232,15 @@ OpenGLRenderer::OpenGLRenderer() {
 		
 		return false;
 	});
+	
+	auto window = toast::Window::GetInstance();
+	window->SetResolution({100u,100u});
+	
 
 	// call resize once at start
 	{
 		auto* window = toast::Window::GetInstance();
-		OpenGLRenderer::Resize(window->GetFramebufferSize().first, window->GetFramebufferSize().second);
+		OpenGLRenderer::Resize(window->GetFramebufferSize());
 	}
 
 #ifdef TOAST_EDITOR
@@ -554,7 +558,9 @@ void OpenGLRenderer::Clear() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGLRenderer::Resize(unsigned int width, unsigned int height) {
+void OpenGLRenderer::Resize(glm::uvec2 size) {
+	unsigned width = size.x;
+	unsigned height = size.y;
 	glViewport(0, 0, width, height);
 	glScissor(0, 0, width, height);
 	m_geometryFramebuffer->Resize(width, height);

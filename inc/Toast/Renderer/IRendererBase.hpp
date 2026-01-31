@@ -66,7 +66,7 @@ public:
 	/// @brief Resizes the viewport and updates internal render targets
 	/// @param width New viewport width in pixels
 	/// @param height New viewport height in pixels
-	virtual void Resize(unsigned int width, unsigned int height) = 0;
+	virtual void Resize(glm::uvec2) = 0;
 
 	// ========== ImGui Integration (Editor Only) ==========
 
