@@ -11,20 +11,20 @@
 #include "Toast/Event/Event.hpp"
 
 namespace toast {
-struct LoadWorld : public event::IEvent {
+struct LoadWorld : public event::Event<LoadWorld> {
 	unsigned world;
 
 	LoadWorld(unsigned world) : world(world) { }
 };
 
-struct LoadLevel : public event::IEvent {
+struct LoadLevel : public event::Event<LoadLevel> {
 	unsigned world;
 	unsigned level;
 
 	LoadLevel(unsigned world, unsigned level) : world(world), level(level) { }
 };
 
-struct NextWorld : public event::IEvent { };
+struct NextWorld : public event::Event<NextWorld> { };
 
-struct NextLevel : public event::IEvent { };
+struct NextLevel : public event::Event<NextLevel> { };
 }
