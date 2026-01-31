@@ -139,6 +139,22 @@ public:
 	 * @return true if file was saved successfully.
 	 */
 	static bool SaveFile(const std::string& path, const std::string& content);
+	
+	/**
+	 * @brief Saves content to a file on disk.
+	 * @param path File path.
+	 * @param content Content to write.
+	 * @return true if file was saved successfully.
+	 */
+	static bool SaveConfig(const std::string& path, const std::string& content);
+	
+	/**
+	 * @brief Loads content from a file on disk.
+	 * @param path File path.
+	 * @param content
+	 * @return true if file was loaded successfully.
+	 */
+	static bool LoadConfig(const std::string& path, std::string& content);
 
 	/**
 	 * @brief Creates a resource slot entry for the editor.

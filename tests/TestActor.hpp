@@ -14,6 +14,8 @@ public:
 	void Init() override {
 		rb = children.Add<physics::Rigidbody>("Rigidbody");
 		mesh = children.Add<toast::MeshRendererComponent>("Mesh");
+		
+		
 	}
 
 	void Begin() override {

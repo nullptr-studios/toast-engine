@@ -292,9 +292,9 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 #endif
 
 					// Convert screen coords to NDC [-1, 1]
-					const auto [w, h] = toast::Window::GetInstance()->GetFramebufferSize();
-					value.x = (value.x / w) - 0.5f;
-					value.y = (value.y / h) - 0.5f;
+					const auto s = toast::Window::GetInstance()->GetFramebufferSize();
+					value.x = (value.x / s.x) - 0.5f;
+					value.y = (value.y / s.y) - 0.5f;
 					value *= 2.0f;
 					value.y *= -1.0f;    // y up
 
