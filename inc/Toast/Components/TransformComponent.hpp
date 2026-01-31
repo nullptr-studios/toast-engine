@@ -1,7 +1,12 @@
-/// @file TransformComponent.hpp
-/// @author Xein
-/// @date 28/05/25
-/// @brief Contains the Transform2D and Transform 3D objects
+/**
+ * @file TransformComponent.hpp
+ * @author Xein
+ * @date 28/05/25
+ * @brief Transform component for position, rotation, and scale.
+ *
+ * This file provides the TransformComponent class which manages
+ * spatial properties (position, rotation, scale) for actors.
+ */
 
 #pragma once
 #include "Component.hpp"
@@ -12,16 +17,69 @@
 
 namespace toast {
 
+/**
+ * @class TransformComponent
+ * @brief Component that manages position, rotation, and scale.
+ *
+ * TransformComponent provides both local and world-space transforms for actors.
+ * It supports hierarchical transforms where child transforms are relative to
+ * their parent's world transform.
+ *
+ * @par Local vs World Space:
+ * - **Local**: Transform relative to parent (or world origin if no parent)
+ * - **World**: Absolute transform in world space
+ *
+ * @par Usage Example:
+ * @code
+ * // Get/set local position
+ * glm::vec3 pos = transform()->position();
+ * transform()->position({ 100.0f, 50.0f, 0.0f });
+ *
+ * // Get/set rotation (in degrees)
+ * transform()->rotation({ 0.0f, 0.0f, 45.0f });  // Rotate 45° around Z
+ *
+ * // Get world-space position (accounts for parent hierarchy)
+ * glm::vec3 worldPos = transform()->worldPosition();
+ *
+ * // Get direction vectors for movement
+ * glm::vec3 forward = transform()->GetFrontVector();
+ * transform()->position(pos + forward * speed * Time::delta());
+ * @endcode
+ *
+ * @par Matrix Caching:
+ * Transform matrices are cached and only recalculated when dirty.
+ * Direct property access is efficient; matrix access triggers
+ * recalculation only if transforms have changed.
+ *
+ * @note Rotation is stored as a quaternion internally but can be
+ *       accessed as Euler angles (degrees or radians).
+ *
+ * @see Actor, Component
+ */
 class TransformComponent : public Component {
 public:
 	REGISTER_ABSTRACT(TransformComponent)
+
+	/**
+	 * @brief Constructs a transform at the origin with no rotation and unit scale.
+	 */
 	TransformComponent();
+
+	/**
+	 * @brief Constructs a transform with specified values.
+	 * @param pos Initial position.
+	 * @param rot Initial rotation in radians (Euler angles).
+	 * @param scale Initial scale.
+	 */
 	TransformComponent(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale);
+
 	~TransformComponent() override = default;
 
-	// Serialize
+	// ========== Serialization ==========
+
 	[[nodiscard]]
 	json_t Save() const override;
+
 	void Load(json_t j, bool force_create = true) override;
 
 #ifdef TOAST_EDITOR

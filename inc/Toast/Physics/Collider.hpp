@@ -4,6 +4,7 @@
 
 #pragma once
 #include "ColliderData.hpp"
+#include "ColliderFlags.hpp"
 #include "Toast/Components/Component.hpp"
 
 #include <glm/glm.hpp>
@@ -20,7 +21,9 @@ class Collider : public toast::Component {
 public:
 	REGISTER_TYPE(Collider);
 
+#ifdef TOAST_EDITOR
 	void Inspector() override;
+#endif
 	void EditorTick() override;
 	void Destroy() override;
 
@@ -41,6 +44,7 @@ private:
 	struct {
 		std::vector<ConvexCollider*> convexShapes;
 		std::list<glm::vec2> points;
+		ColliderFlags flags = ColliderFlags::Default;
 	} m;
 
 	struct {

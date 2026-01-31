@@ -59,7 +59,10 @@ public:
 
 	virtual void OnAnimationDispose(const std::string_view& animationName, int track) { }
 
-	virtual void OnAnimationEvent(const std::string_view& animationName, int track, const std::string_view& eventName);
+	virtual void OnAnimationEvent(
+	    const std::string_view& animationName, int track, const std::string_view& eventName, int intValue, float floatValue,
+	    const std::string_view& stringValue
+	);
 
 private:
 	std::unique_ptr<SpineEventHandler> m_eventHandler;

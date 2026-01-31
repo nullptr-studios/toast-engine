@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/Physics/ColliderFlags.hpp"
 
 #include <glm/glm.hpp>
 
@@ -16,6 +17,7 @@ namespace physics {
 class Rigidbody;
 class BoxRigidbody;
 class ConvexCollider;
+class Trigger;
 class Line;
 
 class PhysicsSystem {
@@ -33,9 +35,11 @@ public:
 	static void RemoveRigidbody(Rigidbody* rb);
 	static void AddCollider(ConvexCollider* c);
 	static void RemoveCollider(ConvexCollider* c);
+	static void AddTrigger(Trigger* t);
+	static void RemoveTrigger(Trigger* t);
 	static void AddBox(BoxRigidbody* rb);
 	static void RemoveBox(BoxRigidbody* rb);
-	static std::optional<RayResult> RayCollision(Line* ray);
+	static std::optional<RayResult> RayCollision(Line* ray, ColliderFlags flags);
 
 	PhysicsSystem();
 	~PhysicsSystem();
@@ -60,6 +64,7 @@ private:
 		std::list<Rigidbody*> rigidbodies;
 		std::list<BoxRigidbody*> boxes;
 		std::list<ConvexCollider*> colliders;
+		std::list<Trigger*> triggers;
 		glm::dvec2 gravity = { 0.0, -9.81 };
 		double positionCorrectionSlop = 1.0e-3;
 		double positionCorrectionPtc = 0.4;

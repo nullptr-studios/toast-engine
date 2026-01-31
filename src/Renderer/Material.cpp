@@ -318,7 +318,7 @@ void Material::LoadResources() {
 			continue;
 		}
 
-		if (auto texture = resource::ResourceManager::GetInstance()->LoadResource<Texture>(path)) {
+		if (auto texture = resource::LoadResource<Texture>(path)) {
 			m_textures.push_back(texture);
 		} else {
 			TOAST_WARN("Could not load texture at path: {0}", path);
@@ -328,7 +328,7 @@ void Material::LoadResources() {
 
 	// Load shader resource
 	if (!m_shaderPath.empty()) {
-		m_shader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>(m_shaderPath);
+		m_shader = resource::LoadResource<renderer::Shader>(m_shaderPath);
 		if (!m_shader) {
 			TOAST_WARN("Could not load shader at path: {0}", m_shaderPath);
 		}

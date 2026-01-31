@@ -9,11 +9,12 @@
 #endif
 
 #include "Toast/Renderer/Lights/2DLight.hpp"
+#include "Toast/Renderer/OclussionVolume.hpp"
 
 void Light2D::Init() {
 	// Load quad mesh for light rendering
-	m_lightMesh = resource::ResourceManager::GetInstance()->LoadResource<renderer::Mesh>("assets/models/quad.obj");
-	m_lightShader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("assets/shaders/2dLight.shader");
+	m_lightMesh = resource::LoadResource<renderer::Mesh>("assets/models/quad.obj");
+	m_lightShader = resource::LoadResource<renderer::Shader>("assets/shaders/2dLight.shader");
 
 	transform()->scale(glm::vec3(m_radius * 2, m_radius * 2, 1.0f));
 	renderer::IRendererBase::GetInstance()->AddLight(this);
@@ -27,6 +28,11 @@ void Light2D::Destroy() {
 }
 
 void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
+	// Culling
+	if (!OclussionVolume::isSphereOnPlanes(renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), transform()->worldPosition(), m_radius)) {
+		return;
+	}
+
 	auto model = transform()->GetWorldMatrix();
 	auto mvp = premultiplied_matrix * model;
 

@@ -38,12 +38,23 @@ void SpineEventHandler::callback(spine::AnimationState* state, spine::EventType 
 			if (event) {
 				std::string name = event->getData().getName().buffer();
 				TOAST_TRACE("Spine Event: {}", name.c_str());
-				context->OnAnimationEvent(entry->getAnimation()->getName().buffer(), entry->getTrackIndex(), name);
 
 				// Access event data
 				int intValue = event->getIntValue();
 				float floatValue = event->getFloatValue();
 				const std::string& stringValue = event->getStringValue().buffer();
+
+				context->OnAnimationEvent(entry->getAnimation()->getName().buffer(), entry->getTrackIndex(), name, intValue, floatValue, stringValue);
+
+				if (name == "PlayFx") {
+					TOAST_TRACE("Spine PlayFx: {}", stringValue);
+					//@TODO
+					// context->PlayFxEvent(intValue, floatValue, stringValue);
+				} else if (name == "PlaySound") {
+					TOAST_TRACE("Spine PlaySound: {}", stringValue);
+					//@TODO
+					// context->SpawnParticleEvent(intValue, floatValue, stringValue);
+				}
 			}
 			break;
 	}

@@ -528,9 +528,9 @@ void World::CancelBegin(Object* obj) {
 		return;
 	}
 	auto* w = Instance();
+	std::lock_guard lock(w->m.queueMutex);
 	const auto it = std::ranges::find(w->m.beginQueue, obj);
 	if (it != w->m.beginQueue.end()) {
-		std::lock_guard lock(w->m.queueMutex);
 		w->m.beginQueue.erase(it);
 	}
 }
@@ -541,7 +541,10 @@ void World::ScheduleDestroy(Object* obj) {
 	}
 	auto* w = Instance();
 	std::lock_guard lock(w->m.queueMutex);
-	w->m.destroyQueue.push_back(obj);
+	// Avoid double-scheduling the same object for destruction
+	if (std::ranges::find(w->m.destroyQueue, obj) == w->m.destroyQueue.end()) {
+		w->m.destroyQueue.push_back(obj);
+	}
 }
 
 const std::list<Object*>& World::begin_queue() const {

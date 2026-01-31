@@ -5,6 +5,7 @@
 #include "PhysicsSystem.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Physics/Rigidbody.hpp"
+#include "Toast/Physics/Trigger.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 #include "Toast/Time.hpp"
@@ -324,16 +325,76 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 
 std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 	std::optional<dvec2> result = std::nullopt;
-	dvec2 pt1 = ray->p1 - rb->GetPosition();
-	dvec2 pt2 = ray->p2 - rb->GetPosition();
-	dvec2 min_distance = cross(dvec3(pt1.x, pt1.y, 0.0f), dvec3(pt2.x, pt2.y, 0.0f)) / length(pt2 - pt1);
+	dvec2 line = ray->p2 - ray->p1;
+	double t = dot(rb->GetPosition() - ray->p1, line) / dot(line, line);
+	t = clamp(t, 0.0, 1.0);
+	dvec2 closest_point = ray->p1 + t * line;
 
-	if (length2(min_distance) >= rb->radius * rb->radius) {
+	if (length2(closest_point - rb->GetPosition()) > rb->radius * rb->radius) {
 		return std::nullopt;
 	}
 
-	result = rb->GetPosition();
+	double distance = std::max(0.0, rb->radius - length(closest_point - rb->GetPosition()));
+
+	dvec2 pt1 = closest_point - ray->tangent * distance;
+	dvec2 pt2 = closest_point + ray->tangent * distance;
+	if (length2(pt2 - ray->p1) > length2(pt1 - ray->p1)) {
+		result = pt1;
+	} else {
+		result = pt2;
+	}
+
 	return result;
+}
+
+void RbTriggerCollision(Rigidbody* rb1, Trigger* t) {
+	// calculate points
+	const auto& tr = t->transform();
+	double left = tr->worldPosition().x - (tr->scale().x / 2);
+	double right = tr->worldPosition().x + (tr->scale().x / 2);
+	double top = tr->worldPosition().y + (tr->scale().y / 2);
+	double bottom = tr->worldPosition().y - (tr->scale().y / 2);
+
+	const auto& pos = rb1->GetPosition();
+	const double scl = rb1->radius;
+	float x_min = pos.x - scl;
+	float y_min = pos.y - scl;
+	float x_max = pos.x + scl;
+	float y_max = pos.y + scl;
+
+	// Actual collision check
+	if (x_min > right || x_max < left) {
+		goto NO_COLLISION;    // NOLINT
+	}
+	if (y_min > top || y_max < bottom) {
+		goto NO_COLLISION;    // NOLINT
+	}
+
+	// Dont dispatch callback if the rigidbody is already there
+	if (std::ranges::find(t->rigidbodies, rb1) != t->rigidbodies.end()) {
+		return;
+	}
+
+	t->rigidbodies.emplace_back(rb1);
+	t->enterCallback(rb1->parent());
+	t->m.color = t->debug.collideColor;
+
+	if (t->debug.log) {
+		TOAST_INFO("{} entered the trigger {}", rb1->parent()->name(), t->name());
+	}
+	return;
+
+NO_COLLISION:
+	if (std::ranges::find(t->rigidbodies, rb1) != t->rigidbodies.end()) {
+		t->rigidbodies.remove(rb1);
+		t->exitCallback(rb1->parent());
+		if (t->rigidbodies.empty()) {
+			t->m.color = t->debug.defaultColor;
+		}
+		if (t->debug.log) {
+			TOAST_INFO("{} exited the trigger {}", rb1->parent()->name(), t->name());
+		}
+	}
 }
 
 }

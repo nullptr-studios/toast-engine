@@ -29,8 +29,10 @@
 // clang-format on
 #endif
 
+#include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
 
+#include <sstream>
 #include <stb_image.h>
 
 #ifdef TRACY_ENABLE
@@ -45,7 +47,7 @@ IRendererBase* IRendererBase::m_instance = nullptr;
 static GLFWwindow* g_backup_current_context = nullptr;
 #endif
 
-#ifndef _NDEBUG
+#ifndef NDEBUG
 void DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* user_param) {
 	// ignore non-significant error/warning codes
 	if (id == 131169 || id == 131185 || id == 131218 || id == 131204) {
@@ -181,7 +183,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Debug output
-#ifndef _NDEBUG
+#ifndef NDEBUG
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(DebugCallback, nullptr);
 #endif
@@ -250,10 +252,10 @@ OpenGLRenderer::OpenGLRenderer() {
 	m_layerStack = LayerStack::GetInstance();
 
 	// setup default resources
-	m_quad = resource::ResourceManager::GetInstance()->LoadResource<renderer::Mesh>("models/quad.obj");
-	m_screenShader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/screen.shader");
-	m_combineLightShader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/combineLight.shader");
-	m_globalLightShader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/globalLight.shader");
+	m_quad = resource::LoadResource<Mesh>("models/quad.obj");
+	m_screenShader = resource::LoadResource<Shader>("shaders/screen.shader");
+	m_combineLightShader = resource::LoadResource<Shader>("shaders/combineLight.shader");
+	m_globalLightShader = resource::LoadResource<Shader>("shaders/globalLight.shader");
 
 	// Set once, change and reset state if needed
 	stbi_set_flip_vertically_on_load(1);
@@ -261,6 +263,7 @@ OpenGLRenderer::OpenGLRenderer() {
 
 OpenGLRenderer::~OpenGLRenderer() {
 	TOAST_INFO("Shutting down OpenGL Renderer...");
+
 	delete m_geometryFramebuffer;
 	delete m_lightFramebuffer;
 	delete m_outputFramebuffer;
@@ -329,6 +332,11 @@ void OpenGLRenderer::Render() {
 	// Compute combined matrix once
 	m_multipliedMatrix = m_projectionMatrix * m_viewMatrix;
 
+	// Extract frustum planes for culling
+	OclussionVolume::extractFrustumPlanesNormalized(m_multipliedMatrix, m_frustumPlanes);
+
+	// ParticleSystems are updated by the scene/world tick; renderer doesn't tick them directly
+
 	// Geometry
 	GeometryPass();
 
@@ -383,11 +391,12 @@ void OpenGLRenderer::GeometryPass() {
 	TracyGpuZone("Geometry Pass");
 #endif
 
-	// Sort by depth (front-to-back) only when necessary.
-	if (m_renderables.size() > 1) {
+	// Sort by depth (front-to-back) only when list has changed
+	if (m_renderablesSortDirty && m_renderables.size() > 1) {
 		std::ranges::stable_sort(m_renderables, [](IRenderable* a, IRenderable* b) {
 			return a->GetDepth() < b->GetDepth();
 		});
+		m_renderablesSortDirty = false;
 	}
 
 	m_geometryFramebuffer->bind();
@@ -399,6 +408,9 @@ void OpenGLRenderer::GeometryPass() {
 			r->OnRender(m_multipliedMatrix);
 		}
 	}
+
+	// ParticleSystems are Actors and will render themselves as part of layer/scene rendering
+
 	// Don't unbind here - will be unbound when next framebuffer is bound
 }
 
@@ -413,10 +425,11 @@ void OpenGLRenderer::LightingPass() {
 	}
 
 	// Sort lights by z to ensure correct accumulation ordering when needed
-	if (m_lights.size() > 1) {
+	if (m_lightsSortDirty && m_lights.size() > 1) {
 		std::ranges::stable_sort(m_lights, [](Light2D* a, Light2D* b) {
 			return a->transform()->position().z < b->transform()->position().z;
 		});
+		m_lightsSortDirty = false;
 	}
 
 	// Render lights at their own resolution
@@ -544,29 +557,28 @@ void OpenGLRenderer::Resize(unsigned int width, unsigned int height) {
 
 void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
 	m_renderables.push_back(renderable);
+	m_renderablesSortDirty = true;
 }
 
 void OpenGLRenderer::RemoveRenderable(IRenderable* renderable) {
-	auto iter = std::ranges::find(m_renderables, renderable);
-	if (iter == m_renderables.end()) {
-		TOAST_ERROR("Removing Renderable That Doesnt Exist on m_renderables");
-		return;
-	}
-	m_renderables.erase(iter);
+	m_renderables.erase(std::ranges::find(m_renderables, renderable));
+	m_renderablesSortDirty = true;
 }
 
 void OpenGLRenderer::AddLight(Light2D* light) {
 	m_lights.push_back(light);
+	m_lightsSortDirty = true;
 }
 
 void OpenGLRenderer::RemoveLight(Light2D* light) {
 	m_lights.erase(std::ranges::find(m_lights, light));
+	m_lightsSortDirty = true;
 }
 
 void OpenGLRenderer::LoadRenderSettings() {
 	json_t settings {};
 	std::istringstream ss;
-	if (!resource::ResourceManager::GetInstance()->OpenFile("renderer_settings.toast", ss)) {
+	if (!resource::Open("renderer_settings.toast", ss)) {
 		throw ToastException("Failed to find project_settings.toast");
 	}
 

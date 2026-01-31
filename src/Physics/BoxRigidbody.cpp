@@ -5,7 +5,9 @@
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
+#ifdef TOAST_EDITOR
 #include <imgui.h>
+#endif
 
 namespace physics {
 
@@ -17,6 +19,7 @@ void BoxRigidbody::Destroy() {
 	PhysicsSystem::RemoveBox(this);
 }
 
+#ifdef TOAST_EDITOR
 void BoxRigidbody::Inspector() {
 	ImGui::SeparatorText("Properties");
 
@@ -62,6 +65,7 @@ void BoxRigidbody::Inspector() {
 	ImGui::SameLine();
 	ImGui::DragFloat2("Debug force", &debug.addForce.x);
 }
+#endif
 
 void BoxRigidbody::EditorTick() {
 	if (!debug.show) {
