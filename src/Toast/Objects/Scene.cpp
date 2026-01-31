@@ -6,7 +6,6 @@
 
 namespace toast {
 
-
 void Scene::Load(json_t j, bool force_create) {
 	if (j["format"].get<std::string>() != "scene") {
 		throw ToastException("Json format is invalid, expected .scene");
