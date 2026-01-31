@@ -52,6 +52,3 @@ inline ColliderFlags& operator&=(ColliderFlags& a, ColliderFlags b) {
 	a = a & b;
 	return a;
 }
-
-
-

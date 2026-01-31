@@ -6,7 +6,7 @@
 #pragma once
 #ifdef NDEBUG
 #ifndef TOAST_EDITOR    // In release mode, disable Tracy unless we're in the editor
-// #undef TRACY_ENABLE
+#undef TRACY_ENABLE
 #endif
 #endif
 

@@ -9,14 +9,12 @@
 #include "glm/gtx/norm.hpp"
 
 #include <Toast/Resources/Mesh.hpp>
+#include <glad/gl.h>
 #include <glm/glm.hpp>
 #include <tiny_obj_loader.h>
 
-#include <glad/gl.h>
-
 // for error placeholder
 #include "ErrorMdl.hpp"
-
 
 renderer::Mesh::Mesh(Mesh&& o) noexcept
     : m_vertices(o.m_vertices),
@@ -24,13 +22,17 @@ renderer::Mesh::Mesh(Mesh&& o) noexcept
       m_vbo(o.m_vbo),
       m_ebo(o.m_ebo),
       m_debugName(std::move(o.m_debugName)),
-      m_hasVertexColor(o.m_hasVertexColor) {
+      m_hasVertexColor(o.m_hasVertexColor),
+      m_centroid(o.m_centroid),
+      m_boundingBox(o.m_boundingBox) {
 	m_path = std::move(o.m_path);
 
 	o.m_vao = 0;
 	o.m_vbo = 0;
 	o.m_ebo = 0;
 	o.m_hasVertexColor = false;
+	o.m_centroid = glm::vec3(0.0f);
+	o.m_boundingBox = BoundingBox {};
 }
 
 renderer::Mesh& renderer::Mesh::operator=(Mesh&& o) noexcept {
@@ -42,12 +44,16 @@ renderer::Mesh& renderer::Mesh::operator=(Mesh&& o) noexcept {
 		m_path = std::move(o.m_path);
 		m_debugName = std::move(o.m_debugName);
 		m_hasVertexColor = o.m_hasVertexColor;
+		m_centroid = o.m_centroid;
+		m_boundingBox = o.m_boundingBox;
 
 		// invalidate other shader
 		o.m_vao = 0;
 		o.m_vbo = 0;
 		o.m_ebo = 0;
 		o.m_hasVertexColor = false;
+		o.m_centroid = glm::vec3(0.0f);
+		o.m_boundingBox = BoundingBox {};
 	}
 	return *this;
 }
@@ -69,7 +75,7 @@ void renderer::Mesh::Load() {
 	SetResourceState(resource::ResourceState::LOADING);
 
 	std::istringstream stream {};
-	if (!resource::ResourceManager::GetInstance()->OpenFile(m_path, stream)) {
+	if (!resource::Open(m_path, stream)) {
 		TOAST_ERROR("Mesh: Failed to open mesh file: {}", m_path);
 		SetResourceState(resource::ResourceState::FAILED);
 		LoadErrMeshPlaceholder();
@@ -124,13 +130,24 @@ void renderer::Mesh::Load() {
 			m_vertices.emplace_back(Vertex { position, normal, tex_coord, {} });
 		}
 	}
+
+	// Compute bounding box and centroid
+	if (!m_vertices.empty()) {
+		glm::vec3 sum(0.0f);
+		for (const auto& v : m_vertices) {
+			m_boundingBox.expand(v.position);
+			sum += v.position;
+		}
+		m_centroid = sum / static_cast<float>(m_vertices.size());
+	}
+
 	ComputeTangents(m_vertices);
 	SetResourceState(resource::ResourceState::LOADEDCPU);
 }
 
 void renderer::Mesh::LoadMainThread() {
 	PROFILE_ZONE;
-	
+
 	SetResourceState(resource::ResourceState::UPLOADING);
 	if (m_vertices.empty()) {
 		TOAST_ERROR("Mesh: Failed to load mesh");
@@ -239,26 +256,38 @@ void renderer::Mesh::DrawDynamicSpine(size_t num_indices) const {
 	glBindVertexArray(0);
 }
 
-void renderer::Mesh::LoadErrMeshPlaceholder()
-{
+renderer::BoundingBox renderer::Mesh::ComputeSpineBoundingBox(const SpineVertex* vertices, size_t num_vertices) {
+	m_dynamicBoundingBox = BoundingBox {};    // Reset to default extremes
+
+	if (vertices == nullptr || num_vertices == 0) {
+		return m_dynamicBoundingBox;
+	}
+
+	for (size_t i = 0; i < num_vertices; ++i) {
+		m_dynamicBoundingBox.expand(vertices[i].position);
+	}
+
+	return m_dynamicBoundingBox;
+}
+
+void renderer::Mesh::LoadErrMeshPlaceholder() {
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 	std::string warn;
 	std::string err;
-	//bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, errorMdl);
-	
+	// bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, errorMdl);
+
 	tinyobj::ObjReaderConfig config;
 	config.triangulate = true;
-	config.mtl_search_path = ""; // none
-	
+	config.mtl_search_path = "";    // none
+
 	tinyobj::ObjReader reader;
-	reader.ParseFromString(errorMdl,"", config);
-	
+	reader.ParseFromString(errorMdl, "", config);
+
 	bool ret = reader.Valid();
 	attrib = reader.GetAttrib();
 	shapes = reader.GetShapes();
-	
 
 	if (!warn.empty()) {
 		TOAST_WARN("TinyObjLoader warning: {0}", warn);
@@ -284,13 +313,13 @@ void renderer::Mesh::LoadErrMeshPlaceholder()
 
 			if (idx.vertex_index >= 0) {
 				position = { attrib.vertices[(3 * idx.vertex_index) + 0],
-							   attrib.vertices[(3 * idx.vertex_index) + 1],
-							   attrib.vertices[(3 * idx.vertex_index) + 2] };
+					           attrib.vertices[(3 * idx.vertex_index) + 1],
+					           attrib.vertices[(3 * idx.vertex_index) + 2] };
 			}
 			if (idx.normal_index >= 0) {
 				normal = { attrib.normals[(3 * idx.normal_index) + 0],
-							 attrib.normals[(3 * idx.normal_index) + 1],
-							 attrib.normals[(3 * idx.normal_index) + 2] };
+					         attrib.normals[(3 * idx.normal_index) + 1],
+					         attrib.normals[(3 * idx.normal_index) + 2] };
 			}
 			if (idx.texcoord_index >= 0) {
 				tex_coord = { attrib.texcoords[(2 * idx.texcoord_index) + 0], attrib.texcoords[(2 * idx.texcoord_index) + 1] };
@@ -298,6 +327,17 @@ void renderer::Mesh::LoadErrMeshPlaceholder()
 			m_vertices.emplace_back(Vertex { position, normal, tex_coord, {} });
 		}
 	}
+
+	// Compute bounding box and centroid for error placeholder
+	if (!m_vertices.empty()) {
+		glm::vec3 sum(0.0f);
+		for (const auto& v : m_vertices) {
+			m_boundingBox.expand(v.position);
+			sum += v.position;
+		}
+		m_centroid = sum / static_cast<float>(m_vertices.size());
+	}
+
 	ComputeTangents(m_vertices);
 	SetResourceState(resource::ResourceState::LOADEDCPU);
 }

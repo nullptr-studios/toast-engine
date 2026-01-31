@@ -28,7 +28,7 @@ DebugDrawLayer::~DebugDrawLayer() = default;
 
 void DebugDrawLayer::OnAttach() {
 	// create shader
-	m_shader = resource::ResourceManager::GetInstance()->LoadResource<renderer::Shader>("shaders/debug.shader");
+	m_shader = resource::LoadResource<renderer::Shader>("shaders/debug.shader");
 
 	// create VAO/VBO
 	glGenVertexArrays(1, &m_vao);
@@ -50,7 +50,7 @@ void DebugDrawLayer::OnAttach() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// reserve to avoid reallocation very often
-	m_vertices.reserve(4096*3);
+	m_vertices.reserve(4096 * 3);
 
 	m_renderer = IRendererBase::GetInstance();
 }

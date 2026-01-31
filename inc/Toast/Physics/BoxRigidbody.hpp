@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Line.hpp"
+
 #include <Toast/Components/Component.hpp>
 #include <glm/glm.hpp>
 
@@ -15,7 +16,9 @@ public:
 
 	void Init() override;
 	void Destroy() override;
+#ifdef TOAST_EDITOR
 	void Inspector() override;
+#endif
 	void EditorTick() override;
 
 	json_t Save() const override;

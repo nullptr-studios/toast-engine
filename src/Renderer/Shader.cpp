@@ -26,7 +26,7 @@ void Shader::Load() {
 	SetResourceState(resource::ResourceState::LOADING);
 	// Parse Json
 	std::istringstream in {};
-	if (!resource::ResourceManager::GetInstance()->OpenFile(m_path, in)) {
+	if (!resource::Open(m_path, in)) {
 		throw ToastException("Shader Failed to open shader file: " + m_path);
 	}
 
@@ -213,7 +213,7 @@ void Shader::CreateFromFiles(const std::vector<std::pair<Stage, std::filesystem:
 	loaded.reserve(stage_files.size());
 	for (const auto& [stage, path] : stage_files) {
 		std::istringstream in {};
-		if (!resource::ResourceManager::GetInstance()->OpenFile(path.string(), in)) {
+		if (!resource::Open(path.string(), in)) {
 			TOAST_ERROR("Shader Failed to open shader file: {0}", path.string());
 		}
 		loaded.emplace_back(stage, std::move(in.str()));
@@ -233,7 +233,7 @@ void Shader::Reload() {
 	loaded.reserve(m_sourceFiles.size());
 	for (auto& kv : m_sourceFiles) {
 		std::istringstream in {};
-		if (!resource::ResourceManager::GetInstance()->OpenFile(kv.second.string(), in)) {
+		if (!resource::Open(kv.second.string(), in)) {
 			TOAST_ERROR("Failed to open shader file: {0}", kv.second.string());
 			return;
 		}

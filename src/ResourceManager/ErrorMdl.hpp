@@ -4,8 +4,8 @@
 
 #pragma once
 
-static constexpr char errorMdl[] = 
-	R"(# Blender 5.0.1
+static constexpr char errorMdl[] =
+    R"(# Blender 5.0.1
 # www.blender.org
 o obj_0
 v -0.934344 0.531701 0.252904

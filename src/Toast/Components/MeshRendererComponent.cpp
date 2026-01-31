@@ -68,9 +68,9 @@ void MeshRendererComponent::Inspector() {
 void MeshRendererComponent::Init() {
 	TransformComponent::Init();
 	// init just for loading
-	m_material = resource::ResourceManager::GetInstance()->LoadResource<renderer::Material>(m_materialPath);
+	m_material = resource::LoadResource<renderer::Material>(m_materialPath);
 	// m_texture = resource::ResourceManager::GetInstance()->LoadResource<Texture>(m_texturePath);
-	m_mesh = resource::ResourceManager::GetInstance()->LoadResource<renderer::Mesh>(m_meshPath);
+	m_mesh = resource::LoadResource<renderer::Mesh>(m_meshPath);
 
 #ifdef TOAST_EDITOR
 	m_materialSlot.SetOnDroppedLambda([this](const std::string& p) {
@@ -105,9 +105,11 @@ void MeshRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept 
 		return;
 	}
 
-	// if (!OclussionVolume::isSphereOnPlanes(renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), worldPosition(), 10.0f *
-	// glm::length(scale()))) { 	return;
-	// }
+	if (!OclussionVolume::isTransformedAABBOnPlanes(
+	        renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), m_mesh->boundingBox(), GetWorldMatrix()
+	    )) {
+		return;
+	}
 
 	// guard against null pointers (material or mesh might have failed to load)
 	if (m_material == nullptr) {

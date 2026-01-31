@@ -13,7 +13,7 @@ SpineTextureLoader SpineTextureLoader::instance;
 
 void SpineTextureLoader::load(spine::AtlasPage& page, const spine::String& path) {
 	// Texture::FlipVertically(false);
-	auto texture = resource::ResourceManager::GetInstance()->LoadResource<Texture>(path.buffer());
+	auto texture = resource::LoadResource<Texture>(path.buffer());
 	page.texture = new std::shared_ptr<Texture>(texture);
 	// Texture::FlipVertically(true);
 
