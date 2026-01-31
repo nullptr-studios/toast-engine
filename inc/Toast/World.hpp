@@ -37,13 +37,6 @@ public:
 	static void DisableScene(unsigned id);
 	static void DisableScene(const std::string& name);
 
-	static void NextLevel() {
-		Instance()->m.gameFlow.NextLevel();
-	}
-
-	static void NextWorld() {
-		Instance()->m.gameFlow.NextWorld();
-	}
 
 	void EarlyTick();
 	void Tick();

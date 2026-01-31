@@ -1,5 +1,6 @@
 #include "Toast/GameFlow.hpp"
 
+#include "Toast/GameEvents.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/World.hpp"
@@ -34,6 +35,23 @@ GameFlow::GameFlow() {
 
 	sol::table table = result;
 	world_list = table.as<std::vector<std::string>>();
+
+	listener.Subscribe<toast::LoadWorld>([this](auto* e) {
+		LoadWorld(e->world);
+		return true;
+	});
+	listener.Subscribe<toast::LoadLevel>([this](auto* e) {
+		LoadLevel(e->world, e->level);
+		return true;
+	});
+	listener.Subscribe<toast::NextWorld>([this](auto* _) {
+		NextWorld();
+		return true;
+	});
+	listener.Subscribe<toast::NextLevel>([this](auto* _) {
+		NextLevel();
+		return true;
+	});
 
 	m = {
 		.worldList = std::move(world_list),
