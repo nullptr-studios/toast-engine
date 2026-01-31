@@ -181,7 +181,9 @@ void Engine::Init() {
 	m->physicsSystem = std::make_unique<physics::PhysicsSystem>();
 
 	// Audio
-	m->audioSystem = audio::AudioSystem::create();
+	auto audio_result = audio::AudioSystem::create();
+	TOAST_ASSERT(audio_result, "Failed to initialize Audio System");
+	m->audioSystem = audio_result.value();
 
 	Begin();
 }

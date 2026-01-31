@@ -49,7 +49,7 @@ auto is_muted() -> bool {
 
 namespace core {
 
-auto load(const Data& audio_data) -> std::expected<void, AudioError> {
+auto load(Data& audio_data) -> std::expected<void, AudioError> {
 	return AudioSystem::get()->core.load(audio_data);
 }
 
@@ -65,7 +65,7 @@ auto update_volume(Data& audio_data, float new_volume, unsigned int fade_length)
 	return AudioSystem::get()->core.update_volume(audio_data, new_volume, fade_length);
 }
 
-auto update_position(const Data& audio_data) -> std::expected<void, AudioError> {
+auto update_position(Data& audio_data) -> std::expected<void, AudioError> {
 	return AudioSystem::get()->core.update_position(audio_data);
 }
 

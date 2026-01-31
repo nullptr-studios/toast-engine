@@ -2,8 +2,9 @@
 
 #include "AudioSystem.hpp"
 
-#include <FMOD/fmod_errors.h>
+#include <fmod_errors.h>
 #include <Toast/Log.hpp>
+#include <Toast/Profiler.hpp>
 
 audio::AudioSystem* audio::AudioSystem::m_instance = nullptr;
 
@@ -50,8 +51,8 @@ void audio::AudioSystem::Tick() const {
 	ERRCHECK(m.studio_system->update());    // also updates the low level system
 }
 
-auto audio::AudioSystem::CoreSystem::load(const Data& audio_data) -> std::expected<void, AudioError> {
-	PROFILER_START
+auto audio::AudioSystem::CoreSystem::load(Data& audio_data) -> std::expected<void, AudioError> {
+	PROFILE_ZONE;
 	if (!owner->is_loaded(audio_data)) {
 		TOAST_INFO("[AudioSystem] Loading Sound from file {}", audio_data.GetFilePath());
 		FMOD::Sound* sound;
@@ -64,12 +65,10 @@ auto audio::AudioSystem::CoreSystem::load(const Data& audio_data) -> std::expect
 		ERRCHECK(owner->m.sounds[audio_data.GetUniqueID()]->getLength(&msLength, FMOD_TIMEUNIT_MS));
 		audio_data.SetLengthMS(msLength);
 		audio_data.SetLoaded(true);
-		PROFILER_END("AudioSystem::load")
 		return {};
 	}
 	
 	TOAST_WARN("[AudioSystem] Sound File was already loaded!");
-	PROFILER_END("AudioSystem::load")
 	return std::unexpected(AudioError::AlreadyLoaded);
 }
 
@@ -145,8 +144,8 @@ auto audio::AudioSystem::CoreSystem::update_volume(Data& audio_data, float new_v
 	return {};
 }
 
-auto audio::AudioSystem::CoreSystem::update_position(const Data& audio_data) -> std::expected<void, AudioError> {
-	if (!is_playing(audio_data)) {
+auto audio::AudioSystem::CoreSystem::update_position(Data& audio_data) -> std::expected<void, AudioError> {
+	if (!this->is_playing(audio_data)) {
 		TOAST_WARN("[AudioSystem] Can't update sound position!");
 		return std::unexpected(AudioError::NotPlaying);
 	}
@@ -176,19 +175,18 @@ auto audio::AudioSystem::CoreSystem::get_length(const Data& audio_data) const ->
 }
 
 auto audio::AudioSystem::load_bank(std::string_view filepath) -> std::expected<void, AudioError> {
-	PROFILER_START
+	PROFILE_ZONE;
 	TOAST_INFO("[AudioSystem] Loading FMOD Studio Sound Bank {}", filepath);
 	FMOD::Studio::Bank* bank = nullptr;
 	ERRCHECK(m.studio_system->loadBankFile(std::string(filepath).c_str(), FMOD_STUDIO_LOAD_BANK_NORMAL, &bank));
 	m.sound_banks.insert({ std::string(filepath), bank });
-	PROFILER_END("AudioSystem::load_bank")
 	return {};
 }
 
 auto audio::AudioSystem::load_event(
     std::string_view name, std::span<const std::pair<std::string_view, float>> params
 ) -> std::expected<void, AudioError> {
-	PROFILER_START
+	PROFILE_ZONE;
 	TOAST_INFO("[AudioSystem] Loading FMOD Studio Event {}", name);
 	FMOD::Studio::EventDescription* event_description = nullptr;
 	ERRCHECK(m.studio_system->getEvent(std::string(name).c_str(), &event_description));
@@ -203,7 +201,6 @@ auto audio::AudioSystem::load_event(
 	}
 	m.event_instances.insert({ std::string(name), event_instance });
 	m.event_descriptions.insert({ std::string(name), event_description });
-	PROFILER_END("AudioSystem::load_event")
 	return {};
 }
 
@@ -284,9 +281,7 @@ auto audio::AudioSystem::set_3d_channel_position(const Data& audio_data, FMOD::C
 	                       audio_data.GetPosition().y * m.DISTANCE_FACTOR,
 	                       audio_data.GetPosition().z * m.DISTANCE_FACTOR };
 
-	FMOD_VECTOR velocity =    // TODO: Add doppler (velocity) support
-	    { 0.0f, 0.0f, 0.0f };
-
+	FMOD_VECTOR velocity = { 0.0f, 0.0f, 0.0f }; // TODO: Add doppler eventually
 	ERRCHECK(channel->set3DAttributes(&position, &velocity));
 }
 
@@ -301,7 +296,7 @@ auto audio::AudioSystem::initialize_reverb() -> void {
 
 void ERRCHECK_fn(const FMOD_RESULT result, const char* file, const int line) {
 	if (result != FMOD_OK) {
-		TOAST_ERROR("FMOD ERROR: {} [Line {}] {} - {}", file, line, result, FMOD_ErrorString(result));
+		TOAST_ERROR("FMOD ERROR: {} [Line {}] {} - {}", file, line, static_cast<int>(result), FMOD_ErrorString(result));
 	}
 }
 
@@ -313,10 +308,10 @@ auto audio::AudioSystem::debug_event_info(const FMOD::Studio::EventDescription* 
 	ERRCHECK(event_desc->isOneshot(&is_oneshot));
 
 	TOAST_INFO(
-	    "FMOD EventDescription has {} parameter descriptions, {} 3D, {} oneshot, {} valid.",
-	    params,
-	    is_3d ? "is" : "isn't",
-	    is_oneshot ? "is" : "isn't",
-	    event_desc->isValid() ? "is" : "isn't"
+		"FMOD EventDescription has {} parameter descriptions, {} 3D, {} oneshot, {} valid.",
+		params,
+		is_3d ? "is" : "isn't",
+		is_oneshot ? "is" : "isn't",
+		event_desc->isValid() ? "is" : "isn't"
 	);
 }

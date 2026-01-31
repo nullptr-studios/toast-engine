@@ -9,6 +9,8 @@
 #include <string_view>
 #include <span>
 #include <memory>
+#include <fmod.hpp>
+#include <fmod_studio.hpp>
 
 /**
  * @brief Error Handling Function for FMOD Errors
@@ -69,7 +71,7 @@ public:
 		explicit CoreSystem(AudioSystem* system) : owner(system) {}
 
 		/// @brief Loads a sound from disk with specified settings
-		auto load(const Data& audio_data) -> std::expected<void, AudioError>;
+		auto load(Data& audio_data) -> std::expected<void, AudioError>;
 
 		/// @brief Plays a previously loaded sound
 		auto play(const Data& audio_data) -> std::expected<void, AudioError>;
@@ -81,7 +83,7 @@ public:
 		auto update_volume(Data& audio_data, float new_volume, unsigned int fade_length = 0) -> std::expected<void, AudioError>;
 
 		/// @brief Updates the 3D position of a playing sound
-		auto update_position(const Data& audio_data) -> std::expected<void, AudioError>;
+		auto update_position(Data& audio_data) -> std::expected<void, AudioError>;
 
 		/// @brief Checks if a looping sound is currently playing
 		[[nodiscard]]

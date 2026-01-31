@@ -48,7 +48,7 @@ auto is_muted() -> bool;
 /// @brief Low-level (FMOD Core) API for raw sound playback.
 namespace core {
 	/// @brief Loads a sound into the core cache.
-	auto load(const Data& audio_data) -> std::expected<void, AudioError>;
+	auto load(Data& audio_data) -> std::expected<void, AudioError>;
 
 	/// @brief Plays a loaded sound.
 	auto play(const Data& audio_data) -> std::expected<void, AudioError>;
@@ -60,7 +60,7 @@ namespace core {
 	auto update_volume(Data& audio_data, float new_volume, unsigned int fade_length = 0) -> std::expected<void, AudioError>;
 
 	/// @brief Updates a playing sound's 3D position.
-	auto update_position(const Data& audio_data) -> std::expected<void, AudioError>;
+	auto update_position(Data& audio_data) -> std::expected<void, AudioError>;
 
 	/// @brief Checks if a looping sound is currently playing.
 	[[nodiscard]]
