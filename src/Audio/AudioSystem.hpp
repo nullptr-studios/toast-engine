@@ -116,14 +116,15 @@ private:
 	auto initialize_reverb() -> void;
 	auto debug_event_info(const FMOD::Studio::EventDescription* event_desc) const -> void;
 
+	static constexpr unsigned int MAX_AUDIO_CHANNELS = 255;
+	static constexpr float DISTANCE_FACTOR = 1.0f;    // Meters
+
 	struct {
 		FMOD::Studio::System* studio_system = nullptr;
 		FMOD::System* low_level_system = nullptr;
 		
-		static constexpr unsigned int MAX_AUDIO_CHANNELS = 255;
 		FMOD::ChannelGroup* master_group = nullptr;
 
-		static constexpr float DISTANCE_FACTOR = 1.0f;    // Meters
 		FMOD_VECTOR listener_position = { 0.0f, 0.0f, -1.0f * DISTANCE_FACTOR };
 		FMOD_VECTOR forward = { 0.0f, 0.0f, 1.0f };
 		FMOD_VECTOR up = { 0.0f, 1.0f, 0.0f };

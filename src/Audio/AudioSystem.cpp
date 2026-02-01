@@ -33,10 +33,10 @@ void audio::AudioSystem::Init() {
 	ERRCHECK(FMOD::Studio::System::create(&m.studio_system));
 	ERRCHECK(m.studio_system->getCoreSystem(&m.low_level_system));
 	ERRCHECK(m.low_level_system->setSoftwareFormat(AUDIO_SAMPLE_RATE, FMOD_SPEAKERMODE_5POINT1, 0));
-	ERRCHECK(m.low_level_system->set3DSettings(1.0, m.DISTANCE_FACTOR, 0.5f));
+	ERRCHECK(m.low_level_system->set3DSettings(1.0, DISTANCE_FACTOR, 0.5f));
 
 	// live-update while on debug
-	ERRCHECK(m.studio_system->initialize(m.MAX_AUDIO_CHANNELS, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, 0));
+	ERRCHECK(m.studio_system->initialize(MAX_AUDIO_CHANNELS, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, 0));
 
 	ERRCHECK(m.low_level_system->getMasterChannelGroup(&m.master_group));
 	initialize_reverb();
@@ -58,7 +58,7 @@ auto audio::AudioSystem::CoreSystem::load(Data& audio_data) -> std::expected<voi
 		FMOD::Sound* sound;
 		ERRCHECK(owner->m.low_level_system->createSound(audio_data.GetFilePath(), audio_data.Is3D() ? FMOD_3D : FMOD_2D, 0, &sound));
 		ERRCHECK(sound->setMode(audio_data.Loop() ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF));
-		ERRCHECK(sound->set3DMinMaxDistance(0.5f * owner->m.DISTANCE_FACTOR, 5000.0f * owner->m.DISTANCE_FACTOR));
+		ERRCHECK(sound->set3DMinMaxDistance(0.5f * owner->DISTANCE_FACTOR, 5000.0f * owner->DISTANCE_FACTOR));
 		// Cache sound for later playback to avoid reloading from disk
 		owner->m.sounds.insert({ audio_data.GetUniqueID(), sound });
 		unsigned int msLength = 0;
@@ -277,9 +277,9 @@ auto audio::AudioSystem::is_loaded(const Data& audio_data) const -> bool {
 }
 
 auto audio::AudioSystem::set_3d_channel_position(const Data& audio_data, FMOD::Channel* channel) const -> void {
-	FMOD_VECTOR position = { audio_data.GetPosition().x * m.DISTANCE_FACTOR,
-	                       audio_data.GetPosition().y * m.DISTANCE_FACTOR,
-	                       audio_data.GetPosition().z * m.DISTANCE_FACTOR };
+	FMOD_VECTOR position = { audio_data.GetPosition().x * DISTANCE_FACTOR,
+	                       audio_data.GetPosition().y * DISTANCE_FACTOR,
+	                       audio_data.GetPosition().z * DISTANCE_FACTOR };
 
 	FMOD_VECTOR velocity = { 0.0f, 0.0f, 0.0f }; // TODO: Add doppler eventually
 	ERRCHECK(channel->set3DAttributes(&position, &velocity));

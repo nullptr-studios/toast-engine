@@ -128,7 +128,7 @@ endif()
 FetchContent_Declare(
         sol2
         GIT_REPOSITORY https://github.com/ThePhD/sol2.git
-        GIT_TAG v3.3.1
+        GIT_TAG v3.5.0
         GIT_SHALLOW TRUE
 )
 
@@ -252,10 +252,10 @@ if(WIN32)
 elseif(UNIX AND NOT APPLE)
     set_target_properties(fmod PROPERTIES
         IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
-        IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/${FMOD_ARCH}/libfmodL.so"
-        IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/${FMOD_ARCH}/libfmod.so"
-        IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/${FMOD_ARCH}/libfmod.so"
-        IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/${FMOD_ARCH}/libfmod.so"
+        IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/libfmodL.so"
+        IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/libfmod.so"
+        IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/libfmod.so"
+        IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/libfmod.so"
     )
 endif()
 target_include_directories(fmod INTERFACE ${FMOD_INCLUDE_DIR})
@@ -277,10 +277,10 @@ if(WIN32)
 elseif(UNIX AND NOT APPLE)
     set_target_properties(fmod_studio PROPERTIES
         IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
-        IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/${FMOD_ARCH}/libfmodstudioL.so"
-        IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/${FMOD_ARCH}/libfmodstudio.so"
-        IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/${FMOD_ARCH}/libfmodstudio.so"
-        IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/${FMOD_ARCH}/libfmodstudio.so"
+        IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/libfmodstudioL.so"
+        IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/libfmodstudio.so"
+        IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/libfmodstudio.so"
+        IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/libfmodstudio.so"
     )
 endif()
 target_include_directories(fmod_studio INTERFACE ${FMOD_INCLUDE_DIR})
