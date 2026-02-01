@@ -158,7 +158,10 @@ Public Attributes</h2></td></tr>
 Protected Member Functions</h2></td></tr>
 <tr class="memitem:a30fc6fc7adb4abda6f7f721ed17f20c6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/structinput_1_1Action.html#a30fc6fc7adb4abda6f7f721ed17f20c6">Action</a> ()=default</td></tr>
 <tr class="separator:a30fc6fc7adb4abda6f7f721ed17f20c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e0093980c105954f54ef67ab61e8d2e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/structinput_1_1Action.html#a5e0093980c105954f54ef67ab61e8d2e">HasOnlyTransientInputs</a> () const</td></tr>
+<tr class="separator:a5e0093980c105954f54ef67ab61e8d2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c7f183b225906586c87ae5a0ad9e907"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/structinput_1_1Action.html#a8c7f183b225906586c87ae5a0ad9e907">CalculateValue</a> ()</td></tr>
+<tr class="memdesc:a8c7f183b225906586c87ae5a0ad9e907"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called each frame to update the action value and determine the correct state.  <br /></td></tr>
 <tr class="separator:a8c7f183b225906586c87ae5a0ad9e907"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a722e299ebba15dabbcc43f4e304f7f2c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/structinput_1_1Action.html#a722e299ebba15dabbcc43f4e304f7f2c">CheckState</a> (std::string_view <a class="el" href="../../da/d9c/structinput_1_1Action.html#ada1b57196ceae3b2b063f9fd368dae73">state</a>)</td></tr>
 <tr class="memdesc:a722e299ebba15dabbcc43f4e304f7f2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if this action should happen on the current <a class="el" href="../../da/d0b/classinput_1_1InputSystem.html">InputSystem</a> State.  <br /></td></tr>
@@ -323,7 +326,9 @@ template&lt;ActionValues Value&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d20/Action_8hpp_source.html#l00050">50</a> of file <a class="el" href="../../d6/d20/Action_8hpp_source.html">Action.hpp</a>.</p>
+<p>Called each frame to update the action value and determine the correct state. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d20/Action_8hpp_source.html#l00065">65</a> of file <a class="el" href="../../d6/d20/Action_8hpp_source.html">Action.hpp</a>.</p>
 
 </div>
 </div>
@@ -355,7 +360,7 @@ template&lt;ActionValues Value&gt; </div>
 
 <p>Checks if this action should happen on the current <a class="el" href="../../da/d0b/classinput_1_1InputSystem.html">InputSystem</a> State. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d20/Action_8hpp_source.html#l00079">79</a> of file <a class="el" href="../../d6/d20/Action_8hpp_source.html">Action.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d20/Action_8hpp_source.html#l00112">112</a> of file <a class="el" href="../../d6/d20/Action_8hpp_source.html">Action.hpp</a>.</p>
 
 </div>
 </div>
@@ -395,7 +400,7 @@ template&lt;ActionValues Value&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d20/Action_8hpp_source.html#l00128">128</a> of file <a class="el" href="../../d6/d20/Action_8hpp_source.html">Action.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d20/Action_8hpp_source.html#l00161">161</a> of file <a class="el" href="../../d6/d20/Action_8hpp_source.html">Action.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -404,6 +409,44 @@ Here is the caller graph for this function:</div>
 <area shape="rect" title=" " alt="" coords="403,13,556,38"/>
 <area shape="rect" href="../../d2/d00/classinput_1_1Layout.html#a8374d8a23f557fdf51d2ad6b98153267" title=" " alt="" coords="199,13,355,38"/>
 <area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="5,5,151,45"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a5e0093980c105954f54ef67ab61e8d2e" name="a5e0093980c105954f54ef67ab61e8d2e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5e0093980c105954f54ef67ab61e8d2e">&#9670;&#160;</a></span>HasOnlyTransientInputs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;ActionValues Value&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool <a class="el" href="../../da/d9c/structinput_1_1Action.html">input::Action</a>&lt; Value &gt;::HasOnlyTransientInputs </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d20/Action_8hpp_source.html#l00051">51</a> of file <a class="el" href="../../d6/d20/Action_8hpp_source.html">Action.hpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../da/d9c/structinput_1_1Action_a5e0093980c105954f54ef67ab61e8d2e_icgraph.png" border="0" usemap="#ada/d9c/structinput_1_1Action_a5e0093980c105954f54ef67ab61e8d2e_icgraph" alt=""/></div>
+<map name="ada/d9c/structinput_1_1Action_a5e0093980c105954f54ef67ab61e8d2e_icgraph" id="ada/d9c/structinput_1_1Action_a5e0093980c105954f54ef67ab61e8d2e_icgraph">
+<area shape="rect" title=" " alt="" coords="227,5,453,45"/>
+<area shape="rect" href="../../da/d9c/structinput_1_1Action.html#a8c7f183b225906586c87ae5a0ad9e907" title="Called each frame to update the action value and determine the correct state." alt="" coords="5,5,179,45"/>
 </map>
 </div>
 

@@ -108,7 +108,7 @@ Collaboration diagram for physics::PhysicsSystem::M:</div>
 <area shape="rect" href="../../d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="35,181,173,207"/>
 <area shape="rect" href="../../d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="153,93,258,119"/>
 <area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="198,181,301,207"/>
-<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="67,5,210,31"/>
+<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="67,5,210,31"/>
 <area shape="rect" href="../../d8/d87/classChildren.html" title=" " alt="" coords="234,5,310,31"/>
 </map>
 <center><span class="legend">[<a target="top" href="../../graph_legend.html">legend</a>]</span></center></div>
@@ -125,6 +125,8 @@ Public Attributes</h2></td></tr>
 <tr class="separator:a7af753cdb68d923d53bc64d56c75ec78"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adfd8e31df63a16c600da8b370ff15a33"><td class="memItemLeft" align="right" valign="top">std::list&lt; <a class="el" href="../../dd/d88/classphysics_1_1ConvexCollider.html">ConvexCollider</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#adfd8e31df63a16c600da8b370ff15a33">colliders</a></td></tr>
 <tr class="separator:adfd8e31df63a16c600da8b370ff15a33"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe78c4ff8725ab1fc8159589014aece9"><td class="memItemLeft" align="right" valign="top">std::list&lt; <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html">Trigger</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#abe78c4ff8725ab1fc8159589014aece9">triggers</a></td></tr>
+<tr class="separator:abe78c4ff8725ab1fc8159589014aece9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8468a46df29ced27319353931a70d995"><td class="memItemLeft" align="right" valign="top">glm::dvec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#a8468a46df29ced27319353931a70d995">gravity</a> = { 0.0, -9.81 }</td></tr>
 <tr class="separator:a8468a46df29ced27319353931a70d995"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a75140a93daf4bd8e6f463a740e6539a2"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#a75140a93daf4bd8e6f463a740e6539a2">positionCorrectionSlop</a> = 1.0e-3</td></tr>
@@ -135,12 +137,14 @@ Public Attributes</h2></td></tr>
 <tr class="separator:ac2be27806825ee2529d7130a27759831"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af3f7e957ca9d3405f7a9db2e7f029441"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#af3f7e957ca9d3405f7a9db2e7f029441">epsSmall</a> = 1.0e-9</td></tr>
 <tr class="separator:af3f7e957ca9d3405f7a9db2e7f029441"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a404ae08cb1ce0fcc50665915581c96b5"><td class="memItemLeft" align="right" valign="top">std::atomic&lt; std::chrono::steady_clock::time_point &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#a404ae08cb1ce0fcc50665915581c96b5">lastPhysicsTime</a> { std::chrono::steady_clock::now() }</td></tr>
+<tr class="separator:a404ae08cb1ce0fcc50665915581c96b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acbf62cb0cff46d00d25f9a0a8695b477"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d7b/classevent_1_1ListenerComponent.html">event::ListenerComponent</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#acbf62cb0cff46d00d25f9a0a8695b477">eventListener</a></td></tr>
 <tr class="separator:acbf62cb0cff46d00d25f9a0a8695b477"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00058">58</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00069">69</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
 <a id="a7af753cdb68d923d53bc64d56c75ec78" name="a7af753cdb68d923d53bc64d56c75ec78"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7af753cdb68d923d53bc64d56c75ec78">&#9670;&#160;</a></span>boxes</h2>
@@ -154,7 +158,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00062">62</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00073">73</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -170,7 +174,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00063">63</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00074">74</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -186,7 +190,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00067">67</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00079">79</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -202,7 +206,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00068">68</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00080">80</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -218,7 +222,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00070">70</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00085">85</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -234,7 +238,23 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00064">64</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00076">76</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a404ae08cb1ce0fcc50665915581c96b5" name="a404ae08cb1ce0fcc50665915581c96b5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a404ae08cb1ce0fcc50665915581c96b5">&#9670;&#160;</a></span>lastPhysicsTime</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::atomic&lt;std::chrono::steady_clock::time_point&gt; physics::PhysicsSystem::M::lastPhysicsTime { std::chrono::steady_clock::now() }</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00083">83</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -250,7 +270,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00066">66</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00078">78</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -266,7 +286,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00065">65</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00077">77</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -282,7 +302,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00061">61</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00072">72</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -298,7 +318,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00059">59</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00070">70</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -314,7 +334,23 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00060">60</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00071">71</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+
+</div>
+</div>
+<a id="abe78c4ff8725ab1fc8159589014aece9" name="abe78c4ff8725ab1fc8159589014aece9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe78c4ff8725ab1fc8159589014aece9">&#9670;&#160;</a></span>triggers</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::list&lt;<a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html">Trigger</a>*&gt; physics::PhysicsSystem::M::triggers</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00075">75</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 
 </div>
 </div>

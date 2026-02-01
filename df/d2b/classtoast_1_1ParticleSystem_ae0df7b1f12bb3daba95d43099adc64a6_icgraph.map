@@ -1,0 +1,4 @@
+<map id="toast::ParticleSystem::InitSharedResources" name="toast::ParticleSystem::InitSharedResources">
+<area shape="rect" id="node1" title="Initialize shared resources." alt="" coords="213,5,376,45"/>
+<area shape="rect" id="node2" href="$df/d2b/classtoast_1_1ParticleSystem.html#a30a3f0c9b2ecfa0ae770a3cc6ddbf798" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,165,45"/>
+</map>

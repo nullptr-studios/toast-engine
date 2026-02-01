@@ -11,7 +11,7 @@ var classSpineRendererComponent =
     [ "OnAnimationCompleted", "d0/dc7/classSpineRendererComponent.html#a761e96a0a60c9cd564b28c0e75e2a414", null ],
     [ "OnAnimationDispose", "d0/dc7/classSpineRendererComponent.html#aab385fb91096d134794d1506700030d2", null ],
     [ "OnAnimationEnd", "d0/dc7/classSpineRendererComponent.html#abe443b6ee9704a5e39bc61e0dfd404f1", null ],
-    [ "OnAnimationEvent", "d0/dc7/classSpineRendererComponent.html#af50e72f1cdd9fe853d14bb3fad289d97", null ],
+    [ "OnAnimationEvent", "d0/dc7/classSpineRendererComponent.html#a3cb307a3b102c117dc6b73315e95d896", null ],
     [ "OnAnimationInterrupted", "d0/dc7/classSpineRendererComponent.html#ab44c9875bb5789777de5bb664c418412", null ],
     [ "OnAnimationStart", "d0/dc7/classSpineRendererComponent.html#a58aa83607b75e997f07eff96b783be1c", null ],
     [ "OnRender", "d0/dc7/classSpineRendererComponent.html#ac7c57651f7368b20c302455ef4712c5e", null ],

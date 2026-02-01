@@ -1,0 +1,5 @@
+<map id="toast::ParticleEmitterConfig" name="toast::ParticleEmitterConfig">
+<area shape="rect" id="node1" title="Configuration for a particle emitter." alt="" coords="5,255,205,280"/>
+<area shape="rect" id="node2" href="$d2/d6a/structtoast_1_1Range.html" title=" " alt="" coords="24,93,187,119"/>
+<area shape="rect" id="node3" href="$d2/d6a/structtoast_1_1Range.html" title="Range helper for random values." alt="" coords="34,5,177,31"/>
+</map>

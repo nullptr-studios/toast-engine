@@ -1,4 +1,5 @@
 <map id="toast::Object::Destroy" name="toast::Object::Destroy">
-<area shape="rect" id="node1" title="This function runs when the object is set to be destroyed." alt="" coords="224,5,388,31"/>
+<area shape="rect" id="node1" title="This function runs when the object is set to be destroyed." alt="" coords="224,35,388,60"/>
 <area shape="rect" id="node2" href="$d1/da3/classtoast_1_1Object.html#a22696262d5e02175220f2af82c663136" title=" " alt="" coords="5,5,176,31"/>
+<area shape="rect" id="node3" href="$df/d2b/classtoast_1_1ParticleSystem.html#a796f31a89365dbc22a1d6b05ee7b61f8" title="This function runs when the object is set to be destroyed." alt="" coords="11,55,171,95"/>
 </map>

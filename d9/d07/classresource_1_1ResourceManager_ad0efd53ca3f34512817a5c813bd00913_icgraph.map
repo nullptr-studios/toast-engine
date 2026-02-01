@@ -1,38 +1,10 @@
 <map id="resource::ResourceManager::GetInstance" name="resource::ResourceManager::GetInstance">
-<area shape="rect" id="node1" title=" " alt="" coords="759,632,961,672"/>
-<area shape="rect" id="node2" href="$db/d95/classspine_1_1EngineSpineExtension.html#a32e9b884162da37142f2e838a3a2c63c" title=" " alt="" coords="490,5,699,45"/>
-<area shape="rect" id="node3" href="$d9/d50/classrenderer_1_1Shader.html#a7fcbfa40dfef2cd48fa4ed3e6e14e026" title="Create shader from files (stage, path)" alt="" coords="504,120,685,160"/>
-<area shape="rect" id="node4" href="$d9/d50/classrenderer_1_1Shader.html#aae684c567923430746044428b4215574" title="loads the resource into CPU memory" alt="" coords="230,99,399,125"/>
-<area shape="rect" id="node5" href="$d9/d07/classresource_1_1ResourceManager.html#a38cd7a05776e6089beefba6f283033d6" title=" " alt="" coords="493,184,696,224"/>
-<area shape="rect" id="node6" href="$db/db2/ResourceSlot_8cpp.html#ac32cb254900114e073f80e0670cf09ba" title=" " alt="" coords="503,249,687,274"/>
-<area shape="rect" id="node8" href="$dd/d75/classAtlasRendererComponent.html#a6c2703c4082252a0572931db24b5a0fd" title="This function runs just after the object is created (scene load thread)" alt="" coords="500,299,689,339"/>
-<area shape="rect" id="node9" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a6c0554ccc0f646263c59529ba8ee8bea" title="This function runs just after the object is created (scene load thread)" alt="" coords="199,648,431,688"/>
-<area shape="rect" id="node10" href="$d0/dc7/classSpineRendererComponent.html#ad1952cbfc3a232ad54536c0170b36f39" title="TODO:SPINE RESOURCE SLOTS." alt="" coords="499,427,691,467"/>
-<area shape="rect" id="node11" href="$d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="544,491,645,517"/>
-<area shape="rect" id="node12" href="$d4/d8c/classrenderer_1_1Mesh.html#a666bf6a6d984146ef7e7dcf4a4ab4f25" title="loads the resource into CPU memory" alt="" coords="515,541,674,566"/>
-<area shape="rect" id="node13" href="$d6/daf/classSpineAtlas.html#a6df4335c7930ed00433f8b958e54bfcd" title="loads the resource into CPU memory" alt="" coords="529,590,660,615"/>
-<area shape="rect" id="node14" href="$de/d02/classSpineSkeletonData.html#a987a79a15788aaea9b15828c4182126f" title="loads the resource into CPU memory" alt="" coords="503,639,687,665"/>
-<area shape="rect" id="node15" href="$d6/d97/classTexture.html#aed73817411e8a93bc03a8e54b4a935ad" title="loads the resource into CPU memory" alt="" coords="540,689,649,714"/>
-<area shape="rect" id="node16" href="$d6/dd4/classtoast_1_1Scene.html#a0cedaed0a89a27b9e0e43e10a907f35a" title=" " alt="" coords="524,762,665,787"/>
-<area shape="rect" id="node17" href="$da/d7d/classSpineTextureLoader.html#a62da76c8ae7d93ba30e38ef284e8811f" title=" " alt="" coords="519,812,670,852"/>
-<area shape="rect" id="node18" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a18b1d9863c345bebecd59b4fd2e97c1d" title="Loads render settings from project settings." alt="" coords="497,876,692,916"/>
-<area shape="rect" id="node19" href="$d4/de6/classrenderer_1_1Material.html#a46c255645ed8314386ee98e87bf8c9d2" title=" " alt="" coords="525,1055,664,1095"/>
-<area shape="rect" id="node22" href="$df/daf/classrenderer_1_1DebugDrawLayer.html#aa1b958dc22ad7a0c70faf45a9ba97851" title=" " alt="" coords="496,991,693,1031"/>
-<area shape="rect" id="node23" href="$d8/d5c/namespaceresource.html#a723b33048c1a6b9c57bc5047f7aa9bb1" title=" " alt="" coords="535,1233,655,1258"/>
-<area shape="rect" id="node33" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="497,1119,692,1159"/>
-<area shape="rect" id="node34" href="$d9/d50/classrenderer_1_1Shader.html#ac3d6214f6af052acd86607d86f7cd3b3" title="Recompile (only if constructed from files)." alt="" coords="503,1183,686,1209"/>
-<area shape="rect" id="node35" href="$de/da0/classtoast_1_1MeshRendererComponent.html#aeb94c065b4cf1a7f341b48610b02d54f" title=" " alt="" coords="479,363,711,403"/>
-<area shape="rect" id="node36" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a4f81e014fd09e5d5fda75a2b7c84b8fd" title=" " alt="" coords="479,1283,711,1323"/>
-<area shape="rect" id="node7" href="$dd/ddc/classeditor_1_1ResourceSlot.html#a6f40912259b00dbff66d31c73491dde9" title=" " alt="" coords="238,241,391,281"/>
-<area shape="rect" id="node20" href="$d4/de6/classrenderer_1_1Material.html#a028edabd522ccbddf4af84589ab161d3" title="loads the resource into GPU memory, only if m_gpu is true" alt="" coords="245,1055,384,1095"/>
-<area shape="rect" id="node21" href="$d4/de6/classrenderer_1_1Material.html#a0e4285ae426362c5e03b56568323d5dd" title=" " alt="" coords="9,1027,147,1067"/>
-<area shape="rect" id="node24" href="$d2/d00/classinput_1_1Layout.html#a8374d8a23f557fdf51d2ad6b98153267" title=" " alt="" coords="237,1397,393,1422"/>
-<area shape="rect" id="node26" href="$d4/de6/classrenderer_1_1Material.html#ad0f8bdf5709e0c9d55f7465c679fb646" title=" " alt="" coords="245,1119,384,1159"/>
-<area shape="rect" id="node28" href="$d6/d7d/classtoast_1_1World.html#ac5c3dc60522b314ca5e13a0b2083e79e" title="Loads scene on the init thread, scene disabld after load." alt="" coords="225,1183,404,1209"/>
-<area shape="rect" id="node29" href="$d6/d7d/classtoast_1_1World.html#abe28a5b8532ca1d9bb09c1e7a43f68bf" title="Loads scene on the main thread, scene enabled after load." alt="" coords="210,1233,419,1258"/>
-<area shape="rect" id="node31" href="$d4/ddb/structtoast_1_1ProjectSettings.html#a118a7097eb32aa181086d459f8974bdb" title=" " alt="" coords="234,1283,395,1323"/>
-<area shape="rect" id="node32" href="$d6/dd4/classtoast_1_1Scene.html#acb44061f0eea603b846970680ce5be30" title=" " alt="" coords="236,1347,393,1373"/>
-<area shape="rect" id="node25" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="5,1389,151,1429"/>
-<area shape="rect" id="node27" href="$d4/de6/classrenderer_1_1Material.html#a1a9fcaae3f2320c844f1a154591f5e01" title="loads the resource into CPU memory" alt="" coords="9,1119,147,1159"/>
-<area shape="rect" id="node30" href="$d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,1233,151,1258"/>
+<area shape="rect" id="node1" title="Gets the singleton instance." alt="" coords="548,80,751,120"/>
+<area shape="rect" id="node2" href="$db/db2/ResourceSlot_8cpp.html#ac32cb254900114e073f80e0670cf09ba" title=" " alt="" coords="313,13,497,38"/>
+<area shape="rect" id="node4" href="$d8/d5c/namespaceresource.html#a478d194cc141760fa1fa2a86fc49e10e" title=" " alt="" coords="316,62,493,87"/>
+<area shape="rect" id="node5" href="$d8/d5c/namespaceresource.html#a723b33048c1a6b9c57bc5047f7aa9bb1" title="Convenience function to open and read a file." alt="" coords="345,111,465,137"/>
+<area shape="rect" id="node6" href="$d8/d5c/namespaceresource.html#aa93bae53eb778900ce67ae7f034918e7" title=" " alt="" coords="309,161,500,186"/>
+<area shape="rect" id="node3" href="$dd/ddc/classeditor_1_1ResourceSlot.html#a6f40912259b00dbff66d31c73491dde9" title=" " alt="" coords="108,5,261,45"/>
+<area shape="rect" id="node7" href="$d9/d4f/classtoast_1_1Engine.html#ae7f81d670cc27f32ce9fcc4bd3bab1d5" title="Starts the engine and enters the main game loop." alt="" coords="115,161,255,186"/>
+<area shape="rect" id="node8" href="$dd/d43/Linux_8inl.html#a3c04138a5bfe5d72780bb7e82a18e627" title=" " alt="" coords="5,161,60,186"/>
 </map>

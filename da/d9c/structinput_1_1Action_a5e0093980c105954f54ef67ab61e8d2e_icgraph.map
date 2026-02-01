@@ -1,0 +1,4 @@
+<map id="input::Action::HasOnlyTransientInputs" name="input::Action::HasOnlyTransientInputs">
+<area shape="rect" id="node1" title=" " alt="" coords="227,5,453,45"/>
+<area shape="rect" id="node2" href="$da/d9c/structinput_1_1Action.html#a8c7f183b225906586c87ae5a0ad9e907" title="Called each frame to update the action value and determine the correct state." alt="" coords="5,5,179,45"/>
+</map>

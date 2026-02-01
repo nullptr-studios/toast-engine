@@ -99,6 +99,9 @@ $(document).ready(function(){initNavTree('dd/d8b/classtoast_1_1ISerializable.htm
 </div><!--header-->
 <div class="contents">
 
+<p>Interface for objects that support JSON serialization.  
+ <a href="../../dd/d8b/classtoast_1_1ISerializable.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="../../df/da3/ISerializable_8hpp_source.html">ISerializable.hpp</a>&gt;</code></p>
 
 <p>Inherited by <a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a>.</p>
@@ -106,17 +109,47 @@ $(document).ready(function(){initNavTree('dd/d8b/classtoast_1_1ISerializable.htm
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a706ca4214d997840d82bc83e0c3ab85b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true)=0</td></tr>
+<tr class="memdesc:a706ca4214d997840d82bc83e0c3ab85b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a706ca4214d997840d82bc83e0c3ab85b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a7a5705e9dd33a51039af65c3928ea4ef">SoftLoad</a> ()=0</td></tr>
+<tr class="memdesc:a7a5705e9dd33a51039af65c3928ea4ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
 <tr class="separator:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66284559a3d768dcad01459ce3688f82"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">Save</a> () const =0</td></tr>
+<tr class="memdesc:a66284559a3d768dcad01459ce3688f82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a66284559a3d768dcad01459ce3688f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a58c24747a2bcdd94fa3d69b81761cd03">SoftSave</a> () const =0</td></tr>
+<tr class="memdesc:a58c24747a2bcdd94fa3d69b81761cd03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../df/da3/ISerializable_8hpp_source.html#l00015">15</a> of file <a class="el" href="../../df/da3/ISerializable_8hpp_source.html">ISerializable.hpp</a>.</p>
+<div class="textblock"><p>Interface for objects that support JSON serialization. </p>
+<p><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization.">ISerializable</a> defines the contract for objects that can save their state to JSON and restore it from JSON. This is used for scene files, prefabs, and runtime state persistence.</p>
+<dl class="section user"><dt>Implementing Serialization:</dt><dd><div class="fragment"><div class="line"><span class="keyword">class </span>MyActor : <span class="keyword">public</span> <a class="code hl_class" href="../../d8/d92/classtoast_1_1Actor.html">Actor</a> {</div>
+<div class="line"><span class="keyword">public</span>:</div>
+<div class="line">    <a class="code hl_typedef" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> Save()<span class="keyword"> const override </span>{</div>
+<div class="line">        <span class="keyword">auto</span> j = Actor::Save();  <span class="comment">// Call parent</span></div>
+<div class="line">        j[<span class="stringliteral">&quot;health&quot;</span>] = m_health;</div>
+<div class="line">        j[<span class="stringliteral">&quot;score&quot;</span>] = m_score;</div>
+<div class="line">        <span class="keywordflow">return</span> j;</div>
+<div class="line">    }</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordtype">void</span> Load(<a class="code hl_typedef" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, <span class="keywordtype">bool</span> force_create)<span class="keyword"> override </span>{</div>
+<div class="line">        Actor::Load(j, force_create);  <span class="comment">// Call parent</span></div>
+<div class="line">        m_health = j.value(<span class="stringliteral">&quot;health&quot;</span>, 100.0f);</div>
+<div class="line">        m_score = j.value(<span class="stringliteral">&quot;score&quot;</span>, 0);</div>
+<div class="line">    }</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">private</span>:</div>
+<div class="line">    <span class="keywordtype">float</span> m_health = 100.0f;</div>
+<div class="line">    <span class="keywordtype">int</span> m_score = 0;</div>
+<div class="line">};</div>
+<div class="ttc" id="aMaterial_8cpp_html_a4639603c23a42546f6e44921d3c8b0a3"><div class="ttname"><a href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a></div><div class="ttdeci">nlohmann::ordered_json json_t</div><div class="ttdef"><b>Definition:</b> <a href="../../d4/d0f/Material_8cpp_source.html#l00018">Material.cpp:18</a></div></div>
+<div class="ttc" id="aclasstoast_1_1Actor_html"><div class="ttname"><a href="../../d8/d92/classtoast_1_1Actor.html">toast::Actor</a></div><div class="ttdef"><b>Definition:</b> <a href="../../d3/d1b/Actor_8hpp_source.html#l00014">Actor.hpp:14</a></div></div>
+</div><!-- fragment --></dd></dl>
+<dl class="section user"><dt>Soft Save/Load:</dt><dd>Soft serialization uses cached JSON for quick state restoration without re-parsing files. Used for editor undo/redo and play mode.</dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="../../d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine....">Object</a>, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction.">Scene</a>, <a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../df/da3/ISerializable_8hpp_source.html#l00056">56</a> of file <a class="el" href="../../df/da3/ISerializable_8hpp_source.html">ISerializable.hpp</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a706ca4214d997840d82bc83e0c3ab85b" name="a706ca4214d997840d82bc83e0c3ab85b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a706ca4214d997840d82bc83e0c3ab85b">&#9670;&#160;</a></span>Load()</h2>
@@ -152,15 +185,26 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Implemented in <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ad5154887b4e9be3cc460c1718681f8ee">physics::BoxRigidbody</a>, <a class="el" href="../../d8/d72/classGlobalLight.html#aec962114f97474140d3f958c3bdda599">GlobalLight</a>, <a class="el" href="../../dd/d75/classAtlasRendererComponent.html#abd67ce261735dcf4ca9a5955c89d1844">AtlasRendererComponent</a>, <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#af29ed8cef0413a30e528c011a20e4bd0">toast::MeshRendererComponent</a>, <a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a17b4928799669c1fbe648df6afe88fef">SpineRendererComponent</a>, <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#af9bdc4d7afedfec4b500a09e505bb28e">toast::TransformComponent</a>, <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2">toast::Actor</a>, <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">toast::Object</a>, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1">toast::Scene</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005">toast::Camera</a>, <a class="el" href="../../d0/db0/classLight2D.html#ab111d55ff108f23ce448e43f72ef1ce4">Light2D</a>, <a class="el" href="../../db/d71/classphysics_1_1Collider.html#a58a915c3632248838b76d97b92c567a9">physics::Collider</a>, and <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#ad0eceef0a4406004c7d74c7f4bfeb541">physics::Rigidbody</a>.</p>
+<p>Loads object state from JSON. </p>
+<p>Deserializes the object's properties from the provided JSON.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">j</td><td>JSON object containing serialized state. </td></tr>
+    <tr><td class="paramname">force_create</td><td>If true, always creates new children; if false, updates existing children by name. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Implemented in <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ad5154887b4e9be3cc460c1718681f8ee">physics::BoxRigidbody</a>, <a class="el" href="../../d8/d72/classGlobalLight.html#aec962114f97474140d3f958c3bdda599">GlobalLight</a>, <a class="el" href="../../dd/d75/classAtlasRendererComponent.html#abd67ce261735dcf4ca9a5955c89d1844">AtlasRendererComponent</a>, <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#af29ed8cef0413a30e528c011a20e4bd0">toast::MeshRendererComponent</a>, <a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a17b4928799669c1fbe648df6afe88fef">SpineRendererComponent</a>, <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#af9bdc4d7afedfec4b500a09e505bb28e">toast::TransformComponent</a>, <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2">toast::Actor</a>, <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">toast::Object</a>, <a class="el" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a1d9ff365dc6e69e4b3812cff6a8999cf">toast::ParticleSystem</a>, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1">toast::Scene</a>, <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#ad2a82bcbfde1f41b94204f2778298529">physics::Trigger</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005">toast::Camera</a>, <a class="el" href="../../d0/db0/classLight2D.html#ab111d55ff108f23ce448e43f72ef1ce4">Light2D</a>, <a class="el" href="../../db/d71/classphysics_1_1Collider.html#a58a915c3632248838b76d97b92c567a9">physics::Collider</a>, and <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#ad0eceef0a4406004c7d74c7f4bfeb541">physics::Rigidbody</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../dd/d8b/classtoast_1_1ISerializable_a706ca4214d997840d82bc83e0c3ab85b_icgraph.png" border="0" usemap="#add/d8b/classtoast_1_1ISerializable_a706ca4214d997840d82bc83e0c3ab85b_icgraph" alt=""/></div>
 <map name="add/d8b/classtoast_1_1ISerializable_a706ca4214d997840d82bc83e0c3ab85b_icgraph" id="add/d8b/classtoast_1_1ISerializable_a706ca4214d997840d82bc83e0c3ab85b_icgraph">
-<area shape="rect" title=" " alt="" coords="536,5,679,45"/>
-<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#af9bdc4d7afedfec4b500a09e505bb28e" title=" " alt="" coords="285,5,488,45"/>
-<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#af29ed8cef0413a30e528c011a20e4bd0" title=" " alt="" coords="5,5,237,45"/>
+<area shape="rect" title="Loads object state from JSON." alt="" coords="536,37,679,77"/>
+<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#af9bdc4d7afedfec4b500a09e505bb28e" title="Loads object state from JSON." alt="" coords="285,37,488,77"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#af29ed8cef0413a30e528c011a20e4bd0" title="Loads object state from JSON." alt="" coords="5,5,237,45"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a1d9ff365dc6e69e4b3812cff6a8999cf" title="Loads object state from JSON." alt="" coords="41,69,201,109"/>
 </map>
 </div>
 
@@ -189,15 +233,20 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Implemented in <a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a705c0dd3604b7c2583605c34db433d8b">AtlasRendererComponent</a>, <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a280b3b0aa0dc11e1e4969188efac3d4e">toast::MeshRendererComponent</a>, <a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a77e3e86af0c6a54075c0ddbf5078a894">SpineRendererComponent</a>, <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#adf007c932918c5e80b026e6171737e53">toast::TransformComponent</a>, <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635">toast::Actor</a>, <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24">toast::Object</a>, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686">toast::Scene</a>, <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a5a52a27601099aacd4ba19414f8ccf2f">physics::BoxRigidbody</a>, <a class="el" href="../../db/d71/classphysics_1_1Collider.html#a4dcb001a41b343e20a224409502b0f77">physics::Collider</a>, <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a6b2f39d53f29ae5dc743e3dbd463d5cb">physics::Rigidbody</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b">toast::Camera</a>, <a class="el" href="../../d0/db0/classLight2D.html#a5c4939babc74eaf4c42825ff76133fad">Light2D</a>, and <a class="el" href="../../d8/d72/classGlobalLight.html#ad0331865a84b28bec1fe94a1f43d7cb3">GlobalLight</a>.</p>
+<p>Saves object state to JSON. </p>
+<p>Serializes the object's properties to a JSON object.</p>
+<dl class="section return"><dt>Returns</dt><dd>JSON object containing the serialized state. </dd></dl>
+
+<p>Implemented in <a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a705c0dd3604b7c2583605c34db433d8b">AtlasRendererComponent</a>, <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a280b3b0aa0dc11e1e4969188efac3d4e">toast::MeshRendererComponent</a>, <a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a77e3e86af0c6a54075c0ddbf5078a894">SpineRendererComponent</a>, <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#adf007c932918c5e80b026e6171737e53">toast::TransformComponent</a>, <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635">toast::Actor</a>, <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24">toast::Object</a>, <a class="el" href="../../df/d2b/classtoast_1_1ParticleSystem.html#aedcfd1b586c5f620e76aaaa76670f7f7">toast::ParticleSystem</a>, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686">toast::Scene</a>, <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a5a52a27601099aacd4ba19414f8ccf2f">physics::BoxRigidbody</a>, <a class="el" href="../../db/d71/classphysics_1_1Collider.html#a4dcb001a41b343e20a224409502b0f77">physics::Collider</a>, <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a6b2f39d53f29ae5dc743e3dbd463d5cb">physics::Rigidbody</a>, <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#abaac0ac8d67fd603c193a1bf8b0724e5">physics::Trigger</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b">toast::Camera</a>, <a class="el" href="../../d0/db0/classLight2D.html#a5c4939babc74eaf4c42825ff76133fad">Light2D</a>, and <a class="el" href="../../d8/d72/classGlobalLight.html#ad0331865a84b28bec1fe94a1f43d7cb3">GlobalLight</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../dd/d8b/classtoast_1_1ISerializable_a66284559a3d768dcad01459ce3688f82_icgraph.png" border="0" usemap="#add/d8b/classtoast_1_1ISerializable_a66284559a3d768dcad01459ce3688f82_icgraph" alt=""/></div>
 <map name="add/d8b/classtoast_1_1ISerializable_a66284559a3d768dcad01459ce3688f82_icgraph" id="add/d8b/classtoast_1_1ISerializable_a66284559a3d768dcad01459ce3688f82_icgraph">
-<area shape="rect" title=" " alt="" coords="536,5,679,45"/>
-<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#adf007c932918c5e80b026e6171737e53" title=" " alt="" coords="285,5,488,45"/>
-<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a280b3b0aa0dc11e1e4969188efac3d4e" title=" " alt="" coords="5,5,237,45"/>
+<area shape="rect" title="Saves object state to JSON." alt="" coords="536,37,679,77"/>
+<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#adf007c932918c5e80b026e6171737e53" title="Saves object state to JSON." alt="" coords="285,37,488,77"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a280b3b0aa0dc11e1e4969188efac3d4e" title="Saves object state to JSON." alt="" coords="5,5,237,45"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#aedcfd1b586c5f620e76aaaa76670f7f7" title="Saves object state to JSON." alt="" coords="41,69,201,109"/>
 </map>
 </div>
 
@@ -226,6 +275,9 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Reloads from cached JSON. </p>
+<p>Restores the object to its last saved state without reading from disk. Used for quick state restoration. </p>
+
 <p>Implemented in <a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef">toast::Object</a>.</p>
 
 </div>
@@ -252,6 +304,9 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Caches current state for quick restoration. </p>
+<p>Saves the current state to an internal cache. Used before entering play mode in the editor. </p>
 
 <p>Implemented in <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656">toast::Object</a>.</p>
 

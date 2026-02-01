@@ -1,5 +1,5 @@
 <map id="renderer::Material::LoadMaterial" name="renderer::Material::LoadMaterial">
-<area shape="rect" id="node1" title=" " alt="" coords="192,37,331,77"/>
-<area shape="rect" id="node2" href="$d4/de6/classrenderer_1_1Material.html#a1a9fcaae3f2320c844f1a154591f5e01" title="loads the resource into CPU memory" alt="" coords="5,5,144,45"/>
-<area shape="rect" id="node3" href="$d4/de6/classrenderer_1_1Material.html#a0e4285ae426362c5e03b56568323d5dd" title=" " alt="" coords="5,69,144,109"/>
+<area shape="rect" id="node1" title="Loads/reloads the material from its JSON file." alt="" coords="192,37,331,77"/>
+<area shape="rect" id="node2" href="$d4/de6/classrenderer_1_1Material.html#a1a9fcaae3f2320c844f1a154591f5e01" title="Loads the material data (can be called from background thread)." alt="" coords="5,5,144,45"/>
+<area shape="rect" id="node3" href="$d4/de6/classrenderer_1_1Material.html#a0e4285ae426362c5e03b56568323d5dd" title="Shows the material editor UI (editor only)." alt="" coords="5,69,144,109"/>
 </map>

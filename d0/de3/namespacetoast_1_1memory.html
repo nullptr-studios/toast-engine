@@ -98,34 +98,68 @@ $(document).ready(function(){initNavTree('d0/de3/namespacetoast_1_1memory.html',
   <div class="headertitle"><div class="title">toast::memory Namespace Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p>Custom memory management utilities.  
+<a href="../../d0/de3/namespacetoast_1_1memory.html#details">More...</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/d98/structtoast_1_1memory_1_1BucketUsage.html">BucketUsage</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Statistics for a single memory bucket.  <a href="../../d7/d98/structtoast_1_1memory_1_1BucketUsage.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da0/structtoast_1_1memory_1_1Stats.html">Stats</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Comprehensive memory allocation statistics.  <a href="../../db/da0/structtoast_1_1memory_1_1Stats.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a6fe304b6043c4e02ed4975327f058298"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a6fe304b6043c4e02ed4975327f058298">Alloc</a> (std::size_t size) noexcept</td></tr>
+<tr class="memdesc:a6fe304b6043c4e02ed4975327f058298"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates memory from the pool.  <br /></td></tr>
 <tr class="separator:a6fe304b6043c4e02ed4975327f058298"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a127c82fd4904bccbeeb35fb25680b6d2"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a127c82fd4904bccbeeb35fb25680b6d2">AllocThrow</a> (std::size_t size)</td></tr>
+<tr class="memdesc:a127c82fd4904bccbeeb35fb25680b6d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates memory from the pool, throwing on failure.  <br /></td></tr>
 <tr class="separator:a127c82fd4904bccbeeb35fb25680b6d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2e24f314c463777d8839af81618b9a54"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a2e24f314c463777d8839af81618b9a54">Free</a> (void *ptr) noexcept</td></tr>
+<tr class="memdesc:a2e24f314c463777d8839af81618b9a54"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees memory previously allocated with <a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a6fe304b6043c4e02ed4975327f058298" title="Allocates memory from the pool.">Alloc()</a> or <a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a127c82fd4904bccbeeb35fb25680b6d2" title="Allocates memory from the pool, throwing on failure.">AllocThrow()</a>.  <br /></td></tr>
 <tr class="separator:a2e24f314c463777d8839af81618b9a54"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6231fe84c8b28f90dd743ad643ccfd79"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a6231fe84c8b28f90dd743ad643ccfd79">AllocAligned</a> (std::size_t size, std::size_t alignment) noexcept</td></tr>
+<tr class="memdesc:a6231fe84c8b28f90dd743ad643ccfd79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates aligned memory.  <br /></td></tr>
 <tr class="separator:a6231fe84c8b28f90dd743ad643ccfd79"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f31e3d11fcbeb21a3910dd2561036fc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a6f31e3d11fcbeb21a3910dd2561036fc">FreeAligned</a> (void *ptr, std::size_t alignment) noexcept</td></tr>
+<tr class="memdesc:a6f31e3d11fcbeb21a3910dd2561036fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees aligned memory previously allocated with <a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a6231fe84c8b28f90dd743ad643ccfd79" title="Allocates aligned memory.">AllocAligned()</a>.  <br /></td></tr>
 <tr class="separator:a6f31e3d11fcbeb21a3910dd2561036fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac51af123560c3208706c301453fd541a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../db/da0/structtoast_1_1memory_1_1Stats.html">Stats</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#ac51af123560c3208706c301453fd541a">GetStats</a> ()</td></tr>
+<tr class="memdesc:ac51af123560c3208706c301453fd541a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets current memory allocation statistics.  <br /></td></tr>
 <tr class="separator:ac51af123560c3208706c301453fd541a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7caaf496c17b28b6641a0ff0bb2dac34"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a7caaf496c17b28b6641a0ff0bb2dac34">ResetPeak</a> ()</td></tr>
+<tr class="memdesc:a7caaf496c17b28b6641a0ff0bb2dac34"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resets the peak memory counter.  <br /></td></tr>
 <tr class="separator:a7caaf496c17b28b6641a0ff0bb2dac34"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a38411115a086d2a6a42b52f00975e45e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a38411115a086d2a6a42b52f00975e45e">TrimPools</a> () noexcept</td></tr>
+<tr class="memdesc:a38411115a086d2a6a42b52f00975e45e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Releases all free pooled blocks back to the OS.  <br /></td></tr>
 <tr class="separator:a38411115a086d2a6a42b52f00975e45e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Function Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Custom memory management utilities. </p>
+<p>This namespace provides a pooled memory allocator optimized for game engines. Small allocations (up to 4KB) are served from buckets to avoid frequent system allocations. Larger allocations fall back to the system allocator.</p>
+<dl class="section user"><dt>Bucket Sizes:</dt><dd>The allocator uses the following bucket sizes: 32, 64, 128, 256, 512, 1024, 2048, 4096 bytes. Allocations are rounded up to the nearest bucket size.</dd></dl>
+<dl class="section user"><dt>Thread Safety:</dt><dd>All functions are thread-safe and use lock-free algorithms where possible.</dd></dl>
+<dl class="section user"><dt>Usage Example:</dt><dd><div class="fragment"><div class="line"><span class="comment">// Allocate memory</span></div>
+<div class="line"><span class="keywordtype">void</span>* ptr = <a class="code hl_function" href="../../d0/de3/namespacetoast_1_1memory.html#a6fe304b6043c4e02ed4975327f058298">toast::memory::Alloc</a>(100);  <span class="comment">// Uses 128-byte bucket</span></div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// Use the memory...</span></div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// Free when done</span></div>
+<div class="line"><a class="code hl_function" href="../../d0/de3/namespacetoast_1_1memory.html#a2e24f314c463777d8839af81618b9a54">toast::memory::Free</a>(ptr);</div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// Check allocation stats</span></div>
+<div class="line"><span class="keyword">auto</span> stats = <a class="code hl_function" href="../../d0/de3/namespacetoast_1_1memory.html#ac51af123560c3208706c301453fd541a">toast::memory::GetStats</a>();</div>
+<div class="line">std::cout &lt;&lt; <span class="stringliteral">&quot;Current: &quot;</span> &lt;&lt; stats.currentBytes &lt;&lt; <span class="stringliteral">&quot; bytes\n&quot;</span>;</div>
+<div class="ttc" id="anamespacetoast_1_1memory_html_a2e24f314c463777d8839af81618b9a54"><div class="ttname"><a href="../../d0/de3/namespacetoast_1_1memory.html#a2e24f314c463777d8839af81618b9a54">toast::memory::Free</a></div><div class="ttdeci">void Free(void *ptr) noexcept</div><div class="ttdoc">Frees memory previously allocated with Alloc() or AllocThrow().</div></div>
+<div class="ttc" id="anamespacetoast_1_1memory_html_a6fe304b6043c4e02ed4975327f058298"><div class="ttname"><a href="../../d0/de3/namespacetoast_1_1memory.html#a6fe304b6043c4e02ed4975327f058298">toast::memory::Alloc</a></div><div class="ttdeci">void * Alloc(std::size_t size) noexcept</div><div class="ttdoc">Allocates memory from the pool.</div></div>
+<div class="ttc" id="anamespacetoast_1_1memory_html_ac51af123560c3208706c301453fd541a"><div class="ttname"><a href="../../d0/de3/namespacetoast_1_1memory.html#ac51af123560c3208706c301453fd541a">toast::memory::GetStats</a></div><div class="ttdeci">Stats GetStats()</div><div class="ttdoc">Gets current memory allocation statistics.</div></div>
+</div><!-- fragment --></dd></dl>
+<dl class="section note"><dt>Note</dt><dd>On Windows, the custom allocator is used. On other platforms, the system allocator may be used directly. </dd></dl>
+</div><h2 class="groupheader">Function Documentation</h2>
 <a id="a6fe304b6043c4e02ed4975327f058298" name="a6fe304b6043c4e02ed4975327f058298"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6fe304b6043c4e02ed4975327f058298">&#9670;&#160;</a></span>Alloc()</h2>
 
@@ -149,6 +183,18 @@ Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Allocates memory from the pool. </p>
+<p>Small allocations are served from buckets for better performance. Larger allocations (&gt;4KB) fall back to the system allocator.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">size</td><td>Number of bytes to allocate. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Pointer to allocated memory, or nullptr on allocation failure.</dd></dl>
+<dl class="section note"><dt>Note</dt><dd>The actual allocated size may be larger than requested due to bucket rounding. </dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a2e24f314c463777d8839af81618b9a54" title="Frees memory previously allocated with Alloc() or AllocThrow().">Free()</a> </dd></dl>
 
 </div>
 </div>
@@ -186,6 +232,19 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Allocates aligned memory. </p>
+<p>Allocates memory with the specified alignment requirement. Useful for SIMD operations or hardware-specific requirements.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">size</td><td>Number of bytes to allocate. </td></tr>
+    <tr><td class="paramname">alignment</td><td>Required alignment (must be power of 2). </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Pointer to aligned memory, or nullptr on failure.</dd></dl>
+<dl class="section note"><dt>Note</dt><dd>Must be freed with <a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a6f31e3d11fcbeb21a3910dd2561036fc" title="Frees aligned memory previously allocated with AllocAligned().">FreeAligned()</a>, not <a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a2e24f314c463777d8839af81618b9a54" title="Frees memory previously allocated with Alloc() or AllocThrow().">Free()</a>. </dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a6f31e3d11fcbeb21a3910dd2561036fc" title="Frees aligned memory previously allocated with AllocAligned().">FreeAligned()</a> </dd></dl>
+
 </div>
 </div>
 <a id="a127c82fd4904bccbeeb35fb25680b6d2" name="a127c82fd4904bccbeeb35fb25680b6d2"></a>
@@ -203,6 +262,23 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Allocates memory from the pool, throwing on failure. </p>
+<p>Same as <a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a6fe304b6043c4e02ed4975327f058298" title="Allocates memory from the pool.">Alloc()</a> but throws std::bad_alloc instead of returning nullptr.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">size</td><td>Number of bytes to allocate. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Pointer to allocated memory. </dd></dl>
+<dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname">std::bad_alloc</td><td>if allocation fails.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a6fe304b6043c4e02ed4975327f058298" title="Allocates memory from the pool.">Alloc()</a> </dd></dl>
 
 </div>
 </div>
@@ -229,6 +305,17 @@ Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Frees memory previously allocated with <a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a6fe304b6043c4e02ed4975327f058298" title="Allocates memory from the pool.">Alloc()</a> or <a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a127c82fd4904bccbeeb35fb25680b6d2" title="Allocates memory from the pool, throwing on failure.">AllocThrow()</a>. </p>
+<p>For pooled allocations, the block is returned to the bucket freelist for reuse. For large allocations, memory is returned to the system.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ptr</td><td>Pointer to memory to free (nullptr is safely ignored).</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section warning"><dt>Warning</dt><dd>Passing a pointer not allocated by Alloc/AllocThrow results in undefined behavior.</dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a6fe304b6043c4e02ed4975327f058298" title="Allocates memory from the pool.">Alloc()</a>, <a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a127c82fd4904bccbeeb35fb25680b6d2" title="Allocates memory from the pool, throwing on failure.">AllocThrow()</a> </dd></dl>
 
 </div>
 </div>
@@ -266,6 +353,16 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Frees aligned memory previously allocated with <a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a6231fe84c8b28f90dd743ad643ccfd79" title="Allocates aligned memory.">AllocAligned()</a>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ptr</td><td>Pointer to aligned memory to free. </td></tr>
+    <tr><td class="paramname">alignment</td><td>The alignment used when allocating (for verification).</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#a6231fe84c8b28f90dd743ad643ccfd79" title="Allocates aligned memory.">AllocAligned()</a> </dd></dl>
+
 </div>
 </div>
 <a id="ac51af123560c3208706c301453fd541a" name="ac51af123560c3208706c301453fd541a"></a>
@@ -283,6 +380,17 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Gets current memory allocation statistics. </p>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="../../db/da0/structtoast_1_1memory_1_1Stats.html" title="Comprehensive memory allocation statistics.">Stats</a> structure containing all allocation metrics.</dd></dl>
+<dl class="section user"><dt>Example:</dt><dd><div class="fragment"><div class="line"><span class="keyword">auto</span> stats = <a class="code hl_function" href="../../d0/de3/namespacetoast_1_1memory.html#ac51af123560c3208706c301453fd541a">toast::memory::GetStats</a>();</div>
+<div class="line"><a class="code hl_define" href="../../d0/d82/Log_8hpp.html#ae45adfee2e32da9a491f9e4114d21509">TOAST_INFO</a>(<span class="stringliteral">&quot;Memory: {} bytes ({} peak)&quot;</span>, stats.currentBytes, stats.peakBytes);</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; bucket : stats.buckets) {</div>
+<div class="line">    <a class="code hl_define" href="../../d0/d82/Log_8hpp.html#a07b069f01dd4771807616165f2434d41">TOAST_TRACE</a>(<span class="stringliteral">&quot;  Bucket {}: {} in use, {} free&quot;</span>, bucket.blockSize, bucket.inUse, bucket.freeCount);</div>
+<div class="line">}</div>
+<div class="ttc" id="aLog_8hpp_html_a07b069f01dd4771807616165f2434d41"><div class="ttname"><a href="../../d0/d82/Log_8hpp.html#a07b069f01dd4771807616165f2434d41">TOAST_TRACE</a></div><div class="ttdeci">#define TOAST_TRACE(...)</div><div class="ttdef"><b>Definition:</b> <a href="../../d0/d82/Log_8hpp_source.html#l00090">Log.hpp:90</a></div></div>
+<div class="ttc" id="aLog_8hpp_html_ae45adfee2e32da9a491f9e4114d21509"><div class="ttname"><a href="../../d0/d82/Log_8hpp.html#ae45adfee2e32da9a491f9e4114d21509">TOAST_INFO</a></div><div class="ttdeci">#define TOAST_INFO(...)</div><div class="ttdef"><b>Definition:</b> <a href="../../d0/d82/Log_8hpp_source.html#l00083">Log.hpp:83</a></div></div>
+</div><!-- fragment --> </dd></dl>
+
 </div>
 </div>
 <a id="a7caaf496c17b28b6641a0ff0bb2dac34" name="a7caaf496c17b28b6641a0ff0bb2dac34"></a>
@@ -299,6 +407,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Resets the peak memory counter. </p>
+<p>Sets peakBytes to the current allocation level. Useful for per-frame or per-level memory profiling. </p>
 
 </div>
 </div>
@@ -324,6 +435,10 @@ Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Releases all free pooled blocks back to the OS. </p>
+<p>Empties all bucket freelists, returning the memory to the system. Use this when transitioning between levels or when memory pressure is high.</p>
+<dl class="section note"><dt>Note</dt><dd>This does NOT affect currently allocated blocks. </dd></dl>
 
 </div>
 </div>

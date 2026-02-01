@@ -1,0 +1,29 @@
+<map id="resource::Open" name="resource::Open">
+<area shape="rect" id="node1" title=" " alt="" coords="777,507,897,533"/>
+<area shape="rect" id="node2" href="$db/d95/classspine_1_1EngineSpineExtension.html#a32e9b884162da37142f2e838a3a2c63c" title=" " alt="" coords="520,5,729,45"/>
+<area shape="rect" id="node3" href="$d2/d00/classinput_1_1Layout.html#a8374d8a23f557fdf51d2ad6b98153267" title=" " alt="" coords="547,70,703,95"/>
+<area shape="rect" id="node5" href="$d9/d50/classrenderer_1_1Shader.html#a7fcbfa40dfef2cd48fa4ed3e6e14e026" title="Create shader from files (stage, path)" alt="" coords="534,120,715,160"/>
+<area shape="rect" id="node6" href="$d9/d50/classrenderer_1_1Shader.html#aae684c567923430746044428b4215574" title="loads the resource into CPU memory" alt="" coords="283,155,453,181"/>
+<area shape="rect" id="node7" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,493,216,518"/>
+<area shape="rect" id="node8" href="$d4/d8c/classrenderer_1_1Mesh.html#a666bf6a6d984146ef7e7dcf4a4ab4f25" title="loads the resource into CPU memory" alt="" coords="545,286,704,311"/>
+<area shape="rect" id="node9" href="$d6/daf/classSpineAtlas.html#a6df4335c7930ed00433f8b958e54bfcd" title="loads the resource into CPU memory" alt="" coords="559,335,690,361"/>
+<area shape="rect" id="node10" href="$de/d02/classSpineSkeletonData.html#a987a79a15788aaea9b15828c4182126f" title="loads the resource into CPU memory" alt="" coords="533,385,717,410"/>
+<area shape="rect" id="node11" href="$d6/d97/classTexture.html#aed73817411e8a93bc03a8e54b4a935ad" title="loads the resource into CPU memory" alt="" coords="570,434,679,459"/>
+<area shape="rect" id="node12" href="$d6/dd4/classtoast_1_1Scene.html#a0cedaed0a89a27b9e0e43e10a907f35a" title=" " alt="" coords="554,507,695,533"/>
+<area shape="rect" id="node13" href="$df/d2b/classtoast_1_1ParticleSystem.html#a0d1c98411602a7aff87ca781f6d3c8bf" title="Load particle system config from a Lua file." alt="" coords="545,557,705,597"/>
+<area shape="rect" id="node15" href="$d4/de6/classrenderer_1_1Material.html#ad0f8bdf5709e0c9d55f7465c679fb646" title="Loads/reloads the material from its JSON file." alt="" coords="555,621,694,661"/>
+<area shape="rect" id="node18" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a18b1d9863c345bebecd59b4fd2e97c1d" title="Loads render settings from project settings." alt="" coords="527,685,722,725"/>
+<area shape="rect" id="node19" href="$d6/d7d/classtoast_1_1World.html#afbe0e3e4c589a2dc3123ae461139bf13" title="Loads scene on the init thread, scene disabld after load." alt="" coords="535,750,714,775"/>
+<area shape="rect" id="node21" href="$d6/dbd/classtoast_1_1GameFlow.html#ad929acb758d90809c68ba2362d8e7ed4" title=" " alt="" coords="264,801,472,826"/>
+<area shape="rect" id="node23" href="$d6/d7d/classtoast_1_1World.html#abe28a5b8532ca1d9bb09c1e7a43f68bf" title="Loads scene on the main thread, scene enabled after load." alt="" coords="520,851,729,877"/>
+<area shape="rect" id="node25" href="$d4/ddb/structtoast_1_1ProjectSettings.html#a118a7097eb32aa181086d459f8974bdb" title=" " alt="" coords="544,901,705,941"/>
+<area shape="rect" id="node26" href="$d9/d50/classrenderer_1_1Shader.html#ac3d6214f6af052acd86607d86f7cd3b3" title="Recompile (only if constructed from files)." alt="" coords="533,966,716,991"/>
+<area shape="rect" id="node27" href="$d6/dd4/classtoast_1_1Scene.html#acb44061f0eea603b846970680ce5be30" title=" " alt="" coords="546,1015,703,1041"/>
+<area shape="rect" id="node4" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="295,63,441,103"/>
+<area shape="rect" id="node14" href="$df/d2b/classtoast_1_1ParticleSystem.html#a1d9ff365dc6e69e4b3812cff6a8999cf" title="Loads object state from JSON." alt="" coords="288,508,448,548"/>
+<area shape="rect" id="node16" href="$d4/de6/classrenderer_1_1Material.html#a1a9fcaae3f2320c844f1a154591f5e01" title="Loads the material data (can be called from background thread)." alt="" coords="299,572,437,612"/>
+<area shape="rect" id="node17" href="$d4/de6/classrenderer_1_1Material.html#a0e4285ae426362c5e03b56568323d5dd" title="Shows the material editor UI (editor only)." alt="" coords="299,636,437,676"/>
+<area shape="rect" id="node20" href="$d6/dbd/classtoast_1_1GameFlow.html#a03e770afc70716334eb4037d9151c8a5" title=" " alt="" coords="265,701,471,726"/>
+<area shape="rect" id="node22" href="$d6/dbd/classtoast_1_1GameFlow.html#ad20bf8c23fc5cc9ae04746532256cf62" title=" " alt="" coords="265,750,471,775"/>
+<area shape="rect" id="node24" href="$d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="295,851,441,877"/>
+</map>

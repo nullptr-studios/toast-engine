@@ -1,0 +1,7 @@
+<map id="OclussionVolume::isAABBOnPlanes" name="OclussionVolume::isAABBOnPlanes">
+<area shape="rect" id="node1" title="Tests if an AABB (in world space) is inside or intersecting the frustum." alt="" coords="568,69,775,109"/>
+<area shape="rect" id="node2" href="$d8/dfe/structOclussionVolume.html#abb794dcccf5b6ec2839b644398f95558" title="Tests if a local&#45;space AABB transformed by worldTransform is visible in the frustum." alt="" coords="285,69,520,109"/>
+<area shape="rect" id="node3" href="$dd/d75/classAtlasRendererComponent.html#ab1dea9839d0075cb1a3fc718ca7f7d16" title="Called during the geometry pass to render this object." alt="" coords="27,5,216,45"/>
+<area shape="rect" id="node4" href="$d0/dc7/classSpineRendererComponent.html#ac7c57651f7368b20c302455ef4712c5e" title="Called during the geometry pass to render this object." alt="" coords="25,69,217,109"/>
+<area shape="rect" id="node5" href="$de/da0/classtoast_1_1MeshRendererComponent.html#aa1e5e6860f7eb384d116aa7b7546a3c5" title="Called during the geometry pass to render this object." alt="" coords="5,133,237,173"/>
+</map>

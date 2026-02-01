@@ -1,0 +1,5 @@
+<map id="toast::ParticleEmitter::GetConfig" name="toast::ParticleEmitter::GetConfig">
+<area shape="rect" id="node1" title="Get/set configuration." alt="" coords="421,5,580,45"/>
+<area shape="rect" id="node2" href="$df/d2b/classtoast_1_1ParticleSystem.html#a0d1c98411602a7aff87ca781f6d3c8bf" title="Load particle system config from a Lua file." alt="" coords="213,5,373,45"/>
+<area shape="rect" id="node3" href="$df/d2b/classtoast_1_1ParticleSystem.html#a1d9ff365dc6e69e4b3812cff6a8999cf" title="Loads object state from JSON." alt="" coords="5,5,165,45"/>
+</map>

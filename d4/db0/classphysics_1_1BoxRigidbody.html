@@ -112,7 +112,7 @@ Collaboration diagram for physics::BoxRigidbody:</div>
 <area shape="rect" href="../../d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="21,181,159,207"/>
 <area shape="rect" href="../../d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="139,93,244,119"/>
 <area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="184,181,287,207"/>
-<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="53,5,196,31"/>
+<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="53,5,196,31"/>
 <area shape="rect" href="../../d8/d87/classChildren.html" title=" " alt="" coords="220,5,296,31"/>
 </map>
 <center><span class="legend">[<a target="top" href="../../graph_legend.html">legend</a>]</span></center></div>
@@ -127,14 +127,14 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a7549182afe912f14f810ed8c6ee8fe5d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a7549182afe912f14f810ed8c6ee8fe5d">Destroy</a> () override</td></tr>
 <tr class="memdesc:a7549182afe912f14f810ed8c6ee8fe5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function runs when the object is set to be destroyed.  <br /></td></tr>
 <tr class="separator:a7549182afe912f14f810ed8c6ee8fe5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ada760b39a86be6e4d9874de541af7cce"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ada760b39a86be6e4d9874de541af7cce">Inspector</a> () override</td></tr>
-<tr class="separator:ada760b39a86be6e4d9874de541af7cce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9544adc0b4bfe621025d3fc28ad0dd84"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a9544adc0b4bfe621025d3fc28ad0dd84">EditorTick</a> () override</td></tr>
 <tr class="memdesc:a9544adc0b4bfe621025d3fc28ad0dd84"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function runs every frame in the editor.  <br /></td></tr>
 <tr class="separator:a9544adc0b4bfe621025d3fc28ad0dd84"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5a52a27601099aacd4ba19414f8ccf2f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a5a52a27601099aacd4ba19414f8ccf2f">Save</a> () const override</td></tr>
+<tr class="memdesc:a5a52a27601099aacd4ba19414f8ccf2f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a5a52a27601099aacd4ba19414f8ccf2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5154887b4e9be3cc460c1718681f8ee"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ad5154887b4e9be3cc460c1718681f8ee">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool b) override</td></tr>
+<tr class="memdesc:ad5154887b4e9be3cc460c1718681f8ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:ad5154887b4e9be3cc460c1718681f8ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a148c420419d84982a2815a383e90c324"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a148c420419d84982a2815a383e90c324">GetPosition</a> () const -&gt; glm::dvec2</td></tr>
 <tr class="separator:a148c420419d84982a2815a383e90c324"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -175,12 +175,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3f6ad7482ab92df9e1d6c53c2086eabc inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3f6ad7482ab92df9e1d6c53c2086eabc">operator=</a> (<a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> &amp;&amp;)=delete</td></tr>
 <tr class="separator:a3f6ad7482ab92df9e1d6c53c2086eabc inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f0da32eafb5fd14513357544f76ae24 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24">Save</a> () const override</td></tr>
+<tr class="memdesc:a4f0da32eafb5fd14513357544f76ae24 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a4f0da32eafb5fd14513357544f76ae24 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true) override</td></tr>
+<tr class="memdesc:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef">SoftLoad</a> () override</td></tr>
+<tr class="memdesc:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
 <tr class="separator:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656">SoftSave</a> () const override</td></tr>
+<tr class="memdesc:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a007cb426ff8f3ad0248257f274161e5e inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a007cb426ff8f3ad0248257f274161e5e">id</a> () const noexcept</td></tr>
 <tr class="memdesc:a007cb426ff8f3ad0248257f274161e5e inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the id of the object.  <br /></td></tr>
@@ -218,12 +222,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a85e32519ac9ca43b7c5eaf4a9dee8769 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a85e32519ac9ca43b7c5eaf4a9dee8769">_LoadTextures</a> ()</td></tr>
 <tr class="separator:a85e32519ac9ca43b7c5eaf4a9dee8769 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a706ca4214d997840d82bc83e0c3ab85b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true)=0</td></tr>
+<tr class="memdesc:a706ca4214d997840d82bc83e0c3ab85b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a706ca4214d997840d82bc83e0c3ab85b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a7a5705e9dd33a51039af65c3928ea4ef">SoftLoad</a> ()=0</td></tr>
+<tr class="memdesc:a7a5705e9dd33a51039af65c3928ea4ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
 <tr class="separator:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66284559a3d768dcad01459ce3688f82"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">Save</a> () const =0</td></tr>
+<tr class="memdesc:a66284559a3d768dcad01459ce3688f82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a66284559a3d768dcad01459ce3688f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a58c24747a2bcdd94fa3d69b81761cd03">SoftSave</a> () const =0</td></tr>
+<tr class="memdesc:a58c24747a2bcdd94fa3d69b81761cd03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
@@ -262,19 +270,19 @@ Public Attributes</h2></td></tr>
 <tr class="separator:a296e8469f74ac49122d6911cd2f188b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2b271d6f75edebbd964a6069cffd6315"><td class="memItemLeft" align="right" valign="top">std::deque&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a2b271d6f75edebbd964a6069cffd6315">torques</a></td></tr>
 <tr class="separator:a2b271d6f75edebbd964a6069cffd6315"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e53ac9cc195552881c9cb7b237f95f0"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:a5b563c2119de194093f3955a2c89450a"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a2177c2c40801cfdcb27e70936512120c">show</a> = true</td></tr>
-<tr class="separator:a5b563c2119de194093f3955a2c89450a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a140808d1b9d4fa2ed7d04b4a06589480"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a7f9cd0a50c34d2fd4b2135c2cdeb154a">showManifolds</a> = false</td></tr>
-<tr class="separator:a140808d1b9d4fa2ed7d04b4a06589480"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a17d9d5ac4c3e15ae09cf6ab843c46d5b"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec2&#160;&#160;&#160;<a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#abbae6be7ae5c89f29278fbddd7631a83">addForce</a> = { 0.0f, 0.0f }</td></tr>
-<tr class="separator:a17d9d5ac4c3e15ae09cf6ab843c46d5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6fe62a1e0fcb7b37ce5e0464c3243650"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec4&#160;&#160;&#160;<a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a1ce88ee3f7462de5ab61d26692615b83">defaultColor</a> = { 1.0f, 1.0f, 1.0f, 1.0f }</td></tr>
-<tr class="separator:a6fe62a1e0fcb7b37ce5e0464c3243650"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a16135450a3fafa4d5d592a9565212d5b"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec4&#160;&#160;&#160;<a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a701e5c13aa35f6f6f9780443b29a537a">collidingColor</a> = { 0.0f, 1.0f, 0.0f, 1.0f }</td></tr>
-<tr class="separator:a16135450a3fafa4d5d592a9565212d5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e53ac9cc195552881c9cb7b237f95f0"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a7e53ac9cc195552881c9cb7b237f95f0">debug</a></td></tr>
-<tr class="separator:a7e53ac9cc195552881c9cb7b237f95f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae47258f41ad937bb38734beb34041de4"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:a0b4feb41634cfca073b12a6f21286f52"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a2177c2c40801cfdcb27e70936512120c">show</a> = true</td></tr>
+<tr class="separator:a0b4feb41634cfca073b12a6f21286f52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a11c7b16ac7172e60d15bfa8078c4d878"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a7f9cd0a50c34d2fd4b2135c2cdeb154a">showManifolds</a> = false</td></tr>
+<tr class="separator:a11c7b16ac7172e60d15bfa8078c4d878"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed1e5631d8975caafe80ad56ce36c92e"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec2&#160;&#160;&#160;<a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#abbae6be7ae5c89f29278fbddd7631a83">addForce</a> = { 0.0f, 0.0f }</td></tr>
+<tr class="separator:aed1e5631d8975caafe80ad56ce36c92e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a1753252d5499bcc8ed07ca19a930a1"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec4&#160;&#160;&#160;<a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a1ce88ee3f7462de5ab61d26692615b83">defaultColor</a> = { 1.0f, 1.0f, 1.0f, 1.0f }</td></tr>
+<tr class="separator:a3a1753252d5499bcc8ed07ca19a930a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1197dd984e21b9deb4be0bfef0f7ee3"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec4&#160;&#160;&#160;<a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a701e5c13aa35f6f6f9780443b29a537a">collidingColor</a> = { 0.0f, 1.0f, 0.0f, 1.0f }</td></tr>
+<tr class="separator:ac1197dd984e21b9deb4be0bfef0f7ee3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae47258f41ad937bb38734beb34041de4"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ae47258f41ad937bb38734beb34041de4">debug</a></td></tr>
+<tr class="separator:ae47258f41ad937bb38734beb34041de4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_classtoast_1_1Object"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_classtoast_1_1Object')"><img src="../../closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a></td></tr>
 <tr class="memitem:adf6362bc2273177668430a2cd9500806 inherit pub_attribs_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d87/classChildren.html">Children</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#adf6362bc2273177668430a2cd9500806">children</a></td></tr>
 <tr class="separator:adf6362bc2273177668430a2cd9500806 inherit pub_attribs_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -342,7 +350,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00012">12</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00013">13</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a2dc1b146bdcfcc569e7eb2bf351580e8" name="a2dc1b146bdcfcc569e7eb2bf351580e8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2dc1b146bdcfcc569e7eb2bf351580e8">&#9670;&#160;</a></span>AddForce() <span class="overload">[1/2]</span></h2>
@@ -360,15 +368,14 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00238">238</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00242">242</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d4/db0/classphysics_1_1BoxRigidbody_a2dc1b146bdcfcc569e7eb2bf351580e8_icgraph.png" border="0" usemap="#ad4/db0/classphysics_1_1BoxRigidbody_a2dc1b146bdcfcc569e7eb2bf351580e8_icgraph" alt=""/></div>
 <map name="ad4/db0/classphysics_1_1BoxRigidbody_a2dc1b146bdcfcc569e7eb2bf351580e8_icgraph" id="ad4/db0/classphysics_1_1BoxRigidbody_a2dc1b146bdcfcc569e7eb2bf351580e8_icgraph">
-<area shape="rect" title=" " alt="" coords="223,37,392,77"/>
+<area shape="rect" title=" " alt="" coords="223,5,392,45"/>
 <area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a6d02bdd5228f0da82e3687ece5aaaa69" title=" " alt="" coords="5,5,175,45"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ada760b39a86be6e4d9874de541af7cce" title=" " alt="" coords="5,69,175,109"/>
 </map>
 </div>
 
@@ -400,7 +407,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00246">246</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00250">250</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 
 </div>
 </div>
@@ -420,7 +427,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00242">242</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00246">246</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -460,7 +467,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a1b6e927d9c508dd81a308d45a52afecb">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00016">16</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00018">18</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 
 </div>
 </div>
@@ -491,7 +498,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#af7bc7c97913fe1b7727349cfd40b9271">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00066">66</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00070">70</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 
 </div>
 </div>
@@ -510,7 +517,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00209">209</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00213">213</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 
 </div>
 </div>
@@ -529,7 +536,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00180">180</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00184">184</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -558,20 +565,19 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00159">159</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00163">163</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d4/db0/classphysics_1_1BoxRigidbody_a148c420419d84982a2815a383e90c324_icgraph.png" border="0" usemap="#ad4/db0/classphysics_1_1BoxRigidbody_a148c420419d84982a2815a383e90c324_icgraph" alt=""/></div>
 <map name="ad4/db0/classphysics_1_1BoxRigidbody_a148c420419d84982a2815a383e90c324_icgraph" id="ad4/db0/classphysics_1_1BoxRigidbody_a148c420419d84982a2815a383e90c324_icgraph">
-<area shape="rect" title=" " alt="" coords="487,88,656,128"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a6d02bdd5228f0da82e3687ece5aaaa69" title=" " alt="" coords="250,5,419,45"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="247,70,422,95"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a46f160106603c30fe08f473710634331" title=" " alt="" coords="231,119,439,145"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ace0ee6b77ef84882d1f83dd38147df99" title=" " alt="" coords="250,169,419,209"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="5,73,183,113"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a9544adc0b4bfe621025d3fc28ad0dd84" title="This function runs every frame in the editor." alt="" coords="9,159,179,199"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a94503868157c1c683a53d49ae9c4c5d5" title=" " alt="" coords="9,223,179,263"/>
+<area shape="rect" title=" " alt="" coords="479,88,648,128"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a6d02bdd5228f0da82e3687ece5aaaa69" title=" " alt="" coords="242,5,411,45"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="239,70,414,95"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a46f160106603c30fe08f473710634331" title=" " alt="" coords="223,119,431,145"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ace0ee6b77ef84882d1f83dd38147df99" title=" " alt="" coords="242,169,411,209"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a9544adc0b4bfe621025d3fc28ad0dd84" title="This function runs every frame in the editor." alt="" coords="5,137,175,177"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a94503868157c1c683a53d49ae9c4c5d5" title=" " alt="" coords="5,201,175,241"/>
 </map>
 </div>
 
@@ -592,18 +598,17 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00169">169</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00173">173</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d4/db0/classphysics_1_1BoxRigidbody_afabc04475f1a0d9040073a6a9b904015_icgraph.png" border="0" usemap="#ad4/db0/classphysics_1_1BoxRigidbody_afabc04475f1a0d9040073a6a9b904015_icgraph" alt=""/></div>
 <map name="ad4/db0/classphysics_1_1BoxRigidbody_afabc04475f1a0d9040073a6a9b904015_icgraph" id="ad4/db0/classphysics_1_1BoxRigidbody_afabc04475f1a0d9040073a6a9b904015_icgraph">
-<area shape="rect" title=" " alt="" coords="453,41,623,81"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="231,17,405,42"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ace0ee6b77ef84882d1f83dd38147df99" title=" " alt="" coords="233,69,403,109"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="5,5,183,45"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a9544adc0b4bfe621025d3fc28ad0dd84" title="This function runs every frame in the editor." alt="" coords="9,69,179,109"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a94503868157c1c683a53d49ae9c4c5d5" title=" " alt="" coords="9,133,179,173"/>
+<area shape="rect" title=" " alt="" coords="445,27,615,67"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="223,5,397,31"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ace0ee6b77ef84882d1f83dd38147df99" title=" " alt="" coords="225,55,395,95"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a9544adc0b4bfe621025d3fc28ad0dd84" title="This function runs every frame in the editor." alt="" coords="5,23,175,63"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a94503868157c1c683a53d49ae9c4c5d5" title=" " alt="" coords="5,87,175,127"/>
 </map>
 </div>
 
@@ -636,34 +641,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d3/d63/classtoast_1_1Component.html#a187729a1cd745c75fab01fe8001d012c">toast::Component</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00012">12</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
-
-</div>
-</div>
-<a id="ada760b39a86be6e4d9874de541af7cce" name="ada760b39a86be6e4d9874de541af7cce"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ada760b39a86be6e4d9874de541af7cce">&#9670;&#160;</a></span>Inspector()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void physics::BoxRigidbody::Inspector </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00020">20</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00014">14</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 
 </div>
 </div>
@@ -686,7 +664,7 @@ Here is the caller graph for this function:</div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>b</em>&#160;</td>
+          <td class="paramname"><em>force_create</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -701,9 +679,19 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Loads object state from JSON. </p>
+<p>Deserializes the object's properties from the provided JSON.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">j</td><td>JSON object containing serialized state. </td></tr>
+    <tr><td class="paramname">force_create</td><td>If true, always creates new children; if false, updates existing children by name. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00101">101</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00105">105</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 
 </div>
 </div>
@@ -748,9 +736,13 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Saves object state to JSON. </p>
+<p>Serializes the object's properties to a JSON object.</p>
+<dl class="section return"><dt>Returns</dt><dd>JSON object containing the serialized state. </dd></dl>
+
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00075">75</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00079">79</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 
 </div>
 </div>
@@ -770,17 +762,15 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00163">163</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00167">167</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d4/db0/classphysics_1_1BoxRigidbody_a0e976cd951b9d55e8083757dde996199_icgraph.png" border="0" usemap="#ad4/db0/classphysics_1_1BoxRigidbody_a0e976cd951b9d55e8083757dde996199_icgraph" alt=""/></div>
 <map name="ad4/db0/classphysics_1_1BoxRigidbody_a0e976cd951b9d55e8083757dde996199_icgraph" id="ad4/db0/classphysics_1_1BoxRigidbody_a0e976cd951b9d55e8083757dde996199_icgraph">
-<area shape="rect" title=" " alt="" coords="487,47,656,87"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="247,5,422,31"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a46f160106603c30fe08f473710634331" title=" " alt="" coords="231,55,439,80"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ada760b39a86be6e4d9874de541af7cce" title=" " alt="" coords="250,105,419,145"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="5,23,183,63"/>
+<area shape="rect" title=" " alt="" coords="261,23,431,63"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="22,5,197,31"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a46f160106603c30fe08f473710634331" title=" " alt="" coords="5,55,213,80"/>
 </map>
 </div>
 
@@ -802,15 +792,14 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00173">173</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html#l00177">177</a> of file <a class="el" href="../../df/de4/BoxRigidbody_8cpp_source.html">BoxRigidbody.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d4/db0/classphysics_1_1BoxRigidbody_a01cfa357e09d697f44a092940cfbddd7_icgraph.png" border="0" usemap="#ad4/db0/classphysics_1_1BoxRigidbody_a01cfa357e09d697f44a092940cfbddd7_icgraph" alt=""/></div>
 <map name="ad4/db0/classphysics_1_1BoxRigidbody_a01cfa357e09d697f44a092940cfbddd7_icgraph" id="ad4/db0/classphysics_1_1BoxRigidbody_a01cfa357e09d697f44a092940cfbddd7_icgraph">
-<area shape="rect" title=" " alt="" coords="453,5,623,45"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="231,13,405,38"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="5,5,183,45"/>
+<area shape="rect" title=" " alt="" coords="228,5,397,45"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="5,13,180,38"/>
 </map>
 </div>
 
@@ -829,7 +818,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00063">63</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00066">66</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -845,7 +834,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00045">45</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00048">48</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -861,7 +850,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00055">55</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00058">58</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -877,12 +866,12 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00065">65</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00068">68</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
-<a id="a7e53ac9cc195552881c9cb7b237f95f0" name="a7e53ac9cc195552881c9cb7b237f95f0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7e53ac9cc195552881c9cb7b237f95f0">&#9670;&#160;</a></span></h2>
+<a id="ae47258f41ad937bb38734beb34041de4" name="ae47258f41ad937bb38734beb34041de4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae47258f41ad937bb38734beb34041de4">&#9670;&#160;</a></span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -907,7 +896,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00064">64</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00067">67</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -923,7 +912,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00051">51</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00054">54</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -939,7 +928,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00056">56</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00059">59</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -955,7 +944,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00041">41</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00044">44</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -971,7 +960,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00048">48</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00051">51</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -987,7 +976,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00044">44</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00047">47</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -1003,7 +992,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00040">40</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00043">43</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -1019,7 +1008,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00050">50</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00053">53</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -1035,7 +1024,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00049">49</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00052">52</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -1051,7 +1040,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00038">38</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00041">41</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -1067,7 +1056,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00046">46</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00049">49</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -1083,7 +1072,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00047">47</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00050">50</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -1099,7 +1088,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00039">39</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00042">42</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -1115,7 +1104,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00061">61</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00064">64</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -1131,7 +1120,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00062">62</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00065">65</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -1147,7 +1136,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00037">37</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00040">40</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -1163,7 +1152,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00057">57</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00060">60</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -1179,7 +1168,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00054">54</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00057">57</a> of file <a class="el" href="../../d8/d87/BoxRigidbody_8hpp_source.html">BoxRigidbody.hpp</a>.</p>
 
 </div>
 </div>

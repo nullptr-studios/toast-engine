@@ -1,5 +1,6 @@
 <map id="toast::ISerializable::Load" name="toast::ISerializable::Load">
-<area shape="rect" id="node1" title=" " alt="" coords="536,5,679,45"/>
-<area shape="rect" id="node2" href="$d0/dd9/classtoast_1_1TransformComponent.html#af9bdc4d7afedfec4b500a09e505bb28e" title=" " alt="" coords="285,5,488,45"/>
-<area shape="rect" id="node3" href="$de/da0/classtoast_1_1MeshRendererComponent.html#af29ed8cef0413a30e528c011a20e4bd0" title=" " alt="" coords="5,5,237,45"/>
+<area shape="rect" id="node1" title="Loads object state from JSON." alt="" coords="536,37,679,77"/>
+<area shape="rect" id="node2" href="$d0/dd9/classtoast_1_1TransformComponent.html#af9bdc4d7afedfec4b500a09e505bb28e" title="Loads object state from JSON." alt="" coords="285,37,488,77"/>
+<area shape="rect" id="node3" href="$de/da0/classtoast_1_1MeshRendererComponent.html#af29ed8cef0413a30e528c011a20e4bd0" title="Loads object state from JSON." alt="" coords="5,5,237,45"/>
+<area shape="rect" id="node4" href="$df/d2b/classtoast_1_1ParticleSystem.html#a1d9ff365dc6e69e4b3812cff6a8999cf" title="Loads object state from JSON." alt="" coords="41,69,201,109"/>
 </map>

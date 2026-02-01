@@ -1,4 +1,4 @@
 <map id="input::InputSystem::DispatchQueue" name="input::InputSystem::DispatchQueue">
-<area shape="rect" id="node1" title=" " alt="" coords="199,5,344,45"/>
+<area shape="rect" id="node1" title="Dispatches all actions in the queue to registered listeners." alt="" coords="199,5,344,45"/>
 <area shape="rect" id="node2" href="$da/d0b/classinput_1_1InputSystem.html#aac98f1c1aeb8aaba7b9ea20f57c27459" title=" " alt="" coords="5,5,151,45"/>
 </map>

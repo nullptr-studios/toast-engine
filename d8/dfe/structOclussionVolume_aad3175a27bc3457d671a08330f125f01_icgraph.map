@@ -1,4 +1,6 @@
 <map id="OclussionVolume::isSphereOnPlanes" name="OclussionVolume::isSphereOnPlanes">
-<area shape="rect" id="node1" title=" " alt="" coords="277,5,476,45"/>
+<area shape="rect" id="node1" title=" " alt="" coords="277,63,476,103"/>
 <area shape="rect" id="node2" href="$d8/dfe/structOclussionVolume.html#a8b37ac45a7df17f2e985993ec52ceea4" title=" " alt="" coords="5,5,229,45"/>
+<area shape="rect" id="node3" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="45,70,189,95"/>
+<area shape="rect" id="node4" href="$df/d2b/classtoast_1_1ParticleSystem.html#a1db5e54b53f308abb509203b89d34ce2" title="Called during the geometry pass to render this object." alt="" coords="37,120,197,160"/>
 </map>

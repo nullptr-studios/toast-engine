@@ -1,4 +1,4 @@
 <map id="toast::Engine::Run" name="toast::Engine::Run">
-<area shape="rect" id="node1" title=" " alt="" coords="108,5,248,31"/>
+<area shape="rect" id="node1" title="Starts the engine and enters the main game loop." alt="" coords="108,5,248,31"/>
 <area shape="rect" id="node2" href="$dd/d43/Linux_8inl.html#a3c04138a5bfe5d72780bb7e82a18e627" title=" " alt="" coords="5,5,60,31"/>
 </map>

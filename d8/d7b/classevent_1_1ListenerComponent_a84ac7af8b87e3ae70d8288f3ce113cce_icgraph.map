@@ -1,7 +1,7 @@
 <map id="event::ListenerComponent::Subscribe" name="event::ListenerComponent::Subscribe">
-<area shape="rect" id="node1" title="Subscribes a function to a specific event." alt="" coords="248,101,443,141"/>
-<area shape="rect" id="node2" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="30,5,175,45"/>
-<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,69,200,109"/>
-<area shape="rect" id="node4" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a34757355e7ec79f24c8ce4fa594a7d7f" title=" " alt="" coords="14,133,191,173"/>
-<area shape="rect" id="node5" href="$d8/d8e/classtoast_1_1Window.html#a8346305f067cb920f298191286be2ecc" title="Creates a window with a given size." alt="" coords="15,198,190,223"/>
+<area shape="rect" id="node1" title="Subscribes a function to a specific event." alt="" coords="264,87,459,127"/>
+<area shape="rect" id="node2" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,5,216,31"/>
+<area shape="rect" id="node3" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="38,55,183,95"/>
+<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="13,119,208,159"/>
+<area shape="rect" id="node5" href="$d8/d8e/classtoast_1_1Window.html#a8346305f067cb920f298191286be2ecc" title="Creates a window with the specified dimensions." alt="" coords="23,184,198,209"/>
 </map>

@@ -1,0 +1,6 @@
+<map id="audio::is_playing" name="audio::is_playing">
+<area shape="rect" id="node1" title="Checks if an event is currently playing." alt="" coords="216,85,348,110"/>
+<area shape="rect" id="node2" href="$d2/d8f/structaudio_1_1AudioSystem_1_1CoreSystem.html#a4b863551ab52b1df2440917ffee9baf6" title="Stops a looping sound." alt="" coords="11,5,163,45"/>
+<area shape="rect" id="node3" href="$d2/d8f/structaudio_1_1AudioSystem_1_1CoreSystem.html#ab71c85d58b46c32a76560ad2157b1fd7" title="Updates the 3D position of a playing sound." alt="" coords="5,70,168,125"/>
+<area shape="rect" id="node4" href="$d2/d8f/structaudio_1_1AudioSystem_1_1CoreSystem.html#ae4eeea8c946f3727fdc9f3e58ba94f0e" title="Updates the volume of a playing sound with optional fade." alt="" coords="5,149,168,203"/>
+</map>

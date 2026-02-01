@@ -42,10 +42,12 @@ var classrenderer_1_1IRendererBase =
     [ "m_instance", "d9/dc4/classrenderer_1_1IRendererBase.html#ae8613504ee0b58a0b65d9df4c1ca1a50", null ],
     [ "m_lightFramebuffer", "d9/dc4/classrenderer_1_1IRendererBase.html#a371c47c770574b869f3ee95dd436ffb0", null ],
     [ "m_lights", "d9/dc4/classrenderer_1_1IRendererBase.html#a80c283b5635016a930c8eca31655014e", null ],
+    [ "m_lightsSortDirty", "d9/dc4/classrenderer_1_1IRendererBase.html#ab8bc528b566e270eca22ee1d29cd1ff2", null ],
     [ "m_listener", "d9/dc4/classrenderer_1_1IRendererBase.html#a3b23bad3b4e8b504ccd8e386a82e64cd", null ],
     [ "m_multipliedMatrix", "d9/dc4/classrenderer_1_1IRendererBase.html#ab122fccb0e8a893503a6adaf83ce352e", null ],
     [ "m_outputFramebuffer", "d9/dc4/classrenderer_1_1IRendererBase.html#a33308ebaacece45d1c67041a93867f6a", null ],
     [ "m_projectionMatrix", "d9/dc4/classrenderer_1_1IRendererBase.html#acb9b2608c1c0e42bdeb41384844a0bc9", null ],
     [ "m_renderables", "d9/dc4/classrenderer_1_1IRendererBase.html#abaa6c4963475e194a208a54352d7ab66", null ],
+    [ "m_renderablesSortDirty", "d9/dc4/classrenderer_1_1IRendererBase.html#a04cfad6210308168c50e7fb227865626", null ],
     [ "m_viewMatrix", "d9/dc4/classrenderer_1_1IRendererBase.html#a9feb231358263407d90a32736f8ced79", null ]
 ];

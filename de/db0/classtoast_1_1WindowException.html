@@ -100,7 +100,7 @@ $(document).ready(function(){initNavTree('de/db0/classtoast_1_1WindowException.h
 </div><!--header-->
 <div class="contents">
 
-<p>Exception to handle all GLFW error callbacks.  
+<p>Exception thrown when a GLFW error occurs.  
  <a href="../../de/db0/classtoast_1_1WindowException.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>&gt;</code></p>
@@ -111,7 +111,7 @@ Collaboration diagram for toast::WindowException:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../de/d7e/classtoast_1_1WindowException__coll__graph.png" border="0" usemap="#atoast_1_1WindowException_coll__map" alt="Collaboration graph"/></div>
 <map name="atoast_1_1WindowException_coll__map" id="atoast_1_1WindowException_coll__map">
-<area shape="rect" title="Exception to handle all GLFW error callbacks." alt="" coords="5,79,184,104"/>
+<area shape="rect" title="Exception thrown when a GLFW error occurs." alt="" coords="5,79,184,104"/>
 <area shape="rect" title=" " alt="" coords="37,5,152,31"/>
 </map>
 <center><span class="legend">[<a target="top" href="../../graph_legend.html">legend</a>]</span></center></div>
@@ -119,23 +119,29 @@ Collaboration diagram for toast::WindowException:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:af8523e52b6160f4fc0342fa2b085688b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/db0/classtoast_1_1WindowException.html#af8523e52b6160f4fc0342fa2b085688b">WindowException</a> (int <a class="el" href="../../de/db0/classtoast_1_1WindowException.html#a6eb03b2086d3a66991ac5bbef009fa80">error</a>, const char *<a class="el" href="../../de/db0/classtoast_1_1WindowException.html#a2d0ba5a584c86da6bb85816c53d09983">description</a>)</td></tr>
+<tr class="memdesc:af8523e52b6160f4fc0342fa2b085688b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a window exception.  <br /></td></tr>
 <tr class="separator:af8523e52b6160f4fc0342fa2b085688b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5da411fe277516819a3b634cae0ba0a9"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/db0/classtoast_1_1WindowException.html#a5da411fe277516819a3b634cae0ba0a9">what</a> () const noexcept override</td></tr>
+<tr class="memdesc:a5da411fe277516819a3b634cae0ba0a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the error message.  <br /></td></tr>
 <tr class="separator:a5da411fe277516819a3b634cae0ba0a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a6eb03b2086d3a66991ac5bbef009fa80"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/db0/classtoast_1_1WindowException.html#a6eb03b2086d3a66991ac5bbef009fa80">error</a></td></tr>
+<tr class="memdesc:a6eb03b2086d3a66991ac5bbef009fa80"><td class="mdescLeft">&#160;</td><td class="mdescRight">GLFW error code.  <br /></td></tr>
 <tr class="separator:a6eb03b2086d3a66991ac5bbef009fa80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2d0ba5a584c86da6bb85816c53d09983"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/db0/classtoast_1_1WindowException.html#a2d0ba5a584c86da6bb85816c53d09983">description</a></td></tr>
+<tr class="memdesc:a2d0ba5a584c86da6bb85816c53d09983"><td class="mdescLeft">&#160;</td><td class="mdescRight">Error description from GLFW.  <br /></td></tr>
 <tr class="separator:a2d0ba5a584c86da6bb85816c53d09983"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac354ba0b32896247550f9d105b5988ad"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/db0/classtoast_1_1WindowException.html#ac354ba0b32896247550f9d105b5988ad">message</a></td></tr>
+<tr class="memdesc:ac354ba0b32896247550f9d105b5988ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Formatted error message.  <br /></td></tr>
 <tr class="separator:ac354ba0b32896247550f9d105b5988ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Exception to handle all GLFW error callbacks. </p>
+<div class="textblock"><p>Exception thrown when a GLFW error occurs. </p>
+<p>This exception wraps GLFW error codes and descriptions for proper error handling and reporting. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00086">86</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00200">200</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="af8523e52b6160f4fc0342fa2b085688b" name="af8523e52b6160f4fc0342fa2b085688b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af8523e52b6160f4fc0342fa2b085688b">&#9670;&#160;</a></span>WindowException()</h2>
@@ -162,10 +168,12 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Constructs a window exception. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">error</td><td>GLFW error code </td></tr>
-    <tr><td class="paramname">description</td><td>Description of the error </td></tr>
+    <tr><td class="paramname">error</td><td>GLFW error code. </td></tr>
+    <tr><td class="paramname">description</td><td>Error description from GLFW. </td></tr>
   </table>
   </dd>
 </dl>
@@ -198,6 +206,9 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Gets the error message. </p>
+<dl class="section return"><dt>Returns</dt><dd>Formatted error string. </dd></dl>
+
 <p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00115">115</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
@@ -215,7 +226,9 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00093">93</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+<p>Error description from GLFW. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00210">210</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 
 </div>
 </div>
@@ -231,7 +244,9 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00092">92</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+<p>GLFW error code. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00209">209</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 
 </div>
 </div>
@@ -247,7 +262,9 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00094">94</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+<p>Formatted error message. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00211">211</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 
 </div>
 </div>

@@ -1,6 +1,6 @@
 <map id="toast::Window::GetFramebufferSize" name="toast::Window::GetFramebufferSize">
-<area shape="rect" id="node1" title="Returns the width and height of the framebuffer." alt="" coords="448,35,699,60"/>
-<area shape="rect" id="node2" href="$d8/d8e/classtoast_1_1Window.html#a08244ac124b29a8e7b12a524a1c50b50" title="Returns true if the window is minimized/iconified or has a zero&#45;sized framebuffer." alt="" coords="199,5,400,31"/>
+<area shape="rect" id="node1" title="Gets the framebuffer dimensions." alt="" coords="448,35,699,60"/>
+<area shape="rect" id="node2" href="$d8/d8e/classtoast_1_1Window.html#a08244ac124b29a8e7b12a524a1c50b50" title="Checks if the window is minimized." alt="" coords="199,5,400,31"/>
 <area shape="rect" id="node3" href="$da/d0b/classinput_1_1InputSystem.html#a796d712f5ad2314dbde0d3fd4cfb88be" title=" " alt="" coords="227,55,372,95"/>
 <area shape="rect" id="node4" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="5,55,151,95"/>
 </map>

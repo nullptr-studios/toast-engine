@@ -94,7 +94,9 @@ $(document).ready(function(){initNavTree('d6/d41/classphysics_1_1Rigidbody.html'
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="../../d5/d28/classphysics_1_1Rigidbody-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">physics::Rigidbody Class Reference</div></div>
 </div><!--header-->
@@ -112,7 +114,7 @@ Collaboration diagram for physics::Rigidbody:</div>
 <area shape="rect" href="../../d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="8,181,147,207"/>
 <area shape="rect" href="../../d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="126,93,231,119"/>
 <area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="171,181,274,207"/>
-<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="41,5,183,31"/>
+<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="41,5,183,31"/>
 <area shape="rect" href="../../d8/d87/classChildren.html" title=" " alt="" coords="207,5,283,31"/>
 </map>
 <center><span class="legend">[<a target="top" href="../../graph_legend.html">legend</a>]</span></center></div>
@@ -127,19 +129,28 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:abee44c40fe214b3b58d1745dd8c86521"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#abee44c40fe214b3b58d1745dd8c86521">Destroy</a> () override</td></tr>
 <tr class="memdesc:abee44c40fe214b3b58d1745dd8c86521"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function runs when the object is set to be destroyed.  <br /></td></tr>
 <tr class="separator:abee44c40fe214b3b58d1745dd8c86521"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6374642256969acc1c453f38fbedea09"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a6374642256969acc1c453f38fbedea09">Inspector</a> () override</td></tr>
-<tr class="separator:a6374642256969acc1c453f38fbedea09"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5cdf13d71dca7632d5fb35aa2934837a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a5cdf13d71dca7632d5fb35aa2934837a">EditorTick</a> () override</td></tr>
-<tr class="memdesc:a5cdf13d71dca7632d5fb35aa2934837a"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function runs every frame in the editor.  <br /></td></tr>
-<tr class="separator:a5cdf13d71dca7632d5fb35aa2934837a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6b2f39d53f29ae5dc743e3dbd463d5cb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a6b2f39d53f29ae5dc743e3dbd463d5cb">Save</a> () const override</td></tr>
+<tr class="memdesc:a6b2f39d53f29ae5dc743e3dbd463d5cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a6b2f39d53f29ae5dc743e3dbd463d5cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad0eceef0a4406004c7d74c7f4bfeb541"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#ad0eceef0a4406004c7d74c7f4bfeb541">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool propagate) override</td></tr>
+<tr class="memdesc:ad0eceef0a4406004c7d74c7f4bfeb541"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:ad0eceef0a4406004c7d74c7f4bfeb541"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a60945624ec1a89156734ffb74c61f424"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a60945624ec1a89156734ffb74c61f424">GetPosition</a> () const -&gt; glm::dvec2</td></tr>
 <tr class="separator:a60945624ec1a89156734ffb74c61f424"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae643fc4478ed62cff8d478d116abe714"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#ae643fc4478ed62cff8d478d116abe714">SetPosition</a> (glm::dvec2)</td></tr>
 <tr class="separator:ae643fc4478ed62cff8d478d116abe714"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5de546bab7f28423116fab2f29dd0f71"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a5de546bab7f28423116fab2f29dd0f71">GetInterpolatedPosition</a> () const -&gt; glm::dvec2</td></tr>
+<tr class="memdesc:a5de546bab7f28423116fab2f29dd0f71"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get interpolated position for rendering (call from render/late tick)  <br /></td></tr>
+<tr class="separator:a5de546bab7f28423116fab2f29dd0f71"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3df201929be5e7dab4904f26ceeedf5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#ac3df201929be5e7dab4904f26ceeedf5">StorePreviousPosition</a> ()</td></tr>
+<tr class="memdesc:ac3df201929be5e7dab4904f26ceeedf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store current position as previous (call before physics step)  <br /></td></tr>
+<tr class="separator:ac3df201929be5e7dab4904f26ceeedf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03e9508170b42fb6e25ce25a90279b74"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a03e9508170b42fb6e25ce25a90279b74">UpdateVisualTransform</a> ()</td></tr>
+<tr class="memdesc:a03e9508170b42fb6e25ce25a90279b74"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update the visual transform using interpolated position (call from Tick/LateTick)  <br /></td></tr>
+<tr class="separator:a03e9508170b42fb6e25ce25a90279b74"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4dfcd7de012b486a089892c43e77c0f0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a4dfcd7de012b486a089892c43e77c0f0">SyncFromTransform</a> ()</td></tr>
+<tr class="memdesc:a4dfcd7de012b486a089892c43e77c0f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sync rigidbody position from transform.  <br /></td></tr>
+<tr class="separator:a4dfcd7de012b486a089892c43e77c0f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3557f683a5e5dcae877f714a733a7e6b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a3557f683a5e5dcae877f714a733a7e6b">AddForce</a> (glm::dvec2)</td></tr>
 <tr class="separator:a3557f683a5e5dcae877f714a733a7e6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1Component"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classtoast_1_1Component')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d3/d63/classtoast_1_1Component.html">toast::Component</a></td></tr>
@@ -163,12 +174,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3f6ad7482ab92df9e1d6c53c2086eabc inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3f6ad7482ab92df9e1d6c53c2086eabc">operator=</a> (<a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> &amp;&amp;)=delete</td></tr>
 <tr class="separator:a3f6ad7482ab92df9e1d6c53c2086eabc inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f0da32eafb5fd14513357544f76ae24 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24">Save</a> () const override</td></tr>
+<tr class="memdesc:a4f0da32eafb5fd14513357544f76ae24 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a4f0da32eafb5fd14513357544f76ae24 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true) override</td></tr>
+<tr class="memdesc:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef">SoftLoad</a> () override</td></tr>
+<tr class="memdesc:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
 <tr class="separator:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656">SoftSave</a> () const override</td></tr>
+<tr class="memdesc:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a007cb426ff8f3ad0248257f274161e5e inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a007cb426ff8f3ad0248257f274161e5e">id</a> () const noexcept</td></tr>
 <tr class="memdesc:a007cb426ff8f3ad0248257f274161e5e inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the id of the object.  <br /></td></tr>
@@ -206,13 +221,32 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a85e32519ac9ca43b7c5eaf4a9dee8769 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a85e32519ac9ca43b7c5eaf4a9dee8769">_LoadTextures</a> ()</td></tr>
 <tr class="separator:a85e32519ac9ca43b7c5eaf4a9dee8769 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a706ca4214d997840d82bc83e0c3ab85b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true)=0</td></tr>
+<tr class="memdesc:a706ca4214d997840d82bc83e0c3ab85b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a706ca4214d997840d82bc83e0c3ab85b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a7a5705e9dd33a51039af65c3928ea4ef">SoftLoad</a> ()=0</td></tr>
+<tr class="memdesc:a7a5705e9dd33a51039af65c3928ea4ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
 <tr class="separator:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66284559a3d768dcad01459ce3688f82"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">Save</a> () const =0</td></tr>
+<tr class="memdesc:a66284559a3d768dcad01459ce3688f82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a66284559a3d768dcad01459ce3688f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a58c24747a2bcdd94fa3d69b81761cd03">SoftSave</a> () const =0</td></tr>
+<tr class="memdesc:a58c24747a2bcdd94fa3d69b81761cd03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a47b364756e6b4442a01dbeeaf94d21b4"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a47b364756e6b4442a01dbeeaf94d21b4">UpdateInterpolationAlpha</a> (double alpha)</td></tr>
+<tr class="memdesc:a47b364756e6b4442a01dbeeaf94d21b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update interpolation alpha based on time since last physics step.  <br /></td></tr>
+<tr class="separator:a47b364756e6b4442a01dbeeaf94d21b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2b72e36001f89b458aba43a1e1bb9e65"><td class="memItemLeft" align="right" valign="top">static auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a2b72e36001f89b458aba43a1e1bb9e65">GetInterpolationAlpha</a> () -&gt; double</td></tr>
+<tr class="memdesc:a2b72e36001f89b458aba43a1e1bb9e65"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the current interpolation alpha.  <br /></td></tr>
+<tr class="separator:a2b72e36001f89b458aba43a1e1bb9e65"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_static_methods_classtoast_1_1Object"><td colspan="2" onclick="javascript:toggleInherit('pub_static_methods_classtoast_1_1Object')"><img src="../../closed.png" alt="-"/>&#160;Static Public Member Functions inherited from <a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a></td></tr>
+<tr class="memitem:a71ecedef54b6348ea33ccfb5503bcde0 inherit pub_static_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a71ecedef54b6348ea33ccfb5503bcde0">Register</a> (const std::string &amp;<a class="el" href="../../d1/da3/classtoast_1_1Object.html#a9ae515365126c17df9c86e1ac6a80e69">name</a>, <a class="el" href="../../da/d8d/Children_8inl.html#ac8137d1a5cdf0985e80eedae0c02cece">FactoryFunction</a> func)</td></tr>
+<tr class="separator:a71ecedef54b6348ea33ccfb5503bcde0 inherit pub_static_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affe9053e09e9e130a9255d1c53d55104 inherit pub_static_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">static const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#affe9053e09e9e130a9255d1c53d55104">static_type</a> ()</td></tr>
+<tr class="memdesc:affe9053e09e9e130a9255d1c53d55104 inherit pub_static_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the name of the class.  <br /></td></tr>
+<tr class="separator:affe9053e09e9e130a9255d1c53d55104 inherit pub_static_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -226,7 +260,7 @@ Public Attributes</h2></td></tr>
 <tr class="separator:ae833768540d886947197ca6e58bd9836"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a97d5a6b987ec8ed7581538b7aba7177e"><td class="memItemLeft" align="right" valign="top">glm::vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a97d5a6b987ec8ed7581538b7aba7177e">gravityScale</a> { 1.0, 1.0 }</td></tr>
 <tr class="separator:a97d5a6b987ec8ed7581538b7aba7177e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a38157d2909b9b670c5db8658372ba94f"><td class="memItemLeft" align="right" valign="top">glm::vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a38157d2909b9b670c5db8658372ba94f">drag</a> = {0.5, 0.5}</td></tr>
+<tr class="memitem:a38157d2909b9b670c5db8658372ba94f"><td class="memItemLeft" align="right" valign="top">glm::vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a38157d2909b9b670c5db8658372ba94f">drag</a> = { 0.5, 0.5 }</td></tr>
 <tr class="separator:a38157d2909b9b670c5db8658372ba94f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af31d22fd4a3e452006d4db289fce4669"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#af31d22fd4a3e452006d4db289fce4669">restitution</a> = 0.6</td></tr>
 <tr class="separator:af31d22fd4a3e452006d4db289fce4669"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -238,31 +272,40 @@ Public Attributes</h2></td></tr>
 <tr class="separator:a783fdb89c2e85f592a42ccbf97efc729"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9e920ca6151b0380ce8a9d5916e51e07"><td class="memItemLeft" align="right" valign="top">std::deque&lt; glm::dvec2 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a9e920ca6151b0380ce8a9d5916e51e07">forces</a></td></tr>
 <tr class="separator:a9e920ca6151b0380ce8a9d5916e51e07"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4ad36bea34c65e7d065effe3da946488"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:a3b4db3e19cc8ac2661d573d6845b6a18"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a2261414210f32661b9fe5ddc7daa9f7c">show</a> = true</td></tr>
-<tr class="separator:a3b4db3e19cc8ac2661d573d6845b6a18"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1282964766971604f80f1a458c8632a2"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a5e5ab92569148ed4a38a108e5c539f45">showManifolds</a> = false</td></tr>
-<tr class="separator:a1282964766971604f80f1a458c8632a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a693a9bf1f56907c443ef2ec102c6430d"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec2&#160;&#160;&#160;<a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a24ba6dfc8e55e3baecae054085c06488">addForce</a> = { 0.0f, 0.0f }</td></tr>
-<tr class="separator:a693a9bf1f56907c443ef2ec102c6430d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a50d57057b564bf9e36757f121780a480"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec4&#160;&#160;&#160;<a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a460b8ea3cd7c38f51a06719bab5c7335">defaultColor</a> = { 1.0f, 1.0f, 1.0f, 1.0f }</td></tr>
-<tr class="separator:a50d57057b564bf9e36757f121780a480"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a201ad4bdb93524d4a65111b8edf011ee"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec4&#160;&#160;&#160;<a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a444ab93479c9e759047cb58963487738">collidingColor</a> = { 0.0f, 1.0f, 0.0f, 1.0f }</td></tr>
-<tr class="separator:a201ad4bdb93524d4a65111b8edf011ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4ad36bea34c65e7d065effe3da946488"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a4ad36bea34c65e7d065effe3da946488">debug</a></td></tr>
-<tr class="separator:a4ad36bea34c65e7d065effe3da946488"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4b7edd63adea29176b56a32ffe2b5414"><td class="memItemLeft" align="right" valign="top">std::mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a4b7edd63adea29176b56a32ffe2b5414">forcesMutex</a></td></tr>
+<tr class="separator:a4b7edd63adea29176b56a32ffe2b5414"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aea59260d632e59e5983a7dfc57cc8a90"><td class="memItemLeft" align="right" valign="top">glm::dvec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#aea59260d632e59e5983a7dfc57cc8a90">m_previousPosition</a> = { 0.0, 0.0 }</td></tr>
+<tr class="separator:aea59260d632e59e5983a7dfc57cc8a90"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3966d4940f6fb8500e556375719828c1"><td class="memItemLeft" align="right" valign="top">glm::dvec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a3966d4940f6fb8500e556375719828c1">m_currentPosition</a> = { 0.0, 0.0 }</td></tr>
+<tr class="separator:a3966d4940f6fb8500e556375719828c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f5649875742580404c025e3898bd1a3"><td class="memItemLeft" align="right" valign="top">glm::dvec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a2f5649875742580404c025e3898bd1a3">m_lastKnownTransformPos</a> = { 0.0, 0.0, 0.0 }</td></tr>
+<tr class="separator:a2f5649875742580404c025e3898bd1a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a290293f0fdd92646bcc6055362282eb3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a290293f0fdd92646bcc6055362282eb3">m_hasValidPreviousPosition</a> = false</td></tr>
+<tr class="separator:a290293f0fdd92646bcc6055362282eb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a841ed74d200ce036ef6e3a76e0e7db40"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:aa5de008f09eaf75dbe416238c45a791a"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a2261414210f32661b9fe5ddc7daa9f7c">show</a> = true</td></tr>
+<tr class="separator:aa5de008f09eaf75dbe416238c45a791a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0764468c621afedbbbbab908c1e0cb30"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a5e5ab92569148ed4a38a108e5c539f45">showManifolds</a> = false</td></tr>
+<tr class="separator:a0764468c621afedbbbbab908c1e0cb30"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa7419c82687684a0042688b9327f75c"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec2&#160;&#160;&#160;<a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a24ba6dfc8e55e3baecae054085c06488">addForce</a> = { 0.0f, 0.0f }</td></tr>
+<tr class="separator:afa7419c82687684a0042688b9327f75c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5985dd04ec489bee42c3e31f91e06906"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec4&#160;&#160;&#160;<a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a460b8ea3cd7c38f51a06719bab5c7335">defaultColor</a> = { 1.0f, 1.0f, 1.0f, 1.0f }</td></tr>
+<tr class="separator:a5985dd04ec489bee42c3e31f91e06906"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41a12a53d234601c9518d4b4b21293dd"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec4&#160;&#160;&#160;<a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a444ab93479c9e759047cb58963487738">collidingColor</a> = { 0.0f, 1.0f, 0.0f, 1.0f }</td></tr>
+<tr class="separator:a41a12a53d234601c9518d4b4b21293dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a841ed74d200ce036ef6e3a76e0e7db40"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a841ed74d200ce036ef6e3a76e0e7db40">debug</a></td></tr>
+<tr class="separator:a841ed74d200ce036ef6e3a76e0e7db40"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_classtoast_1_1Object"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_classtoast_1_1Object')"><img src="../../closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a></td></tr>
 <tr class="memitem:adf6362bc2273177668430a2cd9500806 inherit pub_attribs_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d87/classChildren.html">Children</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#adf6362bc2273177668430a2cd9500806">children</a></td></tr>
 <tr class="separator:adf6362bc2273177668430a2cd9500806 inherit pub_attribs_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a3b3ecb584dd1023ac6da45e71c00d4b9"><td class="memItemLeft" align="right" valign="top">static double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a3b3ecb584dd1023ac6da45e71c00d4b9">s_interpolationAlpha</a> = 1.0</td></tr>
+<tr class="separator:a3b3ecb584dd1023ac6da45e71c00d4b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pub_static_methods_classtoast_1_1Object"><td colspan="2" onclick="javascript:toggleInherit('pub_static_methods_classtoast_1_1Object')"><img src="../../closed.png" alt="-"/>&#160;Static Public Member Functions inherited from <a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a></td></tr>
-<tr class="memitem:a71ecedef54b6348ea33ccfb5503bcde0 inherit pub_static_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a71ecedef54b6348ea33ccfb5503bcde0">Register</a> (const std::string &amp;<a class="el" href="../../d1/da3/classtoast_1_1Object.html#a9ae515365126c17df9c86e1ac6a80e69">name</a>, <a class="el" href="../../da/d8d/Children_8inl.html#ac8137d1a5cdf0985e80eedae0c02cece">FactoryFunction</a> func)</td></tr>
-<tr class="separator:a71ecedef54b6348ea33ccfb5503bcde0 inherit pub_static_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:affe9053e09e9e130a9255d1c53d55104 inherit pub_static_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">static const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#affe9053e09e9e130a9255d1c53d55104">static_type</a> ()</td></tr>
-<tr class="memdesc:affe9053e09e9e130a9255d1c53d55104 inherit pub_static_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the name of the class.  <br /></td></tr>
-<tr class="separator:affe9053e09e9e130a9255d1c53d55104 inherit pub_static_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classtoast_1_1Component"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classtoast_1_1Component')"><img src="../../closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="../../d3/d63/classtoast_1_1Component.html">toast::Component</a></td></tr>
 <tr class="memitem:a187729a1cd745c75fab01fe8001d012c inherit pro_methods_classtoast_1_1Component"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d63/classtoast_1_1Component.html#a187729a1cd745c75fab01fe8001d012c">Init</a> () override</td></tr>
 <tr class="memdesc:a187729a1cd745c75fab01fe8001d012c inherit pro_methods_classtoast_1_1Component"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function runs just after the object is created (scene load thread)  <br /></td></tr>
@@ -336,16 +379,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00171">171</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d6/d41/classphysics_1_1Rigidbody_a3557f683a5e5dcae877f714a733a7e6b_icgraph.png" border="0" usemap="#ad6/d41/classphysics_1_1Rigidbody_a3557f683a5e5dcae877f714a733a7e6b_icgraph" alt=""/></div>
-<map name="ad6/d41/classphysics_1_1Rigidbody_a3557f683a5e5dcae877f714a733a7e6b_icgraph" id="ad6/d41/classphysics_1_1Rigidbody_a3557f683a5e5dcae877f714a733a7e6b_icgraph">
-<area shape="rect" title=" " alt="" coords="197,5,341,45"/>
-<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a6374642256969acc1c453f38fbedea09" title=" " alt="" coords="5,5,149,45"/>
-</map>
-</div>
+<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00254">254</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
 
 </div>
 </div>
@@ -376,12 +410,42 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a1b6e927d9c508dd81a308d45a52afecb">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00017">17</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00027">27</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
 
 </div>
 </div>
-<a id="a5cdf13d71dca7632d5fb35aa2934837a" name="a5cdf13d71dca7632d5fb35aa2934837a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5cdf13d71dca7632d5fb35aa2934837a">&#9670;&#160;</a></span>EditorTick()</h2>
+<a id="a5de546bab7f28423116fab2f29dd0f71" name="a5de546bab7f28423116fab2f29dd0f71"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5de546bab7f28423116fab2f29dd0f71">&#9670;&#160;</a></span>GetInterpolatedPosition()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">glm::dvec2 physics::Rigidbody::GetInterpolatedPosition </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const -&gt; glm::dvec2</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get interpolated position for rendering (call from render/late tick) </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00200">200</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d6/d41/classphysics_1_1Rigidbody_a5de546bab7f28423116fab2f29dd0f71_icgraph.png" border="0" usemap="#ad6/d41/classphysics_1_1Rigidbody_a5de546bab7f28423116fab2f29dd0f71_icgraph" alt=""/></div>
+<map name="ad6/d41/classphysics_1_1Rigidbody_a5de546bab7f28423116fab2f29dd0f71_icgraph" id="ad6/d41/classphysics_1_1Rigidbody_a5de546bab7f28423116fab2f29dd0f71_icgraph">
+<area shape="rect" title="Get interpolated position for rendering (call from render/late tick)" alt="" coords="236,5,420,45"/>
+<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a03e9508170b42fb6e25ce25a90279b74" title="Update the visual transform using interpolated position (call from Tick/LateTick)" alt="" coords="5,5,188,45"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a2b72e36001f89b458aba43a1e1bb9e65" name="a2b72e36001f89b458aba43a1e1bb9e65"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2b72e36001f89b458aba43a1e1bb9e65">&#9670;&#160;</a></span>GetInterpolationAlpha()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -390,24 +454,22 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void physics::Rigidbody::EditorTick </td>
+          <td class="memname">double physics::Rigidbody::GetInterpolationAlpha </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
-          <td></td>
+          <td> -&gt; double</td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
-<p>This function runs every frame in the editor. </p>
+<p>Get the current interpolation alpha. </p>
 
-<p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#af7bc7c97913fe1b7727349cfd40b9271">toast::Object</a>.</p>
-
-<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00092">92</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00250">250</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
 
 </div>
 </div>
@@ -426,21 +488,18 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00161">161</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00184">184</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d6/d41/classphysics_1_1Rigidbody_a60945624ec1a89156734ffb74c61f424_icgraph.png" border="0" usemap="#ad6/d41/classphysics_1_1Rigidbody_a60945624ec1a89156734ffb74c61f424_icgraph" alt=""/></div>
 <map name="ad6/d41/classphysics_1_1Rigidbody_a60945624ec1a89156734ffb74c61f424_icgraph" id="ad6/d41/classphysics_1_1Rigidbody_a60945624ec1a89156734ffb74c61f424_icgraph">
-<area shape="rect" title=" " alt="" coords="660,112,804,152"/>
-<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a5cdf13d71dca7632d5fb35aa2934837a" title="This function runs every frame in the editor." alt="" coords="440,5,584,45"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#ab5bb62de13325b81f45958620bc2b988" title=" " alt="" coords="429,70,595,95"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a2570830536e313c268c0d55b73a19fa8" title=" " alt="" coords="412,119,612,145"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a4924f71c844f8adfafae48531455f910" title=" " alt="" coords="423,218,601,243"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a36809edbcfe0caecb4b7ac54afc385d1" title=" " alt="" coords="421,169,603,194"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a98b9cecc3733f9a2042e2bda4dd89ede" title=" " alt="" coords="187,112,364,152"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#aa25ace6e8dfe7a75026f8ca430bcf062" title=" " alt="" coords="187,211,364,251"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a9bf58af059ac112e456dc6cd15d23c99" title=" " alt="" coords="5,218,139,243"/>
+<area shape="rect" title=" " alt="" coords="253,97,397,137"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#ab5bb62de13325b81f45958620bc2b988" title=" " alt="" coords="22,5,189,31"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a2570830536e313c268c0d55b73a19fa8" title=" " alt="" coords="5,55,205,80"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a4924f71c844f8adfafae48531455f910" title=" " alt="" coords="17,104,194,129"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a36809edbcfe0caecb4b7ac54afc385d1" title=" " alt="" coords="14,153,197,179"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a0027d3725be030a56a5ccb3a36b91616" title=" " alt="" coords="7,203,203,228"/>
 </map>
 </div>
 
@@ -473,34 +532,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d3/d63/classtoast_1_1Component.html#a187729a1cd745c75fab01fe8001d012c">toast::Component</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00013">13</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a6374642256969acc1c453f38fbedea09" name="a6374642256969acc1c453f38fbedea09"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6374642256969acc1c453f38fbedea09">&#9670;&#160;</a></span>Inspector()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void physics::Rigidbody::Inspector </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00021">21</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00015">15</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
 
 </div>
 </div>
@@ -523,7 +555,7 @@ Here is the caller graph for this function:</div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>propagate</em>&#160;</td>
+          <td class="paramname"><em>force_create</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -538,9 +570,19 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Loads object state from JSON. </p>
+<p>Deserializes the object's properties from the provided JSON.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">j</td><td>JSON object containing serialized state. </td></tr>
+    <tr><td class="paramname">force_create</td><td>If true, always creates new children; if false, updates existing children by name. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00119">119</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00142">142</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
 
 </div>
 </div>
@@ -585,9 +627,13 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Saves object state to JSON. </p>
+<p>Serializes the object's properties to a JSON object.</p>
+<dl class="section return"><dt>Returns</dt><dd>JSON object containing the serialized state. </dd></dl>
+
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00100">100</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00123">123</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
 
 </div>
 </div>
@@ -607,20 +653,120 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00165">165</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00188">188</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d6/d41/classphysics_1_1Rigidbody_ae643fc4478ed62cff8d478d116abe714_icgraph.png" border="0" usemap="#ad6/d41/classphysics_1_1Rigidbody_ae643fc4478ed62cff8d478d116abe714_icgraph" alt=""/></div>
 <map name="ad6/d41/classphysics_1_1Rigidbody_ae643fc4478ed62cff8d478d116abe714_icgraph" id="ad6/d41/classphysics_1_1Rigidbody_ae643fc4478ed62cff8d478d116abe714_icgraph">
-<area shape="rect" title=" " alt="" coords="479,88,623,128"/>
-<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a6374642256969acc1c453f38fbedea09" title=" " alt="" coords="259,5,403,45"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#ab5bb62de13325b81f45958620bc2b988" title=" " alt="" coords="247,70,414,95"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a2570830536e313c268c0d55b73a19fa8" title=" " alt="" coords="231,119,431,145"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a36809edbcfe0caecb4b7ac54afc385d1" title=" " alt="" coords="239,169,422,194"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a98b9cecc3733f9a2042e2bda4dd89ede" title=" " alt="" coords="5,112,183,152"/>
+<area shape="rect" title=" " alt="" coords="253,47,397,87"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#ab5bb62de13325b81f45958620bc2b988" title=" " alt="" coords="22,5,189,31"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a2570830536e313c268c0d55b73a19fa8" title=" " alt="" coords="5,55,205,80"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a36809edbcfe0caecb4b7ac54afc385d1" title=" " alt="" coords="14,104,197,129"/>
 </map>
 </div>
+
+</div>
+</div>
+<a id="ac3df201929be5e7dab4904f26ceeedf5" name="ac3df201929be5e7dab4904f26ceeedf5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac3df201929be5e7dab4904f26ceeedf5">&#9670;&#160;</a></span>StorePreviousPosition()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void physics::Rigidbody::StorePreviousPosition </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Store current position as previous (call before physics step) </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00207">207</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a4dfcd7de012b486a089892c43e77c0f0" name="a4dfcd7de012b486a089892c43e77c0f0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4dfcd7de012b486a089892c43e77c0f0">&#9670;&#160;</a></span>SyncFromTransform()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void physics::Rigidbody::SyncFromTransform </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sync rigidbody position from transform. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00233">233</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d6/d41/classphysics_1_1Rigidbody_a4dfcd7de012b486a089892c43e77c0f0_icgraph.png" border="0" usemap="#ad6/d41/classphysics_1_1Rigidbody_a4dfcd7de012b486a089892c43e77c0f0_icgraph" alt=""/></div>
+<map name="ad6/d41/classphysics_1_1Rigidbody_a4dfcd7de012b486a089892c43e77c0f0_icgraph" id="ad6/d41/classphysics_1_1Rigidbody_a4dfcd7de012b486a089892c43e77c0f0_icgraph">
+<area shape="rect" title="Sync rigidbody position from transform." alt="" coords="236,5,395,45"/>
+<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a03e9508170b42fb6e25ce25a90279b74" title="Update the visual transform using interpolated position (call from Tick/LateTick)" alt="" coords="5,5,188,45"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a47b364756e6b4442a01dbeeaf94d21b4" name="a47b364756e6b4442a01dbeeaf94d21b4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a47b364756e6b4442a01dbeeaf94d21b4">&#9670;&#160;</a></span>UpdateInterpolationAlpha()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void physics::Rigidbody::UpdateInterpolationAlpha </td>
+          <td>(</td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>alpha</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Update interpolation alpha based on time since last physics step. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00246">246</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a03e9508170b42fb6e25ce25a90279b74" name="a03e9508170b42fb6e25ce25a90279b74"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a03e9508170b42fb6e25ce25a90279b74">&#9670;&#160;</a></span>UpdateVisualTransform()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void physics::Rigidbody::UpdateVisualTransform </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Update the visual transform using interpolated position (call from Tick/LateTick) </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html#l00212">212</a> of file <a class="el" href="../../d9/d6b/Rigidbody_8cpp_source.html">Rigidbody.cpp</a>.</p>
 
 </div>
 </div>
@@ -637,7 +783,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00052">52</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00080">80</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -653,12 +799,12 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00054">54</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00082">82</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
-<a id="a4ad36bea34c65e7d065effe3da946488" name="a4ad36bea34c65e7d065effe3da946488"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4ad36bea34c65e7d065effe3da946488">&#9670;&#160;</a></span></h2>
+<a id="a841ed74d200ce036ef6e3a76e0e7db40" name="a841ed74d200ce036ef6e3a76e0e7db40"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a841ed74d200ce036ef6e3a76e0e7db40">&#9670;&#160;</a></span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -683,7 +829,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00053">53</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00081">81</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -694,12 +840,12 @@ Here is the caller graph for this function:</div>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">glm::vec2 physics::Rigidbody::drag = {0.5, 0.5}</td>
+          <td class="memname">glm::vec2 physics::Rigidbody::drag = { 0.5, 0.5 }</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00039">39</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00059">59</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -715,7 +861,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00035">35</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00055">55</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -731,7 +877,23 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00046">46</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00066">66</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a4b7edd63adea29176b56a32ffe2b5414" name="a4b7edd63adea29176b56a32ffe2b5414"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4b7edd63adea29176b56a32ffe2b5414">&#9670;&#160;</a></span>forcesMutex</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::mutex physics::Rigidbody::forcesMutex</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00067">67</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -747,7 +909,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00034">34</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00054">54</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -763,7 +925,71 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00038">38</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00058">58</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a3966d4940f6fb8500e556375719828c1" name="a3966d4940f6fb8500e556375719828c1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3966d4940f6fb8500e556375719828c1">&#9670;&#160;</a></span>m_currentPosition</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">glm::dvec2 physics::Rigidbody::m_currentPosition = { 0.0, 0.0 }</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00071">71</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a290293f0fdd92646bcc6055362282eb3" name="a290293f0fdd92646bcc6055362282eb3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a290293f0fdd92646bcc6055362282eb3">&#9670;&#160;</a></span>m_hasValidPreviousPosition</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool physics::Rigidbody::m_hasValidPreviousPosition = false</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00073">73</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a2f5649875742580404c025e3898bd1a3" name="a2f5649875742580404c025e3898bd1a3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2f5649875742580404c025e3898bd1a3">&#9670;&#160;</a></span>m_lastKnownTransformPos</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">glm::dvec3 physics::Rigidbody::m_lastKnownTransformPos = { 0.0, 0.0, 0.0 }</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00072">72</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+
+</div>
+</div>
+<a id="aea59260d632e59e5983a7dfc57cc8a90" name="aea59260d632e59e5983a7dfc57cc8a90"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aea59260d632e59e5983a7dfc57cc8a90">&#9670;&#160;</a></span>m_previousPosition</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">glm::dvec2 physics::Rigidbody::m_previousPosition = { 0.0, 0.0 }</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00070">70</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -779,7 +1005,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00033">33</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00053">53</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -795,7 +1021,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00042">42</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00062">62</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -811,7 +1037,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00032">32</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00052">52</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -827,7 +1053,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00040">40</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00060">60</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -843,7 +1069,31 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00041">41</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00061">61</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a3b3ecb584dd1023ac6da45e71c00d4b9" name="a3b3ecb584dd1023ac6da45e71c00d4b9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3b3ecb584dd1023ac6da45e71c00d4b9">&#9670;&#160;</a></span>s_interpolationAlpha</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">double physics::Rigidbody::s_interpolationAlpha = 1.0</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00074">74</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -859,7 +1109,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00050">50</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00078">78</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -875,7 +1125,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00051">51</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00079">79</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>
@@ -891,7 +1141,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00045">45</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html#l00065">65</a> of file <a class="el" href="../../de/d86/Rigidbody_8hpp_source.html">Rigidbody.hpp</a>.</p>
 
 </div>
 </div>

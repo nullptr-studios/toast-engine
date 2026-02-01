@@ -1,0 +1,7 @@
+<map id="toast::ParticleEmitter::RandomDirection" name="toast::ParticleEmitter::RandomDirection">
+<area shape="rect" id="node1" title="Random direction on unit sphere." alt="" coords="652,37,811,77"/>
+<area shape="rect" id="node2" href="$dd/d84/classtoast_1_1ParticleEmitter.html#aab8b2bf5f0d982e5a14c5e0af6897950" title="Generate spawn velocity." alt="" coords="419,37,604,77"/>
+<area shape="rect" id="node3" href="$dd/d84/classtoast_1_1ParticleEmitter.html#a084a33bb221ec526ad6957b57937c837" title="Spawn particles for this emitter." alt="" coords="212,37,371,77"/>
+<area shape="rect" id="node4" href="$dd/d84/classtoast_1_1ParticleEmitter.html#ad014529c200a03eeb50da8d830d00673" title="Emit a burst." alt="" coords="5,5,164,45"/>
+<area shape="rect" id="node5" href="$dd/d84/classtoast_1_1ParticleEmitter.html#aa854ebc1660c4c0de3452dbd7da1a401" title="Update and render this emitter&#39;s particles." alt="" coords="5,69,164,109"/>
+</map>

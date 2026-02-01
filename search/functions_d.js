@@ -6,5 +6,6 @@ var searchData=
   ['matrix_3',['matrix',['../d8/d63/classtoast_1_1TransformImpl.html#a141d1e881a6f0288e4f529ec84b21fce',1,'toast::TransformImpl']]],
   ['mesh_4',['Mesh',['../d4/d8c/classrenderer_1_1Mesh.html#af2110454c090e88ed22663e2fa39b7ee',1,'renderer::Mesh::Mesh(std::string path=&quot;&quot;)'],['../d4/d8c/classrenderer_1_1Mesh.html#a92b3dba4c54574fde350bd17de2d268b',1,'renderer::Mesh::Mesh(Mesh &amp;&amp;o) noexcept'],['../d4/d8c/classrenderer_1_1Mesh.html#a3d791abb903233a3ea27459907b9afc1',1,'renderer::Mesh::Mesh(const Mesh &amp;)=delete']]],
   ['minor_5',['minor',['../d1/df3/structtoast_1_1Version.html#a3b65841c8c4c70898b17eb73637490e2',1,'toast::Version']]],
-  ['mousekeycodefromstring_6',['MouseKeycodeFromString',['../dc/d73/namespaceinput.html#a32bb9b49476a0f979783c703502070b2',1,'input']]]
+  ['mousekeycodefromstring_6',['MouseKeycodeFromString',['../dc/d73/namespaceinput.html#a32bb9b49476a0f979783c703502070b2',1,'input']]],
+  ['mute_5fall_7',['mute_all',['../db/d5d/classaudio_1_1AudioSystem.html#a1cd2958a1daf23552af9a58a6774a3a5',1,'audio::AudioSystem::mute_all()'],['../d2/d11/namespaceaudio.html#ac26aef4dd79de9eba8125e9c307965c7',1,'audio::mute_all()']]]
 ];

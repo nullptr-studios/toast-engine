@@ -1,4 +1,4 @@
 <map id="renderer::Material::UpdateEditorSlots" name="renderer::Material::UpdateEditorSlots">
-<area shape="rect" id="node1" title=" " alt="" coords="192,5,339,45"/>
-<area shape="rect" id="node2" href="$d4/de6/classrenderer_1_1Material.html#a0e4285ae426362c5e03b56568323d5dd" title=" " alt="" coords="5,5,144,45"/>
+<area shape="rect" id="node1" title="Updates editor UI slots when material is reloaded." alt="" coords="192,5,339,45"/>
+<area shape="rect" id="node2" href="$d4/de6/classrenderer_1_1Material.html#a0e4285ae426362c5e03b56568323d5dd" title="Shows the material editor UI (editor only)." alt="" coords="5,5,144,45"/>
 </map>

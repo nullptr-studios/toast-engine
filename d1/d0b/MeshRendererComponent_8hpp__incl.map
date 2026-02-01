@@ -1,21 +1,21 @@
 <map id="inc/Toast/Components/MeshRendererComponent.hpp" name="inc/Toast/Components/MeshRendererComponent.hpp">
 <area shape="rect" id="node1" title=" " alt="" coords="1111,5,1334,45"/>
-<area shape="rect" id="node2" href="$d9/da8/TransformComponent_8hpp.html" title="Contains the Transform2D and Transform 3D objects." alt="" coords="467,181,677,221"/>
+<area shape="rect" id="node2" href="$d9/da8/TransformComponent_8hpp.html" title="Transform component for position, rotation, and scale." alt="" coords="467,181,677,221"/>
 <area shape="rect" id="node13" title=" " alt="" coords="1009,489,1087,515"/>
 <area shape="rect" id="node21" title=" " alt="" coords="719,269,823,295"/>
-<area shape="rect" id="node23" href="$d7/d78/IRenderable_8hpp.html" title="Interface for renderable objects that can be submitted to the renderer." alt="" coords="543,101,772,126"/>
-<area shape="rect" id="node24" href="$d0/d70/Material_8hpp.html" title=" " alt="" coords="1191,101,1396,126"/>
+<area shape="rect" id="node23" href="$d7/d78/IRenderable_8hpp.html" title="Interface for objects that can be rendered." alt="" coords="543,101,772,126"/>
+<area shape="rect" id="node24" href="$d0/d70/Material_8hpp.html" title="Material resource for combining shaders and textures." alt="" coords="1191,101,1396,126"/>
 <area shape="rect" id="node25" href="$d4/d6e/Shader_8hpp.html" title=" " alt="" coords="1166,189,1261,214"/>
 <area shape="rect" id="node32" href="$d0/ddc/Texture_8hpp.html" title=" " alt="" coords="1873,269,2079,295"/>
 <area shape="rect" id="node34" href="$d1/d62/Mesh_8hpp.html" title=" " alt="" coords="1336,189,1531,214"/>
-<area shape="rect" id="node35" href="$db/d16/ResourceManager_8hpp.html" title=" " alt="" coords="1574,93,1765,133"/>
+<area shape="rect" id="node35" href="$db/d16/ResourceManager_8hpp.html" title="Resource loading and caching system." alt="" coords="1574,93,1765,133"/>
 <area shape="rect" id="node36" href="$da/d46/ResourceSlot_8hpp.html" title=" " alt="" coords="1846,189,1981,214"/>
 <area shape="rect" id="node3" href="$df/d1f/Component_8hpp.html" title="Base component class." alt="" coords="321,269,447,295"/>
 <area shape="rect" id="node4" href="$d7/d3f/Object_8hpp.html" title="Base Object Class." alt="" coords="493,343,675,368"/>
 <area shape="rect" id="node22" title=" " alt="" coords="471,269,644,295"/>
 <area shape="rect" id="node5" href="$d7/d5a/RTTIMacros_8h.html" title=" " alt="" coords="675,416,797,441"/>
 <area shape="rect" id="node6" href="$d5/d03/Factory_8hpp.html" title="Class in charge of Object creation (not anmymore)" alt="" coords="517,416,651,441"/>
-<area shape="rect" id="node7" href="$df/da3/ISerializable_8hpp.html" title="[Brief description of the file&#39;s purpose]" alt="" coords="5,416,173,441"/>
+<area shape="rect" id="node7" href="$df/da3/ISerializable_8hpp.html" title="Interface for objects that can be saved and loaded from JSON." alt="" coords="5,416,173,441"/>
 <area shape="rect" id="node9" href="$d0/d82/Log_8hpp.html" title=" " alt="" coords="1182,416,1293,441"/>
 <area shape="rect" id="node16" title=" " alt="" coords="887,489,985,515"/>
 <area shape="rect" id="node17" title=" " alt="" coords="197,416,264,441"/>

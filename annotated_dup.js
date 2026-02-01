@@ -1,5 +1,9 @@
 var annotated_dup =
 [
+    [ "audio", "d2/d11/namespaceaudio.html", [
+      [ "AudioSystem", "db/d5d/classaudio_1_1AudioSystem.html", "db/d5d/classaudio_1_1AudioSystem" ],
+      [ "Data", "d6/d61/classaudio_1_1Data.html", "d6/d61/classaudio_1_1Data" ]
+    ] ],
     [ "editor", "db/d4c/namespaceeditor.html", [
       [ "ResourceSlot", "dd/ddc/classeditor_1_1ResourceSlot.html", "dd/ddc/classeditor_1_1ResourceSlot" ]
     ] ],
@@ -38,9 +42,11 @@ var annotated_dup =
       [ "PhysicsSystem", "d6/dd8/classphysics_1_1PhysicsSystem.html", "d6/dd8/classphysics_1_1PhysicsSystem" ],
       [ "RayResult", "db/d69/structphysics_1_1RayResult.html", "db/d69/structphysics_1_1RayResult" ],
       [ "Rigidbody", "d6/d41/classphysics_1_1Rigidbody.html", "d6/d41/classphysics_1_1Rigidbody" ],
+      [ "Trigger", "d4/d9c/classphysics_1_1Trigger.html", "d4/d9c/classphysics_1_1Trigger" ],
       [ "UpdatePhysicsDefaults", "d8/d25/structphysics_1_1UpdatePhysicsDefaults.html", "d8/d25/structphysics_1_1UpdatePhysicsDefaults" ]
     ] ],
     [ "renderer", "d0/db9/namespacerenderer.html", [
+      [ "BoundingBox", "dd/d13/structrenderer_1_1BoundingBox.html", "dd/d13/structrenderer_1_1BoundingBox" ],
       [ "DebugDrawLayer", "df/daf/classrenderer_1_1DebugDrawLayer.html", "df/daf/classrenderer_1_1DebugDrawLayer" ],
       [ "DebugVertex", "da/d9a/structrenderer_1_1DebugVertex.html", "da/d9a/structrenderer_1_1DebugVertex" ],
       [ "ILayer", "d4/deb/classrenderer_1_1ILayer.html", "d4/deb/classrenderer_1_1ILayer" ],
@@ -78,11 +84,22 @@ var annotated_dup =
       [ "Component", "d3/d63/classtoast_1_1Component.html", "d3/d63/classtoast_1_1Component" ],
       [ "Engine", "d9/d4f/classtoast_1_1Engine.html", "d9/d4f/classtoast_1_1Engine" ],
       [ "Factory", "d9/de7/classtoast_1_1Factory.html", "d9/de7/classtoast_1_1Factory" ],
+      [ "GameFlow", "d6/dbd/classtoast_1_1GameFlow.html", "d6/dbd/classtoast_1_1GameFlow" ],
+      [ "GPUParticle", "d8/da4/structtoast_1_1GPUParticle.html", "d8/da4/structtoast_1_1GPUParticle" ],
       [ "ISerializable", "dd/d8b/classtoast_1_1ISerializable.html", "dd/d8b/classtoast_1_1ISerializable" ],
+      [ "LoadLevel", "d4/d80/structtoast_1_1LoadLevel.html", "d4/d80/structtoast_1_1LoadLevel" ],
+      [ "LoadWorld", "da/d47/structtoast_1_1LoadWorld.html", "da/d47/structtoast_1_1LoadWorld" ],
       [ "Log", "dc/d5c/classtoast_1_1Log.html", "dc/d5c/classtoast_1_1Log" ],
       [ "MeshRendererComponent", "de/da0/classtoast_1_1MeshRendererComponent.html", "de/da0/classtoast_1_1MeshRendererComponent" ],
+      [ "NextLevel", "d5/d90/structtoast_1_1NextLevel.html", null ],
+      [ "NextWorld", "d3/d64/structtoast_1_1NextWorld.html", null ],
       [ "Object", "d1/da3/classtoast_1_1Object.html", "d1/da3/classtoast_1_1Object" ],
+      [ "ParticleBurst", "dd/d4e/structtoast_1_1ParticleBurst.html", "dd/d4e/structtoast_1_1ParticleBurst" ],
+      [ "ParticleEmitter", "dd/d84/classtoast_1_1ParticleEmitter.html", "dd/d84/classtoast_1_1ParticleEmitter" ],
+      [ "ParticleEmitterConfig", "db/d96/structtoast_1_1ParticleEmitterConfig.html", "db/d96/structtoast_1_1ParticleEmitterConfig" ],
+      [ "ParticleSystem", "df/d2b/classtoast_1_1ParticleSystem.html", "df/d2b/classtoast_1_1ParticleSystem" ],
       [ "ProjectSettings", "d4/ddb/structtoast_1_1ProjectSettings.html", "d4/ddb/structtoast_1_1ProjectSettings" ],
+      [ "Range", "d2/d6a/structtoast_1_1Range.html", "d2/d6a/structtoast_1_1Range" ],
       [ "Scene", "d6/dd4/classtoast_1_1Scene.html", "d6/dd4/classtoast_1_1Scene" ],
       [ "SceneLoadedEvent", "dc/d36/structtoast_1_1SceneLoadedEvent.html", "dc/d36/structtoast_1_1SceneLoadedEvent" ],
       [ "State", "d8/d9c/structtoast_1_1State.html", "d8/d9c/structtoast_1_1State" ],

@@ -1,6 +1,5 @@
 <map id="Time::delta" name="Time::delta">
-<area shape="rect" id="node1" title="Returns the time the last frame took to process." alt="" coords="348,35,444,60"/>
-<area shape="rect" id="node2" href="$d9/d4f/classtoast_1_1Engine.html#ae7f81d670cc27f32ce9fcc4bd3bab1d5" title=" " alt="" coords="134,5,274,31"/>
-<area shape="rect" id="node4" href="$d0/dc7/classSpineRendererComponent.html#ae43b68e864e4701ce626137f0298ed3e" title="This function runs every frame." alt="" coords="108,55,300,95"/>
-<area shape="rect" id="node3" href="$dd/d43/Linux_8inl.html#a3c04138a5bfe5d72780bb7e82a18e627" title=" " alt="" coords="5,5,60,31"/>
+<area shape="rect" id="node1" title="Returns the time the last frame took to process." alt="" coords="245,45,341,70"/>
+<area shape="rect" id="node2" href="$df/d2b/classtoast_1_1ParticleSystem.html#a1db5e54b53f308abb509203b89d34ce2" title="Called during the geometry pass to render this object." alt="" coords="21,5,181,45"/>
+<area shape="rect" id="node3" href="$d0/dc7/classSpineRendererComponent.html#ae43b68e864e4701ce626137f0298ed3e" title="This function runs every frame." alt="" coords="5,69,197,109"/>
 </map>

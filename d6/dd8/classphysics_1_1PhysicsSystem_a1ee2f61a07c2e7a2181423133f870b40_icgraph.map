@@ -1,7 +1,0 @@
-<map id="physics::PhysicsSystem::gravity" name="physics::PhysicsSystem::gravity">
-<area shape="rect" id="node1" title=" " alt="" coords="456,39,633,79"/>
-<area shape="rect" id="node2" href="$d5/dd0/namespacephysics.html#a2df048bd8f58a63d7497b090ff58a052" title=" " alt="" coords="231,17,408,42"/>
-<area shape="rect" id="node4" href="$d5/dd0/namespacephysics.html#aa0997ff64f451f3edfc555c6fa7a320e" title=" " alt="" coords="235,70,404,95"/>
-<area shape="rect" id="node3" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="5,5,183,45"/>
-<area shape="rect" id="node5" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a98b9cecc3733f9a2042e2bda4dd89ede" title=" " alt="" coords="5,69,183,109"/>
-</map>

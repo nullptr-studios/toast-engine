@@ -1,8 +1,8 @@
 <map id="Children::Add" name="Children::Add">
 <area shape="rect" id="node1" title="Creates a new child." alt="" coords="616,55,725,80"/>
-<area shape="rect" id="node2" href="$d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d" title=" " alt="" coords="424,55,568,80"/>
-<area shape="rect" id="node3" href="$d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2" title=" " alt="" coords="223,5,359,31"/>
-<area shape="rect" id="node5" href="$d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1" title=" " alt="" coords="221,55,362,80"/>
-<area shape="rect" id="node6" href="$d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef" title=" " alt="" coords="207,104,376,129"/>
-<area shape="rect" id="node4" href="$d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005" title=" " alt="" coords="5,5,159,31"/>
+<area shape="rect" id="node2" href="$d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d" title="Loads object state from JSON." alt="" coords="424,55,568,80"/>
+<area shape="rect" id="node3" href="$d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2" title="Loads object state from JSON." alt="" coords="223,5,359,31"/>
+<area shape="rect" id="node5" href="$d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1" title="Loads object state from JSON." alt="" coords="221,55,362,80"/>
+<area shape="rect" id="node6" href="$d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef" title="Reloads from cached JSON." alt="" coords="207,104,376,129"/>
+<area shape="rect" id="node4" href="$d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005" title="Loads object state from JSON." alt="" coords="5,5,159,31"/>
 </map>

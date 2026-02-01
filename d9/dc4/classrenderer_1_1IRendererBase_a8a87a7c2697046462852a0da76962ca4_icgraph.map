@@ -1,0 +1,4 @@
+<map id="renderer::IRendererBase::GetViewMatrix" name="renderer::IRendererBase::GetViewMatrix">
+<area shape="rect" id="node1" title="Gets the current view matrix." alt="" coords="213,5,393,45"/>
+<area shape="rect" id="node2" href="$df/d2b/classtoast_1_1ParticleSystem.html#a1db5e54b53f308abb509203b89d34ce2" title="Called during the geometry pass to render this object." alt="" coords="5,5,165,45"/>
+</map>

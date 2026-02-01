@@ -1,10 +1,9 @@
 <map id="physics::BoxRigidbody::GetPosition" name="physics::BoxRigidbody::GetPosition">
-<area shape="rect" id="node1" title=" " alt="" coords="487,88,656,128"/>
-<area shape="rect" id="node2" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a6d02bdd5228f0da82e3687ece5aaaa69" title=" " alt="" coords="250,5,419,45"/>
-<area shape="rect" id="node3" href="$d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="247,70,422,95"/>
-<area shape="rect" id="node5" href="$d5/dd0/namespacephysics.html#a46f160106603c30fe08f473710634331" title=" " alt="" coords="231,119,439,145"/>
-<area shape="rect" id="node6" href="$d4/db0/classphysics_1_1BoxRigidbody.html#ace0ee6b77ef84882d1f83dd38147df99" title=" " alt="" coords="250,169,419,209"/>
-<area shape="rect" id="node4" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="5,73,183,113"/>
-<area shape="rect" id="node7" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a9544adc0b4bfe621025d3fc28ad0dd84" title="This function runs every frame in the editor." alt="" coords="9,159,179,199"/>
-<area shape="rect" id="node8" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a94503868157c1c683a53d49ae9c4c5d5" title=" " alt="" coords="9,223,179,263"/>
+<area shape="rect" id="node1" title=" " alt="" coords="479,88,648,128"/>
+<area shape="rect" id="node2" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a6d02bdd5228f0da82e3687ece5aaaa69" title=" " alt="" coords="242,5,411,45"/>
+<area shape="rect" id="node3" href="$d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="239,70,414,95"/>
+<area shape="rect" id="node4" href="$d5/dd0/namespacephysics.html#a46f160106603c30fe08f473710634331" title=" " alt="" coords="223,119,431,145"/>
+<area shape="rect" id="node5" href="$d4/db0/classphysics_1_1BoxRigidbody.html#ace0ee6b77ef84882d1f83dd38147df99" title=" " alt="" coords="242,169,411,209"/>
+<area shape="rect" id="node6" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a9544adc0b4bfe621025d3fc28ad0dd84" title="This function runs every frame in the editor." alt="" coords="5,137,175,177"/>
+<area shape="rect" id="node7" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a94503868157c1c683a53d49ae9c4c5d5" title=" " alt="" coords="5,201,175,241"/>
 </map>

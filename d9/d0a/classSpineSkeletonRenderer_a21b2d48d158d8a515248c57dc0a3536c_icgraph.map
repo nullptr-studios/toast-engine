@@ -1,5 +1,9 @@
 <map id="SpineSkeletonRenderer::getRenderer" name="SpineSkeletonRenderer::getRenderer">
-<area shape="rect" id="node1" title=" " alt="" coords="245,37,419,77"/>
-<area shape="rect" id="node2" href="$dd/d75/classAtlasRendererComponent.html#ab1dea9839d0075cb1a3fc718ca7f7d16" title="Called during the rendering pass to draw this object." alt="" coords="7,5,196,45"/>
-<area shape="rect" id="node3" href="$d0/dc7/classSpineRendererComponent.html#ac7c57651f7368b20c302455ef4712c5e" title="Called during the rendering pass to draw this object." alt="" coords="5,69,197,109"/>
+<area shape="rect" id="node1" title=" " alt="" coords="744,69,917,109"/>
+<area shape="rect" id="node2" href="$dd/d75/classAtlasRendererComponent.html#ab1dea9839d0075cb1a3fc718ca7f7d16" title="Called during the geometry pass to render this object." alt="" coords="505,5,695,45"/>
+<area shape="rect" id="node3" href="$d0/dc7/classSpineRendererComponent.html#ac7c57651f7368b20c302455ef4712c5e" title="Called during the geometry pass to render this object." alt="" coords="504,69,696,109"/>
+<area shape="rect" id="node4" href="$dd/d75/classAtlasRendererComponent.html#a822310b22be51f46fb04d4e23eb62cdc" title=" " alt="" coords="505,133,695,173"/>
+<area shape="rect" id="node5" href="$dd/d75/classAtlasRendererComponent.html#a064d41b002070405eba9aa17a080a103" title=" " alt="" coords="243,133,456,173"/>
+<area shape="rect" id="node6" href="$dd/d75/classAtlasRendererComponent.html#a6c2703c4082252a0572931db24b5a0fd" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,101,195,141"/>
+<area shape="rect" id="node7" href="$dd/d75/classAtlasRendererComponent.html#abd67ce261735dcf4ca9a5955c89d1844" title="Loads object state from JSON." alt="" coords="5,165,195,205"/>
 </map>

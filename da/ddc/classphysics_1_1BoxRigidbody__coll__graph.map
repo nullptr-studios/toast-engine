@@ -3,6 +3,6 @@
 <area shape="rect" id="node2" href="$d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="21,181,159,207"/>
 <area shape="rect" id="node3" href="$d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="139,93,244,119"/>
 <area shape="rect" id="node6" href="$d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="184,181,287,207"/>
-<area shape="rect" id="node4" href="$dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="53,5,196,31"/>
+<area shape="rect" id="node4" href="$dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="53,5,196,31"/>
 <area shape="rect" id="node5" href="$d8/d87/classChildren.html" title=" " alt="" coords="220,5,296,31"/>
 </map>

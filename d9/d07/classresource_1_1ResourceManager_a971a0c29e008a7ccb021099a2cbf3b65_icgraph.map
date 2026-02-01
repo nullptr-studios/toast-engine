@@ -1,7 +1,4 @@
 <map id="resource::ResourceManager::OpenFile" name="resource::ResourceManager::OpenFile">
-<area shape="rect" id="node1" title="opens a file from disk or pkg" alt="" coords="263,88,465,128"/>
-<area shape="rect" id="node2" href="$db/d95/classspine_1_1EngineSpineExtension.html#a32e9b884162da37142f2e838a3a2c63c" title=" " alt="" coords="5,5,215,45"/>
-<area shape="rect" id="node3" href="$d6/daf/classSpineAtlas.html#a6df4335c7930ed00433f8b958e54bfcd" title="loads the resource into CPU memory" alt="" coords="45,70,175,95"/>
-<area shape="rect" id="node4" href="$de/d02/classSpineSkeletonData.html#a987a79a15788aaea9b15828c4182126f" title="loads the resource into CPU memory" alt="" coords="18,119,202,145"/>
-<area shape="rect" id="node5" href="$d6/dd4/classtoast_1_1Scene.html#a0cedaed0a89a27b9e0e43e10a907f35a" title=" " alt="" coords="39,193,181,218"/>
+<area shape="rect" id="node1" title="Opens a file and returns its contents as a string stream." alt="" coords="173,29,376,69"/>
+<area shape="rect" id="node2" href="$d8/d5c/namespaceresource.html#a0eb5e28e0c91dbbfba5c689635f40aca" title=" " alt="" coords="5,37,125,62"/>
 </map>

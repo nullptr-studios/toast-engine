@@ -1,5 +1,6 @@
 var namespaces_dup =
 [
+    [ "audio", "d2/d11/namespaceaudio.html", "d2/d11/namespaceaudio" ],
     [ "editor", "db/d4c/namespaceeditor.html", "db/d4c/namespaceeditor" ],
     [ "event", "dc/dd0/namespaceevent.html", "dc/dd0/namespaceevent" ],
     [ "input", "dc/d73/namespaceinput.html", "dc/d73/namespaceinput" ],

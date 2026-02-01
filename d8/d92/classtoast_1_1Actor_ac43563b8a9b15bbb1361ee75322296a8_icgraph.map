@@ -1,4 +1,4 @@
 <map id="toast::Actor::Destroy" name="toast::Actor::Destroy">
 <area shape="rect" id="node1" title="This function runs when the object is set to be destroyed." alt="" coords="227,5,383,31"/>
-<area shape="rect" id="node2" href="$d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5" title="This function runs when the object is set to be destroyed." alt="" coords="5,5,179,31"/>
+<area shape="rect" id="node2" href="$d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5" title="Cleans up the camera when destroyed." alt="" coords="5,5,179,31"/>
 </map>

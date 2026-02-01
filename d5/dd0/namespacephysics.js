@@ -10,6 +10,7 @@ var namespacephysics =
     [ "PhysicsSystem", "d6/dd8/classphysics_1_1PhysicsSystem.html", "d6/dd8/classphysics_1_1PhysicsSystem" ],
     [ "RayResult", "db/d69/structphysics_1_1RayResult.html", "db/d69/structphysics_1_1RayResult" ],
     [ "Rigidbody", "d6/d41/classphysics_1_1Rigidbody.html", "d6/d41/classphysics_1_1Rigidbody" ],
+    [ "Trigger", "d4/d9c/classphysics_1_1Trigger.html", "d4/d9c/classphysics_1_1Trigger" ],
     [ "UpdatePhysicsDefaults", "d8/d25/structphysics_1_1UpdatePhysicsDefaults.html", "d8/d25/structphysics_1_1UpdatePhysicsDefaults" ],
     [ "BoxBoxCollision", "d5/dd0/namespacephysics.html#afd721919c6e6937b568f0eae110ffad7", null ],
     [ "BoxBoxResolution", "d5/dd0/namespacephysics.html#a4d57204353d7e78fd76b1ec199b1a2d1", null ],
@@ -33,7 +34,6 @@ var namespacephysics =
     [ "RbRbCollision", "d5/dd0/namespacephysics.html#a023a1eefd578254b09518211706ac1b2", null ],
     [ "RbRbResolution", "d5/dd0/namespacephysics.html#a36809edbcfe0caecb4b7ac54afc385d1", null ],
     [ "RbResetVelocity", "d5/dd0/namespacephysics.html#a33c69640dfa002d677858f5b3536ff2c", null ],
-    [ "RbTriggerCollision", "d5/dd0/namespacephysics.html#a7b9b68274fb56d054ad30d6f269f00eb", null ],
-    [ "RbTriggerResolution", "d5/dd0/namespacephysics.html#a9934106d2d60c8da73bba816b7850eb6", null ],
+    [ "RbTriggerCollision", "d5/dd0/namespacephysics.html#a0027d3725be030a56a5ccb3a36b91616", null ],
     [ "ShoelaceArea", "d5/dd0/namespacephysics.html#a40f3163dfdfef736a883aeb1f39b5376", null ]
 ];

@@ -1,19 +1,3 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="5,227,148,252"/>
-<area shape="rect" id="node2" href="$d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="196,227,301,252"/>
-<area shape="rect" id="node3" href="$d8/d92/classtoast_1_1Actor.html" title=" " alt="" coords="370,80,467,105"/>
-<area shape="rect" id="node7" href="$d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="349,227,488,252"/>
-<area shape="rect" id="node17" href="$d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="367,276,470,301"/>
-<area shape="rect" id="node4" href="$d8/d72/classGlobalLight.html" title=" " alt="" coords="589,5,685,31"/>
-<area shape="rect" id="node5" href="$d0/db0/classLight2D.html" title=" " alt="" coords="601,55,673,80"/>
-<area shape="rect" id="node6" href="$d8/db9/classtoast_1_1Camera.html" title=" " alt="" coords="580,104,695,129"/>
-<area shape="rect" id="node8" href="$d8/d7b/classevent_1_1ListenerComponent.html" title=" " alt="" coords="540,153,735,179"/>
-<area shape="rect" id="node9" href="$d4/db0/classphysics_1_1BoxRigidbody.html" title=" " alt="" coords="553,203,722,228"/>
-<area shape="rect" id="node10" href="$db/d71/classphysics_1_1Collider.html" title=" " alt="" coords="573,252,702,277"/>
-<area shape="rect" id="node11" href="$d6/d41/classphysics_1_1Rigidbody.html" title=" " alt="" coords="565,301,709,327"/>
-<area shape="rect" id="node12" href="$d0/dd9/classtoast_1_1TransformComponent.html" title=" " alt="" coords="536,351,739,376"/>
-<area shape="rect" id="node13" href="$d5/dfe/classrenderer_1_1IRenderable.html" title="Interface for objects that can be rendered by the rendering system." alt="" coords="787,351,949,376"/>
-<area shape="rect" id="node14" href="$dd/d75/classAtlasRendererComponent.html" title=" " alt="" coords="1019,301,1208,327"/>
-<area shape="rect" id="node15" href="$d0/dc7/classSpineRendererComponent.html" title=" " alt="" coords="1017,351,1209,376"/>
-<area shape="rect" id="node16" href="$de/da0/classtoast_1_1MeshRendererComponent.html" title=" " alt="" coords="997,400,1229,425"/>
+<area shape="rect" id="node1" href="$d5/d2e/structstd_1_1formatter_3_01toast_1_1TransformImpl_01_4.html" title=" " alt="" coords="5,5,165,45"/>
 </map>

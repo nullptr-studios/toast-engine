@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['editor_0',['editor',['../db/d4c/namespaceeditor.html',1,'']]],
-  ['event_1',['event',['../dc/dd0/namespaceevent.html',1,'']]]
+  ['audio_0',['audio',['../d2/d11/namespaceaudio.html',1,'']]],
+  ['core_1',['core',['../d0/d66/namespaceaudio_1_1core.html',1,'audio']]]
 ];

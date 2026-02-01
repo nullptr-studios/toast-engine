@@ -1,9 +1,11 @@
 <map id="toast::Actor::transform" name="toast::Actor::transform">
-<area shape="rect" id="node1" title=" " alt="" coords="491,120,660,145"/>
-<area shape="rect" id="node2" href="$d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="295,5,396,31"/>
-<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="248,55,443,95"/>
-<area shape="rect" id="node5" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="273,120,417,145"/>
-<area shape="rect" id="node6" href="$d0/db0/classLight2D.html#a21d10d0a00f1ac024c4c1f393f8eda50" title=" " alt="" coords="273,169,418,195"/>
-<area shape="rect" id="node7" href="$d5/d10/structtoast_1_1Transform2.html#ad1c1969f56ed7c1efe51f3b5e8776084" title=" " alt="" coords="260,219,431,259"/>
-<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,55,200,95"/>
+<area shape="rect" id="node1" title=" " alt="" coords="492,169,661,195"/>
+<area shape="rect" id="node2" href="$d4/d9c/classphysics_1_1Trigger.html#a4970415b9725781eaebe9c0f416ea42e" title="This function runs every frame in the editor." alt="" coords="248,5,444,31"/>
+<area shape="rect" id="node3" href="$d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="295,55,397,80"/>
+<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="249,105,443,145"/>
+<area shape="rect" id="node6" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="274,169,418,195"/>
+<area shape="rect" id="node7" href="$d5/dd0/namespacephysics.html#a0027d3725be030a56a5ccb3a36b91616" title=" " alt="" coords="248,219,444,244"/>
+<area shape="rect" id="node8" href="$d0/db0/classLight2D.html#a21d10d0a00f1ac024c4c1f393f8eda50" title=" " alt="" coords="273,268,419,293"/>
+<area shape="rect" id="node9" href="$d5/d10/structtoast_1_1Transform2.html#ad1c1969f56ed7c1efe51f3b5e8776084" title=" " alt="" coords="261,318,431,358"/>
+<area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,105,200,145"/>
 </map>

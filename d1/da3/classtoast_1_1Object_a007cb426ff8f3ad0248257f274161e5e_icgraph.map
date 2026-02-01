@@ -1,8 +1,12 @@
 <map id="toast::Object::id" name="toast::Object::id">
-<area shape="rect" id="node1" title="Returns the id of the object." alt="" coords="456,80,581,105"/>
-<area shape="rect" id="node2" href="$d6/d7d/classtoast_1_1World.html#ac5c3dc60522b314ca5e13a0b2083e79e" title="Loads scene on the init thread, scene disabld after load." alt="" coords="214,5,393,31"/>
-<area shape="rect" id="node3" href="$d6/d7d/classtoast_1_1World.html#abe28a5b8532ca1d9bb09c1e7a43f68bf" title="Loads scene on the main thread, scene enabled after load." alt="" coords="199,55,408,80"/>
-<area shape="rect" id="node5" href="$d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b" title=" " alt="" coords="235,104,372,129"/>
-<area shape="rect" id="node6" href="$d8/d7c/structtoast_1_1Object_1_1Registrar.html#a31f4099f2cad44dfc513e376596d9cbe" title=" " alt="" coords="217,154,389,194"/>
-<area shape="rect" id="node4" href="$d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,55,151,80"/>
+<area shape="rect" id="node1" title="Returns the id of the object." alt="" coords="777,155,903,180"/>
+<area shape="rect" id="node2" href="$d6/d7d/classtoast_1_1World.html#afbe0e3e4c589a2dc3123ae461139bf13" title="Loads scene on the init thread, scene disabld after load." alt="" coords="535,80,714,105"/>
+<area shape="rect" id="node7" href="$d6/d7d/classtoast_1_1World.html#abe28a5b8532ca1d9bb09c1e7a43f68bf" title="Loads scene on the main thread, scene enabled after load." alt="" coords="520,129,729,155"/>
+<area shape="rect" id="node9" href="$d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b" title=" " alt="" coords="556,179,693,204"/>
+<area shape="rect" id="node10" href="$d8/d7c/structtoast_1_1Object_1_1Registrar.html#a31f4099f2cad44dfc513e376596d9cbe" title=" " alt="" coords="539,229,711,269"/>
+<area shape="rect" id="node3" href="$d6/dbd/classtoast_1_1GameFlow.html#a03e770afc70716334eb4037d9151c8a5" title=" " alt="" coords="265,5,471,31"/>
+<area shape="rect" id="node4" href="$d6/dbd/classtoast_1_1GameFlow.html#ad929acb758d90809c68ba2362d8e7ed4" title=" " alt="" coords="264,55,472,80"/>
+<area shape="rect" id="node5" href="$d6/dbd/classtoast_1_1GameFlow.html#ad20bf8c23fc5cc9ae04746532256cf62" title=" " alt="" coords="265,104,471,129"/>
+<area shape="rect" id="node6" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,104,216,129"/>
+<area shape="rect" id="node8" href="$d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="295,153,441,179"/>
 </map>

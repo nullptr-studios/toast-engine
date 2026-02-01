@@ -13,6 +13,7 @@ var structinput_1_1Action =
     [ "CalculateValue", "da/d9c/structinput_1_1Action.html#a8c7f183b225906586c87ae5a0ad9e907", null ],
     [ "CheckState", "da/d9c/structinput_1_1Action.html#a722e299ebba15dabbcc43f4e304f7f2c", null ],
     [ "create", "da/d9c/structinput_1_1Action.html#ad7fb73eb42aa52c41dd91a1c27bb7e8f", null ],
+    [ "HasOnlyTransientInputs", "da/d9c/structinput_1_1Action.html#a5e0093980c105954f54ef67ab61e8d2e", null ],
     [ "InputSystem", "da/d9c/structinput_1_1Action.html#a6d6fb929d8afbbe0c165564e9b9ab596", null ],
     [ "Layout", "da/d9c/structinput_1_1Action.html#ac902f1ffeb3ca8ce28827888af71848b", null ],
     [ "device", "da/d9c/structinput_1_1Action.html#ace2886317ca23ae91280a3a4851d4c02", null ],

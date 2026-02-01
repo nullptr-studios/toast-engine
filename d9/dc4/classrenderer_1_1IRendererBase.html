@@ -120,11 +120,11 @@ Collaboration diagram for renderer::IRendererBase:</div>
 <area shape="rect" href="../../d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="155,93,261,119"/>
 <area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="169,181,271,207"/>
 <area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html" title=" " alt="" coords="295,181,393,207"/>
-<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="70,5,213,31"/>
+<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="70,5,213,31"/>
 <area shape="rect" href="../../d8/d87/classChildren.html" title=" " alt="" coords="237,5,313,31"/>
 <area shape="rect" href="../../dc/d58/classFramebuffer.html" title=" " alt="" coords="440,269,541,295"/>
 <area shape="rect" href="../../df/d54/structFramebuffer_1_1Specs.html" title=" " alt="" coords="417,181,564,207"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html" title=" " alt="" coords="287,269,401,295"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html" title="Actor that provides the view matrix for rendering." alt="" coords="287,269,401,295"/>
 </map>
 <center><span class="legend">[<a target="top" href="../../graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -248,6 +248,12 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:a80c283b5635016a930c8eca31655014e"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d0/db0/classLight2D.html">Light2D</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a80c283b5635016a930c8eca31655014e">m_lights</a></td></tr>
 <tr class="memdesc:a80c283b5635016a930c8eca31655014e"><td class="mdescLeft">&#160;</td><td class="mdescRight">All 2D lights in the scene.  <br /></td></tr>
 <tr class="separator:a80c283b5635016a930c8eca31655014e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04cfad6210308168c50e7fb227865626"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a04cfad6210308168c50e7fb227865626">m_renderablesSortDirty</a> = true</td></tr>
+<tr class="memdesc:a04cfad6210308168c50e7fb227865626"><td class="mdescLeft">&#160;</td><td class="mdescRight">True when renderables need re-sorting.  <br /></td></tr>
+<tr class="separator:a04cfad6210308168c50e7fb227865626"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8bc528b566e270eca22ee1d29cd1ff2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#ab8bc528b566e270eca22ee1d29cd1ff2">m_lightsSortDirty</a> = true</td></tr>
+<tr class="memdesc:ab8bc528b566e270eca22ee1d29cd1ff2"><td class="mdescLeft">&#160;</td><td class="mdescRight">True when lights need re-sorting.  <br /></td></tr>
+<tr class="separator:ab8bc528b566e270eca22ee1d29cd1ff2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acb9b2608c1c0e42bdeb41384844a0bc9"><td class="memItemLeft" align="right" valign="top">glm::mat4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#acb9b2608c1c0e42bdeb41384844a0bc9">m_projectionMatrix</a> = glm::mat4(1.0f)</td></tr>
 <tr class="memdesc:acb9b2608c1c0e42bdeb41384844a0bc9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Camera projection matrix.  <br /></td></tr>
 <tr class="separator:acb9b2608c1c0e42bdeb41384844a0bc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -423,10 +429,11 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_a07f9cf1f03d2c5f2aa89b094bb14505c_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_a07f9cf1f03d2c5f2aa89b094bb14505c_icgraph" alt=""/></div>
 <map name="ad9/dc4/classrenderer_1_1IRendererBase_a07f9cf1f03d2c5f2aa89b094bb14505c_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_a07f9cf1f03d2c5f2aa89b094bb14505c_icgraph">
-<area shape="rect" title="Adds a renderable object to the render queue." alt="" coords="285,69,465,109"/>
-<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b" title=" " alt="" coords="27,5,216,45"/>
-<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="5,69,237,109"/>
-<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68" title=" " alt="" coords="25,133,217,173"/>
+<area shape="rect" title="Adds a renderable object to the render queue." alt="" coords="285,101,465,141"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a30a3f0c9b2ecfa0ae770a3cc6ddbf798" title="This function runs just after the object is created (scene load thread)" alt="" coords="41,5,201,45"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b" title=" " alt="" coords="27,69,216,109"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="5,133,237,173"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68" title=" " alt="" coords="25,197,217,237"/>
 </map>
 </div>
 
@@ -550,6 +557,16 @@ Here is the caller graph for this function:</div>
 <dl class="section note"><dt>Note</dt><dd>Planes are in normalized form (ax + by + cz + d = 0, with normalized (a,b,c)) </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00170">170</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_a84929e8b810a3bc1c879361ac564630f_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_a84929e8b810a3bc1c879361ac564630f_icgraph" alt=""/></div>
+<map name="ad9/dc4/classrenderer_1_1IRendererBase_a84929e8b810a3bc1c879361ac564630f_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_a84929e8b810a3bc1c879361ac564630f_icgraph">
+<area shape="rect" title="Gets the frustum planes for culling calculations." alt="" coords="245,37,425,77"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#ab1dea9839d0075cb1a3fc718ca7f7d16" title="Called during the geometry pass to render this object." alt="" coords="7,5,196,45"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ac7c57651f7368b20c302455ef4712c5e" title="Called during the geometry pass to render this object." alt="" coords="5,69,197,109"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -671,20 +688,27 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_adcb7d3f72aa89466f4c652bcb02aa312_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_adcb7d3f72aa89466f4c652bcb02aa312_icgraph" alt=""/></div>
 <map name="ad9/dc4/classrenderer_1_1IRendererBase_adcb7d3f72aa89466f4c652bcb02aa312_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_adcb7d3f72aa89466f4c652bcb02aa312_icgraph">
-<area shape="rect" title="Gets the singleton instance of the active renderer." alt="" coords="285,339,465,379"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="42,5,201,31"/>
+<area shape="rect" title="Gets the singleton instance of the active renderer." alt="" coords="285,547,465,587"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94" title="Called when the camera becomes active." alt="" coords="42,5,201,31"/>
 <area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a6f50d08eab5a0109937a65b3f4ee19d8" title="This function runs when the object is set to be destroyed." alt="" coords="27,55,216,95"/>
 <area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40" title="This function runs when the object is set to be destroyed." alt="" coords="5,119,237,159"/>
 <area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a75af091cad96a920a74a062f4701a1d9" title="This function runs when the object is set to be destroyed." alt="" coords="25,183,217,223"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5" title="This function runs when the object is set to be destroyed." alt="" coords="35,248,208,273"/>
-<area shape="rect" href="../../d0/db0/classLight2D.html#aba3ddfa8edeeac944158a97efe965800" title="This function runs when the object is set to be destroyed." alt="" coords="56,297,187,323"/>
-<area shape="rect" href="../../d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="71,347,172,372"/>
-<area shape="rect" href="../../d8/d72/classGlobalLight.html#a54a7de33527e0673b7cfa4c13b04da28" title="This function runs just after the object is created (scene load thread)" alt="" coords="59,396,184,421"/>
-<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b" title=" " alt="" coords="27,446,216,486"/>
-<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="5,510,237,550"/>
-<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68" title=" " alt="" coords="25,574,217,614"/>
-<area shape="rect" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#aa1b958dc22ad7a0c70faf45a9ba97851" title=" " alt="" coords="23,638,220,678"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a075ce438f3311ef921bf26661358d60c" title=" " alt="" coords="29,702,213,742"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a796f31a89365dbc22a1d6b05ee7b61f8" title="This function runs when the object is set to be destroyed." alt="" coords="41,247,201,287"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5" title="Cleans up the camera when destroyed." alt="" coords="35,312,208,337"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#aba3ddfa8edeeac944158a97efe965800" title="This function runs when the object is set to be destroyed." alt="" coords="56,361,187,387"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a30a3f0c9b2ecfa0ae770a3cc6ddbf798" title="This function runs just after the object is created (scene load thread)" alt="" coords="41,411,201,451"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="71,476,172,501"/>
+<area shape="rect" href="../../d8/d72/classGlobalLight.html#a54a7de33527e0673b7cfa4c13b04da28" title="This function runs just after the object is created (scene load thread)" alt="" coords="59,525,184,551"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b" title=" " alt="" coords="27,575,216,615"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="5,639,237,679"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68" title=" " alt="" coords="25,703,217,743"/>
+<area shape="rect" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#aa1b958dc22ad7a0c70faf45a9ba97851" title="Called when the layer is added to the stack." alt="" coords="23,767,220,807"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#ab1dea9839d0075cb1a3fc718ca7f7d16" title="Called during the geometry pass to render this object." alt="" coords="27,831,216,871"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ac7c57651f7368b20c302455ef4712c5e" title="Called during the geometry pass to render this object." alt="" coords="25,895,217,935"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#aa1e5e6860f7eb384d116aa7b7546a3c5" title="Called during the geometry pass to render this object." alt="" coords="5,959,237,999"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="49,1024,193,1049"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a1db5e54b53f308abb509203b89d34ce2" title="Called during the geometry pass to render this object." alt="" coords="41,1074,201,1114"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a075ce438f3311ef921bf26661358d60c" title="Sets this camera as the active camera." alt="" coords="29,1138,213,1178"/>
 </map>
 </div>
 
@@ -818,6 +842,15 @@ Here is the caller graph for this function:</div>
 <dl class="section return"><dt>Returns</dt><dd>Const reference to the view matrix </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00152">152</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_a8a87a7c2697046462852a0da76962ca4_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_a8a87a7c2697046462852a0da76962ca4_icgraph" alt=""/></div>
+<map name="ad9/dc4/classrenderer_1_1IRendererBase_a8a87a7c2697046462852a0da76962ca4_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_a8a87a7c2697046462852a0da76962ca4_icgraph">
+<area shape="rect" title="Gets the current view matrix." alt="" coords="213,5,393,45"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a1db5e54b53f308abb509203b89d34ce2" title="Called during the geometry pass to render this object." alt="" coords="5,5,165,45"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -856,7 +889,7 @@ Here is the caller graph for this function:</div>
 <map name="ad9/dc4/classrenderer_1_1IRendererBase_af68ffec88154a618d56ea8a27c1a2bd8_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_af68ffec88154a618d56ea8a27c1a2bd8_icgraph">
 <area shape="rect" title="Gets the pre&#45;multiplied view&#45;projection matrix (projection * view)" alt="" coords="496,5,688,45"/>
 <area shape="rect" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a694003162c1279fbfcffd60495faa5dd" title=" " alt="" coords="251,5,448,45"/>
-<area shape="rect" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a6dcbe857c8287010ffd272a5000f0a07" title=" " alt="" coords="5,5,203,45"/>
+<area shape="rect" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a6dcbe857c8287010ffd272a5000f0a07" title="Called every frame to render the layer." alt="" coords="5,5,203,45"/>
 </map>
 </div>
 
@@ -1001,10 +1034,11 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_ac193916b3c6024df40964aeda936d470_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_ac193916b3c6024df40964aeda936d470_icgraph" alt=""/></div>
 <map name="ad9/dc4/classrenderer_1_1IRendererBase_ac193916b3c6024df40964aeda936d470_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_ac193916b3c6024df40964aeda936d470_icgraph">
-<area shape="rect" title="Removes a renderable object from the render queue." alt="" coords="285,69,465,109"/>
+<area shape="rect" title="Removes a renderable object from the render queue." alt="" coords="285,101,465,141"/>
 <area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a6f50d08eab5a0109937a65b3f4ee19d8" title="This function runs when the object is set to be destroyed." alt="" coords="27,5,216,45"/>
 <area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40" title="This function runs when the object is set to be destroyed." alt="" coords="5,69,237,109"/>
 <area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a75af091cad96a920a74a062f4701a1d9" title="This function runs when the object is set to be destroyed." alt="" coords="25,133,217,173"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a796f31a89365dbc22a1d6b05ee7b61f8" title="This function runs when the object is set to be destroyed." alt="" coords="41,197,201,237"/>
 </map>
 </div>
 
@@ -1155,9 +1189,9 @@ Here is the caller graph for this function:</div>
 <div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_a7d619b32d6a193d9905838b206ebcc44_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_a7d619b32d6a193d9905838b206ebcc44_icgraph" alt=""/></div>
 <map name="ad9/dc4/classrenderer_1_1IRendererBase_a7d619b32d6a193d9905838b206ebcc44_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_a7d619b32d6a193d9905838b206ebcc44_icgraph">
 <area shape="rect" title="Sets the active camera used for rendering." alt="" coords="237,47,417,87"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="18,5,177,31"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5" title="This function runs when the object is set to be destroyed." alt="" coords="11,55,184,80"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a075ce438f3311ef921bf26661358d60c" title=" " alt="" coords="5,105,189,145"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94" title="Called when the camera becomes active." alt="" coords="18,5,177,31"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5" title="Cleans up the camera when destroyed." alt="" coords="11,55,184,80"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a075ce438f3311ef921bf26661358d60c" title="Sets this camera as the active camera." alt="" coords="5,105,189,145"/>
 </map>
 </div>
 
@@ -1505,7 +1539,7 @@ Here is the caller graph for this function:</div>
 
 <p>Frustum planes for culling. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00247">247</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00249">249</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1558,7 +1592,7 @@ Here is the caller graph for this function:</div>
 
 <p>Color of the global ambient light. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00250">250</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00252">252</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1584,7 +1618,7 @@ Here is the caller graph for this function:</div>
 
 <p>Whether global light is enabled. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00253">253</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00255">255</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1610,7 +1644,7 @@ Here is the caller graph for this function:</div>
 
 <p>Intensity of the global. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00251">251</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00253">253</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1636,7 +1670,7 @@ Here is the caller graph for this function:</div>
 
 <p>Resolution scale for global light calculations. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00254">254</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00256">256</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1716,6 +1750,32 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="ab8bc528b566e270eca22ee1d29cd1ff2" name="ab8bc528b566e270eca22ee1d29cd1ff2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab8bc528b566e270eca22ee1d29cd1ff2">&#9670;&#160;</a></span>m_lightsSortDirty</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool renderer::IRendererBase::m_lightsSortDirty = true</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>True when lights need re-sorting. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00241">241</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
 <a id="a3b23bad3b4e8b504ccd8e386a82e64cd" name="a3b23bad3b4e8b504ccd8e386a82e64cd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3b23bad3b4e8b504ccd8e386a82e64cd">&#9670;&#160;</a></span>m_listener</h2>
 
@@ -1762,7 +1822,7 @@ Here is the caller graph for this function:</div>
 
 <p>Cached projection * view matrix. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00244">244</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00246">246</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1814,7 +1874,7 @@ Here is the caller graph for this function:</div>
 
 <p>Camera projection matrix. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00242">242</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00244">244</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1844,6 +1904,32 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="a04cfad6210308168c50e7fb227865626" name="a04cfad6210308168c50e7fb227865626"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a04cfad6210308168c50e7fb227865626">&#9670;&#160;</a></span>m_renderablesSortDirty</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool renderer::IRendererBase::m_renderablesSortDirty = true</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>True when renderables need re-sorting. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00240">240</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
 <a id="a9feb231358263407d90a32736f8ced79" name="a9feb231358263407d90a32736f8ced79"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9feb231358263407d90a32736f8ced79">&#9670;&#160;</a></span>m_viewMatrix</h2>
 
@@ -1866,7 +1952,7 @@ Here is the caller graph for this function:</div>
 
 <p>Camera view matrix. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00243">243</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00245">245</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>

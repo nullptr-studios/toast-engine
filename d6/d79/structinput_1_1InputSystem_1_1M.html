@@ -108,7 +108,7 @@ Collaboration diagram for input::InputSystem::M:</div>
 <area shape="rect" href="../../d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="33,181,172,207"/>
 <area shape="rect" href="../../d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="151,93,257,119"/>
 <area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="197,181,299,207"/>
-<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="66,5,209,31"/>
+<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="66,5,209,31"/>
 <area shape="rect" href="../../d8/d87/classChildren.html" title=" " alt="" coords="233,5,309,31"/>
 </map>
 <center><span class="legend">[<a target="top" href="../../graph_legend.html">legend</a>]</span></center></div>
@@ -133,18 +133,18 @@ Public Attributes</h2></td></tr>
 <tr class="separator:a9c5b6f171e68785bc8c5626856d981db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8b7701885b269abb4bd48a5106e8d6bb"><td class="memItemLeft" align="right" valign="top">std::map&lt; int, <a class="el" href="../../dd/d8c/structinput_1_1GamepadState.html">GamepadState</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d79/structinput_1_1InputSystem_1_1M.html#a8b7701885b269abb4bd48a5106e8d6bb">controllers</a></td></tr>
 <tr class="separator:a8b7701885b269abb4bd48a5106e8d6bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4c2c45a0b57b5e1dd401dcba22f8b320"><td class="memItemLeft" align="right" valign="top">glm::vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d79/structinput_1_1InputSystem_1_1M.html#a4c2c45a0b57b5e1dd401dcba22f8b320">oldMousePosition</a> = {0.0f, 0.0f}</td></tr>
+<tr class="memitem:a4c2c45a0b57b5e1dd401dcba22f8b320"><td class="memItemLeft" align="right" valign="top">glm::vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d79/structinput_1_1InputSystem_1_1M.html#a4c2c45a0b57b5e1dd401dcba22f8b320">oldMousePosition</a> = { 0.0f, 0.0f }</td></tr>
 <tr class="separator:a4c2c45a0b57b5e1dd401dcba22f8b320"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5a44d269fe69c40882952883fabbe788"><td class="memItemLeft" align="right" valign="top">glm::vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d79/structinput_1_1InputSystem_1_1M.html#a5a44d269fe69c40882952883fabbe788">mouseDelta</a> = {0.0f, 0.0f}</td></tr>
+<tr class="memitem:a5a44d269fe69c40882952883fabbe788"><td class="memItemLeft" align="right" valign="top">glm::vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d79/structinput_1_1InputSystem_1_1M.html#a5a44d269fe69c40882952883fabbe788">mouseDelta</a> = { 0.0f, 0.0f }</td></tr>
 <tr class="separator:a5a44d269fe69c40882952883fabbe788"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3eab8264c986ac871edda6951a11b95c"><td class="memItemLeft" align="right" valign="top">glm::vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d79/structinput_1_1InputSystem_1_1M.html#a3eab8264c986ac871edda6951a11b95c">mousePosition</a> = {0.0f, 0.0f}</td></tr>
+<tr class="memitem:a3eab8264c986ac871edda6951a11b95c"><td class="memItemLeft" align="right" valign="top">glm::vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d79/structinput_1_1InputSystem_1_1M.html#a3eab8264c986ac871edda6951a11b95c">mousePosition</a> = { 0.0f, 0.0f }</td></tr>
 <tr class="separator:a3eab8264c986ac871edda6951a11b95c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af32b72e85982b0cbe40713de6ede4177"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d79/structinput_1_1InputSystem_1_1M.html#af32b72e85982b0cbe40713de6ede4177">triggerDeadzone</a> = 0.2f</td></tr>
 <tr class="separator:af32b72e85982b0cbe40713de6ede4177"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00106">106</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00117">117</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
 <a id="a135d2e8250314824c4e970367bc9b4f8" name="a135d2e8250314824c4e970367bc9b4f8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a135d2e8250314824c4e970367bc9b4f8">&#9670;&#160;</a></span>activeLayout</h2>
@@ -158,7 +158,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00108">108</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00119">119</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -174,7 +174,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00117">117</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00128">128</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -190,7 +190,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00109">109</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00120">120</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -206,7 +206,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00113">113</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00124">124</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -222,7 +222,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00114">114</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00125">125</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -238,7 +238,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00115">115</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00126">126</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -254,7 +254,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00110">110</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00121">121</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -270,7 +270,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00107">107</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00118">118</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -281,12 +281,12 @@ Public Attributes</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">glm::vec2 input::InputSystem::M::mouseDelta = {0.0f, 0.0f}</td>
+          <td class="memname">glm::vec2 input::InputSystem::M::mouseDelta = { 0.0f, 0.0f }</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00120">120</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00131">131</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -297,12 +297,12 @@ Public Attributes</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">glm::vec2 input::InputSystem::M::mousePosition = {0.0f, 0.0f}</td>
+          <td class="memname">glm::vec2 input::InputSystem::M::mousePosition = { 0.0f, 0.0f }</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00121">121</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00132">132</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -313,12 +313,12 @@ Public Attributes</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">glm::vec2 input::InputSystem::M::oldMousePosition = {0.0f, 0.0f}</td>
+          <td class="memname">glm::vec2 input::InputSystem::M::oldMousePosition = { 0.0f, 0.0f }</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00119">119</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00130">130</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -334,7 +334,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00112">112</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00123">123</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -350,7 +350,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00123">123</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00134">134</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>

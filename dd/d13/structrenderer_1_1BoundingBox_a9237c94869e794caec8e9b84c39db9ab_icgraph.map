@@ -1,0 +1,4 @@
+<map id="renderer::BoundingBox::halfExtents" name="renderer::BoundingBox::halfExtents">
+<area shape="rect" id="node1" title="Returns the half&#45;extents of the bounding box." alt="" coords="232,5,403,45"/>
+<area shape="rect" id="node2" href="$dd/d13/structrenderer_1_1BoundingBox.html#ac8a88b95941d10867138445ff1f7e3e4" title="Returns the radius of the bounding sphere that encompasses the box." alt="" coords="5,5,184,45"/>
+</map>

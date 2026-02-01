@@ -6,11 +6,11 @@
 <area shape="rect" id="node5" href="$d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="166,93,271,119"/>
 <area shape="rect" id="node8" href="$d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="169,181,271,207"/>
 <area shape="rect" id="node12" href="$d8/d92/classtoast_1_1Actor.html" title=" " alt="" coords="467,181,565,207"/>
-<area shape="rect" id="node6" href="$dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="81,5,223,31"/>
+<area shape="rect" id="node6" href="$dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="81,5,223,31"/>
 <area shape="rect" id="node7" href="$d8/d87/classChildren.html" title=" " alt="" coords="247,5,323,31"/>
 <area shape="rect" id="node9" href="$dc/d58/classFramebuffer.html" title=" " alt="" coords="255,269,356,295"/>
 <area shape="rect" id="node10" href="$df/d54/structFramebuffer_1_1Specs.html" title=" " alt="" coords="296,181,443,207"/>
-<area shape="rect" id="node11" href="$d8/db9/classtoast_1_1Camera.html" title=" " alt="" coords="385,269,500,295"/>
+<area shape="rect" id="node11" href="$d8/db9/classtoast_1_1Camera.html" title="Actor that provides the view matrix for rendering." alt="" coords="385,269,500,295"/>
 <area shape="rect" id="node14" href="$d8/d72/classGlobalLight.html" title=" " alt="" coords="556,328,652,353"/>
 <area shape="rect" id="node13" href="$d3/d86/classrenderer_1_1LayerStack.html" title="Manages a stack of layers and overlays." alt="" coords="693,387,851,412"/>
 </map>

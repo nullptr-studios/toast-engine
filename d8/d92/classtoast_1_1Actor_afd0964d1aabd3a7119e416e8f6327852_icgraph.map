@@ -1,4 +1,4 @@
 <map id="toast::Actor::Begin" name="toast::Actor::Begin">
 <area shape="rect" id="node1" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="212,5,355,31"/>
-<area shape="rect" id="node2" href="$d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="5,5,164,31"/>
+<area shape="rect" id="node2" href="$d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94" title="Called when the camera becomes active." alt="" coords="5,5,164,31"/>
 </map>

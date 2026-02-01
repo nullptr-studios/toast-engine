@@ -2,7 +2,7 @@
 <area shape="rect" id="node1" title=" " alt="" coords="926,5,1133,31"/>
 <area shape="rect" id="node2" href="$d2/deb/LayerStack_8hpp.html" title=" " alt="" coords="845,79,1067,104"/>
 <area shape="rect" id="node13" href="$dc/dbc/Profiler_8hpp.html" title="Wrapper of the Tracy Profiler." alt="" coords="1172,592,1305,617"/>
-<area shape="rect" id="node3" href="$d2/dd6/ILayer_8hpp.html" title=" " alt="" coords="911,152,1001,177"/>
+<area shape="rect" id="node3" href="$d2/dd6/ILayer_8hpp.html" title="Base interface for rendering layers." alt="" coords="911,152,1001,177"/>
 <area shape="rect" id="node27" title=" " alt="" coords="825,152,887,177"/>
 <area shape="rect" id="node4" href="$df/d7d/Event_8hpp.html" title="Base Event class." alt="" coords="819,225,986,251"/>
 <area shape="rect" id="node5" href="$d0/d1c/ListenerComponent_8hpp.html" title=" " alt="" coords="786,299,963,324"/>
@@ -14,7 +14,7 @@
 <area shape="rect" id="node7" href="$d7/d3f/Object_8hpp.html" title="Base Object Class." alt="" coords="434,445,617,471"/>
 <area shape="rect" id="node8" href="$d7/d5a/RTTIMacros_8h.html" title=" " alt="" coords="198,519,319,544"/>
 <area shape="rect" id="node9" href="$d5/d03/Factory_8hpp.html" title="Class in charge of Object creation (not anmymore)" alt="" coords="800,519,933,544"/>
-<area shape="rect" id="node10" href="$df/da3/ISerializable_8hpp.html" title="[Brief description of the file&#39;s purpose]" alt="" coords="5,519,173,544"/>
+<area shape="rect" id="node10" href="$df/da3/ISerializable_8hpp.html" title="Interface for objects that can be saved and loaded from JSON." alt="" coords="5,519,173,544"/>
 <area shape="rect" id="node19" title=" " alt="" coords="421,592,518,617"/>
 <area shape="rect" id="node20" title=" " alt="" coords="395,519,461,544"/>
 <area shape="rect" id="node21" title=" " alt="" coords="486,519,546,544"/>

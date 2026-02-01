@@ -1,0 +1,5 @@
+<map id="renderer::IRendererBase::GetFrustumPlanes" name="renderer::IRendererBase::GetFrustumPlanes">
+<area shape="rect" id="node1" title="Gets the frustum planes for culling calculations." alt="" coords="245,37,425,77"/>
+<area shape="rect" id="node2" href="$dd/d75/classAtlasRendererComponent.html#ab1dea9839d0075cb1a3fc718ca7f7d16" title="Called during the geometry pass to render this object." alt="" coords="7,5,196,45"/>
+<area shape="rect" id="node3" href="$d0/dc7/classSpineRendererComponent.html#ac7c57651f7368b20c302455ef4712c5e" title="Called during the geometry pass to render this object." alt="" coords="5,69,197,109"/>
+</map>

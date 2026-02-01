@@ -110,12 +110,12 @@ Collaboration diagram for toast::MeshRendererComponent:</div>
 <map name="atoast_1_1MeshRendererComponent_coll__map" id="atoast_1_1MeshRendererComponent_coll__map">
 <area shape="rect" title=" " alt="" coords="199,475,431,500"/>
 <area shape="rect" href="../../d5/dfe/classrenderer_1_1IRenderable.html" title="Interface for objects that can be rendered by the rendering system." alt="" coords="190,372,290,397"/>
-<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html" title=" " alt="" coords="107,277,309,302"/>
+<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html" title="Component that manages position, rotation, and scale." alt="" coords="107,277,309,302"/>
 <area shape="rect" href="../../d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="5,181,144,207"/>
 <area shape="rect" href="../../d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="155,93,261,119"/>
 <area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="169,181,271,207"/>
 <area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html" title=" " alt="" coords="295,181,393,207"/>
-<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="70,5,213,31"/>
+<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="70,5,213,31"/>
 <area shape="rect" href="../../d8/d87/classChildren.html" title=" " alt="" coords="237,5,313,31"/>
 <area shape="rect" href="../../dd/ddc/classeditor_1_1ResourceSlot.html" title=" " alt="" coords="327,372,481,397"/>
 <area shape="rect" href="../../d0/d62/structeditor_1_1ResourceSlot_1_1Entry.html" title=" " alt="" coords="334,269,487,309"/>
@@ -127,8 +127,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a7baba9588fb727b19a28c2902649638f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a7baba9588fb727b19a28c2902649638f">REGISTER_TYPE</a> (<a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html">MeshRendererComponent</a>)</td></tr>
 <tr class="separator:a7baba9588fb727b19a28c2902649638f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af29ed8cef0413a30e528c011a20e4bd0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#af29ed8cef0413a30e528c011a20e4bd0">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true) override</td></tr>
+<tr class="memdesc:af29ed8cef0413a30e528c011a20e4bd0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:af29ed8cef0413a30e528c011a20e4bd0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a280b3b0aa0dc11e1e4969188efac3d4e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a280b3b0aa0dc11e1e4969188efac3d4e">Save</a> () const override</td></tr>
+<tr class="memdesc:a280b3b0aa0dc11e1e4969188efac3d4e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a280b3b0aa0dc11e1e4969188efac3d4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c0554ccc0f646263c59529ba8ee8bea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a6c0554ccc0f646263c59529ba8ee8bea">Init</a> () override</td></tr>
 <tr class="memdesc:a6c0554ccc0f646263c59529ba8ee8bea"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function runs just after the object is created (scene load thread)  <br /></td></tr>
@@ -136,7 +138,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a5a4303d004d5551abfa9f42bf27e4ea6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6">LoadTextures</a> () override</td></tr>
 <tr class="separator:a5a4303d004d5551abfa9f42bf27e4ea6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa1e5e6860f7eb384d116aa7b7546a3c5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#aa1e5e6860f7eb384d116aa7b7546a3c5">OnRender</a> (const glm::mat4 &amp;precomputed_mat) noexcept override</td></tr>
-<tr class="memdesc:aa1e5e6860f7eb384d116aa7b7546a3c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called during the rendering pass to draw this object.  <br /></td></tr>
+<tr class="memdesc:aa1e5e6860f7eb384d116aa7b7546a3c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called during the geometry pass to render this object.  <br /></td></tr>
 <tr class="separator:aa1e5e6860f7eb384d116aa7b7546a3c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abc159d6bd6ba0ebd106a651fbb6f9b40"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40">Destroy</a> () override</td></tr>
 <tr class="memdesc:abc159d6bd6ba0ebd106a651fbb6f9b40"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function runs when the object is set to be destroyed.  <br /></td></tr>
@@ -153,21 +155,25 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab1f1a56a5680b260fdcd92d7d76ee27d inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#ab1f1a56a5680b260fdcd92d7d76ee27d">~IRenderable</a> () override=default</td></tr>
 <tr class="separator:ab1f1a56a5680b260fdcd92d7d76ee27d inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af11eb0731986a0641fbf73096b10be79 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#af11eb0731986a0641fbf73096b10be79">OnRender</a> (const glm::mat4 &amp;viewProjection) noexcept=0</td></tr>
-<tr class="memdesc:af11eb0731986a0641fbf73096b10be79 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called during the rendering pass to draw this object.  <br /></td></tr>
+<tr class="memdesc:af11eb0731986a0641fbf73096b10be79 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called during the geometry pass to render this object.  <br /></td></tr>
 <tr class="separator:af11eb0731986a0641fbf73096b10be79 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af250f228e2af30ac30b89c21d9c2e492 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#af250f228e2af30ac30b89c21d9c2e492">GetDepth</a> () noexcept</td></tr>
-<tr class="memdesc:af250f228e2af30ac30b89c21d9c2e492 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the Z-depth of this renderable for sorting purposes.  <br /></td></tr>
+<tr class="memdesc:af250f228e2af30ac30b89c21d9c2e492 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the Z-depth for sorting purposes.  <br /></td></tr>
 <tr class="separator:af250f228e2af30ac30b89c21d9c2e492 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1TransformComponent"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classtoast_1_1TransformComponent')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html">toast::TransformComponent</a></td></tr>
 <tr class="memitem:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a0077d521827b8e0f9c6814efc7fb55c7">TransformComponent</a> ()</td></tr>
+<tr class="memdesc:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a transform at the origin with no rotation and unit scale.  <br /></td></tr>
 <tr class="separator:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a20ebb339d1ccee8f66a8df02bf7af3e6 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a20ebb339d1ccee8f66a8df02bf7af3e6">TransformComponent</a> (const glm::vec3 &amp;pos, const glm::vec3 &amp;rot, const glm::vec3 &amp;<a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a08faf3c3f9e6ba9cfea6563a4141a174">scale</a>)</td></tr>
+<tr class="memdesc:a20ebb339d1ccee8f66a8df02bf7af3e6 inherit pub_methods_classtoast_1_1TransformComponent"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a transform with specified values.  <br /></td></tr>
 <tr class="separator:a20ebb339d1ccee8f66a8df02bf7af3e6 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6e1bd94307ba8e9dd6ed2428c1c9d4e7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a6e1bd94307ba8e9dd6ed2428c1c9d4e7">~TransformComponent</a> () override=default</td></tr>
 <tr class="separator:a6e1bd94307ba8e9dd6ed2428c1c9d4e7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adf007c932918c5e80b026e6171737e53 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#adf007c932918c5e80b026e6171737e53">Save</a> () const override</td></tr>
+<tr class="memdesc:adf007c932918c5e80b026e6171737e53 inherit pub_methods_classtoast_1_1TransformComponent"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:adf007c932918c5e80b026e6171737e53 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9bdc4d7afedfec4b500a09e505bb28e inherit pub_methods_classtoast_1_1TransformComponent"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#af9bdc4d7afedfec4b500a09e505bb28e">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true) override</td></tr>
+<tr class="memdesc:af9bdc4d7afedfec4b500a09e505bb28e inherit pub_methods_classtoast_1_1TransformComponent"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:af9bdc4d7afedfec4b500a09e505bb28e inherit pub_methods_classtoast_1_1TransformComponent"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf581457760bd3e56af0dfea89512869 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memItemLeft" align="right" valign="top">glm::vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#abf581457760bd3e56af0dfea89512869">position</a> () const noexcept</td></tr>
 <tr class="separator:abf581457760bd3e56af0dfea89512869 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -244,12 +250,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3f6ad7482ab92df9e1d6c53c2086eabc inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3f6ad7482ab92df9e1d6c53c2086eabc">operator=</a> (<a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> &amp;&amp;)=delete</td></tr>
 <tr class="separator:a3f6ad7482ab92df9e1d6c53c2086eabc inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f0da32eafb5fd14513357544f76ae24 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24">Save</a> () const override</td></tr>
+<tr class="memdesc:a4f0da32eafb5fd14513357544f76ae24 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a4f0da32eafb5fd14513357544f76ae24 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true) override</td></tr>
+<tr class="memdesc:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef">SoftLoad</a> () override</td></tr>
+<tr class="memdesc:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
 <tr class="separator:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656">SoftSave</a> () const override</td></tr>
+<tr class="memdesc:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a007cb426ff8f3ad0248257f274161e5e inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a007cb426ff8f3ad0248257f274161e5e">id</a> () const noexcept</td></tr>
 <tr class="memdesc:a007cb426ff8f3ad0248257f274161e5e inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the id of the object.  <br /></td></tr>
@@ -287,12 +297,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a85e32519ac9ca43b7c5eaf4a9dee8769 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a85e32519ac9ca43b7c5eaf4a9dee8769">_LoadTextures</a> ()</td></tr>
 <tr class="separator:a85e32519ac9ca43b7c5eaf4a9dee8769 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a706ca4214d997840d82bc83e0c3ab85b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true)=0</td></tr>
+<tr class="memdesc:a706ca4214d997840d82bc83e0c3ab85b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a706ca4214d997840d82bc83e0c3ab85b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a7a5705e9dd33a51039af65c3928ea4ef">SoftLoad</a> ()=0</td></tr>
+<tr class="memdesc:a7a5705e9dd33a51039af65c3928ea4ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
 <tr class="separator:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66284559a3d768dcad01459ce3688f82"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">Save</a> () const =0</td></tr>
+<tr class="memdesc:a66284559a3d768dcad01459ce3688f82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a66284559a3d768dcad01459ce3688f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a58c24747a2bcdd94fa3d69b81761cd03">SoftSave</a> () const =0</td></tr>
+<tr class="memdesc:a58c24747a2bcdd94fa3d69b81761cd03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
@@ -408,7 +422,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a1b6e927d9c508dd81a308d45a52afecb">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00144">144</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00146">146</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -504,6 +518,16 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Loads object state from JSON. </p>
+<p>Deserializes the object's properties from the provided JSON.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">j</td><td>JSON object containing serialized state. </td></tr>
+    <tr><td class="paramname">force_create</td><td>If true, always creates new children; if false, updates existing children by name. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">toast::ISerializable</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00017">17</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
@@ -563,14 +587,17 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Called during the rendering pass to draw this object. </p>
+<p>Called during the geometry pass to render this object. </p>
+<p>Implementations should bind materials/shaders, set uniforms, and issue draw calls here.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">viewProjection</td><td>Pre-computed view-projection matrix for efficient rendering </td></tr>
+    <tr><td class="paramname">viewProjection</td><td>Pre-multiplied view-projection matrix.</td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section note"><dt>Note</dt><dd>This method must be noexcept as it's called in performance-critical render loop </dd></dl>
+<dl class="section note"><dt>Note</dt><dd>This method is called in the render loop and must be efficient. </dd>
+<dd>
+Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Implements <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#af11eb0731986a0641fbf73096b10be79">renderer::IRenderable</a>.</p>
 
@@ -618,6 +645,10 @@ Additional Inherited Members</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Saves object state to JSON. </p>
+<p>Serializes the object's properties to a JSON object.</p>
+<dl class="section return"><dt>Returns</dt><dd>JSON object containing the serialized state. </dd></dl>
 
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">toast::ISerializable</a>.</p>
 

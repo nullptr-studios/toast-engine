@@ -1,5 +1,5 @@
 <map id="renderer::Material" name="renderer::Material">
-<area shape="rect" id="node1" title="Material class that holds shader and textures." alt="" coords="26,196,165,221"/>
+<area shape="rect" id="node1" title="Resource that combines a shader with textures and parameters." alt="" coords="26,196,165,221"/>
 <area shape="rect" id="node2" href="$d9/d0a/classIResource.html" title="Base class for all resources." alt="" coords="5,108,92,133"/>
 <area shape="rect" id="node3" href="$dd/ddc/classeditor_1_1ResourceSlot.html" title=" " alt="" coords="116,108,269,133"/>
 <area shape="rect" id="node4" href="$d0/d62/structeditor_1_1ResourceSlot_1_1Entry.html" title=" " alt="" coords="116,5,269,45"/>

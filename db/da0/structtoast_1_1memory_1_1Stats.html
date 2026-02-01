@@ -99,26 +99,37 @@ $(document).ready(function(){initNavTree('db/da0/structtoast_1_1memory_1_1Stats.
 </div><!--header-->
 <div class="contents">
 
+<p>Comprehensive memory allocation statistics.  
+ <a href="../../db/da0/structtoast_1_1memory_1_1Stats.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a720954c13a7aa1e6bcc0beeefdcfe527"><td class="memItemLeft" align="right" valign="top">std::size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da0/structtoast_1_1memory_1_1Stats.html#a720954c13a7aa1e6bcc0beeefdcfe527">currentBytes</a></td></tr>
+<tr class="memdesc:a720954c13a7aa1e6bcc0beeefdcfe527"><td class="mdescLeft">&#160;</td><td class="mdescRight">Total user bytes currently allocated.  <br /></td></tr>
 <tr class="separator:a720954c13a7aa1e6bcc0beeefdcfe527"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae99195f36259e45c5bcd2c8bd8707e9c"><td class="memItemLeft" align="right" valign="top">std::size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da0/structtoast_1_1memory_1_1Stats.html#ae99195f36259e45c5bcd2c8bd8707e9c">peakBytes</a></td></tr>
+<tr class="memdesc:ae99195f36259e45c5bcd2c8bd8707e9c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Peak user bytes ever allocated.  <br /></td></tr>
 <tr class="separator:ae99195f36259e45c5bcd2c8bd8707e9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a4611cf6a5deef66f66e6607092f911"><td class="memItemLeft" align="right" valign="top">std::size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da0/structtoast_1_1memory_1_1Stats.html#a3a4611cf6a5deef66f66e6607092f911">largeCurrentBytes</a></td></tr>
+<tr class="memdesc:a3a4611cf6a5deef66f66e6607092f911"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bytes in large (non-pooled) allocations.  <br /></td></tr>
 <tr class="separator:a3a4611cf6a5deef66f66e6607092f911"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac398e57dbbebe87ca5336341028b8b50"><td class="memItemLeft" align="right" valign="top">std::size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da0/structtoast_1_1memory_1_1Stats.html#ac398e57dbbebe87ca5336341028b8b50">largeAllocCount</a></td></tr>
+<tr class="memdesc:ac398e57dbbebe87ca5336341028b8b50"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of active large allocations.  <br /></td></tr>
 <tr class="separator:ac398e57dbbebe87ca5336341028b8b50"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a253746b552853500241e47e56e71a5dd"><td class="memItemLeft" align="right" valign="top">std::size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da0/structtoast_1_1memory_1_1Stats.html#a253746b552853500241e47e56e71a5dd">poolReservedBytes</a></td></tr>
+<tr class="memdesc:a253746b552853500241e47e56e71a5dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Total bytes held by the pool (in-use + free).  <br /></td></tr>
 <tr class="separator:a253746b552853500241e47e56e71a5dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a021a6111cffafce3c941ce7faedd44b3"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d7/d98/structtoast_1_1memory_1_1BucketUsage.html">BucketUsage</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da0/structtoast_1_1memory_1_1Stats.html#a021a6111cffafce3c941ce7faedd44b3">buckets</a></td></tr>
+<tr class="memdesc:a021a6111cffafce3c941ce7faedd44b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Per-bucket allocation statistics.  <br /></td></tr>
 <tr class="separator:a021a6111cffafce3c941ce7faedd44b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00021">21</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
+<div class="textblock"><p>Comprehensive memory allocation statistics. </p>
+<p>Use <a class="el" href="../../d0/de3/namespacetoast_1_1memory.html#ac51af123560c3208706c301453fd541a" title="Gets current memory allocation statistics.">GetStats()</a> to retrieve current allocation information for debugging, profiling, or memory leak detection. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00136">136</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
 <a id="a021a6111cffafce3c941ce7faedd44b3" name="a021a6111cffafce3c941ce7faedd44b3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a021a6111cffafce3c941ce7faedd44b3">&#9670;&#160;</a></span>buckets</h2>
@@ -132,7 +143,9 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00027">27</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
+<p>Per-bucket allocation statistics. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00142">142</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
 
 </div>
 </div>
@@ -148,7 +161,9 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00022">22</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
+<p>Total user bytes currently allocated. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00137">137</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
 
 </div>
 </div>
@@ -164,7 +179,9 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00025">25</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
+<p>Number of active large allocations. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00140">140</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
 
 </div>
 </div>
@@ -180,7 +197,9 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00024">24</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
+<p>Bytes in large (non-pooled) allocations. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00139">139</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
 
 </div>
 </div>
@@ -196,7 +215,9 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00023">23</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
+<p>Peak user bytes ever allocated. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00138">138</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
 
 </div>
 </div>
@@ -212,7 +233,9 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00026">26</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
+<p>Total bytes held by the pool (in-use + free). </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d18/Memory_8hpp_source.html#l00141">141</a> of file <a class="el" href="../../d4/d18/Memory_8hpp_source.html">Memory.hpp</a>.</p>
 
 </div>
 </div>

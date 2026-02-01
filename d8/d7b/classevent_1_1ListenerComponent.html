@@ -115,7 +115,7 @@ Collaboration diagram for event::ListenerComponent:</div>
 <area shape="rect" href="../../d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="33,181,172,207"/>
 <area shape="rect" href="../../d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="151,93,257,119"/>
 <area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="197,181,299,207"/>
-<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="66,5,209,31"/>
+<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="66,5,209,31"/>
 <area shape="rect" href="../../d8/d87/classChildren.html" title=" " alt="" coords="233,5,309,31"/>
 </map>
 <center><span class="legend">[<a target="top" href="../../graph_legend.html">legend</a>]</span></center></div>
@@ -174,12 +174,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3f6ad7482ab92df9e1d6c53c2086eabc inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3f6ad7482ab92df9e1d6c53c2086eabc">operator=</a> (<a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> &amp;&amp;)=delete</td></tr>
 <tr class="separator:a3f6ad7482ab92df9e1d6c53c2086eabc inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f0da32eafb5fd14513357544f76ae24 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24">Save</a> () const override</td></tr>
+<tr class="memdesc:a4f0da32eafb5fd14513357544f76ae24 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a4f0da32eafb5fd14513357544f76ae24 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true) override</td></tr>
+<tr class="memdesc:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef">SoftLoad</a> () override</td></tr>
+<tr class="memdesc:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
 <tr class="separator:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656">SoftSave</a> () const override</td></tr>
+<tr class="memdesc:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a007cb426ff8f3ad0248257f274161e5e inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a007cb426ff8f3ad0248257f274161e5e">id</a> () const noexcept</td></tr>
 <tr class="memdesc:a007cb426ff8f3ad0248257f274161e5e inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the id of the object.  <br /></td></tr>
@@ -217,12 +221,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a85e32519ac9ca43b7c5eaf4a9dee8769 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a85e32519ac9ca43b7c5eaf4a9dee8769">_LoadTextures</a> ()</td></tr>
 <tr class="separator:a85e32519ac9ca43b7c5eaf4a9dee8769 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a706ca4214d997840d82bc83e0c3ab85b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true)=0</td></tr>
+<tr class="memdesc:a706ca4214d997840d82bc83e0c3ab85b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a706ca4214d997840d82bc83e0c3ab85b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a7a5705e9dd33a51039af65c3928ea4ef">SoftLoad</a> ()=0</td></tr>
+<tr class="memdesc:a7a5705e9dd33a51039af65c3928ea4ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
 <tr class="separator:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66284559a3d768dcad01459ce3688f82"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">Save</a> () const =0</td></tr>
+<tr class="memdesc:a66284559a3d768dcad01459ce3688f82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a66284559a3d768dcad01459ce3688f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a58c24747a2bcdd94fa3d69b81761cd03">SoftSave</a> () const =0</td></tr>
+<tr class="memdesc:a58c24747a2bcdd94fa3d69b81761cd03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
@@ -439,7 +447,7 @@ template&lt;typename TEvent &gt; </div>
 
 <p>This function calls all the functions on the @m_callbacks map asociated to one event. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d1c/ListenerComponent_8hpp_source.html#l00174">174</a> of file <a class="el" href="../../d0/d1c/ListenerComponent_8hpp_source.html">ListenerComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d1c/ListenerComponent_8hpp_source.html#l00173">173</a> of file <a class="el" href="../../d0/d1c/ListenerComponent_8hpp_source.html">ListenerComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -571,11 +579,11 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d8/d7b/classevent_1_1ListenerComponent_a84ac7af8b87e3ae70d8288f3ce113cce_icgraph.png" border="0" usemap="#ad8/d7b/classevent_1_1ListenerComponent_a84ac7af8b87e3ae70d8288f3ce113cce_icgraph" alt=""/></div>
 <map name="ad8/d7b/classevent_1_1ListenerComponent_a84ac7af8b87e3ae70d8288f3ce113cce_icgraph" id="ad8/d7b/classevent_1_1ListenerComponent_a84ac7af8b87e3ae70d8288f3ce113cce_icgraph">
-<area shape="rect" title="Subscribes a function to a specific event." alt="" coords="248,101,443,141"/>
-<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="30,5,175,45"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,69,200,109"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a34757355e7ec79f24c8ce4fa594a7d7f" title=" " alt="" coords="14,133,191,173"/>
-<area shape="rect" href="../../d8/d8e/classtoast_1_1Window.html#a8346305f067cb920f298191286be2ecc" title="Creates a window with a given size." alt="" coords="15,198,190,223"/>
+<area shape="rect" title="Subscribes a function to a specific event." alt="" coords="264,87,459,127"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,5,216,31"/>
+<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="38,55,183,95"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="13,119,208,159"/>
+<area shape="rect" href="../../d8/d8e/classtoast_1_1Window.html#a8346305f067cb920f298191286be2ecc" title="Creates a window with the specified dimensions." alt="" coords="23,184,198,209"/>
 </map>
 </div>
 
@@ -597,7 +605,7 @@ template&lt;typename TEvent &gt; </div>
 
 <p>Unsubscribes all callbacks from the event. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d1c/ListenerComponent_8hpp_source.html#l00109">109</a> of file <a class="el" href="../../d0/d1c/ListenerComponent_8hpp_source.html">ListenerComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d1c/ListenerComponent_8hpp_source.html#l00108">108</a> of file <a class="el" href="../../d0/d1c/ListenerComponent_8hpp_source.html">ListenerComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -621,7 +629,7 @@ template&lt;typename TEvent &gt; </div>
 
 <p>Unsubscribes a specific callback from the event. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d1c/ListenerComponent_8hpp_source.html#l00137">137</a> of file <a class="el" href="../../d0/d1c/ListenerComponent_8hpp_source.html">ListenerComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d1c/ListenerComponent_8hpp_source.html#l00136">136</a> of file <a class="el" href="../../d0/d1c/ListenerComponent_8hpp_source.html">ListenerComponent.hpp</a>.</p>
 
 </div>
 </div>

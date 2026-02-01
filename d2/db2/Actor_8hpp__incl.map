@@ -1,11 +1,11 @@
 <map id="inc/Toast/Objects/Actor.hpp" name="inc/Toast/Objects/Actor.hpp">
 <area shape="rect" id="node1" title="The simplest Object that exists on the game world." alt="" coords="441,5,639,31"/>
 <area shape="rect" id="node2" href="$d7/d3f/Object_8hpp.html" title="Base Object Class." alt="" coords="503,240,595,265"/>
-<area shape="rect" id="node19" href="$d9/da8/TransformComponent_8hpp.html" title="Contains the Transform2D and Transform 3D objects." alt="" coords="435,79,645,119"/>
+<area shape="rect" id="node19" href="$d9/da8/TransformComponent_8hpp.html" title="Transform component for position, rotation, and scale." alt="" coords="435,79,645,119"/>
 <area shape="rect" id="node23" href="$d0/d1c/ListenerComponent_8hpp.html" title=" " alt="" coords="823,86,1079,111"/>
 <area shape="rect" id="node3" href="$d7/d5a/RTTIMacros_8h.html" title=" " alt="" coords="355,313,477,339"/>
 <area shape="rect" id="node4" href="$d5/d03/Factory_8hpp.html" title="Class in charge of Object creation (not anmymore)" alt="" coords="5,313,139,339"/>
-<area shape="rect" id="node5" href="$df/da3/ISerializable_8hpp.html" title="[Brief description of the file&#39;s purpose]" alt="" coords="163,313,331,339"/>
+<area shape="rect" id="node5" href="$df/da3/ISerializable_8hpp.html" title="Interface for objects that can be saved and loaded from JSON." alt="" coords="163,313,331,339"/>
 <area shape="rect" id="node7" href="$d0/d82/Log_8hpp.html" title=" " alt="" coords="957,313,1067,339"/>
 <area shape="rect" id="node14" title=" " alt="" coords="521,387,618,412"/>
 <area shape="rect" id="node15" title=" " alt="" coords="552,313,619,339"/>

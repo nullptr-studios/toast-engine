@@ -1,4 +1,6 @@
 <map id="toast::Engine" name="toast::Engine">
-<area shape="rect" id="node1" title="Main Bloom engine class." alt="" coords="28,93,135,119"/>
-<area shape="rect" id="node2" href="$d1/df5/structtoast_1_1Engine_1_1Pimpl.html" title=" " alt="" coords="5,5,157,31"/>
+<area shape="rect" id="node1" title="Core engine class that manages the main application loop and subsystems." alt="" coords="28,196,135,221"/>
+<area shape="rect" id="node2" href="$d1/df5/structtoast_1_1Engine_1_1Pimpl.html" title=" " alt="" coords="5,101,157,126"/>
+<area shape="rect" id="node3" href="$db/d5d/classaudio_1_1AudioSystem.html" title=" " alt="" coords="125,5,277,31"/>
+<area shape="rect" id="node4" href="$d2/d8f/structaudio_1_1AudioSystem_1_1CoreSystem.html" title=" " alt="" coords="191,93,343,133"/>
 </map>

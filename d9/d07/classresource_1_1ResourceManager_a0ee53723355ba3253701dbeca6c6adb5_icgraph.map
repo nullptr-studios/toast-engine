@@ -1,0 +1,6 @@
+<map id="resource::ResourceManager::PurgeResources" name="resource::ResourceManager::PurgeResources">
+<area shape="rect" id="node1" title="Purges unused resources from the cache." alt="" coords="535,5,737,45"/>
+<area shape="rect" id="node2" href="$d8/d5c/namespaceresource.html#aa93bae53eb778900ce67ae7f034918e7" title=" " alt="" coords="296,13,487,38"/>
+<area shape="rect" id="node3" href="$d9/d4f/classtoast_1_1Engine.html#ae7f81d670cc27f32ce9fcc4bd3bab1d5" title="Starts the engine and enters the main game loop." alt="" coords="108,13,248,38"/>
+<area shape="rect" id="node4" href="$dd/d43/Linux_8inl.html#a3c04138a5bfe5d72780bb7e82a18e627" title=" " alt="" coords="5,13,60,38"/>
+</map>

@@ -1,7 +1,5 @@
 <map id="renderer::DebugCircle" name="renderer::DebugCircle">
-<area shape="rect" id="node1" title=" " alt="" coords="215,109,379,134"/>
+<area shape="rect" id="node1" title=" " alt="" coords="215,45,379,70"/>
 <area shape="rect" id="node2" href="$da/dc2/structphysics_1_1Manifold.html#ada9f83e1ee627dec3cf391964aaf0700" title=" " alt="" coords="14,5,158,45"/>
 <area shape="rect" id="node3" href="$de/d3a/structphysics_1_1BoxManifold.html#a0c478ded85cdf9335792ebaf40c57118" title=" " alt="" coords="5,69,167,109"/>
-<area shape="rect" id="node4" href="$db/d71/classphysics_1_1Collider.html#a404a4a4baa1905eec4e62e2935ade778" title="This function runs every frame in the editor." alt="" coords="17,133,155,173"/>
-<area shape="rect" id="node5" href="$d6/d41/classphysics_1_1Rigidbody.html#a5cdf13d71dca7632d5fb35aa2934837a" title="This function runs every frame in the editor." alt="" coords="14,197,158,237"/>
 </map>

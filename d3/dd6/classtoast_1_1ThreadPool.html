@@ -101,44 +101,76 @@ $(document).ready(function(){initNavTree('d3/dd6/classtoast_1_1ThreadPool.html',
 </div><!--header-->
 <div class="contents">
 
+<p>A simple thread pool for executing jobs asynchronously.  
+ <a href="../../d3/dd6/classtoast_1_1ThreadPool.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">ThreadPool.hpp</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ab75efbc1973673ceb4f4083ade733208"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html#ab75efbc1973673ceb4f4083ade733208">Init</a> (size_t size)</td></tr>
-<tr class="memdesc:ab75efbc1973673ceb4f4083ade733208"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the thread pool.  <br /></td></tr>
+<tr class="memdesc:ab75efbc1973673ceb4f4083ade733208"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the thread pool with worker threads.  <br /></td></tr>
 <tr class="separator:ab75efbc1973673ceb4f4083ade733208"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5418ecf01fac852f4025b4caff9c41bd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a5418ecf01fac852f4025b4caff9c41bd">QueueJob</a> (std::function&lt; void()&gt; &amp;&amp;job)</td></tr>
-<tr class="memdesc:a5418ecf01fac852f4025b4caff9c41bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a job to the queue to be picked by a worker.  <br /></td></tr>
+<tr class="memdesc:a5418ecf01fac852f4025b4caff9c41bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Queues a job for execution by a worker thread.  <br /></td></tr>
 <tr class="separator:a5418ecf01fac852f4025b4caff9c41bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad87a1c1a3cb25de4bae7d9f6aa72f1f8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html#ad87a1c1a3cb25de4bae7d9f6aa72f1f8">Destroy</a> ()</td></tr>
-<tr class="memdesc:ad87a1c1a3cb25de4bae7d9f6aa72f1f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ends the thread pool.  <br /></td></tr>
+<tr class="memdesc:ad87a1c1a3cb25de4bae7d9f6aa72f1f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys the thread pool and waits for all workers to finish.  <br /></td></tr>
 <tr class="separator:ad87a1c1a3cb25de4bae7d9f6aa72f1f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8556758c58151e126af66e85f95379ff"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a8556758c58151e126af66e85f95379ff">busy</a> ()</td></tr>
-<tr class="memdesc:a8556758c58151e126af66e85f95379ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if there are workers still performing a job.  <br /></td></tr>
+<tr class="memdesc:a8556758c58151e126af66e85f95379ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if there are pending jobs in the queue.  <br /></td></tr>
 <tr class="separator:a8556758c58151e126af66e85f95379ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
 <tr class="memitem:ae3c6f73e75d70b0fbb7a430b8f04aa07"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html#ae3c6f73e75d70b0fbb7a430b8f04aa07">ThreadLoop</a> ()</td></tr>
+<tr class="memdesc:ae3c6f73e75d70b0fbb7a430b8f04aa07"><td class="mdescLeft">&#160;</td><td class="mdescRight">Main loop executed by each worker thread.  <br /></td></tr>
 <tr class="separator:ae3c6f73e75d70b0fbb7a430b8f04aa07"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
 <tr class="memitem:a6f5a18e0c2e6035dc942688ad24cedc7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a6f5a18e0c2e6035dc942688ad24cedc7">m_shouldStop</a> = false</td></tr>
+<tr class="memdesc:a6f5a18e0c2e6035dc942688ad24cedc7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flag to signal workers to stop.  <br /></td></tr>
 <tr class="separator:a6f5a18e0c2e6035dc942688ad24cedc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abbfef832b4a1556e547489a444d1473a"><td class="memItemLeft" align="right" valign="top">std::mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html#abbfef832b4a1556e547489a444d1473a">m_queueMutex</a></td></tr>
+<tr class="memdesc:abbfef832b4a1556e547489a444d1473a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mutex protecting the job queue.  <br /></td></tr>
 <tr class="separator:abbfef832b4a1556e547489a444d1473a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6bd2b418d7fbc7522d2d8197316d7771"><td class="memItemLeft" align="right" valign="top">std::condition_variable&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a6bd2b418d7fbc7522d2d8197316d7771">m_conditionMutex</a></td></tr>
+<tr class="memdesc:a6bd2b418d7fbc7522d2d8197316d7771"><td class="mdescLeft">&#160;</td><td class="mdescRight">Condition variable for worker notification.  <br /></td></tr>
 <tr class="separator:a6bd2b418d7fbc7522d2d8197316d7771"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8582bf0edad280dddad02a740046caef"><td class="memItemLeft" align="right" valign="top">std::vector&lt; std::thread &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a8582bf0edad280dddad02a740046caef">m_workers</a></td></tr>
+<tr class="memdesc:a8582bf0edad280dddad02a740046caef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Vector of worker threads.  <br /></td></tr>
 <tr class="separator:a8582bf0edad280dddad02a740046caef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85d9c35edc591931dcb9336a565abc62"><td class="memItemLeft" align="right" valign="top">std::queue&lt; std::function&lt; void()&gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a85d9c35edc591931dcb9336a565abc62">m_jobs</a></td></tr>
+<tr class="memdesc:a85d9c35edc591931dcb9336a565abc62"><td class="mdescLeft">&#160;</td><td class="mdescRight">Queue of pending jobs.  <br /></td></tr>
 <tr class="separator:a85d9c35edc591931dcb9336a565abc62"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html#l00010">10</a> of file <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">ThreadPool.hpp</a>.</p>
+<div class="textblock"><p>A simple thread pool for executing jobs asynchronously. </p>
+<p>The <a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html" title="A simple thread pool for executing jobs asynchronously.">ThreadPool</a> manages a fixed number of worker threads that process jobs from a queue. Jobs are executed in FIFO order, though completion order is not guaranteed due to parallel execution.</p>
+<dl class="section user"><dt>Usage Example:</dt><dd><div class="fragment"><div class="line"><a class="code hl_class" href="../../d3/dd6/classtoast_1_1ThreadPool.html">ThreadPool</a> pool;</div>
+<div class="line">pool.<a class="code hl_function" href="../../d3/dd6/classtoast_1_1ThreadPool.html#ab75efbc1973673ceb4f4083ade733208">Init</a>(4);  <span class="comment">// Create 4 worker threads</span></div>
+<div class="line"> </div>
+<div class="line">pool.<a class="code hl_function" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a5418ecf01fac852f4025b4caff9c41bd">QueueJob</a>([]() {</div>
+<div class="line">    <span class="comment">// Do some heavy work...</span></div>
+<div class="line">});</div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// Wait for all jobs to complete</span></div>
+<div class="line"><span class="keywordflow">while</span> (pool.<a class="code hl_function" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a8556758c58151e126af66e85f95379ff">busy</a>()) {</div>
+<div class="line">    std::this_thread::sleep_for(std::chrono::milliseconds(10));</div>
+<div class="line">}</div>
+<div class="line"> </div>
+<div class="line">pool.<a class="code hl_function" href="../../d3/dd6/classtoast_1_1ThreadPool.html#ad87a1c1a3cb25de4bae7d9f6aa72f1f8">Destroy</a>();</div>
+<div class="ttc" id="aclasstoast_1_1ThreadPool_html"><div class="ttname"><a href="../../d3/dd6/classtoast_1_1ThreadPool.html">toast::ThreadPool</a></div><div class="ttdoc">A simple thread pool for executing jobs asynchronously.</div><div class="ttdef"><b>Definition:</b> <a href="../../d5/d91/ThreadPool_8hpp_source.html#l00046">ThreadPool.hpp:46</a></div></div>
+<div class="ttc" id="aclasstoast_1_1ThreadPool_html_a5418ecf01fac852f4025b4caff9c41bd"><div class="ttname"><a href="../../d3/dd6/classtoast_1_1ThreadPool.html#a5418ecf01fac852f4025b4caff9c41bd">toast::ThreadPool::QueueJob</a></div><div class="ttdeci">void QueueJob(std::function&lt; void()&gt; &amp;&amp;job)</div><div class="ttdoc">Queues a job for execution by a worker thread.</div><div class="ttdef"><b>Definition:</b> <a href="../../d8/d61/ThreadPool_8cpp_source.html#l00020">ThreadPool.cpp:20</a></div></div>
+<div class="ttc" id="aclasstoast_1_1ThreadPool_html_a8556758c58151e126af66e85f95379ff"><div class="ttname"><a href="../../d3/dd6/classtoast_1_1ThreadPool.html#a8556758c58151e126af66e85f95379ff">toast::ThreadPool::busy</a></div><div class="ttdeci">bool busy()</div><div class="ttdoc">Checks if there are pending jobs in the queue.</div><div class="ttdef"><b>Definition:</b> <a href="../../d8/d61/ThreadPool_8cpp_source.html#l00044">ThreadPool.cpp:44</a></div></div>
+<div class="ttc" id="aclasstoast_1_1ThreadPool_html_ab75efbc1973673ceb4f4083ade733208"><div class="ttname"><a href="../../d3/dd6/classtoast_1_1ThreadPool.html#ab75efbc1973673ceb4f4083ade733208">toast::ThreadPool::Init</a></div><div class="ttdeci">void Init(size_t size)</div><div class="ttdoc">Initializes the thread pool with worker threads.</div><div class="ttdef"><b>Definition:</b> <a href="../../d8/d61/ThreadPool_8cpp_source.html#l00007">ThreadPool.cpp:7</a></div></div>
+<div class="ttc" id="aclasstoast_1_1ThreadPool_html_ad87a1c1a3cb25de4bae7d9f6aa72f1f8"><div class="ttname"><a href="../../d3/dd6/classtoast_1_1ThreadPool.html#ad87a1c1a3cb25de4bae7d9f6aa72f1f8">toast::ThreadPool::Destroy</a></div><div class="ttdeci">void Destroy()</div><div class="ttdoc">Destroys the thread pool and waits for all workers to finish.</div><div class="ttdef"><b>Definition:</b> <a href="../../d8/d61/ThreadPool_8cpp_source.html#l00028">ThreadPool.cpp:28</a></div></div>
+</div><!-- fragment --></dd></dl>
+<dl class="section note"><dt>Note</dt><dd>The pool should be destroyed before the program exits to ensure all worker threads are properly joined.</dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="../../d6/d7d/classtoast_1_1World.html" title="Class that contains all the loaded scenes on the game.">World</a> (uses <a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html" title="A simple thread pool for executing jobs asynchronously.">ThreadPool</a> for async scene loading) </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html#l00046">46</a> of file <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">ThreadPool.hpp</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a8556758c58151e126af66e85f95379ff" name="a8556758c58151e126af66e85f95379ff"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8556758c58151e126af66e85f95379ff">&#9670;&#160;</a></span>busy()</h2>
@@ -155,18 +187,11 @@ Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Checks if there are workers still performing a job. </p>
+<p>Checks if there are pending jobs in the queue. </p>
+<dl class="section return"><dt>Returns</dt><dd>true if jobs are waiting to be processed, false if queue is empty.</dd></dl>
+<dl class="section note"><dt>Note</dt><dd>This does not indicate if workers are currently executing jobs, only if there are jobs waiting in the queue. </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="../../d8/d61/ThreadPool_8cpp_source.html#l00044">44</a> of file <a class="el" href="../../d8/d61/ThreadPool_8cpp_source.html">ThreadPool.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d3/dd6/classtoast_1_1ThreadPool_a8556758c58151e126af66e85f95379ff_icgraph.png" border="0" usemap="#ad3/dd6/classtoast_1_1ThreadPool_a8556758c58151e126af66e85f95379ff_icgraph" alt=""/></div>
-<map name="ad3/dd6/classtoast_1_1ThreadPool_a8556758c58151e126af66e85f95379ff_icgraph" id="ad3/dd6/classtoast_1_1ThreadPool_a8556758c58151e126af66e85f95379ff_icgraph">
-<area shape="rect" title="Checks if there are workers still performing a job." alt="" coords="209,5,384,31"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#ac995b5a48e27606521ff9076575b771b" title=" " alt="" coords="5,5,161,31"/>
-</map>
-</div>
 
 </div>
 </div>
@@ -185,18 +210,11 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Ends the thread pool. </p>
+<p>Destroys the thread pool and waits for all workers to finish. </p>
+<p>Signals all worker threads to stop and joins them. Any jobs still in the queue will NOT be executed.</p>
+<dl class="section warning"><dt>Warning</dt><dd>This method blocks until all worker threads have terminated. </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="../../d8/d61/ThreadPool_8cpp_source.html#l00028">28</a> of file <a class="el" href="../../d8/d61/ThreadPool_8cpp_source.html">ThreadPool.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d3/dd6/classtoast_1_1ThreadPool_ad87a1c1a3cb25de4bae7d9f6aa72f1f8_icgraph.png" border="0" usemap="#ad3/dd6/classtoast_1_1ThreadPool_ad87a1c1a3cb25de4bae7d9f6aa72f1f8_icgraph" alt=""/></div>
-<map name="ad3/dd6/classtoast_1_1ThreadPool_ad87a1c1a3cb25de4bae7d9f6aa72f1f8_icgraph" id="ad3/dd6/classtoast_1_1ThreadPool_ad87a1c1a3cb25de4bae7d9f6aa72f1f8_icgraph">
-<area shape="rect" title="Ends the thread pool." alt="" coords="209,5,353,45"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#ac995b5a48e27606521ff9076575b771b" title=" " alt="" coords="5,13,161,38"/>
-</map>
-</div>
 
 </div>
 </div>
@@ -216,24 +234,17 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Initializes the thread pool. </p>
+<p>Initializes the thread pool with worker threads. </p>
+<p>Creates the specified number of worker threads. If size is 0 or greater than hardware concurrency, uses hardware_concurrency().</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">size</td><td>Number of workers to create </td></tr>
+    <tr><td class="paramname">size</td><td>Number of worker threads to create.</td></tr>
   </table>
   </dd>
 </dl>
+<dl class="section note"><dt>Note</dt><dd>This method should only be called once per <a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html" title="A simple thread pool for executing jobs asynchronously.">ThreadPool</a> instance. </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="../../d8/d61/ThreadPool_8cpp_source.html#l00007">7</a> of file <a class="el" href="../../d8/d61/ThreadPool_8cpp_source.html">ThreadPool.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d3/dd6/classtoast_1_1ThreadPool_ab75efbc1973673ceb4f4083ade733208_icgraph.png" border="0" usemap="#ad3/dd6/classtoast_1_1ThreadPool_ab75efbc1973673ceb4f4083ade733208_icgraph" alt=""/></div>
-<map name="ad3/dd6/classtoast_1_1ThreadPool_ab75efbc1973673ceb4f4083ade733208_icgraph" id="ad3/dd6/classtoast_1_1ThreadPool_ab75efbc1973673ceb4f4083ade733208_icgraph">
-<area shape="rect" title="Initializes the thread pool." alt="" coords="199,5,364,31"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,5,151,31"/>
-</map>
-</div>
 
 </div>
 </div>
@@ -253,18 +264,20 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Adds a job to the queue to be picked by a worker. </p>
+<p>Queues a job for execution by a worker thread. </p>
+<p>The job will be executed as soon as a worker thread becomes available. Jobs are processed in FIFO order.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">job</td><td>The function to execute (moved into the queue).</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section user"><dt>Example:</dt><dd><div class="fragment"><div class="line">pool.QueueJob([data = std::move(myData)]() {</div>
+<div class="line">    processData(data);</div>
+<div class="line">});</div>
+</div><!-- fragment --> </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="../../d8/d61/ThreadPool_8cpp_source.html#l00020">20</a> of file <a class="el" href="../../d8/d61/ThreadPool_8cpp_source.html">ThreadPool.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d3/dd6/classtoast_1_1ThreadPool_a5418ecf01fac852f4025b4caff9c41bd_icgraph.png" border="0" usemap="#ad3/dd6/classtoast_1_1ThreadPool_a5418ecf01fac852f4025b4caff9c41bd_icgraph" alt=""/></div>
-<map name="ad3/dd6/classtoast_1_1ThreadPool_a5418ecf01fac852f4025b4caff9c41bd_icgraph" id="ad3/dd6/classtoast_1_1ThreadPool_a5418ecf01fac852f4025b4caff9c41bd_icgraph">
-<area shape="rect" title="Adds a job to the queue to be picked by a worker." alt="" coords="232,5,376,45"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#ac5c3dc60522b314ca5e13a0b2083e79e" title="Loads scene on the init thread, scene disabld after load." alt="" coords="5,13,184,38"/>
-</map>
-</div>
 
 </div>
 </div>
@@ -291,15 +304,17 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Main loop executed by each worker thread. </p>
+<p>Workers wait for jobs to become available, execute them, then return to waiting. Exits when m_shouldStop is true. </p>
+
 <p class="definition">Definition at line <a class="el" href="../../d8/d61/ThreadPool_8cpp_source.html#l00053">53</a> of file <a class="el" href="../../d8/d61/ThreadPool_8cpp_source.html">ThreadPool.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d3/dd6/classtoast_1_1ThreadPool_ae3c6f73e75d70b0fbb7a430b8f04aa07_icgraph.png" border="0" usemap="#ad3/dd6/classtoast_1_1ThreadPool_ae3c6f73e75d70b0fbb7a430b8f04aa07_icgraph" alt=""/></div>
 <map name="ad3/dd6/classtoast_1_1ThreadPool_ae3c6f73e75d70b0fbb7a430b8f04aa07_icgraph" id="ad3/dd6/classtoast_1_1ThreadPool_ae3c6f73e75d70b0fbb7a430b8f04aa07_icgraph">
-<area shape="rect" title=" " alt="" coords="412,5,556,45"/>
-<area shape="rect" href="../../d3/dd6/classtoast_1_1ThreadPool.html#ab75efbc1973673ceb4f4083ade733208" title="Initializes the thread pool." alt="" coords="199,13,364,38"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,13,151,38"/>
+<area shape="rect" title="Main loop executed by each worker thread." alt="" coords="219,5,363,45"/>
+<area shape="rect" href="../../d3/dd6/classtoast_1_1ThreadPool.html#ab75efbc1973673ceb4f4083ade733208" title="Initializes the thread pool with worker threads." alt="" coords="5,13,171,38"/>
 </map>
 </div>
 
@@ -326,7 +341,9 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html#l00030">30</a> of file <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">ThreadPool.hpp</a>.</p>
+<p>Condition variable for worker notification. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html#l00113">113</a> of file <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">ThreadPool.hpp</a>.</p>
 
 </div>
 </div>
@@ -350,7 +367,9 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html#l00032">32</a> of file <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">ThreadPool.hpp</a>.</p>
+<p>Queue of pending jobs. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html#l00119">119</a> of file <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">ThreadPool.hpp</a>.</p>
 
 </div>
 </div>
@@ -374,7 +393,9 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html#l00029">29</a> of file <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">ThreadPool.hpp</a>.</p>
+<p>Mutex protecting the job queue. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html#l00110">110</a> of file <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">ThreadPool.hpp</a>.</p>
 
 </div>
 </div>
@@ -398,7 +419,9 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html#l00028">28</a> of file <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">ThreadPool.hpp</a>.</p>
+<p>Flag to signal workers to stop. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html#l00107">107</a> of file <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">ThreadPool.hpp</a>.</p>
 
 </div>
 </div>
@@ -422,7 +445,9 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html#l00031">31</a> of file <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">ThreadPool.hpp</a>.</p>
+<p>Vector of worker threads. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html#l00116">116</a> of file <a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">ThreadPool.hpp</a>.</p>
 
 </div>
 </div>

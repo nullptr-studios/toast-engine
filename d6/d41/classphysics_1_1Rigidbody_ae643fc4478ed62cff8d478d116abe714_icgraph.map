@@ -1,8 +1,6 @@
 <map id="physics::Rigidbody::SetPosition" name="physics::Rigidbody::SetPosition">
-<area shape="rect" id="node1" title=" " alt="" coords="479,88,623,128"/>
-<area shape="rect" id="node2" href="$d6/d41/classphysics_1_1Rigidbody.html#a6374642256969acc1c453f38fbedea09" title=" " alt="" coords="259,5,403,45"/>
-<area shape="rect" id="node3" href="$d5/dd0/namespacephysics.html#ab5bb62de13325b81f45958620bc2b988" title=" " alt="" coords="247,70,414,95"/>
-<area shape="rect" id="node5" href="$d5/dd0/namespacephysics.html#a2570830536e313c268c0d55b73a19fa8" title=" " alt="" coords="231,119,431,145"/>
-<area shape="rect" id="node6" href="$d5/dd0/namespacephysics.html#a36809edbcfe0caecb4b7ac54afc385d1" title=" " alt="" coords="239,169,422,194"/>
-<area shape="rect" id="node4" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a98b9cecc3733f9a2042e2bda4dd89ede" title=" " alt="" coords="5,112,183,152"/>
+<area shape="rect" id="node1" title=" " alt="" coords="253,47,397,87"/>
+<area shape="rect" id="node2" href="$d5/dd0/namespacephysics.html#ab5bb62de13325b81f45958620bc2b988" title=" " alt="" coords="22,5,189,31"/>
+<area shape="rect" id="node3" href="$d5/dd0/namespacephysics.html#a2570830536e313c268c0d55b73a19fa8" title=" " alt="" coords="5,55,205,80"/>
+<area shape="rect" id="node4" href="$d5/dd0/namespacephysics.html#a36809edbcfe0caecb4b7ac54afc385d1" title=" " alt="" coords="14,104,197,129"/>
 </map>

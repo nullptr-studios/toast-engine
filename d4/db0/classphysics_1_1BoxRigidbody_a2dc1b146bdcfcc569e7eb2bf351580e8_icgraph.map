@@ -1,5 +1,4 @@
 <map id="physics::BoxRigidbody::AddForce" name="physics::BoxRigidbody::AddForce">
-<area shape="rect" id="node1" title=" " alt="" coords="223,37,392,77"/>
+<area shape="rect" id="node1" title=" " alt="" coords="223,5,392,45"/>
 <area shape="rect" id="node2" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a6d02bdd5228f0da82e3687ece5aaaa69" title=" " alt="" coords="5,5,175,45"/>
-<area shape="rect" id="node3" href="$d4/db0/classphysics_1_1BoxRigidbody.html#ada760b39a86be6e4d9874de541af7cce" title=" " alt="" coords="5,69,175,109"/>
 </map>

@@ -15,5 +15,5 @@ var classtoast_1_1Engine =
     [ "m_arguments", "d9/d4f/classtoast_1_1Engine.html#ac5c41bb8f8177eee73002b5905332c10", null ],
     [ "m_instance", "d9/d4f/classtoast_1_1Engine.html#afab2690159325d9c600d846577290c72", null ],
     [ "m_windowShouldClose", "d9/d4f/classtoast_1_1Engine.html#a417c31d445a34bc5b2cc1a88bb286769", null ],
-    [ "purge_timer", "d9/d4f/classtoast_1_1Engine.html#afa5f0ac40b93cb12edeb7a40258ca1db", null ]
+    [ "purge_timer", "d9/d4f/classtoast_1_1Engine.html#af3d90dcf4da9a1bb33e54545b2c2e872", null ]
 ];

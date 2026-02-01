@@ -1,6 +1,7 @@
 <map id="resource::ResourceManager::SaveFile" name="resource::ResourceManager::SaveFile">
-<area shape="rect" id="node1" title="saves a file to disk" alt="" coords="435,37,637,77"/>
-<area shape="rect" id="node2" href="$d4/de6/classrenderer_1_1Material.html#aaa539180c1c05e42e926889cf484eccf" title=" " alt="" coords="220,5,359,45"/>
-<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#aecb18ef668ed67dab42662053d81fb51" title="Saves current render settings to project settings." alt="" coords="192,69,387,109"/>
-<area shape="rect" id="node3" href="$d4/de6/classrenderer_1_1Material.html#a0e4285ae426362c5e03b56568323d5dd" title=" " alt="" coords="5,5,144,45"/>
+<area shape="rect" id="node1" title="Saves content to a file on disk." alt="" coords="435,55,637,95"/>
+<area shape="rect" id="node2" href="$d8/d5c/namespaceresource.html#a9d51862d8c41be438c01c8b713c75877" title=" " alt="" coords="219,5,360,31"/>
+<area shape="rect" id="node3" href="$d4/de6/classrenderer_1_1Material.html#aaa539180c1c05e42e926889cf484eccf" title="Saves the current material state to its JSON file." alt="" coords="220,55,359,95"/>
+<area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#aecb18ef668ed67dab42662053d81fb51" title="Saves current render settings to project settings." alt="" coords="192,119,387,159"/>
+<area shape="rect" id="node4" href="$d4/de6/classrenderer_1_1Material.html#a0e4285ae426362c5e03b56568323d5dd" title="Shows the material editor UI (editor only)." alt="" coords="5,55,144,95"/>
 </map>

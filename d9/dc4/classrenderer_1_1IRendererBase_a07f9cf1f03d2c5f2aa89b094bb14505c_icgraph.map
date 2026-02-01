@@ -1,6 +1,7 @@
 <map id="renderer::IRendererBase::AddRenderable" name="renderer::IRendererBase::AddRenderable">
-<area shape="rect" id="node1" title="Adds a renderable object to the render queue." alt="" coords="285,69,465,109"/>
-<area shape="rect" id="node2" href="$dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b" title=" " alt="" coords="27,5,216,45"/>
-<area shape="rect" id="node3" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="5,69,237,109"/>
-<area shape="rect" id="node4" href="$d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68" title=" " alt="" coords="25,133,217,173"/>
+<area shape="rect" id="node1" title="Adds a renderable object to the render queue." alt="" coords="285,101,465,141"/>
+<area shape="rect" id="node2" href="$df/d2b/classtoast_1_1ParticleSystem.html#a30a3f0c9b2ecfa0ae770a3cc6ddbf798" title="This function runs just after the object is created (scene load thread)" alt="" coords="41,5,201,45"/>
+<area shape="rect" id="node3" href="$dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b" title=" " alt="" coords="27,69,216,109"/>
+<area shape="rect" id="node4" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="5,133,237,173"/>
+<area shape="rect" id="node5" href="$d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68" title=" " alt="" coords="25,197,217,237"/>
 </map>

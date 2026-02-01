@@ -1,0 +1,4 @@
+<map id="physics::Rigidbody::SyncFromTransform" name="physics::Rigidbody::SyncFromTransform">
+<area shape="rect" id="node1" title="Sync rigidbody position from transform." alt="" coords="236,5,395,45"/>
+<area shape="rect" id="node2" href="$d6/d41/classphysics_1_1Rigidbody.html#a03e9508170b42fb6e25ce25a90279b74" title="Update the visual transform using interpolated position (call from Tick/LateTick)" alt="" coords="5,5,188,45"/>
+</map>

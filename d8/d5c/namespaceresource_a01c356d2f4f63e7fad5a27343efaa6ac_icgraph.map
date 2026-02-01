@@ -1,5 +1,5 @@
 <map id="resource::canonical_path_for_pack" name="resource::canonical_path_for_pack">
 <area shape="rect" id="node1" title=" " alt="" coords="443,5,591,45"/>
 <area shape="rect" id="node2" href="$d1/dfb/classresource_1_1PackFile.html#ad68681aeb7cd4129042f752ac6460632" title=" " alt="" coords="256,5,395,45"/>
-<area shape="rect" id="node3" href="$d9/d07/classresource_1_1ResourceManager.html#a7e86ce85c2049dc1f6798a3039b8696c" title="opens a file from disk or pkg" alt="" coords="5,5,208,45"/>
+<area shape="rect" id="node3" href="$d9/d07/classresource_1_1ResourceManager.html#a7e86ce85c2049dc1f6798a3039b8696c" title="Opens a file and returns its contents as bytes." alt="" coords="5,5,208,45"/>
 </map>

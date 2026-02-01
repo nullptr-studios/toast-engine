@@ -99,35 +99,38 @@ $(document).ready(function(){initNavTree('db/d16/ResourceManager_8hpp.html','../
   <div class="headertitle"><div class="title">ResourceManager.hpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../da/d46/ResourceSlot_8hpp_source.html">ResourceSlot.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d4/d6e/Shader_8hpp_source.html">Toast/Renderer/Shader.hpp</a>&quot;</code><br />
+
+<p>Resource loading and caching system.  
+<a href="#details">More...</a></p>
+<div class="textblock"><code>#include &quot;<a class="el" href="../../d1/d62/Mesh_8hpp_source.html">Mesh.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../da/d46/ResourceSlot_8hpp_source.html">ResourceSlot.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../d0/ddc/Texture_8hpp_source.html">Texture.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d4/d6e/Shader_8hpp_source.html">Toast/Renderer/Shader.hpp</a>&quot;</code><br />
 <code>#include &lt;<a class="el" href="../../d0/d82/Log_8hpp_source.html">Toast/Log.hpp</a>&gt;</code><br />
 <code>#include &lt;string&gt;</code><br />
 <code>#include &lt;thread&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
-<code>#include &quot;<a class="el" href="../../d1/d62/Mesh_8hpp_source.html">Mesh.hpp</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for ResourceManager.hpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../de/db8/ResourceManager_8hpp__incl.png" border="0" usemap="#ainc_2Toast_2Resources_2ResourceManager_8hpp" alt=""/></div>
 <map name="ainc_2Toast_2Resources_2ResourceManager_8hpp" id="ainc_2Toast_2Resources_2ResourceManager_8hpp">
-<area shape="rect" title=" " alt="" coords="483,5,654,45"/>
+<area shape="rect" title="Resource loading and caching system." alt="" coords="483,5,654,45"/>
+<area shape="rect" href="../../d1/d62/Mesh_8hpp.html" title=" " alt="" coords="127,93,212,119"/>
+<area shape="rect" title=" " alt="" coords="466,313,524,339"/>
+<area shape="rect" title=" " alt="" coords="48,167,110,192"/>
 <area shape="rect" href="../../da/d46/ResourceSlot_8hpp.html" title=" " alt="" coords="756,93,890,119"/>
 <area shape="rect" href="../../d0/ddc/Texture_8hpp.html" title=" " alt="" coords="731,167,830,192"/>
-<area shape="rect" title=" " alt="" coords="466,313,524,339"/>
 <area shape="rect" href="../../d4/d6e/Shader_8hpp.html" title=" " alt="" coords="364,93,559,119"/>
-<area shape="rect" title=" " alt="" coords="48,167,110,192"/>
 <area shape="rect" href="../../d0/d82/Log_8hpp.html" title=" " alt="" coords="1086,93,1197,119"/>
 <area shape="rect" title=" " alt="" coords="1222,93,1286,119"/>
-<area shape="rect" href="../../d1/d62/Mesh_8hpp.html" title=" " alt="" coords="127,93,212,119"/>
 <area shape="rect" href="../../d5/dd0/IResource_8hpp.html" title=" " alt="" coords="636,240,751,265"/>
-<area shape="rect" title=" " alt="" coords="1027,167,1104,192"/>
-<area shape="rect" title=" " alt="" coords="704,313,771,339"/>
-<area shape="rect" title=" " alt="" coords="620,313,680,339"/>
-<area shape="rect" title=" " alt="" coords="416,167,507,192"/>
 <area shape="rect" title=" " alt="" coords="134,167,213,192"/>
 <area shape="rect" title=" " alt="" coords="238,167,342,192"/>
+<area shape="rect" title=" " alt="" coords="704,313,771,339"/>
+<area shape="rect" title=" " alt="" coords="620,313,680,339"/>
+<area shape="rect" title=" " alt="" coords="1027,167,1104,192"/>
+<area shape="rect" title=" " alt="" coords="416,167,507,192"/>
 <area shape="rect" title=" " alt="" coords="905,167,1002,192"/>
 <area shape="rect" title=" " alt="" coords="532,167,656,192"/>
 <area shape="rect" href="../../dc/dbc/Profiler_8hpp.html" title="Wrapper of the Tracy Profiler." alt="" coords="1328,167,1462,192"/>
@@ -153,11 +156,25 @@ Namespaces</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a723b33048c1a6b9c57bc5047f7aa9bb1"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d5c/namespaceresource.html#a723b33048c1a6b9c57bc5047f7aa9bb1">resource::Open</a> (const std::string &amp;path) -&gt; std::optional&lt; std::string &gt;</td></tr>
+<tr class="memdesc:a723b33048c1a6b9c57bc5047f7aa9bb1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience function to open and read a file.  <br /></td></tr>
 <tr class="separator:a723b33048c1a6b9c57bc5047f7aa9bb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0eb5e28e0c91dbbfba5c689635f40aca"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d5c/namespaceresource.html#a0eb5e28e0c91dbbfba5c689635f40aca">resource::Open</a> (const std::string &amp;path, std::istringstream &amp;data)</td></tr>
+<tr class="separator:a0eb5e28e0c91dbbfba5c689635f40aca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2f8eb779b0f2f88f571c549371748e4"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d5c/namespaceresource.html#aa2f8eb779b0f2f88f571c549371748e4">resource::Open</a> (const std::string &amp;path, std::vector&lt; uint8_t &gt; &amp;data_out)</td></tr>
+<tr class="separator:aa2f8eb779b0f2f88f571c549371748e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a478d194cc141760fa1fa2a86fc49e10e"><td class="memTemplParams" colspan="2">template&lt;typename R , typename... Args&gt; </td></tr>
+<tr class="memitem:a478d194cc141760fa1fa2a86fc49e10e"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="../../d8/d5c/namespaceresource.html#a478d194cc141760fa1fa2a86fc49e10e">resource::LoadResource</a> (const std::string &amp;path, Args &amp;&amp;... args)</td></tr>
+<tr class="separator:a478d194cc141760fa1fa2a86fc49e10e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d51862d8c41be438c01c8b713c75877"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d5c/namespaceresource.html#a9d51862d8c41be438c01c8b713c75877">resource::SaveFile</a> (const std::string &amp;path, const std::string &amp;content) -&gt; bool</td></tr>
+<tr class="separator:a9d51862d8c41be438c01c8b713c75877"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa93bae53eb778900ce67ae7f034918e7"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d5c/namespaceresource.html#aa93bae53eb778900ce67ae7f034918e7">resource::PurgeResources</a> ()</td></tr>
+<tr class="separator:aa93bae53eb778900ce67ae7f034918e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><dl class="section author"><dt>Author</dt><dd>Dario </dd></dl>
+<div class="textblock"><p>Resource loading and caching system. </p>
+<dl class="section author"><dt>Author</dt><dd>Dario </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>17/09/25 </dd></dl>
+<p>This file provides the ResourceManager class which handles loading, caching, and managing all game resources (textures, meshes, shaders, etc.). </p>
 
 <p class="definition">Definition in file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 </div></div><!-- contents -->

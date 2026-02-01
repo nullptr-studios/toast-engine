@@ -1,5 +1,5 @@
 <map id="toast::Window::GetDisplayScale" name="toast::Window::GetDisplayScale">
-<area shape="rect" id="node1" title="Returns the user window scaling." alt="" coords="392,5,587,45"/>
+<area shape="rect" id="node1" title="Gets the display scale factors." alt="" coords="392,5,587,45"/>
 <area shape="rect" id="node2" href="$da/d0b/classinput_1_1InputSystem.html#a796d712f5ad2314dbde0d3fd4cfb88be" title=" " alt="" coords="199,5,344,45"/>
 <area shape="rect" id="node3" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="5,5,151,45"/>
 </map>

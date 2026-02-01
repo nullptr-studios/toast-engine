@@ -121,7 +121,7 @@ Collaboration diagram for toast::Object:</div>
 <map name="atoast_1_1Object_coll__map" id="atoast_1_1Object_coll__map">
 <area shape="rect" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="91,93,196,119"/>
 <area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="92,181,195,207"/>
-<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title=" " alt="" coords="5,5,148,31"/>
+<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="5,5,148,31"/>
 <area shape="rect" href="../../d8/d87/classChildren.html" title=" " alt="" coords="172,5,248,31"/>
 </map>
 <center><span class="legend">[<a target="top" href="../../graph_legend.html">legend</a>]</span></center></div>
@@ -146,12 +146,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3f6ad7482ab92df9e1d6c53c2086eabc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3f6ad7482ab92df9e1d6c53c2086eabc">operator=</a> (<a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> &amp;&amp;)=delete</td></tr>
 <tr class="separator:a3f6ad7482ab92df9e1d6c53c2086eabc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f0da32eafb5fd14513357544f76ae24"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24">Save</a> () const override</td></tr>
+<tr class="memdesc:a4f0da32eafb5fd14513357544f76ae24"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a4f0da32eafb5fd14513357544f76ae24"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61b7f00ff983927c256560e8a508778d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true) override</td></tr>
+<tr class="memdesc:a61b7f00ff983927c256560e8a508778d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a61b7f00ff983927c256560e8a508778d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa94f2fa9b30d36e39c45bb21f0a88cef"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef">SoftLoad</a> () override</td></tr>
+<tr class="memdesc:aa94f2fa9b30d36e39c45bb21f0a88cef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
 <tr class="separator:aa94f2fa9b30d36e39c45bb21f0a88cef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a8f2a39c01ed70ccd985e749ebf3656"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656">SoftSave</a> () const override</td></tr>
+<tr class="memdesc:a3a8f2a39c01ed70ccd985e749ebf3656"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a3a8f2a39c01ed70ccd985e749ebf3656"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a007cb426ff8f3ad0248257f274161e5e"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a007cb426ff8f3ad0248257f274161e5e">id</a> () const noexcept</td></tr>
 <tr class="memdesc:a007cb426ff8f3ad0248257f274161e5e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the id of the object.  <br /></td></tr>
@@ -189,12 +193,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a85e32519ac9ca43b7c5eaf4a9dee8769"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a85e32519ac9ca43b7c5eaf4a9dee8769">_LoadTextures</a> ()</td></tr>
 <tr class="separator:a85e32519ac9ca43b7c5eaf4a9dee8769"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a706ca4214d997840d82bc83e0c3ab85b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true)=0</td></tr>
+<tr class="memdesc:a706ca4214d997840d82bc83e0c3ab85b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a706ca4214d997840d82bc83e0c3ab85b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a7a5705e9dd33a51039af65c3928ea4ef">SoftLoad</a> ()=0</td></tr>
+<tr class="memdesc:a7a5705e9dd33a51039af65c3928ea4ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
 <tr class="separator:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66284559a3d768dcad01459ce3688f82"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">Save</a> () const =0</td></tr>
+<tr class="memdesc:a66284559a3d768dcad01459ce3688f82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a66284559a3d768dcad01459ce3688f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a58c24747a2bcdd94fa3d69b81761cd03">SoftSave</a> () const =0</td></tr>
+<tr class="memdesc:a58c24747a2bcdd94fa3d69b81761cd03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
@@ -334,6 +342,15 @@ Friends</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d1/da3/classtoast_1_1Object_ad008cd0547e94d05fbf5578991db8d8e_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_ad008cd0547e94d05fbf5578991db8d8e_icgraph" alt=""/></div>
+<map name="ad1/da3/classtoast_1_1Object_ad008cd0547e94d05fbf5578991db8d8e_icgraph" id="ad1/da3/classtoast_1_1Object_ad008cd0547e94d05fbf5578991db8d8e_icgraph">
+<area shape="rect" title=" " alt="" coords="221,5,376,31"/>
+<area shape="rect" href="../../d4/d9c/classphysics_1_1Trigger.html#a7bdc2533c9899d4491acfb96b2b79904" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="5,5,173,31"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -440,15 +457,6 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="../../de/d4f/Object_8cpp_source.html#l00348">348</a> of file <a class="el" href="../../de/d4f/Object_8cpp_source.html">Object.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d1/da3/classtoast_1_1Object_ad8b793b89d3c10cfb7a3763f4e39d178_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_ad8b793b89d3c10cfb7a3763f4e39d178_icgraph" alt=""/></div>
-<map name="ad1/da3/classtoast_1_1Object_ad8b793b89d3c10cfb7a3763f4e39d178_icgraph" id="ad1/da3/classtoast_1_1Object_ad8b793b89d3c10cfb7a3763f4e39d178_icgraph">
-<area shape="rect" title=" " alt="" coords="199,5,356,31"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,5,151,31"/>
-</map>
-</div>
 
 </div>
 </div>
@@ -748,16 +756,6 @@ Here is the caller graph for this function:</div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="../../de/d4f/Object_8cpp_source.html#l00462">462</a> of file <a class="el" href="../../de/d4f/Object_8cpp_source.html">Object.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d1/da3/classtoast_1_1Object_aafbf50c821ea74dfe7ddae592e910375_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_aafbf50c821ea74dfe7ddae592e910375_icgraph" alt=""/></div>
-<map name="ad1/da3/classtoast_1_1Object_aafbf50c821ea74dfe7ddae592e910375_icgraph" id="ad1/da3/classtoast_1_1Object_aafbf50c821ea74dfe7ddae592e910375_icgraph">
-<area shape="rect" title=" " alt="" coords="445,13,624,38"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#aef21c5ad4318f9be4d80fc1842c649f9" title=" " alt="" coords="231,13,397,38"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a4228ce051340b69a1c777e7d633153cf" title=" " alt="" coords="5,5,183,45"/>
-</map>
-</div>
 
 </div>
 </div>
@@ -852,7 +850,7 @@ Here is the caller graph for this function:</div>
 
 <p>This function runs when the scene starts or the next frame the object is created. </p>
 
-<p>Reimplemented in <a class="el" href="../../d3/d63/classtoast_1_1Component.html#af4588d5c543f8b194d31cba0e9f4a0ec">toast::Component</a>, <a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a6c9bd075357976e95fdc457478aa1cab">SpineRendererComponent</a>, <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#afd0964d1aabd3a7119e416e8f6327852">toast::Actor</a>, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a3e03172399d0e8e175e546da3f7ca5fa">toast::Scene</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94">toast::Camera</a>, and <a class="el" href="../../d0/db0/classLight2D.html#aec8083b5ea0c7c762d7f22d8d8bb57d7">Light2D</a>.</p>
+<p>Reimplemented in <a class="el" href="../../d3/d63/classtoast_1_1Component.html#af4588d5c543f8b194d31cba0e9f4a0ec">toast::Component</a>, <a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a6c9bd075357976e95fdc457478aa1cab">SpineRendererComponent</a>, <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#afd0964d1aabd3a7119e416e8f6327852">toast::Actor</a>, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a3e03172399d0e8e175e546da3f7ca5fa">toast::Scene</a>, <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a7bdc2533c9899d4491acfb96b2b79904">physics::Trigger</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94">toast::Camera</a>, and <a class="el" href="../../d0/db0/classLight2D.html#aec8083b5ea0c7c762d7f22d8d8bb57d7">Light2D</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../d7/d3f/Object_8hpp_source.html#l00148">148</a> of file <a class="el" href="../../d7/d3f/Object_8hpp_source.html">Object.hpp</a>.</p>
 <div class="dynheader">
@@ -860,9 +858,8 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/da3/classtoast_1_1Object_a7153a04208dd687a14e4561a84ee6804_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_a7153a04208dd687a14e4561a84ee6804_icgraph" alt=""/></div>
 <map name="ad1/da3/classtoast_1_1Object_a7153a04208dd687a14e4561a84ee6804_icgraph" id="ad1/da3/classtoast_1_1Object_a7153a04208dd687a14e4561a84ee6804_icgraph">
-<area shape="rect" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="404,5,555,31"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ad8b793b89d3c10cfb7a3763f4e39d178" title=" " alt="" coords="199,5,356,31"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,5,151,31"/>
+<area shape="rect" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="211,5,361,31"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ad8b793b89d3c10cfb7a3763f4e39d178" title=" " alt="" coords="5,5,163,31"/>
 </map>
 </div>
 
@@ -893,7 +890,7 @@ Here is the caller graph for this function:</div>
 
 <p>This function runs when the object is set to be destroyed. </p>
 
-<p>Reimplemented in <a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a6f50d08eab5a0109937a65b3f4ee19d8">AtlasRendererComponent</a>, <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40">toast::MeshRendererComponent</a>, <a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a75af091cad96a920a74a062f4701a1d9">SpineRendererComponent</a>, <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#ac43563b8a9b15bbb1361ee75322296a8">toast::Actor</a>, <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a7549182afe912f14f810ed8c6ee8fe5d">physics::BoxRigidbody</a>, <a class="el" href="../../db/d71/classphysics_1_1Collider.html#a27f0fe678b1144ce27480e6627af86b3">physics::Collider</a>, <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#abee44c40fe214b3b58d1745dd8c86521">physics::Rigidbody</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5">toast::Camera</a>, and <a class="el" href="../../d0/db0/classLight2D.html#aba3ddfa8edeeac944158a97efe965800">Light2D</a>.</p>
+<p>Reimplemented in <a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a6f50d08eab5a0109937a65b3f4ee19d8">AtlasRendererComponent</a>, <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40">toast::MeshRendererComponent</a>, <a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a75af091cad96a920a74a062f4701a1d9">SpineRendererComponent</a>, <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#ac43563b8a9b15bbb1361ee75322296a8">toast::Actor</a>, <a class="el" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a796f31a89365dbc22a1d6b05ee7b61f8">toast::ParticleSystem</a>, <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a7549182afe912f14f810ed8c6ee8fe5d">physics::BoxRigidbody</a>, <a class="el" href="../../db/d71/classphysics_1_1Collider.html#a27f0fe678b1144ce27480e6627af86b3">physics::Collider</a>, <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#abee44c40fe214b3b58d1745dd8c86521">physics::Rigidbody</a>, <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a093b461caa0f5bd9d6aca67ec62b5efd">physics::Trigger</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5">toast::Camera</a>, and <a class="el" href="../../d0/db0/classLight2D.html#aba3ddfa8edeeac944158a97efe965800">Light2D</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../d7/d3f/Object_8hpp_source.html#l00162">162</a> of file <a class="el" href="../../d7/d3f/Object_8hpp_source.html">Object.hpp</a>.</p>
 <div class="dynheader">
@@ -901,8 +898,9 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/da3/classtoast_1_1Object_a1b6e927d9c508dd81a308d45a52afecb_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_a1b6e927d9c508dd81a308d45a52afecb_icgraph" alt=""/></div>
 <map name="ad1/da3/classtoast_1_1Object_a1b6e927d9c508dd81a308d45a52afecb_icgraph" id="ad1/da3/classtoast_1_1Object_a1b6e927d9c508dd81a308d45a52afecb_icgraph">
-<area shape="rect" title="This function runs when the object is set to be destroyed." alt="" coords="224,5,388,31"/>
+<area shape="rect" title="This function runs when the object is set to be destroyed." alt="" coords="224,35,388,60"/>
 <area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a22696262d5e02175220f2af82c663136" title=" " alt="" coords="5,5,176,31"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a796f31a89365dbc22a1d6b05ee7b61f8" title="This function runs when the object is set to be destroyed." alt="" coords="11,55,171,95"/>
 </map>
 </div>
 
@@ -973,7 +971,7 @@ Here is the caller graph for this function:</div>
 
 <p>This function runs every frame in the editor. </p>
 
-<p>Reimplemented in <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a9544adc0b4bfe621025d3fc28ad0dd84">physics::BoxRigidbody</a>, <a class="el" href="../../db/d71/classphysics_1_1Collider.html#a404a4a4baa1905eec4e62e2935ade778">physics::Collider</a>, and <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a5cdf13d71dca7632d5fb35aa2934837a">physics::Rigidbody</a>.</p>
+<p>Reimplemented in <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a9544adc0b4bfe621025d3fc28ad0dd84">physics::BoxRigidbody</a>, <a class="el" href="../../db/d71/classphysics_1_1Collider.html#aae09aee9d2ec67c63f6cc8b7cd63ed40">physics::Collider</a>, and <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a4970415b9725781eaebe9c0f416ea42e">physics::Trigger</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../d7/d3f/Object_8hpp_source.html#l00174">174</a> of file <a class="el" href="../../d7/d3f/Object_8hpp_source.html">Object.hpp</a>.</p>
 <div class="dynheader">
@@ -1019,26 +1017,24 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/da3/classtoast_1_1Object_a6b68efce8207b26d5c0acda01e9dcdea_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_a6b68efce8207b26d5c0acda01e9dcdea_icgraph" alt=""/></div>
 <map name="ad1/da3/classtoast_1_1Object_a6b68efce8207b26d5c0acda01e9dcdea_icgraph" id="ad1/da3/classtoast_1_1Object_a6b68efce8207b26d5c0acda01e9dcdea_icgraph">
-<area shape="rect" title="Gets whether the object is enabled or not." alt="" coords="703,286,868,311"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ad8b793b89d3c10cfb7a3763f4e39d178" title=" " alt="" coords="237,286,395,311"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a6651374e5026cc3bb7c675ab955e8073" title=" " alt="" coords="462,62,642,87"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aace7fa07ca6a59a3aae1e16589e3cc7d" title=" " alt="" coords="459,111,645,137"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ada6c4d2aadb757d2b0f2d0cc646d95b2" title=" " alt="" coords="466,161,638,186"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ab78df3cdfc8cd1c2a397e77f5af31aca" title=" " alt="" coords="465,210,639,235"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aafbf50c821ea74dfe7ddae592e910375" title=" " alt="" coords="463,13,641,38"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#af3c0a2202e6ac21b04bd417db5e7ff10" title=" " alt="" coords="479,311,625,337"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#adf1e92ab96f2a7da61726d068b6755b7" title="An object that is not enabled will not be ticked and its components will be treated as disabled as we..." alt="" coords="469,361,635,386"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#acb44061f0eea603b846970680ce5be30" title=" " alt="" coords="473,410,631,435"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24" title=" " alt="" coords="479,459,625,485"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a7508bae51c016b92cc2f7e2c5ac0bbd0" title=" " alt="" coords="477,509,627,534"/>
-<area shape="rect" href="../../d0/db0/classLight2D.html#a978498147c7e3ad0eb19316adacca7b0" title=" " alt="" coords="449,559,655,599"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="21,347,167,373"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#aef21c5ad4318f9be4d80fc1842c649f9" title=" " alt="" coords="233,13,399,38"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a4228ce051340b69a1c777e7d633153cf" title=" " alt="" coords="5,5,183,45"/>
-<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635" title=" " alt="" coords="247,483,385,509"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686" title=" " alt="" coords="245,385,387,410"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656" title=" " alt="" coords="231,434,401,459"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title=" " alt="" coords="17,483,171,509"/>
+<area shape="rect" title="Gets whether the object is enabled or not." alt="" coords="680,277,845,303"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ad8b793b89d3c10cfb7a3763f4e39d178" title=" " alt="" coords="451,5,608,31"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a6651374e5026cc3bb7c675ab955e8073" title=" " alt="" coords="439,55,619,80"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aace7fa07ca6a59a3aae1e16589e3cc7d" title=" " alt="" coords="437,104,622,129"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ada6c4d2aadb757d2b0f2d0cc646d95b2" title=" " alt="" coords="443,153,615,179"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ab78df3cdfc8cd1c2a397e77f5af31aca" title=" " alt="" coords="442,203,617,228"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aafbf50c821ea74dfe7ddae592e910375" title=" " alt="" coords="440,252,619,277"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#af3c0a2202e6ac21b04bd417db5e7ff10" title=" " alt="" coords="456,301,603,327"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#adf1e92ab96f2a7da61726d068b6755b7" title="An object that is not enabled will not be ticked and its components will be treated as disabled as we..." alt="" coords="447,351,612,376"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#acb44061f0eea603b846970680ce5be30" title=" " alt="" coords="451,400,608,425"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24" title="Saves object state to JSON." alt="" coords="457,449,602,475"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a7508bae51c016b92cc2f7e2c5ac0bbd0" title=" " alt="" coords="455,499,604,524"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#a978498147c7e3ad0eb19316adacca7b0" title=" " alt="" coords="427,549,632,589"/>
+<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635" title="Saves object state to JSON." alt="" coords="225,400,362,425"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686" title="Saves object state to JSON." alt="" coords="222,449,365,475"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656" title="Caches current state for quick restoration." alt="" coords="208,499,379,524"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title="Saves object state to JSON." alt="" coords="5,400,160,425"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="10,499,155,524"/>
 </map>
 </div>
 
@@ -1151,12 +1147,16 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/da3/classtoast_1_1Object_a007cb426ff8f3ad0248257f274161e5e_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_a007cb426ff8f3ad0248257f274161e5e_icgraph" alt=""/></div>
 <map name="ad1/da3/classtoast_1_1Object_a007cb426ff8f3ad0248257f274161e5e_icgraph" id="ad1/da3/classtoast_1_1Object_a007cb426ff8f3ad0248257f274161e5e_icgraph">
-<area shape="rect" title="Returns the id of the object." alt="" coords="456,80,581,105"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#ac5c3dc60522b314ca5e13a0b2083e79e" title="Loads scene on the init thread, scene disabld after load." alt="" coords="214,5,393,31"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#abe28a5b8532ca1d9bb09c1e7a43f68bf" title="Loads scene on the main thread, scene enabled after load." alt="" coords="199,55,408,80"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b" title=" " alt="" coords="235,104,372,129"/>
-<area shape="rect" href="../../d8/d7c/structtoast_1_1Object_1_1Registrar.html#a31f4099f2cad44dfc513e376596d9cbe" title=" " alt="" coords="217,154,389,194"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,55,151,80"/>
+<area shape="rect" title="Returns the id of the object." alt="" coords="777,155,903,180"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#afbe0e3e4c589a2dc3123ae461139bf13" title="Loads scene on the init thread, scene disabld after load." alt="" coords="535,80,714,105"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#abe28a5b8532ca1d9bb09c1e7a43f68bf" title="Loads scene on the main thread, scene enabled after load." alt="" coords="520,129,729,155"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b" title=" " alt="" coords="556,179,693,204"/>
+<area shape="rect" href="../../d8/d7c/structtoast_1_1Object_1_1Registrar.html#a31f4099f2cad44dfc513e376596d9cbe" title=" " alt="" coords="539,229,711,269"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a03e770afc70716334eb4037d9151c8a5" title=" " alt="" coords="265,5,471,31"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#ad929acb758d90809c68ba2362d8e7ed4" title=" " alt="" coords="264,55,472,80"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#ad20bf8c23fc5cc9ae04746532256cf62" title=" " alt="" coords="265,104,471,129"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,104,216,129"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="295,153,441,179"/>
 </map>
 </div>
 
@@ -1187,7 +1187,7 @@ Here is the caller graph for this function:</div>
 
 <p>This function runs just after the object is created (scene load thread) </p>
 
-<p>Reimplemented in <a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a6c2703c4082252a0572931db24b5a0fd">AtlasRendererComponent</a>, <a class="el" href="../../d3/d63/classtoast_1_1Component.html#a187729a1cd745c75fab01fe8001d012c">toast::Component</a>, <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a6c0554ccc0f646263c59529ba8ee8bea">toast::MeshRendererComponent</a>, <a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ad1952cbfc3a232ad54536c0170b36f39">SpineRendererComponent</a>, <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#a9c31ed3e4ced90dd05b1bc252cea8091">toast::Actor</a>, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a68e8ffe175baa7c451bec08cb58c67bb">toast::Scene</a>, <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a400465190114a535ceb4997ac6be4565">physics::BoxRigidbody</a>, <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a462a8f1bf385bb9e88e17494cdf7d9b8">physics::Rigidbody</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a498786ac096d8130f8173abc30ce179f">toast::Camera</a>, <a class="el" href="../../d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c">Light2D</a>, and <a class="el" href="../../d8/d72/classGlobalLight.html#a54a7de33527e0673b7cfa4c13b04da28">GlobalLight</a>.</p>
+<p>Reimplemented in <a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a6c2703c4082252a0572931db24b5a0fd">AtlasRendererComponent</a>, <a class="el" href="../../d3/d63/classtoast_1_1Component.html#a187729a1cd745c75fab01fe8001d012c">toast::Component</a>, <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a6c0554ccc0f646263c59529ba8ee8bea">toast::MeshRendererComponent</a>, <a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ad1952cbfc3a232ad54536c0170b36f39">SpineRendererComponent</a>, <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#a9c31ed3e4ced90dd05b1bc252cea8091">toast::Actor</a>, <a class="el" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a30a3f0c9b2ecfa0ae770a3cc6ddbf798">toast::ParticleSystem</a>, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a68e8ffe175baa7c451bec08cb58c67bb">toast::Scene</a>, <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a400465190114a535ceb4997ac6be4565">physics::BoxRigidbody</a>, <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a462a8f1bf385bb9e88e17494cdf7d9b8">physics::Rigidbody</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a498786ac096d8130f8173abc30ce179f">toast::Camera</a>, <a class="el" href="../../d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c">Light2D</a>, and <a class="el" href="../../d8/d72/classGlobalLight.html#a54a7de33527e0673b7cfa4c13b04da28">GlobalLight</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../d7/d3f/Object_8hpp_source.html#l00145">145</a> of file <a class="el" href="../../d7/d3f/Object_8hpp_source.html">Object.hpp</a>.</p>
 <div class="dynheader">
@@ -1277,9 +1277,19 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Loads object state from JSON. </p>
+<p>Deserializes the object's properties from the provided JSON.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">j</td><td>JSON object containing serialized state. </td></tr>
+    <tr><td class="paramname">force_create</td><td>If true, always creates new children; if false, updates existing children by name. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">toast::ISerializable</a>.</p>
 
-<p>Reimplemented in <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ad5154887b4e9be3cc460c1718681f8ee">physics::BoxRigidbody</a>, <a class="el" href="../../d8/d72/classGlobalLight.html#aec962114f97474140d3f958c3bdda599">GlobalLight</a>, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1">toast::Scene</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005">toast::Camera</a>, <a class="el" href="../../d0/db0/classLight2D.html#ab111d55ff108f23ce448e43f72ef1ce4">Light2D</a>, <a class="el" href="../../db/d71/classphysics_1_1Collider.html#a58a915c3632248838b76d97b92c567a9">physics::Collider</a>, and <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#ad0eceef0a4406004c7d74c7f4bfeb541">physics::Rigidbody</a>.</p>
+<p>Reimplemented in <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ad5154887b4e9be3cc460c1718681f8ee">physics::BoxRigidbody</a>, <a class="el" href="../../d8/d72/classGlobalLight.html#aec962114f97474140d3f958c3bdda599">GlobalLight</a>, <a class="el" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a1d9ff365dc6e69e4b3812cff6a8999cf">toast::ParticleSystem</a>, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1">toast::Scene</a>, <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#ad2a82bcbfde1f41b94204f2778298529">physics::Trigger</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005">toast::Camera</a>, <a class="el" href="../../d0/db0/classLight2D.html#ab111d55ff108f23ce448e43f72ef1ce4">Light2D</a>, <a class="el" href="../../db/d71/classphysics_1_1Collider.html#a58a915c3632248838b76d97b92c567a9">physics::Collider</a>, and <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#ad0eceef0a4406004c7d74c7f4bfeb541">physics::Rigidbody</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../de/d4f/Object_8cpp_source.html#l00007">7</a> of file <a class="el" href="../../de/d4f/Object_8cpp_source.html">Object.cpp</a>.</p>
 <div class="dynheader">
@@ -1287,11 +1297,11 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/da3/classtoast_1_1Object_a61b7f00ff983927c256560e8a508778d_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_a61b7f00ff983927c256560e8a508778d_icgraph" alt=""/></div>
 <map name="ad1/da3/classtoast_1_1Object_a61b7f00ff983927c256560e8a508778d_icgraph" id="ad1/da3/classtoast_1_1Object_a61b7f00ff983927c256560e8a508778d_icgraph">
-<area shape="rect" title=" " alt="" coords="424,55,568,80"/>
-<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2" title=" " alt="" coords="223,5,359,31"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1" title=" " alt="" coords="221,55,362,80"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef" title=" " alt="" coords="207,104,376,129"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005" title=" " alt="" coords="5,5,159,31"/>
+<area shape="rect" title="Loads object state from JSON." alt="" coords="424,55,568,80"/>
+<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2" title="Loads object state from JSON." alt="" coords="223,5,359,31"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1" title="Loads object state from JSON." alt="" coords="221,55,362,80"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef" title="Reloads from cached JSON." alt="" coords="207,104,376,129"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005" title="Loads object state from JSON." alt="" coords="5,5,159,31"/>
 </map>
 </div>
 
@@ -1331,7 +1341,7 @@ Here is the caller graph for this function:</div>
 <area shape="rect" title=" " alt="" coords="453,31,652,56"/>
 <area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ad8b793b89d3c10cfb7a3763f4e39d178" title=" " alt="" coords="223,5,381,31"/>
 <area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a85e32519ac9ca43b7c5eaf4a9dee8769" title=" " alt="" coords="199,55,405,80"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,31,151,56"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,55,151,80"/>
 </map>
 </div>
 
@@ -1368,36 +1378,36 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/da3/classtoast_1_1Object_a9ae515365126c17df9c86e1ac6a80e69_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_a9ae515365126c17df9c86e1ac6a80e69_icgraph" alt=""/></div>
 <map name="ad1/da3/classtoast_1_1Object_a9ae515365126c17df9c86e1ac6a80e69_icgraph" id="ad1/da3/classtoast_1_1Object_a9ae515365126c17df9c86e1ac6a80e69_icgraph">
-<area shape="rect" title="Returns the name of the object." alt="" coords="712,358,863,383"/>
-<area shape="rect" href="../../d8/d7b/classevent_1_1ListenerComponent.html#ab998333e34e60b343c92ee9a3d2b2499" title="This function calls all the functions on the @m_callbacks map asociated to one event." alt="" coords="460,5,655,45"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d" title=" " alt="" coords="485,70,629,95"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a660234a003a2a3eb54bdff3c43565c0f" title="Sets the name of the object." alt="" coords="482,119,633,145"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b" title=" " alt="" coords="489,169,626,194"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a951d9c058d1d04212d5c9da193a47d25" title="Destroys this object." alt="" coords="484,218,631,243"/>
-<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a6bf8c670ff4b5ee880e9c3d09bb54d86" title=" " alt="" coords="461,268,653,308"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a71ecedef54b6348ea33ccfb5503bcde0" title=" " alt="" coords="474,333,641,358"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#acb44061f0eea603b846970680ce5be30" title=" " alt="" coords="479,382,636,407"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a98b9cecc3733f9a2042e2bda4dd89ede" title=" " alt="" coords="469,432,646,472"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24" title=" " alt="" coords="485,497,630,522"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686" title=" " alt="" coords="234,521,377,546"/>
-<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a497254938bace4783d62c84d1cf0c809" title=" " alt="" coords="451,597,664,637"/>
-<area shape="rect" href="../../d8/d7b/classevent_1_1ListenerComponent.html#a84ac7af8b87e3ae70d8288f3ce113cce" title="Subscribes a function to a specific event." alt="" coords="460,731,655,771"/>
-<area shape="rect" href="../../d8/d7b/classevent_1_1ListenerComponent.html#aaa57ee9daf9c73c68e747f7982ec053f" title="Unsubscribes all callbacks from the event." alt="" coords="460,795,655,835"/>
-<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2" title=" " alt="" coords="237,21,373,46"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1" title=" " alt="" coords="235,70,376,95"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef" title=" " alt="" coords="221,119,390,145"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005" title=" " alt="" coords="6,21,159,46"/>
-<area shape="rect" href="../../d8/d7c/structtoast_1_1Object_1_1Registrar.html#a31f4099f2cad44dfc513e376596d9cbe" title=" " alt="" coords="219,325,391,365"/>
-<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635" title=" " alt="" coords="237,422,374,447"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656" title=" " alt="" coords="220,471,391,497"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title=" " alt="" coords="5,422,160,447"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="10,471,155,497"/>
-<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a6c2703c4082252a0572931db24b5a0fd" title="This function runs just after the object is created (scene load thread)" alt="" coords="211,571,400,611"/>
-<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#abd67ce261735dcf4ca9a5955c89d1844" title=" " alt="" coords="211,635,400,675"/>
-<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="233,699,378,739"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="208,763,403,803"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a34757355e7ec79f24c8ce4fa594a7d7f" title=" " alt="" coords="217,827,394,867"/>
-<area shape="rect" href="../../d8/d8e/classtoast_1_1Window.html#a8346305f067cb920f298191286be2ecc" title="Creates a window with a given size." alt="" coords="218,891,393,917"/>
+<area shape="rect" title="Returns the name of the object." alt="" coords="728,358,879,383"/>
+<area shape="rect" href="../../d8/d7b/classevent_1_1ListenerComponent.html#ab998333e34e60b343c92ee9a3d2b2499" title="This function calls all the functions on the @m_callbacks map asociated to one event." alt="" coords="476,5,671,45"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d" title="Loads object state from JSON." alt="" coords="501,70,645,95"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a660234a003a2a3eb54bdff3c43565c0f" title="Sets the name of the object." alt="" coords="498,119,649,145"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b" title=" " alt="" coords="505,169,642,194"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a951d9c058d1d04212d5c9da193a47d25" title="Destroys this object." alt="" coords="500,218,647,243"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a6bf8c670ff4b5ee880e9c3d09bb54d86" title=" " alt="" coords="477,268,669,308"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a0027d3725be030a56a5ccb3a36b91616" title=" " alt="" coords="475,333,671,358"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a71ecedef54b6348ea33ccfb5503bcde0" title=" " alt="" coords="490,382,657,407"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#acb44061f0eea603b846970680ce5be30" title=" " alt="" coords="495,431,652,457"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24" title="Saves object state to JSON." alt="" coords="501,481,646,506"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686" title="Saves object state to JSON." alt="" coords="242,530,385,555"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a064d41b002070405eba9aa17a080a103" title=" " alt="" coords="467,581,680,621"/>
+<area shape="rect" href="../../d8/d7b/classevent_1_1ListenerComponent.html#a84ac7af8b87e3ae70d8288f3ce113cce" title="Subscribes a function to a specific event." alt="" coords="476,731,671,771"/>
+<area shape="rect" href="../../d8/d7b/classevent_1_1ListenerComponent.html#aaa57ee9daf9c73c68e747f7982ec053f" title="Unsubscribes all callbacks from the event." alt="" coords="476,795,671,835"/>
+<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2" title="Loads object state from JSON." alt="" coords="245,21,381,46"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1" title="Loads object state from JSON." alt="" coords="243,70,384,95"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef" title="Reloads from cached JSON." alt="" coords="229,119,398,145"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005" title="Loads object state from JSON." alt="" coords="6,21,159,46"/>
+<area shape="rect" href="../../d8/d7c/structtoast_1_1Object_1_1Registrar.html#a31f4099f2cad44dfc513e376596d9cbe" title=" " alt="" coords="227,367,399,407"/>
+<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635" title="Saves object state to JSON." alt="" coords="245,431,382,457"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656" title="Caches current state for quick restoration." alt="" coords="228,481,399,506"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title="Saves object state to JSON." alt="" coords="5,431,160,457"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="10,481,155,506"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a6c2703c4082252a0572931db24b5a0fd" title="This function runs just after the object is created (scene load thread)" alt="" coords="219,580,408,620"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#abd67ce261735dcf4ca9a5955c89d1844" title="Loads object state from JSON." alt="" coords="219,644,408,684"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="208,709,419,734"/>
+<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="241,759,386,799"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="216,823,411,863"/>
+<area shape="rect" href="../../d8/d8e/classtoast_1_1Window.html#a8346305f067cb920f298191286be2ecc" title="Creates a window with the specified dimensions." alt="" coords="226,887,401,913"/>
 </map>
 </div>
 
@@ -1617,52 +1627,42 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/da3/classtoast_1_1Object_a501e4743a60dd495c3b85c8ded3cd8eb_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_a501e4743a60dd495c3b85c8ded3cd8eb_icgraph" alt=""/></div>
 <map name="ad1/da3/classtoast_1_1Object_a501e4743a60dd495c3b85c8ded3cd8eb_icgraph" id="ad1/da3/classtoast_1_1Object_a501e4743a60dd495c3b85c8ded3cd8eb_icgraph">
-<area shape="rect" title=" " alt="" coords="1256,558,1411,583"/>
-<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a3793262624cd3d2ae10368f544e86d1f" title=" " alt="" coords="1038,63,1175,103"/>
-<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#adb1353f26528ba24408c881447f04c18" title=" " alt="" coords="1005,212,1208,252"/>
-<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a404a4a4baa1905eec4e62e2935ade778" title="This function runs every frame in the editor." alt="" coords="1038,295,1175,335"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a148c420419d84982a2815a383e90c324" title=" " alt="" coords="1022,423,1191,463"/>
-<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a60945624ec1a89156734ffb74c61f424" title=" " alt="" coords="1035,676,1179,716"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a98b9cecc3733f9a2042e2bda4dd89ede" title=" " alt="" coords="511,785,689,825"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#afabc04475f1a0d9040073a6a9b904015" title=" " alt="" coords="1022,359,1191,399"/>
-<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#ae9f6cf2808b058b31ca476212b7acac1" title=" " alt="" coords="1005,979,1208,1019"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a951d9c058d1d04212d5c9da193a47d25" title="Destroys this object." alt="" coords="1033,1043,1180,1069"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a0e976cd951b9d55e8083757dde996199" title=" " alt="" coords="1022,551,1191,591"/>
-<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#ae643fc4478ed62cff8d478d116abe714" title=" " alt="" coords="1035,761,1179,801"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a01cfa357e09d697f44a092940cfbddd7" title=" " alt="" coords="1022,487,1191,527"/>
-<area shape="rect" href="../../d8/d7b/classevent_1_1ListenerComponent.html#a84ac7af8b87e3ae70d8288f3ce113cce" title="Subscribes a function to a specific event." alt="" coords="1009,1093,1204,1133"/>
-<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#aaf015227ff68963c1bf5ddae364699e4" title=" " alt="" coords="785,5,922,45"/>
-<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a58a915c3632248838b76d97b92c567a9" title=" " alt="" coords="769,70,937,95"/>
-<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a2a7f731402488a3d3cb8155d28f9c066" title=" " alt="" coords="752,248,955,288"/>
-<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#aab6cb058834c07e0124b167d6eeec44e" title=" " alt="" coords="752,120,955,160"/>
-<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#affb082be9b9abdc317d0500b4955e236" title=" " alt="" coords="752,184,955,224"/>
-<area shape="rect" href="../../d5/dfe/classrenderer_1_1IRenderable.html#af250f228e2af30ac30b89c21d9c2e492" title="Gets the Z&#45;depth of this renderable for sorting purposes." alt="" coords="519,248,681,288"/>
-<area shape="rect" href="../../d5/d10/structtoast_1_1Transform2.html#ad1c1969f56ed7c1efe51f3b5e8776084" title=" " alt="" coords="515,184,685,224"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#aaa760df2f9d791a8088fb27cc9dc84b5" title=" " alt="" coords="252,248,447,288"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,248,200,288"/>
-<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a0f5bc082fb86f265c78507e6489b43ad" title=" " alt="" coords="499,120,701,160"/>
-<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#aaf8fd1da0707c53bcb13cf05d10fc3c5" title=" " alt="" coords="248,120,451,160"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a6d02bdd5228f0da82e3687ece5aaaa69" title=" " alt="" coords="769,376,938,416"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="766,441,941,466"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a46f160106603c30fe08f473710634331" title=" " alt="" coords="749,490,957,515"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ace0ee6b77ef84882d1f83dd38147df99" title=" " alt="" coords="769,312,938,352"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="511,461,689,501"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a9544adc0b4bfe621025d3fc28ad0dd84" title="This function runs every frame in the editor." alt="" coords="515,312,685,352"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a94503868157c1c683a53d49ae9c4c5d5" title=" " alt="" coords="515,376,685,416"/>
-<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a5cdf13d71dca7632d5fb35aa2934837a" title="This function runs every frame in the editor." alt="" coords="781,655,925,695"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#ab5bb62de13325b81f45958620bc2b988" title=" " alt="" coords="770,719,937,745"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a2570830536e313c268c0d55b73a19fa8" title=" " alt="" coords="753,769,953,794"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a4924f71c844f8adfafae48531455f910" title=" " alt="" coords="765,605,942,630"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a36809edbcfe0caecb4b7ac54afc385d1" title=" " alt="" coords="762,818,945,843"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#aa25ace6e8dfe7a75026f8ca430bcf062" title=" " alt="" coords="511,597,689,637"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a9bf58af059ac112e456dc6cd15d23c99" title=" " alt="" coords="283,605,416,630"/>
-<area shape="rect" href="../../d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="781,986,925,1011"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ada760b39a86be6e4d9874de541af7cce" title=" " alt="" coords="769,540,938,580"/>
-<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a6374642256969acc1c453f38fbedea09" title=" " alt="" coords="781,868,925,908"/>
-<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="781,1151,926,1191"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="756,1215,951,1255"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a34757355e7ec79f24c8ce4fa594a7d7f" title=" " alt="" coords="765,1036,942,1076"/>
-<area shape="rect" href="../../d8/d8e/classtoast_1_1Window.html#a8346305f067cb920f298191286be2ecc" title="Creates a window with a given size." alt="" coords="766,1101,941,1126"/>
+<area shape="rect" title=" " alt="" coords="1259,511,1413,537"/>
+<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a3793262624cd3d2ae10368f544e86d1f" title=" " alt="" coords="1041,43,1178,83"/>
+<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#adb1353f26528ba24408c881447f04c18" title=" " alt="" coords="1008,167,1211,207"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a0027d3725be030a56a5ccb3a36b91616" title=" " alt="" coords="502,262,698,287"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a148c420419d84982a2815a383e90c324" title=" " alt="" coords="1025,376,1194,416"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#afabc04475f1a0d9040073a6a9b904015" title=" " alt="" coords="1025,312,1194,352"/>
+<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#ae9f6cf2808b058b31ca476212b7acac1" title=" " alt="" coords="1008,568,1211,608"/>
+<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a462a8f1bf385bb9e88e17494cdf7d9b8" title="This function runs just after the object is created (scene load thread)" alt="" coords="1037,632,1181,672"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a951d9c058d1d04212d5c9da193a47d25" title="Destroys this object." alt="" coords="1036,697,1183,722"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a0e976cd951b9d55e8083757dde996199" title=" " alt="" coords="1025,504,1194,544"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a01cfa357e09d697f44a092940cfbddd7" title=" " alt="" coords="1025,440,1194,480"/>
+<area shape="rect" href="../../d8/d7b/classevent_1_1ListenerComponent.html#a84ac7af8b87e3ae70d8288f3ce113cce" title="Subscribes a function to a specific event." alt="" coords="1012,747,1207,787"/>
+<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a4dfcd7de012b486a089892c43e77c0f0" title="Sync rigidbody position from transform." alt="" coords="1030,812,1189,852"/>
+<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a03e9508170b42fb6e25ce25a90279b74" title="Update the visual transform using interpolated position (call from Tick/LateTick)" alt="" coords="763,873,946,913"/>
+<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a58a915c3632248838b76d97b92c567a9" title="Loads object state from JSON." alt="" coords="771,19,939,45"/>
+<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a2a7f731402488a3d3cb8155d28f9c066" title=" " alt="" coords="753,197,956,237"/>
+<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#aab6cb058834c07e0124b167d6eeec44e" title=" " alt="" coords="753,133,956,173"/>
+<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#affb082be9b9abdc317d0500b4955e236" title=" " alt="" coords="753,69,956,109"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#aa2aabb66d742c74a9ae2ade9e44b6929" title="Emit a burst from all emitters." alt="" coords="520,133,680,173"/>
+<area shape="rect" href="../../d5/dfe/classrenderer_1_1IRenderable.html#af250f228e2af30ac30b89c21d9c2e492" title="Gets the Z&#45;depth for sorting purposes." alt="" coords="519,197,681,237"/>
+<area shape="rect" href="../../d5/d10/structtoast_1_1Transform2.html#ad1c1969f56ed7c1efe51f3b5e8776084" title=" " alt="" coords="515,69,685,109"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#aaa760df2f9d791a8088fb27cc9dc84b5" title=" " alt="" coords="252,197,447,237"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,197,200,237"/>
+<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a0f5bc082fb86f265c78507e6489b43ad" title=" " alt="" coords="499,5,701,45"/>
+<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html#aaf8fd1da0707c53bcb13cf05d10fc3c5" title=" " alt="" coords="248,5,451,45"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a6d02bdd5228f0da82e3687ece5aaaa69" title=" " alt="" coords="770,376,939,416"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="767,445,942,470"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a46f160106603c30fe08f473710634331" title=" " alt="" coords="751,505,959,530"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ace0ee6b77ef84882d1f83dd38147df99" title=" " alt="" coords="770,312,939,352"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a9544adc0b4bfe621025d3fc28ad0dd84" title="This function runs every frame in the editor." alt="" coords="515,376,685,416"/>
+<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a94503868157c1c683a53d49ae9c4c5d5" title=" " alt="" coords="515,312,685,352"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="783,575,927,601"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="749,695,960,721"/>
+<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="782,745,927,785"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="757,809,952,849"/>
+<area shape="rect" href="../../d8/d8e/classtoast_1_1Window.html#a8346305f067cb920f298191286be2ecc" title="Creates a window with the specified dimensions." alt="" coords="767,646,942,671"/>
 </map>
 </div>
 
@@ -1701,10 +1701,8 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/da3/classtoast_1_1Object_a8da0776b3dd163490fc5f1162c24be49_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_a8da0776b3dd163490fc5f1162c24be49_icgraph" alt=""/></div>
 <map name="ad1/da3/classtoast_1_1Object_a8da0776b3dd163490fc5f1162c24be49_icgraph" id="ad1/da3/classtoast_1_1Object_a8da0776b3dd163490fc5f1162c24be49_icgraph">
-<area shape="rect" title="This function runs every physics tick (physics thread)" alt="" coords="672,13,843,38"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aafbf50c821ea74dfe7ddae592e910375" title=" " alt="" coords="445,13,624,38"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#aef21c5ad4318f9be4d80fc1842c649f9" title=" " alt="" coords="231,13,397,38"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a4228ce051340b69a1c777e7d633153cf" title=" " alt="" coords="5,5,183,45"/>
+<area shape="rect" title="This function runs every physics tick (physics thread)" alt="" coords="232,5,403,31"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aafbf50c821ea74dfe7ddae592e910375" title=" " alt="" coords="5,5,184,31"/>
 </map>
 </div>
 
@@ -1800,9 +1798,13 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Saves object state to JSON. </p>
+<p>Serializes the object's properties to a JSON object.</p>
+<dl class="section return"><dt>Returns</dt><dd>JSON object containing the serialized state. </dd></dl>
+
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">toast::ISerializable</a>.</p>
 
-<p>Reimplemented in <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686">toast::Scene</a>, <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a5a52a27601099aacd4ba19414f8ccf2f">physics::BoxRigidbody</a>, <a class="el" href="../../db/d71/classphysics_1_1Collider.html#a4dcb001a41b343e20a224409502b0f77">physics::Collider</a>, <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a6b2f39d53f29ae5dc743e3dbd463d5cb">physics::Rigidbody</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b">toast::Camera</a>, <a class="el" href="../../d0/db0/classLight2D.html#a5c4939babc74eaf4c42825ff76133fad">Light2D</a>, and <a class="el" href="../../d8/d72/classGlobalLight.html#ad0331865a84b28bec1fe94a1f43d7cb3">GlobalLight</a>.</p>
+<p>Reimplemented in <a class="el" href="../../df/d2b/classtoast_1_1ParticleSystem.html#aedcfd1b586c5f620e76aaaa76670f7f7">toast::ParticleSystem</a>, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686">toast::Scene</a>, <a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a5a52a27601099aacd4ba19414f8ccf2f">physics::BoxRigidbody</a>, <a class="el" href="../../db/d71/classphysics_1_1Collider.html#a4dcb001a41b343e20a224409502b0f77">physics::Collider</a>, <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html#a6b2f39d53f29ae5dc743e3dbd463d5cb">physics::Rigidbody</a>, <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#abaac0ac8d67fd603c193a1bf8b0724e5">physics::Trigger</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b">toast::Camera</a>, <a class="el" href="../../d0/db0/classLight2D.html#a5c4939babc74eaf4c42825ff76133fad">Light2D</a>, and <a class="el" href="../../d8/d72/classGlobalLight.html#ad0331865a84b28bec1fe94a1f43d7cb3">GlobalLight</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../de/d4f/Object_8cpp_source.html#l00043">43</a> of file <a class="el" href="../../de/d4f/Object_8cpp_source.html">Object.cpp</a>.</p>
 <div class="dynheader">
@@ -1810,11 +1812,11 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/da3/classtoast_1_1Object_a4f0da32eafb5fd14513357544f76ae24_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_a4f0da32eafb5fd14513357544f76ae24_icgraph" alt=""/></div>
 <map name="ad1/da3/classtoast_1_1Object_a4f0da32eafb5fd14513357544f76ae24_icgraph" id="ad1/da3/classtoast_1_1Object_a4f0da32eafb5fd14513357544f76ae24_icgraph">
-<area shape="rect" title=" " alt="" coords="427,55,572,80"/>
-<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635" title=" " alt="" coords="225,5,362,31"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686" title=" " alt="" coords="222,55,365,80"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656" title=" " alt="" coords="208,104,379,129"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title=" " alt="" coords="5,5,160,31"/>
+<area shape="rect" title="Saves object state to JSON." alt="" coords="427,55,572,80"/>
+<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635" title="Saves object state to JSON." alt="" coords="225,5,362,31"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686" title="Saves object state to JSON." alt="" coords="222,55,365,80"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656" title="Caches current state for quick restoration." alt="" coords="208,104,379,129"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title="Saves object state to JSON." alt="" coords="5,5,160,31"/>
 <area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="10,104,155,129"/>
 </map>
 </div>
@@ -1871,6 +1873,9 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Reloads from cached JSON. </p>
+<p>Restores the object to its last saved state without reading from disk. Used for quick state restoration. </p>
+
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a7a5705e9dd33a51039af65c3928ea4ef">toast::ISerializable</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../de/d4f/Object_8cpp_source.html#l00063">63</a> of file <a class="el" href="../../de/d4f/Object_8cpp_source.html">Object.cpp</a>.</p>
@@ -1900,6 +1905,9 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Caches current state for quick restoration. </p>
+<p>Saves the current state to an internal cache. Used before entering play mode in the editor. </p>
+
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a58c24747a2bcdd94fa3d69b81761cd03">toast::ISerializable</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../de/d4f/Object_8cpp_source.html#l00068">68</a> of file <a class="el" href="../../de/d4f/Object_8cpp_source.html">Object.cpp</a>.</p>
@@ -1908,7 +1916,7 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/da3/classtoast_1_1Object_a3a8f2a39c01ed70ccd985e749ebf3656_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_a3a8f2a39c01ed70ccd985e749ebf3656_icgraph" alt=""/></div>
 <map name="ad1/da3/classtoast_1_1Object_a3a8f2a39c01ed70ccd985e749ebf3656_icgraph" id="ad1/da3/classtoast_1_1Object_a3a8f2a39c01ed70ccd985e749ebf3656_icgraph">
-<area shape="rect" title=" " alt="" coords="199,5,369,31"/>
+<area shape="rect" title="Caches current state for quick restoration." alt="" coords="199,5,369,31"/>
 <area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,5,151,31"/>
 </map>
 </div>
@@ -1946,31 +1954,29 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/da3/classtoast_1_1Object_affe9053e09e9e130a9255d1c53d55104_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_affe9053e09e9e130a9255d1c53d55104_icgraph" alt=""/></div>
 <map name="ad1/da3/classtoast_1_1Object_affe9053e09e9e130a9255d1c53d55104_icgraph" id="ad1/da3/classtoast_1_1Object_affe9053e09e9e130a9255d1c53d55104_icgraph">
-<area shape="rect" title="Returns the name of the class." alt="" coords="909,255,1095,280"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a4d5014778bdf83165dc2f9c9d9070eff" title="Returns the name of the class." alt="" coords="719,255,861,280"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ad8b793b89d3c10cfb7a3763f4e39d178" title=" " alt="" coords="255,5,413,31"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a22696262d5e02175220f2af82c663136" title=" " alt="" coords="493,156,663,181"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a6651374e5026cc3bb7c675ab955e8073" title=" " alt="" coords="488,205,668,231"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aace7fa07ca6a59a3aae1e16589e3cc7d" title=" " alt="" coords="485,255,671,280"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ab616d28cafbedb9fd44afc9ae20f0efb" title=" " alt="" coords="507,304,649,329"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ab78df3cdfc8cd1c2a397e77f5af31aca" title=" " alt="" coords="491,353,665,379"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a85e32519ac9ca43b7c5eaf4a9dee8769" title=" " alt="" coords="231,55,437,80"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aafbf50c821ea74dfe7ddae592e910375" title=" " alt="" coords="489,403,667,428"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#af3c0a2202e6ac21b04bd417db5e7ff10" title=" " alt="" coords="505,452,651,477"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d" title=" " alt="" coords="506,503,650,528"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24" title=" " alt="" coords="505,107,651,132"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="21,55,167,80"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b" title=" " alt="" coords="265,304,403,329"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#aef21c5ad4318f9be4d80fc1842c649f9" title=" " alt="" coords="251,401,417,427"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a4228ce051340b69a1c777e7d633153cf" title=" " alt="" coords="5,394,183,434"/>
-<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2" title=" " alt="" coords="266,457,402,483"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1" title=" " alt="" coords="263,507,405,532"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef" title=" " alt="" coords="249,556,419,581"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005" title=" " alt="" coords="17,459,171,484"/>
-<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635" title=" " alt="" coords="265,153,403,179"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686" title=" " alt="" coords="263,203,405,228"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656" title=" " alt="" coords="249,104,419,129"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title=" " alt="" coords="17,153,171,179"/>
+<area shape="rect" title="Returns the name of the class." alt="" coords="887,252,1072,277"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a4d5014778bdf83165dc2f9c9d9070eff" title="Returns the name of the class." alt="" coords="696,252,839,277"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ad8b793b89d3c10cfb7a3763f4e39d178" title=" " alt="" coords="477,5,634,31"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a22696262d5e02175220f2af82c663136" title=" " alt="" coords="470,55,641,80"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a6651374e5026cc3bb7c675ab955e8073" title=" " alt="" coords="465,104,645,129"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aace7fa07ca6a59a3aae1e16589e3cc7d" title=" " alt="" coords="463,153,648,179"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ab616d28cafbedb9fd44afc9ae20f0efb" title=" " alt="" coords="485,203,626,228"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ab78df3cdfc8cd1c2a397e77f5af31aca" title=" " alt="" coords="468,252,643,277"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a85e32519ac9ca43b7c5eaf4a9dee8769" title=" " alt="" coords="208,255,415,280"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aafbf50c821ea74dfe7ddae592e910375" title=" " alt="" coords="466,403,645,428"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#af3c0a2202e6ac21b04bd417db5e7ff10" title=" " alt="" coords="482,452,629,477"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d" title="Loads object state from JSON." alt="" coords="483,501,627,527"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24" title="Saves object state to JSON." alt="" coords="483,353,628,379"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b" title=" " alt="" coords="243,203,380,228"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="10,280,155,305"/>
+<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2" title="Loads object state from JSON." alt="" coords="243,452,379,477"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1" title="Loads object state from JSON." alt="" coords="241,501,382,527"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef" title="Reloads from cached JSON." alt="" coords="227,551,396,576"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005" title="Loads object state from JSON." alt="" coords="6,452,159,477"/>
+<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635" title="Saves object state to JSON." alt="" coords="243,353,380,379"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686" title="Saves object state to JSON." alt="" coords="240,403,383,428"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656" title="Caches current state for quick restoration." alt="" coords="226,304,397,329"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title="Saves object state to JSON." alt="" coords="5,353,160,379"/>
 </map>
 </div>
 
@@ -2001,7 +2007,7 @@ Here is the caller graph for this function:</div>
 
 <p>This function runs every frame. </p>
 
-<p>Reimplemented in <a class="el" href="../../d3/d63/classtoast_1_1Component.html#a8ead9044b0a5e2109cab94d1cc3d8854">toast::Component</a>, <a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ae43b68e864e4701ce626137f0298ed3e">SpineRendererComponent</a>, <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#a1c6e52d679db0a2566d2627ac7d28b18">toast::Actor</a>, and <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a75d1850258d9bb6014bcba1fec080c2d">toast::Scene</a>.</p>
+<p>Reimplemented in <a class="el" href="../../d3/d63/classtoast_1_1Component.html#a8ead9044b0a5e2109cab94d1cc3d8854">toast::Component</a>, <a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ae43b68e864e4701ce626137f0298ed3e">SpineRendererComponent</a>, <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#a1c6e52d679db0a2566d2627ac7d28b18">toast::Actor</a>, <a class="el" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a056105dc5bdbccf682c7c6b5d0cef60e">toast::ParticleSystem</a>, and <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html#a75d1850258d9bb6014bcba1fec080c2d">toast::Scene</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../d7/d3f/Object_8hpp_source.html#l00156">156</a> of file <a class="el" href="../../d7/d3f/Object_8hpp_source.html">Object.hpp</a>.</p>
 <div class="dynheader">
@@ -2047,30 +2053,28 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/da3/classtoast_1_1Object_a4d5014778bdf83165dc2f9c9d9070eff_icgraph.png" border="0" usemap="#ad1/da3/classtoast_1_1Object_a4d5014778bdf83165dc2f9c9d9070eff_icgraph" alt=""/></div>
 <map name="ad1/da3/classtoast_1_1Object_a4d5014778bdf83165dc2f9c9d9070eff_icgraph" id="ad1/da3/classtoast_1_1Object_a4d5014778bdf83165dc2f9c9d9070eff_icgraph">
-<area shape="rect" title="Returns the name of the class." alt="" coords="719,255,861,280"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ad8b793b89d3c10cfb7a3763f4e39d178" title=" " alt="" coords="255,5,413,31"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a22696262d5e02175220f2af82c663136" title=" " alt="" coords="493,156,663,181"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a6651374e5026cc3bb7c675ab955e8073" title=" " alt="" coords="488,205,668,231"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aace7fa07ca6a59a3aae1e16589e3cc7d" title=" " alt="" coords="485,255,671,280"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ab616d28cafbedb9fd44afc9ae20f0efb" title=" " alt="" coords="507,304,649,329"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ab78df3cdfc8cd1c2a397e77f5af31aca" title=" " alt="" coords="491,353,665,379"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a85e32519ac9ca43b7c5eaf4a9dee8769" title=" " alt="" coords="231,55,437,80"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aafbf50c821ea74dfe7ddae592e910375" title=" " alt="" coords="489,403,667,428"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#af3c0a2202e6ac21b04bd417db5e7ff10" title=" " alt="" coords="505,452,651,477"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d" title=" " alt="" coords="506,503,650,528"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24" title=" " alt="" coords="505,107,651,132"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="21,55,167,80"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b" title=" " alt="" coords="265,304,403,329"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#aef21c5ad4318f9be4d80fc1842c649f9" title=" " alt="" coords="251,401,417,427"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a4228ce051340b69a1c777e7d633153cf" title=" " alt="" coords="5,394,183,434"/>
-<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2" title=" " alt="" coords="266,457,402,483"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1" title=" " alt="" coords="263,507,405,532"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef" title=" " alt="" coords="249,556,419,581"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005" title=" " alt="" coords="17,459,171,484"/>
-<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635" title=" " alt="" coords="265,153,403,179"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686" title=" " alt="" coords="263,203,405,228"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656" title=" " alt="" coords="249,104,419,129"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title=" " alt="" coords="17,153,171,179"/>
+<area shape="rect" title="Returns the name of the class." alt="" coords="696,252,839,277"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ad8b793b89d3c10cfb7a3763f4e39d178" title=" " alt="" coords="477,5,634,31"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a22696262d5e02175220f2af82c663136" title=" " alt="" coords="470,55,641,80"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a6651374e5026cc3bb7c675ab955e8073" title=" " alt="" coords="465,104,645,129"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aace7fa07ca6a59a3aae1e16589e3cc7d" title=" " alt="" coords="463,153,648,179"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ab616d28cafbedb9fd44afc9ae20f0efb" title=" " alt="" coords="485,203,626,228"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#ab78df3cdfc8cd1c2a397e77f5af31aca" title=" " alt="" coords="468,252,643,277"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a85e32519ac9ca43b7c5eaf4a9dee8769" title=" " alt="" coords="208,255,415,280"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aafbf50c821ea74dfe7ddae592e910375" title=" " alt="" coords="466,403,645,428"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#af3c0a2202e6ac21b04bd417db5e7ff10" title=" " alt="" coords="482,452,629,477"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d" title="Loads object state from JSON." alt="" coords="483,501,627,527"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24" title="Saves object state to JSON." alt="" coords="483,353,628,379"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b" title=" " alt="" coords="243,203,380,228"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="10,280,155,305"/>
+<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2" title="Loads object state from JSON." alt="" coords="243,452,379,477"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1" title="Loads object state from JSON." alt="" coords="241,501,382,527"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef" title="Reloads from cached JSON." alt="" coords="227,551,396,576"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005" title="Loads object state from JSON." alt="" coords="6,452,159,477"/>
+<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635" title="Saves object state to JSON." alt="" coords="243,353,380,379"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686" title="Saves object state to JSON." alt="" coords="240,403,383,428"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656" title="Caches current state for quick restoration." alt="" coords="226,304,397,329"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title="Saves object state to JSON." alt="" coords="5,353,160,379"/>
 </map>
 </div>
 

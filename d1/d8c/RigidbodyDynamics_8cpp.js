@@ -8,5 +8,6 @@ var RigidbodyDynamics_8cpp =
     [ "RbRayCollision", "d1/d8c/RigidbodyDynamics_8cpp.html#a4924f71c844f8adfafae48531455f910", null ],
     [ "RbRbCollision", "d1/d8c/RigidbodyDynamics_8cpp.html#a023a1eefd578254b09518211706ac1b2", null ],
     [ "RbRbResolution", "d1/d8c/RigidbodyDynamics_8cpp.html#a36809edbcfe0caecb4b7ac54afc385d1", null ],
-    [ "RbResetVelocity", "d1/d8c/RigidbodyDynamics_8cpp.html#a33c69640dfa002d677858f5b3536ff2c", null ]
+    [ "RbResetVelocity", "d1/d8c/RigidbodyDynamics_8cpp.html#a33c69640dfa002d677858f5b3536ff2c", null ],
+    [ "RbTriggerCollision", "d1/d8c/RigidbodyDynamics_8cpp.html#a0027d3725be030a56a5ccb3a36b91616", null ]
 ];

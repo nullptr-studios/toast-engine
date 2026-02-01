@@ -1,4 +1,5 @@
 <map id="toast::TransformComponent::Save" name="toast::TransformComponent::Save">
-<area shape="rect" id="node1" title=" " alt="" coords="285,5,488,45"/>
-<area shape="rect" id="node2" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a280b3b0aa0dc11e1e4969188efac3d4e" title=" " alt="" coords="5,5,237,45"/>
+<area shape="rect" id="node1" title="Saves object state to JSON." alt="" coords="285,37,488,77"/>
+<area shape="rect" id="node2" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a280b3b0aa0dc11e1e4969188efac3d4e" title="Saves object state to JSON." alt="" coords="5,5,237,45"/>
+<area shape="rect" id="node3" href="$df/d2b/classtoast_1_1ParticleSystem.html#aedcfd1b586c5f620e76aaaa76670f7f7" title="Saves object state to JSON." alt="" coords="41,69,201,109"/>
 </map>

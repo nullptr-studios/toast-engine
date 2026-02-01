@@ -1,0 +1,7 @@
+<map id="toast::ParticleSystem::AddEmitter" name="toast::ParticleSystem::AddEmitter">
+<area shape="rect" id="node1" title="Add a new emitter." alt="" coords="436,37,596,77"/>
+<area shape="rect" id="node2" href="$df/d2b/classtoast_1_1ParticleSystem.html#acf5d5aaba82529d9d0396276b38b5073" title="Add a new emitter with a preset." alt="" coords="213,5,388,45"/>
+<area shape="rect" id="node4" href="$df/d2b/classtoast_1_1ParticleSystem.html#a0d1c98411602a7aff87ca781f6d3c8bf" title="Load particle system config from a Lua file." alt="" coords="221,69,381,109"/>
+<area shape="rect" id="node3" href="$df/d2b/classtoast_1_1ParticleSystem.html#a30a3f0c9b2ecfa0ae770a3cc6ddbf798" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,165,45"/>
+<area shape="rect" id="node5" href="$df/d2b/classtoast_1_1ParticleSystem.html#a1d9ff365dc6e69e4b3812cff6a8999cf" title="Loads object state from JSON." alt="" coords="5,69,165,109"/>
+</map>

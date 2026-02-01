@@ -1,0 +1,4 @@
+<map id="toast::ParticleSystem::Play" name="toast::ParticleSystem::Play">
+<area shape="rect" id="node1" title="Start/resume all emitters." alt="" coords="213,5,373,45"/>
+<area shape="rect" id="node2" href="$df/d2b/classtoast_1_1ParticleSystem.html#a1d9ff365dc6e69e4b3812cff6a8999cf" title="Loads object state from JSON." alt="" coords="5,5,165,45"/>
+</map>

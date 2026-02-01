@@ -1,5 +1,6 @@
 var namespacerenderer =
 [
+    [ "BoundingBox", "dd/d13/structrenderer_1_1BoundingBox.html", "dd/d13/structrenderer_1_1BoundingBox" ],
     [ "DebugDrawLayer", "df/daf/classrenderer_1_1DebugDrawLayer.html", "df/daf/classrenderer_1_1DebugDrawLayer" ],
     [ "DebugVertex", "da/d9a/structrenderer_1_1DebugVertex.html", "da/d9a/structrenderer_1_1DebugVertex" ],
     [ "ILayer", "d4/deb/classrenderer_1_1ILayer.html", "d4/deb/classrenderer_1_1ILayer" ],
