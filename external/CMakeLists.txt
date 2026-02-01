@@ -128,7 +128,7 @@ endif()
 FetchContent_Declare(
         sol2
         GIT_REPOSITORY https://github.com/ThePhD/sol2.git
-        GIT_TAG v3.3.1
+        GIT_TAG v3.5.0
         GIT_SHALLOW TRUE
 )
 
@@ -222,6 +222,69 @@ if(NOT spine_POPULATED)
     )
 endif()
 
+# FMOD
+if(WIN32)
+    set(FMOD_PLATFORM "windows")
+    set(FMOD_ARCH "x64")
+elseif(UNIX AND NOT APPLE)
+    set(FMOD_PLATFORM "linux")
+    set(FMOD_ARCH "x86_64")
+endif()
+
+set(FMOD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/fmod")
+set(FMOD_LIB_DIR "${FMOD_DIR}/lib/${FMOD_PLATFORM}")
+set(FMOD_INCLUDE_DIR "${FMOD_DIR}/include")
+
+# FMOD Core Library
+add_library(fmod SHARED IMPORTED GLOBAL)
+if(WIN32)
+    set_target_properties(fmod PROPERTIES
+        IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
+        IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/fmodL.dll"
+        IMPORTED_IMPLIB_DEBUG "${FMOD_LIB_DIR}/fmodL_vc.lib"
+        IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/fmod.dll"
+        IMPORTED_IMPLIB_RELEASE "${FMOD_LIB_DIR}/fmod_vc.lib"
+        IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmod.dll"
+        IMPORTED_IMPLIB_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmod_vc.lib"
+        IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/fmod.dll"
+        IMPORTED_IMPLIB_MINSIZEREL "${FMOD_LIB_DIR}/fmod_vc.lib"
+    )
+elseif(UNIX AND NOT APPLE)
+    set_target_properties(fmod PROPERTIES
+        IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
+        IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/libfmodL.so"
+        IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/libfmod.so"
+        IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/libfmod.so"
+        IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/libfmod.so"
+    )
+endif()
+target_include_directories(fmod INTERFACE ${FMOD_INCLUDE_DIR})
+
+# FMOD Studio Library
+add_library(fmod_studio SHARED IMPORTED GLOBAL)
+if(WIN32)
+    set_target_properties(fmod_studio PROPERTIES
+        IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
+        IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/fmodstudioL.dll"
+        IMPORTED_IMPLIB_DEBUG "${FMOD_LIB_DIR}/fmodstudioL_vc.lib"
+        IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/fmodstudio.dll"
+        IMPORTED_IMPLIB_RELEASE "${FMOD_LIB_DIR}/fmodstudio_vc.lib"
+        IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmodstudio.dll"
+        IMPORTED_IMPLIB_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmodstudio_vc.lib"
+        IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/fmodstudio.dll"
+        IMPORTED_IMPLIB_MINSIZEREL "${FMOD_LIB_DIR}/fmodstudio_vc.lib"
+    )
+elseif(UNIX AND NOT APPLE)
+    set_target_properties(fmod_studio PROPERTIES
+        IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
+        IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/libfmodstudioL.so"
+        IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/libfmodstudio.so"
+        IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/libfmodstudio.so"
+        IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/libfmodstudio.so"
+    )
+endif()
+target_include_directories(fmod_studio INTERFACE ${FMOD_INCLUDE_DIR})
+target_link_libraries(fmod_studio INTERFACE fmod)
 
 # glad
 add_library(glad STATIC
@@ -231,4 +294,3 @@ add_library(glad STATIC
 target_include_directories(glad PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/glad/include
 )
-

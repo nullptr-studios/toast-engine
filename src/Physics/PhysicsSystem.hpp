@@ -5,7 +5,9 @@
 #pragma once
 #include "Toast/Physics/ColliderFlags.hpp"
 #include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/Physics/ColliderFlags.hpp"
 
+#include <atomic>
 #include <glm/glm.hpp>
 
 namespace physics {
@@ -17,6 +19,7 @@ namespace physics {
 class Rigidbody;
 class BoxRigidbody;
 class ConvexCollider;
+class Trigger;
 class Line;
 
 class PhysicsSystem {
@@ -30,10 +33,18 @@ public:
 	static auto eps() -> double;
 	static auto eps_small() -> double;
 
+	/// @brief Call from render thread (Tick/LateTick) to update visual transforms with interpolation
+	static void UpdateVisualInterpolation();
+
+	/// @brief Get the fixed timestep in seconds (1/50 = 0.02)
+	static auto GetFixedTimestep() -> double;
+
 	static void AddRigidbody(Rigidbody* rb);
 	static void RemoveRigidbody(Rigidbody* rb);
 	static void AddCollider(ConvexCollider* c);
 	static void RemoveCollider(ConvexCollider* c);
+	static void AddTrigger(Trigger* t);
+	static void RemoveTrigger(Trigger* t);
 	static void AddBox(BoxRigidbody* rb);
 	static void RemoveBox(BoxRigidbody* rb);
 	static std::optional<RayResult> RayCollision(Line* ray, ColliderFlags flags);
@@ -55,17 +66,21 @@ private:
 	void RigidbodyPhysics(Rigidbody* rb);
 	void BoxPhysics(BoxRigidbody* rb);
 
-	 struct M {
+	struct M {
 		std::chrono::duration<double> targetFrametime { 1.0 / 50.0 };
 		unsigned char tickCount = 1;
 		std::list<Rigidbody*> rigidbodies;
 		std::list<BoxRigidbody*> boxes;
 		std::list<ConvexCollider*> colliders;
+		std::list<Trigger*> triggers;
 		glm::dvec2 gravity = { 0.0, -9.81 };
 		double positionCorrectionSlop = 1.0e-3;
 		double positionCorrectionPtc = 0.4;
 		double eps = 1.0e-6;
 		double epsSmall = 1.0e-9;
+
+		// Interpolation thingi
+		std::atomic<std::chrono::steady_clock::time_point> lastPhysicsTime { std::chrono::steady_clock::now() };
 
 		event::ListenerComponent eventListener;
 	} m;

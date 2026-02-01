@@ -6,18 +6,29 @@
 #include "Toast/Physics/Raycast.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
+#ifdef TOAST_EDITOR
 #include <imgui.h>
+#endif
 
 namespace physics {
 
 void Rigidbody::Init() {
 	PhysicsSystem::AddRigidbody(this);
+
+	// Initialize interpolation positions from the current transform
+	auto* transform = static_cast<toast::Actor*>(parent())->transform();
+	glm::vec3 worldPos = transform->worldPosition();
+	m_currentPosition = glm::dvec2(worldPos.x, worldPos.y);
+	m_previousPosition = m_currentPosition;
+	m_lastKnownTransformPos = worldPos;
+	m_hasValidPreviousPosition = true;
 }
 
 void Rigidbody::Destroy() {
 	PhysicsSystem::RemoveRigidbody(this);
 }
 
+#ifdef TOAST_EDITOR
 void Rigidbody::Inspector() {
 	ImGui::SeparatorText("Properties");
 
@@ -31,7 +42,7 @@ void Rigidbody::Inspector() {
 	ImGui::DragScalarN("Gravity Scale", ImGuiDataType_Float, &gravityScale.x, 2);
 	ImGui::DragScalar("Restitution", ImGuiDataType_Double, &restitution);
 	ImGui::DragScalar("Restitution Threshold", ImGuiDataType_Double, &restitutionThreshold);
-	ImGui::DragScalarN("Drag", ImGuiDataType_Double, &drag.x, 2);
+	ImGui::DragScalarN("Drag", ImGuiDataType_Float, &drag.x, 2);
 
 	ImGui::Spacing();
 	ImGui::DragScalarN("Minimum Velocity", ImGuiDataType_Double, &minimumVelocity.x, 2);
@@ -53,20 +64,32 @@ void Rigidbody::Inspector() {
 	bool enemy_flag = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
 
 	if (ImGui::Checkbox("Default", &default_flag)) {
-		if (default_flag) cur |= static_cast<unsigned int>(ColliderFlags::Default);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Default);
+		if (default_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Default);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Default);
+		}
 	}
 	if (ImGui::Checkbox("Ground", &ground_flag)) {
-		if (ground_flag) cur |= static_cast<unsigned int>(ColliderFlags::Ground);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Ground);
+		if (ground_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Ground);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Ground);
+		}
 	}
 	if (ImGui::Checkbox("Enemy", &enemy_flag)) {
-		if (enemy_flag) cur |= static_cast<unsigned int>(ColliderFlags::Enemy);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Enemy);
+		if (enemy_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Enemy);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Enemy);
+		}
 	}
 	if (ImGui::Checkbox("Player", &player_flag)) {
-		if (player_flag) cur |= static_cast<unsigned int>(ColliderFlags::Player);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
+		if (player_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Player);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
+		}
 	}
 
 	flags = static_cast<ColliderFlags>(cur);
@@ -94,8 +117,8 @@ void Rigidbody::EditorTick() {
 		return;
 	}
 	renderer::DebugCircle(GetPosition(), radius, debug.defaultColor);
-
 }
+#endif
 
 json_t Rigidbody::Save() const {
 	json_t j = Component::Save();
@@ -159,17 +182,79 @@ void Rigidbody::Load(json_t j, bool propagate) {
 }
 
 glm::dvec2 Rigidbody::GetPosition() const {
-	return static_cast<toast::Actor*>(parent())->transform()->worldPosition();
+	return m_currentPosition;
 }
 
 void Rigidbody::SetPosition(glm::dvec2 pos) {
+	m_currentPosition = pos;
+
+	// Initialize previous position on first call to avoid teleporting
+	if (!m_hasValidPreviousPosition) {
+		m_previousPosition = pos;
+		m_hasValidPreviousPosition = true;
+	}
+
+	//@Note: Visual transform is updated by PhysicsSystem::UpdateVisualInterpolation()
+}
+
+glm::dvec2 Rigidbody::GetInterpolatedPosition() const {
+	if (!m_hasValidPreviousPosition) {
+		return m_currentPosition;
+	}
+	return glm::mix(m_previousPosition, m_currentPosition, s_interpolationAlpha);
+}
+
+void Rigidbody::StorePreviousPosition() {
+	m_previousPosition = m_currentPosition;
+	m_hasValidPreviousPosition = true;
+}
+
+void Rigidbody::UpdateVisualTransform() {
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
-	float z = transform->worldPosition().z;
-	transform->worldPosition({ pos.x, pos.y, z });
+	glm::vec3 currentTransformPos = transform->worldPosition();
+	float z = currentTransformPos.z;
+
+	// Check if transform was manually modified
+	const double epsilon = 1e-6;
+	bool transformManuallyChanged =
+	    std::abs(currentTransformPos.x - m_lastKnownTransformPos.x) > epsilon || std::abs(currentTransformPos.y - m_lastKnownTransformPos.y) > epsilon;
+
+	if (transformManuallyChanged) {
+		SyncFromTransform();
+	} else {
+		// interp
+		glm::dvec2 interpPos = GetInterpolatedPosition();
+		glm::vec3 newPos = { interpPos.x, interpPos.y, z };
+		transform->worldPosition(newPos);
+		m_lastKnownTransformPos = newPos;
+	}
+}
+
+void Rigidbody::SyncFromTransform() {
+	auto* transform = static_cast<toast::Actor*>(parent())->transform();
+	glm::vec3 worldPos = transform->worldPosition();
+
+	// Update rigidbody position to match transform
+	m_currentPosition = glm::dvec2(worldPos.x, worldPos.y);
+	m_previousPosition = m_currentPosition;
+	m_lastKnownTransformPos = worldPos;
+	m_hasValidPreviousPosition = true;
+
+	// velocity = { 0.0, 0.0 };
+}
+
+void Rigidbody::UpdateInterpolationAlpha(double alpha) {
+	s_interpolationAlpha = glm::clamp(alpha, 0.0, 1.0);
+}
+
+double Rigidbody::GetInterpolationAlpha() {
+	return s_interpolationAlpha;
 }
 
 void Rigidbody::AddForce(glm::dvec2 force) {
+	forcesMutex.lock();
 	forces.emplace_back(force);
+	forcesMutex.unlock();
 }
 
 }

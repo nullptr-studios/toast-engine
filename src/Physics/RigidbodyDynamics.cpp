@@ -1,16 +1,17 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "RigidbodyDynamics.hpp"
+
 #include "ConvexCollider.hpp"
 #include "PhysicsSystem.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Physics/Rigidbody.hpp"
+#include "Toast/Physics/Trigger.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 #include "Toast/Time.hpp"
 #include "glm/gtx/norm.hpp"
 
 #include <glm/glm.hpp>
-
 
 namespace physics {
 using namespace glm;
@@ -33,22 +34,26 @@ void RbKinematics(Rigidbody* rb) {
 	}
 
 	// Sum forces
-	glm::dvec2 forces_sum = std::ranges::fold_left(rb->forces, glm::dvec2(0.0), std::plus {});
+	// Copy and clear under lock
+	std::deque<glm::dvec2> local_forces {};
+	{
+		std::lock_guard lock(rb->forcesMutex);
+		local_forces.swap(rb->forces);
+	}
+
+	glm::dvec2 forces_sum = std::accumulate(local_forces.begin(), local_forces.end(), glm::dvec2(0.0), std::plus());
 	glm::dvec2 accel = (forces_sum / rb->mass) + (PhysicsSystem::gravity() * dvec2 { rb->gravityScale });
 
 	// Integrate velocity
 	velocity += accel * Time::fixed_delta();
 
 	// Apply drag
-	const dvec2 damping = exp(dvec2{-rb->drag} * Time::fixed_delta());
+	const dvec2 damping = exp(dvec2 { -rb->drag } * Time::fixed_delta());
 	velocity *= damping;
 
-	if (all(lessThan(abs(velocity), dvec2{rb->minimumVelocity}))) {
+	if (all(lessThan(abs(velocity), dvec2 { rb->minimumVelocity }))) {
 		velocity = { 0.0, 0.0 };
 	}
-
-	// Remove the forces after integrating
-	rb->forces.clear();
 }
 
 void RbIntegration(Rigidbody* rb) {
@@ -156,14 +161,14 @@ void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
 	rb2->SetPosition(position2);
 
 	// Velocity correction
-	auto velocity_correction = [&](Rigidbody* rb, dvec2 v)-> dvec2 {
+	auto velocity_correction = [&](Rigidbody* rb, dvec2 v) -> dvec2 {
 		double normal_velocity = dot(v, normal);
 		if (std::abs(normal_velocity) < rb->minimumVelocity.y) {
 			// Kill tiny normal velocity
 			v -= normal_velocity * normal;
 		}
 
-		if (all(lessThan(abs(v), dvec2{rb->minimumVelocity}))) {
+		if (all(lessThan(abs(v), dvec2 { rb->minimumVelocity }))) {
 			v = { 0.0, 0.0 };
 		}
 
@@ -306,7 +311,7 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	rb->SetPosition(position);
 
 	// velocity correction
-	normal_speed = glm::dot(velocity, manifold.normal); // update normal speed
+	normal_speed = glm::dot(velocity, manifold.normal);    // update normal speed
 	if (normal_speed < 0.0) {
 		velocity -= normal_speed * manifold.normal;
 	}
@@ -315,12 +320,11 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	if (std::abs(normal_speed) < rb->minimumVelocity.y) {
 		velocity -= normal_speed * manifold.normal;
 	}
-	if (all(lessThan(abs(velocity), dvec2{rb->minimumVelocity}))) {
+	if (all(lessThan(abs(velocity), dvec2 { rb->minimumVelocity }))) {
 		velocity = { 0.0, 0.0 };
 	}
 
 	rb->velocity = velocity;
-
 }
 
 std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
@@ -330,19 +334,71 @@ std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 	t = clamp(t, 0.0, 1.0);
 	dvec2 closest_point = ray->p1 + t * line;
 
-	if (length2(closest_point - rb->GetPosition()) > rb->radius * rb->radius)
+	if (length2(closest_point - rb->GetPosition()) > rb->radius * rb->radius) {
 		return std::nullopt;
+	}
 
 	double distance = std::max(0.0, rb->radius - length(closest_point - rb->GetPosition()));
 
 	dvec2 pt1 = closest_point - ray->tangent * distance;
 	dvec2 pt2 = closest_point + ray->tangent * distance;
-	if (length2(pt2 - ray->p1) > length2(pt1 - ray->p1))
+	if (length2(pt2 - ray->p1) > length2(pt1 - ray->p1)) {
 		result = pt1;
-	else
+	} else {
 		result = pt2;
+	}
 
 	return result;
+}
+
+void RbTriggerCollision(Rigidbody* rb1, Trigger* t) {
+	// calculate points
+	const auto& tr = t->transform();
+	double left = tr->worldPosition().x - (tr->scale().x / 2);
+	double right = tr->worldPosition().x + (tr->scale().x / 2);
+	double top = tr->worldPosition().y + (tr->scale().y / 2);
+	double bottom = tr->worldPosition().y - (tr->scale().y / 2);
+
+	const auto& pos = rb1->GetPosition();
+	const double scl = rb1->radius;
+	float x_min = pos.x - scl;
+	float y_min = pos.y - scl;
+	float x_max = pos.x + scl;
+	float y_max = pos.y + scl;
+
+	// Actual collision check
+	if (x_min > right || x_max < left) {
+		goto NO_COLLISION;    // NOLINT
+	}
+	if (y_min > top || y_max < bottom) {
+		goto NO_COLLISION;    // NOLINT
+	}
+
+	// Dont dispatch callback if the rigidbody is already there
+	if (std::ranges::find(t->rigidbodies, rb1) != t->rigidbodies.end()) {
+		return;
+	}
+
+	t->rigidbodies.emplace_back(rb1);
+	t->enterCallback(rb1->parent());
+	t->m.color = t->debug.collideColor;
+
+	if (t->debug.log) {
+		TOAST_INFO("{} entered the trigger {}", rb1->parent()->name(), t->name());
+	}
+	return;
+
+NO_COLLISION:
+	if (std::ranges::find(t->rigidbodies, rb1) != t->rigidbodies.end()) {
+		t->rigidbodies.remove(rb1);
+		t->exitCallback(rb1->parent());
+		if (t->rigidbodies.empty()) {
+			t->m.color = t->debug.defaultColor;
+		}
+		if (t->debug.log) {
+			TOAST_INFO("{} exited the trigger {}", rb1->parent()->name(), t->name());
+		}
+	}
 }
 
 }

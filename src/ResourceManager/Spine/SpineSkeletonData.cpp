@@ -21,7 +21,7 @@ void SpineSkeletonData::Load() {
 	SetResourceState(resource::ResourceState::LOADING);
 
 	std::vector<uint8_t> buffer {};
-	resource::ResourceManager::GetInstance()->OpenFile(m_path, buffer);
+	resource::Open(m_path, buffer);
 
 	if (m_path.ends_with("l")) {
 		// .skel file

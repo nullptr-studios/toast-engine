@@ -47,17 +47,41 @@ protected:
 	Action() = default;
 	static auto create(std::string_view name, const sol::object& obj) noexcept -> std::optional<Action<Value>>;
 
+	// Check if all pressed keys are transient mouse inputs (scroll/position/delta)
+	bool HasOnlyTransientInputs() const {
+		if (m.pressedKeys.empty()) {
+			return false;
+		}
+		for (const auto& [key, _] : m.pressedKeys) {
+			// Transient inputs are mouse codes >= MOUSE_DELTA_CODE
+			if (key < MOUSE_DELTA_CODE) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/// @brief Called each frame to update the action value and determine the correct state
 	void CalculateValue() {
+		// If no keys are pressed, set value to zero and mark as finished
 		if (m.pressedKeys.empty()) {
 			value = static_cast<Value>(0);
-			state = Finished;
+			// Only transition to Finished if we were active (Started or Ongoing)
+			// This prevents spamming Finished events when already inactive
+			if (state == Started || state == Ongoing) {
+				state = Finished;
+			}
+			return;
 		}
 
+		// Sum all pressed key values to get the final action value
+		// For boolean actions, this is just "is any key pressed?"
+		// For 1D/2D actions, this combines directional inputs (e.g., WASD, analog sticks)
 		value = std::accumulate(m.pressedKeys.begin(), m.pressedKeys.end(), static_cast<Value>(0.0f), [](Value a, const std::pair<int, Value>& pair) {
 			return a + pair.second;
 		});
 
-		// Clamp the values after the addition so it's always
+		// Prevent values from exceeding valid bounds
 		if constexpr (std::is_same_v<Value, float>) {
 			constexpr float MIN = -1.0f;
 			constexpr float MAX = 1.0f;
@@ -68,11 +92,20 @@ protected:
 			value = glm::clamp(value, min, max);
 		}
 
+		// Mouse position/delta/scroll are one-frame events
+		// They should always be Ongoing, never Started
+		if (HasOnlyTransientInputs()) {
+			state = Ongoing;
+			return;
+		}
+
+		// Update Action State
 		if (state == Finished || state == Null) {
 			state = Started;
-		} else {
+		} else if (state == Started) {
 			state = Ongoing;
 		}
+		// If already Ongoing, stay Ongoing
 	}
 
 	/// Checks if this action should happen on the current InputSystem State

@@ -290,14 +290,14 @@ void Object::Children::_ConfigureObject(Object* obj, const std::optional<std::st
 		obj->Load(*file);
 	}
 
-	// Add to begin queue
-	World::ScheduleBegin(obj);
-
 	// Run initialization
 	obj->_Init();
 	if (!file.has_value()) {
 		obj->enabled(true);
 	}
+
+	// Add to begin queue
+	World::ScheduleBegin(obj);
 }
 
 void Object::Children::Remove(unsigned id) {
@@ -460,7 +460,7 @@ void Object::_Destroy() {
 }
 
 void Object::_PhysTick() {
-	if (!enabled() | !m_hasRunBegin) {
+	if (!enabled() || !m_hasRunBegin) {
 		return;
 	}
 

@@ -55,7 +55,7 @@ void Texture::Load() {
 	SetResourceState(resource::ResourceState::LOADING);
 
 	std::vector<uint8_t> f {};
-	if (!resource::ResourceManager::GetInstance()->OpenFile(m_path, f)) {
+	if (!resource::Open(m_path, f)) {
 		TOAST_ERROR("Failed to load texture: {0}", m_path);
 		SetResourceState(resource::ResourceState::FAILED);
 		return;
@@ -86,44 +86,41 @@ void Texture::Load() {
 
 // Load OpenGl on the main thread
 void Texture::LoadMainThread() {
-	if (GetResourceState() != resource::ResourceState::FAILED)
+	if (GetResourceState() != resource::ResourceState::FAILED) {
 		CreateOpenGLTexture();
-	else
-		LoadPlaceholderTexture(); // Load a placeholder texture if loading failed
+	} else {
+		LoadPlaceholderTexture();    // Load a placeholder texture if loading failed
+	}
 }
 
-void Texture::LoadPlaceholderTexture()
-{
+void Texture::LoadPlaceholderTexture() {
 	// generate a raw array of pixeles and upload directly to opengl
 	// generate a checkerdoabr purple and black pattern 32x32
 	constexpr int size = 32;
 	constexpr int channels = 4;
 	unsigned char pixels[size * size * channels];
-	for (int y = 0; y < size; ++y)
-	{
-		for (int x = 0; x < size; ++x)
-		{
+	for (int y = 0; y < size; ++y) {
+		for (int x = 0; x < size; ++x) {
 			int index = (y * size + x) * channels;
 			if (((x / 4) + (y / 4)) % 2 == 0) {
 				// purple
-				pixels[index + 0] = 255; // R
-				pixels[index + 1] = 0;   // G
-				pixels[index + 2] = 255; // B
-				pixels[index + 3] = 255; // A
-			} else
-			{
+				pixels[index + 0] = 255;    // R
+				pixels[index + 1] = 0;      // G
+				pixels[index + 2] = 255;    // B
+				pixels[index + 3] = 255;    // A
+			} else {
 				// black
-				pixels[index + 0] = 0;   // R
-				pixels[index + 1] = 0;   // G
-				pixels[index + 2] = 0;   // B
-				pixels[index + 3] = 255; // A
+				pixels[index + 0] = 0;      // R
+				pixels[index + 1] = 0;      // G
+				pixels[index + 2] = 0;      // B
+				pixels[index + 3] = 255;    // A
 			}
 		}
 	}
 	m_width = size;
 	m_height = size;
 	m_channels = channels;
-	
+
 	// Create OpenGL texture
 	glActiveTexture(GL_TEXTURE0);
 	glGenTextures(1, const_cast<GLuint*>(&m_textureId));
@@ -139,7 +136,7 @@ void Texture::LoadPlaceholderTexture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-	
+
 	// No CPU pixel data to free since we generated it here
 }
 

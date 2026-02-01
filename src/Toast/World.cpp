@@ -8,6 +8,10 @@
 #include "Toast/SimulateWorldEvent.hpp"
 #include "Toast/ThreadPool.hpp"
 
+#include <functional>
+#include <future>
+#include <memory>
+
 namespace toast {
 
 World* World::m_instance = nullptr;
@@ -150,9 +154,12 @@ Object* World::New(const std::string& type, const std::optional<std::string>& na
 	return obj;
 }
 
-void World::LoadScene(std::string_view path) {
+auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
+	std::shared_ptr<std::promise<unsigned>> promis = std::make_shared<std::promise<unsigned>>();
+	std::future<unsigned> futur = promis->get_future();
 	std::string p { path };
-	Instance()->m.threadPool->QueueJob([path = p] {
+	std::function<void()> llambda = []() mutable { };
+	Instance()->m.threadPool->QueueJob([path = p, promis] {
 		// Load scene file
 		json_t j;
 		try {
@@ -200,7 +207,9 @@ void World::LoadScene(std::string_view path) {
 
 		auto* e = new SceneLoadedEvent { scene_id, scene_name };
 		event::Send(reinterpret_cast<event::IEvent*>(e));
+		promis->set_value(scene_id);
 	});
+	return futur;
 }
 
 void World::LoadSceneSync(std::string_view path) {
@@ -519,9 +528,9 @@ void World::CancelBegin(Object* obj) {
 		return;
 	}
 	auto* w = Instance();
+	std::lock_guard lock(w->m.queueMutex);
 	const auto it = std::ranges::find(w->m.beginQueue, obj);
 	if (it != w->m.beginQueue.end()) {
-		std::lock_guard lock(w->m.queueMutex);
 		w->m.beginQueue.erase(it);
 	}
 }
@@ -532,7 +541,10 @@ void World::ScheduleDestroy(Object* obj) {
 	}
 	auto* w = Instance();
 	std::lock_guard lock(w->m.queueMutex);
-	w->m.destroyQueue.push_back(obj);
+	// Avoid double-scheduling the same object for destruction
+	if (std::ranges::find(w->m.destroyQueue, obj) == w->m.destroyQueue.end()) {
+		w->m.destroyQueue.push_back(obj);
+	}
 }
 
 const std::list<Object*>& World::begin_queue() const {

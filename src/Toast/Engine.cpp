@@ -1,6 +1,8 @@
 #include "Toast/Engine.hpp"
 
+#include "Audio/AudioSystem.hpp"
 #include "Event/EventSystem.hpp"
+#include "ForceLink.cpp"
 #include "Input/InputSystem.hpp"
 #include "Physics/PhysicsSystem.hpp"
 #include "Toast/Factory.hpp"
@@ -24,7 +26,7 @@
 namespace toast {
 
 Engine* Engine::m_instance;
-float Engine::purge_timer = 0.0f;
+double Engine::purge_timer = 0.0;
 
 struct Engine::Pimpl {
 	std::unique_ptr<Time> time;
@@ -38,6 +40,7 @@ struct Engine::Pimpl {
 	std::unique_ptr<resource::ResourceManager> resourceManager;
 	std::unique_ptr<ProjectSettings> projectSettings;
 	std::unique_ptr<physics::PhysicsSystem> physicsSystem;
+	audio::AudioSystem* audioSystem;
 };
 
 void Engine::Run(int argc, char** argv) {
@@ -83,6 +86,10 @@ void Engine::Run(int argc, char** argv) {
 		m->inputSystem->Tick();
 
 		world->EarlyTick();
+
+		// Interpolate rb transforms before rendering
+		physics::PhysicsSystem::UpdateVisualInterpolation();
+
 		world->Tick();
 		world->LateTick();
 
@@ -101,6 +108,8 @@ void Engine::Run(int argc, char** argv) {
 		m->renderer->EndImGuiFrame();
 #endif
 
+		m->audioSystem->Tick();
+
 		// Swap after all rendering and UI is done
 		window->SwapBuffers();
 
@@ -109,13 +118,13 @@ void Engine::Run(int argc, char** argv) {
 
 		m_windowShouldClose.store(window->ShouldClose(), std::memory_order_relaxed);
 
-		// Purge unused resources from the cache
-		if (purge_timer >= 120.0f) {
-			purge_timer = 0.0f;
+		// Purge unused resources from the cache (every 120 seconds)
+		const double current_uptime = Time::uptime();
+		if (current_uptime - purge_timer >= 120.0) {
+			purge_timer = current_uptime;
 			TOAST_TRACE("Purging unused resources...");
-			m->resourceManager->PurgeResources();
+			resource::PurgeResources();
 		}
-		purge_timer += Time::delta();
 
 		PROFILE_FRAME;
 	}
@@ -171,10 +180,15 @@ void Engine::Init() {
 	m->factory = std::make_unique<Factory>();
 
 	// Imguilayer testing purposes
-	m->layerStack->PushLayer(new renderer::DebugDrawLayer());
+	m->layerStack->PushOverlay(new renderer::DebugDrawLayer());
 
 	// Physics System
 	m->physicsSystem = std::make_unique<physics::PhysicsSystem>();
+
+	// Audio
+	auto audio_result = audio::AudioSystem::create();
+	TOAST_ASSERT(audio_result, "Failed to initialize Audio System");
+	m->audioSystem = audio_result.value();
 
 	Begin();
 }
@@ -191,7 +205,8 @@ void Engine::Close() {
 }
 
 void Engine::ForcePurgeResources() {
-	purge_timer = UINT8_MAX;
+	// Force purge by setting timer to a very old value
+	purge_timer = -200.0;
 }
 
 }

@@ -5,7 +5,9 @@
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
+#ifdef TOAST_EDITOR
 #include <imgui.h>
+#endif
 
 using namespace physics;
 
@@ -238,6 +240,7 @@ void Collider::Destroy() {
 	}
 }
 
+#ifdef TOAST_EDITOR
 #pragma region EDITOR
 
 void Collider::Inspector() {
@@ -257,20 +260,32 @@ void Collider::Inspector() {
 	bool enemy_flag = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
 
 	if (ImGui::Checkbox("Default", &default_flag)) {
-		if (default_flag) cur |= static_cast<unsigned int>(ColliderFlags::Default);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Default);
+		if (default_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Default);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Default);
+		}
 	}
 	if (ImGui::Checkbox("Ground", &ground_flag)) {
-		if (ground_flag) cur |= static_cast<unsigned int>(ColliderFlags::Ground);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Ground);
+		if (ground_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Ground);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Ground);
+		}
 	}
 	if (ImGui::Checkbox("Enemy", &enemy_flag)) {
-		if (enemy_flag) cur |= static_cast<unsigned int>(ColliderFlags::Enemy);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Enemy);
+		if (enemy_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Enemy);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Enemy);
+		}
 	}
 	if (ImGui::Checkbox("Player", &player_flag)) {
-		if (player_flag) cur |= static_cast<unsigned int>(ColliderFlags::Player);
-		else cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
+		if (player_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Player);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
+		}
 	}
 
 	m.flags = static_cast<ColliderFlags>(cur);
@@ -278,7 +293,6 @@ void Collider::Inspector() {
 	for (auto* c : m.convexShapes) {
 		c->flags = static_cast<ColliderFlags>(cur);
 	}
-
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Points");
@@ -373,6 +387,7 @@ void Collider::EditorTick() {
 }
 
 #pragma endregion
+#endif
 
 json_t Collider::Save() const {
 	json_t j = Component::Save();
@@ -418,8 +433,13 @@ void Collider::Load(json_t j, bool propagate) {
 	if (j.contains("debug.showNormals")) {
 		data.debugNormals = j["debug.showNormals"];
 	}
+
 	if (j.contains("flags")) {
-		m.flags = static_cast<ColliderFlags>(j["flags"].get<unsigned int>());
+		for (auto* c : m.convexShapes) {
+			c->flags = static_cast<ColliderFlags>(j["flags"]);
+		}
+		m.flags = static_cast<ColliderFlags>(j["flags"]);
+		data.flags = static_cast<ColliderFlags>(j["flags"]);
 	}
 
 	Component::Load(j, propagate);
