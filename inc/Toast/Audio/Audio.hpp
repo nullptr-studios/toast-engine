@@ -3,9 +3,8 @@
 
 #pragma once
 
-#include <Toast/Audio/AudioError.hpp>
 #include <Toast/Audio/AudioData.hpp>
-
+#include <Toast/Audio/AudioError.hpp>
 #include <expected>
 #include <glm/vec3.hpp>
 #include <span>
@@ -47,31 +46,31 @@ auto is_muted() -> bool;
 
 /// @brief Low-level (FMOD Core) API for raw sound playback.
 namespace core {
-	/// @brief Loads a sound into the core cache.
-	auto load(Data& audio_data) -> std::expected<void, AudioError>;
+/// @brief Loads a sound into the core cache.
+auto load(Data& audio_data) -> std::expected<void, AudioError>;
 
-	/// @brief Plays a loaded sound.
-	auto play(const Data& audio_data) -> std::expected<void, AudioError>;
+/// @brief Plays a loaded sound.
+auto play(const Data& audio_data) -> std::expected<void, AudioError>;
 
-	/// @brief Stops a looping sound if currently playing.
-	auto stop(const Data& audio_data) -> std::expected<void, AudioError>;
+/// @brief Stops a looping sound if currently playing.
+auto stop(const Data& audio_data) -> std::expected<void, AudioError>;
 
-	/// @brief Updates a playing sound's volume, optionally with fade.
-	auto update_volume(Data& audio_data, float new_volume, unsigned int fade_length = 0) -> std::expected<void, AudioError>;
+/// @brief Updates a playing sound's volume, optionally with fade.
+auto update_volume(Data& audio_data, float new_volume, unsigned int fade_length = 0) -> std::expected<void, AudioError>;
 
-	/// @brief Updates a playing sound's 3D position.
-	auto update_position(Data& audio_data) -> std::expected<void, AudioError>;
+/// @brief Updates a playing sound's 3D position.
+auto update_position(Data& audio_data) -> std::expected<void, AudioError>;
 
-	/// @brief Checks if a looping sound is currently playing.
-	[[nodiscard]]
-	auto is_playing(const Data& audio_data) -> bool;
+/// @brief Checks if a looping sound is currently playing.
+[[nodiscard]]
+auto is_playing(const Data& audio_data) -> bool;
 
-	/// @brief Sets the listener transform for 3D audio.
-	auto set_listener(glm::vec3 pos, glm::vec3 forward, glm::vec3 up) -> void;
+/// @brief Sets the listener transform for 3D audio.
+auto set_listener(glm::vec3 pos, glm::vec3 forward, glm::vec3 up) -> void;
 
-	/// @brief Returns the length of a loaded sound in milliseconds.
-	[[nodiscard]]
-	auto get_length(const Data& audio_data) -> unsigned int;
+/// @brief Returns the length of a loaded sound in milliseconds.
+[[nodiscard]]
+auto get_length(const Data& audio_data) -> unsigned int;
 }
 
 }    // namespace audio

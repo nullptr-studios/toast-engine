@@ -1,9 +1,9 @@
 /// @file Audio.cpp
 /// @date 30 Jan 2026
 
-#include <Toast/Audio/Audio.hpp>
-
 #include "AudioSystem.hpp"
+
+#include <Toast/Audio/Audio.hpp>
 
 namespace audio {
 
@@ -81,6 +81,6 @@ auto get_length(const Data& audio_data) -> unsigned int {
 	return AudioSystem::get()->core.get_length(audio_data);
 }
 
-} // namespace core
+}    // namespace core
 
-} // namespace audio
+}    // namespace audio

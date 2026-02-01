@@ -2,9 +2,9 @@
 
 #include "AudioSystem.hpp"
 
-#include <fmod_errors.h>
 #include <Toast/Log.hpp>
 #include <Toast/Profiler.hpp>
+#include <fmod_errors.h>
 
 audio::AudioSystem* audio::AudioSystem::m_instance = nullptr;
 
@@ -67,7 +67,7 @@ auto audio::AudioSystem::CoreSystem::load(Data& audio_data) -> std::expected<voi
 		audio_data.SetLoaded(true);
 		return {};
 	}
-	
+
 	TOAST_WARN("[AudioSystem] Sound File was already loaded!");
 	return std::unexpected(AudioError::AlreadyLoaded);
 }
@@ -77,7 +77,7 @@ auto audio::AudioSystem::CoreSystem::play(const Data& audio_data) -> std::expect
 		TOAST_ERROR("[AudioSystem] Can't play, sound was not loaded yet from {}", audio_data.GetFilePath());
 		return std::unexpected(AudioError::NotLoaded);
 	}
-	
+
 	TOAST_INFO("[AudioSystem] Playing Sound: {}", audio_data.GetUniqueID());
 	FMOD::Channel* channel;
 	// Start paused to configure 3D position and volume before playback begins
@@ -106,7 +106,7 @@ auto audio::AudioSystem::CoreSystem::stop(const Data& audio_data) -> std::expect
 		TOAST_WARN("[AudioSystem] Can't stop a looping sound that's not playing!");
 		return std::unexpected(AudioError::NotPlaying);
 	}
-	
+
 	TOAST_INFO("[AudioSystem] Stopping sound {}", audio_data.GetUniqueID());
 	ERRCHECK(owner->m.loops_playing[audio_data.GetUniqueID()]->stop());
 	owner->m.loops_playing.erase(audio_data.GetUniqueID());
@@ -118,7 +118,7 @@ auto audio::AudioSystem::CoreSystem::update_volume(Data& audio_data, float new_v
 		TOAST_WARN("[AudioSystem] Can't update sound loop volume! (It isn't playing or might not be loaded)");
 		return std::unexpected(AudioError::NotPlaying);
 	}
-	
+
 	FMOD::Channel* channel = owner->m.loops_playing[audio_data.GetUniqueID()];
 	// Use instant volume change for short fades since FMOD's default is 64 samples anyway
 	if (fade_length <= 64) {
@@ -139,7 +139,7 @@ auto audio::AudioSystem::CoreSystem::update_volume(Data& audio_data, float new_v
 		ERRCHECK(channel->addFadePoint(parentclock, audio_data.GetVolume()));
 		ERRCHECK(channel->addFadePoint(parentclock + fade_length, target_fade_vol));
 	}
-	
+
 	audio_data.SetVolume(new_volume);
 	return {};
 }
@@ -149,7 +149,7 @@ auto audio::AudioSystem::CoreSystem::update_position(Data& audio_data) -> std::e
 		TOAST_WARN("[AudioSystem] Can't update sound position!");
 		return std::unexpected(AudioError::NotPlaying);
 	}
-	
+
 	owner->set_3d_channel_position(audio_data, owner->m.loops_playing[audio_data.GetUniqueID()]);
 	return {};
 }
@@ -183,9 +183,8 @@ auto audio::AudioSystem::load_bank(std::string_view filepath) -> std::expected<v
 	return {};
 }
 
-auto audio::AudioSystem::load_event(
-    std::string_view name, std::span<const std::pair<std::string_view, float>> params
-) -> std::expected<void, AudioError> {
+auto audio::AudioSystem::load_event(std::string_view name, std::span<const std::pair<std::string_view, float>> params)
+    -> std::expected<void, AudioError> {
 	PROFILE_ZONE;
 	TOAST_INFO("[AudioSystem] Loading FMOD Studio Event {}", name);
 	FMOD::Studio::EventDescription* event_description = nullptr;
@@ -209,7 +208,7 @@ auto audio::AudioSystem::set_param(std::string_view event_name, std::string_view
 		TOAST_ERROR("[AudioSystem] Event {} was not in event instance cache, can't set param", event_name);
 		return std::unexpected(AudioError::EventNotFound);
 	}
-	
+
 	ERRCHECK(m.event_instances[std::string(event_name)]->setParameterByName(std::string(param_name).c_str(), value));
 	return {};
 }
@@ -219,7 +218,7 @@ auto audio::AudioSystem::play(std::string_view event_name) -> std::expected<void
 		TOAST_ERROR("[AudioSystem] Event {} was not in event instance cache, cannot play", event_name);
 		return std::unexpected(AudioError::EventNotFound);
 	}
-	
+
 	ERRCHECK(m.event_instances[std::string(event_name)]->start());
 	return {};
 }
@@ -229,7 +228,7 @@ auto audio::AudioSystem::stop(std::string_view event_name) -> std::expected<void
 		TOAST_ERROR("[AudioSystem] Event {} was not in event instance cache, cannot stop", event_name);
 		return std::unexpected(AudioError::EventNotFound);
 	}
-	
+
 	ERRCHECK(m.event_instances[std::string(event_name)]->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT));
 	return {};
 }
@@ -239,7 +238,7 @@ auto audio::AudioSystem::set_volume(std::string_view event_name, float volume) -
 		TOAST_ERROR("[AudioSystem] Event {} was not in event instance cache, can't set volume", event_name);
 		return std::unexpected(AudioError::EventNotFound);
 	}
-	
+
 	TOAST_INFO("[AudioSystem] Setting Event Volume");
 	ERRCHECK(m.event_instances[std::string(event_name)]->setVolume(volume));
 	return {};
@@ -249,7 +248,7 @@ auto audio::AudioSystem::is_playing(std::string_view event_name) const -> bool {
 	if (!m.event_instances.contains(std::string(event_name))) {
 		return false;
 	}
-	
+
 	FMOD_STUDIO_PLAYBACK_STATE playback_state;
 	ERRCHECK(m.event_instances.at(std::string(event_name))->getPlaybackState(&playback_state));
 	return playback_state == FMOD_STUDIO_PLAYBACK_PLAYING;
@@ -278,10 +277,10 @@ auto audio::AudioSystem::is_loaded(const Data& audio_data) const -> bool {
 
 auto audio::AudioSystem::set_3d_channel_position(const Data& audio_data, FMOD::Channel* channel) const -> void {
 	FMOD_VECTOR position = { audio_data.GetPosition().x * DISTANCE_FACTOR,
-	                       audio_data.GetPosition().y * DISTANCE_FACTOR,
-	                       audio_data.GetPosition().z * DISTANCE_FACTOR };
+		                       audio_data.GetPosition().y * DISTANCE_FACTOR,
+		                       audio_data.GetPosition().z * DISTANCE_FACTOR };
 
-	FMOD_VECTOR velocity = { 0.0f, 0.0f, 0.0f }; // TODO: Add doppler eventually
+	FMOD_VECTOR velocity = { 0.0f, 0.0f, 0.0f };    // TODO: Add doppler eventually
 	ERRCHECK(channel->set3DAttributes(&position, &velocity));
 }
 
@@ -308,10 +307,10 @@ auto audio::AudioSystem::debug_event_info(const FMOD::Studio::EventDescription* 
 	ERRCHECK(event_desc->isOneshot(&is_oneshot));
 
 	TOAST_INFO(
-		"FMOD EventDescription has {} parameter descriptions, {} 3D, {} oneshot, {} valid.",
-		params,
-		is_3d ? "is" : "isn't",
-		is_oneshot ? "is" : "isn't",
-		event_desc->isValid() ? "is" : "isn't"
+	    "FMOD EventDescription has {} parameter descriptions, {} 3D, {} oneshot, {} valid.",
+	    params,
+	    is_3d ? "is" : "isn't",
+	    is_oneshot ? "is" : "isn't",
+	    event_desc->isValid() ? "is" : "isn't"
 	);
 }

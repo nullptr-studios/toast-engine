@@ -13,7 +13,11 @@ namespace audio {
 class Data {
 public:
 	explicit Data(const char* filePath, bool loop = false, bool is3D = false, float reverbAmount = 0.0f, glm::vec3 position = { 0.0f, 0.0f, 0.0f })
-			: filePath(filePath), loop(loop), is3D(is3D), reverbAmount(reverbAmount), position(position) {
+	    : filePath(filePath),
+	      loop(loop),
+	      is3D(is3D),
+	      reverbAmount(reverbAmount),
+	      position(position) {
 		uniqueID = filePath;
 	}
 
@@ -80,7 +84,7 @@ private:
 	bool is3D;
 	unsigned int lengthMS = 0;
 	float reverbAmount;
-	glm::vec3 position{};
+	glm::vec3 position {};
 };
 
 }

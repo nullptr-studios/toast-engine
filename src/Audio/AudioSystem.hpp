@@ -6,11 +6,11 @@
 #include <Toast/Audio/AudioData.hpp>
 #include <Toast/Audio/AudioError.hpp>
 #include <expected>
-#include <string_view>
-#include <span>
-#include <memory>
 #include <fmod.hpp>
 #include <fmod_studio.hpp>
+#include <memory>
+#include <span>
+#include <string_view>
 
 /**
  * @brief Error Handling Function for FMOD Errors
@@ -58,7 +58,7 @@ public:
 	// Audio Control
 	[[nodiscard]]
 	auto is_muted() const noexcept -> bool;
-	
+
 	auto mute_all() -> AudioSystem&;
 	auto unmute_all() -> AudioSystem&;
 
@@ -68,7 +68,8 @@ public:
 	// FMOD Core Low-Level Audio System
 	struct CoreSystem {
 		AudioSystem* owner = nullptr;
-		explicit CoreSystem(AudioSystem* system) : owner(system) {}
+
+		explicit CoreSystem(AudioSystem* system) : owner(system) { }
 
 		/// @brief Loads a sound from disk with specified settings
 		auto load(Data& audio_data) -> std::expected<void, AudioError>;
@@ -95,23 +96,23 @@ public:
 		/// @brief Gets the length of an audio file in milliseconds
 		[[nodiscard]]
 		auto get_length(const Data& audio_data) const -> unsigned int;
-	} core{ this };
+	} core { this };
 
 private:
 	AudioSystem() = default;
 	~AudioSystem() = default;
-	
+
 	// Non-copyable, non-movable singleton
 	AudioSystem(const AudioSystem&) = delete;
 	AudioSystem& operator=(const AudioSystem&) = delete;
 	AudioSystem(AudioSystem&&) = delete;
 	AudioSystem& operator=(AudioSystem&&) = delete;
-	
+
 	static AudioSystem* m_instance;
 
 	[[nodiscard]]
 	auto is_loaded(const Data& audio_data) const -> bool;
-	
+
 	auto set_3d_channel_position(const Data& audio_data, FMOD::Channel* channel) const -> void;
 	auto initialize_reverb() -> void;
 	auto debug_event_info(const FMOD::Studio::EventDescription* event_desc) const -> void;
@@ -122,7 +123,7 @@ private:
 	struct {
 		FMOD::Studio::System* studio_system = nullptr;
 		FMOD::System* low_level_system = nullptr;
-		
+
 		FMOD::ChannelGroup* master_group = nullptr;
 
 		FMOD_VECTOR listener_position = { 0.0f, 0.0f, -1.0f * DISTANCE_FACTOR };
@@ -133,7 +134,7 @@ private:
 		FMOD_VECTOR reverb_pos = { 0.0f, 0.0f, 0.0f };
 		float reverb_min_dist = 10.0f;
 		float reverb_max_dist = 50.0f;
-		
+
 		bool muted = false;
 
 		// Resource caches using string views as keys for efficiency
