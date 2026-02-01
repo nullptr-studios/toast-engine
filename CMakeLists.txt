@@ -45,6 +45,7 @@ add_library(toast.engine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 target_include_directories(toast.engine
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/fmod/include
 )
 
 # Precompiled header
@@ -83,6 +84,8 @@ if (TOAST_EDITOR)
             imgui
             imguizmo
             spine-cpp
+            fmod
+            fmod_studio
     )
 else ()
     target_link_libraries(toast.engine PUBLIC
@@ -100,6 +103,8 @@ else ()
             # imgui
             # imguizmo
             spine-cpp
+            fmod
+            fmod_studio
     )
 endif ()
 
