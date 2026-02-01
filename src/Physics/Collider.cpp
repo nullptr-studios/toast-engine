@@ -228,9 +228,6 @@ void Collider::CalculatePoints() {
 	data.flags = m.flags;
 	data.parent = parent();
 
-	data.flags = m.flags;
-	data.parent = parent();
-
 	// Finally, create convex colliders for every convex mesh we produced
 	for (const auto& points : meshes_list) {
 		m.convexShapes.emplace_back(new ConvexCollider(points, data));
@@ -404,7 +401,7 @@ json_t Collider::Save() const {
 	j["debug.showPoints"] = debug.showPoints;
 	j["debug.showColliders"] = debug.showColliders;
 	j["debug.showNormals"] = data.debugNormals;
-	j["flags"] = m.flags;
+	j["flags"] = static_cast<unsigned int>(m.flags);
 
 	return j;
 }
@@ -435,9 +432,6 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("debug.showNormals")) {
 		data.debugNormals = j["debug.showNormals"];
-	}
-	if (j.contains("flags")) {
-		m.flags = static_cast<ColliderFlags>(j["flags"].get<unsigned int>());
 	}
 
 	if (j.contains("flags")) {
