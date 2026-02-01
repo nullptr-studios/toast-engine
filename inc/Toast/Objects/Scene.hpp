@@ -38,7 +38,7 @@ public:
 		m_jsonPath = path;
 	}
 
-private:
+protected:
 	// Scenes should pass the path rather than the object
 	void Load(json_t j, bool force_create = true) override;
 	mutable std::string m_jsonPath;
@@ -47,7 +47,6 @@ private:
 		return SceneT;
 	}
 
-protected:
 	void Init() override { }
 
 	void Begin() override { }
