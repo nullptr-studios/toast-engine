@@ -372,13 +372,6 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	}
 	auto* physics = get().value();
 
-std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags flags) {
-	if (not get().has_value()) {
-		TOAST_WARN("Raycast skipped because physics system doesn't exist");
-		return std::nullopt;
-	}
-	auto* physics = get().value();
-
 	std::optional<RayResult> result = std::nullopt;
 	std::optional<dvec2> col_hit;
 	std::optional<dvec2> rb_hit;
