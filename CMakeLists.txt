@@ -45,6 +45,7 @@ add_library(toast.engine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 target_include_directories(toast.engine
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/renderdoc/
 )
 
 # Precompiled header
@@ -85,6 +86,7 @@ if (TOAST_EDITOR)
             spine-cpp
     )
 else ()
+    
     target_link_libraries(toast.engine PUBLIC
             glfw
             glm::glm
