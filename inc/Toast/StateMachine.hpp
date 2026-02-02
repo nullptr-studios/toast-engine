@@ -28,8 +28,6 @@ struct State {
 	std::function<void()> onBegin;
 	std::function<void()> onTick;
 	std::function<void()> onExit;
-
-	void AddTo(StateMachine& sm, const std::string& name) const;
 };
 
 /**
@@ -44,15 +42,17 @@ class StateMachine {
 public:
 	StateMachine();
 
-	void AddState(const std::string& name, const State& state);
+	void AddState(const std::string& name, State&& state);
 	void SetState(const std::string& name);
 	void Tick();
 
 	const std::string& GetCurrentState() const;
 
 private:
-	std::unordered_map<std::string, State> m_states;
-	std::string m_currentState;
+	struct {
+		std::unordered_map<std::string, State> states;
+		std::string currentState;
+	} m;
 };
 
 }
