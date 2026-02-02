@@ -11,6 +11,8 @@
 
 namespace toast {
 
+class StateMachine;
+
 /**
  * @struct State
  * @brief Represents a single state in the finite state machine.
@@ -26,6 +28,8 @@ struct State {
 	std::function<void()> onBegin;
 	std::function<void()> onTick;
 	std::function<void()> onExit;
+
+	void AddTo(StateMachine& sm, const std::string& name) const;
 };
 
 /**

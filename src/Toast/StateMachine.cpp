@@ -46,4 +46,8 @@ const std::string& StateMachine::GetCurrentState() const {
 	return m_currentState;
 }
 
+void State::AddTo(StateMachine& sm, const std::string& name) const {
+	sm.AddState(name, *this);
+}
+
 }
