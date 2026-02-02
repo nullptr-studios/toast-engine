@@ -1,4 +1,5 @@
 <map id="physics::BoxRigidbody::SetRotation" name="physics::BoxRigidbody::SetRotation">
-<area shape="rect" id="node1" title=" " alt="" coords="228,5,397,45"/>
-<area shape="rect" id="node2" href="$d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="5,13,180,38"/>
+<area shape="rect" id="node1" title=" " alt="" coords="453,5,623,45"/>
+<area shape="rect" id="node2" href="$d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="231,13,405,38"/>
+<area shape="rect" id="node3" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="5,5,183,45"/>
 </map>

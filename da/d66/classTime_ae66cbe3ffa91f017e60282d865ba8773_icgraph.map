@@ -1,7 +1,9 @@
 <map id="Time::fixed_delta" name="Time::fixed_delta">
-<area shape="rect" id="node1" title="Returns fixed delta." alt="" coords="231,80,365,105"/>
-<area shape="rect" id="node2" href="$d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="7,5,181,31"/>
-<area shape="rect" id="node3" href="$d5/dd0/namespacephysics.html#a2df048bd8f58a63d7497b090ff58a052" title=" " alt="" coords="5,55,183,80"/>
-<area shape="rect" id="node4" href="$d5/dd0/namespacephysics.html#ab5bb62de13325b81f45958620bc2b988" title=" " alt="" coords="11,104,177,129"/>
-<area shape="rect" id="node5" href="$d5/dd0/namespacephysics.html#aa0997ff64f451f3edfc555c6fa7a320e" title=" " alt="" coords="9,153,179,179"/>
+<area shape="rect" id="node1" title="Returns fixed delta." alt="" coords="456,80,591,105"/>
+<area shape="rect" id="node2" href="$d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="232,5,407,31"/>
+<area shape="rect" id="node4" href="$d5/dd0/namespacephysics.html#a2df048bd8f58a63d7497b090ff58a052" title=" " alt="" coords="231,55,408,80"/>
+<area shape="rect" id="node5" href="$d5/dd0/namespacephysics.html#ab5bb62de13325b81f45958620bc2b988" title=" " alt="" coords="236,104,403,129"/>
+<area shape="rect" id="node7" href="$d5/dd0/namespacephysics.html#aa0997ff64f451f3edfc555c6fa7a320e" title=" " alt="" coords="235,153,404,179"/>
+<area shape="rect" id="node3" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="5,31,183,71"/>
+<area shape="rect" id="node6" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a98b9cecc3733f9a2042e2bda4dd89ede" title=" " alt="" coords="5,113,183,153"/>
 </map>
