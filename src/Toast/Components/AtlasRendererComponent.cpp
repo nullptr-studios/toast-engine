@@ -77,9 +77,8 @@ void AtlasRendererComponent::BuildQuadFromRegion(spine::AtlasRegion* region) {
 	float v2 = region->v2;
 	
 	// Flip V coordinates on Y axis
-	float temp_v = v;
-	v = 1.0f - v2;
-	v2 = 1.0f - temp_v;
+	v = 1.0f - v;
+	v2 = 1.0f - v2;
 	
 	// Get dimensions
 	float width = static_cast<float>(region->width) / 50.0f;   // Spine uses pixels, convert to world units (assuming 50 pixels = 1 unit)
@@ -87,10 +86,19 @@ void AtlasRendererComponent::BuildQuadFromRegion(spine::AtlasRegion* region) {
 	
 	// Handle rotated regions
 	if (region->degrees == 90) {
-		// For 90-degree rotated regions, swap UVs appropriately
-		float tempU = u;
-		u = u2;
-		u2 = tempU;
+		// Swap dimensions
+		std::swap(width, height);
+		
+		// Rotate UVs: swap U and V
+		float temp_u = u;
+		float temp_u2 = u2;
+		float temp_v = v;
+		float temp_v2 = v2;
+		
+		u = temp_v;
+		u2 = temp_v2;
+		v = temp_u2;
+		v2 = temp_u;
 	}
 	
 	// Build a quad centered at origin
