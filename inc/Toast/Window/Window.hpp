@@ -181,14 +181,6 @@ public:
 	bool GetVSync() const noexcept {
 		return m_vsync;
 	}
-	
-	//@FIXME: Seems to not work properly
-	void SetMaxFPS(unsigned fps);
-	
-	[[nodiscard]]
-	unsigned GetMaxFPS() const noexcept {
-		return m_maxFPS;
-	}
 
 	/**
 	 * @brief Gets the underlying GLFW window handle.
@@ -218,8 +210,6 @@ private:
 	glm::ivec2 m_windowedPos {};
 	
 	bool m_vsync = true;
-	
-	unsigned m_maxFPS = 0;
 
 	/**
 	 * @brief GLFW error callback handler.

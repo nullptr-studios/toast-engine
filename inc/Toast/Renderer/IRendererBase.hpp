@@ -29,18 +29,12 @@ namespace renderer {
  * @brief Configuration settings for the renderer.
  */
 struct RendererConfig {
-	glm::uvec2 resolution = glm::uvec2(1920, 1080); 	///< Initial rendering resolution
-	bool vSync = true;                            				///< Enable/disable vertical sync
-	toast::DisplayMode currentDisplayMode = toast::DisplayMode::WINDOWED;		///< Start in b orderless mode
-	//bool hdr = false;
+	glm::uvec2 resolution; 										///< windowed rendering resolution
+	bool vSync;                            		///< Enable/disable vertical sync
+	toast::DisplayMode currentDisplayMode;		///< Current display mode
 	
-	float resolutionScale = 1.0f;											///< Scale factor for main framebuffer resolution
-	float lightResolutionScale = .75f;								///< Scale factor for light framebuffer resolution
-	
-	
-	//@FIXME: NOT WORKING!!
-	unsigned maxFPS = 500;                      			///< Maximum FPS cap (0 = uncapped)
-	
+	float resolutionScale;										///< Scale factor for main framebuffer resolution
+	float lightResolutionScale;								///< Scale factor for light framebuffer resolution
 };
 
 /// @class IRendererBase
@@ -220,22 +214,29 @@ public:
 		try {
 			auto j = json_t::parse(configData);
 			if (j.contains("resolutionScale")) {
-				m_rendererConfig.resolutionScale = j["resolutionScale"].get<float>();
+				m_config.resolutionScale = j["resolutionScale"].get<float>();
+			}else {
+				m_config.resolutionScale = 1.0f;
 			}
 			if (j.contains("lightResolutionScale")) {
-				m_rendererConfig.lightResolutionScale = j["lightResolutionScale"].get<float>();
+				m_config.lightResolutionScale = j["lightResolutionScale"].get<float>();
+			}else {
+				m_config.lightResolutionScale = .75f;
 			}
 			if (j.contains("vSync")) {
-				m_rendererConfig.vSync = j["vSync"].get<bool>();
+				m_config.vSync = j["vSync"].get<bool>();
+			}else {
+				m_config.vSync = true;
 			}
 			if (j.contains("fullscreen")) {
-				m_rendererConfig.currentDisplayMode = j["fullscreen"].get<toast::DisplayMode>();
-			}
-			if (j.contains("maxFPS")) {
-				m_rendererConfig.maxFPS = j["maxFPS"].get<unsigned>();
+				m_config.currentDisplayMode = j["fullscreen"].get<toast::DisplayMode>();
+			} else {
+				m_config.currentDisplayMode = toast::DisplayMode::WINDOWED;
 			}
 			if (j.contains("resolution")) {
-				m_rendererConfig.resolution = j["resolution"].get<glm::uvec2>();
+				m_config.resolution = j["resolution"].get<glm::uvec2>();
+			} else {
+				m_config.resolution = glm::uvec2(1920, 1080);
 			}
 			TOAST_TRACE("SUCCESFULLY LOADED RENDERER SETTINGS!... now applying");
 			ApplyRenderSettings();
@@ -247,17 +248,16 @@ public:
 	
 	void SaveRenderSettings() {
 		json_t j {};
-		j["resolutionScale"] = m_rendererConfig.resolutionScale;
-		j["lightResolutionScale"] = m_rendererConfig.lightResolutionScale;
-		j["vSync"] = m_rendererConfig.vSync;
-		j["fullscreen"] = m_rendererConfig.currentDisplayMode;
-		j["maxFPS"] = m_rendererConfig.maxFPS;
-		j["resolution"] = m_rendererConfig.resolution;
+		j["resolutionScale"] = m_config.resolutionScale;
+		j["lightResolutionScale"] = m_config.lightResolutionScale;
+		j["vSync"] = m_config.vSync;
+		j["fullscreen"] = m_config.currentDisplayMode;
+		j["resolution"] = m_config.resolution;
 		
 		if (!resource::ResourceManager::SaveConfig(".\\config\\Renderer.settings", j.dump(1))) {
 			TOAST_ERROR("Failed to save renderer settings file!");
 		} else {
-			TOAST_TRACE("SUCCESFULLY SAVED RENDERER SETTINGS!");
+			// TOAST_TRACE("SUCCESFULLY SAVED RENDERER SETTINGS!");
 		}
 	}
 	
@@ -268,17 +268,17 @@ public:
 		auto* window = toast::Window::GetInstance();
 		if (window->GetDisplayMode() == toast::DisplayMode::FULLSCREEN) {
 			window->SetDisplayMode(toast::DisplayMode::WINDOWED);
-			m_rendererConfig.currentDisplayMode = toast::DisplayMode::WINDOWED;
+			m_config.currentDisplayMode = toast::DisplayMode::WINDOWED;
 		} else {
 			window->SetDisplayMode(toast::DisplayMode::FULLSCREEN);
-			m_rendererConfig.currentDisplayMode = toast::DisplayMode::FULLSCREEN;
+			m_config.currentDisplayMode = toast::DisplayMode::FULLSCREEN;
 		}
 		SaveRenderSettings();
 	}
 	
 	[[nodiscard]]
 	const RendererConfig& GetRendererConfig() const noexcept {
-		return m_rendererConfig;
+		return m_config;
 	}
 
 	// ========== Global Light Settings ==========
@@ -350,7 +350,7 @@ protected:
 	bool m_globalLightEnabled = true;                  ///< Whether global light is enabled
 	
 	// ========== Render Settings ==========
-	RendererConfig m_rendererConfig;                   ///< Current renderer configuration
+	RendererConfig m_config {};                   ///< Current renderer configuration
 };
 
 inline void LoadRendererSettings() {

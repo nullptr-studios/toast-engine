@@ -161,7 +161,6 @@ void Engine::Init() {
 	m->window = std::make_unique<Window>(1920, 1080, "ToastEngine");
 	m->layerStack = std::make_unique<renderer::LayerStack>();
 	m->renderer = std::make_unique<renderer::OpenGLRenderer>();
-	m->renderer->LoadRenderSettings();
 
 	// Create input system
 	m->inputSystem = std::make_unique<input::InputSystem>();

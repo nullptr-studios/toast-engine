@@ -108,7 +108,7 @@ void Window::SetDisplayMode(DisplayMode modeScreen) {
 		 m_windowedPos.y,
 		 m_windowedSize.x,
 		 m_windowedSize.y,
-		 m_maxFPS
+		 GLFW_DONT_CARE
 		);
   }else if (modeScreen == DisplayMode::FULLSCREEN) {
 	  TOAST_INFO("Switching to FULLSCREEN mode");
@@ -130,7 +130,7 @@ void Window::SetDisplayMode(DisplayMode modeScreen) {
 				0,
 				mode->width,
 				mode->height,
-				std::clamp(m_maxFPS, 1u, static_cast<unsigned>(mode->refreshRate))
+				GLFW_DONT_CARE
 			);
   	}
   }
@@ -163,45 +163,6 @@ void Window::SetResolution(glm::uvec2 res) const {
 void Window::SetVSync(bool vsync) {
 	glfwSwapInterval(vsync);
 	m_vsync = vsync;
-}
-
-void Window::SetMaxFPS(unsigned fps) {
-	m_maxFPS = fps;
-	
-	glfwGetWindowPos(m_glfwWindow, &m_windowedPos.x, &m_windowedPos.y);
-	int w, h;
-	glfwGetWindowSize(m_glfwWindow, &w, &h);
-	m_windowedSize = { static_cast<unsigned>(w), static_cast<unsigned>(h) };
-	
-	if (m_currentDisplayMode == DisplayMode::WINDOWED) {
-
-		
-		glfwSetWindowMonitor(
-			m_glfwWindow,
-	 nullptr,
-	 m_windowedPos.x,
-	 m_windowedPos.y,
-	 m_windowedSize.x,
-	 m_windowedSize.y,
-	 m_maxFPS
-	);
-	}else {
-		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-		if (mode) {
-			glfwSetWindowMonitor(
-				m_glfwWindow,
-				monitor,
-				0,
-				0,
-				mode->width,
-				mode->height,
-				std::clamp(m_maxFPS, 1u, static_cast<unsigned>(mode->refreshRate))
-			);
-		}
-	}
-	
-
 }
 
 bool Window::IsMinimized() const {

@@ -270,6 +270,10 @@ OpenGLRenderer::OpenGLRenderer() {
 
 	// Set once, change and reset state if needed
 	stbi_set_flip_vertically_on_load(1);
+	
+	
+	// Load settings
+	LoadRenderSettings();
 }
 
 OpenGLRenderer::~OpenGLRenderer() {
@@ -561,13 +565,19 @@ void OpenGLRenderer::Clear() {
 void OpenGLRenderer::Resize(glm::uvec2 size) {
 	unsigned width = size.x;
 	unsigned height = size.y;
+	
 
-	m_geometryFramebuffer->Resize(width * m_rendererConfig.resolutionScale, height * m_rendererConfig.resolutionScale);
+	m_geometryFramebuffer->Resize(width * m_config.resolutionScale, height * m_config.resolutionScale);
 
-	m_lightFramebuffer->Resize(static_cast<unsigned int>(width * m_rendererConfig.lightResolutionScale), static_cast<unsigned int>(height * m_rendererConfig.lightResolutionScale));
+	m_lightFramebuffer->Resize(static_cast<unsigned int>(width * m_config.lightResolutionScale), static_cast<unsigned int>(height * m_config.lightResolutionScale));
 	m_outputFramebuffer->Resize(width, height);
 	// Update projection matrix to maintain aspect ratio
 	SetProjectionMatrix(glm::radians(90.0f), static_cast<float>(width) / static_cast<float>(height), 0.1f, 1000.0f);
+	
+	
+	m_config.resolution = glm::uvec2(width, height);
+	SaveRenderSettings();
+	
 }
 
 void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
@@ -595,15 +605,13 @@ void OpenGLRenderer::ApplyRenderSettings() {
 
 	
 	// vsync
-	window->SetVSync(m_rendererConfig.vSync);
-	
-	window->SetMaxFPS(m_rendererConfig.maxFPS);
+	window->SetVSync(m_config.vSync);
 	
 	
-	window->SetDisplayMode(m_rendererConfig.currentDisplayMode);
+	window->SetDisplayMode(m_config.currentDisplayMode);
 	
 	// resolution (Framebuffer scale is handled in Resize)
-	window->SetResolution(m_rendererConfig.resolution);
+	window->SetResolution(m_config.resolution);
 	
 	
 }

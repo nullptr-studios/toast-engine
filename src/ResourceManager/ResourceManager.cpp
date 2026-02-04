@@ -171,7 +171,7 @@ bool ResourceManager::SaveFile(const std::string& path, const std::string& conte
 }
 
 bool ResourceManager::SaveConfig(const std::string& path, const std::string& content) {
-	TOAST_INFO("Saving File {}", path);
+	// TOAST_INFO("Saving File {}", path);
 	std::string pat = path;
 
 	namespace fs = std::filesystem;
