@@ -173,6 +173,21 @@ spine::AtlasRegion* AtlasRendererComponent::FindRegion(const std::string& region
 	return m_atlas->GetAtlasData()->findRegion(regionName.c_str());
 }
 
+std::string AtlasRendererComponent::GenerateSpriteName(const std::string& regionName) const {
+	// Count existing sprites with this region name
+	int count = 0;
+	for (const auto& [id, childPtr] : children.GetAll()) {
+		if (auto* sprite = dynamic_cast<toast::AtlasSpriteComponent*>(childPtr.get())) {
+			if (sprite->GetRegionName() == regionName) {
+				count++;
+			}
+		}
+	}
+	
+	// Generate name
+	return regionName + "_" + std::to_string(count);
+}
+
 void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept {
 	if (!enabled()) {
 		return;
@@ -264,6 +279,7 @@ void AtlasRendererComponent::Load(json_t j, bool force_create) {
 		m_atlasPath = j.at("atlasResourcePath").get<std::string>();
 	}
 	
+	// Mark cache as dirty so sprites get refreshed with proper regions on next render
 	m_spriteCacheDirty = true;
 }
 
@@ -319,13 +335,16 @@ void AtlasRendererComponent::Inspector() {
 	
 	// Button to add new sprite
 	if (ImGui::Button("Add Sprite")) {
-		auto* sprite = children.Add<toast::AtlasSpriteComponent>("AtlasSprite");
-		if (sprite && !m_regionNames.empty()) {
-			// Set the first region as default
-			sprite->SetRegionName(m_regionNames[0]);
-			sprite->SetRegion(FindRegion(m_regionNames[0]));
+		if (!m_regionNames.empty()) {
+			// Use first region as default
+			std::string spriteName = GenerateSpriteName(m_regionNames[0]);
+			auto* sprite = children.Add<toast::AtlasSpriteComponent>(spriteName);
+			if (sprite) {
+				sprite->SetRegionName(m_regionNames[0]);
+				sprite->SetRegion(FindRegion(m_regionNames[0]));
+			}
+			m_spriteCacheDirty = true;
 		}
-		m_spriteCacheDirty = true;
 	}
 	
 	ImGui::SameLine();
@@ -355,10 +374,12 @@ void AtlasRendererComponent::Inspector() {
 		
 		ImGui::SameLine();
 		if (ImGui::Button("Add This Region") && m_selectedRegion >= 0) {
-			auto* sprite = children.Add<toast::AtlasSpriteComponent>("AtlasSprite");
+			std::string regionName = m_regionNames[m_selectedRegion];
+			std::string spriteName = GenerateSpriteName(regionName);
+			auto* sprite = children.Add<toast::AtlasSpriteComponent>(spriteName);
 			if (sprite) {
-				sprite->SetRegionName(m_regionNames[m_selectedRegion]);
-				sprite->SetRegion(FindRegion(m_regionNames[m_selectedRegion]));
+				sprite->SetRegionName(regionName);
+				sprite->SetRegion(FindRegion(regionName));
 			}
 			m_spriteCacheDirty = true;
 		}
