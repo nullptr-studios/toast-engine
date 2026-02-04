@@ -16,6 +16,7 @@
 #endif
 
 void AtlasRendererComponent::Init() {
+	
 	m_shader = resource::LoadResource<renderer::Shader>("shaders/spine_atlas.shader");
 
 	// Reserve temp buffers to avoid allocations
@@ -97,24 +98,24 @@ void AtlasRendererComponent::BuildQuadFromRegion(spine::AtlasRegion* region) {
 		float halfW = width * 0.5f;
 		float halfH = height * 0.5f;
 		
-		// UV mapping for 90-degree clockwise rotation
-		// Bottom-left vertex samples from bottom-right of atlas region
-		m_tempVerts[0].position = glm::vec3(-halfW, -halfH, 0.0f);
+			
+		// Bottom-left vertex
+		m_tempVerts[0].position = glm::vec3(halfH, -halfW, 0.0f);
 		m_tempVerts[0].texCoord = glm::vec2(u2, v2);
 		m_tempVerts[0].colorABGR = color;
 		
-		// Bottom-right vertex samples from bottom-left of atlas region
-		m_tempVerts[1].position = glm::vec3(halfW, -halfH, 0.0f);
+		// Bottom-right vertex
+		m_tempVerts[1].position = glm::vec3(halfH, halfW, 0.0f);
 		m_tempVerts[1].texCoord = glm::vec2(u, v2);
 		m_tempVerts[1].colorABGR = color;
 		
-		// Top-right vertex samples from top-left of atlas region
-		m_tempVerts[2].position = glm::vec3(halfW, halfH, 0.0f);
+		// Top-right vertex
+		m_tempVerts[2].position = glm::vec3(-halfH, halfW, 0.0f);
 		m_tempVerts[2].texCoord = glm::vec2(u, v);
 		m_tempVerts[2].colorABGR = color;
 		
-		// Top-left vertex samples from top-right of atlas region
-		m_tempVerts[3].position = glm::vec3(-halfW, halfH, 0.0f);
+		// Top-left vertex
+		m_tempVerts[3].position = glm::vec3(-halfH, -halfW, 0.0f);
 		m_tempVerts[3].texCoord = glm::vec2(u2, v);
 		m_tempVerts[3].colorABGR = color;
 	} else {
