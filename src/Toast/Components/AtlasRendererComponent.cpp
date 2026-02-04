@@ -71,7 +71,7 @@ void AtlasRendererComponent::BuildQuadFromRegion(spine::AtlasRegion* region, con
 	v2 = 1.0f - v2;
 	
 	// Get dimensions
-	float width = static_cast<float>(region->width) / 50.0f;
+	float width = static_cast<float>(region->width) / 50.0f; // 1 scale unit is 50 pixls
 	float height = static_cast<float>(region->height) / 50.0f;
 	
 	// Current vertex offset for indices
@@ -197,9 +197,9 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		return;
 	}
 
-	// Refresh sprite cache if dirty
+	// Refresh sprite cache
 	if (m_spriteCacheDirty) {
-		const_cast<AtlasRendererComponent*>(this)->RefreshSprites();
+		RefreshSprites();
 	}
 
 	// Early exit if no sprites
@@ -245,16 +245,15 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		return;
 	}
 
-	const glm::mat4 mvp = precomputed_mat;  // Transforms are already baked into vertices
+	const glm::mat4 mvp = precomputed_mat;  
 
 	m_shader->Use();
 	m_shader->Set("transform", mvp);
-
-	// Bind the texture from the first atlas page (assuming single texture atlas)
+	
 	spine::Vector<spine::AtlasPage*>& pages = m_atlas->GetAtlasData()->getPages();
 	if (pages.size() > 0) {
 		std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(pages[0]->texture);
-		if (tex_ptr && tex_ptr->get()) {
+		if (tex_ptr) {
 			tex_ptr->get()->Bind(0);
 		}
 	}
