@@ -76,6 +76,11 @@ void AtlasRendererComponent::BuildQuadFromRegion(spine::AtlasRegion* region) {
 	float u2 = region->u2;
 	float v2 = region->v2;
 	
+	// Flip V coordinates on Y axis
+	float temp_v = v;
+	v = 1.0f - v2;
+	v2 = 1.0f - temp_v;
+	
 	// Get dimensions
 	float width = static_cast<float>(region->width) / 50.0f;   // Spine uses pixels, convert to world units (assuming 50 pixels = 1 unit)
 	float height = static_cast<float>(region->height) / 50.0f;
