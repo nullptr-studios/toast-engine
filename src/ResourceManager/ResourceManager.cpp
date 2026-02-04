@@ -209,7 +209,7 @@ bool ResourceManager::LoadConfig(const std::string& path, std::string& content) 
 	size_t size = ifs.tellg();
 	ifs.seekg(0, std::ios::beg);
 	content.resize(size);
-	ifs.read((content.data()), static_cast<std::streamsize>(size));
+	ifs.read(content.data(), static_cast<std::streamsize>(size));
 	return true;
 }
 

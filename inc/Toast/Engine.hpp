@@ -66,9 +66,9 @@ public:
 	 * @warning Must be called from the main thread.
 	 */
 	void Run(int argc, char** argv);
-	
+
 	static void SetRenderdocApi(void* api);
-	
+
 	static void* GetRenderdocApi();
 
 	/**
@@ -157,7 +157,7 @@ private:
 
 	/// @brief Timer for automatic resource purging (uses monotonic uptime).
 	static double purge_timer;
-	
+
 	static void* renderdoc_api;
 };
 

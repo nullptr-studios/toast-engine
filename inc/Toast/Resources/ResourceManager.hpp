@@ -100,7 +100,7 @@ public:
 	 * @return true if file was saved successfully.
 	 */
 	static bool SaveFile(const std::string& path, const std::string& content);
-	
+
 	/**
 	 * @brief Saves content to a file on disk.
 	 * @param path File path.
@@ -108,7 +108,7 @@ public:
 	 * @return true if file was saved successfully.
 	 */
 	static bool SaveConfig(const std::string& path, const std::string& content);
-	
+
 	/**
 	 * @brief Loads content from a file on disk.
 	 * @param path File path.

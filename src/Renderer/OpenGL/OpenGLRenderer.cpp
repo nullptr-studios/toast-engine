@@ -222,17 +222,15 @@ OpenGLRenderer::OpenGLRenderer() {
 		Resize({ static_cast<unsigned>(e->width), static_cast<unsigned>(e->height) });
 		return true;
 	});
-	
+
 	m_listener.Subscribe<event::WindowKey>([this](event::WindowKey* e) -> bool {
-		
 		// Toggle Fullscreen F11
 		if (e->key == GLFW_KEY_F11 && e->action == GLFW_PRESS) {
 			ToggleFullscreen();
 		}
-		
+
 		return false;
 	});
-	
 
 	// call resize once at start
 	{
@@ -270,8 +268,7 @@ OpenGLRenderer::OpenGLRenderer() {
 
 	// Set once, change and reset state if needed
 	stbi_set_flip_vertically_on_load(1);
-	
-	
+
 	// Load settings
 	LoadRenderSettings();
 }
@@ -413,7 +410,7 @@ void OpenGLRenderer::GeometryPass() {
 		});
 		m_renderablesSortDirty = false;
 	}
-	
+
 	glViewport(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
 	glScissor(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
 
@@ -565,19 +562,18 @@ void OpenGLRenderer::Clear() {
 void OpenGLRenderer::Resize(glm::uvec2 size) {
 	unsigned width = size.x;
 	unsigned height = size.y;
-	
 
 	m_geometryFramebuffer->Resize(width * m_config.resolutionScale, height * m_config.resolutionScale);
 
-	m_lightFramebuffer->Resize(static_cast<unsigned int>(width * m_config.lightResolutionScale), static_cast<unsigned int>(height * m_config.lightResolutionScale));
+	m_lightFramebuffer->Resize(
+	    static_cast<unsigned int>(width * m_config.lightResolutionScale), static_cast<unsigned int>(height * m_config.lightResolutionScale)
+	);
 	m_outputFramebuffer->Resize(width, height);
 	// Update projection matrix to maintain aspect ratio
 	SetProjectionMatrix(glm::radians(90.0f), static_cast<float>(width) / static_cast<float>(height), 0.1f, 1000.0f);
-	
-	
+
 	m_config.resolution = glm::uvec2(width, height);
 	SaveRenderSettings();
-	
 }
 
 void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
@@ -603,17 +599,13 @@ void OpenGLRenderer::RemoveLight(Light2D* light) {
 void OpenGLRenderer::ApplyRenderSettings() {
 	auto window = toast::Window::GetInstance();
 
-	
 	// vsync
 	window->SetVSync(m_config.vSync);
-	
-	
+
 	window->SetDisplayMode(m_config.currentDisplayMode);
-	
+
 	// resolution (Framebuffer scale is handled in Resize)
 	window->SetResolution(m_config.resolution);
-	
-	
 }
 
 }

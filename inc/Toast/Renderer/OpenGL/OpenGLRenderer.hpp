@@ -38,7 +38,7 @@ public:
 
 	void AddLight(Light2D* light) override;
 	void RemoveLight(Light2D* light) override;
-	
+
 	void ApplyRenderSettings() override;
 
 private:

@@ -13,7 +13,6 @@
 #include "Toast/Renderer/Lights/2DLight.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/Window/Window.hpp"
-
 #include "glm/ext/matrix_clip_space.hpp"
 
 #include <array>
@@ -23,18 +22,17 @@
 
 namespace renderer {
 
-
 /**
  * @struct RendererConfig
  * @brief Configuration settings for the renderer.
  */
 struct RendererConfig {
-	glm::uvec2 resolution; 										///< windowed rendering resolution
-	bool vSync;                            		///< Enable/disable vertical sync
-	toast::DisplayMode currentDisplayMode;		///< Current display mode
-	
-	float resolutionScale;										///< Scale factor for main framebuffer resolution
-	float lightResolutionScale;								///< Scale factor for light framebuffer resolution
+	glm::uvec2 resolution;                    ///< windowed rendering resolution
+	bool vSync;                               ///< Enable/disable vertical sync
+	toast::DisplayMode currentDisplayMode;    ///< Current display mode
+
+	float resolutionScale;                    ///< Scale factor for main framebuffer resolution
+	float lightResolutionScale;               ///< Scale factor for light framebuffer resolution
 };
 
 /// @class IRendererBase
@@ -210,22 +208,22 @@ public:
 			ApplyRenderSettings();
 			return;
 		}
-		
+
 		try {
 			auto j = json_t::parse(configData);
 			if (j.contains("resolutionScale")) {
 				m_config.resolutionScale = j["resolutionScale"].get<float>();
-			}else {
+			} else {
 				m_config.resolutionScale = 1.0f;
 			}
 			if (j.contains("lightResolutionScale")) {
 				m_config.lightResolutionScale = j["lightResolutionScale"].get<float>();
-			}else {
+			} else {
 				m_config.lightResolutionScale = .75f;
 			}
 			if (j.contains("vSync")) {
 				m_config.vSync = j["vSync"].get<bool>();
-			}else {
+			} else {
 				m_config.vSync = true;
 			}
 			if (j.contains("fullscreen")) {
@@ -240,12 +238,10 @@ public:
 			}
 			TOAST_TRACE("SUCCESFULLY LOADED RENDERER SETTINGS!... now applying");
 			ApplyRenderSettings();
-			
-		} catch (const std::exception& e) {
-			TOAST_ERROR("Error parsing renderer settings: {0}", e.what());
-		}
+
+		} catch (const std::exception& e) { TOAST_ERROR("Error parsing renderer settings: {0}", e.what()); }
 	}
-	
+
 	void SaveRenderSettings() {
 		json_t j {};
 		j["resolutionScale"] = m_config.resolutionScale;
@@ -253,17 +249,16 @@ public:
 		j["vSync"] = m_config.vSync;
 		j["fullscreen"] = m_config.currentDisplayMode;
 		j["resolution"] = m_config.resolution;
-		
+
 		if (!resource::ResourceManager::SaveConfig(".\\config\\Renderer.settings", j.dump(1))) {
 			TOAST_ERROR("Failed to save renderer settings file!");
 		} else {
 			// TOAST_TRACE("SUCCESFULLY SAVED RENDERER SETTINGS!");
 		}
 	}
-	
+
 	virtual void ApplyRenderSettings() = 0;    ///< Applies current render settings to the renderer implementation
 
-	
 	void ToggleFullscreen() {
 		auto* window = toast::Window::GetInstance();
 		if (window->GetDisplayMode() == toast::DisplayMode::FULLSCREEN) {
@@ -275,7 +270,7 @@ public:
 		}
 		SaveRenderSettings();
 	}
-	
+
 	[[nodiscard]]
 	const RendererConfig& GetRendererConfig() const noexcept {
 		return m_config;
@@ -348,9 +343,9 @@ protected:
 	float m_globalLightIntensity = 1.f;                ///< Intensity of the global
 
 	bool m_globalLightEnabled = true;                  ///< Whether global light is enabled
-	
+
 	// ========== Render Settings ==========
-	RendererConfig m_config {};                   ///< Current renderer configuration
+	RendererConfig m_config {};    ///< Current renderer configuration
 };
 
 inline void LoadRendererSettings() {

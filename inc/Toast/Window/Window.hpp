@@ -165,18 +165,18 @@ public:
 	 * @param seconds Maximum time to wait in seconds.
 	 */
 	void WaitEventsTimeout(double seconds);
-	
+
 	void SetDisplayMode(DisplayMode mode);
-	
+
 	[[nodiscard]]
 	DisplayMode GetDisplayMode() const;
 
 	static std::vector<glm::uvec2> GetMonitorSupportedSizes();
-	
+
 	void SetResolution(glm::uvec2 res) const;
-	
+
 	void SetVSync(bool vsync);
-	
+
 	[[nodiscard]]
 	bool GetVSync() const noexcept {
 		return m_vsync;
@@ -203,12 +203,12 @@ private:
 
 	/// @brief Event listener for window events.
 	event::ListenerComponent m_listener;
-	
+
 	toast::DisplayMode m_currentDisplayMode = toast::DisplayMode::WINDOWED;
-	
+
 	glm::uvec2 m_windowedSize {};
 	glm::ivec2 m_windowedPos {};
-	
+
 	bool m_vsync = true;
 
 	/**
