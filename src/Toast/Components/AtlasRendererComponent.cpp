@@ -84,52 +84,64 @@ void AtlasRendererComponent::BuildQuadFromRegion(spine::AtlasRegion* region) {
 	float width = static_cast<float>(region->width) / 50.0f;   // Spine uses pixels, convert to world units (assuming 50 pixels = 1 unit)
 	float height = static_cast<float>(region->height) / 50.0f;
 	
-	// Handle rotated regions
-	if (region->degrees == 90) {
-		// Swap dimensions
-		std::swap(width, height);
-		
-		// Rotate UVs: swap U and V
-		float temp_u = u;
-		float temp_u2 = u2;
-		float temp_v = v;
-		float temp_v2 = v2;
-		
-		u = temp_v;
-		u2 = temp_v2;
-		v = temp_u2;
-		v2 = temp_u;
-	}
-	
-	// Build a quad centered at origin
-	float halfW = width * 0.5f;
-	float halfH = height * 0.5f;
-	
 	// Default white color (ABGR format)
 	uint32_t color = 0xFFFFFFFF;
 	
 	// 4 vertices for the quad
 	m_tempVerts.resize(4);
 	
-	// Bottom-left
-	m_tempVerts[0].position = glm::vec3(-halfW, -halfH, 0.0f);
-	m_tempVerts[0].texCoord = glm::vec2(u, v2);
-	m_tempVerts[0].colorABGR = color;
-	
-	// Bottom-right
-	m_tempVerts[1].position = glm::vec3(halfW, -halfH, 0.0f);
-	m_tempVerts[1].texCoord = glm::vec2(u2, v2);
-	m_tempVerts[1].colorABGR = color;
-	
-	// Top-right
-	m_tempVerts[2].position = glm::vec3(halfW, halfH, 0.0f);
-	m_tempVerts[2].texCoord = glm::vec2(u2, v);
-	m_tempVerts[2].colorABGR = color;
-	
-	// Top-left
-	m_tempVerts[3].position = glm::vec3(-halfW, halfH, 0.0f);
-	m_tempVerts[3].texCoord = glm::vec2(u, v);
-	m_tempVerts[3].colorABGR = color;
+	// Handle rotated regions
+	if (region->degrees == 90) {
+		std::swap(width, height);
+		
+		float halfW = width * 0.5f;
+		float halfH = height * 0.5f;
+		
+		// UV mapping for 90-degree clockwise rotation
+		// Bottom-left vertex samples from bottom-right of atlas region
+		m_tempVerts[0].position = glm::vec3(-halfW, -halfH, 0.0f);
+		m_tempVerts[0].texCoord = glm::vec2(u2, v2);
+		m_tempVerts[0].colorABGR = color;
+		
+		// Bottom-right vertex samples from bottom-left of atlas region
+		m_tempVerts[1].position = glm::vec3(halfW, -halfH, 0.0f);
+		m_tempVerts[1].texCoord = glm::vec2(u, v2);
+		m_tempVerts[1].colorABGR = color;
+		
+		// Top-right vertex samples from top-left of atlas region
+		m_tempVerts[2].position = glm::vec3(halfW, halfH, 0.0f);
+		m_tempVerts[2].texCoord = glm::vec2(u, v);
+		m_tempVerts[2].colorABGR = color;
+		
+		// Top-left vertex samples from top-right of atlas region
+		m_tempVerts[3].position = glm::vec3(-halfW, halfH, 0.0f);
+		m_tempVerts[3].texCoord = glm::vec2(u2, v);
+		m_tempVerts[3].colorABGR = color;
+	} else {
+		// Unrotated region
+		float halfW = width * 0.5f;
+		float halfH = height * 0.5f;
+		
+		// Bottom-left
+		m_tempVerts[0].position = glm::vec3(-halfW, -halfH, 0.0f);
+		m_tempVerts[0].texCoord = glm::vec2(u, v2);
+		m_tempVerts[0].colorABGR = color;
+		
+		// Bottom-right
+		m_tempVerts[1].position = glm::vec3(halfW, -halfH, 0.0f);
+		m_tempVerts[1].texCoord = glm::vec2(u2, v2);
+		m_tempVerts[1].colorABGR = color;
+		
+		// Top-right
+		m_tempVerts[2].position = glm::vec3(halfW, halfH, 0.0f);
+		m_tempVerts[2].texCoord = glm::vec2(u2, v);
+		m_tempVerts[2].colorABGR = color;
+		
+		// Top-left
+		m_tempVerts[3].position = glm::vec3(-halfW, halfH, 0.0f);
+		m_tempVerts[3].texCoord = glm::vec2(u, v);
+		m_tempVerts[3].colorABGR = color;
+	}
 	
 	// 6 indices for 2 triangles
 	m_tempIndices = { 0, 1, 2, 0, 2, 3 };
