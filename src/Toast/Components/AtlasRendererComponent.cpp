@@ -16,7 +16,7 @@
 #endif
 
 void AtlasRendererComponent::Init() {
-	m_shader = resource::LoadResource<renderer::Shader>("shaders/default.shader");
+	m_shader = resource::LoadResource<renderer::Shader>("shaders/spine_atlas.shader");
 
 	// Reserve temp buffers to avoid allocations
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
@@ -75,7 +75,6 @@ void AtlasRendererComponent::BuildQuadFromRegion(spine::AtlasRegion* region) {
 	float v = region->v;
 	float u2 = region->u2;
 	float v2 = region->v2;
-	
 	
 	// Get dimensions
 	float width = static_cast<float>(region->width) / 50.0f;   // Spine uses pixels, convert to world units (assuming 50 pixels = 1 unit)
