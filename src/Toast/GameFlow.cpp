@@ -149,7 +149,7 @@ void GameFlow::NextLevel() {
 	}
 
 	// Load & Enable New Level
-	m.currentLevel = std::move(m.nextLevel).or_else([this] () -> std::optional<std::shared_future<unsigned>> {
+	m.currentLevel = std::move(m.nextLevel).or_else([this]() -> std::optional<std::shared_future<unsigned>> {
 		return toast::World::LoadScene(m.levelList[m.level.value()]);
 	});
 	m.currentLevel->wait();

@@ -16,11 +16,11 @@ void AtlasSpriteComponent::Init() {
 
 void AtlasSpriteComponent::Load(json_t j, bool force_create) {
 	TransformComponent::Load(j, force_create);
-	
+
 	if (j.contains("regionName")) {
 		m_regionName = j.at("regionName").get<std::string>();
 	}
-	
+
 	if (j.contains("color")) {
 		auto& colorArr = j.at("color");
 		if (colorArr.is_array() && colorArr.size() >= 4) {
@@ -47,13 +47,13 @@ void AtlasSpriteComponent::Inspector() {
 		TransformComponent::Inspector();
 		ImGui::Unindent(20);
 	}
-	
+
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Text("Atlas Sprite");
-	
+
 	ImGui::Text("Region: %s", m_regionName.empty() ? "<none>" : m_regionName.c_str());
-	
+
 	// Color picker
 	float color[4] = { m_color.r, m_color.g, m_color.b, m_color.a };
 	if (ImGui::ColorEdit4("Color", color)) {

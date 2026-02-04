@@ -46,8 +46,10 @@ public:
 private:
 	void UpdateMeshBounds();
 	void EnumerateRegionNames();
-	void BuildQuadFromRegion(spine::AtlasRegion* region, const glm::mat4& transform, uint32_t color, 
-	                          std::vector<renderer::SpineVertex>& vertices, std::vector<uint16_t>& indices);
+	void BuildQuadFromRegion(
+	    spine::AtlasRegion* region, const glm::mat4& transform, uint32_t color, std::vector<renderer::SpineVertex>& vertices,
+	    std::vector<uint16_t>& indices
+	);
 
 	// Editor resource slots
 	editor::ResourceSlot m_atlasResource { resource::ResourceType::SPINE_ATLAS };
@@ -70,7 +72,7 @@ private:
 	// Region picker (for editor)
 	std::vector<std::string> m_regionNames;
 	int m_selectedRegion = -1;
-	
+
 	// Cache sprite children for faster access
 	std::vector<toast::AtlasSpriteComponent*> m_spriteCache;
 	bool m_spriteCacheDirty = true;

@@ -57,16 +57,14 @@ public:
 	[[nodiscard]]
 	uint32_t GetColorABGR() const noexcept {
 		// Convert RGBA to ABGR format
-		return (static_cast<uint32_t>(m_color.a * 255.0f) << 24) |
-		       (static_cast<uint32_t>(m_color.b * 255.0f) << 16) |
-		       (static_cast<uint32_t>(m_color.g * 255.0f) << 8) |
-		       static_cast<uint32_t>(m_color.r * 255.0f);
+		return (static_cast<uint32_t>(m_color.a * 255.0f) << 24) | (static_cast<uint32_t>(m_color.b * 255.0f) << 16) |
+		       (static_cast<uint32_t>(m_color.g * 255.0f) << 8) | static_cast<uint32_t>(m_color.r * 255.0f);
 	}
 
 private:
 	std::string m_regionName;
 	spine::AtlasRegion* m_region = nullptr;
-	glm::vec4 m_color { 1.0f, 1.0f, 1.0f, 1.0f };  // RGBA
+	glm::vec4 m_color { 1.0f, 1.0f, 1.0f, 1.0f };    // RGBA
 };
 
 }
