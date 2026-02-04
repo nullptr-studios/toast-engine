@@ -77,8 +77,8 @@ void AtlasRendererComponent::BuildQuadFromRegion(spine::AtlasRegion* region) {
 	float v2 = region->v2;
 	
 	// Get dimensions
-	float width = static_cast<float>(region->width);
-	float height = static_cast<float>(region->height);
+	float width = static_cast<float>(region->width) / 100.0f;   // Spine uses pixels, convert to world units (assuming 100 pixels = 1 unit)
+	float height = static_cast<float>(region->height) / 100.0f;
 	
 	// Handle rotated regions
 	if (region->degrees == 90) {
