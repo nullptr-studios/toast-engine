@@ -38,6 +38,10 @@ public:
 	void SwapPoints(glm::vec2 lhs, glm::vec2 rhs);
 	void DeletePoint(glm::vec2 point);
 
+	auto GetPoints() -> std::list<glm::vec2>& {
+		return m.points;
+	}
+
 	ColliderData data;
 
 private:
