@@ -1,5 +1,6 @@
 #include "Toast/Engine.hpp"
 
+#include "Audio/AudioSystem.hpp"
 #include "Event/EventSystem.hpp"
 #include "ForceLink.cpp"
 #include "Input/InputSystem.hpp"
@@ -39,6 +40,7 @@ struct Engine::Pimpl {
 	std::unique_ptr<resource::ResourceManager> resourceManager;
 	std::unique_ptr<ProjectSettings> projectSettings;
 	std::unique_ptr<physics::PhysicsSystem> physicsSystem;
+	audio::AudioSystem* audioSystem;
 };
 
 void Engine::Run(int argc, char** argv) {
@@ -84,6 +86,10 @@ void Engine::Run(int argc, char** argv) {
 		m->inputSystem->Tick();
 
 		world->EarlyTick();
+
+		// Interpolate rb transforms before rendering
+		physics::PhysicsSystem::UpdateVisualInterpolation();
+
 		world->Tick();
 		world->LateTick();
 
@@ -101,6 +107,8 @@ void Engine::Run(int argc, char** argv) {
 		EditorTick();
 		m->renderer->EndImGuiFrame();
 #endif
+
+		m->audioSystem->Tick();
 
 		// Swap after all rendering and UI is done
 		window->SwapBuffers();
@@ -172,10 +180,15 @@ void Engine::Init() {
 	m->factory = std::make_unique<Factory>();
 
 	// Imguilayer testing purposes
-	m->layerStack->PushLayer(new renderer::DebugDrawLayer());
+	m->layerStack->PushOverlay(new renderer::DebugDrawLayer());
 
 	// Physics System
 	m->physicsSystem = std::make_unique<physics::PhysicsSystem>();
+
+	// Audio
+	auto audio_result = audio::AudioSystem::create();
+	TOAST_ASSERT(audio_result, "Failed to initialize Audio System");
+	m->audioSystem = audio_result.value();
 
 	Begin();
 }

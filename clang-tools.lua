@@ -25,17 +25,24 @@ local function run_cmd(cmd)
 end
 
 local function is_source_file(filename)
-	return filename:match("%.c$")
+	local source = filename:match("%.c$")
 		or filename:match("%.cpp$")
 		or filename:match("%.h$")
 		or filename:match("%.hpp$")
 		or filename:match("%.inl$")
+
+	if source then
+		return not (filename:match("Linux.inl") or filename:match("MacOS.inl") or filename:match("Windows.inl"))
+	end
+  return source
 end
 
 local function GetFiles(path)
 	local files = ""
 	for file in lfs.dir(path) do
-		if file == "." or file == ".." then goto continue end
+		if file == "." or file == ".." then
+			goto continue
+		end
 		local fullpath = path .. "/" .. file
 		local attrib = lfs.attributes(fullpath)
 		if attrib.mode == "directory" then
@@ -50,7 +57,11 @@ local function GetFiles(path)
 	return files
 end
 
-local files = " " .. GetFiles("./src") .. " " .. GetFiles("./inc")
+local files = " "
+	.. GetFiles("./src")
+	.. " "
+	.. GetFiles("./inc")
+
 if do_format and do_fix then
 	run_cmd("clang-format -i --verbose" .. files)
 elseif do_format then

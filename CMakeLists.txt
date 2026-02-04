@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(toast_engine VERSION 1.0.0 LANGUAGES CXX C)
+project(toast_engine VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -45,6 +45,7 @@ add_library(toast.engine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 target_include_directories(toast.engine
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/fmod/include/
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/renderdoc/
 )
 
@@ -84,6 +85,8 @@ if (TOAST_EDITOR)
             imgui
             imguizmo
             spine-cpp
+            fmod
+            fmod_studio
     )
 else ()
     
@@ -102,6 +105,8 @@ else ()
             # imgui
             # imguizmo
             spine-cpp
+            fmod
+            fmod_studio
     )
 endif ()
 

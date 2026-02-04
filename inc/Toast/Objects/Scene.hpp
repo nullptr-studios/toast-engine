@@ -47,7 +47,6 @@ protected:
 		return SceneT;
 	}
 
-
 	void Init() override { }
 
 	void Begin() override { }

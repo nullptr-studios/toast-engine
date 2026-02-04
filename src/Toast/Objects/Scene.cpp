@@ -1,5 +1,7 @@
 #include "Toast/Objects/Scene.hpp"
 
+#include "Toast/Objects/Object.hpp"
+#include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 
 namespace toast {

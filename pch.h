@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include <thread>
 #include <random>
+#include <numeric>
 
 #include <array>
 #include <deque>
