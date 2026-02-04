@@ -173,7 +173,7 @@ spine::AtlasRegion* AtlasRendererComponent::FindRegion(const std::string& region
 	return m_atlas->GetAtlasData()->findRegion(regionName.c_str());
 }
 
-std::string AtlasRendererComponent::GenerateSpriteName(const std::string& regionName) const {
+std::string AtlasRendererComponent::GenerateSpriteName(const std::string& regionName) {
 	// Count existing sprites with this region name
 	int count = 0;
 	for (const auto& [id, childPtr] : children.GetAll()) {
@@ -273,11 +273,12 @@ void AtlasRendererComponent::LoadTextures() {
 }
 
 void AtlasRendererComponent::Load(json_t j, bool force_create) {
-	TransformComponent::Load(j, force_create);
-	
+	// Load atlas path first
 	if (j.contains("atlasResourcePath")) {
 		m_atlasPath = j.at("atlasResourcePath").get<std::string>();
 	}
+	
+	TransformComponent::Load(j, false);
 	
 	// Mark cache as dirty so sprites get refreshed with proper regions on next render
 	m_spriteCacheDirty = true;

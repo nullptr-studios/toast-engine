@@ -60,7 +60,7 @@ json_t TransformComponent::Save() const {
 }
 
 void TransformComponent::Load(json_t j, bool force_create) {
-	Component::Load(j);
+	Component::Load(j, force_create);
 	if (j.contains("position")) {
 		m_position = j.at("position");
 	}
