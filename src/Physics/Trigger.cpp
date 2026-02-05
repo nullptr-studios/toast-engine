@@ -16,11 +16,15 @@ void Trigger::Begin() {
 	Actor::Begin();
 	PhysicsSystem::AddTrigger(this);
 	enterCallback = [this](Object* o) {
-		if (!enabled()) return;
+		if (!enabled()) {
+		  return;
+		}
 		OnEnter(o);
 	};
 	exitCallback = [this](Object* o) {
-		if (!enabled()) return;
+		if (!enabled()) {
+		  return;
+		}
 		OnExit(o);
 	};
 }
@@ -50,7 +54,9 @@ void Trigger::Load(json_t j, bool force_create) {
 }
 
 void Trigger::EditorTick() {
-	if (!enabled()) return;
+	if (!enabled()) {
+	  return;
+	}
 	if (debug.draw) {
 		// TODO: Make this fillable
 		renderer::DebugRect(transform()->worldPosition(), transform()->scale(), m.color);
