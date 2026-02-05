@@ -21,6 +21,15 @@ inline void from_json(const ordered_json& j, glm::vec2& v) {
 	v.y = j.at(1).get<float>();
 }
 
+inline void to_json(ordered_json& j, const glm::uvec2& v) {
+	j = ordered_json { v.x, v.y };
+}
+
+inline void from_json(const ordered_json& j, glm::uvec2& v) {
+	v.x = j.at(0).get<float>();
+	v.y = j.at(1).get<float>();
+}
+
 // glm::vec2
 inline void to_json(ordered_json& j, const glm::dvec2& v) {
 	j = ordered_json { v.x, v.y };
