@@ -4,151 +4,189 @@
 
 #include "Toast/Components/AtlasRendererComponent.hpp"
 
-#include "ResourceManager/Spine/SpineSkeletonRenderer.hpp"
+#include "Toast/Components/AtlasSpriteComponent.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
-#include "spine/SkeletonRenderer.h"
-#include "spine/Skin.h"
-#include "spine/Slot.h"
-#include "spine/SlotData.h"
+#include "Toast/Resources/Texture.hpp"
 
 #include <algorithm>
-#include <unordered_set>
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
 #endif
 
 void AtlasRendererComponent::Init() {
-	m_shader = resource::LoadResource<renderer::Shader>("shaders/spine.shader");
+	TransformComponent::Init();
+
+	m_shader = resource::LoadResource<renderer::Shader>("shaders/spine_atlas.shader");
 
 	// Reserve temp buffers to avoid allocations
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
-	m_tempIndices.reserve(INITIAL_VERT_RESERVE * 3);
+	m_tempIndices.reserve(INITIAL_VERT_RESERVE);
 
-	if (!m_atlasPath.empty() && !m_skeletonDataPath.empty()) {
-		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
-		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
-		m_skeleton = std::make_unique<spine::Skeleton>(m_skeletonData->GetSkeletonData());
-
-		// enumerate attachments
-		EnumerateAttachmentNames();
-
-		// If a previously saved atlas object exists, select and apply it
-		if (!m_atlasObject.empty() && !m_attachmentNames.empty()) {
-			auto it = std::find(m_attachmentNames.begin(), m_attachmentNames.end(), m_atlasObject);
-			if (it != m_attachmentNames.end()) {
-				m_selectedAttachment = static_cast<int>(std::distance(m_attachmentNames.begin(), it));
-				SetOnlyAttachmentByName(m_atlasObject);
-			} else {
-				m_selectedAttachment = -1;
-			}
+	if (!m_atlasPath.empty()) {
+		m_atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
+		if (m_atlas && m_atlas->GetResourceState() == resource::ResourceState::LOADEDCPU) {
+			EnumerateRegionNames();
 		}
 
-		// Tick once
-		m_skeleton->update(0.16f);
-		m_skeleton->updateWorldTransform(spine::Physics_None);
-	}
-
-	if (!m_atlasObject.empty()) {
-		SetOnlyAttachmentByName(m_atlasObject);
-	}
 #ifdef TOAST_EDITOR
-	m_atlasResource.SetInitialResource(m_atlasPath);
-	m_skeletonDataResource.SetInitialResource(m_skeletonDataPath);
+		m_atlasResource.SetInitialResource(m_atlasPath);
 #endif
-}
-
-void AtlasRendererComponent::EnumerateAttachmentNames() {
-	m_attachmentNames.clear();
-	if (!m_skeletonData) {
-		return;
-	}
-
-	auto* const data = m_skeletonData->GetSkeletonData();
-	if (!data) {
-		return;
-	}
-
-	std::unordered_set<std::string> names;
-
-	for (int s = 0; s < data->getSkins().size(); ++s) {
-		auto* const skin = data->getSkins()[s];
-		auto i = skin->getAttachments();
-		while (i.hasNext()) {
-			auto& entry = i.next();
-			if (entry._name.buffer()) {
-				names.emplace(entry._name.buffer());
-			}
-		}
-	}
-
-	// fallback
-	//  if (names.empty()) {
-	//  	for (int i = 0; i < data->getSlots().size(); ++i) {
-	//  		auto slot = data->getSlots()[i];
-	//  	}
-	//  }
-
-	// Move into vector and sort
-	m_attachmentNames.assign(names.begin(), names.end());
-	std::ranges::sort(m_attachmentNames);
-
-	// Reset selection if current selected not valid
-	if (m_selectedAttachment >= static_cast<int>(m_attachmentNames.size())) {
-		m_selectedAttachment = -1;
 	}
 }
 
-void AtlasRendererComponent::SetOnlyAttachmentByName(const std::string& name) {
-	if (!m_skeleton || !m_skeletonData) {
+void AtlasRendererComponent::EnumerateRegionNames() {
+	m_regionNames.clear();
+
+	if (!m_atlas || !m_atlas->GetAtlasData()) {
 		return;
 	}
 
-	auto* data = m_skeletonData->GetSkeletonData();
-	if (!data) {
+	spine::Atlas* atlas = m_atlas->GetAtlasData();
+	spine::Vector<spine::AtlasRegion*>& regions = atlas->getRegions();
+
+	m_regionNames.reserve(regions.size());
+	for (size_t i = 0; i < regions.size(); ++i) {
+		m_regionNames.push_back(regions[i]->name.buffer());
+	}
+}
+
+void AtlasRendererComponent::BuildQuadFromRegion(
+    spine::AtlasRegion* region, const glm::mat4& transform, uint32_t color, std::vector<renderer::SpineVertex>& vertices,
+    std::vector<uint16_t>& indices
+) {
+	if (!region) {
 		return;
 	}
 
-	// clear all attachments
-	for (int i = 0; i < m_skeleton->getSlots().size(); ++i) {
-		m_skeleton->getSlots()[i]->setAttachment(nullptr);
+	// Get UV coordinates from the region
+	float u = region->u;
+	float v = region->v;
+	float u2 = region->u2;
+	float v2 = region->v2;
+
+	// Flip V coordinates on Y axis
+	v = 1.0f - v;
+	v2 = 1.0f - v2;
+
+	// Get dimensions
+	float width = static_cast<float>(region->width) / 50.0f;    // 1 scale unit is 50 pixls
+	float height = static_cast<float>(region->height) / 50.0f;
+
+	// Current vertex offset for indices
+	uint16_t baseIndex = static_cast<uint16_t>(vertices.size());
+
+	// 4 vertices for the quad
+	std::array<renderer::SpineVertex, 4> quadVerts;
+
+	// Handle rotated regions
+	if (region->degrees == 90) {
+		std::swap(width, height);
+
+		float halfW = width * 0.5f;
+		float halfH = height * 0.5f;
+
+		// Bottom-left vertex
+		quadVerts[0].position = glm::vec3(halfH, -halfW, 0.0f);
+		quadVerts[0].texCoord = glm::vec2(u2, v2);
+		quadVerts[0].colorABGR = color;
+
+		// Bottom-right vertex
+		quadVerts[1].position = glm::vec3(halfH, halfW, 0.0f);
+		quadVerts[1].texCoord = glm::vec2(u, v2);
+		quadVerts[1].colorABGR = color;
+
+		// Top-right vertex
+		quadVerts[2].position = glm::vec3(-halfH, halfW, 0.0f);
+		quadVerts[2].texCoord = glm::vec2(u, v);
+		quadVerts[2].colorABGR = color;
+
+		// Top-left vertex
+		quadVerts[3].position = glm::vec3(-halfH, -halfW, 0.0f);
+		quadVerts[3].texCoord = glm::vec2(u2, v);
+		quadVerts[3].colorABGR = color;
+	} else {
+		// Unrotated region
+		float halfW = width * 0.5f;
+		float halfH = height * 0.5f;
+
+		// Bottom-left
+		quadVerts[0].position = glm::vec3(-halfW, -halfH, 0.0f);
+		quadVerts[0].texCoord = glm::vec2(u, v2);
+		quadVerts[0].colorABGR = color;
+
+		// Bottom-right
+		quadVerts[1].position = glm::vec3(halfW, -halfH, 0.0f);
+		quadVerts[1].texCoord = glm::vec2(u2, v2);
+		quadVerts[1].colorABGR = color;
+
+		// Top-right
+		quadVerts[2].position = glm::vec3(halfW, halfH, 0.0f);
+		quadVerts[2].texCoord = glm::vec2(u2, v);
+		quadVerts[2].colorABGR = color;
+
+		// Top-left
+		quadVerts[3].position = glm::vec3(-halfW, halfH, 0.0f);
+		quadVerts[3].texCoord = glm::vec2(u, v);
+		quadVerts[3].colorABGR = color;
 	}
 
-	// Find the attachment entry
-	for (int s = 0; s < data->getSkins().size(); ++s) {
-		auto* const skin = data->getSkins()[s];
-		auto i = skin->getAttachments();
-		while (i.hasNext()) {
-			if (auto& entry = i.next(); entry._name.buffer() && name == entry._name.buffer()) {
-				int slot_index = entry._slotIndex;
-				spine::Slot* slot = nullptr;
-				if (slot_index >= 0 && slot_index < m_skeleton->getSlots().size()) {
-					slot = m_skeleton->getSlots()[slot_index];
-				}
-				if (slot) {
-					slot->setAttachment(entry._attachment);
-					m_skeleton->updateWorldTransform(spine::Physics_None);
-					UpdateMeshBounds();
-					return;
-				}
+	// Transform vertices by the sprite's transform
+	for (auto& vert : quadVerts) {
+		glm::vec4 transformedPos = transform * glm::vec4(vert.position, 1.0f);
+		vert.position = glm::vec3(transformedPos);
+		vertices.push_back(vert);
+	}
+
+	// 6 indices for 2 triangles
+	indices.push_back(baseIndex + 0);
+	indices.push_back(baseIndex + 1);
+	indices.push_back(baseIndex + 2);
+	indices.push_back(baseIndex + 0);
+	indices.push_back(baseIndex + 2);
+	indices.push_back(baseIndex + 3);
+}
+
+void AtlasRendererComponent::RefreshSprites() {
+	m_spriteCache.clear();
+
+	// Collect all AtlasSpriteComponent children of this component
+	for (auto& [id, childPtr] : children.GetAll()) {
+		if (auto* sprite = dynamic_cast<toast::AtlasSpriteComponent*>(childPtr.get())) {
+			// Update the sprite's region if needed
+			if (sprite->GetRegion() == nullptr && !sprite->GetRegionName().empty() && m_atlas) {
+				spine::AtlasRegion* region = FindRegion(sprite->GetRegionName());
+				sprite->SetRegion(region);
+			}
+			m_spriteCache.push_back(sprite);
+		}
+	}
+
+	m_spriteCacheDirty = false;
+}
+
+spine::AtlasRegion* AtlasRendererComponent::FindRegion(const std::string& regionName) const {
+	if (!m_atlas || !m_atlas->GetAtlasData()) {
+		return nullptr;
+	}
+	return m_atlas->GetAtlasData()->findRegion(regionName.c_str());
+}
+
+std::string AtlasRendererComponent::GenerateSpriteName(const std::string& regionName) {
+	// Count existing sprites with this region name
+	int count = 0;
+	for (const auto& [id, childPtr] : children.GetAll()) {
+		if (auto* sprite = dynamic_cast<toast::AtlasSpriteComponent*>(childPtr.get())) {
+			if (sprite->GetRegionName() == regionName) {
+				count++;
 			}
 		}
 	}
 
-	for (int i = 0; i < m_skeleton->getSlots().size(); ++i) {
-		auto* slot = m_skeleton->getSlots()[i];
-		if (slot->getData().getName().buffer() && name == slot->getData().getName().buffer()) {
-			// attempt to get attachment with same name
-			if (auto* const att = m_skeleton->getAttachment(slot->getData().getName().buffer(), name.c_str())) {
-				slot->setAttachment(att);
-				m_skeleton->updateWorldTransform(spine::Physics_None);
-				UpdateMeshBounds();
-				return;
-			}
-		}
-	}
+	// Generate name
+	return regionName + "_" + std::to_string(count);
 }
 
 void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept {
@@ -156,112 +194,73 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		return;
 	}
 
-	if (!m_skeleton) {
+	if (!m_atlas || !m_atlas->GetAtlasData()) {
 		return;
 	}
 
-	const glm::mat4 model = GetWorldMatrix();
+	// Refresh sprite cache
+	if (m_spriteCacheDirty) {
+		RefreshSprites();
+	}
 
-	// Frustum culling using the dynamic AABB
-	const auto& frustumPlanes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes();
-	if (!OclussionVolume::isTransformedAABBOnPlanes(frustumPlanes, m_dynamicMesh.dynamicBoundingBox(), model)) {
-		return;    // Outside frustum, skip rendering
+	// Early exit if no sprites
+	if (m_spriteCache.empty()) {
+		return;
 	}
 
 	PROFILE_ZONE;
 
-	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
+	const glm::mat4 parentWorld = GetWorldMatrix();
 
-	const float z_step_cmd = 0.01f;       // inter-command z offset step
-	const float z_step_vertex = 1e-4f;    // per-triangle/vertex z offset step
-	float z_offset = 0.0f;
+	// Clear buffers for this frame
+	m_tempVerts.clear();
+	m_tempIndices.clear();
 
-	const glm::mat4 mvp = precomputed_mat * model;
+	// Build geometry for all sprites
+	for (auto* sprite : m_spriteCache) {
+		if (!sprite->enabled() || !sprite->GetRegion()) {
+			continue;
+		}
+
+		// Get sprite's world transform (relative to parent)
+		glm::mat4 spriteTransform = parentWorld * sprite->GetMatrix();
+
+		// Build quad for this sprite
+		BuildQuadFromRegion(sprite->GetRegion(), spriteTransform, sprite->GetColorABGR(), m_tempVerts, m_tempIndices);
+	}
+
+	// Early exit if no visible sprites
+	if (m_tempIndices.empty()) {
+		return;
+	}
+
+	// Update mesh
+	m_dynamicMesh.UpdateDynamicSpine(m_tempVerts.data(), m_tempVerts.size(), m_tempIndices.data(), m_tempIndices.size());
+
+	// Compute bounding box
+	m_dynamicMesh.ComputeSpineBoundingBox(m_tempVerts.data(), m_tempVerts.size());
+
+	// Frustum culling
+	const auto& frustumPlanes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes();
+	if (!OclussionVolume::isTransformedAABBOnPlanes(frustumPlanes, m_dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f))) {
+		return;
+	}
+
+	const glm::mat4 mvp = precomputed_mat;
 
 	m_shader->Use();
 	m_shader->Set("transform", mvp);
 
-	// Reuse temporary buffers
-	m_tempVerts.clear();
-	m_tempIndices.clear();
-
-	// cache last bound texture to avoid redundant binds
-	m_lastBoundTexture = 0;
-
-	auto flush_batch = [&]() {
-		if (m_tempIndices.empty()) {
-			return;
+	spine::Vector<spine::AtlasPage*>& pages = m_atlas->GetAtlasData()->getPages();
+	if (pages.size() > 0) {
+		std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(pages[0]->texture);
+		if (tex_ptr) {
+			tex_ptr->get()->Bind(0);
 		}
-		// Update GPU buffer
-		m_dynamicMesh.UpdateDynamicSpine(m_tempVerts.data(), m_tempVerts.size(), m_tempIndices.data(), m_tempIndices.size());
-		// Draw  mesh
-		m_dynamicMesh.DrawDynamicSpine(m_tempIndices.size());
-		// clear for next batch
-		m_tempVerts.clear();
-		m_tempIndices.clear();
-	};
-
-	while (command) {
-		if (m_tempVerts.capacity() < static_cast<size_t>(command->numVertices)) {
-			m_tempVerts.reserve(static_cast<size_t>(command->numVertices));
-		}
-		if (m_tempIndices.capacity() < static_cast<size_t>(command->numIndices)) {
-			m_tempIndices.reserve(static_cast<size_t>(command->numIndices));
-		}
-
-		// Determine command texture
-		std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(command->texture);
-		unsigned int tex_id = tex_ptr->get()->id();
-
-		if (tex_id != m_lastBoundTexture && !m_tempIndices.empty()) {
-			flush_batch();
-		}
-
-		// bind texture if needed
-		if (tex_id != m_lastBoundTexture) {
-			if (tex_id != 0) {
-				tex_ptr->get()->Bind(0);
-			}
-			m_lastBoundTexture = tex_id;
-		}
-
-		// append vertices
-		size_t start_vert = m_tempVerts.size();
-		m_tempVerts.resize(start_vert + command->numVertices);
-		for (int i = 0; i < command->numVertices; ++i) {
-			auto& v = m_tempVerts[start_vert + i];
-			v.position = glm::vec3(command->positions[(i * 2) + 0], command->positions[(i * 2) + 1], 0.0f);
-			v.texCoord = glm::vec2(command->uvs[(i * 2) + 0], command->uvs[(i * 2) + 1]);
-			v.colorABGR = command->colors[i];
-		}
-
-		// append indices
-		size_t start_idx = m_tempIndices.size();
-		m_tempIndices.resize(start_idx + command->numIndices);
-		for (int i = 0; i < command->numIndices; ++i) {
-			m_tempIndices[start_idx + i] = static_cast<uint16_t>(command->indices[i] + start_vert);
-		}
-
-		// Per-triangle Z layering
-		for (size_t i = 0; i + 2 < command->numIndices; i += 3) {
-			uint16_t ia = static_cast<uint16_t>(command->indices[i + 0] + start_vert);
-			uint16_t ib = static_cast<uint16_t>(command->indices[i + 1] + start_vert);
-			uint16_t ic = static_cast<uint16_t>(command->indices[i + 2] + start_vert);
-			float z = z_offset;
-			m_tempVerts[ia].position.z = z;
-			m_tempVerts[ib].position.z = z;
-			m_tempVerts[ic].position.z = z;
-			z_offset += z_step_vertex;
-		}
-
-		// Increment Z between commands
-		z_offset += z_step_cmd;
-
-		command = command->next;
 	}
 
-	// flush any remaining geometry
-	flush_batch();
+	// Draw all sprites in one call
+	m_dynamicMesh.DrawDynamicSpine(m_tempIndices.size());
 }
 
 void AtlasRendererComponent::LoadTextures() {
@@ -274,74 +273,24 @@ void AtlasRendererComponent::LoadTextures() {
 }
 
 void AtlasRendererComponent::Load(json_t j, bool force_create) {
-	TransformComponent::Load(j, force_create);
+	// Load atlas path first
 	if (j.contains("atlasResourcePath")) {
 		m_atlasPath = j.at("atlasResourcePath").get<std::string>();
 	}
-	if (j.contains("skeletonDataResourcePath")) {
-		m_skeletonDataPath = j.at("skeletonDataResourcePath").get<std::string>();
-	}
-	if (j.contains("atlasObject")) {
-		m_atlasObject = j.at("atlasObject").get<std::string>();
 
-		// If attachment names already enumerated (e.g. resource was loaded earlier), update selection
-		if (!m_atlasObject.empty() && !m_attachmentNames.empty()) {
-			auto it = std::find(m_attachmentNames.begin(), m_attachmentNames.end(), m_atlasObject);
-			if (it != m_attachmentNames.end()) {
-				m_selectedAttachment = static_cast<int>(std::distance(m_attachmentNames.begin(), it));
-				SetOnlyAttachmentByName(m_atlasObject);
-			} else {
-				m_selectedAttachment = -1;
-			}
-		}
-	}
+	TransformComponent::Load(j, false);
+
+	// Mark cache as dirty so sprites get refreshed with proper regions on next render
+	m_spriteCacheDirty = true;
 }
 
 void AtlasRendererComponent::UpdateMeshBounds() {
-	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
-	// collect all vertices to compute bounding box for frustum culling
-	{
-		spine::RenderCommand* cmd = command;
-		size_t totalVerts = 0;
-		while (cmd) {
-			totalVerts += cmd->numVertices;
-			cmd = cmd->next;
-		}
-
-		// Build temporary vertex positions for bounding box computation
-		m_tempVerts.reserve(totalVerts);
-		cmd = command;
-		while (cmd) {
-			for (int i = 0; i < cmd->numVertices; ++i) {
-				renderer::SpineVertex v {};
-				v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
-				v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], cmd->uvs[(i * 2) + 1]);
-				v.colorABGR = cmd->colors[i];
-				m_tempVerts.push_back(v);
-			}
-			cmd = cmd->next;
-		}
-
-		// Compute dynamic bounding box
+	if (!m_tempVerts.empty()) {
 		m_dynamicMesh.ComputeSpineBoundingBox(m_tempVerts.data(), m_tempVerts.size());
 	}
-
-	// Reset buffers for actual rendering pass
-	m_tempVerts.clear();
-	m_tempIndices.clear();
 }
 
 #ifdef TOAST_EDITOR
-
-// ImGui helper
-static bool ItemsGetter(void* data, int idx, const char** out_text) {
-	auto vec = static_cast<std::vector<std::string>*>(data);
-	if (idx < 0 || idx >= static_cast<int>(vec->size())) {
-		return false;
-	}
-	*out_text = vec->at(idx).c_str();
-	return true;
-}
 
 void AtlasRendererComponent::Inspector() {
 	if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -352,71 +301,88 @@ void AtlasRendererComponent::Inspector() {
 	ImGui::Spacing();
 
 	m_atlasResource.Show();
-	m_skeletonDataResource.Show();
 
-	if (ImGui::Button("Load")) {
-		if (m_atlasResource.GetResourcePath().empty() || m_skeletonDataResource.GetResourcePath().empty()) {
-			TOAST_WARN("AtlasRendererComponent::Inspector() Cannot load Spine resources: paths are empty");
+	if (ImGui::Button("Load Atlas")) {
+		if (m_atlasResource.GetResourcePath().empty()) {
+			TOAST_WARN("AtlasRendererComponent::Inspector() Cannot load atlas: path is empty");
 			return;
 		}
 
-		m_skeletonDataPath = m_skeletonDataResource.GetResourcePath();
 		m_atlasPath = m_atlasResource.GetResourcePath();
 
-		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasResource.GetResourcePath());
-		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataResource.GetResourcePath(), atlas);
-		if (m_skeletonData->GetResourceState() == resource::ResourceState::FAILED) {
-			TOAST_ERROR("AtlasRendererComponent::Inspector() Failed loading SpineSkeletonData from path \"{0}\"", m_skeletonDataResource.GetResourcePath());
+		m_atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
+		if (!m_atlas || m_atlas->GetResourceState() == resource::ResourceState::FAILED) {
+			TOAST_ERROR("AtlasRendererComponent::Inspector() Failed loading SpineAtlas from path \"{0}\"", m_atlasPath);
 			return;
 		}
-		m_skeleton = std::make_unique<spine::Skeleton>(m_skeletonData->GetSkeletonData());
 
-		// enumerate attachments
-		EnumerateAttachmentNames();
-
-		// apply saved selection if present
-		if (!m_atlasObject.empty() && !m_attachmentNames.empty()) {
-			auto it = std::find(m_attachmentNames.begin(), m_attachmentNames.end(), m_atlasObject);
-			if (it != m_attachmentNames.end()) {
-				m_selectedAttachment = static_cast<int>(std::distance(m_attachmentNames.begin(), it));
-				SetOnlyAttachmentByName(m_atlasObject);
-			} else {
-				m_selectedAttachment = -1;
-			}
-		}
-
-		// Tick once
-		m_skeleton->update(0.16f);
-		m_skeleton->updateWorldTransform(spine::Physics_Update);
+		// Enumerate regions
+		EnumerateRegionNames();
+		m_spriteCacheDirty = true;
 	}
 
 	ImGui::Separator();
 
-	if (!m_skeleton) {
-		ImGui::TextColored(ImVec4(1, 1, 0, 1), "No skeleton loaded");
+	if (!m_atlas || !m_atlas->GetAtlasData()) {
+		ImGui::TextColored(ImVec4(1, 1, 0, 1), "No atlas loaded");
 		return;
 	}
 
-	ImGui::Text("Attachments: %d", static_cast<int>(m_attachmentNames.size()));
-	// Attachment picker
-	if (!m_attachmentNames.empty()) {
-		const char* preview = (m_selectedAttachment >= 0 && m_selectedAttachment < static_cast<int>(m_attachmentNames.size()))
-		                          ? m_attachmentNames[m_selectedAttachment].c_str()
-		                          : "<none>";
-		if (ImGui::BeginCombo("Attachment", preview)) {
-			for (int i = 0; i < static_cast<int>(m_attachmentNames.size()); ++i) {
-				const bool selected = (m_selectedAttachment == i);
-				if (ImGui::Selectable(m_attachmentNames[i].c_str(), selected)) {
-					m_selectedAttachment = i;
-					// set only this attachment
-					SetOnlyAttachmentByName(m_attachmentNames[i]);
-					m_atlasObject = m_attachmentNames[i];
+	ImGui::Text("Atlas: %s", m_atlasPath.c_str());
+	ImGui::Text("Regions: %d", static_cast<int>(m_regionNames.size()));
+
+	ImGui::Separator();
+	ImGui::Text("Sprites: %zu", m_spriteCache.size());
+
+	// Button to add new sprite
+	if (ImGui::Button("Add Sprite")) {
+		if (!m_regionNames.empty()) {
+			// Use first region as default
+			std::string spriteName = GenerateSpriteName(m_regionNames[0]);
+			auto* sprite = children.Add<toast::AtlasSpriteComponent>(spriteName);
+			if (sprite) {
+				sprite->SetRegionName(m_regionNames[0]);
+				sprite->SetRegion(FindRegion(m_regionNames[0]));
+			}
+			m_spriteCacheDirty = true;
+		}
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button("Refresh Sprites")) {
+		m_spriteCacheDirty = true;
+	}
+
+	// Region picker for adding sprites
+	if (!m_regionNames.empty()) {
+		ImGui::Separator();
+		ImGui::Text("Quick Add Region:");
+		const char* preview = (m_selectedRegion >= 0 && m_selectedRegion < static_cast<int>(m_regionNames.size()))
+		                          ? m_regionNames[m_selectedRegion].c_str()
+		                          : "<select region>";
+		if (ImGui::BeginCombo("##RegionCombo", preview)) {
+			for (int i = 0; i < static_cast<int>(m_regionNames.size()); ++i) {
+				const bool selected = (m_selectedRegion == i);
+				if (ImGui::Selectable(m_regionNames[i].c_str(), selected)) {
+					m_selectedRegion = i;
 				}
 				if (selected) {
 					ImGui::SetItemDefaultFocus();
 				}
 			}
 			ImGui::EndCombo();
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Add This Region") && m_selectedRegion >= 0) {
+			std::string regionName = m_regionNames[m_selectedRegion];
+			std::string spriteName = GenerateSpriteName(regionName);
+			auto* sprite = children.Add<toast::AtlasSpriteComponent>(spriteName);
+			if (sprite) {
+				sprite->SetRegionName(regionName);
+				sprite->SetRegion(FindRegion(regionName));
+			}
+			m_spriteCacheDirty = true;
 		}
 	}
 }
@@ -426,8 +392,6 @@ void AtlasRendererComponent::Inspector() {
 json_t AtlasRendererComponent::Save() const {
 	json_t j = TransformComponent::Save();
 	j["atlasResourcePath"] = m_atlasPath;
-	j["skeletonDataResourcePath"] = m_skeletonDataPath;
-	j["atlasObject"] = m_atlasObject;
 	return j;
 }
 

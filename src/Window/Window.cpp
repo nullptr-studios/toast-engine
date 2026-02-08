@@ -64,7 +64,7 @@ bool Window::ShouldClose() const {
 	return glfwWindowShouldClose(m_glfwWindow);
 }
 
-std::pair<unsigned, unsigned> Window::GetFramebufferSize() const {
+glm::uvec2 Window::GetFramebufferSize() const {
 	int w = 0, h = 0;
 	glfwGetFramebufferSize(m_glfwWindow, &w, &h);
 	return { static_cast<unsigned>(w), static_cast<unsigned>(h) };
@@ -94,9 +94,64 @@ void Window::WaitEventsTimeout(double seconds) {
 	glfwWaitEventsTimeout(seconds);
 }
 
+void Window::SetDisplayMode(DisplayMode modeScreen) {
+	if (modeScreen == m_currentDisplayMode) {
+		return;
+	}
+
+	if (modeScreen == DisplayMode::WINDOWED) {
+		TOAST_INFO("Switching to WINDOWED mode");
+		glfwSetWindowMonitor(m_glfwWindow, nullptr, m_windowedPos.x, m_windowedPos.y, m_windowedSize.x, m_windowedSize.y, GLFW_DONT_CARE);
+	} else if (modeScreen == DisplayMode::FULLSCREEN) {
+		TOAST_INFO("Switching to FULLSCREEN mode");
+		// Save current windowed size and position
+		if (m_currentDisplayMode == DisplayMode::WINDOWED) {
+			glfwGetWindowPos(m_glfwWindow, &m_windowedPos.x, &m_windowedPos.y);
+			int w, h;
+			glfwGetWindowSize(m_glfwWindow, &w, &h);
+			m_windowedSize = { static_cast<unsigned>(w), static_cast<unsigned>(h) };
+		}
+
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+		if (mode) {
+			glfwSetWindowMonitor(m_glfwWindow, monitor, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
+		}
+	}
+
+	m_currentDisplayMode = modeScreen;
+}
+
+DisplayMode Window::GetDisplayMode() const {
+	return m_currentDisplayMode;
+}
+
+std::vector<glm::uvec2> Window::GetMonitorSupportedSizes() {
+	std::vector<glm::uvec2> sizes;
+	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+	if (monitor) {
+		int count;
+		const GLFWvidmode* modes = glfwGetVideoModes(monitor, &count);
+		sizes.reserve(count);
+		for (int i = 0; i < count; ++i) {
+			sizes.emplace_back(static_cast<unsigned>(modes[i].width), static_cast<unsigned>(modes[i].height));
+		}
+	}
+	return sizes;
+}
+
+void Window::SetResolution(glm::uvec2 res) const {
+	glfwSetWindowSize(m_glfwWindow, static_cast<int>(res.x), static_cast<int>(res.y));
+}
+
+void Window::SetVSync(bool vsync) {
+	glfwSwapInterval(vsync);
+	m_vsync = vsync;
+}
+
 bool Window::IsMinimized() const {
-	auto [w, h] = GetFramebufferSize();
-	return w == 0 || h == 0;
+	auto s = GetFramebufferSize();
+	return s.x == 0 || s.y == 0;
 }
 
 #pragma region Error_Handling

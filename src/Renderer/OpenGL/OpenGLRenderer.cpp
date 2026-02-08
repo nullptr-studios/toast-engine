@@ -219,14 +219,23 @@ OpenGLRenderer::OpenGLRenderer() {
 			return true;
 		}
 		// Update viewport and projection matrix
-		Resize(e->width, e->height);
+		Resize({ static_cast<unsigned>(e->width), static_cast<unsigned>(e->height) });
 		return true;
+	});
+
+	m_listener.Subscribe<event::WindowKey>([this](event::WindowKey* e) -> bool {
+		// Toggle Fullscreen F11
+		if (e->key == GLFW_KEY_F11 && e->action == GLFW_PRESS) {
+			ToggleFullscreen();
+		}
+
+		return false;
 	});
 
 	// call resize once at start
 	{
 		auto* window = toast::Window::GetInstance();
-		OpenGLRenderer::Resize(window->GetFramebufferSize().first, window->GetFramebufferSize().second);
+		OpenGLRenderer::Resize(window->GetFramebufferSize());
 	}
 
 #ifdef TOAST_EDITOR
@@ -259,6 +268,9 @@ OpenGLRenderer::OpenGLRenderer() {
 
 	// Set once, change and reset state if needed
 	stbi_set_flip_vertically_on_load(1);
+
+	// Load settings
+	LoadRenderSettings();
 }
 
 OpenGLRenderer::~OpenGLRenderer() {
@@ -398,6 +410,9 @@ void OpenGLRenderer::GeometryPass() {
 		});
 		m_renderablesSortDirty = false;
 	}
+
+	glViewport(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
+	glScissor(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
 
 	m_geometryFramebuffer->bind();
 	Clear();
@@ -544,15 +559,21 @@ void OpenGLRenderer::Clear() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGLRenderer::Resize(unsigned int width, unsigned int height) {
-	glViewport(0, 0, width, height);
-	glScissor(0, 0, width, height);
-	m_geometryFramebuffer->Resize(width, height);
+void OpenGLRenderer::Resize(glm::uvec2 size) {
+	unsigned width = size.x;
+	unsigned height = size.y;
 
-	m_lightFramebuffer->Resize(static_cast<unsigned int>(width * m_globalLightResolution), static_cast<unsigned int>(height * m_globalLightResolution));
+	m_geometryFramebuffer->Resize(width * m_config.resolutionScale, height * m_config.resolutionScale);
+
+	m_lightFramebuffer->Resize(
+	    static_cast<unsigned int>(width * m_config.lightResolutionScale), static_cast<unsigned int>(height * m_config.lightResolutionScale)
+	);
 	m_outputFramebuffer->Resize(width, height);
 	// Update projection matrix to maintain aspect ratio
 	SetProjectionMatrix(glm::radians(90.0f), static_cast<float>(width) / static_cast<float>(height), 0.1f, 1000.0f);
+
+	m_config.resolution = glm::uvec2(width, height);
+	SaveRenderSettings();
 }
 
 void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
@@ -575,29 +596,16 @@ void OpenGLRenderer::RemoveLight(Light2D* light) {
 	m_lightsSortDirty = true;
 }
 
-void OpenGLRenderer::LoadRenderSettings() {
-	json_t settings {};
-	std::istringstream ss;
-	if (!resource::Open("renderer_settings.toast", ss)) {
-		throw ToastException("Failed to find project_settings.toast");
-	}
+void OpenGLRenderer::ApplyRenderSettings() {
+	auto window = toast::Window::GetInstance();
 
-	ss >> settings;
+	// vsync
+	window->SetVSync(m_config.vSync);
 
-	m_globalLightEnabled = settings["GlobalIllumination"]["enabled"].get<bool>();
-	m_globalLightIntensity = settings["GlobalIllumination"]["intensity"].get<float>();
-	m_globalLightColor = settings["GlobalIllumination"]["color"].get<glm::vec3>();
-	m_globalLightResolution = settings["GlobalIllumination"]["resolution"].get<float>();
-}
+	window->SetDisplayMode(m_config.currentDisplayMode);
 
-void OpenGLRenderer::SaveRenderSettings() {
-	json_t settings {};
-	settings["GlobalIllumination"]["enabled"] = m_globalLightEnabled;
-	settings["GlobalIllumination"]["intensity"] = m_globalLightIntensity;
-	settings["GlobalIllumination"]["color"] = m_globalLightColor;
-	settings["GlobalIllumination"]["resolution"] = m_globalLightResolution;
-
-	resource::ResourceManager::SaveFile("renderer_settings.toast", settings.dump(2));
+	// resolution (Framebuffer scale is handled in Resize)
+	window->SetResolution(m_config.resolution);
 }
 
 }
