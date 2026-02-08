@@ -42,11 +42,23 @@ Material::~Material() {
 }
 
 void Material::Load() {
-	LoadMaterial();
+	try {
+		LoadMaterial();
+	} catch (const std::exception& e) {
+		TOAST_ERROR("Material load failed: {0}", e.what());
+		SetResourceState(resource::ResourceState::FAILED);
+		LoadErrorMaterial();
+	}
 }
 
 void Material::LoadMainThread() {
-	LoadResources();
+	try {
+		LoadResources();
+	} catch (const std::exception& e) {
+		TOAST_ERROR("Material resource load failed: {0}", e.what());
+		SetResourceState(resource::ResourceState::FAILED);
+		LoadErrorMaterial();
+	}
 }
 
 void Material::ShowEditor() {
@@ -330,8 +342,15 @@ void Material::LoadResources() {
 	if (!m_shaderPath.empty()) {
 		m_shader = resource::LoadResource<renderer::Shader>(m_shaderPath);
 		if (!m_shader) {
-			TOAST_WARN("Could not load shader at path: {0}", m_shaderPath);
+			TOAST_ERROR("Could not load shader at path: {0}, using error shader", m_shaderPath);
+			// Create error shader as fallback
+			m_shader = std::make_shared<renderer::Shader>("ErrorShader");
+			m_shader->LoadErrorShader();
 		}
+	} else {
+		TOAST_WARN("Material has no shader path, using error shader");
+		m_shader = std::make_shared<renderer::Shader>("ErrorShader");
+		m_shader->LoadErrorShader();
 	}
 }
 
@@ -483,6 +502,22 @@ void Material::UpdateEditorSlots() {
 		});
 	}
 #endif
+}
+
+void Material::LoadErrorMaterial() {
+	PROFILE_ZONE;
+	TOAST_WARN("Loading error material");
+	
+	// Clear existing data
+	m_shaderParameters.clear();
+	m_parameters.clear();
+	m_textures.clear();
+	
+	m_shader = std::make_shared<renderer::Shader>("ErrorShader");
+	m_shader->LoadErrorShader();
+	
+	// Set material as loaded
+	SetResourceState(resource::ResourceState::UPLOADEDGPU);
 }
 
 }    // namespace renderer

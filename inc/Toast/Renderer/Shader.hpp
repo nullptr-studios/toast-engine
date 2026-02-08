@@ -98,6 +98,9 @@ public:
 		return m_debugName;
 	}
 
+	/// @brief Load error fallback shader
+	void LoadErrorShader();
+
 private:
 	GLuint m_program = 0;
 	std::unordered_map<std::string, GLint> m_uniformLocationCache;
