@@ -1,0 +1,17 @@
+# Cache files
+.xmake/
+.DS_Store
+
+# IDE files
+.vscode
+.vs
+.idea
+
+# Build files
+**[Bb]uild**
+**[Bb]in**
+**[Oo]bj**
+
+compile_commands.json
+CMakeLists.txt
+**.sln
