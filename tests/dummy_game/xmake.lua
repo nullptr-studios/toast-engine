@@ -1,0 +1,7 @@
+target("toast.empty-game", function()
+	set_kind("shared")
+	add_files("**.cpp")
+	add_headerfiles("**.h")
+	add_deps("toast.engine")
+	add_defines("GAME_EXPORT")
+end)
