@@ -412,7 +412,7 @@ json_t Collider::Save() const {
 	j["debug.showColliders"] = debug.showColliders;
 	j["debug.showNormals"] = data.debugNormals;
 	j["flags"] = static_cast<unsigned int>(m.flags);
-
+	j["data.forceLeft"] = data.forceLeft;
 	return j;
 }
 
@@ -450,6 +450,9 @@ void Collider::Load(json_t j, bool propagate) {
 		}
 		m.flags = static_cast<ColliderFlags>(j["flags"]);
 		data.flags = static_cast<ColliderFlags>(j["flags"]);
+	}
+	if (j.contains("data.forceLeft")) {
+		data.forceLeft = j["data.forceLeft"];
 	}
 
 	Component::Load(j, propagate);
