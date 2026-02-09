@@ -33,12 +33,12 @@ json_t Actor::Save() const {
 }
 
 void Actor::Load(json_t j, bool force_create) {
-	Object::Load(j, force_create);
-
 	auto transform_j = j["transform"];
 	m_transform->position(transform_j["position"].get<glm::vec3>());
 	m_transform->rotationQuat(transform_j["rotation"].get<glm::quat>());
 	m_transform->scale(transform_j["scale"].get<glm::vec3>());
+
+	Object::Load(j, force_create);
 }
 
 #ifdef TOAST_EDITOR
