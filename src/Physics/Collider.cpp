@@ -295,6 +295,8 @@ void Collider::Inspector() {
 			cur &= ~static_cast<unsigned int>(ColliderFlags::Ramp);
 		}
 	}
+	ImGui::Spacing();
+	ImGui::Checkbox("Ramp force left?", &data.forceLeft);
 
 	m.flags = static_cast<ColliderFlags>(cur);
 	data.flags = static_cast<ColliderFlags>(cur);

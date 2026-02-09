@@ -17,6 +17,7 @@ struct ColliderData {
 	double friction = 0.4;
 	glm::vec2 worldPosition;
 	double throwForce = 100.0f;
+	bool forceLeft = false;
 	toast::Object* parent;
 	ColliderFlags flags {};
 	bool debugNormals = false;
