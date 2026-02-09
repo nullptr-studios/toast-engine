@@ -185,16 +185,22 @@ void Material::LoadMaterial() {
 	m_textures.clear();
 	m_shader = nullptr;
 
-	std::string data = *resource::Open(m_materialPath);
-	json_t j = json_t::parse(data);
+	std::optional<std::string> data = resource::Open(m_materialPath);
+	if (!data.has_value()) {
+		throw ToastException("Failed to open material file: " + m_materialPath);
+	}
+	json_t j = json_t::parse(data.value());
 
 	if (j.contains("shaderPath")) {
 		m_shaderPath = j.at("shaderPath").get<std::string>();
 	}
 
 	// Read shader description to get parameter list
-	data = *resource::Open(m_shaderPath);
-	json_t shaderJson = json_t::parse(data);
+	data = resource::Open(m_shaderPath);
+	if (!data.has_value()) {
+		throw ToastException("Failed to open shader file: " + m_shaderPath);
+	}
+	json_t shaderJson = json_t::parse(data.value());
 
 	if (shaderJson.contains("parameters")) {
 		for (const auto& param : shaderJson.at("parameters")) {
@@ -514,7 +520,7 @@ void Material::LoadErrorMaterial() {
 	m_textures.clear();
 	
 	m_shader = std::make_shared<renderer::Shader>("ErrorShader");
-	m_shader->LoadErrorShader();
+	// m_shader->LoadErrorShader();
 	
 	// Set material as loaded
 	SetResourceState(resource::ResourceState::UPLOADEDGPU);

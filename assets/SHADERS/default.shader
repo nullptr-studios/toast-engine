@@ -16,11 +16,6 @@
 	        "defaultValue": "images/default.png"
 	    },
 	    {
-	        "name": "gNormalMap",
-            "type": "texture",
-            "defaultValue": "images/NoNormals.png"
-	    },
-	    {
 	        "name": "gColor",
 	        "type": "color"
 	    }
