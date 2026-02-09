@@ -21,7 +21,11 @@ void SpineSkeletonData::Load() {
 	SetResourceState(resource::ResourceState::LOADING);
 
 	std::vector<uint8_t> buffer {};
-	resource::Open(m_path, buffer);
+	if (!resource::Open(m_path, buffer)) {
+		TOAST_ERROR("SpineSkeletonData::Load() failed to open file: {}", m_path);
+		SetResourceState(resource::ResourceState::FAILED);
+		return;
+	}
 
 	if (m_path.ends_with("l")) {
 		// .skel file

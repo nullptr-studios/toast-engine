@@ -16,9 +16,6 @@ resource::ResourceManager* resource::ResourceManager::m_instance = nullptr;
 namespace resource {
 PackFile g_packFile;
 
-std::shared_ptr<Texture> g_fileIcon;
-std::shared_ptr<Texture> g_jsonIcon;
-std::shared_ptr<Texture> g_objIcon;
 
 auto Open(std::string& path) -> std::optional<std::string> {
 	std::istringstream s;
@@ -214,11 +211,6 @@ bool ResourceManager::LoadConfig(const std::string& path, std::string& content) 
 }
 
 editor::ResourceSlot::Entry ResourceManager::CreateResourceSlotEntry(const std::filesystem::path& path) {
-	if (!g_fileIcon) {
-		g_fileIcon = resource::LoadResource<Texture>("editor/icons/genericFile.png");
-		g_jsonIcon = resource::LoadResource<Texture>("editor/icons/jsonFile.png");
-		g_objIcon = resource::LoadResource<Texture>("editor/icons/objFile.png");
-	}
 
 	editor::ResourceSlot::Entry e;
 	e.isDirectory = false;
@@ -236,15 +228,15 @@ editor::ResourceSlot::Entry ResourceManager::CreateResourceSlotEntry(const std::
 		std::replace(normalized.begin(), normalized.end(), '\\', '/');
 		e.icon = resource::LoadResource<Texture>(normalized);
 	} else if (e.extension == ".json") {
-		e.icon = g_jsonIcon;
+		e.icon = resource::LoadResource<Texture>(kJsonFilePath);
 	} else if (e.extension == ".obj") {
-		e.icon = g_objIcon;
+		e.icon = resource::LoadResource<Texture>(kObjFilePath);
 	} else {
-		e.icon = g_fileIcon;
+		e.icon = resource::LoadResource<Texture>(kGenericFilePath);
 	}
 	if (!e.icon) {
 		// generic
-		e.icon = g_fileIcon;
+		e.icon = resource::LoadResource<Texture>(kGenericFilePath);
 	}
 
 	return e;
