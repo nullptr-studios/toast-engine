@@ -6,6 +6,7 @@
 
 #include "Toast/GlmJson.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Time.hpp"
 
 #include <algorithm>
 #include <any>
@@ -414,6 +415,8 @@ void Material::Use() const {
 			}
 		}
 	}
+	
+	m_shader->Set("time", static_cast<float>(Time::uptime()));
 }
 
 void Material::UpdateEditorSlots() {
