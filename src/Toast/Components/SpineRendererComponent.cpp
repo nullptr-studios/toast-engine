@@ -37,8 +37,8 @@ void SpineRendererComponent::Init() {
 		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
 		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
 	} else {
-		m_atlasPath = "animations/player/Player-unfinished.atlas";
-		m_skeletonDataPath = "animations/player/Player-unfinished.json";
+		m_atlasPath = "CHARS/PLAYER/ANIMATIONS/CH_Cat.atlas";
+		m_skeletonDataPath = "CHARS/PLAYER/ANIMATIONS/CH_Cat.json";
 
 		// Fallback to legacy defaults to keep previous behavior
 		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
