@@ -163,7 +163,10 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 		// Load scene file
 		json_t j;
 		try {
-			j = json_t::parse(*resource::Open(path));
+			auto p = resource::Open(path);
+			if (!p.has_value())
+				throw ToastException("Cannot open scene file: " + std::string(path));
+			j = json_t::parse(p.value());
 		} catch (const std::exception& e) {
 			TOAST_ERROR("Failed opening scene with path \"{0}\"\n{1}", path, e.what());
 			return;
