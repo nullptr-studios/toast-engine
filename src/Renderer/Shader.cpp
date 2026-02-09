@@ -27,22 +27,34 @@ void Shader::Load() {
 	// Parse Json
 	std::istringstream in {};
 	if (!resource::Open(m_path, in)) {
-		throw ToastException("Shader Failed to open shader file: " + m_path);
+		TOAST_ERROR("Shader Failed to open shader file: {0}", m_path);
+		SetResourceState(resource::ResourceState::FAILED);
+		LoadErrorShader();
+		return;
 	}
 
 	nlohmann::ordered_json j = nlohmann::ordered_json::parse(in, nullptr, false);
 	if (j.is_discarded()) {
-		throw ToastException("Shader Failed to parse shader JSON file: " + m_path);
+		TOAST_ERROR("Shader Failed to parse shader JSON file: {0}", m_path);
+		SetResourceState(resource::ResourceState::FAILED);
+		LoadErrorShader();
+		return;
 	}
 
 	if (!j.contains("stageFiles") || !j["stageFiles"].is_array()) {
-		throw ToastException("Shader JSON file missing 'stageFiles' array: " + m_path);
+		TOAST_ERROR("Shader JSON file missing 'stageFiles' array: {0}", m_path);
+		SetResourceState(resource::ResourceState::FAILED);
+		LoadErrorShader();
+		return;
 	}
 
 	std::vector<std::pair<Stage, std::filesystem::path>> stage_files;
 	for (const auto& item : j["stageFiles"]) {
 		if (!item.contains("stage") || !item.contains("path")) {
-			throw ToastException("Shader JSON 'stageFiles' item missing 'stage' or 'path': " + m_path);
+			TOAST_ERROR("Shader JSON 'stageFiles' item missing 'stage' or 'path': {0}", m_path);
+			SetResourceState(resource::ResourceState::FAILED);
+			LoadErrorShader();
+			return;
 		}
 		std::string stage_str = item["stage"].get<std::string>();
 		std::string file_path = item["path"].get<std::string>();
@@ -56,12 +68,18 @@ void Shader::Load() {
 		} else if (stage_str == "compute") {
 			stage = Stage::Compute;
 		} else {
-			throw ToastException("Shader JSON unknown stage type: " + stage_str + " in file " + m_path);
+			TOAST_ERROR("Shader JSON unknown stage type: {0} in file {1}", stage_str, m_path);
+			SetResourceState(resource::ResourceState::FAILED);
+			LoadErrorShader();
+			return;
 		}
 		stage_files.emplace_back(stage, std::filesystem::path(file_path));
 	}
 	if (stage_files.empty()) {
-		throw ToastException("Shader JSON file has no valid 'stageFiles': " + m_path);
+		TOAST_ERROR("Shader JSON file has no valid 'stageFiles': {0}", m_path);
+		SetResourceState(resource::ResourceState::FAILED);
+		LoadErrorShader();
+		return;
 	}
 	CreateFromFiles(stage_files, m_path);
 	SetResourceState(resource::ResourceState::LOADEDCPU);
@@ -102,11 +120,37 @@ void Shader::LoadMainThread() {
 	std::vector<GLuint> compiled;
 	compiled.reserve(m_sourcesToLoad.size());
 	// Compile all stages
+	bool compilation_failed = false;
 	for (auto& kv : m_sourcesToLoad) {
-		compiled.push_back(CompileSingleStage(kv.first, kv.second));
+		GLuint shader = CompileSingleStage(kv.first, kv.second);
+		if (shader == 0) {
+			compilation_failed = true;
+			break;
+		}
+		compiled.push_back(shader);
+	}
+
+	if (compilation_failed) {
+		// Clean up any successfully compiled shaders
+		for (auto sh : compiled) {
+			if (sh != 0) {
+				glDeleteShader(sh);
+			}
+		}
+		TOAST_ERROR("Shader compilation failed, loading error shader");
+		LoadErrorShader();
+		return;
 	}
 
 	LinkProgram(compiled);
+	
+	// Check if linking succeeded
+	if (!m_program) {
+		TOAST_ERROR("Shader linking failed, loading error shader");
+		LoadErrorShader();
+		return;
+	}
+	
 	SetResourceState(resource::ResourceState::UPLOADEDGPU);
 }
 
@@ -145,13 +189,22 @@ GLuint Shader::CompileSingleStage(Stage stage, std::string_view source) const {
 		glDeleteShader(s);
 
 		TOAST_ERROR("{0}", error_msg);
-		//@TODO fallback to default error shader?
+		return 0; // Return 0 to indicate failure
 	}
 	return s;
 }
 
 void Shader::LinkProgram(const std::vector<GLuint>& shaders) {
 	PROFILE_ZONE;
+	
+	// Check if any shader failed to compile (has id 0)
+	for (auto sh : shaders) {
+		if (sh == 0) {
+			TOAST_ERROR("Cannot link program: one or more shaders failed to compile");
+			return; // Don't attempt to link
+		}
+	}
+	
 	// Create attach and link all programs
 	GLuint program = glCreateProgram();
 	for (auto sh : shaders) {
@@ -174,8 +227,8 @@ void Shader::LinkProgram(const std::vector<GLuint>& shaders) {
 			glDeleteShader(sh);
 		}
 		glDeleteProgram(program);
-		// TOAST_ERROR("Program link error:\n{0}", log);
-		throw ToastException("Program link error:\n" + log);
+		TOAST_ERROR("Program link error:\n{0}", log);
+		return; // Don't throw, just return
 	}
 
 	// detach and delete shaders after successful link
@@ -192,7 +245,9 @@ void Shader::LinkProgram(const std::vector<GLuint>& shaders) {
 
 void Shader::CreateFromSources(const std::vector<std::pair<Stage, std::string>>& stage_sources, std::string_view debug_name) {
 	if (stage_sources.empty()) {
-		throw ToastException("No shader stages provided");
+		TOAST_ERROR("No shader stages provided");
+		LoadErrorShader();
+		return;
 	}
 
 	m_debugName = std::string(debug_name);
@@ -204,7 +259,9 @@ void Shader::CreateFromSources(const std::vector<std::pair<Stage, std::string>>&
 void Shader::CreateFromFiles(const std::vector<std::pair<Stage, std::filesystem::path>>& stage_files, std::string_view debug_name) {
 	PROFILE_ZONE;
 	if (stage_files.empty()) {
-		throw ToastException("No shader files provided");
+		TOAST_ERROR("No shader files provided");
+		LoadErrorShader();
+		return;
 	}
 
 	m_debugName = std::string(debug_name);
@@ -215,6 +272,8 @@ void Shader::CreateFromFiles(const std::vector<std::pair<Stage, std::filesystem:
 		std::istringstream in {};
 		if (!resource::Open(path.string(), in)) {
 			TOAST_ERROR("Shader Failed to open shader file: {0}", path.string());
+			LoadErrorShader();
+			return;
 		}
 		loaded.emplace_back(stage, std::move(in.str()));
 	}
@@ -374,4 +433,58 @@ std::string Shader::StageToString(Stage s) {
 	}
 	return "Unknown";
 }
+
+void Shader::LoadErrorShader() {
+	PROFILE_ZONE;
+	TOAST_WARN("Loading error fallback shader for shader: {0}", m_path);
+	
+	const char* vertexSource = R"(
+#version 460 core
+
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec2 aTexCoord;
+layout (location = 3) in vec4 aTangent; // xyz = tangent, w = handedness
+
+uniform mat4 gMVP;
+uniform mat4 gWorld;
+
+void main()
+{
+    gl_Position = gMVP * vec4(aPos, 1.0);
 }
+)";
+	
+	const char* fragmentSource = R"(
+#version 460 core
+out vec4 FragColor;
+
+//in vec2 TexCoord;
+
+void main(void)
+{
+    vec2 resolution = vec2(800.0f, 800.f);
+    vec2 TexCoord = gl_FragCoord.st / resolution.xy;
+	
+    float x = floor(TexCoord.x * 8.0);
+    float y = floor(TexCoord.y * 8.0);
+    float pattern = mod(x + y, 2.0);
+    vec3 color = mix(vec3(1.0f,0,0), vec3(0.0), pattern);
+    FragColor = vec4(color, 1.0);
+}
+)";
+
+	std::vector<std::pair<Stage, std::string>> errorStages;
+	errorStages.emplace_back(Stage::Vertex, std::string(vertexSource));
+	errorStages.emplace_back(Stage::Fragment, std::string(fragmentSource));
+	
+	m_debugName = "ErrorShader";
+	m_sourceFiles.clear(); // Can't reload error shader from files
+	
+	CreateFromSources(errorStages, m_debugName);
+	LoadMainThread();
+	
+	SetResourceState(resource::ResourceState::UPLOADEDGPU);
+}
+}
+

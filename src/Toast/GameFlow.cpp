@@ -142,14 +142,14 @@ void GameFlow::NextLevel() {
   }).value_or(0);
 	// clang-format on
 
-	if (m.levelList.size() <= m.level.value() + 1) {
+	if (m.levelList.size() <= m.level.value()) {
 		TOAST_WARN("End Of the World...");
 		m.level = std::nullopt;
 		return;
 	}
 
 	// Load & Enable New Level
-	m.currentLevel = std::move(m.nextLevel).or_else([this] -> std::optional<std::shared_future<unsigned>> {
+	m.currentLevel = std::move(m.nextLevel).or_else([this]() -> std::optional<std::shared_future<unsigned>> {
 		return toast::World::LoadScene(m.levelList[m.level.value()]);
 	});
 	m.currentLevel->wait();
@@ -157,7 +157,7 @@ void GameFlow::NextLevel() {
 	scene->enabled(true);
 
 	// Pre Load Next Level :3
-	if (m.levelList.size() >= m.level.value() + 1) {
+	if (m.levelList.size() > m.level.value() + 1) {
 		m.nextLevel = toast::World::LoadScene(m.levelList[m.level.value() + 1]);
 	} else {
 		m.nextLevel = std::nullopt;

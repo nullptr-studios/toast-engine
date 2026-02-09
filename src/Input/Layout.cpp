@@ -12,7 +12,7 @@ auto Layout::create(const std::string& path) noexcept -> std::optional<Layout> {
 		lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
 
 		std::string current_path = lua["package"]["path"];
-		std::string custom_path = ";./assets/?.lua;./assets/layouts/?.lua";
+		std::string custom_path = ";./assets/?.lua;./assets/LAYOUTS/?.lua";
 		lua["package"]["path"] = current_path + custom_path;
 
 		auto file = resource::Open(path);

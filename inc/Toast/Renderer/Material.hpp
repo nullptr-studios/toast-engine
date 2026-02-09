@@ -130,6 +130,11 @@ public:
 		return m_shader;
 	}
 
+	/**
+	 * @brief Loads a fallback error material
+	 */
+	void LoadErrorMaterial();
+
 private:
 	/**
 	 * @brief Updates editor UI slots when material is reloaded.

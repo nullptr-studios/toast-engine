@@ -42,11 +42,23 @@ Material::~Material() {
 }
 
 void Material::Load() {
-	LoadMaterial();
+	try {
+		LoadMaterial();
+	} catch (const std::exception& e) {
+		TOAST_ERROR("Material load failed: {0}", e.what());
+		SetResourceState(resource::ResourceState::FAILED);
+		LoadErrorMaterial();
+	}
 }
 
 void Material::LoadMainThread() {
-	LoadResources();
+	try {
+		LoadResources();
+	} catch (const std::exception& e) {
+		TOAST_ERROR("Material resource load failed: {0}", e.what());
+		SetResourceState(resource::ResourceState::FAILED);
+		LoadErrorMaterial();
+	}
 }
 
 void Material::ShowEditor() {
@@ -173,16 +185,22 @@ void Material::LoadMaterial() {
 	m_textures.clear();
 	m_shader = nullptr;
 
-	std::string data = *resource::Open(m_materialPath);
-	json_t j = json_t::parse(data);
+	std::optional<std::string> data = resource::Open(m_materialPath);
+	if (!data.has_value()) {
+		throw ToastException("Failed to open material file: " + m_materialPath);
+	}
+	json_t j = json_t::parse(data.value());
 
 	if (j.contains("shaderPath")) {
 		m_shaderPath = j.at("shaderPath").get<std::string>();
 	}
 
 	// Read shader description to get parameter list
-	data = *resource::Open(m_shaderPath);
-	json_t shaderJson = json_t::parse(data);
+	data = resource::Open(m_shaderPath);
+	if (!data.has_value()) {
+		throw ToastException("Failed to open shader file: " + m_shaderPath);
+	}
+	json_t shaderJson = json_t::parse(data.value());
 
 	if (shaderJson.contains("parameters")) {
 		for (const auto& param : shaderJson.at("parameters")) {
@@ -330,8 +348,15 @@ void Material::LoadResources() {
 	if (!m_shaderPath.empty()) {
 		m_shader = resource::LoadResource<renderer::Shader>(m_shaderPath);
 		if (!m_shader) {
-			TOAST_WARN("Could not load shader at path: {0}", m_shaderPath);
+			TOAST_ERROR("Could not load shader at path: {0}, using error shader", m_shaderPath);
+			// Create error shader as fallback
+			m_shader = std::make_shared<renderer::Shader>("ErrorShader");
+			m_shader->LoadErrorShader();
 		}
+	} else {
+		TOAST_WARN("Material has no shader path, using error shader");
+		m_shader = std::make_shared<renderer::Shader>("ErrorShader");
+		m_shader->LoadErrorShader();
 	}
 }
 
@@ -483,6 +508,22 @@ void Material::UpdateEditorSlots() {
 		});
 	}
 #endif
+}
+
+void Material::LoadErrorMaterial() {
+	PROFILE_ZONE;
+	TOAST_WARN("Loading error material");
+	
+	// Clear existing data
+	m_shaderParameters.clear();
+	m_parameters.clear();
+	m_textures.clear();
+	
+	m_shader = std::make_shared<renderer::Shader>("ErrorShader");
+	// m_shader->LoadErrorShader();
+	
+	// Set material as loaded
+	SetResourceState(resource::ResourceState::UPLOADEDGPU);
 }
 
 }    // namespace renderer
