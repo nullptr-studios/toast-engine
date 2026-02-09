@@ -56,6 +56,7 @@ var annotated_dup =
       [ "Material", "d4/de6/classrenderer_1_1Material.html", "d4/de6/classrenderer_1_1Material" ],
       [ "Mesh", "d4/d8c/classrenderer_1_1Mesh.html", "d4/d8c/classrenderer_1_1Mesh" ],
       [ "OpenGLRenderer", "da/d32/classrenderer_1_1OpenGLRenderer.html", "da/d32/classrenderer_1_1OpenGLRenderer" ],
+      [ "RendererConfig", "da/d71/structrenderer_1_1RendererConfig.html", "da/d71/structrenderer_1_1RendererConfig" ],
       [ "Shader", "d9/d50/classrenderer_1_1Shader.html", "d9/d50/classrenderer_1_1Shader" ],
       [ "SpineVertex", "d1/d64/structrenderer_1_1SpineVertex.html", "d1/d64/structrenderer_1_1SpineVertex" ],
       [ "Vertex", "d1/d6e/structrenderer_1_1Vertex.html", "d1/d6e/structrenderer_1_1Vertex" ]
@@ -78,6 +79,7 @@ var annotated_dup =
         [ "Stats", "db/da0/structtoast_1_1memory_1_1Stats.html", "db/da0/structtoast_1_1memory_1_1Stats" ]
       ] ],
       [ "Actor", "d8/d92/classtoast_1_1Actor.html", "d8/d92/classtoast_1_1Actor" ],
+      [ "AtlasSpriteComponent", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html", "d3/dd3/classtoast_1_1AtlasSpriteComponent" ],
       [ "BadObject", "d2/d70/classtoast_1_1BadObject.html", "d2/d70/classtoast_1_1BadObject" ],
       [ "BadScene", "d9/da2/classtoast_1_1BadScene.html", "d9/da2/classtoast_1_1BadScene" ],
       [ "Camera", "d8/db9/classtoast_1_1Camera.html", "d8/db9/classtoast_1_1Camera" ],

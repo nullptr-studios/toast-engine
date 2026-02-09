@@ -146,6 +146,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:accbac2c3e316939ce5228c288f490558"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab4fb50b46ba40737b74e8b52ba96592d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d71/classphysics_1_1Collider.html#ab4fb50b46ba40737b74e8b52ba96592d">DeletePoint</a> (glm::vec2 point)</td></tr>
 <tr class="separator:ab4fb50b46ba40737b74e8b52ba96592d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23ffcc32bd53343dc305ff9f5b5b2ada"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d71/classphysics_1_1Collider.html#a23ffcc32bd53343dc305ff9f5b5b2ada">GetPoints</a> () -&gt; std::list&lt; glm::vec2 &gt; &amp;</td></tr>
+<tr class="separator:a23ffcc32bd53343dc305ff9f5b5b2ada"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1Component"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classtoast_1_1Component')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d3/d63/classtoast_1_1Component.html">toast::Component</a></td></tr>
 <tr class="memitem:a38673b6d868ba5134a87f84da4901044 inherit pub_methods_classtoast_1_1Component"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d63/classtoast_1_1Component.html#a38673b6d868ba5134a87f84da4901044">Component</a> ()=default</td></tr>
 <tr class="separator:a38673b6d868ba5134a87f84da4901044 inherit pub_methods_classtoast_1_1Component"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -248,24 +250,24 @@ Public Attributes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:a2f140cc71f074ee2d8ba7d339bbfb4e0"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:a2885f9a7da0569b8d1f82cd329f5e19b"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; <a class="el" href="../../dd/d88/classphysics_1_1ConvexCollider.html">ConvexCollider</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../db/d71/classphysics_1_1Collider.html#a870b64e3b9e6e23f47c435ac2597a7ec">convexShapes</a></td></tr>
-<tr class="separator:a2885f9a7da0569b8d1f82cd329f5e19b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a13e104aacc56e8d6f7c6c54f355314fc"><td class="memItemLeft" >&#160;&#160;&#160;std::list&lt; glm::vec2 &gt;&#160;&#160;&#160;<a class="el" href="../../db/d71/classphysics_1_1Collider.html#aa24ad5b417cc3ae8c38f63aa3ee73259">points</a></td></tr>
-<tr class="separator:a13e104aacc56e8d6f7c6c54f355314fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a425c1e3dc6478937e7a1650bff2c747b"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6">ColliderFlags</a>&#160;&#160;&#160;<a class="el" href="../../db/d71/classphysics_1_1Collider.html#aa74aaf447ac4e2c8d97d3e3404ed4285">flags</a> = ColliderFlags::Default</td></tr>
-<tr class="separator:a425c1e3dc6478937e7a1650bff2c747b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2f140cc71f074ee2d8ba7d339bbfb4e0"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d71/classphysics_1_1Collider.html#a2f140cc71f074ee2d8ba7d339bbfb4e0">m</a></td></tr>
-<tr class="separator:a2f140cc71f074ee2d8ba7d339bbfb4e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4d855fb6b41f1144d41e33a2ca478376"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:aa5224f1bf70d0a25d87f8ba618e4651a"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../db/d71/classphysics_1_1Collider.html#a4b5d8420613106f9d8caf7285c416486">showPoints</a> = true</td></tr>
-<tr class="separator:aa5224f1bf70d0a25d87f8ba618e4651a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac1481c10020a1fd7f41d0674d4322f93"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../db/d71/classphysics_1_1Collider.html#a8feb4a363ee19cd5e912df44079a1c2a">showColliders</a> = true</td></tr>
-<tr class="separator:ac1481c10020a1fd7f41d0674d4322f93"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad8ec0544212c95435f0b14ab04d40b8e"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec2&#160;&#160;&#160;<a class="el" href="../../db/d71/classphysics_1_1Collider.html#a1e40387e0bd020d1d3698e109c1ebfda">newPointPosition</a></td></tr>
-<tr class="separator:ad8ec0544212c95435f0b14ab04d40b8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4d855fb6b41f1144d41e33a2ca478376"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d71/classphysics_1_1Collider.html#a4d855fb6b41f1144d41e33a2ca478376">debug</a></td></tr>
-<tr class="separator:a4d855fb6b41f1144d41e33a2ca478376"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad91a3d70fd0f7d23fd5ce1510863b7f2"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:a2c6f155ddaa2be1c2318e4fdda8f7fdc"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; <a class="el" href="../../dd/d88/classphysics_1_1ConvexCollider.html">ConvexCollider</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../db/d71/classphysics_1_1Collider.html#a870b64e3b9e6e23f47c435ac2597a7ec">convexShapes</a></td></tr>
+<tr class="separator:a2c6f155ddaa2be1c2318e4fdda8f7fdc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c6ff618f5d326041279ce094742d76d"><td class="memItemLeft" >&#160;&#160;&#160;std::list&lt; glm::vec2 &gt;&#160;&#160;&#160;<a class="el" href="../../db/d71/classphysics_1_1Collider.html#aa24ad5b417cc3ae8c38f63aa3ee73259">points</a></td></tr>
+<tr class="separator:a2c6ff618f5d326041279ce094742d76d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace25cf3baed9b22e3be370a29680aad9"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6">ColliderFlags</a>&#160;&#160;&#160;<a class="el" href="../../db/d71/classphysics_1_1Collider.html#aa74aaf447ac4e2c8d97d3e3404ed4285">flags</a> = ColliderFlags::Default</td></tr>
+<tr class="separator:ace25cf3baed9b22e3be370a29680aad9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad91a3d70fd0f7d23fd5ce1510863b7f2"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d71/classphysics_1_1Collider.html#ad91a3d70fd0f7d23fd5ce1510863b7f2">m</a></td></tr>
+<tr class="separator:ad91a3d70fd0f7d23fd5ce1510863b7f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0622b3dd9fc12dd16eb8e9a2e9bc6ff5"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:ab572b3f2ffaaa769dcec52e72a9d9297"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../db/d71/classphysics_1_1Collider.html#a4b5d8420613106f9d8caf7285c416486">showPoints</a> = true</td></tr>
+<tr class="separator:ab572b3f2ffaaa769dcec52e72a9d9297"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acca9af40a6a1ee4e9b0086ac59249900"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../db/d71/classphysics_1_1Collider.html#a8feb4a363ee19cd5e912df44079a1c2a">showColliders</a> = true</td></tr>
+<tr class="separator:acca9af40a6a1ee4e9b0086ac59249900"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afda6f9d12f0453b8ec168ba81cf1604e"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec2&#160;&#160;&#160;<a class="el" href="../../db/d71/classphysics_1_1Collider.html#a1e40387e0bd020d1d3698e109c1ebfda">newPointPosition</a></td></tr>
+<tr class="separator:afda6f9d12f0453b8ec168ba81cf1604e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0622b3dd9fc12dd16eb8e9a2e9bc6ff5"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d71/classphysics_1_1Collider.html#a0622b3dd9fc12dd16eb8e9a2e9bc6ff5">debug</a></td></tr>
+<tr class="separator:a0622b3dd9fc12dd16eb8e9a2e9bc6ff5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -380,7 +382,7 @@ template&lt;typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00058">58</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00062">62</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
 
 </div>
 </div>
@@ -489,6 +491,33 @@ Here is the caller graph for this function:</div>
 <p>This function runs every frame in the editor. </p>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#af7bc7c97913fe1b7727349cfd40b9271">toast::Object</a>.</p>
+
+</div>
+</div>
+<a id="a23ffcc32bd53343dc305ff9f5b5b2ada" name="a23ffcc32bd53343dc305ff9f5b5b2ada"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a23ffcc32bd53343dc305ff9f5b5b2ada">&#9670;&#160;</a></span>GetPoints()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto physics::Collider::GetPoints </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> -&gt; std::list&lt;glm::vec2&gt;&amp; </td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00041">41</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
 
 </div>
 </div>
@@ -636,7 +665,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00045">45</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00049">49</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
 
 </div>
 </div>
@@ -652,12 +681,12 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00041">41</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00045">45</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
 
 </div>
 </div>
-<a id="a4d855fb6b41f1144d41e33a2ca478376" name="a4d855fb6b41f1144d41e33a2ca478376"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4d855fb6b41f1144d41e33a2ca478376">&#9670;&#160;</a></span></h2>
+<a id="a0622b3dd9fc12dd16eb8e9a2e9bc6ff5" name="a0622b3dd9fc12dd16eb8e9a2e9bc6ff5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0622b3dd9fc12dd16eb8e9a2e9bc6ff5">&#9670;&#160;</a></span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -682,12 +711,12 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00047">47</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00051">51</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
 
 </div>
 </div>
-<a id="a2f140cc71f074ee2d8ba7d339bbfb4e0" name="a2f140cc71f074ee2d8ba7d339bbfb4e0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2f140cc71f074ee2d8ba7d339bbfb4e0">&#9670;&#160;</a></span></h2>
+<a id="ad91a3d70fd0f7d23fd5ce1510863b7f2" name="ad91a3d70fd0f7d23fd5ce1510863b7f2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad91a3d70fd0f7d23fd5ce1510863b7f2">&#9670;&#160;</a></span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -712,7 +741,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00053">53</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00057">57</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
 
 </div>
 </div>
@@ -728,7 +757,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00046">46</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00050">50</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
 
 </div>
 </div>
@@ -744,7 +773,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00052">52</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00056">56</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
 
 </div>
 </div>
@@ -760,7 +789,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00051">51</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00055">55</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
 
 </div>
 </div>

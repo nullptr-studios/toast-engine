@@ -10,6 +10,7 @@ var namespacerenderer =
     [ "Material", "d4/de6/classrenderer_1_1Material.html", "d4/de6/classrenderer_1_1Material" ],
     [ "Mesh", "d4/d8c/classrenderer_1_1Mesh.html", "d4/d8c/classrenderer_1_1Mesh" ],
     [ "OpenGLRenderer", "da/d32/classrenderer_1_1OpenGLRenderer.html", "da/d32/classrenderer_1_1OpenGLRenderer" ],
+    [ "RendererConfig", "da/d71/structrenderer_1_1RendererConfig.html", "da/d71/structrenderer_1_1RendererConfig" ],
     [ "Shader", "d9/d50/classrenderer_1_1Shader.html", "d9/d50/classrenderer_1_1Shader" ],
     [ "SpineVertex", "d1/d64/structrenderer_1_1SpineVertex.html", "d1/d64/structrenderer_1_1SpineVertex" ],
     [ "Vertex", "d1/d6e/structrenderer_1_1Vertex.html", "d1/d6e/structrenderer_1_1Vertex" ],
@@ -27,5 +28,7 @@ var namespacerenderer =
     [ "DebugPoly", "d0/db9/namespacerenderer.html#a005bf5ce8ae020f199974eb0509402f5", null ],
     [ "DebugPoly", "d0/db9/namespacerenderer.html#ae5a54ca929d3e02af34b85da8d4b8a1d", null ],
     [ "DebugRect", "d0/db9/namespacerenderer.html#af4c49be6e51c964d261c471985d3ee67", null ],
-    [ "DebugRect", "d0/db9/namespacerenderer.html#a74097f9808088649086e75a07cf66d64", null ]
+    [ "DebugRect", "d0/db9/namespacerenderer.html#a74097f9808088649086e75a07cf66d64", null ],
+    [ "LoadRendererSettings", "d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5", null ],
+    [ "SaveRendererSettings", "d0/db9/namespacerenderer.html#aaccd4db22dcd63f95d1186b2cbaaaed7", null ]
 ];

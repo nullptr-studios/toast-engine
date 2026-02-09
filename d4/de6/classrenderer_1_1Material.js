@@ -5,6 +5,7 @@ var classrenderer_1_1Material =
     [ "~Material", "d4/de6/classrenderer_1_1Material.html#a809e35bfba9ed936ad55e15dcee548bf", null ],
     [ "GetShader", "d4/de6/classrenderer_1_1Material.html#aa955d267cbeb535e286edc38e0304fc0", null ],
     [ "Load", "d4/de6/classrenderer_1_1Material.html#a1a9fcaae3f2320c844f1a154591f5e01", null ],
+    [ "LoadErrorMaterial", "d4/de6/classrenderer_1_1Material.html#ae1322aac158b85f664006d6db4811f51", null ],
     [ "LoadMainThread", "d4/de6/classrenderer_1_1Material.html#a028edabd522ccbddf4af84589ab161d3", null ],
     [ "LoadMaterial", "d4/de6/classrenderer_1_1Material.html#ad0f8bdf5709e0c9d55f7465c679fb646", null ],
     [ "LoadResources", "d4/de6/classrenderer_1_1Material.html#a46c255645ed8314386ee98e87bf8c9d2", null ],

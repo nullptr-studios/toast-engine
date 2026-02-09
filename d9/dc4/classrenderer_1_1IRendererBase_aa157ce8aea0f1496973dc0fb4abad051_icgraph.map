@@ -1,5 +1,5 @@
 <map id="renderer::IRendererBase::SetProjectionMatrix" name="renderer::IRendererBase::SetProjectionMatrix">
 <area shape="rect" id="node1" title="Sets the projection matrix directly." alt="" coords="491,5,671,45"/>
 <area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,5,200,45"/>
-<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#abb1a319fa21eedb2f79358760b7ef829" title="Resizes the viewport and updates internal render targets." alt="" coords="248,33,443,73"/>
+<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="248,33,443,73"/>
 </map>

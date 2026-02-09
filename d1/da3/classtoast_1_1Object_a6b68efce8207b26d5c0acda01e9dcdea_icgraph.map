@@ -1,5 +1,5 @@
 <map id="toast::Object::enabled" name="toast::Object::enabled">
-<area shape="rect" id="node1" title="Gets whether the object is enabled or not." alt="" coords="680,277,845,303"/>
+<area shape="rect" id="node1" title="Gets whether the object is enabled or not." alt="" coords="680,327,845,352"/>
 <area shape="rect" id="node2" href="$d1/da3/classtoast_1_1Object.html#ad8b793b89d3c10cfb7a3763f4e39d178" title=" " alt="" coords="451,5,608,31"/>
 <area shape="rect" id="node3" href="$d1/da3/classtoast_1_1Object.html#a6651374e5026cc3bb7c675ab955e8073" title=" " alt="" coords="439,55,619,80"/>
 <area shape="rect" id="node4" href="$d1/da3/classtoast_1_1Object.html#aace7fa07ca6a59a3aae1e16589e3cc7d" title=" " alt="" coords="437,104,622,129"/>
@@ -7,14 +7,16 @@
 <area shape="rect" id="node6" href="$d1/da3/classtoast_1_1Object.html#ab78df3cdfc8cd1c2a397e77f5af31aca" title=" " alt="" coords="442,203,617,228"/>
 <area shape="rect" id="node7" href="$d1/da3/classtoast_1_1Object.html#aafbf50c821ea74dfe7ddae592e910375" title=" " alt="" coords="440,252,619,277"/>
 <area shape="rect" id="node8" href="$d1/da3/classtoast_1_1Object.html#af3c0a2202e6ac21b04bd417db5e7ff10" title=" " alt="" coords="456,301,603,327"/>
-<area shape="rect" id="node9" href="$d1/da3/classtoast_1_1Object.html#adf1e92ab96f2a7da61726d068b6755b7" title="An object that is not enabled will not be ticked and its components will be treated as disabled as we..." alt="" coords="447,351,612,376"/>
-<area shape="rect" id="node10" href="$d6/dd4/classtoast_1_1Scene.html#acb44061f0eea603b846970680ce5be30" title=" " alt="" coords="451,400,608,425"/>
-<area shape="rect" id="node11" href="$d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24" title="Saves object state to JSON." alt="" coords="457,449,602,475"/>
-<area shape="rect" id="node17" href="$d6/dd4/classtoast_1_1Scene.html#a7508bae51c016b92cc2f7e2c5ac0bbd0" title=" " alt="" coords="455,499,604,524"/>
-<area shape="rect" id="node18" href="$d0/db0/classLight2D.html#a978498147c7e3ad0eb19316adacca7b0" title=" " alt="" coords="427,549,632,589"/>
-<area shape="rect" id="node12" href="$d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635" title="Saves object state to JSON." alt="" coords="225,400,362,425"/>
-<area shape="rect" id="node14" href="$d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686" title="Saves object state to JSON." alt="" coords="222,449,365,475"/>
-<area shape="rect" id="node15" href="$d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656" title="Caches current state for quick restoration." alt="" coords="208,499,379,524"/>
-<area shape="rect" id="node13" href="$d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title="Saves object state to JSON." alt="" coords="5,400,160,425"/>
-<area shape="rect" id="node16" href="$d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="10,499,155,524"/>
+<area shape="rect" id="node9" href="$d4/d9c/classphysics_1_1Trigger.html#a7bdc2533c9899d4491acfb96b2b79904" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="445,351,613,376"/>
+<area shape="rect" id="node10" href="$d4/d9c/classphysics_1_1Trigger.html#a4970415b9725781eaebe9c0f416ea42e" title="This function runs every frame in the editor." alt="" coords="431,400,627,425"/>
+<area shape="rect" id="node11" href="$d1/da3/classtoast_1_1Object.html#adf1e92ab96f2a7da61726d068b6755b7" title="An object that is not enabled will not be ticked and its components will be treated as disabled as we..." alt="" coords="447,449,612,475"/>
+<area shape="rect" id="node12" href="$d6/dd4/classtoast_1_1Scene.html#acb44061f0eea603b846970680ce5be30" title=" " alt="" coords="451,499,608,524"/>
+<area shape="rect" id="node13" href="$d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24" title="Saves object state to JSON." alt="" coords="457,548,602,573"/>
+<area shape="rect" id="node19" href="$d6/dd4/classtoast_1_1Scene.html#a7508bae51c016b92cc2f7e2c5ac0bbd0" title=" " alt="" coords="455,597,604,623"/>
+<area shape="rect" id="node20" href="$d0/db0/classLight2D.html#a978498147c7e3ad0eb19316adacca7b0" title=" " alt="" coords="427,647,632,687"/>
+<area shape="rect" id="node14" href="$d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635" title="Saves object state to JSON." alt="" coords="225,499,362,524"/>
+<area shape="rect" id="node16" href="$d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686" title="Saves object state to JSON." alt="" coords="222,548,365,573"/>
+<area shape="rect" id="node17" href="$d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656" title="Caches current state for quick restoration." alt="" coords="208,597,379,623"/>
+<area shape="rect" id="node15" href="$d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title="Saves object state to JSON." alt="" coords="5,499,160,524"/>
+<area shape="rect" id="node18" href="$d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="10,597,155,623"/>
 </map>

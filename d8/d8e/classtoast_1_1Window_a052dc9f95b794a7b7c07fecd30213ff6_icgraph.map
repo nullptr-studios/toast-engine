@@ -1,7 +1,9 @@
 <map id="toast::Window::GetInstance" name="toast::Window::GetInstance">
-<area shape="rect" id="node1" title="Gets the singleton window instance." alt="" coords="441,77,641,102"/>
-<area shape="rect" id="node2" href="$da/d0b/classinput_1_1InputSystem.html#a796d712f5ad2314dbde0d3fd4cfb88be" title=" " alt="" coords="223,5,369,45"/>
-<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="199,69,393,109"/>
-<area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="199,133,393,173"/>
-<area shape="rect" id="node3" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="5,5,151,45"/>
+<area shape="rect" id="node1" title="Gets the singleton window instance." alt="" coords="491,134,691,159"/>
+<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="248,5,443,45"/>
+<area shape="rect" id="node3" href="$da/d0b/classinput_1_1InputSystem.html#a796d712f5ad2314dbde0d3fd4cfb88be" title=" " alt="" coords="273,69,418,109"/>
+<area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,191,200,231"/>
+<area shape="rect" id="node6" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="248,184,443,224"/>
+<area shape="rect" id="node7" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a0418bbc4c403c998c16b52ccf33616f4" title=" " alt="" coords="255,248,435,288"/>
+<area shape="rect" id="node4" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="30,69,175,109"/>
 </map>

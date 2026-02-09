@@ -1,8 +1,8 @@
 var searchData=
 [
-  ['object_0',['Object',['../d1/da3/classtoast_1_1Object.html#ad008cd0547e94d05fbf5578991db8d8e',1,'toast::Object']]],
+  ['object_0',['Object',['../d1/da3/classtoast_1_1Object.html#ad4695378a092c5e4823b3df1105db8e5',1,'toast::Object::Object(const Object &amp;)=delete'],['../d1/da3/classtoast_1_1Object.html#ad008cd0547e94d05fbf5578991db8d8e',1,'toast::Object::Object()=default']]],
   ['object_1',['object',['../d2/d70/classtoast_1_1BadObject.html#a1ee6268061f1700d25b81b013d5c0a6c',1,'toast::BadObject']]],
-  ['object_2',['Object',['../d1/da3/classtoast_1_1Object.html#af8992cd6559c38fe6f40d3295518e9ec',1,'toast::Object::Object(Object &amp;&amp;)=delete'],['../d1/da3/classtoast_1_1Object.html#ad4695378a092c5e4823b3df1105db8e5',1,'toast::Object::Object(const Object &amp;)=delete']]],
+  ['object_2',['Object',['../d1/da3/classtoast_1_1Object.html#af8992cd6559c38fe6f40d3295518e9ec',1,'toast::Object']]],
   ['onanimationcompleted_3',['OnAnimationCompleted',['../d0/dc7/classSpineRendererComponent.html#a761e96a0a60c9cd564b28c0e75e2a414',1,'SpineRendererComponent']]],
   ['onanimationdispose_4',['OnAnimationDispose',['../d0/dc7/classSpineRendererComponent.html#aab385fb91096d134794d1506700030d2',1,'SpineRendererComponent']]],
   ['onanimationend_5',['OnAnimationEnd',['../d0/dc7/classSpineRendererComponent.html#abe443b6ee9704a5e39bc61e0dfd404f1',1,'SpineRendererComponent']]],

@@ -143,6 +143,10 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:ad7e4af350e4a3cb4261a68afd862278c"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d9/d4f/classtoast_1_1Engine.html">Engine</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d4f/classtoast_1_1Engine.html#ad7e4af350e4a3cb4261a68afd862278c">get</a> ()</td></tr>
 <tr class="memdesc:ad7e4af350e4a3cb4261a68afd862278c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the current engine instance.  <br /></td></tr>
 <tr class="separator:ad7e4af350e4a3cb4261a68afd862278c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12910cb46403cd49cf8ec673bd3c0f40"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d4f/classtoast_1_1Engine.html#a12910cb46403cd49cf8ec673bd3c0f40">SetRenderdocApi</a> (void *api)</td></tr>
+<tr class="separator:a12910cb46403cd49cf8ec673bd3c0f40"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a57a304970c4038cfc2b8976c614455b5"><td class="memItemLeft" align="right" valign="top">static void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d4f/classtoast_1_1Engine.html#a57a304970c4038cfc2b8976c614455b5">GetRenderdocApi</a> ()</td></tr>
+<tr class="separator:a57a304970c4038cfc2b8976c614455b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aef7f2dc4b8f043dc8413cca0133b163a"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d4f/classtoast_1_1Engine.html#aef7f2dc4b8f043dc8413cca0133b163a">ForcePurgeResources</a> ()</td></tr>
 <tr class="memdesc:aef7f2dc4b8f043dc8413cca0133b163a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Forces an immediate purge of unused cached resources.  <br /></td></tr>
 <tr class="separator:aef7f2dc4b8f043dc8413cca0133b163a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -188,6 +192,8 @@ Static Private Attributes</h2></td></tr>
 <tr class="memitem:af3d90dcf4da9a1bb33e54545b2c2e872"><td class="memItemLeft" align="right" valign="top">static double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d4f/classtoast_1_1Engine.html#af3d90dcf4da9a1bb33e54545b2c2e872">purge_timer</a> = 0.0</td></tr>
 <tr class="memdesc:af3d90dcf4da9a1bb33e54545b2c2e872"><td class="mdescLeft">&#160;</td><td class="mdescRight">Timer for automatic resource purging (uses monotonic uptime).  <br /></td></tr>
 <tr class="separator:af3d90dcf4da9a1bb33e54545b2c2e872"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba589cb26d07dffd1aa0238866589709"><td class="memItemLeft" align="right" valign="top">static void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d4f/classtoast_1_1Engine.html#aba589cb26d07dffd1aa0238866589709">renderdoc_api</a></td></tr>
+<tr class="separator:aba589cb26d07dffd1aa0238866589709"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Core engine class that manages the main application loop and subsystems. </p>
@@ -289,7 +295,7 @@ Static Private Attributes</h2></td></tr>
 <p>Override this method to perform custom initialization logic such as loading the initial scene or setting up game state.</p>
 <dl class="section note"><dt>Note</dt><dd>Called after all subsystems are initialized but before the main loop begins. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00098">98</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00102">102</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -443,6 +449,31 @@ Here is the caller graph for this function:</div>
 <dl class="section return"><dt>Returns</dt><dd>Pointer to the singleton engine instance, or nullptr if not created. </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00138">138</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a57a304970c4038cfc2b8976c614455b5" name="a57a304970c4038cfc2b8976c614455b5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a57a304970c4038cfc2b8976c614455b5">&#9670;&#160;</a></span>GetRenderdocApi()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void * toast::Engine::GetRenderdocApi </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -609,6 +640,32 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="a12910cb46403cd49cf8ec673bd3c0f40" name="a12910cb46403cd49cf8ec673bd3c0f40"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a12910cb46403cd49cf8ec673bd3c0f40">&#9670;&#160;</a></span>SetRenderdocApi()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void toast::Engine::SetRenderdocApi </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>api</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <h2 class="groupheader">Member Data Documentation</h2>
 <a id="a3020eb9e62e04f443bcdfc240c510d51" name="a3020eb9e62e04f443bcdfc240c510d51"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3020eb9e62e04f443bcdfc240c510d51">&#9670;&#160;</a></span>m</h2>
@@ -632,7 +689,7 @@ Here is the caller graph for this function:</div>
 
 <p>Pointer to the private implementation (PIMPL idiom). </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00131">131</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00135">135</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
 
 </div>
 </div>
@@ -659,7 +716,7 @@ Here is the caller graph for this function:</div>
 <p>Command-line arguments passed to <a class="el" href="../../d9/d4f/classtoast_1_1Engine.html#ae7f81d670cc27f32ce9fcc4bd3bab1d5" title="Starts the engine and enters the main game loop.">Run()</a>. </p>
 <p>Contains all runtime arguments, useful for tests, CLI tools, or conditional initialization based on launch parameters. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00139">139</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00143">143</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
 
 </div>
 </div>
@@ -685,7 +742,7 @@ Here is the caller graph for this function:</div>
 
 <p>Singleton instance pointer. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00152">152</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00156">156</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
 
 </div>
 </div>
@@ -711,7 +768,7 @@ Here is the caller graph for this function:</div>
 
 <p>Atomic flag indicating if the window should close. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00142">142</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00146">146</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
 
 </div>
 </div>
@@ -737,7 +794,31 @@ Here is the caller graph for this function:</div>
 
 <p>Timer for automatic resource purging (uses monotonic uptime). </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00155">155</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00159">159</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
+
+</div>
+</div>
+<a id="aba589cb26d07dffd1aa0238866589709" name="aba589cb26d07dffd1aa0238866589709"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aba589cb26d07dffd1aa0238866589709">&#9670;&#160;</a></span>renderdoc_api</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void* toast::Engine::renderdoc_api</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00161">161</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
 
 </div>
 </div>

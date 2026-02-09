@@ -1,6 +1,11 @@
 <map id="IResource::GetResourceState" name="IResource::GetResourceState">
-<area shape="rect" id="node1" title=" " alt="" coords="465,42,676,67"/>
-<area shape="rect" id="node2" href="$d9/d50/classrenderer_1_1Shader.html#a266997650c24d4b0ac35e9c9ccc8d113" title="loads the resource into GPU memory, only if m_gpu is true" alt="" coords="216,5,417,45"/>
-<area shape="rect" id="node4" href="$d6/d97/classTexture.html#a46824bbbf411168bced4cde7c980d1e7" title="loads the resource into GPU memory, only if m_gpu is true" alt="" coords="223,70,410,95"/>
-<area shape="rect" id="node3" href="$d9/d50/classrenderer_1_1Shader.html#a50e96a5b642048382df643fc0246069a" title="Activate the shader." alt="" coords="5,13,168,38"/>
+<area shape="rect" id="node1" title=" " alt="" coords="1180,87,1391,112"/>
+<area shape="rect" id="node2" href="$d9/d50/classrenderer_1_1Shader.html#a266997650c24d4b0ac35e9c9ccc8d113" title="loads the resource into GPU memory, only if m_gpu is true" alt="" coords="931,50,1132,90"/>
+<area shape="rect" id="node9" href="$d6/d97/classTexture.html#a46824bbbf411168bced4cde7c980d1e7" title="loads the resource into GPU memory, only if m_gpu is true" alt="" coords="938,115,1125,140"/>
+<area shape="rect" id="node3" href="$d9/d50/classrenderer_1_1Shader.html#a38c80dee120949501d66be3cec589186" title="Load error fallback shader." alt="" coords="683,50,883,90"/>
+<area shape="rect" id="node8" href="$d9/d50/classrenderer_1_1Shader.html#a50e96a5b642048382df643fc0246069a" title="Activate the shader." alt="" coords="701,115,864,140"/>
+<area shape="rect" id="node4" href="$d9/d50/classrenderer_1_1Shader.html#a7fcbfa40dfef2cd48fa4ed3e6e14e026" title="Create shader from files (stage, path)" alt="" coords="223,26,405,66"/>
+<area shape="rect" id="node5" href="$d9/d50/classrenderer_1_1Shader.html#aae684c567923430746044428b4215574" title="loads the resource into CPU memory" alt="" coords="5,5,175,31"/>
+<area shape="rect" id="node6" href="$d9/d50/classrenderer_1_1Shader.html#afe973a494c8d4d10dd6f953ddda86598" title="Create shader from sources (stage, source)" alt="" coords="453,79,635,119"/>
+<area shape="rect" id="node7" href="$d9/d50/classrenderer_1_1Shader.html#ac3d6214f6af052acd86607d86f7cd3b3" title="Recompile (only if constructed from files)." alt="" coords="223,91,405,116"/>
 </map>

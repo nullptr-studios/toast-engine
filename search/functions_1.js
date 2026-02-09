@@ -14,10 +14,10 @@ var searchData=
   ['addlight_11',['AddLight',['../d9/dc4/classrenderer_1_1IRendererBase.html#a6a9bda281589f4a86fb3ef9ab58a21fd',1,'renderer::IRendererBase::AddLight()'],['../da/d32/classrenderer_1_1OpenGLRenderer.html#adcf403d885fb690cfea48c3b74d86baa',1,'renderer::OpenGLRenderer::AddLight()']]],
   ['addpoint_12',['AddPoint',['../db/d71/classphysics_1_1Collider.html#af65501c963b3b3f43f30fc39eb38ebe3',1,'physics::Collider']]],
   ['addpoints_13',['AddPoints',['../db/d71/classphysics_1_1Collider.html#a33e5989ba72a9689b2fef5e2edcbe38b',1,'physics::Collider']]],
-  ['addrenderable_14',['AddRenderable',['../d9/dc4/classrenderer_1_1IRendererBase.html#a07f9cf1f03d2c5f2aa89b094bb14505c',1,'renderer::IRendererBase::AddRenderable()'],['../da/d32/classrenderer_1_1OpenGLRenderer.html#a06ae4551a738ceb79b014f95c3af4320',1,'renderer::OpenGLRenderer::AddRenderable()']]],
+  ['addrenderable_14',['AddRenderable',['../da/d32/classrenderer_1_1OpenGLRenderer.html#a06ae4551a738ceb79b014f95c3af4320',1,'renderer::OpenGLRenderer::AddRenderable()'],['../d9/dc4/classrenderer_1_1IRendererBase.html#a07f9cf1f03d2c5f2aa89b094bb14505c',1,'renderer::IRendererBase::AddRenderable()']]],
   ['addrequired_15',['AddRequired',['../d8/d87/classChildren.html#ae31493afa5e6924c6a64686a600b5df2',1,'Children']]],
   ['addrigidbody_16',['AddRigidbody',['../d6/dd8/classphysics_1_1PhysicsSystem.html#a3598cf465d7fae76997336d52f559894',1,'physics::PhysicsSystem']]],
-  ['addstate_17',['AddState',['../db/d5b/classtoast_1_1StateMachine.html#a3e1feab0e6357cc1c83c600190767db9',1,'toast::StateMachine']]],
+  ['addstate_17',['AddState',['../db/d5b/classtoast_1_1StateMachine.html#a97bded52b006303832423c1b3e7bd998',1,'toast::StateMachine']]],
   ['addtoqueue_18',['AddToQueue',['../da/d0b/classinput_1_1InputSystem.html#a96cba3a1bce4ee3a1337f3ab420b3e03',1,'input::InputSystem']]],
   ['addtorque_19',['AddTorque',['../d4/db0/classphysics_1_1BoxRigidbody.html#ab5e3bc96587c7f76be353ccfca6d4e22',1,'physics::BoxRigidbody']]],
   ['addtrigger_20',['AddTrigger',['../d6/dd8/classphysics_1_1PhysicsSystem.html#ad7333a348e7238f961549a0e0d80c71b',1,'physics::PhysicsSystem']]],
@@ -25,6 +25,7 @@ var searchData=
   ['allocaligned_22',['AllocAligned',['../d0/de3/namespacetoast_1_1memory.html#a6231fe84c8b28f90dd743ad643ccfd79',1,'toast::memory']]],
   ['allocthrow_23',['AllocThrow',['../d0/de3/namespacetoast_1_1memory.html#a127c82fd4904bccbeeb35fb25680b6d2',1,'toast::memory']]],
   ['applypreset_24',['ApplyPreset',['../db/d96/structtoast_1_1ParticleEmitterConfig.html#a2fcc821cf6cbe7453f85ca452f1cc990',1,'toast::ParticleEmitterConfig']]],
-  ['assignid_25',['AssignId',['../d9/de7/classtoast_1_1Factory.html#a49fca0c258df540f9096bc3036156dbf',1,'toast::Factory']]],
-  ['audiosystem_26',['AudioSystem',['../db/d5d/classaudio_1_1AudioSystem.html#a41edf1200286eb45b253e04afae9f59d',1,'audio::AudioSystem::AudioSystem()=default'],['../db/d5d/classaudio_1_1AudioSystem.html#a547f1afce35a8393ea01fae916f7716c',1,'audio::AudioSystem::AudioSystem(const AudioSystem &amp;)=delete'],['../db/d5d/classaudio_1_1AudioSystem.html#a1558cd3e920a41d8913fe38e32797b2e',1,'audio::AudioSystem::AudioSystem(AudioSystem &amp;&amp;)=delete']]]
+  ['applyrendersettings_25',['ApplyRenderSettings',['../da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0',1,'renderer::OpenGLRenderer::ApplyRenderSettings()'],['../d9/dc4/classrenderer_1_1IRendererBase.html#a110b9c3679ffcc787ce2a5fe334d3358',1,'renderer::IRendererBase::ApplyRenderSettings()']]],
+  ['assignid_26',['AssignId',['../d9/de7/classtoast_1_1Factory.html#a49fca0c258df540f9096bc3036156dbf',1,'toast::Factory']]],
+  ['audiosystem_27',['AudioSystem',['../db/d5d/classaudio_1_1AudioSystem.html#a41edf1200286eb45b253e04afae9f59d',1,'audio::AudioSystem::AudioSystem()=default'],['../db/d5d/classaudio_1_1AudioSystem.html#a547f1afce35a8393ea01fae916f7716c',1,'audio::AudioSystem::AudioSystem(const AudioSystem &amp;)=delete'],['../db/d5d/classaudio_1_1AudioSystem.html#a1558cd3e920a41d8913fe38e32797b2e',1,'audio::AudioSystem::AudioSystem(AudioSystem &amp;&amp;)=delete']]]
 ];

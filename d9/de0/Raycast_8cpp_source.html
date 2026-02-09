@@ -107,17 +107,12 @@ $(document).ready(function(){initNavTree('d9/de0/Raycast_8cpp_source.html','../.
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span>  <span class="comment">// Construct line to send to collision</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span>  <span class="keyword">const</span> vec2 direction = normalize(dir);</div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span>  <span class="keyword">const</span> vec2 normal = { -direction.y, direction.x };</div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>  <a class="code hl_struct" href="../../d1/d1d/structphysics_1_1Line.html">Line</a> ray = {</div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>    .<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a> = point,</div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>    .p2 = point + normalize(dir) * std::numeric_limits&lt;float&gt;::max(),</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>    .normal = normal,</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>    .tangent = direction</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>  };</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#aa25ace6e8dfe7a75026f8ca430bcf062">PhysicsSystem::RayCollision</a>(&amp;ray, flags);</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>}</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>}</div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>  <a class="code hl_struct" href="../../d1/d1d/structphysics_1_1Line.html">Line</a> ray = { .<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a> = point, .p2 = point + normalize(dir) * std::numeric_limits&lt;float&gt;::max(), .normal = normal, .tangent = direction };</div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#aa25ace6e8dfe7a75026f8ca430bcf062">PhysicsSystem::RayCollision</a>(&amp;ray, flags);</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>}</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>}</div>
 <div class="ttc" id="aColliderFlags_8hpp_html_ab24e00ae3493fd723980767febb345c6"><div class="ttname"><a href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6">ColliderFlags</a></div><div class="ttdeci">ColliderFlags</div><div class="ttdef"><b>Definition:</b> <a href="../../dd/d06/ColliderFlags_8hpp_source.html#l00009">ColliderFlags.hpp:9</a></div></div>
 <div class="ttc" id="aLine_8hpp_html"><div class="ttname"><a href="../../db/d57/Line_8hpp.html">Line.hpp</a></div></div>
 <div class="ttc" id="aPhysicsSystem_8hpp_html"><div class="ttname"><a href="../../d1/d91/PhysicsSystem_8hpp.html">PhysicsSystem.hpp</a></div></div>

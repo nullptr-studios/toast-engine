@@ -16,7 +16,7 @@ var classphysics_1_1Rigidbody =
     [ "UpdateVisualTransform", "d6/d41/classphysics_1_1Rigidbody.html#a03e9508170b42fb6e25ce25a90279b74", null ],
     [ "addForce", "d6/d41/classphysics_1_1Rigidbody.html#a24ba6dfc8e55e3baecae054085c06488", null ],
     [ "collidingColor", "d6/d41/classphysics_1_1Rigidbody.html#a444ab93479c9e759047cb58963487738", null ],
-    [ "debug", "d6/d41/classphysics_1_1Rigidbody.html#a841ed74d200ce036ef6e3a76e0e7db40", null ],
+    [ "debug", "d6/d41/classphysics_1_1Rigidbody.html#aa75a114c619f7c737d143079f622f3d6", null ],
     [ "defaultColor", "d6/d41/classphysics_1_1Rigidbody.html#a460b8ea3cd7c38f51a06719bab5c7335", null ],
     [ "drag", "d6/d41/classphysics_1_1Rigidbody.html#a38157d2909b9b670c5db8658372ba94f", null ],
     [ "flags", "d6/d41/classphysics_1_1Rigidbody.html#ae833768540d886947197ca6e58bd9836", null ],

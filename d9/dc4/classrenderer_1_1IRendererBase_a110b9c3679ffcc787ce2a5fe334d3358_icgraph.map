@@ -1,0 +1,6 @@
+<map id="renderer::IRendererBase::ApplyRenderSettings" name="renderer::IRendererBase::ApplyRenderSettings">
+<area shape="rect" id="node1" title="Applies current render settings to the renderer implementation." alt="" coords="509,27,689,67"/>
+<area shape="rect" id="node2" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a0e2a08967ff0d9ffb1db23e45288961b" title=" " alt="" coords="281,27,461,67"/>
+<area shape="rect" id="node3" href="$d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="5,5,233,31"/>
+<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="22,55,217,95"/>
+</map>

@@ -6,9 +6,9 @@ var searchData=
   ['begin_3',['Begin',['../d9/d4f/classtoast_1_1Engine.html#a162c8de172f29ea8fa3e83b2e969ab2a',1,'toast::Engine::Begin()'],['../d0/db0/classLight2D.html#aec8083b5ea0c7c762d7f22d8d8bb57d7',1,'Light2D::Begin()'],['../d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94',1,'toast::Camera::Begin()'],['../d4/d9c/classphysics_1_1Trigger.html#a7bdc2533c9899d4491acfb96b2b79904',1,'physics::Trigger::Begin()'],['../d6/dd4/classtoast_1_1Scene.html#a3e03172399d0e8e175e546da3f7ca5fa',1,'toast::Scene::Begin()'],['../d1/da3/classtoast_1_1Object.html#a7153a04208dd687a14e4561a84ee6804',1,'toast::Object::Begin()'],['../d8/d92/classtoast_1_1Actor.html#afd0964d1aabd3a7119e416e8f6327852',1,'toast::Actor::Begin()'],['../d0/dc7/classSpineRendererComponent.html#a6c9bd075357976e95fdc457478aa1cab',1,'SpineRendererComponent::Begin()'],['../d3/d63/classtoast_1_1Component.html#af4588d5c543f8b194d31cba0e9f4a0ec',1,'toast::Component::Begin()']]],
   ['begin_4',['begin',['../d8/d87/classChildren.html#a010767102c3736b7d457aaee21c4f9d9',1,'Children::begin() const'],['../d8/d87/classChildren.html#a0c4057fb0b71e9f03e3a93148a7a745a',1,'Children::begin()']]],
   ['begin_5fqueue_5',['begin_queue',['../d6/d7d/classtoast_1_1World.html#a3125c3c0b4f748f48beb150f5b5c0bdd',1,'toast::World']]],
-  ['bind_6',['bind',['../dc/d58/classFramebuffer.html#a7b5e9b658e3b08301a2df98b82c7d92c',1,'Framebuffer']]],
-  ['bind_7',['Bind',['../d6/d97/classTexture.html#a14a2a70d9f130ac91a5ac95c8a4c7831',1,'Texture::Bind()'],['../dd/d43/structinput_1_1Bind.html#acd39eb26230f39b6da1c4f30b7f06383',1,'input::Bind::Bind()=default'],['../dd/d43/structinput_1_1Bind.html#ad595c472f18531a87c4b02a4a64f6b96',1,'input::Bind::Bind(Bind &amp;&amp;)=default'],['../dd/d43/structinput_1_1Bind.html#a51f9592d95a4f26a772a74968f031935',1,'input::Bind::Bind(const Bind &amp;)=default']]],
-  ['bind_8',['bind',['../d4/d8c/classrenderer_1_1Mesh.html#a2599efd51933d72f499ae7a9f1cd4d71',1,'renderer::Mesh']]],
+  ['bind_6',['Bind',['../dd/d43/structinput_1_1Bind.html#ad595c472f18531a87c4b02a4a64f6b96',1,'input::Bind']]],
+  ['bind_7',['bind',['../d4/d8c/classrenderer_1_1Mesh.html#a2599efd51933d72f499ae7a9f1cd4d71',1,'renderer::Mesh::bind()'],['../dc/d58/classFramebuffer.html#a7b5e9b658e3b08301a2df98b82c7d92c',1,'Framebuffer::bind()']]],
+  ['bind_8',['Bind',['../dd/d43/structinput_1_1Bind.html#acd39eb26230f39b6da1c4f30b7f06383',1,'input::Bind::Bind()=default'],['../dd/d43/structinput_1_1Bind.html#a51f9592d95a4f26a772a74968f031935',1,'input::Bind::Bind(const Bind &amp;)=default'],['../d6/d97/classTexture.html#a14a2a70d9f130ac91a5ac95c8a4c7831',1,'Texture::Bind()']]],
   ['blitto_9',['BlitTo',['../dc/d58/classFramebuffer.html#a836bb4bf20426c74094e447a21ef06f9',1,'Framebuffer']]],
   ['boundingbox_10',['boundingBox',['../d4/d8c/classrenderer_1_1Mesh.html#ad43d17df94d35c4c43f43a4c6db4fe75',1,'renderer::Mesh']]],
   ['boundingsphereradius_11',['boundingSphereRadius',['../dd/d13/structrenderer_1_1BoundingBox.html#ac8a88b95941d10867138445ff1f7e3e4',1,'renderer::BoundingBox']]],
@@ -21,5 +21,6 @@ var searchData=
   ['boxphysics_18',['BoxPhysics',['../d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9',1,'physics::PhysicsSystem']]],
   ['boxresetvelocity_19',['BoxResetVelocity',['../d5/dd0/namespacephysics.html#a0e080f7c8e05180f30e5621c14b41587',1,'physics']]],
   ['build_20',['Build',['../dc/d58/classFramebuffer.html#a96e90bfc422ceaa34cbd470957bba664',1,'Framebuffer']]],
-  ['busy_21',['busy',['../d3/dd6/classtoast_1_1ThreadPool.html#a8556758c58151e126af66e85f95379ff',1,'toast::ThreadPool']]]
+  ['buildquadfromregion_21',['BuildQuadFromRegion',['../dd/d75/classAtlasRendererComponent.html#af2d0e5de6fd66b29d7314aaac251e8f6',1,'AtlasRendererComponent']]],
+  ['busy_22',['busy',['../d3/dd6/classtoast_1_1ThreadPool.html#a8556758c58151e126af66e85f95379ff',1,'toast::ThreadPool']]]
 ];

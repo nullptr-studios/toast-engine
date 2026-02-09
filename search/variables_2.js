@@ -22,7 +22,8 @@ var searchData=
   ['count_19',['count',['../dd/d4e/structtoast_1_1ParticleBurst.html#a665515b7f1d8e224c20047ea39f880d6',1,'toast::ParticleBurst']]],
   ['current_20',['current',['../dd/d8c/structinput_1_1GamepadState.html#acde9c6373ad6cdb9153a8349d025b8b6',1,'input::GamepadState']]],
   ['currentbytes_21',['currentBytes',['../db/da0/structtoast_1_1memory_1_1Stats.html#a720954c13a7aa1e6bcc0beeefdcfe527',1,'toast::memory::Stats']]],
-  ['currentlevel_22',['currentLevel',['../d6/dbd/classtoast_1_1GameFlow.html#a74a299a933dc1b44cb8e33e206f5986d',1,'toast::GameFlow']]],
-  ['currentstate_23',['currentState',['../d6/d79/structinput_1_1InputSystem_1_1M.html#ae6cb694e371c394b7c46ffffa4a05484',1,'input::InputSystem::M']]],
-  ['cycleinterval_24',['cycleInterval',['../dd/d4e/structtoast_1_1ParticleBurst.html#a83f7fed36752f6315a18ea1cd9ce6f8e',1,'toast::ParticleBurst']]]
+  ['currentdisplaymode_22',['currentDisplayMode',['../da/d71/structrenderer_1_1RendererConfig.html#a7aeb13850815fa42fb95e0c8fd59e54b',1,'renderer::RendererConfig']]],
+  ['currentlevel_23',['currentLevel',['../d6/dbd/classtoast_1_1GameFlow.html#a74a299a933dc1b44cb8e33e206f5986d',1,'toast::GameFlow']]],
+  ['currentstate_24',['currentState',['../d6/d79/structinput_1_1InputSystem_1_1M.html#ae6cb694e371c394b7c46ffffa4a05484',1,'input::InputSystem::M::currentState()'],['../db/d5b/classtoast_1_1StateMachine.html#a589dfa9bf914f61f245374e0f8a32c47',1,'toast::StateMachine::currentState()']]],
+  ['cycleinterval_25',['cycleInterval',['../dd/d4e/structtoast_1_1ParticleBurst.html#a83f7fed36752f6315a18ea1cd9ce6f8e',1,'toast::ParticleBurst']]]
 ];

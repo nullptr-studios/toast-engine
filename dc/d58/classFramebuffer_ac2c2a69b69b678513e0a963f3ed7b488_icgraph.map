@@ -1,6 +1,7 @@
 <map id="Framebuffer::Height" name="Framebuffer::Height">
-<area shape="rect" id="node1" title=" " alt="" coords="491,42,643,67"/>
-<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="248,5,443,45"/>
-<area shape="rect" id="node4" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="273,70,417,95"/>
-<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,5,200,45"/>
+<area shape="rect" id="node1" title=" " alt="" coords="491,77,643,102"/>
+<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#aaa760df2f9d791a8088fb27cc9dc84b5" title=" " alt="" coords="248,5,443,45"/>
+<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="248,69,443,109"/>
+<area shape="rect" id="node5" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="273,134,417,159"/>
+<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,37,200,77"/>
 </map>

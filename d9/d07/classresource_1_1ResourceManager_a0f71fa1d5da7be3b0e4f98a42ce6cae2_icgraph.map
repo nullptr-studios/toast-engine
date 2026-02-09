@@ -1,0 +1,10 @@
+<map id="resource::ResourceManager::SaveConfig" name="resource::ResourceManager::SaveConfig">
+<area shape="rect" id="node1" title="Saves content to a file on disk." alt="" coords="787,99,989,139"/>
+<area shape="rect" id="node2" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a9b82c08210834948eb375af0351ec1c2" title=" " alt="" coords="559,99,739,139"/>
+<area shape="rect" id="node3" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a0e2a08967ff0d9ffb1db23e45288961b" title=" " alt="" coords="306,5,486,45"/>
+<area shape="rect" id="node6" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="299,69,493,109"/>
+<area shape="rect" id="node7" href="$d0/db9/namespacerenderer.html#aaccd4db22dcd63f95d1186b2cbaaaed7" title=" " alt="" coords="281,134,511,159"/>
+<area shape="rect" id="node8" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a0418bbc4c403c998c16b52ccf33616f4" title=" " alt="" coords="306,184,486,224"/>
+<area shape="rect" id="node4" href="$d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="5,13,233,38"/>
+<area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="22,69,217,109"/>
+</map>

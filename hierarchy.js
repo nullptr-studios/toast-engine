@@ -122,7 +122,8 @@ var hierarchy =
               [ "SpineRendererComponent", "d0/dc7/classSpineRendererComponent.html", null ],
               [ "toast::MeshRendererComponent", "de/da0/classtoast_1_1MeshRendererComponent.html", null ],
               [ "toast::ParticleSystem", "df/d2b/classtoast_1_1ParticleSystem.html", null ]
-            ] ]
+            ] ],
+            [ "toast::AtlasSpriteComponent", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html", null ]
           ] ]
         ] ],
         [ "toast::Scene", "d6/dd4/classtoast_1_1Scene.html", null ]
@@ -160,6 +161,7 @@ var hierarchy =
     [ "toast::Range< float >", "d2/d6a/structtoast_1_1Range.html", null ],
     [ "physics::RayResult", "db/d69/structphysics_1_1RayResult.html", null ],
     [ "toast::Object::Registrar< T >", "d8/d7c/structtoast_1_1Object_1_1Registrar.html", null ],
+    [ "renderer::RendererConfig", "da/d71/structrenderer_1_1RendererConfig.html", null ],
     [ "ResourceHandler", "d9/dc4/structResourceHandler.html", null ],
     [ "resource::ResourceManager", "d9/d07/classresource_1_1ResourceManager.html", null ],
     [ "editor::ResourceSlot", "dd/ddc/classeditor_1_1ResourceSlot.html", null ],

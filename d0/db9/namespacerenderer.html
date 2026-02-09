@@ -134,6 +134,9 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html">OpenGLRenderer</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">OpenGL implementation.  <a href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d71/structrenderer_1_1RendererConfig.html">RendererConfig</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configuration settings for the renderer.  <a href="../../da/d71/structrenderer_1_1RendererConfig.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">Shader</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Class for handling OpenGL shaders.  <a href="../../d9/d50/classrenderer_1_1Shader.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -172,6 +175,10 @@ Functions</h2></td></tr>
 <tr class="separator:a005bf5ce8ae020f199974eb0509402f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae5a54ca929d3e02af34b85da8d4b8a1d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#ae5a54ca929d3e02af34b85da8d4b8a1d">DebugPoly</a> (const std::vector&lt; glm::vec3 &gt; &amp;points, const glm::vec4 &amp;color={ 1, 1, 1, 1 }, bool closed=true)</td></tr>
 <tr class="separator:ae5a54ca929d3e02af34b85da8d4b8a1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af6b1b845e609cab39d1febc72715d3a5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5">LoadRendererSettings</a> ()</td></tr>
+<tr class="separator:af6b1b845e609cab39d1febc72715d3a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaccd4db22dcd63f95d1186b2cbaaaed7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#aaccd4db22dcd63f95d1186b2cbaaaed7">SaveRendererSettings</a> ()</td></tr>
+<tr class="separator:aaccd4db22dcd63f95d1186b2cbaaaed7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>@TODO Improve error handling and log </p>
@@ -687,6 +694,60 @@ Here is the caller graph for this function:</div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00112">112</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
+
+</div>
+</div>
+<a id="af6b1b845e609cab39d1febc72715d3a5" name="af6b1b845e609cab39d1febc72715d3a5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af6b1b845e609cab39d1febc72715d3a5">&#9670;&#160;</a></span>LoadRendererSettings()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::LoadRendererSettings </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00350">350</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
+<a id="aaccd4db22dcd63f95d1186b2cbaaaed7" name="aaccd4db22dcd63f95d1186b2cbaaaed7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaccd4db22dcd63f95d1186b2cbaaaed7">&#9670;&#160;</a></span>SaveRendererSettings()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::SaveRendererSettings </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00354">354</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>

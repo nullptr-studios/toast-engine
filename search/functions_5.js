@@ -13,7 +13,7 @@ var searchData=
   ['enginelog_10',['EngineLog',['../dc/d5c/classtoast_1_1Log.html#a505e2ac87b476d2d39e448a60ceceb81',1,'toast::Log']]],
   ['enginespineextension_11',['EngineSpineExtension',['../db/d95/classspine_1_1EngineSpineExtension.html#a4ce568232f12cfd545483cf7e853c54a',1,'spine::EngineSpineExtension']]],
   ['ensureregistryinitialized_12',['EnsureRegistryInitialized',['../db/db2/ResourceSlot_8cpp.html#ac32cb254900114e073f80e0670cf09ba',1,'ResourceSlot.cpp']]],
-  ['enumerateattachmentnames_13',['EnumerateAttachmentNames',['../dd/d75/classAtlasRendererComponent.html#a896eddf631505a121e8f31ecf30048b7',1,'AtlasRendererComponent']]],
+  ['enumerateregionnames_13',['EnumerateRegionNames',['../dd/d75/classAtlasRendererComponent.html#a14acba30a9ad7c9b9b2f4df83ec9e249',1,'AtlasRendererComponent']]],
   ['eps_14',['eps',['../d6/dd8/classphysics_1_1PhysicsSystem.html#a0bc237b9a0e56eaf1713af2e96783f32',1,'physics::PhysicsSystem']]],
   ['eps_5fsmall_15',['eps_small',['../d6/dd8/classphysics_1_1PhysicsSystem.html#a9b80ffbb68320686a638a023f9174f7c',1,'physics::PhysicsSystem']]],
   ['erase_16',['erase',['../d8/d87/classChildren.html#aeedfb535ffc77583c1d6e5e0617e3a32',1,'Children']]],

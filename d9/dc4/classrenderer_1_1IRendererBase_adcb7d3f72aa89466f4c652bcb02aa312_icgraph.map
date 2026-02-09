@@ -1,5 +1,5 @@
 <map id="renderer::IRendererBase::GetInstance" name="renderer::IRendererBase::GetInstance">
-<area shape="rect" id="node1" title="Gets the singleton instance of the active renderer." alt="" coords="285,547,465,587"/>
+<area shape="rect" id="node1" title="Gets the singleton instance of the active renderer." alt="" coords="285,597,465,637"/>
 <area shape="rect" id="node2" href="$d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94" title="Called when the camera becomes active." alt="" coords="42,5,201,31"/>
 <area shape="rect" id="node3" href="$dd/d75/classAtlasRendererComponent.html#a6f50d08eab5a0109937a65b3f4ee19d8" title="This function runs when the object is set to be destroyed." alt="" coords="27,55,216,95"/>
 <area shape="rect" id="node4" href="$de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40" title="This function runs when the object is set to be destroyed." alt="" coords="5,119,237,159"/>
@@ -10,14 +10,16 @@
 <area shape="rect" id="node9" href="$df/d2b/classtoast_1_1ParticleSystem.html#a30a3f0c9b2ecfa0ae770a3cc6ddbf798" title="This function runs just after the object is created (scene load thread)" alt="" coords="41,411,201,451"/>
 <area shape="rect" id="node10" href="$d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="71,476,172,501"/>
 <area shape="rect" id="node11" href="$d8/d72/classGlobalLight.html#a54a7de33527e0673b7cfa4c13b04da28" title="This function runs just after the object is created (scene load thread)" alt="" coords="59,525,184,551"/>
-<area shape="rect" id="node12" href="$dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b" title=" " alt="" coords="27,575,216,615"/>
-<area shape="rect" id="node13" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="5,639,237,679"/>
-<area shape="rect" id="node14" href="$d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68" title=" " alt="" coords="25,703,217,743"/>
-<area shape="rect" id="node15" href="$df/daf/classrenderer_1_1DebugDrawLayer.html#aa1b958dc22ad7a0c70faf45a9ba97851" title="Called when the layer is added to the stack." alt="" coords="23,767,220,807"/>
-<area shape="rect" id="node16" href="$dd/d75/classAtlasRendererComponent.html#ab1dea9839d0075cb1a3fc718ca7f7d16" title="Called during the geometry pass to render this object." alt="" coords="27,831,216,871"/>
-<area shape="rect" id="node17" href="$d0/dc7/classSpineRendererComponent.html#ac7c57651f7368b20c302455ef4712c5e" title="Called during the geometry pass to render this object." alt="" coords="25,895,217,935"/>
-<area shape="rect" id="node18" href="$de/da0/classtoast_1_1MeshRendererComponent.html#aa1e5e6860f7eb384d116aa7b7546a3c5" title="Called during the geometry pass to render this object." alt="" coords="5,959,237,999"/>
-<area shape="rect" id="node19" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="49,1024,193,1049"/>
-<area shape="rect" id="node20" href="$df/d2b/classtoast_1_1ParticleSystem.html#a1db5e54b53f308abb509203b89d34ce2" title="Called during the geometry pass to render this object." alt="" coords="41,1074,201,1114"/>
-<area shape="rect" id="node21" href="$d8/db9/classtoast_1_1Camera.html#a075ce438f3311ef921bf26661358d60c" title="Sets this camera as the active camera." alt="" coords="29,1138,213,1178"/>
+<area shape="rect" id="node12" href="$d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="7,575,235,600"/>
+<area shape="rect" id="node13" href="$dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b" title=" " alt="" coords="27,625,216,665"/>
+<area shape="rect" id="node14" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="5,689,237,729"/>
+<area shape="rect" id="node15" href="$d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68" title=" " alt="" coords="25,753,217,793"/>
+<area shape="rect" id="node16" href="$df/daf/classrenderer_1_1DebugDrawLayer.html#aa1b958dc22ad7a0c70faf45a9ba97851" title="Called when the layer is added to the stack." alt="" coords="23,817,220,857"/>
+<area shape="rect" id="node17" href="$dd/d75/classAtlasRendererComponent.html#ab1dea9839d0075cb1a3fc718ca7f7d16" title="Called during the geometry pass to render this object." alt="" coords="27,881,216,921"/>
+<area shape="rect" id="node18" href="$d0/dc7/classSpineRendererComponent.html#ac7c57651f7368b20c302455ef4712c5e" title="Called during the geometry pass to render this object." alt="" coords="25,945,217,985"/>
+<area shape="rect" id="node19" href="$de/da0/classtoast_1_1MeshRendererComponent.html#aa1e5e6860f7eb384d116aa7b7546a3c5" title="Called during the geometry pass to render this object." alt="" coords="5,1009,237,1049"/>
+<area shape="rect" id="node20" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="49,1073,193,1099"/>
+<area shape="rect" id="node21" href="$df/d2b/classtoast_1_1ParticleSystem.html#a1db5e54b53f308abb509203b89d34ce2" title="Called during the geometry pass to render this object." alt="" coords="41,1123,201,1163"/>
+<area shape="rect" id="node22" href="$d0/db9/namespacerenderer.html#aaccd4db22dcd63f95d1186b2cbaaaed7" title=" " alt="" coords="7,1188,236,1213"/>
+<area shape="rect" id="node23" href="$d8/db9/classtoast_1_1Camera.html#a075ce438f3311ef921bf26661358d60c" title="Sets this camera as the active camera." alt="" coords="29,1238,213,1278"/>
 </map>

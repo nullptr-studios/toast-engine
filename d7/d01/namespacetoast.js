@@ -2,6 +2,7 @@ var namespacetoast =
 [
     [ "memory", "d0/de3/namespacetoast_1_1memory.html", "d0/de3/namespacetoast_1_1memory" ],
     [ "Actor", "d8/d92/classtoast_1_1Actor.html", "d8/d92/classtoast_1_1Actor" ],
+    [ "AtlasSpriteComponent", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html", "d3/dd3/classtoast_1_1AtlasSpriteComponent" ],
     [ "BadObject", "d2/d70/classtoast_1_1BadObject.html", "d2/d70/classtoast_1_1BadObject" ],
     [ "BadScene", "d9/da2/classtoast_1_1BadScene.html", "d9/da2/classtoast_1_1BadScene" ],
     [ "Camera", "d8/db9/classtoast_1_1Camera.html", "d8/db9/classtoast_1_1Camera" ],
@@ -42,6 +43,10 @@ var namespacetoast =
       [ "ComponentT", "d7/d01/namespacetoast.html#a701a4bc5b00fe11e576737195d02d743a283ed6259d24414fe72bc6fd1f5eb5e2", null ],
       [ "SceneT", "d7/d01/namespacetoast.html#a701a4bc5b00fe11e576737195d02d743abaef3520900dc73b59af14e32b652d57", null ],
       [ "InvalidT", "d7/d01/namespacetoast.html#a701a4bc5b00fe11e576737195d02d743ad9d71ede0f8a98f30a93ee3e45c24c65", null ]
+    ] ],
+    [ "DisplayMode", "d7/d01/namespacetoast.html#a3ce7291cbc1534293d25b38c2d2e6a73", [
+      [ "WINDOWED", "d7/d01/namespacetoast.html#a3ce7291cbc1534293d25b38c2d2e6a73adaa43822b2c6abbb5d4eaf867ff6e4a4", null ],
+      [ "FULLSCREEN", "d7/d01/namespacetoast.html#a3ce7291cbc1534293d25b38c2d2e6a73ab89c3d897b196ffff1537331bc659a97", null ]
     ] ],
     [ "EmissionMode", "d7/d01/namespacetoast.html#a8cd7b67a613c1c41b99f0b80946ec1dd", [
       [ "Continuous", "d7/d01/namespacetoast.html#a8cd7b67a613c1c41b99f0b80946ec1dda535863a82f163709557e59e2eb8139a7", null ],

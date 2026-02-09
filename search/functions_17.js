@@ -2,8 +2,8 @@ var searchData=
 [
   ['waiteventstimeout_0',['WaitEventsTimeout',['../d8/d8e/classtoast_1_1Window.html#ae5cdce64ba92a3bf64fd0aa8669adf7c',1,'toast::Window']]],
   ['what_1',['what',['../d2/d70/classtoast_1_1BadObject.html#ac8ee4175734e23686ea03767e646aaa4',1,'toast::BadObject::what()'],['../d6/d05/classToastException.html#abc19be82a21b9df9e0a81adc6656a2fe',1,'ToastException::what()'],['../d9/da2/classtoast_1_1BadScene.html#a2cbf9939a3d43ff168b9c24effc749d6',1,'toast::BadScene::what()'],['../de/db0/classtoast_1_1WindowException.html#a5da411fe277516819a3b634cae0ba0a9',1,'toast::WindowException::what()']]],
-  ['width_2',['Width',['../dc/d58/classFramebuffer.html#a7ebb1fc825324c1f238751744a456e1c',1,'Framebuffer']]],
-  ['width_3',['width',['../d6/d97/classTexture.html#a1e9bf47db02ca03eceac7b13bce03f9a',1,'Texture']]],
+  ['width_2',['width',['../d6/d97/classTexture.html#a1e9bf47db02ca03eceac7b13bce03f9a',1,'Texture']]],
+  ['width_3',['Width',['../dc/d58/classFramebuffer.html#a7ebb1fc825324c1f238751744a456e1c',1,'Framebuffer']]],
   ['window_4',['Window',['../d8/d8e/classtoast_1_1Window.html#a8346305f067cb920f298191286be2ecc',1,'toast::Window::Window(unsigned width=800, unsigned height=600, const std::string &amp;name=&quot;Toast Engine&quot;)'],['../d8/d8e/classtoast_1_1Window.html#ad58c193a91fc22a8d2ea61e878794a3e',1,'toast::Window::Window(const Window &amp;)=delete']]],
   ['windowchar_5',['WindowChar',['../db/db9/structevent_1_1WindowChar.html#a230b38ff2df0ceb9aea166d58e2bbab7',1,'event::WindowChar']]],
   ['windowdrop_6',['WindowDrop',['../d0/d30/structevent_1_1WindowDrop.html#a95eb72ee1fec170c282d4753819dbaea',1,'event::WindowDrop']]],

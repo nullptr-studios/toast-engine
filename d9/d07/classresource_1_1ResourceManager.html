@@ -151,6 +151,12 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:ae92ca1f8db9e4248edaf2dc561201863"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#ae92ca1f8db9e4248edaf2dc561201863">SaveFile</a> (const std::string &amp;path, const std::string &amp;content)</td></tr>
 <tr class="memdesc:ae92ca1f8db9e4248edaf2dc561201863"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves content to a file on disk.  <br /></td></tr>
 <tr class="separator:ae92ca1f8db9e4248edaf2dc561201863"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f71fa1d5da7be3b0e4f98a42ce6cae2"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a0f71fa1d5da7be3b0e4f98a42ce6cae2">SaveConfig</a> (const std::string &amp;path, const std::string &amp;content)</td></tr>
+<tr class="memdesc:a0f71fa1d5da7be3b0e4f98a42ce6cae2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves content to a file on disk.  <br /></td></tr>
+<tr class="separator:a0f71fa1d5da7be3b0e4f98a42ce6cae2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b67dfb42439e17661f9995f4630108e"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a9b67dfb42439e17661f9995f4630108e">LoadConfig</a> (const std::string &amp;path, std::string &amp;content)</td></tr>
+<tr class="memdesc:a9b67dfb42439e17661f9995f4630108e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads content from a file on disk.  <br /></td></tr>
+<tr class="separator:a9b67dfb42439e17661f9995f4630108e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a38cd7a05776e6089beefba6f283033d6"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d0/d62/structeditor_1_1ResourceSlot_1_1Entry.html">editor::ResourceSlot::Entry</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a38cd7a05776e6089beefba6f283033d6">CreateResourceSlotEntry</a> (const std::filesystem::path &amp;path)</td></tr>
 <tr class="memdesc:a38cd7a05776e6089beefba6f283033d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a resource slot entry for the editor.  <br /></td></tr>
 <tr class="separator:a38cd7a05776e6089beefba6f283033d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -274,7 +280,7 @@ Static Private Attributes</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>ResourceSlot entry for editor display. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00173">173</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00216">216</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
 
 </div>
 </div>
@@ -304,7 +310,7 @@ Static Private Attributes</h2></td></tr>
 <p>Gets the cached resources map. </p>
 <dl class="section return"><dt>Returns</dt><dd>Reference to the cache map. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00115">115</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00131">131</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 
 </div>
 </div>
@@ -348,6 +354,65 @@ Here is the caller graph for this function:</div>
 <area shape="rect" href="../../dd/ddc/classeditor_1_1ResourceSlot.html#a6f40912259b00dbff66d31c73491dde9" title=" " alt="" coords="108,5,261,45"/>
 <area shape="rect" href="../../d9/d4f/classtoast_1_1Engine.html#ae7f81d670cc27f32ce9fcc4bd3bab1d5" title="Starts the engine and enters the main game loop." alt="" coords="115,161,255,186"/>
 <area shape="rect" href="../../dd/d43/Linux_8inl.html#a3c04138a5bfe5d72780bb7e82a18e627" title=" " alt="" coords="5,161,60,186"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a9b67dfb42439e17661f9995f4630108e" name="a9b67dfb42439e17661f9995f4630108e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b67dfb42439e17661f9995f4630108e">&#9670;&#160;</a></span>LoadConfig()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool resource::ResourceManager::LoadConfig </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string &amp;&#160;</td>
+          <td class="paramname"><em>content</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Loads content from a file on disk. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">path</td><td>File path. </td></tr>
+    <tr><td class="paramname">content</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if file was loaded successfully. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00199">199</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d9/d07/classresource_1_1ResourceManager_a9b67dfb42439e17661f9995f4630108e_icgraph.png" border="0" usemap="#ad9/d07/classresource_1_1ResourceManager_a9b67dfb42439e17661f9995f4630108e_icgraph" alt=""/></div>
+<map name="ad9/d07/classresource_1_1ResourceManager_a9b67dfb42439e17661f9995f4630108e_icgraph" id="ad9/d07/classresource_1_1ResourceManager_a9b67dfb42439e17661f9995f4630108e_icgraph">
+<area shape="rect" title="Loads content from a file on disk." alt="" coords="509,27,712,67"/>
+<area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a0e2a08967ff0d9ffb1db23e45288961b" title=" " alt="" coords="281,27,461,67"/>
+<area shape="rect" href="../../d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="5,5,233,31"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="22,55,217,95"/>
 </map>
 </div>
 
@@ -403,7 +468,7 @@ template&lt;typename R , typename... Args&gt; </div>
 <div class="ttc" id="aclassTexture_html"><div class="ttname"><a href="../../d6/d97/classTexture.html">Texture</a></div><div class="ttdef"><b>Definition:</b> <a href="../../d0/ddc/Texture_8hpp_source.html#l00012">Texture.hpp:12</a></div></div>
 </div><!-- fragment --> </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00199">199</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00215">215</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -560,6 +625,69 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="a0f71fa1d5da7be3b0e4f98a42ce6cae2" name="a0f71fa1d5da7be3b0e4f98a42ce6cae2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0f71fa1d5da7be3b0e4f98a42ce6cae2">&#9670;&#160;</a></span>SaveConfig()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool resource::ResourceManager::SaveConfig </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>content</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Saves content to a file on disk. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">path</td><td>File path. </td></tr>
+    <tr><td class="paramname">content</td><td>Content to write. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if file was saved successfully. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00173">173</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d9/d07/classresource_1_1ResourceManager_a0f71fa1d5da7be3b0e4f98a42ce6cae2_icgraph.png" border="0" usemap="#ad9/d07/classresource_1_1ResourceManager_a0f71fa1d5da7be3b0e4f98a42ce6cae2_icgraph" alt=""/></div>
+<map name="ad9/d07/classresource_1_1ResourceManager_a0f71fa1d5da7be3b0e4f98a42ce6cae2_icgraph" id="ad9/d07/classresource_1_1ResourceManager_a0f71fa1d5da7be3b0e4f98a42ce6cae2_icgraph">
+<area shape="rect" title="Saves content to a file on disk." alt="" coords="787,99,989,139"/>
+<area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a9b82c08210834948eb375af0351ec1c2" title=" " alt="" coords="559,99,739,139"/>
+<area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a0e2a08967ff0d9ffb1db23e45288961b" title=" " alt="" coords="306,5,486,45"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="299,69,493,109"/>
+<area shape="rect" href="../../d0/db9/namespacerenderer.html#aaccd4db22dcd63f95d1186b2cbaaaed7" title=" " alt="" coords="281,134,511,159"/>
+<area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a0418bbc4c403c998c16b52ccf33616f4" title=" " alt="" coords="306,184,486,224"/>
+<area shape="rect" href="../../d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="5,13,233,38"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="22,69,217,109"/>
+</map>
+</div>
+
+</div>
+</div>
 <a id="ae92ca1f8db9e4248edaf2dc561201863" name="ae92ca1f8db9e4248edaf2dc561201863"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae92ca1f8db9e4248edaf2dc561201863">&#9670;&#160;</a></span>SaveFile()</h2>
 
@@ -610,10 +738,9 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d9/d07/classresource_1_1ResourceManager_ae92ca1f8db9e4248edaf2dc561201863_icgraph.png" border="0" usemap="#ad9/d07/classresource_1_1ResourceManager_ae92ca1f8db9e4248edaf2dc561201863_icgraph" alt=""/></div>
 <map name="ad9/d07/classresource_1_1ResourceManager_ae92ca1f8db9e4248edaf2dc561201863_icgraph" id="ad9/d07/classresource_1_1ResourceManager_ae92ca1f8db9e4248edaf2dc561201863_icgraph">
-<area shape="rect" title="Saves content to a file on disk." alt="" coords="435,55,637,95"/>
-<area shape="rect" href="../../d8/d5c/namespaceresource.html#a9d51862d8c41be438c01c8b713c75877" title=" " alt="" coords="219,5,360,31"/>
-<area shape="rect" href="../../d4/de6/classrenderer_1_1Material.html#aaa539180c1c05e42e926889cf484eccf" title="Saves the current material state to its JSON file." alt="" coords="220,55,359,95"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#aecb18ef668ed67dab42662053d81fb51" title="Saves current render settings to project settings." alt="" coords="192,119,387,159"/>
+<area shape="rect" title="Saves content to a file on disk." alt="" coords="381,27,584,67"/>
+<area shape="rect" href="../../d8/d5c/namespaceresource.html#a9d51862d8c41be438c01c8b713c75877" title=" " alt="" coords="192,5,333,31"/>
+<area shape="rect" href="../../d4/de6/classrenderer_1_1Material.html#aaa539180c1c05e42e926889cf484eccf" title="Saves the current material state to its JSON file." alt="" coords="193,55,332,95"/>
 <area shape="rect" href="../../d4/de6/classrenderer_1_1Material.html#a0e4285ae426362c5e03b56568323d5dd" title="Shows the material editor UI (editor only)." alt="" coords="5,55,144,95"/>
 </map>
 </div>
@@ -653,7 +780,7 @@ Here is the caller graph for this function:</div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Normalized path string. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00126">126</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00142">142</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -690,7 +817,7 @@ Here is the caller graph for this function:</div>
 
 <p>Cache of loaded resources. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00148">148</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00164">164</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 
 </div>
 </div>
@@ -716,7 +843,7 @@ Here is the caller graph for this function:</div>
 
 <p>Singleton instance pointer. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00142">142</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00158">158</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 
 </div>
 </div>
@@ -742,7 +869,7 @@ Here is the caller graph for this function:</div>
 
 <p>ID of the main thread for GPU upload checks. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00139">139</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00155">155</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 
 </div>
 </div>
@@ -768,7 +895,7 @@ Here is the caller graph for this function:</div>
 
 <p>Mutex protecting the resource cache. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00133">133</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00149">149</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 
 </div>
 </div>
@@ -794,7 +921,7 @@ Here is the caller graph for this function:</div>
 
 <p>Whether to read from .pkg file. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00151">151</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00167">167</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 
 </div>
 </div>
@@ -820,7 +947,7 @@ Here is the caller graph for this function:</div>
 
 <p>Mutex protecting the upload queue. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00136">136</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00152">152</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 
 </div>
 </div>
@@ -846,7 +973,7 @@ Here is the caller graph for this function:</div>
 
 <p>Queue of resources pending GPU upload. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00145">145</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00161">161</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 
 </div>
 </div>

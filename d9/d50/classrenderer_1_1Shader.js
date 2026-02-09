@@ -14,6 +14,7 @@ var classrenderer_1_1Shader =
     [ "id", "d9/d50/classrenderer_1_1Shader.html#a7e97d2e9ddc6677f9a1143514b7fa208", null ],
     [ "LinkProgram", "d9/d50/classrenderer_1_1Shader.html#ac317207ca6452256356c444699fbf598", null ],
     [ "Load", "d9/d50/classrenderer_1_1Shader.html#aae684c567923430746044428b4215574", null ],
+    [ "LoadErrorShader", "d9/d50/classrenderer_1_1Shader.html#a38c80dee120949501d66be3cec589186", null ],
     [ "LoadMainThread", "d9/d50/classrenderer_1_1Shader.html#a266997650c24d4b0ac35e9c9ccc8d113", null ],
     [ "operator=", "d9/d50/classrenderer_1_1Shader.html#ac0de195f16ccbb96d73fbb02a643b6fb", null ],
     [ "operator=", "d9/d50/classrenderer_1_1Shader.html#aad1d4f246b8e333edf5b0220550fdda7", null ],
