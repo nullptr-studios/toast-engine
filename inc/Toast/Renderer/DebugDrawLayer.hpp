@@ -41,23 +41,26 @@ public:
 	///@param pos Center position
 	///@param size Size of the rectangle
 	///@param color Color of the rectangle (default white)
-	void DrawRect(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color = { 1, 1, 1, 1 });
-	void DrawRect(const glm::vec3& pos, const glm::vec3& size, float rotation = 0, const glm::vec4& color = { 1, 1, 1, 1 });
+	///@param filled Fill the rectangle (default false)
+	void DrawRect(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color = { 1, 1, 1, 1 }, bool filled = false);
+	void DrawRect(const glm::vec3& pos, const glm::vec3& size, float rotation = 0, const glm::vec4& color = { 1, 1, 1, 1 }, bool filled = false);
 
 	///@brief Draws a circle
 	///@param center Center position
 	///@param radius Radius of the circle
 	///@param color Color of the circle (default white)
 	///@param segments Number of segments to use (default 0 = auto)
-	void DrawCircle(const glm::vec2& center, float radius, const glm::vec4& color = { 1, 1, 1, 1 }, int segments = 0);
-	void DrawCircle(const glm::vec3& center, float radius, const glm::vec4& color = { 1, 1, 1, 1 }, int segments = 0);
+	///@param filled Fill the circle (default false)
+	void DrawCircle(const glm::vec2& center, float radius, const glm::vec4& color = { 1, 1, 1, 1 }, int segments = 0, bool filled = false);
+	void DrawCircle(const glm::vec3& center, float radius, const glm::vec4& color = { 1, 1, 1, 1 }, int segments = 0, bool filled = false);
 
 	///@brief Draws a polygon shape
 	///@param points List of points
 	///@param color Color of the polygon (default white)
 	///@param closed Close the polygon (default true)
-	void DrawPoly(const std::vector<glm::vec2>& points, const glm::vec4& color = { 1, 1, 1, 1 }, bool closed = true);
-	void DrawPoly(const std::vector<glm::vec3>& points, const glm::vec4& color = { 1, 1, 1, 1 }, bool closed = true);
+	///@param filled Fill the polygon (default false)
+	void DrawPoly(const std::vector<glm::vec2>& points, const glm::vec4& color = { 1, 1, 1, 1 }, bool closed = true, bool filled = false);
+	void DrawPoly(const std::vector<glm::vec3>& points, const glm::vec4& color = { 1, 1, 1, 1 }, bool closed = true, bool filled = false);
 
 	void DrawGrid(float gridSize = 2.0f, glm::mat4 viewProjection = glm::mat4(1.0f));
 
@@ -79,12 +82,14 @@ private:
 	static DebugDrawLayer* m_instance;
 	void Flush() const;    // upload and render
 	GLuint m_vao = 0, m_vbo = 0;
+	GLuint m_filledVao = 0, m_filledVbo = 0;	// For filled geometry (triangles)
 	GLint m_projLocation = -1;
 
 	IRendererBase* m_renderer = nullptr;
 	std::shared_ptr<Shader> m_shader;
 
-	std::vector<DebugVertex> m_vertices;
+	std::vector<DebugVertex> m_vertices;       // Line vertices
+	std::vector<DebugVertex> m_filledVertices; // Triangle vertices for filled shapes
 
 	bool m_enabled = true;
 };
@@ -97,28 +102,28 @@ inline void DebugLine(const glm::vec3& a, const glm::vec3& b, const glm::vec4& c
 	DebugDrawLayer::GetInstance()->DrawLine(a, b, color);
 }
 
-inline void DebugCircle(const glm::vec2& center, float radius, const glm::vec4& color = { 1, 1, 1, 1 }, int segments = 16) {
-	DebugDrawLayer::GetInstance()->DrawCircle(center, radius, color, segments);
+inline void DebugCircle(const glm::vec2& center, float radius, const glm::vec4& color = { 1, 1, 1, 1 }, int segments = 16, bool filled = false) {
+	DebugDrawLayer::GetInstance()->DrawCircle(center, radius, color, segments, filled);
 }
 
-inline void DebugCircle(const glm::vec3& center, float radius, const glm::vec4& color = { 1, 1, 1, 1 }, int segments = 16) {
-	DebugDrawLayer::GetInstance()->DrawCircle(center, radius, color, segments);
+inline void DebugCircle(const glm::vec3& center, float radius, const glm::vec4& color = { 1, 1, 1, 1 }, int segments = 16, bool filled = false) {
+	DebugDrawLayer::GetInstance()->DrawCircle(center, radius, color, segments, filled);
 }
 
-inline void DebugRect(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color = { 1, 1, 1, 1 }) {
-	DebugDrawLayer::GetInstance()->DrawRect(pos, size, color);
+inline void DebugRect(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color = { 1, 1, 1, 1 }, bool filled = false) {
+	DebugDrawLayer::GetInstance()->DrawRect(pos, size, color, filled);
 }
 
-inline void DebugRect(const glm::vec3& pos, const glm::vec3& size, float rotation = 0, const glm::vec4& color = { 1, 1, 1, 1 }) {
-	DebugDrawLayer::GetInstance()->DrawRect(pos, size, rotation, color);
+inline void DebugRect(const glm::vec3& pos, const glm::vec3& size, float rotation = 0, const glm::vec4& color = { 1, 1, 1, 1 }, bool filled = false) {
+	DebugDrawLayer::GetInstance()->DrawRect(pos, size, rotation, color, filled);
 }
 
-inline void DebugPoly(const std::vector<glm::vec2>& points, const glm::vec4& color = { 1, 1, 1, 1 }, bool closed = true) {
-	DebugDrawLayer::GetInstance()->DrawPoly(points, color, closed);
+inline void DebugPoly(const std::vector<glm::vec2>& points, const glm::vec4& color = { 1, 1, 1, 1 }, bool closed = true, bool filled = false) {
+	DebugDrawLayer::GetInstance()->DrawPoly(points, color, closed, filled);
 }
 
-inline void DebugPoly(const std::vector<glm::vec3>& points, const glm::vec4& color = { 1, 1, 1, 1 }, bool closed = true) {
-	DebugDrawLayer::GetInstance()->DrawPoly(points, color, closed);
+inline void DebugPoly(const std::vector<glm::vec3>& points, const glm::vec4& color = { 1, 1, 1, 1 }, bool closed = true, bool filled = false) {
+	DebugDrawLayer::GetInstance()->DrawPoly(points, color, closed, filled);
 }
 
 }
