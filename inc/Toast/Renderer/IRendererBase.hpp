@@ -17,7 +17,6 @@
 
 #include <array>
 #include <glm/glm.hpp>
-#include <pplwin.h>
 #include <vector>
 
 namespace renderer {
