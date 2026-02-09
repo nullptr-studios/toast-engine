@@ -282,7 +282,10 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 
 	dvec2 contact_tangent = { manifold.normal.y, -manifold.normal.x };
 	if (c->forceLeft) {
-		contact_tangent.x *= -1.0;
+		c->throwForce *= -1.0f;
+	}
+	else {
+		c->throwForce = fabs(c->throwForce);
 	}
 
 	if ((c->flags & ColliderFlags::Ramp) == ColliderFlags::Ramp) {

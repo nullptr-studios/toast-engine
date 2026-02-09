@@ -298,6 +298,7 @@ void Collider::Inspector() {
 	ImGui::Spacing();
 	ImGui::Checkbox("Ramp force left?", &data.forceLeft);
 
+
 	m.flags = static_cast<ColliderFlags>(cur);
 	data.flags = static_cast<ColliderFlags>(cur);
 	for (auto* c : m.convexShapes) {
