@@ -258,6 +258,7 @@ void Collider::Inspector() {
 	bool ground_flag = (cur & static_cast<unsigned int>(ColliderFlags::Ground)) != 0;
 	bool player_flag = (cur & static_cast<unsigned int>(ColliderFlags::Player)) != 0;
 	bool enemy_flag = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
+	bool ramp_flag = (cur & static_cast<unsigned int>(ColliderFlags::Ramp)) != 0;
 
 	if (ImGui::Checkbox("Default", &default_flag)) {
 		if (default_flag) {
@@ -285,6 +286,13 @@ void Collider::Inspector() {
 			cur |= static_cast<unsigned int>(ColliderFlags::Player);
 		} else {
 			cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
+		}
+	}
+	if (ImGui::Checkbox("Ramp", &ramp_flag)) {
+		if (ramp_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Ramp);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Ramp);
 		}
 	}
 
