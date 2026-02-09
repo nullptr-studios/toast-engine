@@ -29,6 +29,7 @@ public:
 
 	json_t Save() const override;
 	void Load(json_t j, bool propagate) override;
+	void Init() override;
 
 	void CalculatePoints();
 

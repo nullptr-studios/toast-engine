@@ -11,6 +11,10 @@
 
 using namespace physics;
 
+void Collider::Init() {
+	CalculatePoints();
+}
+
 void Collider::AddPoint(glm::vec2 point) {
 	m.points.emplace_back(point);
 }
@@ -416,8 +420,6 @@ void Collider::Load(json_t j, bool propagate) {
 		for (const auto& p : j["points"]) {
 			AddPoint(p);
 		}
-
-		CalculatePoints();
 	}
 
 	if (j.contains("friction")) {
