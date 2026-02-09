@@ -302,7 +302,8 @@ void Collider::Inspector() {
 	m.flags = static_cast<ColliderFlags>(cur);
 	data.flags = static_cast<ColliderFlags>(cur);
 	for (auto* c : m.convexShapes) {
-		c->flags = static_cast<ColliderFlags>(cur);
+		c->flags = data.flags;
+		c->forceLeft = data.forceLeft;
 	}
 
 	ImGui::Spacing();
@@ -446,14 +447,18 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 
 	if (j.contains("flags")) {
+		data.flags = static_cast<ColliderFlags>(j["flags"]);
 		for (auto* c : m.convexShapes) {
-			c->flags = static_cast<ColliderFlags>(j["flags"]);
+			c->flags = data.flags;
 		}
 		m.flags = static_cast<ColliderFlags>(j["flags"]);
-		data.flags = static_cast<ColliderFlags>(j["flags"]);
+
 	}
 	if (j.contains("data.forceLeft")) {
 		data.forceLeft = j["data.forceLeft"];
+		for (auto* c : m.convexShapes) {
+			c->forceLeft = data.forceLeft;
+		}
 	}
 
 	Component::Load(j, propagate);
