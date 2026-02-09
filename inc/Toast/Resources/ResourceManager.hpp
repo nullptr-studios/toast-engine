@@ -29,6 +29,7 @@ public:
 	static constexpr const char* kGenericFilePath = "editor/icons/genericFile.png";
 	static constexpr const char* kObjFilePath = "editor/icons/objFile.png";
 	static constexpr const char* kJsonFilePath = "editor/icons/jsonFile.png";
+    static constexpr const char* kFolderIconPath = "editor/icons/folder.png";
 	
 	
 	/**
