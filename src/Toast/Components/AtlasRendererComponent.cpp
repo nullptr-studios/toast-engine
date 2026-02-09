@@ -89,22 +89,22 @@ void AtlasRendererComponent::BuildQuadFromRegion(
 		float halfH = height * 0.5f;
 
 		// Bottom-left vertex
-		quadVerts[0].position = glm::vec3(halfH, -halfW, 0.0f);
-		quadVerts[0].texCoord = glm::vec2(u2, v2);
+		quadVerts[0].position = glm::vec3(-halfW, -halfH, 0.0f);
+		quadVerts[0].texCoord = glm::vec2(u, v);
 		quadVerts[0].colorABGR = color;
 
 		// Bottom-right vertex
-		quadVerts[1].position = glm::vec3(halfH, halfW, 0.0f);
+		quadVerts[1].position = glm::vec3(halfW, -halfH, 0.0f);
 		quadVerts[1].texCoord = glm::vec2(u, v2);
 		quadVerts[1].colorABGR = color;
 
 		// Top-right vertex
-		quadVerts[2].position = glm::vec3(-halfH, halfW, 0.0f);
-		quadVerts[2].texCoord = glm::vec2(u, v);
+		quadVerts[2].position = glm::vec3(halfW, halfH, 0.0f);
+		quadVerts[2].texCoord = glm::vec2(u2, v2);
 		quadVerts[2].colorABGR = color;
 
 		// Top-left vertex
-		quadVerts[3].position = glm::vec3(-halfH, -halfW, 0.0f);
+		quadVerts[3].position = glm::vec3(-halfW, halfH, 0.0f);
 		quadVerts[3].texCoord = glm::vec2(u2, v);
 		quadVerts[3].colorABGR = color;
 	} else {
