@@ -142,7 +142,7 @@ void GameFlow::NextLevel() {
   }).value_or(0);
 	// clang-format on
 
-	if (m.levelList.size() <= m.level.value() + 1) {
+	if (m.levelList.size() <= m.level.value()) {
 		TOAST_WARN("End Of the World...");
 		m.level = std::nullopt;
 		return;
