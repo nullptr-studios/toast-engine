@@ -10,7 +10,8 @@ enum class ColliderFlags : uint8_t {
 	Default = 0b0000,
 	Ground = 0b0001,
 	Player = 0b0010,
-	Enemy = 0b0100
+	Enemy = 0b0100,
+	Ramp = 0b1000
 };
 
 inline const char* to_string(ColliderFlags e) {
@@ -19,6 +20,7 @@ inline const char* to_string(ColliderFlags e) {
 		case ColliderFlags::Ground: return "Ground";
 		case ColliderFlags::Player: return "Player";
 		case ColliderFlags::Enemy: return "Enemy";
+		case ColliderFlags::Ramp: return "Ramp";
 		default: return "unknown";
 	}
 }

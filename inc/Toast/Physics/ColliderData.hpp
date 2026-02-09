@@ -16,6 +16,7 @@ namespace physics {
 struct ColliderData {
 	double friction = 0.4;
 	glm::vec2 worldPosition;
+	double throwForce = 100.0f;
 	toast::Object* parent;
 	ColliderFlags flags {};
 	bool debugNormals = false;
