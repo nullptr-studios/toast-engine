@@ -281,15 +281,13 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	double inv_mass = 1.0 / rb->mass;
 
 	dvec2 contact_tangent = { manifold.normal.y, -manifold.normal.x };
+	double temp_force = c->throwForce;
 	if (c->forceLeft) {
-		c->throwForce *= -1.0f;
-	}
-	else {
-		c->throwForce = fabs(c->throwForce);
+		temp_force = -temp_force;
 	}
 
 	if ((c->flags & ColliderFlags::Ramp) == ColliderFlags::Ramp) {
-		rb->AddForce(dvec2(c->throwForce * contact_tangent.x, c->throwForce * contact_tangent.y));
+		rb->AddForce(dvec2(temp_force * contact_tangent.x, temp_force * contact_tangent.y));
 	}
 
 	// unfold velocity in normal and tangencial
