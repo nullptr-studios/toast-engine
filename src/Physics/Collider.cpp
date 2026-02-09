@@ -375,6 +375,11 @@ void Collider::Inspector() {
 void Collider::EditorTick() {
 	glm::vec2 world_position = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
 
+	if (world_position != debug.oldPosition) {
+		debug.oldPosition = world_position;
+		CalculatePoints();
+	}
+
 	if (debug.showPoints) {
 		renderer::DebugCircle(debug.newPointPosition + world_position, 0.1f, { 1.0f, 0.5f, 0.0f, 1.0f });
 

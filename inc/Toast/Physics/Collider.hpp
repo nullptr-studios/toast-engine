@@ -56,6 +56,7 @@ private:
 		bool showPoints = true;
 		bool showColliders = true;
 		glm::vec2 newPointPosition;
+		glm::vec2 oldPosition;
 	} debug;
 };
 
