@@ -96,10 +96,10 @@ void AtlasRendererComponent::BuildQuadFromRegion(
 	if (region->degrees == 90) {
 		// Sprite is rotated 90° CW in the atlas
 		// Rotate UVs to compensate
-		quadVerts[0].texCoord = glm::vec2(u, v2);   // BL
-		quadVerts[1].texCoord = glm::vec2(u, v);    // BR
-		quadVerts[2].texCoord = glm::vec2(u2, v);   // TR
-		quadVerts[3].texCoord = glm::vec2(u2, v2);  // TL
+		quadVerts[0].texCoord = glm::vec2(u2, v2);  // BL
+		quadVerts[1].texCoord = glm::vec2(u2, v);   // BR
+		quadVerts[2].texCoord = glm::vec2(u, v);    // TR
+		quadVerts[3].texCoord = glm::vec2(u, v2);   // TL
 	} else {
 		// Unrotated sprite - standard UV mapping
 		quadVerts[0].texCoord = glm::vec2(u, v2);   // Bottom-left
