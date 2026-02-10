@@ -10,7 +10,6 @@
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/Resources/Texture.hpp"
 
-#include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
 
 #ifdef TOAST_EDITOR
@@ -62,19 +61,12 @@ void AtlasRendererComponent::BuildQuadFromRegion(
 		return;
 	}
 
-	// Get UV coordinates from the region
-	float u = region->u;
-	float v = region->v;
-	float u2 = region->u2;
-	float v2 = region->v2;
 
-	// Flip V coordinates on Y axis
-	v = 1.0f - v;
-	v2 = 1.0f - v2;
-
-	// Get dimensions
-	float width = static_cast<float>(region->width) / 50.0f;    // 1 scale unit is 50 pixls
+	float width = static_cast<float>(region->width) / 50.0f;
 	float height = static_cast<float>(region->height) / 50.0f;
+
+	float halfW = width * 0.5f;
+	float halfH = height * 0.5f;
 
 	// Current vertex offset for indices
 	uint16_t baseIndex = static_cast<uint16_t>(vertices.size());
@@ -82,37 +74,49 @@ void AtlasRendererComponent::BuildQuadFromRegion(
 	// 4 vertices for the quad
 	std::array<renderer::SpineVertex, 4> quadVerts;
 
-	// Use original dimensions for both rotated and unrotated sprites
-	float halfW = width * 0.5f;
-	float halfH = height * 0.5f;
-
-	// Standard quad with Y-flipped UVs - same for both rotated and unrotated
+	// Quad positions
+	// Bottom-left, Bottom-right, Top-right, Top-left
 	quadVerts[0].position = glm::vec3(-halfW, -halfH, 0.0f);
-	quadVerts[0].texCoord = glm::vec2(u, v2);
-	quadVerts[0].colorABGR = color;
-
 	quadVerts[1].position = glm::vec3(halfW, -halfH, 0.0f);
-	quadVerts[1].texCoord = glm::vec2(u2, v2);
-	quadVerts[1].colorABGR = color;
-
 	quadVerts[2].position = glm::vec3(halfW, halfH, 0.0f);
-	quadVerts[2].texCoord = glm::vec2(u2, v);
-	quadVerts[2].colorABGR = color;
-
 	quadVerts[3].position = glm::vec3(-halfW, halfH, 0.0f);
-	quadVerts[3].texCoord = glm::vec2(u, v);
+
+	// Set colors
+	quadVerts[0].colorABGR = color;
+	quadVerts[1].colorABGR = color;
+	quadVerts[2].colorABGR = color;
 	quadVerts[3].colorABGR = color;
 
-	// Apply rotation offset for rotated regions
-	glm::mat4 finalTransform = transform;
+	// Get UV coordinates from the region
+	float u = region->u;
+	float v = region->v;
+	float u2 = region->u2;
+	float v2 = region->v2;
+
 	if (region->degrees == 90) {
-		glm::mat4 rotationOffset = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		finalTransform = transform * rotationOffset;
+		// Sprite is rotated 90° CCW in the atlas
+		// UV mapping for rotated sprites:
+		// The UVs need to be rotated to match how the texture is stored in the atlas
+		// Bottom-left vertex -> maps to top-left of UV rect
+		// Bottom-right vertex -> maps to bottom-left of UV rect
+		// Top-right vertex -> maps to bottom-right of UV rect
+		// Top-left vertex -> maps to top-right of UV rect
+		quadVerts[0].texCoord = glm::vec2(u2, v);   // Bottom-left
+		quadVerts[1].texCoord = glm::vec2(u2, v2);  // Bottom-right
+		quadVerts[2].texCoord = glm::vec2(u, v2);   // Top-right
+		quadVerts[3].texCoord = glm::vec2(u, v);    // Top-left
+	} else {
+		// Unrotated sprite - standard UV mapping
+		// For OpenGL: flip V axis (1-v)
+		quadVerts[0].texCoord = glm::vec2(u, v2);   // Bottom-left
+		quadVerts[1].texCoord = glm::vec2(u2, v2);  // Bottom-right
+		quadVerts[2].texCoord = glm::vec2(u2, v);   // Top-right
+		quadVerts[3].texCoord = glm::vec2(u, v);    // Top-left
 	}
 
 	// Transform vertices by the sprite's transform
 	for (auto& vert : quadVerts) {
-		glm::vec4 transformedPos = finalTransform * glm::vec4(vert.position, 1.0f);
+		glm::vec4 transformedPos = transform * glm::vec4(vert.position, 1.0f);
 		vert.position = glm::vec3(transformedPos);
 		vertices.push_back(vert);
 	}
