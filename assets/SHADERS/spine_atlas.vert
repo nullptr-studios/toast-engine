@@ -12,6 +12,7 @@ void main()
 {
     gl_Position = transform * vec4(aPos, 1.0);
     
-    TexCoord = aTexCoord;
+    // flip image on the y axis
+    TexCoord = vec2(aTexCoord.x, aTexCoord.y) * vec2(1.0, -1.0) + vec2(0.0, 1.0);
     VertexColor = aColor;
 }

@@ -89,26 +89,19 @@ void AtlasRendererComponent::BuildQuadFromRegion(
 
 	// Get UV coordinates from the region
 	float u = region->u;
-	float v = 1.0f - region->v;   // Flip V
+	float v = region->v;
 	float u2 = region->u2;
-	float v2 = 1.0f - region->v2; // Flip V
+	float v2 = region->v2;
 
 	if (region->degrees == 90) {
-		// Sprite is rotated 90° CW in the atlas (Spine convention)
-		// The texture region is rotated, so we need to rotate UVs 90° CCW to compensate
-		// 
-		// After V-flip, we have: v = 1-region->v, v2 = 1-region->v2
-		// For a 90° CW rotated texture, the UV corners need to be remapped:
-		// BL vertex samples from what was originally the left edge (rotated to bottom)
-		// BR vertex samples from what was originally the bottom edge (rotated to right)
-		// etc.
-		quadVerts[0].texCoord = glm::vec2(u2, v2);  // BL
-		quadVerts[1].texCoord = glm::vec2(u2, v);   // BR
-		quadVerts[2].texCoord = glm::vec2(u, v);    // TR
-		quadVerts[3].texCoord = glm::vec2(u, v2);   // TL
+		// Sprite is rotated 90° CW in the atlas
+		// Rotate UVs to compensate
+		quadVerts[0].texCoord = glm::vec2(u, v2);   // BL
+		quadVerts[1].texCoord = glm::vec2(u, v);    // BR
+		quadVerts[2].texCoord = glm::vec2(u2, v);   // TR
+		quadVerts[3].texCoord = glm::vec2(u2, v2);  // TL
 	} else {
-		// Unrotated sprite - standard UV mapping after V-flip
-		// BL(0,0) -> (u, v2), BR(1,0) -> (u2, v2), TR(1,1) -> (u2, v), TL(0,1) -> (u, v)
+		// Unrotated sprite - standard UV mapping
 		quadVerts[0].texCoord = glm::vec2(u, v2);   // Bottom-left
 		quadVerts[1].texCoord = glm::vec2(u2, v2);  // Bottom-right
 		quadVerts[2].texCoord = glm::vec2(u2, v);   // Top-right
