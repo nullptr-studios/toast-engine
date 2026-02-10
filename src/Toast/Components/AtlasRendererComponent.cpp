@@ -82,54 +82,31 @@ void AtlasRendererComponent::BuildQuadFromRegion(
 	// 4 vertices for the quad
 	std::array<renderer::SpineVertex, 4> quadVerts;
 
-	// Handle rotated regions
-	if (region->degrees == 90) {
+	// Use original dimensions for both rotated and unrotated sprites
+	float halfW = width * 0.5f;
+	float halfH = height * 0.5f;
 
-		float halfW = width * 0.5f;
-		float halfH = height * 0.5f;
+	// Standard quad with Y-flipped UVs - same for both rotated and unrotated
+	quadVerts[0].position = glm::vec3(-halfW, -halfH, 0.0f);
+	quadVerts[0].texCoord = glm::vec2(u, v2);
+	quadVerts[0].colorABGR = color;
 
-		// Rotated UVs (the working mapping from before)
-		quadVerts[0].position = glm::vec3(-halfW, -halfH, 0.0f);
-		quadVerts[0].texCoord = glm::vec2(u2, v);
-		quadVerts[0].colorABGR = color;
+	quadVerts[1].position = glm::vec3(halfW, -halfH, 0.0f);
+	quadVerts[1].texCoord = glm::vec2(u2, v2);
+	quadVerts[1].colorABGR = color;
 
-		quadVerts[1].position = glm::vec3(halfW, -halfH, 0.0f);
-		quadVerts[1].texCoord = glm::vec2(u, v);
-		quadVerts[1].colorABGR = color;
+	quadVerts[2].position = glm::vec3(halfW, halfH, 0.0f);
+	quadVerts[2].texCoord = glm::vec2(u2, v);
+	quadVerts[2].colorABGR = color;
 
-		quadVerts[2].position = glm::vec3(halfW, halfH, 0.0f);
-		quadVerts[2].texCoord = glm::vec2(u, v2);
-		quadVerts[2].colorABGR = color;
-
-		quadVerts[3].position = glm::vec3(-halfW, halfH, 0.0f);
-		quadVerts[3].texCoord = glm::vec2(u2, v2);
-		quadVerts[3].colorABGR = color;
-	} else {
-		// Unrotated region - standard quad with Y-flipped UVs
-		float halfW = width * 0.5f;
-		float halfH = height * 0.5f;
-
-		quadVerts[0].position = glm::vec3(-halfW, -halfH, 0.0f);
-		quadVerts[0].texCoord = glm::vec2(u, v2);
-		quadVerts[0].colorABGR = color;
-
-		quadVerts[1].position = glm::vec3(halfW, -halfH, 0.0f);
-		quadVerts[1].texCoord = glm::vec2(u2, v2);
-		quadVerts[1].colorABGR = color;
-
-		quadVerts[2].position = glm::vec3(halfW, halfH, 0.0f);
-		quadVerts[2].texCoord = glm::vec2(u2, v);
-		quadVerts[2].colorABGR = color;
-
-		quadVerts[3].position = glm::vec3(-halfW, halfH, 0.0f);
-		quadVerts[3].texCoord = glm::vec2(u, v);
-		quadVerts[3].colorABGR = color;
-	}
+	quadVerts[3].position = glm::vec3(-halfW, halfH, 0.0f);
+	quadVerts[3].texCoord = glm::vec2(u, v);
+	quadVerts[3].colorABGR = color;
 
 	// Apply rotation offset for rotated regions
 	glm::mat4 finalTransform = transform;
 	if (region->degrees == 90) {
-		glm::mat4 rotationOffset = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		glm::mat4 rotationOffset = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		finalTransform = transform * rotationOffset;
 	}
 
