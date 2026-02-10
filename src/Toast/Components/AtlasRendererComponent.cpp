@@ -137,8 +137,8 @@ void AtlasRendererComponent::BuildQuadFromRegion(
 	// Apply rotation offset for rotated regions
 	glm::mat4 finalTransform = transform;
 	if (region->degrees == 90) {
-		// Create a -90 degree rotation matrix
-		glm::mat4 rotationOffset = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		// Create a 90 degree rotation matrix
+		glm::mat4 rotationOffset = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		finalTransform = transform * rotationOffset;
 	}
 
