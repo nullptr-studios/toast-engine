@@ -10,6 +10,7 @@
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/Resources/Texture.hpp"
 
+#include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
 
 #ifdef TOAST_EDITOR
@@ -133,9 +134,17 @@ void AtlasRendererComponent::BuildQuadFromRegion(
 		quadVerts[3].colorABGR = color;
 	}
 
+	// Apply rotation offset for rotated regions
+	glm::mat4 finalTransform = transform;
+	if (region->degrees == 90) {
+		// Create a -90 degree rotation matrix
+		glm::mat4 rotationOffset = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		finalTransform = transform * rotationOffset;
+	}
+
 	// Transform vertices by the sprite's transform
 	for (auto& vert : quadVerts) {
-		glm::vec4 transformedPos = transform * glm::vec4(vert.position, 1.0f);
+		glm::vec4 transformedPos = finalTransform * glm::vec4(vert.position, 1.0f);
 		vert.position = glm::vec3(transformedPos);
 		vertices.push_back(vert);
 	}
