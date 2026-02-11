@@ -513,15 +513,15 @@ void Material::UpdateEditorSlots() {
 void Material::LoadErrorMaterial() {
 	PROFILE_ZONE;
 	TOAST_WARN("Loading error material");
-	
+
 	// Clear existing data
 	m_shaderParameters.clear();
 	m_parameters.clear();
 	m_textures.clear();
-	
+
 	m_shader = std::make_shared<renderer::Shader>("ErrorShader");
 	// m_shader->LoadErrorShader();
-	
+
 	// Set material as loaded
 	SetResourceState(resource::ResourceState::UPLOADEDGPU);
 }
