@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Toast/Resources/ResourceManager.hpp"
 
 #include <cstdio>
@@ -8,30 +10,12 @@
 
 #ifdef TRACY_ENABLE
 #include <tracy/Tracy.hpp>
-// Use the same re-entrancy guard as the main memory manager
-extern thread_local bool g_inTracyCall;
 
-struct SpineTracyGuard {
-	bool wasInCall;
-	SpineTracyGuard() : wasInCall(g_inTracyCall) { g_inTracyCall = true; }
-	~SpineTracyGuard() { g_inTracyCall = wasInCall; }
-};
+// Spine uses its own named memory pool to avoid conflicts with the main allocator's re-entrancy guard
+// This ensures Spine allocations are always properly tracked without interference
+#define SPINE_TRACY_ALLOC(ptr, size) TracyAllocN(ptr, size, "Spine")
+#define SPINE_TRACY_FREE(ptr) TracyFreeN(ptr, "Spine")
 
-#define SPINE_TRACY_ALLOC(ptr, size) \
-	do { \
-		if (!g_inTracyCall) { \
-			SpineTracyGuard guard; \
-			TracyAlloc(ptr, size); \
-		} \
-	} while (0)
-
-#define SPINE_TRACY_FREE(ptr) \
-	do { \
-		if (!g_inTracyCall) { \
-			SpineTracyGuard guard; \
-			TracyFree(ptr); \
-		} \
-	} while (0)
 #else
 #define SPINE_TRACY_ALLOC(ptr, size) ((void)0)
 #define SPINE_TRACY_FREE(ptr) ((void)0)
@@ -61,16 +45,27 @@ public:
 		return ptr;
 	}
 
-	void* _realloc(void* ptr, size_t size, const char* file, int line) override {
+	void* _realloc(void* oldPtr, size_t size, const char* file, int line) override {
 		(void)file;
 		(void)line;
-		return std::realloc(ptr, size);
+		// For Tracy: we need to free the old allocation before realloc
+		// and register the new allocation after (regardless of whether pointer moved)
+		if (oldPtr) {
+			SPINE_TRACY_FREE(oldPtr);
+		}
+		void* newPtr = std::realloc(oldPtr, size);
+		if (newPtr) {
+			SPINE_TRACY_ALLOC(newPtr, size);
+		}
+		return newPtr;
 	}
 
 	void _free(void* mem, const char* file, int line) override {
 		(void)file;
 		(void)line;
-		SPINE_TRACY_FREE(mem);
+		if (mem) {
+			SPINE_TRACY_FREE(mem);
+		}
 		std::free(mem);
 	}
 
