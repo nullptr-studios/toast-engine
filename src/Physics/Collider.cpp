@@ -49,6 +49,8 @@ void Collider::CalculatePoints() {
 	using simple_mesh = std::list<std::pair<glm::vec2, bool>>;
 	simple_mesh start_mesh;
 
+	auto world_mtx = dynamic_cast<toast::Actor*>(parent())->transform()->GetWorldMatrix();
+
 	// Figure out which points are concave
 	int sign = ShoelaceArea(m.points) >= 0 ? 1 : -1;
 	std::list<std::list<glm::vec2>::iterator> concave_points;
@@ -59,6 +61,10 @@ void Collider::CalculatePoints() {
 		glm::vec2 curr = *it;
 		glm::vec2 prev = *it_prev;
 		glm::vec2 next = *it_next;
+
+    curr = world_mtx * glm::vec4(curr.x,curr.y,0,1);
+    prev = world_mtx * glm::vec4(prev.x,prev.y,0,1);
+    next = world_mtx * glm::vec4(next.x,next.y,0,1);
 
 		glm::mat2 mat = { curr - prev, next - curr };
 		float det = sign * glm::determinant(mat);
