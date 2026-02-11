@@ -143,14 +143,14 @@ void Shader::LoadMainThread() {
 	}
 
 	LinkProgram(compiled);
-	
+
 	// Check if linking succeeded
 	if (!m_program) {
 		TOAST_ERROR("Shader linking failed, loading error shader");
 		LoadErrorShader();
 		return;
 	}
-	
+
 	SetResourceState(resource::ResourceState::UPLOADEDGPU);
 }
 
@@ -189,22 +189,22 @@ GLuint Shader::CompileSingleStage(Stage stage, std::string_view source) const {
 		glDeleteShader(s);
 
 		TOAST_ERROR("{0}", error_msg);
-		return 0; // Return 0 to indicate failure
+		return 0;    // Return 0 to indicate failure
 	}
 	return s;
 }
 
 void Shader::LinkProgram(const std::vector<GLuint>& shaders) {
 	PROFILE_ZONE;
-	
+
 	// Check if any shader failed to compile (has id 0)
 	for (auto sh : shaders) {
 		if (sh == 0) {
 			TOAST_ERROR("Cannot link program: one or more shaders failed to compile");
-			return; // Don't attempt to link
+			return;    // Don't attempt to link
 		}
 	}
-	
+
 	// Create attach and link all programs
 	GLuint program = glCreateProgram();
 	for (auto sh : shaders) {
@@ -228,7 +228,7 @@ void Shader::LinkProgram(const std::vector<GLuint>& shaders) {
 		}
 		glDeleteProgram(program);
 		TOAST_ERROR("Program link error:\n{0}", log);
-		return; // Don't throw, just return
+		return;    // Don't throw, just return
 	}
 
 	// detach and delete shaders after successful link
@@ -437,7 +437,7 @@ std::string Shader::StageToString(Stage s) {
 void Shader::LoadErrorShader() {
 	PROFILE_ZONE;
 	TOAST_WARN("Loading error fallback shader for shader: {0}", m_path);
-	
+
 	const char* vertexSource = R"(
 #version 460 core
 
@@ -454,7 +454,7 @@ void main()
     gl_Position = gMVP * vec4(aPos, 1.0);
 }
 )";
-	
+
 	const char* fragmentSource = R"(
 #version 460 core
 out vec4 FragColor;
@@ -479,14 +479,13 @@ void main(void)
 	std::vector<std::pair<Stage, std::string>> errorStages;
 	errorStages.emplace_back(Stage::Vertex, std::string(vertexSource));
 	errorStages.emplace_back(Stage::Fragment, std::string(fragmentSource));
-	
+
 	m_debugName = "ErrorShader";
-	m_sourceFiles.clear(); // Can't reload error shader from files
-	
+	m_sourceFiles.clear();    // Can't reload error shader from files
+
 	CreateFromSources(errorStages, m_debugName);
 	LoadMainThread();
-	
+
 	SetResourceState(resource::ResourceState::UPLOADEDGPU);
 }
 }
-
