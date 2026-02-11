@@ -6,6 +6,37 @@
 #include <spine/Extension.h>
 #include <spine/SpineString.h>
 
+#ifdef TRACY_ENABLE
+#include <tracy/Tracy.hpp>
+// Use the same re-entrancy guard as the main memory manager
+extern thread_local bool g_inTracyCall;
+
+struct SpineTracyGuard {
+	bool wasInCall;
+	SpineTracyGuard() : wasInCall(g_inTracyCall) { g_inTracyCall = true; }
+	~SpineTracyGuard() { g_inTracyCall = wasInCall; }
+};
+
+#define SPINE_TRACY_ALLOC(ptr, size) \
+	do { \
+		if (!g_inTracyCall) { \
+			SpineTracyGuard guard; \
+			TracyAlloc(ptr, size); \
+		} \
+	} while (0)
+
+#define SPINE_TRACY_FREE(ptr) \
+	do { \
+		if (!g_inTracyCall) { \
+			SpineTracyGuard guard; \
+			TracyFree(ptr); \
+		} \
+	} while (0)
+#else
+#define SPINE_TRACY_ALLOC(ptr, size) ((void)0)
+#define SPINE_TRACY_FREE(ptr) ((void)0)
+#endif
+
 namespace spine {
 
 class EngineSpineExtension : public SpineExtension {
@@ -18,9 +49,7 @@ public:
 		(void)file;
 		(void)line;
 		auto ptr = std::malloc(size);
-#ifdef TRACY_ENABLE
-		TracyAlloc(ptr, size);
-#endif
+		SPINE_TRACY_ALLOC(ptr, size);
 		return ptr;
 	}
 
@@ -28,10 +57,7 @@ public:
 		(void)file;
 		(void)line;
 		auto ptr = std::calloc(size, 1);
-#ifdef TRACY_ENABLE
-		TracyAlloc(ptr, size);
-#endif
-
+		SPINE_TRACY_ALLOC(ptr, size);
 		return ptr;
 	}
 
@@ -44,9 +70,7 @@ public:
 	void _free(void* mem, const char* file, int line) override {
 		(void)file;
 		(void)line;
-#ifdef TRACY_ENABLE
-		TracyFree(mem);
-#endif
+		SPINE_TRACY_FREE(mem);
 		std::free(mem);
 	}
 
