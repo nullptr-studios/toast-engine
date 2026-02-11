@@ -12,7 +12,7 @@ namespace physics {
 
 class BoxRigidbody : public toast::Component {
 public:
-	REGISTER_TYPE(BoxRigidbody);
+	REGISTER_ABSTRACT(BoxRigidbody);
 
 	void Init() override;
 	void Destroy() override;
