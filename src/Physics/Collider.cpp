@@ -62,9 +62,9 @@ void Collider::CalculatePoints() {
 		glm::vec2 prev = *it_prev;
 		glm::vec2 next = *it_next;
 
-    curr = world_mtx * glm::vec4(curr.x,curr.y,0,1);
-    prev = world_mtx * glm::vec4(prev.x,prev.y,0,1);
-    next = world_mtx * glm::vec4(next.x,next.y,0,1);
+		curr = world_mtx * glm::vec4(curr.x, curr.y, 0, 1);
+		prev = world_mtx * glm::vec4(prev.x, prev.y, 0, 1);
+		next = world_mtx * glm::vec4(next.x, next.y, 0, 1);
 
 		glm::mat2 mat = { curr - prev, next - curr };
 		float det = sign * glm::determinant(mat);
@@ -96,6 +96,10 @@ void Collider::CalculatePoints() {
 			glm::vec2 curr = it->first;
 			glm::vec2 prev = it_prev->first;
 			glm::vec2 next = it_next->first;
+
+			curr = world_mtx * glm::vec4(curr.x, curr.y, 0, 1);
+			prev = world_mtx * glm::vec4(prev.x, prev.y, 0, 1);
+			next = world_mtx * glm::vec4(next.x, next.y, 0, 1);
 
 			glm::mat2 mat = { curr - prev, next - curr };
 			float det = sign * glm::determinant(mat);
@@ -381,9 +385,12 @@ void Collider::Inspector() {
 void Collider::EditorTick() {
 	glm::vec2 world_position = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
 
-	if (world_position != debug.oldPosition) {
-		debug.oldPosition = world_position;
-		CalculatePoints();
+	{
+		auto world_mtx = dynamic_cast<toast::Actor*>(parent())->transform()->GetWorldMatrix();
+		if (world_mtx != debug.oldPosition) {
+			debug.oldPosition = world_mtx;
+			CalculatePoints();
+		}
 	}
 
 	if (debug.showPoints) {
