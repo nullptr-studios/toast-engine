@@ -6,6 +6,7 @@
 #include <Toast/Physics/BoxRigidbody.hpp>
 #include <Toast/Renderer/DebugDrawLayer.hpp>
 #include <Toast/Time.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
 namespace physics {
