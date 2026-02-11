@@ -297,7 +297,7 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 
 		dmat2 torque_mat;
 		torque_mat = { r, impulse };
-		if (length2(r) > PhysicsSystem::eps() && length2(impulse) > PhysicsSystem::eps()) {
+		if (length2(r) > 1.0f || length2(impulse) > 1.0f) {
 			torque_mat = { normalize(r), normalize(impulse) };
 		}
 
