@@ -5,6 +5,7 @@
 #include "Toast/Components/AtlasRendererComponent.hpp"
 
 #include "Toast/Components/AtlasSpriteComponent.hpp"
+#include "Toast/Profiler.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
@@ -17,6 +18,7 @@
 #endif
 
 void AtlasRendererComponent::Init() {
+	PROFILE_ZONE_C(0xFF6B00);  // Orange for initialization
 	TransformComponent::Init();
 
 	m_shader = resource::LoadResource<renderer::Shader>("shaders/spine_atlas.shader");
@@ -239,6 +241,7 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 }
 
 void AtlasRendererComponent::LoadTextures() {
+	PROFILE_ZONE_C(0xFFFF00);  // Yellow for resource loading
 	m_shader->Use();
 	m_shader->SetSampler("Texture", 0);
 

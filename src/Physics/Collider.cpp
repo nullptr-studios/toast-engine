@@ -3,6 +3,7 @@
 #include "ConvexCollider.hpp"
 #include "Toast/GlmJson.hpp"
 #include "Toast/Objects/Actor.hpp"
+#include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
 #ifdef TOAST_EDITOR
@@ -27,6 +28,7 @@ void Collider::DeletePoint(glm::vec2 point) {
 }
 
 void Collider::CalculatePoints() {
+	PROFILE_ZONE;
 	// We require at leats 3 points to make a mesh
 	if (m.points.size() < 3) {
 		return;

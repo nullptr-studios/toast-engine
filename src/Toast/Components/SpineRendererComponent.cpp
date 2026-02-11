@@ -250,7 +250,7 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		return;
 	}
 
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0xFF0000);  // Red for rendering
 
 	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
 
@@ -385,6 +385,7 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 }
 
 void SpineRendererComponent::Load(json_t j, bool force_create) {
+	PROFILE_ZONE_C(0x00FFFF);  // Cyan for deserialization
 	TransformComponent::Load(j, force_create);
 	if (j.contains("atlasResourcePath")) {
 		m_atlasPath = j.at("atlasResourcePath").get<std::string>();
@@ -395,6 +396,7 @@ void SpineRendererComponent::Load(json_t j, bool force_create) {
 }
 
 json_t SpineRendererComponent::Save() const {
+	PROFILE_ZONE_C(0x00FF00);  // Green for serialization
 	json_t j = TransformComponent::Save();
 	j["atlasResourcePath"] = m_atlasPath;
 	j["skeletonDataResourcePath"] = m_skeletonDataPath;
