@@ -6,6 +6,7 @@
 #include <Toast/Physics/BoxRigidbody.hpp>
 #include <Toast/Renderer/DebugDrawLayer.hpp>
 #include <Toast/Time.hpp>
+#include <glm/gtx/norm.hpp>
 
 namespace physics {
 using namespace glm;
@@ -292,11 +293,16 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 		velocity += impulse * inv_mass;
 
 		// Apply angular impulse with slight damping to smooth spikes
-		dmat2 torque_mat = { r, impulse };
+
+		dmat2 torque_mat;
+		torque_mat = { r, impulse };
+		if (length2(r) > PhysicsSystem::eps() && length2(impulse) > PhysicsSystem::eps()) {
+			torque_mat = { normalize(r), normalize(impulse) };
+		}
+
 		double torque_impulse = determinant(torque_mat);
 		const double angular_impulse_blend = 0.6;
-		//angular_velocity += torque_impulse * inv_inertia * angular_impulse_blend;
-		rb->AddTorque(torque_impulse);
+		angular_velocity += torque_impulse * inv_inertia * angular_impulse_blend;
 	}
 
 	// positional correction
