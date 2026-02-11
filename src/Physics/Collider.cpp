@@ -385,19 +385,17 @@ void Collider::Inspector() {
 void Collider::EditorTick() {
 	glm::vec2 world_position = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
 
-	{
-		auto world_mtx = dynamic_cast<toast::Actor*>(parent())->transform()->GetWorldMatrix();
-		if (world_mtx != debug.oldPosition) {
-			debug.oldPosition = world_mtx;
-			CalculatePoints();
-		}
+	auto world_mtx = dynamic_cast<toast::Actor*>(parent())->transform()->GetWorldMatrix();
+	if (world_mtx != debug.oldPosition) {
+		debug.oldPosition = world_mtx;
+		CalculatePoints();
 	}
 
 	if (debug.showPoints) {
 		renderer::DebugCircle(debug.newPointPosition + world_position, 0.1f, { 1.0f, 0.5f, 0.0f, 1.0f });
 
 		for (glm::vec2 p : m.points) {
-			renderer::DebugCircle(p + world_position, 0.1f);
+			renderer::DebugCircle(glm::vec2(world_mtx * glm::vec4(p.x,p.y,0,1)), 0.1f);
 		}
 	}
 
