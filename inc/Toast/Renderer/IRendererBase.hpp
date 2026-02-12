@@ -201,7 +201,7 @@ public:
 
 	void LoadRenderSettings() {
 		std::string configData;
-		if (!resource::ResourceManager::LoadConfig(".\\config\\Renderer.settings", configData)) {
+		if (!resource::ResourceManager::LoadConfig("Renderer.settings", configData)) {
 			TOAST_WARN("Failed to load renderer settings file... creating a default one!");
 			SaveRenderSettings();
 			ApplyRenderSettings();
@@ -249,7 +249,7 @@ public:
 		j["fullscreen"] = m_config.currentDisplayMode;
 		j["resolution"] = m_config.resolution;
 
-		if (!resource::ResourceManager::SaveConfig(".\\config\\Renderer.settings", j.dump(1))) {
+		if (!resource::ResourceManager::SaveConfig("Renderer.settings", j.dump(1))) {
 			TOAST_ERROR("Failed to save renderer settings file!");
 		} else {
 			// TOAST_TRACE("SUCCESFULLY SAVED RENDERER SETTINGS!");
