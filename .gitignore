@@ -17,6 +17,8 @@ external/*
 !external/glad/**
 !external/fmod/
 !external/fmod/**
+!external/ultralight/
+!external/ultralight/**
 
 # Files to ignore
 */[Ll]og
