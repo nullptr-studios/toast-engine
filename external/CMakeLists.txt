@@ -238,17 +238,29 @@ set(FMOD_INCLUDE_DIR "${FMOD_DIR}/include")
 # FMOD Core Library
 add_library(fmod SHARED IMPORTED GLOBAL)
 if(WIN32)
-    set_target_properties(fmod PROPERTIES
-        IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
-        IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/fmodL.dll"
-        IMPORTED_IMPLIB_DEBUG "${FMOD_LIB_DIR}/fmodL_vc.lib"
-        IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/fmod.dll"
-        IMPORTED_IMPLIB_RELEASE "${FMOD_LIB_DIR}/fmod_vc.lib"
-        IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmod.dll"
-        IMPORTED_IMPLIB_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmod_vc.lib"
-        IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/fmod.dll"
-        IMPORTED_IMPLIB_MINSIZEREL "${FMOD_LIB_DIR}/fmod_vc.lib"
-    )
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        # For GCC/Clang on Windows, link directly to DLL with proper flags
+        set_target_properties(fmod PROPERTIES
+            IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
+            IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/fmodL.dll"
+            IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/fmod.dll"
+            IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmod.dll"
+            IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/fmod.dll"
+        )
+    else()
+        # For MSVC, use import libraries
+        set_target_properties(fmod PROPERTIES
+            IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
+            IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/fmodL.dll"
+            IMPORTED_IMPLIB_DEBUG "${FMOD_LIB_DIR}/fmodL_vc.lib"
+            IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/fmod.dll"
+            IMPORTED_IMPLIB_RELEASE "${FMOD_LIB_DIR}/fmod_vc.lib"
+            IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmod.dll"
+            IMPORTED_IMPLIB_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmod_vc.lib"
+            IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/fmod.dll"
+            IMPORTED_IMPLIB_MINSIZEREL "${FMOD_LIB_DIR}/fmod_vc.lib"
+        )
+    endif()
 elseif(UNIX AND NOT APPLE)
     set_target_properties(fmod PROPERTIES
         IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
@@ -263,17 +275,29 @@ target_include_directories(fmod INTERFACE ${FMOD_INCLUDE_DIR})
 # FMOD Studio Library
 add_library(fmod_studio SHARED IMPORTED GLOBAL)
 if(WIN32)
-    set_target_properties(fmod_studio PROPERTIES
-        IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
-        IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/fmodstudioL.dll"
-        IMPORTED_IMPLIB_DEBUG "${FMOD_LIB_DIR}/fmodstudioL_vc.lib"
-        IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/fmodstudio.dll"
-        IMPORTED_IMPLIB_RELEASE "${FMOD_LIB_DIR}/fmodstudio_vc.lib"
-        IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmodstudio.dll"
-        IMPORTED_IMPLIB_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmodstudio_vc.lib"
-        IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/fmodstudio.dll"
-        IMPORTED_IMPLIB_MINSIZEREL "${FMOD_LIB_DIR}/fmodstudio_vc.lib"
-    )
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        # For GCC/Clang on Windows, link directly to DLL with proper flags
+        set_target_properties(fmod_studio PROPERTIES
+            IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
+            IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/fmodstudioL.dll"
+            IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/fmodstudio.dll"
+            IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmodstudio.dll"
+            IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/fmodstudio.dll"
+        )
+    else()
+        # For MSVC, use import libraries
+        set_target_properties(fmod_studio PROPERTIES
+            IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
+            IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/fmodstudioL.dll"
+            IMPORTED_IMPLIB_DEBUG "${FMOD_LIB_DIR}/fmodstudioL_vc.lib"
+            IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/fmodstudio.dll"
+            IMPORTED_IMPLIB_RELEASE "${FMOD_LIB_DIR}/fmodstudio_vc.lib"
+            IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmodstudio.dll"
+            IMPORTED_IMPLIB_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmodstudio_vc.lib"
+            IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/fmodstudio.dll"
+            IMPORTED_IMPLIB_MINSIZEREL "${FMOD_LIB_DIR}/fmodstudio_vc.lib"
+        )
+    endif()
 elseif(UNIX AND NOT APPLE)
     set_target_properties(fmod_studio PROPERTIES
         IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
