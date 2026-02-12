@@ -82,7 +82,7 @@ double Window::GetTime() {
 }
 
 void Window::SwapBuffers() {
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0xFF0000);    // Red for rendering
 	glfwSwapBuffers(m_glfwWindow);
 }
 

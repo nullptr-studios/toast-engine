@@ -13,6 +13,42 @@
 #endif
 #ifdef TRACY_ENABLE
 #include <tracy/Tracy.hpp>
+
+// Thread-local re-entrancy guard to prevent Tracy from profiling its own allocations
+// This is critical because TracyAlloc/TracyFree internally allocate memory
+thread_local bool g_inTracyCall = false;
+
+struct TracyGuard {
+	bool wasInCall;
+
+	TracyGuard() : wasInCall(g_inTracyCall) {
+		g_inTracyCall = true;
+	}
+
+	~TracyGuard() {
+		g_inTracyCall = wasInCall;
+	}
+};
+
+#define TRACY_ALLOC_SAFE(ptr, size) \
+	do {                              \
+		if (!g_inTracyCall) {           \
+			TracyGuard guard;             \
+			TracyAlloc(ptr, size);        \
+		}                               \
+	} while (0)
+
+#define TRACY_FREE_SAFE(ptr) \
+	do {                       \
+		if (!g_inTracyCall) {    \
+			TracyGuard guard;      \
+			TracyFree(ptr);        \
+		}                        \
+	} while (0)
+
+#else
+#define TRACY_ALLOC_SAFE(ptr, size) ((void)0)
+#define TRACY_FREE_SAFE(ptr) ((void)0)
 #endif
 
 // NOLINTBEGIN
@@ -116,9 +152,7 @@ void* Alloc(std::size_t size) noexcept {
 		// stalls thread until we successfully update peak
 		while (cur > peak && !g_peakBytes.compare_exchange_weak(peak, cur, std::memory_order_relaxed)) { }
 		void* user = hdr + 1;
-#ifdef TRACY_ENABLE
-		TracyAlloc(user, size);
-#endif
+		TRACY_ALLOC_SAFE(user, size);
 		return user;
 	}
 
@@ -138,9 +172,7 @@ void* Alloc(std::size_t size) noexcept {
 	// stalls thread until we successfully update peak
 	while (cur > peak && !g_peakBytes.compare_exchange_weak(peak, cur, std::memory_order_relaxed)) { }
 	void* user = hdr + 1;
-#ifdef TRACY_ENABLE
-	TracyAlloc(user, size);
-#endif
+	TRACY_ALLOC_SAFE(user, size);
 	return user;
 }
 
@@ -170,9 +202,7 @@ void Free(void* ptr) noexcept {
 	}
 	BlockHeader* hdr = HeaderFromUser(ptr);
 	std::size_t sz = hdr->requestedSize;
-#ifdef TRACY_ENABLE
-	TracyFree(ptr);
-#endif
+	TRACY_FREE_SAFE(ptr);
 	g_currentBytes.fetch_sub(sz, std::memory_order_relaxed);
 	if (hdr->bucketIndex == kLargeSentinel) {
 		g_largeBytes.fetch_sub(sz, std::memory_order_relaxed);
@@ -318,15 +348,38 @@ void operator delete[](void* p, const std::nothrow_t&) noexcept {
 #ifdef TRACY_ENABLE
 #include <tracy/Tracy.hpp>
 
+// Thread-local re-entrancy guard to prevent Tracy from profiling its own allocations
+thread_local bool g_inTracyCall = false;
+
+struct TracyGuard {
+	bool wasInCall;
+
+	TracyGuard() : wasInCall(g_inTracyCall) {
+		g_inTracyCall = true;
+	}
+
+	~TracyGuard() {
+		g_inTracyCall = wasInCall;
+	}
+};
+
 void* operator new(std::size_t size) {
 	void* ptr = std::malloc(size);
-	// if (!ptr) { throw std::bad_alloc(); }
-	TracyAlloc(ptr, size);
+	if (!ptr) {
+		throw std::bad_alloc();
+	}
+	if (!g_inTracyCall) {
+		TracyGuard guard;
+		TracyAlloc(ptr, size);
+	}
 	return ptr;
 }
 
 void operator delete(void* ptr) noexcept {
-	TracyFree(ptr);
+	if (ptr && !g_inTracyCall) {
+		TracyGuard guard;
+		TracyFree(ptr);
+	}
 	std::free(ptr);
 }
 
@@ -335,12 +388,18 @@ void* operator new[](std::size_t size) {
 	if (!ptr) {
 		throw std::bad_alloc();
 	}
-	TracyAlloc(ptr, size);
+	if (!g_inTracyCall) {
+		TracyGuard guard;
+		TracyAlloc(ptr, size);
+	}
 	return ptr;
 }
 
 void operator delete[](void* ptr) noexcept {
-	TracyFree(ptr);
+	if (ptr && !g_inTracyCall) {
+		TracyGuard guard;
+		TracyFree(ptr);
+	}
 	std::free(ptr);
 }
 
