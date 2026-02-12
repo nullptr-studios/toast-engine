@@ -439,35 +439,38 @@ void Shader::LoadErrorShader() {
 	TOAST_WARN("Loading error fallback shader for shader: {0}", m_path);
 
 	const char* vertexSource = R"(
-#version 330 core
-layout(location = 0) in vec3 aPosition;
-layout(location = 1) in vec3 aNormal;
-layout(location = 2) in vec2 aTexCoord;
-layout(location = 3) in vec4 aColor;
+#version 460 core
 
-uniform mat4 uModel;
-uniform mat4 uView;
-uniform mat4 uProjection;
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec2 aTexCoord;
+layout (location = 3) in vec4 aTangent; // xyz = tangent, w = handedness
 
-out vec2 vTexCoord;
-out vec4 vColor;
+uniform mat4 gMVP;
+uniform mat4 gWorld;
 
-void main() {
-    gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.0);
-    vTexCoord = aTexCoord;
-    vColor = aColor;
+void main()
+{
+    gl_Position = gMVP * vec4(aPos, 1.0);
 }
 )";
 
 	const char* fragmentSource = R"(
-#version 330 core
-in vec2 vTexCoord;
-in vec4 vColor;
-
+#version 460 core
 out vec4 FragColor;
 
-void main() {
-    FragColor = vec4(1.0, 0.0, 1.0, 1.0);
+//in vec2 TexCoord;
+
+void main(void)
+{
+    vec2 resolution = vec2(800.0f, 800.f);
+    vec2 TexCoord = gl_FragCoord.st / resolution.xy;
+	
+    float x = floor(TexCoord.x * 8.0);
+    float y = floor(TexCoord.y * 8.0);
+    float pattern = mod(x + y, 2.0);
+    vec3 color = mix(vec3(1.0f,0,0), vec3(0.0), pattern);
+    FragColor = vec4(color, 1.0);
 }
 )";
 

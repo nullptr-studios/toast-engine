@@ -13,8 +13,8 @@
 
 void Light2D::Init() {
 	// Load quad mesh for light rendering
-	m_lightMesh = resource::LoadResource<renderer::Mesh>("assets/models/quad.obj");
-	m_lightShader = resource::LoadResource<renderer::Shader>("assets/shaders/2dLight.shader");
+	m_lightMesh = resource::LoadResource<renderer::Mesh>("assets/MODELS/quad.obj");
+	m_lightShader = resource::LoadResource<renderer::Shader>("assets/SHADERS/2dLight.shader");
 
 	transform()->scale(glm::vec3(m_radius * 2, m_radius * 2, 1.0f));
 	renderer::IRendererBase::GetInstance()->AddLight(this);

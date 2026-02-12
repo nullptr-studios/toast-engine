@@ -11,6 +11,10 @@
 
 using namespace physics;
 
+void Collider::Init() {
+	CalculatePoints();
+}
+
 void Collider::AddPoint(glm::vec2 point) {
 	m.points.emplace_back(point);
 }
@@ -382,6 +386,11 @@ void Collider::Inspector() {
 void Collider::EditorTick() {
 	glm::vec2 world_position = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
 
+	if (world_position != debug.oldPosition) {
+		debug.oldPosition = world_position;
+		CalculatePoints();
+	}
+
 	if (debug.showPoints) {
 		renderer::DebugCircle(debug.newPointPosition + world_position, 0.1f, { 1.0f, 0.5f, 0.0f, 1.0f });
 
@@ -427,8 +436,6 @@ void Collider::Load(json_t j, bool propagate) {
 		for (const auto& p : j["points"]) {
 			AddPoint(p);
 		}
-
-		CalculatePoints();
 	}
 
 	if (j.contains("friction")) {
