@@ -196,7 +196,7 @@ void Engine::Init() {
 void Engine::EditorTick() { }
 
 void Engine::Render() {
-	PROFILE_ZONE_C(0xFF0000);  // Red for rendering
+	PROFILE_ZONE_C(0xFF0000);    // Red for rendering
 	m->renderer->Render();
 }
 

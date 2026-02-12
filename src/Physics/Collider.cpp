@@ -397,7 +397,7 @@ void Collider::EditorTick() {
 		renderer::DebugCircle(debug.newPointPosition + world_position, 0.1f, { 1.0f, 0.5f, 0.0f, 1.0f });
 
 		for (glm::vec2 p : m.points) {
-			renderer::DebugCircle(glm::vec2(world_mtx * glm::vec4(p.x,p.y,0,1)), 0.1f);
+			renderer::DebugCircle(glm::vec2(world_mtx * glm::vec4(p.x, p.y, 0, 1)), 0.1f);
 		}
 	}
 

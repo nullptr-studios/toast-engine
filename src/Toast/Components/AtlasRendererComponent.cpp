@@ -18,7 +18,7 @@
 #endif
 
 void AtlasRendererComponent::Init() {
-	PROFILE_ZONE_C(0xFF6B00);  // Orange for initialization
+	PROFILE_ZONE_C(0xFF6B00);    // Orange for initialization
 	TransformComponent::Init();
 
 	m_shader = resource::LoadResource<renderer::Shader>("shaders/spine_atlas.shader");
@@ -63,7 +63,6 @@ void AtlasRendererComponent::BuildQuadFromRegion(
 		return;
 	}
 
-
 	float width = static_cast<float>(region->width) / 50.0f;
 	float height = static_cast<float>(region->height) / 50.0f;
 
@@ -98,16 +97,16 @@ void AtlasRendererComponent::BuildQuadFromRegion(
 	if (region->degrees == 90) {
 		// Sprite is rotated 90° CW in the atlas
 		// Rotate UVs to compensate
-		quadVerts[0].texCoord = glm::vec2(u2, v2);  // BL
-		quadVerts[1].texCoord = glm::vec2(u2, v);   // BR
-		quadVerts[2].texCoord = glm::vec2(u, v);    // TR
-		quadVerts[3].texCoord = glm::vec2(u, v2);   // TL
+		quadVerts[0].texCoord = glm::vec2(u2, v2);    // BL
+		quadVerts[1].texCoord = glm::vec2(u2, v);     // BR
+		quadVerts[2].texCoord = glm::vec2(u, v);      // TR
+		quadVerts[3].texCoord = glm::vec2(u, v2);     // TL
 	} else {
 		// Unrotated sprite - standard UV mapping
-		quadVerts[0].texCoord = glm::vec2(u, v2);   // Bottom-left
-		quadVerts[1].texCoord = glm::vec2(u2, v2);  // Bottom-right
-		quadVerts[2].texCoord = glm::vec2(u2, v);   // Top-right
-		quadVerts[3].texCoord = glm::vec2(u, v);    // Top-left
+		quadVerts[0].texCoord = glm::vec2(u, v2);     // Bottom-left
+		quadVerts[1].texCoord = glm::vec2(u2, v2);    // Bottom-right
+		quadVerts[2].texCoord = glm::vec2(u2, v);     // Top-right
+		quadVerts[3].texCoord = glm::vec2(u, v);      // Top-left
 	}
 
 	// Transform vertices by the sprite's transform
@@ -241,7 +240,7 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 }
 
 void AtlasRendererComponent::LoadTextures() {
-	PROFILE_ZONE_C(0xFFFF00);  // Yellow for resource loading
+	PROFILE_ZONE_C(0xFFFF00);    // Yellow for resource loading
 	m_shader->Use();
 	m_shader->SetSampler("Texture", 0);
 

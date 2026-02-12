@@ -2,8 +2,8 @@
 /// @author dario
 /// @date 28/09/2025.
 
-#include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Profiler.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 
 #ifdef TOAST_EDITOR
@@ -16,7 +16,7 @@
 namespace toast {
 
 void MeshRendererComponent::Load(json_t j, bool force_create) {
-	PROFILE_ZONE_C(0x00FFFF);  // Cyan for deserialization
+	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 	TransformComponent::Load(j, force_create);
 	// if (j.contains("shaderPath")) {
 	//	m_shaderPath = j.at("shaderPath");
@@ -96,7 +96,7 @@ void MeshRendererComponent::Init() {
 }
 
 void MeshRendererComponent::LoadTextures() {
-	PROFILE_ZONE_C(0xFFFF00);  // Yellow for resource loading
+	PROFILE_ZONE_C(0xFFFF00);    // Yellow for resource loading
 	// opengl calls eso si que es en el main thread
 	// m_shader->Use();
 	// m_shader->SetSampler("Texture", 0);

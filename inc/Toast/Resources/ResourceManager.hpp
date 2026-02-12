@@ -25,13 +25,11 @@ namespace resource {
 ///@brief Manager of every resource in the engine
 class ResourceManager {
 public:
-	
 	static constexpr const char* kGenericFilePath = "editor/icons/genericFile.png";
 	static constexpr const char* kObjFilePath = "editor/icons/objFile.png";
 	static constexpr const char* kJsonFilePath = "editor/icons/jsonFile.png";
-    static constexpr const char* kFolderIconPath = "editor/icons/folder.png";
-	
-	
+	static constexpr const char* kFolderIconPath = "editor/icons/folder.png";
+
 	/**
 	 * @brief Constructs the ResourceManager.
 	 * @param pkg If true, reads from game.pkg instead of filesystem.
@@ -140,8 +138,6 @@ public:
 	}
 
 private:
-	
-	
 	/**
 	 * @brief Converts backslashes to forward slashes.
 	 * @param s Input path string.

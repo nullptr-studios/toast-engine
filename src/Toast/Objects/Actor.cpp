@@ -24,7 +24,7 @@ Actor::Actor() {
 }
 
 json_t Actor::Save() const {
-	PROFILE_ZONE_C(0x00FF00);  // Green for serialization
+	PROFILE_ZONE_C(0x00FF00);    // Green for serialization
 	json_t j = Object::Save();
 	json_t transform_j;
 	transform_j["position"] = m_transform->position();
@@ -35,7 +35,7 @@ json_t Actor::Save() const {
 }
 
 void Actor::Load(json_t j, bool force_create) {
-	PROFILE_ZONE_C(0x00FFFF);  // Cyan for deserialization
+	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 
 	auto transform_j = j["transform"];
 	m_transform->position(transform_j["position"].get<glm::vec3>());

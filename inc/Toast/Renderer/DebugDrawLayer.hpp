@@ -80,16 +80,16 @@ public:
 
 private:
 	static DebugDrawLayer* m_instance;
-	void Flush() const;    // upload and render
+	void Flush() const;                         // upload and render
 	GLuint m_vao = 0, m_vbo = 0;
-	GLuint m_filledVao = 0, m_filledVbo = 0;	// For filled geometry (triangles)
+	GLuint m_filledVao = 0, m_filledVbo = 0;    // For filled geometry (triangles)
 	GLint m_projLocation = -1;
 
 	IRendererBase* m_renderer = nullptr;
 	std::shared_ptr<Shader> m_shader;
 
-	std::vector<DebugVertex> m_vertices;       // Line vertices
-	std::vector<DebugVertex> m_filledVertices; // Triangle vertices for filled shapes
+	std::vector<DebugVertex> m_vertices;          // Line vertices
+	std::vector<DebugVertex> m_filledVertices;    // Triangle vertices for filled shapes
 
 	bool m_enabled = true;
 };

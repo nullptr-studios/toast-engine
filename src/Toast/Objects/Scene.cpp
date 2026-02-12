@@ -8,7 +8,7 @@
 namespace toast {
 
 void Scene::Load(json_t j, bool force_create) {
-	PROFILE_ZONE_C(0x00FFFF);  // Cyan for deserialization
+	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 	if (j["format"].get<std::string>() != "scene") {
 		throw ToastException("Json format is invalid, expected .scene");
 	}
@@ -16,7 +16,7 @@ void Scene::Load(json_t j, bool force_create) {
 }
 
 json_t Scene::Save() const {
-	PROFILE_ZONE_C(0x00FF00);  // Green for serialization
+	PROFILE_ZONE_C(0x00FF00);    // Green for serialization
 	json_t j = Object::Save();
 
 	if (!m_jsonPath.empty()) {
@@ -34,7 +34,7 @@ json_t Scene::Save() const {
 }
 
 void Scene::Load(const std::string& json_path) {
-	PROFILE_ZONE_C(0x0080FF);  // Light blue for file loading
+	PROFILE_ZONE_C(0x0080FF);    // Light blue for file loading
 	m_jsonPath = json_path;
 	std::istringstream iss;
 	json_t j;

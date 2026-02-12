@@ -52,7 +52,7 @@ TransformComponent::TransformComponent(const glm::vec3& pos, const glm::vec3& ro
 }
 
 json_t TransformComponent::Save() const {
-	PROFILE_ZONE_C(0x00FF00);  // Green for serialization
+	PROFILE_ZONE_C(0x00FF00);    // Green for serialization
 	json_t j = Component::Save();
 	j["position"] = m_position;
 	j["rotation"] = m_rotation;
@@ -62,7 +62,7 @@ json_t TransformComponent::Save() const {
 }
 
 void TransformComponent::Load(json_t j, bool force_create) {
-	PROFILE_ZONE_C(0x00FFFF);  // Cyan for deserialization
+	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 	Component::Load(j, force_create);
 	if (j.contains("position")) {
 		m_position = j.at("position");

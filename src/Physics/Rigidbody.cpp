@@ -142,7 +142,7 @@ json_t Rigidbody::Save() const {
 }
 
 void Rigidbody::Load(json_t j, bool propagate) {
-	PROFILE_ZONE_C(0x00FFFF);  // Cyan for deserialization
+	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 	if (j.contains("radius")) {
 		radius = j["radius"];
 	}

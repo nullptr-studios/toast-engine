@@ -20,24 +20,30 @@ thread_local bool g_inTracyCall = false;
 
 struct TracyGuard {
 	bool wasInCall;
-	TracyGuard() : wasInCall(g_inTracyCall) { g_inTracyCall = true; }
-	~TracyGuard() { g_inTracyCall = wasInCall; }
+
+	TracyGuard() : wasInCall(g_inTracyCall) {
+		g_inTracyCall = true;
+	}
+
+	~TracyGuard() {
+		g_inTracyCall = wasInCall;
+	}
 };
 
 #define TRACY_ALLOC_SAFE(ptr, size) \
-	do { \
-		if (!g_inTracyCall) { \
-			TracyGuard guard; \
-			TracyAlloc(ptr, size); \
-		} \
+	do {                              \
+		if (!g_inTracyCall) {           \
+			TracyGuard guard;             \
+			TracyAlloc(ptr, size);        \
+		}                               \
 	} while (0)
 
 #define TRACY_FREE_SAFE(ptr) \
-	do { \
-		if (!g_inTracyCall) { \
-			TracyGuard guard; \
-			TracyFree(ptr); \
-		} \
+	do {                       \
+		if (!g_inTracyCall) {    \
+			TracyGuard guard;      \
+			TracyFree(ptr);        \
+		}                        \
 	} while (0)
 
 #else
@@ -347,8 +353,14 @@ thread_local bool g_inTracyCall = false;
 
 struct TracyGuard {
 	bool wasInCall;
-	TracyGuard() : wasInCall(g_inTracyCall) { g_inTracyCall = true; }
-	~TracyGuard() { g_inTracyCall = wasInCall; }
+
+	TracyGuard() : wasInCall(g_inTracyCall) {
+		g_inTracyCall = true;
+	}
+
+	~TracyGuard() {
+		g_inTracyCall = wasInCall;
+	}
 };
 
 void* operator new(std::size_t size) {

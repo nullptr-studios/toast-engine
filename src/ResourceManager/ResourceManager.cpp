@@ -16,7 +16,6 @@ resource::ResourceManager* resource::ResourceManager::m_instance = nullptr;
 namespace resource {
 PackFile g_packFile;
 
-
 auto Open(std::string& path) -> std::optional<std::string> {
 	std::istringstream s;
 	if (!ResourceManager::GetInstance()->OpenFile(path, s)) {
@@ -211,7 +210,6 @@ bool ResourceManager::LoadConfig(const std::string& path, std::string& content) 
 }
 
 editor::ResourceSlot::Entry ResourceManager::CreateResourceSlotEntry(const std::filesystem::path& path) {
-
 	editor::ResourceSlot::Entry e;
 	e.isDirectory = false;
 	// if (ec) rel = de.path().filename();

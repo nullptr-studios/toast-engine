@@ -231,7 +231,7 @@ void DebugDrawLayer::DrawCircle(const glm::vec2& center, float radius, const glm
 	}
 
 	double step = glm::two_pi<double>() / static_cast<double>(segments);
-	
+
 	if (filled) {
 		// Fan triangulation from center
 		for (int i = 0; i < segments; ++i) {
@@ -263,7 +263,7 @@ void DebugDrawLayer::DrawCircle(const glm::vec3& center, float radius, const glm
 	}
 
 	double step = glm::two_pi<double>() / static_cast<double>(segments);
-	
+
 	if (filled) {
 		// Fan triangulation from center
 		for (int i = 0; i < segments; ++i) {
@@ -293,7 +293,7 @@ void DebugDrawLayer::DrawPoly(const std::vector<glm::vec2>& points, const glm::v
 	if (points.size() < 2) {
 		return;
 	}
-	
+
 	if (filled && points.size() >= 3) {
 		// Simple fan triangulation from first vertex
 		for (size_t i = 1; i + 1 < points.size(); ++i) {
@@ -318,7 +318,7 @@ void DebugDrawLayer::DrawPoly(const std::vector<glm::vec3>& points, const glm::v
 	if (points.size() < 2) {
 		return;
 	}
-	
+
 	if (filled && points.size() >= 3) {
 		// Simple fan triangulation from first vertex
 		for (size_t i = 1; i + 1 < points.size(); ++i) {

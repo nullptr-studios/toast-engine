@@ -415,7 +415,7 @@ void Material::Use() const {
 			}
 		}
 	}
-	
+
 	m_shader->Set("time", static_cast<float>(Time::uptime()));
 }
 

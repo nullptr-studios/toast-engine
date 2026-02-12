@@ -339,7 +339,7 @@ void Object::Children::RemoveAll() {
 #pragma endregion
 
 void Object::_Init() {
-	PROFILE_ZONE_C(0xFF6B00);  // Orange for initialization
+	PROFILE_ZONE_C(0xFF6B00);    // Orange for initialization
 	PROFILE_TEXT(type(), strlen(type()));
 
 	Init();    // ACTOR's LOGIC
@@ -349,7 +349,7 @@ void Object::_Begin(bool propagate) {
 	if (!enabled()) {
 		return;
 	}
-	PROFILE_ZONE_C(0xFFFF00);  // Yellow for begin
+	PROFILE_ZONE_C(0xFFFF00);    // Yellow for begin
 	PROFILE_TEXT(type(), strlen(type()));
 
 	Begin();    // ACTOR's LOGIC
@@ -376,7 +376,7 @@ void Object::_EarlyTick() {
 		return;
 	}
 
-	PROFILE_ZONE_C(0x00FF80);  // Light green for early tick
+	PROFILE_ZONE_C(0x00FF80);    // Light green for early tick
 	PROFILE_TEXT(type(), strlen(type()));
 
 	EarlyTick();    // ACTOR's LOGIC
@@ -392,7 +392,7 @@ void Object::_Tick() {
 		return;
 	}
 
-	PROFILE_ZONE_C(0x00FF00);  // Green for main tick
+	PROFILE_ZONE_C(0x00FF00);    // Green for main tick
 	PROFILE_TEXT(type(), strlen(type()));
 
 	Tick();    // ACTOR's LOGIC
@@ -407,7 +407,7 @@ void Object::_EditorTick() {
 	if (!enabled()) {
 		return;
 	}
-	PROFILE_ZONE_C(0xFF00FF);  // Magenta for editor tick
+	PROFILE_ZONE_C(0xFF00FF);    // Magenta for editor tick
 	PROFILE_TEXT(type(), strlen(type()));
 
 	EditorTick();
@@ -423,7 +423,7 @@ void Object::_LateTick() {
 		return;
 	}
 
-	PROFILE_ZONE_C(0x80FF00);  // Yellow-green for late tick
+	PROFILE_ZONE_C(0x80FF00);    // Yellow-green for late tick
 	PROFILE_TEXT(type(), strlen(type()));
 
 	LateTick();    // ACTOR's LOGIC
@@ -445,7 +445,7 @@ void Object::_Destroy() {
 
 	m_hasBeenDestroyed = true;
 
-	PROFILE_ZONE_C(0xFF0000);  // Red for destruction
+	PROFILE_ZONE_C(0xFF0000);    // Red for destruction
 	PROFILE_TEXT(type(), strlen(type()));
 
 	// Check if we need to de-schedule its Begin
@@ -464,7 +464,7 @@ void Object::_PhysTick() {
 		return;
 	}
 
-	PROFILE_ZONE_C(0xFF8000);  // Orange for physics tick
+	PROFILE_ZONE_C(0xFF8000);    // Orange for physics tick
 	PROFILE_TEXT(type(), strlen(type()));
 
 	PhysTick();    // ACTOR's LOGIC
@@ -496,7 +496,7 @@ void Object::_enabled(const bool enabled) {
 }
 
 void Object::_LoadTextures() {
-	PROFILE_ZONE_C(0xFFFF00);  // Yellow for texture loading
+	PROFILE_ZONE_C(0xFFFF00);    // Yellow for texture loading
 	PROFILE_TEXT(type(), strlen(type()));
 
 	LoadTextures();

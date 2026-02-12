@@ -217,7 +217,7 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 }
 
 void World::LoadSceneSync(std::string_view path) {
-	PROFILE_ZONE_C(0x0080FF);  // Light blue for sync scene loading
+	PROFILE_ZONE_C(0x0080FF);    // Light blue for sync scene loading
 	std::string p { path };
 
 	// Load scene file
@@ -488,7 +488,7 @@ void World::RunBeginQueue() {
 }
 
 void World::RunDestroyQueue() {
-	PROFILE_ZONE_C(0xFF0080);  // Pink for destroy queue
+	PROFILE_ZONE_C(0xFF0080);    // Pink for destroy queue
 
 	// Move the destroy queue into a local list under lock and process without holding the lock
 	std::list<Object*> local {};
