@@ -1,7 +1,7 @@
 
 add_library(ultralight INTERFACE)
 target_include_directories(ultralight INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}/ultralight/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 if (WIN32)
     target_link_libraries(ultralight INTERFACE

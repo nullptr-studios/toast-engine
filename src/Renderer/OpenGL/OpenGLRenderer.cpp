@@ -8,6 +8,7 @@
 #include "Toast/Log.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/LayerStack.hpp"
+#include "Toast/Renderer/HUD/HUDLayer.hpp"
 #include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/Mesh.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
@@ -259,6 +260,7 @@ OpenGLRenderer::OpenGLRenderer() {
 
 	// setup layerstack
 	m_layerStack = LayerStack::GetInstance();
+	TOAST_ASSERT(m_layerStack != nullptr, "LayerStack must be created before OpenGLRenderer!");
 
 	// setup default resources
 	m_quad = resource::LoadResource<Mesh>("models/quad.obj");
@@ -569,6 +571,16 @@ void OpenGLRenderer::Resize(glm::uvec2 size) {
 	    static_cast<unsigned int>(width * m_config.lightResolutionScale), static_cast<unsigned int>(height * m_config.lightResolutionScale)
 	);
 	m_outputFramebuffer->Resize(width, height);
+	
+	// Resize HUD layers
+	if (m_layerStack) {
+		for (auto* layer : m_layerStack->GetLayers()) {
+			if (auto* hudLayer = dynamic_cast<renderer::HUD::HUDLayer*>(layer)) {
+				hudLayer->Resize(width, height);
+			}
+		}
+	}
+	
 	// Update projection matrix to maintain aspect ratio
 	SetProjectionMatrix(glm::radians(90.0f), static_cast<float>(width) / static_cast<float>(height), 0.1f, 1000.0f);
 

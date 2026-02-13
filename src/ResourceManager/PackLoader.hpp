@@ -45,7 +45,7 @@ inline uint64_t fnv1a_hash64(const std::u8string& s) {
 
 class PackFile {
 public:
-	bool Open(const std::string& pack_path) {
+	bool Open(const std::string_view& pack_path) {
 		PROFILE_ZONE;
 
 		m_in.open(pack_path, std::ios::binary);
@@ -112,6 +112,21 @@ public:
 
 		return true;
 	}
+	
+	bool FileExists(const std::string_view& raw_path) {
+		// canonicalize lookup path same as packer
+		std::u8string path = canonical_path_for_pack(raw_path);
+
+		uint64_t h = fnv1a_hash64(path);
+		auto it = std::ranges::lower_bound(m_hashes, h);
+		// not found quickly
+		if (it == m_hashes.end() || *it != h) {
+			TOAST_ERROR("PackFile: Path {} not found", raw_path);
+			return false;
+		}
+		
+		return true;
+	}
 
 	void Close() {
 		if (m_in.is_open()) {
@@ -135,7 +150,7 @@ public:
 		auto it = std::ranges::lower_bound(m_hashes, h);
 		// not found quickly
 		if (it == m_hashes.end() || *it != h) {
-			throw ToastException("PackFile: Path not found");
+			TOAST_ERROR("PackFile: Path {} not found", raw_path);
 			return false;
 		}
 

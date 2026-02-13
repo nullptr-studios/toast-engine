@@ -12,7 +12,10 @@ option(TOAST_EDITOR "Build TOAST ENGINE with editor features" ON)
 
 
 if(MSVC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+        # /MP - Enable parallel compilation
+        # /Z7 - Embed debug info in .obj files instead of separate PDB
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /Z7")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP /Z7")
 endif()
 
 
@@ -87,6 +90,7 @@ if (TOAST_EDITOR)
             spine-cpp
             fmod
             fmod_studio
+            ultralight
     )
 else ()
     
@@ -107,6 +111,7 @@ else ()
             spine-cpp
             fmod
             fmod_studio
+            ultralight
     )
 endif ()
 

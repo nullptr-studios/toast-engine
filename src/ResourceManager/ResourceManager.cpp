@@ -4,7 +4,7 @@
 
 #include "Toast/Resources/ResourceManager.hpp"
 
-#include "PackLoader.hpp"
+#include "Toast/Resources/ToastFileSystem.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Profiler.hpp"
 
@@ -14,7 +14,6 @@
 resource::ResourceManager* resource::ResourceManager::m_instance = nullptr;
 
 namespace resource {
-PackFile g_packFile;
 
 auto Open(std::string& path) -> std::optional<std::string> {
 	std::istringstream s;
@@ -39,7 +38,7 @@ ResourceManager::ResourceManager(bool pkg) : m_pkg(pkg) {
 	if (m_pkg) {
 		//@TODO: Make the .PKG path configurable?
 		TOAST_INFO("ResourceManager: Opening resource pack game.pkg");
-		if (!g_packFile.Open("game.pkg")) {
+		if (!ToastFileSystem::Get().UsePackFile("game.pkg")) {
 			throw ToastException("ResourceManager: Failed to open game.pkg");
 		}
 	}
@@ -47,7 +46,7 @@ ResourceManager::ResourceManager(bool pkg) : m_pkg(pkg) {
 
 ResourceManager::~ResourceManager() {
 	if (m_pkg) {
-		g_packFile.Close();
+		ToastFileSystem::Get().ClosePackFile();
 	}
 }
 
@@ -99,40 +98,11 @@ void ResourceManager::PurgeResources() {
 }
 
 bool ResourceManager::OpenFile(const std::string& path, std::istringstream& data_out) const {
-	std::vector<uint8_t> d {};
-	if (!OpenFile(path, d)) {
-		return false;
-	}
-
-	data_out.str(std::string(reinterpret_cast<char*>(d.data()), d.size()));
-	return true;
+	return ToastFileSystem::Get().OpenFile(path, data_out);
 }
 
 bool ResourceManager::OpenFile(const std::string& path, std::vector<uint8_t>& data) const {
-	PROFILE_ZONE;
-	// if using pkg, read from pack file
-	if (m_pkg) {
-		return g_packFile.ReadFile(path, data);
-	}
-
-	std::string p;
-	// else read from filesystem
-	if (path.find("assets/") == std::string::npos) {
-		p = "assets/" + path;
-	} else {
-		p = path;
-	}
-
-	std::ifstream ifs(p, std::ios::binary);
-	if (!ifs) {
-		return false;
-	}
-	ifs.seekg(0, std::ios::end);
-	size_t size = ifs.tellg();
-	ifs.seekg(0, std::ios::beg);
-	data.resize(size);
-	ifs.read(reinterpret_cast<char*>(data.data()), static_cast<std::streamsize>(size));
-	return true;
+	return ToastFileSystem::Get().OpenFile(path, data);
 }
 
 bool ResourceManager::SaveFile(const std::string& path, const std::string& content) {
