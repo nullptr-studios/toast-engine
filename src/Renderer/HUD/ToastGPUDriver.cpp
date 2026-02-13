@@ -20,15 +20,8 @@
 namespace toast::hud {
 
 
-#ifdef _DEBUG
-    #if _WIN32
-        #define GPU_INFO(x) { TOAST_TRACE("[GPU] {}", x); }
-    #else
-        #define GPU_INFO(x) { TOAST_TRACE("[GPU] {}", x); }
-    #endif
-#else
-    #define GPU_INFO(x)
-#endif
+// GPU_INFO is disabled to avoid verbose per-frame logging
+#define GPU_INFO(x)
 
 #if _WIN32
     #define GPU_FATAL(x) { \
@@ -195,19 +188,15 @@ void ToastGPUDriver::CreateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
         // so we DON'T need any swizzle - just keep R8 as-is
         // The shader handles the alpha multiplication with vertex color
         
-        TOAST_TRACE("[GPU] Created A8 (font) texture {} (GL: {}) ({}x{})", texture_id, entry.tex_id, bitmap->width(), bitmap->height());
-        
         entry.width = bitmap->width();
         entry.height = bitmap->height();
         
-        GPU_INFO(std::format("Created texture {} ({}, {})", texture_id, entry.width, entry.height));
         return; // Skip mipmap generation for A8 textures
     } else if (bitmap->format() == ultralight::BitmapFormat::BGRA8_UNORM_SRGB) {
         const void* pixels = bitmap->LockPixels();
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, bitmap->width(), bitmap->height(), 0,
                     GL_BGRA, GL_UNSIGNED_BYTE, pixels);
         bitmap->UnlockPixels();
-        TOAST_TRACE("[GPU] Created BGRA texture {} ({}x{})", texture_id, bitmap->width(), bitmap->height());
     } else {
         GPU_FATAL("Unhandled texture format: " << static_cast<int>(bitmap->format()));
     }
@@ -218,8 +207,6 @@ void ToastGPUDriver::CreateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
     
     entry.width = bitmap->width();
     entry.height = bitmap->height();
-    
-    GPU_INFO(std::format("Created texture {} ({}, {})", texture_id, entry.width, entry.height));
 }
 
 
@@ -230,7 +217,20 @@ void ToastGPUDriver::UpdateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
     glfwMakeContextCurrent(context_->active_window());
     
     glActiveTexture(GL_TEXTURE0);
-    TextureEntry& entry = texture_map_[texture_id];
+    auto it = texture_map_.find(texture_id);
+    
+    // If texture hasn't been created yet, create it using CreateTexture path
+    if (it == texture_map_.end() || it->second.tex_id == 0) {
+        // Forward to CreateTexture which will allocate and initialize the GL texture
+        CreateTexture(texture_id, bitmap);
+        return;
+    }
+    
+    TextureEntry& entry = it->second;
+    
+    // Check if dimensions changed - if so, we need to reallocate
+    bool needs_realloc = (entry.width != bitmap->width() || entry.height != bitmap->height());
+    
     glBindTexture(GL_TEXTURE_2D, entry.tex_id);
     
     CHECK_GL();
@@ -241,14 +241,32 @@ void ToastGPUDriver::UpdateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
     if (!bitmap->IsEmpty()) {
         if (bitmap->format() == ultralight::BitmapFormat::A8_UNORM) {
             const void* pixels = bitmap->LockPixels();
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, bitmap->width(), bitmap->height(), 0,
-                        GL_RED, GL_UNSIGNED_BYTE, pixels);
+            if (needs_realloc) {
+                // Texture size changed - reallocate
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, bitmap->width(), bitmap->height(), 0,
+                            GL_RED, GL_UNSIGNED_BYTE, pixels);
+                entry.width = bitmap->width();
+                entry.height = bitmap->height();
+            } else {
+                // Same size - use subimage for efficiency
+                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bitmap->width(), bitmap->height(),
+                               GL_RED, GL_UNSIGNED_BYTE, pixels);
+            }
             bitmap->UnlockPixels();
             // Don't generate mipmaps for A8 textures
         } else if (bitmap->format() == ultralight::BitmapFormat::BGRA8_UNORM_SRGB) {
             const void* pixels = bitmap->LockPixels();
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, bitmap->width(), bitmap->height(), 0,
-                        GL_BGRA, GL_UNSIGNED_BYTE, pixels);
+            if (needs_realloc) {
+                // Texture size changed - reallocate
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, bitmap->width(), bitmap->height(), 0,
+                            GL_BGRA, GL_UNSIGNED_BYTE, pixels);
+                entry.width = bitmap->width();
+                entry.height = bitmap->height();
+            } else {
+                // Same size - use subimage for efficiency
+                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bitmap->width(), bitmap->height(),
+                               GL_BGRA, GL_UNSIGNED_BYTE, pixels);
+            }
             bitmap->UnlockPixels();
             
             CHECK_GL();
@@ -306,14 +324,6 @@ void ToastGPUDriver::BindTexture(uint8_t texture_unit, uint32_t texture_id) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
-    // Debug: log texture bindings once
-    static std::set<uint32_t> logged_textures;
-    if (logged_textures.find(texture_id) == logged_textures.end()) {
-        TOAST_TRACE("[GPU] Binding texture {} (GL: {}) to unit {}, size={}x{}", 
-                   texture_id, entry.tex_id, texture_unit, entry.width, entry.height);
-        logged_textures.insert(texture_id);
-    }
-    
     CHECK_GL();
 }
 
@@ -331,8 +341,6 @@ void ToastGPUDriver::DestroyTexture(uint32_t texture_id) {
     }
     CHECK_GL();
     texture_map_.erase(texture_id);
-    
-    GPU_INFO(std::format("Destroyed texture {}", texture_id));
 }
 
 void ToastGPUDriver::BindUltralightTexture(uint32_t ultralight_texture_id) {
@@ -356,8 +364,7 @@ void ToastGPUDriver::CreateRenderBuffer(uint32_t render_buffer_id, const ultrali
     glfwMakeContextCurrent(context_->active_window());
     
     if (render_buffer_id == 0) {
-        TOAST_TRACE("Render Buffer ID 0 is reserved for default framebuffer");
-        return;
+        return; // Render Buffer ID 0 is reserved for default framebuffer
     }
 
     RenderBufferEntry& entry = render_buffer_map_[render_buffer_id];
@@ -365,8 +372,6 @@ void ToastGPUDriver::CreateRenderBuffer(uint32_t render_buffer_id, const ultrali
 
     TextureEntry& textureEntry = texture_map_[buffer.texture_id];
     textureEntry.render_buffer_id = render_buffer_id;
-
-    TOAST_TRACE("Created render buffer {} with texture {}", render_buffer_id, buffer.texture_id);
 }
 
 void ToastGPUDriver::BindRenderBuffer(uint32_t render_buffer_id) {
@@ -437,8 +442,6 @@ void ToastGPUDriver::DestroyRenderBuffer(uint32_t render_buffer_id) {
     render_buffer_map_.erase(render_buffer_id);
 
     glfwMakeContextCurrent(previous_context);
-    
-    TOAST_TRACE("Destroyed render buffer {}", render_buffer_id);
 }
 
 
@@ -464,8 +467,6 @@ void ToastGPUDriver::CreateGeometry(uint32_t geometry_id,
     CHECK_GL();
 
     geometry_map_[geometry_id] = geometry;
-    
-    TOAST_TRACE("Created geometry {}", geometry_id);
 }
 
 void ToastGPUDriver::UpdateGeometry(uint32_t geometry_id,
@@ -507,8 +508,6 @@ void ToastGPUDriver::DestroyGeometry(uint32_t geometry_id) {
     geometry_map_.erase(geometry_id);
 
     glfwMakeContextCurrent(previous_context);
-    
-    TOAST_TRACE("Destroyed geometry {}", geometry_id);
 }
 
 
@@ -534,9 +533,9 @@ GLuint ToastGPUDriver::GetTextureGLResolved(uint32_t ultralight_texture_id) {
 void ToastGPUDriver::UpdateCommandList(const ultralight::CommandList& list) {
     PROFILE_ZONE_C(tracy::Color::Orange);
     
+    std::lock_guard<std::mutex> lock(command_list_mutex_);
     command_list_.clear();
     command_list_.reserve(list.size);
-    
     for (uint32_t i = 0; i < list.size; ++i) {
         command_list_.push_back(list.commands[i]);
     }
@@ -545,8 +544,16 @@ void ToastGPUDriver::UpdateCommandList(const ultralight::CommandList& list) {
 void ToastGPUDriver::DrawCommandList() {
     PROFILE_ZONE_C(tracy::Color::Orange);
     
-    if (command_list_.empty()) {
-        return;
+    // Copy command list under lock, then process outside the lock to avoid holding
+    // the mutex during GL calls (which could be re-entrant via callbacks).
+    std::vector<ultralight::Command> local_commands;
+    {
+        std::lock_guard<std::mutex> lock(command_list_mutex_);
+        if (command_list_.empty()) {
+            return;
+        }
+        local_commands = command_list_;
+        command_list_.clear();
     }
 
     glfwMakeContextCurrent(context_->active_window());
@@ -563,7 +570,7 @@ void ToastGPUDriver::DrawCommandList() {
 
     CHECK_GL();
 
-    for (const auto& cmd : command_list_) {
+    for (const auto& cmd : local_commands) {
         switch (cmd.command_type) {
             case ultralight::CommandType::DrawGeometry:
                 DrawGeometry(cmd.geometry_id, cmd.indices_count, 
@@ -575,7 +582,7 @@ void ToastGPUDriver::DrawCommandList() {
         }
     }
 
-    command_list_.clear();
+    // local_commands cleared on scope exit
     glDisable(GL_SCISSOR_TEST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -609,16 +616,6 @@ void ToastGPUDriver::DrawGeometry(uint32_t geometry_id,
     glBindVertexArray(vao_entry);
     CHECK_GL();
 
-    // Debug: Log texture IDs being used (once per unique combination)
-    static std::set<std::tuple<uint32_t, uint32_t, uint32_t>> logged_combos;
-    auto combo = std::make_tuple(state.texture_1_id, state.texture_2_id, state.texture_3_id);
-    if (logged_combos.find(combo) == logged_combos.end()) {
-        // uniform_scalar[0] contains fill type
-        TOAST_TRACE("[GPU] DrawGeometry - tex1={}, tex2={}, tex3={}, shader={}, scalar0={}", 
-                   state.texture_1_id, state.texture_2_id, state.texture_3_id, 
-                   static_cast<int>(state.shader_type), state.uniform_scalar[0]);
-        logged_combos.insert(combo);
-    }
 
     BindTexture(0, state.texture_1_id);
     BindTexture(1, state.texture_2_id);
@@ -832,8 +829,6 @@ void ToastGPUDriver::CreateFBOTexture(uint32_t texture_id, ultralight::RefPtr<ul
     glGenTextures(1, &entry.tex_id);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, entry.tex_id);
-    
-    TOAST_TRACE("[GPU] Created FBO texture {} (GL tex_id: {}) size {}x{}", texture_id, entry.tex_id, entry.width, entry.height);
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

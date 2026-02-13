@@ -20,6 +20,10 @@
 
 #include <GLFW/glfw3.h>
 #include <glad/gl.h>
+#include <unordered_map>
+
+// Static map of windows to HUDLayer instances for input callbacks
+static std::unordered_map<GLFWwindow*, renderer::HUD::HUDLayer*> g_hud_layers;
 
 namespace renderer::HUD {
 
@@ -97,6 +101,70 @@ public:
 static std::unique_ptr<ToastViewListener> g_view_listener;
 static std::unique_ptr<ToastLoadListener> g_load_listener;
 
+// ============================================================================
+// GLFW Input Callback Forwarders
+// ============================================================================
+
+static GLFWcursorposfun g_prev_cursor_pos_callback = nullptr;
+static GLFWmousebuttonfun g_prev_mouse_button_callback = nullptr;
+static GLFWscrollfun g_prev_scroll_callback = nullptr;
+static GLFWkeyfun g_prev_key_callback = nullptr;
+static GLFWcharfun g_prev_char_callback = nullptr;
+
+static void HUDCursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
+    auto it = g_hud_layers.find(window);
+    if (it != g_hud_layers.end() && it->second && it->second->IsInputEnabled()) {
+        it->second->OnMouseMove(static_cast<int>(xpos), static_cast<int>(ypos));
+    }
+    // Chain to previous callback
+    if (g_prev_cursor_pos_callback) {
+        g_prev_cursor_pos_callback(window, xpos, ypos);
+    }
+}
+
+static void HUDMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    auto it = g_hud_layers.find(window);
+    if (it != g_hud_layers.end() && it->second && it->second->IsInputEnabled()) {
+        it->second->OnMouseButton(button, action, mods);
+    }
+    // Chain to previous callback
+    if (g_prev_mouse_button_callback) {
+        g_prev_mouse_button_callback(window, button, action, mods);
+    }
+}
+
+static void HUDScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+    auto it = g_hud_layers.find(window);
+    if (it != g_hud_layers.end() && it->second && it->second->IsInputEnabled()) {
+        it->second->OnMouseScroll(xoffset, yoffset);
+    }
+    // Chain to previous callback
+    if (g_prev_scroll_callback) {
+        g_prev_scroll_callback(window, xoffset, yoffset);
+    }
+}
+
+static void HUDKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    auto it = g_hud_layers.find(window);
+    if (it != g_hud_layers.end() && it->second && it->second->IsInputEnabled()) {
+        it->second->OnKey(key, scancode, action, mods);
+    }
+    // Chain to previous callback
+    if (g_prev_key_callback) {
+        g_prev_key_callback(window, key, scancode, action, mods);
+    }
+}
+
+static void HUDCharCallback(GLFWwindow* window, unsigned int codepoint) {
+    auto it = g_hud_layers.find(window);
+    if (it != g_hud_layers.end() && it->second && it->second->IsInputEnabled()) {
+        it->second->OnChar(codepoint);
+    }
+    // Chain to previous callback
+    if (g_prev_char_callback) {
+        g_prev_char_callback(window, codepoint);
+    }
+}
 
 // ============================================================================
 // HUDLayer Implementation
@@ -109,9 +177,39 @@ HUDLayer::HUDLayer(GLFWwindow* window, uint32_t width, uint32_t height, bool ena
     , height_(height)
     , msaa_enabled_(enable_msaa) {
     TOAST_TRACE("HUDLayer created ({}x{}, MSAA: {})", width, height, enable_msaa);
+    
+    // Register this HUDLayer for input callbacks
+    if (window_) {
+        g_hud_layers[window_] = this;
+        
+        // Install our callbacks, saving the previous ones to chain
+        g_prev_cursor_pos_callback = glfwSetCursorPosCallback(window_, HUDCursorPosCallback);
+        g_prev_mouse_button_callback = glfwSetMouseButtonCallback(window_, HUDMouseButtonCallback);
+        g_prev_scroll_callback = glfwSetScrollCallback(window_, HUDScrollCallback);
+        g_prev_key_callback = glfwSetKeyCallback(window_, HUDKeyCallback);
+        g_prev_char_callback = glfwSetCharCallback(window_, HUDCharCallback);
+    }
 }
 
 HUDLayer::~HUDLayer() {
+    // Unregister from input callbacks before detaching
+    if (window_) {
+        g_hud_layers.erase(window_);
+        
+        // Restore previous callbacks
+        glfwSetCursorPosCallback(window_, g_prev_cursor_pos_callback);
+        glfwSetMouseButtonCallback(window_, g_prev_mouse_button_callback);
+        glfwSetScrollCallback(window_, g_prev_scroll_callback);
+        glfwSetKeyCallback(window_, g_prev_key_callback);
+        glfwSetCharCallback(window_, g_prev_char_callback);
+        
+        g_prev_cursor_pos_callback = nullptr;
+        g_prev_mouse_button_callback = nullptr;
+        g_prev_scroll_callback = nullptr;
+        g_prev_key_callback = nullptr;
+        g_prev_char_callback = nullptr;
+    }
+    
     OnDetach();
 }
 
@@ -129,7 +227,7 @@ void HUDLayer::InitPlatform() {
     // config.cache_path = "./cache/";
     
     config.face_winding = ultralight::FaceWinding::CounterClockwise;
-    config.force_repaint = false;
+    config.force_repaint = true; // Required for stable rendering with custom GPU driver
     config.animation_timer_delay = 1.0 / 60.0;
     config.scroll_timer_delay = 1.0 / 60.0;
     config.recycle_delay = 4.0;
@@ -261,14 +359,14 @@ void HUDLayer::OnAttach() {
 
 void HUDLayer::OnDetach() {
     PROFILE_ZONE_C(tracy::Color::Cyan);
-    
+
     // Cleanup framebuffer
     framebuffer_.reset();
     if (read_fbo_) {
         glDeleteFramebuffers(1, &read_fbo_);
         read_fbo_ = 0;
     }
-    
+
     views_.clear();
     renderer_ = nullptr;
 
@@ -365,20 +463,20 @@ void HUDLayer::Resize(uint32_t width, uint32_t height) {
     
     if (width == 0 || height == 0) return;
     if (width == width_ && height == height_) return;
-    
+
     width_ = width;
     height_ = height;
-    
+
     // Resize the Ultralight view
     for (auto& v : views_) {
         if (v) v->Resize(width, height);
     }
-    
+
     // Resize the framebuffer
     if (framebuffer_) {
         framebuffer_->Resize(width, height);
     }
-    
+
     TOAST_INFO("HUD resized to {}x{}", width, height);
 }
 
@@ -587,15 +685,9 @@ void HUDLayer::OnKey(int key, int scancode, int action, int mods) {
     ultralight::GetKeyIdentifierFromVirtualKeyCode(evt.virtual_key_code, evt.key_identifier);
 
     views_.front()->FireKeyEvent(evt);
-
-    // Also fire a char event for key down if it's a printable character
-    if (action == GLFW_PRESS && evt.virtual_key_code >= 32 && evt.virtual_key_code < 127) {
-        ultralight::KeyEvent charEvt;
-        charEvt.type = ultralight::KeyEvent::kType_Char;
-        charEvt.text = ultralight::String(std::string(1, static_cast<char>(evt.virtual_key_code)).c_str());
-        charEvt.unmodified_text = charEvt.text;
-        views_.front()->FireKeyEvent(charEvt);
-    }
+    
+    // Note: Character input is handled separately by OnChar callback
+    // Do NOT fire a char event here as it causes duplicate input
 }
 
 void HUDLayer::OnChar(unsigned int codepoint) {

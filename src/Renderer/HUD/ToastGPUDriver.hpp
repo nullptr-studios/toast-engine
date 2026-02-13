@@ -12,6 +12,7 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <map>
+#include <mutex>
 
 #define ENABLE_OFFSCREEN_GL 0
 
@@ -194,6 +195,7 @@ private:
     std::map<ProgramType, ProgramEntry> programs_;
     
     std::vector<ultralight::Command> command_list_;
+    std::mutex command_list_mutex_;  ///< Mutex for thread-safe command list access
     
     GLuint cur_program_id_ = 0;
     uint32_t batch_count_ = 0;

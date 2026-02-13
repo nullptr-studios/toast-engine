@@ -138,6 +138,24 @@ public:
     
     /// @brief Handle character input events
     void OnChar(unsigned int codepoint);
+    
+    ///
+    /// @brief Enable input handling for this HUD layer
+    /// @note Input is enabled by default when the HUD layer is created
+    ///
+    void EnableInput() { input_enabled_ = true; }
+    
+    ///
+    /// @brief Disable input handling for this HUD layer
+    /// @note Use this when you want game input to pass through without being handled by the HUD
+    ///
+    void DisableInput() { input_enabled_ = false; }
+    
+    ///
+    /// @brief Check if input handling is enabled
+    /// @return true if input is enabled
+    ///
+    bool IsInputEnabled() const { return input_enabled_; }
 
 private:
     /// @brief Initialize Ultralight platform handlers
@@ -153,6 +171,7 @@ private:
     uint32_t width_ = 0;
     uint32_t height_ = 0;
     bool msaa_enabled_ = false;
+    bool input_enabled_ = true;  ///< Whether input events are forwarded to Ultralight
 
     std::unique_ptr<toast::hud::ToastGPUContext> gpu_context_;
     ultralight::RefPtr<ultralight::Renderer> renderer_;
