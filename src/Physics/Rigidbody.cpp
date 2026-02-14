@@ -200,6 +200,13 @@ void Rigidbody::SetPosition(glm::dvec2 pos) {
 	//@Note: Visual transform is updated by PhysicsSystem::UpdateVisualInterpolation()
 }
 
+auto Rigidbody::GetVelocity() const -> glm::dvec2 {
+	return velocity;
+}
+void Rigidbody::SetVelocity(glm::dvec2 vel) {
+	velocity = vel;
+}
+
 glm::dvec2 Rigidbody::GetInterpolatedPosition() const {
 	if (!m_hasValidPreviousPosition) {
 		return m_currentPosition;
