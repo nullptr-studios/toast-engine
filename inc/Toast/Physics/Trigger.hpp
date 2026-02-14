@@ -3,9 +3,8 @@
 /// @date 19 Jan 2026
 
 #pragma once
-#include "Toast/Objects/Actor.hpp"
-
 #include "ColliderFlags.hpp"
+#include "Toast/Objects/Actor.hpp"
 #include "Toast/Physics/ColliderFlags.hpp"
 
 #include <glm/glm.hpp>
@@ -31,6 +30,7 @@ public:
 	void EditorTick() override;
 
 	virtual void OnEnter(toast::Object*) { }
+
 	virtual void OnExit(toast::Object*) { }
 
 	void AddFlag(ColliderFlags flag);
@@ -39,13 +39,13 @@ public:
 
 	const std::function<void(toast::Object*)>& enterCallback = m.enterCallback;
 	const std::function<void(toast::Object*)>& exitCallback = m.exitCallback;
-	std::list<Rigidbody*> rigidbodies; ///< Used to avoid a rigidbody triggering twice
+	std::list<Rigidbody*> rigidbodies;    ///< Used to avoid a rigidbody triggering twice
 
 	struct M {
 		glm::vec4 color = { 0.0f, 1.0f, 1.0f, 0.5f };
 		std::function<void(toast::Object*)> enterCallback;
 		std::function<void(toast::Object*)> exitCallback;
-		ColliderFlags flags = ColliderFlags::Player; ///< Triggers react only to players by default
+		ColliderFlags flags = ColliderFlags::Player;    ///< Triggers react only to players by default
 	} m;
 
 	struct {

@@ -203,6 +203,7 @@ void Rigidbody::SetPosition(glm::dvec2 pos) {
 auto Rigidbody::GetVelocity() const -> glm::dvec2 {
 	return velocity;
 }
+
 void Rigidbody::SetVelocity(glm::dvec2 vel) {
 	velocity = vel;
 }

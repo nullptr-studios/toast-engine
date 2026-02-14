@@ -369,7 +369,9 @@ std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 void RbTriggerCollision(Rigidbody* rb1, Trigger* t) {
 	PROFILE_ZONE;
 
-	if (!(rb1->flags & t->flags)) return;
+	if (!(rb1->flags & t->flags)) {
+		return;
+	}
 
 	// calculate points
 	const auto& tr = t->transform();
