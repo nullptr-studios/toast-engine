@@ -15,13 +15,13 @@ namespace physics {
 void Trigger::Begin() {
 	Actor::Begin();
 	PhysicsSystem::AddTrigger(this);
-	enterCallback = [this](Object* o) {
+	m.enterCallback = [this](Object* o) {
 		if (!enabled()) {
 			return;
 		}
 		OnEnter(o);
 	};
-	exitCallback = [this](Object* o) {
+	m.exitCallback = [this](Object* o) {
 		if (!enabled()) {
 			return;
 		}
@@ -51,6 +51,16 @@ void Trigger::Load(json_t j, bool force_create) {
 	LOAD(debug.collideColor);
 
 	Actor::Load(j, force_create);
+}
+
+void Trigger::AddFlag(ColliderFlags flag) {
+	if (!(m.flags & flag)) {
+		m.flags |= flag;
+	}
+}
+
+void Trigger::RemoveFlag(ColliderFlags flag) {
+	m.flags &= ~flag;
 }
 
 void Trigger::EditorTick() {

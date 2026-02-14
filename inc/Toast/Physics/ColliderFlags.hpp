@@ -40,7 +40,11 @@ inline ColliderFlags operator~(ColliderFlags a) {
 	return static_cast<ColliderFlags>(~static_cast<T>(a));
 }
 
-// Compound assignment operators (optional but convenient)
+inline bool operator!(ColliderFlags a) {
+	using T = std::underlying_type_t<ColliderFlags>;
+	return static_cast<T>(a) == 0;
+}
+
 inline ColliderFlags& operator|=(ColliderFlags& a, ColliderFlags b) {
 	a = a | b;
 	return a;

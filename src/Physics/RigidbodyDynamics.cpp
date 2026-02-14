@@ -26,6 +26,8 @@ void Manifold::Debug() const {
 }
 
 void RbKinematics(Rigidbody* rb) {
+	PROFILE_ZONE;
+
 	auto& velocity = rb->velocity;
 
 	// Avoid a Rigidbody having 0 mass
@@ -57,6 +59,7 @@ void RbKinematics(Rigidbody* rb) {
 }
 
 void RbIntegration(Rigidbody* rb) {
+	PROFILE_ZONE;
 	// Integrate position
 	dvec2 pos = rb->GetPosition();
 	pos += rb->velocity * Time::fixed_delta();
@@ -69,6 +72,7 @@ void RbResetVelocity(Rigidbody* rb) {
 }
 
 auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
+	PROFILE_ZONE;
 	dvec2 pos1 = rb1->GetPosition();
 	dvec2 pos2 = rb2->GetPosition();
 
@@ -94,6 +98,7 @@ auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
 }
 
 void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
+	PROFILE_ZONE;
 	dvec2 velocity1 = rb1->velocity;
 	dvec2 velocity2 = rb2->velocity;
 
@@ -180,6 +185,7 @@ void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
 }
 
 auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold> {
+	PROFILE_ZONE;
 	dvec2 rb_pos = rb->GetPosition();
 
 	std::list<Manifold> manifolds;
@@ -270,6 +276,7 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 }
 
 void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
+	PROFILE_ZONE;
 	dvec2 velocity = rb->velocity;
 	dvec2 position = rb->GetPosition();
 
@@ -360,6 +367,10 @@ std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 }
 
 void RbTriggerCollision(Rigidbody* rb1, Trigger* t) {
+	PROFILE_ZONE;
+
+	if (!(rb1->flags & t->flags)) return;
+
 	// calculate points
 	const auto& tr = t->transform();
 	double left = tr->worldPosition().x - (tr->scale().x / 2);
