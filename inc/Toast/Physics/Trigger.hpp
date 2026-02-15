@@ -37,14 +37,14 @@ public:
 	void RemoveFlag(ColliderFlags flag);
 	const ColliderFlags& flags = m.flags;
 
-	const std::function<void(toast::Object*)>& enterCallback = m.enterCallback;
-	const std::function<void(toast::Object*)>& exitCallback = m.exitCallback;
+	// This needs to be public to be able to override without needing to create
+	// a child class -- OnEnter and OnExit will stop working tho -x
+	std::function<void(toast::Object*)> enterCallback;
+	std::function<void(toast::Object*)> exitCallback;
 	std::list<Rigidbody*> rigidbodies;    ///< Used to avoid a rigidbody triggering twice
 
 	struct M {
 		glm::vec4 color = { 0.0f, 1.0f, 1.0f, 0.5f };
-		std::function<void(toast::Object*)> enterCallback;
-		std::function<void(toast::Object*)> exitCallback;
 		ColliderFlags flags = ColliderFlags::Player;    ///< Triggers react only to players by default
 	} m;
 

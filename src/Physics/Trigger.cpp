@@ -15,13 +15,13 @@ namespace physics {
 void Trigger::Begin() {
 	Actor::Begin();
 	PhysicsSystem::AddTrigger(this);
-	m.enterCallback = [this](Object* o) {
+	enterCallback = [this](Object* o) {
 		if (!enabled()) {
 			return;
 		}
 		OnEnter(o);
 	};
-	m.exitCallback = [this](Object* o) {
+	exitCallback = [this](Object* o) {
 		if (!enabled()) {
 			return;
 		}
