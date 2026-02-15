@@ -59,11 +59,14 @@ void Rigidbody::Inspector() {
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Collider Flags");
+
+	// Who wrote this shit instead of overriding the ! operator -x
 	unsigned int cur = static_cast<unsigned int>(flags);
 	bool default_flag = (cur & static_cast<unsigned int>(ColliderFlags::Default)) != 0;
 	bool ground_flag = (cur & static_cast<unsigned int>(ColliderFlags::Ground)) != 0;
 	bool player_flag = (cur & static_cast<unsigned int>(ColliderFlags::Player)) != 0;
 	bool enemy_flag = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
+	bool weapon_flag = (cur & static_cast<unsigned int>(ColliderFlags::Weapon)) != 0;
 
 	if (ImGui::Checkbox("Default", &default_flag)) {
 		if (default_flag) {
@@ -77,6 +80,13 @@ void Rigidbody::Inspector() {
 			cur |= static_cast<unsigned int>(ColliderFlags::Ground);
 		} else {
 			cur &= ~static_cast<unsigned int>(ColliderFlags::Ground);
+		}
+	}
+	if (ImGui::Checkbox("Weapon", &weapon_flag)) {
+		if (weapon_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Weapon);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Weapon);
 		}
 	}
 	if (ImGui::Checkbox("Enemy", &enemy_flag)) {
