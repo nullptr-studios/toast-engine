@@ -53,6 +53,16 @@ void Trigger::Load(json_t j, bool force_create) {
 	Actor::Load(j, force_create);
 }
 
+void Trigger::AddFlag(ColliderFlags flag) {
+	if (!(m.flags & flag)) {
+		m.flags |= flag;
+	}
+}
+
+void Trigger::RemoveFlag(ColliderFlags flag) {
+	m.flags &= ~flag;
+}
+
 void Trigger::EditorTick() {
 	if (!enabled()) {
 		return;

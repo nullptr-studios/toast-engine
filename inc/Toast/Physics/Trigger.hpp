@@ -3,7 +3,9 @@
 /// @date 19 Jan 2026
 
 #pragma once
+#include "ColliderFlags.hpp"
 #include "Toast/Objects/Actor.hpp"
+#include "Toast/Physics/ColliderFlags.hpp"
 
 #include <glm/glm.hpp>
 
@@ -17,7 +19,7 @@ class Rigidbody;
 
 class Trigger : public toast::Actor {
 public:
-	REGISTER_ABSTRACT(Trigger);
+	REGISTER_TYPE(Trigger);
 
 	[[nodiscard]]
 	json_t Save() const override;
@@ -27,16 +29,23 @@ public:
 	void Destroy() override;
 	void EditorTick() override;
 
-	std::list<Rigidbody*> rigidbodies;
-	std::function<void(toast::Object*)> enterCallback;
-	std::function<void(toast::Object*)> exitCallback;
-
 	virtual void OnEnter(toast::Object*) { }
 
 	virtual void OnExit(toast::Object*) { }
 
+	void AddFlag(ColliderFlags flag);
+	void RemoveFlag(ColliderFlags flag);
+	const ColliderFlags& flags = m.flags;
+
+	// This needs to be public to be able to override without needing to create
+	// a child class -- OnEnter and OnExit will stop working tho -x
+	std::function<void(toast::Object*)> enterCallback;
+	std::function<void(toast::Object*)> exitCallback;
+	std::list<Rigidbody*> rigidbodies;    ///< Used to avoid a rigidbody triggering twice
+
 	struct M {
 		glm::vec4 color = { 0.0f, 1.0f, 1.0f, 0.5f };
+		ColliderFlags flags = ColliderFlags::Player;    ///< Triggers react only to players by default
 	} m;
 
 	struct {

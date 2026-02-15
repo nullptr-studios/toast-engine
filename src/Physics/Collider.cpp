@@ -275,6 +275,7 @@ void Collider::Inspector() {
 	bool player_flag = (cur & static_cast<unsigned int>(ColliderFlags::Player)) != 0;
 	bool enemy_flag = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
 	bool ramp_flag = (cur & static_cast<unsigned int>(ColliderFlags::Ramp)) != 0;
+	bool weapon_flag = (cur & static_cast<unsigned int>(ColliderFlags::Weapon)) != 0;
 
 	if (ImGui::Checkbox("Default", &default_flag)) {
 		if (default_flag) {
@@ -309,6 +310,13 @@ void Collider::Inspector() {
 			cur |= static_cast<unsigned int>(ColliderFlags::Ramp);
 		} else {
 			cur &= ~static_cast<unsigned int>(ColliderFlags::Ramp);
+		}
+	}
+	if (ImGui::Checkbox("Weapon", &weapon_flag)) {
+		if (weapon_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Weapon);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Weapon);
 		}
 	}
 	ImGui::Spacing();

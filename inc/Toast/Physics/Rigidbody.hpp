@@ -28,6 +28,9 @@ public:
 	auto GetPosition() const -> glm::dvec2;
 	void SetPosition(glm::dvec2);
 
+	auto GetVelocity() const -> glm::dvec2;
+	void SetVelocity(glm::dvec2);
+
 	/// @brief Get interpolated position for rendering (call from render/late tick)
 	auto GetInterpolatedPosition() const -> glm::dvec2;
 
