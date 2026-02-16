@@ -213,7 +213,9 @@ auto BoxBoxCollision(BoxRigidbody* rb1, BoxRigidbody* rb2) -> std::optional<BoxM
 
 void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold, bool call) {
 	if (call) {
-		BoxBoxResolution(rb2, rb1, manifold, false);
+		BoxManifold temp = manifold;
+		temp.normal *= -1.0;
+		BoxBoxResolution(rb2, rb1, temp, false);
 	}
 	dvec2 position1 = rb1->GetPosition();
 	dvec2& velocity1 = rb1->velocity;

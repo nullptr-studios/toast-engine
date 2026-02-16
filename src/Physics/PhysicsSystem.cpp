@@ -361,10 +361,10 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 		}
 	}
 
-	for (auto* b : m.boxes) {
-		auto manifold = BoxBoxCollision(rb, b);
+	for (auto it = ++std::ranges::find(m.boxes, rb); it != m.boxes.end(); ++it) {
+		auto manifold = BoxBoxCollision(rb, *it);
 		if (manifold.has_value()) {
-			BoxBoxResolution(rb, b, manifold.value());
+			BoxBoxResolution(rb, *it, manifold.value());
 		}
 	}
 
