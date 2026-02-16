@@ -58,9 +58,9 @@
 /// unsigned device_id = GetVulkanDeviceID();
 /// TOAST_WARN("Not enough VRAM on device {0}", device_id);
 ///
-/// // this error will appear "TOAST: shader 'shaders/TextMovement.frag' failed to compile"
+/// // this error will appear "TOAST: shader 'SHADERS/TextMovement.frag' failed to compile"
 /// // It will be colored red
-/// std::string shader_path = "shaders/TextMovement.frag"
+/// std::string shader_path = "SHADERS/TextMovement.frag"
 /// TOAST_ERROR("shader '{0}' failed to compile", shader_path);
 ///
 /// // This assert will write "TOAST: Unnable to create a Vulkan Surface" and will crash the program

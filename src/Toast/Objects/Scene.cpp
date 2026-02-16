@@ -20,7 +20,7 @@ json_t Scene::Save() const {
 	json_t j = Object::Save();
 
 	if (!m_jsonPath.empty()) {
-		m_jsonPath = "scenes/" + name() + ".scene";
+		m_jsonPath = "SCENES/" + name() + ".scene";
 	}
 	j["format"] = "scene";
 	j["file_path"] = m_jsonPath;

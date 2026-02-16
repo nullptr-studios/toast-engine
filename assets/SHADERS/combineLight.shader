@@ -2,11 +2,11 @@
 	"stageFiles": [
 		{
 			"stage": "vertex",
-			"path": "shaders/combineLight.vert"
+			"path": "SHADERS/combineLight.vert"
 		},
 		{
 			"stage": "fragment",
-			"path": "shaders/combineLight.frag"
+			"path": "SHADERS/combineLight.frag"
 		}
 	]
 }

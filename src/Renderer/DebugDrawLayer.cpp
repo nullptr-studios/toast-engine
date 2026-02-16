@@ -28,7 +28,7 @@ DebugDrawLayer::~DebugDrawLayer() = default;
 
 void DebugDrawLayer::OnAttach() {
 	// create shader
-	m_shader = resource::LoadResource<renderer::Shader>("shaders/debug.shader");
+	m_shader = resource::LoadResource<renderer::Shader>("SHADERS/debug.shader");
 
 	// create VAO/VBO for lines
 	glGenVertexArrays(1, &m_vao);
