@@ -348,20 +348,20 @@ void operator delete[](void* p, const std::nothrow_t&) noexcept {
 #ifdef TRACY_ENABLE
 #include <tracy/Tracy.hpp>
 
-// Thread-local re-entrancy guard to prevent Tracy from profiling its own allocations
-thread_local bool g_inTracyCall = false;
-
-struct TracyGuard {
-	bool wasInCall;
-
-	TracyGuard() : wasInCall(g_inTracyCall) {
-		g_inTracyCall = true;
-	}
-
-	~TracyGuard() {
-		g_inTracyCall = wasInCall;
-	}
-};
+// // Thread-local re-entrancy guard to prevent Tracy from profiling its own allocations
+// thread_local bool g_inTracyCall = false;
+//
+// struct TracyGuard {
+// 	bool wasInCall;
+//
+// 	TracyGuard() : wasInCall(g_inTracyCall) {
+// 		g_inTracyCall = true;
+// 	}
+//
+// 	~TracyGuard() {
+// 		g_inTracyCall = wasInCall;
+// 	}
+// };
 
 void* operator new(std::size_t size) {
 	void* ptr = std::malloc(size);
