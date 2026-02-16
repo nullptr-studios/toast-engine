@@ -17,7 +17,7 @@
           "position": [ 0.0, 0.0, 0.0 ],
           "rotation": [ 1.0, 0.0, 0.0, 0.0 ],
           "scale": [ 1.0, 1.0, 1.0 ],
-          "materialPath" : "materials/default.mat",
+          "materialPath" : "MATERIALS/default.mat",
           "meshPath": "MODELS/quad.obj"
         }
       ],

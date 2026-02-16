@@ -100,7 +100,7 @@ private:
 	// std::string m_texturePath = "images/default.png";
 	// std::string m_shaderPath = "SHADERS/default.shader";
 	std::string m_meshPath = "MODELS/quad.obj";
-	std::string m_materialPath = "materials/default.mat";
+	std::string m_materialPath = "MATERIALS/default.mat";
 
 	// std::shared_ptr<Texture> m_texture;
 	// std::shared_ptr<renderer::Shader> m_shader;
