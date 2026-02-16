@@ -17,7 +17,7 @@ ConvexCollider::ConvexCollider(const point_list& points, const ColliderData& dat
 
 	for (const auto& [point, _] : points) {
 		// Add the point to the vertices list
-		vertices.emplace_back(point + data.worldPosition);
+		vertices.emplace_back(point);
 	}
 
 	std::list<glm::vec2> vertices_list { vertices.begin(), vertices.end() };
