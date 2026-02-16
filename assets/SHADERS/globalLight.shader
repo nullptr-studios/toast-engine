@@ -2,11 +2,11 @@
 	"stageFiles": [
 		{
 			"stage": "vertex",
-			"path": "shaders/globalLight.vert"
+			"path": "SHADERS/globalLight.vert"
 		},
 		{
 			"stage": "fragment",
-			"path": "shaders/globalLight.frag"
+			"path": "SHADERS/globalLight.frag"
 		}
 	]
 }

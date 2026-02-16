@@ -2,11 +2,11 @@
 	"stageFiles": [
 		{
 			"stage": "vertex",
-			"path": "shaders/missing.vert"
+			"path": "SHADERS/missing.vert"
 		},
 		{
 			"stage": "fragment",
-			"path": "shaders/missing.frag"
+			"path": "SHADERS/missing.frag"
 		}
 	]
 }

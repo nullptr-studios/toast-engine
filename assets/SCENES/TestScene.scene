@@ -18,7 +18,7 @@
           "rotation": [ 1.0, 0.0, 0.0, 0.0 ],
           "scale": [ 1.0, 1.0, 1.0 ],
           "materialPath" : "materials/default.mat",
-          "meshPath": "models/quad.obj"
+          "meshPath": "MODELS/quad.obj"
         }
       ],
       "transform": { "position": [ 0.0, 0.0, 0.0 ], "rotation": [ 1.0, 0.0, 0.0, 0.0 ], "scale": [ 1.0, 1.0, 1.0 ] }

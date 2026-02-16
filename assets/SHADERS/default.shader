@@ -2,11 +2,11 @@
 	"stageFiles": [
 		{
 			"stage": "vertex",
-			"path": "shaders/default.vert"
+			"path": "SHADERS/default.vert"
 		},
 		{
 			"stage": "fragment",
-			"path": "shaders/default.frag"
+			"path": "SHADERS/default.frag"
 		}
 	],
 	"parameters": [

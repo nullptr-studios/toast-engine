@@ -4,5 +4,5 @@
     "test-images/ball.png",
     [ 1, 1, 1, 1 ]
   ],
-  "shaderPath": "shaders/default.shader"
+  "shaderPath": "SHADERS/default.shader"
 }
