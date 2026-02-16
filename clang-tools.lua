@@ -13,6 +13,7 @@ end
 local do_format = args["-f"] or next(args) == nil
 local do_tidy = args["-t"] or next(args) == nil
 local do_fix = args["-i"] or false
+local do_compile_commands = args["--ccomands"]
 
 -- Function to run a command
 local function run_cmd(cmd)
@@ -72,4 +73,9 @@ if do_tidy and do_fix then
 	run_cmd("clang-tidy --fix --fix-errors" .. files)
 elseif do_tidy then
 	run_cmd("clang-tidy" .. files)
+end
+
+if do_compile_commands then
+	run_cmd("cmake -B build-clang -G \"MinGW Makefiles\" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++")
+	run_cmd("cp ./build-clang/compile_commands.json .")
 end
