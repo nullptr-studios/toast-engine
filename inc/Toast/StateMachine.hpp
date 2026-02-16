@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -48,7 +49,7 @@ public:
 
 	void SetParent(T* parent) { m.parent = parent; }
 
-	void AddState(const std::string& name, State<T>* state);
+	void AddState(const std::string& name, std::unique_ptr<State<T>>&& state);
 	void SetState(const std::string& name);
 	void Tick();
 
@@ -56,14 +57,14 @@ public:
 
 private:
 	struct {
-		std::unordered_map<std::string, State<T>*> states;
+		std::unordered_map<std::string, std::unique_ptr<State<T>>> states;
 		std::string currentState;
 		T* parent = nullptr;
 	} m;
 };
 
 template<typename T>
-void StateMachine<T>::AddState(const std::string& name, State<T>* state) {
+void StateMachine<T>::AddState(const std::string& name, std::unique_ptr<State<T>>&& state) {
 	state->parent = m.parent;
 	m.states[name] = state;
 }
