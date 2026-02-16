@@ -29,6 +29,8 @@ struct RendererConfig {
 	glm::uvec2 resolution;                    ///< windowed rendering resolution
 	bool vSync;                               ///< Enable/disable vertical sync
 	toast::DisplayMode currentDisplayMode;    ///< Current display mode
+	
+	unsigned maxFPS = 300;
 
 	float resolutionScale;                    ///< Scale factor for main framebuffer resolution
 	float lightResolutionScale;               ///< Scale factor for light framebuffer resolution
@@ -235,6 +237,11 @@ public:
 			} else {
 				m_config.resolution = glm::uvec2(1920, 1080);
 			}
+			if (j.contains("MaxFPS")) {
+				m_config.maxFPS = j["MaxFPS"].get<unsigned>();
+			} else {
+				m_config.maxFPS = 300;
+			}
 			TOAST_TRACE("SUCCESFULLY LOADED RENDERER SETTINGS!... now applying");
 			ApplyRenderSettings();
 
@@ -248,6 +255,7 @@ public:
 		j["vSync"] = m_config.vSync;
 		j["fullscreen"] = m_config.currentDisplayMode;
 		j["resolution"] = m_config.resolution;
+		j["MaxFPS"] = m_config.maxFPS;
 
 		if (!resource::ResourceManager::SaveConfig("Renderer.settings", j.dump(1))) {
 			TOAST_ERROR("Failed to save renderer settings file!");

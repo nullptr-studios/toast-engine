@@ -28,6 +28,8 @@ namespace toast {
 Engine* Engine::m_instance;
 double Engine::purge_timer = 0.0;
 
+double updateTimer = 0.0;
+
 struct Engine::Pimpl {
 	std::unique_ptr<Time> time;
 	std::unique_ptr<event::EventSystem> eventSystem;
@@ -57,7 +59,11 @@ void Engine::Run(int argc, char** argv) {
 
 	auto* window = m->window.get();
 	auto* world = m->gameWorld.get();
-	while (!GetShouldClose()) {
+	
+	updateTimer += Time::delta();
+	
+	while (!GetShouldClose() && window->GetRefreshFrameTime() <= updateTimer) {
+		updateTimer = 0.0;
 		// This is our frame 0x
 		PROFILE_ZONE_N("Frame");
 

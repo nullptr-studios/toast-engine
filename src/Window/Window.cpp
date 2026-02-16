@@ -81,6 +81,10 @@ double Window::GetTime() {
 	return glfwGetTime();
 }
 
+double Window::GetRefreshFrameTime() {
+	return m_refreshFrameTime;
+}
+
 void Window::SwapBuffers() {
 	PROFILE_ZONE_C(0xFF0000);    // Red for rendering
 	glfwSwapBuffers(m_glfwWindow);

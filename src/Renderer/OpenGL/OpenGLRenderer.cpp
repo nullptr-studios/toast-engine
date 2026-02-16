@@ -601,11 +601,14 @@ void OpenGLRenderer::ApplyRenderSettings() {
 
 	// vsync
 	window->SetVSync(m_config.vSync);
+	
+	window->SetRefreshFrameTime(1000.0/m_config.maxFPS);
 
 	window->SetDisplayMode(m_config.currentDisplayMode);
 
 	// resolution (Framebuffer scale is handled in Resize)
 	window->SetResolution(m_config.resolution);
+	
 }
 
 }

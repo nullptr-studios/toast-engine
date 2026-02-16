@@ -132,6 +132,8 @@ public:
 	 * @return Time in seconds since the window was created.
 	 */
 	double GetTime();
+	
+	double GetRefreshFrameTime();
 
 	/**
 	 * @brief Gets the clipboard contents.
@@ -181,6 +183,10 @@ public:
 	bool GetVSync() const noexcept {
 		return m_vsync;
 	}
+	
+	void SetRefreshFrameTime(double frameTime) {
+		m_refreshFrameTime = frameTime;
+	}
 
 	/**
 	 * @brief Gets the underlying GLFW window handle.
@@ -210,6 +216,8 @@ private:
 	glm::ivec2 m_windowedPos {};
 
 	bool m_vsync = true;
+	
+	double m_refreshFrameTime = 16.6667; // Default to 60 FPS
 
 	/**
 	 * @brief GLFW error callback handler.
