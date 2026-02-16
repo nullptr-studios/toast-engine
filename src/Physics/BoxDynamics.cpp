@@ -223,8 +223,8 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 		return;
 	}
 
+	double inv_mass1 = (rb1->mass > 0.0) ? 1.0 / rb1->mass : 0.0;
 	double inv_mass2 = (rb2->mass > 0.0) ? 1.0 / rb2->mass : 0.0;
-	double inv_mass1= (rb1->mass > 0.0) ? 1.0 / rb1->mass : 0.0;
 
 	double inv_mass_sum = inv_mass1 + inv_mass2;
 	if (inv_mass_sum <= 0.0) {
@@ -244,8 +244,8 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 	// Only resolve if bodies are moving towards each other
 	if (normal_speed < 0.0) {
 		// Restitution disabled below threshold to prevent jitter
-		double restitution1 = (std::abs(normal_speed) < rb2->restitutionThreshold) ? 0.0 : rb2->restitution;
-		double restitution2 = (std::abs(normal_speed) < rb1->restitutionThreshold) ? 0.0 : rb1->restitution;
+		double restitution1 = (std::abs(normal_speed) < rb1->restitutionThreshold) ? 0.0 : rb1->restitution;
+		double restitution2 = (std::abs(normal_speed) < rb2->restitutionThreshold) ? 0.0 : rb2->restitution;
 
 		double restitution = std::min(restitution1, restitution2);
 
@@ -264,16 +264,16 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 		// Apply impulses
 		dvec2 impulse = normal_impulse * normal + tangential_impulse * contact_tangent;
 
-		velocity1 += impulse * inv_mass2;
-		velocity2 -= impulse * inv_mass1;
+		velocity1 += impulse * inv_mass1;
+		velocity2 -= impulse * inv_mass2;
 	}
 
 	// Positional correction
 	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
 	dvec2 correction = (penetration_correction / inv_mass_sum) * normal;
 
-	position1 += correction * inv_mass2;
-	position2 -= correction * inv_mass1;
+	position1 += correction * inv_mass1;
+	position2 -= correction * inv_mass2;
 
 	rb1->SetPosition(position2);
 	rb2->SetPosition(position1);
