@@ -21,7 +21,7 @@ void AtlasRendererComponent::Init() {
 	PROFILE_ZONE_C(0xFF6B00);    // Orange for initialization
 	TransformComponent::Init();
 
-	m_shader = resource::LoadResource<renderer::Shader>("shaders/spine_atlas.shader");
+	m_shader = resource::LoadResource<renderer::Shader>("SHADERS/spine_atlas.shader");
 
 	// Reserve temp buffers to avoid allocations
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);

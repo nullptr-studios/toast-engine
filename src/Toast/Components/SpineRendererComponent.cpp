@@ -25,7 +25,7 @@ void SpineRendererComponent::Init() {
 	TransformComponent::Init();
 
 	// shader and buffers
-	m_shader = resource::LoadResource<renderer::Shader>("shaders/spine.shader");
+	m_shader = resource::LoadResource<renderer::Shader>("SHADERS/spine.shader");
 	// Reserve temp buffers to avoid allocations
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
 	m_tempIndices.reserve(INITIAL_VERT_RESERVE * 3);

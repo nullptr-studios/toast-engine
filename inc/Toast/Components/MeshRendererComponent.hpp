@@ -98,8 +98,8 @@ private:
 	editor::ResourceSlot m_modelSlot { resource::ResourceType::MODEL };
 
 	// std::string m_texturePath = "images/default.png";
-	// std::string m_shaderPath = "shaders/default.shader";
-	std::string m_meshPath = "models/quad.obj";
+	// std::string m_shaderPath = "SHADERS/default.shader";
+	std::string m_meshPath = "MODELS/quad.obj";
 	std::string m_materialPath = "materials/default.mat";
 
 	// std::shared_ptr<Texture> m_texture;

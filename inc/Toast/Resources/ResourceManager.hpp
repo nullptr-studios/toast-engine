@@ -76,7 +76,7 @@ public:
 	 * @par Example:
 	 * @code
 	 * auto texture = rm->LoadResource<Texture>("textures/player.png");
-	 * auto mesh = rm->LoadResource<Mesh>("models/cube.obj");
+	 * auto mesh = rm->LoadResource<Mesh>("MODELS/cube.obj");
 	 * @endcode
 	 */
 	template<typename R, typename... Args>

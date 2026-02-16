@@ -261,10 +261,10 @@ OpenGLRenderer::OpenGLRenderer() {
 	m_layerStack = LayerStack::GetInstance();
 
 	// setup default resources
-	m_quad = resource::LoadResource<Mesh>("models/quad.obj");
-	m_screenShader = resource::LoadResource<Shader>("shaders/screen.shader");
-	m_combineLightShader = resource::LoadResource<Shader>("shaders/combineLight.shader");
-	m_globalLightShader = resource::LoadResource<Shader>("shaders/globalLight.shader");
+	m_quad = resource::LoadResource<Mesh>("MODELS/quad.obj");
+	m_screenShader = resource::LoadResource<Shader>("SHADERS/screen.shader");
+	m_combineLightShader = resource::LoadResource<Shader>("SHADERS/combineLight.shader");
+	m_globalLightShader = resource::LoadResource<Shader>("SHADERS/globalLight.shader");
 
 	// Set once, change and reset state if needed
 	stbi_set_flip_vertically_on_load(1);
