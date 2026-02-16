@@ -25,9 +25,9 @@ class StateMachine;
  * These use std::function so that you can assign lambdas or normal functions.
  */
 struct State {
-	std::function<void()> onBegin;
-	std::function<void()> onTick;
-	std::function<void()> onExit;
+	virtual void OnBegin() = 0;
+	virtual void OnTick() = 0;
+	virtual void OnExit() = 0;
 };
 
 /**
@@ -42,7 +42,7 @@ class StateMachine {
 public:
 	StateMachine();
 
-	void AddState(const std::string& name, State&& state);
+	void AddState(const std::string& name, State* state);
 	void SetState(const std::string& name);
 	void Tick();
 
@@ -50,7 +50,7 @@ public:
 
 private:
 	struct {
-		std::unordered_map<std::string, State> states;
+		std::unordered_map<std::string, State*> states;
 		std::string currentState;
 	} m;
 };

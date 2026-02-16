@@ -6,7 +6,7 @@ namespace toast {
 
 StateMachine::StateMachine() = default;
 
-void StateMachine::AddState(const std::string& name, State&& state) {
+void StateMachine::AddState(const std::string& name, State* state) {
 	m.states[name] = state;
 }
 
@@ -18,8 +18,8 @@ void StateMachine::SetState(const std::string& name) {
 	// Call OnExit on the previous if it existss
 	if (!m.currentState.empty()) {
 		auto it = m.states.find(m.currentState);    // replaced std::unordered_map<std::string, State>::iterator with auto
-		if (it != m.states.end() && it->second.onExit) {
-			it->second.onExit();
+		if (it != m.states.end()) {
+			it->second->OnExit();
 		}
 	}
 
@@ -28,16 +28,16 @@ void StateMachine::SetState(const std::string& name) {
 
 	// Call OnEnter on the new State
 	auto new_it = m.states.find(m.currentState);    // replaced std::unordered_map<std::string, State>::iterator with auto
-	if (new_it != m.states.end() && new_it->second.onBegin) {
-		new_it->second.onBegin();
+	if (new_it != m.states.end()) {
+		new_it->second->OnBegin();
 	}
 }
 
 // Run OnUpdate with the deltaTime each frame
 void StateMachine::Tick() {
 	auto it = m.states.find(m.currentState);    // replaced std::unordered_map<std::string, State>::iterator with auto
-	if (it != m.states.end() && it->second.onTick) {
-		it->second.onTick();
+	if (it != m.states.end()) {
+		it->second->OnTick();
 	}
 }
 
