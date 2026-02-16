@@ -109,10 +109,191 @@ void BoxResetVelocity(BoxRigidbody* rb) {
 }
 
 auto BoxBoxCollision(BoxRigidbody* rb1, BoxRigidbody* rb2) -> std::optional<BoxManifold> {
-	return std::nullopt;
+	dvec2 rb_pos = rb1->GetPosition();
+	std::list<BoxManifold> manifolds;
+
+	int edge_count = 0;
+	// This method will use the SAT algorithm
+	for (const auto& edge : rb2->GetEdges()) {
+		// get the maximum and minimum points of the collider projected onto the edge normal
+		double min_collider = dot(dvec2 { rb2->GetPoints()[0] }, edge.normal);
+		double max_collider = min_collider;
+
+		for (int i = 1; i < rb2->GetPoints().size(); i++) {
+			double proj = dot(dvec2 { rb2->GetPoints()[i] }, edge.normal);
+			min_collider = std::min(proj, min_collider);
+			max_collider = std::max(proj, max_collider);
+		}
+
+		// get the rigidbody OBB vertices
+		std::vector<vec2> rb_points = rb1->GetPoints();
+
+		// project rigidbody vertices onto the same axis
+		double min_rb = dot(dvec2 { rb_points[0] }, edge.normal);
+		double max_rb = min_rb;
+
+		for (int i = 1; i < rb_points.size(); i++) {
+			double proj = dot(dvec2 { rb_points[i] }, edge.normal);
+			min_rb = std::min(proj, min_rb);
+			max_rb = std::max(proj, max_rb);
+		}
+
+		// if theres no overlap on this axis, there is no collision at all
+		if (max_rb < min_collider || min_rb > max_collider) {
+			return std::nullopt;
+		}
+
+		// compute overlap along the axis (penetration depth candidate)
+		double overlap = std::min(max_collider - min_rb, max_rb - min_collider);
+
+		// find closest rigidbody vertex to the edge segment (used for biasing)
+		dvec2 a = edge.p1;
+		dvec2 b = edge.p2;
+		dvec2 ab = b - a;
+
+		double best_dist2 = std::numeric_limits<double>::max();
+		for (dvec2 p : rb_points) {
+			double t = dot(p - a, ab) / dot(ab, ab);
+			t = std::clamp(t, 0.0, 1.0);
+			dvec2 closest = a + ab * t;
+			double dist2 = dot(p - closest, p - closest);
+			best_dist2 = std::min(best_dist2, dist2);
+		}
+
+		// bias depth so nearer parallel edges win
+		overlap += PhysicsSystem::eps() * best_dist2;
+
+		// store candidate manifold
+		// clang-format off
+		auto manifold = BoxManifold{
+			.normal = edge.normal,
+			.contact1 = {0.0, 0.0},
+			.contact2 = {0.0, 0.0},
+			.contactCount = -1,
+			.depth = overlap
+		};
+		// clang-format on
+
+		std::vector<dvec2> points;
+		for (const auto& e : rb1->GetEdges()) {
+			auto p = LineLineCollision(e, edge);
+			if (p.has_value()) {
+				points.emplace_back(p.value());
+			}
+		}
+
+		if (points.size() >= 2) {
+			manifold.contact1 = points[0];
+			manifold.contact2 = points[1];
+			manifold.contactCount = 2;
+		} else if (points.size() == 1) {
+			manifold.contact1 = points[0];
+			manifold.contactCount = 1;
+		} else {
+			manifold.contact1 = rb1->GetPosition();
+			manifold.contact2 = rb1->GetPosition();
+			manifold.contactCount = 1;
+		}
+
+		manifolds.emplace_back(manifold);
+	}
+
+	// select the axis with the least penetration depth
+	auto it = std::ranges::min_element(manifolds, {}, &BoxManifold::depth);
+	if (it == manifolds.end()) {
+		return std::nullopt;
+	}
+	auto best = *it;
+
+	if (rb1->debug.showManifolds) {
+		best.Debug();
+	}
+	return best;
 }
 
-void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold) { }
+void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold, bool call) {
+	if (call) {
+		BoxBoxResolution(rb2, rb1, manifold, false);
+	}
+	dvec2 position1 = rb1->GetPosition();
+	dvec2& velocity1 = rb1->velocity;
+	double& angular_velocity1 = rb1->angularVelocity;
+
+	dvec2 position2 = rb2->GetPosition();
+	dvec2& velocity2 = rb2->velocity;
+	double& angular_velocity2 = rb2->angularVelocity;
+
+	// Skip if body has infinite mass
+	if (rb1->mass <= 0.0 || rb2->mass <= 0.0) {
+		return;
+	}
+	double inv_mass1 = 1.0 / rb1->mass;
+	double inv_mass2 = 1.0 / rb1->mass;
+
+	// moment of inertia for box
+	double width = rb1->size.x / 2;
+	double height = rb1->size.y / 2;
+	double inertia = (rb1->mass * (width * width + height * height)) / 12.0;
+	double inv_inertia = inertia > 0.0 ? 1.0 / inertia : 0.0;
+
+	dvec2 contact = (manifold.contactCount == 2) ? (manifold.contact1 + manifold.contact2) * 0.5 : manifold.contact1;
+	dvec2 r = contact - position1;
+
+	// unfold velocity in normal and tangencial
+	dvec2 contact_tangent = { -manifold.normal.y, manifold.normal.x };
+	double normal_speed = dot(velocity1, manifold.normal);
+	double tangent_speed = dot(velocity1, contact_tangent);
+
+	// only apply restitution if we're moving faster than the restitution threshold
+	double restitution = (std::abs(normal_speed) < rb1->restitutionThreshold) ? 0.0 : rb1->restitution;
+
+	// only resolve if we're going towards the object
+	if (normal_speed < 0.0) {
+		double normal_lever_arm = determinant(dmat2 { r, manifold.normal });
+		double tangent_lever_arm = determinant(dmat2 { r, contact_tangent });
+		double normal_effective_mass = inv_mass1 + (normal_lever_arm * normal_lever_arm * inv_inertia);
+		double tangent_effective_mass = inv_mass1 + (tangent_lever_arm * tangent_lever_arm * inv_inertia);
+
+		// Normal impulse (bounce response)
+		double normal_impulse = -(1.0 + restitution) * normal_speed / normal_effective_mass;
+
+		// Coulomb friction
+		double max_friction_impulse = rb2->friction * std::abs(normal_impulse);
+
+		// calculate tangential impulse to cancel tangential speed
+		double tangential_impulse = -tangent_speed / tangent_effective_mass;
+		tangential_impulse = clamp(tangential_impulse, -max_friction_impulse, max_friction_impulse);
+
+		// total impulse
+		dvec2 impulse = normal_impulse * manifold.normal + tangential_impulse * contact_tangent;
+
+		// Apply impulses to velocity
+		velocity1 += impulse * inv_mass1;
+
+		// Apply angular impulse with slight damping to smooth spikes
+
+		dmat2 torque_mat;
+		torque_mat = { r, impulse };
+		if (length2(r) > 1.0f || length2(impulse) > 1.0f) {
+			torque_mat = { normalize(r), normalize(impulse) };
+		}
+
+		double torque_impulse = determinant(torque_mat);
+		const double angular_impulse_blend = 0.6;
+		angular_velocity1 += torque_impulse * inv_inertia * angular_impulse_blend * rb1->mass;
+	}
+
+	// positional correction
+	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
+	position1 += penetration_correction * manifold.normal;
+	rb1->SetPosition(position1);
+
+	// velocity correction
+	double residual_normal_speed = dot(velocity1, manifold.normal);
+	if (residual_normal_speed < 0.0) {
+		velocity1 -= residual_normal_speed * manifold.normal;
+	}
+}
 
 static auto ClipLineSegmentToLine(dvec2 p1, dvec2 p2, dvec2 normal, dvec2 offset) -> std::vector<dvec2> {
 	std::vector<dvec2> points;
