@@ -5,10 +5,10 @@
 #pragma once
 #include "Objects/Actor.hpp"
 
-template <typename T>
+template<typename T>
 concept is_object = std::is_base_of_v<toast::Object, T>;
 
-template <is_object T, int size>
+template<is_object T, int size>
 class Pool {
 public:
 	Pool(toast::Scene* scene) {
@@ -37,10 +37,12 @@ public:
 			return;
 		}
 
-		if (std::ranges::find(object_pool, obj) == object_pool.end()) return;
+		if (std::ranges::find(object_pool, obj) == object_pool.end()) {
+			return;
+		}
 		obj->enabled(false);
 		if constexpr (std::is_base_of_v<toast::Actor, T>) {
-			obj->transform()->position({0.0f, 0.0f, 0.0f});
+			obj->transform()->position({ 0.0f, 0.0f, 0.0f });
 		}
 		free_objects.emplace(obj);
 	}
@@ -48,5 +50,4 @@ public:
 private:
 	std::array<T*, size> object_pool;
 	std::stack<T*> free_objects;
-
 };
