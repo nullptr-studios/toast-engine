@@ -66,7 +66,7 @@ private:
 template<typename T>
 void StateMachine<T>::AddState(const std::string& name, std::unique_ptr<State<T>>&& state) {
 	state->parent = m.parent;
-	m.states[name] = state;
+	m.states[name] = std::move(state);
 }
 
 template<typename T>

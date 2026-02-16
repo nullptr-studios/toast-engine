@@ -62,7 +62,7 @@ void Engine::Run(int argc, char** argv) {
 	
 	updateTimer += Time::delta();
 	
-	while (!GetShouldClose() && window->GetRefreshFrameTime() <= updateTimer) {
+	while (!GetShouldClose()) {
 		updateTimer = 0.0;
 		// This is our frame 0x
 		PROFILE_ZONE_N("Frame");
