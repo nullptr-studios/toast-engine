@@ -30,7 +30,7 @@ void DebugDrawLayer::OnAttach() {
 	// create shader
 	m_shader = resource::LoadResource<renderer::Shader>("shaders/debug.shader");
 
-	// create VAO/VBO
+	// create VAO/VBO for lines
 	glGenVertexArrays(1, &m_vao);
 	glGenBuffers(1, &m_vbo);
 
@@ -39,7 +39,7 @@ void DebugDrawLayer::OnAttach() {
 	// allocate some space initially
 	glBufferData(GL_ARRAY_BUFFER, 1024 * sizeof(DebugVertex), nullptr, GL_DYNAMIC_DRAW);
 
-	// position (vec2)
+	// position (vec3)
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(DebugVertex), reinterpret_cast<void*>(offsetof(DebugVertex, pos)));
 	// color (vec4)
@@ -49,8 +49,25 @@ void DebugDrawLayer::OnAttach() {
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+	// create VAO/VBO for filled geometry (triangles)
+	glGenVertexArrays(1, &m_filledVao);
+	glGenBuffers(1, &m_filledVbo);
+
+	glBindVertexArray(m_filledVao);
+	glBindBuffer(GL_ARRAY_BUFFER, m_filledVbo);
+	glBufferData(GL_ARRAY_BUFFER, 1024 * sizeof(DebugVertex), nullptr, GL_DYNAMIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(DebugVertex), reinterpret_cast<void*>(offsetof(DebugVertex, pos)));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(DebugVertex), reinterpret_cast<void*>(offsetof(DebugVertex, color)));
+
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 	// reserve to avoid reallocation very often
 	m_vertices.reserve(4096 * 3);
+	m_filledVertices.reserve(4096 * 3);
 
 	m_renderer = IRendererBase::GetInstance();
 }
@@ -60,7 +77,7 @@ void DebugDrawLayer::OnDetach() { }
 void DebugDrawLayer::OnTick() { }
 
 void DebugDrawLayer::OnRender() {
-	if (m_vertices.empty() || !m_enabled) {
+	if ((m_vertices.empty() && m_filledVertices.empty()) || !m_enabled) {
 		return;
 	}
 
@@ -83,28 +100,46 @@ void DebugDrawLayer::OnRender() {
 
 	// clear
 	m_vertices.clear();
+	m_filledVertices.clear();
 }
 
 void DebugDrawLayer::Flush() const {
-	glBindVertexArray(m_vao);
-	glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-
-	size_t byte_size = m_vertices.size() * sizeof(DebugVertex);
-
-	static size_t capacity_bytes = 1024 * sizeof(DebugVertex);
-	if (byte_size > capacity_bytes) {
-		capacity_bytes = byte_size;
-		glBufferData(GL_ARRAY_BUFFER, capacity_bytes, nullptr, GL_STREAM_DRAW);
-	}
-	if (byte_size > 0) {
-		glBufferSubData(GL_ARRAY_BUFFER, 0, byte_size, m_vertices.data());
-	}
-
 	m_shader->Use();
 	m_shader->Set("transform", m_renderer->GetViewProjectionMatrix());
 
-	// draw as lines
-	glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(m_vertices.size()));
+	// Render filled triangles first
+	if (!m_filledVertices.empty()) {
+		glBindVertexArray(m_filledVao);
+		glBindBuffer(GL_ARRAY_BUFFER, m_filledVbo);
+
+		size_t filled_byte_size = m_filledVertices.size() * sizeof(DebugVertex);
+
+		static size_t filled_capacity_bytes = 1024 * sizeof(DebugVertex);
+		if (filled_byte_size > filled_capacity_bytes) {
+			filled_capacity_bytes = filled_byte_size;
+			glBufferData(GL_ARRAY_BUFFER, filled_capacity_bytes, nullptr, GL_STREAM_DRAW);
+		}
+		glBufferSubData(GL_ARRAY_BUFFER, 0, filled_byte_size, m_filledVertices.data());
+
+		glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_filledVertices.size()));
+	}
+
+	// Render lines
+	if (!m_vertices.empty()) {
+		glBindVertexArray(m_vao);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+
+		size_t byte_size = m_vertices.size() * sizeof(DebugVertex);
+
+		static size_t capacity_bytes = 1024 * sizeof(DebugVertex);
+		if (byte_size > capacity_bytes) {
+			capacity_bytes = byte_size;
+			glBufferData(GL_ARRAY_BUFFER, capacity_bytes, nullptr, GL_STREAM_DRAW);
+		}
+		glBufferSubData(GL_ARRAY_BUFFER, 0, byte_size, m_vertices.data());
+
+		glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(m_vertices.size()));
+	}
 
 	// unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -128,7 +163,7 @@ void DebugDrawLayer::DrawLine(const glm::vec3& a, const glm::vec3& b, const glm:
 	m_vertices.push_back({ b, color });
 }
 
-void DebugDrawLayer::DrawRect(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color) {
+void DebugDrawLayer::DrawRect(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color, bool filled) {
 	if (!m_enabled) {
 		return;
 	}
@@ -139,13 +174,23 @@ void DebugDrawLayer::DrawRect(const glm::vec2& pos, const glm::vec2& size, const
 	glm::vec2 c = pos + glm::vec2(half_size.x, half_size.y);
 	glm::vec2 d = pos + glm::vec2(-half_size.x, half_size.y);
 
-	DrawLine(a, b, color);
-	DrawLine(b, c, color);
-	DrawLine(c, d, color);
-	DrawLine(d, a, color);
+	if (filled) {
+		// Two triangles
+		m_filledVertices.push_back({ glm::vec3(a, 0.f), color });
+		m_filledVertices.push_back({ glm::vec3(b, 0.f), color });
+		m_filledVertices.push_back({ glm::vec3(c, 0.f), color });
+		m_filledVertices.push_back({ glm::vec3(a, 0.f), color });
+		m_filledVertices.push_back({ glm::vec3(c, 0.f), color });
+		m_filledVertices.push_back({ glm::vec3(d, 0.f), color });
+	} else {
+		DrawLine(a, b, color);
+		DrawLine(b, c, color);
+		DrawLine(c, d, color);
+		DrawLine(d, a, color);
+	}
 }
 
-void DebugDrawLayer::DrawRect(const glm::vec3& pos, const glm::vec3& size, float rotation, const glm::vec4& color) {
+void DebugDrawLayer::DrawRect(const glm::vec3& pos, const glm::vec3& size, float rotation, const glm::vec4& color, bool filled) {
 	if (!m_enabled) {
 		return;
 	}
@@ -161,13 +206,23 @@ void DebugDrawLayer::DrawRect(const glm::vec3& pos, const glm::vec3& size, float
 	c = glm::vec3(rotatemxt * glm::vec4(c, 1.0f)) + pos;
 	d = glm::vec3(rotatemxt * glm::vec4(d, 1.0f)) + pos;
 
-	DrawLine(a, b, color);
-	DrawLine(b, c, color);
-	DrawLine(c, d, color);
-	DrawLine(d, a, color);
+	if (filled) {
+		// Two triangles
+		m_filledVertices.push_back({ a, color });
+		m_filledVertices.push_back({ b, color });
+		m_filledVertices.push_back({ c, color });
+		m_filledVertices.push_back({ a, color });
+		m_filledVertices.push_back({ c, color });
+		m_filledVertices.push_back({ d, color });
+	} else {
+		DrawLine(a, b, color);
+		DrawLine(b, c, color);
+		DrawLine(c, d, color);
+		DrawLine(d, a, color);
+	}
 }
 
-void DebugDrawLayer::DrawCircle(const glm::vec2& center, float radius, const glm::vec4& color, int segments) {
+void DebugDrawLayer::DrawCircle(const glm::vec2& center, float radius, const glm::vec4& color, int segments, bool filled) {
 	if (!m_enabled) {
 		return;
 	}
@@ -176,16 +231,30 @@ void DebugDrawLayer::DrawCircle(const glm::vec2& center, float radius, const glm
 	}
 
 	double step = glm::two_pi<double>() / static_cast<double>(segments);
-	glm::vec2 prev = center + glm::vec2(radius, 0.0f);
-	for (int i = 1; i <= segments; ++i) {
-		double ang = step * static_cast<double>(i);
-		glm::vec2 cur = center + glm::vec2(cosf(ang) * radius, sinf(ang) * radius);
-		DrawLine(prev, cur, color);
-		prev = cur;
+
+	if (filled) {
+		// Fan triangulation from center
+		for (int i = 0; i < segments; ++i) {
+			double ang1 = step * static_cast<double>(i);
+			double ang2 = step * static_cast<double>(i + 1);
+			glm::vec2 p1 = center + glm::vec2(cosf(ang1) * radius, sinf(ang1) * radius);
+			glm::vec2 p2 = center + glm::vec2(cosf(ang2) * radius, sinf(ang2) * radius);
+			m_filledVertices.push_back({ glm::vec3(center, 0.f), color });
+			m_filledVertices.push_back({ glm::vec3(p1, 0.f), color });
+			m_filledVertices.push_back({ glm::vec3(p2, 0.f), color });
+		}
+	} else {
+		glm::vec2 prev = center + glm::vec2(radius, 0.0f);
+		for (int i = 1; i <= segments; ++i) {
+			double ang = step * static_cast<double>(i);
+			glm::vec2 cur = center + glm::vec2(cosf(ang) * radius, sinf(ang) * radius);
+			DrawLine(prev, cur, color);
+			prev = cur;
+		}
 	}
 }
 
-void DebugDrawLayer::DrawCircle(const glm::vec3& center, float radius, const glm::vec4& color, int segments) {
+void DebugDrawLayer::DrawCircle(const glm::vec3& center, float radius, const glm::vec4& color, int segments, bool filled) {
 	if (!m_enabled) {
 		return;
 	}
@@ -194,42 +263,76 @@ void DebugDrawLayer::DrawCircle(const glm::vec3& center, float radius, const glm
 	}
 
 	double step = glm::two_pi<double>() / static_cast<double>(segments);
-	glm::vec2 prev = center + glm::vec3(radius, 0.0f, 0.0f);
-	for (int i = 1; i <= segments; ++i) {
-		double ang = step * static_cast<double>(i);
-		glm::vec2 cur = center + glm::vec3(cosf(ang) * radius, sinf(ang) * radius, 0.0f);
-		DrawLine(prev, cur, color);
-		prev = cur;
+
+	if (filled) {
+		// Fan triangulation from center
+		for (int i = 0; i < segments; ++i) {
+			double ang1 = step * static_cast<double>(i);
+			double ang2 = step * static_cast<double>(i + 1);
+			glm::vec3 p1 = center + glm::vec3(cosf(ang1) * radius, sinf(ang1) * radius, 0.0f);
+			glm::vec3 p2 = center + glm::vec3(cosf(ang2) * radius, sinf(ang2) * radius, 0.0f);
+			m_filledVertices.push_back({ center, color });
+			m_filledVertices.push_back({ p1, color });
+			m_filledVertices.push_back({ p2, color });
+		}
+	} else {
+		glm::vec2 prev = center + glm::vec3(radius, 0.0f, 0.0f);
+		for (int i = 1; i <= segments; ++i) {
+			double ang = step * static_cast<double>(i);
+			glm::vec2 cur = center + glm::vec3(cosf(ang) * radius, sinf(ang) * radius, 0.0f);
+			DrawLine(prev, cur, color);
+			prev = cur;
+		}
 	}
 }
 
-void DebugDrawLayer::DrawPoly(const std::vector<glm::vec2>& points, const glm::vec4& color, bool closed) {
+void DebugDrawLayer::DrawPoly(const std::vector<glm::vec2>& points, const glm::vec4& color, bool closed, bool filled) {
 	if (!m_enabled) {
 		return;
 	}
 	if (points.size() < 2) {
 		return;
 	}
-	for (size_t i = 0; i + 1 < points.size(); ++i) {
-		DrawLine(points[i], points[i + 1], color);
-	}
-	if (closed && points.size() > 2) {
-		DrawLine(points.back(), points.front(), color);
+
+	if (filled && points.size() >= 3) {
+		// Simple fan triangulation from first vertex
+		for (size_t i = 1; i + 1 < points.size(); ++i) {
+			m_filledVertices.push_back({ glm::vec3(points[0], 0.f), color });
+			m_filledVertices.push_back({ glm::vec3(points[i], 0.f), color });
+			m_filledVertices.push_back({ glm::vec3(points[i + 1], 0.f), color });
+		}
+	} else {
+		for (size_t i = 0; i + 1 < points.size(); ++i) {
+			DrawLine(points[i], points[i + 1], color);
+		}
+		if (closed && points.size() > 2) {
+			DrawLine(points.back(), points.front(), color);
+		}
 	}
 }
 
-void DebugDrawLayer::DrawPoly(const std::vector<glm::vec3>& points, const glm::vec4& color, bool closed) {
+void DebugDrawLayer::DrawPoly(const std::vector<glm::vec3>& points, const glm::vec4& color, bool closed, bool filled) {
 	if (!m_enabled) {
 		return;
 	}
 	if (points.size() < 2) {
 		return;
 	}
-	for (size_t i = 0; i + 1 < points.size(); ++i) {
-		DrawLine(points[i], points[i + 1], color);
-	}
-	if (closed && points.size() > 2) {
-		DrawLine(points.back(), points.front(), color);
+
+	if (filled && points.size() >= 3) {
+		// Simple fan triangulation from first vertex
+		for (size_t i = 1; i + 1 < points.size(); ++i) {
+			m_filledVertices.push_back({ points[0], color });
+			m_filledVertices.push_back({ points[i], color });
+			m_filledVertices.push_back({ points[i + 1], color });
+		}
+	} else {
+		for (size_t i = 0; i + 1 < points.size(); ++i) {
+			DrawLine(points[i], points[i + 1], color);
+		}
+		if (closed && points.size() > 2) {
+			DrawLine(points.back(), points.front(), color);
+		}
 	}
 }
 
@@ -312,6 +415,7 @@ void DebugDrawLayer::DrawFrustum(std::array<glm::vec4, 6> planes) {
 
 void DebugDrawLayer::Clear() {
 	m_vertices.clear();
+	m_filledVertices.clear();
 }
 
 }

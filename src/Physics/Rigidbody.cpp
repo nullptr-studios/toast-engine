@@ -4,6 +4,7 @@
 #include "Toast/GlmJson.hpp"
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Physics/Raycast.hpp"
+#include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
 #ifdef TOAST_EDITOR
@@ -13,6 +14,7 @@
 namespace physics {
 
 void Rigidbody::Init() {
+	PROFILE_ZONE;
 	PhysicsSystem::AddRigidbody(this);
 
 	// Initialize interpolation positions from the current transform
@@ -140,6 +142,7 @@ json_t Rigidbody::Save() const {
 }
 
 void Rigidbody::Load(json_t j, bool propagate) {
+	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 	if (j.contains("radius")) {
 		radius = j["radius"];
 	}

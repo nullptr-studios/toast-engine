@@ -1,0 +1,72 @@
+# FMOD
+if(WIN32)
+    set(FMOD_PLATFORM "windows")
+    set(FMOD_ARCH "x64")
+elseif(UNIX AND NOT APPLE)
+    set(FMOD_PLATFORM "linux")
+    set(FMOD_ARCH "x86_64")
+endif()
+
+set(FMOD_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(FMOD_LIB_DIR "${FMOD_DIR}/lib/${FMOD_PLATFORM}")
+set(FMOD_INCLUDE_DIR "${FMOD_DIR}/include")
+
+if(WIN32)
+    # Use MSVC import libraries for both MSVC and GCC
+    set(FMOD_CORE_DLL_DEBUG "${FMOD_LIB_DIR}/fmodL.dll")
+    set(FMOD_CORE_IMPLIB_DEBUG "${FMOD_LIB_DIR}/fmodL_vc.lib")
+    set(FMOD_CORE_DLL_RELEASE "${FMOD_LIB_DIR}/fmod.dll")
+    set(FMOD_CORE_IMPLIB_RELEASE "${FMOD_LIB_DIR}/fmod_vc.lib")
+    set(FMOD_STUDIO_DLL_DEBUG "${FMOD_LIB_DIR}/fmodstudioL.dll")
+    set(FMOD_STUDIO_IMPLIB_DEBUG "${FMOD_LIB_DIR}/fmodstudioL_vc.lib")
+    set(FMOD_STUDIO_DLL_RELEASE "${FMOD_LIB_DIR}/fmodstudio.dll")
+    set(FMOD_STUDIO_IMPLIB_RELEASE "${FMOD_LIB_DIR}/fmodstudio_vc.lib")
+elseif(UNIX AND NOT APPLE)
+    set(FMOD_CORE_LIB "${FMOD_LIB_DIR}/libfmod.so")
+    set(FMOD_STUDIO_LIB "${FMOD_LIB_DIR}/libfmodstudio.so")
+endif()
+
+# FMOD Core Library
+add_library(fmod SHARED IMPORTED GLOBAL)
+target_include_directories(fmod INTERFACE ${FMOD_INCLUDE_DIR})
+
+if(WIN32)
+    set_target_properties(fmod PROPERTIES
+        IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
+        IMPORTED_LOCATION_DEBUG "${FMOD_CORE_DLL_DEBUG}"
+        IMPORTED_IMPLIB_DEBUG "${FMOD_CORE_IMPLIB_DEBUG}"
+        IMPORTED_LOCATION_RELEASE "${FMOD_CORE_DLL_RELEASE}"
+        IMPORTED_IMPLIB_RELEASE "${FMOD_CORE_IMPLIB_RELEASE}"
+        IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_CORE_DLL_RELEASE}"
+        IMPORTED_IMPLIB_RELWITHDEBINFO "${FMOD_CORE_IMPLIB_RELEASE}"
+        IMPORTED_LOCATION_MINSIZEREL "${FMOD_CORE_DLL_RELEASE}"
+        IMPORTED_IMPLIB_MINSIZEREL "${FMOD_CORE_IMPLIB_RELEASE}"
+    )
+else()
+    set_target_properties(fmod PROPERTIES
+        IMPORTED_LOCATION "${FMOD_CORE_LIB}"
+    )
+endif()
+
+# FMOD Studio Library
+add_library(fmod_studio SHARED IMPORTED GLOBAL)
+target_include_directories(fmod_studio INTERFACE ${FMOD_INCLUDE_DIR})
+target_link_libraries(fmod_studio INTERFACE fmod)
+
+if(WIN32)
+    set_target_properties(fmod_studio PROPERTIES
+        IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
+        IMPORTED_LOCATION_DEBUG "${FMOD_STUDIO_DLL_DEBUG}"
+        IMPORTED_IMPLIB_DEBUG "${FMOD_STUDIO_IMPLIB_DEBUG}"
+        IMPORTED_LOCATION_RELEASE "${FMOD_STUDIO_DLL_RELEASE}"
+        IMPORTED_IMPLIB_RELEASE "${FMOD_STUDIO_IMPLIB_RELEASE}"
+        IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_STUDIO_DLL_RELEASE}"
+        IMPORTED_IMPLIB_RELWITHDEBINFO "${FMOD_STUDIO_IMPLIB_RELEASE}"
+        IMPORTED_LOCATION_MINSIZEREL "${FMOD_STUDIO_DLL_RELEASE}"
+        IMPORTED_IMPLIB_MINSIZEREL "${FMOD_STUDIO_IMPLIB_RELEASE}"
+    )
+else()
+    set_target_properties(fmod_studio PROPERTIES
+        IMPORTED_LOCATION "${FMOD_STUDIO_LIB}"
+    )
+endif()

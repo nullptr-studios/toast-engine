@@ -3,6 +3,7 @@
 #include "ConvexCollider.hpp"
 #include "Toast/GlmJson.hpp"
 #include "Toast/Objects/Actor.hpp"
+#include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
 #ifdef TOAST_EDITOR
@@ -31,6 +32,7 @@ void Collider::DeletePoint(glm::vec2 point) {
 }
 
 void Collider::CalculatePoints() {
+	PROFILE_ZONE;
 	// We require at leats 3 points to make a mesh
 	if (m.points.size() < 3) {
 		return;
@@ -272,6 +274,7 @@ void Collider::Inspector() {
 	bool ground_flag = (cur & static_cast<unsigned int>(ColliderFlags::Ground)) != 0;
 	bool player_flag = (cur & static_cast<unsigned int>(ColliderFlags::Player)) != 0;
 	bool enemy_flag = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
+	bool ramp_flag = (cur & static_cast<unsigned int>(ColliderFlags::Ramp)) != 0;
 
 	if (ImGui::Checkbox("Default", &default_flag)) {
 		if (default_flag) {
@@ -301,11 +304,21 @@ void Collider::Inspector() {
 			cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
 		}
 	}
+	if (ImGui::Checkbox("Ramp", &ramp_flag)) {
+		if (ramp_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Ramp);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Ramp);
+		}
+	}
+	ImGui::Spacing();
+	ImGui::Checkbox("Ramp force left?", &data.forceLeft);
 
 	m.flags = static_cast<ColliderFlags>(cur);
 	data.flags = static_cast<ColliderFlags>(cur);
 	for (auto* c : m.convexShapes) {
-		c->flags = static_cast<ColliderFlags>(cur);
+		c->flags = data.flags;
+		c->forceLeft = data.forceLeft;
 	}
 
 	ImGui::Spacing();
@@ -422,7 +435,7 @@ json_t Collider::Save() const {
 	j["debug.showColliders"] = debug.showColliders;
 	j["debug.showNormals"] = data.debugNormals;
 	j["flags"] = static_cast<unsigned int>(m.flags);
-
+	j["data.forceLeft"] = data.forceLeft;
 	return j;
 }
 
@@ -453,11 +466,17 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 
 	if (j.contains("flags")) {
+		data.flags = static_cast<ColliderFlags>(j["flags"]);
 		for (auto* c : m.convexShapes) {
-			c->flags = static_cast<ColliderFlags>(j["flags"]);
+			c->flags = data.flags;
 		}
 		m.flags = static_cast<ColliderFlags>(j["flags"]);
-		data.flags = static_cast<ColliderFlags>(j["flags"]);
+	}
+	if (j.contains("data.forceLeft")) {
+		data.forceLeft = j["data.forceLeft"];
+		for (auto* c : m.convexShapes) {
+			c->forceLeft = data.forceLeft;
+		}
 	}
 
 	Component::Load(j, propagate);
