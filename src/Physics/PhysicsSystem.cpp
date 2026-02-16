@@ -361,6 +361,13 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 		}
 	}
 
+	for (auto* b : m.boxes) {
+		auto manifold = BoxBoxCollision(rb, b);
+		if (manifold.has_value()) {
+			BoxBoxResolution(rb, b, manifold.value());
+		}
+	}
+
 	// Final position integration
 	BoxIntegration(rb);
 }
