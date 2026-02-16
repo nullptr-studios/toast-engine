@@ -25,10 +25,10 @@ namespace resource {
 ///@brief Manager of every resource in the engine
 class ResourceManager {
 public:
-	static constexpr const char* kGenericFilePath = "editor/icons/genericFile.png";
-	static constexpr const char* kObjFilePath = "editor/icons/objFile.png";
-	static constexpr const char* kJsonFilePath = "editor/icons/jsonFile.png";
-	static constexpr const char* kFolderIconPath = "editor/icons/folder.png";
+	static constexpr const char* kGenericFilePath = "EDITOR/icons/genericFile.png";
+	static constexpr const char* kObjFilePath = "EDITOR/icons/objFile.png";
+	static constexpr const char* kJsonFilePath = "EDITOR/icons/jsonFile.png";
+	static constexpr const char* kFolderIconPath = "EDITOR/icons/folder.png";
 
 	/**
 	 * @brief Constructs the ResourceManager.
