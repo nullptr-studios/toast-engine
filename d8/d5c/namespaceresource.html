@@ -169,12 +169,6 @@ Functions</h2></td></tr>
 Variables</h2></td></tr>
 <tr class="memitem:a2fe3e5a411780a1a2574e04d21886515"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d1/dfb/classresource_1_1PackFile.html">PackFile</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d5c/namespaceresource.html#a2fe3e5a411780a1a2574e04d21886515">g_packFile</a></td></tr>
 <tr class="separator:a2fe3e5a411780a1a2574e04d21886515"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a891f5ac584df2d01deb1eecbc59e6764"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="../../d6/d97/classTexture.html">Texture</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d5c/namespaceresource.html#a891f5ac584df2d01deb1eecbc59e6764">g_fileIcon</a></td></tr>
-<tr class="separator:a891f5ac584df2d01deb1eecbc59e6764"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7cb9ce18b962c136af8b4a617df095d4"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="../../d6/d97/classTexture.html">Texture</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d5c/namespaceresource.html#a7cb9ce18b962c136af8b4a617df095d4">g_jsonIcon</a></td></tr>
-<tr class="separator:a7cb9ce18b962c136af8b4a617df095d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a60d495b7376b017b94a5f55435bd5c1e"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="../../d6/d97/classTexture.html">Texture</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d5c/namespaceresource.html#a60d495b7376b017b94a5f55435bd5c1e">g_objIcon</a></td></tr>
-<tr class="separator:a60d495b7376b017b94a5f55435bd5c1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
 <a id="a57b82542a4dc5e4b47a4a37b867f1e94" name="a57b82542a4dc5e4b47a4a37b867f1e94"></a>
@@ -361,7 +355,7 @@ template&lt;typename R , typename... Args&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00202">202</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00207">207</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 
 </div>
 </div>
@@ -400,10 +394,10 @@ template&lt;typename R , typename... Args&gt; </div>
 <dl class="section user"><dt>Example:</dt><dd><div class="fragment"><div class="line"><span class="keywordflow">if</span> (<span class="keyword">auto</span> contents = <a class="code hl_function" href="../../d8/d5c/namespaceresource.html#a5bb34b2d0a15fcd098fb0d19c9d1f917">resource::Open</a>(<span class="stringliteral">&quot;config.json&quot;</span>)) {</div>
 <div class="line">    <span class="keyword">auto</span> json = nlohmann::json::parse(*contents);</div>
 <div class="line">}</div>
-<div class="ttc" id="anamespaceresource_html_a5bb34b2d0a15fcd098fb0d19c9d1f917"><div class="ttname"><a href="../../d8/d5c/namespaceresource.html#a5bb34b2d0a15fcd098fb0d19c9d1f917">resource::Open</a></div><div class="ttdeci">auto Open(std::string &amp;path) -&gt; std::optional&lt; std::string &gt;</div><div class="ttdef"><b>Definition:</b> <a href="../../d8/d44/ResourceManager_8cpp_source.html#l00023">ResourceManager.cpp:23</a></div></div>
+<div class="ttc" id="anamespaceresource_html_a5bb34b2d0a15fcd098fb0d19c9d1f917"><div class="ttname"><a href="../../d8/d5c/namespaceresource.html#a5bb34b2d0a15fcd098fb0d19c9d1f917">resource::Open</a></div><div class="ttdeci">auto Open(std::string &amp;path) -&gt; std::optional&lt; std::string &gt;</div><div class="ttdef"><b>Definition:</b> <a href="../../d8/d44/ResourceManager_8cpp_source.html#l00019">ResourceManager.cpp:19</a></div></div>
 </div><!-- fragment --> </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00184">184</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00189">189</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 
 </div>
 </div>
@@ -441,7 +435,7 @@ template&lt;typename R , typename... Args&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00193">193</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00198">198</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 
 </div>
 </div>
@@ -479,7 +473,7 @@ template&lt;typename R , typename... Args&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00197">197</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00202">202</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 
 </div>
 </div>
@@ -499,7 +493,7 @@ template&lt;typename R , typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00023">23</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00019">19</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -559,7 +553,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00210">210</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00215">215</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -607,59 +601,11 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00206">206</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html#l00211">211</a> of file <a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">ResourceManager.hpp</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Variable Documentation</h2>
-<a id="a891f5ac584df2d01deb1eecbc59e6764" name="a891f5ac584df2d01deb1eecbc59e6764"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a891f5ac584df2d01deb1eecbc59e6764">&#9670;&#160;</a></span>g_fileIcon</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="../../d6/d97/classTexture.html">Texture</a>&gt; resource::g_fileIcon</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00019">19</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a7cb9ce18b962c136af8b4a617df095d4" name="a7cb9ce18b962c136af8b4a617df095d4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7cb9ce18b962c136af8b4a617df095d4">&#9670;&#160;</a></span>g_jsonIcon</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="../../d6/d97/classTexture.html">Texture</a>&gt; resource::g_jsonIcon</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00020">20</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a60d495b7376b017b94a5f55435bd5c1e" name="a60d495b7376b017b94a5f55435bd5c1e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a60d495b7376b017b94a5f55435bd5c1e">&#9670;&#160;</a></span>g_objIcon</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="../../d6/d97/classTexture.html">Texture</a>&gt; resource::g_objIcon</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00021">21</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
-
-</div>
-</div>
 <a id="a2fe3e5a411780a1a2574e04d21886515" name="a2fe3e5a411780a1a2574e04d21886515"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2fe3e5a411780a1a2574e04d21886515">&#9670;&#160;</a></span>g_packFile</h2>
 

@@ -14,7 +14,7 @@
 <area shape="rect" id="node32" href="$d8/d7b/classevent_1_1ListenerComponent.html#a84ac7af8b87e3ae70d8288f3ce113cce" title="Subscribes a function to a specific event." alt="" coords="1012,797,1207,837"/>
 <area shape="rect" id="node38" href="$d6/d41/classphysics_1_1Rigidbody.html#a4dfcd7de012b486a089892c43e77c0f0" title="Sync rigidbody position from transform." alt="" coords="1030,952,1189,992"/>
 <area shape="rect" id="node39" href="$d6/d41/classphysics_1_1Rigidbody.html#a03e9508170b42fb6e25ce25a90279b74" title="Update the visual transform using interpolated position (call from Tick/LateTick)" alt="" coords="763,967,946,1007"/>
-<area shape="rect" id="node3" href="$db/d71/classphysics_1_1Collider.html#a58a915c3632248838b76d97b92c567a9" title="Loads object state from JSON." alt="" coords="771,19,939,45"/>
+<area shape="rect" id="node3" href="$db/d71/classphysics_1_1Collider.html#a52f2eb7420c7743d41ea1e718a56aac7" title="This function runs just after the object is created (scene load thread)" alt="" coords="775,19,934,45"/>
 <area shape="rect" id="node5" href="$d0/dd9/classtoast_1_1TransformComponent.html#a2a7f731402488a3d3cb8155d28f9c066" title=" " alt="" coords="753,197,956,237"/>
 <area shape="rect" id="node13" href="$d0/dd9/classtoast_1_1TransformComponent.html#aab6cb058834c07e0124b167d6eeec44e" title=" " alt="" coords="753,133,956,173"/>
 <area shape="rect" id="node16" href="$d0/dd9/classtoast_1_1TransformComponent.html#affb082be9b9abdc317d0500b4955e236" title=" " alt="" coords="753,69,956,109"/>

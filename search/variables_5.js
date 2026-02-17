@@ -7,13 +7,15 @@ var searchData=
   ['filepath_4',['filePath',['../d6/d61/classaudio_1_1Data.html#a3a8e8fa05b301e5e60d111dc08af99ae',1,'audio::Data']]],
   ['files_5',['files',['../d0/d30/structevent_1_1WindowDrop.html#aa8565e91a6aebbe14755d87830dac3ab',1,'event::WindowDrop']]],
   ['filetableoffset_6',['fileTableOffset',['../d5/d79/structresource_1_1PackHeader.html#abf048c987d69af0027342986b9db9dfa',1,'resource::PackHeader']]],
-  ['flags_7',['flags',['../db/d71/classphysics_1_1Collider.html#aa74aaf447ac4e2c8d97d3e3404ed4285',1,'physics::Collider::flags()'],['../d5/ddb/structphysics_1_1ColliderData.html#a624ecf7e5c22508e859344254dc7fe63',1,'physics::ColliderData::flags()'],['../d6/d41/classphysics_1_1Rigidbody.html#ae833768540d886947197ca6e58bd9836',1,'physics::Rigidbody::flags()']]],
+  ['flags_7',['flags',['../db/d71/classphysics_1_1Collider.html#aa74aaf447ac4e2c8d97d3e3404ed4285',1,'physics::Collider::flags()'],['../d5/ddb/structphysics_1_1ColliderData.html#a624ecf7e5c22508e859344254dc7fe63',1,'physics::ColliderData::flags()'],['../d6/d41/classphysics_1_1Rigidbody.html#ae833768540d886947197ca6e58bd9836',1,'physics::Rigidbody::flags()'],['../d4/d9c/classphysics_1_1Trigger.html#a0c567ea8f2ef514d2f8727dbe3aad932',1,'physics::Trigger::flags()'],['../d5/dc6/structphysics_1_1Trigger_1_1M.html#a4fb48e83af18075e1bf7ceaae2a9ae68',1,'physics::Trigger::M::flags()']]],
   ['flags_5f_8',['flags_',['../d8/d19/classPackFile.html#a9ced5c9b0408753c6a933e86a68185ef',1,'PackFile']]],
   ['floatvalue_9',['floatValue',['../d7/d44/structSpineEvent.html#a88d1d48e252aee6b47ee54d2c3336d0c',1,'SpineEvent']]],
-  ['forces_10',['forces',['../d4/db0/classphysics_1_1BoxRigidbody.html#a296e8469f74ac49122d6911cd2f188b2',1,'physics::BoxRigidbody::forces()'],['../d6/d41/classphysics_1_1Rigidbody.html#a9e920ca6151b0380ce8a9d5916e51e07',1,'physics::Rigidbody::forces()']]],
-  ['forcesmutex_11',['forcesMutex',['../d6/d41/classphysics_1_1Rigidbody.html#a4b7edd63adea29176b56a32ffe2b5414',1,'physics::Rigidbody']]],
-  ['format_12',['format',['../d9/d89/structFramebuffer_1_1ColorSpec.html#a7b8acbfa6406813b60b3cc3d325e166d',1,'Framebuffer::ColorSpec']]],
-  ['forward_13',['forward',['../db/d5d/classaudio_1_1AudioSystem.html#ae27571db646a48184d4f71eda5c67e8f',1,'audio::AudioSystem']]],
-  ['freecount_14',['freeCount',['../d7/d98/structtoast_1_1memory_1_1BucketUsage.html#ab688cf1153153870ca319a7c5a7c57c6',1,'toast::memory::BucketUsage']]],
-  ['friction_15',['friction',['../d4/db0/classphysics_1_1BoxRigidbody.html#ae566ae919c8a5a1300528cb32e1ec449',1,'physics::BoxRigidbody::friction()'],['../d5/ddb/structphysics_1_1ColliderData.html#a275f262c7697066fd7d335def42b7d49',1,'physics::ColliderData::friction()'],['../d6/d41/classphysics_1_1Rigidbody.html#ae8a34da33c201273c5edd374dd5a4010',1,'physics::Rigidbody::friction()']]]
+  ['forceleft_10',['forceLeft',['../d5/ddb/structphysics_1_1ColliderData.html#a6a81f6112165a9133f1a45d710958878',1,'physics::ColliderData']]],
+  ['forces_11',['forces',['../d4/db0/classphysics_1_1BoxRigidbody.html#a296e8469f74ac49122d6911cd2f188b2',1,'physics::BoxRigidbody::forces()'],['../d6/d41/classphysics_1_1Rigidbody.html#a9e920ca6151b0380ce8a9d5916e51e07',1,'physics::Rigidbody::forces()']]],
+  ['forcesmutex_12',['forcesMutex',['../d6/d41/classphysics_1_1Rigidbody.html#a4b7edd63adea29176b56a32ffe2b5414',1,'physics::Rigidbody']]],
+  ['format_13',['format',['../d9/d89/structFramebuffer_1_1ColorSpec.html#a7b8acbfa6406813b60b3cc3d325e166d',1,'Framebuffer::ColorSpec']]],
+  ['forward_14',['forward',['../db/d5d/classaudio_1_1AudioSystem.html#ae27571db646a48184d4f71eda5c67e8f',1,'audio::AudioSystem']]],
+  ['free_5fobjects_15',['free_objects',['../d5/d0b/classPool.html#a79a6b238e27bd00b2fb8d23dcb7f9cd9',1,'Pool']]],
+  ['freecount_16',['freeCount',['../d7/d98/structtoast_1_1memory_1_1BucketUsage.html#ab688cf1153153870ca319a7c5a7c57c6',1,'toast::memory::BucketUsage']]],
+  ['friction_17',['friction',['../d4/db0/classphysics_1_1BoxRigidbody.html#ae566ae919c8a5a1300528cb32e1ec449',1,'physics::BoxRigidbody::friction()'],['../d5/ddb/structphysics_1_1ColliderData.html#a275f262c7697066fd7d335def42b7d49',1,'physics::ColliderData::friction()'],['../d6/d41/classphysics_1_1Rigidbody.html#ae8a34da33c201273c5edd374dd5a4010',1,'physics::Rigidbody::friction()']]]
 ];

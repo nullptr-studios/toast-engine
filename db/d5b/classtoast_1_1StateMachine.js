@@ -1,11 +1,13 @@
 var classtoast_1_1StateMachine =
 [
-    [ "StateMachine", "db/d5b/classtoast_1_1StateMachine.html#ae07810d34ad587daaf836a9567a60eea", null ],
-    [ "AddState", "db/d5b/classtoast_1_1StateMachine.html#a97bded52b006303832423c1b3e7bd998", null ],
-    [ "GetCurrentState", "db/d5b/classtoast_1_1StateMachine.html#ab735216c9aa60eaf2f1f5693d886c80c", null ],
-    [ "SetState", "db/d5b/classtoast_1_1StateMachine.html#a045b9188e834ff9b2ef3517c35548a8e", null ],
-    [ "Tick", "db/d5b/classtoast_1_1StateMachine.html#aeb2207b6711b578f83e8f405178ce078", null ],
-    [ "currentState", "db/d5b/classtoast_1_1StateMachine.html#a589dfa9bf914f61f245374e0f8a32c47", null ],
-    [ "m", "db/d5b/classtoast_1_1StateMachine.html#a76e0249d99c0352aaf9779256d573af7", null ],
-    [ "states", "db/d5b/classtoast_1_1StateMachine.html#ad4bc95f96884b63de32004f531ffb900", null ]
+    [ "StateMachine", "db/d5b/classtoast_1_1StateMachine.html#ad2a8793fdfaa6e84c4642c928d76a82a", null ],
+    [ "AddState", "db/d5b/classtoast_1_1StateMachine.html#ab7e9071c38b8d2b8e588e3135b6ed98b", null ],
+    [ "GetCurrentState", "db/d5b/classtoast_1_1StateMachine.html#a2d9d0687395512655562a57b76296a24", null ],
+    [ "SetParent", "db/d5b/classtoast_1_1StateMachine.html#a01195667c64a5c85153eb34af615ca73", null ],
+    [ "SetState", "db/d5b/classtoast_1_1StateMachine.html#a35bfd5aa524226b0cbb1a5a3f47f9139", null ],
+    [ "Tick", "db/d5b/classtoast_1_1StateMachine.html#a47e764795ad3459687900e5499ff317b", null ],
+    [ "currentState", "db/d5b/classtoast_1_1StateMachine.html#a1a62da1cbd4b4d773230573dae4646eb", null ],
+    [ "m", "db/d5b/classtoast_1_1StateMachine.html#a30ee203bdaf22ef6f6c0edbcb450e601", null ],
+    [ "parent", "db/d5b/classtoast_1_1StateMachine.html#a933f79cc090584d9a8fba25461aafdb1", null ],
+    [ "states", "db/d5b/classtoast_1_1StateMachine.html#ad332ab1ec67874c91780e18d01bb97ee", null ]
 ];

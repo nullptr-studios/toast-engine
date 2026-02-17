@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.6"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Toast Engine: toast::State Struct Reference</title>
+<title>Toast Engine: toast::State&lt; T &gt; Struct Template Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -93,9 +93,10 @@ $(document).ready(function(){initNavTree('d8/d9c/structtoast_1_1State.html','../
 
 <div class="header">
   <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../de/d47/structtoast_1_1State-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">toast::State Struct Reference</div></div>
+  <div class="headertitle"><div class="title">toast::State&lt; T &gt; Struct Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 
@@ -104,71 +105,135 @@ $(document).ready(function(){initNavTree('d8/d9c/structtoast_1_1State.html','../
 
 <p><code>#include &lt;<a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a2fd7d1ac0283ff3c430f7b18c81f76e5"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d9c/structtoast_1_1State.html#a2fd7d1ac0283ff3c430f7b18c81f76e5">OnBegin</a> ()</td></tr>
+<tr class="separator:a2fd7d1ac0283ff3c430f7b18c81f76e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a55ac878c56a022fc274b89ca76db17fb"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d9c/structtoast_1_1State.html#a55ac878c56a022fc274b89ca76db17fb">OnTick</a> ()</td></tr>
+<tr class="separator:a55ac878c56a022fc274b89ca76db17fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1f9e39a9e4136da1bee7242b6d85969"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d9c/structtoast_1_1State.html#ad1f9e39a9e4136da1bee7242b6d85969">OnExit</a> ()</td></tr>
+<tr class="separator:ad1f9e39a9e4136da1bee7242b6d85969"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a9712b3de3137ae71f7a2a134bab46a0b"><td class="memItemLeft" align="right" valign="top">std::function&lt; void()&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d9c/structtoast_1_1State.html#a9712b3de3137ae71f7a2a134bab46a0b">onBegin</a></td></tr>
-<tr class="separator:a9712b3de3137ae71f7a2a134bab46a0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a439a87057b512b886cdca4976169574d"><td class="memItemLeft" align="right" valign="top">std::function&lt; void()&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d9c/structtoast_1_1State.html#a439a87057b512b886cdca4976169574d">onTick</a></td></tr>
-<tr class="separator:a439a87057b512b886cdca4976169574d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aee50a8c1681e3ba21a224e51ab98d478"><td class="memItemLeft" align="right" valign="top">std::function&lt; void()&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d9c/structtoast_1_1State.html#aee50a8c1681e3ba21a224e51ab98d478">onExit</a></td></tr>
-<tr class="separator:aee50a8c1681e3ba21a224e51ab98d478"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abbef405469a75a0244fcf8990afaef47"><td class="memItemLeft" align="right" valign="top">T *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d9c/structtoast_1_1State.html#abbef405469a75a0244fcf8990afaef47">parent</a> = nullptr</td></tr>
+<tr class="separator:abbef405469a75a0244fcf8990afaef47"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Represents a single state in the finite state machine. </p>
+<div class="textblock"><div class="compoundTemplParams">template&lt;typename T&gt;<br />
+struct toast::State&lt; T &gt;</div><p>Represents a single state in the finite state machine. </p>
 <p>Each function is optional, if it's empty, nothing happens.</p><ul>
-<li><a class="el" href="../../d8/d9c/structtoast_1_1State.html#a9712b3de3137ae71f7a2a134bab46a0b">onBegin()</a>: called once as soon as the state becomes active.</li>
-<li><a class="el" href="../../d8/d9c/structtoast_1_1State.html#a439a87057b512b886cdca4976169574d">onTick()</a>: called every frame while the state is active.</li>
-<li><a class="el" href="../../d8/d9c/structtoast_1_1State.html#aee50a8c1681e3ba21a224e51ab98d478">onExit()</a>: called just before switching to the next state.</li>
+<li>onBegin(): called once as soon as the state becomes active.</li>
+<li>onTick(): called every frame while the state is active.</li>
+<li>onExit(): called just before switching to the next state.</li>
 </ul>
 <p>These use std::function so that you can assign lambdas or normal functions. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00027">27</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
-</div><h2 class="groupheader">Member Data Documentation</h2>
-<a id="a9712b3de3137ae71f7a2a134bab46a0b" name="a9712b3de3137ae71f7a2a134bab46a0b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9712b3de3137ae71f7a2a134bab46a0b">&#9670;&#160;</a></span>onBegin</h2>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00028">28</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a2fd7d1ac0283ff3c430f7b18c81f76e5" name="a2fd7d1ac0283ff3c430f7b18c81f76e5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2fd7d1ac0283ff3c430f7b18c81f76e5">&#9670;&#160;</a></span>OnBegin()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::function&lt;void()&gt; toast::State::onBegin</td>
+          <td class="memname">virtual void <a class="el" href="../../d8/d9c/structtoast_1_1State.html">toast::State</a>&lt; T &gt;::OnBegin </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00028">28</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00029">29</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 
 </div>
 </div>
-<a id="aee50a8c1681e3ba21a224e51ab98d478" name="aee50a8c1681e3ba21a224e51ab98d478"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aee50a8c1681e3ba21a224e51ab98d478">&#9670;&#160;</a></span>onExit</h2>
+<a id="ad1f9e39a9e4136da1bee7242b6d85969" name="ad1f9e39a9e4136da1bee7242b6d85969"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad1f9e39a9e4136da1bee7242b6d85969">&#9670;&#160;</a></span>OnExit()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::function&lt;void()&gt; toast::State::onExit</td>
+          <td class="memname">virtual void <a class="el" href="../../d8/d9c/structtoast_1_1State.html">toast::State</a>&lt; T &gt;::OnExit </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00031">31</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a55ac878c56a022fc274b89ca76db17fb" name="a55ac878c56a022fc274b89ca76db17fb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a55ac878c56a022fc274b89ca76db17fb">&#9670;&#160;</a></span>OnTick()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void <a class="el" href="../../d8/d9c/structtoast_1_1State.html">toast::State</a>&lt; T &gt;::OnTick </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00030">30</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 
 </div>
 </div>
-<a id="a439a87057b512b886cdca4976169574d" name="a439a87057b512b886cdca4976169574d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a439a87057b512b886cdca4976169574d">&#9670;&#160;</a></span>onTick</h2>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="abbef405469a75a0244fcf8990afaef47" name="abbef405469a75a0244fcf8990afaef47"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abbef405469a75a0244fcf8990afaef47">&#9670;&#160;</a></span>parent</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">std::function&lt;void()&gt; toast::State::onTick</td>
+          <td class="memname">T* <a class="el" href="../../d8/d9c/structtoast_1_1State.html">toast::State</a>&lt; T &gt;::parent = nullptr</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00029">29</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00033">33</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 
 </div>
 </div>

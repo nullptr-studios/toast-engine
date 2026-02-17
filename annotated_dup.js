@@ -132,6 +132,7 @@ var annotated_dup =
     [ "PackFile", "d8/d19/classPackFile.html", "d8/d19/classPackFile" ],
     [ "PackHeader", "d6/d09/structPackHeader.html", "d6/d09/structPackHeader" ],
     [ "PlayerController", "d4/da8/classinput_1_1PlayerController.html", null ],
+    [ "Pool", "d5/d0b/classPool.html", "d5/d0b/classPool" ],
     [ "ResourceHandler", "d9/dc4/structResourceHandler.html", "d9/dc4/structResourceHandler" ],
     [ "SpineAtlas", "d6/daf/classSpineAtlas.html", "d6/daf/classSpineAtlas" ],
     [ "SpineEvent", "d7/d44/structSpineEvent.html", "d7/d44/structSpineEvent" ],

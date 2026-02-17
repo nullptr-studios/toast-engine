@@ -126,8 +126,8 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a2df46b0f25cadefecc06a39c83e9169d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a2df46b0f25cadefecc06a39c83e9169d">REGISTER_ABSTRACT</a> (<a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html">Trigger</a>)</td></tr>
-<tr class="separator:a2df46b0f25cadefecc06a39c83e9169d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe51eea1c4b364b86274d715899cdb09"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#abe51eea1c4b364b86274d715899cdb09">REGISTER_TYPE</a> (<a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html">Trigger</a>)</td></tr>
+<tr class="separator:abe51eea1c4b364b86274d715899cdb09"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abaac0ac8d67fd603c193a1bf8b0724e5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#abaac0ac8d67fd603c193a1bf8b0724e5">Save</a> () const override</td></tr>
 <tr class="memdesc:abaac0ac8d67fd603c193a1bf8b0724e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:abaac0ac8d67fd603c193a1bf8b0724e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -147,6 +147,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a4ec9243aa75b9c1b12f9f077527befd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac097f32b3a318c1482d47355f5416412"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#ac097f32b3a318c1482d47355f5416412">OnExit</a> (<a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a> *)</td></tr>
 <tr class="separator:ac097f32b3a318c1482d47355f5416412"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ee92c5f882d8389c8128dbacd9ec48d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a0ee92c5f882d8389c8128dbacd9ec48d">AddFlag</a> (<a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6">ColliderFlags</a> flag)</td></tr>
+<tr class="separator:a0ee92c5f882d8389c8128dbacd9ec48d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a468d0adb6df68943341bbebe30a9f776"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a468d0adb6df68943341bbebe30a9f776">RemoveFlag</a> (<a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6">ColliderFlags</a> flag)</td></tr>
+<tr class="separator:a468d0adb6df68943341bbebe30a9f776"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1Actor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classtoast_1_1Actor')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d8/d92/classtoast_1_1Actor.html">toast::Actor</a></td></tr>
 <tr class="memitem:a8b646727d72f463ad8fe80b96a6eb514 inherit pub_methods_classtoast_1_1Actor"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d92/classtoast_1_1Actor.html#a8b646727d72f463ad8fe80b96a6eb514">REGISTER_TYPE</a> (<a class="el" href="../../d8/d92/classtoast_1_1Actor.html">Actor</a>)</td></tr>
 <tr class="separator:a8b646727d72f463ad8fe80b96a6eb514 inherit pub_methods_classtoast_1_1Actor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -239,25 +243,28 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:ab8b93ad31bc392146b3996eb4f33c223"><td class="memItemLeft" align="right" valign="top">std::list&lt; <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html">Rigidbody</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#ab8b93ad31bc392146b3996eb4f33c223">rigidbodies</a></td></tr>
-<tr class="separator:ab8b93ad31bc392146b3996eb4f33c223"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0c567ea8f2ef514d2f8727dbe3aad932"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6">ColliderFlags</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a0c567ea8f2ef514d2f8727dbe3aad932">flags</a> = m.flags</td></tr>
+<tr class="separator:a0c567ea8f2ef514d2f8727dbe3aad932"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0058a12dc3c426037fb1bdbfa1b650b1"><td class="memItemLeft" align="right" valign="top">std::function&lt; void(<a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a> *)&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a0058a12dc3c426037fb1bdbfa1b650b1">enterCallback</a></td></tr>
 <tr class="separator:a0058a12dc3c426037fb1bdbfa1b650b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab9296f75913a9c3d92cb353ff8a19002"><td class="memItemLeft" align="right" valign="top">std::function&lt; void(<a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a> *)&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#ab9296f75913a9c3d92cb353ff8a19002">exitCallback</a></td></tr>
 <tr class="separator:ab9296f75913a9c3d92cb353ff8a19002"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8b93ad31bc392146b3996eb4f33c223"><td class="memItemLeft" align="right" valign="top">std::list&lt; <a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html">Rigidbody</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#ab8b93ad31bc392146b3996eb4f33c223">rigidbodies</a></td></tr>
+<tr class="memdesc:ab8b93ad31bc392146b3996eb4f33c223"><td class="mdescLeft">&#160;</td><td class="mdescRight">Used to avoid a rigidbody triggering twice.  <br /></td></tr>
+<tr class="separator:ab8b93ad31bc392146b3996eb4f33c223"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6fe24246c94154e57236faa0d4d6cdf4"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="../../d5/dc6/structphysics_1_1Trigger_1_1M.html">physics::Trigger::M</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a6fe24246c94154e57236faa0d4d6cdf4">m</a></td></tr>
 <tr class="separator:a6fe24246c94154e57236faa0d4d6cdf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8b948dd6165b2f358d6e43d8e46459f2"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:a5446ddbe14abd5396ef31995a799023a"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a4d000c36d8c49fb4daec4cf8838555bd">draw</a> = true</td></tr>
-<tr class="separator:a5446ddbe14abd5396ef31995a799023a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab613c0b07a711c6ac02c261a462fb874"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a6fb36f90404615d73072d2b983dbb9d5">log</a> = false</td></tr>
-<tr class="separator:ab613c0b07a711c6ac02c261a462fb874"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a28542055bf3320d8abc314ae0cf5f8be"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec4&#160;&#160;&#160;<a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a9629bad053db913881c4f070ca95be94">defaultColor</a> = { 0.0f, 1.0f, 1.0f, 0.5f }</td></tr>
-<tr class="separator:a28542055bf3320d8abc314ae0cf5f8be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5054643e63d33707cd400a698b0933d3"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec4&#160;&#160;&#160;<a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#aa12c8dacf9d5c9e4c936608ebbe256f3">collideColor</a> = { 1.0f, 0.0f, 0.0f, 0.5f }</td></tr>
-<tr class="separator:a5054643e63d33707cd400a698b0933d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8b948dd6165b2f358d6e43d8e46459f2"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a8b948dd6165b2f358d6e43d8e46459f2">debug</a></td></tr>
-<tr class="separator:a8b948dd6165b2f358d6e43d8e46459f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84ac410acc75ec536a19955fdc1e4dea"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:ad32b22db005f15870cc8156baf781d8e"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a4d000c36d8c49fb4daec4cf8838555bd">draw</a> = true</td></tr>
+<tr class="separator:ad32b22db005f15870cc8156baf781d8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae46e7501ddeb19ef952fe06e01c57ab2"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a6fb36f90404615d73072d2b983dbb9d5">log</a> = false</td></tr>
+<tr class="separator:ae46e7501ddeb19ef952fe06e01c57ab2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1b5b9edce65918d805d9372f5947b97"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec4&#160;&#160;&#160;<a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a9629bad053db913881c4f070ca95be94">defaultColor</a> = { 0.0f, 1.0f, 1.0f, 0.5f }</td></tr>
+<tr class="separator:ad1b5b9edce65918d805d9372f5947b97"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0b11bd07c96b11fe930d971c63011802"><td class="memItemLeft" >&#160;&#160;&#160;glm::vec4&#160;&#160;&#160;<a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#aa12c8dacf9d5c9e4c936608ebbe256f3">collideColor</a> = { 1.0f, 0.0f, 0.0f, 0.5f }</td></tr>
+<tr class="separator:a0b11bd07c96b11fe930d971c63011802"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84ac410acc75ec536a19955fdc1e4dea"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a84ac410acc75ec536a19955fdc1e4dea">debug</a></td></tr>
+<tr class="separator:a84ac410acc75ec536a19955fdc1e4dea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_classtoast_1_1Object"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_classtoast_1_1Object')"><img src="../../closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a></td></tr>
 <tr class="memitem:adf6362bc2273177668430a2cd9500806 inherit pub_attribs_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d87/classChildren.html">Children</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#adf6362bc2273177668430a2cd9500806">children</a></td></tr>
 <tr class="separator:adf6362bc2273177668430a2cd9500806 inherit pub_attribs_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -334,8 +341,28 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00018">18</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00020">20</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a0ee92c5f882d8389c8128dbacd9ec48d" name="a0ee92c5f882d8389c8128dbacd9ec48d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ee92c5f882d8389c8128dbacd9ec48d">&#9670;&#160;</a></span>AddFlag()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void physics::Trigger::AddFlag </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6">ColliderFlags</a>&#160;</td>
+          <td class="paramname"><em>flag</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../db/d9a/Trigger_8cpp_source.html#l00056">56</a> of file <a class="el" href="../../db/d9a/Trigger_8cpp_source.html">Trigger.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a7bdc2533c9899d4491acfb96b2b79904" name="a7bdc2533c9899d4491acfb96b2b79904"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7bdc2533c9899d4491acfb96b2b79904">&#9670;&#160;</a></span>Begin()</h2>
 
@@ -425,7 +452,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#af7bc7c97913fe1b7727349cfd40b9271">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d9a/Trigger_8cpp_source.html#l00056">56</a> of file <a class="el" href="../../db/d9a/Trigger_8cpp_source.html">Trigger.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d9a/Trigger_8cpp_source.html#l00066">66</a> of file <a class="el" href="../../db/d9a/Trigger_8cpp_source.html">Trigger.cpp</a>.</p>
 
 </div>
 </div>
@@ -503,7 +530,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00034">34</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00032">32</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -540,7 +567,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00036">36</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00034">34</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -553,14 +580,14 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a2df46b0f25cadefecc06a39c83e9169d" name="a2df46b0f25cadefecc06a39c83e9169d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2df46b0f25cadefecc06a39c83e9169d">&#9670;&#160;</a></span>REGISTER_ABSTRACT()</h2>
+<a id="abe51eea1c4b364b86274d715899cdb09" name="abe51eea1c4b364b86274d715899cdb09"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe51eea1c4b364b86274d715899cdb09">&#9670;&#160;</a></span>REGISTER_TYPE()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">physics::Trigger::REGISTER_ABSTRACT </td>
+          <td class="memname">physics::Trigger::REGISTER_TYPE </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html">Trigger</a>&#160;</td>
           <td class="paramname"></td><td>)</td>
@@ -568,6 +595,26 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="a468d0adb6df68943341bbebe30a9f776" name="a468d0adb6df68943341bbebe30a9f776"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a468d0adb6df68943341bbebe30a9f776">&#9670;&#160;</a></span>RemoveFlag()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void physics::Trigger::RemoveFlag </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6">ColliderFlags</a>&#160;</td>
+          <td class="paramname"><em>flag</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../db/d9a/Trigger_8cpp_source.html#l00062">62</a> of file <a class="el" href="../../db/d9a/Trigger_8cpp_source.html">Trigger.cpp</a>.</p>
 
 </div>
 </div>
@@ -617,12 +664,12 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00046">46</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00055">55</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
 
 </div>
 </div>
-<a id="a8b948dd6165b2f358d6e43d8e46459f2" name="a8b948dd6165b2f358d6e43d8e46459f2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8b948dd6165b2f358d6e43d8e46459f2">&#9670;&#160;</a></span></h2>
+<a id="a84ac410acc75ec536a19955fdc1e4dea" name="a84ac410acc75ec536a19955fdc1e4dea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a84ac410acc75ec536a19955fdc1e4dea">&#9670;&#160;</a></span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -647,7 +694,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00045">45</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00054">54</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
 
 </div>
 </div>
@@ -663,7 +710,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00043">43</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00052">52</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
 
 </div>
 </div>
@@ -679,7 +726,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00031">31</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00042">42</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
 
 </div>
 </div>
@@ -695,7 +742,23 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00032">32</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00043">43</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a0c567ea8f2ef514d2f8727dbe3aad932" name="a0c567ea8f2ef514d2f8727dbe3aad932"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0c567ea8f2ef514d2f8727dbe3aad932">&#9670;&#160;</a></span>flags</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const <a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6">ColliderFlags</a>&amp; physics::Trigger::flags = m.flags</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00038">38</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
 
 </div>
 </div>
@@ -711,7 +774,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00044">44</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00053">53</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
 
 </div>
 </div>
@@ -741,7 +804,9 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00030">30</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
+<p>Used to avoid a rigidbody triggering twice. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d29/Trigger_8hpp_source.html#l00044">44</a> of file <a class="el" href="../../d2/d29/Trigger_8hpp_source.html">Trigger.hpp</a>.</p>
 
 </div>
 </div>

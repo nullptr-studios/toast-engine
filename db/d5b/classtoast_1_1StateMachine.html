@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.6"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Toast Engine: toast::StateMachine Class Reference</title>
+<title>Toast Engine: toast::StateMachine&lt; T &gt; Class Template Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -96,7 +96,7 @@ $(document).ready(function(){initNavTree('db/d5b/classtoast_1_1StateMachine.html
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="../../de/d10/classtoast_1_1StateMachine-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">toast::StateMachine Class Reference</div></div>
+  <div class="headertitle"><div class="title">toast::StateMachine&lt; T &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 
@@ -107,29 +107,34 @@ $(document).ready(function(){initNavTree('db/d5b/classtoast_1_1StateMachine.html
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae07810d34ad587daaf836a9567a60eea"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#ae07810d34ad587daaf836a9567a60eea">StateMachine</a> ()</td></tr>
-<tr class="separator:ae07810d34ad587daaf836a9567a60eea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a97bded52b006303832423c1b3e7bd998"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a97bded52b006303832423c1b3e7bd998">AddState</a> (const std::string &amp;name, <a class="el" href="../../d8/d9c/structtoast_1_1State.html">State</a> &amp;&amp;state)</td></tr>
-<tr class="separator:a97bded52b006303832423c1b3e7bd998"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a045b9188e834ff9b2ef3517c35548a8e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a045b9188e834ff9b2ef3517c35548a8e">SetState</a> (const std::string &amp;name)</td></tr>
-<tr class="separator:a045b9188e834ff9b2ef3517c35548a8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeb2207b6711b578f83e8f405178ce078"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#aeb2207b6711b578f83e8f405178ce078">Tick</a> ()</td></tr>
-<tr class="separator:aeb2207b6711b578f83e8f405178ce078"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab735216c9aa60eaf2f1f5693d886c80c"><td class="memItemLeft" align="right" valign="top">const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#ab735216c9aa60eaf2f1f5693d886c80c">GetCurrentState</a> () const</td></tr>
-<tr class="separator:ab735216c9aa60eaf2f1f5693d886c80c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2a8793fdfaa6e84c4642c928d76a82a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#ad2a8793fdfaa6e84c4642c928d76a82a">StateMachine</a> ()=default</td></tr>
+<tr class="separator:ad2a8793fdfaa6e84c4642c928d76a82a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a01195667c64a5c85153eb34af615ca73"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a01195667c64a5c85153eb34af615ca73">SetParent</a> (T *<a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a933f79cc090584d9a8fba25461aafdb1">parent</a>)</td></tr>
+<tr class="separator:a01195667c64a5c85153eb34af615ca73"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab7e9071c38b8d2b8e588e3135b6ed98b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#ab7e9071c38b8d2b8e588e3135b6ed98b">AddState</a> (const std::string &amp;name, <a class="el" href="../../d8/d9c/structtoast_1_1State.html">State</a>&lt; T &gt; *state)</td></tr>
+<tr class="separator:ab7e9071c38b8d2b8e588e3135b6ed98b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35bfd5aa524226b0cbb1a5a3f47f9139"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a35bfd5aa524226b0cbb1a5a3f47f9139">SetState</a> (const std::string &amp;name)</td></tr>
+<tr class="separator:a35bfd5aa524226b0cbb1a5a3f47f9139"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47e764795ad3459687900e5499ff317b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a47e764795ad3459687900e5499ff317b">Tick</a> ()</td></tr>
+<tr class="separator:a47e764795ad3459687900e5499ff317b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d9d0687395512655562a57b76296a24"><td class="memItemLeft" align="right" valign="top">const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a2d9d0687395512655562a57b76296a24">GetCurrentState</a> () const</td></tr>
+<tr class="separator:a2d9d0687395512655562a57b76296a24"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:a76e0249d99c0352aaf9779256d573af7"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:a17c857e65dbc145ceb8f2e9dc0cb6eab"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; std::string, <a class="el" href="../../d8/d9c/structtoast_1_1State.html">State</a> &gt;&#160;&#160;&#160;<a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#ad4bc95f96884b63de32004f531ffb900">states</a></td></tr>
-<tr class="separator:a17c857e65dbc145ceb8f2e9dc0cb6eab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae85eee3ef01e1f9b2caff0db4a1e9a2d"><td class="memItemLeft" >&#160;&#160;&#160;std::string&#160;&#160;&#160;<a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a589dfa9bf914f61f245374e0f8a32c47">currentState</a></td></tr>
-<tr class="separator:ae85eee3ef01e1f9b2caff0db4a1e9a2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a76e0249d99c0352aaf9779256d573af7"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a76e0249d99c0352aaf9779256d573af7">m</a></td></tr>
-<tr class="separator:a76e0249d99c0352aaf9779256d573af7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a30ee203bdaf22ef6f6c0edbcb450e601"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:a3529a23a0fb16632f1e370c462e30f65"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; std::string, <a class="el" href="../../d8/d9c/structtoast_1_1State.html">State</a>&lt; T &gt; * &gt;&#160;&#160;&#160;<a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#ad332ab1ec67874c91780e18d01bb97ee">states</a></td></tr>
+<tr class="separator:a3529a23a0fb16632f1e370c462e30f65"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68e575af50e141bac0d4d83c02cbe17b"><td class="memItemLeft" >&#160;&#160;&#160;std::string&#160;&#160;&#160;<a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a1a62da1cbd4b4d773230573dae4646eb">currentState</a></td></tr>
+<tr class="separator:a68e575af50e141bac0d4d83c02cbe17b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe47083c1959a50ab4a70404507ccede"><td class="memItemLeft" >&#160;&#160;&#160;T *&#160;&#160;&#160;<a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a933f79cc090584d9a8fba25461aafdb1">parent</a> = nullptr</td></tr>
+<tr class="separator:afe47083c1959a50ab4a70404507ccede"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a30ee203bdaf22ef6f6c0edbcb450e601"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a30ee203bdaf22ef6f6c0edbcb450e601">m</a></td></tr>
+<tr class="separator:a30ee203bdaf22ef6f6c0edbcb450e601"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A finite state machine using string identifiers. </p>
+<div class="textblock"><div class="compoundTemplParams">template&lt;typename T&gt;<br />
+class toast::StateMachine&lt; T &gt;</div><p>A finite state machine using string identifiers. </p>
 <p>Simple Finite <a class="el" href="../../d8/d9c/structtoast_1_1State.html" title="Represents a single state in the finite state machine.">State</a> Machine for managing named logic states.</p>
 <p>The <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html" title="A finite state machine using string identifiers.">StateMachine</a> class stores a collection of named states and also manages transitions between them. Each state can define OnEnter, OnUpdate, and OnExit functions. The machine calls OnExit() on the old state before switching, and OnEnter() on the new one.</p>
 <p>The <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html" title="A finite state machine using string identifiers.">StateMachine</a> provides an easy way to organize and control gameplay and anim logic, allowing objects such as players, enemies, or AI agents to move between discrete behaviors (e.g., "Idle", "Run", "InAir" etc.)</p>
@@ -140,17 +145,17 @@ Private Attributes</h2></td></tr>
 </ul>
 <p>Internally, states are stored in an unordered map (<code>std::unordered_map&lt;std::string, <a class="el" href="../../d8/d9c/structtoast_1_1State.html" title="Represents a single state in the finite state machine.">State</a>&gt;</code>) and identified by a unique string name.</p>
 <hr  />
-<h3><a class="anchor" id="autotoc_md11"></a>
+<h3><a class="anchor" id="autotoc_md14"></a>
 How to use</h3>
 <ol type="1">
 <li>First you will need too Create an instance of <code><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html" title="A finite state machine using string identifiers.">toast::StateMachine</a></code></li>
 <li>Then define your states using <code><a class="el" href="../../d8/d9c/structtoast_1_1State.html" title="Represents a single state in the finite state machine.">toast::State</a></code> objects.</li>
 <li>Add them to the state machine with <code>AddState("StateName", state)</code></li>
 <li>Switch between states using the <code>SetState("Name")</code> function</li>
-<li>Call <code><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#aeb2207b6711b578f83e8f405178ce078">Tick()</a></code> each frame to run the current state's logic on update</li>
+<li>Call <code><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a47e764795ad3459687900e5499ff317b">Tick()</a></code> each frame to run the current state's logic on update</li>
 </ol>
 <hr  />
-<h3><a class="anchor" id="autotoc_md13"></a>
+<h3><a class="anchor" id="autotoc_md16"></a>
 Example</h3>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="../../d6/dd7/StateMachine_8hpp.html">Toast/StateMachine.hpp</a>&gt;</span></div>
 <div class="line"><span class="preprocessor">#include &lt;iostream&gt;</span></div>
@@ -161,14 +166,14 @@ Example</h3>
 <div class="line">    <a class="code hl_enumvalue" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a636da1d35e805b00eae0fcd8333f9234">Player</a>()</div>
 <div class="line">    {</div>
 <div class="line">        <a class="code hl_struct" href="../../d8/d9c/structtoast_1_1State.html">toast::State</a> idle;</div>
-<div class="line">        idle.<a class="code hl_variable" href="../../d8/d9c/structtoast_1_1State.html#a9712b3de3137ae71f7a2a134bab46a0b">onBegin</a> = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;I AM IDLE NOW T\n&quot;</span>; };</div>
-<div class="line">        idle.<a class="code hl_variable" href="../../d8/d9c/structtoast_1_1State.html#a439a87057b512b886cdca4976169574d">onTick</a> = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;I am just Idling... &quot;</span> &lt;&lt; Time::Delta() &lt;&lt; <span class="stringliteral">&quot;\n&quot;</span>; };</div>
-<div class="line">        idle.<a class="code hl_variable" href="../../d8/d9c/structtoast_1_1State.html#aee50a8c1681e3ba21a224e51ab98d478">onExit</a> = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;I don&#39;t want to be Idle anymore\n&quot;</span>; };</div>
+<div class="line">        idle.onBegin = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;I AM IDLE NOW T\n&quot;</span>; };</div>
+<div class="line">        idle.onTick = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;I am just Idling... &quot;</span> &lt;&lt; Time::Delta() &lt;&lt; <span class="stringliteral">&quot;\n&quot;</span>; };</div>
+<div class="line">        idle.onExit = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;I don&#39;t want to be Idle anymore\n&quot;</span>; };</div>
 <div class="line"> </div>
 <div class="line">        <a class="code hl_struct" href="../../d8/d9c/structtoast_1_1State.html">toast::State</a> run;</div>
-<div class="line">        run.<a class="code hl_variable" href="../../d8/d9c/structtoast_1_1State.html#a9712b3de3137ae71f7a2a134bab46a0b">onBegin</a> = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;Start Running\n&quot;</span>; };</div>
-<div class="line">        run.<a class="code hl_variable" href="../../d8/d9c/structtoast_1_1State.html#a439a87057b512b886cdca4976169574d">onTick</a> = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;Running... &quot;</span> &lt;&lt; Time::Delta() &lt;&lt; <span class="stringliteral">&quot;\n&quot;</span>; };</div>
-<div class="line">        run.<a class="code hl_variable" href="../../d8/d9c/structtoast_1_1State.html#aee50a8c1681e3ba21a224e51ab98d478">onExit</a> = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;Stop Running\n&quot;</span>; };</div>
+<div class="line">        run.onBegin = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;Start Running\n&quot;</span>; };</div>
+<div class="line">        run.onTick = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;Running... &quot;</span> &lt;&lt; Time::Delta() &lt;&lt; <span class="stringliteral">&quot;\n&quot;</span>; };</div>
+<div class="line">        run.onExit = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;Stop Running\n&quot;</span>; };</div>
 <div class="line"> </div>
 <div class="line">        m_fsm.AddState(<span class="stringliteral">&quot;Idle&quot;</span>, idle);</div>
 <div class="line">        m_fsm.AddState(<span class="stringliteral">&quot;Run&quot;</span>, run);</div>
@@ -190,13 +195,10 @@ Example</h3>
 <div class="line">};</div>
 <div class="ttc" id="aColliderFlags_8hpp_html_ab24e00ae3493fd723980767febb345c6a636da1d35e805b00eae0fcd8333f9234"><div class="ttname"><a href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a636da1d35e805b00eae0fcd8333f9234">ColliderFlags::Player</a></div><div class="ttdeci">@ Player</div></div>
 <div class="ttc" id="aStateMachine_8hpp_html"><div class="ttname"><a href="../../d6/dd7/StateMachine_8hpp.html">StateMachine.hpp</a></div><div class="ttdoc">State Machine Class.</div></div>
-<div class="ttc" id="aclasstoast_1_1StateMachine_html"><div class="ttname"><a href="../../db/d5b/classtoast_1_1StateMachine.html">toast::StateMachine</a></div><div class="ttdoc">A finite state machine using string identifiers.</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/dd7/StateMachine_8hpp_source.html#l00041">StateMachine.hpp:41</a></div></div>
-<div class="ttc" id="astructtoast_1_1State_html"><div class="ttname"><a href="../../d8/d9c/structtoast_1_1State.html">toast::State</a></div><div class="ttdoc">Represents a single state in the finite state machine.</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/dd7/StateMachine_8hpp_source.html#l00027">StateMachine.hpp:27</a></div></div>
-<div class="ttc" id="astructtoast_1_1State_html_a439a87057b512b886cdca4976169574d"><div class="ttname"><a href="../../d8/d9c/structtoast_1_1State.html#a439a87057b512b886cdca4976169574d">toast::State::onTick</a></div><div class="ttdeci">std::function&lt; void()&gt; onTick</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/dd7/StateMachine_8hpp_source.html#l00029">StateMachine.hpp:29</a></div></div>
-<div class="ttc" id="astructtoast_1_1State_html_a9712b3de3137ae71f7a2a134bab46a0b"><div class="ttname"><a href="../../d8/d9c/structtoast_1_1State.html#a9712b3de3137ae71f7a2a134bab46a0b">toast::State::onBegin</a></div><div class="ttdeci">std::function&lt; void()&gt; onBegin</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/dd7/StateMachine_8hpp_source.html#l00028">StateMachine.hpp:28</a></div></div>
-<div class="ttc" id="astructtoast_1_1State_html_aee50a8c1681e3ba21a224e51ab98d478"><div class="ttname"><a href="../../d8/d9c/structtoast_1_1State.html#aee50a8c1681e3ba21a224e51ab98d478">toast::State::onExit</a></div><div class="ttdeci">std::function&lt; void()&gt; onExit</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/dd7/StateMachine_8hpp_source.html#l00030">StateMachine.hpp:30</a></div></div>
+<div class="ttc" id="aclasstoast_1_1StateMachine_html"><div class="ttname"><a href="../../db/d5b/classtoast_1_1StateMachine.html">toast::StateMachine</a></div><div class="ttdoc">A finite state machine using string identifiers.</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/dd7/StateMachine_8hpp_source.html#l00045">StateMachine.hpp:45</a></div></div>
+<div class="ttc" id="astructtoast_1_1State_html"><div class="ttname"><a href="../../d8/d9c/structtoast_1_1State.html">toast::State</a></div><div class="ttdoc">Represents a single state in the finite state machine.</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/dd7/StateMachine_8hpp_source.html#l00028">StateMachine.hpp:28</a></div></div>
 </div><!-- fragment --><hr  />
-<h3><a class="anchor" id="autotoc_md15"></a>
+<h3><a class="anchor" id="autotoc_md18"></a>
 Notes</h3>
 <ul>
 <li>The class is designed for simplicity and readability; It currently does not handle nested states or transitions.</li>
@@ -204,7 +206,7 @@ Notes</h3>
 <li>You can freely use lambdas or regular functions for your callbacks.</li>
 </ul>
 <hr  />
-<h3><a class="anchor" id="autotoc_md17"></a>
+<h3><a class="anchor" id="autotoc_md20"></a>
 toast::State</h3>
 <p>The <b><a class="el" href="../../d8/d9c/structtoast_1_1State.html" title="Represents a single state in the finite state machine.">State</a></b> struct defines what happens when a state is entered, updated, or exited.</p>
 <div class="fragment"><div class="line"><span class="keyword">struct </span><a class="code hl_struct" href="../../d8/d9c/structtoast_1_1State.html">State</a></div>
@@ -215,11 +217,11 @@ toast::State</h3>
 <div class="line">};</div>
 </div><!-- fragment --><p>You can assign lambdas or normal functions to each callback:</p>
 <div class="fragment"><div class="line"><a class="code hl_struct" href="../../d8/d9c/structtoast_1_1State.html">toast::State</a> attack;</div>
-<div class="line">attack.<a class="code hl_variable" href="../../d8/d9c/structtoast_1_1State.html#a9712b3de3137ae71f7a2a134bab46a0b">onBegin</a> = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;Prepare attack!\n&quot;</span>; };</div>
-<div class="line">attack.<a class="code hl_variable" href="../../d8/d9c/structtoast_1_1State.html#a439a87057b512b886cdca4976169574d">onTick</a> = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;Attacking...\n&quot;</span>; };</div>
-<div class="line">attack.<a class="code hl_variable" href="../../d8/d9c/structtoast_1_1State.html#aee50a8c1681e3ba21a224e51ab98d478">onExit</a> = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;Attack finished.\n&quot;</span>; };</div>
+<div class="line">attack.onBegin = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;Prepare attack!\n&quot;</span>; };</div>
+<div class="line">attack.onTick = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;Attacking...\n&quot;</span>; };</div>
+<div class="line">attack.onExit = []() { std::cout &lt;&lt; <span class="stringliteral">&quot;Attack finished.\n&quot;</span>; };</div>
 </div><!-- fragment --><hr  />
-<h3><a class="anchor" id="autotoc_md19"></a>
+<h3><a class="anchor" id="autotoc_md22"></a>
 Notes</h3>
 <ul>
 <li>States are identified by <b>string names</b> for readability. You can later switch to enums or hashed IDs if performance is critical.</li>
@@ -227,19 +229,21 @@ Notes</h3>
 <li>The system is header-only friendly, minimal, and has no dependencies beyond the STL. </li>
 </ul>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00041">41</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00045">45</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ae07810d34ad587daaf836a9567a60eea" name="ae07810d34ad587daaf836a9567a60eea"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae07810d34ad587daaf836a9567a60eea">&#9670;&#160;</a></span>StateMachine()</h2>
+<a id="ad2a8793fdfaa6e84c4642c928d76a82a" name="ad2a8793fdfaa6e84c4642c928d76a82a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad2a8793fdfaa6e84c4642c928d76a82a">&#9670;&#160;</a></span>StateMachine()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">toast::StateMachine::StateMachine </td>
+          <td class="memname"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html">toast::StateMachine</a>&lt; T &gt;::StateMachine </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -255,14 +259,16 @@ Notes</h3>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a97bded52b006303832423c1b3e7bd998" name="a97bded52b006303832423c1b3e7bd998"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a97bded52b006303832423c1b3e7bd998">&#9670;&#160;</a></span>AddState()</h2>
+<a id="ab7e9071c38b8d2b8e588e3135b6ed98b" name="ab7e9071c38b8d2b8e588e3135b6ed98b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab7e9071c38b8d2b8e588e3135b6ed98b">&#9670;&#160;</a></span>AddState()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">void toast::StateMachine::AddState </td>
+          <td class="memname">void <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html">toast::StateMachine</a>&lt; T &gt;::AddState </td>
           <td>(</td>
           <td class="paramtype">const std::string &amp;&#160;</td>
           <td class="paramname"><em>name</em>, </td>
@@ -270,7 +276,7 @@ Notes</h3>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../d8/d9c/structtoast_1_1State.html">State</a> &amp;&amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="../../d8/d9c/structtoast_1_1State.html">State</a>&lt; T &gt; *&#160;</td>
           <td class="paramname"><em>state</em>&#160;</td>
         </tr>
         <tr>
@@ -281,37 +287,68 @@ Notes</h3>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d82/StateMachine_8cpp_source.html#l00009">9</a> of file <a class="el" href="../../d6/d82/StateMachine_8cpp_source.html">StateMachine.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00066">66</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 
 </div>
 </div>
-<a id="ab735216c9aa60eaf2f1f5693d886c80c" name="ab735216c9aa60eaf2f1f5693d886c80c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab735216c9aa60eaf2f1f5693d886c80c">&#9670;&#160;</a></span>GetCurrentState()</h2>
+<a id="a2d9d0687395512655562a57b76296a24" name="a2d9d0687395512655562a57b76296a24"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2d9d0687395512655562a57b76296a24">&#9670;&#160;</a></span>GetCurrentState()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">const std::string &amp; toast::StateMachine::GetCurrentState </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td> const</td>
+          <td class="memname">const std::string &amp; <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html">toast::StateMachine</a>&lt; T &gt;::GetCurrentState</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d82/StateMachine_8cpp_source.html#l00045">45</a> of file <a class="el" href="../../d6/d82/StateMachine_8cpp_source.html">StateMachine.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00106">106</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 
 </div>
 </div>
-<a id="a045b9188e834ff9b2ef3517c35548a8e" name="a045b9188e834ff9b2ef3517c35548a8e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a045b9188e834ff9b2ef3517c35548a8e">&#9670;&#160;</a></span>SetState()</h2>
+<a id="a01195667c64a5c85153eb34af615ca73" name="a01195667c64a5c85153eb34af615ca73"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a01195667c64a5c85153eb34af615ca73">&#9670;&#160;</a></span>SetParent()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void toast::StateMachine::SetState </td>
+          <td class="memname">void <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html">toast::StateMachine</a>&lt; T &gt;::SetParent </td>
+          <td>(</td>
+          <td class="paramtype">T *&#160;</td>
+          <td class="paramname"><em>parent</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00049">49</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a35bfd5aa524226b0cbb1a5a3f47f9139" name="a35bfd5aa524226b0cbb1a5a3f47f9139"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a35bfd5aa524226b0cbb1a5a3f47f9139">&#9670;&#160;</a></span>SetState()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html">toast::StateMachine</a>&lt; T &gt;::SetState </td>
           <td>(</td>
           <td class="paramtype">const std::string &amp;&#160;</td>
           <td class="paramname"><em>name</em></td><td>)</td>
@@ -320,79 +357,99 @@ Notes</h3>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d82/StateMachine_8cpp_source.html#l00013">13</a> of file <a class="el" href="../../d6/d82/StateMachine_8cpp_source.html">StateMachine.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00072">72</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 
 </div>
 </div>
-<a id="aeb2207b6711b578f83e8f405178ce078" name="aeb2207b6711b578f83e8f405178ce078"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aeb2207b6711b578f83e8f405178ce078">&#9670;&#160;</a></span>Tick()</h2>
+<a id="a47e764795ad3459687900e5499ff317b" name="a47e764795ad3459687900e5499ff317b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a47e764795ad3459687900e5499ff317b">&#9670;&#160;</a></span>Tick()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">void toast::StateMachine::Tick </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
+          <td class="memname">void <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html">toast::StateMachine</a>&lt; T &gt;::Tick</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d82/StateMachine_8cpp_source.html#l00037">37</a> of file <a class="el" href="../../d6/d82/StateMachine_8cpp_source.html">StateMachine.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00097">97</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a589dfa9bf914f61f245374e0f8a32c47" name="a589dfa9bf914f61f245374e0f8a32c47"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a589dfa9bf914f61f245374e0f8a32c47">&#9670;&#160;</a></span>currentState</h2>
+<a id="a1a62da1cbd4b4d773230573dae4646eb" name="a1a62da1cbd4b4d773230573dae4646eb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1a62da1cbd4b4d773230573dae4646eb">&#9670;&#160;</a></span>currentState</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html">toast::StateMachine</a>&lt; T &gt;::currentState</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00060">60</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a30ee203bdaf22ef6f6c0edbcb450e601" name="a30ee203bdaf22ef6f6c0edbcb450e601"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a30ee203bdaf22ef6f6c0edbcb450e601">&#9670;&#160;</a></span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::string toast::StateMachine::currentState</td>
+          <td class="memname">struct  { ... }  <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html">toast::StateMachine</a>&lt; T &gt;::m</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00054">54</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
-
 </div>
 </div>
-<a id="a76e0249d99c0352aaf9779256d573af7" name="a76e0249d99c0352aaf9779256d573af7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a76e0249d99c0352aaf9779256d573af7">&#9670;&#160;</a></span></h2>
+<a id="a933f79cc090584d9a8fba25461aafdb1" name="a933f79cc090584d9a8fba25461aafdb1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a933f79cc090584d9a8fba25461aafdb1">&#9670;&#160;</a></span>parent</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">struct  { ... }  toast::StateMachine::m</td>
+          <td class="memname">T* <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html">toast::StateMachine</a>&lt; T &gt;::parent = nullptr</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00061">61</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+
 </div>
 </div>
-<a id="ad4bc95f96884b63de32004f531ffb900" name="ad4bc95f96884b63de32004f531ffb900"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad4bc95f96884b63de32004f531ffb900">&#9670;&#160;</a></span>states</h2>
+<a id="ad332ab1ec67874c91780e18d01bb97ee" name="ad332ab1ec67874c91780e18d01bb97ee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad332ab1ec67874c91780e18d01bb97ee">&#9670;&#160;</a></span>states</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">std::unordered_map&lt;std::string, <a class="el" href="../../d8/d9c/structtoast_1_1State.html">State</a>&gt; toast::StateMachine::states</td>
+          <td class="memname">std::unordered_map&lt;std::string, <a class="el" href="../../d8/d9c/structtoast_1_1State.html">State</a>&lt;T&gt;*&gt; <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html">toast::StateMachine</a>&lt; T &gt;::states</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00053">53</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00059">59</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following files:<ul>
+<hr/>The documentation for this class was generated from the following file:<ul>
 <li>inc/Toast/<a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a></li>
-<li>src/Toast/<a class="el" href="../../d6/d82/StateMachine_8cpp_source.html">StateMachine.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

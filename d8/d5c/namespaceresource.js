@@ -31,8 +31,5 @@ var namespaceresource =
     [ "Open", "d8/d5c/namespaceresource.html#a5bb34b2d0a15fcd098fb0d19c9d1f917", null ],
     [ "PurgeResources", "d8/d5c/namespaceresource.html#aa93bae53eb778900ce67ae7f034918e7", null ],
     [ "SaveFile", "d8/d5c/namespaceresource.html#a9d51862d8c41be438c01c8b713c75877", null ],
-    [ "g_fileIcon", "d8/d5c/namespaceresource.html#a891f5ac584df2d01deb1eecbc59e6764", null ],
-    [ "g_jsonIcon", "d8/d5c/namespaceresource.html#a7cb9ce18b962c136af8b4a617df095d4", null ],
-    [ "g_objIcon", "d8/d5c/namespaceresource.html#a60d495b7376b017b94a5f55435bd5c1e", null ],
     [ "g_packFile", "d8/d5c/namespaceresource.html#a2fe3e5a411780a1a2574e04d21886515", null ]
 ];

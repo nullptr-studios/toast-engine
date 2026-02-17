@@ -1,4 +1,4 @@
 <map id="physics::Collider::CalculatePoints" name="physics::Collider::CalculatePoints">
-<area shape="rect" id="node1" title=" " alt="" coords="221,5,359,45"/>
-<area shape="rect" id="node2" href="$db/d71/classphysics_1_1Collider.html#a58a915c3632248838b76d97b92c567a9" title="Loads object state from JSON." alt="" coords="5,13,173,38"/>
+<area shape="rect" id="node1" title=" " alt="" coords="212,5,349,45"/>
+<area shape="rect" id="node2" href="$db/d71/classphysics_1_1Collider.html#a52f2eb7420c7743d41ea1e718a56aac7" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,13,164,38"/>
 </map>

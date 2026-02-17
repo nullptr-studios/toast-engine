@@ -156,6 +156,7 @@ var hierarchy =
     [ "physics::PhysicsSystem", "d6/dd8/classphysics_1_1PhysicsSystem.html", null ],
     [ "toast::Engine::Pimpl", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html", null ],
     [ "PlayerController", "d4/da8/classinput_1_1PlayerController.html", null ],
+    [ "Pool< T, size >", "d5/d0b/classPool.html", null ],
     [ "toast::ProjectSettings", "d4/ddb/structtoast_1_1ProjectSettings.html", null ],
     [ "toast::Range< T >", "d2/d6a/structtoast_1_1Range.html", null ],
     [ "toast::Range< float >", "d2/d6a/structtoast_1_1Range.html", null ],
@@ -175,8 +176,8 @@ var hierarchy =
     ] ],
     [ "renderer::SpineVertex", "d1/d64/structrenderer_1_1SpineVertex.html", null ],
     [ "SScene", "da/da4/classtoast_1_1SScene.html", null ],
-    [ "toast::State", "d8/d9c/structtoast_1_1State.html", null ],
-    [ "toast::StateMachine", "db/d5b/classtoast_1_1StateMachine.html", null ],
+    [ "toast::State< T >", "d8/d9c/structtoast_1_1State.html", null ],
+    [ "toast::StateMachine< T >", "db/d5b/classtoast_1_1StateMachine.html", null ],
     [ "toast::memory::Stats", "db/da0/structtoast_1_1memory_1_1Stats.html", null ],
     [ "spine::TextureLoader", null, [
       [ "SpineTextureLoader", "da/d7d/classSpineTextureLoader.html", null ]
