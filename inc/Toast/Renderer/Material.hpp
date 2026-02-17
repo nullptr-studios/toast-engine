@@ -39,7 +39,7 @@ namespace renderer {
  * @par Material File Format:
  * @code{.json}
  * {
- *     "shaderPath": "shaders/standard.shader",
+ *     "shaderPath": "SHADERS/standard.shader",
  *     "materialParams": {
  *         "albedoTexture": "textures/brick.png",
  *         "normalTexture": "textures/brick_normal.png",

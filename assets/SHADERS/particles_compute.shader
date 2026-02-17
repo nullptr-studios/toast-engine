@@ -2,7 +2,7 @@
 	"stageFiles": [
 		{
 			"stage": "compute",
-			"path": "shaders/particles_update.comp"
+			"path": "SHADERS/particles_update.comp"
 		}
 	]
 }

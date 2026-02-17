@@ -4,6 +4,7 @@
 #include "Toast/GlmJson.hpp"
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Physics/Raycast.hpp"
+#include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
 #ifdef TOAST_EDITOR
@@ -13,6 +14,7 @@
 namespace physics {
 
 void Rigidbody::Init() {
+	PROFILE_ZONE;
 	PhysicsSystem::AddRigidbody(this);
 
 	// Initialize interpolation positions from the current transform
@@ -57,11 +59,14 @@ void Rigidbody::Inspector() {
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Collider Flags");
+
+	// Who wrote this shit instead of overriding the ! operator -x
 	unsigned int cur = static_cast<unsigned int>(flags);
 	bool default_flag = (cur & static_cast<unsigned int>(ColliderFlags::Default)) != 0;
 	bool ground_flag = (cur & static_cast<unsigned int>(ColliderFlags::Ground)) != 0;
 	bool player_flag = (cur & static_cast<unsigned int>(ColliderFlags::Player)) != 0;
 	bool enemy_flag = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
+	bool weapon_flag = (cur & static_cast<unsigned int>(ColliderFlags::Weapon)) != 0;
 
 	if (ImGui::Checkbox("Default", &default_flag)) {
 		if (default_flag) {
@@ -75,6 +80,13 @@ void Rigidbody::Inspector() {
 			cur |= static_cast<unsigned int>(ColliderFlags::Ground);
 		} else {
 			cur &= ~static_cast<unsigned int>(ColliderFlags::Ground);
+		}
+	}
+	if (ImGui::Checkbox("Weapon", &weapon_flag)) {
+		if (weapon_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Weapon);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Weapon);
 		}
 	}
 	if (ImGui::Checkbox("Enemy", &enemy_flag)) {
@@ -140,6 +152,7 @@ json_t Rigidbody::Save() const {
 }
 
 void Rigidbody::Load(json_t j, bool propagate) {
+	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 	if (j.contains("radius")) {
 		radius = j["radius"];
 	}
@@ -195,6 +208,14 @@ void Rigidbody::SetPosition(glm::dvec2 pos) {
 	}
 
 	//@Note: Visual transform is updated by PhysicsSystem::UpdateVisualInterpolation()
+}
+
+auto Rigidbody::GetVelocity() const -> glm::dvec2 {
+	return velocity;
+}
+
+void Rigidbody::SetVelocity(glm::dvec2 vel) {
+	velocity = vel;
 }
 
 glm::dvec2 Rigidbody::GetInterpolatedPosition() const {

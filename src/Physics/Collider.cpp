@@ -3,6 +3,7 @@
 #include "ConvexCollider.hpp"
 #include "Toast/GlmJson.hpp"
 #include "Toast/Objects/Actor.hpp"
+#include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
 #ifdef TOAST_EDITOR
@@ -10,6 +11,10 @@
 #endif
 
 using namespace physics;
+
+void Collider::Init() {
+	CalculatePoints();
+}
 
 void Collider::AddPoint(glm::vec2 point) {
 	m.points.emplace_back(point);
@@ -27,6 +32,7 @@ void Collider::DeletePoint(glm::vec2 point) {
 }
 
 void Collider::CalculatePoints() {
+	PROFILE_ZONE;
 	// We require at leats 3 points to make a mesh
 	if (m.points.size() < 3) {
 		return;
@@ -45,6 +51,8 @@ void Collider::CalculatePoints() {
 	using simple_mesh = std::list<std::pair<glm::vec2, bool>>;
 	simple_mesh start_mesh;
 
+	auto world_mtx = dynamic_cast<toast::Actor*>(parent())->transform()->GetWorldMatrix();
+
 	// Figure out which points are concave
 	int sign = ShoelaceArea(m.points) >= 0 ? 1 : -1;
 	std::list<std::list<glm::vec2>::iterator> concave_points;
@@ -55,6 +63,10 @@ void Collider::CalculatePoints() {
 		glm::vec2 curr = *it;
 		glm::vec2 prev = *it_prev;
 		glm::vec2 next = *it_next;
+
+		curr = world_mtx * glm::vec4(curr.x, curr.y, 0, 1);
+		prev = world_mtx * glm::vec4(prev.x, prev.y, 0, 1);
+		next = world_mtx * glm::vec4(next.x, next.y, 0, 1);
 
 		glm::mat2 mat = { curr - prev, next - curr };
 		float det = sign * glm::determinant(mat);
@@ -86,6 +98,10 @@ void Collider::CalculatePoints() {
 			glm::vec2 curr = it->first;
 			glm::vec2 prev = it_prev->first;
 			glm::vec2 next = it_next->first;
+
+			curr = world_mtx * glm::vec4(curr.x, curr.y, 0, 1);
+			prev = world_mtx * glm::vec4(prev.x, prev.y, 0, 1);
+			next = world_mtx * glm::vec4(next.x, next.y, 0, 1);
 
 			glm::mat2 mat = { curr - prev, next - curr };
 			float det = sign * glm::determinant(mat);
@@ -258,6 +274,8 @@ void Collider::Inspector() {
 	bool ground_flag = (cur & static_cast<unsigned int>(ColliderFlags::Ground)) != 0;
 	bool player_flag = (cur & static_cast<unsigned int>(ColliderFlags::Player)) != 0;
 	bool enemy_flag = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
+	bool ramp_flag = (cur & static_cast<unsigned int>(ColliderFlags::Ramp)) != 0;
+	bool weapon_flag = (cur & static_cast<unsigned int>(ColliderFlags::Weapon)) != 0;
 
 	if (ImGui::Checkbox("Default", &default_flag)) {
 		if (default_flag) {
@@ -287,11 +305,28 @@ void Collider::Inspector() {
 			cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
 		}
 	}
+	if (ImGui::Checkbox("Ramp", &ramp_flag)) {
+		if (ramp_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Ramp);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Ramp);
+		}
+	}
+	if (ImGui::Checkbox("Weapon", &weapon_flag)) {
+		if (weapon_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Weapon);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Weapon);
+		}
+	}
+	ImGui::Spacing();
+	ImGui::Checkbox("Ramp force left?", &data.forceLeft);
 
 	m.flags = static_cast<ColliderFlags>(cur);
 	data.flags = static_cast<ColliderFlags>(cur);
 	for (auto* c : m.convexShapes) {
-		c->flags = static_cast<ColliderFlags>(cur);
+		c->flags = data.flags;
+		c->forceLeft = data.forceLeft;
 	}
 
 	ImGui::Spacing();
@@ -371,11 +406,17 @@ void Collider::Inspector() {
 void Collider::EditorTick() {
 	glm::vec2 world_position = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
 
+	auto world_mtx = dynamic_cast<toast::Actor*>(parent())->transform()->GetWorldMatrix();
+	if (world_mtx != debug.oldPosition) {
+		debug.oldPosition = world_mtx;
+		CalculatePoints();
+	}
+
 	if (debug.showPoints) {
 		renderer::DebugCircle(debug.newPointPosition + world_position, 0.1f, { 1.0f, 0.5f, 0.0f, 1.0f });
 
 		for (glm::vec2 p : m.points) {
-			renderer::DebugCircle(p + world_position, 0.1f);
+			renderer::DebugCircle(glm::vec2(world_mtx * glm::vec4(p.x, p.y, 0, 1)), 0.1f);
 		}
 	}
 
@@ -402,7 +443,7 @@ json_t Collider::Save() const {
 	j["debug.showColliders"] = debug.showColliders;
 	j["debug.showNormals"] = data.debugNormals;
 	j["flags"] = static_cast<unsigned int>(m.flags);
-
+	j["data.forceLeft"] = data.forceLeft;
 	return j;
 }
 
@@ -416,8 +457,6 @@ void Collider::Load(json_t j, bool propagate) {
 		for (const auto& p : j["points"]) {
 			AddPoint(p);
 		}
-
-		CalculatePoints();
 	}
 
 	if (j.contains("friction")) {
@@ -435,11 +474,17 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 
 	if (j.contains("flags")) {
+		data.flags = static_cast<ColliderFlags>(j["flags"]);
 		for (auto* c : m.convexShapes) {
-			c->flags = static_cast<ColliderFlags>(j["flags"]);
+			c->flags = data.flags;
 		}
 		m.flags = static_cast<ColliderFlags>(j["flags"]);
-		data.flags = static_cast<ColliderFlags>(j["flags"]);
+	}
+	if (j.contains("data.forceLeft")) {
+		data.forceLeft = j["data.forceLeft"];
+		for (auto* c : m.convexShapes) {
+			c->forceLeft = data.forceLeft;
+		}
 	}
 
 	Component::Load(j, propagate);

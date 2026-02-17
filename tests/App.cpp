@@ -5,5 +5,5 @@
 #include <Toast/World.hpp>
 
 void Test::Begin() {
-	toast::World::LoadSceneSync("scenes/TestScene.scene");
+	toast::World::LoadSceneSync("SCENES/TestScene.scene");
 }

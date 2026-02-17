@@ -2,6 +2,7 @@
 
 #include "Toast/Input/KeyCodes.hpp"
 #include "Toast/Log.hpp"
+#include "Toast/Profiler.hpp"
 #include "Toast/ProjectSettings.hpp"
 #include "Toast/Window/Window.hpp"
 #include "Toast/Window/WindowEvents.hpp"
@@ -73,6 +74,7 @@ InputSystem::InputSystem() {
 }
 
 void InputSystem::Tick() {
+	PROFILE_ZONE;
 	// Check all connected controllers for button/axis changes
 	PollControllers();
 

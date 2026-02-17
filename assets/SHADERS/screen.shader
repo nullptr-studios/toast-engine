@@ -2,11 +2,11 @@
 	"stageFiles": [
 		{
 			"stage": "vertex",
-			"path": "shaders/screen.vert"
+			"path": "SHADERS/screen.vert"
 		},
 		{
 			"stage": "fragment",
-			"path": "shaders/screen.frag"
+			"path": "SHADERS/screen.frag"
 		}
 	]
 }

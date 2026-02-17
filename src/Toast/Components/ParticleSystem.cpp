@@ -1160,8 +1160,8 @@ void ParticleSystem::InitSharedResources() {
 	}
 
 	// Load shared shaders
-	m_computeShader = resource::LoadResource<renderer::Shader>("shaders/particles_compute.shader");
-	m_renderShader = resource::LoadResource<renderer::Shader>("shaders/particles_render.shader");
+	m_computeShader = resource::LoadResource<renderer::Shader>("SHADERS/particles_compute.shader");
+	m_renderShader = resource::LoadResource<renderer::Shader>("SHADERS/particles_render.shader");
 
 	// Create shared quad
 	float quadVertices[] = { -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f };

@@ -5,12 +5,12 @@
 
 #pragma once
 
-#include <functional>
 #include <string>
 #include <unordered_map>
 
 namespace toast {
 
+template<typename T>
 class StateMachine;
 
 /**
@@ -24,10 +24,13 @@ class StateMachine;
  *
  * These use std::function so that you can assign lambdas or normal functions.
  */
+template<typename T>
 struct State {
-	std::function<void()> onBegin;
-	std::function<void()> onTick;
-	std::function<void()> onExit;
+	virtual void OnBegin() { };
+	virtual void OnTick() { };
+	virtual void OnExit() { };
+
+	T* parent = nullptr;
 };
 
 /**
@@ -38,11 +41,14 @@ struct State {
  * Each state can define OnEnter, OnUpdate, and OnExit functions.
  * The machine calls OnExit() on the old state before switching, and OnEnter() on the new one.
  */
+ template<typename T>
 class StateMachine {
 public:
-	StateMachine();
+	StateMachine() = default;
 
-	void AddState(const std::string& name, State&& state);
+	void SetParent(T* parent) { m.parent = parent; }
+
+	void AddState(const std::string& name, State<T>* state);
 	void SetState(const std::string& name);
 	void Tick();
 
@@ -50,9 +56,55 @@ public:
 
 private:
 	struct {
-		std::unordered_map<std::string, State> states;
+		std::unordered_map<std::string, State<T>*> states;
 		std::string currentState;
+		T* parent = nullptr;
 	} m;
 };
+
+template<typename T>
+void StateMachine<T>::AddState(const std::string& name, State<T>* state) {
+	state->parent = m.parent;
+	m.states[name] = state;
+}
+
+template<typename T>
+void StateMachine<T>::SetState(const std::string& name) {
+	if (m.currentState == name) {
+		return;
+	}
+
+	// Call OnExit on the previous if it existss
+	if (!m.currentState.empty()) {
+		auto it = m.states.find(m.currentState);
+		if (it != m.states.end()) {
+			it->second->OnExit();
+		}
+	}
+
+	// Set the new State
+	m.currentState = name;
+
+	// Call OnEnter on the new State
+	auto new_it = m.states.find(m.currentState);
+	if (new_it != m.states.end()) {
+		new_it->second->OnBegin();
+	}
+}
+
+// Run OnUpdate with the deltaTime each frame
+template<typename T>
+void StateMachine<T>::Tick() {
+	auto it = m.states.find(m.currentState);
+	if (it != m.states.end()) {
+		it->second->OnTick();
+	}
+}
+
+// Getter
+template<typename T>
+const std::string& StateMachine<T>::GetCurrentState() const {
+	return m.currentState;
+}
 
 }

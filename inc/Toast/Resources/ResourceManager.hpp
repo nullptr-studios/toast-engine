@@ -25,6 +25,11 @@ namespace resource {
 ///@brief Manager of every resource in the engine
 class ResourceManager {
 public:
+	static constexpr const char* kGenericFilePath = "EDITOR/icons/genericFile.png";
+	static constexpr const char* kObjFilePath = "EDITOR/icons/objFile.png";
+	static constexpr const char* kJsonFilePath = "EDITOR/icons/jsonFile.png";
+	static constexpr const char* kFolderIconPath = "EDITOR/icons/folder.png";
+
 	/**
 	 * @brief Constructs the ResourceManager.
 	 * @param pkg If true, reads from game.pkg instead of filesystem.
@@ -71,7 +76,7 @@ public:
 	 * @par Example:
 	 * @code
 	 * auto texture = rm->LoadResource<Texture>("textures/player.png");
-	 * auto mesh = rm->LoadResource<Mesh>("models/cube.obj");
+	 * auto mesh = rm->LoadResource<Mesh>("MODELS/cube.obj");
 	 * @endcode
 	 */
 	template<typename R, typename... Args>

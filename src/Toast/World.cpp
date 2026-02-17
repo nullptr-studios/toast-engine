@@ -164,8 +164,9 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 		json_t j;
 		try {
 			auto p = resource::Open(path);
-			if (!p.has_value())
+			if (!p.has_value()) {
 				throw ToastException("Cannot open scene file: " + std::string(path));
+			}
 			j = json_t::parse(p.value());
 		} catch (const std::exception& e) {
 			TOAST_ERROR("Failed opening scene with path \"{0}\"\n{1}", path, e.what());
@@ -216,6 +217,7 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 }
 
 void World::LoadSceneSync(std::string_view path) {
+	PROFILE_ZONE_C(0x0080FF);    // Light blue for sync scene loading
 	std::string p { path };
 
 	// Load scene file
@@ -486,7 +488,7 @@ void World::RunBeginQueue() {
 }
 
 void World::RunDestroyQueue() {
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0xFF0080);    // Pink for destroy queue
 
 	// Move the destroy queue into a local list under lock and process without holding the lock
 	std::list<Object*> local {};

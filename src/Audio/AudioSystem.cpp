@@ -48,6 +48,7 @@ void audio::AudioSystem::Destroy() const {
 }
 
 void audio::AudioSystem::Tick() const {
+	PROFILE_ZONE;
 	ERRCHECK(m.studio_system->update());    // also updates the low level system
 }
 
