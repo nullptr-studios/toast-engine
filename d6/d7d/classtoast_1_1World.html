@@ -210,37 +210,37 @@ Private Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:a44240c60d8bbc6eacc3519e8e7d2b095"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:a863e752cf2d5bd9984bf9d317b19e6ff"><td class="memItemLeft" >&#160;&#160;&#160;Object::Children&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ab491b3afead8ef753abe2b9bcef44440">children</a></td></tr>
-<tr class="separator:a863e752cf2d5bd9984bf9d317b19e6ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abddff554fb96e1e95a13347361b3fd59"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; <a class="el" href="../../d8/d7b/classevent_1_1ListenerComponent.html">event::ListenerComponent</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ad03dc5a0a160cec62a807200a99202f5">listener</a></td></tr>
-<tr class="separator:abddff554fb96e1e95a13347361b3fd59"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a57a2fc53d7bbf39c5f0271a536e5ec26"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; unsigned, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html">Scene</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ade75d08acfdf21845949d8cd559538f5">tickableScenes</a></td></tr>
-<tr class="separator:a57a2fc53d7bbf39c5f0271a536e5ec26"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad81879edc5f7d1ee7f16c2a79362b02e"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; unsigned, unsigned &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ae968691e35ec884c0471364c36ee83c9">sceneDestroyTimers</a></td></tr>
-<tr class="separator:ad81879edc5f7d1ee7f16c2a79362b02e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab760e62169fdc081c20fdddfc41d0e40"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html">ThreadPool</a> *&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ad51213dcc785e509623488eca698ba7e">threadPool</a> = nullptr</td></tr>
-<tr class="separator:ab760e62169fdc081c20fdddfc41d0e40"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab782e1fd0189717b3bf5a856981746f0"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#af0a1ae3006d996b0089b646b4cdce2f3">simulateWorld</a> = true</td></tr>
-<tr class="separator:ab782e1fd0189717b3bf5a856981746f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ace0bd83f598dde684b0a06db29a8e4dc"><td class="memItemLeft" >&#160;&#160;&#160;std::map&lt; unsigned, std::string &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a327ee80b887ca855431c7a22f9ce01da">loadedScenes</a></td></tr>
-<tr class="separator:ace0bd83f598dde684b0a06db29a8e4dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a874eb31122d669d4c1a1a911951298c6"><td class="memItemLeft" >&#160;&#160;&#160;std::map&lt; unsigned, bool &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a6949230b877c88263453ac3c8dddb4e4">loadedScenesStatus</a></td></tr>
-<tr class="separator:a874eb31122d669d4c1a1a911951298c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9ea54c117e64dbe7e34c6bad9120f340"><td class="memItemLeft" >&#160;&#160;&#160;std::list&lt; <a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a186dcc6688e52570c7e0f8b17a83e5dc">beginQueue</a></td></tr>
-<tr class="separator:a9ea54c117e64dbe7e34c6bad9120f340"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a86e9cac476a3723df4040722cd4336ef"><td class="memItemLeft" >&#160;&#160;&#160;std::list&lt; <a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a2aabd3387c04d29360801d07fe23542f">destroyQueue</a></td></tr>
-<tr class="separator:a86e9cac476a3723df4040722cd4336ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1c9d74ec301697b2a223e42a7d9589e"><td class="memItemLeft" >&#160;&#160;&#160;std::mutex&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a707749c8c094112bf2803d4f96c680e1">queueMutex</a></td></tr>
-<tr class="separator:ad1c9d74ec301697b2a223e42a7d9589e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aca90265c1453cf2d1ae5d8ff6f33350d"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> *&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a53ef536f98cae6cdc2faefdec053c931">editorScene</a> = nullptr</td></tr>
-<tr class="separator:aca90265c1453cf2d1ae5d8ff6f33350d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a983a0bc92d37944acfa1ec16b320d8d8"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; std::vector&lt; std::string &gt; &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#adf5a3027b5077591871e88285e8485ff">worldList</a></td></tr>
-<tr class="separator:a983a0bc92d37944acfa1ec16b320d8d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8a6bf71aa59679584b72e3b84f2fc7ea"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d6/dbd/classtoast_1_1GameFlow.html">GameFlow</a>&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a55ee90504efe676125509c49a5f6b446">gameFlow</a></td></tr>
-<tr class="separator:a8a6bf71aa59679584b72e3b84f2fc7ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a44240c60d8bbc6eacc3519e8e7d2b095"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7d/classtoast_1_1World.html#a44240c60d8bbc6eacc3519e8e7d2b095">m</a></td></tr>
-<tr class="separator:a44240c60d8bbc6eacc3519e8e7d2b095"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85712b99aa2f36d3d6c4c71a523502c1"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:a7ab4ade09be31ef6c084cf59fecc6a3e"><td class="memItemLeft" >&#160;&#160;&#160;Object::Children&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ab491b3afead8ef753abe2b9bcef44440">children</a></td></tr>
+<tr class="separator:a7ab4ade09be31ef6c084cf59fecc6a3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4f4a40551300854d6afaffa36c322e1e"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; <a class="el" href="../../d8/d7b/classevent_1_1ListenerComponent.html">event::ListenerComponent</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ad03dc5a0a160cec62a807200a99202f5">listener</a></td></tr>
+<tr class="separator:a4f4a40551300854d6afaffa36c322e1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99fa91540e53bcb973b285b9ce5b7652"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; unsigned, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html">Scene</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ade75d08acfdf21845949d8cd559538f5">tickableScenes</a></td></tr>
+<tr class="separator:a99fa91540e53bcb973b285b9ce5b7652"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77c4d69cc99224455279f1139d6bae3c"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; unsigned, unsigned &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ae968691e35ec884c0471364c36ee83c9">sceneDestroyTimers</a></td></tr>
+<tr class="separator:a77c4d69cc99224455279f1139d6bae3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a052074505a7afda272db5a23798d1964"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html">ThreadPool</a> *&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ad51213dcc785e509623488eca698ba7e">threadPool</a> = nullptr</td></tr>
+<tr class="separator:a052074505a7afda272db5a23798d1964"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18ce643b5681011869bfbd58857caadc"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#af0a1ae3006d996b0089b646b4cdce2f3">simulateWorld</a> = true</td></tr>
+<tr class="separator:a18ce643b5681011869bfbd58857caadc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89d3078b0c4a8353d2879ff8a09af4fc"><td class="memItemLeft" >&#160;&#160;&#160;std::map&lt; unsigned, std::string &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a327ee80b887ca855431c7a22f9ce01da">loadedScenes</a></td></tr>
+<tr class="separator:a89d3078b0c4a8353d2879ff8a09af4fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35dab14e8f524f78cbf02e380fe276b1"><td class="memItemLeft" >&#160;&#160;&#160;std::map&lt; unsigned, bool &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a6949230b877c88263453ac3c8dddb4e4">loadedScenesStatus</a></td></tr>
+<tr class="separator:a35dab14e8f524f78cbf02e380fe276b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7fe0a5fa9957cc5e8b421a751ea8174d"><td class="memItemLeft" >&#160;&#160;&#160;std::list&lt; <a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a186dcc6688e52570c7e0f8b17a83e5dc">beginQueue</a></td></tr>
+<tr class="separator:a7fe0a5fa9957cc5e8b421a751ea8174d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a46dac124d52360e94cfd502ec2369d45"><td class="memItemLeft" >&#160;&#160;&#160;std::list&lt; <a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a2aabd3387c04d29360801d07fe23542f">destroyQueue</a></td></tr>
+<tr class="separator:a46dac124d52360e94cfd502ec2369d45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8983813fd7f3b4b0fe0312050daa37c2"><td class="memItemLeft" >&#160;&#160;&#160;std::mutex&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a707749c8c094112bf2803d4f96c680e1">queueMutex</a></td></tr>
+<tr class="separator:a8983813fd7f3b4b0fe0312050daa37c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac4c53d5ca078e086e4c39ab1fa1cd5ee"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> *&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a53ef536f98cae6cdc2faefdec053c931">editorScene</a> = nullptr</td></tr>
+<tr class="separator:ac4c53d5ca078e086e4c39ab1fa1cd5ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0c9374144e90a2e92dcb16c2523318f"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; std::vector&lt; std::string &gt; &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#adf5a3027b5077591871e88285e8485ff">worldList</a></td></tr>
+<tr class="separator:ad0c9374144e90a2e92dcb16c2523318f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a857a406828ec39fb3f06070d2743e908"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d6/dbd/classtoast_1_1GameFlow.html">GameFlow</a>&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a55ee90504efe676125509c49a5f6b446">gameFlow</a></td></tr>
+<tr class="separator:a857a406828ec39fb3f06070d2743e908"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85712b99aa2f36d3d6c4c71a523502c1"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7d/classtoast_1_1World.html#a85712b99aa2f36d3d6c4c71a523502c1">m</a></td></tr>
+<tr class="separator:a85712b99aa2f36d3d6c4c71a523502c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-static-attribs" name="pri-static-attribs"></a>
 Static Private Attributes</h2></td></tr>
@@ -1475,8 +1475,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a44240c60d8bbc6eacc3519e8e7d2b095" name="a44240c60d8bbc6eacc3519e8e7d2b095"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a44240c60d8bbc6eacc3519e8e7d2b095">&#9670;&#160;</a></span></h2>
+<a id="a85712b99aa2f36d3d6c4c71a523502c1" name="a85712b99aa2f36d3d6c4c71a523502c1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85712b99aa2f36d3d6c4c71a523502c1">&#9670;&#160;</a></span></h2>
 
 <div class="memitem">
 <div class="memproto">

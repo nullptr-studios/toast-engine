@@ -23,5 +23,7 @@ var searchData=
   ['spinetextureloader_2ecpp_20',['SpineTextureLoader.cpp',['../dd/db5/SpineTextureLoader_8cpp.html',1,'']]],
   ['spinetextureloader_2ehpp_21',['SpineTextureLoader.hpp',['../dd/dad/SpineTextureLoader_8hpp.html',1,'']]],
   ['statemachine_2edox_22',['StateMachine.dox',['../dc/d30/StateMachine_8dox.html',1,'']]],
-  ['statemachine_2ehpp_23',['StateMachine.hpp',['../d6/dd7/StateMachine_8hpp.html',1,'']]]
+  ['statemachine_2ehpp_23',['StateMachine.hpp',['../d6/dd7/StateMachine_8hpp.html',1,'']]],
+  ['statemachineold_2ecpp_24',['StateMachineOld.cpp',['../dd/d00/StateMachineOld_8cpp.html',1,'']]],
+  ['statemachineold_2ehpp_25',['StateMachineOld.hpp',['../d1/d4a/StateMachineOld_8hpp.html',1,'']]]
 ];

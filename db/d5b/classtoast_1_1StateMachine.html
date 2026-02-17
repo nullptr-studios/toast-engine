@@ -122,20 +122,21 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:a30ee203bdaf22ef6f6c0edbcb450e601"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:a3529a23a0fb16632f1e370c462e30f65"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; std::string, <a class="el" href="../../d8/d9c/structtoast_1_1State.html">State</a>&lt; T &gt; * &gt;&#160;&#160;&#160;<a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#ad332ab1ec67874c91780e18d01bb97ee">states</a></td></tr>
-<tr class="separator:a3529a23a0fb16632f1e370c462e30f65"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a68e575af50e141bac0d4d83c02cbe17b"><td class="memItemLeft" >&#160;&#160;&#160;std::string&#160;&#160;&#160;<a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a1a62da1cbd4b4d773230573dae4646eb">currentState</a></td></tr>
-<tr class="separator:a68e575af50e141bac0d4d83c02cbe17b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afe47083c1959a50ab4a70404507ccede"><td class="memItemLeft" >&#160;&#160;&#160;T *&#160;&#160;&#160;<a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a933f79cc090584d9a8fba25461aafdb1">parent</a> = nullptr</td></tr>
-<tr class="separator:afe47083c1959a50ab4a70404507ccede"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a30ee203bdaf22ef6f6c0edbcb450e601"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a30ee203bdaf22ef6f6c0edbcb450e601">m</a></td></tr>
-<tr class="separator:a30ee203bdaf22ef6f6c0edbcb450e601"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a994e8ff804a6d8d0db01985489f1a5b5"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:afe87e75eb13a5186ba3662566c444c4e"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; std::string, <a class="el" href="../../d8/d9c/structtoast_1_1State.html">State</a>&lt; T &gt; * &gt;&#160;&#160;&#160;<a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#ad332ab1ec67874c91780e18d01bb97ee">states</a></td></tr>
+<tr class="separator:afe87e75eb13a5186ba3662566c444c4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aad23a18de4140a76fccb9e2f7385fa2f"><td class="memItemLeft" >&#160;&#160;&#160;std::string&#160;&#160;&#160;<a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a1a62da1cbd4b4d773230573dae4646eb">currentState</a></td></tr>
+<tr class="separator:aad23a18de4140a76fccb9e2f7385fa2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1430e1e37a986e8866e9cd927bf43359"><td class="memItemLeft" >&#160;&#160;&#160;T *&#160;&#160;&#160;<a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a933f79cc090584d9a8fba25461aafdb1">parent</a> = nullptr</td></tr>
+<tr class="separator:a1430e1e37a986e8866e9cd927bf43359"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a994e8ff804a6d8d0db01985489f1a5b5"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html#a994e8ff804a6d8d0db01985489f1a5b5">m</a></td></tr>
+<tr class="separator:a994e8ff804a6d8d0db01985489f1a5b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename T&gt;<br />
 class toast::StateMachine&lt; T &gt;</div><p>A finite state machine using string identifiers. </p>
 <p>Simple Finite <a class="el" href="../../d8/d9c/structtoast_1_1State.html" title="Represents a single state in the finite state machine.">State</a> Machine for managing named logic states.</p>
+<p>The <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html" title="A finite state machine using string identifiers.">StateMachine</a> class stores a collection of named states and also manages transitions between them. Each state can define OnEnter, OnUpdate, and OnExit functions. The machine calls OnExit() on the old state before switching, and OnEnter() on the new one.</p>
 <p>The <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html" title="A finite state machine using string identifiers.">StateMachine</a> class stores a collection of named states and also manages transitions between them. Each state can define OnEnter, OnUpdate, and OnExit functions. The machine calls OnExit() on the old state before switching, and OnEnter() on the new one.</p>
 <p>The <a class="el" href="../../db/d5b/classtoast_1_1StateMachine.html" title="A finite state machine using string identifiers.">StateMachine</a> provides an easy way to organize and control gameplay and anim logic, allowing objects such as players, enemies, or AI agents to move between discrete behaviors (e.g., "Idle", "Run", "InAir" etc.)</p>
 <p>Each state contains three optional callbacks:</p><ul>
@@ -398,8 +399,8 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
-<a id="a30ee203bdaf22ef6f6c0edbcb450e601" name="a30ee203bdaf22ef6f6c0edbcb450e601"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a30ee203bdaf22ef6f6c0edbcb450e601">&#9670;&#160;</a></span></h2>
+<a id="a994e8ff804a6d8d0db01985489f1a5b5" name="a994e8ff804a6d8d0db01985489f1a5b5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a994e8ff804a6d8d0db01985489f1a5b5">&#9670;&#160;</a></span></h2>
 
 <div class="memitem">
 <div class="memproto">

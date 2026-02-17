@@ -19,7 +19,7 @@ var classphysics_1_1BoxRigidbody =
     [ "angularDrag", "d4/db0/classphysics_1_1BoxRigidbody.html#a1a50fb10c9a165c271fdc3d9396d6cb6", null ],
     [ "angularVelocity", "d4/db0/classphysics_1_1BoxRigidbody.html#aa4d60e62e95066d7cbfeaedc9abdad6a", null ],
     [ "collidingColor", "d4/db0/classphysics_1_1BoxRigidbody.html#a701e5c13aa35f6f6f9780443b29a537a", null ],
-    [ "debug", "d4/db0/classphysics_1_1BoxRigidbody.html#ae47258f41ad937bb38734beb34041de4", null ],
+    [ "debug", "d4/db0/classphysics_1_1BoxRigidbody.html#a36124a93494830239c8ff8a1048eb9ab", null ],
     [ "defaultColor", "d4/db0/classphysics_1_1BoxRigidbody.html#a1ce88ee3f7462de5ab61d26692615b83", null ],
     [ "disableAngular", "d4/db0/classphysics_1_1BoxRigidbody.html#a288eaaa423131d88bfaed371d3b8d372", null ],
     [ "forces", "d4/db0/classphysics_1_1BoxRigidbody.html#a296e8469f74ac49122d6911cd2f188b2", null ],

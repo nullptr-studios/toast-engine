@@ -106,6 +106,8 @@ var annotated_dup =
       [ "SceneLoadedEvent", "dc/d36/structtoast_1_1SceneLoadedEvent.html", "dc/d36/structtoast_1_1SceneLoadedEvent" ],
       [ "State", "d8/d9c/structtoast_1_1State.html", "d8/d9c/structtoast_1_1State" ],
       [ "StateMachine", "db/d5b/classtoast_1_1StateMachine.html", "db/d5b/classtoast_1_1StateMachine" ],
+      [ "StateMachineOld", "d5/d96/classtoast_1_1StateMachineOld.html", "d5/d96/classtoast_1_1StateMachineOld" ],
+      [ "StateOld", "da/d7c/structtoast_1_1StateOld.html", "da/d7c/structtoast_1_1StateOld" ],
       [ "ThreadPool", "d3/dd6/classtoast_1_1ThreadPool.html", "d3/dd6/classtoast_1_1ThreadPool" ],
       [ "Transform2", "d5/d10/structtoast_1_1Transform2.html", "d5/d10/structtoast_1_1Transform2" ],
       [ "TransformComponent", "d0/dd9/classtoast_1_1TransformComponent.html", "d0/dd9/classtoast_1_1TransformComponent" ],

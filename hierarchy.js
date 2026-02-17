@@ -178,6 +178,8 @@ var hierarchy =
     [ "SScene", "da/da4/classtoast_1_1SScene.html", null ],
     [ "toast::State< T >", "d8/d9c/structtoast_1_1State.html", null ],
     [ "toast::StateMachine< T >", "db/d5b/classtoast_1_1StateMachine.html", null ],
+    [ "toast::StateMachineOld", "d5/d96/classtoast_1_1StateMachineOld.html", null ],
+    [ "toast::StateOld", "da/d7c/structtoast_1_1StateOld.html", null ],
     [ "toast::memory::Stats", "db/da0/structtoast_1_1memory_1_1Stats.html", null ],
     [ "spine::TextureLoader", null, [
       [ "SpineTextureLoader", "da/d7d/classSpineTextureLoader.html", null ]

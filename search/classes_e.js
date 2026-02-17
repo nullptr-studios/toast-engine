@@ -16,5 +16,7 @@ var searchData=
   ['sscene_13',['SScene',['../da/da4/classtoast_1_1SScene.html',1,'']]],
   ['state_14',['State',['../d8/d9c/structtoast_1_1State.html',1,'toast']]],
   ['statemachine_15',['StateMachine',['../db/d5b/classtoast_1_1StateMachine.html',1,'toast']]],
-  ['stats_16',['Stats',['../db/da0/structtoast_1_1memory_1_1Stats.html',1,'toast::memory']]]
+  ['statemachineold_16',['StateMachineOld',['../d5/d96/classtoast_1_1StateMachineOld.html',1,'toast']]],
+  ['stateold_17',['StateOld',['../da/d7c/structtoast_1_1StateOld.html',1,'toast']]],
+  ['stats_18',['Stats',['../db/da0/structtoast_1_1memory_1_1Stats.html',1,'toast::memory']]]
 ];
