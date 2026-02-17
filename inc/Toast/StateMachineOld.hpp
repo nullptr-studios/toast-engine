@@ -11,7 +11,7 @@
 
 namespace toast {
 
-class StateMachine;
+class StateMachineOld;
 
 /**
  * @struct State
@@ -24,7 +24,7 @@ class StateMachine;
  *
  * These use std::function so that you can assign lambdas or normal functions.
  */
-struct State {
+struct [[deprecated("Use State")]] StateOld {
 	std::function<void()> onBegin;
 	std::function<void()> onTick;
 	std::function<void()> onExit;
@@ -38,11 +38,11 @@ struct State {
  * Each state can define OnEnter, OnUpdate, and OnExit functions.
  * The machine calls OnExit() on the old state before switching, and OnEnter() on the new one.
  */
-class StateMachine {
+class [[deprecated("Use StateMachine")]] StateMachineOld {
 public:
-	StateMachine();
+	StateMachineOld();
 
-	void AddState(const std::string& name, State&& state);
+	void AddState(const std::string& name, StateOld&& state);
 	void SetState(const std::string& name);
 	void Tick();
 
@@ -50,7 +50,7 @@ public:
 
 private:
 	struct {
-		std::unordered_map<std::string, State> states;
+		std::unordered_map<std::string, StateOld> states;
 		std::string currentState;
 	} m;
 };

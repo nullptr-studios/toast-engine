@@ -1,16 +1,16 @@
-#include "Toast/StateMachine.hpp"
+#include "Toast/StateMachineOld.hpp"
 
 #include "Toast/Time.hpp"
 
 namespace toast {
 
-StateMachine::StateMachine() = default;
+StateMachineOld::StateMachineOld() = default;
 
-void StateMachine::AddState(const std::string& name, State&& state) {
+void StateMachineOld::AddState(const std::string& name, StateOld&& state) {
 	m.states[name] = state;
 }
 
-void StateMachine::SetState(const std::string& name) {
+void StateMachineOld::SetState(const std::string& name) {
 	if (m.currentState == name) {
 		return;
 	}
@@ -34,7 +34,7 @@ void StateMachine::SetState(const std::string& name) {
 }
 
 // Run OnUpdate with the deltaTime each frame
-void StateMachine::Tick() {
+void StateMachineOld::Tick() {
 	auto it = m.states.find(m.currentState);    // replaced std::unordered_map<std::string, State>::iterator with auto
 	if (it != m.states.end() && it->second.onTick) {
 		it->second.onTick();
@@ -42,7 +42,7 @@ void StateMachine::Tick() {
 }
 
 // Getter
-const std::string& StateMachine::GetCurrentState() const {
+const std::string& StateMachineOld::GetCurrentState() const {
 	return m.currentState;
 }
 
