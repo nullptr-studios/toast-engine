@@ -34,7 +34,7 @@ void Collider::DeletePoint(glm::vec2 point) {
 }
 
 void Collider::Bevel(unsigned idx) {
-	TOAST_ASSERT(idx < 0, "Invaid idx Passed To Bevel Function");
+	TOAST_ASSERT(idx < 0, "Invaid idx Passed To Bevel Function: {}",idx);
 	if (m.points.size() < 3) {
 		return;
 	}
