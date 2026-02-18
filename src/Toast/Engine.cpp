@@ -59,9 +59,9 @@ void Engine::Run(int argc, char** argv) {
 
 	auto* window = m->window.get();
 	auto* world = m->gameWorld.get();
-	
+
 	updateTimer += Time::delta();
-	
+
 	while (!GetShouldClose()) {
 		updateTimer = 0.0;
 		// This is our frame 0x

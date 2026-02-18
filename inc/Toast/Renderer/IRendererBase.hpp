@@ -29,11 +29,11 @@ struct RendererConfig {
 	glm::uvec2 resolution;                    ///< windowed rendering resolution
 	bool vSync;                               ///< Enable/disable vertical sync
 	toast::DisplayMode currentDisplayMode;    ///< Current display mode
-	
+
 	unsigned maxFPS = 300;
 
-	float resolutionScale;                    ///< Scale factor for main framebuffer resolution
-	float lightResolutionScale;               ///< Scale factor for light framebuffer resolution
+	float resolutionScale;         ///< Scale factor for main framebuffer resolution
+	float lightResolutionScale;    ///< Scale factor for light framebuffer resolution
 };
 
 /// @class IRendererBase

@@ -132,7 +132,7 @@ public:
 	 * @return Time in seconds since the window was created.
 	 */
 	double GetTime();
-	
+
 	double GetRefreshFrameTime();
 
 	/**
@@ -183,7 +183,7 @@ public:
 	bool GetVSync() const noexcept {
 		return m_vsync;
 	}
-	
+
 	void SetRefreshFrameTime(double frameTime) {
 		m_refreshFrameTime = frameTime;
 	}
@@ -216,8 +216,8 @@ private:
 	glm::ivec2 m_windowedPos {};
 
 	bool m_vsync = true;
-	
-	double m_refreshFrameTime = 16.6667; // Default to 60 FPS
+
+	double m_refreshFrameTime = 16.6667;    // Default to 60 FPS
 
 	/**
 	 * @brief GLFW error callback handler.

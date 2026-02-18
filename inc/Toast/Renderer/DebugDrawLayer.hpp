@@ -128,16 +128,16 @@ inline void DebugPoly(const std::vector<glm::vec3>& points, const glm::vec4& col
 
 inline void DrawDebugArrow(const glm::vec2& start, const glm::vec2& direction, float length, const glm::vec4& color) {
 	glm::vec2 end = start + direction * length;
-		
+
 	// Draw main line
 	renderer::DebugLine(start, end, color);
-		
+
 	// Draw arrowhead
 	glm::vec2 perpendicular(-direction.y, direction.x);
 	float arrowSize = length * 0.2f;
 	glm::vec2 arrowPoint1 = end - direction * arrowSize + perpendicular * arrowSize * 0.5f;
 	glm::vec2 arrowPoint2 = end - direction * arrowSize - perpendicular * arrowSize * 0.5f;
-		
+
 	renderer::DebugLine(end, arrowPoint1, color);
 	renderer::DebugLine(end, arrowPoint2, color);
 }

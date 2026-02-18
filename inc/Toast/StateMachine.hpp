@@ -27,9 +27,11 @@ class StateMachine;
  */
 template<typename T>
 struct State {
-	virtual void OnBegin() { };
-	virtual void OnTick() { };
-	virtual void OnExit() { };
+	virtual void OnBegin() { }
+
+	virtual void OnTick() { }
+
+	virtual void OnExit() { }
 
 	T* parent = nullptr;
 };
@@ -42,12 +44,14 @@ struct State {
  * Each state can define OnEnter, OnUpdate, and OnExit functions.
  * The machine calls OnExit() on the old state before switching, and OnEnter() on the new one.
  */
- template<typename T>
+template<typename T>
 class StateMachine {
 public:
 	StateMachine() = default;
 
-	void SetParent(T* parent) { m.parent = parent; }
+	void SetParent(T* parent) {
+		m.parent = parent;
+	}
 
 	void AddState(const std::string& name, std::unique_ptr<State<T>>&& state);
 	void SetState(const std::string& name);
