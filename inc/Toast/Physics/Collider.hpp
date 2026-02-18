@@ -32,6 +32,7 @@ public:
 	void Init() override;
 
 	void CalculatePoints();
+	void Bevel(unsigned idx);
 
 	template<typename... Args>
 	void AddPoints(Args... points);
