@@ -3,7 +3,6 @@
 #include "Toast/World.hpp"
 
 namespace toast {
-
 void Object::Load(json_t j, const bool force_create) {
 	PROFILE_ZONE;
 
@@ -259,14 +258,14 @@ Object* Object::Children::operator[](std::string_view name) {
 	return this->Get(name);
 }
 
-Object* Object::Children::Add(std::string type, std::optional<std::string_view> name, std::optional<json_t> file) {
+Object* Object::Children::Add(std::string_view type, std::optional<std::string_view> name, std::optional<json_t> file) {
 	auto registry = getRegistry();
-	if (!registry.contains(type)) {
+	if (!registry.contains(type.data())) {
 		TOAST_ERROR("Type {0} not found in registry", type);
 		return nullptr;
 	}
-
-	auto* obj = registry[type](*this, std::nullopt);
+	
+	auto* obj = registry[type.data()](*this, std::nullopt);
 	_ConfigureObject(obj, name, file);
 	return obj;
 }
@@ -506,5 +505,4 @@ void Object::_LoadTextures() {
 		child->_LoadTextures();
 	}
 }
-
 }

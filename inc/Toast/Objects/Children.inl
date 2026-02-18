@@ -110,7 +110,7 @@ public:
 	template<typename T>
 	T* Add(std::optional<std::string_view> name = {}, std::optional<json_t> file = {});
 
-	Object* Add(std::string type, std::optional<std::string_view> name = {}, std::optional<json_t> file = {});
+	Object* Add(std::string_view type, std::optional<std::string_view> name = {}, std::optional<json_t> file = {});
 
 	/// @brief Creates a new child if the child doesnt exist
 	/// @tparam T Class to create the child from
