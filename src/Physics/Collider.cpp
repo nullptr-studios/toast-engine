@@ -6,6 +6,8 @@
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
+#include <iterator>
+
 #ifdef TOAST_EDITOR
 #include <imgui.h>
 #endif
@@ -29,6 +31,25 @@ void Collider::SwapPoints(glm::vec2 lhs, glm::vec2 rhs) {
 void Collider::DeletePoint(glm::vec2 point) {
 	auto it = std::ranges::find(m.points, point);
 	m.points.erase(it);
+}
+
+void Collider::Bevel(unsigned idx) {
+	TOAST_ASSERT(idx < 0, "Invaid idx Passed To Bevel Function");
+	if (m.points.size() < 3) {
+		return;
+	}
+
+	auto p1 = m.points.begin();
+	std::advance(p1, idx);
+
+	auto right = (p1 != m.points.end()) ? std::next(p1) : m.points.begin();
+	auto left = (p1 != m.points.begin()) ? std::prev(p1) : std::prev(m.points.end());
+
+	auto new_point1 = glm::mix(*left, *p1, 0.5f);
+	auto new_point2 = glm::mix(*right, *p1, 0.5f);
+
+	*p1 = new_point1;
+	m.points.insert(p1, new_point2);
 }
 
 void Collider::CalculatePoints() {
