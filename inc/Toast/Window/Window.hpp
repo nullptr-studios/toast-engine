@@ -74,7 +74,7 @@ public:
 	 * @param name Window title.
 	 * @throws ToastException if a window already exists.
 	 */
-	Window(unsigned width = 800, unsigned height = 600, const std::string& name = "Toast Engine");
+	Window(unsigned width = 800, unsigned height = 600, std::string_view name = "Toast Engine");
 
 	/**
 	 * @brief Destroys the window and terminates GLFW.

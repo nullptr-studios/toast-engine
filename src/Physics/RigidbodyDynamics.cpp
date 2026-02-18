@@ -54,7 +54,6 @@ void RbKinematics(Rigidbody* rb) {
 	const dvec2 gravity = PhysicsSystem::gravity() * dvec2 { rb->gravityScale };
 	velocity += gravity * Time::fixed_delta();
 
-
 	// Apply drag over fixed timestep
 	const dvec2 damping = exp(dvec2 { -rb->drag } * Time::fixed_delta());
 	velocity *= damping;

@@ -98,7 +98,7 @@ void ResourceManager::PurgeResources() {
 	}
 }
 
-bool ResourceManager::OpenFile(const std::string& path, std::istringstream& data_out) const {
+bool ResourceManager::OpenFile(std::string_view path, std::istringstream& data_out) const {
 	std::vector<uint8_t> d {};
 	if (!OpenFile(path, d)) {
 		return false;
@@ -108,7 +108,7 @@ bool ResourceManager::OpenFile(const std::string& path, std::istringstream& data
 	return true;
 }
 
-bool ResourceManager::OpenFile(const std::string& path, std::vector<uint8_t>& data) const {
+bool ResourceManager::OpenFile(std::string_view path, std::vector<uint8_t>& data) const {
 	PROFILE_ZONE;
 	// if using pkg, read from pack file
 	if (m_pkg) {
@@ -117,8 +117,8 @@ bool ResourceManager::OpenFile(const std::string& path, std::vector<uint8_t>& da
 
 	std::string p;
 	// else read from filesystem
-	if (path.find("assets/") == std::string::npos) {
-		p = "assets/" + path;
+	if (path.find("assets/") == std::string_view::npos) {
+		p = std::string("assets/") + path.data();
 	} else {
 		p = path;
 	}
@@ -135,11 +135,11 @@ bool ResourceManager::OpenFile(const std::string& path, std::vector<uint8_t>& da
 	return true;
 }
 
-bool ResourceManager::SaveFile(const std::string& path, const std::string& content) {
+bool ResourceManager::SaveFile(std::string_view path, std::string_view content) {
 	TOAST_INFO("Saving File {}", path);
 	std::string pat {};
-	if (path.find("assets/") == std::string::npos) {
-		pat = "assets/" + path;
+	if (path.find("assets/") == std::string_view::npos) {
+		pat = std::string("assets/") + path.data();
 	} else {
 		pat = path;
 	}
@@ -166,15 +166,14 @@ bool ResourceManager::SaveFile(const std::string& path, const std::string& conte
 	return ofs.good();
 }
 
-bool ResourceManager::SaveConfig(const std::string& path, const std::string& content) {
+bool ResourceManager::SaveConfig(std::string_view path, std::string_view content) {
 	// TOAST_INFO("Saving File {}", path);
-	std::string pat = path;
 
 	namespace fs = std::filesystem;
 
 	// Ensure parent directories exist
 	try {
-		if (const fs::path p(pat); p.has_parent_path()) {
+		if (const fs::path p(path); p.has_parent_path()) {
 			fs::create_directories(p.parent_path());
 		}
 	} catch (const fs::filesystem_error&) {
@@ -183,7 +182,7 @@ bool ResourceManager::SaveConfig(const std::string& path, const std::string& con
 	}
 
 	// Open file for writing in binary mode
-	std::ofstream ofs(pat, std::ios::binary | std::ios::out | std::ios::trunc);
+	std::ofstream ofs(path.data(), std::ios::binary | std::ios::out | std::ios::trunc);
 	if (!ofs.is_open()) {
 		return false;
 	}
@@ -192,12 +191,11 @@ bool ResourceManager::SaveConfig(const std::string& path, const std::string& con
 	return ofs.good();
 }
 
-bool ResourceManager::LoadConfig(const std::string& path, std::string& content) {
+bool ResourceManager::LoadConfig(std::string_view path, std::string& content) {
 	PROFILE_ZONE;
 
-	std::string p = path;
 
-	std::ifstream ifs(p, std::ios::binary);
+	std::ifstream ifs(path.data(), std::ios::binary);
 	if (!ifs) {
 		return false;
 	}

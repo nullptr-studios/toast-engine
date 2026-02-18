@@ -27,15 +27,15 @@ public:
 
 	template<typename T>
 	static auto New(const std::optional<std::string>& name = std::nullopt) -> T*;
-	static auto New(const std::string& type, const std::optional<std::string>& name = std::nullopt) -> Object*;
+	static auto New(std::string_view type, const std::optional<std::string>& name = std::nullopt) -> Object*;
 	static auto LoadScene(std::string_view path) -> std::future<unsigned>;    ///< Loads scene on the init thread, scene disabld after load
 	static void LoadSceneSync(std::string_view path);                         ///< Loads scene on the main thread, scene enabled after load
 	static void UnloadScene(unsigned id);
-	static void UnloadScene(const std::string& name);
+	static void UnloadScene(std::string_view name);
 	static void EnableScene(unsigned id);
-	static void EnableScene(const std::string& name);
+	static void EnableScene(std::string_view name);
 	static void DisableScene(unsigned id);
-	static void DisableScene(const std::string& name);
+	static void DisableScene(std::string_view name);
 
 	void EarlyTick();
 	void Tick();
@@ -55,18 +55,18 @@ public:
 
 	template<typename T>
 	[[nodiscard]]
-	static T* Get(const std::string& name) {
+	static T* Get(std::string_view name) {
 		return static_cast<T*>(Get(name));
 	}
 
 	[[nodiscard]]
 	static Object* Get(unsigned id);
 	[[nodiscard]]
-	static Object* Get(const std::string& name);
+	static Object* Get(std::string_view name);
 	[[nodiscard]]
 	static bool Has(unsigned id);
 	[[nodiscard]]
-	static bool Has(const std::string& name);
+	static bool Has(std::string_view name);
 	[[nodiscard]]
 	static Object::Children& GetChildren();
 

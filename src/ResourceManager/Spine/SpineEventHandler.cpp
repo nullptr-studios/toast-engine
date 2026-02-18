@@ -15,23 +15,23 @@ void SpineEventHandler::callback(spine::AnimationState* state, spine::EventType 
 	switch (type) {
 		case spine::EventType_Start:
 			context->OnAnimationStart(entry->getAnimation()->getName().buffer(), entry->getTrackIndex());
-			//TOAST_TRACE("Spine: Animation started: {}", entry->getAnimation()->getName().buffer());
+			// TOAST_TRACE("Spine: Animation started: {}", entry->getAnimation()->getName().buffer());
 			break;
 		case spine::EventType_Interrupt:
 			context->OnAnimationInterrupted(entry->getAnimation()->getName().buffer(), entry->getTrackIndex());
-			//TOAST_TRACE("Spine: Animation interrupted");
+			// TOAST_TRACE("Spine: Animation interrupted");
 			break;
 		case spine::EventType_End:
 			context->OnAnimationEnd(entry->getAnimation()->getName().buffer(), entry->getTrackIndex());
-			//TOAST_TRACE("Spine: Animation ended");
+			// TOAST_TRACE("Spine: Animation ended");
 			break;
 		case spine::EventType_Complete:
 			context->OnAnimationCompleted(entry->getAnimation()->getName().buffer(), entry->getTrackIndex());
-			//TOAST_TRACE("Spine: Animation completed (loops fire this each loop)");
+			// TOAST_TRACE("Spine: Animation completed (loops fire this each loop)");
 			break;
 		case spine::EventType_Dispose:
 			context->OnAnimationDispose(entry->getAnimation()->getName().buffer(), entry->getTrackIndex());
-			//TOAST_TRACE("Spine: Track entry disposed");
+			// TOAST_TRACE("Spine: Track entry disposed");
 			break;
 		case spine::EventType_Event:
 			// User-defined event from animation

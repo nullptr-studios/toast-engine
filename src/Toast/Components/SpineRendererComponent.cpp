@@ -449,5 +449,5 @@ void SpineRendererComponent::OnAnimationEvent(
     const std::string_view& stringValue
 ) {
 	event::Send(new SpineEvent(id(), animationName, track, eventName, intValue, floatValue, stringValue));
-	//TOAST_TRACE("Spine Event Sent!");
+	// TOAST_TRACE("Spine Event Sent!");
 }

@@ -297,13 +297,13 @@ void editor::ResourceSlot::RenderPopups() {
 	}
 }
 
-void editor::ResourceSlot::SetInitialResource(const std::string& default_path) {
+void editor::ResourceSlot::SetInitialResource(std::string_view default_path) {
 	m_defaultPath = default_path;
 	auto e = resource::ResourceManager::CreateResourceSlotEntry(std::filesystem::path(m_defaultPath));
 	ProcessDrop(&e);
 }
 
-void editor::ResourceSlot::SetResource(const std::string& path) {
+void editor::ResourceSlot::SetResource(std::string_view path) {
 	auto e = resource::ResourceManager::CreateResourceSlotEntry(std::filesystem::path(path));
 	ProcessDrop(&e);
 }
