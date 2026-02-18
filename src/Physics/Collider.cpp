@@ -34,7 +34,6 @@ void Collider::DeletePoint(glm::vec2 point) {
 }
 
 void Collider::Bevel(unsigned idx) {
-	TOAST_ASSERT(idx < 0, "Invaid idx Passed To Bevel Function: {}",idx);
 	if (m.points.size() < 3) {
 		return;
 	}
@@ -45,8 +44,8 @@ void Collider::Bevel(unsigned idx) {
 	auto right = (p1 != m.points.end()) ? std::next(p1) : m.points.begin();
 	auto left = (p1 != m.points.begin()) ? std::prev(p1) : std::prev(m.points.end());
 
-	auto new_point1 = glm::mix(*left, *p1, 0.5f);
-	auto new_point2 = glm::mix(*right, *p1, 0.5f);
+	auto new_point1 = glm::mix(*right, *p1, 0.9f);
+	auto new_point2 = glm::mix(*left, *p1, 0.9f);
 
 	*p1 = new_point1;
 	m.points.insert(p1, new_point2);
