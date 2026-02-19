@@ -246,7 +246,12 @@ void Collider::CalculatePoints() {
 
 	// Finally, create convex colliders for every convex mesh we produced
 	for (const auto& points : meshes_list) {
-		m.convexShapes.emplace_back(new ConvexCollider(points, data));
+		
+		//FIXME: this way of setting up the flags is retarded
+		auto c = new ConvexCollider(points, data);
+		c->flags = data.flags;
+		c->forceLeft = data.forceLeft;
+		m.convexShapes.emplace_back(c);
 	}
 }
 
@@ -482,9 +487,6 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("data.forceLeft")) {
 		data.forceLeft = j["data.forceLeft"];
-		for (auto* c : m.convexShapes) {
-			c->forceLeft = data.forceLeft;
-		}
 	}
 
 	Component::Load(j, propagate);
