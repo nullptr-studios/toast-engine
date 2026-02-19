@@ -51,7 +51,10 @@ set(LZ4_BUILD_CLI OFF CACHE BOOL "LZ4_BUILD_CLI" OFF)
 set(LZ4_BUILD_LEGACY_LZ4C OFF CACHE BOOL "LZ4_BUILD_LEGACY_LZ4C" OFF)
 FetchContent_Declare(
         lz4
-        URL https://github.com/lz4/lz4/archive/refs/tags/v1.10.0.tar.gz
+        GIT_REPOSITORY https://github.com/lz4/lz4.git
+        GIT_TAG v1.10.0
+        GIT_SHALLOW TRUE
+        SOURCE_SUBDIR build/cmake
 )
 FetchContent_MakeAvailable(lz4)
 
@@ -184,7 +187,7 @@ endif()
 # Spine Runtime
 FetchContent_Declare(
         spine
-        URL https://github.com/EsotericSoftware/spine-runtimes/archive/refs/tags/spine-libgdx-4.2.0.tar.gz
+        URL https://github.com/nullptr-studios/spine-deps/archive/refs/tags/4.2.tar.gz
 )
 
 FetchContent_GetProperties(spine)
