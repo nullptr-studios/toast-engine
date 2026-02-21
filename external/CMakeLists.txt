@@ -61,6 +61,7 @@ FetchContent_MakeAvailable(lz4)
 
 set(TRACY_ENABLE ON CACHE BOOL "Enable tracy client" ON)
 set(TRACY_ON_DEMAND OFF CACHE BOOL "Tracy on demand" OFF)
+set(TRACY_FIBERS ON CACHE BOOL "Tracy Fibers" ON)
 FetchContent_Declare(
         tracy
         URL https://github.com/wolfpld/tracy/archive/refs/tags/v0.13.1.tar.gz

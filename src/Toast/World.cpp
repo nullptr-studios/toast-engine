@@ -24,6 +24,9 @@ World* World::Instance() {
 }
 
 World::World() {
+	
+	PROFILE_ZONE_N("World Construction");
+	
 	if (m_instance) {
 		throw ToastException("Having more than one world is not allowed");
 	}

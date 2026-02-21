@@ -62,6 +62,7 @@ void PhysicsSystem::start() {
 	}
 
 	physics->thread = std::jthread([physics](std::stop_token token) {    // NOLINT
+		TracyFiberEnter("Physics Thread");
 		while (!token.stop_requested()) {
 			using namespace std::chrono;
 			time_point begin = steady_clock::now();
@@ -95,6 +96,8 @@ void PhysicsSystem::start() {
 		for (auto* rb : physics->m.boxes) {
 			BoxResetVelocity(rb);
 		}
+		
+		TracyFiberLeave;
 	});
 }
 

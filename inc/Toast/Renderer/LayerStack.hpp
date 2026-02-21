@@ -25,8 +25,8 @@ public:
 	///@brief Pops an overlay from the stack
 	void PopOverlay(renderer::ILayer* overlay);
 
-	void TickLayers();
-	void RenderLayers();
+	void TickLayers() const;
+	void RenderLayers() const;
 
 	const std::vector<renderer::ILayer*>& GetLayers() {
 		return m_layers;

@@ -29,6 +29,7 @@ auto Open(std::string& path) -> std::optional<std::string> {
 
 //@TODO: Instead of passing a bool, detect if a .pkg is in the root folder
 ResourceManager::ResourceManager(bool pkg) : m_pkg(pkg) {
+	PROFILE_ZONE_N("ResourceManager Construction");
 	if (m_instance == nullptr) {
 		m_instance = this;
 	}
