@@ -62,8 +62,8 @@ public:
 
 	template<typename T>
 	[[nodiscard]]
-	static auto GetFromType(std::string_view type) -> T* {
-		return static_cast<T*>(GetFromType(type));
+	static auto GetFromType() -> T* {
+		return static_cast<T*>(Instance()->m.children.GetType(T::static_type(), true));
 	}
 
 
