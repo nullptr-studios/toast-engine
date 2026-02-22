@@ -7,6 +7,7 @@
 #include <future>
 #include <mutex>
 #include <optional>
+#include <string_view>
 
 namespace toast {
 
@@ -59,6 +60,13 @@ public:
 		return static_cast<T*>(Get(name));
 	}
 
+	template<typename T>
+	[[nodiscard]]
+	static auto GetFromType(std::string_view type) -> T* {
+		return static_cast<T*>(GetFromType(type));
+	}
+
+
 	[[nodiscard]]
 	static Object* Get(unsigned id);
 	[[nodiscard]]
@@ -69,6 +77,9 @@ public:
 	static bool Has(std::string_view name);
 	[[nodiscard]]
 	static Object::Children& GetChildren();
+
+	[[nodiscard]]
+	static auto GetFromType(std::string_view type) -> Object*;
 
 	static void ScheduleBegin(Object* obj);
 	static void CancelBegin(Object* obj);

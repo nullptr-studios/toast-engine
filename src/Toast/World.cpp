@@ -585,6 +585,10 @@ Object* World::Get(std::string_view name) {
 	return Instance()->m.children.Get(name);
 }
 
+auto World::GetFromType(std::string_view type) -> Object* {
+	return Instance()->m.children.GetType(type, true);
+}
+
 bool World::Has(const unsigned id) {
 	return Instance()->m.children.Has(id);
 }

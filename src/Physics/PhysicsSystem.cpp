@@ -1,4 +1,5 @@
 #define GLM_ENABLE_EXPERIMENTAL
+#define TRACY_FIBERS
 #include "PhysicsSystem.hpp"
 
 #include "ConvexCollider.hpp"
