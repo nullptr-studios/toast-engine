@@ -154,9 +154,8 @@ Engine::Engine() {
 }
 
 void Engine::Init() {
-	
 	PROFILE_ZONE_N("Engine Init");
-	
+
 	// Starting logging system 0x
 	Log::Init();
 	TOAST_INFO("Initializing Toast Engine...");

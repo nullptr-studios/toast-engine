@@ -195,7 +195,6 @@ bool ResourceManager::SaveConfig(std::string_view path, std::string_view content
 bool ResourceManager::LoadConfig(std::string_view path, std::string& content) {
 	PROFILE_ZONE;
 
-
 	std::ifstream ifs(path.data(), std::ios::binary);
 	if (!ifs) {
 		return false;

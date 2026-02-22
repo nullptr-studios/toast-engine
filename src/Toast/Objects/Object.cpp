@@ -264,7 +264,7 @@ Object* Object::Children::Add(std::string_view type, std::optional<std::string_v
 		TOAST_ERROR("Type {0} not found in registry", type);
 		return nullptr;
 	}
-	
+
 	auto* obj = registry[type.data()](*this, std::nullopt);
 	_ConfigureObject(obj, name, file);
 	return obj;

@@ -14,9 +14,8 @@ namespace toast {
 Window* Window::m_instance = nullptr;
 
 Window::Window(unsigned width, unsigned height, std::string_view name) {
-	
 	PROFILE_ZONE_N("Window Construction");
-	
+
 	// Set window instance
 	if (m_instance != nullptr) {
 		throw ToastException("Trying to create window but it already exists");

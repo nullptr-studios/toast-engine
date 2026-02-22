@@ -48,6 +48,14 @@ public:
 	glm::vec2 GetBoneLocalPosition(const std::string_view& boneName) const;
 	void SetBoneLocalPosition(const std::string_view& boneName, const glm::vec2& position) const;
 
+	/// @brief Returns the bone's world position (after applying the component's world transform).
+	/// Useful for attaching game objects (e.g. weapon actors) to spine bones.
+	glm::vec2 GetBoneWorldPosition(const std::string_view& boneName);
+
+	/// @brief Converts a 2-D world-space position into spine root-local space.
+	/// Use this to drive IK targets from world coordinates (e.g. a crosshair actor).
+	glm::vec2 WorldPositionToSpineLocal(const glm::vec2& worldPos);
+
 	// Events
 	virtual void OnAnimationStart(const std::string_view& animationName, int track) { }
 

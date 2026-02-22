@@ -96,7 +96,7 @@ void PhysicsSystem::start() {
 		for (auto* rb : physics->m.boxes) {
 			BoxResetVelocity(rb);
 		}
-		
+
 		TracyFiberLeave;
 	});
 }

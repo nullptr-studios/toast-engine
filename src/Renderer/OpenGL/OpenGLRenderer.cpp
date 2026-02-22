@@ -154,10 +154,9 @@ void DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsiz
 #endif
 
 OpenGLRenderer::OpenGLRenderer() {
-	
 	PROFILE_ZONE_N("OpenGL Renderer Construction");
 	TOAST_INFO("Initializing OpenGL Renderer");
-	
+
 	if (!m_instance) {
 		m_instance = this;
 	}

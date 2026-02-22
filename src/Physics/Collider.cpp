@@ -246,8 +246,7 @@ void Collider::CalculatePoints() {
 
 	// Finally, create convex colliders for every convex mesh we produced
 	for (const auto& points : meshes_list) {
-		
-		//FIXME: this way of setting up the flags is retarded
+		// FIXME: this way of setting up the flags is retarded
 		auto c = new ConvexCollider(points, data);
 		c->flags = data.flags;
 		c->forceLeft = data.forceLeft;

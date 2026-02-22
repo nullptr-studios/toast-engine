@@ -444,6 +444,27 @@ void SpineRendererComponent::SetBoneLocalPosition(const std::string_view& boneNa
 	bone->setY(position.y);
 }
 
+glm::vec2 SpineRendererComponent::GetBoneWorldPosition(const std::string_view& boneName) {
+	if (!m_skeleton) {
+		return glm::vec2(0.0f);
+	}
+	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	if (!bone) {
+		TOAST_WARN("SpineRendererComponent::GetBoneWorldPosition() Bone \"{0}\" not found", boneName);
+		return glm::vec2(0.0f);
+	}
+
+	const glm::vec4 spineLocal(bone->getWorldX(), bone->getWorldY(), 0.0f, 1.0f);
+	const glm::vec4 worldPos = GetWorldMatrix() * spineLocal;
+	return glm::vec2(worldPos.x, worldPos.y);
+}
+
+glm::vec2 SpineRendererComponent::WorldPositionToSpineLocal(const glm::vec2& worldPos) {
+	const glm::vec4 wp(worldPos.x, worldPos.y, 0.0f, 1.0f);
+	const glm::vec4 spineLocal = glm::inverse(GetWorldMatrix()) * wp;
+	return glm::vec2(spineLocal.x, spineLocal.y);
+}
+
 void SpineRendererComponent::OnAnimationEvent(
     const std::string_view& animationName, int track, const std::string_view& eventName, int intValue, float floatValue,
     const std::string_view& stringValue

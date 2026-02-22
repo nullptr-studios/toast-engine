@@ -21,9 +21,8 @@ InputSystem* InputSystem::get() {
 }
 
 InputSystem::InputSystem() {
-	
 	PROFILE_ZONE_N("Input system construction");
-	
+
 	if (m_instance) {
 		throw ToastException("Tried to create Input System but one already exists");
 	}

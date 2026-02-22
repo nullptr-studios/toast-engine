@@ -22,7 +22,7 @@ struct GamepadState {
 class InputSystem {
 public:
 	InputSystem();
-	
+
 	[[nodiscard]]
 	static InputSystem* get();
 
