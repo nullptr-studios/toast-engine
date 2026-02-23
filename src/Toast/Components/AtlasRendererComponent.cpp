@@ -26,6 +26,10 @@ void AtlasRendererComponent::Init() {
 	// Reserve temp buffers to avoid allocations
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
 	m_tempIndices.reserve(INITIAL_VERT_RESERVE);
+	
+	SetRunEarlyTick(false);
+	SetRunLateTick(false);
+	SetRunTick(false);
 
 	if (!m_atlasPath.empty()) {
 		m_atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);

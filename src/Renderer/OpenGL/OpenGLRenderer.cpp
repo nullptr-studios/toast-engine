@@ -406,6 +406,7 @@ void OpenGLRenderer::Render() {
 
 void OpenGLRenderer::GeometryPass() {
 #ifdef TRACY_ENABLE
+	PROFILE_ZONE;
 	TracyGpuZone("Geometry Pass");
 #endif
 
@@ -437,6 +438,7 @@ void OpenGLRenderer::GeometryPass() {
 
 void OpenGLRenderer::LightingPass() {
 #ifdef TRACY_ENABLE
+	PROFILE_ZONE;
 	TracyGpuZone("Lighting Pass");
 #endif
 
@@ -508,6 +510,7 @@ void OpenGLRenderer::LightingPass() {
 
 void OpenGLRenderer::CombinedRenderPass() const {
 #ifdef TRACY_ENABLE
+	PROFILE_ZONE;
 	TracyGpuZone("Combined Pass");
 #endif
 
@@ -607,6 +610,7 @@ void OpenGLRenderer::RemoveTransparentRenderable(IRenderable* renderable) {
 
 void OpenGLRenderer::SpritePass() {
 #ifdef TRACY_ENABLE
+	PROFILE_ZONE;
 	TracyGpuZone("Sprite Pass");
 #endif
 
