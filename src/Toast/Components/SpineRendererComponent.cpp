@@ -78,7 +78,7 @@ void SpineRendererComponent::LoadTextures() {
 	m_shader->Use();
 	m_shader->SetSampler("Texture", 0);
 
-	renderer::IRendererBase::GetInstance()->AddRenderable(this);
+	renderer::IRendererBase::GetInstance()->AddTransparentRenderable(this);
 
 	m_dynamicMesh.InitDynamicSpine();
 }
@@ -238,7 +238,7 @@ void SpineRendererComponent::Inspector() {
 
 void SpineRendererComponent::Destroy() {
 	TransformComponent::Destroy();
-	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveTransparentRenderable(this);
 }
 
 void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept {
@@ -442,6 +442,61 @@ void SpineRendererComponent::SetBoneLocalPosition(const std::string_view& boneNa
 	}
 	bone->setX(position.x);
 	bone->setY(position.y);
+}
+
+float SpineRendererComponent::GetBoneLocalRotation(const std::string_view& boneName) const {
+	if (!m_skeleton) {
+		return 0.0f;
+	}
+	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	if (!bone) {
+		TOAST_WARN("SpineRendererComponent::GetBoneLocalRotation() Bone \"{0}\" not found", boneName);
+		return 0.0f;
+	}
+	return bone->getRotation();
+}
+
+void SpineRendererComponent::SetBoneLocalRotation(const std::string_view& boneName, float rotationDegrees) const {
+	if (!m_skeleton) {
+		return;
+	}
+	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	if (!bone) {
+		TOAST_WARN("SpineRendererComponent::SetBoneLocalRotation() Bone \"{0}\" not found", boneName);
+		return;
+	}
+	bone->setRotation(rotationDegrees);
+}
+
+float SpineRendererComponent::GetBoneWorldRotation(const std::string_view& boneName) {
+	if (!m_skeleton) {
+		return 0.0f;
+	}
+	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	if (!bone) {
+		TOAST_WARN("SpineRendererComponent::GetBoneWorldRotation() Bone \"{0}\" not found", boneName);
+		return 0.0f;
+	}
+	return bone->getWorldRotationX();
+}
+
+void SpineRendererComponent::SetBoneWorldRotation(const std::string_view& boneName, float rotationDegrees) {
+	if (!m_skeleton) {
+		return;
+	}
+	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	if (!bone) {
+		TOAST_WARN("SpineRendererComponent::SetBoneWorldRotation() Bone \"{0}\" not found", boneName);
+		return;
+	}
+
+	// To set world rotation, we need to convert it to local rotation based on parent's world rotation
+	float parentWorldRot = 0.0f;
+	if (bone->getParent()) {
+		parentWorldRot = bone->getParent()->getWorldRotationX();
+	}
+	float localRot = rotationDegrees - parentWorldRot;
+	bone->setRotation(localRot);
 }
 
 glm::vec2 SpineRendererComponent::GetBoneWorldPosition(const std::string_view& boneName) {

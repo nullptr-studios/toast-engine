@@ -448,9 +448,12 @@ void TransformComponent::UpdateChildrenWorldMatrix() {
 		if (auto a = dynamic_cast<Actor*>(child->second.get())) {
 			if (auto* t = a->transform()) {
 				t->m_dirtyWorldMatrix = true;
+				// Propagate into the child actor's own components
+				t->UpdateChildrenWorldMatrix();
 			}
 		} else if (auto t = dynamic_cast<TransformComponent*>(child->second.get())) {
 			t->m_dirtyWorldMatrix = true;
+			t->UpdateChildrenWorldMatrix();
 		} else if (auto r = dynamic_cast<IRenderable*>(child->second.get())) {
 			r->m_dirtyWorldMatrix = true;
 		}

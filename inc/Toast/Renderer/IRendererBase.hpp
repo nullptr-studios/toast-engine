@@ -84,6 +84,13 @@ public:
 	/// @param renderable Pointer to the renderable object to remove
 	virtual void RemoveRenderable(IRenderable* renderable) = 0;
 
+	/// @brief Adds a transparent/sprite renderable (spine, atlas) that renders after the combine pass
+	/// @note These bypass the lighting pipeline and are drawn with alpha blending into the output FBO
+	virtual void AddTransparentRenderable(IRenderable* renderable) = 0;
+
+	/// @brief Removes a transparent/sprite renderable from the sprite pass queue
+	virtual void RemoveTransparentRenderable(IRenderable* renderable) = 0;
+
 	/// @brief Adds a 2D light to the lighting system
 	/// @param light Pointer to the light to add
 	/// @note The renderer does not take ownership of the light
@@ -332,10 +339,12 @@ protected:
 	toast::Camera* m_activeCamera = nullptr;    ///< Currently active camera for rendering
 
 	// ========== Scene Objects ==========
-	std::vector<IRenderable*> m_renderables;    ///< All renderable objects in the scene
-	std::vector<Light2D*> m_lights;             ///< All 2D lights in the scene
-	bool m_renderablesSortDirty = true;         ///< True when renderables need re-sorting
-	bool m_lightsSortDirty = true;              ///< True when lights need re-sorting
+	std::vector<IRenderable*> m_renderables;               ///< Opaque renderable objects (geometry pass)
+	std::vector<IRenderable*> m_transparentRenderables;    ///< Transparent/sprite renderables (sprite pass, post-combine)
+	std::vector<Light2D*> m_lights;                        ///< All 2D lights in the scene
+	bool m_renderablesSortDirty = true;                    ///< True when renderables need re-sorting
+	bool m_transparentSortDirty = true;                    ///< True when transparent renderables need re-sorting
+	bool m_lightsSortDirty = true;                         ///< True when lights need re-sorting
 
 	// ========== Transform Matrices ==========
 	glm::mat4 m_projectionMatrix = glm::mat4(1.0f);    ///< Camera projection matrix

@@ -244,7 +244,7 @@ void AtlasRendererComponent::LoadTextures() {
 	m_shader->Use();
 	m_shader->SetSampler("Texture", 0);
 
-	renderer::IRendererBase::GetInstance()->AddRenderable(this);
+	renderer::IRendererBase::GetInstance()->AddTransparentRenderable(this);
 
 	m_dynamicMesh.InitDynamicSpine();
 }
@@ -373,5 +373,5 @@ json_t AtlasRendererComponent::Save() const {
 }
 
 void AtlasRendererComponent::Destroy() {
-	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveTransparentRenderable(this);
 }

@@ -361,6 +361,9 @@ void OpenGLRenderer::Render() {
 	// Combine
 	CombinedRenderPass();
 
+	// Transparent/sprite pass (spine, atlas) — rendered after combine into output FBO
+	SpritePass();
+
 	// Render editor/game layers into output buffer
 	m_outputFramebuffer->bind();
 	m_layerStack->RenderLayers();
@@ -587,6 +590,57 @@ void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
 void OpenGLRenderer::RemoveRenderable(IRenderable* renderable) {
 	m_renderables.erase(std::ranges::find(m_renderables, renderable));
 	m_renderablesSortDirty = true;
+}
+
+void OpenGLRenderer::AddTransparentRenderable(IRenderable* renderable) {
+	m_transparentRenderables.push_back(renderable);
+	m_transparentSortDirty = true;
+}
+
+void OpenGLRenderer::RemoveTransparentRenderable(IRenderable* renderable) {
+	auto it = std::ranges::find(m_transparentRenderables, renderable);
+	if (it != m_transparentRenderables.end()) {
+		m_transparentRenderables.erase(it);
+	}
+	m_transparentSortDirty = true;
+}
+
+void OpenGLRenderer::SpritePass() {
+#ifdef TRACY_ENABLE
+	TracyGpuZone("Sprite Pass");
+#endif
+
+	if (m_transparentRenderables.empty()) {
+		return;
+	}
+
+	// Sort back-to-front so sprites layer correctly with alpha blending
+	if (m_transparentSortDirty && m_transparentRenderables.size() > 1) {
+		std::ranges::stable_sort(m_transparentRenderables, [](IRenderable* a, IRenderable* b) {
+			return a->GetDepth() < b->GetDepth();
+		});
+		m_transparentSortDirty = false;
+	}
+
+	// Render directly into the output framebuffer (after combine)
+	m_outputFramebuffer->bind();
+	glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
+	glScissor(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
+
+	// Straight alpha blending over the already-combined scene
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	for (auto* r : m_transparentRenderables) {
+		if (r) {
+			r->OnRender(m_multipliedMatrix);
+		}
+	}
+
+	// Restore state
+	glDisable(GL_BLEND);
+
+	Framebuffer::unbind();
 }
 
 void OpenGLRenderer::AddLight(Light2D* light) {
