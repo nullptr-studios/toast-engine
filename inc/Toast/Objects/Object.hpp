@@ -139,6 +139,10 @@ public:
 	/// @brief Destroys this object
 	void Nuke();
 
+	void SetRunEarlyTick(bool value) { m_runsEarlyTick = value; }
+
+	void SetRunLateTick(bool value) { m_runsLateTick = value; }
+
 protected:
 	// Tick functions
 	/// @brief This function runs just after the object is created (scene load thread)
@@ -177,6 +181,8 @@ private:
 	unsigned m_id = -1;
 	std::string m_name;
 	bool m_enabled = false;
+	bool m_runsEarlyTick = true;
+	bool m_runsLateTick = true;
 	Object* m_parent = nullptr;
 	Scene* m_scene = nullptr;
 

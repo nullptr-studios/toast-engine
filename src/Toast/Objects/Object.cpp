@@ -372,6 +372,10 @@ void Object::_Begin(bool propagate) {
 }
 
 void Object::_EarlyTick() {
+	if (not m_runsEarlyTick) {
+		return;
+	}
+
 	if (!enabled() || !m_hasRunBegin) {
 		return;
 	}
@@ -404,6 +408,10 @@ void Object::_Tick() {
 }
 
 void Object::_EditorTick() {
+	if (not m_runsLateTick) {
+		return;
+	}
+
 	if (!enabled()) {
 		return;
 	}
