@@ -1,0 +1,4 @@
+add_library(sol2 INTERFACE)
+target_include_directories(sol2 INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_definitions(sol2 INTERFACE SOL_USE_CXX17_IF_AVAILABLE=1 SOL_USING_CXX_OPTIONAL=1)
+target_link_libraries(sol2 INTERFACE lua_static)

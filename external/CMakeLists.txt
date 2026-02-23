@@ -14,194 +14,48 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "GLFW_BUILD_DOCS" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "GLFW_BUILD_TESTS" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "GLFW_BUILD_EXAMPLES" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "GLFW_INSTALL" FORCE)
-
-FetchContent_Declare(
-        glfw
-        URL https://github.com/glfw/glfw/archive/refs/tags/3.4.tar.gz
-)
-FetchContent_MakeAvailable(glfw)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/glfw")
 
 
-FetchContent_Declare(
-        glm
-        URL https://github.com/g-truc/glm/archive/refs/tags/1.0.2.tar.gz
-)
-FetchContent_MakeAvailable(glm)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/glm")
 
 
 set(JSON_BuildTests OFF CACHE BOOL "JSON_BuildTests" OFF)
 set(JSON_Install OFF CACHE BOOL "JSON_Install" OFF)
-FetchContent_Declare(
-        nlohmann_json
-        URL https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz
-)
-FetchContent_MakeAvailable(nlohmann_json)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/nlohmann_json")
 
 
 # set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "SPDLOG_FMT_EXTERNAL" OFF)
 set(SPDLOG_INSTALL OFF CACHE BOOL "SPDLOG_INSTALL" OFF)
-FetchContent_Declare(
-        spdlog
-        URL https://github.com/gabime/spdlog/archive/refs/tags/v1.14.1.tar.gz
-)
-FetchContent_MakeAvailable(spdlog)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/spdlog")
 
 
 set(LZ4_BUILD_CLI OFF CACHE BOOL "LZ4_BUILD_CLI" OFF)
 set(LZ4_BUILD_LEGACY_LZ4C OFF CACHE BOOL "LZ4_BUILD_LEGACY_LZ4C" OFF)
-FetchContent_Declare(
-        lz4
-        GIT_REPOSITORY https://github.com/lz4/lz4.git
-        GIT_TAG v1.10.0
-        GIT_SHALLOW TRUE
-        SOURCE_SUBDIR build/cmake
-)
-FetchContent_MakeAvailable(lz4)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/lz4/build/cmake")
 
 
 set(TRACY_ENABLE ON CACHE BOOL "Enable tracy client" ON)
 set(TRACY_ON_DEMAND OFF CACHE BOOL "Tracy on demand" OFF)
 set(TRACY_FIBERS ON CACHE BOOL "Tracy Fibers" ON)
-FetchContent_Declare(
-        tracy
-        URL https://github.com/wolfpld/tracy/archive/refs/tags/v0.13.1.tar.gz
-)
-FetchContent_MakeAvailable(tracy)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/tracy")
 
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/stb")
 
-FetchContent_Declare(
-        stb
-        GIT_REPOSITORY https://github.com/nothings/stb.git
-        GIT_TAG master
-        GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(stb)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/yaml-cpp")
 
-if(NOT TARGET stb)
-    add_library(stb INTERFACE)
-    target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
-endif()
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/lua")
 
-set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "YAML_CPP_BUILD_TESTS" OFF)
-set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "YAML_CPP_BUILD_TOOLS" OFF)
-set(YAML_CPP_INSTALL OFF CACHE BOOL "YAML_CPP_INSTALL" OFF)
-FetchContent_Declare(
-        yaml-cpp
-        URL https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.9.0.tar.gz
-)
-FetchContent_MakeAvailable(yaml-cpp)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/sol2")
 
-FetchContent_Declare(
-        lua
-        URL https://github.com/lua/lua/archive/refs/tags/v5.4.4.tar.gz
-)
-FetchContent_GetProperties(lua)
-if(NOT lua_POPULATED)
-    FetchContent_Populate(lua)
-    file(GLOB LUA_SOURCES "${lua_SOURCE_DIR}/*.c")
-    list(REMOVE_ITEM LUA_SOURCES
-            "${lua_SOURCE_DIR}/lua.c"
-            "${lua_SOURCE_DIR}/luac.c"
-            "${lua_SOURCE_DIR}/onelua.c"
-    )
-    add_library(lua_static STATIC ${LUA_SOURCES})
-    target_include_directories(lua_static PUBLIC ${lua_SOURCE_DIR})
-    if(UNIX)
-        target_compile_definitions(lua_static PUBLIC LUA_USE_POSIX)
-        target_link_libraries(lua_static PUBLIC m dl)
-    endif()
-endif()
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader")
 
-FetchContent_Declare(
-        sol2
-        URL https://github.com/ThePhD/sol2/archive/refs/tags/v3.5.0.tar.gz
-)
-
-FetchContent_GetProperties(sol2)
-if(NOT sol2_POPULATED)
-    FetchContent_Populate(sol2)
-    add_library(sol2 INTERFACE)
-    target_include_directories(sol2 INTERFACE ${sol2_SOURCE_DIR}/include)
-    target_compile_definitions(sol2 INTERFACE SOL_USE_CXX17_IF_AVAILABLE=1 SOL_USING_CXX_OPTIONAL=1)
-    target_link_libraries(sol2 INTERFACE lua_static)
-endif()
-
-
-FetchContent_Declare(
-        tinyobjloader
-        GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
-        GIT_TAG v2.0.0rc13
-        GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(tinyobjloader)
-
-
-FetchContent_Declare(
-        imgui
-        URL https://github.com/ocornut/imgui/archive/refs/tags/v1.92.5-docking.tar.gz
-)
-
-FetchContent_GetProperties(imgui)
-if(NOT imgui_POPULATED)
-    FetchContent_Populate(imgui)
-    add_library(imgui STATIC
-            ${imgui_SOURCE_DIR}/imgui.cpp
-            ${imgui_SOURCE_DIR}/imgui_demo.cpp
-            ${imgui_SOURCE_DIR}/imgui_draw.cpp
-            ${imgui_SOURCE_DIR}/imgui_tables.cpp
-            ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-            ${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
-    )
-    target_include_directories(imgui PUBLIC
-            ${imgui_SOURCE_DIR}
-            ${imgui_SOURCE_DIR}/backends
-            ${imgui_SOURCE_DIR}/misc/cpp
-    )
-    target_link_libraries(imgui PUBLIC glfw)
-    target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)
-endif()
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/imgui")
 
 # ImGuizmo
-FetchContent_Declare(
-        imguizmo
-        GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git
-        GIT_TAG master
-)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/imguizmo")
 
-# Handle ImGuizmo
-FetchContent_GetProperties(imguizmo)    
-if(NOT imguizmo_POPULATED)
-    FetchContent_Populate(imguizmo)
-    add_library(imguizmo STATIC
-            ${imguizmo_SOURCE_DIR}/ImGuizmo.cpp
-            ${imguizmo_SOURCE_DIR}/ImCurveEdit.cpp
-            ${imguizmo_SOURCE_DIR}/ImGradient.cpp
-            ${imguizmo_SOURCE_DIR}/ImSequencer.cpp
-    )
-    target_include_directories(imguizmo PUBLIC ${imguizmo_SOURCE_DIR})
-    target_link_libraries(imguizmo PUBLIC imgui)
-endif()
-
-
-# Spine Runtime
-FetchContent_Declare(
-        spine
-        URL https://github.com/nullptr-studios/spine-deps/archive/refs/tags/4.2.tar.gz
-)
-
-FetchContent_GetProperties(spine)
-if(NOT spine_POPULATED)
-    FetchContent_Populate(spine)
-    file(GLOB SPINE_SOURCES
-            "${spine_SOURCE_DIR}/spine-cpp/spine-cpp/src/spine/*.cpp"
-    )
-    add_library(spine-cpp STATIC ${SPINE_SOURCES})
-    target_include_directories(spine-cpp PUBLIC
-            "${spine_SOURCE_DIR}/spine-cpp/spine-cpp/include"
-    )
-endif()
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/spine")
 
 #fmod
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/fmod")
