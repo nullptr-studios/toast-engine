@@ -73,7 +73,7 @@ void MeshRendererComponent::Init() {
 	m_material = resource::LoadResource<renderer::Material>(m_materialPath);
 	// m_texture = resource::ResourceManager::GetInstance()->LoadResource<Texture>(m_texturePath);
 	m_mesh = resource::LoadResource<renderer::Mesh>(m_meshPath);
-	
+
 	SetRunTick(false);
 	SetRunEarlyTick(false);
 	SetRunLateTick(false);

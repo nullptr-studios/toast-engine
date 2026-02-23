@@ -826,7 +826,7 @@ void ParticleSystem::Init() {
 	SetRunEarlyTick(false);
 	SetRunTick(false);
 	SetRunLateTick(false);
-	
+
 	InitSharedResources();
 
 	// If no emitters exist, add a default one

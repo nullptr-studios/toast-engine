@@ -26,7 +26,7 @@ void AtlasRendererComponent::Init() {
 	// Reserve temp buffers to avoid allocations
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
 	m_tempIndices.reserve(INITIAL_VERT_RESERVE);
-	
+
 	SetRunEarlyTick(false);
 	SetRunLateTick(false);
 	SetRunTick(false);
