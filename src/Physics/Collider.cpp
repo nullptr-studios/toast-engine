@@ -6,6 +6,8 @@
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
+#include <iterator>
+
 #ifdef TOAST_EDITOR
 #include <imgui.h>
 #endif
@@ -29,6 +31,25 @@ void Collider::SwapPoints(glm::vec2 lhs, glm::vec2 rhs) {
 void Collider::DeletePoint(glm::vec2 point) {
 	auto it = std::ranges::find(m.points, point);
 	m.points.erase(it);
+}
+
+void Collider::Bevel(unsigned idx) {
+	if (m.points.size() < 3) {
+		return;
+	}
+
+	// Get the corner represented by 3 points
+	auto p1 = m.points.begin();
+	std::advance(p1, idx);
+
+	auto right = (p1 != m.points.end()) ? std::next(p1) : m.points.begin();
+	auto left = (p1 != m.points.begin()) ? std::prev(p1) : std::prev(m.points.end());
+
+	// Reformat the corner into 2 more points that are close to the original point
+	auto new_point1 = glm::mix(*right, *p1, 0.9f);
+	auto new_point2 = glm::mix(*left, *p1, 0.9f);
+	*p1 = new_point1;
+	m.points.insert(p1, new_point2);
 }
 
 void Collider::CalculatePoints() {
@@ -246,7 +267,11 @@ void Collider::CalculatePoints() {
 
 	// Finally, create convex colliders for every convex mesh we produced
 	for (const auto& points : meshes_list) {
-		m.convexShapes.emplace_back(new ConvexCollider(points, data));
+		// FIXME: this way of setting up the flags is retarded
+		auto c = new ConvexCollider(points, data);
+		c->flags = data.flags;
+		c->forceLeft = data.forceLeft;
+		m.convexShapes.emplace_back(c);
 	}
 }
 
@@ -482,9 +507,6 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("data.forceLeft")) {
 		data.forceLeft = j["data.forceLeft"];
-		for (auto* c : m.convexShapes) {
-			c->forceLeft = data.forceLeft;
-		}
 	}
 
 	Component::Load(j, propagate);

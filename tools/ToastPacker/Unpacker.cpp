@@ -113,7 +113,7 @@ public:
 		flags_.clear();
 	}
 
-	bool ReadFile(const std::string& raw_path, std::vector<uint8_t>& out) {
+	bool ReadFile(std::string_view raw_path, std::vector<uint8_t>& out) {
 		// canonicalize lookup path same as packer
 		std::u8string path = canonical_path_for_pack(raw_path);
 

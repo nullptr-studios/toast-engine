@@ -74,6 +74,10 @@ void MeshRendererComponent::Init() {
 	// m_texture = resource::ResourceManager::GetInstance()->LoadResource<Texture>(m_texturePath);
 	m_mesh = resource::LoadResource<renderer::Mesh>(m_meshPath);
 
+	SetRunTick(false);
+	SetRunEarlyTick(false);
+	SetRunLateTick(false);
+
 #ifdef TOAST_EDITOR
 	m_materialSlot.SetOnDroppedLambda([this](const std::string& p) {
 		SetMaterial(p);

@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -26,9 +27,11 @@ class StateMachine;
  */
 template<typename T>
 struct State {
-	virtual void OnBegin() { };
-	virtual void OnTick() { };
-	virtual void OnExit() { };
+	virtual void OnBegin() { }
+
+	virtual void OnTick() { }
+
+	virtual void OnExit() { }
 
 	T* parent = nullptr;
 };
@@ -41,35 +44,37 @@ struct State {
  * Each state can define OnEnter, OnUpdate, and OnExit functions.
  * The machine calls OnExit() on the old state before switching, and OnEnter() on the new one.
  */
- template<typename T>
+template<typename T>
 class StateMachine {
 public:
 	StateMachine() = default;
 
-	void SetParent(T* parent) { m.parent = parent; }
+	void SetParent(T* parent) {
+		m.parent = parent;
+	}
 
-	void AddState(const std::string& name, State<T>* state);
-	void SetState(const std::string& name);
+	void AddState(std::string_view name, std::unique_ptr<State<T>>&& state);
+	void SetState(std::string_view name);
 	void Tick();
 
 	const std::string& GetCurrentState() const;
 
 private:
 	struct {
-		std::unordered_map<std::string, State<T>*> states;
+		std::unordered_map<std::string, std::unique_ptr<State<T>>> states;
 		std::string currentState;
 		T* parent = nullptr;
 	} m;
 };
 
 template<typename T>
-void StateMachine<T>::AddState(const std::string& name, State<T>* state) {
+void StateMachine<T>::AddState(std::string_view name, std::unique_ptr<State<T>>&& state) {
 	state->parent = m.parent;
-	m.states[name] = state;
+	m.states[std::string(name)] = std::move(state);
 }
 
 template<typename T>
-void StateMachine<T>::SetState(const std::string& name) {
+void StateMachine<T>::SetState(std::string_view name) {
 	if (m.currentState == name) {
 		return;
 	}

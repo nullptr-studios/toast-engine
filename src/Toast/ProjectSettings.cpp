@@ -12,6 +12,8 @@ namespace toast {
 ProjectSettings* ProjectSettings::m_instance = nullptr;
 
 ProjectSettings::ProjectSettings() : m_version(0, 0, 0) {
+	PROFILE_ZONE("ProjectSettings Construction");
+
 	if (m_instance) {
 		throw ToastException("Tried to create Project Settings but it already exists");
 	}

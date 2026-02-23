@@ -35,7 +35,7 @@ void RbKinematics(Rigidbody* rb) {
 		rb->mass = 1;
 	}
 
-	// Sum forces
+	// Sum forces/impulses
 	// Copy and clear under lock
 	std::deque<glm::dvec2> local_forces {};
 	{
@@ -44,12 +44,17 @@ void RbKinematics(Rigidbody* rb) {
 	}
 
 	glm::dvec2 forces_sum = std::accumulate(local_forces.begin(), local_forces.end(), glm::dvec2(0.0), std::plus());
-	glm::dvec2 accel = (forces_sum / rb->mass) + (PhysicsSystem::gravity() * dvec2 { rb->gravityScale });
 
-	// Integrate velocity
-	velocity += accel * Time::fixed_delta();
+	// Apply impulses as instantaneous change in velocity
+	if (length2(forces_sum) > 0.0) {
+		velocity += forces_sum / rb->mass;    // forces_sum is impulse (F*dt), so dividing by mass yields delta_v
+	}
 
-	// Apply drag
+	// Apply gravity as acceleration over fixed timestep
+	const dvec2 gravity = PhysicsSystem::gravity() * dvec2 { rb->gravityScale };
+	velocity += gravity * Time::fixed_delta();
+
+	// Apply drag over fixed timestep
 	const dvec2 damping = exp(dvec2 { -rb->drag } * Time::fixed_delta());
 	velocity *= damping;
 
@@ -156,11 +161,14 @@ void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
 	}
 
 	// Positional correction
-	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
-	dvec2 correction = (penetration_correction / inv_mass_sum) * normal;
+	{
+		double depth_corr = manifold.depth - PhysicsSystem::pos_slop();
+		double penetration_correction = (depth_corr > 0.0) ? (depth_corr * PhysicsSystem::pos_ptc()) : 0.0;
+		dvec2 correction = (penetration_correction / inv_mass_sum) * normal;
 
-	position1 += correction * inv_mass1;
-	position2 -= correction * inv_mass2;
+		position1 += correction * inv_mass1;
+		position2 -= correction * inv_mass2;
+	}
 
 	rb1->SetPosition(position1);
 	rb2->SetPosition(position2);
@@ -321,8 +329,11 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	}
 
 	// positional correction
-	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
-	position += penetration_correction * manifold.normal;
+	{
+		double depth_corr = manifold.depth - PhysicsSystem::pos_slop();
+		double penetration_correction = (depth_corr > 0.0) ? (depth_corr * PhysicsSystem::pos_ptc()) : 0.0;
+		position += penetration_correction * manifold.normal;
+	}
 	rb->SetPosition(position);
 
 	// velocity correction

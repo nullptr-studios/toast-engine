@@ -9,6 +9,7 @@ namespace event {
 EventSystem* EventSystem::m_instance = nullptr;
 
 EventSystem::EventSystem() {
+	PROFILE_ZONE_N("EventSystem Construction");
 	if (m_instance) {
 		throw ToastException("EventSystem already exists");
 	}

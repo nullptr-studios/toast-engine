@@ -24,6 +24,9 @@
 void SpineRendererComponent::Init() {
 	TransformComponent::Init();
 
+	SetRunEarlyTick(false);
+	SetRunLateTick(false);
+
 	// shader and buffers
 	m_shader = resource::LoadResource<renderer::Shader>("SHADERS/spine.shader");
 	// Reserve temp buffers to avoid allocations
@@ -48,7 +51,7 @@ void SpineRendererComponent::Init() {
 	if (m_skeletonData) {
 		m_skeleton = std::make_unique<spine::Skeleton>(m_skeletonData->GetSkeletonData());
 		m_animationStateData = std::make_unique<spine::AnimationStateData>(m_skeletonData->GetSkeletonData());
-		m_animationStateData->setDefaultMix(.5f);
+		m_animationStateData->setDefaultMix(.4f);
 		m_animationState = std::make_unique<spine::AnimationState>(m_animationStateData.get());
 		m_animationState->setListener(m_eventHandler.get());
 
@@ -78,7 +81,7 @@ void SpineRendererComponent::LoadTextures() {
 	m_shader->Use();
 	m_shader->SetSampler("Texture", 0);
 
-	renderer::IRendererBase::GetInstance()->AddRenderable(this);
+	renderer::IRendererBase::GetInstance()->AddTransparentRenderable(this);
 
 	m_dynamicMesh.InitDynamicSpine();
 }
@@ -238,7 +241,7 @@ void SpineRendererComponent::Inspector() {
 
 void SpineRendererComponent::Destroy() {
 	TransformComponent::Destroy();
-	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveTransparentRenderable(this);
 }
 
 void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept {
@@ -444,10 +447,86 @@ void SpineRendererComponent::SetBoneLocalPosition(const std::string_view& boneNa
 	bone->setY(position.y);
 }
 
+float SpineRendererComponent::GetBoneLocalRotation(const std::string_view& boneName) const {
+	if (!m_skeleton) {
+		return 0.0f;
+	}
+	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	if (!bone) {
+		TOAST_WARN("SpineRendererComponent::GetBoneLocalRotation() Bone \"{0}\" not found", boneName);
+		return 0.0f;
+	}
+	return bone->getRotation();
+}
+
+void SpineRendererComponent::SetBoneLocalRotation(const std::string_view& boneName, float rotationDegrees) const {
+	if (!m_skeleton) {
+		return;
+	}
+	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	if (!bone) {
+		TOAST_WARN("SpineRendererComponent::SetBoneLocalRotation() Bone \"{0}\" not found", boneName);
+		return;
+	}
+	bone->setRotation(rotationDegrees);
+}
+
+float SpineRendererComponent::GetBoneWorldRotation(const std::string_view& boneName) {
+	if (!m_skeleton) {
+		return 0.0f;
+	}
+	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	if (!bone) {
+		TOAST_WARN("SpineRendererComponent::GetBoneWorldRotation() Bone \"{0}\" not found", boneName);
+		return 0.0f;
+	}
+	return bone->getWorldRotationX();
+}
+
+void SpineRendererComponent::SetBoneWorldRotation(const std::string_view& boneName, float rotationDegrees) {
+	if (!m_skeleton) {
+		return;
+	}
+	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	if (!bone) {
+		TOAST_WARN("SpineRendererComponent::SetBoneWorldRotation() Bone \"{0}\" not found", boneName);
+		return;
+	}
+
+	// To set world rotation, we need to convert it to local rotation based on parent's world rotation
+	float parentWorldRot = 0.0f;
+	if (bone->getParent()) {
+		parentWorldRot = bone->getParent()->getWorldRotationX();
+	}
+	float localRot = rotationDegrees - parentWorldRot;
+	bone->setRotation(localRot);
+}
+
+glm::vec2 SpineRendererComponent::GetBoneWorldPosition(const std::string_view& boneName) {
+	if (!m_skeleton) {
+		return glm::vec2(0.0f);
+	}
+	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	if (!bone) {
+		TOAST_WARN("SpineRendererComponent::GetBoneWorldPosition() Bone \"{0}\" not found", boneName);
+		return glm::vec2(0.0f);
+	}
+
+	const glm::vec4 spineLocal(bone->getWorldX(), bone->getWorldY(), 0.0f, 1.0f);
+	const glm::vec4 worldPos = GetWorldMatrix() * spineLocal;
+	return glm::vec2(worldPos.x, worldPos.y);
+}
+
+glm::vec2 SpineRendererComponent::WorldPositionToSpineLocal(const glm::vec2& worldPos) {
+	const glm::vec4 wp(worldPos.x, worldPos.y, 0.0f, 1.0f);
+	const glm::vec4 spineLocal = glm::inverse(GetWorldMatrix()) * wp;
+	return glm::vec2(spineLocal.x, spineLocal.y);
+}
+
 void SpineRendererComponent::OnAnimationEvent(
     const std::string_view& animationName, int track, const std::string_view& eventName, int intValue, float floatValue,
     const std::string_view& stringValue
 ) {
 	event::Send(new SpineEvent(id(), animationName, track, eventName, intValue, floatValue, stringValue));
-	TOAST_TRACE("Spine Event Sent!");
+	// TOAST_TRACE("Spine Event Sent!");
 }

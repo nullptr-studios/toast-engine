@@ -17,18 +17,14 @@ set(GLFW_INSTALL OFF CACHE BOOL "GLFW_INSTALL" FORCE)
 
 FetchContent_Declare(
         glfw
-        GIT_REPOSITORY https://github.com/glfw/glfw.git
-        GIT_TAG 3.4
-        GIT_SHALLOW TRUE
+        URL https://github.com/glfw/glfw/archive/refs/tags/3.4.tar.gz
 )
 FetchContent_MakeAvailable(glfw)
 
 
 FetchContent_Declare(
         glm
-        GIT_REPOSITORY https://github.com/g-truc/glm.git
-        GIT_TAG 1.0.1
-        GIT_SHALLOW TRUE
+        URL https://github.com/g-truc/glm/archive/refs/tags/1.0.2.tar.gz
 )
 FetchContent_MakeAvailable(glm)
 
@@ -37,9 +33,7 @@ set(JSON_BuildTests OFF CACHE BOOL "JSON_BuildTests" OFF)
 set(JSON_Install OFF CACHE BOOL "JSON_Install" OFF)
 FetchContent_Declare(
         nlohmann_json
-        GIT_REPOSITORY https://github.com/nlohmann/json.git
-        GIT_TAG v3.11.3
-        GIT_SHALLOW TRUE
+        URL https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz
 )
 FetchContent_MakeAvailable(nlohmann_json)
 
@@ -48,9 +42,7 @@ FetchContent_MakeAvailable(nlohmann_json)
 set(SPDLOG_INSTALL OFF CACHE BOOL "SPDLOG_INSTALL" OFF)
 FetchContent_Declare(
         spdlog
-        GIT_REPOSITORY https://github.com/gabime/spdlog.git
-        GIT_TAG v1.14.1
-        GIT_SHALLOW TRUE
+        URL https://github.com/gabime/spdlog/archive/refs/tags/v1.14.1.tar.gz
 )
 FetchContent_MakeAvailable(spdlog)
 
@@ -69,11 +61,10 @@ FetchContent_MakeAvailable(lz4)
 
 set(TRACY_ENABLE ON CACHE BOOL "Enable tracy client" ON)
 set(TRACY_ON_DEMAND OFF CACHE BOOL "Tracy on demand" OFF)
+set(TRACY_FIBERS ON CACHE BOOL "Tracy Fibers" ON)
 FetchContent_Declare(
         tracy
-        GIT_REPOSITORY https://github.com/wolfpld/tracy.git
-        GIT_TAG v0.13.1
-        GIT_SHALLOW TRUE
+        URL https://github.com/wolfpld/tracy/archive/refs/tags/v0.13.1.tar.gz
 )
 FetchContent_MakeAvailable(tracy)
 
@@ -96,17 +87,13 @@ set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "YAML_CPP_BUILD_TOOLS" OFF)
 set(YAML_CPP_INSTALL OFF CACHE BOOL "YAML_CPP_INSTALL" OFF)
 FetchContent_Declare(
         yaml-cpp
-        GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-        GIT_TAG master
-        GIT_SHALLOW TRUE
+        URL https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.9.0.tar.gz
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
 FetchContent_Declare(
         lua
-        GIT_REPOSITORY https://github.com/lua/lua.git
-        GIT_TAG v5.4.4
-        GIT_SHALLOW TRUE
+        URL https://github.com/lua/lua/archive/refs/tags/v5.4.4.tar.gz
 )
 FetchContent_GetProperties(lua)
 if(NOT lua_POPULATED)
@@ -127,9 +114,7 @@ endif()
 
 FetchContent_Declare(
         sol2
-        GIT_REPOSITORY https://github.com/ThePhD/sol2.git
-        GIT_TAG v3.5.0
-        GIT_SHALLOW TRUE
+        URL https://github.com/ThePhD/sol2/archive/refs/tags/v3.5.0.tar.gz
 )
 
 FetchContent_GetProperties(sol2)
@@ -153,9 +138,7 @@ FetchContent_MakeAvailable(tinyobjloader)
 
 FetchContent_Declare(
         imgui
-        GIT_REPOSITORY https://github.com/ocornut/imgui.git
-        GIT_TAG v1.92.5-docking
-        GIT_SHALLOW TRUE
+        URL https://github.com/ocornut/imgui/archive/refs/tags/v1.92.5-docking.tar.gz
 )
 
 FetchContent_GetProperties(imgui)
@@ -205,9 +188,7 @@ endif()
 # Spine Runtime
 FetchContent_Declare(
         spine
-        GIT_REPOSITORY https://github.com/EsotericSoftware/spine-runtimes.git
-        GIT_TAG 4.2
-        GIT_SHALLOW TRUE
+        URL https://github.com/nullptr-studios/spine-deps/archive/refs/tags/4.2.tar.gz
 )
 
 FetchContent_GetProperties(spine)

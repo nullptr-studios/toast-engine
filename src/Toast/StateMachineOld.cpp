@@ -6,11 +6,11 @@ namespace toast {
 
 StateMachineOld::StateMachineOld() = default;
 
-void StateMachineOld::AddState(const std::string& name, StateOld&& state) {
-	m.states[name] = state;
+void StateMachineOld::AddState(std::string_view name, StateOld&& state) {
+	m.states[std::string(name)] = state;
 }
 
-void StateMachineOld::SetState(const std::string& name) {
+void StateMachineOld::SetState(std::string_view name) {
 	if (m.currentState == name) {
 		return;
 	}

@@ -27,7 +27,7 @@ public:
 #ifdef TOAST_EDITOR
 
 	///@brief Sets the initial resource to load when showing the slot for the first time
-	void SetInitialResource(const std::string& default_path);
+	void SetInitialResource(std::string_view default_path);
 
 	///@brief editor callback when a resource is dropped
 	void SetOnDroppedLambda(std::function<void(const std::string& path)> func) {
@@ -36,7 +36,7 @@ public:
 
 	///@brief Changes the resource if something has changed
 	/// Call this in setters to update the slot
-	void SetResource(const std::string& path);
+	void SetResource(std::string_view path);
 
 	void Show();
 #endif
@@ -54,8 +54,8 @@ public:
 
 private:
 	[[nodiscard]]
-	std::string ToForwardSlashes(const std::string& s) const {
-		std::string result = s;
+	std::string ToForwardSlashes(std::string_view s) const {
+		std::string result(s);
 		std::ranges::replace(result, '\\', '/');
 		return result;
 	}

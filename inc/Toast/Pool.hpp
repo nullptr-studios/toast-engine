@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Objects/Actor.hpp"
+#include "Objects/Scene.hpp"
 
 template<typename T>
 concept is_object = std::is_base_of_v<toast::Object, T>;
@@ -13,7 +14,7 @@ class Pool {
 public:
 	Pool(toast::Scene* scene) {
 		for (int i = 0; i < size; i++) {
-			object_pool[i] = scene->children().Add<T>();
+			object_pool[i] = scene->children.Add<T>();
 			object_pool[i]->enabled(false);
 			free_objects.emplace(object_pool[i]);
 		}

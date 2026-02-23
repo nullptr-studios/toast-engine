@@ -42,8 +42,8 @@ class [[deprecated("Use StateMachine")]] StateMachineOld {
 public:
 	StateMachineOld();
 
-	void AddState(const std::string& name, StateOld&& state);
-	void SetState(const std::string& name);
+	void AddState(std::string_view name, StateOld&& state);
+	void SetState(std::string_view name);
 	void Tick();
 
 	const std::string& GetCurrentState() const;

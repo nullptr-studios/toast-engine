@@ -125,11 +125,11 @@ public:
 		m_flags.clear();
 	}
 
-	bool ReadFile(const std::string& raw_path, std::vector<uint8_t>& out) {
+	bool ReadFile(std::string_view raw_path, std::vector<uint8_t>& out) {
 		PROFILE_ZONE;
 
 		// canonicalize lookup path same as packer
-		std::u8string path = canonical_path_for_pack(raw_path);
+		std::u8string path = canonical_path_for_pack(std::string(raw_path));
 
 		uint64_t h = fnv1a_hash64(path);
 		auto it = std::ranges::lower_bound(m_hashes, h);

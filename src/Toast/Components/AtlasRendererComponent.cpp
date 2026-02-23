@@ -27,6 +27,10 @@ void AtlasRendererComponent::Init() {
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
 	m_tempIndices.reserve(INITIAL_VERT_RESERVE);
 
+	SetRunEarlyTick(false);
+	SetRunLateTick(false);
+	SetRunTick(false);
+
 	if (!m_atlasPath.empty()) {
 		m_atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
 		if (m_atlas && m_atlas->GetResourceState() == resource::ResourceState::LOADEDCPU) {
@@ -244,7 +248,7 @@ void AtlasRendererComponent::LoadTextures() {
 	m_shader->Use();
 	m_shader->SetSampler("Texture", 0);
 
-	renderer::IRendererBase::GetInstance()->AddRenderable(this);
+	renderer::IRendererBase::GetInstance()->AddTransparentRenderable(this);
 
 	m_dynamicMesh.InitDynamicSpine();
 }
@@ -373,5 +377,5 @@ json_t AtlasRendererComponent::Save() const {
 }
 
 void AtlasRendererComponent::Destroy() {
-	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveTransparentRenderable(this);
 }

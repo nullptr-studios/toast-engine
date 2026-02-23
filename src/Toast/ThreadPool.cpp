@@ -55,6 +55,8 @@ void ThreadPool::ThreadLoop() {
 		std::function<void()> job;
 
 		{
+			// TracyLockableN(std::unique_lock<std::mutex>, lock, "ThreadPool Queue Mutex");
+			// std::unique_lock <LockableBase(std::mutex )> lock ( m_queueMutex ) ;
 			std::unique_lock<std::mutex> lock(m_queueMutex);
 			m_conditionMutex.wait(lock, [this] {
 				return !m_jobs.empty() || m_shouldStop;

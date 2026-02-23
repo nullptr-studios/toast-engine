@@ -1,0 +1,40 @@
+﻿{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "windows-base",
+      "description": "msvc x64",
+      "hidden": true,
+      "generator": "Visual Studio 18 2026",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe"
+      },
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "x64-debug",
+      "displayName": "MSVC Debug",
+      "inherits": "windows-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" },
+      "binaryDir": "${sourceDir}/build/windows/debug",
+      "installDir": "${sourceDir}/install/windows/debug"
+    },
+    {
+      "name": "x64-release",
+      "displayName": "MSVC Release",
+      "inherits": "windows-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" },
+      "binaryDir": "${sourceDir}/build/windows/release",
+      "installDir": "${sourceDir}/install/windows/release"
+    }
+  ]
+}

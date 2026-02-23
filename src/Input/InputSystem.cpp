@@ -21,6 +21,8 @@ InputSystem* InputSystem::get() {
 }
 
 InputSystem::InputSystem() {
+	PROFILE_ZONE_N("Input system construction");
+
 	if (m_instance) {
 		throw ToastException("Tried to create Input System but one already exists");
 	}
@@ -348,7 +350,7 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 					// Convert screen coords to NDC [-1, 1]
 					const auto s = toast::Window::GetInstance()->GetFramebufferSize();
 					value.x = (value.x / s.x) - 0.5f;
-					value.y = (value.y / s.y) - 0.5f;
+					value.y = -((value.y / s.y) - 0.5f);
 					value *= 2.0f;
 
 					// Store as transient input (will be cleared after dispatch)
