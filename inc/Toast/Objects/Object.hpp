@@ -10,6 +10,7 @@
 #include "Toast/ISerializable.hpp"
 #include "Toast/Log.hpp"
 
+#include <generator>
 #include <ranges>
 #include <string_view>
 #include <utility>
@@ -139,11 +140,19 @@ public:
 	/// @brief Destroys this object
 	void Nuke();
 
-	void SetRunEarlyTick(bool value) { m_runsEarlyTick = value; }
-	
-	void SetRunTick(bool value) { m_runsTick = value; }
+	void Adopt(unsigned id);
 
-	void SetRunLateTick(bool value) { m_runsLateTick = value; }
+	void SetRunEarlyTick(bool value) {
+		m_runsEarlyTick = value;
+	}
+
+	void SetRunTick(bool value) {
+		m_runsTick = value;
+	}
+
+	void SetRunLateTick(bool value) {
+		m_runsLateTick = value;
+	}
 
 protected:
 	// Tick functions

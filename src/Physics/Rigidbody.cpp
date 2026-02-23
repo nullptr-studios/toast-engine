@@ -7,6 +7,8 @@
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
+#include <memory>
+
 #ifdef TOAST_EDITOR
 #include <imgui.h>
 #endif
@@ -232,6 +234,12 @@ void Rigidbody::StorePreviousPosition() {
 
 void Rigidbody::UpdateVisualTransform() {
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
+#ifdef TOAST_EDITOR
+	auto* debug = dynamic_cast<toast::Actor*>(parent());
+	if (!debug) {
+		TOAST_ERROR("INVALID RIGIDBODY PARENT");
+	}
+#endif
 	glm::vec3 currentTransformPos = transform->worldPosition();
 	float z = currentTransformPos.z;
 
