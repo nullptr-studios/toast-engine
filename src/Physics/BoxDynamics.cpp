@@ -264,8 +264,10 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 		// Apply impulses
 		dvec2 impulse = normal_impulse * normal + tangential_impulse * contact_tangent;
 
-		velocity1 -= impulse * inv_mass1;
-		velocity2 += impulse * inv_mass2;
+		velocity1.x -= impulse.x * inv_mass1;
+		velocity2.x += impulse.x * inv_mass2;
+		velocity1.y += impulse.y * inv_mass1;
+		velocity2.y -= impulse.y * inv_mass2;
 	}
 
 	// Positional correction
