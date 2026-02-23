@@ -30,7 +30,7 @@ var NAVTREE =
       [ "Dependencies", "d2/d07/md_docs_md_tools.html#autotoc_md5", null ],
       [ "IDEs", "d2/d07/md_docs_md_tools.html#autotoc_md6", null ],
       [ "Compiling", "d2/d07/md_docs_md_tools.html#autotoc_md7", null ],
-      [ "CI", "d2/d07/md_docs_md_tools.html#autotoc_md9", null ]
+      [ "CI", "d2/d07/md_docs_md_tools.html#autotoc_md8", null ]
     ] ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ],
