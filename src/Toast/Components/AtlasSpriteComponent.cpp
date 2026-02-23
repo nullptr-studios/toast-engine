@@ -12,6 +12,10 @@ namespace toast {
 
 void AtlasSpriteComponent::Init() {
 	TransformComponent::Init();
+	
+	SetRunEarlyTick(false);
+	SetRunTick(false);
+	SetRunLateTick(false);
 }
 
 void AtlasSpriteComponent::Load(json_t j, bool force_create) {

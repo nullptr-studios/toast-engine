@@ -15,7 +15,7 @@ namespace toast {
 /// Each sprite has its own transform and can be manipulated independently
 class AtlasSpriteComponent : public TransformComponent {
 public:
-	REGISTER_TYPE(AtlasSpriteComponent);
+	REGISTER_ABSTRACT(AtlasSpriteComponent);
 
 	void Init() override;
 

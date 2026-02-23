@@ -12,7 +12,7 @@
 namespace toast {
 
 struct SceneLoadedEvent final : public event::Event<SceneLoadedEvent> {
-	SceneLoadedEvent(const unsigned id, const std::string& name) : id(id), name(name) { }
+	SceneLoadedEvent(const unsigned id, std::string_view name) : id(id), name(name) { }
 
 	unsigned id;
 	std::string name;

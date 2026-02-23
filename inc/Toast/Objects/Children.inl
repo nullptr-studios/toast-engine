@@ -38,7 +38,7 @@ public:
 	/// @param name Name of the target Actor to find
 	template<typename T>
 	[[nodiscard]]
-	T* Get(const std::string& name);
+	T* Get(std::string_view name);
 
 	template<typename T>
 	[[nodiscard]]
@@ -54,12 +54,12 @@ public:
 	/// Getting a child by name is O(n)
 	/// @param name Name of the target Actor to find
 	[[nodiscard]]
-	Object* Get(const std::string& name);
+	Object* Get(std::string_view name);
 
 	/// @brief Search a child by type passed as string
 	/// @param propagate Propagate down the tree (no by default)
 	[[nodiscard]]
-	Object* GetType(const std::string& type, bool propagate = false);
+	Object* GetType(std::string_view type, bool propagate = false);
 
 	/// @brief Returns a reference to the raw list
 	[[nodiscard]]
@@ -75,7 +75,7 @@ public:
 	/// Getting a child by name is O(n)
 	/// @param name Name of the target Actor to find
 	[[nodiscard]]
-	Object* operator[](const std::string& name);
+	Object* operator[](std::string_view name);
 
 	// Has ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	template<typename... Components>
@@ -93,12 +93,12 @@ public:
 	/// Checking if an Actor exists by name is O(n)
 	/// @param name Name of the target Actor to find
 	[[nodiscard]]
-	bool Has(const std::string& name) const;
+	bool Has(std::string_view name) const;
 
 	/// @brief Check whether a child of a type exists or not
 	/// Checking if a type exists by string is O(n)
 	/// @param propagate tells if the function should propagate down the tree or not (no by default)
-	bool HasType(const std::string& type, bool propagate = false) const;
+	bool HasType(std::string_view type, bool propagate = false) const;
 
 	// Add ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// @brief Creates a new child
@@ -110,7 +110,7 @@ public:
 	template<typename T>
 	T* Add(std::optional<std::string_view> name = {}, std::optional<json_t> file = {});
 
-	Object* Add(std::string type, std::optional<std::string_view> name = {}, std::optional<json_t> file = {});
+	Object* Add(std::string_view type, std::optional<std::string_view> name = {}, std::optional<json_t> file = {});
 
 	/// @brief Creates a new child if the child doesnt exist
 	/// @tparam T Class to create the child from
@@ -140,7 +140,7 @@ public:
 
 	/// @brief Removes children by name
 	/// @param name Target name to remove
-	void Remove(const std::string& name);
+	void Remove(std::string_view name);
 
 	/// @brief Adds all the objects to the destroy queue
 	void RemoveAll();

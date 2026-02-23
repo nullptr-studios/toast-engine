@@ -24,6 +24,8 @@ World* World::Instance() {
 }
 
 World::World() {
+	PROFILE_ZONE_N("World Construction");
+
 	if (m_instance) {
 		throw ToastException("Having more than one world is not allowed");
 	}
@@ -118,12 +120,12 @@ World::~World() {
 	delete m.threadPool;
 }
 
-Object* World::New(const std::string& type, const std::optional<std::string>& name) {
+Object* World::New(std::string_view type, const std::optional<std::string>& name) {
 	auto* world = Instance();
 	std::string obj_name {};
 
 	auto reg = Object::getRegistry();
-	auto* obj = reg[type](world->m.children, std::nullopt);
+	auto* obj = reg[type.data()](world->m.children, std::nullopt);
 	auto obj_id = obj->id();
 
 	// Add name to the scene
@@ -296,7 +298,7 @@ void World::UnloadScene(const unsigned id) {
 	toast::World::ScheduleDestroy(scene);
 }
 
-void World::UnloadScene(const std::string& name) {
+void World::UnloadScene(std::string_view name) {
 	auto* const obj = dynamic_cast<Scene*>(Get(name));
 	if (!obj) {
 		TOAST_ERROR("Object {0} is not a Scene", name);
@@ -305,7 +307,7 @@ void World::UnloadScene(const std::string& name) {
 	UnloadScene(obj->id());
 }
 
-void World::EnableScene(const std::string& name) {
+void World::EnableScene(std::string_view name) {
 	auto* w = Instance();
 	auto* scene = w->m.children.Get(name);
 	if (!scene) {
@@ -341,7 +343,7 @@ void World::EnableScene(unsigned id) {
 	scene->enabled(true);
 }
 
-void World::DisableScene(const std::string& name) {
+void World::DisableScene(std::string_view name) {
 	auto* w = Instance();
 	auto* scene = w->m.children.Get(name);
 	if (!scene) {
@@ -579,15 +581,19 @@ Object* World::Get(const unsigned id) {
 	return Instance()->m.children.Get(id);
 }
 
-Object* World::Get(const std::string& name) {
+Object* World::Get(std::string_view name) {
 	return Instance()->m.children.Get(name);
+}
+
+auto World::GetFromType(std::string_view type) -> Object* {
+	return Instance()->m.children.GetType(type, true);
 }
 
 bool World::Has(const unsigned id) {
 	return Instance()->m.children.Has(id);
 }
 
-bool World::Has(const std::string& name) {
+bool World::Has(std::string_view name) {
 	return Instance()->m.children.Has(name);
 }
 

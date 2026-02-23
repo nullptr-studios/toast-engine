@@ -11,7 +11,7 @@ T* Object::Children::Get(const unsigned id) {
 }
 
 template<typename T>
-T* Object::Children::Get(const std::string& name) {
+T* Object::Children::Get(std::string_view name) {
 	static_assert(std::is_base_of_v<Object, T>, "T is not an Actor");
 	return dynamic_cast<T*>(Get(name));
 }

@@ -7,6 +7,7 @@
 Time* Time::m_instance = nullptr;
 
 Time::Time() {
+	PROFILE_ZONE_N("Time Construction");
 	TOAST_INFO("Initializing Time");
 
 	if (m_instance) {

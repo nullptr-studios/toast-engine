@@ -201,13 +201,26 @@ glm::dvec2 Rigidbody::GetPosition() const {
 }
 
 void Rigidbody::SetPosition(glm::dvec2 pos) {
-	m_currentPosition = pos;
-
-	// Initialize previous position on first call to avoid teleporting
 	if (!m_hasValidPreviousPosition) {
+		m_currentPosition = pos;
 		m_previousPosition = pos;
 		m_hasValidPreviousPosition = true;
+		return;
 	}
+
+	glm::dvec2 delta = pos - m_currentPosition;
+	double dist2 = glm::dot(delta, delta);
+
+	// Threshold
+	double threshold = std::max(1e-4, radius * 0.25);
+	double thresh2 = threshold * threshold;
+
+	if (dist2 > thresh2) {
+		// Smooth previous position halfway towards the current position.
+		m_previousPosition = glm::mix(m_previousPosition, m_currentPosition, 0.5);
+	}
+
+	m_currentPosition = pos;
 
 	//@Note: Visual transform is updated by PhysicsSystem::UpdateVisualInterpolation()
 }
@@ -281,9 +294,10 @@ double Rigidbody::GetInterpolationAlpha() {
 }
 
 void Rigidbody::AddForce(glm::dvec2 force) {
-	forcesMutex.lock();
-	forces.emplace_back(force);
-	forcesMutex.unlock();
+	{
+		std::lock_guard lock(forcesMutex);
+		forces.emplace_back(force);
+	}
 }
 
 }
