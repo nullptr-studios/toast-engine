@@ -274,8 +274,9 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
 	dvec2 correction = (penetration_correction / inv_mass_sum) * normal;
 
-	position1 -= correction * inv_mass1 / inv_mass_sum;
-	position2 += correction * inv_mass2 / inv_mass_sum;
+	position1 -= correction * inv_mass1;
+	position2 += correction * inv_mass2;
+
 
 	rb1->SetPosition(position2);
 	rb2->SetPosition(position1);

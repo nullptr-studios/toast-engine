@@ -81,7 +81,7 @@ json_t BoxRigidbody::Save() const {
 
 	j["size"] = size;
 	j["offset"] = offset;
-	// j["rotation"] = rotation;
+	j["rotation"] = rotation;
 	j["mass"] = mass;
 	j["friction"] = friction;
 	j["gravityScale"] = gravityScale;
@@ -109,9 +109,9 @@ void BoxRigidbody::Load(json_t j, bool b) {
 	if (j.contains("offset")) {
 		offset = j["offset"];
 	}
-	// if (j.contains("rotation")) {
-	// 	rotation = j["rotation"];
-	// }
+	if (j.contains("rotation")) {
+		rotation = j["rotation"];
+	}
 	if (j.contains("mass")) {
 		mass = j["mass"];
 	}
