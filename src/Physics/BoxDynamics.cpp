@@ -235,7 +235,7 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 	dvec2 contact_tangent = { -normal.y, normal.x };
 
 	// Relative velocity
-	dvec2 relative_velocity = velocity1 - velocity2;
+	dvec2 relative_velocity = velocity2 - velocity1;
 
 	// Unfold velocity in normal and tangential components
 	double normal_speed = dot(relative_velocity, normal);
@@ -264,10 +264,8 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 		// Apply impulses
 		dvec2 impulse = normal_impulse * normal + tangential_impulse * contact_tangent;
 
-		velocity1.x -= impulse.x * inv_mass1;
-		velocity2.x += impulse.x * inv_mass2;
-		velocity1.y += impulse.y * inv_mass1;
-		velocity2.y -= impulse.y * inv_mass2;
+		velocity1 -= impulse * inv_mass1;
+		velocity2 += impulse * inv_mass2;
 	}
 
 	// Positional correction
