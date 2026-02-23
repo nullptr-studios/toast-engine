@@ -140,6 +140,8 @@ public:
 	void Nuke();
 
 	void SetRunEarlyTick(bool value) { m_runsEarlyTick = value; }
+	
+	void SetRunTick(bool value) { m_runsTick = value; }
 
 	void SetRunLateTick(bool value) { m_runsLateTick = value; }
 
@@ -182,6 +184,7 @@ private:
 	std::string m_name;
 	bool m_enabled = false;
 	bool m_runsEarlyTick = true;
+	bool m_runsTick = true;
 	bool m_runsLateTick = true;
 	Object* m_parent = nullptr;
 	Scene* m_scene = nullptr;

@@ -392,7 +392,7 @@ void Object::_EarlyTick() {
 }
 
 void Object::_Tick() {
-	if (!enabled() || !m_hasRunBegin) {
+	if (!enabled() || !m_hasRunBegin || !m_runsTick) {
 		return;
 	}
 
