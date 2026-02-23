@@ -487,7 +487,7 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 
 		double torque_impulse = determinant(torque_mat);
 		const double angular_impulse_blend = 0.6;
-		if (abs(torque_impulse) > PhysicsSystem::eps()) {
+		if (abs(torque_impulse) > PhysicsSystem::pos_slop()) {
 			angular_velocity += torque_impulse * inv_inertia * angular_impulse_blend * rb->mass;
 		}
 	}
