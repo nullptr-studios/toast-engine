@@ -10,7 +10,6 @@
 #include "Toast/ISerializable.hpp"
 #include "Toast/Log.hpp"
 
-#include <generator>
 #include <ranges>
 #include <string_view>
 #include <utility>
