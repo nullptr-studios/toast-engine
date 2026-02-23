@@ -1,9 +1,10 @@
 <map id="Framebuffer::unbind" name="Framebuffer::unbind">
-<area shape="rect" id="node1" title=" " alt="" coords="976,66,1129,91"/>
-<area shape="rect" id="node2" href="$dc/d58/classFramebuffer.html#a96e90bfc422ceaa34cbd470957bba664" title=" " alt="" coords="759,9,902,34"/>
-<area shape="rect" id="node6" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a0a8505f22fa05954b99b767e28de37a3" title=" " alt="" coords="733,59,928,99"/>
-<area shape="rect" id="node7" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="491,88,685,128"/>
+<area shape="rect" id="node1" title=" " alt="" coords="976,97,1129,122"/>
+<area shape="rect" id="node2" href="$dc/d58/classFramebuffer.html#a96e90bfc422ceaa34cbd470957bba664" title=" " alt="" coords="759,10,902,35"/>
+<area shape="rect" id="node6" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a0a8505f22fa05954b99b767e28de37a3" title=" " alt="" coords="733,60,928,100"/>
+<area shape="rect" id="node7" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="491,117,685,157"/>
+<area shape="rect" id="node8" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#aab2464f0c7da8d5ca052139d87399534" title=" " alt="" coords="733,175,928,215"/>
 <area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,5,200,45"/>
-<area shape="rect" id="node4" href="$dc/d58/classFramebuffer.html#aa16fe7b9d734100fc6817cb131362f60" title=" " alt="" coords="512,35,664,61"/>
+<area shape="rect" id="node4" href="$dc/d58/classFramebuffer.html#aa16fe7b9d734100fc6817cb131362f60" title=" " alt="" coords="512,37,664,62"/>
 <area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="248,33,443,73"/>
 </map>

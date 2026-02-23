@@ -4,6 +4,7 @@ var classrenderer_1_1IRendererBase =
     [ "IRendererBase", "d9/dc4/classrenderer_1_1IRendererBase.html#a8068e392b9dd321a90fee7f0b6c43086", null ],
     [ "AddLight", "d9/dc4/classrenderer_1_1IRendererBase.html#a6a9bda281589f4a86fb3ef9ab58a21fd", null ],
     [ "AddRenderable", "d9/dc4/classrenderer_1_1IRendererBase.html#a07f9cf1f03d2c5f2aa89b094bb14505c", null ],
+    [ "AddTransparentRenderable", "d9/dc4/classrenderer_1_1IRendererBase.html#a10414aa890ea41a4a32536bb35635528", null ],
     [ "ApplyRenderSettings", "d9/dc4/classrenderer_1_1IRendererBase.html#a110b9c3679ffcc787ce2a5fe334d3358", null ],
     [ "Clear", "d9/dc4/classrenderer_1_1IRendererBase.html#a541528bece8c0b5fba565b8401e6c1b0", null ],
     [ "EndImGuiFrame", "d9/dc4/classrenderer_1_1IRendererBase.html#aa7690cb062c8f09aa245f402b05853c4", null ],
@@ -23,6 +24,7 @@ var classrenderer_1_1IRendererBase =
     [ "LoadRenderSettings", "d9/dc4/classrenderer_1_1IRendererBase.html#a0e2a08967ff0d9ffb1db23e45288961b", null ],
     [ "RemoveLight", "d9/dc4/classrenderer_1_1IRendererBase.html#a200c37ffe55ba5819b9d63b862cc723d", null ],
     [ "RemoveRenderable", "d9/dc4/classrenderer_1_1IRendererBase.html#ac193916b3c6024df40964aeda936d470", null ],
+    [ "RemoveTransparentRenderable", "d9/dc4/classrenderer_1_1IRendererBase.html#a8bba6f987aafbef6bbf7212db18aaa4c", null ],
     [ "Render", "d9/dc4/classrenderer_1_1IRendererBase.html#a8419a7d264475c7f170c77144cf372f3", null ],
     [ "Resize", "d9/dc4/classrenderer_1_1IRendererBase.html#a237d66424970fa52bcc89b14b3a32251", null ],
     [ "SaveRenderSettings", "d9/dc4/classrenderer_1_1IRendererBase.html#a9b82c08210834948eb375af0351ec1c2", null ],
@@ -52,5 +54,7 @@ var classrenderer_1_1IRendererBase =
     [ "m_projectionMatrix", "d9/dc4/classrenderer_1_1IRendererBase.html#acb9b2608c1c0e42bdeb41384844a0bc9", null ],
     [ "m_renderables", "d9/dc4/classrenderer_1_1IRendererBase.html#abaa6c4963475e194a208a54352d7ab66", null ],
     [ "m_renderablesSortDirty", "d9/dc4/classrenderer_1_1IRendererBase.html#a04cfad6210308168c50e7fb227865626", null ],
+    [ "m_transparentRenderables", "d9/dc4/classrenderer_1_1IRendererBase.html#a5c9e2aab80ed9e109bde8a3d090756c9", null ],
+    [ "m_transparentSortDirty", "d9/dc4/classrenderer_1_1IRendererBase.html#aaa3cd644dbc1e75877e6076fea705dcb", null ],
     [ "m_viewMatrix", "d9/dc4/classrenderer_1_1IRendererBase.html#a9feb231358263407d90a32736f8ced79", null ]
 ];

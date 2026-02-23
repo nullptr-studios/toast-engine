@@ -152,22 +152,24 @@ $(document).ready(function(){initNavTree('d8/d61/ThreadPool_8cpp_source.html','.
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    std::function&lt;void()&gt; job;</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    {</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>      std::unique_lock&lt;std::mutex&gt; lock(<a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#abbfef832b4a1556e547489a444d1473a">m_queueMutex</a>);</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      <a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a6bd2b418d7fbc7522d2d8197316d7771">m_conditionMutex</a>.wait(lock, [<span class="keyword">this</span>] {</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>        <span class="keywordflow">return</span> !<a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a85d9c35edc591931dcb9336a565abc62">m_jobs</a>.empty() || <a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a6f5a18e0c2e6035dc942688ad24cedc7">m_shouldStop</a>;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      });</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>      <span class="keywordflow">if</span> (<a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a6f5a18e0c2e6035dc942688ad24cedc7">m_shouldStop</a>) {</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>      }</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>      job = <a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a85d9c35edc591931dcb9336a565abc62">m_jobs</a>.front();</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>      <a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a85d9c35edc591931dcb9336a565abc62">m_jobs</a>.pop();</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    }</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    job();</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  }</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>}</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>      <span class="comment">// TracyLockableN(std::unique_lock&lt;std::mutex&gt;, lock, &quot;ThreadPool Queue Mutex&quot;);</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      <span class="comment">// std::unique_lock &lt;LockableBase(std::mutex )&gt; lock ( m_queueMutex ) ;</span></div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>      std::unique_lock&lt;std::mutex&gt; lock(<a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#abbfef832b4a1556e547489a444d1473a">m_queueMutex</a>);</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      <a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a6bd2b418d7fbc7522d2d8197316d7771">m_conditionMutex</a>.wait(lock, [<span class="keyword">this</span>] {</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>        <span class="keywordflow">return</span> !<a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a85d9c35edc591931dcb9336a565abc62">m_jobs</a>.empty() || <a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a6f5a18e0c2e6035dc942688ad24cedc7">m_shouldStop</a>;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>      });</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>      <span class="keywordflow">if</span> (<a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a6f5a18e0c2e6035dc942688ad24cedc7">m_shouldStop</a>) {</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>      }</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>      job = <a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a85d9c35edc591931dcb9336a565abc62">m_jobs</a>.front();</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>      <a class="code hl_variable" href="../../d3/dd6/classtoast_1_1ThreadPool.html#a85d9c35edc591931dcb9336a565abc62">m_jobs</a>.pop();</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    }</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    job();</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  }</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>}</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>}</div>
 <div class="ttc" id="aLog_8hpp_html"><div class="ttname"><a href="../../d0/d82/Log_8hpp.html">Log.hpp</a></div></div>
 <div class="ttc" id="aLog_8hpp_html_a07b069f01dd4771807616165f2434d41"><div class="ttname"><a href="../../d0/d82/Log_8hpp.html#a07b069f01dd4771807616165f2434d41">TOAST_TRACE</a></div><div class="ttdeci">#define TOAST_TRACE(...)</div><div class="ttdef"><b>Definition:</b> <a href="../../d0/d82/Log_8hpp_source.html#l00090">Log.hpp:90</a></div></div>
 <div class="ttc" id="aThreadPool_8hpp_html"><div class="ttname"><a href="../../d5/d91/ThreadPool_8hpp.html">ThreadPool.hpp</a></div><div class="ttdoc">Thread pool implementation for parallel task execution.</div></div>

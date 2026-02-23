@@ -127,9 +127,15 @@ struct toast::State&lt; T &gt;</div><p>Represents a single state in the finite s
 <li>onTick(): called every frame while the state is active.</li>
 <li>onExit(): called just before switching to the next state.</li>
 </ul>
+<p>These use std::function so that you can assign lambdas or normal functions.</p>
+<p>Each function is optional, if it's empty, nothing happens.</p><ul>
+<li>onBegin(): called once as soon as the state becomes active.</li>
+<li>onTick(): called every frame while the state is active.</li>
+<li>onExit(): called just before switching to the next state.</li>
+</ul>
 <p>These use std::function so that you can assign lambdas or normal functions. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00028">28</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00029">29</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a2fd7d1ac0283ff3c430f7b18c81f76e5" name="a2fd7d1ac0283ff3c430f7b18c81f76e5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2fd7d1ac0283ff3c430f7b18c81f76e5">&#9670;&#160;</a></span>OnBegin()</h2>
@@ -156,7 +162,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00029">29</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00030">30</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 
 </div>
 </div>
@@ -185,7 +191,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00031">31</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00034">34</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 
 </div>
 </div>
@@ -214,7 +220,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00030">30</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00032">32</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 
 </div>
 </div>
@@ -233,7 +239,7 @@ template&lt;typename T &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00033">33</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html#l00036">36</a> of file <a class="el" href="../../d6/dd7/StateMachine_8hpp_source.html">StateMachine.hpp</a>.</p>
 
 </div>
 </div>

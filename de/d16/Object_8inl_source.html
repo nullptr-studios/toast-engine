@@ -106,7 +106,7 @@ $(document).ready(function(){initNavTree('de/d16/Object_8inl_source.html','../..
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span>}</div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>T* Object::Children::Get(<span class="keyword">const</span> std::string&amp; name) {</div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>T* Object::Children::Get(std::string_view name) {</div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>  <span class="keyword">static_assert</span>(std::is_base_of_v&lt;Object, T&gt;, <span class="stringliteral">&quot;T is not an Actor&quot;</span>);</div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>  <span class="keywordflow">return</span> <span class="keyword">dynamic_cast&lt;</span>T*<span class="keyword">&gt;</span>(Get(name));</div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>}</div>

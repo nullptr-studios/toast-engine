@@ -6,7 +6,7 @@ var classtoast_1_1AtlasSpriteComponent =
     [ "GetRegionName", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#ac45e0666abc414ef513d0423b78333f0", null ],
     [ "Init", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a823e81f2669065e8df1bb437080cda37", null ],
     [ "Load", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a7018575548a6a5f8c8a0eed284bf8eda", null ],
-    [ "REGISTER_TYPE", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a859f521a2582ea34f36a5dd111cc0ce3", null ],
+    [ "REGISTER_ABSTRACT", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#ab4fc51f3e657f8f560eca0d7ff7bd16d", null ],
     [ "Save", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a0c473abdbd3eb4f1fb7353285af63fc2", null ],
     [ "SetColor", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a814f2cdb5de59562962a1b70ea6ce585", null ],
     [ "SetRegion", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a4334b73e8ee16cfd125e248aa79264eb", null ],

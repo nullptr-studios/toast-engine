@@ -1,7 +1,7 @@
 var searchData=
 [
   ['name_0',['name',['../d1/da3/classtoast_1_1Object.html#a9ae515365126c17df9c86e1ac6a80e69',1,'toast::Object::name() const noexcept'],['../d1/da3/classtoast_1_1Object.html#a660234a003a2a3eb54bdff3c43565c0f',1,'toast::Object::name(std::string &amp;&amp;name) noexcept'],['../d4/ddb/structtoast_1_1ProjectSettings.html#a11868202ac426e93bcb68339443d35bb',1,'toast::ProjectSettings::name()'],['../dd/ddc/classeditor_1_1ResourceSlot.html#a902c20a0be3b13ab7cd8bd1d64de1d95',1,'editor::ResourceSlot::name()']]],
-  ['new_1',['New',['../d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b',1,'toast::World::New(const std::optional&lt; std::string &gt; &amp;name=std::nullopt) -&gt; T *'],['../d6/d7d/classtoast_1_1World.html#aa93e0e046095934e9b2e47523b96d4ba',1,'toast::World::New(const std::string &amp;type, const std::optional&lt; std::string &gt; &amp;name=std::nullopt) -&gt; Object *']]],
+  ['new_1',['New',['../d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b',1,'toast::World::New(const std::optional&lt; std::string &gt; &amp;name=std::nullopt) -&gt; T *'],['../d6/d7d/classtoast_1_1World.html#acf4ed739984731f27accd1863f285e25',1,'toast::World::New(std::string_view type, const std::optional&lt; std::string &gt; &amp;name=std::nullopt) -&gt; Object *']]],
   ['nextcrossfadetodefault_2',['NextCrossFadeToDefault',['../d0/dc7/classSpineRendererComponent.html#add32ea1ef11796c185bf217e7cdb277b',1,'SpineRendererComponent']]],
   ['nextlevel_3',['NextLevel',['../d6/dbd/classtoast_1_1GameFlow.html#ad20bf8c23fc5cc9ae04746532256cf62',1,'toast::GameFlow']]],
   ['nextworld_4',['NextWorld',['../d6/dbd/classtoast_1_1GameFlow.html#a7ddf33d4fb36f377da046a61650d9d16',1,'toast::GameFlow']]],

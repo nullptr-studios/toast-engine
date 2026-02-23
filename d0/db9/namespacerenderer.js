@@ -29,6 +29,7 @@ var namespacerenderer =
     [ "DebugPoly", "d0/db9/namespacerenderer.html#a37c288e9290405ef60d602157db1288c", null ],
     [ "DebugRect", "d0/db9/namespacerenderer.html#a701b15fad8c5a9a948aeeda07bbfdcdc", null ],
     [ "DebugRect", "d0/db9/namespacerenderer.html#a7ec284fdf765fd75ec652ecf620d9626", null ],
+    [ "DrawDebugArrow", "d0/db9/namespacerenderer.html#a4a7f0edbb5c2cbc3f842f44c0bef253d", null ],
     [ "LoadRendererSettings", "d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5", null ],
     [ "SaveRendererSettings", "d0/db9/namespacerenderer.html#aaccd4db22dcd63f95d1186b2cbaaaed7", null ]
 ];

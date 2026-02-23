@@ -134,12 +134,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae4a050285f6f42c96324a8bb21c8a723"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; R &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#ae4a050285f6f42c96324a8bb21c8a723">LoadResource</a> (const std::string &amp;path, Args &amp;&amp;... args)</td></tr>
 <tr class="memdesc:ae4a050285f6f42c96324a8bb21c8a723"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads a resource of the specified type.  <br /></td></tr>
 <tr class="separator:ae4a050285f6f42c96324a8bb21c8a723"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a971a0c29e008a7ccb021099a2cbf3b65"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a971a0c29e008a7ccb021099a2cbf3b65">OpenFile</a> (const std::string &amp;path, std::istringstream &amp;data_out) const</td></tr>
-<tr class="memdesc:a971a0c29e008a7ccb021099a2cbf3b65"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opens a file and returns its contents as a string stream.  <br /></td></tr>
-<tr class="separator:a971a0c29e008a7ccb021099a2cbf3b65"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e86ce85c2049dc1f6798a3039b8696c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a7e86ce85c2049dc1f6798a3039b8696c">OpenFile</a> (const std::string &amp;path, std::vector&lt; uint8_t &gt; &amp;data) const</td></tr>
-<tr class="memdesc:a7e86ce85c2049dc1f6798a3039b8696c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opens a file and returns its contents as bytes.  <br /></td></tr>
-<tr class="separator:a7e86ce85c2049dc1f6798a3039b8696c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a087ad2e16112181c326a973a11b6e708"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a087ad2e16112181c326a973a11b6e708">OpenFile</a> (std::string_view path, std::istringstream &amp;data_out) const</td></tr>
+<tr class="memdesc:a087ad2e16112181c326a973a11b6e708"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opens a file and returns its contents as a string stream.  <br /></td></tr>
+<tr class="separator:a087ad2e16112181c326a973a11b6e708"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a26ceb62b6f6ee3aadace3cb9cbe1cf16"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a26ceb62b6f6ee3aadace3cb9cbe1cf16">OpenFile</a> (std::string_view path, std::vector&lt; uint8_t &gt; &amp;data) const</td></tr>
+<tr class="memdesc:a26ceb62b6f6ee3aadace3cb9cbe1cf16"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opens a file and returns its contents as bytes.  <br /></td></tr>
+<tr class="separator:a26ceb62b6f6ee3aadace3cb9cbe1cf16"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9a03d92420d4a04fd3350e104e51fa0f"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; std::string, std::shared_ptr&lt; <a class="el" href="../../d9/d0a/classIResource.html">IResource</a> &gt; &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a9a03d92420d4a04fd3350e104e51fa0f">GetCachedResources</a> ()</td></tr>
 <tr class="memdesc:a9a03d92420d4a04fd3350e104e51fa0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the cached resources map.  <br /></td></tr>
 <tr class="separator:a9a03d92420d4a04fd3350e104e51fa0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -149,15 +149,15 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:ad0efd53ca3f34512817a5c813bd00913"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html">ResourceManager</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#ad0efd53ca3f34512817a5c813bd00913">GetInstance</a> ()</td></tr>
 <tr class="memdesc:ad0efd53ca3f34512817a5c813bd00913"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the singleton instance.  <br /></td></tr>
 <tr class="separator:ad0efd53ca3f34512817a5c813bd00913"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae92ca1f8db9e4248edaf2dc561201863"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#ae92ca1f8db9e4248edaf2dc561201863">SaveFile</a> (const std::string &amp;path, const std::string &amp;content)</td></tr>
-<tr class="memdesc:ae92ca1f8db9e4248edaf2dc561201863"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves content to a file on disk.  <br /></td></tr>
-<tr class="separator:ae92ca1f8db9e4248edaf2dc561201863"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0f71fa1d5da7be3b0e4f98a42ce6cae2"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a0f71fa1d5da7be3b0e4f98a42ce6cae2">SaveConfig</a> (const std::string &amp;path, const std::string &amp;content)</td></tr>
-<tr class="memdesc:a0f71fa1d5da7be3b0e4f98a42ce6cae2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves content to a file on disk.  <br /></td></tr>
-<tr class="separator:a0f71fa1d5da7be3b0e4f98a42ce6cae2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9b67dfb42439e17661f9995f4630108e"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a9b67dfb42439e17661f9995f4630108e">LoadConfig</a> (const std::string &amp;path, std::string &amp;content)</td></tr>
-<tr class="memdesc:a9b67dfb42439e17661f9995f4630108e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads content from a file on disk.  <br /></td></tr>
-<tr class="separator:a9b67dfb42439e17661f9995f4630108e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ce48936a6b0949b8a736d235a48a462"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a2ce48936a6b0949b8a736d235a48a462">SaveFile</a> (std::string_view path, std::string_view content)</td></tr>
+<tr class="memdesc:a2ce48936a6b0949b8a736d235a48a462"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves content to a file on disk.  <br /></td></tr>
+<tr class="separator:a2ce48936a6b0949b8a736d235a48a462"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a26e8971b5be5f5119d5e890f6cc89e2c"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a26e8971b5be5f5119d5e890f6cc89e2c">SaveConfig</a> (std::string_view path, std::string_view content)</td></tr>
+<tr class="memdesc:a26e8971b5be5f5119d5e890f6cc89e2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves content to a file on disk.  <br /></td></tr>
+<tr class="separator:a26e8971b5be5f5119d5e890f6cc89e2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae914d7c7c2112242af09a99f312cb0ef"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#ae914d7c7c2112242af09a99f312cb0ef">LoadConfig</a> (std::string_view path, std::string &amp;content)</td></tr>
+<tr class="memdesc:ae914d7c7c2112242af09a99f312cb0ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads content from a file on disk.  <br /></td></tr>
+<tr class="separator:ae914d7c7c2112242af09a99f312cb0ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a38cd7a05776e6089beefba6f283033d6"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d0/d62/structeditor_1_1ResourceSlot_1_1Entry.html">editor::ResourceSlot::Entry</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a38cd7a05776e6089beefba6f283033d6">CreateResourceSlotEntry</a> (const std::filesystem::path &amp;path)</td></tr>
 <tr class="memdesc:a38cd7a05776e6089beefba6f283033d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a resource slot entry for the editor.  <br /></td></tr>
 <tr class="separator:a38cd7a05776e6089beefba6f283033d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -254,7 +254,7 @@ Static Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00048">48</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00049">49</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
 
 </div>
 </div>
@@ -292,7 +292,7 @@ Static Private Attributes</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>ResourceSlot entry for editor display. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00212">212</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00210">210</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
 
 </div>
 </div>
@@ -352,7 +352,7 @@ Static Private Attributes</h2></td></tr>
 <p>Gets the singleton instance. </p>
 <dl class="section return"><dt>Returns</dt><dd>Pointer to the <a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html" title="Manager of every resource in the engine.">ResourceManager</a>. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00054">54</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00055">55</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -361,7 +361,7 @@ Here is the caller graph for this function:</div>
 <area shape="rect" title="Gets the singleton instance." alt="" coords="548,80,751,120"/>
 <area shape="rect" href="../../db/db2/ResourceSlot_8cpp.html#ac32cb254900114e073f80e0670cf09ba" title=" " alt="" coords="313,13,497,38"/>
 <area shape="rect" href="../../d8/d5c/namespaceresource.html#a478d194cc141760fa1fa2a86fc49e10e" title=" " alt="" coords="316,62,493,87"/>
-<area shape="rect" href="../../d8/d5c/namespaceresource.html#a723b33048c1a6b9c57bc5047f7aa9bb1" title="Convenience function to open and read a file." alt="" coords="345,111,465,137"/>
+<area shape="rect" href="../../d8/d5c/namespaceresource.html#a98429c1d7abe249fc608c7c5b13bb5e3" title="Convenience function to open and read a file." alt="" coords="345,111,465,137"/>
 <area shape="rect" href="../../d8/d5c/namespaceresource.html#aa93bae53eb778900ce67ae7f034918e7" title=" " alt="" coords="309,161,500,186"/>
 <area shape="rect" href="../../dd/ddc/classeditor_1_1ResourceSlot.html#a6f40912259b00dbff66d31c73491dde9" title=" " alt="" coords="108,5,261,45"/>
 <area shape="rect" href="../../d9/d4f/classtoast_1_1Engine.html#ae7f81d670cc27f32ce9fcc4bd3bab1d5" title="Starts the engine and enters the main game loop." alt="" coords="115,161,255,186"/>
@@ -371,8 +371,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a9b67dfb42439e17661f9995f4630108e" name="a9b67dfb42439e17661f9995f4630108e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9b67dfb42439e17661f9995f4630108e">&#9670;&#160;</a></span>LoadConfig()</h2>
+<a id="ae914d7c7c2112242af09a99f312cb0ef" name="ae914d7c7c2112242af09a99f312cb0ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae914d7c7c2112242af09a99f312cb0ef">&#9670;&#160;</a></span>LoadConfig()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -383,7 +383,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">bool resource::ResourceManager::LoadConfig </td>
           <td>(</td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramtype">std::string_view&#160;</td>
           <td class="paramname"><em>path</em>, </td>
         </tr>
         <tr>
@@ -419,8 +419,8 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="../../d9/d07/classresource_1_1ResourceManager_a9b67dfb42439e17661f9995f4630108e_icgraph.png" border="0" usemap="#ad9/d07/classresource_1_1ResourceManager_a9b67dfb42439e17661f9995f4630108e_icgraph" alt=""/></div>
-<map name="ad9/d07/classresource_1_1ResourceManager_a9b67dfb42439e17661f9995f4630108e_icgraph" id="ad9/d07/classresource_1_1ResourceManager_a9b67dfb42439e17661f9995f4630108e_icgraph">
+<div class="center"><img src="../../d9/d07/classresource_1_1ResourceManager_ae914d7c7c2112242af09a99f312cb0ef_icgraph.png" border="0" usemap="#ad9/d07/classresource_1_1ResourceManager_ae914d7c7c2112242af09a99f312cb0ef_icgraph" alt=""/></div>
+<map name="ad9/d07/classresource_1_1ResourceManager_ae914d7c7c2112242af09a99f312cb0ef_icgraph" id="ad9/d07/classresource_1_1ResourceManager_ae914d7c7c2112242af09a99f312cb0ef_icgraph">
 <area shape="rect" title="Loads content from a file on disk." alt="" coords="509,27,712,67"/>
 <area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a0e2a08967ff0d9ffb1db23e45288961b" title=" " alt="" coords="281,27,461,67"/>
 <area shape="rect" href="../../d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="5,5,233,31"/>
@@ -511,12 +511,12 @@ Here is the caller graph for this function:</div>
 <p>Uploads pending GPU resources on the main thread. </p>
 <p>Call this once per frame from the main thread to upload textures and other GPU resources that were loaded in the background. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00058">58</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00059">59</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
 
 </div>
 </div>
-<a id="a971a0c29e008a7ccb021099a2cbf3b65" name="a971a0c29e008a7ccb021099a2cbf3b65"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a971a0c29e008a7ccb021099a2cbf3b65">&#9670;&#160;</a></span>OpenFile() <span class="overload">[1/2]</span></h2>
+<a id="a087ad2e16112181c326a973a11b6e708" name="a087ad2e16112181c326a973a11b6e708"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a087ad2e16112181c326a973a11b6e708">&#9670;&#160;</a></span>OpenFile() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -524,7 +524,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">bool resource::ResourceManager::OpenFile </td>
           <td>(</td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramtype">std::string_view&#160;</td>
           <td class="paramname"><em>path</em>, </td>
         </tr>
         <tr>
@@ -551,21 +551,21 @@ Here is the caller graph for this function:</div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if file was opened successfully. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00101">101</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00102">102</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="../../d9/d07/classresource_1_1ResourceManager_a971a0c29e008a7ccb021099a2cbf3b65_icgraph.png" border="0" usemap="#ad9/d07/classresource_1_1ResourceManager_a971a0c29e008a7ccb021099a2cbf3b65_icgraph" alt=""/></div>
-<map name="ad9/d07/classresource_1_1ResourceManager_a971a0c29e008a7ccb021099a2cbf3b65_icgraph" id="ad9/d07/classresource_1_1ResourceManager_a971a0c29e008a7ccb021099a2cbf3b65_icgraph">
+<div class="center"><img src="../../d9/d07/classresource_1_1ResourceManager_a087ad2e16112181c326a973a11b6e708_icgraph.png" border="0" usemap="#ad9/d07/classresource_1_1ResourceManager_a087ad2e16112181c326a973a11b6e708_icgraph" alt=""/></div>
+<map name="ad9/d07/classresource_1_1ResourceManager_a087ad2e16112181c326a973a11b6e708_icgraph" id="ad9/d07/classresource_1_1ResourceManager_a087ad2e16112181c326a973a11b6e708_icgraph">
 <area shape="rect" title="Opens a file and returns its contents as a string stream." alt="" coords="173,29,376,69"/>
-<area shape="rect" href="../../d8/d5c/namespaceresource.html#a0eb5e28e0c91dbbfba5c689635f40aca" title=" " alt="" coords="5,37,125,62"/>
+<area shape="rect" href="../../d8/d5c/namespaceresource.html#a5df99cfc6966fee06c247e97c9169c7c" title=" " alt="" coords="5,37,125,62"/>
 </map>
 </div>
 
 </div>
 </div>
-<a id="a7e86ce85c2049dc1f6798a3039b8696c" name="a7e86ce85c2049dc1f6798a3039b8696c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7e86ce85c2049dc1f6798a3039b8696c">&#9670;&#160;</a></span>OpenFile() <span class="overload">[2/2]</span></h2>
+<a id="a26ceb62b6f6ee3aadace3cb9cbe1cf16" name="a26ceb62b6f6ee3aadace3cb9cbe1cf16"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a26ceb62b6f6ee3aadace3cb9cbe1cf16">&#9670;&#160;</a></span>OpenFile() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -573,7 +573,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">bool resource::ResourceManager::OpenFile </td>
           <td>(</td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramtype">std::string_view&#160;</td>
           <td class="paramname"><em>path</em>, </td>
         </tr>
         <tr>
@@ -600,7 +600,7 @@ Here is the caller graph for this function:</div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if file was opened successfully. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00111">111</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00112">112</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
 
 </div>
 </div>
@@ -622,7 +622,7 @@ Here is the caller graph for this function:</div>
 <p>Purges unused resources from the cache. </p>
 <p>Removes resources with no external references. Called automatically by the engine every 120 seconds. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00079">79</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00080">80</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -637,8 +637,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a0f71fa1d5da7be3b0e4f98a42ce6cae2" name="a0f71fa1d5da7be3b0e4f98a42ce6cae2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0f71fa1d5da7be3b0e4f98a42ce6cae2">&#9670;&#160;</a></span>SaveConfig()</h2>
+<a id="a26e8971b5be5f5119d5e890f6cc89e2c" name="a26e8971b5be5f5119d5e890f6cc89e2c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a26e8971b5be5f5119d5e890f6cc89e2c">&#9670;&#160;</a></span>SaveConfig()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -649,13 +649,13 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">bool resource::ResourceManager::SaveConfig </td>
           <td>(</td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramtype">std::string_view&#160;</td>
           <td class="paramname"><em>path</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramtype">std::string_view&#160;</td>
           <td class="paramname"><em>content</em>&#160;</td>
         </tr>
         <tr>
@@ -681,12 +681,12 @@ Here is the caller graph for this function:</div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if file was saved successfully. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00169">169</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00170">170</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="../../d9/d07/classresource_1_1ResourceManager_a0f71fa1d5da7be3b0e4f98a42ce6cae2_icgraph.png" border="0" usemap="#ad9/d07/classresource_1_1ResourceManager_a0f71fa1d5da7be3b0e4f98a42ce6cae2_icgraph" alt=""/></div>
-<map name="ad9/d07/classresource_1_1ResourceManager_a0f71fa1d5da7be3b0e4f98a42ce6cae2_icgraph" id="ad9/d07/classresource_1_1ResourceManager_a0f71fa1d5da7be3b0e4f98a42ce6cae2_icgraph">
+<div class="center"><img src="../../d9/d07/classresource_1_1ResourceManager_a26e8971b5be5f5119d5e890f6cc89e2c_icgraph.png" border="0" usemap="#ad9/d07/classresource_1_1ResourceManager_a26e8971b5be5f5119d5e890f6cc89e2c_icgraph" alt=""/></div>
+<map name="ad9/d07/classresource_1_1ResourceManager_a26e8971b5be5f5119d5e890f6cc89e2c_icgraph" id="ad9/d07/classresource_1_1ResourceManager_a26e8971b5be5f5119d5e890f6cc89e2c_icgraph">
 <area shape="rect" title="Saves content to a file on disk." alt="" coords="787,99,989,139"/>
 <area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a9b82c08210834948eb375af0351ec1c2" title=" " alt="" coords="559,99,739,139"/>
 <area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a0e2a08967ff0d9ffb1db23e45288961b" title=" " alt="" coords="306,5,486,45"/>
@@ -700,8 +700,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="ae92ca1f8db9e4248edaf2dc561201863" name="ae92ca1f8db9e4248edaf2dc561201863"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae92ca1f8db9e4248edaf2dc561201863">&#9670;&#160;</a></span>SaveFile()</h2>
+<a id="a2ce48936a6b0949b8a736d235a48a462" name="a2ce48936a6b0949b8a736d235a48a462"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2ce48936a6b0949b8a736d235a48a462">&#9670;&#160;</a></span>SaveFile()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -712,13 +712,13 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">bool resource::ResourceManager::SaveFile </td>
           <td>(</td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramtype">std::string_view&#160;</td>
           <td class="paramname"><em>path</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramtype">std::string_view&#160;</td>
           <td class="paramname"><em>content</em>&#160;</td>
         </tr>
         <tr>
@@ -744,12 +744,12 @@ Here is the caller graph for this function:</div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if file was saved successfully. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00138">138</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html#l00139">139</a> of file <a class="el" href="../../d8/d44/ResourceManager_8cpp_source.html">ResourceManager.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="../../d9/d07/classresource_1_1ResourceManager_ae92ca1f8db9e4248edaf2dc561201863_icgraph.png" border="0" usemap="#ad9/d07/classresource_1_1ResourceManager_ae92ca1f8db9e4248edaf2dc561201863_icgraph" alt=""/></div>
-<map name="ad9/d07/classresource_1_1ResourceManager_ae92ca1f8db9e4248edaf2dc561201863_icgraph" id="ad9/d07/classresource_1_1ResourceManager_ae92ca1f8db9e4248edaf2dc561201863_icgraph">
+<div class="center"><img src="../../d9/d07/classresource_1_1ResourceManager_a2ce48936a6b0949b8a736d235a48a462_icgraph.png" border="0" usemap="#ad9/d07/classresource_1_1ResourceManager_a2ce48936a6b0949b8a736d235a48a462_icgraph" alt=""/></div>
+<map name="ad9/d07/classresource_1_1ResourceManager_a2ce48936a6b0949b8a736d235a48a462_icgraph" id="ad9/d07/classresource_1_1ResourceManager_a2ce48936a6b0949b8a736d235a48a462_icgraph">
 <area shape="rect" title="Saves content to a file on disk." alt="" coords="381,27,584,67"/>
 <area shape="rect" href="../../d8/d5c/namespaceresource.html#a9d51862d8c41be438c01c8b713c75877" title=" " alt="" coords="192,5,333,31"/>
 <area shape="rect" href="../../d4/de6/classrenderer_1_1Material.html#aaa539180c1c05e42e926889cf484eccf" title="Saves the current material state to its JSON file." alt="" coords="193,55,332,95"/>

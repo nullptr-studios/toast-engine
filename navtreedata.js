@@ -30,7 +30,7 @@ var NAVTREE =
       [ "Dependencies", "d2/d07/md_docs_md_tools.html#autotoc_md5", null ],
       [ "IDEs", "d2/d07/md_docs_md_tools.html#autotoc_md6", null ],
       [ "Compiling", "d2/d07/md_docs_md_tools.html#autotoc_md7", null ],
-      [ "CI", "d2/d07/md_docs_md_tools.html#autotoc_md8", null ]
+      [ "CI", "d2/d07/md_docs_md_tools.html#autotoc_md9", null ]
     ] ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ],
@@ -75,23 +75,23 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"d0/dd9/classtoast_1_1TransformComponent.html#ae8b9d2df779e62a0587cbbff614e8a1a",
-"d1/df3/structtoast_1_1Version.html#a06689bdc44131f116a556e484503aa71",
-"d3/d74/KeyCodes_8hpp.html#a32da43b6a39a115183d02163d98c2212",
-"d4/d9c/classphysics_1_1Trigger.html#a0ee92c5f882d8389c8128dbacd9ec48d",
-"d5/d79/structresource_1_1PackHeader.html",
-"d6/d61/classaudio_1_1Data.html#a953c69f8b9c6ae9b94a086917b6b378d",
-"d6/dd4/classtoast_1_1Scene.html#a7508bae51c016b92cc2f7e2c5ac0bbd0",
-"d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fa7a03bac2692f8d17e2cda1b0721ffd0e",
-"d8/da4/structtoast_1_1GPUParticle.html#afff1a273e43e64d5486045adc889e762",
-"d9/d94/classSpineEventHandler.html#ad89e066cf02313d6bbd0ef51eff7b6a5",
-"da/d32/classrenderer_1_1OpenGLRenderer.html#ac3afc024d784b3f22149f259cf91bd69",
-"db/d5d/classaudio_1_1AudioSystem.html#a0a67626d5305d809cf3521a99704c36f",
-"db/d9a/Trigger_8cpp_source.html",
-"dc/d73/namespaceinput.html#ae7a6d9f45bbb460291576bc22e96ff47abbb93ef26e3c101ff11cdd21cab08a94",
-"dd/d84/classtoast_1_1ParticleEmitter.html#ac3b4a112d2a7c15c5be9e4451f3df2dc",
-"df/d2b/classtoast_1_1ParticleSystem.html#a75d8258569689aeb288221a392aff56c",
-"functions_vars.html"
+"d0/dd9/classtoast_1_1TransformComponent.html#adf007c932918c5e80b026e6171737e53",
+"d1/da3/classtoast_1_1Object.html#ae53861f4dd5e315684ff40af3ddc166a",
+"d3/d63/classtoast_1_1Component.html#aad2d12862bca40814d20921c0cfbaa6e",
+"d4/d8c/classrenderer_1_1Mesh.html#ad5e41c15dcc1f00b91733bb33169cc63",
+"d5/d10/structtoast_1_1Transform2.html#aab48283bc6d9152136a4d03c1f4ff906",
+"d6/d61/classaudio_1_1Data.html#a1488110e4e7471be34aed35591d05cd2",
+"d6/dbd/classtoast_1_1GameFlow.html#ad1053e43a03163fdf88ab427678fb228",
+"d8/d44/ResourceManager_8cpp.html#a2fe3e5a411780a1a2574e04d21886515",
+"d8/d92/classtoast_1_1Actor.html#a9ba773f744838aaa4d5974d29ec522a7",
+"d9/d50/classrenderer_1_1Shader.html#ab8f473edbbfdfe223eaf8723b32c7624",
+"da/d0b/classinput_1_1InputSystem.html#adbc18d9cd75290d8c046542ecbd51941",
+"db/d16/ResourceManager_8hpp.html#a9d51862d8c41be438c01c8b713c75877",
+"db/d96/structtoast_1_1ParticleEmitterConfig.html#a17b4ae531373fbfc8e7025ed1f82b93c",
+"dc/d5c/classtoast_1_1Log.html#aaf43c99a119326de0837e404cf685c79",
+"dd/d84/classtoast_1_1ParticleEmitter.html#a0b45ad4b9708dc73ff3a94683dd326bd",
+"de/db0/classtoast_1_1WindowException.html#af8523e52b6160f4fc0342fa2b085688b",
+"dir_fe640a56059d34174b81817cbc830cb3.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

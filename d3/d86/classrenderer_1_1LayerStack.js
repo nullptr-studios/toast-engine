@@ -8,8 +8,8 @@ var classrenderer_1_1LayerStack =
     [ "PopOverlay", "d3/d86/classrenderer_1_1LayerStack.html#a1d6b98bca79c45fc4dd5e3966031f209", null ],
     [ "PushLayer", "d3/d86/classrenderer_1_1LayerStack.html#a3d6d2f6974054e943a25f6cfa89107a6", null ],
     [ "PushOverlay", "d3/d86/classrenderer_1_1LayerStack.html#a45e26bd8665642ceb5e62f4680e68bf1", null ],
-    [ "RenderLayers", "d3/d86/classrenderer_1_1LayerStack.html#a03968d36bda78c0c74f87880c1ac8953", null ],
-    [ "TickLayers", "d3/d86/classrenderer_1_1LayerStack.html#a941b4eb214717c7d8b1bf6a64d63788f", null ],
+    [ "RenderLayers", "d3/d86/classrenderer_1_1LayerStack.html#a470c5680212da9d38dc2868f22095176", null ],
+    [ "TickLayers", "d3/d86/classrenderer_1_1LayerStack.html#a3f4017c648e8bbee0745aebfb16cac79", null ],
     [ "m_instance", "d3/d86/classrenderer_1_1LayerStack.html#ae3dbcecfbd700e290d7240a8063eb711", null ],
     [ "m_layerInsertIndex", "d3/d86/classrenderer_1_1LayerStack.html#a2119e048f3619131936d9a705933a9be", null ],
     [ "m_layers", "d3/d86/classrenderer_1_1LayerStack.html#a6b6b62e5b7ac60a3b2f97f648524216d", null ]

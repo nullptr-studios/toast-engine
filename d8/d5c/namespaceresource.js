@@ -25,10 +25,10 @@ var namespaceresource =
     [ "canonical_path_for_pack", "d8/d5c/namespaceresource.html#a01c356d2f4f63e7fad5a27343efaa6ac", null ],
     [ "fnv1a_hash64", "d8/d5c/namespaceresource.html#a10a267534916b6ed0921f1bcee651726", null ],
     [ "LoadResource", "d8/d5c/namespaceresource.html#a478d194cc141760fa1fa2a86fc49e10e", null ],
-    [ "Open", "d8/d5c/namespaceresource.html#a723b33048c1a6b9c57bc5047f7aa9bb1", null ],
-    [ "Open", "d8/d5c/namespaceresource.html#a0eb5e28e0c91dbbfba5c689635f40aca", null ],
-    [ "Open", "d8/d5c/namespaceresource.html#aa2f8eb779b0f2f88f571c549371748e4", null ],
     [ "Open", "d8/d5c/namespaceresource.html#a5bb34b2d0a15fcd098fb0d19c9d1f917", null ],
+    [ "Open", "d8/d5c/namespaceresource.html#a98429c1d7abe249fc608c7c5b13bb5e3", null ],
+    [ "Open", "d8/d5c/namespaceresource.html#a5df99cfc6966fee06c247e97c9169c7c", null ],
+    [ "Open", "d8/d5c/namespaceresource.html#a33053adbcd2ac947ecdafb5e133779c0", null ],
     [ "PurgeResources", "d8/d5c/namespaceresource.html#aa93bae53eb778900ce67ae7f034918e7", null ],
     [ "SaveFile", "d8/d5c/namespaceresource.html#a9d51862d8c41be438c01c8b713c75877", null ],
     [ "g_packFile", "d8/d5c/namespaceresource.html#a2fe3e5a411780a1a2574e04d21886515", null ]

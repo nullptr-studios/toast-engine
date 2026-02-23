@@ -17,6 +17,7 @@ var classtoast_1_1Object =
     [ "_OnEnable", "d1/da3/classtoast_1_1Object.html#aed52a56e0795659d3f262bc9d947d3cb", null ],
     [ "_PhysTick", "d1/da3/classtoast_1_1Object.html#aafbf50c821ea74dfe7ddae592e910375", null ],
     [ "_Tick", "d1/da3/classtoast_1_1Object.html#af3c0a2202e6ac21b04bd417db5e7ff10", null ],
+    [ "Adopt", "d1/da3/classtoast_1_1Object.html#a7dfbd4969b0fbce5826fd089ab93aeec", null ],
     [ "base_type", "d1/da3/classtoast_1_1Object.html#a205294c5148df0c677830c4cf463c6ea", null ],
     [ "Begin", "d1/da3/classtoast_1_1Object.html#a7153a04208dd687a14e4561a84ee6804", null ],
     [ "Destroy", "d1/da3/classtoast_1_1Object.html#a1b6e927d9c508dd81a308d45a52afecb", null ],
@@ -44,6 +45,10 @@ var classtoast_1_1Object =
     [ "Register", "d1/da3/classtoast_1_1Object.html#a71ecedef54b6348ea33ccfb5503bcde0", null ],
     [ "Save", "d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24", null ],
     [ "scene", "d1/da3/classtoast_1_1Object.html#abbc346e00151294c04020d898fc3e7ac", null ],
+    [ "SetRunEarlyTick", "d1/da3/classtoast_1_1Object.html#a664d8c11a6c4d7d66d4ac01172fcfb2b", null ],
+    [ "SetRunLateTick", "d1/da3/classtoast_1_1Object.html#af761f0a344b6331ec69e8b45e5c8cf36", null ],
+    [ "SetRunTick", "d1/da3/classtoast_1_1Object.html#a9b1a3bf5fe1a7b9d9ec307b8fed16533", null ],
+    [ "SetScene", "d1/da3/classtoast_1_1Object.html#a2d173fcb83cd6a64996df7a77604236a", null ],
     [ "SoftLoad", "d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef", null ],
     [ "SoftSave", "d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656", null ],
     [ "static_type", "d1/da3/classtoast_1_1Object.html#affe9053e09e9e130a9255d1c53d55104", null ],
@@ -60,5 +65,8 @@ var classtoast_1_1Object =
     [ "m_json", "d1/da3/classtoast_1_1Object.html#af2405ec4b87f951b415ccd13f5aa7279", null ],
     [ "m_name", "d1/da3/classtoast_1_1Object.html#a6fe7d4c96a13e69d722eb25c2a30e7cc", null ],
     [ "m_parent", "d1/da3/classtoast_1_1Object.html#a81efdfbb5e25a21c83bf23477f90659b", null ],
+    [ "m_runsEarlyTick", "d1/da3/classtoast_1_1Object.html#a5634e91c478e984aea4eca56202bac19", null ],
+    [ "m_runsLateTick", "d1/da3/classtoast_1_1Object.html#a1271862bc353241530aac7504182465e", null ],
+    [ "m_runsTick", "d1/da3/classtoast_1_1Object.html#a92529750c0a7c8636a615ce849b0a138", null ],
     [ "m_scene", "d1/da3/classtoast_1_1Object.html#a19f10c2e6a311410c36fba119f38d834", null ]
 ];

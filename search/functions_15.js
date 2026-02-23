@@ -4,7 +4,7 @@ var searchData=
   ['unbind_1',['Unbind',['../d6/d97/classTexture.html#a1b1ea9fa785cad23822c4b6cbfbbc723',1,'Texture']]],
   ['unbind_2',['unbind',['../dc/d58/classFramebuffer.html#af819ea3cfe2fa85caa9e3ec430264d40',1,'Framebuffer']]],
   ['unload_3',['unload',['../da/d7d/classSpineTextureLoader.html#ae980e0386fcc6f0f5aafbb32dddc00f0',1,'SpineTextureLoader']]],
-  ['unloadscene_4',['UnloadScene',['../d6/d7d/classtoast_1_1World.html#a840bdbfbf06a66f30d7166b0a6a55ed8',1,'toast::World::UnloadScene(unsigned id)'],['../d6/d7d/classtoast_1_1World.html#a9cb3a25d0bf673ce46b512c5be72a811',1,'toast::World::UnloadScene(const std::string &amp;name)']]],
+  ['unloadscene_4',['UnloadScene',['../d6/d7d/classtoast_1_1World.html#a840bdbfbf06a66f30d7166b0a6a55ed8',1,'toast::World::UnloadScene(unsigned id)'],['../d6/d7d/classtoast_1_1World.html#a3844ff2ee3089892eb2b3fdce6ab6505',1,'toast::World::UnloadScene(std::string_view name)']]],
   ['unmute_5fall_5',['unmute_all',['../d2/d11/namespaceaudio.html#abb3dcb2dd9baee00a3b343e7765be665',1,'audio::unmute_all()'],['../db/d5d/classaudio_1_1AudioSystem.html#a2f8fd10146c4e03e47cad70c4654a494',1,'audio::AudioSystem::unmute_all()']]],
   ['unregisterlistener_6',['UnregisterListener',['../da/d0b/classinput_1_1InputSystem.html#ae7f8781d0c20c4caa6496146d44e573d',1,'input::InputSystem']]],
   ['unsubscribe_7',['Unsubscribe',['../d8/d7b/classevent_1_1ListenerComponent.html#aaa57ee9daf9c73c68e747f7982ec053f',1,'event::ListenerComponent::Unsubscribe()'],['../d8/d7b/classevent_1_1ListenerComponent.html#a8b17fa66e62fb1a4a52d56b87de5f4e8',1,'event::ListenerComponent::Unsubscribe(std::string name)']]],

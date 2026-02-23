@@ -113,7 +113,7 @@ IDEs</h1>
 Compiling</h1>
 <p>Compiling using the IDEs tools is fine most of the time. However, a script to compile will be provided that will add some additional steps like downloading submodules, compiling shaders, packing files, etc.</p>
 <p>You can use our compile script by running <code>lua .\compile.lua</code>. The command also has the flags <code>-g</code> to just run the build system generation, <code>-b</code> to just build with a generated system and <code>-R</code> to make the script build on Release. The script will use Visual Studio 17 as the generator, MSVC as the compiler for Windows and Ninja as the generator for the compile_commands file used by LLVM on Windows. The script will use Unix Makefiles as the generator and G++ as the compiler on Linux.</p>
-<h1><a class="anchor" id="autotoc_md8"></a>
+<h1><a class="anchor" id="autotoc_md9"></a>
 CI</h1>
 <p>The whole CI project for the team can be seen on the .gitlab-ci.yml file. However, a script exist to check if the CI will pass before pushing. You can run the script with <code>lua .\clang-tools.lua</code></p>
 <p>By default this script will run the unit tests but you can check more things with the following flags:</p><ul>
