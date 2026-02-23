@@ -142,11 +142,17 @@ public:
 
 	void Adopt(unsigned id);
 
-	void SetRunEarlyTick(bool value) { m_runsEarlyTick = value; }
-	
-	void SetRunTick(bool value) { m_runsTick = value; }
+	void SetRunEarlyTick(bool value) {
+		m_runsEarlyTick = value;
+	}
 
-	void SetRunLateTick(bool value) { m_runsLateTick = value; }
+	void SetRunTick(bool value) {
+		m_runsTick = value;
+	}
+
+	void SetRunLateTick(bool value) {
+		m_runsLateTick = value;
+	}
 
 protected:
 	// Tick functions
