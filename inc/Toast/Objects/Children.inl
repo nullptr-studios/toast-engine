@@ -182,7 +182,7 @@ public:
 		return m_children.end();
 	}
 
-	auto RecursiveLoop() -> std::generator<Children&>;
+	// auto RecursiveLoop() -> std::generator<Children&>;
 
 private:
 	template<typename T>

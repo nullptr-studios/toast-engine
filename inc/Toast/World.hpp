@@ -66,7 +66,6 @@ public:
 		return static_cast<T*>(Instance()->m.children.GetType(T::static_type(), true));
 	}
 
-
 	[[nodiscard]]
 	static Object* Get(unsigned id);
 	[[nodiscard]]

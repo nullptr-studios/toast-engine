@@ -226,6 +226,7 @@ public:
 
 private:
 #pragma endregion
+	void SetScene(Scene* scene);
 };
 
 #include "Object.inl"

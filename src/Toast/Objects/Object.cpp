@@ -342,10 +342,20 @@ void Object::Children::RemoveAll() {
 	}
 }
 
-auto Object::Children::RecursiveLoop() -> std::generator<Children&> {
-	for (auto& child : m_children | std::views::values) {
-		co_yield child->children;
-		co_yield std::ranges::elements_of(child->children.RecursiveLoop());
+// Here lies the remnents of dante code :(
+// auto Object::Children::RecursiveLoop() -> std::generator<Children&> {
+// 	for (auto& child : m_children | std::views::values) {
+// 		co_yield child->children;
+// 		co_yield std::ranges::elements_of(child->children.RecursiveLoop());
+// 	}
+// }
+
+void Object::SetScene(Scene* scene) {
+	assert(scene != nullptr);
+	m_scene = scene;
+	children.m_scene = scene;
+	for (auto& child : children | std::views::values) {
+		child->SetScene(scene);
 	}
 }
 
@@ -383,13 +393,8 @@ void Object::Adopt(unsigned id) {
 	}
 	auto orphan = children_of_parent->Collect(id);
 
-	// PERF:
 	orphan->m_parent = this;
-	orphan->m_scene = m_scene;
-	orphan->children.m_scene = m_scene;
-	for (auto& child : orphan->children.RecursiveLoop()) {
-		child.m_scene = m_scene;
-	}
+	orphan->SetScene(m_scene);
 	children.m_children[id] = std::move(orphan);
 }
 

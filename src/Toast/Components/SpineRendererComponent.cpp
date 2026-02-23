@@ -26,7 +26,7 @@ void SpineRendererComponent::Init() {
 
 	SetRunEarlyTick(false);
 	SetRunLateTick(false);
-	
+
 	// shader and buffers
 	m_shader = resource::LoadResource<renderer::Shader>("SHADERS/spine.shader");
 	// Reserve temp buffers to avoid allocations

@@ -12,7 +12,7 @@ namespace toast {
 
 void AtlasSpriteComponent::Init() {
 	TransformComponent::Init();
-	
+
 	SetRunEarlyTick(false);
 	SetRunTick(false);
 	SetRunLateTick(false);

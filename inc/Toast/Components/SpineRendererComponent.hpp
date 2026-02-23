@@ -58,10 +58,10 @@ public:
 
 	glm::vec2 GetBoneLocalPosition(const std::string_view& boneName) const;
 	void SetBoneLocalPosition(const std::string_view& boneName, const glm::vec2& position) const;
-	
+
 	float GetBoneLocalRotation(const std::string_view& boneName) const;
 	void SetBoneLocalRotation(const std::string_view& boneName, float rotationDegrees) const;
-	
+
 	float GetBoneWorldRotation(const std::string_view& boneName);
 	void SetBoneWorldRotation(const std::string_view& boneName, float rotationDegrees);
 
