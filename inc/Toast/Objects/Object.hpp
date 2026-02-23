@@ -10,6 +10,7 @@
 #include "Toast/ISerializable.hpp"
 #include "Toast/Log.hpp"
 
+#include <generator>
 #include <ranges>
 #include <string_view>
 #include <utility>
@@ -138,6 +139,8 @@ public:
 
 	/// @brief Destroys this object
 	void Nuke();
+
+	void Adopt(unsigned id);
 
 protected:
 	// Tick functions

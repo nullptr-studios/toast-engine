@@ -38,14 +38,14 @@ void Collider::Bevel(unsigned idx) {
 		return;
 	}
 
-  // Get the corner represented by 3 points
+	// Get the corner represented by 3 points
 	auto p1 = m.points.begin();
 	std::advance(p1, idx);
 
 	auto right = (p1 != m.points.end()) ? std::next(p1) : m.points.begin();
 	auto left = (p1 != m.points.begin()) ? std::prev(p1) : std::prev(m.points.end());
 
-  // Reformat the corner into 2 more points that are close to the original point
+	// Reformat the corner into 2 more points that are close to the original point
 	auto new_point1 = glm::mix(*right, *p1, 0.9f);
 	auto new_point2 = glm::mix(*left, *p1, 0.9f);
 	*p1 = new_point1;

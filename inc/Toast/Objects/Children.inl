@@ -182,6 +182,8 @@ public:
 		return m_children.end();
 	}
 
+	auto RecursiveLoop() -> std::generator<Children&>;
+
 private:
 	template<typename T>
 	bool HasObject();
@@ -189,6 +191,8 @@ private:
 	void erase(const unsigned id) {
 		m_children.erase(id);
 	}
+
+	auto Collect(const unsigned id) -> std::unique_ptr<Object>;
 
 	child_list m_children;
 
