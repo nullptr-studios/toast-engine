@@ -48,7 +48,7 @@ void SpineRendererComponent::Init() {
 	if (m_skeletonData) {
 		m_skeleton = std::make_unique<spine::Skeleton>(m_skeletonData->GetSkeletonData());
 		m_animationStateData = std::make_unique<spine::AnimationStateData>(m_skeletonData->GetSkeletonData());
-		m_animationStateData->setDefaultMix(.5f);
+		m_animationStateData->setDefaultMix(.4f);
 		m_animationState = std::make_unique<spine::AnimationState>(m_animationStateData.get());
 		m_animationState->setListener(m_eventHandler.get());
 
