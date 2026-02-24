@@ -32,7 +32,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/spdlog")
 
 set(LZ4_BUILD_CLI OFF CACHE BOOL "LZ4_BUILD_CLI" OFF)
 set(LZ4_BUILD_LEGACY_LZ4C OFF CACHE BOOL "LZ4_BUILD_LEGACY_LZ4C" OFF)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/lz4/build/cmake")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/lz4/amongas/cmake")
 
 
 set(TRACY_ENABLE ON CACHE BOOL "Enable tracy client" ON)

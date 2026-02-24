@@ -2,7 +2,7 @@
 /// @author dario
 /// @date 23/10/2025.
 
-#include "../../ResourceManager/Spine/SpineSkeletonRenderer.hpp"
+#include "Toast/Components/SpineRendererComponent.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Resources/Mesh.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
@@ -12,6 +12,7 @@
 #include "imgui.h"
 #endif
 
+#include "ResourceManager/Spine/SpineSkeletonRenderer.hpp"
 #include "Toast/Components/AtlasRendererComponent.hpp"
 #include "Toast/Components/SpineRendererComponent.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
