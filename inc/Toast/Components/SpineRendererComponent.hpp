@@ -46,6 +46,8 @@ public:
 			m_skeleton->updateWorldTransform(spine::Physics_None);
 		}
 	}
+	
+	spine::AnimationStateData* GetSkeletonData() const { return m_animationStateData.get(); }
 
 	void Load(json_t j, bool force_create = true) override;
 	json_t Save() const override;
