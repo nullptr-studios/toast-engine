@@ -3,6 +3,7 @@
 /// @date 23/10/2025.
 
 #include "Toast/Components/SpineRendererComponent.hpp"
+
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Resources/Mesh.hpp"
 #include "Toast/Resources/ResourceManager.hpp"

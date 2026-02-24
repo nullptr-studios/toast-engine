@@ -8,6 +8,7 @@
 #include "Toast/SimulateWorldEvent.hpp"
 #include "Toast/ThreadPool.hpp"
 
+#include <exception>
 #include <functional>
 #include <future>
 #include <memory>
@@ -170,8 +171,9 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 				throw ToastException("Cannot open scene file: " + std::string(path));
 			}
 			j = json_t::parse(p.value());
-		} catch (const std::exception& e) {
+		} catch (std::exception& e) {
 			TOAST_ERROR("Failed opening scene with path \"{0}\"\n{1}", path, e.what());
+			promis->set_exception(std::current_exception());
 			return;
 		}
 
