@@ -1,5 +1,6 @@
 var NAVTREEINDEX16 =
 {
+"de/db0/classtoast_1_1WindowException.html#af8523e52b6160f4fc0342fa2b085688b":[4,0,9,37,0],
 "de/db0/classtoast_1_1WindowException.html#af8523e52b6160f4fc0342fa2b085688b":[2,0,9,37,0],
 "de/db8/ConvexCollider_8hpp.html":[5,0,2,3,5],
 "de/db8/ConvexCollider_8hpp.html#a40f3163dfdfef736a883aeb1f39b5376":[5,0,2,3,5,2],
@@ -248,6 +249,5 @@ var NAVTREEINDEX16 =
 "dir_cc826e206496d9bb3cee340d21aea050.html":[5,0,2,5],
 "dir_ccd7b538c847270c19b095e450cf5570.html":[5,0,2,6,0],
 "dir_d172ab4fa3714607a9365eb5cf7b4d15.html":[5,0,1,0,2],
-"dir_de9f5e5c693426af4ac695525c65b1e0.html":[5,0,2,6],
-"dir_e293982dbf9eca18e9f2c53f201004b8.html":[5,0,2,4,0]
+"dir_de9f5e5c693426af4ac695525c65b1e0.html":[5,0,2,6]
 };

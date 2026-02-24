@@ -7,6 +7,7 @@ var classSpineRendererComponent =
     [ "GetBoneLocalRotation", "d0/dc7/classSpineRendererComponent.html#aeb0abbfd4c48c49e1bae8f79e4a1828a", null ],
     [ "GetBoneWorldPosition", "d0/dc7/classSpineRendererComponent.html#a99c33e0a54b37ac4fa8f9f560f553363", null ],
     [ "GetBoneWorldRotation", "d0/dc7/classSpineRendererComponent.html#a4c43aaba2e8b9ef9a0ca3a882033c446", null ],
+    [ "GetSkeletonData", "d0/dc7/classSpineRendererComponent.html#a2652b87e07083f4a416dc6e8ddb375d5", null ],
     [ "Init", "d0/dc7/classSpineRendererComponent.html#ad1952cbfc3a232ad54536c0170b36f39", null ],
     [ "Load", "d0/dc7/classSpineRendererComponent.html#a17b4928799669c1fbe648df6afe88fef", null ],
     [ "LoadTextures", "d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68", null ],
