@@ -168,10 +168,10 @@ void Engine::Init() {
 
 	// Create window
 	m->window = std::make_unique<Window>(1920, 1080, "ToastEngine");
-	
+
 	// LayerStack must be created BEFORE renderer, as renderer gets the instance during init
 	m->layerStack = std::make_unique<renderer::LayerStack>();
-	
+
 	m->renderer = std::make_unique<renderer::OpenGLRenderer>();
 
 	// Create input system
@@ -193,8 +193,7 @@ void Engine::Init() {
 	auto audio_result = audio::AudioSystem::create();
 	TOAST_ASSERT(audio_result, "Failed to initialize Audio System");
 	m->audioSystem = audio_result.value();
-	
-	
+
 	auto HUD = new renderer::HUD::HUDLayer(m->window->GetWindow(), 1920, 1080, false);
 	m->layerStack->PushOverlay(HUD);
 	HUD->LoadURL("file:///assets/ui/main_menu.html");

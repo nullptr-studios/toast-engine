@@ -4,9 +4,9 @@
 
 #include "Toast/Resources/ResourceManager.hpp"
 
-#include "Toast/Resources/ToastFileSystem.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Profiler.hpp"
+#include "Toast/Resources/ToastFileSystem.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>

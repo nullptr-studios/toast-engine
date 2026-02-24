@@ -5,11 +5,10 @@
 
 class ToastLogger : public ultralight::Logger {
 public:
-    static ToastLogger& Get();
+	static ToastLogger& Get();
 
-    void LogMessage(ultralight::LogLevel log_level, const ultralight::String& message) override;
+	void LogMessage(ultralight::LogLevel log_level, const ultralight::String& message) override;
 
 private:
-    ToastLogger() = default;
+	ToastLogger() = default;
 };
-

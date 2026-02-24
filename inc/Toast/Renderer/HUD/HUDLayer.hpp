@@ -15,8 +15,8 @@ typedef struct GLFWwindow GLFWwindow;
 class Framebuffer;
 
 namespace toast::hud {
-    class ToastGPUContext;
-    class ToastGPUDriver;
+class ToastGPUContext;
+class ToastGPUDriver;
 }
 
 namespace renderer::HUD {
@@ -46,140 +46,153 @@ namespace renderer::HUD {
 ///
 class HUDLayer : public ILayer {
 public:
-    ///
-    /// @brief Construct a new HUD Layer
-    /// @param window The GLFW window to render to
-    /// @param width Initial viewport width
-    /// @param height Initial viewport height
-    /// @param enable_msaa Whether to enable MSAA for UI rendering
-    ///
-    HUDLayer(GLFWwindow* window, uint32_t width, uint32_t height, bool enable_msaa = false);
-    
-    ~HUDLayer() override;
+	///
+	/// @brief Construct a new HUD Layer
+	/// @param window The GLFW window to render to
+	/// @param width Initial viewport width
+	/// @param height Initial viewport height
+	/// @param enable_msaa Whether to enable MSAA for UI rendering
+	///
+	HUDLayer(GLFWwindow* window, uint32_t width, uint32_t height, bool enable_msaa = false);
 
-    /// @brief Initialize the Ultralight renderer and create views
-    void OnAttach() override;
-    
-    /// @brief Cleanup Ultralight resources
-    void OnDetach() override;
-    
-    /// @brief Update Ultralight logic (JavaScript execution, animations)
-    void OnTick() override;
-    
-    /// @brief Render the UI to the HUD framebuffer
-    void OnRender() override;
+	~HUDLayer() override;
 
-    // =========================================================================
-    // View Management
-    // =========================================================================
+	/// @brief Initialize the Ultralight renderer and create views
+	void OnAttach() override;
 
-    ///
-    /// @brief Load a URL into the first view (if any)
-    /// @param url The URL to load (can be file:// or http://)
-    ///
-    void LoadURL(const std::string& url);
-    
-    ///
-    /// @brief Load HTML content directly into the first view (if any)
-    /// @param html The HTML content string
-    /// @param base_url Base URL for resolving relative paths
-    ///
-    void LoadHTML(const std::string& html, const std::string& base_url = "");
+	/// @brief Cleanup Ultralight resources
+	void OnDetach() override;
 
-    ///
-    /// @brief Create an additional Ultralight view managed by this HUD layer.
-    /// @param width View width
-    /// @param height View height
-    /// @param config Optional view configuration (defaults to transparent, accelerated)
-    /// @return RefPtr to the created view
-    ultralight::RefPtr<ultralight::View> CreateView(uint32_t width, uint32_t height, ultralight::ViewConfig config = {});
-     
-     ///
-     /// @brief Resize the UI viewport
-     /// @param width New viewport width
-     /// @param height New viewport height
-    ///
-    void Resize(uint32_t width, uint32_t height);
-    
-    ///
-    /// @brief Get the Ultralight View for direct manipulation
-    /// @return RefPtr to the Ultralight View
-    ///
-    ultralight::RefPtr<ultralight::View> GetView() const { return views_.empty() ? nullptr : views_.front(); }
-    const std::vector<ultralight::RefPtr<ultralight::View>>& GetViews() const { return views_; }
-    
-    ///
-    /// @brief Get the HUD framebuffer for compositing
-    /// @return Pointer to the framebuffer containing the rendered HUD
-    ///
-    Framebuffer* GetFramebuffer() const { return framebuffer_.get(); }
-    
-    ///
-    /// @brief Get the raw Ultralight render target texture ID (for debugging)
-    /// @return OpenGL texture ID of Ultralight's internal render target, or 0 if not available
-    ///
-    uint32_t GetUltralightTextureGL() const;
+	/// @brief Update Ultralight logic (JavaScript execution, animations)
+	void OnTick() override;
 
-    // =========================================================================
-    // Input Handling
-    // =========================================================================
+	/// @brief Render the UI to the HUD framebuffer
+	void OnRender() override;
 
-    /// @brief Handle mouse move events
-    void OnMouseMove(int x, int y);
-    
-    /// @brief Handle mouse button events
-    void OnMouseButton(int button, int action, int mods);
-    
-    /// @brief Handle mouse scroll events
-    void OnMouseScroll(double xoffset, double yoffset);
-    
-    /// @brief Handle key events
-    void OnKey(int key, int scancode, int action, int mods);
-    
-    /// @brief Handle character input events
-    void OnChar(unsigned int codepoint);
-    
-    ///
-    /// @brief Enable input handling for this HUD layer
-    /// @note Input is enabled by default when the HUD layer is created
-    ///
-    void EnableInput() { input_enabled_ = true; }
-    
-    ///
-    /// @brief Disable input handling for this HUD layer
-    /// @note Use this when you want game input to pass through without being handled by the HUD
-    ///
-    void DisableInput() { input_enabled_ = false; }
-    
-    ///
-    /// @brief Check if input handling is enabled
-    /// @return true if input is enabled
-    ///
-    bool IsInputEnabled() const { return input_enabled_; }
+	// =========================================================================
+	// View Management
+	// =========================================================================
+
+	///
+	/// @brief Load a URL into the first view (if any)
+	/// @param url The URL to load (can be file:// or http://)
+	///
+	void LoadURL(const std::string& url);
+
+	///
+	/// @brief Load HTML content directly into the first view (if any)
+	/// @param html The HTML content string
+	/// @param base_url Base URL for resolving relative paths
+	///
+	void LoadHTML(const std::string& html, const std::string& base_url = "");
+
+	///
+	/// @brief Create an additional Ultralight view managed by this HUD layer.
+	/// @param width View width
+	/// @param height View height
+	/// @param config Optional view configuration (defaults to transparent, accelerated)
+	/// @return RefPtr to the created view
+	ultralight::RefPtr<ultralight::View> CreateView(uint32_t width, uint32_t height, ultralight::ViewConfig config = {});
+
+	///
+	/// @brief Resize the UI viewport
+	/// @param width New viewport width
+	/// @param height New viewport height
+	///
+	void Resize(uint32_t width, uint32_t height);
+
+	///
+	/// @brief Get the Ultralight View for direct manipulation
+	/// @return RefPtr to the Ultralight View
+	///
+	ultralight::RefPtr<ultralight::View> GetView() const {
+		return views_.empty() ? nullptr : views_.front();
+	}
+
+	const std::vector<ultralight::RefPtr<ultralight::View>>& GetViews() const {
+		return views_;
+	}
+
+	///
+	/// @brief Get the HUD framebuffer for compositing
+	/// @return Pointer to the framebuffer containing the rendered HUD
+	///
+	Framebuffer* GetFramebuffer() const {
+		return framebuffer_.get();
+	}
+
+	///
+	/// @brief Get the raw Ultralight render target texture ID (for debugging)
+	/// @return OpenGL texture ID of Ultralight's internal render target, or 0 if not available
+	///
+	uint32_t GetUltralightTextureGL() const;
+
+	// =========================================================================
+	// Input Handling
+	// =========================================================================
+
+	/// @brief Handle mouse move events
+	void OnMouseMove(int x, int y);
+
+	/// @brief Handle mouse button events
+	void OnMouseButton(int button, int action, int mods);
+
+	/// @brief Handle mouse scroll events
+	void OnMouseScroll(double xoffset, double yoffset);
+
+	/// @brief Handle key events
+	void OnKey(int key, int scancode, int action, int mods);
+
+	/// @brief Handle character input events
+	void OnChar(unsigned int codepoint);
+
+	///
+	/// @brief Enable input handling for this HUD layer
+	/// @note Input is enabled by default when the HUD layer is created
+	///
+	void EnableInput() {
+		input_enabled_ = true;
+	}
+
+	///
+	/// @brief Disable input handling for this HUD layer
+	/// @note Use this when you want game input to pass through without being handled by the HUD
+	///
+	void DisableInput() {
+		input_enabled_ = false;
+	}
+
+	///
+	/// @brief Check if input handling is enabled
+	/// @return true if input is enabled
+	///
+	bool IsInputEnabled() const {
+		return input_enabled_;
+	}
 
 private:
-    /// @brief Initialize Ultralight platform handlers
-    void InitPlatform();
-    
-    /// @brief Create the GPU context and driver
-    void CreateGPUContext();
-    
-    /// @brief Create the output framebuffer
-    void CreateFramebuffer();
+	/// @brief Initialize Ultralight platform handlers
+	void InitPlatform();
 
-    GLFWwindow* window_ = nullptr;
-    uint32_t width_ = 0;
-    uint32_t height_ = 0;
-    bool msaa_enabled_ = false;
-    bool input_enabled_ = true;  ///< Whether input events are forwarded to Ultralight
+	/// @brief Create the GPU context and driver
+	void CreateGPUContext();
 
-    std::unique_ptr<toast::hud::ToastGPUContext> gpu_context_;
-    ultralight::RefPtr<ultralight::Renderer> renderer_;
-    std::vector<ultralight::RefPtr<ultralight::View>> views_;
-    
-    // Output framebuffer for the HUD
-    std::unique_ptr<Framebuffer> framebuffer_;
-    unsigned read_fbo_ = 0;
+	/// @brief Create the output framebuffer
+	void CreateFramebuffer();
+
+	GLFWwindow* window_ = nullptr;
+	uint32_t width_ = 0;
+	uint32_t height_ = 0;
+	bool msaa_enabled_ = false;
+	bool input_enabled_ = true;    ///< Whether input events are forwarded to Ultralight
+
+	std::unique_ptr<toast::hud::ToastGPUContext> gpu_context_;
+	ultralight::RefPtr<ultralight::Renderer> renderer_;
+	std::vector<ultralight::RefPtr<ultralight::View>> views_;
+
+	// Output framebuffer for the HUD
+	std::unique_ptr<Framebuffer> framebuffer_;
+	unsigned read_fbo_ = 0;
 };
 
-} // namespace renderer::HUD
+}    // namespace renderer::HUD

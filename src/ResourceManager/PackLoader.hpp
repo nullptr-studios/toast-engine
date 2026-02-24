@@ -112,7 +112,7 @@ public:
 
 		return true;
 	}
-	
+
 	bool FileExists(const std::string_view& raw_path) {
 		// canonicalize lookup path same as packer
 		std::u8string path = canonical_path_for_pack(raw_path);
@@ -124,7 +124,7 @@ public:
 			TOAST_ERROR("PackFile: Path {} not found", raw_path);
 			return false;
 		}
-		
+
 		return true;
 	}
 

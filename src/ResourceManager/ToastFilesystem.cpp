@@ -1,18 +1,15 @@
 /// @file ToastFileSystem.cpp
 /// @brief File system abstraction (filesystem + pack) shared between ResourceManager and Ultralight.
 
-#include <Toast/Resources/ToastFileSystem.hpp>
-
 #include <Toast/Log.hpp>
 #include <Toast/Profiler.hpp>
-
+#include <Toast/Resources/ToastFileSystem.hpp>
 #include <Ultralight/Buffer.h>
-
 #include <algorithm>
-#include <ranges>
 #include <cctype>
 #include <cstring>
 #include <fstream>
+#include <ranges>
 
 namespace {
 void DestroyBuffer(void* /*user_data*/, void* data) {
@@ -97,35 +94,89 @@ bool ToastFileSystem::FileExists(const ultralight::String& path) {
 ultralight::String ToastFileSystem::GetFileMimeType(const ultralight::String& path) {
 	std::string filepath = path.utf8().data();
 	auto dot_pos = filepath.rfind('.');
-	if (dot_pos == std::string::npos) return "application/unknown";
+	if (dot_pos == std::string::npos) {
+		return "application/unknown";
+	}
 	std::string ext = filepath.substr(dot_pos + 1);
-	std::ranges::transform(ext, ext.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+	std::ranges::transform(ext, ext.begin(), [](unsigned char c) {
+		return static_cast<char>(std::tolower(c));
+	});
 
-	if (ext == "html" || ext == "htm") return "text/html";
-	if (ext == "js") return "application/javascript";
-	if (ext == "css") return "text/css";
-	if (ext == "json") return "application/json";
-	if (ext == "xml") return "application/xml";
-	if (ext == "txt") return "text/plain";
-	if (ext == "png") return "image/png";
-	if (ext == "jpg" || ext == "jpeg") return "image/jpeg";
-	if (ext == "gif") return "image/gif";
-	if (ext == "svg") return "image/svg+xml";
-	if (ext == "ico") return "image/x-icon";
-	if (ext == "webp") return "image/webp";
-	if (ext == "woff") return "font/woff";
-	if (ext == "woff2") return "font/woff2";
-	if (ext == "ttf") return "font/ttf";
-	if (ext == "otf") return "font/otf";
-	if (ext == "eot") return "application/vnd.ms-fontobject";
-	if (ext == "mp3") return "audio/mpeg";
-	if (ext == "wav") return "audio/wav";
-	if (ext == "ogg") return "audio/ogg";
-	if (ext == "mp4") return "video/mp4";
-	if (ext == "webm") return "video/webm";
-	if (ext == "pdf") return "application/pdf";
-	if (ext == "zip") return "application/zip";
-	if (ext == "dat") return "application/octet-stream";
+	if (ext == "html" || ext == "htm") {
+		return "text/html";
+	}
+	if (ext == "js") {
+		return "application/javascript";
+	}
+	if (ext == "css") {
+		return "text/css";
+	}
+	if (ext == "json") {
+		return "application/json";
+	}
+	if (ext == "xml") {
+		return "application/xml";
+	}
+	if (ext == "txt") {
+		return "text/plain";
+	}
+	if (ext == "png") {
+		return "image/png";
+	}
+	if (ext == "jpg" || ext == "jpeg") {
+		return "image/jpeg";
+	}
+	if (ext == "gif") {
+		return "image/gif";
+	}
+	if (ext == "svg") {
+		return "image/svg+xml";
+	}
+	if (ext == "ico") {
+		return "image/x-icon";
+	}
+	if (ext == "webp") {
+		return "image/webp";
+	}
+	if (ext == "woff") {
+		return "font/woff";
+	}
+	if (ext == "woff2") {
+		return "font/woff2";
+	}
+	if (ext == "ttf") {
+		return "font/ttf";
+	}
+	if (ext == "otf") {
+		return "font/otf";
+	}
+	if (ext == "eot") {
+		return "application/vnd.ms-fontobject";
+	}
+	if (ext == "mp3") {
+		return "audio/mpeg";
+	}
+	if (ext == "wav") {
+		return "audio/wav";
+	}
+	if (ext == "ogg") {
+		return "audio/ogg";
+	}
+	if (ext == "mp4") {
+		return "video/mp4";
+	}
+	if (ext == "webm") {
+		return "video/webm";
+	}
+	if (ext == "pdf") {
+		return "application/pdf";
+	}
+	if (ext == "zip") {
+		return "application/zip";
+	}
+	if (ext == "dat") {
+		return "application/octet-stream";
+	}
 	return "application/unknown";
 }
 
