@@ -6,7 +6,9 @@
 #include "ToastGPUContext.hpp"
 #include "ToastGPUDriver.hpp"
 
+#include <AppCore/Platform.h>
 #include <GLFW/glfw3.h>
+#include <JavaScriptCore/JSRetainPtr.h>
 #include <Toast/Log.hpp>
 #include <Toast/Profiler.hpp>
 #include <Toast/Renderer/Framebuffer.hpp>
@@ -17,7 +19,6 @@
 #include <Ultralight/Ultralight.h>
 #include <Ultralight/platform/Config.h>
 #include <Ultralight/platform/Platform.h>
-#include <JavaScriptCore/JSRetainPtr.h>
 #include <unordered_map>
 
 // Static map of windows to HUDLayer instances for input callbacks
@@ -100,43 +101,56 @@ static std::unique_ptr<ToastLoadListener> g_load_listener;
 // Internal per-HUDLayer load listener that sets dom_ready_ and flushes pending scripts.
 class HUDLayerLoadListener : public ultralight::LoadListener {
 public:
-	HUDLayerLoadListener(renderer::HUD::HUDLayer* owner, ultralight::LoadListener* forward = nullptr)
-	    : owner_(owner), forward_(forward) {}
+	HUDLayerLoadListener(renderer::HUD::HUDLayer* owner, ultralight::LoadListener* forward = nullptr) : owner_(owner), forward_(forward) { }
 
 	void OnBeginLoading(ultralight::View* caller, uint64_t frame_id, bool is_main_frame, const ultralight::String& url) override {
 		if (is_main_frame) {
 			TOAST_TRACE("[Load] Begin loading (HUDLayer): {}", url.utf8().data());
 		}
-		if (forward_) forward_->OnBeginLoading(caller, frame_id, is_main_frame, url);
+		if (forward_) {
+			forward_->OnBeginLoading(caller, frame_id, is_main_frame, url);
+		}
 	}
 
 	void OnFinishLoading(ultralight::View* caller, uint64_t frame_id, bool is_main_frame, const ultralight::String& url) override {
 		if (is_main_frame) {
 			TOAST_TRACE("[Load] Finished loading (HUDLayer): {}", url.utf8().data());
 		}
-		if (forward_) forward_->OnFinishLoading(caller, frame_id, is_main_frame, url);
+		if (forward_) {
+			forward_->OnFinishLoading(caller, frame_id, is_main_frame, url);
+		}
 	}
 
-	void OnFailLoading(ultralight::View* caller, uint64_t frame_id, bool is_main_frame, const ultralight::String& url,
-	                   const ultralight::String& description, const ultralight::String& error_domain, int error_code) override {
+	void OnFailLoading(
+	    ultralight::View* caller, uint64_t frame_id, bool is_main_frame, const ultralight::String& url, const ultralight::String& description,
+	    const ultralight::String& error_domain, int error_code
+	) override {
 		if (is_main_frame) {
-			TOAST_ERROR("[Load] Failed to load (HUDLayer): {} - {} ({}:{})", url.utf8().data(), description.utf8().data(), error_domain.utf8().data(), error_code);
+			TOAST_ERROR(
+			    "[Load] Failed to load (HUDLayer): {} - {} ({}:{})", url.utf8().data(), description.utf8().data(), error_domain.utf8().data(), error_code
+			);
 		}
-		if (forward_) forward_->OnFailLoading(caller, frame_id, is_main_frame, url, description, error_domain, error_code);
+		if (forward_) {
+			forward_->OnFailLoading(caller, frame_id, is_main_frame, url, description, error_domain, error_code);
+		}
 	}
 
 	void OnDOMReady(ultralight::View* caller, uint64_t frame_id, bool is_main_frame, const ultralight::String& url) override {
-		if (!is_main_frame) return;
+		if (!is_main_frame) {
+			return;
+		}
 		TOAST_TRACE("[Load] DOM ready (HUDLayer): {}", url.utf8().data());
 		if (owner_) {
 			owner_->OnDOMReady();
 		}
-		if (forward_) forward_->OnDOMReady(caller, frame_id, is_main_frame, url);
+		if (forward_) {
+			forward_->OnDOMReady(caller, frame_id, is_main_frame, url);
+		}
 	}
 
 private:
 	renderer::HUD::HUDLayer* owner_ = nullptr;
-	ultralight::LoadListener* forward_ = nullptr; // Not owned
+	ultralight::LoadListener* forward_ = nullptr;    // Not owned
 };
 
 // ============================================================================
@@ -234,7 +248,9 @@ HUDLayer::HUDLayer(GLFWwindow* window, uint32_t width, uint32_t height, bool ena
 
 HUDLayer::~HUDLayer() {
 	// Clear singleton if this is the current instance
-	if (s_Instance == this) s_Instance = nullptr;
+	if (s_Instance == this) {
+		s_Instance = nullptr;
+	}
 
 	// Unregister from input callbacks before detaching
 	if (window_) {
@@ -286,7 +302,7 @@ void HUDLayer::InitPlatform() {
 	ultralight::Platform::instance().set_config(config);
 	ultralight::Platform::instance().set_file_system(&ToastFileSystem::Get());
 	ultralight::Platform::instance().set_logger(&ToastLogger::Get());
-	ultralight::Platform::instance().set_font_loader(&ToastFontLoader::Get());
+	ultralight::Platform::instance().set_font_loader(ultralight::GetPlatformFontLoader());
 
 	TOAST_TRACE("Ultralight platform initialized");
 	TOAST_TRACE("Resource path: UI/Ultralight/resources/");
@@ -305,110 +321,110 @@ void HUDLayer::CreateGPUContext() {
 }
 
 void HUDLayer::OnAttach() {
-    PROFILE_ZONE_C(tracy::Color::Cyan);
+	PROFILE_ZONE_C(tracy::Color::Cyan);
 
-    TOAST_TRACE("HUDLayer::OnAttach - Initializing Ultralight...");
+	TOAST_TRACE("HUDLayer::OnAttach - Initializing Ultralight...");
 
-    // Ensure OpenGL context is current before any GL operations
-    if (window_) {
-        glfwMakeContextCurrent(window_);
-    } else {
-        TOAST_ERROR("HUDLayer::OnAttach - No window provided!");
-        return;
-    }
+	// Ensure OpenGL context is current before any GL operations
+	if (window_) {
+		glfwMakeContextCurrent(window_);
+	} else {
+		TOAST_ERROR("HUDLayer::OnAttach - No window provided!");
+		return;
+	}
 
-    // Initialize platform first (FileSystem, Logger, Config)
-    InitPlatform();
+	// Initialize platform first (FileSystem, Logger, Config)
+	InitPlatform();
 
-    // Create GPU context and driver BEFORE creating the renderer
-    CreateGPUContext();
+	// Create GPU context and driver BEFORE creating the renderer
+	CreateGPUContext();
 
-    // Verify GPU driver was set
-    if (!gpu_context_ || !gpu_context_->driver()) {
-        TOAST_ERROR("HUDLayer::OnAttach - GPU context/driver not initialized!");
-        return;
-    }
+	// Verify GPU driver was set
+	if (!gpu_context_ || !gpu_context_->driver()) {
+		TOAST_ERROR("HUDLayer::OnAttach - GPU context/driver not initialized!");
+		return;
+	}
 
-    TOAST_TRACE("Creating Ultralight Renderer...");
+	TOAST_TRACE("Creating Ultralight Renderer...");
 
-    // Check if required resources exist before creating renderer
-    if (!ToastFileSystem::Get().FileExists("UI/Ultralight/resources/icudt67l.dat")) {
-        TOAST_ERROR("CRITICAL: icudt67l.dat not found in UI/Ultralight/resources/ folder!");
-        return;
-    }
+	// Check if required resources exist before creating renderer
+	if (!ToastFileSystem::Get().FileExists("UI/Ultralight/resources/icudt67l.dat")) {
+		TOAST_ERROR("CRITICAL: icudt67l.dat not found in UI/Ultralight/resources/ folder!");
+		return;
+	}
 
-    // Verify cacert.pem exists (optional but recommended)
-    if (!ToastFileSystem::Get().FileExists("UI/Ultralight/resources/cacert.pem")) {
-        TOAST_WARN("cacert.pem not found in UI/Ultralight/resources/ folder - HTTPS may not work correctly");
-    }
+	// Verify cacert.pem exists (optional but recommended)
+	if (!ToastFileSystem::Get().FileExists("UI/Ultralight/resources/cacert.pem")) {
+		TOAST_WARN("cacert.pem not found in UI/Ultralight/resources/ folder - HTTPS may not work correctly");
+	}
 
-    TOAST_TRACE("Resources verified, creating renderer...");
+	TOAST_TRACE("Resources verified, creating renderer...");
 
-    // Create the Ultralight renderer
-    try {
-        renderer_ = ultralight::Renderer::Create();
+	// Create the Ultralight renderer
+	try {
+		renderer_ = ultralight::Renderer::Create();
 
-        if (!renderer_) {
-            TOAST_ERROR("Renderer::Create() returned nullptr!");
-            return;
-        }
-    } catch (const std::exception& e) {
-        TOAST_ERROR("Exception creating Ultralight renderer: {}", e.what());
-        return;
-    } catch (...) {
-        TOAST_ERROR("Unknown exception creating Ultralight renderer!");
-        return;
-    }
+		if (!renderer_) {
+			TOAST_ERROR("Renderer::Create() returned nullptr!");
+			return;
+		}
+	} catch (const std::exception& e) {
+		TOAST_ERROR("Exception creating Ultralight renderer: {}", e.what());
+		return;
+	} catch (...) {
+		TOAST_ERROR("Unknown exception creating Ultralight renderer!");
+		return;
+	}
 
-    TOAST_TRACE("Ultralight Renderer created successfully");
+	TOAST_TRACE("Ultralight Renderer created successfully");
 
-    // Create view configuration
-    ultralight::ViewConfig view_config;
-    view_config.is_accelerated = true;    // Use GPU acceleration
-    view_config.is_transparent = true;    // Allow transparency
-    view_config.initial_device_scale = 1.0;
-    view_config.initial_focus = true;
-    view_config.enable_images = true;
-    view_config.enable_javascript = true;
+	// Create view configuration
+	ultralight::ViewConfig view_config;
+	view_config.is_accelerated = true;    // Use GPU acceleration
+	view_config.is_transparent = true;    // Allow transparency
+	view_config.initial_device_scale = 1.0;
+	view_config.initial_focus = true;
+	view_config.enable_images = true;
+	view_config.enable_javascript = true;
 
-    TOAST_TRACE("Creating Ultralight View ({}x{})...", width_, height_);
+	TOAST_TRACE("Creating Ultralight View ({}x{})...", width_, height_);
 
-    // Create the first view and register it
-    auto first_view = CreateView(width_, height_, view_config);
-    if (!first_view) {
-        TOAST_ERROR("Failed to create Ultralight view!");
-        return;
-    }
+	// Create the first view and register it
+	auto first_view = CreateView(width_, height_, view_config);
+	if (!first_view) {
+		TOAST_ERROR("Failed to create Ultralight view!");
+		return;
+	}
 
-    // Set up listeners for debugging
-    if (!g_view_listener) {
-        g_view_listener = std::make_unique<ToastViewListener>();
-    }
-    if (!g_load_listener) {
-        g_load_listener = std::make_unique<ToastLoadListener>();
-    }
-    first_view->set_view_listener(g_view_listener.get());
+	// Set up listeners for debugging
+	if (!g_view_listener) {
+		g_view_listener = std::make_unique<ToastViewListener>();
+	}
+	if (!g_load_listener) {
+		g_load_listener = std::make_unique<ToastLoadListener>();
+	}
+	first_view->set_view_listener(g_view_listener.get());
 
-    // Create a per-instance load listener that forwards to the global debug load listener
-    load_listener_ = std::make_unique<HUDLayerLoadListener>(this, g_load_listener.get());
-    first_view->set_load_listener(load_listener_.get());
+	// Create a per-instance load listener that forwards to the global debug load listener
+	load_listener_ = std::make_unique<HUDLayerLoadListener>(this, g_load_listener.get());
+	first_view->set_load_listener(load_listener_.get());
 
-    // If a URL was requested earlier via LoadURL, load it now (after listeners are attached)
-    if (!pending_url_.empty()) {
-        TOAST_TRACE("HUDLayer::OnAttach - loading pending URL: {}", pending_url_);
-        first_view->LoadURL(ultralight::String(pending_url_.c_str()));
-        pending_url_.clear();
-    }
+	// If a URL was requested earlier via LoadURL, load it now (after listeners are attached)
+	if (!pending_url_.empty()) {
+		TOAST_TRACE("HUDLayer::OnAttach - loading pending URL: {}", pending_url_);
+		first_view->LoadURL(ultralight::String(pending_url_.c_str()));
+		pending_url_.clear();
+	}
 
-    // Set the active window for the GPU context
-    gpu_context_->set_active_window(window_);
+	// Set the active window for the GPU context
+	gpu_context_->set_active_window(window_);
 
-    // Create the output framebuffer for the HUD
-    CreateFramebuffer();
-    // Reusable read FBO for blits
-    glGenFramebuffers(1, &read_fbo_);
+	// Create the output framebuffer for the HUD
+	CreateFramebuffer();
+	// Reusable read FBO for blits
+	glGenFramebuffers(1, &read_fbo_);
 
-    TOAST_INFO("HUDLayer attached successfully");
+	TOAST_INFO("HUDLayer attached successfully");
 }
 
 void HUDLayer::OnDetach() {
@@ -444,7 +460,7 @@ void HUDLayer::OnRender() {
 	if (!renderer_ || !gpu_context_ || views_.empty() || !framebuffer_) {
 		return;
 	}
-	
+
 	renderer_->RefreshDisplay(0);
 
 	// Begin drawing
@@ -505,9 +521,16 @@ void HUDLayer::OnRender() {
 		// Ultralight stores pixels top-left origin, so we flip Y during blit.
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_->Handle());
 		glBlitFramebuffer(
-		    0, 0, static_cast<GLint>(target.width), static_cast<GLint>(target.height),
-		    0, static_cast<GLint>(target.height), static_cast<GLint>(target.width), 0,
-		    GL_COLOR_BUFFER_BIT, GL_NEAREST
+		    0,
+		    0,
+		    static_cast<GLint>(target.width),
+		    static_cast<GLint>(target.height),
+		    0,
+		    static_cast<GLint>(target.height),
+		    static_cast<GLint>(target.width),
+		    0,
+		    GL_COLOR_BUFFER_BIT,
+		    GL_NEAREST
 		);
 	}
 
@@ -517,21 +540,21 @@ void HUDLayer::OnRender() {
 }
 
 void HUDLayer::LoadURL(const std::string& url) {
-    PROFILE_ZONE_C(tracy::Color::Cyan);
+	PROFILE_ZONE_C(tracy::Color::Cyan);
 
-    if (views_.empty()) {
-        // View not created yet — remember URL and it will be loaded in OnAttach
-        TOAST_TRACE("HUDLayer::LoadURL - view not initialized yet, deferring URL: {}", url);
-        pending_url_ = url;
-        return;
-    }
+	if (views_.empty()) {
+		// View not created yet — remember URL and it will be loaded in OnAttach
+		TOAST_TRACE("HUDLayer::LoadURL - view not initialized yet, deferring URL: {}", url);
+		pending_url_ = url;
+		return;
+	}
 
-    // Reset dom_ready state and clear any pending scripts when loading a new page
-    dom_ready_ = false;
-    pending_scripts_.clear();
+	// Reset dom_ready state and clear any pending scripts when loading a new page
+	dom_ready_ = false;
+	pending_scripts_.clear();
 
-    views_.front()->LoadURL(ultralight::String(url.c_str()));
-    TOAST_INFO("Loading URL: {}", url);
+	views_.front()->LoadURL(ultralight::String(url.c_str()));
+	TOAST_INFO("Loading URL: {}", url);
 }
 
 // Helper to escape a C++ string for safe injection into a JS single-quoted string literal
@@ -540,12 +563,12 @@ static std::string JSEscape(const std::string& s) {
 	out.reserve(s.size());
 	for (char c : s) {
 		switch (c) {
-		case '\\': out += "\\\\"; break;
-		case '\'': out += "\\'"; break;
-		case '\n': out += "\\n"; break;
-		case '\r': out += "\\r"; break;
-		case '\t': out += "\\t"; break;
-		default: out += c; break;
+			case '\\': out += "\\\\"; break;
+			case '\'': out += "\\'"; break;
+			case '\n': out += "\\n"; break;
+			case '\r': out += "\\r"; break;
+			case '\t': out += "\\t"; break;
+			default: out += c; break;
 		}
 	}
 	return out;
@@ -601,8 +624,12 @@ void HUDLayer::OnDOMReady() {
 
 // Execute any queued scripts immediately (used when the page emits '[GameUI] ready')
 void HUDLayer::FlushPendingScriptsNow() {
-	if (pending_scripts_.empty()) return;
-	if (views_.empty() || !views_.front()) return;
+	if (pending_scripts_.empty()) {
+		return;
+	}
+	if (views_.empty() || !views_.front()) {
+		return;
+	}
 
 	for (const auto& s : pending_scripts_) {
 		views_.front()->EvaluateScript(ultralight::String(s.c_str()));
@@ -618,48 +645,51 @@ void HUDLayer::ExecuteJS(const std::string& script) {
 
 // JS wrapper API implementations
 void HUDLayer::SetWeaponSlot(int index, const std::string& icon_url, int ammo) {
-	int slotId = index + 1; // 1-based for HTML
+	int slotId = index + 1;    // 1-based for HTML
 
-	// We pass a raw JS object literal. No JSEscape needed for the whole JSON, 
+	// We pass a raw JS object literal. No JSEscape needed for the whole JSON,
 	// only for the icon_url string itself to prevent path breaking.
-	std::string script = 
-			"(function(){ "
-			"  var data = { slot: " + std::to_string(slotId) + ", image: '" + icon_url + "', ammo: " + std::to_string(ammo) + " };"
-			"  function trySetup(){ "
-			"    if (window.GameUI && window.GameUI.setupWeapon){ "
-			"      window.GameUI.setupWeapon(data); "
-			"      window.GameUI.updateWeapon(data); "
-			"    } else { setTimeout(trySetup, 50); }"
-			"  } trySetup();"
-			"})();";
+	std::string script = "(function(){ "
+	                     "  var data = { slot: " +
+	                     std::to_string(slotId) + ", image: '" + icon_url + "', ammo: " + std::to_string(ammo) +
+	                     " };"
+	                     "  function trySetup(){ "
+	                     "    if (window.GameUI && window.GameUI.setupWeapon){ "
+	                     "      window.GameUI.setupWeapon(data); "
+	                     "      window.GameUI.updateWeapon(data); "
+	                     "    } else { setTimeout(trySetup, 50); }"
+	                     "  } trySetup();"
+	                     "})();";
 	ExecuteJS(script);
 }
 
 void HUDLayer::SetWeaponAmmo(int index, int ammo) {
 	int slotId = index + 1;
-	std::string script = 
-			"(function(){ "
-			"  var data = { slot: " + std::to_string(slotId) + ", ammo: " + std::to_string(ammo) + " };"
-			"  function tryUpdate(){ "
-			"    if (window.GameUI && window.GameUI.updateWeapon){ "
-			"      window.GameUI.updateWeapon(data); "
-			"    } else { setTimeout(tryUpdate, 50); }"
-			"  } tryUpdate();"
-			"})();";
+	std::string script = "(function(){ "
+	                     "  var data = { slot: " +
+	                     std::to_string(slotId) + ", ammo: " + std::to_string(ammo) +
+	                     " };"
+	                     "  function tryUpdate(){ "
+	                     "    if (window.GameUI && window.GameUI.updateWeapon){ "
+	                     "      window.GameUI.updateWeapon(data); "
+	                     "    } else { setTimeout(tryUpdate, 50); }"
+	                     "  } tryUpdate();"
+	                     "})();";
 	ExecuteJS(script);
 }
 
 void HUDLayer::SetSelectedWeapon(int index) {
 	int slotId = index + 1;
-	std::string script = 
-			"(function(){ "
-			"  var data = { slot: " + std::to_string(slotId) + " };"
-			"  function trySelect(){ "
-			"    if (window.GameUI && window.GameUI.selectWeapon){ "
-			"      window.GameUI.selectWeapon(data); "
-			"    } else { setTimeout(trySelect, 50); }"
-			"  } trySelect();"
-			"})();";
+	std::string script = "(function(){ "
+	                     "  var data = { slot: " +
+	                     std::to_string(slotId) +
+	                     " };"
+	                     "  function trySelect(){ "
+	                     "    if (window.GameUI && window.GameUI.selectWeapon){ "
+	                     "      window.GameUI.selectWeapon(data); "
+	                     "    } else { setTimeout(trySelect, 50); }"
+	                     "  } trySelect();"
+	                     "})();";
 	ExecuteJS(script);
 }
 

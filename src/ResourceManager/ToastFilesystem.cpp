@@ -189,5 +189,5 @@ ultralight::RefPtr<ultralight::Buffer> ToastFileSystem::OpenFile(const ultraligh
 
 	auto* buffer_data = new char[data.size()];
 	std::memcpy(buffer_data, data.data(), data.size());
-	return ultralight::Buffer::Create(buffer_data, data.size(), &DestroyBuffer, nullptr);
+	return ultralight::Buffer::Create(buffer_data, data.size(), nullptr, &DestroyBuffer);
 }

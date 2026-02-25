@@ -140,6 +140,6 @@ ultralight::RefPtr<ultralight::FontFile> ToastFontLoader::Load(const ultralight:
 
 	TOAST_TRACE("[FontLoader] Successfully loaded font: {} ({} bytes)", font_path, file_size);
 
-	auto buffer = ultralight::Buffer::Create(data, file_size, &ToastFontLoader::DestroyBuffer, nullptr);
+	auto buffer = ultralight::Buffer::Create(data, file_size, nullptr, &ToastFontLoader::DestroyBuffer);
 	return ultralight::FontFile::Create(buffer);
 }

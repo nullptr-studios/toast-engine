@@ -102,7 +102,9 @@ public:
 	void SetSelectedWeapon(int index);
 
 	// Singleton accessor: returns the most recently constructed HUDLayer (or nullptr)
-	static HUDLayer* Get() { return s_Instance; }
+	static HUDLayer* Get() {
+		return s_Instance;
+	}
 
 	///
 	/// @brief Create an additional Ultralight view managed by this HUD layer.
@@ -190,7 +192,7 @@ public:
 
 	///
 	/// @brief Called by the per-instance LoadListener when the main-frame DOM is ready
-	/// 
+	///
 	void OnDOMReady();
 
 	// Force any queued JS scripts to execute immediately (used by console-ready handshake)
@@ -207,10 +209,10 @@ private:
 	void CreateFramebuffer();
 
 	// DOM readiness and script queueing
-	bool dom_ready_ = false;                         ///< True after the page's main-frame DOM is ready
+	bool dom_ready_ = false;                      ///< True after the page's main-frame DOM is ready
 	std::unique_ptr<ultralight::LoadListener> load_listener_;
-	std::vector<std::string> pending_scripts_;      ///< Scripts queued until DOM ready
-	std::string pending_url_;                      ///< URL to load if LoadURL is called before view creation
+	std::vector<std::string> pending_scripts_;    ///< Scripts queued until DOM ready
+	std::string pending_url_;                     ///< URL to load if LoadURL is called before view creation
 
 	/// @brief Evaluate script now or queue it until DOM ready
 	void EvalScriptOrQueue(const std::string& script);

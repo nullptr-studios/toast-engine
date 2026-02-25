@@ -207,8 +207,8 @@ OpenGLRenderer::OpenGLRenderer() {
 	m_lightFramebuffer = new Framebuffer(s);
 	m_lightFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // light accumulation buffer
 	m_lightFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // normal buffer
-	//m_lightFramebuffer->AddDepthAttachment();
 	// m_lightFramebuffer->AddDepthAttachment();
+	//  m_lightFramebuffer->AddDepthAttachment();
 	m_lightFramebuffer->Build();
 
 	m_outputFramebuffer = new Framebuffer(s);
@@ -218,8 +218,8 @@ OpenGLRenderer::OpenGLRenderer() {
 
 	// Layer framebuffer: used to render game/editor layers (non-HUD) before compositing
 	m_layerFramebuffer = new Framebuffer(s);
-	m_layerFramebuffer->AddColorAttachment(GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE); // layer colors (same format as output)
-	m_layerFramebuffer->AddDepthAttachment(); // allow depth testing for layers
+	m_layerFramebuffer->AddColorAttachment(GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);    // layer colors (same format as output)
+	m_layerFramebuffer->AddDepthAttachment();                                       // allow depth testing for layers
 	m_layerFramebuffer->Build();
 
 	//@TODO: HDR support
@@ -373,7 +373,6 @@ void OpenGLRenderer::Render() {
 
 	// Combine (writes into m_outputFramebuffer)
 	CombinedRenderPass();
-	
 
 	// Render game/editor layers directly into the output framebuffer (HUD layers still render into their own FBOs)
 	m_outputFramebuffer->bind();
@@ -383,20 +382,20 @@ void OpenGLRenderer::Render() {
 
 	// Render non-HUD editor/game layers into a dedicated layer framebuffer
 	// Clear HUD layer framebuffers first to avoid persistence/smearing if a HUD view didn't draw pixels this frame
-    if (m_layerStack) {
-        for (auto* layer : m_layerStack->GetLayers()) {
-            if (auto* hud = dynamic_cast<HUD::HUDLayer*>(layer)) {
-                if (auto* fb = hud->GetFramebuffer()) {
-                    fb->bind();
-                    glViewport(0, 0, fb->Width(), fb->Height());
-                    glScissor(0, 0, fb->Width(), fb->Height());
-                    glClearColor(0, 0, 0, 0);
-                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                    Framebuffer::unbind();
-                }
-            }
-        }
-    }
+	if (m_layerStack) {
+		for (auto* layer : m_layerStack->GetLayers()) {
+			if (auto* hud = dynamic_cast<HUD::HUDLayer*>(layer)) {
+				if (auto* fb = hud->GetFramebuffer()) {
+					fb->bind();
+					glViewport(0, 0, fb->Width(), fb->Height());
+					glScissor(0, 0, fb->Width(), fb->Height());
+					glClearColor(0, 0, 0, 0);
+					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+					Framebuffer::unbind();
+				}
+			}
+		}
+	}
 
 	// Now bind the per-layer framebuffer and clear it (transparent)
 	m_layerFramebuffer->bind();
@@ -411,7 +410,7 @@ void OpenGLRenderer::Render() {
 
 	// Render layers; HUD layers will still render into their own FBOs
 	m_layerStack->RenderLayers();
- 	Framebuffer::unbind();
+	Framebuffer::unbind();
 
 	// Composite layer framebuffer over the combined output (alpha blend)
 	m_outputFramebuffer->bind();
@@ -432,8 +431,8 @@ void OpenGLRenderer::Render() {
 	// Composite all HUD layer framebuffers onto the output as the final pass
 	HUDPass();
 
-	// draw to screen only if not in editor mode
-	#ifndef TOAST_EDITOR
+// draw to screen only if not in editor mode
+#ifndef TOAST_EDITOR
 	{
 #ifdef TRACY_ENABLE
 		TracyGpuZone("ScreenPass");
@@ -496,23 +495,22 @@ void OpenGLRenderer::GeometryPass() {
 	// }
 
 	// Ensure depth and face-culling state is correct for geometry rendering
-	glDisable(GL_CULL_FACE); // avoid culling if winding conventions differ
-	glDisable(GL_BLEND);     // Geometry should write depth, not blended
+	glDisable(GL_CULL_FACE);    // avoid culling if winding conventions differ
+	glDisable(GL_BLEND);        // Geometry should write depth, not blended
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LEQUAL);  // allow equal depth to pass for some projection conventions
+	glDepthFunc(GL_LEQUAL);    // allow equal depth to pass for some projection conventions
 	glClearDepth(1.0);
-	
+
 	// Clear both color and depth
 	Clear();
 
 	// geometry pass
 	for (auto* r : m_renderables) {
 		if (r) {
-		 r->OnRender(m_multipliedMatrix);
+			r->OnRender(m_multipliedMatrix);
 		}
 	}
-
 
 	// Restore predictable state (depth writes on)
 	glDepthMask(GL_TRUE);
@@ -550,7 +548,7 @@ void OpenGLRenderer::LightingPass() {
 	// 	GLenum lightDraws[] = { GL_COLOR_ATTACHMENT0 };
 	// 	glDrawBuffers(1, lightDraws);
 	// }
-	
+
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -578,7 +576,6 @@ void OpenGLRenderer::LightingPass() {
 			}
 		}
 	}
-	
 
 	// Global light pass: disable depth test (we own the state)
 	// (we already disabled it for accumulation; keep disabled while shading global light)
@@ -590,7 +587,11 @@ void OpenGLRenderer::LightingPass() {
 
 	// Restore GL state to known defaults
 	glBindTexture(GL_TEXTURE_2D, 0);
-	if (prevDepthTest) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
+	if (prevDepthTest) {
+		glEnable(GL_DEPTH_TEST);
+	} else {
+		glDisable(GL_DEPTH_TEST);
+	}
 	glDisable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask(GL_TRUE);
@@ -630,22 +631,22 @@ void OpenGLRenderer::CombinedRenderPass() const {
 		// bind light accumulation texture (light FBO attachment 0)
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, m_lightFramebuffer->GetColorTexture(0));
- 
+
 		// draw screen quad
- 		m_combineLightShader->Use();
- 		m_combineLightShader->SetSampler("gAlbedoTexture", 0);
- 		m_combineLightShader->SetSampler("gLightingTexture", 1);
+		m_combineLightShader->Use();
+		m_combineLightShader->SetSampler("gAlbedoTexture", 0);
+		m_combineLightShader->SetSampler("gLightingTexture", 1);
 		// set global ambient/global light uniforms
 		m_combineLightShader->Set("gGlobalLightIntensity", m_globalLightIntensity);
 		m_combineLightShader->Set("gGlobalLightColor", m_globalLightColor);
- 		m_quad->Draw();
- 
- 		// Unbind textures (keep pipeline clean)
- 		glActiveTexture(GL_TEXTURE1);
- 		glBindTexture(GL_TEXTURE_2D, 0);
- 		glActiveTexture(GL_TEXTURE0);
- 		glBindTexture(GL_TEXTURE_2D, 0);
- 	} else {
+		m_quad->Draw();
+
+		// Unbind textures (keep pipeline clean)
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	} else {
 		// Global light disabled: skip light blits and draw pure albedo into output
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -765,7 +766,7 @@ void OpenGLRenderer::SpritePass() {
 	// Restore state
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
-	
+
 	{
 		GLenum drawsBack[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		glDrawBuffers(2, drawsBack);
@@ -859,4 +860,3 @@ void OpenGLRenderer::HUDPass() {
 }
 
 }
-

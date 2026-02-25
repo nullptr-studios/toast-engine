@@ -56,7 +56,7 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 	m_lightShader->Set("gNormalMappingEnabled", m_normalMappingEnabled);
 
 	m_lightShader->Set(
-		"gInvScreenSize", glm::vec2(1.0f / static_cast<float>(m_lightBuffer->Width()), 1.0f / static_cast<float>(m_lightBuffer->Height()))
+	    "gInvScreenSize", glm::vec2(1.0f / static_cast<float>(m_lightBuffer->Width()), 1.0f / static_cast<float>(m_lightBuffer->Height()))
 	);
 
 	// Bind normal texture from the geometry framebuffer (attachment 1)

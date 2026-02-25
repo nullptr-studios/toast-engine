@@ -48,7 +48,7 @@ public:
 	bool Open(const std::string_view& pack_path) {
 		PROFILE_ZONE;
 
-		m_in.open(pack_path, std::ios::binary);
+		m_in.open(pack_path.data(), std::ios::binary);
 		if (!m_in) {
 			return false;
 		}
