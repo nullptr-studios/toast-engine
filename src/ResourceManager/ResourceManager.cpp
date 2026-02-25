@@ -34,13 +34,13 @@ ResourceManager::ResourceManager(bool pkg) : m_pkg(pkg) {
 	}
 
 	m_mainThreadId = std::this_thread::get_id();
-
+	
 	// If pkg is true, open the game.pkg file
 	if (m_pkg) {
 		//@TODO: Make the .PKG path configurable?
-		TOAST_INFO("ResourceManager: Opening resource pack game.pkg");
-		if (!ToastFileSystem::Get().UsePackFile("game.pkg")) {
-			throw ToastException("ResourceManager: Failed to open game.pkg");
+		TOAST_INFO("ResourceManager: Opening resource pack game.toast");
+		if (!ToastFileSystem::Get().UsePackFile("game.toast")) {
+			throw ToastException("ResourceManager: Failed to open game.toast");
 		}
 	}
 }

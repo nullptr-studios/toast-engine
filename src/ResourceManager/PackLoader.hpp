@@ -30,6 +30,7 @@ static inline std::u8string canonical_path_for_pack(const fs::path& p) {
 	if (s.size() >= 2 && s[0] == '.' && s[1] == '/') {
 		s.erase(0, 2);
 	}
+	
 	return s;
 }
 
@@ -113,9 +114,17 @@ public:
 		return true;
 	}
 
-	bool FileExists(const std::string_view& raw_path) {
+	bool FileExists(const std::string_view raw_path) {
 		// canonicalize lookup path same as packer
-		std::u8string path = canonical_path_for_pack(raw_path);
+		std::u8string path;
+		std::string raw_path_str(raw_path);
+		if (raw_path_str.contains("assets/") )
+		{
+			path = canonical_path_for_pack(raw_path_str.substr(7));
+		}else {
+			// canonicalize lookup path same as packer
+			path = canonical_path_for_pack(std::string(raw_path));
+		}
 
 		uint64_t h = fnv1a_hash64(path);
 		auto it = std::ranges::lower_bound(m_hashes, h);
@@ -143,8 +152,16 @@ public:
 	bool ReadFile(std::string_view raw_path, std::vector<uint8_t>& out) {
 		PROFILE_ZONE;
 
-		// canonicalize lookup path same as packer
-		std::u8string path = canonical_path_for_pack(std::string(raw_path));
+		std::u8string path;
+		std::string raw_path_str(raw_path);
+		if (raw_path_str.contains("assets/") )
+		{
+			path = canonical_path_for_pack(raw_path_str.substr(7));
+		}else {
+			// canonicalize lookup path same as packer
+			path = canonical_path_for_pack(std::string(raw_path));
+		}
+
 
 		uint64_t h = fnv1a_hash64(path);
 		auto it = std::ranges::lower_bound(m_hashes, h);
