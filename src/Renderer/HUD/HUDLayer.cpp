@@ -3,6 +3,8 @@
 /// @author dario
 /// @date 12/02/2026.
 
+#include "Toast/Ui/FontHandler.hpp"
+#include "Toast/Ui/Logger.hpp"
 #include "ToastGPUContext.hpp"
 #include "ToastGPUDriver.hpp"
 
@@ -14,13 +16,10 @@
 #include <Toast/Renderer/Framebuffer.hpp>
 #include <Toast/Renderer/HUD/HUDLayer.hpp>
 #include <Toast/Renderer/HUD/ShowHUDLayer.h>
-#include <Toast/Renderer/HUD/ToastFontLoader.hpp>
-#include <Toast/Renderer/HUD/ToastLogger.hpp>
 #include <Toast/Resources/ToastFileSystem.hpp>
 #include <Ultralight/Ultralight.h>
 #include <Ultralight/platform/Config.h>
 #include <Ultralight/platform/Platform.h>
-#include <unordered_map>
 
 // Static map of windows to HUDLayer instances for input callbacks
 static std::unordered_map<GLFWwindow*, renderer::HUD::HUDLayer*> g_hud_layers;
@@ -313,8 +312,8 @@ void HUDLayer::InitPlatform() {
 	// Set platform handlers
 	ultralight::Platform::instance().set_config(config);
 	ultralight::Platform::instance().set_file_system(&ToastFileSystem::Get());
-	ultralight::Platform::instance().set_logger(&ToastLogger::Get());
-	ultralight::Platform::instance().set_font_loader(ultralight::GetPlatformFontLoader());
+	ultralight::Platform::instance().set_logger(&ui::UiLogger::get());
+	ultralight::Platform::instance().set_font_loader(&ui::UiFontLoader::get());
 
 	TOAST_TRACE("Ultralight platform initialized");
 	TOAST_TRACE("Resource path: UI/Ultralight/resources/");
