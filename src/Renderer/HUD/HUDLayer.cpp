@@ -296,7 +296,7 @@ void HUDLayer::InitPlatform() {
 	config.override_ram_size = 0;
 	config.min_large_heap_size = 32 * 1024 * 1024;    // 32MB
 	config.min_small_heap_size = 1 * 1024 * 1024;     // 1MB
-	config.num_renderer_threads = 0;                  // Use main thread
+	config.num_renderer_threads = 2;                  // Use main thread
 
 	// Set platform handlers
 	ultralight::Platform::instance().set_config(config);
@@ -460,6 +460,10 @@ void HUDLayer::OnRender() {
 	if (!renderer_ || !gpu_context_ || views_.empty() || !framebuffer_) {
 		return;
 	}
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_STENCIL);
 
 	renderer_->RefreshDisplay(0);
 
