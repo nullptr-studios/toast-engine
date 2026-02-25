@@ -71,6 +71,12 @@ RefPtr<FontFile> UiFontLoader::Load(const String& family, int weight, bool itali
 	}
 	TOAST_WARN("Font Not Found: {} falling back onto platform", filename);
 	auto* font_loader = ultralight::GetPlatformFontLoader();
-	return font_loader->Load(family, weight, italic);
+	auto system_font = font_loader->Load(family, weight, italic);
+	if (system_font) {
+		return system_font;
+	}
+
+	TOAST_ERROR("DONT DOES NOT EXIST ON SYSTEM OR ASSETS FALLBACKING ON DEFAULT");
+	return Load("Monocraft", 400, false);
 }
 }
