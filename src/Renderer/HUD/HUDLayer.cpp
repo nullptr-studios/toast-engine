@@ -13,6 +13,7 @@
 #include <Toast/Profiler.hpp>
 #include <Toast/Renderer/Framebuffer.hpp>
 #include <Toast/Renderer/HUD/HUDLayer.hpp>
+#include <Toast/Renderer/HUD/ShowHUDLayer.h>
 #include <Toast/Renderer/HUD/ToastFontLoader.hpp>
 #include <Toast/Renderer/HUD/ToastLogger.hpp>
 #include <Toast/Resources/ToastFileSystem.hpp>
@@ -244,6 +245,17 @@ HUDLayer::HUDLayer(GLFWwindow* window, uint32_t width, uint32_t height, bool ena
 		g_prev_key_callback = glfwSetKeyCallback(window_, HUDKeyCallback);
 		g_prev_char_callback = glfwSetCharCallback(window_, HUDCharCallback);
 	}
+
+	listener.Subscribe<ShowHUDLayerEvent>([this](ShowHUDLayerEvent* e) -> bool {
+		if (e->s) {
+			TOAST_TRACE("Received ShowHUDLayerEvent: show=true");
+			this->Enable();
+		} else {
+			TOAST_TRACE("Received ShowHUDLayerEvent: show=false");
+			this->Disable();
+		}
+		return true;
+	});
 }
 
 HUDLayer::~HUDLayer() {
@@ -270,7 +282,7 @@ HUDLayer::~HUDLayer() {
 		g_prev_char_callback = nullptr;
 	}
 
-	OnDetach();
+	// OnDetach();
 }
 
 void HUDLayer::InitPlatform() {
@@ -446,7 +458,7 @@ void HUDLayer::OnDetach() {
 void HUDLayer::OnTick() {
 	PROFILE_ZONE_C(tracy::Color::Cyan);
 
-	if (!renderer_) {
+	if (!renderer_ || !active_) {
 		return;
 	}
 
@@ -457,13 +469,13 @@ void HUDLayer::OnTick() {
 void HUDLayer::OnRender() {
 	PROFILE_ZONE_C(tracy::Color::Cyan);
 
-	if (!renderer_ || !gpu_context_ || views_.empty() || !framebuffer_) {
+	if (!renderer_ || !gpu_context_ || views_.empty() || !framebuffer_ || !active_) {
 		return;
 	}
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
-	glDisable(GL_STENCIL);
+	glDisable(GL_STENCIL_TEST);
 
 	renderer_->RefreshDisplay(0);
 
@@ -695,6 +707,16 @@ void HUDLayer::SetSelectedWeapon(int index) {
 	                     "  } trySelect();"
 	                     "})();";
 	ExecuteJS(script);
+}
+
+void HUDLayer::Enable() {
+	active_ = true;
+	TOAST_INFO("HUD enabled");
+}
+
+void HUDLayer::Disable() {
+	active_ = false;
+	TOAST_INFO("HUD disabled");
 }
 
 void HUDLayer::Resize(uint32_t width, uint32_t height) {

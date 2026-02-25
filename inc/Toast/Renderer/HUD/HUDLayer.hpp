@@ -101,7 +101,10 @@ public:
 	/// @brief Change the currently selected weapon slot (calls JS: window.setSelectedWeapon)
 	void SetSelectedWeapon(int index);
 
-	// Singleton accessor: returns the most recently constructed HUDLayer (or nullptr)
+	void Enable();     /// Enable the HUD (for previewing in editor)
+	void Disable();    /// Disable the HUD (for previewing in editor)
+
+	                   // Singleton accessor: returns the most recently constructed HUDLayer (or nullptr)
 	static HUDLayer* Get() {
 		return s_Instance;
 	}
@@ -219,6 +222,11 @@ private:
 
 	// Singleton instance
 	static HUDLayer* s_Instance;
+
+	// Listener for previewing or not te ui
+	event::ListenerComponent listener;
+
+	bool active_ = false;
 
 	GLFWwindow* window_ = nullptr;
 	uint32_t width_ = 0;

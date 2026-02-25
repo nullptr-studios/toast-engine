@@ -207,8 +207,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	m_lightFramebuffer = new Framebuffer(s);
 	m_lightFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // light accumulation buffer
 	m_lightFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // normal buffer
-	// m_lightFramebuffer->AddDepthAttachment();
-	//  m_lightFramebuffer->AddDepthAttachment();
+	m_lightFramebuffer->AddDepthAttachment();
 	m_lightFramebuffer->Build();
 
 	m_outputFramebuffer = new Framebuffer(s);
@@ -755,7 +754,7 @@ void OpenGLRenderer::SpritePass() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_FALSE);
+	glDepthMask(GL_TRUE);
 
 	for (auto* r : m_transparentRenderables) {
 		if (r) {
@@ -764,13 +763,12 @@ void OpenGLRenderer::SpritePass() {
 	}
 
 	// Restore state
-	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
 
-	{
-		GLenum drawsBack[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-		glDrawBuffers(2, drawsBack);
-	}
+	// {
+	// 	GLenum drawsBack[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	// 	glDrawBuffers(2, drawsBack);
+	// }
 
 	Framebuffer::unbind();
 }
