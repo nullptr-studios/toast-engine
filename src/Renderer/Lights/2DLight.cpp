@@ -38,8 +38,9 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 
 	m_lightShader->Use();
 
-	// famebuffer samplers
-	m_lightShader->SetSampler("gLightAccum", 0);
+	// Framebuffer samplers
+	// The light shader samples scene normals from the GEOMETRY (G-)buffer, not from the light FBO.
+	// Avoid binding the light framebuffer's attachments as textures while the light FBO is bound (read-while-write hazard).
 	m_lightShader->SetSampler("gNormal", 1);
 
 	m_lightShader->Set("gMVP", mvp);
@@ -55,19 +56,20 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 	m_lightShader->Set("gNormalMappingEnabled", m_normalMappingEnabled);
 
 	m_lightShader->Set(
-	    "gInvScreenSize", glm::vec2(1.0f / static_cast<float>(m_lightBuffer->Width()), 1.0f / static_cast<float>(m_lightBuffer->Height()))
+		"gInvScreenSize", glm::vec2(1.0f / static_cast<float>(m_lightBuffer->Width()), 1.0f / static_cast<float>(m_lightBuffer->Height()))
 	);
 
-	// Bind current light accumulation texture
-	glActiveTexture(GL_TEXTURE0 + 0);
-	glBindTexture(GL_TEXTURE_2D, m_lightBuffer->GetColorTexture(0));
+	// Bind normal texture from the geometry framebuffer (attachment 1)
+	auto geomFB = renderer::IRendererBase::GetInstance()->GetGeometryFramebuffer();
+	if (geomFB) {
+		glActiveTexture(GL_TEXTURE0 + 1);
+		glBindTexture(GL_TEXTURE_2D, geomFB->GetColorTexture(1));
+	}
 
-	// Normal
-	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindTexture(GL_TEXTURE_2D, m_lightBuffer->GetColorTexture(1));
-
+	// Draw light quad into the currently bound light framebuffer (accumulation happens via additive blending)
 	m_lightMesh->Draw();
 
+	// Restore active texture unit
 	glActiveTexture(GL_TEXTURE0);
 }
 

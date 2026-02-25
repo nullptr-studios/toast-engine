@@ -10,6 +10,7 @@
 #include <Ultralight/Ultralight.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 typedef struct GLFWwindow GLFWwindow;
 class Framebuffer;
@@ -85,6 +86,23 @@ public:
 	/// @param base_url Base URL for resolving relative paths
 	///
 	void LoadHTML(const std::string& html, const std::string& base_url = "");
+
+	// JS wrapper API: call into the HUD's JavaScript from C++/Ultralight
+	/// @brief Execute an arbitrary JavaScript string on the first view.
+	/// If the DOM is not ready yet the script will be queued and executed once DOMReady fires.
+	void ExecuteJS(const std::string& script);
+
+	/// @brief Set a weapon slot's icon URL and ammo count (calls JS: window.setWeaponSlot)
+	void SetWeaponSlot(int index, const std::string& icon_url, int ammo);
+
+	/// @brief Set only the ammo count for a weapon slot (calls JS: window.HUD.setSlot)
+	void SetWeaponAmmo(int index, int ammo);
+
+	/// @brief Change the currently selected weapon slot (calls JS: window.setSelectedWeapon)
+	void SetSelectedWeapon(int index);
+
+	// Singleton accessor: returns the most recently constructed HUDLayer (or nullptr)
+	static HUDLayer* Get() { return s_Instance; }
 
 	///
 	/// @brief Create an additional Ultralight view managed by this HUD layer.
@@ -170,6 +188,14 @@ public:
 		return input_enabled_;
 	}
 
+	///
+	/// @brief Called by the per-instance LoadListener when the main-frame DOM is ready
+	/// 
+	void OnDOMReady();
+
+	// Force any queued JS scripts to execute immediately (used by console-ready handshake)
+	void FlushPendingScriptsNow();
+
 private:
 	/// @brief Initialize Ultralight platform handlers
 	void InitPlatform();
@@ -179,6 +205,18 @@ private:
 
 	/// @brief Create the output framebuffer
 	void CreateFramebuffer();
+
+	// DOM readiness and script queueing
+	bool dom_ready_ = false;                         ///< True after the page's main-frame DOM is ready
+	std::unique_ptr<ultralight::LoadListener> load_listener_;
+	std::vector<std::string> pending_scripts_;      ///< Scripts queued until DOM ready
+	std::string pending_url_;                      ///< URL to load if LoadURL is called before view creation
+
+	/// @brief Evaluate script now or queue it until DOM ready
+	void EvalScriptOrQueue(const std::string& script);
+
+	// Singleton instance
+	static HUDLayer* s_Instance;
 
 	GLFWwindow* window_ = nullptr;
 	uint32_t width_ = 0;

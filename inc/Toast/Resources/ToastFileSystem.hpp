@@ -22,7 +22,7 @@ class ToastFileSystem : public ultralight::FileSystem {
 
 	// Normalize input path and ensure it points under assets/ when using filesystem
 	[[nodiscard]]
-	std::string NormalizePath(const std::string& path) const;
+	std::string NormalizePath(const std::string_view path) const;
 
 public:
 	// Singleton accessor
@@ -45,6 +45,6 @@ public:
 	ultralight::RefPtr<ultralight::Buffer> OpenFile(const ultralight::String& path) override;
 
 	// Engine-facing helpers (non-Ultralight)
-	bool OpenFile(const std::string& path, std::istringstream& data_out) const;
-	bool OpenFile(const std::string& path, std::vector<uint8_t>& data_out) const;
+	bool OpenFile(const std::string_view path, std::istringstream& data_out) const;
+	bool OpenFile(const std::string_view path, std::vector<uint8_t>& data_out) const;
 };

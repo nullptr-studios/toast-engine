@@ -204,7 +204,7 @@ void Engine::Init() {
 
 	auto HUD = new renderer::HUD::HUDLayer(m->window->GetWindow(), 1920, 1080, false);
 	m->layerStack->PushOverlay(HUD);
-	HUD->LoadURL("file:///assets/ui/main_menu.html");
+	HUD->LoadURL("file:///assets/ui/hud.html");
 
 	Begin();
 }

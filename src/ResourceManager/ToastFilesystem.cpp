@@ -28,11 +28,11 @@ ToastFileSystem& ToastFileSystem::Get() {
 	return *instance;
 }
 
-std::string ToastFileSystem::NormalizePath(const std::string& path) const {
+std::string ToastFileSystem::NormalizePath(const std::string_view path) const {
 	if (path.find("assets/") == std::string::npos) {
-		return std::string("assets/") + path;
+		return std::string("assets/") + path.data();
 	}
-	return path;
+	return path.data();
 }
 
 bool ToastFileSystem::UsePackFile(const std::string_view& path) {
@@ -48,7 +48,7 @@ void ToastFileSystem::ClosePackFile() {
 	}
 }
 
-bool ToastFileSystem::OpenFile(const std::string& path, std::istringstream& data_out) const {
+bool ToastFileSystem::OpenFile(std::string_view path, std::istringstream& data_out) const {
 	std::vector<uint8_t> data;
 	if (!OpenFile(path, data)) {
 		return false;
@@ -57,7 +57,7 @@ bool ToastFileSystem::OpenFile(const std::string& path, std::istringstream& data
 	return true;
 }
 
-bool ToastFileSystem::OpenFile(const std::string& path, std::vector<uint8_t>& data_out) const {
+bool ToastFileSystem::OpenFile(std::string_view path, std::vector<uint8_t>& data_out) const {
 	PROFILE_ZONE;
 
 	if (packEnabled) {

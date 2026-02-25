@@ -7,6 +7,7 @@
 
 #include "ToastGPUContext.hpp"
 #include "UltralightShaders.hpp"
+#include "glad/gl.h"
 
 #include <Toast/Log.hpp>
 #include <Toast/Profiler.hpp>

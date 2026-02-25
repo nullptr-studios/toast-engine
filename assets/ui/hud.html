@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HUD</title>
+  <style>
+    :root{
+      --hud-padding: 14px;
+      --slot-size: 64px;
+      --slot-gap: 12px;
+      --selected-scale: 1.12;
+      --ammo-font-size: 14px;
+      --hud-z: 9999;
+    }
+
+    html,body{
+      margin:0;
+      padding:0;
+      width:100%;
+      height:100%;
+      background:transparent;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    /* HUD container pinned to bottom-left */
+    .hud-container{
+      position:fixed;
+      left:var(--hud-padding);
+      bottom:var(--hud-padding);
+      display:flex;
+      gap:var(--slot-gap);
+      align-items:end;
+      z-index:var(--hud-z);
+      pointer-events:none; /* Let clicks pass through unless enabled via JS */
+    }
+
+    .weapon-slot{
+      width:var(--slot-size);
+      height:var(--slot-size);
+      background:rgba(0,0,0,0.45);
+      border-radius:8px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      transform-origin:center bottom;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+      pointer-events:auto;
+      user-select:none;
+    }
+
+    .weapon-slot.selected{
+      transform: scale(var(--selected-scale));
+      box-shadow: 0 6px 18px rgba(0,0,0,0.75), 0 0 8px rgba(255,255,255,0.04) inset;
+    }
+
+    .weapon-icon{
+      width:48px;
+      height:28px;
+      object-fit:contain;
+      image-rendering: -webkit-optimize-contrast;
+      margin-bottom:6px;
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6));
+    }
+
+    .ammo-label{
+      color: #fff;
+      font-size: var(--ammo-font-size);
+      font-weight:600;
+      text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+      line-height:1;
+      letter-spacing:0.4px;
+    }
+
+    /* Small responsive tweak */
+    @media (max-width:600px){
+      :root{ --slot-size: 54px; --slot-gap:8px; --ammo-font-size:12px; }
+      .weapon-icon{ width:40px; height:24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hud-container" id="hud">
+    <div class="weapon-slot" id="slot-0" data-slot-index="0" role="button" aria-label="Weapon Slot 1">
+      <img class="weapon-icon" id="icon-0" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='36' viewBox='0 0 64 36'><rect rx='6' ry='6' width='64' height='36' fill='%23DD3333'/><circle cx='48' cy='18' r='6' fill='%23000'/></svg>" />
+      <div class="ammo-label" id="ammo-0">0</div>
+    </div>
+
+    <div class="weapon-slot" id="slot-1" data-slot-index="1" role="button" aria-label="Weapon Slot 2">
+      <img class="weapon-icon" id="icon-1" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='36' viewBox='0 0 64 36'><rect rx='6' ry='6' width='64' height='36' fill='%2333AAFF'/><rect x='8' y='10' width='18' height='12' rx='2' fill='%23000'/></svg>" />
+      <div class="ammo-label" id="ammo-1">0</div>
+    </div>
+  </div>
+
+  <script>
+    // Capture placeholders (original <img> src values) so we can restore them if cleared
+    const HUD_PLACEHOLDERS = (function(){
+      const map = {};
+      try { map[0] = document.getElementById('icon-0').src; } catch(e) { map[0] = ''; }
+      try { map[1] = document.getElementById('icon-1').src; } catch(e) { map[1] = ''; }
+      return map;
+    })();
+
+    // Public JS state - these variables will be accessed from C++/Ultralight later.
+    // Keep them as simple globals for easy binding.
+    window.HUD = {
+      slots: [
+        { icon: '', ammo: 0 },
+        { icon: '', ammo: 0 }
+      ],
+      selectedIndex: 0,
+      // Update UI from the JS state
+      refresh: function(){
+        for (let i = 0; i < this.slots.length; ++i){
+          const slot = this.slots[i];
+          const slotEl = document.getElementById(`slot-${i}`);
+          const iconEl = document.getElementById(`icon-${i}`);
+          const ammoEl = document.getElementById(`ammo-${i}`);
+
+          // Defensive: ensure elements exist before touching them
+          if (!slotEl) continue;
+
+          // Update icon if a URL is provided; otherwise keep placeholder
+          if (slot && slot.icon && typeof slot.icon === 'string' && slot.icon.length > 0){
+            if (iconEl) iconEl.src = slot.icon;
+          } else {
+            // If slot.icon is empty, ensure we don't leave a blank src - restore placeholder
+            if (iconEl && (!iconEl.src || iconEl.src.length === 0)) {
+              if (HUD_PLACEHOLDERS[i]) iconEl.src = HUD_PLACEHOLDERS[i];
+            }
+          }
+
+          // Update ammo text (guard element)
+          if (ammoEl) ammoEl.textContent = String((slot && typeof slot.ammo !== 'undefined' && slot.ammo !== null) ? slot.ammo : '');
+
+          // Update selected styling
+          if (i === this.selectedIndex){
+            slotEl.classList.add('selected');
+            slotEl.setAttribute('aria-pressed','true');
+          } else {
+            slotEl.classList.remove('selected');
+            slotEl.setAttribute('aria-pressed','false');
+          }
+        }
+      },
+
+      // Helper to set a slot's info
+      setSlot: function(index, opts){
+        // opts can be undefined/null or an object { icon, ammo }
+        try { console.log('[HUD] setSlot called', { index: index, opts: opts }); } catch(e) {}
+        if (index < 0 || index >= this.slots.length) return;
+        const slot = this.slots[index] || (this.slots[index] = { icon: '', ammo: 0 });
+        if (opts && Object.prototype.hasOwnProperty.call(opts, 'icon')) {
+          // Only update icon if a non-empty string is provided. If an empty string is passed
+          // we will NOT overwrite the existing icon (this prevents accidental clearing).
+          if (typeof opts.icon === 'string' && opts.icon.length > 0) {
+            slot.icon = opts.icon;
+          }
+        }
+        if (opts && Object.prototype.hasOwnProperty.call(opts, 'ammo')) {
+          // Allow 0 ammo values explicitly
+          if (opts.ammo === null || typeof opts.ammo === 'undefined') {
+            // ignore
+          } else {
+            slot.ammo = opts.ammo;
+          }
+        }
+        this.refresh();
+      },
+
+      setSelected: function(index){
+        try { console.log('[HUD] setSelected called', index); } catch(e) {}
+        if (typeof index !== 'number') return;
+        if (index < 0 || index >= this.slots.length) return;
+        this.selectedIndex = index;
+        this.refresh();
+      }
+    };
+ 
+    // Expose simple API on window for ease of binding from C++ later
+    window.setWeaponSlot = function(index, iconUrl, ammo){
+      try { console.log('[window] setWeaponSlot', { index: index, iconUrl: iconUrl, ammo: ammo }); } catch(e) {}
+      // Normalize args and prefer not to clear icon when iconUrl is empty string
+      const opts = {};
+      if (typeof iconUrl !== 'undefined' && iconUrl !== null) {
+        if (typeof iconUrl === 'string' && iconUrl.length > 0) opts.icon = iconUrl;
+        // If iconUrl is empty string, do not include opts.icon so we don't clear the placeholder
+      }
+      if (typeof ammo !== 'undefined' && ammo !== null) opts.ammo = ammo;
+      window.HUD.setSlot(index, opts);
+    };
+
+    window.setSelectedWeapon = function(index){
+      try { console.log('[window] setSelectedWeapon', index); } catch(e) {}
+      window.HUD.setSelected(index);
+    };
+
+    // Initialize UI
+    window.HUD.refresh();
+
+    // Mutation observers: log when icon src or ammo text changes (helps detect accidental clears)
+    (function(){
+      ['icon-0','icon-1'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (!el) return;
+        try {
+          var mo = new MutationObserver(function(mutations){
+            mutations.forEach(function(m){
+              if (m.type === 'attributes' && m.attributeName === 'src') {
+                try { console.log('[HUD MUTATION] icon changed', id, el.src); } catch(e) {}
+              }
+            });
+          });
+          mo.observe(el, { attributes: true, attributeFilter: ['src'] });
+        } catch(e) {
+          try { console.log('[HUD MUTATION] observer init failed for', id, e); } catch(e) {}
+        }
+      });
+      ['ammo-0','ammo-1'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (!el) return;
+        try {
+          var mo2 = new MutationObserver(function(mutations){
+            try { console.log('[HUD MUTATION] ammo changed', id, el.textContent); } catch(e) {}
+          });
+          mo2.observe(el, { characterData: true, subtree: true, childList: true });
+        } catch(e) {
+          try { console.log('[HUD MUTATION] ammo observer failed for', id, e); } catch(e) {}
+        }
+      });
+    })();
+
+    // Debug: print HUD state a few times to help diagnose missing values (temporary)
+    (function(){
+      let cnt = 0;
+      const id = setInterval(function(){
+        try { console.log('[HUD DEBUG]', window.HUD); } catch(e) {}
+        cnt++; if (cnt >= 12) clearInterval(id);
+      }, 1000);
+    })();
+
+    // Optional: click to change selected weapon (useful for desktop testing)
+    document.getElementById('slot-0').addEventListener('click', ()=>{ window.HUD.setSelected(0); });
+    document.getElementById('slot-1').addEventListener('click', ()=>{ window.HUD.setSelected(1); });
+
+  </script>
+</body>
+</html>
+

@@ -9,7 +9,6 @@
 #include <Ultralight/Geometry.h>
 #include <Ultralight/Matrix.h>
 #include <Ultralight/platform/GPUDriver.h>
-#include <glad/gl.h>
 #include <map>
 #include <mutex>
 #include <vector>
