@@ -202,9 +202,6 @@ public:
 	void FlushPendingScriptsNow();
 
 private:
-	/// @brief Initialize Ultralight platform handlers
-	void InitPlatform();
-
 	/// @brief Create the GPU context and driver
 	void CreateGPUContext();
 
