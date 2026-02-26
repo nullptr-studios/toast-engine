@@ -9,7 +9,6 @@
 #pragma once
 
 #include <Toast/Renderer/HUD/HUDLayer.hpp>
-
 #include <Toast/Window/Window.hpp>
 
 namespace ui {
@@ -18,7 +17,7 @@ class UiSystem {
 		renderer::HUD::HUDLayer* layer;
 	} m;
 
-  void Configure();
+	void Configure();
 
 public:
 	UiSystem(toast::Window& window, bool msaa);
