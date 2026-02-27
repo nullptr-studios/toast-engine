@@ -615,58 +615,24 @@ void HUDLayer::FlushPendingScriptsNow() {
 
 void HUDLayer::ExecuteJS(const std::string& script) {
 	// Log the outgoing JS for debugging
-	TOAST_TRACE("HUD ExecuteJS: {}", script);
+	TOAST_TRACE("[JAVASCRIPT] {}", script);
 	EvalScriptOrQueue(script);
 }
 
 // JS wrapper API implementations
+[[deprecated("THIS SHOULD NOT BE ON THE ENGINE")]]
 void HUDLayer::SetWeaponSlot(int index, const std::string& icon_url, int ammo) {
-	int slotId = index + 1;    // 1-based for HTML
-
-	// We pass a raw JS object literal. No JSEscape needed for the whole JSON,
-	// only for the icon_url string itself to prevent path breaking.
-	std::string script = "(function(){ "
-	                     "  var data = { slot: " +
-	                     std::to_string(slotId) + ", image: '" + icon_url + "', ammo: " + std::to_string(ammo) +
-	                     " };"
-	                     "  function trySetup(){ "
-	                     "    if (window.GameUI && window.GameUI.setupWeapon){ "
-	                     "      window.GameUI.setupWeapon(data); "
-	                     "      window.GameUI.updateWeapon(data); "
-	                     "    } else { setTimeout(trySetup, 50); }"
-	                     "  } trySetup();"
-	                     "})();";
-	ExecuteJS(script);
+	ExecuteJS(std::format("setWeaponSlot({}, \"{}\", {})", index, icon_url, ammo));
 }
 
+[[deprecated("THIS SHOULD NOT BE ON THE ENGINE")]]
 void HUDLayer::SetWeaponAmmo(int index, int ammo) {
-	int slotId = index + 1;
-	std::string script = "(function(){ "
-	                     "  var data = { slot: " +
-	                     std::to_string(slotId) + ", ammo: " + std::to_string(ammo) +
-	                     " };"
-	                     "  function tryUpdate(){ "
-	                     "    if (window.GameUI && window.GameUI.updateWeapon){ "
-	                     "      window.GameUI.updateWeapon(data); "
-	                     "    } else { setTimeout(tryUpdate, 50); }"
-	                     "  } tryUpdate();"
-	                     "})();";
-	ExecuteJS(script);
+	ExecuteJS(std::format("setWeaponAmmo({}, {})", index, ammo));
 }
 
+[[deprecated("THIS SHOULD NOT BE ON THE ENGINE")]]
 void HUDLayer::SetSelectedWeapon(int index) {
-	int slotId = index + 1;
-	std::string script = "(function(){ "
-	                     "  var data = { slot: " +
-	                     std::to_string(slotId) +
-	                     " };"
-	                     "  function trySelect(){ "
-	                     "    if (window.GameUI && window.GameUI.selectWeapon){ "
-	                     "      window.GameUI.selectWeapon(data); "
-	                     "    } else { setTimeout(trySelect, 50); }"
-	                     "  } trySelect();"
-	                     "})();";
-	ExecuteJS(script);
+	ExecuteJS(std::format("setSelectedWeapon({})", index));
 }
 
 void HUDLayer::Enable() {

@@ -2,6 +2,7 @@
 #include "Toast/Renderer/HUD/HUDLayer.hpp"
 #include "Toast/Renderer/LayerStack.hpp"
 #include "Toast/Resources/ToastFileSystem.hpp"
+#include "Toast/Ui/Events.hpp"
 #include "Toast/Ui/FontHandler.hpp"
 #include "Toast/Ui/Logger.hpp"
 
@@ -15,13 +16,20 @@ UiSystem::UiSystem(toast::Window& window, bool msaa) {
 
 	Configure();
 
-	// m is constructed here
-	m = {
-		.layer = ui,
-	};
+	m.layer = ui;
 
 	renderer::LayerStack::GetInstance()->PushOverlay(ui);
 	ui->LoadURL("file:///assets/UI/hud.html");
+
+	m.listener.Subscribe<LoadUrl>([this](LoadUrl* e) {
+		m.layer->LoadURL(e->url);
+		return false;
+	});
+
+	m.listener.Subscribe<ExecuteJS>([this](ExecuteJS* e) {
+		m.layer->ExecuteJS(e->script);
+		return false;
+	});
 }
 
 void UiSystem::Configure() {
