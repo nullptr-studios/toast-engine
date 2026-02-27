@@ -356,30 +356,6 @@ void DebugDrawLayer::DrawGrid(float gridSize, glm::mat4 viewProjection) {
 			glm::vec3 ptA = glm::vec3(dir ? -gridSize : f, 0.f, dir ? f : -gridSize);
 			glm::vec3 ptB = glm::vec3(dir ? gridSize : f, 0.f, dir ? f : gridSize);
 			bool visible = true;
-			for (int i = 0; i < 6; i++) {
-				// if (!OclussionVolume::isSphereOnPlanes(IRendererBase::GetInstance()->GetFrustumPlanes(), ptA, 0)
-				//	&& !OclussionVolume::isSphereOnPlanes(IRendererBase::GetInstance()->GetFrustumPlanes(), ptB, 0))
-				//{
-				//	visible = false;
-				//	break;
-				// }
-				// if (dA > 0.f && dB > 0.f)
-				//{
-				//	continue;
-				// }
-				// if (dA < 0.f)
-				//{
-				//	float len = fabsf(dA - dB);
-				//	float t = fabsf(dA) / len;
-				//	ptA.Lerp(ptB, t);
-				// }
-				// if (dB < 0.f)
-				//{
-				//	float len = fabsf(dB - dA);
-				//	float t = fabsf(dB) / len;
-				//	ptB.Lerp(ptA, t);
-				// }
-			}
 			if (visible) {
 #ifdef TOAST_EDITOR
 				ImU32 col = IM_COL32(0x80, 0x80, 0x80, 0xFF);
