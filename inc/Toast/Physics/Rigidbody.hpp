@@ -83,6 +83,7 @@ public:
 		glm::vec2 addForce = { 0.0f, 0.0f };
 		glm::vec4 defaultColor = { 1.0f, 1.0f, 1.0f, 1.0f };      // Color when not colliding
 		glm::vec4 collidingColor = { 0.0f, 1.0f, 0.0f, 1.0f };    // Color when colliding (not implemented)
+		bool skipResolution = false;	                          // Makes the rigidbody skip physics resolution
 	} debug;
 };
 

@@ -58,6 +58,7 @@ void Rigidbody::Inspector() {
 	ImGui::Checkbox("Draw manifolds", &debug.showManifolds);
 	ImGui::ColorEdit4("Default color", &debug.defaultColor.r);
 	ImGui::ColorEdit4("Colliding color", &debug.collidingColor.r);
+	ImGui::Checkbox("Skip Resolution", &debug.skipResolution);
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Collider Flags");
@@ -149,6 +150,7 @@ json_t Rigidbody::Save() const {
 	j["debug.show"] = debug.show;
 	j["debug.defaultColor"] = debug.defaultColor;
 	j["debug.collidingColor"] = debug.collidingColor;
+	j["debug.skipResolution"] = debug.skipResolution;
 	j["flags"] = static_cast<unsigned int>(flags);
 	return j;
 }
@@ -188,6 +190,11 @@ void Rigidbody::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("debug.collidingColor")) {
 		debug.collidingColor = j["debug.collidingColor"];
+	}
+	if (j.contains("debug.skipResolution")) {
+#ifdef _DEBUG    // precompile it to prevent this to ever leak to release
+		debug.skipResolution = j["debug.skipResolution"];
+#endif
 	}
 	if (j.contains("flags")) {
 		flags = static_cast<ColliderFlags>(j["flags"].get<unsigned int>());
