@@ -227,7 +227,7 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 		}
 
 		// we DO NOT want to check with rigidbodies that are behind the normal
-		if (rb_proj < 0.0f) {
+		if (rb_proj < - 2 * rb->radius ) {
 			continue;
 		}
 
