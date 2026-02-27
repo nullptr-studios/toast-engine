@@ -18,6 +18,7 @@
 #include "Toast/Ui/Manager.hpp"
 #include "Toast/Window/Window.hpp"
 #include "Toast/World.hpp"
+#include "Toast/CoroutineHandler.hpp"
 
 #include <memory>
 
@@ -46,6 +47,7 @@ struct Engine::Pimpl {
 	std::unique_ptr<physics::PhysicsSystem> physicsSystem;
 	std::unique_ptr<ui::UiSystem> uiSystem;
 	audio::AudioSystem* audioSystem;
+	std::unique_ptr<CoroutineHandler> coroutineHandler;
 };
 
 void Engine::Run(int argc, char** argv) {
@@ -92,6 +94,7 @@ void Engine::Run(int argc, char** argv) {
 		world->RunBeginQueue();
 
 		m->eventSystem->PollEvents();
+		m->coroutineHandler->Tick();
 		m->inputSystem->Tick();
 
 		world->EarlyTick();
@@ -209,6 +212,8 @@ void Engine::Init() {
 	// auto* hud = new renderer::HUD::HUDLayer(m->window->GetWindow(), 1920, 1080, false); // TODO: you can delete this later
 	// m->layerStack->PushOverlay(hud);
 	// hud->LoadURL("file:///assets/UI/hud.html");
+
+	m->coroutineHandler = std::make_unique<CoroutineHandler>();
 
 	Begin();
 }
