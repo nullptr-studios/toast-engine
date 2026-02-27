@@ -757,7 +757,7 @@ void ParticleSystem::OnRender(const glm::mat4& viewProjection) noexcept {
 		return;
 	}
 
-	if (!OclussionVolume::isSphereOnPlanes(renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), worldPosition(), m_cullingRadius)) {
+	if (!OclussionVolume::isSphereOnPlanes(worldPosition(), m_cullingRadius)) {
 		return;
 	}
 

@@ -310,7 +310,7 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 
 		// Frustum culling using the dynamic AABB
 		const auto& frustumPlanes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes();
-		if (!OclussionVolume::isTransformedAABBOnPlanes(frustumPlanes, m_dynamicMesh.dynamicBoundingBox(), model)) {
+		if (!OclussionVolume::isTransformedAABBOnPlanes(m_dynamicMesh.dynamicBoundingBox(), model)) {
 			return;    // Outside frustum, skip rendering
 		}
 	}
