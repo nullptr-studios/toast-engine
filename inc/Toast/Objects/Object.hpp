@@ -86,7 +86,7 @@ public:
 	}
 
 	[[nodiscard]]
-	Scene* scene() const noexcept {
+	toast::Scene* scene() const noexcept {
 		return m_scene;
 	}
 
@@ -152,6 +152,10 @@ public:
 	void SetRunLateTick(bool value) {
 		m_runsLateTick = value;
 	}
+	
+	void SetSerialize(bool value) {
+		m_serialize = value;
+	}
 
 protected:
 	// Tick functions
@@ -194,6 +198,7 @@ private:
 	bool m_runsEarlyTick = true;
 	bool m_runsTick = true;
 	bool m_runsLateTick = true;
+	bool m_serialize = true;
 	Object* m_parent = nullptr;
 	Scene* m_scene = nullptr;
 

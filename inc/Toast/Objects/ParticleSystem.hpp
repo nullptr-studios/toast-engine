@@ -144,7 +144,7 @@ struct ParticleEmitterConfig {
 	void LoadFromLua(const sol::table& table);
 
 	/// @brief Apply a preset configuration
-	void ApplyPreset(const std::string& presetName);
+	void ApplyPreset(std::string_view presetName);
 };
 
 /// @brief GPU particle data structure
@@ -288,7 +288,6 @@ public:
 
 	void Init() override;
 	void Destroy() override;
-	void Tick() override;
 
 	void Load(json_t j, bool force_create = true) override;
 	[[nodiscard]]
@@ -297,12 +296,12 @@ public:
 	/// @brief Load particle system config from a Lua file
 	/// @param luaPath Path to the Lua config
 	/// @return true if loaded successfully
-	bool LoadFromLua(const std::string& luaPath);
+	bool LoadFromLua(std::string_view luaPath);
 
 	/// @brief Save particle system config to a Lua file
 	/// @param luaPath Path to save the config
 	/// @return true if saved successfully
-	bool SaveToLua(const std::string& luaPath) const;
+	bool SaveToLua(std::string_view luaPath) const;
 
 #ifdef TOAST_EDITOR
 	void Inspector() override;
@@ -341,7 +340,7 @@ public:
 	/// @brief Add a new emitter with a preset
 	/// @param presetName Name of the preset
 	/// @return Reference to the new emitter
-	ParticleEmitter& AddEmitterWithPreset(const std::string& presetName);
+	ParticleEmitter& AddEmitterWithPreset(std::string_view presetName);
 
 	/// @brief Remove an emitter by index
 	void RemoveEmitter(size_t index);
@@ -375,7 +374,7 @@ public:
 		return m_luaConfigPath;
 	}
 
-	void SetLuaConfigPath(const std::string& path) {
+	void SetLuaConfigPath(std::string_view path) {
 		m_luaConfigPath = path;
 	}
 

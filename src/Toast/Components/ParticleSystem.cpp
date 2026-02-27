@@ -184,7 +184,7 @@ void ParticleEmitterConfig::LoadFromLua(const sol::table& table) {
 	maxParticles = std::min(maxParticlesOpt.value_or(10000u), MAX_PARTICLES_LIMIT);
 }
 
-void ParticleEmitterConfig::ApplyPreset(const std::string& presetName) {
+void ParticleEmitterConfig::ApplyPreset(std::string_view presetName) {
 	if (presetName == "Smoke") {
 		emissionMode = EmissionMode::Continuous;
 		emissionRate = 20.0f;
@@ -829,18 +829,18 @@ void ParticleSystem::Init() {
 
 	InitSharedResources();
 
-	// If no emitters exist, add a default one
-	if (m_emitters.empty()) {
-		AddEmitterWithPreset("Smoke");
-	}
+	// // If no emitters exist, add a default one
+	// if (m_emitters.empty()) {
+	// 	AddEmitterWithPreset("Smoke");
+	// }
 
-	renderer::IRendererBase::GetInstance()->AddRenderable(this);
+	renderer::IRendererBase::GetInstance()->AddTransparentRenderable(this);
 
 	TOAST_INFO("ParticleSystem initialized with {} emitter(s)", m_emitters.size());
 }
 
 void ParticleSystem::Destroy() {
-	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveTransparentRenderable(this);
 
 	for (auto& emitter : m_emitters) {
 		emitter.CleanupGPUResources();
@@ -849,10 +849,6 @@ void ParticleSystem::Destroy() {
 
 	CleanupSharedResources();
 	TransformComponent::Destroy();
-}
-
-void ParticleSystem::Tick() {
-	TransformComponent::Tick();
 }
 
 void ParticleSystem::Load(json_t j, bool force_create) {
@@ -892,7 +888,7 @@ json_t ParticleSystem::Save() const {
 	return j;
 }
 
-bool ParticleSystem::LoadFromLua(const std::string& luaPath) {
+bool ParticleSystem::LoadFromLua(std::string_view luaPath) {
 	sol::state lua;
 	lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
 
@@ -965,7 +961,7 @@ bool ParticleSystem::LoadFromLua(const std::string& luaPath) {
 	return true;
 }
 
-bool ParticleSystem::SaveToLua(const std::string& luaPath) const {
+bool ParticleSystem::SaveToLua(std::string_view luaPath) const {
 	sol::state lua;
 	lua.open_libraries(sol::lib::base, sol::lib::table);
 
@@ -1145,7 +1141,7 @@ bool ParticleSystem::SaveToLua(const std::string& luaPath) const {
 	luaFile << "return " << serializeTable(lua, config, 0) << "\n";
 
 	// Write to file
-	std::ofstream file(".\\assets\\" + luaPath);
+	std::ofstream file(".\\assets\\" + std::string(luaPath.data()));
 	if (!file.is_open()) {
 		TOAST_ERROR("Failed to save particle system config to: {}", luaPath);
 		return false;
@@ -1261,7 +1257,7 @@ ParticleEmitter& ParticleSystem::AddEmitter() {
 	return emitter;
 }
 
-ParticleEmitter& ParticleSystem::AddEmitterWithPreset(const std::string& presetName) {
+ParticleEmitter& ParticleSystem::AddEmitterWithPreset(std::string_view presetName) {
 	auto& emitter = AddEmitter();
 	emitter.GetConfig().ApplyPreset(presetName);
 	emitter.GetConfig().name = presetName;

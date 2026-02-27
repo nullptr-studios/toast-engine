@@ -12,7 +12,10 @@
 namespace toast {
 void Object::Load(json_t j, const bool force_create) {
 	PROFILE_ZONE;
-
+	
+	if (!m_serialize)
+		return;
+	
 	// Verify that the type for the object is the same as in the json
 	if (type() != j["type"].get<std::string>()) {
 		TOAST_ERROR("Trying to serialize for object {0} as type {1}. Expected {2}", name(), j["type"].get<std::string>(), type());
@@ -27,6 +30,10 @@ void Object::Load(json_t j, const bool force_create) {
 	m_json = j;    // Store for soft reloads
 
 	for (auto& json_c : j["children"]) {
+		
+		if (!json_c.contains("type")) //SKIP NOT ACTUAL CHILD ENTRIES
+			continue;
+		
 		const auto type = json_c["type"].get<std::string>();
 		std::string c_name = json_c["name"];
 
@@ -50,6 +57,10 @@ json_t Object::Save() const {
 	PROFILE_ZONE;
 
 	json_t j {};
+	
+	if (!m_serialize) {
+		return j;
+	}
 
 	j["type"] = type();
 	j["name"] = name();
@@ -555,7 +566,11 @@ void Object::_OnDisable() {
 
 void Object::_enabled(const bool enabled) {
 	if (enabled && !m_json.empty()) {
-		m_enabled = m_json["enabled"];
+		if (m_json.contains("enabled")) {
+			m_json["enabled"] = m_enabled;
+		}else {
+			return; // EARLY EXIT IF NOT VALID OBJ ENTRY
+		}
 	} else {
 		m_enabled = false;
 	}
