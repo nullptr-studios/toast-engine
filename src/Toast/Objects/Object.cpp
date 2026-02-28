@@ -567,7 +567,7 @@ void Object::_OnDisable() {
 void Object::_enabled(const bool enabled) {
 	if (enabled && !m_json.empty()) {
 		if (m_json.contains("enabled")) {
-			m_json["enabled"] = m_enabled;
+			m_enabled = m_json["enabled"];
 		}else {
 			return; // EARLY EXIT IF NOT VALID OBJ ENTRY
 		}
