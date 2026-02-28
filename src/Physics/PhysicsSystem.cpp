@@ -11,6 +11,7 @@
 #include "RigidbodyDynamics.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Physics/BoxRigidbody.hpp"
+#include "Toast/Physics/GravityType.hpp"
 #include "Toast/Physics/Physics.hpp"
 #include "Toast/Physics/PhysicsEvents.hpp"
 #include "Toast/Physics/Raycast.hpp"
@@ -528,11 +529,44 @@ auto PhysicsSystem::GetAllRigidbodies() -> std::list<Rigidbody*>& {
 	return i.value()->m.rigidbodies;
 }
 
-void PhysicsSystem::SetGravityType(GravityType type) { }
+void PhysicsSystem::SetGravityType(GravityType type) {
+	auto i = PhysicsSystem::get();
+	if (not i.has_value()) {
+		return;
+	}
 
-void PhysicsSystem::SetGravityPoint(glm::dvec2 pos) { }
+	i.value()->m.gravityType = type;
+}
 
-void PhysicsSystem::SetGravityPointScale(double scale) { }
+void PhysicsSystem::SetGravityPoint(glm::dvec2 pos) {
+	auto i = PhysicsSystem::get();
+	if (not i.has_value()) {
+		return;
+	}
+
+	i.value()->m.gravityPoint = pos;
+}
+
+void PhysicsSystem::SetGravityPointScale(double scale) {
+	auto i = PhysicsSystem::get();
+	if (not i.has_value()) {
+		return;
+	}
+
+	i.value()->m.gravityPointScale = scale;
+}
+
+void SetGravityType(GravityType type) {
+	PhysicsSystem::SetGravityType(type);
+}
+
+void SetGravityPoint(glm::dvec2 pos) {
+	PhysicsSystem::SetGravityPoint(pos);
+}
+
+void SetGravityPointScale(double scale) {
+	PhysicsSystem::SetGravityPointScale(scale);
+}
 
 auto GetAllRigidbodies() -> std::list<Rigidbody*>& {
 	return PhysicsSystem::GetAllRigidbodies();

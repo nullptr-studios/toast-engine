@@ -361,6 +361,7 @@ void Object::Children::RemoveAll() {
 // 		co_yield std::ranges::elements_of(child->children.RecursiveLoop());
 // 	}
 // }
+// omg dante -x
 
 void Object::SetScene(Scene* scene) {
 	assert(scene != nullptr);
