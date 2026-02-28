@@ -108,6 +108,15 @@ void SpineRendererComponent::Tick() {
 	m_animationState->update(dt);
 	m_animationState->apply(*m_skeleton);
 
+	for (const auto& [name, pos] : m_boneLocalOverrides) {
+		spine::Bone* b = m_skeleton->findBone(name.c_str());
+		if (!b) {
+			continue;
+		}
+		b->setX(pos.x);
+		b->setY(pos.y);
+	}
+
 	m_skeleton->update(dt);
 	m_skeleton->updateWorldTransform(spine::Physics_Update);
 }
@@ -301,7 +310,7 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 
 		// Frustum culling using the dynamic AABB
 		const auto& frustumPlanes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes();
-		if (!OclussionVolume::isTransformedAABBOnPlanes(frustumPlanes, m_dynamicMesh.dynamicBoundingBox(), model)) {
+		if (!OclussionVolume::isTransformedAABBOnPlanes(m_dynamicMesh.dynamicBoundingBox(), model)) {
 			return;    // Outside frustum, skip rendering
 		}
 	}
@@ -445,8 +454,19 @@ void SpineRendererComponent::SetBoneLocalPosition(const std::string_view& boneNa
 		TOAST_WARN("SpineRendererComponent::SetBoneLocalPosition() Bone \"{0}\" not found", boneName);
 		return;
 	}
+	// Apply immediately
 	bone->setX(position.x);
 	bone->setY(position.y);
+
+	m_boneLocalOverrides[std::string(boneName)] = position;
+}
+
+void SpineRendererComponent::ClearBoneLocalPositionOverride(const std::string_view& boneName) const {
+	m_boneLocalOverrides.erase(std::string(boneName));
+}
+
+void SpineRendererComponent::ClearAllBoneLocalPositionOverrides() const {
+	m_boneLocalOverrides.clear();
 }
 
 float SpineRendererComponent::GetBoneLocalRotation(const std::string_view& boneName) const {

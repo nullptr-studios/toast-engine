@@ -12,12 +12,17 @@ concept is_object = std::is_base_of_v<toast::Object, T>;
 template<is_object T, int size>
 class Pool {
 public:
-	Pool(toast::Scene* scene) {
+	Pool(toast::Scene* scene) : scene(scene) {
 		for (int i = 0; i < size; i++) {
 			object_pool[i] = scene->children.Add<T>();
 			object_pool[i]->enabled(false);
+			object_pool[i]->SetSerialize(false);
 			free_objects.emplace(object_pool[i]);
 		}
+	}
+
+	~Pool() {
+		RemoveAll();
 	}
 
 	auto Release() -> T* {
@@ -49,6 +54,14 @@ public:
 	}
 
 private:
+	void RemoveAll() {
+		for (int i = 0; i < size; i++) {
+			// scene->children.Remove(object_pool[i]->id());
+			object_pool[i] = nullptr;
+		}
+	}
+
+	toast::Scene* scene;
 	std::array<T*, size> object_pool;
 	std::stack<T*> free_objects;
 };

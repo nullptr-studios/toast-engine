@@ -30,6 +30,7 @@ public:
 	void LightingPass();
 	void CombinedRenderPass() const;
 	void SpritePass();
+	void HUDPass();
 
 	void Clear() override;
 	void Resize(glm::uvec2 size) override;
@@ -55,5 +56,8 @@ private:
 	std::shared_ptr<Mesh> m_quad = nullptr;
 
 	GlobalLight* m_globalLight = nullptr;
+
+	// Optional per-layer framebuffer to render non-HUD layers before compositing
+	Framebuffer* m_layerFramebuffer = nullptr;
 };
 }

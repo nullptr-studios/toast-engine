@@ -1,5 +1,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
+
 #define TRACY_FIBERS
+
 #include "PhysicsSystem.hpp"
 
 #include "ConvexCollider.hpp"
@@ -7,9 +9,12 @@
 #include "RigidbodyDynamics.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Physics/BoxRigidbody.hpp"
+#include "Toast/Physics/GravityType.hpp"
+#include "Toast/Physics/Physics.hpp"
 #include "Toast/Physics/PhysicsEvents.hpp"
 #include "Toast/Physics/Raycast.hpp"
 #include "Toast/Physics/Rigidbody.hpp"
+#include "Toast/Physics/Trigger.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 #include "Toast/Renderer/OpenGL/OpenGLRenderer.hpp"
@@ -22,6 +27,44 @@
 namespace physics {
 using namespace glm;
 
+auto GravityType::FromString(std::string_view other) -> GravityType {
+	std::string str = other.data();
+	std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
+		return std::tolower(c);
+	});
+
+	if (str == "direction") {
+		return GravityType::DIRECTION;
+	}
+	if (str == "point") {
+		return GravityType::POINT;
+	}
+
+	TOAST_WARN("Value \"{}\" not recognized as valid GravityType", str);
+	return GravityType::DIRECTION;
+}
+
+auto GravityType::ToString(GravityType other) -> std::string {
+	switch (other.v) {
+		case DIRECTION: return "Direction";
+		case POINT: return "Point";
+		default: return "Unknown";
+	}
+}
+
+auto GravityType::operator=(type value) -> GravityType& {
+	v = value;
+	return *this;
+}
+
+bool GravityType::operator==(type value) const {
+	return v == value;
+}
+
+bool GravityType::operator==(const GravityType& other) const {
+	return v == other.v;
+}
+
 #pragma region START_AND_END
 
 PhysicsSystem* PhysicsSystem::instance = nullptr;
@@ -30,7 +73,7 @@ PhysicsSystem::PhysicsSystem() {
 	instance = this;
 
 	m.eventListener.Subscribe<UpdatePhysicsDefaults>([this](auto* e) {
-		m.gravity = e->gravity;
+		m.gravityDirection = e->gravity;
 		m.positionCorrectionPtc = e->positionCorrectionPtc;
 		m.positionCorrectionSlop = e->positionCorrectionSlop;
 		m.eps = e->eps;
@@ -236,13 +279,40 @@ void PhysicsSystem::RemoveBox(BoxRigidbody* rb) {
 	(*i)->m.boxes.remove(rb);
 }
 
+auto PhysicsSystem::gravity_type() -> GravityType {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return GravityType::DIRECTION;
+	}
+
+	return (*i)->m.gravityType;
+}
+
 dvec2 PhysicsSystem::gravity() {
 	auto i = PhysicsSystem::get();
 	if (!i.has_value()) {
 		return { 0.0, 0.0 };
 	}
 
-	return (*i)->m.gravity;
+	return (*i)->m.gravityDirection;
+}
+
+auto PhysicsSystem::gravity_point() -> glm::dvec2 {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return { 0.0, 0.0 };
+	}
+
+	return (*i)->m.gravityPoint;
+}
+
+auto PhysicsSystem::gravity_point_scale() -> double {
+	auto i = PhysicsSystem::get();
+	if (!i.has_value()) {
+		return 0.0;
+	}
+
+	return (*i)->m.gravityPointScale;
 }
 
 double PhysicsSystem::pos_slop() {
@@ -317,6 +387,10 @@ double PhysicsSystem::GetFixedTimestep() {
 }
 
 void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
+	if (not rb->enabled()) {
+		return;
+	}
+
 	PROFILE_ZONE;
 	const auto& name = rb->parent()->name();
 	PROFILE_TEXT(name.c_str(), name.size());
@@ -326,6 +400,10 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 	// Collision loops
 
 	for (auto it = ++std::ranges::find(m.rigidbodies, rb); it != m.rigidbodies.end(); ++it) {
+		if (not(*it)->enabled()) {
+			continue;
+		}
+
 		auto manifold = RbRbCollision(rb, *it);
 		if (manifold.has_value()) {
 			RbRbResolution(rb, *it, manifold.value());
@@ -334,9 +412,11 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 
 	// TODO: Collision with Boxes
 
-	// TODO: Collision with Triggers
-
 	for (auto* c : m.colliders) {
+		if (not c->parent->enabled()) {
+			continue;
+		}
+
 		auto manifold = RbMeshCollision(rb, c);
 		if (manifold.has_value()) {
 			RbMeshResolution(rb, c, manifold.value());
@@ -344,6 +424,10 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 	}
 
 	for (auto* t : m.triggers) {
+		if (not t->enabled()) {
+			continue;
+		}
+
 		RbTriggerCollision(rb, t);
 	}
 
@@ -352,6 +436,10 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 }
 
 void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
+	if (not rb->enabled()) {
+		return;
+	}
+
 	PROFILE_ZONE;
 	// PROFILE_TEXT(rb->parent()->name(), rb->parent()->name().size());
 
@@ -359,6 +447,10 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 
 	// Collision loops
 	for (auto* c : m.colliders) {
+		if (not c->parent->enabled()) {
+			continue;
+		}
+
 		auto manifold = BoxMeshCollision(rb, c);
 		if (manifold.has_value()) {
 			BoxMeshResolution(rb, c, manifold.value());
@@ -426,6 +518,60 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	}
 
 	return result;
+}
+
+auto PhysicsSystem::GetAllRigidbodies() -> std::list<Rigidbody*>& {
+	auto i = PhysicsSystem::get();
+	// high cortison std::optional vs low cortison c assert
+	assert(i.has_value() && "Physics System does not exist");
+	return i.value()->m.rigidbodies;
+}
+
+void PhysicsSystem::SetGravityType(GravityType type) {
+	auto i = PhysicsSystem::get();
+	if (not i.has_value()) {
+		return;
+	}
+
+	i.value()->m.gravityType = type;
+}
+
+void PhysicsSystem::SetGravityPoint(glm::dvec2 pos) {
+	auto i = PhysicsSystem::get();
+	if (not i.has_value()) {
+		return;
+	}
+
+	i.value()->m.gravityPoint = pos;
+}
+
+void PhysicsSystem::SetGravityPointScale(double scale) {
+	auto i = PhysicsSystem::get();
+	if (not i.has_value()) {
+		return;
+	}
+
+	i.value()->m.gravityPointScale = scale;
+}
+
+void SetGravityType(GravityType type) {
+	PhysicsSystem::SetGravityType(type);
+}
+
+void SetGravityPoint(glm::dvec2 pos) {
+	PhysicsSystem::SetGravityPoint(pos);
+}
+
+void SetGravityPointScale(double scale) {
+	PhysicsSystem::SetGravityPointScale(scale);
+}
+
+auto GetAllRigidbodies() -> std::list<Rigidbody*>& {
+	return PhysicsSystem::GetAllRigidbodies();
+}
+
+auto Gravity() -> float {
+	return glm::length(PhysicsSystem::gravity());
 }
 
 }

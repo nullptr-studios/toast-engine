@@ -43,6 +43,7 @@ ConvexCollider::ConvexCollider(const point_list& points, const ColliderData& dat
 	friction = data.friction;
 	worldPosition = data.worldPosition;
 	debugNormals = data.debugNormals;
+	parent = data.parent;
 
 	PhysicsSystem::AddCollider(this);
 }

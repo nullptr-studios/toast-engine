@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toast Engine - Main Menu</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 600px;
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 3.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.8);
+            transform: translateY(-3px);
+        }
+
+        .stats-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 30px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 0.95em;
+        }
+
+        .stat-label {
+            opacity: 0.8;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #f093fb;
+        }
+
+        .controls-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 30px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .control-item {
+            padding: 5px 0;
+        }
+
+        .key {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 0 5px;
+        }
+
+        .toast-logo {
+            font-size: 2em;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        #fps-counter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        #status-message {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 8px;
+            min-width: 300px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #status-message.show {
+            opacity: 1;
+        }
+
+        .input-test {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            padding: 10px;
+            color: white;
+            margin-top: 15px;
+            width: 100%;
+            max-width: 300px;
+            font-size: 1em;
+        }
+
+        .input-test::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .input-test:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <div id="fps-counter">FPS: <span id="fps-value">0</span></div>
+    <div id="status-message"></div>
+
+    <div class="container">
+        <div class="toast-logo">🍞</div>
+        
+        <h1>Toast Engine</h1>
+        <p class="subtitle">Powered by Ultralight & OpenGL</p>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="onPlayClicked()">Play Game</button>
+            <button class="btn-secondary" onclick="onSettingsClicked()">Settings</button>
+            <button class="btn-secondary" onclick="onAboutClicked()">About</button>
+            <button class="btn-secondary" onclick="onQuitClicked()">Quit</button>
+        </div>
+
+        <input type="text" class="input-test" placeholder="Type here to test input..." />
+
+        <div class="stats-panel">
+            <h3 style="margin-bottom: 15px; font-size: 1.1em;">System Information</h3>
+            <div class="stat-row">
+                <span class="stat-label">Resolution:</span>
+                <span class="stat-value" id="resolution">1920 x 1080</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Renderer:</span>
+                <span class="stat-value">OpenGL 4.5</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">UI Framework:</span>
+                <span class="stat-value">Ultralight</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Status:</span>
+                <span class="stat-value" id="status">Ready ✓</span>
+            </div>
+        </div>
+
+        <div class="controls-section">
+            <h4 style="margin-bottom: 10px;">Controls</h4>
+            <div class="control-item">
+                <span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> - Move
+            </div>
+            <div class="control-item">
+                <span class="key">Mouse</span> - Look Around
+            </div>
+            <div class="control-item">
+                <span class="key">ESC</span> - Menu
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // FPS Counter
+        let frameCount = 0;
+        let lastTime = Date.now();
+        let fps = 0;
+
+        function updateFPS() {
+            frameCount++;
+            const currentTime = Date.now();
+            const deltaTime = currentTime - lastTime;
+
+            if (deltaTime >= 1000) {
+                fps = Math.round((frameCount * 1000) / deltaTime);
+                document.getElementById('fps-value').textContent = fps;
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+
+            requestAnimationFrame(updateFPS);
+        }
+
+        // Start FPS counter
+        updateFPS();
+
+        // Button click handlers
+        function onPlayClicked() {
+            showStatus('Starting game...');
+            console.log('Play button clicked');
+        }
+
+        function onSettingsClicked() {
+            showStatus('Opening settings...');
+            console.log('Settings button clicked');
+        }
+
+        function onAboutClicked() {
+            showStatus('Toast Engine v1.0.0 - A powerful 2D/3D game engine');
+            console.log('About button clicked');
+        }
+
+        function onQuitClicked() {
+            showStatus('Quitting application...');
+            console.log('Quit button clicked');
+        }
+
+        function showStatus(message) {
+            const statusEl = document.getElementById('status-message');
+            statusEl.textContent = message;
+            statusEl.classList.add('show');
+            setTimeout(() => {
+                statusEl.classList.remove('show');
+            }, 3000);
+        }
+
+        // Test various input methods
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                console.log('ESC pressed');
+            }
+        });
+
+        // Mouse tracking
+        document.addEventListener('mousemove', (e) => {
+            // Could display coordinates here for testing
+        });
+
+        // Log when page loads
+        console.log('Toast Engine Main Menu loaded');
+        console.log('Ultralight is working correctly!');
+    </script>
+</body>
+</html>
+
