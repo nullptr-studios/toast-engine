@@ -63,7 +63,7 @@ void RbKinematics(Rigidbody* rb) {
 	velocity += gravity * Time::fixed_delta();
 
 	// Apply drag over fixed timestep
-	const dvec2 damping = exp(rb->hasDrag ? dvec2 { -rb->drag } : dvec2 { 0.0 } * Time::fixed_delta());
+	const dvec2 damping = exp(rb->hasDrag ? dvec2 { -rb->drag } * Time::fixed_delta() : dvec2 { 0.0 });
 	velocity *= damping;
 
 	if (all(lessThan(abs(velocity), dvec2 { rb->minimumVelocity }))) {
