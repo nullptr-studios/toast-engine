@@ -1,8 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
-#ifndef WIN32
 #define TRACY_FIBERS
-#endif
 
 #include "PhysicsSystem.hpp"
 
