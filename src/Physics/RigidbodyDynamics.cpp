@@ -51,7 +51,7 @@ void RbKinematics(Rigidbody* rb) {
 	}
 
 	// Apply gravity as acceleration over fixed timestep
-	const dvec2 gravity = PhysicsSystem::gravity() * dvec2 { rb->gravityScale };
+	const dvec2 gravity = PhysicsSystem::gravity() * (rb->hasGravity ? dvec2 { rb->gravityScale } : glm::dvec2{ 0.0, 0.0 });
 	velocity += gravity * Time::fixed_delta();
 
 	// Apply drag over fixed timestep

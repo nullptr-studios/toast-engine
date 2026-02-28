@@ -1,6 +1,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #define TRACY_FIBERS
 #include "PhysicsSystem.hpp"
+#include "Toast/Physics/Physics.hpp"
 
 #include "ConvexCollider.hpp"
 #include "Physics/BoxDynamics.hpp"
@@ -426,6 +427,21 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	}
 
 	return result;
+}
+
+auto PhysicsSystem::GetAllRigidbodies() -> std::list<Rigidbody*>& {
+	auto i = PhysicsSystem::get();
+	// high cortison std::optional vs low cortison c assert
+	assert(i.has_value() && "Physics System does not exist");
+	return i.value()->m.rigidbodies;
+}
+
+auto GetAllRigidbodies() -> std::list<Rigidbody*>& {
+	return PhysicsSystem::GetAllRigidbodies();
+}
+
+auto Gravity() -> float {
+	return glm::length(PhysicsSystem::gravity());
 }
 
 }

@@ -48,6 +48,8 @@ public:
 	static void RemoveBox(BoxRigidbody* rb);
 	static std::optional<RayResult> RayCollision(Line* ray, ColliderFlags flags);
 
+	static auto GetAllRigidbodies() -> std::list<Rigidbody*>&;
+
 	PhysicsSystem();
 	~PhysicsSystem();
 

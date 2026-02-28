@@ -43,6 +43,7 @@ void Rigidbody::Inspector() {
 	ImGui::Spacing();
 	ImGui::SeparatorText("Simulation");
 
+	ImGui::Checkbox("Has Gravity?", &hasGravity);
 	ImGui::DragScalarN("Gravity Scale", ImGuiDataType_Float, &gravityScale.x, 2);
 	ImGui::DragScalar("Restitution", ImGuiDataType_Double, &restitution);
 	ImGui::DragScalar("Restitution Threshold", ImGuiDataType_Double, &restitutionThreshold);
@@ -141,6 +142,7 @@ json_t Rigidbody::Save() const {
 	j["radius"] = radius;
 	j["mass"] = mass;
 	j["friction"] = friction;
+	j["hasGravity"] = hasGravity;
 	j["gravityScale"] = gravityScale;
 	j["drag"] = drag;
 	j["restitution"] = restitution;
@@ -165,6 +167,9 @@ void Rigidbody::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("friction")) {
 		friction = j["friction"];
+	}
+	if (j.contains("hasGravity")) {
+		hasGravity = j["hasGravity"];
 	}
 	if (j.contains("gravityScale")) {
 		gravityScale = j["gravityScale"];
@@ -301,10 +306,13 @@ double Rigidbody::GetInterpolationAlpha() {
 }
 
 void Rigidbody::AddForce(glm::dvec2 force) {
-	{
-		std::lock_guard lock(forcesMutex);
-		forces.emplace_back(force);
-	}
+	std::lock_guard lock(forcesMutex);
+	forces.emplace_back(force);
+}
+
+void Rigidbody::AddAccel(glm::dvec2 accel) {
+	std::lock_guard lock(forcesMutex);
+	forces.emplace_back(accel * mass);
 }
 
 }

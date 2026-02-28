@@ -50,6 +50,7 @@ public:
 	static auto GetInterpolationAlpha() -> double;
 
 	void AddForce(glm::dvec2);
+	void AddAccel(glm::dvec2);
 
 	// properties
 	double radius = 1.0;      // This is not affected by parent.scale()
@@ -58,6 +59,7 @@ public:
 	ColliderFlags flags = ColliderFlags::Default;
 
 	// simulation
+	bool hasGravity = true;                    // Is the rb affected by gravity at all?
 	glm::vec2 gravityScale { 1.0, 1.0 };       // How much gravity affects the object
 	glm::vec2 drag = { 0.5, 0.5 };             // Anisotropic drag for linear movement
 	double restitution = 0.6;                  // Bounciness
