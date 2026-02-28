@@ -5,15 +5,18 @@
 #include "ForceLink.cpp"
 #include "Input/InputSystem.hpp"
 #include "Physics/PhysicsSystem.hpp"
+#include "Toast/CoroutineHandler.hpp"
 #include "Toast/Factory.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Objects/Scene.hpp"
 #include "Toast/ProjectSettings.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/Renderer/HUD/HUDLayer.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/LayerStack.hpp"
 #include "Toast/Renderer/OpenGL/OpenGLRenderer.hpp"
 #include "Toast/Time.hpp"
+#include "Toast/Ui/Manager.hpp"
 #include "Toast/Window/Window.hpp"
 #include "Toast/World.hpp"
 
@@ -42,7 +45,9 @@ struct Engine::Pimpl {
 	std::unique_ptr<resource::ResourceManager> resourceManager;
 	std::unique_ptr<ProjectSettings> projectSettings;
 	std::unique_ptr<physics::PhysicsSystem> physicsSystem;
+	std::unique_ptr<ui::UiSystem> uiSystem;
 	audio::AudioSystem* audioSystem;
+	std::unique_ptr<CoroutineHandler> coroutineHandler;
 };
 
 void Engine::Run(int argc, char** argv) {
@@ -89,6 +94,7 @@ void Engine::Run(int argc, char** argv) {
 		world->RunBeginQueue();
 
 		m->eventSystem->PollEvents();
+		m->coroutineHandler->Tick();
 		m->inputSystem->Tick();
 
 		world->EarlyTick();
@@ -175,7 +181,10 @@ void Engine::Init() {
 
 	// Create window
 	m->window = std::make_unique<Window>(1920, 1080, "ToastEngine");
+
+	// LayerStack must be created BEFORE renderer, as renderer gets the instance during init
 	m->layerStack = std::make_unique<renderer::LayerStack>();
+
 	m->renderer = std::make_unique<renderer::OpenGLRenderer>();
 
 	// Create input system
@@ -197,6 +206,14 @@ void Engine::Init() {
 	auto audio_result = audio::AudioSystem::create();
 	TOAST_ASSERT(audio_result, "Failed to initialize Audio System");
 	m->audioSystem = audio_result.value();
+
+	// Ui
+	m->uiSystem = std::make_unique<ui::UiSystem>(*m->window, false);
+	// auto* hud = new renderer::HUD::HUDLayer(m->window->GetWindow(), 1920, 1080, false); // TODO: you can delete this later
+	// m->layerStack->PushOverlay(hud);
+	// hud->LoadURL("file:///assets/UI/hud.html");
+
+	m->coroutineHandler = std::make_unique<CoroutineHandler>();
 
 	Begin();
 }

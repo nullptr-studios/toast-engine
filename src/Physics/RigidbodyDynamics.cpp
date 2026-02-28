@@ -51,11 +51,19 @@ void RbKinematics(Rigidbody* rb) {
 	}
 
 	// Apply gravity as acceleration over fixed timestep
-	const dvec2 gravity = PhysicsSystem::gravity() * dvec2 { rb->gravityScale };
+	dvec2 physics_system_gravity;
+	if (PhysicsSystem::gravity_type() != GravityType::POINT) {
+		physics_system_gravity = PhysicsSystem::gravity();
+	} else {
+		dvec2 dir = normalize(PhysicsSystem::gravity_point() - rb->GetPosition());
+		physics_system_gravity = dir * PhysicsSystem::gravity_point_scale();
+	}
+
+	const dvec2 gravity = physics_system_gravity * (rb->hasGravity ? dvec2 { rb->gravityScale } : glm::dvec2 { 0.0, 0.0 });
 	velocity += gravity * Time::fixed_delta();
 
 	// Apply drag over fixed timestep
-	const dvec2 damping = exp(dvec2 { -rb->drag } * Time::fixed_delta());
+	const dvec2 damping = exp(rb->hasDrag ? dvec2 { -rb->drag } * Time::fixed_delta() : dvec2 { 0.0 });
 	velocity *= damping;
 
 	if (all(lessThan(abs(velocity), dvec2 { rb->minimumVelocity }))) {
@@ -81,7 +89,12 @@ auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
 	dvec2 pos1 = rb1->GetPosition();
 	dvec2 pos2 = rb2->GetPosition();
 
-	double penetration = (rb1->radius + rb2->radius) - distance(pos1, pos2);
+	double dist = distance(pos1, pos2);
+	if (dist < 0.1f) {
+		return std::nullopt;
+	}
+
+	double penetration = (rb1->radius + rb2->radius) - dist;
 
 	// if penetration is negative we don't have a collision
 	if (penetration <= 0.0) {
@@ -103,6 +116,12 @@ auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
 }
 
 void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
+#ifdef _DEBUG
+	if (rb1->debug.skipResolution || rb2->debug.skipResolution) {
+		return;
+	}
+#endif
+
 	PROFILE_ZONE;
 	dvec2 velocity1 = rb1->velocity;
 	dvec2 velocity2 = rb2->velocity;
@@ -201,23 +220,42 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 	// This method will use the SAT algorithm
 	for (const auto& edge : c->edges) {
 		// project all points onto the edge normal and keep the minimum & maximum
-		double min_proj = dot(dvec2 { c->vertices[0] }, edge.normal);
+		double min_proj = dot(dvec2 { c->vertices[0] } - edge.p1, edge.normal);
 		double max_proj = min_proj;
 
 		for (int i = 1; i < c->vertices.size(); i++) {
-			double v = dot(dvec2 { c->vertices[i] }, edge.normal);
+			double v = dot(dvec2 { c->vertices[i] } - edge.p1, edge.normal);
 			min_proj = std::min(v, min_proj);
 			max_proj = std::max(v, max_proj);
 		}
 
 		// project rb position onto edge normal and then add radius
-		double rb_proj = dot(rb_pos, edge.normal);
+		double rb_proj = dot(rb_pos - edge.p1, edge.normal);
 		double rb_max_proj = rb_proj + rb->radius;
 		double rb_min_proj = rb_proj - rb->radius;
 
 		// if theres no collision on the projection, there is no collision
 		if (rb_max_proj < min_proj || rb_min_proj > max_proj) {
 			return std::nullopt;
+		}
+
+		// we DO NOT want to check with rigidbodies that are behind the normal
+		if (rb_proj < -2 * rb->radius) {
+			continue;
+		}
+
+		// find where along the line is the object
+		double distance_along_line = dot(rb_pos - edge.p1, edge.tangent);
+		glm::dvec2 normal;
+		if (distance_along_line < 0.0f) {
+			// Case 1: rigidbody is before segment
+			normal = rb_pos - edge.p1;
+		} else if (distance_along_line > edge.length) {
+			// Case 2: rigidbody is after segment
+			normal = rb_pos - edge.p2;
+		} else {
+			// Case 3: rigidbody is inside the line
+			normal = edge.normal;
 		}
 
 		// compute overlap along the axis to store as penetration depth candidate
@@ -238,7 +276,7 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 		// if there is we will generate a manifold to compare later on
 		// clang-format off
 		manifolds.emplace_back(Manifold {
-			.normal = edge.normal,
+			.normal = normal,
 			.contact1 = {0.0f, 0.0f},
 			.contact2 = {0.0f, 0.0f},
 			.contactCount = -1,
@@ -284,6 +322,12 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 }
 
 void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
+#ifdef _DEBUG
+	if (rb->debug.skipResolution) {
+		return;
+	}
+#endif
+
 	PROFILE_ZONE;
 	dvec2 velocity = rb->velocity;
 	dvec2 position = rb->GetPosition();

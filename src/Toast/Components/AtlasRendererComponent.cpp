@@ -222,7 +222,7 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 
 	// Frustum culling
 	const auto& frustumPlanes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes();
-	if (!OclussionVolume::isTransformedAABBOnPlanes(frustumPlanes, m_dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f))) {
+	if (!OclussionVolume::isTransformedAABBOnPlanes(m_dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f))) {
 		return;
 	}
 

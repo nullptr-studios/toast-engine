@@ -4,9 +4,9 @@
 
 #include "Toast/Resources/ResourceManager.hpp"
 
-#include "PackLoader.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Profiler.hpp"
+#include "Toast/Resources/ToastFileSystem.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -14,7 +14,6 @@
 resource::ResourceManager* resource::ResourceManager::m_instance = nullptr;
 
 namespace resource {
-PackFile g_packFile;
 
 auto Open(std::string& path) -> std::optional<std::string> {
 	std::istringstream s;
@@ -39,16 +38,16 @@ ResourceManager::ResourceManager(bool pkg) : m_pkg(pkg) {
 	// If pkg is true, open the game.pkg file
 	if (m_pkg) {
 		//@TODO: Make the .PKG path configurable?
-		TOAST_INFO("ResourceManager: Opening resource pack game.pkg");
-		if (!g_packFile.Open("game.pkg")) {
-			throw ToastException("ResourceManager: Failed to open game.pkg");
+		TOAST_INFO("ResourceManager: Opening resource pack game.toast");
+		if (!ToastFileSystem::Get().UsePackFile("game.toast")) {
+			throw ToastException("ResourceManager: Failed to open game.toast");
 		}
 	}
 }
 
 ResourceManager::~ResourceManager() {
 	if (m_pkg) {
-		g_packFile.Close();
+		ToastFileSystem::Get().ClosePackFile();
 	}
 }
 
@@ -99,41 +98,12 @@ void ResourceManager::PurgeResources() {
 	}
 }
 
-bool ResourceManager::OpenFile(std::string_view path, std::istringstream& data_out) const {
-	std::vector<uint8_t> d {};
-	if (!OpenFile(path, d)) {
-		return false;
-	}
-
-	data_out.str(std::string(reinterpret_cast<char*>(d.data()), d.size()));
-	return true;
+bool ResourceManager::OpenFile(const std::string_view path, std::istringstream& data_out) const {
+	return ToastFileSystem::Get().OpenFile(path, data_out);
 }
 
-bool ResourceManager::OpenFile(std::string_view path, std::vector<uint8_t>& data) const {
-	PROFILE_ZONE;
-	// if using pkg, read from pack file
-	if (m_pkg) {
-		return g_packFile.ReadFile(path, data);
-	}
-
-	std::string p;
-	// else read from filesystem
-	if (path.find("assets/") == std::string_view::npos) {
-		p = std::string("assets/") + path.data();
-	} else {
-		p = path;
-	}
-
-	std::ifstream ifs(p, std::ios::binary);
-	if (!ifs) {
-		return false;
-	}
-	ifs.seekg(0, std::ios::end);
-	size_t size = ifs.tellg();
-	ifs.seekg(0, std::ios::beg);
-	data.resize(size);
-	ifs.read(reinterpret_cast<char*>(data.data()), static_cast<std::streamsize>(size));
-	return true;
+bool ResourceManager::OpenFile(const std::string_view path, std::vector<uint8_t>& data) const {
+	return ToastFileSystem::Get().OpenFile(path, data);
 }
 
 bool ResourceManager::SaveFile(std::string_view path, std::string_view content) {

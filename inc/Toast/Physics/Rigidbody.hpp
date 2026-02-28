@@ -50,6 +50,7 @@ public:
 	static auto GetInterpolationAlpha() -> double;
 
 	void AddForce(glm::dvec2);
+	void AddAccel(glm::dvec2);
 
 	// properties
 	double radius = 1.0;      // This is not affected by parent.scale()
@@ -58,7 +59,9 @@ public:
 	ColliderFlags flags = ColliderFlags::Default;
 
 	// simulation
+	bool hasGravity = true;                    // Is the rb affected by gravity at all?
 	glm::vec2 gravityScale { 1.0, 1.0 };       // How much gravity affects the object
+	bool hasDrag = true;                       // Is the rb affected by drag at all?
 	glm::vec2 drag = { 0.5, 0.5 };             // Anisotropic drag for linear movement
 	double restitution = 0.6;                  // Bounciness
 	double restitutionThreshold = 0.5;         // Minimum speed for restitution to take place
@@ -83,6 +86,7 @@ public:
 		glm::vec2 addForce = { 0.0f, 0.0f };
 		glm::vec4 defaultColor = { 1.0f, 1.0f, 1.0f, 1.0f };      // Color when not colliding
 		glm::vec4 collidingColor = { 0.0f, 1.0f, 0.0f, 1.0f };    // Color when colliding (not implemented)
+		bool skipResolution = false;                              // Makes the rigidbody skip physics resolution
 	} debug;
 };
 

@@ -30,6 +30,7 @@ static inline std::u8string canonical_path_for_pack(const fs::path& p) {
 	if (s.size() >= 2 && s[0] == '.' && s[1] == '/') {
 		s.erase(0, 2);
 	}
+
 	return s;
 }
 
@@ -45,10 +46,10 @@ inline uint64_t fnv1a_hash64(const std::u8string& s) {
 
 class PackFile {
 public:
-	bool Open(const std::string& pack_path) {
+	bool Open(const std::string_view& pack_path) {
 		PROFILE_ZONE;
 
-		m_in.open(pack_path, std::ios::binary);
+		m_in.open(pack_path.data(), std::ios::binary);
 		if (!m_in) {
 			return false;
 		}
@@ -113,6 +114,28 @@ public:
 		return true;
 	}
 
+	bool FileExists(const std::string_view raw_path) {
+		// canonicalize lookup path same as packer
+		std::u8string path;
+		std::string raw_path_str(raw_path);
+		if (raw_path_str.contains("assets/")) {
+			path = canonical_path_for_pack(raw_path_str.substr(7));
+		} else {
+			// canonicalize lookup path same as packer
+			path = canonical_path_for_pack(std::string(raw_path));
+		}
+
+		uint64_t h = fnv1a_hash64(path);
+		auto it = std::ranges::lower_bound(m_hashes, h);
+		// not found quickly
+		if (it == m_hashes.end() || *it != h) {
+			TOAST_ERROR("PackFile: Path {} not found", raw_path);
+			return false;
+		}
+
+		return true;
+	}
+
 	void Close() {
 		if (m_in.is_open()) {
 			m_in.close();
@@ -128,14 +151,20 @@ public:
 	bool ReadFile(std::string_view raw_path, std::vector<uint8_t>& out) {
 		PROFILE_ZONE;
 
-		// canonicalize lookup path same as packer
-		std::u8string path = canonical_path_for_pack(std::string(raw_path));
+		std::u8string path;
+		std::string raw_path_str(raw_path);
+		if (raw_path_str.contains("assets/")) {
+			path = canonical_path_for_pack(raw_path_str.substr(7));
+		} else {
+			// canonicalize lookup path same as packer
+			path = canonical_path_for_pack(std::string(raw_path));
+		}
 
 		uint64_t h = fnv1a_hash64(path);
 		auto it = std::ranges::lower_bound(m_hashes, h);
 		// not found quickly
 		if (it == m_hashes.end() || *it != h) {
-			throw ToastException("PackFile: Path not found");
+			TOAST_ERROR("PackFile: Path {} not found", raw_path);
 			return false;
 		}
 

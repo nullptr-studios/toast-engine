@@ -7,17 +7,17 @@
 #include "sol/forward.hpp"
 #include "sol/state.hpp"
 
+#include <exception>
 #include <future>
 #include <optional>
 
 namespace toast {
 
 GameFlow::GameFlow() {
-	sol::state lua;
-
 	std::vector<std::string> world_list;
 
 	// Loading the lua file
+	sol::state lua;
 	lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
 
 	auto file = resource::Open("gameflow.lua");
@@ -70,15 +70,19 @@ void GameFlow::LoadWorld(unsigned world) {
 
 	if (m.currentLevel.has_value()) {
 		m.currentLevel->wait();
-		auto* scene = toast::World::Get(m.currentLevel->get());
-		scene->Nuke();
+		try {
+			auto* scene = toast::World::Get(m.currentLevel->get());
+			scene->Nuke();
+		} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 		m.currentLevel = std::nullopt;
 	}
 
 	if (m.nextLevel.has_value()) {
 		m.nextLevel->wait();
-		auto* scene = toast::World::Get(m.nextLevel->get());
-		scene->Nuke();
+		try {
+			auto* scene = toast::World::Get(m.nextLevel->get());
+			scene->Nuke();
+		} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 		m.nextLevel = std::nullopt;
 	}
 
@@ -123,15 +127,19 @@ void GameFlow::LoadLevel(unsigned world, unsigned level) {
 	}
 	m.currentLevel->wait();
 
-	auto* scene = toast::World::Get(m.currentLevel->get());
-	scene->enabled(true);
+	try {
+		auto* scene = toast::World::Get(m.currentLevel->get());
+		scene->enabled(true);
+	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 }
 
 void GameFlow::NextLevel() {
 	// Nuke Loaded Level
 	if (m.currentLevel.has_value()) {
-		auto* scene = toast::World::Get(m.currentLevel->get());
-		scene->Nuke();
+		try {
+			auto* scene = toast::World::Get(m.currentLevel->get());
+			scene->Nuke();
+		} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 		m.currentLevel = std::nullopt;
 	}
 
@@ -152,9 +160,11 @@ void GameFlow::NextLevel() {
 	m.currentLevel = std::move(m.nextLevel).or_else([this]() -> std::optional<std::shared_future<unsigned>> {
 		return toast::World::LoadScene(m.levelList[m.level.value()]);
 	});
-	m.currentLevel->wait();
-	auto* scene = toast::World::Get(m.currentLevel->get());
-	scene->enabled(true);
+	try {
+		m.currentLevel->wait();
+		auto* scene = toast::World::Get(m.currentLevel->get());
+		scene->enabled(true);
+	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 
 	// Pre Load Next Level :3
 	if (m.levelList.size() > m.level.value() + 1) {

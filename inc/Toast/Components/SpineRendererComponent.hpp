@@ -13,6 +13,8 @@
 #include "spine/AnimationStateData.h"
 #include "spine/Skeleton.h"
 
+#include <unordered_map>
+
 class SpineRendererComponent : public IRenderable {
 public:
 	REGISTER_TYPE(SpineRendererComponent);
@@ -46,8 +48,10 @@ public:
 			m_skeleton->updateWorldTransform(spine::Physics_None);
 		}
 	}
-	
-	spine::AnimationStateData* GetSkeletonData() const { return m_animationStateData.get(); }
+
+	spine::AnimationStateData* GetSkeletonData() const {
+		return m_animationStateData.get();
+	}
 
 	void Load(json_t j, bool force_create = true) override;
 	json_t Save() const override;
@@ -58,6 +62,7 @@ public:
 	void NextCrossFadeToDefault(float duration, int track = 0) const;
 	void CrossFadeToDefault(float duration, int track = 0) const;
 
+	// Bone helpers
 	glm::vec2 GetBoneLocalPosition(const std::string_view& boneName) const;
 	void SetBoneLocalPosition(const std::string_view& boneName, const glm::vec2& position) const;
 
@@ -72,8 +77,10 @@ public:
 	glm::vec2 GetBoneWorldPosition(const std::string_view& boneName);
 
 	/// @brief Converts a 2-D world-space position into spine root-local space.
-	/// Use this to drive IK targets from world coordinates (e.g. a crosshair actor).
 	glm::vec2 WorldPositionToSpineLocal(const glm::vec2& worldPos);
+
+	void ClearBoneLocalPositionOverride(const std::string_view& boneName) const;
+	void ClearAllBoneLocalPositionOverrides() const;
 
 	// Events
 	virtual void OnAnimationStart(const std::string_view& animationName, int track) { }
@@ -117,6 +124,8 @@ private:
 	// Cache last bound texture
 	unsigned int m_lastBoundTexture = 0;
 	static constexpr size_t INITIAL_VERT_RESERVE = 1024;
+
+	mutable std::unordered_map<std::string, glm::vec2> m_boneLocalOverrides;
 
 #ifdef TOAST_EDITOR
 	// Editor-only: UI state for animation preview
