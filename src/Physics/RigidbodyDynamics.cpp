@@ -51,11 +51,19 @@ void RbKinematics(Rigidbody* rb) {
 	}
 
 	// Apply gravity as acceleration over fixed timestep
-	const dvec2 gravity = PhysicsSystem::gravity() * (rb->hasGravity ? dvec2 { rb->gravityScale } : glm::dvec2{ 0.0, 0.0 });
+	dvec2 physics_system_gravity;
+	if (PhysicsSystem::gravity_type() != GravityType::POINT) {
+		physics_system_gravity = PhysicsSystem::gravity();
+	} else {
+		dvec2 dir = normalize(PhysicsSystem::gravity_point() - rb->GetPosition());
+		physics_system_gravity = dir * PhysicsSystem::gravity_point_scale();
+	}
+
+	const dvec2 gravity = physics_system_gravity * (rb->hasGravity ? dvec2 { rb->gravityScale } : glm::dvec2{ 0.0, 0.0 });
 	velocity += gravity * Time::fixed_delta();
 
 	// Apply drag over fixed timestep
-	const dvec2 damping = exp(dvec2 { -rb->drag } * Time::fixed_delta());
+	const dvec2 damping = exp(rb->hasDrag ? dvec2 { -rb->drag } : dvec2 { 0.0 } * Time::fixed_delta());
 	velocity *= damping;
 
 	if (all(lessThan(abs(velocity), dvec2 { rb->minimumVelocity }))) {

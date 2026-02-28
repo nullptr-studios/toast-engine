@@ -61,6 +61,7 @@ public:
 	// simulation
 	bool hasGravity = true;                    // Is the rb affected by gravity at all?
 	glm::vec2 gravityScale { 1.0, 1.0 };       // How much gravity affects the object
+	bool hasDrag = true;                       // Is the rb affected by drag at all?
 	glm::vec2 drag = { 0.5, 0.5 };             // Anisotropic drag for linear movement
 	double restitution = 0.6;                  // Bounciness
 	double restitutionThreshold = 0.5;         // Minimum speed for restitution to take place

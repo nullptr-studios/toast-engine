@@ -21,12 +21,42 @@ class ConvexCollider;
 class Trigger;
 class Line;
 
+#pragma once
+
+#include <string>
+#include <string_view>
+
+struct GravityType {
+	enum type {
+		DIRECTION,
+		POINT
+	};
+
+	type v;
+
+	GravityType(type value) : v(value) { }
+	GravityType(const GravityType& other) = default;
+
+	auto operator=(type value) -> GravityType&;
+	auto operator=(const GravityType& other) -> GravityType& = default;
+	bool operator==(type value) const;
+	bool operator==(const GravityType& other) const;
+
+	static auto FromString(std::string_view other) -> GravityType;
+	static auto ToString(GravityType other) -> std::string;
+};
+
+
 class PhysicsSystem {
 public:
+
 	static void start();
 	static void stop();
 
+	static auto gravity_type() -> GravityType;
 	static auto gravity() -> glm::dvec2;
+	static auto gravity_point() -> glm::dvec2;
+	static auto gravity_point_scale() -> double;
 	static auto pos_slop() -> double;
 	static auto pos_ptc() -> double;
 	static auto eps() -> double;
@@ -49,6 +79,10 @@ public:
 	static std::optional<RayResult> RayCollision(Line* ray, ColliderFlags flags);
 
 	static auto GetAllRigidbodies() -> std::list<Rigidbody*>&;
+
+	static void SetGravityType(GravityType type);
+	static void SetGravityPoint(glm::dvec2 pos);
+	static void SetGravityPointScale(double scale);
 
 	PhysicsSystem();
 	~PhysicsSystem();
@@ -74,7 +108,10 @@ private:
 		std::list<BoxRigidbody*> boxes;
 		std::list<ConvexCollider*> colliders;
 		std::list<Trigger*> triggers;
-		glm::dvec2 gravity = { 0.0, -9.81 };
+		GravityType gravityType = GravityType::DIRECTION;
+		glm::dvec2 gravityDirection = { 0.0, -9.81 };
+		glm::dvec2 gravityPoint = { 0.0, 0.0 };
+		double gravityPointScale = 1.0;
 		double positionCorrectionSlop = 1.0e-3;
 		double positionCorrectionPtc = 0.4;
 		double eps = 1.0e-6;

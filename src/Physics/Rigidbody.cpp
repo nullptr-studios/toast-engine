@@ -45,6 +45,7 @@ void Rigidbody::Inspector() {
 
 	ImGui::Checkbox("Has Gravity?", &hasGravity);
 	ImGui::DragScalarN("Gravity Scale", ImGuiDataType_Float, &gravityScale.x, 2);
+	ImGui::Checkbox("Has Drag?", &hasDrag);
 	ImGui::DragScalar("Restitution", ImGuiDataType_Double, &restitution);
 	ImGui::DragScalar("Restitution Threshold", ImGuiDataType_Double, &restitutionThreshold);
 	ImGui::DragScalarN("Drag", ImGuiDataType_Float, &drag.x, 2);
@@ -144,6 +145,7 @@ json_t Rigidbody::Save() const {
 	j["friction"] = friction;
 	j["hasGravity"] = hasGravity;
 	j["gravityScale"] = gravityScale;
+	j["hasDrag"] = hasDrag;
 	j["drag"] = drag;
 	j["restitution"] = restitution;
 	j["restitutionThreshold"] = restitutionThreshold;
@@ -173,6 +175,9 @@ void Rigidbody::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("gravityScale")) {
 		gravityScale = j["gravityScale"];
+	}
+	if (j.contains("hasDrag")) {
+		hasDrag = j["hasDrag"];
 	}
 	if (j.contains("drag")) {
 		drag = j["drag"];
