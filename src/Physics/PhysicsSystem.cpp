@@ -5,13 +5,13 @@
 #endif
 
 #include "PhysicsSystem.hpp"
-#include "Toast/Physics/Physics.hpp"
 
 #include "ConvexCollider.hpp"
 #include "Physics/BoxDynamics.hpp"
 #include "RigidbodyDynamics.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Physics/BoxRigidbody.hpp"
+#include "Toast/Physics/Physics.hpp"
 #include "Toast/Physics/PhysicsEvents.hpp"
 #include "Toast/Physics/Raycast.hpp"
 #include "Toast/Physics/Rigidbody.hpp"
@@ -62,10 +62,9 @@ bool GravityType::operator==(type value) const {
 	return v == value;
 }
 
-bool GravityType::operator==(const GravityType & other) const {
+bool GravityType::operator==(const GravityType& other) const {
 	return v == other.v;
 }
-
 
 #pragma region START_AND_END
 

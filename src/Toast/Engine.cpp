@@ -5,6 +5,7 @@
 #include "ForceLink.cpp"
 #include "Input/InputSystem.hpp"
 #include "Physics/PhysicsSystem.hpp"
+#include "Toast/CoroutineHandler.hpp"
 #include "Toast/Factory.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Objects/Scene.hpp"
@@ -18,7 +19,6 @@
 #include "Toast/Ui/Manager.hpp"
 #include "Toast/Window/Window.hpp"
 #include "Toast/World.hpp"
-#include "Toast/CoroutineHandler.hpp"
 
 #include <memory>
 

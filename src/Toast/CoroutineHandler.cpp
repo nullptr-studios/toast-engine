@@ -1,7 +1,7 @@
 #include "Toast/CoroutineHandler.hpp"
 
-#include <Toast/Profiler.hpp>
 #include <Toast/Log.hpp>
+#include <Toast/Profiler.hpp>
 
 namespace toast {
 

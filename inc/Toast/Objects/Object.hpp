@@ -152,7 +152,7 @@ public:
 	void SetRunLateTick(bool value) {
 		m_runsLateTick = value;
 	}
-	
+
 	void SetSerialize(bool value) {
 		m_serialize = value;
 	}

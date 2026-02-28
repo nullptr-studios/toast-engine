@@ -20,7 +20,7 @@ public:
 			free_objects.emplace(object_pool[i]);
 		}
 	}
-	
+
 	~Pool() {
 		RemoveAll();
 	}
@@ -60,7 +60,7 @@ private:
 			object_pool[i] = nullptr;
 		}
 	}
-	
+
 	toast::Scene* scene;
 	std::array<T*, size> object_pool;
 	std::stack<T*> free_objects;

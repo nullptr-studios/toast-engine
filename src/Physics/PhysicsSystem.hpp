@@ -35,6 +35,7 @@ struct GravityType {
 	type v;
 
 	GravityType(type value) : v(value) { }
+
 	GravityType(const GravityType& other) = default;
 
 	auto operator=(type value) -> GravityType&;
@@ -46,10 +47,8 @@ struct GravityType {
 	static auto ToString(GravityType other) -> std::string;
 };
 
-
 class PhysicsSystem {
 public:
-
 	static void start();
 	static void stop();
 

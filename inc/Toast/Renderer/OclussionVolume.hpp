@@ -14,7 +14,7 @@
 struct OclussionVolume {
 	float mRadius = 5.0f;
 
-	[[nodiscard]] 
+	[[nodiscard]]
 	inline bool isOnFrustumPlanes(const glm::mat4& worldTransform) const;
 
 	static inline bool isSphereOnPlanes(const glm::vec3& center, float radius);
@@ -23,8 +23,7 @@ struct OclussionVolume {
 	static inline bool isAABBOnPlanes(const renderer::BoundingBox& aabb);
 
 	/// Tests if a local-space AABB transformed by worldTransform is visible in the frustum
-	static inline bool
-	    isTransformedAABBOnPlanes(const renderer::BoundingBox& localAABB, const glm::mat4& worldTransform);
+	static inline bool isTransformedAABBOnPlanes(const renderer::BoundingBox& localAABB, const glm::mat4& worldTransform);
 
 	static inline void extractFrustumPlanesNormalized(const glm::mat4& clip, std::array<glm::vec4, 6>& outPlanes);
 };
@@ -111,7 +110,7 @@ inline bool OclussionVolume::isTransformedAABBOnPlanes(const renderer::BoundingB
 	}
 
 	const auto planes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes();
-	
+
 	// Transform AABB to world space by transforming all 8 corners and computing a new AABB
 	// This is a conservative approximation but fast
 	glm::vec3 corners[8] = {

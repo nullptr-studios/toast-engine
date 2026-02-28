@@ -473,7 +473,6 @@ json_t Collider::Save() const {
 }
 
 void Collider::Load(json_t j, bool propagate) {
-	
 	if (j.contains("points")) {
 		// we need to clear the points before loading so we don't have duplicates
 		if (!m.points.empty()) {

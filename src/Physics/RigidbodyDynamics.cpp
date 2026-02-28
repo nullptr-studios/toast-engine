@@ -59,7 +59,7 @@ void RbKinematics(Rigidbody* rb) {
 		physics_system_gravity = dir * PhysicsSystem::gravity_point_scale();
 	}
 
-	const dvec2 gravity = physics_system_gravity * (rb->hasGravity ? dvec2 { rb->gravityScale } : glm::dvec2{ 0.0, 0.0 });
+	const dvec2 gravity = physics_system_gravity * (rb->hasGravity ? dvec2 { rb->gravityScale } : glm::dvec2 { 0.0, 0.0 });
 	velocity += gravity * Time::fixed_delta();
 
 	// Apply drag over fixed timestep
@@ -235,7 +235,7 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 		}
 
 		// we DO NOT want to check with rigidbodies that are behind the normal
-		if (rb_proj < - 2 * rb->radius ) {
+		if (rb_proj < -2 * rb->radius) {
 			continue;
 		}
 
