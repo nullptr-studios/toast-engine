@@ -1,6 +1,7 @@
 var structtoast_1_1Engine_1_1Pimpl =
 [
     [ "audioSystem", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html#abe32c1abf3d7130a94830037a0253b50", null ],
+    [ "coroutineHandler", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html#a40859ae24023193867a008247b1733d4", null ],
     [ "eventSystem", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html#af784f7097ee4b47b6d613597d3dda148", null ],
     [ "factory", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html#adb80927e356fd489a32a928ab2b69d06", null ],
     [ "gameWorld", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html#a2eaaa1fdfda99c6a2583452ae437cdbb", null ],
@@ -11,5 +12,6 @@ var structtoast_1_1Engine_1_1Pimpl =
     [ "renderer", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html#a7ae1ee5ac62a4a67f9cd49bf4648c11b", null ],
     [ "resourceManager", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html#af6a70fe3f82c6c330f279ecab5427c2e", null ],
     [ "time", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html#ad5ff4b2beabac0f1eea29877a9945b50", null ],
+    [ "uiSystem", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html#a82ba024494b3a3f52121cd44ee6b387d", null ],
     [ "window", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html#a0dd134cf7c0f5a2b8d23111b23c259dd", null ]
 ];

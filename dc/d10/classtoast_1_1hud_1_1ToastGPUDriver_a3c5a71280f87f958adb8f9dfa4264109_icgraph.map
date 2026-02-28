@@ -1,0 +1,8 @@
+<map id="toast::hud::ToastGPUDriver::ResolveIfNeeded" name="toast::hud::ToastGPUDriver::ResolveIfNeeded">
+<area shape="rect" id="node1" title=" " alt="" coords="741,69,939,109"/>
+<area shape="rect" id="node2" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a8e81d34a3e4bf60590efceaff1b9b5c3" title="Bind a texture to a specific texture unit." alt="" coords="496,5,693,45"/>
+<area shape="rect" id="node5" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a0909e51b7f4a50a47d89627f426926a8" title="Bind an Ultralight texture for use in rendering." alt="" coords="496,69,693,109"/>
+<area shape="rect" id="node6" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#ab274c979478701b452289a8ee8b4ac00" title="Get the OpenGL texture ID for an Ultralight texture, resolving MSAA if needed." alt="" coords="496,133,693,173"/>
+<area shape="rect" id="node3" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a9295042a92ae1b7bdbd5c14411155448" title=" " alt="" coords="251,5,448,45"/>
+<area shape="rect" id="node4" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#ab5de27477a15eed382a9210031b6f749" title="Execute all pending draw commands." alt="" coords="5,5,203,45"/>
+</map>

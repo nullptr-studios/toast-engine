@@ -450,69 +450,45 @@ $(document).ready(function(){initNavTree('d6/d0f/DebugDrawLayer_8cpp_source.html
 <div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span>      glm::vec3 ptA = glm::vec3(dir ? -gridSize : f, 0.f, dir ? f : -gridSize);</div>
 <div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>      glm::vec3 ptB = glm::vec3(dir ? gridSize : f, 0.f, dir ? f : gridSize);</div>
 <div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>      <span class="keywordtype">bool</span> visible = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>      <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; 6; i++) {</div>
-<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>        <span class="comment">// if (!OclussionVolume::isSphereOnPlanes(IRendererBase::GetInstance()-&gt;GetFrustumPlanes(), ptA, 0)</span></div>
-<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>        <span class="comment">//  &amp;&amp; !OclussionVolume::isSphereOnPlanes(IRendererBase::GetInstance()-&gt;GetFrustumPlanes(), ptB, 0))</span></div>
-<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>        <span class="comment">//{</span></div>
-<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span>        <span class="comment">//  visible = false;</span></div>
-<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>        <span class="comment">//  break;</span></div>
-<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span>        <span class="comment">// }</span></div>
-<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>        <span class="comment">// if (dA &gt; 0.f &amp;&amp; dB &gt; 0.f)</span></div>
-<div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span>        <span class="comment">//{</span></div>
-<div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span>        <span class="comment">//  continue;</span></div>
-<div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span>        <span class="comment">// }</span></div>
-<div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span>        <span class="comment">// if (dA &lt; 0.f)</span></div>
-<div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span>        <span class="comment">//{</span></div>
-<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>        <span class="comment">//  float len = fabsf(dA - dB);</span></div>
-<div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>        <span class="comment">//  float t = fabsf(dA) / len;</span></div>
-<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>        <span class="comment">//  ptA.Lerp(ptB, t);</span></div>
-<div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>        <span class="comment">// }</span></div>
-<div class="line"><a id="l00376" name="l00376"></a><span class="lineno">  376</span>        <span class="comment">// if (dB &lt; 0.f)</span></div>
-<div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>        <span class="comment">//{</span></div>
-<div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span>        <span class="comment">//  float len = fabsf(dB - dA);</span></div>
-<div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span>        <span class="comment">//  float t = fabsf(dB) / len;</span></div>
-<div class="line"><a id="l00380" name="l00380"></a><span class="lineno">  380</span>        <span class="comment">//  ptB.Lerp(ptA, t);</span></div>
-<div class="line"><a id="l00381" name="l00381"></a><span class="lineno">  381</span>        <span class="comment">// }</span></div>
-<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>      }</div>
-<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>      <span class="keywordflow">if</span> (visible) {</div>
-<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span><span class="preprocessor">#ifdef TOAST_EDITOR</span></div>
-<div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>        ImU32 col = IM_COL32(0x80, 0x80, 0x80, 0xFF);</div>
-<div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span>        col = (fmodf(fabsf(f), 10.f) &lt; FLT_EPSILON) ? IM_COL32(0x90, 0x90, 0x90, 0xFF) : col;</div>
-<div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span>        col = (fabsf(f) &lt; FLT_EPSILON) ? IM_COL32(0x40, 0x40, 0x40, 0xFF) : col;</div>
-<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span> </div>
-<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span>        <span class="keywordtype">float</span> thickness = 1.f;</div>
-<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>        thickness = (fmodf(fabsf(f), 10.f) &lt; FLT_EPSILON) ? 1.5f : thickness;</div>
-<div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span>        thickness = (fabsf(f) &lt; FLT_EPSILON) ? 2.3f : thickness;</div>
-<div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span> </div>
-<div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span>        ptA = glm::vec3(rot * glm::vec4(ptA, 1.f));</div>
-<div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span>        ptB = glm::vec3(rot * glm::vec4(ptB, 1.f));</div>
-<div class="line"><a id="l00395" name="l00395"></a><span class="lineno">  395</span> </div>
-<div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span>        <a class="code hl_function" href="../../d0/db9/namespacerenderer.html#a5d7c904d4b6dfd090a787bfd774d0308">renderer::DebugLine</a>(</div>
-<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span>            ptA,</div>
-<div class="line"><a id="l00398" name="l00398"></a><span class="lineno">  398</span>            ptB,</div>
-<div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span>            glm::vec4(</div>
-<div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span>                <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>((col &amp; 0xFF0000) &gt;&gt; 16) / 255.f,</div>
-<div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span>                <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>((col &amp; 0x00FF00) &gt;&gt; 8) / 255.f,</div>
-<div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span>                <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>(col &amp; 0x0000FF) / 255.f,</div>
-<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>                <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>((col &amp; 0xFF000000) &gt;&gt; 24) / 255.f</div>
-<div class="line"><a id="l00404" name="l00404"></a><span class="lineno">  404</span>            )</div>
-<div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span>        );</div>
-<div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00407" name="l00407"></a><span class="lineno">  407</span>      }</div>
-<div class="line"><a id="l00408" name="l00408"></a><span class="lineno">  408</span>    }</div>
-<div class="line"><a id="l00409" name="l00409"></a><span class="lineno">  409</span>  }</div>
-<div class="line"><a id="l00410" name="l00410"></a><span class="lineno">  410</span>}</div>
-<div class="line"><a id="l00411" name="l00411"></a><span class="lineno">  411</span> </div>
-<div class="line"><a id="l00412" name="l00412"></a><span class="lineno"><a class="line" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a6cee472319d03837d02097653269e053">  412</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a6cee472319d03837d02097653269e053">DebugDrawLayer::DrawFrustum</a>(std::array&lt;glm::vec4, 6&gt; planes) {</div>
-<div class="line"><a id="l00413" name="l00413"></a><span class="lineno">  413</span>  <span class="comment">// TODO</span></div>
-<div class="line"><a id="l00414" name="l00414"></a><span class="lineno">  414</span>}</div>
-<div class="line"><a id="l00415" name="l00415"></a><span class="lineno">  415</span> </div>
-<div class="line"><a id="l00416" name="l00416"></a><span class="lineno"><a class="line" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a24967d94b4ae369f2747bca6ce8e20a1">  416</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a24967d94b4ae369f2747bca6ce8e20a1">DebugDrawLayer::Clear</a>() {</div>
-<div class="line"><a id="l00417" name="l00417"></a><span class="lineno">  417</span>  <a class="code hl_variable" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#ac2f7ba3559d0693cbfa4d0f2c20cd75f">m_vertices</a>.clear();</div>
-<div class="line"><a id="l00418" name="l00418"></a><span class="lineno">  418</span>  <a class="code hl_variable" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#ad654eaee25bab6d36f1c42e5508890f9">m_filledVertices</a>.clear();</div>
-<div class="line"><a id="l00419" name="l00419"></a><span class="lineno">  419</span>}</div>
-<div class="line"><a id="l00420" name="l00420"></a><span class="lineno">  420</span> </div>
-<div class="line"><a id="l00421" name="l00421"></a><span class="lineno">  421</span>}</div>
+<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>      <span class="keywordflow">if</span> (visible) {</div>
+<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span><span class="preprocessor">#ifdef TOAST_EDITOR</span></div>
+<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>        ImU32 col = IM_COL32(0x80, 0x80, 0x80, 0xFF);</div>
+<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>        col = (fmodf(fabsf(f), 10.f) &lt; FLT_EPSILON) ? IM_COL32(0x90, 0x90, 0x90, 0xFF) : col;</div>
+<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span>        col = (fabsf(f) &lt; FLT_EPSILON) ? IM_COL32(0x40, 0x40, 0x40, 0xFF) : col;</div>
+<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span> </div>
+<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span>        <span class="keywordtype">float</span> thickness = 1.f;</div>
+<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>        thickness = (fmodf(fabsf(f), 10.f) &lt; FLT_EPSILON) ? 1.5f : thickness;</div>
+<div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span>        thickness = (fabsf(f) &lt; FLT_EPSILON) ? 2.3f : thickness;</div>
+<div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span> </div>
+<div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span>        ptA = glm::vec3(rot * glm::vec4(ptA, 1.f));</div>
+<div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span>        ptB = glm::vec3(rot * glm::vec4(ptB, 1.f));</div>
+<div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span> </div>
+<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>        <a class="code hl_function" href="../../d0/db9/namespacerenderer.html#a5d7c904d4b6dfd090a787bfd774d0308">renderer::DebugLine</a>(</div>
+<div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>            ptA,</div>
+<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>            ptB,</div>
+<div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>            glm::vec4(</div>
+<div class="line"><a id="l00376" name="l00376"></a><span class="lineno">  376</span>                <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>((col &amp; 0xFF0000) &gt;&gt; 16) / 255.f,</div>
+<div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>                <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>((col &amp; 0x00FF00) &gt;&gt; 8) / 255.f,</div>
+<div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span>                <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>(col &amp; 0x0000FF) / 255.f,</div>
+<div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span>                <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>((col &amp; 0xFF000000) &gt;&gt; 24) / 255.f</div>
+<div class="line"><a id="l00380" name="l00380"></a><span class="lineno">  380</span>            )</div>
+<div class="line"><a id="l00381" name="l00381"></a><span class="lineno">  381</span>        );</div>
+<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>      }</div>
+<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>    }</div>
+<div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>  }</div>
+<div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span>}</div>
+<div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span> </div>
+<div class="line"><a id="l00388" name="l00388"></a><span class="lineno"><a class="line" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a6cee472319d03837d02097653269e053">  388</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a6cee472319d03837d02097653269e053">DebugDrawLayer::DrawFrustum</a>(std::array&lt;glm::vec4, 6&gt; planes) {</div>
+<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span>  <span class="comment">// TODO</span></div>
+<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>}</div>
+<div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span> </div>
+<div class="line"><a id="l00392" name="l00392"></a><span class="lineno"><a class="line" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a24967d94b4ae369f2747bca6ce8e20a1">  392</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a24967d94b4ae369f2747bca6ce8e20a1">DebugDrawLayer::Clear</a>() {</div>
+<div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span>  <a class="code hl_variable" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#ac2f7ba3559d0693cbfa4d0f2c20cd75f">m_vertices</a>.clear();</div>
+<div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span>  <a class="code hl_variable" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#ad654eaee25bab6d36f1c42e5508890f9">m_filledVertices</a>.clear();</div>
+<div class="line"><a id="l00395" name="l00395"></a><span class="lineno">  395</span>}</div>
+<div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span> </div>
+<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span>}</div>
 <div class="ttc" id="aDebugDrawLayer_8hpp_html"><div class="ttname"><a href="../../d7/d47/DebugDrawLayer_8hpp.html">DebugDrawLayer.hpp</a></div></div>
 <div class="ttc" id="aIRendererBase_8hpp_html"><div class="ttname"><a href="../../d7/dcb/IRendererBase_8hpp.html">IRendererBase.hpp</a></div><div class="ttdoc">Base interface for all renderer implementations.</div></div>
 <div class="ttc" id="aOclussionVolume_8hpp_html"><div class="ttname"><a href="../../de/dd7/OclussionVolume_8hpp.html">OclussionVolume.hpp</a></div></div>
@@ -521,7 +497,7 @@ $(document).ready(function(){initNavTree('d6/d0f/DebugDrawLayer_8cpp_source.html
 <div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a09b436af6f83b23ea33296d9c5f8bf04"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a09b436af6f83b23ea33296d9c5f8bf04">renderer::DebugDrawLayer::m_filledVao</a></div><div class="ttdeci">GLuint m_filledVao</div><div class="ttdef"><b>Definition:</b> <a href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00085">DebugDrawLayer.hpp:85</a></div></div>
 <div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a104fa3bfb3992e953177ef3de67aea7f"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a104fa3bfb3992e953177ef3de67aea7f">renderer::DebugDrawLayer::OnDetach</a></div><div class="ttdeci">void OnDetach() override</div><div class="ttdoc">Called when the layer is removed from the stack.</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d0f/DebugDrawLayer_8cpp_source.html#l00075">DebugDrawLayer.cpp:75</a></div></div>
 <div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a17f63184e4cb1a7de6cd055d8fe0e0b1"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a17f63184e4cb1a7de6cd055d8fe0e0b1">renderer::DebugDrawLayer::DrawLine</a></div><div class="ttdeci">void DrawLine(const glm::vec2 &amp;a, const glm::vec2 &amp;b, const glm::vec4 &amp;color={ 1, 1, 1, 1 })</div><div class="ttdoc">Draws a simple line.</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d0f/DebugDrawLayer_8cpp_source.html#l00150">DebugDrawLayer.cpp:150</a></div></div>
-<div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a24967d94b4ae369f2747bca6ce8e20a1"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a24967d94b4ae369f2747bca6ce8e20a1">renderer::DebugDrawLayer::Clear</a></div><div class="ttdeci">void Clear()</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d0f/DebugDrawLayer_8cpp_source.html#l00416">DebugDrawLayer.cpp:416</a></div></div>
+<div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a24967d94b4ae369f2747bca6ce8e20a1"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a24967d94b4ae369f2747bca6ce8e20a1">renderer::DebugDrawLayer::Clear</a></div><div class="ttdeci">void Clear()</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d0f/DebugDrawLayer_8cpp_source.html#l00392">DebugDrawLayer.cpp:392</a></div></div>
 <div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a2ad015abba3e6aea39dc584707b88c2e"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a2ad015abba3e6aea39dc584707b88c2e">renderer::DebugDrawLayer::DrawPoly</a></div><div class="ttdeci">void DrawPoly(const std::vector&lt; glm::vec2 &gt; &amp;points, const glm::vec4 &amp;color={ 1, 1, 1, 1 }, bool closed=true, bool filled=false)</div><div class="ttdoc">Draws a polygon shape.</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d0f/DebugDrawLayer_8cpp_source.html#l00289">DebugDrawLayer.cpp:289</a></div></div>
 <div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a2b7407b439f4ba31cba8feecbd9a3f86"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a2b7407b439f4ba31cba8feecbd9a3f86">renderer::DebugDrawLayer::m_vao</a></div><div class="ttdeci">GLuint m_vao</div><div class="ttdef"><b>Definition:</b> <a href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00084">DebugDrawLayer.hpp:84</a></div></div>
 <div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a44e5038d639ed509f9903e51264dd66a"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a44e5038d639ed509f9903e51264dd66a">renderer::DebugDrawLayer::m_filledVbo</a></div><div class="ttdeci">GLuint m_filledVbo</div><div class="ttdef"><b>Definition:</b> <a href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00085">DebugDrawLayer.hpp:85</a></div></div>
@@ -530,7 +506,7 @@ $(document).ready(function(){initNavTree('d6/d0f/DebugDrawLayer_8cpp_source.html
 <div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a694003162c1279fbfcffd60495faa5dd"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a694003162c1279fbfcffd60495faa5dd">renderer::DebugDrawLayer::Flush</a></div><div class="ttdeci">void Flush() const</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d0f/DebugDrawLayer_8cpp_source.html#l00106">DebugDrawLayer.cpp:106</a></div></div>
 <div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a6a642122db082356be6138e874bfa198"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a6a642122db082356be6138e874bfa198">renderer::DebugDrawLayer::m_enabled</a></div><div class="ttdeci">bool m_enabled</div><div class="ttdef"><b>Definition:</b> <a href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00094">DebugDrawLayer.hpp:94</a></div></div>
 <div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a6c4c932bf685c4866987fec44e0b3e00"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a6c4c932bf685c4866987fec44e0b3e00">renderer::DebugDrawLayer::m_renderer</a></div><div class="ttdeci">IRendererBase * m_renderer</div><div class="ttdef"><b>Definition:</b> <a href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00088">DebugDrawLayer.hpp:88</a></div></div>
-<div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a6cee472319d03837d02097653269e053"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a6cee472319d03837d02097653269e053">renderer::DebugDrawLayer::DrawFrustum</a></div><div class="ttdeci">void DrawFrustum(std::array&lt; glm::vec4, 6 &gt; planes)</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d0f/DebugDrawLayer_8cpp_source.html#l00412">DebugDrawLayer.cpp:412</a></div></div>
+<div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a6cee472319d03837d02097653269e053"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a6cee472319d03837d02097653269e053">renderer::DebugDrawLayer::DrawFrustum</a></div><div class="ttdeci">void DrawFrustum(std::array&lt; glm::vec4, 6 &gt; planes)</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d0f/DebugDrawLayer_8cpp_source.html#l00388">DebugDrawLayer.cpp:388</a></div></div>
 <div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a6dcbe857c8287010ffd272a5000f0a07"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a6dcbe857c8287010ffd272a5000f0a07">renderer::DebugDrawLayer::OnRender</a></div><div class="ttdeci">void OnRender() override</div><div class="ttdoc">Called every frame to render the layer.</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d0f/DebugDrawLayer_8cpp_source.html#l00079">DebugDrawLayer.cpp:79</a></div></div>
 <div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a6f5b5f3583b47a5bb2014ee5d3662db2"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a6f5b5f3583b47a5bb2014ee5d3662db2">renderer::DebugDrawLayer::m_vbo</a></div><div class="ttdeci">GLuint m_vbo</div><div class="ttdef"><b>Definition:</b> <a href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00084">DebugDrawLayer.hpp:84</a></div></div>
 <div class="ttc" id="aclassrenderer_1_1DebugDrawLayer_html_a927fddc7c6b3766a2067964fe6b62aa6"><div class="ttname"><a href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#a927fddc7c6b3766a2067964fe6b62aa6">renderer::DebugDrawLayer::DrawCircle</a></div><div class="ttdeci">void DrawCircle(const glm::vec2 &amp;center, float radius, const glm::vec4 &amp;color={ 1, 1, 1, 1 }, int segments=0, bool filled=false)</div><div class="ttdoc">Draws a circle.</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d0f/DebugDrawLayer_8cpp_source.html#l00225">DebugDrawLayer.cpp:225</a></div></div>

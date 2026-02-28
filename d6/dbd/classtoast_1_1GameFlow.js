@@ -5,6 +5,7 @@ var classtoast_1_1GameFlow =
     [ "LoadWorld", "d6/dbd/classtoast_1_1GameFlow.html#ad929acb758d90809c68ba2362d8e7ed4", null ],
     [ "NextLevel", "d6/dbd/classtoast_1_1GameFlow.html#ad20bf8c23fc5cc9ae04746532256cf62", null ],
     [ "NextWorld", "d6/dbd/classtoast_1_1GameFlow.html#a7ddf33d4fb36f377da046a61650d9d16", null ],
+    [ "ValidateLevels", "d6/dbd/classtoast_1_1GameFlow.html#a750359cd15c44e5a7aa3f55aa7035d4d", null ],
     [ "currentLevel", "d6/dbd/classtoast_1_1GameFlow.html#a74a299a933dc1b44cb8e33e206f5986d", null ],
     [ "level", "d6/dbd/classtoast_1_1GameFlow.html#a63e5d94c76f780fba4b14b9c0249c68d", null ],
     [ "levelList", "d6/dbd/classtoast_1_1GameFlow.html#ac3226f635c917059b3f75ab7cdd715a9", null ],

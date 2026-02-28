@@ -10,6 +10,8 @@ var searchData=
   ['component_2ehpp_7',['Component.hpp',['../df/d1f/Component_8hpp.html',1,'']]],
   ['convexcollider_2ecpp_8',['ConvexCollider.cpp',['../d6/da3/ConvexCollider_8cpp.html',1,'']]],
   ['convexcollider_2ehpp_9',['ConvexCollider.hpp',['../de/db8/ConvexCollider_8hpp.html',1,'']]],
-  ['crashhandler_2ecpp_10',['CrashHandler.cpp',['../db/de7/CrashHandler_8cpp.html',1,'']]],
-  ['crashhandler_2ehpp_11',['CrashHandler.hpp',['../da/d0d/CrashHandler_8hpp.html',1,'']]]
+  ['coroutinehandler_2ecpp_10',['CoroutineHandler.cpp',['../d7/d7f/CoroutineHandler_8cpp.html',1,'']]],
+  ['coroutinehandler_2ehpp_11',['CoroutineHandler.hpp',['../da/d90/CoroutineHandler_8hpp.html',1,'']]],
+  ['crashhandler_2ecpp_12',['CrashHandler.cpp',['../db/de7/CrashHandler_8cpp.html',1,'']]],
+  ['crashhandler_2ehpp_13',['CrashHandler.hpp',['../da/d0d/CrashHandler_8hpp.html',1,'']]]
 ];

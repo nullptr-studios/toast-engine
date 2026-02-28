@@ -1,5 +1,6 @@
 var namespacetoast =
 [
+    [ "hud", "db/d28/namespacetoast_1_1hud.html", "db/d28/namespacetoast_1_1hud" ],
     [ "memory", "d0/de3/namespacetoast_1_1memory.html", "d0/de3/namespacetoast_1_1memory" ],
     [ "Actor", "d8/d92/classtoast_1_1Actor.html", "d8/d92/classtoast_1_1Actor" ],
     [ "AtlasSpriteComponent", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html", "d3/dd3/classtoast_1_1AtlasSpriteComponent" ],
@@ -7,6 +8,9 @@ var namespacetoast =
     [ "BadScene", "d9/da2/classtoast_1_1BadScene.html", "d9/da2/classtoast_1_1BadScene" ],
     [ "Camera", "d8/db9/classtoast_1_1Camera.html", "d8/db9/classtoast_1_1Camera" ],
     [ "Component", "d3/d63/classtoast_1_1Component.html", "d3/d63/classtoast_1_1Component" ],
+    [ "CoroutineHandler", "d7/da4/classtoast_1_1CoroutineHandler.html", "d7/da4/classtoast_1_1CoroutineHandler" ],
+    [ "CoroutineInfo", "df/d4c/structtoast_1_1CoroutineInfo.html", "df/d4c/structtoast_1_1CoroutineInfo" ],
+    [ "CoroutineTask", "da/d0d/structtoast_1_1CoroutineTask.html", "da/d0d/structtoast_1_1CoroutineTask" ],
     [ "Engine", "d9/d4f/classtoast_1_1Engine.html", "d9/d4f/classtoast_1_1Engine" ],
     [ "Factory", "d9/de7/classtoast_1_1Factory.html", "d9/de7/classtoast_1_1Factory" ],
     [ "GameFlow", "d6/dbd/classtoast_1_1GameFlow.html", "d6/dbd/classtoast_1_1GameFlow" ],
@@ -36,6 +40,7 @@ var namespacetoast =
     [ "TransformComponent", "d0/dd9/classtoast_1_1TransformComponent.html", "d0/dd9/classtoast_1_1TransformComponent" ],
     [ "TransformImpl", "d8/d63/classtoast_1_1TransformImpl.html", "d8/d63/classtoast_1_1TransformImpl" ],
     [ "Version", "d1/df3/structtoast_1_1Version.html", "d1/df3/structtoast_1_1Version" ],
+    [ "WaitSeconds", "d6/d44/structtoast_1_1WaitSeconds.html", "d6/d44/structtoast_1_1WaitSeconds" ],
     [ "Window", "d8/d8e/classtoast_1_1Window.html", "d8/d8e/classtoast_1_1Window" ],
     [ "WindowException", "de/db0/classtoast_1_1WindowException.html", "de/db0/classtoast_1_1WindowException" ],
     [ "WindowProps", "dc/d26/structtoast_1_1WindowProps.html", "dc/d26/structtoast_1_1WindowProps" ],

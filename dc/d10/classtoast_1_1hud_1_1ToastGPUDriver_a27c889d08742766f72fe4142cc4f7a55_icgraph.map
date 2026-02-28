@@ -1,0 +1,12 @@
+<map id="toast::hud::ToastGPUDriver::name" name="toast::hud::ToastGPUDriver::name">
+<area shape="rect" id="node1" title="Get the driver name." alt="" coords="987,165,1184,205"/>
+<area shape="rect" id="node2" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a8ec4cbc5ba4383020f76f4542e67f16f" title=" " alt="" coords="741,5,939,45"/>
+<area shape="rect" id="node3" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a76dd6e6c303290ac55050e08d386ff06" title=" " alt="" coords="741,69,939,109"/>
+<area shape="rect" id="node4" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#ab056a1fe4d60a031aec062226b18125d" title=" " alt="" coords="741,133,939,173"/>
+<area shape="rect" id="node8" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#af4b144078ae3a7978a815c3a1d3369cb" title=" " alt="" coords="741,197,939,237"/>
+<area shape="rect" id="node9" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#ad1dfeb5bf84660403518ea8d835a09a3" title=" " alt="" coords="741,261,939,301"/>
+<area shape="rect" id="node10" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a2f66ade7eb90115e322bb60d4edf4a2f" title=" " alt="" coords="741,325,939,365"/>
+<area shape="rect" id="node5" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a9a3d7095948319932a30115a144b9390" title=" " alt="" coords="496,229,693,269"/>
+<area shape="rect" id="node6" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a9295042a92ae1b7bdbd5c14411155448" title=" " alt="" coords="251,229,448,269"/>
+<area shape="rect" id="node7" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#ab5de27477a15eed382a9210031b6f749" title="Execute all pending draw commands." alt="" coords="5,229,203,269"/>
+</map>

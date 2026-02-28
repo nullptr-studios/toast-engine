@@ -1,7 +1,7 @@
 <map id="renderer::BoundingBox::expand" name="renderer::BoundingBox::expand">
 <area shape="rect" id="node1" title="Expands the bounding box to include a point." alt="" coords="568,69,739,109"/>
 <area shape="rect" id="node2" href="$d4/d8c/classrenderer_1_1Mesh.html#a48c0a153b8a4feb05caa9a254868a0fa" title=" " alt="" coords="291,21,514,61"/>
-<area shape="rect" id="node4" href="$d8/dfe/structOclussionVolume.html#abb794dcccf5b6ec2839b644398f95558" title="Tests if a local&#45;space AABB transformed by worldTransform is visible in the frustum." alt="" coords="285,101,520,141"/>
+<area shape="rect" id="node4" href="$d8/dfe/structOclussionVolume.html#aa91067e0feb7412dcff8679305ee9ee7" title="Tests if a local&#45;space AABB transformed by worldTransform is visible in the frustum." alt="" coords="285,101,520,141"/>
 <area shape="rect" id="node3" href="$dd/d75/classAtlasRendererComponent.html#a822310b22be51f46fb04d4e23eb62cdc" title=" " alt="" coords="27,5,216,45"/>
 <area shape="rect" id="node5" href="$dd/d75/classAtlasRendererComponent.html#ab1dea9839d0075cb1a3fc718ca7f7d16" title="Called during the geometry pass to render this object." alt="" coords="27,69,216,109"/>
 <area shape="rect" id="node6" href="$d0/dc7/classSpineRendererComponent.html#ac7c57651f7368b20c302455ef4712c5e" title="Called during the geometry pass to render this object." alt="" coords="25,133,217,173"/>

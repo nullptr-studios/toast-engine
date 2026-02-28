@@ -1,0 +1,16 @@
+<map id="toast::hud::ToastGPUContext::msaa_enabled" name="toast::hud::ToastGPUContext::msaa_enabled">
+<area shape="rect" id="node1" title="Check if MSAA is enabled." alt="" coords="1060,124,1268,164"/>
+<area shape="rect" id="node2" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a7c6b7b65191f548dd07ac09ac069ec3a" title="Bind a render buffer (FBO) for rendering." alt="" coords="496,5,693,45"/>
+<area shape="rect" id="node6" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#adcfbdf02696ed4e3bda415a7643d04ce" title=" " alt="" coords="741,7,1012,47"/>
+<area shape="rect" id="node7" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#ae1b3587b9eb0b052e4c774fe146061cf" title=" " alt="" coords="778,255,975,295"/>
+<area shape="rect" id="node10" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a28a9d123026ee59722eecf2794b1ced7" title=" " alt="" coords="778,188,975,228"/>
+<area shape="rect" id="node11" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a3c5a71280f87f958adb8f9dfa4264109" title=" " alt="" coords="778,124,975,164"/>
+<area shape="rect" id="node3" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#abae932af9fa97fd49617e9b3a8071ecf" title="Clear a render buffer." alt="" coords="251,5,448,45"/>
+<area shape="rect" id="node5" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a9295042a92ae1b7bdbd5c14411155448" title=" " alt="" coords="251,69,448,109"/>
+<area shape="rect" id="node4" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#ab5de27477a15eed382a9210031b6f749" title="Execute all pending draw commands." alt="" coords="5,37,203,77"/>
+<area shape="rect" id="node8" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#abe2c5707cd4fdb4ac4be1d7abf22d991" title=" " alt="" coords="496,261,693,301"/>
+<area shape="rect" id="node9" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a5f6205f7eecf3587af3976564ed634fd" title=" " alt="" coords="251,261,448,301"/>
+<area shape="rect" id="node12" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a8e81d34a3e4bf60590efceaff1b9b5c3" title="Bind a texture to a specific texture unit." alt="" coords="496,69,693,109"/>
+<area shape="rect" id="node13" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a0909e51b7f4a50a47d89627f426926a8" title="Bind an Ultralight texture for use in rendering." alt="" coords="496,133,693,173"/>
+<area shape="rect" id="node14" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#ab274c979478701b452289a8ee8b4ac00" title="Get the OpenGL texture ID for an Ultralight texture, resolving MSAA if needed." alt="" coords="496,197,693,237"/>
+</map>

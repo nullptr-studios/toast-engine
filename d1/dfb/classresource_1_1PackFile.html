@@ -114,8 +114,10 @@ Collaboration diagram for resource::PackFile:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a307e2952ca89116291d05dc08718d090"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/dfb/classresource_1_1PackFile.html#a307e2952ca89116291d05dc08718d090">Open</a> (const std::string &amp;pack_path)</td></tr>
-<tr class="separator:a307e2952ca89116291d05dc08718d090"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2649a22cca37debbc545f718fde4289"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/dfb/classresource_1_1PackFile.html#aa2649a22cca37debbc545f718fde4289">Open</a> (const std::string_view &amp;pack_path)</td></tr>
+<tr class="separator:aa2649a22cca37debbc545f718fde4289"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06a20785fec85e7552e90eb823223b3b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/dfb/classresource_1_1PackFile.html#a06a20785fec85e7552e90eb823223b3b">FileExists</a> (const std::string_view raw_path)</td></tr>
+<tr class="separator:a06a20785fec85e7552e90eb823223b3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af43122d3f8ab2077df37d9f8444b98cd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/dfb/classresource_1_1PackFile.html#af43122d3f8ab2077df37d9f8444b98cd">Close</a> ()</td></tr>
 <tr class="separator:af43122d3f8ab2077df37d9f8444b98cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a856d4a3280d926d7e168a3fcec1d6936"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/dfb/classresource_1_1PackFile.html#a856d4a3280d926d7e168a3fcec1d6936">ReadFile</a> (std::string_view raw_path, std::vector&lt; uint8_t &gt; &amp;out)</td></tr>
@@ -147,7 +149,7 @@ Private Attributes</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00046">46</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00047">47</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="af43122d3f8ab2077df37d9f8444b98cd" name="af43122d3f8ab2077df37d9f8444b98cd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af43122d3f8ab2077df37d9f8444b98cd">&#9670;&#160;</a></span>Close()</h2>
@@ -172,21 +174,59 @@ Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00116">116</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00139">139</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/dfb/classresource_1_1PackFile_af43122d3f8ab2077df37d9f8444b98cd_icgraph.png" border="0" usemap="#ad1/dfb/classresource_1_1PackFile_af43122d3f8ab2077df37d9f8444b98cd_icgraph" alt=""/></div>
 <map name="ad1/dfb/classresource_1_1PackFile_af43122d3f8ab2077df37d9f8444b98cd_icgraph" id="ad1/dfb/classresource_1_1PackFile_af43122d3f8ab2077df37d9f8444b98cd_icgraph">
-<area shape="rect" title=" " alt="" coords="256,5,395,45"/>
+<area shape="rect" title=" " alt="" coords="529,5,668,45"/>
+<area shape="rect" href="../../df/d71/classToastFileSystem.html#a0b5c9654be83209ca4bb8a5901261750" title=" " alt="" coords="256,13,481,38"/>
 <area shape="rect" href="../../d9/d07/classresource_1_1ResourceManager.html#afd3e603ff5a935c34127d0ddedf1f80e" title=" " alt="" coords="5,5,208,45"/>
 </map>
 </div>
 
 </div>
 </div>
-<a id="a307e2952ca89116291d05dc08718d090" name="a307e2952ca89116291d05dc08718d090"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a307e2952ca89116291d05dc08718d090">&#9670;&#160;</a></span>Open()</h2>
+<a id="a06a20785fec85e7552e90eb823223b3b" name="a06a20785fec85e7552e90eb823223b3b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a06a20785fec85e7552e90eb823223b3b">&#9670;&#160;</a></span>FileExists()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool resource::PackFile::FileExists </td>
+          <td>(</td>
+          <td class="paramtype">const std::string_view&#160;</td>
+          <td class="paramname"><em>raw_path</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00117">117</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d1/dfb/classresource_1_1PackFile_a06a20785fec85e7552e90eb823223b3b_icgraph.png" border="0" usemap="#ad1/dfb/classresource_1_1PackFile_a06a20785fec85e7552e90eb823223b3b_icgraph" alt=""/></div>
+<map name="ad1/dfb/classresource_1_1PackFile_a06a20785fec85e7552e90eb823223b3b_icgraph" id="ad1/dfb/classresource_1_1PackFile_a06a20785fec85e7552e90eb823223b3b_icgraph">
+<area shape="rect" title=" " alt="" coords="252,5,391,45"/>
+<area shape="rect" href="../../df/d71/classToastFileSystem.html#a1a605828e760ec7af20154a00d616270" title=" " alt="" coords="5,13,204,38"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="aa2649a22cca37debbc545f718fde4289" name="aa2649a22cca37debbc545f718fde4289"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa2649a22cca37debbc545f718fde4289">&#9670;&#160;</a></span>Open()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -197,7 +237,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">bool resource::PackFile::Open </td>
           <td>(</td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramtype">const std::string_view &amp;&#160;</td>
           <td class="paramname"><em>pack_path</em></td><td>)</td>
           <td></td>
         </tr>
@@ -209,14 +249,14 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00048">48</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00049">49</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="../../d1/dfb/classresource_1_1PackFile_a307e2952ca89116291d05dc08718d090_icgraph.png" border="0" usemap="#ad1/dfb/classresource_1_1PackFile_a307e2952ca89116291d05dc08718d090_icgraph" alt=""/></div>
-<map name="ad1/dfb/classresource_1_1PackFile_a307e2952ca89116291d05dc08718d090_icgraph" id="ad1/dfb/classresource_1_1PackFile_a307e2952ca89116291d05dc08718d090_icgraph">
-<area shape="rect" title=" " alt="" coords="256,5,395,45"/>
-<area shape="rect" href="../../d9/d07/classresource_1_1ResourceManager.html#a4c539b4095cb156345d1425282b4f538" title="Constructs the ResourceManager." alt="" coords="5,5,208,45"/>
+<div class="center"><img src="../../d1/dfb/classresource_1_1PackFile_aa2649a22cca37debbc545f718fde4289_icgraph.png" border="0" usemap="#ad1/dfb/classresource_1_1PackFile_aa2649a22cca37debbc545f718fde4289_icgraph" alt=""/></div>
+<map name="ad1/dfb/classresource_1_1PackFile_aa2649a22cca37debbc545f718fde4289_icgraph" id="ad1/dfb/classresource_1_1PackFile_aa2649a22cca37debbc545f718fde4289_icgraph">
+<area shape="rect" title=" " alt="" coords="268,5,407,45"/>
+<area shape="rect" href="../../df/d71/classToastFileSystem.html#a29da75e12bcd8c37e52c52b7a86ce472" title=" " alt="" coords="5,13,220,38"/>
 </map>
 </div>
 
@@ -256,15 +296,15 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00162">162</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00191">191</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/dfb/classresource_1_1PackFile_a1225757b08011411053c94bdd52a279b_icgraph.png" border="0" usemap="#ad1/dfb/classresource_1_1PackFile_a1225757b08011411053c94bdd52a279b_icgraph" alt=""/></div>
 <map name="ad1/dfb/classresource_1_1PackFile_a1225757b08011411053c94bdd52a279b_icgraph" id="ad1/dfb/classresource_1_1PackFile_a1225757b08011411053c94bdd52a279b_icgraph">
-<area shape="rect" title=" " alt="" coords="443,5,581,45"/>
-<area shape="rect" href="../../d1/dfb/classresource_1_1PackFile.html#a856d4a3280d926d7e168a3fcec1d6936" title=" " alt="" coords="256,5,395,45"/>
-<area shape="rect" href="../../d9/d07/classresource_1_1ResourceManager.html#a26ceb62b6f6ee3aadace3cb9cbe1cf16" title="Opens a file and returns its contents as bytes." alt="" coords="5,5,208,45"/>
+<area shape="rect" title=" " alt="" coords="433,5,572,45"/>
+<area shape="rect" href="../../d1/dfb/classresource_1_1PackFile.html#a856d4a3280d926d7e168a3fcec1d6936" title=" " alt="" coords="247,5,385,45"/>
+<area shape="rect" href="../../df/d71/classToastFileSystem.html#a7ebfa477a3e4db5f47c09ad487392dcf" title=" " alt="" coords="5,13,199,38"/>
 </map>
 </div>
 
@@ -304,14 +344,14 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00128">128</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00151">151</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d1/dfb/classresource_1_1PackFile_a856d4a3280d926d7e168a3fcec1d6936_icgraph.png" border="0" usemap="#ad1/dfb/classresource_1_1PackFile_a856d4a3280d926d7e168a3fcec1d6936_icgraph" alt=""/></div>
 <map name="ad1/dfb/classresource_1_1PackFile_a856d4a3280d926d7e168a3fcec1d6936_icgraph" id="ad1/dfb/classresource_1_1PackFile_a856d4a3280d926d7e168a3fcec1d6936_icgraph">
-<area shape="rect" title=" " alt="" coords="256,5,395,45"/>
-<area shape="rect" href="../../d9/d07/classresource_1_1ResourceManager.html#a26ceb62b6f6ee3aadace3cb9cbe1cf16" title="Opens a file and returns its contents as bytes." alt="" coords="5,5,208,45"/>
+<area shape="rect" title=" " alt="" coords="247,5,385,45"/>
+<area shape="rect" href="../../df/d71/classToastFileSystem.html#a7ebfa477a3e4db5f47c09ad487392dcf" title=" " alt="" coords="5,13,199,38"/>
 </map>
 </div>
 
@@ -338,7 +378,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00201">201</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00230">230</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
 
 </div>
 </div>
@@ -362,7 +402,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00196">196</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00225">225</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
 
 </div>
 </div>
@@ -386,7 +426,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00195">195</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00224">224</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
 
 </div>
 </div>
@@ -410,7 +450,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00194">194</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00223">223</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
 
 </div>
 </div>
@@ -434,7 +474,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00198">198</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00227">227</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
 
 </div>
 </div>
@@ -458,7 +498,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00199">199</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00228">228</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
 
 </div>
 </div>
@@ -482,7 +522,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00197">197</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00226">226</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
 
 </div>
 </div>
@@ -506,7 +546,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00200">200</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html#l00229">229</a> of file <a class="el" href="../../d5/d46/PackLoader_8hpp_source.html">PackLoader.hpp</a>.</p>
 
 </div>
 </div>

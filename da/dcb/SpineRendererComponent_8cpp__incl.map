@@ -1,52 +1,52 @@
 <map id="src/Toast/Components/SpineRendererComponent.cpp" name="src/Toast/Components/SpineRendererComponent.cpp">
-<area shape="rect" id="node1" title=" " alt="" coords="2468,5,2691,45"/>
-<area shape="rect" id="node2" href="$d2/d92/SpineRendererComponent_8hpp.html" title=" " alt="" coords="1004,181,1246,221"/>
-<area shape="rect" id="node15" href="$d1/d62/Mesh_8hpp.html" title=" " alt="" coords="1830,277,2025,302"/>
-<area shape="rect" id="node26" href="$d7/dcb/IRendererBase_8hpp.html" title="Base interface for all renderer implementations." alt="" coords="1768,93,1954,133"/>
-<area shape="rect" id="node33" href="$db/d16/ResourceManager_8hpp.html" title="Resource loading and caching system." alt="" coords="2539,181,2730,221"/>
-<area shape="rect" id="node39" href="$d9/de7/Time_8hpp.html" title="Controls the time of the application." alt="" coords="2643,101,2764,126"/>
-<area shape="rect" id="node41" href="$dc/d52/SpineSkeletonRenderer_8hpp.html" title=" " alt="" coords="2788,93,2992,133"/>
-<area shape="rect" id="node43" href="$d2/d4d/AtlasRendererComponent_8hpp.html" title=" " alt="" coords="2211,181,2450,221"/>
-<area shape="rect" id="node44" href="$de/dd7/OclussionVolume_8hpp.html" title=" " alt="" coords="1309,93,1496,133"/>
-<area shape="rect" id="node47" href="$de/dcb/SpineEvent_8hpp.html" title=" " alt="" coords="3119,181,3286,221"/>
-<area shape="rect" id="node48" title=" " alt="" coords="3016,101,3156,126"/>
-<area shape="rect" id="node49" title=" " alt="" coords="3181,101,3330,126"/>
-<area shape="rect" id="node50" title=" " alt="" coords="3354,101,3461,126"/>
-<area shape="rect" id="node3" href="$d7/d78/IRenderable_8hpp.html" title="Interface for objects that can be rendered." alt="" coords="1020,277,1249,302"/>
-<area shape="rect" id="node6" href="$d4/d6e/Shader_8hpp.html" title=" " alt="" coords="2201,277,2396,302"/>
-<area shape="rect" id="node16" href="$da/d46/ResourceSlot_8hpp.html" title=" " alt="" coords="2572,269,2763,309"/>
-<area shape="rect" id="node19" href="$d8/d1d/SpineEventHandler_8hpp.html" title=" " alt="" coords="383,269,560,309"/>
-<area shape="rect" id="node20" title=" " alt="" coords="523,365,698,390"/>
-<area shape="rect" id="node21" href="$da/df7/SpineSkeletonData_8hpp.html" title=" " alt="" coords="1578,269,1755,309"/>
-<area shape="rect" id="node24" title=" " alt="" coords="585,277,790,302"/>
-<area shape="rect" id="node25" title=" " alt="" coords="815,277,944,302"/>
-<area shape="rect" id="node4" href="$d9/da8/TransformComponent_8hpp.html" title="Transform component for position, rotation, and scale." alt="" coords="1020,357,1230,397"/>
-<area shape="rect" id="node5" title=" " alt="" coords="930,445,1034,471"/>
-<area shape="rect" id="node7" href="$d5/dd0/IResource_8hpp.html" title=" " alt="" coords="2214,445,2436,471"/>
-<area shape="rect" id="node8" title=" " alt="" coords="2217,519,2276,544"/>
-<area shape="rect" id="node10" title=" " alt="" coords="2130,365,2221,390"/>
-<area shape="rect" id="node11" title=" " alt="" coords="1440,365,1519,390"/>
-<area shape="rect" id="node12" title=" " alt="" coords="2702,519,2799,544"/>
-<area shape="rect" id="node13" title=" " alt="" coords="2246,365,2370,390"/>
-<area shape="rect" id="node14" title=" " alt="" coords="1992,365,2055,390"/>
-<area shape="rect" id="node9" title=" " alt="" coords="2374,519,2434,544"/>
-<area shape="rect" id="node17" href="$d0/ddc/Texture_8hpp.html" title=" " alt="" coords="2608,365,2706,390"/>
-<area shape="rect" id="node18" title=" " alt="" coords="2824,519,2901,544"/>
-<area shape="rect" id="node22" href="$d7/d85/SpineAtlas_8hpp.html" title=" " alt="" coords="1747,365,1866,390"/>
-<area shape="rect" id="node23" title=" " alt="" coords="1922,445,2029,471"/>
-<area shape="rect" id="node27" href="$d6/d80/Camera_8hpp.html" title="Camera actor for controlling the view into the scene." alt="" coords="230,365,332,390"/>
-<area shape="rect" id="node28" href="$d0/d1c/ListenerComponent_8hpp.html" title=" " alt="" coords="3060,365,3316,390"/>
-<area shape="rect" id="node30" href="$d1/d21/GlmJson_8hpp.html" title="Allows to serialize vectors and quaternions." alt="" coords="356,365,499,390"/>
-<area shape="rect" id="node31" href="$d9/d2c/Framebuffer_8hpp.html" title=" " alt="" coords="1324,277,1553,302"/>
-<area shape="rect" id="node32" href="$da/d4f/2DLight_8hpp.html" title=" " alt="" coords="1913,181,2076,221"/>
-<area shape="rect" id="node35" href="$d0/de3/Window_8hpp.html" title="Window management for the Toast Engine." alt="" coords="2900,189,3094,214"/>
-<area shape="rect" id="node37" title=" " alt="" coords="1660,181,1809,221"/>
-<area shape="rect" id="node38" title=" " alt="" coords="1833,189,1889,214"/>
-<area shape="rect" id="node29" href="$d0/d82/Log_8hpp.html" title=" " alt="" coords="3132,445,3243,471"/>
-<area shape="rect" id="node34" title=" " alt="" coords="2940,277,3004,302"/>
-<area shape="rect" id="node36" href="$df/d7d/Event_8hpp.html" title="Base Event class." alt="" coords="3130,277,3296,302"/>
-<area shape="rect" id="node40" title=" " alt="" coords="3310,189,3377,214"/>
-<area shape="rect" id="node42" title=" " alt="" coords="3452,189,3638,214"/>
-<area shape="rect" id="node45" href="$d7/d47/DebugDrawLayer_8hpp.html" title=" " alt="" coords="1322,189,1483,214"/>
-<area shape="rect" id="node46" title=" " alt="" coords="70,189,156,214"/>
+<area shape="rect" id="node1" title=" " alt="" coords="1909,5,2131,45"/>
+<area shape="rect" id="node2" href="$d2/d92/SpineRendererComponent_8hpp.html" title=" " alt="" coords="482,269,723,309"/>
+<area shape="rect" id="node15" href="$d1/d62/Mesh_8hpp.html" title=" " alt="" coords="1847,365,2041,390"/>
+<area shape="rect" id="node26" href="$d7/dcb/IRendererBase_8hpp.html" title="Base interface for all renderer implementations." alt="" coords="1191,181,1377,221"/>
+<area shape="rect" id="node33" href="$db/d16/ResourceManager_8hpp.html" title="Resource loading and caching system." alt="" coords="1983,269,2174,309"/>
+<area shape="rect" id="node39" href="$d9/de7/Time_8hpp.html" title="Controls the time of the application." alt="" coords="1137,101,1258,126"/>
+<area shape="rect" id="node41" href="$dc/d52/SpineSkeletonRenderer_8hpp.html" title=" " alt="" coords="2134,93,2338,133"/>
+<area shape="rect" id="node43" href="$d2/d4d/AtlasRendererComponent_8hpp.html" title=" " alt="" coords="2199,269,2438,309"/>
+<area shape="rect" id="node44" href="$de/dd7/OclussionVolume_8hpp.html" title=" " alt="" coords="1441,93,1628,133"/>
+<area shape="rect" id="node47" href="$de/dcb/SpineEvent_8hpp.html" title=" " alt="" coords="3117,269,3283,309"/>
+<area shape="rect" id="node48" title=" " alt="" coords="2362,101,2502,126"/>
+<area shape="rect" id="node49" title=" " alt="" coords="2527,101,2676,126"/>
+<area shape="rect" id="node50" title=" " alt="" coords="2700,101,2807,126"/>
+<area shape="rect" id="node3" href="$d7/d78/IRenderable_8hpp.html" title="Interface for objects that can be rendered." alt="" coords="641,365,871,390"/>
+<area shape="rect" id="node6" href="$d4/d6e/Shader_8hpp.html" title=" " alt="" coords="1223,365,1417,390"/>
+<area shape="rect" id="node13" title=" " alt="" coords="1223,453,1347,478"/>
+<area shape="rect" id="node16" href="$da/d46/ResourceSlot_8hpp.html" title=" " alt="" coords="2610,357,2801,397"/>
+<area shape="rect" id="node19" href="$d8/d1d/SpineEventHandler_8hpp.html" title=" " alt="" coords="389,357,566,397"/>
+<area shape="rect" id="node20" title=" " alt="" coords="401,453,575,478"/>
+<area shape="rect" id="node21" href="$da/df7/SpineSkeletonData_8hpp.html" title=" " alt="" coords="2357,357,2534,397"/>
+<area shape="rect" id="node24" title=" " alt="" coords="5,365,211,390"/>
+<area shape="rect" id="node25" title=" " alt="" coords="235,365,365,390"/>
+<area shape="rect" id="node4" href="$d9/da8/TransformComponent_8hpp.html" title="Transform component for position, rotation, and scale." alt="" coords="609,445,820,485"/>
+<area shape="rect" id="node5" title=" " alt="" coords="995,533,1099,559"/>
+<area shape="rect" id="node7" href="$d5/dd0/IResource_8hpp.html" title=" " alt="" coords="2334,533,2557,559"/>
+<area shape="rect" id="node8" title=" " alt="" coords="2243,607,2301,632"/>
+<area shape="rect" id="node10" title=" " alt="" coords="1473,453,1564,478"/>
+<area shape="rect" id="node11" title=" " alt="" coords="1741,453,1819,478"/>
+<area shape="rect" id="node12" title=" " alt="" coords="2414,607,2511,632"/>
+<area shape="rect" id="node14" title=" " alt="" coords="1843,453,1906,478"/>
+<area shape="rect" id="node9" title=" " alt="" coords="2709,607,2769,632"/>
+<area shape="rect" id="node17" href="$d0/ddc/Texture_8hpp.html" title=" " alt="" coords="2436,453,2535,478"/>
+<area shape="rect" id="node18" title=" " alt="" coords="2880,607,2957,632"/>
+<area shape="rect" id="node22" href="$d7/d85/SpineAtlas_8hpp.html" title=" " alt="" coords="2610,453,2729,478"/>
+<area shape="rect" id="node23" title=" " alt="" coords="2732,533,2839,559"/>
+<area shape="rect" id="node27" href="$d6/d80/Camera_8hpp.html" title="Camera actor for controlling the view into the scene." alt="" coords="996,453,1097,478"/>
+<area shape="rect" id="node28" href="$d0/d1c/ListenerComponent_8hpp.html" title=" " alt="" coords="3028,453,3284,478"/>
+<area shape="rect" id="node30" href="$d1/d21/GlmJson_8hpp.html" title="Allows to serialize vectors and quaternions." alt="" coords="799,277,942,302"/>
+<area shape="rect" id="node31" href="$d9/d2c/Framebuffer_8hpp.html" title=" " alt="" coords="1441,365,1671,390"/>
+<area shape="rect" id="node32" href="$da/d4f/2DLight_8hpp.html" title=" " alt="" coords="1609,269,1772,309"/>
+<area shape="rect" id="node35" href="$d0/de3/Window_8hpp.html" title="Window management for the Toast Engine." alt="" coords="2897,277,3092,302"/>
+<area shape="rect" id="node37" title=" " alt="" coords="1017,269,1167,309"/>
+<area shape="rect" id="node38" title=" " alt="" coords="1191,277,1247,302"/>
+<area shape="rect" id="node29" href="$d0/d82/Log_8hpp.html" title=" " alt="" coords="2863,533,2974,559"/>
+<area shape="rect" id="node34" title=" " alt="" coords="2167,365,2231,390"/>
+<area shape="rect" id="node36" href="$df/d7d/Event_8hpp.html" title="Base Event class." alt="" coords="3079,365,3246,390"/>
+<area shape="rect" id="node40" title=" " alt="" coords="1100,189,1167,214"/>
+<area shape="rect" id="node42" title=" " alt="" coords="2143,189,2329,214"/>
+<area shape="rect" id="node45" href="$d7/d47/DebugDrawLayer_8hpp.html" title=" " alt="" coords="1423,277,1585,302"/>
+<area shape="rect" id="node46" title=" " alt="" coords="1452,189,1537,214"/>
 </map>

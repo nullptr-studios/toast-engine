@@ -1,7 +1,8 @@
 var classresource_1_1PackFile =
 [
     [ "Close", "d1/dfb/classresource_1_1PackFile.html#af43122d3f8ab2077df37d9f8444b98cd", null ],
-    [ "Open", "d1/dfb/classresource_1_1PackFile.html#a307e2952ca89116291d05dc08718d090", null ],
+    [ "FileExists", "d1/dfb/classresource_1_1PackFile.html#a06a20785fec85e7552e90eb823223b3b", null ],
+    [ "Open", "d1/dfb/classresource_1_1PackFile.html#aa2649a22cca37debbc545f718fde4289", null ],
     [ "read_at_index", "d1/dfb/classresource_1_1PackFile.html#a1225757b08011411053c94bdd52a279b", null ],
     [ "ReadFile", "d1/dfb/classresource_1_1PackFile.html#a856d4a3280d926d7e168a3fcec1d6936", null ],
     [ "m_flags", "d1/dfb/classresource_1_1PackFile.html#a4409352f91616cacf986833123878b45", null ],

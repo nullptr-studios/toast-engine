@@ -10,6 +10,7 @@ var classrenderer_1_1OpenGLRenderer =
     [ "CombinedRenderPass", "da/d32/classrenderer_1_1OpenGLRenderer.html#a0a8505f22fa05954b99b767e28de37a3", null ],
     [ "EndImGuiFrame", "da/d32/classrenderer_1_1OpenGLRenderer.html#ad18eabe058d092df1a7b74eeb19dfc92", null ],
     [ "GeometryPass", "da/d32/classrenderer_1_1OpenGLRenderer.html#aaa760df2f9d791a8088fb27cc9dc84b5", null ],
+    [ "HUDPass", "da/d32/classrenderer_1_1OpenGLRenderer.html#ae710c3e5e20e988eb3e5af541eac17c8", null ],
     [ "LightingPass", "da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9", null ],
     [ "RemoveLight", "da/d32/classrenderer_1_1OpenGLRenderer.html#a6bb30a8086cbd585d58fb209324f9d53", null ],
     [ "RemoveRenderable", "da/d32/classrenderer_1_1OpenGLRenderer.html#affee9303eaff93eaaa9fe2ab5fe97e9c", null ],
@@ -21,6 +22,7 @@ var classrenderer_1_1OpenGLRenderer =
     [ "m_combineLightShader", "da/d32/classrenderer_1_1OpenGLRenderer.html#ae07ee52543c5d581bd9385e979a9a852", null ],
     [ "m_globalLight", "da/d32/classrenderer_1_1OpenGLRenderer.html#a0ccab867a2bdb1eb020da50073c0480a", null ],
     [ "m_globalLightShader", "da/d32/classrenderer_1_1OpenGLRenderer.html#ac354fe3d950faec4e04f79b37b0e0cda", null ],
+    [ "m_layerFramebuffer", "da/d32/classrenderer_1_1OpenGLRenderer.html#a46af6b2b208cd54ed46912cc26597e5a", null ],
     [ "m_layerStack", "da/d32/classrenderer_1_1OpenGLRenderer.html#ac3afc024d784b3f22149f259cf91bd69", null ],
     [ "m_quad", "da/d32/classrenderer_1_1OpenGLRenderer.html#a8a3d7f26ea7b2596ea34d3b7d79e7742", null ],
     [ "m_screenShader", "da/d32/classrenderer_1_1OpenGLRenderer.html#ab78fc575cd513e39d8f6436ec35ccdd6", null ]

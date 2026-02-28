@@ -1,5 +1,4 @@
 <map id="renderer::IRendererBase::RemoveRenderable" name="renderer::IRendererBase::RemoveRenderable">
-<area shape="rect" id="node1" title="Removes a renderable object from the render queue." alt="" coords="285,37,465,77"/>
+<area shape="rect" id="node1" title="Removes a renderable object from the render queue." alt="" coords="285,5,465,45"/>
 <area shape="rect" id="node2" href="$de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40" title="This function runs when the object is set to be destroyed." alt="" coords="5,5,237,45"/>
-<area shape="rect" id="node3" href="$df/d2b/classtoast_1_1ParticleSystem.html#a796f31a89365dbc22a1d6b05ee7b61f8" title="This function runs when the object is set to be destroyed." alt="" coords="41,69,201,109"/>
 </map>

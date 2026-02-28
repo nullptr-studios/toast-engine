@@ -1,5 +1,4 @@
 <map id="renderer::IRendererBase::AddRenderable" name="renderer::IRendererBase::AddRenderable">
-<area shape="rect" id="node1" title="Adds a renderable object to the render queue." alt="" coords="285,37,465,77"/>
-<area shape="rect" id="node2" href="$df/d2b/classtoast_1_1ParticleSystem.html#a30a3f0c9b2ecfa0ae770a3cc6ddbf798" title="This function runs just after the object is created (scene load thread)" alt="" coords="41,5,201,45"/>
-<area shape="rect" id="node3" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="5,69,237,109"/>
+<area shape="rect" id="node1" title="Adds a renderable object to the render queue." alt="" coords="285,5,465,45"/>
+<area shape="rect" id="node2" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="5,5,237,45"/>
 </map>

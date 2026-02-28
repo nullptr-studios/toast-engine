@@ -37,6 +37,7 @@ var annotated_dup =
       [ "Collider", "db/d71/classphysics_1_1Collider.html", "db/d71/classphysics_1_1Collider" ],
       [ "ColliderData", "d5/ddb/structphysics_1_1ColliderData.html", "d5/ddb/structphysics_1_1ColliderData" ],
       [ "ConvexCollider", "dd/d88/classphysics_1_1ConvexCollider.html", "dd/d88/classphysics_1_1ConvexCollider" ],
+      [ "GravityType", "df/d1e/structphysics_1_1GravityType.html", "df/d1e/structphysics_1_1GravityType" ],
       [ "Line", "d1/d1d/structphysics_1_1Line.html", "d1/d1d/structphysics_1_1Line" ],
       [ "Manifold", "da/dc2/structphysics_1_1Manifold.html", "da/dc2/structphysics_1_1Manifold" ],
       [ "PhysicsSystem", "d6/dd8/classphysics_1_1PhysicsSystem.html", "d6/dd8/classphysics_1_1PhysicsSystem" ],
@@ -46,6 +47,12 @@ var annotated_dup =
       [ "UpdatePhysicsDefaults", "d8/d25/structphysics_1_1UpdatePhysicsDefaults.html", "d8/d25/structphysics_1_1UpdatePhysicsDefaults" ]
     ] ],
     [ "renderer", "d0/db9/namespacerenderer.html", [
+      [ "HUD", "dc/d2a/namespacerenderer_1_1HUD.html", [
+        [ "HUDLayer", "dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html", "dc/d3b/classrenderer_1_1HUD_1_1HUDLayer" ],
+        [ "HUDLayerLoadListener", "de/dbb/classrenderer_1_1HUD_1_1HUDLayerLoadListener.html", "de/dbb/classrenderer_1_1HUD_1_1HUDLayerLoadListener" ],
+        [ "ToastLoadListener", "d1/dff/classrenderer_1_1HUD_1_1ToastLoadListener.html", "d1/dff/classrenderer_1_1HUD_1_1ToastLoadListener" ],
+        [ "ToastViewListener", "d3/de3/classrenderer_1_1HUD_1_1ToastViewListener.html", "d3/de3/classrenderer_1_1HUD_1_1ToastViewListener" ]
+      ] ],
       [ "BoundingBox", "dd/d13/structrenderer_1_1BoundingBox.html", "dd/d13/structrenderer_1_1BoundingBox" ],
       [ "DebugDrawLayer", "df/daf/classrenderer_1_1DebugDrawLayer.html", "df/daf/classrenderer_1_1DebugDrawLayer" ],
       [ "DebugVertex", "da/d9a/structrenderer_1_1DebugVertex.html", "da/d9a/structrenderer_1_1DebugVertex" ],
@@ -74,6 +81,10 @@ var annotated_dup =
       [ "formatter< toast::TransformImpl >", "d5/d2e/structstd_1_1formatter_3_01toast_1_1TransformImpl_01_4.html", "d5/d2e/structstd_1_1formatter_3_01toast_1_1TransformImpl_01_4" ]
     ] ],
     [ "toast", "d7/d01/namespacetoast.html", [
+      [ "hud", "db/d28/namespacetoast_1_1hud.html", [
+        [ "ToastGPUContext", "df/d85/classtoast_1_1hud_1_1ToastGPUContext.html", "df/d85/classtoast_1_1hud_1_1ToastGPUContext" ],
+        [ "ToastGPUDriver", "dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html", "dc/d10/classtoast_1_1hud_1_1ToastGPUDriver" ]
+      ] ],
       [ "memory", "d0/de3/namespacetoast_1_1memory.html", [
         [ "BucketUsage", "d7/d98/structtoast_1_1memory_1_1BucketUsage.html", "d7/d98/structtoast_1_1memory_1_1BucketUsage" ],
         [ "Stats", "db/da0/structtoast_1_1memory_1_1Stats.html", "db/da0/structtoast_1_1memory_1_1Stats" ]
@@ -84,6 +95,9 @@ var annotated_dup =
       [ "BadScene", "d9/da2/classtoast_1_1BadScene.html", "d9/da2/classtoast_1_1BadScene" ],
       [ "Camera", "d8/db9/classtoast_1_1Camera.html", "d8/db9/classtoast_1_1Camera" ],
       [ "Component", "d3/d63/classtoast_1_1Component.html", "d3/d63/classtoast_1_1Component" ],
+      [ "CoroutineHandler", "d7/da4/classtoast_1_1CoroutineHandler.html", "d7/da4/classtoast_1_1CoroutineHandler" ],
+      [ "CoroutineInfo", "df/d4c/structtoast_1_1CoroutineInfo.html", "df/d4c/structtoast_1_1CoroutineInfo" ],
+      [ "CoroutineTask", "da/d0d/structtoast_1_1CoroutineTask.html", "da/d0d/structtoast_1_1CoroutineTask" ],
       [ "Engine", "d9/d4f/classtoast_1_1Engine.html", "d9/d4f/classtoast_1_1Engine" ],
       [ "Factory", "d9/de7/classtoast_1_1Factory.html", "d9/de7/classtoast_1_1Factory" ],
       [ "GameFlow", "d6/dbd/classtoast_1_1GameFlow.html", "d6/dbd/classtoast_1_1GameFlow" ],
@@ -113,10 +127,18 @@ var annotated_dup =
       [ "TransformComponent", "d0/dd9/classtoast_1_1TransformComponent.html", "d0/dd9/classtoast_1_1TransformComponent" ],
       [ "TransformImpl", "d8/d63/classtoast_1_1TransformImpl.html", "d8/d63/classtoast_1_1TransformImpl" ],
       [ "Version", "d1/df3/structtoast_1_1Version.html", "d1/df3/structtoast_1_1Version" ],
+      [ "WaitSeconds", "d6/d44/structtoast_1_1WaitSeconds.html", "d6/d44/structtoast_1_1WaitSeconds" ],
       [ "Window", "d8/d8e/classtoast_1_1Window.html", "d8/d8e/classtoast_1_1Window" ],
       [ "WindowException", "de/db0/classtoast_1_1WindowException.html", "de/db0/classtoast_1_1WindowException" ],
       [ "WindowProps", "dc/d26/structtoast_1_1WindowProps.html", "dc/d26/structtoast_1_1WindowProps" ],
       [ "World", "d6/d7d/classtoast_1_1World.html", "d6/d7d/classtoast_1_1World" ]
+    ] ],
+    [ "ui", "d3/df6/namespaceui.html", [
+      [ "ExecuteJS", "d5/d75/structui_1_1ExecuteJS.html", "d5/d75/structui_1_1ExecuteJS" ],
+      [ "LoadUrl", "d2/d9e/structui_1_1LoadUrl.html", "d2/d9e/structui_1_1LoadUrl" ],
+      [ "UiFontLoader", "dd/d6a/classui_1_1UiFontLoader.html", "dd/d6a/classui_1_1UiFontLoader" ],
+      [ "UiLogger", "de/da8/classui_1_1UiLogger.html", "de/da8/classui_1_1UiLogger" ],
+      [ "UiSystem", "df/d5b/classui_1_1UiSystem.html", "df/d5b/classui_1_1UiSystem" ]
     ] ],
     [ "Actor", "df/d6a/classActor.html", null ],
     [ "ActorLookup", "da/d99/structtoast_1_1ActorLookup.html", null ],
@@ -136,6 +158,7 @@ var annotated_dup =
     [ "PlayerController", "d4/da8/classinput_1_1PlayerController.html", null ],
     [ "Pool", "d5/d0b/classPool.html", "d5/d0b/classPool" ],
     [ "ResourceHandler", "d9/dc4/structResourceHandler.html", "d9/dc4/structResourceHandler" ],
+    [ "ShowHUDLayerEvent", "da/d29/classShowHUDLayerEvent.html", "da/d29/classShowHUDLayerEvent" ],
     [ "SpineAtlas", "d6/daf/classSpineAtlas.html", "d6/daf/classSpineAtlas" ],
     [ "SpineEvent", "d7/d44/structSpineEvent.html", "d7/d44/structSpineEvent" ],
     [ "SpineEventHandler", "d9/d94/classSpineEventHandler.html", "d9/d94/classSpineEventHandler" ],
@@ -146,5 +169,6 @@ var annotated_dup =
     [ "SScene", "da/da4/classtoast_1_1SScene.html", null ],
     [ "Texture", "d6/d97/classTexture.html", "d6/d97/classTexture" ],
     [ "Time", "da/d66/classTime.html", "da/d66/classTime" ],
-    [ "ToastException", "d6/d05/classToastException.html", "d6/d05/classToastException" ]
+    [ "ToastException", "d6/d05/classToastException.html", "d6/d05/classToastException" ],
+    [ "ToastFileSystem", "df/d71/classToastFileSystem.html", "df/d71/classToastFileSystem" ]
 ];

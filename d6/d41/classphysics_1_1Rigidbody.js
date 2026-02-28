@@ -1,5 +1,6 @@
 var classphysics_1_1Rigidbody =
 [
+    [ "AddAccel", "d6/d41/classphysics_1_1Rigidbody.html#abb577eb3a11a268cf9c978135cef16fd", null ],
     [ "AddForce", "d6/d41/classphysics_1_1Rigidbody.html#a3557f683a5e5dcae877f714a733a7e6b", null ],
     [ "Destroy", "d6/d41/classphysics_1_1Rigidbody.html#abee44c40fe214b3b58d1745dd8c86521", null ],
     [ "GetInterpolatedPosition", "d6/d41/classphysics_1_1Rigidbody.html#a5de546bab7f28423116fab2f29dd0f71", null ],
@@ -18,7 +19,7 @@ var classphysics_1_1Rigidbody =
     [ "UpdateVisualTransform", "d6/d41/classphysics_1_1Rigidbody.html#a03e9508170b42fb6e25ce25a90279b74", null ],
     [ "addForce", "d6/d41/classphysics_1_1Rigidbody.html#a24ba6dfc8e55e3baecae054085c06488", null ],
     [ "collidingColor", "d6/d41/classphysics_1_1Rigidbody.html#a444ab93479c9e759047cb58963487738", null ],
-    [ "debug", "d6/d41/classphysics_1_1Rigidbody.html#a841ed74d200ce036ef6e3a76e0e7db40", null ],
+    [ "debug", "d6/d41/classphysics_1_1Rigidbody.html#aa75a114c619f7c737d143079f622f3d6", null ],
     [ "defaultColor", "d6/d41/classphysics_1_1Rigidbody.html#a460b8ea3cd7c38f51a06719bab5c7335", null ],
     [ "drag", "d6/d41/classphysics_1_1Rigidbody.html#a38157d2909b9b670c5db8658372ba94f", null ],
     [ "flags", "d6/d41/classphysics_1_1Rigidbody.html#ae833768540d886947197ca6e58bd9836", null ],
@@ -26,6 +27,8 @@ var classphysics_1_1Rigidbody =
     [ "forcesMutex", "d6/d41/classphysics_1_1Rigidbody.html#a4b7edd63adea29176b56a32ffe2b5414", null ],
     [ "friction", "d6/d41/classphysics_1_1Rigidbody.html#ae8a34da33c201273c5edd374dd5a4010", null ],
     [ "gravityScale", "d6/d41/classphysics_1_1Rigidbody.html#a97d5a6b987ec8ed7581538b7aba7177e", null ],
+    [ "hasDrag", "d6/d41/classphysics_1_1Rigidbody.html#a5218c595eb88666f6a5e5b4ef1a105bd", null ],
+    [ "hasGravity", "d6/d41/classphysics_1_1Rigidbody.html#aa96dd1da1eddfd4c74125b0ea20eeb22", null ],
     [ "m_currentPosition", "d6/d41/classphysics_1_1Rigidbody.html#a3966d4940f6fb8500e556375719828c1", null ],
     [ "m_hasValidPreviousPosition", "d6/d41/classphysics_1_1Rigidbody.html#a290293f0fdd92646bcc6055362282eb3", null ],
     [ "m_lastKnownTransformPos", "d6/d41/classphysics_1_1Rigidbody.html#a2f5649875742580404c025e3898bd1a3", null ],
@@ -38,5 +41,6 @@ var classphysics_1_1Rigidbody =
     [ "s_interpolationAlpha", "d6/d41/classphysics_1_1Rigidbody.html#a3b3ecb584dd1023ac6da45e71c00d4b9", null ],
     [ "show", "d6/d41/classphysics_1_1Rigidbody.html#a2261414210f32661b9fe5ddc7daa9f7c", null ],
     [ "showManifolds", "d6/d41/classphysics_1_1Rigidbody.html#a5e5ab92569148ed4a38a108e5c539f45", null ],
+    [ "skipResolution", "d6/d41/classphysics_1_1Rigidbody.html#acc46f4f03645b3f08df162c9a2972cd2", null ],
     [ "velocity", "d6/d41/classphysics_1_1Rigidbody.html#a783fdb89c2e85f592a42ccbf97efc729", null ]
 ];

@@ -1,0 +1,4 @@
+<map id="renderer::IRendererBase::GetGeometryFramebuffer" name="renderer::IRendererBase::GetGeometryFramebuffer">
+<area shape="rect" id="node1" title="Gets the geometry framebuffer (G&#45;buffer for deferred rendering)" alt="" coords="197,5,395,45"/>
+<area shape="rect" id="node2" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="5,13,149,38"/>
+</map>

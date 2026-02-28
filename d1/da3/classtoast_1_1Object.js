@@ -44,11 +44,12 @@ var classtoast_1_1Object =
     [ "RefreshBegin", "d1/da3/classtoast_1_1Object.html#af88c5c7e23457847cc4ce96fba806ed4", null ],
     [ "Register", "d1/da3/classtoast_1_1Object.html#a71ecedef54b6348ea33ccfb5503bcde0", null ],
     [ "Save", "d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24", null ],
-    [ "scene", "d1/da3/classtoast_1_1Object.html#abbc346e00151294c04020d898fc3e7ac", null ],
+    [ "scene", "d1/da3/classtoast_1_1Object.html#a3bdab1a6b3cd48b518e8289a36e90faf", null ],
     [ "SetRunEarlyTick", "d1/da3/classtoast_1_1Object.html#a664d8c11a6c4d7d66d4ac01172fcfb2b", null ],
     [ "SetRunLateTick", "d1/da3/classtoast_1_1Object.html#af761f0a344b6331ec69e8b45e5c8cf36", null ],
     [ "SetRunTick", "d1/da3/classtoast_1_1Object.html#a9b1a3bf5fe1a7b9d9ec307b8fed16533", null ],
     [ "SetScene", "d1/da3/classtoast_1_1Object.html#a2d173fcb83cd6a64996df7a77604236a", null ],
+    [ "SetSerialize", "d1/da3/classtoast_1_1Object.html#aee4606b6c9a3a4e914824c1f9fd77df5", null ],
     [ "SoftLoad", "d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef", null ],
     [ "SoftSave", "d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656", null ],
     [ "static_type", "d1/da3/classtoast_1_1Object.html#affe9053e09e9e130a9255d1c53d55104", null ],
@@ -68,5 +69,6 @@ var classtoast_1_1Object =
     [ "m_runsEarlyTick", "d1/da3/classtoast_1_1Object.html#a5634e91c478e984aea4eca56202bac19", null ],
     [ "m_runsLateTick", "d1/da3/classtoast_1_1Object.html#a1271862bc353241530aac7504182465e", null ],
     [ "m_runsTick", "d1/da3/classtoast_1_1Object.html#a92529750c0a7c8636a615ce849b0a138", null ],
-    [ "m_scene", "d1/da3/classtoast_1_1Object.html#a19f10c2e6a311410c36fba119f38d834", null ]
+    [ "m_scene", "d1/da3/classtoast_1_1Object.html#a19f10c2e6a311410c36fba119f38d834", null ],
+    [ "m_serialize", "d1/da3/classtoast_1_1Object.html#a4ed94fc1811a218005194941b08337b9", null ]
 ];

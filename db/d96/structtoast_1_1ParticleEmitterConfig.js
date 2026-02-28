@@ -1,6 +1,6 @@
 var structtoast_1_1ParticleEmitterConfig =
 [
-    [ "ApplyPreset", "db/d96/structtoast_1_1ParticleEmitterConfig.html#a2fcc821cf6cbe7453f85ca452f1cc990", null ],
+    [ "ApplyPreset", "db/d96/structtoast_1_1ParticleEmitterConfig.html#a11b2f874830c76f4234c4208b9511c8e", null ],
     [ "LoadFromLua", "db/d96/structtoast_1_1ParticleEmitterConfig.html#aebb1636d3664f894d73716ea03798ac0", null ],
     [ "additiveBlending", "db/d96/structtoast_1_1ParticleEmitterConfig.html#af1b0dcb5ba05b5dbb3f4378e30db1ec2", null ],
     [ "bursts", "db/d96/structtoast_1_1ParticleEmitterConfig.html#af46a9f86465b029e26d6706724dcce3c", null ],

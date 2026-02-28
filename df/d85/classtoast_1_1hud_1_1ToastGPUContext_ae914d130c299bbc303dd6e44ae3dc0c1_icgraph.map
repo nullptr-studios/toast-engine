@@ -1,0 +1,12 @@
+<map id="toast::hud::ToastGPUContext::active_window" name="toast::hud::ToastGPUContext::active_window">
+<area shape="rect" id="node1" title="Get the currently active window." alt="" coords="496,248,704,288"/>
+<area shape="rect" id="node2" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#abae932af9fa97fd49617e9b3a8071ecf" title="Clear a render buffer." alt="" coords="251,5,448,45"/>
+<area shape="rect" id="node3" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#ab5de27477a15eed382a9210031b6f749" title="Execute all pending draw commands." alt="" coords="5,63,203,103"/>
+<area shape="rect" id="node4" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a2f96677a830b02d1a7b818d183a0ff6c" title=" " alt="" coords="251,120,448,160"/>
+<area shape="rect" id="node5" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#aef4e9d8d3d199e12149e830d387c2cc7" title=" " alt="" coords="251,184,448,224"/>
+<area shape="rect" id="node6" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#abe2c5707cd4fdb4ac4be1d7abf22d991" title=" " alt="" coords="251,312,448,352"/>
+<area shape="rect" id="node7" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a5f6205f7eecf3587af3976564ed634fd" title=" " alt="" coords="5,372,203,412"/>
+<area shape="rect" id="node8" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a401e4ae963ea73950e07756127aeed2c" title=" " alt="" coords="251,376,448,416"/>
+<area shape="rect" id="node9" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a9295042a92ae1b7bdbd5c14411155448" title=" " alt="" coords="251,248,448,288"/>
+<area shape="rect" id="node10" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a49362700e2ca89643185992867c16313" title=" " alt="" coords="251,491,448,531"/>
+</map>

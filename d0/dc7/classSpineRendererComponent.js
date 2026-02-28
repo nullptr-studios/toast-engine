@@ -1,6 +1,8 @@
 var classSpineRendererComponent =
 [
     [ "Begin", "d0/dc7/classSpineRendererComponent.html#a6c9bd075357976e95fdc457478aa1cab", null ],
+    [ "ClearAllBoneLocalPositionOverrides", "d0/dc7/classSpineRendererComponent.html#af63704ab3d04c605fa01fc815870450f", null ],
+    [ "ClearBoneLocalPositionOverride", "d0/dc7/classSpineRendererComponent.html#a17f7efdffcb00767dcb790a0b869a646", null ],
     [ "CrossFadeToDefault", "d0/dc7/classSpineRendererComponent.html#af2b840b6155fc8135ea8517828f0aae2", null ],
     [ "Destroy", "d0/dc7/classSpineRendererComponent.html#a75af091cad96a920a74a062f4701a1d9", null ],
     [ "GetBoneLocalPosition", "d0/dc7/classSpineRendererComponent.html#a9741d393c4a42c154d8a5ef40167ff73", null ],
@@ -34,6 +36,7 @@ var classSpineRendererComponent =
     [ "m_animationStateData", "d0/dc7/classSpineRendererComponent.html#a301446b26f667778ee4e85b7ae40e64d", null ],
     [ "m_atlasPath", "d0/dc7/classSpineRendererComponent.html#a609ffc38a3f284a9f11e3d9775ef97dc", null ],
     [ "m_atlasResource", "d0/dc7/classSpineRendererComponent.html#a37d3ad13c3686386ba839436e18c166f", null ],
+    [ "m_boneLocalOverrides", "d0/dc7/classSpineRendererComponent.html#aaf09a2fe8b15f0e804c29798fad7c24b", null ],
     [ "m_dynamicMesh", "d0/dc7/classSpineRendererComponent.html#a6c7b356b440e8c57206fdf7aa44b8ef6", null ],
     [ "m_eventHandler", "d0/dc7/classSpineRendererComponent.html#a40d462cec2ce3b63238257d0ea99bc44", null ],
     [ "m_lastBoundTexture", "d0/dc7/classSpineRendererComponent.html#a76f73917f84880d8d092f7753d96e427", null ],

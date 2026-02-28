@@ -7,5 +7,8 @@ var searchData=
   ['colorspec_4',['ColorSpec',['../d9/d89/structFramebuffer_1_1ColorSpec.html',1,'Framebuffer']]],
   ['component_5',['Component',['../d3/d63/classtoast_1_1Component.html',1,'toast']]],
   ['convexcollider_6',['ConvexCollider',['../dd/d88/classphysics_1_1ConvexCollider.html',1,'physics']]],
-  ['coresystem_7',['CoreSystem',['../d2/d8f/structaudio_1_1AudioSystem_1_1CoreSystem.html',1,'audio::AudioSystem']]]
+  ['coresystem_7',['CoreSystem',['../d2/d8f/structaudio_1_1AudioSystem_1_1CoreSystem.html',1,'audio::AudioSystem']]],
+  ['coroutinehandler_8',['CoroutineHandler',['../d7/da4/classtoast_1_1CoroutineHandler.html',1,'toast']]],
+  ['coroutineinfo_9',['CoroutineInfo',['../df/d4c/structtoast_1_1CoroutineInfo.html',1,'toast']]],
+  ['coroutinetask_10',['CoroutineTask',['../da/d0d/structtoast_1_1CoroutineTask.html',1,'toast']]]
 ];

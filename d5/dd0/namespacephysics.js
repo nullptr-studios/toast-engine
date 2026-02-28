@@ -5,6 +5,7 @@ var namespacephysics =
     [ "Collider", "db/d71/classphysics_1_1Collider.html", "db/d71/classphysics_1_1Collider" ],
     [ "ColliderData", "d5/ddb/structphysics_1_1ColliderData.html", "d5/ddb/structphysics_1_1ColliderData" ],
     [ "ConvexCollider", "dd/d88/classphysics_1_1ConvexCollider.html", "dd/d88/classphysics_1_1ConvexCollider" ],
+    [ "GravityType", "df/d1e/structphysics_1_1GravityType.html", "df/d1e/structphysics_1_1GravityType" ],
     [ "Line", "d1/d1d/structphysics_1_1Line.html", "d1/d1d/structphysics_1_1Line" ],
     [ "Manifold", "da/dc2/structphysics_1_1Manifold.html", "da/dc2/structphysics_1_1Manifold" ],
     [ "PhysicsSystem", "d6/dd8/classphysics_1_1PhysicsSystem.html", "d6/dd8/classphysics_1_1PhysicsSystem" ],
@@ -21,6 +22,8 @@ var namespacephysics =
     [ "BoxResetVelocity", "d5/dd0/namespacephysics.html#a0e080f7c8e05180f30e5621c14b41587", null ],
     [ "ClipLineSegmentToLine", "d5/dd0/namespacephysics.html#a6df5e9daff3b599535853d1cd368261c", null ],
     [ "ConvexRayCollision", "d5/dd0/namespacephysics.html#a740edf213e0fd126ea757f5aea74e90b", null ],
+    [ "GetAllRigidbodies", "d5/dd0/namespacephysics.html#a9a34db3da7e8ac1dbaf8ac3e1b08e53c", null ],
+    [ "Gravity", "d5/dd0/namespacephysics.html#aa53d891e169d147c91ff73e83093b9ff", null ],
     [ "LineLineCollision", "d5/dd0/namespacephysics.html#a4b4e1e3b2202add3d8299be29043fa23", null ],
     [ "RayCast", "d5/dd0/namespacephysics.html#a9bf58af059ac112e456dc6cd15d23c99", null ],
     [ "RayCast", "d5/dd0/namespacephysics.html#ac6056f6f70f24259b9d9533e75d9f668", null ],
@@ -35,5 +38,8 @@ var namespacephysics =
     [ "RbRbResolution", "d5/dd0/namespacephysics.html#a36809edbcfe0caecb4b7ac54afc385d1", null ],
     [ "RbResetVelocity", "d5/dd0/namespacephysics.html#a33c69640dfa002d677858f5b3536ff2c", null ],
     [ "RbTriggerCollision", "d5/dd0/namespacephysics.html#a0027d3725be030a56a5ccb3a36b91616", null ],
+    [ "SetGravityPoint", "d5/dd0/namespacephysics.html#a27f31621d04cfbb97d56d971756881ff", null ],
+    [ "SetGravityPointScale", "d5/dd0/namespacephysics.html#a655297c3695404b71f4dff341e295390", null ],
+    [ "SetGravityType", "d5/dd0/namespacephysics.html#a87606d7d4e42606e3ea00b1d88a2b2ac", null ],
     [ "ShoelaceArea", "d5/dd0/namespacephysics.html#a40f3163dfdfef736a883aeb1f39b5376", null ]
 ];

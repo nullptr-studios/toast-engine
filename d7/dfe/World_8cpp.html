@@ -105,6 +105,7 @@ $(document).ready(function(){initNavTree('d7/dfe/World_8cpp.html','../../'); ini
 <code>#include &quot;<a class="el" href="../../db/d16/ResourceManager_8hpp_source.html">Toast/Resources/ResourceManager.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../d6/d39/SimulateWorldEvent_8hpp_source.html">Toast/SimulateWorldEvent.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../d5/d91/ThreadPool_8hpp_source.html">Toast/ThreadPool.hpp</a>&quot;</code><br />
+<code>#include &lt;exception&gt;</code><br />
 <code>#include &lt;functional&gt;</code><br />
 <code>#include &lt;future&gt;</code><br />
 <code>#include &lt;memory&gt;</code><br />
@@ -113,56 +114,56 @@ Include dependency graph for World.cpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d0/d6b/World_8cpp__incl.png" border="0" usemap="#asrc_2Toast_2World_8cpp" alt=""/></div>
 <map name="asrc_2Toast_2World_8cpp" id="asrc_2Toast_2World_8cpp">
-<area shape="rect" title=" " alt="" coords="1549,5,1696,31"/>
-<area shape="rect" href="../../d0/dbb/World_8hpp.html" title=" " alt="" coords="641,79,767,104"/>
-<area shape="rect" href="../../d0/d82/Log_8hpp.html" title=" " alt="" coords="1274,533,1385,559"/>
-<area shape="rect" href="../../dc/dbc/Profiler_8hpp.html" title="Wrapper of the Tracy Profiler." alt="" coords="1496,607,1629,632"/>
-<area shape="rect" title=" " alt="" coords="2448,607,2525,632"/>
-<area shape="rect" title=" " alt="" coords="673,225,735,251"/>
-<area shape="rect" href="../../d1/d91/PhysicsSystem_8hpp.html" title=" " alt="" coords="1333,225,1534,251"/>
-<area shape="rect" href="../../db/de8/Scene_8hpp.html" title="A collection of Actors." alt="" coords="249,225,429,251"/>
-<area shape="rect" href="../../db/d16/ResourceManager_8hpp.html" title="Resource loading and caching system." alt="" coords="1767,299,1958,339"/>
-<area shape="rect" href="../../d6/d39/SimulateWorldEvent_8hpp.html" title=" " alt="" coords="1857,79,2077,104"/>
-<area shape="rect" href="../../d5/d91/ThreadPool_8hpp.html" title="Thread pool implementation for parallel task execution." alt="" coords="2101,79,2262,104"/>
-<area shape="rect" title=" " alt="" coords="2286,79,2373,104"/>
-<area shape="rect" href="../../d7/d3f/Object_8hpp.html" title="Base Object Class." alt="" coords="657,460,802,485"/>
-<area shape="rect" title=" " alt="" coords="946,607,1043,632"/>
-<area shape="rect" href="../../d0/d1c/ListenerComponent_8hpp.html" title=" " alt="" coords="773,306,1029,331"/>
-<area shape="rect" href="../../db/d8b/GameFlow_8hpp.html" title=" " alt="" coords="741,152,899,177"/>
-<area shape="rect" href="../../d0/d46/SceneLoadedEvent_8hpp.html" title="An event sent when the scene finishes being loaded." alt="" coords="991,152,1201,177"/>
-<area shape="rect" title=" " alt="" coords="504,152,568,177"/>
-<area shape="rect" title=" " alt="" coords="592,152,667,177"/>
-<area shape="rect" href="../../d7/d5a/RTTIMacros_8h.html" title=" " alt="" coords="669,533,790,559"/>
-<area shape="rect" href="../../d5/d03/Factory_8hpp.html" title="Class in charge of Object creation (not anmymore)" alt="" coords="815,533,948,559"/>
-<area shape="rect" href="../../df/da3/ISerializable_8hpp.html" title="Interface for objects that can be saved and loaded from JSON." alt="" coords="5,533,173,559"/>
-<area shape="rect" title=" " alt="" coords="1023,533,1089,559"/>
-<area shape="rect" title=" " alt="" coords="1169,607,1229,632"/>
-<area shape="rect" href="../../da/d8d/Children_8inl.html" title=" " alt="" coords="440,533,536,559"/>
-<area shape="rect" href="../../de/d16/Object_8inl.html" title=" " alt="" coords="561,533,645,559"/>
-<area shape="rect" title=" " alt="" coords="16,607,163,632"/>
-<area shape="rect" title=" " alt="" coords="1253,607,1323,632"/>
-<area shape="rect" title=" " alt="" coords="1077,607,1144,632"/>
-<area shape="rect" title=" " alt="" coords="1347,607,1471,632"/>
-<area shape="rect" title=" " alt="" coords="2081,607,2140,632"/>
-<area shape="rect" href="../../df/d1f/Component_8hpp.html" title="Base component class." alt="" coords="605,387,854,412"/>
-<area shape="rect" title=" " alt="" coords="878,387,925,412"/>
-<area shape="rect" title=" " alt="" coords="949,387,1041,412"/>
-<area shape="rect" title=" " alt="" coords="494,387,581,412"/>
-<area shape="rect" href="../../df/d7d/Event_8hpp.html" title="Base Event class." alt="" coords="925,225,1091,251"/>
-<area shape="rect" href="../../dd/d06/ColliderFlags_8hpp.html" title=" " alt="" coords="1217,306,1444,331"/>
-<area shape="rect" title=" " alt="" coords="1468,306,1535,331"/>
-<area shape="rect" title=" " alt="" coords="1497,533,1601,559"/>
-<area shape="rect" href="../../d1/d62/Mesh_8hpp.html" title=" " alt="" coords="1761,460,1847,485"/>
-<area shape="rect" title=" " alt="" coords="1626,533,1689,559"/>
-<area shape="rect" href="../../da/d46/ResourceSlot_8hpp.html" title=" " alt="" coords="2365,387,2499,412"/>
-<area shape="rect" href="../../d0/ddc/Texture_8hpp.html" title=" " alt="" coords="2351,460,2449,485"/>
-<area shape="rect" href="../../d4/d6e/Shader_8hpp.html" title=" " alt="" coords="1871,460,2065,485"/>
-<area shape="rect" title=" " alt="" coords="1711,387,1775,412"/>
-<area shape="rect" href="../../d5/dd0/IResource_8hpp.html" title=" " alt="" coords="2233,533,2348,559"/>
-<area shape="rect" title=" " alt="" coords="1765,533,1843,559"/>
-<area shape="rect" title=" " alt="" coords="1969,533,2060,559"/>
-<area shape="rect" title=" " alt="" coords="2085,533,2209,559"/>
-<area shape="rect" title=" " alt="" coords="2110,152,2253,177"/>
+<area shape="rect" title=" " alt="" coords="1369,5,1516,31"/>
+<area shape="rect" href="../../d0/dbb/World_8hpp.html" title=" " alt="" coords="671,79,796,104"/>
+<area shape="rect" href="../../d0/d82/Log_8hpp.html" title=" " alt="" coords="103,533,214,559"/>
+<area shape="rect" href="../../dc/dbc/Profiler_8hpp.html" title="Wrapper of the Tracy Profiler." alt="" coords="656,607,789,632"/>
+<area shape="rect" title=" " alt="" coords="1100,607,1177,632"/>
+<area shape="rect" title=" " alt="" coords="540,225,601,251"/>
+<area shape="rect" href="../../d1/d91/PhysicsSystem_8hpp.html" title=" " alt="" coords="1238,225,1439,251"/>
+<area shape="rect" href="../../db/de8/Scene_8hpp.html" title="A collection of Actors." alt="" coords="982,225,1162,251"/>
+<area shape="rect" href="../../db/d16/ResourceManager_8hpp.html" title="Resource loading and caching system." alt="" coords="1753,299,1943,339"/>
+<area shape="rect" href="../../d6/d39/SimulateWorldEvent_8hpp.html" title=" " alt="" coords="1566,79,1786,104"/>
+<area shape="rect" href="../../d5/d91/ThreadPool_8hpp.html" title="Thread pool implementation for parallel task execution." alt="" coords="1810,79,1971,104"/>
+<area shape="rect" title=" " alt="" coords="1995,79,2082,104"/>
+<area shape="rect" title=" " alt="" coords="2106,79,2193,104"/>
+<area shape="rect" href="../../d7/d3f/Object_8hpp.html" title="Base Object Class." alt="" coords="801,460,946,485"/>
+<area shape="rect" title=" " alt="" coords="1202,607,1299,632"/>
+<area shape="rect" href="../../d0/d1c/ListenerComponent_8hpp.html" title=" " alt="" coords="217,306,473,331"/>
+<area shape="rect" href="../../db/d8b/GameFlow_8hpp.html" title=" " alt="" coords="376,152,533,177"/>
+<area shape="rect" href="../../d0/d46/SceneLoadedEvent_8hpp.html" title="An event sent when the scene finishes being loaded." alt="" coords="40,152,251,177"/>
+<area shape="rect" title=" " alt="" coords="608,152,672,177"/>
+<area shape="rect" title=" " alt="" coords="696,152,771,177"/>
+<area shape="rect" href="../../d7/d5a/RTTIMacros_8h.html" title=" " alt="" coords="661,533,782,559"/>
+<area shape="rect" href="../../d5/d03/Factory_8hpp.html" title="Class in charge of Object creation (not anmymore)" alt="" coords="807,533,940,559"/>
+<area shape="rect" href="../../df/da3/ISerializable_8hpp.html" title="Interface for objects that can be saved and loaded from JSON." alt="" coords="468,533,636,559"/>
+<area shape="rect" title=" " alt="" coords="964,533,1031,559"/>
+<area shape="rect" title=" " alt="" coords="1470,607,1530,632"/>
+<area shape="rect" href="../../da/d8d/Children_8inl.html" title=" " alt="" coords="239,533,335,559"/>
+<area shape="rect" href="../../de/d16/Object_8inl.html" title=" " alt="" coords="359,533,443,559"/>
+<area shape="rect" title=" " alt="" coords="245,607,315,632"/>
+<area shape="rect" title=" " alt="" coords="5,607,72,632"/>
+<area shape="rect" title=" " alt="" coords="97,607,221,632"/>
+<area shape="rect" title=" " alt="" coords="1731,607,1789,632"/>
+<area shape="rect" href="../../df/d1f/Component_8hpp.html" title="Base component class." alt="" coords="585,387,834,412"/>
+<area shape="rect" title=" " alt="" coords="229,387,275,412"/>
+<area shape="rect" title=" " alt="" coords="299,387,391,412"/>
+<area shape="rect" title=" " alt="" coords="415,387,502,412"/>
+<area shape="rect" href="../../df/d7d/Event_8hpp.html" title="Base Event class." alt="" coords="134,225,301,251"/>
+<area shape="rect" href="../../dd/d06/ColliderFlags_8hpp.html" title=" " alt="" coords="1163,306,1389,331"/>
+<area shape="rect" href="../../d1/dd2/GravityType_8hpp.html" title=" " alt="" coords="1359,533,1577,559"/>
+<area shape="rect" title=" " alt="" coords="1072,306,1139,331"/>
+<area shape="rect" title=" " alt="" coords="2248,533,2352,559"/>
+<area shape="rect" href="../../d1/d62/Mesh_8hpp.html" title=" " alt="" coords="2031,460,2116,485"/>
+<area shape="rect" title=" " alt="" coords="2110,533,2173,559"/>
+<area shape="rect" href="../../da/d46/ResourceSlot_8hpp.html" title=" " alt="" coords="1657,387,1791,412"/>
+<area shape="rect" href="../../d0/ddc/Texture_8hpp.html" title=" " alt="" coords="1583,460,1681,485"/>
+<area shape="rect" href="../../d4/d6e/Shader_8hpp.html" title=" " alt="" coords="1812,460,2007,485"/>
+<area shape="rect" title=" " alt="" coords="1816,387,1880,412"/>
+<area shape="rect" href="../../d5/dd0/IResource_8hpp.html" title=" " alt="" coords="1703,533,1817,559"/>
+<area shape="rect" title=" " alt="" coords="2007,533,2086,559"/>
+<area shape="rect" title=" " alt="" coords="1841,533,1932,559"/>
+<area shape="rect" title=" " alt="" coords="1819,152,1962,177"/>
 </map>
 </div>
 </div>

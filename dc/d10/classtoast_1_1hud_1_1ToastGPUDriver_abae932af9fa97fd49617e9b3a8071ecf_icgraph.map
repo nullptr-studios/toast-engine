@@ -1,0 +1,4 @@
+<map id="toast::hud::ToastGPUDriver::ClearRenderBuffer" name="toast::hud::ToastGPUDriver::ClearRenderBuffer">
+<area shape="rect" id="node1" title="Clear a render buffer." alt="" coords="251,5,448,45"/>
+<area shape="rect" id="node2" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#ab5de27477a15eed382a9210031b6f749" title="Execute all pending draw commands." alt="" coords="5,5,203,45"/>
+</map>

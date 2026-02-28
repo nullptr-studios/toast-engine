@@ -24,5 +24,7 @@ var namespaces_dup =
     [ "renderer", "d0/db9/namespacerenderer.html", "d0/db9/namespacerenderer" ],
     [ "resource", "d8/d5c/namespaceresource.html", "d8/d5c/namespaceresource" ],
     [ "spine", "da/dd2/namespacespine.html", "da/dd2/namespacespine" ],
-    [ "toast", "d7/d01/namespacetoast.html", "d7/d01/namespacetoast" ]
+    [ "toast", "d7/d01/namespacetoast.html", "d7/d01/namespacetoast" ],
+    [ "ui", "d3/df6/namespaceui.html", "d3/df6/namespaceui" ],
+    [ "ultralight", "d5/d27/namespaceultralight.html", "d5/d27/namespaceultralight" ]
 ];

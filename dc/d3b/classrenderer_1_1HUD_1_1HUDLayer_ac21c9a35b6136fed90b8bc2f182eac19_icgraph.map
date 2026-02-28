@@ -1,0 +1,4 @@
+<map id="renderer::HUD::HUDLayer::Get" name="renderer::HUD::HUDLayer::Get">
+<area shape="rect" id="node1" title="Disable the HUD (for previewing in editor)" alt="" coords="288,13,508,38"/>
+<area shape="rect" id="node2" href="$d3/de3/classrenderer_1_1HUD_1_1ToastViewListener.html#a89928c49dc4b77c087cf65db60e47ad0" title=" " alt="" coords="5,5,240,45"/>
+</map>
