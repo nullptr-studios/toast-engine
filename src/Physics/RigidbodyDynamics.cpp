@@ -88,8 +88,12 @@ auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
 	PROFILE_ZONE;
 	dvec2 pos1 = rb1->GetPosition();
 	dvec2 pos2 = rb2->GetPosition();
+	
+	double dist = distance(pos1,pos2);
+	if (dist < 0.1f)
+		return std::nullopt;
 
-	double penetration = (rb1->radius + rb2->radius) - distance(pos1, pos2);
+	double penetration = (rb1->radius + rb2->radius) - dist;
 
 	// if penetration is negative we don't have a collision
 	if (penetration <= 0.0) {
