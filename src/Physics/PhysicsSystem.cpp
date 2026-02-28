@@ -473,6 +473,10 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	std::optional<dvec2> rb_hit;
 
 	for (auto* c : physics->m.colliders) {
+		if (!c->parent->enabled()) {
+			continue;
+		}
+		
 		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(c->flags)) == 0u) {
 			continue;
 		}
@@ -494,6 +498,11 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	}
 
 	for (auto* r : physics->m.rigidbodies) {
+		
+		if (!r->enabled()) {
+			continue;
+		}
+		
 		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(r->flags)) == 0u) {
 			continue;
 		}
