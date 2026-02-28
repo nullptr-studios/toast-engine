@@ -402,7 +402,7 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 
 	for (auto it = ++std::ranges::find(m.rigidbodies, rb); it != m.rigidbodies.end(); ++it) {
 		if (not(*it)->enabled()) {
-			return;
+			continue;
 		}
 
 		auto manifold = RbRbCollision(rb, *it);
@@ -415,7 +415,7 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 
 	for (auto* c : m.colliders) {
 		if (not c->parent->enabled()) {
-			return;
+			continue;
 		}
 
 		auto manifold = RbMeshCollision(rb, c);
@@ -426,7 +426,7 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 
 	for (auto* t : m.triggers) {
 		if (not t->enabled()) {
-			return;
+			continue;
 		}
 
 		RbTriggerCollision(rb, t);
@@ -449,7 +449,7 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 	// Collision loops
 	for (auto* c : m.colliders) {
 		if (not c->parent->enabled()) {
-			return;
+			continue;
 		}
 
 		auto manifold = BoxMeshCollision(rb, c);
