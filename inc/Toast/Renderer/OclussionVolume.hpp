@@ -15,7 +15,7 @@ struct OclussionVolume {
 	float mRadius = 5.0f;
 
 	[[nodiscard]] 
-	bool isOnFrustumPlanes(const glm::mat4& worldTransform) const;
+	inline bool isOnFrustumPlanes(const glm::mat4& worldTransform) const;
 
 	static inline bool isSphereOnPlanes(const glm::vec3& center, float radius);
 
