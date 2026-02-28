@@ -615,7 +615,7 @@ void HUDLayer::FlushPendingScriptsNow() {
 
 void HUDLayer::ExecuteJS(const std::string& script) {
 	// Log the outgoing JS for debugging
-	TOAST_TRACE("[JAVASCRIPT] {}", script);
+	// TOAST_TRACE("[JAVASCRIPT] {}", script);
 	EvalScriptOrQueue(script);
 }
 
