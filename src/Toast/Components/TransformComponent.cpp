@@ -64,14 +64,21 @@ json_t TransformComponent::Save() const {
 void TransformComponent::Load(json_t j, bool force_create) {
 	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 	Component::Load(j, force_create);
-	if (j.contains("position")) {
-		m_position = j.at("position");
-	}
-	if (j.contains("rotation")) {
-		m_rotation = j.at("rotation");
-	}
-	if (j.contains("scale")) {
-		m_scale = j.at("scale");
+	
+	try {
+		if (j.contains("position")) {
+			m_position = j.at("position");
+		}
+		if (j.contains("rotation")) {
+			m_rotation = j.at("rotation");
+		}
+		if (j.contains("scale")) {
+			m_scale = j.at("scale");
+		}
+	} catch (...) {
+		m_position = glm::vec3(0.0f);
+		m_rotation = glm::identity<glm::quat>();
+		m_scale = glm::vec3(1.0f);
 	}
 
 	// Refresh caches
