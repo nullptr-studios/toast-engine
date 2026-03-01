@@ -8,8 +8,6 @@
 #include "Toast/Window/Window.hpp"
 #include "Toast/Window/WindowEvents.hpp"
 
-#include <ranges>
-
 namespace input {
 
 InputSystem* InputSystem::m_instance = nullptr;
@@ -126,7 +124,7 @@ void InputSystem::SetState(std::string_view state) {
 		return;
 	}
 	auto& state_list = instance->m.activeLayout->m.states;
-	if (std::ranges::find(state_list, state) != state_list.end()) {
+	if (std::find(state_list.begin(), state_list.end(), state) != state_list.end()) {
 		TOAST_WARN("State {} not found on active layout", state);
 		instance->m.currentState.clear();
 		return;
@@ -138,7 +136,7 @@ void InputSystem::SetState(std::string_view state) {
 void InputSystem::ActiveLayout(std::string_view name) {
 	auto* instance = get();
 	auto& layout_list = instance->m.layouts;
-	instance->m.activeLayout = std::ranges::find_if(layout_list, [name](const Layout& l) {
+	instance->m.activeLayout = std::find_if(layout_list.begin(), layout_list.end(), [name](const Layout& l) {
 		return l.name == name;
 	});
 
@@ -153,16 +151,19 @@ void InputSystem::ActiveLayout(std::string_view name) {
 
 void InputSystem::RegisterListener(Listener* ptr) {
 	auto* this_ptr = get();
-	if (std::ranges::find(this_ptr->m.subscribers, ptr) == this_ptr->m.subscribers.end()) {
+	if (std::find(this_ptr->m.subscribers.begin(), this_ptr->m.subscribers.end(), ptr) == this_ptr->m.subscribers.end()) {
 		this_ptr->m.subscribers.emplace_back(ptr);
 	}
 }
 
 void InputSystem::UnregisterListener(Listener* ptr) {
 	auto* this_ptr = get();
-	auto it = std::find(this_ptr->m.subscribers.begin(), this_ptr->m.subscribers.end(), ptr);
-	if (it != this_ptr->m.subscribers.end()) {
-		this_ptr->m.subscribers.erase(it);
+	auto& subs = this_ptr->m.subscribers;
+	auto it = std::find(subs.begin(), subs.end(), ptr);
+	if (it != subs.end()) {
+		// Swap with last element and pop â€” O(1), order doesn't matter
+		*it = subs.back();
+		subs.pop_back();
 	}
 }
 
@@ -200,7 +201,7 @@ bool InputSystem::Handle0DAction(int key_code, int action, int mods, Device devi
 			if (bind.device != device) {
 				continue;
 			}
-			if (!bind.keys.contains(key_code)) {
+			if (!bind.ContainsKey(key_code)) {
 				continue;
 			}
 
@@ -324,6 +325,7 @@ bool InputSystem::OnMouseButton(event::WindowMouseButton* e) {
 }
 
 bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
+	PROFILE_ZONE;
 	// Store mouse delta and mouse position
 	m.oldMousePosition = m.mousePosition;
 	m.mousePosition = glm::vec2 { e->x, e->y };
@@ -532,6 +534,7 @@ bool InputSystem::OnInputDevice(event::WindowInputDevice* e) {
 }
 
 void InputSystem::PollControllers() {
+	PROFILE_ZONE;
 	// Skip if no active layout
 	if (!HasActiveLayout()) {
 		return;
@@ -553,37 +556,46 @@ void InputSystem::PollControllers() {
 			}
 		}
 
-		// Axis changes (with deadzone and normalization)
-		std::array<float, 6> axes {};
+		// Build transformed axes array once per controller per frame
+		// Check if any axis actually changed first to skip the work entirely
+		bool any_axis_changed = false;
 		for (int i = 0; i <= GLFW_GAMEPAD_AXIS_LAST; ++i) {
-			// Apply deadzone to previous and current values
 			const float prev = std::abs(state.previous.axes[i]) > AXIS_DEADZONE ? state.previous.axes[i] : 0.0f;
 			const float curr = std::abs(state.current.axes[i]) > AXIS_DEADZONE ? state.current.axes[i] : 0.0f;
-
-			// Only process if the axis value changed meaningfully
-			// The 0.001f threshold prevents micro-jitter
 			if (std::abs(curr - prev) > 0.001f) {
-				// Copy all axes and apply transformations
-				std::ranges::copy(state.current.axes, axes.begin());
+				any_axis_changed = true;
+				break;
+			}
+		}
 
-				// Invert Y axes to match standard coordinate system (up = positive)
-				axes[1] *= -1.0f;    // Left stick Y
-				axes[3] *= -1.0f;    // Right stick Y
+		if (!any_axis_changed) {
+			continue;
+		}
 
-				// Normalize trigger values from [-1, 1] to [0, 1]
-				// GLFW reports triggers as axis values but they should be unidirectional
-				axes[4] = (axes[4] * 0.5f) + 0.5f;    // Left trigger (L2)
-				axes[5] = (axes[5] * 0.5f) + 0.5f;    // Right trigger (R2)
+		// Transform axes once
+		std::array<float, 6> axes {};
+		std::copy(std::begin(state.current.axes), std::end(state.current.axes), axes.begin());
 
-				// Apply deadzone to all processed axes
-				// This ensures values below threshold are clamped to zero
-				std::ranges::for_each(axes, [](float& ax) {
-					if (std::abs(ax) < AXIS_DEADZONE) {
-						ax = 0.0f;
-					}
-				});
+		// Invert Y axes to match standard coordinate system (up = positive)
+		axes[1] *= -1.0f;    // Left stick Y
+		axes[3] *= -1.0f;    // Right stick Y
 
-				// Route axis changes to appropriate action handlers
+		// Normalize trigger values from [-1, 1] to [0, 1]
+		axes[4] = (axes[4] * 0.5f) + 0.5f;    // Left trigger (L2)
+		axes[5] = (axes[5] * 0.5f) + 0.5f;    // Right trigger (R2)
+
+		// Apply deadzone to all processed axes
+		for (auto& ax : axes) {
+			if (std::abs(ax) < AXIS_DEADZONE) {
+				ax = 0.0f;
+			}
+		}
+
+		// Now dispatch only the axes that actually changed
+		for (int i = 0; i <= GLFW_GAMEPAD_AXIS_LAST; ++i) {
+			const float prev = std::abs(state.previous.axes[i]) > AXIS_DEADZONE ? state.previous.axes[i] : 0.0f;
+			const float curr = std::abs(state.current.axes[i]) > AXIS_DEADZONE ? state.current.axes[i] : 0.0f;
+			if (std::abs(curr - prev) > 0.001f) {
 				ControllerAxis(i, axes);
 			}
 		}
@@ -600,14 +612,14 @@ void InputSystem::ControllerButton(int id, bool value) {
 			if (bind.device != Device::ControllerButton) {
 				continue;
 			}
-			if (!bind.keys.contains(id)) {
+			if (!bind.ContainsKey(id)) {
 				continue;
 			}
 			action.device = bind.device;
 			if (!value) {
-				action.m.pressedKeys.erase(id + 2e6);
+				action.m.pressedKeys.erase(id + 2000000);
 			} else {
-				action.m.pressedKeys.emplace(id + 2e6, true);
+				action.m.pressedKeys.emplace(id + 2000000, true);
 			}
 			AddToQueue(m.dispatch0DQueue, &action);
 			return;
@@ -629,9 +641,9 @@ void InputSystem::ControllerButton(int id, bool value) {
 				}
 				action.device = bind.device;
 				if (!value) {
-					action.m.pressedKeys.erase(id + 2e6);
+					action.m.pressedKeys.erase(id + 2000000);
 				} else {
-					action.m.pressedKeys.emplace(id + 2e6, bind.GetFloatValue(direction));
+					action.m.pressedKeys.emplace(id + 2000000, bind.GetFloatValue(direction));
 				}
 				AddToQueue(m.dispatch1DQueue, &action);
 				return;
@@ -654,9 +666,9 @@ void InputSystem::ControllerButton(int id, bool value) {
 				}
 				action.device = bind.device;
 				if (!value) {
-					action.m.pressedKeys.erase(id + 2e6);
+					action.m.pressedKeys.erase(id + 2000000);
 				} else {
-					action.m.pressedKeys.emplace(id + 2e6, bind.GetVec2Value(direction));
+					action.m.pressedKeys.emplace(id + 2000000, bind.GetVec2Value(direction));
 				}
 				AddToQueue(m.dispatch2DQueue, &action);
 				return;
@@ -666,7 +678,7 @@ void InputSystem::ControllerButton(int id, bool value) {
 }
 
 // Yeah ignore the clang-tidy warning -x
-void InputSystem::ControllerAxis(int id, std::array<float, 6> axes) {
+void InputSystem::ControllerAxis(int id, const std::array<float, 6>& axes) {
 	// Controller axes -> 1D
 	for (auto& action : m.activeLayout->m.actions1d) {
 		if (!action.CheckState(m.currentState)) {

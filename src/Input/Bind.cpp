@@ -31,7 +31,7 @@ auto Bind::create(std::string& key) -> std::optional<Bind> {
 	auto [code, device] = key_data.value();
 
 	bind.device = device;
-	bind.keys.insert({ code, BindRange::Full });
+	bind.keys.emplace_back(code, BindRange::Full);
 	return bind;
 }
 
@@ -72,5 +72,5 @@ void Bind::Insert(const sol::object& key_lua, BindRange range) {
 
 	auto [key_code, device] = key_data.value();
 	this->device = device;
-	keys.insert({ key_code, range });
+	keys.emplace_back(key_code, range);
 }

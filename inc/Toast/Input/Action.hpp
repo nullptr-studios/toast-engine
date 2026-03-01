@@ -9,7 +9,6 @@
 #include "Toast/Log.hpp"
 
 #include <glm/glm.hpp>
-#include <numeric>
 #include <optional>
 #include <sol/sol.hpp>
 #include <string>
@@ -77,26 +76,26 @@ protected:
 		// Sum all pressed key values to get the final action value
 		// For boolean actions, this is just "is any key pressed?"
 		// For 1D/2D actions, this combines directional inputs (e.g., WASD, analog sticks)
-		value = std::accumulate(m.pressedKeys.begin(), m.pressedKeys.end(), static_cast<Value>(0.0f), [](Value a, const std::pair<int, Value>& pair) {
-			return a + pair.second;
-		});
+		value = static_cast<Value>(0);
+		for (const auto& [_, v] : m.pressedKeys) {
+			value = value + v;
+		}
+
+		const bool transient = HasOnlyTransientInputs();
 
 		// Prevent values from exceeding valid bounds
-		if (!HasOnlyTransientInputs()) {
+		// Skip clamping for transient mouse inputs (world-space positions can exceed [-1, 1])
+		if (!transient) {
 			if constexpr (std::is_same_v<Value, float>) {
-				constexpr float MIN = -1.0f;
-				constexpr float MAX = 1.0f;
-				value = std::clamp(value, MIN, MAX);
+				value = std::clamp(value, -1.0f, 1.0f);
 			} else if constexpr (std::is_same_v<Value, glm::vec2>) {
-				glm::vec2 min = { -1.0f, -1.0f };
-				glm::vec2 max = { 1.0f, 1.0f };
-				value = glm::clamp(value, min, max);
+				value = glm::clamp(value, glm::vec2(-1.0f), glm::vec2(1.0f));
 			}
 		}
 
 		// Mouse position/delta/scroll are one-frame events
 		// They should always be Ongoing, never Started
-		if (HasOnlyTransientInputs()) {
+		if (transient) {
 			state = Ongoing;
 			return;
 		}
@@ -111,7 +110,7 @@ protected:
 	}
 
 	/// Checks if this action should happen on the current InputSystem State
-	bool CheckState(std::string_view state) {
+	bool CheckState(std::string_view currentState) const {
 		if (m.states.empty()) {
 			return true;
 		}
@@ -125,9 +124,10 @@ protected:
 				continue;
 			}
 
-			if (s.starts_with('-')) {
+			if (s[0] == '-') {
 				// if it matches the current state, block
-				if (s.substr(1) == state) {
+				// Compare without allocating a substring
+				if (std::string_view(s).substr(1) == currentState) {
 					blocked = true;
 					break;
 				}
@@ -136,7 +136,7 @@ protected:
 
 			// record presence and match
 			has_positive = true;
-			if (s == state) {
+			if (s == currentState) {
 				matched_positive = true;
 			}
 		}
@@ -152,6 +152,7 @@ protected:
 		std::vector<Bind> binds;
 		std::vector<std::string> states;
 		std::unordered_map<int, Value> pressedKeys;
+		bool queued = false;    ///< Whether this action is currently in a dispatch queue
 	} m;
 };
 
