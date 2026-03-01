@@ -20,7 +20,16 @@
 #include "Toast/Window/Window.hpp"
 #include "Toast/World.hpp"
 
+#include <chrono>
 #include <memory>
+#include <thread>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <mmsystem.h>
+#include <intrin.h>
+#pragma comment(lib, "winmm.lib")
+#endif
 
 #ifdef TOAST_EDITOR
 #include <imgui.h>
@@ -67,10 +76,22 @@ void Engine::Run(int argc, char** argv) {
 
 	updateTimer += Time::delta();
 
+#ifdef _WIN32
+	// Request 1ms timer resolution for accurate sleep_for on Windows.
+	// Without this, Sleep/sleep_for is ~15ms, making any FPS cap below 70 wildly inaccurate.
+	timeBeginPeriod(1);
+#endif
+
+	using clock_t = std::chrono::high_resolution_clock;
+	clock_t::time_point frameStart;
+
 	while (!GetShouldClose()) {
 		updateTimer = 0.0;
 		// This is our frame 0x
 		PROFILE_ZONE_N("Frame");
+
+		// Record frame start at the very top so the limiter measures the full frame cost
+		frameStart = clock_t::now();
 
 		// avoid heavy work if minimized
 		if (window->IsMinimized()) {
@@ -124,6 +145,24 @@ void Engine::Run(int argc, char** argv) {
 
 		// Swap after all rendering and UI is done
 		window->SwapBuffers();
+
+		// Only when VSync is OFF; when VSync is on the driver already paces us.
+		const auto& cfg = m->renderer->GetRendererConfig();
+		if (!cfg.vSync && cfg.maxFPS > 0) {
+			const auto targetDuration = std::chrono::duration<double>(1.0 / static_cast<double>(cfg.maxFPS));
+			const auto targetTime = frameStart + targetDuration;
+
+			auto now = clock_t::now();
+			while (targetTime - now > std::chrono::milliseconds(2)) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+				now = clock_t::now();
+			}
+			while (clock_t::now() < targetTime) {
+#ifdef _WIN32
+				_mm_pause();
+#endif
+			}
+		}
 
 		// DestroyQueue also removes scenes 0x
 		world->RunDestroyQueue();
@@ -226,6 +265,9 @@ void Engine::Render() {
 }
 
 void Engine::Close() {
+#ifdef _WIN32
+	timeEndPeriod(1);
+#endif
 	delete m;
 }
 

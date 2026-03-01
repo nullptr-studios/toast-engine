@@ -26,14 +26,14 @@ namespace renderer {
  * @brief Configuration settings for the renderer.
  */
 struct RendererConfig {
-	glm::uvec2 resolution;                    ///< windowed rendering resolution
-	bool vSync;                               ///< Enable/disable vertical sync
-	toast::DisplayMode currentDisplayMode;    ///< Current display mode
+	glm::uvec2 resolution { 1920, 1080 };        ///< windowed rendering resolution
+	bool vSync { true };                         ///< Enable/disable vertical sync
+	toast::DisplayMode currentDisplayMode {};    ///< Current display mode
 
-	unsigned maxFPS = 300;
+	unsigned maxFPS = 144;
 
-	float resolutionScale;         ///< Scale factor for main framebuffer resolution
-	float lightResolutionScale;    ///< Scale factor for light framebuffer resolution
+	float resolutionScale = 1.0f;          ///< Scale factor for main framebuffer resolution
+	float lightResolutionScale = 0.75f;    ///< Scale factor for light framebuffer resolution
 };
 
 /// @class IRendererBase
@@ -211,48 +211,49 @@ public:
 	void LoadRenderSettings() {
 		std::string configData;
 		if (!resource::ResourceManager::LoadConfig("Renderer.settings", configData)) {
-			TOAST_WARN("Failed to load renderer settings file... creating a default one!");
-			SaveRenderSettings();
-			ApplyRenderSettings();
+			TOAST_WARN("Renderer.settings not found, using defaults");
+			ApplySafeRenderSettings();
 			return;
 		}
 
 		try {
 			auto j = json_t::parse(configData);
+
 			if (j.contains("resolutionScale")) {
 				m_config.resolutionScale = j["resolutionScale"].get<float>();
-			} else {
-				m_config.resolutionScale = 1.0f;
 			}
 			if (j.contains("lightResolutionScale")) {
 				m_config.lightResolutionScale = j["lightResolutionScale"].get<float>();
-			} else {
-				m_config.lightResolutionScale = .75f;
 			}
 			if (j.contains("vSync")) {
 				m_config.vSync = j["vSync"].get<bool>();
-			} else {
-				m_config.vSync = true;
 			}
 			if (j.contains("fullscreen")) {
 				m_config.currentDisplayMode = j["fullscreen"].get<toast::DisplayMode>();
-			} else {
-				m_config.currentDisplayMode = toast::DisplayMode::WINDOWED;
 			}
 			if (j.contains("resolution")) {
 				m_config.resolution = j["resolution"].get<glm::uvec2>();
-			} else {
-				m_config.resolution = glm::uvec2(1920, 1080);
 			}
 			if (j.contains("MaxFPS")) {
 				m_config.maxFPS = j["MaxFPS"].get<unsigned>();
-			} else {
-				m_config.maxFPS = 300;
 			}
-			TOAST_TRACE("SUCCESFULLY LOADED RENDERER SETTINGS!... now applying");
-			ApplyRenderSettings();
 
-		} catch (const std::exception& e) { TOAST_ERROR("Error parsing renderer settings: {0}", e.what()); }
+			TOAST_TRACE("Renderer.settings loaded successfully");
+
+			// Apply only the settings that don't resize the OS window.
+			ApplySafeRenderSettings();
+
+		} catch (const std::exception& e) {
+			TOAST_ERROR("Error parsing Renderer.settings: {0} — using defaults", e.what());
+			ApplySafeRenderSettings();
+		}
+	}
+
+	/// @brief Applies only VSync and FPS cap — safe to call at any time, no window resize side-effects.
+	void ApplySafeRenderSettings() {
+		auto* window = toast::Window::GetInstance();
+		window->SetVSync(m_config.vSync);
+		window->SetRefreshFrameTime(1000.0 / m_config.maxFPS);
 	}
 
 	void SaveRenderSettings() {
@@ -288,6 +289,18 @@ public:
 	[[nodiscard]]
 	const RendererConfig& GetRendererConfig() const noexcept {
 		return m_config;
+	}
+
+	/// @brief Sets the maximum FPS cap
+	void SetMaxFPS(unsigned fps) noexcept {
+		m_config.maxFPS = fps;
+	}
+
+	/// @brief Enables or disables VSync and immediately applies it.
+	/// Does NOT call the full ApplyRenderSettings
+	void SetVSyncEnabled(bool enabled) noexcept {
+		m_config.vSync = enabled;
+		toast::Window::GetInstance()->SetVSync(enabled);
 	}
 
 	// ========== Global Light Settings ==========
