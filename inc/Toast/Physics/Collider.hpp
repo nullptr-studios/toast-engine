@@ -52,6 +52,10 @@ public:
 		return m.points;
 	}
 
+	auto currentEditMode() -> ColliderEditMode {
+		return m.currentEditMode;
+	}
+
 	ColliderData data;
 
 private:
