@@ -17,6 +17,14 @@ namespace physics {
 
 class ConvexCollider;
 
+/// <summary>
+/// What mode for the points to appear on the editor
+/// </summary>
+enum class ColliderEditMode {
+	VERTICES,
+	EDGES
+};
+
 class Collider : public toast::Component {
 public:
 	REGISTER_TYPE(Collider);
@@ -51,6 +59,7 @@ private:
 		std::vector<ConvexCollider*> convexShapes;
 		std::list<glm::vec2> points;
 		ColliderFlags flags = ColliderFlags::Default;
+		ColliderEditMode currentEditMode = ColliderEditMode::VERTICES;
 	} m;
 
 	struct {

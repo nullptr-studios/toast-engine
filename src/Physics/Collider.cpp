@@ -344,8 +344,6 @@ void Collider::Inspector() {
 			cur &= ~static_cast<unsigned int>(ColliderFlags::Weapon);
 		}
 	}
-	ImGui::Spacing();
-	ImGui::Checkbox("Ramp force left?", &data.forceLeft);
 
 	m.flags = static_cast<ColliderFlags>(cur);
 	data.flags = static_cast<ColliderFlags>(cur);
@@ -353,6 +351,17 @@ void Collider::Inspector() {
 		c->flags = data.flags;
 		c->forceLeft = data.forceLeft;
 	}
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Editor settings");
+
+	constexpr std::array<const char*, 2> editModeNames = { "Vertices", "Edges" };
+	int currentEditIndex = static_cast<int>(m.currentEditMode);
+
+	if (ImGui::Combo("Collider Mode", &currentEditIndex, editModeNames.data(), editModeNames.size())) {
+		m.currentEditMode = static_cast<ColliderEditMode>(currentEditIndex);
+	}
+
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Points");
@@ -438,7 +447,9 @@ void Collider::EditorTick() {
 	}
 
 	if (debug.showPoints) {
-		renderer::DebugCircle(debug.newPointPosition + world_position, 0.1f, { 1.0f, 0.5f, 0.0f, 1.0f });
+		glm::vec2 new_p = debug.newPointPosition;
+		constexpr glm::vec4 color = { 1.0, 0.5, 0.0, 1.0 };
+		renderer::DebugCircle(glm::vec2 { world_mtx * glm::vec4 {new_p.x, new_p.y, 0, 1} }, 0.1f, color);
 
 		for (glm::vec2 p : m.points) {
 			renderer::DebugCircle(glm::vec2(world_mtx * glm::vec4(p.x, p.y, 0, 1)), 0.1f);
