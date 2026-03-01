@@ -82,14 +82,16 @@ protected:
 		});
 
 		// Prevent values from exceeding valid bounds
-		if constexpr (std::is_same_v<Value, float>) {
-			constexpr float MIN = -1.0f;
-			constexpr float MAX = 1.0f;
-			value = std::clamp(value, MIN, MAX);
-		} else if constexpr (std::is_same_v<Value, glm::vec2>) {
-			glm::vec2 min = { -1.0f, -1.0f };
-			glm::vec2 max = { 1.0f, 1.0f };
-			value = glm::clamp(value, min, max);
+		if (!HasOnlyTransientInputs()) {
+			if constexpr (std::is_same_v<Value, float>) {
+				constexpr float MIN = -1.0f;
+				constexpr float MAX = 1.0f;
+				value = std::clamp(value, MIN, MAX);
+			} else if constexpr (std::is_same_v<Value, glm::vec2>) {
+				glm::vec2 min = { -1.0f, -1.0f };
+				glm::vec2 max = { 1.0f, 1.0f };
+				value = glm::clamp(value, min, max);
+			}
 		}
 
 		// Mouse position/delta/scroll are one-frame events

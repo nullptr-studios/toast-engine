@@ -62,7 +62,6 @@ void Collider::CalculatePoints() {
 	// create edges (only used for editor)
 	auto it = m.points.begin();
 	while (it != m.points.end()) {
-
 		auto next = std::next(it);
 		if (next == m.points.end()) {
 			next = m.points.begin();
@@ -70,13 +69,15 @@ void Collider::CalculatePoints() {
 
 		glm::vec2 t = glm::normalize(*next - *it);
 
-		m.edges.emplace_back(Line {
-			.p1 = *it,
-			.p2 = *next,
-			.normal = { -t.y, t.x},
-			.tangent = t,
-			.length = glm::distance(*it, *next),
-		});
+		m.edges.emplace_back(
+		    Line {
+		      .p1 = *it,
+		      .p2 = *next,
+		      .normal = { -t.y, t.x },
+		      .tangent = t,
+		      .length = glm::distance(*it, *next),
+    }
+		);
 
 		++it;
 	}
@@ -384,7 +385,6 @@ void Collider::Inspector() {
 		m.currentEditMode = static_cast<ColliderEditMode>(currentEditIndex);
 	}
 
-
 	ImGui::Spacing();
 	ImGui::SeparatorText("Points");
 
@@ -471,7 +471,13 @@ void Collider::EditorTick() {
 	if (debug.showPoints) {
 		glm::vec2 new_p = debug.newPointPosition;
 		constexpr glm::vec4 color = { 1.0, 0.5, 0.0, 1.0 };
-		renderer::DebugCircle(glm::vec2 { world_mtx * glm::vec4 {new_p.x, new_p.y, 0, 1} }, 0.1f, color);
+		renderer::DebugCircle(
+		    glm::vec2 {
+		      world_mtx * glm::vec4 { new_p.x, new_p.y, 0, 1 }
+    },
+		    0.1f,
+		    color
+		);
 
 		for (glm::vec2 p : m.points) {
 			renderer::DebugCircle(glm::vec2(world_mtx * glm::vec4(p.x, p.y, 0, 1)), 0.1f);

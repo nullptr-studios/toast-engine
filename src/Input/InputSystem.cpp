@@ -4,6 +4,7 @@
 #include "Toast/Log.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/ProjectSettings.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Window/Window.hpp"
 #include "Toast/Window/WindowEvents.hpp"
 
@@ -77,6 +78,8 @@ InputSystem::InputSystem() {
 
 void InputSystem::Tick() {
 	PROFILE_ZONE;
+	m.mouseRaysDirty = true;
+
 	// Check all connected controllers for button/axis changes
 	PollControllers();
 
@@ -169,6 +172,14 @@ auto InputSystem::GetMousePosition() -> glm::vec2 {
 
 auto InputSystem::GetMouseDelta() -> glm::vec2 {
 	return get()->m.mouseDelta;
+}
+
+void InputSystem::SetViewportPosition(glm::vec2 position) {
+	get()->m.viewportPosition = position;
+}
+
+void InputSystem::SetViewportSize(glm::vec2 size) {
+	get()->m.viewportSize = size;
 }
 
 #pragma endregion
@@ -338,23 +349,54 @@ bool InputSystem::OnMousePosition(event::WindowMousePosition* e) {
 				if (key == MOUSE_POSITION_CODE) {
 					action.device = bind.device;
 
-					glm::vec2 value = m.mousePosition;
+					// Localize mouse position to viewport and convert to NDC [-1, 1]
+					glm::vec2 localMouse = m.mousePosition - m.viewportPosition;
+					float ndcX = (localMouse.x * 2.0f / m.viewportSize.x) - 1.0f;
+					float ndcY = 1.0f - (localMouse.y * 2.0f / m.viewportSize.y);
 
-#if defined(__linux__)
-					// Adjust for display scale on Linux
-					const auto [sx, sy] = toast::Window::GetInstance()->GetDisplayScale();
-					value.x *= sx;
-					value.y *= sy;
-#endif
+					auto* renderer = renderer::IRendererBase::GetInstance();
+					auto* cam = renderer->GetActiveCamera();
 
-					// Convert screen coords to NDC [-1, 1]
-					const auto s = toast::Window::GetInstance()->GetFramebufferSize();
-					value.x = (value.x / s.x) - 0.5f;
-					value.y = -((value.y / s.y) - 0.5f);
-					value *= 2.0f;
+					if (cam) {
+						if (m.mouseRaysDirty) {
+							m.mouseRaysDirty = false;
 
-					// Store as transient input (will be cleared after dispatch)
-					action.m.pressedKeys[MOUSE_POSITION_CODE] = value;
+							glm::mat4 invVP = glm::inverse(renderer->GetProjectionMatrix() * cam->GetViewMatrix());
+
+							// Precompute: world = invVP * (nx, ny, z, 1) / w
+							// For z = -1 (near) and z = +1 (far), expand into origin + x_coeff * nx + y_coeff * ny
+							auto unprojectCorner = [&](float nx, float ny, float nz) -> glm::vec3 {
+								glm::vec4 h = invVP * glm::vec4(nx, ny, nz, 1.0f);
+								return glm::vec3(h) / h.w;
+							};
+
+							glm::vec3 n00 = unprojectCorner(0.0f, 0.0f, -1.0f);
+							glm::vec3 n10 = unprojectCorner(1.0f, 0.0f, -1.0f);
+							glm::vec3 n01 = unprojectCorner(0.0f, 1.0f, -1.0f);
+							m.rayNearOrigin = n00;
+							m.rayNearX = n10 - n00;
+							m.rayNearY = n01 - n00;
+
+							glm::vec3 f00 = unprojectCorner(0.0f, 0.0f, 1.0f);
+							glm::vec3 f10 = unprojectCorner(1.0f, 0.0f, 1.0f);
+							glm::vec3 f01 = unprojectCorner(0.0f, 1.0f, 1.0f);
+							m.rayFarOrigin = f00;
+							m.rayFarX = f10 - f00;
+							m.rayFarY = f01 - f00;
+						}
+
+						// Fast per-move: reconstruct near/far world points from cached coefficients
+						glm::vec3 nearW = m.rayNearOrigin + m.rayNearX * ndcX + m.rayNearY * ndcY;
+						glm::vec3 farW = m.rayFarOrigin + m.rayFarX * ndcX + m.rayFarY * ndcY;
+
+						// Intersect ray with Z=0 world plane
+						glm::vec3 dir = farW - nearW;
+						float t = (std::abs(dir.z) > 0.0001f) ? (-nearW.z / dir.z) : 0.0f;
+						glm::vec3 worldPos = nearW + dir * t;
+
+						action.m.pressedKeys[MOUSE_RAW_CODE] = glm::vec2(worldPos.x, worldPos.y);
+					}
+
 					AddToQueue(m.dispatch2DQueue, &action);
 					return true;
 				}

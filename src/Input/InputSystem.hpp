@@ -39,6 +39,9 @@ public:
 	static auto GetMousePosition() -> glm::vec2;
 	static auto GetMouseDelta() -> glm::vec2;
 
+	static void SetViewportPosition(glm::vec2 position);
+	static void SetViewportSize(glm::vec2 size);
+
 	void Tick();
 
 private:
@@ -131,6 +134,19 @@ private:
 		glm::vec2 oldMousePosition = { 0.0f, 0.0f };
 		glm::vec2 mouseDelta = { 0.0f, 0.0f };
 		glm::vec2 mousePosition = { 0.0f, 0.0f };
+
+		glm::vec2 viewportSize = { 0.0f, 0.0f };
+		glm::vec2 viewportPosition = { 0.0f, 0.0f };
+
+		// Cached inverse VP decomposition for mouse-to-world
+
+		glm::vec3 rayNearOrigin { 0.f };
+		glm::vec3 rayNearX { 0.f };
+		glm::vec3 rayNearY { 0.f };
+		glm::vec3 rayFarOrigin { 0.f };
+		glm::vec3 rayFarX { 0.f };
+		glm::vec3 rayFarY { 0.f };
+		bool mouseRaysDirty = true;
 
 		float triggerDeadzone = 0.2f;
 	} m;
