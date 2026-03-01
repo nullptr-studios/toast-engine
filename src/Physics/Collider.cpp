@@ -39,6 +39,13 @@ void Collider::DeletePoint(glm::vec2 point) {
 	m.points.erase(it);
 }
 
+void Collider::DeleteAt(unsigned idx) {
+	auto point = m.points.begin();
+	std::advance(point, idx);
+	m.points.erase(point);
+	CalculatePoints();
+}
+
 void Collider::Bevel(unsigned idx) {
 	if (m.points.size() < 3) {
 		return;
@@ -385,7 +392,7 @@ void Collider::Inspector() {
 	ImGui::Spacing();
 	ImGui::SeparatorText("Editor settings");
 
-	constexpr std::array<const char*, 2> editModeNames = { "Vertices", "Edges" };
+	constexpr std::array<const char*, 3> editModeNames = { "Vertices", "Edges", "Multi" };
 	int currentEditIndex = static_cast<int>(m.currentEditMode);
 
 	if (ImGui::Combo("Collider Mode", &currentEditIndex, editModeNames.data(), editModeNames.size())) {

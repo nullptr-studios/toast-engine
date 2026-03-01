@@ -23,7 +23,8 @@ class ConvexCollider;
 /// </summary>
 enum class ColliderEditMode {
 	VERTICES,
-	EDGES
+	EDGES,
+	MULTI,
 };
 
 class Collider : public toast::Component {
@@ -49,6 +50,7 @@ public:
 	void AddPointAt(int index, glm::vec2 point);
 	void SwapPoints(glm::vec2 lhs, glm::vec2 rhs);
 	void DeletePoint(glm::vec2 point);
+	void DeleteAt(unsigned idx);
 
 	auto GetPoints() -> std::list<glm::vec2>& {
 		return m.points;

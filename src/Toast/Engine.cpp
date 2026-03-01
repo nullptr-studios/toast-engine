@@ -25,9 +25,9 @@
 #include <thread>
 
 #ifdef _WIN32
-#include <windows.h>
-#include <mmsystem.h>
 #include <intrin.h>
+#include <mmsystem.h>
+#include <windows.h>
 #pragma comment(lib, "winmm.lib")
 #endif
 
