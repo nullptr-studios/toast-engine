@@ -59,6 +59,28 @@ void Collider::CalculatePoints() {
 		return;
 	}
 
+	// create edges (only used for editor)
+	auto it = m.points.begin();
+	while (it != m.points.end()) {
+
+		auto next = std::next(it);
+		if (next == m.points.end()) {
+			next = m.points.begin();
+		}
+
+		glm::vec2 t = glm::normalize(*next - *it);
+
+		m.edges.emplace_back(Line {
+			.p1 = *it,
+			.p2 = *next,
+			.normal = { -t.y, t.x},
+			.tangent = t,
+			.length = glm::distance(*it, *next),
+		});
+
+		++it;
+	}
+
 	// update world position data
 	glm::vec2 world_position = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
 	data.worldPosition = world_position;

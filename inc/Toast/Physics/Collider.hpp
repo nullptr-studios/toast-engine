@@ -52,6 +52,10 @@ public:
 		return m.points;
 	}
 
+	auto GetEdges() -> std::list<Line>& {
+		return m.edges;
+	}
+
 	auto currentEditMode() -> ColliderEditMode {
 		return m.currentEditMode;
 	}
@@ -62,6 +66,7 @@ private:
 	struct {
 		std::vector<ConvexCollider*> convexShapes;
 		std::list<glm::vec2> points;
+		std::list<Line> edges;
 		ColliderFlags flags = ColliderFlags::Default;
 		ColliderEditMode currentEditMode = ColliderEditMode::VERTICES;
 	} m;
