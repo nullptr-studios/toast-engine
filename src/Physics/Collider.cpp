@@ -22,6 +22,12 @@ void Collider::AddPoint(glm::vec2 point) {
 	m.points.emplace_back(point);
 }
 
+void Collider::AddPointAt(int index, glm::vec2 point) {
+	auto it = m.points.begin();
+	std::advance(it, index + 1);
+	m.points.emplace(it, point);
+}
+
 void Collider::SwapPoints(glm::vec2 lhs, glm::vec2 rhs) {
 	auto lhs_it = std::ranges::find(m.points, lhs);
 	auto rhs_it = std::ranges::find(m.points, rhs);
@@ -60,6 +66,7 @@ void Collider::CalculatePoints() {
 	}
 
 	// create edges (only used for editor)
+	m.edges.clear();
 	auto it = m.points.begin();
 	while (it != m.points.end()) {
 		auto next = std::next(it);

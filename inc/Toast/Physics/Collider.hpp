@@ -5,6 +5,7 @@
 #pragma once
 #include "ColliderData.hpp"
 #include "ColliderFlags.hpp"
+#include "Line.hpp"
 #include "Toast/Components/Component.hpp"
 
 #include <glm/glm.hpp>
@@ -45,6 +46,7 @@ public:
 	template<typename... Args>
 	void AddPoints(Args... points);
 	void AddPoint(glm::vec2 point);
+	void AddPointAt(int index, glm::vec2 point);
 	void SwapPoints(glm::vec2 lhs, glm::vec2 rhs);
 	void DeletePoint(glm::vec2 point);
 
@@ -52,7 +54,7 @@ public:
 		return m.points;
 	}
 
-	auto GetEdges() -> std::list<Line>& {
+	auto GetEdges() -> std::list<Line> {
 		return m.edges;
 	}
 
