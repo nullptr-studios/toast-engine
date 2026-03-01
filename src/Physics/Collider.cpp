@@ -5,6 +5,7 @@
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "glm/geometric.hpp"
 
 #include <iterator>
 
@@ -47,7 +48,7 @@ void Collider::DeleteAt(unsigned idx) {
 }
 
 void Collider::Bevel(unsigned idx) {
-	if (m.points.size() < 3) {
+	if (m.points.size() < 3 || idx >= m.points.size()) {
 		return;
 	}
 
@@ -55,14 +56,18 @@ void Collider::Bevel(unsigned idx) {
 	auto p1 = m.points.begin();
 	std::advance(p1, idx);
 
-	auto right = (p1 != m.points.end()) ? std::next(p1) : m.points.begin();
+	auto right = (std::next(p1) == m.points.end()) ? m.points.begin() : std::next(p1);
 	auto left = (p1 != m.points.begin()) ? std::prev(p1) : std::prev(m.points.end());
 
 	// Reformat the corner into 2 more points that are close to the original point
-	auto new_point1 = glm::mix(*right, *p1, 0.9f);
-	auto new_point2 = glm::mix(*left, *p1, 0.9f);
+	// auto new_point1 = glm::mix(*right, *p1, 0.5f);
+	// auto new_point2 = glm::mix(*left, *p1, 0.5f);
+	auto new_point1 = *p1 + glm::normalize(*right - *p1);
+	auto new_point2 = *p1 + glm::normalize(*left - *p1);
+
 	*p1 = new_point1;
 	m.points.insert(p1, new_point2);
+	CalculatePoints();
 }
 
 void Collider::CalculatePoints() {
