@@ -80,6 +80,7 @@ private:
 		bool showColliders = true;
 		glm::vec2 newPointPosition;
 		glm::mat4 oldPosition;
+		int bevelSubdivisions = 1;
 	} debug;
 };
 
