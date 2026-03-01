@@ -24,12 +24,12 @@
 #include <memory>
 #include <thread>
 
-#ifdef _WIN32
-#include <intrin.h>
-#include <mmsystem.h>
-#include <windows.h>
-#pragma comment(lib, "winmm.lib")
-#endif
+//#ifdef _WIN32
+//#include <intrin.h>
+//#include <mmsystem.h>
+//#include <windows.h>
+//#pragma comment(lib, "winmm.lib")
+//#endif
 
 #ifdef TOAST_EDITOR
 #include <imgui.h>
@@ -79,7 +79,7 @@ void Engine::Run(int argc, char** argv) {
 #ifdef _WIN32
 	// Request 1ms timer resolution for accurate sleep_for on Windows.
 	// Without this, Sleep/sleep_for is ~15ms, making any FPS cap below 70 wildly inaccurate.
-	timeBeginPeriod(1);
+	//timeBeginPeriod(1);
 #endif
 
 	using clock_t = std::chrono::high_resolution_clock;
@@ -266,7 +266,7 @@ void Engine::Render() {
 
 void Engine::Close() {
 #ifdef _WIN32
-	timeEndPeriod(1);
+	//timeEndPeriod(1);
 #endif
 	delete m;
 }
