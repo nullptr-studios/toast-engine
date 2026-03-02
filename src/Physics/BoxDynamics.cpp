@@ -7,6 +7,8 @@
 #include <Toast/Renderer/DebugDrawLayer.hpp>
 #include <Toast/Time.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/vector_query.hpp"
+#include "glm/gtx/vector_angle.hpp"
 #include <glm/gtx/norm.hpp>
 
 namespace physics {
@@ -109,7 +111,6 @@ void BoxResetVelocity(BoxRigidbody* rb) {
 }
 
 auto BoxBoxCollision(BoxRigidbody* rb1, BoxRigidbody* rb2) -> std::optional<BoxManifold> {
-	dvec2 rb_pos = rb1->GetPosition();
 	std::list<BoxManifold> manifolds;
 
 	int edge_count = 0;
@@ -241,6 +242,20 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 	double normal_speed = dot(relative_velocity, normal);
 	double tangent_speed = dot(relative_velocity, contact_tangent);
 
+	double width1 = rb1->size.x / 2;
+	double height1 = rb1->size.y / 2;
+	double inertia1 = (rb1->mass * (width1 * width1 + height1 * height1)) / 12.0;
+	double inv_inertia1 = inertia1 > 0.0 ? 1.0 / inertia1 : 0.0;
+
+	double width2 = rb2->size.x / 2;
+	double height2 = rb2->size.y / 2;
+	double inertia2 = (rb2->mass * (width2 * width2 + height2 * height2)) / 12.0;
+	double inv_inertia2 = inertia2 > 0.0 ? 1.0 / inertia2 : 0.0;
+
+	dvec2 contact = (manifold.contactCount == 2) ? (manifold.contact1 + manifold.contact2) * 0.5 : manifold.contact1;
+	dvec2 r1 = contact - position1;
+	dvec2 r2 = contact - position2;
+
 	// Only resolve if bodies are moving towards each other
 	if (normal_speed < 0.0) {
 		// Restitution disabled below threshold to prevent jitter
@@ -274,7 +289,6 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 
 	position1 -= correction * inv_mass1;
 	position2 += correction * inv_mass2;
-
 
 	rb1->SetPosition(position2);
 	rb2->SetPosition(position1);
@@ -445,6 +459,11 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 
 	dvec2 contact = (manifold.contactCount == 2) ? (manifold.contact1 + manifold.contact2) * 0.5 : manifold.contact1;
 	dvec2 r = contact - position;
+	if (!isNormalized(r, PhysicsSystem::pos_slop())) {
+		r = normalize(r);
+	}
+	double r_length = length(r);
+
 
 	// unfold velocity in normal and tangencial
 	dvec2 contact_tangent = { -manifold.normal.y, manifold.normal.x };
@@ -476,20 +495,10 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 
 		// Apply impulses to velocity
 		velocity += impulse * inv_mass;
+		double angle_to_rotate = angle(r, manifold.normal);
+		if (abs(angle_to_rotate) > (1e-2))
+			rb->AddTorque(angle_to_rotate);
 
-		// Apply angular impulse with slight damping to smooth spikes
-
-		dmat2 torque_mat;
-		torque_mat = { r, impulse };
-		if (length2(r) > 1.0f || length2(impulse) > 1.0f) {
-			torque_mat = { normalize(r), normalize(impulse) };
-		}
-
-		double torque_impulse = determinant(torque_mat);
-		const double angular_impulse_blend = 0.6;
-		if (abs(torque_impulse) > PhysicsSystem::pos_slop()) {
-			angular_velocity += torque_impulse * inv_inertia * angular_impulse_blend * rb->mass;
-		}
 	}
 
 	// positional correction
