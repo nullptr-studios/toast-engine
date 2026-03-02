@@ -111,6 +111,7 @@ void BoxResetVelocity(BoxRigidbody* rb) {
 }
 
 auto BoxBoxCollision(BoxRigidbody* rb1, BoxRigidbody* rb2) -> std::optional<BoxManifold> {
+	dvec2 rb1_pos = rb1->GetPosition();
 	std::list<BoxManifold> manifolds;
 
 	int edge_count = 0;
@@ -133,16 +134,19 @@ auto BoxBoxCollision(BoxRigidbody* rb1, BoxRigidbody* rb2) -> std::optional<BoxM
 		double min_rb = dot(dvec2 { rb_points[0] }, edge.normal);
 		double max_rb = min_rb;
 
+
 		for (int i = 1; i < rb_points.size(); i++) {
 			double proj = dot(dvec2 { rb_points[i] }, edge.normal);
 			min_rb = std::min(proj, min_rb);
 			max_rb = std::max(proj, max_rb);
 		}
 
+
 		// if theres no overlap on this axis, there is no collision at all
 		if (max_rb < min_collider || min_rb > max_collider) {
 			return std::nullopt;
 		}
+
 
 		// compute overlap along the axis (penetration depth candidate)
 		double overlap = std::min(max_collider - min_rb, max_rb - min_collider);
@@ -255,6 +259,10 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 	dvec2 contact = (manifold.contactCount == 2) ? (manifold.contact1 + manifold.contact2) * 0.5 : manifold.contact1;
 	dvec2 r1 = contact - position1;
 	dvec2 r2 = contact - position2;
+	if (!isNormalized(r1, 1e-2))
+		r1 = normalize(r1);
+	if (!isNormalized(r2, 1e-2))
+		r2 = normalize(r2);
 
 	// Only resolve if bodies are moving towards each other
 	if (normal_speed < 0.0) {
@@ -281,6 +289,24 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 
 		velocity1 -= impulse * inv_mass1;
 		velocity2 += impulse * inv_mass2;
+
+		if (!isNormalized(impulse, 1e-2))
+			impulse = normalize(impulse);
+		if (abs(dot(r1, -impulse)) < 1) {
+			double angle_to_rotate1 = orientedAngle(r1, -impulse) - pi<double>();
+			angle_to_rotate1 *= cos(angle_to_rotate1);
+			angle_to_rotate1 *= sin(angle_to_rotate1);
+			if (abs(angle_to_rotate1) > 1e-1)
+				rb1->angularVelocity +=  angle_to_rotate1 * inv_mass1;
+		}
+
+		if (abs(dot(r2, impulse)) < 1) {
+			double angle_to_rotate2 = orientedAngle(r2, impulse) - pi<double>();
+			angle_to_rotate2 *= cos(angle_to_rotate2);
+			angle_to_rotate2 *= sin(angle_to_rotate2);
+			if (abs(angle_to_rotate2) > 1e-1)
+				rb2->angularVelocity +=  angle_to_rotate2 * inv_mass2;
+		}
 	}
 
 	// Positional correction
@@ -360,16 +386,40 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 		// project rigidbody vertices onto the same axis
 		double min_rb = dot(dvec2 { rb_points[0] }, edge.normal);
 		double max_rb = min_rb;
-
+		bool not_needed = false;
 		for (int i = 1; i < rb_points.size(); i++) {
 			double proj = dot(dvec2 { rb_points[i] }, edge.normal);
 			min_rb = std::min(proj, min_rb);
 			max_rb = std::max(proj, max_rb);
+
+			// we DO NOT want to check with rigidbodies that are behind the normal
+			if (proj < -rb->size.y) {
+				not_needed = true;
+				break;
+			}
+		}
+
+		if (not_needed == true) {
+			continue;
 		}
 
 		// if theres no overlap on this axis, there is no collision at all
 		if (max_rb < min_collider || min_rb > max_collider) {
 			return std::nullopt;
+		}
+
+		// find where along the line is the object
+		double distance_along_line = dot(rb_pos - edge.p1, edge.tangent);
+		glm::dvec2 normal;
+		if (distance_along_line < 0.0f) {
+			// Case 1: rigidbody is before segment
+			normal = rb_pos - edge.p1;
+		} else if (distance_along_line > edge.length) {
+			// Case 2: rigidbody is after segment
+			normal = rb_pos - edge.p2;
+		} else {
+			// Case 3: rigidbody is inside the line
+			normal = edge.normal;
 		}
 
 		// compute overlap along the axis (penetration depth candidate)
@@ -459,7 +509,7 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 
 	dvec2 contact = (manifold.contactCount == 2) ? (manifold.contact1 + manifold.contact2) * 0.5 : manifold.contact1;
 	dvec2 r = contact - position;
-	if (!isNormalized(r, PhysicsSystem::pos_slop())) {
+	if (!isNormalized(r, 1e-2)) {
 		r = normalize(r);
 	}
 	double r_length = length(r);
@@ -495,9 +545,16 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 
 		// Apply impulses to velocity
 		velocity += impulse * inv_mass;
-		double angle_to_rotate = angle(r, manifold.normal);
-		rb->angularVelocity += angle_to_rotate / ;
 
+		if (!isNormalized(impulse, 1e-2))
+			impulse = normalize(impulse);
+		if (abs(dot(r, impulse)) < 1) {
+			double angle_to_rotate = orientedAngle(r, impulse) - pi<double>();
+			angle_to_rotate *= cos(angle_to_rotate);
+			angle_to_rotate *= sin(angle_to_rotate);
+			if (abs(angle_to_rotate) > 1e-1)
+				rb->angularVelocity +=  angle_to_rotate * inv_mass;
+		}
 	}
 
 	// positional correction

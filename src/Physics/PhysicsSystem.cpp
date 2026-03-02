@@ -78,6 +78,7 @@ PhysicsSystem::PhysicsSystem() {
 		m.positionCorrectionSlop = e->positionCorrectionSlop;
 		m.eps = e->eps;
 		m.epsSmall = e->epsSmall;
+		m.tickCount = e->iterationCount;
 		return true;
 	});
 }
