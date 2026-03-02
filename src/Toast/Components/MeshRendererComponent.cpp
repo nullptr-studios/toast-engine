@@ -2,6 +2,7 @@
 /// @author dario
 /// @date 28/09/2025.
 
+#include "Toast/Profiler.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 
@@ -15,6 +16,7 @@
 namespace toast {
 
 void MeshRendererComponent::Load(json_t j, bool force_create) {
+	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 	TransformComponent::Load(j, force_create);
 	// if (j.contains("shaderPath")) {
 	//	m_shaderPath = j.at("shaderPath");
@@ -72,6 +74,10 @@ void MeshRendererComponent::Init() {
 	// m_texture = resource::ResourceManager::GetInstance()->LoadResource<Texture>(m_texturePath);
 	m_mesh = resource::LoadResource<renderer::Mesh>(m_meshPath);
 
+	SetRunTick(false);
+	SetRunEarlyTick(false);
+	SetRunLateTick(false);
+
 #ifdef TOAST_EDITOR
 	m_materialSlot.SetOnDroppedLambda([this](const std::string& p) {
 		SetMaterial(p);
@@ -94,6 +100,7 @@ void MeshRendererComponent::Init() {
 }
 
 void MeshRendererComponent::LoadTextures() {
+	PROFILE_ZONE_C(0xFFFF00);    // Yellow for resource loading
 	// opengl calls eso si que es en el main thread
 	// m_shader->Use();
 	// m_shader->SetSampler("Texture", 0);
@@ -105,9 +112,7 @@ void MeshRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept 
 		return;
 	}
 
-	if (!OclussionVolume::isTransformedAABBOnPlanes(
-	        renderer::IRendererBase::GetInstance()->GetFrustumPlanes(), m_mesh->boundingBox(), GetWorldMatrix()
-	    )) {
+	if (!OclussionVolume::isTransformedAABBOnPlanes(m_mesh->boundingBox(), GetWorldMatrix())) {
 		return;
 	}
 

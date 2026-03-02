@@ -15,4 +15,8 @@ std::optional<RayResult> RayCast(const vec2 point, const vec2 dir, ColliderFlags
 	return PhysicsSystem::RayCollision(&ray, flags);
 }
 
+toast::Object* PointCast(const vec2 point, ColliderFlags flags) {
+	return PhysicsSystem::PointCollision(point, flags);
+}
+
 }

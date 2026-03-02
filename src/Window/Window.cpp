@@ -13,7 +13,9 @@ namespace toast {
 
 Window* Window::m_instance = nullptr;
 
-Window::Window(unsigned width, unsigned height, const std::string& name) {
+Window::Window(unsigned width, unsigned height, std::string_view name) {
+	PROFILE_ZONE_N("Window Construction");
+
 	// Set window instance
 	if (m_instance != nullptr) {
 		throw ToastException("Trying to create window but it already exists");
@@ -32,7 +34,7 @@ Window::Window(unsigned width, unsigned height, const std::string& name) {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	m_glfwWindow = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
+	m_glfwWindow = glfwCreateWindow(width, height, name.data(), nullptr, nullptr);
 
 	glfwMakeContextCurrent(m_glfwWindow);
 	glfwSwapInterval(0);    // disable v-sync for uncapped framerate
@@ -81,8 +83,12 @@ double Window::GetTime() {
 	return glfwGetTime();
 }
 
+double Window::GetRefreshFrameTime() {
+	return m_refreshFrameTime;
+}
+
 void Window::SwapBuffers() {
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0xFF0000);    // Red for rendering
 	glfwSwapBuffers(m_glfwWindow);
 }
 

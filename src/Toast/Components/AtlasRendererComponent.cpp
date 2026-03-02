@@ -5,6 +5,7 @@
 #include "Toast/Components/AtlasRendererComponent.hpp"
 
 #include "Toast/Components/AtlasSpriteComponent.hpp"
+#include "Toast/Profiler.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
@@ -17,13 +18,18 @@
 #endif
 
 void AtlasRendererComponent::Init() {
+	PROFILE_ZONE_C(0xFF6B00);    // Orange for initialization
 	TransformComponent::Init();
 
-	m_shader = resource::LoadResource<renderer::Shader>("shaders/spine_atlas.shader");
+	m_shader = resource::LoadResource<renderer::Shader>("SHADERS/spine_atlas.shader");
 
 	// Reserve temp buffers to avoid allocations
 	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
 	m_tempIndices.reserve(INITIAL_VERT_RESERVE);
+
+	SetRunEarlyTick(false);
+	SetRunLateTick(false);
+	SetRunTick(false);
 
 	if (!m_atlasPath.empty()) {
 		m_atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
@@ -61,19 +67,11 @@ void AtlasRendererComponent::BuildQuadFromRegion(
 		return;
 	}
 
-	// Get UV coordinates from the region
-	float u = region->u;
-	float v = region->v;
-	float u2 = region->u2;
-	float v2 = region->v2;
-
-	// Flip V coordinates on Y axis
-	v = 1.0f - v;
-	v2 = 1.0f - v2;
-
-	// Get dimensions
-	float width = static_cast<float>(region->width) / 50.0f;    // 1 scale unit is 50 pixls
+	float width = static_cast<float>(region->width) / 50.0f;
 	float height = static_cast<float>(region->height) / 50.0f;
+
+	float halfW = width * 0.5f;
+	float halfH = height * 0.5f;
 
 	// Current vertex offset for indices
 	uint16_t baseIndex = static_cast<uint16_t>(vertices.size());
@@ -81,56 +79,38 @@ void AtlasRendererComponent::BuildQuadFromRegion(
 	// 4 vertices for the quad
 	std::array<renderer::SpineVertex, 4> quadVerts;
 
-	// Handle rotated regions
+	// Quad positions
+	// Bottom-left, Bottom-right, Top-right, Top-left
+	quadVerts[0].position = glm::vec3(-halfW, -halfH, 0.0f);
+	quadVerts[1].position = glm::vec3(halfW, -halfH, 0.0f);
+	quadVerts[2].position = glm::vec3(halfW, halfH, 0.0f);
+	quadVerts[3].position = glm::vec3(-halfW, halfH, 0.0f);
+
+	// Set colors
+	quadVerts[0].colorABGR = color;
+	quadVerts[1].colorABGR = color;
+	quadVerts[2].colorABGR = color;
+	quadVerts[3].colorABGR = color;
+
+	// Get UV coordinates from the region
+	float u = region->u;
+	float v = region->v;
+	float u2 = region->u2;
+	float v2 = region->v2;
+
 	if (region->degrees == 90) {
-		std::swap(width, height);
-
-		float halfW = width * 0.5f;
-		float halfH = height * 0.5f;
-
-		// Bottom-left vertex
-		quadVerts[0].position = glm::vec3(halfH, -halfW, 0.0f);
-		quadVerts[0].texCoord = glm::vec2(u2, v2);
-		quadVerts[0].colorABGR = color;
-
-		// Bottom-right vertex
-		quadVerts[1].position = glm::vec3(halfH, halfW, 0.0f);
-		quadVerts[1].texCoord = glm::vec2(u, v2);
-		quadVerts[1].colorABGR = color;
-
-		// Top-right vertex
-		quadVerts[2].position = glm::vec3(-halfH, halfW, 0.0f);
-		quadVerts[2].texCoord = glm::vec2(u, v);
-		quadVerts[2].colorABGR = color;
-
-		// Top-left vertex
-		quadVerts[3].position = glm::vec3(-halfH, -halfW, 0.0f);
-		quadVerts[3].texCoord = glm::vec2(u2, v);
-		quadVerts[3].colorABGR = color;
+		// Sprite is rotated 90° CW in the atlas
+		// Rotate UVs to compensate
+		quadVerts[0].texCoord = glm::vec2(u2, v2);    // BL
+		quadVerts[1].texCoord = glm::vec2(u2, v);     // BR
+		quadVerts[2].texCoord = glm::vec2(u, v);      // TR
+		quadVerts[3].texCoord = glm::vec2(u, v2);     // TL
 	} else {
-		// Unrotated region
-		float halfW = width * 0.5f;
-		float halfH = height * 0.5f;
-
-		// Bottom-left
-		quadVerts[0].position = glm::vec3(-halfW, -halfH, 0.0f);
-		quadVerts[0].texCoord = glm::vec2(u, v2);
-		quadVerts[0].colorABGR = color;
-
-		// Bottom-right
-		quadVerts[1].position = glm::vec3(halfW, -halfH, 0.0f);
-		quadVerts[1].texCoord = glm::vec2(u2, v2);
-		quadVerts[1].colorABGR = color;
-
-		// Top-right
-		quadVerts[2].position = glm::vec3(halfW, halfH, 0.0f);
-		quadVerts[2].texCoord = glm::vec2(u2, v);
-		quadVerts[2].colorABGR = color;
-
-		// Top-left
-		quadVerts[3].position = glm::vec3(-halfW, halfH, 0.0f);
-		quadVerts[3].texCoord = glm::vec2(u, v);
-		quadVerts[3].colorABGR = color;
+		// Unrotated sprite - standard UV mapping
+		quadVerts[0].texCoord = glm::vec2(u, v2);     // Bottom-left
+		quadVerts[1].texCoord = glm::vec2(u2, v2);    // Bottom-right
+		quadVerts[2].texCoord = glm::vec2(u2, v);     // Top-right
+		quadVerts[3].texCoord = glm::vec2(u, v);      // Top-left
 	}
 
 	// Transform vertices by the sprite's transform
@@ -242,7 +222,7 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 
 	// Frustum culling
 	const auto& frustumPlanes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes();
-	if (!OclussionVolume::isTransformedAABBOnPlanes(frustumPlanes, m_dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f))) {
+	if (!OclussionVolume::isTransformedAABBOnPlanes(m_dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f))) {
 		return;
 	}
 
@@ -264,10 +244,11 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 }
 
 void AtlasRendererComponent::LoadTextures() {
+	PROFILE_ZONE_C(0xFFFF00);    // Yellow for resource loading
 	m_shader->Use();
 	m_shader->SetSampler("Texture", 0);
 
-	renderer::IRendererBase::GetInstance()->AddRenderable(this);
+	renderer::IRendererBase::GetInstance()->AddTransparentRenderable(this);
 
 	m_dynamicMesh.InitDynamicSpine();
 }
@@ -396,5 +377,5 @@ json_t AtlasRendererComponent::Save() const {
 }
 
 void AtlasRendererComponent::Destroy() {
-	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveTransparentRenderable(this);
 }

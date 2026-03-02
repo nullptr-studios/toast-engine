@@ -29,12 +29,17 @@ public:
 	void GeometryPass();
 	void LightingPass();
 	void CombinedRenderPass() const;
+	void SpritePass();
+	void HUDPass();
 
 	void Clear() override;
 	void Resize(glm::uvec2 size) override;
 
 	void AddRenderable(IRenderable* renderable) override;
 	void RemoveRenderable(IRenderable* renderable) override;
+
+	void AddTransparentRenderable(IRenderable* renderable) override;
+	void RemoveTransparentRenderable(IRenderable* renderable) override;
 
 	void AddLight(Light2D* light) override;
 	void RemoveLight(Light2D* light) override;
@@ -51,5 +56,8 @@ private:
 	std::shared_ptr<Mesh> m_quad = nullptr;
 
 	GlobalLight* m_globalLight = nullptr;
+
+	// Optional per-layer framebuffer to render non-HUD layers before compositing
+	Framebuffer* m_layerFramebuffer = nullptr;
 };
 }

@@ -3,7 +3,12 @@
 #include "ConvexCollider.hpp"
 #include "Toast/GlmJson.hpp"
 #include "Toast/Objects/Actor.hpp"
+#include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "glm/geometric.hpp"
+
+#include <iterator>
+#include <vector>
 
 #ifdef TOAST_EDITOR
 #include <imgui.h>
@@ -11,8 +16,18 @@
 
 using namespace physics;
 
+void Collider::Init() {
+	CalculatePoints();
+}
+
 void Collider::AddPoint(glm::vec2 point) {
 	m.points.emplace_back(point);
+}
+
+void Collider::AddPointAt(int index, glm::vec2 point) {
+	auto it = m.points.begin();
+	std::advance(it, index + 1);
+	m.points.emplace(it, point);
 }
 
 void Collider::SwapPoints(glm::vec2 lhs, glm::vec2 rhs) {
@@ -26,10 +41,79 @@ void Collider::DeletePoint(glm::vec2 point) {
 	m.points.erase(it);
 }
 
+void Collider::DeleteAt(unsigned idx) {
+	auto point = m.points.begin();
+	std::advance(point, idx);
+	m.points.erase(point);
+	CalculatePoints();
+}
+
+void Collider::Bevel(unsigned idx) {
+  unsigned subdivisions = debug.bevelSubdivisions;
+	if (m.points.size() < 3 || idx >= m.points.size() || subdivisions < 1) {
+		return;
+	}
+
+	auto p1 = m.points.begin();
+	std::advance(p1, idx);
+
+	auto right = (std::next(p1) == m.points.end()) ? m.points.begin() : std::next(p1);
+	auto left = (p1 != m.points.begin()) ? std::prev(p1) : std::prev(m.points.end());
+
+	// Cut points at 25% of each edge from the corner
+	constexpr float cut_ratio = 0.25f;
+	glm::vec2 cut_left = glm::mix(*p1, *left, cut_ratio);
+	glm::vec2 cut_right = glm::mix(*p1, *right, cut_ratio);
+
+	// Quadratic Bezier: cut_left -> *p1 (control) -> cut_right
+	// This creates an arc tangent to both edges at the cut points.
+	// subdivisions=1 gives a flat chamfer, higher values round the corner.
+	std::vector<glm::vec2> arc;
+	for (unsigned i = 0; i <= subdivisions; ++i) {
+		float t = static_cast<float>(i) / static_cast<float>(subdivisions);
+		float u = 1.0f - t;
+		glm::vec2 pt = u * u * cut_left + 2.0f * u * t * (*p1) + t * t * cut_right;
+		arc.push_back(pt);
+	}
+
+	// Replace the original point with the arc points
+	for (const auto& pt : arc) {
+		m.points.insert(p1, pt);
+	}
+	m.points.erase(p1);
+
+	CalculatePoints();
+}
+
 void Collider::CalculatePoints() {
+	PROFILE_ZONE;
 	// We require at leats 3 points to make a mesh
 	if (m.points.size() < 3) {
 		return;
+	}
+
+	// create edges (only used for editor)
+	m.edges.clear();
+	auto it = m.points.begin();
+	while (it != m.points.end()) {
+		auto next = std::next(it);
+		if (next == m.points.end()) {
+			next = m.points.begin();
+		}
+
+		glm::vec2 t = glm::normalize(*next - *it);
+
+		m.edges.emplace_back(
+		    Line {
+		      .p1 = *it,
+		      .p2 = *next,
+		      .normal = { -t.y, t.x },
+		      .tangent = t,
+		      .length = glm::distance(*it, *next),
+    }
+		);
+
+		++it;
 	}
 
 	// update world position data
@@ -45,6 +129,8 @@ void Collider::CalculatePoints() {
 	using simple_mesh = std::list<std::pair<glm::vec2, bool>>;
 	simple_mesh start_mesh;
 
+	auto world_mtx = dynamic_cast<toast::Actor*>(parent())->transform()->GetWorldMatrix();
+
 	// Figure out which points are concave
 	int sign = ShoelaceArea(m.points) >= 0 ? 1 : -1;
 	std::list<std::list<glm::vec2>::iterator> concave_points;
@@ -55,6 +141,10 @@ void Collider::CalculatePoints() {
 		glm::vec2 curr = *it;
 		glm::vec2 prev = *it_prev;
 		glm::vec2 next = *it_next;
+
+		curr = world_mtx * glm::vec4(curr.x, curr.y, 0, 1);
+		prev = world_mtx * glm::vec4(prev.x, prev.y, 0, 1);
+		next = world_mtx * glm::vec4(next.x, next.y, 0, 1);
 
 		glm::mat2 mat = { curr - prev, next - curr };
 		float det = sign * glm::determinant(mat);
@@ -86,6 +176,10 @@ void Collider::CalculatePoints() {
 			glm::vec2 curr = it->first;
 			glm::vec2 prev = it_prev->first;
 			glm::vec2 next = it_next->first;
+
+			curr = world_mtx * glm::vec4(curr.x, curr.y, 0, 1);
+			prev = world_mtx * glm::vec4(prev.x, prev.y, 0, 1);
+			next = world_mtx * glm::vec4(next.x, next.y, 0, 1);
 
 			glm::mat2 mat = { curr - prev, next - curr };
 			float det = sign * glm::determinant(mat);
@@ -226,11 +320,15 @@ void Collider::CalculatePoints() {
 	}
 
 	data.flags = m.flags;
-	data.parent = parent();
+	data.parent = this;
 
 	// Finally, create convex colliders for every convex mesh we produced
 	for (const auto& points : meshes_list) {
-		m.convexShapes.emplace_back(new ConvexCollider(points, data));
+		// FIXME: this way of setting up the flags is retarded
+		auto c = new ConvexCollider(points, data);
+		c->flags = data.flags;
+		c->forceLeft = data.forceLeft;
+		m.convexShapes.emplace_back(c);
 	}
 }
 
@@ -258,6 +356,8 @@ void Collider::Inspector() {
 	bool ground_flag = (cur & static_cast<unsigned int>(ColliderFlags::Ground)) != 0;
 	bool player_flag = (cur & static_cast<unsigned int>(ColliderFlags::Player)) != 0;
 	bool enemy_flag = (cur & static_cast<unsigned int>(ColliderFlags::Enemy)) != 0;
+	bool ramp_flag = (cur & static_cast<unsigned int>(ColliderFlags::Ramp)) != 0;
+	bool weapon_flag = (cur & static_cast<unsigned int>(ColliderFlags::Weapon)) != 0;
 
 	if (ImGui::Checkbox("Default", &default_flag)) {
 		if (default_flag) {
@@ -287,11 +387,36 @@ void Collider::Inspector() {
 			cur &= ~static_cast<unsigned int>(ColliderFlags::Player);
 		}
 	}
+	if (ImGui::Checkbox("Ramp", &ramp_flag)) {
+		if (ramp_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Ramp);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Ramp);
+		}
+	}
+	if (ImGui::Checkbox("Weapon", &weapon_flag)) {
+		if (weapon_flag) {
+			cur |= static_cast<unsigned int>(ColliderFlags::Weapon);
+		} else {
+			cur &= ~static_cast<unsigned int>(ColliderFlags::Weapon);
+		}
+	}
 
 	m.flags = static_cast<ColliderFlags>(cur);
 	data.flags = static_cast<ColliderFlags>(cur);
 	for (auto* c : m.convexShapes) {
-		c->flags = static_cast<ColliderFlags>(cur);
+		c->flags = data.flags;
+		c->forceLeft = data.forceLeft;
+	}
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Editor settings");
+
+	constexpr std::array<const char*, 3> editModeNames = { "Vertices", "Edges", "Multi" };
+	int currentEditIndex = static_cast<int>(m.currentEditMode);
+
+	if (ImGui::Combo("Collider Mode", &currentEditIndex, editModeNames.data(), editModeNames.size())) {
+		m.currentEditMode = static_cast<ColliderEditMode>(currentEditIndex);
 	}
 
 	ImGui::Spacing();
@@ -302,6 +427,8 @@ void Collider::Inspector() {
 	}
 	ImGui::SameLine();
 	ImGui::DragFloat2("Position", &debug.newPointPosition.x);
+
+	ImGui::SliderInt("Bevel Subdivisions", &debug.bevelSubdivisions, 1, 5);
 
 	ImGui::Separator();
 	ImGui::Spacing();
@@ -342,6 +469,15 @@ void Collider::Inspector() {
 			ImGui::Spacing();
 			return;
 		}
+		ImGui::SameLine();
+
+		if (ImGui::SmallButton("Bevel")) {
+			Bevel(idx);
+			ImGui::PopID();
+			ImGui::Separator();
+			ImGui::Spacing();
+			return;
+		}
 
 		std::string label = std::format("Position##pt{}", idx);
 		ImGui::DragFloat2(label.c_str(), &it->x);
@@ -371,11 +507,25 @@ void Collider::Inspector() {
 void Collider::EditorTick() {
 	glm::vec2 world_position = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
 
+	auto world_mtx = dynamic_cast<toast::Actor*>(parent())->transform()->GetWorldMatrix();
+	if (world_mtx != debug.oldPosition) {
+		debug.oldPosition = world_mtx;
+		CalculatePoints();
+	}
+
 	if (debug.showPoints) {
-		renderer::DebugCircle(debug.newPointPosition + world_position, 0.1f, { 1.0f, 0.5f, 0.0f, 1.0f });
+		glm::vec2 new_p = debug.newPointPosition;
+		constexpr glm::vec4 color = { 1.0, 0.5, 0.0, 1.0 };
+		renderer::DebugCircle(
+		    glm::vec2 {
+		      world_mtx * glm::vec4 { new_p.x, new_p.y, 0, 1 }
+    },
+		    0.1f,
+		    color
+		);
 
 		for (glm::vec2 p : m.points) {
-			renderer::DebugCircle(p + world_position, 0.1f);
+			renderer::DebugCircle(glm::vec2(world_mtx * glm::vec4(p.x, p.y, 0, 1)), 0.1f);
 		}
 	}
 
@@ -402,7 +552,7 @@ json_t Collider::Save() const {
 	j["debug.showColliders"] = debug.showColliders;
 	j["debug.showNormals"] = data.debugNormals;
 	j["flags"] = static_cast<unsigned int>(m.flags);
-
+	j["data.forceLeft"] = data.forceLeft;
 	return j;
 }
 
@@ -416,8 +566,6 @@ void Collider::Load(json_t j, bool propagate) {
 		for (const auto& p : j["points"]) {
 			AddPoint(p);
 		}
-
-		CalculatePoints();
 	}
 
 	if (j.contains("friction")) {
@@ -435,11 +583,14 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 
 	if (j.contains("flags")) {
+		data.flags = static_cast<ColliderFlags>(j["flags"]);
 		for (auto* c : m.convexShapes) {
-			c->flags = static_cast<ColliderFlags>(j["flags"]);
+			c->flags = data.flags;
 		}
 		m.flags = static_cast<ColliderFlags>(j["flags"]);
-		data.flags = static_cast<ColliderFlags>(j["flags"]);
+	}
+	if (j.contains("data.forceLeft")) {
+		data.forceLeft = j["data.forceLeft"];
 	}
 
 	Component::Load(j, propagate);

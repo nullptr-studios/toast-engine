@@ -19,8 +19,8 @@ public:
 	}
 
 	void Begin() override {
-		mesh->SetMesh("models/quad.obj");
-		mesh->SetMaterial("shaders/default.shader");
+		mesh->SetMesh("MODELS/quad.obj");
+		mesh->SetMaterial("SHADERS/default.shader");
 
 		transform()->position({ 0.0f, 0.0f, 0.0f });
 	}

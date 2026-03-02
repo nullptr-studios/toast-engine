@@ -6,6 +6,7 @@
 
 #include "Toast/GlmJson.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Time.hpp"
 
 #include <algorithm>
 #include <any>
@@ -414,6 +415,8 @@ void Material::Use() const {
 			}
 		}
 	}
+
+	m_shader->Set("time", static_cast<float>(Time::uptime()));
 }
 
 void Material::UpdateEditorSlots() {
@@ -513,15 +516,15 @@ void Material::UpdateEditorSlots() {
 void Material::LoadErrorMaterial() {
 	PROFILE_ZONE;
 	TOAST_WARN("Loading error material");
-	
+
 	// Clear existing data
 	m_shaderParameters.clear();
 	m_parameters.clear();
 	m_textures.clear();
-	
+
 	m_shader = std::make_shared<renderer::Shader>("ErrorShader");
 	// m_shader->LoadErrorShader();
-	
+
 	// Set material as loaded
 	SetResourceState(resource::ResourceState::UPLOADEDGPU);
 }

@@ -25,6 +25,11 @@ namespace resource {
 ///@brief Manager of every resource in the engine
 class ResourceManager {
 public:
+	static constexpr const char* kGenericFilePath = "EDITOR/icons/genericFile.png";
+	static constexpr const char* kObjFilePath = "EDITOR/icons/objFile.png";
+	static constexpr const char* kJsonFilePath = "EDITOR/icons/jsonFile.png";
+	static constexpr const char* kFolderIconPath = "EDITOR/icons/folder.png";
+
 	/**
 	 * @brief Constructs the ResourceManager.
 	 * @param pkg If true, reads from game.pkg instead of filesystem.
@@ -71,7 +76,7 @@ public:
 	 * @par Example:
 	 * @code
 	 * auto texture = rm->LoadResource<Texture>("textures/player.png");
-	 * auto mesh = rm->LoadResource<Mesh>("models/cube.obj");
+	 * auto mesh = rm->LoadResource<Mesh>("MODELS/cube.obj");
 	 * @endcode
 	 */
 	template<typename R, typename... Args>
@@ -83,7 +88,7 @@ public:
 	 * @param data_out Output string stream with file contents.
 	 * @return true if file was opened successfully.
 	 */
-	bool OpenFile(const std::string& path, std::istringstream& data_out) const;
+	bool OpenFile(std::string_view path, std::istringstream& data_out) const;
 
 	/**
 	 * @brief Opens a file and returns its contents as bytes.
@@ -91,7 +96,7 @@ public:
 	 * @param data Output vector with file bytes.
 	 * @return true if file was opened successfully.
 	 */
-	bool OpenFile(const std::string& path, std::vector<uint8_t>& data) const;
+	bool OpenFile(std::string_view path, std::vector<uint8_t>& data) const;
 
 	/**
 	 * @brief Saves content to a file on disk.
@@ -99,7 +104,7 @@ public:
 	 * @param content Content to write.
 	 * @return true if file was saved successfully.
 	 */
-	static bool SaveFile(const std::string& path, const std::string& content);
+	static bool SaveFile(std::string_view path, std::string_view content);
 
 	/**
 	 * @brief Saves content to a file on disk.
@@ -107,7 +112,7 @@ public:
 	 * @param content Content to write.
 	 * @return true if file was saved successfully.
 	 */
-	static bool SaveConfig(const std::string& path, const std::string& content);
+	static bool SaveConfig(std::string_view path, std::string_view content);
 
 	/**
 	 * @brief Loads content from a file on disk.
@@ -115,7 +120,7 @@ public:
 	 * @param content
 	 * @return true if file was loaded successfully.
 	 */
-	static bool LoadConfig(const std::string& path, std::string& content);
+	static bool LoadConfig(std::string_view path, std::string& content);
 
 	/**
 	 * @brief Creates a resource slot entry for the editor.
@@ -181,7 +186,7 @@ private:
  * @endcode
  */
 [[nodiscard]]
-inline auto Open(const std::string& path) -> std::optional<std::string> {
+inline auto Open(std::string_view path) -> std::optional<std::string> {
 	std::istringstream fileStream;
 	if (!ResourceManager::GetInstance()->OpenFile(path, fileStream)) {
 		return std::nullopt;
@@ -190,11 +195,11 @@ inline auto Open(const std::string& path) -> std::optional<std::string> {
 	return fileStream.str();
 }
 
-inline auto Open(const std::string& path, std::istringstream& data) {
+inline auto Open(std::string_view path, std::istringstream& data) {
 	return ResourceManager::GetInstance()->OpenFile(path, data);
 }
 
-inline auto Open(const std::string& path, std::vector<uint8_t>& data_out) {
+inline auto Open(std::string_view path, std::vector<uint8_t>& data_out) {
 	return ResourceManager::GetInstance()->OpenFile(path, data_out);
 }
 

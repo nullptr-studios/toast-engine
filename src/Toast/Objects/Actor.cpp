@@ -8,6 +8,7 @@
 #include "Toast/Event/ListenerComponent.hpp"
 #include "Toast/GlmJson.hpp"
 #include "Toast/Objects/Actor.hpp"
+#include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
 namespace toast {
@@ -23,6 +24,7 @@ Actor::Actor() {
 }
 
 json_t Actor::Save() const {
+	PROFILE_ZONE_C(0x00FF00);    // Green for serialization
 	json_t j = Object::Save();
 	json_t transform_j;
 	transform_j["position"] = m_transform->position();
@@ -33,12 +35,14 @@ json_t Actor::Save() const {
 }
 
 void Actor::Load(json_t j, bool force_create) {
-	Object::Load(j, force_create);
+	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 
 	auto transform_j = j["transform"];
 	m_transform->position(transform_j["position"].get<glm::vec3>());
 	m_transform->rotationQuat(transform_j["rotation"].get<glm::quat>());
 	m_transform->scale(transform_j["scale"].get<glm::vec3>());
+
+	Object::Load(j, force_create);
 }
 
 #ifdef TOAST_EDITOR

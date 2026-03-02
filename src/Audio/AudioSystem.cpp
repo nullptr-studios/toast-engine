@@ -9,6 +9,7 @@
 audio::AudioSystem* audio::AudioSystem::m_instance = nullptr;
 
 auto audio::AudioSystem::create() -> std::expected<AudioSystem*, AudioError> {
+	PROFILE_ZONE_N("AudioSystem Creation");
 	if (m_instance != nullptr) {
 		TOAST_ERROR("AudioSystem: Attempted to create AudioSystem instance when one already exists!");
 		return std::unexpected(AudioError::AlreadyLoaded);
@@ -28,6 +29,7 @@ auto audio::AudioSystem::get() noexcept -> AudioSystem* {
 }
 
 void audio::AudioSystem::Init() {
+	PROFILE_ZONE_N("AudioSystem Initialization");
 	// Create FMOD Studio system first, then get low-level system from it
 	// Both systems are needed: Studio for events, Core for raw audio playback
 	ERRCHECK(FMOD::Studio::System::create(&m.studio_system));
@@ -48,6 +50,7 @@ void audio::AudioSystem::Destroy() const {
 }
 
 void audio::AudioSystem::Tick() const {
+	PROFILE_ZONE;
 	ERRCHECK(m.studio_system->update());    // also updates the low level system
 }
 

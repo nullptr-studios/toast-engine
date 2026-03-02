@@ -1,11 +1,21 @@
 #include "Toast/Objects/Object.hpp"
 
+#include "Toast/Log.hpp"
 #include "Toast/World.hpp"
 
-namespace toast {
+#include <algorithm>
+#include <generator>
+#include <memory>
+#include <optional>
+#include <ranges>
 
+namespace toast {
 void Object::Load(json_t j, const bool force_create) {
 	PROFILE_ZONE;
+
+	if (!m_serialize) {
+		return;
+	}
 
 	// Verify that the type for the object is the same as in the json
 	if (type() != j["type"].get<std::string>()) {
@@ -21,6 +31,10 @@ void Object::Load(json_t j, const bool force_create) {
 	m_json = j;    // Store for soft reloads
 
 	for (auto& json_c : j["children"]) {
+		if (!json_c.contains("type")) {    // SKIP NOT ACTUAL CHILD ENTRIES
+			continue;
+		}
+
 		const auto type = json_c["type"].get<std::string>();
 		std::string c_name = json_c["name"];
 
@@ -44,6 +58,10 @@ json_t Object::Save() const {
 	PROFILE_ZONE;
 
 	json_t j {};
+
+	if (!m_serialize) {
+		return j;
+	}
 
 	j["type"] = type();
 	j["name"] = name();
@@ -160,7 +178,7 @@ bool Object::Children::Has(const unsigned id) const {
 	return it != m_children.end() && it->second != nullptr;
 }
 
-bool Object::Children::Has(const std::string& name) const {
+bool Object::Children::Has(std::string_view name) const {
 	for (const auto& child : m_children | std::views::values) {
 		if (child->name() == name) {
 			return true;
@@ -175,7 +193,7 @@ bool Object::Children::Has(const std::string& name) const {
 	return false;
 }
 
-bool Object::Children::HasType(const std::string& type, bool propagate) const {
+bool Object::Children::HasType(std::string_view type, bool propagate) const {
 	for (const auto& child : m_children | std::views::values) {
 		if (child->type() == type) {
 			return true;
@@ -212,7 +230,7 @@ Object* Object::Children::Get(unsigned id) {
 	return nullptr;
 }
 
-Object* Object::Children::Get(const std::string& name) {
+Object* Object::Children::Get(std::string_view name) {
 	for (const auto& child : m_children | std::views::values) {
 		// Check for child name
 		if (child->name() == name) {
@@ -230,7 +248,7 @@ Object* Object::Children::Get(const std::string& name) {
 	return nullptr;
 }
 
-Object* Object::Children::GetType(const std::string& type, bool propagate) {
+Object* Object::Children::GetType(std::string_view type, bool propagate) {
 	for (const auto& child : m_children | std::views::values) {
 		if (child->type() == type) {
 			return child.get();
@@ -255,18 +273,18 @@ Object* Object::Children::operator[](const unsigned id) {
 	return this->Get(id);
 }
 
-Object* Object::Children::operator[](const std::string& name) {
+Object* Object::Children::operator[](std::string_view name) {
 	return this->Get(name);
 }
 
-Object* Object::Children::Add(std::string type, std::optional<std::string_view> name, std::optional<json_t> file) {
+Object* Object::Children::Add(std::string_view type, std::optional<std::string_view> name, std::optional<json_t> file) {
 	auto registry = getRegistry();
-	if (!registry.contains(type)) {
+	if (!registry.contains(type.data())) {
 		TOAST_ERROR("Type {0} not found in registry", type);
 		return nullptr;
 	}
 
-	auto* obj = registry[type](*this, std::nullopt);
+	auto* obj = registry[type.data()](*this, std::nullopt);
 	_ConfigureObject(obj, name, file);
 	return obj;
 }
@@ -315,7 +333,7 @@ void Object::Children::Remove(unsigned id) {
 	}
 }
 
-void Object::Children::Remove(const std::string& name) {
+void Object::Children::Remove(std::string_view name) {
 	for (const auto& [_, child] : m_children) {
 		if (child->name() == name) {
 			// run the destroy logic
@@ -336,10 +354,67 @@ void Object::Children::RemoveAll() {
 	}
 }
 
+// Here lies the remnents of dante code :(
+// auto Object::Children::RecursiveLoop() -> std::generator<Children&> {
+// 	for (auto& child : m_children | std::views::values) {
+// 		co_yield child->children;
+// 		co_yield std::ranges::elements_of(child->children.RecursiveLoop());
+// 	}
+// }
+// omg dante -x
+
+void Object::SetScene(Scene* scene) {
+	assert(scene != nullptr);
+	m_scene = scene;
+	children.m_scene = scene;
+	for (auto& child : children | std::views::values) {
+		child->SetScene(scene);
+	}
+}
+
+auto Object::Children::Collect(const unsigned id) -> std::unique_ptr<Object> {
+	auto iter = m_children.find(id);
+	assert(iter != m_children.end());
+	auto ptr = std::move(iter->second);
+	m_children.erase(iter);
+	return ptr;
+}
+
+void Object::Adopt(unsigned id) {
+	assert(id != m_id);
+	// adopting parent test
+	Object* iter;    // NOLINT
+	if ((iter = parent())) {
+		while (iter->id() != id && (iter = iter->parent())) { }
+		if (iter) {
+			TOAST_ERROR("adopting one's own parent not allowed");
+			return;
+		}
+	}
+	//
+	auto* obj = iter ? iter : World::Get(id);
+	if (!obj) {
+		TOAST_ERROR("Cannot Adopt Child When Child Does Not Exist");
+		return;
+	}
+	auto parent = (obj->parent() ? std::optional<Object*>(obj->parent()) : std::nullopt);
+	Children* children_of_parent;    // NOLINT
+	if (parent) {
+		children_of_parent = &parent.value()->children;
+	} else {
+		children_of_parent = &World::GetChildren();
+	}
+	auto orphan = children_of_parent->Collect(id);
+
+	orphan->m_parent = this;
+	orphan->SetScene(m_scene);
+	children.m_children[id] = std::move(orphan);
+}
+
 #pragma endregion
 
 void Object::_Init() {
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0xFF6B00);    // Orange for initialization
 	PROFILE_TEXT(type(), strlen(type()));
 
 	Init();    // ACTOR's LOGIC
@@ -349,7 +424,7 @@ void Object::_Begin(bool propagate) {
 	if (!enabled()) {
 		return;
 	}
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0xFFFF00);    // Yellow for begin
 	PROFILE_TEXT(type(), strlen(type()));
 
 	Begin();    // ACTOR's LOGIC
@@ -372,11 +447,15 @@ void Object::_Begin(bool propagate) {
 }
 
 void Object::_EarlyTick() {
+	if (not m_runsEarlyTick) {
+		return;
+	}
+
 	if (!enabled() || !m_hasRunBegin) {
 		return;
 	}
 
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0x00FF80);    // Light green for early tick
 	PROFILE_TEXT(type(), strlen(type()));
 
 	EarlyTick();    // ACTOR's LOGIC
@@ -388,11 +467,11 @@ void Object::_EarlyTick() {
 }
 
 void Object::_Tick() {
-	if (!enabled() || !m_hasRunBegin) {
+	if (!enabled() || !m_hasRunBegin || !m_runsTick) {
 		return;
 	}
 
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0x00FF00);    // Green for main tick
 	PROFILE_TEXT(type(), strlen(type()));
 
 	Tick();    // ACTOR's LOGIC
@@ -404,10 +483,14 @@ void Object::_Tick() {
 }
 
 void Object::_EditorTick() {
+	if (not m_runsLateTick) {
+		return;
+	}
+
 	if (!enabled()) {
 		return;
 	}
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0xFF00FF);    // Magenta for editor tick
 	PROFILE_TEXT(type(), strlen(type()));
 
 	EditorTick();
@@ -423,7 +506,7 @@ void Object::_LateTick() {
 		return;
 	}
 
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0x80FF00);    // Yellow-green for late tick
 	PROFILE_TEXT(type(), strlen(type()));
 
 	LateTick();    // ACTOR's LOGIC
@@ -445,7 +528,7 @@ void Object::_Destroy() {
 
 	m_hasBeenDestroyed = true;
 
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0xFF0000);    // Red for destruction
 	PROFILE_TEXT(type(), strlen(type()));
 
 	// Check if we need to de-schedule its Begin
@@ -464,7 +547,7 @@ void Object::_PhysTick() {
 		return;
 	}
 
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0xFF8000);    // Orange for physics tick
 	PROFILE_TEXT(type(), strlen(type()));
 
 	PhysTick();    // ACTOR's LOGIC
@@ -485,7 +568,11 @@ void Object::_OnDisable() {
 
 void Object::_enabled(const bool enabled) {
 	if (enabled && !m_json.empty()) {
-		m_enabled = m_json["enabled"];
+		if (m_json.contains("enabled")) {
+			m_enabled = m_json["enabled"];
+		} else {
+			return;    // EARLY EXIT IF NOT VALID OBJ ENTRY
+		}
 	} else {
 		m_enabled = false;
 	}
@@ -496,7 +583,7 @@ void Object::_enabled(const bool enabled) {
 }
 
 void Object::_LoadTextures() {
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0xFFFF00);    // Yellow for texture loading
 	PROFILE_TEXT(type(), strlen(type()));
 
 	LoadTextures();
@@ -506,5 +593,4 @@ void Object::_LoadTextures() {
 		child->_LoadTextures();
 	}
 }
-
 }

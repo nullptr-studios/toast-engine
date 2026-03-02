@@ -5,19 +5,34 @@
 #include "ForceLink.cpp"
 #include "Input/InputSystem.hpp"
 #include "Physics/PhysicsSystem.hpp"
+#include "Toast/CoroutineHandler.hpp"
 #include "Toast/Factory.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Objects/Scene.hpp"
 #include "Toast/ProjectSettings.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/Renderer/HUD/HUDLayer.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/LayerStack.hpp"
 #include "Toast/Renderer/OpenGL/OpenGLRenderer.hpp"
 #include "Toast/Time.hpp"
+#include "Toast/Ui/Manager.hpp"
 #include "Toast/Window/Window.hpp"
 #include "Toast/World.hpp"
 
+#include <chrono>
 #include <memory>
+#include <thread>
+
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <mmsystem.h>
+#include <intrin.h>
+#pragma comment(lib, "winmm.lib")
+#endif
 
 #ifdef TOAST_EDITOR
 #include <imgui.h>
@@ -27,6 +42,8 @@ namespace toast {
 
 Engine* Engine::m_instance;
 double Engine::purge_timer = 0.0;
+
+double updateTimer = 0.0;
 
 struct Engine::Pimpl {
 	std::unique_ptr<Time> time;
@@ -40,7 +57,9 @@ struct Engine::Pimpl {
 	std::unique_ptr<resource::ResourceManager> resourceManager;
 	std::unique_ptr<ProjectSettings> projectSettings;
 	std::unique_ptr<physics::PhysicsSystem> physicsSystem;
+	std::unique_ptr<ui::UiSystem> uiSystem;
 	audio::AudioSystem* audioSystem;
+	std::unique_ptr<CoroutineHandler> coroutineHandler;
 };
 
 void Engine::Run(int argc, char** argv) {
@@ -57,9 +76,25 @@ void Engine::Run(int argc, char** argv) {
 
 	auto* window = m->window.get();
 	auto* world = m->gameWorld.get();
+
+	updateTimer += Time::delta();
+
+#ifdef _WIN32
+	// Request 1ms timer resolution for accurate sleep_for on Windows.
+	// Without this, Sleep/sleep_for is ~15ms, making any FPS cap below 70 wildly inaccurate.
+	timeBeginPeriod(1);
+#endif
+
+	using clock_t = std::chrono::high_resolution_clock;
+	clock_t::time_point frameStart;
+
 	while (!GetShouldClose()) {
+		updateTimer = 0.0;
 		// This is our frame 0x
 		PROFILE_ZONE_N("Frame");
+
+		// Record frame start at the very top so the limiter measures the full frame cost
+		frameStart = clock_t::now();
 
 		// avoid heavy work if minimized
 		if (window->IsMinimized()) {
@@ -83,6 +118,7 @@ void Engine::Run(int argc, char** argv) {
 		world->RunBeginQueue();
 
 		m->eventSystem->PollEvents();
+		m->coroutineHandler->Tick();
 		m->inputSystem->Tick();
 
 		world->EarlyTick();
@@ -112,6 +148,24 @@ void Engine::Run(int argc, char** argv) {
 
 		// Swap after all rendering and UI is done
 		window->SwapBuffers();
+
+		// Only when VSync is OFF; when VSync is on the driver already paces us.
+		const auto& cfg = m->renderer->GetRendererConfig();
+		if (!cfg.vSync && cfg.maxFPS > 0) {
+			const auto targetDuration = std::chrono::duration<double>(1.0 / static_cast<double>(cfg.maxFPS));
+			const auto targetTime = frameStart + targetDuration;
+
+			auto now = clock_t::now();
+			while (targetTime - now > std::chrono::milliseconds(2)) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+				now = clock_t::now();
+			}
+			while (clock_t::now() < targetTime) {
+#ifdef _WIN32
+				_mm_pause();
+#endif
+			}
+		}
 
 		// DestroyQueue also removes scenes 0x
 		world->RunDestroyQueue();
@@ -148,6 +202,8 @@ Engine::Engine() {
 }
 
 void Engine::Init() {
+	PROFILE_ZONE_N("Engine Init");
+
 	// Starting logging system 0x
 	Log::Init();
 	TOAST_INFO("Initializing Toast Engine...");
@@ -167,7 +223,10 @@ void Engine::Init() {
 
 	// Create window
 	m->window = std::make_unique<Window>(1920, 1080, "ToastEngine");
+
+	// LayerStack must be created BEFORE renderer, as renderer gets the instance during init
 	m->layerStack = std::make_unique<renderer::LayerStack>();
+
 	m->renderer = std::make_unique<renderer::OpenGLRenderer>();
 
 	// Create input system
@@ -190,17 +249,28 @@ void Engine::Init() {
 	TOAST_ASSERT(audio_result, "Failed to initialize Audio System");
 	m->audioSystem = audio_result.value();
 
+	// Ui
+	m->uiSystem = std::make_unique<ui::UiSystem>(*m->window, false);
+	// auto* hud = new renderer::HUD::HUDLayer(m->window->GetWindow(), 1920, 1080, false); // TODO: you can delete this later
+	// m->layerStack->PushOverlay(hud);
+	// hud->LoadURL("file:///assets/UI/hud.html");
+
+	m->coroutineHandler = std::make_unique<CoroutineHandler>();
+
 	Begin();
 }
 
 void Engine::EditorTick() { }
 
 void Engine::Render() {
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0xFF0000);    // Red for rendering
 	m->renderer->Render();
 }
 
 void Engine::Close() {
+#ifdef _WIN32
+	timeEndPeriod(1);
+#endif
 	delete m;
 }
 

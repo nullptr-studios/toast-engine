@@ -74,7 +74,7 @@ public:
 	 * @param name Window title.
 	 * @throws ToastException if a window already exists.
 	 */
-	Window(unsigned width = 800, unsigned height = 600, const std::string& name = "Toast Engine");
+	Window(unsigned width = 800, unsigned height = 600, std::string_view name = "Toast Engine");
 
 	/**
 	 * @brief Destroys the window and terminates GLFW.
@@ -133,6 +133,8 @@ public:
 	 */
 	double GetTime();
 
+	double GetRefreshFrameTime();
+
 	/**
 	 * @brief Gets the clipboard contents.
 	 * @return Text currently in the system clipboard.
@@ -182,6 +184,10 @@ public:
 		return m_vsync;
 	}
 
+	void SetRefreshFrameTime(double frameTime) {
+		m_refreshFrameTime = frameTime;
+	}
+
 	/**
 	 * @brief Gets the underlying GLFW window handle.
 	 * @return Raw GLFW window pointer.
@@ -210,6 +216,8 @@ private:
 	glm::ivec2 m_windowedPos {};
 
 	bool m_vsync = true;
+
+	double m_refreshFrameTime = 16.6667;    // Default to 60 FPS
 
 	/**
 	 * @brief GLFW error callback handler.

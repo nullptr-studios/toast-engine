@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Toast/Resources/ResourceManager.hpp"
 
 #include <cstdio>
@@ -5,6 +7,19 @@
 #include <cstring>
 #include <spine/Extension.h>
 #include <spine/SpineString.h>
+
+#ifdef TRACY_ENABLE
+#include <tracy/Tracy.hpp>
+
+// Spine uses its own named memory pool to avoid conflicts with the main allocator's re-entrancy guard
+// This ensures Spine allocations are always properly tracked without interference
+#define SPINE_TRACY_ALLOC(ptr, size) TracyAllocN(ptr, size, "Spine")
+#define SPINE_TRACY_FREE(ptr) TracyFreeN(ptr, "Spine")
+
+#else
+#define SPINE_TRACY_ALLOC(ptr, size) ((void)0)
+#define SPINE_TRACY_FREE(ptr) ((void)0)
+#endif
 
 namespace spine {
 
@@ -18,9 +33,7 @@ public:
 		(void)file;
 		(void)line;
 		auto ptr = std::malloc(size);
-#ifdef TRACY_ENABLE
-		TracyAlloc(ptr, size);
-#endif
+		SPINE_TRACY_ALLOC(ptr, size);
 		return ptr;
 	}
 
@@ -28,25 +41,31 @@ public:
 		(void)file;
 		(void)line;
 		auto ptr = std::calloc(size, 1);
-#ifdef TRACY_ENABLE
-		TracyAlloc(ptr, size);
-#endif
-
+		SPINE_TRACY_ALLOC(ptr, size);
 		return ptr;
 	}
 
-	void* _realloc(void* ptr, size_t size, const char* file, int line) override {
+	void* _realloc(void* oldPtr, size_t size, const char* file, int line) override {
 		(void)file;
 		(void)line;
-		return std::realloc(ptr, size);
+		// For Tracy: we need to free the old allocation before realloc
+		// and register the new allocation after (regardless of whether pointer moved)
+		if (oldPtr) {
+			SPINE_TRACY_FREE(oldPtr);
+		}
+		void* newPtr = std::realloc(oldPtr, size);
+		if (newPtr) {
+			SPINE_TRACY_ALLOC(newPtr, size);
+		}
+		return newPtr;
 	}
 
 	void _free(void* mem, const char* file, int line) override {
 		(void)file;
 		(void)line;
-#ifdef TRACY_ENABLE
-		TracyFree(mem);
-#endif
+		if (mem) {
+			SPINE_TRACY_FREE(mem);
+		}
 		std::free(mem);
 	}
 

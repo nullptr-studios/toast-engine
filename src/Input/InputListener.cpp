@@ -20,6 +20,14 @@ auto GetMouseDelta() -> glm::vec2 {
 	return InputSystem::GetMouseDelta();
 }
 
+void SetViewportPosition(glm::vec2 position) {
+	InputSystem::SetViewportPosition(position);
+}
+
+void SetViewportSize(glm::vec2 size) {
+	InputSystem::SetViewportSize(size);
+}
+
 Listener::Listener() {
 	InputSystem::RegisterListener(this);
 }

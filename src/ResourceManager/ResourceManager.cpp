@@ -4,9 +4,9 @@
 
 #include "Toast/Resources/ResourceManager.hpp"
 
-#include "PackLoader.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Profiler.hpp"
+#include "Toast/Resources/ToastFileSystem.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -14,11 +14,6 @@
 resource::ResourceManager* resource::ResourceManager::m_instance = nullptr;
 
 namespace resource {
-PackFile g_packFile;
-
-std::shared_ptr<Texture> g_fileIcon;
-std::shared_ptr<Texture> g_jsonIcon;
-std::shared_ptr<Texture> g_objIcon;
 
 auto Open(std::string& path) -> std::optional<std::string> {
 	std::istringstream s;
@@ -33,6 +28,7 @@ auto Open(std::string& path) -> std::optional<std::string> {
 
 //@TODO: Instead of passing a bool, detect if a .pkg is in the root folder
 ResourceManager::ResourceManager(bool pkg) : m_pkg(pkg) {
+	PROFILE_ZONE_N("ResourceManager Construction");
 	if (m_instance == nullptr) {
 		m_instance = this;
 	}
@@ -42,16 +38,16 @@ ResourceManager::ResourceManager(bool pkg) : m_pkg(pkg) {
 	// If pkg is true, open the game.pkg file
 	if (m_pkg) {
 		//@TODO: Make the .PKG path configurable?
-		TOAST_INFO("ResourceManager: Opening resource pack game.pkg");
-		if (!g_packFile.Open("game.pkg")) {
-			throw ToastException("ResourceManager: Failed to open game.pkg");
+		TOAST_INFO("ResourceManager: Opening resource pack game.toast");
+		if (!ToastFileSystem::Get().UsePackFile("game.toast")) {
+			throw ToastException("ResourceManager: Failed to open game.toast");
 		}
 	}
 }
 
 ResourceManager::~ResourceManager() {
 	if (m_pkg) {
-		g_packFile.Close();
+		ToastFileSystem::Get().ClosePackFile();
 	}
 }
 
@@ -102,48 +98,19 @@ void ResourceManager::PurgeResources() {
 	}
 }
 
-bool ResourceManager::OpenFile(const std::string& path, std::istringstream& data_out) const {
-	std::vector<uint8_t> d {};
-	if (!OpenFile(path, d)) {
-		return false;
-	}
-
-	data_out.str(std::string(reinterpret_cast<char*>(d.data()), d.size()));
-	return true;
+bool ResourceManager::OpenFile(const std::string_view path, std::istringstream& data_out) const {
+	return ToastFileSystem::Get().OpenFile(path, data_out);
 }
 
-bool ResourceManager::OpenFile(const std::string& path, std::vector<uint8_t>& data) const {
-	PROFILE_ZONE;
-	// if using pkg, read from pack file
-	if (m_pkg) {
-		return g_packFile.ReadFile(path, data);
-	}
-
-	std::string p;
-	// else read from filesystem
-	if (path.find("assets/") == std::string::npos) {
-		p = "assets/" + path;
-	} else {
-		p = path;
-	}
-
-	std::ifstream ifs(p, std::ios::binary);
-	if (!ifs) {
-		return false;
-	}
-	ifs.seekg(0, std::ios::end);
-	size_t size = ifs.tellg();
-	ifs.seekg(0, std::ios::beg);
-	data.resize(size);
-	ifs.read(reinterpret_cast<char*>(data.data()), static_cast<std::streamsize>(size));
-	return true;
+bool ResourceManager::OpenFile(const std::string_view path, std::vector<uint8_t>& data) const {
+	return ToastFileSystem::Get().OpenFile(path, data);
 }
 
-bool ResourceManager::SaveFile(const std::string& path, const std::string& content) {
+bool ResourceManager::SaveFile(std::string_view path, std::string_view content) {
 	TOAST_INFO("Saving File {}", path);
 	std::string pat {};
-	if (path.find("assets/") == std::string::npos) {
-		pat = "assets/" + path;
+	if (path.find("assets/") == std::string_view::npos) {
+		pat = std::string("assets/") + path.data();
 	} else {
 		pat = path;
 	}
@@ -170,15 +137,14 @@ bool ResourceManager::SaveFile(const std::string& path, const std::string& conte
 	return ofs.good();
 }
 
-bool ResourceManager::SaveConfig(const std::string& path, const std::string& content) {
+bool ResourceManager::SaveConfig(std::string_view path, std::string_view content) {
 	// TOAST_INFO("Saving File {}", path);
-	std::string pat = path;
 
 	namespace fs = std::filesystem;
 
 	// Ensure parent directories exist
 	try {
-		if (const fs::path p(pat); p.has_parent_path()) {
+		if (const fs::path p(path); p.has_parent_path()) {
 			fs::create_directories(p.parent_path());
 		}
 	} catch (const fs::filesystem_error&) {
@@ -187,7 +153,7 @@ bool ResourceManager::SaveConfig(const std::string& path, const std::string& con
 	}
 
 	// Open file for writing in binary mode
-	std::ofstream ofs(pat, std::ios::binary | std::ios::out | std::ios::trunc);
+	std::ofstream ofs(path.data(), std::ios::binary | std::ios::out | std::ios::trunc);
 	if (!ofs.is_open()) {
 		return false;
 	}
@@ -196,12 +162,10 @@ bool ResourceManager::SaveConfig(const std::string& path, const std::string& con
 	return ofs.good();
 }
 
-bool ResourceManager::LoadConfig(const std::string& path, std::string& content) {
+bool ResourceManager::LoadConfig(std::string_view path, std::string& content) {
 	PROFILE_ZONE;
 
-	std::string p = path;
-
-	std::ifstream ifs(p, std::ios::binary);
+	std::ifstream ifs(path.data(), std::ios::binary);
 	if (!ifs) {
 		return false;
 	}
@@ -214,12 +178,6 @@ bool ResourceManager::LoadConfig(const std::string& path, std::string& content) 
 }
 
 editor::ResourceSlot::Entry ResourceManager::CreateResourceSlotEntry(const std::filesystem::path& path) {
-	if (!g_fileIcon) {
-		g_fileIcon = resource::LoadResource<Texture>("editor/icons/genericFile.png");
-		g_jsonIcon = resource::LoadResource<Texture>("editor/icons/jsonFile.png");
-		g_objIcon = resource::LoadResource<Texture>("editor/icons/objFile.png");
-	}
-
 	editor::ResourceSlot::Entry e;
 	e.isDirectory = false;
 	// if (ec) rel = de.path().filename();
@@ -236,15 +194,15 @@ editor::ResourceSlot::Entry ResourceManager::CreateResourceSlotEntry(const std::
 		std::replace(normalized.begin(), normalized.end(), '\\', '/');
 		e.icon = resource::LoadResource<Texture>(normalized);
 	} else if (e.extension == ".json") {
-		e.icon = g_jsonIcon;
+		e.icon = resource::LoadResource<Texture>(kJsonFilePath);
 	} else if (e.extension == ".obj") {
-		e.icon = g_objIcon;
+		e.icon = resource::LoadResource<Texture>(kObjFilePath);
 	} else {
-		e.icon = g_fileIcon;
+		e.icon = resource::LoadResource<Texture>(kGenericFilePath);
 	}
 	if (!e.icon) {
 		// generic
-		e.icon = g_fileIcon;
+		e.icon = resource::LoadResource<Texture>(kGenericFilePath);
 	}
 
 	return e;

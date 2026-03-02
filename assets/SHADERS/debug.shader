@@ -2,11 +2,11 @@
 	"stageFiles": [
 		{
 			"stage": "vertex",
-			"path": "shaders/debug.vert"
+			"path": "SHADERS/debug.vert"
 		},
 		{
 			"stage": "fragment",
-			"path": "shaders/debug.frag"
+			"path": "SHADERS/debug.frag"
 		}
 	]
 }

@@ -1,6 +1,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include "Toast/Objects/Actor.hpp"
+#include "Toast/Profiler.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/gtx/quaternion.hpp"
 
@@ -51,6 +52,7 @@ TransformComponent::TransformComponent(const glm::vec3& pos, const glm::vec3& ro
 }
 
 json_t TransformComponent::Save() const {
+	PROFILE_ZONE_C(0x00FF00);    // Green for serialization
 	json_t j = Component::Save();
 	j["position"] = m_position;
 	j["rotation"] = m_rotation;
@@ -60,15 +62,23 @@ json_t TransformComponent::Save() const {
 }
 
 void TransformComponent::Load(json_t j, bool force_create) {
+	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 	Component::Load(j, force_create);
-	if (j.contains("position")) {
-		m_position = j.at("position");
-	}
-	if (j.contains("rotation")) {
-		m_rotation = j.at("rotation");
-	}
-	if (j.contains("scale")) {
-		m_scale = j.at("scale");
+	
+	try {
+		if (j.contains("position")) {
+			m_position = j.at("position");
+		}
+		if (j.contains("rotation")) {
+			m_rotation = j.at("rotation");
+		}
+		if (j.contains("scale")) {
+			m_scale = j.at("scale");
+		}
+	} catch (...) {
+		m_position = glm::vec3(0.0f);
+		m_rotation = glm::identity<glm::quat>();
+		m_scale = glm::vec3(1.0f);
 	}
 
 	// Refresh caches
@@ -445,9 +455,12 @@ void TransformComponent::UpdateChildrenWorldMatrix() {
 		if (auto a = dynamic_cast<Actor*>(child->second.get())) {
 			if (auto* t = a->transform()) {
 				t->m_dirtyWorldMatrix = true;
+				// Propagate into the child actor's own components
+				t->UpdateChildrenWorldMatrix();
 			}
 		} else if (auto t = dynamic_cast<TransformComponent*>(child->second.get())) {
 			t->m_dirtyWorldMatrix = true;
+			t->UpdateChildrenWorldMatrix();
 		} else if (auto r = dynamic_cast<IRenderable*>(child->second.get())) {
 			r->m_dirtyWorldMatrix = true;
 		}

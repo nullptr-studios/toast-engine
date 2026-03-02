@@ -26,6 +26,8 @@ void Manifold::Debug() const {
 }
 
 void RbKinematics(Rigidbody* rb) {
+	PROFILE_ZONE;
+
 	auto& velocity = rb->velocity;
 
 	// Avoid a Rigidbody having 0 mass
@@ -33,7 +35,7 @@ void RbKinematics(Rigidbody* rb) {
 		rb->mass = 1;
 	}
 
-	// Sum forces
+	// Sum forces/impulses
 	// Copy and clear under lock
 	std::deque<glm::dvec2> local_forces {};
 	{
@@ -42,13 +44,26 @@ void RbKinematics(Rigidbody* rb) {
 	}
 
 	glm::dvec2 forces_sum = std::accumulate(local_forces.begin(), local_forces.end(), glm::dvec2(0.0), std::plus());
-	glm::dvec2 accel = (forces_sum / rb->mass) + (PhysicsSystem::gravity() * dvec2 { rb->gravityScale });
 
-	// Integrate velocity
-	velocity += accel * Time::fixed_delta();
+	// Apply impulses as instantaneous change in velocity
+	if (length2(forces_sum) > 0.0) {
+		velocity += forces_sum / rb->mass;    // forces_sum is impulse (F*dt), so dividing by mass yields delta_v
+	}
 
-	// Apply drag
-	const dvec2 damping = exp(dvec2 { -rb->drag } * Time::fixed_delta());
+	// Apply gravity as acceleration over fixed timestep
+	dvec2 physics_system_gravity;
+	if (PhysicsSystem::gravity_type() != GravityType::POINT) {
+		physics_system_gravity = PhysicsSystem::gravity();
+	} else {
+		dvec2 dir = normalize(PhysicsSystem::gravity_point() - rb->GetPosition());
+		physics_system_gravity = dir * PhysicsSystem::gravity_point_scale();
+	}
+
+	const dvec2 gravity = physics_system_gravity * (rb->hasGravity ? dvec2 { rb->gravityScale } : glm::dvec2 { 0.0, 0.0 });
+	velocity += gravity * Time::fixed_delta();
+
+	// Apply drag over fixed timestep
+	const dvec2 damping = exp(rb->hasDrag ? dvec2 { -rb->drag } * Time::fixed_delta() : dvec2 { 0.0 });
 	velocity *= damping;
 
 	if (all(lessThan(abs(velocity), dvec2 { rb->minimumVelocity }))) {
@@ -57,6 +72,7 @@ void RbKinematics(Rigidbody* rb) {
 }
 
 void RbIntegration(Rigidbody* rb) {
+	PROFILE_ZONE;
 	// Integrate position
 	dvec2 pos = rb->GetPosition();
 	pos += rb->velocity * Time::fixed_delta();
@@ -69,10 +85,16 @@ void RbResetVelocity(Rigidbody* rb) {
 }
 
 auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
+	PROFILE_ZONE;
 	dvec2 pos1 = rb1->GetPosition();
 	dvec2 pos2 = rb2->GetPosition();
 
-	double penetration = (rb1->radius + rb2->radius) - distance(pos1, pos2);
+	double dist = distance(pos1, pos2);
+	if (dist < 0.1f) {
+		return std::nullopt;
+	}
+
+	double penetration = (rb1->radius + rb2->radius) - dist;
 
 	// if penetration is negative we don't have a collision
 	if (penetration <= 0.0) {
@@ -94,6 +116,13 @@ auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
 }
 
 void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
+#ifdef _DEBUG
+	if (rb1->debug.skipResolution || rb2->debug.skipResolution) {
+		return;
+	}
+#endif
+
+	PROFILE_ZONE;
 	dvec2 velocity1 = rb1->velocity;
 	dvec2 velocity2 = rb2->velocity;
 
@@ -151,11 +180,14 @@ void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
 	}
 
 	// Positional correction
-	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
-	dvec2 correction = (penetration_correction / inv_mass_sum) * normal;
+	{
+		double depth_corr = manifold.depth - PhysicsSystem::pos_slop();
+		double penetration_correction = (depth_corr > 0.0) ? (depth_corr * PhysicsSystem::pos_ptc()) : 0.0;
+		dvec2 correction = (penetration_correction / inv_mass_sum) * normal;
 
-	position1 += correction * inv_mass1;
-	position2 -= correction * inv_mass2;
+		position1 += correction * inv_mass1;
+		position2 -= correction * inv_mass2;
+	}
 
 	rb1->SetPosition(position1);
 	rb2->SetPosition(position2);
@@ -180,6 +212,7 @@ void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
 }
 
 auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold> {
+	PROFILE_ZONE;
 	dvec2 rb_pos = rb->GetPosition();
 
 	std::list<Manifold> manifolds;
@@ -187,23 +220,42 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 	// This method will use the SAT algorithm
 	for (const auto& edge : c->edges) {
 		// project all points onto the edge normal and keep the minimum & maximum
-		double min_proj = dot(dvec2 { c->vertices[0] }, edge.normal);
+		double min_proj = dot(dvec2 { c->vertices[0] } - edge.p1, edge.normal);
 		double max_proj = min_proj;
 
 		for (int i = 1; i < c->vertices.size(); i++) {
-			double v = dot(dvec2 { c->vertices[i] }, edge.normal);
+			double v = dot(dvec2 { c->vertices[i] } - edge.p1, edge.normal);
 			min_proj = std::min(v, min_proj);
 			max_proj = std::max(v, max_proj);
 		}
 
 		// project rb position onto edge normal and then add radius
-		double rb_proj = dot(rb_pos, edge.normal);
+		double rb_proj = dot(rb_pos - edge.p1, edge.normal);
 		double rb_max_proj = rb_proj + rb->radius;
 		double rb_min_proj = rb_proj - rb->radius;
 
 		// if theres no collision on the projection, there is no collision
 		if (rb_max_proj < min_proj || rb_min_proj > max_proj) {
 			return std::nullopt;
+		}
+
+		// we DO NOT want to check with rigidbodies that are behind the normal
+		if (rb_proj < -2 * rb->radius) {
+			continue;
+		}
+
+		// find where along the line is the object
+		double distance_along_line = dot(rb_pos - edge.p1, edge.tangent);
+		glm::dvec2 normal;
+		if (distance_along_line < 0.0f) {
+			// Case 1: rigidbody is before segment
+			normal = rb_pos - edge.p1;
+		} else if (distance_along_line > edge.length) {
+			// Case 2: rigidbody is after segment
+			normal = rb_pos - edge.p2;
+		} else {
+			// Case 3: rigidbody is inside the line
+			normal = edge.normal;
 		}
 
 		// compute overlap along the axis to store as penetration depth candidate
@@ -224,7 +276,7 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 		// if there is we will generate a manifold to compare later on
 		// clang-format off
 		manifolds.emplace_back(Manifold {
-			.normal = edge.normal,
+			.normal = normal,
 			.contact1 = {0.0f, 0.0f},
 			.contact2 = {0.0f, 0.0f},
 			.contactCount = -1,
@@ -270,6 +322,13 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 }
 
 void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
+#ifdef _DEBUG
+	if (rb->debug.skipResolution) {
+		return;
+	}
+#endif
+
+	PROFILE_ZONE;
 	dvec2 velocity = rb->velocity;
 	dvec2 position = rb->GetPosition();
 
@@ -280,7 +339,15 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 
 	double inv_mass = 1.0 / rb->mass;
 
-	dvec2 contact_tangent = { -manifold.normal.y, manifold.normal.x };
+	dvec2 contact_tangent = { manifold.normal.y, -manifold.normal.x };
+	double temp_force = c->throwForce;
+	if (c->forceLeft) {
+		temp_force = -temp_force;
+	}
+
+	if ((c->flags & ColliderFlags::Ramp) == ColliderFlags::Ramp) {
+		rb->AddForce(dvec2(temp_force * contact_tangent.x, temp_force * contact_tangent.y));
+	}
 
 	// unfold velocity in normal and tangencial
 	double normal_speed = dot(velocity, manifold.normal);
@@ -306,8 +373,11 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 	}
 
 	// positional correction
-	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
-	position += penetration_correction * manifold.normal;
+	{
+		double depth_corr = manifold.depth - PhysicsSystem::pos_slop();
+		double penetration_correction = (depth_corr > 0.0) ? (depth_corr * PhysicsSystem::pos_ptc()) : 0.0;
+		position += penetration_correction * manifold.normal;
+	}
 	rb->SetPosition(position);
 
 	// velocity correction
@@ -352,6 +422,12 @@ std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 }
 
 void RbTriggerCollision(Rigidbody* rb1, Trigger* t) {
+	PROFILE_ZONE;
+
+	if (!(rb1->flags & t->flags)) {
+		return;
+	}
+
 	// calculate points
 	const auto& tr = t->transform();
 	double left = tr->worldPosition().x - (tr->scale().x / 2);

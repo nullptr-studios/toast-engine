@@ -13,6 +13,8 @@
 #include "spine/AnimationStateData.h"
 #include "spine/Skeleton.h"
 
+#include <unordered_map>
+
 class SpineRendererComponent : public IRenderable {
 public:
 	REGISTER_TYPE(SpineRendererComponent);
@@ -34,6 +36,21 @@ public:
 
 	void SetSkeletonData(const std::shared_ptr<SpineSkeletonData>& data) {
 		m_skeletonData = data;
+		if (m_skeletonData) {
+			m_skeleton = std::make_unique<spine::Skeleton>(m_skeletonData->GetSkeletonData());
+			m_animationStateData = std::make_unique<spine::AnimationStateData>(m_skeletonData->GetSkeletonData());
+			m_animationStateData->setDefaultMix(.4f);
+			m_animationState = std::make_unique<spine::AnimationState>(m_animationStateData.get());
+			m_animationState->setListener(m_eventHandler.get());
+
+			// Initial update to ensure world transforms are valid
+			m_skeleton->update(0.0f);
+			m_skeleton->updateWorldTransform(spine::Physics_None);
+		}
+	}
+
+	spine::AnimationStateData* GetSkeletonData() const {
+		return m_animationStateData.get();
 	}
 
 	void Load(json_t j, bool force_create = true) override;
@@ -45,8 +62,25 @@ public:
 	void NextCrossFadeToDefault(float duration, int track = 0) const;
 	void CrossFadeToDefault(float duration, int track = 0) const;
 
+	// Bone helpers
 	glm::vec2 GetBoneLocalPosition(const std::string_view& boneName) const;
 	void SetBoneLocalPosition(const std::string_view& boneName, const glm::vec2& position) const;
+
+	float GetBoneLocalRotation(const std::string_view& boneName) const;
+	void SetBoneLocalRotation(const std::string_view& boneName, float rotationDegrees) const;
+
+	float GetBoneWorldRotation(const std::string_view& boneName);
+	void SetBoneWorldRotation(const std::string_view& boneName, float rotationDegrees);
+
+	/// @brief Returns the bone's world position (after applying the component's world transform).
+	/// Useful for attaching game objects (e.g. weapon actors) to spine bones.
+	glm::vec2 GetBoneWorldPosition(const std::string_view& boneName);
+
+	/// @brief Converts a 2-D world-space position into spine root-local space.
+	glm::vec2 WorldPositionToSpineLocal(const glm::vec2& worldPos);
+
+	void ClearBoneLocalPositionOverride(const std::string_view& boneName) const;
+	void ClearAllBoneLocalPositionOverrides() const;
 
 	// Events
 	virtual void OnAnimationStart(const std::string_view& animationName, int track) { }
@@ -90,6 +124,8 @@ private:
 	// Cache last bound texture
 	unsigned int m_lastBoundTexture = 0;
 	static constexpr size_t INITIAL_VERT_RESERVE = 1024;
+
+	mutable std::unordered_map<std::string, glm::vec2> m_boneLocalOverrides;
 
 #ifdef TOAST_EDITOR
 	// Editor-only: UI state for animation preview

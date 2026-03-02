@@ -34,7 +34,7 @@
 #pragma clang diagnostic ignored "-Wreserved-id-macro"
 #endif
 #ifdef __gl_h_
-  #error OpenGL (gl.h) header already included (API: gl), remove previous include!
+  // #error OpenGL (gl.h) header already included (API: gl), remove previous include!
 #endif
 #define __gl_h_ 1
 #ifdef __gl3_h_

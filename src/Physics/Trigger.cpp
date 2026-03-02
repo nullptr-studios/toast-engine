@@ -17,13 +17,13 @@ void Trigger::Begin() {
 	PhysicsSystem::AddTrigger(this);
 	enterCallback = [this](Object* o) {
 		if (!enabled()) {
-		  return;
+			return;
 		}
 		OnEnter(o);
 	};
 	exitCallback = [this](Object* o) {
 		if (!enabled()) {
-		  return;
+			return;
 		}
 		OnExit(o);
 	};
@@ -53,9 +53,19 @@ void Trigger::Load(json_t j, bool force_create) {
 	Actor::Load(j, force_create);
 }
 
+void Trigger::AddFlag(ColliderFlags flag) {
+	if (!(m.flags & flag)) {
+		m.flags |= flag;
+	}
+}
+
+void Trigger::RemoveFlag(ColliderFlags flag) {
+	m.flags &= ~flag;
+}
+
 void Trigger::EditorTick() {
 	if (!enabled()) {
-	  return;
+		return;
 	}
 	if (debug.draw) {
 		// TODO: Make this fillable

@@ -2,11 +2,11 @@
 	"stageFiles": [
 		{
 			"stage": "vertex",
-			"path": "shaders/spine.vert"
+			"path": "SHADERS/spine.vert"
 		},
 		{
 			"stage": "fragment",
-			"path": "shaders/spine.frag"
+			"path": "SHADERS/spine.frag"
 		}
 	]
 }

@@ -12,12 +12,14 @@ namespace toast {
 ProjectSettings* ProjectSettings::m_instance = nullptr;
 
 ProjectSettings::ProjectSettings() : m_version(0, 0, 0) {
+	PROFILE_ZONE_N("ProjectSettings Construction");
+
 	if (m_instance) {
 		throw ToastException("Tried to create Project Settings but it already exists");
 	}
 	m_instance = this;
 
-	std::string raw_file = *resource::Open("assets/project_settings.toast");
+	std::string raw_file = *resource::Open("project_settings.toast");
 	YAML::Node config = YAML::Load(raw_file);
 
 	if (config["format"].as<std::string>() != "projectData") {

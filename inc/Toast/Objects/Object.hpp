@@ -86,7 +86,7 @@ public:
 	}
 
 	[[nodiscard]]
-	Scene* scene() const noexcept {
+	toast::Scene* scene() const noexcept {
 		return m_scene;
 	}
 
@@ -139,6 +139,24 @@ public:
 	/// @brief Destroys this object
 	void Nuke();
 
+	void Adopt(unsigned id);
+
+	void SetRunEarlyTick(bool value) {
+		m_runsEarlyTick = value;
+	}
+
+	void SetRunTick(bool value) {
+		m_runsTick = value;
+	}
+
+	void SetRunLateTick(bool value) {
+		m_runsLateTick = value;
+	}
+
+	void SetSerialize(bool value) {
+		m_serialize = value;
+	}
+
 protected:
 	// Tick functions
 	/// @brief This function runs just after the object is created (scene load thread)
@@ -177,6 +195,10 @@ private:
 	unsigned m_id = -1;
 	std::string m_name;
 	bool m_enabled = false;
+	bool m_runsEarlyTick = true;
+	bool m_runsTick = true;
+	bool m_runsLateTick = true;
+	bool m_serialize = true;
 	Object* m_parent = nullptr;
 	Scene* m_scene = nullptr;
 
@@ -208,6 +230,7 @@ public:
 
 private:
 #pragma endregion
+	void SetScene(Scene* scene);
 };
 
 #include "Object.inl"
