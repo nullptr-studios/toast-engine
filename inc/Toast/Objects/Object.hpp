@@ -189,7 +189,9 @@ protected:
 	virtual void OnDisable() { }
 
 	/// @brief This function runs every frame in the editor
+#ifdef TOAST_EDITOR
 	virtual void EditorTick() { }
+#endif
 
 private:
 	unsigned m_id = -1;
@@ -217,7 +219,9 @@ private:
 	void _Begin(bool propagate = false);
 	void _EarlyTick();
 	void _Tick();
+#ifdef TOAST_EDITOR
 	void _EditorTick();
+#endif
 	void _LateTick();
 	void _Destroy();
 	void _PhysTick();

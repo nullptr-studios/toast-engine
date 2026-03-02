@@ -67,6 +67,7 @@ void BoxRigidbody::Inspector() {
 }
 #endif
 
+#ifdef TOAST_EDITOR
 void BoxRigidbody::EditorTick() {
 	if (!debug.show) {
 		return;
@@ -75,6 +76,7 @@ void BoxRigidbody::EditorTick() {
 	std::vector<glm::vec2> points = GetPoints();
 	renderer::DebugPoly(points, debug.defaultColor);
 }
+#endif
 
 json_t BoxRigidbody::Save() const {
 	json_t j = Component::Save();

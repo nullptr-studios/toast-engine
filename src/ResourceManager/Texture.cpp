@@ -10,10 +10,7 @@
 #include <stb_image.h>
 
 Texture::~Texture() {
-	if (m_pixels) {
-		stbi_image_free(m_pixels);    // stbi allocated
-		m_pixels = nullptr;
-	}
+	// m_pixels is a std::vector, it cleans itself up automatically
 
 	if (m_textureId) {
 		glBindTexture(GL_TEXTURE_2D, m_textureId);                  // bind
@@ -79,7 +76,11 @@ void Texture::Load() {
 	}
 
 	m_channels = channels;
-	m_pixels = pixels;    // Take ownership
+
+	// Copy pixel data into our owned buffer, then free stbi's allocation immediately
+	const size_t dataSize = static_cast<size_t>(m_width) * m_height * channels;
+	m_pixels.assign(pixels, pixels + dataSize);
+	stbi_image_free(pixels);
 
 	SetResourceState(resource::ResourceState::LOADEDCPU);
 }
@@ -149,7 +150,7 @@ void Texture::CreateOpenGLTexture() {
 
 	SetResourceState(resource::ResourceState::UPLOADING);
 
-	if (m_pixels == nullptr) {
+	if (m_pixels.empty()) {
 		SetResourceState(resource::ResourceState::FAILED);
 		TOAST_ERROR("Trying to create OpenGL texture but no pixel data is available!?!");
 		LoadPlaceholderTexture();
@@ -179,8 +180,8 @@ void Texture::CreateOpenGLTexture() {
 		default: {
 			TOAST_ERROR("Unsupported channel count {0} for texture: {1}", m_channels, m_path);
 			SetResourceState(resource::ResourceState::FAILED);
-			stbi_image_free(m_pixels);
-			m_pixels = nullptr;
+			m_pixels.clear();
+			m_pixels.shrink_to_fit();
 			LoadPlaceholderTexture();
 			return;
 		}
@@ -193,7 +194,7 @@ void Texture::CreateOpenGLTexture() {
 	// Ensure tight packing for arbitrary widths
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_width, m_height, 0, format, GL_UNSIGNED_BYTE, reinterpret_cast<void*>(m_pixels));
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_width, m_height, 0, format, GL_UNSIGNED_BYTE, m_pixels.data());
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -203,10 +204,8 @@ void Texture::CreateOpenGLTexture() {
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// Release CPU pixel data now that it's on the GPU
-	if (m_pixels) {
-		stbi_image_free(m_pixels);
-		m_pixels = nullptr;
-	}
+	m_pixels.clear();
+	m_pixels.shrink_to_fit();
 
 	SetResourceState(resource::ResourceState::UPLOADEDGPU);
 }

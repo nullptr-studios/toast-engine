@@ -28,9 +28,9 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <windows.h>
-#include <mmsystem.h>
 #include <intrin.h>
+#include <mmsystem.h>
+#include <windows.h>
 #pragma comment(lib, "winmm.lib")
 #endif
 
@@ -258,9 +258,15 @@ void Engine::Init() {
 	m->coroutineHandler = std::make_unique<CoroutineHandler>();
 
 	Begin();
+
+#ifndef TOAST_EDITOR
+	physics::PhysicsSystem::start();
+#endif
 }
 
+#ifdef TOAST_EDITOR
 void Engine::EditorTick() { }
+#endif
 
 void Engine::Render() {
 	PROFILE_ZONE_C(0xFF0000);    // Red for rendering

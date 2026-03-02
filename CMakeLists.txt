@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
-option(TOAST_EDITOR "Build TOAST ENGINE with editor features" ON)
+option(TOAST_EDITOR "Build TOAST ENGINE with editor features" OFF)
 
 
 if(MSVC)
@@ -71,7 +71,7 @@ target_compile_options(toast.engine PRIVATE
 )
 
 if (TOAST_EDITOR)
-    target_compile_definitions(toast.engine PRIVATE TOAST_EDITOR)
+    target_compile_definitions(toast.engine PUBLIC TOAST_EDITOR)
     
     target_link_libraries(toast.engine PUBLIC
             glfw
