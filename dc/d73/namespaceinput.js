@@ -46,6 +46,8 @@ var namespaceinput =
     [ "normalize_name", "dc/d73/namespaceinput.html#a7faf7e3a337505cad3a89d967bd8c14d", null ],
     [ "SetLayout", "dc/d73/namespaceinput.html#a530ba5b44fdad1d1d8eca54dc80c37bd", null ],
     [ "SetState", "dc/d73/namespaceinput.html#a7a9610b7434f4b69268042cf97a68eb1", null ],
+    [ "SetViewportPosition", "dc/d73/namespaceinput.html#a51639acdf9365c0441bdbe0bcd5a4ce0", null ],
+    [ "SetViewportSize", "dc/d73/namespaceinput.html#a18fd5a040b6ea4d773f4720b665503e8", null ],
     [ "to_lower_copy", "dc/d73/namespaceinput.html#ae7ccf9cab65254161f2cca682f814708", null ],
     [ "trim_inplace", "dc/d73/namespaceinput.html#a16c57796ab83faa737919be7e9bcd6b8", null ],
     [ "MOUSE_DELTA_CODE", "dc/d73/namespaceinput.html#a0757b04db65bed0936eaf48d3016c13f", null ],

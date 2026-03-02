@@ -12,7 +12,7 @@ var classphysics_1_1Trigger =
     [ "RemoveFlag", "d4/d9c/classphysics_1_1Trigger.html#a468d0adb6df68943341bbebe30a9f776", null ],
     [ "Save", "d4/d9c/classphysics_1_1Trigger.html#abaac0ac8d67fd603c193a1bf8b0724e5", null ],
     [ "collideColor", "d4/d9c/classphysics_1_1Trigger.html#aa12c8dacf9d5c9e4c936608ebbe256f3", null ],
-    [ "debug", "d4/d9c/classphysics_1_1Trigger.html#a84ac410acc75ec536a19955fdc1e4dea", null ],
+    [ "debug", "d4/d9c/classphysics_1_1Trigger.html#a8b948dd6165b2f358d6e43d8e46459f2", null ],
     [ "defaultColor", "d4/d9c/classphysics_1_1Trigger.html#a9629bad053db913881c4f070ca95be94", null ],
     [ "draw", "d4/d9c/classphysics_1_1Trigger.html#a4d000c36d8c49fb4daec4cf8838555bd", null ],
     [ "enterCallback", "d4/d9c/classphysics_1_1Trigger.html#a0058a12dc3c426037fb1bdbfa1b650b1", null ],

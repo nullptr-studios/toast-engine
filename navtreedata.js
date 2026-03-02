@@ -27,10 +27,10 @@ var NAVTREE =
   [ "Toast Engine", "index.html", [
     [ "File Formats", "d7/da1/files.html", "d7/da1/files" ],
     [ "Recomended Tools", "d2/d07/md_docs_md_tools.html", [
-      [ "Dependencies", "d2/d07/md_docs_md_tools.html#autotoc_md5", null ],
-      [ "IDEs", "d2/d07/md_docs_md_tools.html#autotoc_md6", null ],
-      [ "Compiling", "d2/d07/md_docs_md_tools.html#autotoc_md7", null ],
-      [ "CI", "d2/d07/md_docs_md_tools.html#autotoc_md8", null ]
+      [ "Dependencies", "d2/d07/md_docs_md_tools.html#autotoc_md9", null ],
+      [ "IDEs", "d2/d07/md_docs_md_tools.html#autotoc_md10", null ],
+      [ "Compiling", "d2/d07/md_docs_md_tools.html#autotoc_md11", null ],
+      [ "CI", "d2/d07/md_docs_md_tools.html#autotoc_md12", null ]
     ] ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ],
@@ -77,23 +77,24 @@ var NAVTREEINDEX =
 "annotated.html",
 "d0/dd9/classtoast_1_1TransformComponent.html#ac2d82bd47277dc3ddeea0952a29bc85d",
 "d1/da3/classtoast_1_1Object.html#aa9867880b2966b5ccb8be7c9abf37618",
-"d2/d96/structtoast_1_1hud_1_1ToastGPUDriver_1_1FBOEntry.html",
-"d4/d30/structevent_1_1WindowMouseScroll.html#ad09aa57f62e3d4eb244ea8d73e3e4821",
-"d4/de6/classrenderer_1_1Material.html#a028edabd522ccbddf4af84589ab161d3",
-"d6/d00/HUDLayer_8cpp.html#aa267d9b173c572a0697b9361a58fa2ea",
-"d6/d7d/classtoast_1_1World.html#a3725ceaf4209b45f93700c33d250e918",
-"d6/dd8/classphysics_1_1PhysicsSystem.html#aa25ace6e8dfe7a75026f8ca430bcf062",
-"d8/d72/classGlobalLight.html#a54a7de33527e0673b7cfa4c13b04da28",
-"d8/dcc/Memory_8cpp.html",
-"d9/da2/classtoast_1_1BadScene.html",
-"da/d32/classrenderer_1_1OpenGLRenderer.html",
-"db/d28/namespacetoast_1_1hud.html#afc04736acb89899f7730f3c721b01cb9",
-"db/d96/structtoast_1_1ParticleEmitterConfig.html#a17b4ae531373fbfc8e7025ed1f82b93c",
-"dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#adcfbdf02696ed4e3bda415a7643d04ce",
-"dc/d5c/classtoast_1_1Log.html#aaf43c99a119326de0837e404cf685c79aa237c5304202fc8955280322de2fdd9e",
-"dd/d84/classtoast_1_1ParticleEmitter.html#a040970d1576964cf2f61f29498c8db38",
-"de/da8/classui_1_1UiLogger.html",
-"df/d85/classtoast_1_1hud_1_1ToastGPUContext.html#af50c0e38ff3b05721da9c3fcaa514d29"
+"d2/d92/SpineRendererComponent_8hpp.html",
+"d4/d30/structevent_1_1WindowMouseScroll.html#ab13428611fd26a1b51ed73c4cd868772",
+"d4/ddb/structtoast_1_1ProjectSettings.html#ae322dc085737bb5b72f598b9d170a6a3",
+"d6/d00/HUDLayer_8cpp.html#a00be01e99f41f38d0b48f0d75f0cc9b8",
+"d6/d7d/classtoast_1_1World.html#a12a0fc63377ea20ad612effee7b95dc5",
+"d6/dd8/classphysics_1_1PhysicsSystem.html#a4d13966184a5ccdca2ed0bccb4f72dc2",
+"d8/d63/classtoast_1_1TransformImpl.html",
+"d8/da4/structtoast_1_1GPUParticle.html#a7c1b4caebe1f25bc5326f2d458d5255a",
+"d9/d50/classrenderer_1_1Shader.html#ad597e053a977442a0147f8e1d6a5092f",
+"da/d0b/classinput_1_1InputSystem.html#a991b04e68f8a95c819f9d1c0ae535186",
+"da/dd2/namespacespine.html#a15db164a29b8a06070fd587d7e108df0",
+"db/d71/classphysics_1_1Collider.html#a870b64e3b9e6e23f47c435ac2597a7ec",
+"dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a5ebb4cbe696d9f6a271747ce5ba70e9d",
+"dc/d58/classFramebuffer.html",
+"dd/d5f/Collider_8hpp.html#a0861439c2c8e1125b19d287254d4ed0e",
+"de/d3a/structphysics_1_1BoxManifold.html#a3f29f6d820cdbc4e2fbea3ee7b85c2f0",
+"df/d3f/structevent_1_1WindowResize.html#ab646014d214524bfdfd6818e8b65544b",
+"functions_i.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

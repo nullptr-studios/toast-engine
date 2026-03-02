@@ -158,6 +158,10 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:ad68b3ea3c76099b46e4593c843b4121a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf2b458ac79ba0ff1b18d649f24e0804"><td class="memItemLeft" align="right" valign="top">static auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#abf2b458ac79ba0ff1b18d649f24e0804">GetMouseDelta</a> () -&gt; glm::vec2</td></tr>
 <tr class="separator:abf2b458ac79ba0ff1b18d649f24e0804"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac5bc60ecae5bf0d5f204fc01f97c3261"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#ac5bc60ecae5bf0d5f204fc01f97c3261">SetViewportPosition</a> (glm::vec2 position)</td></tr>
+<tr class="separator:ac5bc60ecae5bf0d5f204fc01f97c3261"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab63de01abe2406cd1d2e0f9fe1167ca"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#aab63de01abe2406cd1d2e0f9fe1167ca">SetViewportSize</a> (glm::vec2 size)</td></tr>
+<tr class="separator:aab63de01abe2406cd1d2e0f9fe1167ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-types" name="pri-types"></a>
 Private Types</h2></td></tr>
@@ -168,14 +172,14 @@ Private Types</h2></td></tr>
 Private Member Functions</h2></td></tr>
 <tr class="memitem:a991b04e68f8a95c819f9d1c0ae535186"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#a991b04e68f8a95c819f9d1c0ae535186">HasActiveLayout</a> () const</td></tr>
 <tr class="separator:a991b04e68f8a95c819f9d1c0ae535186"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab242eefdd696ab1fc6a30bbc95cb9e59"><td class="memTemplParams" colspan="2">template&lt;typename ActionType , typename CallbackType &gt; </td></tr>
-<tr class="memitem:ab242eefdd696ab1fc6a30bbc95cb9e59"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#ab242eefdd696ab1fc6a30bbc95cb9e59">DispatchQueue</a> (std::deque&lt; ActionType * &gt; &amp;queue, CallbackType Listener::M::*map_ptr)</td></tr>
-<tr class="memdesc:ab242eefdd696ab1fc6a30bbc95cb9e59"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dispatches all actions in the queue to registered listeners.  <br /></td></tr>
-<tr class="separator:ab242eefdd696ab1fc6a30bbc95cb9e59"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a96cba3a1bce4ee3a1337f3ab420b3e03"><td class="memTemplParams" colspan="2">template&lt;typename ActionType &gt; </td></tr>
-<tr class="memitem:a96cba3a1bce4ee3a1337f3ab420b3e03"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#a96cba3a1bce4ee3a1337f3ab420b3e03">AddToQueue</a> (std::deque&lt; ActionType * &gt; &amp;queue, ActionType *action)</td></tr>
-<tr class="memdesc:a96cba3a1bce4ee3a1337f3ab420b3e03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds an action to the dispatch queue if not already present Prevents duplicate entries in the same frame.  <br /></td></tr>
-<tr class="separator:a96cba3a1bce4ee3a1337f3ab420b3e03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae67a8c083bc107a0825daf7377e272ea"><td class="memTemplParams" colspan="2">template&lt;typename ActionType , typename CallbackType &gt; </td></tr>
+<tr class="memitem:ae67a8c083bc107a0825daf7377e272ea"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#ae67a8c083bc107a0825daf7377e272ea">DispatchQueue</a> (std::vector&lt; ActionType * &gt; &amp;queue, CallbackType Listener::M::*map_ptr)</td></tr>
+<tr class="memdesc:ae67a8c083bc107a0825daf7377e272ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dispatches all actions in the queue to registered listeners.  <br /></td></tr>
+<tr class="separator:ae67a8c083bc107a0825daf7377e272ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e22245a5adb4c0387dbc28b3f7503b2"><td class="memTemplParams" colspan="2">template&lt;typename ActionType &gt; </td></tr>
+<tr class="memitem:a4e22245a5adb4c0387dbc28b3f7503b2"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#a4e22245a5adb4c0387dbc28b3f7503b2">AddToQueue</a> (std::vector&lt; ActionType * &gt; &amp;queue, ActionType *action)</td></tr>
+<tr class="memdesc:a4e22245a5adb4c0387dbc28b3f7503b2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds an action to the dispatch queue if not already present O(1) flag check instead of O(n) linear search.  <br /></td></tr>
+<tr class="separator:a4e22245a5adb4c0387dbc28b3f7503b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a79899b7667840a4848a8d5b575dbdbae"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#a79899b7667840a4848a8d5b575dbdbae">OnKeyPress</a> (<a class="el" href="../../d1/d90/structevent_1_1WindowKey.html">event::WindowKey</a> *e)</td></tr>
 <tr class="separator:a79899b7667840a4848a8d5b575dbdbae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a796d712f5ad2314dbde0d3fd4cfb88be"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#a796d712f5ad2314dbde0d3fd4cfb88be">OnMousePosition</a> (<a class="el" href="../../de/d75/structevent_1_1WindowMousePosition.html">event::WindowMousePosition</a> *e)</td></tr>
@@ -204,8 +208,8 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:ae56f445fca432d8cc935e6b5c0131ae1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adbc18d9cd75290d8c046542ecbd51941"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#adbc18d9cd75290d8c046542ecbd51941">ControllerButton</a> (int id, bool value)</td></tr>
 <tr class="separator:adbc18d9cd75290d8c046542ecbd51941"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1130e36e786520ba83f81a838d69e427"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#a1130e36e786520ba83f81a838d69e427">ControllerAxis</a> (int id, std::array&lt; float, 6 &gt; axes)</td></tr>
-<tr class="separator:a1130e36e786520ba83f81a838d69e427"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e6b7ad68697f4aefbc6b88a41cfe899"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#a0e6b7ad68697f4aefbc6b88a41cfe899">ControllerAxis</a> (int id, const std::array&lt; float, 6 &gt; &amp;axes)</td></tr>
+<tr class="separator:a0e6b7ad68697f4aefbc6b88a41cfe899"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
@@ -221,7 +225,7 @@ Static Private Attributes</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00022">22</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00023">23</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 </div><h2 class="groupheader">Member Typedef Documentation</h2>
 <a id="a29a4a530731a4d3d89f1ab063df00c07" name="a29a4a530731a4d3d89f1ab063df00c07"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a29a4a530731a4d3d89f1ab063df00c07">&#9670;&#160;</a></span>layout_it</h2>
@@ -243,7 +247,7 @@ Static Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00046">46</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00050">50</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -263,7 +267,7 @@ Static Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00023">23</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00022">22</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -344,7 +348,7 @@ Static Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00135">135</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00136">136</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -357,8 +361,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a96cba3a1bce4ee3a1337f3ab420b3e03" name="a96cba3a1bce4ee3a1337f3ab420b3e03"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a96cba3a1bce4ee3a1337f3ab420b3e03">&#9670;&#160;</a></span>AddToQueue()</h2>
+<a id="a4e22245a5adb4c0387dbc28b3f7503b2" name="a4e22245a5adb4c0387dbc28b3f7503b2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4e22245a5adb4c0387dbc28b3f7503b2">&#9670;&#160;</a></span>AddToQueue()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -371,7 +375,7 @@ template&lt;typename ActionType &gt; </div>
         <tr>
           <td class="memname">void input::InputSystem::AddToQueue </td>
           <td>(</td>
-          <td class="paramtype">std::deque&lt; ActionType * &gt; &amp;&#160;</td>
+          <td class="paramtype">std::vector&lt; ActionType * &gt; &amp;&#160;</td>
           <td class="paramname"><em>queue</em>, </td>
         </tr>
         <tr>
@@ -393,16 +397,16 @@ template&lt;typename ActionType &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Adds an action to the dispatch queue if not already present Prevents duplicate entries in the same frame. </p>
+<p>Adds an action to the dispatch queue if not already present O(1) flag check instead of O(n) linear search. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00087">87</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00085">85</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="../../da/d0b/classinput_1_1InputSystem_a96cba3a1bce4ee3a1337f3ab420b3e03_icgraph.png" border="0" usemap="#ada/d0b/classinput_1_1InputSystem_a96cba3a1bce4ee3a1337f3ab420b3e03_icgraph" alt=""/></div>
-<map name="ada/d0b/classinput_1_1InputSystem_a96cba3a1bce4ee3a1337f3ab420b3e03_icgraph" id="ada/d0b/classinput_1_1InputSystem_a96cba3a1bce4ee3a1337f3ab420b3e03_icgraph">
-<area shape="rect" title="Adds an action to the dispatch queue if not already present Prevents duplicate entries in the same fr..." alt="" coords="812,293,957,333"/>
-<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a1130e36e786520ba83f81a838d69e427" title=" " alt="" coords="619,5,764,45"/>
+<div class="center"><img src="../../da/d0b/classinput_1_1InputSystem_a4e22245a5adb4c0387dbc28b3f7503b2_icgraph.png" border="0" usemap="#ada/d0b/classinput_1_1InputSystem_a4e22245a5adb4c0387dbc28b3f7503b2_icgraph" alt=""/></div>
+<map name="ada/d0b/classinput_1_1InputSystem_a4e22245a5adb4c0387dbc28b3f7503b2_icgraph" id="ada/d0b/classinput_1_1InputSystem_a4e22245a5adb4c0387dbc28b3f7503b2_icgraph">
+<area shape="rect" title="Adds an action to the dispatch queue if not already present O(1) flag check instead of O(n) linear se..." alt="" coords="812,293,957,333"/>
+<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a0e6b7ad68697f4aefbc6b88a41cfe899" title=" " alt="" coords="619,5,764,45"/>
 <area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#adbc18d9cd75290d8c046542ecbd51941" title=" " alt="" coords="619,69,764,109"/>
 <area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#ac76ae51ef28bf6796431bb528b44b0ce" title=" " alt="" coords="619,133,764,173"/>
 <area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a4f45ec24a1ff08b3fd6ab3c5953727b6" title=" " alt="" coords="619,197,764,237"/>
@@ -422,8 +426,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a1130e36e786520ba83f81a838d69e427" name="a1130e36e786520ba83f81a838d69e427"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1130e36e786520ba83f81a838d69e427">&#9670;&#160;</a></span>ControllerAxis()</h2>
+<a id="a0e6b7ad68697f4aefbc6b88a41cfe899" name="a0e6b7ad68697f4aefbc6b88a41cfe899"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0e6b7ad68697f4aefbc6b88a41cfe899">&#9670;&#160;</a></span>ControllerAxis()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -440,7 +444,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::array&lt; float, 6 &gt;&#160;</td>
+          <td class="paramtype">const std::array&lt; float, 6 &gt; &amp;&#160;</td>
           <td class="paramname"><em>axes</em>&#160;</td>
         </tr>
         <tr>
@@ -456,7 +460,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00627">627</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00681">681</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -494,12 +498,12 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00551">551</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00605">605</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 
 </div>
 </div>
-<a id="ab242eefdd696ab1fc6a30bbc95cb9e59" name="ab242eefdd696ab1fc6a30bbc95cb9e59"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab242eefdd696ab1fc6a30bbc95cb9e59">&#9670;&#160;</a></span>DispatchQueue()</h2>
+<a id="ae67a8c083bc107a0825daf7377e272ea" name="ae67a8c083bc107a0825daf7377e272ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae67a8c083bc107a0825daf7377e272ea">&#9670;&#160;</a></span>DispatchQueue()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -512,7 +516,7 @@ template&lt;typename ActionType , typename CallbackType &gt; </div>
         <tr>
           <td class="memname">void input::InputSystem::DispatchQueue </td>
           <td>(</td>
-          <td class="paramtype">std::deque&lt; ActionType * &gt; &amp;&#160;</td>
+          <td class="paramtype">std::vector&lt; ActionType * &gt; &amp;&#160;</td>
           <td class="paramname"><em>queue</em>, </td>
         </tr>
         <tr>
@@ -535,27 +539,13 @@ template&lt;typename ActionType , typename CallbackType &gt; </div>
 </div><div class="memdoc">
 
 <p>Dispatches all actions in the queue to registered listeners. </p>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">ActionType</td><td>The action type (Action0D, Action1D, or Action2D) </td></tr>
-    <tr><td class="paramname">CallbackType</td><td>The callback map type for this action dimension </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">queue</td><td>The dispatch queue containing actions to process </td></tr>
-    <tr><td class="paramname">map_ptr</td><td>Pointer to the callback map in <a class="el" href="../../d3/d10/structinput_1_1Listener_1_1M.html">Listener::M</a> </td></tr>
-  </table>
-  </dd>
-</dl>
 
 <p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00057">57</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="../../da/d0b/classinput_1_1InputSystem_ab242eefdd696ab1fc6a30bbc95cb9e59_icgraph.png" border="0" usemap="#ada/d0b/classinput_1_1InputSystem_ab242eefdd696ab1fc6a30bbc95cb9e59_icgraph" alt=""/></div>
-<map name="ada/d0b/classinput_1_1InputSystem_ab242eefdd696ab1fc6a30bbc95cb9e59_icgraph" id="ada/d0b/classinput_1_1InputSystem_ab242eefdd696ab1fc6a30bbc95cb9e59_icgraph">
+<div class="center"><img src="../../da/d0b/classinput_1_1InputSystem_ae67a8c083bc107a0825daf7377e272ea_icgraph.png" border="0" usemap="#ada/d0b/classinput_1_1InputSystem_ae67a8c083bc107a0825daf7377e272ea_icgraph" alt=""/></div>
+<map name="ada/d0b/classinput_1_1InputSystem_ae67a8c083bc107a0825daf7377e272ea_icgraph" id="ada/d0b/classinput_1_1InputSystem_ae67a8c083bc107a0825daf7377e272ea_icgraph">
 <area shape="rect" title="Dispatches all actions in the queue to registered listeners." alt="" coords="199,5,344,45"/>
 <area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#aac98f1c1aeb8aaba7b9ea20f57c27459" title=" " alt="" coords="5,5,151,45"/>
 </map>
@@ -586,21 +576,25 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00016">16</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00015">15</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../da/d0b/classinput_1_1InputSystem_a4c5ec69d0c239e4705e9264f96f560ce_icgraph.png" border="0" usemap="#ada/d0b/classinput_1_1InputSystem_a4c5ec69d0c239e4705e9264f96f560ce_icgraph" alt=""/></div>
 <map name="ada/d0b/classinput_1_1InputSystem_a4c5ec69d0c239e4705e9264f96f560ce_icgraph" id="ada/d0b/classinput_1_1InputSystem_a4c5ec69d0c239e4705e9264f96f560ce_icgraph">
-<area shape="rect" title=" " alt="" coords="439,109,613,134"/>
-<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a1d6c48c567d96e57e21f08de8e97ee14" title=" " alt="" coords="243,5,388,45"/>
-<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a780034af98cf445cbd9088735840bacc" title=" " alt="" coords="243,69,388,109"/>
-<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a7ad5f9674fc98a5352fa1f3a138d73f6" title=" " alt="" coords="243,133,388,173"/>
-<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#ae7f8781d0c20c4caa6496146d44e573d" title=" " alt="" coords="240,197,391,237"/>
-<area shape="rect" href="../../dc/d73/namespaceinput.html#a530ba5b44fdad1d1d8eca54dc80c37bd" title="Change the current input layout." alt="" coords="35,13,163,38"/>
-<area shape="rect" href="../../dc/d06/classinput_1_1Listener.html#ae3c81bc7244c8e5124e501be6ca49927" title=" " alt="" coords="11,77,186,102"/>
-<area shape="rect" href="../../dc/d73/namespaceinput.html#a7a9610b7434f4b69268042cf97a68eb1" title="Change the current input state." alt="" coords="39,141,158,166"/>
-<area shape="rect" href="../../dc/d06/classinput_1_1Listener.html#a3106c28fe591706f6b8472b74ec57b04" title=" " alt="" coords="5,205,192,230"/>
+<area shape="rect" title=" " alt="" coords="457,173,632,198"/>
+<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a1d6c48c567d96e57e21f08de8e97ee14" title=" " alt="" coords="256,5,401,45"/>
+<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a780034af98cf445cbd9088735840bacc" title=" " alt="" coords="256,69,401,109"/>
+<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a7ad5f9674fc98a5352fa1f3a138d73f6" title=" " alt="" coords="256,133,401,173"/>
+<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#ac5bc60ecae5bf0d5f204fc01f97c3261" title=" " alt="" coords="248,197,409,237"/>
+<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#aab63de01abe2406cd1d2e0f9fe1167ca" title=" " alt="" coords="256,261,401,301"/>
+<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#ae7f8781d0c20c4caa6496146d44e573d" title=" " alt="" coords="253,325,404,365"/>
+<area shape="rect" href="../../dc/d73/namespaceinput.html#a530ba5b44fdad1d1d8eca54dc80c37bd" title="Change the current input layout." alt="" coords="39,13,167,38"/>
+<area shape="rect" href="../../dc/d06/classinput_1_1Listener.html#ae3c81bc7244c8e5124e501be6ca49927" title=" " alt="" coords="15,77,190,102"/>
+<area shape="rect" href="../../dc/d73/namespaceinput.html#a7a9610b7434f4b69268042cf97a68eb1" title="Change the current input state." alt="" coords="43,141,162,166"/>
+<area shape="rect" href="../../dc/d73/namespaceinput.html#a51639acdf9365c0441bdbe0bcd5a4ce0" title=" " alt="" coords="5,205,200,230"/>
+<area shape="rect" href="../../dc/d73/namespaceinput.html#a18fd5a040b6ea4d773f4720b665503e8" title=" " alt="" coords="18,269,187,294"/>
+<area shape="rect" href="../../dc/d06/classinput_1_1Listener.html#a3106c28fe591706f6b8472b74ec57b04" title=" " alt="" coords="9,333,196,358"/>
 </map>
 </div>
 
@@ -629,7 +623,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00170">170</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00174">174</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -665,7 +659,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00166">166</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00170">170</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -724,7 +718,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00176">176</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00188">188</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -786,7 +780,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00216">216</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00228">228</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -848,7 +842,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00255">255</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00267">267</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -910,7 +904,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00294">294</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00306">306</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -949,7 +943,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00383">383</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00427">427</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -987,7 +981,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00409">409</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00453">453</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1025,7 +1019,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00439">439</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00483">483</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1062,7 +1056,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00116">116</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00117">117</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1106,7 +1100,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00477">477</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00521">521</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1143,7 +1137,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00303">303</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00315">315</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1180,7 +1174,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00310">310</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00322">322</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1217,7 +1211,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00315">315</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00327">327</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1254,7 +1248,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00465">465</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00509">509</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1342,7 +1336,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00492">492</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00536">536</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1379,7 +1373,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00151">151</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00152">152</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1416,7 +1410,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00120">120</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00121">121</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1424,6 +1418,80 @@ Here is the caller graph for this function:</div>
 <map name="ada/d0b/classinput_1_1InputSystem_a7ad5f9674fc98a5352fa1f3a138d73f6_icgraph" id="ada/d0b/classinput_1_1InputSystem_a7ad5f9674fc98a5352fa1f3a138d73f6_icgraph">
 <area shape="rect" title=" " alt="" coords="172,5,317,45"/>
 <area shape="rect" href="../../dc/d73/namespaceinput.html#a7a9610b7434f4b69268042cf97a68eb1" title="Change the current input state." alt="" coords="5,13,124,38"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="ac5bc60ecae5bf0d5f204fc01f97c3261" name="ac5bc60ecae5bf0d5f204fc01f97c3261"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac5bc60ecae5bf0d5f204fc01f97c3261">&#9670;&#160;</a></span>SetViewportPosition()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void input::InputSystem::SetViewportPosition </td>
+          <td>(</td>
+          <td class="paramtype">glm::vec2&#160;</td>
+          <td class="paramname"><em>position</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00178">178</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../da/d0b/classinput_1_1InputSystem_ac5bc60ecae5bf0d5f204fc01f97c3261_icgraph.png" border="0" usemap="#ada/d0b/classinput_1_1InputSystem_ac5bc60ecae5bf0d5f204fc01f97c3261_icgraph" alt=""/></div>
+<map name="ada/d0b/classinput_1_1InputSystem_ac5bc60ecae5bf0d5f204fc01f97c3261_icgraph" id="ada/d0b/classinput_1_1InputSystem_ac5bc60ecae5bf0d5f204fc01f97c3261_icgraph">
+<area shape="rect" title=" " alt="" coords="248,5,409,45"/>
+<area shape="rect" href="../../dc/d73/namespaceinput.html#a51639acdf9365c0441bdbe0bcd5a4ce0" title=" " alt="" coords="5,13,200,38"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="aab63de01abe2406cd1d2e0f9fe1167ca" name="aab63de01abe2406cd1d2e0f9fe1167ca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab63de01abe2406cd1d2e0f9fe1167ca">&#9670;&#160;</a></span>SetViewportSize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void input::InputSystem::SetViewportSize </td>
+          <td>(</td>
+          <td class="paramtype">glm::vec2&#160;</td>
+          <td class="paramname"><em>size</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00182">182</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../da/d0b/classinput_1_1InputSystem_aab63de01abe2406cd1d2e0f9fe1167ca_icgraph.png" border="0" usemap="#ada/d0b/classinput_1_1InputSystem_aab63de01abe2406cd1d2e0f9fe1167ca_icgraph" alt=""/></div>
+<map name="ada/d0b/classinput_1_1InputSystem_aab63de01abe2406cd1d2e0f9fe1167ca_icgraph" id="ada/d0b/classinput_1_1InputSystem_aab63de01abe2406cd1d2e0f9fe1167ca_icgraph">
+<area shape="rect" title=" " alt="" coords="223,5,368,45"/>
+<area shape="rect" href="../../dc/d73/namespaceinput.html#a18fd5a040b6ea4d773f4720b665503e8" title=" " alt="" coords="5,13,175,38"/>
 </map>
 </div>
 
@@ -1444,7 +1512,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00078">78</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00077">77</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -1472,7 +1540,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00158">158</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00159">159</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1506,7 +1574,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00047">47</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00051">51</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -1552,7 +1620,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00045">45</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00049">49</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>

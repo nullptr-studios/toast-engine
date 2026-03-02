@@ -96,7 +96,7 @@ $(document).ready(function(){initNavTree('d2/d07/md_docs_md_tools.html','../../'
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>This is a list of the tools recomended to work on Toast Engine</p>
-<h1><a class="anchor" id="autotoc_md5"></a>
+<h1><a class="anchor" id="autotoc_md9"></a>
 Dependencies</h1>
 <p>For working on the project, the following tools need to be installed on your computer:</p><ul>
 <li>Visual Studio Toolchain for MSVC compiler on windows / GNU C++ compiler on Linux</li>
@@ -106,14 +106,14 @@ Dependencies</h1>
 <li>Lua 5.4 (you can install it by running <code>winget install Devcom.Lua</code>)</li>
 <li>Vulkan SDK for the SPIR-V shader compiler (you can install glslc if you dont want to have to install the full SDK)</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md6"></a>
+<h1><a class="anchor" id="autotoc_md10"></a>
 IDEs</h1>
 <p>For C++ code on the engine, an IDE with CMake support is required to work on the project. JetBrains CLion is recommended over Visual Studio as while VS supports CMakeLists, it's not as good as an experience to use. Also, the support for the GLSL programming is better on CLion.</p>
-<h1><a class="anchor" id="autotoc_md7"></a>
+<h1><a class="anchor" id="autotoc_md11"></a>
 Compiling</h1>
 <p>Compiling using the IDEs tools is fine most of the time. However, a script to compile will be provided that will add some additional steps like downloading submodules, compiling shaders, packing files, etc.</p>
 <p>You can use our compile script by running <code>lua .\compile.lua</code>. The command also has the flags <code>-g</code> to just run the build system generation, <code>-b</code> to just build with a generated system and <code>-R</code> to make the script build on Release. The script will use Visual Studio 17 as the generator, MSVC as the compiler for Windows and Ninja as the generator for the compile_commands file used by LLVM on Windows. The script will use Unix Makefiles as the generator and G++ as the compiler on Linux.</p>
-<h1><a class="anchor" id="autotoc_md8"></a>
+<h1><a class="anchor" id="autotoc_md12"></a>
 CI</h1>
 <p>The whole CI project for the team can be seen on the .gitlab-ci.yml file. However, a script exist to check if the CI will pass before pushing. You can run the script with <code>lua .\clang-tools.lua</code></p>
 <p>By default this script will run the unit tests but you can check more things with the following flags:</p><ul>

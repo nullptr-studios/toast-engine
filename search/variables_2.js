@@ -28,7 +28,8 @@ var searchData=
   ['current_25',['current',['../dd/d8c/structinput_1_1GamepadState.html#acde9c6373ad6cdb9153a8349d025b8b6',1,'input::GamepadState']]],
   ['currentbytes_26',['currentBytes',['../db/da0/structtoast_1_1memory_1_1Stats.html#a720954c13a7aa1e6bcc0beeefdcfe527',1,'toast::memory::Stats']]],
   ['currentdisplaymode_27',['currentDisplayMode',['../da/d71/structrenderer_1_1RendererConfig.html#a7aeb13850815fa42fb95e0c8fd59e54b',1,'renderer::RendererConfig']]],
-  ['currentlevel_28',['currentLevel',['../d6/dbd/classtoast_1_1GameFlow.html#a74a299a933dc1b44cb8e33e206f5986d',1,'toast::GameFlow']]],
-  ['currentstate_29',['currentState',['../d6/d79/structinput_1_1InputSystem_1_1M.html#ae6cb694e371c394b7c46ffffa4a05484',1,'input::InputSystem::M::currentState()'],['../db/d5b/classtoast_1_1StateMachine.html#a1a62da1cbd4b4d773230573dae4646eb',1,'toast::StateMachine::currentState()'],['../d5/d96/classtoast_1_1StateMachineOld.html#a8b9c87c48884a379d7b359c66ec6cae4',1,'toast::StateMachineOld::currentState()']]],
-  ['cycleinterval_30',['cycleInterval',['../dd/d4e/structtoast_1_1ParticleBurst.html#a83f7fed36752f6315a18ea1cd9ce6f8e',1,'toast::ParticleBurst']]]
+  ['currenteditmode_28',['currentEditMode',['../db/d71/classphysics_1_1Collider.html#adc15da75b707b9b1f2f2d57e23cf500d',1,'physics::Collider']]],
+  ['currentlevel_29',['currentLevel',['../d6/dbd/classtoast_1_1GameFlow.html#a74a299a933dc1b44cb8e33e206f5986d',1,'toast::GameFlow']]],
+  ['currentstate_30',['currentState',['../d6/d79/structinput_1_1InputSystem_1_1M.html#ae6cb694e371c394b7c46ffffa4a05484',1,'input::InputSystem::M::currentState()'],['../db/d5b/classtoast_1_1StateMachine.html#a1a62da1cbd4b4d773230573dae4646eb',1,'toast::StateMachine::currentState()'],['../d5/d96/classtoast_1_1StateMachineOld.html#a8b9c87c48884a379d7b359c66ec6cae4',1,'toast::StateMachineOld::currentState()']]],
+  ['cycleinterval_31',['cycleInterval',['../dd/d4e/structtoast_1_1ParticleBurst.html#a83f7fed36752f6315a18ea1cd9ce6f8e',1,'toast::ParticleBurst']]]
 ];

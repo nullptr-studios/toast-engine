@@ -1,6 +1,6 @@
 <map id="input::InputSystem::AddToQueue" name="input::InputSystem::AddToQueue">
-<area shape="rect" id="node1" title="Adds an action to the dispatch queue if not already present Prevents duplicate entries in the same fr..." alt="" coords="812,293,957,333"/>
-<area shape="rect" id="node2" href="$da/d0b/classinput_1_1InputSystem.html#a1130e36e786520ba83f81a838d69e427" title=" " alt="" coords="619,5,764,45"/>
+<area shape="rect" id="node1" title="Adds an action to the dispatch queue if not already present O(1) flag check instead of O(n) linear se..." alt="" coords="812,293,957,333"/>
+<area shape="rect" id="node2" href="$da/d0b/classinput_1_1InputSystem.html#a0e6b7ad68697f4aefbc6b88a41cfe899" title=" " alt="" coords="619,5,764,45"/>
 <area shape="rect" id="node3" href="$da/d0b/classinput_1_1InputSystem.html#adbc18d9cd75290d8c046542ecbd51941" title=" " alt="" coords="619,69,764,109"/>
 <area shape="rect" id="node4" href="$da/d0b/classinput_1_1InputSystem.html#ac76ae51ef28bf6796431bb528b44b0ce" title=" " alt="" coords="619,133,764,173"/>
 <area shape="rect" id="node9" href="$da/d0b/classinput_1_1InputSystem.html#a4f45ec24a1ff08b3fd6ab3c5953727b6" title=" " alt="" coords="619,197,764,237"/>

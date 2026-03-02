@@ -1,0 +1,4 @@
+<map id="toast::Window::SetVSync" name="toast::Window::SetVSync">
+<area shape="rect" id="node1" title=" " alt="" coords="233,13,416,38"/>
+<area shape="rect" id="node2" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a431b2a634d0674c39597dad74834a2ec" title="Enables or disables VSync and immediately applies it. Does NOT call the full ApplyRenderSettings." alt="" coords="5,5,185,45"/>
+</map>

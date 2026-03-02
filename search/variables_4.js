@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['edges_0',['edges',['../dd/d88/classphysics_1_1ConvexCollider.html#af819eb18beb96b3b47f7337c70b7f7e4',1,'physics::ConvexCollider']]],
+  ['edges_0',['edges',['../db/d71/classphysics_1_1Collider.html#acca165b28e1d074c0e14ee6a5fb1397d',1,'physics::Collider::edges()'],['../dd/d88/classphysics_1_1ConvexCollider.html#af819eb18beb96b3b47f7337c70b7f7e4',1,'physics::ConvexCollider::edges()']]],
   ['editorscene_1',['editorScene',['../d6/d7d/classtoast_1_1World.html#a53ef536f98cae6cdc2faefdec053c931',1,'toast::World']]],
   ['elapsedtime_2',['elapsedTime',['../da/d9c/structinput_1_1Action.html#a8b7f24c8176437d6eaa51eec63295f1d',1,'input::Action']]],
   ['emissionmode_3',['emissionMode',['../db/d96/structtoast_1_1ParticleEmitterConfig.html#ab8e3f2c959e4bf5c0164616d37324151',1,'toast::ParticleEmitterConfig']]],

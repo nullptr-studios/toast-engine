@@ -13,6 +13,11 @@ var namespacephysics =
     [ "Rigidbody", "d6/d41/classphysics_1_1Rigidbody.html", "d6/d41/classphysics_1_1Rigidbody" ],
     [ "Trigger", "d4/d9c/classphysics_1_1Trigger.html", "d4/d9c/classphysics_1_1Trigger" ],
     [ "UpdatePhysicsDefaults", "d8/d25/structphysics_1_1UpdatePhysicsDefaults.html", "d8/d25/structphysics_1_1UpdatePhysicsDefaults" ],
+    [ "ColliderEditMode", "d5/dd0/namespacephysics.html#a0861439c2c8e1125b19d287254d4ed0e", [
+      [ "VERTICES", "d5/dd0/namespacephysics.html#a0861439c2c8e1125b19d287254d4ed0eafa561e3cfc50676003b1b521657063b1", null ],
+      [ "EDGES", "d5/dd0/namespacephysics.html#a0861439c2c8e1125b19d287254d4ed0ea42861b39fff0a83ef415a81d1bafa380", null ],
+      [ "MULTI", "d5/dd0/namespacephysics.html#a0861439c2c8e1125b19d287254d4ed0eaf26be970aac1b06fa62b87562bc73deb", null ]
+    ] ],
     [ "BoxBoxCollision", "d5/dd0/namespacephysics.html#afd721919c6e6937b568f0eae110ffad7", null ],
     [ "BoxBoxResolution", "d5/dd0/namespacephysics.html#a4d57204353d7e78fd76b1ec199b1a2d1", null ],
     [ "BoxIntegration", "d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f", null ],
@@ -25,6 +30,8 @@ var namespacephysics =
     [ "GetAllRigidbodies", "d5/dd0/namespacephysics.html#a9a34db3da7e8ac1dbaf8ac3e1b08e53c", null ],
     [ "Gravity", "d5/dd0/namespacephysics.html#aa53d891e169d147c91ff73e83093b9ff", null ],
     [ "LineLineCollision", "d5/dd0/namespacephysics.html#a4b4e1e3b2202add3d8299be29043fa23", null ],
+    [ "PointCast", "d5/dd0/namespacephysics.html#a80a86dffe491109581f3afd69cf37b66", null ],
+    [ "PointCast", "d5/dd0/namespacephysics.html#a20316933c06d6e7227828a0ef9d82c6e", null ],
     [ "RayCast", "d5/dd0/namespacephysics.html#a9bf58af059ac112e456dc6cd15d23c99", null ],
     [ "RayCast", "d5/dd0/namespacephysics.html#ac6056f6f70f24259b9d9533e75d9f668", null ],
     [ "RbBoxCollision", "d5/dd0/namespacephysics.html#ae7051f57845ca7267e232f0eeb73ff99", null ],
