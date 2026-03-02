@@ -51,6 +51,7 @@ public:
 	static void AddBox(BoxRigidbody* rb);
 	static void RemoveBox(BoxRigidbody* rb);
 	static std::optional<RayResult> RayCollision(Line* ray, ColliderFlags flags);
+	static toast::Object* PointCollision(glm::vec2 point, ColliderFlags flags);
 
 	static auto GetAllRigidbodies() -> std::list<Rigidbody*>&;
 

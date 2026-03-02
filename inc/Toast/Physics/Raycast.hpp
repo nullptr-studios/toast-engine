@@ -32,4 +32,6 @@ struct RayResult {
 
 auto RayCast(glm::vec2 point, glm::vec2 dir, ColliderFlags flags = ColliderFlags::Default) -> std::optional<RayResult>;
 
+auto PointCast(glm::vec2 point, ColliderFlags flags = ColliderFlags::All) -> toast::Object*;
+
 }

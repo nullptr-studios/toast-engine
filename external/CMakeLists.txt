@@ -39,7 +39,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/lz4/amongas/cmake")
 
 
 set(TRACY_ENABLE ON CACHE BOOL "Enable tracy client" ON)
-set(TRACY_ON_DEMAND OFF CACHE BOOL "Tracy on demand" OFF)
+set(TRACY_ON_DEMAND OFF CACHE BOOL "Tracy on demand" ON)
 set(TRACY_FIBERS ON CACHE BOOL "Tracy Fibers" ON)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/tracy")
 

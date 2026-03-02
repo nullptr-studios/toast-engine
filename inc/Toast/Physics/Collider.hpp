@@ -5,6 +5,7 @@
 #pragma once
 #include "ColliderData.hpp"
 #include "ColliderFlags.hpp"
+#include "Line.hpp"
 #include "Toast/Components/Component.hpp"
 
 #include <glm/glm.hpp>
@@ -16,6 +17,15 @@ class Actor;
 namespace physics {
 
 class ConvexCollider;
+
+/// <summary>
+/// What mode for the points to appear on the editor
+/// </summary>
+enum class ColliderEditMode {
+	VERTICES,
+	EDGES,
+	MULTI,
+};
 
 class Collider : public toast::Component {
 public:
@@ -37,11 +47,21 @@ public:
 	template<typename... Args>
 	void AddPoints(Args... points);
 	void AddPoint(glm::vec2 point);
+	void AddPointAt(int index, glm::vec2 point);
 	void SwapPoints(glm::vec2 lhs, glm::vec2 rhs);
 	void DeletePoint(glm::vec2 point);
+	void DeleteAt(unsigned idx);
 
 	auto GetPoints() -> std::list<glm::vec2>& {
 		return m.points;
+	}
+
+	auto GetEdges() -> std::list<Line> {
+		return m.edges;
+	}
+
+	auto currentEditMode() -> ColliderEditMode {
+		return m.currentEditMode;
 	}
 
 	ColliderData data;
@@ -50,7 +70,9 @@ private:
 	struct {
 		std::vector<ConvexCollider*> convexShapes;
 		std::list<glm::vec2> points;
+		std::list<Line> edges;
 		ColliderFlags flags = ColliderFlags::Default;
+		ColliderEditMode currentEditMode = ColliderEditMode::VERTICES;
 	} m;
 
 	struct {
@@ -58,6 +80,7 @@ private:
 		bool showColliders = true;
 		glm::vec2 newPointPosition;
 		glm::mat4 oldPosition;
+		int bevelSubdivisions = 1;
 	} debug;
 };
 

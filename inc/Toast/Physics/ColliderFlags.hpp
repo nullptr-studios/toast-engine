@@ -13,7 +13,8 @@ enum class ColliderFlags : uint8_t {
 	Player  = 0b00010,
 	Enemy   = 0b00100,
 	Ramp    = 0b01000,
-	Weapon  = 0b10000
+	Weapon  = 0b10000,
+	All     = 0b11111
 };
 // clang-format on
 
