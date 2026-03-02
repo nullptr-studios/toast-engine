@@ -496,8 +496,7 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 		// Apply impulses to velocity
 		velocity += impulse * inv_mass;
 		double angle_to_rotate = angle(r, manifold.normal);
-		if (abs(angle_to_rotate) > (1e-2))
-			rb->AddTorque(angle_to_rotate);
+		rb->angularVelocity += angle_to_rotate / ;
 
 	}
 
