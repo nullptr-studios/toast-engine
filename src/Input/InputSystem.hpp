@@ -9,8 +9,9 @@
 #include "Toast/Window/WindowEvents.hpp"
 
 #include <algorithm>
+#include <array>
 #include <glm/glm.hpp>
-#include <list>
+#include <vector>
 
 namespace input {
 
@@ -39,6 +40,9 @@ public:
 	static auto GetMousePosition() -> glm::vec2;
 	static auto GetMouseDelta() -> glm::vec2;
 
+	static void SetViewportPosition(glm::vec2 position);
+	static void SetViewportSize(glm::vec2 size);
+
 	void Tick();
 
 private:
@@ -49,45 +53,40 @@ private:
 	bool HasActiveLayout() const;
 
 	/// @brief Dispatches all actions in the queue to registered listeners
-	/// @tparam ActionType The action type (Action0D, Action1D, or Action2D)
-	/// @tparam CallbackType The callback map type for this action dimension
-	/// @param queue The dispatch queue containing actions to process
-	/// @param map_ptr Pointer to the callback map in Listener::M
 	template<typename ActionType, typename CallbackType>
-	void DispatchQueue(std::deque<ActionType*>& queue, CallbackType Listener::M::* map_ptr) {
-		while (!queue.empty()) {
-			ActionType* a = queue.front();
-			const auto& name = a->name;
-
+	void DispatchQueue(std::vector<ActionType*>& queue, CallbackType Listener::M::* map_ptr) {
+		PROFILE_ZONE;
+		for (auto* a : queue) {
 			a->CalculateValue();
 
 			// Call registered callbacks for this action name
-			// Each listener can have multiple callbacks for the same action
 			for (auto* l : m.subscribers) {
 				auto& callbacks_map = l->m.*map_ptr;
-				const auto range = callbacks_map.equal_range(name);
+				const auto range = callbacks_map.equal_range(a->name);
 				for (auto it = range.first; it != range.second; ++it) {
 					it->second(a);
 				}
 			}
 
 			// Remove one-frame events (mouse scroll/position/delta) after dispatch
-			// These inputs should not persist across frames
 			std::erase_if(a->m.pressedKeys, [](const auto& v) {
 				return v.first >= MOUSE_DELTA_CODE;
 			});
 
-			queue.pop_front();
+			// Clear the queued flag so it can be re-queued next frame
+			a->m.queued = false;
 		}
+		queue.clear();
 	}
 
 	/// @brief Adds an action to the dispatch queue if not already present
-	/// Prevents duplicate entries in the same frame
+	/// O(1) flag check instead of O(n) linear search
 	template<typename ActionType>
-	void AddToQueue(std::deque<ActionType*>& queue, ActionType* action) {
-		if (std::ranges::find(queue, action) != queue.end()) {
+	void AddToQueue(std::vector<ActionType*>& queue, ActionType* action) {
+		if (action->m.queued) {
 			return;
 		}
+		action->m.queued = true;
 		queue.emplace_back(action);
 	}
 
@@ -113,7 +112,7 @@ private:
 	// Controller
 	void PollControllers();
 	void ControllerButton(int id, bool value);
-	void ControllerAxis(int id, std::array<float, 6> axes);
+	void ControllerAxis(int id, const std::array<float, 6>& axes);
 
 	struct M {
 		std::vector<Layout> layouts;
@@ -121,16 +120,29 @@ private:
 		std::string currentState;
 		event::ListenerComponent eventListener;
 
-		std::list<Listener*> subscribers;
-		std::deque<Action0D*> dispatch0DQueue;
-		std::deque<Action1D*> dispatch1DQueue;
-		std::deque<Action2D*> dispatch2DQueue;
+		std::vector<Listener*> subscribers;
+		std::vector<Action0D*> dispatch0DQueue;
+		std::vector<Action1D*> dispatch1DQueue;
+		std::vector<Action2D*> dispatch2DQueue;
 
 		std::map<int, GamepadState> controllers;
 
 		glm::vec2 oldMousePosition = { 0.0f, 0.0f };
 		glm::vec2 mouseDelta = { 0.0f, 0.0f };
 		glm::vec2 mousePosition = { 0.0f, 0.0f };
+
+		glm::vec2 viewportSize = { 0.0f, 0.0f };
+		glm::vec2 viewportPosition = { 0.0f, 0.0f };
+
+		// Cached inverse VP decomposition for mouse-to-world
+
+		glm::vec3 rayNearOrigin { 0.f };
+		glm::vec3 rayNearX { 0.f };
+		glm::vec3 rayNearY { 0.f };
+		glm::vec3 rayFarOrigin { 0.f };
+		glm::vec3 rayFarX { 0.f };
+		glm::vec3 rayFarY { 0.f };
+		bool mouseRaysDirty = true;
 
 		float triggerDeadzone = 0.2f;
 	} m;

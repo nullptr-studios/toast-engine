@@ -473,6 +473,10 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	std::optional<dvec2> rb_hit;
 
 	for (auto* c : physics->m.colliders) {
+		if (!c->parent->enabled()) {
+			continue;
+		}
+
 		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(c->flags)) == 0u) {
 			continue;
 		}
@@ -494,6 +498,10 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	}
 
 	for (auto* r : physics->m.rigidbodies) {
+		if (!r->enabled()) {
+			continue;
+		}
+
 		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(r->flags)) == 0u) {
 			continue;
 		}
@@ -518,6 +526,56 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	}
 
 	return result;
+}
+
+toast::Object* PhysicsSystem::PointCollision(glm::vec2 point, ColliderFlags flags) {
+	if (not get().has_value()) {
+		return nullptr;
+	}
+	auto* physics = get().value();
+
+	const dvec2 pt { point };
+
+	// Colliders
+	for (auto* c : physics->m.colliders) {
+		if (!c->parent->enabled()) {
+			continue;
+		}
+		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(c->flags)) == 0u) {
+			continue;
+		}
+		if (c->edges.empty()) {
+			continue;
+		}
+
+		bool inside = true;
+		for (const auto& edge : c->edges) {
+			dvec2 to_point = pt - edge.p1;
+			// If dot with the outward normal is positive, point is outside this edge
+			if (glm::dot(to_point, edge.normal) > 0.0) {
+				inside = false;
+				break;
+			}
+		}
+		if (inside) {
+			return c->parent->parent();
+		}
+	}
+
+	// Check rigidbodies
+	for (auto* rb : physics->m.rigidbodies) {
+		if (!rb->enabled()) {
+			continue;
+		}
+		if ((static_cast<unsigned int>(flags) & static_cast<unsigned int>(rb->flags)) == 0u) {
+			continue;
+		}
+		if (glm::length2(pt - rb->GetPosition()) <= rb->radius * rb->radius) {
+			return rb->parent();
+		}
+	}
+
+	return nullptr;
 }
 
 auto PhysicsSystem::GetAllRigidbodies() -> std::list<Rigidbody*>& {

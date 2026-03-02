@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <optional>
 #include <sol/sol.hpp>
+#include <vector>
 
 namespace input {
 
@@ -25,6 +26,9 @@ enum class BindRange : uint8_t {
 struct Bind {
 	Bind(const Bind&) = default;
 	Bind(Bind&&) = default;
+	Bind& operator=(const Bind&) = default;
+	Bind& operator=(Bind&&) = default;
+	~Bind() = default;
 
 	static auto create(const sol::object& obj) -> std::optional<Bind>;
 
@@ -52,7 +56,18 @@ struct Bind {
 	}
 
 	Device device = Device::Null;
-	std::unordered_map<int, BindRange> keys;
+	std::vector<std::pair<int, BindRange>> keys;
+
+	/// @brief Check if a key code is in this bind
+	bool ContainsKey(int key_code) const {
+		for (const auto& [k, _] : keys) {
+			if (k == key_code) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	// std::vector<std::unique_ptr<IModifier>> mods;
 
 private:

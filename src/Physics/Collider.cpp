@@ -5,8 +5,10 @@
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "glm/geometric.hpp"
 
 #include <iterator>
+#include <vector>
 
 #ifdef TOAST_EDITOR
 #include <imgui.h>
@@ -22,6 +24,12 @@ void Collider::AddPoint(glm::vec2 point) {
 	m.points.emplace_back(point);
 }
 
+void Collider::AddPointAt(int index, glm::vec2 point) {
+	auto it = m.points.begin();
+	std::advance(it, index + 1);
+	m.points.emplace(it, point);
+}
+
 void Collider::SwapPoints(glm::vec2 lhs, glm::vec2 rhs) {
 	auto lhs_it = std::ranges::find(m.points, lhs);
 	auto rhs_it = std::ranges::find(m.points, rhs);
@@ -33,23 +41,48 @@ void Collider::DeletePoint(glm::vec2 point) {
 	m.points.erase(it);
 }
 
+void Collider::DeleteAt(unsigned idx) {
+	auto point = m.points.begin();
+	std::advance(point, idx);
+	m.points.erase(point);
+	CalculatePoints();
+}
+
 void Collider::Bevel(unsigned idx) {
-	if (m.points.size() < 3) {
+  unsigned subdivisions = debug.bevelSubdivisions;
+	if (m.points.size() < 3 || idx >= m.points.size() || subdivisions < 1) {
 		return;
 	}
 
-	// Get the corner represented by 3 points
 	auto p1 = m.points.begin();
 	std::advance(p1, idx);
 
-	auto right = (p1 != m.points.end()) ? std::next(p1) : m.points.begin();
+	auto right = (std::next(p1) == m.points.end()) ? m.points.begin() : std::next(p1);
 	auto left = (p1 != m.points.begin()) ? std::prev(p1) : std::prev(m.points.end());
 
-	// Reformat the corner into 2 more points that are close to the original point
-	auto new_point1 = glm::mix(*right, *p1, 0.9f);
-	auto new_point2 = glm::mix(*left, *p1, 0.9f);
-	*p1 = new_point1;
-	m.points.insert(p1, new_point2);
+	// Cut points at 25% of each edge from the corner
+	constexpr float cut_ratio = 0.25f;
+	glm::vec2 cut_left = glm::mix(*p1, *left, cut_ratio);
+	glm::vec2 cut_right = glm::mix(*p1, *right, cut_ratio);
+
+	// Quadratic Bezier: cut_left -> *p1 (control) -> cut_right
+	// This creates an arc tangent to both edges at the cut points.
+	// subdivisions=1 gives a flat chamfer, higher values round the corner.
+	std::vector<glm::vec2> arc;
+	for (unsigned i = 0; i <= subdivisions; ++i) {
+		float t = static_cast<float>(i) / static_cast<float>(subdivisions);
+		float u = 1.0f - t;
+		glm::vec2 pt = u * u * cut_left + 2.0f * u * t * (*p1) + t * t * cut_right;
+		arc.push_back(pt);
+	}
+
+	// Replace the original point with the arc points
+	for (const auto& pt : arc) {
+		m.points.insert(p1, pt);
+	}
+	m.points.erase(p1);
+
+	CalculatePoints();
 }
 
 void Collider::CalculatePoints() {
@@ -57,6 +90,30 @@ void Collider::CalculatePoints() {
 	// We require at leats 3 points to make a mesh
 	if (m.points.size() < 3) {
 		return;
+	}
+
+	// create edges (only used for editor)
+	m.edges.clear();
+	auto it = m.points.begin();
+	while (it != m.points.end()) {
+		auto next = std::next(it);
+		if (next == m.points.end()) {
+			next = m.points.begin();
+		}
+
+		glm::vec2 t = glm::normalize(*next - *it);
+
+		m.edges.emplace_back(
+		    Line {
+		      .p1 = *it,
+		      .p2 = *next,
+		      .normal = { -t.y, t.x },
+		      .tangent = t,
+		      .length = glm::distance(*it, *next),
+    }
+		);
+
+		++it;
 	}
 
 	// update world position data
@@ -344,14 +401,22 @@ void Collider::Inspector() {
 			cur &= ~static_cast<unsigned int>(ColliderFlags::Weapon);
 		}
 	}
-	ImGui::Spacing();
-	ImGui::Checkbox("Ramp force left?", &data.forceLeft);
 
 	m.flags = static_cast<ColliderFlags>(cur);
 	data.flags = static_cast<ColliderFlags>(cur);
 	for (auto* c : m.convexShapes) {
 		c->flags = data.flags;
 		c->forceLeft = data.forceLeft;
+	}
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Editor settings");
+
+	constexpr std::array<const char*, 3> editModeNames = { "Vertices", "Edges", "Multi" };
+	int currentEditIndex = static_cast<int>(m.currentEditMode);
+
+	if (ImGui::Combo("Collider Mode", &currentEditIndex, editModeNames.data(), editModeNames.size())) {
+		m.currentEditMode = static_cast<ColliderEditMode>(currentEditIndex);
 	}
 
 	ImGui::Spacing();
@@ -362,6 +427,8 @@ void Collider::Inspector() {
 	}
 	ImGui::SameLine();
 	ImGui::DragFloat2("Position", &debug.newPointPosition.x);
+
+	ImGui::SliderInt("Bevel Subdivisions", &debug.bevelSubdivisions, 1, 5);
 
 	ImGui::Separator();
 	ImGui::Spacing();
@@ -397,6 +464,15 @@ void Collider::Inspector() {
 
 		if (ImGui::SmallButton("X")) {
 			DeletePoint(*it);
+			ImGui::PopID();
+			ImGui::Separator();
+			ImGui::Spacing();
+			return;
+		}
+		ImGui::SameLine();
+
+		if (ImGui::SmallButton("Bevel")) {
+			Bevel(idx);
 			ImGui::PopID();
 			ImGui::Separator();
 			ImGui::Spacing();
@@ -438,7 +514,15 @@ void Collider::EditorTick() {
 	}
 
 	if (debug.showPoints) {
-		renderer::DebugCircle(debug.newPointPosition + world_position, 0.1f, { 1.0f, 0.5f, 0.0f, 1.0f });
+		glm::vec2 new_p = debug.newPointPosition;
+		constexpr glm::vec4 color = { 1.0, 0.5, 0.0, 1.0 };
+		renderer::DebugCircle(
+		    glm::vec2 {
+		      world_mtx * glm::vec4 { new_p.x, new_p.y, 0, 1 }
+    },
+		    0.1f,
+		    color
+		);
 
 		for (glm::vec2 p : m.points) {
 			renderer::DebugCircle(glm::vec2(world_mtx * glm::vec4(p.x, p.y, 0, 1)), 0.1f);

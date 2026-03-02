@@ -49,4 +49,7 @@ void SetState(std::string_view state);    ///< @brief Change the current input s
 auto GetMousePosition() -> glm::vec2;     ///< @brief Returns the last mouse position
 auto GetMouseDelta() -> glm::vec2;        ///< @brief Returns the last mouse delta
 
+void SetViewportPosition(glm::vec2 position);
+void SetViewportSize(glm::vec2 size);
+
 }

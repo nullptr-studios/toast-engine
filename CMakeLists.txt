@@ -118,7 +118,7 @@ endif ()
 
 # Platform system libs
 if(WIN32)
-    target_link_libraries(toast.engine PUBLIC comdlg32 opengl32)
+    target_link_libraries(toast.engine PUBLIC comdlg32 opengl32 winmm)
 elseif(UNIX AND NOT APPLE)
     target_link_libraries(toast.engine PUBLIC X11 pthread dl GL)
 endif()
