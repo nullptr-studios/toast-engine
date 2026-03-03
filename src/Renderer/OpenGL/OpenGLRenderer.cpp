@@ -278,7 +278,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	m_globalLightShader = resource::LoadResource<Shader>("SHADERS/globalLight.shader");
 
 	// Set once, change and reset state if needed
-	stbi_set_flip_vertically_on_load(1);
+	stbi_set_flip_vertically_on_load_thread(1);
 
 	// Load settings
 	LoadRenderSettings();

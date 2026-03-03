@@ -188,6 +188,7 @@ void ToastGPUDriver::CreateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
 		entry.width = bitmap->width();
 		entry.height = bitmap->height();
 
+		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);    // restore default
 		return;    // Skip mipmap generation for A8 textures
 	} else if (bitmap->format() == ultralight::BitmapFormat::BGRA8_UNORM_SRGB) {
 		const void* pixels = bitmap->LockPixels();
@@ -203,6 +204,8 @@ void ToastGPUDriver::CreateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
 
 	entry.width = bitmap->width();
 	entry.height = bitmap->height();
+
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);    // restore default
 }
 
 void ToastGPUDriver::UpdateTexture(uint32_t texture_id, ultralight::RefPtr<ultralight::Bitmap> bitmap) {
@@ -267,6 +270,7 @@ void ToastGPUDriver::UpdateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
 		}
 	}
 
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);    // restore default
 	CHECK_GL();
 }
 

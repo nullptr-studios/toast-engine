@@ -44,7 +44,7 @@ void Texture::TextureWrap(bool repeat) const {
 }
 
 void Texture::FlipVertically(bool flip) {
-	stbi_set_flip_vertically_on_load(flip);
+	stbi_set_flip_vertically_on_load_thread(flip);
 }
 
 void Texture::Load() {
@@ -59,6 +59,8 @@ void Texture::Load() {
 	}
 
 	int channels = 0;
+	
+	stbi_set_flip_vertically_on_load_thread(1);
 
 	// Decode without forcing 4 channels
 	unsigned char* pixels = stbi_load_from_memory(f.data(), static_cast<int>(f.size()), &m_width, &m_height, &channels, 0);
@@ -87,10 +89,17 @@ void Texture::Load() {
 
 // Load OpenGl on the main thread
 void Texture::LoadMainThread() {
-	if (GetResourceState() != resource::ResourceState::FAILED) {
+	const auto state = GetResourceState();
+	if (state == resource::ResourceState::LOADEDCPU) {
 		CreateOpenGLTexture();
+	} else if (state == resource::ResourceState::FAILED) {
+		LoadPlaceholderTexture();
 	} else {
-		LoadPlaceholderTexture();    // Load a placeholder texture if loading failed
+		TOAST_WARN("Texture::LoadMainThread() called in unexpected state ({}) for: {}",
+		           static_cast<int>(state), m_path);
+		if (state == resource::ResourceState::UNLOADED || state == resource::ResourceState::LOADING) {
+			LoadPlaceholderTexture();
+		}
 	}
 }
 
@@ -128,6 +137,7 @@ void Texture::LoadPlaceholderTexture() {
 	glBindTexture(GL_TEXTURE_2D, m_textureId);
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);    // reset; Ultralight HUD driver may leave this non-zero
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<void*>(pixels));
 
@@ -193,6 +203,7 @@ void Texture::CreateOpenGLTexture() {
 
 	// Ensure tight packing for arbitrary widths
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);    // reset; Ultralight HUD driver may leave this non-zero
 
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_width, m_height, 0, format, GL_UNSIGNED_BYTE, m_pixels.data());
 

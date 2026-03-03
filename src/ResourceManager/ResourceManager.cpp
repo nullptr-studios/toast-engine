@@ -56,15 +56,14 @@ ResourceManager* ResourceManager::GetInstance() {
 }
 
 void ResourceManager::LoadResourcesMainThread() {
-	if (m_uploadResources.empty()) {
-		return;
-	}
-
 	PROFILE_ZONE;
 	// safe swap under lock to drain the queue
 	std::vector<std::weak_ptr<IResource>> local;
 	{
 		std::lock_guard<std::mutex> lg(m_uploadMtx);
+		if (m_uploadResources.empty()) {
+			return;
+		}
 		local.swap(m_uploadResources);
 	}
 

@@ -245,16 +245,13 @@ std::shared_ptr<R> ResourceManager::LoadResource(const std::string& path, Args&&
 
 	// Create the object first (owning pointer) - perfect-forward extra args (optional)
 	auto res = std::make_shared<R>(formattedPath, std::forward<Args>(args)...);
+	
+	res->Load();
 
-	// Insert weak_ptr into cache BEFORE performing the expensive load so other threads see it.
-	// Important: don't std::move(res) here — we still need the shared_ptr locally to call Load().
 	{
 		std::lock_guard lock(m_mtx);
-		m_cachedResources[formattedPath] = res;    // constructs weak_ptr<IResource> from shared_ptr<R>
+		m_cachedResources[formattedPath] = res;
 	}
-
-	// Now load without holding the resource map mutex.
-	res->Load();
 
 	// If the resource needs GPU upload, enqueue an upload job that captures the shared_ptr.
 	if (res->IsGPU()) {
