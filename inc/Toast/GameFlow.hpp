@@ -32,7 +32,7 @@ class GameFlow final {
 	void NextLevel();
 	void NextWorld();
 
-  void Restart();
+	void Restart();
 
 public:
 	GameFlow();

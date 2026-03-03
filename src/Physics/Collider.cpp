@@ -49,7 +49,7 @@ void Collider::DeleteAt(unsigned idx) {
 }
 
 void Collider::Bevel(unsigned idx) {
-  unsigned subdivisions = debug.bevelSubdivisions;
+	unsigned subdivisions = debug.bevelSubdivisions;
 	if (m.points.size() < 3 || idx >= m.points.size() || subdivisions < 1) {
 		return;
 	}
