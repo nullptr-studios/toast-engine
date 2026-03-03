@@ -52,6 +52,12 @@ GameFlow::GameFlow() {
 		NextLevel();
 		return true;
 	});
+#ifdef TOAST_EDITOR
+	listener.Subscribe<toast::RestartGameFlow>([this](auto* _) {
+		Restart();
+		return true;
+	});
+#endif
 
 	m = {
 		.worldList = std::move(world_list),
@@ -183,5 +189,32 @@ void GameFlow::NextWorld() {
     }).value_or(0)
   );
 	// clang-format on
+}
+
+void GameFlow::Restart() {
+	try {
+		if (m.currentLevel) {
+			m.currentLevel->wait();
+			auto* scene = toast::World::Get(m.currentLevel->get());
+			if (scene) {
+				scene->Nuke();
+			}
+		}
+	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
+
+	try {
+		if (m.nextLevel) {
+			m.nextLevel->wait();
+			auto* scene = toast::World::Get(m.nextLevel->get());
+			if (scene) {
+				scene->Nuke();
+			}
+		}
+	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
+	m.nextLevel = std::nullopt;
+	m.currentLevel = std::nullopt;
+	m.level = std::nullopt;
+	m.world = std::nullopt;
+	m.levelList.clear();
 }
 }

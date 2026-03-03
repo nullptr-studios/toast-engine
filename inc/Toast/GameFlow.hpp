@@ -32,7 +32,7 @@ class GameFlow final {
 	void NextLevel();
 	void NextWorld();
 
-	bool ValidateLevels();    ///<@brief checks if all the levels in the world are valid files in assets
+  void Restart();
 
 public:
 	GameFlow();
