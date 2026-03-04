@@ -38,6 +38,7 @@ GameFlow::GameFlow() {
 
 	listener.Subscribe<toast::LoadWorld>([this](auto* e) {
 		LoadWorld(e->world);
+		m.nextLevel = toast::World::LoadScene(m.levelList[0]);
 		return true;
 	});
 	listener.Subscribe<toast::LoadLevel>([this](auto* e) {
@@ -114,8 +115,6 @@ void GameFlow::LoadWorld(unsigned world) {
 
 	sol::table table = result;
 	m.levelList = table.as<std::vector<std::string>>();
-
-	m.nextLevel = toast::World::LoadScene(m.levelList[0]);
 }
 
 void GameFlow::LoadLevel(unsigned world, unsigned level) {
