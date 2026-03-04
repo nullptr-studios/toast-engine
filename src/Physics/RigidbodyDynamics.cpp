@@ -8,6 +8,7 @@
 #include "Toast/Physics/Trigger.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Time.hpp"
 #include "glm/gtx/norm.hpp"
 
@@ -212,10 +213,21 @@ void RbRbResolution(Rigidbody* rb1, Rigidbody* rb2, Manifold manifold) {
 }
 
 auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold> {
-	PROFILE_ZONE;
+	PROFILE_ZONE_C(0xFF00FF);
 	dvec2 rb_pos = rb->GetPosition();
 
 	std::list<Manifold> manifolds;
+
+	vec3 minPoint = vec3(std::numeric_limits<float>::max());
+	vec3 maxPoint = vec3(std::numeric_limits<float>::lowest());
+	for (int i = 0; i < c->vertices.size(); ++i) {
+		minPoint = min(minPoint, vec3(c->vertices[i].x, c->vertices[i].y, -1.0f));
+		maxPoint = max(maxPoint, vec3(c->vertices[i].x, c->vertices[i].y, 1.0f));
+	}
+	renderer::BoundingBox bounding_box(minPoint, maxPoint);
+	if (!	OclussionVolume::isAABBOnPlanes(bounding_box)) {
+		return std::nullopt;
+	}
 
 	// This method will use the SAT algorithm
 	for (const auto& edge : c->edges) {

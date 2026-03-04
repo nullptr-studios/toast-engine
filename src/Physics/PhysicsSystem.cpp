@@ -111,10 +111,10 @@ void PhysicsSystem::start() {
 		while (!token.stop_requested()) {
 			using namespace std::chrono;
 			time_point begin = steady_clock::now();
+			PROFILE_ZONE_N("physics::simulation");
 
 			// Loop the physics simulation a set amount of times per frame
 			for (int i = 0; i < physics->m.tickCount; i++) {
-				PROFILE_ZONE_N("physics::simulation");
 				Time::GetInstance()->PhysTick();
 				physics->Tick();
 

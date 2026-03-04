@@ -7,8 +7,11 @@
 #include <Toast/Renderer/DebugDrawLayer.hpp>
 #include <Toast/Time.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
-#include "glm/gtx/vector_query.hpp"
+#include "Toast/Renderer/OclussionVolume.hpp"
+#include "Toast/Resources/Mesh.hpp"
 #include "glm/gtx/vector_angle.hpp"
+#include "glm/gtx/vector_query.hpp"
+
 #include <glm/gtx/norm.hpp>
 
 namespace physics {
@@ -111,8 +114,31 @@ void BoxResetVelocity(BoxRigidbody* rb) {
 }
 
 auto BoxBoxCollision(BoxRigidbody* rb1, BoxRigidbody* rb2) -> std::optional<BoxManifold> {
+	PROFILE_ZONE_C(0x00FF00);
 	dvec2 rb1_pos = rb1->GetPosition();
 	std::list<BoxManifold> manifolds;
+	std::vector<vec2> rb_points = rb1->GetPoints();
+	vec3 minPoint = vec3(std::numeric_limits<float>::max());
+	vec3 maxPoint = vec3(std::numeric_limits<float>::lowest());
+	for (int i = 0; i < rb_points.size(); ++i) {
+		minPoint = min(minPoint, vec3(rb_points[i].x, rb_points[i].y, -1.0f));
+		maxPoint = max(maxPoint, vec3(rb_points[i].x, rb_points[i].y, 1.0f));
+	}
+	renderer::BoundingBox bounding_box(minPoint, maxPoint);
+	if (!	OclussionVolume::isAABBOnPlanes(bounding_box)) {
+		return std::nullopt;
+	}
+	rb_points = rb2->GetPoints();
+	minPoint = vec3(std::numeric_limits<float>::max());
+	maxPoint = vec3(std::numeric_limits<float>::lowest());
+	for (int i = 0; i < rb_points.size(); ++i) {
+		minPoint = min(minPoint, vec3(rb_points[i].x, rb_points[i].y, -1.0f));
+		maxPoint = max(maxPoint, vec3(rb_points[i].x, rb_points[i].y, 1.0f));
+	}
+	bounding_box = renderer::BoundingBox(minPoint, maxPoint);
+	if (!	OclussionVolume::isAABBOnPlanes(bounding_box)) {
+		return std::nullopt;
+	}
 
 	int edge_count = 0;
 	// This method will use the SAT algorithm
@@ -217,6 +243,7 @@ auto BoxBoxCollision(BoxRigidbody* rb1, BoxRigidbody* rb2) -> std::optional<BoxM
 }
 
 void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold) {
+	PROFILE_ZONE_C(0xFF00FF);
 	dvec2 velocity1 = rb1->velocity;
 	dvec2 velocity2 = rb2->velocity;
 
@@ -364,8 +391,31 @@ static auto ClipLineSegmentToLine(dvec2 p1, dvec2 p2, dvec2 normal, dvec2 offset
 }
 
 auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxManifold> {
+	PROFILE_ZONE_C(0xFF0000);
 	dvec2 rb_pos = rb->GetPosition();
 	std::list<BoxManifold> manifolds;
+	std::vector<vec2> rb_points = rb->GetPoints();
+	vec3 minPoint = vec3(std::numeric_limits<float>::max());
+	vec3 maxPoint = vec3(std::numeric_limits<float>::lowest());
+	for (int i = 0; i < c->vertices.size(); ++i) {
+		minPoint = min(minPoint, vec3(c->vertices[i].x, c->vertices[i].y, -1.0f));
+		maxPoint = max(maxPoint, vec3(c->vertices[i].x, c->vertices[i].y, 1.0f));
+	}
+	renderer::BoundingBox bounding_box(minPoint, maxPoint);
+	if (!	OclussionVolume::isAABBOnPlanes(bounding_box)) {
+		return std::nullopt;
+	}
+
+	minPoint = vec3(std::numeric_limits<float>::max());
+	maxPoint = vec3(std::numeric_limits<float>::lowest());
+	for (int i = 0; i < rb_points.size(); ++i) {
+		minPoint = min(minPoint, vec3(rb_points[i].x, rb_points[i].y, -1.0f));
+		maxPoint = max(maxPoint, vec3(rb_points[i].x, rb_points[i].y, 1.0f));
+	}
+	bounding_box = renderer::BoundingBox(minPoint, maxPoint);
+	if (!	OclussionVolume::isAABBOnPlanes(bounding_box)) {
+		return std::nullopt;
+	}
 
 	int edge_count = 0;
 	// This method will use the SAT algorithm
@@ -381,7 +431,7 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 		}
 
 		// get the rigidbody OBB vertices
-		std::vector<vec2> rb_points = rb->GetPoints();
+
 
 		// project rigidbody vertices onto the same axis
 		double min_rb = dot(dvec2 { rb_points[0] }, edge.normal);
@@ -491,6 +541,7 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 }
 
 void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold) {
+	PROFILE_ZONE_C(0x00FFFF);
 	dvec2 position = rb->GetPosition();
 	dvec2& velocity = rb->velocity;
 	double& angular_velocity = rb->angularVelocity;
