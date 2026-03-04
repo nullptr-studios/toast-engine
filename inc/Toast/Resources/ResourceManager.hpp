@@ -40,6 +40,7 @@ public:
 	static constexpr const char* kNixIconPath = "EDITOR/icons/nix.png";
 	static constexpr const char* kWavIconPath = "EDITOR/icons/wav.png";
 	static constexpr const char* kYamlIconPath = "EDITOR/icons/yaml.png";
+	static constexpr const char* kTtfFilePath = "EDITOR/icons/ttf.png";
 
 
 	/**
