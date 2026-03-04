@@ -197,6 +197,30 @@ editor::ResourceSlot::Entry ResourceManager::CreateResourceSlotEntry(const std::
 		e.icon = resource::LoadResource<Texture>(kJsonFilePath);
 	} else if (e.extension == ".obj") {
 		e.icon = resource::LoadResource<Texture>(kObjFilePath);
+	} else if (e.extension == ".html") {
+		e.icon = resource::LoadResource<Texture>(kHtmlIconPath);
+	} else if (e.extension == ".css") {
+		e.icon = resource.LoadResource<Texture>(kCssIconPath);
+	} else if (e.extension == ".config") {
+		e.icon = resource.LoadResource<Texture>(kConfigIconPath);
+	} else if (e.extension == ".toast") {
+		e.icon = resource.LoadResource<Texture>(kYamlIconPath);
+	} else if (e.extension == ".yaml") {
+		e.icon = resource.LoadResource<Texture>(kYamlIconPath);
+	} else if (e.extension == ".js") {
+		e.icon = resource.LoadResource<Texture>(kJsIconPath);
+	} else if (e.extension == ".lua") {
+		e.icon = resource.LoadResource<Texture>(kLuaIconPack);
+	} else if (e.extension == ".scene") {
+		e.icon = resource.LoadResource<Texture>(kLogFilePath);
+	} else if (e.extension == ".log") {
+		e.icon = resource.LoadResource<Texture>(kNixIconPath);
+	} else if (e.extension == ".nix") {
+		e.icon = resource.LoadResource<Texture>(kSceneIconPath);
+	} else if (e.extension == ".scene") {
+		e.icon = resource.LoadResource<Texture>(kJsonIconPath);
+	} else if (e.extension == ".ini") {
+		e.icon = resource.LoadResource<Texture>(kJsonIconPath);
 	} else {
 		e.icon = resource::LoadResource<Texture>(kGenericFilePath);
 	}

@@ -26,7 +26,9 @@ namespace resource {
 class ResourceManager {
 public:
 	static constexpr const char* kGenericFilePath = "EDITOR/icons/file.png";
+	static constexpr const char* kFolderIconPath = "EDITOR/icons/folder.png";
 	static constexpr const char* kObjFilePath = "EDITOR/icons/objFile.png";
+	static constexpr const char* kIniFilePath = "EDITOR/icons/ini.png";
 	static constexpr const char* kJsonFilePath = "EDITOR/icons/json.png";
 	static constexpr const char* kConfigIconPath = "EDITOR/icons/config.png";
 	static constexpr const char* kHtmlIconPath = "EDITOR/icons/html.png";
