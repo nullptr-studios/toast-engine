@@ -27,7 +27,8 @@ struct CoroutineTask {
 
 		void unhandled_exception() {
 			throw;
-		}    // O usa std::terminate() para juegos
+			// i love this comment -dante
+		}
 	};
 };
 

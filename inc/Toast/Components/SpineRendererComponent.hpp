@@ -35,22 +35,22 @@ public:
 	void OnRender(const glm::mat4&) noexcept override;
 
 	void SetSkeletonData(const std::shared_ptr<SpineSkeletonData>& data) {
-		m_skeletonData = data;
-		if (m_skeletonData) {
-			m_skeleton = std::make_unique<spine::Skeleton>(m_skeletonData->GetSkeletonData());
-			m_animationStateData = std::make_unique<spine::AnimationStateData>(m_skeletonData->GetSkeletonData());
-			m_animationStateData->setDefaultMix(.4f);
-			m_animationState = std::make_unique<spine::AnimationState>(m_animationStateData.get());
-			m_animationState->setListener(m_eventHandler.get());
+		m.skeletonData = data;
+		if (m.skeletonData) {
+			m.skeleton = std::make_unique<spine::Skeleton>(m.skeletonData->GetSkeletonData());
+			m.animationStateData = std::make_unique<spine::AnimationStateData>(m.skeletonData->GetSkeletonData());
+			m.animationStateData->setDefaultMix(.4f);
+			m.animationState = std::make_unique<spine::AnimationState>(m.animationStateData.get());
+			m.animationState->setListener(m.eventHandler.get());
 
 			// Initial update to ensure world transforms are valid
-			m_skeleton->update(0.0f);
-			m_skeleton->updateWorldTransform(spine::Physics_None);
+			m.skeleton->update(0.0f);
+			m.skeleton->updateWorldTransform(spine::Physics_None);
 		}
 	}
 
 	spine::AnimationStateData* GetSkeletonData() const {
-		return m_animationStateData.get();
+		return m.animationStateData.get();
 	}
 
 	void Load(json_t j, bool force_create = true) override;
@@ -63,76 +63,82 @@ public:
 	void CrossFadeToDefault(float duration, int track = 0) const;
 
 	// Bone helpers
-	glm::vec2 GetBoneLocalPosition(const std::string_view& boneName) const;
-	void SetBoneLocalPosition(const std::string_view& boneName, const glm::vec2& position) const;
+	glm::vec2 GetBoneLocalPosition(const std::string_view& bone_name) const;
+	void SetBoneLocalPosition(const std::string_view& bone_name, const glm::vec2& position) const;
 
-	float GetBoneLocalRotation(const std::string_view& boneName) const;
-	void SetBoneLocalRotation(const std::string_view& boneName, float rotationDegrees) const;
+	float GetBoneLocalRotation(const std::string_view& bone_name) const;
+	void SetBoneLocalRotation(const std::string_view& bone_name, float rotation_degrees) const;
 
-	float GetBoneWorldRotation(const std::string_view& boneName);
-	void SetBoneWorldRotation(const std::string_view& boneName, float rotationDegrees);
+	float GetBoneWorldRotation(const std::string_view& bone_name) const;
+	void SetBoneWorldRotation(const std::string_view& bone_name, float rotation_degrees);
 
 	/// @brief Returns the bone's world position (after applying the component's world transform).
 	/// Useful for attaching game objects (e.g. weapon actors) to spine bones.
-	glm::vec2 GetBoneWorldPosition(const std::string_view& boneName);
+	glm::vec2 GetBoneWorldPosition(const std::string_view& bone_name);
 
 	/// @brief Converts a 2-D world-space position into spine root-local space.
-	glm::vec2 WorldPositionToSpineLocal(const glm::vec2& worldPos);
+	glm::vec2 WorldPositionToSpineLocal(const glm::vec2& world_pos);
 
-	void ClearBoneLocalPositionOverride(const std::string_view& boneName) const;
+	void ClearBoneLocalPositionOverride(const std::string_view& bone_name) const;
 	void ClearAllBoneLocalPositionOverrides() const;
 
 	// Events
-	virtual void OnAnimationStart(const std::string_view& animationName, int track) { }
+	virtual void OnAnimationStart(const std::string_view&  /*animation_name*/, int /*track*/) { }
 
-	virtual void OnAnimationCompleted(const std::string_view& animationName, int track) { }
+	virtual void OnAnimationCompleted(const std::string_view& /*animation_name*/, int /*track*/) { }
 
-	virtual void OnAnimationEnd(const std::string_view& animationName, int track) { }
+	virtual void OnAnimationEnd(const std::string_view& /*animation_name*/, int /*track*/) { }
 
-	virtual void OnAnimationInterrupted(const std::string_view& animationName, int track) { }
+	virtual void OnAnimationInterrupted(const std::string_view& /*animation_name*/, int /*track*/) { }
 
-	virtual void OnAnimationDispose(const std::string_view& animationName, int track) { }
+	virtual void OnAnimationDispose(const std::string_view& /*animation_name*/, int /*track*/) { }
 
 	virtual void OnAnimationEvent(
-	    const std::string_view& animationName, int track, const std::string_view& eventName, int intValue, float floatValue,
-	    const std::string_view& stringValue
+	    const std::string_view& animation_name, int track, const std::string_view& event_name, int int_value, float float_value,
+	    const std::string_view& string_value
 	);
 
 private:
-	std::unique_ptr<SpineEventHandler> m_eventHandler;
-
-	editor::ResourceSlot m_atlasResource { resource::ResourceType::SPINE_ATLAS };
-	editor::ResourceSlot m_skeletonDataResource { resource::ResourceType::SPINE_SKELETON_DATA };
-
-	// Persisted resource paths (mirrors AtlasRendererComponent)
-	std::string m_atlasPath;
-	std::string m_skeletonDataPath;
-
-	std::shared_ptr<SpineSkeletonData> m_skeletonData;
-	std::shared_ptr<renderer::Shader> m_shader;
-
-	std::unique_ptr<spine::Skeleton> m_skeleton;
-	std::unique_ptr<spine::AnimationStateData> m_animationStateData;
-	std::unique_ptr<spine::AnimationState> m_animationState;
-
-	renderer::Mesh m_dynamicMesh;
-
-	// buffers
-	std::vector<renderer::SpineVertex> m_tempVerts;
-	std::vector<uint16_t> m_tempIndices;
-
-	// Cache last bound texture
-	unsigned int m_lastBoundTexture = 0;
 	static constexpr size_t INITIAL_VERT_RESERVE = 1024;
 
-	mutable std::unordered_map<std::string, glm::vec2> m_boneLocalOverrides;
+	struct {
+		std::unique_ptr<SpineEventHandler> eventHandler;
+
+		editor::ResourceSlot atlasResource { resource::ResourceType::SPINE_ATLAS };
+		editor::ResourceSlot skeletonDataResource { resource::ResourceType::SPINE_SKELETON_DATA };
+
+		// Persisted resource paths (mirrors AtlasRendererComponent)
+		std::string atlasPath;
+		std::string skeletonDataPath;
+
+		std::shared_ptr<SpineSkeletonData> skeletonData;
+		std::shared_ptr<renderer::Shader> shader;
+
+		std::unique_ptr<spine::Skeleton> skeleton;
+		std::unique_ptr<spine::AnimationStateData> animationStateData;
+		std::unique_ptr<spine::AnimationState> animationState;
+
+		renderer::Mesh dynamicMesh;
+
+		// buffers
+		std::vector<renderer::SpineVertex> tempVerts;
+		std::vector<uint16_t> tempIndices;
+
+		// Cache last bound texture
+		unsigned int lastBoundTexture = 0;
+
+		mutable std::unordered_map<std::string, glm::vec2> boneLocalOverrides;
+	} m;
 
 #ifdef TOAST_EDITOR
-	// Editor-only: UI state for animation preview
-	std::vector<std::string> m_animationNames;
-	int m_selectedAnimation = -1;
-	bool m_loopAnimation = false;
-	bool m_playing = false;
+	struct {
+		// Editor-only: UI state for animation preview
+		std::vector<std::string> animationNames;
+		int selectedAnimation = -1;
+		bool loopAnimation = false;
+		bool playing = false;
+	} debug;
+
 	// Helper to populate animation names from current skeleton data
 	void RefreshAnimationList();
 #endif
