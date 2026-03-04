@@ -25,10 +25,20 @@ namespace resource {
 ///@brief Manager of every resource in the engine
 class ResourceManager {
 public:
-	static constexpr const char* kGenericFilePath = "EDITOR/icons/genericFile.png";
+	static constexpr const char* kGenericFilePath = "EDITOR/icons/file.png";
 	static constexpr const char* kObjFilePath = "EDITOR/icons/objFile.png";
-	static constexpr const char* kJsonFilePath = "EDITOR/icons/jsonFile.png";
-	static constexpr const char* kFolderIconPath = "EDITOR/icons/folder.png";
+	static constexpr const char* kJsonFilePath = "EDITOR/icons/json.png";
+	static constexpr const char* kConfigIconPath = "EDITOR/icons/config.png";
+	static constexpr const char* kHtmlIconPath = "EDITOR/icons/html.png";
+	static constexpr const char* kJsIconPath = "EDITOR/icons/js.png";
+	static constexpr const char* kLuaIconPath = "EDITOR/icons/lua.png";
+	static constexpr const char* kCssIconPath = "EDITOR/icons/css.png";
+	static constexpr const char* kEditorconfigIconPath = "EDITOR/icons/editorconfig.png";
+	static constexpr const char* kLogIconPath = "EDITOR/icons/log.png";
+	static constexpr const char* kNixIconPath = "EDITOR/icons/nix.png";
+	static constexpr const char* kWavIconPath = "EDITOR/icons/wav.png";
+	static constexpr const char* kYamlIconPath = "EDITOR/icons/yaml.png";
+
 
 	/**
 	 * @brief Constructs the ResourceManager.
