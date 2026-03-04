@@ -2,6 +2,7 @@
 
 #include "Toast/GameEvents.hpp"
 #include "Toast/Log.hpp"
+#include "Toast/Objects/Scene.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/World.hpp"
 #include "sol/forward.hpp"
@@ -12,6 +13,8 @@
 #include <optional>
 
 namespace toast {
+
+Scene* GameFlow::currentScene = nullptr;
 
 GameFlow::GameFlow() {
 	std::vector<std::string> world_list;
@@ -68,6 +71,10 @@ GameFlow::GameFlow() {
 		.currentLevel = std::nullopt,
 		.nextLevel = std::nullopt,
 	};
+}
+
+Scene* GameFlow::CurrentScene() {
+	return currentScene;
 }
 
 void GameFlow::LoadWorld(unsigned world) {
@@ -135,6 +142,7 @@ void GameFlow::LoadLevel(unsigned world, unsigned level) {
 	try {
 		auto* scene = toast::World::Get(m.currentLevel->get());
 		scene->enabled(true);
+		currentScene = dynamic_cast<Scene*>(scene);
 	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 }
 
@@ -169,6 +177,7 @@ void GameFlow::NextLevel() {
 		m.currentLevel->wait();
 		auto* scene = toast::World::Get(m.currentLevel->get());
 		scene->enabled(true);
+		currentScene = dynamic_cast<Scene*>(scene);
 	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 
 	// Pre Load Next Level :3
