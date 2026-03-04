@@ -40,8 +40,8 @@ public:
 
 	// Sprite management
 	void RefreshSprites();
-	spine::AtlasRegion* FindRegion(const std::string& region_name) const;
-	std::string GenerateSpriteName(const std::string& region_name);
+	spine::AtlasRegion* FindRegion(std::string_view region_name) const;
+	std::string GenerateSpriteName(std::string_view region_name);
 
 private:
 	void UpdateMeshBounds();

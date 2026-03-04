@@ -249,14 +249,14 @@ void AtlasRendererComponent::RefreshSprites() {
 	m.spriteCacheDirty = false;
 }
 
-spine::AtlasRegion* AtlasRendererComponent::FindRegion(const std::string& region_name) const {
+spine::AtlasRegion* AtlasRendererComponent::FindRegion(std::string_view region_name) const {
 	if (!m.atlas || !m.atlas->GetAtlasData()) {
 		return nullptr;
 	}
-	return m.atlas->GetAtlasData()->findRegion(region_name.c_str());
+	return m.atlas->GetAtlasData()->findRegion(region_name.data());
 }
 
-std::string AtlasRendererComponent::GenerateSpriteName(const std::string& region_name) {
+std::string AtlasRendererComponent::GenerateSpriteName(std::string_view region_name) {
 	// Count existing sprites with this region name
 	int count = 0;
 	for (const auto& [id, childPtr] : children.GetAll()) {
@@ -268,7 +268,7 @@ std::string AtlasRendererComponent::GenerateSpriteName(const std::string& region
 	}
 
 	// Generate name
-	return region_name + "_" + std::to_string(count);
+	return std::format("{}_{}", region_name, count);
 }
 
 void AtlasRendererComponent::UpdateMeshBounds() {
