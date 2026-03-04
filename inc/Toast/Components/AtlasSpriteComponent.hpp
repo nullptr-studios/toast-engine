@@ -7,6 +7,7 @@
 #include "spine/Atlas.h"
 
 #include <string>
+#include <string_view>
 
 namespace toast {
 
@@ -27,7 +28,7 @@ public:
 #endif
 
 	// Getters/Setters
-	void SetRegionName(const std::string& region_name) {
+	void SetRegionName(std::string_view region_name) {
 		m.regionName = region_name;
 	}
 
