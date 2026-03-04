@@ -9,10 +9,10 @@
 #include "Toast/Resources/ResourceSlot.hpp"
 #include "Toast/Resources/Spine/SpineEventHandler.hpp"
 #include "Toast/Resources/Spine/SpineSkeletonData.hpp"
-#include "spine/AnimationState.h"
-#include "spine/AnimationStateData.h"
-#include "spine/Skeleton.h"
 
+#include <spine/AnimationState.h>
+#include <spine/AnimationStateData.h>
+#include <spine/Skeleton.h>
 #include <unordered_map>
 
 class SpineRendererComponent : public IRenderable {
@@ -83,7 +83,7 @@ public:
 	void ClearAllBoneLocalPositionOverrides() const;
 
 	// Events
-	virtual void OnAnimationStart(const std::string_view&  /*animation_name*/, int /*track*/) { }
+	virtual void OnAnimationStart(const std::string_view& /*animation_name*/, int /*track*/) { }
 
 	virtual void OnAnimationCompleted(const std::string_view& /*animation_name*/, int /*track*/) { }
 
