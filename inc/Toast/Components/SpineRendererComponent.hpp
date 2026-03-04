@@ -56,46 +56,45 @@ public:
 	void Load(json_t j, bool force_create = true) override;
 	json_t Save() const override;
 
-	void PlayAnimation(const std::string_view& name, bool loop, int track = 0) const;
+	void PlayAnimation(std::string_view name, bool loop, int track = 0) const;
 	void StopAnimation(int track = 0) const;
 
 	void NextCrossFadeToDefault(float duration, int track = 0) const;
 	void CrossFadeToDefault(float duration, int track = 0) const;
 
 	// Bone helpers
-	glm::vec2 GetBoneLocalPosition(const std::string_view& bone_name) const;
-	void SetBoneLocalPosition(const std::string_view& bone_name, const glm::vec2& position) const;
+	glm::vec2 GetBoneLocalPosition(std::string_view bone_name) const;
+	void SetBoneLocalPosition(std::string_view bone_name, const glm::vec2& position) const;
 
-	float GetBoneLocalRotation(const std::string_view& bone_name) const;
-	void SetBoneLocalRotation(const std::string_view& bone_name, float rotation_degrees) const;
+	float GetBoneLocalRotation(std::string_view bone_name) const;
+	void SetBoneLocalRotation(std::string_view bone_name, float rotation_degrees) const;
 
-	float GetBoneWorldRotation(const std::string_view& bone_name) const;
-	void SetBoneWorldRotation(const std::string_view& bone_name, float rotation_degrees);
+	float GetBoneWorldRotation(std::string_view bone_name) const;
+	void SetBoneWorldRotation(std::string_view bone_name, float rotation_degrees);
 
 	/// @brief Returns the bone's world position (after applying the component's world transform).
 	/// Useful for attaching game objects (e.g. weapon actors) to spine bones.
-	glm::vec2 GetBoneWorldPosition(const std::string_view& bone_name);
+	glm::vec2 GetBoneWorldPosition(std::string_view bone_name);
 
 	/// @brief Converts a 2-D world-space position into spine root-local space.
 	glm::vec2 WorldPositionToSpineLocal(const glm::vec2& world_pos);
 
-	void ClearBoneLocalPositionOverride(const std::string_view& bone_name) const;
+	void ClearBoneLocalPositionOverride(std::string_view bone_name) const;
 	void ClearAllBoneLocalPositionOverrides() const;
 
 	// Events
-	virtual void OnAnimationStart(const std::string_view& /*animation_name*/, int /*track*/) { }
+	virtual void OnAnimationStart(std::string_view /*animation_name*/, int /*track*/) { }
 
-	virtual void OnAnimationCompleted(const std::string_view& /*animation_name*/, int /*track*/) { }
+	virtual void OnAnimationCompleted(std::string_view /*animation_name*/, int /*track*/) { }
 
-	virtual void OnAnimationEnd(const std::string_view& /*animation_name*/, int /*track*/) { }
+	virtual void OnAnimationEnd(std::string_view /*animation_name*/, int /*track*/) { }
 
-	virtual void OnAnimationInterrupted(const std::string_view& /*animation_name*/, int /*track*/) { }
+	virtual void OnAnimationInterrupted(std::string_view /*animation_name*/, int /*track*/) { }
 
-	virtual void OnAnimationDispose(const std::string_view& /*animation_name*/, int /*track*/) { }
+	virtual void OnAnimationDispose(std::string_view /*animation_name*/, int /*track*/) { }
 
 	virtual void OnAnimationEvent(
-	    const std::string_view& animation_name, int track, const std::string_view& event_name, int int_value, float float_value,
-	    const std::string_view& string_value
+	    std::string_view animation_name, int track, const std::string_view& event_name, int int_value, float float_value, std::string_view string_value
 	);
 
 private:

@@ -415,7 +415,7 @@ json_t SpineRendererComponent::Save() const {
 	return j;
 }
 
-void SpineRendererComponent::PlayAnimation(const std::string_view& name, bool loop, int track) const {
+void SpineRendererComponent::PlayAnimation(std::string_view name, bool loop, int track) const {
 	m.animationState->setAnimation(track, name.data(), loop);
 }
 
@@ -431,7 +431,7 @@ void SpineRendererComponent::CrossFadeToDefault(float duration, int track) const
 	m.animationState->setEmptyAnimation(track, duration);
 }
 
-glm::vec2 SpineRendererComponent::GetBoneLocalPosition(const std::string_view& bone_name) const {
+glm::vec2 SpineRendererComponent::GetBoneLocalPosition(std::string_view bone_name) const {
 	if (!m.skeleton) {
 		return glm::vec2(0.0f);
 	}
@@ -443,7 +443,7 @@ glm::vec2 SpineRendererComponent::GetBoneLocalPosition(const std::string_view& b
 	return { bone->getX(), bone->getY() };
 }
 
-void SpineRendererComponent::SetBoneLocalPosition(const std::string_view& bone_name, const glm::vec2& position) const {
+void SpineRendererComponent::SetBoneLocalPosition(std::string_view bone_name, const glm::vec2& position) const {
 	if (!m.skeleton) {
 		return;
 	}
@@ -459,7 +459,7 @@ void SpineRendererComponent::SetBoneLocalPosition(const std::string_view& bone_n
 	m.boneLocalOverrides[std::string(bone_name)] = position;
 }
 
-void SpineRendererComponent::ClearBoneLocalPositionOverride(const std::string_view& bone_name) const {
+void SpineRendererComponent::ClearBoneLocalPositionOverride(std::string_view bone_name) const {
 	m.boneLocalOverrides.erase(std::string(bone_name));
 }
 
@@ -467,7 +467,7 @@ void SpineRendererComponent::ClearAllBoneLocalPositionOverrides() const {
 	m.boneLocalOverrides.clear();
 }
 
-float SpineRendererComponent::GetBoneLocalRotation(const std::string_view& bone_name) const {
+float SpineRendererComponent::GetBoneLocalRotation(std::string_view bone_name) const {
 	if (!m.skeleton) {
 		return 0.0f;
 	}
@@ -479,7 +479,7 @@ float SpineRendererComponent::GetBoneLocalRotation(const std::string_view& bone_
 	return bone->getRotation();
 }
 
-void SpineRendererComponent::SetBoneLocalRotation(const std::string_view& bone_name, float rotation_degrees) const {
+void SpineRendererComponent::SetBoneLocalRotation(std::string_view bone_name, float rotation_degrees) const {
 	if (!m.skeleton) {
 		return;
 	}
@@ -491,7 +491,7 @@ void SpineRendererComponent::SetBoneLocalRotation(const std::string_view& bone_n
 	bone->setRotation(rotation_degrees);
 }
 
-float SpineRendererComponent::GetBoneWorldRotation(const std::string_view& bone_name) const {
+float SpineRendererComponent::GetBoneWorldRotation(std::string_view bone_name) const {
 	if (!m.skeleton) {
 		return 0.0f;
 	}
@@ -503,7 +503,7 @@ float SpineRendererComponent::GetBoneWorldRotation(const std::string_view& bone_
 	return bone->getWorldRotationX();
 }
 
-void SpineRendererComponent::SetBoneWorldRotation(const std::string_view& bone_name, float rotation_degrees) {    // NOLINT
+void SpineRendererComponent::SetBoneWorldRotation(std::string_view bone_name, float rotation_degrees) {    // NOLINT
 	if (!m.skeleton) {
 		return;
 	}
@@ -522,7 +522,7 @@ void SpineRendererComponent::SetBoneWorldRotation(const std::string_view& bone_n
 	bone->setRotation(local_rot);
 }
 
-glm::vec2 SpineRendererComponent::GetBoneWorldPosition(const std::string_view& bone_name) {
+glm::vec2 SpineRendererComponent::GetBoneWorldPosition(std::string_view bone_name) {
 	if (!m.skeleton) {
 		return glm::vec2(0.0f);
 	}
@@ -544,8 +544,8 @@ glm::vec2 SpineRendererComponent::WorldPositionToSpineLocal(const glm::vec2& wor
 }
 
 void SpineRendererComponent::OnAnimationEvent(
-    const std::string_view& animation_name, int track, const std::string_view& event_name, int int_value, float float_value,
-    const std::string_view& string_value
+    std::string_view animation_name, int track, const std::string_view& event_name, int int_value, float float_value,
+    std::string_view string_value
 ) {
 	event::Send(new SpineEvent(id(), animation_name, track, event_name, int_value, float_value, string_value));
 	// TOAST_TRACE("Spine Event Sent!");
