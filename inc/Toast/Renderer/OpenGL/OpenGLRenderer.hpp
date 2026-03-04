@@ -57,6 +57,8 @@ private:
 
 	GlobalLight* m_globalLight = nullptr;
 
+	std::vector<IRenderable*> m_combinedRenderables;
+
 	// Optional per-layer framebuffer to render non-HUD layers before compositing
 	Framebuffer* m_layerFramebuffer = nullptr;
 };

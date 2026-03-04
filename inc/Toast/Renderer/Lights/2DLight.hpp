@@ -64,13 +64,6 @@ public:
 		return m_color;
 	}
 
-	void SetNormalMappingEnabled(bool enabled) {
-		m_normalMappingEnabled = enabled;
-	}
-
-	bool IsNormalMappingEnabled() const {
-		return m_normalMappingEnabled;
-	}
 
 #ifdef TOAST_EDITOR
 	void Inspector() override;
@@ -90,6 +83,4 @@ private:
 
 	float m_radialSoftness = 0.25f;
 	float m_angularSoftness = 0.5f;
-
-	bool m_normalMappingEnabled = true;
 };
