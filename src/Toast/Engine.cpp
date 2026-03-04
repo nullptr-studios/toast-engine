@@ -28,9 +28,9 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <windows.h>
-#include <mmsystem.h>
 #include <intrin.h>
+#include <mmsystem.h>
+#include <windows.h>
 #pragma comment(lib, "winmm.lib")
 #endif
 
