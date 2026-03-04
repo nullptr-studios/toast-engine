@@ -9,7 +9,6 @@
 #include "Toast/Physics/Trigger.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
-#include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Time.hpp"
 #include "glm/gtx/matrix_query.hpp"
 #include "glm/gtx/norm.hpp"
@@ -221,14 +220,12 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 
 	std::list<Manifold> manifolds;
 
-	vec3 minPoint = vec3(std::numeric_limits<float>::max());
-	vec3 maxPoint = vec3(std::numeric_limits<float>::lowest());
-	for (int i = 0; i < c->vertices.size(); ++i) {
-		minPoint = min(minPoint, vec3(c->vertices[i].x, c->vertices[i].y, -1.0f));
-		maxPoint = max(maxPoint, vec3(c->vertices[i].x, c->vertices[i].y, 1.0f));
-	}
-	renderer::BoundingBox bounding_box(minPoint, maxPoint);
-	if (!	OclussionVolume::isAABBOnPlanes(bounding_box)) {
+	const auto& colliderAABB = c->getAABB();
+
+	float rbR = static_cast<float>(rb->radius);
+	vec3 rbMin(static_cast<float>(rb_pos.x) - rbR, static_cast<float>(rb_pos.y) - rbR, -1.0f);
+	vec3 rbMax(static_cast<float>(rb_pos.x) + rbR, static_cast<float>(rb_pos.y) + rbR, 1.0f);
+	if (rbMax.x < colliderAABB.min.x || rbMin.x > colliderAABB.max.x || rbMax.y < colliderAABB.min.y || rbMin.y > colliderAABB.max.y) {
 		return std::nullopt;
 	}
 
@@ -492,26 +489,26 @@ NO_COLLISION:
 	}
 }
 
-auto RbBoxCollision(Rigidbody* rb1, BoxRigidbody* rb2) -> std::optional<Manifold>  {
+auto RbBoxCollision(Rigidbody* rb1, BoxRigidbody* rb2) -> std::optional<Manifold> {
 	PROFILE_ZONE_C(0xFF00FF);
 	dvec2 rb_pos = rb1->GetPosition();
-	std::vector<vec2> box_points = rb2->GetPoints();
+	const auto& box_points = rb2->GetPoints();
 
 	std::list<Manifold> manifolds;
 
-	vec3 minPoint = vec3(std::numeric_limits<float>::max());
-	vec3 maxPoint = vec3(std::numeric_limits<float>::lowest());
-	for (int i = 0; i < box_points.size(); ++i) {
-		minPoint = min(minPoint, vec3(box_points[i].x, box_points[i].y, -1.0f));
-		maxPoint = max(maxPoint, vec3(box_points[i].x, box_points[i].y, 1.0f));
-	}
-	renderer::BoundingBox bounding_box(minPoint, maxPoint);
-	if (!	OclussionVolume::isAABBOnPlanes(bounding_box)) {
+	const auto& boxAABB = rb2->GetAABB();
+
+	float rbR = static_cast<float>(rb1->radius);
+	vec3 rbMin(static_cast<float>(rb_pos.x) - rbR, static_cast<float>(rb_pos.y) - rbR, -1.0f);
+	vec3 rbMax(static_cast<float>(rb_pos.x) + rbR, static_cast<float>(rb_pos.y) + rbR, 1.0f);
+	if (rbMax.x < boxAABB.min.x || rbMin.x > boxAABB.max.x || rbMax.y < boxAABB.min.y || rbMin.y > boxAABB.max.y) {
 		return std::nullopt;
 	}
 
+	const auto& box_edges = rb2->GetEdges();
+
 	// This method will use the SAT algorithm
-	for (const auto& edge : rb2->GetEdges()) {
+	for (const auto& edge : box_edges) {
 		// project all points onto the edge normal and keep the minimum & maximum
 		double min_proj = dot(dvec2 { box_points[0] } - edge.p1, edge.normal);
 		double max_proj = min_proj;
@@ -677,14 +674,16 @@ void RbBoxResolution(Rigidbody* rb1, BoxRigidbody* rb2, Manifold manifold) {
 		velocity1 -= impulse * inv_mass1;
 		velocity2 += impulse * inv_mass2;
 
-		if (!isNormalized(impulse, 1e-2))
+		if (!isNormalized(impulse, 1e-2)) {
 			impulse = normalize(impulse);
+		}
 		if (abs(dot(r, impulse)) < 1) {
 			double angle_to_rotate = orientedAngle(r, impulse) - pi<double>();
 			angle_to_rotate *= cos(angle_to_rotate);
 			angle_to_rotate *= sin(angle_to_rotate);
-			if (abs(angle_to_rotate) > 1e-1)
-				rb2->angularVelocity +=  angle_to_rotate * inv_mass2;
+			if (abs(angle_to_rotate) > 1e-1) {
+				rb2->angularVelocity += angle_to_rotate * inv_mass2;
+			}
 		}
 	}
 

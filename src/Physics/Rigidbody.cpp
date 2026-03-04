@@ -29,9 +29,9 @@ void Rigidbody::Init() {
 }
 
 void Rigidbody::Begin() {
-		Component::Begin();
-		velocity = { 0.0, 0.0 };
-		forces.clear();
+	Component::Begin();
+	velocity = { 0.0, 0.0 };
+	forces.clear();
 }
 
 void Rigidbody::Destroy() {

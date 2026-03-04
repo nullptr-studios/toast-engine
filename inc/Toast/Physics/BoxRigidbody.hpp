@@ -6,6 +6,7 @@
 #include "Line.hpp"
 
 #include <Toast/Components/Component.hpp>
+#include <Toast/Resources/Mesh.hpp>
 #include <glm/glm.hpp>
 
 namespace physics {
@@ -34,8 +35,11 @@ public:
 	void AddForce(glm::dvec2 force, glm::dvec2 position);
 	void AddTorque(double torque);
 
-	auto GetPoints() const -> std::vector<glm::vec2>;
-	auto GetEdges() const -> std::vector<Line>;
+	auto GetPoints() const -> const std::vector<glm::vec2>&;
+	auto GetEdges() const -> const std::vector<Line>&;
+	auto GetAABB() const -> const renderer::BoundingBox&;
+
+	void InvalidateCache() const;
 
 	// properties
 	glm::dvec2 size;
@@ -68,6 +72,14 @@ public:
 		glm::vec4 defaultColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 		glm::vec4 collidingColor = { 0.0f, 1.0f, 0.0f, 1.0f };
 	} debug;
+
+private:
+	mutable bool m_cacheDirty = true;
+	mutable std::vector<glm::vec2> m_cachedPoints;
+	mutable std::vector<Line> m_cachedEdges;
+	mutable renderer::BoundingBox m_cachedAABB;
+
+	void RebuildCache() const;
 };
 
 }

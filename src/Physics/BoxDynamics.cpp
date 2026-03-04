@@ -7,7 +7,6 @@
 #include <Toast/Renderer/DebugDrawLayer.hpp>
 #include <Toast/Time.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
-#include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Resources/Mesh.hpp"
 #include "glm/gtx/vector_angle.hpp"
 #include "glm/gtx/vector_query.hpp"
@@ -117,62 +116,45 @@ auto BoxBoxCollision(BoxRigidbody* rb1, BoxRigidbody* rb2) -> std::optional<BoxM
 	PROFILE_ZONE_C(0x00FF00);
 	dvec2 rb1_pos = rb1->GetPosition();
 	std::list<BoxManifold> manifolds;
-	std::vector<vec2> rb_points = rb1->GetPoints();
-	vec3 minPoint = vec3(std::numeric_limits<float>::max());
-	vec3 maxPoint = vec3(std::numeric_limits<float>::lowest());
-	for (int i = 0; i < rb_points.size(); ++i) {
-		minPoint = min(minPoint, vec3(rb_points[i].x, rb_points[i].y, -1.0f));
-		maxPoint = max(maxPoint, vec3(rb_points[i].x, rb_points[i].y, 1.0f));
-	}
-	renderer::BoundingBox bounding_box(minPoint, maxPoint);
-	if (!	OclussionVolume::isAABBOnPlanes(bounding_box)) {
+
+	const auto& aabb1 = rb1->GetAABB();
+	const auto& aabb2 = rb2->GetAABB();
+
+	if (aabb1.max.x < aabb2.min.x || aabb1.min.x > aabb2.max.x || aabb1.max.y < aabb2.min.y || aabb1.min.y > aabb2.max.y) {
 		return std::nullopt;
 	}
-	rb_points = rb2->GetPoints();
-	minPoint = vec3(std::numeric_limits<float>::max());
-	maxPoint = vec3(std::numeric_limits<float>::lowest());
-	for (int i = 0; i < rb_points.size(); ++i) {
-		minPoint = min(minPoint, vec3(rb_points[i].x, rb_points[i].y, -1.0f));
-		maxPoint = max(maxPoint, vec3(rb_points[i].x, rb_points[i].y, 1.0f));
-	}
-	bounding_box = renderer::BoundingBox(minPoint, maxPoint);
-	if (!	OclussionVolume::isAABBOnPlanes(bounding_box)) {
-		return std::nullopt;
-	}
+
+	const auto& rb1_points = rb1->GetPoints();
+	const auto& rb2_points = rb2->GetPoints();
+	const auto& rb2_edges = rb2->GetEdges();
 
 	int edge_count = 0;
 	// This method will use the SAT algorithm
-	for (const auto& edge : rb2->GetEdges()) {
+	for (const auto& edge : rb2_edges) {
 		// get the maximum and minimum points of the collider projected onto the edge normal
-		double min_collider = dot(dvec2 { rb2->GetPoints()[0] }, edge.normal);
+		double min_collider = dot(dvec2 { rb2_points[0] }, edge.normal);
 		double max_collider = min_collider;
 
-		for (int i = 1; i < rb2->GetPoints().size(); i++) {
-			double proj = dot(dvec2 { rb2->GetPoints()[i] }, edge.normal);
+		for (int i = 1; i < rb2_points.size(); i++) {
+			double proj = dot(dvec2 { rb2_points[i] }, edge.normal);
 			min_collider = std::min(proj, min_collider);
 			max_collider = std::max(proj, max_collider);
 		}
 
-		// get the rigidbody OBB vertices
-		std::vector<vec2> rb_points = rb1->GetPoints();
-
 		// project rigidbody vertices onto the same axis
-		double min_rb = dot(dvec2 { rb_points[0] }, edge.normal);
+		double min_rb = dot(dvec2 { rb1_points[0] }, edge.normal);
 		double max_rb = min_rb;
 
-
-		for (int i = 1; i < rb_points.size(); i++) {
-			double proj = dot(dvec2 { rb_points[i] }, edge.normal);
+		for (int i = 1; i < rb1_points.size(); i++) {
+			double proj = dot(dvec2 { rb1_points[i] }, edge.normal);
 			min_rb = std::min(proj, min_rb);
 			max_rb = std::max(proj, max_rb);
 		}
-
 
 		// if theres no overlap on this axis, there is no collision at all
 		if (max_rb < min_collider || min_rb > max_collider) {
 			return std::nullopt;
 		}
-
 
 		// compute overlap along the axis (penetration depth candidate)
 		double overlap = std::min(max_collider - min_rb, max_rb - min_collider);
@@ -183,7 +165,7 @@ auto BoxBoxCollision(BoxRigidbody* rb1, BoxRigidbody* rb2) -> std::optional<BoxM
 		dvec2 ab = b - a;
 
 		double best_dist2 = std::numeric_limits<double>::max();
-		for (dvec2 p : rb_points) {
+		for (dvec2 p : rb1_points) {
 			double t = dot(p - a, ab) / dot(ab, ab);
 			t = std::clamp(t, 0.0, 1.0);
 			dvec2 closest = a + ab * t;
@@ -286,10 +268,12 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 	dvec2 contact = (manifold.contactCount == 2) ? (manifold.contact1 + manifold.contact2) * 0.5 : manifold.contact1;
 	dvec2 r1 = contact - position1;
 	dvec2 r2 = contact - position2;
-	if (!isNormalized(r1, 1e-2))
+	if (!isNormalized(r1, 1e-2)) {
 		r1 = normalize(r1);
-	if (!isNormalized(r2, 1e-2))
+	}
+	if (!isNormalized(r2, 1e-2)) {
 		r2 = normalize(r2);
+	}
 
 	// Only resolve if bodies are moving towards each other
 	if (normal_speed < 0.0) {
@@ -317,22 +301,25 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 		velocity1 -= impulse * inv_mass1;
 		velocity2 += impulse * inv_mass2;
 
-		if (!isNormalized(impulse, 1e-2))
+		if (!isNormalized(impulse, 1e-2)) {
 			impulse = normalize(impulse);
+		}
 		if (abs(dot(r1, -impulse)) < 1) {
 			double angle_to_rotate1 = orientedAngle(r1, -impulse) - pi<double>();
 			angle_to_rotate1 *= cos(angle_to_rotate1);
 			angle_to_rotate1 *= sin(angle_to_rotate1);
-			if (abs(angle_to_rotate1) > 1e-1)
-				rb1->angularVelocity +=  angle_to_rotate1 * inv_mass1;
+			if (abs(angle_to_rotate1) > 1e-1) {
+				rb1->angularVelocity += angle_to_rotate1 * inv_mass1;
+			}
 		}
 
 		if (abs(dot(r2, impulse)) < 1) {
 			double angle_to_rotate2 = orientedAngle(r2, impulse) - pi<double>();
 			angle_to_rotate2 *= cos(angle_to_rotate2);
 			angle_to_rotate2 *= sin(angle_to_rotate2);
-			if (abs(angle_to_rotate2) > 1e-1)
-				rb2->angularVelocity +=  angle_to_rotate2 * inv_mass2;
+			if (abs(angle_to_rotate2) > 1e-1) {
+				rb2->angularVelocity += angle_to_rotate2 * inv_mass2;
+			}
 		}
 	}
 
@@ -394,28 +381,16 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 	PROFILE_ZONE_C(0xFF0000);
 	dvec2 rb_pos = rb->GetPosition();
 	std::list<BoxManifold> manifolds;
-	std::vector<vec2> rb_points = rb->GetPoints();
-	vec3 minPoint = vec3(std::numeric_limits<float>::max());
-	vec3 maxPoint = vec3(std::numeric_limits<float>::lowest());
-	for (int i = 0; i < c->vertices.size(); ++i) {
-		minPoint = min(minPoint, vec3(c->vertices[i].x, c->vertices[i].y, -1.0f));
-		maxPoint = max(maxPoint, vec3(c->vertices[i].x, c->vertices[i].y, 1.0f));
-	}
-	renderer::BoundingBox bounding_box(minPoint, maxPoint);
-	if (!	OclussionVolume::isAABBOnPlanes(bounding_box)) {
+
+	const auto& colliderAABB = c->getAABB();
+	const auto& rbAABB = rb->GetAABB();
+
+	if (rbAABB.max.x < colliderAABB.min.x || rbAABB.min.x > colliderAABB.max.x || rbAABB.max.y < colliderAABB.min.y ||
+	    rbAABB.min.y > colliderAABB.max.y) {
 		return std::nullopt;
 	}
 
-	minPoint = vec3(std::numeric_limits<float>::max());
-	maxPoint = vec3(std::numeric_limits<float>::lowest());
-	for (int i = 0; i < rb_points.size(); ++i) {
-		minPoint = min(minPoint, vec3(rb_points[i].x, rb_points[i].y, -1.0f));
-		maxPoint = max(maxPoint, vec3(rb_points[i].x, rb_points[i].y, 1.0f));
-	}
-	bounding_box = renderer::BoundingBox(minPoint, maxPoint);
-	if (!	OclussionVolume::isAABBOnPlanes(bounding_box)) {
-		return std::nullopt;
-	}
+	const auto& rb_points = rb->GetPoints();
 
 	int edge_count = 0;
 	// This method will use the SAT algorithm
@@ -431,7 +406,6 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 		}
 
 		// get the rigidbody OBB vertices
-
 
 		// project rigidbody vertices onto the same axis
 		double min_rb = dot(dvec2 { rb_points[0] }, edge.normal);
@@ -595,14 +569,16 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 		// Apply impulses to velocity
 		velocity += impulse * inv_mass;
 
-		if (!isNormalized(impulse, 1e-2))
+		if (!isNormalized(impulse, 1e-2)) {
 			impulse = normalize(impulse);
+		}
 		if (abs(dot(r, impulse)) < 1) {
 			double angle_to_rotate = orientedAngle(r, impulse) - pi<double>();
 			angle_to_rotate *= cos(angle_to_rotate);
 			angle_to_rotate *= sin(angle_to_rotate);
-			if (abs(angle_to_rotate) > 1e-1)
-				rb->angularVelocity +=  angle_to_rotate * inv_mass;
+			if (abs(angle_to_rotate) > 1e-1) {
+				rb->angularVelocity += angle_to_rotate * inv_mass;
+			}
 		}
 	}
 

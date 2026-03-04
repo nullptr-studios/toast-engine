@@ -419,7 +419,6 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 		}
 	}
 
-
 	for (auto* c : m.colliders) {
 		if (not c->parent->enabled()) {
 			continue;
