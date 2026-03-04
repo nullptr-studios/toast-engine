@@ -542,8 +542,15 @@ void OpenGLRenderer::LightingPass() {
 	// }
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	// blit dept from geometry pass to light framebuffer to allow depth testing during light accumulation
+	m_geometryFramebuffer->bindRead();
+	m_lightFramebuffer->bindDraw();
+	glBlitFramebuffer(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height(), 0, 0, m_lightFramebuffer->Width(), m_lightFramebuffer->Height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	m_lightFramebuffer->bind();
+		
+	
 
 	// Disable depth writes for light accumulation
 	glDepthMask(GL_FALSE);
@@ -553,8 +560,7 @@ void OpenGLRenderer::LightingPass() {
 	glBlendFunc(GL_ONE, GL_ONE);
 
 	// Disable depth test while accumulating lights
-	GLboolean prevDepthTest = glIsEnabled(GL_DEPTH_TEST);
-	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 
 	// lighting pass (skip loop if empty)
 	if (!m_lights.empty()) {
@@ -568,11 +574,7 @@ void OpenGLRenderer::LightingPass() {
 
 	// Restore GL state to known defaults
 	glBindTexture(GL_TEXTURE_2D, 0);
-	if (prevDepthTest) {
-		glEnable(GL_DEPTH_TEST);
-	} else {
-		glDisable(GL_DEPTH_TEST);
-	}
+	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask(GL_TRUE);

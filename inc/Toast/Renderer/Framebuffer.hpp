@@ -57,6 +57,14 @@ public:
 	void bind() const {
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 	}
+	
+	void bindRead() const {
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
+	}
+	
+	void bindDraw() const {
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
+	}
 
 	// Unbind to default framebuffer (bind 0)
 	static void unbind() {
