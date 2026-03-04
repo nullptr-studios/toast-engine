@@ -6,6 +6,12 @@
 #include <Toast/Physics/BoxRigidbody.hpp>
 #include <Toast/Renderer/DebugDrawLayer.hpp>
 #include <Toast/Time.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include "Toast/Resources/Mesh.hpp"
+#include "glm/gtx/vector_angle.hpp"
+#include "glm/gtx/vector_query.hpp"
+
+#include <glm/gtx/norm.hpp>
 
 namespace physics {
 using namespace glm;
@@ -107,10 +113,244 @@ void BoxResetVelocity(BoxRigidbody* rb) {
 }
 
 auto BoxBoxCollision(BoxRigidbody* rb1, BoxRigidbody* rb2) -> std::optional<BoxManifold> {
-	return std::nullopt;
+	PROFILE_ZONE_C(0x00FF00);
+	dvec2 rb1_pos = rb1->GetPosition();
+	std::list<BoxManifold> manifolds;
+
+	const auto& aabb1 = rb1->GetAABB();
+	const auto& aabb2 = rb2->GetAABB();
+
+	if (aabb1.max.x < aabb2.min.x || aabb1.min.x > aabb2.max.x || aabb1.max.y < aabb2.min.y || aabb1.min.y > aabb2.max.y) {
+		return std::nullopt;
+	}
+
+	const auto& rb1_points = rb1->GetPoints();
+	const auto& rb2_points = rb2->GetPoints();
+	const auto& rb2_edges = rb2->GetEdges();
+
+	int edge_count = 0;
+	// This method will use the SAT algorithm
+	for (const auto& edge : rb2_edges) {
+		// get the maximum and minimum points of the collider projected onto the edge normal
+		double min_collider = dot(dvec2 { rb2_points[0] }, edge.normal);
+		double max_collider = min_collider;
+
+		for (int i = 1; i < rb2_points.size(); i++) {
+			double proj = dot(dvec2 { rb2_points[i] }, edge.normal);
+			min_collider = std::min(proj, min_collider);
+			max_collider = std::max(proj, max_collider);
+		}
+
+		// project rigidbody vertices onto the same axis
+		double min_rb = dot(dvec2 { rb1_points[0] }, edge.normal);
+		double max_rb = min_rb;
+
+		for (int i = 1; i < rb1_points.size(); i++) {
+			double proj = dot(dvec2 { rb1_points[i] }, edge.normal);
+			min_rb = std::min(proj, min_rb);
+			max_rb = std::max(proj, max_rb);
+		}
+
+		// if theres no overlap on this axis, there is no collision at all
+		if (max_rb < min_collider || min_rb > max_collider) {
+			return std::nullopt;
+		}
+
+		// compute overlap along the axis (penetration depth candidate)
+		double overlap = std::min(max_collider - min_rb, max_rb - min_collider);
+
+		// find closest rigidbody vertex to the edge segment (used for biasing)
+		dvec2 a = edge.p1;
+		dvec2 b = edge.p2;
+		dvec2 ab = b - a;
+
+		double best_dist2 = std::numeric_limits<double>::max();
+		for (dvec2 p : rb1_points) {
+			double t = dot(p - a, ab) / dot(ab, ab);
+			t = std::clamp(t, 0.0, 1.0);
+			dvec2 closest = a + ab * t;
+			double dist2 = dot(p - closest, p - closest);
+			best_dist2 = std::min(best_dist2, dist2);
+		}
+
+		// bias depth so nearer parallel edges win
+		overlap += PhysicsSystem::eps() * best_dist2;
+
+		// store candidate manifold
+		// clang-format off
+		auto manifold = BoxManifold{
+			.normal = edge.normal,
+			.contact1 = {0.0, 0.0},
+			.contact2 = {0.0, 0.0},
+			.contactCount = -1,
+			.depth = overlap
+		};
+		// clang-format on
+
+		std::vector<dvec2> points;
+		for (const auto& e : rb1->GetEdges()) {
+			auto p = LineLineCollision(e, edge);
+			if (p.has_value()) {
+				points.emplace_back(p.value());
+			}
+		}
+
+		if (points.size() >= 2) {
+			manifold.contact1 = points[0];
+			manifold.contact2 = points[1];
+			manifold.contactCount = 2;
+		} else if (points.size() == 1) {
+			manifold.contact1 = points[0];
+			manifold.contactCount = 1;
+		} else {
+			manifold.contact1 = rb1->GetPosition();
+			manifold.contact2 = rb1->GetPosition();
+			manifold.contactCount = 1;
+		}
+
+		manifolds.emplace_back(manifold);
+	}
+
+	// select the axis with the least penetration depth
+	auto it = std::ranges::min_element(manifolds, {}, &BoxManifold::depth);
+	if (it == manifolds.end()) {
+		return std::nullopt;
+	}
+	auto best = *it;
+
+	if (rb1->debug.showManifolds) {
+		best.Debug();
+	}
+	return best;
 }
 
-void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold) { }
+void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold) {
+	PROFILE_ZONE_C(0xFF00FF);
+	dvec2 velocity1 = rb1->velocity;
+	dvec2 velocity2 = rb2->velocity;
+
+	dvec2 position1 = rb1->GetPosition();
+	dvec2 position2 = rb2->GetPosition();
+
+	// Early out if both bodies have infinite mass
+	if (rb1->mass <= 0.0 && rb2->mass <= 0.0) {
+		return;
+	}
+
+	double inv_mass1 = (rb1->mass > 0.0) ? 1.0 / rb1->mass : 0.0;
+	double inv_mass2 = (rb2->mass > 0.0) ? 1.0 / rb2->mass : 0.0;
+
+	double inv_mass_sum = inv_mass1 + inv_mass2;
+	if (inv_mass_sum <= 0.0) {
+		return;
+	}
+
+	dvec2 normal = manifold.normal;
+	dvec2 contact_tangent = { -normal.y, normal.x };
+
+	// Relative velocity
+	dvec2 relative_velocity = velocity2 - velocity1;
+
+	// Unfold velocity in normal and tangential components
+	double normal_speed = dot(relative_velocity, normal);
+	double tangent_speed = dot(relative_velocity, contact_tangent);
+
+	double width1 = rb1->size.x / 2;
+	double height1 = rb1->size.y / 2;
+	double inertia1 = (rb1->mass * (width1 * width1 + height1 * height1)) / 12.0;
+	double inv_inertia1 = inertia1 > 0.0 ? 1.0 / inertia1 : 0.0;
+
+	double width2 = rb2->size.x / 2;
+	double height2 = rb2->size.y / 2;
+	double inertia2 = (rb2->mass * (width2 * width2 + height2 * height2)) / 12.0;
+	double inv_inertia2 = inertia2 > 0.0 ? 1.0 / inertia2 : 0.0;
+
+	dvec2 contact = (manifold.contactCount == 2) ? (manifold.contact1 + manifold.contact2) * 0.5 : manifold.contact1;
+	dvec2 r1 = contact - position1;
+	dvec2 r2 = contact - position2;
+	if (!isNormalized(r1, 1e-2)) {
+		r1 = normalize(r1);
+	}
+	if (!isNormalized(r2, 1e-2)) {
+		r2 = normalize(r2);
+	}
+
+	// Only resolve if bodies are moving towards each other
+	if (normal_speed < 0.0) {
+		// Restitution disabled below threshold to prevent jitter
+		double restitution1 = (std::abs(normal_speed) < rb1->restitutionThreshold) ? 0.0 : rb1->restitution;
+		double restitution2 = (std::abs(normal_speed) < rb2->restitutionThreshold) ? 0.0 : rb2->restitution;
+
+		double restitution = std::min(restitution1, restitution2);
+
+		// Normal impulse
+		// Jn = -(1 + e) * vn / (invMass1 + invMass2)
+		double normal_impulse = -(1.0 + restitution) * normal_speed / inv_mass_sum;
+
+		// Friction impulse
+		double friction = std::sqrt(rb1->friction * rb2->friction);
+		double max_friction_impulse = friction * std::abs(normal_impulse);
+
+		// Tangential impulse needed to cancel tangential speed
+		double tangential_impulse = -tangent_speed / inv_mass_sum;
+		tangential_impulse = clamp(tangential_impulse, -max_friction_impulse, max_friction_impulse);
+
+		// Apply impulses
+		dvec2 impulse = normal_impulse * normal + tangential_impulse * contact_tangent;
+
+		velocity1 -= impulse * inv_mass1;
+		velocity2 += impulse * inv_mass2;
+
+		if (!isNormalized(impulse, 1e-2)) {
+			impulse = normalize(impulse);
+		}
+		if (abs(dot(r1, -impulse)) < 1) {
+			double angle_to_rotate1 = orientedAngle(r1, -impulse) - pi<double>();
+			angle_to_rotate1 *= cos(angle_to_rotate1);
+			angle_to_rotate1 *= sin(angle_to_rotate1);
+			if (abs(angle_to_rotate1) > 1e-1) {
+				rb1->angularVelocity += angle_to_rotate1 * inv_mass1;
+			}
+		}
+
+		if (abs(dot(r2, impulse)) < 1) {
+			double angle_to_rotate2 = orientedAngle(r2, impulse) - pi<double>();
+			angle_to_rotate2 *= cos(angle_to_rotate2);
+			angle_to_rotate2 *= sin(angle_to_rotate2);
+			if (abs(angle_to_rotate2) > 1e-1) {
+				rb2->angularVelocity += angle_to_rotate2 * inv_mass2;
+			}
+		}
+	}
+
+	// Positional correction
+	double penetration_correction = std::max(manifold.depth - PhysicsSystem::pos_slop(), 0.0) * PhysicsSystem::pos_ptc();
+	dvec2 correction = (penetration_correction / inv_mass_sum) * normal;
+
+	position1 -= correction * inv_mass1;
+	position2 += correction * inv_mass2;
+
+	rb1->SetPosition(position2);
+	rb2->SetPosition(position1);
+
+	// Velocity correction
+	auto velocity_correction = [&](BoxRigidbody* rb, dvec2 v) -> dvec2 {
+		double normal_velocity = dot(v, normal);
+		if (std::abs(normal_velocity) < rb->minimumVelocity.y) {
+			// Kill tiny normal velocity
+			v -= normal_velocity * normal;
+		}
+
+		if (all(lessThan(abs(v), dvec2 { rb->minimumVelocity }))) {
+			v = { 0.0, 0.0 };
+		}
+
+		return v;
+	};
+
+	rb1->velocity = velocity_correction(rb1, velocity2);
+	rb2->velocity = velocity_correction(rb2, velocity1);
+}
 
 static auto ClipLineSegmentToLine(dvec2 p1, dvec2 p2, dvec2 normal, dvec2 offset) -> std::vector<dvec2> {
 	std::vector<dvec2> points;
@@ -138,8 +378,19 @@ static auto ClipLineSegmentToLine(dvec2 p1, dvec2 p2, dvec2 normal, dvec2 offset
 }
 
 auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxManifold> {
+	PROFILE_ZONE_C(0xFF0000);
 	dvec2 rb_pos = rb->GetPosition();
 	std::list<BoxManifold> manifolds;
+
+	const auto& colliderAABB = c->getAABB();
+	const auto& rbAABB = rb->GetAABB();
+
+	if (rbAABB.max.x < colliderAABB.min.x || rbAABB.min.x > colliderAABB.max.x || rbAABB.max.y < colliderAABB.min.y ||
+	    rbAABB.min.y > colliderAABB.max.y) {
+		return std::nullopt;
+	}
+
+	const auto& rb_points = rb->GetPoints();
 
 	int edge_count = 0;
 	// This method will use the SAT algorithm
@@ -155,21 +406,44 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 		}
 
 		// get the rigidbody OBB vertices
-		std::vector<vec2> rb_points = rb->GetPoints();
 
 		// project rigidbody vertices onto the same axis
 		double min_rb = dot(dvec2 { rb_points[0] }, edge.normal);
 		double max_rb = min_rb;
-
+		bool not_needed = false;
 		for (int i = 1; i < rb_points.size(); i++) {
 			double proj = dot(dvec2 { rb_points[i] }, edge.normal);
 			min_rb = std::min(proj, min_rb);
 			max_rb = std::max(proj, max_rb);
+
+			// we DO NOT want to check with rigidbodies that are behind the normal
+			if (proj < -rb->size.y) {
+				not_needed = true;
+				break;
+			}
+		}
+
+		if (not_needed == true) {
+			continue;
 		}
 
 		// if theres no overlap on this axis, there is no collision at all
 		if (max_rb < min_collider || min_rb > max_collider) {
 			return std::nullopt;
+		}
+
+		// find where along the line is the object
+		double distance_along_line = dot(rb_pos - edge.p1, edge.tangent);
+		glm::dvec2 normal;
+		if (distance_along_line < 0.0f) {
+			// Case 1: rigidbody is before segment
+			normal = rb_pos - edge.p1;
+		} else if (distance_along_line > edge.length) {
+			// Case 2: rigidbody is after segment
+			normal = rb_pos - edge.p2;
+		} else {
+			// Case 3: rigidbody is inside the line
+			normal = edge.normal;
 		}
 
 		// compute overlap along the axis (penetration depth candidate)
@@ -241,6 +515,7 @@ auto BoxMeshCollision(BoxRigidbody* rb, ConvexCollider* c) -> std::optional<BoxM
 }
 
 void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold) {
+	PROFILE_ZONE_C(0x00FFFF);
 	dvec2 position = rb->GetPosition();
 	dvec2& velocity = rb->velocity;
 	double& angular_velocity = rb->angularVelocity;
@@ -259,6 +534,9 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 
 	dvec2 contact = (manifold.contactCount == 2) ? (manifold.contact1 + manifold.contact2) * 0.5 : manifold.contact1;
 	dvec2 r = contact - position;
+	if (!isNormalized(r, 1e-2)) {
+		r = normalize(r);
+	}
 
 	// unfold velocity in normal and tangencial
 	dvec2 contact_tangent = { -manifold.normal.y, manifold.normal.x };
@@ -291,11 +569,17 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 		// Apply impulses to velocity
 		velocity += impulse * inv_mass;
 
-		// Apply angular impulse with slight damping to smooth spikes
-		dmat2 torque_mat = { r, impulse };
-		double torque_impulse = determinant(torque_mat);
-		const double angular_impulse_blend = 0.6;
-		angular_velocity += torque_impulse * inv_inertia * angular_impulse_blend;
+		if (!isNormalized(impulse, 1e-2)) {
+			impulse = normalize(impulse);
+		}
+		if (abs(dot(r, impulse)) < 1) {
+			double angle_to_rotate = orientedAngle(r, impulse) - pi<double>();
+			angle_to_rotate *= cos(angle_to_rotate);
+			angle_to_rotate *= sin(angle_to_rotate);
+			if (abs(angle_to_rotate) > 1e-1) {
+				rb->angularVelocity += angle_to_rotate * inv_mass;
+			}
+		}
 	}
 
 	// positional correction

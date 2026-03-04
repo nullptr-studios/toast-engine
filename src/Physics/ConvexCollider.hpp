@@ -5,6 +5,7 @@
 #pragma once
 #include <Toast/Physics/ColliderData.hpp>
 #include <Toast/Physics/Line.hpp>
+#include <Toast/Resources/Mesh.hpp>
 #include <glm/glm.hpp>
 
 namespace physics {
@@ -18,7 +19,14 @@ public:
 	std::vector<Line> edges;
 	std::vector<glm::vec2> vertices;
 
+	const renderer::BoundingBox& getAABB() const {
+		return m_aabb;
+	}
+
 	void Debug();
+
+private:
+	renderer::BoundingBox m_aabb;
 };
 
 inline float ShoelaceArea(const std::list<glm::vec2>& points) {

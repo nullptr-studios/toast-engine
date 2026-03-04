@@ -78,6 +78,7 @@ PhysicsSystem::PhysicsSystem() {
 		m.positionCorrectionSlop = e->positionCorrectionSlop;
 		m.eps = e->eps;
 		m.epsSmall = e->epsSmall;
+		m.tickCount = e->iterationCount;
 		return true;
 	});
 }
@@ -110,10 +111,10 @@ void PhysicsSystem::start() {
 		while (!token.stop_requested()) {
 			using namespace std::chrono;
 			time_point begin = steady_clock::now();
+			PROFILE_ZONE_N("physics::simulation");
 
 			// Loop the physics simulation a set amount of times per frame
 			for (int i = 0; i < physics->m.tickCount; i++) {
-				PROFILE_ZONE_N("physics::simulation");
 				Time::GetInstance()->PhysTick();
 				physics->Tick();
 
@@ -411,6 +412,12 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 	}
 
 	// TODO: Collision with Boxes
+	for (auto* b : m.boxes) {
+		auto manifold = RbBoxCollision(rb, b);
+		if (manifold.has_value()) {
+			RbBoxResolution(rb, b, manifold.value());
+		}
+	}
 
 	for (auto* c : m.colliders) {
 		if (not c->parent->enabled()) {
@@ -454,6 +461,13 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 		auto manifold = BoxMeshCollision(rb, c);
 		if (manifold.has_value()) {
 			BoxMeshResolution(rb, c, manifold.value());
+		}
+	}
+
+	for (auto it = ++std::ranges::find(m.boxes, rb); it != m.boxes.end(); ++it) {
+		auto manifold = BoxBoxCollision(rb, *it);
+		if (manifold.has_value()) {
+			BoxBoxResolution(rb, *it, manifold.value());
 		}
 	}
 

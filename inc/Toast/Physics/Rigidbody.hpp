@@ -16,6 +16,7 @@ public:
 	REGISTER_TYPE(Rigidbody);
 
 	void Init() override;
+	void Begin() override;
 	void Destroy() override;
 #ifdef TOAST_EDITOR
 	void Inspector() override;
