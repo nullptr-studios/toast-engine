@@ -28,6 +28,12 @@ void Rigidbody::Init() {
 	m_hasValidPreviousPosition = true;
 }
 
+void Rigidbody::Begin() {
+		Component::Begin();
+		velocity = { 0.0, 0.0 };
+		forces.clear();
+}
+
 void Rigidbody::Destroy() {
 	PhysicsSystem::RemoveRigidbody(this);
 }

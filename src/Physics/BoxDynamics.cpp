@@ -563,8 +563,6 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 	if (!isNormalized(r, 1e-2)) {
 		r = normalize(r);
 	}
-	double r_length = length(r);
-
 
 	// unfold velocity in normal and tangencial
 	dvec2 contact_tangent = { -manifold.normal.y, manifold.normal.x };

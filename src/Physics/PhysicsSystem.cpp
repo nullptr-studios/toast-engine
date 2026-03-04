@@ -412,6 +412,13 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 	}
 
 	// TODO: Collision with Boxes
+	for (auto* b : m.boxes) {
+		auto manifold = RbBoxCollision(rb, b);
+		if (manifold.has_value()) {
+			RbBoxResolution(rb, b, manifold.value());
+		}
+	}
+
 
 	for (auto* c : m.colliders) {
 		if (not c->parent->enabled()) {
