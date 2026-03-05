@@ -152,6 +152,10 @@ public:
 	void SetRunLateTick(bool value) {
 		m_runsLateTick = value;
 	}
+	
+	void SetRunPhysTick(bool value) {
+		m_runsPhysTick = value;
+	}
 
 	void SetSerialize(bool value) {
 		m_serialize = value;
@@ -200,6 +204,7 @@ private:
 	bool m_runsEarlyTick = true;
 	bool m_runsTick = true;
 	bool m_runsLateTick = true;
+	bool m_runsPhysTick = false;
 	bool m_serialize = true;
 	Object* m_parent = nullptr;
 	Scene* m_scene = nullptr;

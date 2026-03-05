@@ -544,7 +544,7 @@ void Object::_Destroy() {
 }
 
 void Object::_PhysTick() {
-	if (!enabled() || !m_hasRunBegin) {
+	if (!enabled() || !m_hasRunBegin || !m_runsPhysTick) {
 		return;
 	}
 
