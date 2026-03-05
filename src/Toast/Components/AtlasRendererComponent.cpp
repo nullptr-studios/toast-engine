@@ -109,7 +109,6 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 	spine::Vector<spine::AtlasPage*>& pages = m.atlas->GetAtlasData()->getPages();
 	if (pages.size() > 0) {
 		std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(pages[0]->texture);
-		tex_ptr->get()->id();
 		if (tex_ptr) {
 			tex_ptr->get()->Bind(0);
 		}
@@ -390,8 +389,7 @@ void AtlasRendererComponent::Inspector() {
 	for (const auto& e : m.regionNames) {
 		ImGui::PushID(index);
 		auto* region = FindRegion(e);
-		// ImGui::Image(tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, region->v), ImVec2(region->u2, region->v2));
-    ImGui::ImageButton("#image",tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, region->v), ImVec2(region->u2, region->v2));
+		ImGui::ImageButton("#image", tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, region->v), ImVec2(region->u2, region->v2));
 		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
 			ImGui::EndDragDropSource();
 		}
@@ -401,7 +399,7 @@ void AtlasRendererComponent::Inspector() {
 		ImGui::PopID();
 		index++;
 	}
-  ImGui::EndColumns();
+	ImGui::EndColumns();
 }
 
 #endif
