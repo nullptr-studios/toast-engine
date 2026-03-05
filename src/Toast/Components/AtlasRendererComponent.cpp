@@ -10,6 +10,7 @@
 #include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/Resources/Texture.hpp"
+#include "imgui_internal.h"
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
@@ -108,6 +109,7 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 	spine::Vector<spine::AtlasPage*>& pages = m.atlas->GetAtlasData()->getPages();
 	if (pages.size() > 0) {
 		std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(pages[0]->texture);
+		tex_ptr->get()->id();
 		if (tex_ptr) {
 			tex_ptr->get()->Bind(0);
 		}
@@ -372,6 +374,34 @@ void AtlasRendererComponent::Inspector() {
 			m.spriteCacheDirty = true;
 		}
 	}
+
+	/////////////// Browser ///////////////
+
+	float cell_size = 100;
+	float panel_width = ImGui::GetContentRegionAvail().x;
+	int column_count = static_cast<int>(panel_width / cell_size);
+	column_count = std::max(1, column_count);
+
+	ImGui::Columns(column_count, nullptr, false);
+
+	unsigned int index = 0;
+	std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(m.atlas->GetAtlasData()->getPages()[0]->texture);
+
+	for (const auto& e : m.regionNames) {
+		ImGui::PushID(index);
+		auto* region = FindRegion(e);
+		// ImGui::Image(tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, region->v), ImVec2(region->u2, region->v2));
+    ImGui::ImageButton("#image",tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, region->v), ImVec2(region->u2, region->v2));
+		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+			ImGui::EndDragDropSource();
+		}
+		ImGui::TextWrapped("%s", e.c_str());
+
+		ImGui::NextColumn();
+		ImGui::PopID();
+		index++;
+	}
+  ImGui::EndColumns();
 }
 
 #endif
