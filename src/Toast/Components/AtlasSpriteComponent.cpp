@@ -59,7 +59,7 @@ void AtlasSpriteComponent::Inspector() {
 	ImGui::Text("Region: %s", m.regionName.empty() ? "<none>" : m.regionName.c_str());
 
 	// Color picker
-	float color[4] = { m.color.r, m.color.g, m.color.b, m.color.a }; // NOLINT
+	float color[4] = { m.color.r, m.color.g, m.color.b, m.color.a };    // NOLINT
 	if (ImGui::ColorEdit4("Color", color)) {
 		m.color.r = color[0];
 		m.color.g = color[1];

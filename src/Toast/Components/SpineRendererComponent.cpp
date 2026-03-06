@@ -544,8 +544,7 @@ glm::vec2 SpineRendererComponent::WorldPositionToSpineLocal(const glm::vec2& wor
 }
 
 void SpineRendererComponent::OnAnimationEvent(
-    std::string_view animation_name, int track, const std::string_view& event_name, int int_value, float float_value,
-    std::string_view string_value
+    std::string_view animation_name, int track, const std::string_view& event_name, int int_value, float float_value, std::string_view string_value
 ) {
 	event::Send(new SpineEvent(id(), animation_name, track, event_name, int_value, float_value, string_value));
 	// TOAST_TRACE("Spine Event Sent!");
