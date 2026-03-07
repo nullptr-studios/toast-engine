@@ -391,9 +391,9 @@ void AtlasRendererComponent::Inspector() {
 	for (const auto& [index, region_name] : m.regionNames | std::views::enumerate) {
 		ImGui::PushID(index);
 		auto* region = FindRegion(region_name);
-		ImGui::ImageButton("#image", tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, region->v), ImVec2(region->u2, region->v2));
+		ImGui::ImageButton("#image", tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, -region->v), ImVec2(region->u2, -region->v2));
 		if (ImGui::BeginDragDropSource()) {
-			ImGui::ImageButton("#image", tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, region->v), ImVec2(region->u2, region->v2));
+			ImGui::ImageButton("#image", tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, -region->v), ImVec2(region->u2, -region->v2));
 			static std::function<toast::AtlasSpriteComponent*()> callback;
 			callback = [this, region_name = std::string(region_name)]() {
 				std::string sprite_name = GenerateSpriteName(region_name);
