@@ -4,6 +4,8 @@
 
 #include "Toast/Components/AtlasSpriteComponent.hpp"
 
+#include "Toast/Components/AtlasRendererComponent.hpp"
+
 #ifdef TOAST_EDITOR
 #include "imgui.h"
 #endif
@@ -16,6 +18,17 @@ void AtlasSpriteComponent::Init() {
 	SetRunEarlyTick(false);
 	SetRunTick(false);
 	SetRunLateTick(false);
+}
+
+void AtlasSpriteComponent::Destroy() {
+	toast::Object* p = parent();
+	while (p) {
+		if (auto* renderer = dynamic_cast<AtlasRendererComponent*>(p)) {
+			renderer->RemoveSpriteFromCache(this);
+			break;
+		}
+		p = p->parent();
+	}
 }
 
 void AtlasSpriteComponent::Load(json_t j, bool force_create) {

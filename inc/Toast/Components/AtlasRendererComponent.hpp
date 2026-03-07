@@ -3,6 +3,7 @@
 /// @date 21/11/2025.
 
 #pragma once
+#include "Toast/Components/AtlasSpriteComponent.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/Mesh.hpp"
@@ -13,10 +14,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-namespace toast {
-class AtlasSpriteComponent;
-}
 
 class AtlasRendererComponent : public IRenderable {
 public:
@@ -40,6 +37,7 @@ public:
 
 	// Sprite management
 	void RefreshSprites();
+	void RemoveSpriteFromCache(toast::AtlasSpriteComponent* sprite);
 	spine::AtlasRegion* FindRegion(std::string_view region_name) const;
 	std::string GenerateSpriteName(std::string_view region_name);
 
@@ -70,8 +68,7 @@ private:
 		// Region picker (for editor)
 		std::vector<std::string> regionNames;
 		int selectedRegion = -1;
-
-		// Cache sprite children for faster access
+		
 		std::vector<toast::AtlasSpriteComponent*> spriteCache;
 		bool spriteCacheDirty = true;
 	} m;

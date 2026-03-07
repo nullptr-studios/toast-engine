@@ -57,7 +57,7 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		return;
 	}
 
-	// Refresh sprite cache
+	// Refresh sprite cache if dirty
 	if (m.spriteCacheDirty) {
 		RefreshSprites();
 	}
@@ -75,16 +75,12 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 	m.tempVerts.clear();
 	m.tempIndices.clear();
 
-	// Build geometry for all sprites
 	for (auto* sprite : m.spriteCache) {
 		if (!sprite->enabled() || !sprite->GetRegion()) {
 			continue;
 		}
 
-		// Get sprite's world transform (relative to parent)
 		glm::mat4 sprite_transform = parent_world * sprite->GetMatrix();
-
-		// Build quad for this sprite
 		BuildQuadFromRegion(sprite->GetRegion(), sprite_transform, sprite->GetColorABGR(), m.tempVerts, m.tempIndices);
 	}
 
@@ -238,19 +234,23 @@ void AtlasRendererComponent::BuildQuadFromRegion(
 void AtlasRendererComponent::RefreshSprites() {
 	m.spriteCache.clear();
 
-	// Collect all AtlasSpriteComponent children of this component
 	for (auto& [id, childPtr] : children.GetAll()) {
 		if (auto* sprite = dynamic_cast<toast::AtlasSpriteComponent*>(childPtr.get())) {
-			// Update the sprite's region if needed
 			if (sprite->GetRegion() == nullptr && !sprite->GetRegionName().empty() && m.atlas) {
-				spine::AtlasRegion* region = FindRegion(sprite->GetRegionName());
-				sprite->SetRegion(region);
+				sprite->SetRegion(FindRegion(sprite->GetRegionName()));
 			}
 			m.spriteCache.push_back(sprite);
 		}
 	}
 
 	m.spriteCacheDirty = false;
+}
+
+void AtlasRendererComponent::RemoveSpriteFromCache(toast::AtlasSpriteComponent* sprite) {
+	auto it = std::find(m.spriteCache.begin(), m.spriteCache.end(), sprite);
+	if (it != m.spriteCache.end()) {
+		m.spriteCache.erase(it);
+	}
 }
 
 spine::AtlasRegion* AtlasRendererComponent::FindRegion(std::string_view region_name) const {

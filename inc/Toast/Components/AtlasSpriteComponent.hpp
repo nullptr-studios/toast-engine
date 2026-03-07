@@ -19,6 +19,7 @@ public:
 	REGISTER_TYPE(AtlasSpriteComponent);
 
 	void Init() override;
+	void Destroy() override;
 
 	void Load(json_t j, bool force_create = true) override;
 	json_t Save() const override;
