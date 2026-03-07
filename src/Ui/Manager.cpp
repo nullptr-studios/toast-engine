@@ -19,7 +19,6 @@ UiSystem::UiSystem(toast::Window& window, bool msaa) {
 	m.layer = ui;
 
 	renderer::LayerStack::GetInstance()->PushOverlay(ui);
-	ui->LoadURL("file:///assets/UI/hud.html");
 
 	m.listener.Subscribe<LoadUrl>([this](LoadUrl* e) {
 		m.layer->LoadURL(e->url);

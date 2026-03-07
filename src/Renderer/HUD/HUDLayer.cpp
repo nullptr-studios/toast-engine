@@ -350,41 +350,30 @@ void HUDLayer::OnAttach() {
 
 	TOAST_TRACE("Ultralight Renderer created successfully");
 
-	// Create view configuration
-	ultralight::ViewConfig view_config;
-	view_config.is_accelerated = true;    // Use GPU acceleration
-	view_config.is_transparent = true;    // Allow transparency
-	view_config.initial_device_scale = 1.0;
-	view_config.initial_focus = true;
-	view_config.enable_images = true;
-	view_config.enable_javascript = true;
-
-	TOAST_TRACE("Creating Ultralight View ({}x{})...", width_, height_);
-
-	// Create the first view and register it
-	auto first_view = CreateView(width_, height_, view_config);
-	if (!first_view) {
-		TOAST_ERROR("Failed to create Ultralight view!");
-		return;
-	}
-
-	// Set up listeners for debugging
+	// Set up shared listeners
 	if (!g_view_listener) {
 		g_view_listener = std::make_unique<ToastViewListener>();
 	}
 	if (!g_load_listener) {
 		g_load_listener = std::make_unique<ToastLoadListener>();
 	}
-	first_view->set_view_listener(g_view_listener.get());
-
-	// Create a per-instance load listener that forwards to the global debug load listener
 	load_listener_ = std::make_unique<HUDLayerLoadListener>(this, g_load_listener.get());
-	first_view->set_load_listener(load_listener_.get());
 
-	// If a URL was requested earlier via LoadURL, load it now (after listeners are attached)
+	// If a URL was requested before init via LoadURL(), create a view and load it now
 	if (!pending_url_.empty()) {
-		TOAST_TRACE("HUDLayer::OnAttach - loading pending URL: {}", pending_url_);
-		first_view->LoadURL(ultralight::String(pending_url_.c_str()));
+		ultralight::ViewConfig view_config;
+		view_config.is_accelerated = true;
+		view_config.is_transparent = true;
+		view_config.initial_device_scale = 1.0;
+		view_config.initial_focus = true;
+		view_config.enable_images = true;
+		view_config.enable_javascript = true;
+
+		auto first_view = CreateView(width_, height_, view_config);
+		if (first_view) {
+			TOAST_TRACE("HUDLayer::OnAttach - loading pending URL: {}", pending_url_);
+			first_view->LoadURL(ultralight::String(pending_url_.c_str()));
+		}
 		pending_url_.clear();
 	}
 
@@ -941,6 +930,12 @@ ultralight::RefPtr<ultralight::View> HUDLayer::CreateView(uint32_t width, uint32
 
 	auto v = renderer_->CreateView(width, height, config, nullptr);
 	if (v) {
+		if (g_view_listener) {
+			v->set_view_listener(g_view_listener.get());
+		}
+		if (load_listener_) {
+			v->set_load_listener(load_listener_.get());
+		}
 		views_.push_back(v);
 	}
 	return v;
