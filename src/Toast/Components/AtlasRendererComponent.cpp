@@ -10,6 +10,10 @@
 #include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/Resources/Texture.hpp"
+#include "imgui_internal.h"
+
+#include <functional>
+#include <ranges>
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
@@ -372,6 +376,45 @@ void AtlasRendererComponent::Inspector() {
 			m.spriteCacheDirty = true;
 		}
 	}
+
+	/////////////// Browser ///////////////
+
+	float cell_size = 100;
+	float panel_width = ImGui::GetContentRegionAvail().x;
+	int column_count = static_cast<int>(panel_width / cell_size);
+	column_count = std::max(1, column_count);
+
+	ImGui::Columns(column_count, nullptr, false);
+
+	std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(m.atlas->GetAtlasData()->getPages()[0]->texture);
+
+	for (const auto& [index, region_name] : m.regionNames | std::views::enumerate) {
+		ImGui::PushID(index);
+		auto* region = FindRegion(region_name);
+		ImGui::ImageButton("#image", tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, region->v), ImVec2(region->u2, region->v2));
+		if (ImGui::BeginDragDropSource()) {
+			ImGui::ImageButton("#image", tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, region->v), ImVec2(region->u2, region->v2));
+			static std::function<toast::AtlasSpriteComponent*()> callback;
+			callback = [this, region_name = std::string(region_name)]() {
+				std::string sprite_name = GenerateSpriteName(region_name);
+				toast::AtlasSpriteComponent* sprite = children.Add<toast::AtlasSpriteComponent>(sprite_name);
+				if (sprite) {
+					sprite->SetRegionName(region_name);
+					sprite->SetRegion(FindRegion(region_name));
+				}
+				m.spriteCacheDirty = true;
+				return sprite;
+			};
+			auto* payload = &callback;
+			ImGui::SetDragDropPayload("AtlasSprite", &payload, sizeof(payload));
+			ImGui::EndDragDropSource();
+		}
+		ImGui::TextWrapped("%s", region_name.c_str());
+
+		ImGui::NextColumn();
+		ImGui::PopID();
+	}
+	ImGui::EndColumns();
 }
 
 #endif
