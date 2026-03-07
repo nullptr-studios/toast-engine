@@ -253,6 +253,21 @@ void AtlasRendererComponent::RemoveSpriteFromCache(toast::AtlasSpriteComponent* 
 	}
 }
 
+void AtlasRendererComponent::AddSpriteToCache(toast::AtlasSpriteComponent* sprite) {
+	if (!sprite) {
+		return;
+	}
+	
+	if (sprite->GetRegion() == nullptr && !sprite->GetRegionName().empty() && m.atlas) {
+		sprite->SetRegion(FindRegion(sprite->GetRegionName()));
+	}
+	
+	auto it = std::find(m.spriteCache.begin(), m.spriteCache.end(), sprite);
+	if (it == m.spriteCache.end()) {
+		m.spriteCache.push_back(sprite);
+	}
+}
+
 spine::AtlasRegion* AtlasRendererComponent::FindRegion(std::string_view region_name) const {
 	if (!m.atlas || !m.atlas->GetAtlasData()) {
 		return nullptr;
@@ -328,14 +343,13 @@ void AtlasRendererComponent::Inspector() {
 	// Button to add new sprite
 	if (ImGui::Button("Add Sprite")) {
 		if (!m.regionNames.empty()) {
-			// Use first region as default
 			std::string sprite_name = GenerateSpriteName(m.regionNames[0]);
 			auto* sprite = children.Add<toast::AtlasSpriteComponent>(sprite_name);
 			if (sprite) {
 				sprite->SetRegionName(m.regionNames[0]);
 				sprite->SetRegion(FindRegion(m.regionNames[0]));
+				AddSpriteToCache(sprite);
 			}
-			m.spriteCacheDirty = true;
 		}
 	}
 
@@ -372,8 +386,8 @@ void AtlasRendererComponent::Inspector() {
 			if (sprite) {
 				sprite->SetRegionName(region_name);
 				sprite->SetRegion(FindRegion(region_name));
+				AddSpriteToCache(sprite);
 			}
-			m.spriteCacheDirty = true;
 		}
 	}
 
@@ -401,8 +415,8 @@ void AtlasRendererComponent::Inspector() {
 				if (sprite) {
 					sprite->SetRegionName(region_name);
 					sprite->SetRegion(FindRegion(region_name));
+					AddSpriteToCache(sprite);
 				}
-				m.spriteCacheDirty = true;
 				return sprite;
 			};
 			auto* payload = &callback;

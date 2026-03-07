@@ -18,6 +18,13 @@ void AtlasSpriteComponent::Init() {
 	SetRunEarlyTick(false);
 	SetRunTick(false);
 	SetRunLateTick(false);
+
+#ifdef TOAST_EDITOR
+	// Autoadd to parent
+	// HACK: this is not really the best solution and the engine should know when are we in play mode or paused
+	dynamic_cast<AtlasRendererComponent*>(parent())->AddSpriteToCache(this);
+#endif
+
 }
 
 void AtlasSpriteComponent::Destroy() {

@@ -38,6 +38,7 @@ public:
 	// Sprite management
 	void RefreshSprites();
 	void RemoveSpriteFromCache(toast::AtlasSpriteComponent* sprite);
+	void AddSpriteToCache(toast::AtlasSpriteComponent* sprite);
 	spine::AtlasRegion* FindRegion(std::string_view region_name) const;
 	std::string GenerateSpriteName(std::string_view region_name);
 
