@@ -716,10 +716,12 @@ void HUDLayer::OnMouseMove(int x, int y) {
 
 	ultralight::MouseEvent evt;
 	evt.type = ultralight::MouseEvent::kType_MouseMoved;
-	evt.x = x;
-	evt.y = y;
+	evt.x = x - viewport_offset_x_;
+	evt.y = y - viewport_offset_y_;
 	evt.button = ultralight::MouseEvent::kButton_None;
-	views_.front()->FireMouseEvent(evt);
+	for (auto& v : views_) {
+		v->FireMouseEvent(evt);
+	}
 }
 
 void HUDLayer::OnMouseButton(int button, int action, int mods) {
@@ -733,8 +735,8 @@ void HUDLayer::OnMouseButton(int button, int action, int mods) {
 	// Get current mouse position
 	double xpos, ypos;
 	glfwGetCursorPos(window_, &xpos, &ypos);
-	evt.x = static_cast<int>(xpos);
-	evt.y = static_cast<int>(ypos);
+	evt.x = static_cast<int>(xpos) - viewport_offset_x_;
+	evt.y = static_cast<int>(ypos) - viewport_offset_y_;
 
 	switch (button) {
 		case GLFW_MOUSE_BUTTON_LEFT: evt.button = ultralight::MouseEvent::kButton_Left; break;
@@ -743,7 +745,9 @@ void HUDLayer::OnMouseButton(int button, int action, int mods) {
 		default: evt.button = ultralight::MouseEvent::kButton_None; break;
 	}
 
-	views_.front()->FireMouseEvent(evt);
+	for (auto& v : views_) {
+		v->FireMouseEvent(evt);
+	}
 }
 
 void HUDLayer::OnMouseScroll(double xoffset, double yoffset) {
@@ -755,7 +759,9 @@ void HUDLayer::OnMouseScroll(double xoffset, double yoffset) {
 	evt.type = ultralight::ScrollEvent::kType_ScrollByPixel;
 	evt.delta_x = static_cast<int>(xoffset * 32);
 	evt.delta_y = static_cast<int>(yoffset * 32);
-	views_.front()->FireScrollEvent(evt);
+	for (auto& v : views_) {
+		v->FireScrollEvent(evt);
+	}
 }
 
 // Helper function to convert GLFW key to Ultralight key
@@ -881,10 +887,9 @@ void HUDLayer::OnKey(int key, int scancode, int action, int mods) {
 	// Get key identifier
 	ultralight::GetKeyIdentifierFromVirtualKeyCode(evt.virtual_key_code, evt.key_identifier);
 
-	views_.front()->FireKeyEvent(evt);
-
-	// Note: Character input is handled separately by OnChar callback
-	// Do NOT fire a char event here as it causes duplicate input
+	for (auto& v : views_) {
+		v->FireKeyEvent(evt);
+	}
 }
 
 void HUDLayer::OnChar(unsigned int codepoint) {
@@ -915,7 +920,9 @@ void HUDLayer::OnChar(unsigned int codepoint) {
 
 	evt.text = ultralight::String(utf8);
 	evt.unmodified_text = evt.text;
-	views_.front()->FireKeyEvent(evt);
+	for (auto& v : views_) {
+		v->FireKeyEvent(evt);
+	}
 }
 
 ultralight::RefPtr<ultralight::View> HUDLayer::CreateView(uint32_t width, uint32_t height, ultralight::ViewConfig config) {
@@ -937,6 +944,13 @@ ultralight::RefPtr<ultralight::View> HUDLayer::CreateView(uint32_t width, uint32
 		views_.push_back(v);
 	}
 	return v;
+}
+
+void HUDLayer::RemoveView(const ultralight::RefPtr<ultralight::View>& view) {
+	auto it = std::find(views_.begin(), views_.end(), view);
+	if (it != views_.end()) {
+		views_.erase(it);
+	}
 }
 
 }    // namespace renderer::HUD
