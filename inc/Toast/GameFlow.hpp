@@ -24,8 +24,7 @@ class GameFlow final {
 
 		std::optional<std::shared_future<unsigned>> currentLevel;
 		std::optional<std::shared_future<unsigned>> nextLevel;
-		
-		
+
 	} m;
 
 	void LoadWorld(unsigned world);
@@ -35,12 +34,12 @@ class GameFlow final {
 	void NextWorld();
 
 	void Restart();
-	
+
 	static Scene* currentScene;
 
 public:
 	GameFlow();
-	
+
 	static Scene* CurrentScene();
 };
 

@@ -257,11 +257,11 @@ void AtlasRendererComponent::AddSpriteToCache(toast::AtlasSpriteComponent* sprit
 	if (!sprite) {
 		return;
 	}
-	
+
 	if (sprite->GetRegion() == nullptr && !sprite->GetRegionName().empty() && m.atlas) {
 		sprite->SetRegion(FindRegion(sprite->GetRegionName()));
 	}
-	
+
 	auto it = std::find(m.spriteCache.begin(), m.spriteCache.end(), sprite);
 	if (it == m.spriteCache.end()) {
 		m.spriteCache.push_back(sprite);
@@ -407,7 +407,9 @@ void AtlasRendererComponent::Inspector() {
 		auto* region = FindRegion(region_name);
 		ImGui::ImageButton("#image", tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, -region->v), ImVec2(region->u2, -region->v2));
 		if (ImGui::BeginDragDropSource()) {
-			ImGui::ImageButton("#image", tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, -region->v), ImVec2(region->u2, -region->v2));
+			ImGui::ImageButton(
+			    "#image", tex_ptr->get()->id(), ImVec2(cell_size, cell_size), ImVec2(region->u, -region->v), ImVec2(region->u2, -region->v2)
+			);
 			static std::function<toast::AtlasSpriteComponent*()> callback;
 			callback = [this, region_name = std::string(region_name)]() {
 				std::string sprite_name = GenerateSpriteName(region_name);

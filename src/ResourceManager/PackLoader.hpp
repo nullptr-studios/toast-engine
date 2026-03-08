@@ -223,7 +223,7 @@ private:
 	}
 
 	std::ifstream m_in;
-	std::mutex m_readMtx;              // protects m_in during seek+read
+	std::mutex m_readMtx;    // protects m_in during seek+read
 	PackHeader m_header = {};
 	std::vector<uint64_t> m_hashes;
 	std::vector<std::u8string> m_paths;

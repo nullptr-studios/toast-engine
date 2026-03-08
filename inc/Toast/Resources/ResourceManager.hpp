@@ -42,7 +42,6 @@ public:
 	static constexpr const char* kYamlIconPath = "EDITOR/icons/yaml.png";
 	static constexpr const char* kTtfFilePath = "EDITOR/icons/ttf.png";
 
-
 	/**
 	 * @brief Constructs the ResourceManager.
 	 * @param pkg If true, reads from game.pkg instead of filesystem.
@@ -258,7 +257,7 @@ std::shared_ptr<R> ResourceManager::LoadResource(const std::string& path, Args&&
 
 	// Create the object first (owning pointer) - perfect-forward extra args (optional)
 	auto res = std::make_shared<R>(formattedPath, std::forward<Args>(args)...);
-	
+
 	res->Load();
 
 	{

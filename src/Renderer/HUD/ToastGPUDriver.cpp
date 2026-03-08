@@ -189,7 +189,7 @@ void ToastGPUDriver::CreateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
 		entry.height = bitmap->height();
 
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);    // restore default
-		return;    // Skip mipmap generation for A8 textures
+		return;                                    // Skip mipmap generation for A8 textures
 	} else if (bitmap->format() == ultralight::BitmapFormat::BGRA8_UNORM_SRGB) {
 		const void* pixels = bitmap->LockPixels();
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, bitmap->width(), bitmap->height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, pixels);

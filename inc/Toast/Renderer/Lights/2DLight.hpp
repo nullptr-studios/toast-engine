@@ -64,7 +64,6 @@ public:
 		return m_color;
 	}
 
-
 #ifdef TOAST_EDITOR
 	void Inspector() override;
 #endif

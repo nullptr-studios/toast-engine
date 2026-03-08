@@ -152,7 +152,7 @@ public:
 	void SetRunLateTick(bool value) {
 		m_runsLateTick = value;
 	}
-	
+
 	void SetRunPhysTick(bool value) {
 		m_runsPhysTick = value;
 	}

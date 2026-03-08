@@ -24,7 +24,6 @@ void AtlasSpriteComponent::Init() {
 	// HACK: this is not really the best solution and the engine should know when are we in play mode or paused
 	dynamic_cast<AtlasRendererComponent*>(parent())->AddSpriteToCache(this);
 #endif
-
 }
 
 void AtlasSpriteComponent::Destroy() {

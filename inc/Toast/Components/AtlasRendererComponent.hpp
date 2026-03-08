@@ -69,7 +69,7 @@ private:
 		// Region picker (for editor)
 		std::vector<std::string> regionNames;
 		int selectedRegion = -1;
-		
+
 		std::vector<toast::AtlasSpriteComponent*> spriteCache;
 		bool spriteCacheDirty = true;
 	} m;

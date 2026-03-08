@@ -463,14 +463,18 @@ void OpenGLRenderer::GeometryPass() {
 	PROFILE_ZONE;
 	TracyGpuZone("Geometry Pass");
 #endif
-	
+
 	m_combinedRenderables.clear();
 	m_combinedRenderables.reserve(m_renderables.size() + m_transparentRenderables.size());
 	for (auto* r : m_renderables) {
-		if (r) m_combinedRenderables.push_back(r);
+		if (r) {
+			m_combinedRenderables.push_back(r);
+		}
 	}
 	for (auto* r : m_transparentRenderables) {
-		if (r) m_combinedRenderables.push_back(r);
+		if (r) {
+			m_combinedRenderables.push_back(r);
+		}
 	}
 
 	// Sort back-to-front (highest depth first) for correct transparency
@@ -485,7 +489,7 @@ void OpenGLRenderer::GeometryPass() {
 	glScissor(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
 
 	m_geometryFramebuffer->bind();
-	
+
 	glDepthRange(0.0, 1.0);
 
 	// Forward shading
@@ -508,7 +512,6 @@ void OpenGLRenderer::GeometryPass() {
 
 	// Restore predictable state
 	glDepthMask(GL_TRUE);
-	
 }
 
 void OpenGLRenderer::LightingPass() {
@@ -543,14 +546,23 @@ void OpenGLRenderer::LightingPass() {
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
+
 	// blit dept from geometry pass to light framebuffer to allow depth testing during light accumulation
 	m_geometryFramebuffer->bindRead();
 	m_lightFramebuffer->bindDraw();
-	glBlitFramebuffer(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height(), 0, 0, m_lightFramebuffer->Width(), m_lightFramebuffer->Height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(
+	    0,
+	    0,
+	    m_geometryFramebuffer->Width(),
+	    m_geometryFramebuffer->Height(),
+	    0,
+	    0,
+	    m_lightFramebuffer->Width(),
+	    m_lightFramebuffer->Height(),
+	    GL_DEPTH_BUFFER_BIT,
+	    GL_NEAREST
+	);
 	m_lightFramebuffer->bind();
-		
-	
 
 	// Disable depth writes for light accumulation
 	glDepthMask(GL_FALSE);
@@ -570,7 +582,6 @@ void OpenGLRenderer::LightingPass() {
 			}
 		}
 	}
-	
 
 	// Restore GL state to known defaults
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -706,8 +717,7 @@ void OpenGLRenderer::RemoveTransparentRenderable(IRenderable* renderable) {
 	m_transparentSortDirty = true;
 }
 
-void OpenGLRenderer::SpritePass() {
-}
+void OpenGLRenderer::SpritePass() { }
 
 void OpenGLRenderer::AddLight(Light2D* light) {
 	m_lights.push_back(light);
