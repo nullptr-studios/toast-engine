@@ -944,7 +944,12 @@ ultralight::RefPtr<ultralight::View> HUDLayer::CreateView(uint32_t width, uint32
 void HUDLayer::RemoveView(const ultralight::RefPtr<ultralight::View>& view) {
 	auto it = std::find(views_.begin(), views_.end(), view);
 	if (it != views_.end()) {
+		bool wasFront = (it == views_.begin());
 		views_.erase(it);
+		// If the front view changed, reset DOM readiness so scripts queue until new front is ready
+		if (wasFront) {
+			dom_ready_ = false;
+		}
 	}
 }
 

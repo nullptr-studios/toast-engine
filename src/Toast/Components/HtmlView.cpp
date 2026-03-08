@@ -15,6 +15,23 @@
 
 namespace toast {
 
+/// Per-view listener that forwards console messages to a callback
+class HtmlViewListener : public ultralight::ViewListener {
+public:
+	explicit HtmlViewListener(HtmlView::ConsoleCallback cb) : m_cb(std::move(cb)) { }
+
+	void OnAddConsoleMessage(ultralight::View* caller, const ultralight::ConsoleMessage& msg) override {
+		std::string message = msg.message().utf8().data();
+		TOAST_TRACE("[JS Console] {}", message);
+		if (m_cb) {
+			m_cb(message);
+		}
+	}
+
+private:
+	HtmlView::ConsoleCallback m_cb;
+};
+
 void HtmlView::Begin() {
 	Component::Begin();
 	CreateUlView();
@@ -51,6 +68,11 @@ void HtmlView::CreateUlView() {
 
 	m_view = hud->CreateView(fb->Width(), fb->Height());
 	if (m_view) {
+		// If a console callback is set, install a per-view listener
+		if (m_consoleCb) {
+			m_viewListener = std::make_unique<HtmlViewListener>(m_consoleCb);
+			m_view->set_view_listener(m_viewListener.get());
+		}
 		m_view->LoadURL(ultralight::String(m_url.c_str()));
 		TOAST_INFO("HtmlView: loaded {}", m_url);
 	}
@@ -63,6 +85,7 @@ void HtmlView::DestroyUlView() {
 		}
 		m_view = nullptr;
 	}
+	m_viewListener.reset();
 }
 
 void HtmlView::SetUrl(const std::string& url) {
