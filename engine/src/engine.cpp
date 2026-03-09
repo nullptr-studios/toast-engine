@@ -4,6 +4,8 @@
 #include <cassert>
 #include <print>
 
+extern "C" void toast_rust_tick();
+
 namespace toast {
 
 Engine* Engine::instance = nullptr;
@@ -26,7 +28,7 @@ Engine* Engine::get() noexcept {
 }
 
 void Engine::tick() {
-
+	toast_rust_tick();
 }
 
 bool Engine::shouldClose() {
