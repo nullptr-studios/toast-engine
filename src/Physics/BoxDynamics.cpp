@@ -308,18 +308,14 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 			double angle_to_rotate1 = orientedAngle(r1, -impulse) - pi<double>();
 			angle_to_rotate1 *= cos(angle_to_rotate1);
 			angle_to_rotate1 *= sin(angle_to_rotate1);
-			if (abs(angle_to_rotate1) > 1e-1) {
-				rb1->angularVelocity += angle_to_rotate1 * inv_mass1;
-			}
+			rb1->angularVelocity += angle_to_rotate1;
 		}
 
 		if (abs(dot(r2, impulse)) < 1) {
 			double angle_to_rotate2 = orientedAngle(r2, impulse) - pi<double>();
 			angle_to_rotate2 *= cos(angle_to_rotate2);
 			angle_to_rotate2 *= sin(angle_to_rotate2);
-			if (abs(angle_to_rotate2) > 1e-1) {
-				rb2->angularVelocity += angle_to_rotate2 * inv_mass2;
-			}
+			rb2->angularVelocity += angle_to_rotate2;
 		}
 	}
 
@@ -576,9 +572,7 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 			double angle_to_rotate = orientedAngle(r, impulse) - pi<double>();
 			angle_to_rotate *= cos(angle_to_rotate);
 			angle_to_rotate *= sin(angle_to_rotate);
-			if (abs(angle_to_rotate) > 1e-1) {
-				rb->angularVelocity += angle_to_rotate * inv_mass;
-			}
+			rb->angularVelocity += angle_to_rotate;
 		}
 	}
 

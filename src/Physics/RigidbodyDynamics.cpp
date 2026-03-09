@@ -539,19 +539,8 @@ auto RbBoxCollision(Rigidbody* rb1, BoxRigidbody* rb2) -> std::optional<Manifold
 			continue;
 		}
 
-		// find where along the line is the object
-		double distance_along_line = dot(rb_pos - edge.p1, edge.tangent);
 		glm::dvec2 normal;
-		if (distance_along_line < 0.0f) {
-			// Case 1: rigidbody is before segment
-			normal = rb_pos - edge.p1;
-		} else if (distance_along_line > edge.length) {
-			// Case 2: rigidbody is after segment
-			normal = rb_pos - edge.p2;
-		} else {
-			// Case 3: rigidbody is inside the line
-			normal = edge.normal;
-		}
+		normal = edge.normal;
 
 		// compute overlap along the axis to store as penetration depth candidate
 		double overlap = std::min(max_proj - rb_min_proj, rb_max_proj - min_proj);
@@ -612,6 +601,7 @@ auto RbBoxCollision(Rigidbody* rb1, BoxRigidbody* rb2) -> std::optional<Manifold
 	if (rb1->debug.showManifolds) {
 		best.Debug();
 	}
+	best.normal = rotate(best.normal, rb2->GetRotation());
 
 	return best;
 }
@@ -686,9 +676,7 @@ void RbBoxResolution(Rigidbody* rb1, BoxRigidbody* rb2, Manifold manifold) {
 			double angle_to_rotate = orientedAngle(r, impulse) - pi<double>();
 			angle_to_rotate *= cos(angle_to_rotate);
 			angle_to_rotate *= sin(angle_to_rotate);
-			if (abs(angle_to_rotate) > 1e-1) {
-				rb2->angularVelocity += angle_to_rotate * inv_mass2;
-			}
+			rb2->angularVelocity += angle_to_rotate * inv_mass2;
 		}
 	}
 
@@ -698,8 +686,8 @@ void RbBoxResolution(Rigidbody* rb1, BoxRigidbody* rb2, Manifold manifold) {
 		double penetration_correction = (depth_corr > 0.0) ? (depth_corr * PhysicsSystem::pos_ptc()) : 0.0;
 		dvec2 correction = (penetration_correction / inv_mass_sum) * normal;
 
-		position1 += correction * inv_mass1;
-		position2 -= correction * inv_mass2;
+		position1 -= correction * inv_mass1;
+		position2 += correction * inv_mass2;
 	}
 
 	rb1->SetPosition(position1);
