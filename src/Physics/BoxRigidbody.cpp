@@ -19,8 +19,6 @@ void BoxRigidbody::Begin() {
 	Component::Begin();
 	angularVelocity = 0.0;
 	velocity = { 0.0, 0.0 };
-	forces.clear();
-	torques.clear();
 }
 
 void BoxRigidbody::Destroy() {
