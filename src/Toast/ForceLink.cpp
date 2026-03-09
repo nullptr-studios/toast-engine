@@ -17,6 +17,7 @@
 
 // Components
 #include <Toast/Components/AtlasRendererComponent.hpp>
+#include <Toast/Components/HtmlView.hpp>
 #include <Toast/Components/MeshRendererComponent.hpp>
 #include <Toast/Components/SpineRendererComponent.hpp>
 #include <Toast/Components/TransformComponent.hpp>
