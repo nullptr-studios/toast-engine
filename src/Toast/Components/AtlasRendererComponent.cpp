@@ -10,13 +10,13 @@
 #include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/Resources/Texture.hpp"
-#include "imgui_internal.h"
 
 #include <functional>
 #include <ranges>
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
+#include "imgui_internal.h"
 #endif
 
 void AtlasRendererComponent::Destroy() {
