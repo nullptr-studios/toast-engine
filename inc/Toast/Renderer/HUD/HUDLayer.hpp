@@ -246,8 +246,8 @@ private:
 	uint32_t height_ = 0;
 	bool msaa_enabled_ = false;
 	bool input_enabled_ = true;    ///< Whether input events are forwarded to Ultralight
-	int viewport_offset_x_ = 0;   ///< Viewport X offset in window space (for editor)
-	int viewport_offset_y_ = 0;   ///< Viewport Y offset in window space (for editor)
+	int viewport_offset_x_ = 0;    ///< Viewport X offset in window space (for editor)
+	int viewport_offset_y_ = 0;    ///< Viewport Y offset in window space (for editor)
 
 	std::unique_ptr<toast::hud::ToastGPUContext> gpu_context_;
 	ultralight::RefPtr<ultralight::Renderer> renderer_;

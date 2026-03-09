@@ -2,10 +2,14 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+// clang-format off
 #include <windows.h>
 #include <mmsystem.h>
+// clang-format on
 #pragma comment(lib, "winmm.lib")
 #endif
+
+#include "Toast/Engine.hpp"
 
 #include "Audio/AudioSystem.hpp"
 #include "Event/EventSystem.hpp"
@@ -13,7 +17,6 @@
 #include "Input/InputSystem.hpp"
 #include "Physics/PhysicsSystem.hpp"
 #include "Toast/CoroutineHandler.hpp"
-#include "Toast/Engine.hpp"
 #include "Toast/Factory.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Objects/Scene.hpp"

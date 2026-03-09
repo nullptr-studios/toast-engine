@@ -34,11 +34,18 @@ public:
 	void Begin() override;
 
 	void SetUrl(const std::string& url);
-	const std::string& GetUrl() const { return m_url; }
 
-	void SetConsoleCallback(ConsoleCallback cb) { m_consoleCb = std::move(cb); }
+	const std::string& GetUrl() const {
+		return m_url;
+	}
 
-	ultralight::RefPtr<ultralight::View> GetView() const { return m_view; }
+	void SetConsoleCallback(ConsoleCallback cb) {
+		m_consoleCb = std::move(cb);
+	}
+
+	ultralight::RefPtr<ultralight::View> GetView() const {
+		return m_view;
+	}
 
 	[[nodiscard]]
 	json_t Save() const override;
