@@ -450,7 +450,7 @@ void World::EditorTick() {
 	}
 
 	// ReSharper disable once CppUseElementsView
-	for (const auto& [_, s] : m.children) {
+	for (const auto& [_, s] : m.tickableScenes) {
 		s->_EditorTick();
 	}
 }
