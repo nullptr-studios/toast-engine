@@ -2,8 +2,8 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <mmsystem.h>
 #include <windows.h>
+#include <mmsystem.h>
 #pragma comment(lib, "winmm.lib")
 #endif
 
