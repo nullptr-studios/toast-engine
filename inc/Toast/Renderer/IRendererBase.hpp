@@ -17,6 +17,7 @@
 
 #include <array>
 #include <glm/glm.hpp>
+#include <unordered_set>
 #include <vector>
 
 namespace renderer {
@@ -90,6 +91,18 @@ public:
 
 	/// @brief Removes a transparent/sprite renderable from the sprite pass queue
 	virtual void RemoveTransparentRenderable(IRenderable* renderable) = 0;
+	
+	virtual void DisableRenderable(IRenderable* renderable) {
+		m_disabledRenderables.insert(renderable);
+		m_renderablesSortDirty = true;
+		m_transparentSortDirty = true;
+	}
+	
+	virtual void EnableRenderable(IRenderable* renderable) {
+		m_disabledRenderables.erase(renderable);
+		m_renderablesSortDirty = true;
+		m_transparentSortDirty = true;
+	}
 
 	/// @brief Adds a 2D light to the lighting system
 	/// @param light Pointer to the light to add
@@ -354,6 +367,8 @@ protected:
 	// ========== Scene Objects ==========
 	std::vector<IRenderable*> m_renderables;               ///< Opaque renderable objects (geometry pass)
 	std::vector<IRenderable*> m_transparentRenderables;    ///< Transparent/sprite renderables (sprite pass, post-combine)
+	/// @brief Set of renderables that are currently disabled — excluded from the geometry pass.
+	std::unordered_set<IRenderable*> m_disabledRenderables;
 	std::vector<Light2D*> m_lights;                        ///< All 2D lights in the scene
 	bool m_renderablesSortDirty = true;                    ///< True when renderables need re-sorting
 	bool m_transparentSortDirty = true;                    ///< True when transparent renderables need re-sorting

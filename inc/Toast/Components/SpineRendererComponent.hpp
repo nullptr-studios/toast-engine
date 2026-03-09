@@ -25,6 +25,8 @@ public:
 
 	void Begin() override;
 	void Tick() override;
+	void OnEnable() override;
+	void OnDisable() override;
 
 #ifdef TOAST_EDITOR
 	void Inspector() override;
@@ -45,6 +47,13 @@ public:
 
 			// Initial update to ensure world transforms are valid
 			m.skeleton->update(0.0f);
+			m.skeleton->updateWorldTransform(spine::Physics_None);
+		}
+	}
+	
+	void ResetSkeletonToSetupPose() const {
+		if (m.skeleton) {
+			m.skeleton->setToSetupPose();
 			m.skeleton->updateWorldTransform(spine::Physics_None);
 		}
 	}

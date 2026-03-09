@@ -558,8 +558,12 @@ void HUDLayer::LoadHTML(const std::string& html, const std::string& base_url) {
 // Evaluate a script now if DOM is ready, otherwise queue it to be run after DOM ready.
 void HUDLayer::EvalScriptOrQueue(const std::string& script) {
 	if (dom_ready_) {
-		if (!views_.empty() && views_.front()) {
-			views_.front()->EvaluateScript(ultralight::String(script.c_str()));
+		if (!views_.empty()) {
+			for (const auto& v : views_) {
+				if (v) {
+					v->EvaluateScript(ultralight::String(script.c_str()));
+				}
+			}
 		}
 		return;
 	}
@@ -578,10 +582,11 @@ void HUDLayer::OnDOMReady() {
 	dom_ready_ = true;
 	// Flush pending scripts
 	for (const auto& s : pending_scripts_) {
-		if (!views_.empty() && views_.front()) {
-			// Wrap script execution in a short timeout so page-level initializers (like GameUI) run first
+		if (!views_.empty()) {
 			std::string wrapped = std::string("(function(){ setTimeout(function(){ ") + s + std::string(" }, 50); })();");
-			views_.front()->EvaluateScript(ultralight::String(wrapped.c_str()));
+			for (const auto& v : views_) {
+				v->EvaluateScript(ultralight::String(wrapped.c_str()));
+			}
 		}
 	}
 	pending_scripts_.clear();
@@ -603,8 +608,6 @@ void HUDLayer::FlushPendingScriptsNow() {
 }
 
 void HUDLayer::ExecuteJS(const std::string& script) {
-	// Log the outgoing JS for debugging
-	// TOAST_TRACE("[JAVASCRIPT] {}", script);
 	EvalScriptOrQueue(script);
 }
 

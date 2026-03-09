@@ -23,6 +23,18 @@ void AtlasRendererComponent::Destroy() {
 	renderer::IRendererBase::GetInstance()->RemoveTransparentRenderable(this);
 }
 
+void AtlasRendererComponent::OnEnable() {
+		if (auto* r = renderer::IRendererBase::GetInstance()) {
+			r->EnableRenderable(this);
+		}
+}
+
+void AtlasRendererComponent::OnDisable() {
+		if (auto* r = renderer::IRendererBase::GetInstance()) {
+			r->DisableRenderable(this);
+		}
+}
+
 void AtlasRendererComponent::Init() {
 	PROFILE_ZONE_C(0xFF6B00);    // Orange for initialization
 	TransformComponent::Init();
@@ -91,14 +103,13 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 
 	// Update mesh
 	m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
-
+	
 	// Compute bounding box
-	m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
-
-	// Frustum culling
-	if (!OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f))) {
-		return;
-	}
+	 m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
+	 // Frustum culling
+	 if (!OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f))) {
+	 	return;
+	 }
 
 	const glm::mat4 mvp = precomputed_mat;
 
