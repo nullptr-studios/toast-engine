@@ -28,5 +28,5 @@ struct NextWorld : public event::Event<NextWorld> { };
 
 struct NextLevel : public event::Event<NextLevel> { };
 
-struct RestartGameFlow : public event::Event<RestartGameFlow> { };
+struct ResetGameFlow : public event::Event<ResetGameFlow> { };
 }
