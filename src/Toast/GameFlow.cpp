@@ -57,8 +57,8 @@ GameFlow::GameFlow() {
 		return true;
 	});
 #ifdef TOAST_EDITOR
-	listener.Subscribe<toast::RestartGameFlow>([this](auto* _) {
-		Restart();
+	listener.Subscribe<toast::ResetGameFlow>([this](auto* _) {
+		Reset();
 		return true;
 	});
 #endif
@@ -199,7 +199,7 @@ void GameFlow::NextWorld() {
 	// clang-format on
 }
 
-void GameFlow::Restart() {
+void GameFlow::Reset() {
 	try {
 		if (m.currentLevel) {
 			m.currentLevel->wait();
