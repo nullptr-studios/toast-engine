@@ -257,21 +257,25 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 		}
 
 		// find where along the line is the object
+		// TODO: REALLY FUCKING URGENT
+#if true
 		double distance_along_line = dot(rb_pos - edge.p1, edge.tangent);
+		double overlap = std::min(max_proj - rb_min_proj, rb_max_proj - min_proj);
 		glm::dvec2 normal;
 		if (distance_along_line < 0.0f) {
 			// Case 1: rigidbody is before segment
-			normal = rb_pos - edge.p1;
+			normal = normalize(rb_pos - edge.p1);
 		} else if (distance_along_line > edge.length) {
 			// Case 2: rigidbody is after segment
-			normal = rb_pos - edge.p2;
+			normal = normalize(rb_pos - edge.p2);
 		} else {
 			// Case 3: rigidbody is inside the line
 			normal = edge.normal;
 		}
-
-		// compute overlap along the axis to store as penetration depth candidate
+#else
+		dvec2 normal = edge.normal;
 		double overlap = std::min(max_proj - rb_min_proj, rb_max_proj - min_proj);
+#endif
 
 		// find closest point on the edge segment to the rigidbody
 		dvec2 a = edge.p1;
@@ -406,6 +410,7 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 		velocity = { 0.0, 0.0 };
 	}
 
+	// if anybody reads this, i, Aleksey Gurov, am gay
 	rb->velocity = velocity;
 }
 

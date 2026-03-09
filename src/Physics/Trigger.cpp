@@ -63,6 +63,7 @@ void Trigger::RemoveFlag(ColliderFlags flag) {
 	m.flags &= ~flag;
 }
 
+#ifdef TOAST_EDITOR
 void Trigger::EditorTick() {
 	if (!enabled()) {
 		return;
@@ -72,5 +73,6 @@ void Trigger::EditorTick() {
 		renderer::DebugRect(transform()->worldPosition(), transform()->scale(), m.color);
 	}
 }
+#endif
 
 }

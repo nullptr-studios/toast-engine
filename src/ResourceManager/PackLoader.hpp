@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <lz4.h>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -180,6 +181,7 @@ public:
 
 		for (size_t i = lo; i <= hi; ++i) {
 			if (m_paths[i] == path) {
+				std::lock_guard<std::mutex> lock(m_readMtx);
 				return read_at_index(i, out);
 			}
 		}
@@ -221,6 +223,7 @@ private:
 	}
 
 	std::ifstream m_in;
+	std::mutex m_readMtx;    // protects m_in during seek+read
 	PackHeader m_header = {};
 	std::vector<uint64_t> m_hashes;
 	std::vector<std::u8string> m_paths;

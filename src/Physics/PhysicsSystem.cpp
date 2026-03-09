@@ -1,6 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
-#define TRACY_FIBERS
+// #define TRACY_FIBERS
 
 #include "PhysicsSystem.hpp"
 
@@ -107,7 +107,7 @@ void PhysicsSystem::start() {
 	}
 
 	physics->thread = std::jthread([physics](std::stop_token token) {    // NOLINT
-		TracyFiberEnter("Physics Thread");
+		// TracyFiberEnter("Physics Thread");
 		while (!token.stop_requested()) {
 			using namespace std::chrono;
 			time_point begin = steady_clock::now();
@@ -142,7 +142,7 @@ void PhysicsSystem::start() {
 			BoxResetVelocity(rb);
 		}
 
-		TracyFiberLeave;
+		// TracyFiberLeave;
 	});
 }
 

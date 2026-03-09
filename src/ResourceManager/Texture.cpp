@@ -10,10 +10,7 @@
 #include <stb_image.h>
 
 Texture::~Texture() {
-	if (m_pixels) {
-		stbi_image_free(m_pixels);    // stbi allocated
-		m_pixels = nullptr;
-	}
+	// m_pixels is a std::vector, it cleans itself up automatically
 
 	if (m_textureId) {
 		glBindTexture(GL_TEXTURE_2D, m_textureId);                  // bind
@@ -47,7 +44,7 @@ void Texture::TextureWrap(bool repeat) const {
 }
 
 void Texture::FlipVertically(bool flip) {
-	stbi_set_flip_vertically_on_load(flip);
+	stbi_set_flip_vertically_on_load_thread(flip);
 }
 
 void Texture::Load() {
@@ -62,6 +59,8 @@ void Texture::Load() {
 	}
 
 	int channels = 0;
+
+	stbi_set_flip_vertically_on_load_thread(1);
 
 	// Decode without forcing 4 channels
 	unsigned char* pixels = stbi_load_from_memory(f.data(), static_cast<int>(f.size()), &m_width, &m_height, &channels, 0);
@@ -79,17 +78,27 @@ void Texture::Load() {
 	}
 
 	m_channels = channels;
-	m_pixels = pixels;    // Take ownership
+
+	// Copy pixel data into our owned buffer, then free stbi's allocation immediately
+	const size_t dataSize = static_cast<size_t>(m_width) * m_height * channels;
+	m_pixels.assign(pixels, pixels + dataSize);
+	stbi_image_free(pixels);
 
 	SetResourceState(resource::ResourceState::LOADEDCPU);
 }
 
 // Load OpenGl on the main thread
 void Texture::LoadMainThread() {
-	if (GetResourceState() != resource::ResourceState::FAILED) {
+	const auto state = GetResourceState();
+	if (state == resource::ResourceState::LOADEDCPU) {
 		CreateOpenGLTexture();
+	} else if (state == resource::ResourceState::FAILED) {
+		LoadPlaceholderTexture();
 	} else {
-		LoadPlaceholderTexture();    // Load a placeholder texture if loading failed
+		TOAST_WARN("Texture::LoadMainThread() called in unexpected state ({}) for: {}", static_cast<int>(state), m_path);
+		if (state == resource::ResourceState::UNLOADED || state == resource::ResourceState::LOADING) {
+			LoadPlaceholderTexture();
+		}
 	}
 }
 
@@ -127,6 +136,7 @@ void Texture::LoadPlaceholderTexture() {
 	glBindTexture(GL_TEXTURE_2D, m_textureId);
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);    // reset; Ultralight HUD driver may leave this non-zero
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<void*>(pixels));
 
@@ -149,7 +159,7 @@ void Texture::CreateOpenGLTexture() {
 
 	SetResourceState(resource::ResourceState::UPLOADING);
 
-	if (m_pixels == nullptr) {
+	if (m_pixels.empty()) {
 		SetResourceState(resource::ResourceState::FAILED);
 		TOAST_ERROR("Trying to create OpenGL texture but no pixel data is available!?!");
 		LoadPlaceholderTexture();
@@ -179,8 +189,8 @@ void Texture::CreateOpenGLTexture() {
 		default: {
 			TOAST_ERROR("Unsupported channel count {0} for texture: {1}", m_channels, m_path);
 			SetResourceState(resource::ResourceState::FAILED);
-			stbi_image_free(m_pixels);
-			m_pixels = nullptr;
+			m_pixels.clear();
+			m_pixels.shrink_to_fit();
 			LoadPlaceholderTexture();
 			return;
 		}
@@ -192,21 +202,21 @@ void Texture::CreateOpenGLTexture() {
 
 	// Ensure tight packing for arbitrary widths
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_width, m_height, 0, format, GL_UNSIGNED_BYTE, reinterpret_cast<void*>(m_pixels));
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);    // reset; Ultralight HUD driver may leave this non-zero
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_width, m_height, 0, format, GL_UNSIGNED_BYTE, m_pixels.data());
+	// glGenerateMipmap(GL_TEXTURE_2D);
+
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// Release CPU pixel data now that it's on the GPU
-	if (m_pixels) {
-		stbi_image_free(m_pixels);
-		m_pixels = nullptr;
-	}
+	m_pixels.clear();
+	m_pixels.shrink_to_fit();
 
 	SetResourceState(resource::ResourceState::UPLOADEDGPU);
 }

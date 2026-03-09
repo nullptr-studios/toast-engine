@@ -1,4 +1,11 @@
-#include "Toast/Engine.hpp"
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <mmsystem.h>
+#pragma comment(lib, "winmm.lib")
+#endif
 
 #include "Audio/AudioSystem.hpp"
 #include "Event/EventSystem.hpp"
@@ -6,6 +13,7 @@
 #include "Input/InputSystem.hpp"
 #include "Physics/PhysicsSystem.hpp"
 #include "Toast/CoroutineHandler.hpp"
+#include "Toast/Engine.hpp"
 #include "Toast/Factory.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Objects/Scene.hpp"
@@ -25,13 +33,7 @@
 #include <thread>
 
 #ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
 #include <intrin.h>
-#include <mmsystem.h>
-#include <windows.h>
-#pragma comment(lib, "winmm.lib")
 #endif
 
 #ifdef TOAST_EDITOR
@@ -258,9 +260,15 @@ void Engine::Init() {
 	m->coroutineHandler = std::make_unique<CoroutineHandler>();
 
 	Begin();
+
+#ifndef TOAST_EDITOR
+	physics::PhysicsSystem::start();
+#endif
 }
 
+#ifdef TOAST_EDITOR
 void Engine::EditorTick() { }
+#endif
 
 void Engine::Render() {
 	PROFILE_ZONE_C(0xFF0000);    // Red for rendering

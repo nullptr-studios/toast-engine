@@ -2,6 +2,7 @@
 
 #include "Toast/GameEvents.hpp"
 #include "Toast/Log.hpp"
+#include "Toast/Objects/Scene.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/World.hpp"
 #include "sol/forward.hpp"
@@ -12,6 +13,8 @@
 #include <optional>
 
 namespace toast {
+
+Scene* GameFlow::currentScene = nullptr;
 
 GameFlow::GameFlow() {
 	std::vector<std::string> world_list;
@@ -38,6 +41,7 @@ GameFlow::GameFlow() {
 
 	listener.Subscribe<toast::LoadWorld>([this](auto* e) {
 		LoadWorld(e->world);
+		m.nextLevel = toast::World::LoadScene(m.levelList[0]);
 		return true;
 	});
 	listener.Subscribe<toast::LoadLevel>([this](auto* e) {
@@ -52,6 +56,12 @@ GameFlow::GameFlow() {
 		NextLevel();
 		return true;
 	});
+#ifdef TOAST_EDITOR
+	listener.Subscribe<toast::RestartGameFlow>([this](auto* _) {
+		Restart();
+		return true;
+	});
+#endif
 
 	m = {
 		.worldList = std::move(world_list),
@@ -61,6 +71,10 @@ GameFlow::GameFlow() {
 		.currentLevel = std::nullopt,
 		.nextLevel = std::nullopt,
 	};
+}
+
+Scene* GameFlow::CurrentScene() {
+	return currentScene;
 }
 
 void GameFlow::LoadWorld(unsigned world) {
@@ -108,8 +122,6 @@ void GameFlow::LoadWorld(unsigned world) {
 
 	sol::table table = result;
 	m.levelList = table.as<std::vector<std::string>>();
-
-	m.nextLevel = toast::World::LoadScene(m.levelList[0]);
 }
 
 void GameFlow::LoadLevel(unsigned world, unsigned level) {
@@ -130,6 +142,7 @@ void GameFlow::LoadLevel(unsigned world, unsigned level) {
 	try {
 		auto* scene = toast::World::Get(m.currentLevel->get());
 		scene->enabled(true);
+		currentScene = dynamic_cast<Scene*>(scene);
 	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 }
 
@@ -164,6 +177,7 @@ void GameFlow::NextLevel() {
 		m.currentLevel->wait();
 		auto* scene = toast::World::Get(m.currentLevel->get());
 		scene->enabled(true);
+		currentScene = dynamic_cast<Scene*>(scene);
 	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 
 	// Pre Load Next Level :3
@@ -183,5 +197,32 @@ void GameFlow::NextWorld() {
     }).value_or(0)
   );
 	// clang-format on
+}
+
+void GameFlow::Restart() {
+	try {
+		if (m.currentLevel) {
+			m.currentLevel->wait();
+			auto* scene = toast::World::Get(m.currentLevel->get());
+			if (scene) {
+				scene->Nuke();
+			}
+		}
+	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
+
+	try {
+		if (m.nextLevel) {
+			m.nextLevel->wait();
+			auto* scene = toast::World::Get(m.nextLevel->get());
+			if (scene) {
+				scene->Nuke();
+			}
+		}
+	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
+	m.nextLevel = std::nullopt;
+	m.currentLevel = std::nullopt;
+	m.level = std::nullopt;
+	m.world = std::nullopt;
+	m.levelList.clear();
 }
 }

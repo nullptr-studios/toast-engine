@@ -108,7 +108,9 @@ protected:
 	 * This is called in addition to the normal game tick when running
 	 * in the editor.
 	 */
+#ifdef TOAST_EDITOR
 	virtual void EditorTick();
+#endif
 
 	/**
 	 * @brief Called every frame for rendering.

@@ -33,8 +33,9 @@ public:
 
 #ifdef TOAST_EDITOR
 	void Inspector() override;
-#endif
 	void EditorTick() override;
+#endif
+
 	void Destroy() override;
 
 	json_t Save() const override;

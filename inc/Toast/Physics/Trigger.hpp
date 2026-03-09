@@ -27,7 +27,9 @@ public:
 
 	void Begin() override;
 	void Destroy() override;
+#ifdef TOAST_EDITOR
 	void EditorTick() override;
+#endif
 
 	virtual void OnEnter(toast::Object*) { }
 

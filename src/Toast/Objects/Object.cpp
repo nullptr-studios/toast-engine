@@ -4,7 +4,6 @@
 #include "Toast/World.hpp"
 
 #include <algorithm>
-#include <generator>
 #include <memory>
 #include <optional>
 #include <ranges>
@@ -482,6 +481,7 @@ void Object::_Tick() {
 	}
 }
 
+#ifdef TOAST_EDITOR
 void Object::_EditorTick() {
 	if (not m_runsLateTick) {
 		return;
@@ -500,6 +500,7 @@ void Object::_EditorTick() {
 		child->_EditorTick();
 	}
 }
+#endif
 
 void Object::_LateTick() {
 	if (!enabled() || !m_hasRunBegin) {
@@ -543,7 +544,7 @@ void Object::_Destroy() {
 }
 
 void Object::_PhysTick() {
-	if (!enabled() || !m_hasRunBegin) {
+	if (!enabled() || !m_hasRunBegin || !m_runsPhysTick) {
 		return;
 	}
 

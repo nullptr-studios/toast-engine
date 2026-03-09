@@ -20,8 +20,8 @@ public:
 	void Destroy() override;
 #ifdef TOAST_EDITOR
 	void Inspector() override;
-#endif
 	void EditorTick() override;
+#endif
 
 	json_t Save() const override;
 	void Load(json_t j, bool b) override;

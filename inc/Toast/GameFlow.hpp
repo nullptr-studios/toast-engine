@@ -24,6 +24,7 @@ class GameFlow final {
 
 		std::optional<std::shared_future<unsigned>> currentLevel;
 		std::optional<std::shared_future<unsigned>> nextLevel;
+
 	} m;
 
 	void LoadWorld(unsigned world);
@@ -32,10 +33,14 @@ class GameFlow final {
 	void NextLevel();
 	void NextWorld();
 
-	bool ValidateLevels();    ///<@brief checks if all the levels in the world are valid files in assets
+	void Restart();
+
+	static Scene* currentScene;
 
 public:
 	GameFlow();
+
+	static Scene* CurrentScene();
 };
 
 }
