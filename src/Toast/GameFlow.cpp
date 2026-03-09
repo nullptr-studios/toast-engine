@@ -56,12 +56,14 @@ GameFlow::GameFlow() {
 		NextLevel();
 		return true;
 	});
-#ifdef TOAST_EDITOR
 	listener.Subscribe<toast::ResetGameFlow>([this](auto* _) {
 		Reset();
 		return true;
 	});
-#endif
+	listener.Subscribe<toast::RestartLevel>([this](auto* _) {
+		Restart();
+		return true;
+	});
 
 	m = {
 		.worldList = std::move(world_list),
@@ -224,5 +226,16 @@ void GameFlow::Reset() {
 	m.level = std::nullopt;
 	m.world = std::nullopt;
 	m.levelList.clear();
+}
+
+void GameFlow::Restart() {
+	if (!m.currentLevel) {
+		TOAST_WARN("No Active Scene Abort Restart");
+		return;
+	}
+	m.currentLevel->wait();
+	auto* scene = toast::World::Get(m.currentLevel->get());
+	scene->SoftLoad();
+	toast::World::ScheduleBegin(scene);
 }
 }

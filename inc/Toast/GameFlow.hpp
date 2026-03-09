@@ -34,6 +34,7 @@ class GameFlow final {
 	void NextWorld();
 
 	void Reset();
+	void Restart();
 
 	static Scene* currentScene;
 
