@@ -71,7 +71,7 @@ target_compile_options(toast.engine PRIVATE
 )
 
 if (TOAST_EDITOR)
-    target_compile_definitions(toast.engine PRIVATE TOAST_EDITOR)
+    target_compile_definitions(toast.engine PUBLIC TOAST_EDITOR)
     
     target_link_libraries(toast.engine PUBLIC
             glfw

@@ -56,15 +56,14 @@ ResourceManager* ResourceManager::GetInstance() {
 }
 
 void ResourceManager::LoadResourcesMainThread() {
-	if (m_uploadResources.empty()) {
-		return;
-	}
-
 	PROFILE_ZONE;
 	// safe swap under lock to drain the queue
 	std::vector<std::weak_ptr<IResource>> local;
 	{
 		std::lock_guard<std::mutex> lg(m_uploadMtx);
+		if (m_uploadResources.empty()) {
+			return;
+		}
 		local.swap(m_uploadResources);
 	}
 
@@ -195,8 +194,34 @@ editor::ResourceSlot::Entry ResourceManager::CreateResourceSlotEntry(const std::
 		e.icon = resource::LoadResource<Texture>(normalized);
 	} else if (e.extension == ".json") {
 		e.icon = resource::LoadResource<Texture>(kJsonFilePath);
+	} else if (e.extension == ".prefab") {
+		e.icon = resource::LoadResource<Texture>(kJsonFilePath);
 	} else if (e.extension == ".obj") {
 		e.icon = resource::LoadResource<Texture>(kObjFilePath);
+	} else if (e.extension == ".html") {
+		e.icon = resource::LoadResource<Texture>(kHtmlIconPath);
+	} else if (e.extension == ".css") {
+		e.icon = resource::LoadResource<Texture>(kCssIconPath);
+	} else if (e.extension == ".config") {
+		e.icon = resource::LoadResource<Texture>(kConfigIconPath);
+	} else if (e.extension == ".toast") {
+		e.icon = resource::LoadResource<Texture>(kYamlIconPath);
+	} else if (e.extension == ".yaml") {
+		e.icon = resource::LoadResource<Texture>(kYamlIconPath);
+	} else if (e.extension == ".js") {
+		e.icon = resource::LoadResource<Texture>(kJsIconPath);
+	} else if (e.extension == ".lua") {
+		e.icon = resource::LoadResource<Texture>(kLuaIconPath);
+	} else if (e.extension == ".log") {
+		e.icon = resource::LoadResource<Texture>(kLogIconPath);
+	} else if (e.extension == ".nix") {
+		e.icon = resource::LoadResource<Texture>(kNixIconPath);
+	} else if (e.extension == ".scene") {
+		e.icon = resource::LoadResource<Texture>(kJsonFilePath);
+	} else if (e.extension == ".ini") {
+		e.icon = resource::LoadResource<Texture>(kIniFilePath);
+	} else if (e.extension == ".ttf") {
+		e.icon = resource::LoadResource<Texture>(kTtfFilePath);
 	} else {
 		e.icon = resource::LoadResource<Texture>(kGenericFilePath);
 	}

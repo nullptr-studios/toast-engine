@@ -45,6 +45,12 @@ ConvexCollider::ConvexCollider(const point_list& points, const ColliderData& dat
 	debugNormals = data.debugNormals;
 	parent = data.parent;
 
+	// Pre-compute AABB from vertices (never changes for static colliders)
+	for (const auto& v : vertices) {
+		m_aabb.expand(glm::vec3(v.x, v.y, -1.0f));
+		m_aabb.expand(glm::vec3(v.x, v.y, 1.0f));
+	}
+
 	PhysicsSystem::AddCollider(this);
 }
 

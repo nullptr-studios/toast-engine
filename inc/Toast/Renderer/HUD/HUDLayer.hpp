@@ -118,6 +118,12 @@ public:
 	ultralight::RefPtr<ultralight::View> CreateView(uint32_t width, uint32_t height, ultralight::ViewConfig config = {});
 
 	///
+	/// @brief Remove a previously created view from this HUD layer.
+	/// @param view The view to remove
+	///
+	void RemoveView(const ultralight::RefPtr<ultralight::View>& view);
+
+	///
 	/// @brief Resize the UI viewport
 	/// @param width New viewport width
 	/// @param height New viewport height
@@ -194,6 +200,16 @@ public:
 	}
 
 	///
+	/// @brief Set the viewport offset for coordinate mapping (editor support)
+	/// @param x X offset of the viewport in window space
+	/// @param y Y offset of the viewport in window space
+	///
+	void SetViewportOffset(int x, int y) {
+		viewport_offset_x_ = x;
+		viewport_offset_y_ = y;
+	}
+
+	///
 	/// @brief Called by the per-instance LoadListener when the main-frame DOM is ready
 	///
 	void OnDOMReady();
@@ -230,6 +246,8 @@ private:
 	uint32_t height_ = 0;
 	bool msaa_enabled_ = false;
 	bool input_enabled_ = true;    ///< Whether input events are forwarded to Ultralight
+	int viewport_offset_x_ = 0;    ///< Viewport X offset in window space (for editor)
+	int viewport_offset_y_ = 0;    ///< Viewport Y offset in window space (for editor)
 
 	std::unique_ptr<toast::hud::ToastGPUContext> gpu_context_;
 	ultralight::RefPtr<ultralight::Renderer> renderer_;

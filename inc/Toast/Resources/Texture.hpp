@@ -6,7 +6,9 @@
 
 #include "IResource.hpp"
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 // To create a texture please call ResourceManager::LoadTexture(path)
 class Texture : public IResource {
@@ -52,7 +54,7 @@ private:
 
 	int m_width = 0;
 	int m_height = 0;
-	int m_channels = 0;                   // number of channels loaded from file
-	unsigned char* m_pixels = nullptr;    // stbi allocated buffer
+	int m_channels = 0;               // number of channels loaded from file
+	std::vector<uint8_t> m_pixels;    // owned copy of pixel data
 	unsigned int m_textureId = 0;
 };

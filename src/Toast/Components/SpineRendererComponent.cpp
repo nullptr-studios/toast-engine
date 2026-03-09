@@ -14,12 +14,9 @@
 #endif
 
 #include "ResourceManager/Spine/SpineSkeletonRenderer.hpp"
-#include "Toast/Components/AtlasRendererComponent.hpp"
-#include "Toast/Components/SpineRendererComponent.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Resources/Spine/SpineEvent.hpp"
 #include "spine/Animation.h"
-#include "spine/Attachment.h"
 #include "spine/Bone.h"
 
 /// TODO:SPINE RESOURCE SLOTS
@@ -30,62 +27,62 @@ void SpineRendererComponent::Init() {
 	SetRunLateTick(false);
 
 	// shader and buffers
-	m_shader = resource::LoadResource<renderer::Shader>("SHADERS/spine.shader");
+	m.shader = resource::LoadResource<renderer::Shader>("SHADERS/spine.shader");
 	// Reserve temp buffers to avoid allocations
-	m_tempVerts.reserve(INITIAL_VERT_RESERVE);
-	m_tempIndices.reserve(INITIAL_VERT_RESERVE * 3);
+	m.tempVerts.reserve(INITIAL_VERT_RESERVE);
+	m.tempIndices.reserve(INITIAL_VERT_RESERVE * 3);
 
-	m_eventHandler = std::make_unique<SpineEventHandler>(this);
+	m.eventHandler = std::make_unique<SpineEventHandler>(this);
 
 	// Load resources either from persisted paths (preferred) or fallback to defaults
-	if (!m_atlasPath.empty() && !m_skeletonDataPath.empty()) {
-		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
-		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
+	if (!m.atlasPath.empty() && !m.skeletonDataPath.empty()) {
+		auto atlas = resource::LoadResource<SpineAtlas>(m.atlasPath);
+		m.skeletonData = resource::LoadResource<SpineSkeletonData>(m.skeletonDataPath, atlas);
 	} else {
-		m_atlasPath = "CHARS/PLAYER/ANIMATIONS/CH_Cat.atlas";
-		m_skeletonDataPath = "CHARS/PLAYER/ANIMATIONS/CH_Cat.json";
+		m.atlasPath = "CHARS/PLAYER/ANIMATIONS/CH_Cat.atlas";
+		m.skeletonDataPath = "CHARS/PLAYER/ANIMATIONS/CH_Cat.json";
 
 		// Fallback to legacy defaults to keep previous behavior
-		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
-		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
+		auto atlas = resource::LoadResource<SpineAtlas>(m.atlasPath);
+		m.skeletonData = resource::LoadResource<SpineSkeletonData>(m.skeletonDataPath, atlas);
 	}
 
-	if (m_skeletonData) {
-		m_skeleton = std::make_unique<spine::Skeleton>(m_skeletonData->GetSkeletonData());
-		m_animationStateData = std::make_unique<spine::AnimationStateData>(m_skeletonData->GetSkeletonData());
-		m_animationStateData->setDefaultMix(.4f);
-		m_animationState = std::make_unique<spine::AnimationState>(m_animationStateData.get());
-		m_animationState->setListener(m_eventHandler.get());
+	if (m.skeletonData) {
+		m.skeleton = std::make_unique<spine::Skeleton>(m.skeletonData->GetSkeletonData());
+		m.animationStateData = std::make_unique<spine::AnimationStateData>(m.skeletonData->GetSkeletonData());
+		m.animationStateData->setDefaultMix(.4f);
+		m.animationState = std::make_unique<spine::AnimationState>(m.animationStateData.get());
+		m.animationState->setListener(m.eventHandler.get());
 
 		// Initial update to ensure world transforms are valid
-		m_skeleton->update(0.0f);
-		m_skeleton->updateWorldTransform(spine::Physics_None);
+		m.skeleton->update(0.0f);
+		m.skeleton->updateWorldTransform(spine::Physics_None);
 #ifdef TOAST_EDITOR
 		RefreshAnimationList();
 		// Auto-select first animation if available
-		if (!m_animationNames.empty()) {
-			m_selectedAnimation = 0;
-			m_animationState->setAnimation(0, m_animationNames[m_selectedAnimation].c_str(), m_loopAnimation);
+		if (!debug.animationNames.empty()) {
+			debug.selectedAnimation = 0;
+			m.animationState->setAnimation(0, debug.animationNames[debug.selectedAnimation].c_str(), debug.loopAnimation);
 		}
 
-		m_atlasResource.name("Atlas Resource");
-		m_skeletonDataResource.name("Skeleton Data Resource");
+		m.atlasResource.name("Atlas Resource");
+		m.skeletonDataResource.name("Skeleton Data Resource");
 #endif
 	}
 
 #ifdef TOAST_EDITOR
-	m_atlasResource.SetInitialResource(m_atlasPath);
-	m_skeletonDataResource.SetInitialResource(m_skeletonDataPath);
+	m.atlasResource.SetInitialResource(m.atlasPath);
+	m.skeletonDataResource.SetInitialResource(m.skeletonDataPath);
 #endif
 }
 
 void SpineRendererComponent::LoadTextures() {
-	m_shader->Use();
-	m_shader->SetSampler("Texture", 0);
+	m.shader->Use();
+	m.shader->SetSampler("Texture", 0);
 
 	renderer::IRendererBase::GetInstance()->AddTransparentRenderable(this);
 
-	m_dynamicMesh.InitDynamicSpine();
+	m.dynamicMesh.InitDynamicSpine();
 }
 
 void SpineRendererComponent::Begin() {
@@ -99,17 +96,17 @@ void SpineRendererComponent::Tick() {
 	// 	return;
 	// }
 
-	if (!m_skeleton || !m_animationState) {
+	if (!m.skeleton || !m.animationState) {
 		return;
 	}
 
 	double dt = Time::delta();
 
-	m_animationState->update(dt);
-	m_animationState->apply(*m_skeleton);
+	m.animationState->update(dt);
+	m.animationState->apply(*m.skeleton);
 
-	for (const auto& [name, pos] : m_boneLocalOverrides) {
-		spine::Bone* b = m_skeleton->findBone(name.c_str());
+	for (const auto& [name, pos] : m.boneLocalOverrides) {
+		spine::Bone* b = m.skeleton->findBone(name.c_str());
 		if (!b) {
 			continue;
 		}
@@ -117,29 +114,29 @@ void SpineRendererComponent::Tick() {
 		b->setY(pos.y);
 	}
 
-	m_skeleton->update(dt);
-	m_skeleton->updateWorldTransform(spine::Physics_Update);
+	m.skeleton->update(dt);
+	m.skeleton->updateWorldTransform(spine::Physics_Update);
 }
 
 #ifdef TOAST_EDITOR
 
 void SpineRendererComponent::RefreshAnimationList() {
-	m_animationNames.clear();
-	m_selectedAnimation = -1;
-	if (!m_skeletonData) {
+	debug.animationNames.clear();
+	debug.selectedAnimation = -1;
+	if (!m.skeletonData) {
 		return;
 	}
-	spine::SkeletonData* data = m_skeletonData->GetSkeletonData();
+	spine::SkeletonData* data = m.skeletonData->GetSkeletonData();
 	if (!data) {
 		return;
 	}
 
 	const spine::Vector<spine::Animation*>& anims = data->getAnimations();
-	m_animationNames.reserve(anims.size());
+	debug.animationNames.reserve(anims.size());
 	for (size_t i = 0; i < anims.size(); ++i) {
 		spine::Animation* a = anims[i];
 		if (a) {
-			m_animationNames.emplace_back(a->getName().buffer());
+			debug.animationNames.emplace_back(a->getName().buffer());
 		}
 	}
 }
@@ -154,64 +151,65 @@ void SpineRendererComponent::Inspector() {
 	}
 	ImGui::Spacing();
 	// Animation controls
-	m_atlasResource.Show();
-	m_skeletonDataResource.Show();
+	m.atlasResource.Show();
+	m.skeletonDataResource.Show();
 
-	bool resourcesChanged = false;
+	bool resources_changed = false;
 	if (ImGui::Button("Load")) {
-		if (m_atlasResource.GetResourcePath().empty() || m_skeletonDataResource.GetResourcePath().empty()) {
+		if (m.atlasResource.GetResourcePath().empty() || m.skeletonDataResource.GetResourcePath().empty()) {
 			TOAST_WARN("SpineRendererComponent::Inspector() Cannot load Spine resources: paths are empty");
 			return;
 		}
 
 		// Persist paths similarly to AtlasRendererComponent
-		m_atlasPath = m_atlasResource.GetResourcePath();
-		m_skeletonDataPath = m_skeletonDataResource.GetResourcePath();
+		m.atlasPath = m.atlasResource.GetResourcePath();
+		m.skeletonDataPath = m.skeletonDataResource.GetResourcePath();
 
-		auto atlas = resource::LoadResource<SpineAtlas>(m_atlasPath);
-		m_skeletonData = resource::LoadResource<SpineSkeletonData>(m_skeletonDataPath, atlas);
-		m_skeleton = std::make_unique<spine::Skeleton>(m_skeletonData->GetSkeletonData());
-		m_animationStateData = std::make_unique<spine::AnimationStateData>(m_skeletonData->GetSkeletonData());
-		m_animationState = std::make_unique<spine::AnimationState>(m_animationStateData.get());
-		m_animationState->setListener(m_eventHandler.get());
+		auto atlas = resource::LoadResource<SpineAtlas>(m.atlasPath);
+		m.skeletonData = resource::LoadResource<SpineSkeletonData>(m.skeletonDataPath, atlas);
+		m.skeleton = std::make_unique<spine::Skeleton>(m.skeletonData->GetSkeletonData());
+		m.animationStateData = std::make_unique<spine::AnimationStateData>(m.skeletonData->GetSkeletonData());
+		m.animationState = std::make_unique<spine::AnimationState>(m.animationStateData.get());
+		m.animationState->setListener(m.eventHandler.get());
 
 		// Tick once
 		double dt = Time::delta();
 
-		m_animationState->update(dt);
-		m_animationState->apply(*m_skeleton);
+		m.animationState->update(dt);
+		m.animationState->apply(*m.skeleton);
 
-		m_skeleton->update(dt);
-		m_skeleton->updateWorldTransform(spine::Physics_None);
+		m.skeleton->update(dt);
+		m.skeleton->updateWorldTransform(spine::Physics_None);
 
-		resourcesChanged = true;
+		resources_changed = true;
 	}
 
-	if (resourcesChanged) {
+	if (resources_changed) {
 		RefreshAnimationList();
-		if (!m_animationNames.empty()) {
-			m_selectedAnimation = 0;
-			m_animationState->setAnimation(0, m_animationNames[m_selectedAnimation].c_str(), m_loopAnimation);
+		if (!debug.animationNames.empty()) {
+			debug.selectedAnimation = 0;
+			m.animationState->setAnimation(0, debug.animationNames[debug.selectedAnimation].c_str(), debug.loopAnimation);
 		}
 	}
 
 	ImGui::Separator();
 	ImGui::Text("Animation Preview");
 
-	if (m_animationNames.empty()) {
+	if (debug.animationNames.empty()) {
 		ImGui::Text("No animations found");
 	} else {
 		// Build preview label
-		const char* current =
-		    (m_selectedAnimation >= 0 && m_selectedAnimation < (int)m_animationNames.size()) ? m_animationNames[m_selectedAnimation].c_str() : "<none>";
+		const char* current = (debug.selectedAnimation >= 0 && debug.selectedAnimation < (int)debug.animationNames.size())
+		                          ? debug.animationNames[debug.selectedAnimation].c_str()
+		                          : "<none>";
 		if (ImGui::BeginCombo("##SpineAnimCombo", current)) {
-			for (int i = 0; i < (int)m_animationNames.size(); ++i) {
-				bool selected = (m_selectedAnimation == i);
-				if (ImGui::Selectable(m_animationNames[i].c_str(), selected)) {
-					m_selectedAnimation = i;
+			for (int i = 0; i < (int)debug.animationNames.size(); ++i) {
+				bool selected = (debug.selectedAnimation == i);
+				if (ImGui::Selectable(debug.animationNames[i].c_str(), selected)) {
+					debug.selectedAnimation = i;
 
-					if (m_animationState && m_skeleton) {
-						m_animationState->setAnimation(0, m_animationNames[i].c_str(), m_loopAnimation);
+					if (m.animationState && m.skeleton) {
+						m.animationState->setAnimation(0, debug.animationNames[i].c_str(), debug.loopAnimation);
 					}
 				}
 				if (selected) {
@@ -221,31 +219,31 @@ void SpineRendererComponent::Inspector() {
 			ImGui::EndCombo();
 		}
 
-		ImGui::Checkbox("Loop", &m_loopAnimation);
+		ImGui::Checkbox("Loop", &debug.loopAnimation);
 		ImGui::SameLine();
 		if (ImGui::Button("Play")) {
-			if (m_animationState && m_selectedAnimation >= 0 && m_selectedAnimation < (int)m_animationNames.size()) {
-				m_animationState->setAnimation(0, m_animationNames[m_selectedAnimation].c_str(), m_loopAnimation);
+			if (m.animationState && debug.selectedAnimation >= 0 && debug.selectedAnimation < (int)debug.animationNames.size()) {
+				m.animationState->setAnimation(0, debug.animationNames[debug.selectedAnimation].c_str(), debug.loopAnimation);
 			}
-			m_playing = true;
+			debug.playing = true;
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Stop")) {
-			if (m_animationState) {
-				m_animationState->clearTrack(0);
+			if (m.animationState) {
+				m.animationState->clearTrack(0);
 			}
-			m_playing = false;
+			debug.playing = false;
 		}
 	}
 
-	if (m_playing) {
+	if (debug.playing) {
 		double dt = Time::delta();
 
-		m_animationState->update(dt);
-		m_animationState->apply(*m_skeleton);
+		m.animationState->update(dt);
+		m.animationState->apply(*m.skeleton);
 
-		m_skeleton->update(dt);
-		m_skeleton->updateWorldTransform(spine::Physics_Update);
+		m.skeleton->update(dt);
+		m.skeleton->updateWorldTransform(spine::Physics_Update);
 	}
 }
 #endif
@@ -260,13 +258,13 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		return;
 	}
 
-	if (!m_skeleton) {
+	if (!m.skeleton) {
 		return;
 	}
 
 	PROFILE_ZONE_C(0xFF0000);    // Red for rendering
 
-	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m_skeleton);
+	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m.skeleton);
 
 	const float z_step_cmd = 0.01f;       // inter-command z offset step
 	const float z_step_vertex = 1e-4f;    // per-triangle/vertex z offset step
@@ -275,24 +273,24 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 	const glm::mat4 model = GetWorldMatrix();
 	const glm::mat4 mvp = precomputed_mat * model;
 
-	m_shader->Use();
-	m_shader->Set("transform", mvp);
+	m.shader->Use();
+	m.shader->Set("transform", mvp);
 
 	// Reuse temporary buffers
-	m_tempVerts.clear();
-	m_tempIndices.clear();
+	m.tempVerts.clear();
+	m.tempIndices.clear();
 
 	// First pass: collect all vertices to compute bounding box for frustum culling
 	{
 		spine::RenderCommand* cmd = command;
-		size_t totalVerts = 0;
+		size_t total_verts = 0;
 		while (cmd) {
-			totalVerts += cmd->numVertices;
+			total_verts += cmd->numVertices;
 			cmd = cmd->next;
 		}
 
 		// Build temporary vertex positions for bounding box computation
-		m_tempVerts.reserve(totalVerts);
+		m.tempVerts.reserve(total_verts);
 		cmd = command;
 		while (cmd) {
 			for (int i = 0; i < cmd->numVertices; ++i) {
@@ -300,91 +298,91 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 				v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
 				v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], cmd->uvs[(i * 2) + 1]);
 				v.colorABGR = cmd->colors[i];
-				m_tempVerts.push_back(v);
+				m.tempVerts.push_back(v);
 			}
 			cmd = cmd->next;
 		}
 
 		// Compute dynamic bounding box
-		m_dynamicMesh.ComputeSpineBoundingBox(m_tempVerts.data(), m_tempVerts.size());
+		m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
 
 		// Frustum culling using the dynamic AABB
-		const auto& frustumPlanes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes();
-		if (!OclussionVolume::isTransformedAABBOnPlanes(m_dynamicMesh.dynamicBoundingBox(), model)) {
+		// const auto& frustum_planes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes(); // TODO: dario forgot about this or smth
+		if (!OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), model)) {
 			return;    // Outside frustum, skip rendering
 		}
 	}
 
 	// Reset buffers for actual rendering pass
-	m_tempVerts.clear();
-	m_tempIndices.clear();
+	m.tempVerts.clear();
+	m.tempIndices.clear();
 
 	// cache last bound texture to avoid redundant binds
-	m_lastBoundTexture = 0;
+	m.lastBoundTexture = 0;
 
 	auto flush_batch = [&]() {
-		if (m_tempIndices.empty()) {
+		if (m.tempIndices.empty()) {
 			return;
 		}
 		// Update GPU buffer
-		m_dynamicMesh.UpdateDynamicSpine(m_tempVerts.data(), m_tempVerts.size(), m_tempIndices.data(), m_tempIndices.size());
+		m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
 		// Draw  mesh
-		m_dynamicMesh.DrawDynamicSpine(m_tempIndices.size());
+		m.dynamicMesh.DrawDynamicSpine(m.tempIndices.size());
 		// clear for next batch
-		m_tempVerts.clear();
-		m_tempIndices.clear();
+		m.tempVerts.clear();
+		m.tempIndices.clear();
 	};
 
 	while (command) {
-		if (m_tempVerts.capacity() < static_cast<size_t>(command->numVertices)) {
-			m_tempVerts.reserve(static_cast<size_t>(command->numVertices));
+		if (m.tempVerts.capacity() < static_cast<size_t>(command->numVertices)) {
+			m.tempVerts.reserve(static_cast<size_t>(command->numVertices));
 		}
-		if (m_tempIndices.capacity() < static_cast<size_t>(command->numIndices)) {
-			m_tempIndices.reserve(static_cast<size_t>(command->numIndices));
+		if (m.tempIndices.capacity() < static_cast<size_t>(command->numIndices)) {
+			m.tempIndices.reserve(static_cast<size_t>(command->numIndices));
 		}
 
 		// Determine command texture
 		std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(command->texture);
 		unsigned int tex_id = tex_ptr->get()->id();
 
-		if (tex_id != m_lastBoundTexture && !m_tempIndices.empty()) {
+		if (tex_id != m.lastBoundTexture && !m.tempIndices.empty()) {
 			flush_batch();
 		}
 
 		// bind texture if needed
-		if (tex_id != m_lastBoundTexture) {
+		if (tex_id != m.lastBoundTexture) {
 			if (tex_id != 0) {
 				tex_ptr->get()->Bind(0);
 			}
-			m_lastBoundTexture = tex_id;
+			m.lastBoundTexture = tex_id;
 		}
 
 		// append vertices
-		size_t start_vert = m_tempVerts.size();
-		m_tempVerts.resize(start_vert + command->numVertices);
+		size_t start_vert = m.tempVerts.size();
+		m.tempVerts.resize(start_vert + command->numVertices);
 		for (int i = 0; i < command->numVertices; ++i) {
-			auto& v = m_tempVerts[start_vert + i];
+			auto& v = m.tempVerts[start_vert + i];
 			v.position = glm::vec3(command->positions[(i * 2) + 0], command->positions[(i * 2) + 1], 0.0f);
 			v.texCoord = glm::vec2(command->uvs[(i * 2) + 0], command->uvs[(i * 2) + 1]);
 			v.colorABGR = command->colors[i];
 		}
 
 		// append indices
-		size_t start_idx = m_tempIndices.size();
-		m_tempIndices.resize(start_idx + command->numIndices);
+		size_t start_idx = m.tempIndices.size();
+		m.tempIndices.resize(start_idx + command->numIndices);
 		for (int i = 0; i < command->numIndices; ++i) {
-			m_tempIndices[start_idx + i] = static_cast<uint16_t>(command->indices[i] + start_vert);
+			m.tempIndices[start_idx + i] = static_cast<uint16_t>(command->indices[i] + start_vert);
 		}
 
 		// Per-triangle Z layering
-		for (size_t i = 0; i + 2 < command->numIndices; i += 3) {
+		for (int i = 0; i + 2 < command->numIndices; i += 3) {
 			uint16_t ia = static_cast<uint16_t>(command->indices[i + 0] + start_vert);
 			uint16_t ib = static_cast<uint16_t>(command->indices[i + 1] + start_vert);
 			uint16_t ic = static_cast<uint16_t>(command->indices[i + 2] + start_vert);
 			float z = z_offset;
-			m_tempVerts[ia].position.z = z;
-			m_tempVerts[ib].position.z = z;
-			m_tempVerts[ic].position.z = z;
+			m.tempVerts[ia].position.z = z;
+			m.tempVerts[ib].position.z = z;
+			m.tempVerts[ic].position.z = z;
 			z_offset += z_step_vertex;
 		}
 
@@ -402,153 +400,152 @@ void SpineRendererComponent::Load(json_t j, bool force_create) {
 	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 	TransformComponent::Load(j, force_create);
 	if (j.contains("atlasResourcePath")) {
-		m_atlasPath = j.at("atlasResourcePath").get<std::string>();
+		m.atlasPath = j.at("atlasResourcePath").get<std::string>();
 	}
 	if (j.contains("skeletonDataResourcePath")) {
-		m_skeletonDataPath = j.at("skeletonDataResourcePath").get<std::string>();
+		m.skeletonDataPath = j.at("skeletonDataResourcePath").get<std::string>();
 	}
 }
 
 json_t SpineRendererComponent::Save() const {
 	PROFILE_ZONE_C(0x00FF00);    // Green for serialization
 	json_t j = TransformComponent::Save();
-	j["atlasResourcePath"] = m_atlasPath;
-	j["skeletonDataResourcePath"] = m_skeletonDataPath;
+	j["atlasResourcePath"] = m.atlasPath;
+	j["skeletonDataResourcePath"] = m.skeletonDataPath;
 	return j;
 }
 
-void SpineRendererComponent::PlayAnimation(const std::string_view& name, bool loop, int track) const {
-	m_animationState->setAnimation(track, name.data(), loop);
+void SpineRendererComponent::PlayAnimation(std::string_view name, bool loop, int track) const {
+	m.animationState->setAnimation(track, name.data(), loop);
 }
 
 void SpineRendererComponent::StopAnimation(int track) const {
-	m_animationState->clearTrack(track);
+	m.animationState->clearTrack(track);
 }
 
 void SpineRendererComponent::NextCrossFadeToDefault(float duration, int track) const {
-	m_animationState->addEmptyAnimation(track, duration, 0);
+	m.animationState->addEmptyAnimation(track, duration, 0);
 }
 
 void SpineRendererComponent::CrossFadeToDefault(float duration, int track) const {
-	m_animationState->setEmptyAnimation(track, duration);
+	m.animationState->setEmptyAnimation(track, duration);
 }
 
-glm::vec2 SpineRendererComponent::GetBoneLocalPosition(const std::string_view& boneName) const {
-	if (!m_skeleton) {
+glm::vec2 SpineRendererComponent::GetBoneLocalPosition(std::string_view bone_name) const {
+	if (!m.skeleton) {
 		return glm::vec2(0.0f);
 	}
-	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	spine::Bone* bone = m.skeleton->findBone(bone_name.data());
 	if (!bone) {
-		TOAST_WARN("SpineRendererComponent::GetBoneLocalPosition() Bone \"{0}\" not found", boneName);
+		TOAST_WARN("SpineRendererComponent::GetBoneLocalPosition() Bone \"{0}\" not found", bone_name);
 		return glm::vec2(0.0f);
 	}
-	return glm::vec2(bone->getX(), bone->getY());
+	return { bone->getX(), bone->getY() };
 }
 
-void SpineRendererComponent::SetBoneLocalPosition(const std::string_view& boneName, const glm::vec2& position) const {
-	if (!m_skeleton) {
+void SpineRendererComponent::SetBoneLocalPosition(std::string_view bone_name, const glm::vec2& position) const {
+	if (!m.skeleton) {
 		return;
 	}
-	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	spine::Bone* bone = m.skeleton->findBone(bone_name.data());
 	if (!bone) {
-		TOAST_WARN("SpineRendererComponent::SetBoneLocalPosition() Bone \"{0}\" not found", boneName);
+		TOAST_WARN("SpineRendererComponent::SetBoneLocalPosition() Bone \"{0}\" not found", bone_name);
 		return;
 	}
 	// Apply immediately
 	bone->setX(position.x);
 	bone->setY(position.y);
 
-	m_boneLocalOverrides[std::string(boneName)] = position;
+	m.boneLocalOverrides[std::string(bone_name)] = position;
 }
 
-void SpineRendererComponent::ClearBoneLocalPositionOverride(const std::string_view& boneName) const {
-	m_boneLocalOverrides.erase(std::string(boneName));
+void SpineRendererComponent::ClearBoneLocalPositionOverride(std::string_view bone_name) const {
+	m.boneLocalOverrides.erase(std::string(bone_name));
 }
 
 void SpineRendererComponent::ClearAllBoneLocalPositionOverrides() const {
-	m_boneLocalOverrides.clear();
+	m.boneLocalOverrides.clear();
 }
 
-float SpineRendererComponent::GetBoneLocalRotation(const std::string_view& boneName) const {
-	if (!m_skeleton) {
+float SpineRendererComponent::GetBoneLocalRotation(std::string_view bone_name) const {
+	if (!m.skeleton) {
 		return 0.0f;
 	}
-	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	spine::Bone* bone = m.skeleton->findBone(bone_name.data());
 	if (!bone) {
-		TOAST_WARN("SpineRendererComponent::GetBoneLocalRotation() Bone \"{0}\" not found", boneName);
+		TOAST_WARN("SpineRendererComponent::GetBoneLocalRotation() Bone \"{0}\" not found", bone_name);
 		return 0.0f;
 	}
 	return bone->getRotation();
 }
 
-void SpineRendererComponent::SetBoneLocalRotation(const std::string_view& boneName, float rotationDegrees) const {
-	if (!m_skeleton) {
+void SpineRendererComponent::SetBoneLocalRotation(std::string_view bone_name, float rotation_degrees) const {
+	if (!m.skeleton) {
 		return;
 	}
-	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	spine::Bone* bone = m.skeleton->findBone(bone_name.data());
 	if (!bone) {
-		TOAST_WARN("SpineRendererComponent::SetBoneLocalRotation() Bone \"{0}\" not found", boneName);
+		TOAST_WARN("SpineRendererComponent::SetBoneLocalRotation() Bone \"{0}\" not found", bone_name);
 		return;
 	}
-	bone->setRotation(rotationDegrees);
+	bone->setRotation(rotation_degrees);
 }
 
-float SpineRendererComponent::GetBoneWorldRotation(const std::string_view& boneName) {
-	if (!m_skeleton) {
+float SpineRendererComponent::GetBoneWorldRotation(std::string_view bone_name) const {
+	if (!m.skeleton) {
 		return 0.0f;
 	}
-	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	spine::Bone* bone = m.skeleton->findBone(bone_name.data());
 	if (!bone) {
-		TOAST_WARN("SpineRendererComponent::GetBoneWorldRotation() Bone \"{0}\" not found", boneName);
+		TOAST_WARN("SpineRendererComponent::GetBoneWorldRotation() Bone \"{0}\" not found", bone_name);
 		return 0.0f;
 	}
 	return bone->getWorldRotationX();
 }
 
-void SpineRendererComponent::SetBoneWorldRotation(const std::string_view& boneName, float rotationDegrees) {
-	if (!m_skeleton) {
+void SpineRendererComponent::SetBoneWorldRotation(std::string_view bone_name, float rotation_degrees) {    // NOLINT
+	if (!m.skeleton) {
 		return;
 	}
-	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	spine::Bone* bone = m.skeleton->findBone(bone_name.data());
 	if (!bone) {
-		TOAST_WARN("SpineRendererComponent::SetBoneWorldRotation() Bone \"{0}\" not found", boneName);
+		TOAST_WARN("SpineRendererComponent::SetBoneWorldRotation() Bone \"{0}\" not found", bone_name);
 		return;
 	}
 
 	// To set world rotation, we need to convert it to local rotation based on parent's world rotation
-	float parentWorldRot = 0.0f;
+	float parent_world_rot = 0.0f;
 	if (bone->getParent()) {
-		parentWorldRot = bone->getParent()->getWorldRotationX();
+		parent_world_rot = bone->getParent()->getWorldRotationX();
 	}
-	float localRot = rotationDegrees - parentWorldRot;
-	bone->setRotation(localRot);
+	float local_rot = rotation_degrees - parent_world_rot;
+	bone->setRotation(local_rot);
 }
 
-glm::vec2 SpineRendererComponent::GetBoneWorldPosition(const std::string_view& boneName) {
-	if (!m_skeleton) {
+glm::vec2 SpineRendererComponent::GetBoneWorldPosition(std::string_view bone_name) {
+	if (!m.skeleton) {
 		return glm::vec2(0.0f);
 	}
-	spine::Bone* bone = m_skeleton->findBone(boneName.data());
+	spine::Bone* bone = m.skeleton->findBone(bone_name.data());
 	if (!bone) {
-		TOAST_WARN("SpineRendererComponent::GetBoneWorldPosition() Bone \"{0}\" not found", boneName);
+		TOAST_WARN("SpineRendererComponent::GetBoneWorldPosition() Bone \"{0}\" not found", bone_name);
 		return glm::vec2(0.0f);
 	}
 
-	const glm::vec4 spineLocal(bone->getWorldX(), bone->getWorldY(), 0.0f, 1.0f);
-	const glm::vec4 worldPos = GetWorldMatrix() * spineLocal;
-	return glm::vec2(worldPos.x, worldPos.y);
+	const glm::vec4 spine_local(bone->getWorldX(), bone->getWorldY(), 0.0f, 1.0f);
+	const glm::vec4 world_pos = GetWorldMatrix() * spine_local;
+	return { world_pos.x, world_pos.y };
 }
 
-glm::vec2 SpineRendererComponent::WorldPositionToSpineLocal(const glm::vec2& worldPos) {
-	const glm::vec4 wp(worldPos.x, worldPos.y, 0.0f, 1.0f);
-	const glm::vec4 spineLocal = glm::inverse(GetWorldMatrix()) * wp;
-	return glm::vec2(spineLocal.x, spineLocal.y);
+glm::vec2 SpineRendererComponent::WorldPositionToSpineLocal(const glm::vec2& world_pos) {
+	const glm::vec4 wp(world_pos.x, world_pos.y, 0.0f, 1.0f);
+	const glm::vec4 spine_local = glm::inverse(GetWorldMatrix()) * wp;
+	return { spine_local.x, spine_local.y };
 }
 
 void SpineRendererComponent::OnAnimationEvent(
-    const std::string_view& animationName, int track, const std::string_view& eventName, int intValue, float floatValue,
-    const std::string_view& stringValue
+    std::string_view animation_name, int track, const std::string_view& event_name, int int_value, float float_value, std::string_view string_value
 ) {
-	event::Send(new SpineEvent(id(), animationName, track, eventName, intValue, floatValue, stringValue));
+	event::Send(new SpineEvent(id(), animation_name, track, event_name, int_value, float_value, string_value));
 	// TOAST_TRACE("Spine Event Sent!");
 }

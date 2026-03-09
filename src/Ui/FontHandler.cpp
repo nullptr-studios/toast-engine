@@ -4,6 +4,7 @@
 
 #include <Toast/Ui/FontHandler.hpp>
 #include <Ultralight/platform/FontLoader.h>
+#include <cstring>
 
 using namespace ultralight;
 
@@ -15,7 +16,7 @@ auto UiFontLoader::get() -> UiFontLoader& {
 }
 
 void UiFontLoader::DestroyBuffer(void* user_data [[maybe_unused]], void* data) {
-	// delete[] static_cast<char*>(data);
+	delete[] static_cast<char*>(data);
 }
 
 [[nodiscard]]
@@ -63,11 +64,13 @@ RefPtr<FontFile> UiFontLoader::Load(const String& family, int weight, bool itali
 	}
 	filename += ".ttf";
 
-	auto file = resource::Open(filename);
-	if (file.has_value()) {
+	std::vector<uint8_t> font_data;
+	if (resource::Open(filename, font_data)) {
 		TOAST_TRACE("[Font Loader] Loading Font ... {}", filename);
-		// auto buffer = Buffer::Create(file->data(), file->size(), nullptr, &UiFontLoader::DestroyBuffer);
-		return FontFile::Create(filename.data());
+		auto* buf = new char[font_data.size()];
+		std::memcpy(buf, font_data.data(), font_data.size());
+		auto buffer = Buffer::Create(buf, font_data.size(), nullptr, &UiFontLoader::DestroyBuffer);
+		return FontFile::Create(buffer);
 	}
 	TOAST_WARN("Font Not Found: {} falling back onto platform", filename);
 	auto* font_loader = ultralight::GetPlatformFontLoader();

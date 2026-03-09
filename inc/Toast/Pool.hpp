@@ -48,7 +48,7 @@ public:
 		}
 		obj->enabled(false);
 		if constexpr (std::is_base_of_v<toast::Actor, T>) {
-			obj->transform()->position({ 0.0f, 0.0f, 0.0f });
+			obj->transform()->position({ 1000.0f, 1000.0f, 0.0f });
 		}
 		free_objects.emplace(obj);
 	}
