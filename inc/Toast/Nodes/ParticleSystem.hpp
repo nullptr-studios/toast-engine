@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "Toast/Components/TransformComponent.hpp"
-#include "Toast/Objects/Actor.hpp"
+#include "Toast/SubNodes/TransformSubNode.hpp"
+#include "Toast/Nodes/Node3D.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/Texture.hpp"

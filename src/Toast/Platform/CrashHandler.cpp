@@ -207,7 +207,7 @@ LONG WINAPI TopLevelExceptionFilter(EXCEPTION_POINTERS* pExceptionPointers) {
 
 	// DEBUG build:
 	if (g_hUiReadyEvent) {
-		WaitForSingleObject(g_hUiReadyEvent, 2000);
+		WaitForSingleNode(g_hUiReadyEvent, 2000);
 	}
 
 	DWORD uiTid = g_uiThreadId.load();
@@ -219,7 +219,7 @@ LONG WINAPI TopLevelExceptionFilter(EXCEPTION_POINTERS* pExceptionPointers) {
 	DWORD timeout = 300000;    // 5 minutes auto close
 
 	if (g_hUiFinishedEvent) {
-		WaitForSingleObject(g_hUiFinishedEvent, timeout);
+		WaitForSingleNode(g_hUiFinishedEvent, timeout);
 	} else {
 		Sleep(500);
 	}
@@ -283,7 +283,7 @@ void PopulateBacktraceList(HWND hList) {
 	HDC hdc = GetDC(hList);
 	HFONT old = nullptr;
 	if (g_hMonoFont) {
-		old = static_cast<HFONT>(SelectObject(hdc, g_hMonoFont));
+		old = static_cast<HFONT>(SelectNode(hdc, g_hMonoFont));
 	}
 
 	int maxWidth = 0;
@@ -306,7 +306,7 @@ void PopulateBacktraceList(HWND hList) {
 	SendMessageW(hList, LB_SETHORIZONTALEXTENT, static_cast<WPARAM>(maxWidth + 40), 0);
 
 	if (old) {
-		SelectObject(hdc, old);
+		SelectNode(hdc, old);
 	}
 	ReleaseDC(hList, hdc);
 
@@ -528,7 +528,7 @@ LRESULT CALLBACK CrashWndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			}
 			// clean font
 			if (g_hMonoFont) {
-				DeleteObject(g_hMonoFont);
+				DeleteNode(g_hMonoFont);
 				g_hMonoFont = nullptr;
 			}
 			PostQuitMessage(0);

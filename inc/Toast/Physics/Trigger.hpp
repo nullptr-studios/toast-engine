@@ -4,20 +4,20 @@
 
 #pragma once
 #include "ColliderFlags.hpp"
-#include "Toast/Objects/Actor.hpp"
+#include "Toast/Nodes/Node3D.hpp"
 #include "Toast/Physics/ColliderFlags.hpp"
 
 #include <glm/glm.hpp>
 
 namespace toast {
-class Object;
+class Node;
 }
 
 namespace physics {
 
 class Rigidbody;
 
-class Trigger : public toast::Actor {
+class Trigger : public toast::Node3D {
 public:
 	REGISTER_TYPE(Trigger);
 
@@ -31,9 +31,9 @@ public:
 	void EditorTick() override;
 #endif
 
-	virtual void OnEnter(toast::Object*) { }
+	virtual void OnEnter(toast::Node*) { }
 
-	virtual void OnExit(toast::Object*) { }
+	virtual void OnExit(toast::Node*) { }
 
 	void AddFlag(ColliderFlags flag);
 	void RemoveFlag(ColliderFlags flag);
@@ -41,8 +41,8 @@ public:
 
 	// This needs to be public to be able to override without needing to create
 	// a child class -- OnEnter and OnExit will stop working tho -x
-	std::function<void(toast::Object*)> enterCallback;
-	std::function<void(toast::Object*)> exitCallback;
+	std::function<void(toast::Node*)> enterCallback;
+	std::function<void(toast::Node*)> exitCallback;
 	std::list<Rigidbody*> rigidbodies;    ///< Used to avoid a rigidbody triggering twice
 
 	struct M {

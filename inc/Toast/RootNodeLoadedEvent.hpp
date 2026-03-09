@@ -1,4 +1,4 @@
-/// @file SceneLoadedEvent.hpp
+/// @file RootNodeLoadedEvent.hpp
 /// @date 2/10/2025
 /// @author Xein
 /// @brief An event sent when the scene finishes being loaded
@@ -11,17 +11,17 @@
 
 namespace toast {
 
-struct SceneLoadedEvent final : public event::Event<SceneLoadedEvent> {
-	SceneLoadedEvent(const unsigned id, std::string_view name) : id(id), name(name) { }
+struct RootNodeLoadedEvent final : public event::Event<RootNodeLoadedEvent> {
+	RootNodeLoadedEvent(const unsigned id, std::string_view name) : id(id), name(name) { }
 
 	unsigned id;
 	std::string name;
 };
 
-class BadScene : std::exception {
+class BadRootNode : std::exception {
 public:
-	BadScene(unsigned id) : m_id(id) {
-		m_error = std::format("Scene {0} couldn't be loaded correctly", m_id);
+	BadRootNode(unsigned id) : m_id(id) {
+		m_error = std::format("RootNode {0} couldn't be loaded correctly", m_id);
 	}
 
 	[[nodiscard]]

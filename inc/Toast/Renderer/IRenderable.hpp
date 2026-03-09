@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "Toast/Components/TransformComponent.hpp"
+#include "Toast/SubNodes/TransformSubNode.hpp"
 
 #include <glm/glm.hpp>
 
@@ -20,8 +20,8 @@ namespace renderer {
  * @class IRenderable
  * @brief Interface for objects that can be rendered by the rendering system.
  *
- * IRenderable extends TransformComponent to provide rendering capabilities.
- * Objects implementing this interface are added to the renderer's queue
+ * IRenderable extends TransformSubNode to provide rendering capabilities.
+ * Nodes implementing this interface are added to the renderer's queue
  * and drawn during the geometry pass.
  *
  * @par Render Order:
@@ -50,9 +50,9 @@ namespace renderer {
  * when destroyed. Use AddRenderable() and RemoveRenderable() on the
  * renderer for manual control.
  *
- * @see IRendererBase, TransformComponent, Material
+ * @see IRendererBase, TransformSubNode, Material
  */
-class IRenderable : public toast::TransformComponent {
+class IRenderable : public toast::TransformSubNode {
 public:
 	~IRenderable() override = default;
 

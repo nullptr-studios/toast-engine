@@ -1,9 +1,9 @@
-/// @file AtlasRendererComponent.hpp
+/// @file AtlasRendererSubNode.hpp
 /// @author dario
 /// @date 21/11/2025.
 
 #pragma once
-#include "Toast/Components/AtlasSpriteComponent.hpp"
+#include "Toast/SubNodes/AtlasSpriteSubNode.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/Mesh.hpp"
@@ -15,9 +15,9 @@
 #include <string>
 #include <vector>
 
-class AtlasRendererComponent : public IRenderable {
+class AtlasRendererSubNode : public IRenderable {
 public:
-	REGISTER_TYPE(AtlasRendererComponent);
+	REGISTER_TYPE(AtlasRendererSubNode);
 
 	void Init() override;
 
@@ -37,8 +37,8 @@ public:
 
 	// Sprite management
 	void RefreshSprites();
-	void RemoveSpriteFromCache(toast::AtlasSpriteComponent* sprite);
-	void AddSpriteToCache(toast::AtlasSpriteComponent* sprite);
+	void RemoveSpriteFromCache(toast::AtlasSpriteSubNode* sprite);
+	void AddSpriteToCache(toast::AtlasSpriteSubNode* sprite);
 	spine::AtlasRegion* FindRegion(std::string_view region_name) const;
 	std::string GenerateSpriteName(std::string_view region_name);
 
@@ -70,7 +70,7 @@ private:
 		std::vector<std::string> regionNames;
 		int selectedRegion = -1;
 
-		std::vector<toast::AtlasSpriteComponent*> spriteCache;
+		std::vector<toast::AtlasSpriteSubNode*> spriteCache;
 		bool spriteCacheDirty = true;
 	} m;
 

@@ -2,7 +2,7 @@
 
 #include "Physics/PhysicsSystem.hpp"
 #include "Toast/Log.hpp"
-#include "Toast/Objects/Scene.hpp"
+#include "Toast/Nodes/RootNode.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/SimulateWorldEvent.hpp"
@@ -33,9 +33,9 @@ World::World() {
 	m_instance = this;
 
 	// Event handling
-	m.listener = std::make_unique<event::ListenerComponent>();
-	m.listener->Subscribe<SceneLoadedEvent>(
-	    [this](const SceneLoadedEvent* e) {
+	m.listener = std::make_unique<event::ListenerSubNode>();
+	m.listener->Subscribe<RootNodeLoadedEvent>(
+	    [this](const RootNodeLoadedEvent* e) {
 		    // Check if scene still exists
 		    if (!m.children.Has(e->id)) {
 			    return true;
@@ -43,15 +43,15 @@ World::World() {
 
 		    auto* scene = m.children.Get(e->id);
 		    if (!scene) {
-			    return true;    // Scene is being destroyed
+			    return true;    // RootNode is being destroyed
 		    }
 
 		    // set the scene as loaded in the list
-		    m.tickableScenes[e->id] = dynamic_cast<Scene*>(scene);
+		    m.tickableRootNodes[e->id] = dynamic_cast<RootNode*>(scene);
 
 #ifdef TOAST_EDITOR
 		    {
-			    auto* scene_ptr = static_cast<Scene*>(scene);
+			    auto* scene_ptr = static_cast<RootNode*>(scene);
 			    scene_ptr->_LoadTextures();
 		    }
 #endif
@@ -69,38 +69,38 @@ World::World() {
 		    if (simulate) {
 			    // Logic for play logic
 			    for (auto& s : m.children | std::views::values) {
-				    auto* scene = static_cast<Scene*>(s.get());
+				    auto* scene = static_cast<RootNode*>(s.get());
 				    s->SoftSave();
 				    s->RefreshBegin(true);
-				    m.loadedScenes.insert({ s->id(), scene->json_path() });
-				    m.loadedScenesStatus.insert({ s->id(), s->enabled() });
+				    m.loadedRootNodes.insert({ s->id(), scene->json_path() });
+				    m.loadedRootNodesStatus.insert({ s->id(), s->enabled() });
 			    }
 
 			    physics::PhysicsSystem::start();
 		    } else {
 			    // Logic for pause logic
 			    physics::PhysicsSystem::stop();
-			    m.editorScene->_Begin();    // Rerun to set editor camera
+			    m.editorRootNode->_Begin();    // Rerun to set editor camera
 
 			    for (auto& s : m.children | std::views::values) {
-				    if (!m.loadedScenes.contains(s->id())) {
+				    if (!m.loadedRootNodes.contains(s->id())) {
 					    // If the scene didn't exist on runtime, we remove it
-					    UnloadScene(s->id());
+					    UnloadRootNode(s->id());
 					    continue;
 				    }
 
 				    s->SoftLoad();
-				    s->enabled(m.loadedScenesStatus[s->id()]);
-				    m.loadedScenes.erase(s->id());
+				    s->enabled(m.loadedRootNodesStatus[s->id()]);
+				    m.loadedRootNodes.erase(s->id());
 			    }
 
-			    for (const auto& [_, path] : m.loadedScenes) {
+			    for (const auto& [_, path] : m.loadedRootNodes) {
 				    // Create again the remaining scenes
-				    LoadSceneSync(path);
+				    LoadRootNodeSync(path);
 			    }
 
-			    m.loadedScenes.clear();
-			    m.loadedScenesStatus.clear();
+			    m.loadedRootNodes.clear();
+			    m.loadedRootNodesStatus.clear();
 		    }
 
 		    return true;
@@ -121,11 +121,11 @@ World::~World() {
 	delete m.threadPool;
 }
 
-Object* World::New(std::string_view type, const std::optional<std::string>& name) {
+Node* World::New(std::string_view type, const std::optional<std::string>& name) {
 	auto* world = Instance();
 	std::string obj_name {};
 
-	auto reg = Object::getRegistry();
+	auto reg = Node::getRegistry();
 	auto* obj = reg[type.data()](world->m.children, std::nullopt);
 	auto obj_id = obj->id();
 
@@ -139,9 +139,9 @@ Object* World::New(std::string_view type, const std::optional<std::string>& name
 
 	// Set values to the parent() and scene() functions
 	obj->m_parent = nullptr;
-	obj->m_scene = dynamic_cast<Scene*>(obj);
+	obj->m_scene = dynamic_cast<RootNode*>(obj);
 	obj->children.parent(obj);
-	obj->children.scene(dynamic_cast<Scene*>(obj));
+	obj->children.scene(dynamic_cast<RootNode*>(obj));
 
 	// Run load and init
 	obj->_Init();
@@ -149,15 +149,15 @@ Object* World::New(std::string_view type, const std::optional<std::string>& name
 	// Schedule the Begin
 	ScheduleBegin(obj);
 
-	if (obj->base_type() == SceneT) {
-		auto* e = new SceneLoadedEvent { obj_id, obj_name };
+	if (obj->base_type() == RootNodeT) {
+		auto* e = new RootNodeLoadedEvent { obj_id, obj_name };
 		event::Send(reinterpret_cast<event::IEvent*>(e));
 	}
 
 	return obj;
 }
 
-auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
+auto World::LoadRootNode(std::string_view path) -> std::future<unsigned> {
 	std::shared_ptr<std::promise<unsigned>> promis = std::make_shared<std::promise<unsigned>>();
 	std::future<unsigned> futur = promis->get_future();
 	std::string p { path };
@@ -178,7 +178,7 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 		}
 
 		if (j.empty() || !j.contains("format") || j["format"] != "scene") {
-			TOAST_ERROR("Scene \"{0}\" is empty or invalid", path);
+			TOAST_ERROR("RootNode \"{0}\" is empty or invalid", path);
 			return;
 		}
 
@@ -189,8 +189,8 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 			// Creating scene from the registry
 			// Force string copy to avoid string_view references to JSON
 			const std::string scene_type = j["type"].get<std::string>();
-			auto create_registry = Object::getRegistry();
-			auto* scene = static_cast<Scene*>(create_registry[scene_type](world->m.children, std::nullopt));
+			auto create_registry = Node::getRegistry();
+			auto* scene = static_cast<RootNode*>(create_registry[scene_type](world->m.children, std::nullopt));
 			scene_id = scene->id();
 
 			// Add name to the scene - force copy
@@ -213,14 +213,14 @@ auto World::LoadScene(std::string_view path) -> std::future<unsigned> {
 			ScheduleBegin(scene);
 		}
 
-		auto* e = new SceneLoadedEvent { scene_id, scene_name };
+		auto* e = new RootNodeLoadedEvent { scene_id, scene_name };
 		event::Send(reinterpret_cast<event::IEvent*>(e));
 		promis->set_value(scene_id);
 	});
 	return futur;
 }
 
-void World::LoadSceneSync(std::string_view path) {
+void World::LoadRootNodeSync(std::string_view path) {
 	PROFILE_ZONE_C(0x0080FF);    // Light blue for sync scene loading
 	std::string p { path };
 
@@ -234,7 +234,7 @@ void World::LoadSceneSync(std::string_view path) {
 	}
 
 	if (j.empty() || !j.contains("format") || j["format"] != "scene") {
-		TOAST_ERROR("Scene \"{0}\" is empty or invalid", path);
+		TOAST_ERROR("RootNode \"{0}\" is empty or invalid", path);
 		return;
 	}
 
@@ -245,8 +245,8 @@ void World::LoadSceneSync(std::string_view path) {
 		// Creating scene from the registry
 		// Force string copy to avoid string_view references to JSON
 		const std::string scene_type = j["type"].get<std::string>();
-		auto create_registry = Object::getRegistry();
-		auto* scene = static_cast<Scene*>(create_registry[scene_type](world->m.children, std::nullopt));
+		auto create_registry = Node::getRegistry();
+		auto* scene = static_cast<RootNode*>(create_registry[scene_type](world->m.children, std::nullopt));
 		scene_id = scene->id();
 
 		std::string name = j["name"].get<std::string>();
@@ -270,11 +270,11 @@ void World::LoadSceneSync(std::string_view path) {
 		ScheduleBegin(scene);
 	}
 
-	auto* e = new SceneLoadedEvent { scene_id, scene_name };
+	auto* e = new RootNodeLoadedEvent { scene_id, scene_name };
 	event::Send(reinterpret_cast<event::IEvent*>(e));
 }
 
-void World::UnloadScene(const unsigned id) {
+void World::UnloadRootNode(const unsigned id) {
 	auto* w = Instance();
 
 	// Check if scene still exists
@@ -285,7 +285,7 @@ void World::UnloadScene(const unsigned id) {
 	// Get scene safely
 	auto* scene = w->m.children.Get(id);
 	if (!scene) {
-		return;    // Scene doesn't exist or is being destroyed
+		return;    // RootNode doesn't exist or is being destroyed
 	}
 
 	// Disable the scene manually
@@ -294,32 +294,32 @@ void World::UnloadScene(const unsigned id) {
 	}
 
 	// Remove from tickables immediately so it stops being processed
-	w->m.tickableScenes.erase(id);
+	w->m.tickableRootNodes.erase(id);
 
 	// Just schedule for destruction
 	toast::World::ScheduleDestroy(scene);
 }
 
-void World::UnloadScene(std::string_view name) {
-	auto* const obj = dynamic_cast<Scene*>(Get(name));
+void World::UnloadRootNode(std::string_view name) {
+	auto* const obj = dynamic_cast<RootNode*>(Get(name));
 	if (!obj) {
-		TOAST_ERROR("Object {0} is not a Scene", name);
+		TOAST_ERROR("Node {0} is not a RootNode", name);
 		return;
 	}
-	UnloadScene(obj->id());
+	UnloadRootNode(obj->id());
 }
 
-void World::EnableScene(std::string_view name) {
+void World::EnableRootNode(std::string_view name) {
 	auto* w = Instance();
 	auto* scene = w->m.children.Get(name);
 	if (!scene) {
 		TOAST_ERROR("Tried to enable scene \"{0}\" but it doesn't exist", name);
 		return;
 	}
-	EnableScene(scene->id());
+	EnableRootNode(scene->id());
 }
 
-void World::EnableScene(unsigned id) {
+void World::EnableRootNode(unsigned id) {
 	auto* w = Instance();
 	if (!w->m.children.Has(id)) {
 		TOAST_ERROR("Tried to activate scene {0} but it doesn't exist", id);
@@ -328,13 +328,13 @@ void World::EnableScene(unsigned id) {
 
 	// We will throw an exception if the scene hasn't finished loaded so that
 	// anyone can implement a custom action for when that happens (i.e. loading screen)
-	if (!w->m.tickableScenes.contains(id)) {
-		throw BadScene(id);
+	if (!w->m.tickableRootNodes.contains(id)) {
+		throw BadRootNode(id);
 	}
 
 	auto* scene = w->m.children.Get(id);
 	if (!scene) {
-		return;    // Scene is being destroyed
+		return;    // RootNode is being destroyed
 	}
 
 	if (scene->enabled()) {
@@ -345,17 +345,17 @@ void World::EnableScene(unsigned id) {
 	scene->enabled(true);
 }
 
-void World::DisableScene(std::string_view name) {
+void World::DisableRootNode(std::string_view name) {
 	auto* w = Instance();
 	auto* scene = w->m.children.Get(name);
 	if (!scene) {
 		TOAST_ERROR("Tried to disable scene \"{0}\" but it doesn't exist", name);
 		return;
 	}
-	DisableScene(scene->id());
+	DisableRootNode(scene->id());
 }
 
-void World::DisableScene(unsigned id) {
+void World::DisableRootNode(unsigned id) {
 	auto* w = Instance();
 	if (!w->m.children.Has(id)) {
 		TOAST_ERROR("Tried to deactivate scene {0} but it doesn't exist", id);
@@ -364,7 +364,7 @@ void World::DisableScene(unsigned id) {
 
 	auto* scene = w->m.children.Get(id);
 	if (!scene) {
-		return;    // Scene is being destroyed
+		return;    // RootNode is being destroyed
 	}
 
 	if (!scene->enabled()) {
@@ -390,7 +390,7 @@ void World::EarlyTick() {
 
 	PROFILE_ZONE;
 
-	for (const auto& [_, s] : m.tickableScenes) {
+	for (const auto& [_, s] : m.tickableRootNodes) {
 		s->_EarlyTick();
 	}
 }
@@ -402,7 +402,7 @@ void World::Tick() {
 
 	PROFILE_ZONE;
 
-	for (const auto& [_, s] : m.tickableScenes) {
+	for (const auto& [_, s] : m.tickableRootNodes) {
 		s->_Tick();
 	}
 }
@@ -414,7 +414,7 @@ void World::LateTick() {
 
 	PROFILE_ZONE;
 
-	for (const auto& [_, s] : m.tickableScenes) {
+	for (const auto& [_, s] : m.tickableRootNodes) {
 		s->_LateTick();
 	}
 }
@@ -426,14 +426,14 @@ void World::PhysTick() {
 
 	PROFILE_ZONE;
 
-	for (const auto& [_, s] : m.tickableScenes) {
+	for (const auto& [_, s] : m.tickableRootNodes) {
 		s->_PhysTick();
 	}
 
 #ifdef TOAST_EDITOR
 	// NOTE: Idk if we should tick physics on the editor scene -x
-	if (m.editorScene != nullptr) {
-		m.editorScene->_PhysTick();
+	if (m.editorRootNode != nullptr) {
+		m.editorRootNode->_PhysTick();
 	}
 #endif
 }
@@ -442,11 +442,11 @@ void World::PhysTick() {
 void World::EditorTick() {
 	PROFILE_ZONE;
 
-	if (m.editorScene != nullptr) {
-		m.editorScene->_EarlyTick();
-		m.editorScene->_Tick();
-		m.editorScene->_EditorTick();
-		m.editorScene->_LateTick();
+	if (m.editorRootNode != nullptr) {
+		m.editorRootNode->_EarlyTick();
+		m.editorRootNode->_Tick();
+		m.editorRootNode->_EditorTick();
+		m.editorRootNode->_LateTick();
 	}
 
 	// ReSharper disable once CppUseElementsView
@@ -464,7 +464,7 @@ void World::RunBeginQueue() {
 	PROFILE_ZONE;
 
 	// Swap the queue into a local list under lock so other threads can enqueue while we process
-	std::list<Object*> local {};
+	std::list<Node*> local {};
 	{
 		std::lock_guard lock(m.queueMutex);
 		local.swap(m.beginQueue);
@@ -476,7 +476,7 @@ void World::RunBeginQueue() {
 		}
 
 		// We need to check this so scene begin is not run while the scene is being loaded
-		if (!m.tickableScenes.contains(obj->scene()->id())) {
+		if (!m.tickableRootNodes.contains(obj->scene()->id())) {
 			std::lock_guard lock(m.queueMutex);
 			m.beginQueue.push_back(obj);
 			continue;
@@ -495,7 +495,7 @@ void World::RunDestroyQueue() {
 	PROFILE_ZONE_C(0xFF0080);    // Pink for destroy queue
 
 	// Move the destroy queue into a local list under lock and process without holding the lock
-	std::list<Object*> local {};
+	std::list<Node*> local {};
 	{
 		std::lock_guard lock(m.queueMutex);
 		local.swap(m.destroyQueue);
@@ -523,7 +523,7 @@ void World::RunDestroyQueue() {
 	}
 }
 
-void World::ScheduleBegin(Object* obj) {
+void World::ScheduleBegin(Node* obj) {
 	if (!obj) {
 		return;
 	}
@@ -532,7 +532,7 @@ void World::ScheduleBegin(Object* obj) {
 	w->m.beginQueue.push_back(obj);
 }
 
-void World::CancelBegin(Object* obj) {
+void World::CancelBegin(Node* obj) {
 	if (!obj) {
 		return;
 	}
@@ -544,7 +544,7 @@ void World::CancelBegin(Object* obj) {
 	}
 }
 
-void World::ScheduleDestroy(Object* obj) {
+void World::ScheduleDestroy(Node* obj) {
 	if (!obj) {
 		return;
 	}
@@ -556,38 +556,38 @@ void World::ScheduleDestroy(Object* obj) {
 	}
 }
 
-const std::list<Object*>& World::begin_queue() const {
+const std::list<Node*>& World::begin_queue() const {
 	return m.beginQueue;
 }
 
 #ifdef TOAST_EDITOR
-void World::SetEditorScene(Object* obj) {
-	m.editorScene = obj;
+void World::SetEditorRootNode(Node* obj) {
+	m.editorRootNode = obj;
 
-	obj->m_name = "EditorScene";
+	obj->m_name = "EditorRootNode";
 	obj->m_id = Factory::AssignId();
 
 	obj->m_parent = nullptr;
-	obj->m_scene = dynamic_cast<Scene*>(obj);
+	obj->m_scene = dynamic_cast<RootNode*>(obj);
 	obj->children.parent(obj);
-	obj->children.scene(dynamic_cast<Scene*>(obj));
+	obj->children.scene(dynamic_cast<RootNode*>(obj));
 
-	m.editorScene->_Init();
-	m.editorScene->_LoadTextures();
-	m.editorScene->enabled(true);
-	m.editorScene->_Begin(true);
+	m.editorRootNode->_Init();
+	m.editorRootNode->_LoadTextures();
+	m.editorRootNode->enabled(true);
+	m.editorRootNode->_Begin(true);
 }
 #endif
 
-Object* World::Get(const unsigned id) {
+Node* World::Get(const unsigned id) {
 	return Instance()->m.children.Get(id);
 }
 
-Object* World::Get(std::string_view name) {
+Node* World::Get(std::string_view name) {
 	return Instance()->m.children.Get(name);
 }
 
-auto World::GetFromType(std::string_view type) -> Object* {
+auto World::GetFromType(std::string_view type) -> Node* {
 	return Instance()->m.children.GetType(type, true);
 }
 
@@ -599,7 +599,7 @@ bool World::Has(std::string_view name) {
 	return Instance()->m.children.Has(name);
 }
 
-Object::Children& World::GetChildren() {
+Node::Children& World::GetChildren() {
 	return Instance()->m.children;
 }
 

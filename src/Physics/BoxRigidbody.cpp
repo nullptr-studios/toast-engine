@@ -2,7 +2,7 @@
 
 #include "PhysicsSystem.hpp"
 #include "Toast/GlmJson.hpp"
-#include "Toast/Objects/Actor.hpp"
+#include "Toast/Nodes/Node3D.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
 #ifdef TOAST_EDITOR
@@ -16,7 +16,7 @@ void BoxRigidbody::Init() {
 }
 
 void BoxRigidbody::Begin() {
-	Component::Begin();
+	SubNode::Begin();
 	angularVelocity = 0.0;
 	velocity = { 0.0, 0.0 };
 	forces.clear();
@@ -87,7 +87,7 @@ void BoxRigidbody::EditorTick() {
 #endif
 
 json_t BoxRigidbody::Save() const {
-	json_t j = Component::Save();
+	json_t j = SubNode::Save();
 
 	j["size"] = size;
 	j["offset"] = offset;
@@ -167,26 +167,26 @@ void BoxRigidbody::Load(json_t j, bool b) {
 		debug.collidingColor = j["debug.collidingColor"];
 	}
 
-	Component::Load(j, b);
+	SubNode::Load(j, b);
 }
 
 auto BoxRigidbody::GetPosition() const -> glm::dvec2 {
-	return static_cast<toast::Actor*>(parent())->transform()->worldPosition();
+	return static_cast<toast::Node3D*>(parent())->transform()->worldPosition();
 }
 
 void BoxRigidbody::SetPosition(glm::dvec2 position) {
-	auto* transform = static_cast<toast::Actor*>(parent())->transform();
+	auto* transform = static_cast<toast::Node3D*>(parent())->transform();
 	float z = transform->worldPosition().z;
 	transform->worldPosition({ position.x, position.y, z });
 	InvalidateCache();
 }
 
 auto BoxRigidbody::GetRotation() const -> double {
-	return static_cast<toast::Actor*>(parent())->transform()->worldRotationRadians().z;
+	return static_cast<toast::Node3D*>(parent())->transform()->worldRotationRadians().z;
 }
 
 void BoxRigidbody::SetRotation(double rotation) {
-	auto* transform = static_cast<toast::Actor*>(parent())->transform();
+	auto* transform = static_cast<toast::Node3D*>(parent())->transform();
 	float x = transform->worldRotationRadians().x;
 	float y = transform->worldRotationRadians().y;
 	transform->worldRotationRadians({ x, y, rotation });

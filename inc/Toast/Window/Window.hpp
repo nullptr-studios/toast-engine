@@ -208,7 +208,7 @@ private:
 	WindowProps m_properties;
 
 	/// @brief Event listener for window events.
-	event::ListenerComponent m_listener;
+	event::ListenerSubNode m_listener;
 
 	toast::DisplayMode m_currentDisplayMode = toast::DisplayMode::WINDOWED;
 

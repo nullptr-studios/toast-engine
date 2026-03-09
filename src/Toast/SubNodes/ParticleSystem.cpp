@@ -2,7 +2,7 @@
 /// @date 01/20/2026
 /// @brief compute Particle System
 
-#include "Toast/Objects/ParticleSystem.hpp"
+#include "Toast/Nodes/ParticleSystem.hpp"
 
 #include "Toast/Log.hpp"
 #include "Toast/Profiler.hpp"
@@ -821,7 +821,7 @@ ParticleSystem::~ParticleSystem() {
 }
 
 void ParticleSystem::Init() {
-	TransformComponent::Init();
+	TransformSubNode::Init();
 
 	SetRunEarlyTick(false);
 	SetRunTick(false);
@@ -848,11 +848,11 @@ void ParticleSystem::Destroy() {
 	m_emitters.clear();
 
 	CleanupSharedResources();
-	TransformComponent::Destroy();
+	TransformSubNode::Destroy();
 }
 
 void ParticleSystem::Load(json_t j, bool force_create) {
-	TransformComponent::Load(j, force_create);
+	TransformSubNode::Load(j, force_create);
 
 	// Load Lua config path
 	if (j.contains("luaConfigPath")) {
@@ -878,7 +878,7 @@ void ParticleSystem::Load(json_t j, bool force_create) {
 }
 
 json_t ParticleSystem::Save() const {
-	json_t j = TransformComponent::Save();
+	json_t j = TransformSubNode::Save();
 
 	// Just save the Lua config path
 	j["luaConfigPath"] = m_luaConfigPath;
@@ -1273,7 +1273,7 @@ void ParticleSystem::RemoveEmitter(size_t index) {
 
 #ifdef TOAST_EDITOR
 void ParticleSystem::Inspector() {
-	TransformComponent::Inspector();
+	TransformSubNode::Inspector();
 
 	ImGui::DragInt("Culling Radius", &m_cullingRadius, 1, 1, 1000);
 

@@ -7,7 +7,7 @@
 class Children;
 
 // Changed FactoryFunction to accept a run_init flag so callers can create prototype objects without running Init.
-using FactoryFunction = std::function<Object*(Children&, std::optional<unsigned>)>;
+using FactoryFunction = std::function<Node*(Children&, std::optional<unsigned>)>;
 
 static std::unordered_map<std::string, FactoryFunction>& getRegistry() {
 	static std::unordered_map<std::string, FactoryFunction> instance;
@@ -15,19 +15,19 @@ static std::unordered_map<std::string, FactoryFunction>& getRegistry() {
 }
 
 class Children {
-	friend class Object;
+	friend class Node;
 	friend class World;
-	using child_list = std::unordered_map<unsigned, std::unique_ptr<Object>>;
+	using child_list = std::unordered_map<unsigned, std::unique_ptr<Node>>;
 
 public:
 	Children() = default;
 	~Children() = default;
 
 	// Get ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// @brief Search an Actor and cast it to the correct class
+	/// @brief Search an Node3D and cast it to the correct class
 	/// Getting a direct child by ID is O(1) while propagating down is O(n)
 	/// @tparam T Class to do the casting to
-	/// @param id Target Actor to find
+	/// @param id Target Node3D to find
 	template<typename T>
 	[[nodiscard]]
 	T* Get(unsigned id);
@@ -35,7 +35,7 @@ public:
 	/// @brief Search an actor and cast it to the correct class
 	/// Getting a child by name is O(n)
 	/// @tparam T Class to do the casting to
-	/// @param name Name of the target Actor to find
+	/// @param name Name of the target Node3D to find
 	template<typename T>
 	[[nodiscard]]
 	T* Get(std::string_view name);
@@ -44,54 +44,54 @@ public:
 	[[nodiscard]]
 	T* Get();
 
-	/// @brief Search an Actor
+	/// @brief Search an Node3D
 	/// Getting a direct child by ID is O(1) while propagating down is O(n)
-	/// @param id Target Actor to find
+	/// @param id Target Node3D to find
 	[[nodiscard]]
-	Object* Get(unsigned id);
+	Node* Get(unsigned id);
 
-	/// @brief Search an Actor
+	/// @brief Search an Node3D
 	/// Getting a child by name is O(n)
-	/// @param name Name of the target Actor to find
+	/// @param name Name of the target Node3D to find
 	[[nodiscard]]
-	Object* Get(std::string_view name);
+	Node* Get(std::string_view name);
 
 	/// @brief Search a child by type passed as string
 	/// @param propagate Propagate down the tree (no by default)
 	[[nodiscard]]
-	Object* GetType(std::string_view type, bool propagate = false);
+	Node* GetType(std::string_view type, bool propagate = false);
 
 	/// @brief Returns a reference to the raw list
 	[[nodiscard]]
 	child_list& GetAll();
 
-	/// @brief Search an Actor
+	/// @brief Search an Node3D
 	/// Getting a direct child by ID is O(1) while propagating down is O(n)
-	/// @param id Target Actor to find
+	/// @param id Target Node3D to find
 	[[nodiscard]]
-	Object* operator[](unsigned id);
+	Node* operator[](unsigned id);
 
-	/// @brief Search an Actor
+	/// @brief Search an Node3D
 	/// Getting a child by name is O(n)
-	/// @param name Name of the target Actor to find
+	/// @param name Name of the target Node3D to find
 	[[nodiscard]]
-	Object* operator[](std::string_view name);
+	Node* operator[](std::string_view name);
 
 	// Has ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	template<typename... Components>
+	template<typename... SubNodes>
 	[[nodiscard]]
 	bool Has();
 
 	/// @brief Check whether a child exists or not
 	/// @note This function does not propagate down
-	/// Checking if an Actor exists by ID is O(1)
-	/// @param id Target Actor to find
+	/// Checking if an Node3D exists by ID is O(1)
+	/// @param id Target Node3D to find
 	[[nodiscard]]
 	bool Has(unsigned id) const;
 
 	/// @brief Check whether a child exists or not
-	/// Checking if an Actor exists by name is O(n)
-	/// @param name Name of the target Actor to find
+	/// Checking if an Node3D exists by name is O(n)
+	/// @param name Name of the target Node3D to find
 	[[nodiscard]]
 	bool Has(std::string_view name) const;
 
@@ -110,7 +110,7 @@ public:
 	template<typename T>
 	T* Add(std::optional<std::string_view> name = {}, std::optional<json_t> file = {});
 
-	Object* Add(std::string_view type, std::optional<std::string_view> name = {}, std::optional<json_t> file = {});
+	Node* Add(std::string_view type, std::optional<std::string_view> name = {}, std::optional<json_t> file = {});
 
 	/// @brief Creates a new child if the child doesnt exist
 	/// @tparam T Class to create the child from
@@ -126,8 +126,8 @@ public:
 	/// This function just creates a uptr and emplaces to the list. If this object is used AS-IS, it will most likely
 	/// crash the application at some point
 	template<typename T>
-	T* _CreateObject(std::optional<unsigned> id);
-	void _ConfigureObject(Object* obj, const std::optional<std::string_view>& name = {}, const std::optional<json_t>& file = {}) const;
+	T* _CreateNode(std::optional<unsigned> id);
+	void _ConfigureNode(Node* obj, const std::optional<std::string_view>& name = {}, const std::optional<json_t>& file = {}) const;
 
 public:
 	// Remove /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,16 +153,16 @@ public:
 	}
 
 	[[nodiscard]]
-	Scene* scene() const;
+	RootNode* scene() const;
 
-	void scene(Scene* scene) {
+	void scene(RootNode* scene) {
 		m_scene = scene;
 	}
 
 	[[nodiscard]]
-	Object* parent() const;
+	Node* parent() const;
 
-	void parent(Object* parent) {
+	void parent(Node* parent) {
 		m_parent = parent;
 	}
 
@@ -186,16 +186,16 @@ public:
 
 private:
 	template<typename T>
-	bool HasObject();
+	bool HasNode();
 
 	void erase(const unsigned id) {
 		m_children.erase(id);
 	}
 
-	auto Collect(const unsigned id) -> std::unique_ptr<Object>;
+	auto Collect(const unsigned id) -> std::unique_ptr<Node>;
 
 	child_list m_children;
 
-	std::optional<Object*> m_parent;
-	std::optional<Scene*> m_scene;
+	std::optional<Node*> m_parent;
+	std::optional<RootNode*> m_scene;
 };

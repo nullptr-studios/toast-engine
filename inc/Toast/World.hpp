@@ -1,8 +1,8 @@
 #pragma once
-#include "Objects/Object.hpp"
-#include "Toast/Event/ListenerComponent.hpp"
+#include "Nodes/Node.hpp"
+#include "Toast/Event/ListenerSubNode.hpp"
 #include "Toast/GameFlow.hpp"
-#include "Toast/SceneLoadedEvent.hpp"
+#include "Toast/RootNodeLoadedEvent.hpp"
 
 #include <future>
 #include <mutex>
@@ -28,15 +28,15 @@ public:
 
 	template<typename T>
 	static auto New(const std::optional<std::string>& name = std::nullopt) -> T*;
-	static auto New(std::string_view type, const std::optional<std::string>& name = std::nullopt) -> Object*;
-	static auto LoadScene(std::string_view path) -> std::future<unsigned>;    ///< Loads scene on the init thread, scene disabld after load
-	static void LoadSceneSync(std::string_view path);                         ///< Loads scene on the main thread, scene enabled after load
-	static void UnloadScene(unsigned id);
-	static void UnloadScene(std::string_view name);
-	static void EnableScene(unsigned id);
-	static void EnableScene(std::string_view name);
-	static void DisableScene(unsigned id);
-	static void DisableScene(std::string_view name);
+	static auto New(std::string_view type, const std::optional<std::string>& name = std::nullopt) -> Node*;
+	static auto LoadRootNode(std::string_view path) -> std::future<unsigned>;    ///< Loads scene on the init thread, scene disabld after load
+	static void LoadRootNodeSync(std::string_view path);                         ///< Loads scene on the main thread, scene enabled after load
+	static void UnloadRootNode(unsigned id);
+	static void UnloadRootNode(std::string_view name);
+	static void EnableRootNode(unsigned id);
+	static void EnableRootNode(std::string_view name);
+	static void DisableRootNode(unsigned id);
+	static void DisableRootNode(std::string_view name);
 
 	void EarlyTick();
 	void Tick();
@@ -67,27 +67,27 @@ public:
 	}
 
 	[[nodiscard]]
-	static Object* Get(unsigned id);
+	static Node* Get(unsigned id);
 	[[nodiscard]]
-	static Object* Get(std::string_view name);
+	static Node* Get(std::string_view name);
 	[[nodiscard]]
 	static bool Has(unsigned id);
 	[[nodiscard]]
 	static bool Has(std::string_view name);
 	[[nodiscard]]
-	static Object::Children& GetChildren();
+	static Node::Children& GetChildren();
 
 	[[nodiscard]]
-	static auto GetFromType(std::string_view type) -> Object*;
+	static auto GetFromType(std::string_view type) -> Node*;
 
-	static void ScheduleBegin(Object* obj);
-	static void CancelBegin(Object* obj);
-	static void ScheduleDestroy(Object* obj);
+	static void ScheduleBegin(Node* obj);
+	static void CancelBegin(Node* obj);
+	static void ScheduleDestroy(Node* obj);
 	[[nodiscard]]
-	const std::list<Object*>& begin_queue() const;
+	const std::list<Node*>& begin_queue() const;
 
 #ifdef TOAST_EDITOR
-	void SetEditorScene(Object* obj);
+	void SetEditorRootNode(Node* obj);
 #endif
 
 private:
@@ -98,18 +98,18 @@ private:
 	constexpr static size_t POOL_SIZE = 2;
 
 	struct {
-		Object::Children children;
-		std::unique_ptr<event::ListenerComponent> listener;
-		std::unordered_map<unsigned, Scene*> tickableScenes;
+		Node::Children children;
+		std::unique_ptr<event::ListenerSubNode> listener;
+		std::unordered_map<unsigned, RootNode*> tickableRootNodes;
 		std::unordered_map<unsigned, unsigned> sceneDestroyTimers;
 		ThreadPool* threadPool = nullptr;
 		bool simulateWorld = true;
-		std::map<unsigned, std::string> loadedScenes;
-		std::map<unsigned, bool> loadedScenesStatus;
-		std::list<Object*> beginQueue;
-		std::list<Object*> destroyQueue;
+		std::map<unsigned, std::string> loadedRootNodes;
+		std::map<unsigned, bool> loadedRootNodesStatus;
+		std::list<Node*> beginQueue;
+		std::list<Node*> destroyQueue;
 		std::mutex queueMutex;
-		Object* editorScene = nullptr;
+		Node* editorRootNode = nullptr;
 		std::vector<std::vector<std::string>> worldList;
 		GameFlow gameFlow;
 	} m;
@@ -118,7 +118,7 @@ private:
 template<typename T>
 auto World::New(const std::optional<std::string>& name) -> T* {
 	auto* world = Instance();
-	Object* obj = world->m.children._CreateObject<T>(std::nullopt);
+	Node* obj = world->m.children._CreateNode<T>(std::nullopt);
 	obj->m_name = name.value_or(std::format("{}_{}", T::static_type(), obj->id()));
 
 	obj->m_parent = nullptr;
@@ -132,8 +132,8 @@ auto World::New(const std::optional<std::string>& name) -> T* {
 	// Schedule the Begin
 	ScheduleBegin(obj);
 
-	if (obj->base_type() == SceneT) {
-		auto* e = new SceneLoadedEvent { obj->id(), obj->name() };
+	if (obj->base_type() == RootNodeT) {
+		auto* e = new RootNodeLoadedEvent { obj->id(), obj->name() };
 		event::Send(e);
 	}
 

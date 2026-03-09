@@ -3,14 +3,14 @@
 /// @date 28 Dec 2025
 
 #pragma once
-#include "Toast/Components/TransformComponent.hpp"
+#include "Toast/SubNodes/TransformSubNode.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 namespace toast {
 
-class Actor;
+class Node3D;
 
 class TransformImpl {
 	friend struct Transform2;
@@ -63,10 +63,10 @@ struct Transform2 {
 	TransformImpl local;
 	TransformImpl world;
 
-	void UpdateWorldTransform(Actor* parent);
+	void UpdateWorldTransform(Node3D* parent);
 
-	void FromTransform(const toast::TransformComponent* t);
-	void ToTransform(toast::TransformComponent* t) const;
+	void FromTransform(const toast::TransformSubNode* t);
+	void ToTransform(toast::TransformSubNode* t) const;
 };
 
 }

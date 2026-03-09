@@ -4,21 +4,21 @@
 
 // This file exists solely to force the linker to force include objects/components
 
-// Objects
-#include <Toast/Objects/Actor.hpp>
-#include <Toast/Objects/Object.hpp>
-#include <Toast/Objects/ParticleSystem.hpp>
-#include <Toast/Objects/Scene.hpp>
+// Nodes
+#include <Toast/Nodes/Node3D.hpp>
+#include <Toast/Nodes/Node.hpp>
+#include <Toast/Nodes/ParticleSystem.hpp>
+#include <Toast/Nodes/RootNode.hpp>
 
 // Renderer
 #include <Toast/Renderer/Camera.hpp>
 #include <Toast/Renderer/Lights/2DLight.hpp>
 #include <Toast/Renderer/Lights/GlobalLight.hpp>
 
-// Components
-#include <Toast/Components/AtlasRendererComponent.hpp>
-#include <Toast/Components/MeshRendererComponent.hpp>
-#include <Toast/Components/SpineRendererComponent.hpp>
-#include <Toast/Components/TransformComponent.hpp>
+// SubNodes
+#include <Toast/SubNodes/AtlasRendererSubNode.hpp>
+#include <Toast/SubNodes/MeshRendererSubNode.hpp>
+#include <Toast/SubNodes/SpineRendererSubNode.hpp>
+#include <Toast/SubNodes/TransformSubNode.hpp>
 #include <Toast/Physics/Collider.hpp>
 #include <Toast/Physics/Rigidbody.hpp>

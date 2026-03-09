@@ -13,15 +13,15 @@
 namespace physics {
 
 void Trigger::Begin() {
-	Actor::Begin();
+	Node3D::Begin();
 	PhysicsSystem::AddTrigger(this);
-	enterCallback = [this](Object* o) {
+	enterCallback = [this](Node* o) {
 		if (!enabled()) {
 			return;
 		}
 		OnEnter(o);
 	};
-	exitCallback = [this](Object* o) {
+	exitCallback = [this](Node* o) {
 		if (!enabled()) {
 			return;
 		}
@@ -30,12 +30,12 @@ void Trigger::Begin() {
 }
 
 void Trigger::Destroy() {
-	Actor::Destroy();
+	Node3D::Destroy();
 	PhysicsSystem::RemoveTrigger(this);
 }
 
 json_t Trigger::Save() const {
-	json_t j = Actor::Save();
+	json_t j = Node3D::Save();
 	SAVE(debug.draw);
 	SAVE(debug.log);
 	SAVE(debug.defaultColor);
@@ -50,7 +50,7 @@ void Trigger::Load(json_t j, bool force_create) {
 	LOAD(debug.defaultColor);
 	LOAD(debug.collideColor);
 
-	Actor::Load(j, force_create);
+	Node3D::Load(j, force_create);
 }
 
 void Trigger::AddFlag(ColliderFlags flag) {

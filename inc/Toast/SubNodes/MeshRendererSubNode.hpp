@@ -1,10 +1,10 @@
-/// @file SpriteRenderComponent.hpp
+/// @file SpriteRenderSubNode.hpp
 /// @author dario
 /// @date 28/09/2025.
 
 #pragma once
 
-#include "Toast/Components/TransformComponent.hpp"
+#include "Toast/SubNodes/TransformSubNode.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/Material.hpp"
 #include "Toast/Renderer/Shader.hpp"
@@ -17,9 +17,9 @@
 #include <memory>
 
 namespace toast {
-class MeshRendererComponent : public IRenderable {
+class MeshRendererSubNode : public IRenderable {
 public:
-	REGISTER_TYPE(MeshRendererComponent);
+	REGISTER_TYPE(MeshRendererSubNode);
 
 	void Load(json_t j, bool force_create = true) override;
 	[[nodiscard]]

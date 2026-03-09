@@ -542,7 +542,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	return result;
 }
 
-toast::Object* PhysicsSystem::PointCollision(glm::vec2 point, ColliderFlags flags) {
+toast::Node* PhysicsSystem::PointCollision(glm::vec2 point, ColliderFlags flags) {
 	if (not get().has_value()) {
 		return nullptr;
 	}

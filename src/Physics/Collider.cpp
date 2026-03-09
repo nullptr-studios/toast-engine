@@ -2,7 +2,7 @@
 
 #include "ConvexCollider.hpp"
 #include "Toast/GlmJson.hpp"
-#include "Toast/Objects/Actor.hpp"
+#include "Toast/Nodes/Node3D.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 #include "glm/geometric.hpp"
@@ -117,7 +117,7 @@ void Collider::CalculatePoints() {
 	}
 
 	// update world position data
-	glm::vec2 world_position = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
+	glm::vec2 world_position = static_cast<toast::Node3D*>(parent())->transform()->worldPosition();
 	data.worldPosition = world_position;
 
 	for (auto* c : m.convexShapes) {
@@ -129,7 +129,7 @@ void Collider::CalculatePoints() {
 	using simple_mesh = std::list<std::pair<glm::vec2, bool>>;
 	simple_mesh start_mesh;
 
-	auto world_mtx = dynamic_cast<toast::Actor*>(parent())->transform()->GetWorldMatrix();
+	auto world_mtx = dynamic_cast<toast::Node3D*>(parent())->transform()->GetWorldMatrix();
 
 	// Figure out which points are concave
 	int sign = ShoelaceArea(m.points) >= 0 ? 1 : -1;
@@ -505,9 +505,9 @@ void Collider::Inspector() {
 }
 
 void Collider::EditorTick() {
-	glm::vec2 world_position = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
+	glm::vec2 world_position = static_cast<toast::Node3D*>(parent())->transform()->worldPosition();
 
-	auto world_mtx = dynamic_cast<toast::Actor*>(parent())->transform()->GetWorldMatrix();
+	auto world_mtx = dynamic_cast<toast::Node3D*>(parent())->transform()->GetWorldMatrix();
 	if (world_mtx != debug.oldPosition) {
 		debug.oldPosition = world_mtx;
 		CalculatePoints();
@@ -540,7 +540,7 @@ void Collider::EditorTick() {
 #endif
 
 json_t Collider::Save() const {
-	json_t j = Component::Save();
+	json_t j = SubNode::Save();
 
 	for (const auto& p : m.points) {
 		j["points"].push_back(p);
@@ -593,5 +593,5 @@ void Collider::Load(json_t j, bool propagate) {
 		data.forceLeft = j["data.forceLeft"];
 	}
 
-	Component::Load(j, propagate);
+	SubNode::Load(j, propagate);
 }

@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "Toast/Objects/Actor.hpp"
+#include "Toast/Nodes/Node3D.hpp"
 #include "glm/vec3.hpp"
 
-class GlobalLight : public toast::Actor {
+class GlobalLight : public toast::Node3D {
 public:
 	REGISTER_TYPE(GlobalLight);
 

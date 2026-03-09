@@ -8,7 +8,7 @@
 enum class ColliderFlags : uint8_t;
 
 namespace toast {
-class Object;
+class Node;
 }
 
 namespace physics {
@@ -18,7 +18,7 @@ struct ColliderData {
 	glm::vec2 worldPosition;
 	double throwForce = 100.0f;
 	bool forceLeft = false;
-	toast::Object* parent = nullptr;
+	toast::Node* parent = nullptr;
 	ColliderFlags flags {};
 	bool debugNormals = false;
 };

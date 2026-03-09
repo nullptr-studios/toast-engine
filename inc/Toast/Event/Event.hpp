@@ -4,11 +4,11 @@
 /// @brief  Base Event class
 
 #pragma once
-#include "ListenerComponent.hpp"
+#include "ListenerSubNode.hpp"
 
 namespace event {
 
-using EventMap = std::multimap<unsigned char, ListenerComponent*>;
+using EventMap = std::multimap<unsigned char, ListenerSubNode*>;
 
 /// @brief  Core components of the event struct
 struct IEvent {
@@ -40,7 +40,7 @@ void Event<EventType>::Notify() {
 	bool handled = false;
 
 	// Don't hold the lock during dispatch to prevent deadlocks
-	std::vector<ListenerComponent*> listeners_copy;
+	std::vector<ListenerSubNode*> listeners_copy;
 	{
 		std::lock_guard<std::mutex> lock(s_eventMutex);
 		listeners_copy.reserve(subscribers.size());

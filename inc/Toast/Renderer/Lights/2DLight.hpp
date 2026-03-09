@@ -3,13 +3,13 @@
 /// @date 22/11/2025.
 
 #pragma once
-#include "Toast/Objects/Actor.hpp"
+#include "Toast/Nodes/Node3D.hpp"
 #include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/Mesh.hpp"
 
 class Framebuffer;
 
-class Light2D : public toast::Actor {
+class Light2D : public toast::Node3D {
 public:
 	REGISTER_TYPE(Light2D);
 

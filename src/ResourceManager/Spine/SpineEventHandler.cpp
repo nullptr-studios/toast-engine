@@ -4,12 +4,12 @@
 
 #include "Toast/Resources/Spine/SpineEventHandler.hpp"
 
-#include "Toast/Components/SpineRendererComponent.hpp"
+#include "Toast/SubNodes/SpineRendererSubNode.hpp"
 #include "spine/Animation.h"
 #include "spine/Event.h"
 #include "spine/EventData.h"
 
-SpineEventHandler::SpineEventHandler(SpineRendererComponent* ctx) : context(ctx) { }
+SpineEventHandler::SpineEventHandler(SpineRendererSubNode* ctx) : context(ctx) { }
 
 void SpineEventHandler::callback(spine::AnimationState* state, spine::EventType type, spine::TrackEntry* entry, spine::Event* event) {
 	switch (type) {

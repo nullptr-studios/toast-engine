@@ -2,11 +2,11 @@
 
 #include "TestActor.hpp"
 
-#include <Toast/Objects/Scene.hpp>
+#include <Toast/Objects/RootNode.hpp>
 
-class TestScene : public toast::Scene {
+class TestRootNode : public toast::RootNode {
 public:
-	REGISTER_TYPE(TestScene);
+	REGISTER_TYPE(TestRootNode);
 
 	void Init() override {
 		children.Add<TestActor>("TestActor");

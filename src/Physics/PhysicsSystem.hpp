@@ -3,7 +3,7 @@
 /// @date 28 Dec 2025
 
 #pragma once
-#include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/Event/ListenerSubNode.hpp"
 #include "Toast/Physics/ColliderFlags.hpp"
 #include "Toast/Physics/GravityType.hpp"
 
@@ -51,7 +51,7 @@ public:
 	static void AddBox(BoxRigidbody* rb);
 	static void RemoveBox(BoxRigidbody* rb);
 	static std::optional<RayResult> RayCollision(Line* ray, ColliderFlags flags);
-	static toast::Object* PointCollision(glm::vec2 point, ColliderFlags flags);
+	static toast::Node* PointCollision(glm::vec2 point, ColliderFlags flags);
 
 	static auto GetAllRigidbodies() -> std::list<Rigidbody*>&;
 
@@ -95,7 +95,7 @@ private:
 		// Interpolation thingi
 		std::atomic<std::chrono::steady_clock::time_point> lastPhysicsTime { std::chrono::steady_clock::now() };
 
-		event::ListenerComponent eventListener;
+		event::ListenerSubNode eventListener;
 	} m;
 
 	// out of the struct to make sure this is ALWAYS the last

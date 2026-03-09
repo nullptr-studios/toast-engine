@@ -6,13 +6,13 @@
 
 #include "spine/AnimationState.h"
 
-class SpineRendererComponent;
+class SpineRendererSubNode;
 
 class SpineEventHandler : public spine::AnimationStateListenerObject {
-	SpineRendererComponent* context;
+	SpineRendererSubNode* context;
 
 public:
-	SpineEventHandler(SpineRendererComponent* ctx);
+	SpineEventHandler(SpineRendererSubNode* ctx);
 
 	void callback(spine::AnimationState* state, spine::EventType type, spine::TrackEntry* entry, spine::Event* event) override;
 };

@@ -26,17 +26,17 @@ namespace toast {
  *
  * @par Implementing Serialization:
  * @code
- * class MyActor : public Actor {
+ * class MyNode3D : public Node3D {
  * public:
  *     json_t Save() const override {
- *         auto j = Actor::Save();  // Call parent
+ *         auto j = Node3D::Save();  // Call parent
  *         j["health"] = m_health;
  *         j["score"] = m_score;
  *         return j;
  *     }
  *
  *     void Load(json_t j, bool force_create) override {
- *         Actor::Load(j, force_create);  // Call parent
+ *         Node3D::Load(j, force_create);  // Call parent
  *         m_health = j.value("health", 100.0f);
  *         m_score = j.value("score", 0);
  *     }
@@ -51,7 +51,7 @@ namespace toast {
  * Soft serialization uses cached JSON for quick state restoration
  * without re-parsing files. Used for editor undo/redo and play mode.
  *
- * @see Object, Scene, json_t
+ * @see Node, RootNode, json_t
  */
 class ISerializable {
 public:

@@ -3,7 +3,7 @@
 /// @author Xein
 
 #pragma once
-#include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/Event/ListenerSubNode.hpp"
 #include "Toast/Input/InputListener.hpp"
 #include "Toast/Input/Layout.hpp"
 #include "Toast/Window/WindowEvents.hpp"
@@ -118,7 +118,7 @@ private:
 		std::vector<Layout> layouts;
 		layout_it activeLayout;
 		std::string currentState;
-		event::ListenerComponent eventListener;
+		event::ListenerSubNode eventListener;
 
 		std::vector<Listener*> subscribers;
 		std::vector<Action0D*> dispatch0DQueue;

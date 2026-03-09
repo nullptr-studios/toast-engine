@@ -1,7 +1,7 @@
 #include "Toast/Transform2.hpp"
 
-#include "Toast/Components/TransformComponent.hpp"
-#include "Toast/Objects/Actor.hpp"
+#include "Toast/SubNodes/TransformSubNode.hpp"
+#include "Toast/Nodes/Node3D.hpp"
 
 using namespace toast;
 using namespace glm;
@@ -106,7 +106,7 @@ auto Transform2::scale() noexcept -> glm::vec3& {
 	return local.scale();
 }
 
-void Transform2::UpdateWorldTransform(Actor* parent) {
+void Transform2::UpdateWorldTransform(Node3D* parent) {
 	// TODO: Update this to use Transform2 when available
 	vec3 pos = local.position() + parent->transform()->worldPosition();
 	if (pos != world.position()) {
@@ -124,13 +124,13 @@ void Transform2::UpdateWorldTransform(Actor* parent) {
 	}
 }
 
-void Transform2::FromTransform(const toast::TransformComponent* t) {
+void Transform2::FromTransform(const toast::TransformSubNode* t) {
 	position() = t->position();
 	rotation() = t->rotationQuat();
 	scale() = t->scale();
 }
 
-void Transform2::ToTransform(toast::TransformComponent* t) const {
+void Transform2::ToTransform(toast::TransformSubNode* t) const {
 	t->position(position());
 	t->rotationQuat(rotation());
 	t->scale(scale());

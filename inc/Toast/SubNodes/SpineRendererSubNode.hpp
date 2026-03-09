@@ -1,4 +1,4 @@
-/// @file SpineRendererComponent.hpp
+/// @file SpineRendererSubNode.hpp
 /// @author dario
 /// @date 23/10/2025.
 
@@ -15,9 +15,9 @@
 #include <spine/Skeleton.h>
 #include <unordered_map>
 
-class SpineRendererComponent : public IRenderable {
+class SpineRendererSubNode : public IRenderable {
 public:
-	REGISTER_TYPE(SpineRendererComponent);
+	REGISTER_TYPE(SpineRendererSubNode);
 
 	void Init() override;
 
@@ -106,7 +106,7 @@ private:
 		editor::ResourceSlot atlasResource { resource::ResourceType::SPINE_ATLAS };
 		editor::ResourceSlot skeletonDataResource { resource::ResourceType::SPINE_SKELETON_DATA };
 
-		// Persisted resource paths (mirrors AtlasRendererComponent)
+		// Persisted resource paths (mirrors AtlasRendererSubNode)
 		std::string atlasPath;
 		std::string skeletonDataPath;
 

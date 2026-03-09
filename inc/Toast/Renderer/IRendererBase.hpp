@@ -6,7 +6,7 @@
 #pragma once
 
 #include "Camera.hpp"
-#include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/Event/ListenerSubNode.hpp"
 #include "Toast/GlmJson.hpp"
 #include "Toast/Renderer/Framebuffer.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
@@ -73,7 +73,7 @@ public:
 	/// @note Only available in editor builds (TOAST_EDITOR defined)
 	virtual void EndImGuiFrame() = 0;
 
-	// ========== Scene Management ==========
+	// ========== RootNode Management ==========
 
 	/// @brief Adds a renderable object to the render queue
 	/// @param renderable Pointer to the renderable object to add
@@ -340,7 +340,7 @@ protected:
 	static IRendererBase* m_instance;
 
 	// ========== Event System ==========
-	event::ListenerComponent m_listener;
+	event::ListenerSubNode m_listener;
 
 	// ========== Framebuffers ==========
 	/// @note These are owned by the derived renderer implementation
@@ -351,7 +351,7 @@ protected:
 	// ========== Camera ==========
 	toast::Camera* m_activeCamera = nullptr;    ///< Currently active camera for rendering
 
-	// ========== Scene Objects ==========
+	// ========== RootNode Nodes ==========
 	std::vector<IRenderable*> m_renderables;               ///< Opaque renderable objects (geometry pass)
 	std::vector<IRenderable*> m_transparentRenderables;    ///< Transparent/sprite renderables (sprite pass, post-combine)
 	std::vector<Light2D*> m_lights;                        ///< All 2D lights in the scene

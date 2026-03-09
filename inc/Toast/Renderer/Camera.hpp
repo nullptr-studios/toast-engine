@@ -9,7 +9,7 @@
  */
 
 #pragma once
-#include "Toast/Objects/Actor.hpp"
+#include "Toast/Nodes/Node3D.hpp"
 
 #include <glm/glm.hpp>
 
@@ -17,9 +17,9 @@ namespace toast {
 
 /**
  * @class Camera
- * @brief Actor that provides the view matrix for rendering.
+ * @brief Node3D that provides the view matrix for rendering.
  *
- * The Camera class extends Actor to provide camera functionality.
+ * The Camera class extends Node3D to provide camera functionality.
  * It calculates the view matrix from its transform and can be set
  * as the active camera for the renderer.
  *
@@ -44,9 +44,9 @@ namespace toast {
  * @note Only one camera should be active at a time. Setting a new
  *       active camera automatically deactivates the previous one.
  *
- * @see Actor, IRendererBase
+ * @see Node3D, IRendererBase
  */
-class Camera : public toast::Actor {
+class Camera : public toast::Node3D {
 public:
 	REGISTER_TYPE(Camera);
 

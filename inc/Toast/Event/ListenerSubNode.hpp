@@ -1,10 +1,10 @@
-/// @file   ListenerComponent.hpp
+/// @file   ListenerSubNode.hpp
 /// @author Xein
 /// @date   14 Apr 2025
 
 #pragma once
 
-#include "Toast/Components/Component.hpp"
+#include "Toast/SubNodes/SubNode.hpp"
 #include "Toast/Log.hpp"
 
 #include <any>
@@ -19,20 +19,20 @@ static inline std::mutex s_eventMutex;
 
 void Send(IEvent* event);
 
-class ListenerComponent : public toast::Component {
+class ListenerSubNode : public toast::SubNode {
 	friend struct IEvent;
 	template<typename TEvent>
 	friend struct Event;
 
 public:
-	using EventMap = std::multimap<unsigned char, ListenerComponent*>;
+	using EventMap = std::multimap<unsigned char, ListenerSubNode*>;
 
-	REGISTER_TYPE(ListenerComponent);
-	ListenerComponent() = default;
-	~ListenerComponent() override;
+	REGISTER_TYPE(ListenerSubNode);
+	ListenerSubNode() = default;
+	~ListenerSubNode() override;
 
-	ListenerComponent(const ListenerComponent&) = delete;
-	ListenerComponent& operator=(const ListenerComponent&) = delete;
+	ListenerSubNode(const ListenerSubNode&) = delete;
+	ListenerSubNode& operator=(const ListenerSubNode&) = delete;
 
 	/// @brief Subscribes a function to a specific event
 	template<typename TEvent>
@@ -64,7 +64,7 @@ private:
 
 // I'm ignoring the readability-function-size because it has to do with the Tracy wrapper macro that adds +1 complexity 0x
 template<typename TEvent>
-void ListenerComponent::Subscribe(
+void ListenerSubNode::Subscribe(
     std::string name, std::function<bool(TEvent*)> callback, unsigned char priority
 ) {    // NOLINT(readability-function-size)
 	static_assert(std::is_base_of_v<IEvent, TEvent>, "Event T is not inherited from IEvent");
@@ -105,7 +105,7 @@ void ListenerComponent::Subscribe(
 }
 
 template<typename TEvent>
-void ListenerComponent::Unsubscribe() {
+void ListenerSubNode::Unsubscribe() {
 	static_assert(std::is_base_of_v<IEvent, TEvent>, "Event T is not inherited from IEvent");
 	size_t count = m_callbacks.count(typeid(TEvent));
 	if (!m_callbacks.contains(typeid(TEvent))) {
@@ -133,7 +133,7 @@ void ListenerComponent::Unsubscribe() {
 }
 
 template<typename TEvent>
-void ListenerComponent::Unsubscribe(std::string name) {
+void ListenerSubNode::Unsubscribe(std::string name) {
 	static_assert(std::is_base_of_v<IEvent, TEvent>, "Event T is not inherited from IEvent");
 
 	// CHECK if more functions exist
@@ -170,7 +170,7 @@ void ListenerComponent::Unsubscribe(std::string name) {
 }
 
 template<typename TEvent>
-bool ListenerComponent::Dispatch(TEvent* event) {
+bool ListenerSubNode::Dispatch(TEvent* event) {
 	// Find range with all callbacks
 	auto [begin, end] = m_callbacks.equal_range(typeid(TEvent));
 	bool handled = false;

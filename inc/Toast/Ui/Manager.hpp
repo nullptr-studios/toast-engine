@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/Event/ListenerSubNode.hpp"
 
 #include <Toast/Renderer/HUD/HUDLayer.hpp>
 #include <Toast/Window/Window.hpp>
@@ -17,7 +17,7 @@ namespace ui {
 class UiSystem {
 	struct {
 		renderer::HUD::HUDLayer* layer;
-		event::ListenerComponent listener;
+		event::ListenerSubNode listener;
 	} m;
 
 	void Configure();

@@ -1,10 +1,10 @@
-#include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/Event/ListenerSubNode.hpp"
 
 #include "EventSystem.hpp"
 
 namespace event {
 
-ListenerComponent::~ListenerComponent() {
+ListenerSubNode::~ListenerSubNode() {
 	if (m_events.empty()) {
 		return;
 	}

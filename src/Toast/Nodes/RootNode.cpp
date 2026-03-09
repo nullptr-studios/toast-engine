@@ -1,23 +1,23 @@
-#include "Toast/Objects/Scene.hpp"
+#include "Toast/Nodes/RootNode.hpp"
 
-#include "Toast/Objects/Object.hpp"
+#include "Toast/Nodes/Node.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 
 namespace toast {
 
-void Scene::Load(json_t j, bool force_create) {
+void RootNode::Load(json_t j, bool force_create) {
 	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 	if (j["format"].get<std::string>() != "scene") {
 		throw ToastException("Json format is invalid, expected .scene");
 	}
-	Object::Load(j, force_create);
+	Node::Load(j, force_create);
 }
 
-json_t Scene::Save() const {
+json_t RootNode::Save() const {
 	PROFILE_ZONE_C(0x00FF00);    // Green for serialization
-	json_t j = Object::Save();
+	json_t j = Node::Save();
 
 	if (!m_jsonPath.empty()) {
 		m_jsonPath = "SCENES/" + name() + ".scene";
@@ -33,7 +33,7 @@ json_t Scene::Save() const {
 	return j;
 }
 
-void Scene::Load(const std::string& json_path) {
+void RootNode::Load(const std::string& json_path) {
 	PROFILE_ZONE_C(0x0080FF);    // Light blue for file loading
 	m_jsonPath = json_path;
 	std::istringstream iss;
@@ -48,7 +48,7 @@ void Scene::Load(const std::string& json_path) {
 	Load(j);
 }
 
-void Scene::Restart() {
+void RootNode::Restart() {
 	TOAST_INFO("Reloading scene {0}", name());
 	json_t j;
 

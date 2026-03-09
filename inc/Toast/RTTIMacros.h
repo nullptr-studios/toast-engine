@@ -17,7 +17,7 @@
 	const char* type() const noexcept override {          \
 		return static_type();                               \
 	}                                                     \
-	static inline Object::Registrar<CLASS> registrar_ {};
+	static inline Node::Registrar<CLASS> registrar_ {};
 
 #define REGISTER_ABSTRACT(CLASS)               \
 	[[nodiscard]]                                \

@@ -1,4 +1,4 @@
-#include "Toast/Objects/Object.hpp"
+#include "Toast/Nodes/Node.hpp"
 
 #include "Toast/Log.hpp"
 #include "Toast/World.hpp"
@@ -9,7 +9,7 @@
 #include <ranges>
 
 namespace toast {
-void Object::Load(json_t j, const bool force_create) {
+void Node::Load(json_t j, const bool force_create) {
 	PROFILE_ZONE;
 
 	if (!m_serialize) {
@@ -53,7 +53,7 @@ void Object::Load(json_t j, const bool force_create) {
 	}
 }
 
-json_t Object::Save() const {
+json_t Node::Save() const {
 	PROFILE_ZONE;
 
 	json_t j {};
@@ -77,12 +77,12 @@ json_t Object::Save() const {
 	return j;
 }
 
-void Object::SoftLoad() {
+void Node::SoftLoad() {
 	// you shouldn't need to propagate this function
 	Load(m_json, false);
 }
 
-void Object::SoftSave() const {
+void Node::SoftSave() const {
 	m_json = Save();
 
 	for (const auto& child : children | std::views::values) {
@@ -90,11 +90,11 @@ void Object::SoftSave() const {
 	}
 }
 
-bool Object::enabled() const noexcept {
+bool Node::enabled() const noexcept {
 	return m_enabled;
 }
 
-void Object::enabled(bool enabled) {
+void Node::enabled(bool enabled) {
 	// if (m_enabled == enabled) {
 	// 	return;
 	// }
@@ -114,7 +114,7 @@ void Object::enabled(bool enabled) {
 	m_json["enabled"] = m_enabled;
 }
 
-void Object::RefreshBegin(const bool propagate) {
+void Node::RefreshBegin(const bool propagate) {
 	if (m_hasRunBegin) {
 		// If it has run begin, we need to re-schedule it
 		m_hasRunBegin = false;
@@ -135,34 +135,34 @@ void Object::RefreshBegin(const bool propagate) {
 	}
 }
 
-void Object::Nuke() {
+void Node::Nuke() {
 	// Don't make this function const even if it's possible
 	if (parent()) {
 		parent()->children.Remove(id());
 	} else {
-		if (base_type() != SceneT) {
+		if (base_type() != RootNodeT) {
 			TOAST_ERROR("Trying to nuke \"{0}\" but the bomb doesn't have enough uranium, ask Xein for more uranium", name());
 			// This will probably crash the engine, but maybe not
 			const_cast<Children&>(World::Instance()->GetChildren()).Remove(id());
 			return;
 		}
-		TOAST_WARN("Scene \"{0}\" (id {1}) was nuked", name(), id());
-		World::UnloadScene(id());
+		TOAST_WARN("RootNode \"{0}\" (id {1}) was nuked", name(), id());
+		World::UnloadRootNode(id());
 	}
 }
 
 #pragma region Children stuff
 
-Scene* Object::Children::scene() const {
+RootNode* Node::Children::scene() const {
 	if (!m_scene.has_value()) {
-		// 	throw ToastException("Scene has not been set");
+		// 	throw ToastException("RootNode has not been set");
 		TOAST_ERROR("scene() has not been set");
 		return nullptr;
 	}
 	return m_scene.value();
 }
 
-Object* Object::Children::parent() const {
+Node* Node::Children::parent() const {
 	if (!m_parent.has_value()) {
 		// 	throw ToastException("Parent has not been set");
 		TOAST_ERROR("parent() has not been set");
@@ -171,13 +171,13 @@ Object* Object::Children::parent() const {
 	return m_parent.value();
 }
 
-bool Object::Children::Has(const unsigned id) const {
+bool Node::Children::Has(const unsigned id) const {
 	// Check if the id exists in the map and is not nullptr
 	const auto it = m_children.find(id);
 	return it != m_children.end() && it->second != nullptr;
 }
 
-bool Object::Children::Has(std::string_view name) const {
+bool Node::Children::Has(std::string_view name) const {
 	for (const auto& child : m_children | std::views::values) {
 		if (child->name() == name) {
 			return true;
@@ -192,7 +192,7 @@ bool Object::Children::Has(std::string_view name) const {
 	return false;
 }
 
-bool Object::Children::HasType(std::string_view type, bool propagate) const {
+bool Node::Children::HasType(std::string_view type, bool propagate) const {
 	for (const auto& child : m_children | std::views::values) {
 		if (child->type() == type) {
 			return true;
@@ -210,7 +210,7 @@ bool Object::Children::HasType(std::string_view type, bool propagate) const {
 	return false;
 }
 
-Object* Object::Children::Get(unsigned id) {
+Node* Node::Children::Get(unsigned id) {
 	if (const auto& find = m_children.find(id); find != m_children.end()) {
 		return find->second.get();
 	}
@@ -221,7 +221,7 @@ Object* Object::Children::Get(unsigned id) {
 
 	// Recursively search
 	for (const auto& child : m_children | std::views::values) {
-		if (Object* result = child->children.Get(id); result != nullptr) {
+		if (Node* result = child->children.Get(id); result != nullptr) {
 			return result;
 		}
 	}
@@ -229,7 +229,7 @@ Object* Object::Children::Get(unsigned id) {
 	return nullptr;
 }
 
-Object* Object::Children::Get(std::string_view name) {
+Node* Node::Children::Get(std::string_view name) {
 	for (const auto& child : m_children | std::views::values) {
 		// Check for child name
 		if (child->name() == name) {
@@ -237,17 +237,17 @@ Object* Object::Children::Get(std::string_view name) {
 		}
 
 		// Recursively search
-		if (Object* result = child->children.Get(name); result != nullptr) {
+		if (Node* result = child->children.Get(name); result != nullptr) {
 			return result;
 		}
 	}
 
 	// Not found -> return nullptr
-	// TOAST_WARN("Object with name '{0}' not found", name);
+	// TOAST_WARN("Node with name '{0}' not found", name);
 	return nullptr;
 }
 
-Object* Object::Children::GetType(std::string_view type, bool propagate) {
+Node* Node::Children::GetType(std::string_view type, bool propagate) {
 	for (const auto& child : m_children | std::views::values) {
 		if (child->type() == type) {
 			return child.get();
@@ -264,19 +264,19 @@ Object* Object::Children::GetType(std::string_view type, bool propagate) {
 	return nullptr;
 }
 
-Object::Children::child_list& Object::Children::GetAll() {
+Node::Children::child_list& Node::Children::GetAll() {
 	return m_children;
 }
 
-Object* Object::Children::operator[](const unsigned id) {
+Node* Node::Children::operator[](const unsigned id) {
 	return this->Get(id);
 }
 
-Object* Object::Children::operator[](std::string_view name) {
+Node* Node::Children::operator[](std::string_view name) {
 	return this->Get(name);
 }
 
-Object* Object::Children::Add(std::string_view type, std::optional<std::string_view> name, std::optional<json_t> file) {
+Node* Node::Children::Add(std::string_view type, std::optional<std::string_view> name, std::optional<json_t> file) {
 	auto registry = getRegistry();
 	if (!registry.contains(type.data())) {
 		TOAST_ERROR("Type {0} not found in registry", type);
@@ -284,11 +284,11 @@ Object* Object::Children::Add(std::string_view type, std::optional<std::string_v
 	}
 
 	auto* obj = registry[type.data()](*this, std::nullopt);
-	_ConfigureObject(obj, name, file);
+	_ConfigureNode(obj, name, file);
 	return obj;
 }
 
-void Object::Children::_ConfigureObject(Object* obj, const std::optional<std::string_view>& name, const std::optional<json_t>& file) const {
+void Node::Children::_ConfigureNode(Node* obj, const std::optional<std::string_view>& name, const std::optional<json_t>& file) const {
 	// Go to fallback name if not provided
 	if (name.has_value()) {
 		obj->m_name = *name;
@@ -317,7 +317,7 @@ void Object::Children::_ConfigureObject(Object* obj, const std::optional<std::st
 	World::ScheduleBegin(obj);
 }
 
-void Object::Children::Remove(unsigned id) {
+void Node::Children::Remove(unsigned id) {
 	if (auto* o = Get(id); o != nullptr) {
 		// Run the destroy logic
 		o->_Destroy();
@@ -332,7 +332,7 @@ void Object::Children::Remove(unsigned id) {
 	}
 }
 
-void Object::Children::Remove(std::string_view name) {
+void Node::Children::Remove(std::string_view name) {
 	for (const auto& [_, child] : m_children) {
 		if (child->name() == name) {
 			// run the destroy logic
@@ -347,14 +347,14 @@ void Object::Children::Remove(std::string_view name) {
 	}
 }
 
-void Object::Children::RemoveAll() {
+void Node::Children::RemoveAll() {
 	for (const auto& [_, c] : m_children) {
 		World::ScheduleDestroy(c.get());
 	}
 }
 
 // Here lies the remnents of dante code :(
-// auto Object::Children::RecursiveLoop() -> std::generator<Children&> {
+// auto Node::Children::RecursiveLoop() -> std::generator<Children&> {
 // 	for (auto& child : m_children | std::views::values) {
 // 		co_yield child->children;
 // 		co_yield std::ranges::elements_of(child->children.RecursiveLoop());
@@ -362,16 +362,16 @@ void Object::Children::RemoveAll() {
 // }
 // omg dante -x
 
-void Object::SetScene(Scene* scene) {
+void Node::SetRootNode(RootNode* scene) {
 	assert(scene != nullptr);
 	m_scene = scene;
 	children.m_scene = scene;
 	for (auto& child : children | std::views::values) {
-		child->SetScene(scene);
+		child->SetRootNode(scene);
 	}
 }
 
-auto Object::Children::Collect(const unsigned id) -> std::unique_ptr<Object> {
+auto Node::Children::Collect(const unsigned id) -> std::unique_ptr<Node> {
 	auto iter = m_children.find(id);
 	assert(iter != m_children.end());
 	auto ptr = std::move(iter->second);
@@ -379,10 +379,10 @@ auto Object::Children::Collect(const unsigned id) -> std::unique_ptr<Object> {
 	return ptr;
 }
 
-void Object::Adopt(unsigned id) {
+void Node::Adopt(unsigned id) {
 	assert(id != m_id);
 	// adopting parent test
-	Object* iter;    // NOLINT
+	Node* iter;    // NOLINT
 	if ((iter = parent())) {
 		while (iter->id() != id && (iter = iter->parent())) { }
 		if (iter) {
@@ -396,7 +396,7 @@ void Object::Adopt(unsigned id) {
 		TOAST_ERROR("Cannot Adopt Child When Child Does Not Exist");
 		return;
 	}
-	auto parent = (obj->parent() ? std::optional<Object*>(obj->parent()) : std::nullopt);
+	auto parent = (obj->parent() ? std::optional<Node*>(obj->parent()) : std::nullopt);
 	Children* children_of_parent;    // NOLINT
 	if (parent) {
 		children_of_parent = &parent.value()->children;
@@ -406,20 +406,20 @@ void Object::Adopt(unsigned id) {
 	auto orphan = children_of_parent->Collect(id);
 
 	orphan->m_parent = this;
-	orphan->SetScene(m_scene);
+	orphan->SetRootNode(m_scene);
 	children.m_children[id] = std::move(orphan);
 }
 
 #pragma endregion
 
-void Object::_Init() {
+void Node::_Init() {
 	PROFILE_ZONE_C(0xFF6B00);    // Orange for initialization
 	PROFILE_TEXT(type(), strlen(type()));
 
 	Init();    // ACTOR's LOGIC
 }
 
-void Object::_Begin(bool propagate) {
+void Node::_Begin(bool propagate) {
 	if (!enabled()) {
 		return;
 	}
@@ -445,7 +445,7 @@ void Object::_Begin(bool propagate) {
 #endif
 }
 
-void Object::_EarlyTick() {
+void Node::_EarlyTick() {
 	if (not m_runsEarlyTick) {
 		return;
 	}
@@ -465,7 +465,7 @@ void Object::_EarlyTick() {
 	}
 }
 
-void Object::_Tick() {
+void Node::_Tick() {
 	if (!enabled() || !m_hasRunBegin || !m_runsTick) {
 		return;
 	}
@@ -482,7 +482,7 @@ void Object::_Tick() {
 }
 
 #ifdef TOAST_EDITOR
-void Object::_EditorTick() {
+void Node::_EditorTick() {
 	if (not m_runsLateTick) {
 		return;
 	}
@@ -502,7 +502,7 @@ void Object::_EditorTick() {
 }
 #endif
 
-void Object::_LateTick() {
+void Node::_LateTick() {
 	if (!enabled() || !m_hasRunBegin) {
 		return;
 	}
@@ -518,7 +518,7 @@ void Object::_LateTick() {
 	}
 }
 
-void Object::_Destroy() {
+void Node::_Destroy() {
 	// Commenting this because the destroy function should run always
 	// even if the object is destroyed while disabled
 	// if (!enabled()) return;
@@ -543,7 +543,7 @@ void Object::_Destroy() {
 	}
 }
 
-void Object::_PhysTick() {
+void Node::_PhysTick() {
 	if (!enabled() || !m_hasRunBegin || !m_runsPhysTick) {
 		return;
 	}
@@ -559,15 +559,15 @@ void Object::_PhysTick() {
 	}
 }
 
-void Object::_OnEnable() {
+void Node::_OnEnable() {
 	OnEnable();
 }
 
-void Object::_OnDisable() {
+void Node::_OnDisable() {
 	OnDisable();
 }
 
-void Object::_enabled(const bool enabled) {
+void Node::_enabled(const bool enabled) {
 	if (enabled && !m_json.empty()) {
 		if (m_json.contains("enabled")) {
 			m_enabled = m_json["enabled"];
@@ -583,7 +583,7 @@ void Object::_enabled(const bool enabled) {
 	}
 }
 
-void Object::_LoadTextures() {
+void Node::_LoadTextures() {
 	PROFILE_ZONE_C(0xFFFF00);    // Yellow for texture loading
 	PROFILE_TEXT(type(), strlen(type()));
 

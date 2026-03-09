@@ -53,7 +53,7 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 }
 
 json_t Light2D::Save() const {
-	json_t j = Actor::Save();
+	json_t j = Node3D::Save();
 	j["radius"] = m_radius;
 	j["intensity"] = m_intensity;
 	j["volumetric_intensity"] = m_volumetricIntensity;
@@ -65,7 +65,7 @@ json_t Light2D::Save() const {
 }
 
 void Light2D::Load(json_t j, bool force_create) {
-	Actor::Load(j, force_create);
+	Node3D::Load(j, force_create);
 	if (j.contains("radius")) {
 		m_radius = j.at("radius").get<float>();
 	}
@@ -95,7 +95,7 @@ void Light2D::Load(json_t j, bool force_create) {
 
 #ifdef TOAST_EDITOR
 void Light2D::Inspector() {
-	Actor::Inspector();
+	Node3D::Inspector();
 
 	ImGui::DragFloat("Light Radius", &m_radius, 0.5f, 0.0f, 10000.0f);
 	ImGui::DragFloat("Light Intensity", &m_intensity, 0.05f, 0.0f, 1.0f);

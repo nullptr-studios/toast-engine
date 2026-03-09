@@ -2,7 +2,7 @@
 
 #include "Toast/GameEvents.hpp"
 #include "Toast/Log.hpp"
-#include "Toast/Objects/Scene.hpp"
+#include "Toast/Nodes/RootNode.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/World.hpp"
 #include "sol/forward.hpp"
@@ -14,7 +14,7 @@
 
 namespace toast {
 
-Scene* GameFlow::currentScene = nullptr;
+RootNode* GameFlow::currentRootNode = nullptr;
 
 GameFlow::GameFlow() {
 	std::vector<std::string> world_list;
@@ -41,7 +41,7 @@ GameFlow::GameFlow() {
 
 	listener.Subscribe<toast::LoadWorld>([this](auto* e) {
 		LoadWorld(e->world);
-		m.nextLevel = toast::World::LoadScene(m.levelList[0]);
+		m.nextLevel = toast::World::LoadRootNode(m.levelList[0]);
 		return true;
 	});
 	listener.Subscribe<toast::LoadLevel>([this](auto* e) {
@@ -73,8 +73,8 @@ GameFlow::GameFlow() {
 	};
 }
 
-Scene* GameFlow::CurrentScene() {
-	return currentScene;
+RootNode* GameFlow::CurrentRootNode() {
+	return currentRootNode;
 }
 
 void GameFlow::LoadWorld(unsigned world) {
@@ -131,9 +131,9 @@ void GameFlow::LoadLevel(unsigned world, unsigned level) {
 	}
 	m.level = level;
 
-	m.currentLevel = toast::World::LoadScene(m.levelList[level]);
+	m.currentLevel = toast::World::LoadRootNode(m.levelList[level]);
 	if (m.levelList.size() >= level + 1) {
-		m.nextLevel = toast::World::LoadScene(m.levelList[level + 1]);
+		m.nextLevel = toast::World::LoadRootNode(m.levelList[level + 1]);
 	} else {
 		m.nextLevel = std::nullopt;
 	}
@@ -142,7 +142,7 @@ void GameFlow::LoadLevel(unsigned world, unsigned level) {
 	try {
 		auto* scene = toast::World::Get(m.currentLevel->get());
 		scene->enabled(true);
-		currentScene = dynamic_cast<Scene*>(scene);
+		currentRootNode = dynamic_cast<RootNode*>(scene);
 	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 }
 
@@ -171,18 +171,18 @@ void GameFlow::NextLevel() {
 
 	// Load & Enable New Level
 	m.currentLevel = std::move(m.nextLevel).or_else([this]() -> std::optional<std::shared_future<unsigned>> {
-		return toast::World::LoadScene(m.levelList[m.level.value()]);
+		return toast::World::LoadRootNode(m.levelList[m.level.value()]);
 	});
 	try {
 		m.currentLevel->wait();
 		auto* scene = toast::World::Get(m.currentLevel->get());
 		scene->enabled(true);
-		currentScene = dynamic_cast<Scene*>(scene);
+		currentRootNode = dynamic_cast<RootNode*>(scene);
 	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 
 	// Pre Load Next Level :3
 	if (m.levelList.size() > m.level.value() + 1) {
-		m.nextLevel = toast::World::LoadScene(m.levelList[m.level.value() + 1]);
+		m.nextLevel = toast::World::LoadRootNode(m.levelList[m.level.value() + 1]);
 	} else {
 		m.nextLevel = std::nullopt;
 	}

@@ -11,7 +11,7 @@
 #include "Toast/Renderer/Lights/GlobalLight.hpp"
 
 void GlobalLight::Init() {
-	Object::Init();
+	Node::Init();
 
 	renderer::IRendererBase::GetInstance()->SetGlobalLightEnabled(m_enableLight);
 	renderer::IRendererBase::GetInstance()->SetGlobalLightColor(m_color);
@@ -19,7 +19,7 @@ void GlobalLight::Init() {
 }
 
 void GlobalLight::Load(json_t j, bool force_create) {
-	Object::Load(j, force_create);
+	Node::Load(j, force_create);
 	if (j.contains("color")) {
 		m_color = j.at("color").get<glm::vec3>();
 	}
@@ -32,7 +32,7 @@ void GlobalLight::Load(json_t j, bool force_create) {
 }
 
 json_t GlobalLight::Save() const {
-	json_t j = Object::Save();
+	json_t j = Node::Save();
 	j["color"] = m_color;
 	j["intensity"] = m_intensity;
 	j["enableLight"] = m_enableLight;
@@ -41,7 +41,7 @@ json_t GlobalLight::Save() const {
 
 #ifdef TOAST_EDITOR
 void GlobalLight::Inspector() {
-	Object::Inspector();
+	Node::Inspector();
 	if (ImGui::Checkbox("Enable Global Light", &m_enableLight)) {
 		renderer::IRendererBase::GetInstance()->SetGlobalLightEnabled(m_enableLight);
 	}

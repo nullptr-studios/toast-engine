@@ -1,6 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
-#include "Toast/Objects/Actor.hpp"
+#include "Toast/Nodes/Node3D.hpp"
 #include "Toast/Profiler.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/gtx/quaternion.hpp"
@@ -9,7 +9,7 @@
 #include "imgui.h"
 #endif
 
-#include "Toast/Components/TransformComponent.hpp"
+#include "Toast/SubNodes/TransformSubNode.hpp"
 #include "Toast/GlmJson.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 
@@ -19,11 +19,11 @@ namespace toast {
 
 static constexpr float kEPS = 1e-6f;
 
-glm::vec3 TransformComponent::SafeCompDiv(const glm::vec3& a, const glm::vec3& b) noexcept {
+glm::vec3 TransformSubNode::SafeCompDiv(const glm::vec3& a, const glm::vec3& b) noexcept {
 	return { std::abs(b.x) > kEPS ? a.x / b.x : 0.0f, std::abs(b.y) > kEPS ? a.y / b.y : 0.0f, std::abs(b.z) > kEPS ? a.z / b.z : 0.0f };
 }
 
-TransformComponent::TransformComponent()
+TransformSubNode::TransformSubNode()
     : m_position(0.0f),
       m_rotation(identity<quat>()),
       m_scale(1.0f),
@@ -37,7 +37,7 @@ TransformComponent::TransformComponent()
 	m_cachedParentWorldScl = glm::vec3(1.0f);
 }
 
-TransformComponent::TransformComponent(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale)
+TransformSubNode::TransformSubNode(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale)
     : m_position(pos),
       m_rotation(quat(radians(rot))),
       m_scale(scale),
@@ -51,9 +51,9 @@ TransformComponent::TransformComponent(const glm::vec3& pos, const glm::vec3& ro
 	m_cachedParentWorldScl = glm::vec3(1.0f);
 }
 
-json_t TransformComponent::Save() const {
+json_t TransformSubNode::Save() const {
 	PROFILE_ZONE_C(0x00FF00);    // Green for serialization
-	json_t j = Component::Save();
+	json_t j = SubNode::Save();
 	j["position"] = m_position;
 	j["rotation"] = m_rotation;
 	j["scale"] = m_scale;
@@ -61,9 +61,9 @@ json_t TransformComponent::Save() const {
 	return j;
 }
 
-void TransformComponent::Load(json_t j, bool force_create) {
+void TransformSubNode::Load(json_t j, bool force_create) {
 	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
-	Component::Load(j, force_create);
+	SubNode::Load(j, force_create);
 
 	try {
 		if (j.contains("position")) {
@@ -90,8 +90,8 @@ void TransformComponent::Load(json_t j, bool force_create) {
 }
 
 #ifdef TOAST_EDITOR
-void TransformComponent::Inspector() {
-	Component::Inspector();
+void TransformSubNode::Inspector() {
+	SubNode::Inspector();
 
 	// Use a persistent Euler cache for editing to avoid re-deriving from quaternion each frame,
 	// which can clamp around +/-90° due to Euler ambiguity.
@@ -124,33 +124,33 @@ void TransformComponent::Inspector() {
 }
 #endif
 
-glm::vec3 TransformComponent::position() const noexcept {
+glm::vec3 TransformSubNode::position() const noexcept {
 	return m_position;
 }
 
-glm::vec3 TransformComponent::rotation() const noexcept {
+glm::vec3 TransformSubNode::rotation() const noexcept {
 	return degrees(eulerAngles(m_rotation));
 }
 
-glm::vec3 TransformComponent::rotationRadians() const noexcept {
+glm::vec3 TransformSubNode::rotationRadians() const noexcept {
 	return eulerAngles(m_rotation);
 }
 
-glm::quat TransformComponent::rotationQuat() const noexcept {
+glm::quat TransformSubNode::rotationQuat() const noexcept {
 	return m_rotation;
 }
 
-glm::vec3 TransformComponent::scale() const noexcept {
+glm::vec3 TransformSubNode::scale() const noexcept {
 	return m_scale;
 }
 
-void TransformComponent::position(const glm::vec3& position) noexcept {
+void TransformSubNode::position(const glm::vec3& position) noexcept {
 	m_position = position;
 	m_dirtyMatrix = m_dirtyInverse = m_dirtyWorldMatrix = true;
 	UpdateChildrenWorldMatrix();
 }
 
-void TransformComponent::rotation(const glm::vec3& degreesVal) noexcept {
+void TransformSubNode::rotation(const glm::vec3& degreesVal) noexcept {
 	m_rotation = normalize(quat(radians(degreesVal)));
 	m_eulerDegreesCache = degreesVal;    // keep editor cache in sync to avoid 90° lock
 	m_eulerCacheValid = true;
@@ -158,7 +158,7 @@ void TransformComponent::rotation(const glm::vec3& degreesVal) noexcept {
 	UpdateChildrenWorldMatrix();
 }
 
-void TransformComponent::rotationRadians(const glm::vec3& rotationVal) noexcept {
+void TransformSubNode::rotationRadians(const glm::vec3& rotationVal) noexcept {
 	m_rotation = normalize(quat(rotationVal));
 	m_eulerDegreesCache = degrees(rotationVal);
 	m_eulerCacheValid = true;
@@ -166,7 +166,7 @@ void TransformComponent::rotationRadians(const glm::vec3& rotationVal) noexcept 
 	UpdateChildrenWorldMatrix();
 }
 
-void TransformComponent::rotationQuat(const glm::quat& quaternion) noexcept {
+void TransformSubNode::rotationQuat(const glm::quat& quaternion) noexcept {
 	m_rotation = normalize(quaternion);
 	m_eulerDegreesCache = degrees(eulerAngles(m_rotation));
 	m_eulerCacheValid = true;
@@ -174,7 +174,7 @@ void TransformComponent::rotationQuat(const glm::quat& quaternion) noexcept {
 	UpdateChildrenWorldMatrix();
 }
 
-void TransformComponent::scale(const glm::vec3& scaleVal) noexcept {
+void TransformSubNode::scale(const glm::vec3& scaleVal) noexcept {
 	m_scale = scaleVal;
 	m_dirtyMatrix = m_dirtyInverse = m_dirtyWorldMatrix = true;
 	UpdateChildrenWorldMatrix();
@@ -182,7 +182,7 @@ void TransformComponent::scale(const glm::vec3& scaleVal) noexcept {
 
 // -------- World TRS helpers --------
 
-void TransformComponent::ComputeParentWorldTRS(glm::vec3& outPos, glm::quat& outRot, glm::vec3& outScl) const noexcept {
+void TransformSubNode::ComputeParentWorldTRS(glm::vec3& outPos, glm::quat& outRot, glm::vec3& outScl) const noexcept {
 	// If world matrix is clean, reuse cached parent TRS
 	if (!m_dirtyWorldMatrix) {
 		outPos = m_cachedParentWorldPos;
@@ -196,18 +196,18 @@ void TransformComponent::ComputeParentWorldTRS(glm::vec3& outPos, glm::quat& out
 	glm::quat accRot = glm::identity<glm::quat>();
 	glm::vec3 accScl = glm::vec3(1.0f);
 
-	Object* object_ptr = parent();
+	Node* object_ptr = parent();
 	while (object_ptr) {
-		TransformComponent* parent_transform = nullptr;
+		TransformSubNode* parent_transform = nullptr;
 
-		if (Actor* parent_actor = dynamic_cast<Actor*>(object_ptr)) {
-			// Skip using our own transform as parent if parent is our owning Actor
+		if (Node3D* parent_actor = dynamic_cast<Node3D*>(object_ptr)) {
+			// Skip using our own transform as parent if parent is our owning Node3D
 			if (parent_actor->transform() == this) {
 				object_ptr = object_ptr->parent();
 				continue;
 			}
 			parent_transform = parent_actor->transform();
-		} else if (TransformComponent* parent_comp = dynamic_cast<TransformComponent*>(object_ptr)) {
+		} else if (TransformSubNode* parent_comp = dynamic_cast<TransformSubNode*>(object_ptr)) {
 			parent_transform = parent_comp;
 		} else {
 			// Skip non-transform parents
@@ -236,7 +236,7 @@ void TransformComponent::ComputeParentWorldTRS(glm::vec3& outPos, glm::quat& out
 
 // -------- World TRS getters --------
 
-glm::vec3 TransformComponent::worldPosition() noexcept {
+glm::vec3 TransformSubNode::worldPosition() noexcept {
 	glm::vec3 pPos;
 	glm::quat pRot;
 	glm::vec3 pScl;
@@ -244,7 +244,7 @@ glm::vec3 TransformComponent::worldPosition() noexcept {
 	return pRot * (m_position * pScl) + pPos;
 }
 
-glm::quat TransformComponent::worldRotationQuat() noexcept {
+glm::quat TransformSubNode::worldRotationQuat() noexcept {
 	glm::vec3 pPos;
 	glm::quat pRot;
 	glm::vec3 pScl;
@@ -252,15 +252,15 @@ glm::quat TransformComponent::worldRotationQuat() noexcept {
 	return normalize(pRot * m_rotation);
 }
 
-glm::vec3 TransformComponent::worldRotationRadians() noexcept {
+glm::vec3 TransformSubNode::worldRotationRadians() noexcept {
 	return eulerAngles(worldRotationQuat());
 }
 
-glm::vec3 TransformComponent::worldRotation() noexcept {
+glm::vec3 TransformSubNode::worldRotation() noexcept {
 	return degrees(worldRotationRadians());
 }
 
-glm::vec3 TransformComponent::worldScale() noexcept {
+glm::vec3 TransformSubNode::worldScale() noexcept {
 	glm::vec3 pPos;
 	glm::quat pRot;
 	glm::vec3 pScl;
@@ -270,7 +270,7 @@ glm::vec3 TransformComponent::worldScale() noexcept {
 
 // -------- World TRS setters --------
 
-void TransformComponent::worldPosition(const glm::vec3& worldPos) noexcept {
+void TransformSubNode::worldPosition(const glm::vec3& worldPos) noexcept {
 	// localPos = inverse(pRot) * ((worldPos - pPos) / pScl)
 	glm::vec3 pPos;
 	glm::quat pRot;
@@ -283,7 +283,7 @@ void TransformComponent::worldPosition(const glm::vec3& worldPos) noexcept {
 	position(localPos);    // will mark dirties and propagate
 }
 
-void TransformComponent::worldRotationQuat(const glm::quat& worldRot) noexcept {
+void TransformSubNode::worldRotationQuat(const glm::quat& worldRot) noexcept {
 	glm::vec3 pPos;
 	glm::quat pRot;
 	glm::vec3 pScl;
@@ -293,15 +293,15 @@ void TransformComponent::worldRotationQuat(const glm::quat& worldRot) noexcept {
 	rotationQuat(localRot);    // marks dirties and syncs editor cache
 }
 
-void TransformComponent::worldRotationRadians(const glm::vec3& worldRotRadians) noexcept {
+void TransformSubNode::worldRotationRadians(const glm::vec3& worldRotRadians) noexcept {
 	worldRotationQuat(normalize(quat(worldRotRadians)));
 }
 
-void TransformComponent::worldRotation(const glm::vec3& worldRotDegrees) noexcept {
+void TransformSubNode::worldRotation(const glm::vec3& worldRotDegrees) noexcept {
 	worldRotationQuat(normalize(quat(radians(worldRotDegrees))));
 }
 
-void TransformComponent::worldScale(const glm::vec3& worldScl) noexcept {
+void TransformSubNode::worldScale(const glm::vec3& worldScl) noexcept {
 	glm::vec3 pPos;
 	glm::quat pRot;
 	glm::vec3 pScl;
@@ -313,7 +313,7 @@ void TransformComponent::worldScale(const glm::vec3& worldScl) noexcept {
 
 // -------- Direction vectors --------
 
-glm::vec3 TransformComponent::GetFrontVector() noexcept {
+glm::vec3 TransformSubNode::GetFrontVector() noexcept {
 	if (!m_dirtyDirectionVectors) {
 		return m_front;
 	}
@@ -321,7 +321,7 @@ glm::vec3 TransformComponent::GetFrontVector() noexcept {
 	return m_front;
 }
 
-glm::vec3 TransformComponent::GetRightVector() noexcept {
+glm::vec3 TransformSubNode::GetRightVector() noexcept {
 	if (!m_dirtyDirectionVectors) {
 		return m_right;
 	}
@@ -329,7 +329,7 @@ glm::vec3 TransformComponent::GetRightVector() noexcept {
 	return m_right;
 }
 
-glm::vec3 TransformComponent::GetUpVector() noexcept {
+glm::vec3 TransformSubNode::GetUpVector() noexcept {
 	if (!m_dirtyDirectionVectors) {
 		return m_up;
 	}
@@ -339,7 +339,7 @@ glm::vec3 TransformComponent::GetUpVector() noexcept {
 
 // -------- Matrices --------
 
-glm::mat4 TransformComponent::GetMatrix() noexcept {
+glm::mat4 TransformSubNode::GetMatrix() noexcept {
 	if (!m_dirtyMatrix) {
 		return m_cachedMatrix;
 	}
@@ -354,7 +354,7 @@ glm::mat4 TransformComponent::GetMatrix() noexcept {
 	return m_cachedMatrix;
 }
 
-glm::mat4 TransformComponent::GetInverse() noexcept {
+glm::mat4 TransformSubNode::GetInverse() noexcept {
 	if (!m_dirtyInverse) {
 		return m_cachedInverse;
 	}
@@ -379,7 +379,7 @@ glm::mat4 TransformComponent::GetInverse() noexcept {
 	return m_cachedInverse;
 }
 
-glm::mat4 TransformComponent::GetWorldMatrix() noexcept {
+glm::mat4 TransformSubNode::GetWorldMatrix() noexcept {
 	if (!m_dirtyWorldMatrix) {
 		return m_cachedWorldMatrix;
 	}
@@ -395,17 +395,17 @@ glm::mat4 TransformComponent::GetWorldMatrix() noexcept {
 	glm::quat world_rot = m_rotation;
 	glm::vec3 world_scl = m_scale;
 
-	Object* object_ptr = parent();
+	Node* object_ptr = parent();
 	while (object_ptr) {
-		TransformComponent* parent_transform = nullptr;
+		TransformSubNode* parent_transform = nullptr;
 
-		if (Actor* parent_actor = dynamic_cast<Actor*>(object_ptr)) {
+		if (Node3D* parent_actor = dynamic_cast<Node3D*>(object_ptr)) {
 			if (parent_actor->transform() == this) {
 				object_ptr = object_ptr->parent();
 				continue;
 			}
 			parent_transform = parent_actor->transform();
-		} else if (TransformComponent* parent_comp = dynamic_cast<TransformComponent*>(object_ptr)) {
+		} else if (TransformSubNode* parent_comp = dynamic_cast<TransformSubNode*>(object_ptr)) {
 			parent_transform = parent_comp;
 		} else {
 			// Skip non-transform parents
@@ -432,7 +432,7 @@ glm::mat4 TransformComponent::GetWorldMatrix() noexcept {
 	return m_cachedWorldMatrix;
 }
 
-void TransformComponent::CalcDirectionVectors() {
+void TransformSubNode::CalcDirectionVectors() {
 	glm::vec3 forward_local(0.0f, 0.0f, -1.0f);
 	glm::vec3 right_local(1.0f, 0.0f, 0.0f);
 	glm::vec3 up_local(0.0f, 1.0f, 0.0f);
@@ -444,21 +444,21 @@ void TransformComponent::CalcDirectionVectors() {
 	m_dirtyDirectionVectors = false;
 }
 
-void TransformComponent::UpdateChildrenWorldMatrix() {
+void TransformSubNode::UpdateChildrenWorldMatrix() {
 	auto begin = children.begin();
 	auto end = children.end();
-	if (m_attachedActor) {
-		begin = m_attachedActor->children.begin();
-		end = m_attachedActor->children.end();
+	if (m_attachedNode3D) {
+		begin = m_attachedNode3D->children.begin();
+		end = m_attachedNode3D->children.end();
 	}
 	for (auto child = begin; child != end; ++child) {
-		if (auto a = dynamic_cast<Actor*>(child->second.get())) {
+		if (auto a = dynamic_cast<Node3D*>(child->second.get())) {
 			if (auto* t = a->transform()) {
 				t->m_dirtyWorldMatrix = true;
 				// Propagate into the child actor's own components
 				t->UpdateChildrenWorldMatrix();
 			}
-		} else if (auto t = dynamic_cast<TransformComponent*>(child->second.get())) {
+		} else if (auto t = dynamic_cast<TransformSubNode*>(child->second.get())) {
 			t->m_dirtyWorldMatrix = true;
 			t->UpdateChildrenWorldMatrix();
 		} else if (auto r = dynamic_cast<IRenderable*>(child->second.get())) {

@@ -1,31 +1,31 @@
-#include "Toast/Objects/Object.hpp"
+#include "Toast/Nodes/Node.hpp"
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
 #endif
 
-#include "Toast/Components/TransformComponent.hpp"
-#include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/SubNodes/TransformSubNode.hpp"
+#include "Toast/Event/ListenerSubNode.hpp"
 #include "Toast/GlmJson.hpp"
-#include "Toast/Objects/Actor.hpp"
+#include "Toast/Nodes/Node3D.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 
 namespace toast {
 
-Actor::Actor() {
-	// Adds a transform to the Actor
-	m_transform = std::make_unique<TransformComponent>();
+Node3D::Node3D() {
+	// Adds a transform to the Node3D
+	m_transform = std::make_unique<TransformSubNode>();
 	m_transform->m_id = Factory::AssignId();
-	m_transform->SetAttachedActor(this);
+	m_transform->SetAttachedNode3D(this);
 	m_transform->m_parent = this;
 	// Adds an Event Listener component
-	m_listener = std::make_unique<event::ListenerComponent>();
+	m_listener = std::make_unique<event::ListenerSubNode>();
 }
 
-json_t Actor::Save() const {
+json_t Node3D::Save() const {
 	PROFILE_ZONE_C(0x00FF00);    // Green for serialization
-	json_t j = Object::Save();
+	json_t j = Node::Save();
 	json_t transform_j;
 	transform_j["position"] = m_transform->position();
 	transform_j["rotation"] = m_transform->rotationQuat();
@@ -34,7 +34,7 @@ json_t Actor::Save() const {
 	return j;
 }
 
-void Actor::Load(json_t j, bool force_create) {
+void Node3D::Load(json_t j, bool force_create) {
 	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 
 	auto transform_j = j["transform"];
@@ -42,12 +42,12 @@ void Actor::Load(json_t j, bool force_create) {
 	m_transform->rotationQuat(transform_j["rotation"].get<glm::quat>());
 	m_transform->scale(transform_j["scale"].get<glm::vec3>());
 
-	Object::Load(j, force_create);
+	Node::Load(j, force_create);
 }
 
 #ifdef TOAST_EDITOR
-void Actor::Inspector() {
-	Object::Inspector();
+void Node3D::Inspector() {
+	Node::Inspector();
 	if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::Indent(20);
 		transform()->Inspector();
@@ -56,16 +56,16 @@ void Actor::Inspector() {
 }
 #endif
 
-void Actor::Init() { }
+void Node3D::Init() { }
 
-TransformComponent* Actor::transform() const {
+TransformSubNode* Node3D::transform() const {
 	if (!m_transform) {
 		throw ToastException("No transform provided in actor???");
 	}
 	return m_transform.get();
 }
 
-event::ListenerComponent* Actor::listener() const {
+event::ListenerSubNode* Node3D::listener() const {
 	if (!m_listener) {
 		throw ToastException("No listener provided in actor???");
 	}

@@ -6,12 +6,12 @@
 #include "ColliderData.hpp"
 #include "ColliderFlags.hpp"
 #include "Line.hpp"
-#include "Toast/Components/Component.hpp"
+#include "Toast/SubNodes/SubNode.hpp"
 
 #include <glm/glm.hpp>
 
 namespace toast {
-class Actor;
+class Node3D;
 }
 
 namespace physics {
@@ -27,7 +27,7 @@ enum class ColliderEditMode {
 	MULTI,
 };
 
-class Collider : public toast::Component {
+class Collider : public toast::SubNode {
 public:
 	REGISTER_TYPE(Collider);
 

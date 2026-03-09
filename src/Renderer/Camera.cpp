@@ -9,18 +9,18 @@
 #include "glm/ext/matrix_transform.hpp"
 
 void toast::Camera::Init() {
-	Actor::Init();
+	Node3D::Init();
 }
 
 void toast::Camera::Begin() {
-	Actor::Begin();
+	Node3D::Begin();
 	if (m_isActiveCamera) {
 		renderer::IRendererBase::GetInstance()->SetActiveCamera(this);
 	}
 }
 
 void toast::Camera::Destroy() {
-	Actor::Destroy();
+	Node3D::Destroy();
 
 	if (renderer::IRendererBase::GetInstance()->GetActiveCamera() == this) {
 		renderer::IRendererBase::GetInstance()->SetActiveCamera(nullptr);
@@ -28,13 +28,13 @@ void toast::Camera::Destroy() {
 }
 
 json_t toast::Camera::Save() const {
-	json_t j = Actor::Save();
+	json_t j = Node3D::Save();
 	j["isActiveCamera"] = m_isActiveCamera;
 	return j;
 }
 
 void toast::Camera::Load(json_t j, bool force_create) {
-	Actor::Load(j);
+	Node3D::Load(j);
 	m_isActiveCamera = j.value("isActiveCamera", false);
 }
 

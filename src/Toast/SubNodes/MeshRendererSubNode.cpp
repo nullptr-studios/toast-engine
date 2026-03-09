@@ -1,4 +1,4 @@
-/// @file MeshRendererComponent.cpp
+/// @file MeshRendererSubNode.cpp
 /// @author dario
 /// @date 28/09/2025.
 
@@ -10,14 +10,14 @@
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #endif
-#include "Toast/Components/MeshRendererComponent.hpp"
+#include "Toast/SubNodes/MeshRendererSubNode.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
 
 namespace toast {
 
-void MeshRendererComponent::Load(json_t j, bool force_create) {
+void MeshRendererSubNode::Load(json_t j, bool force_create) {
 	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
-	TransformComponent::Load(j, force_create);
+	TransformSubNode::Load(j, force_create);
 	// if (j.contains("shaderPath")) {
 	//	m_shaderPath = j.at("shaderPath");
 	// }
@@ -37,8 +37,8 @@ void MeshRendererComponent::Load(json_t j, bool force_create) {
 	}
 }
 
-json_t MeshRendererComponent::Save() const {
-	json_t j = TransformComponent::Save();
+json_t MeshRendererSubNode::Save() const {
+	json_t j = TransformSubNode::Save();
 	// j["shaderPath"] = m_shaderPath;
 	// j["texturePath"] = m_texturePath;
 	j["meshPath"] = m_meshPath;
@@ -48,10 +48,10 @@ json_t MeshRendererComponent::Save() const {
 }
 
 #ifdef TOAST_EDITOR
-void MeshRendererComponent::Inspector() {
+void MeshRendererSubNode::Inspector() {
 	if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::Indent(20);
-		TransformComponent::Inspector();
+		TransformSubNode::Inspector();
 		ImGui::Unindent(20);
 	}
 
@@ -67,8 +67,8 @@ void MeshRendererComponent::Inspector() {
 }
 
 #endif
-void MeshRendererComponent::Init() {
-	TransformComponent::Init();
+void MeshRendererSubNode::Init() {
+	TransformSubNode::Init();
 	// init just for loading
 	m_material = resource::LoadResource<renderer::Material>(m_materialPath);
 	// m_texture = resource::ResourceManager::GetInstance()->LoadResource<Texture>(m_texturePath);
@@ -99,7 +99,7 @@ void MeshRendererComponent::Init() {
 #endif
 }
 
-void MeshRendererComponent::LoadTextures() {
+void MeshRendererSubNode::LoadTextures() {
 	PROFILE_ZONE_C(0xFFFF00);    // Yellow for resource loading
 	// opengl calls eso si que es en el main thread
 	// m_shader->Use();
@@ -107,7 +107,7 @@ void MeshRendererComponent::LoadTextures() {
 	renderer::IRendererBase::GetInstance()->AddRenderable(this);
 }
 
-void MeshRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept {
+void MeshRendererSubNode::OnRender(const glm::mat4& precomputed_mat) noexcept {
 	if (!enabled()) {
 		return;
 	}
@@ -148,7 +148,7 @@ void MeshRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept 
 	// m_shader->unuse();
 }
 
-void MeshRendererComponent::Destroy() {
+void MeshRendererSubNode::Destroy() {
 	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
 }
 

@@ -1,9 +1,9 @@
-/// @file AtlasSpriteComponent.hpp
+/// @file AtlasSpriteSubNode.hpp
 /// @author dario
 /// @date 04/02/2026.
 
 #pragma once
-#include "Toast/Components/TransformComponent.hpp"
+#include "Toast/SubNodes/TransformSubNode.hpp"
 #include "spine/Atlas.h"
 
 #include <string>
@@ -11,12 +11,12 @@
 
 namespace toast {
 
-/// @class AtlasSpriteComponent
-/// @brief Individual sprite instance from an atlas, child of AtlasRendererComponent
+/// @class AtlasSpriteSubNode
+/// @brief Individual sprite instance from an atlas, child of AtlasRendererSubNode
 /// Each sprite has its own transform and can be manipulated independently
-class AtlasSpriteComponent : public TransformComponent {
+class AtlasSpriteSubNode : public TransformSubNode {
 public:
-	REGISTER_TYPE(AtlasSpriteComponent);
+	REGISTER_TYPE(AtlasSpriteSubNode);
 
 	void Init() override;
 	void Destroy() override;

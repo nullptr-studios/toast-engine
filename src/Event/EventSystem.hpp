@@ -1,7 +1,7 @@
 /// @file   EventSystem.hpp
 /// @author Xein
 /// @date   16/04/25
-/// @brief  Object responsible for handling the queue of events
+/// @brief  Node responsible for handling the queue of events
 
 #pragma once
 
@@ -10,11 +10,11 @@
 
 namespace event {
 struct IEvent;
-class ListenerComponent;
+class ListenerSubNode;
 
 class EventSystem {
 public:
-	friend class ListenerComponent;
+	friend class ListenerSubNode;
 
 	EventSystem();
 	~EventSystem();

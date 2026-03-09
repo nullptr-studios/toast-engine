@@ -1,10 +1,10 @@
-/// @file AtlasSpriteComponent.cpp
+/// @file AtlasSpriteSubNode.cpp
 /// @author dario
 /// @date 04/02/2026.
 
-#include "Toast/Components/AtlasSpriteComponent.hpp"
+#include "Toast/SubNodes/AtlasSpriteSubNode.hpp"
 
-#include "Toast/Components/AtlasRendererComponent.hpp"
+#include "Toast/SubNodes/AtlasRendererSubNode.hpp"
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
@@ -12,8 +12,8 @@
 
 namespace toast {
 
-void AtlasSpriteComponent::Init() {
-	TransformComponent::Init();
+void AtlasSpriteSubNode::Init() {
+	TransformSubNode::Init();
 
 	SetRunEarlyTick(false);
 	SetRunTick(false);
@@ -22,14 +22,14 @@ void AtlasSpriteComponent::Init() {
 #ifdef TOAST_EDITOR
 	// Autoadd to parent
 	// HACK: this is not really the best solution and the engine should know when are we in play mode or paused
-	dynamic_cast<AtlasRendererComponent*>(parent())->AddSpriteToCache(this);
+	dynamic_cast<AtlasRendererSubNode*>(parent())->AddSpriteToCache(this);
 #endif
 }
 
-void AtlasSpriteComponent::Destroy() {
-	toast::Object* p = parent();
+void AtlasSpriteSubNode::Destroy() {
+	toast::Node* p = parent();
 	while (p) {
-		if (auto* renderer = dynamic_cast<AtlasRendererComponent*>(p)) {
+		if (auto* renderer = dynamic_cast<AtlasRendererSubNode*>(p)) {
 			renderer->RemoveSpriteFromCache(this);
 			break;
 		}
@@ -37,8 +37,8 @@ void AtlasSpriteComponent::Destroy() {
 	}
 }
 
-void AtlasSpriteComponent::Load(json_t j, bool force_create) {
-	TransformComponent::Load(j, force_create);
+void AtlasSpriteSubNode::Load(json_t j, bool force_create) {
+	TransformSubNode::Load(j, force_create);
 
 	if (j.contains("regionName")) {
 		m.regionName = j.at("regionName").get<std::string>();
@@ -55,8 +55,8 @@ void AtlasSpriteComponent::Load(json_t j, bool force_create) {
 	}
 }
 
-json_t AtlasSpriteComponent::Save() const {
-	json_t j = TransformComponent::Save();
+json_t AtlasSpriteSubNode::Save() const {
+	json_t j = TransformSubNode::Save();
 	j["regionName"] = m.regionName;
 	j["color"] = { m.color.r, m.color.g, m.color.b, m.color.a };
 	return j;
@@ -64,10 +64,10 @@ json_t AtlasSpriteComponent::Save() const {
 
 #ifdef TOAST_EDITOR
 
-void AtlasSpriteComponent::Inspector() {
+void AtlasSpriteSubNode::Inspector() {
 	if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::Indent(20);
-		TransformComponent::Inspector();
+		TransformSubNode::Inspector();
 		ImGui::Unindent(20);
 	}
 

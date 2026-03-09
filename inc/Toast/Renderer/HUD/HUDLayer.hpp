@@ -221,7 +221,7 @@ private:
 	static HUDLayer* s_Instance;
 
 	// Listener for previewing or not te ui
-	event::ListenerComponent listener;
+	event::ListenerSubNode listener;
 
 	bool active_ = false;
 

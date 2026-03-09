@@ -1,16 +1,16 @@
 /**
- * @file TransformComponent.hpp
+ * @file TransformSubNode.hpp
  * @author Xein
  * @date 28/05/25
  * @brief Transform component for position, rotation, and scale.
  *
- * This file provides the TransformComponent class which manages
+ * This file provides the TransformSubNode class which manages
  * spatial properties (position, rotation, scale) for actors.
  */
 
 #pragma once
-#include "Component.hpp"
-#include "Toast/Objects/Object.hpp"
+#include "SubNode.hpp"
+#include "Toast/Nodes/Node.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -18,10 +18,10 @@
 namespace toast {
 
 /**
- * @class TransformComponent
- * @brief Component that manages position, rotation, and scale.
+ * @class TransformSubNode
+ * @brief SubNode that manages position, rotation, and scale.
  *
- * TransformComponent provides both local and world-space transforms for actors.
+ * TransformSubNode provides both local and world-space transforms for actors.
  * It supports hierarchical transforms where child transforms are relative to
  * their parent's world transform.
  *
@@ -54,16 +54,16 @@ namespace toast {
  * @note Rotation is stored as a quaternion internally but can be
  *       accessed as Euler angles (degrees or radians).
  *
- * @see Actor, Component
+ * @see Node3D, SubNode
  */
-class TransformComponent : public Component {
+class TransformSubNode : public SubNode {
 public:
-	REGISTER_ABSTRACT(TransformComponent)
+	REGISTER_ABSTRACT(TransformSubNode)
 
 	/**
 	 * @brief Constructs a transform at the origin with no rotation and unit scale.
 	 */
-	TransformComponent();
+	TransformSubNode();
 
 	/**
 	 * @brief Constructs a transform with specified values.
@@ -71,9 +71,9 @@ public:
 	 * @param rot Initial rotation in radians (Euler angles).
 	 * @param scale Initial scale.
 	 */
-	TransformComponent(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale);
+	TransformSubNode(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale);
 
-	~TransformComponent() override = default;
+	~TransformSubNode() override = default;
 
 	// ========== Serialization ==========
 
@@ -139,8 +139,8 @@ public:
 	[[nodiscard]]
 	glm::mat4 GetWorldMatrix() noexcept;
 
-	void SetAttachedActor(toast::Actor* actor) {
-		m_attachedActor = actor;
+	void SetAttachedNode3D(toast::Node3D* actor) {
+		m_attachedNode3D = actor;
 	}
 
 private:
@@ -182,7 +182,7 @@ private:
 
 	static glm::vec3 SafeCompDiv(const glm::vec3& a, const glm::vec3& b) noexcept;
 
-	toast::Actor* m_attachedActor = nullptr;
+	toast::Node3D* m_attachedNode3D = nullptr;
 };
 
 }
@@ -193,13 +193,13 @@ private:
 #pragma region fmt /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<>
-struct fmt::formatter[toast::TransformComponent] {
+struct fmt::formatter[toast::TransformSubNode] {
   constexpr auto parse(format_parse_context& ctx) {
     return ctx.begin();
   }
 
   template<typename FormatContext>
-  auto format(const toast::TransformComponent& t, FormatContext& ctx) {
+  auto format(const toast::TransformSubNode& t, FormatContext& ctx) {
     return fmt::format_to(
         ctx.out(),
         "Pos: ({:.3f}, {:.3f}, {:.3f}), Rot(deg): ({:.3f}, {:.3f}, {:.3f}), Scale: ({:.3f}, {:.3f}, {:.3f})",

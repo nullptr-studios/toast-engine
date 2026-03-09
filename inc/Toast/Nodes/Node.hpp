@@ -1,7 +1,7 @@
-/// @file Object.hpp
+/// @file Node.hpp
 /// @author Xein
 /// @date 30/05/25
-/// @brief Base Object Class
+/// @brief Base Node Class
 
 #pragma once
 
@@ -15,21 +15,21 @@
 #include <utility>
 
 namespace toast {
-class Actor;
-class Scene;
-class Component;
+class Node3D;
+class RootNode;
+class SubNode;
 
 enum BaseType : uint8_t {
-	ActorT = 0,
-	ComponentT = 1,
-	SceneT = 2,
+	Node3DT = 0,
+	SubNodeT = 1,
+	RootNodeT = 2,
 	InvalidT = 3
 };
 
-class Object : public ISerializable {
+class Node : public ISerializable {
 	friend class World;
 	friend class Engine;
-	friend class Actor;
+	friend class Node3D;
 
 public:
 #pragma region Children
@@ -44,21 +44,21 @@ public:
 	template<typename T>
 	struct Registrar {
 		Registrar() {
-			Object::Register(T::static_type(), [](Children& children, std::optional<unsigned> id) {
-				return children._CreateObject<T>(id);
+			Node::Register(T::static_type(), [](Children& children, std::optional<unsigned> id) {
+				return children._CreateNode<T>(id);
 			});
 		}
 	};
 
 #pragma endregion
 
-	Object() = default;
-	virtual ~Object() = default;
+	Node() = default;
+	virtual ~Node() = default;
 
-	Object(const Object&) = delete;
-	Object& operator=(const Object&) = delete;
-	Object(Object&&) = delete;
-	Object& operator=(Object&&) = delete;
+	Node(const Node&) = delete;
+	Node& operator=(const Node&) = delete;
+	Node(Node&&) = delete;
+	Node& operator=(Node&&) = delete;
 
 	// Serialize
 	[[nodiscard]]
@@ -81,12 +81,12 @@ public:
 	}
 
 	[[nodiscard]]
-	Object* parent() const noexcept {
+	Node* parent() const noexcept {
 		return m_parent;
 	}
 
 	[[nodiscard]]
-	toast::Scene* scene() const noexcept {
+	toast::RootNode* scene() const noexcept {
 		return m_scene;
 	}
 
@@ -104,7 +104,7 @@ public:
 	/// Returns the name of the class
 	[[nodiscard]]
 	static const char* static_type() {
-		return "Object";
+		return "Node";
 	}
 
 	/// Returns the name of the class
@@ -206,8 +206,8 @@ private:
 	bool m_runsLateTick = true;
 	bool m_runsPhysTick = false;
 	bool m_serialize = true;
-	Object* m_parent = nullptr;
-	Scene* m_scene = nullptr;
+	Node* m_parent = nullptr;
+	RootNode* m_scene = nullptr;
 
 	// Makes objects not be able to be ticked without having run the begin function
 	std::atomic_bool m_hasRunBegin = false;
@@ -239,9 +239,9 @@ public:
 
 private:
 #pragma endregion
-	void SetScene(Scene* scene);
+	void SetRootNode(RootNode* scene);
 };
 
-#include "Object.inl"
+#include "Node.inl"
 
 }

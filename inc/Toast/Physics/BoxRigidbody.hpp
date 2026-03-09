@@ -5,13 +5,13 @@
 #pragma once
 #include "Line.hpp"
 
-#include <Toast/Components/Component.hpp>
+#include <Toast/SubNodes/SubNode.hpp>
 #include <Toast/Resources/Mesh.hpp>
 #include <glm/glm.hpp>
 
 namespace physics {
 
-class BoxRigidbody : public toast::Component {
+class BoxRigidbody : public toast::SubNode {
 public:
 	REGISTER_TYPE(BoxRigidbody);
 

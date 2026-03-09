@@ -3,16 +3,16 @@
 /// @date 16 Feb 2026
 
 #pragma once
-#include "Objects/Actor.hpp"
-#include "Objects/Scene.hpp"
+#include "Nodes/Node3D.hpp"
+#include "Nodes/RootNode.hpp"
 
 template<typename T>
-concept is_object = std::is_base_of_v<toast::Object, T>;
+concept is_object = std::is_base_of_v<toast::Node, T>;
 
 template<is_object T, int size>
 class Pool {
 public:
-	Pool(toast::Scene* scene) : scene(scene) {
+	Pool(toast::RootNode* scene) : scene(scene) {
 		for (int i = 0; i < size; i++) {
 			object_pool[i] = scene->children.Add<T>();
 			object_pool[i]->enabled(false);
@@ -47,7 +47,7 @@ public:
 			return;
 		}
 		obj->enabled(false);
-		if constexpr (std::is_base_of_v<toast::Actor, T>) {
+		if constexpr (std::is_base_of_v<toast::Node3D, T>) {
 			obj->transform()->position({ 1000.0f, 1000.0f, 0.0f });
 		}
 		free_objects.emplace(obj);
@@ -61,7 +61,7 @@ private:
 		}
 	}
 
-	toast::Scene* scene;
+	toast::RootNode* scene;
 	std::array<T*, size> object_pool;
 	std::stack<T*> free_objects;
 };

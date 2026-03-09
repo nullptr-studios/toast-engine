@@ -1,29 +1,29 @@
-/// @file Scene.hpp
+/// @file RootNode.hpp
 /// @date 6/2/2025
 /// @author Xein
-/// @brief A collection of Actors
+/// @brief A collection of Node3Ds
 
 #pragma once
-#include "Object.hpp"
+#include "Node.hpp"
 
 namespace toast {
-struct ActorLookup;
+struct Node3DLookup;
 class ChildMap;
 
-/// @class toast::Scene
-/// @brief A collection of Actors
-/// The scene manages its Actor children with the ChildMap abstraction @see toast::ChildMap
+/// @class toast::RootNode
+/// @brief A collection of Node3Ds
+/// The scene manages its Node3D children with the ChildMap abstraction @see toast::ChildMap
 ///
 /// A scene has a unique ID and a name that allows it to be searched in the World @see toast::World
-class Scene : public Object {
+class RootNode : public Node {
 public:
-	REGISTER_TYPE(Scene);
+	REGISTER_TYPE(RootNode);
 
-	Scene() {
+	RootNode() {
 		enabled(false);
 	}
 
-	~Scene() override = default;
+	~RootNode() override = default;
 
 	// Serialization
 	[[nodiscard]]
@@ -39,12 +39,12 @@ public:
 	}
 
 protected:
-	// Scenes should pass the path rather than the object
+	// RootNodes should pass the path rather than the object
 	void Load(json_t j, bool force_create = true) override;
 	mutable std::string m_jsonPath;
 
 	constexpr BaseType base_type() const noexcept final {
-		return SceneT;
+		return RootNodeT;
 	}
 
 	void Init() override { }

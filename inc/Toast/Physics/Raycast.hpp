@@ -11,7 +11,7 @@
 enum class ColliderFlags : uint8_t;
 
 namespace toast {
-class Object;
+class Node;
 }
 
 namespace physics {
@@ -27,11 +27,11 @@ struct RayResult {
 	glm::vec2 point = { 0.0f, 0.0f };
 	glm::vec2 normal = { 0.0f, 0.0f };
 	float distance = 0.0f;
-	toast::Object* other = nullptr;
+	toast::Node* other = nullptr;
 };
 
 auto RayCast(glm::vec2 point, glm::vec2 dir, ColliderFlags flags = ColliderFlags::Default) -> std::optional<RayResult>;
 
-auto PointCast(glm::vec2 point, ColliderFlags flags = ColliderFlags::All) -> toast::Object*;
+auto PointCast(glm::vec2 point, ColliderFlags flags = ColliderFlags::All) -> toast::Node*;
 
 }

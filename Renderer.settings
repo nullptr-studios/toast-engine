@@ -1,0 +1,11 @@
+{
+ "resolutionScale": 1.0,
+ "lightResolutionScale": 0.75,
+ "vSync": true,
+ "fullscreen": 0,
+ "resolution": [
+  2575,
+  1435
+ ],
+ "MaxFPS": 144
+}

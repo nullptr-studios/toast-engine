@@ -16,7 +16,7 @@
 #include "Toast/Engine.hpp"
 #include "Toast/Factory.hpp"
 #include "Toast/Log.hpp"
-#include "Toast/Objects/Scene.hpp"
+#include "Toast/Nodes/RootNode.hpp"
 #include "Toast/ProjectSettings.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 #include "Toast/Renderer/HUD/HUDLayer.hpp"

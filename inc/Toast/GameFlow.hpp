@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/Event/ListenerSubNode.hpp"
 
 #include <future>
 
 namespace toast {
 
 class GameFlow final {
-	event::ListenerComponent listener;
+	event::ListenerSubNode listener;
 
 	struct {
 		std::vector<std::string> worldList;
@@ -35,12 +35,12 @@ class GameFlow final {
 
 	void Restart();
 
-	static Scene* currentScene;
+	static RootNode* currentRootNode;
 
 public:
 	GameFlow();
 
-	static Scene* CurrentScene();
+	static RootNode* CurrentRootNode();
 };
 
 }

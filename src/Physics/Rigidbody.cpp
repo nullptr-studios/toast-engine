@@ -2,7 +2,7 @@
 
 #include "PhysicsSystem.hpp"
 #include "Toast/GlmJson.hpp"
-#include "Toast/Objects/Actor.hpp"
+#include "Toast/Nodes/Node3D.hpp"
 #include "Toast/Physics/Raycast.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
@@ -20,7 +20,7 @@ void Rigidbody::Init() {
 	PhysicsSystem::AddRigidbody(this);
 
 	// Initialize interpolation positions from the current transform
-	auto* transform = static_cast<toast::Actor*>(parent())->transform();
+	auto* transform = static_cast<toast::Node3D*>(parent())->transform();
 	glm::vec3 worldPos = transform->worldPosition();
 	m_currentPosition = glm::dvec2(worldPos.x, worldPos.y);
 	m_previousPosition = m_currentPosition;
@@ -29,7 +29,7 @@ void Rigidbody::Init() {
 }
 
 void Rigidbody::Begin() {
-	Component::Begin();
+	SubNode::Begin();
 	velocity = { 0.0, 0.0 };
 	forces.clear();
 }
@@ -144,7 +144,7 @@ void Rigidbody::EditorTick() {
 #endif
 
 json_t Rigidbody::Save() const {
-	json_t j = Component::Save();
+	json_t j = SubNode::Save();
 
 	j["radius"] = radius;
 	j["mass"] = mass;
@@ -216,7 +216,7 @@ void Rigidbody::Load(json_t j, bool propagate) {
 		flags = static_cast<ColliderFlags>(j["flags"].get<unsigned int>());
 	}
 
-	Component::Load(j, propagate);
+	SubNode::Load(j, propagate);
 }
 
 glm::dvec2 Rigidbody::GetPosition() const {
@@ -269,9 +269,9 @@ void Rigidbody::StorePreviousPosition() {
 }
 
 void Rigidbody::UpdateVisualTransform() {
-	auto* transform = static_cast<toast::Actor*>(parent())->transform();
+	auto* transform = static_cast<toast::Node3D*>(parent())->transform();
 #ifdef TOAST_EDITOR
-	auto* debug = dynamic_cast<toast::Actor*>(parent());
+	auto* debug = dynamic_cast<toast::Node3D*>(parent());
 	if (!debug) {
 		TOAST_ERROR("INVALID RIGIDBODY PARENT");
 	}
@@ -296,7 +296,7 @@ void Rigidbody::UpdateVisualTransform() {
 }
 
 void Rigidbody::SyncFromTransform() {
-	auto* transform = static_cast<toast::Actor*>(parent())->transform();
+	auto* transform = static_cast<toast::Node3D*>(parent())->transform();
 	glm::vec3 worldPos = transform->worldPosition();
 
 	// Update rigidbody position to match transform
