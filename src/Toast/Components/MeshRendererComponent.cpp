@@ -153,14 +153,14 @@ void MeshRendererComponent::Destroy() {
 }
 
 void MeshRendererComponent::OnEnable() {
-		if (auto* r = renderer::IRendererBase::GetInstance()) {
-			r->EnableRenderable(this);
+	if (auto* r = renderer::IRendererBase::GetInstance()) {
+		r->EnableRenderable(this);
 	}
 }
 
 void MeshRendererComponent::OnDisable() {
-		if (auto* r = renderer::IRendererBase::GetInstance()) {
-			r->DisableRenderable(this);
-		}
+	if (auto* r = renderer::IRendererBase::GetInstance()) {
+		r->DisableRenderable(this);
+	}
 }
 }

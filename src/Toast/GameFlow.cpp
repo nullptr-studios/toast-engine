@@ -11,6 +11,7 @@
 #include <exception>
 #include <future>
 #include <optional>
+#include <stdexcept>
 
 namespace toast {
 
@@ -88,6 +89,9 @@ void GameFlow::LoadWorld(unsigned world) {
 		m.currentLevel->wait();
 		try {
 			auto* scene = toast::World::Get(m.currentLevel->get());
+			if (!scene) {
+				throw std::runtime_error("Current Level Deleted By Another Existence");
+			}
 			scene->Nuke();
 		} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 		m.currentLevel = std::nullopt;
@@ -97,6 +101,9 @@ void GameFlow::LoadWorld(unsigned world) {
 		m.nextLevel->wait();
 		try {
 			auto* scene = toast::World::Get(m.nextLevel->get());
+			if (!scene) {
+				throw std::runtime_error("Current Level Deleted By Another Existence");
+			}
 			scene->Nuke();
 		} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 		m.nextLevel = std::nullopt;
@@ -143,6 +150,9 @@ void GameFlow::LoadLevel(unsigned world, unsigned level) {
 
 	try {
 		auto* scene = toast::World::Get(m.currentLevel->get());
+		if (!scene) {
+			throw std::runtime_error("Current Level Deleted By Another Existence");
+		}
 		scene->enabled(true);
 		currentScene = dynamic_cast<Scene*>(scene);
 	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
@@ -153,6 +163,9 @@ void GameFlow::NextLevel() {
 	if (m.currentLevel.has_value()) {
 		try {
 			auto* scene = toast::World::Get(m.currentLevel->get());
+			if (!scene) {
+				throw std::runtime_error("Current Level Deleted By Another Existence");
+			}
 			scene->Nuke();
 		} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 		m.currentLevel = std::nullopt;
@@ -178,6 +191,9 @@ void GameFlow::NextLevel() {
 	try {
 		m.currentLevel->wait();
 		auto* scene = toast::World::Get(m.currentLevel->get());
+		if (!scene) {
+			throw std::runtime_error("Current Level Deleted By Another Existence");
+		}
 		scene->enabled(true);
 		currentScene = dynamic_cast<Scene*>(scene);
 	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }

@@ -362,10 +362,17 @@ void HUDLayer::OnAttach() {
 
 	// If a URL was requested before init via LoadURL(), create a view and load it now
 	if (!pending_url_.empty()) {
+		// Read the monitor DPI scale so Ultralight's CSS coordinate space equals logical pixels
+		if (window_) {
+			float sx = 1.0f, sy = 1.0f;
+			glfwGetWindowContentScale(window_, &sx, &sy);
+			device_scale_ = sx;
+		}
+
 		ultralight::ViewConfig view_config;
 		view_config.is_accelerated = true;
 		view_config.is_transparent = true;
-		view_config.initial_device_scale = 1.0;
+		view_config.initial_device_scale = device_scale_;
 		view_config.initial_focus = true;
 		view_config.enable_images = true;
 		view_config.enable_javascript = true;
@@ -663,10 +670,18 @@ void HUDLayer::Resize(uint32_t width, uint32_t height) {
 	width_ = width;
 	height_ = height;
 
-	// Resize the Ultralight view
+	// Refresh DPI scale — the monitor or window scale may have changed
+	if (window_) {
+		float sx = 1.0f, sy = 1.0f;
+		glfwGetWindowContentScale(window_, &sx, &sy);
+		device_scale_ = sx;
+	}
+
+	// Resize the Ultralight view (physical pixels) and update the device scale
 	for (auto& v : views_) {
 		if (v) {
 			v->Resize(width, height);
+			v->set_device_scale(device_scale_);
 		}
 	}
 
@@ -675,7 +690,7 @@ void HUDLayer::Resize(uint32_t width, uint32_t height) {
 		framebuffer_->Resize(width, height);
 	}
 
-	TOAST_INFO("HUD resized to {}x{}", width, height);
+	TOAST_INFO("HUD resized to {}x{} (device_scale={:.2f})", width, height, device_scale_);
 }
 
 // ============================================================================
@@ -934,7 +949,7 @@ ultralight::RefPtr<ultralight::View> HUDLayer::CreateView(uint32_t width, uint32
 	// Default to accelerated + transparent if caller didn't set
 	config.is_accelerated = true;
 	config.is_transparent = true;
-	config.initial_device_scale = (config.initial_device_scale == 0.0) ? 1.0 : config.initial_device_scale;
+	config.initial_device_scale = (config.initial_device_scale == 0.0) ? device_scale_ : config.initial_device_scale;
 	config.initial_focus = true;
 	config.enable_images = true;
 	config.enable_javascript = true;
@@ -971,21 +986,28 @@ void HUDLayer::RemoveView(const ultralight::RefPtr<ultralight::View>& view) {
 }
 
 void HUDLayer::SetViewSortOrder(const ultralight::RefPtr<ultralight::View>& view, int order) {
-	if (!view) return;
+	if (!view) {
+		return;
+	}
 	view_sort_orders_[view.get()] = order;
 	SortViewsByOrder();
 }
 
 void HUDLayer::SortViewsByOrder() {
-	std::stable_sort(views_.begin(), views_.end(),
-		[this](const ultralight::RefPtr<ultralight::View>& a, const ultralight::RefPtr<ultralight::View>& b) {
-			int oa = 0, ob = 0;
-			auto itA = view_sort_orders_.find(a.get());
-			auto itB = view_sort_orders_.find(b.get());
-			if (itA != view_sort_orders_.end()) oa = itA->second;
-			if (itB != view_sort_orders_.end()) ob = itB->second;
-			return oa < ob;
-		});
+	std::stable_sort(
+	    views_.begin(), views_.end(), [this](const ultralight::RefPtr<ultralight::View>& a, const ultralight::RefPtr<ultralight::View>& b) {
+		    int oa = 0, ob = 0;
+		    auto itA = view_sort_orders_.find(a.get());
+		    auto itB = view_sort_orders_.find(b.get());
+		    if (itA != view_sort_orders_.end()) {
+			    oa = itA->second;
+		    }
+		    if (itB != view_sort_orders_.end()) {
+			    ob = itB->second;
+		    }
+		    return oa < ob;
+	    }
+	);
 }
 
 }    // namespace renderer::HUD
@@ -1049,8 +1071,12 @@ void HUDLayer::InitBlurResources() {
 	GLuint vs = CompileShader(GL_VERTEX_SHADER, kBlurVertSrc);
 	GLuint fs = CompileShader(GL_FRAGMENT_SHADER, kBlurFragSrc);
 	if (!vs || !fs) {
-		if (vs) glDeleteShader(vs);
-		if (fs) glDeleteShader(fs);
+		if (vs) {
+			glDeleteShader(vs);
+		}
+		if (fs) {
+			glDeleteShader(fs);
+		}
 		TOAST_ERROR("[HUD] Failed to compile blur shaders");
 		return;
 	}
@@ -1073,10 +1099,7 @@ void HUDLayer::InitBlurResources() {
 
 	// Fullscreen quad
 	float quad[] = {
-		-1.f, -1.f, 0.f, 0.f,
-		 1.f, -1.f, 1.f, 0.f,
-		-1.f,  1.f, 0.f, 1.f,
-		 1.f,  1.f, 1.f, 1.f,
+		-1.f, -1.f, 0.f, 0.f, 1.f, -1.f, 1.f, 0.f, -1.f, 1.f, 0.f, 1.f, 1.f, 1.f, 1.f, 1.f,
 	};
 	glGenVertexArrays(1, &blur_vao_);
 	glGenBuffers(1, &blur_vbo_);
@@ -1113,17 +1136,40 @@ void HUDLayer::InitBlurResources() {
 }
 
 void HUDLayer::DestroyBlurResources() {
-	if (blur_program_) { glDeleteProgram(blur_program_); blur_program_ = 0; }
-	if (blur_vao_) { glDeleteVertexArrays(1, &blur_vao_); blur_vao_ = 0; }
-	if (blur_vbo_) { glDeleteBuffers(1, &blur_vbo_); blur_vbo_ = 0; }
-	if (blur_fbo_a_) { glDeleteFramebuffers(1, &blur_fbo_a_); blur_fbo_a_ = 0; }
-	if (blur_fbo_b_) { glDeleteFramebuffers(1, &blur_fbo_b_); blur_fbo_b_ = 0; }
-	if (blur_tex_a_) { glDeleteTextures(1, &blur_tex_a_); blur_tex_a_ = 0; }
-	if (blur_tex_b_) { glDeleteTextures(1, &blur_tex_b_); blur_tex_b_ = 0; }
+	if (blur_program_) {
+		glDeleteProgram(blur_program_);
+		blur_program_ = 0;
+	}
+	if (blur_vao_) {
+		glDeleteVertexArrays(1, &blur_vao_);
+		blur_vao_ = 0;
+	}
+	if (blur_vbo_) {
+		glDeleteBuffers(1, &blur_vbo_);
+		blur_vbo_ = 0;
+	}
+	if (blur_fbo_a_) {
+		glDeleteFramebuffers(1, &blur_fbo_a_);
+		blur_fbo_a_ = 0;
+	}
+	if (blur_fbo_b_) {
+		glDeleteFramebuffers(1, &blur_fbo_b_);
+		blur_fbo_b_ = 0;
+	}
+	if (blur_tex_a_) {
+		glDeleteTextures(1, &blur_tex_a_);
+		blur_tex_a_ = 0;
+	}
+	if (blur_tex_b_) {
+		glDeleteTextures(1, &blur_tex_b_);
+		blur_tex_b_ = 0;
+	}
 }
 
 void HUDLayer::RenderBlurToFramebuffer() {
-	if (!blur_program_ || !blur_vao_ || !scene_texture_) return;
+	if (!blur_program_ || !blur_vao_ || !scene_texture_) {
+		return;
+	}
 
 	// Resize blur textures if the HUD was resized
 	if (blur_tex_width_ != width_ || blur_tex_height_ != height_) {
@@ -1147,7 +1193,7 @@ void HUDLayer::RenderBlurToFramebuffer() {
 	GLint locRes = glGetUniformLocation(blur_program_, "uResolution");
 	glUniform1i(locTex, 0);
 	glUniform2f(locRes, static_cast<float>(width_), static_cast<float>(height_));
-	glUniform2f(locDir, 0.0f, 0.0f);  // No blur direction — just copy
+	glUniform2f(locDir, 0.0f, 0.0f);    // No blur direction — just copy
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, scene_texture_);
 	glBindVertexArray(blur_vao_);

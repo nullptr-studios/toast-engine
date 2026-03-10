@@ -274,6 +274,7 @@ private:
 	GLFWwindow* window_ = nullptr;
 	uint32_t width_ = 0;
 	uint32_t height_ = 0;
+	float device_scale_ = 1.0f;    ///< Monitor DPI scale (from glfwGetWindowContentScale)
 	bool msaa_enabled_ = false;
 	bool input_enabled_ = true;    ///< Whether input events are forwarded to Ultralight
 	int viewport_offset_x_ = 0;    ///< Viewport X offset in window space (for editor)
