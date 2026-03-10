@@ -362,10 +362,17 @@ void HUDLayer::OnAttach() {
 
 	// If a URL was requested before init via LoadURL(), create a view and load it now
 	if (!pending_url_.empty()) {
+		// Read the monitor DPI scale so Ultralight's CSS coordinate space equals logical pixels
+		if (window_) {
+			float sx = 1.0f, sy = 1.0f;
+			glfwGetWindowContentScale(window_, &sx, &sy);
+			device_scale_ = sx;
+		}
+
 		ultralight::ViewConfig view_config;
 		view_config.is_accelerated = true;
 		view_config.is_transparent = true;
-		view_config.initial_device_scale = 1.0;
+		view_config.initial_device_scale = device_scale_;
 		view_config.initial_focus = true;
 		view_config.enable_images = true;
 		view_config.enable_javascript = true;
@@ -663,10 +670,18 @@ void HUDLayer::Resize(uint32_t width, uint32_t height) {
 	width_ = width;
 	height_ = height;
 
-	// Resize the Ultralight view
+	// Refresh DPI scale — the monitor or window scale may have changed
+	if (window_) {
+		float sx = 1.0f, sy = 1.0f;
+		glfwGetWindowContentScale(window_, &sx, &sy);
+		device_scale_ = sx;
+	}
+
+	// Resize the Ultralight view (physical pixels) and update the device scale
 	for (auto& v : views_) {
 		if (v) {
 			v->Resize(width, height);
+			v->set_device_scale(device_scale_);
 		}
 	}
 
@@ -675,7 +690,7 @@ void HUDLayer::Resize(uint32_t width, uint32_t height) {
 		framebuffer_->Resize(width, height);
 	}
 
-	TOAST_INFO("HUD resized to {}x{}", width, height);
+	TOAST_INFO("HUD resized to {}x{} (device_scale={:.2f})", width, height, device_scale_);
 }
 
 // ============================================================================
@@ -934,7 +949,7 @@ ultralight::RefPtr<ultralight::View> HUDLayer::CreateView(uint32_t width, uint32
 	// Default to accelerated + transparent if caller didn't set
 	config.is_accelerated = true;
 	config.is_transparent = true;
-	config.initial_device_scale = (config.initial_device_scale == 0.0) ? 1.0 : config.initial_device_scale;
+	config.initial_device_scale = (config.initial_device_scale == 0.0) ? device_scale_ : config.initial_device_scale;
 	config.initial_focus = true;
 	config.enable_images = true;
 	config.enable_javascript = true;
