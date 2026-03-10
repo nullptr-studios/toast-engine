@@ -20,6 +20,7 @@
 #include <Ultralight/Ultralight.h>
 #include <Ultralight/platform/Config.h>
 #include <Ultralight/platform/Platform.h>
+#include <algorithm>
 
 // Static map of windows to HUDLayer instances for input callbacks
 static std::unordered_map<GLFWwindow*, renderer::HUD::HUDLayer*> g_hud_layers;
@@ -385,11 +386,17 @@ void HUDLayer::OnAttach() {
 	// Reusable read FBO for blits
 	glGenFramebuffers(1, &read_fbo_);
 
+	// Initialize blur resources
+	InitBlurResources();
+
 	TOAST_INFO("HUDLayer attached successfully");
 }
 
 void HUDLayer::OnDetach() {
 	PROFILE_ZONE_C(tracy::Color::Cyan);
+
+	// Cleanup blur resources
+	DestroyBlurResources();
 
 	// Cleanup framebuffer
 	framebuffer_.reset();
@@ -399,6 +406,7 @@ void HUDLayer::OnDetach() {
 	}
 
 	views_.clear();
+	view_sort_orders_.clear();
 	renderer_ = nullptr;
 
 	TOAST_INFO("HUDLayer detached");
@@ -453,7 +461,12 @@ void HUDLayer::OnRender() {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	// Blit each view's render target into the HUD framebuffer (in insertion order)
+	// Apply background blur if enabled (captures the current backbuffer and blurs it)
+	if (blur_enabled_) {
+		RenderBlurToFramebuffer();
+	}
+
+	// Blit each view's render target into the HUD framebuffer (sorted by sort order)
 	for (const auto& v : views_) {
 		if (!v) {
 			continue;
@@ -948,12 +961,228 @@ void HUDLayer::RemoveView(const ultralight::RefPtr<ultralight::View>& view) {
 	auto it = std::find(views_.begin(), views_.end(), view);
 	if (it != views_.end()) {
 		bool wasFront = (it == views_.begin());
+		view_sort_orders_.erase(view.get());
 		views_.erase(it);
 		// If the front view changed, reset DOM readiness so scripts queue until new front is ready
 		if (wasFront) {
 			dom_ready_ = false;
 		}
 	}
+}
+
+void HUDLayer::SetViewSortOrder(const ultralight::RefPtr<ultralight::View>& view, int order) {
+	if (!view) return;
+	view_sort_orders_[view.get()] = order;
+	SortViewsByOrder();
+}
+
+void HUDLayer::SortViewsByOrder() {
+	std::stable_sort(views_.begin(), views_.end(),
+		[this](const ultralight::RefPtr<ultralight::View>& a, const ultralight::RefPtr<ultralight::View>& b) {
+			int oa = 0, ob = 0;
+			auto itA = view_sort_orders_.find(a.get());
+			auto itB = view_sort_orders_.find(b.get());
+			if (itA != view_sort_orders_.end()) oa = itA->second;
+			if (itB != view_sort_orders_.end()) ob = itB->second;
+			return oa < ob;
+		});
+}
+
+}    // namespace renderer::HUD
+
+// ============================================================================
+// Blur Implementation (in renderer::HUD namespace via reopening for clarity)
+// ============================================================================
+
+namespace renderer::HUD {
+
+static const char* kBlurVertSrc = R"(
+#version 330 core
+layout(location = 0) in vec2 aPos;
+layout(location = 1) in vec2 aUV;
+out vec2 vUV;
+void main() {
+    vUV = aUV;
+    gl_Position = vec4(aPos, 0.0, 1.0);
+}
+)";
+
+static const char* kBlurFragSrc = R"(
+#version 330 core
+in vec2 vUV;
+out vec4 FragColor;
+uniform sampler2D uTexture;
+uniform vec2 uDirection;
+uniform vec2 uResolution;
+
+void main() {
+    vec2 texelSize = 1.0 / uResolution;
+    float weights[5] = float[](0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
+    vec4 result = texture(uTexture, vUV) * weights[0];
+    for (int i = 1; i < 5; ++i) {
+        vec2 offset = uDirection * texelSize * float(i) * 2.0;
+        result += texture(uTexture, vUV + offset) * weights[i];
+        result += texture(uTexture, vUV - offset) * weights[i];
+    }
+    FragColor = result;
+}
+)";
+
+static GLuint CompileShader(GLenum type, const char* src) {
+	GLuint s = glCreateShader(type);
+	glShaderSource(s, 1, &src, nullptr);
+	glCompileShader(s);
+	GLint ok = 0;
+	glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
+	if (!ok) {
+		char log[512];
+		glGetShaderInfoLog(s, sizeof(log), nullptr, log);
+		TOAST_ERROR("[HUD Blur] Shader compile error: {}", log);
+		glDeleteShader(s);
+		return 0;
+	}
+	return s;
+}
+
+void HUDLayer::InitBlurResources() {
+	// Compile blur shader program
+	GLuint vs = CompileShader(GL_VERTEX_SHADER, kBlurVertSrc);
+	GLuint fs = CompileShader(GL_FRAGMENT_SHADER, kBlurFragSrc);
+	if (!vs || !fs) {
+		if (vs) glDeleteShader(vs);
+		if (fs) glDeleteShader(fs);
+		TOAST_ERROR("[HUD] Failed to compile blur shaders");
+		return;
+	}
+	blur_program_ = glCreateProgram();
+	glAttachShader(blur_program_, vs);
+	glAttachShader(blur_program_, fs);
+	glLinkProgram(blur_program_);
+	glDeleteShader(vs);
+	glDeleteShader(fs);
+	GLint ok = 0;
+	glGetProgramiv(blur_program_, GL_LINK_STATUS, &ok);
+	if (!ok) {
+		char log[512];
+		glGetProgramInfoLog(blur_program_, sizeof(log), nullptr, log);
+		TOAST_ERROR("[HUD Blur] Program link error: {}", log);
+		glDeleteProgram(blur_program_);
+		blur_program_ = 0;
+		return;
+	}
+
+	// Fullscreen quad
+	float quad[] = {
+		-1.f, -1.f, 0.f, 0.f,
+		 1.f, -1.f, 1.f, 0.f,
+		-1.f,  1.f, 0.f, 1.f,
+		 1.f,  1.f, 1.f, 1.f,
+	};
+	glGenVertexArrays(1, &blur_vao_);
+	glGenBuffers(1, &blur_vbo_);
+	glBindVertexArray(blur_vao_);
+	glBindBuffer(GL_ARRAY_BUFFER, blur_vbo_);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	glBindVertexArray(0);
+
+	// Create ping-pong FBOs and textures for blur passes
+	auto createBlurTarget = [&](GLuint& fbo, GLuint& tex) {
+		glGenFramebuffers(1, &fbo);
+		glGenTextures(1, &tex);
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width_, height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	};
+
+	createBlurTarget(blur_fbo_a_, blur_tex_a_);
+	createBlurTarget(blur_fbo_b_, blur_tex_b_);
+	blur_tex_width_ = width_;
+	blur_tex_height_ = height_;
+
+	TOAST_INFO("[HUD] Blur resources initialized");
+}
+
+void HUDLayer::DestroyBlurResources() {
+	if (blur_program_) { glDeleteProgram(blur_program_); blur_program_ = 0; }
+	if (blur_vao_) { glDeleteVertexArrays(1, &blur_vao_); blur_vao_ = 0; }
+	if (blur_vbo_) { glDeleteBuffers(1, &blur_vbo_); blur_vbo_ = 0; }
+	if (blur_fbo_a_) { glDeleteFramebuffers(1, &blur_fbo_a_); blur_fbo_a_ = 0; }
+	if (blur_fbo_b_) { glDeleteFramebuffers(1, &blur_fbo_b_); blur_fbo_b_ = 0; }
+	if (blur_tex_a_) { glDeleteTextures(1, &blur_tex_a_); blur_tex_a_ = 0; }
+	if (blur_tex_b_) { glDeleteTextures(1, &blur_tex_b_); blur_tex_b_ = 0; }
+}
+
+void HUDLayer::RenderBlurToFramebuffer() {
+	if (!blur_program_ || !blur_vao_ || !scene_texture_) return;
+
+	// Resize blur textures if the HUD was resized
+	if (blur_tex_width_ != width_ || blur_tex_height_ != height_) {
+		auto resizeTex = [&](GLuint tex) {
+			glBindTexture(GL_TEXTURE_2D, tex);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width_, height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		};
+		resizeTex(blur_tex_a_);
+		resizeTex(blur_tex_b_);
+		blur_tex_width_ = width_;
+		blur_tex_height_ = height_;
+	}
+
+	// Step 1: Copy the scene texture into blur_tex_a_ using a shader blit
+	// (scene_texture_ is a GL texture from the renderer's output framebuffer)
+	glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo_a_);
+	glViewport(0, 0, width_, height_);
+	glUseProgram(blur_program_);
+	GLint locTex = glGetUniformLocation(blur_program_, "uTexture");
+	GLint locDir = glGetUniformLocation(blur_program_, "uDirection");
+	GLint locRes = glGetUniformLocation(blur_program_, "uResolution");
+	glUniform1i(locTex, 0);
+	glUniform2f(locRes, static_cast<float>(width_), static_cast<float>(height_));
+	glUniform2f(locDir, 0.0f, 0.0f);  // No blur direction — just copy
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, scene_texture_);
+	glBindVertexArray(blur_vao_);
+	glDisable(GL_BLEND);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	// Step 2: Multi-pass gaussian blur (ping-pong between A and B)
+	constexpr int kBlurPasses = 3;
+	for (int i = 0; i < kBlurPasses; ++i) {
+		// Horizontal pass: read from A, write to B
+		glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo_b_);
+		glViewport(0, 0, width_, height_);
+		glBindTexture(GL_TEXTURE_2D, blur_tex_a_);
+		glUniform2f(locDir, 1.0f, 0.0f);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+		// Vertical pass: read from B, write to A
+		glBindFramebuffer(GL_FRAMEBUFFER, blur_fbo_a_);
+		glViewport(0, 0, width_, height_);
+		glBindTexture(GL_TEXTURE_2D, blur_tex_b_);
+		glUniform2f(locDir, 0.0f, 1.0f);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	}
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+
+	// Step 3: Blit the blurred result into the HUD framebuffer as background
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, blur_fbo_a_);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_->Handle());
+	glBlitFramebuffer(0, 0, width_, height_, 0, 0, width_, height_, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+	// Re-bind HUD framebuffer for subsequent view blitting
+	framebuffer_->bind();
+	glViewport(0, 0, static_cast<GLsizei>(width_), static_cast<GLsizei>(height_));
 }
 
 }    // namespace renderer::HUD

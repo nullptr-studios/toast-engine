@@ -47,6 +47,12 @@ public:
 		return m_view;
 	}
 
+	void SetSortOrder(int order);
+
+	int GetSortOrder() const {
+		return m_sortOrder;
+	}
+
 	[[nodiscard]]
 	json_t Save() const override;
 	void Load(json_t j, bool force_create = true) override;
@@ -56,6 +62,8 @@ public:
 #endif
 
 protected:
+	void EvalJS(const std::string& script);
+
 	void Destroy() override;
 	void OnEnable() override;
 	void OnDisable() override;
@@ -65,6 +73,7 @@ private:
 	void DestroyUlView();
 
 	std::string m_url;
+	int m_sortOrder = 0;
 	ultralight::RefPtr<ultralight::View> m_view;
 	ConsoleCallback m_consoleCb;
 	std::unique_ptr<ultralight::ViewListener> m_viewListener;
