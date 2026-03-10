@@ -63,7 +63,7 @@ void Time::Tick() noexcept {
 	m_now = clock_t::now();
 	std::chrono::duration<double> t = m_now - m_previous;
 	m_deltaRaw = t.count();
-	m_delta = std::min(m_deltaRaw / m_deltaScale, MAX_DELTA);
+	m_delta = std::min(m_deltaRaw * m_deltaScale, MAX_DELTA);
 }
 
 void Time::PhysTick() noexcept {

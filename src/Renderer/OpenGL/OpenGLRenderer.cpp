@@ -377,6 +377,7 @@ void OpenGLRenderer::Render() {
 	if (m_layerStack) {
 		for (auto* layer : m_layerStack->GetLayers()) {
 			if (auto* hud = dynamic_cast<HUD::HUDLayer*>(layer)) {
+				hud->SetSceneTexture(m_outputFramebuffer->GetColorTexture(0));
 				if (auto* fb = hud->GetFramebuffer()) {
 					fb->bind();
 					glViewport(0, 0, fb->Width(), fb->Height());
