@@ -131,29 +131,6 @@ public:
 	void SetViewSortOrder(const ultralight::RefPtr<ultralight::View>& view, int order);
 
 	///
-	/// @brief Enable or disable background blur effect
-	/// @param enabled Whether blur should be active
-	///
-	void SetBackgroundBlur(bool enabled) {
-		blur_enabled_ = enabled;
-	}
-
-	///
-	/// @brief Set the scene framebuffer texture for blur source
-	/// @param texId GL texture ID of the scene's color attachment
-	///
-	void SetSceneTexture(unsigned texId) {
-		scene_texture_ = texId;
-	}
-
-	///
-	/// @brief Check if background blur is currently enabled
-	///
-	bool IsBackgroundBlurEnabled() const {
-		return blur_enabled_;
-	}
-
-	///
 	/// @brief Resize the UI viewport
 	/// @param width New viewport width
 	/// @param height New viewport height
@@ -288,23 +265,6 @@ private:
 	// Output framebuffer for the HUD
 	std::unique_ptr<Framebuffer> framebuffer_;
 	unsigned read_fbo_ = 0;
-
-	// Background blur
-	bool blur_enabled_ = false;
-	unsigned scene_texture_ = 0;
-	unsigned blur_program_ = 0;
-	unsigned blur_fbo_a_ = 0;
-	unsigned blur_fbo_b_ = 0;
-	unsigned blur_tex_a_ = 0;
-	unsigned blur_tex_b_ = 0;
-	unsigned blur_vao_ = 0;
-	unsigned blur_vbo_ = 0;
-	uint32_t blur_tex_width_ = 0;
-	uint32_t blur_tex_height_ = 0;
-
-	void InitBlurResources();
-	void DestroyBlurResources();
-	void RenderBlurToFramebuffer();
 	void SortViewsByOrder();
 };
 
