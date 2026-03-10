@@ -82,7 +82,7 @@ public:
 
 	// debug stuff
 	struct {
-		bool show = true;                                         // Draws the debug of the shape
+		bool show = false;                                         // Draws the debug of the shape
 		bool showManifolds = false;                               // Shows contact points and normal resolutions
 		glm::vec2 addForce = { 0.0f, 0.0f };
 		glm::vec4 defaultColor = { 1.0f, 1.0f, 1.0f, 1.0f };      // Color when not colliding
