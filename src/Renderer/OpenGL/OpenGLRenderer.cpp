@@ -709,7 +709,10 @@ void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
 }
 
 void OpenGLRenderer::RemoveRenderable(IRenderable* renderable) {
-	m_renderables.erase(std::ranges::find(m_renderables, renderable));
+	auto it = std::ranges::find(m_renderables, renderable);
+	if (it != m_renderables.end()) {
+		m_renderables.erase(it);
+	}
 	m_disabledRenderables.erase(renderable);    // clean up if it was disabled
 	m_renderablesSortDirty = true;
 }
@@ -736,7 +739,10 @@ void OpenGLRenderer::AddLight(Light2D* light) {
 }
 
 void OpenGLRenderer::RemoveLight(Light2D* light) {
-	m_lights.erase(std::ranges::find(m_lights, light));
+	auto it = std::ranges::find(m_lights, light);
+	if (it != m_lights.end()) {
+		m_lights.erase(it);
+	}
 	m_lightsSortDirty = true;
 }
 

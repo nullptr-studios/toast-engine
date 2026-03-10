@@ -91,13 +91,13 @@ public:
 
 	/// @brief Removes a transparent/sprite renderable from the sprite pass queue
 	virtual void RemoveTransparentRenderable(IRenderable* renderable) = 0;
-	
+
 	virtual void DisableRenderable(IRenderable* renderable) {
 		m_disabledRenderables.insert(renderable);
 		m_renderablesSortDirty = true;
 		m_transparentSortDirty = true;
 	}
-	
+
 	virtual void EnableRenderable(IRenderable* renderable) {
 		m_disabledRenderables.erase(renderable);
 		m_renderablesSortDirty = true;
@@ -369,10 +369,10 @@ protected:
 	std::vector<IRenderable*> m_transparentRenderables;    ///< Transparent/sprite renderables (sprite pass, post-combine)
 	/// @brief Set of renderables that are currently disabled — excluded from the geometry pass.
 	std::unordered_set<IRenderable*> m_disabledRenderables;
-	std::vector<Light2D*> m_lights;                        ///< All 2D lights in the scene
-	bool m_renderablesSortDirty = true;                    ///< True when renderables need re-sorting
-	bool m_transparentSortDirty = true;                    ///< True when transparent renderables need re-sorting
-	bool m_lightsSortDirty = true;                         ///< True when lights need re-sorting
+	std::vector<Light2D*> m_lights;        ///< All 2D lights in the scene
+	bool m_renderablesSortDirty = true;    ///< True when renderables need re-sorting
+	bool m_transparentSortDirty = true;    ///< True when transparent renderables need re-sorting
+	bool m_lightsSortDirty = true;         ///< True when lights need re-sorting
 
 	// ========== Transform Matrices ==========
 	glm::mat4 m_projectionMatrix = glm::mat4(1.0f);    ///< Camera projection matrix

@@ -50,7 +50,7 @@ public:
 			m.skeleton->updateWorldTransform(spine::Physics_None);
 		}
 	}
-	
+
 	void ResetSkeletonToSetupPose() const {
 		if (m.skeleton) {
 			m.skeleton->setToSetupPose();

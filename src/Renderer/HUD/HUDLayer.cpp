@@ -986,21 +986,28 @@ void HUDLayer::RemoveView(const ultralight::RefPtr<ultralight::View>& view) {
 }
 
 void HUDLayer::SetViewSortOrder(const ultralight::RefPtr<ultralight::View>& view, int order) {
-	if (!view) return;
+	if (!view) {
+		return;
+	}
 	view_sort_orders_[view.get()] = order;
 	SortViewsByOrder();
 }
 
 void HUDLayer::SortViewsByOrder() {
-	std::stable_sort(views_.begin(), views_.end(),
-		[this](const ultralight::RefPtr<ultralight::View>& a, const ultralight::RefPtr<ultralight::View>& b) {
-			int oa = 0, ob = 0;
-			auto itA = view_sort_orders_.find(a.get());
-			auto itB = view_sort_orders_.find(b.get());
-			if (itA != view_sort_orders_.end()) oa = itA->second;
-			if (itB != view_sort_orders_.end()) ob = itB->second;
-			return oa < ob;
-		});
+	std::stable_sort(
+	    views_.begin(), views_.end(), [this](const ultralight::RefPtr<ultralight::View>& a, const ultralight::RefPtr<ultralight::View>& b) {
+		    int oa = 0, ob = 0;
+		    auto itA = view_sort_orders_.find(a.get());
+		    auto itB = view_sort_orders_.find(b.get());
+		    if (itA != view_sort_orders_.end()) {
+			    oa = itA->second;
+		    }
+		    if (itB != view_sort_orders_.end()) {
+			    ob = itB->second;
+		    }
+		    return oa < ob;
+	    }
+	);
 }
 
 }    // namespace renderer::HUD
@@ -1064,8 +1071,12 @@ void HUDLayer::InitBlurResources() {
 	GLuint vs = CompileShader(GL_VERTEX_SHADER, kBlurVertSrc);
 	GLuint fs = CompileShader(GL_FRAGMENT_SHADER, kBlurFragSrc);
 	if (!vs || !fs) {
-		if (vs) glDeleteShader(vs);
-		if (fs) glDeleteShader(fs);
+		if (vs) {
+			glDeleteShader(vs);
+		}
+		if (fs) {
+			glDeleteShader(fs);
+		}
 		TOAST_ERROR("[HUD] Failed to compile blur shaders");
 		return;
 	}
@@ -1088,10 +1099,7 @@ void HUDLayer::InitBlurResources() {
 
 	// Fullscreen quad
 	float quad[] = {
-		-1.f, -1.f, 0.f, 0.f,
-		 1.f, -1.f, 1.f, 0.f,
-		-1.f,  1.f, 0.f, 1.f,
-		 1.f,  1.f, 1.f, 1.f,
+		-1.f, -1.f, 0.f, 0.f, 1.f, -1.f, 1.f, 0.f, -1.f, 1.f, 0.f, 1.f, 1.f, 1.f, 1.f, 1.f,
 	};
 	glGenVertexArrays(1, &blur_vao_);
 	glGenBuffers(1, &blur_vbo_);
@@ -1128,17 +1136,40 @@ void HUDLayer::InitBlurResources() {
 }
 
 void HUDLayer::DestroyBlurResources() {
-	if (blur_program_) { glDeleteProgram(blur_program_); blur_program_ = 0; }
-	if (blur_vao_) { glDeleteVertexArrays(1, &blur_vao_); blur_vao_ = 0; }
-	if (blur_vbo_) { glDeleteBuffers(1, &blur_vbo_); blur_vbo_ = 0; }
-	if (blur_fbo_a_) { glDeleteFramebuffers(1, &blur_fbo_a_); blur_fbo_a_ = 0; }
-	if (blur_fbo_b_) { glDeleteFramebuffers(1, &blur_fbo_b_); blur_fbo_b_ = 0; }
-	if (blur_tex_a_) { glDeleteTextures(1, &blur_tex_a_); blur_tex_a_ = 0; }
-	if (blur_tex_b_) { glDeleteTextures(1, &blur_tex_b_); blur_tex_b_ = 0; }
+	if (blur_program_) {
+		glDeleteProgram(blur_program_);
+		blur_program_ = 0;
+	}
+	if (blur_vao_) {
+		glDeleteVertexArrays(1, &blur_vao_);
+		blur_vao_ = 0;
+	}
+	if (blur_vbo_) {
+		glDeleteBuffers(1, &blur_vbo_);
+		blur_vbo_ = 0;
+	}
+	if (blur_fbo_a_) {
+		glDeleteFramebuffers(1, &blur_fbo_a_);
+		blur_fbo_a_ = 0;
+	}
+	if (blur_fbo_b_) {
+		glDeleteFramebuffers(1, &blur_fbo_b_);
+		blur_fbo_b_ = 0;
+	}
+	if (blur_tex_a_) {
+		glDeleteTextures(1, &blur_tex_a_);
+		blur_tex_a_ = 0;
+	}
+	if (blur_tex_b_) {
+		glDeleteTextures(1, &blur_tex_b_);
+		blur_tex_b_ = 0;
+	}
 }
 
 void HUDLayer::RenderBlurToFramebuffer() {
-	if (!blur_program_ || !blur_vao_ || !scene_texture_) return;
+	if (!blur_program_ || !blur_vao_ || !scene_texture_) {
+		return;
+	}
 
 	// Resize blur textures if the HUD was resized
 	if (blur_tex_width_ != width_ || blur_tex_height_ != height_) {
@@ -1162,7 +1193,7 @@ void HUDLayer::RenderBlurToFramebuffer() {
 	GLint locRes = glGetUniformLocation(blur_program_, "uResolution");
 	glUniform1i(locTex, 0);
 	glUniform2f(locRes, static_cast<float>(width_), static_cast<float>(height_));
-	glUniform2f(locDir, 0.0f, 0.0f);  // No blur direction — just copy
+	glUniform2f(locDir, 0.0f, 0.0f);    // No blur direction — just copy
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, scene_texture_);
 	glBindVertexArray(blur_vao_);

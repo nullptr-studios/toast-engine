@@ -91,15 +91,15 @@ void SpineRendererComponent::Begin() {
 }
 
 void SpineRendererComponent::OnEnable() {
-		if (auto* r = renderer::IRendererBase::GetInstance()) {
-			r->EnableRenderable(this);
-		}
+	if (auto* r = renderer::IRendererBase::GetInstance()) {
+		r->EnableRenderable(this);
+	}
 }
 
 void SpineRendererComponent::OnDisable() {
-		if (auto* r = renderer::IRendererBase::GetInstance()) {
-			r->DisableRenderable(this);
-		}
+	if (auto* r = renderer::IRendererBase::GetInstance()) {
+		r->DisableRenderable(this);
+	}
 }
 
 void SpineRendererComponent::Tick() {
