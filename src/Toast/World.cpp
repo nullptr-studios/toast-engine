@@ -293,9 +293,6 @@ void World::UnloadScene(const unsigned id) {
 		scene->_enabled(false);
 	}
 
-	// Remove from tickables immediately so it stops being processed
-	w->m.tickableScenes.erase(id);
-
 	// Just schedule for destruction
 	toast::World::ScheduleDestroy(scene);
 }
@@ -517,7 +514,7 @@ void World::RunDestroyQueue() {
 		if (obj->parent()) {
 			obj->parent()->children.erase(obj->id());
 		} else {
-			// If it's a root-level object (likely a scene), remove from world's children
+			m.tickableScenes.erase(obj->id());
 			m.children.erase(obj->id());
 		}
 	}
