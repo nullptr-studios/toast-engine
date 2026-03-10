@@ -30,10 +30,29 @@ public:
 		}
 	}
 
-	void Begin() override {
 
-		for (int i = 0; i < size; i++) {
-			m_pool[i]->enabled(false);
+
+	void EarlyTick() override {
+		// On the first tick, disable every free object that has already finished its Begin
+		if (!m_poolReady) {
+			bool allReady = true;
+			for (int i = 0; i < size; i++) {
+				if (!m_pool[i]->has_run_begin()) {
+					allReady = false;
+				}
+			}
+			if (allReady) {
+				// All objects have completed Begin
+				std::stack<T*> temp;
+				while (!m_free.empty()) {
+					auto* obj = m_free.top();
+					m_free.pop();
+					obj->enabled(false);
+					temp.push(obj);
+				}
+				m_free = std::move(temp);
+				m_poolReady = true;
+			}
 		}
 	}
 
@@ -43,13 +62,15 @@ public:
 			return nullptr;
 		}
 		auto* obj = m_free.top();
-		m_free.pop();
-		if (!obj->enabled()) {
-			obj->enabled(true);
-		}
+		 
+		// Safety
 		if (!obj->has_run_begin()) {
-			obj->RefreshBegin(true);
+			TOAST_WARN("Pool::Release — object not yet initialised (Begin pending), returning nullptr");
+			return nullptr;
 		}
+
+		m_free.pop();
+		obj->enabled(true);
 		return obj;
 	}
 
@@ -72,4 +93,5 @@ public:
 private:
 	std::array<T*, size> m_pool = {};
 	std::stack<T*> m_free;
+	bool m_poolReady = false;
 };
