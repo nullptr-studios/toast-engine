@@ -78,6 +78,11 @@ public:
 	static Object::Children& GetChildren();
 
 	[[nodiscard]]
+	static auto GetTickables() -> const std::unordered_map<unsigned int, Scene*> {
+		return Instance()->m.tickableScenes;
+	}
+
+	[[nodiscard]]
 	static auto GetFromType(std::string_view type) -> Object*;
 
 	static void ScheduleBegin(Object* obj);
