@@ -138,7 +138,34 @@ void GameFlow::LoadLevel(unsigned world, unsigned level) {
 	if (m.level == level || m.levelList.size() <= level) {
 		return;
 	}
+	if (not m.level && m.world == world && level == 0 && m.nextLevel) {
+		m.level = level;
+		m.currentLevel = std::move(m.nextLevel);
+		m.currentLevel->wait();
+		try {
+			auto* scene = toast::World::Get(m.currentLevel->get());
+			if (!scene) {
+				throw std::runtime_error("Current Level Deleted By Another Existence");
+			}
+			scene->enabled(true);
+		} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
+
+		if (m.levelList.size() >= level + 1) {
+			m.nextLevel = toast::World::LoadScene(m.levelList[level + 1]);
+		} else {
+			m.nextLevel = std::nullopt;
+		}
+		return;
+	}
+
 	m.level = level;
+
+	if (m.currentLevel) {
+		auto* scene = toast::World::Get(m.currentLevel->get());
+		if (!scene) {
+			scene->Nuke();
+		}
+	}
 
 	m.currentLevel = toast::World::LoadScene(m.levelList[level]);
 	if (m.levelList.size() >= level + 1) {
@@ -218,6 +245,7 @@ void GameFlow::NextWorld() {
 }
 
 void GameFlow::Reset() {
+	TOAST_INFO("Resetting Gameflow Destroying levels...");
 	try {
 		if (m.currentLevel) {
 			m.currentLevel->wait();
