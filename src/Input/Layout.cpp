@@ -15,22 +15,22 @@ auto Layout::create(const std::string& path) noexcept -> std::optional<Layout> {
 		std::string custom_path = ";./assets/?.lua;./assets/LAYOUTS/?.lua;./LAYOUTS/?";
 		lua["package"]["path"] = current_path + custom_path;
 
-#ifdef TOAST_EDITOR
+//#ifdef TOAST_EDITOR
 		auto file = resource::Open(path);
-#else
-		// If we're on the game version, it will load the layouts from ./LAYOUTS/(...).layout
-		// This is done like this so we can edit the keybinds through the game
-		std::optional<std::string> file;
-		std::ifstream raw_file(path);
-
-		if (raw_file) {
-			std::string line, full_text;
-			while (std::getline(raw_file, line)) {
-				full_text += line + "\n";
-			}
-			file = full_text;
-		}
-#endif
+//#else
+//		// If we're on the game version, it will load the layouts from ./LAYOUTS/(...).layout
+//		// This is done like this so we can edit the keybinds through the game
+//		std::optional<std::string> file;
+//		std::ifstream raw_file(path);
+//
+//		if (raw_file) {
+//			std::string line, full_text;
+//			while (std::getline(raw_file, line)) {
+//				full_text += line + "\n";
+//			}
+//			file = full_text;
+//		}
+//#endif
 		if (!file.has_value()) {
 			TOAST_ERROR("Input layout file couldn't be open");
 			return std::nullopt;
