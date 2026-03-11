@@ -162,7 +162,7 @@ void GameFlow::LoadLevel(unsigned world, unsigned level) {
 
 	if (m.currentLevel) {
 		auto* scene = toast::World::Get(m.currentLevel->get());
-		if (!scene) {
+		if (scene) {
 			scene->Nuke();
 		}
 	}
