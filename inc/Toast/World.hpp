@@ -27,7 +27,9 @@ public:
 	static World* Instance();
 
 	template<typename T>
+	[[deprecated("This doesn;t work, load a scene from json pls")]]
 	static auto New(const std::optional<std::string>& name = std::nullopt) -> T*;
+	[[deprecated("This doesn;t work, load a scene from json pls")]]
 	static auto New(std::string_view type, const std::optional<std::string>& name = std::nullopt) -> Object*;
 	static auto LoadScene(std::string_view path) -> std::future<unsigned>;    ///< Loads scene on the init thread, scene disabld after load
 	static void LoadSceneSync(std::string_view path);                         ///< Loads scene on the main thread, scene enabled after load
