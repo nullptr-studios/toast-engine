@@ -580,7 +580,7 @@ void OpenGLRenderer::LightingPass() {
 	glBlendFunc(GL_ONE, GL_ONE);
 
 	// Disable depth test while accumulating lights
-	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_DEPTH_TEST);
 
 	// lighting pass (skip loop if empty)
 	if (!m_lights.empty()) {
