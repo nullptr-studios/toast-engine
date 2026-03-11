@@ -60,7 +60,6 @@
         ] ++ ultralightDeps;
 
         shellHook = ''
-          # Ayuda a herramientas como clangd/clang-tidy a encontrar las cabeceras de C++ de Nix
           export CPLUS_INCLUDE_PATH="${pkgs.lib.makeSearchPathOutput "dev" "include" [ customStdenv.cc.cc ]}:${pkgs.lib.makeSearchPath "include" [ customStdenv.cc.cc ]}"
           
           export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath (with pkgs; [
@@ -69,7 +68,6 @@
           ] ++ ultralightDeps)}:$LD_LIBRARY_PATH"
           
           echo "gam250 environment loaded with $(clang --version | head -n1)"
-          echo "Clang-tidy location: $(which clang-tidy)"
         '';
       };
     };

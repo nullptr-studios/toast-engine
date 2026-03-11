@@ -18,6 +18,7 @@ using namespace physics;
 
 void Collider::Init() {
 	CalculatePoints();
+	enabled_ref() = false; // disable colliders until its loaded
 }
 
 void Collider::AddPoint(glm::vec2 point) {

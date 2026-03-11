@@ -12,6 +12,10 @@
 
 namespace physics {
 
+void Trigger::Init() {
+	enabled_ref() = false;
+}
+
 void Trigger::Begin() {
 	Actor::Begin();
 	PhysicsSystem::AddTrigger(this);

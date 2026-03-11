@@ -411,7 +411,6 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 		}
 	}
 
-	// TODO: Collision with Boxes
 	for (auto* b : m.boxes) {
 		auto manifold = RbBoxCollision(rb, b);
 		if (manifold.has_value()) {

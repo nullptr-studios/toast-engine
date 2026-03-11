@@ -26,6 +26,8 @@ void Rigidbody::Init() {
 	m_previousPosition = m_currentPosition;
 	m_lastKnownTransformPos = worldPos;
 	m_hasValidPreviousPosition = true;
+
+	enabled_ref() = false;
 }
 
 void Rigidbody::Begin() {
