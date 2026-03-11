@@ -491,8 +491,10 @@ void HUDLayer::OnRender() {
 			continue;
 		}
 
-		// Draw into our own framebuffer_ (already bound as GL_DRAW_FRAMEBUFFER above).
-		// Ultralight stores pixels top-left origin, so we flip Y during blit.
+		// Draw into our own framebuffer_ 
+		// Ultralight stores pixels top-left origin, so we flip Y during blit
+		// Source is the render target in device pixels
+		// destination is the HUD framebuffer in logical pixels
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_->Handle());
 		glBlitFramebuffer(
 		    0,
@@ -500,11 +502,11 @@ void HUDLayer::OnRender() {
 		    static_cast<GLint>(target.width),
 		    static_cast<GLint>(target.height),
 		    0,
-		    static_cast<GLint>(target.height),
-		    static_cast<GLint>(target.width),
+		    static_cast<GLint>(height_),
+		    static_cast<GLint>(width_),
 		    0,
 		    GL_COLOR_BUFFER_BIT,
-		    GL_NEAREST
+		    GL_LINEAR
 		);
 	}
 
