@@ -58,6 +58,7 @@ public:
 	double mass = 1.0;        // Weight in kg
 	double friction = 0.2;    // How it deals frictions onto other objects (not itself)
 	ColliderFlags flags = ColliderFlags::Default;
+	bool ignorePlayer = false;
 
 	// simulation
 	bool hasGravity = true;                    // Is the rb affected by gravity at all?
