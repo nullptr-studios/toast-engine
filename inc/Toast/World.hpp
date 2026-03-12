@@ -27,7 +27,9 @@ public:
 	static World* Instance();
 
 	template<typename T>
+	[[deprecated("This doesn;t work, load a scene from json pls")]]
 	static auto New(const std::optional<std::string>& name = std::nullopt) -> T*;
+	[[deprecated("This doesn;t work, load a scene from json pls")]]
 	static auto New(std::string_view type, const std::optional<std::string>& name = std::nullopt) -> Object*;
 	static auto LoadScene(std::string_view path) -> std::future<unsigned>;    ///< Loads scene on the init thread, scene disabld after load
 	static void LoadSceneSync(std::string_view path);                         ///< Loads scene on the main thread, scene enabled after load
@@ -37,6 +39,8 @@ public:
 	static void EnableScene(std::string_view name);
 	static void DisableScene(unsigned id);
 	static void DisableScene(std::string_view name);
+
+	static bool IsRunning();
 
 	void EarlyTick();
 	void Tick();
@@ -76,6 +80,11 @@ public:
 	static bool Has(std::string_view name);
 	[[nodiscard]]
 	static Object::Children& GetChildren();
+
+	[[nodiscard]]
+	static auto GetTickables() -> const std::unordered_map<unsigned int, Scene*> {
+		return Instance()->m.tickableScenes;
+	}
 
 	[[nodiscard]]
 	static auto GetFromType(std::string_view type) -> Object*;

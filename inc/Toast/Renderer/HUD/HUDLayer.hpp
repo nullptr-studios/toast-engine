@@ -118,6 +118,19 @@ public:
 	ultralight::RefPtr<ultralight::View> CreateView(uint32_t width, uint32_t height, ultralight::ViewConfig config = {});
 
 	///
+	/// @brief Remove a previously created view from this HUD layer.
+	/// @param view The view to remove
+	///
+	void RemoveView(const ultralight::RefPtr<ultralight::View>& view);
+
+	///
+	/// @brief Set the sort order for a view (higher values render on top)
+	/// @param view The view to update
+	/// @param order Sort order value
+	///
+	void SetViewSortOrder(const ultralight::RefPtr<ultralight::View>& view, int order);
+
+	///
 	/// @brief Resize the UI viewport
 	/// @param width New viewport width
 	/// @param height New viewport height
@@ -194,6 +207,16 @@ public:
 	}
 
 	///
+	/// @brief Set the viewport offset for coordinate mapping (editor support)
+	/// @param x X offset of the viewport in window space
+	/// @param y Y offset of the viewport in window space
+	///
+	void SetViewportOffset(int x, int y) {
+		viewport_offset_x_ = x;
+		viewport_offset_y_ = y;
+	}
+
+	///
 	/// @brief Called by the per-instance LoadListener when the main-frame DOM is ready
 	///
 	void OnDOMReady();
@@ -228,16 +251,21 @@ private:
 	GLFWwindow* window_ = nullptr;
 	uint32_t width_ = 0;
 	uint32_t height_ = 0;
+	float device_scale_ = 1.0f;    ///< Monitor DPI scale (from glfwGetWindowContentScale)
 	bool msaa_enabled_ = false;
 	bool input_enabled_ = true;    ///< Whether input events are forwarded to Ultralight
+	int viewport_offset_x_ = 0;    ///< Viewport X offset in window space (for editor)
+	int viewport_offset_y_ = 0;    ///< Viewport Y offset in window space (for editor)
 
 	std::unique_ptr<toast::hud::ToastGPUContext> gpu_context_;
 	ultralight::RefPtr<ultralight::Renderer> renderer_;
 	std::vector<ultralight::RefPtr<ultralight::View>> views_;
+	std::unordered_map<ultralight::View*, int> view_sort_orders_;
 
 	// Output framebuffer for the HUD
 	std::unique_ptr<Framebuffer> framebuffer_;
 	unsigned read_fbo_ = 0;
+	void SortViewsByOrder();
 };
 
 }    // namespace renderer::HUD

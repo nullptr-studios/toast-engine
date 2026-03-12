@@ -36,6 +36,9 @@ public:
 
 	void Destroy() override;
 
+	void OnEnable() override;
+	void OnDisable() override;
+
 	void SetMaterial(const std::string& path) {
 		// m_materialSlot.SetResource(path);
 		m_materialPath = path;

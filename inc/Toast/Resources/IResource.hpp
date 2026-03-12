@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -59,10 +60,10 @@ public:
 	    : m_path(std::move(other.m_path)),
 	      m_gpu(other.m_gpu),
 	      m_resourceType(other.m_resourceType),
-	      m_resourceState(other.m_resourceState) {
+	      m_resourceState(other.m_resourceState.load(std::memory_order_acquire)) {
 		other.m_gpu = false;
 		other.m_resourceType = resource::ResourceType::UNKNOWN;
-		other.m_resourceState = resource::ResourceState::UNLOADED;
+		other.m_resourceState.store(resource::ResourceState::UNLOADED, std::memory_order_release);
 	}
 
 	IResource& operator=(IResource&& other) noexcept {
@@ -70,10 +71,10 @@ public:
 			m_path = std::move(other.m_path);
 			m_gpu = other.m_gpu;
 			m_resourceType = other.m_resourceType;
-			m_resourceState = other.m_resourceState;
+			m_resourceState.store(other.m_resourceState.load(std::memory_order_acquire), std::memory_order_release);
 			other.m_gpu = false;
 			other.m_resourceType = resource::ResourceType::UNKNOWN;
-			other.m_resourceState = resource::ResourceState::UNLOADED;
+			other.m_resourceState.store(resource::ResourceState::UNLOADED, std::memory_order_release);
 		}
 		return *this;
 	}
@@ -91,11 +92,11 @@ public:
 
 	[[nodiscard]]
 	resource::ResourceState GetResourceState() const {
-		return m_resourceState;
+		return m_resourceState.load(std::memory_order_acquire);
 	}
 
 	void SetResourceState(resource::ResourceState state) {
-		m_resourceState = state;
+		m_resourceState.store(state, std::memory_order_release);
 	}
 
 	[[nodiscard]]
@@ -109,5 +110,5 @@ protected:
 private:
 	bool m_gpu = false;
 	resource::ResourceType m_resourceType = resource::ResourceType::UNKNOWN;
-	resource::ResourceState m_resourceState = resource::ResourceState::UNLOADED;
+	std::atomic<resource::ResourceState> m_resourceState { resource::ResourceState::UNLOADED };
 };

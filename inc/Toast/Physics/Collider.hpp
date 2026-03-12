@@ -33,13 +33,16 @@ public:
 
 #ifdef TOAST_EDITOR
 	void Inspector() override;
-#endif
 	void EditorTick() override;
+#endif
+
 	void Destroy() override;
 
 	json_t Save() const override;
 	void Load(json_t j, bool propagate) override;
 	void Init() override;
+	void OnEnable() override;
+	void OnDisable() override;
 
 	void CalculatePoints();
 	void Bevel(unsigned idx);
@@ -63,6 +66,8 @@ public:
 	auto currentEditMode() -> ColliderEditMode {
 		return m.currentEditMode;
 	}
+
+	void DestroyConvexShapes();
 
 	ColliderData data;
 

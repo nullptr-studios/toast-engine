@@ -17,17 +17,27 @@ void Light2D::Init() {
 	m_lightShader = resource::LoadResource<renderer::Shader>("assets/SHADERS/2dLight.shader");
 
 	transform()->scale(glm::vec3(m_radius * 2, m_radius * 2, 1.0f));
+
+}
+
+void Light2D::LoadTextures() {
+	Actor::LoadTextures();
 	renderer::IRendererBase::GetInstance()->AddLight(this);
 	m_lightBuffer = renderer::IRendererBase::GetInstance()->GetLightFramebuffer();
 }
 
-void Light2D::Begin() { }
+void Light2D::Begin() {
+}
 
 void Light2D::Destroy() {
 	renderer::IRendererBase::GetInstance()->RemoveLight(this);
 }
 
 void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
+	
+	if (!enabled())
+		return;
+	
 	// Culling
 	if (!OclussionVolume::isSphereOnPlanes(transform()->worldPosition(), m_radius)) {
 		return;
@@ -37,11 +47,6 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 	auto mvp = premultiplied_matrix * model;
 
 	m_lightShader->Use();
-
-	// Framebuffer samplers
-	// The light shader samples scene normals from the GEOMETRY (G-)buffer, not from the light FBO.
-	// Avoid binding the light framebuffer's attachments as textures while the light FBO is bound (read-while-write hazard).
-	m_lightShader->SetSampler("gNormal", 1);
 
 	m_lightShader->Set("gMVP", mvp);
 	m_lightShader->Set("gLightColor", m_color);
@@ -53,24 +58,8 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 	m_lightShader->Set("gRadialSoftness", m_radialSoftness);
 	m_lightShader->Set("gAngularSoftness", m_angularSoftness);
 
-	m_lightShader->Set("gNormalMappingEnabled", m_normalMappingEnabled);
-
-	m_lightShader->Set(
-	    "gInvScreenSize", glm::vec2(1.0f / static_cast<float>(m_lightBuffer->Width()), 1.0f / static_cast<float>(m_lightBuffer->Height()))
-	);
-
-	// Bind normal texture from the geometry framebuffer (attachment 1)
-	auto geomFB = renderer::IRendererBase::GetInstance()->GetGeometryFramebuffer();
-	if (geomFB) {
-		glActiveTexture(GL_TEXTURE0 + 1);
-		glBindTexture(GL_TEXTURE_2D, geomFB->GetColorTexture(1));
-	}
-
 	// Draw light quad into the currently bound light framebuffer (accumulation happens via additive blending)
 	m_lightMesh->Draw();
-
-	// Restore active texture unit
-	glActiveTexture(GL_TEXTURE0);
 }
 
 json_t Light2D::Save() const {
@@ -81,7 +70,6 @@ json_t Light2D::Save() const {
 	j["angle"] = m_angle;
 	j["radial_softness"] = m_radialSoftness;
 	j["angular_softness"] = m_angularSoftness;
-	j["normal_mapping_enabled"] = m_normalMappingEnabled;
 	j["color"] = { m_color.r, m_color.g, m_color.b, m_color.a };
 	return j;
 }
@@ -106,9 +94,7 @@ void Light2D::Load(json_t j, bool force_create) {
 	if (j.contains("angular_softness")) {
 		m_angularSoftness = j.at("angular_softness").get<float>();
 	}
-	if (j.contains("normal_mapping_enabled")) {
-		m_normalMappingEnabled = j.at("normal_mapping_enabled").get<bool>();
-	}
+
 	if (j.contains("color")) {
 		auto color_array = j.at("color").get<std::vector<float>>();
 		if (color_array.size() == 4) {
@@ -129,9 +115,6 @@ void Light2D::Inspector() {
 	ImGui::DragFloat("Angular Softness", &m_angularSoftness, 0.01f, 0.000f, 1.0f);
 
 	ImGui::ColorEdit4("Light Color", &m_color.r);
-
-	ImGui::Separator();
-	ImGui::Checkbox("Enable Normal Mapping", &m_normalMappingEnabled);
 
 	transform()->scale(glm::vec3(m_radius * 2, m_radius * 2, 1.0f));
 }

@@ -27,4 +27,8 @@ struct LoadLevel : public event::Event<LoadLevel> {
 struct NextWorld : public event::Event<NextWorld> { };
 
 struct NextLevel : public event::Event<NextLevel> { };
+
+struct ResetGameFlow : public event::Event<ResetGameFlow> { };
+
+struct RestartLevel : public event::Event<RestartLevel> { };
 }

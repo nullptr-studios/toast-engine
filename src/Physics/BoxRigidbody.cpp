@@ -15,6 +15,12 @@ void BoxRigidbody::Init() {
 	PhysicsSystem::AddBox(this);
 }
 
+void BoxRigidbody::Begin() {
+	Component::Begin();
+	angularVelocity = 0.0;
+	velocity = { 0.0, 0.0 };
+}
+
 void BoxRigidbody::Destroy() {
 	PhysicsSystem::RemoveBox(this);
 }
@@ -67,21 +73,23 @@ void BoxRigidbody::Inspector() {
 }
 #endif
 
+#ifdef TOAST_EDITOR
 void BoxRigidbody::EditorTick() {
 	if (!debug.show) {
 		return;
 	}
 
-	std::vector<glm::vec2> points = GetPoints();
+	const auto& points = GetPoints();
 	renderer::DebugPoly(points, debug.defaultColor);
 }
+#endif
 
 json_t BoxRigidbody::Save() const {
 	json_t j = Component::Save();
 
 	j["size"] = size;
 	j["offset"] = offset;
-	// j["rotation"] = rotation;
+	j["rotation"] = rotation;
 	j["mass"] = mass;
 	j["friction"] = friction;
 	j["gravityScale"] = gravityScale;
@@ -109,9 +117,9 @@ void BoxRigidbody::Load(json_t j, bool b) {
 	if (j.contains("offset")) {
 		offset = j["offset"];
 	}
-	// if (j.contains("rotation")) {
-	// 	rotation = j["rotation"];
-	// }
+	if (j.contains("rotation")) {
+		rotation = j["rotation"];
+	}
 	if (j.contains("mass")) {
 		mass = j["mass"];
 	}
@@ -168,6 +176,7 @@ void BoxRigidbody::SetPosition(glm::dvec2 position) {
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
 	float z = transform->worldPosition().z;
 	transform->worldPosition({ position.x, position.y, z });
+	InvalidateCache();
 }
 
 auto BoxRigidbody::GetRotation() const -> double {
@@ -179,21 +188,25 @@ void BoxRigidbody::SetRotation(double rotation) {
 	float x = transform->worldRotationRadians().x;
 	float y = transform->worldRotationRadians().y;
 	transform->worldRotationRadians({ x, y, rotation });
+	InvalidateCache();
 }
 
-auto BoxRigidbody::GetPoints() const -> std::vector<glm::vec2> {
+void BoxRigidbody::InvalidateCache() const {
+	m_cacheDirty = true;
+}
+
+void BoxRigidbody::RebuildCache() const {
 	glm::dvec2 position = GetPosition();
-	double rotation = GetRotation();
+	double rot = GetRotation();
 	glm::dvec2 scale = size;
 
-	std::vector<glm::vec2> points(4);
+	// --- Rebuild points ---
+	m_cachedPoints.resize(4);
 
-	// Half-extents for centering
 	glm::dvec2 h = scale * 0.5;
-	double cos_r = std::cos(rotation);
-	double sin_r = std::sin(rotation);
+	double cos_r = std::cos(rot);
+	double sin_r = std::sin(rot);
 
-	// Define local corners relative to center
 	std::array<glm::dvec2, 4> corners = {
 		glm::dvec2 { -h.x, -h.y },
      glm::dvec2 {  h.x, -h.y },
@@ -202,41 +215,53 @@ auto BoxRigidbody::GetPoints() const -> std::vector<glm::vec2> {
 	};
 
 	for (int i = 0; i < 4; i++) {
-		// Rotation -> Position
-		points[i].x = (float)((corners[i].x * cos_r) - (corners[i].y * sin_r) + position.x);
-		points[i].y = (float)((corners[i].x * sin_r) + (corners[i].y * cos_r) + position.y);
+		m_cachedPoints[i].x = (float)((corners[i].x * cos_r) - (corners[i].y * sin_r) + position.x);
+		m_cachedPoints[i].y = (float)((corners[i].x * sin_r) + (corners[i].y * cos_r) + position.y);
 	}
 
-	return points;
-}
+	// --- Rebuild edges ---
+	m_cachedEdges.resize(4);
+	for (int i = 0; i < 4; i++) {
+		const glm::vec2& p1 = m_cachedPoints[i];
+		const glm::vec2& p2 = m_cachedPoints[(i + 1) % 4];
 
-auto BoxRigidbody::GetEdges() const -> std::vector<Line> {
-	std::vector<glm::vec2> points = GetPoints();
-	std::vector<Line> lines;
-	lines.reserve(points.size());
-
-	for (int i = 0; i < points.size(); i++) {
-		const glm::vec2& p1 = points[i];
-		const glm::vec2& p2 = points[(i + 1) % points.size()];
-
-		// compute edge direction
 		glm::vec2 edge = p2 - p1;
-
-		// compute perpendicular vector
 		glm::vec2 normal = glm::normalize(glm::vec2 { -edge.y, edge.x });
 
-		// clang-format off
-		lines.emplace_back(Line {
-			.p1 = p1,
-			.p2 = p2,
-			.normal = normal,
-			.tangent = {-normal.y, normal.x},
-			.length = glm::distance(p1, p2)
-		});
-		// clang-format on
+		m_cachedEdges[i] = Line {
+			.p1 = p1, .p2 = p2, .normal = normal, .tangent = { -normal.y, normal.x },
+                 .length = glm::distance(p1, p2)
+		};
 	}
 
-	return lines;
+	m_cachedAABB = renderer::BoundingBox {};
+	for (int i = 0; i < 4; i++) {
+		m_cachedAABB.expand(glm::vec3(m_cachedPoints[i].x, m_cachedPoints[i].y, -1.0f));
+		m_cachedAABB.expand(glm::vec3(m_cachedPoints[i].x, m_cachedPoints[i].y, 1.0f));
+	}
+
+	m_cacheDirty = false;
+}
+
+auto BoxRigidbody::GetPoints() const -> const std::vector<glm::vec2>& {
+	if (m_cacheDirty) {
+		RebuildCache();
+	}
+	return m_cachedPoints;
+}
+
+auto BoxRigidbody::GetEdges() const -> const std::vector<Line>& {
+	if (m_cacheDirty) {
+		RebuildCache();
+	}
+	return m_cachedEdges;
+}
+
+auto BoxRigidbody::GetAABB() const -> const renderer::BoundingBox& {
+	if (m_cacheDirty) {
+		RebuildCache();
+	}
+	return m_cachedAABB;
 }
 
 void BoxRigidbody::AddForce(glm::dvec2 force) {

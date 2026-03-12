@@ -20,6 +20,7 @@
 #include <Ultralight/Ultralight.h>
 #include <Ultralight/platform/Config.h>
 #include <Ultralight/platform/Platform.h>
+#include <algorithm>
 
 // Static map of windows to HUDLayer instances for input callbacks
 static std::unordered_map<GLFWwindow*, renderer::HUD::HUDLayer*> g_hud_layers;
@@ -350,41 +351,37 @@ void HUDLayer::OnAttach() {
 
 	TOAST_TRACE("Ultralight Renderer created successfully");
 
-	// Create view configuration
-	ultralight::ViewConfig view_config;
-	view_config.is_accelerated = true;    // Use GPU acceleration
-	view_config.is_transparent = true;    // Allow transparency
-	view_config.initial_device_scale = 1.0;
-	view_config.initial_focus = true;
-	view_config.enable_images = true;
-	view_config.enable_javascript = true;
-
-	TOAST_TRACE("Creating Ultralight View ({}x{})...", width_, height_);
-
-	// Create the first view and register it
-	auto first_view = CreateView(width_, height_, view_config);
-	if (!first_view) {
-		TOAST_ERROR("Failed to create Ultralight view!");
-		return;
-	}
-
-	// Set up listeners for debugging
+	// Set up shared listeners
 	if (!g_view_listener) {
 		g_view_listener = std::make_unique<ToastViewListener>();
 	}
 	if (!g_load_listener) {
 		g_load_listener = std::make_unique<ToastLoadListener>();
 	}
-	first_view->set_view_listener(g_view_listener.get());
-
-	// Create a per-instance load listener that forwards to the global debug load listener
 	load_listener_ = std::make_unique<HUDLayerLoadListener>(this, g_load_listener.get());
-	first_view->set_load_listener(load_listener_.get());
 
-	// If a URL was requested earlier via LoadURL, load it now (after listeners are attached)
+	// If a URL was requested before init via LoadURL(), create a view and load it now
 	if (!pending_url_.empty()) {
-		TOAST_TRACE("HUDLayer::OnAttach - loading pending URL: {}", pending_url_);
-		first_view->LoadURL(ultralight::String(pending_url_.c_str()));
+		// Read the monitor DPI scale so Ultralight's CSS coordinate space equals logical pixels
+		if (window_) {
+			float sx = 1.0f, sy = 1.0f;
+			glfwGetWindowContentScale(window_, &sx, &sy);
+			device_scale_ = sx;
+		}
+
+		ultralight::ViewConfig view_config;
+		view_config.is_accelerated = true;
+		view_config.is_transparent = true;
+		view_config.initial_device_scale = device_scale_;
+		view_config.initial_focus = true;
+		view_config.enable_images = true;
+		view_config.enable_javascript = true;
+
+		auto first_view = CreateView(width_, height_, view_config);
+		if (first_view) {
+			TOAST_TRACE("HUDLayer::OnAttach - loading pending URL: {}", pending_url_);
+			first_view->LoadURL(ultralight::String(pending_url_.c_str()));
+		}
 		pending_url_.clear();
 	}
 
@@ -410,6 +407,7 @@ void HUDLayer::OnDetach() {
 	}
 
 	views_.clear();
+	view_sort_orders_.clear();
 	renderer_ = nullptr;
 
 	TOAST_INFO("HUDLayer detached");
@@ -464,7 +462,7 @@ void HUDLayer::OnRender() {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	// Blit each view's render target into the HUD framebuffer (in insertion order)
+	// Blit each view's render target into the HUD framebuffer (sorted by sort order)
 	for (const auto& v : views_) {
 		if (!v) {
 			continue;
@@ -493,8 +491,10 @@ void HUDLayer::OnRender() {
 			continue;
 		}
 
-		// Draw into our own framebuffer_ (already bound as GL_DRAW_FRAMEBUFFER above).
-		// Ultralight stores pixels top-left origin, so we flip Y during blit.
+		// Draw into our own framebuffer_ 
+		// Ultralight stores pixels top-left origin, so we flip Y during blit
+		// Source is the render target in device pixels
+		// destination is the HUD framebuffer in logical pixels
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_->Handle());
 		glBlitFramebuffer(
 		    0,
@@ -502,11 +502,11 @@ void HUDLayer::OnRender() {
 		    static_cast<GLint>(target.width),
 		    static_cast<GLint>(target.height),
 		    0,
-		    static_cast<GLint>(target.height),
-		    static_cast<GLint>(target.width),
+		    static_cast<GLint>(height_),
+		    static_cast<GLint>(width_),
 		    0,
 		    GL_COLOR_BUFFER_BIT,
-		    GL_NEAREST
+		    GL_LINEAR
 		);
 	}
 
@@ -569,8 +569,12 @@ void HUDLayer::LoadHTML(const std::string& html, const std::string& base_url) {
 // Evaluate a script now if DOM is ready, otherwise queue it to be run after DOM ready.
 void HUDLayer::EvalScriptOrQueue(const std::string& script) {
 	if (dom_ready_) {
-		if (!views_.empty() && views_.front()) {
-			views_.front()->EvaluateScript(ultralight::String(script.c_str()));
+		if (!views_.empty()) {
+			for (const auto& v : views_) {
+				if (v) {
+					v->EvaluateScript(ultralight::String(script.c_str()));
+				}
+			}
 		}
 		return;
 	}
@@ -589,10 +593,11 @@ void HUDLayer::OnDOMReady() {
 	dom_ready_ = true;
 	// Flush pending scripts
 	for (const auto& s : pending_scripts_) {
-		if (!views_.empty() && views_.front()) {
-			// Wrap script execution in a short timeout so page-level initializers (like GameUI) run first
+		if (!views_.empty()) {
 			std::string wrapped = std::string("(function(){ setTimeout(function(){ ") + s + std::string(" }, 50); })();");
-			views_.front()->EvaluateScript(ultralight::String(wrapped.c_str()));
+			for (const auto& v : views_) {
+				v->EvaluateScript(ultralight::String(wrapped.c_str()));
+			}
 		}
 	}
 	pending_scripts_.clear();
@@ -614,8 +619,6 @@ void HUDLayer::FlushPendingScriptsNow() {
 }
 
 void HUDLayer::ExecuteJS(const std::string& script) {
-	// Log the outgoing JS for debugging
-	// TOAST_TRACE("[JAVASCRIPT] {}", script);
 	EvalScriptOrQueue(script);
 }
 
@@ -658,10 +661,18 @@ void HUDLayer::Resize(uint32_t width, uint32_t height) {
 	width_ = width;
 	height_ = height;
 
-	// Resize the Ultralight view
+	// Refresh DPI scale — the monitor or window scale may have changed
+	if (window_) {
+		float sx = 1.0f, sy = 1.0f;
+		glfwGetWindowContentScale(window_, &sx, &sy);
+		device_scale_ = sx;
+	}
+
+	// Resize the Ultralight view (physical pixels) and update the device scale
 	for (auto& v : views_) {
 		if (v) {
 			v->Resize(width, height);
+			//v->set_device_scale(device_scale_);
 		}
 	}
 
@@ -670,7 +681,7 @@ void HUDLayer::Resize(uint32_t width, uint32_t height) {
 		framebuffer_->Resize(width, height);
 	}
 
-	TOAST_INFO("HUD resized to {}x{}", width, height);
+	TOAST_INFO("HUD resized to {}x{} (device_scale={:.2f})", width, height, device_scale_);
 }
 
 // ============================================================================
@@ -716,10 +727,12 @@ void HUDLayer::OnMouseMove(int x, int y) {
 
 	ultralight::MouseEvent evt;
 	evt.type = ultralight::MouseEvent::kType_MouseMoved;
-	evt.x = x;
-	evt.y = y;
+	evt.x = x - viewport_offset_x_;
+	evt.y = y - viewport_offset_y_;
 	evt.button = ultralight::MouseEvent::kButton_None;
-	views_.front()->FireMouseEvent(evt);
+	for (auto& v : views_) {
+		v->FireMouseEvent(evt);
+	}
 }
 
 void HUDLayer::OnMouseButton(int button, int action, int mods) {
@@ -733,8 +746,8 @@ void HUDLayer::OnMouseButton(int button, int action, int mods) {
 	// Get current mouse position
 	double xpos, ypos;
 	glfwGetCursorPos(window_, &xpos, &ypos);
-	evt.x = static_cast<int>(xpos);
-	evt.y = static_cast<int>(ypos);
+	evt.x = static_cast<int>(xpos) - viewport_offset_x_;
+	evt.y = static_cast<int>(ypos) - viewport_offset_y_;
 
 	switch (button) {
 		case GLFW_MOUSE_BUTTON_LEFT: evt.button = ultralight::MouseEvent::kButton_Left; break;
@@ -743,7 +756,9 @@ void HUDLayer::OnMouseButton(int button, int action, int mods) {
 		default: evt.button = ultralight::MouseEvent::kButton_None; break;
 	}
 
-	views_.front()->FireMouseEvent(evt);
+	for (auto& v : views_) {
+		v->FireMouseEvent(evt);
+	}
 }
 
 void HUDLayer::OnMouseScroll(double xoffset, double yoffset) {
@@ -755,7 +770,9 @@ void HUDLayer::OnMouseScroll(double xoffset, double yoffset) {
 	evt.type = ultralight::ScrollEvent::kType_ScrollByPixel;
 	evt.delta_x = static_cast<int>(xoffset * 32);
 	evt.delta_y = static_cast<int>(yoffset * 32);
-	views_.front()->FireScrollEvent(evt);
+	for (auto& v : views_) {
+		v->FireScrollEvent(evt);
+	}
 }
 
 // Helper function to convert GLFW key to Ultralight key
@@ -881,10 +898,9 @@ void HUDLayer::OnKey(int key, int scancode, int action, int mods) {
 	// Get key identifier
 	ultralight::GetKeyIdentifierFromVirtualKeyCode(evt.virtual_key_code, evt.key_identifier);
 
-	views_.front()->FireKeyEvent(evt);
-
-	// Note: Character input is handled separately by OnChar callback
-	// Do NOT fire a char event here as it causes duplicate input
+	for (auto& v : views_) {
+		v->FireKeyEvent(evt);
+	}
 }
 
 void HUDLayer::OnChar(unsigned int codepoint) {
@@ -915,14 +931,16 @@ void HUDLayer::OnChar(unsigned int codepoint) {
 
 	evt.text = ultralight::String(utf8);
 	evt.unmodified_text = evt.text;
-	views_.front()->FireKeyEvent(evt);
+	for (auto& v : views_) {
+		v->FireKeyEvent(evt);
+	}
 }
 
 ultralight::RefPtr<ultralight::View> HUDLayer::CreateView(uint32_t width, uint32_t height, ultralight::ViewConfig config) {
 	// Default to accelerated + transparent if caller didn't set
 	config.is_accelerated = true;
 	config.is_transparent = true;
-	config.initial_device_scale = (config.initial_device_scale == 0.0) ? 1.0 : config.initial_device_scale;
+	config.initial_device_scale = (config.initial_device_scale == 0.0) ? device_scale_ : config.initial_device_scale;
 	config.initial_focus = true;
 	config.enable_images = true;
 	config.enable_javascript = true;
@@ -934,9 +952,102 @@ ultralight::RefPtr<ultralight::View> HUDLayer::CreateView(uint32_t width, uint32
 
 	auto v = renderer_->CreateView(width, height, config, nullptr);
 	if (v) {
+		if (g_view_listener) {
+			v->set_view_listener(g_view_listener.get());
+		}
+		if (load_listener_) {
+			v->set_load_listener(load_listener_.get());
+		}
 		views_.push_back(v);
 	}
 	return v;
 }
 
+void HUDLayer::RemoveView(const ultralight::RefPtr<ultralight::View>& view) {
+	auto it = std::find(views_.begin(), views_.end(), view);
+	if (it != views_.end()) {
+		bool wasFront = (it == views_.begin());
+		view_sort_orders_.erase(view.get());
+		views_.erase(it);
+		// If the front view changed, reset DOM readiness so scripts queue until new front is ready
+		if (wasFront) {
+			dom_ready_ = false;
+		}
+	}
+}
+
+void HUDLayer::SetViewSortOrder(const ultralight::RefPtr<ultralight::View>& view, int order) {
+	if (!view) return;
+	view_sort_orders_[view.get()] = order;
+	SortViewsByOrder();
+}
+
+void HUDLayer::SortViewsByOrder() {
+	std::stable_sort(views_.begin(), views_.end(),
+		[this](const ultralight::RefPtr<ultralight::View>& a, const ultralight::RefPtr<ultralight::View>& b) {
+			int oa = 0, ob = 0;
+			auto itA = view_sort_orders_.find(a.get());
+			auto itB = view_sort_orders_.find(b.get());
+			if (itA != view_sort_orders_.end()) oa = itA->second;
+			if (itB != view_sort_orders_.end()) ob = itB->second;
+			return oa < ob;
+		});
+}
+
 }    // namespace renderer::HUD
+
+// ============================================================================
+// Blur Implementation (in renderer::HUD namespace via reopening for clarity)
+// ============================================================================
+
+namespace renderer::HUD {
+
+static const char* kBlurVertSrc = R"(
+#version 330 core
+layout(location = 0) in vec2 aPos;
+layout(location = 1) in vec2 aUV;
+out vec2 vUV;
+void main() {
+    vUV = aUV;
+    gl_Position = vec4(aPos, 0.0, 1.0);
+}
+)";
+
+static const char* kBlurFragSrc = R"(
+#version 330 core
+in vec2 vUV;
+out vec4 FragColor;
+uniform sampler2D uTexture;
+uniform vec2 uDirection;
+uniform vec2 uResolution;
+
+void main() {
+    vec2 texelSize = 1.0 / uResolution;
+    float weights[5] = float[](0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
+    vec4 result = texture(uTexture, vUV) * weights[0];
+    for (int i = 1; i < 5; ++i) {
+        vec2 offset = uDirection * texelSize * float(i) * 2.0;
+        result += texture(uTexture, vUV + offset) * weights[i];
+        result += texture(uTexture, vUV - offset) * weights[i];
+    }
+    FragColor = result;
+}
+)";
+
+static GLuint CompileShader(GLenum type, const char* src) {
+	GLuint s = glCreateShader(type);
+	glShaderSource(s, 1, &src, nullptr);
+	glCompileShader(s);
+	GLint ok = 0;
+	glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
+	if (!ok) {
+		char log[512];
+		glGetShaderInfoLog(s, sizeof(log), nullptr, log);
+		TOAST_ERROR("[HUD Blur] Shader compile error: {}", log);
+		glDeleteShader(s);
+		return 0;
+	}
+	return s;
+}
+
+}

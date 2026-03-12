@@ -5,6 +5,7 @@
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/World.hpp"
 #include "glm/geometric.hpp"
 
 #include <iterator>
@@ -17,7 +18,19 @@
 using namespace physics;
 
 void Collider::Init() {
-	CalculatePoints();
+	 CalculatePoints();
+
+	if (toast::World::IsRunning()) {
+		enabled_ref() = false; // disable colliders until its loaded
+	}
+}
+
+void Collider::OnEnable() {
+	//CalculatePoints();
+}
+
+void Collider::OnDisable() {
+	//DestroyConvexShapes();
 }
 
 void Collider::AddPoint(glm::vec2 point) {
@@ -49,7 +62,7 @@ void Collider::DeleteAt(unsigned idx) {
 }
 
 void Collider::Bevel(unsigned idx) {
-  unsigned subdivisions = debug.bevelSubdivisions;
+	unsigned subdivisions = debug.bevelSubdivisions;
 	if (m.points.size() < 3 || idx >= m.points.size() || subdivisions < 1) {
 		return;
 	}
@@ -83,6 +96,13 @@ void Collider::Bevel(unsigned idx) {
 	m.points.erase(p1);
 
 	CalculatePoints();
+}
+
+void Collider::DestroyConvexShapes() {
+	for (auto* c : m.convexShapes) {
+		delete c;
+	}
+	m.convexShapes.clear();
 }
 
 void Collider::CalculatePoints() {
@@ -120,10 +140,7 @@ void Collider::CalculatePoints() {
 	glm::vec2 world_position = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
 	data.worldPosition = world_position;
 
-	for (auto* c : m.convexShapes) {
-		delete c;
-	}
-	m.convexShapes.clear();
+	DestroyConvexShapes();
 
 	// simple_meshes are a list of points marked true if concave
 	using simple_mesh = std::list<std::pair<glm::vec2, bool>>;
@@ -333,9 +350,7 @@ void Collider::CalculatePoints() {
 }
 
 void Collider::Destroy() {
-	for (auto* c : m.convexShapes) {
-		delete c;
-	}
+	DestroyConvexShapes();
 }
 
 #ifdef TOAST_EDITOR

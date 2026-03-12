@@ -4,7 +4,6 @@
 #include "Toast/World.hpp"
 
 #include <algorithm>
-#include <generator>
 #include <memory>
 #include <optional>
 #include <ranges>
@@ -482,6 +481,7 @@ void Object::_Tick() {
 	}
 }
 
+#ifdef TOAST_EDITOR
 void Object::_EditorTick() {
 	if (not m_runsLateTick) {
 		return;
@@ -500,6 +500,7 @@ void Object::_EditorTick() {
 		child->_EditorTick();
 	}
 }
+#endif
 
 void Object::_LateTick() {
 	if (!enabled() || !m_hasRunBegin) {
@@ -543,7 +544,7 @@ void Object::_Destroy() {
 }
 
 void Object::_PhysTick() {
-	if (!enabled() || !m_hasRunBegin) {
+	if (!enabled() || !m_hasRunBegin || !m_runsPhysTick) {
 		return;
 	}
 
@@ -567,6 +568,8 @@ void Object::_OnDisable() {
 }
 
 void Object::_enabled(const bool enabled) {
+	const bool prev = m_enabled;
+
 	if (enabled && !m_json.empty()) {
 		if (m_json.contains("enabled")) {
 			m_enabled = m_json["enabled"];
@@ -575,6 +578,13 @@ void Object::_enabled(const bool enabled) {
 		}
 	} else {
 		m_enabled = false;
+	}
+
+	// Fire lifecycle callbacks when the effective state actually changes
+	if (m_enabled && !prev) {
+		_OnEnable();
+	} else if (!m_enabled && prev) {
+		_OnDisable();
 	}
 
 	for (const auto& child : children | std::views::values) {

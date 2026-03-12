@@ -3,6 +3,7 @@
 /// @date 21/11/2025.
 
 #pragma once
+#include "Toast/Components/AtlasSpriteComponent.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/Mesh.hpp"
@@ -13,10 +14,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-namespace toast {
-class AtlasSpriteComponent;
-}
 
 class AtlasRendererComponent : public IRenderable {
 public:
@@ -34,14 +31,19 @@ public:
 
 	void Destroy() override;
 
+	void OnEnable() override;
+	void OnDisable() override;
+
 #ifdef TOAST_EDITOR
 	void Inspector() override;
 #endif
 
 	// Sprite management
 	void RefreshSprites();
-	spine::AtlasRegion* FindRegion(const std::string& regionName) const;
-	std::string GenerateSpriteName(const std::string& regionName);
+	void RemoveSpriteFromCache(toast::AtlasSpriteComponent* sprite);
+	void AddSpriteToCache(toast::AtlasSpriteComponent* sprite);
+	spine::AtlasRegion* FindRegion(std::string_view region_name) const;
+	std::string GenerateSpriteName(std::string_view region_name);
 
 private:
 	void UpdateMeshBounds();
@@ -50,30 +52,34 @@ private:
 	    spine::AtlasRegion* region, const glm::mat4& transform, uint32_t color, std::vector<renderer::SpineVertex>& vertices,
 	    std::vector<uint16_t>& indices
 	);
-
-	// Editor resource slots
-	editor::ResourceSlot m_atlasResource { resource::ResourceType::SPINE_ATLAS };
-
-	std::string m_atlasPath;
-
-	std::shared_ptr<SpineAtlas> m_atlas;
-	std::shared_ptr<renderer::Shader> m_shader;
-
-	renderer::Mesh m_dynamicMesh;
-
-	// Buffers for instanced rendering (all sprites combined)
-	std::vector<renderer::SpineVertex> m_tempVerts;
-	std::vector<uint16_t> m_tempIndices;
-
-	// Cache last bound texture
-	unsigned int m_lastBoundTexture = 0;
 	static constexpr size_t INITIAL_VERT_RESERVE = 256;
 
-	// Region picker (for editor)
-	std::vector<std::string> m_regionNames;
-	int m_selectedRegion = -1;
+	struct {
+		std::string atlasPath;
 
-	// Cache sprite children for faster access
-	std::vector<toast::AtlasSpriteComponent*> m_spriteCache;
-	bool m_spriteCacheDirty = true;
+		std::shared_ptr<SpineAtlas> atlas;
+		std::shared_ptr<renderer::Shader> shader;
+
+		renderer::Mesh dynamicMesh;
+
+		// Buffers for instanced rendering (all sprites combined)
+		std::vector<renderer::SpineVertex> tempVerts;
+		std::vector<uint16_t> tempIndices;
+
+		// Cache last bound texture
+		unsigned int lastBoundTexture = 0;
+
+		// Region picker (for editor)
+		std::vector<std::string> regionNames;
+		int selectedRegion = -1;
+
+		std::vector<toast::AtlasSpriteComponent*> spriteCache;
+		bool spriteCacheDirty = true;
+	} m;
+
+#ifdef TOAST_EDITOR
+	struct {
+		editor::ResourceSlot atlasResource { resource::ResourceType::SPINE_ATLAS };
+	} debug;
+#endif
 };

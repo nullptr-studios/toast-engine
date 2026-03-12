@@ -199,20 +199,16 @@ OpenGLRenderer::OpenGLRenderer() {
 	Framebuffer::Specs s = { 1920, 1080 };
 	m_geometryFramebuffer = new Framebuffer(s);
 	m_geometryFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // albedo HDR buffer
-	// m_geometryFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // position HDR buffer
-	m_geometryFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // normals HDR buffer
 	m_geometryFramebuffer->AddDepthAttachment();
 	m_geometryFramebuffer->Build();
 
 	m_lightFramebuffer = new Framebuffer(s);
 	m_lightFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // light accumulation buffer
-	m_lightFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // normal buffer
 	m_lightFramebuffer->AddDepthAttachment();
 	m_lightFramebuffer->Build();
 
 	m_outputFramebuffer = new Framebuffer(s);
 	m_outputFramebuffer->AddColorAttachment(GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);    // final output buffer
-	m_outputFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);          // lighting info
 	m_outputFramebuffer->Build();
 
 	// Layer framebuffer: used to render game/editor layers (non-HUD) before compositing
@@ -278,7 +274,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	m_globalLightShader = resource::LoadResource<Shader>("SHADERS/globalLight.shader");
 
 	// Set once, change and reset state if needed
-	stbi_set_flip_vertically_on_load(1);
+	stbi_set_flip_vertically_on_load_thread(1);
 
 	// Load settings
 	LoadRenderSettings();
@@ -361,11 +357,8 @@ void OpenGLRenderer::Render() {
 
 	// ParticleSystems are updated by the scene/world tick; renderer doesn't tick them directly
 
-	// Geometry
+	// Forward-shaded geometry pass: renders all objects (opaque + transparent) with alpha blending
 	GeometryPass();
-
-	// Transparent/sprite pass: render into the geometry (G-)buffer so transparents are affected by lighting
-	SpritePass();
 
 	// Lighting
 	LightingPass();
@@ -471,12 +464,32 @@ void OpenGLRenderer::GeometryPass() {
 	TracyGpuZone("Geometry Pass");
 #endif
 
-	// Sort by depth (front-to-back) only when list has changed
-	if (m_renderablesSortDirty && m_renderables.size() > 1) {
-		std::ranges::stable_sort(m_renderables, [](IRenderable* a, IRenderable* b) {
+	// Rebuild the combined list only when membership changed (add/remove/enable/disable).
+	// The depth sort still runs every frame since object positions change each tick.
+	if (m_renderablesSortDirty || m_transparentSortDirty) {
+		m_combinedRenderables.clear();
+		m_combinedRenderables.reserve(m_renderables.size() + m_transparentRenderables.size());
+
+		for (auto* r : m_renderables) {
+			if (r && !m_disabledRenderables.contains(r)) {
+				m_combinedRenderables.push_back(r);
+			}
+		}
+		for (auto* r : m_transparentRenderables) {
+			if (r && !m_disabledRenderables.contains(r)) {
+				m_combinedRenderables.push_back(r);
+			}
+		}
+
+		m_renderablesSortDirty = false;
+		m_transparentSortDirty = false;
+	}
+
+	// Sort back-to-front every frame — object z-depths change as they move
+	if (m_combinedRenderables.size() > 1) {
+		std::ranges::stable_sort(m_combinedRenderables, [](IRenderable* a, IRenderable* b) {
 			return a->GetDepth() < b->GetDepth();
 		});
-		m_renderablesSortDirty = false;
 	}
 
 	// Prepare render target and GL state
@@ -485,37 +498,28 @@ void OpenGLRenderer::GeometryPass() {
 
 	m_geometryFramebuffer->bind();
 
-	// Ensure depth mapping is normalized (avoid driver-specific differences)
 	glDepthRange(0.0, 1.0);
 
-	// {
-	// 	GLenum draws[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-	// 	glDrawBuffers(2, draws);
-	// }
-
-	// Ensure depth and face-culling state is correct for geometry rendering
-	glDisable(GL_CULL_FACE);    // avoid culling if winding conventions differ
-	glDisable(GL_BLEND);        // Geometry should write depth, not blended
+	// Forward shading
+	glDisable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LEQUAL);    // allow equal depth to pass for some projection conventions
+	glDepthFunc(GL_LEQUAL);
 	glClearDepth(1.0);
 
-	// Clear both color and depth
+	// Clear to transparent black so the combine pass preserves empty areas
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	Clear();
 
-	// geometry pass
-	for (auto* r : m_renderables) {
-		if (r) {
-			r->OnRender(m_multipliedMatrix);
-		}
+	// Render only enabled renderables — no enabled() check needed inside OnRender
+	for (auto* r : m_combinedRenderables) {
+		r->OnRender(m_multipliedMatrix);
 	}
 
-	// Restore predictable state (depth writes on)
+	// Restore predictable state
 	glDepthMask(GL_TRUE);
-	glEnable(GL_BLEND);
-
-	// Don't unbind here - will be unbound when next framebuffer is bound
 }
 
 void OpenGLRenderer::LightingPass() {
@@ -549,12 +553,24 @@ void OpenGLRenderer::LightingPass() {
 	// }
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// Copy normals and depth from the geometry buffer into the light buffer
-	// We no longer blit geometry attachments into the light framebuffer every frame.
-	// Light shaders sample geometry textures (normals/depth) directly from the geometry FBO to avoid
-	// read-while-write hazards and reduce expensive blits.
+	// blit dept from geometry pass to light framebuffer to allow depth testing during light accumulation
+	m_geometryFramebuffer->bindRead();
+	m_lightFramebuffer->bindDraw();
+	glBlitFramebuffer(
+	    0,
+	    0,
+	    m_geometryFramebuffer->Width(),
+	    m_geometryFramebuffer->Height(),
+	    0,
+	    0,
+	    m_lightFramebuffer->Width(),
+	    m_lightFramebuffer->Height(),
+	    GL_DEPTH_BUFFER_BIT,
+	    GL_NEAREST
+	);
+	m_lightFramebuffer->bind();
 
 	// Disable depth writes for light accumulation
 	glDepthMask(GL_FALSE);
@@ -563,8 +579,7 @@ void OpenGLRenderer::LightingPass() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 
-	// Disable depth test while accumulating lights (we limit influence using normal/depth samplers in shaders)
-	GLboolean prevDepthTest = glIsEnabled(GL_DEPTH_TEST);
+	// Disable depth test while accumulating lights
 	glDisable(GL_DEPTH_TEST);
 
 	// lighting pass (skip loop if empty)
@@ -576,21 +591,9 @@ void OpenGLRenderer::LightingPass() {
 		}
 	}
 
-	// Global light pass: disable depth test (we own the state)
-	// (we already disabled it for accumulation; keep disabled while shading global light)
-
-	// Note: do not run a full-screen light shading pass here while the light FBO is bound.
-	// We only accumulate per-light contributions into m_lightFramebuffer. The final
-	// shading/combine is done in CombinedRenderPass where we can safely sample the
-	// light texture (m_lightFramebuffer->GetColorTexture(0)).
-
 	// Restore GL state to known defaults
 	glBindTexture(GL_TEXTURE_2D, 0);
-	if (prevDepthTest) {
-		glEnable(GL_DEPTH_TEST);
-	} else {
-		glDisable(GL_DEPTH_TEST);
-	}
+	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask(GL_TRUE);
@@ -705,7 +708,11 @@ void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
 }
 
 void OpenGLRenderer::RemoveRenderable(IRenderable* renderable) {
-	m_renderables.erase(std::ranges::find(m_renderables, renderable));
+	auto it = std::ranges::find(m_renderables, renderable);
+	if (it != m_renderables.end()) {
+		m_renderables.erase(it);
+	}
+	m_disabledRenderables.erase(renderable);    // clean up if it was disabled
 	m_renderablesSortDirty = true;
 }
 
@@ -719,59 +726,11 @@ void OpenGLRenderer::RemoveTransparentRenderable(IRenderable* renderable) {
 	if (it != m_transparentRenderables.end()) {
 		m_transparentRenderables.erase(it);
 	}
+	m_disabledRenderables.erase(renderable);    // clean up if it was disabled
 	m_transparentSortDirty = true;
 }
 
-void OpenGLRenderer::SpritePass() {
-#ifdef TRACY_ENABLE
-	PROFILE_ZONE;
-	TracyGpuZone("Sprite Pass");
-#endif
-
-	if (m_transparentRenderables.empty()) {
-		return;
-	}
-
-	// Sort back-to-front so sprites layer correctly with alpha blending
-	if (m_transparentSortDirty && m_transparentRenderables.size() > 1) {
-		std::ranges::stable_sort(m_transparentRenderables, [](IRenderable* a, IRenderable* b) {
-			return a->GetDepth() < b->GetDepth();
-		});
-		m_transparentSortDirty = false;
-	}
-
-	// Render transparent objects into the geometry framebuffer (albedo + normals attachments)
-	glViewport(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
-	glScissor(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
-	m_geometryFramebuffer->bind();
-
-	// {
-	// 	GLenum draws[] = { GL_COLOR_ATTACHMENT0 };
-	// 	glDrawBuffers(1, draws);
-	// }
-
-	// Enable alpha blending and depth test, but do not write to depth
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-
-	for (auto* r : m_transparentRenderables) {
-		if (r) {
-			r->OnRender(m_multipliedMatrix);
-		}
-	}
-
-	// Restore state
-	glDisable(GL_BLEND);
-
-	// {
-	// 	GLenum drawsBack[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-	// 	glDrawBuffers(2, drawsBack);
-	// }
-
-	Framebuffer::unbind();
-}
+void OpenGLRenderer::SpritePass() { }
 
 void OpenGLRenderer::AddLight(Light2D* light) {
 	m_lights.push_back(light);
@@ -779,7 +738,10 @@ void OpenGLRenderer::AddLight(Light2D* light) {
 }
 
 void OpenGLRenderer::RemoveLight(Light2D* light) {
-	m_lights.erase(std::ranges::find(m_lights, light));
+	auto it = std::ranges::find(m_lights, light);
+	if (it != m_lights.end()) {
+		m_lights.erase(it);
+	}
 	m_lightsSortDirty = true;
 }
 

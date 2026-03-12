@@ -5,6 +5,8 @@
 
 #pragma once
 #include "Toast/Event/Event.hpp"
+#include "Toast/Input/InputListener.hpp"
+#include "Window.hpp"
 
 struct GLFWwindow;
 
@@ -98,7 +100,10 @@ struct WindowResize : Event<WindowResize> {
 
 	static void Callback(GLFWwindow* window, int width, int height);
 
-	WindowResize(int width, int height) : width(width), height(height) { }
+	WindowResize(int width, int height) : width(width), height(height) {
+		input::SetViewportPosition({ 0, 0 });
+		input::SetViewportSize(toast::Window::GetInstance()->GetFramebufferSize());
+	}
 };
 
 }

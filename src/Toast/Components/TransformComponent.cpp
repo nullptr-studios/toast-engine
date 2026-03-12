@@ -64,7 +64,7 @@ json_t TransformComponent::Save() const {
 void TransformComponent::Load(json_t j, bool force_create) {
 	PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization
 	Component::Load(j, force_create);
-	
+
 	try {
 		if (j.contains("position")) {
 			m_position = j.at("position");

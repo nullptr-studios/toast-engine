@@ -25,9 +25,15 @@ public:
 	json_t Save() const override;
 	void Load(json_t j, bool force_create = true) override;
 
+	void Init() override;
 	void Begin() override;
 	void Destroy() override;
+#ifdef TOAST_EDITOR
 	void EditorTick() override;
+#endif
+
+	void OnEnable() override;
+	void OnDisable() override;
 
 	virtual void OnEnter(toast::Object*) { }
 

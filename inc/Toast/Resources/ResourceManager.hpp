@@ -25,10 +25,22 @@ namespace resource {
 ///@brief Manager of every resource in the engine
 class ResourceManager {
 public:
-	static constexpr const char* kGenericFilePath = "EDITOR/icons/genericFile.png";
-	static constexpr const char* kObjFilePath = "EDITOR/icons/objFile.png";
-	static constexpr const char* kJsonFilePath = "EDITOR/icons/jsonFile.png";
+	static constexpr const char* kGenericFilePath = "EDITOR/icons/file.png";
 	static constexpr const char* kFolderIconPath = "EDITOR/icons/folder.png";
+	static constexpr const char* kObjFilePath = "EDITOR/icons/objFile.png";
+	static constexpr const char* kIniFilePath = "EDITOR/icons/ini.png";
+	static constexpr const char* kJsonFilePath = "EDITOR/icons/json.png";
+	static constexpr const char* kConfigIconPath = "EDITOR/icons/config.png";
+	static constexpr const char* kHtmlIconPath = "EDITOR/icons/html.png";
+	static constexpr const char* kJsIconPath = "EDITOR/icons/js.png";
+	static constexpr const char* kLuaIconPath = "EDITOR/icons/lua.png";
+	static constexpr const char* kCssIconPath = "EDITOR/icons/css.png";
+	static constexpr const char* kEditorconfigIconPath = "EDITOR/icons/editorconfig.png";
+	static constexpr const char* kLogIconPath = "EDITOR/icons/log.png";
+	static constexpr const char* kNixIconPath = "EDITOR/icons/nix.png";
+	static constexpr const char* kWavIconPath = "EDITOR/icons/wav.png";
+	static constexpr const char* kYamlIconPath = "EDITOR/icons/yaml.png";
+	static constexpr const char* kTtfFilePath = "EDITOR/icons/ttf.png";
 
 	/**
 	 * @brief Constructs the ResourceManager.
@@ -223,7 +235,7 @@ std::shared_ptr<R> ResourceManager::LoadResource(const std::string& path, Args&&
 	// Normalize path to use forward slashes
 	std::string formattedPath = ToForwardSlashes(path);
 
-	TOAST_INFO("Loading resource: {0}", formattedPath);
+	// TOAST_INFO("Loading resource: {0}", formattedPath);
 
 	// Fast path: try to return cached
 	{
@@ -246,15 +258,12 @@ std::shared_ptr<R> ResourceManager::LoadResource(const std::string& path, Args&&
 	// Create the object first (owning pointer) - perfect-forward extra args (optional)
 	auto res = std::make_shared<R>(formattedPath, std::forward<Args>(args)...);
 
-	// Insert weak_ptr into cache BEFORE performing the expensive load so other threads see it.
-	// Important: don't std::move(res) here — we still need the shared_ptr locally to call Load().
+	res->Load();
+
 	{
 		std::lock_guard lock(m_mtx);
-		m_cachedResources[formattedPath] = res;    // constructs weak_ptr<IResource> from shared_ptr<R>
+		m_cachedResources[formattedPath] = res;
 	}
-
-	// Now load without holding the resource map mutex.
-	res->Load();
 
 	// If the resource needs GPU upload, enqueue an upload job that captures the shared_ptr.
 	if (res->IsGPU()) {

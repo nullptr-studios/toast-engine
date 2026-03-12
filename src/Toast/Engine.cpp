@@ -1,3 +1,14 @@
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+// clang-format off
+#include <windows.h>
+#include <mmsystem.h>
+// clang-format on
+#pragma comment(lib, "winmm.lib")
+#endif
+
 #include "Toast/Engine.hpp"
 
 #include "Audio/AudioSystem.hpp"
@@ -25,13 +36,7 @@
 #include <thread>
 
 #ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#include <mmsystem.h>
 #include <intrin.h>
-#pragma comment(lib, "winmm.lib")
 #endif
 
 #ifdef TOAST_EDITOR
@@ -113,11 +118,12 @@ void Engine::Run(int argc, char** argv) {
 		m->time->Tick();
 
 		m->resourceManager->LoadResourcesMainThread();
+		
+		m->eventSystem->PollEvents();
 
 		// Ensure any pending Begin calls are executed as early as possible in the frame
 		world->RunBeginQueue();
 
-		m->eventSystem->PollEvents();
 		m->coroutineHandler->Tick();
 		m->inputSystem->Tick();
 
@@ -258,9 +264,15 @@ void Engine::Init() {
 	m->coroutineHandler = std::make_unique<CoroutineHandler>();
 
 	Begin();
+
+#ifndef TOAST_EDITOR
+	physics::PhysicsSystem::start();
+#endif
 }
 
+#ifdef TOAST_EDITOR
 void Engine::EditorTick() { }
+#endif
 
 void Engine::Render() {
 	PROFILE_ZONE_C(0xFF0000);    // Red for rendering

@@ -1,6 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
-#define TRACY_FIBERS
+// #define TRACY_FIBERS
 
 #include "PhysicsSystem.hpp"
 
@@ -78,6 +78,7 @@ PhysicsSystem::PhysicsSystem() {
 		m.positionCorrectionSlop = e->positionCorrectionSlop;
 		m.eps = e->eps;
 		m.epsSmall = e->epsSmall;
+		m.tickCount = e->iterationCount;
 		return true;
 	});
 }
@@ -106,14 +107,14 @@ void PhysicsSystem::start() {
 	}
 
 	physics->thread = std::jthread([physics](std::stop_token token) {    // NOLINT
-		TracyFiberEnter("Physics Thread");
+		// TracyFiberEnter("Physics Thread");
 		while (!token.stop_requested()) {
 			using namespace std::chrono;
 			time_point begin = steady_clock::now();
+			PROFILE_ZONE_N("physics::simulation");
 
 			// Loop the physics simulation a set amount of times per frame
 			for (int i = 0; i < physics->m.tickCount; i++) {
-				PROFILE_ZONE_N("physics::simulation");
 				Time::GetInstance()->PhysTick();
 				physics->Tick();
 
@@ -141,7 +142,7 @@ void PhysicsSystem::start() {
 			BoxResetVelocity(rb);
 		}
 
-		TracyFiberLeave;
+		// TracyFiberLeave;
 	});
 }
 
@@ -410,7 +411,12 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 		}
 	}
 
-	// TODO: Collision with Boxes
+	for (auto* b : m.boxes) {
+		auto manifold = RbBoxCollision(rb, b);
+		if (manifold.has_value()) {
+			RbBoxResolution(rb, b, manifold.value());
+		}
+	}
 
 	for (auto* c : m.colliders) {
 		if (not c->parent->enabled()) {
@@ -454,6 +460,13 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 		auto manifold = BoxMeshCollision(rb, c);
 		if (manifold.has_value()) {
 			BoxMeshResolution(rb, c, manifold.value());
+		}
+	}
+
+	for (auto it = ++std::ranges::find(m.boxes, rb); it != m.boxes.end(); ++it) {
+		auto manifold = BoxBoxCollision(rb, *it);
+		if (manifold.has_value()) {
+			BoxBoxResolution(rb, *it, manifold.value());
 		}
 	}
 
@@ -522,7 +535,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 		}
 	}
 	if (result != std::nullopt) {
-		renderer::DebugLine(ray->p1, result->point, vec4(0.0f, 0.0f, 1.0f, 1.0f));
+		// renderer::DebugLine(ray->p1, result->point, vec4(0.0f, 0.0f, 1.0f, 1.0f));
 	}
 
 	return result;

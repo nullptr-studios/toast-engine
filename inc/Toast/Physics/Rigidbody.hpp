@@ -16,11 +16,15 @@ public:
 	REGISTER_TYPE(Rigidbody);
 
 	void Init() override;
+	void Begin() override;
 	void Destroy() override;
 #ifdef TOAST_EDITOR
 	void Inspector() override;
 	void EditorTick() override;
 #endif
+
+	void OnEnable() override;
+	void OnDisable() override;
 
 	json_t Save() const override;
 	void Load(json_t j, bool propagate) override;
@@ -57,6 +61,7 @@ public:
 	double mass = 1.0;        // Weight in kg
 	double friction = 0.2;    // How it deals frictions onto other objects (not itself)
 	ColliderFlags flags = ColliderFlags::Default;
+	bool ignorePlayer = false;
 
 	// simulation
 	bool hasGravity = true;                    // Is the rb affected by gravity at all?
@@ -81,7 +86,7 @@ public:
 
 	// debug stuff
 	struct {
-		bool show = true;                                         // Draws the debug of the shape
+		bool show = false;                                         // Draws the debug of the shape
 		bool showManifolds = false;                               // Shows contact points and normal resolutions
 		glm::vec2 addForce = { 0.0f, 0.0f };
 		glm::vec4 defaultColor = { 1.0f, 1.0f, 1.0f, 1.0f };      // Color when not colliding

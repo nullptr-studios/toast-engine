@@ -153,6 +153,10 @@ public:
 		m_runsLateTick = value;
 	}
 
+	void SetRunPhysTick(bool value) {
+		m_runsPhysTick = value;
+	}
+
 	void SetSerialize(bool value) {
 		m_serialize = value;
 	}
@@ -189,7 +193,9 @@ protected:
 	virtual void OnDisable() { }
 
 	/// @brief This function runs every frame in the editor
+#ifdef TOAST_EDITOR
 	virtual void EditorTick() { }
+#endif
 
 private:
 	unsigned m_id = -1;
@@ -198,6 +204,7 @@ private:
 	bool m_runsEarlyTick = true;
 	bool m_runsTick = true;
 	bool m_runsLateTick = true;
+	bool m_runsPhysTick = false;
 	bool m_serialize = true;
 	Object* m_parent = nullptr;
 	Scene* m_scene = nullptr;
@@ -217,7 +224,9 @@ private:
 	void _Begin(bool propagate = false);
 	void _EarlyTick();
 	void _Tick();
+#ifdef TOAST_EDITOR
 	void _EditorTick();
+#endif
 	void _LateTick();
 	void _Destroy();
 	void _PhysTick();
