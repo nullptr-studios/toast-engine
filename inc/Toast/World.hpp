@@ -40,6 +40,8 @@ public:
 	static void DisableScene(unsigned id);
 	static void DisableScene(std::string_view name);
 
+	static bool IsRunning();
+
 	void EarlyTick();
 	void Tick();
 	void LateTick();

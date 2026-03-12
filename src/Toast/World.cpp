@@ -121,6 +121,16 @@ World::~World() {
 	delete m.threadPool;
 }
 
+bool World::IsRunning() {
+	auto* w = Instance();
+
+	if (not w) {
+		return false;
+	}
+
+	return w->m.simulateWorld;
+}
+
 Object* World::New(std::string_view type, const std::optional<std::string>& name) {
 	auto* world = Instance();
 	std::string obj_name {};

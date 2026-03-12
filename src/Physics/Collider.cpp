@@ -5,6 +5,7 @@
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/World.hpp"
 #include "glm/geometric.hpp"
 
 #include <iterator>
@@ -18,7 +19,10 @@ using namespace physics;
 
 void Collider::Init() {
 	CalculatePoints();
-	enabled_ref() = false; // disable colliders until its loaded
+
+	if (toast::World::IsRunning()) {
+		enabled_ref() = false; // disable colliders until its loaded
+	}
 }
 
 void Collider::AddPoint(glm::vec2 point) {

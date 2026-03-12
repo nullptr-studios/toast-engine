@@ -3,6 +3,7 @@
 #include "PhysicsSystem.hpp"
 #include "Toast/GlmJson.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/World.hpp"
 
 #define SAVE(name) j[#name] = name;
 #define LOAD(name)         \
@@ -13,7 +14,9 @@
 namespace physics {
 
 void Trigger::Init() {
-	enabled_ref() = false;
+	if (toast::World::IsRunning()) {
+		enabled_ref() = false; // disable colliders until its loaded
+	}
 }
 
 void Trigger::Begin() {

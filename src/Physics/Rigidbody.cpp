@@ -6,6 +6,7 @@
 #include "Toast/Physics/Raycast.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/World.hpp"
 
 #include <memory>
 
@@ -27,7 +28,9 @@ void Rigidbody::Init() {
 	m_lastKnownTransformPos = worldPos;
 	m_hasValidPreviousPosition = true;
 
-	enabled_ref() = false;
+	if (toast::World::IsRunning()) {
+		enabled_ref() = false; // disable colliders until its loaded
+	}
 }
 
 void Rigidbody::Begin() {
