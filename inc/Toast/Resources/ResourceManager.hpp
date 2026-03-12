@@ -235,7 +235,7 @@ std::shared_ptr<R> ResourceManager::LoadResource(const std::string& path, Args&&
 	// Normalize path to use forward slashes
 	std::string formattedPath = ToForwardSlashes(path);
 
-	TOAST_INFO("Loading resource: {0}", formattedPath);
+	// TOAST_INFO("Loading resource: {0}", formattedPath);
 
 	// Fast path: try to return cached
 	{
