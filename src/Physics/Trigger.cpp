@@ -33,16 +33,17 @@ void Trigger::Begin() {
 		}
 		OnExit(o);
 	};
-}
-
-void Trigger::OnEnable() {
-	TOAST_TRACE("[PHYSICS SYSTEM] Added trigger {}", name());
 	PhysicsSystem::AddTrigger(this);
 }
 
+void Trigger::OnEnable() {
+	//TOAST_TRACE("[PHYSICS SYSTEM] Added trigger {}", name());
+	//PhysicsSystem::AddTrigger(this);
+}
+
 void Trigger::OnDisable() {
-	TOAST_TRACE("[PHYSICS SYSTEM] Removed trigger {}", name());
-	PhysicsSystem::RemoveTrigger(this);
+	//TOAST_TRACE("[PHYSICS SYSTEM] Removed trigger {}", name());
+	//PhysicsSystem::RemoveTrigger(this);
 }
 
 void Trigger::Destroy() {

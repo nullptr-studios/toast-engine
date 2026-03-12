@@ -18,7 +18,7 @@
 using namespace physics;
 
 void Collider::Init() {
-	// CalculatePoints();
+	 CalculatePoints();
 
 	if (toast::World::IsRunning()) {
 		enabled_ref() = false; // disable colliders until its loaded
@@ -26,11 +26,11 @@ void Collider::Init() {
 }
 
 void Collider::OnEnable() {
-	CalculatePoints();
+	//CalculatePoints();
 }
 
 void Collider::OnDisable() {
-	DestroyConvexShapes();
+	//DestroyConvexShapes();
 }
 
 void Collider::AddPoint(glm::vec2 point) {
