@@ -21,7 +21,6 @@ void Trigger::Init() {
 
 void Trigger::Begin() {
 	Actor::Begin();
-	PhysicsSystem::AddTrigger(this);
 	enterCallback = [this](Object* o) {
 		if (!enabled()) {
 			return;
@@ -36,7 +35,18 @@ void Trigger::Begin() {
 	};
 }
 
+void Trigger::OnEnable() {
+	TOAST_TRACE("[PHYSICS SYSTEM] Added trigger {}", name());
+	PhysicsSystem::AddTrigger(this);
+}
+
+void Trigger::OnDisable() {
+	TOAST_TRACE("[PHYSICS SYSTEM] Removed trigger {}", name());
+	PhysicsSystem::RemoveTrigger(this);
+}
+
 void Trigger::Destroy() {
+	TOAST_TRACE("[PHYSICS SYSTEM] Removed trigger {}", name());
 	Actor::Destroy();
 	PhysicsSystem::RemoveTrigger(this);
 }

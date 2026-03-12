@@ -23,6 +23,9 @@ public:
 	void EditorTick() override;
 #endif
 
+	void OnEnable() override;
+	void OnDisable() override;
+
 	json_t Save() const override;
 	void Load(json_t j, bool propagate) override;
 

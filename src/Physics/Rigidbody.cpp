@@ -18,7 +18,6 @@ namespace physics {
 
 void Rigidbody::Init() {
 	PROFILE_ZONE;
-	PhysicsSystem::AddRigidbody(this);
 
 	// Initialize interpolation positions from the current transform
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
@@ -39,7 +38,18 @@ void Rigidbody::Begin() {
 	forces.clear();
 }
 
+void Rigidbody::OnEnable() {
+	TOAST_TRACE("[PHYSICS SYSTEM] Added rigidbody {}", parent()->name());
+	PhysicsSystem::AddRigidbody(this);
+}
+
+void Rigidbody::OnDisable() {
+	TOAST_TRACE("[PHYSICS SYSTEM] Removed rigidbody {}", parent()->name());
+	PhysicsSystem::RemoveRigidbody(this);
+}
+
 void Rigidbody::Destroy() {
+	TOAST_TRACE("[PHYSICS SYSTEM] Removed rigidbody {}", parent()->name());
 	PhysicsSystem::RemoveRigidbody(this);
 }
 

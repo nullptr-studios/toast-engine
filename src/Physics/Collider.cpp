@@ -18,11 +18,19 @@
 using namespace physics;
 
 void Collider::Init() {
-	CalculatePoints();
+	// CalculatePoints();
 
 	if (toast::World::IsRunning()) {
 		enabled_ref() = false; // disable colliders until its loaded
 	}
+}
+
+void Collider::OnEnable() {
+	CalculatePoints();
+}
+
+void Collider::OnDisable() {
+	DestroyConvexShapes();
 }
 
 void Collider::AddPoint(glm::vec2 point) {
@@ -90,6 +98,13 @@ void Collider::Bevel(unsigned idx) {
 	CalculatePoints();
 }
 
+void Collider::DestroyConvexShapes() {
+	for (auto* c : m.convexShapes) {
+		delete c;
+	}
+	m.convexShapes.clear();
+}
+
 void Collider::CalculatePoints() {
 	PROFILE_ZONE;
 	// We require at leats 3 points to make a mesh
@@ -125,10 +140,7 @@ void Collider::CalculatePoints() {
 	glm::vec2 world_position = static_cast<toast::Actor*>(parent())->transform()->worldPosition();
 	data.worldPosition = world_position;
 
-	for (auto* c : m.convexShapes) {
-		delete c;
-	}
-	m.convexShapes.clear();
+	DestroyConvexShapes();
 
 	// simple_meshes are a list of points marked true if concave
 	using simple_mesh = std::list<std::pair<glm::vec2, bool>>;
@@ -338,9 +350,7 @@ void Collider::CalculatePoints() {
 }
 
 void Collider::Destroy() {
-	for (auto* c : m.convexShapes) {
-		delete c;
-	}
+	DestroyConvexShapes();
 }
 
 #ifdef TOAST_EDITOR

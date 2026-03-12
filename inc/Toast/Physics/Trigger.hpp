@@ -32,6 +32,9 @@ public:
 	void EditorTick() override;
 #endif
 
+	void OnEnable() override;
+	void OnDisable() override;
+
 	virtual void OnEnter(toast::Object*) { }
 
 	virtual void OnExit(toast::Object*) { }
