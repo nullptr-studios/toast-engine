@@ -20,9 +20,13 @@ void Light2D::Init() {
 
 }
 
-void Light2D::Begin() {
+void Light2D::LoadTextures() {
+	Actor::LoadTextures();
 	renderer::IRendererBase::GetInstance()->AddLight(this);
 	m_lightBuffer = renderer::IRendererBase::GetInstance()->GetLightFramebuffer();
+}
+
+void Light2D::Begin() {
 }
 
 void Light2D::Destroy() {
