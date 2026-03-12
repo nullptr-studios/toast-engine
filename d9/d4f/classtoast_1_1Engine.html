@@ -156,11 +156,8 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a162c8de172f29ea8fa3e83b2e969ab2a"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d4f/classtoast_1_1Engine.html#a162c8de172f29ea8fa3e83b2e969ab2a">Begin</a> ()</td></tr>
 <tr class="memdesc:a162c8de172f29ea8fa3e83b2e969ab2a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called once during engine initialization.  <br /></td></tr>
 <tr class="separator:a162c8de172f29ea8fa3e83b2e969ab2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2d4afda4371ddb8ee2271b2453a117ae"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d4f/classtoast_1_1Engine.html#a2d4afda4371ddb8ee2271b2453a117ae">EditorTick</a> ()</td></tr>
-<tr class="memdesc:a2d4afda4371ddb8ee2271b2453a117ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called every frame in editor mode.  <br /></td></tr>
-<tr class="separator:a2d4afda4371ddb8ee2271b2453a117ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaea93216f712d6cbad3ea63596660a83"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d4f/classtoast_1_1Engine.html#aaea93216f712d6cbad3ea63596660a83">Render</a> ()</td></tr>
-<tr class="memdesc:aaea93216f712d6cbad3ea63596660a83"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called every frame for rendering.  <br /></td></tr>
+<tr class="memdesc:aaea93216f712d6cbad3ea63596660a83"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called every frame in editor mode.  <br /></td></tr>
 <tr class="separator:aaea93216f712d6cbad3ea63596660a83"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac251fca8ab6fb96b256b262c1c97e828"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d4f/classtoast_1_1Engine.html#ac251fca8ab6fb96b256b262c1c97e828">Close</a> ()</td></tr>
 <tr class="memdesc:ac251fca8ab6fb96b256b262c1c97e828"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called when the engine is shutting down.  <br /></td></tr>
@@ -263,7 +260,7 @@ Static Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00196">196</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00202">202</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
 
 </div>
 </div>
@@ -337,53 +334,13 @@ Here is the caller graph for this function:</div>
 <p>Override this method to perform cleanup operations such as saving game state or releasing custom resources.</p>
 <dl class="section note"><dt>Note</dt><dd>Called before subsystems are destroyed. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00270">270</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00282">282</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d9/d4f/classtoast_1_1Engine_ac251fca8ab6fb96b256b262c1c97e828_icgraph.png" border="0" usemap="#ad9/d4f/classtoast_1_1Engine_ac251fca8ab6fb96b256b262c1c97e828_icgraph" alt=""/></div>
 <map name="ad9/d4f/classtoast_1_1Engine_ac251fca8ab6fb96b256b262c1c97e828_icgraph" id="ad9/d4f/classtoast_1_1Engine_ac251fca8ab6fb96b256b262c1c97e828_icgraph">
 <area shape="rect" title="Called when the engine is shutting down." alt="" coords="296,5,447,31"/>
-<area shape="rect" href="../../d9/d4f/classtoast_1_1Engine.html#ae7f81d670cc27f32ce9fcc4bd3bab1d5" title="Starts the engine and enters the main game loop." alt="" coords="108,5,248,31"/>
-<area shape="rect" href="../../dd/d43/Linux_8inl.html#a3c04138a5bfe5d72780bb7e82a18e627" title=" " alt="" coords="5,5,60,31"/>
-</map>
-</div>
-
-</div>
-</div>
-<a id="a2d4afda4371ddb8ee2271b2453a117ae" name="a2d4afda4371ddb8ee2271b2453a117ae"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2d4afda4371ddb8ee2271b2453a117ae">&#9670;&#160;</a></span>EditorTick()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void toast::Engine::EditorTick </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Called every frame in editor mode. </p>
-<p>Override this method to add custom editor-specific update logic. This is called in addition to the normal game tick when running in the editor. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00263">263</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d9/d4f/classtoast_1_1Engine_a2d4afda4371ddb8ee2271b2453a117ae_icgraph.png" border="0" usemap="#ad9/d4f/classtoast_1_1Engine_a2d4afda4371ddb8ee2271b2453a117ae_icgraph" alt=""/></div>
-<map name="ad9/d4f/classtoast_1_1Engine_a2d4afda4371ddb8ee2271b2453a117ae_icgraph" id="ad9/d4f/classtoast_1_1Engine_a2d4afda4371ddb8ee2271b2453a117ae_icgraph">
-<area shape="rect" title="Called every frame in editor mode." alt="" coords="296,5,476,31"/>
 <area shape="rect" href="../../d9/d4f/classtoast_1_1Engine.html#ae7f81d670cc27f32ce9fcc4bd3bab1d5" title="Starts the engine and enters the main game loop." alt="" coords="108,5,248,31"/>
 <area shape="rect" href="../../dd/d43/Linux_8inl.html#a3c04138a5bfe5d72780bb7e82a18e627" title=" " alt="" coords="5,5,60,31"/>
 </map>
@@ -418,7 +375,7 @@ Here is the caller graph for this function:</div>
 <p>Normally, resources are automatically purged every 120 seconds. Call this method to trigger an immediate cleanup of resources that are no longer referenced.</p>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="../../d9/d07/classresource_1_1ResourceManager.html#a0ee53723355ba3253701dbeca6c6adb5" title="Purges unused resources from the cache.">resource::ResourceManager::PurgeResources()</a> </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00277">277</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00289">289</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
 
 </div>
 </div>
@@ -448,7 +405,7 @@ Here is the caller graph for this function:</div>
 <p>Gets the current engine instance. </p>
 <dl class="section return"><dt>Returns</dt><dd>Pointer to the singleton engine instance, or nullptr if not created. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00192">192</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00198">198</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
 
 </div>
 </div>
@@ -495,7 +452,7 @@ Here is the caller graph for this function:</div>
 <p>Checks if the engine should close. </p>
 <dl class="section return"><dt>Returns</dt><dd>true if the engine should terminate, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00188">188</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00194">194</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -535,7 +492,7 @@ Here is the caller graph for this function:</div>
 <p>Initializes all engine subsystems. </p>
 <dl class="section note"><dt>Note</dt><dd>Called internally by <a class="el" href="../../d9/d4f/classtoast_1_1Engine.html#ae7f81d670cc27f32ce9fcc4bd3bab1d5" title="Starts the engine and enters the main game loop.">Run()</a>. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00204">204</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00210">210</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -572,16 +529,18 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Called every frame for rendering. </p>
+<p>Called every frame in editor mode. </p>
+<p>Override this method to add custom editor-specific update logic. This is called in addition to the normal game tick when running in the editor.</p>
+<p>Called every frame for rendering.</p>
 <p>Override this method to add custom rendering logic that should execute after the main renderer has finished. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00265">265</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00277">277</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d9/d4f/classtoast_1_1Engine_aaea93216f712d6cbad3ea63596660a83_icgraph.png" border="0" usemap="#ad9/d4f/classtoast_1_1Engine_aaea93216f712d6cbad3ea63596660a83_icgraph" alt=""/></div>
 <map name="ad9/d4f/classtoast_1_1Engine_aaea93216f712d6cbad3ea63596660a83_icgraph" id="ad9/d4f/classtoast_1_1Engine_aaea93216f712d6cbad3ea63596660a83_icgraph">
-<area shape="rect" title="Called every frame for rendering." alt="" coords="296,5,457,31"/>
+<area shape="rect" title="Called every frame in editor mode." alt="" coords="296,5,457,31"/>
 <area shape="rect" href="../../d9/d4f/classtoast_1_1Engine.html#ae7f81d670cc27f32ce9fcc4bd3bab1d5" title="Starts the engine and enters the main game loop." alt="" coords="108,5,248,31"/>
 <area shape="rect" href="../../dd/d43/Linux_8inl.html#a3c04138a5bfe5d72780bb7e82a18e627" title=" " alt="" coords="5,5,60,31"/>
 </map>
@@ -627,7 +586,7 @@ Here is the caller graph for this function:</div>
 <dl class="section note"><dt>Note</dt><dd>This method blocks until the application exits. </dd></dl>
 <dl class="section warning"><dt>Warning</dt><dd>Must be called from the main thread. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00065">65</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d0c/Engine_8cpp_source.html#l00070">70</a> of file <a class="el" href="../../d6/d0c/Engine_8cpp_source.html">Engine.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -689,7 +648,7 @@ Here is the caller graph for this function:</div>
 
 <p>Pointer to the private implementation (PIMPL idiom). </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00135">135</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00137">137</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
 
 </div>
 </div>
@@ -716,7 +675,7 @@ Here is the caller graph for this function:</div>
 <p>Command-line arguments passed to <a class="el" href="../../d9/d4f/classtoast_1_1Engine.html#ae7f81d670cc27f32ce9fcc4bd3bab1d5" title="Starts the engine and enters the main game loop.">Run()</a>. </p>
 <p>Contains all runtime arguments, useful for tests, CLI tools, or conditional initialization based on launch parameters. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00143">143</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00145">145</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
 
 </div>
 </div>
@@ -742,7 +701,7 @@ Here is the caller graph for this function:</div>
 
 <p>Singleton instance pointer. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00156">156</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00158">158</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
 
 </div>
 </div>
@@ -768,7 +727,7 @@ Here is the caller graph for this function:</div>
 
 <p>Atomic flag indicating if the window should close. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00146">146</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00148">148</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
 
 </div>
 </div>
@@ -794,7 +753,7 @@ Here is the caller graph for this function:</div>
 
 <p>Timer for automatic resource purging (uses monotonic uptime). </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00159">159</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00161">161</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
 
 </div>
 </div>
@@ -818,7 +777,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00161">161</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d48/Engine_8hpp_source.html#l00163">163</a> of file <a class="el" href="../../d3/d48/Engine_8hpp_source.html">Engine.hpp</a>.</p>
 
 </div>
 </div>

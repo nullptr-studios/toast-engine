@@ -11,8 +11,13 @@ var searchData=
   ['additiveblending_8',['additiveBlending',['../db/d96/structtoast_1_1ParticleEmitterConfig.html#af1b0dcb5ba05b5dbb3f4378e30db1ec2',1,'toast::ParticleEmitterConfig']]],
   ['angulardrag_9',['angularDrag',['../d4/db0/classphysics_1_1BoxRigidbody.html#a1a50fb10c9a165c271fdc3d9396d6cb6',1,'physics::BoxRigidbody']]],
   ['angularvelocity_10',['angularVelocity',['../d4/db0/classphysics_1_1BoxRigidbody.html#aa4d60e62e95066d7cbfeaedc9abdad6a',1,'physics::BoxRigidbody']]],
-  ['animationname_11',['animationName',['../d7/d44/structSpineEvent.html#adbd896837c78ac8dc54b64e9a4c22498',1,'SpineEvent']]],
-  ['audio_5fsample_5frate_12',['AUDIO_SAMPLE_RATE',['../db/d5d/classaudio_1_1AudioSystem.html#a831c45bf6a735cbd15ca9d19c6b210dd',1,'audio::AudioSystem']]],
-  ['audiosystem_13',['audioSystem',['../d1/df5/structtoast_1_1Engine_1_1Pimpl.html#abe32c1abf3d7130a94830037a0253b50',1,'toast::Engine::Pimpl']]],
-  ['axis_5fdeadzone_14',['AXIS_DEADZONE',['../da/d0b/classinput_1_1InputSystem.html#aefbbd064db5c8d8f76ec832a27b7e8ff',1,'input::InputSystem']]]
+  ['animationname_11',['animationName',['../d7/d44/structSpineEvent.html#adbd896837c78ac8dc54b64e9a4c22498',1,'SpineEvent::animationName()'],['../d9/d0f/structSpineAnimationPlaybackEvent.html#a01e42f40b3a95713219cc3a17c0e79ed',1,'SpineAnimationPlaybackEvent::animationName()']]],
+  ['animationstate_12',['animationState',['../d0/dc7/classSpineRendererComponent.html#abecd0060cf4c03ee72fe848e0850b79b',1,'SpineRendererComponent']]],
+  ['animationstatedata_13',['animationStateData',['../d0/dc7/classSpineRendererComponent.html#ae55fbd69aedb31ed5facc41ed823e3af',1,'SpineRendererComponent']]],
+  ['atlas_14',['atlas',['../dd/d75/classAtlasRendererComponent.html#ad8f41a6d413299d9d4f19b73e2c865c6',1,'AtlasRendererComponent']]],
+  ['atlaspath_15',['atlasPath',['../dd/d75/classAtlasRendererComponent.html#a1cee4083637ab57c44d51a8474496017',1,'AtlasRendererComponent::atlasPath()'],['../d0/dc7/classSpineRendererComponent.html#a920dc08b724c7d70257a1e068adb833c',1,'SpineRendererComponent::atlasPath()']]],
+  ['atlasresource_16',['atlasResource',['../d0/dc7/classSpineRendererComponent.html#a8f920e9cca2c10ccaa1085646cb99739',1,'SpineRendererComponent']]],
+  ['audio_5fsample_5frate_17',['AUDIO_SAMPLE_RATE',['../db/d5d/classaudio_1_1AudioSystem.html#a831c45bf6a735cbd15ca9d19c6b210dd',1,'audio::AudioSystem']]],
+  ['audiosystem_18',['audioSystem',['../d1/df5/structtoast_1_1Engine_1_1Pimpl.html#abe32c1abf3d7130a94830037a0253b50',1,'toast::Engine::Pimpl']]],
+  ['axis_5fdeadzone_19',['AXIS_DEADZONE',['../da/d0b/classinput_1_1InputSystem.html#aefbbd064db5c8d8f76ec832a27b7e8ff',1,'input::InputSystem']]]
 ];

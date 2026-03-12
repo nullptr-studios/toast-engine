@@ -6,5 +6,6 @@ var searchData=
   ['sphere_3',['Sphere',['../d7/d01/namespacetoast.html#a8e34d06ba583c25de62dc1fdd002535eab7095f057db3fefa7325ad93a04e14fd',1,'toast']]],
   ['spine_5fatlas_4',['SPINE_ATLAS',['../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fa864c645f8df49590ab2e27a202b43fb7',1,'resource']]],
   ['spine_5fskeleton_5fdata_5',['SPINE_SKELETON_DATA',['../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fa955043a12a09c679ff30ded113a1f8f4',1,'resource']]],
-  ['started_6',['Started',['../da/d9c/structinput_1_1Action.html#acdea4e9a7d78e342be3f23e7753996ceaeb2e5fb8230b8635e8400b121a388d85',1,'input::Action']]]
+  ['start_6',['Start',['../d9/d0f/structSpineAnimationPlaybackEvent.html#aea4800c9403e7ac5d60155aaa456b37aaa6122a65eaa676f700ae68d393054a37',1,'SpineAnimationPlaybackEvent']]],
+  ['started_7',['Started',['../da/d9c/structinput_1_1Action.html#acdea4e9a7d78e342be3f23e7753996ceaeb2e5fb8230b8635e8400b121a388d85',1,'input::Action']]]
 ];

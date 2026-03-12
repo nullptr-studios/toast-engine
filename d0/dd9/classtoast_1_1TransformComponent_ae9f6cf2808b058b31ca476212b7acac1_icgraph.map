@@ -1,6 +1,6 @@
 <map id="toast::TransformComponent::GetWorldMatrix" name="toast::TransformComponent::GetWorldMatrix">
 <area shape="rect" id="node1" title=" " alt="" coords="256,63,459,103"/>
-<area shape="rect" id="node2" href="$d0/dc7/classSpineRendererComponent.html#a99c33e0a54b37ac4fa8f9f560f553363" title="Returns the bone&#39;s world position (after applying the component&#39;s world transform)...." alt="" coords="11,5,203,45"/>
+<area shape="rect" id="node2" href="$d0/dc7/classSpineRendererComponent.html#a75ba8047dcd4530c718005a1ce114633" title="Returns the bone&#39;s world position (after applying the component&#39;s world transform)...." alt="" coords="11,5,203,45"/>
 <area shape="rect" id="node3" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="35,70,179,95"/>
-<area shape="rect" id="node4" href="$d0/dc7/classSpineRendererComponent.html#a9b2e4df029e7596a74902ac67eb6cfe4" title="Converts a 2&#45;D world&#45;space position into spine root&#45;local space." alt="" coords="5,120,208,160"/>
+<area shape="rect" id="node4" href="$d0/dc7/classSpineRendererComponent.html#a3aac564cd362be9f447a076d6dc3a178" title="Converts a 2&#45;D world&#45;space position into spine root&#45;local space." alt="" coords="5,120,208,160"/>
 </map>

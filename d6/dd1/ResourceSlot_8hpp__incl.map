@@ -1,9 +1,11 @@
 <map id="inc/Toast/Resources/ResourceSlot.hpp" name="inc/Toast/Resources/ResourceSlot.hpp">
-<area shape="rect" id="node1" title=" " alt="" coords="135,5,286,45"/>
-<area shape="rect" id="node2" href="$d0/ddc/Texture_8hpp.html" title=" " alt="" coords="161,93,260,119"/>
-<area shape="rect" id="node3" href="$d5/dd0/IResource_8hpp.html" title=" " alt="" coords="67,167,181,192"/>
-<area shape="rect" id="node7" title=" " alt="" coords="284,93,361,119"/>
-<area shape="rect" id="node5" title=" " alt="" coords="187,240,245,265"/>
+<area shape="rect" id="node1" title=" " alt="" coords="161,5,311,45"/>
+<area shape="rect" id="node2" href="$d0/ddc/Texture_8hpp.html" title=" " alt="" coords="187,93,285,119"/>
+<area shape="rect" id="node3" href="$d5/dd0/IResource_8hpp.html" title=" " alt="" coords="84,167,199,192"/>
+<area shape="rect" id="node9" title=" " alt="" coords="309,93,387,119"/>
+<area shape="rect" id="node5" title=" " alt="" coords="181,240,248,265"/>
+<area shape="rect" id="node6" title=" " alt="" coords="272,240,331,265"/>
+<area shape="rect" id="node8" title=" " alt="" coords="325,167,387,192"/>
 <area shape="rect" id="node4" title=" " alt="" coords="5,240,72,265"/>
-<area shape="rect" id="node6" title=" " alt="" coords="97,240,157,265"/>
+<area shape="rect" id="node7" title=" " alt="" coords="97,240,157,265"/>
 </map>

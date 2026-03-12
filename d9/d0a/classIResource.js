@@ -15,6 +15,6 @@ var classIResource =
     [ "SetResourceState", "d9/d0a/classIResource.html#a15aa34d8be0b3855d2964dc673e392af", null ],
     [ "m_gpu", "d9/d0a/classIResource.html#a1f639b02fa17bb886938c429d685bade", null ],
     [ "m_path", "d9/d0a/classIResource.html#a6c9579cfa5260330ceec6c1f3aee494b", null ],
-    [ "m_resourceState", "d9/d0a/classIResource.html#a5ad00d4e04e5d9976bd8ca01b3319d2b", null ],
+    [ "m_resourceState", "d9/d0a/classIResource.html#a07069922617446cf203792de93f276d2", null ],
     [ "m_resourceType", "d9/d0a/classIResource.html#aa16dfabf6b4177328beed599864abdc2", null ]
 ];

@@ -10,7 +10,6 @@ var hierarchy =
     [ "input::Bind", "dd/d43/structinput_1_1Bind.html", null ],
     [ "renderer::BoundingBox", "dd/d13/structrenderer_1_1BoundingBox.html", null ],
     [ "physics::BoxManifold", "de/d3a/structphysics_1_1BoxManifold.html", null ],
-    [ "toast::memory::BucketUsage", "d7/d98/structtoast_1_1memory_1_1BucketUsage.html", null ],
     [ "Children", "d8/d87/classChildren.html", null ],
     [ "physics::ColliderData", "d5/ddb/structphysics_1_1ColliderData.html", [
       [ "physics::ConvexCollider", "dd/d88/classphysics_1_1ConvexCollider.html", null ]
@@ -53,6 +52,9 @@ var hierarchy =
     [ "event::IEvent", "da/ddb/structevent_1_1IEvent.html", [
       [ "event::Event< ShowHUDLayerEvent >", "d7/d51/structevent_1_1Event.html", [
         [ "ShowHUDLayerEvent", "da/d29/classShowHUDLayerEvent.html", null ]
+      ] ],
+      [ "event::Event< SpineAnimationPlaybackEvent >", "d7/d51/structevent_1_1Event.html", [
+        [ "SpineAnimationPlaybackEvent", "d9/d0f/structSpineAnimationPlaybackEvent.html", null ]
       ] ],
       [ "event::Event< SpineEvent >", "d7/d51/structevent_1_1Event.html", [
         [ "SpineEvent", "d7/d44/structSpineEvent.html", null ]
@@ -99,6 +101,12 @@ var hierarchy =
       [ "event::Event< NextWorld >", "d7/d51/structevent_1_1Event.html", [
         [ "toast::NextWorld", "d3/d64/structtoast_1_1NextWorld.html", null ]
       ] ],
+      [ "event::Event< ResetGameFlow >", "d7/d51/structevent_1_1Event.html", [
+        [ "toast::ResetGameFlow", "d9/db4/structtoast_1_1ResetGameFlow.html", null ]
+      ] ],
+      [ "event::Event< RestartLevel >", "d7/d51/structevent_1_1Event.html", [
+        [ "toast::RestartLevel", "d1/dda/structtoast_1_1RestartLevel.html", null ]
+      ] ],
       [ "event::Event< SceneLoadedEvent >", "d7/d51/structevent_1_1Event.html", [
         [ "toast::SceneLoadedEvent", "dc/d36/structtoast_1_1SceneLoadedEvent.html", null ]
       ] ],
@@ -133,6 +141,7 @@ var hierarchy =
         [ "toast::Actor", "d8/d92/classtoast_1_1Actor.html", [
           [ "GlobalLight", "d8/d72/classGlobalLight.html", null ],
           [ "Light2D", "d0/db0/classLight2D.html", null ],
+          [ "Pool< T, size >", "d5/d0b/classPool.html", null ],
           [ "physics::Trigger", "d4/d9c/classphysics_1_1Trigger.html", null ],
           [ "toast::Camera", "d8/db9/classtoast_1_1Camera.html", null ]
         ] ],
@@ -141,6 +150,7 @@ var hierarchy =
           [ "physics::BoxRigidbody", "d4/db0/classphysics_1_1BoxRigidbody.html", null ],
           [ "physics::Collider", "db/d71/classphysics_1_1Collider.html", null ],
           [ "physics::Rigidbody", "d6/d41/classphysics_1_1Rigidbody.html", null ],
+          [ "toast::HtmlView", "d4/da6/classtoast_1_1HtmlView.html", null ],
           [ "toast::TransformComponent", "d0/dd9/classtoast_1_1TransformComponent.html", [
             [ "renderer::IRenderable", "d5/dfe/classrenderer_1_1IRenderable.html", [
               [ "AtlasRendererComponent", "dd/d75/classAtlasRendererComponent.html", null ],
@@ -188,7 +198,6 @@ var hierarchy =
     [ "physics::PhysicsSystem", "d6/dd8/classphysics_1_1PhysicsSystem.html", null ],
     [ "toast::Engine::Pimpl", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html", null ],
     [ "PlayerController", "d4/da8/classinput_1_1PlayerController.html", null ],
-    [ "Pool< T, size >", "d5/d0b/classPool.html", null ],
     [ "toast::hud::ToastGPUDriver::ProgramEntry", "d8/d98/structtoast_1_1hud_1_1ToastGPUDriver_1_1ProgramEntry.html", null ],
     [ "toast::ProjectSettings", "d4/ddb/structtoast_1_1ProjectSettings.html", null ],
     [ "toast::CoroutineTask::promise_type", "d9/d2b/structtoast_1_1CoroutineTask_1_1promise__type.html", null ],
@@ -215,7 +224,6 @@ var hierarchy =
     [ "toast::StateMachine< T >", "db/d5b/classtoast_1_1StateMachine.html", null ],
     [ "toast::StateMachineOld", "d5/d96/classtoast_1_1StateMachineOld.html", null ],
     [ "toast::StateOld", "da/d7c/structtoast_1_1StateOld.html", null ],
-    [ "toast::memory::Stats", "db/da0/structtoast_1_1memory_1_1Stats.html", null ],
     [ "toast::hud::ToastGPUDriver::TextureEntry", "d1/d2f/structtoast_1_1hud_1_1ToastGPUDriver_1_1TextureEntry.html", null ],
     [ "spine::TextureLoader", null, [
       [ "SpineTextureLoader", "da/d7d/classSpineTextureLoader.html", null ]
@@ -229,7 +237,8 @@ var hierarchy =
     [ "toast::Version", "d1/df3/structtoast_1_1Version.html", null ],
     [ "renderer::Vertex", "d1/d6e/structrenderer_1_1Vertex.html", null ],
     [ "ultralight::ViewListener", null, [
-      [ "renderer::HUD::ToastViewListener", "d3/de3/classrenderer_1_1HUD_1_1ToastViewListener.html", null ]
+      [ "renderer::HUD::ToastViewListener", "d3/de3/classrenderer_1_1HUD_1_1ToastViewListener.html", null ],
+      [ "toast::HtmlViewListener", "d2/daf/classtoast_1_1HtmlViewListener.html", null ]
     ] ],
     [ "toast::WaitSeconds", "d6/d44/structtoast_1_1WaitSeconds.html", null ],
     [ "toast::Window", "d8/d8e/classtoast_1_1Window.html", null ],

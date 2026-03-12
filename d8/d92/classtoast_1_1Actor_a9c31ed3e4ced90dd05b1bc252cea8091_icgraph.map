@@ -1,4 +1,5 @@
 <map id="toast::Actor::Init" name="toast::Actor::Init">
-<area shape="rect" id="node1" title="This function runs just after the object is created (scene load thread)" alt="" coords="196,5,323,31"/>
-<area shape="rect" id="node2" href="$d8/db9/classtoast_1_1Camera.html#a498786ac096d8130f8173abc30ce179f" title="Initializes the camera." alt="" coords="5,5,148,31"/>
+<area shape="rect" id="node1" title="This function runs just after the object is created (scene load thread)" alt="" coords="196,31,323,56"/>
+<area shape="rect" id="node2" href="$d5/d0b/classPool.html#a1482d253225e87870c64876806e8235d" title="This function runs just after the object is created (scene load thread)" alt="" coords="37,5,116,31"/>
+<area shape="rect" id="node3" href="$d8/db9/classtoast_1_1Camera.html#a498786ac096d8130f8173abc30ce179f" title="Initializes the camera." alt="" coords="5,55,148,80"/>
 </map>

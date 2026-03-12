@@ -1,4 +1,5 @@
 <map id="input::InputSystem::SetViewportSize" name="input::InputSystem::SetViewportSize">
-<area shape="rect" id="node1" title=" " alt="" coords="223,5,368,45"/>
-<area shape="rect" id="node2" href="$dc/d73/namespaceinput.html#a18fd5a040b6ea4d773f4720b665503e8" title=" " alt="" coords="5,13,175,38"/>
+<area shape="rect" id="node1" title=" " alt="" coords="433,5,579,45"/>
+<area shape="rect" id="node2" href="$dc/d73/namespaceinput.html#a18fd5a040b6ea4d773f4720b665503e8" title=" " alt="" coords="216,13,385,38"/>
+<area shape="rect" id="node3" href="$df/d3f/structevent_1_1WindowResize.html#ab646014d214524bfdfd6818e8b65544b" title=" " alt="" coords="5,5,168,45"/>
 </map>

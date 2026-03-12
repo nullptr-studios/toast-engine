@@ -18,7 +18,7 @@ var classTexture =
     [ "width", "d6/d97/classTexture.html#a1e9bf47db02ca03eceac7b13bce03f9a", null ],
     [ "m_channels", "d6/d97/classTexture.html#a04233c9263759b7185f105d134eb83a1", null ],
     [ "m_height", "d6/d97/classTexture.html#a308919fb8790c1b0867a2a509085803e", null ],
-    [ "m_pixels", "d6/d97/classTexture.html#adfe7224d759cd4bc63d4bb077b9e7790", null ],
+    [ "m_pixels", "d6/d97/classTexture.html#a9ebd48bcbc6ba54f79841f33df2d6c07", null ],
     [ "m_textureId", "d6/d97/classTexture.html#aab6bde7da738cf8300f71d7b842599f4", null ],
     [ "m_width", "d6/d97/classTexture.html#af481acfa0145beff91b45d0bd1cbe3ed", null ]
 ];

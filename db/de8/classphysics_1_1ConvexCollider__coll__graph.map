@@ -1,8 +1,9 @@
 <map id="physics::ConvexCollider" name="physics::ConvexCollider">
-<area shape="rect" id="node1" title=" " alt="" coords="5,256,184,281"/>
-<area shape="rect" id="node2" href="$d5/ddb/structphysics_1_1ColliderData.html" title=" " alt="" coords="15,181,175,207"/>
-<area shape="rect" id="node3" href="$d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="154,93,259,119"/>
-<area shape="rect" id="node6" href="$d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="199,181,302,207"/>
-<area shape="rect" id="node4" href="$dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="69,5,211,31"/>
-<area shape="rect" id="node5" href="$d8/d87/classChildren.html" title=" " alt="" coords="235,5,311,31"/>
+<area shape="rect" id="node1" title=" " alt="" coords="155,269,333,295"/>
+<area shape="rect" id="node2" href="$d5/ddb/structphysics_1_1ColliderData.html" title=" " alt="" coords="5,181,165,207"/>
+<area shape="rect" id="node3" href="$d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="145,93,250,119"/>
+<area shape="rect" id="node6" href="$d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="190,181,293,207"/>
+<area shape="rect" id="node4" href="$dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="59,5,202,31"/>
+<area shape="rect" id="node5" href="$d8/d87/classChildren.html" title=" " alt="" coords="226,5,302,31"/>
+<area shape="rect" id="node7" href="$dd/d13/structrenderer_1_1BoundingBox.html" title="Axis&#45;aligned bounding box for mesh geometry." alt="" coords="317,181,488,207"/>
 </map>

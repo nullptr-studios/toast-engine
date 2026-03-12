@@ -12,5 +12,6 @@ var classresource_1_1PackFile =
     [ "m_offsets", "d1/dfb/classresource_1_1PackFile.html#a0fb1c052afe2a7a76a0a11f9457ce873", null ],
     [ "m_origSizes", "d1/dfb/classresource_1_1PackFile.html#aaf0f4a5752a41d207e4f6af2b03e9685", null ],
     [ "m_paths", "d1/dfb/classresource_1_1PackFile.html#a5b241e00bbb204779134b5765b1a668c", null ],
+    [ "m_readMtx", "d1/dfb/classresource_1_1PackFile.html#a8717ecb833aab6a6fb83a09635d477d0", null ],
     [ "m_storedSizes", "d1/dfb/classresource_1_1PackFile.html#a191431289d311ca603a767c5b1ea02f2", null ]
 ];

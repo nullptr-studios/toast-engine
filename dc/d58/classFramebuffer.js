@@ -14,6 +14,8 @@ var classFramebuffer =
     [ "AddColorAttachment", "dc/d58/classFramebuffer.html#a0bed4ed27872b406deacff64a4e9c562", null ],
     [ "AddDepthAttachment", "dc/d58/classFramebuffer.html#a8518bba3d1f6097775be888d01205877", null ],
     [ "bind", "dc/d58/classFramebuffer.html#a7b5e9b658e3b08301a2df98b82c7d92c", null ],
+    [ "bindDraw", "dc/d58/classFramebuffer.html#ae8894be4410223625afcd699f6858abd", null ],
+    [ "bindRead", "dc/d58/classFramebuffer.html#ae0fa5062bc6c487496c92af79fffde7f", null ],
     [ "BlitTo", "dc/d58/classFramebuffer.html#a836bb4bf20426c74094e447a21ef06f9", null ],
     [ "Build", "dc/d58/classFramebuffer.html#a96e90bfc422ceaa34cbd470957bba664", null ],
     [ "destroy", "dc/d58/classFramebuffer.html#afcb5d409f21a4c5729b10928943d0e18", null ],

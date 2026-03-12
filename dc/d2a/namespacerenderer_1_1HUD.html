@@ -128,6 +128,8 @@ Functions</h2></td></tr>
 <tr class="separator:a1a79e7413a25e2d850ef01fa7e74f0a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3c25f3a57658740f36a9666fe45c3b5e"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html#a3c25f3a57658740f36a9666fe45c3b5e">GLFWKeyToUltralightKey</a> (int key)</td></tr>
 <tr class="separator:a3c25f3a57658740f36a9666fe45c3b5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99d8fb6674d94e1c028460fdb186f488"><td class="memItemLeft" align="right" valign="top">static GLuint&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html#a99d8fb6674d94e1c028460fdb186f488">CompileShader</a> (GLenum type, const char *src)</td></tr>
+<tr class="separator:a99d8fb6674d94e1c028460fdb186f488"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
@@ -145,8 +147,50 @@ Variables</h2></td></tr>
 <tr class="separator:a7fd49f1eb45067e06ad5d367570c79cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2f97c65616b27ee54daf2589782800fc"><td class="memItemLeft" align="right" valign="top">static GLFWcharfun&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html#a2f97c65616b27ee54daf2589782800fc">g_prev_char_callback</a> = nullptr</td></tr>
 <tr class="separator:a2f97c65616b27ee54daf2589782800fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6bdd2a718969a93f39259bae24678d9e"><td class="memItemLeft" align="right" valign="top">static const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html#a6bdd2a718969a93f39259bae24678d9e">kBlurVertSrc</a></td></tr>
+<tr class="separator:a6bdd2a718969a93f39259bae24678d9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a925f633d8b58c5ed9355486803fe2b12"><td class="memItemLeft" align="right" valign="top">static const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html#a925f633d8b58c5ed9355486803fe2b12">kBlurFragSrc</a></td></tr>
+<tr class="separator:a925f633d8b58c5ed9355486803fe2b12"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="a99d8fb6674d94e1c028460fdb186f488" name="a99d8fb6674d94e1c028460fdb186f488"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a99d8fb6674d94e1c028460fdb186f488">&#9670;&#160;</a></span>CompileShader()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static GLuint renderer::HUD::CompileShader </td>
+          <td>(</td>
+          <td class="paramtype">GLenum&#160;</td>
+          <td class="paramname"><em>type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>src</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l01037">1037</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a3c25f3a57658740f36a9666fe45c3b5e" name="a3c25f3a57658740f36a9666fe45c3b5e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3c25f3a57658740f36a9666fe45c3b5e">&#9670;&#160;</a></span>GLFWKeyToUltralightKey()</h2>
 
@@ -171,7 +215,7 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00762">762</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00779">779</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -218,7 +262,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00210">210</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00211">211</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -271,7 +315,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00166">166</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00167">167</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -336,7 +380,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00199">199</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00200">200</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -395,7 +439,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00177">177</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00178">178</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -448,7 +492,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00188">188</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00189">189</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -510,7 +554,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00099">99</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00100">100</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -534,7 +578,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00164">164</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00165">165</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -558,7 +602,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00160">160</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00161">161</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -582,7 +626,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00163">163</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00164">164</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -606,7 +650,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00161">161</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00162">162</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -630,7 +674,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00162">162</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00163">163</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -654,7 +698,85 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00098">98</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00099">99</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a925f633d8b58c5ed9355486803fe2b12" name="a925f633d8b58c5ed9355486803fe2b12"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a925f633d8b58c5ed9355486803fe2b12">&#9670;&#160;</a></span>kBlurFragSrc</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char* renderer::HUD::kBlurFragSrc</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= R<span class="stringliteral">&quot;(</span></div>
+<div class="line"><span class="stringliteral">#version 330 core</span></div>
+<div class="line"><span class="stringliteral">in vec2 vUV;</span></div>
+<div class="line"><span class="stringliteral">out vec4 FragColor;</span></div>
+<div class="line"><span class="stringliteral">uniform sampler2D uTexture;</span></div>
+<div class="line"><span class="stringliteral">uniform vec2 uDirection;</span></div>
+<div class="line"><span class="stringliteral">uniform vec2 uResolution;</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral">void main() {</span></div>
+<div class="line"><span class="stringliteral">    vec2 texelSize = 1.0 / uResolution;</span></div>
+<div class="line"><span class="stringliteral">    float weights[5] = float[](0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);</span></div>
+<div class="line"><span class="stringliteral">    vec4 result = texture(uTexture, vUV) * weights[0];</span></div>
+<div class="line"><span class="stringliteral">    for (int i = 1; i &lt; 5; ++i) {</span></div>
+<div class="line"><span class="stringliteral">        vec2 offset = uDirection * texelSize * float(i) * 2.0;</span></div>
+<div class="line"><span class="stringliteral">        result += texture(uTexture, vUV + offset) * weights[i];</span></div>
+<div class="line"><span class="stringliteral">        result += texture(uTexture, vUV - offset) * weights[i];</span></div>
+<div class="line"><span class="stringliteral">    }</span></div>
+<div class="line"><span class="stringliteral">    FragColor = result;</span></div>
+<div class="line"><span class="stringliteral">}</span></div>
+<div class="line"><span class="stringliteral">)&quot;</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l01016">1016</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a6bdd2a718969a93f39259bae24678d9e" name="a6bdd2a718969a93f39259bae24678d9e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6bdd2a718969a93f39259bae24678d9e">&#9670;&#160;</a></span>kBlurVertSrc</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char* renderer::HUD::kBlurVertSrc</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= R<span class="stringliteral">&quot;(</span></div>
+<div class="line"><span class="stringliteral">#version 330 core</span></div>
+<div class="line"><span class="stringliteral">layout(location = 0) in vec2 aPos;</span></div>
+<div class="line"><span class="stringliteral">layout(location = 1) in vec2 aUV;</span></div>
+<div class="line"><span class="stringliteral">out vec2 vUV;</span></div>
+<div class="line"><span class="stringliteral">void main() {</span></div>
+<div class="line"><span class="stringliteral">    vUV = aUV;</span></div>
+<div class="line"><span class="stringliteral">    gl_Position = vec4(aPos, 0.0, 1.0);</span></div>
+<div class="line"><span class="stringliteral">}</span></div>
+<div class="line"><span class="stringliteral">)&quot;</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l01005">1005</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>

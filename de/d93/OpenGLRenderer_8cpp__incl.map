@@ -1,52 +1,52 @@
 <map id="src/Renderer/OpenGL/OpenGLRenderer.cpp" name="src/Renderer/OpenGL/OpenGLRenderer.cpp">
-<area shape="rect" id="node1" title=" " alt="" coords="2253,5,2416,45"/>
-<area shape="rect" id="node2" href="$db/db0/OpenGLRenderer_8hpp.html" title=" " alt="" coords="1659,93,1834,133"/>
-<area shape="rect" id="node4" title=" " alt="" coords="1411,445,1490,471"/>
-<area shape="rect" id="node11" href="$d1/d21/GlmJson_8hpp.html" title="Allows to serialize vectors and quaternions." alt="" coords="2513,277,2655,302"/>
-<area shape="rect" id="node14" href="$d7/d78/IRenderable_8hpp.html" title="Interface for objects that can be rendered." alt="" coords="2680,277,2909,302"/>
-<area shape="rect" id="node16" href="$db/d16/ResourceManager_8hpp.html" title="Resource loading and caching system." alt="" coords="1083,269,1274,309"/>
-<area shape="rect" id="node17" href="$d1/d62/Mesh_8hpp.html" title=" " alt="" coords="1419,365,1613,390"/>
-<area shape="rect" id="node22" href="$d4/d6e/Shader_8hpp.html" title=" " alt="" coords="1149,365,1344,390"/>
-<area shape="rect" id="node26" href="$d0/d82/Log_8hpp.html" title=" " alt="" coords="329,365,439,390"/>
-<area shape="rect" id="node27" href="$dc/dbc/Profiler_8hpp.html" title="Wrapper of the Tracy Profiler." alt="" coords="5,445,139,471"/>
-<area shape="rect" id="node32" href="$d0/de3/Window_8hpp.html" title="Window management for the Toast Engine." alt="" coords="2981,277,3176,302"/>
-<area shape="rect" id="node36" href="$de/d8a/HUDLayer_8hpp.html" title="HUD rendering layer using Ultralight for web&#45;based UI." alt="" coords="662,269,815,309"/>
-<area shape="rect" id="node39" href="$d2/deb/LayerStack_8hpp.html" title=" " alt="" coords="2215,277,2438,302"/>
-<area shape="rect" id="node40" href="$d9/de7/Time_8hpp.html" title="Controls the time of the application." alt="" coords="2550,101,2671,126"/>
-<area shape="rect" id="node42" href="$de/d4f/WindowEvents_8hpp.html" title="Stores all the different events a function has." alt="" coords="2499,189,2739,214"/>
-<area shape="rect" id="node43" title=" " alt="" coords="2695,101,2806,126"/>
-<area shape="rect" id="node44" title=" " alt="" coords="2831,101,3049,126"/>
-<area shape="rect" id="node45" title=" " alt="" coords="3074,101,3230,126"/>
-<area shape="rect" id="node46" href="$de/dd7/OclussionVolume_8hpp.html" title=" " alt="" coords="1991,93,2177,133"/>
-<area shape="rect" id="node49" title=" " alt="" coords="3255,101,3329,126"/>
-<area shape="rect" id="node50" title=" " alt="" coords="3354,101,3457,126"/>
-<area shape="rect" id="node3" href="$d9/d2c/Framebuffer_8hpp.html" title=" " alt="" coords="1789,365,2019,390"/>
-<area shape="rect" id="node8" href="$d7/dcb/IRendererBase_8hpp.html" title="Base interface for all renderer implementations." alt="" coords="1925,181,2112,221"/>
-<area shape="rect" id="node35" href="$dc/dc6/GlobalLight_8hpp.html" title=" " alt="" coords="1463,181,1625,221"/>
-<area shape="rect" id="node5" title=" " alt="" coords="1864,445,1944,471"/>
-<area shape="rect" id="node6" title=" " alt="" coords="893,592,952,617"/>
-<area shape="rect" id="node7" title=" " alt="" coords="1645,445,1707,471"/>
-<area shape="rect" id="node9" href="$d6/d80/Camera_8hpp.html" title="Camera actor for controlling the view into the scene." alt="" coords="2089,277,2191,302"/>
-<area shape="rect" id="node10" title=" " alt="" coords="2321,445,2425,471"/>
-<area shape="rect" id="node12" title=" " alt="" coords="2781,445,2955,471"/>
-<area shape="rect" id="node13" title=" " alt="" coords="2563,365,2709,390"/>
-<area shape="rect" id="node15" href="$d9/da8/TransformComponent_8hpp.html" title="Transform component for position, rotation, and scale." alt="" coords="2835,357,3045,397"/>
-<area shape="rect" id="node19" href="$da/d46/ResourceSlot_8hpp.html" title=" " alt="" coords="750,365,885,390"/>
-<area shape="rect" id="node20" href="$d0/ddc/Texture_8hpp.html" title=" " alt="" coords="800,445,899,471"/>
-<area shape="rect" id="node31" title=" " alt="" coords="1061,365,1125,390"/>
-<area shape="rect" id="node18" href="$d5/dd0/IResource_8hpp.html" title=" " alt="" coords="886,519,1109,544"/>
-<area shape="rect" id="node21" title=" " alt="" coords="597,445,675,471"/>
-<area shape="rect" id="node23" title=" " alt="" coords="1245,445,1336,471"/>
-<area shape="rect" id="node24" title=" " alt="" coords="923,445,1021,471"/>
-<area shape="rect" id="node25" title=" " alt="" coords="1097,445,1221,471"/>
-<area shape="rect" id="node28" title=" " alt="" coords="264,445,333,471"/>
-<area shape="rect" id="node29" title=" " alt="" coords="357,445,424,471"/>
-<area shape="rect" id="node30" title=" " alt="" coords="449,445,573,471"/>
-<area shape="rect" id="node33" href="$df/d7d/Event_8hpp.html" title="Base Event class." alt="" coords="3135,445,3302,471"/>
-<area shape="rect" id="node34" title=" " alt="" coords="3070,365,3181,390"/>
-<area shape="rect" id="node37" href="$d2/dd6/ILayer_8hpp.html" title="Base interface for rendering layers." alt="" coords="2145,365,2335,390"/>
-<area shape="rect" id="node38" title=" " alt="" coords="464,365,624,390"/>
-<area shape="rect" id="node41" title=" " alt="" coords="2763,189,2829,214"/>
-<area shape="rect" id="node47" href="$d7/d47/DebugDrawLayer_8hpp.html" title=" " alt="" coords="1751,277,1913,302"/>
-<area shape="rect" id="node48" title=" " alt="" coords="2187,189,2272,214"/>
+<area shape="rect" id="node1" title=" " alt="" coords="1884,5,2047,45"/>
+<area shape="rect" id="node2" href="$db/db0/OpenGLRenderer_8hpp.html" title=" " alt="" coords="1090,93,1265,133"/>
+<area shape="rect" id="node4" title=" " alt="" coords="426,445,505,471"/>
+<area shape="rect" id="node9" href="$d1/d21/GlmJson_8hpp.html" title="Allows to serialize vectors and quaternions." alt="" coords="1422,277,1565,302"/>
+<area shape="rect" id="node13" href="$d7/d78/IRenderable_8hpp.html" title="Interface for objects that can be rendered." alt="" coords="1775,277,2004,302"/>
+<area shape="rect" id="node15" href="$db/d16/ResourceManager_8hpp.html" title="Resource loading and caching system." alt="" coords="302,269,493,309"/>
+<area shape="rect" id="node16" href="$d1/d62/Mesh_8hpp.html" title=" " alt="" coords="392,365,587,390"/>
+<area shape="rect" id="node21" href="$d4/d6e/Shader_8hpp.html" title=" " alt="" coords="661,365,856,390"/>
+<area shape="rect" id="node25" href="$d0/d82/Log_8hpp.html" title=" " alt="" coords="1134,365,1245,390"/>
+<area shape="rect" id="node26" href="$dc/dbc/Profiler_8hpp.html" title="Wrapper of the Tracy Profiler." alt="" coords="2135,445,2268,471"/>
+<area shape="rect" id="node31" href="$d0/de3/Window_8hpp.html" title="Window management for the Toast Engine." alt="" coords="2313,277,2508,302"/>
+<area shape="rect" id="node35" href="$de/d8a/HUDLayer_8hpp.html" title="HUD rendering layer using Ultralight for web&#45;based UI." alt="" coords="2838,269,2991,309"/>
+<area shape="rect" id="node38" href="$d2/deb/LayerStack_8hpp.html" title=" " alt="" coords="2533,277,2755,302"/>
+<area shape="rect" id="node39" href="$d9/de7/Time_8hpp.html" title="Controls the time of the application." alt="" coords="2379,101,2501,126"/>
+<area shape="rect" id="node41" href="$de/d4f/WindowEvents_8hpp.html" title="Stores all the different events a function has." alt="" coords="2028,189,2268,214"/>
+<area shape="rect" id="node43" title=" " alt="" coords="2525,101,2635,126"/>
+<area shape="rect" id="node44" title=" " alt="" coords="2660,101,2879,126"/>
+<area shape="rect" id="node45" title=" " alt="" coords="2903,101,3059,126"/>
+<area shape="rect" id="node46" href="$de/dd7/OclussionVolume_8hpp.html" title=" " alt="" coords="1397,93,1584,133"/>
+<area shape="rect" id="node49" title=" " alt="" coords="3084,101,3159,126"/>
+<area shape="rect" id="node50" title=" " alt="" coords="3183,101,3286,126"/>
+<area shape="rect" id="node3" href="$d9/d2c/Framebuffer_8hpp.html" title=" " alt="" coords="880,365,1109,390"/>
+<area shape="rect" id="node8" href="$d7/dcb/IRendererBase_8hpp.html" title="Base interface for all renderer implementations." alt="" coords="1197,181,1384,221"/>
+<area shape="rect" id="node34" href="$dc/dc6/GlobalLight_8hpp.html" title=" " alt="" coords="909,181,1072,221"/>
+<area shape="rect" id="node5" title=" " alt="" coords="969,445,1049,471"/>
+<area shape="rect" id="node6" title=" " alt="" coords="564,592,623,617"/>
+<area shape="rect" id="node7" title=" " alt="" coords="1055,519,1118,544"/>
+<area shape="rect" id="node10" title=" " alt="" coords="1660,445,1764,471"/>
+<area shape="rect" id="node11" title=" " alt="" coords="1788,445,1961,471"/>
+<area shape="rect" id="node12" title=" " alt="" coords="1421,365,1568,390"/>
+<area shape="rect" id="node14" href="$d9/da8/TransformComponent_8hpp.html" title="Transform component for position, rotation, and scale." alt="" coords="1896,357,2107,397"/>
+<area shape="rect" id="node18" href="$da/d46/ResourceSlot_8hpp.html" title=" " alt="" coords="182,365,317,390"/>
+<area shape="rect" id="node19" href="$d0/ddc/Texture_8hpp.html" title=" " alt="" coords="49,445,148,471"/>
+<area shape="rect" id="node30" title=" " alt="" coords="93,365,157,390"/>
+<area shape="rect" id="node17" href="$d5/dd0/IResource_8hpp.html" title=" " alt="" coords="102,519,325,544"/>
+<area shape="rect" id="node20" title=" " alt="" coords="1124,445,1201,471"/>
+<area shape="rect" id="node22" title=" " alt="" coords="631,445,721,471"/>
+<area shape="rect" id="node23" title=" " alt="" coords="847,445,945,471"/>
+<area shape="rect" id="node24" title=" " alt="" coords="1986,445,2110,471"/>
+<area shape="rect" id="node27" title=" " alt="" coords="1276,445,1345,471"/>
+<area shape="rect" id="node28" title=" " alt="" coords="1369,445,1436,471"/>
+<area shape="rect" id="node29" title=" " alt="" coords="1461,445,1585,471"/>
+<area shape="rect" id="node32" href="$df/d7d/Event_8hpp.html" title="Base Event class." alt="" coords="2583,445,2750,471"/>
+<area shape="rect" id="node33" title=" " alt="" coords="2334,365,2445,390"/>
+<area shape="rect" id="node36" href="$d2/dd6/ILayer_8hpp.html" title="Base interface for rendering layers." alt="" coords="2571,365,2762,390"/>
+<area shape="rect" id="node37" title=" " alt="" coords="2888,365,3048,390"/>
+<area shape="rect" id="node40" title=" " alt="" coords="2407,189,2473,214"/>
+<area shape="rect" id="node42" href="$d3/d07/InputListener_8hpp.html" title=" " alt="" coords="2029,277,2238,302"/>
+<area shape="rect" id="node47" href="$d7/d47/DebugDrawLayer_8hpp.html" title=" " alt="" coords="1589,277,1750,302"/>
+<area shape="rect" id="node48" title=" " alt="" coords="1408,189,1493,214"/>
 </map>

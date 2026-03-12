@@ -10,7 +10,7 @@ var searchData=
   ['collideredgeindex_7',['colliderEdgeIndex',['../de/d3a/structphysics_1_1BoxManifold.html#af4053695d88b5f2381fb3a75e08f9c82',1,'physics::BoxManifold']]],
   ['colliders_8',['colliders',['../db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#adfd8e31df63a16c600da8b370ff15a33',1,'physics::PhysicsSystem::M']]],
   ['collidingcolor_9',['collidingColor',['../d6/d41/classphysics_1_1Rigidbody.html#a444ab93479c9e759047cb58963487738',1,'physics::Rigidbody::collidingColor()'],['../d4/db0/classphysics_1_1BoxRigidbody.html#a701e5c13aa35f6f6f9780443b29a537a',1,'physics::BoxRigidbody::collidingColor()']]],
-  ['color_10',['color',['../d8/da4/structtoast_1_1GPUParticle.html#a7c1b4caebe1f25bc5326f2d458d5255a',1,'toast::GPUParticle::color()'],['../d5/dc6/structphysics_1_1Trigger_1_1M.html#ae82b1d0336876be6d7f700c2dd9d32c7',1,'physics::Trigger::M::color()'],['../da/d9a/structrenderer_1_1DebugVertex.html#a913bbcefbb2607de737956ee75e84b71',1,'renderer::DebugVertex::color()']]],
+  ['color_10',['color',['../d3/dd3/classtoast_1_1AtlasSpriteComponent.html#af8b8b5fc1aa28ac25c798537824987b6',1,'toast::AtlasSpriteComponent::color()'],['../d8/da4/structtoast_1_1GPUParticle.html#a7c1b4caebe1f25bc5326f2d458d5255a',1,'toast::GPUParticle::color()'],['../d5/dc6/structphysics_1_1Trigger_1_1M.html#ae82b1d0336876be6d7f700c2dd9d32c7',1,'physics::Trigger::M::color()'],['../da/d9a/structrenderer_1_1DebugVertex.html#a913bbcefbb2607de737956ee75e84b71',1,'renderer::DebugVertex::color()']]],
   ['colorabgr_11',['colorABGR',['../d1/d64/structrenderer_1_1SpineVertex.html#acf602274f40b42ca084e8228b0ae49eb',1,'renderer::SpineVertex']]],
   ['command_5flist_5f_12',['command_list_',['../dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a417b59284be0ecd0350769ed787e0aee',1,'toast::hud::ToastGPUDriver']]],
   ['command_5flist_5fmutex_5f_13',['command_list_mutex_',['../dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a4e67a1cf48cbf42fc2456d8ee107542b',1,'toast::hud::ToastGPUDriver']]],
@@ -26,10 +26,10 @@ var searchData=
   ['count_23',['count',['../dd/d4e/structtoast_1_1ParticleBurst.html#a665515b7f1d8e224c20047ea39f880d6',1,'toast::ParticleBurst']]],
   ['cur_5fprogram_5fid_5f_24',['cur_program_id_',['../dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#aad940ebf787adadb557d429b477f9d99',1,'toast::hud::ToastGPUDriver']]],
   ['current_25',['current',['../dd/d8c/structinput_1_1GamepadState.html#acde9c6373ad6cdb9153a8349d025b8b6',1,'input::GamepadState']]],
-  ['currentbytes_26',['currentBytes',['../db/da0/structtoast_1_1memory_1_1Stats.html#a720954c13a7aa1e6bcc0beeefdcfe527',1,'toast::memory::Stats']]],
-  ['currentdisplaymode_27',['currentDisplayMode',['../da/d71/structrenderer_1_1RendererConfig.html#a7aeb13850815fa42fb95e0c8fd59e54b',1,'renderer::RendererConfig']]],
-  ['currenteditmode_28',['currentEditMode',['../db/d71/classphysics_1_1Collider.html#adc15da75b707b9b1f2f2d57e23cf500d',1,'physics::Collider']]],
-  ['currentlevel_29',['currentLevel',['../d6/dbd/classtoast_1_1GameFlow.html#a74a299a933dc1b44cb8e33e206f5986d',1,'toast::GameFlow']]],
+  ['currentdisplaymode_26',['currentDisplayMode',['../da/d71/structrenderer_1_1RendererConfig.html#a7aeb13850815fa42fb95e0c8fd59e54b',1,'renderer::RendererConfig']]],
+  ['currenteditmode_27',['currentEditMode',['../db/d71/classphysics_1_1Collider.html#adc15da75b707b9b1f2f2d57e23cf500d',1,'physics::Collider']]],
+  ['currentlevel_28',['currentLevel',['../d6/dbd/classtoast_1_1GameFlow.html#a74a299a933dc1b44cb8e33e206f5986d',1,'toast::GameFlow']]],
+  ['currentscene_29',['currentScene',['../d6/dbd/classtoast_1_1GameFlow.html#ada8b47b41cb52b26542502550b866393',1,'toast::GameFlow']]],
   ['currentstate_30',['currentState',['../d6/d79/structinput_1_1InputSystem_1_1M.html#ae6cb694e371c394b7c46ffffa4a05484',1,'input::InputSystem::M::currentState()'],['../db/d5b/classtoast_1_1StateMachine.html#a1a62da1cbd4b4d773230573dae4646eb',1,'toast::StateMachine::currentState()'],['../d5/d96/classtoast_1_1StateMachineOld.html#a8b9c87c48884a379d7b359c66ec6cae4',1,'toast::StateMachineOld::currentState()']]],
   ['cycleinterval_31',['cycleInterval',['../dd/d4e/structtoast_1_1ParticleBurst.html#a83f7fed36752f6315a18ea1cd9ce6f8e',1,'toast::ParticleBurst']]]
 ];

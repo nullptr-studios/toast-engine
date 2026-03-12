@@ -114,13 +114,13 @@ Collaboration diagram for toast::World:</div>
 <map name="atoast_1_1World_coll__map" id="atoast_1_1World_coll__map">
 <area shape="rect" title="Class that contains all the loaded scenes on the game." alt="" coords="129,432,229,457"/>
 <area shape="rect" href="../../d3/dd6/classtoast_1_1ThreadPool.html" title="A simple thread pool for executing jobs asynchronously." alt="" coords="5,344,141,369"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="209,93,314,119"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="217,181,319,207"/>
-<area shape="rect" href="../../d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="344,181,483,207"/>
-<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="123,5,266,31"/>
-<area shape="rect" href="../../d8/d87/classChildren.html" title=" " alt="" coords="290,5,366,31"/>
-<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html" title=" " alt="" coords="273,344,407,369"/>
-<area shape="rect" href="../../d8/d7b/classevent_1_1ListenerComponent.html" title=" " alt="" coords="300,256,495,281"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="254,93,359,119"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="257,181,359,207"/>
+<area shape="rect" href="../../d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="416,181,555,207"/>
+<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="169,5,311,31"/>
+<area shape="rect" href="../../d8/d87/classChildren.html" title=" " alt="" coords="335,5,411,31"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html" title=" " alt="" coords="241,344,375,369"/>
+<area shape="rect" href="../../d8/d7b/classevent_1_1ListenerComponent.html" title=" " alt="" coords="421,256,616,281"/>
 </map>
 <center><span class="legend">[<a target="top" href="../../graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -180,6 +180,8 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:a82479083ced151f862d5564ca30e1520"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9e2f7a36f6a7b318b2dd374ceed87e8"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7d/classtoast_1_1World.html#af9e2f7a36f6a7b318b2dd374ceed87e8">DisableScene</a> (std::string_view name)</td></tr>
 <tr class="separator:af9e2f7a36f6a7b318b2dd374ceed87e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a511b85e1a35f6e76e6bf58d4e771adac"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7d/classtoast_1_1World.html#a511b85e1a35f6e76e6bf58d4e771adac">IsRunning</a> ()</td></tr>
+<tr class="separator:a511b85e1a35f6e76e6bf58d4e771adac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a92b7a926bbe8dedbd71fb04a74127b31"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a92b7a926bbe8dedbd71fb04a74127b31"><td class="memTemplItemLeft" align="right" valign="top">static T *&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="../../d6/d7d/classtoast_1_1World.html#a92b7a926bbe8dedbd71fb04a74127b31">Get</a> (const unsigned id)</td></tr>
 <tr class="separator:a92b7a926bbe8dedbd71fb04a74127b31"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -199,6 +201,8 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:af121d5cfcfc2b9054eb1a1c3b0991b6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a259769e397775dca7ceb5046192ea870"><td class="memItemLeft" align="right" valign="top">static Object::Children &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7d/classtoast_1_1World.html#a259769e397775dca7ceb5046192ea870">GetChildren</a> ()</td></tr>
 <tr class="separator:a259769e397775dca7ceb5046192ea870"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1fd608c06f42c2f82fb62eb9bc53560d"><td class="memItemLeft" align="right" valign="top">static auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7d/classtoast_1_1World.html#a1fd608c06f42c2f82fb62eb9bc53560d">GetTickables</a> () -&gt; const std::unordered_map&lt; unsigned int, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html">Scene</a> * &gt;</td></tr>
+<tr class="separator:a1fd608c06f42c2f82fb62eb9bc53560d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a274f726b7019a16eff310d9b47314c95"><td class="memItemLeft" align="right" valign="top">static auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7d/classtoast_1_1World.html#a274f726b7019a16eff310d9b47314c95">GetFromType</a> (std::string_view type) -&gt; <a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> *</td></tr>
 <tr class="separator:a274f726b7019a16eff310d9b47314c95"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a302faae45abbec1aaed2c37d81b72594"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7d/classtoast_1_1World.html#a302faae45abbec1aaed2c37d81b72594">ScheduleBegin</a> (<a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> *obj)</td></tr>
@@ -215,37 +219,37 @@ Private Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:a12a0fc63377ea20ad612effee7b95dc5"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:a6bb38233742c8425da6eae41389f785b"><td class="memItemLeft" >&#160;&#160;&#160;Object::Children&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ab491b3afead8ef753abe2b9bcef44440">children</a></td></tr>
-<tr class="separator:a6bb38233742c8425da6eae41389f785b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a61ee79ed2940d8097cf9490b568c3246"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; <a class="el" href="../../d8/d7b/classevent_1_1ListenerComponent.html">event::ListenerComponent</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ad03dc5a0a160cec62a807200a99202f5">listener</a></td></tr>
-<tr class="separator:a61ee79ed2940d8097cf9490b568c3246"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae9de5c89566d06abc027f835865befa7"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; unsigned, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html">Scene</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ade75d08acfdf21845949d8cd559538f5">tickableScenes</a></td></tr>
-<tr class="separator:ae9de5c89566d06abc027f835865befa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6085b4f390182c63da5e681224c5946c"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; unsigned, unsigned &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ae968691e35ec884c0471364c36ee83c9">sceneDestroyTimers</a></td></tr>
-<tr class="separator:a6085b4f390182c63da5e681224c5946c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aea60e7ceda3e1259c1f84b4f67866272"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html">ThreadPool</a> *&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ad51213dcc785e509623488eca698ba7e">threadPool</a> = nullptr</td></tr>
-<tr class="separator:aea60e7ceda3e1259c1f84b4f67866272"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a03767442a3e435b09f104215499f69cc"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#af0a1ae3006d996b0089b646b4cdce2f3">simulateWorld</a> = true</td></tr>
-<tr class="separator:a03767442a3e435b09f104215499f69cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6dd2f081bec72b6ba8289aeb1ac42153"><td class="memItemLeft" >&#160;&#160;&#160;std::map&lt; unsigned, std::string &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a327ee80b887ca855431c7a22f9ce01da">loadedScenes</a></td></tr>
-<tr class="separator:a6dd2f081bec72b6ba8289aeb1ac42153"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab22b4a5fd7a0112bc819b550ab74dd0d"><td class="memItemLeft" >&#160;&#160;&#160;std::map&lt; unsigned, bool &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a6949230b877c88263453ac3c8dddb4e4">loadedScenesStatus</a></td></tr>
-<tr class="separator:ab22b4a5fd7a0112bc819b550ab74dd0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9a2b7df141b575fd82d526814f628145"><td class="memItemLeft" >&#160;&#160;&#160;std::list&lt; <a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a186dcc6688e52570c7e0f8b17a83e5dc">beginQueue</a></td></tr>
-<tr class="separator:a9a2b7df141b575fd82d526814f628145"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adf273a3ce86bbe5ce2517c2b21a7eed1"><td class="memItemLeft" >&#160;&#160;&#160;std::list&lt; <a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a2aabd3387c04d29360801d07fe23542f">destroyQueue</a></td></tr>
-<tr class="separator:adf273a3ce86bbe5ce2517c2b21a7eed1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae9a2b310fee827dded15075b976723a9"><td class="memItemLeft" >&#160;&#160;&#160;std::mutex&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a707749c8c094112bf2803d4f96c680e1">queueMutex</a></td></tr>
-<tr class="separator:ae9a2b310fee827dded15075b976723a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af6f1d00f74be50b2b1cfdfdecbfc29ff"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> *&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a53ef536f98cae6cdc2faefdec053c931">editorScene</a> = nullptr</td></tr>
-<tr class="separator:af6f1d00f74be50b2b1cfdfdecbfc29ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a43d74a27fcccbb0da144c6e1b82c718c"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; std::vector&lt; std::string &gt; &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#adf5a3027b5077591871e88285e8485ff">worldList</a></td></tr>
-<tr class="separator:a43d74a27fcccbb0da144c6e1b82c718c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa66a879988b468b3a667e207d128936d"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d6/dbd/classtoast_1_1GameFlow.html">GameFlow</a>&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a55ee90504efe676125509c49a5f6b446">gameFlow</a></td></tr>
-<tr class="separator:aa66a879988b468b3a667e207d128936d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a12a0fc63377ea20ad612effee7b95dc5"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7d/classtoast_1_1World.html#a12a0fc63377ea20ad612effee7b95dc5">m</a></td></tr>
-<tr class="separator:a12a0fc63377ea20ad612effee7b95dc5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af43aaf15b4adb6aeda9ef0277dfb5fdb"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:adedb109f02af484d71a44cf74628bb5c"><td class="memItemLeft" >&#160;&#160;&#160;Object::Children&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ab491b3afead8ef753abe2b9bcef44440">children</a></td></tr>
+<tr class="separator:adedb109f02af484d71a44cf74628bb5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3eb0992f8b305ae8de4796e824f58b60"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; <a class="el" href="../../d8/d7b/classevent_1_1ListenerComponent.html">event::ListenerComponent</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ad03dc5a0a160cec62a807200a99202f5">listener</a></td></tr>
+<tr class="separator:a3eb0992f8b305ae8de4796e824f58b60"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a488eac8ab7f3afd2f1ee27a9c5c435eb"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; unsigned, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html">Scene</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ade75d08acfdf21845949d8cd559538f5">tickableScenes</a></td></tr>
+<tr class="separator:a488eac8ab7f3afd2f1ee27a9c5c435eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a96141a05f0519396ab23ca540ad20642"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; unsigned, unsigned &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ae968691e35ec884c0471364c36ee83c9">sceneDestroyTimers</a></td></tr>
+<tr class="separator:a96141a05f0519396ab23ca540ad20642"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac63faf1b7b9018888162469478194f9f"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d3/dd6/classtoast_1_1ThreadPool.html">ThreadPool</a> *&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#ad51213dcc785e509623488eca698ba7e">threadPool</a> = nullptr</td></tr>
+<tr class="separator:ac63faf1b7b9018888162469478194f9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1dadf488ec8c6847497c5f1608f99be9"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#af0a1ae3006d996b0089b646b4cdce2f3">simulateWorld</a> = true</td></tr>
+<tr class="separator:a1dadf488ec8c6847497c5f1608f99be9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ad55bc4ff9b7b9fe37cd10873354d23"><td class="memItemLeft" >&#160;&#160;&#160;std::map&lt; unsigned, std::string &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a327ee80b887ca855431c7a22f9ce01da">loadedScenes</a></td></tr>
+<tr class="separator:a2ad55bc4ff9b7b9fe37cd10873354d23"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a86097f27d1132b145926eb5a7db8e896"><td class="memItemLeft" >&#160;&#160;&#160;std::map&lt; unsigned, bool &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a6949230b877c88263453ac3c8dddb4e4">loadedScenesStatus</a></td></tr>
+<tr class="separator:a86097f27d1132b145926eb5a7db8e896"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a76567f1d5e52aae8179d9751dd5b243e"><td class="memItemLeft" >&#160;&#160;&#160;std::list&lt; <a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a186dcc6688e52570c7e0f8b17a83e5dc">beginQueue</a></td></tr>
+<tr class="separator:a76567f1d5e52aae8179d9751dd5b243e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a215bba3af156d2c23b5438b3c1a882d5"><td class="memItemLeft" >&#160;&#160;&#160;std::list&lt; <a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a2aabd3387c04d29360801d07fe23542f">destroyQueue</a></td></tr>
+<tr class="separator:a215bba3af156d2c23b5438b3c1a882d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6af364ac9b8d94ee543506e56464bd66"><td class="memItemLeft" >&#160;&#160;&#160;std::mutex&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a707749c8c094112bf2803d4f96c680e1">queueMutex</a></td></tr>
+<tr class="separator:a6af364ac9b8d94ee543506e56464bd66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d8fe0a2cfcf1c4fbaef72413a9d4a3f"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> *&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a53ef536f98cae6cdc2faefdec053c931">editorScene</a> = nullptr</td></tr>
+<tr class="separator:a5d8fe0a2cfcf1c4fbaef72413a9d4a3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5652707d5fec5ea01c67660fdaedbaeb"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; std::vector&lt; std::string &gt; &gt;&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#adf5a3027b5077591871e88285e8485ff">worldList</a></td></tr>
+<tr class="separator:a5652707d5fec5ea01c67660fdaedbaeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20838a642af78b7f18cf3555741f087b"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d6/dbd/classtoast_1_1GameFlow.html">GameFlow</a>&#160;&#160;&#160;<a class="el" href="../../d6/d7d/classtoast_1_1World.html#a55ee90504efe676125509c49a5f6b446">gameFlow</a></td></tr>
+<tr class="separator:a20838a642af78b7f18cf3555741f087b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af43aaf15b4adb6aeda9ef0277dfb5fdb"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7d/classtoast_1_1World.html#af43aaf15b4adb6aeda9ef0277dfb5fdb">m</a></td></tr>
+<tr class="separator:af43aaf15b4adb6aeda9ef0277dfb5fdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-static-attribs" name="pri-static-attribs"></a>
 Static Private Attributes</h2></td></tr>
@@ -368,7 +372,7 @@ Static Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00559">559</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00566">566</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -405,7 +409,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00535">535</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00542">542</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -442,7 +446,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00348">348</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00355">355</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 
 </div>
 </div>
@@ -470,7 +474,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00358">358</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00365">365</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -498,7 +502,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00386">386</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00393">393</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 
 </div>
 </div>
@@ -526,7 +530,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00312">312</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00319">319</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 
 </div>
 </div>
@@ -554,7 +558,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00322">322</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00329">329</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -593,19 +597,21 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00053">53</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00057">57</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d6/d7d/classtoast_1_1World_a92b7a926bbe8dedbd71fb04a74127b31_icgraph.png" border="0" usemap="#ad6/d7d/classtoast_1_1World_a92b7a926bbe8dedbd71fb04a74127b31_icgraph" alt=""/></div>
 <map name="ad6/d7d/classtoast_1_1World_a92b7a926bbe8dedbd71fb04a74127b31_icgraph" id="ad6/d7d/classtoast_1_1World_a92b7a926bbe8dedbd71fb04a74127b31_icgraph">
-<area shape="rect" title=" " alt="" coords="520,104,651,129"/>
+<area shape="rect" title=" " alt="" coords="520,153,651,179"/>
 <area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a7dfbd4969b0fbce5826fd089ab93aeec" title=" " alt="" coords="293,5,443,31"/>
 <area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a03e770afc70716334eb4037d9151c8a5" title=" " alt="" coords="265,55,471,80"/>
 <area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#ad929acb758d90809c68ba2362d8e7ed4" title=" " alt="" coords="264,104,472,129"/>
 <area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#ad20bf8c23fc5cc9ae04746532256cf62" title=" " alt="" coords="265,153,471,179"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a3844ff2ee3089892eb2b3fdce6ab6505" title=" " alt="" coords="271,203,465,228"/>
-<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,153,216,179"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a0295ae9112eee846f74aeba2e7009070" title=" " alt="" coords="279,203,457,228"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#ac4612b47b4e1c6e4352b29eabf72c502" title=" " alt="" coords="275,252,461,277"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a3844ff2ee3089892eb2b3fdce6ab6505" title=" " alt="" coords="271,301,465,327"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,203,216,228"/>
 </map>
 </div>
 
@@ -637,7 +643,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00059">59</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00063">63</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -665,7 +671,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00586">586</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00593">593</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 
 </div>
 </div>
@@ -693,7 +699,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00582">582</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00589">589</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 
 </div>
 </div>
@@ -720,7 +726,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00602">602</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00609">609</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -759,7 +765,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00065">65</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00069">69</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -787,7 +793,34 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00590">590</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00597">597</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a1fd608c06f42c2f82fb62eb9bc53560d" name="a1fd608c06f42c2f82fb62eb9bc53560d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1fd608c06f42c2f82fb62eb9bc53560d">&#9670;&#160;</a></span>GetTickables()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static auto toast::World::GetTickables </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> -&gt; const std::unordered_map&lt;unsigned int, <a class="el" href="../../d6/dd4/classtoast_1_1Scene.html">Scene</a>*&gt; </td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00085">85</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -815,7 +848,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00598">598</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00605">605</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 
 </div>
 </div>
@@ -843,7 +876,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00594">594</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00601">601</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 
 </div>
 </div>
@@ -876,26 +909,71 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d6/d7d/classtoast_1_1World_a92526a6d06162bfab7873c3e55166e1b_icgraph.png" border="0" usemap="#ad6/d7d/classtoast_1_1World_a92526a6d06162bfab7873c3e55166e1b_icgraph" alt=""/></div>
 <map name="ad6/d7d/classtoast_1_1World_a92526a6d06162bfab7873c3e55166e1b_icgraph" id="ad6/d7d/classtoast_1_1World_a92526a6d06162bfab7873c3e55166e1b_icgraph">
-<area shape="rect" title=" " alt="" coords="771,355,933,380"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a6a093e9a4faaca5980e004cba87d9f74" title=" " alt="" coords="519,5,708,31"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#af9e2f7a36f6a7b318b2dd374ceed87e8" title=" " alt="" coords="515,55,711,80"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a32964fd211afe48967e05aafd256108b" title=" " alt="" coords="518,104,709,129"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#ad5459cad49da1af7a535aba8f94010fd" title=" " alt="" coords="548,153,679,179"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a259769e397775dca7ceb5046192ea870" title=" " alt="" coords="521,203,706,228"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a951d9c058d1d04212d5c9da193a47d25" title="Destroys this object." alt="" coords="29,253,175,279"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a0d598e1bd38a188fc91f82626df8574d" title=" " alt="" coords="516,608,711,633"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a5cd83e41c6ce366075d44d83a5577b2a" title=" " alt="" coords="547,657,680,683"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#abe28a5b8532ca1d9bb09c1e7a43f68bf" title="Loads scene on the main thread, scene enabled after load." alt="" coords="247,405,456,431"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#acf4ed739984731f27accd1863f285e25" title=" " alt="" coords="283,483,420,508"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#af88c5c7e23457847cc4ce96fba806ed4" title=" " alt="" coords="251,532,451,557"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a302faae45abbec1aaed2c37d81b72594" title=" " alt="" coords="511,507,715,532"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a91a7bd2e3a2c7c3ec7996024e7ea1247" title=" " alt="" coords="504,304,723,329"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a840bdbfbf06a66f30d7166b0a6a55ed8" title=" " alt="" coords="255,329,448,355"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a4228ce051340b69a1c777e7d633153cf" title=" " alt="" coords="525,707,702,747"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a22696262d5e02175220f2af82c663136" title=" " alt="" coords="266,5,437,31"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a7dfbd4969b0fbce5826fd089ab93aeec" title=" " alt="" coords="276,152,427,177"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="29,392,175,417"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a3844ff2ee3089892eb2b3fdce6ab6505" title=" " alt="" coords="5,329,199,355"/>
+<area shape="rect" title=" " alt="" coords="788,405,951,431"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a6a093e9a4faaca5980e004cba87d9f74" title=" " alt="" coords="536,5,725,31"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#af9e2f7a36f6a7b318b2dd374ceed87e8" title=" " alt="" coords="533,55,729,80"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a32964fd211afe48967e05aafd256108b" title=" " alt="" coords="535,104,726,129"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#ad5459cad49da1af7a535aba8f94010fd" title=" " alt="" coords="565,153,696,179"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a259769e397775dca7ceb5046192ea870" title=" " alt="" coords="538,203,723,228"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a951d9c058d1d04212d5c9da193a47d25" title="Destroys this object." alt="" coords="37,253,184,279"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a0d598e1bd38a188fc91f82626df8574d" title=" " alt="" coords="533,608,728,633"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a1fd608c06f42c2f82fb62eb9bc53560d" title=" " alt="" coords="535,657,727,683"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a5cd83e41c6ce366075d44d83a5577b2a" title=" " alt="" coords="564,707,697,732"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a511b85e1a35f6e76e6bf58d4e771adac" title=" " alt="" coords="545,756,717,781"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#abe28a5b8532ca1d9bb09c1e7a43f68bf" title="Loads scene on the main thread, scene enabled after load." alt="" coords="264,405,473,431"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#acf4ed739984731f27accd1863f285e25" title=" " alt="" coords="300,456,437,481"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#af88c5c7e23457847cc4ce96fba806ed4" title=" " alt="" coords="269,557,469,583"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a302faae45abbec1aaed2c37d81b72594" title=" " alt="" coords="529,507,733,532"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a91a7bd2e3a2c7c3ec7996024e7ea1247" title=" " alt="" coords="521,304,740,329"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a840bdbfbf06a66f30d7166b0a6a55ed8" title=" " alt="" coords="272,329,465,355"/>
+<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a4228ce051340b69a1c777e7d633153cf" title=" " alt="" coords="542,806,719,846"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a22696262d5e02175220f2af82c663136" title=" " alt="" coords="283,5,454,31"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#a7dfbd4969b0fbce5826fd089ab93aeec" title=" " alt="" coords="293,152,444,177"/>
+<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a52f2eb7420c7743d41ea1e718a56aac7" title="This function runs just after the object is created (scene load thread)" alt="" coords="289,699,448,724"/>
+<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a462a8f1bf385bb9e88e17494cdf7d9b8" title="This function runs just after the object is created (scene load thread)" alt="" coords="297,749,441,789"/>
+<area shape="rect" href="../../d4/d9c/classphysics_1_1Trigger.html#a04fccf26c778f5d6886070069f936043" title="This function runs just after the object is created (scene load thread)" alt="" coords="293,813,445,839"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="38,392,183,417"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#ac4612b47b4e1c6e4352b29eabf72c502" title=" " alt="" coords="275,507,462,532"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,507,216,532"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a3844ff2ee3089892eb2b3fdce6ab6505" title=" " alt="" coords="14,329,207,355"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a511b85e1a35f6e76e6bf58d4e771adac" name="a511b85e1a35f6e76e6bf58d4e771adac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a511b85e1a35f6e76e6bf58d4e771adac">&#9670;&#160;</a></span>IsRunning()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool toast::World::IsRunning </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00124">124</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d6/d7d/classtoast_1_1World_a511b85e1a35f6e76e6bf58d4e771adac_icgraph.png" border="0" usemap="#ad6/d7d/classtoast_1_1World_a511b85e1a35f6e76e6bf58d4e771adac_icgraph" alt=""/></div>
+<map name="ad6/d7d/classtoast_1_1World_a511b85e1a35f6e76e6bf58d4e771adac_icgraph" id="ad6/d7d/classtoast_1_1World_a511b85e1a35f6e76e6bf58d4e771adac_icgraph">
+<area shape="rect" title=" " alt="" coords="212,63,384,88"/>
+<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a52f2eb7420c7743d41ea1e718a56aac7" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,164,31"/>
+<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a462a8f1bf385bb9e88e17494cdf7d9b8" title="This function runs just after the object is created (scene load thread)" alt="" coords="13,55,157,95"/>
+<area shape="rect" href="../../d4/d9c/classphysics_1_1Trigger.html#a04fccf26c778f5d6886070069f936043" title="This function runs just after the object is created (scene load thread)" alt="" coords="9,120,161,145"/>
 </map>
 </div>
 
@@ -916,7 +994,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00410">410</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00417">417</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 
 </div>
 </div>
@@ -946,17 +1024,16 @@ Here is the caller graph for this function:</div>
 
 <p>Loads scene on the init thread, scene disabld after load. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00160">160</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00170">170</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d6/d7d/classtoast_1_1World_afbe0e3e4c589a2dc3123ae461139bf13_icgraph.png" border="0" usemap="#ad6/d7d/classtoast_1_1World_afbe0e3e4c589a2dc3123ae461139bf13_icgraph" alt=""/></div>
 <map name="ad6/d7d/classtoast_1_1World_afbe0e3e4c589a2dc3123ae461139bf13_icgraph" id="ad6/d7d/classtoast_1_1World_afbe0e3e4c589a2dc3123ae461139bf13_icgraph">
-<area shape="rect" title="Loads scene on the init thread, scene disabld after load." alt="" coords="520,55,699,80"/>
-<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a03e770afc70716334eb4037d9151c8a5" title=" " alt="" coords="265,5,471,31"/>
-<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#ad929acb758d90809c68ba2362d8e7ed4" title=" " alt="" coords="264,55,472,80"/>
-<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#ad20bf8c23fc5cc9ae04746532256cf62" title=" " alt="" coords="265,104,471,129"/>
-<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,104,216,129"/>
+<area shape="rect" title="Loads scene on the init thread, scene disabld after load." alt="" coords="519,24,697,49"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,24,216,49"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a03e770afc70716334eb4037d9151c8a5" title=" " alt="" coords="264,24,471,49"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#ad20bf8c23fc5cc9ae04746532256cf62" title=" " alt="" coords="264,73,471,99"/>
 </map>
 </div>
 
@@ -988,7 +1065,7 @@ Here is the caller graph for this function:</div>
 
 <p>Loads scene on the main thread, scene enabled after load. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00223">223</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00233">233</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1027,7 +1104,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00119">119</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00128">128</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1065,7 +1142,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00124">124</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00134">134</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 
 </div>
 </div>
@@ -1171,7 +1248,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00422">422</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00429">429</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1199,7 +1276,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00459">459</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00466">466</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 
 </div>
 </div>
@@ -1218,7 +1295,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00494">494</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00501">501</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 
 </div>
 </div>
@@ -1246,17 +1323,19 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00526">526</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00533">533</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d6/d7d/classtoast_1_1World_a302faae45abbec1aaed2c37d81b72594_icgraph.png" border="0" usemap="#ad6/d7d/classtoast_1_1World_a302faae45abbec1aaed2c37d81b72594_icgraph" alt=""/></div>
 <map name="ad6/d7d/classtoast_1_1World_a302faae45abbec1aaed2c37d81b72594_icgraph" id="ad6/d7d/classtoast_1_1World_a302faae45abbec1aaed2c37d81b72594_icgraph">
-<area shape="rect" title=" " alt="" coords="456,55,660,80"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#abe28a5b8532ca1d9bb09c1e7a43f68bf" title="Loads scene on the main thread, scene enabled after load." alt="" coords="199,5,408,31"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#acf4ed739984731f27accd1863f285e25" title=" " alt="" coords="235,55,372,80"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#af88c5c7e23457847cc4ce96fba806ed4" title=" " alt="" coords="203,104,403,129"/>
-<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,5,151,31"/>
+<area shape="rect" title=" " alt="" coords="521,80,725,105"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#abe28a5b8532ca1d9bb09c1e7a43f68bf" title="Loads scene on the main thread, scene enabled after load." alt="" coords="264,5,473,31"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#acf4ed739984731f27accd1863f285e25" title=" " alt="" coords="300,55,437,80"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html#af88c5c7e23457847cc4ce96fba806ed4" title=" " alt="" coords="269,104,469,129"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#ac4612b47b4e1c6e4352b29eabf72c502" title=" " alt="" coords="275,153,462,179"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="38,5,183,31"/>
+<area shape="rect" href="../../d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,153,216,179"/>
 </map>
 </div>
 
@@ -1286,7 +1365,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00547">547</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00554">554</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1317,7 +1396,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00398">398</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00405">405</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 
 </div>
 </div>
@@ -1345,7 +1424,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00303">303</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00310">310</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 
 </div>
 </div>
@@ -1373,7 +1452,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00277">277</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dfe/World_8cpp_source.html#l00287">287</a> of file <a class="el" href="../../d7/dfe/World_8cpp_source.html">World.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1401,7 +1480,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00109">109</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00118">118</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1417,7 +1496,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00101">101</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00110">110</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1441,7 +1520,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00097">97</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00106">106</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1457,7 +1536,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00110">110</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00119">119</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1473,7 +1552,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00112">112</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00121">121</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1489,7 +1568,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00114">114</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00123">123</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1505,7 +1584,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00102">102</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00111">111</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1521,7 +1600,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00107">107</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00116">116</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1537,12 +1616,12 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00108">108</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00117">117</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
-<a id="a12a0fc63377ea20ad612effee7b95dc5" name="a12a0fc63377ea20ad612effee7b95dc5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a12a0fc63377ea20ad612effee7b95dc5">&#9670;&#160;</a></span></h2>
+<a id="af43aaf15b4adb6aeda9ef0277dfb5fdb" name="af43aaf15b4adb6aeda9ef0277dfb5fdb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af43aaf15b4adb6aeda9ef0277dfb5fdb">&#9670;&#160;</a></span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1575,7 +1654,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00096">96</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00105">105</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1599,7 +1678,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00098">98</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00107">107</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1615,7 +1694,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00111">111</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00120">120</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1631,7 +1710,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00104">104</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00113">113</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1647,7 +1726,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00106">106</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00115">115</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1663,7 +1742,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00105">105</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00114">114</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1679,7 +1758,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00103">103</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00112">112</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>
@@ -1695,7 +1774,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00113">113</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dbb/World_8hpp_source.html#l00122">122</a> of file <a class="el" href="../../d0/dbb/World_8hpp_source.html">World.hpp</a>.</p>
 
 </div>
 </div>

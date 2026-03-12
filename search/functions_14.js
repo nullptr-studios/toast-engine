@@ -24,6 +24,5 @@ var searchData=
   ['transformcomponent_21',['TransformComponent',['../d0/dd9/classtoast_1_1TransformComponent.html#a20ebb339d1ccee8f66a8df02bf7af3e6',1,'toast::TransformComponent::TransformComponent(const glm::vec3 &amp;pos, const glm::vec3 &amp;rot, const glm::vec3 &amp;scale)'],['../d0/dd9/classtoast_1_1TransformComponent.html#a0077d521827b8e0f9c6814efc7fb55c7',1,'toast::TransformComponent::TransformComponent()']]],
   ['transformimpl_22',['TransformImpl',['../d8/d63/classtoast_1_1TransformImpl.html#aa313bc0d7ae81f10236bce9587596694',1,'toast::TransformImpl']]],
   ['trim_5finplace_23',['trim_inplace',['../dc/d73/namespaceinput.html#a16c57796ab83faa737919be7e9bcd6b8',1,'input']]],
-  ['trimpools_24',['TrimPools',['../d0/de3/namespacetoast_1_1memory.html#a38411115a086d2a6a42b52f00975e45e',1,'toast::memory']]],
-  ['type_25',['type',['../d1/da3/classtoast_1_1Object.html#a4d5014778bdf83165dc2f9c9d9070eff',1,'toast::Object']]]
+  ['type_24',['type',['../d1/da3/classtoast_1_1Object.html#a4d5014778bdf83165dc2f9c9d9070eff',1,'toast::Object']]]
 ];

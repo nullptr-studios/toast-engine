@@ -4,7 +4,6 @@ var classtoast_1_1Engine =
     [ "Engine", "d9/d4f/classtoast_1_1Engine.html#a9a857311e4cf0e98602101c0bdcb5131", null ],
     [ "Begin", "d9/d4f/classtoast_1_1Engine.html#a162c8de172f29ea8fa3e83b2e969ab2a", null ],
     [ "Close", "d9/d4f/classtoast_1_1Engine.html#ac251fca8ab6fb96b256b262c1c97e828", null ],
-    [ "EditorTick", "d9/d4f/classtoast_1_1Engine.html#a2d4afda4371ddb8ee2271b2453a117ae", null ],
     [ "ForcePurgeResources", "d9/d4f/classtoast_1_1Engine.html#aef7f2dc4b8f043dc8413cca0133b163a", null ],
     [ "get", "d9/d4f/classtoast_1_1Engine.html#ad7e4af350e4a3cb4261a68afd862278c", null ],
     [ "GetRenderdocApi", "d9/d4f/classtoast_1_1Engine.html#a57a304970c4038cfc2b8976c614455b5", null ],

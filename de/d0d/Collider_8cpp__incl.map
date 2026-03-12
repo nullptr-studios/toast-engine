@@ -1,47 +1,52 @@
 <map id="src/Physics/Collider.cpp" name="src/Physics/Collider.cpp">
-<area shape="rect" id="node1" title=" " alt="" coords="1003,5,1177,31"/>
-<area shape="rect" id="node2" href="$dd/d5f/Collider_8hpp.html" title=" " alt="" coords="476,240,667,265"/>
-<area shape="rect" id="node14" href="$dc/dbc/Profiler_8hpp.html" title="Wrapper of the Tracy Profiler." alt="" coords="849,621,982,647"/>
-<area shape="rect" id="node25" href="$de/db8/ConvexCollider_8hpp.html" title=" " alt="" coords="251,240,399,265"/>
-<area shape="rect" id="node26" href="$d1/d21/GlmJson_8hpp.html" title="Allows to serialize vectors and quaternions." alt="" coords="5,321,148,346"/>
-<area shape="rect" id="node28" href="$d3/d1b/Actor_8hpp.html" title="The simplest Object that exists on the game world." alt="" coords="877,240,1052,265"/>
-<area shape="rect" id="node34" href="$d7/d47/DebugDrawLayer_8hpp.html" title=" " alt="" coords="1308,79,1507,119"/>
-<area shape="rect" id="node43" title=" " alt="" coords="1995,401,2057,427"/>
-<area shape="rect" id="node44" title=" " alt="" coords="1815,86,1960,111"/>
-<area shape="rect" id="node45" title=" " alt="" coords="1984,86,2055,111"/>
-<area shape="rect" id="node3" href="$d8/dc0/ColliderData_8hpp.html" title=" " alt="" coords="223,321,354,346"/>
-<area shape="rect" id="node4" title=" " alt="" coords="425,401,529,427"/>
-<area shape="rect" id="node5" href="$dd/d06/ColliderFlags_8hpp.html" title=" " alt="" coords="531,321,665,346"/>
-<area shape="rect" id="node6" href="$db/d57/Line_8hpp.html" title=" " alt="" coords="378,321,455,346"/>
-<area shape="rect" id="node7" href="$df/d1f/Component_8hpp.html" title="Base component class." alt="" coords="753,401,1003,427"/>
-<area shape="rect" id="node8" href="$d7/d3f/Object_8hpp.html" title="Base Object Class." alt="" coords="773,475,956,500"/>
-<area shape="rect" id="node9" href="$d7/d5a/RTTIMacros_8h.html" title=" " alt="" coords="453,548,575,573"/>
-<area shape="rect" id="node10" href="$d5/d03/Factory_8hpp.html" title="Class in charge of Object creation (not anmymore)" alt="" coords="919,548,1053,573"/>
-<area shape="rect" id="node11" href="$df/da3/ISerializable_8hpp.html" title="Interface for objects that can be saved and loaded from JSON." alt="" coords="253,548,421,573"/>
-<area shape="rect" id="node13" href="$d0/d82/Log_8hpp.html" title=" " alt="" coords="1205,548,1316,573"/>
-<area shape="rect" id="node20" title=" " alt="" coords="1441,621,1539,647"/>
-<area shape="rect" id="node21" title=" " alt="" coords="599,548,666,573"/>
-<area shape="rect" id="node22" title=" " alt="" coords="1392,548,1452,573"/>
-<area shape="rect" id="node23" href="$da/d8d/Children_8inl.html" title=" " alt="" coords="690,548,786,573"/>
-<area shape="rect" id="node24" href="$de/d16/Object_8inl.html" title=" " alt="" coords="811,548,895,573"/>
-<area shape="rect" id="node12" title=" " alt="" coords="166,621,313,647"/>
-<area shape="rect" id="node15" title=" " alt="" coords="1155,621,1225,647"/>
-<area shape="rect" id="node16" title=" " alt="" coords="1249,621,1315,647"/>
-<area shape="rect" id="node17" title=" " alt="" coords="1339,621,1417,647"/>
-<area shape="rect" id="node18" title=" " alt="" coords="1007,621,1131,647"/>
-<area shape="rect" id="node19" title=" " alt="" coords="1643,621,1702,647"/>
-<area shape="rect" id="node27" title=" " alt="" coords="163,401,337,427"/>
-<area shape="rect" id="node29" href="$d9/da8/TransformComponent_8hpp.html" title="Transform component for position, rotation, and scale." alt="" coords="741,313,951,353"/>
-<area shape="rect" id="node30" href="$d0/d1c/ListenerComponent_8hpp.html" title=" " alt="" coords="1134,321,1390,346"/>
-<area shape="rect" id="node31" title=" " alt="" coords="1239,401,1285,427"/>
-<area shape="rect" id="node32" title=" " alt="" coords="1309,401,1401,427"/>
-<area shape="rect" id="node33" title=" " alt="" coords="1128,401,1215,427"/>
-<area shape="rect" id="node35" href="$d2/dd6/ILayer_8hpp.html" title="Base interface for rendering layers." alt="" coords="1212,167,1403,192"/>
-<area shape="rect" id="node37" href="$d4/d6e/Shader_8hpp.html" title=" " alt="" coords="1443,321,1638,346"/>
-<area shape="rect" id="node41" title=" " alt="" coords="1892,401,1971,427"/>
-<area shape="rect" id="node36" href="$df/d7d/Event_8hpp.html" title="Base Event class." alt="" coords="1201,240,1368,265"/>
-<area shape="rect" id="node38" href="$d5/dd0/IResource_8hpp.html" title=" " alt="" coords="1527,475,1749,500"/>
-<area shape="rect" id="node40" title=" " alt="" coords="1629,401,1719,427"/>
-<area shape="rect" id="node42" title=" " alt="" coords="1744,401,1868,427"/>
-<area shape="rect" id="node39" title=" " alt="" coords="1569,548,1635,573"/>
+<area shape="rect" id="node1" title=" " alt="" coords="1198,5,1373,31"/>
+<area shape="rect" id="node2" href="$dd/d5f/Collider_8hpp.html" title=" " alt="" coords="151,240,342,265"/>
+<area shape="rect" id="node14" href="$dc/dbc/Profiler_8hpp.html" title="Wrapper of the Tracy Profiler." alt="" coords="1684,621,1817,647"/>
+<area shape="rect" id="node22" href="$de/db8/ConvexCollider_8hpp.html" title=" " alt="" coords="385,240,533,265"/>
+<area shape="rect" id="node28" title=" " alt="" coords="711,401,774,427"/>
+<area shape="rect" id="node29" href="$d1/d21/GlmJson_8hpp.html" title="Allows to serialize vectors and quaternions." alt="" coords="1150,321,1293,346"/>
+<area shape="rect" id="node31" href="$d3/d1b/Actor_8hpp.html" title="The simplest Object that exists on the game world." alt="" coords="1577,240,1751,265"/>
+<area shape="rect" id="node37" href="$d7/d47/DebugDrawLayer_8hpp.html" title=" " alt="" coords="811,79,1010,119"/>
+<area shape="rect" id="node43" href="$d0/dbb/World_8hpp.html" title=" " alt="" coords="1897,86,2023,111"/>
+<area shape="rect" id="node49" title=" " alt="" coords="2047,86,2193,111"/>
+<area shape="rect" id="node50" title=" " alt="" coords="2217,86,2287,111"/>
+<area shape="rect" id="node3" href="$d8/dc0/ColliderData_8hpp.html" title=" " alt="" coords="291,321,421,346"/>
+<area shape="rect" id="node4" title=" " alt="" coords="393,401,497,427"/>
+<area shape="rect" id="node5" href="$dd/d06/ColliderFlags_8hpp.html" title=" " alt="" coords="30,321,165,346"/>
+<area shape="rect" id="node6" href="$db/d57/Line_8hpp.html" title=" " alt="" coords="189,321,267,346"/>
+<area shape="rect" id="node7" href="$df/d1f/Component_8hpp.html" title="Base component class." alt="" coords="1615,401,1865,427"/>
+<area shape="rect" id="node8" href="$d7/d3f/Object_8hpp.html" title="Base Object Class." alt="" coords="1790,475,1973,500"/>
+<area shape="rect" id="node9" href="$d7/d5a/RTTIMacros_8h.html" title=" " alt="" coords="1669,548,1790,573"/>
+<area shape="rect" id="node10" href="$d5/d03/Factory_8hpp.html" title="Class in charge of Object creation (not anmymore)" alt="" coords="1815,548,1948,573"/>
+<area shape="rect" id="node11" href="$df/da3/ISerializable_8hpp.html" title="Interface for objects that can be saved and loaded from JSON." alt="" coords="1368,548,1536,573"/>
+<area shape="rect" id="node13" href="$d0/d82/Log_8hpp.html" title=" " alt="" coords="2234,548,2345,573"/>
+<area shape="rect" id="node17" title=" " alt="" coords="2173,621,2270,647"/>
+<area shape="rect" id="node18" title=" " alt="" coords="1972,548,2039,573"/>
+<area shape="rect" id="node19" title=" " alt="" coords="769,548,829,573"/>
+<area shape="rect" id="node20" href="$da/d8d/Children_8inl.html" title=" " alt="" coords="2063,548,2159,573"/>
+<area shape="rect" id="node21" href="$de/d16/Object_8inl.html" title=" " alt="" coords="1561,548,1645,573"/>
+<area shape="rect" id="node12" title=" " alt="" coords="1267,621,1413,647"/>
+<area shape="rect" id="node15" title=" " alt="" coords="2344,621,2411,647"/>
+<area shape="rect" id="node16" title=" " alt="" coords="732,621,791,647"/>
+<area shape="rect" id="node23" href="$d1/d62/Mesh_8hpp.html" title=" " alt="" coords="547,321,741,346"/>
+<area shape="rect" id="node24" href="$d5/dd0/IResource_8hpp.html" title=" " alt="" coords="572,401,687,427"/>
+<area shape="rect" id="node27" title=" " alt="" coords="798,401,877,427"/>
+<area shape="rect" id="node25" title=" " alt="" coords="787,475,853,500"/>
+<area shape="rect" id="node26" title=" " alt="" coords="645,475,712,500"/>
+<area shape="rect" id="node30" title=" " alt="" coords="1368,401,1541,427"/>
+<area shape="rect" id="node32" href="$d9/da8/TransformComponent_8hpp.html" title="Transform component for position, rotation, and scale." alt="" coords="1473,313,1684,353"/>
+<area shape="rect" id="node33" href="$d0/d1c/ListenerComponent_8hpp.html" title=" " alt="" coords="1989,321,2245,346"/>
+<area shape="rect" id="node34" title=" " alt="" coords="1990,401,2037,427"/>
+<area shape="rect" id="node35" title=" " alt="" coords="2061,401,2153,427"/>
+<area shape="rect" id="node36" title=" " alt="" coords="2177,401,2263,427"/>
+<area shape="rect" id="node38" href="$d2/dd6/ILayer_8hpp.html" title="Base interface for rendering layers." alt="" coords="990,167,1181,192"/>
+<area shape="rect" id="node40" href="$d4/d6e/Shader_8hpp.html" title=" " alt="" coords="917,321,1112,346"/>
+<area shape="rect" id="node39" href="$df/d7d/Event_8hpp.html" title="Base Event class." alt="" coords="2073,240,2239,265"/>
+<area shape="rect" id="node41" title=" " alt="" coords="1101,401,1192,427"/>
+<area shape="rect" id="node42" title=" " alt="" coords="953,401,1077,427"/>
+<area shape="rect" id="node44" href="$db/d8b/GameFlow_8hpp.html" title=" " alt="" coords="2307,167,2464,192"/>
+<area shape="rect" id="node45" title=" " alt="" coords="2449,240,2511,265"/>
+<area shape="rect" id="node46" href="$d0/d46/SceneLoadedEvent_8hpp.html" title="An event sent when the scene finishes being loaded." alt="" coords="2072,167,2283,192"/>
+<area shape="rect" id="node47" title=" " alt="" coords="1835,167,1899,192"/>
+<area shape="rect" id="node48" title=" " alt="" coords="1923,167,1997,192"/>
 </map>

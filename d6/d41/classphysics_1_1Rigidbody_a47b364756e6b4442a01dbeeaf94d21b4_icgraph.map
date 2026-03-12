@@ -1,6 +1,0 @@
-<map id="physics::Rigidbody::UpdateInterpolationAlpha" name="physics::Rigidbody::UpdateInterpolationAlpha">
-<area shape="rect" id="node1" title="Update interpolation alpha based on time since last physics step." alt="" coords="544,5,741,45"/>
-<area shape="rect" id="node2" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#af8229c43c68fc2b167cc684f768e8c2c" title="Call from render thread (Tick/LateTick) to update visual transforms with interpolation." alt="" coords="296,5,496,45"/>
-<area shape="rect" id="node3" href="$d9/d4f/classtoast_1_1Engine.html#ae7f81d670cc27f32ce9fcc4bd3bab1d5" title="Starts the engine and enters the main game loop." alt="" coords="108,13,248,38"/>
-<area shape="rect" id="node4" href="$dd/d43/Linux_8inl.html#a3c04138a5bfe5d72780bb7e82a18e627" title=" " alt="" coords="5,13,60,38"/>
-</map>

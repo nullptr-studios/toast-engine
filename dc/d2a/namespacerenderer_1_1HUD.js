@@ -4,6 +4,7 @@ var namespacerenderer_1_1HUD =
     [ "HUDLayerLoadListener", "de/dbb/classrenderer_1_1HUD_1_1HUDLayerLoadListener.html", "de/dbb/classrenderer_1_1HUD_1_1HUDLayerLoadListener" ],
     [ "ToastLoadListener", "d1/dff/classrenderer_1_1HUD_1_1ToastLoadListener.html", "d1/dff/classrenderer_1_1HUD_1_1ToastLoadListener" ],
     [ "ToastViewListener", "d3/de3/classrenderer_1_1HUD_1_1ToastViewListener.html", "d3/de3/classrenderer_1_1HUD_1_1ToastViewListener" ],
+    [ "CompileShader", "dc/d2a/namespacerenderer_1_1HUD.html#a99d8fb6674d94e1c028460fdb186f488", null ],
     [ "GLFWKeyToUltralightKey", "dc/d2a/namespacerenderer_1_1HUD.html#a3c25f3a57658740f36a9666fe45c3b5e", null ],
     [ "HUDCharCallback", "dc/d2a/namespacerenderer_1_1HUD.html#a5292e35b6beeabf6284f50a6751a26e0", null ],
     [ "HUDCursorPosCallback", "dc/d2a/namespacerenderer_1_1HUD.html#adc82be7bb76ae280259ac8b1fa9d1c86", null ],
@@ -17,5 +18,7 @@ var namespacerenderer_1_1HUD =
     [ "g_prev_key_callback", "dc/d2a/namespacerenderer_1_1HUD.html#a7fd49f1eb45067e06ad5d367570c79cc", null ],
     [ "g_prev_mouse_button_callback", "dc/d2a/namespacerenderer_1_1HUD.html#ae8db3e4ce570dcfeb4e155fa3078cdde", null ],
     [ "g_prev_scroll_callback", "dc/d2a/namespacerenderer_1_1HUD.html#a70ca2f31811fae6488733bffd52fbb6b", null ],
-    [ "g_view_listener", "dc/d2a/namespacerenderer_1_1HUD.html#a6c03daacb4dce4929f4a7864af5259db", null ]
+    [ "g_view_listener", "dc/d2a/namespacerenderer_1_1HUD.html#a6c03daacb4dce4929f4a7864af5259db", null ],
+    [ "kBlurFragSrc", "dc/d2a/namespacerenderer_1_1HUD.html#a925f633d8b58c5ed9355486803fe2b12", null ],
+    [ "kBlurVertSrc", "dc/d2a/namespacerenderer_1_1HUD.html#a6bdd2a718969a93f39259bae24678d9e", null ]
 ];

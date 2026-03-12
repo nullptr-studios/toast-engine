@@ -1,0 +1,4 @@
+<map id="renderer::HUD::HUDLayer::SortViewsByOrder" name="renderer::HUD::HUDLayer::SortViewsByOrder">
+<area shape="rect" id="node1" title=" " alt="" coords="243,5,432,45"/>
+<area shape="rect" id="node2" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#ac6fecc17bc732d73ba302ca877c5bc0a" title="Set the sort order for a view (higher values render on top)" alt="" coords="5,5,195,45"/>
+</map>

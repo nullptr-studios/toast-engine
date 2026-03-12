@@ -4,6 +4,8 @@ var classphysics_1_1ConvexCollider =
     [ "ConvexCollider", "dd/d88/classphysics_1_1ConvexCollider.html#a4f36e15379013bcd603f75f1255b8bf3", null ],
     [ "~ConvexCollider", "dd/d88/classphysics_1_1ConvexCollider.html#a4d88df92252405e2d8ccb01c416b200b", null ],
     [ "Debug", "dd/d88/classphysics_1_1ConvexCollider.html#a9dd869f0a9981150d01de12e844c2679", null ],
+    [ "getAABB", "dd/d88/classphysics_1_1ConvexCollider.html#a478972cdef800c0fbbedd4bdb181d532", null ],
     [ "edges", "dd/d88/classphysics_1_1ConvexCollider.html#af819eb18beb96b3b47f7337c70b7f7e4", null ],
+    [ "m_aabb", "dd/d88/classphysics_1_1ConvexCollider.html#aa7b40f62248eea701027d8bae620697e", null ],
     [ "vertices", "dd/d88/classphysics_1_1ConvexCollider.html#ae7b1612e470258be5f201e6b9e091823", null ]
 ];

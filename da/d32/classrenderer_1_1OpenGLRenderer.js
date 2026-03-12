@@ -19,6 +19,7 @@ var classrenderer_1_1OpenGLRenderer =
     [ "Resize", "da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72", null ],
     [ "SpritePass", "da/d32/classrenderer_1_1OpenGLRenderer.html#aab2464f0c7da8d5ca052139d87399534", null ],
     [ "StartImGuiFrame", "da/d32/classrenderer_1_1OpenGLRenderer.html#a83277b8741fc34f5ee7d1a8882e8e492", null ],
+    [ "m_combinedRenderables", "da/d32/classrenderer_1_1OpenGLRenderer.html#afa1181d059a025d2982323e84edea488", null ],
     [ "m_combineLightShader", "da/d32/classrenderer_1_1OpenGLRenderer.html#ae07ee52543c5d581bd9385e979a9a852", null ],
     [ "m_globalLight", "da/d32/classrenderer_1_1OpenGLRenderer.html#a0ccab867a2bdb1eb020da50073c0480a", null ],
     [ "m_globalLightShader", "da/d32/classrenderer_1_1OpenGLRenderer.html#ac354fe3d950faec4e04f79b37b0e0cda", null ],

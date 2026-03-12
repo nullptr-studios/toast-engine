@@ -211,6 +211,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a8bba6f987aafbef6bbf7212db18aaa4c inherit pub_methods_classrenderer_1_1IRendererBase"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a8bba6f987aafbef6bbf7212db18aaa4c">RemoveTransparentRenderable</a> (<a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> *renderable)=0</td></tr>
 <tr class="memdesc:a8bba6f987aafbef6bbf7212db18aaa4c inherit pub_methods_classrenderer_1_1IRendererBase"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a transparent/sprite renderable from the sprite pass queue.  <br /></td></tr>
 <tr class="separator:a8bba6f987aafbef6bbf7212db18aaa4c inherit pub_methods_classrenderer_1_1IRendererBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2d1338bd423745a6e2683b381e13a53 inherit pub_methods_classrenderer_1_1IRendererBase"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#ab2d1338bd423745a6e2683b381e13a53">DisableRenderable</a> (<a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> *renderable)</td></tr>
+<tr class="separator:ab2d1338bd423745a6e2683b381e13a53 inherit pub_methods_classrenderer_1_1IRendererBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7f7f6f52f2fa4dd840f403e0d889f447 inherit pub_methods_classrenderer_1_1IRendererBase"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a7f7f6f52f2fa4dd840f403e0d889f447">EnableRenderable</a> (<a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> *renderable)</td></tr>
+<tr class="separator:a7f7f6f52f2fa4dd840f403e0d889f447 inherit pub_methods_classrenderer_1_1IRendererBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6a9bda281589f4a86fb3ef9ab58a21fd inherit pub_methods_classrenderer_1_1IRendererBase"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a6a9bda281589f4a86fb3ef9ab58a21fd">AddLight</a> (<a class="el" href="../../d0/db0/classLight2D.html">Light2D</a> *light)=0</td></tr>
 <tr class="memdesc:a6a9bda281589f4a86fb3ef9ab58a21fd inherit pub_methods_classrenderer_1_1IRendererBase"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a 2D light to the lighting system.  <br /></td></tr>
 <tr class="separator:a6a9bda281589f4a86fb3ef9ab58a21fd inherit pub_methods_classrenderer_1_1IRendererBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -300,6 +304,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a8a3d7f26ea7b2596ea34d3b7d79e7742"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ccab867a2bdb1eb020da50073c0480a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d72/classGlobalLight.html">GlobalLight</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a0ccab867a2bdb1eb020da50073c0480a">m_globalLight</a> = nullptr</td></tr>
 <tr class="separator:a0ccab867a2bdb1eb020da50073c0480a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa1181d059a025d2982323e84edea488"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#afa1181d059a025d2982323e84edea488">m_combinedRenderables</a></td></tr>
+<tr class="separator:afa1181d059a025d2982323e84edea488"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a46af6b2b208cd54ed46912cc26597e5a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d58/classFramebuffer.html">Framebuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46af6b2b208cd54ed46912cc26597e5a">m_layerFramebuffer</a> = nullptr</td></tr>
 <tr class="separator:a46af6b2b208cd54ed46912cc26597e5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -332,8 +338,10 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memdesc:abaa6c4963475e194a208a54352d7ab66 inherit pro_attribs_classrenderer_1_1IRendererBase"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opaque renderable objects (geometry pass)  <br /></td></tr>
 <tr class="separator:abaa6c4963475e194a208a54352d7ab66 inherit pro_attribs_classrenderer_1_1IRendererBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5c9e2aab80ed9e109bde8a3d090756c9 inherit pro_attribs_classrenderer_1_1IRendererBase"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a5c9e2aab80ed9e109bde8a3d090756c9">m_transparentRenderables</a></td></tr>
-<tr class="memdesc:a5c9e2aab80ed9e109bde8a3d090756c9 inherit pro_attribs_classrenderer_1_1IRendererBase"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transparent/sprite renderables (sprite pass, post-combine)  <br /></td></tr>
 <tr class="separator:a5c9e2aab80ed9e109bde8a3d090756c9 inherit pro_attribs_classrenderer_1_1IRendererBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0227c77885ea682293b97d4e4b7126fc inherit pro_attribs_classrenderer_1_1IRendererBase"><td class="memItemLeft" align="right" valign="top">std::unordered_set&lt; <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a0227c77885ea682293b97d4e4b7126fc">m_disabledRenderables</a></td></tr>
+<tr class="memdesc:a0227c77885ea682293b97d4e4b7126fc inherit pro_attribs_classrenderer_1_1IRendererBase"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of renderables that are currently disabled — excluded from the geometry pass.  <br /></td></tr>
+<tr class="separator:a0227c77885ea682293b97d4e4b7126fc inherit pro_attribs_classrenderer_1_1IRendererBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a80c283b5635016a930c8eca31655014e inherit pro_attribs_classrenderer_1_1IRendererBase"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d0/db0/classLight2D.html">Light2D</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a80c283b5635016a930c8eca31655014e">m_lights</a></td></tr>
 <tr class="memdesc:a80c283b5635016a930c8eca31655014e inherit pro_attribs_classrenderer_1_1IRendererBase"><td class="mdescLeft">&#160;</td><td class="mdescRight">All 2D lights in the scene.  <br /></td></tr>
 <tr class="separator:a80c283b5635016a930c8eca31655014e inherit pro_attribs_classrenderer_1_1IRendererBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -421,7 +429,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00287">287</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00283">283</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 
 </div>
 </div>
@@ -461,7 +469,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a6a9bda281589f4a86fb3ef9ab58a21fd">renderer::IRendererBase</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00776">776</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00735">735</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 
 </div>
 </div>
@@ -500,7 +508,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a07f9cf1f03d2c5f2aa89b094bb14505c">renderer::IRendererBase</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00702">702</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00705">705</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 
 </div>
 </div>
@@ -533,7 +541,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a10414aa890ea41a4a32536bb35635528">renderer::IRendererBase</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00712">712</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00719">719</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 
 </div>
 </div>
@@ -564,7 +572,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a110b9c3679ffcc787ce2a5fe334d3358">renderer::IRendererBase</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00786">786</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00748">748</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 
 </div>
 </div>
@@ -596,7 +604,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a541528bece8c0b5fba565b8401e6c1b0">renderer::IRendererBase</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00670">670</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00673">673</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -625,7 +633,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00606">606</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00609">609</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -666,7 +674,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#aa7690cb062c8f09aa245f402b05853c4">renderer::IRendererBase</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00316">316</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00312">312</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 
 </div>
 </div>
@@ -685,7 +693,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00468">468</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00461">461</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -713,7 +721,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00800">800</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00762">762</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -741,7 +749,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00521">521</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00525">525</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -788,7 +796,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a200c37ffe55ba5819b9d63b862cc723d">renderer::IRendererBase</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00781">781</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00740">740</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 
 </div>
 </div>
@@ -826,7 +834,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#ac193916b3c6024df40964aeda936d470">renderer::IRendererBase</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00707">707</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00710">710</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 
 </div>
 </div>
@@ -858,7 +866,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a8bba6f987aafbef6bbf7212db18aaa4c">renderer::IRendererBase</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00717">717</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00724">724</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 
 </div>
 </div>
@@ -890,7 +898,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a8419a7d264475c7f170c77144cf372f3">renderer::IRendererBase</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00341">341</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00337">337</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 
 </div>
 </div>
@@ -929,7 +937,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a237d66424970fa52bcc89b14b3a32251">renderer::IRendererBase</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00674">674</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00677">677</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -957,16 +965,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00725">725</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../da/d32/classrenderer_1_1OpenGLRenderer_aab2464f0c7da8d5ca052139d87399534_icgraph.png" border="0" usemap="#ada/d32/classrenderer_1_1OpenGLRenderer_aab2464f0c7da8d5ca052139d87399534_icgraph" alt=""/></div>
-<map name="ada/d32/classrenderer_1_1OpenGLRenderer_aab2464f0c7da8d5ca052139d87399534_icgraph" id="ada/d32/classrenderer_1_1OpenGLRenderer_aab2464f0c7da8d5ca052139d87399534_icgraph">
-<area shape="rect" title=" " alt="" coords="248,5,443,45"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,5,200,45"/>
-</map>
-</div>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00733">733</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 
 </div>
 </div>
@@ -998,11 +997,35 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a74f64319bbbf85b58c8c9300c63f9a62">renderer::IRendererBase</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00301">301</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00297">297</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
+<a id="afa1181d059a025d2982323e84edea488" name="afa1181d059a025d2982323e84edea488"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa1181d059a025d2982323e84edea488">&#9670;&#160;</a></span>m_combinedRenderables</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;<a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a>*&gt; renderer::OpenGLRenderer::m_combinedRenderables</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../db/db0/OpenGLRenderer_8hpp_source.html#l00060">60</a> of file <a class="el" href="../../db/db0/OpenGLRenderer_8hpp_source.html">OpenGLRenderer.hpp</a>.</p>
+
+</div>
+</div>
 <a id="ae07ee52543c5d581bd9385e979a9a852" name="ae07ee52543c5d581bd9385e979a9a852"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae07ee52543c5d581bd9385e979a9a852">&#9670;&#160;</a></span>m_combineLightShader</h2>
 
@@ -1095,7 +1118,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/db0/OpenGLRenderer_8hpp_source.html#l00061">61</a> of file <a class="el" href="../../db/db0/OpenGLRenderer_8hpp_source.html">OpenGLRenderer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/db0/OpenGLRenderer_8hpp_source.html#l00063">63</a> of file <a class="el" href="../../db/db0/OpenGLRenderer_8hpp_source.html">OpenGLRenderer.hpp</a>.</p>
 
 </div>
 </div>

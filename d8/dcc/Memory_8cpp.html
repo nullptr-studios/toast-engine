@@ -93,34 +93,24 @@ $(document).ready(function(){initNavTree('d8/dcc/Memory_8cpp.html','../../'); in
 
 <div class="header">
   <div class="summary">
-<a href="#define-members">Macros</a>  </div>
+<a href="#define-members">Macros</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">Memory.cpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d18/Memory_8hpp_source.html">Toast/Memory.hpp</a>&quot;</code><br />
-<code>#include &lt;algorithm&gt;</code><br />
-<code>#include &lt;array&gt;</code><br />
-<code>#include &lt;atomic&gt;</code><br />
-<code>#include &lt;cstdint&gt;</code><br />
 <code>#include &lt;cstdlib&gt;</code><br />
 <code>#include &lt;new&gt;</code><br />
-<code>#include &lt;stdlib.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Memory.cpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d0/df3/Memory_8cpp__incl.png" border="0" usemap="#asrc_2Toast_2Memory_8cpp" alt=""/></div>
 <map name="asrc_2Toast_2Memory_8cpp" id="asrc_2Toast_2Memory_8cpp">
-<area shape="rect" title=" " alt="" coords="367,5,530,31"/>
-<area shape="rect" href="../../d4/d18/Memory_8hpp.html" title="Custom memory allocation system with pooling." alt="" coords="16,79,156,104"/>
-<area shape="rect" title=" " alt="" coords="181,79,266,104"/>
-<area shape="rect" title=" " alt="" coords="290,79,346,104"/>
-<area shape="rect" title=" " alt="" coords="370,79,437,104"/>
-<area shape="rect" title=" " alt="" coords="461,79,527,104"/>
-<area shape="rect" title=" " alt="" coords="552,79,617,104"/>
-<area shape="rect" title=" " alt="" coords="641,79,691,104"/>
-<area shape="rect" title=" " alt="" coords="715,79,785,104"/>
-<area shape="rect" title=" " alt="" coords="5,152,76,177"/>
-<area shape="rect" title=" " alt="" coords="100,152,163,177"/>
+<area shape="rect" title=" " alt="" coords="121,5,283,31"/>
+<area shape="rect" href="../../d4/d18/Memory_8hpp.html" title="Memory utilities &#45; uses default global allocator with optional Tracy profiling." alt="" coords="5,79,145,104"/>
+<area shape="rect" title=" " alt="" coords="169,79,235,104"/>
+<area shape="rect" title=" " alt="" coords="259,79,308,104"/>
+<area shape="rect" title=" " alt="" coords="40,152,111,177"/>
 </map>
 </div>
 </div>
@@ -132,6 +122,37 @@ Macros</h2></td></tr>
 <tr class="separator:a48d3e230b2026b634b4a38e84d76a756"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0635133a5cc2e9200ed0f4b2ac7090a5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#a0635133a5cc2e9200ed0f4b2ac7090a5">TRACY_FREE_SAFE</a>(ptr)&#160;&#160;&#160;((void)0)</td></tr>
 <tr class="separator:a0635133a5cc2e9200ed0f4b2ac7090a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:acfad8f0764cf06b8abd170d8569a7b3f"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#acfad8f0764cf06b8abd170d8569a7b3f">operator new</a> (std::size_t size)</td></tr>
+<tr class="separator:acfad8f0764cf06b8abd170d8569a7b3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8fb4213ce34d87b1076be664d2e6ff53"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#a8fb4213ce34d87b1076be664d2e6ff53">operator new[]</a> (std::size_t size)</td></tr>
+<tr class="separator:a8fb4213ce34d87b1076be664d2e6ff53"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f6b8317cec9efc1c7d7ac039cc8ebe5"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#a9f6b8317cec9efc1c7d7ac039cc8ebe5">operator new</a> (std::size_t size, const std::nothrow_t &amp;) noexcept</td></tr>
+<tr class="separator:a9f6b8317cec9efc1c7d7ac039cc8ebe5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec6fc9bf634e2b404b1c7d7f581cc86c"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#aec6fc9bf634e2b404b1c7d7f581cc86c">operator new[]</a> (std::size_t size, const std::nothrow_t &amp;) noexcept</td></tr>
+<tr class="separator:aec6fc9bf634e2b404b1c7d7f581cc86c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeca504f5967ac17351b25e9b0c1a2fe9"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#aeca504f5967ac17351b25e9b0c1a2fe9">operator new</a> (std::size_t size, std::align_val_t alignment)</td></tr>
+<tr class="separator:aeca504f5967ac17351b25e9b0c1a2fe9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3fac7402551eec3efc0e16189e6bf413"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#a3fac7402551eec3efc0e16189e6bf413">operator new[]</a> (std::size_t size, std::align_val_t alignment)</td></tr>
+<tr class="separator:a3fac7402551eec3efc0e16189e6bf413"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa145befcf5e7b83424408ca503c8637"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#afa145befcf5e7b83424408ca503c8637">operator delete</a> (void *ptr) noexcept</td></tr>
+<tr class="separator:afa145befcf5e7b83424408ca503c8637"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22aea74a1155aa798d6032da46da2391"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#a22aea74a1155aa798d6032da46da2391">operator delete[]</a> (void *ptr) noexcept</td></tr>
+<tr class="separator:a22aea74a1155aa798d6032da46da2391"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2ba75765a3f3daf016fb56491444747"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#ab2ba75765a3f3daf016fb56491444747">operator delete</a> (void *ptr, std::size_t) noexcept</td></tr>
+<tr class="separator:ab2ba75765a3f3daf016fb56491444747"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0b62de26bfea6ea21db5445b98edda35"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#a0b62de26bfea6ea21db5445b98edda35">operator delete[]</a> (void *ptr, std::size_t) noexcept</td></tr>
+<tr class="separator:a0b62de26bfea6ea21db5445b98edda35"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8550e9bb1c5db86131284c9c9f4941d7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#a8550e9bb1c5db86131284c9c9f4941d7">operator delete</a> (void *ptr, const std::nothrow_t &amp;) noexcept</td></tr>
+<tr class="separator:a8550e9bb1c5db86131284c9c9f4941d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a32e6840057e14ada18c1f92c0ba0cbf0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#a32e6840057e14ada18c1f92c0ba0cbf0">operator delete[]</a> (void *ptr, const std::nothrow_t &amp;) noexcept</td></tr>
+<tr class="separator:a32e6840057e14ada18c1f92c0ba0cbf0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae687fe1d0a408ab4f327a7dd0348744d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#ae687fe1d0a408ab4f327a7dd0348744d">operator delete</a> (void *ptr, std::align_val_t) noexcept</td></tr>
+<tr class="separator:ae687fe1d0a408ab4f327a7dd0348744d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a51eaa66737259e15193bb7239a382b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dcc/Memory_8cpp.html#a3a51eaa66737259e15193bb7239a382b">operator delete[]</a> (void *ptr, std::align_val_t) noexcept</td></tr>
+<tr class="separator:a3a51eaa66737259e15193bb7239a382b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a48d3e230b2026b634b4a38e84d76a756" name="a48d3e230b2026b634b4a38e84d76a756"></a>
@@ -160,7 +181,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00050">50</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00041">41</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
 
 </div>
 </div>
@@ -180,7 +201,468 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00051">51</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00042">42</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Function Documentation</h2>
+<a id="afa145befcf5e7b83424408ca503c8637" name="afa145befcf5e7b83424408ca503c8637"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa145befcf5e7b83424408ca503c8637">&#9670;&#160;</a></span>operator delete() <span class="overload">[1/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void operator delete </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>ptr</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00121">121</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a8550e9bb1c5db86131284c9c9f4941d7" name="a8550e9bb1c5db86131284c9c9f4941d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8550e9bb1c5db86131284c9c9f4941d7">&#9670;&#160;</a></span>operator delete() <span class="overload">[2/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void operator delete </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::nothrow_t &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00141">141</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ae687fe1d0a408ab4f327a7dd0348744d" name="ae687fe1d0a408ab4f327a7dd0348744d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae687fe1d0a408ab4f327a7dd0348744d">&#9670;&#160;</a></span>operator delete() <span class="overload">[3/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void operator delete </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::align_val_t&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00151">151</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ab2ba75765a3f3daf016fb56491444747" name="ab2ba75765a3f3daf016fb56491444747"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2ba75765a3f3daf016fb56491444747">&#9670;&#160;</a></span>operator delete() <span class="overload">[4/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void operator delete </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::size_t&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00131">131</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a22aea74a1155aa798d6032da46da2391" name="a22aea74a1155aa798d6032da46da2391"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a22aea74a1155aa798d6032da46da2391">&#9670;&#160;</a></span>operator delete[]() <span class="overload">[1/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void operator delete[] </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>ptr</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00126">126</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a32e6840057e14ada18c1f92c0ba0cbf0" name="a32e6840057e14ada18c1f92c0ba0cbf0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a32e6840057e14ada18c1f92c0ba0cbf0">&#9670;&#160;</a></span>operator delete[]() <span class="overload">[2/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void operator delete[] </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::nothrow_t &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00146">146</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a3a51eaa66737259e15193bb7239a382b" name="a3a51eaa66737259e15193bb7239a382b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3a51eaa66737259e15193bb7239a382b">&#9670;&#160;</a></span>operator delete[]() <span class="overload">[3/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void operator delete[] </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::align_val_t&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00160">160</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a0b62de26bfea6ea21db5445b98edda35" name="a0b62de26bfea6ea21db5445b98edda35"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0b62de26bfea6ea21db5445b98edda35">&#9670;&#160;</a></span>operator delete[]() <span class="overload">[4/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void operator delete[] </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::size_t&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00136">136</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<a id="acfad8f0764cf06b8abd170d8569a7b3f" name="acfad8f0764cf06b8abd170d8569a7b3f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acfad8f0764cf06b8abd170d8569a7b3f">&#9670;&#160;</a></span>operator new() <span class="overload">[1/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void * operator new </td>
+          <td>(</td>
+          <td class="paramtype">std::size_t&#160;</td>
+          <td class="paramname"><em>size</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00047">47</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a9f6b8317cec9efc1c7d7ac039cc8ebe5" name="a9f6b8317cec9efc1c7d7ac039cc8ebe5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f6b8317cec9efc1c7d7ac039cc8ebe5">&#9670;&#160;</a></span>operator new() <span class="overload">[2/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void * operator new </td>
+          <td>(</td>
+          <td class="paramtype">std::size_t&#160;</td>
+          <td class="paramname"><em>size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::nothrow_t &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00065">65</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aeca504f5967ac17351b25e9b0c1a2fe9" name="aeca504f5967ac17351b25e9b0c1a2fe9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeca504f5967ac17351b25e9b0c1a2fe9">&#9670;&#160;</a></span>operator new() <span class="overload">[3/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void * operator new </td>
+          <td>(</td>
+          <td class="paramtype">std::size_t&#160;</td>
+          <td class="paramname"><em>size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::align_val_t&#160;</td>
+          <td class="paramname"><em>alignment</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00081">81</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a8fb4213ce34d87b1076be664d2e6ff53" name="a8fb4213ce34d87b1076be664d2e6ff53"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8fb4213ce34d87b1076be664d2e6ff53">&#9670;&#160;</a></span>operator new[]() <span class="overload">[1/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void * operator new[] </td>
+          <td>(</td>
+          <td class="paramtype">std::size_t&#160;</td>
+          <td class="paramname"><em>size</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00056">56</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aec6fc9bf634e2b404b1c7d7f581cc86c" name="aec6fc9bf634e2b404b1c7d7f581cc86c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aec6fc9bf634e2b404b1c7d7f581cc86c">&#9670;&#160;</a></span>operator new[]() <span class="overload">[2/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void * operator new[] </td>
+          <td>(</td>
+          <td class="paramtype">std::size_t&#160;</td>
+          <td class="paramname"><em>size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::nothrow_t &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00073">73</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a3fac7402551eec3efc0e16189e6bf413" name="a3fac7402551eec3efc0e16189e6bf413"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3fac7402551eec3efc0e16189e6bf413">&#9670;&#160;</a></span>operator new[]() <span class="overload">[3/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void * operator new[] </td>
+          <td>(</td>
+          <td class="paramtype">std::size_t&#160;</td>
+          <td class="paramname"><em>size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::align_val_t&#160;</td>
+          <td class="paramname"><em>alignment</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/dcc/Memory_8cpp_source.html#l00101">101</a> of file <a class="el" href="../../d8/dcc/Memory_8cpp_source.html">Memory.cpp</a>.</p>
 
 </div>
 </div>

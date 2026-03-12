@@ -1,11 +1,11 @@
 var classPool =
 [
-    [ "Pool", "d5/d0b/classPool.html#a8aff6c269544b3623afd5fed24e89101", null ],
-    [ "~Pool", "d5/d0b/classPool.html#afa7be03325f1890a9e0f452231464eb0", null ],
+    [ "EarlyTick", "d5/d0b/classPool.html#a6b9d794d7b296b25332d669a749599cc", null ],
     [ "Hold", "d5/d0b/classPool.html#a7d3b7c8ebf0a6cde4a18336853d28fda", null ],
+    [ "Init", "d5/d0b/classPool.html#a1482d253225e87870c64876806e8235d", null ],
+    [ "REGISTER_ABSTRACT", "d5/d0b/classPool.html#a4541945afa552fc30b7fcad9f6b3e53b", null ],
     [ "Release", "d5/d0b/classPool.html#ab25afd9d7b6ea0f831a8d3436a5215d5", null ],
-    [ "RemoveAll", "d5/d0b/classPool.html#a05c11203d2e3bbe30af8370342f80aaf", null ],
-    [ "free_objects", "d5/d0b/classPool.html#a79a6b238e27bd00b2fb8d23dcb7f9cd9", null ],
-    [ "object_pool", "d5/d0b/classPool.html#af573c6905bb3b63b9452fe975453b34e", null ],
-    [ "scene", "d5/d0b/classPool.html#ae91d49a0f9faac17b5734c3f8d5ac45d", null ]
+    [ "m_free", "d5/d0b/classPool.html#a71103d03399684cfd116a64a47521828", null ],
+    [ "m_pool", "d5/d0b/classPool.html#ae792033f1e0fd1dd8182b4f1380ce782", null ],
+    [ "m_poolReady", "d5/d0b/classPool.html#adfe5e092c15af5675c41435df0839109", null ]
 ];

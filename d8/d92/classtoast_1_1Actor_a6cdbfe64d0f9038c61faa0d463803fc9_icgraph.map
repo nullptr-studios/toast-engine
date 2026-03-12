@@ -1,13 +1,11 @@
 <map id="toast::Actor::transform" name="toast::Actor::transform">
-<area shape="rect" id="node1" title=" " alt="" coords="717,169,887,195"/>
-<area shape="rect" id="node2" href="$d4/d9c/classphysics_1_1Trigger.html#a4970415b9725781eaebe9c0f416ea42e" title="This function runs every frame in the editor." alt="" coords="473,5,669,31"/>
-<area shape="rect" id="node3" href="$d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="521,55,622,80"/>
-<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="474,105,669,145"/>
-<area shape="rect" id="node6" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="499,169,643,195"/>
-<area shape="rect" id="node7" href="$d5/dd0/namespacephysics.html#a0027d3725be030a56a5ccb3a36b91616" title=" " alt="" coords="473,219,669,244"/>
-<area shape="rect" id="node10" href="$d0/db0/classLight2D.html#a21d10d0a00f1ac024c4c1f393f8eda50" title=" " alt="" coords="499,268,644,293"/>
-<area shape="rect" id="node11" href="$d5/d10/structtoast_1_1Transform2.html#ad1c1969f56ed7c1efe51f3b5e8776084" title=" " alt="" coords="486,318,657,358"/>
-<area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="231,105,425,145"/>
-<area shape="rect" id="node8" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a98b9cecc3733f9a2042e2bda4dd89ede" title=" " alt="" coords="239,211,417,251"/>
-<area shape="rect" id="node9" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a4228ce051340b69a1c777e7d633153cf" title=" " alt="" coords="5,211,183,251"/>
+<area shape="rect" id="node1" title=" " alt="" coords="492,145,661,171"/>
+<area shape="rect" id="node2" href="$d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="295,5,397,31"/>
+<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="249,55,443,95"/>
+<area shape="rect" id="node5" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="274,120,418,145"/>
+<area shape="rect" id="node6" href="$d5/dd0/namespacephysics.html#a0027d3725be030a56a5ccb3a36b91616" title=" " alt="" coords="248,169,444,195"/>
+<area shape="rect" id="node8" href="$d0/db0/classLight2D.html#a21d10d0a00f1ac024c4c1f393f8eda50" title=" " alt="" coords="273,219,419,244"/>
+<area shape="rect" id="node9" href="$d5/d10/structtoast_1_1Transform2.html#ad1c1969f56ed7c1efe51f3b5e8776084" title=" " alt="" coords="261,269,431,309"/>
+<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,55,200,95"/>
+<area shape="rect" id="node7" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a98b9cecc3733f9a2042e2bda4dd89ede" title=" " alt="" coords="14,162,191,202"/>
 </map>

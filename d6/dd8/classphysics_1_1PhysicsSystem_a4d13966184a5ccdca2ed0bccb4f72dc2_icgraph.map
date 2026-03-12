@@ -1,4 +1,7 @@
 <map id="physics::PhysicsSystem::start" name="physics::PhysicsSystem::start">
-<area shape="rect" id="node1" title=" " alt="" coords="199,5,376,45"/>
-<area shape="rect" id="node2" href="$d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,13,151,38"/>
+<area shape="rect" id="node1" title=" " alt="" coords="489,23,667,63"/>
+<area shape="rect" id="node2" href="$d9/d4f/classtoast_1_1Engine.html#a0c34e7e61832e0e38f2708a737684607" title="Initializes all engine subsystems." alt="" coords="301,5,437,31"/>
+<area shape="rect" id="node5" href="$d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="296,55,441,80"/>
+<area shape="rect" id="node3" href="$d9/d4f/classtoast_1_1Engine.html#ae7f81d670cc27f32ce9fcc4bd3bab1d5" title="Starts the engine and enters the main game loop." alt="" coords="108,5,248,31"/>
+<area shape="rect" id="node4" href="$dd/d43/Linux_8inl.html#a3c04138a5bfe5d72780bb7e82a18e627" title=" " alt="" coords="5,5,60,31"/>
 </map>

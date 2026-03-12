@@ -1,7 +1,8 @@
 <map id="toast::ISerializable::Save" name="toast::ISerializable::Save">
-<area shape="rect" id="node1" title="Saves object state to JSON." alt="" coords="536,69,679,109"/>
-<area shape="rect" id="node2" href="$d0/dd9/classtoast_1_1TransformComponent.html#adf007c932918c5e80b026e6171737e53" title="Saves object state to JSON." alt="" coords="285,69,488,109"/>
-<area shape="rect" id="node3" href="$d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a0c473abdbd3eb4f1fb7353285af63fc2" title="Saves object state to JSON." alt="" coords="17,5,226,45"/>
-<area shape="rect" id="node4" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a280b3b0aa0dc11e1e4969188efac3d4e" title="Saves object state to JSON." alt="" coords="5,69,237,109"/>
-<area shape="rect" id="node5" href="$df/d2b/classtoast_1_1ParticleSystem.html#aedcfd1b586c5f620e76aaaa76670f7f7" title="Saves object state to JSON." alt="" coords="41,133,201,173"/>
+<area shape="rect" id="node1" title="Saves object state to JSON." alt="" coords="536,41,679,81"/>
+<area shape="rect" id="node2" href="$d4/da6/classtoast_1_1HtmlView.html#a477d2793098b8a432f2628e0203d47bb" title="Saves object state to JSON." alt="" coords="303,19,470,45"/>
+<area shape="rect" id="node3" href="$d0/dd9/classtoast_1_1TransformComponent.html#adf007c932918c5e80b026e6171737e53" title="Saves object state to JSON." alt="" coords="285,69,488,109"/>
+<area shape="rect" id="node4" href="$d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a0c473abdbd3eb4f1fb7353285af63fc2" title="Saves object state to JSON." alt="" coords="17,5,226,45"/>
+<area shape="rect" id="node5" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a280b3b0aa0dc11e1e4969188efac3d4e" title="Saves object state to JSON." alt="" coords="5,69,237,109"/>
+<area shape="rect" id="node6" href="$df/d2b/classtoast_1_1ParticleSystem.html#aedcfd1b586c5f620e76aaaa76670f7f7" title="Saves object state to JSON." alt="" coords="41,133,201,173"/>
 </map>

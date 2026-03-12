@@ -170,6 +170,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab9559746af63354a4f65b28e19325e23"><td class="memItemLeft" align="right" valign="top">ultralight::RefPtr&lt; ultralight::View &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#ab9559746af63354a4f65b28e19325e23">CreateView</a> (uint32_t width, uint32_t height, ultralight::ViewConfig config={})</td></tr>
 <tr class="memdesc:ab9559746af63354a4f65b28e19325e23"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an additional Ultralight view managed by this <a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html">HUD</a> layer.  <br /></td></tr>
 <tr class="separator:ab9559746af63354a4f65b28e19325e23"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aebf5ec99afb1285f0da09a5ab46dd749"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#aebf5ec99afb1285f0da09a5ab46dd749">RemoveView</a> (const ultralight::RefPtr&lt; ultralight::View &gt; &amp;view)</td></tr>
+<tr class="memdesc:aebf5ec99afb1285f0da09a5ab46dd749"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove a previously created view from this <a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html">HUD</a> layer.  <br /></td></tr>
+<tr class="separator:aebf5ec99afb1285f0da09a5ab46dd749"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6fecc17bc732d73ba302ca877c5bc0a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#ac6fecc17bc732d73ba302ca877c5bc0a">SetViewSortOrder</a> (const ultralight::RefPtr&lt; ultralight::View &gt; &amp;view, int order)</td></tr>
+<tr class="memdesc:ac6fecc17bc732d73ba302ca877c5bc0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the sort order for a view (higher values render on top)  <br /></td></tr>
+<tr class="separator:ac6fecc17bc732d73ba302ca877c5bc0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1bcb55e2090bed41c9d82d99a178ee97"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a1bcb55e2090bed41c9d82d99a178ee97">Resize</a> (uint32_t width, uint32_t height)</td></tr>
 <tr class="memdesc:a1bcb55e2090bed41c9d82d99a178ee97"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resize the UI viewport.  <br /></td></tr>
 <tr class="separator:a1bcb55e2090bed41c9d82d99a178ee97"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -208,6 +214,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a5862f1b7218992aac843d1d75ca54f87"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a5862f1b7218992aac843d1d75ca54f87">IsInputEnabled</a> () const</td></tr>
 <tr class="memdesc:a5862f1b7218992aac843d1d75ca54f87"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if input handling is enabled.  <br /></td></tr>
 <tr class="separator:a5862f1b7218992aac843d1d75ca54f87"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae9f705c2eb7b3c25a4055ac92bc918a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#aae9f705c2eb7b3c25a4055ac92bc918a">SetViewportOffset</a> (int x, int y)</td></tr>
+<tr class="memdesc:aae9f705c2eb7b3c25a4055ac92bc918a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the viewport offset for coordinate mapping (editor support)  <br /></td></tr>
+<tr class="separator:aae9f705c2eb7b3c25a4055ac92bc918a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2bf779ea45be09e1f69d5d2a1389a337"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a2bf779ea45be09e1f69d5d2a1389a337">OnDOMReady</a> ()</td></tr>
 <tr class="memdesc:a2bf779ea45be09e1f69d5d2a1389a337"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called by the per-instance LoadListener when the main-frame DOM is ready.  <br /></td></tr>
 <tr class="separator:a2bf779ea45be09e1f69d5d2a1389a337"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -249,6 +258,8 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:af16d5d4f320d68a98fd96ed6d52581a0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#af16d5d4f320d68a98fd96ed6d52581a0">EvalScriptOrQueue</a> (const std::string &amp;script)</td></tr>
 <tr class="memdesc:af16d5d4f320d68a98fd96ed6d52581a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Evaluate script now or queue it until DOM ready.  <br /></td></tr>
 <tr class="separator:af16d5d4f320d68a98fd96ed6d52581a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f00b8dad83870841acb745f92cdceea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a5f00b8dad83870841acb745f92cdceea">SortViewsByOrder</a> ()</td></tr>
+<tr class="separator:a5f00b8dad83870841acb745f92cdceea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
@@ -273,17 +284,28 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a0d1048ff42fcf39cf581639be159f49c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6448284139665b2b2242b9beec95b585"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a6448284139665b2b2242b9beec95b585">height_</a> = 0</td></tr>
 <tr class="separator:a6448284139665b2b2242b9beec95b585"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca20930ff4719b1fded4a4c0d94032ef"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#aca20930ff4719b1fded4a4c0d94032ef">device_scale_</a> = 1.0f</td></tr>
+<tr class="memdesc:aca20930ff4719b1fded4a4c0d94032ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Monitor DPI scale (from glfwGetWindowContentScale)  <br /></td></tr>
+<tr class="separator:aca20930ff4719b1fded4a4c0d94032ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a23b7f39c09cbc666f716eeb8f8202bfb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a23b7f39c09cbc666f716eeb8f8202bfb">msaa_enabled_</a> = false</td></tr>
 <tr class="separator:a23b7f39c09cbc666f716eeb8f8202bfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaaa2be537c6c335ea2664915de727d16"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#aaaa2be537c6c335ea2664915de727d16">input_enabled_</a> = true</td></tr>
 <tr class="memdesc:aaaa2be537c6c335ea2664915de727d16"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether input events are forwarded to Ultralight.  <br /></td></tr>
 <tr class="separator:aaaa2be537c6c335ea2664915de727d16"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a548ac533d58287772b13d8096c91cdd2"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a548ac533d58287772b13d8096c91cdd2">viewport_offset_x_</a> = 0</td></tr>
+<tr class="memdesc:a548ac533d58287772b13d8096c91cdd2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Viewport X offset in window space (for editor)  <br /></td></tr>
+<tr class="separator:a548ac533d58287772b13d8096c91cdd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a81000c7697e3fbc09cab848f46291318"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a81000c7697e3fbc09cab848f46291318">viewport_offset_y_</a> = 0</td></tr>
+<tr class="memdesc:a81000c7697e3fbc09cab848f46291318"><td class="mdescLeft">&#160;</td><td class="mdescRight">Viewport Y offset in window space (for editor)  <br /></td></tr>
+<tr class="separator:a81000c7697e3fbc09cab848f46291318"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac694924611e5845ec0c84ea659b91d42"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="../../df/d85/classtoast_1_1hud_1_1ToastGPUContext.html">toast::hud::ToastGPUContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#ac694924611e5845ec0c84ea659b91d42">gpu_context_</a></td></tr>
 <tr class="separator:ac694924611e5845ec0c84ea659b91d42"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5e40f3e898d7c7cf8f04ae32cce94df3"><td class="memItemLeft" align="right" valign="top">ultralight::RefPtr&lt; ultralight::Renderer &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a5e40f3e898d7c7cf8f04ae32cce94df3">renderer_</a></td></tr>
 <tr class="separator:a5e40f3e898d7c7cf8f04ae32cce94df3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa583b0f25d01a57177be955d17a0d7c6"><td class="memItemLeft" align="right" valign="top">std::vector&lt; ultralight::RefPtr&lt; ultralight::View &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#aa583b0f25d01a57177be955d17a0d7c6">views_</a></td></tr>
 <tr class="separator:aa583b0f25d01a57177be955d17a0d7c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a0b97dd04199d1331d01b947a2d87e8"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; ultralight::View *, int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a1a0b97dd04199d1331d01b947a2d87e8">view_sort_orders_</a></td></tr>
+<tr class="separator:a1a0b97dd04199d1331d01b947a2d87e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a49e454d5f8e0d7187c401371aac7dddc"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="../../dc/d58/classFramebuffer.html">Framebuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a49e454d5f8e0d7187c401371aac7dddc">framebuffer_</a></td></tr>
 <tr class="separator:a49e454d5f8e0d7187c401371aac7dddc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeaa5b5b5bd45032d3427ff8d2a8b96f3"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#aeaa5b5b5bd45032d3427ff8d2a8b96f3">read_fbo_</a> = 0</td></tr>
@@ -359,7 +381,7 @@ Static Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00225">225</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00226">226</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -386,7 +408,7 @@ Static Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00260">260</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00261">261</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -416,7 +438,7 @@ Static Private Attributes</h2></td></tr>
 
 <p>Create the output framebuffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00680">680</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00691">691</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -454,7 +476,7 @@ Here is the caller graph for this function:</div>
 
 <p>Create the GPU context and driver. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00287">287</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00288">288</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -510,7 +532,7 @@ Here is the caller graph for this function:</div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>RefPtr to the created view </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00921">921</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00939">939</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -540,7 +562,7 @@ Here is the caller graph for this function:</div>
 
 <p>Enable the <a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html">HUD</a> (for previewing in editor) </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00643">643</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00646">646</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -579,7 +601,7 @@ Here is the caller graph for this function:</div>
 <p>Disable input handling for this <a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html">HUD</a> layer. </p>
 <dl class="section note"><dt>Note</dt><dd>Use this when you want game input to pass through without being handled by the <a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html">HUD</a> </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00184">184</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00197">197</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -598,7 +620,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00638">638</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00641">641</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -637,7 +659,7 @@ Here is the caller graph for this function:</div>
 <p>Enable input handling for this <a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html">HUD</a> layer. </p>
 <dl class="section note"><dt>Note</dt><dd>Input is enabled by default when the <a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html">HUD</a> layer is created </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00176">176</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00189">189</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -701,7 +723,7 @@ Here is the caller graph for this function:</div>
 
 <p>Execute an arbitrary JavaScript string on the first view. If the DOM is not ready yet the script will be queued and executed once DOMReady fires. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00616">616</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00621">621</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -731,7 +753,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00602">602</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00607">607</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -766,8 +788,15 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer_ac21c9a35b6136fed90b8bc2f182eac19_icgraph.png" border="0" usemap="#adc/d3b/classrenderer_1_1HUD_1_1HUDLayer_ac21c9a35b6136fed90b8bc2f182eac19_icgraph" alt=""/></div>
 <map name="adc/d3b/classrenderer_1_1HUD_1_1HUDLayer_ac21c9a35b6136fed90b8bc2f182eac19_icgraph" id="adc/d3b/classrenderer_1_1HUD_1_1HUDLayer_ac21c9a35b6136fed90b8bc2f182eac19_icgraph">
-<area shape="rect" title="Disable the HUD (for previewing in editor)" alt="" coords="288,13,508,38"/>
-<area shape="rect" href="../../d3/de3/classrenderer_1_1HUD_1_1ToastViewListener.html#a89928c49dc4b77c087cf65db60e47ad0" title=" " alt="" coords="5,5,240,45"/>
+<area shape="rect" title="Disable the HUD (for previewing in editor)" alt="" coords="537,141,757,167"/>
+<area shape="rect" href="../../d4/da6/classtoast_1_1HtmlView.html#a588dd927b31f47534585b7579258ad3e" title=" " alt="" coords="261,52,483,77"/>
+<area shape="rect" href="../../d4/da6/classtoast_1_1HtmlView.html#aaadc05d2f7fa46ea7698a6df29356372" title=" " alt="" coords="279,102,465,142"/>
+<area shape="rect" href="../../d3/de3/classrenderer_1_1HUD_1_1ToastViewListener.html#a89928c49dc4b77c087cf65db60e47ad0" title=" " alt="" coords="255,166,489,206"/>
+<area shape="rect" href="../../d4/da6/classtoast_1_1HtmlView.html#a0dfd0b7185e38a7fb84fa6f1655cdcfe" title=" " alt="" coords="281,230,463,270"/>
+<area shape="rect" href="../../d4/da6/classtoast_1_1HtmlView.html#a0314f1331c55f069fd64aabe9052d491" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="21,5,191,31"/>
+<area shape="rect" href="../../d4/da6/classtoast_1_1HtmlView.html#a57cbb2da6a42f36ca1c01f34e736f10a" title="This function runs when the object is enabled after being disabled." alt="" coords="8,55,204,80"/>
+<area shape="rect" href="../../d4/da6/classtoast_1_1HtmlView.html#aa89f224e59135b7116786ded008b68d2" title="This function runs when the object is set to be destroyed." alt="" coords="13,108,199,133"/>
+<area shape="rect" href="../../d4/da6/classtoast_1_1HtmlView.html#a1ab145aaa6b68d48ad2aec839189aeec" title="This function runs when the object is disabled." alt="" coords="5,157,207,183"/>
 </map>
 </div>
 
@@ -799,7 +828,7 @@ Here is the caller graph for this function:</div>
 <p>Get the <a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html">HUD</a> framebuffer for compositing. </p>
 <dl class="section return"><dt>Returns</dt><dd>Pointer to the framebuffer containing the rendered <a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html">HUD</a> </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00143">143</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00156">156</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -821,7 +850,7 @@ Here is the caller graph for this function:</div>
 <p>Get the raw Ultralight render target texture ID (for debugging) </p>
 <dl class="section return"><dt>Returns</dt><dd>OpenGL texture ID of Ultralight's internal render target, or 0 if not available </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00695">695</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00706">706</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -851,7 +880,7 @@ Here is the caller graph for this function:</div>
 <p>Get the Ultralight View for direct manipulation. </p>
 <dl class="section return"><dt>Returns</dt><dd>RefPtr to the Ultralight View </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00131">131</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00144">144</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -878,7 +907,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00135">135</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00148">148</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -908,7 +937,7 @@ Here is the caller graph for this function:</div>
 <p>Check if input handling is enabled. </p>
 <dl class="section return"><dt>Returns</dt><dd>true if input is enabled </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00192">192</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00205">205</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1006,7 +1035,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../d4/deb/classrenderer_1_1ILayer.html#a903c827e7d42c556209c6fb14881c6c1">renderer::ILayer</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00298">298</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00299">299</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -1028,7 +1057,7 @@ Here is the caller graph for this function:</div>
 
 <p>Handle character input events. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00890">890</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00906">906</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -1059,7 +1088,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../d4/deb/classrenderer_1_1ILayer.html#addb9d3072e52bff3a9ecdffea589b1c6">renderer::ILayer</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00402">402</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00399">399</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -1080,7 +1109,7 @@ Here is the caller graph for this function:</div>
 
 <p>Called by the per-instance LoadListener when the main-frame DOM is ready. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00587">587</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00591">591</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1133,7 +1162,7 @@ Here is the caller graph for this function:</div>
 
 <p>Handle key events. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00855">855</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00872">872</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -1171,7 +1200,7 @@ Here is the caller graph for this function:</div>
 
 <p>Handle mouse button events. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00725">725</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00738">738</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -1203,7 +1232,7 @@ Here is the caller graph for this function:</div>
 
 <p>Handle mouse move events. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00712">712</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00723">723</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -1235,7 +1264,7 @@ Here is the caller graph for this function:</div>
 
 <p>Handle mouse scroll events. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00749">749</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00764">764</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -1266,7 +1295,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../d4/deb/classrenderer_1_1ILayer.html#ae391269c069e09d5a7c10f4bc73b376e">renderer::ILayer</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00429">429</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00427">427</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -1297,7 +1326,35 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../d4/deb/classrenderer_1_1ILayer.html#ab3cd35490c29c261285985a737540ca7">renderer::ILayer</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00418">418</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00416">416</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aebf5ec99afb1285f0da09a5ab46dd749" name="aebf5ec99afb1285f0da09a5ab46dd749"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aebf5ec99afb1285f0da09a5ab46dd749">&#9670;&#160;</a></span>RemoveView()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::HUD::HUDLayer::RemoveView </td>
+          <td>(</td>
+          <td class="paramtype">const ultralight::RefPtr&lt; ultralight::View &gt; &amp;&#160;</td>
+          <td class="paramname"><em>view</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Remove a previously created view from this <a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html">HUD</a> layer. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">view</td><td>The view to remove </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00966">966</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -1336,7 +1393,7 @@ Here is the caller graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00648">648</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00651">651</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -1358,7 +1415,93 @@ Here is the caller graph for this function:</div>
 
 <p>Change the currently selected weapon slot (calls JS: window.setSelectedWeapon) </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00634">634</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00637">637</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aae9f705c2eb7b3c25a4055ac92bc918a" name="aae9f705c2eb7b3c25a4055ac92bc918a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aae9f705c2eb7b3c25a4055ac92bc918a">&#9670;&#160;</a></span>SetViewportOffset()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::HUD::HUDLayer::SetViewportOffset </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>y</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Set the viewport offset for coordinate mapping (editor support) </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">x</td><td>X offset of the viewport in window space </td></tr>
+    <tr><td class="paramname">y</td><td>Y offset of the viewport in window space </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00214">214</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ac6fecc17bc732d73ba302ca877c5bc0a" name="ac6fecc17bc732d73ba302ca877c5bc0a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac6fecc17bc732d73ba302ca877c5bc0a">&#9670;&#160;</a></span>SetViewSortOrder()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::HUD::HUDLayer::SetViewSortOrder </td>
+          <td>(</td>
+          <td class="paramtype">const ultralight::RefPtr&lt; ultralight::View &gt; &amp;&#160;</td>
+          <td class="paramname"><em>view</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>order</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the sort order for a view (higher values render on top) </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">view</td><td>The view to update </td></tr>
+    <tr><td class="paramname">order</td><td>Sort order value </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00979">979</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -1390,7 +1533,7 @@ Here is the caller graph for this function:</div>
 
 <p>Set only the ammo count for a weapon slot (calls JS: window.HUD.setSlot) </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00629">629</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00632">632</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
 
 </div>
 </div>
@@ -1428,7 +1571,43 @@ Here is the caller graph for this function:</div>
 
 <p>Set a weapon slot's icon URL and ammo count (calls JS: window.setWeaponSlot) </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00624">624</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00627">627</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a5f00b8dad83870841acb745f92cdceea" name="a5f00b8dad83870841acb745f92cdceea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5f00b8dad83870841acb745f92cdceea">&#9670;&#160;</a></span>SortViewsByOrder()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::HUD::HUDLayer::SortViewsByOrder </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html#l00985">985</a> of file <a class="el" href="../../d6/d00/HUDLayer_8cpp_source.html">HUDLayer.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer_a5f00b8dad83870841acb745f92cdceea_icgraph.png" border="0" usemap="#adc/d3b/classrenderer_1_1HUD_1_1HUDLayer_a5f00b8dad83870841acb745f92cdceea_icgraph" alt=""/></div>
+<map name="adc/d3b/classrenderer_1_1HUD_1_1HUDLayer_a5f00b8dad83870841acb745f92cdceea_icgraph" id="adc/d3b/classrenderer_1_1HUD_1_1HUDLayer_a5f00b8dad83870841acb745f92cdceea_icgraph">
+<area shape="rect" title=" " alt="" coords="243,5,432,45"/>
+<area shape="rect" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#ac6fecc17bc732d73ba302ca877c5bc0a" title="Set the sort order for a view (higher values render on top)" alt="" coords="5,5,195,45"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -1453,7 +1632,33 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00226">226</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00249">249</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+
+</div>
+</div>
+<a id="aca20930ff4719b1fded4a4c0d94032ef" name="aca20930ff4719b1fded4a4c0d94032ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aca20930ff4719b1fded4a4c0d94032ef">&#9670;&#160;</a></span>device_scale_</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">float renderer::HUD::HUDLayer::device_scale_ = 1.0f</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Monitor DPI scale (from glfwGetWindowContentScale) </p>
+
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00254">254</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1479,7 +1684,7 @@ Here is the caller graph for this function:</div>
 
 <p>True after the page's main-frame DOM is ready. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00212">212</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00235">235</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1503,7 +1708,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00239">239</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00266">266</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1527,7 +1732,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00234">234</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00260">260</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1551,7 +1756,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00230">230</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00253">253</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1577,7 +1782,7 @@ Here is the caller graph for this function:</div>
 
 <p>Whether input events are forwarded to Ultralight. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00232">232</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00256">256</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1601,7 +1806,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00224">224</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00247">247</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1625,7 +1830,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00213">213</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00236">236</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1649,7 +1854,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00231">231</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00255">255</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1675,7 +1880,7 @@ Here is the caller graph for this function:</div>
 
 <p>Scripts queued until DOM ready. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00214">214</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00237">237</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1701,7 +1906,7 @@ Here is the caller graph for this function:</div>
 
 <p>URL to load if LoadURL is called before view creation. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00215">215</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00238">238</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1725,7 +1930,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00240">240</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00267">267</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1749,7 +1954,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00235">235</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00261">261</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1773,7 +1978,83 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00221">221</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00244">244</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a1a0b97dd04199d1331d01b947a2d87e8" name="a1a0b97dd04199d1331d01b947a2d87e8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1a0b97dd04199d1331d01b947a2d87e8">&#9670;&#160;</a></span>view_sort_orders_</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unordered_map&lt;ultralight::View*, int&gt; renderer::HUD::HUDLayer::view_sort_orders_</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00263">263</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a548ac533d58287772b13d8096c91cdd2" name="a548ac533d58287772b13d8096c91cdd2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a548ac533d58287772b13d8096c91cdd2">&#9670;&#160;</a></span>viewport_offset_x_</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int renderer::HUD::HUDLayer::viewport_offset_x_ = 0</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Viewport X offset in window space (for editor) </p>
+
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00257">257</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a81000c7697e3fbc09cab848f46291318" name="a81000c7697e3fbc09cab848f46291318"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a81000c7697e3fbc09cab848f46291318">&#9670;&#160;</a></span>viewport_offset_y_</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int renderer::HUD::HUDLayer::viewport_offset_y_ = 0</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Viewport Y offset in window space (for editor) </p>
+
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00258">258</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1797,7 +2078,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00236">236</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00262">262</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1821,7 +2102,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00229">229</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00252">252</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -1845,7 +2126,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00228">228</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html#l00251">251</a> of file <a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">HUDLayer.hpp</a>.</p>
 
 </div>
 </div>

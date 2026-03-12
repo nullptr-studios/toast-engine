@@ -85,10 +85,6 @@ var annotated_dup =
         [ "ToastGPUContext", "df/d85/classtoast_1_1hud_1_1ToastGPUContext.html", "df/d85/classtoast_1_1hud_1_1ToastGPUContext" ],
         [ "ToastGPUDriver", "dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html", "dc/d10/classtoast_1_1hud_1_1ToastGPUDriver" ]
       ] ],
-      [ "memory", "d0/de3/namespacetoast_1_1memory.html", [
-        [ "BucketUsage", "d7/d98/structtoast_1_1memory_1_1BucketUsage.html", "d7/d98/structtoast_1_1memory_1_1BucketUsage" ],
-        [ "Stats", "db/da0/structtoast_1_1memory_1_1Stats.html", "db/da0/structtoast_1_1memory_1_1Stats" ]
-      ] ],
       [ "Actor", "d8/d92/classtoast_1_1Actor.html", "d8/d92/classtoast_1_1Actor" ],
       [ "AtlasSpriteComponent", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html", "d3/dd3/classtoast_1_1AtlasSpriteComponent" ],
       [ "BadObject", "d2/d70/classtoast_1_1BadObject.html", "d2/d70/classtoast_1_1BadObject" ],
@@ -102,6 +98,8 @@ var annotated_dup =
       [ "Factory", "d9/de7/classtoast_1_1Factory.html", "d9/de7/classtoast_1_1Factory" ],
       [ "GameFlow", "d6/dbd/classtoast_1_1GameFlow.html", "d6/dbd/classtoast_1_1GameFlow" ],
       [ "GPUParticle", "d8/da4/structtoast_1_1GPUParticle.html", "d8/da4/structtoast_1_1GPUParticle" ],
+      [ "HtmlView", "d4/da6/classtoast_1_1HtmlView.html", "d4/da6/classtoast_1_1HtmlView" ],
+      [ "HtmlViewListener", "d2/daf/classtoast_1_1HtmlViewListener.html", "d2/daf/classtoast_1_1HtmlViewListener" ],
       [ "ISerializable", "dd/d8b/classtoast_1_1ISerializable.html", "dd/d8b/classtoast_1_1ISerializable" ],
       [ "LoadLevel", "d4/d80/structtoast_1_1LoadLevel.html", "d4/d80/structtoast_1_1LoadLevel" ],
       [ "LoadWorld", "da/d47/structtoast_1_1LoadWorld.html", "da/d47/structtoast_1_1LoadWorld" ],
@@ -116,6 +114,8 @@ var annotated_dup =
       [ "ParticleSystem", "df/d2b/classtoast_1_1ParticleSystem.html", "df/d2b/classtoast_1_1ParticleSystem" ],
       [ "ProjectSettings", "d4/ddb/structtoast_1_1ProjectSettings.html", "d4/ddb/structtoast_1_1ProjectSettings" ],
       [ "Range", "d2/d6a/structtoast_1_1Range.html", "d2/d6a/structtoast_1_1Range" ],
+      [ "ResetGameFlow", "d9/db4/structtoast_1_1ResetGameFlow.html", null ],
+      [ "RestartLevel", "d1/dda/structtoast_1_1RestartLevel.html", null ],
       [ "Scene", "d6/dd4/classtoast_1_1Scene.html", "d6/dd4/classtoast_1_1Scene" ],
       [ "SceneLoadedEvent", "dc/d36/structtoast_1_1SceneLoadedEvent.html", "dc/d36/structtoast_1_1SceneLoadedEvent" ],
       [ "State", "d8/d9c/structtoast_1_1State.html", "d8/d9c/structtoast_1_1State" ],
@@ -159,6 +159,7 @@ var annotated_dup =
     [ "Pool", "d5/d0b/classPool.html", "d5/d0b/classPool" ],
     [ "ResourceHandler", "d9/dc4/structResourceHandler.html", "d9/dc4/structResourceHandler" ],
     [ "ShowHUDLayerEvent", "da/d29/classShowHUDLayerEvent.html", "da/d29/classShowHUDLayerEvent" ],
+    [ "SpineAnimationPlaybackEvent", "d9/d0f/structSpineAnimationPlaybackEvent.html", "d9/d0f/structSpineAnimationPlaybackEvent" ],
     [ "SpineAtlas", "d6/daf/classSpineAtlas.html", "d6/daf/classSpineAtlas" ],
     [ "SpineEvent", "d7/d44/structSpineEvent.html", "d7/d44/structSpineEvent" ],
     [ "SpineEventHandler", "d9/d94/classSpineEventHandler.html", "d9/d94/classSpineEventHandler" ],
