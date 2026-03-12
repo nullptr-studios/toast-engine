@@ -30,6 +30,12 @@ void Rigidbody::Init() {
 	if (toast::World::IsRunning()) {
 		enabled_ref() = false; // disable colliders until its loaded
 	}
+	
+	// Dante ahh fix
+#ifdef TOAST_EDITOR
+	PhysicsSystem::AddRigidbody(this);
+#endif
+	
 }
 
 void Rigidbody::Begin() {
