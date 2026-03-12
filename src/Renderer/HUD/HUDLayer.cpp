@@ -672,7 +672,7 @@ void HUDLayer::Resize(uint32_t width, uint32_t height) {
 	for (auto& v : views_) {
 		if (v) {
 			v->Resize(width, height);
-			v->set_device_scale(device_scale_);
+			//v->set_device_scale(device_scale_);
 		}
 	}
 
