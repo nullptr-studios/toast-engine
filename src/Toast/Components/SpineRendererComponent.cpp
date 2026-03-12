@@ -57,6 +57,7 @@ void SpineRendererComponent::Init() {
 		// Initial update to ensure world transforms are valid
 		m.skeleton->update(0.0f);
 		m.skeleton->updateWorldTransform(spine::Physics_None);
+		m.skeleton->setToSetupPose();
 #ifdef TOAST_EDITOR
 		RefreshAnimationList();
 		// Auto-select first animation if available
@@ -87,6 +88,18 @@ void SpineRendererComponent::LoadTextures() {
 
 void SpineRendererComponent::Begin() {
 	TransformComponent::Begin();
+}
+
+void SpineRendererComponent::OnEnable() {
+	if (auto* r = renderer::IRendererBase::GetInstance()) {
+		r->EnableRenderable(this);
+	}
+}
+
+void SpineRendererComponent::OnDisable() {
+	if (auto* r = renderer::IRendererBase::GetInstance()) {
+		r->DisableRenderable(this);
+	}
 }
 
 void SpineRendererComponent::Tick() {

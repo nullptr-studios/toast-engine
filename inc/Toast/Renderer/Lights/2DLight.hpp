@@ -14,6 +14,7 @@ public:
 	REGISTER_TYPE(Light2D);
 
 	void Init() override;
+	void LoadTextures() override;
 	void Begin() override;
 
 	void Destroy() override;

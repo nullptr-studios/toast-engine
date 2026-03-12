@@ -464,20 +464,28 @@ void OpenGLRenderer::GeometryPass() {
 	TracyGpuZone("Geometry Pass");
 #endif
 
-	m_combinedRenderables.clear();
-	m_combinedRenderables.reserve(m_renderables.size() + m_transparentRenderables.size());
-	for (auto* r : m_renderables) {
-		if (r) {
-			m_combinedRenderables.push_back(r);
+	// Rebuild the combined list only when membership changed (add/remove/enable/disable).
+	// The depth sort still runs every frame since object positions change each tick.
+	if (m_renderablesSortDirty || m_transparentSortDirty) {
+		m_combinedRenderables.clear();
+		m_combinedRenderables.reserve(m_renderables.size() + m_transparentRenderables.size());
+
+		for (auto* r : m_renderables) {
+			if (r && !m_disabledRenderables.contains(r)) {
+				m_combinedRenderables.push_back(r);
+			}
 		}
-	}
-	for (auto* r : m_transparentRenderables) {
-		if (r) {
-			m_combinedRenderables.push_back(r);
+		for (auto* r : m_transparentRenderables) {
+			if (r && !m_disabledRenderables.contains(r)) {
+				m_combinedRenderables.push_back(r);
+			}
 		}
+
+		m_renderablesSortDirty = false;
+		m_transparentSortDirty = false;
 	}
 
-	// Sort back-to-front (highest depth first) for correct transparency
+	// Sort back-to-front every frame — object z-depths change as they move
 	if (m_combinedRenderables.size() > 1) {
 		std::ranges::stable_sort(m_combinedRenderables, [](IRenderable* a, IRenderable* b) {
 			return a->GetDepth() < b->GetDepth();
@@ -505,7 +513,7 @@ void OpenGLRenderer::GeometryPass() {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	Clear();
 
-	// Render everything in one forward pass
+	// Render only enabled renderables — no enabled() check needed inside OnRender
 	for (auto* r : m_combinedRenderables) {
 		r->OnRender(m_multipliedMatrix);
 	}
@@ -572,7 +580,7 @@ void OpenGLRenderer::LightingPass() {
 	glBlendFunc(GL_ONE, GL_ONE);
 
 	// Disable depth test while accumulating lights
-	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_DEPTH_TEST);
 
 	// lighting pass (skip loop if empty)
 	if (!m_lights.empty()) {
@@ -700,7 +708,11 @@ void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
 }
 
 void OpenGLRenderer::RemoveRenderable(IRenderable* renderable) {
-	m_renderables.erase(std::ranges::find(m_renderables, renderable));
+	auto it = std::ranges::find(m_renderables, renderable);
+	if (it != m_renderables.end()) {
+		m_renderables.erase(it);
+	}
+	m_disabledRenderables.erase(renderable);    // clean up if it was disabled
 	m_renderablesSortDirty = true;
 }
 
@@ -714,6 +726,7 @@ void OpenGLRenderer::RemoveTransparentRenderable(IRenderable* renderable) {
 	if (it != m_transparentRenderables.end()) {
 		m_transparentRenderables.erase(it);
 	}
+	m_disabledRenderables.erase(renderable);    // clean up if it was disabled
 	m_transparentSortDirty = true;
 }
 
@@ -725,7 +738,10 @@ void OpenGLRenderer::AddLight(Light2D* light) {
 }
 
 void OpenGLRenderer::RemoveLight(Light2D* light) {
-	m_lights.erase(std::ranges::find(m_lights, light));
+	auto it = std::ranges::find(m_lights, light);
+	if (it != m_lights.end()) {
+		m_lights.erase(it);
+	}
 	m_lightsSortDirty = true;
 }
 

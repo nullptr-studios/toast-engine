@@ -118,11 +118,12 @@ void Engine::Run(int argc, char** argv) {
 		m->time->Tick();
 
 		m->resourceManager->LoadResourcesMainThread();
+		
+		m->eventSystem->PollEvents();
 
 		// Ensure any pending Begin calls are executed as early as possible in the frame
 		world->RunBeginQueue();
 
-		m->eventSystem->PollEvents();
 		m->coroutineHandler->Tick();
 		m->inputSystem->Tick();
 

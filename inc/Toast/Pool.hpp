@@ -9,59 +9,89 @@
 template<typename T>
 concept is_object = std::is_base_of_v<toast::Object, T>;
 
+
 template<is_object T, int size>
-class Pool {
+class Pool : public toast::Actor {
 public:
-	Pool(toast::Scene* scene) : scene(scene) {
+	REGISTER_ABSTRACT(Pool);
+
+	void Init() override {
+		toast::Actor::Init();
+
+		SetSerialize(false);
+
 		for (int i = 0; i < size; i++) {
-			object_pool[i] = scene->children.Add<T>();
-			object_pool[i]->enabled(false);
-			object_pool[i]->SetSerialize(false);
-			free_objects.emplace(object_pool[i]);
+			m_pool[i] = children.Add<T>();
+			m_pool[i]->SetSerialize(false);
+			if constexpr (std::is_base_of_v<toast::Actor, T>) {
+				m_pool[i]->transform()->position({ 99999.0f, 99999.0f, 0.0f });
+			}
+			m_free.emplace(m_pool[i]);
 		}
 	}
 
-	~Pool() {
-		RemoveAll();
+
+
+	void EarlyTick() override {
+		// On the first tick, disable every free object that has already finished its Begin
+		if (!m_poolReady) {
+			bool allReady = true;
+			for (int i = 0; i < size; i++) {
+				if (!m_pool[i]->has_run_begin()) {
+					allReady = false;
+				}
+			}
+			if (allReady) {
+				// All objects have completed Begin
+				std::stack<T*> temp;
+				while (!m_free.empty()) {
+					auto* obj = m_free.top();
+					m_free.pop();
+					obj->enabled(false);
+					temp.push(obj);
+				}
+				m_free = std::move(temp);
+				m_poolReady = true;
+			}
+		}
 	}
 
 	auto Release() -> T* {
-		if (free_objects.empty()) {
-			TOAST_ERROR("There aren't any free objects in the pool");
+		if (m_free.empty()) {
+			TOAST_ERROR("Pool exhausted — no free objects");
+			return nullptr;
+		}
+		auto* obj = m_free.top();
+		 
+		// Safety
+		if (!obj->has_run_begin()) {
+			TOAST_WARN("Pool::Release — object not yet initialised (Begin pending), returning nullptr");
 			return nullptr;
 		}
 
-		auto* obj = free_objects.top();
+		m_free.pop();
 		obj->enabled(true);
-		free_objects.pop();
 		return obj;
 	}
 
 	void Hold(T* obj) {
-		if (free_objects.size() == size) {
-			TOAST_ERROR("Pool is full");
+		if (static_cast<int>(m_free.size()) >= size) {
+			TOAST_ERROR("Pool::Hold — pool is already full");
 			return;
 		}
-
-		if (std::ranges::find(object_pool, obj) == object_pool.end()) {
+		if (std::ranges::find(m_pool, obj) == m_pool.end()) {
+			TOAST_ERROR("Pool::Hold — object does not belong to this pool");
 			return;
 		}
 		obj->enabled(false);
 		if constexpr (std::is_base_of_v<toast::Actor, T>) {
-			obj->transform()->position({ 1000.0f, 1000.0f, 0.0f });
+			obj->transform()->position({ 99999.0f, 99999.0f, 0.0f });
 		}
-		free_objects.emplace(obj);
+		m_free.emplace(obj);
 	}
 
 private:
-	void RemoveAll() {
-		for (int i = 0; i < size; i++) {
-			// scene->children.Remove(object_pool[i]->id());
-			object_pool[i] = nullptr;
-		}
-	}
-
-	toast::Scene* scene;
-	std::array<T*, size> object_pool;
-	std::stack<T*> free_objects;
+	std::array<T*, size> m_pool = {};
+	std::stack<T*> m_free;
+	bool m_poolReady = false;
 };

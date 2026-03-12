@@ -121,6 +121,16 @@ World::~World() {
 	delete m.threadPool;
 }
 
+bool World::IsRunning() {
+	auto* w = Instance();
+
+	if (not w) {
+		return false;
+	}
+
+	return w->m.simulateWorld;
+}
+
 Object* World::New(std::string_view type, const std::optional<std::string>& name) {
 	auto* world = Instance();
 	std::string obj_name {};
@@ -292,9 +302,6 @@ void World::UnloadScene(const unsigned id) {
 	if (scene->enabled()) {
 		scene->_enabled(false);
 	}
-
-	// Remove from tickables immediately so it stops being processed
-	w->m.tickableScenes.erase(id);
 
 	// Just schedule for destruction
 	toast::World::ScheduleDestroy(scene);
@@ -517,7 +524,7 @@ void World::RunDestroyQueue() {
 		if (obj->parent()) {
 			obj->parent()->children.erase(obj->id());
 		} else {
-			// If it's a root-level object (likely a scene), remove from world's children
+			m.tickableScenes.erase(obj->id());
 			m.children.erase(obj->id());
 		}
 	}

@@ -74,6 +74,7 @@ void HtmlView::CreateUlView() {
 			m_view->set_view_listener(m_viewListener.get());
 		}
 		m_view->LoadURL(ultralight::String(m_url.c_str()));
+		hud->SetViewSortOrder(m_view, m_sortOrder);
 		TOAST_INFO("HtmlView: loaded {}", m_url);
 	}
 }
@@ -97,9 +98,26 @@ void HtmlView::SetUrl(const std::string& url) {
 	}
 }
 
+void HtmlView::SetSortOrder(int order) {
+	m_sortOrder = order;
+	if (m_view) {
+		if (auto* hud = renderer::HUD::HUDLayer::Get()) {
+			hud->SetViewSortOrder(m_view, m_sortOrder);
+		}
+	}
+}
+
+void HtmlView::EvalJS(const std::string& script) {
+	if (!m_view) {
+		return;
+	}
+	m_view->EvaluateScript(ultralight::String(script.c_str()));
+}
+
 json_t HtmlView::Save() const {
 	json_t j = Component::Save();
 	j["url"] = m_url;
+	j["sort_order"] = m_sortOrder;
 	return j;
 }
 
@@ -107,6 +125,9 @@ void HtmlView::Load(json_t j, bool force_create) {
 	Component::Load(j, force_create);
 	if (j.contains("url")) {
 		m_url = j["url"].get<std::string>();
+	}
+	if (j.contains("sort_order")) {
+		m_sortOrder = j["sort_order"].get<int>();
 	}
 }
 
@@ -118,6 +139,9 @@ void HtmlView::Inspector() {
 		if (m_view) {
 			m_view->LoadURL(ultralight::String(m_url.c_str()));
 		}
+	}
+	if (ImGui::DragInt("Sort Order", &m_sortOrder)) {
+		SetSortOrder(m_sortOrder);
 	}
 }
 #endif

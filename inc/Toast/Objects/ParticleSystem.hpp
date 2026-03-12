@@ -288,6 +288,7 @@ public:
 
 	void Init() override;
 	void Destroy() override;
+	void LoadTextures() override;
 
 	void Load(json_t j, bool force_create = true) override;
 	[[nodiscard]]
@@ -399,6 +400,7 @@ private:
 
 	bool m_isPlaying = true;
 	bool m_sharedResourcesInitialized = false;
+	bool m_addedToRenderer = false;
 
 	// Serialization
 	std::string m_luaConfigPath;    ///< Path to Lua config file
