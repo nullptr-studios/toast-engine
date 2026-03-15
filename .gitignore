@@ -1,4 +1,5 @@
 # Cache files
+.cache/
 .xmake/
 .DS_Store
 
