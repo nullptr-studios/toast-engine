@@ -1,3 +1,4 @@
 [workspace]
-members = ["hello"]
+members = ["hello", "log-server"]
 resolver = "2"
+

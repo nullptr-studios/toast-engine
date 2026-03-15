@@ -24,6 +24,9 @@
 				buf
 
 				lldb
+
+				# networking
+				openssl
 			];
 
 			buildInputs = with pkgs; [

@@ -1,0 +1,22 @@
+syntax = "proto3";
+package logging;
+
+message LogData {
+  enum Severity {
+    TRACE = 0;
+    INFO = 1;
+    WARNING = 2;
+    ERROR = 3;
+    CRITICAL = 4;
+  }
+
+  uint64 timestamp = 1;
+  Severity severity = 2;
+
+  string filepath = 3;
+  uint32 line_number = 4;
+
+  string sink = 5;
+  string message = 6;
+}
+
