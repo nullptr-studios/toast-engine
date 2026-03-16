@@ -8,13 +8,14 @@
 
 // clang-format off
 enum class ColliderFlags : uint8_t {
-	Default = 0b00000,
-	Ground  = 0b00001,
-	Player  = 0b00010,
-	Enemy   = 0b00100,
-	Ramp    = 0b01000,
-	Weapon  = 0b10000,
-	All     = 0b11111
+	Default = 0b000000,
+	Ground  = 0b000001,
+	Player  = 0b000010,
+	Enemy   = 0b000100,
+	Ramp    = 0b001000,
+	Weapon  = 0b010000,
+	Bullet  = 0b100000,
+	All     = 0b111111
 };
 // clang-format on
 
@@ -26,6 +27,7 @@ inline const char* to_string(ColliderFlags e) {
 		case ColliderFlags::Enemy: return "Enemy";
 		case ColliderFlags::Ramp: return "Ramp";
 		case ColliderFlags::Weapon: return "Weapon";
+		case ColliderFlags::Bullet: return "Bullet";
 		default: return "unknown";
 	}
 }

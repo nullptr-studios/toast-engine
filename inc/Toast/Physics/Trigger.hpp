@@ -5,7 +5,6 @@
 #pragma once
 #include "ColliderFlags.hpp"
 #include "Toast/Objects/Actor.hpp"
-#include "Toast/Physics/ColliderFlags.hpp"
 
 #include <glm/glm.hpp>
 

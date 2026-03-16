@@ -56,6 +56,8 @@ public:
 	void AddForce(glm::dvec2);
 	void AddAccel(glm::dvec2);
 
+	std::function<void(toast::Object*)> enterCallback;
+	std::function<void(toast::Object*)> exitCallback;
 	// properties
 	double radius = 1.0;      // This is not affected by parent.scale()
 	double mass = 1.0;        // Weight in kg
