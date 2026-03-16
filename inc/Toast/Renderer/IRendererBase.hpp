@@ -64,6 +64,8 @@ public:
 	/// @param height New viewport height in pixels
 	virtual void Resize(glm::uvec2) = 0;
 
+	virtual void DrawScreenQuad(bool flipY) = 0;
+
 	// ========== ImGui Integration (Editor Only) ==========
 
 	/// @brief Begins a new ImGui frame for editor UI

@@ -270,6 +270,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	// setup default resources
 	m_quad = resource::LoadResource<Mesh>("MODELS/quad.obj");
 	m_screenShader = resource::LoadResource<Shader>("SHADERS/screen.shader");
+	m_flippedScreenShader = resource::LoadResource<Shader>("SHADERS/flippedScreen.shader");
 	m_combineLightShader = resource::LoadResource<Shader>("SHADERS/combineLight.shader");
 	m_globalLightShader = resource::LoadResource<Shader>("SHADERS/globalLight.shader");
 
@@ -657,9 +658,7 @@ void OpenGLRenderer::CombinedRenderPass() const {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_geometryFramebuffer->GetColorTexture(0));
 
-		m_screenShader->Use();
-		m_screenShader->SetSampler("screenTexture", 0);
-		m_quad->Draw();
+		renderer::IRendererBase::GetInstance()->DrawScreenQuad(false);
 
 		// Unbind texture
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -758,6 +757,17 @@ void OpenGLRenderer::ApplyRenderSettings() {
 
 	// resolution (Framebuffer scale is handled in Resize)
 	window->SetResolution(m_config.resolution);
+}
+
+void OpenGLRenderer::DrawScreenQuad(bool flipY) {
+	if (flipY) {
+		m_flippedScreenShader->Use();
+		m_flippedScreenShader->SetSampler("screenTexture", 0);
+	} else {
+		m_screenShader->Use();
+		m_screenShader->SetSampler("screenTexture", 0);
+	}
+	m_quad->Draw();
 }
 
 void OpenGLRenderer::HUDPass() {

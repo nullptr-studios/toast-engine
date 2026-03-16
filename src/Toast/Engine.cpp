@@ -118,7 +118,7 @@ void Engine::Run(int argc, char** argv) {
 		m->time->Tick();
 
 		m->resourceManager->LoadResourcesMainThread();
-		
+
 		m->eventSystem->PollEvents();
 
 		// Ensure any pending Begin calls are executed as early as possible in the frame
@@ -218,7 +218,6 @@ void Engine::Init() {
 	}
 
 	m->resourceManager = std::make_unique<resource::ResourceManager>(false);
-
 	// Starting time tracking
 	m->time = std::make_unique<Time>();
 
