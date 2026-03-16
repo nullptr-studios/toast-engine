@@ -136,6 +136,24 @@ void InputSystem::SetState(std::string_view state) {
 void InputSystem::ActiveLayout(std::string_view name) {
 	auto* instance = get();
 	auto& layout_list = instance->m.layouts;
+
+	// Initialize all actions to null when loading
+	// If we do not do this, actions can be left ongoing if switched layout mid action
+	if (instance->HasActiveLayout()) {
+		for (auto& a : instance->m.activeLayout->m.actions0d) {
+			a.m.pressedKeys.clear();
+			a.state = Action0D::Null;
+		}
+		for (auto& a : instance->m.activeLayout->m.actions1d) {
+			a.m.pressedKeys.clear();
+			a.state = Action1D::Null;
+		}
+		for (auto& a : instance->m.activeLayout->m.actions2d) {
+			a.m.pressedKeys.clear();
+			a.state = Action2D::Null;
+		}
+	}
+
 	instance->m.activeLayout = std::find_if(layout_list.begin(), layout_list.end(), [name](const Layout& l) {
 		return l.name == name;
 	});

@@ -2,10 +2,14 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+// clang-format off
 #include <windows.h>
 #include <mmsystem.h>
+// clang-format on
 #pragma comment(lib, "winmm.lib")
 #endif
+
+#include "Toast/Engine.hpp"
 
 #include "Audio/AudioSystem.hpp"
 #include "Event/EventSystem.hpp"
@@ -13,7 +17,6 @@
 #include "Input/InputSystem.hpp"
 #include "Physics/PhysicsSystem.hpp"
 #include "Toast/CoroutineHandler.hpp"
-#include "Toast/Engine.hpp"
 #include "Toast/Factory.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Objects/Scene.hpp"
@@ -115,11 +118,12 @@ void Engine::Run(int argc, char** argv) {
 		m->time->Tick();
 
 		m->resourceManager->LoadResourcesMainThread();
+		
+		m->eventSystem->PollEvents();
 
 		// Ensure any pending Begin calls are executed as early as possible in the frame
 		world->RunBeginQueue();
 
-		m->eventSystem->PollEvents();
 		m->coroutineHandler->Tick();
 		m->inputSystem->Tick();
 

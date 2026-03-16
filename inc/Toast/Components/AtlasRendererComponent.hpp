@@ -31,6 +31,9 @@ public:
 
 	void Destroy() override;
 
+	void OnEnable() override;
+	void OnDisable() override;
+
 #ifdef TOAST_EDITOR
 	void Inspector() override;
 #endif

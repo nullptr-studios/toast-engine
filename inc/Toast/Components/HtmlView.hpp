@@ -34,11 +34,24 @@ public:
 	void Begin() override;
 
 	void SetUrl(const std::string& url);
-	const std::string& GetUrl() const { return m_url; }
 
-	void SetConsoleCallback(ConsoleCallback cb) { m_consoleCb = std::move(cb); }
+	const std::string& GetUrl() const {
+		return m_url;
+	}
 
-	ultralight::RefPtr<ultralight::View> GetView() const { return m_view; }
+	void SetConsoleCallback(ConsoleCallback cb) {
+		m_consoleCb = std::move(cb);
+	}
+
+	ultralight::RefPtr<ultralight::View> GetView() const {
+		return m_view;
+	}
+
+	void SetSortOrder(int order);
+
+	int GetSortOrder() const {
+		return m_sortOrder;
+	}
 
 	[[nodiscard]]
 	json_t Save() const override;
@@ -48,7 +61,9 @@ public:
 	void Inspector() override;
 #endif
 
+	void EvalJS(const std::string& script);
 protected:
+
 	void Destroy() override;
 	void OnEnable() override;
 	void OnDisable() override;
@@ -58,6 +73,7 @@ private:
 	void DestroyUlView();
 
 	std::string m_url;
+	int m_sortOrder = 0;
 	ultralight::RefPtr<ultralight::View> m_view;
 	ConsoleCallback m_consoleCb;
 	std::unique_ptr<ultralight::ViewListener> m_viewListener;

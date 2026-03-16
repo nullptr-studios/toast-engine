@@ -88,6 +88,16 @@ void RbResetVelocity(Rigidbody* rb) {
 }
 
 auto RbRbCollision(Rigidbody* rb1, Rigidbody* rb2) -> std::optional<Manifold> {
+	if (rb1->ignorePlayer or rb2->ignorePlayer) {
+		if ((rb1->flags & ColliderFlags::Player) == ColliderFlags::Player) {
+			return std::nullopt;
+		}
+
+		if ((rb2->flags & ColliderFlags::Player) == ColliderFlags::Player) {
+			return std::nullopt;
+		}
+	}
+
 	PROFILE_ZONE;
 	dvec2 pos1 = rb1->GetPosition();
 	dvec2 pos2 = rb2->GetPosition();

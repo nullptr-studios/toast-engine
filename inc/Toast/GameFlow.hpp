@@ -33,6 +33,7 @@ class GameFlow final {
 	void NextLevel();
 	void NextWorld();
 
+	void Reset();
 	void Restart();
 
 	static Scene* currentScene;

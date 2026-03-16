@@ -17,17 +17,27 @@ void Light2D::Init() {
 	m_lightShader = resource::LoadResource<renderer::Shader>("assets/SHADERS/2dLight.shader");
 
 	transform()->scale(glm::vec3(m_radius * 2, m_radius * 2, 1.0f));
+
+}
+
+void Light2D::LoadTextures() {
+	Actor::LoadTextures();
 	renderer::IRendererBase::GetInstance()->AddLight(this);
 	m_lightBuffer = renderer::IRendererBase::GetInstance()->GetLightFramebuffer();
 }
 
-void Light2D::Begin() { }
+void Light2D::Begin() {
+}
 
 void Light2D::Destroy() {
 	renderer::IRendererBase::GetInstance()->RemoveLight(this);
 }
 
 void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
+	
+	if (!enabled())
+		return;
+	
 	// Culling
 	if (!OclussionVolume::isSphereOnPlanes(transform()->worldPosition(), m_radius)) {
 		return;

@@ -6,6 +6,7 @@
 #include "Toast/Physics/Raycast.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/World.hpp"
 
 #include <memory>
 
@@ -17,7 +18,6 @@ namespace physics {
 
 void Rigidbody::Init() {
 	PROFILE_ZONE;
-	PhysicsSystem::AddRigidbody(this);
 
 	// Initialize interpolation positions from the current transform
 	auto* transform = static_cast<toast::Actor*>(parent())->transform();
@@ -26,6 +26,16 @@ void Rigidbody::Init() {
 	m_previousPosition = m_currentPosition;
 	m_lastKnownTransformPos = worldPos;
 	m_hasValidPreviousPosition = true;
+
+	if (toast::World::IsRunning()) {
+		enabled_ref() = false; // disable colliders until its loaded
+	}
+	
+//	// Dante ahh fix
+//#ifdef TOAST_EDITOR
+	PhysicsSystem::AddRigidbody(this);
+//#endif
+	
 }
 
 void Rigidbody::Begin() {
@@ -34,7 +44,18 @@ void Rigidbody::Begin() {
 	forces.clear();
 }
 
+void Rigidbody::OnEnable() {
+	//TOAST_TRACE("[PHYSICS SYSTEM] Added rigidbody {}", parent()->name());
+	//PhysicsSystem::AddRigidbody(this);
+}
+
+void Rigidbody::OnDisable() {
+	//TOAST_TRACE("[PHYSICS SYSTEM] Removed rigidbody {}", parent()->name());
+	//PhysicsSystem::RemoveRigidbody(this);
+}
+
 void Rigidbody::Destroy() {
+	TOAST_TRACE("[PHYSICS SYSTEM] Removed rigidbody {}", parent()->name());
 	PhysicsSystem::RemoveRigidbody(this);
 }
 
@@ -70,6 +91,11 @@ void Rigidbody::Inspector() {
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Collider Flags");
+
+	ImGui::Checkbox("Ignore player?", &ignorePlayer);
+
+	ImGui::Spacing();
+
 
 	// Who wrote this shit instead of overriding the ! operator -x
 	unsigned int cur = static_cast<unsigned int>(flags);
@@ -156,6 +182,7 @@ json_t Rigidbody::Save() const {
 	j["restitution"] = restitution;
 	j["restitutionThreshold"] = restitutionThreshold;
 	j["minimumVelocity"] = minimumVelocity;
+	j["ignorePlayer"] = ignorePlayer;
 
 	j["debug.show"] = debug.show;
 	j["debug.defaultColor"] = debug.defaultColor;
@@ -214,6 +241,9 @@ void Rigidbody::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("flags")) {
 		flags = static_cast<ColliderFlags>(j["flags"].get<unsigned int>());
+	}
+	if (j.contains("ignorePlayer")) {
+		ignorePlayer = j["ignorePlayer"];
 	}
 
 	Component::Load(j, propagate);

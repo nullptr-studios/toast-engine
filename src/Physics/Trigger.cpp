@@ -3,6 +3,7 @@
 #include "PhysicsSystem.hpp"
 #include "Toast/GlmJson.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/World.hpp"
 
 #define SAVE(name) j[#name] = name;
 #define LOAD(name)         \
@@ -12,9 +13,14 @@
 
 namespace physics {
 
+void Trigger::Init() {
+	if (toast::World::IsRunning()) {
+		enabled_ref() = false; // disable colliders until its loaded
+	}
+}
+
 void Trigger::Begin() {
 	Actor::Begin();
-	PhysicsSystem::AddTrigger(this);
 	enterCallback = [this](Object* o) {
 		if (!enabled()) {
 			return;
@@ -27,9 +33,21 @@ void Trigger::Begin() {
 		}
 		OnExit(o);
 	};
+	PhysicsSystem::AddTrigger(this);
+}
+
+void Trigger::OnEnable() {
+	//TOAST_TRACE("[PHYSICS SYSTEM] Added trigger {}", name());
+	//PhysicsSystem::AddTrigger(this);
+}
+
+void Trigger::OnDisable() {
+	//TOAST_TRACE("[PHYSICS SYSTEM] Removed trigger {}", name());
+	//PhysicsSystem::RemoveTrigger(this);
 }
 
 void Trigger::Destroy() {
+	TOAST_TRACE("[PHYSICS SYSTEM] Removed trigger {}", name());
 	Actor::Destroy();
 	PhysicsSystem::RemoveTrigger(this);
 }

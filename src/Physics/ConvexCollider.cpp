@@ -51,10 +51,12 @@ ConvexCollider::ConvexCollider(const point_list& points, const ColliderData& dat
 		m_aabb.expand(glm::vec3(v.x, v.y, 1.0f));
 	}
 
+	TOAST_TRACE("[PHYSICS SYSTEM] Added collider {}", parent->name());
 	PhysicsSystem::AddCollider(this);
 }
 
 ConvexCollider::~ConvexCollider() {
+	TOAST_TRACE("[PHYSICS SYSTEM] Removed collider {}", parent->name());
 	PhysicsSystem::RemoveCollider(this);
 }
 

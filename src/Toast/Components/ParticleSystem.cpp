@@ -827,14 +827,16 @@ void ParticleSystem::Init() {
 	SetRunTick(false);
 	SetRunLateTick(false);
 
+	// gpu initialization in load textures
+}
+
+void ParticleSystem::LoadTextures() {
 	InitSharedResources();
 
-	// // If no emitters exist, add a default one
-	// if (m_emitters.empty()) {
-	// 	AddEmitterWithPreset("Smoke");
-	// }
-
-	renderer::IRendererBase::GetInstance()->AddTransparentRenderable(this);
+	if (!m_addedToRenderer) {
+		renderer::IRendererBase::GetInstance()->AddTransparentRenderable(this);
+		m_addedToRenderer = true;
+	}
 
 	TOAST_INFO("ParticleSystem initialized with {} emitter(s)", m_emitters.size());
 }

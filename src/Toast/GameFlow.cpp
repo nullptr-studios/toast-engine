@@ -11,6 +11,7 @@
 #include <exception>
 #include <future>
 #include <optional>
+#include <stdexcept>
 
 namespace toast {
 
@@ -56,12 +57,14 @@ GameFlow::GameFlow() {
 		NextLevel();
 		return true;
 	});
-#ifdef TOAST_EDITOR
-	listener.Subscribe<toast::RestartGameFlow>([this](auto* _) {
+	listener.Subscribe<toast::ResetGameFlow>([this](auto* _) {
+		Reset();
+		return true;
+	});
+	listener.Subscribe<toast::RestartLevel>([this](auto* _) {
 		Restart();
 		return true;
 	});
-#endif
 
 	m = {
 		.worldList = std::move(world_list),
@@ -86,6 +89,9 @@ void GameFlow::LoadWorld(unsigned world) {
 		m.currentLevel->wait();
 		try {
 			auto* scene = toast::World::Get(m.currentLevel->get());
+			if (!scene) {
+				throw std::runtime_error("Current Level Deleted By Another Existence");
+			}
 			scene->Nuke();
 		} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 		m.currentLevel = std::nullopt;
@@ -95,6 +101,9 @@ void GameFlow::LoadWorld(unsigned world) {
 		m.nextLevel->wait();
 		try {
 			auto* scene = toast::World::Get(m.nextLevel->get());
+			if (!scene) {
+				throw std::runtime_error("Current Level Deleted By Another Existence");
+			}
 			scene->Nuke();
 		} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 		m.nextLevel = std::nullopt;
@@ -129,7 +138,34 @@ void GameFlow::LoadLevel(unsigned world, unsigned level) {
 	if (m.level == level || m.levelList.size() <= level) {
 		return;
 	}
+	if (not m.level && m.world == world && level == 0 && m.nextLevel) {
+		m.level = level;
+		m.currentLevel = std::move(m.nextLevel);
+		m.currentLevel->wait();
+		try {
+			auto* scene = toast::World::Get(m.currentLevel->get());
+			if (!scene) {
+				throw std::runtime_error("Current Level Deleted By Another Existence");
+			}
+			scene->enabled(true);
+		} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
+
+		if (m.levelList.size() >= level + 1) {
+			m.nextLevel = toast::World::LoadScene(m.levelList[level + 1]);
+		} else {
+			m.nextLevel = std::nullopt;
+		}
+		return;
+	}
+
 	m.level = level;
+
+	if (m.currentLevel) {
+		auto* scene = toast::World::Get(m.currentLevel->get());
+		if (scene) {
+			scene->Nuke();
+		}
+	}
 
 	m.currentLevel = toast::World::LoadScene(m.levelList[level]);
 	if (m.levelList.size() >= level + 1) {
@@ -141,6 +177,9 @@ void GameFlow::LoadLevel(unsigned world, unsigned level) {
 
 	try {
 		auto* scene = toast::World::Get(m.currentLevel->get());
+		if (!scene) {
+			throw std::runtime_error("Current Level Deleted By Another Existence");
+		}
 		scene->enabled(true);
 		currentScene = dynamic_cast<Scene*>(scene);
 	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
@@ -151,6 +190,9 @@ void GameFlow::NextLevel() {
 	if (m.currentLevel.has_value()) {
 		try {
 			auto* scene = toast::World::Get(m.currentLevel->get());
+			if (!scene) {
+				throw std::runtime_error("Current Level Deleted By Another Existence");
+			}
 			scene->Nuke();
 		} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
 		m.currentLevel = std::nullopt;
@@ -176,6 +218,9 @@ void GameFlow::NextLevel() {
 	try {
 		m.currentLevel->wait();
 		auto* scene = toast::World::Get(m.currentLevel->get());
+		if (!scene) {
+			throw std::runtime_error("Current Level Deleted By Another Existence");
+		}
 		scene->enabled(true);
 		currentScene = dynamic_cast<Scene*>(scene);
 	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
@@ -199,7 +244,8 @@ void GameFlow::NextWorld() {
 	// clang-format on
 }
 
-void GameFlow::Restart() {
+void GameFlow::Reset() {
+	TOAST_INFO("Resetting Gameflow Destroying levels...");
 	try {
 		if (m.currentLevel) {
 			m.currentLevel->wait();
@@ -224,5 +270,16 @@ void GameFlow::Restart() {
 	m.level = std::nullopt;
 	m.world = std::nullopt;
 	m.levelList.clear();
+}
+
+void GameFlow::Restart() {
+	if (!m.currentLevel) {
+		TOAST_WARN("No Active Scene Abort Restart");
+		return;
+	}
+	m.currentLevel->wait();
+	auto* scene = toast::World::Get(m.currentLevel->get());
+	scene->SoftLoad();
+	toast::World::ScheduleBegin(scene);
 }
 }
