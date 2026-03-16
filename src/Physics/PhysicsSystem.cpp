@@ -408,6 +408,13 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 		auto manifold = RbRbCollision(rb, *it);
 		if (manifold.has_value()) {
 			RbRbResolution(rb, *it, manifold.value());
+			if (rb->enterCallback) {
+				rb->enterCallback(*it);
+			}
+
+			if ((*it)->enterCallback) {
+				(*it)->enterCallback(rb);
+			}
 		}
 	}
 
