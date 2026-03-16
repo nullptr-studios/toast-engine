@@ -46,11 +46,14 @@ public:
 
 	void ApplyRenderSettings() override;
 
+	void DrawScreenQuad(bool flipY) override;
+
 private:
 	LayerStack* m_layerStack = nullptr;
 
 	// Rendering resources
 	std::shared_ptr<Shader> m_screenShader = nullptr;
+	std::shared_ptr<Shader> m_flippedScreenShader = nullptr;
 	std::shared_ptr<Shader> m_combineLightShader = nullptr;
 	std::shared_ptr<Shader> m_globalLightShader = nullptr;
 	std::shared_ptr<Mesh> m_quad = nullptr;

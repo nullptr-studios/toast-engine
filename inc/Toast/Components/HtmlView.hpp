@@ -62,8 +62,8 @@ public:
 #endif
 
 	void EvalJS(const std::string& script);
-protected:
 
+protected:
 	void Destroy() override;
 	void OnEnable() override;
 	void OnDisable() override;
