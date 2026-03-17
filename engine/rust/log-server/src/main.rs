@@ -7,15 +7,16 @@ pub mod proto {
 }
 
 use proto::LogData;
+use proto::LogBatch;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
 
-    let mut port = "8080";
-    if args.len() > 1 {
-        port = args[1].as_str();
-    }
+    let mut port = "12800";
+    // if args.len() > 1 {
+    //     port = args[1].as_str();
+    // }
     let addr = format!("127.0.0.1:{}", port);
     let listener = TcpListener::bind(addr.clone()).await?;
     println!("Server listening on {}. Waiting for Game Engine...", addr);
@@ -40,13 +41,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         // Try to decode the protobuf
-        match LogData::decode(&buf[..n]) {
-            Ok(log) => {
-                println!("--- Log Received ---");
-                println!("Time: {}", log.timestamp);
-                println!("File: {}:{}", log.filepath, log.line_number);
-                println!("Msg:  {}", log.message);
-                println!("Sev:  {:?}", log.severity);
+        match LogBatch::decode(&buf[..n]) {
+            Ok(batch) => {
+                for log in batch.logs {
+                    println!("--- Log Received ---");
+                    println!("Time: {}", log.timestamp);
+                    println!("File: {}:{}", log.filepath, log.line_number);
+                    println!("Msg:  {}", log.message);
+                    println!("Sev:  {:?}", log.severity);
+                }
             }
             Err(e) => {
                 eprintln!("Failed to parse Protobuf: {:?}", e);

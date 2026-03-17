@@ -1,25 +1,34 @@
 #include "engine.h"
 #include "engine.hpp"
 
-#include <cassert>
-#include <print>
+#include "thread_pool.hpp"
+#include "logger.hpp"
 
-extern "C" void toast_rust_tick();
+#include <cassert>
+#include <chrono>
+#include <memory>
+#include <print>
+#include <thread>
 
 namespace toast {
 
 Engine* Engine::instance = nullptr;
 
 struct EnginePimpl {
-
+	std::unique_ptr<ThreadPool> thread_pool;
+	std::unique_ptr<Logger> logger;
 };
 
 Engine::Engine() noexcept {
-	m = new EnginePimpl{};
+	m = new EnginePimpl{
+		.thread_pool = ThreadPool::create(),
+		.logger = Logger::create()
+	};
+
 	instance = this;
 }
 
-Engine::~Engine() noexcept = default;
+Engine::~Engine() noexcept { };
 
 Engine* Engine::get() noexcept {
 	// If at any point toast doesn't exist just crash the damn game -x
@@ -28,7 +37,10 @@ Engine* Engine::get() noexcept {
 }
 
 void Engine::tick() {
-	toast_rust_tick();
+	Logger::log("", 0, 0, "", "Test message");
+
+	using namespace std::chrono_literals;
+	std::this_thread::sleep_for(10s);
 }
 
 bool Engine::shouldClose() {

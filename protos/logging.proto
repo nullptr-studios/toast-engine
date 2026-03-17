@@ -20,3 +20,7 @@ message LogData {
   string message = 6;
 }
 
+message LogBatch {
+  repeated LogData logs = 1;
+}
+

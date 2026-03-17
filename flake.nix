@@ -1,45 +1,57 @@
 {
-	description = "toast-engine dev environment";
+  description = "toast-engine dev environment";
 
-	inputs = {
-		nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-	};
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  };
 
-	outputs = { self, nixpkgs }:
-	let
-		system = "x86_64-linux";
-		pkgs = nixpkgs.legacyPackages.${system};
-	in
-	{
-		devShells.${system}.default = pkgs.mkShell {
-			nativeBuildInputs = with pkgs; [
-				xmake
-				rustup
-				protobuf
-				pkg-config
+  outputs = { self, nixpkgs }:
+  let
+    system = "x86_64-linux";
+    pkgs = nixpkgs.legacyPackages.${system};
+    
+    # The .NET SDK package
+    dotnet-sdk = pkgs.dotnetCorePackages.sdk_10_0;
 
-				# LSPs
-				clang-tools
-				rust-analyzer
-				buf
+    # Libraries required by the .NET runtime at execution
+    runtimeLibs = with pkgs; [
+      dotnet-sdk
+      icu
+      openssl
+      zlib
+      stdenv.cc.cc.lib
+    ];
+  in
+  {
+    devShells.${system}.default = pkgs.mkShell {
+      nativeBuildInputs = with pkgs; [
+        xmake
+        rustup
+        protobuf
+        pkg-config
+        dotnet-sdk
+        clang-tools
+        rust-analyzer
+        buf
+        lldb
+      ];
 
-				lldb
+      buildInputs = with pkgs; [
+        lua5_4
+        lua54Packages.luafilesystem
+        llvmPackages.clang
+        llvmPackages.llvm
+      ];
 
-				# networking
-				openssl
-			];
+      shellHook = ''
+        export DOTNET_ROOT="${dotnet-sdk}/share/dotnet";
+        export PATH="${dotnet-sdk}/bin:$PATH";
+        export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}:$LD_LIBRARY_PATH";
+        export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1;
 
-			buildInputs = with pkgs; [
-				lua5_4
-				lua54Packages.luafilesystem
-				llvmPackages.clang
-				llvmPackages.llvm
-			];
-
-			shellHook = ''
-				echo "toast-engine environment loaded"
-				echo "using compiler $(clang --version | head -n1)"
-			'';
-		};
-	};
+        echo "toast-engine environment loaded"
+        echo "using dotnet $(dotnet --version)"
+      '';
+    };
+  };
 }
