@@ -559,7 +559,7 @@ void Collider::EditorTick() {
 
 	if (debug.showPoints) {
 		glm::vec2 new_p = debug.newPointPosition;
-		const glm::vec4 color = glm::vec4{ 1.0, 0.5, 0.0, 1.0 };
+		const glm::vec4 color = { 1.0f, 0.5f, 0.0f, 1.0f };
 		renderer::DebugCircle(
 		    glm::vec2 {
 		      world_mtx * glm::vec4 { new_p.x, new_p.y, 0, 1 }
