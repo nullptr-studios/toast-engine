@@ -67,6 +67,7 @@ public:
 
 	void PlayAnimation(std::string_view name, bool loop, int track = 0) const;
 	void StopAnimation(int track = 0) const;
+	void NextPlayAnimation(std::string_view name, bool loop, float delay, int track = 0) const;
 
 	void NextCrossFadeToDefault(float duration, int track = 0) const;
 	void CrossFadeToDefault(float duration, int track = 0) const;

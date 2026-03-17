@@ -436,6 +436,10 @@ void SpineRendererComponent::StopAnimation(int track) const {
 	m.animationState->clearTrack(track);
 }
 
+void SpineRendererComponent::NextPlayAnimation(std::string_view name, bool loop, float delay, int track) const {
+	m.animationState->addAnimation(track, name.data(), loop, delay);
+}
+
 void SpineRendererComponent::NextCrossFadeToDefault(float duration, int track) const {
 	m.animationState->addEmptyAnimation(track, duration, 0);
 }
