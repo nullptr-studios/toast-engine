@@ -5,6 +5,8 @@
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/World.hpp"
 #include "glm/geometric.hpp"
 
@@ -25,12 +27,18 @@ void Collider::Init() {
 	}
 }
 
+void Collider::LoadTextures() {
+	renderer::IRendererBase::GetInstance()->AddRenderable(&m.renderable);
+}
+
 void Collider::OnEnable() {
 	//CalculatePoints();
+	m.renderable.enabled(true);
 }
 
 void Collider::OnDisable() {
 	//DestroyConvexShapes();
+	m.renderable.enabled(false);
 }
 
 void Collider::AddPoint(glm::vec2 point) {
@@ -347,10 +355,13 @@ void Collider::CalculatePoints() {
 		c->forceLeft = data.forceLeft;
 		m.convexShapes.emplace_back(c);
 	}
+
+	m.renderable.SendVertices(m.points);
 }
 
 void Collider::Destroy() {
 	DestroyConvexShapes();
+	renderer::IRendererBase::GetInstance()->RemoveRenderable(&m.renderable);
 }
 
 #ifdef TOAST_EDITOR
@@ -530,7 +541,7 @@ void Collider::EditorTick() {
 
 	if (debug.showPoints) {
 		glm::vec2 new_p = debug.newPointPosition;
-		constexpr glm::vec4 color = { 1.0, 0.5, 0.0, 1.0 };
+		const glm::vec4 color = glm::vec4{ 1.0, 0.5, 0.0, 1.0 };
 		renderer::DebugCircle(
 		    glm::vec2 {
 		      world_mtx * glm::vec4 { new_p.x, new_p.y, 0, 1 }

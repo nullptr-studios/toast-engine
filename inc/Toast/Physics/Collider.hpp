@@ -7,6 +7,7 @@
 #include "ColliderFlags.hpp"
 #include "Line.hpp"
 #include "Toast/Components/Component.hpp"
+#include "Toast/Physics/ColliderRenderable.hpp"
 
 #include <glm/glm.hpp>
 
@@ -41,6 +42,7 @@ public:
 	json_t Save() const override;
 	void Load(json_t j, bool propagate) override;
 	void Init() override;
+	void LoadTextures() override;
 	void OnEnable() override;
 	void OnDisable() override;
 
@@ -55,7 +57,7 @@ public:
 	void DeletePoint(glm::vec2 point);
 	void DeleteAt(unsigned idx);
 
-	auto GetPoints() -> std::list<glm::vec2>& {
+	auto GetPoints() -> std::vector<glm::vec2>& {
 		return m.points;
 	}
 
@@ -74,10 +76,11 @@ public:
 private:
 	struct {
 		std::vector<ConvexCollider*> convexShapes;
-		std::list<glm::vec2> points;
+		std::vector<glm::vec2> points;
 		std::list<Line> edges;
 		ColliderFlags flags = ColliderFlags::Default;
 		ColliderEditMode currentEditMode = ColliderEditMode::VERTICES;
+		ColliderRenderable renderable;
 	} m;
 
 	struct {

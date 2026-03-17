@@ -1,0 +1,135 @@
+#include "Toast/Physics/ColliderRenderable.hpp"
+#include "glm/matrix.hpp"
+
+#include <vector>
+#include <algorithm>
+#include <glm/glm.hpp>
+
+using namespace glm;
+
+static bool isPointInTriangle(const vec2& p, const glm::vec2& a, const glm::vec2& b, const glm::vec2& c) {
+    vec2 ab = b - a;
+    vec2 bc = c - b;
+    vec2 ca = a - c;
+
+    vec2 ap = p - a;
+    vec2 bp = p - b;
+    vec2 cp = p - c;
+
+    float cross1 = determinant(glm::mat2{ab, ap});
+    float cross2 = determinant(glm::mat2{bc, bp});
+    float cross3 = determinant(glm::mat2{ca, cp});
+
+    // If the point is inside, all cross products will have the same sign.
+    bool has_neg = (cross1 < 0.0f) || (cross2 < 0.0f) || (cross3 < 0.0f);
+    bool has_pos = (cross1 > 0.0f) || (cross2 > 0.0f) || (cross3 > 0.0f);
+
+    return !(has_neg && has_pos);
+}
+
+static std::vector<size_t> triangulate(const std::vector<vec2>& vertices) {
+    std::vector<size_t> indices;
+    
+    // A polygon must have at least 3 vertices
+    if (vertices.size() < 3) {
+        return indices;
+    }
+
+    // Create a working list of indices representing the remaining polygon
+    std::vector<size_t> remaining_indices(vertices.size());
+    for (size_t i = 0; i < vertices.size(); ++i) {
+        remaining_indices[i] = i;
+    }
+
+    // 1. Determine the overall winding order of the polygon.
+    // Even if you don't care about the output winding, the algorithm needs to 
+    // know what "inside" vs "outside" means to find convex angles.
+    float area = 0.0f;
+    for (size_t i = 0; i < vertices.size(); ++i) {
+        size_t j = (i + 1) % vertices.size();
+        area += determinant(glm::mat2{vertices[i], vertices[j]});
+    }
+
+    // If the area is negative, the vertices are clockwise.
+    // We reverse our working indices to process everything as counter-clockwise.
+    if (area < 0.0f) {
+        std::reverse(remaining_indices.begin(), remaining_indices.end());
+    }
+
+    // 2. Ear Clipping Loop
+    // We use a safety counter to prevent infinite loops if the polygon is 
+    // self-intersecting or contains degenerate (overlapping) data.
+    size_t safety_counter = vertices.size() * 2; 
+    
+    while (remaining_indices.size() > 3) {
+        if (--safety_counter == 0) break; 
+
+        bool ear_found = false;
+        size_t count = remaining_indices.size();
+
+        for (size_t i = 0; i < count; ++i) {
+            size_t prev_idx = remaining_indices[(i + count - 1) % count];
+            size_t curr_idx = remaining_indices[i];
+            size_t next_idx = remaining_indices[(i + 1) % count];
+
+            const vec2& prev = vertices[prev_idx];
+            const vec2& curr = vertices[curr_idx];
+            const vec2& next = vertices[next_idx];
+
+            // Check if the vertex is convex (interior angle < 180).
+            // Because we forced CCW, the cross product of the edges must be positive.
+            vec2 edge1 = curr - prev;
+            vec2 edge2 = next - curr;
+            if (determinant(glm::mat2{edge1, edge2}) <= 0.00001f) {
+                continue; // Angle is concave or collinear, cannot be an ear tip
+            }
+
+            // Check if any OTHER vertex of the polygon is inside this triangle
+            bool is_ear = true;
+            for (size_t j = 0; j < count; ++j) {
+                if (j == i || j == (i + count - 1) % count || j == (i + 1) % count) {
+                    continue; // Skip the vertices that make up the triangle itself
+                }
+                
+                size_t test_idx = remaining_indices[j];
+                if (isPointInTriangle(vertices[test_idx], prev, curr, next)) {
+                    is_ear = false;
+                    break;
+                }
+            }
+
+            // If it's a valid ear, clip it!
+            if (is_ear) {
+                indices.push_back(prev_idx);
+                indices.push_back(curr_idx);
+                indices.push_back(next_idx);
+
+                // Remove the ear tip from our working list
+                remaining_indices.erase(remaining_indices.begin() + i);
+                ear_found = true;
+                break;
+            }
+        }
+
+        // If we looped through all remaining vertices and couldn't find an ear, 
+        // the polygon is likely invalid (e.g., self-intersecting). Break out.
+        if (!ear_found) {
+            break;
+        }
+    }
+
+    // 3. Add the final remaining 3 vertices as the last triangle
+    if (remaining_indices.size() == 3) {
+        indices.push_back(remaining_indices[0]);
+        indices.push_back(remaining_indices[1]);
+        indices.push_back(remaining_indices[2]);
+    }
+
+    return indices;
+}
+
+void physics::ColliderRenderable::SendVertices(std::vector<glm::vec2>& points) {
+	this->m.points = points;
+	this->m.indices = triangulate(points);
+}
+
