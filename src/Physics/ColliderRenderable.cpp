@@ -129,9 +129,23 @@ static std::vector<uint16_t> triangulate(const std::vector<vec2>& vertices) {
 }
 
 void physics::ColliderRenderable::SendVertices(std::vector<glm::vec2>& points) {
+        // clear things just in case
+        m.points.clear();
+        m.indices.clear();
+	m.vertices.clear();
+
 	this->m.points = points;
 	this->m.indices = triangulate(points);
 	CalculateBoundingBox();
+
+        for (const auto& point : m.points) {
+		m.vertices.emplace_back(renderer::SpineVertex {
+		        .position = glm::vec3 { point.x, point.y, 0.0 },
+                        .texCoord = { 0.0, 0.0 },
+                        .colorABGR = 0xFFFFFFFF
+                });
+        }
+
 	m.mesh.UpdateDynamicSpine(m.vertices.data(), m.vertices.size(), m.indices.data(), m.indices.size());
 }
 
