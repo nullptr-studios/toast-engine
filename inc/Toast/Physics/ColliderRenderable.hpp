@@ -25,7 +25,7 @@ namespace physics {
 
 class ColliderRenderable : public renderer::IRenderable {
 	struct {
-		std::vector<glm::vec2> points;
+		std::vector<glm::vec3> points;
 		std::vector<uint16_t> indices;
 		std::vector<renderer::SpineVertex> vertices;
 		renderer::BoundingBox boundingBox;
@@ -36,7 +36,7 @@ class ColliderRenderable : public renderer::IRenderable {
 	} m;
 
 public:
-	void SendVertices(std::vector<glm::vec2>& points);
+	void SendVertices(std::vector<glm::vec3>& points);
 
 	void Load(json_t j, bool force_create = true) override {
 		PROFILE_ZONE_C(0x00FFFF);    // Cyan for deserialization

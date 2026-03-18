@@ -27,7 +27,7 @@ static bool isPointInTriangle(const vec2& p, const glm::vec2& a, const glm::vec2
     return !(has_neg && has_pos);
 }
 
-static std::vector<uint16_t> triangulate(const std::vector<vec2>& vertices) {
+static std::vector<uint16_t> triangulate(const std::vector<vec3>& vertices) {
     std::vector<uint16_t> indices;
     
     // A polygon must have at least 3 vertices
@@ -128,7 +128,7 @@ static std::vector<uint16_t> triangulate(const std::vector<vec2>& vertices) {
     return indices;
 }
 
-void physics::ColliderRenderable::SendVertices(std::vector<glm::vec2>& points) {
+void physics::ColliderRenderable::SendVertices(std::vector<glm::vec3>& points) {
         // clear things just in case
         m.points.clear();
         m.indices.clear();

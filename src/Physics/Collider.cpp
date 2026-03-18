@@ -32,6 +32,7 @@ void Collider::Init() {
 void Collider::LoadTextures() {
 	renderer::IRendererBase::GetInstance()->AddRenderable(&m.renderable);
 	m.renderable.LoadTextures();
+	m.renderable.enabled(true);
 }
 
 void Collider::OnEnable() {
@@ -359,7 +360,13 @@ void Collider::CalculatePoints() {
 		m.convexShapes.emplace_back(c);
 	}
 
-	m.renderable.SendVertices(m.points);
+	std::vector<glm::vec3> world_vertices(m.points.size());
+	for (const auto& p : m.points) {
+		glm::vec4 p4d = world_mtx * glm::vec4{ p.x, p.y, 0.0, 1.0 };
+		world_vertices.emplace_back(glm::vec3{p4d});
+	}
+
+	m.renderable.SendVertices(world_vertices);
 }
 
 void Collider::Destroy() {
