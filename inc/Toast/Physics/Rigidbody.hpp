@@ -64,6 +64,7 @@ public:
 	double friction = 0.2;    // How it deals frictions onto other objects (not itself)
 	ColliderFlags flags = ColliderFlags::Default;
 	bool ignorePlayer = false;
+	bool has_already_enter = false;
 
 	// simulation
 	bool hasGravity = true;                    // Is the rb affected by gravity at all?
