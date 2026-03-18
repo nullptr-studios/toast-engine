@@ -108,7 +108,7 @@ public:
 		}
 
 		// draw
-		m.mesh.Draw();
+		m.mesh.DrawDynamicSpine(m.indices.size());
 
 		// restore state
 		// m_texture->Unbind();
