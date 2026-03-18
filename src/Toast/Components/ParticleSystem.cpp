@@ -1285,7 +1285,7 @@ void ParticleSystem::Inspector() {
 
 	// Lua config path
 	ImGui::InputText("Lua Config name", &m_luaConfigPath);
-	ImGui::SameLine();
+	
 	if (ImGui::Button("Load")) {
 		LoadFromLua(m_luaConfigPath);
 	}
