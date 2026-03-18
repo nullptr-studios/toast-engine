@@ -25,10 +25,13 @@ void Collider::Init() {
 	if (toast::World::IsRunning()) {
 		enabled_ref() = false; // disable colliders until its loaded
 	}
+
+	m.renderable.Init();
 }
 
 void Collider::LoadTextures() {
 	renderer::IRendererBase::GetInstance()->AddRenderable(&m.renderable);
+	m.renderable.LoadTextures();
 }
 
 void Collider::OnEnable() {
@@ -528,6 +531,13 @@ void Collider::Inspector() {
 	ImGui::Checkbox("Show points", &debug.showPoints);
 	ImGui::Checkbox("Show colliders", &debug.showColliders);
 	ImGui::Checkbox("Show normals", &data.debugNormals);
+
+	ImGui::Spacing();
+	if (ImGui::CollapsingHeader("Renderable")) {
+		ImGui::Indent(10);
+		m.renderable.Inspector();
+		ImGui::Unindent(10);
+	}
 }
 
 void Collider::EditorTick() {
@@ -579,6 +589,9 @@ json_t Collider::Save() const {
 	j["debug.showNormals"] = data.debugNormals;
 	j["flags"] = static_cast<unsigned int>(m.flags);
 	j["data.forceLeft"] = data.forceLeft;
+
+	j["renderable"] = m.renderable.Save();
+
 	return j;
 }
 
@@ -617,6 +630,10 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("data.forceLeft")) {
 		data.forceLeft = j["data.forceLeft"];
+	}
+
+	if (j.contains("renderable")) {
+		m.renderable.Load(j["renderable"], propagate);
 	}
 
 	Component::Load(j, propagate);

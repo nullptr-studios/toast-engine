@@ -45,8 +45,6 @@ public:
 		m_material = resource::LoadResource<renderer::Material>(path);
 	}
 
-	[[nodiscard]]
-
 	//[[nodiscard]]
 	// std::weak_ptr<Texture> GetTexture() const {
 	//	return m_texture;

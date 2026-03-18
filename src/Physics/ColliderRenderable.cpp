@@ -27,8 +27,8 @@ static bool isPointInTriangle(const vec2& p, const glm::vec2& a, const glm::vec2
     return !(has_neg && has_pos);
 }
 
-static std::vector<size_t> triangulate(const std::vector<vec2>& vertices) {
-    std::vector<size_t> indices;
+static std::vector<uint16_t> triangulate(const std::vector<vec2>& vertices) {
+    std::vector<uint16_t> indices;
     
     // A polygon must have at least 3 vertices
     if (vertices.size() < 3) {
@@ -131,5 +131,7 @@ static std::vector<size_t> triangulate(const std::vector<vec2>& vertices) {
 void physics::ColliderRenderable::SendVertices(std::vector<glm::vec2>& points) {
 	this->m.points = points;
 	this->m.indices = triangulate(points);
+	CalculateBoundingBox();
+	m.mesh.UpdateDynamicSpine(m.vertices.data(), m.vertices.size(), m.indices.data(), m.indices.size());
 }
 
