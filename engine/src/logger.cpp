@@ -1,15 +1,43 @@
 #include "logger.hpp"
+#include "thread_pool.hpp"
 #include <easypb.hpp>
 
 #include <chrono>
 #include <vector>
+#include <filesystem>
+#include <cstdlib>
+#include <iostream>
 
 auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 	struct Helper : public Logger {};
 	auto ptr = std::make_unique<Helper>();
 	instance = ptr.get();
 
-	ptr->init_network();
+#if defined(__linux__)
+	// TODO: This needs to work in windows
+	static constexpr bool AUTO_SPAWN_LOG_SERVER = false;
+	if (AUTO_SPAWN_LOG_SERVER) {
+		try {
+			std::vector<std::filesystem::path> candidates = {
+				"build/linux/x86_64/debug/log-server",
+				"build/linux/x86_64/release/log-server",
+			};
+			std::filesystem::path server_path;
+			for (auto &p : candidates) {
+				if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) { server_path = p; break; }
+			}
+			if (!server_path.empty()) {
+				std::string cmd = std::string("setsid ") + server_path.string() + " >/dev/null 2>&1 &";
+				std::system(cmd.c_str());
+			}
+		} catch (...) {
+			// best-effort spawn; ignore failures
+		}
+	}
+#endif
+
+	// Attempt to connect (with retries)
+	ptr->init_network_retry();
 	return ptr;
 }
 
@@ -55,8 +83,7 @@ void Logger::init_network() {
 		asio::connect(m.socket, endpoints);
 
 #if defined(__linux__) || defined(__APPLE__)
-		// Guard against a stalled server holding a ThreadPool worker thread
-		// indefinitely
+		// Guard against a stalled server holding a ThreadPool worker indefinitely
 		timeval timeout{.tv_sec = 1, .tv_usec = 0};
 		setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &timeout,
 				sizeof(timeout));
@@ -138,6 +165,43 @@ void Logger::flush_sync() {
 		if (ec) {
 			std::fprintf(stderr, "[Logger] Final flush failed: %s\n",
 					ec.message().c_str());
+		}
+	}
+}
+
+void Logger::init_network_retry() {
+	// Try connecting with retries instead of aborting — make logging non-fatal
+	const int max_attempts = 50; // ~10s at base_delay_ms=200
+	const int base_delay_ms = 200;
+	for (int attempt = 1; attempt <= max_attempts; ++attempt) {
+		try {
+			// Ensure socket is fresh
+			if (m.socket.is_open()) {
+				asio::error_code ec;
+				m.socket.close(ec);
+			}
+			m.socket = asio::ip::tcp::socket(m.io_ctx);
+
+			asio::ip::tcp::resolver resolver(m.io_ctx);
+			auto endpoints = resolver.resolve(HOST, std::to_string(PORT));
+			asio::connect(m.socket, endpoints);
+
+		#if defined(__linux__) || defined(__APPLE__)
+			// Guard against a stalled server holding a ThreadPool worker indefinitely
+			timeval timeout{.tv_sec = 1, .tv_usec = 0};
+			setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &timeout,
+					sizeof(timeout));
+		#endif
+
+			std::fprintf(stderr, "[Logger] Connected to log server (attempt %d)\n", attempt);
+			return;
+		} catch (const std::exception &e) {
+			if (attempt == max_attempts) {
+				std::fprintf(stderr, "[Logger] Failed to connect to log server after %d attempts: %s\n", max_attempts, e.what());
+			} else {
+				std::fprintf(stderr, "[Logger] Connect attempt %d failed: %s; retrying in %dms\n", attempt, e.what(), base_delay_ms * attempt);
+				std::this_thread::sleep_for(std::chrono::milliseconds(base_delay_ms * attempt));
+			}
 		}
 	}
 }

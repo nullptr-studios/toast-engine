@@ -4,24 +4,19 @@
  * @date 16/03/26
  * @brief Handles logging on the project: serializes logs and sends them through TCP/IP
  *        to the logger server
- *
- * @note NOTE: Protobuf serialization is not yet implemented — messages are currently sent as
- *       raw newline-terminated strings.
  */
 
 #pragma once
 
 #include <asio.hpp>
 #include <memory>
-#include <string>
 #include <string_view>
 #include <deque>
 #include <mutex>
 #include <atomic>
 #include <cassert>
-#include <cstdio>
+
 #include "logging_easypb.h"
-#include "toast/thread_pool.hpp"
 
 class Logger {
 	inline static Logger* instance = nullptr;
@@ -84,12 +79,9 @@ public:
 private:
 	Logger() = default;
 
-	/**
-	 * @brief Synchronously connects the socket to the log server
-	 *
-	 * TODO: Should hold the engine until connected to logger
-	 */
+	[[deprecated("Use init_network_retry() instead")]]
 	void init_network();
+	void init_network_retry();
 
 	/**
 	 * @brief Waits for any in-flight drain job to finish, then sends remaining messages

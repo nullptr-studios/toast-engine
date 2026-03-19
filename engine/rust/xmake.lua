@@ -24,3 +24,21 @@ rule_end()
 target("toast.engine")
 add_rules("toast.cargo")
 target_end()
+
+-- Build log-server binary and copy to engine build output
+target("toast.log-server")
+    set_kind("phony")
+    before_build(function ()
+        local mode = is_mode("release") and "release" or "debug"
+        local manifest = path.join(rust_dir, "log-server", "Cargo.toml")
+        local args = {"build", "--manifest-path", manifest}
+        if mode == "release" then table.insert(args, "--release") end
+        os.execv("cargo", args)
+        local bin = path.join(rust_dir, "target", mode, "log-server")
+        local out_dir = path.join(os.projectdir(), "build", os.host(), os.arch(), mode)
+        os.mkdir(out_dir)
+        os.cp(bin, out_dir)
+        -- ensure executable
+        os.execv("chmod", {"+x", path.join(out_dir, "log-server")})
+    end)
+target_end()
