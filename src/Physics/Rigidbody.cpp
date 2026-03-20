@@ -8,6 +8,7 @@
 #include "Toast/Renderer/DebugDrawLayer.hpp"
 #include "Toast/World.hpp"
 
+#include <limits>
 #include <memory>
 
 #ifdef TOAST_EDITOR
@@ -173,7 +174,13 @@ json_t Rigidbody::Save() const {
 	json_t j = Component::Save();
 
 	j["radius"] = radius;
-	j["mass"] = mass;
+  if (std::isinf(mass)) {
+    j["infinite_mass"] = true;
+    j["mass"] = 0.0f;
+  } else {
+    j["infinite_mass"] = false;
+    j["mass"] = mass;
+  }
 	j["friction"] = friction;
 	j["hasGravity"] = hasGravity;
 	j["gravityScale"] = gravityScale;
@@ -198,7 +205,12 @@ void Rigidbody::Load(json_t j, bool propagate) {
 		radius = j["radius"];
 	}
 	if (j.contains("mass")) {
-		mass = j["mass"];
+    if (j["mass"].type() == nlohmann::detail::value_t::number_float) {
+      mass = j["mass"];
+    } else {
+      mass = std::numeric_limits<double>::infinity();
+    }
+
 	}
 	if (j.contains("friction")) {
 		friction = j["friction"];
