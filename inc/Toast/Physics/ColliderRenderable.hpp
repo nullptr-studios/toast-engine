@@ -124,9 +124,9 @@ public:
 private:
 	void CalculateBoundingBox() {
 		float y_min = std::numeric_limits<float>::max();
-		float y_max = std::numeric_limits<float>::min();
+		float y_max = std::numeric_limits<float>::lowest();
 		float x_min = std::numeric_limits<float>::max();
-		float x_max = std::numeric_limits<float>::min();
+		float x_max = std::numeric_limits<float>::lowest();
 
 		for (auto& p : m.points) {
 			y_min = std::min(p.y, y_min);

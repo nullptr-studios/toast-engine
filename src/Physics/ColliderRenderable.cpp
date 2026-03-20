@@ -47,7 +47,7 @@ static std::vector<uint16_t> triangulate(const std::vector<vec3>& vertices) {
     float area = 0.0f;
     for (size_t i = 0; i < vertices.size(); ++i) {
         size_t j = (i + 1) % vertices.size();
-        area += determinant(glm::mat2{vertices[i], vertices[j]});
+        area += vertices[i].x * vertices[j].y - vertices[j].x * vertices[i].y;
     }
 
     // If the area is negative, the vertices are clockwise.

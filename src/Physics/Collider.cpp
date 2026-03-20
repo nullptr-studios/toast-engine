@@ -360,10 +360,11 @@ void Collider::CalculatePoints() {
 		m.convexShapes.emplace_back(c);
 	}
 
-	std::vector<glm::vec3> world_vertices(m.points.size());
+	std::vector<glm::vec3> world_vertices;
+	world_vertices.reserve(m.points.size());
 	for (const auto& p : m.points) {
 		glm::vec4 p4d = world_mtx * glm::vec4{ p.x, p.y, 0.0, 1.0 };
-		world_vertices.emplace_back(glm::vec3{p4d});
+		world_vertices.push_back(glm::vec3{ p4d });
 	}
 
 	m.renderable.SendVertices(world_vertices);
