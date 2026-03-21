@@ -33,6 +33,17 @@ class ColliderRenderable : public renderer::IRenderable {
 		std::shared_ptr<renderer::Material> material;
 		std::string material_path;
 		editor::ResourceSlot material_slot { resource::ResourceType::MATERIAL };
+
+		// Top layer feature
+		bool showTop = false;
+		float maxSlope = 45.0f; // in degrees
+		float topHeight = 0.5f;
+		renderer::Mesh topMesh;
+		std::vector<renderer::SpineVertex> topVertices;
+		std::vector<uint16_t> topIndices;
+		std::shared_ptr<renderer::Material> topMaterial;
+		std::string topMaterialPath;
+		editor::ResourceSlot topMaterialSlot { resource::ResourceType::MATERIAL };
 	} m;
 
 public:
@@ -43,12 +54,28 @@ public:
 		if (j.contains("material_path")) {
 			m.material_path = j.at("material_path");
 		}
+		if (j.contains("showTop")) {
+			m.showTop = j.at("showTop");
+		}
+		if (j.contains("maxSlope")) {
+			m.maxSlope = j.at("maxSlope");
+		}
+		if (j.contains("topHeight")) {
+			m.topHeight = j.at("topHeight");
+		}
+		if (j.contains("topMaterialPath")) {
+			m.topMaterialPath = j.at("topMaterialPath");
+		}
 	}
 
 	[[nodiscard]]
 	json_t Save() const override {
 		json_t j;
 		j["material_path"] = m.material_path;
+		j["showTop"] = m.showTop;
+		j["maxSlope"] = m.maxSlope;
+		j["topHeight"] = m.topHeight;
+		j["topMaterialPath"] = m.topMaterialPath;
 		return j;
 	}
 
@@ -56,6 +83,7 @@ public:
 		TransformComponent::Init();
 		// init just for loading
 		m.material = resource::LoadResource<renderer::Material>(m.material_path);
+		m.topMaterial = resource::LoadResource<renderer::Material>(m.topMaterialPath);
 
 		SetRunTick(false);
 		SetRunEarlyTick(false);
@@ -67,18 +95,34 @@ public:
 			m.material_path = p;
 			m.material = resource::LoadResource<renderer::Material>(p);
 		});
-
 		m.material_slot.SetInitialResource(m.material_path);
+
+		m.topMaterialSlot.name("Top Material");
+		m.topMaterialSlot.SetOnDroppedLambda([this](const std::string& p) {
+			m.topMaterialPath = p;
+			m.topMaterial = resource::LoadResource<renderer::Material>(p);
+		});
+		m.topMaterialSlot.SetInitialResource(m.topMaterialPath);
 #endif
 	}
 
 	void Inspector() override {
 		m.material_slot.Show();
+		ImGui::Separator();
+		ImGui::Checkbox("Show Top Layer", &m.showTop);
+		if (m.showTop) {
+			ImGui::DragFloat("Max Slope (Deg)", &m.maxSlope, 0.5f, 0.0f, 90.0f);
+			ImGui::DragFloat("Top Height", &m.topHeight, 0.05f, 0.0f, 10.0f);
+			m.topMaterialSlot.Show();
+		}
 	}
 
 	void LoadTextures() override {
 		m.mesh.InitDynamicSpine();
 		m.mesh.UpdateDynamicSpine(m.vertices.data(), m.vertices.size(), m.indices.data(), m.indices.size());
+
+		m.topMesh.InitDynamicSpine();
+		m.topMesh.UpdateDynamicSpine(m.topVertices.data(), m.topVertices.size(), m.topIndices.data(), m.topIndices.size());
 	}
 
 	void OnRender(const glm::mat4& viewProjection) noexcept override {
@@ -88,37 +132,30 @@ public:
 			return;
 		}
 
-		if (m.material == nullptr) return;
-		if (m.material->GetShader() == nullptr) return;
-		
 		PROFILE_ZONE;
 
 		// compute transform once
 		const glm::mat4 model = GetWorldMatrix();
 		const glm::mat4 mvp = viewProjection * model;
 
-		m.material->Use();
-		auto shader = m.material->GetShader();
-		if (shader) {
+		if (m.material && m.material->GetShader()) {
+			m.material->Use();
+			auto shader = m.material->GetShader();
 			// upload world matrix for deferred / lighting passes
 			shader->Set("gWorld", model);
-
 			// set generic transform uniform
 			shader->Set("gMVP", mvp);
+			// draw
+			m.mesh.DrawDynamicSpine(m.indices.size());
 		}
 
-		// draw
-		m.mesh.DrawDynamicSpine(m.indices.size());
-
-		// restore state
-		// m_texture->Unbind();
-		// m_shader->unuse();
-
-		// for (size_t i = 0; i < m.indices.size(); i += 3) {
-		// 	renderer::DebugLine(m.points[m.indices[i]], m.points[m.indices[i+1]], glm::vec4{0.0, 1.0, 1.0, 1.0});
-		// 	renderer::DebugLine(m.points[m.indices[i+1]], m.points[m.indices[i+2]], glm::vec4{0.0, 1.0, 1.0, 1.0});
-		// 	renderer::DebugLine(m.points[m.indices[i+2]], m.points[m.indices[i]], glm::vec4{0.0, 1.0, 1.0, 1.0});
-		// }
+		if (m.showTop && m.topMaterial && m.topMaterial->GetShader()) {
+			m.topMaterial->Use();
+			auto shader = m.topMaterial->GetShader();
+			shader->Set("gWorld", model);
+			shader->Set("gMVP", mvp);
+			m.topMesh.DrawDynamicSpine(m.topIndices.size());
+		}
 	}
 
 private:

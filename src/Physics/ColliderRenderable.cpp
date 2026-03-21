@@ -129,23 +129,92 @@ static std::vector<uint16_t> triangulate(const std::vector<vec3>& vertices) {
 }
 
 void physics::ColliderRenderable::SendVertices(std::vector<glm::vec3>& points) {
-        // clear things just in case
-        m.points.clear();
-        m.indices.clear();
-	m.vertices.clear();
+    // clear things just in case
+    m.points.clear();
+    m.indices.clear();
+    m.vertices.clear();
+    m.topVertices.clear();
+    m.topIndices.clear();
 
-	this->m.points = points;
-	this->m.indices = triangulate(points);
-	CalculateBoundingBox();
+    this->m.points = points;
+    this->m.indices = triangulate(points);
+    CalculateBoundingBox();
 
-        for (const auto& point : m.points) {
-		m.vertices.emplace_back(renderer::SpineVertex {
-		        .position = glm::vec3 { point.x, point.y, 0.0 },
-                        .texCoord = { 0.0, 0.0 },
-                        .colorABGR = 0xFFFFFFFF
+    for (const auto& point : m.points) {
+        m.vertices.emplace_back(renderer::SpineVertex {
+                .position = glm::vec3 { point.x, point.y, 0.0 },
+                .texCoord = { 0.0, 0.0 },
+                .colorABGR = 0xFFFFFFFF
+        });
+    }
+
+    m.mesh.UpdateDynamicSpine(m.vertices.data(), m.vertices.size(), m.indices.data(), m.indices.size());
+
+    if (m.showTop && m.points.size() >= 2) {
+        float cosThreshold = cos(glm::radians(m.maxSlope));
+        float currentDistance = 0.0f;
+
+        for (size_t i = 0; i < m.points.size(); ++i) {
+            size_t nextIdx = (i + 1) % m.points.size();
+            glm::vec3 p1 = m.points[i];
+            glm::vec3 p2 = m.points[nextIdx];
+
+            glm::vec3 edge = p2 - p1;
+            float edgeLen = glm::length(edge);
+            if (edgeLen < 0.0001f) continue;
+
+            // Outward normal for CCW: (dy, -dx) But we need to know if it points UP
+            glm::vec2 normal = glm::normalize(glm::vec2(p1.y - p2.y, p2.x - p1.x));
+            
+            // If normal points UP and within slope
+            if (normal.y > cosThreshold) {
+                uint16_t baseIdx = static_cast<uint16_t>(m.topVertices.size());
+                
+                float nextDistance = currentDistance + edgeLen;
+
+                // V0: Bottom Left
+                m.topVertices.emplace_back(renderer::SpineVertex{
+                    .position = p1,
+                    .texCoord = { currentDistance, 0.0f },
+                    .colorABGR = 0xFFFFFFFF
                 });
-        }
+                // V1: Bottom Right
+                m.topVertices.emplace_back(renderer::SpineVertex{
+                    .position = p2,
+                    .texCoord = { nextDistance, 0.0f },
+                    .colorABGR = 0xFFFFFFFF
+                });
+                // V2: Top Right
+                m.topVertices.emplace_back(renderer::SpineVertex{
+                    .position = p2 + glm::vec3(0.0f, m.topHeight, 0.0f),
+                    .texCoord = { nextDistance, 1.0f },
+                    .colorABGR = 0xFFFFFFFF
+                });
+                // V3: Top Left
+                m.topVertices.emplace_back(renderer::SpineVertex{
+                    .position = p1 + glm::vec3(0.0f, m.topHeight, 0.0f),
+                    .texCoord = { currentDistance, 1.0f },
+                    .colorABGR = 0xFFFFFFFF
+                });
 
-	m.mesh.UpdateDynamicSpine(m.vertices.data(), m.vertices.size(), m.indices.data(), m.indices.size());
+                m.topIndices.push_back(baseIdx + 0);
+                m.topIndices.push_back(baseIdx + 1);
+                m.topIndices.push_back(baseIdx + 2);
+                m.topIndices.push_back(baseIdx + 0);
+                m.topIndices.push_back(baseIdx + 2);
+                m.topIndices.push_back(baseIdx + 3);
+
+                currentDistance = nextDistance;
+            } else {
+                // If we have a break in the top layer, we might want to reset distance 
+                // but usually ground textures are continuous.
+                // currentDistance = 0.0f; 
+            }
+        }
+        
+        if (!m.topVertices.empty()) {
+            m.topMesh.UpdateDynamicSpine(m.topVertices.data(), m.topVertices.size(), m.topIndices.data(), m.topIndices.size());
+        }
+    }
 }
 
