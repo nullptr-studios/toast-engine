@@ -409,12 +409,20 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 		if (manifold.has_value()) {
 			RbRbResolution(rb, *it, manifold.value());
 			
+			// FIXME: This gets called rn every frame
+			// TODO: ExitCallback
 			if (rb->enterCallback) {
-				rb->enterCallback(*it);
+				std::lock_guard lock(m.callbackMutex);
+				m.callbackList.emplace_back([rb, it]() {
+					rb->enterCallback(*it);
+				});
 			}
 
 			if ((*it)->enterCallback) {
-				(*it)->enterCallback(rb);
+				std::lock_guard lock(m.callbackMutex);
+				m.callbackList.emplace_back([rb, it]() {
+					(*it)->enterCallback(rb);
+				});
 			}
 
 		}
@@ -632,6 +640,22 @@ void PhysicsSystem::SetGravityPointScale(double scale) {
 	}
 
 	i.value()->m.gravityPointScale = scale;
+}
+
+void PhysicsSystem::MainThreadLateTick() {
+	auto i = PhysicsSystem::get();
+	
+	if (!i.has_value()) {
+		return;
+	}
+	
+	std::lock_guard lock(i.value()->m.callbackMutex);
+	{
+		for (const auto& callback : i.value()->m.callbackList) {
+			callback();
+		}
+		i.value()->m.callbackList.clear();
+	}
 }
 
 void SetGravityType(GravityType type) {

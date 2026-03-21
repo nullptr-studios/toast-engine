@@ -134,6 +134,8 @@ void Engine::Run(int argc, char** argv) {
 
 		world->Tick();
 		world->LateTick();
+		
+		physics::PhysicsSystem::MainThreadLateTick();
 
 #ifdef TOAST_EDITOR
 		world->EditorTick();
