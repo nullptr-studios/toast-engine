@@ -464,6 +464,7 @@ void OpenGLRenderer::GeometryPass() {
 	TracyGpuZone("Geometry Pass");
 #endif
 
+	// TODO: Remove this shit dario made like every think dario makes
 	// Rebuild the combined list only when membership changed (add/remove/enable/disable).
 	// The depth sort still runs every frame since object positions change each tick.
 	if (m_renderablesSortDirty || m_transparentSortDirty) {
