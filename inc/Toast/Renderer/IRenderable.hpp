@@ -16,6 +16,13 @@
 
 namespace renderer {
 
+// this should have been done since the very begining lmao
+enum class IRenderablePass : uint8_t {
+	GEOMETRY,
+	LIGHTS,
+	OCCLUSION,
+};
+
 /**
  * @class IRenderable
  * @brief Interface for objects that can be rendered by the rendering system.
@@ -67,7 +74,7 @@ public:
 	 * @note This method is called in the render loop and must be efficient.
 	 * @note Must be noexcept as exceptions cannot be handled in render loop.
 	 */
-	virtual void OnRender(const glm::mat4& viewProjection) noexcept = 0;
+	virtual void OnRender(renderer::IRenderablePass pass, const glm::mat4& viewProjection) noexcept = 0;
 
 	/**
 	 * @brief Gets the Z-depth for sorting purposes.
@@ -78,7 +85,7 @@ public:
 	 * @return Z-depth in world units.
 	 */
 	[[nodiscard]]
-	float GetDepth() noexcept {
+	virtual float GetDepth() noexcept {
 		return worldPosition().z;
 	}
 

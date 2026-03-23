@@ -27,19 +27,17 @@ public:
 	void Render() override;
 
 	void GeometryPass();
+	void OcclusionPass();
 	void LightingPass();
 	void CombinedRenderPass() const;
 	void SpritePass();
 	void HUDPass();
 
-	void Clear() override;
+	void Clear() const override;
 	void Resize(glm::uvec2 size) override;
 
 	void AddRenderable(IRenderable* renderable) override;
 	void RemoveRenderable(IRenderable* renderable) override;
-
-	void AddTransparentRenderable(IRenderable* renderable) override;
-	void RemoveTransparentRenderable(IRenderable* renderable) override;
 
 	void AddLight(Light2D* light) override;
 	void RemoveLight(Light2D* light) override;
@@ -48,21 +46,38 @@ public:
 
 	void DrawScreenQuad(bool flipY) override;
 
+	GLuint GetShadowMapTexture() const override;
+
 private:
-	LayerStack* m_layerStack = nullptr;
+	void RecreateShadowResources(unsigned resolution);
+	void DestroyShadowResources();
 
-	// Rendering resources
-	std::shared_ptr<Shader> m_screenShader = nullptr;
-	std::shared_ptr<Shader> m_flippedScreenShader = nullptr;
-	std::shared_ptr<Shader> m_combineLightShader = nullptr;
-	std::shared_ptr<Shader> m_globalLightShader = nullptr;
-	std::shared_ptr<Mesh> m_quad = nullptr;
+	struct {
+		LayerStack* layerStack = nullptr;
 
-	GlobalLight* m_globalLight = nullptr;
+		// Rendering resources
+		std::shared_ptr<Shader> screenShader = nullptr;
+		std::shared_ptr<Shader> flippedScreenShader = nullptr;
+		std::shared_ptr<Shader> combineLightShader = nullptr;
+		std::shared_ptr<Shader> globalLightShader = nullptr;
+		std::shared_ptr<Mesh> quad = nullptr;
 
-	std::vector<IRenderable*> m_combinedRenderables;
+		GlobalLight* globalLight = nullptr;
 
-	// Optional per-layer framebuffer to render non-HUD layers before compositing
-	Framebuffer* m_layerFramebuffer = nullptr;
+		std::vector<IRenderable*> combinedRenderables;
+		Framebuffer* geometryResolveFramebuffer = nullptr;
+
+		// Shadows
+		Framebuffer* occlusionFramebuffer = nullptr;
+		GLuint jfaTex = 0;
+		GLuint pingPongTex = 0;
+		GLuint sdfTex = 0;
+		std::shared_ptr<Shader> sdfComputeShader = nullptr;
+		std::shared_ptr<Shader> jfaInitComputeShader = nullptr;
+		std::shared_ptr<Shader> jfaComputeShader = nullptr;
+		std::shared_ptr<Shader> finalComputeShader = nullptr;
+
+		// Framebuffer* layerFramebuffer = nullptr;
+	} m;
 };
 }

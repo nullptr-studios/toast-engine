@@ -4,10 +4,24 @@
 
 #pragma once
 #include "Toast/Objects/Actor.hpp"
+#include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/Mesh.hpp"
 
 class Framebuffer;
+class Light2D;
+
+class LightRenderable : public renderer::IRenderable {
+public:
+	LightRenderable(Light2D* light) : m_light(light) { }
+
+	void OnRender(renderer::IRenderablePass pass, const glm::mat4& viewProjection) noexcept override;
+
+	float GetDepth() noexcept override;
+
+private:
+	Light2D* m_light;
+};
 
 class Light2D : public toast::Actor {
 public:
@@ -70,10 +84,22 @@ public:
 #endif
 
 private:
+	glm::vec2 TransformToUV(const glm::vec3& worldPos, const glm::mat4& viewProj) const {
+		glm::vec4 clipSpace = viewProj * glm::vec4(worldPos, 1.0f);
+
+		glm::vec3 ndc = glm::vec3(clipSpace) / clipSpace.w;
+
+		glm::vec2 uv;
+		uv.x = ndc.x * 0.5f + 0.5f;
+		uv.y = ndc.y * 0.5f + 0.5f;
+
+		return uv;
+	}
+
 	std::shared_ptr<renderer::Mesh> m_lightMesh = nullptr;
 	std::shared_ptr<renderer::Shader> m_lightShader = nullptr;
 
-	Framebuffer* m_lightBuffer = nullptr;
+	// Framebuffer* m_lightBuffer = nullptr;
 
 	glm::vec4 m_color = glm::vec4(1.0f);
 	float m_intensity = 1.0f;
@@ -83,4 +109,9 @@ private:
 
 	float m_radialSoftness = 0.25f;
 	float m_angularSoftness = 0.5f;
+
+	bool m_castShadow = true;
+	float m_lightShadowRadius = 0.05f;
+
+	IRenderable* m_renderable = nullptr;
 };
