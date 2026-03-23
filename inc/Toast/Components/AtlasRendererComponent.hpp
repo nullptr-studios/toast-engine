@@ -21,7 +21,7 @@ public:
 
 	void Init() override;
 
-	void OnRender(const glm::mat4&) noexcept override;
+	void OnRender(renderer::IRenderablePass pass, const glm::mat4& precomputed_mat) noexcept override;
 
 	void LoadTextures() override;
 
@@ -59,6 +59,7 @@ private:
 
 		std::shared_ptr<SpineAtlas> atlas;
 		std::shared_ptr<renderer::Shader> shader;
+		std::shared_ptr<renderer::Shader> occlusionShader;
 
 		renderer::Mesh dynamicMesh;
 
@@ -75,6 +76,10 @@ private:
 
 		std::vector<toast::AtlasSpriteComponent*> spriteCache;
 		bool spriteCacheDirty = true;
+
+		bool isOccluder = false;
+
+		bool isOnScreen = true;
 	} m;
 
 #ifdef TOAST_EDITOR

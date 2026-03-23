@@ -28,6 +28,8 @@ void SpineRendererComponent::Init() {
 
 	// shader and buffers
 	m.shader = resource::LoadResource<renderer::Shader>("SHADERS/spine.shader");
+	m.occlusionShader = resource::LoadResource<renderer::Shader>("SHADERS/occlusion.shader");
+
 	// Reserve temp buffers to avoid allocations
 	m.tempVerts.reserve(INITIAL_VERT_RESERVE);
 	m.tempIndices.reserve(INITIAL_VERT_RESERVE * 3);
@@ -81,7 +83,7 @@ void SpineRendererComponent::LoadTextures() {
 	m.shader->Use();
 	m.shader->SetSampler("Texture", 0);
 
-	renderer::IRendererBase::GetInstance()->AddTransparentRenderable(this);
+	renderer::IRendererBase::GetInstance()->AddRenderable(this);
 
 	m.dynamicMesh.InitDynamicSpine();
 }
@@ -205,6 +207,8 @@ void SpineRendererComponent::Inspector() {
 		}
 	}
 
+	ImGui::Checkbox("Is Occluder", &m.isOccluder);
+
 	ImGui::Separator();
 	ImGui::Text("Animation Preview");
 
@@ -263,10 +267,11 @@ void SpineRendererComponent::Inspector() {
 
 void SpineRendererComponent::Destroy() {
 	TransformComponent::Destroy();
-	renderer::IRendererBase::GetInstance()->RemoveTransparentRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
 }
 
-void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept {
+// optimize
+void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::mat4& precomputed_mat) noexcept {
 	if (!enabled()) {
 		return;
 	}
@@ -275,6 +280,11 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		return;
 	}
 
+	if (pass != renderer::IRenderablePass::GEOMETRY && pass != renderer::IRenderablePass::OCCLUSION) {
+		return;
+	}
+
+	// this is really unoptimiced lmao
 	PROFILE_ZONE_C(0xFF0000);    // Red for rendering
 
 	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m.skeleton);
@@ -286,52 +296,67 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 	const glm::mat4 model = GetWorldMatrix();
 	const glm::mat4 mvp = precomputed_mat * model;
 
-	m.shader->Use();
-	m.shader->Set("transform", mvp);
-
 	// Reuse temporary buffers
 	m.tempVerts.clear();
 	m.tempIndices.clear();
 
-	// First pass: collect all vertices to compute bounding box for frustum culling
-	{
-		spine::RenderCommand* cmd = command;
-		size_t total_verts = 0;
-		while (cmd) {
-			total_verts += cmd->numVertices;
-			cmd = cmd->next;
-		}
-
-		// Build temporary vertex positions for bounding box computation
-		m.tempVerts.reserve(total_verts);
-		cmd = command;
-		while (cmd) {
-			for (int i = 0; i < cmd->numVertices; ++i) {
-				renderer::SpineVertex v {};
-				v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
-				v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], cmd->uvs[(i * 2) + 1]);
-				v.colorABGR = cmd->colors[i];
-				m.tempVerts.push_back(v);
+	// done just at occlusion step and reused
+	if (pass == renderer::IRenderablePass::OCCLUSION) {
+		// First pass: collect all vertices to compute bounding box for frustum culling
+		{
+			spine::RenderCommand* cmd = command;
+			size_t total_verts = 0;
+			while (cmd) {
+				total_verts += cmd->numVertices;
+				cmd = cmd->next;
 			}
-			cmd = cmd->next;
+
+			// Build temporary vertex positions for bounding box computation
+			m.tempVerts.reserve(total_verts);
+			cmd = command;
+			while (cmd) {
+				for (int i = 0; i < cmd->numVertices; ++i) {
+					renderer::SpineVertex v {};
+					v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
+					v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], 1.0f - cmd->uvs[(i * 2) + 1]);
+					v.colorABGR = cmd->colors[i];
+					m.tempVerts.push_back(v);
+				}
+				cmd = cmd->next;
+			}
+
+			// Compute dynamic bounding box
+			m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
+
+			// Frustum culling using the dynamic AABB
+			m.onScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), model);
 		}
 
-		// Compute dynamic bounding box
-		m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
-
-		// Frustum culling using the dynamic AABB
-		// const auto& frustum_planes = renderer::IRendererBase::GetInstance()->GetFrustumPlanes(); // TODO: dario forgot about this or smth
-		if (!OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), model)) {
-			return;    // Outside frustum, skip rendering
-		}
+		// Reset buffers for actual rendering pass
+		m.tempVerts.clear();
+		m.tempIndices.clear();
 	}
-
-	// Reset buffers for actual rendering pass
-	m.tempVerts.clear();
-	m.tempIndices.clear();
 
 	// cache last bound texture to avoid redundant binds
 	m.lastBoundTexture = 0;
+
+	if (pass == renderer::IRenderablePass::GEOMETRY) {
+		m.shader->Use();
+		m.shader->Set("transform", mvp);
+	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
+		if (!m.isOccluder) {
+			return;    // Skip occlusion pass if not an occluder
+		}
+		m.occlusionShader->Use();
+		m.occlusionShader->Set("gWorld", model);
+
+		// set generic transform uniform
+		m.occlusionShader->Set("gMVP", mvp);
+	}
+
+	if (!m.onScreen) {
+		return;
+	}
 
 	auto flush_batch = [&]() {
 		if (m.tempIndices.empty()) {
@@ -376,7 +401,7 @@ void SpineRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 		for (int i = 0; i < command->numVertices; ++i) {
 			auto& v = m.tempVerts[start_vert + i];
 			v.position = glm::vec3(command->positions[(i * 2) + 0], command->positions[(i * 2) + 1], 0.0f);
-			v.texCoord = glm::vec2(command->uvs[(i * 2) + 0], command->uvs[(i * 2) + 1]);
+			v.texCoord = glm::vec2(command->uvs[(i * 2) + 0], 1.0f - command->uvs[(i * 2) + 1]);
 			v.colorABGR = command->colors[i];
 		}
 
@@ -418,6 +443,9 @@ void SpineRendererComponent::Load(json_t j, bool force_create) {
 	if (j.contains("skeletonDataResourcePath")) {
 		m.skeletonDataPath = j.at("skeletonDataResourcePath").get<std::string>();
 	}
+	if (j.contains("isOccluder")) {
+		m.isOccluder = j.at("isOccluder").get<bool>();
+	}
 }
 
 json_t SpineRendererComponent::Save() const {
@@ -425,6 +453,7 @@ json_t SpineRendererComponent::Save() const {
 	json_t j = TransformComponent::Save();
 	j["atlasResourcePath"] = m.atlasPath;
 	j["skeletonDataResourcePath"] = m.skeletonDataPath;
+	j["isOccluder"] = m.isOccluder;
 	return j;
 }
 
@@ -434,6 +463,10 @@ void SpineRendererComponent::PlayAnimation(std::string_view name, bool loop, int
 
 void SpineRendererComponent::StopAnimation(int track) const {
 	m.animationState->clearTrack(track);
+}
+
+void SpineRendererComponent::NextPlayAnimation(std::string_view name, bool loop, float delay, int track) const {
+	m.animationState->addAnimation(track, name.data(), loop, delay);
 }
 
 void SpineRendererComponent::NextCrossFadeToDefault(float duration, int track) const {

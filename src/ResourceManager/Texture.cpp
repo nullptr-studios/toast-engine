@@ -4,10 +4,66 @@
 
 #include <Toast/Log.hpp>
 #include <Toast/Profiler.hpp>
+#include <Toast/Renderer/IRendererBase.hpp>
 #include <Toast/Resources/ResourceManager.hpp>
 #include <Toast/Resources/Texture.hpp>
+#include <algorithm>
 #include <glad/gl.h>
 #include <stb_image.h>
+#include <string_view>
+
+namespace {
+
+#ifndef GL_TEXTURE_MAX_ANISOTROPY_EXT
+#define GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
+#endif
+
+#ifndef GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT
+#define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
+#endif
+
+constexpr float kDefaultAnisotropyLevel = 8.0f;
+
+float GetConfiguredAnisotropyLevel() {
+	if (auto* rendererInstance = renderer::IRendererBase::GetInstance()) {
+		return std::max(1.0f, rendererInstance->GetRendererConfig().anisotropyLevel);
+	}
+	return kDefaultAnisotropyLevel;
+}
+
+bool SupportsAnisotropicFiltering() {
+	static int cachedSupport = -1;
+	if (cachedSupport != -1) {
+		return cachedSupport == 1;
+	}
+
+	GLint extensionCount = 0;
+	glGetIntegerv(GL_NUM_EXTENSIONS, &extensionCount);
+	for (GLint i = 0; i < extensionCount; ++i) {
+		const char* extension = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, static_cast<GLuint>(i)));
+		if (extension && std::string_view(extension) == "GL_EXT_texture_filter_anisotropic") {
+			cachedSupport = 1;
+			return true;
+		}
+	}
+
+	cachedSupport = 0;
+	return false;
+}
+
+void ApplyAnisotropy2D() {
+	if (!SupportsAnisotropicFiltering()) {
+		return;
+	}
+
+	const float requestedLevel = GetConfiguredAnisotropyLevel();
+	GLfloat maxAnisotropy = 1.0f;
+	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+	const GLfloat anisotropy = std::clamp(static_cast<GLfloat>(requestedLevel), 1.0f, maxAnisotropy);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
+}
+
+}    // namespace
 
 Texture::~Texture() {
 	// m_pixels is a std::vector, it cleans itself up automatically
@@ -33,7 +89,7 @@ void Texture::Unbind(unsigned int slot) const {
 
 void Texture::TextureFiltering(bool linear) const {
 	Bind();
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR : GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST_MIPMAP_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
 }
 
@@ -142,8 +198,10 @@ void Texture::LoadPlaceholderTexture() {
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	ApplyAnisotropy2D();
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -206,11 +264,12 @@ void Texture::CreateOpenGLTexture() {
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_width, m_height, 0, format, GL_UNSIGNED_BYTE, m_pixels.data());
-	// glGenerateMipmap(GL_TEXTURE_2D);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	ApplyAnisotropy2D();
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 

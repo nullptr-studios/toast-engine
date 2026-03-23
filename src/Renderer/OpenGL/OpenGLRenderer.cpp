@@ -12,13 +12,11 @@
 #include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/Mesh.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
-#include "Toast/Time.hpp"
 #include "Toast/Window/Window.hpp"
 #include "Toast/Window/WindowEvents.hpp"
 
 #include <GLFW/glfw3.h>
 #include <glad/gl.h>
-#include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #ifdef TOAST_EDITOR
@@ -33,6 +31,7 @@
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
 
+#include <algorithm>
 #include <sstream>
 #include <stb_image.h>
 
@@ -43,6 +42,31 @@
 namespace renderer {
 
 IRendererBase* IRendererBase::m_instance = nullptr;
+
+#ifdef _DEBUG
+#define CHECK_GL()                                     \
+	{                                                    \
+		if (GLenum err = glGetError()) {                   \
+			TOAST_ERROR("GL Error: {}", glErrorString(err)); \
+		}                                                  \
+	}
+#else
+#define CHECK_GL()
+#endif
+
+inline const char* glErrorString(GLenum err) noexcept {
+	switch (err) {
+		case GL_NO_ERROR: return "GL_NO_ERROR";
+		case GL_INVALID_ENUM: return "GL_INVALID_ENUM";
+		case GL_INVALID_VALUE: return "GL_INVALID_VALUE";
+		case GL_INVALID_OPERATION: return "GL_INVALID_OPERATION";
+		case GL_STACK_OVERFLOW: return "GL_STACK_OVERFLOW";
+		case GL_STACK_UNDERFLOW: return "GL_STACK_UNDERFLOW";
+		case GL_OUT_OF_MEMORY: return "GL_OUT_OF_MEMORY";
+		case GL_INVALID_FRAMEBUFFER_OPERATION: return "GL_INVALID_FRAMEBUFFER_OPERATION";
+		default: return "UNKNOWN ERROR";
+	}
+}
 
 #ifdef TOAST_EDITOR
 static GLFWwindow* g_backup_current_context = nullptr;
@@ -179,12 +203,16 @@ OpenGLRenderer::OpenGLRenderer() {
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_SCISSOR_TEST);
+	glEnable(GL_MULTISAMPLE);
 	// glEnable(GL_CULL_FACE);
 	// glCullFace(GL_BACK);
 	// glFrontFace(GL_CCW);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Load renderer settings before creating framebuffer resources that depend on config values.
+	LoadRenderSettings();
 
 	// Debug output
 #ifndef NDEBUG
@@ -195,29 +223,43 @@ OpenGLRenderer::OpenGLRenderer() {
 	// Default projection matrix
 	SetProjectionMatrix(glm::radians(90.0f), 16.0f / 9.0f, 0.1f, 1000.0f);
 
+	GLint maxSupportedSamples = 1;
+	glGetIntegerv(GL_MAX_SAMPLES, &maxSupportedSamples);
+	const unsigned requestedSamples = std::max(1u, m_config.msaaSamples);
+	const unsigned clampedSamples = static_cast<unsigned>(std::min(static_cast<GLint>(requestedSamples), maxSupportedSamples));
+	if (requestedSamples != clampedSamples) {
+		TOAST_WARN("Requested MSAA sample count {0} exceeds GPU limit {1}. Clamping.", requestedSamples, clampedSamples);
+	}
+	m_config.msaaSamples = clampedSamples;
+
 	// Geometry framebuffer
-	Framebuffer::Specs s = { 1920, 1080 };
-	m_geometryFramebuffer = new Framebuffer(s);
+	Framebuffer::Specs geometrySpecs = { 1920, 1080, /*clampedSamples > 1*/ false, static_cast<int>(clampedSamples) };
+	m_geometryFramebuffer = new Framebuffer(geometrySpecs);
 	m_geometryFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // albedo HDR buffer
 	m_geometryFramebuffer->AddDepthAttachment();
 	m_geometryFramebuffer->Build();
 
-	m_lightFramebuffer = new Framebuffer(s);
-	m_lightFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // light accumulation buffer
-	m_lightFramebuffer->AddDepthAttachment();
-	m_lightFramebuffer->Build();
+	// m_lightFramebuffer = new Framebuffer(s);
+	// m_lightFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // light accumulation buffer
+	// m_lightFramebuffer->AddDepthAttachment();
+	// m_lightFramebuffer->Build();
 
-	m_outputFramebuffer = new Framebuffer(s);
+	Framebuffer::Specs outputSpecs = { 1920, 1080, false };
+	m_outputFramebuffer = new Framebuffer(outputSpecs);
 	m_outputFramebuffer->AddColorAttachment(GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);    // final output buffer
 	m_outputFramebuffer->Build();
 
-	// Layer framebuffer: used to render game/editor layers (non-HUD) before compositing
-	m_layerFramebuffer = new Framebuffer(s);
-	m_layerFramebuffer->AddColorAttachment(GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);    // layer colors (same format as output)
-	m_layerFramebuffer->AddDepthAttachment();                                       // allow depth testing for layers
-	m_layerFramebuffer->Build();
+	Framebuffer::Specs resolveSpecs = { 1920, 1080 };
+	m.geometryResolveFramebuffer = new Framebuffer(resolveSpecs);
+	m.geometryResolveFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);
+	m.geometryResolveFramebuffer->Build();
 
-	//@TODO: HDR support
+	RecreateShadowResources(m_config.shadowMapResolution);
+
+	m.sdfComputeShader = resource::LoadResource<Shader>("SHADERS/occlusionSDF.shader");
+	m.jfaInitComputeShader = resource::LoadResource<Shader>("SHADERS/occlusionJFAInit.shader");
+	m.jfaComputeShader = resource::LoadResource<Shader>("SHADERS/occlusionJFA.shader");
+	m.finalComputeShader = resource::LoadResource<Shader>("SHADERS/occlusionFinal.shader");
 
 	// Listen to window resize events
 	m_listener.Subscribe<event::WindowResize>([this](event::WindowResize* e) -> bool {
@@ -264,29 +306,29 @@ OpenGLRenderer::OpenGLRenderer() {
 #endif
 
 	// setup layerstack
-	m_layerStack = LayerStack::GetInstance();
+	m.layerStack = LayerStack::GetInstance();
 	// TOAST_ASSERT(m_layerStack != nullptr, "LayerStack must be created before OpenGLRenderer!");
 
 	// setup default resources
-	m_quad = resource::LoadResource<Mesh>("MODELS/quad.obj");
-	m_screenShader = resource::LoadResource<Shader>("SHADERS/screen.shader");
-	m_combineLightShader = resource::LoadResource<Shader>("SHADERS/combineLight.shader");
-	m_globalLightShader = resource::LoadResource<Shader>("SHADERS/globalLight.shader");
+	m.quad = resource::LoadResource<Mesh>("MODELS/quad.obj");
+	m.screenShader = resource::LoadResource<Shader>("SHADERS/screen.shader");
+	m.flippedScreenShader = resource::LoadResource<Shader>("SHADERS/flippedScreen.shader");
+	m.combineLightShader = resource::LoadResource<Shader>("SHADERS/combineLight.shader");
+	m.globalLightShader = resource::LoadResource<Shader>("SHADERS/globalLight.shader");
 
 	// Set once, change and reset state if needed
 	stbi_set_flip_vertically_on_load_thread(1);
-
-	// Load settings
-	LoadRenderSettings();
 }
 
 OpenGLRenderer::~OpenGLRenderer() {
 	TOAST_INFO("Shutting down OpenGL Renderer...");
 
 	delete m_geometryFramebuffer;
-	delete m_lightFramebuffer;
+	// delete m_lightFramebuffer;
 	delete m_outputFramebuffer;
-	delete m_layerFramebuffer;
+	delete m.geometryResolveFramebuffer;
+	DestroyShadowResources();
+	// delete m.layerFramebuffer;
 #ifdef TOAST_EDITOR
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
@@ -355,16 +397,37 @@ void OpenGLRenderer::Render() {
 	// Extract frustum planes for culling
 	OclussionVolume::extractFrustumPlanesNormalized(m_multipliedMatrix, m_frustumPlanes);
 
-	// ParticleSystems are updated by the scene/world tick; renderer doesn't tick them directly
+	// The depth sort still runs every frame since object positions change each tick.
+	if (m_renderablesSortDirty) {
+		m.combinedRenderables.clear();
+		for (auto* r : m_renderables) {
+			if (r && m_disabledRenderables.find(r) == m_disabledRenderables.end()) {
+				m.combinedRenderables.push_back(r);
+			}
+		}
 
-	// Forward-shaded geometry pass: renders all objects (opaque + transparent) with alpha blending
+		m_renderablesSortDirty = false;
+	}
+
+	// Sort back-to-front every frame
+	if (m.combinedRenderables.size() > 1) {
+		std::stable_sort(m.combinedRenderables.begin(), m.combinedRenderables.end(), [](IRenderable* a, IRenderable* b) {
+			return a->GetDepth() < b->GetDepth();
+		});
+	}
+
+	OcclusionPass();
+	CHECK_GL();
+
 	GeometryPass();
+	CHECK_GL();
 
 	// Lighting
-	LightingPass();
+	// LightingPass();
 
 	// Combine (writes into m_outputFramebuffer)
 	CombinedRenderPass();
+	CHECK_GL();
 
 	// Render game/editor layers directly into the output framebuffer (HUD layers still render into their own FBOs)
 	m_outputFramebuffer->bind();
@@ -374,8 +437,8 @@ void OpenGLRenderer::Render() {
 
 	// Render non-HUD editor/game layers into a dedicated layer framebuffer
 	// Clear HUD layer framebuffers first to avoid persistence/smearing if a HUD view didn't draw pixels this frame
-	if (m_layerStack) {
-		for (auto* layer : m_layerStack->GetLayers()) {
+	if (m.layerStack) {
+		for (auto* layer : m.layerStack->GetLayers()) {
 			if (auto* hud = dynamic_cast<HUD::HUDLayer*>(layer)) {
 				if (auto* fb = hud->GetFramebuffer()) {
 					fb->bind();
@@ -389,40 +452,37 @@ void OpenGLRenderer::Render() {
 		}
 	}
 
-	// Now bind the per-layer framebuffer and clear it (transparent)
-	m_layerFramebuffer->bind();
-	glViewport(0, 0, m_layerFramebuffer->Width(), m_layerFramebuffer->Height());
-	glScissor(0, 0, m_layerFramebuffer->Width(), m_layerFramebuffer->Height());
+	m_outputFramebuffer->bind();
+	glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
+	glScissor(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
 	// Ensure depth testing is enabled for layer rendering and depth buffer is writable
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LEQUAL);
-	glClearColor(0, 0, 0, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Render layers; HUD layers will still render into their own FBOs
-	m_layerStack->RenderLayers();
+	m.layerStack->RenderLayers();
 	Framebuffer::unbind();
 
 	// Composite layer framebuffer over the combined output (alpha blend)
-	m_outputFramebuffer->bind();
+	// m_outputFramebuffer->bind();
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	m_screenShader->Use();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_layerFramebuffer->GetColorTexture(0));
-	m_screenShader->SetSampler("screenTexture", 0);
-	m_quad->Draw();
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	Framebuffer::unbind();
+	// m.screenShader->Use();
+	// glActiveTexture(GL_TEXTURE0);
+	// glBindTexture(GL_TEXTURE_2D, m_outputFramebuffer->GetColorTexture(0));
+	// m.screenShader->SetSampler("screenTexture", 0);
+	// m.quad->Draw();
+	// glBindTexture(GL_TEXTURE_2D, 0);
+	// glDisable(GL_BLEND);
+	// glEnable(GL_DEPTH_TEST);
+	// Framebuffer::unbind();
 
 	// Composite all HUD layer framebuffers onto the output as the final pass
 	HUDPass();
-
+	CHECK_GL()
 // draw to screen only if not in editor mode
 #ifndef TOAST_EDITOR
 	{
@@ -441,9 +501,9 @@ void OpenGLRenderer::Render() {
 		glBindTexture(GL_TEXTURE_2D, m_outputFramebuffer->GetColorTexture(0));
 
 		// draw screen quad
-		m_screenShader->Use();
-		m_screenShader->SetSampler("screenTexture", 0);
-		m_quad->Draw();
+		m.screenShader->Use();
+		m.screenShader->SetSampler("screenTexture", 0);
+		m.quad->Draw();
 
 		// Restore depth test
 		glEnable(GL_DEPTH_TEST);
@@ -464,34 +524,6 @@ void OpenGLRenderer::GeometryPass() {
 	TracyGpuZone("Geometry Pass");
 #endif
 
-	// Rebuild the combined list only when membership changed (add/remove/enable/disable).
-	// The depth sort still runs every frame since object positions change each tick.
-	if (m_renderablesSortDirty || m_transparentSortDirty) {
-		m_combinedRenderables.clear();
-		m_combinedRenderables.reserve(m_renderables.size() + m_transparentRenderables.size());
-
-		for (auto* r : m_renderables) {
-			if (r && !m_disabledRenderables.contains(r)) {
-				m_combinedRenderables.push_back(r);
-			}
-		}
-		for (auto* r : m_transparentRenderables) {
-			if (r && !m_disabledRenderables.contains(r)) {
-				m_combinedRenderables.push_back(r);
-			}
-		}
-
-		m_renderablesSortDirty = false;
-		m_transparentSortDirty = false;
-	}
-
-	// Sort back-to-front every frame — object z-depths change as they move
-	if (m_combinedRenderables.size() > 1) {
-		std::ranges::stable_sort(m_combinedRenderables, [](IRenderable* a, IRenderable* b) {
-			return a->GetDepth() < b->GetDepth();
-		});
-	}
-
 	// Prepare render target and GL state
 	glViewport(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
 	glScissor(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
@@ -509,17 +541,87 @@ void OpenGLRenderer::GeometryPass() {
 	glDepthFunc(GL_LEQUAL);
 	glClearDepth(1.0);
 
+	// Keep alpha-to-coverage disabled for now; transparent blending remains consistent across MSAA sample counts.
+	glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+
 	// Clear to transparent black so the combine pass preserves empty areas
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	Clear();
 
 	// Render only enabled renderables — no enabled() check needed inside OnRender
-	for (auto* r : m_combinedRenderables) {
-		r->OnRender(m_multipliedMatrix);
+	for (auto* r : m.combinedRenderables) {
+		r->OnRender(renderer::IRenderablePass::GEOMETRY, m_multipliedMatrix);
+	}
+}
+
+void OpenGLRenderer::OcclusionPass() {
+#ifdef TRACY_ENABLE
+	PROFILE_ZONE;
+	TracyGpuZone("Occlusion Pass");
+#endif
+
+	m.occlusionFramebuffer->bind();
+	glViewport(0, 0, m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height());
+
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glDisable(GL_BLEND);
+
+	for (auto* r : m.combinedRenderables) {
+		r->OnRender(renderer::IRenderablePass::OCCLUSION, m_multipliedMatrix);
 	}
 
-	// Restore predictable state
-	glDepthMask(GL_TRUE);
+	// init jfa
+	// glUseProgram(initShader);
+	m.jfaInitComputeShader->Use();
+
+	glBindTextureUnit(0, m.occlusionFramebuffer->GetColorTexture(0));
+	glBindImageTexture(1, m.jfaTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
+
+	// glUniform2i(resLoc, width, height);
+
+	m.jfaInitComputeShader->Set("resolution", glm::ivec2(m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height()));
+
+	glDispatchCompute((m.occlusionFramebuffer->Width() + 15) / 16, (m.occlusionFramebuffer->Height() + 15) / 16, 1);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+	//// dispatch JFA compute
+	GLuint inputTex = m.jfaTex;
+	GLuint outputTex = m.pingPongTex;
+
+	int maxDim = std::max(m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height());
+	int step = maxDim / 2;
+
+	while (step > 0) {
+		// glUseProgram(jfaShader);
+		m.jfaComputeShader->Use();
+
+		m.jfaComputeShader->Set("resolution", glm::ivec2(m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height()));
+		m.jfaComputeShader->Set("stepValue", step);
+
+		glBindTextureUnit(0, inputTex);
+		glBindImageTexture(1, outputTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
+
+		glDispatchCompute((m.occlusionFramebuffer->Width() + 15) / 16, (m.occlusionFramebuffer->Height() + 15) / 16, 1);
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+		std::swap(inputTex, outputTex);
+
+		step /= 2;
+	}
+
+	// final shader
+	// glUseProgram(finalShader);
+	m.finalComputeShader->Use();
+
+	glBindTextureUnit(0, inputTex);    // last JFA result
+	glBindImageTexture(1, m.sdfTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+	// glUniform2i(resLoc, width, height);
+	m.finalComputeShader->Set("resolution", glm::ivec2(m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height()));
+
+	glDispatchCompute((m.occlusionFramebuffer->Width() + 15) / 16, (m.occlusionFramebuffer->Height() + 15) / 16, 1);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
 void OpenGLRenderer::LightingPass() {
@@ -529,81 +631,81 @@ void OpenGLRenderer::LightingPass() {
 #endif
 
 	// If global lighting is disabled, avoid all light buffer work
-	if (!m_globalLightEnabled) {
-		return;
-	}
-
-	// Sort lights by z to ensure correct accumulation ordering when needed
-	if (m_lightsSortDirty && m_lights.size() > 1) {
-		std::ranges::stable_sort(m_lights, [](Light2D* a, Light2D* b) {
-			return a->transform()->position().z < b->transform()->position().z;
-		});
-		m_lightsSortDirty = false;
-	}
-
-	// Render lights at their own resolution
-	glViewport(0, 0, m_lightFramebuffer->Width(), m_lightFramebuffer->Height());
-	glScissor(0, 0, m_lightFramebuffer->Width(), m_lightFramebuffer->Height());
-
-	m_lightFramebuffer->bind();
-
-	// {
-	// 	GLenum lightDraws[] = { GL_COLOR_ATTACHMENT0 };
-	// 	glDrawBuffers(1, lightDraws);
+	// if (!m_globalLightEnabled) {
+	//	return;
+	//}
+	//
+	//// Sort lights by z to ensure correct accumulation ordering when needed
+	// if (m_lightsSortDirty && m_lights.size() > 1) {
+	//	std::ranges::stable_sort(m_lights, [](Light2D* a, Light2D* b) {
+	//		return a->transform()->position().z < b->transform()->position().z;
+	//	});
+	//	m_lightsSortDirty = false;
 	// }
-
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// blit dept from geometry pass to light framebuffer to allow depth testing during light accumulation
-	m_geometryFramebuffer->bindRead();
-	m_lightFramebuffer->bindDraw();
-	glBlitFramebuffer(
-	    0,
-	    0,
-	    m_geometryFramebuffer->Width(),
-	    m_geometryFramebuffer->Height(),
-	    0,
-	    0,
-	    m_lightFramebuffer->Width(),
-	    m_lightFramebuffer->Height(),
-	    GL_DEPTH_BUFFER_BIT,
-	    GL_NEAREST
-	);
-	m_lightFramebuffer->bind();
-
-	// Disable depth writes for light accumulation
-	glDepthMask(GL_FALSE);
-
-	// Enable additive blending explicitly for light accumulation
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
-
-	// Disable depth test while accumulating lights
-	glDisable(GL_DEPTH_TEST);
-
-	// lighting pass (skip loop if empty)
-	if (!m_lights.empty()) {
-		for (auto* light : m_lights) {
-			if (light) {
-				light->OnRender(m_multipliedMatrix);
-			}
-		}
-	}
-
-	// Restore GL state to known defaults
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthMask(GL_TRUE);
-
-	// Unbind light framebuffer; CombinedRenderPass will read from its texture
-	Framebuffer::unbind();
-
-	// Restore viewport and scissor to output resolution
-	glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
-	glScissor(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
+	//
+	//// Render lights at their own resolution
+	// glViewport(0, 0, m_lightFramebuffer->Width(), m_lightFramebuffer->Height());
+	// glScissor(0, 0, m_lightFramebuffer->Width(), m_lightFramebuffer->Height());
+	//
+	// m_lightFramebuffer->bind();
+	//
+	//// {
+	//// 	GLenum lightDraws[] = { GL_COLOR_ATTACHMENT0 };
+	//// 	glDrawBuffers(1, lightDraws);
+	//// }
+	//
+	// glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//
+	//// blit dept from geometry pass to light framebuffer to allow depth testing during light accumulation
+	// m_geometryFramebuffer->bindRead();
+	// m_lightFramebuffer->bindDraw();
+	// glBlitFramebuffer(
+	//     0,
+	//     0,
+	//     m_geometryFramebuffer->Width(),
+	//     m_geometryFramebuffer->Height(),
+	//     0,
+	//     0,
+	//     m_lightFramebuffer->Width(),
+	//     m_lightFramebuffer->Height(),
+	//     GL_DEPTH_BUFFER_BIT,
+	//     GL_NEAREST
+	//);
+	// m_lightFramebuffer->bind();
+	//
+	//// Disable depth writes for light accumulation
+	// glDepthMask(GL_FALSE);
+	//
+	//// Enable additive blending explicitly for light accumulation
+	// glEnable(GL_BLEND);
+	// glBlendFunc(GL_ONE, GL_ONE);
+	//
+	//// Disable depth test while accumulating lights
+	// glDisable(GL_DEPTH_TEST);
+	//
+	//// lighting pass (skip loop if empty)
+	// if (!m_lights.empty()) {
+	//	for (auto* light : m_lights) {
+	//		if (light) {
+	//			light->OnRender(m_multipliedMatrix);
+	//		}
+	//	}
+	// }
+	//
+	//// Restore GL state to known defaults
+	// glBindTexture(GL_TEXTURE_2D, 0);
+	// glEnable(GL_DEPTH_TEST);
+	// glDisable(GL_BLEND);
+	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	// glDepthMask(GL_TRUE);
+	//
+	//// Unbind light framebuffer; CombinedRenderPass will read from its texture
+	// Framebuffer::unbind();
+	//
+	//// Restore viewport and scissor to output resolution
+	// glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
+	// glScissor(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
 }
 
 void OpenGLRenderer::CombinedRenderPass() const {
@@ -612,10 +714,10 @@ void OpenGLRenderer::CombinedRenderPass() const {
 	TracyGpuZone("Combined Pass");
 #endif
 
-	m_outputFramebuffer->bind();
-
 	// Disable depth test for full-screen combine; we'll restore after.
 	glDisable(GL_DEPTH_TEST);
+
+	m_outputFramebuffer->bind();
 
 	// Ensure we're drawing to the primary color attachment (attachment 0)
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -624,44 +726,63 @@ void OpenGLRenderer::CombinedRenderPass() const {
 	glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
 	glScissor(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
 
-	if (m_globalLightEnabled) {
-		// When lighting is enabled, sample the light accumulation texture directly from the light FBO
-		// bind albedo (geometry attachment 0)
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_geometryFramebuffer->GetColorTexture(0));
+	// if (m_globalLightEnabled) {
+	// 	// When lighting is enabled, sample the light accumulation texture directly from the light FBO
+	// 	// bind albedo (geometry attachment 0)
+	// 	glActiveTexture(GL_TEXTURE0);
+	// 	glBindTexture(GL_TEXTURE_2D, m_geometryFramebuffer->GetColorTexture(0));
+	//
+	// 	// bind light accumulation texture (light FBO attachment 0)
+	// 	glActiveTexture(GL_TEXTURE1);
+	// 	//glBindTexture(GL_TEXTURE_2D, m_lightFramebuffer->GetColorTexture(0));
+	//
+	// 	// draw screen quad
+	// 	m.combineLightShader->Use();
+	// 	m.combineLightShader->SetSampler("gAlbedoTexture", 0);
+	// 	m.combineLightShader->SetSampler("gLightingTexture", 1);
+	// 	// set global ambient/global light uniforms
+	// 	m.combineLightShader->Set("gGlobalLightIntensity", m_globalLightIntensity);
+	// 	m.combineLightShader->Set("gGlobalLightColor", m_globalLightColor);
+	// 	m.quad->Draw();
+	//
+	// 	// Unbind textures (keep pipeline clean)
+	// 	glActiveTexture(GL_TEXTURE1);
+	// 	glBindTexture(GL_TEXTURE_2D, 0);
+	// 	glActiveTexture(GL_TEXTURE0);
+	// 	glBindTexture(GL_TEXTURE_2D, 0);
+	// } else {
+	// 	// Global light disabled: skip light blits and draw pure albedo into output
+	// 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	// 	glClear(GL_COLOR_BUFFER_BIT);
+	//
+	// 	glActiveTexture(GL_TEXTURE0);
+	// 	glBindTexture(GL_TEXTURE_2D, m_geometryFramebuffer->GetColorTexture(0));
+	//
+	// 	renderer::IRendererBase::GetInstance()->DrawScreenQuad(false);
+	//
+	// 	// Unbind texture
+	// 	glBindTexture(GL_TEXTURE_2D, 0);
+	// }
 
-		// bind light accumulation texture (light FBO attachment 0)
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, m_lightFramebuffer->GetColorTexture(0));
+	Clear();
 
-		// draw screen quad
-		m_combineLightShader->Use();
-		m_combineLightShader->SetSampler("gAlbedoTexture", 0);
-		m_combineLightShader->SetSampler("gLightingTexture", 1);
-		// set global ambient/global light uniforms
-		m_combineLightShader->Set("gGlobalLightIntensity", m_globalLightIntensity);
-		m_combineLightShader->Set("gGlobalLightColor", m_globalLightColor);
-		m_quad->Draw();
+	const bool geometryIsMsaa = m_geometryFramebuffer->IsMultisample();
+	const bool sameSize =
+	    m_geometryFramebuffer->Width() == m_outputFramebuffer->Width() && m_geometryFramebuffer->Height() == m_outputFramebuffer->Height();
 
-		// Unbind textures (keep pipeline clean)
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
+	if (geometryIsMsaa) {
+		if (sameSize) {
+			// Fast path: direct resolve when MSAA and output sizes match.
+			m_geometryFramebuffer->BlitTo(m_outputFramebuffer, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		} else {
+			// Correct MSAA+resolutionScale path:
+			// 1) resolve MSAA at geometry resolution
+			m_geometryFramebuffer->BlitTo(m.geometryResolveFramebuffer, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			// 2) scale resolved single-sample image into full output
+			m.geometryResolveFramebuffer->BlitTo(m_outputFramebuffer, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+		}
 	} else {
-		// Global light disabled: skip light blits and draw pure albedo into output
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_geometryFramebuffer->GetColorTexture(0));
-
-		m_screenShader->Use();
-		m_screenShader->SetSampler("screenTexture", 0);
-		m_quad->Draw();
-
-		// Unbind texture
-		glBindTexture(GL_TEXTURE_2D, 0);
+		m_geometryFramebuffer->BlitTo(m_outputFramebuffer, GL_COLOR_BUFFER_BIT, sameSize ? GL_NEAREST : GL_LINEAR);
 	}
 
 	// Restore depth test state to default
@@ -670,7 +791,7 @@ void OpenGLRenderer::CombinedRenderPass() const {
 	Framebuffer::unbind();
 }
 
-void OpenGLRenderer::Clear() {
+void OpenGLRenderer::Clear() const {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -678,17 +799,21 @@ void OpenGLRenderer::Resize(glm::uvec2 size) {
 	unsigned width = size.x;
 	unsigned height = size.y;
 
-	m_geometryFramebuffer->Resize(width * m_config.resolutionScale, height * m_config.resolutionScale);
+	unsigned geometryWidth = std::max(1u, static_cast<unsigned>(width * m_config.resolutionScale));
+	unsigned geometryHeight = std::max(1u, static_cast<unsigned>(height * m_config.resolutionScale));
 
-	m_lightFramebuffer->Resize(
-	    static_cast<unsigned int>(width * m_config.lightResolutionScale), static_cast<unsigned int>(height * m_config.lightResolutionScale)
-	);
-	m_outputFramebuffer->Resize(width, height);
-	m_layerFramebuffer->Resize(width, height);
+	m_geometryFramebuffer->Resize(static_cast<int>(geometryWidth), static_cast<int>(geometryHeight));
+	m.geometryResolveFramebuffer->Resize(static_cast<int>(geometryWidth), static_cast<int>(geometryHeight));
+
+	// m_lightFramebuffer->Resize(
+	//     static_cast<unsigned int>(width * m_config.lightResolutionScale), static_cast<unsigned int>(height * m_config.lightResolutionScale)
+	// );
+	m_outputFramebuffer->Resize(static_cast<int>(width), static_cast<int>(height));
+	// m.layerFramebuffer->Resize(width, height);
 
 	// Resize HUD layers
-	if (m_layerStack) {
-		for (auto* layer : m_layerStack->GetLayers()) {
+	if (m.layerStack) {
+		for (auto* layer : m.layerStack->GetLayers()) {
 			if (auto* hudLayer = dynamic_cast<renderer::HUD::HUDLayer*>(layer)) {
 				hudLayer->Resize(width, height);
 			}
@@ -698,8 +823,11 @@ void OpenGLRenderer::Resize(glm::uvec2 size) {
 	// Update projection matrix to maintain aspect ratio
 	SetProjectionMatrix(glm::radians(90.0f), static_cast<float>(width) / static_cast<float>(height), 0.1f, 1000.0f);
 
-	m_config.resolution = glm::uvec2(width, height);
-	SaveRenderSettings();
+	// In editor mode, Resize is also used for docked viewport size changes; avoid treating those as persistent window resolution changes.
+	auto windowFramebufferSize = toast::Window::GetInstance()->GetFramebufferSize();
+	if (windowFramebufferSize.x == width && windowFramebufferSize.y == height) {
+		m_config.resolution = glm::uvec2(width, height);
+	}
 }
 
 void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
@@ -708,26 +836,12 @@ void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
 }
 
 void OpenGLRenderer::RemoveRenderable(IRenderable* renderable) {
-	auto it = std::ranges::find(m_renderables, renderable);
+	auto it = std::find(m_renderables.begin(), m_renderables.end(), renderable);
 	if (it != m_renderables.end()) {
 		m_renderables.erase(it);
 	}
 	m_disabledRenderables.erase(renderable);    // clean up if it was disabled
 	m_renderablesSortDirty = true;
-}
-
-void OpenGLRenderer::AddTransparentRenderable(IRenderable* renderable) {
-	m_transparentRenderables.push_back(renderable);
-	m_transparentSortDirty = true;
-}
-
-void OpenGLRenderer::RemoveTransparentRenderable(IRenderable* renderable) {
-	auto it = std::ranges::find(m_transparentRenderables, renderable);
-	if (it != m_transparentRenderables.end()) {
-		m_transparentRenderables.erase(it);
-	}
-	m_disabledRenderables.erase(renderable);    // clean up if it was disabled
-	m_transparentSortDirty = true;
 }
 
 void OpenGLRenderer::SpritePass() { }
@@ -738,7 +852,7 @@ void OpenGLRenderer::AddLight(Light2D* light) {
 }
 
 void OpenGLRenderer::RemoveLight(Light2D* light) {
-	auto it = std::ranges::find(m_lights, light);
+	auto it = std::find(m_lights.begin(), m_lights.end(), light);
 	if (it != m_lights.end()) {
 		m_lights.erase(it);
 	}
@@ -757,6 +871,114 @@ void OpenGLRenderer::ApplyRenderSettings() {
 
 	// resolution (Framebuffer scale is handled in Resize)
 	window->SetResolution(m_config.resolution);
+
+	GLint maxSupportedSamples = 1;
+	glGetIntegerv(GL_MAX_SAMPLES, &maxSupportedSamples);
+	const unsigned requestedSamples = std::max(1u, m_config.msaaSamples);
+	const unsigned clampedSamples = static_cast<unsigned>(std::min(static_cast<GLint>(requestedSamples), maxSupportedSamples));
+	if (requestedSamples != clampedSamples) {
+		TOAST_WARN("Requested MSAA sample count {0} exceeds GPU limit {1}. Clamping.", requestedSamples, clampedSamples);
+	}
+	m_config.msaaSamples = clampedSamples;
+
+	// HACK: MSAA disabled for now, creates weird edges arround atlas sprites
+	if (!m_geometryFramebuffer || static_cast<unsigned>(m_geometryFramebuffer->Samples()) != clampedSamples) {
+		const unsigned outputWidth = static_cast<unsigned>(std::max(1, m_outputFramebuffer ? m_outputFramebuffer->Width() : 1920));
+		const unsigned outputHeight = static_cast<unsigned>(std::max(1, m_outputFramebuffer ? m_outputFramebuffer->Height() : 1080));
+		const unsigned geometryWidth = std::max(1u, static_cast<unsigned>(outputWidth * m_config.resolutionScale));
+		const unsigned geometryHeight = std::max(1u, static_cast<unsigned>(outputHeight * m_config.resolutionScale));
+
+		delete m_geometryFramebuffer;
+		Framebuffer::Specs geometrySpecs = { static_cast<int>(geometryWidth),
+			                                   static_cast<int>(geometryHeight),
+			                                   /*clampedSamples > 1*/ false,
+			                                   static_cast<int>(clampedSamples) };
+		m_geometryFramebuffer = new Framebuffer(geometrySpecs);
+		m_geometryFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);
+		m_geometryFramebuffer->AddDepthAttachment();
+		m_geometryFramebuffer->Build();
+	}
+
+	if (!m.occlusionFramebuffer || static_cast<unsigned>(m.occlusionFramebuffer->Width()) != m_config.shadowMapResolution ||
+	    static_cast<unsigned>(m.occlusionFramebuffer->Height()) != m_config.shadowMapResolution) {
+		RecreateShadowResources(m_config.shadowMapResolution);
+	}
+
+	// Ensure scaled internal buffers follow current config after any settings change.
+	Resize(window->GetFramebufferSize());
+
+	SaveRenderSettings();
+}
+
+void OpenGLRenderer::DestroyShadowResources() {
+	delete m.occlusionFramebuffer;
+	m.occlusionFramebuffer = nullptr;
+
+	if (m.jfaTex) {
+		glDeleteTextures(1, &m.jfaTex);
+		m.jfaTex = 0;
+	}
+	if (m.pingPongTex) {
+		glDeleteTextures(1, &m.pingPongTex);
+		m.pingPongTex = 0;
+	}
+	if (m.sdfTex) {
+		glDeleteTextures(1, &m.sdfTex);
+		m.sdfTex = 0;
+	}
+}
+
+void OpenGLRenderer::RecreateShadowResources(unsigned resolution) {
+	const unsigned clampedResolution = std::clamp(resolution, 64u, 8192u);
+	m_config.shadowMapResolution = clampedResolution;
+
+	DestroyShadowResources();
+
+	Framebuffer::Specs occlusionSpecs = { static_cast<int>(clampedResolution), static_cast<int>(clampedResolution) };
+	m.occlusionFramebuffer = new Framebuffer(occlusionSpecs);
+	m.occlusionFramebuffer->AddColorAttachment(GL_R8, GL_RED, GL_UNSIGNED_BYTE);
+	m.occlusionFramebuffer->Build();
+
+	glGenTextures(1, &m.jfaTex);
+	glBindTexture(GL_TEXTURE_2D, m.jfaTex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height(), 0, GL_RG, GL_FLOAT, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glGenTextures(1, &m.pingPongTex);
+	glBindTexture(GL_TEXTURE_2D, m.pingPongTex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height(), 0, GL_RG, GL_FLOAT, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glGenTextures(1, &m.sdfTex);
+	glBindTexture(GL_TEXTURE_2D, m.sdfTex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height(), 0, GL_RED, GL_FLOAT, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void OpenGLRenderer::DrawScreenQuad(bool flipY) {
+	if (flipY) {
+		m.flippedScreenShader->Use();
+		m.flippedScreenShader->SetSampler("screenTexture", 0);
+	} else {
+		m.screenShader->Use();
+		m.screenShader->SetSampler("screenTexture", 0);
+	}
+	m.quad->Draw();
+}
+
+GLuint OpenGLRenderer::GetShadowMapTexture() const {
+	return m.sdfTex;
 }
 
 void OpenGLRenderer::HUDPass() {
@@ -765,13 +987,13 @@ void OpenGLRenderer::HUDPass() {
 	TracyGpuZone("HUD Pass");
 #endif
 
-	if (!m_layerStack) {
+	if (!m.layerStack) {
 		return;
 	}
 
 	// Collect all HUD layers from the layer stack
 	std::vector<HUD::HUDLayer*> hudLayers;
-	for (auto* layer : m_layerStack->GetLayers()) {
+	for (auto* layer : m.layerStack->GetLayers()) {
 		if (auto* hud = dynamic_cast<HUD::HUDLayer*>(layer)) {
 			if (hud->GetFramebuffer()) {
 				hudLayers.push_back(hud);
@@ -796,7 +1018,7 @@ void OpenGLRenderer::HUDPass() {
 	// Ultralight renders with straight (un-premultiplied) alpha
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	m_screenShader->Use();
+	m.screenShader->Use();
 
 	for (auto* hud : hudLayers) {
 		GLuint hudTex = hud->GetFramebuffer()->GetColorTexture(0);
@@ -806,9 +1028,9 @@ void OpenGLRenderer::HUDPass() {
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, hudTex);
-		m_screenShader->SetSampler("screenTexture", 0);
+		m.screenShader->SetSampler("screenTexture", 0);
 
-		m_quad->Draw();
+		m.quad->Draw();
 	}
 
 	// Restore state

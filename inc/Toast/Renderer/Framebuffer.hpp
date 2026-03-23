@@ -118,6 +118,10 @@ public:
 		return m_specs.multisample;
 	}
 
+	int Samples() const {
+		return m_specs.multisample ? m_specs.samples : 1;
+	}
+
 	GLuint Handle() const {
 		return m_fbo;
 	}

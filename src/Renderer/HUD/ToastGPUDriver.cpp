@@ -145,6 +145,8 @@ void ToastGPUDriver::CreateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
 	// Ensure correct GL context is current
 	glfwMakeContextCurrent(context_->active_window());
 
+	CHECK_GL();
+
 	if (bitmap->IsEmpty()) {
 		CreateFBOTexture(texture_id, bitmap);
 		return;

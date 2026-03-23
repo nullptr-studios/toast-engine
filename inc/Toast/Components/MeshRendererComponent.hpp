@@ -32,7 +32,7 @@ public:
 	void Init() override;
 	void LoadTextures() override;
 
-	void OnRender(const glm::mat4& precomputed_mat) noexcept override;
+	void OnRender(renderer::IRenderablePass pass, const glm::mat4& precomputed_mat) noexcept override;
 
 	void Destroy() override;
 
@@ -44,8 +44,6 @@ public:
 		m_materialPath = path;
 		m_material = resource::LoadResource<renderer::Material>(path);
 	}
-
-	[[nodiscard]]
 
 	//[[nodiscard]]
 	// std::weak_ptr<Texture> GetTexture() const {
@@ -109,6 +107,9 @@ private:
 	// std::shared_ptr<renderer::Shader> m_shader;
 	std::shared_ptr<renderer::Mesh> m_mesh;
 	std::shared_ptr<renderer::Material> m_material;
+	std::shared_ptr<renderer::Shader> m_occlusionShader;
+
+	bool m_isOccluder = false;
 
 	// Per-instance vertex color (rgba) used when mesh doesn't provide per-vertex colors
 	// glm::vec4 m_vertexColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);

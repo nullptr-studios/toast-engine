@@ -20,7 +20,7 @@
 #endif
 
 void AtlasRendererComponent::Destroy() {
-	renderer::IRendererBase::GetInstance()->RemoveTransparentRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
 }
 
 void AtlasRendererComponent::OnEnable() {
@@ -40,6 +40,7 @@ void AtlasRendererComponent::Init() {
 	TransformComponent::Init();
 
 	m.shader = resource::LoadResource<renderer::Shader>("SHADERS/spine_atlas.shader");
+	m.occlusionShader = resource::LoadResource<renderer::Shader>("SHADERS/occlusion.shader");
 
 	// Reserve temp buffers to avoid allocations
 	m.tempVerts.reserve(INITIAL_VERT_RESERVE);
@@ -60,7 +61,8 @@ void AtlasRendererComponent::Init() {
 	}
 }
 
-void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept {
+// optimize
+void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::mat4& precomputed_mat) noexcept {
 	if (!enabled()) {
 		return;
 	}
@@ -78,43 +80,58 @@ void AtlasRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept
 	if (m.spriteCache.empty()) {
 		return;
 	}
-
 	PROFILE_ZONE;
 
 	const glm::mat4 parent_world = GetWorldMatrix();
 
 	// Clear buffers for this frame
-	m.tempVerts.clear();
-	m.tempIndices.clear();
+	if (pass == renderer::IRenderablePass::OCCLUSION) {
+		m.tempVerts.clear();
+		m.tempIndices.clear();
 
-	for (auto* sprite : m.spriteCache) {
-		if (!sprite->enabled() || !sprite->GetRegion()) {
-			continue;
+		for (auto* sprite : m.spriteCache) {
+			if (!sprite->enabled() || !sprite->GetRegion()) {
+				continue;
+			}
+
+			glm::mat4 sprite_transform = parent_world * sprite->GetMatrix();
+			BuildQuadFromRegion(sprite->GetRegion(), sprite_transform, sprite->GetColorABGR(), m.tempVerts, m.tempIndices);
 		}
 
-		glm::mat4 sprite_transform = parent_world * sprite->GetMatrix();
-		BuildQuadFromRegion(sprite->GetRegion(), sprite_transform, sprite->GetColorABGR(), m.tempVerts, m.tempIndices);
+		// Early exit if no visible sprites
+		if (m.tempIndices.empty()) {
+			return;
+		}
+
+		// Update mesh
+		m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
+
+		// Compute bounding box
+		m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
+
+		m.isOnScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f));
 	}
 
-	// Early exit if no visible sprites
-	if (m.tempIndices.empty()) {
-		return;
-	}
-
-	// Update mesh
-	m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
-
-	// Compute bounding box
-	m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
 	// Frustum culling
-	if (!OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f))) {
+	if (!m.isOnScreen) {
 		return;
 	}
 
 	const glm::mat4 mvp = precomputed_mat;
 
-	m.shader->Use();
-	m.shader->Set("transform", mvp);
+	if (pass == renderer::IRenderablePass::GEOMETRY) {
+		m.shader->Use();
+		m.shader->Set("transform", mvp);
+	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
+		if (!m.isOccluder) {
+			return;
+		}
+		m.occlusionShader->Use();
+		m.occlusionShader->Set("gWorld", GetWorldMatrix());
+
+		// set generic transform uniform
+		m.occlusionShader->Set("gMVP", mvp);
+	}
 
 	spine::Vector<spine::AtlasPage*>& pages = m.atlas->GetAtlasData()->getPages();
 	if (pages.size() > 0) {
@@ -133,7 +150,7 @@ void AtlasRendererComponent::LoadTextures() {
 	m.shader->Use();
 	m.shader->SetSampler("Texture", 0);
 
-	renderer::IRendererBase::GetInstance()->AddTransparentRenderable(this);
+	renderer::IRendererBase::GetInstance()->AddRenderable(this);
 
 	m.dynamicMesh.InitDynamicSpine();
 }
@@ -142,6 +159,9 @@ void AtlasRendererComponent::Load(json_t j, bool force_create) {
 	// Load atlas path first
 	if (j.contains("atlasResourcePath")) {
 		m.atlasPath = j.at("atlasResourcePath").get<std::string>();
+	}
+	if (j.contains("isOccluder")) {
+		m.isOccluder = j.at("isOccluder").get<bool>();
 	}
 
 	TransformComponent::Load(j, force_create);
@@ -153,6 +173,7 @@ void AtlasRendererComponent::Load(json_t j, bool force_create) {
 json_t AtlasRendererComponent::Save() const {
 	json_t j = TransformComponent::Save();
 	j["atlasResourcePath"] = m.atlasPath;
+	j["isOccluder"] = m.isOccluder;
 	return j;
 }
 
@@ -401,6 +422,8 @@ void AtlasRendererComponent::Inspector() {
 			}
 		}
 	}
+
+	ImGui::Checkbox("Is Occluder", &m.isOccluder);
 
 	/////////////// Browser ///////////////
 
