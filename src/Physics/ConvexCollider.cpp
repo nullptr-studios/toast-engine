@@ -20,7 +20,7 @@ ConvexCollider::ConvexCollider(const point_list& points, const ColliderData& dat
 		vertices.emplace_back(point);
 	}
 
-	std::list<glm::vec2> vertices_list { vertices.begin(), vertices.end() };
+	std::vector<glm::vec2> vertices_list { vertices.begin(), vertices.end() };
 	double sign = ShoelaceArea(vertices_list) <= 0 ? 1.0 : -1.0;
 
 	for (const auto& point : vertices) {

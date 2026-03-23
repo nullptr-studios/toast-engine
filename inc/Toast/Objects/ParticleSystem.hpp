@@ -387,7 +387,7 @@ private:
 	void CleanupSharedResources();
 
 	// IRenderable implementation
-	void OnRender(const glm::mat4& viewProjection) noexcept override;
+	void OnRender(renderer::IRenderablePass pass, const glm::mat4& viewProjection) noexcept override;
 
 	// Emitters
 	std::vector<ParticleEmitter> m_emitters;

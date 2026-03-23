@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Toast/Event/ListenerComponent.hpp"
+#include "Toast/Physics/Collider.hpp"
 #include "Toast/Physics/ColliderFlags.hpp"
 #include "Toast/Physics/GravityType.hpp"
 
@@ -54,10 +55,13 @@ public:
 	static toast::Object* PointCollision(glm::vec2 point, ColliderFlags flags);
 
 	static auto GetAllRigidbodies() -> std::list<Rigidbody*>&;
+	static auto GetAllCollidingRb() -> std::list<Rigidbody*>&;
 
 	static void SetGravityType(GravityType type);
 	static void SetGravityPoint(glm::dvec2 pos);
 	static void SetGravityPointScale(double scale);
+
+	static void MainThreadLateTick();
 
 	PhysicsSystem();
 	~PhysicsSystem();
@@ -80,6 +84,7 @@ private:
 		std::chrono::duration<double> targetFrametime { 1.0 / 50.0 };
 		unsigned char tickCount = 1;
 		std::list<Rigidbody*> rigidbodies;
+		std::list<Rigidbody*> colliding;
 		std::list<BoxRigidbody*> boxes;
 		std::list<ConvexCollider*> colliders;
 		std::list<Trigger*> triggers;
@@ -96,6 +101,10 @@ private:
 		std::atomic<std::chrono::steady_clock::time_point> lastPhysicsTime { std::chrono::steady_clock::now() };
 
 		event::ListenerComponent eventListener;
+
+		std::mutex callbackMutex;
+
+		std::list<std::function<void()>> callbackList;
 	} m;
 
 	// out of the struct to make sure this is ALWAYS the last

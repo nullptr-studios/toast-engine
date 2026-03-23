@@ -11,37 +11,68 @@
 #include "Toast/Renderer/Lights/2DLight.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
 
+#include <algorithm>
+
+void LightRenderable::OnRender(renderer::IRenderablePass pass, const glm::mat4& viewProjection) noexcept {
+	// yes yes i know, why is this here? for simplicity sakes and correct transparency, having in another render pass would break the light blending
+	// with transparents
+	if (pass == renderer::IRenderablePass::GEOMETRY) {
+		m_light->OnRender(viewProjection);
+	}
+}
+
+float LightRenderable::GetDepth() noexcept {
+	return m_light->transform()->worldPosition().z;
+}
+
 void Light2D::Init() {
 	// Load quad mesh for light rendering
 	m_lightMesh = resource::LoadResource<renderer::Mesh>("assets/MODELS/quad.obj");
 	m_lightShader = resource::LoadResource<renderer::Shader>("assets/SHADERS/2dLight.shader");
 
 	transform()->scale(glm::vec3(m_radius * 2, m_radius * 2, 1.0f));
-
+	m_renderable = new LightRenderable(this);
 }
 
 void Light2D::LoadTextures() {
 	Actor::LoadTextures();
 	renderer::IRendererBase::GetInstance()->AddLight(this);
-	m_lightBuffer = renderer::IRendererBase::GetInstance()->GetLightFramebuffer();
+	renderer::IRendererBase::GetInstance()->AddRenderable(m_renderable);
+	// m_lightBuffer = renderer::IRendererBase::GetInstance()->GetLightFramebuffer();
 }
 
-void Light2D::Begin() {
-}
+void Light2D::Begin() { }
 
 void Light2D::Destroy() {
 	renderer::IRendererBase::GetInstance()->RemoveLight(this);
+	renderer::IRendererBase::GetInstance()->RemoveRenderable(m_renderable);
+	delete m_renderable;
 }
 
 void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
-	
-	if (!enabled())
+	if (!enabled()) {
 		return;
-	
+	}
+
 	// Culling
 	if (!OclussionVolume::isSphereOnPlanes(transform()->worldPosition(), m_radius)) {
 		return;
 	}
+
+	// Disable depth writes for light accumulation
+	GLboolean prevDepthMask = GL_TRUE;
+	glGetBooleanv(GL_DEPTH_WRITEMASK, &prevDepthMask);
+
+	GLint prevBlendSrc = GL_SRC_ALPHA, prevBlendDst = GL_ONE_MINUS_SRC_ALPHA;
+	glGetIntegerv(GL_BLEND_SRC_RGB, &prevBlendSrc);
+	glGetIntegerv(GL_BLEND_DST_RGB, &prevBlendDst);
+
+	glDepthMask(GL_FALSE);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+	glEnable(GL_DEPTH_TEST);
 
 	auto model = transform()->GetWorldMatrix();
 	auto mvp = premultiplied_matrix * model;
@@ -49,17 +80,50 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 	m_lightShader->Use();
 
 	m_lightShader->Set("gMVP", mvp);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, renderer::IRendererBase::GetInstance()->GetShadowMapTexture());
+	m_lightShader->Set("sdfTex", 0);
+	if (auto* geometryFb = renderer::IRendererBase::GetInstance()->GetGeometryFramebuffer()) {
+		m_lightShader->Set("screenSize", glm::ivec2(geometryFb->Width(), geometryFb->Height()));
+	}
+
+	const glm::vec2 lightPosUV = TransformToUV(transform()->worldPosition(), premultiplied_matrix);
+	const glm::vec3 lightEdgeWorld = glm::vec3(model * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+	const glm::vec2 lightEdgeUV = TransformToUV(lightEdgeWorld, premultiplied_matrix);
+	const float lightRadiusUV = std::max(0.0001f, glm::distance(lightPosUV, lightEdgeUV));
+	glm::vec2 lightDirUV = lightEdgeUV - lightPosUV;
+	if (glm::dot(lightDirUV, lightDirUV) < 1e-8f) {
+		lightDirUV = glm::vec2(1.0f, 0.0f);
+	} else {
+		lightDirUV = glm::normalize(lightDirUV);
+	}
+	m_lightShader->Set("lightPosUV", lightPosUV);
+	m_lightShader->Set("lightRadius", lightRadiusUV);
+	m_lightShader->Set("gLightDirection", lightDirUV);
+
+	const auto& renderConfig = renderer::IRendererBase::GetInstance()->GetRendererConfig();
+	m_lightShader->Set("gShadowSteps", static_cast<int>(renderConfig.shadowRaymarchSteps));
+
+	m_lightShader->Set("gLightShadowRadius", m_lightShadowRadius);
+	m_lightShader->Set("doShadows", m_castShadow);
+
 	m_lightShader->Set("gLightColor", m_color);
 	m_lightShader->Set("gLightIntensity", m_intensity);
 	m_lightShader->Set("gLightVolumetricIntensity", m_volumetricIntensity);
-
 	m_lightShader->Set("gLightAngle", glm::radians(m_angle));
-
 	m_lightShader->Set("gRadialSoftness", m_radialSoftness);
 	m_lightShader->Set("gAngularSoftness", m_angularSoftness);
 
-	// Draw light quad into the currently bound light framebuffer (accumulation happens via additive blending)
 	m_lightMesh->Draw();
+
+	glBlendFunc(static_cast<GLenum>(prevBlendSrc), static_cast<GLenum>(prevBlendDst));
+	glDisable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(prevDepthMask ? GL_TRUE : GL_FALSE);
+	glDepthFunc(GL_LEQUAL);
+	glClearDepth(1.0);
 }
 
 json_t Light2D::Save() const {
@@ -71,6 +135,8 @@ json_t Light2D::Save() const {
 	j["radial_softness"] = m_radialSoftness;
 	j["angular_softness"] = m_angularSoftness;
 	j["color"] = { m_color.r, m_color.g, m_color.b, m_color.a };
+	j["light_shadow_radius"] = m_lightShadowRadius;
+	j["cast_shadow"] = m_castShadow;
 	return j;
 }
 
@@ -94,6 +160,12 @@ void Light2D::Load(json_t j, bool force_create) {
 	if (j.contains("angular_softness")) {
 		m_angularSoftness = j.at("angular_softness").get<float>();
 	}
+	if (j.contains("light_shadow_radius")) {
+		m_lightShadowRadius = j.at("light_shadow_radius").get<float>();
+	}
+	if (j.contains("cast_shadow")) {
+		m_castShadow = j.at("cast_shadow").get<bool>();
+	}
 
 	if (j.contains("color")) {
 		auto color_array = j.at("color").get<std::vector<float>>();
@@ -113,6 +185,8 @@ void Light2D::Inspector() {
 	ImGui::DragFloat("Light Angle", &m_angle, 1.0f, 0.0f, 180.0f);
 	ImGui::DragFloat("Radial Softness", &m_radialSoftness, 0.01f, 0.001f, .25f);
 	ImGui::DragFloat("Angular Softness", &m_angularSoftness, 0.01f, 0.000f, 1.0f);
+	ImGui::DragFloat("Light Shadow Radius", &m_lightShadowRadius, 0.5f, 0.05f, 10.0f);
+	ImGui::Checkbox("Cast Shadows", &m_castShadow);
 
 	ImGui::ColorEdit4("Light Color", &m_color.r);
 
