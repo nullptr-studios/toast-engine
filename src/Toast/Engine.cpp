@@ -220,7 +220,6 @@ void Engine::Init() {
 	}
 
 	m->resourceManager = std::make_unique<resource::ResourceManager>(false);
-
 	// Starting time tracking
 	m->time = std::make_unique<Time>();
 

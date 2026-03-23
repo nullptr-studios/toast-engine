@@ -15,6 +15,7 @@
 #include "Toast/Window/Window.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
 
+#include <algorithm>
 #include <array>
 #include <glm/glm.hpp>
 #include <unordered_set>
@@ -33,8 +34,11 @@ struct RendererConfig {
 
 	unsigned maxFPS = 144;
 
-	float resolutionScale = 1.0f;          ///< Scale factor for main framebuffer resolution
-	float lightResolutionScale = 0.75f;    ///< Scale factor for light framebuffer resolution
+	float resolutionScale = 1.0f;           ///< Scale factor for main framebuffer resolution
+	unsigned msaaSamples = 8;               ///< MSAA sample count for geometry render targets
+	float anisotropyLevel = 8.0f;           ///< Texture anisotropy level (clamped by GPU max)
+	unsigned shadowMapResolution = 1024;    ///< Square shadow-map/SDF atlas resolution
+	unsigned shadowRaymarchSteps = 16;      ///< Raymarch quality for SDF shadows
 };
 
 /// @class IRendererBase
@@ -57,12 +61,14 @@ public:
 
 	/// @brief Clears the current render target
 	/// @note Typically clears color and depth buffers
-	virtual void Clear() = 0;
+	virtual void Clear() const = 0;
 
 	/// @brief Resizes the viewport and updates internal render targets
 	/// @param width New viewport width in pixels
 	/// @param height New viewport height in pixels
 	virtual void Resize(glm::uvec2) = 0;
+
+	virtual void DrawScreenQuad(bool flipY) = 0;
 
 	// ========== ImGui Integration (Editor Only) ==========
 
@@ -85,23 +91,14 @@ public:
 	/// @param renderable Pointer to the renderable object to remove
 	virtual void RemoveRenderable(IRenderable* renderable) = 0;
 
-	/// @brief Adds a transparent/sprite renderable (spine, atlas) that renders after the combine pass
-	/// @note These bypass the lighting pipeline and are drawn with alpha blending into the output FBO
-	virtual void AddTransparentRenderable(IRenderable* renderable) = 0;
-
-	/// @brief Removes a transparent/sprite renderable from the sprite pass queue
-	virtual void RemoveTransparentRenderable(IRenderable* renderable) = 0;
-
 	virtual void DisableRenderable(IRenderable* renderable) {
 		m_disabledRenderables.insert(renderable);
 		m_renderablesSortDirty = true;
-		m_transparentSortDirty = true;
 	}
 
 	virtual void EnableRenderable(IRenderable* renderable) {
 		m_disabledRenderables.erase(renderable);
 		m_renderablesSortDirty = true;
-		m_transparentSortDirty = true;
 	}
 
 	/// @brief Adds a 2D light to the lighting system
@@ -112,6 +109,8 @@ public:
 	/// @brief Removes a 2D light from the lighting system
 	/// @param light Pointer to the light to remove
 	virtual void RemoveLight(Light2D* light) = 0;
+
+	virtual GLuint GetShadowMapTexture() const = 0;
 
 	// ========== Framebuffer Access ==========
 
@@ -129,14 +128,6 @@ public:
 	[[nodiscard]]
 	Framebuffer* GetGeometryFramebuffer() const noexcept {
 		return m_geometryFramebuffer;
-	}
-
-	/// @brief Gets the lighting framebuffer for light accumulation
-	/// @return Pointer to the light framebuffer, or nullptr if not applicable
-	/// @note This is renderer-specific and may not be available in all implementations
-	[[nodiscard]]
-	Framebuffer* GetLightFramebuffer() const noexcept {
-		return m_lightFramebuffer;
 	}
 
 	// ========== Camera Management ==========
@@ -235,9 +226,6 @@ public:
 			if (j.contains("resolutionScale")) {
 				m_config.resolutionScale = j["resolutionScale"].get<float>();
 			}
-			if (j.contains("lightResolutionScale")) {
-				m_config.lightResolutionScale = j["lightResolutionScale"].get<float>();
-			}
 			if (j.contains("vSync")) {
 				m_config.vSync = j["vSync"].get<bool>();
 			}
@@ -249,6 +237,18 @@ public:
 			}
 			if (j.contains("MaxFPS")) {
 				m_config.maxFPS = j["MaxFPS"].get<unsigned>();
+			}
+			if (j.contains("msaaSamples")) {
+				m_config.msaaSamples = std::max(1u, j["msaaSamples"].get<unsigned>());
+			}
+			if (j.contains("anisotropyLevel")) {
+				m_config.anisotropyLevel = std::max(1.0f, j["anisotropyLevel"].get<float>());
+			}
+			if (j.contains("shadowMapResolution")) {
+				m_config.shadowMapResolution = std::clamp(j["shadowMapResolution"].get<unsigned>(), 64u, 8192u);
+			}
+			if (j.contains("shadowRaymarchSteps")) {
+				m_config.shadowRaymarchSteps = std::clamp(j["shadowRaymarchSteps"].get<unsigned>(), 1u, 256u);
 			}
 
 			TOAST_TRACE("Renderer.settings loaded successfully");
@@ -272,11 +272,14 @@ public:
 	void SaveRenderSettings() {
 		json_t j {};
 		j["resolutionScale"] = m_config.resolutionScale;
-		j["lightResolutionScale"] = m_config.lightResolutionScale;
 		j["vSync"] = m_config.vSync;
 		j["fullscreen"] = m_config.currentDisplayMode;
 		j["resolution"] = m_config.resolution;
 		j["MaxFPS"] = m_config.maxFPS;
+		j["msaaSamples"] = m_config.msaaSamples;
+		j["anisotropyLevel"] = m_config.anisotropyLevel;
+		j["shadowMapResolution"] = m_config.shadowMapResolution;
+		j["shadowRaymarchSteps"] = m_config.shadowRaymarchSteps;
 
 		if (!resource::ResourceManager::SaveConfig("Renderer.settings", j.dump(1))) {
 			TOAST_ERROR("Failed to save renderer settings file!");
@@ -307,6 +310,34 @@ public:
 	/// @brief Sets the maximum FPS cap
 	void SetMaxFPS(unsigned fps) noexcept {
 		m_config.maxFPS = fps;
+	}
+
+	void SetResolutionScale(float scale) noexcept {
+		m_config.resolutionScale = std::max(0.1f, scale);
+	}
+
+	void SetResolution(glm::uvec2 resolution) noexcept {
+		m_config.resolution = resolution;
+	}
+
+	void SetDisplayMode(toast::DisplayMode mode) noexcept {
+		m_config.currentDisplayMode = mode;
+	}
+
+	void SetMsaaSamples(unsigned samples) noexcept {
+		m_config.msaaSamples = std::max(1u, samples);
+	}
+
+	void SetAnisotropyLevel(float level) noexcept {
+		m_config.anisotropyLevel = std::max(1.0f, level);
+	}
+
+	void SetShadowMapResolution(unsigned resolution) noexcept {
+		m_config.shadowMapResolution = std::clamp(resolution, 64u, 8192u);
+	}
+
+	void SetShadowRaymarchSteps(unsigned steps) noexcept {
+		m_config.shadowRaymarchSteps = std::clamp(steps, 1u, 256u);
 	}
 
 	/// @brief Enables or disables VSync and immediately applies it.
@@ -358,20 +389,18 @@ protected:
 	// ========== Framebuffers ==========
 	/// @note These are owned by the derived renderer implementation
 	Framebuffer* m_geometryFramebuffer = nullptr;    ///< G-buffer for deferred rendering (optional)
-	Framebuffer* m_lightFramebuffer = nullptr;       ///< Light accumulation buffer (optional)
-	Framebuffer* m_outputFramebuffer = nullptr;      ///< Final output framebuffer (required)
+	// Framebuffer* m_lightFramebuffer = nullptr;       ///< Light accumulation buffer (optional)
+	Framebuffer* m_outputFramebuffer = nullptr;    ///< Final output framebuffer (required)
 
 	// ========== Camera ==========
 	toast::Camera* m_activeCamera = nullptr;    ///< Currently active camera for rendering
 
 	// ========== Scene Objects ==========
-	std::vector<IRenderable*> m_renderables;               ///< Opaque renderable objects (geometry pass)
-	std::vector<IRenderable*> m_transparentRenderables;    ///< Transparent/sprite renderables (sprite pass, post-combine)
+	std::vector<IRenderable*> m_renderables;    ///< Opaque renderable objects (geometry pass)
 	/// @brief Set of renderables that are currently disabled — excluded from the geometry pass.
 	std::unordered_set<IRenderable*> m_disabledRenderables;
 	std::vector<Light2D*> m_lights;        ///< All 2D lights in the scene
 	bool m_renderablesSortDirty = true;    ///< True when renderables need re-sorting
-	bool m_transparentSortDirty = true;    ///< True when transparent renderables need re-sorting
 	bool m_lightsSortDirty = true;         ///< True when lights need re-sorting
 
 	// ========== Transform Matrices ==========

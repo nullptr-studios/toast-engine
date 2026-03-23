@@ -34,7 +34,7 @@ public:
 
 	void Destroy() override;
 
-	void OnRender(const glm::mat4&) noexcept override;
+	void OnRender(renderer::IRenderablePass pass, const glm::mat4&) noexcept override;
 
 	void SetSkeletonData(const std::shared_ptr<SpineSkeletonData>& data) {
 		m.skeletonData = data;
@@ -67,6 +67,7 @@ public:
 
 	void PlayAnimation(std::string_view name, bool loop, int track = 0) const;
 	void StopAnimation(int track = 0) const;
+	void NextPlayAnimation(std::string_view name, bool loop, float delay, int track = 0) const;
 
 	void NextCrossFadeToDefault(float duration, int track = 0) const;
 	void CrossFadeToDefault(float duration, int track = 0) const;
@@ -90,6 +91,10 @@ public:
 
 	void ClearBoneLocalPositionOverride(std::string_view bone_name) const;
 	void ClearAllBoneLocalPositionOverrides() const;
+
+	void SetIsOccluder(bool value) {
+		m.isOccluder = value;
+	}
 
 	// Events
 	virtual void OnAnimationStart(std::string_view /*animation_name*/, int /*track*/) { }
@@ -121,12 +126,16 @@ private:
 
 		std::shared_ptr<SpineSkeletonData> skeletonData;
 		std::shared_ptr<renderer::Shader> shader;
+		std::shared_ptr<renderer::Shader> occlusionShader;
 
 		std::unique_ptr<spine::Skeleton> skeleton;
 		std::unique_ptr<spine::AnimationStateData> animationStateData;
 		std::unique_ptr<spine::AnimationState> animationState;
 
 		renderer::Mesh dynamicMesh;
+
+		bool isOccluder = false;
+		bool onScreen = true;
 
 		// buffers
 		std::vector<renderer::SpineVertex> tempVerts;

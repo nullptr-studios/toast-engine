@@ -31,12 +31,14 @@ class ColliderRenderable : public renderer::IRenderable {
 		renderer::BoundingBox boundingBox;
 		renderer::Mesh mesh;
 		std::shared_ptr<renderer::Material> material;
+		std::shared_ptr<renderer::Shader> occlusionShader;
 		std::string material_path;
 		editor::ResourceSlot material_slot { resource::ResourceType::MATERIAL };
 
 		// Top layer feature
-		bool enabled = false;
+		bool show = false;
 		bool showTop = false;
+		bool isOccluder = false;
 		float maxSlope = 45.0f; // in degrees
 		float topHeight = 0.5f;
 		renderer::Mesh topMesh;
@@ -67,8 +69,11 @@ public:
 		if (j.contains("topMaterialPath")) {
 			m.topMaterialPath = j.at("topMaterialPath");
 		}
-		if (j.contains("enabled")) {
-			m.enabled = j.at("enabled");
+		if (j.contains("isOccluder")) {
+			m.isOccluder = j.at("isOccluder");
+		}
+		if (j.contains("show")) {
+			m.show = j.at("show");
 		}
 	}
 
@@ -80,7 +85,8 @@ public:
 		j["maxSlope"] = m.maxSlope;
 		j["topHeight"] = m.topHeight;
 		j["topMaterialPath"] = m.topMaterialPath;
-		j["enabled"] = m.enabled;
+		j["isOccluder"] = m.isOccluder;
+		j["show"] = m.show;
 		return j;
 	}
 
@@ -89,6 +95,7 @@ public:
 		// init just for loading
 		m.material = resource::LoadResource<renderer::Material>(m.material_path);
 		m.topMaterial = resource::LoadResource<renderer::Material>(m.topMaterialPath);
+		m.occlusionShader = resource::LoadResource<renderer::Shader>("SHADERS/occlusion.shader");
 
 		SetRunTick(false);
 		SetRunEarlyTick(false);
@@ -111,9 +118,12 @@ public:
 #endif
 	}
 
+#ifdef TOAST_EDITOR
 	void Inspector() override {
 		m.material_slot.Show();
 		ImGui::Separator();
+		ImGui::Checkbox("Visible", &m.show);
+		ImGui::Checkbox("Is Occluder", &m.isOccluder);
 		ImGui::Checkbox("Show Top Layer", &m.showTop);
 		if (m.showTop) {
 			ImGui::DragFloat("Max Slope (Deg)", &m.maxSlope, 0.5f, 0.0f, 90.0f);
@@ -121,8 +131,13 @@ public:
 			m.topMaterialSlot.Show();
 		}
 	}
-
+#endif
+	
 	void LoadTextures() override {
+		
+		if (!m.show)
+			return;
+		
 		m.mesh.InitDynamicSpine();
 		m.mesh.UpdateDynamicSpine(m.vertices.data(), m.vertices.size(), m.indices.data(), m.indices.size());
 
@@ -130,9 +145,9 @@ public:
 		m.topMesh.UpdateDynamicSpine(m.topVertices.data(), m.topVertices.size(), m.topIndices.data(), m.topIndices.size());
 	}
 
-	void OnRender(const glm::mat4& viewProjection) noexcept override {
-		if (not enabled()) return;
-		if (not m.enabled) return;
+	void OnRender(renderer::IRenderablePass pass,const glm::mat4& viewProjection) noexcept override {
+		if (not enabled() || not m.show) 
+			return;
 
 		if (not OclussionVolume::isTransformedAABBOnPlanes(m.boundingBox, GetWorldMatrix())) {
 			return;
@@ -146,20 +161,37 @@ public:
 
 		if (m.material && m.material->GetShader()) {
 			m.material->Use();
-			auto shader = m.material->GetShader();
-			// upload world matrix for deferred / lighting passes
-			shader->Set("gWorld", model);
-			// set generic transform uniform
-			shader->Set("gMVP", mvp);
+			if (pass == renderer::IRenderablePass::GEOMETRY) {
+				auto shader = m.material->GetShader();
+				// upload world matrix for deferred / lighting passes
+				shader->Set("gWorld", model);
+				// set generic transform uniform
+				shader->Set("gMVP", mvp);
+			}else if (pass == renderer::IRenderablePass::OCCLUSION) {
+				if (!m.isOccluder)
+					return;
+				
+				m.occlusionShader->Use();
+				// upload world matrix for deferred / lighting passes
+				m.occlusionShader->Set("gWorld", model);
+				// set generic transform uniform
+				m.occlusionShader->Set("gMVP", mvp);
+			}
 			// draw
 			m.mesh.DrawDynamicSpine(m.indices.size());
 		}
 
 		if (m.showTop && m.topMaterial && m.topMaterial->GetShader()) {
-			m.topMaterial->Use();
-			auto shader = m.topMaterial->GetShader();
-			shader->Set("gWorld", model);
-			shader->Set("gMVP", mvp);
+				m.topMaterial->Use();
+			if (pass == renderer::IRenderablePass::GEOMETRY) {
+				auto shader = m.topMaterial->GetShader();
+				shader->Set("gWorld", model);
+				shader->Set("gMVP", mvp);
+			} else if (pass == renderer::IRenderablePass::OCCLUSION) {
+				m.occlusionShader->Use();
+				m.occlusionShader->Set("gWorld", model);
+				m.occlusionShader->Set("gMVP", mvp);
+			}
 			m.topMesh.DrawDynamicSpine(m.topIndices.size());
 		}
 	}
@@ -183,6 +215,8 @@ private:
 			.max = {x_max, y_max, 0.0f}
 		};
 	}
+	
+	
 };
 
 }

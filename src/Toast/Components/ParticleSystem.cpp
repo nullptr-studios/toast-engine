@@ -752,7 +752,7 @@ glm::vec3 ParticleEmitter::RandomDirection() {
 	return glm::vec3(std::sin(phi) * std::cos(theta), std::sin(phi) * std::sin(theta), std::cos(phi));
 }
 
-void ParticleSystem::OnRender(const glm::mat4& viewProjection) noexcept {
+void ParticleSystem::OnRender(renderer::IRenderablePass pass, const glm::mat4& viewProjection) noexcept {
 	if (!m_sharedResourcesInitialized) {
 		return;
 	}
@@ -761,57 +761,59 @@ void ParticleSystem::OnRender(const glm::mat4& viewProjection) noexcept {
 		return;
 	}
 
-	PROFILE_ZONE;
+	if (pass == renderer::IRenderablePass::GEOMETRY) {
+		PROFILE_ZONE;
 
-	const float dt = static_cast<float>(Time::delta());
-	const glm::vec3 worldPos = worldPosition();
+		const float dt = static_cast<float>(Time::delta());
+		const glm::vec3 worldPos = worldPosition();
 
-	glm::mat4 viewMatrix = renderer::IRendererBase::GetInstance()->GetViewMatrix();
-	glm::vec3 camRight = glm::vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
-	glm::vec3 camUp = glm::vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
-	glm::vec3 camPos = glm::vec3(glm::inverse(viewMatrix)[3]);
+		glm::mat4 viewMatrix = renderer::IRendererBase::GetInstance()->GetViewMatrix();
+		glm::vec3 camRight = glm::vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+		glm::vec3 camUp = glm::vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
+		glm::vec3 camPos = glm::vec3(glm::inverse(viewMatrix)[3]);
 
-	// Get parent rotation from transform
-	glm::mat3 parentRotation = glm::mat3_cast(worldRotationQuat());
+		// Get parent rotation from transform
+		glm::mat3 parentRotation = glm::mat3_cast(worldRotationQuat());
 
-	// Sort emitters by distance to camera
-	std::vector<size_t> emitterOrder(m_emitters.size());
-	for (size_t i = 0; i < emitterOrder.size(); ++i) {
-		emitterOrder[i] = i;
-	}
-	// Precompute squared distances per emitter to avoid repeated math inside the comparator
-	std::vector<float> emitterDist2(m_emitters.size());
-	for (size_t i = 0; i < m_emitters.size(); ++i) {
-		const glm::vec3 pos = worldPos + parentRotation * m_emitters[i].GetConfig().localOffset;
-		emitterDist2[i] = glm::length2(camPos - pos);
-	}
-	std::sort(emitterOrder.begin(), emitterOrder.end(), [&](size_t a, size_t b) {
-		return emitterDist2[a] > emitterDist2[b];    // Back to front
-	});
+		// Sort emitters by distance to camera
+		std::vector<size_t> emitterOrder(m_emitters.size());
+		for (size_t i = 0; i < emitterOrder.size(); ++i) {
+			emitterOrder[i] = i;
+		}
+		// Precompute squared distances per emitter to avoid repeated math inside the comparator
+		std::vector<float> emitterDist2(m_emitters.size());
+		for (size_t i = 0; i < m_emitters.size(); ++i) {
+			const glm::vec3 pos = worldPos + parentRotation * m_emitters[i].GetConfig().localOffset;
+			emitterDist2[i] = glm::length2(camPos - pos);
+		}
+		std::sort(emitterOrder.begin(), emitterOrder.end(), [&](size_t a, size_t b) {
+			return emitterDist2[a] > emitterDist2[b];    // Back to front
+		});
 
-	// Bind shared quad VAO once
-	glBindVertexArray(m_quadVAO);
+		// Bind shared quad VAO once
+		glBindVertexArray(m_quadVAO);
 
-	for (size_t idx : emitterOrder) {
-		auto& emitter = m_emitters[idx];
-		if (!emitter.IsGPUInitialized()) {
-			continue;
+		for (size_t idx : emitterOrder) {
+			auto& emitter = m_emitters[idx];
+			if (!emitter.IsGPUInitialized()) {
+				continue;
+			}
+
+			emitter.UpdateAndRender(viewProjection, worldPos, parentRotation, camRight, camUp, dt);
+
+			// Draw this emitter's particles
+			uint32_t count = emitter.GetParticleCount();
+			if (count > 0) {
+				glDrawArraysInstanced(GL_TRIANGLES, 0, 6, static_cast<GLsizei>(count));
+			}
 		}
 
-		emitter.UpdateAndRender(viewProjection, worldPos, parentRotation, camRight, camUp, dt);
+		glBindVertexArray(0);
 
-		// Draw this emitter's particles
-		uint32_t count = emitter.GetParticleCount();
-		if (count > 0) {
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, static_cast<GLsizei>(count));
-		}
+		// Restore state
+		glDepthMask(GL_TRUE);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
-
-	glBindVertexArray(0);
-
-	// Restore state
-	glDepthMask(GL_TRUE);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 ParticleSystem::ParticleSystem() = default;
@@ -834,7 +836,7 @@ void ParticleSystem::LoadTextures() {
 	InitSharedResources();
 
 	if (!m_addedToRenderer) {
-		renderer::IRendererBase::GetInstance()->AddTransparentRenderable(this);
+		renderer::IRendererBase::GetInstance()->AddRenderable(this);
 		m_addedToRenderer = true;
 	}
 
@@ -842,7 +844,7 @@ void ParticleSystem::LoadTextures() {
 }
 
 void ParticleSystem::Destroy() {
-	renderer::IRendererBase::GetInstance()->RemoveTransparentRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
 
 	for (auto& emitter : m_emitters) {
 		emitter.CleanupGPUResources();
@@ -1285,7 +1287,7 @@ void ParticleSystem::Inspector() {
 
 	// Lua config path
 	ImGui::InputText("Lua Config name", &m_luaConfigPath);
-	ImGui::SameLine();
+
 	if (ImGui::Button("Load")) {
 		LoadFromLua(m_luaConfigPath);
 	}

@@ -73,6 +73,7 @@ public:
 	void Set(std::string_view name, int value);
 	void Set(std::string_view name, float value);
 	void Set(std::string_view name, const glm::vec2& v);
+	void Set(std::string_view name, const glm::ivec2& v);
 	void Set(std::string_view name, const glm::vec3& v);
 	void Set(std::string_view name, const glm::vec4& v);
 	void Set(std::string_view name, const glm::mat3& m, bool transpose = false);

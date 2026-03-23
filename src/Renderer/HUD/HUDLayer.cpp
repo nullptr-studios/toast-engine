@@ -3,6 +3,7 @@
 /// @author dario
 /// @date 12/02/2026.
 
+#include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Ui/FontHandler.hpp"
 #include "Toast/Ui/Logger.hpp"
 #include "ToastGPUContext.hpp"
@@ -440,33 +441,36 @@ void HUDLayer::OnRender() {
 	// Begin drawing
 	gpu_context_->BeginDrawing();
 
-	// Render all views (this updates textures and command lists)
+	// Render all views (updates textures and command lists)
 	renderer_->Render();
 
-	// Execute the GPU command list (renders to Ultralight's internal render targets)
+	// Execute GPU commands
 	gpu_context_->driver()->DrawCommandList();
 
 	// End drawing
 	gpu_context_->EndDrawing();
 
-	// Save current read/draw FBO state so we can restore them afterwards
-	GLint prev_read_fbo = 0;
-	GLint prev_draw_fbo = 0;
-	glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &prev_read_fbo);
-	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &prev_draw_fbo);
+	GLint prev_fbo = 0;
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prev_fbo);
 
-	// Clear the HUD framebuffer before compositing views into it
+	// Bind HUD framebuffer
 	framebuffer_->bind();
+
 	glViewport(0, 0, static_cast<GLsizei>(width_), static_cast<GLsizei>(height_));
 	glScissor(0, 0, static_cast<GLsizei>(width_), static_cast<GLsizei>(height_));
+
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	// Blit each view's render target into the HUD framebuffer (sorted by sort order)
+	// Enable alpha compositing
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	for (const auto& v : views_) {
 		if (!v) {
 			continue;
 		}
+
 		ultralight::RenderTarget target = v->render_target();
 		if (target.is_empty || target.texture_id == 0) {
 			continue;
@@ -477,42 +481,18 @@ void HUDLayer::OnRender() {
 			continue;
 		}
 
-		// Set the Ultralight texture as the read source
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, read_fbo_);
-		glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex_id, 0);
+		// Bind texture to slot 0
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, tex_id);
 
-		GLenum status = glCheckFramebufferStatus(GL_READ_FRAMEBUFFER);
-		if (status != GL_FRAMEBUFFER_COMPLETE) {
-			static bool error_logged = false;
-			if (!error_logged) {
-				TOAST_ERROR("[HUD] Read framebuffer incomplete: 0x{:X}", status);
-				error_logged = true;
-			}
-			continue;
-		}
-
-		// Draw into our own framebuffer_
-		// Ultralight stores pixels top-left origin, so we flip Y during blit
-		// Source is the render target in device pixels
-		// destination is the HUD framebuffer in logical pixels
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_->Handle());
-		glBlitFramebuffer(
-		    0,
-		    0,
-		    static_cast<GLint>(target.width),
-		    static_cast<GLint>(target.height),
-		    0,
-		    static_cast<GLint>(height_),
-		    static_cast<GLint>(width_),
-		    0,
-		    GL_COLOR_BUFFER_BIT,
-		    GL_LINEAR
-		);
+		// Draw fullscreen quad (renderer expects texture in slot 0)
+		IRendererBase::GetInstance()->DrawScreenQuad(true);
 	}
 
-	// Restore previously bound read/draw framebuffers
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, prev_read_fbo);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prev_draw_fbo);
+	glDisable(GL_BLEND);
+
+	// Restore previous framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
 }
 
 void HUDLayer::LoadURL(const std::string& url) {
