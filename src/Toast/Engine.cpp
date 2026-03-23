@@ -118,7 +118,7 @@ void Engine::Run(int argc, char** argv) {
 		m->time->Tick();
 
 		m->resourceManager->LoadResourcesMainThread();
-		
+
 		m->eventSystem->PollEvents();
 
 		// Ensure any pending Begin calls are executed as early as possible in the frame
@@ -134,6 +134,8 @@ void Engine::Run(int argc, char** argv) {
 
 		world->Tick();
 		world->LateTick();
+
+		physics::PhysicsSystem::MainThreadLateTick();
 
 #ifdef TOAST_EDITOR
 		world->EditorTick();

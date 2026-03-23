@@ -491,7 +491,7 @@ void HUDLayer::OnRender() {
 			continue;
 		}
 
-		// Draw into our own framebuffer_ 
+		// Draw into our own framebuffer_
 		// Ultralight stores pixels top-left origin, so we flip Y during blit
 		// Source is the render target in device pixels
 		// destination is the HUD framebuffer in logical pixels
@@ -672,7 +672,7 @@ void HUDLayer::Resize(uint32_t width, uint32_t height) {
 	for (auto& v : views_) {
 		if (v) {
 			v->Resize(width, height);
-			//v->set_device_scale(device_scale_);
+			// v->set_device_scale(device_scale_);
 		}
 	}
 
@@ -977,21 +977,28 @@ void HUDLayer::RemoveView(const ultralight::RefPtr<ultralight::View>& view) {
 }
 
 void HUDLayer::SetViewSortOrder(const ultralight::RefPtr<ultralight::View>& view, int order) {
-	if (!view) return;
+	if (!view) {
+		return;
+	}
 	view_sort_orders_[view.get()] = order;
 	SortViewsByOrder();
 }
 
 void HUDLayer::SortViewsByOrder() {
-	std::stable_sort(views_.begin(), views_.end(),
-		[this](const ultralight::RefPtr<ultralight::View>& a, const ultralight::RefPtr<ultralight::View>& b) {
-			int oa = 0, ob = 0;
-			auto itA = view_sort_orders_.find(a.get());
-			auto itB = view_sort_orders_.find(b.get());
-			if (itA != view_sort_orders_.end()) oa = itA->second;
-			if (itB != view_sort_orders_.end()) ob = itB->second;
-			return oa < ob;
-		});
+	std::stable_sort(
+	    views_.begin(), views_.end(), [this](const ultralight::RefPtr<ultralight::View>& a, const ultralight::RefPtr<ultralight::View>& b) {
+		    int oa = 0, ob = 0;
+		    auto itA = view_sort_orders_.find(a.get());
+		    auto itB = view_sort_orders_.find(b.get());
+		    if (itA != view_sort_orders_.end()) {
+			    oa = itA->second;
+		    }
+		    if (itB != view_sort_orders_.end()) {
+			    ob = itB->second;
+		    }
+		    return oa < ob;
+	    }
+	);
 }
 
 }    // namespace renderer::HUD

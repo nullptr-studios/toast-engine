@@ -28,14 +28,13 @@ void Rigidbody::Init() {
 	m_hasValidPreviousPosition = true;
 
 	if (toast::World::IsRunning()) {
-		enabled_ref() = false; // disable colliders until its loaded
+		enabled_ref() = false;    // disable colliders until its loaded
 	}
-	
-//	// Dante ahh fix
-//#ifdef TOAST_EDITOR
+
+	//	// Dante ahh fix
+	// #ifdef TOAST_EDITOR
 	PhysicsSystem::AddRigidbody(this);
-//#endif
-	
+	// #endif
 }
 
 void Rigidbody::Begin() {
@@ -45,13 +44,13 @@ void Rigidbody::Begin() {
 }
 
 void Rigidbody::OnEnable() {
-	//TOAST_TRACE("[PHYSICS SYSTEM] Added rigidbody {}", parent()->name());
-	//PhysicsSystem::AddRigidbody(this);
+	// TOAST_TRACE("[PHYSICS SYSTEM] Added rigidbody {}", parent()->name());
+	// PhysicsSystem::AddRigidbody(this);
 }
 
 void Rigidbody::OnDisable() {
-	//TOAST_TRACE("[PHYSICS SYSTEM] Removed rigidbody {}", parent()->name());
-	//PhysicsSystem::RemoveRigidbody(this);
+	// TOAST_TRACE("[PHYSICS SYSTEM] Removed rigidbody {}", parent()->name());
+	// PhysicsSystem::RemoveRigidbody(this);
 }
 
 void Rigidbody::Destroy() {
@@ -95,7 +94,6 @@ void Rigidbody::Inspector() {
 	ImGui::Checkbox("Ignore player?", &ignorePlayer);
 
 	ImGui::Spacing();
-
 
 	// Who wrote this shit instead of overriding the ! operator -x
 	unsigned int cur = static_cast<unsigned int>(flags);
@@ -354,6 +352,21 @@ void Rigidbody::AddForce(glm::dvec2 force) {
 void Rigidbody::AddAccel(glm::dvec2 accel) {
 	std::lock_guard lock(forcesMutex);
 	forces.emplace_back(accel * mass);
+}
+
+bool Rigidbody::CanCallBack(Rigidbody* c) const {
+	if (!enabled()) {
+		return false;
+	}
+
+	if ((static_cast<unsigned int>(ColliderFlags::Bullet) & static_cast<unsigned int>(c->flags)) == 0u) {
+		return false;
+	}
+	if (std::ranges::find(physics::PhysicsSystem::GetAllCollidingRb(), c) != physics::PhysicsSystem::GetAllCollidingRb().end()) {
+		return false;
+	}
+
+	return true;
 }
 
 }
