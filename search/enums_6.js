@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['modifierkey_0',['ModifierKey',['../dc/d73/namespaceinput.html#a1e6e3b3649b55b03da60a1868fe936f0',1,'input']]]
+  ['level_0',['Level',['../dc/d5c/classtoast_1_1Log.html#aaf43c99a119326de0837e404cf685c79',1,'toast::Log']]]
 ];

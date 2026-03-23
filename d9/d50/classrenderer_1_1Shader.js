@@ -20,6 +20,7 @@ var classrenderer_1_1Shader =
     [ "operator=", "d9/d50/classrenderer_1_1Shader.html#aad1d4f246b8e333edf5b0220550fdda7", null ],
     [ "QueryUniformLocation", "d9/d50/classrenderer_1_1Shader.html#a092689f9d3763ac37543d2a75a6c0f62", null ],
     [ "Reload", "d9/d50/classrenderer_1_1Shader.html#ac3d6214f6af052acd86607d86f7cd3b3", null ],
+    [ "Set", "d9/d50/classrenderer_1_1Shader.html#affbb99d759f8d9a725c0c6725effd726", null ],
     [ "Set", "d9/d50/classrenderer_1_1Shader.html#a88afc2cffc4d45f69dfd0442625fdef1", null ],
     [ "Set", "d9/d50/classrenderer_1_1Shader.html#adf826575461fa6cd2135336331606c8d", null ],
     [ "Set", "d9/d50/classrenderer_1_1Shader.html#addfc047c6ad3c84182b405b7d366e90d", null ],

@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['resourcestate_0',['ResourceState',['../d8/d5c/namespaceresource.html#a57b82542a4dc5e4b47a4a37b867f1e94',1,'resource']]],
-  ['resourcetype_1',['ResourceType',['../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78f',1,'resource']]]
+  ['modifierkey_0',['ModifierKey',['../dc/d73/namespaceinput.html#a1e6e3b3649b55b03da60a1868fe936f0',1,'input']]]
 ];

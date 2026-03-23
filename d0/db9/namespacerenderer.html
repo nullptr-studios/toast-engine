@@ -153,6 +153,11 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
+<tr class="memitem:aaace186f1b25ce4be32328162a1dcd1b"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1b">IRenderablePass</a> : uint8_t { <a class="el" href="../../d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1bab22957ad8078e8d73de61aef53d13a74">GEOMETRY</a>
+, <a class="el" href="../../d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1babc2f2b159cc56de34d757ac7c93b9100">LIGHTS</a>
+, <a class="el" href="../../d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1ba8307d318a3a8fd7a3acd8eb50fc95701">OCCLUSION</a>
+ }</td></tr>
+<tr class="separator:aaace186f1b25ce4be32328162a1dcd1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a157aaedd17cff1e92376e40949f2ef56"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#a157aaedd17cff1e92376e40949f2ef56">Stage</a> : uint16_t { <a class="el" href="../../d0/db9/namespacerenderer.html#a157aaedd17cff1e92376e40949f2ef56ab22b929ba52471a02d18bb3a4e4472e6">Vertex</a> = GL_VERTEX_SHADER
 , <a class="el" href="../../d0/db9/namespacerenderer.html#a157aaedd17cff1e92376e40949f2ef56a37d01b98065725fe3a1d30acf3a0064a">Fragment</a> = GL_FRAGMENT_SHADER
 , <a class="el" href="../../d0/db9/namespacerenderer.html#a157aaedd17cff1e92376e40949f2ef56ad9c6333623e6357515fcbf17be806273">Geometry</a> = GL_GEOMETRY_SHADER
@@ -163,6 +168,8 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:aec613881638ab64b05d385199590e152"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#aec613881638ab64b05d385199590e152">glErrorString</a> (GLenum err) noexcept</td></tr>
+<tr class="separator:aec613881638ab64b05d385199590e152"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1ffee1c771d40ee0be7f69862c7c0204"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#a1ffee1c771d40ee0be7f69862c7c0204">DebugCallback</a> (GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *user_param)</td></tr>
 <tr class="separator:a1ffee1c771d40ee0be7f69862c7c0204"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5d7c904d4b6dfd090a787bfd774d0308"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#a5d7c904d4b6dfd090a787bfd774d0308">DebugLine</a> (const glm::vec2 &amp;a, const glm::vec2 &amp;b, const glm::vec4 &amp;color={ 1, 1, 1, 1 })</td></tr>
@@ -191,6 +198,35 @@ Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>@TODO Improve error handling and log </p>
 </div><h2 class="groupheader">Enumeration Type Documentation</h2>
+<a id="aaace186f1b25ce4be32328162a1dcd1b" name="aaace186f1b25ce4be32328162a1dcd1b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaace186f1b25ce4be32328162a1dcd1b">&#9670;&#160;</a></span>IRenderablePass</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum class <a class="el" href="../../d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1b">renderer::IRenderablePass</a> : uint8_t</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="aaace186f1b25ce4be32328162a1dcd1bab22957ad8078e8d73de61aef53d13a74" name="aaace186f1b25ce4be32328162a1dcd1bab22957ad8078e8d73de61aef53d13a74"></a>GEOMETRY&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aaace186f1b25ce4be32328162a1dcd1babc2f2b159cc56de34d757ac7c93b9100" name="aaace186f1b25ce4be32328162a1dcd1babc2f2b159cc56de34d757ac7c93b9100"></a>LIGHTS&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aaace186f1b25ce4be32328162a1dcd1ba8307d318a3a8fd7a3acd8eb50fc95701" name="aaace186f1b25ce4be32328162a1dcd1ba8307d318a3a8fd7a3acd8eb50fc95701"></a>OCCLUSION&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d78/IRenderable_8hpp_source.html#l00020">20</a> of file <a class="el" href="../../d7/d78/IRenderable_8hpp_source.html">IRenderable.hpp</a>.</p>
+
+</div>
+</div>
 <a id="a157aaedd17cff1e92376e40949f2ef56" name="a157aaedd17cff1e92376e40949f2ef56"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a157aaedd17cff1e92376e40949f2ef56">&#9670;&#160;</a></span>Stage</h2>
 
@@ -280,7 +316,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00052">52</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00076">76</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -772,6 +808,34 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="aec613881638ab64b05d385199590e152" name="aec613881638ab64b05d385199590e152"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aec613881638ab64b05d385199590e152">&#9670;&#160;</a></span>glErrorString()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char * renderer::glErrorString </td>
+          <td>(</td>
+          <td class="paramtype">GLenum&#160;</td>
+          <td class="paramname"><em>err</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00057">57</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+
+</div>
+</div>
 <a id="af6b1b845e609cab39d1febc72715d3a5" name="af6b1b845e609cab39d1febc72715d3a5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af6b1b845e609cab39d1febc72715d3a5">&#9670;&#160;</a></span>LoadRendererSettings()</h2>
 
@@ -795,7 +859,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00395">395</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00424">424</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -822,7 +886,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00399">399</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00428">428</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>

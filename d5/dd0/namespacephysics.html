@@ -110,6 +110,8 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/ddb/structphysics_1_1ColliderData.html">ColliderData</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d96/classphysics_1_1ColliderRenderable.html">ColliderRenderable</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d88/classphysics_1_1ConvexCollider.html">ConvexCollider</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d1e/structphysics_1_1GravityType.html">GravityType</a></td></tr>
@@ -160,8 +162,8 @@ Functions</h2></td></tr>
 <tr class="separator:a46f160106603c30fe08f473710634331"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a740edf213e0fd126ea757f5aea74e90b"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dd0/namespacephysics.html#a740edf213e0fd126ea757f5aea74e90b">ConvexRayCollision</a> (<a class="el" href="../../d1/d1d/structphysics_1_1Line.html">Line</a> *ray, <a class="el" href="../../dd/d88/classphysics_1_1ConvexCollider.html">ConvexCollider</a> *c) -&gt; std::optional&lt; std::pair&lt; dvec2, dvec2 &gt; &gt;</td></tr>
 <tr class="separator:a740edf213e0fd126ea757f5aea74e90b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a40f3163dfdfef736a883aeb1f39b5376"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dd0/namespacephysics.html#a40f3163dfdfef736a883aeb1f39b5376">ShoelaceArea</a> (const std::list&lt; glm::vec2 &gt; &amp;points)</td></tr>
-<tr class="separator:a40f3163dfdfef736a883aeb1f39b5376"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acd0439aefcf3ae4e14fa0bc34af2c16f"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dd0/namespacephysics.html#acd0439aefcf3ae4e14fa0bc34af2c16f">ShoelaceArea</a> (const std::vector&lt; glm::vec2 &gt; &amp;points)</td></tr>
+<tr class="separator:acd0439aefcf3ae4e14fa0bc34af2c16f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a87606d7d4e42606e3ea00b1d88a2b2ac"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dd0/namespacephysics.html#a87606d7d4e42606e3ea00b1d88a2b2ac">SetGravityType</a> (<a class="el" href="../../df/d1e/structphysics_1_1GravityType.html">GravityType</a> type)</td></tr>
 <tr class="separator:a87606d7d4e42606e3ea00b1d88a2b2ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a27f31621d04cfbb97d56d971756881ff"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dd0/namespacephysics.html#a27f31621d04cfbb97d56d971756881ff">SetGravityPoint</a> (glm::dvec2 pos)</td></tr>
@@ -231,7 +233,7 @@ Functions</h2></td></tr>
 <tr><td class="fieldname"><a id="a0861439c2c8e1125b19d287254d4ed0eaf26be970aac1b06fa62b87562bc73deb" name="a0861439c2c8e1125b19d287254d4ed0eaf26be970aac1b06fa62b87562bc73deb"></a>MULTI&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00024">24</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d5f/Collider_8hpp_source.html#l00025">25</a> of file <a class="el" href="../../dd/d5f/Collider_8hpp_source.html">Collider.hpp</a>.</p>
 
 </div>
 </div>
@@ -587,7 +589,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00640">640</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00697">697</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -614,7 +616,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00644">644</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00701">701</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1223,7 +1225,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00632">632</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00689">689</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1251,7 +1253,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00636">636</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00693">693</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1279,7 +1281,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00628">628</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00685">685</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1291,8 +1293,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a40f3163dfdfef736a883aeb1f39b5376" name="a40f3163dfdfef736a883aeb1f39b5376"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a40f3163dfdfef736a883aeb1f39b5376">&#9670;&#160;</a></span>ShoelaceArea()</h2>
+<a id="acd0439aefcf3ae4e14fa0bc34af2c16f" name="acd0439aefcf3ae4e14fa0bc34af2c16f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acd0439aefcf3ae4e14fa0bc34af2c16f">&#9670;&#160;</a></span>ShoelaceArea()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1303,7 +1305,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">float physics::ShoelaceArea </td>
           <td>(</td>
-          <td class="paramtype">const std::list&lt; glm::vec2 &gt; &amp;&#160;</td>
+          <td class="paramtype">const std::vector&lt; glm::vec2 &gt; &amp;&#160;</td>
           <td class="paramname"><em>points</em></td><td>)</td>
           <td></td>
         </tr>
@@ -1319,8 +1321,8 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="../../d5/dd0/namespacephysics_a40f3163dfdfef736a883aeb1f39b5376_icgraph.png" border="0" usemap="#ad5/dd0/namespacephysics_a40f3163dfdfef736a883aeb1f39b5376_icgraph" alt=""/></div>
-<map name="ad5/dd0/namespacephysics_a40f3163dfdfef736a883aeb1f39b5376_icgraph" id="ad5/dd0/namespacephysics_a40f3163dfdfef736a883aeb1f39b5376_icgraph">
+<div class="center"><img src="../../d5/dd0/namespacephysics_acd0439aefcf3ae4e14fa0bc34af2c16f_icgraph.png" border="0" usemap="#ad5/dd0/namespacephysics_acd0439aefcf3ae4e14fa0bc34af2c16f_icgraph" alt=""/></div>
+<map name="ad5/dd0/namespacephysics_acd0439aefcf3ae4e14fa0bc34af2c16f_icgraph" id="ad5/dd0/namespacephysics_acd0439aefcf3ae4e14fa0bc34af2c16f_icgraph">
 <area shape="rect" title=" " alt="" coords="439,109,607,134"/>
 <area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a3793262624cd3d2ae10368f544e86d1f" title=" " alt="" coords="233,69,370,109"/>
 <area shape="rect" href="../../dd/d88/classphysics_1_1ConvexCollider.html#a4f36e15379013bcd603f75f1255b8bf3" title=" " alt="" coords="212,133,391,173"/>

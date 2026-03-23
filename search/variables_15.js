@@ -10,7 +10,7 @@ var searchData=
   ['version_7',['version',['../d5/d79/structresource_1_1PackHeader.html#a486ce2a1241d58e4120ac8045eb87588',1,'resource::PackHeader::version()'],['../d6/d09/structPackHeader.html#a4975d30c739dd9398444145ce3025719',1,'PackHeader::version()']]],
   ['vert_5fshader_5fid_8',['vert_shader_id',['../d8/d98/structtoast_1_1hud_1_1ToastGPUDriver_1_1ProgramEntry.html#a2c39c9e886e804de45d1973250223ea9',1,'toast::hud::ToastGPUDriver::ProgramEntry']]],
   ['vertex_5fformat_9',['vertex_format',['../da/d0a/structtoast_1_1hud_1_1ToastGPUDriver_1_1GeometryEntry.html#ac3c88874d1d397e6c1d855d00aff6a40',1,'toast::hud::ToastGPUDriver::GeometryEntry']]],
-  ['vertices_10',['vertices',['../dd/d88/classphysics_1_1ConvexCollider.html#ae7b1612e470258be5f201e6b9e091823',1,'physics::ConvexCollider']]],
+  ['vertices_10',['vertices',['../dd/d88/classphysics_1_1ConvexCollider.html#ae7b1612e470258be5f201e6b9e091823',1,'physics::ConvexCollider::vertices()'],['../de/d96/classphysics_1_1ColliderRenderable.html#a4ff3a783d8fab76fd2bdd5041edad27c',1,'physics::ColliderRenderable::vertices()']]],
   ['view_5fsort_5forders_5f_11',['view_sort_orders_',['../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a1a0b97dd04199d1331d01b947a2d87e8',1,'renderer::HUD::HUDLayer']]],
   ['viewport_5foffset_5fx_5f_12',['viewport_offset_x_',['../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a548ac533d58287772b13d8096c91cdd2',1,'renderer::HUD::HUDLayer']]],
   ['viewport_5foffset_5fy_5f_13',['viewport_offset_y_',['../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a81000c7697e3fbc09cab848f46291318',1,'renderer::HUD::HUDLayer']]],

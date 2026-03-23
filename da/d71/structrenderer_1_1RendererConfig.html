@@ -120,15 +120,42 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:aeaba4a8bb33d3215f33e64e1c416667a"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d71/structrenderer_1_1RendererConfig.html#aeaba4a8bb33d3215f33e64e1c416667a">resolutionScale</a> = 1.0f</td></tr>
 <tr class="memdesc:aeaba4a8bb33d3215f33e64e1c416667a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scale factor for main framebuffer resolution.  <br /></td></tr>
 <tr class="separator:aeaba4a8bb33d3215f33e64e1c416667a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9dee87a119c25cd603b034ed90b89317"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d71/structrenderer_1_1RendererConfig.html#a9dee87a119c25cd603b034ed90b89317">lightResolutionScale</a> = 0.75f</td></tr>
-<tr class="memdesc:a9dee87a119c25cd603b034ed90b89317"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scale factor for light framebuffer resolution.  <br /></td></tr>
-<tr class="separator:a9dee87a119c25cd603b034ed90b89317"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a53ef601461b1a7160a58738fb237db82"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d71/structrenderer_1_1RendererConfig.html#a53ef601461b1a7160a58738fb237db82">msaaSamples</a> = 8</td></tr>
+<tr class="memdesc:a53ef601461b1a7160a58738fb237db82"><td class="mdescLeft">&#160;</td><td class="mdescRight">MSAA sample count for geometry render targets.  <br /></td></tr>
+<tr class="separator:a53ef601461b1a7160a58738fb237db82"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47ba188bfd0404fad32e2fef60b4de90"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d71/structrenderer_1_1RendererConfig.html#a47ba188bfd0404fad32e2fef60b4de90">anisotropyLevel</a> = 8.0f</td></tr>
+<tr class="memdesc:a47ba188bfd0404fad32e2fef60b4de90"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="../../d6/d97/classTexture.html">Texture</a> anisotropy level (clamped by GPU max)  <br /></td></tr>
+<tr class="separator:a47ba188bfd0404fad32e2fef60b4de90"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee7bb1a506ed4f47b00bd0f331a6330c"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d71/structrenderer_1_1RendererConfig.html#aee7bb1a506ed4f47b00bd0f331a6330c">shadowMapResolution</a> = 1024</td></tr>
+<tr class="memdesc:aee7bb1a506ed4f47b00bd0f331a6330c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Square shadow-map/SDF atlas resolution.  <br /></td></tr>
+<tr class="separator:aee7bb1a506ed4f47b00bd0f331a6330c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a4449a85b24967681d6607e152aceed"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d71/structrenderer_1_1RendererConfig.html#a5a4449a85b24967681d6607e152aceed">shadowRaymarchSteps</a> = 16</td></tr>
+<tr class="memdesc:a5a4449a85b24967681d6607e152aceed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Raymarch quality for SDF shadows.  <br /></td></tr>
+<tr class="separator:a5a4449a85b24967681d6607e152aceed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Configuration settings for the renderer. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00029">29</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00030">30</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
+<a id="a47ba188bfd0404fad32e2fef60b4de90" name="a47ba188bfd0404fad32e2fef60b4de90"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a47ba188bfd0404fad32e2fef60b4de90">&#9670;&#160;</a></span>anisotropyLevel</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float renderer::RendererConfig::anisotropyLevel = 8.0f</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><a class="el" href="../../d6/d97/classTexture.html">Texture</a> anisotropy level (clamped by GPU max) </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00039">39</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
 <a id="a7aeb13850815fa42fb95e0c8fd59e54b" name="a7aeb13850815fa42fb95e0c8fd59e54b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7aeb13850815fa42fb95e0c8fd59e54b">&#9670;&#160;</a></span>currentDisplayMode</h2>
 
@@ -143,25 +170,7 @@ Public Attributes</h2></td></tr>
 
 <p>Current display mode. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00032">32</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
-
-</div>
-</div>
-<a id="a9dee87a119c25cd603b034ed90b89317" name="a9dee87a119c25cd603b034ed90b89317"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9dee87a119c25cd603b034ed90b89317">&#9670;&#160;</a></span>lightResolutionScale</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float renderer::RendererConfig::lightResolutionScale = 0.75f</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Scale factor for light framebuffer resolution. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00037">37</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00033">33</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -177,7 +186,25 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00034">34</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00035">35</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a53ef601461b1a7160a58738fb237db82" name="a53ef601461b1a7160a58738fb237db82"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a53ef601461b1a7160a58738fb237db82">&#9670;&#160;</a></span>msaaSamples</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">unsigned renderer::RendererConfig::msaaSamples = 8</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>MSAA sample count for geometry render targets. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00038">38</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -195,7 +222,7 @@ Public Attributes</h2></td></tr>
 
 <p>windowed rendering resolution </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00030">30</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00031">31</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -213,7 +240,43 @@ Public Attributes</h2></td></tr>
 
 <p>Scale factor for main framebuffer resolution. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00036">36</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00037">37</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
+<a id="aee7bb1a506ed4f47b00bd0f331a6330c" name="aee7bb1a506ed4f47b00bd0f331a6330c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aee7bb1a506ed4f47b00bd0f331a6330c">&#9670;&#160;</a></span>shadowMapResolution</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">unsigned renderer::RendererConfig::shadowMapResolution = 1024</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Square shadow-map/SDF atlas resolution. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00040">40</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a5a4449a85b24967681d6607e152aceed" name="a5a4449a85b24967681d6607e152aceed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5a4449a85b24967681d6607e152aceed">&#9670;&#160;</a></span>shadowRaymarchSteps</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">unsigned renderer::RendererConfig::shadowRaymarchSteps = 16</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Raymarch quality for SDF shadows. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00041">41</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -231,7 +294,7 @@ Public Attributes</h2></td></tr>
 
 <p>Enable/disable vertical sync. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00031">31</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00032">32</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>

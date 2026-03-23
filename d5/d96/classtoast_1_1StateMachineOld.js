@@ -6,6 +6,6 @@ var classtoast_1_1StateMachineOld =
     [ "SetState", "d5/d96/classtoast_1_1StateMachineOld.html#aa34dbe4f64768eaebaf9aca3a2406202", null ],
     [ "Tick", "d5/d96/classtoast_1_1StateMachineOld.html#adf2fb803c54793811f7f57828c5192b1", null ],
     [ "currentState", "d5/d96/classtoast_1_1StateMachineOld.html#a8b9c87c48884a379d7b359c66ec6cae4", null ],
-    [ "m", "d5/d96/classtoast_1_1StateMachineOld.html#ab251a6d5d59a5a636252c13659e761c4", null ],
+    [ "m", "d5/d96/classtoast_1_1StateMachineOld.html#a9e585b28e356f04a28bdb468606fc411", null ],
     [ "states", "d5/d96/classtoast_1_1StateMachineOld.html#a9d6eff34916fd675fb1accf29fd61cdc", null ]
 ];

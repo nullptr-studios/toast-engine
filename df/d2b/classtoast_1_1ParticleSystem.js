@@ -20,7 +20,7 @@ var classtoast_1_1ParticleSystem =
     [ "Load", "df/d2b/classtoast_1_1ParticleSystem.html#a1d9ff365dc6e69e4b3812cff6a8999cf", null ],
     [ "LoadFromLua", "df/d2b/classtoast_1_1ParticleSystem.html#ae18585e3649e314325cb94d70b329958", null ],
     [ "LoadTextures", "df/d2b/classtoast_1_1ParticleSystem.html#a391aeab99f0fea858e431ca016978224", null ],
-    [ "OnRender", "df/d2b/classtoast_1_1ParticleSystem.html#a1db5e54b53f308abb509203b89d34ce2", null ],
+    [ "OnRender", "df/d2b/classtoast_1_1ParticleSystem.html#a9299dea8472706f936400b0b7a71dc4b", null ],
     [ "Pause", "df/d2b/classtoast_1_1ParticleSystem.html#ad3f06633487308e70b2ac444c3fc03a8", null ],
     [ "Play", "df/d2b/classtoast_1_1ParticleSystem.html#a975815da5806be1be3f87005a39149ca", null ],
     [ "REGISTER_TYPE", "df/d2b/classtoast_1_1ParticleSystem.html#a27bfa6c94340aec9dd62935f1d305b2c", null ],

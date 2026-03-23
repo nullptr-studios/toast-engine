@@ -1,4 +1,9 @@
 <map id="renderer::IRendererBase::RemoveRenderable" name="renderer::IRendererBase::RemoveRenderable">
-<area shape="rect" id="node1" title="Removes a renderable object from the render queue." alt="" coords="285,5,465,45"/>
-<area shape="rect" id="node2" href="$de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40" title="This function runs when the object is set to be destroyed." alt="" coords="5,5,237,45"/>
+<area shape="rect" id="node1" title="Removes a renderable object from the render queue." alt="" coords="285,165,465,205"/>
+<area shape="rect" id="node2" href="$dd/d75/classAtlasRendererComponent.html#a6f50d08eab5a0109937a65b3f4ee19d8" title="This function runs when the object is set to be destroyed." alt="" coords="27,5,216,45"/>
+<area shape="rect" id="node3" href="$de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40" title="This function runs when the object is set to be destroyed." alt="" coords="5,69,237,109"/>
+<area shape="rect" id="node4" href="$d0/dc7/classSpineRendererComponent.html#a75af091cad96a920a74a062f4701a1d9" title="This function runs when the object is set to be destroyed." alt="" coords="25,133,217,173"/>
+<area shape="rect" id="node5" href="$df/d2b/classtoast_1_1ParticleSystem.html#a796f31a89365dbc22a1d6b05ee7b61f8" title="This function runs when the object is set to be destroyed." alt="" coords="41,197,201,237"/>
+<area shape="rect" id="node6" href="$db/d71/classphysics_1_1Collider.html#a27f0fe678b1144ce27480e6627af86b3" title="This function runs when the object is set to be destroyed." alt="" coords="53,261,190,301"/>
+<area shape="rect" id="node7" href="$d0/db0/classLight2D.html#aba3ddfa8edeeac944158a97efe965800" title="This function runs when the object is set to be destroyed." alt="" coords="56,326,187,351"/>
 </map>

@@ -18,14 +18,17 @@ var classLight2D =
     [ "SetIntensity", "d0/db0/classLight2D.html#a1b52be67fc5abd9b6530766efe3d03ca", null ],
     [ "SetRadius", "d0/db0/classLight2D.html#a21d10d0a00f1ac024c4c1f393f8eda50", null ],
     [ "SetVolumetricIntensity", "d0/db0/classLight2D.html#a4784151665d56cc6eb30544b36938904", null ],
+    [ "TransformToUV", "d0/db0/classLight2D.html#ab8bf08ac5e7a352f4420669443dce42e", null ],
     [ "m_angle", "d0/db0/classLight2D.html#a9b5727e7f06b1365d78689713d250c56", null ],
     [ "m_angularSoftness", "d0/db0/classLight2D.html#a1dc7993678daac432d754fdf9e6cc619", null ],
+    [ "m_castShadow", "d0/db0/classLight2D.html#a1613662c4b999113f9ea4e5b79c5764d", null ],
     [ "m_color", "d0/db0/classLight2D.html#a32faa41d74e2ff440ffc4f27959ec619", null ],
     [ "m_intensity", "d0/db0/classLight2D.html#a79398c26f8545dd36f8fa4733ade9a26", null ],
-    [ "m_lightBuffer", "d0/db0/classLight2D.html#ad1632256c8edff7413583b47feb0bf22", null ],
     [ "m_lightMesh", "d0/db0/classLight2D.html#ac5e5d8142e0267b2e1e8a6560111205a", null ],
     [ "m_lightShader", "d0/db0/classLight2D.html#af13151f490d14215676e6469d824fd34", null ],
+    [ "m_lightShadowRadius", "d0/db0/classLight2D.html#a73a80bea939fa59f1a90a797946eba06", null ],
     [ "m_radialSoftness", "d0/db0/classLight2D.html#a534e42dbc6bbb9550d66cbcfbaea5ddf", null ],
     [ "m_radius", "d0/db0/classLight2D.html#a9b574936d5f48c1b59bb93bf9c7c7b0d", null ],
+    [ "m_renderable", "d0/db0/classLight2D.html#ab3dc238538485dba1101dcb5e3145af9", null ],
     [ "m_volumetricIntensity", "d0/db0/classLight2D.html#abca6d5fee408f68557312dd79b0f42d4", null ]
 ];

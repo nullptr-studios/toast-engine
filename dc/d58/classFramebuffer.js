@@ -29,6 +29,7 @@ var classFramebuffer =
     [ "operator=", "dc/d58/classFramebuffer.html#a5741afd699eabd7feaf74030aeefb9f0", null ],
     [ "ReadPixel", "dc/d58/classFramebuffer.html#a6dd706bddbfc166287164612c0bf63e9", null ],
     [ "Resize", "dc/d58/classFramebuffer.html#aa16fe7b9d734100fc6817cb131362f60", null ],
+    [ "Samples", "dc/d58/classFramebuffer.html#ad7e2aea011f7dbaa02aeb4928d4dd042", null ],
     [ "steal", "dc/d58/classFramebuffer.html#a8faa074639f920a73987720eaea81da8", null ],
     [ "unbind", "dc/d58/classFramebuffer.html#af819ea3cfe2fa85caa9e3ec430264d40", null ],
     [ "Width", "dc/d58/classFramebuffer.html#a7ebb1fc825324c1f238751744a456e1c", null ],

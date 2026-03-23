@@ -11,9 +11,10 @@ var classphysics_1_1Collider =
     [ "Destroy", "db/d71/classphysics_1_1Collider.html#a27f0fe678b1144ce27480e6627af86b3", null ],
     [ "DestroyConvexShapes", "db/d71/classphysics_1_1Collider.html#ac58b1234159027859109d9e5ca1a572f", null ],
     [ "GetEdges", "db/d71/classphysics_1_1Collider.html#a60d8a8dd0f2a78f5cce495a397186b49", null ],
-    [ "GetPoints", "db/d71/classphysics_1_1Collider.html#a23ffcc32bd53343dc305ff9f5b5b2ada", null ],
+    [ "GetPoints", "db/d71/classphysics_1_1Collider.html#aaaa9295c45f4223cd6bfb374782b7434", null ],
     [ "Init", "db/d71/classphysics_1_1Collider.html#a52f2eb7420c7743d41ea1e718a56aac7", null ],
     [ "Load", "db/d71/classphysics_1_1Collider.html#a58a915c3632248838b76d97b92c567a9", null ],
+    [ "LoadTextures", "db/d71/classphysics_1_1Collider.html#aa35f24c4edaa6cef3bf8ded1949dfca6", null ],
     [ "OnDisable", "db/d71/classphysics_1_1Collider.html#a73ea29a793f59f1fc7e76dfdc62097da", null ],
     [ "OnEnable", "db/d71/classphysics_1_1Collider.html#a9785c816451a3924e34fa5d9153aae7c", null ],
     [ "REGISTER_TYPE", "db/d71/classphysics_1_1Collider.html#a5325412d3412a96b9a17875379e65f2b", null ],
@@ -29,7 +30,8 @@ var classphysics_1_1Collider =
     [ "m", "db/d71/classphysics_1_1Collider.html#ab4c3a369db0829fb28cd982e21735e6e", null ],
     [ "newPointPosition", "db/d71/classphysics_1_1Collider.html#a1e40387e0bd020d1d3698e109c1ebfda", null ],
     [ "oldPosition", "db/d71/classphysics_1_1Collider.html#a3399af0e5c69dd27c8ee46602ca8712b", null ],
-    [ "points", "db/d71/classphysics_1_1Collider.html#aa24ad5b417cc3ae8c38f63aa3ee73259", null ],
+    [ "points", "db/d71/classphysics_1_1Collider.html#ac31f4347db151716d5a92eee0cacbac4", null ],
+    [ "renderable", "db/d71/classphysics_1_1Collider.html#a9fd7fb52fa33a4036b6e6c2014eccdb3", null ],
     [ "showColliders", "db/d71/classphysics_1_1Collider.html#a8feb4a363ee19cd5e912df44079a1c2a", null ],
     [ "showPoints", "db/d71/classphysics_1_1Collider.html#a4b5d8420613106f9d8caf7285c416486", null ]
 ];

@@ -1,4 +1,5 @@
 <map id="Framebuffer::AddColorAttachment" name="Framebuffer::AddColorAttachment">
-<area shape="rect" id="node1" title=" " alt="" coords="248,13,492,38"/>
-<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,5,200,45"/>
+<area shape="rect" id="node1" title=" " alt="" coords="248,45,492,70"/>
+<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="5,5,200,45"/>
+<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,69,200,109"/>
 </map>

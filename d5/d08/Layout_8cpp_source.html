@@ -112,22 +112,22 @@ $(document).ready(function(){initNavTree('d5/d08/Layout_8cpp_source.html','../..
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>    std::string custom_path = <span class="stringliteral">&quot;;./assets/?.lua;./assets/LAYOUTS/?.lua;./LAYOUTS/?&quot;</span>;</div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>    lua[<span class="stringliteral">&quot;package&quot;</span>][<span class="stringliteral">&quot;path&quot;</span>] = current_path + custom_path;</div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="comment">//#ifdef TOAST_EDITOR</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    <span class="comment">// #ifdef TOAST_EDITOR</span></div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    <span class="keyword">auto</span> file = <a class="code hl_function" href="../../d8/d5c/namespaceresource.html#a5bb34b2d0a15fcd098fb0d19c9d1f917">resource::Open</a>(path);</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="comment">//#else</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="comment">//    // If we&#39;re on the game version, it will load the layouts from ./LAYOUTS/(...).layout</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="comment">//    // This is done like this so we can edit the keybinds through the game</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="comment">//    std::optional&lt;std::string&gt; file;</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="comment">//    std::ifstream raw_file(path);</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="comment">//</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="comment">//    if (raw_file) {</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="comment">//      std::string line, full_text;</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="comment">//      while (std::getline(raw_file, line)) {</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="comment">//        full_text += line + &quot;\n&quot;;</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="comment">//      }</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="comment">//      file = full_text;</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="comment">//    }</span></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="comment">//#endif</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    <span class="comment">// #else</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    <span class="comment">//    // If we&#39;re on the game version, it will load the layouts from ./LAYOUTS/(...).layout</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>    <span class="comment">//    // This is done like this so we can edit the keybinds through the game</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    <span class="comment">//    std::optional&lt;std::string&gt; file;</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    <span class="comment">//    std::ifstream raw_file(path);</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    <span class="comment">//</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    <span class="comment">//    if (raw_file) {</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    <span class="comment">//      std::string line, full_text;</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    <span class="comment">//      while (std::getline(raw_file, line)) {</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>    <span class="comment">//        full_text += line + &quot;\n&quot;;</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    <span class="comment">//      }</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    <span class="comment">//      file = full_text;</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    <span class="comment">//    }</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    <span class="comment">// #endif</span></div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    <span class="keywordflow">if</span> (!file.has_value()) {</div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>      <a class="code hl_define" href="../../d0/d82/Log_8hpp.html#aeb6d2936af6818000825b1409a9a3290">TOAST_ERROR</a>(<span class="stringliteral">&quot;Input layout file couldn&#39;t be open&quot;</span>);</div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>      <span class="keywordflow">return</span> std::nullopt;</div>

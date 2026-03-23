@@ -114,7 +114,7 @@ Collaboration diagram for renderer::IRendererBase:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../dc/d06/classrenderer_1_1IRendererBase__coll__graph.png" border="0" usemap="#arenderer_1_1IRendererBase_coll__map" alt="Collaboration graph"/></div>
 <map name="arenderer_1_1IRendererBase_coll__map" id="arenderer_1_1IRendererBase_coll__map">
-<area shape="rect" title="Abstract base class for all renderer implementations." alt="" coords="327,387,507,412"/>
+<area shape="rect" title="Abstract base class for all renderer implementations." alt="" coords="327,372,507,397"/>
 <area shape="rect" href="../../d8/d7b/classevent_1_1ListenerComponent.html" title=" " alt="" coords="45,269,240,295"/>
 <area shape="rect" href="../../d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="5,181,144,207"/>
 <area shape="rect" href="../../d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="155,93,261,119"/>
@@ -136,12 +136,14 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a8419a7d264475c7f170c77144cf372f3"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a8419a7d264475c7f170c77144cf372f3">Render</a> ()=0</td></tr>
 <tr class="memdesc:a8419a7d264475c7f170c77144cf372f3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Main render function, called every frame to render the scene.  <br /></td></tr>
 <tr class="separator:a8419a7d264475c7f170c77144cf372f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a541528bece8c0b5fba565b8401e6c1b0"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a541528bece8c0b5fba565b8401e6c1b0">Clear</a> ()=0</td></tr>
-<tr class="memdesc:a541528bece8c0b5fba565b8401e6c1b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears the current render target.  <br /></td></tr>
-<tr class="separator:a541528bece8c0b5fba565b8401e6c1b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4923f630aad1ed9356b40ffb68c9e0c8"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a4923f630aad1ed9356b40ffb68c9e0c8">Clear</a> () const =0</td></tr>
+<tr class="memdesc:a4923f630aad1ed9356b40ffb68c9e0c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears the current render target.  <br /></td></tr>
+<tr class="separator:a4923f630aad1ed9356b40ffb68c9e0c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a237d66424970fa52bcc89b14b3a32251"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a237d66424970fa52bcc89b14b3a32251">Resize</a> (glm::uvec2)=0</td></tr>
 <tr class="memdesc:a237d66424970fa52bcc89b14b3a32251"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resizes the viewport and updates internal render targets.  <br /></td></tr>
 <tr class="separator:a237d66424970fa52bcc89b14b3a32251"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8180d2c255281d9e5a18091537f88bd7"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a8180d2c255281d9e5a18091537f88bd7">DrawScreenQuad</a> (bool flipY)=0</td></tr>
+<tr class="separator:a8180d2c255281d9e5a18091537f88bd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a74f64319bbbf85b58c8c9300c63f9a62"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a74f64319bbbf85b58c8c9300c63f9a62">StartImGuiFrame</a> ()=0</td></tr>
 <tr class="memdesc:a74f64319bbbf85b58c8c9300c63f9a62"><td class="mdescLeft">&#160;</td><td class="mdescRight">Begins a new ImGui frame for editor UI.  <br /></td></tr>
 <tr class="separator:a74f64319bbbf85b58c8c9300c63f9a62"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -154,12 +156,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ac193916b3c6024df40964aeda936d470"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#ac193916b3c6024df40964aeda936d470">RemoveRenderable</a> (<a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> *renderable)=0</td></tr>
 <tr class="memdesc:ac193916b3c6024df40964aeda936d470"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a renderable object from the render queue.  <br /></td></tr>
 <tr class="separator:ac193916b3c6024df40964aeda936d470"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a10414aa890ea41a4a32536bb35635528"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a10414aa890ea41a4a32536bb35635528">AddTransparentRenderable</a> (<a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> *renderable)=0</td></tr>
-<tr class="memdesc:a10414aa890ea41a4a32536bb35635528"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a transparent/sprite renderable (spine, atlas) that renders after the combine pass.  <br /></td></tr>
-<tr class="separator:a10414aa890ea41a4a32536bb35635528"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8bba6f987aafbef6bbf7212db18aaa4c"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a8bba6f987aafbef6bbf7212db18aaa4c">RemoveTransparentRenderable</a> (<a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> *renderable)=0</td></tr>
-<tr class="memdesc:a8bba6f987aafbef6bbf7212db18aaa4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a transparent/sprite renderable from the sprite pass queue.  <br /></td></tr>
-<tr class="separator:a8bba6f987aafbef6bbf7212db18aaa4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab2d1338bd423745a6e2683b381e13a53"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#ab2d1338bd423745a6e2683b381e13a53">DisableRenderable</a> (<a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> *renderable)</td></tr>
 <tr class="separator:ab2d1338bd423745a6e2683b381e13a53"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7f7f6f52f2fa4dd840f403e0d889f447"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a7f7f6f52f2fa4dd840f403e0d889f447">EnableRenderable</a> (<a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> *renderable)</td></tr>
@@ -170,15 +166,14 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a200c37ffe55ba5819b9d63b862cc723d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a200c37ffe55ba5819b9d63b862cc723d">RemoveLight</a> (<a class="el" href="../../d0/db0/classLight2D.html">Light2D</a> *light)=0</td></tr>
 <tr class="memdesc:a200c37ffe55ba5819b9d63b862cc723d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a 2D light from the lighting system.  <br /></td></tr>
 <tr class="separator:a200c37ffe55ba5819b9d63b862cc723d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a128593d19223cf2ce3677da15cd79c08"><td class="memItemLeft" align="right" valign="top">virtual GLuint&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a128593d19223cf2ce3677da15cd79c08">GetShadowMapTexture</a> () const =0</td></tr>
+<tr class="separator:a128593d19223cf2ce3677da15cd79c08"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6325e0b22fa18b98651e5b21f2da1670"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d58/classFramebuffer.html">Framebuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a6325e0b22fa18b98651e5b21f2da1670">GetMainFramebuffer</a> () const noexcept</td></tr>
 <tr class="memdesc:a6325e0b22fa18b98651e5b21f2da1670"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the main output framebuffer containing the final rendered image.  <br /></td></tr>
 <tr class="separator:a6325e0b22fa18b98651e5b21f2da1670"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1aeb4973b2cf0dbf6b7115ad65c892ca"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d58/classFramebuffer.html">Framebuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a1aeb4973b2cf0dbf6b7115ad65c892ca">GetGeometryFramebuffer</a> () const noexcept</td></tr>
 <tr class="memdesc:a1aeb4973b2cf0dbf6b7115ad65c892ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the geometry framebuffer (G-buffer for deferred rendering)  <br /></td></tr>
 <tr class="separator:a1aeb4973b2cf0dbf6b7115ad65c892ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aac036b48aaf873546df12bfb73ba0d62"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d58/classFramebuffer.html">Framebuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#aac036b48aaf873546df12bfb73ba0d62">GetLightFramebuffer</a> () const noexcept</td></tr>
-<tr class="memdesc:aac036b48aaf873546df12bfb73ba0d62"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the lighting framebuffer for light accumulation.  <br /></td></tr>
-<tr class="separator:aac036b48aaf873546df12bfb73ba0d62"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d619b32d6a193d9905838b206ebcc44"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a7d619b32d6a193d9905838b206ebcc44">SetActiveCamera</a> (<a class="el" href="../../d8/db9/classtoast_1_1Camera.html">toast::Camera</a> *camera) noexcept</td></tr>
 <tr class="memdesc:a7d619b32d6a193d9905838b206ebcc44"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the active camera used for rendering.  <br /></td></tr>
 <tr class="separator:a7d619b32d6a193d9905838b206ebcc44"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -223,6 +218,20 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a4d715feb74e05cddf95ede9858780c45"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a4d715feb74e05cddf95ede9858780c45">SetMaxFPS</a> (unsigned fps) noexcept</td></tr>
 <tr class="memdesc:a4d715feb74e05cddf95ede9858780c45"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the maximum FPS cap.  <br /></td></tr>
 <tr class="separator:a4d715feb74e05cddf95ede9858780c45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d992a6231558fa6319aec69f88c682b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a3d992a6231558fa6319aec69f88c682b">SetResolutionScale</a> (float scale) noexcept</td></tr>
+<tr class="separator:a3d992a6231558fa6319aec69f88c682b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ddf3ad8767bfae156d973b20e8c9454"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a8ddf3ad8767bfae156d973b20e8c9454">SetResolution</a> (glm::uvec2 resolution) noexcept</td></tr>
+<tr class="separator:a8ddf3ad8767bfae156d973b20e8c9454"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae53cfc3ba1ec76cea7c924a15715f9b2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#ae53cfc3ba1ec76cea7c924a15715f9b2">SetDisplayMode</a> (<a class="el" href="../../d7/d01/namespacetoast.html#a3ce7291cbc1534293d25b38c2d2e6a73">toast::DisplayMode</a> mode) noexcept</td></tr>
+<tr class="separator:ae53cfc3ba1ec76cea7c924a15715f9b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d2b91707d4e08a34a7d245498516e73"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a0d2b91707d4e08a34a7d245498516e73">SetMsaaSamples</a> (unsigned samples) noexcept</td></tr>
+<tr class="separator:a0d2b91707d4e08a34a7d245498516e73"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab86b13093baa1dcd4579b36975a745c2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#ab86b13093baa1dcd4579b36975a745c2">SetAnisotropyLevel</a> (float level) noexcept</td></tr>
+<tr class="separator:ab86b13093baa1dcd4579b36975a745c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a365fe2951edc36c0ea85a929d473adb2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a365fe2951edc36c0ea85a929d473adb2">SetShadowMapResolution</a> (unsigned resolution) noexcept</td></tr>
+<tr class="separator:a365fe2951edc36c0ea85a929d473adb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a556fd346b862a1b60621e3e0fa2bb1bc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a556fd346b862a1b60621e3e0fa2bb1bc">SetShadowRaymarchSteps</a> (unsigned steps) noexcept</td></tr>
+<tr class="separator:a556fd346b862a1b60621e3e0fa2bb1bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a431b2a634d0674c39597dad74834a2ec"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a431b2a634d0674c39597dad74834a2ec">SetVSyncEnabled</a> (bool enabled) noexcept</td></tr>
 <tr class="memdesc:a431b2a634d0674c39597dad74834a2ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enables or disables VSync and immediately applies it. Does NOT call the full ApplyRenderSettings.  <br /></td></tr>
 <tr class="separator:a431b2a634d0674c39597dad74834a2ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -258,9 +267,6 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:a71dea848418f86c0fbf5b3ba2ade3999"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d58/classFramebuffer.html">Framebuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a71dea848418f86c0fbf5b3ba2ade3999">m_geometryFramebuffer</a> = nullptr</td></tr>
 <tr class="memdesc:a71dea848418f86c0fbf5b3ba2ade3999"><td class="mdescLeft">&#160;</td><td class="mdescRight">G-buffer for deferred rendering (optional)  <br /></td></tr>
 <tr class="separator:a71dea848418f86c0fbf5b3ba2ade3999"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a371c47c770574b869f3ee95dd436ffb0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d58/classFramebuffer.html">Framebuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a371c47c770574b869f3ee95dd436ffb0">m_lightFramebuffer</a> = nullptr</td></tr>
-<tr class="memdesc:a371c47c770574b869f3ee95dd436ffb0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Light accumulation buffer (optional)  <br /></td></tr>
-<tr class="separator:a371c47c770574b869f3ee95dd436ffb0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a33308ebaacece45d1c67041a93867f6a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d58/classFramebuffer.html">Framebuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a33308ebaacece45d1c67041a93867f6a">m_outputFramebuffer</a> = nullptr</td></tr>
 <tr class="memdesc:a33308ebaacece45d1c67041a93867f6a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Final output framebuffer (required)  <br /></td></tr>
 <tr class="separator:a33308ebaacece45d1c67041a93867f6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -268,10 +274,7 @@ Protected Attributes</h2></td></tr>
 <tr class="memdesc:a25e2074ab0e650e89a054a61dfd1302c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Currently active camera for rendering.  <br /></td></tr>
 <tr class="separator:a25e2074ab0e650e89a054a61dfd1302c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abaa6c4963475e194a208a54352d7ab66"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#abaa6c4963475e194a208a54352d7ab66">m_renderables</a></td></tr>
-<tr class="memdesc:abaa6c4963475e194a208a54352d7ab66"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opaque renderable objects (geometry pass)  <br /></td></tr>
 <tr class="separator:abaa6c4963475e194a208a54352d7ab66"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5c9e2aab80ed9e109bde8a3d090756c9"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a5c9e2aab80ed9e109bde8a3d090756c9">m_transparentRenderables</a></td></tr>
-<tr class="separator:a5c9e2aab80ed9e109bde8a3d090756c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0227c77885ea682293b97d4e4b7126fc"><td class="memItemLeft" align="right" valign="top">std::unordered_set&lt; <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a0227c77885ea682293b97d4e4b7126fc">m_disabledRenderables</a></td></tr>
 <tr class="memdesc:a0227c77885ea682293b97d4e4b7126fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of renderables that are currently disabled — excluded from the geometry pass.  <br /></td></tr>
 <tr class="separator:a0227c77885ea682293b97d4e4b7126fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -281,9 +284,6 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:a04cfad6210308168c50e7fb227865626"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a04cfad6210308168c50e7fb227865626">m_renderablesSortDirty</a> = true</td></tr>
 <tr class="memdesc:a04cfad6210308168c50e7fb227865626"><td class="mdescLeft">&#160;</td><td class="mdescRight">True when renderables need re-sorting.  <br /></td></tr>
 <tr class="separator:a04cfad6210308168c50e7fb227865626"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaa3cd644dbc1e75877e6076fea705dcb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#aaa3cd644dbc1e75877e6076fea705dcb">m_transparentSortDirty</a> = true</td></tr>
-<tr class="memdesc:aaa3cd644dbc1e75877e6076fea705dcb"><td class="mdescLeft">&#160;</td><td class="mdescRight">True when transparent renderables need re-sorting.  <br /></td></tr>
-<tr class="separator:aaa3cd644dbc1e75877e6076fea705dcb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8bc528b566e270eca22ee1d29cd1ff2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#ab8bc528b566e270eca22ee1d29cd1ff2">m_lightsSortDirty</a> = true</td></tr>
 <tr class="memdesc:ab8bc528b566e270eca22ee1d29cd1ff2"><td class="mdescLeft">&#160;</td><td class="mdescRight">True when lights need re-sorting.  <br /></td></tr>
 <tr class="separator:ab8bc528b566e270eca22ee1d29cd1ff2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -322,7 +322,7 @@ Static Protected Attributes</h2></td></tr>
 <p>This class defines the interface that all renderers must implement and provides common functionality for camera management, scene management, and matrix operations. It uses a singleton pattern to allow global access to the active renderer instance.</p>
 <dl class="section note"><dt>Note</dt><dd>Derived classes should implement specific rendering pipelines (forward, deferred, etc.) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00048">48</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00052">52</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a0303d8b3d049a76f30a5669f1664c3eb" name="a0303d8b3d049a76f30a5669f1664c3eb"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0303d8b3d049a76f30a5669f1664c3eb">&#9670;&#160;</a></span>~IRendererBase()</h2>
@@ -462,50 +462,13 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_a07f9cf1f03d2c5f2aa89b094bb14505c_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_a07f9cf1f03d2c5f2aa89b094bb14505c_icgraph" alt=""/></div>
 <map name="ad9/dc4/classrenderer_1_1IRendererBase_a07f9cf1f03d2c5f2aa89b094bb14505c_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_a07f9cf1f03d2c5f2aa89b094bb14505c_icgraph">
-<area shape="rect" title="Adds a renderable object to the render queue." alt="" coords="285,5,465,45"/>
-<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="5,5,237,45"/>
-</map>
-</div>
-
-</div>
-</div>
-<a id="a10414aa890ea41a4a32536bb35635528" name="a10414aa890ea41a4a32536bb35635528"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a10414aa890ea41a4a32536bb35635528">&#9670;&#160;</a></span>AddTransparentRenderable()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual void renderer::IRendererBase::AddTransparentRenderable </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> *&#160;</td>
-          <td class="paramname"><em>renderable</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Adds a transparent/sprite renderable (spine, atlas) that renders after the combine pass. </p>
-<dl class="section note"><dt>Note</dt><dd>These bypass the lighting pipeline and are drawn with alpha blending into the output FBO </dd></dl>
-
-<p>Implemented in <a class="el" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#ac9420fa37aa4e1347f1c67cc4504aaf7">renderer::OpenGLRenderer</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_a10414aa890ea41a4a32536bb35635528_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_a10414aa890ea41a4a32536bb35635528_icgraph" alt=""/></div>
-<map name="ad9/dc4/classrenderer_1_1IRendererBase_a10414aa890ea41a4a32536bb35635528_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_a10414aa890ea41a4a32536bb35635528_icgraph">
-<area shape="rect" title="Adds a transparent/sprite renderable (spine, atlas) that renders after the combine pass." alt="" coords="245,69,451,109"/>
-<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b" title=" " alt="" coords="7,5,196,45"/>
-<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68" title=" " alt="" coords="5,69,197,109"/>
-<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a391aeab99f0fea858e431ca016978224" title=" " alt="" coords="21,133,181,173"/>
+<area shape="rect" title="Adds a renderable object to the render queue." alt="" coords="285,165,465,205"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b" title=" " alt="" coords="27,5,216,45"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="5,69,237,109"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68" title=" " alt="" coords="25,133,217,173"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a391aeab99f0fea858e431ca016978224" title=" " alt="" coords="41,197,201,237"/>
+<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#aa35f24c4edaa6cef3bf8ded1949dfca6" title=" " alt="" coords="53,261,190,301"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#afc65520d3b9194ab82e4ad7d1349e2c7" title=" " alt="" coords="38,326,205,351"/>
 </map>
 </div>
 
@@ -580,8 +543,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a541528bece8c0b5fba565b8401e6c1b0" name="a541528bece8c0b5fba565b8401e6c1b0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a541528bece8c0b5fba565b8401e6c1b0">&#9670;&#160;</a></span>Clear()</h2>
+<a id="a4923f630aad1ed9356b40ffb68c9e0c8" name="a4923f630aad1ed9356b40ffb68c9e0c8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4923f630aad1ed9356b40ffb68c9e0c8">&#9670;&#160;</a></span>Clear()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -593,7 +556,7 @@ Here is the caller graph for this function:</div>
           <td class="memname">virtual void renderer::IRendererBase::Clear </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
-          <td></td>
+          <td> const</td>
         </tr>
       </table>
   </td>
@@ -606,7 +569,7 @@ Here is the caller graph for this function:</div>
 <p>Clears the current render target. </p>
 <dl class="section note"><dt>Note</dt><dd>Typically clears color and depth buffers </dd></dl>
 
-<p>Implemented in <a class="el" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a9aba67fe686eb0038c653b5af8bcb174">renderer::OpenGLRenderer</a>.</p>
+<p>Implemented in <a class="el" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#aebd9e19e0484fba2ca30fd7ae91a9fb9">renderer::OpenGLRenderer</a>.</p>
 
 </div>
 </div>
@@ -634,7 +597,44 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00095">95</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00094">94</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a8180d2c255281d9e5a18091537f88bd7" name="a8180d2c255281d9e5a18091537f88bd7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8180d2c255281d9e5a18091537f88bd7">&#9670;&#160;</a></span>DrawScreenQuad()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void renderer::IRendererBase::DrawScreenQuad </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>flipY</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implemented in <a class="el" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a7ff7667f195855dad477acf063a0b95a">renderer::OpenGLRenderer</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_a8180d2c255281d9e5a18091537f88bd7_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_a8180d2c255281d9e5a18091537f88bd7_icgraph" alt=""/></div>
+<map name="ad9/dc4/classrenderer_1_1IRendererBase_a8180d2c255281d9e5a18091537f88bd7_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_a8180d2c255281d9e5a18091537f88bd7_icgraph">
+<area shape="rect" title=" " alt="" coords="243,5,423,45"/>
+<area shape="rect" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#ab63becb2cab80e073e26b63b0806b1d3" title="Render the UI to the HUD framebuffer." alt="" coords="5,5,195,45"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -662,7 +662,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00101">101</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00099">99</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -722,7 +722,7 @@ Here is the caller graph for this function:</div>
 <p>Gets the currently active camera. </p>
 <dl class="section return"><dt>Returns</dt><dd>Pointer to the active camera, or nullptr if none set </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00153">153</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00144">144</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -753,22 +753,23 @@ Here is the caller graph for this function:</div>
 <dl class="section return"><dt>Returns</dt><dd>Array of 6 plane equations (left, right, bottom, top, near, far) </dd></dl>
 <dl class="section note"><dt>Note</dt><dd>Planes are in normalized form (ax + by + cz + d = 0, with normalized (a,b,c)) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00208">208</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00199">199</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_a84929e8b810a3bc1c879361ac564630f_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_a84929e8b810a3bc1c879361ac564630f_icgraph" alt=""/></div>
 <map name="ad9/dc4/classrenderer_1_1IRendererBase_a84929e8b810a3bc1c879361ac564630f_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_a84929e8b810a3bc1c879361ac564630f_icgraph">
-<area shape="rect" title="Gets the frustum planes for culling calculations." alt="" coords="823,127,1003,167"/>
-<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#a6f1fbf54b6f417e32c6916bd84480022" title="Tests if an AABB (in world space) is inside or intersecting the frustum." alt="" coords="568,69,775,109"/>
-<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#aa91067e0feb7412dcff8679305ee9ee7" title="Tests if a local&#45;space AABB transformed by worldTransform is visible in the frustum." alt="" coords="285,69,520,109"/>
-<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#acb8b6e5349aa38b63c643b837c4f5e5e" title=" " alt="" coords="572,187,771,227"/>
-<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#ab1dea9839d0075cb1a3fc718ca7f7d16" title="Called during the geometry pass to render this object." alt="" coords="27,5,216,45"/>
-<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ac7c57651f7368b20c302455ef4712c5e" title="Called during the geometry pass to render this object." alt="" coords="25,69,217,109"/>
-<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#aa1e5e6860f7eb384d116aa7b7546a3c5" title="Called during the geometry pass to render this object." alt="" coords="5,133,237,173"/>
-<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#ab556e6cd76f0ae6702c9e1569c38d418" title=" " alt="" coords="291,133,515,173"/>
-<area shape="rect" href="../../d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="331,198,475,223"/>
-<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a1db5e54b53f308abb509203b89d34ce2" title="Called during the geometry pass to render this object." alt="" coords="323,248,483,288"/>
+<area shape="rect" title="Gets the frustum planes for culling calculations." alt="" coords="823,159,1003,199"/>
+<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#a6f1fbf54b6f417e32c6916bd84480022" title="Tests if an AABB (in world space) is inside or intersecting the frustum." alt="" coords="568,101,775,141"/>
+<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#aa91067e0feb7412dcff8679305ee9ee7" title="Tests if a local&#45;space AABB transformed by worldTransform is visible in the frustum." alt="" coords="285,101,520,141"/>
+<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#acb8b6e5349aa38b63c643b837c4f5e5e" title=" " alt="" coords="572,219,771,259"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a6a5ef88b2d6ec6ee1f0da40480ac4999" title="Called during the geometry pass to render this object." alt="" coords="25,5,217,45"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#afcaceadb679fa164398a29b173c9a089" title="Called during the geometry pass to render this object." alt="" coords="27,69,216,109"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a32465ff4dd779494011494b690bad907" title="Called during the geometry pass to render this object." alt="" coords="5,133,237,173"/>
+<area shape="rect" href="../../de/d96/classphysics_1_1ColliderRenderable.html#a37b3d774f2caf79962e38e82b4b1db10" title="Called during the geometry pass to render this object." alt="" coords="20,197,223,237"/>
+<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#ab556e6cd76f0ae6702c9e1569c38d418" title=" " alt="" coords="291,165,515,205"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="331,230,475,255"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a9299dea8472706f936400b0b7a71dc4b" title="Called during the geometry pass to render this object." alt="" coords="323,280,483,320"/>
 </map>
 </div>
 
@@ -801,7 +802,7 @@ Here is the caller graph for this function:</div>
 <dl class="section return"><dt>Returns</dt><dd>Pointer to the geometry framebuffer, or nullptr if not applicable </dd></dl>
 <dl class="section note"><dt>Note</dt><dd>This is renderer-specific and may not be available in all implementations </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00130">130</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00129">129</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -828,7 +829,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00322">322</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00353">353</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -855,7 +856,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00331">331</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00362">362</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -886,87 +887,51 @@ Here is the caller graph for this function:</div>
 <dl class="section return"><dt>Returns</dt><dd>Pointer to the renderer instance, or nullptr if not initialized </dd></dl>
 <dl class="section note"><dt>Note</dt><dd>The first renderer created automatically becomes the singleton instance </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00218">218</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00209">209</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_adcb7d3f72aa89466f4c652bcb02aa312_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_adcb7d3f72aa89466f4c652bcb02aa312_icgraph" alt=""/></div>
 <map name="ad9/dc4/classrenderer_1_1IRendererBase_adcb7d3f72aa89466f4c652bcb02aa312_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_adcb7d3f72aa89466f4c652bcb02aa312_icgraph">
-<area shape="rect" title="Gets the singleton instance of the active renderer." alt="" coords="848,773,1028,813"/>
+<area shape="rect" title="Gets the singleton instance of the active renderer." alt="" coords="848,887,1028,927"/>
 <area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94" title="Called when the camera becomes active." alt="" coords="605,5,763,31"/>
 <area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a6f50d08eab5a0109937a65b3f4ee19d8" title="This function runs when the object is set to be destroyed." alt="" coords="589,55,779,95"/>
 <area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40" title="This function runs when the object is set to be destroyed." alt="" coords="568,119,800,159"/>
 <area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a75af091cad96a920a74a062f4701a1d9" title="This function runs when the object is set to be destroyed." alt="" coords="588,183,780,223"/>
 <area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a796f31a89365dbc22a1d6b05ee7b61f8" title="This function runs when the object is set to be destroyed." alt="" coords="604,247,764,287"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5" title="Cleans up the camera when destroyed." alt="" coords="597,312,771,337"/>
-<area shape="rect" href="../../d0/db0/classLight2D.html#aba3ddfa8edeeac944158a97efe965800" title="This function runs when the object is set to be destroyed." alt="" coords="619,361,749,387"/>
-<area shape="rect" href="../../d8/d72/classGlobalLight.html#a54a7de33527e0673b7cfa4c13b04da28" title="This function runs just after the object is created (scene load thread)" alt="" coords="621,411,747,436"/>
-<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#a6f1fbf54b6f417e32c6916bd84480022" title="Tests if an AABB (in world space) is inside or intersecting the frustum." alt="" coords="581,461,787,501"/>
-<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#aa91067e0feb7412dcff8679305ee9ee7" title="Tests if a local&#45;space AABB transformed by worldTransform is visible in the frustum." alt="" coords="285,458,520,498"/>
-<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#acb8b6e5349aa38b63c643b837c4f5e5e" title=" " alt="" coords="585,575,783,615"/>
-<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a1db5e54b53f308abb509203b89d34ce2" title="Called during the geometry pass to render this object." alt="" coords="323,637,483,677"/>
-<area shape="rect" href="../../d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="570,691,798,716"/>
-<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b" title=" " alt="" coords="589,741,779,781"/>
-<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="568,805,800,845"/>
-<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68" title=" " alt="" coords="588,869,780,909"/>
-<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a391aeab99f0fea858e431ca016978224" title=" " alt="" coords="604,933,764,973"/>
-<area shape="rect" href="../../d0/db0/classLight2D.html#afc65520d3b9194ab82e4ad7d1349e2c7" title=" " alt="" coords="601,997,767,1023"/>
-<area shape="rect" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#aa1b958dc22ad7a0c70faf45a9ba97851" title="Called when the layer is added to the stack." alt="" coords="585,1047,783,1087"/>
-<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a5c3c01970b5c989ee99571810d1c9927" title="This function runs when the object is disabled." alt="" coords="589,1111,779,1151"/>
-<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ae2f9f68cd082084d115e300c82a077e4" title="This function runs when the object is disabled." alt="" coords="568,1175,800,1215"/>
-<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ac28b6a479bd1aec45ad0d6a691602189" title="This function runs when the object is disabled." alt="" coords="588,1239,780,1279"/>
-<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a938e376172377962d64d4ef944888b41" title="This function runs when the object is enabled after being disabled." alt="" coords="589,1303,779,1343"/>
-<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a7e03ccc7b57d8c9617fe8ab6d04d091f" title="This function runs when the object is enabled after being disabled." alt="" coords="568,1367,800,1407"/>
-<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a3ad3e3e5b4cd4a9305674c1cbb7a3ba8" title="This function runs when the object is enabled after being disabled." alt="" coords="588,1431,780,1471"/>
-<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a796d712f5ad2314dbde0d3fd4cfb88be" title=" " alt="" coords="611,1495,757,1535"/>
-<area shape="rect" href="../../d0/db9/namespacerenderer.html#aaccd4db22dcd63f95d1186b2cbaaaed7" title=" " alt="" coords="569,1560,799,1585"/>
-<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a075ce438f3311ef921bf26661358d60c" title="Sets this camera as the active camera." alt="" coords="592,1610,776,1650"/>
-<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#ab1dea9839d0075cb1a3fc718ca7f7d16" title="Called during the geometry pass to render this object." alt="" coords="27,394,216,434"/>
-<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ac7c57651f7368b20c302455ef4712c5e" title="Called during the geometry pass to render this object." alt="" coords="25,458,217,498"/>
-<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#aa1e5e6860f7eb384d116aa7b7546a3c5" title="Called during the geometry pass to render this object." alt="" coords="5,522,237,562"/>
-<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#ab556e6cd76f0ae6702c9e1569c38d418" title=" " alt="" coords="291,522,515,562"/>
-<area shape="rect" href="../../d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="331,587,475,612"/>
-<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="330,1495,475,1535"/>
-</map>
-</div>
-
-</div>
-</div>
-<a id="aac036b48aaf873546df12bfb73ba0d62" name="aac036b48aaf873546df12bfb73ba0d62"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aac036b48aaf873546df12bfb73ba0d62">&#9670;&#160;</a></span>GetLightFramebuffer()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../dc/d58/classFramebuffer.html">Framebuffer</a> * renderer::IRendererBase::GetLightFramebuffer </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Gets the lighting framebuffer for light accumulation. </p>
-<dl class="section return"><dt>Returns</dt><dd>Pointer to the light framebuffer, or nullptr if not applicable </dd></dl>
-<dl class="section note"><dt>Note</dt><dd>This is renderer-specific and may not be available in all implementations </dd></dl>
-
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00138">138</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_aac036b48aaf873546df12bfb73ba0d62_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_aac036b48aaf873546df12bfb73ba0d62_icgraph" alt=""/></div>
-<map name="ad9/dc4/classrenderer_1_1IRendererBase_aac036b48aaf873546df12bfb73ba0d62_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_aac036b48aaf873546df12bfb73ba0d62_icgraph">
-<area shape="rect" title="Gets the lighting framebuffer for light accumulation." alt="" coords="220,5,400,45"/>
-<area shape="rect" href="../../d0/db0/classLight2D.html#afc65520d3b9194ab82e4ad7d1349e2c7" title=" " alt="" coords="5,13,172,38"/>
+<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a27f0fe678b1144ce27480e6627af86b3" title="This function runs when the object is set to be destroyed." alt="" coords="615,311,753,351"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5" title="Cleans up the camera when destroyed." alt="" coords="597,376,771,401"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#aba3ddfa8edeeac944158a97efe965800" title="This function runs when the object is set to be destroyed." alt="" coords="619,425,749,451"/>
+<area shape="rect" href="../../d8/d72/classGlobalLight.html#a54a7de33527e0673b7cfa4c13b04da28" title="This function runs just after the object is created (scene load thread)" alt="" coords="621,475,747,500"/>
+<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#a6f1fbf54b6f417e32c6916bd84480022" title="Tests if an AABB (in world space) is inside or intersecting the frustum." alt="" coords="581,525,787,565"/>
+<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#aa91067e0feb7412dcff8679305ee9ee7" title="Tests if a local&#45;space AABB transformed by worldTransform is visible in the frustum." alt="" coords="285,550,520,590"/>
+<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#acb8b6e5349aa38b63c643b837c4f5e5e" title=" " alt="" coords="585,690,783,730"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="331,640,475,665"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a9299dea8472706f936400b0b7a71dc4b" title="Called during the geometry pass to render this object." alt="" coords="323,754,483,794"/>
+<area shape="rect" href="../../d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="570,805,798,831"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b" title=" " alt="" coords="589,855,779,895"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="568,919,800,959"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ae0f7be710b5f56a988d82bcf22774a68" title=" " alt="" coords="588,983,780,1023"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a391aeab99f0fea858e431ca016978224" title=" " alt="" coords="604,1047,764,1087"/>
+<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#aa35f24c4edaa6cef3bf8ded1949dfca6" title=" " alt="" coords="615,1111,753,1151"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#afc65520d3b9194ab82e4ad7d1349e2c7" title=" " alt="" coords="601,1176,767,1201"/>
+<area shape="rect" href="../../df/daf/classrenderer_1_1DebugDrawLayer.html#aa1b958dc22ad7a0c70faf45a9ba97851" title="Called when the layer is added to the stack." alt="" coords="585,1226,783,1266"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a5c3c01970b5c989ee99571810d1c9927" title="This function runs when the object is disabled." alt="" coords="589,1290,779,1330"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ae2f9f68cd082084d115e300c82a077e4" title="This function runs when the object is disabled." alt="" coords="568,1354,800,1394"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ac28b6a479bd1aec45ad0d6a691602189" title="This function runs when the object is disabled." alt="" coords="588,1418,780,1458"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a938e376172377962d64d4ef944888b41" title="This function runs when the object is enabled after being disabled." alt="" coords="589,1482,779,1522"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a7e03ccc7b57d8c9617fe8ab6d04d091f" title="This function runs when the object is enabled after being disabled." alt="" coords="568,1546,800,1586"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a3ad3e3e5b4cd4a9305674c1cbb7a3ba8" title="This function runs when the object is enabled after being disabled." alt="" coords="588,1610,780,1650"/>
+<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a796d712f5ad2314dbde0d3fd4cfb88be" title=" " alt="" coords="611,1674,757,1714"/>
+<area shape="rect" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#ab63becb2cab80e073e26b63b0806b1d3" title="Render the UI to the HUD framebuffer." alt="" coords="589,1738,779,1778"/>
+<area shape="rect" href="../../d0/db9/namespacerenderer.html#aaccd4db22dcd63f95d1186b2cbaaaed7" title=" " alt="" coords="569,1803,799,1828"/>
+<area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a075ce438f3311ef921bf26661358d60c" title="Sets this camera as the active camera." alt="" coords="592,1853,776,1893"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a6a5ef88b2d6ec6ee1f0da40480ac4999" title="Called during the geometry pass to render this object." alt="" coords="25,454,217,494"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#afcaceadb679fa164398a29b173c9a089" title="Called during the geometry pass to render this object." alt="" coords="27,518,216,558"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a32465ff4dd779494011494b690bad907" title="Called during the geometry pass to render this object." alt="" coords="5,582,237,622"/>
+<area shape="rect" href="../../de/d96/classphysics_1_1ColliderRenderable.html#a37b3d774f2caf79962e38e82b4b1db10" title="Called during the geometry pass to render this object." alt="" coords="20,646,223,686"/>
+<area shape="rect" href="../../d8/dfe/structOclussionVolume.html#ab556e6cd76f0ae6702c9e1569c38d418" title=" " alt="" coords="291,690,515,730"/>
+<area shape="rect" href="../../da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="330,1674,475,1714"/>
 </map>
 </div>
 
@@ -999,7 +964,7 @@ Here is the caller graph for this function:</div>
 <dl class="section return"><dt>Returns</dt><dd>Pointer to the output framebuffer </dd></dl>
 <dl class="section note"><dt>Note</dt><dd>This is the framebuffer that should be displayed to the screen </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00122">122</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00121">121</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1029,7 +994,7 @@ Here is the caller graph for this function:</div>
 <p>Gets the current projection matrix. </p>
 <dl class="section return"><dt>Returns</dt><dd>Const reference to the projection matrix </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00183">183</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00174">174</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1056,7 +1021,43 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00303">303</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00306">306</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_ab8bfd3ee89ab05ad1e47f9372e3d71df_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_ab8bfd3ee89ab05ad1e47f9372e3d71df_icgraph" alt=""/></div>
+<map name="ad9/dc4/classrenderer_1_1IRendererBase_ab8bfd3ee89ab05ad1e47f9372e3d71df_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_ab8bfd3ee89ab05ad1e47f9372e3d71df_icgraph">
+<area shape="rect" title=" " alt="" coords="197,5,377,45"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="5,13,149,38"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a128593d19223cf2ce3677da15cd79c08" name="a128593d19223cf2ce3677da15cd79c08"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a128593d19223cf2ce3677da15cd79c08">&#9670;&#160;</a></span>GetShadowMapTexture()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual GLuint renderer::IRendererBase::GetShadowMapTexture </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implemented in <a class="el" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#af3a4343e0ced11e219af09a87e0625f2">renderer::OpenGLRenderer</a>.</p>
 
 </div>
 </div>
@@ -1086,14 +1087,14 @@ Here is the caller graph for this function:</div>
 <p>Gets the current view matrix. </p>
 <dl class="section return"><dt>Returns</dt><dd>Const reference to the view matrix </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00190">190</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00181">181</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_a8a87a7c2697046462852a0da76962ca4_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_a8a87a7c2697046462852a0da76962ca4_icgraph" alt=""/></div>
 <map name="ad9/dc4/classrenderer_1_1IRendererBase_a8a87a7c2697046462852a0da76962ca4_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_a8a87a7c2697046462852a0da76962ca4_icgraph">
 <area shape="rect" title="Gets the current view matrix." alt="" coords="213,5,393,45"/>
-<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a1db5e54b53f308abb509203b89d34ce2" title="Called during the geometry pass to render this object." alt="" coords="5,5,165,45"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a9299dea8472706f936400b0b7a71dc4b" title="Called during the geometry pass to render this object." alt="" coords="5,5,165,45"/>
 </map>
 </div>
 
@@ -1126,7 +1127,7 @@ Here is the caller graph for this function:</div>
 <dl class="section return"><dt>Returns</dt><dd>Const reference to the combined matrix </dd></dl>
 <dl class="section note"><dt>Note</dt><dd>This is computed once per frame for performance </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00198">198</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00189">189</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1163,7 +1164,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00340">340</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00371">371</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1190,7 +1191,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00224">224</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00215">215</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1287,49 +1288,13 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_ac193916b3c6024df40964aeda936d470_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_ac193916b3c6024df40964aeda936d470_icgraph" alt=""/></div>
 <map name="ad9/dc4/classrenderer_1_1IRendererBase_ac193916b3c6024df40964aeda936d470_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_ac193916b3c6024df40964aeda936d470_icgraph">
-<area shape="rect" title="Removes a renderable object from the render queue." alt="" coords="285,5,465,45"/>
-<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40" title="This function runs when the object is set to be destroyed." alt="" coords="5,5,237,45"/>
-</map>
-</div>
-
-</div>
-</div>
-<a id="a8bba6f987aafbef6bbf7212db18aaa4c" name="a8bba6f987aafbef6bbf7212db18aaa4c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8bba6f987aafbef6bbf7212db18aaa4c">&#9670;&#160;</a></span>RemoveTransparentRenderable()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual void renderer::IRendererBase::RemoveTransparentRenderable </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a> *&#160;</td>
-          <td class="paramname"><em>renderable</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Removes a transparent/sprite renderable from the sprite pass queue. </p>
-
-<p>Implemented in <a class="el" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a173f86cda6c2ec8ed20c589c55529a18">renderer::OpenGLRenderer</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_a8bba6f987aafbef6bbf7212db18aaa4c_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_a8bba6f987aafbef6bbf7212db18aaa4c_icgraph" alt=""/></div>
-<map name="ad9/dc4/classrenderer_1_1IRendererBase_a8bba6f987aafbef6bbf7212db18aaa4c_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_a8bba6f987aafbef6bbf7212db18aaa4c_icgraph">
-<area shape="rect" title="Removes a transparent/sprite renderable from the sprite pass queue." alt="" coords="245,69,480,109"/>
-<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a6f50d08eab5a0109937a65b3f4ee19d8" title="This function runs when the object is set to be destroyed." alt="" coords="7,5,196,45"/>
-<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a75af091cad96a920a74a062f4701a1d9" title="This function runs when the object is set to be destroyed." alt="" coords="5,69,197,109"/>
-<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a796f31a89365dbc22a1d6b05ee7b61f8" title="This function runs when the object is set to be destroyed." alt="" coords="21,133,181,173"/>
+<area shape="rect" title="Removes a renderable object from the render queue." alt="" coords="285,165,465,205"/>
+<area shape="rect" href="../../dd/d75/classAtlasRendererComponent.html#a6f50d08eab5a0109937a65b3f4ee19d8" title="This function runs when the object is set to be destroyed." alt="" coords="27,5,216,45"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40" title="This function runs when the object is set to be destroyed." alt="" coords="5,69,237,109"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a75af091cad96a920a74a062f4701a1d9" title="This function runs when the object is set to be destroyed." alt="" coords="25,133,217,173"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a796f31a89365dbc22a1d6b05ee7b61f8" title="This function runs when the object is set to be destroyed." alt="" coords="41,197,201,237"/>
+<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a27f0fe678b1144ce27480e6627af86b3" title="This function runs when the object is set to be destroyed." alt="" coords="53,261,190,301"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#aba3ddfa8edeeac944158a97efe965800" title="This function runs when the object is set to be destroyed." alt="" coords="56,326,187,351"/>
 </map>
 </div>
 
@@ -1432,10 +1397,10 @@ Here is the caller graph for this function:</div>
 <div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_a9b82c08210834948eb375af0351ec1c2_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_a9b82c08210834948eb375af0351ec1c2_icgraph" alt=""/></div>
 <map name="ad9/dc4/classrenderer_1_1IRendererBase_a9b82c08210834948eb375af0351ec1c2_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_a9b82c08210834948eb375af0351ec1c2_icgraph">
 <area shape="rect" title=" " alt="" coords="525,63,705,103"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="265,5,460,45"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="265,5,460,45"/>
 <area shape="rect" href="../../d0/db9/namespacerenderer.html#aaccd4db22dcd63f95d1186b2cbaaaed7" title=" " alt="" coords="248,70,477,95"/>
 <area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a0418bbc4c403c998c16b52ccf33616f4" title=" " alt="" coords="273,120,453,160"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,63,200,103"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,120,200,160"/>
 </map>
 </div>
 
@@ -1473,7 +1438,7 @@ Here is the caller graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00146">146</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00137">137</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1485,6 +1450,62 @@ Here is the caller graph for this function:</div>
 <area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a075ce438f3311ef921bf26661358d60c" title="Sets this camera as the active camera." alt="" coords="5,105,189,145"/>
 </map>
 </div>
+
+</div>
+</div>
+<a id="ab86b13093baa1dcd4579b36975a745c2" name="ab86b13093baa1dcd4579b36975a745c2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab86b13093baa1dcd4579b36975a745c2">&#9670;&#160;</a></span>SetAnisotropyLevel()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::IRendererBase::SetAnisotropyLevel </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>level</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00331">331</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ae53cfc3ba1ec76cea7c924a15715f9b2" name="ae53cfc3ba1ec76cea7c924a15715f9b2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae53cfc3ba1ec76cea7c924a15715f9b2">&#9670;&#160;</a></span>SetDisplayMode()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::IRendererBase::SetDisplayMode </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d7/d01/namespacetoast.html#a3ce7291cbc1534293d25b38c2d2e6a73">toast::DisplayMode</a>&#160;</td>
+          <td class="paramname"><em>mode</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00323">323</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1512,7 +1533,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00326">326</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00357">357</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1549,7 +1570,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00344">344</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00375">375</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1586,7 +1607,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00335">335</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00366">366</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1625,7 +1646,35 @@ Here is the caller graph for this function:</div>
 
 <p>Sets the maximum FPS cap. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00308">308</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00311">311</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a0d2b91707d4e08a34a7d245498516e73" name="a0d2b91707d4e08a34a7d245498516e73"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0d2b91707d4e08a34a7d245498516e73">&#9670;&#160;</a></span>SetMsaaSamples()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::IRendererBase::SetMsaaSamples </td>
+          <td>(</td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>samples</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00327">327</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1661,15 +1710,16 @@ Here is the caller graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00161">161</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00152">152</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d9/dc4/classrenderer_1_1IRendererBase_aa157ce8aea0f1496973dc0fb4abad051_icgraph.png" border="0" usemap="#ad9/dc4/classrenderer_1_1IRendererBase_aa157ce8aea0f1496973dc0fb4abad051_icgraph" alt=""/></div>
 <map name="ad9/dc4/classrenderer_1_1IRendererBase_aa157ce8aea0f1496973dc0fb4abad051_icgraph" id="ad9/dc4/classrenderer_1_1IRendererBase_aa157ce8aea0f1496973dc0fb4abad051_icgraph">
-<area shape="rect" title="Sets the projection matrix directly." alt="" coords="491,5,671,45"/>
+<area shape="rect" title="Sets the projection matrix directly." alt="" coords="491,35,671,75"/>
 <area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,5,200,45"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="248,33,443,73"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="248,63,443,103"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="5,69,200,109"/>
 </map>
 </div>
 
@@ -1732,7 +1782,119 @@ Here is the caller graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00170">170</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00161">161</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a8ddf3ad8767bfae156d973b20e8c9454" name="a8ddf3ad8767bfae156d973b20e8c9454"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8ddf3ad8767bfae156d973b20e8c9454">&#9670;&#160;</a></span>SetResolution()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::IRendererBase::SetResolution </td>
+          <td>(</td>
+          <td class="paramtype">glm::uvec2&#160;</td>
+          <td class="paramname"><em>resolution</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00319">319</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a3d992a6231558fa6319aec69f88c682b" name="a3d992a6231558fa6319aec69f88c682b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d992a6231558fa6319aec69f88c682b">&#9670;&#160;</a></span>SetResolutionScale()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::IRendererBase::SetResolutionScale </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>scale</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00315">315</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a365fe2951edc36c0ea85a929d473adb2" name="a365fe2951edc36c0ea85a929d473adb2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a365fe2951edc36c0ea85a929d473adb2">&#9670;&#160;</a></span>SetShadowMapResolution()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::IRendererBase::SetShadowMapResolution </td>
+          <td>(</td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>resolution</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00335">335</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a556fd346b862a1b60621e3e0fa2bb1bc" name="a556fd346b862a1b60621e3e0fa2bb1bc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a556fd346b862a1b60621e3e0fa2bb1bc">&#9670;&#160;</a></span>SetShadowRaymarchSteps()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::IRendererBase::SetShadowRaymarchSteps </td>
+          <td>(</td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>steps</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00339">339</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1768,7 +1930,7 @@ Here is the caller graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00176">176</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00167">167</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1807,7 +1969,7 @@ Here is the caller graph for this function:</div>
 
 <p>Enables or disables VSync and immediately applies it. Does NOT call the full ApplyRenderSettings. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00314">314</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00345">345</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1864,7 +2026,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00290">290</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00293">293</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1900,7 +2062,7 @@ Here is the caller graph for this function:</div>
 
 <p>Currently active camera for rendering. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00365">365</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00396">396</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1926,7 +2088,7 @@ Here is the caller graph for this function:</div>
 
 <p>Current renderer configuration. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00392">392</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00421">421</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1952,7 +2114,7 @@ Here is the caller graph for this function:</div>
 
 <p>Set of renderables that are currently disabled — excluded from the geometry pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00371">371</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00401">401</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -1978,7 +2140,7 @@ Here is the caller graph for this function:</div>
 
 <p>Frustum planes for culling. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00383">383</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00412">412</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2005,7 +2167,7 @@ Here is the caller graph for this function:</div>
 <p>G-buffer for deferred rendering (optional) </p>
 <dl class="section note"><dt>Note</dt><dd>These are owned by the derived renderer implementation </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00360">360</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00391">391</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2031,7 +2193,7 @@ Here is the caller graph for this function:</div>
 
 <p>Color of the global ambient light. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00386">386</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00415">415</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2057,7 +2219,7 @@ Here is the caller graph for this function:</div>
 
 <p>Whether global light is enabled. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00389">389</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00418">418</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2083,7 +2245,7 @@ Here is the caller graph for this function:</div>
 
 <p>Intensity of the global. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00387">387</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00416">416</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2107,33 +2269,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00353">353</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
-
-</div>
-</div>
-<a id="a371c47c770574b869f3ee95dd436ffb0" name="a371c47c770574b869f3ee95dd436ffb0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a371c47c770574b869f3ee95dd436ffb0">&#9670;&#160;</a></span>m_lightFramebuffer</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../dc/d58/classFramebuffer.html">Framebuffer</a>* renderer::IRendererBase::m_lightFramebuffer = nullptr</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Light accumulation buffer (optional) </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00361">361</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00384">384</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2159,7 +2295,7 @@ Here is the caller graph for this function:</div>
 
 <p>All 2D lights in the scene. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00372">372</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00402">402</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2185,7 +2321,7 @@ Here is the caller graph for this function:</div>
 
 <p>True when lights need re-sorting. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00375">375</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00404">404</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2209,7 +2345,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00356">356</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00387">387</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2235,7 +2371,7 @@ Here is the caller graph for this function:</div>
 
 <p>Cached projection * view matrix. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00380">380</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00409">409</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2261,7 +2397,7 @@ Here is the caller graph for this function:</div>
 
 <p>Final output framebuffer (required) </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00362">362</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00393">393</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2287,7 +2423,7 @@ Here is the caller graph for this function:</div>
 
 <p>Camera projection matrix. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00378">378</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00407">407</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2310,10 +2446,9 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
-
 <p>Opaque renderable objects (geometry pass) </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00368">368</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00399">399</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2339,58 +2474,7 @@ Here is the caller graph for this function:</div>
 
 <p>True when renderables need re-sorting. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00373">373</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
-
-</div>
-</div>
-<a id="a5c9e2aab80ed9e109bde8a3d090756c9" name="a5c9e2aab80ed9e109bde8a3d090756c9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5c9e2aab80ed9e109bde8a3d090756c9">&#9670;&#160;</a></span>m_transparentRenderables</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::vector&lt;<a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">IRenderable</a>*&gt; renderer::IRendererBase::m_transparentRenderables</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Transparent/sprite renderables (sprite pass, post-combine) </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00369">369</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
-
-</div>
-</div>
-<a id="aaa3cd644dbc1e75877e6076fea705dcb" name="aaa3cd644dbc1e75877e6076fea705dcb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaa3cd644dbc1e75877e6076fea705dcb">&#9670;&#160;</a></span>m_transparentSortDirty</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool renderer::IRendererBase::m_transparentSortDirty = true</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>True when transparent renderables need re-sorting. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00374">374</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00403">403</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -2416,7 +2500,7 @@ Here is the caller graph for this function:</div>
 
 <p>Camera view matrix. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00379">379</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00408">408</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>

@@ -15,6 +15,11 @@ var namespacerenderer =
     [ "Shader", "d9/d50/classrenderer_1_1Shader.html", "d9/d50/classrenderer_1_1Shader" ],
     [ "SpineVertex", "d1/d64/structrenderer_1_1SpineVertex.html", "d1/d64/structrenderer_1_1SpineVertex" ],
     [ "Vertex", "d1/d6e/structrenderer_1_1Vertex.html", "d1/d6e/structrenderer_1_1Vertex" ],
+    [ "IRenderablePass", "d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1b", [
+      [ "GEOMETRY", "d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1bab22957ad8078e8d73de61aef53d13a74", null ],
+      [ "LIGHTS", "d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1babc2f2b159cc56de34d757ac7c93b9100", null ],
+      [ "OCCLUSION", "d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1ba8307d318a3a8fd7a3acd8eb50fc95701", null ]
+    ] ],
     [ "Stage", "d0/db9/namespacerenderer.html#a157aaedd17cff1e92376e40949f2ef56", [
       [ "Vertex", "d0/db9/namespacerenderer.html#a157aaedd17cff1e92376e40949f2ef56ab22b929ba52471a02d18bb3a4e4472e6", null ],
       [ "Fragment", "d0/db9/namespacerenderer.html#a157aaedd17cff1e92376e40949f2ef56a37d01b98065725fe3a1d30acf3a0064a", null ],
@@ -31,6 +36,7 @@ var namespacerenderer =
     [ "DebugRect", "d0/db9/namespacerenderer.html#a701b15fad8c5a9a948aeeda07bbfdcdc", null ],
     [ "DebugRect", "d0/db9/namespacerenderer.html#a7ec284fdf765fd75ec652ecf620d9626", null ],
     [ "DrawDebugArrow", "d0/db9/namespacerenderer.html#a4a7f0edbb5c2cbc3f842f44c0bef253d", null ],
+    [ "glErrorString", "d0/db9/namespacerenderer.html#aec613881638ab64b05d385199590e152", null ],
     [ "LoadRendererSettings", "d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5", null ],
     [ "SaveRendererSettings", "d0/db9/namespacerenderer.html#aaccd4db22dcd63f95d1186b2cbaaaed7", null ]
 ];

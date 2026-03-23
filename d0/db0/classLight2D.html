@@ -94,6 +94,7 @@ $(document).ready(function(){initNavTree('d0/db0/classLight2D.html','../../'); i
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="../../dd/d1d/classLight2D-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">Light2D Class Reference</div></div>
@@ -108,14 +109,15 @@ Collaboration diagram for Light2D:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../dc/d3d/classLight2D__coll__graph.png" border="0" usemap="#aLight2D_coll__map" alt="Collaboration graph"/></div>
 <map name="aLight2D_coll__map" id="aLight2D_coll__map">
-<area shape="rect" title=" " alt="" coords="214,269,286,295"/>
-<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html" title=" " alt="" coords="77,181,175,207"/>
-<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="91,93,196,119"/>
-<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="199,181,301,207"/>
-<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="5,5,148,31"/>
-<area shape="rect" href="../../d8/d87/classChildren.html" title=" " alt="" coords="172,5,248,31"/>
-<area shape="rect" href="../../dc/d58/classFramebuffer.html" title=" " alt="" coords="331,181,433,207"/>
-<area shape="rect" href="../../df/d54/structFramebuffer_1_1Specs.html" title=" " alt="" coords="311,93,458,119"/>
+<area shape="rect" title=" " alt="" coords="39,432,111,457"/>
+<area shape="rect" href="../../d8/d92/classtoast_1_1Actor.html" title=" " alt="" coords="5,181,103,207"/>
+<area shape="rect" href="../../d0/dd9/classtoast_1_1TransformComponent.html" title="Component that manages position, rotation, and scale." alt="" coords="91,269,294,295"/>
+<area shape="rect" href="../../d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="119,93,224,119"/>
+<area shape="rect" href="../../d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="127,181,229,207"/>
+<area shape="rect" href="../../d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="254,181,393,207"/>
+<area shape="rect" href="../../dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="33,5,176,31"/>
+<area shape="rect" href="../../d8/d87/classChildren.html" title=" " alt="" coords="200,5,276,31"/>
+<area shape="rect" href="../../d5/dfe/classrenderer_1_1IRenderable.html" title="Interface for objects that can be rendered by the rendering system." alt="" coords="101,344,263,369"/>
 </map>
 <center><span class="legend">[<a target="top" href="../../graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -264,14 +266,17 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a58c24747a2bcdd94fa3d69b81761cd03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
+Private Member Functions</h2></td></tr>
+<tr class="memitem:ab8bf08ac5e7a352f4420669443dce42e"><td class="memItemLeft" align="right" valign="top">glm::vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db0/classLight2D.html#ab8bf08ac5e7a352f4420669443dce42e">TransformToUV</a> (const glm::vec3 &amp;worldPos, const glm::mat4 &amp;viewProj) const</td></tr>
+<tr class="separator:ab8bf08ac5e7a352f4420669443dce42e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
 <tr class="memitem:ac5e5d8142e0267b2e1e8a6560111205a"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="../../d4/d8c/classrenderer_1_1Mesh.html">renderer::Mesh</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db0/classLight2D.html#ac5e5d8142e0267b2e1e8a6560111205a">m_lightMesh</a> = nullptr</td></tr>
 <tr class="separator:ac5e5d8142e0267b2e1e8a6560111205a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af13151f490d14215676e6469d824fd34"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db0/classLight2D.html#af13151f490d14215676e6469d824fd34">m_lightShader</a> = nullptr</td></tr>
 <tr class="separator:af13151f490d14215676e6469d824fd34"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1632256c8edff7413583b47feb0bf22"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d58/classFramebuffer.html">Framebuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db0/classLight2D.html#ad1632256c8edff7413583b47feb0bf22">m_lightBuffer</a> = nullptr</td></tr>
-<tr class="separator:ad1632256c8edff7413583b47feb0bf22"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a32faa41d74e2ff440ffc4f27959ec619"><td class="memItemLeft" align="right" valign="top">glm::vec4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db0/classLight2D.html#a32faa41d74e2ff440ffc4f27959ec619">m_color</a> = glm::vec4(1.0f)</td></tr>
 <tr class="separator:a32faa41d74e2ff440ffc4f27959ec619"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a79398c26f8545dd36f8fa4733ade9a26"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db0/classLight2D.html#a79398c26f8545dd36f8fa4733ade9a26">m_intensity</a> = 1.0f</td></tr>
@@ -286,6 +291,12 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a534e42dbc6bbb9550d66cbcfbaea5ddf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1dc7993678daac432d754fdf9e6cc619"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db0/classLight2D.html#a1dc7993678daac432d754fdf9e6cc619">m_angularSoftness</a> = 0.5f</td></tr>
 <tr class="separator:a1dc7993678daac432d754fdf9e6cc619"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1613662c4b999113f9ea4e5b79c5764d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db0/classLight2D.html#a1613662c4b999113f9ea4e5b79c5764d">m_castShadow</a> = true</td></tr>
+<tr class="separator:a1613662c4b999113f9ea4e5b79c5764d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73a80bea939fa59f1a90a797946eba06"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db0/classLight2D.html#a73a80bea939fa59f1a90a797946eba06">m_lightShadowRadius</a> = 0.05f</td></tr>
+<tr class="separator:a73a80bea939fa59f1a90a797946eba06"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3dc238538485dba1101dcb5e3145af9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d7/d78/IRenderable_8hpp.html#a6fb8f660dd7cbc0df48549b79c483bfa">IRenderable</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db0/classLight2D.html#ab3dc238538485dba1101dcb5e3145af9">m_renderable</a> = nullptr</td></tr>
+<tr class="separator:ab3dc238538485dba1101dcb5e3145af9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -358,7 +369,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00012">12</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00026">26</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="aec8083b5ea0c7c762d7f22d8d8bb57d7" name="aec8083b5ea0c7c762d7f22d8d8bb57d7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aec8083b5ea0c7c762d7f22d8d8bb57d7">&#9670;&#160;</a></span>Begin()</h2>
@@ -387,7 +398,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#afd0964d1aabd3a7119e416e8f6327852">toast::Actor</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00029">29</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00044">44</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
 
 </div>
 </div>
@@ -418,7 +429,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#ac43563b8a9b15bbb1361ee75322296a8">toast::Actor</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00032">32</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00046">46</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
 
 </div>
 </div>
@@ -445,7 +456,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00056">56</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00070">70</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -472,7 +483,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00064">64</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00078">78</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -499,7 +510,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00040">40</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00054">54</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -526,7 +537,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00032">32</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00046">46</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -553,7 +564,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00048">48</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00062">62</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -584,7 +595,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#a9c31ed3e4ced90dd05b1bc252cea8091">toast::Actor</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00014">14</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00028">28</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
 
 </div>
 </div>
@@ -634,7 +645,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2">toast::Actor</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00077">77</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00143">143</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
 
 </div>
 </div>
@@ -663,7 +674,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a144d8696ae8da523c8e1c9b03e0754f9">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00023">23</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00037">37</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
 
 </div>
 </div>
@@ -683,7 +694,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00036">36</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00052">52</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
 
 </div>
 </div>
@@ -734,7 +745,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635">toast::Actor</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00065">65</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d72/2DLight_8cpp_source.html#l00129">129</a> of file <a class="el" href="../../d8/d72/2DLight_8cpp_source.html">2DLight.cpp</a>.</p>
 
 </div>
 </div>
@@ -762,7 +773,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00052">52</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00066">66</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -790,7 +801,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00060">60</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00074">74</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -818,7 +829,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00036">36</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00050">50</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -846,7 +857,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00027">27</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00041">41</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -874,7 +885,54 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00044">44</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00058">58</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ab8bf08ac5e7a352f4420669443dce42e" name="ab8bf08ac5e7a352f4420669443dce42e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab8bf08ac5e7a352f4420669443dce42e">&#9670;&#160;</a></span>TransformToUV()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">glm::vec2 Light2D::TransformToUV </td>
+          <td>(</td>
+          <td class="paramtype">const glm::vec3 &amp;&#160;</td>
+          <td class="paramname"><em>worldPos</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const glm::mat4 &amp;&#160;</td>
+          <td class="paramname"><em>viewProj</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00087">87</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d0/db0/classLight2D_ab8bf08ac5e7a352f4420669443dce42e_icgraph.png" border="0" usemap="#ad0/db0/classLight2D_ab8bf08ac5e7a352f4420669443dce42e_icgraph" alt=""/></div>
+<map name="ad0/db0/classLight2D_ab8bf08ac5e7a352f4420669443dce42e_icgraph" id="ad0/db0/classLight2D_ab8bf08ac5e7a352f4420669443dce42e_icgraph">
+<area shape="rect" title=" " alt="" coords="197,5,376,31"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="5,5,149,31"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -899,7 +957,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00081">81</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00107">107</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -923,7 +981,31 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00085">85</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00111">111</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a1613662c4b999113f9ea4e5b79c5764d" name="a1613662c4b999113f9ea4e5b79c5764d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1613662c4b999113f9ea4e5b79c5764d">&#9670;&#160;</a></span>m_castShadow</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Light2D::m_castShadow = true</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00113">113</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -947,7 +1029,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00078">78</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00104">104</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -971,31 +1053,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00079">79</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
-
-</div>
-</div>
-<a id="ad1632256c8edff7413583b47feb0bf22" name="ad1632256c8edff7413583b47feb0bf22"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad1632256c8edff7413583b47feb0bf22">&#9670;&#160;</a></span>m_lightBuffer</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../dc/d58/classFramebuffer.html">Framebuffer</a>* Light2D::m_lightBuffer = nullptr</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00076">76</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00105">105</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -1019,7 +1077,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00073">73</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00099">99</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -1043,7 +1101,31 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00074">74</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00100">100</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a73a80bea939fa59f1a90a797946eba06" name="a73a80bea939fa59f1a90a797946eba06"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a73a80bea939fa59f1a90a797946eba06">&#9670;&#160;</a></span>m_lightShadowRadius</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Light2D::m_lightShadowRadius = 0.05f</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00114">114</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -1067,7 +1149,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00084">84</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00110">110</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -1091,7 +1173,31 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00082">82</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00108">108</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ab3dc238538485dba1101dcb5e3145af9" name="ab3dc238538485dba1101dcb5e3145af9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab3dc238538485dba1101dcb5e3145af9">&#9670;&#160;</a></span>m_renderable</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d7/d78/IRenderable_8hpp.html#a6fb8f660dd7cbc0df48549b79c483bfa">IRenderable</a>* Light2D::m_renderable = nullptr</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00116">116</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -1115,7 +1221,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00080">80</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d4f/2DLight_8hpp_source.html#l00106">106</a> of file <a class="el" href="../../da/d4f/2DLight_8hpp_source.html">2DLight.hpp</a>.</p>
 
 </div>
 </div>

@@ -1,6 +1,7 @@
 <map id="Framebuffer::Build" name="Framebuffer::Build">
-<area shape="rect" id="node1" title=" " alt="" coords="691,11,833,37"/>
-<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,5,200,45"/>
-<area shape="rect" id="node3" href="$dc/d58/classFramebuffer.html#aa16fe7b9d734100fc6817cb131362f60" title=" " alt="" coords="491,37,643,62"/>
-<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="248,33,443,73"/>
+<area shape="rect" id="node1" title=" " alt="" coords="691,57,833,82"/>
+<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="5,5,200,45"/>
+<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,81,200,121"/>
+<area shape="rect" id="node4" href="$dc/d58/classFramebuffer.html#aa16fe7b9d734100fc6817cb131362f60" title=" " alt="" coords="491,57,643,82"/>
+<area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="248,49,443,89"/>
 </map>

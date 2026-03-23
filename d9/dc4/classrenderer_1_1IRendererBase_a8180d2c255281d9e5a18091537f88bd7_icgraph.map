@@ -1,0 +1,4 @@
+<map id="renderer::IRendererBase::DrawScreenQuad" name="renderer::IRendererBase::DrawScreenQuad">
+<area shape="rect" id="node1" title=" " alt="" coords="243,5,423,45"/>
+<area shape="rect" id="node2" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#ab63becb2cab80e073e26b63b0806b1d3" title="Render the UI to the HUD framebuffer." alt="" coords="5,5,195,45"/>
+</map>

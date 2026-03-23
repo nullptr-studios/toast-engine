@@ -104,14 +104,15 @@ $(document).ready(function(){initNavTree('dd/d06/ColliderFlags_8hpp.html','../..
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
 <tr class="memitem:ab24e00ae3493fd723980767febb345c6"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6">ColliderFlags</a> : uint8_t { <br />
-&#160;&#160;<a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a7a1920d61156abc05a60135aefe8bc67">Default</a> = 0b00000
-, <a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a3519d51443d41746a097cd54cd5c11cf">Ground</a> = 0b00001
-, <a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a636da1d35e805b00eae0fcd8333f9234">Player</a> = 0b00010
-, <a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a8c6d21187fb58b7a079d70030686b33e">Enemy</a> = 0b00100
+&#160;&#160;<a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a7a1920d61156abc05a60135aefe8bc67">Default</a> = 0b000000
+, <a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a3519d51443d41746a097cd54cd5c11cf">Ground</a> = 0b000001
+, <a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a636da1d35e805b00eae0fcd8333f9234">Player</a> = 0b000010
+, <a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a8c6d21187fb58b7a079d70030686b33e">Enemy</a> = 0b000100
 , <br />
-&#160;&#160;<a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a99b4c3afc6aaa3ab4de17c90455a55eb">Ramp</a> = 0b01000
-, <a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a18c83669920215a818638ad0e5421e4b">Weapon</a> = 0b10000
-, <a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6ab1c94ca2fbc3e78fc30069c8d0f01680">All</a> = 0b11111
+&#160;&#160;<a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a99b4c3afc6aaa3ab4de17c90455a55eb">Ramp</a> = 0b001000
+, <a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a18c83669920215a818638ad0e5421e4b">Weapon</a> = 0b010000
+, <a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6a7533f96ec01fd81438833f71539c7d4e">Bullet</a> = 0b100000
+, <a class="el" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6ab1c94ca2fbc3e78fc30069c8d0f01680">All</a> = 0b111111
 <br />
  }</td></tr>
 <tr class="separator:ab24e00ae3493fd723980767febb345c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -165,6 +166,7 @@ Functions</h2></td></tr>
 <tr><td class="fieldname"><a id="ab24e00ae3493fd723980767febb345c6a8c6d21187fb58b7a079d70030686b33e" name="ab24e00ae3493fd723980767febb345c6a8c6d21187fb58b7a079d70030686b33e"></a>Enemy&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="ab24e00ae3493fd723980767febb345c6a99b4c3afc6aaa3ab4de17c90455a55eb" name="ab24e00ae3493fd723980767febb345c6a99b4c3afc6aaa3ab4de17c90455a55eb"></a>Ramp&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="ab24e00ae3493fd723980767febb345c6a18c83669920215a818638ad0e5421e4b" name="ab24e00ae3493fd723980767febb345c6a18c83669920215a818638ad0e5421e4b"></a>Weapon&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="ab24e00ae3493fd723980767febb345c6a7533f96ec01fd81438833f71539c7d4e" name="ab24e00ae3493fd723980767febb345c6a7533f96ec01fd81438833f71539c7d4e"></a>Bullet&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="ab24e00ae3493fd723980767febb345c6ab1c94ca2fbc3e78fc30069c8d0f01680" name="ab24e00ae3493fd723980767febb345c6ab1c94ca2fbc3e78fc30069c8d0f01680"></a>All&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
@@ -197,7 +199,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00048">48</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00050">50</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
 
 </div>
 </div>
@@ -235,7 +237,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00038">38</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00040">40</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
 
 </div>
 </div>
@@ -273,7 +275,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00058">58</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00060">60</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
 
 </div>
 </div>
@@ -311,7 +313,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00033">33</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00035">35</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
 
 </div>
 </div>
@@ -349,7 +351,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00053">53</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00055">55</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
 
 </div>
 </div>
@@ -377,7 +379,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00043">43</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00045">45</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
 
 </div>
 </div>
@@ -405,7 +407,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00021">21</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html#l00022">22</a> of file <a class="el" href="../../dd/d06/ColliderFlags_8hpp_source.html">ColliderFlags.hpp</a>.</p>
 
 </div>
 </div>

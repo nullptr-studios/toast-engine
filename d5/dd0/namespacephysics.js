@@ -4,6 +4,7 @@ var namespacephysics =
     [ "BoxRigidbody", "d4/db0/classphysics_1_1BoxRigidbody.html", "d4/db0/classphysics_1_1BoxRigidbody" ],
     [ "Collider", "db/d71/classphysics_1_1Collider.html", "db/d71/classphysics_1_1Collider" ],
     [ "ColliderData", "d5/ddb/structphysics_1_1ColliderData.html", "d5/ddb/structphysics_1_1ColliderData" ],
+    [ "ColliderRenderable", "de/d96/classphysics_1_1ColliderRenderable.html", "de/d96/classphysics_1_1ColliderRenderable" ],
     [ "ConvexCollider", "dd/d88/classphysics_1_1ConvexCollider.html", "dd/d88/classphysics_1_1ConvexCollider" ],
     [ "GravityType", "df/d1e/structphysics_1_1GravityType.html", "df/d1e/structphysics_1_1GravityType" ],
     [ "Line", "d1/d1d/structphysics_1_1Line.html", "d1/d1d/structphysics_1_1Line" ],
@@ -48,5 +49,5 @@ var namespacephysics =
     [ "SetGravityPoint", "d5/dd0/namespacephysics.html#a27f31621d04cfbb97d56d971756881ff", null ],
     [ "SetGravityPointScale", "d5/dd0/namespacephysics.html#a655297c3695404b71f4dff341e295390", null ],
     [ "SetGravityType", "d5/dd0/namespacephysics.html#a87606d7d4e42606e3ea00b1d88a2b2ac", null ],
-    [ "ShoelaceArea", "d5/dd0/namespacephysics.html#a40f3163dfdfef736a883aeb1f39b5376", null ]
+    [ "ShoelaceArea", "d5/dd0/namespacephysics.html#acd0439aefcf3ae4e14fa0bc34af2c16f", null ]
 ];

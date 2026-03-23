@@ -154,7 +154,9 @@ var hierarchy =
           [ "toast::TransformComponent", "d0/dd9/classtoast_1_1TransformComponent.html", [
             [ "renderer::IRenderable", "d5/dfe/classrenderer_1_1IRenderable.html", [
               [ "AtlasRendererComponent", "dd/d75/classAtlasRendererComponent.html", null ],
+              [ "LightRenderable", "dc/da1/classLightRenderable.html", null ],
               [ "SpineRendererComponent", "d0/dc7/classSpineRendererComponent.html", null ],
+              [ "physics::ColliderRenderable", "de/d96/classphysics_1_1ColliderRenderable.html", null ],
               [ "toast::MeshRendererComponent", "de/da0/classtoast_1_1MeshRendererComponent.html", null ],
               [ "toast::ParticleSystem", "df/d2b/classtoast_1_1ParticleSystem.html", null ]
             ] ],
