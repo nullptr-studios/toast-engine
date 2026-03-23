@@ -35,6 +35,10 @@ void MeshRendererComponent::Load(json_t j, bool force_create) {
 	if (j.contains("materialPath")) {
 		m_materialPath = j.at("materialPath").get<std::string>();
 	}
+
+	if (j.contains("isOccluder")) {
+		m_isOccluder = j.at("isOccluder").get<bool>();
+	}
 }
 
 json_t MeshRendererComponent::Save() const {
@@ -44,6 +48,7 @@ json_t MeshRendererComponent::Save() const {
 	j["meshPath"] = m_meshPath;
 	// j["vertexColor"] = { m_vertexColor.r, m_vertexColor.g, m_vertexColor.b, m_vertexColor.a };
 	j["materialPath"] = m_materialPath;
+	j["isOccluder"] = m_isOccluder;
 	return j;
 }
 
@@ -54,6 +59,8 @@ void MeshRendererComponent::Inspector() {
 		TransformComponent::Inspector();
 		ImGui::Unindent(20);
 	}
+
+	ImGui::Checkbox("Is Occluder", &m_isOccluder);
 
 	ImGui::Spacing();
 	// Vertex color picker
@@ -73,6 +80,7 @@ void MeshRendererComponent::Init() {
 	m_material = resource::LoadResource<renderer::Material>(m_materialPath);
 	// m_texture = resource::ResourceManager::GetInstance()->LoadResource<Texture>(m_texturePath);
 	m_mesh = resource::LoadResource<renderer::Mesh>(m_meshPath);
+	m_occlusionShader = resource::LoadResource<renderer::Shader>("SHADERS/occlusion.shader");
 
 	SetRunTick(false);
 	SetRunEarlyTick(false);
@@ -107,7 +115,7 @@ void MeshRendererComponent::LoadTextures() {
 	renderer::IRendererBase::GetInstance()->AddRenderable(this);
 }
 
-void MeshRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept {
+void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::mat4& precomputed_mat) noexcept {
 	if (!enabled()) {
 		return;
 	}
@@ -129,23 +137,34 @@ void MeshRendererComponent::OnRender(const glm::mat4& precomputed_mat) noexcept 
 	// compute transform once
 	const glm::mat4 model = GetWorldMatrix();
 	const glm::mat4 mvp = precomputed_mat * model;
-
 	m_material->Use();
-	auto shader = m_material->GetShader();
-	if (shader) {
-		// upload world matrix for deferred / lighting passes
-		shader->Set("gWorld", model);
+	if (pass == renderer::IRenderablePass::GEOMETRY) {
+		auto shader = m_material->GetShader();
+		if (shader) {
+			shader->Set("gWorld", model);
+
+			// set generic transform uniform
+			shader->Set("gMVP", mvp);
+		}
+
+		// draw
+
+		// restore state
+		// m_texture->Unbind();
+		// m_shader->unuse();
+	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
+		if (!m_isOccluder) {
+			return;
+		}
+
+		m_occlusionShader->Use();
+		m_occlusionShader->Set("gWorld", model);
 
 		// set generic transform uniform
-		shader->Set("gMVP", mvp);
+		m_occlusionShader->Set("gMVP", mvp);
 	}
 
-	// draw
 	m_mesh->Draw();
-
-	// restore state
-	// m_texture->Unbind();
-	// m_shader->unuse();
 }
 
 void MeshRendererComponent::Destroy() {

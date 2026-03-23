@@ -382,6 +382,13 @@ void Shader::Set(std::string_view name, const glm::vec2& v) {
 	}
 }
 
+void Shader::Set(std::string_view name, const glm::ivec2& v) {
+	GLint loc = QueryUniformLocation(name);
+	if (loc >= 0) {
+		glUniform2iv(loc, 1, &v[0]);
+	}
+}
+
 void Shader::Set(std::string_view name, const glm::vec3& v) {
 	GLint loc = QueryUniformLocation(name);
 	if (loc >= 0) {
