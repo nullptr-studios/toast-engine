@@ -280,10 +280,6 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		return;
 	}
 
-	if (pass != renderer::IRenderablePass::GEOMETRY && pass != renderer::IRenderablePass::OCCLUSION) {
-		return;
-	}
-
 	// this is really unoptimiced lmao
 	PROFILE_ZONE_C(0xFF0000);    // Red for rendering
 
@@ -363,72 +359,77 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 			return;
 		}
 		// Update GPU buffer
-		m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
+		if (pass == renderer::IRenderablePass::OCCLUSION) {
+			m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
+		}
+		
 		// Draw  mesh
 		m.dynamicMesh.DrawDynamicSpine(m.tempIndices.size());
 		// clear for next batch
-		m.tempVerts.clear();
-		m.tempIndices.clear();
+		if (pass == renderer::IRenderablePass::GEOMETRY) {
+			m.tempVerts.clear();
+			m.tempIndices.clear();
+		}
 	};
 
-	while (command) {
-		if (m.tempVerts.capacity() < static_cast<size_t>(command->numVertices)) {
-			m.tempVerts.reserve(static_cast<size_t>(command->numVertices));
-		}
-		if (m.tempIndices.capacity() < static_cast<size_t>(command->numIndices)) {
-			m.tempIndices.reserve(static_cast<size_t>(command->numIndices));
-		}
-
-		// Determine command texture
-		std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(command->texture);
-		unsigned int tex_id = tex_ptr->get()->id();
-
-		if (tex_id != m.lastBoundTexture && !m.tempIndices.empty()) {
-			flush_batch();
-		}
-
-		// bind texture if needed
-		if (tex_id != m.lastBoundTexture) {
-			if (tex_id != 0) {
-				tex_ptr->get()->Bind(0);
+		while (command) {
+			if (m.tempVerts.capacity() < static_cast<size_t>(command->numVertices)) {
+				m.tempVerts.reserve(static_cast<size_t>(command->numVertices));
 			}
-			m.lastBoundTexture = tex_id;
+			if (m.tempIndices.capacity() < static_cast<size_t>(command->numIndices)) {
+				m.tempIndices.reserve(static_cast<size_t>(command->numIndices));
+			}
+
+			// Determine command texture
+			std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(command->texture);
+			unsigned int tex_id = tex_ptr->get()->id();
+
+			if (tex_id != m.lastBoundTexture && !m.tempIndices.empty()) {
+				flush_batch();
+			}
+
+			// bind texture if needed
+			if (tex_id != m.lastBoundTexture) {
+				if (tex_id != 0) {
+					tex_ptr->get()->Bind(0);
+				}
+				m.lastBoundTexture = tex_id;
+			}
+
+			// append vertices
+			size_t start_vert = m.tempVerts.size();
+			m.tempVerts.resize(start_vert + command->numVertices);
+			for (int i = 0; i < command->numVertices; ++i) {
+				auto& v = m.tempVerts[start_vert + i];
+				v.position = glm::vec3(command->positions[(i * 2) + 0], command->positions[(i * 2) + 1], 0.0f);
+				v.texCoord = glm::vec2(command->uvs[(i * 2) + 0], 1.0f - command->uvs[(i * 2) + 1]);
+				v.colorABGR = command->colors[i];
+			}
+
+			// append indices
+			size_t start_idx = m.tempIndices.size();
+			m.tempIndices.resize(start_idx + command->numIndices);
+			for (int i = 0; i < command->numIndices; ++i) {
+				m.tempIndices[start_idx + i] = static_cast<uint16_t>(command->indices[i] + start_vert);
+			}
+
+			// Per-triangle Z layering
+			for (int i = 0; i + 2 < command->numIndices; i += 3) {
+				uint16_t ia = static_cast<uint16_t>(command->indices[i + 0] + start_vert);
+				uint16_t ib = static_cast<uint16_t>(command->indices[i + 1] + start_vert);
+				uint16_t ic = static_cast<uint16_t>(command->indices[i + 2] + start_vert);
+				float z = z_offset;
+				m.tempVerts[ia].position.z = z;
+				m.tempVerts[ib].position.z = z;
+				m.tempVerts[ic].position.z = z;
+				z_offset += z_step_vertex;
+			}
+
+			// Increment Z between commands
+			z_offset += z_step_cmd;
+
+			command = command->next;
 		}
-
-		// append vertices
-		size_t start_vert = m.tempVerts.size();
-		m.tempVerts.resize(start_vert + command->numVertices);
-		for (int i = 0; i < command->numVertices; ++i) {
-			auto& v = m.tempVerts[start_vert + i];
-			v.position = glm::vec3(command->positions[(i * 2) + 0], command->positions[(i * 2) + 1], 0.0f);
-			v.texCoord = glm::vec2(command->uvs[(i * 2) + 0], 1.0f - command->uvs[(i * 2) + 1]);
-			v.colorABGR = command->colors[i];
-		}
-
-		// append indices
-		size_t start_idx = m.tempIndices.size();
-		m.tempIndices.resize(start_idx + command->numIndices);
-		for (int i = 0; i < command->numIndices; ++i) {
-			m.tempIndices[start_idx + i] = static_cast<uint16_t>(command->indices[i] + start_vert);
-		}
-
-		// Per-triangle Z layering
-		for (int i = 0; i + 2 < command->numIndices; i += 3) {
-			uint16_t ia = static_cast<uint16_t>(command->indices[i + 0] + start_vert);
-			uint16_t ib = static_cast<uint16_t>(command->indices[i + 1] + start_vert);
-			uint16_t ic = static_cast<uint16_t>(command->indices[i + 2] + start_vert);
-			float z = z_offset;
-			m.tempVerts[ia].position.z = z;
-			m.tempVerts[ib].position.z = z;
-			m.tempVerts[ic].position.z = z;
-			z_offset += z_step_vertex;
-		}
-
-		// Increment Z between commands
-		z_offset += z_step_cmd;
-
-		command = command->next;
-	}
 
 	// flush any remaining geometry
 	flush_batch();
