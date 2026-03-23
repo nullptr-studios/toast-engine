@@ -756,8 +756,10 @@ void ParticleSystem::OnRender(renderer::IRenderablePass pass, const glm::mat4& v
 	if (!m_sharedResourcesInitialized) {
 		return;
 	}
+	
+		const glm::vec3 worldPos = worldPosition();
 
-	if (!OclussionVolume::isSphereOnPlanes(worldPosition(), m_cullingRadius)) {
+	if (!OclussionVolume::isSphereOnPlanes(worldPos, m_cullingRadius)) {
 		return;
 	}
 
@@ -765,12 +767,16 @@ void ParticleSystem::OnRender(renderer::IRenderablePass pass, const glm::mat4& v
 		PROFILE_ZONE;
 
 		const float dt = static_cast<float>(Time::delta());
-		const glm::vec3 worldPos = worldPosition();
 
-		glm::mat4 viewMatrix = renderer::IRendererBase::GetInstance()->GetViewMatrix();
-		glm::vec3 camRight = glm::vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
-		glm::vec3 camUp = glm::vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
-		glm::vec3 camPos = glm::vec3(glm::inverse(viewMatrix)[3]);
+		// const glm::mat4 viewMatrix = renderer::IRendererBase::GetInstance()->GetViewMatrix();
+		auto cam = renderer::IRendererBase::GetInstance()->GetActiveCamera();
+		
+		// glm::vec3 camRight = glm::vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+		// glm::vec3 camUp = glm::vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
+		// glm::vec3 camPos = glm::vec3(glm::inverse(viewMatrix)[3]);
+		const glm::vec3 camRight = cam->transform()->GetRightVector();
+		const glm::vec3 camUp = cam->transform()->GetUpVector();
+		const glm::vec3 camPos = cam->transform()->worldPosition();
 
 		// Get parent rotation from transform
 		glm::mat3 parentRotation = glm::mat3_cast(worldRotationQuat());
@@ -786,7 +792,7 @@ void ParticleSystem::OnRender(renderer::IRenderablePass pass, const glm::mat4& v
 			const glm::vec3 pos = worldPos + parentRotation * m_emitters[i].GetConfig().localOffset;
 			emitterDist2[i] = glm::length2(camPos - pos);
 		}
-		std::sort(emitterOrder.begin(), emitterOrder.end(), [&](size_t a, size_t b) {
+		std::ranges::sort(emitterOrder, [&](size_t a, size_t b) {
 			return emitterDist2[a] > emitterDist2[b];    // Back to front
 		});
 

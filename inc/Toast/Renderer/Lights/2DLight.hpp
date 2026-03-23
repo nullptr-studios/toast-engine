@@ -98,6 +98,7 @@ private:
 
 	std::shared_ptr<renderer::Mesh> m_lightMesh = nullptr;
 	std::shared_ptr<renderer::Shader> m_lightShader = nullptr;
+	
 
 	// Framebuffer* m_lightBuffer = nullptr;
 
