@@ -43,6 +43,31 @@ namespace renderer {
 
 IRendererBase* IRendererBase::m_instance = nullptr;
 
+#ifdef _DEBUG
+#define CHECK_GL()                                   \
+{                                                  \
+if (GLenum err = glGetError()) {                 \
+TOAST_ERROR("GL Error: {}", glErrorString(err)); \
+}                                                \
+}
+#else
+#define CHECK_GL()
+#endif
+
+inline const char* glErrorString(GLenum err) noexcept {
+	switch (err) {
+		case GL_NO_ERROR: return "GL_NO_ERROR";
+		case GL_INVALID_ENUM: return "GL_INVALID_ENUM";
+		case GL_INVALID_VALUE: return "GL_INVALID_VALUE";
+		case GL_INVALID_OPERATION: return "GL_INVALID_OPERATION";
+		case GL_STACK_OVERFLOW: return "GL_STACK_OVERFLOW";
+		case GL_STACK_UNDERFLOW: return "GL_STACK_UNDERFLOW";
+		case GL_OUT_OF_MEMORY: return "GL_OUT_OF_MEMORY";
+		case GL_INVALID_FRAMEBUFFER_OPERATION: return "GL_INVALID_FRAMEBUFFER_OPERATION";
+		default: return "UNKNOWN ERROR";
+	}
+}
+
 #ifdef TOAST_EDITOR
 static GLFWwindow* g_backup_current_context = nullptr;
 #endif
@@ -371,16 +396,38 @@ void OpenGLRenderer::Render() {
 
 	// Extract frustum planes for culling
 	OclussionVolume::extractFrustumPlanesNormalized(m_multipliedMatrix, m_frustumPlanes);
+	
+	// The depth sort still runs every frame since object positions change each tick.
+	if (m_renderablesSortDirty) {
+		m.combinedRenderables.clear();
+		for (auto* r : m_renderables) {
+			if (r && m_disabledRenderables.find(r) == m_disabledRenderables.end()) {
+				m.combinedRenderables.push_back(r);
+			}
+		}
+
+		m_renderablesSortDirty = false;
+	}
+
+	// Sort back-to-front every frame
+	if (m.combinedRenderables.size() > 1) {
+		std::stable_sort(m.combinedRenderables.begin(), m.combinedRenderables.end(), [](IRenderable* a, IRenderable* b) {
+			return a->GetDepth() < b->GetDepth();
+		});
+	}
 
 	OcclusionPass();
+	CHECK_GL();
 
 	GeometryPass();
+	CHECK_GL();
 
 	// Lighting
 	// LightingPass();
 
 	// Combine (writes into m_outputFramebuffer)
 	CombinedRenderPass();
+	CHECK_GL();
 
 	// Render game/editor layers directly into the output framebuffer (HUD layers still render into their own FBOs)
 	m_outputFramebuffer->bind();
@@ -435,6 +482,7 @@ void OpenGLRenderer::Render() {
 
 	// Composite all HUD layer framebuffers onto the output as the final pass
 	HUDPass();
+	CHECK_GL()
 
 // draw to screen only if not in editor mode
 #ifndef TOAST_EDITOR
@@ -476,25 +524,6 @@ void OpenGLRenderer::GeometryPass() {
 	PROFILE_ZONE;
 	TracyGpuZone("Geometry Pass");
 #endif
-
-	// The depth sort still runs every frame since object positions change each tick.
-	if (m_renderablesSortDirty) {
-		m.combinedRenderables.clear();
-		for (auto* r : m_renderables) {
-			if (r && m_disabledRenderables.find(r) == m_disabledRenderables.end()) {
-				m.combinedRenderables.push_back(r);
-			}
-		}
-
-		m_renderablesSortDirty = false;
-	}
-
-	// Sort back-to-front every frame
-	if (m.combinedRenderables.size() > 1) {
-		std::stable_sort(m.combinedRenderables.begin(), m.combinedRenderables.end(), [](IRenderable* a, IRenderable* b) {
-			return a->GetDepth() < b->GetDepth();
-		});
-	}
 
 	// Prepare render target and GL state
 	glViewport(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
