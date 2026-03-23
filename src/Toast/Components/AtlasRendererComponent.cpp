@@ -85,6 +85,7 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	const glm::mat4 parent_world = GetWorldMatrix();
 
 	// Clear buffers for this frame
+	if (pass == renderer::IRenderablePass::OCCLUSION) {
 	m.tempVerts.clear();
 	m.tempIndices.clear();
 
@@ -104,13 +105,15 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 
 	// Update mesh
 	m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
-
-	// Compute bounding box
-	if (pass == renderer::IRenderablePass::OCCLUSION) {
+		
+		// Compute bounding box
 		m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
+		
+		m.isOnScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f));
 	}
+	
 	// Frustum culling
-	if (!OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f))) {
+	if (!m.isOnScreen) {
 		return;
 	}
 
