@@ -408,8 +408,7 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 		auto manifold = RbRbCollision(rb, *it);
 		if (manifold.has_value()) {
 			RbRbResolution(rb, *it, manifold.value());
-			
-			// FIXME: This gets called rn every frame
+
 			// TODO: ExitCallback
 			if (rb->enterCallback) {
 				std::lock_guard lock(m.callbackMutex);
@@ -425,6 +424,13 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 				});
 			}
 
+			if (std::ranges::find(m.colliding, rb) != m.colliding.end()) {
+				m.colliding.emplace_back(rb);
+			}
+
+			if (std::ranges::find(m.colliding, *it) != m.colliding.end()) {
+				m.colliding.emplace_back(*it);
+			}
 		}
 	}
 
@@ -613,6 +619,13 @@ auto PhysicsSystem::GetAllRigidbodies() -> std::list<Rigidbody*>& {
 	// high cortison std::optional vs low cortison c assert
 	assert(i.has_value() && "Physics System does not exist");
 	return i.value()->m.rigidbodies;
+}
+
+auto PhysicsSystem::GetAllCollidingRb() -> std::list<Rigidbody*>& {
+	auto i = PhysicsSystem::get();
+	// high cortison std::optional vs low cortison c assert
+	assert(i.has_value() && "Physics System does not exist");
+	return i.value()->m.colliding;
 }
 
 void PhysicsSystem::SetGravityType(GravityType type) {
