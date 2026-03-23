@@ -29,7 +29,7 @@ private:
 	renderer::BoundingBox m_aabb;
 };
 
-inline float ShoelaceArea(const std::list<glm::vec2>& points) {
+inline float ShoelaceArea(const std::vector<glm::vec2>& points) {
 	float area = 0.0f;
 
 	for (auto it = points.begin(); it != points.end(); ++it) {
