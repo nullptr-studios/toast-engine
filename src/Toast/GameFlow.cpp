@@ -1,9 +1,12 @@
 #include "Toast/GameFlow.hpp"
 
+#include "Toast/CoroutineHandler.hpp"
 #include "Toast/GameEvents.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Objects/Scene.hpp"
+#include "Toast/Renderer/HUD/HUDLayer.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/WaitAsync.hpp"
 #include "Toast/World.hpp"
 #include "sol/forward.hpp"
 #include "sol/state.hpp"
@@ -45,8 +48,9 @@ GameFlow::GameFlow() {
 		m.nextLevel = toast::World::LoadScene(m.levelList[0]);
 		return true;
 	});
-	listener.Subscribe<toast::LoadLevel>([this](auto* e) {
-		LoadLevel(e->world, e->level);
+	listener.Subscribe<toast::LoadLevel>([this](toast::LoadLevel* e) {
+		this->LoadLevel(e->world, e->level);
+    
 		return true;
 	});
 	listener.Subscribe<toast::NextWorld>([this](auto* _) {
@@ -54,7 +58,13 @@ GameFlow::GameFlow() {
 		return true;
 	});
 	listener.Subscribe<toast::NextLevel>([this](auto* _) {
-		NextLevel();
+		[](GameFlow& flow) -> toast::CoroutineTask {
+			renderer::HUD::HUDLayer::Get()->ExecuteJS("fadeIn()");
+			co_await toast::WaitSeconds(0.6f);
+      flow.NextLevel();
+			co_await toast::WaitSeconds(0.1f);
+			renderer::HUD::HUDLayer::Get()->ExecuteJS("fadeOut()");
+		}(*this);
 		return true;
 	});
 	listener.Subscribe<toast::ResetGameFlow>([this](auto* _) {
