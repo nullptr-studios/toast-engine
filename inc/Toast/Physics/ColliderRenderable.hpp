@@ -35,6 +35,7 @@ class ColliderRenderable : public renderer::IRenderable {
 		editor::ResourceSlot material_slot { resource::ResourceType::MATERIAL };
 
 		// Top layer feature
+		bool enabled = false;
 		bool showTop = false;
 		float maxSlope = 45.0f; // in degrees
 		float topHeight = 0.5f;
@@ -66,6 +67,9 @@ public:
 		if (j.contains("topMaterialPath")) {
 			m.topMaterialPath = j.at("topMaterialPath");
 		}
+		if (j.contains("enabled")) {
+			m.enabled = j.at("enabled");
+		}
 	}
 
 	[[nodiscard]]
@@ -76,6 +80,7 @@ public:
 		j["maxSlope"] = m.maxSlope;
 		j["topHeight"] = m.topHeight;
 		j["topMaterialPath"] = m.topMaterialPath;
+		j["enabled"] = m.enabled;
 		return j;
 	}
 
@@ -127,6 +132,7 @@ public:
 
 	void OnRender(const glm::mat4& viewProjection) noexcept override {
 		if (not enabled()) return;
+		if (not m.enabled) return;
 
 		if (not OclussionVolume::isTransformedAABBOnPlanes(m.boundingBox, GetWorldMatrix())) {
 			return;
