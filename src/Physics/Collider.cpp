@@ -5,6 +5,8 @@
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/World.hpp"
 #include "glm/geometric.hpp"
 
@@ -23,14 +25,24 @@ void Collider::Init() {
 	if (toast::World::IsRunning()) {
 		enabled_ref() = false;    // disable colliders until its loaded
 	}
+
+	m.renderable.Init();
+}
+
+void Collider::LoadTextures() {
+	renderer::IRendererBase::GetInstance()->AddRenderable(&m.renderable);
+	m.renderable.LoadTextures();
+	m.renderable.enabled(true);
 }
 
 void Collider::OnEnable() {
-	// CalculatePoints();
+	//CalculatePoints();
+	m.renderable.enabled(true);
 }
 
 void Collider::OnDisable() {
-	// DestroyConvexShapes();
+	//DestroyConvexShapes();
+	m.renderable.enabled(false);
 }
 
 void Collider::AddPoint(glm::vec2 point) {
@@ -347,10 +359,20 @@ void Collider::CalculatePoints() {
 		c->forceLeft = data.forceLeft;
 		m.convexShapes.emplace_back(c);
 	}
+
+	std::vector<glm::vec3> world_vertices;
+	world_vertices.reserve(m.points.size());
+	for (const auto& p : m.points) {
+		glm::vec4 p4d = world_mtx * glm::vec4{ p.x, p.y, 0.0, 1.0 };
+		world_vertices.push_back(glm::vec3{ p4d });
+	}
+
+	m.renderable.SendVertices(world_vertices);
 }
 
 void Collider::Destroy() {
 	DestroyConvexShapes();
+	renderer::IRendererBase::GetInstance()->RemoveRenderable(&m.renderable);
 }
 
 #ifdef TOAST_EDITOR
@@ -517,6 +539,13 @@ void Collider::Inspector() {
 	ImGui::Checkbox("Show points", &debug.showPoints);
 	ImGui::Checkbox("Show colliders", &debug.showColliders);
 	ImGui::Checkbox("Show normals", &data.debugNormals);
+
+	ImGui::Spacing();
+	if (ImGui::CollapsingHeader("Renderable")) {
+		ImGui::Indent(10);
+		m.renderable.Inspector();
+		ImGui::Unindent(10);
+	}
 }
 
 void Collider::EditorTick() {
@@ -530,7 +559,7 @@ void Collider::EditorTick() {
 
 	if (debug.showPoints) {
 		glm::vec2 new_p = debug.newPointPosition;
-		constexpr glm::vec4 color = { 1.0, 0.5, 0.0, 1.0 };
+		const glm::vec4 color = glm::vec4{ 1.0, 0.5, 0.0, 1.0 };
 		renderer::DebugCircle(
 		    glm::vec2 {
 		      world_mtx * glm::vec4 { new_p.x, new_p.y, 0, 1 }
@@ -568,6 +597,9 @@ json_t Collider::Save() const {
 	j["debug.showNormals"] = data.debugNormals;
 	j["flags"] = static_cast<unsigned int>(m.flags);
 	j["data.forceLeft"] = data.forceLeft;
+
+	j["renderable"] = m.renderable.Save();
+
 	return j;
 }
 
@@ -606,6 +638,10 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 	if (j.contains("data.forceLeft")) {
 		data.forceLeft = j["data.forceLeft"];
+	}
+
+	if (j.contains("renderable")) {
+		m.renderable.Load(j["renderable"], propagate);
 	}
 
 	Component::Load(j, propagate);
