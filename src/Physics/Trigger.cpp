@@ -15,7 +15,7 @@ namespace physics {
 
 void Trigger::Init() {
 	if (toast::World::IsRunning()) {
-		enabled_ref() = false; // disable colliders until its loaded
+		enabled_ref() = false;    // disable colliders until its loaded
 	}
 }
 
@@ -37,13 +37,13 @@ void Trigger::Begin() {
 }
 
 void Trigger::OnEnable() {
-	//TOAST_TRACE("[PHYSICS SYSTEM] Added trigger {}", name());
-	//PhysicsSystem::AddTrigger(this);
+	// TOAST_TRACE("[PHYSICS SYSTEM] Added trigger {}", name());
+	// PhysicsSystem::AddTrigger(this);
 }
 
 void Trigger::OnDisable() {
-	//TOAST_TRACE("[PHYSICS SYSTEM] Removed trigger {}", name());
-	//PhysicsSystem::RemoveTrigger(this);
+	// TOAST_TRACE("[PHYSICS SYSTEM] Removed trigger {}", name());
+	// PhysicsSystem::RemoveTrigger(this);
 }
 
 void Trigger::Destroy() {

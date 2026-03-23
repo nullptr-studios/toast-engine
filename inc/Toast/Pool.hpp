@@ -9,7 +9,6 @@
 template<typename T>
 concept is_object = std::is_base_of_v<toast::Object, T>;
 
-
 template<is_object T, int size>
 class Pool : public toast::Actor {
 public:
@@ -29,8 +28,6 @@ public:
 			m_free.emplace(m_pool[i]);
 		}
 	}
-
-
 
 	void EarlyTick() override {
 		// On the first tick, disable every free object that has already finished its Begin
@@ -62,7 +59,7 @@ public:
 			return nullptr;
 		}
 		auto* obj = m_free.top();
-		 
+
 		// Safety
 		if (!obj->has_run_begin()) {
 			TOAST_WARN("Pool::Release — object not yet initialised (Begin pending), returning nullptr");

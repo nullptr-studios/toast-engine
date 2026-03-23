@@ -32,7 +32,6 @@ struct SpineEvent : public event::Event<SpineEvent> {
 };
 
 struct SpineAnimationPlaybackEvent : public event::Event<SpineAnimationPlaybackEvent> {
-	
 	enum class Type {
 		Start,
 		Interrupt,
@@ -40,7 +39,7 @@ struct SpineAnimationPlaybackEvent : public event::Event<SpineAnimationPlaybackE
 		Complete,
 		Dispose
 	};
-	
+
 	SpineAnimationPlaybackEvent(unsigned int uniqueID, std::string_view animationName, int track, Type type)
 	    : uniqueID(uniqueID),
 	      animationName(animationName),

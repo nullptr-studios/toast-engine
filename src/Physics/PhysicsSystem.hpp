@@ -60,7 +60,7 @@ public:
 	static void SetGravityType(GravityType type);
 	static void SetGravityPoint(glm::dvec2 pos);
 	static void SetGravityPointScale(double scale);
-	
+
 	static void MainThreadLateTick();
 
 	PhysicsSystem();
@@ -101,9 +101,9 @@ private:
 		std::atomic<std::chrono::steady_clock::time_point> lastPhysicsTime { std::chrono::steady_clock::now() };
 
 		event::ListenerComponent eventListener;
-		
+
 		std::mutex callbackMutex;
-		
+
 		std::list<std::function<void()>> callbackList;
 	} m;
 

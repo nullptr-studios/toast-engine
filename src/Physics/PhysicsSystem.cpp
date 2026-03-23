@@ -416,7 +416,7 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 				});
 			}
 
-			if ((*it)->enterCallback  && (*it)->CanCallBack(rb)) {
+			if ((*it)->enterCallback && (*it)->CanCallBack(rb)) {
 				std::lock_guard lock(m.callbackMutex);
 				m.callbackList.emplace_back([rb, it]() {
 					(*it)->enterCallback(rb);
@@ -430,8 +430,7 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 			if (std::ranges::find(m.colliding, *it) != m.colliding.end()) {
 				m.colliding.emplace_back(*it);
 			}
-		}
-		else {
+		} else {
 			auto find = std::ranges::find(m.colliding, rb);
 			if (find != m.colliding.end()) {
 				rb->exitCallback(*it);
@@ -669,11 +668,11 @@ void PhysicsSystem::SetGravityPointScale(double scale) {
 
 void PhysicsSystem::MainThreadLateTick() {
 	auto i = PhysicsSystem::get();
-	
+
 	if (!i.has_value()) {
 		return;
 	}
-	
+
 	std::lock_guard lock(i.value()->m.callbackMutex);
 	{
 		for (const auto& callback : i.value()->m.callbackList) {
