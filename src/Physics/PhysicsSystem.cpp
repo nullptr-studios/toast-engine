@@ -409,15 +409,14 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 		if (manifold.has_value()) {
 			RbRbResolution(rb, *it, manifold.value());
 
-			// TODO: ExitCallback
-			if (rb->enterCallback) {
+			if (rb->enterCallback && rb->CanCallBack(*it)) {
 				std::lock_guard lock(m.callbackMutex);
 				m.callbackList.emplace_back([rb, it]() {
 					rb->enterCallback(*it);
 				});
 			}
 
-			if ((*it)->enterCallback) {
+			if ((*it)->enterCallback  && (*it)->CanCallBack(rb)) {
 				std::lock_guard lock(m.callbackMutex);
 				m.callbackList.emplace_back([rb, it]() {
 					(*it)->enterCallback(rb);
@@ -430,6 +429,19 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 
 			if (std::ranges::find(m.colliding, *it) != m.colliding.end()) {
 				m.colliding.emplace_back(*it);
+			}
+		}
+		else {
+			auto find = std::ranges::find(m.colliding, rb);
+			if (find != m.colliding.end()) {
+				rb->exitCallback(*it);
+				m.colliding.erase(find);
+			}
+
+			find = std::ranges::find(m.colliding, *it);
+			if (find != m.colliding.end()) {
+				(*it)->exitCallback(rb);
+				m.colliding.erase(find);
 			}
 		}
 	}
