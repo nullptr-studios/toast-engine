@@ -15,11 +15,12 @@
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/Resources/ResourceSlot.hpp"
 #include "nlohmann/detail/value_t.hpp"
+
 #include <Toast/Renderer/IRenderable.hpp>
 #include <algorithm>
 #include <glm/glm.hpp>
-#include <limits>
 #include <imgui.h>
+#include <limits>
 
 namespace physics {
 
@@ -39,7 +40,7 @@ class ColliderRenderable : public renderer::IRenderable {
 		bool show = false;
 		bool showTop = false;
 		bool isOccluder = false;
-		float maxSlope = 45.0f; // in degrees
+		float maxSlope = 45.0f;    // in degrees
 		float topHeight = 0.5f;
 		renderer::Mesh topMesh;
 		std::vector<renderer::SpineVertex> topVertices;
@@ -132,12 +133,12 @@ public:
 		}
 	}
 #endif
-	
+
 	void LoadTextures() override {
-		
-		if (!m.show)
+		if (!m.show) {
 			return;
-		
+		}
+
 		m.mesh.InitDynamicSpine();
 		m.mesh.UpdateDynamicSpine(m.vertices.data(), m.vertices.size(), m.indices.data(), m.indices.size());
 
@@ -145,9 +146,10 @@ public:
 		m.topMesh.UpdateDynamicSpine(m.topVertices.data(), m.topVertices.size(), m.topIndices.data(), m.topIndices.size());
 	}
 
-	void OnRender(renderer::IRenderablePass pass,const glm::mat4& viewProjection) noexcept override {
-		if (not enabled() || not m.show) 
+	void OnRender(renderer::IRenderablePass pass, const glm::mat4& viewProjection) noexcept override {
+		if (not enabled() || not m.show) {
 			return;
+		}
 
 		if (not OclussionVolume::isTransformedAABBOnPlanes(m.boundingBox, GetWorldMatrix())) {
 			return;
@@ -167,10 +169,11 @@ public:
 				shader->Set("gWorld", model);
 				// set generic transform uniform
 				shader->Set("gMVP", mvp);
-			}else if (pass == renderer::IRenderablePass::OCCLUSION) {
-				if (!m.isOccluder)
+			} else if (pass == renderer::IRenderablePass::OCCLUSION) {
+				if (!m.isOccluder) {
 					return;
-				
+				}
+
 				m.occlusionShader->Use();
 				// upload world matrix for deferred / lighting passes
 				m.occlusionShader->Set("gWorld", model);
@@ -182,7 +185,7 @@ public:
 		}
 
 		if (m.showTop && m.topMaterial && m.topMaterial->GetShader()) {
-				m.topMaterial->Use();
+			m.topMaterial->Use();
 			if (pass == renderer::IRenderablePass::GEOMETRY) {
 				auto shader = m.topMaterial->GetShader();
 				shader->Set("gWorld", model);
@@ -211,12 +214,10 @@ private:
 		}
 
 		m.boundingBox = {
-			.min = {x_min, y_min, 0.0f},
-			.max = {x_max, y_max, 0.0f}
+			.min = { x_min, y_min, 0.0f },
+        .max = { x_max, y_max, 0.0f }
 		};
 	}
-	
-	
 };
 
 }

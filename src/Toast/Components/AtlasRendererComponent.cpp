@@ -86,32 +86,32 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 
 	// Clear buffers for this frame
 	if (pass == renderer::IRenderablePass::OCCLUSION) {
-	m.tempVerts.clear();
-	m.tempIndices.clear();
+		m.tempVerts.clear();
+		m.tempIndices.clear();
 
-	for (auto* sprite : m.spriteCache) {
-		if (!sprite->enabled() || !sprite->GetRegion()) {
-			continue;
+		for (auto* sprite : m.spriteCache) {
+			if (!sprite->enabled() || !sprite->GetRegion()) {
+				continue;
+			}
+
+			glm::mat4 sprite_transform = parent_world * sprite->GetMatrix();
+			BuildQuadFromRegion(sprite->GetRegion(), sprite_transform, sprite->GetColorABGR(), m.tempVerts, m.tempIndices);
 		}
 
-		glm::mat4 sprite_transform = parent_world * sprite->GetMatrix();
-		BuildQuadFromRegion(sprite->GetRegion(), sprite_transform, sprite->GetColorABGR(), m.tempVerts, m.tempIndices);
-	}
+		// Early exit if no visible sprites
+		if (m.tempIndices.empty()) {
+			return;
+		}
 
-	// Early exit if no visible sprites
-	if (m.tempIndices.empty()) {
-		return;
-	}
+		// Update mesh
+		m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
 
-	// Update mesh
-	m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
-		
 		// Compute bounding box
 		m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
-		
+
 		m.isOnScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f));
 	}
-	
+
 	// Frustum culling
 	if (!m.isOnScreen) {
 		return;

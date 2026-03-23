@@ -5,8 +5,8 @@
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
-#include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/World.hpp"
 #include "glm/geometric.hpp"
 
@@ -36,12 +36,12 @@ void Collider::LoadTextures() {
 }
 
 void Collider::OnEnable() {
-	//CalculatePoints();
+	// CalculatePoints();
 	m.renderable.enabled(true);
 }
 
 void Collider::OnDisable() {
-	//DestroyConvexShapes();
+	// DestroyConvexShapes();
 	m.renderable.enabled(false);
 }
 
@@ -363,8 +363,8 @@ void Collider::CalculatePoints() {
 	std::vector<glm::vec3> world_vertices;
 	world_vertices.reserve(m.points.size());
 	for (const auto& p : m.points) {
-		glm::vec4 p4d = world_mtx * glm::vec4{ p.x, p.y, 0.0, 1.0 };
-		world_vertices.push_back(glm::vec3{ p4d });
+		glm::vec4 p4d = world_mtx * glm::vec4 { p.x, p.y, 0.0, 1.0 };
+		world_vertices.push_back(glm::vec3 { p4d });
 	}
 
 	m.renderable.SendVertices(world_vertices);

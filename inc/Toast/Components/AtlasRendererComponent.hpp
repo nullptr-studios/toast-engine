@@ -78,7 +78,7 @@ private:
 		bool spriteCacheDirty = true;
 
 		bool isOccluder = false;
-		
+
 		bool isOnScreen = true;
 	} m;
 
