@@ -56,12 +56,17 @@ public:
 	void AddForce(glm::dvec2);
 	void AddAccel(glm::dvec2);
 
+	bool CanCallBack(Rigidbody* c) const;
+	std::function<void(toast::Object*)> enterCallback;
+	std::function<void(toast::Object*)> exitCallback;
+
 	// properties
 	double radius = 1.0;      // This is not affected by parent.scale()
 	double mass = 1.0;        // Weight in kg
 	double friction = 0.2;    // How it deals frictions onto other objects (not itself)
 	ColliderFlags flags = ColliderFlags::Default;
 	bool ignorePlayer = false;
+	bool has_already_enter = false;
 
 	// simulation
 	bool hasGravity = true;                    // Is the rb affected by gravity at all?

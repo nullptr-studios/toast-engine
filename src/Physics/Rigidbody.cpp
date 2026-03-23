@@ -354,4 +354,19 @@ void Rigidbody::AddAccel(glm::dvec2 accel) {
 	forces.emplace_back(accel * mass);
 }
 
+bool Rigidbody::CanCallBack(Rigidbody* c) const {
+	if (!enabled()) {
+		return false;
+	}
+
+	if ((static_cast<unsigned int>(ColliderFlags::Bullet) & static_cast<unsigned int>(c->flags)) == 0u) {
+		return false;
+	}
+	if (std::ranges::find(physics::PhysicsSystem::GetAllCollidingRb(), c) != physics::PhysicsSystem::GetAllCollidingRb().end()) {
+		return false;
+	}
+
+	return true;
+}
+
 }

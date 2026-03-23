@@ -408,6 +408,40 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 		auto manifold = RbRbCollision(rb, *it);
 		if (manifold.has_value()) {
 			RbRbResolution(rb, *it, manifold.value());
+
+			if (rb->enterCallback && rb->CanCallBack(*it)) {
+				std::lock_guard lock(m.callbackMutex);
+				m.callbackList.emplace_back([rb, it]() {
+					rb->enterCallback(*it);
+				});
+			}
+
+			if ((*it)->enterCallback && (*it)->CanCallBack(rb)) {
+				std::lock_guard lock(m.callbackMutex);
+				m.callbackList.emplace_back([rb, it]() {
+					(*it)->enterCallback(rb);
+				});
+			}
+
+			if (std::ranges::find(m.colliding, rb) != m.colliding.end()) {
+				m.colliding.emplace_back(rb);
+			}
+
+			if (std::ranges::find(m.colliding, *it) != m.colliding.end()) {
+				m.colliding.emplace_back(*it);
+			}
+		} else {
+			auto find = std::ranges::find(m.colliding, rb);
+			if (find != m.colliding.end()) {
+				rb->exitCallback(*it);
+				m.colliding.erase(find);
+			}
+
+			find = std::ranges::find(m.colliding, *it);
+			if (find != m.colliding.end()) {
+				(*it)->exitCallback(rb);
+				m.colliding.erase(find);
+			}
 		}
 	}
 
@@ -598,6 +632,13 @@ auto PhysicsSystem::GetAllRigidbodies() -> std::list<Rigidbody*>& {
 	return i.value()->m.rigidbodies;
 }
 
+auto PhysicsSystem::GetAllCollidingRb() -> std::list<Rigidbody*>& {
+	auto i = PhysicsSystem::get();
+	// high cortison std::optional vs low cortison c assert
+	assert(i.has_value() && "Physics System does not exist");
+	return i.value()->m.colliding;
+}
+
 void PhysicsSystem::SetGravityType(GravityType type) {
 	auto i = PhysicsSystem::get();
 	if (not i.has_value()) {
@@ -623,6 +664,22 @@ void PhysicsSystem::SetGravityPointScale(double scale) {
 	}
 
 	i.value()->m.gravityPointScale = scale;
+}
+
+void PhysicsSystem::MainThreadLateTick() {
+	auto i = PhysicsSystem::get();
+
+	if (!i.has_value()) {
+		return;
+	}
+
+	std::lock_guard lock(i.value()->m.callbackMutex);
+	{
+		for (const auto& callback : i.value()->m.callbackList) {
+			callback();
+		}
+		i.value()->m.callbackList.clear();
+	}
 }
 
 void SetGravityType(GravityType type) {
