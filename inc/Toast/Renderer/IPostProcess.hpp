@@ -6,5 +6,6 @@
 
 
 struct IPostProcess {
+	virtual ~IPostProcess() = default;
 	virtual void Execute(unsigned int inTex, unsigned int outFbo) = 0;
 };

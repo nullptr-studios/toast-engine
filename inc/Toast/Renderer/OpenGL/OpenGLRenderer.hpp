@@ -6,6 +6,7 @@
 #include "Toast/Renderer/Framebuffer.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/Lights/GlobalLight.hpp"
+#include "Toast/Renderer/PostProcessing/Tonemaping.hpp"
 
 namespace renderer {
 class LayerStack;
@@ -76,6 +77,8 @@ private:
 		std::shared_ptr<Shader> jfaInitComputeShader = nullptr;
 		std::shared_ptr<Shader> jfaComputeShader = nullptr;
 		std::shared_ptr<Shader> finalComputeShader = nullptr;
+		
+		Tonemaping tonemap;
 
 		// Framebuffer* layerFramebuffer = nullptr;
 	} m;

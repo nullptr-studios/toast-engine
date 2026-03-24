@@ -204,6 +204,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_SCISSOR_TEST);
 	glEnable(GL_MULTISAMPLE);
+	// glEnable(GL_FRAMEBUFFER_SRGB);
 	// glEnable(GL_CULL_FACE);
 	// glCullFace(GL_BACK);
 	// glFrontFace(GL_CCW);
@@ -553,6 +554,8 @@ void OpenGLRenderer::GeometryPass() {
 	for (auto* r : m.combinedRenderables) {
 		r->OnRender(renderer::IRenderablePass::GEOMETRY, m_multipliedMatrix);
 	}
+	
+	m.tonemap.Execute(m_geometryFramebuffer->Handle(), m.jfaTex);
 }
 
 void OpenGLRenderer::OcclusionPass() {
