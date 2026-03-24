@@ -5,8 +5,8 @@
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
-#include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/World.hpp"
 #include "glm/geometric.hpp"
 
@@ -38,12 +38,12 @@ void Collider::LoadTextures() {
 }
 
 void Collider::OnEnable() {
-	//CalculatePoints();
+	// CalculatePoints();
 	m.renderable.enabled(true);
 }
 
 void Collider::OnDisable() {
-	//DestroyConvexShapes();
+	// DestroyConvexShapes();
 	m.renderable.enabled(false);
 }
 
@@ -137,15 +137,13 @@ void Collider::CalculatePoints() {
 
 		glm::vec2 t = glm::normalize(*next - *it);
 
-		m.edges.emplace_back(
-		    Line {
-		      .p1 = *it,
-		      .p2 = *next,
-		      .normal = { -t.y, t.x },
-		      .tangent = t,
-		      .length = glm::distance(*it, *next),
-    }
-		);
+		m.edges.emplace_back(Line {
+		  .p1 = *it,
+		  .p2 = *next,
+		  .normal = { -t.y, t.x },
+		  .tangent = t,
+		  .length = glm::distance(*it, *next),
+		});
 
 		++it;
 	}
@@ -362,13 +360,13 @@ void Collider::CalculatePoints() {
 		m.convexShapes.emplace_back(c);
 	}
 
-        std::vector<glm::vec3> local_vertices;
-        local_vertices.reserve(m.points.size());
-        for (const auto& p : m.points) {
-                local_vertices.push_back(glm::vec3{ p.x, p.y, 0.0f });
-        }
+	std::vector<glm::vec3> local_vertices;
+	local_vertices.reserve(m.points.size());
+	for (const auto& p : m.points) {
+		local_vertices.push_back(glm::vec3 { p.x, p.y, 0.0f });
+	}
 
-        m.renderable.SendVertices(local_vertices);
+	m.renderable.SendVertices(local_vertices);
 }
 
 void Collider::Destroy() {

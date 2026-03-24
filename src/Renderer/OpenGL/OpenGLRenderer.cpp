@@ -44,12 +44,12 @@ namespace renderer {
 IRendererBase* IRendererBase::m_instance = nullptr;
 
 #ifdef _DEBUG
-#define CHECK_GL()                                   \
-{                                                  \
-if (GLenum err = glGetError()) {                 \
-TOAST_ERROR("GL Error: {}", glErrorString(err)); \
-}                                                \
-}
+#define CHECK_GL()                                     \
+	{                                                    \
+		if (GLenum err = glGetError()) {                   \
+			TOAST_ERROR("GL Error: {}", glErrorString(err)); \
+		}                                                  \
+	}
 #else
 #define CHECK_GL()
 #endif
@@ -396,7 +396,7 @@ void OpenGLRenderer::Render() {
 
 	// Extract frustum planes for culling
 	OclussionVolume::extractFrustumPlanesNormalized(m_multipliedMatrix, m_frustumPlanes);
-	
+
 	// The depth sort still runs every frame since object positions change each tick.
 	if (m_renderablesSortDirty) {
 		m.combinedRenderables.clear();
@@ -483,7 +483,6 @@ void OpenGLRenderer::Render() {
 	// Composite all HUD layer framebuffers onto the output as the final pass
 	HUDPass();
 	CHECK_GL()
-
 // draw to screen only if not in editor mode
 #ifndef TOAST_EDITOR
 	{

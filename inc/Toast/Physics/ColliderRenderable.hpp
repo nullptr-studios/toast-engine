@@ -15,11 +15,12 @@
 #include "Toast/Resources/ResourceManager.hpp"
 #include "Toast/Resources/ResourceSlot.hpp"
 #include "nlohmann/detail/value_t.hpp"
+
 #include <Toast/Renderer/IRenderable.hpp>
 #include <algorithm>
 #include <glm/glm.hpp>
-#include <limits>
 #include <imgui.h>
+#include <limits>
 
 namespace physics {
 
@@ -40,9 +41,9 @@ class ColliderRenderable : public renderer::IRenderable {
 		bool show = false;
 		bool showTop = false;
 		bool isOccluder = false;
-		float maxSlope = 45.0f; // in degrees
+		float maxSlope = 45.0f;    // in degrees
 		float topHeight = 0.5f;
-                float topOffset = 0.0f;
+		float topOffset = 0.0f;
 		renderer::Mesh topMesh;
 		std::vector<renderer::SpineVertex> topVertices;
 		std::vector<uint16_t> topIndices;
@@ -74,4 +75,3 @@ private:
 };
 
 }
-

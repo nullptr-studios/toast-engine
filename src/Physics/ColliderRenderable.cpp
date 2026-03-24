@@ -1,10 +1,10 @@
 #include "Toast/Physics/ColliderRenderable.hpp"
-#include <glm/matrix.hpp>
-#include <imgui.h>
 
-#include <vector>
 #include <algorithm>
 #include <glm/glm.hpp>
+#include <glm/matrix.hpp>
+#include <imgui.h>
+#include <vector>
 
 using namespace glm;
 
@@ -17,9 +17,9 @@ static bool isPointInTriangle(const vec2& p, const glm::vec2& a, const glm::vec2
 	vec2 bp = p - b;
 	vec2 cp = p - c;
 
-	float cross1 = determinant(glm::mat2{ab, ap});
-	float cross2 = determinant(glm::mat2{bc, bp});
-	float cross3 = determinant(glm::mat2{ca, cp});
+	float cross1 = determinant(glm::mat2 { ab, ap });
+	float cross2 = determinant(glm::mat2 { bc, bp });
+	float cross3 = determinant(glm::mat2 { ca, cp });
 
 	bool has_neg = (cross1 < 0.0f) || (cross2 < 0.0f) || (cross3 < 0.0f);
 	bool has_pos = (cross1 > 0.0f) || (cross2 > 0.0f) || (cross3 > 0.0f);
@@ -53,9 +53,11 @@ static std::vector<uint16_t> triangulate(const std::vector<vec3>& vertices) {
 		std::reverse(remaining_indices.begin(), remaining_indices.end());
 	}
 
-	size_t safety_counter = vertices.size() * 2; 
+	size_t safety_counter = vertices.size() * 2;
 	while (remaining_indices.size() > 3) {
-		if (--safety_counter == 0) break; 
+		if (--safety_counter == 0) {
+			break;
+		}
 
 		bool ear_found = false;
 		size_t count = remaining_indices.size();
@@ -71,14 +73,14 @@ static std::vector<uint16_t> triangulate(const std::vector<vec3>& vertices) {
 
 			vec2 edge1 = curr - prev;
 			vec2 edge2 = next - curr;
-			if (determinant(glm::mat2{edge1, edge2}) <= 0.00001f) {
-				continue; 
+			if (determinant(glm::mat2 { edge1, edge2 }) <= 0.00001f) {
+				continue;
 			}
 
 			bool is_ear = true;
 			for (size_t j = 0; j < count; ++j) {
 				if (j == i || j == (i + count - 1) % count || j == (i + 1) % count) {
-					continue; 
+					continue;
 				}
 
 				size_t test_idx = remaining_indices[j];
@@ -127,10 +129,10 @@ void physics::ColliderRenderable::SendVertices(std::vector<glm::vec3>& points) {
 
 	for (const auto& point : m.points) {
 		m.vertices.emplace_back(renderer::SpineVertex {
-				.position = glm::vec3 { point.x, point.y, 0.0 },
-				.texCoord = { 0.0, 0.0 },
-				.colorABGR = 0xFFFFFFFF
-				});
+		  .position = glm::vec3 { point.x, point.y, 0.0 },
+         .texCoord = { 0.0, 0.0 },
+         .colorABGR = 0xFFFFFFFF
+    });
 	}
 
 	m.mesh.UpdateDynamicSpine(m.vertices.data(), m.vertices.size(), m.indices.data(), m.indices.size());
@@ -153,7 +155,9 @@ void physics::ColliderRenderable::SendVertices(std::vector<glm::vec3>& points) {
 
 			glm::vec3 edge = p2 - p1;
 			float edge_len = glm::length(edge);
-			if (edge_len < 0.0001f) continue;
+			if (edge_len < 0.0001f) {
+				continue;
+			}
 
 			glm::vec2 normal2d = winding * glm::normalize(glm::vec2(p2.y - p1.y, p1.x - p2.x));
 			glm::vec3 normal3d = glm::vec3(normal2d, 0.0f);
@@ -167,29 +171,25 @@ void physics::ColliderRenderable::SendVertices(std::vector<glm::vec3>& points) {
 				glm::vec3 offset_pos = normal3d * m.topOffset;
 
 				// V0: Bottom Left
-				m.topVertices.emplace_back(renderer::SpineVertex{
-						.position = p1 + offset_pos,
-						.texCoord = { current_distance, 0.0f },
-						.colorABGR = 0xFFFFFFFF
-						});
+				m.topVertices.emplace_back(renderer::SpineVertex {
+				  .position = p1 + offset_pos, .texCoord = { current_distance, 0.0f },
+                 .colorABGR = 0xFFFFFFFF
+        });
 				// V1: Bottom Right
-				m.topVertices.emplace_back(renderer::SpineVertex{
-						.position = p2 + offset_pos,
-						.texCoord = { next_distance, 0.0f },
-						.colorABGR = 0xFFFFFFFF
-						});
+				m.topVertices.emplace_back(renderer::SpineVertex {
+				  .position = p2 + offset_pos, .texCoord = { next_distance, 0.0f },
+                 .colorABGR = 0xFFFFFFFF
+        });
 				// V2: Top Right
-				m.topVertices.emplace_back(renderer::SpineVertex{
-						.position = (p2 + offset_pos) + normal3d * m.topHeight,
-						.texCoord = { next_distance, 1.0f },
-						.colorABGR = 0xFFFFFFFF
-						});
+				m.topVertices.emplace_back(renderer::SpineVertex {
+				  .position = (p2 + offset_pos) + normal3d * m.topHeight, .texCoord = { next_distance, 1.0f },
+                     .colorABGR = 0xFFFFFFFF
+        });
 				// V3: Top Left
-				m.topVertices.emplace_back(renderer::SpineVertex{
-						.position = (p1 + offset_pos) + normal3d * m.topHeight,
-						.texCoord = { current_distance, 1.0f },
-						.colorABGR = 0xFFFFFFFF
-						});
+				m.topVertices.emplace_back(renderer::SpineVertex {
+				  .position = (p1 + offset_pos) + normal3d * m.topHeight, .texCoord = { current_distance, 1.0f },
+                     .colorABGR = 0xFFFFFFFF
+        });
 
 				m.topIndices.push_back(base_idx + 0);
 				m.topIndices.push_back(base_idx + 1);
@@ -222,16 +222,16 @@ void physics::ColliderRenderable::Init() {
 #ifdef TOAST_EDITOR
 	m.material_slot.name("Material");
 	m.material_slot.SetOnDroppedLambda([this](const std::string& p) {
-			m.material_path = p;
-			m.material = resource::LoadResource<renderer::Material>(p);
-			});
+		m.material_path = p;
+		m.material = resource::LoadResource<renderer::Material>(p);
+	});
 	m.material_slot.SetInitialResource(m.material_path);
 
 	m.topMaterialSlot.name("Top Material");
 	m.topMaterialSlot.SetOnDroppedLambda([this](const std::string& p) {
-			m.topMaterialPath = p;
-			m.topMaterial = resource::LoadResource<renderer::Material>(p);
-			});
+		m.topMaterialPath = p;
+		m.topMaterial = resource::LoadResource<renderer::Material>(p);
+	});
 	m.topMaterialSlot.SetInitialResource(m.topMaterialPath);
 #endif
 }
@@ -350,6 +350,6 @@ void physics::ColliderRenderable::CalculateBoundingBox() {
 
 	m.boundingBox = {
 		.min = { x_min, y_min, 0.0f },
-		.max = { x_max, y_max, 0.0f }
+      .max = { x_max, y_max, 0.0f }
 	};
 }
