@@ -555,6 +555,7 @@ void Collider::EditorTick() {
 	auto world_mtx = dynamic_cast<toast::Actor*>(parent())->transform()->GetWorldMatrix();
 	if (world_mtx != debug.oldPosition) {
 		debug.oldPosition = world_mtx;
+		m.renderable.position(m.renderable.position());
 		CalculatePoints();
 	}
 
