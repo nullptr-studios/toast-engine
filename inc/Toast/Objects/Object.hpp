@@ -85,6 +85,10 @@ public:
 		return m_parent;
 	}
 
+	void SetParent(Object* parent) {
+		m_parent = parent;
+	}
+
 	[[nodiscard]]
 	toast::Scene* scene() const noexcept {
 		return m_scene;
