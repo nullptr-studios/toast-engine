@@ -462,14 +462,14 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 			if (rb->enterCallback) {
 				std::lock_guard lock(m.callbackMutex);
 				m.callbackList.emplace_back([rb, b]() {
-					rb->enterCallback(b, b->parent());
+					rb->enterCallback(b->flags, b->parent());
 				});
 			}
 		}
 		else {
 			auto find = std::ranges::find(m.colliding, rb);
 			if (find != m.colliding.end()) {
-				rb->exitCallback(b->parent());
+				rb->exitCallback(b->flags, b->parent());
 				m.colliding.erase(find);
 			}
 		}
@@ -489,13 +489,16 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 			}
 
 			if (rb->enterCallback) {
-				rb->enterCallback(c->parent);
+				std::lock_guard lock(m.callbackMutex);
+				m.callbackList.emplace_back([rb, c]() {
+					rb->enterCallback(c->flags, c->parent);
+				});
 			}
 		}
 		else {
 			auto find = std::ranges::find(m.colliding, rb);
 			if (find != m.colliding.end()) {
-				rb->exitCallback(c->parent);
+				rb->exitCallback(c->flags, c->parent);
 				m.colliding.erase(find);
 			}
 		}
