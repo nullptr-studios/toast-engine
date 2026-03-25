@@ -6,6 +6,7 @@
 #include "ColliderData.hpp"
 #include "ColliderFlags.hpp"
 #include "Line.hpp"
+#include "Physics/ConvexCollider.hpp"
 #include "Toast/Components/Component.hpp"
 #include "Toast/Physics/ColliderRenderable.hpp"
 
@@ -70,8 +71,17 @@ public:
 	}
 
 	void DestroyConvexShapes();
-
 	ColliderData data;
+
+	void SetFlags(ColliderFlags flags) {
+		m.flags = flags;
+		data.flags = flags;
+		for (auto c : m.convexShapes) {
+			c->flags = flags;
+		}
+	}
+
+
 
 private:
 	struct {
