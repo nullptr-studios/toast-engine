@@ -74,10 +74,10 @@ public:
 	ColliderData data;
 
 	void SetFlags(ColliderFlags flags) {
-		m.flags = flags;
-		data.flags = flags;
+		m.flags |= flags;
+		data.flags |= flags;
 		for (auto c : m.convexShapes) {
-			c->flags = flags;
+			c->flags |= flags;
 		}
 	}
 
