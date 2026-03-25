@@ -15,17 +15,16 @@ public:
 		return instance;
 	}
 
-	// Main execution
-	GLuint PostProcessPass(GLuint inputHDRTexture);
+	void PostProcessPass(Framebuffer* inputFBO, Framebuffer* outputFBO);
 
-	// Global stack
 	void AddGlobalProcess(std::unique_ptr<IPostProcess> effect);
 	void ClearGlobalProcesses();
 
-	// Override stack
 	void SetOverrideStack(std::vector<IPostProcess*>* stack, int priority);
 	void ClearOverride();
-	
+
+	void GlobalInspector();
+
 	void InitBuffers(const glm::ivec2& resolution);
 
 private:
@@ -39,7 +38,7 @@ private:
 
 	int m_width = 0;
 	int m_height = 0;
-	
+
 	// Global effects
 	std::vector<std::unique_ptr<IPostProcess>> m_globalStack;
 
@@ -48,6 +47,5 @@ private:
 	int m_overridePriority = -1;
 
 private:
-	void ExecuteStack(std::vector<IPostProcess*>* stack, GLuint inputTex);
+	GLuint ExecuteStack(std::vector<IPostProcess*>* stack, Framebuffer* inputFBO) const;
 };
-

@@ -134,6 +134,9 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 
 	PROFILE_ZONE;
 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	// compute transform once
 	const glm::mat4 model = GetWorldMatrix();
 	const glm::mat4 mvp = precomputed_mat * model;
@@ -156,6 +159,8 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 		if (!m_isOccluder) {
 			return;
 		}
+
+		glDisable(GL_BLEND);
 
 		m_occlusionShader->Use();
 		m_occlusionShader->Set("gWorld", model);

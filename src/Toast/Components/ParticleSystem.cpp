@@ -756,8 +756,8 @@ void ParticleSystem::OnRender(renderer::IRenderablePass pass, const glm::mat4& v
 	if (!m_sharedResourcesInitialized) {
 		return;
 	}
-	
-		const glm::vec3 worldPos = worldPosition();
+
+	const glm::vec3 worldPos = worldPosition();
 
 	if (!OclussionVolume::isSphereOnPlanes(worldPos, m_cullingRadius)) {
 		return;
@@ -770,7 +770,7 @@ void ParticleSystem::OnRender(renderer::IRenderablePass pass, const glm::mat4& v
 
 		// const glm::mat4 viewMatrix = renderer::IRendererBase::GetInstance()->GetViewMatrix();
 		auto cam = renderer::IRendererBase::GetInstance()->GetActiveCamera();
-		
+
 		// glm::vec3 camRight = glm::vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
 		// glm::vec3 camUp = glm::vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
 		// glm::vec3 camPos = glm::vec3(glm::inverse(viewMatrix)[3]);

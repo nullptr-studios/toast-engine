@@ -74,6 +74,31 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	// Refresh sprite cache if dirty
 	if (m.spriteCacheDirty) {
 		RefreshSprites();
+
+		m.tempVerts.clear();
+		m.tempIndices.clear();
+
+		for (auto* sprite : m.spriteCache) {
+			if (!sprite->enabled() || !sprite->GetRegion()) {
+				continue;
+			}
+
+			const glm::mat4 parent_world = GetWorldMatrix();
+
+			glm::mat4 sprite_transform = parent_world * sprite->GetMatrix();
+			BuildQuadFromRegion(sprite->GetRegion(), sprite_transform, sprite->GetColorABGR(), m.tempVerts, m.tempIndices);
+		}
+
+		// Early exit if no visible sprites
+		if (m.tempIndices.empty()) {
+			return;
+		}
+
+		// Update mesh
+		m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
+
+		// Compute bounding box
+		m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
 	}
 
 	// Early exit if no sprites
@@ -82,36 +107,14 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	}
 	PROFILE_ZONE;
 
-	const glm::mat4 parent_world = GetWorldMatrix();
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Clear buffers for this frame
 	if (pass == renderer::IRenderablePass::OCCLUSION) {
-	m.tempVerts.clear();
-	m.tempIndices.clear();
-
-	for (auto* sprite : m.spriteCache) {
-		if (!sprite->enabled() || !sprite->GetRegion()) {
-			continue;
-		}
-
-		glm::mat4 sprite_transform = parent_world * sprite->GetMatrix();
-		BuildQuadFromRegion(sprite->GetRegion(), sprite_transform, sprite->GetColorABGR(), m.tempVerts, m.tempIndices);
-	}
-
-	// Early exit if no visible sprites
-	if (m.tempIndices.empty()) {
-		return;
-	}
-
-	// Update mesh
-	m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
-		
-		// Compute bounding box
-		m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
-		
 		m.isOnScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f));
 	}
-	
+
 	// Frustum culling
 	if (!m.isOnScreen) {
 		return;
@@ -126,6 +129,9 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		if (!m.isOccluder) {
 			return;
 		}
+
+		glDisable(GL_BLEND);
+
 		m.occlusionShader->Use();
 		m.occlusionShader->Set("gWorld", GetWorldMatrix());
 
@@ -289,6 +295,8 @@ void AtlasRendererComponent::AddSpriteToCache(toast::AtlasSpriteComponent* sprit
 	if (!sprite) {
 		return;
 	}
+
+	sprite->SetParentDirtyBool(&m.spriteCacheDirty);
 
 	if (sprite->GetRegion() == nullptr && !sprite->GetRegionName().empty() && m.atlas) {
 		sprite->SetRegion(FindRegion(sprite->GetRegionName()));

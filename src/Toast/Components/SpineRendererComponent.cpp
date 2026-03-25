@@ -287,6 +287,9 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	// this is really unoptimiced lmao
 	PROFILE_ZONE_C(0xFF0000);    // Red for rendering
 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m.skeleton);
 
 	const float z_step_cmd = 0.01f;       // inter-command z offset step
@@ -296,45 +299,16 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	const glm::mat4 model = GetWorldMatrix();
 	const glm::mat4 mvp = precomputed_mat * model;
 
-	// Reuse temporary buffers
-	m.tempVerts.clear();
-	m.tempIndices.clear();
-
 	// done just at occlusion step and reused
 	if (pass == renderer::IRenderablePass::OCCLUSION) {
 		// First pass: collect all vertices to compute bounding box for frustum culling
 		{
-			spine::RenderCommand* cmd = command;
-			size_t total_verts = 0;
-			while (cmd) {
-				total_verts += cmd->numVertices;
-				cmd = cmd->next;
-			}
-
-			// Build temporary vertex positions for bounding box computation
-			m.tempVerts.reserve(total_verts);
-			cmd = command;
-			while (cmd) {
-				for (int i = 0; i < cmd->numVertices; ++i) {
-					renderer::SpineVertex v {};
-					v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
-					v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], 1.0f - cmd->uvs[(i * 2) + 1]);
-					v.colorABGR = cmd->colors[i];
-					m.tempVerts.push_back(v);
-				}
-				cmd = cmd->next;
-			}
-
 			// Compute dynamic bounding box
 			m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
 
 			// Frustum culling using the dynamic AABB
 			m.onScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), model);
 		}
-
-		// Reset buffers for actual rendering pass
-		m.tempVerts.clear();
-		m.tempIndices.clear();
 	}
 
 	// cache last bound texture to avoid redundant binds
@@ -347,6 +321,9 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		if (!m.isOccluder) {
 			return;    // Skip occlusion pass if not an occluder
 		}
+
+		glDisable(GL_BLEND);
+
 		m.occlusionShader->Use();
 		m.occlusionShader->Set("gWorld", model);
 
@@ -366,10 +343,10 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
 		// Draw  mesh
 		m.dynamicMesh.DrawDynamicSpine(m.tempIndices.size());
-		// clear for next batch
-		m.tempVerts.clear();
-		m.tempIndices.clear();
 	};
+
+	m.tempVerts.clear();
+	m.tempIndices.clear();
 
 	while (command) {
 		if (m.tempVerts.capacity() < static_cast<size_t>(command->numVertices)) {

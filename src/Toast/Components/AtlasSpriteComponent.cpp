@@ -85,6 +85,9 @@ void AtlasSpriteComponent::Inspector() {
 		m.color.b = color[2];
 		m.color.a = color[3];
 	}
+
+	// this is a really bad fix but hey, its just editor jank
+	*m.parentdirty = true;
 }
 
 #endif

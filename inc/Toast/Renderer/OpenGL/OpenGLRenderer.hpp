@@ -6,7 +6,7 @@
 #include "Toast/Renderer/Framebuffer.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/Lights/GlobalLight.hpp"
-#include "Toast/Renderer/PostProcessing/Tonemaping.hpp"
+#include "Toast/Renderer/PostProcessManager.hpp"
 
 namespace renderer {
 class LayerStack;
@@ -29,6 +29,7 @@ public:
 
 	void GeometryPass();
 	void OcclusionPass();
+	void PostProcessPass();
 	void LightingPass();
 	void CombinedRenderPass() const;
 	void SpritePass();
@@ -45,7 +46,7 @@ public:
 
 	void ApplyRenderSettings() override;
 
-	void DrawScreenQuad(bool flipY) override;
+	void DrawScreenQuad(bool flipY, bool useShader) override;
 
 	GLuint GetShadowMapTexture() const override;
 
@@ -77,9 +78,6 @@ private:
 		std::shared_ptr<Shader> jfaInitComputeShader = nullptr;
 		std::shared_ptr<Shader> jfaComputeShader = nullptr;
 		std::shared_ptr<Shader> finalComputeShader = nullptr;
-		
-		Tonemaping tonemap;
-
 		// Framebuffer* layerFramebuffer = nullptr;
 	} m;
 };

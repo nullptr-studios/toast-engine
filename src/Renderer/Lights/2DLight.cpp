@@ -91,17 +91,13 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 
 		m_lightShader->Set("screenSize", glm::ivec2(width, height));
 
-		const glm::vec2 lightPosUV =
-			TransformToUV(transform()->worldPosition(), premultiplied_matrix);
+		const glm::vec2 lightPosUV = TransformToUV(transform()->worldPosition(), premultiplied_matrix);
 
-		const glm::vec3 lightEdgeWorld =
-			glm::vec3(model * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+		const glm::vec3 lightEdgeWorld = glm::vec3(model * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 
-		const glm::vec2 lightEdgeUV =
-			TransformToUV(lightEdgeWorld, premultiplied_matrix);
+		const glm::vec2 lightEdgeUV = TransformToUV(lightEdgeWorld, premultiplied_matrix);
 
-		const float lightRadiusUV =
-			std::max(0.0001f, glm::distance(lightPosUV, lightEdgeUV));
+		const float lightRadiusUV = std::max(0.0001f, glm::distance(lightPosUV, lightEdgeUV));
 
 		glm::vec2 lightDirUV = lightEdgeUV - lightPosUV;
 		if (glm::dot(lightDirUV, lightDirUV) < 1e-8f) {
@@ -110,11 +106,9 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 			lightDirUV = glm::normalize(lightDirUV);
 		}
 
-
 		const float aspect = static_cast<float>(width) / static_cast<float>(height);
 
-		glm::vec2 correctedLightDir =
-			glm::normalize(glm::vec2(lightDirUV.x * aspect, lightDirUV.y));
+		glm::vec2 correctedLightDir = glm::normalize(glm::vec2(lightDirUV.x * aspect, lightDirUV.y));
 
 		const float angleRad = glm::radians(m_angle);
 		const float cosOuter = std::cos(angleRad);
@@ -122,7 +116,6 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 
 		const float invLightRadius = 1.0f / lightRadiusUV;
 		const float invShadowRadius = 1.0f / std::max(m_lightShadowRadius, 0.0001f);
-
 
 		m_lightShader->Set("lightPosUV", lightPosUV);
 		m_lightShader->Set("invLightRadius", invLightRadius);
@@ -133,9 +126,7 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 
 		m_lightShader->Set("invShadowRadius", invShadowRadius);
 
-		m_lightShader->Set("gShadowSteps",
-			static_cast<int>(renderer::IRendererBase::GetInstance()
-				->GetRendererConfig().shadowRaymarchSteps));
+		m_lightShader->Set("gShadowSteps", static_cast<int>(renderer::IRendererBase::GetInstance()->GetRendererConfig().shadowRaymarchSteps));
 
 		m_lightShader->Set("doShadows", m_castShadow);
 

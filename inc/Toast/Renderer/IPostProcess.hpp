@@ -4,8 +4,14 @@
 
 #pragma once
 
+#include "Framebuffer.hpp"
 
 struct IPostProcess {
 	virtual ~IPostProcess() = default;
-	virtual void Execute(unsigned int inTex, unsigned int outFbo) = 0;
+
+	virtual void Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) = 0;
+
+#ifdef TOAST_EDITOR
+	virtual void Inspector() = 0;
+#endif
 };

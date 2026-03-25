@@ -21,6 +21,8 @@
 #include <unordered_set>
 #include <vector>
 
+class PostProcessManager;
+
 namespace renderer {
 
 /**
@@ -68,7 +70,11 @@ public:
 	/// @param height New viewport height in pixels
 	virtual void Resize(glm::uvec2) = 0;
 
-	virtual void DrawScreenQuad(bool flipY) = 0;
+	virtual void DrawScreenQuad(bool flipY, bool useShader = true) = 0;
+
+	PostProcessManager* GetPostProcessManager() const {
+		return m_postProcessManager.get();
+	}
 
 	// ========== ImGui Integration (Editor Only) ==========
 
@@ -416,6 +422,9 @@ protected:
 	float m_globalLightIntensity = 1.f;                ///< Intensity of the global
 
 	bool m_globalLightEnabled = true;                  ///< Whether global light is enabled
+
+	// ========== Post Processing ==========
+	std::unique_ptr<PostProcessManager> m_postProcessManager;    ///< Manager for post-processing effects
 
 	// ========== Render Settings ==========
 	RendererConfig m_config {};    ///< Current renderer configuration

@@ -30,6 +30,8 @@
 
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
+#include "Toast/Renderer/PostProcessing/ColorGrading.hpp"
+#include "Toast/Renderer/PostProcessing/Tonemaping.hpp"
 
 #include <algorithm>
 #include <sstream>
@@ -44,12 +46,12 @@ namespace renderer {
 IRendererBase* IRendererBase::m_instance = nullptr;
 
 #ifdef _DEBUG
-#define CHECK_GL()                                   \
-{                                                  \
-if (GLenum err = glGetError()) {                 \
-TOAST_ERROR("GL Error: {}", glErrorString(err)); \
-}                                                \
-}
+#define CHECK_GL()                                     \
+	{                                                    \
+		if (GLenum err = glGetError()) {                   \
+			TOAST_ERROR("GL Error: {}", glErrorString(err)); \
+		}                                                  \
+	}
 #else
 #define CHECK_GL()
 #endif
@@ -234,7 +236,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	m_config.msaaSamples = clampedSamples;
 
 	// Geometry framebuffer
-	Framebuffer::Specs geometrySpecs = { 1920, 1080, /*clampedSamples > 1*/ false, static_cast<int>(clampedSamples) };
+	Framebuffer::Specs geometrySpecs = { 1920, 1080, /*clampedSamples > 1*/ false };
 	m_geometryFramebuffer = new Framebuffer(geometrySpecs);
 	m_geometryFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // albedo HDR buffer
 	m_geometryFramebuffer->AddDepthAttachment();
@@ -261,6 +263,15 @@ OpenGLRenderer::OpenGLRenderer() {
 	m.jfaInitComputeShader = resource::LoadResource<Shader>("SHADERS/occlusionJFAInit.shader");
 	m.jfaComputeShader = resource::LoadResource<Shader>("SHADERS/occlusionJFA.shader");
 	m.finalComputeShader = resource::LoadResource<Shader>("SHADERS/occlusionFinal.shader");
+
+	// post process
+	m_postProcessManager = std::make_unique<PostProcessManager>();
+	m_postProcessManager->InitBuffers(m_config.resolution);
+
+	std::unique_ptr<Tonemaping> tonemapping = std::make_unique<Tonemaping>();
+	std::unique_ptr<Colorgrading> colorgrading = std::make_unique<Colorgrading>();
+	m_postProcessManager->AddGlobalProcess(std::move(tonemapping));
+	m_postProcessManager->AddGlobalProcess(std::move(colorgrading));
 
 	// Listen to window resize events
 	m_listener.Subscribe<event::WindowResize>([this](event::WindowResize* e) -> bool {
@@ -397,7 +408,7 @@ void OpenGLRenderer::Render() {
 
 	// Extract frustum planes for culling
 	OclussionVolume::extractFrustumPlanesNormalized(m_multipliedMatrix, m_frustumPlanes);
-	
+
 	// The depth sort still runs every frame since object positions change each tick.
 	if (m_renderablesSortDirty) {
 		m.combinedRenderables.clear();
@@ -427,7 +438,8 @@ void OpenGLRenderer::Render() {
 	// LightingPass();
 
 	// Combine (writes into m_outputFramebuffer)
-	CombinedRenderPass();
+	PostProcessPass();
+	// CombinedRenderPass();
 	CHECK_GL();
 
 	// Render game/editor layers directly into the output framebuffer (HUD layers still render into their own FBOs)
@@ -484,7 +496,6 @@ void OpenGLRenderer::Render() {
 	// Composite all HUD layer framebuffers onto the output as the final pass
 	HUDPass();
 	CHECK_GL()
-
 // draw to screen only if not in editor mode
 #ifndef TOAST_EDITOR
 	{
@@ -554,8 +565,6 @@ void OpenGLRenderer::GeometryPass() {
 	for (auto* r : m.combinedRenderables) {
 		r->OnRender(renderer::IRenderablePass::GEOMETRY, m_multipliedMatrix);
 	}
-	
-	m.tonemap.Execute(m_geometryFramebuffer->Handle(), m.jfaTex);
 }
 
 void OpenGLRenderer::OcclusionPass() {
@@ -566,6 +575,7 @@ void OpenGLRenderer::OcclusionPass() {
 
 	m.occlusionFramebuffer->bind();
 	glViewport(0, 0, m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height());
+	glScissor(0, 0, m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height());
 
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -626,6 +636,10 @@ void OpenGLRenderer::OcclusionPass() {
 
 	glDispatchCompute((m.occlusionFramebuffer->Width() + 15) / 16, (m.occlusionFramebuffer->Height() + 15) / 16, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+}
+
+void OpenGLRenderer::PostProcessPass() {
+	m_postProcessManager->PostProcessPass(m_geometryFramebuffer, m_outputFramebuffer);
 }
 
 void OpenGLRenderer::LightingPass() {
@@ -770,22 +784,23 @@ void OpenGLRenderer::CombinedRenderPass() const {
 
 	Clear();
 
-	const bool geometryIsMsaa = m_geometryFramebuffer->IsMultisample();
+	// const bool geometryIsMsaa = m_geometryFramebuffer->IsMultisample();
 	const bool sameSize =
 	    m_geometryFramebuffer->Width() == m_outputFramebuffer->Width() && m_geometryFramebuffer->Height() == m_outputFramebuffer->Height();
 
-	if (geometryIsMsaa) {
-		if (sameSize) {
-			// Fast path: direct resolve when MSAA and output sizes match.
-			m_geometryFramebuffer->BlitTo(m_outputFramebuffer, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		} else {
-			// Correct MSAA+resolutionScale path:
-			// 1) resolve MSAA at geometry resolution
-			m_geometryFramebuffer->BlitTo(m.geometryResolveFramebuffer, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-			// 2) scale resolved single-sample image into full output
-			m.geometryResolveFramebuffer->BlitTo(m_outputFramebuffer, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-		}
-	} else {
+	/*if (geometryIsMsaa) {
+	  if (sameSize) {
+	    // Fast path: direct resolve when MSAA and output sizes match.
+	    m_geometryFramebuffer->BlitTo(m_outputFramebuffer, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	  } else {
+	    // Correct MSAA+resolutionScale path:
+	    // 1) resolve MSAA at geometry resolution
+	    m_geometryFramebuffer->BlitTo(m.geometryResolveFramebuffer, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	    // 2) scale resolved single-sample image into full output
+	    m.geometryResolveFramebuffer->BlitTo(m_outputFramebuffer, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	  }
+	} else*/
+	{
 		m_geometryFramebuffer->BlitTo(m_outputFramebuffer, GL_COLOR_BUFFER_BIT, sameSize ? GL_NEAREST : GL_LINEAR);
 	}
 
@@ -814,6 +829,8 @@ void OpenGLRenderer::Resize(glm::uvec2 size) {
 	// );
 	m_outputFramebuffer->Resize(static_cast<int>(width), static_cast<int>(height));
 	// m.layerFramebuffer->Resize(width, height);
+
+	m_postProcessManager->InitBuffers(size);
 
 	// Resize HUD layers
 	if (m.layerStack) {
@@ -970,13 +987,15 @@ void OpenGLRenderer::RecreateShadowResources(unsigned resolution) {
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void OpenGLRenderer::DrawScreenQuad(bool flipY) {
-	if (flipY) {
-		m.flippedScreenShader->Use();
-		m.flippedScreenShader->SetSampler("screenTexture", 0);
-	} else {
-		m.screenShader->Use();
-		m.screenShader->SetSampler("screenTexture", 0);
+void OpenGLRenderer::DrawScreenQuad(bool flipY, bool useShader) {
+	if (useShader) {
+		if (flipY) {
+			m.flippedScreenShader->Use();
+			m.flippedScreenShader->SetSampler("screenTexture", 0);
+		} else {
+			m.screenShader->Use();
+			m.screenShader->SetSampler("screenTexture", 0);
+		}
 	}
 	m.quad->Draw();
 }

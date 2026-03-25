@@ -2,11 +2,6 @@
 /// @author dario
 /// @date 24/03/2026.
 
-
 #pragma once
 
-
-
-class Bloom {
-
-};
+class Bloom { };
