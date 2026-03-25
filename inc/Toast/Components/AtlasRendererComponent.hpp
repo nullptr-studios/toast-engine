@@ -78,6 +78,8 @@ private:
 		bool spriteCacheDirty = true;
 
 		bool isOccluder = false;
+		
+		bool drawToDepth = true;
 
 		bool isOnScreen = true;
 	} m;

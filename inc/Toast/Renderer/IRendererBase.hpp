@@ -136,6 +136,10 @@ public:
 	Framebuffer* GetGeometryFramebuffer() const noexcept {
 		return m_geometryFramebuffer;
 	}
+	
+	Framebuffer* GetLightFramebuffer() const noexcept {
+		return m_lightFramebuffer;
+	}
 
 	// ========== Camera Management ==========
 
@@ -401,7 +405,7 @@ protected:
 	// ========== Framebuffers ==========
 	/// @note These are owned by the derived renderer implementation
 	Framebuffer* m_geometryFramebuffer = nullptr;    ///< G-buffer for deferred rendering (optional)
-	// Framebuffer* m_lightFramebuffer = nullptr;       ///< Light accumulation buffer (optional)
+	Framebuffer* m_lightFramebuffer = nullptr;       ///< Light accumulation buffer (optional)
 	Framebuffer* m_outputFramebuffer = nullptr;    ///< Final output framebuffer (required)
 
 	// ========== Camera ==========
@@ -411,6 +415,7 @@ protected:
 	std::vector<IRenderable*> m_renderables;    ///< Opaque renderable objects (geometry pass)
 	/// @brief Set of renderables that are currently disabled — excluded from the geometry pass.
 	std::unordered_set<IRenderable*> m_disabledRenderables;
+	std::vector<IRenderable*> m_transparentRenderables;
 	std::vector<Light2D*> m_lights;        ///< All 2D lights in the scene
 	bool m_renderablesSortDirty = true;    ///< True when renderables need re-sorting
 	bool m_lightsSortDirty = true;         ///< True when lights need re-sorting

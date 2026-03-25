@@ -136,6 +136,8 @@ private:
 
 		bool isOccluder = false;
 		bool onScreen = true;
+		
+		bool drawToDepth = true;
 
 		// buffers
 		std::vector<renderer::SpineVertex> tempVerts;

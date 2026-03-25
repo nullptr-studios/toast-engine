@@ -84,7 +84,7 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 	glBindTexture(GL_TEXTURE_2D, renderer::IRendererBase::GetInstance()->GetShadowMapTexture());
 	m_lightShader->Set("sdfTex", 0);
 
-	auto* geometryFb = renderer::IRendererBase::GetInstance()->GetGeometryFramebuffer();
+	auto* geometryFb = renderer::IRendererBase::GetInstance()->GetLightFramebuffer();
 	if (geometryFb) {
 		const int width = geometryFb->Width();
 		const int height = geometryFb->Height();

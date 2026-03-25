@@ -208,6 +208,7 @@ void SpineRendererComponent::Inspector() {
 	}
 
 	ImGui::Checkbox("Is Occluder", &m.isOccluder);
+	ImGui::Checkbox("Draw to depth", &m.drawToDepth);
 
 	ImGui::Separator();
 	ImGui::Text("Animation Preview");
@@ -287,9 +288,6 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	// this is really unoptimiced lmao
 	PROFILE_ZONE_C(0xFF0000);    // Red for rendering
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 	spine::RenderCommand* command = SpineSkeletonRenderer::getRenderer().render(*m.skeleton);
 
 	const float z_step_cmd = 0.01f;       // inter-command z offset step
@@ -309,6 +307,10 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 			// Frustum culling using the dynamic AABB
 			m.onScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), model);
 		}
+		
+		if (!m.isOccluder) {
+			return;
+		}
 	}
 
 	// cache last bound texture to avoid redundant binds
@@ -322,7 +324,6 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 			return;    // Skip occlusion pass if not an occluder
 		}
 
-		glDisable(GL_BLEND);
 
 		m.occlusionShader->Use();
 		m.occlusionShader->Set("gWorld", model);
@@ -408,6 +409,18 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	}
 
 	// flush any remaining geometry
+	if (m.drawToDepth) {
+		glDepthMask(GL_TRUE);
+	} else {
+		glDepthMask(GL_FALSE);
+	}
+
+	if (pass != renderer::IRenderablePass::OCCLUSION) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else {
+		glDisable(GL_BLEND);
+	}
 	flush_batch();
 }
 
@@ -423,6 +436,9 @@ void SpineRendererComponent::Load(json_t j, bool force_create) {
 	if (j.contains("isOccluder")) {
 		m.isOccluder = j.at("isOccluder").get<bool>();
 	}
+	if (j.contains("drawToDepth")) {
+		m.drawToDepth = j.at("drawToDepth").get<bool>();	
+	}
 }
 
 json_t SpineRendererComponent::Save() const {
@@ -431,6 +447,7 @@ json_t SpineRendererComponent::Save() const {
 	j["atlasResourcePath"] = m.atlasPath;
 	j["skeletonDataResourcePath"] = m.skeletonDataPath;
 	j["isOccluder"] = m.isOccluder;
+	j["drawToDepth"] = m.drawToDepth;
 	return j;
 }
 

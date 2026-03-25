@@ -68,7 +68,7 @@ private:
 
 		std::vector<IRenderable*> combinedRenderables;
 		Framebuffer* geometryResolveFramebuffer = nullptr;
-		Framebuffer* lightFB = nullptr;
+		Framebuffer* postProcessFramebuffer = nullptr;
 
 		// Shadows
 		Framebuffer* occlusionFramebuffer = nullptr;

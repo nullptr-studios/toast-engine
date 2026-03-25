@@ -107,12 +107,13 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	}
 	PROFILE_ZONE;
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 	// Clear buffers for this frame
 	if (pass == renderer::IRenderablePass::OCCLUSION) {
+		
 		m.isOnScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f));
+		if (!m.isOccluder) {
+			return;    // Skip occlusion pass if not an occluder
+		}
 	}
 
 	// Frustum culling
@@ -126,11 +127,7 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		m.shader->Use();
 		m.shader->Set("transform", mvp);
 	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
-		if (!m.isOccluder) {
-			return;
-		}
 
-		glDisable(GL_BLEND);
 
 		m.occlusionShader->Use();
 		m.occlusionShader->Set("gWorld", GetWorldMatrix());
@@ -148,6 +145,18 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	}
 
 	// Draw all sprites in one call
+	if (m.drawToDepth) {
+		glDepthMask(GL_TRUE);
+	} else {
+		glDepthMask(GL_FALSE);
+	}
+
+	if (pass != renderer::IRenderablePass::OCCLUSION) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else {
+		glDisable(GL_BLEND);
+	}
 	m.dynamicMesh.DrawDynamicSpine(m.tempIndices.size());
 }
 
@@ -169,6 +178,9 @@ void AtlasRendererComponent::Load(json_t j, bool force_create) {
 	if (j.contains("isOccluder")) {
 		m.isOccluder = j.at("isOccluder").get<bool>();
 	}
+	if (j.contains("drawToDepth")) {
+		m.drawToDepth = j.at("drawToDepth").get<bool>();
+	}
 
 	TransformComponent::Load(j, force_create);
 
@@ -180,6 +192,8 @@ json_t AtlasRendererComponent::Save() const {
 	json_t j = TransformComponent::Save();
 	j["atlasResourcePath"] = m.atlasPath;
 	j["isOccluder"] = m.isOccluder;
+	j["drawToDepth"] = m.drawToDepth;
+	
 	return j;
 }
 
@@ -432,6 +446,8 @@ void AtlasRendererComponent::Inspector() {
 	}
 
 	ImGui::Checkbox("Is Occluder", &m.isOccluder);
+	ImGui::Checkbox("Draw to depth", &m.drawToDepth);
+	
 
 	/////////////// Browser ///////////////
 
