@@ -5,8 +5,8 @@
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
-#include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/World.hpp"
 #include "glm/geometric.hpp"
 
@@ -26,22 +26,24 @@ void Collider::Init() {
 		enabled_ref() = false;    // disable colliders until its loaded
 	}
 
+	m.renderable.SetParent(parent());
 	m.renderable.Init();
 }
 
 void Collider::LoadTextures() {
 	renderer::IRendererBase::GetInstance()->AddRenderable(&m.renderable);
+	m.renderable.SetParent(parent());
 	m.renderable.LoadTextures();
 	m.renderable.enabled(true);
 }
 
 void Collider::OnEnable() {
-	//CalculatePoints();
+	// CalculatePoints();
 	m.renderable.enabled(true);
 }
 
 void Collider::OnDisable() {
-	//DestroyConvexShapes();
+	// DestroyConvexShapes();
 	m.renderable.enabled(false);
 }
 
@@ -135,15 +137,13 @@ void Collider::CalculatePoints() {
 
 		glm::vec2 t = glm::normalize(*next - *it);
 
-		m.edges.emplace_back(
-		    Line {
-		      .p1 = *it,
-		      .p2 = *next,
-		      .normal = { -t.y, t.x },
-		      .tangent = t,
-		      .length = glm::distance(*it, *next),
-    }
-		);
+		m.edges.emplace_back(Line {
+		  .p1 = *it,
+		  .p2 = *next,
+		  .normal = { -t.y, t.x },
+		  .tangent = t,
+		  .length = glm::distance(*it, *next),
+		});
 
 		++it;
 	}
@@ -360,14 +360,13 @@ void Collider::CalculatePoints() {
 		m.convexShapes.emplace_back(c);
 	}
 
-	std::vector<glm::vec3> world_vertices;
-	world_vertices.reserve(m.points.size());
+	std::vector<glm::vec3> local_vertices;
+	local_vertices.reserve(m.points.size());
 	for (const auto& p : m.points) {
-		glm::vec4 p4d = world_mtx * glm::vec4{ p.x, p.y, 0.0, 1.0 };
-		world_vertices.push_back(glm::vec3{ p4d });
+		local_vertices.push_back(glm::vec3 { p.x, p.y, 0.0f });
 	}
 
-	m.renderable.SendVertices(world_vertices);
+	m.renderable.SendVertices(local_vertices);
 }
 
 void Collider::Destroy() {
@@ -554,6 +553,7 @@ void Collider::EditorTick() {
 	auto world_mtx = dynamic_cast<toast::Actor*>(parent())->transform()->GetWorldMatrix();
 	if (world_mtx != debug.oldPosition) {
 		debug.oldPosition = world_mtx;
+		m.renderable.position(m.renderable.position());
 		CalculatePoints();
 	}
 
