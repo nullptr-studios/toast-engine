@@ -6,7 +6,7 @@
 #include "ColliderData.hpp"
 #include "ColliderFlags.hpp"
 #include "Line.hpp"
-#include "Physics/ConvexCollider.hpp"
+#include "ConvexCollider.hpp"
 #include "Toast/Components/Component.hpp"
 #include "Toast/Physics/ColliderRenderable.hpp"
 
