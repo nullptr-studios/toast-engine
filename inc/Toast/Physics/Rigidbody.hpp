@@ -57,8 +57,8 @@ public:
 	void AddAccel(glm::dvec2);
 
 	bool CanCallBack(Rigidbody* c) const;
-	std::function<void(toast::Object*)> enterCallback;
-	std::function<void(toast::Object*)> exitCallback;
+	std::function<void(ColliderFlags, std::optional<Object*>)> enterCallback;
+	std::function<void(ColliderFlags, std::optional<Object*>)> exitCallback;
 
 	// properties
 	double radius = 1.0;      // This is not affected by parent.scale()

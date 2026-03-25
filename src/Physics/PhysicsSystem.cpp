@@ -399,7 +399,7 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 	RbKinematics(rb);
 
 	// Collision loops
-
+	std::optional<toast::Object*> call;
 	for (auto it = ++std::ranges::find(m.rigidbodies, rb); it != m.rigidbodies.end(); ++it) {
 		if (not(*it)->enabled()) {
 			continue;
@@ -418,29 +418,32 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 			}
 
 			if (rb->enterCallback && rb->CanCallBack(*it)) {
+				call = (*it);
 				std::lock_guard lock(m.callbackMutex);
-				m.callbackList.emplace_back([rb, it]() {
-					rb->enterCallback(*it);
+				m.callbackList.emplace_back([rb, it, call]() {
+					rb->enterCallback((*it)->flags, call);
 				});
 			}
 
 			if ((*it)->enterCallback && (*it)->CanCallBack(rb)) {
+				call = rb;
 				std::lock_guard lock(m.callbackMutex);
-				m.callbackList.emplace_back([rb, it]() {
-					(*it)->enterCallback(rb);
+				m.callbackList.emplace_back([rb, it, call]() {
+					(*it)->enterCallback(rb->flags, call);
 				});
 			}
 		}
 		else {
 			auto find = std::ranges::find(m.colliding, rb);
 			if (find != m.colliding.end()) {
-				rb->exitCallback(*it);
+				call = *it;
+				rb->exitCallback((*it)->flags, call);
 				m.colliding.erase(find);
 			}
 
 			find = std::ranges::find(m.colliding, *it);
 			if (find != m.colliding.end()) {
-				(*it)->exitCallback(rb);
+				(*it)->exitCallback(rb->flags, call);
 				m.colliding.erase(find);
 			}
 		}
@@ -459,7 +462,7 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 			if (rb->enterCallback) {
 				std::lock_guard lock(m.callbackMutex);
 				m.callbackList.emplace_back([rb, b]() {
-					rb->enterCallback(b->parent());
+					rb->enterCallback(b, b->parent());
 				});
 			}
 		}

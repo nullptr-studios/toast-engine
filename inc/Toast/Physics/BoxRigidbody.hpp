@@ -3,6 +3,7 @@
 /// @date 1 Jan 2026
 
 #pragma once
+#include "ColliderFlags.hpp"
 #include "Line.hpp"
 
 #include <Toast/Components/Component.hpp>
@@ -47,6 +48,7 @@ public:
 	double rotation;
 	double mass = 1.0;
 	double friction = 0.2;
+	ColliderFlags flags = ColliderFlags::Default;
 
 	// simulation
 	double linearDrag = 0.5;
