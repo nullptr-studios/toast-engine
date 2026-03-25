@@ -450,6 +450,25 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 		auto manifold = RbBoxCollision(rb, b);
 		if (manifold.has_value()) {
 			RbBoxResolution(rb, b, manifold.value());
+
+			if (std::ranges::find(m.colliding, rb) != m.colliding.end()) {
+				m.colliding.emplace_back(rb);
+			}
+
+
+			if (rb->enterCallback) {
+				std::lock_guard lock(m.callbackMutex);
+				m.callbackList.emplace_back([rb, b]() {
+					rb->enterCallback(b->parent());
+				});
+			}
+		}
+		else {
+			auto find = std::ranges::find(m.colliding, rb);
+			if (find != m.colliding.end()) {
+				rb->exitCallback(b->parent());
+				m.colliding.erase(find);
+			}
 		}
 	}
 
