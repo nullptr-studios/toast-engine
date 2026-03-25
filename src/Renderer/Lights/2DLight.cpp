@@ -37,7 +37,7 @@ void Light2D::Init() {
 void Light2D::LoadTextures() {
 	Actor::LoadTextures();
 	renderer::IRendererBase::GetInstance()->AddLight(this);
-	renderer::IRendererBase::GetInstance()->AddRenderable(m_renderable);
+	// renderer::IRendererBase::GetInstance()->AddRenderable(m_renderable);
 	// m_lightBuffer = renderer::IRendererBase::GetInstance()->GetLightFramebuffer();
 }
 
@@ -45,7 +45,7 @@ void Light2D::Begin() { }
 
 void Light2D::Destroy() {
 	renderer::IRendererBase::GetInstance()->RemoveLight(this);
-	renderer::IRendererBase::GetInstance()->RemoveRenderable(m_renderable);
+	// renderer::IRendererBase::GetInstance()->RemoveRenderable(m_renderable);
 	delete m_renderable;
 }
 

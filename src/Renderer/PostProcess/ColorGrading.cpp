@@ -53,9 +53,9 @@ void Colorgrading::Inspector() {
 	ImGui::SeparatorText("Color Grading");
 	ImGui::DragFloat("Contrast", &contrast, .01f, 0.f, 10.f);
 	ImGui::DragFloat("Saturation", &saturation, .01f, 0.f, 10.f);
-	ImGui::ColorEdit3("Tint", (float*)&tint);
+	ImGui::ColorPicker3("Tint", (float*)&tint, ImGuiColorEditFlags_PickerHueWheel);
 	ImGui::Spacing();
-	ImGui::ColorEdit3("Lift", (float*)&lift);
-	ImGui::ColorEdit3("Gamma", (float*)&gamma);
-	ImGui::ColorEdit3("Gain", (float*)&gain);
+	ImGui::ColorPicker3("Lift", (float*)&lift, ImGuiColorEditFlags_PickerHueWheel);
+	ImGui::ColorPicker3("Gamma", (float*)&gamma, ImGuiColorEditFlags_PickerHueWheel);
+	ImGui::ColorPicker3("Gain", (float*)&gain, ImGuiColorEditFlags_PickerHueWheel);
 }

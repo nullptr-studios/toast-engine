@@ -31,6 +31,7 @@ namespace renderer {
  */
 struct RendererConfig {
 	glm::uvec2 resolution { 1920, 1080 };        ///< windowed rendering resolution
+	float lightResolutionScale = 1.0f;
 	bool vSync { true };                         ///< Enable/disable vertical sync
 	toast::DisplayMode currentDisplayMode {};    ///< Current display mode
 
@@ -278,6 +279,7 @@ public:
 	void SaveRenderSettings() {
 		json_t j {};
 		j["resolutionScale"] = m_config.resolutionScale;
+		j["lightScale"] = m_config.lightResolutionScale;
 		j["vSync"] = m_config.vSync;
 		j["fullscreen"] = m_config.currentDisplayMode;
 		j["resolution"] = m_config.resolution;
@@ -344,6 +346,10 @@ public:
 
 	void SetShadowRaymarchSteps(unsigned steps) noexcept {
 		m_config.shadowRaymarchSteps = std::clamp(steps, 1u, 256u);
+	}
+	
+	void SetLightResolutionScale(float scale) noexcept {
+		m_config.lightResolutionScale = std::max(0.01f, scale);
 	}
 
 	/// @brief Enables or disables VSync and immediately applies it.
