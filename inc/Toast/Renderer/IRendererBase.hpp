@@ -430,7 +430,7 @@ protected:
 
 	// ========== Global Light ==========
 	glm::vec3 m_globalLightColor = glm::vec3(1.0f);    ///< Color of the global ambient light
-	float m_globalLightIntensity = 1.f;                ///< Intensity of the global
+	float m_globalLightIntensity = 0.7f;                ///< Intensity of the global
 
 	bool m_globalLightEnabled = true;                  ///< Whether global light is enabled
 
