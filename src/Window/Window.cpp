@@ -6,8 +6,38 @@
 
 // clang-format off
 #include <glad/gl.h>
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 // clang-format on
+
+#ifdef TOAST_EDITOR
+#include <backends/imgui_impl_sdl3.h>
+#endif
+
+namespace {
+unsigned DecodeUTF8Codepoint(const char* text, int& consumed) {
+	const unsigned char c0 = static_cast<unsigned char>(text[0]);
+	if (c0 == 0) {
+		consumed = 0;
+		return 0;
+	}
+	if ((c0 & 0x80u) == 0) {
+		consumed = 1;
+		return c0;
+	}
+	if ((c0 & 0xE0u) == 0xC0u) {
+		consumed = 2;
+		return ((c0 & 0x1Fu) << 6) | (static_cast<unsigned char>(text[1]) & 0x3Fu);
+	}
+	if ((c0 & 0xF0u) == 0xE0u) {
+		consumed = 3;
+		return ((c0 & 0x0Fu) << 12) | ((static_cast<unsigned char>(text[1]) & 0x3Fu) << 6) |
+		       (static_cast<unsigned char>(text[2]) & 0x3Fu);
+	}
+	consumed = 4;
+	return ((c0 & 0x07u) << 18) | ((static_cast<unsigned char>(text[1]) & 0x3Fu) << 12) |
+	       ((static_cast<unsigned char>(text[2]) & 0x3Fu) << 6) | (static_cast<unsigned char>(text[3]) & 0x3Fu);
+}
+}
 
 namespace toast {
 
@@ -16,14 +46,14 @@ Window* Window::m_instance = nullptr;
 Window::Window(unsigned width, unsigned height, std::string_view name) {
 	PROFILE_ZONE_N("Window Construction");
 
-	// Set window instance
 	if (m_instance != nullptr) {
 		throw ToastException("Trying to create window but it already exists");
 	}
 	m_instance = this;
 
-	TOAST_ASSERT(glfwInit(), "Couldn't initialize GLFW");
-	glfwSetErrorCallback(ErrorCallback);
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD)) {
+		throw WindowException(-1, SDL_GetError());
+	}
 
 	m_properties.width = width;
 	m_properties.height = height;
@@ -31,56 +61,66 @@ Window::Window(unsigned width, unsigned height, std::string_view name) {
 
 	TOAST_INFO("Creating window {0} ({1}, {2})", m_properties.name, m_properties.width, m_properties.height);
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	m_glfwWindow = glfwCreateWindow(width, height, name.data(), nullptr, nullptr);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-	glfwMakeContextCurrent(m_glfwWindow);
-	glfwSwapInterval(0);    // disable v-sync for uncapped framerate
+	m_sdlWindow = SDL_CreateWindow(
+	    name.data(),
+	    static_cast<int>(width),
+	    static_cast<int>(height),
+	    SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY
+	);
+	if (!m_sdlWindow) {
+		throw WindowException(-1, SDL_GetError());
+	}
 
-	// Bind the close event to actually close the window
-	m_listener.Subscribe<event::WindowClose>([&](event::WindowClose* e) -> bool {
-		glfwSetWindowShouldClose(m_glfwWindow, true);
+	m_glContext = SDL_GL_CreateContext(m_sdlWindow);
+	if (!m_glContext) {
+		throw WindowException(-1, SDL_GetError());
+	}
+
+	SDL_GL_MakeCurrent(m_sdlWindow, m_glContext);
+	SDL_GL_SetSwapInterval(0);
+
+	m_listener.Subscribe<event::WindowClose>([&](event::WindowClose*) -> bool {
+		m_shouldClose = true;
 		return true;
 	});
-
-	// Set glfw to listen to the callbacks
-	glfwSetKeyCallback(m_glfwWindow, event::WindowKey::Callback);
-	glfwSetCharCallback(m_glfwWindow, event::WindowChar::Callback);
-	glfwSetCursorPosCallback(m_glfwWindow, event::WindowMousePosition::Callback);
-	glfwSetMouseButtonCallback(m_glfwWindow, event::WindowMouseButton::Callback);
-	glfwSetScrollCallback(m_glfwWindow, event::WindowMouseScroll::Callback);
-	glfwSetJoystickCallback(event::WindowInputDevice::Callback);
-	glfwSetDropCallback(m_glfwWindow, event::WindowDrop::Callback);
-	glfwSetFramebufferSizeCallback(m_glfwWindow, event::WindowResize::Callback);
 }
 
 Window::~Window() {
 	TOAST_INFO("Destroying window");
-	glfwDestroyWindow(m_glfwWindow);
-	glfwTerminate();
+	if (m_glContext) {
+		SDL_GL_DestroyContext(m_glContext);
+		m_glContext = nullptr;
+	}
+	if (m_sdlWindow) {
+		SDL_DestroyWindow(m_sdlWindow);
+		m_sdlWindow = nullptr;
+	}
+	SDL_Quit();
 }
 
 bool Window::ShouldClose() const {
-	return glfwWindowShouldClose(m_glfwWindow);
+	return m_shouldClose;
 }
 
 glm::uvec2 Window::GetFramebufferSize() const {
-	int w = 0, h = 0;
-	glfwGetFramebufferSize(m_glfwWindow, &w, &h);
+	int w = 0;
+	int h = 0;
+	SDL_GetWindowSizeInPixels(m_sdlWindow, &w, &h);
 	return { static_cast<unsigned>(w), static_cast<unsigned>(h) };
 }
 
 std::pair<float, float> Window::GetDisplayScale() const {
-	float wx = 0, wy = 0;
-	glfwGetWindowContentScale(m_glfwWindow, &wx, &wy);
-
-	return { wx, wy };
+	const float scale = SDL_GetWindowDisplayScale(m_sdlWindow);
+	return { scale, scale };
 }
 
 double Window::GetTime() {
-	return glfwGetTime();
+	return static_cast<double>(SDL_GetTicksNS()) / 1'000'000'000.0;
 }
 
 double Window::GetRefreshFrameTime() {
@@ -88,16 +128,93 @@ double Window::GetRefreshFrameTime() {
 }
 
 void Window::SwapBuffers() {
-	PROFILE_ZONE_C(0xFF0000);    // Red for rendering
-	glfwSwapBuffers(m_glfwWindow);
+	PROFILE_ZONE_C(0xFF0000);
+	SDL_GL_SwapWindow(m_sdlWindow);
 }
 
 void Window::PollEventsOnly() {
-	glfwPollEvents();
+	SDL_Event ev;
+	while (SDL_PollEvent(&ev)) {
+#ifdef TOAST_EDITOR
+		ImGui_ImplSDL3_ProcessEvent(&ev);
+#endif
+		switch (ev.type) {
+			case SDL_EVENT_QUIT:
+				m_shouldClose = true;
+				break;
+			case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+				if (ev.window.windowID == SDL_GetWindowID(m_sdlWindow)) {
+					m_shouldClose = true;
+				}
+				break;
+			case SDL_EVENT_KEY_DOWN:
+			case SDL_EVENT_KEY_UP: {
+				const int action = (ev.type == SDL_EVENT_KEY_UP)
+				                       ? event::WINDOW_INPUT_RELEASED
+				                       : (ev.key.repeat ? event::WINDOW_INPUT_REPEATED : event::WINDOW_INPUT_PRESSED);
+				event::WindowKey::Callback(
+				    static_cast<int>(ev.key.key),
+				    static_cast<int>(ev.key.scancode),
+				    action,
+				    static_cast<int>(SDL_GetModState())
+				);
+				break;
+			}
+			case SDL_EVENT_TEXT_INPUT: {
+				const char* text = ev.text.text;
+				int i = 0;
+				while (text[i] != '\0') {
+					int consumed = 0;
+					const unsigned cp = DecodeUTF8Codepoint(text + i, consumed);
+					if (consumed <= 0) {
+						break;
+					}
+					event::WindowChar::Callback(cp);
+					i += consumed;
+				}
+				break;
+			}
+			case SDL_EVENT_MOUSE_MOTION:
+				event::WindowMousePosition::Callback(ev.motion.x, ev.motion.y);
+				break;
+			case SDL_EVENT_MOUSE_BUTTON_DOWN:
+			case SDL_EVENT_MOUSE_BUTTON_UP: {
+				const int action = (ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN) ? event::WINDOW_INPUT_PRESSED : event::WINDOW_INPUT_RELEASED;
+				event::WindowMouseButton::Callback(static_cast<int>(ev.button.button), action, static_cast<int>(SDL_GetModState()));
+				break;
+			}
+			case SDL_EVENT_MOUSE_WHEEL:
+				event::WindowMouseScroll::Callback(ev.wheel.x, ev.wheel.y);
+				break;
+			case SDL_EVENT_GAMEPAD_ADDED:
+				event::WindowInputDevice::Callback(static_cast<int>(ev.gdevice.which), event::WINDOW_INPUT_DEVICE_CONNECTED);
+				break;
+			case SDL_EVENT_GAMEPAD_REMOVED:
+				event::WindowInputDevice::Callback(static_cast<int>(ev.gdevice.which), event::WINDOW_INPUT_DEVICE_DISCONNECTED);
+				break;
+			case SDL_EVENT_DROP_FILE: {
+				std::vector<std::string> files;
+				files.emplace_back(ev.drop.data ? ev.drop.data : "");
+				if (ev.drop.data) {
+					SDL_free(const_cast<char*>(ev.drop.data));
+				}
+				event::WindowDrop::Callback(std::move(files));
+				break;
+			}
+			case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+				if (ev.window.windowID == SDL_GetWindowID(m_sdlWindow)) {
+					event::WindowResize::Callback(ev.window.data1, ev.window.data2);
+				}
+				break;
+			default: break;
+		}
+	}
 }
 
 void Window::WaitEventsTimeout(double seconds) {
-	glfwWaitEventsTimeout(seconds);
+	const Sint64 timeout_ms = static_cast<Sint64>(seconds * 1000.0);
+	SDL_Event event;
+	SDL_WaitEventTimeout(&event, static_cast<int>(timeout_ms));
 }
 
 void Window::SetDisplayMode(DisplayMode modeScreen) {
@@ -107,22 +224,19 @@ void Window::SetDisplayMode(DisplayMode modeScreen) {
 
 	if (modeScreen == DisplayMode::WINDOWED) {
 		TOAST_INFO("Switching to WINDOWED mode");
-		glfwSetWindowMonitor(m_glfwWindow, nullptr, m_windowedPos.x, m_windowedPos.y, m_windowedSize.x, m_windowedSize.y, GLFW_DONT_CARE);
+		SDL_SetWindowFullscreen(m_sdlWindow, false);
+		SDL_SetWindowPosition(m_sdlWindow, m_windowedPos.x, m_windowedPos.y);
+		SDL_SetWindowSize(m_sdlWindow, static_cast<int>(m_windowedSize.x), static_cast<int>(m_windowedSize.y));
 	} else if (modeScreen == DisplayMode::FULLSCREEN) {
 		TOAST_INFO("Switching to FULLSCREEN mode");
-		// Save current windowed size and position
 		if (m_currentDisplayMode == DisplayMode::WINDOWED) {
-			glfwGetWindowPos(m_glfwWindow, &m_windowedPos.x, &m_windowedPos.y);
-			int w, h;
-			glfwGetWindowSize(m_glfwWindow, &w, &h);
+			SDL_GetWindowPosition(m_sdlWindow, &m_windowedPos.x, &m_windowedPos.y);
+			int w = 0;
+			int h = 0;
+			SDL_GetWindowSize(m_sdlWindow, &w, &h);
 			m_windowedSize = { static_cast<unsigned>(w), static_cast<unsigned>(h) };
 		}
-
-		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-		if (mode) {
-			glfwSetWindowMonitor(m_glfwWindow, monitor, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
-		}
+		SDL_SetWindowFullscreen(m_sdlWindow, true);
 	}
 
 	m_currentDisplayMode = modeScreen;
@@ -134,24 +248,25 @@ DisplayMode Window::GetDisplayMode() const {
 
 std::vector<glm::uvec2> Window::GetMonitorSupportedSizes() {
 	std::vector<glm::uvec2> sizes;
-	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-	if (monitor) {
-		int count;
-		const GLFWvidmode* modes = glfwGetVideoModes(monitor, &count);
+	const SDL_DisplayID display_id = SDL_GetPrimaryDisplay();
+	int count = 0;
+	const SDL_DisplayMode* const* modes = SDL_GetFullscreenDisplayModes(display_id, &count);
+	if (modes) {
 		sizes.reserve(count);
 		for (int i = 0; i < count; ++i) {
-			sizes.emplace_back(static_cast<unsigned>(modes[i].width), static_cast<unsigned>(modes[i].height));
+			sizes.emplace_back(static_cast<unsigned>(modes[i]->w), static_cast<unsigned>(modes[i]->h));
 		}
+		SDL_free(const_cast<SDL_DisplayMode**>(modes));
 	}
 	return sizes;
 }
 
 void Window::SetResolution(glm::uvec2 res) const {
-	glfwSetWindowSize(m_glfwWindow, static_cast<int>(res.x), static_cast<int>(res.y));
+	SDL_SetWindowSize(m_sdlWindow, static_cast<int>(res.x), static_cast<int>(res.y));
 }
 
 void Window::SetVSync(bool vsync) {
-	glfwSwapInterval(vsync);
+	SDL_GL_SetSwapInterval(vsync ? 1 : 0);
 	m_vsync = vsync;
 }
 
@@ -170,7 +285,7 @@ WindowException::WindowException(int error, const char* description) : error(err
 	std::ostringstream oss;
 	oss << error << ": " << description;
 	message = oss.str();
-	TOAST_ERROR("GLFW Error {0}: {1}", error, description);
+	TOAST_ERROR("SDL Error {0}: {1}", error, description);
 }
 
 const char* WindowException::what() const noexcept {

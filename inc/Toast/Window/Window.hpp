@@ -5,14 +5,14 @@
  * @brief Window management for the Toast Engine.
  *
  * This file provides the Window class which manages the application window,
- * OpenGL context, and OS event handling through GLFW.
+ * OpenGL context, and OS event handling through SDL3.
  */
 
 #pragma once
 #include "Toast/Event/Event.hpp"
 #include "glm/vec2.hpp"
 
-struct GLFWwindow;
+#include <SDL3/SDL_video.h>
 
 namespace toast {
 
@@ -35,7 +35,7 @@ enum class DisplayMode : uint8_t {
  * @class Window
  * @brief Singleton class managing the application window.
  *
- * The Window class wraps GLFW to provide window creation, event handling,
+ * The Window class wraps SDL3 to provide window creation, event handling,
  * and OpenGL context management. It follows the singleton pattern as only
  * one window is supported.
  *
@@ -77,7 +77,7 @@ public:
 	Window(unsigned width = 800, unsigned height = 600, std::string_view name = "Toast Engine");
 
 	/**
-	 * @brief Destroys the window and terminates GLFW.
+	 * @brief Destroys the window and terminates SDL.
 	 */
 	~Window();
 
@@ -189,20 +189,26 @@ public:
 	}
 
 	/**
-	 * @brief Gets the underlying GLFW window handle.
-	 * @return Raw GLFW window pointer.
+	 * @brief Gets the underlying SDL window handle.
+	 * @return Raw SDL window pointer.
 	 */
 	[[nodiscard]]
-	GLFWwindow* GetWindow() const {
-		return m_glfwWindow;
+	SDL_Window* GetWindow() const {
+		return m_sdlWindow;
+	}
+
+	[[nodiscard]]
+	SDL_GLContext GetGLContext() const {
+		return m_glContext;
 	}
 
 private:
 	/// @brief Singleton instance pointer.
 	static Window* m_instance;
 
-	/// @brief Raw GLFW window pointer.
-	GLFWwindow* m_glfwWindow;
+	/// @brief Raw SDL window pointer.
+	SDL_Window* m_sdlWindow = nullptr;
+	SDL_GLContext m_glContext = nullptr;
 
 	/// @brief Window configuration properties.
 	WindowProps m_properties;
@@ -216,12 +222,13 @@ private:
 	glm::ivec2 m_windowedPos {};
 
 	bool m_vsync = true;
+	bool m_shouldClose = false;
 
 	double m_refreshFrameTime = 16.6667;    // Default to 60 FPS
 
 	/**
-	 * @brief GLFW error callback handler.
-	 * @param error GLFW error code.
+	 * @brief Window error callback handler.
+	 * @param error Backend error code.
 	 * @param description Error description string.
 	 */
 	static void ErrorCallback(int error, const char* description);
@@ -229,22 +236,22 @@ private:
 
 /**
  * @class WindowException
- * @brief Exception thrown when a GLFW error occurs.
+ * @brief Exception thrown when a window backend error occurs.
  *
- * This exception wraps GLFW error codes and descriptions for
+ * This exception wraps backend error codes and descriptions for
  * proper error handling and reporting.
  */
 class WindowException : public std::exception {
 public:
 	/**
 	 * @brief Constructs a window exception.
-	 * @param error GLFW error code.
-	 * @param description Error description from GLFW.
+	 * @param error Backend error code.
+	 * @param description Error description from backend.
 	 */
 	WindowException(int error, const char* description);
 
-	int error;                  ///< GLFW error code.
-	const char* description;    ///< Error description from GLFW.
+	int error;                  ///< Backend error code.
+	const char* description;    ///< Error description from backend.
 	std::string message;        ///< Formatted error message.
 
 	/**

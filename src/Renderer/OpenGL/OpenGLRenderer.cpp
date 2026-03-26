@@ -15,14 +15,14 @@
 #include "Toast/Window/Window.hpp"
 #include "Toast/Window/WindowEvents.hpp"
 
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 #include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
 
 #ifdef TOAST_EDITOR
 // clang-format off
 #include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <ImGuizmo.h>
 // clang-format on
@@ -71,7 +71,8 @@ inline const char* glErrorString(GLenum err) noexcept {
 }
 
 #ifdef TOAST_EDITOR
-static GLFWwindow* g_backup_current_context = nullptr;
+static SDL_Window* g_backup_current_window = nullptr;
+static SDL_GLContext g_backup_current_context = nullptr;
 #endif
 
 #ifndef NDEBUG
@@ -189,7 +190,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	}
 
 	// Load OpenGL functions using GLAD
-	int version = gladLoadGL(glfwGetProcAddress);
+	int version = gladLoadGL(SDL_GL_GetProcAddress);
 	if (!version) {
 		TOAST_ERROR("Failed to initialize OpenGL context");
 	}
@@ -290,7 +291,7 @@ OpenGLRenderer::OpenGLRenderer() {
 
 	m_listener.Subscribe<event::WindowKey>([this](event::WindowKey* e) -> bool {
 		// Toggle Fullscreen F11
-		if (e->key == GLFW_KEY_F11 && e->action == GLFW_PRESS) {
+		if (e->key == SDLK_F11 && e->action == event::WINDOW_INPUT_PRESSED) {
 			ToggleFullscreen();
 		}
 
@@ -314,12 +315,13 @@ OpenGLRenderer::OpenGLRenderer() {
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;    // Enable Multi-Viewport
 
 	// Setup Platform/Renderer backends
-	ImGui_ImplGlfw_InitForOpenGL(
-	    toast::Window::GetInstance()->GetWindow(), true
-	);    // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+	ImGui_ImplSDL3_InitForOpenGL(
+	    toast::Window::GetInstance()->GetWindow(), toast::Window::GetInstance()->GetGLContext()
+	);
 	ImGui_ImplOpenGL3_Init();
 
-	g_backup_current_context = glfwGetCurrentContext();
+	g_backup_current_window = SDL_GL_GetCurrentWindow();
+	g_backup_current_context = SDL_GL_GetCurrentContext();
 #endif
 
 	// setup layerstack
@@ -348,7 +350,7 @@ OpenGLRenderer::~OpenGLRenderer() {
 	// delete m.layerFramebuffer;
 #ifdef TOAST_EDITOR
 	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
+	ImGui_ImplSDL3_Shutdown();
 	ImGui::DestroyContext();
 #endif
 }
@@ -360,7 +362,7 @@ void OpenGLRenderer::StartImGuiFrame() {
 	TracyGpuZone("ImGuiStart");
 #endif
 	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
+	ImGui_ImplSDL3_NewFrame();
 	ImGui::NewFrame();
 	ImGuizmo::SetOrthographic(false);
 	ImGuizmo::BeginFrame();
@@ -383,7 +385,7 @@ void OpenGLRenderer::EndImGuiFrame() {
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
-		glfwMakeContextCurrent(g_backup_current_context);
+		SDL_GL_MakeCurrent(g_backup_current_window, g_backup_current_context);
 	}
 
 #ifdef TRACY_ENABLE
