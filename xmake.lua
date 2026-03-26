@@ -15,6 +15,15 @@ if is_mode("release") then
 	add_cxflags("/fp:fast", "/arch:AVX2", {force = true, tools = "cl"})
 end
 
+-- Add a simple print to know which target is being built
+rule("toast.building_msg")
+    before_build(function (target)
+        cprint("${cyan}[%s] building...", target:name())
+    end)
+rule_end()
+
+add_rules("toast.building_msg")
+
 includes("engine/xmake.lua")
 includes("editor/xmake.lua")
 includes("player/xmake.lua")

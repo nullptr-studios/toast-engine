@@ -1,106 +1,51 @@
-use tokio::net::TcpListener;
-use tokio::io::AsyncReadExt;
-use prost::Message;
-use std::env;
+/**
+ * @file main.rs
+ * @author Xein
+ * @date 26 Mar 2026
+ */
+
+use clap::Parser;
+use std::sync::Arc;
 
 pub mod proto {
     include!(concat!(env!("OUT_DIR"), "/logging.rs"));
 }
 
-use proto::LogBatch;
+mod server;
+mod storage;
+
+use storage::LogStorage;
+use server::Server;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Port for the engine to connect to
+    #[arg(long, default_value_t = 12800)]
+    port: u16,
+
+    /// Keep server running even after engine disconnects
+    #[arg(long, default_value_t = false)]
+    infinite: bool,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Vec<String> = env::args().collect();
-    let single_shot = !args.iter().any(|a| a == "--infinite");
+    let args = Args::parse();
+    
+    let storage = LogStorage::new();
+    let server = Arc::new(Server::new(storage));
 
-    // allow overriding port via --port <port>
-    let mut port = "12800".to_string();
-    if let Some(pos) = args.iter().position(|a| a == "--port") {
-        if args.len() > pos + 1 {
-            port = args[pos+1].clone();
+    // Spawn TUI listener
+    let server_tui = server.clone();
+    tokio::spawn(async move {
+        if let Err(e) = server_tui.run_tui_listener(12801).await {
+            eprintln!("TUI Listener failed: {:?}", e);
         }
-    }
+    });
 
-    let addr = format!("127.0.0.1:{}", port);
-    let listener = TcpListener::bind(addr.clone()).await?;
-    println!("Server listening on {}. Waiting for Game Engine...", addr);
-
-    loop {
-        let (mut socket, peer_addr) = listener.accept().await?;
-        println!("Engine connected: {}", peer_addr);
-
-        if single_shot {
-            // Handle single connection inline and then exit
-            let mut buf = vec![0u8; 65536];
-            loop {
-                let n = match socket.read(&mut buf).await {
-                    Ok(0) => {
-                        println!("Engine disconnected.");
-                        break;
-                    }
-                    Ok(n) => n,
-                    Err(e) => {
-                        eprintln!("Read error: {:?}", e);
-                        break;
-                    }
-                };
-
-                match LogBatch::decode(&buf[..n]) {
-                    Ok(batch) => {
-                        for log in batch.logs {
-                            println!("--- Log Received ---");
-                            println!("Time: {}", log.timestamp);
-                            println!("File: {}:{}", log.filepath, log.line_number);
-                            println!("Msg:  {}", log.message);
-                            println!("Sev:  {:?}", log.severity);
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("Failed to parse Protobuf: {:?}", e);
-                        println!("Raw bytes: {:?}", &buf[..n]);
-                    }
-                }
-            }
-            println!("Server closed.");
-            break;
-        } else {
-            // Spawn a task to handle the client and keep listening for further connections.
-            tokio::spawn(async move {
-                let mut buf = vec![0u8; 65536];
-                loop {
-                    let n = match socket.read(&mut buf).await {
-                        Ok(0) => {
-                            println!("Engine disconnected.");
-                            break;
-                        }
-                        Ok(n) => n,
-                        Err(e) => {
-                            eprintln!("Read error: {:?}", e);
-                            break;
-                        }
-                    };
-
-                    match LogBatch::decode(&buf[..n]) {
-                        Ok(batch) => {
-                            for log in batch.logs {
-                                println!("--- Log Received ---");
-                                println!("Time: {}", log.timestamp);
-                                println!("File: {}:{}", log.filepath, log.line_number);
-                                println!("Msg:  {}", log.message);
-                                println!("Sev:  {:?}", log.severity);
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to parse Protobuf: {:?}", e);
-                            println!("Raw bytes: {:?}", &buf[..n]);
-                        }
-                    }
-                }
-                println!("Client handler exiting.");
-            });
-        }
-    }
+    // Run Engine listener
+    server.run_engine_listener(args.port, args.infinite).await?;
 
     Ok(())
 }

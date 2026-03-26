@@ -10,8 +10,6 @@ target("toast.player", function()
 	set_kind("phony")
 
 	on_build(function(target)
-		cprint("${cyan bright}[toast.player] building...")
-
 		local args = {
 			"publish",
 			"player/player.csproj",

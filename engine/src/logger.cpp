@@ -1,47 +1,94 @@
+#include "log.hpp"
+#include "log.h"
 #include "logger.hpp"
-#include "thread_pool.hpp"
-#include <easypb.hpp>
 
+#include "logging_easypb.h"
+#include "thread_pool.hpp"
+
+#include <easypb.hpp>
 #include <chrono>
 #include <vector>
 #include <filesystem>
 #include <cstdlib>
 #include <iostream>
 
+namespace logging {
+
+void _detail::log(uint8_t severity, std::string_view file_name, unsigned line_number, std::string_view sink, std::string_view message) {
+	// We wrap the singleton access here so the public headers don't need to know
+	// anything about the Logger class or its dependencies
+	Logger::log(file_name, line_number, severity, sink, message);
+}
+
 auto Logger::create() noexcept -> std::unique_ptr<Logger> {
+	// Standard trick to allow make_unique with a private constructor
 	struct Helper : public Logger {};
 	auto ptr = std::make_unique<Helper>();
 	instance = ptr.get();
 
-#if defined(__linux__)
-	// TODO: This needs to work in windows
-	static constexpr bool AUTO_SPAWN_LOG_SERVER = false;
-	if (AUTO_SPAWN_LOG_SERVER) {
+	// We allow disabling this so it's easier to debug the server
+	// On release this should ALWAYS be on since the client is not expected to open the log server on their own
+	if constexpr (AUTO_SPAWN_LOG_SERVER) {
 		try {
 			std::vector<std::filesystem::path> candidates = {
+#if defined(_WIN32)
+				"log-server.exe",
+				"build/windows/x64/debug/log-server.exe",
+				"build/windows/x64/release/log-server.exe",
+				"build/windows/x86_64/debug/log-server.exe",
+				"build/windows/x86_64/release/log-server.exe",
+#elif defined(__APPLE__)
+				"log-server",
+				"build/macos/arm64/debug/log-server",
+				"build/macos/arm64/release/log-server",
+				"build/macos/x86_64/debug/log-server",
+				"build/macos/x86_64/release/log-server",
+#else
+				"log-server",
 				"build/linux/x86_64/debug/log-server",
 				"build/linux/x86_64/release/log-server",
+#endif
 			};
+
 			std::filesystem::path server_path;
 			for (auto &p : candidates) {
-				if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) { server_path = p; break; }
+				if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) {
+					server_path = p;
+					break;
+				}
 			}
+
 			if (!server_path.empty()) {
-				std::string cmd = std::string("setsid ") + server_path.string() + " >/dev/null 2>&1 &";
-				std::system(cmd.c_str());
+				std::string cmd;
+				std::string output_redir = SHOW_SERVER_LOGS ? "" : " >/dev/null 2>&1";
+
+#if defined(_WIN32)
+				// On Windows, 'start /B' runs the command in the background without opening a new window
+				// For output redirection, we need to wrap it in 'cmd /C'
+				if (SHOW_SERVER_LOGS) {
+					cmd = "start /B " + server_path.string();
+				} else {
+					cmd = "start /B cmd /C \"" + server_path.string() + " >nul 2>&1\"";
+				}
+#elif defined(__APPLE__) || defined(__linux__)
+				// setsid detaches the server from the engine's process group on Linux/macOS.
+				cmd = "setsid " + server_path.string() + output_redir + " &";
+#endif
+				if (!cmd.empty()) {
+					std::system(cmd.c_str());
+				}
 			}
 		} catch (...) {
-			// best-effort spawn; ignore failures
+			std::println(std::cerr, "[Logger] Failed to spawn log server");
+			abort();
 		}
 	}
-#endif
 
-	// Attempt to connect (with retries)
-	ptr->init_network_retry();
+	ptr->initNetworkRetry();
 	return ptr;
 }
 
-auto Logger::get() noexcept -> Logger & {
+auto Logger::get() noexcept -> Logger& {
 	assert(instance && "Logger doesn't exist");
 	return *instance;
 }
@@ -51,84 +98,102 @@ Logger::~Logger() noexcept {
 	instance = nullptr;
 }
 
-void Logger::log(std::string_view file, unsigned line_number, char severity, std::string_view sink, std::string_view message) {
-	assert(instance && "Logger doesn't exist");
+void Logger::log(std::string_view file, unsigned line, char severity, std::string_view sink, std::string_view message) {
+	auto& logger = get();
 
 	logging::LogData log;
-	log.set_timestamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+	log.set_timestamp(std::chrono::duration_cast<std::chrono::nanoseconds>(
+		std::chrono::system_clock::now().time_since_epoch()).count()); //retarded stl library
 	log.set_filepath(file);
-	log.set_line_number(line_number);
-	log.set_severity(logging::LogData_Severity::TRACE);
+	log.set_line_number(line);
+	log.set_severity(static_cast<logging::LogData_Severity>(severity));
 	log.set_sink(sink);
 	log.set_message(message);
 
 	{
-		std::lock_guard lock(instance->m.queue_mutex);
-		instance->m.log_queue.emplace_back(std::move(log));
+		std::lock_guard lock(logger.m.queue_mutex);
+		logger.m.log_queue.emplace_back(std::move(log));
 	}
 
-	// Claim the drain slot. exchange(true) returns the *previous* value — if it
-	// was false we just claimed it and must schedule the job; if it was true a
-	// job is already in-flight and will pick up this message before it
-	// re-releases the flag.
-	if (!instance->m.drain_pending.exchange(true)) {
-		toast::ThreadPool::queueJob([inst = instance]() { inst->drain(); });
+	// We use an atomic exchange to claim a "drain slot". This ensures that
+	// even if 100 threads log at once, only one background task is queued
+	if (!logger.m.drain_pending.exchange(true)) {
+		toast::ThreadPool::queueJob([&logger]() { logger.drain(); });
 	}
 }
 
-void Logger::init_network() {
-	try {
-		asio::ip::tcp::resolver resolver(m.io_ctx);
-		auto endpoints = resolver.resolve(HOST, std::to_string(PORT));
-		asio::connect(m.socket, endpoints);
+void Logger::initNetworkRetry() {
+	// The server might be slow to start, so we give it a few seconds
+	// to avoid crashing the engine immediately on boot
+	constexpr int max_attempts = 10;
+	constexpr int delay_ms = 1000;
 
-#if defined(__linux__) || defined(__APPLE__)
-		// Guard against a stalled server holding a ThreadPool worker indefinitely
-		timeval timeout{.tv_sec = 1, .tv_usec = 0};
-		setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &timeout,
-				sizeof(timeout));
+	for (int attempt = 1; attempt <= max_attempts; ++attempt) {
+		try {
+			if (m.socket.is_open()) {
+				asio::error_code ec;
+				[[maybe_unused]]
+				auto close_result = m.socket.close(ec);
+			}
+			m.socket = asio::ip::tcp::socket(m.io_ctx);
+
+			asio::ip::tcp::resolver resolver(m.io_ctx);
+			auto endpoints = resolver.resolve("127.0.0.1", std::to_string(PORT));
+			asio::connect(m.socket, endpoints);
+
+			// We set a send timeout so the engine doesn't hang if the log server stops responding or the TCP buffer fills up
+#if defined(_WIN32)
+			DWORD timeout = 1000;
+			setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<const char*>(&timeout), sizeof(timeout));
+#else
+			timeval timeout{.tv_sec = 1, .tv_usec = 0};
+			setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 #endif
-	} catch (const std::exception &e) {
-		assert(false && "Failed to connect to log server");
+			return;
+		} catch (const std::exception &e) {
+			if (attempt == max_attempts) {
+				std::println(std::cerr, "[Logger] Failed to connect after {} attempts: {}", max_attempts, e.what());
+				abort();
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+		}
 	}
 }
 
 void Logger::stop() {
-	// Wait for any ThreadPool drain job to complete before we touch the socket.
-	// Busy-spin is fine here: the write should be microseconds on loopback.
+	// We spin briefly to wait for any active background write to finish
+	// This prevents us from closing the socket while a ThreadPool worker is using it
 	while (m.drain_pending.load(std::memory_order_acquire)) {
 		std::this_thread::yield();
 	}
 
-	// One final synchronous flush for anything logged after the last drain
-	// released. No new drain jobs can be scheduled from this point — the caller
-	// is responsible for ensuring log() is not called concurrently with the
-	// destructor.
-	flush_sync();
+	// Any logs produced during the last drain or while we were waiting above
+	// must be flushed synchronously before the object is destroyed
+	flushSync();
 
 	if (m.socket.is_open()) {
 		asio::error_code ec;
-		m.socket.shutdown(asio::ip::tcp::socket::shutdown_both, ec);
-		m.socket.close(ec);
+		[[maybe_unused]]
+		auto shutdown_result = m.socket.shutdown(asio::ip::tcp::socket::shutdown_both, ec);
+		[[maybe_unused]]
+		auto close_result = m.socket.close(ec);
 	}
 }
 
 void Logger::drain() {
-	auto batch = collect_queue();
+	auto batch = collectQueue();
 
 	if (!batch.empty() && m.socket.is_open()) {
 		try {
 			asio::write(m.socket, asio::buffer(batch));
 		} catch (const std::exception &e) {
-			// TODO: reconnect logic; fall back to stderr until it's implemented
-			std::fprintf(stderr, "[Logger] Send failed: %s\n", e.what());
+			// If sending fails, we fallback to stderr to avoid losing critical info
+			std::println(std::cerr, "[Logger] Send failure: {}", e.what());
 		}
 	}
 
-	// Release the drain slot only after the write is done, then atomically check
-	// if more messages arrived during the write. If so, immediately re-claim the
-	// slot and re-schedule rather than letting those messages sit until the next
-	// log() call.
+	// Release the drain slot, but check if more logs arrived while we were busy
+	// This "double-check" pattern ensures the queue is actually empty when we finish
 	m.drain_pending.store(false, std::memory_order_release);
 	{
 		std::lock_guard lock(m.queue_mutex);
@@ -138,10 +203,10 @@ void Logger::drain() {
 	}
 }
 
-auto Logger::collect_queue() -> std::vector<uint8_t> {
-	// create a batch with all the logs to dispatch
+auto Logger::collectQueue() -> std::vector<uint8_t> {
+	// Batching logs together significantly reduces the number of TCP packets
+	// and system calls, which is better for performance
 	logging::LogBatch batch;
-
 	{
 		std::lock_guard lock(m.queue_mutex);
 		while (!m.log_queue.empty()) {
@@ -151,58 +216,43 @@ auto Logger::collect_queue() -> std::vector<uint8_t> {
 		}
 	}
 
-	// serialize the batch into binary and send it
+	if (batch.logs.size() == 0) return {};
+
 	std::vector<uint8_t> buffer(batch.ByteSizeLong());
 	batch.SerializeToArray(buffer.data(), buffer.size());
 	return buffer;
 }
 
-void Logger::flush_sync() {
-	auto batch = collect_queue();
+void Logger::flushSync() {
+	auto batch = collectQueue();
 	if (!batch.empty() && m.socket.is_open()) {
 		asio::error_code ec;
 		asio::write(m.socket, asio::buffer(batch), ec);
-		if (ec) {
-			std::fprintf(stderr, "[Logger] Final flush failed: %s\n",
-					ec.message().c_str());
-		}
 	}
 }
 
-void Logger::init_network_retry() {
-	// Try connecting with retries instead of aborting — make logging non-fatal
-	const int max_attempts = 50; // ~10s at base_delay_ms=200
-	const int base_delay_ms = 200;
-	for (int attempt = 1; attempt <= max_attempts; ++attempt) {
-		try {
-			// Ensure socket is fresh
-			if (m.socket.is_open()) {
-				asio::error_code ec;
-				m.socket.close(ec);
-			}
-			m.socket = asio::ip::tcp::socket(m.io_ctx);
-
-			asio::ip::tcp::resolver resolver(m.io_ctx);
-			auto endpoints = resolver.resolve(HOST, std::to_string(PORT));
-			asio::connect(m.socket, endpoints);
-
-		#if defined(__linux__) || defined(__APPLE__)
-			// Guard against a stalled server holding a ThreadPool worker indefinitely
-			timeval timeout{.tv_sec = 1, .tv_usec = 0};
-			setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &timeout,
-					sizeof(timeout));
-		#endif
-
-			std::fprintf(stderr, "[Logger] Connected to log server (attempt %d)\n", attempt);
-			return;
-		} catch (const std::exception &e) {
-			if (attempt == max_attempts) {
-				std::fprintf(stderr, "[Logger] Failed to connect to log server after %d attempts: %s\n", max_attempts, e.what());
-			} else {
-				std::fprintf(stderr, "[Logger] Connect attempt %d failed: %s; retrying in %dms\n", attempt, e.what(), base_delay_ms * attempt);
-				std::this_thread::sleep_for(std::chrono::milliseconds(base_delay_ms * attempt));
-			}
-		}
-	}
 }
 
+extern "C" {
+	using namespace logging;
+
+	void toast_trace(const char* sink, const char* message, const char* file, unsigned line) {
+		Logger::log(file, line, 0, sink, message);
+	}
+
+	void toast_info(const char* sink, const char* message, const char* file, unsigned line) {
+		Logger::log(file, line, 1, sink, message);
+	}
+
+	void toast_warn(const char* sink, const char* message, const char* file, unsigned line) {
+		Logger::log(file, line, 2, sink, message);
+	}
+
+	void toast_error(const char* sink, const char* message, const char* file, unsigned line) {
+		Logger::log(file, line, 3, sink, message);
+	}
+
+	void toast_critical(const char* sink, const char* message, const char* file, unsigned line) {
+		Logger::log(file, line, 4, sink, message);
+	}
+}

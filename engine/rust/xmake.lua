@@ -28,7 +28,7 @@ target_end()
 -- Build log-server binary and copy to engine build output
 target("toast.log-server")
     set_kind("phony")
-    before_build(function ()
+    before_build(function (target)
         local mode = is_mode("release") and "release" or "debug"
         local manifest = path.join(rust_dir, "log-server", "Cargo.toml")
         local args = {"build", "--manifest-path", manifest}

@@ -1,9 +1,11 @@
 /**
  * @file logger.hpp
  * @author Xein
- * @date 16/03/26
- * @brief Handles logging on the project: serializes logs and sends them through TCP/IP
- *        to the logger server
+ * @date 16 Mar 2026
+ * @brief Internal log delivery system
+ *
+ * Handles the heavy lifting of serializing logs and shipping them over TCP;
+ * it's designed to be as "fire-and-forget" as possible for the caller
  */
 
 #pragma once
@@ -15,103 +17,76 @@
 #include <mutex>
 #include <atomic>
 #include <cassert>
+#include <vector>
 
 #include "logging_easypb.h"
+
+namespace logging {
 
 class Logger {
 	inline static Logger* instance = nullptr;
 
 	struct {
 		asio::io_context io_ctx;
-		asio::ip::tcp::socket socket{ io_ctx }; // needs to be after io_ctx
+		asio::ip::tcp::socket socket{ io_ctx };
 
 		std::deque<logging::LogData> log_queue;
 		std::mutex queue_mutex;
 
-		/// Guards the socket against concurrent drain() calls
-		/// true  -> a drain job is in-flight; callers must not schedule another
-		/// false -> no drain is running; the next log() call will schedule one
+		/**
+		 * @brief Prevents multiple background jobs from fighting over the same socket
+		 *
+		 * We use an atomic flag to ensure only one 'drain' job is scheduled at a time,
+		 * avoiding unnecessary context switches and thread contention.
+		 */
 		std::atomic<bool> drain_pending = false;
 	} m;
 
-public:
-	static constexpr std::string_view HOST = "127.0.0.1"; ///< localhost, DO NOT CHANGE
-	static constexpr uint16_t PORT = 12800;               ///< Port used to load the server
+	static constexpr uint16_t PORT = 12800; ///< Port to connect to the server
+	static constexpr bool AUTO_SPAWN_LOG_SERVER = false; ///< Decides if the engine should create a log server or not
+	static constexpr bool SHOW_SERVER_LOGS = false; ///< If true, log server consoole will also appear on the terminal
 
+public:
 	/**
-	 * @brief Creates the singleton Logger instance and opens the TCP connection.
-	 *
-	 * Must be called before any call to log() or get(). The returned pointer owns the
-	 * logger and destroying it shuts the logger down cleanly
+	 * @brief Set up the global logger instance, gives ownership to the caller
+	 * @return A unique_ptr that manages the logger's lifetime
+	 * @note This function asserts it will only be called once
 	 */
 	static auto create() noexcept -> std::unique_ptr<Logger>;
 
 	/**
-	 * @brief Retrieves the active Logger instance.
-	 * @note Asserts in debug if called before create()
+	 * @brief Get the active logger
+	 * @note This function asserts a logger has been created
 	 */
-	static auto get() noexcept -> Logger &;
+	static auto get() noexcept -> Logger&;
 
 	/**
-	 * @brief Flushes any remaining messages and closes the connection.
+	 * @brief Clean shutdown: flushes remaining logs and closes the connection
 	 */
 	~Logger() noexcept;
 
-	// Remove copy and move semantics
+	// Copying a global logger doesn't make sense
 	Logger(const Logger&) = delete;
 	Logger(Logger&&) = delete;
 	Logger& operator=(const Logger&) = delete;
 	Logger& operator=(Logger&&) = delete;
 
 	/**
-	 * @brief Enqueues a message for delivery to the log server.
+	 * @brief Entry point for all engine logs
 	 *
-	 * Thread-safe. Returns immediately as the actual TCP send happens on a ThreadPool
-	 * worker. If a drain job is already pending, this message will be picked up by it
-	 * or the one after it; no drain job is double-scheduled
-	 *
-	 * @param message The log string to send. A newline is appended automatically.
-	 *
-	 * HACK: This is not the actual implementation of log()
+	 * Thread-safe. It pushes the log to a local queue and signals a background
+	 * task to handle the actual network I/O
 	 */
-	static void log(std::string_view file, unsigned line_number, char severity, std::string_view sink, std::string_view message);
+	static void log(std::string_view file, unsigned line, char severity, std::string_view sink, std::string_view message);
 
 private:
 	Logger() = default;
 
-	[[deprecated("Use init_network_retry() instead")]]
-	void init_network();
-	void init_network_retry();
-
-	/**
-	 * @brief Waits for any in-flight drain job to finish, then sends remaining messages
-	 *        and closes the socket.
-	 *
-	 * The spin on drain_pending is brief — it only lasts as long as the current write.
-	 */
-	void stop();
-
-	/**
-	 * @brief Drains the queue and sends its contents over TCP.
-	 *
-	 * Executed on a ThreadPool worker thread. At most one drain() runs at a time —
-	 * drain_pending guarantees this. The flag is only released *after* the write
-	 * completes; the queue is then re-checked atomically so that any messages
-	 * logged during the write are not silently dropped.
-	 */
-	void drain();
-
-	/**
-	 * @brief Collects all pending messages from the queue into a single string.
-	 * @return Concatenated batch, or an empty string if the queue was empty.
-	 */
-	auto collect_queue() -> std::vector<uint8_t>;
-
-	/**
-	 * @brief Sends any remaining queued messages synchronously. Called from stop().
-	 *
-	 * Assumes drain_pending is false and no concurrent drain() is running.
-	 */
-	void flush_sync();
-
+	void initNetworkRetry(); ///< @brief Tries to establish a connection, retrying if the server isn't ready
+	void stop(); ///< @brief Blocks until the background work finishes to avoid data races during shutdown
+	void drain(); ///< @brief Background worker that batches queued logs and sends them
+	auto collectQueue() -> std::vector<uint8_t>; ///< @brief Pulls everything from the queue and turns it into a bit buffer
+	void flushSync(); ///< @brief Synchronous fallback for when we can't rely on background threads (like shutdown)
 };
+
+}

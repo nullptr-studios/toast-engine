@@ -1,6 +1,5 @@
 add_requires("asio 1.36.0") -- networking
 
--- This target contains the core Toast Engine
 target("toast.engine", function()
 	set_kind("shared")
 	add_includedirs("include/toast")
