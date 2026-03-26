@@ -186,6 +186,66 @@ void PhysicsSystem::Tick() {
 		BoxPhysics(rb);
 	}
 
+	// Handle adding the physics objects to the tickables
+	{ 
+		std::lock_guard(m.nigger_mutex);
+
+		auto is_in_list = [](auto* obj, auto& list) -> bool {
+			if (std::ranges::find(list, obj) != list.end()) {
+				return true;
+			}
+			return false;
+		};
+	
+		while (not m.rigidbodies_queue.empty()) { 
+			auto* rb = m.rigidbodies_queue.front();
+
+			if (is_in_list(rb, m.rigidbodies)) {
+				m.rigidbodies_queue.pop();
+				continue;
+			}
+
+			m.rigidbodies.emplace_back(rb);
+			m.rigidbodies_queue.pop();
+		}
+
+		while (not m.boxes_queue.empty()) {
+			auto* box = m.boxes_queue.front();
+
+			if (is_in_list(box, m.boxes)) {
+				m.boxes_queue.pop();
+				continue;
+			}
+
+			m.boxes.emplace_back(box);
+			m.boxes_queue.pop();
+		}
+
+		while (not m.colliders_queue.empty()) {
+			auto* collider = m.colliders_queue.front();
+
+			if (is_in_list(collider, m.colliders)) {
+				m.colliders_queue.pop();
+				continue;
+			}
+
+			m.colliders.emplace_back(collider);
+			m.colliders_queue.pop();
+		}
+
+		while (not m.triggers_queue.empty()) {
+			auto* t = m.triggers_queue.front();
+
+			if (is_in_list(t, m.triggers)) {
+				m.triggers_queue.pop();
+				continue;
+			}
+
+			m.triggers.emplace_back(t);
+			m.triggers_queue.pop();
+		}
+	}
+
 	// Record the time of this physics step for interpolation
 	m.lastPhysicsTime.store(std::chrono::steady_clock::now(), std::memory_order_release);
 }
@@ -197,13 +257,14 @@ void PhysicsSystem::AddRigidbody(Rigidbody* rb) {
 	if (!i.has_value()) {
 		return;
 	}
-	auto& list = (*i)->m.rigidbodies;
+	std::lock_guard((*i)->m.nigger_mutex);
+	auto& list = (*i)->m.rigidbodies_queue;
 
 	// Return if the rigidbody is already registered on the list
-	if (std::ranges::find(list, rb) != list.end()) {
-		return;
-	}
-	list.emplace_back(rb);
+	//if (std::ranges::find(list, rb) != list.end()) {
+	//	return;
+	//}
+	list.emplace(rb);
 }
 
 void PhysicsSystem::RemoveRigidbody(Rigidbody* rb) {
@@ -219,13 +280,14 @@ void PhysicsSystem::AddCollider(ConvexCollider* c) {
 	if (!i.has_value()) {
 		return;
 	}
-	auto& list = (*i)->m.colliders;
+	std::lock_guard((*i)->m.nigger_mutex);
+	auto& list = (*i)->m.colliders_queue;
 
 	// Return if the rigidbody is already registered on the list
-	if (std::ranges::find(list, c) != list.end()) {
-		return;
-	}
-	list.emplace_back(c);
+	//if (std::ranges::find(list, c) != list.end()) {
+	//	return;
+	//}
+	list.emplace(c);
 }
 
 void PhysicsSystem::RemoveCollider(ConvexCollider* c) {
@@ -241,13 +303,14 @@ void PhysicsSystem::AddTrigger(Trigger* t) {
 	if (!i.has_value()) {
 		return;
 	}
-	auto& list = (*i)->m.triggers;
+	std::lock_guard((*i)->m.nigger_mutex);
+	auto& list = (*i)->m.triggers_queue;
 
 	// Return if the rigidbody is already registered on the list
-	if (std::ranges::find(list, t) != list.end()) {
-		return;
-	}
-	list.emplace_back(t);
+	//if (std::ranges::find(list, t) != list.end()) {
+	//	return;
+	//}
+	list.emplace(t);
 }
 
 void PhysicsSystem::RemoveTrigger(Trigger* t) {
@@ -263,13 +326,14 @@ void PhysicsSystem::AddBox(BoxRigidbody* rb) {
 	if (!i.has_value()) {
 		return;
 	}
-	auto& list = (*i)->m.boxes;
+	std::lock_guard((*i)->m.nigger_mutex);
+	auto& list = (*i)->m.boxes_queue;
 
 	// Return if the rigidbody is already registered on the list
-	if (std::ranges::find(list, rb) != list.end()) {
-		return;
-	}
-	list.emplace_back(rb);
+	//if (std::ranges::find(list, rb) != list.end()) {
+	//	return;
+	//}
+	list.emplace(rb);
 }
 
 void PhysicsSystem::RemoveBox(BoxRigidbody* rb) {
@@ -382,7 +446,7 @@ void PhysicsSystem::UpdateVisualInterpolation() {
 double PhysicsSystem::GetFixedTimestep() {
 	auto i = PhysicsSystem::get();
 	if (!i.has_value()) {
-		return 1.0 / 50.0;
+		return 1.0 / 120.0;
 	}
 	return (*i)->m.targetFrametime.count();
 }

@@ -83,11 +83,17 @@ private:
 	struct M {
 		std::chrono::duration<double> targetFrametime { 1.0 / 50.0 };
 		unsigned char tickCount = 1;
-		std::list<Rigidbody*> rigidbodies;
 		std::list<Rigidbody*> colliding;
+
+		std::list<Rigidbody*> rigidbodies;
+		std::queue<Rigidbody*> rigidbodies_queue;
 		std::list<BoxRigidbody*> boxes;
+		std::queue<BoxRigidbody*> boxes_queue;
 		std::list<ConvexCollider*> colliders;
+		std::queue<ConvexCollider*> colliders_queue;
 		std::list<Trigger*> triggers;
+		std::queue<Trigger*> triggers_queue;
+
 		GravityType gravityType = GravityType::DIRECTION;
 		glm::dvec2 gravityDirection = { 0.0, -9.81 };
 		glm::dvec2 gravityPoint = { 0.0, 0.0 };
