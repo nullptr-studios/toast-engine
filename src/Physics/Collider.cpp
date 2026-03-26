@@ -103,11 +103,14 @@ void Collider::Bevel(unsigned idx) {
 		arc.push_back(pt);
 	}
 
+	// Convert to index for insertion/erasure
+	const size_t i = std::distance(m.points.begin(), p1);
+
 	// Replace the original point with the arc points
-	for (const auto& pt : arc) {
-		m.points.insert(p1, pt);
-	}
-	m.points.erase(p1);
+	m.points.insert(m.points.begin() + i, arc.begin(), arc.end());
+
+	// Erase original point
+	m.points.erase(m.points.begin() + i + arc.size());
 
 	CalculatePoints();
 }
