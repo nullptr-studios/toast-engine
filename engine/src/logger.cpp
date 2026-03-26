@@ -185,7 +185,18 @@ void Logger::drain() {
 
 	if (!batch.empty() && m.socket.is_open()) {
 		try {
-			asio::write(m.socket, asio::buffer(batch));
+			uint32_t len = static_cast<uint32_t>(batch.size());
+			uint8_t len_buf[4];
+			len_buf[0] = (len >> 24) & 0xFF;
+			len_buf[1] = (len >> 16) & 0xFF;
+			len_buf[2] = (len >> 8) & 0xFF;
+			len_buf[3] = len & 0xFF;
+
+			std::array<asio::const_buffer, 2> bufs = {
+				asio::buffer(len_buf, 4),
+				asio::buffer(batch)
+			};
+			asio::write(m.socket, bufs);
 		} catch (const std::exception &e) {
 			// If sending fails, we fallback to stderr to avoid losing critical info
 			std::println(std::cerr, "[Logger] Send failure: {}", e.what());
@@ -226,10 +237,22 @@ auto Logger::collectQueue() -> std::vector<uint8_t> {
 void Logger::flushSync() {
 	auto batch = collectQueue();
 	if (!batch.empty() && m.socket.is_open()) {
+		uint32_t len = static_cast<uint32_t>(batch.size());
+		uint8_t len_buf[4];
+		len_buf[0] = (len >> 24) & 0xFF;
+		len_buf[1] = (len >> 16) & 0xFF;
+		len_buf[2] = (len >> 8) & 0xFF;
+		len_buf[3] = len & 0xFF;
+
+		std::array<asio::const_buffer, 2> bufs = {
+			asio::buffer(len_buf, 4),
+			asio::buffer(batch)
+		};
 		asio::error_code ec;
-		asio::write(m.socket, asio::buffer(batch), ec);
+		asio::write(m.socket, bufs, ec);
 	}
 }
+
 
 }
 

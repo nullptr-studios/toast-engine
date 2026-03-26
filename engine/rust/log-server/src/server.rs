@@ -58,7 +58,9 @@ impl Server {
             }
 
             let storage = self.storage.clone();
-            handle_engine_connection(&mut socket, storage).await?;
+            if let Err(e) = handle_engine_connection(&mut socket, storage).await {
+                eprintln!("Engine connection error: {:?}", e);
+            }
 
             println!("Engine disconnected: {}", peer_addr);
             
@@ -83,17 +85,24 @@ impl Server {
 }
 
 async fn handle_engine_connection(socket: &mut TcpStream, storage: LogStorage) -> Result<(), Box<dyn std::error::Error>> {
-    let mut buf = vec![0u8; 65536];
     loop {
-        let n = socket.read(&mut buf).await?;
-        if n == 0 {
-            break;
+        let len = match socket.read_u32().await {
+            Ok(l) => l,
+            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => return Ok(()),
+            Err(e) => return Err(e.into()),
+        };
+
+        let mut buf = vec![0u8; len as usize];
+        if let Err(e) = socket.read_exact(&mut buf).await {
+            if e.kind() == std::io::ErrorKind::UnexpectedEof {
+                return Ok(());
+            }
+            return Err(e.into());
         }
 
-        let batch = LogBatch::decode(&buf[..n])?;
+        let batch = LogBatch::decode(&buf[..])?;
         storage.add_logs(batch).await;
     }
-    Ok(())
 }
 
 async fn handle_tui_connection(socket: &mut TcpStream, storage: LogStorage) -> Result<(), Box<dyn std::error::Error>> {
