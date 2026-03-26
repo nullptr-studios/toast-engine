@@ -9,6 +9,11 @@
 #include "Toast/Physics/GravityType.hpp"
 
 #include <atomic>
+#include <functional>
+#include <list>
+#include <mutex>
+#include <queue>
+#include <thread>
 #include <glm/glm.hpp>
 
 namespace physics {
@@ -77,7 +82,7 @@ private:
 
 	void Tick();
 
-	void RigidbodyPhysics(Rigidbody* rb);
+	void RigidbodyPhysics(Rigidbody* rb, std::list<std::function<void()>>& localCallbacks);
 	void BoxPhysics(BoxRigidbody* rb);
 
 	struct M {
@@ -86,13 +91,10 @@ private:
 		std::list<Rigidbody*> colliding;
 
 		std::list<Rigidbody*> rigidbodies;
-		std::queue<Rigidbody*> rigidbodies_queue;
 		std::list<BoxRigidbody*> boxes;
-		std::queue<BoxRigidbody*> boxes_queue;
 		std::list<ConvexCollider*> colliders;
-		std::queue<ConvexCollider*> colliders_queue;
 		std::list<Trigger*> triggers;
-		std::queue<Trigger*> triggers_queue;
+		std::recursive_mutex simulationMutex;
 
 		GravityType gravityType = GravityType::DIRECTION;
 		glm::dvec2 gravityDirection = { 0.0, -9.81 };

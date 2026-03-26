@@ -68,6 +68,7 @@ bool GravityType::operator==(const GravityType& other) const {
 #pragma region START_AND_END
 
 PhysicsSystem* PhysicsSystem::instance = nullptr;
+static std::mutex g_threadLifecycleMutex;
 
 PhysicsSystem::PhysicsSystem() {
 	instance = this;
@@ -84,6 +85,7 @@ PhysicsSystem::PhysicsSystem() {
 }
 
 PhysicsSystem::~PhysicsSystem() {
+	std::lock_guard lock(g_threadLifecycleMutex);
 	instance = nullptr;
 }
 
@@ -97,6 +99,7 @@ auto PhysicsSystem::get() noexcept -> std::optional<PhysicsSystem*> {
 }
 
 void PhysicsSystem::start() {
+	std::lock_guard lock(g_threadLifecycleMutex);
 	auto i = PhysicsSystem::get();
 	if (!i.has_value()) {
 		return;
@@ -134,12 +137,15 @@ void PhysicsSystem::start() {
 		}
 
 		// When we stop the physics thread, restore rigidbody velocities
-		for (auto* rb : physics->m.rigidbodies) {
-			RbResetVelocity(rb);
-		}
+		{
+			std::lock_guard sim_lock(physics->m.simulationMutex);
+			for (auto* rb : physics->m.rigidbodies) {
+				RbResetVelocity(rb);
+			}
 
-		for (auto* rb : physics->m.boxes) {
-			BoxResetVelocity(rb);
+			for (auto* rb : physics->m.boxes) {
+				BoxResetVelocity(rb);
+			}
 		}
 
 		// TracyFiberLeave;
@@ -147,6 +153,7 @@ void PhysicsSystem::start() {
 }
 
 void PhysicsSystem::stop() {
+	std::lock_guard lock(g_threadLifecycleMutex);
 	auto i = PhysicsSystem::get();
 	if (!i.has_value()) {
 		return;
@@ -168,86 +175,38 @@ void PhysicsSystem::stop() {
 void PhysicsSystem::Tick() {
 	PROFILE_ZONE;
 
-	// Store previous positions for interpolation before physics step
-	for (auto* rb : m.rigidbodies) {
-		rb->StorePreviousPosition();
-	}
+	std::list<std::function<void()>> localCallbacks;
 
-	// Propagate the PhysTick down the object tree as first
-	toast::World::Instance()->PhysTick();
+	{
+		std::lock_guard sim_lock(m.simulationMutex);
 
-	// Handle Rigidbody physics
-	for (auto* rb : m.rigidbodies) {
-		RigidbodyPhysics(rb);
-	}
-
-	// Handle Box physics
-	for (auto* rb : m.boxes) {
-		BoxPhysics(rb);
-	}
-
-	// Handle adding the physics objects to the tickables
-	{ 
-		std::lock_guard(m.nigger_mutex);
-
-		auto is_in_list = [](auto* obj, auto& list) -> bool {
-			if (std::ranges::find(list, obj) != list.end()) {
-				return true;
-			}
-			return false;
-		};
-	
-		while (not m.rigidbodies_queue.empty()) { 
-			auto* rb = m.rigidbodies_queue.front();
-
-			if (is_in_list(rb, m.rigidbodies)) {
-				m.rigidbodies_queue.pop();
-				continue;
-			}
-
-			m.rigidbodies.emplace_back(rb);
-			m.rigidbodies_queue.pop();
+		// Store previous positions for interpolation before physics step
+		for (auto* rb : m.rigidbodies) {
+			rb->StorePreviousPosition();
 		}
 
-		while (not m.boxes_queue.empty()) {
-			auto* box = m.boxes_queue.front();
+		// Propagate the PhysTick down the object tree as first
+		toast::World::Instance()->PhysTick();
 
-			if (is_in_list(box, m.boxes)) {
-				m.boxes_queue.pop();
-				continue;
-			}
-
-			m.boxes.emplace_back(box);
-			m.boxes_queue.pop();
+		// Handle Rigidbody physics
+		for (auto* rb : m.rigidbodies) {
+			RigidbodyPhysics(rb, localCallbacks);
 		}
 
-		while (not m.colliders_queue.empty()) {
-			auto* collider = m.colliders_queue.front();
-
-			if (is_in_list(collider, m.colliders)) {
-				m.colliders_queue.pop();
-				continue;
-			}
-
-			m.colliders.emplace_back(collider);
-			m.colliders_queue.pop();
-		}
-
-		while (not m.triggers_queue.empty()) {
-			auto* t = m.triggers_queue.front();
-
-			if (is_in_list(t, m.triggers)) {
-				m.triggers_queue.pop();
-				continue;
-			}
-
-			m.triggers.emplace_back(t);
-			m.triggers_queue.pop();
+		// Handle Box physics
+		for (auto* rb : m.boxes) {
+			BoxPhysics(rb);
 		}
 	}
 
 	// Record the time of this physics step for interpolation
 	m.lastPhysicsTime.store(std::chrono::steady_clock::now(), std::memory_order_release);
+
+	// Append local callbacks to the global list after releasing the simulation lock
+	if (!localCallbacks.empty()) {
+		std::lock_guard lock(m.callbackMutex);
+		m.callbackList.splice(m.callbackList.end(), localCallbacks);
+	}
 }
 
 #pragma region HELPER_FUNCTIONS
@@ -257,14 +216,12 @@ void PhysicsSystem::AddRigidbody(Rigidbody* rb) {
 	if (!i.has_value()) {
 		return;
 	}
-	std::lock_guard((*i)->m.nigger_mutex);
-	auto& list = (*i)->m.rigidbodies_queue;
+	auto* physics = i.value();
+	std::lock_guard sim_lock(physics->m.simulationMutex);
 
-	// Return if the rigidbody is already registered on the list
-	//if (std::ranges::find(list, rb) != list.end()) {
-	//	return;
-	//}
-	list.emplace(rb);
+	if (std::ranges::find(physics->m.rigidbodies, rb) == physics->m.rigidbodies.end()) {
+		physics->m.rigidbodies.emplace_back(rb);
+	}
 }
 
 void PhysicsSystem::RemoveRigidbody(Rigidbody* rb) {
@@ -272,7 +229,11 @@ void PhysicsSystem::RemoveRigidbody(Rigidbody* rb) {
 	if (!i.has_value()) {
 		return;
 	}
-	(*i)->m.rigidbodies.remove(rb);
+	auto* physics = i.value();
+	std::lock_guard sim_lock(physics->m.simulationMutex);
+
+	physics->m.rigidbodies.remove(rb);
+	physics->m.colliding.remove(rb);
 }
 
 void PhysicsSystem::AddCollider(ConvexCollider* c) {
@@ -280,14 +241,12 @@ void PhysicsSystem::AddCollider(ConvexCollider* c) {
 	if (!i.has_value()) {
 		return;
 	}
-	std::lock_guard((*i)->m.nigger_mutex);
-	auto& list = (*i)->m.colliders_queue;
+	auto* physics = i.value();
+	std::lock_guard sim_lock(physics->m.simulationMutex);
 
-	// Return if the rigidbody is already registered on the list
-	//if (std::ranges::find(list, c) != list.end()) {
-	//	return;
-	//}
-	list.emplace(c);
+	if (std::ranges::find(physics->m.colliders, c) == physics->m.colliders.end()) {
+		physics->m.colliders.emplace_back(c);
+	}
 }
 
 void PhysicsSystem::RemoveCollider(ConvexCollider* c) {
@@ -295,7 +254,10 @@ void PhysicsSystem::RemoveCollider(ConvexCollider* c) {
 	if (!i.has_value()) {
 		return;
 	}
-	(*i)->m.colliders.remove(c);
+	auto* physics = i.value();
+	std::lock_guard sim_lock(physics->m.simulationMutex);
+
+	physics->m.colliders.remove(c);
 }
 
 void PhysicsSystem::AddTrigger(Trigger* t) {
@@ -303,14 +265,12 @@ void PhysicsSystem::AddTrigger(Trigger* t) {
 	if (!i.has_value()) {
 		return;
 	}
-	std::lock_guard((*i)->m.nigger_mutex);
-	auto& list = (*i)->m.triggers_queue;
+	auto* physics = i.value();
+	std::lock_guard sim_lock(physics->m.simulationMutex);
 
-	// Return if the rigidbody is already registered on the list
-	//if (std::ranges::find(list, t) != list.end()) {
-	//	return;
-	//}
-	list.emplace(t);
+	if (std::ranges::find(physics->m.triggers, t) == physics->m.triggers.end()) {
+		physics->m.triggers.emplace_back(t);
+	}
 }
 
 void PhysicsSystem::RemoveTrigger(Trigger* t) {
@@ -318,7 +278,10 @@ void PhysicsSystem::RemoveTrigger(Trigger* t) {
 	if (!i.has_value()) {
 		return;
 	}
-	(*i)->m.triggers.remove(t);
+	auto* physics = i.value();
+	std::lock_guard sim_lock(physics->m.simulationMutex);
+
+	physics->m.triggers.remove(t);
 }
 
 void PhysicsSystem::AddBox(BoxRigidbody* rb) {
@@ -326,14 +289,12 @@ void PhysicsSystem::AddBox(BoxRigidbody* rb) {
 	if (!i.has_value()) {
 		return;
 	}
-	std::lock_guard((*i)->m.nigger_mutex);
-	auto& list = (*i)->m.boxes_queue;
+	auto* physics = i.value();
+	std::lock_guard sim_lock(physics->m.simulationMutex);
 
-	// Return if the rigidbody is already registered on the list
-	//if (std::ranges::find(list, rb) != list.end()) {
-	//	return;
-	//}
-	list.emplace(rb);
+	if (std::ranges::find(physics->m.boxes, rb) == physics->m.boxes.end()) {
+		physics->m.boxes.emplace_back(rb);
+	}
 }
 
 void PhysicsSystem::RemoveBox(BoxRigidbody* rb) {
@@ -341,7 +302,10 @@ void PhysicsSystem::RemoveBox(BoxRigidbody* rb) {
 	if (!i.has_value()) {
 		return;
 	}
-	(*i)->m.boxes.remove(rb);
+	auto* physics = i.value();
+	std::lock_guard sim_lock(physics->m.simulationMutex);
+
+	physics->m.boxes.remove(rb);
 }
 
 auto PhysicsSystem::gravity_type() -> GravityType {
@@ -424,6 +388,7 @@ void PhysicsSystem::UpdateVisualInterpolation() {
 		return;
 	}
 	auto* physics = *i;
+	std::lock_guard sim_lock(physics->m.simulationMutex);
 
 	// Calculate time elapsed since last physics step
 	auto now = std::chrono::steady_clock::now();
@@ -451,7 +416,7 @@ double PhysicsSystem::GetFixedTimestep() {
 	return (*i)->m.targetFrametime.count();
 }
 
-void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
+void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb, std::list<std::function<void()>>& localCallbacks) {
 	if (not rb->enabled()) {
 		return;
 	}
@@ -474,16 +439,16 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 			RbRbResolution(rb, *it, manifold.value());
 
 			if (rb->enterCallback && rb->CanCallBack(*it)) {
-				std::lock_guard lock(m.callbackMutex);
-				m.callbackList.emplace_back([rb, it]() {
-					rb->enterCallback(*it);
+				auto* other = *it;
+				localCallbacks.emplace_back([rb, other]() {
+					rb->enterCallback(other);
 				});
 			}
 
 			if ((*it)->enterCallback && (*it)->CanCallBack(rb)) {
-				std::lock_guard lock(m.callbackMutex);
-				m.callbackList.emplace_back([rb, it]() {
-					(*it)->enterCallback(rb);
+				auto* other = *it;
+				localCallbacks.emplace_back([rb, other]() {
+					other->enterCallback(rb);
 				});
 			}
 
@@ -497,13 +462,19 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 		} else {
 			auto find = std::ranges::find(m.colliding, rb);
 			if (find != m.colliding.end()) {
-				rb->exitCallback(*it);
+				auto* other = *it;
+				localCallbacks.emplace_back([rb, other]() {
+					rb->exitCallback(other);
+				});
 				m.colliding.erase(find);
 			}
 
 			find = std::ranges::find(m.colliding, *it);
 			if (find != m.colliding.end()) {
-				(*it)->exitCallback(rb);
+				auto* other = *it;
+				localCallbacks.emplace_back([rb, other]() {
+					other->exitCallback(rb);
+				});
 				m.colliding.erase(find);
 			}
 		}
@@ -532,7 +503,7 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb) {
 			continue;
 		}
 
-		RbTriggerCollision(rb, t);
+		RbTriggerCollision(rb, t, localCallbacks);
 	}
 
 	// Final position integration
@@ -578,6 +549,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 		return std::nullopt;
 	}
 	auto* physics = get().value();
+	std::lock_guard sim_lock(physics->m.simulationMutex);
 
 	std::optional<RayResult> result = std::nullopt;
 	std::optional<dvec2> col_hit;
@@ -644,6 +616,7 @@ toast::Object* PhysicsSystem::PointCollision(glm::vec2 point, ColliderFlags flag
 		return nullptr;
 	}
 	auto* physics = get().value();
+	std::lock_guard sim_lock(physics->m.simulationMutex);
 
 	const dvec2 pt { point };
 
@@ -693,6 +666,7 @@ auto PhysicsSystem::GetAllRigidbodies() -> std::list<Rigidbody*>& {
 	auto i = PhysicsSystem::get();
 	// high cortison std::optional vs low cortison c assert
 	assert(i.has_value() && "Physics System does not exist");
+	std::lock_guard sim_lock(i.value()->m.simulationMutex);
 	return i.value()->m.rigidbodies;
 }
 
@@ -700,6 +674,7 @@ auto PhysicsSystem::GetAllCollidingRb() -> std::list<Rigidbody*>& {
 	auto i = PhysicsSystem::get();
 	// high cortison std::optional vs low cortison c assert
 	assert(i.has_value() && "Physics System does not exist");
+	std::lock_guard sim_lock(i.value()->m.simulationMutex);
 	return i.value()->m.colliding;
 }
 
