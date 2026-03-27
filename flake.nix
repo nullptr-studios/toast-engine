@@ -56,18 +56,60 @@
           libXext
           libXfixes
           libXinerama
+          libXrender
+          libxscrnsaver
+          libxxf86vm
+          libxtst
+          libunwind
+          libusb1
+          libdrm
+          mesa
+          dbus
+          ibus
+          udev
+          libdecor
           libGL
+          # Audio
+          alsa-lib
+          pulseaudio
+          pipewire
+          libsamplerate
         ] ++ ultralightDeps;
 
         shellHook = ''
+          # Ayuda a herramientas como clangd/clang-tidy a encontrar las cabeceras de C++ de Nix
           export CPLUS_INCLUDE_PATH="${pkgs.lib.makeSearchPathOutput "dev" "include" [ customStdenv.cc.cc ]}:${pkgs.lib.makeSearchPath "include" [ customStdenv.cc.cc ]}"
           
           export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath (with pkgs; [
             stdenv.cc.cc.lib
             libGL
+            libX11
+            libXcursor
+            libXrandr
+            libXi
+            libXext
+            libXfixes
+            libXinerama
+            libXrender
+            libxscrnsaver
+            libxxf86vm
+            libxtst
+            libunwind
+            libusb1
+            libdrm
+            mesa
+            dbus
+            ibus
+            udev
+            libdecor
+            alsa-lib
+            pulseaudio
+            pipewire
+            libsamplerate
           ] ++ ultralightDeps)}:$LD_LIBRARY_PATH"
           
           echo "gam250 environment loaded with $(clang --version | head -n1)"
+          echo "Clang-tidy location: $(which clang-tidy)"
         '';
       };
     };
