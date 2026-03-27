@@ -414,21 +414,24 @@ void OpenGLRenderer::Render() {
 	// Extract frustum planes for culling
 	OclussionVolume::extractFrustumPlanesNormalized(m_multipliedMatrix, m_frustumPlanes);
 
-	// The depth sort still runs every frame since object positions change each tick.
+	// Rebuild enabled renderables only when scene membership or enable-state changes.
 	if (m_renderablesSortDirty) {
-		// m.combinedRenderables.clear();
-		// for (auto* r : m_renderables) {
-		// 	if (r && m_disabledRenderables.find(r) == m_disabledRenderables.end()) {
-		// 		m.combinedRenderables.push_back(r);
-		// 	}
-		// }
-		//
-		// m_renderablesSortDirty = false;
+		m.combinedRenderables.clear();
+		m.combinedRenderables.reserve(m_renderables.size());
+		for (auto* r : m_renderables) {
+			if (r && m_disabledRenderables.find(r) == m_disabledRenderables.end()) {
+				m.combinedRenderables.push_back(r);
+			}
+		}
+		m_renderablesSortDirty = false;
 	}
 
-	std::stable_sort(m_renderables.begin(), m_renderables.end(), [](IRenderable* a, IRenderable* b) {
-		return a->GetDepth() < b->GetDepth();
-	});
+	// Depth can change every frame, so keep sort per-frame but only for enabled list.
+	if (m.combinedRenderables.size() > 1) {
+		std::stable_sort(m.combinedRenderables.begin(), m.combinedRenderables.end(), [](IRenderable* a, IRenderable* b) {
+			return a->GetDepth() < b->GetDepth();
+		});
+	}
 
 	OcclusionPass();
 	CHECK_GL();
@@ -445,12 +448,6 @@ void OpenGLRenderer::Render() {
 	PostProcessPass();
 	// CombinedRenderPass();
 	CHECK_GL();
-
-	// Render game/editor layers directly into the output framebuffer (HUD layers still render into their own FBOs)
-	m_outputFramebuffer->bind();
-	// ensure viewport/scissor match output
-	glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
-	glScissor(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
 
 	// Render non-HUD editor/game layers into a dedicated layer framebuffer
 	// Clear HUD layer framebuffers first to avoid persistence/smearing if a HUD view didn't draw pixels this frame
@@ -478,7 +475,9 @@ void OpenGLRenderer::Render() {
 	glDepthFunc(GL_LEQUAL);
 
 	// Render layers; HUD layers will still render into their own FBOs
-	m.layerStack->RenderLayers();
+	if (m.layerStack) {
+		m.layerStack->RenderLayers();
+	}
 	Framebuffer::unbind();
 
 	// Composite layer framebuffer over the combined output (alpha blend)
@@ -565,8 +564,8 @@ void OpenGLRenderer::GeometryPass() {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	Clear();
 
-	// Render only enabled renderables — no enabled() check needed inside OnRender
-	for (auto* r : m_renderables) {
+	// Render only enabled renderables.
+	for (auto* r : m.combinedRenderables) {
 		r->OnRender(renderer::IRenderablePass::GEOMETRY, m_multipliedMatrix);
 	}
 }
@@ -585,7 +584,7 @@ void OpenGLRenderer::OcclusionPass() {
 
 	glDisable(GL_BLEND);
 
-	for (auto* r : m_renderables) {
+	for (auto* r : m.combinedRenderables) {
 		r->OnRender(renderer::IRenderablePass::OCCLUSION, m_multipliedMatrix);
 	}
 	for (auto* r : m_transparentRenderables) {
@@ -894,6 +893,9 @@ void OpenGLRenderer::Resize(glm::uvec2 size) {
 }
 
 void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
+	if (!renderable) {
+		return;
+	}
 	m_renderables.push_back(renderable);
 	m_renderablesSortDirty = true;
 }
@@ -1062,46 +1064,44 @@ void OpenGLRenderer::HUDPass() {
 		return;
 	}
 
-	// Collect all HUD layers from the layer stack
-	std::vector<HUD::HUDLayer*> hudLayers;
+	bool anyHudDrawn = false;
 	for (auto* layer : m.layerStack->GetLayers()) {
-		if (auto* hud = dynamic_cast<HUD::HUDLayer*>(layer)) {
-			if (hud->GetFramebuffer()) {
-				hudLayers.push_back(hud);
-			}
+		auto* hud = dynamic_cast<HUD::HUDLayer*>(layer);
+		if (!hud || !hud->GetFramebuffer()) {
+			continue;
 		}
-	}
 
-	if (hudLayers.empty()) {
-		return;
-	}
-
-	// Composite each HUD framebuffer onto the output using alpha blending (over operation)
-	m_outputFramebuffer->bind();
-	// Ensure draw to attachment 0
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-	glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
-	glScissor(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
-
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	// Ultralight renders with straight (un-premultiplied) alpha
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	m.screenShader->Use();
-
-	for (auto* hud : hudLayers) {
 		GLuint hudTex = hud->GetFramebuffer()->GetColorTexture(0);
 		if (hudTex == 0) {
 			continue;
 		}
+
+		if (!anyHudDrawn) {
+			// Composite each HUD framebuffer onto the output using alpha blending (over operation)
+			m_outputFramebuffer->bind();
+			glDrawBuffer(GL_COLOR_ATTACHMENT0);
+			glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
+			glScissor(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
+
+			glDisable(GL_DEPTH_TEST);
+			glEnable(GL_BLEND);
+			// Ultralight renders with straight (un-premultiplied) alpha
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+			m.screenShader->Use();
+		}
+
+		anyHudDrawn = true;
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, hudTex);
 		m.screenShader->SetSampler("screenTexture", 0);
 
 		m.quad->Draw();
+	}
+
+	if (!anyHudDrawn) {
+		return;
 	}
 
 	// Restore state

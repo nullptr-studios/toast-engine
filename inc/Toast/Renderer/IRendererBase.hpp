@@ -99,13 +99,15 @@ public:
 	virtual void RemoveRenderable(IRenderable* renderable) = 0;
 
 	virtual void DisableRenderable(IRenderable* renderable) {
-		m_disabledRenderables.insert(renderable);
-		m_renderablesSortDirty = true;
+		if (m_disabledRenderables.insert(renderable).second) {
+			m_renderablesSortDirty = true;
+		}
 	}
 
 	virtual void EnableRenderable(IRenderable* renderable) {
-		m_disabledRenderables.erase(renderable);
-		m_renderablesSortDirty = true;
+		if (m_disabledRenderables.erase(renderable) > 0) {
+			m_renderablesSortDirty = true;
+		}
 	}
 
 	/// @brief Adds a 2D light to the lighting system
