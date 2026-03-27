@@ -11,6 +11,7 @@
 
 #include <Toast/Log.hpp>
 #include <Toast/Profiler.hpp>
+#include <SDL3/SDL.h>
 #include <Ultralight/platform/Platform.h>
 #include <cstring>
 #include <iostream>
@@ -85,7 +86,7 @@ inline std::string GetProgramLog(GLuint program_id) {
 
 static GLuint LoadShaderFromSource(GLenum shader_type, const char* source, const char* name) {
 	// Check that we have a valid GL context
-	if (!glfwGetCurrentContext()) {
+	if (!SDL_GL_GetCurrentContext()) {
 		GPU_FATAL("No GL context current when loading shader: " << name);
 	}
 
@@ -143,7 +144,7 @@ void ToastGPUDriver::CreateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
 	// Ensure correct GL context is current
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	// CHECK_GL();
 
@@ -214,7 +215,7 @@ void ToastGPUDriver::UpdateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
 	// Ensure correct GL context is current
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	glActiveTexture(GL_TEXTURE0);
 	auto it = texture_map_.find(texture_id);
@@ -328,7 +329,7 @@ void ToastGPUDriver::DestroyTexture(uint32_t texture_id) {
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
 	// Ensure correct GL context is current
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	TextureEntry& entry = texture_map_[texture_id];
 	glDeleteTextures(1, &entry.tex_id);
@@ -357,7 +358,7 @@ void ToastGPUDriver::CreateRenderBuffer(uint32_t render_buffer_id, const ultrali
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
 	// Ensure correct GL context is current
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	if (render_buffer_id == 0) {
 		return;    // Render Buffer ID 0 is reserved for default framebuffer
@@ -380,7 +381,7 @@ void ToastGPUDriver::BindRenderBuffer(uint32_t render_buffer_id) {
 
 	RenderBufferEntry& entry = render_buffer_map_[render_buffer_id];
 
-	auto i = entry.fbo_map.find(glfwGetCurrentContext());
+	auto i = entry.fbo_map.find(SDL_GL_GetCurrentWindow());
 	if (i == entry.fbo_map.end()) {
 		return;
 	}
@@ -398,7 +399,7 @@ void ToastGPUDriver::BindRenderBuffer(uint32_t render_buffer_id) {
 }
 
 void ToastGPUDriver::ClearRenderBuffer(uint32_t render_buffer_id) {
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	BindRenderBuffer(render_buffer_id);
 	glDisable(GL_SCISSOR_TEST);
@@ -416,11 +417,12 @@ void ToastGPUDriver::DestroyRenderBuffer(uint32_t render_buffer_id) {
 		return;
 	}
 
-	auto previous_context = glfwGetCurrentContext();
+	auto* previous_window = SDL_GL_GetCurrentWindow();
+	auto previous_context = SDL_GL_GetCurrentContext();
 
 	RenderBufferEntry& entry = render_buffer_map_[render_buffer_id];
 	for (auto& [context, fbo_entry] : entry.fbo_map) {
-		glfwMakeContextCurrent(context);
+		SDL_GL_MakeCurrent(context, previous_context);
 		glDeleteFramebuffers(1, &fbo_entry.fbo_id);
 		// CHECK_GL();
 		if (context_->msaa_enabled()) {
@@ -437,14 +439,14 @@ void ToastGPUDriver::DestroyRenderBuffer(uint32_t render_buffer_id) {
 	// CHECK_GL();
 	render_buffer_map_.erase(render_buffer_id);
 
-	glfwMakeContextCurrent(previous_context);
+	SDL_GL_MakeCurrent(previous_window, previous_context);
 }
 
 void ToastGPUDriver::CreateGeometry(uint32_t geometry_id, const ultralight::VertexBuffer& vertices, const ultralight::IndexBuffer& indices) {
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
 	// Ensure correct GL context is current
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	GeometryEntry geometry;
 	geometry.vertex_format = vertices.format;
@@ -466,7 +468,7 @@ void ToastGPUDriver::UpdateGeometry(uint32_t geometry_id, const ultralight::Vert
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
 	// Ensure correct GL context is current
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	GeometryEntry& geometry = geometry_map_[geometry_id];
 	// CHECK_GL();
@@ -487,10 +489,11 @@ void ToastGPUDriver::DestroyGeometry(uint32_t geometry_id) {
 	glDeleteBuffers(1, &geometry.vbo_vertices);
 	// CHECK_GL();
 
-	auto previous_context = glfwGetCurrentContext();
+	auto* previous_window = SDL_GL_GetCurrentWindow();
+	auto previous_context = SDL_GL_GetCurrentContext();
 
 	for (auto& [context, vao_entry] : geometry.vao_map) {
-		glfwMakeContextCurrent(context);
+		SDL_GL_MakeCurrent(context, previous_context);
 		glDeleteVertexArrays(1, &vao_entry);
 		// CHECK_GL();
 	}
@@ -498,7 +501,7 @@ void ToastGPUDriver::DestroyGeometry(uint32_t geometry_id) {
 	// CHECK_GL();
 	geometry_map_.erase(geometry_id);
 
-	glfwMakeContextCurrent(previous_context);
+	SDL_GL_MakeCurrent(previous_window, previous_context);
 }
 
 GLuint ToastGPUDriver::GetTextureGL(uint32_t ultralight_texture_id) const {
@@ -545,7 +548,7 @@ void ToastGPUDriver::DrawCommandList() {
 	  command_list_.clear();
 	}*/
 
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	// CHECK_GL();
 
@@ -577,7 +580,7 @@ void ToastGPUDriver::DrawCommandList() {
 void ToastGPUDriver::DrawGeometry(uint32_t geometry_id, uint32_t indices_count, uint32_t indices_offset, const ultralight::GPUState& state) {
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	if (programs_.empty()) {
 		LoadPrograms();
@@ -594,7 +597,7 @@ void ToastGPUDriver::DrawGeometry(uint32_t geometry_id, uint32_t indices_count, 
 	// CHECK_GL();
 
 	CreateVAOIfNeededForActiveContext(geometry_id);
-	auto vao_entry = geometry.vao_map[glfwGetCurrentContext()];
+	auto vao_entry = geometry.vao_map[SDL_GL_GetCurrentWindow()];
 	glBindVertexArray(vao_entry);
 	// CHECK_GL();
 
@@ -715,7 +718,7 @@ void ToastGPUDriver::UpdateUniforms(const ultralight::GPUState& state) {
 	    ApplyProjection(state.transform, static_cast<float>(state.viewport_width), static_cast<float>(state.viewport_height), flip_y);
 
 	float params[4] = {
-		static_cast<float>(glfwGetTime() / 1000.0), static_cast<float>(state.viewport_width), static_cast<float>(state.viewport_height), 1.0f
+		static_cast<float>(SDL_GetTicks() / 1000.0), static_cast<float>(state.viewport_width), static_cast<float>(state.viewport_height), 1.0f
 	};
 	SetUniform4f("State", params);
 	// CHECK_GL();
@@ -827,12 +830,12 @@ void ToastGPUDriver::CreateFBOIfNeededForActiveContext(uint32_t render_buffer_id
 	}
 
 	RenderBufferEntry& entry = i->second;
-	auto j = entry.fbo_map.find(glfwGetCurrentContext());
+	auto j = entry.fbo_map.find(SDL_GL_GetCurrentWindow());
 	if (j != entry.fbo_map.end()) {
 		return;    // Already exists
 	}
 
-	FBOEntry& fbo_entry = entry.fbo_map[glfwGetCurrentContext()];
+	FBOEntry& fbo_entry = entry.fbo_map[SDL_GL_GetCurrentWindow()];
 
 	glGenFramebuffers(1, &fbo_entry.fbo_id);
 	// CHECK_GL();
@@ -890,7 +893,7 @@ void ToastGPUDriver::CreateVAOIfNeededForActiveContext(uint32_t geometry_id) {
 
 	auto& geometry_entry = i->second;
 
-	auto j = geometry_entry.vao_map.find(glfwGetCurrentContext());
+	auto j = geometry_entry.vao_map.find(SDL_GL_GetCurrentWindow());
 	if (j != geometry_entry.vao_map.end()) {
 		return;    // Already exists
 	}
@@ -944,7 +947,7 @@ void ToastGPUDriver::CreateVAOIfNeededForActiveContext(uint32_t geometry_id) {
 
 	glBindVertexArray(0);
 
-	geometry_entry.vao_map[glfwGetCurrentContext()] = vao_entry;
+	geometry_entry.vao_map[SDL_GL_GetCurrentWindow()] = vao_entry;
 }
 
 void ToastGPUDriver::ResolveIfNeeded(uint32_t render_buffer_id) {
@@ -966,7 +969,7 @@ void ToastGPUDriver::ResolveIfNeeded(uint32_t render_buffer_id) {
 		return;
 	}
 
-	auto i = renderBufferEntry.fbo_map.find(glfwGetCurrentContext());
+	auto i = renderBufferEntry.fbo_map.find(SDL_GL_GetCurrentWindow());
 	if (i == renderBufferEntry.fbo_map.end()) {
 		return;
 	}

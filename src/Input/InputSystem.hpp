@@ -7,6 +7,7 @@
 #include "Toast/Input/InputListener.hpp"
 #include "Toast/Input/Layout.hpp"
 #include "Toast/Window/WindowEvents.hpp"
+#include <SDL3/SDL_gamepad.h>
 
 #include <algorithm>
 #include <array>
@@ -16,8 +17,11 @@
 namespace input {
 
 struct GamepadState {
-	GLFWgamepadstate current;
-	GLFWgamepadstate previous;
+	SDL_Gamepad* handle = nullptr;
+	std::array<bool, SDL_GAMEPAD_BUTTON_COUNT> currentButtons {};
+	std::array<bool, SDL_GAMEPAD_BUTTON_COUNT> previousButtons {};
+	std::array<float, SDL_GAMEPAD_AXIS_COUNT> currentAxes {};
+	std::array<float, SDL_GAMEPAD_AXIS_COUNT> previousAxes {};
 };
 
 class InputSystem {
@@ -112,7 +116,7 @@ private:
 	// Controller
 	void PollControllers();
 	void ControllerButton(int id, bool value);
-	void ControllerAxis(int id, const std::array<float, 6>& axes);
+	void ControllerAxis(int id, const std::array<float, SDL_GAMEPAD_AXIS_COUNT>& axes);
 
 	struct M {
 		std::vector<Layout> layouts;
