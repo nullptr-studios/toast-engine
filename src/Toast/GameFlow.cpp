@@ -50,7 +50,7 @@ GameFlow::GameFlow() {
 	});
 	listener.Subscribe<toast::LoadLevel>([this](toast::LoadLevel* e) {
 		this->LoadLevel(e->world, e->level);
-    
+
 		return true;
 	});
 	listener.Subscribe<toast::NextWorld>([this](auto* _) {
@@ -61,7 +61,7 @@ GameFlow::GameFlow() {
 		[](GameFlow& flow) -> toast::CoroutineTask {
 			renderer::HUD::HUDLayer::Get()->ExecuteJS("fadeIn()");
 			co_await toast::WaitSeconds(0.6f);
-      flow.NextLevel();
+			flow.NextLevel();
 			co_await toast::WaitSeconds(0.1f);
 			renderer::HUD::HUDLayer::Get()->ExecuteJS("fadeOut()");
 		}(*this);

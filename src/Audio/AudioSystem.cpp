@@ -38,7 +38,11 @@ void audio::AudioSystem::Init() {
 	ERRCHECK(m.low_level_system->set3DSettings(1.0, DISTANCE_FACTOR, 0.5f));
 
 	// live-update while on debug
+#ifdef TOAST_EDITOR
+	ERRCHECK(m.studio_system->initialize(MAX_AUDIO_CHANNELS, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_NORMAL, 0));
+#else
 	ERRCHECK(m.studio_system->initialize(MAX_AUDIO_CHANNELS, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, 0));
+#endif
 
 	ERRCHECK(m.low_level_system->getMasterChannelGroup(&m.master_group));
 	initialize_reverb();
