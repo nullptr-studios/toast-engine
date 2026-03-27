@@ -137,13 +137,15 @@ void Collider::CalculatePoints() {
 
 		glm::vec2 t = glm::normalize(*next - *it);
 
-		m.edges.emplace_back(Line {
-		  .p1 = *it,
-		  .p2 = *next,
-		  .normal = { -t.y, t.x },
-		  .tangent = t,
-		  .length = glm::distance(*it, *next),
-		});
+		m.edges.emplace_back(
+		    Line {
+		      .p1 = *it,
+		      .p2 = *next,
+		      .normal = { -t.y, t.x },
+		      .tangent = t,
+		      .length = glm::distance(*it, *next),
+    }
+		);
 
 		++it;
 	}

@@ -966,9 +966,7 @@ void HUDLayer::SetViewSortOrder(const ultralight::RefPtr<ultralight::View>& view
 
 void HUDLayer::SortViewsByOrder() {
 	std::stable_sort(
-	    views_.begin(),
-	    views_.end(),
-	    [this](const ultralight::RefPtr<ultralight::View>& a, const ultralight::RefPtr<ultralight::View>& b) {
+	    views_.begin(), views_.end(), [this](const ultralight::RefPtr<ultralight::View>& a, const ultralight::RefPtr<ultralight::View>& b) {
 		    int oa = 0, ob = 0;
 		    auto itA = view_sort_orders_.find(a.get());
 		    auto itB = view_sort_orders_.find(b.get());

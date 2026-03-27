@@ -128,11 +128,13 @@ void physics::ColliderRenderable::SendVertices(std::vector<glm::vec3>& points) {
 	CalculateBoundingBox();
 
 	for (const auto& point : m.points) {
-		m.vertices.emplace_back(renderer::SpineVertex {
-		  .position = glm::vec3 { point.x, point.y, 0.0 },
-         .texCoord = { 0.0, 0.0 },
-         .colorABGR = 0xFFFFFFFF
-    });
+		m.vertices.emplace_back(
+		    renderer::SpineVertex {
+		      .position = glm::vec3 { point.x, point.y, 0.0 },
+             .texCoord = { 0.0, 0.0 },
+             .colorABGR = 0xFFFFFFFF
+    }
+		);
 	}
 
 	m.mesh.UpdateDynamicSpine(m.vertices.data(), m.vertices.size(), m.indices.data(), m.indices.size());
@@ -171,25 +173,33 @@ void physics::ColliderRenderable::SendVertices(std::vector<glm::vec3>& points) {
 				glm::vec3 offset_pos = normal3d * m.topOffset;
 
 				// V0: Bottom Left
-				m.topVertices.emplace_back(renderer::SpineVertex {
-				  .position = p1 + offset_pos, .texCoord = { current_distance, 0.0f },
-                 .colorABGR = 0xFFFFFFFF
-        });
+				m.topVertices.emplace_back(
+				    renderer::SpineVertex {
+				      .position = p1 + offset_pos, .texCoord = { current_distance, 0.0f },
+                     .colorABGR = 0xFFFFFFFF
+        }
+				);
 				// V1: Bottom Right
-				m.topVertices.emplace_back(renderer::SpineVertex {
-				  .position = p2 + offset_pos, .texCoord = { next_distance, 0.0f },
-                 .colorABGR = 0xFFFFFFFF
-        });
+				m.topVertices.emplace_back(
+				    renderer::SpineVertex {
+				      .position = p2 + offset_pos, .texCoord = { next_distance, 0.0f },
+                     .colorABGR = 0xFFFFFFFF
+        }
+				);
 				// V2: Top Right
-				m.topVertices.emplace_back(renderer::SpineVertex {
-				  .position = (p2 + offset_pos) + normal3d * m.topHeight, .texCoord = { next_distance, 1.0f },
-                     .colorABGR = 0xFFFFFFFF
-        });
+				m.topVertices.emplace_back(
+				    renderer::SpineVertex {
+				      .position = (p2 + offset_pos) + normal3d * m.topHeight, .texCoord = { next_distance, 1.0f },
+                         .colorABGR = 0xFFFFFFFF
+        }
+				);
 				// V3: Top Left
-				m.topVertices.emplace_back(renderer::SpineVertex {
-				  .position = (p1 + offset_pos) + normal3d * m.topHeight, .texCoord = { current_distance, 1.0f },
-                     .colorABGR = 0xFFFFFFFF
-        });
+				m.topVertices.emplace_back(
+				    renderer::SpineVertex {
+				      .position = (p1 + offset_pos) + normal3d * m.topHeight, .texCoord = { current_distance, 1.0f },
+                         .colorABGR = 0xFFFFFFFF
+        }
+				);
 
 				m.topIndices.push_back(base_idx + 0);
 				m.topIndices.push_back(base_idx + 1);

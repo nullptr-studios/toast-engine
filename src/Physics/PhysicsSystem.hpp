@@ -10,11 +10,11 @@
 
 #include <atomic>
 #include <functional>
+#include <glm/glm.hpp>
 #include <list>
 #include <mutex>
 #include <queue>
 #include <thread>
-#include <glm/glm.hpp>
 
 namespace physics {
 struct RayResult;
