@@ -40,7 +40,7 @@ public:
 
 	void AddRenderable(IRenderable* renderable) override;
 	void RemoveRenderable(IRenderable* renderable) override;
-	
+
 	void AddLight(Light2D* light) override;
 	void RemoveLight(Light2D* light) override;
 

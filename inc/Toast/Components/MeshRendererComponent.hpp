@@ -110,7 +110,7 @@ private:
 	std::shared_ptr<renderer::Shader> m_occlusionShader;
 
 	bool m_isOccluder = false;
-	
+
 	bool m_drawToDepth = true;
 
 	// Per-instance vertex color (rgba) used when mesh doesn't provide per-vertex colors

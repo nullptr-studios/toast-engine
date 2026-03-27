@@ -39,7 +39,7 @@ void MeshRendererComponent::Load(json_t j, bool force_create) {
 	if (j.contains("isOccluder")) {
 		m_isOccluder = j.at("isOccluder").get<bool>();
 	}
-	
+
 	if (j.contains("drawToDepth")) {
 		m_drawToDepth = j.at("drawToDepth").get<bool>();
 	}
@@ -137,7 +137,7 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 	if (m_material->GetShader() == nullptr || m_mesh == nullptr) {
 		return;
 	}
-	
+
 	if (pass == renderer::IRenderablePass::OCCLUSION) {
 		if (!m_isOccluder) {
 			return;
@@ -145,7 +145,6 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 	}
 
 	PROFILE_ZONE;
-	
 
 	// compute transform once
 	const glm::mat4 model = GetWorldMatrix();
@@ -166,14 +165,13 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 		// m_texture->Unbind();
 		// m_shader->unuse();
 	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
-
 		m_occlusionShader->Use();
 		m_occlusionShader->Set("gWorld", model);
 
 		// set generic transform uniform
 		m_occlusionShader->Set("gMVP", mvp);
 	}
-	
+
 	if (m_drawToDepth) {
 		glDepthMask(GL_TRUE);
 	} else {

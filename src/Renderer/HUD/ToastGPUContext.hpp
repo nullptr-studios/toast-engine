@@ -5,9 +5,9 @@
 
 #pragma once
 
+#include <SDL3/SDL_video.h>
 #include <Ultralight/platform/Config.h>
 #include <Ultralight/platform/GPUDriver.h>
-#include <SDL3/SDL_video.h>
 #include <memory>
 
 #define ENABLE_OFFSCREEN_GL 0

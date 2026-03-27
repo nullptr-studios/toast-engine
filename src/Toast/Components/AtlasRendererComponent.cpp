@@ -109,7 +109,6 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 
 	// Clear buffers for this frame
 	if (pass == renderer::IRenderablePass::OCCLUSION) {
-		
 		m.isOnScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f));
 		if (!m.isOccluder) {
 			return;    // Skip occlusion pass if not an occluder
@@ -127,8 +126,6 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		m.shader->Use();
 		m.shader->Set("transform", mvp);
 	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
-
-
 		m.occlusionShader->Use();
 		m.occlusionShader->Set("gWorld", GetWorldMatrix());
 
@@ -193,7 +190,7 @@ json_t AtlasRendererComponent::Save() const {
 	j["atlasResourcePath"] = m.atlasPath;
 	j["isOccluder"] = m.isOccluder;
 	j["drawToDepth"] = m.drawToDepth;
-	
+
 	return j;
 }
 
@@ -447,7 +444,6 @@ void AtlasRendererComponent::Inspector() {
 
 	ImGui::Checkbox("Is Occluder", &m.isOccluder);
 	ImGui::Checkbox("Draw to depth", &m.drawToDepth);
-	
 
 	/////////////// Browser ///////////////
 

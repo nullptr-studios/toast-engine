@@ -136,7 +136,7 @@ public:
 	Framebuffer* GetGeometryFramebuffer() const noexcept {
 		return m_geometryFramebuffer;
 	}
-	
+
 	Framebuffer* GetLightFramebuffer() const noexcept {
 		return m_lightFramebuffer;
 	}
@@ -351,7 +351,7 @@ public:
 	void SetShadowRaymarchSteps(unsigned steps) noexcept {
 		m_config.shadowRaymarchSteps = std::clamp(steps, 1u, 256u);
 	}
-	
+
 	void SetLightResolutionScale(float scale) noexcept {
 		m_config.lightResolutionScale = std::max(0.01f, scale);
 	}
@@ -406,7 +406,7 @@ protected:
 	/// @note These are owned by the derived renderer implementation
 	Framebuffer* m_geometryFramebuffer = nullptr;    ///< G-buffer for deferred rendering (optional)
 	Framebuffer* m_lightFramebuffer = nullptr;       ///< Light accumulation buffer (optional)
-	Framebuffer* m_outputFramebuffer = nullptr;    ///< Final output framebuffer (required)
+	Framebuffer* m_outputFramebuffer = nullptr;      ///< Final output framebuffer (required)
 
 	// ========== Camera ==========
 	toast::Camera* m_activeCamera = nullptr;    ///< Currently active camera for rendering
@@ -430,7 +430,7 @@ protected:
 
 	// ========== Global Light ==========
 	glm::vec3 m_globalLightColor = glm::vec3(1.0f);    ///< Color of the global ambient light
-	float m_globalLightIntensity = 0.7f;                ///< Intensity of the global
+	float m_globalLightIntensity = 0.7f;               ///< Intensity of the global
 
 	bool m_globalLightEnabled = true;                  ///< Whether global light is enabled
 

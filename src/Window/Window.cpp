@@ -30,12 +30,11 @@ unsigned DecodeUTF8Codepoint(const char* text, int& consumed) {
 	}
 	if ((c0 & 0xF0u) == 0xE0u) {
 		consumed = 3;
-		return ((c0 & 0x0Fu) << 12) | ((static_cast<unsigned char>(text[1]) & 0x3Fu) << 6) |
-		       (static_cast<unsigned char>(text[2]) & 0x3Fu);
+		return ((c0 & 0x0Fu) << 12) | ((static_cast<unsigned char>(text[1]) & 0x3Fu) << 6) | (static_cast<unsigned char>(text[2]) & 0x3Fu);
 	}
 	consumed = 4;
-	return ((c0 & 0x07u) << 18) | ((static_cast<unsigned char>(text[1]) & 0x3Fu) << 12) |
-	       ((static_cast<unsigned char>(text[2]) & 0x3Fu) << 6) | (static_cast<unsigned char>(text[3]) & 0x3Fu);
+	return ((c0 & 0x07u) << 18) | ((static_cast<unsigned char>(text[1]) & 0x3Fu) << 12) | ((static_cast<unsigned char>(text[2]) & 0x3Fu) << 6) |
+	       (static_cast<unsigned char>(text[3]) & 0x3Fu);
 }
 }
 
@@ -67,10 +66,7 @@ Window::Window(unsigned width, unsigned height, std::string_view name) {
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
 	m_sdlWindow = SDL_CreateWindow(
-	    name.data(),
-	    static_cast<int>(width),
-	    static_cast<int>(height),
-	    SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY
+	    name.data(), static_cast<int>(width), static_cast<int>(height), SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY
 	);
 	if (!m_sdlWindow) {
 		throw WindowException(-1, SDL_GetError());
@@ -139,9 +135,7 @@ void Window::PollEventsOnly() {
 		ImGui_ImplSDL3_ProcessEvent(&ev);
 #endif
 		switch (ev.type) {
-			case SDL_EVENT_QUIT:
-				m_shouldClose = true;
-				break;
+			case SDL_EVENT_QUIT: m_shouldClose = true; break;
 			case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
 				if (ev.window.windowID == SDL_GetWindowID(m_sdlWindow)) {
 					m_shouldClose = true;
@@ -149,15 +143,9 @@ void Window::PollEventsOnly() {
 				break;
 			case SDL_EVENT_KEY_DOWN:
 			case SDL_EVENT_KEY_UP: {
-				const int action = (ev.type == SDL_EVENT_KEY_UP)
-				                       ? event::WINDOW_INPUT_RELEASED
-				                       : (ev.key.repeat ? event::WINDOW_INPUT_REPEATED : event::WINDOW_INPUT_PRESSED);
-				event::WindowKey::Callback(
-				    static_cast<int>(ev.key.key),
-				    static_cast<int>(ev.key.scancode),
-				    action,
-				    static_cast<int>(SDL_GetModState())
-				);
+				const int action = (ev.type == SDL_EVENT_KEY_UP) ? event::WINDOW_INPUT_RELEASED
+				                                                 : (ev.key.repeat ? event::WINDOW_INPUT_REPEATED : event::WINDOW_INPUT_PRESSED);
+				event::WindowKey::Callback(static_cast<int>(ev.key.key), static_cast<int>(ev.key.scancode), action, static_cast<int>(SDL_GetModState()));
 				break;
 			}
 			case SDL_EVENT_TEXT_INPUT: {
@@ -174,18 +162,14 @@ void Window::PollEventsOnly() {
 				}
 				break;
 			}
-			case SDL_EVENT_MOUSE_MOTION:
-				event::WindowMousePosition::Callback(ev.motion.x, ev.motion.y);
-				break;
+			case SDL_EVENT_MOUSE_MOTION: event::WindowMousePosition::Callback(ev.motion.x, ev.motion.y); break;
 			case SDL_EVENT_MOUSE_BUTTON_DOWN:
 			case SDL_EVENT_MOUSE_BUTTON_UP: {
 				const int action = (ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN) ? event::WINDOW_INPUT_PRESSED : event::WINDOW_INPUT_RELEASED;
 				event::WindowMouseButton::Callback(static_cast<int>(ev.button.button), action, static_cast<int>(SDL_GetModState()));
 				break;
 			}
-			case SDL_EVENT_MOUSE_WHEEL:
-				event::WindowMouseScroll::Callback(ev.wheel.x, ev.wheel.y);
-				break;
+			case SDL_EVENT_MOUSE_WHEEL: event::WindowMouseScroll::Callback(ev.wheel.x, ev.wheel.y); break;
 			case SDL_EVENT_GAMEPAD_ADDED:
 				event::WindowInputDevice::Callback(static_cast<int>(ev.gdevice.which), event::WINDOW_INPUT_DEVICE_CONNECTED);
 				break;

@@ -40,11 +40,18 @@ constexpr unsigned MOUSE_DELTA_CODE = -5;
 
 static void trim_inplace(std::string& s) {
 	s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-		return !std::isspace(ch);
-	}));
-	s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-		return !std::isspace(ch);
-	}).base(), s.end());
+		        return !std::isspace(ch);
+	        }));
+	s.erase(
+	    std::find_if(
+	        s.rbegin(),
+	        s.rend(),
+	        [](unsigned char ch) {
+		        return !std::isspace(ch);
+	        }
+	    ).base(),
+	    s.end()
+	);
 }
 
 static std::string to_lower_copy(std::string s) {
@@ -164,68 +171,68 @@ inline auto KeyboardKeycodeFromString(std::string& str) -> std::optional<int> {
 	}
 
 	static const std::unordered_map<std::string, SDL_Keycode> map {
-		{ "space", SDLK_SPACE },
-		{ "enter", SDLK_RETURN },
-		{ "return", SDLK_RETURN },
-		{ "tab", SDLK_TAB },
-		{ "backspace", SDLK_BACKSPACE },
-		{ "escape", SDLK_ESCAPE },
-		{ "esc", SDLK_ESCAPE },
-		{ "insert", SDLK_INSERT },
-		{ "delete", SDLK_DELETE },
-		{ "home", SDLK_HOME },
-		{ "end", SDLK_END },
-		{ "page_up", SDLK_PAGEUP },
-		{ "page_down", SDLK_PAGEDOWN },
-		{ "up", SDLK_UP },
-		{ "down", SDLK_DOWN },
-		{ "left", SDLK_LEFT },
-		{ "right", SDLK_RIGHT },
-		{ "left_shift", SDLK_LSHIFT },
-		{ "right_shift", SDLK_RSHIFT },
-		{ "left_control", SDLK_LCTRL },
-		{ "right_control", SDLK_RCTRL },
-		{ "left_ctrl", SDLK_LCTRL },
-		{ "right_ctrl", SDLK_RCTRL },
-		{ "left_alt", SDLK_LALT },
-		{ "right_alt", SDLK_RALT },
-		{ "left_super", SDLK_LGUI },
-		{ "right_super", SDLK_RGUI },
-		{ "caps_lock", SDLK_CAPSLOCK },
-		{ "scroll_lock", SDLK_SCROLLLOCK },
-		{ "num_lock", SDLK_NUMLOCKCLEAR },
-		{ "menu", SDLK_MENU },
-		{ "left_bracket", SDLK_LEFTBRACKET },
+		{		     "space",        SDLK_SPACE },
+		{		     "enter",       SDLK_RETURN },
+		{		    "return",       SDLK_RETURN },
+		{		       "tab",          SDLK_TAB },
+		{     "backspace",    SDLK_BACKSPACE },
+		{		    "escape",       SDLK_ESCAPE },
+		{		       "esc",       SDLK_ESCAPE },
+		{		    "insert",       SDLK_INSERT },
+		{		    "delete",       SDLK_DELETE },
+		{		      "home",         SDLK_HOME },
+		{		       "end",          SDLK_END },
+		{		   "page_up",       SDLK_PAGEUP },
+		{     "page_down",     SDLK_PAGEDOWN },
+		{		        "up",           SDLK_UP },
+		{		      "down",         SDLK_DOWN },
+		{		      "left",         SDLK_LEFT },
+		{		     "right",        SDLK_RIGHT },
+		{    "left_shift",       SDLK_LSHIFT },
+		{   "right_shift",       SDLK_RSHIFT },
+		{  "left_control",        SDLK_LCTRL },
+		{ "right_control",        SDLK_RCTRL },
+		{     "left_ctrl",        SDLK_LCTRL },
+		{    "right_ctrl",        SDLK_RCTRL },
+		{		  "left_alt",         SDLK_LALT },
+		{     "right_alt",         SDLK_RALT },
+		{    "left_super",         SDLK_LGUI },
+		{   "right_super",         SDLK_RGUI },
+		{     "caps_lock",     SDLK_CAPSLOCK },
+		{   "scroll_lock",   SDLK_SCROLLLOCK },
+		{		  "num_lock", SDLK_NUMLOCKCLEAR },
+		{		      "menu",         SDLK_MENU },
+		{  "left_bracket",  SDLK_LEFTBRACKET },
 		{ "right_bracket", SDLK_RIGHTBRACKET },
-		{ "backslash", SDLK_BACKSLASH },
-		{ "semicolon", SDLK_SEMICOLON },
-		{ "apostrophe", SDLK_APOSTROPHE },
-		{ "comma", SDLK_COMMA },
-		{ "period", SDLK_PERIOD },
-		{ "slash", SDLK_SLASH },
-		{ "minus", SDLK_MINUS },
-		{ "equal", SDLK_EQUALS },
-		{ "grave_accent", SDLK_GRAVE },
-		{ "kp_0", SDLK_KP_0 },
-		{ "kp_1", SDLK_KP_1 },
-		{ "kp_2", SDLK_KP_2 },
-		{ "kp_3", SDLK_KP_3 },
-		{ "kp_4", SDLK_KP_4 },
-		{ "kp_5", SDLK_KP_5 },
-		{ "kp_6", SDLK_KP_6 },
-		{ "kp_7", SDLK_KP_7 },
-		{ "kp_8", SDLK_KP_8 },
-		{ "kp_9", SDLK_KP_9 },
-		{ "kp_decimal", SDLK_KP_PERIOD },
-		{ "kp_enter", SDLK_KP_ENTER },
-		{ "kp_add", SDLK_KP_PLUS },
-		{ "kp_subtract", SDLK_KP_MINUS },
-		{ "kp_multiply", SDLK_KP_MULTIPLY },
-		{ "kp_divide", SDLK_KP_DIVIDE },
-		{ "kp_equal", SDLK_KP_EQUALS },
-		{ "print_screen", SDLK_PRINTSCREEN },
-		{ "pause", SDLK_PAUSE },
-		{ "pause_break", SDLK_PAUSE },
+		{     "backslash",    SDLK_BACKSLASH },
+		{     "semicolon",    SDLK_SEMICOLON },
+		{    "apostrophe",   SDLK_APOSTROPHE },
+		{		     "comma",        SDLK_COMMA },
+		{		    "period",       SDLK_PERIOD },
+		{		     "slash",        SDLK_SLASH },
+		{		     "minus",        SDLK_MINUS },
+		{		     "equal",       SDLK_EQUALS },
+		{  "grave_accent",        SDLK_GRAVE },
+		{		      "kp_0",         SDLK_KP_0 },
+		{		      "kp_1",         SDLK_KP_1 },
+		{		      "kp_2",         SDLK_KP_2 },
+		{		      "kp_3",         SDLK_KP_3 },
+		{		      "kp_4",         SDLK_KP_4 },
+		{		      "kp_5",         SDLK_KP_5 },
+		{		      "kp_6",         SDLK_KP_6 },
+		{		      "kp_7",         SDLK_KP_7 },
+		{		      "kp_8",         SDLK_KP_8 },
+		{		      "kp_9",         SDLK_KP_9 },
+		{    "kp_decimal",    SDLK_KP_PERIOD },
+		{		  "kp_enter",     SDLK_KP_ENTER },
+		{		    "kp_add",      SDLK_KP_PLUS },
+		{   "kp_subtract",     SDLK_KP_MINUS },
+		{   "kp_multiply",  SDLK_KP_MULTIPLY },
+		{     "kp_divide",    SDLK_KP_DIVIDE },
+		{		  "kp_equal",    SDLK_KP_EQUALS },
+		{  "print_screen",  SDLK_PRINTSCREEN },
+		{		     "pause",        SDLK_PAUSE },
+		{   "pause_break",        SDLK_PAUSE },
 	};
 
 	auto it = map.find(n);
@@ -301,21 +308,51 @@ inline auto ControllerButtonFromString(std::string& str) -> std::optional<int> {
 		}
 	}
 
-	if (key == "a" || key == "cross") return SDL_GAMEPAD_BUTTON_SOUTH;
-	if (key == "b" || key == "circle") return SDL_GAMEPAD_BUTTON_EAST;
-	if (key == "x" || key == "square") return SDL_GAMEPAD_BUTTON_WEST;
-	if (key == "y" || key == "triangle") return SDL_GAMEPAD_BUTTON_NORTH;
-	if (key == "left_bumper" || key == "lb" || key == "left_shoulder") return SDL_GAMEPAD_BUTTON_LEFT_SHOULDER;
-	if (key == "right_bumper" || key == "rb" || key == "right_shoulder") return SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER;
-	if (key == "back" || key == "select") return SDL_GAMEPAD_BUTTON_BACK;
-	if (key == "guide" || key == "home") return SDL_GAMEPAD_BUTTON_GUIDE;
-	if (key == "start") return SDL_GAMEPAD_BUTTON_START;
-	if (key == "left_thumb" || key == "left_stick" || key == "ls") return SDL_GAMEPAD_BUTTON_LEFT_STICK;
-	if (key == "right_thumb" || key == "right_stick" || key == "rs") return SDL_GAMEPAD_BUTTON_RIGHT_STICK;
-	if (key == "dpad_up" || key == "up") return SDL_GAMEPAD_BUTTON_DPAD_UP;
-	if (key == "dpad_right" || key == "right") return SDL_GAMEPAD_BUTTON_DPAD_RIGHT;
-	if (key == "dpad_down" || key == "down") return SDL_GAMEPAD_BUTTON_DPAD_DOWN;
-	if (key == "dpad_left" || key == "left") return SDL_GAMEPAD_BUTTON_DPAD_LEFT;
+	if (key == "a" || key == "cross") {
+		return SDL_GAMEPAD_BUTTON_SOUTH;
+	}
+	if (key == "b" || key == "circle") {
+		return SDL_GAMEPAD_BUTTON_EAST;
+	}
+	if (key == "x" || key == "square") {
+		return SDL_GAMEPAD_BUTTON_WEST;
+	}
+	if (key == "y" || key == "triangle") {
+		return SDL_GAMEPAD_BUTTON_NORTH;
+	}
+	if (key == "left_bumper" || key == "lb" || key == "left_shoulder") {
+		return SDL_GAMEPAD_BUTTON_LEFT_SHOULDER;
+	}
+	if (key == "right_bumper" || key == "rb" || key == "right_shoulder") {
+		return SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER;
+	}
+	if (key == "back" || key == "select") {
+		return SDL_GAMEPAD_BUTTON_BACK;
+	}
+	if (key == "guide" || key == "home") {
+		return SDL_GAMEPAD_BUTTON_GUIDE;
+	}
+	if (key == "start") {
+		return SDL_GAMEPAD_BUTTON_START;
+	}
+	if (key == "left_thumb" || key == "left_stick" || key == "ls") {
+		return SDL_GAMEPAD_BUTTON_LEFT_STICK;
+	}
+	if (key == "right_thumb" || key == "right_stick" || key == "rs") {
+		return SDL_GAMEPAD_BUTTON_RIGHT_STICK;
+	}
+	if (key == "dpad_up" || key == "up") {
+		return SDL_GAMEPAD_BUTTON_DPAD_UP;
+	}
+	if (key == "dpad_right" || key == "right") {
+		return SDL_GAMEPAD_BUTTON_DPAD_RIGHT;
+	}
+	if (key == "dpad_down" || key == "down") {
+		return SDL_GAMEPAD_BUTTON_DPAD_DOWN;
+	}
+	if (key == "dpad_left" || key == "left") {
+		return SDL_GAMEPAD_BUTTON_DPAD_LEFT;
+	}
 
 	return std::nullopt;
 }
@@ -334,12 +371,24 @@ inline auto ControllerAxisFromString(std::string& str) -> std::optional<int> {
 		}
 	}
 
-	if (key == "left_x" || key == "lx" || key == "left_stick_x") return SDL_GAMEPAD_AXIS_LEFTX;
-	if (key == "left_y" || key == "ly" || key == "left_stick_y") return SDL_GAMEPAD_AXIS_LEFTY;
-	if (key == "right_x" || key == "rx" || key == "right_stick_x") return SDL_GAMEPAD_AXIS_RIGHTX;
-	if (key == "right_y" || key == "ry" || key == "right_stick_y") return SDL_GAMEPAD_AXIS_RIGHTY;
-	if (key == "left_trigger" || key == "lt" || key == "trigger_l") return SDL_GAMEPAD_AXIS_LEFT_TRIGGER;
-	if (key == "right_trigger" || key == "rt" || key == "trigger_r") return SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
+	if (key == "left_x" || key == "lx" || key == "left_stick_x") {
+		return SDL_GAMEPAD_AXIS_LEFTX;
+	}
+	if (key == "left_y" || key == "ly" || key == "left_stick_y") {
+		return SDL_GAMEPAD_AXIS_LEFTY;
+	}
+	if (key == "right_x" || key == "rx" || key == "right_stick_x") {
+		return SDL_GAMEPAD_AXIS_RIGHTX;
+	}
+	if (key == "right_y" || key == "ry" || key == "right_stick_y") {
+		return SDL_GAMEPAD_AXIS_RIGHTY;
+	}
+	if (key == "left_trigger" || key == "lt" || key == "trigger_l") {
+		return SDL_GAMEPAD_AXIS_LEFT_TRIGGER;
+	}
+	if (key == "right_trigger" || key == "rt" || key == "trigger_r") {
+		return SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
+	}
 
 	return std::nullopt;
 }

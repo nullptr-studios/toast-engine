@@ -136,7 +136,7 @@ private:
 
 		bool isOccluder = false;
 		bool onScreen = true;
-		
+
 		bool drawToDepth = true;
 
 		// buffers

@@ -12,8 +12,8 @@
 #include "ToastGPUDriver.hpp"
 
 #include <AppCore/Platform.h>
-#include <SDL3/SDL.h>
 #include <JavaScriptCore/JSRetainPtr.h>
+#include <SDL3/SDL.h>
 #include <Toast/Log.hpp>
 #include <Toast/Profiler.hpp>
 #include <Toast/Renderer/Framebuffer.hpp>
@@ -222,7 +222,6 @@ HUDLayer::~HUDLayer() {
 	if (s_Instance == this) {
 		s_Instance = nullptr;
 	}
-
 
 	// OnDetach();
 }
@@ -755,9 +754,8 @@ void HUDLayer::OnKey(int key, int scancode, int action, int mods) {
 	}
 
 	ultralight::KeyEvent evt;
-	evt.type = (action == event::WINDOW_INPUT_PRESSED || action == event::WINDOW_INPUT_REPEATED)
-	               ? ultralight::KeyEvent::kType_RawKeyDown
-	               : ultralight::KeyEvent::kType_KeyUp;
+	evt.type = (action == event::WINDOW_INPUT_PRESSED || action == event::WINDOW_INPUT_REPEATED) ? ultralight::KeyEvent::kType_RawKeyDown
+	                                                                                             : ultralight::KeyEvent::kType_KeyUp;
 
 	evt.virtual_key_code = SDLKeyToUltralightKey(key);
 	evt.native_key_code = scancode;

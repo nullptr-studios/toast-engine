@@ -11,7 +11,7 @@ struct IPostProcess {
 	virtual ~IPostProcess() = default;
 
 	virtual void Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) = 0;
-	
+
 	// virtual json_t Save() = 0;
 	// virtual void Load(json_t&) = 0;
 

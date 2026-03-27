@@ -5,11 +5,11 @@
 
 #pragma once
 
-#include <glad/gl.h>
 #include <SDL3/SDL_video.h>
 #include <Ultralight/Geometry.h>
 #include <Ultralight/Matrix.h>
 #include <Ultralight/platform/GPUDriver.h>
+#include <glad/gl.h>
 #include <map>
 #include <mutex>
 #include <vector>

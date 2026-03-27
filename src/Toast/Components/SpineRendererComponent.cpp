@@ -307,7 +307,7 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 			// Frustum culling using the dynamic AABB
 			m.onScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), model);
 		}
-		
+
 		if (!m.isOccluder) {
 			return;
 		}
@@ -323,7 +323,6 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		if (!m.isOccluder) {
 			return;    // Skip occlusion pass if not an occluder
 		}
-
 
 		m.occlusionShader->Use();
 		m.occlusionShader->Set("gWorld", model);
@@ -437,7 +436,7 @@ void SpineRendererComponent::Load(json_t j, bool force_create) {
 		m.isOccluder = j.at("isOccluder").get<bool>();
 	}
 	if (j.contains("drawToDepth")) {
-		m.drawToDepth = j.at("drawToDepth").get<bool>();	
+		m.drawToDepth = j.at("drawToDepth").get<bool>();
 	}
 }
 

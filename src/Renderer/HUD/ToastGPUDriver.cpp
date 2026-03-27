@@ -9,9 +9,9 @@
 #include "UltralightShaders.hpp"
 #include "glad/gl.h"
 
+#include <SDL3/SDL.h>
 #include <Toast/Log.hpp>
 #include <Toast/Profiler.hpp>
-#include <SDL3/SDL.h>
 #include <Ultralight/platform/Platform.h>
 #include <cstring>
 #include <iostream>

@@ -7,8 +7,8 @@
 #include "Toast/Input/InputListener.hpp"
 #include "Toast/Input/Layout.hpp"
 #include "Toast/Window/WindowEvents.hpp"
-#include <SDL3/SDL_gamepad.h>
 
+#include <SDL3/SDL_gamepad.h>
 #include <algorithm>
 #include <array>
 #include <glm/glm.hpp>

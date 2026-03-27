@@ -87,7 +87,7 @@ void PostProcessManager::PostProcessPass(Framebuffer* inputFBO, Framebuffer* out
 	glViewport(0, 0, outputFBO->Width(), outputFBO->Height());
 	glScissor(0, 0, outputFBO->Width(), outputFBO->Height());
 
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	srcFBO->BlitTo(outputFBO, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
