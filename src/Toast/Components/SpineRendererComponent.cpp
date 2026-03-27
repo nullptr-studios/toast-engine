@@ -111,7 +111,7 @@ void SpineRendererComponent::Tick() {
 	// 	return;
 	// }
 
-	if (!m.skeleton || !m.animationState) {
+	if (!m.skeleton || !m.animationState || !m.onScreen) {
 		return;
 	}
 
