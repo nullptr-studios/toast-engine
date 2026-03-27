@@ -9,7 +9,12 @@
 #include "Toast/Physics/GravityType.hpp"
 
 #include <atomic>
+#include <functional>
 #include <glm/glm.hpp>
+#include <list>
+#include <mutex>
+#include <queue>
+#include <thread>
 
 namespace physics {
 struct RayResult;
@@ -77,17 +82,20 @@ private:
 
 	void Tick();
 
-	void RigidbodyPhysics(Rigidbody* rb);
+	void RigidbodyPhysics(Rigidbody* rb, std::list<std::function<void()>>& localCallbacks);
 	void BoxPhysics(BoxRigidbody* rb);
 
 	struct M {
 		std::chrono::duration<double> targetFrametime { 1.0 / 50.0 };
 		unsigned char tickCount = 1;
-		std::list<Rigidbody*> rigidbodies;
 		std::list<Rigidbody*> colliding;
+
+		std::list<Rigidbody*> rigidbodies;
 		std::list<BoxRigidbody*> boxes;
 		std::list<ConvexCollider*> colliders;
 		std::list<Trigger*> triggers;
+		std::recursive_mutex simulationMutex;
+
 		GravityType gravityType = GravityType::DIRECTION;
 		glm::dvec2 gravityDirection = { 0.0, -9.81 };
 		glm::dvec2 gravityPoint = { 0.0, 0.0 };

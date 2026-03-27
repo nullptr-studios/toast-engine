@@ -1,9 +1,9 @@
 #include "Toast/Physics/ColliderRenderable.hpp"
 
-#include "glm/matrix.hpp"
-
 #include <algorithm>
 #include <glm/glm.hpp>
+#include <glm/matrix.hpp>
+#include <imgui.h>
 #include <vector>
 
 using namespace glm;
@@ -21,7 +21,6 @@ static bool isPointInTriangle(const vec2& p, const glm::vec2& a, const glm::vec2
 	float cross2 = determinant(glm::mat2 { bc, bp });
 	float cross3 = determinant(glm::mat2 { ca, cp });
 
-	// If the point is inside, all cross products will have the same sign.
 	bool has_neg = (cross1 < 0.0f) || (cross2 < 0.0f) || (cross3 < 0.0f);
 	bool has_pos = (cross1 > 0.0f) || (cross2 > 0.0f) || (cross3 > 0.0f);
 
@@ -42,26 +41,19 @@ static std::vector<uint16_t> triangulate(const std::vector<vec3>& vertices) {
 		remaining_indices[i] = i;
 	}
 
-	// 1. Determine the overall winding order of the polygon.
-	// Even if you don't care about the output winding, the algorithm needs to
-	// know what "inside" vs "outside" means to find convex angles.
+	// winding order
 	float area = 0.0f;
 	for (size_t i = 0; i < vertices.size(); ++i) {
 		size_t j = (i + 1) % vertices.size();
 		area += vertices[i].x * vertices[j].y - vertices[j].x * vertices[i].y;
 	}
 
-	// If the area is negative, the vertices are clockwise.
-	// We reverse our working indices to process everything as counter-clockwise.
+	// If the area is negative, CW
 	if (area < 0.0f) {
 		std::reverse(remaining_indices.begin(), remaining_indices.end());
 	}
 
-	// 2. Ear Clipping Loop
-	// We use a safety counter to prevent infinite loops if the polygon is
-	// self-intersecting or contains degenerate (overlapping) data.
 	size_t safety_counter = vertices.size() * 2;
-
 	while (remaining_indices.size() > 3) {
 		if (--safety_counter == 0) {
 			break;
@@ -79,19 +71,16 @@ static std::vector<uint16_t> triangulate(const std::vector<vec3>& vertices) {
 			const vec2& curr = vertices[curr_idx];
 			const vec2& next = vertices[next_idx];
 
-			// Check if the vertex is convex (interior angle < 180).
-			// Because we forced CCW, the cross product of the edges must be positive.
 			vec2 edge1 = curr - prev;
 			vec2 edge2 = next - curr;
 			if (determinant(glm::mat2 { edge1, edge2 }) <= 0.00001f) {
-				continue;    // Angle is concave or collinear, cannot be an ear tip
+				continue;
 			}
 
-			// Check if any OTHER vertex of the polygon is inside this triangle
 			bool is_ear = true;
 			for (size_t j = 0; j < count; ++j) {
 				if (j == i || j == (i + count - 1) % count || j == (i + 1) % count) {
-					continue;    // Skip the vertices that make up the triangle itself
+					continue;
 				}
 
 				size_t test_idx = remaining_indices[j];
@@ -101,27 +90,22 @@ static std::vector<uint16_t> triangulate(const std::vector<vec3>& vertices) {
 				}
 			}
 
-			// If it's a valid ear, clip it!
 			if (is_ear) {
 				indices.push_back(prev_idx);
 				indices.push_back(curr_idx);
 				indices.push_back(next_idx);
 
-				// Remove the ear tip from our working list
 				remaining_indices.erase(remaining_indices.begin() + i);
 				ear_found = true;
 				break;
 			}
 		}
 
-		// If we looped through all remaining vertices and couldn't find an ear,
-		// the polygon is likely invalid (e.g., self-intersecting). Break out.
 		if (!ear_found) {
 			break;
 		}
 	}
 
-	// 3. Add the final remaining 3 vertices as the last triangle
 	if (remaining_indices.size() == 3) {
 		indices.push_back(remaining_indices[0]);
 		indices.push_back(remaining_indices[1]);
@@ -156,70 +140,75 @@ void physics::ColliderRenderable::SendVertices(std::vector<glm::vec3>& points) {
 	m.mesh.UpdateDynamicSpine(m.vertices.data(), m.vertices.size(), m.indices.data(), m.indices.size());
 
 	if (m.showTop && m.points.size() >= 2) {
-		float cosThreshold = cos(glm::radians(m.maxSlope));
-		float currentDistance = 0.0f;
+		float area = 0.0f;
+		for (size_t i = 0; i < m.points.size(); ++i) {
+			size_t j = (i + 1) % m.points.size();
+			area += m.points[i].x * m.points[j].y - m.points[j].x * m.points[i].y;
+		}
+		float winding = (area >= 0.0f) ? 1.0f : -1.0f;
+
+		float cos_threshold = cos(glm::radians(m.maxSlope));
+		float current_distance = 0.0f;
 
 		for (size_t i = 0; i < m.points.size(); ++i) {
-			size_t nextIdx = (i + 1) % m.points.size();
-			glm::vec3 p1 = m.points[i];
-			glm::vec3 p2 = m.points[nextIdx];
+			size_t next_idx = (i + 1) % m.points.size();
+			glm::vec3 p1 = m.points[i] + m.horizontal_offset * glm::normalize(m.points[i] - m.points[next_idx]);
+			glm::vec3 p2 = m.points[next_idx] + m.horizontal_offset * glm::normalize(m.points[next_idx] - m.points[i]);
 
 			glm::vec3 edge = p2 - p1;
-			float edgeLen = glm::length(edge);
-			if (edgeLen < 0.0001f) {
+			float edge_len = glm::length(edge);
+			if (edge_len < 0.0001f) {
 				continue;
 			}
 
-			// Outward normal for CCW: (dy, -dx) But we need to know if it points UP
-			glm::vec2 normal = glm::normalize(glm::vec2(p1.y - p2.y, p2.x - p1.x));
+			glm::vec2 normal2d = winding * glm::normalize(glm::vec2(p2.y - p1.y, p1.x - p2.x));
+			glm::vec3 normal3d = glm::vec3(normal2d, 0.0f);
 
 			// If normal points UP and within slope
-			if (normal.y > cosThreshold) {
-				uint16_t baseIdx = static_cast<uint16_t>(m.topVertices.size());
+			if (normal2d.y > cos_threshold) {
+				uint16_t base_idx = static_cast<uint16_t>(m.topVertices.size());
 
-				float nextDistance = currentDistance + edgeLen;
+				float next_distance = current_distance + edge_len;
+
+				glm::vec3 offset_pos = normal3d * m.topOffset;
 
 				// V0: Bottom Left
 				m.topVertices.emplace_back(
 				    renderer::SpineVertex {
-				      .position = p1, .texCoord = { currentDistance, 0.0f },
-                   .colorABGR = 0xFFFFFFFF
+				      .position = p1 + offset_pos, .texCoord = { current_distance, 0.0f },
+                     .colorABGR = 0xFFFFFFFF
         }
 				);
 				// V1: Bottom Right
 				m.topVertices.emplace_back(
 				    renderer::SpineVertex {
-				      .position = p2, .texCoord = { nextDistance, 0.0f },
-                   .colorABGR = 0xFFFFFFFF
+				      .position = p2 + offset_pos, .texCoord = { next_distance, 0.0f },
+                     .colorABGR = 0xFFFFFFFF
         }
 				);
 				// V2: Top Right
 				m.topVertices.emplace_back(
 				    renderer::SpineVertex {
-				      .position = p2 + glm::vec3(0.0f, m.topHeight, 0.0f), .texCoord = { nextDistance, 1.0f },
-                       .colorABGR = 0xFFFFFFFF
+				      .position = (p2 + offset_pos) + normal3d * m.topHeight, .texCoord = { next_distance, 1.0f },
+                         .colorABGR = 0xFFFFFFFF
         }
 				);
 				// V3: Top Left
 				m.topVertices.emplace_back(
 				    renderer::SpineVertex {
-				      .position = p1 + glm::vec3(0.0f, m.topHeight, 0.0f), .texCoord = { currentDistance, 1.0f },
-                       .colorABGR = 0xFFFFFFFF
+				      .position = (p1 + offset_pos) + normal3d * m.topHeight, .texCoord = { current_distance, 1.0f },
+                         .colorABGR = 0xFFFFFFFF
         }
 				);
 
-				m.topIndices.push_back(baseIdx + 0);
-				m.topIndices.push_back(baseIdx + 1);
-				m.topIndices.push_back(baseIdx + 2);
-				m.topIndices.push_back(baseIdx + 0);
-				m.topIndices.push_back(baseIdx + 2);
-				m.topIndices.push_back(baseIdx + 3);
+				m.topIndices.push_back(base_idx + 0);
+				m.topIndices.push_back(base_idx + 1);
+				m.topIndices.push_back(base_idx + 2);
+				m.topIndices.push_back(base_idx + 0);
+				m.topIndices.push_back(base_idx + 2);
+				m.topIndices.push_back(base_idx + 3);
 
-				currentDistance = nextDistance;
-			} else {
-				// If we have a break in the top layer, we might want to reset distance
-				// but usually ground textures are continuous.
-				// currentDistance = 0.0f;
+				current_distance = next_distance;
 			}
 		}
 
@@ -227,4 +216,150 @@ void physics::ColliderRenderable::SendVertices(std::vector<glm::vec3>& points) {
 			m.topMesh.UpdateDynamicSpine(m.topVertices.data(), m.topVertices.size(), m.topIndices.data(), m.topIndices.size());
 		}
 	}
+}
+
+void physics::ColliderRenderable::Init() {
+	toast::TransformComponent::Init();
+	// init just for loading
+	m.material = resource::LoadResource<renderer::Material>(m.material_path);
+	m.topMaterial = resource::LoadResource<renderer::Material>(m.topMaterialPath);
+	m.occlusionShader = resource::LoadResource<renderer::Shader>("SHADERS/occlusion.shader");
+
+	toast::Object::SetRunTick(false);
+	toast::Object::SetRunEarlyTick(false);
+	toast::Object::SetRunLateTick(false);
+
+#ifdef TOAST_EDITOR
+	m.material_slot.name("Material");
+	m.material_slot.SetOnDroppedLambda([this](const std::string& p) {
+		m.material_path = p;
+		m.material = resource::LoadResource<renderer::Material>(p);
+	});
+	m.material_slot.SetInitialResource(m.material_path);
+
+	m.topMaterialSlot.name("Top Material");
+	m.topMaterialSlot.SetOnDroppedLambda([this](const std::string& p) {
+		m.topMaterialPath = p;
+		m.topMaterial = resource::LoadResource<renderer::Material>(p);
+	});
+	m.topMaterialSlot.SetInitialResource(m.topMaterialPath);
+#endif
+}
+
+void physics::ColliderRenderable::Load(json_t j, bool force_create) {
+	if (j.contains("type")) {
+		toast::TransformComponent::Load(j, force_create);
+	}
+	m.material_path = j.value("material_path", "");
+	m.showTop = j.value("showTop", false);
+	m.maxSlope = j.value("maxSlope", 45.0f);
+	m.topHeight = j.value("topHeight", 0.5f);
+	m.topOffset = j.value("topOffset", -0.2f);
+	m.topMaterialPath = j.value("topMaterialPath", "");
+	m.isOccluder = j.value("isOccluder", false);
+	m.show = j.value("show", true);
+	m.horizontal_offset = j.value("horizontal_offset", .10f);
+}
+
+json_t physics::ColliderRenderable::Save() const {
+	json_t j = toast::TransformComponent::Save();
+	j["material_path"] = m.material_path;
+	j["showTop"] = m.showTop;
+	j["maxSlope"] = m.maxSlope;
+	j["topHeight"] = m.topHeight;
+	j["topOffset"] = m.topOffset;
+	j["topMaterialPath"] = m.topMaterialPath;
+	j["isOccluder"] = m.isOccluder;
+	j["show"] = m.show;
+	j["horizontal_offset"] = m.horizontal_offset;
+	return j;
+}
+
+void physics::ColliderRenderable::Inspector() {
+	m.material_slot.Show();
+	ImGui::Separator();
+	ImGui::Checkbox("Visible", &m.show);
+	ImGui::Checkbox("Is Occluder", &m.isOccluder);
+	ImGui::Checkbox("Show Top Layer", &m.showTop);
+	if (m.showTop) {
+		ImGui::DragFloat("Max Slope (Deg)", &m.maxSlope, 0.5f, 0.0f, 90.0f);
+		ImGui::DragFloat("Top Height", &m.topHeight, 0.05f, 0.0f, 10.0f);
+		ImGui::DragFloat("Top Offset", &m.topOffset, 0.05f, -10.0f, 10.0f);
+		ImGui::DragFloat("Horizontal Offset", &m.horizontal_offset);
+		m.topMaterialSlot.Show();
+	}
+}
+
+void physics::ColliderRenderable::LoadTextures() {
+	m.mesh.InitDynamicSpine();
+	m.mesh.UpdateDynamicSpine(m.vertices.data(), m.vertices.size(), m.indices.data(), m.indices.size());
+
+	m.topMesh.InitDynamicSpine();
+	m.topMesh.UpdateDynamicSpine(m.topVertices.data(), m.topVertices.size(), m.topIndices.data(), m.topIndices.size());
+}
+
+void physics::ColliderRenderable::OnRender(renderer::IRenderablePass pass, const glm::mat4& view_projection) noexcept {
+	if (not toast::Object::enabled() || not m.show) {
+		return;
+	}
+
+	if (not OclussionVolume::isTransformedAABBOnPlanes(m.boundingBox, toast::TransformComponent::GetWorldMatrix())) {
+		return;
+	}
+
+	// compute transform once
+	const glm::mat4 model = toast::TransformComponent::GetWorldMatrix();
+	const glm::mat4 mvp = view_projection * model;
+
+	if (m.material && m.material->GetShader()) {
+		m.material->Use();
+		if (pass == renderer::IRenderablePass::GEOMETRY) {
+			auto shader = m.material->GetShader();
+			shader->Set("gWorld", model);
+			shader->Set("gMVP", mvp);
+		} else if (pass == renderer::IRenderablePass::OCCLUSION) {
+			if (!m.isOccluder) {
+				return;
+			}
+
+			m.occlusionShader->Use();
+			m.occlusionShader->Set("gWorld", model);
+			m.occlusionShader->Set("gMVP", mvp);
+		}
+		// draw
+		m.mesh.DrawDynamicSpine(m.indices.size());
+	}
+
+	if (m.showTop && m.topMaterial && m.topMaterial->GetShader()) {
+		m.topMaterial->Use();
+		if (pass == renderer::IRenderablePass::GEOMETRY) {
+			auto shader = m.topMaterial->GetShader();
+			shader->Set("gWorld", model);
+			shader->Set("gMVP", mvp);
+		} else if (pass == renderer::IRenderablePass::OCCLUSION) {
+			m.occlusionShader->Use();
+			m.occlusionShader->Set("gWorld", model);
+			m.occlusionShader->Set("gMVP", mvp);
+		}
+		m.topMesh.DrawDynamicSpine(m.topIndices.size());
+	}
+}
+
+void physics::ColliderRenderable::CalculateBoundingBox() {
+	float y_min = std::numeric_limits<float>::max();
+	float y_max = std::numeric_limits<float>::lowest();
+	float x_min = std::numeric_limits<float>::max();
+	float x_max = std::numeric_limits<float>::lowest();
+
+	for (auto& p : m.points) {
+		y_min = std::min(p.y, y_min);
+		y_max = std::max(p.y, y_max);
+		x_min = std::min(p.x, x_min);
+		x_max = std::max(p.x, x_max);
+	}
+
+	m.boundingBox = {
+		.min = { x_min, y_min, 0.0f },
+      .max = { x_max, y_max, 0.0f }
+	};
 }

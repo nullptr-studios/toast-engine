@@ -448,12 +448,14 @@ std::optional<dvec2> RbRayCollision(Line* ray, Rigidbody* rb) {
 	return result;
 }
 
-void RbTriggerCollision(Rigidbody* rb1, Trigger* t) {
+void RbTriggerCollision(Rigidbody* rb1, Trigger* t, std::list<std::function<void()>>& localCallbacks) {
 	PROFILE_ZONE;
 
 	if (!(rb1->flags & t->flags)) {
 		return;
 	}
+
+	auto* parent = rb1->parent();
 
 	// calculate points
 	const auto& tr = t->transform();
@@ -483,7 +485,9 @@ void RbTriggerCollision(Rigidbody* rb1, Trigger* t) {
 	}
 
 	t->rigidbodies.emplace_back(rb1);
-	t->enterCallback(rb1->parent());
+	localCallbacks.emplace_back([t, parent]() {
+		t->enterCallback(parent);
+	});
 	t->m.color = t->debug.collideColor;
 
 	if (t->debug.log) {
@@ -494,7 +498,9 @@ void RbTriggerCollision(Rigidbody* rb1, Trigger* t) {
 NO_COLLISION:
 	if (std::ranges::find(t->rigidbodies, rb1) != t->rigidbodies.end()) {
 		t->rigidbodies.remove(rb1);
-		t->exitCallback(rb1->parent());
+		localCallbacks.emplace_back([t, parent]() {
+			t->exitCallback(parent);
+		});
 		if (t->rigidbodies.empty()) {
 			t->m.color = t->debug.defaultColor;
 		}
