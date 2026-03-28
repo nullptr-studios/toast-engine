@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/matrix.hpp>
+#ifdef TOAST_EDITOR
 #include <imgui.h>
+#endif
 #include <vector>
 
 using namespace glm;
@@ -275,6 +277,7 @@ json_t physics::ColliderRenderable::Save() const {
 	return j;
 }
 
+#ifdef TOAST_EDITOR
 void physics::ColliderRenderable::Inspector() {
 	m.material_slot.Show();
 	ImGui::Separator();
@@ -289,6 +292,7 @@ void physics::ColliderRenderable::Inspector() {
 		m.topMaterialSlot.Show();
 	}
 }
+#endif
 
 void physics::ColliderRenderable::LoadTextures() {
 	m.mesh.InitDynamicSpine();

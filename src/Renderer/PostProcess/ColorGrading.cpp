@@ -6,7 +6,9 @@
 
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#ifdef TOAST_EDITOR
 #include "imgui.h"
+#endif
 
 Colorgrading::Colorgrading() {
 	m_colorgradingShader = resource::LoadResource<renderer::Shader>("SHADERS/colorgrading.shader");
@@ -49,6 +51,7 @@ void Colorgrading::Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) {
 	Framebuffer::unbind();
 }
 
+#ifdef TOAST_EDITOR
 void Colorgrading::Inspector() {
 	ImGui::SeparatorText("Color Grading");
 	ImGui::DragFloat("Contrast", &contrast, .01f, 0.f, 10.f);
@@ -59,3 +62,4 @@ void Colorgrading::Inspector() {
 	ImGui::ColorPicker3("Gamma", (float*)&gamma, ImGuiColorEditFlags_PickerHueWheel);
 	ImGui::ColorPicker3("Gain", (float*)&gain, ImGuiColorEditFlags_PickerHueWheel);
 }
+#endif

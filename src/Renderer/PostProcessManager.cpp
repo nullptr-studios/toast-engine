@@ -5,7 +5,9 @@
 #include "Toast/Renderer/PostProcessManager.hpp"
 
 #include "Toast/Log.hpp"
+#ifdef TOAST_EDITOR
 #include "imgui.h"
+#endif
 
 PostProcessManager* PostProcessManager::instance = nullptr;
 
@@ -117,6 +119,7 @@ void PostProcessManager::ClearOverride() {
 }
 
 void PostProcessManager::GlobalInspector() {
+#ifdef TOAST_EDITOR
 	if (ImGui::CollapsingHeader("Global Post-Processing Effects")) {
 		for (auto& effect : m_globalStack) {
 			if (effect) {
@@ -124,6 +127,7 @@ void PostProcessManager::GlobalInspector() {
 			}
 		}
 	}
+#endif
 }
 
 void PostProcessManager::InitBuffers(const glm::ivec2& resolution) {

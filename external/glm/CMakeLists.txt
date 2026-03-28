@@ -28,7 +28,7 @@ option(GLM_BUILD_INSTALL "Generate the install target" ${GLM_IS_MASTER_PROJECT})
 include(GNUInstallDirs)
 
 option(GLM_ENABLE_CXX_17 "Enable C++ 17" OFF)
-option(GLM_ENABLE_CXX_20 "Enable C++ 20" OFF)
+option(GLM_ENABLE_CXX_20 "Enable C++ 20" ON)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -72,7 +72,7 @@ else()
 
 endif()
 
-option(GLM_ENABLE_LANG_EXTENSIONS "Enable language extensions" OFF)
+option(GLM_ENABLE_LANG_EXTENSIONS "Enable language extensions" ON)
 option(GLM_DISABLE_AUTO_DETECTION "Disable platform, compiler, arch and C++ language detection" OFF)
 
 if(GLM_DISABLE_AUTO_DETECTION)
