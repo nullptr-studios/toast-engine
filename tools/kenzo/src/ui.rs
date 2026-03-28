@@ -22,7 +22,7 @@ pub fn draw(f: &mut Frame, app: &App) {
 
 fn render_disconnected(f: &mut Frame, app: &App, area: Rect) {
     // Make popup as small as possible
-    let area = centered_rect(40, 7, area); 
+    let area = centered_rect(40, 8, area); 
     
     let block = Block::default()
         .borders(Borders::ALL)
