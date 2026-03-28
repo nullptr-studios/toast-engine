@@ -483,7 +483,7 @@ void World::RunBeginQueue() {
 		}
 
 		// We need to check this so scene begin is not run while the scene is being loaded
-		if (!m.tickableScenes.contains(obj->scene()->id())) {
+		if (obj->scene() && !m.tickableScenes.contains(obj->scene()->id())) {
 			std::lock_guard lock(m.queueMutex);
 			m.beginQueue.push_back(obj);
 			continue;
