@@ -19,7 +19,9 @@
 #include <Toast/Renderer/IRenderable.hpp>
 #include <algorithm>
 #include <glm/glm.hpp>
+#ifdef TOAST_EDITOR
 #include <imgui.h>
+#endif
 #include <limits>
 
 namespace physics {
