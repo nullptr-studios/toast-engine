@@ -67,7 +67,6 @@ private:
 		GlobalLight* globalLight = nullptr;
 
 		std::vector<IRenderable*> combinedRenderables;
-		Framebuffer* geometryResolveFramebuffer = nullptr;
 		Framebuffer* postProcessFramebuffer = nullptr;
 
 		// Shadows

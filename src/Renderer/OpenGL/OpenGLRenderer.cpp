@@ -207,11 +207,6 @@ OpenGLRenderer::OpenGLRenderer() {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_SCISSOR_TEST);
 	glEnable(GL_MULTISAMPLE);
-	// glEnable(GL_FRAMEBUFFER_SRGB);
-	// glEnable(GL_CULL_FACE);
-	// glCullFace(GL_BACK);
-	// glFrontFace(GL_CCW);
-
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -258,10 +253,10 @@ OpenGLRenderer::OpenGLRenderer() {
 	m_outputFramebuffer->AddColorAttachment(GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);    // final output buffer
 	m_outputFramebuffer->Build();
 
-	Framebuffer::Specs resolveSpecs = { 1920, 1080 };
-	m.geometryResolveFramebuffer = new Framebuffer(resolveSpecs);
-	m.geometryResolveFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);
-	m.geometryResolveFramebuffer->Build();
+	// Framebuffer::Specs resolveSpecs = { 1920, 1080 };
+	// m_geometryResolveFramebuffer = new Framebuffer(resolveSpecs);
+	// m_geometryResolveFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);
+	// m_geometryResolveFramebuffer->Build();
 
 	RecreateShadowResources(m_config.shadowMapResolution);
 
@@ -310,7 +305,6 @@ OpenGLRenderer::OpenGLRenderer() {
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;    // Enable Keyboard Controls
-	// io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;     // Enable Gamepad Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;      // IF using Docking Branch
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;    // Enable Multi-Viewport
 
@@ -341,11 +335,8 @@ OpenGLRenderer::~OpenGLRenderer() {
 	TOAST_INFO("Shutting down OpenGL Renderer...");
 
 	delete m_geometryFramebuffer;
-	// delete m_lightFramebuffer;
 	delete m_outputFramebuffer;
-	delete m.geometryResolveFramebuffer;
 	DestroyShadowResources();
-	// delete m.layerFramebuffer;
 #ifdef TOAST_EDITOR
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL3_Shutdown();
@@ -423,14 +414,16 @@ void OpenGLRenderer::Render() {
 				m.combinedRenderables.push_back(r);
 			}
 		}
-		m_renderablesSortDirty = false;
 	}
 
 	// Depth can change every frame, so keep sort per-frame but only for enabled list.
-	if (m.combinedRenderables.size() > 1) {
+	// HACK: FOR OPTIMIZATION PURPOSES WE JUST SORT WHEN ADDING OBJECTS
+	if (m.combinedRenderables.size() > 1 && m_renderablesSortDirty) {
 		std::stable_sort(m.combinedRenderables.begin(), m.combinedRenderables.end(), [](IRenderable* a, IRenderable* b) {
 			return a->GetDepth() < b->GetDepth();
 		});
+		m_renderablesSortDirty = false;
+		
 	}
 
 	OcclusionPass();
@@ -446,15 +439,14 @@ void OpenGLRenderer::Render() {
 	LightingPass();
 
 	PostProcessPass();
-	// CombinedRenderPass();
 	CHECK_GL();
 
 	// Render non-HUD editor/game layers into a dedicated layer framebuffer
-	// Clear HUD layer framebuffers first to avoid persistence/smearing if a HUD view didn't draw pixels this frame
 	if (m.layerStack) {
 		for (auto* layer : m.layerStack->GetLayers()) {
 			if (auto* hud = dynamic_cast<HUD::HUDLayer*>(layer)) {
-				if (auto* fb = hud->GetFramebuffer()) {
+				auto* fb = hud->GetFramebuffer();
+				if (fb) {
 					fb->bind();
 					glViewport(0, 0, fb->Width(), fb->Height());
 					glScissor(0, 0, fb->Width(), fb->Height());
@@ -469,66 +461,40 @@ void OpenGLRenderer::Render() {
 	m_outputFramebuffer->bind();
 	glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
 	glScissor(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
-	// Ensure depth testing is enabled for layer rendering and depth buffer is writable
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LEQUAL);
 
-	// Render layers; HUD layers will still render into their own FBOs
 	if (m.layerStack) {
 		m.layerStack->RenderLayers();
 	}
 	Framebuffer::unbind();
 
-	// Composite layer framebuffer over the combined output (alpha blend)
-	// m_outputFramebuffer->bind();
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	// m.screenShader->Use();
-	// glActiveTexture(GL_TEXTURE0);
-	// glBindTexture(GL_TEXTURE_2D, m_outputFramebuffer->GetColorTexture(0));
-	// m.screenShader->SetSampler("screenTexture", 0);
-	// m.quad->Draw();
-	// glBindTexture(GL_TEXTURE_2D, 0);
-	// glDisable(GL_BLEND);
-	// glEnable(GL_DEPTH_TEST);
-	// Framebuffer::unbind();
-
-	// Composite all HUD layer framebuffers onto the output as the final pass
 	HUDPass();
-	CHECK_GL()
-// draw to screen only if not in editor mode
+	CHECK_GL(); // Added missing semicolon
+
 #ifndef TOAST_EDITOR
 	{
 #ifdef TRACY_ENABLE
 		TracyGpuZone("ScreenPass");
 #endif
-		// Present final framebuffer to default framebuffer
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		// We control depth testing. Disable for fullscreen quad, then enable back.
 		glDisable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		// bind texture
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_outputFramebuffer->GetColorTexture(0));
 
-		// draw screen quad
 		m.screenShader->Use();
 		m.screenShader->SetSampler("screenTexture", 0);
 		m.quad->Draw();
 
-		// Restore depth test
 		glEnable(GL_DEPTH_TEST);
 	}
 #endif
 
 #ifndef TOAST_EDITOR
 #ifdef TRACY_ENABLE
-	// Collect GPU queries in non-editor builds too
 	TracyGpuCollect;
 #endif
 #endif
@@ -540,7 +506,6 @@ void OpenGLRenderer::GeometryPass() {
 	TracyGpuZone("Geometry Pass");
 #endif
 
-	// Prepare render target and GL state
 	glViewport(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
 	glScissor(0, 0, m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
 
@@ -548,23 +513,15 @@ void OpenGLRenderer::GeometryPass() {
 
 	glDepthRange(0.0, 1.0);
 
-	// Forward shading
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LEQUAL);
-	glClearDepth(1.0);
-
-	// Keep alpha-to-coverage disabled for now; transparent blending remains consistent across MSAA sample counts.
-	// glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-
-	// Clear to transparent black so the combine pass preserves empty areas
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	Clear();
 
-	// Render only enabled renderables.
 	for (auto* r : m.combinedRenderables) {
 		r->OnRender(renderer::IRenderablePass::GEOMETRY, m_multipliedMatrix);
 	}
@@ -591,21 +548,13 @@ void OpenGLRenderer::OcclusionPass() {
 		r->OnRender(renderer::IRenderablePass::OCCLUSION, m_multipliedMatrix);
 	}
 
-	// init jfa
-	// glUseProgram(initShader);
 	m.jfaInitComputeShader->Use();
-
 	glBindTextureUnit(0, m.occlusionFramebuffer->GetColorTexture(0));
 	glBindImageTexture(1, m.jfaTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
-
-	// glUniform2i(resLoc, width, height);
-
 	m.jfaInitComputeShader->Set("resolution", glm::ivec2(m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height()));
-
 	glDispatchCompute((m.occlusionFramebuffer->Width() + 15) / 16, (m.occlusionFramebuffer->Height() + 15) / 16, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-	//// dispatch JFA compute
 	GLuint inputTex = m.jfaTex;
 	GLuint outputTex = m.pingPongTex;
 
@@ -613,9 +562,7 @@ void OpenGLRenderer::OcclusionPass() {
 	int step = maxDim / 2;
 
 	while (step > 0) {
-		// glUseProgram(jfaShader);
 		m.jfaComputeShader->Use();
-
 		m.jfaComputeShader->Set("resolution", glm::ivec2(m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height()));
 		m.jfaComputeShader->Set("stepValue", step);
 
@@ -630,16 +577,10 @@ void OpenGLRenderer::OcclusionPass() {
 		step /= 2;
 	}
 
-	// final shader
-	// glUseProgram(finalShader);
 	m.finalComputeShader->Use();
-
 	glBindTextureUnit(0, inputTex);    // last JFA result
 	glBindImageTexture(1, m.sdfTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-
-	// glUniform2i(resLoc, width, height);
 	m.finalComputeShader->Set("resolution", glm::ivec2(m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height()));
-
 	glDispatchCompute((m.occlusionFramebuffer->Width() + 15) / 16, (m.occlusionFramebuffer->Height() + 15) / 16, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
@@ -654,15 +595,9 @@ void OpenGLRenderer::LightingPass() {
 	TracyGpuZone("Lighting Pass");
 #endif
 
-	// Prepare render target and GL state
 	glViewport(0, 0, m_lightFramebuffer->Width(), m_lightFramebuffer->Height());
 	glScissor(0, 0, m_lightFramebuffer->Width(), m_lightFramebuffer->Height());
 
-	// If global lighting is disabled, avoid all light buffer work
-	// if (!m_globalLightEnabled) {
-	//	return;
-	//}
-	//
 	if (m_lightsSortDirty && m_lights.size() > 1) {
 		std::ranges::stable_sort(m_lights, [](Light2D* a, Light2D* b) {
 			return a->transform()->position().z < b->transform()->position().z;
@@ -670,19 +605,10 @@ void OpenGLRenderer::LightingPass() {
 		m_lightsSortDirty = false;
 	}
 
-	//// Render lights at their own resolution
-
 	m_lightFramebuffer->bind();
-	//
-	//// {
-	//// 	GLenum lightDraws[] = { GL_COLOR_ATTACHMENT0 };
-	//// 	glDrawBuffers(1, lightDraws);
-	//// }
-	//
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	//
-	//// blit dept from geometry pass to light framebuffer to allow depth testing during light accumulation
+
 	m_geometryFramebuffer->bindRead();
 	m_lightFramebuffer->bindDraw();
 	glBlitFramebuffer(
@@ -698,18 +624,11 @@ void OpenGLRenderer::LightingPass() {
 	    GL_NEAREST
 	);
 	m_lightFramebuffer->bind();
-	//
-	//// Disable depth writes for light accumulation
+
 	glDepthMask(GL_FALSE);
-	//
-	//// Enable additive blending explicitly for light accumulation
-	// glEnable(GL_BLEND);
-	// glBlendFunc(GL_ONE, GL_ONE);
-	//
-	//// Disable depth test while accumulating lights
+
 	glDisable(GL_DEPTH_TEST);
-	//
-	// lighting pass (skip loop if empty)
+
 	if (!m_lights.empty()) {
 		for (auto* light : m_lights) {
 			if (light) {
@@ -719,134 +638,29 @@ void OpenGLRenderer::LightingPass() {
 	}
 
 	m.postProcessFramebuffer->bind();
-
 	glDisable(GL_BLEND);
 
-	// Ensure viewport and scissor match the output framebuffer
 	glViewport(0, 0, m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
 	glScissor(0, 0, m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
 
-	// When lighting is enabled, sample the light accumulation texture directly from the light FBO
-	// bind albedo (geometry attachment 0)
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_geometryFramebuffer->GetColorTexture(0));
 
-	// bind light accumulation texture (light FBO attachment 0)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, m_lightFramebuffer->GetColorTexture(0));
 
-	// draw screen quad
 	m.combineLightShader->Use();
 	m.combineLightShader->SetSampler("gAlbedoTexture", 0);
 	m.combineLightShader->SetSampler("gLightingTexture", 1);
-	// set global ambient/global light uniforms
 	m.combineLightShader->Set("gGlobalLightIntensity", m_globalLightIntensity);
 	m.combineLightShader->Set("gGlobalLightColor", m_globalLightColor);
 	m.quad->Draw();
 
-	// Unbind textures (keep pipeline clean)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	// m_lightFramebuffer->BlitTo(m.postProcessFramebuffer, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-	//// Restore GL state to known defaults
-	// glBindTexture(GL_TEXTURE_2D, 0);
-	// glEnable(GL_DEPTH_TEST);
-	// glDisable(GL_BLEND);
-	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	// glDepthMask(GL_TRUE);
-	//
-	//// Unbind light framebuffer; CombinedRenderPass will read from its texture
-	// Framebuffer::unbind();
-	//
-	//// Restore viewport and scissor to output resolution
-	// glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
-	// glScissor(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
-}
-
-void OpenGLRenderer::CombinedRenderPass() const {
-#ifdef TRACY_ENABLE
-	PROFILE_ZONE;
-	TracyGpuZone("Combined Pass");
-#endif
-
-	// Disable depth test for full-screen combine; we'll restore after.
-	glDisable(GL_DEPTH_TEST);
-
-	m_outputFramebuffer->bind();
-
-	// Ensure we're drawing to the primary color attachment (attachment 0)
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-	// Ensure viewport and scissor match the output framebuffer
-	glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
-	glScissor(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
-
-	if (m_globalLightEnabled) {
-		// When lighting is enabled, sample the light accumulation texture directly from the light FBO
-		// bind albedo (geometry attachment 0)
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_geometryFramebuffer->GetColorTexture(0));
-
-		// bind light accumulation texture (light FBO attachment 0)
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, m_lightFramebuffer->GetColorTexture(0));
-
-		// draw screen quad
-		m.combineLightShader->Use();
-		m.combineLightShader->SetSampler("gAlbedoTexture", 0);
-		m.combineLightShader->SetSampler("gLightingTexture", 1);
-		// set global ambient/global light uniforms
-		m.combineLightShader->Set("gGlobalLightIntensity", m_globalLightIntensity);
-		m.combineLightShader->Set("gGlobalLightColor", m_globalLightColor);
-		m.quad->Draw();
-
-		// Unbind textures (keep pipeline clean)
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-	} else {
-		// Global light disabled: skip light blits and draw pure albedo into output
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_geometryFramebuffer->GetColorTexture(0));
-
-		renderer::IRendererBase::GetInstance()->DrawScreenQuad(false);
-
-		// Unbind texture
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-
-	Clear();
-
-	// const bool geometryIsMsaa = m_geometryFramebuffer->IsMultisample();
-	const bool sameSize =
-	    m_geometryFramebuffer->Width() == m_outputFramebuffer->Width() && m_geometryFramebuffer->Height() == m_outputFramebuffer->Height();
-
-	/*if (geometryIsMsaa) {
-	  if (sameSize) {
-	    // Fast path: direct resolve when MSAA and output sizes match.
-	    m_geometryFramebuffer->BlitTo(m_outputFramebuffer, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	  } else {
-	    // Correct MSAA+resolutionScale path:
-	    // 1) resolve MSAA at geometry resolution
-	    m_geometryFramebuffer->BlitTo(m.geometryResolveFramebuffer, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	    // 2) scale resolved single-sample image into full output
-	    m.geometryResolveFramebuffer->BlitTo(m_outputFramebuffer, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-	  }
-	} else*/
-	{ m_geometryFramebuffer->BlitTo(m_outputFramebuffer, GL_COLOR_BUFFER_BIT, sameSize ? GL_NEAREST : GL_LINEAR); }
-
-	// Restore depth test state to default
-	glEnable(GL_DEPTH_TEST);
-
-	Framebuffer::unbind();
 }
 
 void OpenGLRenderer::Clear() const {
@@ -861,19 +675,15 @@ void OpenGLRenderer::Resize(glm::uvec2 size) {
 	unsigned geometryHeight = std::max(1u, static_cast<unsigned>(height * m_config.resolutionScale));
 
 	m_geometryFramebuffer->Resize(static_cast<int>(geometryWidth), static_cast<int>(geometryHeight));
-	m.geometryResolveFramebuffer->Resize(static_cast<int>(geometryWidth), static_cast<int>(geometryHeight));
 
-	// m_lightFramebuffer->Resize(
-	//     static_cast<unsigned int>(width * m_config.lightResolutionScale), static_cast<unsigned int>(height * m_config.lightResolutionScale)
-	// );
+	m_lightFramebuffer->Resize(
+	    static_cast<unsigned int>(width * m_config.lightResolutionScale), static_cast<unsigned int>(height * m_config.lightResolutionScale)
+	);
 	m_outputFramebuffer->Resize(static_cast<int>(width), static_cast<int>(height));
-	// m.layerFramebuffer->Resize(width, height);
-
 	m_postProcessManager->InitBuffers(size);
 
 	m.postProcessFramebuffer->Resize(static_cast<int>(width), static_cast<int>(height));
 
-	// Resize HUD layers
 	if (m.layerStack) {
 		for (auto* layer : m.layerStack->GetLayers()) {
 			if (auto* hudLayer = dynamic_cast<renderer::HUD::HUDLayer*>(layer)) {
@@ -882,10 +692,8 @@ void OpenGLRenderer::Resize(glm::uvec2 size) {
 		}
 	}
 
-	// Update projection matrix to maintain aspect ratio
 	SetProjectionMatrix(glm::radians(90.0f), static_cast<float>(width) / static_cast<float>(height), 0.1f, 1000.0f);
 
-	// In editor mode, Resize is also used for docked viewport size changes; avoid treating those as persistent window resolution changes.
 	auto windowFramebufferSize = toast::Window::GetInstance()->GetFramebufferSize();
 	if (windowFramebufferSize.x == width && windowFramebufferSize.y == height) {
 		m_config.resolution = glm::uvec2(width, height);
@@ -927,14 +735,9 @@ void OpenGLRenderer::RemoveLight(Light2D* light) {
 void OpenGLRenderer::ApplyRenderSettings() {
 	auto window = toast::Window::GetInstance();
 
-	// vsync
 	window->SetVSync(m_config.vSync);
-
 	window->SetRefreshFrameTime(1000.0 / m_config.maxFPS);
-
 	window->SetDisplayMode(m_config.currentDisplayMode);
-
-	// resolution (Framebuffer scale is handled in Resize)
 	window->SetResolution(m_config.resolution);
 
 	GLint maxSupportedSamples = 1;
@@ -946,10 +749,9 @@ void OpenGLRenderer::ApplyRenderSettings() {
 	}
 	m_config.msaaSamples = clampedSamples;
 
-	// HACK: MSAA disabled for now, creates weird edges arround atlas sprites
 	if (!m_geometryFramebuffer || static_cast<unsigned>(m_geometryFramebuffer->Samples()) != clampedSamples) {
-		const unsigned outputWidth = static_cast<unsigned>(std::max(1, m_outputFramebuffer ? m_outputFramebuffer->Width() : 1920));
-		const unsigned outputHeight = static_cast<unsigned>(std::max(1, m_outputFramebuffer ? m_outputFramebuffer->Height() : 1080));
+		const unsigned outputWidth = std::max(1, m_outputFramebuffer ? m_outputFramebuffer->Width() : 1920);
+		const unsigned outputHeight = std::max(1, m_outputFramebuffer ? m_outputFramebuffer->Height() : 1080);
 		const unsigned geometryWidth = std::max(1u, static_cast<unsigned>(outputWidth * m_config.resolutionScale));
 		const unsigned geometryHeight = std::max(1u, static_cast<unsigned>(outputHeight * m_config.resolutionScale));
 
@@ -975,7 +777,6 @@ void OpenGLRenderer::ApplyRenderSettings() {
 		RecreateShadowResources(m_config.shadowMapResolution);
 	}
 
-	// Ensure scaled internal buffers follow current config after any settings change.
 	Resize(window->GetFramebufferSize());
 
 	SaveRenderSettings();
@@ -1077,7 +878,6 @@ void OpenGLRenderer::HUDPass() {
 		}
 
 		if (!anyHudDrawn) {
-			// Composite each HUD framebuffer onto the output using alpha blending (over operation)
 			m_outputFramebuffer->bind();
 			glDrawBuffer(GL_COLOR_ATTACHMENT0);
 			glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
@@ -1085,7 +885,6 @@ void OpenGLRenderer::HUDPass() {
 
 			glDisable(GL_DEPTH_TEST);
 			glEnable(GL_BLEND);
-			// Ultralight renders with straight (un-premultiplied) alpha
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 			m.screenShader->Use();
@@ -1104,7 +903,6 @@ void OpenGLRenderer::HUDPass() {
 		return;
 	}
 
-	// Restore state
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
