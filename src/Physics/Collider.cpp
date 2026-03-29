@@ -2,7 +2,6 @@
 
 #include "ConvexCollider.hpp"
 #include "Toast/GlmJson.hpp"
-#include "Toast/Log.hpp"
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
@@ -18,7 +17,8 @@
 #include <imgui.h>
 #endif
 
-namespace physics {
+using namespace physics;
+
 void Collider::Init() {
 	CalculatePoints();
 
@@ -28,10 +28,6 @@ void Collider::Init() {
 
 	m.renderable.SetParent(parent());
 	m.renderable.Init();
-	if (renderer::IRendererBase::GetInstance() != nullptr) {
-		renderer::IRendererBase::GetInstance()->AddRenderable(&m.renderable);
-		// m.renderable.enabled(true);
-	}
 }
 
 void Collider::LoadTextures() {
@@ -56,39 +52,23 @@ void Collider::AddPoint(glm::vec2 point) {
 }
 
 void Collider::AddPointAt(int index, glm::vec2 point) {
-	// Clamp insert position to a valid range
 	auto it = m.points.begin();
-	int size = static_cast<int>(std::distance(m.points.begin(), m.points.end()));
-	int insert_pos = index + 1;
-	if (insert_pos < 0) {
-		insert_pos = 0;
-	}
-	if (insert_pos > size) {
-		insert_pos = size;    // insert at end if past
-	}
-	std::advance(it, insert_pos);
+	std::advance(it, index + 1);
 	m.points.emplace(it, point);
 }
 
 void Collider::SwapPoints(glm::vec2 lhs, glm::vec2 rhs) {
 	auto lhs_it = std::ranges::find(m.points, lhs);
 	auto rhs_it = std::ranges::find(m.points, rhs);
-	if (lhs_it != m.points.end() && rhs_it != m.points.end()) {
-		std::iter_swap(lhs_it, rhs_it);
-	}
+	std::swap(lhs_it, rhs_it);
 }
 
 void Collider::DeletePoint(glm::vec2 point) {
 	auto it = std::ranges::find(m.points, point);
-	if (it != m.points.end()) {
-		m.points.erase(it);
-	}
+	m.points.erase(it);
 }
 
 void Collider::DeleteAt(unsigned idx) {
-	if (idx >= m.points.size()) {
-		return;
-	}
 	auto point = m.points.begin();
 	std::advance(point, idx);
 	m.points.erase(point);
@@ -385,17 +365,13 @@ void Collider::CalculatePoints() {
 		m.convexShapes.emplace_back(c);
 	}
 
-	std::vector<glm::vec3> world_vertices;
-	world_vertices.reserve(m.points.size());
-	// Send local-space vertices to the renderable
+	std::vector<glm::vec3> local_vertices;
+	local_vertices.reserve(m.points.size());
 	for (const auto& p : m.points) {
-		world_vertices.emplace_back(p.x, p.y, 0.0f);
+		local_vertices.push_back(glm::vec3 { p.x, p.y, 0.0f });
 	}
 
-	if (renderer::IRendererBase::GetInstance() == nullptr) {
-		TOAST_WARN("Collider::CalculatePoints - renderer instance is null");
-	}
-	m.renderable.SendVertices(world_vertices);
+	m.renderable.SendVertices(local_vertices);
 }
 
 void Collider::Destroy() {
@@ -404,6 +380,7 @@ void Collider::Destroy() {
 }
 
 #ifdef TOAST_EDITOR
+#pragma region EDITOR
 
 void Collider::Inspector() {
 	ImGui::Spacing();
@@ -608,6 +585,7 @@ void Collider::EditorTick() {
 	}
 }
 
+#pragma endregion
 #endif
 
 json_t Collider::Save() const {
@@ -672,6 +650,4 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 
 	Component::Load(j, propagate);
-}
-
 }
