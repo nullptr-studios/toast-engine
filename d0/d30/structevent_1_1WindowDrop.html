@@ -121,16 +121,16 @@ Collaboration diagram for event::WindowDrop:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a95eb72ee1fec170c282d4753819dbaea"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d30/structevent_1_1WindowDrop.html#a95eb72ee1fec170c282d4753819dbaea">WindowDrop</a> (int count, const char **paths)</td></tr>
-<tr class="separator:a95eb72ee1fec170c282d4753819dbaea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6e4023d12c160e938385e5c3835973b3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d30/structevent_1_1WindowDrop.html#a6e4023d12c160e938385e5c3835973b3">WindowDrop</a> (std::vector&lt; std::string &gt; input_files)</td></tr>
+<tr class="separator:a6e4023d12c160e938385e5c3835973b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_structevent_1_1IEvent"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_structevent_1_1IEvent')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../da/ddb/structevent_1_1IEvent.html">event::IEvent</a></td></tr>
 <tr class="memitem:a10c3f7557fefdbce6062d8052b02eebc inherit pub_methods_structevent_1_1IEvent"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/ddb/structevent_1_1IEvent.html#a10c3f7557fefdbce6062d8052b02eebc">~IEvent</a> ()=default</td></tr>
 <tr class="separator:a10c3f7557fefdbce6062d8052b02eebc inherit pub_methods_structevent_1_1IEvent"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a4a0e23ac9c8173361a30177f0cdfb5d4"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d30/structevent_1_1WindowDrop.html#a4a0e23ac9c8173361a30177f0cdfb5d4">Callback</a> (<a class="el" href="../../dc/d42/ToastGPUContext_8hpp.html#a3c96d80d363e67d13a41b5d1821f3242">GLFWwindow</a> *window, int count, const char **paths)</td></tr>
-<tr class="separator:a4a0e23ac9c8173361a30177f0cdfb5d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add47d86a9651f72913d28b8d1b1f510f"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d30/structevent_1_1WindowDrop.html#add47d86a9651f72913d28b8d1b1f510f">Callback</a> (std::vector&lt; std::string &gt; <a class="el" href="../../d0/d30/structevent_1_1WindowDrop.html#aa8565e91a6aebbe14755d87830dac3ab">files</a>)</td></tr>
+<tr class="separator:add47d86a9651f72913d28b8d1b1f510f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -153,10 +153,10 @@ Additional Inherited Members</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="../../d7/d51/structevent_1_1Event.html" title="Base class for all the Events.">Event</a> sent when user drag and drops files to the window. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d4f/WindowEvents_8hpp_source.html#l00019">19</a> of file <a class="el" href="../../de/d4f/WindowEvents_8hpp_source.html">WindowEvents.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d4f/WindowEvents_8hpp_source.html#l00024">24</a> of file <a class="el" href="../../de/d4f/WindowEvents_8hpp_source.html">WindowEvents.hpp</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a95eb72ee1fec170c282d4753819dbaea" name="a95eb72ee1fec170c282d4753819dbaea"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a95eb72ee1fec170c282d4753819dbaea">&#9670;&#160;</a></span>WindowDrop()</h2>
+<a id="a6e4023d12c160e938385e5c3835973b3" name="a6e4023d12c160e938385e5c3835973b3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6e4023d12c160e938385e5c3835973b3">&#9670;&#160;</a></span>WindowDrop()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -167,35 +167,25 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="memname">event::WindowDrop::WindowDrop </td>
           <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>count</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype">std::vector&lt; std::string &gt;&#160;</td>
+          <td class="paramname"><em>input_files</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">const char **&#160;</td>
-          <td class="paramname"><em>paths</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">explicit</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d4f/WindowEvents_8hpp_source.html#l00025">25</a> of file <a class="el" href="../../de/d4f/WindowEvents_8hpp_source.html">WindowEvents.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d4f/WindowEvents_8hpp_source.html#l00030">30</a> of file <a class="el" href="../../de/d4f/WindowEvents_8hpp_source.html">WindowEvents.hpp</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a4a0e23ac9c8173361a30177f0cdfb5d4" name="a4a0e23ac9c8173361a30177f0cdfb5d4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4a0e23ac9c8173361a30177f0cdfb5d4">&#9670;&#160;</a></span>Callback()</h2>
+<a id="add47d86a9651f72913d28b8d1b1f510f" name="add47d86a9651f72913d28b8d1b1f510f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#add47d86a9651f72913d28b8d1b1f510f">&#9670;&#160;</a></span>Callback()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -206,25 +196,9 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="memname">void event::WindowDrop::Callback </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/d42/ToastGPUContext_8hpp.html#a3c96d80d363e67d13a41b5d1821f3242">GLFWwindow</a> *&#160;</td>
-          <td class="paramname"><em>window</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype">std::vector&lt; std::string &gt;&#160;</td>
+          <td class="paramname"><em>files</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>count</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char **&#160;</td>
-          <td class="paramname"><em>paths</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -234,14 +208,14 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d69/WindowEvents_8cpp_source.html#l00032">32</a> of file <a class="el" href="../../db/d69/WindowEvents_8cpp_source.html">WindowEvents.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d69/WindowEvents_8cpp_source.html#l00031">31</a> of file <a class="el" href="../../db/d69/WindowEvents_8cpp_source.html">WindowEvents.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="../../d0/d30/structevent_1_1WindowDrop_a4a0e23ac9c8173361a30177f0cdfb5d4_icgraph.png" border="0" usemap="#ad0/d30/structevent_1_1WindowDrop_a4a0e23ac9c8173361a30177f0cdfb5d4_icgraph" alt=""/></div>
-<map name="ad0/d30/structevent_1_1WindowDrop_a4a0e23ac9c8173361a30177f0cdfb5d4_icgraph" id="ad0/d30/structevent_1_1WindowDrop_a4a0e23ac9c8173361a30177f0cdfb5d4_icgraph">
-<area shape="rect" title=" " alt="" coords="228,5,387,45"/>
-<area shape="rect" href="../../d8/d8e/classtoast_1_1Window.html#a3ad3d9acdc93f96a4a7097d8989828e5" title="Creates a window with the specified dimensions." alt="" coords="5,13,180,38"/>
+<div class="center"><img src="../../d0/d30/structevent_1_1WindowDrop_add47d86a9651f72913d28b8d1b1f510f_icgraph.png" border="0" usemap="#ad0/d30/structevent_1_1WindowDrop_add47d86a9651f72913d28b8d1b1f510f_icgraph" alt=""/></div>
+<map name="ad0/d30/structevent_1_1WindowDrop_add47d86a9651f72913d28b8d1b1f510f_icgraph" id="ad0/d30/structevent_1_1WindowDrop_add47d86a9651f72913d28b8d1b1f510f_icgraph">
+<area shape="rect" title=" " alt="" coords="273,5,432,45"/>
+<area shape="rect" href="../../d8/d8e/classtoast_1_1Window.html#aa040bba8b272d0790c3ff839abfcf262" title="Polls OS events without swapping buffers." alt="" coords="5,13,225,38"/>
 </map>
 </div>
 
@@ -262,7 +236,7 @@ Here is the caller graph for this function:</div>
 
 <p>Path to the files thrown to the window. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d4f/WindowEvents_8hpp_source.html#l00021">21</a> of file <a class="el" href="../../de/d4f/WindowEvents_8hpp_source.html">WindowEvents.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d4f/WindowEvents_8hpp_source.html#l00026">26</a> of file <a class="el" href="../../de/d4f/WindowEvents_8hpp_source.html">WindowEvents.hpp</a>.</p>
 
 </div>
 </div>

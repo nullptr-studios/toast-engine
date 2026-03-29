@@ -95,15 +95,15 @@ $(document).ready(function(){initNavTree('dc/d42/ToastGPUContext_8hpp.html','../
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#define-members">Macros</a>  </div>
   <div class="headertitle"><div class="title">ToastGPUContext.hpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
 
 <p>GPU Context for Ultralight rendering in Toast Engine.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &lt;Ultralight/platform/Config.h&gt;</code><br />
+<div class="textblock"><code>#include &lt;SDL3/SDL_video.h&gt;</code><br />
+<code>#include &lt;Ultralight/platform/Config.h&gt;</code><br />
 <code>#include &lt;Ultralight/platform/GPUDriver.h&gt;</code><br />
 <code>#include &lt;memory&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
@@ -111,10 +111,11 @@ Include dependency graph for ToastGPUContext.hpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../da/d40/ToastGPUContext_8hpp__incl.png" border="0" usemap="#asrc_2Renderer_2HUD_2ToastGPUContext_8hpp" alt=""/></div>
 <map name="asrc_2Renderer_2HUD_2ToastGPUContext_8hpp" id="asrc_2Renderer_2HUD_2ToastGPUContext_8hpp">
-<area shape="rect" title="GPU Context for Ultralight rendering in Toast Engine." alt="" coords="102,5,385,31"/>
-<area shape="rect" title=" " alt="" coords="5,79,148,119"/>
-<area shape="rect" title=" " alt="" coords="172,79,315,119"/>
-<area shape="rect" title=" " alt="" coords="339,86,417,111"/>
+<area shape="rect" title="GPU Context for Ultralight rendering in Toast Engine." alt="" coords="181,5,464,31"/>
+<area shape="rect" title=" " alt="" coords="5,86,144,111"/>
+<area shape="rect" title=" " alt="" coords="169,79,311,119"/>
+<area shape="rect" title=" " alt="" coords="335,79,478,119"/>
+<area shape="rect" title=" " alt="" coords="503,86,580,111"/>
 </map>
 </div>
 </div>
@@ -137,11 +138,6 @@ Namespaces</h2></td></tr>
 Macros</h2></td></tr>
 <tr class="memitem:a3ce9b5b41d3457de21f0788dcfb4f816"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d42/ToastGPUContext_8hpp.html#a3ce9b5b41d3457de21f0788dcfb4f816">ENABLE_OFFSCREEN_GL</a>&#160;&#160;&#160;0</td></tr>
 <tr class="separator:a3ce9b5b41d3457de21f0788dcfb4f816"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:a3c96d80d363e67d13a41b5d1821f3242"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../dc/d42/ToastGPUContext_8hpp.html#a3c96d80d363e67d13a41b5d1821f3242">GLFWwindow</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d42/ToastGPUContext_8hpp.html#a3c96d80d363e67d13a41b5d1821f3242">GLFWwindow</a></td></tr>
-<tr class="separator:a3c96d80d363e67d13a41b5d1821f3242"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>GPU Context for Ultralight rendering in Toast Engine. </p>
@@ -162,24 +158,7 @@ Typedefs</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d42/ToastGPUContext_8hpp_source.html#l00014">14</a> of file <a class="el" href="../../dc/d42/ToastGPUContext_8hpp_source.html">ToastGPUContext.hpp</a>.</p>
-
-</div>
-</div>
-<h2 class="groupheader">Typedef Documentation</h2>
-<a id="a3c96d80d363e67d13a41b5d1821f3242" name="a3c96d80d363e67d13a41b5d1821f3242"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3c96d80d363e67d13a41b5d1821f3242">&#9670;&#160;</a></span>GLFWwindow</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef struct <a class="el" href="../../dc/d42/ToastGPUContext_8hpp.html#a3c96d80d363e67d13a41b5d1821f3242">GLFWwindow</a> <a class="el" href="../../dc/d42/ToastGPUContext_8hpp.html#a3c96d80d363e67d13a41b5d1821f3242">GLFWwindow</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/d42/ToastGPUContext_8hpp_source.html#l00012">12</a> of file <a class="el" href="../../dc/d42/ToastGPUContext_8hpp_source.html">ToastGPUContext.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d42/ToastGPUContext_8hpp_source.html#l00013">13</a> of file <a class="el" href="../../dc/d42/ToastGPUContext_8hpp_source.html">ToastGPUContext.hpp</a>.</p>
 
 </div>
 </div>

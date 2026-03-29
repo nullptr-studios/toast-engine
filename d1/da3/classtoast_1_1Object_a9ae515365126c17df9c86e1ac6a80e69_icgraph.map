@@ -11,8 +11,8 @@
 <area shape="rect" id="node15" href="$d0/dc7/classSpineRendererComponent.html#a6fd92e0e723525ba2746325030958911" title=" " alt="" coords="469,461,661,501"/>
 <area shape="rect" id="node16" href="$d1/da3/classtoast_1_1Object.html#a951d9c058d1d04212d5c9da193a47d25" title="Destroys this object." alt="" coords="491,526,638,551"/>
 <area shape="rect" id="node17" href="$d0/dc7/classSpineRendererComponent.html#a15033e2bd6c88dbf36a88a1045458194" title=" " alt="" coords="469,576,661,616"/>
-<area shape="rect" id="node18" href="$d5/dd0/namespacephysics.html#a0027d3725be030a56a5ccb3a36b91616" title=" " alt="" coords="467,641,663,666"/>
-<area shape="rect" id="node19" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a98b9cecc3733f9a2042e2bda4dd89ede" title=" " alt="" coords="225,633,402,673"/>
+<area shape="rect" id="node18" href="$d5/dd0/namespacephysics.html#aa3a7e4c9e02abd1798c4843fd5273a33" title=" " alt="" coords="467,641,663,666"/>
+<area shape="rect" id="node19" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a6963546bf6bad5b4b18c8990feb99703" title=" " alt="" coords="225,633,402,673"/>
 <area shape="rect" id="node20" href="$d1/da3/classtoast_1_1Object.html#a71ecedef54b6348ea33ccfb5503bcde0" title=" " alt="" coords="481,742,648,767"/>
 <area shape="rect" id="node22" href="$d6/dd4/classtoast_1_1Scene.html#acb44061f0eea603b846970680ce5be30" title=" " alt="" coords="486,791,643,817"/>
 <area shape="rect" id="node23" href="$d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24" title="Saves object state to JSON." alt="" coords="492,841,637,866"/>
@@ -32,7 +32,7 @@
 <area shape="rect" id="node25" href="$d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title="Saves object state to JSON." alt="" coords="5,762,160,787"/>
 <area shape="rect" id="node28" href="$d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="10,811,155,837"/>
 <area shape="rect" id="node30" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="208,910,419,935"/>
-<area shape="rect" id="node31" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a96e64ff34b39b6d78b0d7366dcae848e" title="Construct a new HUD Layer." alt="" coords="219,960,408,1000"/>
+<area shape="rect" id="node31" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a60e4c37b45b29617f840b0074d2c41fb" title="Construct a new HUD Layer." alt="" coords="219,960,408,1000"/>
 <area shape="rect" id="node32" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="241,1024,386,1064"/>
 <area shape="rect" id="node33" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="216,1088,411,1128"/>
 <area shape="rect" id="node34" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a34757355e7ec79f24c8ce4fa594a7d7f" title=" " alt="" coords="225,1152,402,1192"/>

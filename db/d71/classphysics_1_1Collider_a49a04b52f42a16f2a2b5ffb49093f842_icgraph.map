@@ -1,0 +1,8 @@
+<map id="physics::Collider::DestroyConvexShapes" name="physics::Collider::DestroyConvexShapes">
+<area shape="rect" id="node1" title=" " alt="" coords="397,101,567,141"/>
+<area shape="rect" id="node2" href="$db/d71/classphysics_1_1Collider.html#a6f9ccc6b4ae80c28845da8d32ea72d53" title=" " alt="" coords="212,69,349,109"/>
+<area shape="rect" id="node6" href="$db/d71/classphysics_1_1Collider.html#a57cf5e7c5cfa6f2662180d5f6cbf18b5" title="This function runs when the object is set to be destroyed." alt="" coords="212,133,349,173"/>
+<area shape="rect" id="node3" href="$db/d71/classphysics_1_1Collider.html#a1d55caaa35c76ab687e218769d97bda1" title=" " alt="" coords="16,5,153,45"/>
+<area shape="rect" id="node4" href="$db/d71/classphysics_1_1Collider.html#aed6bce7b608aa3920ef5dc3540f5cf92" title=" " alt="" coords="16,69,153,109"/>
+<area shape="rect" id="node5" href="$db/d71/classphysics_1_1Collider.html#adb659d8b5b2dc880af43418ee896e23a" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,134,164,159"/>
+</map>

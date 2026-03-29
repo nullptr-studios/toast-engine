@@ -1,7 +1,7 @@
 <map id="event::ListenerComponent::Subscribe" name="event::ListenerComponent::Subscribe">
 <area shape="rect" id="node1" title="Subscribes a function to a specific event." alt="" coords="264,151,459,191"/>
 <area shape="rect" id="node2" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,5,216,31"/>
-<area shape="rect" id="node3" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a96e64ff34b39b6d78b0d7366dcae848e" title="Construct a new HUD Layer." alt="" coords="16,55,205,95"/>
+<area shape="rect" id="node3" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a60e4c37b45b29617f840b0074d2c41fb" title="Construct a new HUD Layer." alt="" coords="16,55,205,95"/>
 <area shape="rect" id="node4" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="38,119,183,159"/>
 <area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="13,183,208,223"/>
 <area shape="rect" id="node6" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a34757355e7ec79f24c8ce4fa594a7d7f" title=" " alt="" coords="22,247,199,287"/>

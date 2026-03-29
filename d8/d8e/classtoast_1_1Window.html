@@ -129,7 +129,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a3ad3d9acdc93f96a4a7097d8989828e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a window with the specified dimensions.  <br /></td></tr>
 <tr class="separator:a3ad3d9acdc93f96a4a7097d8989828e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8d4c1c3b5b318686bc19f3f048cfa6e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#ab8d4c1c3b5b318686bc19f3f048cfa6e">~Window</a> ()</td></tr>
-<tr class="memdesc:ab8d4c1c3b5b318686bc19f3f048cfa6e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys the window and terminates GLFW.  <br /></td></tr>
+<tr class="memdesc:ab8d4c1c3b5b318686bc19f3f048cfa6e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys the window and terminates SDL.  <br /></td></tr>
 <tr class="separator:ab8d4c1c3b5b318686bc19f3f048cfa6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad58c193a91fc22a8d2ea61e878794a3e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#ad58c193a91fc22a8d2ea61e878794a3e">Window</a> (const <a class="el" href="../../d8/d8e/classtoast_1_1Window.html">Window</a> &amp;)=delete</td></tr>
 <tr class="separator:ad58c193a91fc22a8d2ea61e878794a3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -176,9 +176,11 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a3dd532d96affd51ae4435bf6c0e726f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f0bb962da4f7bd7b831d1c807a9befa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#a6f0bb962da4f7bd7b831d1c807a9befa">SetRefreshFrameTime</a> (double frameTime)</td></tr>
 <tr class="separator:a6f0bb962da4f7bd7b831d1c807a9befa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad31e2f79821a5ce4c83f21e2c1718e37"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d42/ToastGPUContext_8hpp.html#a3c96d80d363e67d13a41b5d1821f3242">GLFWwindow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#ad31e2f79821a5ce4c83f21e2c1718e37">GetWindow</a> () const</td></tr>
-<tr class="memdesc:ad31e2f79821a5ce4c83f21e2c1718e37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the underlying GLFW window handle.  <br /></td></tr>
-<tr class="separator:ad31e2f79821a5ce4c83f21e2c1718e37"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1cceb276573e9cca93214ec58934e5c7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/d8a/HUDLayer_8hpp.html#a55a196c7d3b8497538632c79ae1e6392">SDL_Window</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#a1cceb276573e9cca93214ec58934e5c7">GetWindow</a> () const</td></tr>
+<tr class="memdesc:a1cceb276573e9cca93214ec58934e5c7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the underlying SDL window handle.  <br /></td></tr>
+<tr class="separator:a1cceb276573e9cca93214ec58934e5c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab29e437e8081fd599e4981013249c672"><td class="memItemLeft" align="right" valign="top">SDL_GLContext&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#ab29e437e8081fd599e4981013249c672">GetGLContext</a> () const</td></tr>
+<tr class="separator:ab29e437e8081fd599e4981013249c672"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -191,14 +193,16 @@ Static Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-static-methods" name="pri-static-methods"></a>
 Static Private Member Functions</h2></td></tr>
 <tr class="memitem:a010e52f8959c9ad63264b38499e5254a"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#a010e52f8959c9ad63264b38499e5254a">ErrorCallback</a> (int error, const char *description)</td></tr>
-<tr class="memdesc:a010e52f8959c9ad63264b38499e5254a"><td class="mdescLeft">&#160;</td><td class="mdescRight">GLFW error callback handler.  <br /></td></tr>
+<tr class="memdesc:a010e52f8959c9ad63264b38499e5254a"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html" title="Singleton class managing the application window.">Window</a> error callback handler.  <br /></td></tr>
 <tr class="separator:a010e52f8959c9ad63264b38499e5254a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:a6be5ae2d855acbcedfbb4a9898f8d899"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d42/ToastGPUContext_8hpp.html#a3c96d80d363e67d13a41b5d1821f3242">GLFWwindow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#a6be5ae2d855acbcedfbb4a9898f8d899">m_glfwWindow</a></td></tr>
-<tr class="memdesc:a6be5ae2d855acbcedfbb4a9898f8d899"><td class="mdescLeft">&#160;</td><td class="mdescRight">Raw GLFW window pointer.  <br /></td></tr>
-<tr class="separator:a6be5ae2d855acbcedfbb4a9898f8d899"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a120c0a5177a80106332bb68d42aa9508"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/d8a/HUDLayer_8hpp.html#a55a196c7d3b8497538632c79ae1e6392">SDL_Window</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#a120c0a5177a80106332bb68d42aa9508">m_sdlWindow</a> = nullptr</td></tr>
+<tr class="memdesc:a120c0a5177a80106332bb68d42aa9508"><td class="mdescLeft">&#160;</td><td class="mdescRight">Raw SDL window pointer.  <br /></td></tr>
+<tr class="separator:a120c0a5177a80106332bb68d42aa9508"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f6e03a5fc87d01f653a8dd9f0b061b0"><td class="memItemLeft" align="right" valign="top">SDL_GLContext&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#a0f6e03a5fc87d01f653a8dd9f0b061b0">m_glContext</a> = nullptr</td></tr>
+<tr class="separator:a0f6e03a5fc87d01f653a8dd9f0b061b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac2ce2a4bbbfe9b1b8e6641b5c8b59ba2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d26/structtoast_1_1WindowProps.html">WindowProps</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#ac2ce2a4bbbfe9b1b8e6641b5c8b59ba2">m_properties</a></td></tr>
 <tr class="memdesc:ac2ce2a4bbbfe9b1b8e6641b5c8b59ba2"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html" title="Singleton class managing the application window.">Window</a> configuration properties.  <br /></td></tr>
 <tr class="separator:ac2ce2a4bbbfe9b1b8e6641b5c8b59ba2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -213,6 +217,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a825d4a2a43bb3417c70b3345b42f004d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89463d87c119516d92b89db9b1b030d4"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#a89463d87c119516d92b89db9b1b030d4">m_vsync</a> = true</td></tr>
 <tr class="separator:a89463d87c119516d92b89db9b1b030d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a300ba5559fc3b6f70b827c675b315c01"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#a300ba5559fc3b6f70b827c675b315c01">m_shouldClose</a> = false</td></tr>
+<tr class="separator:a300ba5559fc3b6f70b827c675b315c01"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaffd07143dc979f0f07fa56deff6bf3c"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/classtoast_1_1Window.html#aaffd07143dc979f0f07fa56deff6bf3c">m_refreshFrameTime</a> = 16.6667</td></tr>
 <tr class="separator:aaffd07143dc979f0f07fa56deff6bf3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -224,7 +230,7 @@ Static Private Attributes</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Singleton class managing the application window. </p>
-<p>The <a class="el" href="../../d8/d8e/classtoast_1_1Window.html" title="Singleton class managing the application window.">Window</a> class wraps GLFW to provide window creation, event handling, and OpenGL context management. It follows the singleton pattern as only one window is supported.</p>
+<p>The <a class="el" href="../../d8/d8e/classtoast_1_1Window.html" title="Singleton class managing the application window.">Window</a> class wraps SDL3 to provide window creation, event handling, and OpenGL context management. It follows the singleton pattern as only one window is supported.</p>
 <dl class="section user"><dt>Features:</dt><dd><ul>
 <li><a class="el" href="../../d8/d8e/classtoast_1_1Window.html" title="Singleton class managing the application window.">Window</a> creation and destruction</li>
 <li>Double-buffered rendering with buffer swap</li>
@@ -247,7 +253,7 @@ Static Private Attributes</h2></td></tr>
 </div><!-- fragment --></dd></dl>
 <dl class="section note"><dt>Note</dt><dd>The window is created and managed by the <a class="el" href="../../d9/d4f/classtoast_1_1Engine.html" title="Core engine class that manages the main application loop and subsystems.">Engine</a> class. </dd></dl>
 <dl class="section warning"><dt>Warning</dt><dd>Only one <a class="el" href="../../d8/d8e/classtoast_1_1Window.html" title="Singleton class managing the application window.">Window</a> instance can exist at a time.</dd></dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="../../d9/d4f/classtoast_1_1Engine.html" title="Core engine class that manages the main application loop and subsystems.">Engine</a>, <a class="el" href="../../de/db0/classtoast_1_1WindowException.html" title="Exception thrown when a GLFW error occurs.">WindowException</a></dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="../../d9/d4f/classtoast_1_1Engine.html" title="Core engine class that manages the main application loop and subsystems.">Engine</a>, <a class="el" href="../../de/db0/classtoast_1_1WindowException.html" title="Exception thrown when a window backend error occurs.">WindowException</a></dd></dl>
 <p>This class is the main window class for the Toast <a class="el" href="../../d9/d4f/classtoast_1_1Engine.html" title="Core engine class that manages the main application loop and subsystems.">Engine</a>. It is a wrapper over the <a href="https://www.glfw.org/documentation">GLFW library</a>.</p>
 <p>To create a window simply call the constructor passing the window size and the name. There are a lot of features left to implement so if anything is needed that doesn't have a proper function expand the class wraping the function you need from GLFW. You should never use GLFW outside the HID module. </p>
 
@@ -301,7 +307,7 @@ Static Private Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00016">16</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00045">45</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -320,9 +326,9 @@ Static Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Destroys the window and terminates GLFW. </p>
+<p>Destroys the window and terminates SDL. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00059">59</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00089">89</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -387,25 +393,16 @@ Static Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>GLFW error callback handler. </p>
+<p><a class="el" href="../../d8/d8e/classtoast_1_1Window.html" title="Singleton class managing the application window.">Window</a> error callback handler. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">error</td><td>GLFW error code. </td></tr>
+    <tr><td class="paramname">error</td><td>Backend error code. </td></tr>
     <tr><td class="paramname">description</td><td>Error description string. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00165">165</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d8/d8e/classtoast_1_1Window_a010e52f8959c9ad63264b38499e5254a_icgraph.png" border="0" usemap="#ad8/d8e/classtoast_1_1Window_a010e52f8959c9ad63264b38499e5254a_icgraph" alt=""/></div>
-<map name="ad8/d8e/classtoast_1_1Window_a010e52f8959c9ad63264b38499e5254a_icgraph" id="ad8/d8e/classtoast_1_1Window_a010e52f8959c9ad63264b38499e5254a_icgraph">
-<area shape="rect" title="GLFW error callback handler." alt="" coords="228,5,437,31"/>
-<area shape="rect" href="../../d8/d8e/classtoast_1_1Window.html#a3ad3d9acdc93f96a4a7097d8989828e5" title="Creates a window with the specified dimensions." alt="" coords="5,5,180,31"/>
-</map>
-</div>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00266">266</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -444,7 +441,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00131">131</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00231">231</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -467,7 +464,7 @@ Here is the caller graph for this function:</div>
 <p>Returns the content scale for HiDPI displays (e.g., 2.0 for Retina).</p>
 <dl class="section return"><dt>Returns</dt><dd>Pair of (scaleX, scaleY) factors. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00075">75</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00113">113</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -492,9 +489,9 @@ Here is the caller graph for this function:</div>
 <dd>
 An <code>std::pair</code> with the width and heigth of the framebuffer</dd></dl>
 <p>For easier use of this function considering doing </p><div class="fragment"><div class="line"><span class="keyword">auto</span> [width, height] = <a class="code hl_function" href="../../d8/d8e/classtoast_1_1Window.html#a3975ecde68681bf14f608879435b552b">GetFramebufferSize</a>(); </div>
-<div class="ttc" id="aclasstoast_1_1Window_html_a3975ecde68681bf14f608879435b552b"><div class="ttname"><a href="../../d8/d8e/classtoast_1_1Window.html#a3975ecde68681bf14f608879435b552b">toast::Window::GetFramebufferSize</a></div><div class="ttdeci">glm::uvec2 GetFramebufferSize() const</div><div class="ttdoc">Gets the framebuffer dimensions.</div><div class="ttdef"><b>Definition:</b> <a href="../../d2/d84/Window_8cpp_source.html#l00069">Window.cpp:69</a></div></div>
+<div class="ttc" id="aclasstoast_1_1Window_html_a3975ecde68681bf14f608879435b552b"><div class="ttname"><a href="../../d8/d8e/classtoast_1_1Window.html#a3975ecde68681bf14f608879435b552b">toast::Window::GetFramebufferSize</a></div><div class="ttdeci">glm::uvec2 GetFramebufferSize() const</div><div class="ttdoc">Gets the framebuffer dimensions.</div><div class="ttdef"><b>Definition:</b> <a href="../../d2/d84/Window_8cpp_source.html#l00106">Window.cpp:106</a></div></div>
 </div><!-- fragment --> 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00069">69</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00106">106</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -508,6 +505,33 @@ Here is the caller graph for this function:</div>
 <area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,87,200,127"/>
 </map>
 </div>
+
+</div>
+</div>
+<a id="ab29e437e8081fd599e4981013249c672" name="ab29e437e8081fd599e4981013249c672"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab29e437e8081fd599e4981013249c672">&#9670;&#160;</a></span>GetGLContext()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">SDL_GLContext toast::Window::GetGLContext </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00201">201</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 
 </div>
 </div>
@@ -543,17 +567,18 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d8/d8e/classtoast_1_1Window_a052dc9f95b794a7b7c07fecd30213ff6_icgraph.png" border="0" usemap="#ad8/d8e/classtoast_1_1Window_a052dc9f95b794a7b7c07fecd30213ff6_icgraph" alt=""/></div>
 <map name="ad8/d8e/classtoast_1_1Window_a052dc9f95b794a7b7c07fecd30213ff6_icgraph" id="ad8/d8e/classtoast_1_1Window_a052dc9f95b794a7b7c07fecd30213ff6_icgraph">
-<area shape="rect" title="Gets the singleton window instance." alt="" coords="767,221,967,246"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="281,108,476,148"/>
+<area shape="rect" title="Gets the singleton window instance." alt="" coords="767,242,967,267"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="281,143,476,183"/>
 <area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a39ce4f6ba44499434438b9ba8878f51e" title="Applies only VSync and FPS cap — safe to call at any time, no window resize side&#45;effects." alt="" coords="524,5,719,45"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="22,195,217,235"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="524,184,719,224"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="524,120,719,160"/>
-<area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a431b2a634d0674c39597dad74834a2ec" title="Enables or disables VSync and immediately applies it. Does NOT call the full ApplyRenderSettings." alt="" coords="531,299,711,339"/>
-<area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a0418bbc4c403c998c16b52ccf33616f4" title=" " alt="" coords="289,227,469,267"/>
-<area shape="rect" href="../../df/d3f/structevent_1_1WindowResize.html#ab646014d214524bfdfd6818e8b65544b" title=" " alt="" coords="540,413,703,453"/>
-<area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a0e2a08967ff0d9ffb1db23e45288961b" title=" " alt="" coords="289,19,469,59"/>
-<area shape="rect" href="../../d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="5,26,233,51"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="22,120,217,160"/>
+<area shape="rect" href="../../dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a874eca459b55e550d33374080f8e20d9" title="Initialize the Ultralight renderer and create views." alt="" coords="527,171,716,211"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="524,235,719,275"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="524,299,719,339"/>
+<area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a431b2a634d0674c39597dad74834a2ec" title="Enables or disables VSync and immediately applies it. Does NOT call the full ApplyRenderSettings." alt="" coords="531,363,711,403"/>
+<area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a0418bbc4c403c998c16b52ccf33616f4" title=" " alt="" coords="289,396,469,436"/>
+<area shape="rect" href="../../df/d3f/structevent_1_1WindowResize.html#ab646014d214524bfdfd6818e8b65544b" title=" " alt="" coords="540,477,703,517"/>
+<area shape="rect" href="../../d9/dc4/classrenderer_1_1IRendererBase.html#a0e2a08967ff0d9ffb1db23e45288961b" title=" " alt="" coords="289,5,469,45"/>
+<area shape="rect" href="../../d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="5,13,233,38"/>
 </map>
 </div>
 
@@ -582,7 +607,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00135">135</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00235">235</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -601,7 +626,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00086">86</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00122">122</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -623,7 +648,7 @@ Here is the caller graph for this function:</div>
 <p>Gets time since window creation. </p>
 <dl class="section return"><dt>Returns</dt><dd><a class="el" href="../../da/d66/classTime.html" title="Class that controls the time of the application.">Time</a> in seconds since the window was created. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00082">82</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00118">118</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -654,8 +679,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="ad31e2f79821a5ce4c83f21e2c1718e37" name="ad31e2f79821a5ce4c83f21e2c1718e37"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad31e2f79821a5ce4c83f21e2c1718e37">&#9670;&#160;</a></span>GetWindow()</h2>
+<a id="a1cceb276573e9cca93214ec58934e5c7" name="a1cceb276573e9cca93214ec58934e5c7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1cceb276573e9cca93214ec58934e5c7">&#9670;&#160;</a></span>GetWindow()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -664,7 +689,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../dc/d42/ToastGPUContext_8hpp.html#a3c96d80d363e67d13a41b5d1821f3242">GLFWwindow</a> * toast::Window::GetWindow </td>
+          <td class="memname"><a class="el" href="../../de/d8a/HUDLayer_8hpp.html#a55a196c7d3b8497538632c79ae1e6392">SDL_Window</a> * toast::Window::GetWindow </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -677,16 +702,16 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Gets the underlying GLFW window handle. </p>
-<dl class="section return"><dt>Returns</dt><dd>Raw GLFW window pointer. </dd></dl>
+<p>Gets the underlying SDL window handle. </p>
+<dl class="section return"><dt>Returns</dt><dd>Raw SDL window pointer. </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00196">196</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="../../d8/d8e/classtoast_1_1Window_ad31e2f79821a5ce4c83f21e2c1718e37_icgraph.png" border="0" usemap="#ad8/d8e/classtoast_1_1Window_ad31e2f79821a5ce4c83f21e2c1718e37_icgraph" alt=""/></div>
-<map name="ad8/d8e/classtoast_1_1Window_ad31e2f79821a5ce4c83f21e2c1718e37_icgraph" id="ad8/d8e/classtoast_1_1Window_ad31e2f79821a5ce4c83f21e2c1718e37_icgraph">
-<area shape="rect" title="Gets the underlying GLFW window handle." alt="" coords="229,5,427,31"/>
+<div class="center"><img src="../../d8/d8e/classtoast_1_1Window_a1cceb276573e9cca93214ec58934e5c7_icgraph.png" border="0" usemap="#ad8/d8e/classtoast_1_1Window_a1cceb276573e9cca93214ec58934e5c7_icgraph" alt=""/></div>
+<map name="ad8/d8e/classtoast_1_1Window_a1cceb276573e9cca93214ec58934e5c7_icgraph" id="ad8/d8e/classtoast_1_1Window_a1cceb276573e9cca93214ec58934e5c7_icgraph">
+<area shape="rect" title="Gets the underlying SDL window handle." alt="" coords="229,5,427,31"/>
 <area shape="rect" href="../../df/d5b/classui_1_1UiSystem.html#a3aeafa5b40b261778e89c6d9025c4930" title=" " alt="" coords="5,5,181,31"/>
 </map>
 </div>
@@ -712,7 +737,7 @@ Here is the caller graph for this function:</div>
 <p>Use this to skip rendering when the window is not visible.</p>
 <dl class="section return"><dt>Returns</dt><dd>true if the window is minimized or has zero size. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00158">158</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00259">259</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -760,7 +785,7 @@ Here is the caller graph for this function:</div>
 <p>Polls OS events without swapping buffers. </p>
 <p>Processes pending window events (input, resize, etc.). Called automatically by the engine. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00095">95</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00131">131</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -780,7 +805,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00103">103</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00206">206</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -828,7 +853,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00149">149</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00250">250</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -848,7 +873,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00153">153</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00254">254</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -879,7 +904,7 @@ Here is the caller graph for this function:</div>
 <p>Checks if the window should close. </p>
 <dl class="section return"><dt>Returns</dt><dd>true if close was requested (X button, Alt+F4, etc.). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00065">65</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00102">102</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -901,7 +926,7 @@ Here is the caller graph for this function:</div>
 <p>Swaps the front and back buffers. </p>
 <p>Call this at the end of each frame after rendering to display the rendered content. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00090">90</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00126">126</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -930,7 +955,7 @@ Here is the caller graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00099">99</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d84/Window_8cpp_source.html#l00200">200</a> of file <a class="el" href="../../d2/d84/Window_8cpp_source.html">Window.cpp</a>.</p>
 
 </div>
 </div>
@@ -955,12 +980,12 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00213">213</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00219">219</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 
 </div>
 </div>
-<a id="a6be5ae2d855acbcedfbb4a9898f8d899" name="a6be5ae2d855acbcedfbb4a9898f8d899"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6be5ae2d855acbcedfbb4a9898f8d899">&#9670;&#160;</a></span>m_glfwWindow</h2>
+<a id="a0f6e03a5fc87d01f653a8dd9f0b061b0" name="a0f6e03a5fc87d01f653a8dd9f0b061b0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0f6e03a5fc87d01f653a8dd9f0b061b0">&#9670;&#160;</a></span>m_glContext</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -969,7 +994,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../dc/d42/ToastGPUContext_8hpp.html#a3c96d80d363e67d13a41b5d1821f3242">GLFWwindow</a>* toast::Window::m_glfwWindow</td>
+          <td class="memname">SDL_GLContext toast::Window::m_glContext = nullptr</td>
         </tr>
       </table>
   </td>
@@ -979,9 +1004,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Raw GLFW window pointer. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00205">205</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00211">211</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 
 </div>
 </div>
@@ -1007,7 +1030,7 @@ Here is the caller graph for this function:</div>
 
 <p>Singleton instance pointer. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00202">202</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00207">207</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 
 </div>
 </div>
@@ -1033,7 +1056,7 @@ Here is the caller graph for this function:</div>
 
 <p>Event listener for window events. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00211">211</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00217">217</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 
 </div>
 </div>
@@ -1059,7 +1082,7 @@ Here is the caller graph for this function:</div>
 
 <p><a class="el" href="../../d8/d8e/classtoast_1_1Window.html" title="Singleton class managing the application window.">Window</a> configuration properties. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00208">208</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00214">214</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 
 </div>
 </div>
@@ -1083,7 +1106,57 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00220">220</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00227">227</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a120c0a5177a80106332bb68d42aa9508" name="a120c0a5177a80106332bb68d42aa9508"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a120c0a5177a80106332bb68d42aa9508">&#9670;&#160;</a></span>m_sdlWindow</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../de/d8a/HUDLayer_8hpp.html#a55a196c7d3b8497538632c79ae1e6392">SDL_Window</a>* toast::Window::m_sdlWindow = nullptr</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Raw SDL window pointer. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00210">210</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a300ba5559fc3b6f70b827c675b315c01" name="a300ba5559fc3b6f70b827c675b315c01"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a300ba5559fc3b6f70b827c675b315c01">&#9670;&#160;</a></span>m_shouldClose</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool toast::Window::m_shouldClose = false</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00225">225</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 
 </div>
 </div>
@@ -1107,7 +1180,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00218">218</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00224">224</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 
 </div>
 </div>
@@ -1131,7 +1204,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00216">216</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00222">222</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 
 </div>
 </div>
@@ -1155,7 +1228,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00215">215</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/de3/Window_8hpp_source.html#l00221">221</a> of file <a class="el" href="../../d0/de3/Window_8hpp_source.html">Window.hpp</a>.</p>
 
 </div>
 </div>

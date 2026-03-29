@@ -8,6 +8,7 @@ var hierarchy =
     ] ],
     [ "audio::AudioSystem", "db/d5d/classaudio_1_1AudioSystem.html", null ],
     [ "input::Bind", "dd/d43/structinput_1_1Bind.html", null ],
+    [ "Bloom", "d0/dd5/classBloom.html", null ],
     [ "renderer::BoundingBox", "dd/d13/structrenderer_1_1BoundingBox.html", null ],
     [ "physics::BoxManifold", "de/d3a/structphysics_1_1BoxManifold.html", null ],
     [ "Children", "d8/d87/classChildren.html", null ],
@@ -125,6 +126,10 @@ var hierarchy =
     [ "input::IModifier", "d0/d35/structinput_1_1IModifier.html", null ],
     [ "InputSystem", "de/d88/classinpit_1_1InputSystem.html", null ],
     [ "input::InputSystem", "da/d0b/classinput_1_1InputSystem.html", null ],
+    [ "IPostProcess", "d5/dc4/structIPostProcess.html", [
+      [ "Colorgrading", "db/db7/structColorgrading.html", null ],
+      [ "Tonemaping", "d6/da0/structTonemaping.html", null ]
+    ] ],
     [ "renderer::IRendererBase", "d9/dc4/classrenderer_1_1IRendererBase.html", [
       [ "renderer::OpenGLRenderer", "da/d32/classrenderer_1_1OpenGLRenderer.html", null ]
     ] ],
@@ -200,6 +205,7 @@ var hierarchy =
     [ "physics::PhysicsSystem", "d6/dd8/classphysics_1_1PhysicsSystem.html", null ],
     [ "toast::Engine::Pimpl", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html", null ],
     [ "PlayerController", "d4/da8/classinput_1_1PlayerController.html", null ],
+    [ "PostProcessManager", "d7/d13/classPostProcessManager.html", null ],
     [ "toast::hud::ToastGPUDriver::ProgramEntry", "d8/d98/structtoast_1_1hud_1_1ToastGPUDriver_1_1ProgramEntry.html", null ],
     [ "toast::ProjectSettings", "d4/ddb/structtoast_1_1ProjectSettings.html", null ],
     [ "toast::CoroutineTask::promise_type", "d9/d2b/structtoast_1_1CoroutineTask_1_1promise__type.html", null ],

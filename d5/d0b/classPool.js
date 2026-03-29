@@ -1,5 +1,6 @@
 var classPool =
 [
+    [ "Destroy", "d5/d0b/classPool.html#ae95c8020651bccdd20286a393bb598de", null ],
     [ "EarlyTick", "d5/d0b/classPool.html#a6b9d794d7b296b25332d669a749599cc", null ],
     [ "Hold", "d5/d0b/classPool.html#a7d3b7c8ebf0a6cde4a18336853d28fda", null ],
     [ "Init", "d5/d0b/classPool.html#a1482d253225e87870c64876806e8235d", null ],

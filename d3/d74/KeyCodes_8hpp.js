@@ -1,6 +1,5 @@
 var KeyCodes_8hpp =
 [
-    [ "GLFW_INCLUDE_NONE", "d3/d74/KeyCodes_8hpp.html#a088324ad8995e3eb76024e3e79083d48", null ],
     [ "Device", "d3/d74/KeyCodes_8hpp.html#ad495ea0070fcea929e5e4c493eeb5342", [
       [ "Null", "d3/d74/KeyCodes_8hpp.html#ad495ea0070fcea929e5e4c493eeb5342abbb93ef26e3c101ff11cdd21cab08a94", null ],
       [ "Keyboard", "d3/d74/KeyCodes_8hpp.html#ad495ea0070fcea929e5e4c493eeb5342a6ce4d85a628a88bbdb3ac24a8e5a9c2e", null ],

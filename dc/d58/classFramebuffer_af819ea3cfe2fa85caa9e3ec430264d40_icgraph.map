@@ -1,11 +1,14 @@
 <map id="Framebuffer::unbind" name="Framebuffer::unbind">
-<area shape="rect" id="node1" title=" " alt="" coords="976,146,1129,171"/>
-<area shape="rect" id="node2" href="$dc/d58/classFramebuffer.html#a96e90bfc422ceaa34cbd470957bba664" title=" " alt="" coords="759,57,902,82"/>
-<area shape="rect" id="node7" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a0a8505f22fa05954b99b767e28de37a3" title=" " alt="" coords="733,171,928,211"/>
-<area shape="rect" id="node8" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="491,171,685,211"/>
-<area shape="rect" id="node9" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ae710c3e5e20e988eb3e5af541eac17c8" title=" " alt="" coords="733,107,928,147"/>
+<area shape="rect" id="node1" title=" " alt="" coords="976,221,1129,246"/>
+<area shape="rect" id="node2" href="$dc/d58/classFramebuffer.html#a96e90bfc422ceaa34cbd470957bba664" title=" " alt="" coords="759,93,902,118"/>
+<area shape="rect" id="node8" href="$db/db7/structColorgrading.html#a26a3dd10ae0ac4f27f953e4ca37bcd09" title=" " alt="" coords="749,142,913,167"/>
+<area shape="rect" id="node9" href="$d6/da0/structTonemaping.html#ab36322f98efed50cd103678c74e9a8d3" title=" " alt="" coords="751,191,911,217"/>
+<area shape="rect" id="node10" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ae710c3e5e20e988eb3e5af541eac17c8" title=" " alt="" coords="733,241,928,281"/>
+<area shape="rect" id="node11" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="491,259,685,299"/>
+<area shape="rect" id="node12" href="$d7/d13/classPostProcessManager.html#ada11314e85d3c40d28c02aec93317743" title=" " alt="" coords="752,356,909,396"/>
 <area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="5,5,200,45"/>
-<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,81,200,121"/>
-<area shape="rect" id="node5" href="$dc/d58/classFramebuffer.html#aa16fe7b9d734100fc6817cb131362f60" title=" " alt="" coords="512,57,664,82"/>
-<area shape="rect" id="node6" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="248,49,443,89"/>
+<area shape="rect" id="node4" href="$d7/d13/classPostProcessManager.html#ab9037823e679cff0abc7e649cbe0a864" title=" " alt="" coords="267,127,424,167"/>
+<area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,127,200,167"/>
+<area shape="rect" id="node6" href="$dc/d58/classFramebuffer.html#aa16fe7b9d734100fc6817cb131362f60" title=" " alt="" coords="512,73,664,98"/>
+<area shape="rect" id="node7" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="248,63,443,103"/>
 </map>

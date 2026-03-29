@@ -13,6 +13,7 @@ var classtoast_1_1MeshRendererComponent =
     [ "SetMaterial", "de/da0/classtoast_1_1MeshRendererComponent.html#aeb94c065b4cf1a7f341b48610b02d54f", null ],
     [ "SetMesh", "de/da0/classtoast_1_1MeshRendererComponent.html#a0e8d5ae064ee6e4c5da68454d991eece", null ],
     [ "SetMesh", "de/da0/classtoast_1_1MeshRendererComponent.html#a4f81e014fd09e5d5fda75a2b7c84b8fd", null ],
+    [ "m_drawToDepth", "de/da0/classtoast_1_1MeshRendererComponent.html#a6b94c1e9aaca2b251d9f097230a70d07", null ],
     [ "m_isOccluder", "de/da0/classtoast_1_1MeshRendererComponent.html#a291b7cc1c803a7f31380d353c2e96d2b", null ],
     [ "m_material", "de/da0/classtoast_1_1MeshRendererComponent.html#a78eb8eef548ec2a3b72dd42e9fa33a0b", null ],
     [ "m_materialPath", "de/da0/classtoast_1_1MeshRendererComponent.html#a2a5ec94d952678d682f2834721c3867b", null ],

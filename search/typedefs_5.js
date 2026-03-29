@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['irenderable_0',['IRenderable',['../d7/d78/IRenderable_8hpp.html#a6fb8f660dd7cbc0df48549b79c483bfa',1,'IRenderable.hpp']]]
+  ['json_5ft_0',['json_t',['../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3',1,'json_t():&#160;Material.cpp'],['../df/da3/ISerializable_8hpp.html#a4639603c23a42546f6e44921d3c8b0a3',1,'json_t():&#160;ISerializable.hpp']]]
 ];

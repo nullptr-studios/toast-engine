@@ -15,5 +15,10 @@ var namespaceevent =
     [ "WindowResize", "df/d3f/structevent_1_1WindowResize.html", "df/d3f/structevent_1_1WindowResize" ],
     [ "EventMap", "dc/dd0/namespaceevent.html#a5b57204c8784476b478f18fa8f36e8c2", null ],
     [ "Send", "dc/dd0/namespaceevent.html#ac371b5226ab6b0eba839ac3aec88c6ab", null ],
-    [ "s_eventMutex", "dc/dd0/namespaceevent.html#ad13afc8c8b60ea5cceabba7cba5e5c88", null ]
+    [ "s_eventMutex", "dc/dd0/namespaceevent.html#ad13afc8c8b60ea5cceabba7cba5e5c88", null ],
+    [ "WINDOW_INPUT_DEVICE_CONNECTED", "dc/dd0/namespaceevent.html#a5aa48cdb24c72469526d421ce0cb9eff", null ],
+    [ "WINDOW_INPUT_DEVICE_DISCONNECTED", "dc/dd0/namespaceevent.html#a7ef7d6ba37932555dd7cfc843cb40cb3", null ],
+    [ "WINDOW_INPUT_PRESSED", "dc/dd0/namespaceevent.html#a48cfb526807630847468859037e5c3fb", null ],
+    [ "WINDOW_INPUT_RELEASED", "dc/dd0/namespaceevent.html#af0075259775b45f7d61475ffe2011e04", null ],
+    [ "WINDOW_INPUT_REPEATED", "dc/dd0/namespaceevent.html#aa3704fb005d677943b60a4efade278aa", null ]
 ];

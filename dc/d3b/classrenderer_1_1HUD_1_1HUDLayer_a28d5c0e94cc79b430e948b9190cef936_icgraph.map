@@ -1,6 +1,7 @@
 <map id="renderer::HUD::HUDLayer::ExecuteJS" name="renderer::HUD::HUDLayer::ExecuteJS">
-<area shape="rect" id="node1" title="Execute an arbitrary JavaScript string on the first view. If the DOM is not ready yet the script will..." alt="" coords="243,69,432,109"/>
-<area shape="rect" id="node2" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a9ffa16067cfe0be528a8c1b9f0369f6d" title="Change the currently selected weapon slot (calls JS: window.setSelectedWeapon)" alt="" coords="5,5,195,45"/>
-<area shape="rect" id="node3" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a6c241a7372d334e199e58b45ae45e73a" title="Set only the ammo count for a weapon slot (calls JS: window.HUD.setSlot)" alt="" coords="5,69,195,109"/>
-<area shape="rect" id="node4" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a4a55bb0ee57228b25d32cc4baabc6b2e" title="Set a weapon slot&#39;s icon URL and ammo count (calls JS: window.setWeaponSlot)" alt="" coords="5,133,195,173"/>
+<area shape="rect" id="node1" title="Execute an arbitrary JavaScript string on the first view. If the DOM is not ready yet the script will..." alt="" coords="264,87,453,127"/>
+<area shape="rect" id="node2" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,5,216,31"/>
+<area shape="rect" id="node3" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a9ffa16067cfe0be528a8c1b9f0369f6d" title="Change the currently selected weapon slot (calls JS: window.setSelectedWeapon)" alt="" coords="16,55,205,95"/>
+<area shape="rect" id="node4" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a6c241a7372d334e199e58b45ae45e73a" title="Set only the ammo count for a weapon slot (calls JS: window.HUD.setSlot)" alt="" coords="16,119,205,159"/>
+<area shape="rect" id="node5" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a4a55bb0ee57228b25d32cc4baabc6b2e" title="Set a weapon slot&#39;s icon URL and ammo count (calls JS: window.setWeaponSlot)" alt="" coords="16,183,205,223"/>
 </map>

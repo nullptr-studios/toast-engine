@@ -103,44 +103,98 @@ $(document).ready(function(){initNavTree('dd/d8c/structinput_1_1GamepadState.htm
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:acde9c6373ad6cdb9153a8349d025b8b6"><td class="memItemLeft" align="right" valign="top">GLFWgamepadstate&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8c/structinput_1_1GamepadState.html#acde9c6373ad6cdb9153a8349d025b8b6">current</a></td></tr>
-<tr class="separator:acde9c6373ad6cdb9153a8349d025b8b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5cc0b5dd8f9b80104715bd541a842765"><td class="memItemLeft" align="right" valign="top">GLFWgamepadstate&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8c/structinput_1_1GamepadState.html#a5cc0b5dd8f9b80104715bd541a842765">previous</a></td></tr>
-<tr class="separator:a5cc0b5dd8f9b80104715bd541a842765"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a151bc153692a8666e3071c52ae4e2129"><td class="memItemLeft" align="right" valign="top">SDL_Gamepad *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8c/structinput_1_1GamepadState.html#a151bc153692a8666e3071c52ae4e2129">handle</a> = nullptr</td></tr>
+<tr class="separator:a151bc153692a8666e3071c52ae4e2129"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a015df38127d426adecd7ba275d2fb6e1"><td class="memItemLeft" align="right" valign="top">std::array&lt; bool, SDL_GAMEPAD_BUTTON_COUNT &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8c/structinput_1_1GamepadState.html#a015df38127d426adecd7ba275d2fb6e1">currentButtons</a> {}</td></tr>
+<tr class="separator:a015df38127d426adecd7ba275d2fb6e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a754b2df3f7ae88b4c12357e06f36f142"><td class="memItemLeft" align="right" valign="top">std::array&lt; bool, SDL_GAMEPAD_BUTTON_COUNT &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8c/structinput_1_1GamepadState.html#a754b2df3f7ae88b4c12357e06f36f142">previousButtons</a> {}</td></tr>
+<tr class="separator:a754b2df3f7ae88b4c12357e06f36f142"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a866b34c149086d42df699366ded7fa93"><td class="memItemLeft" align="right" valign="top">std::array&lt; float, SDL_GAMEPAD_AXIS_COUNT &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8c/structinput_1_1GamepadState.html#a866b34c149086d42df699366ded7fa93">currentAxes</a> {}</td></tr>
+<tr class="separator:a866b34c149086d42df699366ded7fa93"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a64cbdc7c88b60d0526403be6bf5c98d9"><td class="memItemLeft" align="right" valign="top">std::array&lt; float, SDL_GAMEPAD_AXIS_COUNT &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8c/structinput_1_1GamepadState.html#a64cbdc7c88b60d0526403be6bf5c98d9">previousAxes</a> {}</td></tr>
+<tr class="separator:a64cbdc7c88b60d0526403be6bf5c98d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00018">18</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00019">19</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
-<a id="acde9c6373ad6cdb9153a8349d025b8b6" name="acde9c6373ad6cdb9153a8349d025b8b6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acde9c6373ad6cdb9153a8349d025b8b6">&#9670;&#160;</a></span>current</h2>
+<a id="a866b34c149086d42df699366ded7fa93" name="a866b34c149086d42df699366ded7fa93"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a866b34c149086d42df699366ded7fa93">&#9670;&#160;</a></span>currentAxes</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">GLFWgamepadstate input::GamepadState::current</td>
+          <td class="memname">std::array&lt;float, SDL_GAMEPAD_AXIS_COUNT&gt; input::GamepadState::currentAxes {}</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00019">19</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00023">23</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
-<a id="a5cc0b5dd8f9b80104715bd541a842765" name="a5cc0b5dd8f9b80104715bd541a842765"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5cc0b5dd8f9b80104715bd541a842765">&#9670;&#160;</a></span>previous</h2>
+<a id="a015df38127d426adecd7ba275d2fb6e1" name="a015df38127d426adecd7ba275d2fb6e1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a015df38127d426adecd7ba275d2fb6e1">&#9670;&#160;</a></span>currentButtons</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">GLFWgamepadstate input::GamepadState::previous</td>
+          <td class="memname">std::array&lt;bool, SDL_GAMEPAD_BUTTON_COUNT&gt; input::GamepadState::currentButtons {}</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00021">21</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a151bc153692a8666e3071c52ae4e2129" name="a151bc153692a8666e3071c52ae4e2129"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a151bc153692a8666e3071c52ae4e2129">&#9670;&#160;</a></span>handle</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">SDL_Gamepad* input::GamepadState::handle = nullptr</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00020">20</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a64cbdc7c88b60d0526403be6bf5c98d9" name="a64cbdc7c88b60d0526403be6bf5c98d9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a64cbdc7c88b60d0526403be6bf5c98d9">&#9670;&#160;</a></span>previousAxes</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::array&lt;float, SDL_GAMEPAD_AXIS_COUNT&gt; input::GamepadState::previousAxes {}</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00024">24</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a754b2df3f7ae88b4c12357e06f36f142" name="a754b2df3f7ae88b4c12357e06f36f142"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a754b2df3f7ae88b4c12357e06f36f142">&#9670;&#160;</a></span>previousButtons</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::array&lt;bool, SDL_GAMEPAD_BUTTON_COUNT&gt; input::GamepadState::previousButtons {}</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00022">22</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>

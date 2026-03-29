@@ -1,4 +1,4 @@
 <map id="event::WindowInputDevice::Callback" name="event::WindowInputDevice::Callback">
-<area shape="rect" id="node1" title=" " alt="" coords="228,5,425,45"/>
-<area shape="rect" id="node2" href="$d8/d8e/classtoast_1_1Window.html#a3ad3d9acdc93f96a4a7097d8989828e5" title="Creates a window with the specified dimensions." alt="" coords="5,13,180,38"/>
+<area shape="rect" id="node1" title=" " alt="" coords="273,5,471,45"/>
+<area shape="rect" id="node2" href="$d8/d8e/classtoast_1_1Window.html#aa040bba8b272d0790c3ff839abfcf262" title="Polls OS events without swapping buffers." alt="" coords="5,13,225,38"/>
 </map>

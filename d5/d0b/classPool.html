@@ -131,6 +131,9 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ab25afd9d7b6ea0f831a8d3436a5215d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d3b7c8ebf0a6cde4a18336853d28fda"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0b/classPool.html#a7d3b7c8ebf0a6cde4a18336853d28fda">Hold</a> (T *obj)</td></tr>
 <tr class="separator:a7d3b7c8ebf0a6cde4a18336853d28fda"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae95c8020651bccdd20286a393bb598de"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0b/classPool.html#ae95c8020651bccdd20286a393bb598de">Destroy</a> () override</td></tr>
+<tr class="memdesc:ae95c8020651bccdd20286a393bb598de"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function runs when the object is set to be destroyed.  <br /></td></tr>
+<tr class="separator:ae95c8020651bccdd20286a393bb598de"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1Actor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classtoast_1_1Actor')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d8/d92/classtoast_1_1Actor.html">toast::Actor</a></td></tr>
 <tr class="memitem:a8b646727d72f463ad8fe80b96a6eb514 inherit pub_methods_classtoast_1_1Actor"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d92/classtoast_1_1Actor.html#a8b646727d72f463ad8fe80b96a6eb514">REGISTER_TYPE</a> (<a class="el" href="../../d8/d92/classtoast_1_1Actor.html">Actor</a>)</td></tr>
 <tr class="separator:a8b646727d72f463ad8fe80b96a6eb514 inherit pub_methods_classtoast_1_1Actor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -178,6 +181,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a007cb426ff8f3ad0248257f274161e5e inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a501e4743a60dd495c3b85c8ded3cd8eb inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a501e4743a60dd495c3b85c8ded3cd8eb">parent</a> () const noexcept</td></tr>
 <tr class="separator:a501e4743a60dd495c3b85c8ded3cd8eb inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04135b1bb33fd5c23d6ca9951c685263 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a04135b1bb33fd5c23d6ca9951c685263">SetParent</a> (<a class="el" href="../../d1/da3/classtoast_1_1Object.html">Object</a> *<a class="el" href="../../d1/da3/classtoast_1_1Object.html#a501e4743a60dd495c3b85c8ded3cd8eb">parent</a>)</td></tr>
+<tr class="separator:a04135b1bb33fd5c23d6ca9951c685263 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3bdab1a6b3cd48b518e8289a36e90faf inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d6/dd4/classtoast_1_1Scene.html">toast::Scene</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3bdab1a6b3cd48b518e8289a36e90faf">scene</a> () const noexcept</td></tr>
 <tr class="separator:a3bdab1a6b3cd48b518e8289a36e90faf inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9ae515365126c17df9c86e1ac6a80e69 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a9ae515365126c17df9c86e1ac6a80e69">name</a> () const noexcept</td></tr>
@@ -317,6 +322,39 @@ Additional Inherited Members</h2></td></tr>
 class Pool&lt; T, size &gt;</div>
 <p class="definition">Definition at line <a class="el" href="../../df/d0f/Pool_8hpp_source.html#l00013">13</a> of file <a class="el" href="../../df/d0f/Pool_8hpp_source.html">Pool.hpp</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="ae95c8020651bccdd20286a393bb598de" name="ae95c8020651bccdd20286a393bb598de"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae95c8020651bccdd20286a393bb598de">&#9670;&#160;</a></span>Destroy()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;<a class="el" href="../../d0/d39/conceptis__object.html">is_object</a> T, int size&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="../../d5/d0b/classPool.html">Pool</a>&lt; T, size &gt;::Destroy </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>This function runs when the object is set to be destroyed. </p>
+
+<p>Reimplemented from <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#ac43563b8a9b15bbb1361ee75322296a8">toast::Actor</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../df/d0f/Pool_8hpp_source.html#l00090">90</a> of file <a class="el" href="../../df/d0f/Pool_8hpp_source.html">Pool.hpp</a>.</p>
+
+</div>
+</div>
 <a id="a6b9d794d7b296b25332d669a749599cc" name="a6b9d794d7b296b25332d669a749599cc"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6b9d794d7b296b25332d669a749599cc">&#9670;&#160;</a></span>EarlyTick()</h2>
 
@@ -485,7 +523,7 @@ template&lt;<a class="el" href="../../d0/d39/conceptis__object.html">is_object</
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/d0f/Pool_8hpp_source.html#l00092">92</a> of file <a class="el" href="../../df/d0f/Pool_8hpp_source.html">Pool.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/d0f/Pool_8hpp_source.html#l00101">101</a> of file <a class="el" href="../../df/d0f/Pool_8hpp_source.html">Pool.hpp</a>.</p>
 
 </div>
 </div>
@@ -511,7 +549,7 @@ template&lt;<a class="el" href="../../d0/d39/conceptis__object.html">is_object</
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/d0f/Pool_8hpp_source.html#l00091">91</a> of file <a class="el" href="../../df/d0f/Pool_8hpp_source.html">Pool.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/d0f/Pool_8hpp_source.html#l00100">100</a> of file <a class="el" href="../../df/d0f/Pool_8hpp_source.html">Pool.hpp</a>.</p>
 
 </div>
 </div>
@@ -537,7 +575,7 @@ template&lt;<a class="el" href="../../d0/d39/conceptis__object.html">is_object</
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/d0f/Pool_8hpp_source.html#l00093">93</a> of file <a class="el" href="../../df/d0f/Pool_8hpp_source.html">Pool.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/d0f/Pool_8hpp_source.html#l00102">102</a> of file <a class="el" href="../../df/d0f/Pool_8hpp_source.html">Pool.hpp</a>.</p>
 
 </div>
 </div>

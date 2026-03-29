@@ -3,6 +3,6 @@
 <area shape="rect" id="node2" href="$d0/dd9/classtoast_1_1TransformComponent.html#ae9f6cf2808b058b31ca476212b7acac1" title=" " alt="" coords="256,92,459,132"/>
 <area shape="rect" id="node3" href="$d0/dc7/classSpineRendererComponent.html#a75ba8047dcd4530c718005a1ce114633" title="Returns the bone&#39;s world position (after applying the component&#39;s world transform)...." alt="" coords="11,5,203,45"/>
 <area shape="rect" id="node4" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="35,70,179,95"/>
-<area shape="rect" id="node5" href="$de/d96/classphysics_1_1ColliderRenderable.html#a37b3d774f2caf79962e38e82b4b1db10" title="Called during the geometry pass to render this object." alt="" coords="5,120,208,160"/>
+<area shape="rect" id="node5" href="$de/d96/classphysics_1_1ColliderRenderable.html#ac25c9fa7764ddd9734812f1cd82f73f0" title="Called during the geometry pass to render this object." alt="" coords="5,120,208,160"/>
 <area shape="rect" id="node6" href="$d0/dc7/classSpineRendererComponent.html#a3aac564cd362be9f447a076d6dc3a178" title="Converts a 2&#45;D world&#45;space position into spine root&#45;local space." alt="" coords="5,184,208,224"/>
 </map>

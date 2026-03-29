@@ -1,10 +1,11 @@
 <map id="src/Renderer/HUD/ToastGPUDriver.hpp" name="src/Renderer/HUD/ToastGPUDriver.hpp">
-<area shape="rect" id="node1" title="OpenGL GPU Driver implementation for Ultralight in Toast Engine." alt="" coords="429,5,700,31"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,86,116,111"/>
-<area shape="rect" id="node3" title=" " alt="" coords="141,86,303,111"/>
-<area shape="rect" id="node4" title=" " alt="" coords="327,86,469,111"/>
-<area shape="rect" id="node5" title=" " alt="" coords="493,79,636,119"/>
-<area shape="rect" id="node6" title=" " alt="" coords="661,86,711,111"/>
-<area shape="rect" id="node7" title=" " alt="" coords="735,86,799,111"/>
-<area shape="rect" id="node8" title=" " alt="" coords="824,86,887,111"/>
+<area shape="rect" id="node1" title="OpenGL GPU Driver implementation for Ultralight in Toast Engine." alt="" coords="523,5,794,31"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,86,144,111"/>
+<area shape="rect" id="node3" title=" " alt="" coords="168,86,331,111"/>
+<area shape="rect" id="node4" title=" " alt="" coords="355,86,496,111"/>
+<area shape="rect" id="node5" title=" " alt="" coords="521,79,663,119"/>
+<area shape="rect" id="node6" title=" " alt="" coords="687,86,766,111"/>
+<area shape="rect" id="node7" title=" " alt="" coords="791,86,841,111"/>
+<area shape="rect" id="node8" title=" " alt="" coords="865,86,929,111"/>
+<area shape="rect" id="node9" title=" " alt="" coords="954,86,1017,111"/>
 </map>

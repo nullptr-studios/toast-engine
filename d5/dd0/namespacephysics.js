@@ -45,9 +45,10 @@ var namespacephysics =
     [ "RbRbCollision", "d5/dd0/namespacephysics.html#a023a1eefd578254b09518211706ac1b2", null ],
     [ "RbRbResolution", "d5/dd0/namespacephysics.html#a36809edbcfe0caecb4b7ac54afc385d1", null ],
     [ "RbResetVelocity", "d5/dd0/namespacephysics.html#a33c69640dfa002d677858f5b3536ff2c", null ],
-    [ "RbTriggerCollision", "d5/dd0/namespacephysics.html#a0027d3725be030a56a5ccb3a36b91616", null ],
+    [ "RbTriggerCollision", "d5/dd0/namespacephysics.html#aa3a7e4c9e02abd1798c4843fd5273a33", null ],
     [ "SetGravityPoint", "d5/dd0/namespacephysics.html#a27f31621d04cfbb97d56d971756881ff", null ],
     [ "SetGravityPointScale", "d5/dd0/namespacephysics.html#a655297c3695404b71f4dff341e295390", null ],
     [ "SetGravityType", "d5/dd0/namespacephysics.html#a87606d7d4e42606e3ea00b1d88a2b2ac", null ],
-    [ "ShoelaceArea", "d5/dd0/namespacephysics.html#acd0439aefcf3ae4e14fa0bc34af2c16f", null ]
+    [ "ShoelaceArea", "d5/dd0/namespacephysics.html#acd0439aefcf3ae4e14fa0bc34af2c16f", null ],
+    [ "g_threadLifecycleMutex", "d5/dd0/namespacephysics.html#a82cba2d23e67fd0015fe65a3f3ae2206", null ]
 ];

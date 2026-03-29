@@ -7,7 +7,7 @@ var classinput_1_1InputSystem =
     [ "InputSystem", "da/d0b/classinput_1_1InputSystem.html#af4a01afc105c5b97513b68a82f40cc9b", null ],
     [ "ActiveLayout", "da/d0b/classinput_1_1InputSystem.html#a1d6c48c567d96e57e21f08de8e97ee14", null ],
     [ "AddToQueue", "da/d0b/classinput_1_1InputSystem.html#a4e22245a5adb4c0387dbc28b3f7503b2", null ],
-    [ "ControllerAxis", "da/d0b/classinput_1_1InputSystem.html#a0e6b7ad68697f4aefbc6b88a41cfe899", null ],
+    [ "ControllerAxis", "da/d0b/classinput_1_1InputSystem.html#a801b33253943c3e8c0152316304df8c1", null ],
     [ "ControllerButton", "da/d0b/classinput_1_1InputSystem.html#adbc18d9cd75290d8c046542ecbd51941", null ],
     [ "DispatchQueue", "da/d0b/classinput_1_1InputSystem.html#ae67a8c083bc107a0825daf7377e272ea", null ],
     [ "get", "da/d0b/classinput_1_1InputSystem.html#a4c5ec69d0c239e4705e9264f96f560ce", null ],

@@ -1,7 +1,12 @@
 <map id="inc/Toast/Input/KeyCodes.hpp" name="inc/Toast/Input/KeyCodes.hpp">
-<area shape="rect" id="node1" title=" " alt="" coords="129,5,341,31"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,79,116,104"/>
-<area shape="rect" id="node3" title=" " alt="" coords="141,79,226,104"/>
-<area shape="rect" id="node4" title=" " alt="" coords="250,79,325,104"/>
-<area shape="rect" id="node5" title=" " alt="" coords="349,79,407,104"/>
+<area shape="rect" id="node1" title=" " alt="" coords="669,5,881,31"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,79,169,104"/>
+<area shape="rect" id="node3" title=" " alt="" coords="194,79,357,104"/>
+<area shape="rect" id="node4" title=" " alt="" coords="381,79,538,104"/>
+<area shape="rect" id="node5" title=" " alt="" coords="562,79,709,104"/>
+<area shape="rect" id="node6" title=" " alt="" coords="733,79,818,104"/>
+<area shape="rect" id="node7" title=" " alt="" coords="843,79,908,104"/>
+<area shape="rect" id="node8" title=" " alt="" coords="933,79,1007,104"/>
+<area shape="rect" id="node9" title=" " alt="" coords="1031,79,1090,104"/>
+<area shape="rect" id="node10" title=" " alt="" coords="1115,79,1239,104"/>
 </map>

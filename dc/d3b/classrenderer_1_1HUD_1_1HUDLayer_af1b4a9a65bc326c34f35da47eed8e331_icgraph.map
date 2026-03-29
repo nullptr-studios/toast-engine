@@ -1,0 +1,4 @@
+<map id="renderer::HUD::HUDLayer::OnChar" name="renderer::HUD::HUDLayer::OnChar">
+<area shape="rect" id="node1" title="Handle character input events." alt="" coords="243,5,432,45"/>
+<area shape="rect" id="node2" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a60e4c37b45b29617f840b0074d2c41fb" title="Construct a new HUD Layer." alt="" coords="5,5,195,45"/>
+</map>

@@ -1,6 +1,6 @@
 <map id="toast::World::LoadScene" name="toast::World::LoadScene">
-<area shape="rect" id="node1" title="Loads scene on the init thread, scene disabld after load." alt="" coords="519,24,697,49"/>
-<area shape="rect" id="node2" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,24,216,49"/>
-<area shape="rect" id="node3" href="$d6/dbd/classtoast_1_1GameFlow.html#a03e770afc70716334eb4037d9151c8a5" title=" " alt="" coords="264,24,471,49"/>
-<area shape="rect" id="node4" href="$d6/dbd/classtoast_1_1GameFlow.html#ad20bf8c23fc5cc9ae04746532256cf62" title=" " alt="" coords="264,73,471,99"/>
+<area shape="rect" id="node1" title="Loads scene on the init thread, scene disabld after load." alt="" coords="264,55,443,80"/>
+<area shape="rect" id="node2" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="5,5,216,31"/>
+<area shape="rect" id="node3" href="$d6/dbd/classtoast_1_1GameFlow.html#a03e770afc70716334eb4037d9151c8a5" title=" " alt="" coords="7,55,214,80"/>
+<area shape="rect" id="node4" href="$d6/dbd/classtoast_1_1GameFlow.html#ad20bf8c23fc5cc9ae04746532256cf62" title=" " alt="" coords="7,104,214,129"/>
 </map>

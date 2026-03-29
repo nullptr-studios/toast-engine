@@ -1,6 +1,6 @@
 var classrenderer_1_1HUD_1_1HUDLayer =
 [
-    [ "HUDLayer", "dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a96e64ff34b39b6d78b0d7366dcae848e", null ],
+    [ "HUDLayer", "dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a60e4c37b45b29617f840b0074d2c41fb", null ],
     [ "~HUDLayer", "dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a39280d11923e260190924d74b7701417", null ],
     [ "CreateFramebuffer", "dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a50d5abe82e2db106c3858aecf089aecb", null ],
     [ "CreateGPUContext", "dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#acd0aac45923ac5ab29f2c08a6e55db02", null ],
@@ -58,5 +58,5 @@ var classrenderer_1_1HUD_1_1HUDLayer =
     [ "viewport_offset_y_", "dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a81000c7697e3fbc09cab848f46291318", null ],
     [ "views_", "dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#aa583b0f25d01a57177be955d17a0d7c6", null ],
     [ "width_", "dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a0d1048ff42fcf39cf581639be159f49c", null ],
-    [ "window_", "dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#aa0128ec965de6865006af0aa9a9438ed", null ]
+    [ "window_", "dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#aa50e8f2015197482c6ed9a88979dddc9", null ]
 ];

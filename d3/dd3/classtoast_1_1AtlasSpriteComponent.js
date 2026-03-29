@@ -10,10 +10,12 @@ var classtoast_1_1AtlasSpriteComponent =
     [ "REGISTER_TYPE", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a859f521a2582ea34f36a5dd111cc0ce3", null ],
     [ "Save", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a0c473abdbd3eb4f1fb7353285af63fc2", null ],
     [ "SetColor", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a814f2cdb5de59562962a1b70ea6ce585", null ],
+    [ "SetParentDirtyBool", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#af777aab12d2ccfa3261baffd90076588", null ],
     [ "SetRegion", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a4334b73e8ee16cfd125e248aa79264eb", null ],
     [ "SetRegionName", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a110ea9db8baf9e016f307be8863d3c7f", null ],
     [ "color", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#af8b8b5fc1aa28ac25c798537824987b6", null ],
-    [ "m", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#ace09a41b312c7b12d962a27bfb0cf6b7", null ],
+    [ "m", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a210a9cc9908caef42dc183064a03491f", null ],
+    [ "parentdirty", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a0a724ff46c18fd6144a0e17a40193b5b", null ],
     [ "region", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a992bd415ad20b4daa22bfacd6a76ec1a", null ],
     [ "regionName", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html#ae8e7c44dfc9be5aed18c02a9468bb30b", null ]
 ];

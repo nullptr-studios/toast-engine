@@ -1,9 +1,10 @@
 <map id="renderer::HUD::HUDLayer::Get" name="renderer::HUD::HUDLayer::Get">
-<area shape="rect" id="node1" title="Disable the HUD (for previewing in editor)" alt="" coords="537,141,757,167"/>
+<area shape="rect" id="node1" title="Disable the HUD (for previewing in editor)" alt="" coords="537,167,757,192"/>
 <area shape="rect" id="node2" href="$d4/da6/classtoast_1_1HtmlView.html#a588dd927b31f47534585b7579258ad3e" title=" " alt="" coords="261,52,483,77"/>
 <area shape="rect" id="node5" href="$d4/da6/classtoast_1_1HtmlView.html#aaadc05d2f7fa46ea7698a6df29356372" title=" " alt="" coords="279,102,465,142"/>
-<area shape="rect" id="node8" href="$d3/de3/classrenderer_1_1HUD_1_1ToastViewListener.html#a89928c49dc4b77c087cf65db60e47ad0" title=" " alt="" coords="255,166,489,206"/>
-<area shape="rect" id="node9" href="$d4/da6/classtoast_1_1HtmlView.html#a0dfd0b7185e38a7fb84fa6f1655cdcfe" title=" " alt="" coords="281,230,463,270"/>
+<area shape="rect" id="node8" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="267,167,477,192"/>
+<area shape="rect" id="node9" href="$d3/de3/classrenderer_1_1HUD_1_1ToastViewListener.html#a89928c49dc4b77c087cf65db60e47ad0" title=" " alt="" coords="255,217,489,257"/>
+<area shape="rect" id="node10" href="$d4/da6/classtoast_1_1HtmlView.html#a0dfd0b7185e38a7fb84fa6f1655cdcfe" title=" " alt="" coords="281,281,463,321"/>
 <area shape="rect" id="node3" href="$d4/da6/classtoast_1_1HtmlView.html#a0314f1331c55f069fd64aabe9052d491" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="21,5,191,31"/>
 <area shape="rect" id="node4" href="$d4/da6/classtoast_1_1HtmlView.html#a57cbb2da6a42f36ca1c01f34e736f10a" title="This function runs when the object is enabled after being disabled." alt="" coords="8,55,204,80"/>
 <area shape="rect" id="node6" href="$d4/da6/classtoast_1_1HtmlView.html#aa89f224e59135b7116786ded008b68d2" title="This function runs when the object is set to be destroyed." alt="" coords="13,108,199,133"/>

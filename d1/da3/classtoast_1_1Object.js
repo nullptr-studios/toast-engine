@@ -43,6 +43,7 @@ var classtoast_1_1Object =
     [ "Register", "d1/da3/classtoast_1_1Object.html#a71ecedef54b6348ea33ccfb5503bcde0", null ],
     [ "Save", "d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24", null ],
     [ "scene", "d1/da3/classtoast_1_1Object.html#a3bdab1a6b3cd48b518e8289a36e90faf", null ],
+    [ "SetParent", "d1/da3/classtoast_1_1Object.html#a04135b1bb33fd5c23d6ca9951c685263", null ],
     [ "SetRunEarlyTick", "d1/da3/classtoast_1_1Object.html#a664d8c11a6c4d7d66d4ac01172fcfb2b", null ],
     [ "SetRunLateTick", "d1/da3/classtoast_1_1Object.html#af761f0a344b6331ec69e8b45e5c8cf36", null ],
     [ "SetRunPhysTick", "d1/da3/classtoast_1_1Object.html#ab960d48f930808cc9c7aa4456886ae82", null ],

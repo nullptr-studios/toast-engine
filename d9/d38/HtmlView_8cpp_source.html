@@ -236,10 +236,14 @@ $(document).ready(function(){initNavTree('d9/d38/HtmlView_8cpp_source.html','../
 <div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>  <span class="keywordflow">if</span> (ImGui::DragInt(<span class="stringliteral">&quot;Sort Order&quot;</span>, &amp;<a class="code hl_variable" href="../../d4/da6/classtoast_1_1HtmlView.html#ac1821b3ba7436356e9c46a9f989bf0cf">m_sortOrder</a>)) {</div>
 <div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>    <a class="code hl_function" href="../../d4/da6/classtoast_1_1HtmlView.html#a0dfd0b7185e38a7fb84fa6f1655cdcfe">SetSortOrder</a>(<a class="code hl_variable" href="../../d4/da6/classtoast_1_1HtmlView.html#ac1821b3ba7436356e9c46a9f989bf0cf">m_sortOrder</a>);</div>
 <div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  }</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>}</div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span> </div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>}    <span class="comment">// namespace toast</span></div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  <span class="keyword">static</span> std::string js;</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  <span class="keywordflow">if</span> (ImGui::InputText(<span class="stringliteral">&quot;Execute&quot;</span>, &amp;js, ImGuiInputTextFlags_EnterReturnsTrue)) {</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>    <a class="code hl_function" href="../../d4/da6/classtoast_1_1HtmlView.html#ac46c291d9afb8c7b5e8f2328c9635e34">EvalJS</a>(js);</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  }</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>}</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span> </div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>}    <span class="comment">// namespace toast</span></div>
 <div class="ttc" id="aFramebuffer_8hpp_html"><div class="ttname"><a href="../../d9/d2c/Framebuffer_8hpp.html">Framebuffer.hpp</a></div></div>
 <div class="ttc" id="aHUDLayer_8hpp_html"><div class="ttname"><a href="../../de/d8a/HUDLayer_8hpp.html">HUDLayer.hpp</a></div><div class="ttdoc">HUD rendering layer using Ultralight for web-based UI.</div></div>
 <div class="ttc" id="aHtmlView_8hpp_html"><div class="ttname"><a href="../../d0/d47/HtmlView_8hpp.html">HtmlView.hpp</a></div><div class="ttdoc">Component that creates and manages an Ultralight HTML view.</div></div>

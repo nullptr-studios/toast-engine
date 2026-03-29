@@ -1,5 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" title=" " alt="" coords="5,42,179,67"/>
-<area shape="rect" id="node2" href="$d3/de3/classrenderer_1_1HUD_1_1ToastViewListener.html" title=" " alt="" coords="227,5,416,45"/>
-<area shape="rect" id="node3" href="$d2/daf/classtoast_1_1HtmlViewListener.html" title="Per&#45;view listener that forwards console messages to a callback." alt="" coords="232,70,411,95"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,5,163,31"/>
+<area shape="rect" id="node2" href="$dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html" title="OpenGL implementation of Ultralight&#39;s GPUDriver interface." alt="" coords="211,5,408,31"/>
 </map>

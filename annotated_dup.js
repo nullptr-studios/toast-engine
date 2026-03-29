@@ -144,10 +144,13 @@ var annotated_dup =
     [ "Actor", "df/d6a/classActor.html", null ],
     [ "ActorLookup", "da/d99/structtoast_1_1ActorLookup.html", null ],
     [ "AtlasRendererComponent", "dd/d75/classAtlasRendererComponent.html", "dd/d75/classAtlasRendererComponent" ],
+    [ "Bloom", "d0/dd5/classBloom.html", null ],
     [ "Children", "d8/d87/classChildren.html", "d8/d87/classChildren" ],
+    [ "Colorgrading", "db/db7/structColorgrading.html", "db/db7/structColorgrading" ],
     [ "Framebuffer", "dc/d58/classFramebuffer.html", "dc/d58/classFramebuffer" ],
     [ "GlobalLight", "d8/d72/classGlobalLight.html", "d8/d72/classGlobalLight" ],
     [ "InputSystem", "de/d88/classinpit_1_1InputSystem.html", null ],
+    [ "IPostProcess", "d5/dc4/structIPostProcess.html", "d5/dc4/structIPostProcess" ],
     [ "IResource", "d9/d0a/classIResource.html", "d9/d0a/classIResource" ],
     [ "Light2D", "d0/db0/classLight2D.html", "d0/db0/classLight2D" ],
     [ "LightRenderable", "dc/da1/classLightRenderable.html", "dc/da1/classLightRenderable" ],
@@ -159,6 +162,7 @@ var annotated_dup =
     [ "PackHeader", "d6/d09/structPackHeader.html", "d6/d09/structPackHeader" ],
     [ "PlayerController", "d4/da8/classinput_1_1PlayerController.html", null ],
     [ "Pool", "d5/d0b/classPool.html", "d5/d0b/classPool" ],
+    [ "PostProcessManager", "d7/d13/classPostProcessManager.html", "d7/d13/classPostProcessManager" ],
     [ "ResourceHandler", "d9/dc4/structResourceHandler.html", "d9/dc4/structResourceHandler" ],
     [ "ShowHUDLayerEvent", "da/d29/classShowHUDLayerEvent.html", "da/d29/classShowHUDLayerEvent" ],
     [ "SpineAnimationPlaybackEvent", "d9/d0f/structSpineAnimationPlaybackEvent.html", "d9/d0f/structSpineAnimationPlaybackEvent" ],
@@ -173,5 +177,6 @@ var annotated_dup =
     [ "Texture", "d6/d97/classTexture.html", "d6/d97/classTexture" ],
     [ "Time", "da/d66/classTime.html", "da/d66/classTime" ],
     [ "ToastException", "d6/d05/classToastException.html", "d6/d05/classToastException" ],
-    [ "ToastFileSystem", "df/d71/classToastFileSystem.html", "df/d71/classToastFileSystem" ]
+    [ "ToastFileSystem", "df/d71/classToastFileSystem.html", "df/d71/classToastFileSystem" ],
+    [ "Tonemaping", "d6/da0/structTonemaping.html", "d6/da0/structTonemaping" ]
 ];
