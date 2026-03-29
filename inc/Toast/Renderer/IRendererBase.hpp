@@ -21,6 +21,8 @@
 #include <unordered_set>
 #include <vector>
 
+class PostProcessManager;
+
 namespace renderer {
 
 /**
@@ -29,6 +31,7 @@ namespace renderer {
  */
 struct RendererConfig {
 	glm::uvec2 resolution { 1920, 1080 };        ///< windowed rendering resolution
+	float lightResolutionScale = 1.0f;
 	bool vSync { true };                         ///< Enable/disable vertical sync
 	toast::DisplayMode currentDisplayMode {};    ///< Current display mode
 
@@ -68,7 +71,11 @@ public:
 	/// @param height New viewport height in pixels
 	virtual void Resize(glm::uvec2) = 0;
 
-	virtual void DrawScreenQuad(bool flipY) = 0;
+	virtual void DrawScreenQuad(bool flipY, bool useShader = true) = 0;
+
+	PostProcessManager* GetPostProcessManager() const {
+		return m_postProcessManager.get();
+	}
 
 	// ========== ImGui Integration (Editor Only) ==========
 
@@ -92,13 +99,15 @@ public:
 	virtual void RemoveRenderable(IRenderable* renderable) = 0;
 
 	virtual void DisableRenderable(IRenderable* renderable) {
-		m_disabledRenderables.insert(renderable);
-		m_renderablesSortDirty = true;
+		if (m_disabledRenderables.insert(renderable).second) {
+			m_renderablesSortDirty = true;
+		}
 	}
 
 	virtual void EnableRenderable(IRenderable* renderable) {
-		m_disabledRenderables.erase(renderable);
-		m_renderablesSortDirty = true;
+		if (m_disabledRenderables.erase(renderable) > 0) {
+			m_renderablesSortDirty = true;
+		}
 	}
 
 	/// @brief Adds a 2D light to the lighting system
@@ -128,6 +137,10 @@ public:
 	[[nodiscard]]
 	Framebuffer* GetGeometryFramebuffer() const noexcept {
 		return m_geometryFramebuffer;
+	}
+
+	Framebuffer* GetLightFramebuffer() const noexcept {
+		return m_lightFramebuffer;
 	}
 
 	// ========== Camera Management ==========
@@ -272,6 +285,7 @@ public:
 	void SaveRenderSettings() {
 		json_t j {};
 		j["resolutionScale"] = m_config.resolutionScale;
+		j["lightScale"] = m_config.lightResolutionScale;
 		j["vSync"] = m_config.vSync;
 		j["fullscreen"] = m_config.currentDisplayMode;
 		j["resolution"] = m_config.resolution;
@@ -340,6 +354,10 @@ public:
 		m_config.shadowRaymarchSteps = std::clamp(steps, 1u, 256u);
 	}
 
+	void SetLightResolutionScale(float scale) noexcept {
+		m_config.lightResolutionScale = std::max(0.01f, scale);
+	}
+
 	/// @brief Enables or disables VSync and immediately applies it.
 	/// Does NOT call the full ApplyRenderSettings
 	void SetVSyncEnabled(bool enabled) noexcept {
@@ -389,8 +407,8 @@ protected:
 	// ========== Framebuffers ==========
 	/// @note These are owned by the derived renderer implementation
 	Framebuffer* m_geometryFramebuffer = nullptr;    ///< G-buffer for deferred rendering (optional)
-	// Framebuffer* m_lightFramebuffer = nullptr;       ///< Light accumulation buffer (optional)
-	Framebuffer* m_outputFramebuffer = nullptr;    ///< Final output framebuffer (required)
+	Framebuffer* m_lightFramebuffer = nullptr;       ///< Light accumulation buffer (optional)
+	Framebuffer* m_outputFramebuffer = nullptr;      ///< Final output framebuffer (required)
 
 	// ========== Camera ==========
 	toast::Camera* m_activeCamera = nullptr;    ///< Currently active camera for rendering
@@ -399,6 +417,7 @@ protected:
 	std::vector<IRenderable*> m_renderables;    ///< Opaque renderable objects (geometry pass)
 	/// @brief Set of renderables that are currently disabled — excluded from the geometry pass.
 	std::unordered_set<IRenderable*> m_disabledRenderables;
+	std::vector<IRenderable*> m_transparentRenderables;
 	std::vector<Light2D*> m_lights;        ///< All 2D lights in the scene
 	bool m_renderablesSortDirty = true;    ///< True when renderables need re-sorting
 	bool m_lightsSortDirty = true;         ///< True when lights need re-sorting
@@ -413,9 +432,12 @@ protected:
 
 	// ========== Global Light ==========
 	glm::vec3 m_globalLightColor = glm::vec3(1.0f);    ///< Color of the global ambient light
-	float m_globalLightIntensity = 1.f;                ///< Intensity of the global
+	float m_globalLightIntensity = 0.7f;               ///< Intensity of the global
 
 	bool m_globalLightEnabled = true;                  ///< Whether global light is enabled
+
+	// ========== Post Processing ==========
+	std::unique_ptr<PostProcessManager> m_postProcessManager;    ///< Manager for post-processing effects
 
 	// ========== Render Settings ==========
 	RendererConfig m_config {};    ///< Current renderer configuration

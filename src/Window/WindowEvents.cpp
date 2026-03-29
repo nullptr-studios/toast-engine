@@ -1,27 +1,26 @@
 #include "Toast/Window/WindowEvents.hpp"
 
-#include "GLFW/glfw3.h"
 #include "Toast/Event/ListenerComponent.hpp"
 
 namespace event {
 
-void WindowKey::Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+void WindowKey::Callback(int key, int scancode, int action, int mods) {
 	Send(new WindowKey(key, scancode, action, mods));
 }
 
-void WindowChar::Callback(GLFWwindow* window, unsigned key) {
+void WindowChar::Callback(unsigned key) {
 	Send(new WindowChar(key));
 }
 
-void WindowMousePosition::Callback(GLFWwindow* window, double x_pos, double y_pos) {
+void WindowMousePosition::Callback(double x_pos, double y_pos) {
 	Send(new WindowMousePosition(x_pos, y_pos));
 }
 
-void WindowMouseButton::Callback(GLFWwindow* window, int button, int action, int mods) {
+void WindowMouseButton::Callback(int button, int action, int mods) {
 	Send(new WindowMouseButton(button, action, mods));
 }
 
-void WindowMouseScroll::Callback(GLFWwindow* window, double x_offset, double y_offset) {
+void WindowMouseScroll::Callback(double x_offset, double y_offset) {
 	Send(new WindowMouseScroll(x_offset, y_offset));
 }
 
@@ -29,11 +28,11 @@ void WindowInputDevice::Callback(int jid, int event) {
 	Send(new WindowInputDevice(jid, event));
 }
 
-void WindowDrop::Callback(GLFWwindow* window, int count, const char** paths) {
-	Send(new WindowDrop(count, paths));
+void WindowDrop::Callback(std::vector<std::string> files) {
+	Send(new WindowDrop(std::move(files)));
 }
 
-void WindowResize::Callback(GLFWwindow* window, int width, int height) {
+void WindowResize::Callback(int width, int height) {
 	Send(new WindowResize(width, height));
 }
 

@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-typedef struct GLFWwindow GLFWwindow;
+typedef struct SDL_Window SDL_Window;
 class Framebuffer;
 
 namespace toast::hud {
@@ -49,12 +49,12 @@ class HUDLayer : public ILayer {
 public:
 	///
 	/// @brief Construct a new HUD Layer
-	/// @param window The GLFW window to render to
+	/// @param window The SDL window to render to
 	/// @param width Initial viewport width
 	/// @param height Initial viewport height
 	/// @param enable_msaa Whether to enable MSAA for UI rendering
 	///
-	HUDLayer(GLFWwindow* window, uint32_t width, uint32_t height, bool enable_msaa = false);
+	HUDLayer(SDL_Window* window, uint32_t width, uint32_t height, bool enable_msaa = false);
 
 	~HUDLayer() override;
 
@@ -248,10 +248,10 @@ private:
 
 	bool active_ = false;
 
-	GLFWwindow* window_ = nullptr;
+	SDL_Window* window_ = nullptr;
 	uint32_t width_ = 0;
 	uint32_t height_ = 0;
-	float device_scale_ = 1.0f;    ///< Monitor DPI scale (from glfwGetWindowContentScale)
+	float device_scale_ = 1.0f;    ///< Monitor DPI scale (from SDL_GetWindowDisplayScale)
 	bool msaa_enabled_ = false;
 	bool input_enabled_ = true;    ///< Whether input events are forwarded to Ultralight
 	int viewport_offset_x_ = 0;    ///< Viewport X offset in window space (for editor)

@@ -74,7 +74,7 @@ if (TOAST_EDITOR)
     target_compile_definitions(toast.engine PUBLIC TOAST_EDITOR)
     
     target_link_libraries(toast.engine PUBLIC
-            glfw
+            SDL3::SDL3-static
             glm::glm
             nlohmann_json::nlohmann_json
             spdlog::spdlog
@@ -95,7 +95,7 @@ if (TOAST_EDITOR)
 else ()
     
     target_link_libraries(toast.engine PUBLIC
-            glfw
+            SDL3::SDL3-static
             glm::glm
             nlohmann_json::nlohmann_json
             spdlog::spdlog

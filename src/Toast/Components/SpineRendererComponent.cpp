@@ -59,7 +59,6 @@ void SpineRendererComponent::Init() {
 		// Initial update to ensure world transforms are valid
 		m.skeleton->update(0.0f);
 		m.skeleton->updateWorldTransform(spine::Physics_None);
-		m.skeleton->setToSetupPose();
 #ifdef TOAST_EDITOR
 		RefreshAnimationList();
 		// Auto-select first animation if available
@@ -90,6 +89,9 @@ void SpineRendererComponent::LoadTextures() {
 
 void SpineRendererComponent::Begin() {
 	TransformComponent::Begin();
+
+	// reset skeleton
+	m.skeleton->setToSetupPose();
 }
 
 void SpineRendererComponent::OnEnable() {
@@ -111,7 +113,7 @@ void SpineRendererComponent::Tick() {
 	// 	return;
 	// }
 
-	if (!m.skeleton || !m.animationState) {
+	if (!m.skeleton || !m.animationState || !m.onScreen) {
 		return;
 	}
 
@@ -208,6 +210,7 @@ void SpineRendererComponent::Inspector() {
 	}
 
 	ImGui::Checkbox("Is Occluder", &m.isOccluder);
+	ImGui::Checkbox("Draw to depth", &m.drawToDepth);
 
 	ImGui::Separator();
 	ImGui::Text("Animation Preview");
@@ -296,35 +299,10 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	const glm::mat4 model = GetWorldMatrix();
 	const glm::mat4 mvp = precomputed_mat * model;
 
-	// Reuse temporary buffers
-	m.tempVerts.clear();
-	m.tempIndices.clear();
-
 	// done just at occlusion step and reused
 	if (pass == renderer::IRenderablePass::OCCLUSION) {
 		// First pass: collect all vertices to compute bounding box for frustum culling
 		{
-			spine::RenderCommand* cmd = command;
-			size_t total_verts = 0;
-			while (cmd) {
-				total_verts += cmd->numVertices;
-				cmd = cmd->next;
-			}
-
-			// Build temporary vertex positions for bounding box computation
-			m.tempVerts.reserve(total_verts);
-			cmd = command;
-			while (cmd) {
-				for (int i = 0; i < cmd->numVertices; ++i) {
-					renderer::SpineVertex v {};
-					v.position = glm::vec3(cmd->positions[(i * 2) + 0], cmd->positions[(i * 2) + 1], 0.0f);
-					v.texCoord = glm::vec2(cmd->uvs[(i * 2) + 0], 1.0f - cmd->uvs[(i * 2) + 1]);
-					v.colorABGR = cmd->colors[i];
-					m.tempVerts.push_back(v);
-				}
-				cmd = cmd->next;
-			}
-
 			// Compute dynamic bounding box
 			m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
 
@@ -332,9 +310,9 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 			m.onScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), model);
 		}
 
-		// Reset buffers for actual rendering pass
-		m.tempVerts.clear();
-		m.tempIndices.clear();
+		if (!m.isOccluder) {
+			return;
+		}
 	}
 
 	// cache last bound texture to avoid redundant binds
@@ -347,6 +325,7 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		if (!m.isOccluder) {
 			return;    // Skip occlusion pass if not an occluder
 		}
+
 		m.occlusionShader->Use();
 		m.occlusionShader->Set("gWorld", model);
 
@@ -366,10 +345,10 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
 		// Draw  mesh
 		m.dynamicMesh.DrawDynamicSpine(m.tempIndices.size());
-		// clear for next batch
-		m.tempVerts.clear();
-		m.tempIndices.clear();
 	};
+
+	m.tempVerts.clear();
+	m.tempIndices.clear();
 
 	while (command) {
 		if (m.tempVerts.capacity() < static_cast<size_t>(command->numVertices)) {
@@ -431,6 +410,18 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	}
 
 	// flush any remaining geometry
+	if (m.drawToDepth) {
+		glDepthMask(GL_TRUE);
+	} else {
+		glDepthMask(GL_FALSE);
+	}
+
+	if (pass != renderer::IRenderablePass::OCCLUSION) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else {
+		glDisable(GL_BLEND);
+	}
 	flush_batch();
 }
 
@@ -446,6 +437,9 @@ void SpineRendererComponent::Load(json_t j, bool force_create) {
 	if (j.contains("isOccluder")) {
 		m.isOccluder = j.at("isOccluder").get<bool>();
 	}
+	if (j.contains("drawToDepth")) {
+		m.drawToDepth = j.at("drawToDepth").get<bool>();
+	}
 }
 
 json_t SpineRendererComponent::Save() const {
@@ -454,6 +448,7 @@ json_t SpineRendererComponent::Save() const {
 	j["atlasResourcePath"] = m.atlasPath;
 	j["skeletonDataResourcePath"] = m.skeletonDataPath;
 	j["isOccluder"] = m.isOccluder;
+	j["drawToDepth"] = m.drawToDepth;
 	return j;
 }
 

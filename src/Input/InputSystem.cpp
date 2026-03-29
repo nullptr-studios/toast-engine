@@ -8,6 +8,8 @@
 #include "Toast/Window/Window.hpp"
 #include "Toast/Window/WindowEvents.hpp"
 
+#include <SDL3/SDL_gamepad.h>
+
 namespace input {
 
 InputSystem* InputSystem::m_instance = nullptr;
@@ -44,13 +46,18 @@ InputSystem::InputSystem() {
 	TOAST_INFO("Created {} layouts", m.layouts.size());
 
 	// Check for connected controllers when the game starts
-	for (int i = 0; i < 16; i++) {
-		// yes im using not and or to spice things up a bit
-		if (not glfwJoystickPresent(i) || not glfwJoystickIsGamepad(i)) {
-			continue;
+	int gamepad_count = 0;
+	SDL_JoystickID* gamepads = SDL_GetGamepads(&gamepad_count);
+	if (gamepads) {
+		for (int i = 0; i < gamepad_count; ++i) {
+			SDL_Gamepad* handle = SDL_OpenGamepad(gamepads[i]);
+			if (!handle) {
+				continue;
+			}
+			m.controllers[static_cast<int>(gamepads[i])] = GamepadState { .handle = handle };
+			TOAST_INFO("Controller {} connected: {}", gamepads[i], SDL_GetGamepadName(handle));
 		}
-		m.controllers[i] = GamepadState {};
-		TOAST_INFO("Controller {} connected: {}", i, glfwGetGamepadName(i));
+		SDL_free(gamepads);
 	}
 
 	// No active layout by default
@@ -204,7 +211,7 @@ void InputSystem::SetViewportSize(glm::vec2 size) {
 #pragma endregion
 
 bool InputSystem::Handle0DAction(int key_code, int action, int mods, Device device) {
-	// Ignore OS key repeat events (action == 2 = GLFW_REPEAT)
+	// Ignore OS key repeat events (action == 2 = repeated)
 	// We handle held keys ourselves by dispatching every frame in Tick()
 	if (action == 2) {
 		return false;
@@ -538,13 +545,21 @@ bool InputSystem::OnMouseScroll(event::WindowMouseScroll* e) {
 
 bool InputSystem::OnInputDevice(event::WindowInputDevice* e) {
 	// Track controller connect/disconnect
-	if (e->event == GLFW_CONNECTED && glfwJoystickIsGamepad(e->jid)) {
-		m.controllers[e->jid] = GamepadState {};
-		TOAST_INFO("Controller {0} connected: {1}", e->jid, glfwGetGamepadName(e->jid));
+	if (e->event == event::WINDOW_INPUT_DEVICE_CONNECTED) {
+		SDL_Gamepad* handle = SDL_OpenGamepad(static_cast<SDL_JoystickID>(e->jid));
+		if (!handle) {
+			return false;
+		}
+		m.controllers[e->jid] = GamepadState { .handle = handle };
+		TOAST_INFO("Controller {0} connected: {1}", e->jid, SDL_GetGamepadName(handle));
 		return true;
 	}
-	if (e->event == GLFW_DISCONNECTED) {
+	if (e->event == event::WINDOW_INPUT_DEVICE_DISCONNECTED) {
 		TOAST_INFO("Controller {0} disconnected", e->jid);
+		auto it = m.controllers.find(e->jid);
+		if (it != m.controllers.end() && it->second.handle) {
+			SDL_CloseGamepad(it->second.handle);
+		}
 		m.controllers.erase(e->jid);
 		return true;
 	}
@@ -559,14 +574,25 @@ void InputSystem::PollControllers() {
 	}
 
 	for (auto& [jid, state] : m.controllers) {
-		// Refresh controller state from GLFW
-		state.previous = state.current;
-		glfwGetGamepadState(jid, &state.current);
+		if (!state.handle || !SDL_GamepadConnected(state.handle)) {
+			continue;
+		}
+
+		state.previousButtons = state.currentButtons;
+		state.previousAxes = state.currentAxes;
+
+		for (int i = 0; i < SDL_GAMEPAD_BUTTON_COUNT; ++i) {
+			state.currentButtons[i] = SDL_GetGamepadButton(state.handle, static_cast<SDL_GamepadButton>(i));
+		}
+		for (int i = 0; i < SDL_GAMEPAD_AXIS_COUNT; ++i) {
+			const Sint16 raw = SDL_GetGamepadAxis(state.handle, static_cast<SDL_GamepadAxis>(i));
+			state.currentAxes[i] = std::clamp(static_cast<float>(raw) / 32767.0f, -1.0f, 1.0f);
+		}
 
 		// Button transitions (press/release)
-		for (int i = 0; i <= GLFW_GAMEPAD_BUTTON_LAST; ++i) {
-			const bool was_pressed = state.previous.buttons[i] == GLFW_PRESS;
-			const bool is_pressed = state.current.buttons[i] == GLFW_PRESS;
+		for (int i = 0; i < SDL_GAMEPAD_BUTTON_COUNT; ++i) {
+			const bool was_pressed = state.previousButtons[i];
+			const bool is_pressed = state.currentButtons[i];
 			if (!was_pressed && is_pressed) {
 				ControllerButton(i, true);
 			} else if (was_pressed && !is_pressed) {
@@ -574,13 +600,31 @@ void InputSystem::PollControllers() {
 			}
 		}
 
-		// Build transformed axes array once per controller per frame
-		// Check if any axis actually changed first to skip the work entirely
+		// Build transformed axes once for both current and previous states
+		// and compare processed values so release detection matches runtime behavior.
+		auto transform_axes = [&](const std::array<float, SDL_GAMEPAD_AXIS_COUNT>& src) {
+			std::array<float, SDL_GAMEPAD_AXIS_COUNT> out {};
+			std::copy(std::begin(src), std::end(src), out.begin());
+
+			// Invert Y axes to match standard coordinate system (up = positive)
+			out[1] *= -1.0f;    // Left stick Y
+			out[3] *= -1.0f;    // Right stick Y
+
+			// SDL triggers already report [0, 1], so don't remap from [-1, 1].
+			for (auto& ax : out) {
+				if (std::abs(ax) < AXIS_DEADZONE) {
+					ax = 0.0f;
+				}
+			}
+			return out;
+		};
+
+		const auto previous_axes = transform_axes(state.previousAxes);
+		const auto axes = transform_axes(state.currentAxes);
+
 		bool any_axis_changed = false;
-		for (int i = 0; i <= GLFW_GAMEPAD_AXIS_LAST; ++i) {
-			const float prev = std::abs(state.previous.axes[i]) > AXIS_DEADZONE ? state.previous.axes[i] : 0.0f;
-			const float curr = std::abs(state.current.axes[i]) > AXIS_DEADZONE ? state.current.axes[i] : 0.0f;
-			if (std::abs(curr - prev) > 0.001f) {
+		for (int i = 0; i < SDL_GAMEPAD_AXIS_COUNT; ++i) {
+			if (std::abs(axes[i] - previous_axes[i]) > 0.001f) {
 				any_axis_changed = true;
 				break;
 			}
@@ -590,30 +634,9 @@ void InputSystem::PollControllers() {
 			continue;
 		}
 
-		// Transform axes once
-		std::array<float, 6> axes {};
-		std::copy(std::begin(state.current.axes), std::end(state.current.axes), axes.begin());
-
-		// Invert Y axes to match standard coordinate system (up = positive)
-		axes[1] *= -1.0f;    // Left stick Y
-		axes[3] *= -1.0f;    // Right stick Y
-
-		// Normalize trigger values from [-1, 1] to [0, 1]
-		axes[4] = (axes[4] * 0.5f) + 0.5f;    // Left trigger (L2)
-		axes[5] = (axes[5] * 0.5f) + 0.5f;    // Right trigger (R2)
-
-		// Apply deadzone to all processed axes
-		for (auto& ax : axes) {
-			if (std::abs(ax) < AXIS_DEADZONE) {
-				ax = 0.0f;
-			}
-		}
-
 		// Now dispatch only the axes that actually changed
-		for (int i = 0; i <= GLFW_GAMEPAD_AXIS_LAST; ++i) {
-			const float prev = std::abs(state.previous.axes[i]) > AXIS_DEADZONE ? state.previous.axes[i] : 0.0f;
-			const float curr = std::abs(state.current.axes[i]) > AXIS_DEADZONE ? state.current.axes[i] : 0.0f;
-			if (std::abs(curr - prev) > 0.001f) {
+		for (int i = 0; i < SDL_GAMEPAD_AXIS_COUNT; ++i) {
+			if (std::abs(axes[i] - previous_axes[i]) > 0.001f) {
 				ControllerAxis(i, axes);
 			}
 		}
@@ -696,7 +719,7 @@ void InputSystem::ControllerButton(int id, bool value) {
 }
 
 // Yeah ignore the clang-tidy warning -x
-void InputSystem::ControllerAxis(int id, const std::array<float, 6>& axes) {
+void InputSystem::ControllerAxis(int id, const std::array<float, SDL_GAMEPAD_AXIS_COUNT>& axes) {
 	// Controller axes -> 1D
 	for (auto& action : m.activeLayout->m.actions1d) {
 		if (!action.CheckState(m.currentState)) {

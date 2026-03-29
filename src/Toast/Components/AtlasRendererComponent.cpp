@@ -71,9 +71,38 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		return;
 	}
 
+#ifdef TOAST_EDITOR
+	m.spriteCacheDirty = true;
+#endif
+
 	// Refresh sprite cache if dirty
 	if (m.spriteCacheDirty) {
 		RefreshSprites();
+
+		m.tempVerts.clear();
+		m.tempIndices.clear();
+
+		for (auto* sprite : m.spriteCache) {
+			if (!sprite->enabled() || !sprite->GetRegion()) {
+				continue;
+			}
+
+			const glm::mat4 parent_world = GetWorldMatrix();
+
+			glm::mat4 sprite_transform = parent_world * sprite->GetMatrix();
+			BuildQuadFromRegion(sprite->GetRegion(), sprite_transform, sprite->GetColorABGR(), m.tempVerts, m.tempIndices);
+		}
+
+		// Early exit if no visible sprites
+		if (m.tempIndices.empty()) {
+			return;
+		}
+
+		// Update mesh
+		m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
+
+		// Compute bounding box
+		m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
 	}
 
 	// Early exit if no sprites
@@ -82,36 +111,14 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	}
 	PROFILE_ZONE;
 
-	const glm::mat4 parent_world = GetWorldMatrix();
-
 	// Clear buffers for this frame
 	if (pass == renderer::IRenderablePass::OCCLUSION) {
-	m.tempVerts.clear();
-	m.tempIndices.clear();
-
-	for (auto* sprite : m.spriteCache) {
-		if (!sprite->enabled() || !sprite->GetRegion()) {
-			continue;
-		}
-
-		glm::mat4 sprite_transform = parent_world * sprite->GetMatrix();
-		BuildQuadFromRegion(sprite->GetRegion(), sprite_transform, sprite->GetColorABGR(), m.tempVerts, m.tempIndices);
-	}
-
-	// Early exit if no visible sprites
-	if (m.tempIndices.empty()) {
-		return;
-	}
-
-	// Update mesh
-	m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
-		
-		// Compute bounding box
-		m.dynamicMesh.ComputeSpineBoundingBox(m.tempVerts.data(), m.tempVerts.size());
-		
 		m.isOnScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f));
+		if (!m.isOccluder) {
+			return;    // Skip occlusion pass if not an occluder
+		}
 	}
-	
+
 	// Frustum culling
 	if (!m.isOnScreen) {
 		return;
@@ -123,9 +130,6 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		m.shader->Use();
 		m.shader->Set("transform", mvp);
 	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
-		if (!m.isOccluder) {
-			return;
-		}
 		m.occlusionShader->Use();
 		m.occlusionShader->Set("gWorld", GetWorldMatrix());
 
@@ -142,6 +146,18 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	}
 
 	// Draw all sprites in one call
+	if (m.drawToDepth) {
+		glDepthMask(GL_TRUE);
+	} else {
+		glDepthMask(GL_FALSE);
+	}
+
+	if (pass != renderer::IRenderablePass::OCCLUSION) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else {
+		glDisable(GL_BLEND);
+	}
 	m.dynamicMesh.DrawDynamicSpine(m.tempIndices.size());
 }
 
@@ -163,6 +179,9 @@ void AtlasRendererComponent::Load(json_t j, bool force_create) {
 	if (j.contains("isOccluder")) {
 		m.isOccluder = j.at("isOccluder").get<bool>();
 	}
+	if (j.contains("drawToDepth")) {
+		m.drawToDepth = j.at("drawToDepth").get<bool>();
+	}
 
 	TransformComponent::Load(j, force_create);
 
@@ -174,6 +193,8 @@ json_t AtlasRendererComponent::Save() const {
 	json_t j = TransformComponent::Save();
 	j["atlasResourcePath"] = m.atlasPath;
 	j["isOccluder"] = m.isOccluder;
+	j["drawToDepth"] = m.drawToDepth;
+
 	return j;
 }
 
@@ -289,6 +310,8 @@ void AtlasRendererComponent::AddSpriteToCache(toast::AtlasSpriteComponent* sprit
 	if (!sprite) {
 		return;
 	}
+
+	sprite->SetParentDirtyBool(&m.spriteCacheDirty);
 
 	if (sprite->GetRegion() == nullptr && !sprite->GetRegionName().empty() && m.atlas) {
 		sprite->SetRegion(FindRegion(sprite->GetRegionName()));
@@ -424,6 +447,7 @@ void AtlasRendererComponent::Inspector() {
 	}
 
 	ImGui::Checkbox("Is Occluder", &m.isOccluder);
+	ImGui::Checkbox("Draw to depth", &m.drawToDepth);
 
 	/////////////// Browser ///////////////
 
@@ -465,6 +489,8 @@ void AtlasRendererComponent::Inspector() {
 		ImGui::PopID();
 	}
 	ImGui::EndColumns();
+
+	RefreshSprites();
 }
 
 #endif

@@ -5,11 +5,10 @@
 
 #pragma once
 
+#include <SDL3/SDL_video.h>
 #include <Ultralight/platform/Config.h>
 #include <Ultralight/platform/GPUDriver.h>
 #include <memory>
-
-typedef struct GLFWwindow GLFWwindow;
 
 #define ENABLE_OFFSCREEN_GL 0
 
@@ -30,10 +29,10 @@ class ToastGPUContext {
 public:
 	///
 	/// @brief Construct a new GPU context
-	/// @param window The main GLFW window
+	/// @param window The main SDL window
 	/// @param enable_msaa Whether to enable MSAA rendering
 	///
-	ToastGPUContext(GLFWwindow* window, bool enable_msaa = false);
+	ToastGPUContext(SDL_Window* window, bool enable_msaa = false);
 
 	~ToastGPUContext();
 
@@ -59,25 +58,25 @@ public:
 	}
 
 	/// @brief Get the main window
-	GLFWwindow* window() const {
+	SDL_Window* window() const {
 		return window_;
 	}
 
 	/// @brief Set the currently active window for FBO operations
 	/// @note FBOs are not shared across GL contexts, so we track the active window
-	void set_active_window(GLFWwindow* win) {
+	void set_active_window(SDL_Window* win) {
 		active_window_ = win;
 	}
 
 	/// @brief Get the currently active window
-	GLFWwindow* active_window() const {
+	SDL_Window* active_window() const {
 		return active_window_;
 	}
 
 private:
 	std::unique_ptr<ToastGPUDriver> driver_;
-	GLFWwindow* window_ = nullptr;
-	GLFWwindow* active_window_ = nullptr;
+	SDL_Window* window_ = nullptr;
+	SDL_Window* active_window_ = nullptr;
 	bool msaa_enabled_ = false;
 };
 

@@ -2,11 +2,12 @@
 
 #include "ConvexCollider.hpp"
 #include "Toast/GlmJson.hpp"
+#include "Toast/Log.hpp"
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
-#include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/World.hpp"
 #include "glm/geometric.hpp"
 
@@ -17,8 +18,7 @@
 #include <imgui.h>
 #endif
 
-using namespace physics;
-
+namespace physics {
 void Collider::Init() {
 	CalculatePoints();
 
@@ -26,22 +26,28 @@ void Collider::Init() {
 		enabled_ref() = false;    // disable colliders until its loaded
 	}
 
+	m.renderable.SetParent(parent());
 	m.renderable.Init();
+	if (renderer::IRendererBase::GetInstance() != nullptr) {
+		renderer::IRendererBase::GetInstance()->AddRenderable(&m.renderable);
+		// m.renderable.enabled(true);
+	}
 }
 
 void Collider::LoadTextures() {
 	renderer::IRendererBase::GetInstance()->AddRenderable(&m.renderable);
+	m.renderable.SetParent(parent());
 	m.renderable.LoadTextures();
 	m.renderable.enabled(true);
 }
 
 void Collider::OnEnable() {
-	//CalculatePoints();
+	// CalculatePoints();
 	m.renderable.enabled(true);
 }
 
 void Collider::OnDisable() {
-	//DestroyConvexShapes();
+	// DestroyConvexShapes();
 	m.renderable.enabled(false);
 }
 
@@ -50,23 +56,39 @@ void Collider::AddPoint(glm::vec2 point) {
 }
 
 void Collider::AddPointAt(int index, glm::vec2 point) {
+	// Clamp insert position to a valid range
 	auto it = m.points.begin();
-	std::advance(it, index + 1);
+	int size = static_cast<int>(std::distance(m.points.begin(), m.points.end()));
+	int insert_pos = index + 1;
+	if (insert_pos < 0) {
+		insert_pos = 0;
+	}
+	if (insert_pos > size) {
+		insert_pos = size;    // insert at end if past
+	}
+	std::advance(it, insert_pos);
 	m.points.emplace(it, point);
 }
 
 void Collider::SwapPoints(glm::vec2 lhs, glm::vec2 rhs) {
 	auto lhs_it = std::ranges::find(m.points, lhs);
 	auto rhs_it = std::ranges::find(m.points, rhs);
-	std::swap(lhs_it, rhs_it);
+	if (lhs_it != m.points.end() && rhs_it != m.points.end()) {
+		std::iter_swap(lhs_it, rhs_it);
+	}
 }
 
 void Collider::DeletePoint(glm::vec2 point) {
 	auto it = std::ranges::find(m.points, point);
-	m.points.erase(it);
+	if (it != m.points.end()) {
+		m.points.erase(it);
+	}
 }
 
 void Collider::DeleteAt(unsigned idx) {
+	if (idx >= m.points.size()) {
+		return;
+	}
 	auto point = m.points.begin();
 	std::advance(point, idx);
 	m.points.erase(point);
@@ -101,11 +123,14 @@ void Collider::Bevel(unsigned idx) {
 		arc.push_back(pt);
 	}
 
+	// Convert to index for insertion/erasure
+	const size_t i = std::distance(m.points.begin(), p1);
+
 	// Replace the original point with the arc points
-	for (const auto& pt : arc) {
-		m.points.insert(p1, pt);
-	}
-	m.points.erase(p1);
+	m.points.insert(m.points.begin() + i, arc.begin(), arc.end());
+
+	// Erase original point
+	m.points.erase(m.points.begin() + i + arc.size());
 
 	CalculatePoints();
 }
@@ -362,11 +387,14 @@ void Collider::CalculatePoints() {
 
 	std::vector<glm::vec3> world_vertices;
 	world_vertices.reserve(m.points.size());
+	// Send local-space vertices to the renderable
 	for (const auto& p : m.points) {
-		glm::vec4 p4d = world_mtx * glm::vec4{ p.x, p.y, 0.0, 1.0 };
-		world_vertices.push_back(glm::vec3{ p4d });
+		world_vertices.emplace_back(p.x, p.y, 0.0f);
 	}
 
+	if (renderer::IRendererBase::GetInstance() == nullptr) {
+		TOAST_WARN("Collider::CalculatePoints - renderer instance is null");
+	}
 	m.renderable.SendVertices(world_vertices);
 }
 
@@ -376,7 +404,6 @@ void Collider::Destroy() {
 }
 
 #ifdef TOAST_EDITOR
-#pragma region EDITOR
 
 void Collider::Inspector() {
 	ImGui::Spacing();
@@ -554,6 +581,7 @@ void Collider::EditorTick() {
 	auto world_mtx = dynamic_cast<toast::Actor*>(parent())->transform()->GetWorldMatrix();
 	if (world_mtx != debug.oldPosition) {
 		debug.oldPosition = world_mtx;
+		m.renderable.position(m.renderable.position());
 		CalculatePoints();
 	}
 
@@ -580,7 +608,6 @@ void Collider::EditorTick() {
 	}
 }
 
-#pragma endregion
 #endif
 
 json_t Collider::Save() const {
@@ -645,4 +672,6 @@ void Collider::Load(json_t j, bool propagate) {
 	}
 
 	Component::Load(j, propagate);
+}
+
 }
