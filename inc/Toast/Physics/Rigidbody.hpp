@@ -89,6 +89,8 @@ public:
 	bool m_hasValidPreviousPosition = false;
 	static inline double s_interpolationAlpha = 1.0;
 
+	bool m_skipBoundsCheck = false;
+
 	// debug stuff
 	struct {
 		bool show = false;                                        // Draws the debug of the shape

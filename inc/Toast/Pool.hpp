@@ -61,10 +61,10 @@ public:
 		auto* obj = m_free.top();
 
 		// Safety
-		if (!obj->has_run_begin()) {
-			TOAST_WARN("Pool::Release — object not yet initialised (Begin pending), returning nullptr");
-			return nullptr;
-		}
+		// if (!obj->has_run_begin()) {
+		// 	TOAST_WARN("Pool::Release - object not yet initialised (Begin pending), returning nullptr");
+		// 	return nullptr;
+		// }
 
 		m_free.pop();
 		obj->enabled(true);
@@ -85,6 +85,15 @@ public:
 			obj->transform()->position({ 99999.0f, 99999.0f, 0.0f });
 		}
 		m_free.emplace(obj);
+	}
+
+	void Destroy() override {
+		// for (auto p : m_pool) {
+		// 	children.Remove(p->id());
+		// 	m_free.pop();
+		// 	p = nullptr;
+		// }
+		m_poolReady = false;
 	}
 
 private:

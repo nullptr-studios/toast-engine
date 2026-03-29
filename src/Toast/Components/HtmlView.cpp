@@ -143,6 +143,10 @@ void HtmlView::Inspector() {
 	if (ImGui::DragInt("Sort Order", &m_sortOrder)) {
 		SetSortOrder(m_sortOrder);
 	}
+	static std::string js;
+	if (ImGui::InputText("Execute", &js, ImGuiInputTextFlags_EnterReturnsTrue)) {
+		EvalJS(js);
+	}
 }
 #endif
 

@@ -1,9 +1,13 @@
 #include "Toast/Physics/ColliderRenderable.hpp"
 
+#include "Toast/Log.hpp"
+
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/matrix.hpp>
+#ifdef TOAST_EDITOR
 #include <imgui.h>
+#endif
 #include <vector>
 
 using namespace glm;
@@ -125,17 +129,29 @@ void physics::ColliderRenderable::SendVertices(std::vector<glm::vec3>& points) {
 
 	this->m.points = points;
 	this->m.indices = triangulate(points);
+	// If triangulation failed fall back to a simple fan triangulation so we still have geometry to draw
+	if (this->m.indices.empty() && this->m.points.size() >= 3) {
+		TOAST_INFO("ColliderRenderable::SendVertices - triangulation failed, using fan fallback");
+		for (uint16_t i = 1; i + 1 < this->m.points.size(); ++i) {
+			this->m.indices.push_back(0);
+			this->m.indices.push_back(i);
+			this->m.indices.push_back(i + 1);
+		}
+	}
 	CalculateBoundingBox();
 
 	for (const auto& point : m.points) {
-		m.vertices.emplace_back(renderer::SpineVertex {
-		  .position = glm::vec3 { point.x, point.y, 0.0 },
-         .texCoord = { 0.0, 0.0 },
-         .colorABGR = 0xFFFFFFFF
-    });
+		m.vertices.emplace_back(
+		    renderer::SpineVertex {
+		      .position = glm::vec3 { point.x, point.y, 0.0 },
+             .texCoord = { 0.0, 0.0 },
+             .colorABGR = 0xFFFFFFFF
+    }
+		);
 	}
 
-	m.mesh.UpdateDynamicSpine(m.vertices.data(), m.vertices.size(), m.indices.data(), m.indices.size());
+	// TOAST_INFO("ColliderRenderable::SendVertices called (points={})", m.points.size());
+	m.pending_update = true;
 
 	if (m.showTop && m.points.size() >= 2) {
 		float area = 0.0f;
@@ -171,25 +187,33 @@ void physics::ColliderRenderable::SendVertices(std::vector<glm::vec3>& points) {
 				glm::vec3 offset_pos = normal3d * m.topOffset;
 
 				// V0: Bottom Left
-				m.topVertices.emplace_back(renderer::SpineVertex {
-				  .position = p1 + offset_pos, .texCoord = { current_distance, 0.0f },
-                 .colorABGR = 0xFFFFFFFF
-        });
+				m.topVertices.emplace_back(
+				    renderer::SpineVertex {
+				      .position = p1 + offset_pos, .texCoord = { current_distance, 0.0f },
+                     .colorABGR = 0xFFFFFFFF
+        }
+				);
 				// V1: Bottom Right
-				m.topVertices.emplace_back(renderer::SpineVertex {
-				  .position = p2 + offset_pos, .texCoord = { next_distance, 0.0f },
-                 .colorABGR = 0xFFFFFFFF
-        });
+				m.topVertices.emplace_back(
+				    renderer::SpineVertex {
+				      .position = p2 + offset_pos, .texCoord = { next_distance, 0.0f },
+                     .colorABGR = 0xFFFFFFFF
+        }
+				);
 				// V2: Top Right
-				m.topVertices.emplace_back(renderer::SpineVertex {
-				  .position = (p2 + offset_pos) + normal3d * m.topHeight, .texCoord = { next_distance, 1.0f },
-                     .colorABGR = 0xFFFFFFFF
-        });
+				m.topVertices.emplace_back(
+				    renderer::SpineVertex {
+				      .position = (p2 + offset_pos) + normal3d * m.topHeight, .texCoord = { next_distance, 1.0f },
+                         .colorABGR = 0xFFFFFFFF
+        }
+				);
 				// V3: Top Left
-				m.topVertices.emplace_back(renderer::SpineVertex {
-				  .position = (p1 + offset_pos) + normal3d * m.topHeight, .texCoord = { current_distance, 1.0f },
-                     .colorABGR = 0xFFFFFFFF
-        });
+				m.topVertices.emplace_back(
+				    renderer::SpineVertex {
+				      .position = (p1 + offset_pos) + normal3d * m.topHeight, .texCoord = { current_distance, 1.0f },
+                         .colorABGR = 0xFFFFFFFF
+        }
+				);
 
 				m.topIndices.push_back(base_idx + 0);
 				m.topIndices.push_back(base_idx + 1);
@@ -202,8 +226,13 @@ void physics::ColliderRenderable::SendVertices(std::vector<glm::vec3>& points) {
 			}
 		}
 
-		if (!m.topVertices.empty()) {
-			m.topMesh.UpdateDynamicSpine(m.topVertices.data(), m.topVertices.size(), m.topIndices.data(), m.topIndices.size());
+		m.pending_top_update = !m.topVertices.empty();
+		if (m.pending_top_update && renderer::IRendererBase::GetInstance() != nullptr) {
+			m.topMesh.InitDynamicSpine();
+			if (!m.topVertices.empty() && !m.topIndices.empty()) {
+				m.topMesh.UpdateDynamicSpine(m.topVertices.data(), m.topVertices.size(), m.topIndices.data(), m.topIndices.size());
+				m.pending_top_update = false;
+			}
 		}
 	}
 }
@@ -265,6 +294,7 @@ json_t physics::ColliderRenderable::Save() const {
 	return j;
 }
 
+#ifdef TOAST_EDITOR
 void physics::ColliderRenderable::Inspector() {
 	m.material_slot.Show();
 	ImGui::Separator();
@@ -279,6 +309,7 @@ void physics::ColliderRenderable::Inspector() {
 		m.topMaterialSlot.Show();
 	}
 }
+#endif
 
 void physics::ColliderRenderable::LoadTextures() {
 	m.mesh.InitDynamicSpine();
@@ -291,6 +322,20 @@ void physics::ColliderRenderable::LoadTextures() {
 void physics::ColliderRenderable::OnRender(renderer::IRenderablePass pass, const glm::mat4& view_projection) noexcept {
 	if (not toast::Object::enabled() || not m.show) {
 		return;
+	}
+
+	// Do this before frustum culling
+	if (m.pending_update) {
+		TOAST_INFO("ColliderRenderable::OnRender uploading mesh (verts={}, inds={})", m.vertices.size(), m.indices.size());
+		m.mesh.InitDynamicSpine();
+		m.mesh.UpdateDynamicSpine(m.vertices.data(), m.vertices.size(), m.indices.data(), m.indices.size());
+		m.pending_update = false;
+	}
+	if (m.pending_top_update) {
+		TOAST_INFO("ColliderRenderable::OnRender uploading top mesh (verts={}, inds={})", m.topVertices.size(), m.topIndices.size());
+		m.topMesh.InitDynamicSpine();
+		m.topMesh.UpdateDynamicSpine(m.topVertices.data(), m.topVertices.size(), m.topIndices.data(), m.topIndices.size());
+		m.pending_top_update = false;
 	}
 
 	if (not OclussionVolume::isTransformedAABBOnPlanes(m.boundingBox, toast::TransformComponent::GetWorldMatrix())) {

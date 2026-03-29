@@ -9,6 +9,7 @@
 #include "UltralightShaders.hpp"
 #include "glad/gl.h"
 
+#include <SDL3/SDL.h>
 #include <Toast/Log.hpp>
 #include <Toast/Profiler.hpp>
 #include <Ultralight/platform/Platform.h>
@@ -85,7 +86,7 @@ inline std::string GetProgramLog(GLuint program_id) {
 
 static GLuint LoadShaderFromSource(GLenum shader_type, const char* source, const char* name) {
 	// Check that we have a valid GL context
-	if (!glfwGetCurrentContext()) {
+	if (!SDL_GL_GetCurrentContext()) {
 		GPU_FATAL("No GL context current when loading shader: " << name);
 	}
 
@@ -143,35 +144,35 @@ void ToastGPUDriver::CreateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
 	// Ensure correct GL context is current
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
-	CHECK_GL();
+	// CHECK_GL();
 
 	if (bitmap->IsEmpty()) {
 		CreateFBOTexture(texture_id, bitmap);
 		return;
 	}
 
-	CHECK_GL();
+	// CHECK_GL();
 
 	TextureEntry& entry = texture_map_[texture_id];
 	glGenTextures(1, &entry.tex_id);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, entry.tex_id);
 
-	CHECK_GL();
+	// CHECK_GL();
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	CHECK_GL();
+	// CHECK_GL();
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, bitmap->row_bytes() / bitmap->bpp());
 
-	CHECK_GL();
+	// CHECK_GL();
 
 	if (bitmap->format() == ultralight::BitmapFormat::A8_UNORM) {
 		const void* pixels = bitmap->LockPixels();
@@ -200,9 +201,9 @@ void ToastGPUDriver::CreateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
 		GPU_FATAL("Unhandled texture format: " << static_cast<int>(bitmap->format()));
 	}
 
-	CHECK_GL();
+	// CHECK_GL();
 	glGenerateMipmap(GL_TEXTURE_2D);
-	CHECK_GL();
+	// CHECK_GL();
 
 	entry.width = bitmap->width();
 	entry.height = bitmap->height();
@@ -214,7 +215,7 @@ void ToastGPUDriver::UpdateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
 	// Ensure correct GL context is current
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	glActiveTexture(GL_TEXTURE0);
 	auto it = texture_map_.find(texture_id);
@@ -233,7 +234,7 @@ void ToastGPUDriver::UpdateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
 
 	glBindTexture(GL_TEXTURE_2D, entry.tex_id);
 
-	CHECK_GL();
+	// CHECK_GL();
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, bitmap->row_bytes() / bitmap->bpp());
@@ -265,7 +266,7 @@ void ToastGPUDriver::UpdateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
 			}
 			bitmap->UnlockPixels();
 
-			CHECK_GL();
+			// CHECK_GL();
 			glGenerateMipmap(GL_TEXTURE_2D);
 		} else {
 			GPU_FATAL("Unhandled texture format: " << static_cast<int>(bitmap->format()));
@@ -273,7 +274,7 @@ void ToastGPUDriver::UpdateTexture(uint32_t texture_id, ultralight::RefPtr<ultra
 	}
 
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);    // restore default
-	CHECK_GL();
+	                                           // CHECK_GL();
 }
 
 void ToastGPUDriver::BindTexture(uint8_t texture_unit, uint32_t texture_id) {
@@ -321,22 +322,22 @@ void ToastGPUDriver::BindTexture(uint8_t texture_unit, uint32_t texture_id) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	CHECK_GL();
+	// CHECK_GL();
 }
 
 void ToastGPUDriver::DestroyTexture(uint32_t texture_id) {
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
 	// Ensure correct GL context is current
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	TextureEntry& entry = texture_map_[texture_id];
 	glDeleteTextures(1, &entry.tex_id);
-	CHECK_GL();
+	// CHECK_GL();
 	if (entry.msaa_tex_id) {
 		glDeleteTextures(1, &entry.msaa_tex_id);
 	}
-	CHECK_GL();
+	// CHECK_GL();
 	texture_map_.erase(texture_id);
 }
 
@@ -350,14 +351,14 @@ void ToastGPUDriver::BindUltralightTexture(uint32_t ultralight_texture_id) {
 	TextureEntry& entry = it->second;
 	ResolveIfNeeded(entry.render_buffer_id);
 	glBindTexture(GL_TEXTURE_2D, entry.tex_id);
-	CHECK_GL();
+	// CHECK_GL();
 }
 
 void ToastGPUDriver::CreateRenderBuffer(uint32_t render_buffer_id, const ultralight::RenderBuffer& buffer) {
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
 	// Ensure correct GL context is current
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	if (render_buffer_id == 0) {
 		return;    // Render Buffer ID 0 is reserved for default framebuffer
@@ -380,7 +381,7 @@ void ToastGPUDriver::BindRenderBuffer(uint32_t render_buffer_id) {
 
 	RenderBufferEntry& entry = render_buffer_map_[render_buffer_id];
 
-	auto i = entry.fbo_map.find(glfwGetCurrentContext());
+	auto i = entry.fbo_map.find(SDL_GL_GetCurrentWindow());
 	if (i == entry.fbo_map.end()) {
 		return;
 	}
@@ -394,19 +395,19 @@ void ToastGPUDriver::BindRenderBuffer(uint32_t render_buffer_id) {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo_entry.fbo_id);
 	}
 
-	CHECK_GL();
+	// CHECK_GL();
 }
 
 void ToastGPUDriver::ClearRenderBuffer(uint32_t render_buffer_id) {
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	BindRenderBuffer(render_buffer_id);
 	glDisable(GL_SCISSOR_TEST);
-	CHECK_GL();
+	// CHECK_GL();
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	CHECK_GL();
+	// CHECK_GL();
 	glClear(GL_COLOR_BUFFER_BIT);
-	CHECK_GL();
+	// CHECK_GL();
 }
 
 void ToastGPUDriver::DestroyRenderBuffer(uint32_t render_buffer_id) {
@@ -416,17 +417,18 @@ void ToastGPUDriver::DestroyRenderBuffer(uint32_t render_buffer_id) {
 		return;
 	}
 
-	auto previous_context = glfwGetCurrentContext();
+	auto* previous_window = SDL_GL_GetCurrentWindow();
+	auto previous_context = SDL_GL_GetCurrentContext();
 
 	RenderBufferEntry& entry = render_buffer_map_[render_buffer_id];
 	for (auto& [context, fbo_entry] : entry.fbo_map) {
-		glfwMakeContextCurrent(context);
+		SDL_GL_MakeCurrent(context, previous_context);
 		glDeleteFramebuffers(1, &fbo_entry.fbo_id);
-		CHECK_GL();
+		// CHECK_GL();
 		if (context_->msaa_enabled()) {
 			glDeleteFramebuffers(1, &fbo_entry.msaa_fbo_id);
 		}
-		CHECK_GL();
+		// CHECK_GL();
 	}
 
 #if ENABLE_OFFSCREEN_GL
@@ -434,17 +436,17 @@ void ToastGPUDriver::DestroyRenderBuffer(uint32_t render_buffer_id) {
 		glDeleteBuffers(1, &entry.pbo_id);
 	}
 #endif
-	CHECK_GL();
+	// CHECK_GL();
 	render_buffer_map_.erase(render_buffer_id);
 
-	glfwMakeContextCurrent(previous_context);
+	SDL_GL_MakeCurrent(previous_window, previous_context);
 }
 
 void ToastGPUDriver::CreateGeometry(uint32_t geometry_id, const ultralight::VertexBuffer& vertices, const ultralight::IndexBuffer& indices) {
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
 	// Ensure correct GL context is current
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	GeometryEntry geometry;
 	geometry.vertex_format = vertices.format;
@@ -452,12 +454,12 @@ void ToastGPUDriver::CreateGeometry(uint32_t geometry_id, const ultralight::Vert
 	glGenBuffers(1, &geometry.vbo_vertices);
 	glBindBuffer(GL_ARRAY_BUFFER, geometry.vbo_vertices);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size, vertices.data, GL_DYNAMIC_DRAW);
-	CHECK_GL();
+	// CHECK_GL();
 
 	glGenBuffers(1, &geometry.vbo_indices);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geometry.vbo_indices);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size, indices.data, GL_STATIC_DRAW);
-	CHECK_GL();
+	// CHECK_GL();
 
 	geometry_map_[geometry_id] = geometry;
 }
@@ -466,39 +468,40 @@ void ToastGPUDriver::UpdateGeometry(uint32_t geometry_id, const ultralight::Vert
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
 	// Ensure correct GL context is current
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	GeometryEntry& geometry = geometry_map_[geometry_id];
-	CHECK_GL();
+	// CHECK_GL();
 	glBindBuffer(GL_ARRAY_BUFFER, geometry.vbo_vertices);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size, vertices.data, GL_DYNAMIC_DRAW);
-	CHECK_GL();
+	// CHECK_GL();
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geometry.vbo_indices);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size, indices.data, GL_STATIC_DRAW);
-	CHECK_GL();
+	// CHECK_GL();
 }
 
 void ToastGPUDriver::DestroyGeometry(uint32_t geometry_id) {
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
 	GeometryEntry& geometry = geometry_map_[geometry_id];
-	CHECK_GL();
+	// CHECK_GL();
 	glDeleteBuffers(1, &geometry.vbo_indices);
 	glDeleteBuffers(1, &geometry.vbo_vertices);
-	CHECK_GL();
+	// CHECK_GL();
 
-	auto previous_context = glfwGetCurrentContext();
+	auto* previous_window = SDL_GL_GetCurrentWindow();
+	auto previous_context = SDL_GL_GetCurrentContext();
 
 	for (auto& [context, vao_entry] : geometry.vao_map) {
-		glfwMakeContextCurrent(context);
+		SDL_GL_MakeCurrent(context, previous_context);
 		glDeleteVertexArrays(1, &vao_entry);
-		CHECK_GL();
+		// CHECK_GL();
 	}
 
-	CHECK_GL();
+	// CHECK_GL();
 	geometry_map_.erase(geometry_id);
 
-	glfwMakeContextCurrent(previous_context);
+	SDL_GL_MakeCurrent(previous_window, previous_context);
 }
 
 GLuint ToastGPUDriver::GetTextureGL(uint32_t ultralight_texture_id) const {
@@ -522,7 +525,7 @@ GLuint ToastGPUDriver::GetTextureGLResolved(uint32_t ultralight_texture_id) {
 void ToastGPUDriver::UpdateCommandList(const ultralight::CommandList& list) {
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
-	std::lock_guard<std::mutex> lock(command_list_mutex_);
+	// std::lock_guard<std::mutex> lock(command_list_mutex_);
 	command_list_.clear();
 	command_list_.reserve(list.size);
 	for (uint32_t i = 0; i < list.size; ++i) {
@@ -535,19 +538,19 @@ void ToastGPUDriver::DrawCommandList() {
 
 	// Copy command list under lock, then process outside the lock to avoid holding
 	// the mutex during GL calls (which could be re-entrant via callbacks).
-	std::vector<ultralight::Command> local_commands;
-	{
-		std::lock_guard<std::mutex> lock(command_list_mutex_);
-		if (command_list_.empty()) {
-			return;
-		}
-		local_commands = command_list_;
-		command_list_.clear();
-	}
+	// std::vector<ultralight::Command> local_commands;
+	/*{
+	  std::lock_guard<std::mutex> lock(command_list_mutex_);
+	  if (command_list_.empty()) {
+	    return;
+	  }
+	  local_commands = command_list_;
+	  command_list_.clear();
+	}*/
 
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
-	CHECK_GL();
+	// CHECK_GL();
 
 	batch_count_ = 0;
 
@@ -557,26 +560,27 @@ void ToastGPUDriver::DrawCommandList() {
 	glDepthFunc(GL_NEVER);
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-	CHECK_GL();
+	// CHECK_GL();
 
-	for (const auto& cmd : local_commands) {
+	for (const auto& cmd : command_list_) {
 		switch (cmd.command_type) {
 			case ultralight::CommandType::DrawGeometry: DrawGeometry(cmd.geometry_id, cmd.indices_count, cmd.indices_offset, cmd.gpu_state); break;
 			case ultralight::CommandType::ClearRenderBuffer: ClearRenderBuffer(cmd.gpu_state.render_buffer_id); break;
 		}
 	}
+	command_list_.clear();
 
 	// local_commands cleared on scope exit
 	glDisable(GL_SCISSOR_TEST);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	CHECK_GL();
+	// CHECK_GL();
 }
 
 void ToastGPUDriver::DrawGeometry(uint32_t geometry_id, uint32_t indices_count, uint32_t indices_offset, const ultralight::GPUState& state) {
 	PROFILE_ZONE_C(tracy::Color::Orange);
 
-	glfwMakeContextCurrent(context_->active_window());
+	SDL_GL_MakeCurrent(context_->active_window(), SDL_GL_GetCurrentContext());
 
 	if (programs_.empty()) {
 		LoadPrograms();
@@ -590,18 +594,18 @@ void ToastGPUDriver::DrawGeometry(uint32_t geometry_id, uint32_t indices_count, 
 	SelectProgram(static_cast<ProgramType>(state.shader_type));
 	UpdateUniforms(state);
 
-	CHECK_GL();
+	// CHECK_GL();
 
 	CreateVAOIfNeededForActiveContext(geometry_id);
-	auto vao_entry = geometry.vao_map[glfwGetCurrentContext()];
+	auto vao_entry = geometry.vao_map[SDL_GL_GetCurrentWindow()];
 	glBindVertexArray(vao_entry);
-	CHECK_GL();
+	// CHECK_GL();
 
 	BindTexture(0, state.texture_1_id);
 	BindTexture(1, state.texture_2_id);
 	BindTexture(2, state.texture_3_id);
 
-	CHECK_GL();
+	// CHECK_GL();
 
 	if (state.enable_scissor) {
 		glEnable(GL_SCISSOR_TEST);
@@ -617,14 +621,14 @@ void ToastGPUDriver::DrawGeometry(uint32_t geometry_id, uint32_t indices_count, 
 		glDisable(GL_BLEND);
 	}
 
-	CHECK_GL();
+	// CHECK_GL();
 	glDrawElements(GL_TRIANGLES, indices_count, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(indices_offset * sizeof(unsigned int)));
-	CHECK_GL();
+	// CHECK_GL();
 	glBindVertexArray(0);
 
 	batch_count_++;
 
-	CHECK_GL();
+	// CHECK_GL();
 }
 
 void ToastGPUDriver::LoadPrograms() {
@@ -714,26 +718,26 @@ void ToastGPUDriver::UpdateUniforms(const ultralight::GPUState& state) {
 	    ApplyProjection(state.transform, static_cast<float>(state.viewport_width), static_cast<float>(state.viewport_height), flip_y);
 
 	float params[4] = {
-		static_cast<float>(glfwGetTime() / 1000.0), static_cast<float>(state.viewport_width), static_cast<float>(state.viewport_height), 1.0f
+		static_cast<float>(SDL_GetTicks() / 1000.0), static_cast<float>(state.viewport_width), static_cast<float>(state.viewport_height), 1.0f
 	};
 	SetUniform4f("State", params);
-	CHECK_GL();
+	// CHECK_GL();
 
 	ultralight::Matrix4x4 mat = model_view_projection.GetMatrix4x4();
 	SetUniformMatrix4fv("Transform", 1, mat.data);
-	CHECK_GL();
+	// CHECK_GL();
 
 	SetUniform4fv("Scalar4", 2, &state.uniform_scalar[0]);
-	CHECK_GL();
+	// CHECK_GL();
 
 	SetUniform4fv("Vector", 8, &state.uniform_vector[0].x);
-	CHECK_GL();
+	// CHECK_GL();
 
 	SetUniform1ui("ClipSize", state.clip_size);
-	CHECK_GL();
+	// CHECK_GL();
 
 	SetUniformMatrix4fv("Clip", 8, &state.clip[0].data[0]);
-	CHECK_GL();
+	// CHECK_GL();
 }
 
 void ToastGPUDriver::SetUniform1ui(const char* name, GLuint val) {
@@ -782,7 +786,7 @@ ultralight::Matrix ToastGPUDriver::ApplyProjection(const ultralight::Matrix4x4& 
 }
 
 void ToastGPUDriver::CreateFBOTexture(uint32_t texture_id, ultralight::RefPtr<ultralight::Bitmap> bitmap) {
-	CHECK_GL();
+	// CHECK_GL();
 
 	TextureEntry& entry = texture_map_[texture_id];
 	entry.width = bitmap->width();
@@ -809,9 +813,9 @@ void ToastGPUDriver::CreateFBOTexture(uint32_t texture_id, ultralight::RefPtr<ul
 		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA8, entry.width, entry.height, GL_FALSE);
 	}
 
-	CHECK_GL();
+	// CHECK_GL();
 	glGenerateMipmap(GL_TEXTURE_2D);
-	CHECK_GL();
+	// CHECK_GL();
 }
 
 void ToastGPUDriver::CreateFBOIfNeededForActiveContext(uint32_t render_buffer_id) {
@@ -826,34 +830,34 @@ void ToastGPUDriver::CreateFBOIfNeededForActiveContext(uint32_t render_buffer_id
 	}
 
 	RenderBufferEntry& entry = i->second;
-	auto j = entry.fbo_map.find(glfwGetCurrentContext());
+	auto j = entry.fbo_map.find(SDL_GL_GetCurrentWindow());
 	if (j != entry.fbo_map.end()) {
 		return;    // Already exists
 	}
 
-	FBOEntry& fbo_entry = entry.fbo_map[glfwGetCurrentContext()];
+	FBOEntry& fbo_entry = entry.fbo_map[SDL_GL_GetCurrentWindow()];
 
 	glGenFramebuffers(1, &fbo_entry.fbo_id);
-	CHECK_GL();
+	// CHECK_GL();
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo_entry.fbo_id);
-	CHECK_GL();
+	// CHECK_GL();
 
 	TextureEntry& textureEntry = texture_map_[entry.texture_id];
 
 	glBindTexture(GL_TEXTURE_2D, textureEntry.tex_id);
-	CHECK_GL();
+	// CHECK_GL();
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureEntry.tex_id, 0);
-	CHECK_GL();
+	// CHECK_GL();
 
 	GLenum drawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
 	glDrawBuffers(1, drawBuffers);
-	CHECK_GL();
+	// CHECK_GL();
 
 	GLenum result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (result != GL_FRAMEBUFFER_COMPLETE) {
 		GPU_FATAL("Error creating FBO: " << result);
 	}
-	CHECK_GL();
+	// CHECK_GL();
 
 	if (!context_->msaa_enabled()) {
 		return;
@@ -861,23 +865,23 @@ void ToastGPUDriver::CreateFBOIfNeededForActiveContext(uint32_t render_buffer_id
 
 	// Create MSAA FBO
 	glGenFramebuffers(1, &fbo_entry.msaa_fbo_id);
-	CHECK_GL();
+	// CHECK_GL();
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo_entry.msaa_fbo_id);
-	CHECK_GL();
+	// CHECK_GL();
 
 	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textureEntry.msaa_tex_id);
-	CHECK_GL();
+	// CHECK_GL();
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, textureEntry.msaa_tex_id, 0);
-	CHECK_GL();
+	// CHECK_GL();
 
 	glDrawBuffers(1, drawBuffers);
-	CHECK_GL();
+	// CHECK_GL();
 
 	result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (result != GL_FRAMEBUFFER_COMPLETE) {
 		GPU_FATAL("Error creating MSAA FBO: " << result);
 	}
-	CHECK_GL();
+	// CHECK_GL();
 }
 
 void ToastGPUDriver::CreateVAOIfNeededForActiveContext(uint32_t geometry_id) {
@@ -889,7 +893,7 @@ void ToastGPUDriver::CreateVAOIfNeededForActiveContext(uint32_t geometry_id) {
 
 	auto& geometry_entry = i->second;
 
-	auto j = geometry_entry.vao_map.find(glfwGetCurrentContext());
+	auto j = geometry_entry.vao_map.find(SDL_GL_GetCurrentWindow());
 	if (j != geometry_entry.vao_map.end()) {
 		return;    // Already exists
 	}
@@ -900,10 +904,10 @@ void ToastGPUDriver::CreateVAOIfNeededForActiveContext(uint32_t geometry_id) {
 	glBindVertexArray(vao_entry);
 
 	glBindBuffer(GL_ARRAY_BUFFER, geometry_entry.vbo_vertices);
-	CHECK_GL();
+	// CHECK_GL();
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geometry_entry.vbo_indices);
-	CHECK_GL();
+	// CHECK_GL();
 
 	if (geometry_entry.vertex_format == ultralight::VertexBufferFormat::_2f_4ub_2f_2f_28f) {
 		GLsizei stride = 140;
@@ -924,7 +928,7 @@ void ToastGPUDriver::CreateVAOIfNeededForActiveContext(uint32_t geometry_id) {
 			glEnableVertexAttribArray(i);
 		}
 
-		CHECK_GL();
+		// CHECK_GL();
 	} else if (geometry_entry.vertex_format == ultralight::VertexBufferFormat::_2f_4ub_2f) {
 		GLsizei stride = 20;
 
@@ -936,14 +940,14 @@ void ToastGPUDriver::CreateVAOIfNeededForActiveContext(uint32_t geometry_id) {
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
 
-		CHECK_GL();
+		// CHECK_GL();
 	} else {
 		GPU_FATAL("Unhandled vertex format: " << static_cast<int>(geometry_entry.vertex_format));
 	}
 
 	glBindVertexArray(0);
 
-	geometry_entry.vao_map[glfwGetCurrentContext()] = vao_entry;
+	geometry_entry.vao_map[SDL_GL_GetCurrentWindow()] = vao_entry;
 }
 
 void ToastGPUDriver::ResolveIfNeeded(uint32_t render_buffer_id) {
@@ -965,7 +969,7 @@ void ToastGPUDriver::ResolveIfNeeded(uint32_t render_buffer_id) {
 		return;
 	}
 
-	auto i = renderBufferEntry.fbo_map.find(glfwGetCurrentContext());
+	auto i = renderBufferEntry.fbo_map.find(SDL_GL_GetCurrentWindow());
 	if (i == renderBufferEntry.fbo_map.end()) {
 		return;
 	}
@@ -977,18 +981,18 @@ void ToastGPUDriver::ResolveIfNeeded(uint32_t render_buffer_id) {
 		GLint drawFboId = 0, readFboId = 0;
 		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &drawFboId);
 		glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &readFboId);
-		CHECK_GL();
+		// CHECK_GL();
 
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_entry.fbo_id);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo_entry.msaa_fbo_id);
-		CHECK_GL();
+		// CHECK_GL();
 
 		glBlitFramebuffer(0, 0, textureEntry.width, textureEntry.height, 0, 0, textureEntry.width, textureEntry.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		CHECK_GL();
+		// CHECK_GL();
 
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFboId);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, readFboId);
-		CHECK_GL();
+		// CHECK_GL();
 
 		fbo_entry.needs_resolve = false;
 	}
@@ -999,16 +1003,16 @@ void ToastGPUDriver::MakeTextureSRGBIfNeeded(uint32_t texture_id) {
 	if (!textureEntry.is_sRGB) {
 		// Destroy existing texture
 		glDeleteTextures(1, &textureEntry.tex_id);
-		CHECK_GL();
+		// CHECK_GL();
 
 		// Create new sRGB texture
 		glGenTextures(1, &textureEntry.tex_id);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureEntry.tex_id);
-		CHECK_GL();
+		// CHECK_GL();
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, textureEntry.width, textureEntry.height, 0, GL_BGRA, GL_UNSIGNED_BYTE, nullptr);
-		CHECK_GL();
+		// CHECK_GL();
 
 		textureEntry.is_sRGB = true;
 	}

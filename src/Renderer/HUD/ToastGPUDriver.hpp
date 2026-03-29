@@ -5,10 +5,11 @@
 
 #pragma once
 
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL_video.h>
 #include <Ultralight/Geometry.h>
 #include <Ultralight/Matrix.h>
 #include <Ultralight/platform/GPUDriver.h>
+#include <glad/gl.h>
 #include <map>
 #include <mutex>
 #include <vector>
@@ -131,7 +132,7 @@ private:
 
 	/// Render buffer entry
 	struct RenderBufferEntry {
-		std::map<GLFWwindow*, FBOEntry> fbo_map;    ///< FBOs per GL context
+		std::map<SDL_Window*, FBOEntry> fbo_map;    ///< FBOs per GL context
 		uint32_t texture_id = 0;                    ///< Backing texture ID
 #if ENABLE_OFFSCREEN_GL
 		ultralight::RefPtr<ultralight::Bitmap> bitmap;
@@ -144,7 +145,7 @@ private:
 
 	/// Geometry entry for VAO/VBO management
 	struct GeometryEntry {
-		std::map<GLFWwindow*, GLuint> vao_map;    ///< VAOs per GL context
+		std::map<SDL_Window*, GLuint> vao_map;    ///< VAOs per GL context
 		ultralight::VertexBufferFormat vertex_format;
 		GLuint vbo_vertices = 0;                  ///< VBO for vertices
 		GLuint vbo_indices = 0;                   ///< VBO for indices

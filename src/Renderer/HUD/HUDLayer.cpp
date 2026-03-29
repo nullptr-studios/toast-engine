@@ -6,12 +6,14 @@
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Ui/FontHandler.hpp"
 #include "Toast/Ui/Logger.hpp"
+#include "Toast/Window/Window.hpp"
+#include "Toast/Window/WindowEvents.hpp"
 #include "ToastGPUContext.hpp"
 #include "ToastGPUDriver.hpp"
 
 #include <AppCore/Platform.h>
-#include <GLFW/glfw3.h>
 #include <JavaScriptCore/JSRetainPtr.h>
+#include <SDL3/SDL.h>
 #include <Toast/Log.hpp>
 #include <Toast/Profiler.hpp>
 #include <Toast/Renderer/Framebuffer.hpp>
@@ -22,9 +24,6 @@
 #include <Ultralight/platform/Config.h>
 #include <Ultralight/platform/Platform.h>
 #include <algorithm>
-
-// Static map of windows to HUDLayer instances for input callbacks
-static std::unordered_map<GLFWwindow*, renderer::HUD::HUDLayer*> g_hud_layers;
 
 namespace renderer::HUD {
 
@@ -155,76 +154,7 @@ private:
 	ultralight::LoadListener* forward_ = nullptr;    // Not owned
 };
 
-// ============================================================================
-// GLFW Input Callback Forwarders
-// ============================================================================
-
-static GLFWcursorposfun g_prev_cursor_pos_callback = nullptr;
-static GLFWmousebuttonfun g_prev_mouse_button_callback = nullptr;
-static GLFWscrollfun g_prev_scroll_callback = nullptr;
-static GLFWkeyfun g_prev_key_callback = nullptr;
-static GLFWcharfun g_prev_char_callback = nullptr;
-
-static void HUDCursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
-	auto it = g_hud_layers.find(window);
-	if (it != g_hud_layers.end() && it->second && it->second->IsInputEnabled()) {
-		it->second->OnMouseMove(static_cast<int>(xpos), static_cast<int>(ypos));
-	}
-	// Chain to previous callback
-	if (g_prev_cursor_pos_callback) {
-		g_prev_cursor_pos_callback(window, xpos, ypos);
-	}
-}
-
-static void HUDMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-	auto it = g_hud_layers.find(window);
-	if (it != g_hud_layers.end() && it->second && it->second->IsInputEnabled()) {
-		it->second->OnMouseButton(button, action, mods);
-	}
-	// Chain to previous callback
-	if (g_prev_mouse_button_callback) {
-		g_prev_mouse_button_callback(window, button, action, mods);
-	}
-}
-
-static void HUDScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
-	auto it = g_hud_layers.find(window);
-	if (it != g_hud_layers.end() && it->second && it->second->IsInputEnabled()) {
-		it->second->OnMouseScroll(xoffset, yoffset);
-	}
-	// Chain to previous callback
-	if (g_prev_scroll_callback) {
-		g_prev_scroll_callback(window, xoffset, yoffset);
-	}
-}
-
-static void HUDKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	auto it = g_hud_layers.find(window);
-	if (it != g_hud_layers.end() && it->second && it->second->IsInputEnabled()) {
-		it->second->OnKey(key, scancode, action, mods);
-	}
-	// Chain to previous callback
-	if (g_prev_key_callback) {
-		g_prev_key_callback(window, key, scancode, action, mods);
-	}
-}
-
-static void HUDCharCallback(GLFWwindow* window, unsigned int codepoint) {
-	auto it = g_hud_layers.find(window);
-	if (it != g_hud_layers.end() && it->second && it->second->IsInputEnabled()) {
-		it->second->OnChar(codepoint);
-	}
-	// Chain to previous callback
-	if (g_prev_char_callback) {
-		g_prev_char_callback(window, codepoint);
-	}
-}
-
-// ============================================================================
-// HUDLayer Implementation
-// ============================================================================
-
-HUDLayer::HUDLayer(GLFWwindow* window, uint32_t width, uint32_t height, bool enable_msaa)
+HUDLayer::HUDLayer(SDL_Window* window, uint32_t width, uint32_t height, bool enable_msaa)
     : ILayer("HUDLayer"),
       window_(window),
       width_(width),
@@ -235,17 +165,45 @@ HUDLayer::HUDLayer(GLFWwindow* window, uint32_t width, uint32_t height, bool ena
 	// Set singleton instance to this
 	s_Instance = this;
 
-	// Register this HUDLayer for input callbacks
-	if (window_) {
-		g_hud_layers[window_] = this;
+	listener.Subscribe<event::WindowMousePosition>([this](event::WindowMousePosition* e) -> bool {
+		if (!IsInputEnabled()) {
+			return false;
+		}
+		OnMouseMove(static_cast<int>(e->x), static_cast<int>(e->y));
+		return false;
+	});
 
-		// Install our callbacks, saving the previous ones to chain
-		g_prev_cursor_pos_callback = glfwSetCursorPosCallback(window_, HUDCursorPosCallback);
-		g_prev_mouse_button_callback = glfwSetMouseButtonCallback(window_, HUDMouseButtonCallback);
-		g_prev_scroll_callback = glfwSetScrollCallback(window_, HUDScrollCallback);
-		g_prev_key_callback = glfwSetKeyCallback(window_, HUDKeyCallback);
-		g_prev_char_callback = glfwSetCharCallback(window_, HUDCharCallback);
-	}
+	listener.Subscribe<event::WindowMouseButton>([this](event::WindowMouseButton* e) -> bool {
+		if (!IsInputEnabled()) {
+			return false;
+		}
+		OnMouseButton(e->button, e->action, e->mods);
+		return false;
+	});
+
+	listener.Subscribe<event::WindowMouseScroll>([this](event::WindowMouseScroll* e) -> bool {
+		if (!IsInputEnabled()) {
+			return false;
+		}
+		OnMouseScroll(e->x, e->y);
+		return false;
+	});
+
+	listener.Subscribe<event::WindowKey>([this](event::WindowKey* e) -> bool {
+		if (!IsInputEnabled()) {
+			return false;
+		}
+		OnKey(e->key, e->scancode, e->action, e->mods);
+		return false;
+	});
+
+	listener.Subscribe<event::WindowChar>([this](event::WindowChar* e) -> bool {
+		if (!IsInputEnabled()) {
+			return false;
+		}
+		OnChar(e->key);
+		return false;
+	});
 
 	listener.Subscribe<ShowHUDLayerEvent>([this](ShowHUDLayerEvent* e) -> bool {
 		if (e->s) {
@@ -263,24 +221,6 @@ HUDLayer::~HUDLayer() {
 	// Clear singleton if this is the current instance
 	if (s_Instance == this) {
 		s_Instance = nullptr;
-	}
-
-	// Unregister from input callbacks before detaching
-	if (window_) {
-		g_hud_layers.erase(window_);
-
-		// Restore previous callbacks
-		glfwSetCursorPosCallback(window_, g_prev_cursor_pos_callback);
-		glfwSetMouseButtonCallback(window_, g_prev_mouse_button_callback);
-		glfwSetScrollCallback(window_, g_prev_scroll_callback);
-		glfwSetKeyCallback(window_, g_prev_key_callback);
-		glfwSetCharCallback(window_, g_prev_char_callback);
-
-		g_prev_cursor_pos_callback = nullptr;
-		g_prev_mouse_button_callback = nullptr;
-		g_prev_scroll_callback = nullptr;
-		g_prev_key_callback = nullptr;
-		g_prev_char_callback = nullptr;
 	}
 
 	// OnDetach();
@@ -304,7 +244,7 @@ void HUDLayer::OnAttach() {
 
 	// Ensure OpenGL context is current before any GL operations
 	if (window_) {
-		glfwMakeContextCurrent(window_);
+		SDL_GL_MakeCurrent(window_, toast::Window::GetInstance()->GetGLContext());
 	} else {
 		TOAST_ERROR("HUDLayer::OnAttach - No window provided!");
 		return;
@@ -365,9 +305,7 @@ void HUDLayer::OnAttach() {
 	if (!pending_url_.empty()) {
 		// Read the monitor DPI scale so Ultralight's CSS coordinate space equals logical pixels
 		if (window_) {
-			float sx = 1.0f, sy = 1.0f;
-			glfwGetWindowContentScale(window_, &sx, &sy);
-			device_scale_ = sx;
+			device_scale_ = SDL_GetWindowDisplayScale(window_);
 		}
 
 		ultralight::ViewConfig view_config;
@@ -643,9 +581,7 @@ void HUDLayer::Resize(uint32_t width, uint32_t height) {
 
 	// Refresh DPI scale — the monitor or window scale may have changed
 	if (window_) {
-		float sx = 1.0f, sy = 1.0f;
-		glfwGetWindowContentScale(window_, &sx, &sy);
-		device_scale_ = sx;
+		device_scale_ = SDL_GetWindowDisplayScale(window_);
 	}
 
 	// Resize the Ultralight view (physical pixels) and update the device scale
@@ -721,18 +657,19 @@ void HUDLayer::OnMouseButton(int button, int action, int mods) {
 	}
 
 	ultralight::MouseEvent evt;
-	evt.type = (action == GLFW_PRESS) ? ultralight::MouseEvent::kType_MouseDown : ultralight::MouseEvent::kType_MouseUp;
+	evt.type = (action == event::WINDOW_INPUT_PRESSED) ? ultralight::MouseEvent::kType_MouseDown : ultralight::MouseEvent::kType_MouseUp;
 
 	// Get current mouse position
-	double xpos, ypos;
-	glfwGetCursorPos(window_, &xpos, &ypos);
+	float xpos = 0.0f;
+	float ypos = 0.0f;
+	SDL_GetMouseState(&xpos, &ypos);
 	evt.x = static_cast<int>(xpos) - viewport_offset_x_;
 	evt.y = static_cast<int>(ypos) - viewport_offset_y_;
 
 	switch (button) {
-		case GLFW_MOUSE_BUTTON_LEFT: evt.button = ultralight::MouseEvent::kButton_Left; break;
-		case GLFW_MOUSE_BUTTON_MIDDLE: evt.button = ultralight::MouseEvent::kButton_Middle; break;
-		case GLFW_MOUSE_BUTTON_RIGHT: evt.button = ultralight::MouseEvent::kButton_Right; break;
+		case SDL_BUTTON_LEFT: evt.button = ultralight::MouseEvent::kButton_Left; break;
+		case SDL_BUTTON_MIDDLE: evt.button = ultralight::MouseEvent::kButton_Middle; break;
+		case SDL_BUTTON_RIGHT: evt.button = ultralight::MouseEvent::kButton_Right; break;
 		default: evt.button = ultralight::MouseEvent::kButton_None; break;
 	}
 
@@ -755,96 +692,58 @@ void HUDLayer::OnMouseScroll(double xoffset, double yoffset) {
 	}
 }
 
-// Helper function to convert GLFW key to Ultralight key
-static int GLFWKeyToUltralightKey(int key) {
+// Helper function to convert SDL key to Ultralight key
+static int SDLKeyToUltralightKey(int key) {
+	if (key >= SDLK_A && key <= SDLK_Z) {
+		return ultralight::KeyCodes::GK_A + (key - SDLK_A);
+	}
+	if (key >= SDLK_0 && key <= SDLK_9) {
+		return ultralight::KeyCodes::GK_0 + (key - SDLK_0);
+	}
+	if (key >= SDLK_F1 && key <= SDLK_F12) {
+		return ultralight::KeyCodes::GK_F1 + (key - SDLK_F1);
+	}
+
 	switch (key) {
-		case GLFW_KEY_SPACE: return ultralight::KeyCodes::GK_SPACE;
-		case GLFW_KEY_APOSTROPHE: return ultralight::KeyCodes::GK_OEM_7;
-		case GLFW_KEY_COMMA: return ultralight::KeyCodes::GK_OEM_COMMA;
-		case GLFW_KEY_MINUS: return ultralight::KeyCodes::GK_OEM_MINUS;
-		case GLFW_KEY_PERIOD: return ultralight::KeyCodes::GK_OEM_PERIOD;
-		case GLFW_KEY_SLASH: return ultralight::KeyCodes::GK_OEM_2;
-		case GLFW_KEY_0: return ultralight::KeyCodes::GK_0;
-		case GLFW_KEY_1: return ultralight::KeyCodes::GK_1;
-		case GLFW_KEY_2: return ultralight::KeyCodes::GK_2;
-		case GLFW_KEY_3: return ultralight::KeyCodes::GK_3;
-		case GLFW_KEY_4: return ultralight::KeyCodes::GK_4;
-		case GLFW_KEY_5: return ultralight::KeyCodes::GK_5;
-		case GLFW_KEY_6: return ultralight::KeyCodes::GK_6;
-		case GLFW_KEY_7: return ultralight::KeyCodes::GK_7;
-		case GLFW_KEY_8: return ultralight::KeyCodes::GK_8;
-		case GLFW_KEY_9: return ultralight::KeyCodes::GK_9;
-		case GLFW_KEY_SEMICOLON: return ultralight::KeyCodes::GK_OEM_1;
-		case GLFW_KEY_EQUAL: return ultralight::KeyCodes::GK_OEM_PLUS;
-		case GLFW_KEY_A: return ultralight::KeyCodes::GK_A;
-		case GLFW_KEY_B: return ultralight::KeyCodes::GK_B;
-		case GLFW_KEY_C: return ultralight::KeyCodes::GK_C;
-		case GLFW_KEY_D: return ultralight::KeyCodes::GK_D;
-		case GLFW_KEY_E: return ultralight::KeyCodes::GK_E;
-		case GLFW_KEY_F: return ultralight::KeyCodes::GK_F;
-		case GLFW_KEY_G: return ultralight::KeyCodes::GK_G;
-		case GLFW_KEY_H: return ultralight::KeyCodes::GK_H;
-		case GLFW_KEY_I: return ultralight::KeyCodes::GK_I;
-		case GLFW_KEY_J: return ultralight::KeyCodes::GK_J;
-		case GLFW_KEY_K: return ultralight::KeyCodes::GK_K;
-		case GLFW_KEY_L: return ultralight::KeyCodes::GK_L;
-		case GLFW_KEY_M: return ultralight::KeyCodes::GK_M;
-		case GLFW_KEY_N: return ultralight::KeyCodes::GK_N;
-		case GLFW_KEY_O: return ultralight::KeyCodes::GK_O;
-		case GLFW_KEY_P: return ultralight::KeyCodes::GK_P;
-		case GLFW_KEY_Q: return ultralight::KeyCodes::GK_Q;
-		case GLFW_KEY_R: return ultralight::KeyCodes::GK_R;
-		case GLFW_KEY_S: return ultralight::KeyCodes::GK_S;
-		case GLFW_KEY_T: return ultralight::KeyCodes::GK_T;
-		case GLFW_KEY_U: return ultralight::KeyCodes::GK_U;
-		case GLFW_KEY_V: return ultralight::KeyCodes::GK_V;
-		case GLFW_KEY_W: return ultralight::KeyCodes::GK_W;
-		case GLFW_KEY_X: return ultralight::KeyCodes::GK_X;
-		case GLFW_KEY_Y: return ultralight::KeyCodes::GK_Y;
-		case GLFW_KEY_Z: return ultralight::KeyCodes::GK_Z;
-		case GLFW_KEY_LEFT_BRACKET: return ultralight::KeyCodes::GK_OEM_4;
-		case GLFW_KEY_BACKSLASH: return ultralight::KeyCodes::GK_OEM_5;
-		case GLFW_KEY_RIGHT_BRACKET: return ultralight::KeyCodes::GK_OEM_6;
-		case GLFW_KEY_GRAVE_ACCENT: return ultralight::KeyCodes::GK_OEM_3;
-		case GLFW_KEY_ESCAPE: return ultralight::KeyCodes::GK_ESCAPE;
-		case GLFW_KEY_ENTER: return ultralight::KeyCodes::GK_RETURN;
-		case GLFW_KEY_TAB: return ultralight::KeyCodes::GK_TAB;
-		case GLFW_KEY_BACKSPACE: return ultralight::KeyCodes::GK_BACK;
-		case GLFW_KEY_INSERT: return ultralight::KeyCodes::GK_INSERT;
-		case GLFW_KEY_DELETE: return ultralight::KeyCodes::GK_DELETE;
-		case GLFW_KEY_RIGHT: return ultralight::KeyCodes::GK_RIGHT;
-		case GLFW_KEY_LEFT: return ultralight::KeyCodes::GK_LEFT;
-		case GLFW_KEY_DOWN: return ultralight::KeyCodes::GK_DOWN;
-		case GLFW_KEY_UP: return ultralight::KeyCodes::GK_UP;
-		case GLFW_KEY_PAGE_UP: return ultralight::KeyCodes::GK_PRIOR;
-		case GLFW_KEY_PAGE_DOWN: return ultralight::KeyCodes::GK_NEXT;
-		case GLFW_KEY_HOME: return ultralight::KeyCodes::GK_HOME;
-		case GLFW_KEY_END: return ultralight::KeyCodes::GK_END;
-		case GLFW_KEY_CAPS_LOCK: return ultralight::KeyCodes::GK_CAPITAL;
-		case GLFW_KEY_SCROLL_LOCK: return ultralight::KeyCodes::GK_SCROLL;
-		case GLFW_KEY_NUM_LOCK: return ultralight::KeyCodes::GK_NUMLOCK;
-		case GLFW_KEY_PRINT_SCREEN: return ultralight::KeyCodes::GK_SNAPSHOT;
-		case GLFW_KEY_PAUSE: return ultralight::KeyCodes::GK_PAUSE;
-		case GLFW_KEY_F1: return ultralight::KeyCodes::GK_F1;
-		case GLFW_KEY_F2: return ultralight::KeyCodes::GK_F2;
-		case GLFW_KEY_F3: return ultralight::KeyCodes::GK_F3;
-		case GLFW_KEY_F4: return ultralight::KeyCodes::GK_F4;
-		case GLFW_KEY_F5: return ultralight::KeyCodes::GK_F5;
-		case GLFW_KEY_F6: return ultralight::KeyCodes::GK_F6;
-		case GLFW_KEY_F7: return ultralight::KeyCodes::GK_F7;
-		case GLFW_KEY_F8: return ultralight::KeyCodes::GK_F8;
-		case GLFW_KEY_F9: return ultralight::KeyCodes::GK_F9;
-		case GLFW_KEY_F10: return ultralight::KeyCodes::GK_F10;
-		case GLFW_KEY_F11: return ultralight::KeyCodes::GK_F11;
-		case GLFW_KEY_F12: return ultralight::KeyCodes::GK_F12;
-		case GLFW_KEY_LEFT_SHIFT: return ultralight::KeyCodes::GK_SHIFT;
-		case GLFW_KEY_LEFT_CONTROL: return ultralight::KeyCodes::GK_CONTROL;
-		case GLFW_KEY_LEFT_ALT: return ultralight::KeyCodes::GK_MENU;
-		case GLFW_KEY_LEFT_SUPER: return ultralight::KeyCodes::GK_LWIN;
-		case GLFW_KEY_RIGHT_SHIFT: return ultralight::KeyCodes::GK_SHIFT;
-		case GLFW_KEY_RIGHT_CONTROL: return ultralight::KeyCodes::GK_CONTROL;
-		case GLFW_KEY_RIGHT_ALT: return ultralight::KeyCodes::GK_MENU;
-		case GLFW_KEY_RIGHT_SUPER: return ultralight::KeyCodes::GK_RWIN;
+		case SDLK_SPACE: return ultralight::KeyCodes::GK_SPACE;
+		case SDLK_APOSTROPHE: return ultralight::KeyCodes::GK_OEM_7;
+		case SDLK_COMMA: return ultralight::KeyCodes::GK_OEM_COMMA;
+		case SDLK_MINUS: return ultralight::KeyCodes::GK_OEM_MINUS;
+		case SDLK_PERIOD: return ultralight::KeyCodes::GK_OEM_PERIOD;
+		case SDLK_SLASH: return ultralight::KeyCodes::GK_OEM_2;
+		case SDLK_SEMICOLON: return ultralight::KeyCodes::GK_OEM_1;
+		case SDLK_EQUALS: return ultralight::KeyCodes::GK_OEM_PLUS;
+		case SDLK_LEFTBRACKET: return ultralight::KeyCodes::GK_OEM_4;
+		case SDLK_BACKSLASH: return ultralight::KeyCodes::GK_OEM_5;
+		case SDLK_RIGHTBRACKET: return ultralight::KeyCodes::GK_OEM_6;
+		case SDLK_GRAVE: return ultralight::KeyCodes::GK_OEM_3;
+		case SDLK_ESCAPE: return ultralight::KeyCodes::GK_ESCAPE;
+		case SDLK_RETURN: return ultralight::KeyCodes::GK_RETURN;
+		case SDLK_TAB: return ultralight::KeyCodes::GK_TAB;
+		case SDLK_BACKSPACE: return ultralight::KeyCodes::GK_BACK;
+		case SDLK_INSERT: return ultralight::KeyCodes::GK_INSERT;
+		case SDLK_DELETE: return ultralight::KeyCodes::GK_DELETE;
+		case SDLK_RIGHT: return ultralight::KeyCodes::GK_RIGHT;
+		case SDLK_LEFT: return ultralight::KeyCodes::GK_LEFT;
+		case SDLK_DOWN: return ultralight::KeyCodes::GK_DOWN;
+		case SDLK_UP: return ultralight::KeyCodes::GK_UP;
+		case SDLK_PAGEUP: return ultralight::KeyCodes::GK_PRIOR;
+		case SDLK_PAGEDOWN: return ultralight::KeyCodes::GK_NEXT;
+		case SDLK_HOME: return ultralight::KeyCodes::GK_HOME;
+		case SDLK_END: return ultralight::KeyCodes::GK_END;
+		case SDLK_CAPSLOCK: return ultralight::KeyCodes::GK_CAPITAL;
+		case SDLK_SCROLLLOCK: return ultralight::KeyCodes::GK_SCROLL;
+		case SDLK_NUMLOCKCLEAR: return ultralight::KeyCodes::GK_NUMLOCK;
+		case SDLK_PRINTSCREEN: return ultralight::KeyCodes::GK_SNAPSHOT;
+		case SDLK_PAUSE: return ultralight::KeyCodes::GK_PAUSE;
+		case SDLK_LSHIFT:
+		case SDLK_RSHIFT: return ultralight::KeyCodes::GK_SHIFT;
+		case SDLK_LCTRL:
+		case SDLK_RCTRL: return ultralight::KeyCodes::GK_CONTROL;
+		case SDLK_LALT:
+		case SDLK_RALT: return ultralight::KeyCodes::GK_MENU;
+		case SDLK_LGUI: return ultralight::KeyCodes::GK_LWIN;
+		case SDLK_RGUI: return ultralight::KeyCodes::GK_RWIN;
 		default: return ultralight::KeyCodes::GK_UNKNOWN;
 	}
 }
@@ -855,23 +754,24 @@ void HUDLayer::OnKey(int key, int scancode, int action, int mods) {
 	}
 
 	ultralight::KeyEvent evt;
-	evt.type = (action == GLFW_PRESS || action == GLFW_REPEAT) ? ultralight::KeyEvent::kType_RawKeyDown : ultralight::KeyEvent::kType_KeyUp;
+	evt.type = (action == event::WINDOW_INPUT_PRESSED || action == event::WINDOW_INPUT_REPEATED) ? ultralight::KeyEvent::kType_RawKeyDown
+	                                                                                             : ultralight::KeyEvent::kType_KeyUp;
 
-	evt.virtual_key_code = GLFWKeyToUltralightKey(key);
+	evt.virtual_key_code = SDLKeyToUltralightKey(key);
 	evt.native_key_code = scancode;
 
 	// Set modifiers
 	evt.modifiers = 0;
-	if (mods & GLFW_MOD_ALT) {
+	if (mods & SDL_KMOD_ALT) {
 		evt.modifiers |= ultralight::KeyEvent::kMod_AltKey;
 	}
-	if (mods & GLFW_MOD_CONTROL) {
+	if (mods & SDL_KMOD_CTRL) {
 		evt.modifiers |= ultralight::KeyEvent::kMod_CtrlKey;
 	}
-	if (mods & GLFW_MOD_SHIFT) {
+	if (mods & SDL_KMOD_SHIFT) {
 		evt.modifiers |= ultralight::KeyEvent::kMod_ShiftKey;
 	}
-	if (mods & GLFW_MOD_SUPER) {
+	if (mods & SDL_KMOD_GUI) {
 		evt.modifiers |= ultralight::KeyEvent::kMod_MetaKey;
 	}
 
@@ -966,9 +866,7 @@ void HUDLayer::SetViewSortOrder(const ultralight::RefPtr<ultralight::View>& view
 
 void HUDLayer::SortViewsByOrder() {
 	std::stable_sort(
-	    views_.begin(),
-	    views_.end(),
-	    [this](const ultralight::RefPtr<ultralight::View>& a, const ultralight::RefPtr<ultralight::View>& b) {
+	    views_.begin(), views_.end(), [this](const ultralight::RefPtr<ultralight::View>& a, const ultralight::RefPtr<ultralight::View>& b) {
 		    int oa = 0, ob = 0;
 		    auto itA = view_sort_orders_.find(a.get());
 		    auto itB = view_sort_orders_.find(b.get());

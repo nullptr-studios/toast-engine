@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Toast/Components/TransformComponent.hpp"
+#include "Toast/Renderer/IRenderable.hpp"
 #include "spine/Atlas.h"
 
 #include <string>
@@ -23,6 +24,10 @@ public:
 
 	void Load(json_t j, bool force_create = true) override;
 	json_t Save() const override;
+
+	void SetParentDirtyBool(bool* b) {
+		m.parentdirty = b;
+	}
 
 #ifdef TOAST_EDITOR
 	void Inspector() override;
@@ -68,6 +73,7 @@ private:
 		std::string regionName;
 		spine::AtlasRegion* region = nullptr;
 		glm::vec4 color { 1.0f, 1.0f, 1.0f, 1.0f };    // RGBA
+		bool* parentdirty = nullptr;
 	} m;
 };
 

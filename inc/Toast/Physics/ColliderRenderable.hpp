@@ -19,7 +19,9 @@
 #include <Toast/Renderer/IRenderable.hpp>
 #include <algorithm>
 #include <glm/glm.hpp>
+#ifdef TOAST_EDITOR
 #include <imgui.h>
+#endif
 #include <limits>
 
 namespace physics {
@@ -31,6 +33,10 @@ class ColliderRenderable : public renderer::IRenderable {
 		std::vector<renderer::SpineVertex> vertices;
 		renderer::BoundingBox boundingBox;
 		renderer::Mesh mesh;
+		// When SendVertices is called from non-render threads, we set
+		// these flags so the actual GL buffer upload happens on the render stage
+		bool pending_update = false;
+		bool pending_top_update = false;
 		std::shared_ptr<renderer::Material> material;
 		std::shared_ptr<renderer::Shader> occlusionShader;
 		std::string material_path;

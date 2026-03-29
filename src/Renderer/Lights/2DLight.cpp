@@ -37,7 +37,7 @@ void Light2D::Init() {
 void Light2D::LoadTextures() {
 	Actor::LoadTextures();
 	renderer::IRendererBase::GetInstance()->AddLight(this);
-	renderer::IRendererBase::GetInstance()->AddRenderable(m_renderable);
+	// renderer::IRendererBase::GetInstance()->AddRenderable(m_renderable);
 	// m_lightBuffer = renderer::IRendererBase::GetInstance()->GetLightFramebuffer();
 }
 
@@ -45,7 +45,7 @@ void Light2D::Begin() { }
 
 void Light2D::Destroy() {
 	renderer::IRendererBase::GetInstance()->RemoveLight(this);
-	renderer::IRendererBase::GetInstance()->RemoveRenderable(m_renderable);
+	// renderer::IRendererBase::GetInstance()->RemoveRenderable(m_renderable);
 	delete m_renderable;
 }
 
@@ -59,7 +59,7 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 		return;
 	}
 
-	// Disable depth writes for light accumulation
+	// Save previous GL state
 	GLboolean prevDepthMask = GL_TRUE;
 	glGetBooleanv(GL_DEPTH_WRITEMASK, &prevDepthMask);
 
@@ -67,56 +67,80 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 	glGetIntegerv(GL_BLEND_SRC_RGB, &prevBlendSrc);
 	glGetIntegerv(GL_BLEND_DST_RGB, &prevBlendDst);
 
+	// Setup additive light blending
 	glDepthMask(GL_FALSE);
-
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-
 	glEnable(GL_DEPTH_TEST);
 
 	auto model = transform()->GetWorldMatrix();
 	auto mvp = premultiplied_matrix * model;
 
 	m_lightShader->Use();
-
 	m_lightShader->Set("gMVP", mvp);
 
+	// Bind SDF shadow texture
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, renderer::IRendererBase::GetInstance()->GetShadowMapTexture());
 	m_lightShader->Set("sdfTex", 0);
-	if (auto* geometryFb = renderer::IRendererBase::GetInstance()->GetGeometryFramebuffer()) {
-		m_lightShader->Set("screenSize", glm::ivec2(geometryFb->Width(), geometryFb->Height()));
+
+	auto* geometryFb = renderer::IRendererBase::GetInstance()->GetLightFramebuffer();
+	if (geometryFb) {
+		const int width = geometryFb->Width();
+		const int height = geometryFb->Height();
+
+		m_lightShader->Set("screenSize", glm::ivec2(width, height));
+
+		const glm::vec2 lightPosUV = TransformToUV(transform()->worldPosition(), premultiplied_matrix);
+
+		const glm::vec3 lightEdgeWorld = glm::vec3(model * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+
+		const glm::vec2 lightEdgeUV = TransformToUV(lightEdgeWorld, premultiplied_matrix);
+
+		const float lightRadiusUV = std::max(0.0001f, glm::distance(lightPosUV, lightEdgeUV));
+
+		glm::vec2 lightDirUV = lightEdgeUV - lightPosUV;
+		if (glm::dot(lightDirUV, lightDirUV) < 1e-8f) {
+			lightDirUV = glm::vec2(1.0f, 0.0f);
+		} else {
+			lightDirUV = glm::normalize(lightDirUV);
+		}
+
+		const float aspect = static_cast<float>(width) / static_cast<float>(height);
+
+		glm::vec2 correctedLightDir = glm::normalize(glm::vec2(lightDirUV.x * aspect, lightDirUV.y));
+
+		const float angleRad = glm::radians(m_angle);
+		const float cosOuter = std::cos(angleRad);
+		const float cosInner = std::cos(std::max(angleRad - m_angularSoftness, 0.0f));
+
+		const float invLightRadius = 1.0f / lightRadiusUV;
+		const float invShadowRadius = 1.0f / std::max(m_lightShadowRadius, 0.0001f);
+
+		m_lightShader->Set("lightPosUV", lightPosUV);
+		m_lightShader->Set("invLightRadius", invLightRadius);
+		m_lightShader->Set("correctedLightDir", correctedLightDir);
+
+		m_lightShader->Set("cosOuter", cosOuter);
+		m_lightShader->Set("cosInner", cosInner);
+
+		m_lightShader->Set("invShadowRadius", invShadowRadius);
+
+		m_lightShader->Set("gShadowSteps", static_cast<int>(renderer::IRendererBase::GetInstance()->GetRendererConfig().shadowRaymarchSteps));
+
+		m_lightShader->Set("doShadows", m_castShadow);
+
+		m_lightShader->Set("gLightColor", m_color);
+		m_lightShader->Set("gLightIntensity", m_intensity);
+		m_lightShader->Set("gLightVolumetricIntensity", m_volumetricIntensity);
+		m_lightShader->Set("gRadialSoftness", m_radialSoftness);
+		m_lightShader->Set("gAngularSoftness", m_angularSoftness);
 	}
 
-	const glm::vec2 lightPosUV = TransformToUV(transform()->worldPosition(), premultiplied_matrix);
-	const glm::vec3 lightEdgeWorld = glm::vec3(model * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-	const glm::vec2 lightEdgeUV = TransformToUV(lightEdgeWorld, premultiplied_matrix);
-	const float lightRadiusUV = std::max(0.0001f, glm::distance(lightPosUV, lightEdgeUV));
-	glm::vec2 lightDirUV = lightEdgeUV - lightPosUV;
-	if (glm::dot(lightDirUV, lightDirUV) < 1e-8f) {
-		lightDirUV = glm::vec2(1.0f, 0.0f);
-	} else {
-		lightDirUV = glm::normalize(lightDirUV);
-	}
-	m_lightShader->Set("lightPosUV", lightPosUV);
-	m_lightShader->Set("lightRadius", lightRadiusUV);
-	m_lightShader->Set("gLightDirection", lightDirUV);
-
-	const auto& renderConfig = renderer::IRendererBase::GetInstance()->GetRendererConfig();
-	m_lightShader->Set("gShadowSteps", static_cast<int>(renderConfig.shadowRaymarchSteps));
-
-	m_lightShader->Set("gLightShadowRadius", m_lightShadowRadius);
-	m_lightShader->Set("doShadows", m_castShadow);
-
-	m_lightShader->Set("gLightColor", m_color);
-	m_lightShader->Set("gLightIntensity", m_intensity);
-	m_lightShader->Set("gLightVolumetricIntensity", m_volumetricIntensity);
-	m_lightShader->Set("gLightAngle", glm::radians(m_angle));
-	m_lightShader->Set("gRadialSoftness", m_radialSoftness);
-	m_lightShader->Set("gAngularSoftness", m_angularSoftness);
-
+	// Draw light volume
 	m_lightMesh->Draw();
 
+	// Restore GL state
 	glBlendFunc(static_cast<GLenum>(prevBlendSrc), static_cast<GLenum>(prevBlendDst));
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);

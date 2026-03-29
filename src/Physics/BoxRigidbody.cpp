@@ -207,6 +207,10 @@ void BoxRigidbody::RebuildCache() const {
 	double cos_r = std::cos(rot);
 	double sin_r = std::sin(rot);
 
+	// Apply local offset (rotated by the box rotation) so the AABB and points reflect it
+	glm::dvec2 rotated_offset = { offset.x * cos_r - offset.y * sin_r, offset.x * sin_r + offset.y * cos_r };
+	glm::dvec2 center = position + rotated_offset;
+
 	std::array<glm::dvec2, 4> corners = {
 		glm::dvec2 { -h.x, -h.y },
      glm::dvec2 {  h.x, -h.y },
@@ -215,8 +219,8 @@ void BoxRigidbody::RebuildCache() const {
 	};
 
 	for (int i = 0; i < 4; i++) {
-		m_cachedPoints[i].x = (float)((corners[i].x * cos_r) - (corners[i].y * sin_r) + position.x);
-		m_cachedPoints[i].y = (float)((corners[i].x * sin_r) + (corners[i].y * cos_r) + position.y);
+		m_cachedPoints[i].x = (float)((corners[i].x * cos_r) - (corners[i].y * sin_r) + center.x);
+		m_cachedPoints[i].y = (float)((corners[i].x * sin_r) + (corners[i].y * cos_r) + center.y);
 	}
 
 	// --- Rebuild edges ---

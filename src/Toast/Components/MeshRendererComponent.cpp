@@ -39,6 +39,10 @@ void MeshRendererComponent::Load(json_t j, bool force_create) {
 	if (j.contains("isOccluder")) {
 		m_isOccluder = j.at("isOccluder").get<bool>();
 	}
+
+	if (j.contains("drawToDepth")) {
+		m_drawToDepth = j.at("drawToDepth").get<bool>();
+	}
 }
 
 json_t MeshRendererComponent::Save() const {
@@ -49,6 +53,7 @@ json_t MeshRendererComponent::Save() const {
 	// j["vertexColor"] = { m_vertexColor.r, m_vertexColor.g, m_vertexColor.b, m_vertexColor.a };
 	j["materialPath"] = m_materialPath;
 	j["isOccluder"] = m_isOccluder;
+	j["drawToDepth"] = m_drawToDepth;
 	return j;
 }
 
@@ -61,6 +66,7 @@ void MeshRendererComponent::Inspector() {
 	}
 
 	ImGui::Checkbox("Is Occluder", &m_isOccluder);
+	ImGui::Checkbox("Draw to depth", &m_drawToDepth);
 
 	ImGui::Spacing();
 	// Vertex color picker
@@ -132,6 +138,12 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 		return;
 	}
 
+	if (pass == renderer::IRenderablePass::OCCLUSION) {
+		if (!m_isOccluder) {
+			return;
+		}
+	}
+
 	PROFILE_ZONE;
 
 	// compute transform once
@@ -153,15 +165,24 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 		// m_texture->Unbind();
 		// m_shader->unuse();
 	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
-		if (!m_isOccluder) {
-			return;
-		}
-
 		m_occlusionShader->Use();
 		m_occlusionShader->Set("gWorld", model);
 
 		// set generic transform uniform
 		m_occlusionShader->Set("gMVP", mvp);
+	}
+
+	if (m_drawToDepth) {
+		glDepthMask(GL_TRUE);
+	} else {
+		glDepthMask(GL_FALSE);
+	}
+
+	if (pass != renderer::IRenderablePass::OCCLUSION) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else {
+		glDisable(GL_BLEND);
 	}
 
 	m_mesh->Draw();
