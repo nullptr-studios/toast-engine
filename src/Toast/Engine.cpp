@@ -229,7 +229,7 @@ void Engine::Init() {
 	m->projectSettings = std::make_unique<ProjectSettings>();
 
 	// Create window
-	m->window = std::make_unique<Window>(1920, 1080, "ToastEngine");
+	m->window = std::make_unique<Window>(1280, 720, "ToastEngine");
 
 	// LayerStack must be created BEFORE renderer, as renderer gets the instance during init
 	m->layerStack = std::make_unique<renderer::LayerStack>();
