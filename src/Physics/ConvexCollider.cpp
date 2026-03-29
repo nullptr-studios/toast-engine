@@ -49,6 +49,8 @@ ConvexCollider::ConvexCollider(const point_list& points, const ColliderData& dat
 	for (const auto& v : vertices) {
 		m_aabb.expand(glm::vec3(v.x, v.y, -1.0f));
 		m_aabb.expand(glm::vec3(v.x, v.y, 1.0f));
+		m_aabb.min -= glm::vec3(5.0f, 5.0f, 5.0f);
+		m_aabb.max += glm::vec3(5.0f, 5.0f, 5.0f);
 	}
 
 	TOAST_TRACE("[PHYSICS SYSTEM] Added collider {}", parent->name());
