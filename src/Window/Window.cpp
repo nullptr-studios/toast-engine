@@ -132,17 +132,6 @@ void Window::PollEventsOnly() {
 	SDL_Event ev;
 	while (SDL_PollEvent(&ev)) {
 #ifdef TOAST_EDITOR
-		// Debug raw SDL events to help diagnose shortcut handling
-		switch (ev.type) {
-			case SDL_EVENT_KEY_DOWN:
-			case SDL_EVENT_KEY_UP:
-				// TOAST_TRACE("SDL Event KEY: key={} scancode={} repeat={} mods=0x{:x}", ev.key.key, ev.key.scancode, ev.key.repeat, SDL_GetModState());
-				break;
-			case SDL_EVENT_TEXT_INPUT:
-				TOAST_TRACE("SDL Event TEXT_INPUT: text='{}'", ev.text.text ? ev.text.text : "");
-				break;
-			default: break;
-		}
 #endif
 #ifdef TOAST_EDITOR
 		ImGui_ImplSDL3_ProcessEvent(&ev);
