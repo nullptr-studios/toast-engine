@@ -30,18 +30,18 @@ namespace renderer {
  * @brief Configuration settings for the renderer.
  */
 struct RendererConfig {
-	glm::uvec2 resolution { 1920, 1080 };        ///< windowed rendering resolution
+	glm::uvec2 resolution { 1280, 720 };        ///< windowed rendering resolution
 	float lightResolutionScale = 1.0f;
 	bool vSync { true };                         ///< Enable/disable vertical sync
-	toast::DisplayMode currentDisplayMode {};    ///< Current display mode
+	toast::DisplayMode currentDisplayMode  = toast::DisplayMode::WINDOWED;    ///< Current display mode
 
 	unsigned maxFPS = 144;
 
 	float resolutionScale = 1.0f;           ///< Scale factor for main framebuffer resolution
-	unsigned msaaSamples = 8;               ///< MSAA sample count for geometry render targets
+	unsigned msaaSamples = 1;               ///< MSAA sample count for geometry render targets
 	float anisotropyLevel = 8.0f;           ///< Texture anisotropy level (clamped by GPU max)
 	unsigned shadowMapResolution = 1024;    ///< Square shadow-map/SDF atlas resolution
-	unsigned shadowRaymarchSteps = 16;      ///< Raymarch quality for SDF shadows
+	unsigned shadowRaymarchSteps = 32;      ///< Raymarch quality for SDF shadows
 };
 
 /// @class IRendererBase

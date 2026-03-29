@@ -25,10 +25,10 @@ String UiFontLoader::fallback_font() const {
 }
 
 [[nodiscard]]
-String UiFontLoader::fallback_font_for_characters(const String& characters, int weight, bool italic) const {    // NOLINT
-	                                                                                                              //
-	TOAST_TRACE("[FontLoader] fallback_font_for_characters() called, weight={} italic={}", weight, italic);
-	TOAST_ERROR("TELL DANTE IF THE ACTUALLY HAPPENS OR NOT");
+String UiFontLoader::fallback_font_for_characters(const String& characters, int weight, bool italic) const {
+	// TOAST_TRACE("[FontLoader] fallback_font_for_characters() called, weight={} italic={}", weight, italic);
+	// TOAST_ERROR("TELL DANTE IF THE ACTUALLY HAPPENS OR NOT");
+	TOAST_WARN("[FontLoader] Unknown characters {} (weight={} italic = {}), using fallback font", characters.utf8().data(), weight, italic);
 	return fallback_font();
 }
 

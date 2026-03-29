@@ -1,5 +1,7 @@
 #include "Toast/CoroutineHandler.hpp"
 
+#include "Toast/SimulateWorldEvent.hpp"
+
 #include <Toast/Log.hpp>
 #include <Toast/Profiler.hpp>
 
@@ -9,6 +11,15 @@ CoroutineHandler* CoroutineHandler::instance = nullptr;
 
 CoroutineHandler::CoroutineHandler() {
 	instance = this;
+
+#ifdef TOAST_EDITOR
+	listener.Subscribe<SimulateWorldEvent>([this](SimulateWorldEvent* e) {
+		if (not e->value) {    // If Not Simulating
+			pendingTasks.clear();
+		}
+		return false;
+	});
+#endif
 }
 
 void CoroutineHandler::AddTask(CoroutineInfo&& info) {
