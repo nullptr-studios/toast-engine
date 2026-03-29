@@ -2,6 +2,7 @@
 
 #include "ConvexCollider.hpp"
 #include "Toast/GlmJson.hpp"
+#include "Toast/Log.hpp"
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
@@ -9,7 +10,6 @@
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/World.hpp"
 #include "glm/geometric.hpp"
-#include "Toast/Log.hpp"
 
 #include <iterator>
 #include <vector>
@@ -30,7 +30,7 @@ void Collider::Init() {
 	m.renderable.Init();
 	if (renderer::IRendererBase::GetInstance() != nullptr) {
 		renderer::IRendererBase::GetInstance()->AddRenderable(&m.renderable);
-		//m.renderable.enabled(true);
+		// m.renderable.enabled(true);
 	}
 }
 
@@ -161,13 +161,13 @@ void Collider::CalculatePoints() {
 		glm::vec2 t = glm::normalize(*next - *it);
 
 		m.edges.emplace_back(
-				Line {
-					.p1 = *it,
-					.p2 = *next,
-					.normal = { -t.y, t.x },
-					.tangent = t,
-					.length = glm::distance(*it, *next),
-		}
+		    Line {
+		      .p1 = *it,
+		      .p2 = *next,
+		      .normal = { -t.y, t.x },
+		      .tangent = t,
+		      .length = glm::distance(*it, *next),
+    }
 		);
 
 		++it;
@@ -389,7 +389,7 @@ void Collider::CalculatePoints() {
 	world_vertices.reserve(m.points.size());
 	// Send local-space vertices to the renderable
 	for (const auto& p : m.points) {
-		world_vertices.emplace_back( p.x, p.y, 0.0f );
+		world_vertices.emplace_back(p.x, p.y, 0.0f);
 	}
 
 	if (renderer::IRendererBase::GetInstance() == nullptr) {
@@ -589,11 +589,11 @@ void Collider::EditorTick() {
 		glm::vec2 new_p = debug.newPointPosition;
 		const glm::vec4 color = { 1.0f, 0.5f, 0.0f, 1.0f };
 		renderer::DebugCircle(
-				glm::vec2 {
-					world_mtx * glm::vec4 { new_p.x, new_p.y, 0, 1 }
-		},
-				0.1f,
-				color
+		    glm::vec2 {
+		      world_mtx * glm::vec4 { new_p.x, new_p.y, 0, 1 }
+    },
+		    0.1f,
+		    color
 		);
 
 		for (glm::vec2 p : m.points) {

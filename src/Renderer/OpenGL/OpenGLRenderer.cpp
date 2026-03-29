@@ -305,8 +305,8 @@ OpenGLRenderer::OpenGLRenderer() {
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;    // Enable Keyboard Controls
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;      // IF using Docking Branch
-	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;    // Enable Multi-Viewport
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;        // IF using Docking Branch
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;      // Enable Multi-Viewport
 
 	// Setup Platform/Renderer backends
 	ImGui_ImplSDL3_InitForOpenGL(toast::Window::GetInstance()->GetWindow(), toast::Window::GetInstance()->GetGLContext());
@@ -415,16 +415,14 @@ void OpenGLRenderer::Render() {
 			}
 		}
 		m_renderablesSortDirty = false;
-		
 	}
 
 	// Depth can change every frame, so keep sort per-frame but only for enabled list.
 	// HACK: FOR OPTIMIZATION PURPOSES WE JUST SORT WHEN ADDING OBJECTS
-	if (m.combinedRenderables.size() > 1 ) {
+	if (m.combinedRenderables.size() > 1) {
 		std::stable_sort(m.combinedRenderables.begin(), m.combinedRenderables.end(), [](IRenderable* a, IRenderable* b) {
 			return a->GetDepth() < b->GetDepth();
 		});
-		
 	}
 
 	OcclusionPass();
@@ -472,7 +470,7 @@ void OpenGLRenderer::Render() {
 	Framebuffer::unbind();
 
 	HUDPass();
-	CHECK_GL(); // Added missing semicolon
+	CHECK_GL();    // Added missing semicolon
 
 #ifndef TOAST_EDITOR
 	{
@@ -661,7 +659,6 @@ void OpenGLRenderer::LightingPass() {
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
-
 }
 
 void OpenGLRenderer::Clear() const {

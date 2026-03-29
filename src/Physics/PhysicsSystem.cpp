@@ -115,8 +115,6 @@ void PhysicsSystem::start() {
 			using namespace std::chrono;
 			time_point begin = steady_clock::now();
 			PROFILE_ZONE_N("physics::simulation");
-			
-			
 
 			// Loop the physics simulation a set amount of times per frame
 			physics->CachePhysicsObjects();
@@ -437,7 +435,7 @@ void PhysicsSystem::RigidbodyPhysics(Rigidbody* rb, std::list<std::function<void
 		auto cached_it = std::ranges::find(m.cachedRigidbodies, rb);
 		if (cached_it != m.cachedRigidbodies.end()) {
 			for (auto it = std::next(cached_it); it != m.cachedRigidbodies.end(); ++it) {
-				if (not (*it)->enabled()) {
+				if (not(*it)->enabled()) {
 					continue;
 				}
 
@@ -564,24 +562,24 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 
 void PhysicsSystem::CachePhysicsObjects() {
 	// detects if inside frustum or out, cached lists contains in screen physics
-	auto rb_view = m.rigidbodies | std::views::filter([](auto* rb)->bool {
-		if (rb->m_skipBoundsCheck) {
-			return true;
-		}
-		auto pstition = rb->GetPosition();
-		return OclussionVolume::isSphereOnPlanes(glm::vec3(pstition.x,pstition.y,0.f), rb->radius);
-});
-	m.cachedRigidbodies.assign(rb_view.begin(),rb_view.end());
-	
-	auto box_view = m.boxes | std::views::filter([](auto* rb)->bool {
-		return OclussionVolume::isAABBOnPlanes(rb->GetAABB());
-	});
-	m.cachedBoxRigidbodies.assign(box_view.begin(),box_view.end());
-	
-	auto convex_view = m.colliders | std::views::filter([](auto* rb)->bool {
-		return OclussionVolume::isAABBOnPlanes(rb->getAABB());
-	});
-	m.cachedConvexColliders.assign(convex_view.begin(),convex_view.end());
+	auto rb_view = m.rigidbodies | std::views::filter([](auto* rb) -> bool {
+		               if (rb->m_skipBoundsCheck) {
+			               return true;
+		               }
+		               auto pstition = rb->GetPosition();
+		               return OclussionVolume::isSphereOnPlanes(glm::vec3(pstition.x, pstition.y, 0.f), rb->radius);
+	               });
+	m.cachedRigidbodies.assign(rb_view.begin(), rb_view.end());
+
+	auto box_view = m.boxes | std::views::filter([](auto* rb) -> bool {
+		                return OclussionVolume::isAABBOnPlanes(rb->GetAABB());
+	                });
+	m.cachedBoxRigidbodies.assign(box_view.begin(), box_view.end());
+
+	auto convex_view = m.colliders | std::views::filter([](auto* rb) -> bool {
+		                   return OclussionVolume::isAABBOnPlanes(rb->getAABB());
+	                   });
+	m.cachedConvexColliders.assign(convex_view.begin(), convex_view.end());
 }
 
 std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags flags) {

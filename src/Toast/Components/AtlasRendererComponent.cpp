@@ -70,7 +70,7 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	if (!m.atlas || !m.atlas->GetAtlasData()) {
 		return;
 	}
-	
+
 #ifdef TOAST_EDITOR
 	m.spriteCacheDirty = true;
 #endif
@@ -489,7 +489,7 @@ void AtlasRendererComponent::Inspector() {
 		ImGui::PopID();
 	}
 	ImGui::EndColumns();
-	
+
 	RefreshSprites();
 }
 

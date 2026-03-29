@@ -84,7 +84,7 @@ private:
 
 	void RigidbodyPhysics(Rigidbody* rb, std::list<std::function<void()>>& localCallbacks);
 	void BoxPhysics(BoxRigidbody* rb);
-	
+
 	void CachePhysicsObjects();
 
 	struct M {
@@ -97,7 +97,7 @@ private:
 		std::list<ConvexCollider*> colliders;
 		std::list<Trigger*> triggers;
 		std::recursive_mutex simulationMutex;
-		
+
 		std::list<Rigidbody*> cachedRigidbodies;
 		std::list<BoxRigidbody*> cachedBoxRigidbodies;
 		std::list<ConvexCollider*> cachedConvexColliders;
