@@ -213,9 +213,9 @@ void BoxRigidbody::RebuildCache() const {
 
 	std::array<glm::dvec2, 4> corners = {
 		glm::dvec2 { -h.x, -h.y },
-		glm::dvec2 {  h.x, -h.y },
-		glm::dvec2 {  h.x,  h.y },
-		glm::dvec2 { -h.x,  h.y }
+     glm::dvec2 {  h.x, -h.y },
+     glm::dvec2 {  h.x,  h.y },
+     glm::dvec2 { -h.x,  h.y }
 	};
 
 	for (int i = 0; i < 4; i++) {

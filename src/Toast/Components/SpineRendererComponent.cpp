@@ -89,10 +89,9 @@ void SpineRendererComponent::LoadTextures() {
 
 void SpineRendererComponent::Begin() {
 	TransformComponent::Begin();
-	
+
 	// reset skeleton
 	m.skeleton->setToSetupPose();
-	
 }
 
 void SpineRendererComponent::OnEnable() {

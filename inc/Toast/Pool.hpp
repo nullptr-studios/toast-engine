@@ -28,6 +28,7 @@ public:
 			m_free.emplace(m_pool[i]);
 		}
 	}
+
 	void EarlyTick() override {
 		// On the first tick, disable every free object that has already finished its Begin
 		if (!m_poolReady) {
@@ -85,7 +86,7 @@ public:
 		}
 		m_free.emplace(obj);
 	}
-	
+
 	void Destroy() override {
 		// for (auto p : m_pool) {
 		// 	children.Remove(p->id());

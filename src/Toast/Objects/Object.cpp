@@ -483,7 +483,6 @@ void Object::_Tick() {
 
 #ifdef TOAST_EDITOR
 void Object::_EditorTick() {
-
 	if (!enabled()) {
 		return;
 	}
@@ -503,7 +502,7 @@ void Object::_LateTick() {
 	if (not m_runsLateTick) {
 		return;
 	}
-	
+
 	if (!enabled() || !m_hasRunBegin) {
 		return;
 	}
