@@ -414,15 +414,16 @@ void OpenGLRenderer::Render() {
 				m.combinedRenderables.push_back(r);
 			}
 		}
+		m_renderablesSortDirty = false;
+		
 	}
 
 	// Depth can change every frame, so keep sort per-frame but only for enabled list.
 	// HACK: FOR OPTIMIZATION PURPOSES WE JUST SORT WHEN ADDING OBJECTS
-	if (m.combinedRenderables.size() > 1 && m_renderablesSortDirty) {
+	if (m.combinedRenderables.size() > 1 ) {
 		std::stable_sort(m.combinedRenderables.begin(), m.combinedRenderables.end(), [](IRenderable* a, IRenderable* b) {
 			return a->GetDepth() < b->GetDepth();
 		});
-		m_renderablesSortDirty = false;
 		
 	}
 
