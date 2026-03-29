@@ -70,6 +70,10 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	if (!m.atlas || !m.atlas->GetAtlasData()) {
 		return;
 	}
+	
+#ifdef TOAST_EDITOR
+	m.spriteCacheDirty = true;
+#endif
 
 	// Refresh sprite cache if dirty
 	if (m.spriteCacheDirty) {
