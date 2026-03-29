@@ -565,8 +565,11 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 void PhysicsSystem::CachePhysicsObjects() {
 	// detects if inside frustum or out, cached lists contains in screen physics
 	auto rb_view = m.rigidbodies | std::views::filter([](auto* rb)->bool {
-	auto pstition = rb->GetPosition();
-	return OclussionVolume::isSphereOnPlanes(glm::vec3(pstition.x,pstition.y,0.f), rb->radius);
+		if (rb->m_skipBoundsCheck) {
+			return true;
+		}
+		auto pstition = rb->GetPosition();
+		return OclussionVolume::isSphereOnPlanes(glm::vec3(pstition.x,pstition.y,0.f), rb->radius);
 });
 	m.cachedRigidbodies.assign(rb_view.begin(),rb_view.end());
 	

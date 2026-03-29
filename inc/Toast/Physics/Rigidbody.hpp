@@ -88,6 +88,8 @@ public:
 	glm::dvec3 m_lastKnownTransformPos = { 0.0, 0.0, 0.0 };    // Track transform position to detect manual changes
 	bool m_hasValidPreviousPosition = false;
 	static inline double s_interpolationAlpha = 1.0;
+	
+	bool m_skipBoundsCheck = false;
 
 	// debug stuff
 	struct {
