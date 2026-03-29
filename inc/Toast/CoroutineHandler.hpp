@@ -3,6 +3,8 @@
 /// @date 27 Feb 2026
 
 #pragma once
+#include "Toast/Event/ListenerComponent.hpp"
+
 #include <chrono>
 #include <coroutine>
 #include <vector>
@@ -47,6 +49,7 @@ public:
 private:
 	static CoroutineHandler* instance;
 	std::vector<CoroutineInfo> pendingTasks;
+	event::ListenerComponent listener;
 };
 
 }
