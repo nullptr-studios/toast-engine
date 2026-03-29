@@ -17,10 +17,10 @@
 <area shape="rect" id="node22" href="$d6/dd4/classtoast_1_1Scene.html#acb44061f0eea603b846970680ce5be30" title=" " alt="" coords="486,791,643,817"/>
 <area shape="rect" id="node23" href="$d1/da3/classtoast_1_1Object.html#a4f0da32eafb5fd14513357544f76ae24" title="Saves object state to JSON." alt="" coords="492,841,637,866"/>
 <area shape="rect" id="node26" href="$d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686" title="Saves object state to JSON." alt="" coords="242,861,385,886"/>
-<area shape="rect" id="node29" href="$d8/d7b/classevent_1_1ListenerComponent.html#a84ac7af8b87e3ae70d8288f3ce113cce" title="Subscribes a function to a specific event." alt="" coords="467,951,662,991"/>
-<area shape="rect" id="node36" href="$d0/dc7/classSpineRendererComponent.html#ae43b68e864e4701ce626137f0298ed3e" title="This function runs every frame." alt="" coords="469,1015,661,1055"/>
-<area shape="rect" id="node37" href="$d8/d7b/classevent_1_1ListenerComponent.html#aaa57ee9daf9c73c68e747f7982ec053f" title="Unsubscribes all callbacks from the event." alt="" coords="467,1079,662,1119"/>
-<area shape="rect" id="node38" href="$dd/d88/classphysics_1_1ConvexCollider.html#a4d88df92252405e2d8ccb01c416b200b" title=" " alt="" coords="475,1143,654,1183"/>
+<area shape="rect" id="node29" href="$d8/d7b/classevent_1_1ListenerComponent.html#a84ac7af8b87e3ae70d8288f3ce113cce" title="Subscribes a function to a specific event." alt="" coords="467,968,662,1008"/>
+<area shape="rect" id="node37" href="$d0/dc7/classSpineRendererComponent.html#ae43b68e864e4701ce626137f0298ed3e" title="This function runs every frame." alt="" coords="469,1032,661,1072"/>
+<area shape="rect" id="node38" href="$d8/d7b/classevent_1_1ListenerComponent.html#aaa57ee9daf9c73c68e747f7982ec053f" title="Unsubscribes all callbacks from the event." alt="" coords="467,1096,662,1136"/>
+<area shape="rect" id="node39" href="$dd/d88/classphysics_1_1ConvexCollider.html#a4d88df92252405e2d8ccb01c416b200b" title=" " alt="" coords="475,1160,654,1200"/>
 <area shape="rect" id="node7" href="$dd/d75/classAtlasRendererComponent.html#a6c2703c4082252a0572931db24b5a0fd" title="This function runs just after the object is created (scene load thread)" alt="" coords="219,224,408,264"/>
 <area shape="rect" id="node9" href="$d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2" title="Loads object state from JSON." alt="" coords="245,289,381,314"/>
 <area shape="rect" id="node11" href="$d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1" title="Loads object state from JSON." alt="" coords="243,338,384,363"/>
@@ -31,10 +31,11 @@
 <area shape="rect" id="node27" href="$d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656" title="Caches current state for quick restoration." alt="" coords="228,811,399,837"/>
 <area shape="rect" id="node25" href="$d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title="Saves object state to JSON." alt="" coords="5,762,160,787"/>
 <area shape="rect" id="node28" href="$d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="10,811,155,837"/>
-<area shape="rect" id="node30" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="208,910,419,935"/>
-<area shape="rect" id="node31" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a60e4c37b45b29617f840b0074d2c41fb" title="Construct a new HUD Layer." alt="" coords="219,960,408,1000"/>
-<area shape="rect" id="node32" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="241,1024,386,1064"/>
-<area shape="rect" id="node33" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="216,1088,411,1128"/>
-<area shape="rect" id="node34" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a34757355e7ec79f24c8ce4fa594a7d7f" title=" " alt="" coords="225,1152,402,1192"/>
-<area shape="rect" id="node35" href="$d8/d8e/classtoast_1_1Window.html#a3ad3d9acdc93f96a4a7097d8989828e5" title="Creates a window with the specified dimensions." alt="" coords="226,1217,401,1242"/>
+<area shape="rect" id="node30" href="$d7/da4/classtoast_1_1CoroutineHandler.html#a4ae717115afc41be011bcfbb80267b84" title=" " alt="" coords="225,911,402,951"/>
+<area shape="rect" id="node31" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="208,975,419,1001"/>
+<area shape="rect" id="node32" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a60e4c37b45b29617f840b0074d2c41fb" title="Construct a new HUD Layer." alt="" coords="219,1025,408,1065"/>
+<area shape="rect" id="node33" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="241,1089,386,1129"/>
+<area shape="rect" id="node34" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="216,1153,411,1193"/>
+<area shape="rect" id="node35" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a34757355e7ec79f24c8ce4fa594a7d7f" title=" " alt="" coords="225,1217,402,1257"/>
+<area shape="rect" id="node36" href="$d8/d8e/classtoast_1_1Window.html#a3ad3d9acdc93f96a4a7097d8989828e5" title="Creates a window with the specified dimensions." alt="" coords="226,1282,401,1307"/>
 </map>
