@@ -485,6 +485,8 @@ void AtlasRendererComponent::Inspector() {
 		ImGui::PopID();
 	}
 	ImGui::EndColumns();
+	
+	RefreshSprites();
 }
 
 #endif
