@@ -20,7 +20,7 @@
 using namespace physics;
 
 void Collider::Init() {
-	CalculatePoints();
+	// CalculatePoints();
 
 	if (toast::World::IsRunning()) {
 		enabled_ref() = false;    // disable colliders until its loaded
@@ -38,12 +38,12 @@ void Collider::LoadTextures() {
 }
 
 void Collider::OnEnable() {
-	// CalculatePoints();
+	CalculatePoints();
 	m.renderable.enabled(true);
 }
 
 void Collider::OnDisable() {
-	// DestroyConvexShapes();
+	DestroyConvexShapes();
 	m.renderable.enabled(false);
 }
 
