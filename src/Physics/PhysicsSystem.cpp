@@ -126,8 +126,7 @@ void PhysicsSystem::start() {
 	if (physics->thread.joinable()) {
 		try {
 			physics->thread.join();
-		} catch (...) {
-		}
+		} catch (...) { }
 	}
 
 	physics->thread = std::jthread([physics](std::stop_token token) {    // NOLINT
@@ -159,9 +158,7 @@ void PhysicsSystem::start() {
 					std::this_thread::sleep_for(physics->m.targetFrametime - elapsed);
 				}
 			}
-		} catch (const std::exception& e) {
-			TOAST_ERROR("Physics thread crashed with exception: {}", e.what());
-		} catch (...) {
+		} catch (const std::exception& e) { TOAST_ERROR("Physics thread crashed with exception: {}", e.what()); } catch (...) {
 			TOAST_ERROR("Physics thread crashed with unknown exception");
 		}
 
@@ -181,7 +178,6 @@ void PhysicsSystem::start() {
 		g_threadAlive.store(false, std::memory_order_release);
 		// TracyFiberLeave;
 	});
-
 }
 
 void PhysicsSystem::stop() {
@@ -206,8 +202,7 @@ void PhysicsSystem::stop() {
 	if (threadJoinable) {
 		try {
 			physicsPtr->thread.join();
-		} catch (...) {
-		}
+		} catch (...) { }
 	}
 	g_threadAlive.store(false, std::memory_order_release);
 }
