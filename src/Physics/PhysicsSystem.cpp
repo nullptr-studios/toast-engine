@@ -69,6 +69,8 @@ bool GravityType::operator==(const GravityType& other) const {
 
 PhysicsSystem* PhysicsSystem::instance = nullptr;
 static std::mutex g_threadLifecycleMutex;
+static std::atomic<bool> g_threadAlive { false };
+static std::atomic<bool> g_intentionallyStopped { false };
 
 PhysicsSystem::PhysicsSystem() {
 	instance = this;
@@ -82,9 +84,15 @@ PhysicsSystem::PhysicsSystem() {
 		m.tickCount = e->iterationCount;
 		return true;
 	});
+
+	// Ensure the intentionally-stopped flag is false by default for newly constructed system
+	g_intentionallyStopped.store(false, std::memory_order_release);
 }
 
 PhysicsSystem::~PhysicsSystem() {
+	// Ensure threads are stopped and supervisor won't respawn them
+	PhysicsSystem::stop();
+
 	std::lock_guard lock(g_threadLifecycleMutex);
 	instance = nullptr;
 }
@@ -105,36 +113,56 @@ void PhysicsSystem::start() {
 		return;
 	}
 	auto* physics = i.value();
-	if (physics->thread.joinable()) {
+
+	// Clear intentional stop so supervisor may restart the thread if needed
+	g_intentionallyStopped.store(false, std::memory_order_release);
+
+	// If thread is already running, nothing to do
+	if (g_threadAlive.load(std::memory_order_acquire)) {
 		return;
 	}
 
+	// If there is an old thread object, join it to clean up resources
+	if (physics->thread.joinable()) {
+		try {
+			physics->thread.join();
+		} catch (...) {
+		}
+	}
+
 	physics->thread = std::jthread([physics](std::stop_token token) {    // NOLINT
-		// TracyFiberEnter("Physics Thread");
-		while (!token.stop_requested()) {
-			using namespace std::chrono;
-			time_point begin = steady_clock::now();
-			PROFILE_ZONE_N("physics::simulation");
+		g_threadAlive.store(true, std::memory_order_release);
+		try {
+			// TracyFiberEnter("Physics Thread");
+			while (!token.stop_requested()) {
+				using namespace std::chrono;
+				time_point begin = steady_clock::now();
+				PROFILE_ZONE_N("physics::simulation");
 
-			// Loop the physics simulation a set amount of times per frame
-			physics->CachePhysicsObjects();
-			for (int i = 0; i < physics->m.tickCount; i++) {
-				Time::GetInstance()->PhysTick();
-				physics->Tick();
+				// Loop the physics simulation a set amount of times per frame
+				physics->CachePhysicsObjects();
+				for (int i = 0; i < physics->m.tickCount; i++) {
+					Time::GetInstance()->PhysTick();
+					physics->Tick();
 
-				// Interrupt the loop if we're running out of budget
+					// Interrupt the loop if we're running out of budget
+					duration elapsed = steady_clock::now() - begin;
+					if (elapsed >= physics->m.targetFrametime) {
+						break;
+					}
+				}
+
+				// Handle constant frame time
 				duration elapsed = steady_clock::now() - begin;
-				if (elapsed >= physics->m.targetFrametime) {
-					break;
+				if (elapsed < physics->m.targetFrametime) {
+					PROFILE_ZONE_NC("physics::wait", 0x404040);
+					std::this_thread::sleep_for(physics->m.targetFrametime - elapsed);
 				}
 			}
-
-			// Handle constant frame time
-			duration elapsed = steady_clock::now() - begin;
-			if (elapsed < physics->m.targetFrametime) {
-				PROFILE_ZONE_NC("physics::wait", 0x404040);
-				std::this_thread::sleep_for(physics->m.targetFrametime - elapsed);
-			}
+		} catch (const std::exception& e) {
+			TOAST_ERROR("Physics thread crashed with exception: {}", e.what());
+		} catch (...) {
+			TOAST_ERROR("Physics thread crashed with unknown exception");
 		}
 
 		// When we stop the physics thread, restore rigidbody velocities
@@ -149,26 +177,39 @@ void PhysicsSystem::start() {
 			}
 		}
 
+		// Mark thread as no longer alive
+		g_threadAlive.store(false, std::memory_order_release);
 		// TracyFiberLeave;
 	});
+
 }
 
 void PhysicsSystem::stop() {
-	std::lock_guard lock(g_threadLifecycleMutex);
-	auto i = PhysicsSystem::get();
-	if (!i.has_value()) {
-		return;
+	PhysicsSystem* physicsPtr = nullptr;
+	bool threadJoinable = false;
+	{
+		std::lock_guard lock(g_threadLifecycleMutex);
+		auto i = PhysicsSystem::get();
+		if (!i.has_value()) {
+			return;
+		}
+		physicsPtr = *i;
+		// Mark as intentionally stopped so main-thread supervisor doesn't respawn the thread
+		g_intentionallyStopped.store(true, std::memory_order_release);
+		threadJoinable = physicsPtr->thread.joinable();
+		if (threadJoinable) {
+			physicsPtr->thread.request_stop();
+		}
 	}
 
-	auto* physics = *i;
-
-	// If the thread is not running, skip
-	if (!physics->thread.joinable()) {
-		return;
+	// Join outside of the lifecycle mutex to avoid deadlocks
+	if (threadJoinable) {
+		try {
+			physicsPtr->thread.join();
+		} catch (...) {
+		}
 	}
-
-	physics->thread.request_stop();
-	physics->thread.join();
+	g_threadAlive.store(false, std::memory_order_release);
 }
 
 #pragma endregion
@@ -757,6 +798,11 @@ void PhysicsSystem::MainThreadLateTick() {
 			callback();
 		}
 		i.value()->m.callbackList.clear();
+	}
+
+	// Main-thread supervisor: restart physics thread on unexpected exit unless intentionally stopped
+	if (!g_intentionallyStopped.load(std::memory_order_acquire) && !g_threadAlive.load(std::memory_order_acquire)) {
+		PhysicsSystem::start();
 	}
 }
 
