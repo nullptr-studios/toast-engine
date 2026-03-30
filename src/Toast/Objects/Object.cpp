@@ -80,6 +80,7 @@ json_t Object::Save() const {
 void Object::SoftLoad() {
 	// you shouldn't need to propagate this function
 	Load(m_json, false);
+	_Begin(true);
 }
 
 void Object::SoftSave() const {
@@ -140,12 +141,13 @@ void Object::Nuke() {
 	if (parent()) {
 		parent()->children.Remove(id());
 	} else {
-		if (base_type() != SceneT) {
-			TOAST_ERROR("Trying to nuke \"{0}\" but the bomb doesn't have enough uranium, ask Xein for more uranium", name());
-			// This will probably crash the engine, but maybe not
-			const_cast<Children&>(World::Instance()->GetChildren()).Remove(id());
-			return;
-		}
+		// if (base_type() != SceneT) {
+		// This apparently works
+		// TOAST_ERROR("Trying to nuke \"{0}\" but the bomb doesn't have enough uranium, ask Xein for more uranium", name());
+		// This will probably crash the engine, but maybe not
+		// const_cast<Children&>(World::Instance()->GetChildren()).Remove(id());
+		// return;
+		// }
 		TOAST_WARN("Scene \"{0}\" (id {1}) was nuked", name(), id());
 		World::UnloadScene(id());
 	}

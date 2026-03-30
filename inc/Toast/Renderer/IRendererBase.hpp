@@ -30,10 +30,10 @@ namespace renderer {
  * @brief Configuration settings for the renderer.
  */
 struct RendererConfig {
-	glm::uvec2 resolution { 1280, 720 };        ///< windowed rendering resolution
+	glm::uvec2 resolution { 1280, 720 };                                     ///< windowed rendering resolution
 	float lightResolutionScale = 1.0f;
-	bool vSync { true };                         ///< Enable/disable vertical sync
-	toast::DisplayMode currentDisplayMode  = toast::DisplayMode::WINDOWED;    ///< Current display mode
+	bool vSync { true };                                                     ///< Enable/disable vertical sync
+	toast::DisplayMode currentDisplayMode = toast::DisplayMode::WINDOWED;    ///< Current display mode
 
 	unsigned maxFPS = 144;
 
