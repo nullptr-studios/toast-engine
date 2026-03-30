@@ -80,6 +80,7 @@ json_t Object::Save() const {
 void Object::SoftLoad() {
 	// you shouldn't need to propagate this function
 	Load(m_json, false);
+	_Begin(true);
 }
 
 void Object::SoftSave() const {
