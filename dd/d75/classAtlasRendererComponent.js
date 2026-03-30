@@ -25,7 +25,7 @@ var classAtlasRendererComponent =
     [ "isOccluder", "dd/d75/classAtlasRendererComponent.html#a1a97292d0a78f4a126ec3b7d066c09f6", null ],
     [ "isOnScreen", "dd/d75/classAtlasRendererComponent.html#ac8dbf1934a5a50e79f192193125f43fd", null ],
     [ "lastBoundTexture", "dd/d75/classAtlasRendererComponent.html#a261db32fc0ce3d5c820660cba3548ba7", null ],
-    [ "m", "dd/d75/classAtlasRendererComponent.html#ab87c6e4d737542597bc81983d374ccd6", null ],
+    [ "m", "dd/d75/classAtlasRendererComponent.html#a3f950058387ca6f3bb155eb968760c26", null ],
     [ "occlusionShader", "dd/d75/classAtlasRendererComponent.html#ac485668025fd63377ec1e732a4ebe75e", null ],
     [ "regionNames", "dd/d75/classAtlasRendererComponent.html#a0b728eed9638708bf1cf3d7ec744f2f0", null ],
     [ "selectedRegion", "dd/d75/classAtlasRendererComponent.html#a86685f37be154dd03a694d9b405ee145", null ],

@@ -1,8 +1,8 @@
 var searchData=
 [
   ['halfextents_0',['halfExtents',['../dd/d13/structrenderer_1_1BoundingBox.html#a9237c94869e794caec8e9b84c39db9ab',1,'renderer::BoundingBox']]],
-  ['handle_1',['handle',['../df/d4c/structtoast_1_1CoroutineInfo.html#aa6f9d2527772a29c4eb2f1237148ecd7',1,'toast::CoroutineInfo::handle()'],['../dd/d8c/structinput_1_1GamepadState.html#a151bc153692a8666e3071c52ae4e2129',1,'input::GamepadState::handle()']]],
-  ['handle_2',['Handle',['../dc/d58/classFramebuffer.html#a6f4f36b4ae752d1f33d4f329e7dd505e',1,'Framebuffer']]],
+  ['handle_1',['Handle',['../dc/d58/classFramebuffer.html#a6f4f36b4ae752d1f33d4f329e7dd505e',1,'Framebuffer']]],
+  ['handle_2',['handle',['../df/d4c/structtoast_1_1CoroutineInfo.html#aa6f9d2527772a29c4eb2f1237148ecd7',1,'toast::CoroutineInfo::handle()'],['../dd/d8c/structinput_1_1GamepadState.html#a151bc153692a8666e3071c52ae4e2129',1,'input::GamepadState::handle()']]],
   ['handle0daction_3',['Handle0DAction',['../da/d0b/classinput_1_1InputSystem.html#ac76ae51ef28bf6796431bb528b44b0ce',1,'input::InputSystem']]],
   ['handle1daction_4',['Handle1DAction',['../da/d0b/classinput_1_1InputSystem.html#a4f45ec24a1ff08b3fd6ab3c5953727b6',1,'input::InputSystem']]],
   ['handle2daction_5',['Handle2DAction',['../da/d0b/classinput_1_1InputSystem.html#ac290a572419243203bf225821bed59e2',1,'input::InputSystem']]],

@@ -345,39 +345,39 @@ Private Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:ab87c6e4d737542597bc81983d374ccd6"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:a29293e4118333cff4f4355a7896fc1bc"><td class="memItemLeft" >&#160;&#160;&#160;std::string&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a1cee4083637ab57c44d51a8474496017">atlasPath</a></td></tr>
-<tr class="separator:a29293e4118333cff4f4355a7896fc1bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae71f6b91b57cde6728aa44cfba998ff4"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../d6/daf/classSpineAtlas.html">SpineAtlas</a> &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ad8f41a6d413299d9d4f19b73e2c865c6">atlas</a></td></tr>
-<tr class="separator:ae71f6b91b57cde6728aa44cfba998ff4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af18c3c2d613fc2615cf356f015d562e6"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a2658d60b991993772782f9c3fa6a4a22">shader</a></td></tr>
-<tr class="separator:af18c3c2d613fc2615cf356f015d562e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab5835e5286407da57421139fe22dca4c"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ac485668025fd63377ec1e732a4ebe75e">occlusionShader</a></td></tr>
-<tr class="separator:ab5835e5286407da57421139fe22dca4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a163cf5e34d9813c4005b901e7096b5a1"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d4/d8c/classrenderer_1_1Mesh.html">renderer::Mesh</a>&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ad1c4e9b1f4440456d7f48f079f3cbb33">dynamicMesh</a></td></tr>
-<tr class="separator:a163cf5e34d9813c4005b901e7096b5a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9d8791db54a42c0b53a748db7111e3d1"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; <a class="el" href="../../d1/d64/structrenderer_1_1SpineVertex.html">renderer::SpineVertex</a> &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#aa3d622f2b50ac5b494d9d94785e451f5">tempVerts</a></td></tr>
-<tr class="separator:a9d8791db54a42c0b53a748db7111e3d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a184406f9cac106b1a536471966d62091"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; uint16_t &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ae3bf4a37e8af32128ed4e50f6b150f51">tempIndices</a></td></tr>
-<tr class="separator:a184406f9cac106b1a536471966d62091"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad58ee0b2b4ff364acaad00214a71d817"><td class="memItemLeft" >&#160;&#160;&#160;unsigned int&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a261db32fc0ce3d5c820660cba3548ba7">lastBoundTexture</a> = 0</td></tr>
-<tr class="separator:ad58ee0b2b4ff364acaad00214a71d817"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a88d2d09274d3ecd810d6b3c70c57e8f6"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; std::string &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a0b728eed9638708bf1cf3d7ec744f2f0">regionNames</a></td></tr>
-<tr class="separator:a88d2d09274d3ecd810d6b3c70c57e8f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1b7e2ab43212310d4e6af3e3d055a1d0"><td class="memItemLeft" >&#160;&#160;&#160;int&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a86685f37be154dd03a694d9b405ee145">selectedRegion</a> = -1</td></tr>
-<tr class="separator:a1b7e2ab43212310d4e6af3e3d055a1d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b7625d283a61f2520f44239cc1915e3"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; <a class="el" href="../../d3/dd3/classtoast_1_1AtlasSpriteComponent.html">toast::AtlasSpriteComponent</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a3c669ac9332db11385f1c7ef49a50d93">spriteCache</a></td></tr>
-<tr class="separator:a4b7625d283a61f2520f44239cc1915e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac00f1950de42b3e9e7d67846106d10d9"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a50e92cb3cd51ea4a2996c1bd0d17f6e5">spriteCacheDirty</a> = true</td></tr>
-<tr class="separator:ac00f1950de42b3e9e7d67846106d10d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afc9f5b55463a80fc307f203978335edd"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a1a97292d0a78f4a126ec3b7d066c09f6">isOccluder</a> = false</td></tr>
-<tr class="separator:afc9f5b55463a80fc307f203978335edd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0912ecb5bc3b38df057d68341eeff0ad"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ab9c44b133cf59e5956948b24efe8a8de">drawToDepth</a> = true</td></tr>
-<tr class="separator:a0912ecb5bc3b38df057d68341eeff0ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aee7263284aae0cbedd6448a3e16c1163"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ac8dbf1934a5a50e79f192193125f43fd">isOnScreen</a> = true</td></tr>
-<tr class="separator:aee7263284aae0cbedd6448a3e16c1163"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab87c6e4d737542597bc81983d374ccd6"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ab87c6e4d737542597bc81983d374ccd6">m</a></td></tr>
-<tr class="separator:ab87c6e4d737542597bc81983d374ccd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f950058387ca6f3bb155eb968760c26"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:a49b516f5f60bcb6faa9fb636e2f21ac2"><td class="memItemLeft" >&#160;&#160;&#160;std::string&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a1cee4083637ab57c44d51a8474496017">atlasPath</a></td></tr>
+<tr class="separator:a49b516f5f60bcb6faa9fb636e2f21ac2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48f278edb41275dcd27b47d3bb357142"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../d6/daf/classSpineAtlas.html">SpineAtlas</a> &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ad8f41a6d413299d9d4f19b73e2c865c6">atlas</a></td></tr>
+<tr class="separator:a48f278edb41275dcd27b47d3bb357142"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a01f42dc7a2df4e16493b9f665e99db8a"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a2658d60b991993772782f9c3fa6a4a22">shader</a></td></tr>
+<tr class="separator:a01f42dc7a2df4e16493b9f665e99db8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a70695e0c5407b58c9a9e15b20f315dd7"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ac485668025fd63377ec1e732a4ebe75e">occlusionShader</a></td></tr>
+<tr class="separator:a70695e0c5407b58c9a9e15b20f315dd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa562b9cf30bb64a7ae079f6f2693880"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d4/d8c/classrenderer_1_1Mesh.html">renderer::Mesh</a>&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ad1c4e9b1f4440456d7f48f079f3cbb33">dynamicMesh</a></td></tr>
+<tr class="separator:aaa562b9cf30bb64a7ae079f6f2693880"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85e8c546cdb30958a2f7dac5d3282a08"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; <a class="el" href="../../d1/d64/structrenderer_1_1SpineVertex.html">renderer::SpineVertex</a> &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#aa3d622f2b50ac5b494d9d94785e451f5">tempVerts</a></td></tr>
+<tr class="separator:a85e8c546cdb30958a2f7dac5d3282a08"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae755d98cfb11571811c48b3ad74b444a"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; uint16_t &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ae3bf4a37e8af32128ed4e50f6b150f51">tempIndices</a></td></tr>
+<tr class="separator:ae755d98cfb11571811c48b3ad74b444a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ae5730b135fa859bd57dcff71b83dc1"><td class="memItemLeft" >&#160;&#160;&#160;unsigned int&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a261db32fc0ce3d5c820660cba3548ba7">lastBoundTexture</a> = 0</td></tr>
+<tr class="separator:a3ae5730b135fa859bd57dcff71b83dc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad404c063640c6a8cb06370e032ca31d8"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; std::string &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a0b728eed9638708bf1cf3d7ec744f2f0">regionNames</a></td></tr>
+<tr class="separator:ad404c063640c6a8cb06370e032ca31d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05744f6fd275803d5165c19f79f2eab0"><td class="memItemLeft" >&#160;&#160;&#160;int&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a86685f37be154dd03a694d9b405ee145">selectedRegion</a> = -1</td></tr>
+<tr class="separator:a05744f6fd275803d5165c19f79f2eab0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a07bc14c3ad23acda839e66a0be0ab449"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; <a class="el" href="../../d3/dd3/classtoast_1_1AtlasSpriteComponent.html">toast::AtlasSpriteComponent</a> * &gt;&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a3c669ac9332db11385f1c7ef49a50d93">spriteCache</a></td></tr>
+<tr class="separator:a07bc14c3ad23acda839e66a0be0ab449"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a157db711665ad9a516126ffa503f18"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a50e92cb3cd51ea4a2996c1bd0d17f6e5">spriteCacheDirty</a> = true</td></tr>
+<tr class="separator:a3a157db711665ad9a516126ffa503f18"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c441f2d45fba13561a7c5ad9d3a50eb"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a1a97292d0a78f4a126ec3b7d066c09f6">isOccluder</a> = false</td></tr>
+<tr class="separator:a7c441f2d45fba13561a7c5ad9d3a50eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0206238de6d870bec09caf891a99a64b"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ab9c44b133cf59e5956948b24efe8a8de">drawToDepth</a> = true</td></tr>
+<tr class="separator:a0206238de6d870bec09caf891a99a64b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f8a7b7c4068e7b91b23659f30a224f4"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ac8dbf1934a5a50e79f192193125f43fd">isOnScreen</a> = true</td></tr>
+<tr class="separator:a0f8a7b7c4068e7b91b23659f30a224f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f950058387ca6f3bb155eb968760c26"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a3f950058387ca6f3bb155eb968760c26">m</a></td></tr>
+<tr class="separator:a3f950058387ca6f3bb155eb968760c26"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-static-attribs" name="pri-static-attribs"></a>
 Static Private Attributes</h2></td></tr>
@@ -1122,8 +1122,8 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 </div>
 </div>
-<a id="ab87c6e4d737542597bc81983d374ccd6" name="ab87c6e4d737542597bc81983d374ccd6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab87c6e4d737542597bc81983d374ccd6">&#9670;&#160;</a></span></h2>
+<a id="a3f950058387ca6f3bb155eb968760c26" name="a3f950058387ca6f3bb155eb968760c26"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3f950058387ca6f3bb155eb968760c26">&#9670;&#160;</a></span></h2>
 
 <div class="memitem">
 <div class="memproto">

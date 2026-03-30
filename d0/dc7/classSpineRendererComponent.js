@@ -47,7 +47,7 @@ var classSpineRendererComponent =
     [ "INITIAL_VERT_RESERVE", "d0/dc7/classSpineRendererComponent.html#a316c689c509ce182e9d26ba1f9f474d8", null ],
     [ "isOccluder", "d0/dc7/classSpineRendererComponent.html#a6eb9d3931e4551db5ce36313b87f28d3", null ],
     [ "lastBoundTexture", "d0/dc7/classSpineRendererComponent.html#a605509f9d747cc482e82729fe889c4f6", null ],
-    [ "m", "d0/dc7/classSpineRendererComponent.html#ada93268f57784cf96f9ef2441412f8da", null ],
+    [ "m", "d0/dc7/classSpineRendererComponent.html#a3005f82c97407ee42b6743c59f2ff015", null ],
     [ "occlusionShader", "d0/dc7/classSpineRendererComponent.html#a3917465a36279566092d697fa7187be0", null ],
     [ "onScreen", "d0/dc7/classSpineRendererComponent.html#a72598c4ada61817f0866602dda2d429c", null ],
     [ "shader", "d0/dc7/classSpineRendererComponent.html#a716158e088d102886a117efd1c2713e2", null ],
