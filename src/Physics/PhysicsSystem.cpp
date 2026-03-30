@@ -576,6 +576,7 @@ void PhysicsSystem::CachePhysicsObjects() {
 	                });
 	m.cachedBoxRigidbodies.assign(box_view.begin(), box_view.end());
 
+	// FIXME: the racist condition onlt happens in convexcolliders
 	auto convex_view = m.colliders | std::views::filter([](auto* rb) -> bool {
 		                   return OclussionVolume::isAABBOnPlanes(rb->getAABB());
 	                   });
