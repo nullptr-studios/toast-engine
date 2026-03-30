@@ -50,5 +50,7 @@ var namespacephysics =
     [ "SetGravityPointScale", "d5/dd0/namespacephysics.html#a655297c3695404b71f4dff341e295390", null ],
     [ "SetGravityType", "d5/dd0/namespacephysics.html#a87606d7d4e42606e3ea00b1d88a2b2ac", null ],
     [ "ShoelaceArea", "d5/dd0/namespacephysics.html#acd0439aefcf3ae4e14fa0bc34af2c16f", null ],
+    [ "g_intentionallyStopped", "d5/dd0/namespacephysics.html#a1ac4f49fad7e8e82c39b7a25f6e2df63", null ],
+    [ "g_threadAlive", "d5/dd0/namespacephysics.html#aefa33afe24ef9639071269aff8a8a268", null ],
     [ "g_threadLifecycleMutex", "d5/dd0/namespacephysics.html#a82cba2d23e67fd0015fe65a3f3ae2206", null ]
 ];

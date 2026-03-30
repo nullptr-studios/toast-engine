@@ -6,5 +6,7 @@ var PhysicsSystem_8cpp =
     [ "SetGravityPoint", "d6/d4a/PhysicsSystem_8cpp.html#a27f31621d04cfbb97d56d971756881ff", null ],
     [ "SetGravityPointScale", "d6/d4a/PhysicsSystem_8cpp.html#a655297c3695404b71f4dff341e295390", null ],
     [ "SetGravityType", "d6/d4a/PhysicsSystem_8cpp.html#a87606d7d4e42606e3ea00b1d88a2b2ac", null ],
+    [ "g_intentionallyStopped", "d6/d4a/PhysicsSystem_8cpp.html#a1ac4f49fad7e8e82c39b7a25f6e2df63", null ],
+    [ "g_threadAlive", "d6/d4a/PhysicsSystem_8cpp.html#aefa33afe24ef9639071269aff8a8a268", null ],
     [ "g_threadLifecycleMutex", "d6/d4a/PhysicsSystem_8cpp.html#a82cba2d23e67fd0015fe65a3f3ae2206", null ]
 ];

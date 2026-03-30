@@ -210,6 +210,10 @@ Functions</h2></td></tr>
 Variables</h2></td></tr>
 <tr class="memitem:a82cba2d23e67fd0015fe65a3f3ae2206"><td class="memItemLeft" align="right" valign="top">static std::mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dd0/namespacephysics.html#a82cba2d23e67fd0015fe65a3f3ae2206">g_threadLifecycleMutex</a></td></tr>
 <tr class="separator:a82cba2d23e67fd0015fe65a3f3ae2206"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aefa33afe24ef9639071269aff8a8a268"><td class="memItemLeft" align="right" valign="top">static std::atomic&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dd0/namespacephysics.html#aefa33afe24ef9639071269aff8a8a268">g_threadAlive</a> { false }</td></tr>
+<tr class="separator:aefa33afe24ef9639071269aff8a8a268"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1ac4f49fad7e8e82c39b7a25f6e2df63"><td class="memItemLeft" align="right" valign="top">static std::atomic&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dd0/namespacephysics.html#a1ac4f49fad7e8e82c39b7a25f6e2df63">g_intentionallyStopped</a> { false }</td></tr>
+<tr class="separator:a1ac4f49fad7e8e82c39b7a25f6e2df63"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
 <a id="a0861439c2c8e1125b19d287254d4ed0e" name="a0861439c2c8e1125b19d287254d4ed0e"></a>
@@ -608,7 +612,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00775">775</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00817">817</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -635,7 +639,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00779">779</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00821">821</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1263,7 +1267,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00767">767</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00809">809</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1291,7 +1295,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00771">771</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00813">813</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1319,7 +1323,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00763">763</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00805">805</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1361,18 +1365,66 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d5/dd0/namespacephysics_acd0439aefcf3ae4e14fa0bc34af2c16f_icgraph.png" border="0" usemap="#ad5/dd0/namespacephysics_acd0439aefcf3ae4e14fa0bc34af2c16f_icgraph" alt=""/></div>
 <map name="ad5/dd0/namespacephysics_acd0439aefcf3ae4e14fa0bc34af2c16f_icgraph" id="ad5/dd0/namespacephysics_acd0439aefcf3ae4e14fa0bc34af2c16f_icgraph">
-<area shape="rect" title=" " alt="" coords="439,109,607,134"/>
-<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a3793262624cd3d2ae10368f544e86d1f" title=" " alt="" coords="233,69,370,109"/>
-<area shape="rect" href="../../dd/d88/classphysics_1_1ConvexCollider.html#a4f36e15379013bcd603f75f1255b8bf3" title=" " alt="" coords="212,133,391,173"/>
-<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a577b15c3856391f11179c2e7d7ea5cb4" title=" " alt="" coords="16,5,153,45"/>
-<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#aab58749055baebe612df19032b255d23" title=" " alt="" coords="16,69,153,109"/>
-<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a52f2eb7420c7743d41ea1e718a56aac7" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,134,164,159"/>
+<area shape="rect" title=" " alt="" coords="417,109,585,134"/>
+<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a3793262624cd3d2ae10368f544e86d1f" title=" " alt="" coords="211,69,349,109"/>
+<area shape="rect" href="../../dd/d88/classphysics_1_1ConvexCollider.html#a4f36e15379013bcd603f75f1255b8bf3" title=" " alt="" coords="191,133,369,173"/>
+<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a577b15c3856391f11179c2e7d7ea5cb4" title=" " alt="" coords="5,5,143,45"/>
+<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#aab58749055baebe612df19032b255d23" title=" " alt="" coords="5,69,143,109"/>
+<area shape="rect" href="../../db/d71/classphysics_1_1Collider.html#a9785c816451a3924e34fa5d9153aae7c" title="This function runs when the object is enabled after being disabled." alt="" coords="5,133,143,173"/>
 </map>
 </div>
 
 </div>
 </div>
 <h2 class="groupheader">Variable Documentation</h2>
+<a id="a1ac4f49fad7e8e82c39b7a25f6e2df63" name="a1ac4f49fad7e8e82c39b7a25f6e2df63"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1ac4f49fad7e8e82c39b7a25f6e2df63">&#9670;&#160;</a></span>g_intentionallyStopped</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::atomic&lt;bool&gt; physics::g_intentionallyStopped { false }</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00073">73</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aefa33afe24ef9639071269aff8a8a268" name="aefa33afe24ef9639071269aff8a8a268"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aefa33afe24ef9639071269aff8a8a268">&#9670;&#160;</a></span>g_threadAlive</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::atomic&lt;bool&gt; physics::g_threadAlive { false }</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00072">72</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a82cba2d23e67fd0015fe65a3f3ae2206" name="a82cba2d23e67fd0015fe65a3f3ae2206"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a82cba2d23e67fd0015fe65a3f3ae2206">&#9670;&#160;</a></span>g_threadLifecycleMutex</h2>
 
