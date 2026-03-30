@@ -209,6 +209,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 
 	// Load renderer settings before creating framebuffer resources that depend on config values.
 	LoadRenderSettings();
