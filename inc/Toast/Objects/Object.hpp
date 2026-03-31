@@ -66,7 +66,7 @@ public:
 	void Load(json_t j, bool force_create = true) override;
 
 	// Soft-serialize
-	void SoftLoad() override;
+	void SoftLoad(bool editorStop = false) override;
 	void SoftSave() const override;
 
 #ifdef TOAST_EDITOR

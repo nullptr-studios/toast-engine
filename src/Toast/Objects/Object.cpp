@@ -77,10 +77,13 @@ json_t Object::Save() const {
 	return j;
 }
 
-void Object::SoftLoad() {
+void Object::SoftLoad(bool editorStop) {
 	// you shouldn't need to propagate this function
 	Load(m_json, false);
-	_Begin(true);
+	
+	// hi dante
+	if (!editorStop)
+		_Begin(true);
 }
 
 void Object::SoftSave() const {

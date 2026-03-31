@@ -89,7 +89,7 @@ World::World() {
 					    continue;
 				    }
 
-				    s->SoftLoad();
+				    s->SoftLoad(true);
 				    s->enabled(m.loadedScenesStatus[s->id()]);
 				    m.loadedScenes.erase(s->id());
 			    }
