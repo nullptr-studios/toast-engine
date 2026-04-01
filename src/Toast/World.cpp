@@ -1,6 +1,8 @@
 #include "Toast/World.hpp"
 
+#include "Audio/AudioSystem.hpp"
 #include "Physics/PhysicsSystem.hpp"
+#include "Toast/Audio/Audio.hpp"
 #include "Toast/Log.hpp"
 #include "Toast/Objects/Scene.hpp"
 #include "Toast/Profiler.hpp"
@@ -67,6 +69,7 @@ World::World() {
 
 		    auto simulate = e->value;
 		    if (simulate) {
+		    	audio::unmute_all();
 			    // Logic for play logic
 			    for (auto& s : m.children | std::views::values) {
 				    auto* scene = static_cast<Scene*>(s.get());
@@ -78,6 +81,9 @@ World::World() {
 
 			    physics::PhysicsSystem::start();
 		    } else {
+		    	
+		    	audio::mute_all();
+		    	
 			    // Logic for pause logic
 			    physics::PhysicsSystem::stop();
 			    m.editorScene->_Begin();    // Rerun to set editor camera
@@ -92,6 +98,7 @@ World::World() {
 				    s->SoftLoad(true);
 				    s->enabled(m.loadedScenesStatus[s->id()]);
 				    m.loadedScenes.erase(s->id());
+			    	
 			    }
 
 			    for (const auto& [_, path] : m.loadedScenes) {
