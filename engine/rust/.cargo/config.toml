@@ -1,3 +1,0 @@
-[env]
-RUST_ROOT = { value = ".", relative = true }
-PROTO_PATH = { value = "../../protos", relative = true }

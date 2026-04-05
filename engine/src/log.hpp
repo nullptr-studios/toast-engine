@@ -6,6 +6,8 @@
  */
 
 #pragma once
+#include "export.hpp"
+
 #include <cstdint>
 #include <cstdlib>
 #include <string_view>
@@ -13,13 +15,13 @@
 
 /// @internal
 namespace logging::_detail {
-	constexpr std::string_view get_only_name(std::string_view path) {
+	constexpr std::string_view TOAST_API get_only_name(std::string_view path) {
 		size_t last_slash = path.find_last_of("\\/");
 		if (last_slash == std::string_view::npos) return path;
 		return path.substr(last_slash + 1);
 	}
 
-	void log(uint8_t severity, std::string_view file_name, unsigned line_number, std::string_view sink, std::string_view message);
+	void TOAST_API log(uint8_t severity, std::string_view file_name, unsigned line_number, std::string_view sink, std::string_view message);
 }
 
 #define TOAST_FILE_NAME ::logging::_detail::get_only_name(__FILE__)

@@ -1,5 +1,5 @@
-#include "engine.h"
 #include "engine.hpp"
+#include "ffi/engine.h" // ffi
 
 #include "thread_pool.hpp"
 #include "logger.hpp"

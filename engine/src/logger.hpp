@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "generated/logging_easypb.h"
+
 #include <asio.hpp>
 #include <memory>
 #include <string_view>
@@ -18,8 +20,8 @@
 #include <atomic>
 #include <cassert>
 #include <vector>
+#include <cstdint>
 
-#include "logging_easypb.h"
 
 namespace logging {
 

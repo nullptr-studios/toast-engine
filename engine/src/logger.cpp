@@ -1,8 +1,8 @@
-#include "log.hpp"
-#include "log.h"
+#include "log.hpp" // public functions
+#include "ffi/log.h" // ffi
 #include "logger.hpp"
 
-#include "logging_easypb.h"
+#include "generated/logging_easypb.h"
 #include "thread_pool.hpp"
 
 #include <easypb.hpp>

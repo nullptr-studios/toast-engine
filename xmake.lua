@@ -15,6 +15,10 @@ if is_mode("release") then
 	add_cxflags("/fp:fast", "/arch:AVX2", {force = true, tools = "cl"})
 end
 
+if is_mode("debug") then
+	add_cxxflags("-Og", { tools = {"clang", "gcc"} })
+end
+
 -- Add a simple print to know which target is being built
 rule("toast.building_msg")
     before_build(function (target)

@@ -5,16 +5,18 @@
  */
 
 #pragma once
-#include "engine.hpp"
+#include "export.hpp"
+#include "_details/engine.hpp"
 
 namespace toast {
 
-class IApplication {
+class TOAST_API IApplication {
 	virtual void Begin() = 0;
 	virtual void Tick() = 0;
 	virtual void Destroy() = 0;
 };
 
-void pushApplicationLayer(IApplication* app);
+void TOAST_API pushApplicationLayer(IApplication* app);
 
 }
+
