@@ -4,6 +4,7 @@
 /// @date 07/03/2026
 
 #include <Toast/Components/HtmlView.hpp>
+#include <Toast/Localization.hpp>
 #include <Toast/Log.hpp>
 #include <Toast/Renderer/Framebuffer.hpp>
 #include <Toast/Renderer/HUD/HUDLayer.hpp>
@@ -68,13 +69,12 @@ void HtmlView::CreateUlView() {
 
 	m_view = hud->CreateView(fb->Width(), fb->Height());
 	if (m_view) {
-		// If a console callback is set, install a per-view listener
-		if (m_consoleCb) {
-			m_viewListener = std::make_unique<HtmlViewListener>(m_consoleCb);
-			m_view->set_view_listener(m_viewListener.get());
-		}
+		// Always install the listener
+		m_viewListener = std::make_unique<HtmlViewListener>(m_consoleCb);
+		m_view->set_view_listener(m_viewListener.get());
 		m_view->LoadURL(ultralight::String(m_url.c_str()));
 		hud->SetViewSortOrder(m_view, m_sortOrder);
+		hud->ExecuteJS(Localization::BuildApplyScript());
 		TOAST_INFO("HtmlView: loaded {}", m_url);
 	}
 }
