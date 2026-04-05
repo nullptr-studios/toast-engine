@@ -5,6 +5,8 @@
 #include "Toast/Resources/ResourceManager.hpp"
 
 #include <nlohmann/json.hpp>
+#include <algorithm>
+#include <cctype>
 #include <unordered_map>
 
 namespace toast {
@@ -13,6 +15,64 @@ using Table = std::unordered_map<std::string, std::string>;
 
 std::unordered_map<std::string, Table> s_tables;
 std::string s_language = "en";
+
+static std::string Trim(std::string value) {
+	const auto begin = value.find_first_not_of(" \t\r\n");
+	if (begin == std::string::npos) {
+		return {};
+	}
+	const auto end = value.find_last_not_of(" \t\r\n");
+	return value.substr(begin, end - begin + 1);
+}
+
+static std::string NormalizeLanguageCode(std::string code) {
+	code = Trim(std::move(code));
+
+	if (code.size() >= 2 && ((code.front() == '"' && code.back() == '"') || (code.front() == '\'' && code.back() == '\''))) {
+		code = code.substr(1, code.size() - 2);
+	}
+
+	std::transform(code.begin(), code.end(), code.begin(), [](unsigned char c) {
+		return static_cast<char>(std::tolower(c));
+	});
+
+	if (code == "english") {
+		return "en";
+	}
+	if (code == "spanish" || code == "espanol") {
+		return "es";
+	}
+	if (code == "romanian") {
+		return "ro";
+	}
+	if (code == "chinese") {
+		return "zh";
+	}
+	if (code == "russian") {
+		return "ru";
+	}
+	if (code == "meow") {
+		return "cat";
+	}
+
+	return code;
+}
+
+bool EnsureLocalizationLoaded() {
+	if (!s_tables.empty()) {
+		return true;
+	}
+
+	// Fallback to both common resource roots so localization works in game/editor flows.
+	if (Localization::LoadFile("UI/locales.json")) {
+		return true;
+	}
+	if (Localization::LoadFile("assets/UI/locales.json")) {
+		return true;
+	}
+
+	return false;
+}
 
 static std::string EscapeJSString(std::string_view value) {
 	std::string out;
@@ -53,7 +113,8 @@ bool Localization::LoadFile(const std::string& resource_path) {
 
 	nlohmann::json root;
 	try {
-		root = nlohmann::json::parse(*raw);
+		std::istringstream stream(raw.value());
+		stream >> root;
 	} catch (const std::exception& e) {
 		TOAST_ERROR("Failed to parse localization file {}: {}", resource_path, e.what());
 		return false;
@@ -70,13 +131,18 @@ bool Localization::LoadFile(const std::string& resource_path) {
 			continue;
 		}
 
+		const std::string lang = NormalizeLanguageCode(it.key());
+		if (lang.empty()) {
+			continue;
+		}
+
 		Table table;
 		for (auto jt = it.value().begin(); jt != it.value().end(); ++jt) {
 			if (jt.value().is_string()) {
 				table[jt.key()] = jt.value().get<std::string>();
 			}
 		}
-		s_tables[it.key()] = std::move(table);
+		s_tables[lang] = std::move(table);
 	}
 
 	if (s_tables.empty()) {
@@ -93,15 +159,21 @@ bool Localization::LoadFile(const std::string& resource_path) {
 }
 
 bool Localization::SetLanguage(const std::string& language_code) {
-	if (!s_tables.contains(language_code)) {
-		TOAST_WARN("Localization language not available: {}", language_code);
+	if (!EnsureLocalizationLoaded()) {
+		TOAST_WARN("Localization tables are empty; cannot set language {}", language_code);
 		return false;
 	}
-	if (s_language == language_code) {
+
+	const std::string normalized = NormalizeLanguageCode(language_code);
+	if (!s_tables.contains(normalized)) {
+		TOAST_WARN("Localization language not available: {} (normalized: {})", language_code, normalized);
+		return false;
+	}
+	if (s_language == normalized) {
 		return true;
 	}
 
-	s_language = language_code;
+	s_language = normalized;
 	event::Send(new toast::LocalizationChanged(s_language));
 	TOAST_INFO("Localization language set to {}", s_language);
 	return true;
@@ -112,6 +184,10 @@ const std::string& Localization::GetLanguage() {
 }
 
 std::string Localization::Translate(std::string_view key) {
+	if (!EnsureLocalizationLoaded()) {
+		return std::string(key);
+	}
+
 	const auto table_it = s_tables.find(s_language);
 	if (table_it == s_tables.end()) {
 		return std::string(key);
@@ -126,6 +202,10 @@ std::string Localization::Translate(std::string_view key) {
 }
 
 std::vector<std::string> Localization::GetLanguages() {
+	if (!EnsureLocalizationLoaded()) {
+		return {};
+	}
+
 	std::vector<std::string> out;
 	out.reserve(s_tables.size());
 	for (const auto& [lang, _] : s_tables) {
@@ -135,6 +215,8 @@ std::vector<std::string> Localization::GetLanguages() {
 }
 
 std::string Localization::BuildApplyScript() {
+	EnsureLocalizationLoaded();
+
 	const std::string lang = EscapeJSString(s_language);
 	const std::string dict = CurrentDictionaryJson().dump();
 

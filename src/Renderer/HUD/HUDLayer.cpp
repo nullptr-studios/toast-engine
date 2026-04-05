@@ -15,6 +15,7 @@
 #include <JavaScriptCore/JSRetainPtr.h>
 #include <SDL3/SDL.h>
 #include <Toast/Log.hpp>
+#include <Toast/Localization.hpp>
 #include <Toast/Profiler.hpp>
 #include <Toast/Renderer/Framebuffer.hpp>
 #include <Toast/Renderer/HUD/HUDLayer.hpp>
@@ -509,6 +510,10 @@ void HUDLayer::EvalScriptOrQueue(const std::string& script) {
 void HUDLayer::OnDOMReady() {
 	// Mark DOM ready
 	dom_ready_ = true;
+
+	// Every page navigation creates a new JS context, so push the current localization again.
+	EvalScriptOrQueue(toast::Localization::BuildApplyScript());
+
 	// Flush pending scripts
 	for (const auto& s : pending_scripts_) {
 		if (!views_.empty()) {
