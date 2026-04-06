@@ -425,6 +425,22 @@ void OpenGLRenderer::Render() {
 			return a->GetDepth() < b->GetDepth();
 		});
 	}
+	
+	if (m_transparentsSortDirty) {
+		m.combinedTransparents.clear();
+		m.combinedTransparents.reserve(m_transparentRenderables.size());
+		for (auto* r : m_transparentRenderables) {
+			if (r && m_disabledTransparents.find(r) == m_disabledTransparents.end()) {
+				m.combinedTransparents.push_back(r);
+			}
+		}
+		m_renderablesSortDirty = false;
+		
+		std::stable_sort(m.combinedTransparents.begin(), m.combinedTransparents.end(), [](IRenderable* a, IRenderable* b) {
+			return a->GetDepth() < b->GetDepth();
+		});
+		
+	}
 
 	OcclusionPass();
 	CHECK_GL();
@@ -544,7 +560,7 @@ void OpenGLRenderer::OcclusionPass() {
 	for (auto* r : m.combinedRenderables) {
 		r->OnRender(renderer::IRenderablePass::OCCLUSION, m_multipliedMatrix);
 	}
-	for (auto* r : m_transparentRenderables) {
+	for (auto* r : m.combinedTransparents) {
 		r->OnRender(renderer::IRenderablePass::OCCLUSION, m_multipliedMatrix);
 	}
 
@@ -716,7 +732,24 @@ void OpenGLRenderer::RemoveRenderable(IRenderable* renderable) {
 	m_renderablesSortDirty = true;
 }
 
-void OpenGLRenderer::SpritePass() { }
+void OpenGLRenderer::AddTransparent(IRenderable* renderable) {
+	m_transparentRenderables.push_back(renderable);
+}
+
+void OpenGLRenderer::RemoveTransparent(IRenderable* renderable) {
+	auto it = std::find(m_transparentRenderables.begin(), m_transparentRenderables.end(), renderable);
+	if (it != m_transparentRenderables.end()) {
+		m_transparentRenderables.erase(it);
+	}
+	m_disabledTransparents.erase(renderable);
+	m_transparentsSortDirty = true;
+}
+
+void OpenGLRenderer::SpritePass() {
+	for (const auto& renderable : m.combinedTransparents) {
+		renderable->OnRender(IRenderablePass::GEOMETRY, m_multipliedMatrix);
+	}
+}
 
 void OpenGLRenderer::AddLight(Light2D* light) {
 	m_lights.push_back(light);

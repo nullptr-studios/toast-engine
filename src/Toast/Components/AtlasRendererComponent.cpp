@@ -20,18 +20,18 @@
 #endif
 
 void AtlasRendererComponent::Destroy() {
-	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveTransparent(this);
 }
 
 void AtlasRendererComponent::OnEnable() {
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		r->EnableRenderable(this);
+		r->EnableTransparent(this);
 	}
 }
 
 void AtlasRendererComponent::OnDisable() {
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		r->DisableRenderable(this);
+		r->DisableTransparent(this);
 	}
 }
 
@@ -166,7 +166,7 @@ void AtlasRendererComponent::LoadTextures() {
 	m.shader->Use();
 	m.shader->SetSampler("Texture", 0);
 
-	renderer::IRendererBase::GetInstance()->AddRenderable(this);
+	renderer::IRendererBase::GetInstance()->AddTransparent(this);
 
 	m.dynamicMesh.InitDynamicSpine();
 }

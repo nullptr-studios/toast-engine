@@ -95,6 +95,10 @@ public:
 	void SetIsOccluder(bool value) {
 		m.isOccluder = value;
 	}
+	
+	void SetDrawToDepth(bool v) {
+		m.drawToDepth = v;
+	}
 
 	// Events
 	virtual void OnAnimationStart(std::string_view /*animation_name*/, int /*track*/) { }
