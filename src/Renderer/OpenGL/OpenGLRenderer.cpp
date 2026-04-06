@@ -30,7 +30,10 @@
 
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
+#include "Toast/Renderer/PostProcessing/Bloom.hpp"
+#include "Toast/Renderer/PostProcessing/ChromaticAberration.hpp"
 #include "Toast/Renderer/PostProcessing/ColorGrading.hpp"
+#include "Toast/Renderer/PostProcessing/DepthOfField.hpp"
 #include "Toast/Renderer/PostProcessing/Tonemaping.hpp"
 
 #include <algorithm>
@@ -236,7 +239,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	Framebuffer::Specs geometrySpecs = { 1920, 1080, /*clampedSamples > 1*/ false };
 	m_geometryFramebuffer = new Framebuffer(geometrySpecs);
 	m_geometryFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // albedo HDR buffer
-	m_geometryFramebuffer->AddDepthAttachment();
+	m_geometryFramebuffer->AddDepthAttachment(true, GL_DEPTH_COMPONENT32F);
 	m_geometryFramebuffer->Build();
 
 	Framebuffer::Specs lightSpecs = { (int)(1920 * m_config.lightResolutionScale), (int)(1080 * m_config.lightResolutionScale), false };
@@ -269,11 +272,15 @@ OpenGLRenderer::OpenGLRenderer() {
 	// post process
 	m_postProcessManager = std::make_unique<PostProcessManager>();
 	m_postProcessManager->InitBuffers(m_config.resolution);
-
-	std::unique_ptr<Tonemaping> tonemapping = std::make_unique<Tonemaping>();
-	std::unique_ptr<Colorgrading> colorgrading = std::make_unique<Colorgrading>();
-	m_postProcessManager->AddGlobalProcess(std::move(tonemapping));
-	m_postProcessManager->AddGlobalProcess(std::move(colorgrading));
+	if (!m_postProcessManager->LoadGlobalFromConfig()) {
+		m_postProcessManager->AddGlobalProcess(std::make_unique<Bloom>());
+		m_postProcessManager->AddGlobalProcess(std::make_unique<ChromaticAberration>());
+		auto dof = std::make_unique<DepthOfField>();
+		dof->SetEnabled(false);
+		m_postProcessManager->AddGlobalProcess(std::move(dof));
+		m_postProcessManager->AddGlobalProcess(std::make_unique<Tonemaping>());
+		m_postProcessManager->AddGlobalProcess(std::make_unique<Colorgrading>());
+	}
 
 	// Listen to window resize events
 	m_listener.Subscribe<event::WindowResize>([this](event::WindowResize* e) -> bool {
@@ -794,7 +801,7 @@ void OpenGLRenderer::ApplyRenderSettings() {
 			                                   static_cast<int>(clampedSamples) };
 		m_geometryFramebuffer = new Framebuffer(geometrySpecs);
 		m_geometryFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);
-		m_geometryFramebuffer->AddDepthAttachment();
+		m_geometryFramebuffer->AddDepthAttachment(true, GL_DEPTH_COMPONENT32F);
 		m_geometryFramebuffer->Build();
 	}
 

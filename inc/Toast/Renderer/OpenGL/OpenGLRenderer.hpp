@@ -7,6 +7,7 @@
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/Lights/GlobalLight.hpp"
 #include "Toast/Renderer/PostProcessManager.hpp"
+#include "Toast/Renderer/PostProcessVolume.hpp"
 
 namespace renderer {
 class LayerStack;
@@ -82,6 +83,8 @@ private:
 		std::shared_ptr<Shader> jfaInitComputeShader = nullptr;
 		std::shared_ptr<Shader> jfaComputeShader = nullptr;
 		std::shared_ptr<Shader> finalComputeShader = nullptr;
+		
+		PostProcessVolume* amongas;
 		// Framebuffer* layerFramebuffer = nullptr;
 	} m;
 };

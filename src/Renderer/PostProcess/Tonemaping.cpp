@@ -47,6 +47,18 @@ void Tonemaping::Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) {
 	Framebuffer::unbind();
 }
 
+json_t Tonemaping::SaveParams() const {
+	json_t j {};
+	j["exposure"] = m_exposure;
+	j["gamma"] = m_gamma;
+	return j;
+}
+
+void Tonemaping::LoadParams(const json_t& j) {
+	m_exposure = j.value("exposure", m_exposure);
+	m_gamma = j.value("gamma", m_gamma);
+}
+
 #ifdef TOAST_EDITOR
 
 void Tonemaping::Inspector() {
