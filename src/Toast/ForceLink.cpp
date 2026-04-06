@@ -14,6 +14,7 @@
 #include <Toast/Renderer/Camera.hpp>
 #include <Toast/Renderer/Lights/2DLight.hpp>
 #include <Toast/Renderer/Lights/GlobalLight.hpp>
+#include <Toast/Renderer/PostProcessVolume.hpp>
 
 // Components
 #include <Toast/Components/AtlasRendererComponent.hpp>
