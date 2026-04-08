@@ -18,7 +18,26 @@ namespace toast {
 /// Per-view listener that forwards console messages to a callback
 class HtmlViewListener : public ultralight::ViewListener {
 public:
-	explicit HtmlViewListener(HtmlView::ConsoleCallback cb) : m_cb(std::move(cb)) { }
+	explicit HtmlViewListener(HtmlView::ConsoleCallback cb, ultralight::ViewListener* forward)
+	    : m_cb(std::move(cb)), m_forward(forward) { }
+
+	void OnChangeTitle(ultralight::View* caller, const ultralight::String& title) override {
+		if (m_forward) {
+			m_forward->OnChangeTitle(caller, title);
+		}
+	}
+
+	void OnChangeURL(ultralight::View* caller, const ultralight::String& url) override {
+		if (m_forward) {
+			m_forward->OnChangeURL(caller, url);
+		}
+	}
+
+	void OnChangeCursor(ultralight::View* caller, ultralight::Cursor cursor) override {
+		if (m_forward) {
+			m_forward->OnChangeCursor(caller, cursor);
+		}
+	}
 
 	void OnAddConsoleMessage(ultralight::View* caller, const ultralight::ConsoleMessage& msg) override {
 		std::string message = msg.message().utf8().data();
@@ -26,10 +45,62 @@ public:
 		if (m_cb) {
 			m_cb(message);
 		}
+		if (m_forward) {
+			m_forward->OnAddConsoleMessage(caller, msg);
+		}
 	}
 
 private:
 	HtmlView::ConsoleCallback m_cb;
+	ultralight::ViewListener* m_forward = nullptr;
+};
+
+class HtmlLoadListener : public ultralight::LoadListener {
+public:
+	explicit HtmlLoadListener(HtmlView::DOMReadyCallback cb, ultralight::LoadListener* forward)
+	    : m_cb(std::move(cb)), m_forward(forward) { }
+
+	void OnBeginLoading(ultralight::View* caller, uint64_t frame_id, bool is_main_frame, const ultralight::String& url) override {
+		if (m_forward) {
+			m_forward->OnBeginLoading(caller, frame_id, is_main_frame, url);
+		}
+	}
+
+	void OnFinishLoading(ultralight::View* caller, uint64_t frame_id, bool is_main_frame, const ultralight::String& url) override {
+		if (m_forward) {
+			m_forward->OnFinishLoading(caller, frame_id, is_main_frame, url);
+		}
+	}
+
+	void OnFailLoading(
+	    ultralight::View* caller, uint64_t frame_id, bool is_main_frame, const ultralight::String& url, const ultralight::String& description,
+	    const ultralight::String& error_domain, int error_code
+	) override {
+		if (m_forward) {
+			m_forward->OnFailLoading(caller, frame_id, is_main_frame, url, description, error_domain, error_code);
+		}
+	}
+
+	void OnWindowObjectReady(
+	    ultralight::View* caller, uint64_t frame_id, bool is_main_frame, const ultralight::String& url
+	) override {
+		if (m_forward) {
+			m_forward->OnWindowObjectReady(caller, frame_id, is_main_frame, url);
+		}
+	}
+
+	void OnDOMReady(ultralight::View* caller, uint64_t frame_id, bool is_main_frame, const ultralight::String& url) override {
+		if (is_main_frame && m_cb) {
+			m_cb();
+		}
+		if (m_forward) {
+			m_forward->OnDOMReady(caller, frame_id, is_main_frame, url);
+		}
+	}
+
+private:
+	HtmlView::DOMReadyCallback m_cb;
+	ultralight::LoadListener* m_forward = nullptr;
 };
 
 void HtmlView::Begin() {
@@ -70,8 +141,12 @@ void HtmlView::CreateUlView() {
 	if (m_view) {
 		// If a console callback is set, install a per-view listener
 		if (m_consoleCb) {
-			m_viewListener = std::make_unique<HtmlViewListener>(m_consoleCb);
+			m_viewListener = std::make_unique<HtmlViewListener>(m_consoleCb, m_view->view_listener());
 			m_view->set_view_listener(m_viewListener.get());
+		}
+		if (m_domReadyCb) {
+			m_loadListener = std::make_unique<HtmlLoadListener>(m_domReadyCb, m_view->load_listener());
+			m_view->set_load_listener(m_loadListener.get());
 		}
 		m_view->LoadURL(ultralight::String(m_url.c_str()));
 		hud->SetViewSortOrder(m_view, m_sortOrder);
@@ -87,6 +162,7 @@ void HtmlView::DestroyUlView() {
 		m_view = nullptr;
 	}
 	m_viewListener.reset();
+	m_loadListener.reset();
 }
 
 void HtmlView::SetUrl(const std::string& url) {
