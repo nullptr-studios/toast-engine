@@ -1,4 +1,4 @@
-/**
+/*
  * @file main.rs
  * @author Xein
  * @date 26 Mar 2026
@@ -7,9 +7,7 @@
 use clap::Parser;
 use std::sync::Arc;
 
-pub mod proto {
-    include!(concat!(env!("OUT_DIR"), "/logging.rs"));
-}
+pub mod proto;
 
 mod server;
 mod storage;
@@ -18,7 +16,6 @@ use storage::LogStorage;
 use server::Server;
 
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
 struct Args {
     /// Port for the engine to connect to
     #[arg(long, default_value_t = 12800)]

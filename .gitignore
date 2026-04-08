@@ -1,6 +1,7 @@
 # Cache files
 .cache/
 .xmake/
+logs/
 .DS_Store
 
 # IDE files
@@ -12,9 +13,11 @@
 **[Bb]uild**
 **[Bb]in**
 **[Oo]bj**
+**[Tt]arget**
 
 compile_commands.json
 CMakeLists.txt
 **.sln
 vsxmake**/
 vs**/
+Cargo.lock

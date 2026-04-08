@@ -45,7 +45,7 @@ class Logger {
 	} m;
 
 	static constexpr uint16_t PORT = 12800; ///< Port to connect to the server
-	static constexpr bool AUTO_SPAWN_LOG_SERVER = false; ///< Decides if the engine should create a log server or not
+	static constexpr bool AUTO_SPAWN_LOG_SERVER = true; ///< Decides if the engine should create a log server or not
 	static constexpr bool SHOW_SERVER_LOGS = false; ///< If true, log server consoole will also appear on the terminal
 
 public:

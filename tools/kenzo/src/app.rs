@@ -88,6 +88,12 @@ pub struct App {
     // Communication
     pub log_rx: Option<mpsc::Receiver<Vec<LogData>>>,
     pub stop_tx: Option<tokio::sync::oneshot::Sender<()>>,
+    
+    // Reconnection
+    pub last_connect_addr: Option<String>,
+    
+    // Control
+    pub should_exit: bool,
 }
 
 impl App {
@@ -114,6 +120,8 @@ impl App {
             focus: AppFocus::Table,
             log_rx: None,
             stop_tx: None,
+            last_connect_addr: None,
+            should_exit: false,
         };
 
         if let Some(path) = csv_path {
@@ -134,6 +142,11 @@ impl App {
         loop {
             // Draw
             terminal.draw(|f| crate::ui::draw(f, self))?;
+            
+            // Check if we should exit
+            if self.should_exit {
+                break Ok(());
+            }
 
             // Handle Network Events
             let mut batches = Vec::new();
@@ -144,6 +157,11 @@ impl App {
             }
             
             if !batches.is_empty() {
+                // Transition from Connecting to Connected on first batch (even if empty)
+                if let ConnectionState::Connecting(_) = self.state {
+                    self.state = ConnectionState::Connected;
+                }
+                
                 for batch in batches {
                     for log in batch {
                         self.process_log(log);
@@ -170,10 +188,11 @@ impl App {
             
             if let Some(rx) = &mut self.log_rx {
                  if rx.is_closed() {
-                     if let ConnectionState::Connected = self.state {
-                          self.disconnect();
-                     } else if let ConnectionState::Connecting(_) = self.state {
-                          self.disconnect();
+                     // Auto-reconnect if we were connected or connecting
+                     if let (ConnectionState::Connected | ConnectionState::Connecting(_), Some(addr)) = (&self.state, &self.last_connect_addr) {
+                         self.connect(addr.clone()).await;
+                     } else {
+                         self.disconnect();
                      }
                  }
             }
@@ -206,7 +225,9 @@ impl App {
 
     async fn handle_disconnected_key(&mut self, key: KeyEvent) -> Result<()> {
         match key.code {
-            KeyCode::Char('q') => std::process::exit(0),
+            KeyCode::Char('q') => {
+                self.should_exit = true;
+            }
             KeyCode::Esc => {
                 self.input_buffer = Input::default();
             }
@@ -276,7 +297,9 @@ impl App {
         }
 
         match key.code {
-            KeyCode::Char('q') => self.disconnect(),
+            KeyCode::Char('q') => {
+                self.disconnect();
+            }
             KeyCode::Char('/') => self.focus = AppFocus::Search,
             KeyCode::Char('f') => {
                 self.show_filters = !self.show_filters;
@@ -432,9 +455,10 @@ impl App {
         self.table_state.select(Some(self.search_matches[prev_match_idx]));
     }
 
-    async fn connect(&mut self, addr: String) {
+      async fn connect(&mut self, addr: String) {
         self.disconnect();
         self.state = ConnectionState::Connecting(addr.clone());
+        self.last_connect_addr = Some(addr.clone());
         let (tx, rx) = mpsc::channel(100);
         let (stop_tx, mut stop_rx) = tokio::sync::oneshot::channel();
         
@@ -445,6 +469,9 @@ impl App {
         tokio::spawn(async move {
             match TcpStream::connect(&addr_clone).await {
                 Ok(mut socket) => {
+                    // Send empty batch to signal successful connection
+                    let _ = tx.send(Vec::new()).await;
+                    
                     loop {
                         tokio::select! {
                              _ = &mut stop_rx => break,

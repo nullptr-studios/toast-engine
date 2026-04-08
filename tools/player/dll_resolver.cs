@@ -29,23 +29,23 @@ internal static class NativeResolver {
         // System.Console.WriteLine($"[NativeResolver] Resolve called for: {libraryName}");
 
         // Search roots: assembly location, AppContext.BaseDirectory, current directory
-        var roots = new System.Collections.Generic.List<string>();
+        var roots = new List<string>();
         try {
-            var asmDir = System.IO.Path.GetDirectoryName(assembly.Location);
+            var asmDir = Path.GetDirectoryName(assembly.Location);
             if (!string.IsNullOrEmpty(asmDir)) roots.Add(asmDir);
-        } catch (Exception ex) { System.Console.WriteLine($"[NativeResolver] asm location error: {ex.Message}"); }
+        } catch (Exception ex) { Console.WriteLine($"[NativeResolver] asm location error: {ex.Message}"); }
         try {
             var baseDir = AppContext.BaseDirectory;
             if (!string.IsNullOrEmpty(baseDir)) roots.Add(baseDir);
-        } catch (Exception ex) { System.Console.WriteLine($"[NativeResolver] baseDir error: {ex.Message}"); }
+        } catch (Exception ex) { Console.WriteLine($"[NativeResolver] baseDir error: {ex.Message}"); }
         roots.Add(Directory.GetCurrentDirectory());
 
         // System.Console.WriteLine("[NativeResolver] search roots:");
         // foreach (var r in roots) System.Console.WriteLine("  " + r);
 
-        string[] extensions = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? new[] { ".dll" }
-            : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? new[] { ".dylib" }
-            : new[] { ".so" };
+        string[] extensions = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? [".dll"]
+            : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? [".dylib"]
+            : [".so"];
 
         // If resolving the application library, attempt to preload the engine library with RTLD_GLOBAL so DT_NEEDED is resolved
         if (libraryName == "__APPLICATION_LIB__") {
@@ -59,11 +59,11 @@ internal static class NativeResolver {
                                 const int RTLD_NOW = 2;
                                 const int RTLD_GLOBAL = 0x100;
                                 var h = dlopen(engineFiles[0], RTLD_NOW | RTLD_GLOBAL);
-                                if (h == IntPtr.Zero) System.Console.WriteLine("[NativeResolver] dlopen returned NULL"); else System.Console.WriteLine("[NativeResolver] dlopen succeeded");
-                            } catch (Exception ex) { System.Console.WriteLine($"[NativeResolver] dlopen failed: {ex.Message}"); }
+                                if (h == IntPtr.Zero) Console.WriteLine("[NativeResolver] dlopen returned NULL");
+                            } catch (Exception ex) { Console.WriteLine($"[NativeResolver] dlopen failed: {ex.Message}"); }
                             goto LoadApp;
                         }
-                    } catch (Exception ex) { System.Console.WriteLine($"[NativeResolver] search error: {ex.Message}"); }
+                    } catch (Exception ex) { Console.WriteLine($"[NativeResolver] search error: {ex.Message}"); }
                 }
             }
         }
@@ -77,7 +77,7 @@ internal static class NativeResolver {
                         // System.Console.WriteLine($"[NativeResolver] Loading application lib from: {files[0]}");
                         try {
                             // Change CWD to the library's dir so '.' in RUNPATH resolves correctly
-                            var libDir = System.IO.Path.GetDirectoryName(files[0]);
+                            var libDir = Path.GetDirectoryName(files[0]);
                             var oldCwd = Directory.GetCurrentDirectory();
                             try {
                                 if (!string.IsNullOrEmpty(libDir)) Directory.SetCurrentDirectory(libDir);
@@ -94,14 +94,14 @@ internal static class NativeResolver {
                             } finally {
                                 try { Directory.SetCurrentDirectory(oldCwd); } catch { }
                             }
-                        } catch (Exception ex) { System.Console.WriteLine($"[NativeResolver] Load failed: {ex.Message}"); }
+                        } catch (Exception ex) { Console.WriteLine($"[NativeResolver] Load failed: {ex.Message}"); }
                     }
-                } catch (Exception ex) { System.Console.WriteLine($"[NativeResolver] search error: {ex.Message}"); }
+                } catch (Exception ex) { Console.WriteLine($"[NativeResolver] search error: {ex.Message}"); }
             }
         }
 
         // Give up
-        System.Console.WriteLine($"[NativeResolver] Could not find native library for '{libraryName}'");
+        Console.WriteLine($"[NativeResolver] Could not find native library for '{libraryName}'");
         return IntPtr.Zero;
     }
 }

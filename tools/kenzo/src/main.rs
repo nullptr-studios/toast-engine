@@ -1,9 +1,7 @@
 use clap::Parser;
 use anyhow::Result;
 
-pub mod proto {
-    include!(concat!(env!("OUT_DIR"), "/logging.rs"));
-}
+pub mod proto;
 
 mod app;
 mod ui;
@@ -12,7 +10,6 @@ mod tui;
 use crate::app::App;
 
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
 struct Args {
     /// Path to a CSV log file to open directly
     #[arg(long)]
@@ -22,6 +19,13 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
+    
+    // Set up panic handler to restore terminal
+    let default_panic = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic_info| {
+        let _ = tui::restore();
+        default_panic(panic_info);
+    }));
     
     // Initialize Terminal
     let mut terminal = tui::init()?;

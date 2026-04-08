@@ -12,6 +12,16 @@
 #include <cstdlib>
 #include <iostream>
 
+#ifdef __linux__
+#include <unistd.h>
+#endif
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 namespace logging {
 
 void _detail::log(uint8_t severity, std::string_view file_name, unsigned line_number, std::string_view sink, std::string_view message) {
@@ -30,26 +40,43 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 	// On release this should ALWAYS be on since the client is not expected to open the log server on their own
 	if constexpr (AUTO_SPAWN_LOG_SERVER) {
 		try {
-			std::vector<std::filesystem::path> candidates = {
-#if defined(_WIN32)
-				"log-server.exe",
-				"build/windows/x64/debug/log-server.exe",
-				"build/windows/x64/release/log-server.exe",
-				"build/windows/x86_64/debug/log-server.exe",
-				"build/windows/x86_64/release/log-server.exe",
+			// Get the directory of the current executable
+			std::filesystem::path exe_dir;
+			try {
+				// Try to get the executable path using platform-specific methods
+#ifdef __linux__
+				char exe_path[4096];
+				ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+				if (len != -1) {
+					exe_path[len] = '\0';
+					exe_dir = std::filesystem::path(exe_path).parent_path();
+				}
 #elif defined(__APPLE__)
-				"log-server",
-				"build/macos/arm64/debug/log-server",
-				"build/macos/arm64/release/log-server",
-				"build/macos/x86_64/debug/log-server",
-				"build/macos/x86_64/release/log-server",
-#else
-				"log-server",
-				"build/linux/x86_64/debug/log-server",
-				"build/linux/x86_64/release/log-server",
+				uint32_t size = 4096;
+				char exe_path[size];
+				if (_NSGetExecutablePath(exe_path, &size) == 0) {
+					exe_dir = std::filesystem::path(exe_path).parent_path();
+				}
+#elif defined(_WIN32)
+				char exe_path[MAX_PATH];
+				if (GetModuleFileNameA(nullptr, exe_path, MAX_PATH)) {
+					exe_dir = std::filesystem::path(exe_path).parent_path();
+				}
 #endif
-			};
+			} catch (...) {
+				// If we can't get exe dir, fall back to cwd
+			}
 
+			std::vector<std::filesystem::path> candidates;
+			
+			if (!exe_dir.empty()) {
+#if defined(_WIN32)
+				candidates.push_back(exe_dir / "log_server.exe");
+#else
+				candidates.push_back(exe_dir / "log_server");
+#endif
+			}
+			
 			std::filesystem::path server_path;
 			for (auto &p : candidates) {
 				if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) {
@@ -72,10 +99,19 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 				}
 #elif defined(__APPLE__) || defined(__linux__)
 				// setsid detaches the server from the engine's process group on Linux/macOS.
+				// The trailing & ensures std::system() returns immediately without waiting
 				cmd = "setsid " + server_path.string() + output_redir + " &";
 #endif
 				if (!cmd.empty()) {
-					std::system(cmd.c_str());
+					int ret = std::system(cmd.c_str());
+					if (ret != 0) {
+						std::println(std::cerr, "[Logger] Failed to execute log server spawn command: {}", ret);
+					}
+				}
+			} else {
+				std::println(std::cerr, "[Logger] Could not find log server binary. Candidates checked:");
+				for (const auto& candidate : candidates) {
+					std::println(std::cerr, "  - {}", candidate.string());
 				}
 			}
 		} catch (...) {

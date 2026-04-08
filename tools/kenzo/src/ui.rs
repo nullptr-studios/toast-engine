@@ -21,8 +21,8 @@ pub fn draw(f: &mut Frame, app: &App) {
 }
 
 fn render_disconnected(f: &mut Frame, app: &App, area: Rect) {
-    // Make popup as small as possible
-    let area = centered_rect(40, 8, area); 
+    // Make popup large enough to display all options with padding
+    let area = centered_rect(50, 20, area); 
     
     let block = Block::default()
         .borders(Borders::ALL)
@@ -38,9 +38,13 @@ fn render_disconnected(f: &mut Frame, app: &App, area: Rect) {
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([
+            Constraint::Length(1), // Empty
             Constraint::Length(1), // Localhost
+            Constraint::Length(1), // Empty
             Constraint::Length(1), // Remote IP
+            Constraint::Length(1), // Empty
             Constraint::Length(1), // CSV
+            Constraint::Min(1),    // Rest
         ])
         .split(area);
 
@@ -62,7 +66,7 @@ fn render_disconnected(f: &mut Frame, app: &App, area: Rect) {
     } else {
         "  Connect to Localhost".to_string()
     };
-    f.render_widget(Paragraph::new(localhost_text).style(localhost_style), chunks[0]);
+    f.render_widget(Paragraph::new(localhost_text).style(localhost_style), chunks[1]);
 
     // Remote IP
     let remote_style = if app.popup_selection == PopupOption::RemoteIp {
@@ -80,7 +84,7 @@ fn render_disconnected(f: &mut Frame, app: &App, area: Rect) {
     } else {
         format!("  Connect to IP: {}", remote_input)
     };
-    f.render_widget(Paragraph::new(remote_text).style(remote_style), chunks[1]);
+    f.render_widget(Paragraph::new(remote_text).style(remote_style), chunks[3]);
 
     // CSV
     let csv_style = if app.popup_selection == PopupOption::CsvFile {
@@ -90,7 +94,7 @@ fn render_disconnected(f: &mut Frame, app: &App, area: Rect) {
     };
     let csv_input = if app.popup_selection == PopupOption::CsvFile { app.input_buffer.value() } else { "" };
     let csv_text = format!("  Open CSV: {}", csv_input);
-    f.render_widget(Paragraph::new(csv_text).style(csv_style), chunks[2]);
+    f.render_widget(Paragraph::new(csv_text).style(csv_style), chunks[5]);
 }
 
 fn render_connected(f: &mut Frame, app: &App, area: Rect) {
