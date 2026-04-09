@@ -9,6 +9,7 @@
 #include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 
+#include <algorithm>
 #include <memory>
 
 struct DepthOfField : public IPostProcess {
@@ -84,6 +85,15 @@ struct DepthOfField : public IPostProcess {
 		m_farPlane = j.value("farPlane", m_farPlane);
 	}
 
+	void SetFocusDistance(float distance) {
+		m_focusDistance = std::clamp(distance, m_nearPlane, m_farPlane);
+	}
+
+	[[nodiscard]]
+	float GetFocusDistance() const {
+		return m_focusDistance;
+	}
+
 #ifdef TOAST_EDITOR
 	void Inspector() override;
 #endif
@@ -115,5 +125,4 @@ inline void DepthOfField::Inspector() {
 	ImGui::DragFloat("Far Blur Scale", &m_farBlurScale, 0.01f, 0.0f, 4.0f);
 }
 #endif
-
 

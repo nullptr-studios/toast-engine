@@ -82,7 +82,7 @@ void SpineRendererComponent::LoadTextures() {
 	m.shader->Use();
 	m.shader->SetSampler("Texture", 0);
 
-	renderer::IRendererBase::GetInstance()->AddRenderable(this);
+	renderer::IRendererBase::GetInstance()->AddTransparent(this);
 
 	m.dynamicMesh.InitDynamicSpine();
 }
@@ -96,13 +96,13 @@ void SpineRendererComponent::Begin() {
 
 void SpineRendererComponent::OnEnable() {
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		r->EnableRenderable(this);
+		r->DisableTransparent(this);
 	}
 }
 
 void SpineRendererComponent::OnDisable() {
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		r->DisableRenderable(this);
+		r->EnableTransparent(this);
 	}
 }
 
@@ -270,7 +270,7 @@ void SpineRendererComponent::Inspector() {
 
 void SpineRendererComponent::Destroy() {
 	TransformComponent::Destroy();
-	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveTransparent(this);
 }
 
 // optimize

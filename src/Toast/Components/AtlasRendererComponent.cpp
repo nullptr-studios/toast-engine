@@ -12,7 +12,9 @@
 #include "Toast/Resources/Texture.hpp"
 
 #include <functional>
+#include <limits>
 #include <ranges>
+#include <array>
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
@@ -159,6 +161,34 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		glDisable(GL_BLEND);
 	}
 	m.dynamicMesh.DrawDynamicSpine(m.tempIndices.size());
+}
+
+float AtlasRendererComponent::GetTransparentSortDepth(const glm::mat4& view_matrix) noexcept {
+	const auto& bounds = m.dynamicMesh.dynamicBoundingBox();
+	if (!bounds.isValid()) {
+		return IRenderable::GetTransparentSortDepth(view_matrix);
+	}
+
+	const glm::vec3 min = bounds.min;
+	const glm::vec3 max = bounds.max;
+	const std::array<glm::vec3, 8> corners = {
+		glm::vec3(min.x, min.y, min.z),
+		glm::vec3(max.x, min.y, min.z),
+		glm::vec3(min.x, max.y, min.z),
+		glm::vec3(max.x, max.y, min.z),
+		glm::vec3(min.x, min.y, max.z),
+		glm::vec3(max.x, min.y, max.z),
+		glm::vec3(min.x, max.y, max.z),
+		glm::vec3(max.x, max.y, max.z),
+	};
+
+	float nearest_view_z = std::numeric_limits<float>::lowest();
+	for (const glm::vec3& corner : corners) {
+		const float view_z = (view_matrix * glm::vec4(corner, 1.0f)).z;
+		nearest_view_z = std::max(nearest_view_z, view_z);
+	}
+
+	return nearest_view_z;
 }
 
 void AtlasRendererComponent::LoadTextures() {

@@ -15,6 +15,8 @@
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <string>
+#include <utility>
 
 namespace toast {
 class MeshRendererComponent : public IRenderable {
@@ -87,6 +89,29 @@ public:
 		m_mesh = resource::LoadResource<renderer::Mesh>(m_meshPath);
 	}
 
+	void SetTransparent(bool transparent);
+
+	void SetUseExternalTextureOnly(bool enabled) {
+		m_useExternalTextureOnly = enabled;
+	}
+
+	[[nodiscard]]
+	bool IsTransparent() const {
+		return m_isTransparent;
+	}
+
+	void SetExternalTexture(unsigned int texture_id, std::string sampler_name = "gTexture", int texture_unit = 0) {
+		m_externalTextureId = texture_id;
+		m_externalTextureSampler = std::move(sampler_name);
+		m_externalTextureUnit = texture_unit;
+		m_useExternalTexture = (texture_id != 0);
+	}
+
+	void ClearExternalTexture() {
+		m_externalTextureId = 0;
+		m_useExternalTexture = false;
+	}
+
 	// Vertex color controls the generic vertex attribute (location = 3) used by the shaders
 	//[[nodiscard]]
 	// glm::vec4 GetVertexColor() const { return m_vertexColor; }
@@ -108,10 +133,20 @@ private:
 	std::shared_ptr<renderer::Mesh> m_mesh;
 	std::shared_ptr<renderer::Material> m_material;
 	std::shared_ptr<renderer::Shader> m_occlusionShader;
+	std::shared_ptr<renderer::Shader> m_externalShader;
 
 	bool m_isOccluder = false;
+	bool m_isTransparent = false;
 
 	bool m_drawToDepth = true;
+
+	bool m_useExternalTexture = false;
+	bool m_useExternalTextureOnly = false;
+	unsigned int m_externalTextureId = 0;
+	std::string m_externalTextureSampler = "gTexture";
+	int m_externalTextureUnit = 0;
+
+	bool m_isRegisteredInRenderer = false;
 
 	// Per-instance vertex color (rgba) used when mesh doesn't provide per-vertex colors
 	// glm::vec4 m_vertexColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);

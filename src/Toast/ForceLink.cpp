@@ -12,6 +12,8 @@
 
 // Renderer
 #include <Toast/Renderer/Camera.hpp>
+#include <Toast/Renderer/HUD/HUDActor.hpp>
+#include <Toast/Renderer/HUD/HUDWorldRendererComponent.hpp>
 #include <Toast/Renderer/Lights/2DLight.hpp>
 #include <Toast/Renderer/Lights/GlobalLight.hpp>
 #include <Toast/Renderer/PostProcessVolume.hpp>

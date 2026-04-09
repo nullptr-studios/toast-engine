@@ -347,6 +347,7 @@ void HUDLayer::OnDetach() {
 
 	views_.clear();
 	view_sort_orders_.clear();
+	view_composite_flags_.clear();
 	renderer_ = nullptr;
 
 	TOAST_INFO("HUDLayer detached");
@@ -406,6 +407,11 @@ void HUDLayer::OnRender() {
 
 	for (const auto& v : views_) {
 		if (!v) {
+			continue;
+		}
+
+		auto composite_it = view_composite_flags_.find(v.get());
+		if (composite_it != view_composite_flags_.end() && !composite_it->second) {
 			continue;
 		}
 
@@ -620,11 +626,18 @@ void HUDLayer::CreateFramebuffer() {
 }
 
 uint32_t HUDLayer::GetUltralightTextureGL() const {
-	if (views_.empty() || !gpu_context_) {
+	if (views_.empty()) {
+		return 0;
+	}
+	return GetViewTextureGL(views_.front());
+}
+
+uint32_t HUDLayer::GetViewTextureGL(const ultralight::RefPtr<ultralight::View>& view) const {
+	if (!view || !gpu_context_) {
 		return 0;
 	}
 
-	ultralight::RenderTarget target = views_.front()->render_target();
+	ultralight::RenderTarget target = view->render_target();
 	if (target.is_empty || target.texture_id == 0) {
 		return 0;
 	}
@@ -816,7 +829,7 @@ void HUDLayer::OnChar(unsigned int codepoint) {
 	}
 }
 
-ultralight::RefPtr<ultralight::View> HUDLayer::CreateView(uint32_t width, uint32_t height, ultralight::ViewConfig config) {
+ultralight::RefPtr<ultralight::View> HUDLayer::CreateView(uint32_t width, uint32_t height, ultralight::ViewConfig config, bool composite_to_hud) {
 	// Default to accelerated + transparent if caller didn't set
 	config.is_accelerated = true;
 	config.is_transparent = true;
@@ -839,6 +852,7 @@ ultralight::RefPtr<ultralight::View> HUDLayer::CreateView(uint32_t width, uint32
 			v->set_load_listener(load_listener_.get());
 		}
 		views_.push_back(v);
+		view_composite_flags_[v.get()] = composite_to_hud;
 	}
 	return v;
 }
@@ -848,6 +862,7 @@ void HUDLayer::RemoveView(const ultralight::RefPtr<ultralight::View>& view) {
 	if (it != views_.end()) {
 		bool wasFront = (it == views_.begin());
 		view_sort_orders_.erase(view.get());
+		view_composite_flags_.erase(view.get());
 		views_.erase(it);
 		// If the front view changed, reset DOM readiness so scripts queue until new front is ready
 		if (wasFront) {

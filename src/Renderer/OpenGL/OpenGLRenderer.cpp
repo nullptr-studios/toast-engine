@@ -37,6 +37,7 @@
 #include "Toast/Renderer/PostProcessing/Tonemaping.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <sstream>
 #include <stb_image.h>
 
@@ -429,6 +430,11 @@ void OpenGLRenderer::Render() {
 	// HACK: FOR OPTIMIZATION PURPOSES WE JUST SORT WHEN ADDING OBJECTS
 	if (m.combinedRenderables.size() > 1) {
 		std::stable_sort(m.combinedRenderables.begin(), m.combinedRenderables.end(), [](IRenderable* a, IRenderable* b) {
+			const int priority_a = a->GetGeometrySortPriority();
+			const int priority_b = b->GetGeometrySortPriority();
+			if (priority_a != priority_b) {
+				return priority_a < priority_b;
+			}
 			return a->GetDepth() < b->GetDepth();
 		});
 	}
@@ -441,12 +447,26 @@ void OpenGLRenderer::Render() {
 				m.combinedTransparents.push_back(r);
 			}
 		}
-		m_renderablesSortDirty = false;
-		
-		std::stable_sort(m.combinedTransparents.begin(), m.combinedTransparents.end(), [](IRenderable* a, IRenderable* b) {
-			return a->GetDepth() < b->GetDepth();
+		m_transparentsSortDirty = false;
+	}
+
+	if (m.combinedTransparents.size() > 1) {
+		std::stable_sort(m.combinedTransparents.begin(), m.combinedTransparents.end(), [&](IRenderable* a, IRenderable* b) {
+			const int priority_a = a->GetTransparentSortPriority();
+			const int priority_b = b->GetTransparentSortPriority();
+			if (priority_a != priority_b) {
+				return priority_a < priority_b;
+			}
+
+			const float depthA = a->GetTransparentSortDepth(m_viewMatrix);
+			const float depthB = b->GetTransparentSortDepth(m_viewMatrix);
+			if (std::abs(depthA - depthB) > 1e-4f) {
+				// View-space: smaller Z is farther, so draw farther first for blending.
+				return depthA < depthB;
+			}
+			return a < b;
 		});
-		
+
 	}
 
 	OcclusionPass();
@@ -741,6 +761,7 @@ void OpenGLRenderer::RemoveRenderable(IRenderable* renderable) {
 
 void OpenGLRenderer::AddTransparent(IRenderable* renderable) {
 	m_transparentRenderables.push_back(renderable);
+	m_transparentsSortDirty = true;
 }
 
 void OpenGLRenderer::RemoveTransparent(IRenderable* renderable) {

@@ -22,6 +22,8 @@ public:
 	void Init() override;
 
 	void OnRender(renderer::IRenderablePass pass, const glm::mat4& precomputed_mat) noexcept override;
+	[[nodiscard]]
+	float GetTransparentSortDepth(const glm::mat4& view_matrix) noexcept override;
 
 	void LoadTextures() override;
 

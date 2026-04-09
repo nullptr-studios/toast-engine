@@ -100,6 +100,20 @@ public:
 		m.drawToDepth = v;
 	}
 
+	void SetRenderLastInGeometry(bool v) {
+		m.renderLastInGeometry = v;
+	}
+
+	[[nodiscard]]
+	int GetGeometrySortPriority() noexcept override {
+		return m.renderLastInGeometry ? 1000 : 0;
+	}
+
+	[[nodiscard]]
+	int GetTransparentSortPriority() noexcept override {
+		return m.renderLastInGeometry ? 1000 : 0;
+	}
+
 	// Events
 	virtual void OnAnimationStart(std::string_view /*animation_name*/, int /*track*/) { }
 
@@ -142,6 +156,7 @@ private:
 		bool onScreen = true;
 
 		bool drawToDepth = true;
+		bool renderLastInGeometry = false;
 
 		// buffers
 		std::vector<renderer::SpineVertex> tempVerts;

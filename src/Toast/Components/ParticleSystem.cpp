@@ -595,7 +595,9 @@ void ParticleEmitter::UpdateAndRender(
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
-	glDepthMask(GL_FALSE);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glDepthMask(GL_TRUE);
 
 	m_renderShader->Use();
 	m_renderShader->Set("u_ViewProj", viewProjection);
@@ -842,15 +844,25 @@ void ParticleSystem::LoadTextures() {
 	InitSharedResources();
 
 	if (!m_addedToRenderer) {
-		renderer::IRendererBase::GetInstance()->AddRenderable(this);
+		renderer::IRendererBase::GetInstance()->AddTransparent(this);
 		m_addedToRenderer = true;
 	}
 
 	TOAST_INFO("ParticleSystem initialized with {} emitter(s)", m_emitters.size());
 }
 
+void ParticleSystem::OnDisable() {
+	IRenderable::OnDisable();
+	renderer::IRendererBase::GetInstance()->DisableTransparent(this);
+}
+
+void ParticleSystem::OnEnable() {
+	IRenderable::OnEnable();
+	renderer::IRendererBase::GetInstance()->EnableTransparent(this);
+}
+
 void ParticleSystem::Destroy() {
-	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveTransparent(this);
 
 	for (auto& emitter : m_emitters) {
 		emitter.CleanupGPUResources();

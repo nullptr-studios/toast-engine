@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Toast/Renderer/Framebuffer.hpp"
+#include "Toast/Renderer/HUD/HUDActor.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/Lights/GlobalLight.hpp"
 #include "Toast/Renderer/PostProcessManager.hpp"
@@ -85,6 +86,7 @@ private:
 		std::shared_ptr<Shader> finalComputeShader = nullptr;
 		
 		PostProcessVolume* amongas;
+		HUDActor* amongas2;
 		// Framebuffer* layerFramebuffer = nullptr;
 	} m;
 };
