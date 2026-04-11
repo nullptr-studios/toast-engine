@@ -100,6 +100,10 @@ public:
 	virtual void AddTransparent(IRenderable* renderable) = 0;
 	
 	virtual void RemoveTransparent(IRenderable* renderable) = 0;
+
+	virtual void AddWater(IRenderable* renderable) = 0;
+
+	virtual void RemoveWater(IRenderable* renderable) = 0;
 	
 	virtual void DisableTransparent(IRenderable* renderable) {
 		if (m_disabledTransparents.insert(renderable).second) {
@@ -110,6 +114,18 @@ public:
 	virtual void EnableTransparent(IRenderable* renderable) {
 		if (m_disabledTransparents.erase(renderable) > 0) {
 			m_transparentsSortDirty = true;
+		}
+	}
+
+	virtual void DisableWater(IRenderable* renderable) {
+		if (m_disabledWaters.insert(renderable).second) {
+			m_watersSortDirty = true;
+		}
+	}
+
+	virtual void EnableWater(IRenderable* renderable) {
+		if (m_disabledWaters.erase(renderable) > 0) {
+			m_watersSortDirty = true;
 		}
 	}
 
@@ -433,10 +449,13 @@ protected:
 	/// @brief Set of renderables that are currently disabled — excluded from the geometry pass.
 	std::unordered_set<IRenderable*> m_disabledRenderables;
 	std::unordered_set<IRenderable*> m_disabledTransparents;
+	std::unordered_set<IRenderable*> m_disabledWaters;
 	std::vector<IRenderable*> m_transparentRenderables;
+	std::vector<IRenderable*> m_waterRenderables;
 	std::vector<Light2D*> m_lights;        ///< All 2D lights in the scene
 	bool m_renderablesSortDirty = true;    ///< True when renderables need re-sorting
 	bool m_transparentsSortDirty = true;
+	bool m_watersSortDirty = true;
 	bool m_lightsSortDirty = true;         ///< True when lights need re-sorting
 
 	// ========== Transform Matrices ==========

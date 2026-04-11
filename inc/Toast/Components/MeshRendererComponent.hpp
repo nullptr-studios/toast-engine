@@ -18,6 +18,10 @@
 #include <string>
 #include <utility>
 
+namespace renderer {
+class IRendererBase;
+}
+
 namespace toast {
 class MeshRendererComponent : public IRenderable {
 public:
@@ -89,7 +93,7 @@ public:
 		m_mesh = resource::LoadResource<renderer::Mesh>(m_meshPath);
 	}
 
-	void SetTransparent(bool transparent);
+	virtual void SetTransparent(bool transparent);
 
 	void SetUseExternalTextureOnly(bool enabled) {
 		m_useExternalTextureOnly = enabled;
@@ -117,6 +121,18 @@ public:
 	// glm::vec4 GetVertexColor() const { return m_vertexColor; }
 
 	// void SetVertexColor(const glm::vec4& c) { m_vertexColor = c; }
+
+protected:
+	virtual void RegisterWithRenderer(renderer::IRendererBase* renderer);
+	virtual void UnregisterFromRenderer(renderer::IRendererBase* renderer);
+	virtual void EnableInRenderer(renderer::IRendererBase* renderer);
+	virtual void DisableInRenderer(renderer::IRendererBase* renderer);
+	virtual void ApplyCustomUniforms(renderer::Shader* shader) noexcept;
+
+	[[nodiscard]]
+	const std::string& GetMaterialPath() const {
+		return m_materialPath;
+	}
 
 private:
 	editor::ResourceSlot m_materialSlot { resource::ResourceType::MATERIAL };

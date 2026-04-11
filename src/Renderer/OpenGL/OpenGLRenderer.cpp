@@ -35,6 +35,7 @@
 #include "Toast/Renderer/PostProcessing/ColorGrading.hpp"
 #include "Toast/Renderer/PostProcessing/DepthOfField.hpp"
 #include "Toast/Renderer/PostProcessing/Tonemaping.hpp"
+#include "Toast/Components/WaterRendererComponent.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -252,6 +253,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	m.postProcessFramebuffer = new Framebuffer(geometrySpecs);
 	m.postProcessFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);
 	m.postProcessFramebuffer->Build();
+	CreateOrResizeWaterSceneCopyTexture(m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
 
 	Framebuffer::Specs outputSpecs = { 1920, 1080, false };
 	m_outputFramebuffer = new Framebuffer(outputSpecs);
@@ -344,6 +346,9 @@ OpenGLRenderer::~OpenGLRenderer() {
 	TOAST_INFO("Shutting down OpenGL Renderer...");
 
 	delete m_geometryFramebuffer;
+	delete m_lightFramebuffer;
+	delete m.postProcessFramebuffer;
+	DestroyWaterSceneCopyTexture();
 	delete m_outputFramebuffer;
 	DestroyShadowResources();
 #ifdef TOAST_EDITOR
@@ -469,6 +474,34 @@ void OpenGLRenderer::Render() {
 
 	}
 
+	if (m_watersSortDirty) {
+		m.combinedWaters.clear();
+		m.combinedWaters.reserve(m_waterRenderables.size());
+		for (auto* r : m_waterRenderables) {
+			if (r && m_disabledWaters.find(r) == m_disabledWaters.end()) {
+				m.combinedWaters.push_back(r);
+			}
+		}
+		m_watersSortDirty = false;
+	}
+
+	if (m.combinedWaters.size() > 1) {
+		std::stable_sort(m.combinedWaters.begin(), m.combinedWaters.end(), [&](IRenderable* a, IRenderable* b) {
+			const int priority_a = a->GetTransparentSortPriority();
+			const int priority_b = b->GetTransparentSortPriority();
+			if (priority_a != priority_b) {
+				return priority_a < priority_b;
+			}
+
+			const float depthA = a->GetTransparentSortDepth(m_viewMatrix);
+			const float depthB = b->GetTransparentSortDepth(m_viewMatrix);
+			if (std::abs(depthA - depthB) > 1e-4f) {
+				return depthA < depthB;
+			}
+			return a < b;
+		});
+	}
+
 	OcclusionPass();
 	CHECK_GL();
 
@@ -480,6 +513,10 @@ void OpenGLRenderer::Render() {
 
 	// Lighting
 	LightingPass();
+	CHECK_GL();
+
+	WaterPass();
+	CHECK_GL();
 
 	PostProcessPass();
 	CHECK_GL();
@@ -725,6 +762,7 @@ void OpenGLRenderer::Resize(glm::uvec2 size) {
 	m_postProcessManager->InitBuffers(size);
 
 	m.postProcessFramebuffer->Resize(static_cast<int>(width), static_cast<int>(height));
+	CreateOrResizeWaterSceneCopyTexture(m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
 
 	if (m.layerStack) {
 		for (auto* layer : m.layerStack->GetLayers()) {
@@ -773,8 +811,72 @@ void OpenGLRenderer::RemoveTransparent(IRenderable* renderable) {
 	m_transparentsSortDirty = true;
 }
 
+void OpenGLRenderer::AddWater(IRenderable* renderable) {
+	if (!renderable) {
+		return;
+	}
+	m_waterRenderables.push_back(renderable);
+	m_watersSortDirty = true;
+}
+
+void OpenGLRenderer::RemoveWater(IRenderable* renderable) {
+	auto it = std::find(m_waterRenderables.begin(), m_waterRenderables.end(), renderable);
+	if (it != m_waterRenderables.end()) {
+		m_waterRenderables.erase(it);
+	}
+	m_disabledWaters.erase(renderable);
+	m_watersSortDirty = true;
+}
+
 void OpenGLRenderer::SpritePass() {
 	for (const auto& renderable : m.combinedTransparents) {
+		renderable->OnRender(IRenderablePass::GEOMETRY, m_multipliedMatrix);
+	}
+}
+
+void OpenGLRenderer::WaterPass() {
+	if (m.combinedWaters.empty()) {
+		return;
+	}
+	if (m.waterSceneCopyTexture == 0) {
+		return;
+	}
+
+	const GLuint litColorTex = m.postProcessFramebuffer->GetColorTexture(0);
+	if (litColorTex == 0) {
+		return;
+	}
+
+	glCopyImageSubData(
+	    litColorTex,
+	    GL_TEXTURE_2D,
+	    0,
+	    0,
+	    0,
+	    0,
+	    m.waterSceneCopyTexture,
+	    GL_TEXTURE_2D,
+	    0,
+	    0,
+	    0,
+	    0,
+	    m.postProcessFramebuffer->Width(),
+	    m.postProcessFramebuffer->Height(),
+	    1
+	);
+
+	m.postProcessFramebuffer->bind();
+	glViewport(0, 0, m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
+	glScissor(0, 0, m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_DEPTH_TEST);
+
+	const GLuint sceneTex = m.waterSceneCopyTexture;
+	for (auto* renderable : m.combinedWaters) {
+		if (auto* water = dynamic_cast<toast::WaterRendererComponent*>(renderable)) {
+			water->SetRefractionTexture(sceneTex);
+		}
 		renderable->OnRender(IRenderablePass::GEOMETRY, m_multipliedMatrix);
 	}
 }
@@ -831,6 +933,7 @@ void OpenGLRenderer::ApplyRenderSettings() {
 	);
 
 	m.postProcessFramebuffer->Resize(m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
+	CreateOrResizeWaterSceneCopyTexture(m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
 
 	if (!m.occlusionFramebuffer || static_cast<unsigned>(m.occlusionFramebuffer->Width()) != m_config.shadowMapResolution ||
 	    static_cast<unsigned>(m.occlusionFramebuffer->Height()) != m_config.shadowMapResolution) {
@@ -896,6 +999,39 @@ void OpenGLRenderer::RecreateShadowResources(unsigned resolution) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void OpenGLRenderer::CreateOrResizeWaterSceneCopyTexture(int width, int height) {
+	width = std::max(width, 1);
+	height = std::max(height, 1);
+
+	if (m.waterSceneCopyTexture == 0) {
+		glGenTextures(1, &m.waterSceneCopyTexture);
+	}
+
+	if (m.waterSceneCopyWidth == width && m.waterSceneCopyHeight == height) {
+		return;
+	}
+
+	glBindTexture(GL_TEXTURE_2D, m.waterSceneCopyTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	m.waterSceneCopyWidth = width;
+	m.waterSceneCopyHeight = height;
+}
+
+void OpenGLRenderer::DestroyWaterSceneCopyTexture() {
+	if (m.waterSceneCopyTexture != 0) {
+		glDeleteTextures(1, &m.waterSceneCopyTexture);
+		m.waterSceneCopyTexture = 0;
+	}
+	m.waterSceneCopyWidth = 0;
+	m.waterSceneCopyHeight = 0;
 }
 
 void OpenGLRenderer::DrawScreenQuad(bool flipY, bool useShader) {

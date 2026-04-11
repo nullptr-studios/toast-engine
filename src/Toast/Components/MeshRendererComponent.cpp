@@ -15,6 +15,40 @@
 
 namespace toast {
 
+void MeshRendererComponent::RegisterWithRenderer(renderer::IRendererBase* renderer) {
+	if (m_isTransparent) {
+		renderer->AddTransparent(this);
+	} else {
+		renderer->AddRenderable(this);
+	}
+}
+
+void MeshRendererComponent::UnregisterFromRenderer(renderer::IRendererBase* renderer) {
+	if (m_isTransparent) {
+		renderer->RemoveTransparent(this);
+	} else {
+		renderer->RemoveRenderable(this);
+	}
+}
+
+void MeshRendererComponent::EnableInRenderer(renderer::IRendererBase* renderer) {
+	if (m_isTransparent) {
+		renderer->EnableTransparent(this);
+	} else {
+		renderer->EnableRenderable(this);
+	}
+}
+
+void MeshRendererComponent::DisableInRenderer(renderer::IRendererBase* renderer) {
+	if (m_isTransparent) {
+		renderer->DisableTransparent(this);
+	} else {
+		renderer->DisableRenderable(this);
+	}
+}
+
+void MeshRendererComponent::ApplyCustomUniforms(renderer::Shader* /*shader*/) noexcept { }
+
 void MeshRendererComponent::SetTransparent(bool transparent) {
 	if (m_isTransparent == transparent) {
 		return;
@@ -22,19 +56,10 @@ void MeshRendererComponent::SetTransparent(bool transparent) {
 
 	auto* renderer = renderer::IRendererBase::GetInstance();
 	if (renderer && m_isRegisteredInRenderer) {
-		if (m_isTransparent) {
-			renderer->RemoveTransparent(this);
-		} else {
-			renderer->RemoveRenderable(this);
-		}
+		UnregisterFromRenderer(renderer);
 
 		m_isTransparent = transparent;
-
-		if (m_isTransparent) {
-			renderer->AddTransparent(this);
-		} else {
-			renderer->AddRenderable(this);
-		}
+		RegisterWithRenderer(renderer);
 		return;
 	}
 
@@ -155,11 +180,7 @@ void MeshRendererComponent::LoadTextures() {
 	// m_shader->Use();
 	// m_shader->SetSampler("Texture", 0);
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		if (m_isTransparent) {
-			r->AddTransparent(this);
-		} else {
-			r->AddRenderable(this);
-		}
+		RegisterWithRenderer(r);
 		m_isRegisteredInRenderer = true;
 	}
 }
@@ -222,6 +243,8 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 				glBindTexture(GL_TEXTURE_2D, m_externalTextureId);
 				shader->SetSampler(m_externalTextureSampler, m_externalTextureUnit);
 			}
+
+			ApplyCustomUniforms(shader.get());
 		}
 
 		// draw
@@ -255,32 +278,20 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 
 void MeshRendererComponent::Destroy() {
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		if (m_isTransparent) {
-			r->RemoveTransparent(this);
-		} else {
-			r->RemoveRenderable(this);
-		}
+		UnregisterFromRenderer(r);
 	}
 	m_isRegisteredInRenderer = false;
 }
 
 void MeshRendererComponent::OnEnable() {
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		if (m_isTransparent) {
-			r->EnableTransparent(this);
-		} else {
-			r->EnableRenderable(this);
-		}
+		EnableInRenderer(r);
 	}
 }
 
 void MeshRendererComponent::OnDisable() {
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		if (m_isTransparent) {
-			r->DisableTransparent(this);
-		} else {
-			r->DisableRenderable(this);
-		}
+		DisableInRenderer(r);
 	}
 }
 }

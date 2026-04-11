@@ -35,6 +35,7 @@ public:
 	void LightingPass();
 	void CombinedRenderPass() const;
 	void SpritePass();
+	void WaterPass();
 	void HUDPass();
 
 	void Clear() const override;
@@ -45,6 +46,9 @@ public:
 	
 	void AddTransparent(IRenderable* renderable) override;
 	void RemoveTransparent(IRenderable* renderable) override;
+
+	void AddWater(IRenderable* renderable) override;
+	void RemoveWater(IRenderable* renderable) override;
 
 	void AddLight(Light2D* light) override;
 	void RemoveLight(Light2D* light) override;
@@ -58,6 +62,8 @@ public:
 private:
 	void RecreateShadowResources(unsigned resolution);
 	void DestroyShadowResources();
+	void CreateOrResizeWaterSceneCopyTexture(int width, int height);
+	void DestroyWaterSceneCopyTexture();
 
 	struct {
 		LayerStack* layerStack = nullptr;
@@ -73,7 +79,11 @@ private:
 
 		std::vector<IRenderable*> combinedRenderables;
 		std::vector<IRenderable*> combinedTransparents;
+		std::vector<IRenderable*> combinedWaters;
 		Framebuffer* postProcessFramebuffer = nullptr;
+		GLuint waterSceneCopyTexture = 0;
+		int waterSceneCopyWidth = 0;
+		int waterSceneCopyHeight = 0;
 
 		// Shadows
 		Framebuffer* occlusionFramebuffer = nullptr;
