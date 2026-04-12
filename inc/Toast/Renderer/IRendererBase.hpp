@@ -40,7 +40,12 @@ struct RendererConfig {
 	unsigned msaaSamples = 1;               ///< MSAA sample count for geometry render targets
 	float anisotropyLevel = 8.0f;           ///< Texture anisotropy level (clamped by GPU max)
 	unsigned shadowMapResolution = 1024;    ///< Square shadow-map/SDF atlas resolution
+	unsigned directionalShadowMapResolution = 2048;
 	unsigned shadowRaymarchSteps = 32;      ///< Raymarch quality for SDF shadows
+	float directionalShadowDistance = 160.0f;
+	float directionalShadowRange = 70.0f;
+	float directionalShadowBias = 0.0015f;
+	float directionalShadowStrength = 0.8f;
 };
 
 /// @class IRendererBase
@@ -291,9 +296,29 @@ public:
 			if (j.contains("shadowMapResolution")) {
 				m_config.shadowMapResolution = std::clamp(j["shadowMapResolution"].get<unsigned>(), 64u, 8192u);
 			}
+			if (j.contains("directionalShadowMapResolution")) {
+				m_config.directionalShadowMapResolution = std::clamp(j["directionalShadowMapResolution"].get<unsigned>(), 64u, 8192u);
+			} else {
+				m_config.directionalShadowMapResolution = m_config.shadowMapResolution;
+			}
 			if (j.contains("shadowRaymarchSteps")) {
 				m_config.shadowRaymarchSteps = std::clamp(j["shadowRaymarchSteps"].get<unsigned>(), 1u, 256u);
 			}
+			if (j.contains("directionalShadowDistance")) {
+				m_config.directionalShadowDistance = std::clamp(j["directionalShadowDistance"].get<float>(), 8.0f, 4000.0f);
+			}
+			if (j.contains("directionalShadowRange")) {
+				m_config.directionalShadowRange = std::clamp(j["directionalShadowRange"].get<float>(), 8.0f, 2000.0f);
+			}
+			if (j.contains("directionalShadowBias")) {
+				m_config.directionalShadowBias = std::clamp(j["directionalShadowBias"].get<float>(), 0.00001f, 0.1f);
+			}
+			if (j.contains("directionalShadowStrength")) {
+				m_config.directionalShadowStrength = std::clamp(j["directionalShadowStrength"].get<float>(), 0.0f, 1.0f);
+			}
+
+			m_directionalShadowBias = m_config.directionalShadowBias;
+			m_directionalShadowStrength = m_config.directionalShadowStrength;
 
 			TOAST_TRACE("Renderer.settings loaded successfully");
 
@@ -324,7 +349,12 @@ public:
 		j["msaaSamples"] = m_config.msaaSamples;
 		j["anisotropyLevel"] = m_config.anisotropyLevel;
 		j["shadowMapResolution"] = m_config.shadowMapResolution;
+		j["directionalShadowMapResolution"] = m_config.directionalShadowMapResolution;
 		j["shadowRaymarchSteps"] = m_config.shadowRaymarchSteps;
+		j["directionalShadowDistance"] = m_config.directionalShadowDistance;
+		j["directionalShadowRange"] = m_config.directionalShadowRange;
+		j["directionalShadowBias"] = m_config.directionalShadowBias;
+		j["directionalShadowStrength"] = m_config.directionalShadowStrength;
 
 		if (!resource::ResourceManager::SaveConfig("Renderer.settings", j.dump(1))) {
 			TOAST_ERROR("Failed to save renderer settings file!");
@@ -381,8 +411,30 @@ public:
 		m_config.shadowMapResolution = std::clamp(resolution, 64u, 8192u);
 	}
 
+	void SetDirectionalShadowMapResolution(unsigned resolution) noexcept {
+		m_config.directionalShadowMapResolution = std::clamp(resolution, 64u, 8192u);
+	}
+
 	void SetShadowRaymarchSteps(unsigned steps) noexcept {
 		m_config.shadowRaymarchSteps = std::clamp(steps, 1u, 256u);
+	}
+
+	void SetDirectionalShadowDistance(float distance) noexcept {
+		m_config.directionalShadowDistance = std::clamp(distance, 8.0f, 4000.0f);
+	}
+
+	void SetDirectionalShadowRange(float range) noexcept {
+		m_config.directionalShadowRange = std::clamp(range, 8.0f, 2000.0f);
+	}
+
+	void SetDirectionalShadowBias(float bias) noexcept {
+		m_config.directionalShadowBias = std::clamp(bias, 0.00001f, 0.1f);
+		m_directionalShadowBias = m_config.directionalShadowBias;
+	}
+
+	void SetDirectionalShadowStrength(float strength) noexcept {
+		m_config.directionalShadowStrength = std::clamp(strength, 0.0f, 1.0f);
+		m_directionalShadowStrength = m_config.directionalShadowStrength;
 	}
 
 	void SetLightResolutionScale(float scale) noexcept {
@@ -423,6 +475,55 @@ public:
 
 	void SetGlobalLightEnabled(bool enabled) noexcept {
 		m_globalLightEnabled = enabled;
+	}
+
+	[[nodiscard]]
+	glm::vec3 GetGlobalLightDirection() const noexcept {
+		return m_globalLightDirection;
+	}
+
+	void SetGlobalLightDirection(const glm::vec3& direction) noexcept {
+		const float len2 = glm::dot(direction, direction);
+		if (len2 > 1e-6f) {
+			m_globalLightDirection = glm::normalize(direction);
+		}
+	}
+
+	[[nodiscard]]
+	bool IsDirectionalShadowsEnabled() const noexcept {
+		return m_directionalShadowsEnabled;
+	}
+
+	void SetDirectionalShadowsEnabled(bool enabled) noexcept {
+		m_directionalShadowsEnabled = enabled;
+	}
+
+	[[nodiscard]]
+	const glm::mat4& GetDirectionalShadowMatrix() const noexcept {
+		return m_directionalShadowMatrix;
+	}
+
+	void SetDirectionalShadowMatrix(const glm::mat4& matrix) noexcept {
+		m_directionalShadowMatrix = matrix;
+	}
+
+	[[nodiscard]]
+	GLuint GetDirectionalShadowMapTexture() const noexcept {
+		return m_directionalShadowMapTexture;
+	}
+
+	void SetDirectionalShadowMapTexture(GLuint texture) noexcept {
+		m_directionalShadowMapTexture = texture;
+	}
+
+	[[nodiscard]]
+	float GetDirectionalShadowBias() const noexcept {
+		return m_directionalShadowBias;
+	}
+
+	[[nodiscard]]
+	float GetDirectionalShadowStrength() const noexcept {
+		return m_directionalShadowStrength;
 	}
 
 protected:
@@ -471,6 +572,13 @@ protected:
 	float m_globalLightIntensity = 0.7f;               ///< Intensity of the global
 
 	bool m_globalLightEnabled = true;                  ///< Whether global light is enabled
+	glm::vec3 m_globalLightDirection = glm::normalize(glm::vec3(-0.35f, -1.0f, -0.25f));
+
+	bool m_directionalShadowsEnabled = true;
+	glm::mat4 m_directionalShadowMatrix = glm::mat4(1.0f);
+	GLuint m_directionalShadowMapTexture = 0;
+	float m_directionalShadowBias = 0.0015f;
+	float m_directionalShadowStrength = 0.8f;
 
 	// ========== Post Processing ==========
 	std::unique_ptr<PostProcessManager> m_postProcessManager;    ///< Manager for post-processing effects

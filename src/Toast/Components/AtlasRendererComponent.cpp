@@ -121,14 +121,21 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		}
 	}
 
+	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+		m.isOnScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f));
+		if (!m.castsDirectionalShadow) {
+			return;
+		}
+	}
+
 	// Frustum culling
-	if (!m.isOnScreen) {
+	if (pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW && !m.isOnScreen) {
 		return;
 	}
 
 	const glm::mat4 mvp = precomputed_mat;
 
-	if (pass == renderer::IRenderablePass::GEOMETRY) {
+	if (pass == renderer::IRenderablePass::GEOMETRY || pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
 		m.shader->Use();
 		m.shader->Set("transform", mvp);
 	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
@@ -148,13 +155,15 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	}
 
 	// Draw all sprites in one call
-	if (m.drawToDepth) {
+	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+		glDepthMask(GL_TRUE);
+	} else if (m.drawToDepth) {
 		glDepthMask(GL_TRUE);
 	} else {
 		glDepthMask(GL_FALSE);
 	}
 
-	if (pass != renderer::IRenderablePass::OCCLUSION) {
+	if (pass != renderer::IRenderablePass::OCCLUSION && pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	} else {
@@ -209,6 +218,9 @@ void AtlasRendererComponent::Load(json_t j, bool force_create) {
 	if (j.contains("isOccluder")) {
 		m.isOccluder = j.at("isOccluder").get<bool>();
 	}
+	if (j.contains("castsDirectionalShadow")) {
+		m.castsDirectionalShadow = j.at("castsDirectionalShadow").get<bool>();
+	}
 	if (j.contains("drawToDepth")) {
 		m.drawToDepth = j.at("drawToDepth").get<bool>();
 	}
@@ -223,6 +235,7 @@ json_t AtlasRendererComponent::Save() const {
 	json_t j = TransformComponent::Save();
 	j["atlasResourcePath"] = m.atlasPath;
 	j["isOccluder"] = m.isOccluder;
+	j["castsDirectionalShadow"] = m.castsDirectionalShadow;
 	j["drawToDepth"] = m.drawToDepth;
 
 	return j;
@@ -476,7 +489,8 @@ void AtlasRendererComponent::Inspector() {
 		}
 	}
 
-	ImGui::Checkbox("Is Occluder", &m.isOccluder);
+	ImGui::Checkbox("2D Light Occluder", &m.isOccluder);
+	ImGui::Checkbox("Casts Directional Shadow", &m.castsDirectionalShadow);
 	ImGui::Checkbox("Draw to depth", &m.drawToDepth);
 
 	/////////////// Browser ///////////////

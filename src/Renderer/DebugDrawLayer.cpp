@@ -163,6 +163,37 @@ void DebugDrawLayer::DrawLine(const glm::vec3& a, const glm::vec3& b, const glm:
 	m_vertices.push_back({ b, color });
 }
 
+void DebugDrawLayer::DrawArrow3D(const glm::vec3& start, const glm::vec3& direction, float length, const glm::vec4& color) {
+	if (!m_enabled || length <= 0.0f) {
+		return;
+	}
+
+	const float dirLen2 = glm::dot(direction, direction);
+	if (dirLen2 <= 1e-6f) {
+		return;
+	}
+
+	const glm::vec3 dir = direction / glm::sqrt(dirLen2);
+	const glm::vec3 end = start + dir * length;
+	DrawLine(start, end, color);
+
+	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+	if (std::abs(glm::dot(up, dir)) > 0.98f) {
+		up = glm::vec3(1.0f, 0.0f, 0.0f);
+	}
+
+	const glm::vec3 right = glm::normalize(glm::cross(dir, up));
+	const glm::vec3 headUp = glm::normalize(glm::cross(right, dir));
+	const float headLength = length * 0.22f;
+	const float headWidth = headLength * 0.45f;
+	const glm::vec3 base = end - dir * headLength;
+
+	DrawLine(end, base + right * headWidth, color);
+	DrawLine(end, base - right * headWidth, color);
+	DrawLine(end, base + headUp * headWidth, color);
+	DrawLine(end, base - headUp * headWidth, color);
+}
+
 void DebugDrawLayer::DrawRect(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color, bool filled) {
 	if (!m_enabled) {
 		return;

@@ -209,7 +209,8 @@ void SpineRendererComponent::Inspector() {
 		}
 	}
 
-	ImGui::Checkbox("Is Occluder", &m.isOccluder);
+	ImGui::Checkbox("2D Light Occluder", &m.isOccluder);
+	ImGui::Checkbox("Casts Directional Shadow", &m.castsDirectionalShadow);
 	ImGui::Checkbox("Draw to depth", &m.drawToDepth);
 
 	ImGui::Separator();
@@ -283,7 +284,8 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		return;
 	}
 
-	if (pass != renderer::IRenderablePass::GEOMETRY && pass != renderer::IRenderablePass::OCCLUSION) {
+	if (pass != renderer::IRenderablePass::GEOMETRY && pass != renderer::IRenderablePass::OCCLUSION &&
+	    pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
 		return;
 	}
 
@@ -300,7 +302,7 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	const glm::mat4 mvp = precomputed_mat * model;
 
 	// done just at occlusion step and reused
-	if (pass == renderer::IRenderablePass::OCCLUSION) {
+	if (pass == renderer::IRenderablePass::OCCLUSION || pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
 		// First pass: collect all vertices to compute bounding box for frustum culling
 		{
 			// Compute dynamic bounding box
@@ -310,7 +312,8 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 			m.onScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), model);
 		}
 
-		if (!m.isOccluder) {
+		const bool castsForPass = (pass == renderer::IRenderablePass::OCCLUSION) ? m.isOccluder : m.castsDirectionalShadow;
+		if (!castsForPass) {
 			return;
 		}
 	}
@@ -318,12 +321,12 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	// cache last bound texture to avoid redundant binds
 	m.lastBoundTexture = 0;
 
-	if (pass == renderer::IRenderablePass::GEOMETRY) {
+	if (pass == renderer::IRenderablePass::GEOMETRY || pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
 		m.shader->Use();
 		m.shader->Set("transform", mvp);
 	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
 		if (!m.isOccluder) {
-			return;    // Skip occlusion pass if not an occluder
+			return;
 		}
 
 		m.occlusionShader->Use();
@@ -333,7 +336,7 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		m.occlusionShader->Set("gMVP", mvp);
 	}
 
-	if (!m.onScreen) {
+	if (pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW && !m.onScreen) {
 		return;
 	}
 
@@ -410,13 +413,15 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	}
 
 	// flush any remaining geometry
-	if (m.drawToDepth) {
+	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+		glDepthMask(GL_TRUE);
+	} else if (m.drawToDepth) {
 		glDepthMask(GL_TRUE);
 	} else {
 		glDepthMask(GL_FALSE);
 	}
 
-	if (pass != renderer::IRenderablePass::OCCLUSION) {
+	if (pass != renderer::IRenderablePass::OCCLUSION && pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	} else {
@@ -437,6 +442,9 @@ void SpineRendererComponent::Load(json_t j, bool force_create) {
 	if (j.contains("isOccluder")) {
 		m.isOccluder = j.at("isOccluder").get<bool>();
 	}
+	if (j.contains("castsDirectionalShadow")) {
+		m.castsDirectionalShadow = j.at("castsDirectionalShadow").get<bool>();
+	}
 	if (j.contains("drawToDepth")) {
 		m.drawToDepth = j.at("drawToDepth").get<bool>();
 	}
@@ -448,6 +456,7 @@ json_t SpineRendererComponent::Save() const {
 	j["atlasResourcePath"] = m.atlasPath;
 	j["skeletonDataResourcePath"] = m.skeletonDataPath;
 	j["isOccluder"] = m.isOccluder;
+	j["castsDirectionalShadow"] = m.castsDirectionalShadow;
 	j["drawToDepth"] = m.drawToDepth;
 	return j;
 }

@@ -153,6 +153,7 @@ private:
 		renderer::Mesh dynamicMesh;
 
 		bool isOccluder = false;
+		bool castsDirectionalShadow = true;
 		bool onScreen = true;
 
 		bool drawToDepth = true;

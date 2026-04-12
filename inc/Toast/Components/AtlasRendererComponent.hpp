@@ -80,6 +80,7 @@ private:
 		bool spriteCacheDirty = true;
 
 		bool isOccluder = false;
+		bool castsDirectionalShadow = true;
 
 		bool drawToDepth = true;
 

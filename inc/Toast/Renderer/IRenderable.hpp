@@ -21,6 +21,7 @@ enum class IRenderablePass : uint8_t {
 	GEOMETRY,
 	LIGHTS,
 	OCCLUSION,
+	DIRECTIONAL_SHADOW,
 };
 
 /**

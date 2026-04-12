@@ -43,6 +43,7 @@ class ColliderRenderable : public renderer::IRenderable {
 		bool show = false;
 		bool showTop = false;
 		bool isOccluder = false;
+		bool castsDirectionalShadow = true;
 		float maxSlope = 45.0f;    // in degrees
 		float topHeight = 0.5f;
 		float topOffset = 0.0f;

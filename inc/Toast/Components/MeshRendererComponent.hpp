@@ -150,8 +150,10 @@ private:
 	std::shared_ptr<renderer::Material> m_material;
 	std::shared_ptr<renderer::Shader> m_occlusionShader;
 	std::shared_ptr<renderer::Shader> m_externalShader;
+	std::shared_ptr<renderer::Shader> m_defaultShader;
 
 	bool m_isOccluder = false;
+	bool m_castsDirectionalShadow = true;
 	bool m_isTransparent = false;
 
 	bool m_drawToDepth = true;
