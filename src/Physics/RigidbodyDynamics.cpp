@@ -15,9 +15,89 @@
 #include "glm/gtx/vector_angle.hpp"
 
 #include <glm/glm.hpp>
+#include <limits>
 
 namespace physics {
 using namespace glm;
+
+namespace {
+constexpr double kCircleCollisionEpsSmall = 1.0e-9;
+
+auto ClosestPointOnSegment(const dvec2& point, const Line& segment) -> dvec2 {
+	const dvec2 ab = segment.p2 - segment.p1;
+	const double ab_len_sq = dot(ab, ab);
+	if (ab_len_sq <= kCircleCollisionEpsSmall) {
+		return segment.p1;
+	}
+
+	const double t = clamp(dot(point - segment.p1, ab) / ab_len_sq, 0.0, 1.0);
+	return segment.p1 + ab * t;
+}
+
+auto CircleVsConvexEdges(const dvec2& center, const double radius, const std::vector<Line>& edges) -> std::optional<Manifold> {
+	if (edges.empty() || radius <= 0.0) {
+		return std::nullopt;
+	}
+
+	double max_separation = -std::numeric_limits<double>::infinity();
+	const Line* reference_edge = nullptr;
+
+	for (const Line& edge : edges) {
+		// Signed distance from center to supporting plane (positive means outside along outward normal)
+		const double separation = dot(center - edge.p1, edge.normal);
+		if (separation > radius) {
+			return std::nullopt;
+		}
+
+		if (separation > max_separation) {
+			max_separation = separation;
+			reference_edge = &edge;
+		}
+	}
+
+	if (reference_edge == nullptr) {
+		return std::nullopt;
+	}
+
+	dvec2 closest_point = ClosestPointOnSegment(center, *reference_edge);
+	dvec2 center_to_closest = center - closest_point;
+	double dist_sq = length2(center_to_closest);
+
+	dvec2 normal = reference_edge->normal;
+	double depth = 0.0;
+
+	// Center outside the polygon support plane of the reference edge: solve as circle vs segment.
+	if (max_separation > 0.0) {
+		if (dist_sq > radius * radius) {
+			return std::nullopt;
+		}
+
+		if (dist_sq > kCircleCollisionEpsSmall) {
+			normal = center_to_closest / std::sqrt(dist_sq);
+		}
+		depth = radius - std::sqrt(std::max(dist_sq, 0.0));
+	} else {
+		// Center is inside (or on boundary): push outward along nearest face normal.
+		depth = radius - max_separation;
+		closest_point = center - normal * max_separation;
+	}
+
+	const double normal_len_sq = length2(normal);
+	if (normal_len_sq <= kCircleCollisionEpsSmall) {
+		return std::nullopt;
+	}
+	if (!isNormalized(normal, 1e-4)) {
+		normal /= std::sqrt(normal_len_sq);
+	}
+
+	return Manifold { .normal = normal, .contact1 = closest_point, .contact2 = closest_point, .contactCount = 1, .depth = depth };
+}
+
+}
+
+auto BuildCircleConvexManifold(const dvec2& center, double radius, const std::vector<Line>& edges) -> std::optional<Manifold> {
+	return CircleVsConvexEdges(center, radius, edges);
+}
 
 void Manifold::Debug() const {
 	renderer::DebugCircle(contact1, 0.1, { 0.0f, 1.0f, 0.0f, 1.0f });
@@ -228,8 +308,6 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 	PROFILE_ZONE_C(0xFF00FF);
 	dvec2 rb_pos = rb->GetPosition();
 
-	std::list<Manifold> manifolds;
-
 	const auto& colliderAABB = c->getAABB();
 
 	float rbR = static_cast<float>(rb->radius);
@@ -239,112 +317,16 @@ auto RbMeshCollision(Rigidbody* rb, ConvexCollider* c) -> std::optional<Manifold
 		return std::nullopt;
 	}
 
-	// This method will use the SAT algorithm
-	for (const auto& edge : c->edges) {
-		// project all points onto the edge normal and keep the minimum & maximum
-		double min_proj = dot(dvec2 { c->vertices[0] } - edge.p1, edge.normal);
-		double max_proj = min_proj;
-
-		for (int i = 1; i < c->vertices.size(); i++) {
-			double v = dot(dvec2 { c->vertices[i] } - edge.p1, edge.normal);
-			min_proj = std::min(v, min_proj);
-			max_proj = std::max(v, max_proj);
-		}
-
-		// project rb position onto edge normal and then add radius
-		double rb_proj = dot(rb_pos - edge.p1, edge.normal);
-		double rb_max_proj = rb_proj + rb->radius;
-		double rb_min_proj = rb_proj - rb->radius;
-
-		// if theres no collision on the projection, there is no collision
-		if (rb_max_proj < min_proj || rb_min_proj > max_proj) {
-			return std::nullopt;
-		}
-
-		// we DO NOT want to check with rigidbodies that are behind the normal
-		if (rb_proj < -2 * rb->radius) {
-			continue;
-		}
-
-		// find where along the line is the object
-		// TODO: REALLY FUCKING URGENT
-#if true
-		double distance_along_line = dot(rb_pos - edge.p1, edge.tangent);
-		double overlap = std::min(max_proj - rb_min_proj, rb_max_proj - min_proj);
-		glm::dvec2 normal;
-		if (distance_along_line < 0.0f) {
-			// Case 1: rigidbody is before segment
-			normal = normalize(rb_pos - edge.p1);
-		} else if (distance_along_line > edge.length) {
-			// Case 2: rigidbody is after segment
-			normal = normalize(rb_pos - edge.p2);
-		} else {
-			// Case 3: rigidbody is inside the line
-			normal = edge.normal;
-		}
-#else
-		dvec2 normal = edge.normal;
-		double overlap = std::min(max_proj - rb_min_proj, rb_max_proj - min_proj);
-#endif
-
-		// find closest point on the edge segment to the rigidbody
-		dvec2 a = edge.p1;
-		dvec2 b = edge.p2;
-		dvec2 ab = b - a;
-		double t = dot(rb_pos - a, ab) / dot(ab, ab);
-		t = std::clamp(t, 0.0, 1.0);
-		dvec2 closest = a + ab * t;
-
-		// bias depth so nearer parallel edges win
-		double dist = length(rb_pos - closest);
-		overlap += PhysicsSystem::eps() * (dist * dist);
-
-		// if there is we will generate a manifold to compare later on
-		// clang-format off
-		manifolds.emplace_back(Manifold {
-			.normal = normal,
-			.contact1 = {0.0f, 0.0f},
-			.contact2 = {0.0f, 0.0f},
-			.contactCount = -1,
-			.depth = overlap
-		});
-		// clang-format on
-	}
-
-	// select the axis with the least penetration depth
-	auto it = std::ranges::min_element(manifolds, {}, &Manifold::depth);
-	if (it == manifolds.end()) {
+	auto manifold = BuildCircleConvexManifold(rb_pos, rb->radius, c->edges);
+	if (!manifold.has_value()) {
 		return std::nullopt;
-	}
-	auto best = *it;
-
-	// compute contact information for the chosen manifold
-	// distance from circle center to the supporting plane along normal
-	const double dist_to_plane = std::max(0.0, rb->radius - best.depth);
-	// tangent direction perpendicular to normal
-	dvec2 tangent = normalize(dvec2 { -best.normal.y, best.normal.x });
-	// half-length of the chord of intersection on the circle
-	double chord_half = std::sqrt(std::max(0.0, (rb->radius * rb->radius) - (dist_to_plane * dist_to_plane)));
-	// base point on circle center shifted toward contact plane
-	dvec2 base_point = rb_pos - best.normal * dist_to_plane;
-
-	if (chord_half <= PhysicsSystem::eps()) {
-		// if overlap is almost zero, use a single contact
-		best.contact1 = base_point;
-		best.contact2 = base_point;
-		best.contactCount = 1;
-	} else {
-		// otherwise use two symmetric contact points on the chord
-		best.contact1 = base_point - tangent * chord_half;
-		best.contact2 = base_point + tangent * chord_half;
-		best.contactCount = 2;
 	}
 
 	if (rb->debug.showManifolds) {
-		best.Debug();
+		manifold->Debug();
 	}
 
-	return best;
+	return manifold;
 }
 
 void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
@@ -412,10 +394,6 @@ void RbMeshResolution(Rigidbody* rb, ConvexCollider* c, Manifold manifold) {
 		velocity -= normal_speed * manifold.normal;
 	}
 
-	// Damp tiny bounce so gravity doesn't cause endless hopping
-	if (std::abs(normal_speed) < rb->minimumVelocity.y) {
-		velocity -= normal_speed * manifold.normal;
-	}
 	if (all(lessThan(abs(velocity), dvec2 { rb->minimumVelocity }))) {
 		velocity = { 0.0, 0.0 };
 	}
@@ -513,9 +491,6 @@ NO_COLLISION:
 auto RbBoxCollision(Rigidbody* rb1, BoxRigidbody* rb2) -> std::optional<Manifold> {
 	PROFILE_ZONE_C(0xFF00FF);
 	dvec2 rb_pos = rb1->GetPosition();
-	const auto& box_points = rb2->GetPoints();
-
-	std::list<Manifold> manifolds;
 
 	const auto& boxAABB = rb2->GetAABB();
 
@@ -526,100 +501,16 @@ auto RbBoxCollision(Rigidbody* rb1, BoxRigidbody* rb2) -> std::optional<Manifold
 		return std::nullopt;
 	}
 
-	const auto& box_edges = rb2->GetEdges();
-
-	// This method will use the SAT algorithm
-	for (const auto& edge : box_edges) {
-		// project all points onto the edge normal and keep the minimum & maximum
-		double min_proj = dot(dvec2 { box_points[0] } - edge.p1, edge.normal);
-		double max_proj = min_proj;
-
-		for (int i = 1; i < box_points.size(); i++) {
-			double v = dot(dvec2 { box_points[i] } - edge.p1, edge.normal);
-			min_proj = std::min(v, min_proj);
-			max_proj = std::max(v, max_proj);
-		}
-
-		// project rb position onto edge normal and then add radius
-		double rb_proj = dot(rb_pos - edge.p1, edge.normal);
-		double rb_max_proj = rb_proj + rb1->radius;
-		double rb_min_proj = rb_proj - rb1->radius;
-
-		// if theres no collision on the projection, there is no collision
-		if (rb_max_proj < min_proj || rb_min_proj > max_proj) {
-			return std::nullopt;
-		}
-
-		// we DO NOT want to check with rigidbodies that are behind the normal
-		if (rb_proj < -2 * rb1->radius) {
-			continue;
-		}
-
-		glm::dvec2 normal;
-		normal = edge.normal;
-
-		// compute overlap along the axis to store as penetration depth candidate
-		double overlap = std::min(max_proj - rb_min_proj, rb_max_proj - min_proj);
-
-		// find closest point on the edge segment to the rigidbody
-		dvec2 a = edge.p1;
-		dvec2 b = edge.p2;
-		dvec2 ab = b - a;
-		double t = dot(rb_pos - a, ab) / dot(ab, ab);
-		t = std::clamp(t, 0.0, 1.0);
-		dvec2 closest = a + ab * t;
-
-		// bias depth so nearer parallel edges win
-		double dist = length(rb_pos - closest);
-		overlap += PhysicsSystem::eps() * (dist * dist);
-
-		// if there is we will generate a manifold to compare later on
-		// clang-format off
-		manifolds.emplace_back(Manifold {
-			.normal = normal,
-			.contact1 = {0.0f, 0.0f},
-			.contact2 = {0.0f, 0.0f},
-			.contactCount = -1,
-			.depth = overlap
-		});
-		// clang-format on
-	}
-
-	// select the axis with the least penetration depth
-	auto it = std::ranges::min_element(manifolds, {}, &Manifold::depth);
-	if (it == manifolds.end()) {
+	auto manifold = BuildCircleConvexManifold(rb_pos, rb1->radius, rb2->GetEdges());
+	if (!manifold.has_value()) {
 		return std::nullopt;
-	}
-	auto best = *it;
-
-	// compute contact information for the chosen manifold
-	// distance from circle center to the supporting plane along normal
-	const double dist_to_plane = std::max(0.0, rb1->radius - best.depth);
-	// tangent direction perpendicular to normal
-	dvec2 tangent = normalize(dvec2 { -best.normal.y, best.normal.x });
-	// half-length of the chord of intersection on the circle
-	double chord_half = std::sqrt(std::max(0.0, (rb1->radius * rb1->radius) - (dist_to_plane * dist_to_plane)));
-	// base point on circle center shifted toward contact plane
-	dvec2 base_point = rb_pos - best.normal * dist_to_plane;
-
-	if (chord_half <= PhysicsSystem::eps()) {
-		// if overlap is almost zero, use a single contact
-		best.contact1 = base_point;
-		best.contact2 = base_point;
-		best.contactCount = 1;
-	} else {
-		// otherwise use two symmetric contact points on the chord
-		best.contact1 = base_point - tangent * chord_half;
-		best.contact2 = base_point + tangent * chord_half;
-		best.contactCount = 2;
 	}
 
 	if (rb1->debug.showManifolds) {
-		best.Debug();
+		manifold->Debug();
 	}
-	best.normal = rotate(best.normal, rb2->GetRotation());
 
-	return best;
+	return manifold;
 }
 
 void RbBoxResolution(Rigidbody* rb1, BoxRigidbody* rb2, Manifold manifold) {
@@ -712,8 +603,8 @@ void RbBoxResolution(Rigidbody* rb1, BoxRigidbody* rb2, Manifold manifold) {
 	// Velocity correction
 	auto velocity_correction1 = [&](Rigidbody* rb, dvec2 v) -> dvec2 {
 		double normal_velocity = dot(v, normal);
-		if (std::abs(normal_velocity) < rb->minimumVelocity.y) {
-			// Kill tiny normal velocity
+		if (normal_velocity < 0.0) {
+			// Keep separating velocity; only remove inward velocity.
 			v -= normal_velocity * normal;
 		}
 
@@ -726,8 +617,8 @@ void RbBoxResolution(Rigidbody* rb1, BoxRigidbody* rb2, Manifold manifold) {
 
 	auto velocity_correction2 = [&](BoxRigidbody* rb, dvec2 v) -> dvec2 {
 		double normal_velocity = dot(v, normal);
-		if (std::abs(normal_velocity) < rb->minimumVelocity.y) {
-			// Kill tiny normal velocity
+		if (normal_velocity < 0.0) {
+			// Keep separating velocity; only remove inward velocity.
 			v -= normal_velocity * normal;
 		}
 

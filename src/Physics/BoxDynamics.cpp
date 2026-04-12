@@ -268,10 +268,10 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 	dvec2 contact = (manifold.contactCount == 2) ? (manifold.contact1 + manifold.contact2) * 0.5 : manifold.contact1;
 	dvec2 r1 = contact - position1;
 	dvec2 r2 = contact - position2;
-	if (!isNormalized(r1, 1e-2)) {
+	if (length2(r1) > PhysicsSystem::eps_small() && !isNormalized(r1, 1e-2)) {
 		r1 = normalize(r1);
 	}
-	if (!isNormalized(r2, 1e-2)) {
+	if (length2(r2) > PhysicsSystem::eps_small() && !isNormalized(r2, 1e-2)) {
 		r2 = normalize(r2);
 	}
 
@@ -326,8 +326,8 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 	position1 -= correction * inv_mass1;
 	position2 += correction * inv_mass2;
 
-	rb1->SetPosition(position2);
-	rb2->SetPosition(position1);
+	rb1->SetPosition(position1);
+	rb2->SetPosition(position2);
 
 	// Velocity correction
 	auto velocity_correction = [&](BoxRigidbody* rb, dvec2 v) -> dvec2 {
@@ -344,8 +344,8 @@ void BoxBoxResolution(BoxRigidbody* rb1, BoxRigidbody* rb2, BoxManifold manifold
 		return v;
 	};
 
-	rb1->velocity = velocity_correction(rb1, velocity2);
-	rb2->velocity = velocity_correction(rb2, velocity1);
+	rb1->velocity = velocity_correction(rb1, velocity1);
+	rb2->velocity = velocity_correction(rb2, velocity2);
 }
 
 static auto ClipLineSegmentToLine(dvec2 p1, dvec2 p2, dvec2 normal, dvec2 offset) -> std::vector<dvec2> {
@@ -530,7 +530,7 @@ void BoxMeshResolution(BoxRigidbody* rb, ConvexCollider* c, BoxManifold manifold
 
 	dvec2 contact = (manifold.contactCount == 2) ? (manifold.contact1 + manifold.contact2) * 0.5 : manifold.contact1;
 	dvec2 r = contact - position;
-	if (!isNormalized(r, 1e-2)) {
+	if (length2(r) > PhysicsSystem::eps_small() && !isNormalized(r, 1e-2)) {
 		r = normalize(r);
 	}
 
