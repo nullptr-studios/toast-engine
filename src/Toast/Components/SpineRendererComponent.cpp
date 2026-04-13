@@ -82,7 +82,15 @@ void SpineRendererComponent::LoadTextures() {
 	m.shader->Use();
 	m.shader->SetSampler("Texture", 0);
 
-	renderer::IRendererBase::GetInstance()->AddTransparent(this);
+	if (auto* r = renderer::IRendererBase::GetInstance()) {
+		r->AddTransparent(this);
+		// Keep renderer-side visibility in sync when async load order triggers callbacks early.
+		if (enabled()) {
+			r->EnableTransparent(this);
+		} else {
+			r->DisableTransparent(this);
+		}
+	}
 
 	m.dynamicMesh.InitDynamicSpine();
 }
@@ -96,13 +104,13 @@ void SpineRendererComponent::Begin() {
 
 void SpineRendererComponent::OnEnable() {
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		r->DisableTransparent(this);
+		r->EnableTransparent(this);
 	}
 }
 
 void SpineRendererComponent::OnDisable() {
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		r->EnableTransparent(this);
+		r->DisableTransparent(this);
 	}
 }
 

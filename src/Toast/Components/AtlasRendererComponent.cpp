@@ -224,6 +224,10 @@ void AtlasRendererComponent::Load(json_t j, bool force_create) {
 	if (j.contains("drawToDepth")) {
 		m.drawToDepth = j.at("drawToDepth").get<bool>();
 	}
+	
+	if (!m.castsDirectionalShadow) {
+		TOAST_ERROR("NODIRECTIONALSHADOW");
+	}
 
 	TransformComponent::Load(j, force_create);
 
