@@ -9,9 +9,12 @@
 #include "Toast/Physics/GravityType.hpp"
 
 #include <atomic>
+#include <deque>
 #include <functional>
+#include <future>
 #include <glm/glm.hpp>
 #include <list>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -77,10 +80,32 @@ public:
 	PhysicsSystem& operator=(PhysicsSystem&&) = delete;
 
 private:
+	enum class MutationType : unsigned char {
+		AddRigidbody,
+		RemoveRigidbody,
+		AddCollider,
+		RemoveCollider,
+		AddTrigger,
+		RemoveTrigger,
+		AddBox,
+		RemoveBox
+	};
+
+	struct PendingMutation {
+		MutationType type;
+		void* object = nullptr;
+		std::shared_ptr<std::promise<void>> completion = nullptr;
+	};
+
 	static auto get() noexcept -> std::optional<PhysicsSystem*>;
 	static PhysicsSystem* instance;
 
 	void Tick();
+	void QueueMutation(PendingMutation mutation);
+	void FlushPendingMutations();
+	void ApplyPendingMutation(const PendingMutation& mutation);
+	[[nodiscard]] bool CanQueueMutations() const;
+	[[nodiscard]] bool IsPhysicsThread() const;
 
 	void RigidbodyPhysics(Rigidbody* rb, std::list<std::function<void()>>& localCallbacks);
 	void BoxPhysics(BoxRigidbody* rb);
@@ -117,8 +142,10 @@ private:
 		event::ListenerComponent eventListener;
 
 		std::mutex callbackMutex;
+		std::mutex mutationQueueMutex;
 
 		std::list<std::function<void()>> callbackList;
+		std::deque<PendingMutation> pendingMutations;
 	} m;
 
 	// out of the struct to make sure this is ALWAYS the last

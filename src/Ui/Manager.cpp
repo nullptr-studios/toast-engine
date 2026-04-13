@@ -1,7 +1,9 @@
 #include "Toast/Log.hpp"
+#include "Toast/Localization.hpp"
 #include "Toast/Renderer/HUD/HUDLayer.hpp"
 #include "Toast/Renderer/LayerStack.hpp"
 #include "Toast/Resources/ToastFileSystem.hpp"
+#include "Toast/GameEvents.hpp"
 #include "Toast/Ui/Events.hpp"
 #include "Toast/Ui/FontHandler.hpp"
 #include "Toast/Ui/Logger.hpp"
@@ -27,6 +29,12 @@ UiSystem::UiSystem(toast::Window& window, bool msaa) {
 
 	m.listener.Subscribe<ExecuteJS>([this](ExecuteJS* e) {
 		m.layer->ExecuteJS(e->script);
+		return false;
+	});
+
+	m.listener.Subscribe<toast::LocalizationChanged>([this](toast::LocalizationChanged* e) {
+		(void)e;
+		m.layer->ExecuteJS(toast::Localization::BuildApplyScript());
 		return false;
 	});
 }
