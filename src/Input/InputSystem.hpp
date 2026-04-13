@@ -44,6 +44,14 @@ public:
 	static auto GetMousePosition() -> glm::vec2;
 	static auto GetMouseDelta() -> glm::vec2;
 
+	/// @brief Returns the first connected gamepad handle, or nullptr if none
+	/// Used by haptics system to send rumble commands without exposing controller internals
+	static auto GetFirstConnectedGamepad() -> SDL_Gamepad*;
+
+	/// @brief Returns the type of the first connected gamepad
+	/// Used to detect DualSense controllers for adaptive trigger effects
+	static auto GetGamepadType() -> SDL_GamepadType;
+
 	static void SetViewportPosition(glm::vec2 position);
 	static void SetViewportSize(glm::vec2 size);
 

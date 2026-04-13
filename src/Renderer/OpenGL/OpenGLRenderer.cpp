@@ -257,7 +257,10 @@ OpenGLRenderer::OpenGLRenderer() {
 	}
 
 	// Load OpenGL functions using GLAD
-	int version = gladLoadGL(SDL_GL_GetProcAddress);
+	auto gl_loader = [](const char* name) -> GLADapiproc {
+		return reinterpret_cast<GLADapiproc>(SDL_GL_GetProcAddress(name));
+	};
+	int version = gladLoadGL(gl_loader);
 	if (!version) {
 		TOAST_ERROR("Failed to initialize OpenGL context");
 	}
