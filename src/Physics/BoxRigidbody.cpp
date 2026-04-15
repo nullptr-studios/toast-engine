@@ -5,6 +5,7 @@
 #include "Toast/GlmJson.hpp"
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/norm.hpp"
 
 #ifdef TOAST_EDITOR

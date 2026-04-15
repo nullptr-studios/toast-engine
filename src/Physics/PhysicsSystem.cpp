@@ -878,7 +878,6 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 				continue;
 			}
 			result = { .type = RayResult::Rigidbody, .point = *rb_hit, .normal = ray->tangent, .distance = d, .other = r->parent() };
-			rigidbody = r;
 		}
 	}
 
@@ -898,6 +897,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 				continue;
 			}
 			result = { .type = RayResult::Box, .point = *col_hit, .normal = collision->second, .distance = d, .other = c->parent };
+			rigidbody = c;
 		}
 	}
 
