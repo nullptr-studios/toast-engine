@@ -21,18 +21,6 @@ void Trigger::Init() {
 
 void Trigger::Begin() {
 	Actor::Begin();
-	enterCallback = [this](Object* o) {
-		if (!enabled()) {
-			return;
-		}
-		OnEnter(o);
-	};
-	exitCallback = [this](Object* o) {
-		if (!enabled()) {
-			return;
-		}
-		OnExit(o);
-	};
 	PhysicsSystem::AddTrigger(this);
 }
 
@@ -67,6 +55,19 @@ void Trigger::Load(json_t j, bool force_create) {
 	LOAD(debug.log);
 	LOAD(debug.defaultColor);
 	LOAD(debug.collideColor);
+
+	enterCallback = [this](Object* o) {
+		if (!enabled()) {
+			return;
+		}
+		OnEnter(o);
+	};
+	exitCallback = [this](Object* o) {
+		if (!enabled()) {
+			return;
+		}
+		OnExit(o);
+	};
 
 	Actor::Load(j, force_create);
 }

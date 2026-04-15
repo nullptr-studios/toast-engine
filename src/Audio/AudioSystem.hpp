@@ -3,6 +3,7 @@
 /// @date 30 Jan 2026
 
 #pragma once
+#include <Toast/Audio/Audio.hpp>
 #include <Toast/Audio/AudioData.hpp>
 #include <Toast/Audio/AudioError.hpp>
 #include <expected>
@@ -61,6 +62,15 @@ public:
 
 	auto mute_all() -> AudioSystem&;
 	auto unmute_all() -> AudioSystem&;
+
+	auto set_music_volume(float volume) -> void;
+	[[nodiscard]] auto get_music_volume() const noexcept -> float { return m.music_volume; }
+	
+	auto set_effects_volume(float volume) -> void;
+	[[nodiscard]] auto get_effects_volume() const noexcept -> float { return m.effects_volume; }
+	
+	auto set_audio_mode(AudioMode mode) -> void;
+	[[nodiscard]] auto get_audio_mode() const noexcept -> AudioMode { return m.audio_mode; }
 
 	// The audio sampling rate of the audio engine
 	static constexpr int AUDIO_SAMPLE_RATE = 48000;
@@ -125,6 +135,8 @@ private:
 		FMOD::System* low_level_system = nullptr;
 
 		FMOD::ChannelGroup* master_group = nullptr;
+		FMOD::Studio::Bus* music_bus = nullptr;
+		FMOD::Studio::Bus* sfx_bus = nullptr;
 
 		FMOD_VECTOR listener_position = { 0.0f, 0.0f, -1.0f * DISTANCE_FACTOR };
 		FMOD_VECTOR forward = { 0.0f, 0.0f, 1.0f };
@@ -136,6 +148,11 @@ private:
 		float reverb_max_dist = 50.0f;
 
 		bool muted = false;
+		
+		// Settings
+		float music_volume = 1.0f;
+		float effects_volume = 1.0f;
+		AudioMode audio_mode = AudioMode::Stereo;
 
 		// Resource caches using string views as keys for efficiency
 		std::map<std::string, FMOD::Sound*> sounds;

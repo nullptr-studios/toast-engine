@@ -71,8 +71,10 @@ public:
 	 *
 	 * Restores the object to its last saved state without reading
 	 * from disk. Used for quick state restoration.
+	 * 
+	 * @param editorStop If on editor and stopping play mode not play begin
 	 */
-	virtual void SoftLoad() = 0;
+	virtual void SoftLoad(bool editorStop) = 0;
 
 	/**
 	 * @brief Saves object state to JSON.

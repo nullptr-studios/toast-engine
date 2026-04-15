@@ -47,6 +47,31 @@ auto is_muted() -> bool {
 	return AudioSystem::get()->is_muted();
 }
 
+// Settings API
+auto set_music_volume(float volume) -> void {
+	AudioSystem::get()->set_music_volume(volume);
+}
+
+auto get_music_volume() -> float {
+	return AudioSystem::get()->get_music_volume();
+}
+
+auto set_effects_volume(float volume) -> void {
+	AudioSystem::get()->set_effects_volume(volume);
+}
+
+auto get_effects_volume() -> float {
+	return AudioSystem::get()->get_effects_volume();
+}
+
+auto set_audio_mode(AudioMode mode) -> void {
+	AudioSystem::get()->set_audio_mode(mode);
+}
+
+auto get_audio_mode() -> AudioMode {
+	return AudioSystem::get()->get_audio_mode();
+}
+
 namespace core {
 
 auto load(Data& audio_data) -> std::expected<void, AudioError> {

@@ -51,6 +51,26 @@ void Colorgrading::Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) {
 	Framebuffer::unbind();
 }
 
+json_t Colorgrading::SaveParams() const {
+	json_t j {};
+	j["contrast"] = contrast;
+	j["saturation"] = saturation;
+	j["tint"] = tint;
+	j["lift"] = lift;
+	j["gamma"] = gamma;
+	j["gain"] = gain;
+	return j;
+}
+
+void Colorgrading::LoadParams(const json_t& j) {
+	contrast = j.value("contrast", contrast);
+	saturation = j.value("saturation", saturation);
+	tint = j.value("tint", tint);
+	lift = j.value("lift", lift);
+	gamma = j.value("gamma", gamma);
+	gain = j.value("gain", gain);
+}
+
 #ifdef TOAST_EDITOR
 void Colorgrading::Inspector() {
 	ImGui::SeparatorText("Color Grading");

@@ -300,7 +300,81 @@ auto audio::AudioSystem::initialize_reverb() -> void {
 	ERRCHECK(m.reverb->set3DAttributes(&m.reverb_pos, m.reverb_min_dist, m.reverb_max_dist));
 }
 
-// Error checking/debugging function definitions
+auto audio::AudioSystem::set_music_volume(float volume) -> void {
+	m.music_volume = std::clamp(volume, 0.0f, 1.0f);
+	
+	// Try to get music bus from FMOD Studio - common bus paths
+	if (!m.music_bus) {
+		// Try common bus naming conventions
+		FMOD_RESULT result = m.studio_system->getBus("bus:/Music", &m.music_bus);
+		if (result != FMOD_OK) {
+			result = m.studio_system->getBus("bus:/music", &m.music_bus);
+		}
+		if (result != FMOD_OK) {
+			result = m.studio_system->getBus("bus:/Master/Music", &m.music_bus);
+		}
+	}
+	
+	if (m.music_bus) {
+		ERRCHECK(m.music_bus->setVolume(m.music_volume));
+	} else {
+		TOAST_WARN("[AudioSystem] Music bus not found - volume change may not take effect");
+	}
+}
+
+auto audio::AudioSystem::set_effects_volume(float volume) -> void {
+	m.effects_volume = std::clamp(volume, 0.0f, 1.0f);
+	
+	// Try to get SFX bus from FMOD Studio
+	if (!m.sfx_bus) {
+		FMOD_RESULT result = m.studio_system->getBus("bus:/SFX", &m.sfx_bus);
+		if (result != FMOD_OK) {
+			result = m.studio_system->getBus("bus:/sfx", &m.sfx_bus);
+		}
+		if (result != FMOD_OK) {
+			result = m.studio_system->getBus("bus:/Master/SFX", &m.sfx_bus);
+		}
+		if (result != FMOD_OK) {
+			result = m.studio_system->getBus("bus:/Effects", &m.sfx_bus);
+		}
+	}
+	
+	if (m.sfx_bus) {
+		ERRCHECK(m.sfx_bus->setVolume(m.effects_volume));
+	} else {
+		TOAST_WARN("[AudioSystem] SFX bus not found - volume change may not take effect");
+	}
+}
+
+auto audio::AudioSystem::set_audio_mode(AudioMode mode) -> void {
+	m.audio_mode = mode;
+	
+	// FMOD Studio handles audio modes through the project's output format or snapshots
+	// For runtime changes, we use the panner mode on the master channel group
+	FMOD_DSP_PAN_3D_ROLLOFF_TYPE rolloff = FMOD_DSP_PAN_3D_ROLLOFF_LINEARSQUARED;
+	
+	switch (mode) {
+		case AudioMode::Mono:
+			// Force mono output by setting speaker mode
+			ERRCHECK(m.low_level_system->setSoftwareFormat(AUDIO_SAMPLE_RATE, FMOD_SPEAKERMODE_MONO, 0));
+			TOAST_INFO("[AudioSystem] Audio mode set to Mono");
+			break;
+		case AudioMode::Stereo:
+			ERRCHECK(m.low_level_system->setSoftwareFormat(AUDIO_SAMPLE_RATE, FMOD_SPEAKERMODE_STEREO, 0));
+			TOAST_INFO("[AudioSystem] Audio mode set to Stereo");
+			break;
+		case AudioMode::Binaural:
+			// Binaural uses stereo output with HRTF processing
+			// FMOD's Object Spatializer or Resonance Audio plugin would be ideal here
+			ERRCHECK(m.low_level_system->setSoftwareFormat(AUDIO_SAMPLE_RATE, FMOD_SPEAKERMODE_STEREO, 0));
+			TOAST_INFO("[AudioSystem] Audio mode set to Binaural (stereo with spatial processing)");
+			break;
+		case AudioMode::Surround:
+			ERRCHECK(m.low_level_system->setSoftwareFormat(AUDIO_SAMPLE_RATE, FMOD_SPEAKERMODE_5POINT1, 0));
+			TOAST_INFO("[AudioSystem] Audio mode set to Surround (5.1)");
+			break;
+	}
+}
 
 void ERRCHECK_fn(const FMOD_RESULT result, const char* file, const int line) {
 	if (result != FMOD_OK) {

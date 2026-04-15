@@ -289,6 +289,9 @@ public:
 	void Init() override;
 	void Destroy() override;
 	void LoadTextures() override;
+	
+	void OnDisable() override;
+	void OnEnable() override;
 
 	void Load(json_t j, bool force_create = true) override;
 	[[nodiscard]]

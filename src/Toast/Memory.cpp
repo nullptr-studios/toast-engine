@@ -5,9 +5,13 @@
 
 #ifdef TRACY_ENABLE
 #include <tracy/Tracy.hpp>
+#include <atomic>
 
 // Thread-local re-entrancy guard to prevent Tracy from profiling its own allocations
 thread_local bool g_inTracyCall = false;
+
+// Global flag to disable Tracy during shutdown to prevent crashes on Linux
+std::atomic<bool> g_tracyEnabled = true;
 
 struct TracyGuard {
 	bool wasInCall;
@@ -23,7 +27,7 @@ struct TracyGuard {
 
 #define TRACY_ALLOC_SAFE(ptr, size) \
 	do {                              \
-		if (!g_inTracyCall) {           \
+		if (g_tracyEnabled && !g_inTracyCall) { \
 			TracyGuard _tg;               \
 			TracyAlloc(ptr, size);        \
 		}                               \
@@ -31,7 +35,7 @@ struct TracyGuard {
 
 #define TRACY_FREE_SAFE(ptr) \
 	do {                       \
-		if (!g_inTracyCall) {    \
+		if (g_tracyEnabled && !g_inTracyCall) { \
 			TracyGuard _tg;        \
 			TracyFree(ptr);        \
 		}                        \
@@ -167,3 +171,13 @@ void operator delete[](void* ptr, std::align_val_t) noexcept {
 }
 
 // NOLINTEND
+
+#ifdef TRACY_ENABLE
+extern "C" {
+	/// Disables Tracy profiling during shutdown to prevent crashes
+	void DisableTracyProfiling() noexcept {
+		g_tracyEnabled = false;
+	}
+}
+#endif
+

@@ -19,9 +19,30 @@
 namespace toast {
 
 Scene* GameFlow::currentScene = nullptr;
+GameFlow* instance;
+
+auto GameFlow::GetLevel() -> std::optional<unsigned> {
+	return instance->m.level;
+}
+
+auto GameFlow::GetWorld() -> std::optional<unsigned> {
+	return instance->m.world;
+}
+
+Scene* GameFlow::CurrentScene() {
+	try {
+		if (instance->m.currentLevel) {
+			instance->m.currentLevel->wait();
+			auto* scene = toast::World::Get(instance->m.currentLevel->get());
+			return dynamic_cast<Scene*>(scene);
+		}
+	} catch (std::exception& e) { TOAST_ERROR("{}", e.what()); }
+	return nullptr;
+}
 
 GameFlow::GameFlow() {
 	std::vector<std::string> world_list;
+	instance = this;
 
 	// Loading the lua file
 	sol::state lua;
@@ -84,10 +105,6 @@ GameFlow::GameFlow() {
 		.currentLevel = std::nullopt,
 		.nextLevel = std::nullopt,
 	};
-}
-
-Scene* GameFlow::CurrentScene() {
-	return currentScene;
 }
 
 void GameFlow::LoadWorld(unsigned world) {

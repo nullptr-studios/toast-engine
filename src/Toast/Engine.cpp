@@ -19,6 +19,7 @@
 #include "Toast/CoroutineHandler.hpp"
 #include "Toast/Factory.hpp"
 #include "Toast/Log.hpp"
+#include "Toast/Memory.hpp"
 #include "Toast/Objects/Scene.hpp"
 #include "Toast/ProjectSettings.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
@@ -283,6 +284,9 @@ void Engine::Render() {
 void Engine::Close() {
 #ifdef _WIN32
 	timeEndPeriod(1);
+#endif
+#ifdef TRACY_ENABLE
+	DisableTracyProfiling();
 #endif
 	delete m;
 }

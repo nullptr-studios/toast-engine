@@ -114,8 +114,10 @@ public:
 	/// @param width View width
 	/// @param height View height
 	/// @param config Optional view configuration (defaults to transparent, accelerated)
+	/// @param composite_to_hud If true, this view is composited into the fullscreen HUD framebuffer.
 	/// @return RefPtr to the created view
-	ultralight::RefPtr<ultralight::View> CreateView(uint32_t width, uint32_t height, ultralight::ViewConfig config = {});
+	ultralight::RefPtr<ultralight::View>
+	CreateView(uint32_t width, uint32_t height, ultralight::ViewConfig config = {}, bool composite_to_hud = true);
 
 	///
 	/// @brief Remove a previously created view from this HUD layer.
@@ -162,6 +164,10 @@ public:
 	/// @return OpenGL texture ID of Ultralight's internal render target, or 0 if not available
 	///
 	uint32_t GetUltralightTextureGL() const;
+
+	/// @brief Resolve a specific view's Ultralight render target to an OpenGL texture ID.
+	/// @return OpenGL texture ID or 0 if unavailable.
+	uint32_t GetViewTextureGL(const ultralight::RefPtr<ultralight::View>& view) const;
 
 	// =========================================================================
 	// Input Handling
@@ -261,6 +267,7 @@ private:
 	ultralight::RefPtr<ultralight::Renderer> renderer_;
 	std::vector<ultralight::RefPtr<ultralight::View>> views_;
 	std::unordered_map<ultralight::View*, int> view_sort_orders_;
+	std::unordered_map<ultralight::View*, bool> view_composite_flags_;
 
 	// Output framebuffer for the HUD
 	std::unique_ptr<Framebuffer> framebuffer_;

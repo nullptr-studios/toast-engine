@@ -41,6 +41,8 @@ class GameFlow final {
 public:
 	GameFlow();
 
+	static auto GetLevel() -> std::optional<unsigned>;
+	static auto GetWorld() -> std::optional<unsigned>;
 	static Scene* CurrentScene();
 };
 

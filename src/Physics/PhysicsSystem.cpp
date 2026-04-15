@@ -138,6 +138,10 @@ void PhysicsSystem::start() {
 				time_point begin = steady_clock::now();
 				PROFILE_ZONE_N("physics::simulation");
 
+				// Apply queued add/remove requests on the physics thread before
+				// building this frame's cache to keep pointer lifetimes safe
+				physics->FlushPendingMutations();
+
 				// Loop the physics simulation a set amount of times per frame
 				physics->CachePhysicsObjects();
 				for (int i = 0; i < physics->m.tickCount; i++) {
@@ -205,6 +209,10 @@ void PhysicsSystem::stop() {
 		} catch (...) { }
 	}
 	g_threadAlive.store(false, std::memory_order_release);
+
+	if (physicsPtr != nullptr) {
+		physicsPtr->FlushPendingMutations();
+	}
 }
 
 #pragma endregion
@@ -248,17 +256,133 @@ void PhysicsSystem::Tick() {
 
 #pragma region HELPER_FUNCTIONS
 
+void PhysicsSystem::QueueMutation(PendingMutation mutation) {
+	std::lock_guard lock(m.mutationQueueMutex);
+	m.pendingMutations.emplace_back(std::move(mutation));
+}
+
+void PhysicsSystem::FlushPendingMutations() {
+	std::deque<PendingMutation> localMutations;
+	{
+		std::lock_guard queue_lock(m.mutationQueueMutex);
+		if (m.pendingMutations.empty()) {
+			return;
+		}
+		localMutations.swap(m.pendingMutations);
+	}
+
+	std::vector<std::shared_ptr<std::promise<void>>> completions;
+	{
+		std::lock_guard sim_lock(m.simulationMutex);
+		for (auto& mutation : localMutations) {
+			ApplyPendingMutation(mutation);
+			if (mutation.completion != nullptr) {
+				completions.emplace_back(std::move(mutation.completion));
+			}
+		}
+	}
+
+	for (const auto& completion : completions) {
+		completion->set_value();
+	}
+}
+
+void PhysicsSystem::ApplyPendingMutation(const PendingMutation& mutation) {
+	switch (mutation.type) {
+		case MutationType::AddRigidbody: {
+			auto* rb = static_cast<Rigidbody*>(mutation.object);
+			if (std::ranges::find(m.rigidbodies, rb) == m.rigidbodies.end()) {
+				m.rigidbodies.emplace_back(rb);
+			}
+			break;
+		}
+
+		case MutationType::RemoveRigidbody: {
+			auto* rb = static_cast<Rigidbody*>(mutation.object);
+			m.rigidbodies.remove(rb);
+			m.colliding.remove(rb);
+			break;
+		}
+
+		case MutationType::AddCollider: {
+			auto* collider = static_cast<ConvexCollider*>(mutation.object);
+			if (std::ranges::find(m.colliders, collider) == m.colliders.end()) {
+				m.colliders.emplace_back(collider);
+			}
+			break;
+		}
+
+		case MutationType::RemoveCollider: {
+			auto* collider = static_cast<ConvexCollider*>(mutation.object);
+			m.colliders.remove(collider);
+			break;
+		}
+
+		case MutationType::AddTrigger: {
+			auto* trigger = static_cast<Trigger*>(mutation.object);
+			if (std::ranges::find(m.triggers, trigger) == m.triggers.end()) {
+				m.triggers.emplace_back(trigger);
+			}
+			break;
+		}
+
+		case MutationType::RemoveTrigger: {
+			auto* trigger = static_cast<Trigger*>(mutation.object);
+			m.triggers.remove(trigger);
+			break;
+		}
+
+		case MutationType::AddBox: {
+			auto* box = static_cast<BoxRigidbody*>(mutation.object);
+			if (std::ranges::find(m.boxes, box) == m.boxes.end()) {
+				m.boxes.emplace_back(box);
+			}
+			break;
+		}
+
+		case MutationType::RemoveBox: {
+			auto* box = static_cast<BoxRigidbody*>(mutation.object);
+			m.boxes.remove(box);
+			break;
+		}
+	}
+}
+
+bool PhysicsSystem::CanQueueMutations() const {
+	if (!g_threadAlive.load(std::memory_order_acquire)) {
+		return false;
+	}
+
+	if (!thread.joinable()) {
+		return false;
+	}
+
+	return !thread.get_stop_token().stop_requested();
+}
+
+bool PhysicsSystem::IsPhysicsThread() const {
+	if (!thread.joinable()) {
+		return false;
+	}
+
+	return thread.get_id() == std::this_thread::get_id();
+}
+
 void PhysicsSystem::AddRigidbody(Rigidbody* rb) {
 	auto i = PhysicsSystem::get();
 	if (!i.has_value()) {
 		return;
 	}
 	auto* physics = i.value();
-	std::lock_guard sim_lock(physics->m.simulationMutex);
+	PendingMutation mutation { .type = MutationType::AddRigidbody, .object = rb };
 
-	if (std::ranges::find(physics->m.rigidbodies, rb) == physics->m.rigidbodies.end()) {
-		physics->m.rigidbodies.emplace_back(rb);
+	if (physics->CanQueueMutations()) {
+		physics->QueueMutation(std::move(mutation));
+		return;
 	}
+
+	std::lock_guard sim_lock(physics->m.simulationMutex);
+	physics->ApplyPendingMutation(mutation);
 }
 
 void PhysicsSystem::RemoveRigidbody(Rigidbody* rb) {
@@ -267,10 +391,24 @@ void PhysicsSystem::RemoveRigidbody(Rigidbody* rb) {
 		return;
 	}
 	auto* physics = i.value();
-	std::lock_guard sim_lock(physics->m.simulationMutex);
+	PendingMutation mutation { .type = MutationType::RemoveRigidbody, .object = rb };
 
-	physics->m.rigidbodies.remove(rb);
-	physics->m.colliding.remove(rb);
+	if (physics->CanQueueMutations()) {
+		if (physics->IsPhysicsThread()) {
+			physics->QueueMutation(std::move(mutation));
+			return;
+		}
+
+		auto completion = std::make_shared<std::promise<void>>();
+		auto finished = completion->get_future();
+		mutation.completion = completion;
+		physics->QueueMutation(std::move(mutation));
+		finished.wait();
+		return;
+	}
+
+	std::lock_guard sim_lock(physics->m.simulationMutex);
+	physics->ApplyPendingMutation(mutation);
 }
 
 void PhysicsSystem::AddCollider(ConvexCollider* c) {
@@ -279,11 +417,15 @@ void PhysicsSystem::AddCollider(ConvexCollider* c) {
 		return;
 	}
 	auto* physics = i.value();
-	std::lock_guard sim_lock(physics->m.simulationMutex);
+	PendingMutation mutation { .type = MutationType::AddCollider, .object = c };
 
-	if (std::ranges::find(physics->m.colliders, c) == physics->m.colliders.end()) {
-		physics->m.colliders.emplace_back(c);
+	if (physics->CanQueueMutations()) {
+		physics->QueueMutation(std::move(mutation));
+		return;
 	}
+
+	std::lock_guard sim_lock(physics->m.simulationMutex);
+	physics->ApplyPendingMutation(mutation);
 }
 
 void PhysicsSystem::RemoveCollider(ConvexCollider* c) {
@@ -292,9 +434,24 @@ void PhysicsSystem::RemoveCollider(ConvexCollider* c) {
 		return;
 	}
 	auto* physics = i.value();
-	std::lock_guard sim_lock(physics->m.simulationMutex);
+	PendingMutation mutation { .type = MutationType::RemoveCollider, .object = c };
 
-	physics->m.colliders.remove(c);
+	if (physics->CanQueueMutations()) {
+		if (physics->IsPhysicsThread()) {
+			physics->QueueMutation(std::move(mutation));
+			return;
+		}
+
+		auto completion = std::make_shared<std::promise<void>>();
+		auto finished = completion->get_future();
+		mutation.completion = completion;
+		physics->QueueMutation(std::move(mutation));
+		finished.wait();
+		return;
+	}
+
+	std::lock_guard sim_lock(physics->m.simulationMutex);
+	physics->ApplyPendingMutation(mutation);
 }
 
 void PhysicsSystem::AddTrigger(Trigger* t) {
@@ -303,11 +460,15 @@ void PhysicsSystem::AddTrigger(Trigger* t) {
 		return;
 	}
 	auto* physics = i.value();
-	std::lock_guard sim_lock(physics->m.simulationMutex);
+	PendingMutation mutation { .type = MutationType::AddTrigger, .object = t };
 
-	if (std::ranges::find(physics->m.triggers, t) == physics->m.triggers.end()) {
-		physics->m.triggers.emplace_back(t);
+	if (physics->CanQueueMutations()) {
+		physics->QueueMutation(std::move(mutation));
+		return;
 	}
+
+	std::lock_guard sim_lock(physics->m.simulationMutex);
+	physics->ApplyPendingMutation(mutation);
 }
 
 void PhysicsSystem::RemoveTrigger(Trigger* t) {
@@ -316,9 +477,24 @@ void PhysicsSystem::RemoveTrigger(Trigger* t) {
 		return;
 	}
 	auto* physics = i.value();
-	std::lock_guard sim_lock(physics->m.simulationMutex);
+	PendingMutation mutation { .type = MutationType::RemoveTrigger, .object = t };
 
-	physics->m.triggers.remove(t);
+	if (physics->CanQueueMutations()) {
+		if (physics->IsPhysicsThread()) {
+			physics->QueueMutation(std::move(mutation));
+			return;
+		}
+
+		auto completion = std::make_shared<std::promise<void>>();
+		auto finished = completion->get_future();
+		mutation.completion = completion;
+		physics->QueueMutation(std::move(mutation));
+		finished.wait();
+		return;
+	}
+
+	std::lock_guard sim_lock(physics->m.simulationMutex);
+	physics->ApplyPendingMutation(mutation);
 }
 
 void PhysicsSystem::AddBox(BoxRigidbody* rb) {
@@ -327,11 +503,15 @@ void PhysicsSystem::AddBox(BoxRigidbody* rb) {
 		return;
 	}
 	auto* physics = i.value();
-	std::lock_guard sim_lock(physics->m.simulationMutex);
+	PendingMutation mutation { .type = MutationType::AddBox, .object = rb };
 
-	if (std::ranges::find(physics->m.boxes, rb) == physics->m.boxes.end()) {
-		physics->m.boxes.emplace_back(rb);
+	if (physics->CanQueueMutations()) {
+		physics->QueueMutation(std::move(mutation));
+		return;
 	}
+
+	std::lock_guard sim_lock(physics->m.simulationMutex);
+	physics->ApplyPendingMutation(mutation);
 }
 
 void PhysicsSystem::RemoveBox(BoxRigidbody* rb) {
@@ -340,9 +520,24 @@ void PhysicsSystem::RemoveBox(BoxRigidbody* rb) {
 		return;
 	}
 	auto* physics = i.value();
-	std::lock_guard sim_lock(physics->m.simulationMutex);
+	PendingMutation mutation { .type = MutationType::RemoveBox, .object = rb };
 
-	physics->m.boxes.remove(rb);
+	if (physics->CanQueueMutations()) {
+		if (physics->IsPhysicsThread()) {
+			physics->QueueMutation(std::move(mutation));
+			return;
+		}
+
+		auto completion = std::make_shared<std::promise<void>>();
+		auto finished = completion->get_future();
+		mutation.completion = completion;
+		physics->QueueMutation(std::move(mutation));
+		finished.wait();
+		return;
+	}
+
+	std::lock_guard sim_lock(physics->m.simulationMutex);
+	physics->ApplyPendingMutation(mutation);
 }
 
 auto PhysicsSystem::gravity_type() -> GravityType {
@@ -597,6 +792,8 @@ void PhysicsSystem::BoxPhysics(BoxRigidbody* rb) {
 }
 
 void PhysicsSystem::CachePhysicsObjects() {
+	std::lock_guard sim_lock(m.simulationMutex);
+
 	// detects if inside frustum or out, cached lists contains in screen physics
 	auto rb_view = m.rigidbodies | std::views::filter([](auto* rb) -> bool {
 		               if (rb->m_skipBoundsCheck) {
@@ -612,7 +809,7 @@ void PhysicsSystem::CachePhysicsObjects() {
 	                });
 	m.cachedBoxRigidbodies.assign(box_view.begin(), box_view.end());
 
-	// FIXME: the racist condition onlt happens in convexcolliders
+	// Cache visible convex colliders for this simulation frame.
 	auto convex_view = m.colliders | std::views::filter([](auto* rb) -> bool {
 		                   return OclussionVolume::isAABBOnPlanes(rb->getAABB());
 	                   });
