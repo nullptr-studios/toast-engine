@@ -82,4 +82,6 @@ private:
 	void RebuildCache() const;
 };
 
+auto BoxRayCollision(Line* ray, BoxRigidbody* c) -> std::optional<std::pair<glm::dvec2, glm::dvec2>>;
+
 }

@@ -881,6 +881,26 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 			rigidbody = r;
 		}
 	}
+
+	for (auto* c : physics->m.boxes) {
+		
+		auto collision = BoxRayCollision(ray, c);
+		if (not collision.has_value()) {
+			continue;
+		}
+
+		if (not col_hit.has_value() || length2(collision->first - ray->p1) < length2(*col_hit - ray->p1)) {
+			col_hit = collision->first;
+			const float d = static_cast<float>(distance(*col_hit, ray->p1));
+
+			// same as below
+			if (result && result.value().distance < d) {
+				continue;
+			}
+			result = { .type = RayResult::Box, .point = *col_hit, .normal = collision->second, .distance = d, .other = c->parent };
+		}
+	}
+
 	if (rigidbody != nullptr) {
 		if (rigidbody->enterCallback) {
 			rigidbody->enterCallback(rigidbody);
