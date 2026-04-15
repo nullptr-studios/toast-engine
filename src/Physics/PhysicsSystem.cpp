@@ -827,6 +827,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	std::optional<RayResult> result = std::nullopt;
 	std::optional<dvec2> col_hit;
 	std::optional<dvec2> rb_hit;
+	Rigidbody* rigidbody = nullptr;
 
 	for (auto* c : physics->m.colliders) {
 		if (!c->parent->enabled()) {
@@ -853,6 +854,8 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 		}
 	}
 
+
+
 	for (auto* r : physics->m.rigidbodies) {
 		if (!r->enabled()) {
 			continue;
@@ -875,12 +878,14 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 				continue;
 			}
 			result = { .type = RayResult::Rigidbody, .point = *rb_hit, .normal = ray->tangent, .distance = d, .other = r->parent() };
+			rigidbody = r;
 		}
 	}
-	if (result != std::nullopt) {
-		// renderer::DebugLine(ray->p1, result->point, vec4(0.0f, 0.0f, 1.0f, 1.0f));
+	if (rigidbody != nullptr) {
+		if (rigidbody->enterCallback) {
+			rigidbody->enterCallback(rigidbody);
+		}
 	}
-
 	return result;
 }
 
