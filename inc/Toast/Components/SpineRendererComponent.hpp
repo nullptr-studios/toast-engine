@@ -48,6 +48,7 @@ public:
 			// Initial update to ensure world transforms are valid
 			m.skeleton->update(0.0f);
 			m.skeleton->updateWorldTransform(spine::Physics_None);
+			SetSerialize(false);
 		}
 	}
 
