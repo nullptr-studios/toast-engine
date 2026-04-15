@@ -1,7 +1,9 @@
 <map id="toast::TransformComponent::Load" name="toast::TransformComponent::Load">
-<area shape="rect" id="node1" title="Loads object state from JSON." alt="" coords="285,101,488,141"/>
-<area shape="rect" id="node2" href="$d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a7018575548a6a5f8c8a0eed284bf8eda" title="Loads object state from JSON." alt="" coords="17,5,226,45"/>
-<area shape="rect" id="node3" href="$de/da0/classtoast_1_1MeshRendererComponent.html#af29ed8cef0413a30e528c011a20e4bd0" title="Loads object state from JSON." alt="" coords="5,69,237,109"/>
-<area shape="rect" id="node4" href="$df/d2b/classtoast_1_1ParticleSystem.html#a1d9ff365dc6e69e4b3812cff6a8999cf" title="Loads object state from JSON." alt="" coords="41,133,201,173"/>
-<area shape="rect" id="node5" href="$de/d96/classphysics_1_1ColliderRenderable.html#a39613c76542ce6caa7d0a9c0989aa017" title="Loads object state from JSON." alt="" coords="20,197,223,237"/>
+<area shape="rect" id="node1" title="Loads object state from JSON." alt="" coords="600,133,803,173"/>
+<area shape="rect" id="node2" href="$d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a7018575548a6a5f8c8a0eed284bf8eda" title="Loads object state from JSON." alt="" coords="315,5,525,45"/>
+<area shape="rect" id="node3" href="$de/da0/classtoast_1_1MeshRendererComponent.html#af29ed8cef0413a30e528c011a20e4bd0" title="Loads object state from JSON." alt="" coords="304,69,536,109"/>
+<area shape="rect" id="node5" href="$df/d2b/classtoast_1_1ParticleSystem.html#a1d9ff365dc6e69e4b3812cff6a8999cf" title="Loads object state from JSON." alt="" coords="340,133,500,173"/>
+<area shape="rect" id="node6" href="$de/d96/classphysics_1_1ColliderRenderable.html#a39613c76542ce6caa7d0a9c0989aa017" title="Loads object state from JSON." alt="" coords="319,197,521,237"/>
+<area shape="rect" id="node7" href="$d3/db0/classtoast_1_1HUDWorldRendererComponent.html#a76f25419925b18760a7c2854bd034ab7" title="Loads object state from JSON." alt="" coords="288,261,552,301"/>
+<area shape="rect" id="node4" href="$dc/df8/classtoast_1_1WaterRendererComponent.html#a653ae01aab44968879b103c6c25b3e8b" title="Loads object state from JSON." alt="" coords="5,69,240,109"/>
 </map>

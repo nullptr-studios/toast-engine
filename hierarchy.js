@@ -8,7 +8,6 @@ var hierarchy =
     ] ],
     [ "audio::AudioSystem", "db/d5d/classaudio_1_1AudioSystem.html", null ],
     [ "input::Bind", "dd/d43/structinput_1_1Bind.html", null ],
-    [ "Bloom", "d0/dd5/classBloom.html", null ],
     [ "renderer::BoundingBox", "dd/d13/structrenderer_1_1BoundingBox.html", null ],
     [ "physics::BoxManifold", "de/d3a/structphysics_1_1BoxManifold.html", null ],
     [ "Children", "d8/d87/classChildren.html", null ],
@@ -96,6 +95,9 @@ var hierarchy =
       [ "event::Event< LoadWorld >", "d7/d51/structevent_1_1Event.html", [
         [ "toast::LoadWorld", "da/d47/structtoast_1_1LoadWorld.html", null ]
       ] ],
+      [ "event::Event< LocalizationChanged >", "d7/d51/structevent_1_1Event.html", [
+        [ "toast::LocalizationChanged", "da/d79/structtoast_1_1LocalizationChanged.html", null ]
+      ] ],
       [ "event::Event< NextLevel >", "d7/d51/structevent_1_1Event.html", [
         [ "toast::NextLevel", "d5/d90/structtoast_1_1NextLevel.html", null ]
       ] ],
@@ -127,7 +129,10 @@ var hierarchy =
     [ "InputSystem", "de/d88/classinpit_1_1InputSystem.html", null ],
     [ "input::InputSystem", "da/d0b/classinput_1_1InputSystem.html", null ],
     [ "IPostProcess", "d5/dc4/structIPostProcess.html", [
+      [ "Bloom", "d6/d83/structBloom.html", null ],
+      [ "ChromaticAberration", "d5/dfa/structChromaticAberration.html", null ],
       [ "Colorgrading", "db/db7/structColorgrading.html", null ],
+      [ "DepthOfField", "db/d3d/structDepthOfField.html", null ],
       [ "Tonemaping", "d6/da0/structTonemaping.html", null ]
     ] ],
     [ "renderer::IRendererBase", "d9/dc4/classrenderer_1_1IRendererBase.html", [
@@ -145,8 +150,10 @@ var hierarchy =
       [ "toast::Object", "d1/da3/classtoast_1_1Object.html", [
         [ "toast::Actor", "d8/d92/classtoast_1_1Actor.html", [
           [ "GlobalLight", "d8/d72/classGlobalLight.html", null ],
+          [ "HUDActor", "d9/da2/classHUDActor.html", null ],
           [ "Light2D", "d0/db0/classLight2D.html", null ],
           [ "Pool< T, size >", "d5/d0b/classPool.html", null ],
+          [ "PostProcessVolume", "d1/dc7/classPostProcessVolume.html", null ],
           [ "physics::Trigger", "d4/d9c/classphysics_1_1Trigger.html", null ],
           [ "toast::Camera", "d8/db9/classtoast_1_1Camera.html", null ]
         ] ],
@@ -162,7 +169,10 @@ var hierarchy =
               [ "LightRenderable", "dc/da1/classLightRenderable.html", null ],
               [ "SpineRendererComponent", "d0/dc7/classSpineRendererComponent.html", null ],
               [ "physics::ColliderRenderable", "de/d96/classphysics_1_1ColliderRenderable.html", null ],
-              [ "toast::MeshRendererComponent", "de/da0/classtoast_1_1MeshRendererComponent.html", null ],
+              [ "toast::HUDWorldRendererComponent", "d3/db0/classtoast_1_1HUDWorldRendererComponent.html", null ],
+              [ "toast::MeshRendererComponent", "de/da0/classtoast_1_1MeshRendererComponent.html", [
+                [ "toast::WaterRendererComponent", "dc/df8/classtoast_1_1WaterRendererComponent.html", null ]
+              ] ],
               [ "toast::ParticleSystem", "df/d2b/classtoast_1_1ParticleSystem.html", null ]
             ] ],
             [ "toast::AtlasSpriteComponent", "d3/dd3/classtoast_1_1AtlasSpriteComponent.html", null ]
@@ -177,8 +187,10 @@ var hierarchy =
     [ "input::Listener", "dc/d06/classinput_1_1Listener.html", null ],
     [ "ultralight::LoadListener", null, [
       [ "renderer::HUD::HUDLayerLoadListener", "de/dbb/classrenderer_1_1HUD_1_1HUDLayerLoadListener.html", null ],
-      [ "renderer::HUD::ToastLoadListener", "d1/dff/classrenderer_1_1HUD_1_1ToastLoadListener.html", null ]
+      [ "renderer::HUD::ToastLoadListener", "d1/dff/classrenderer_1_1HUD_1_1ToastLoadListener.html", null ],
+      [ "toast::HtmlLoadListener", "d4/d49/classtoast_1_1HtmlLoadListener.html", null ]
     ] ],
+    [ "toast::Localization", "df/ddc/classtoast_1_1Localization.html", null ],
     [ "Log", "d0/d77/classLog.html", null ],
     [ "toast::Log", "dc/d5c/classtoast_1_1Log.html", null ],
     [ "ultralight::Logger", null, [
@@ -202,6 +214,7 @@ var hierarchy =
     [ "toast::ParticleBurst", "dd/d4e/structtoast_1_1ParticleBurst.html", null ],
     [ "toast::ParticleEmitter", "dd/d84/classtoast_1_1ParticleEmitter.html", null ],
     [ "toast::ParticleEmitterConfig", "db/d96/structtoast_1_1ParticleEmitterConfig.html", null ],
+    [ "physics::PhysicsSystem::PendingMutation", "d0/d01/structphysics_1_1PhysicsSystem_1_1PendingMutation.html", null ],
     [ "physics::PhysicsSystem", "d6/dd8/classphysics_1_1PhysicsSystem.html", null ],
     [ "toast::Engine::Pimpl", "d1/df5/structtoast_1_1Engine_1_1Pimpl.html", null ],
     [ "PlayerController", "d4/da8/classinput_1_1PlayerController.html", null ],

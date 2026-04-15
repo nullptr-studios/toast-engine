@@ -10,5 +10,7 @@ var searchData=
   ['loadlevel_7',['LoadLevel',['../d4/d80/structtoast_1_1LoadLevel.html',1,'toast']]],
   ['loadurl_8',['LoadUrl',['../d2/d9e/structui_1_1LoadUrl.html',1,'ui']]],
   ['loadworld_9',['LoadWorld',['../da/d47/structtoast_1_1LoadWorld.html',1,'toast']]],
-  ['log_10',['Log',['../d0/d77/classLog.html',1,'Log'],['../dc/d5c/classtoast_1_1Log.html',1,'toast::Log']]]
+  ['localization_10',['Localization',['../df/ddc/classtoast_1_1Localization.html',1,'toast']]],
+  ['localizationchanged_11',['LocalizationChanged',['../da/d79/structtoast_1_1LocalizationChanged.html',1,'toast']]],
+  ['log_12',['Log',['../d0/d77/classLog.html',1,'Log'],['../dc/d5c/classtoast_1_1Log.html',1,'toast::Log']]]
 ];

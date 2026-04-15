@@ -116,6 +116,13 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
+<tr class="memitem:ae7cdc7425826c225dd28dac1f14ec801"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801">AudioMode</a> : uint8_t { <a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801a5d9b47bd3b65072e0d5daf55f01da086">Mono</a>
+, <a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801abbc45d9b35436f5f0ed9e33499efcea9">Stereo</a>
+, <a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801a1ba0aa75055b4a8b0280d8fd5f48a291">Binaural</a>
+, <a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801a428ea67d6ee5702028ad01753503828c">Surround</a>
+ }</td></tr>
+<tr class="memdesc:ae7cdc7425826c225dd28dac1f14ec801"><td class="mdescLeft">&#160;</td><td class="mdescRight">Audio output mode for speaker configuration.  <a href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801">More...</a><br /></td></tr>
+<tr class="separator:ae7cdc7425826c225dd28dac1f14ec801"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aec5ea71da3ec787a15a48adc710fa506"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#aec5ea71da3ec787a15a48adc710fa506">AudioError</a> : uint8_t { <br />
 &#160;&#160;<a class="el" href="../../d2/d11/namespaceaudio.html#aec5ea71da3ec787a15a48adc710fa506a5111e24c1ecc6266ce0de4b4dc42033b">NotLoaded</a>
 , <a class="el" href="../../d2/d11/namespaceaudio.html#aec5ea71da3ec787a15a48adc710fa506a3cd0dcca263062e228b48dc510f78334">AlreadyLoaded</a>
@@ -160,6 +167,24 @@ Functions</h2></td></tr>
 <tr class="memitem:af7aebbc251293268c81dc3fe7f9375b6"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#af7aebbc251293268c81dc3fe7f9375b6">is_muted</a> () -&gt; bool</td></tr>
 <tr class="memdesc:af7aebbc251293268c81dc3fe7f9375b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether the audio system is muted.  <br /></td></tr>
 <tr class="separator:af7aebbc251293268c81dc3fe7f9375b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a770d883e641e41c365a6a311f9615e06"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#a770d883e641e41c365a6a311f9615e06">set_music_volume</a> (float volume) -&gt; void</td></tr>
+<tr class="memdesc:a770d883e641e41c365a6a311f9615e06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the music bus volume (0.0 to 1.0)  <br /></td></tr>
+<tr class="separator:a770d883e641e41c365a6a311f9615e06"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae98b736ef9c5da6f41816b81f080572e"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#ae98b736ef9c5da6f41816b81f080572e">get_music_volume</a> () -&gt; float</td></tr>
+<tr class="memdesc:ae98b736ef9c5da6f41816b81f080572e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the current music volume.  <br /></td></tr>
+<tr class="separator:ae98b736ef9c5da6f41816b81f080572e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52bb868db7009f975eff9af6718dc978"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#a52bb868db7009f975eff9af6718dc978">set_effects_volume</a> (float volume) -&gt; void</td></tr>
+<tr class="memdesc:a52bb868db7009f975eff9af6718dc978"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the effects/SFX bus volume (0.0 to 1.0)  <br /></td></tr>
+<tr class="separator:a52bb868db7009f975eff9af6718dc978"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34699d422711134b0360916dfa1e97a8"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#a34699d422711134b0360916dfa1e97a8">get_effects_volume</a> () -&gt; float</td></tr>
+<tr class="memdesc:a34699d422711134b0360916dfa1e97a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the current effects volume.  <br /></td></tr>
+<tr class="separator:a34699d422711134b0360916dfa1e97a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a761fe97cbd1c1b0d9051e0f0497dcb43"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#a761fe97cbd1c1b0d9051e0f0497dcb43">set_audio_mode</a> (<a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801">AudioMode</a> mode) -&gt; void</td></tr>
+<tr class="memdesc:a761fe97cbd1c1b0d9051e0f0497dcb43"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the audio output mode.  <br /></td></tr>
+<tr class="separator:a761fe97cbd1c1b0d9051e0f0497dcb43"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef285a90925bf779500f6b65ddda976b"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#aef285a90925bf779500f6b65ddda976b">get_audio_mode</a> () -&gt; <a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801">AudioMode</a></td></tr>
+<tr class="memdesc:aef285a90925bf779500f6b65ddda976b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the current audio mode.  <br /></td></tr>
+<tr class="separator:aef285a90925bf779500f6b65ddda976b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
 <a id="aec5ea71da3ec787a15a48adc710fa506" name="aec5ea71da3ec787a15a48adc710fa506"></a>
@@ -194,7 +219,102 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="ae7cdc7425826c225dd28dac1f14ec801" name="ae7cdc7425826c225dd28dac1f14ec801"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7cdc7425826c225dd28dac1f14ec801">&#9670;&#160;</a></span>AudioMode</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum class <a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801">audio::AudioMode</a> : uint8_t</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Audio output mode for speaker configuration. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="ae7cdc7425826c225dd28dac1f14ec801a5d9b47bd3b65072e0d5daf55f01da086" name="ae7cdc7425826c225dd28dac1f14ec801a5d9b47bd3b65072e0d5daf55f01da086"></a>Mono&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="ae7cdc7425826c225dd28dac1f14ec801abbc45d9b35436f5f0ed9e33499efcea9" name="ae7cdc7425826c225dd28dac1f14ec801abbc45d9b35436f5f0ed9e33499efcea9"></a>Stereo&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="ae7cdc7425826c225dd28dac1f14ec801a1ba0aa75055b4a8b0280d8fd5f48a291" name="ae7cdc7425826c225dd28dac1f14ec801a1ba0aa75055b4a8b0280d8fd5f48a291"></a>Binaural&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="ae7cdc7425826c225dd28dac1f14ec801a428ea67d6ee5702028ad01753503828c" name="ae7cdc7425826c225dd28dac1f14ec801a428ea67d6ee5702028ad01753503828c"></a>Surround&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+<p class="definition">Definition at line <a class="el" href="../../df/de5/Audio_8hpp_source.html#l00016">16</a> of file <a class="el" href="../../df/de5/Audio_8hpp_source.html">Audio.hpp</a>.</p>
+
+</div>
+</div>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="aef285a90925bf779500f6b65ddda976b" name="aef285a90925bf779500f6b65ddda976b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aef285a90925bf779500f6b65ddda976b">&#9670;&#160;</a></span>get_audio_mode()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto audio::get_audio_mode </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> -&gt;  <a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801">AudioMode</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Gets the current audio mode. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../dc/d48/Audio_8cpp_source.html#l00071">71</a> of file <a class="el" href="../../dc/d48/Audio_8cpp_source.html">Audio.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a34699d422711134b0360916dfa1e97a8" name="a34699d422711134b0360916dfa1e97a8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a34699d422711134b0360916dfa1e97a8">&#9670;&#160;</a></span>get_effects_volume()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto audio::get_effects_volume </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> -&gt;  float</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Gets the current effects volume. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../dc/d48/Audio_8cpp_source.html#l00063">63</a> of file <a class="el" href="../../dc/d48/Audio_8cpp_source.html">Audio.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ae98b736ef9c5da6f41816b81f080572e" name="ae98b736ef9c5da6f41816b81f080572e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae98b736ef9c5da6f41816b81f080572e">&#9670;&#160;</a></span>get_music_volume()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto audio::get_music_volume </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> -&gt;  float</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Gets the current music volume. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../dc/d48/Audio_8cpp_source.html#l00055">55</a> of file <a class="el" href="../../dc/d48/Audio_8cpp_source.html">Audio.cpp</a>.</p>
+
+</div>
+</div>
 <a id="af7aebbc251293268c81dc3fe7f9375b6" name="af7aebbc251293268c81dc3fe7f9375b6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af7aebbc251293268c81dc3fe7f9375b6">&#9670;&#160;</a></span>is_muted()</h2>
 
@@ -321,6 +441,15 @@ Here is the caller graph for this function:</div>
 <p>Mutes all audio output. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../dc/d48/Audio_8cpp_source.html#l00038">38</a> of file <a class="el" href="../../dc/d48/Audio_8cpp_source.html">Audio.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d2/d11/namespaceaudio_ac26aef4dd79de9eba8125e9c307965c7_icgraph.png" border="0" usemap="#ad2/d11/namespaceaudio_ac26aef4dd79de9eba8125e9c307965c7_icgraph" alt=""/></div>
+<map name="ad2/d11/namespaceaudio_ac26aef4dd79de9eba8125e9c307965c7_icgraph" id="ad2/d11/namespaceaudio_ac26aef4dd79de9eba8125e9c307965c7_icgraph">
+<area shape="rect" title="Mutes all audio output." alt="" coords="199,5,321,31"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,5,151,31"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -343,6 +472,72 @@ Here is the caller graph for this function:</div>
 <p>Starts playback for a loaded event. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../dc/d48/Audio_8cpp_source.html#l00022">22</a> of file <a class="el" href="../../dc/d48/Audio_8cpp_source.html">Audio.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a761fe97cbd1c1b0d9051e0f0497dcb43" name="a761fe97cbd1c1b0d9051e0f0497dcb43"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a761fe97cbd1c1b0d9051e0f0497dcb43">&#9670;&#160;</a></span>set_audio_mode()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto audio::set_audio_mode </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801">AudioMode</a>&#160;</td>
+          <td class="paramname"><em>mode</em></td><td>)</td>
+          <td> -&gt;  void</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the audio output mode. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../dc/d48/Audio_8cpp_source.html#l00067">67</a> of file <a class="el" href="../../dc/d48/Audio_8cpp_source.html">Audio.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a52bb868db7009f975eff9af6718dc978" name="a52bb868db7009f975eff9af6718dc978"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a52bb868db7009f975eff9af6718dc978">&#9670;&#160;</a></span>set_effects_volume()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto audio::set_effects_volume </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>volume</em></td><td>)</td>
+          <td> -&gt;  void</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the effects/SFX bus volume (0.0 to 1.0) </p>
+
+<p class="definition">Definition at line <a class="el" href="../../dc/d48/Audio_8cpp_source.html#l00059">59</a> of file <a class="el" href="../../dc/d48/Audio_8cpp_source.html">Audio.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a770d883e641e41c365a6a311f9615e06" name="a770d883e641e41c365a6a311f9615e06"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a770d883e641e41c365a6a311f9615e06">&#9670;&#160;</a></span>set_music_volume()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto audio::set_music_volume </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>volume</em></td><td>)</td>
+          <td> -&gt;  void</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the music bus volume (0.0 to 1.0) </p>
+
+<p class="definition">Definition at line <a class="el" href="../../dc/d48/Audio_8cpp_source.html#l00051">51</a> of file <a class="el" href="../../dc/d48/Audio_8cpp_source.html">Audio.cpp</a>.</p>
 
 </div>
 </div>
@@ -456,6 +651,15 @@ Here is the caller graph for this function:</div>
 <p>Unmutes all audio output. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../dc/d48/Audio_8cpp_source.html#l00042">42</a> of file <a class="el" href="../../dc/d48/Audio_8cpp_source.html">Audio.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d2/d11/namespaceaudio_abb3dcb2dd9baee00a3b343e7765be665_icgraph.png" border="0" usemap="#ad2/d11/namespaceaudio_abb3dcb2dd9baee00a3b343e7765be665_icgraph" alt=""/></div>
+<map name="ad2/d11/namespaceaudio_abb3dcb2dd9baee00a3b343e7765be665_icgraph" id="ad2/d11/namespaceaudio_abb3dcb2dd9baee00a3b343e7765be665_icgraph">
+<area shape="rect" title="Unmutes all audio output." alt="" coords="199,5,337,31"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="5,5,151,31"/>
+</map>
+</div>
 
 </div>
 </div>

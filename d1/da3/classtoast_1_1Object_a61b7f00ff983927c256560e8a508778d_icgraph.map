@@ -1,7 +1,8 @@
 <map id="toast::Object::Load" name="toast::Object::Load">
-<area shape="rect" id="node1" title="Loads object state from JSON." alt="" coords="424,55,568,80"/>
-<area shape="rect" id="node2" href="$d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2" title="Loads object state from JSON." alt="" coords="223,5,359,31"/>
-<area shape="rect" id="node4" href="$d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1" title="Loads object state from JSON." alt="" coords="221,55,362,80"/>
-<area shape="rect" id="node5" href="$d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef" title="Reloads from cached JSON." alt="" coords="207,104,376,129"/>
+<area shape="rect" id="node1" title="Loads object state from JSON." alt="" coords="424,79,568,104"/>
+<area shape="rect" id="node2" href="$d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2" title="Loads object state from JSON." alt="" coords="223,29,359,55"/>
+<area shape="rect" id="node5" href="$d6/dd4/classtoast_1_1Scene.html#a659b1b991acdd72aaae114c28d7cc2b1" title="Loads object state from JSON." alt="" coords="221,79,362,104"/>
+<area shape="rect" id="node6" href="$d1/da3/classtoast_1_1Object.html#aa11cd2c18489d042e6fd27295d622c38" title="Reloads from cached JSON." alt="" coords="207,128,376,153"/>
 <area shape="rect" id="node3" href="$d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005" title="Loads object state from JSON." alt="" coords="5,5,159,31"/>
+<area shape="rect" id="node4" href="$d9/da2/classHUDActor.html#aa02212ff6f4e5a51681afbb8e5c4f425" title="Loads object state from JSON." alt="" coords="19,55,145,80"/>
 </map>

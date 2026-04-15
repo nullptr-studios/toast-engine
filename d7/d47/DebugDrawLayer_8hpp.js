@@ -2,6 +2,7 @@ var DebugDrawLayer_8hpp =
 [
     [ "renderer::DebugVertex", "da/d9a/structrenderer_1_1DebugVertex.html", "da/d9a/structrenderer_1_1DebugVertex" ],
     [ "renderer::DebugDrawLayer", "df/daf/classrenderer_1_1DebugDrawLayer.html", "df/daf/classrenderer_1_1DebugDrawLayer" ],
+    [ "DebugArrow3D", "d7/d47/DebugDrawLayer_8hpp.html#a2a92a56b217dbaea6013d92825eda6c0", null ],
     [ "DebugCircle", "d7/d47/DebugDrawLayer_8hpp.html#aaeaac8f8a7ee2e7f44634fd87cb8c136", null ],
     [ "DebugCircle", "d7/d47/DebugDrawLayer_8hpp.html#a9cba2108ed3399b4494b3a47d69dccdc", null ],
     [ "DebugLine", "d7/d47/DebugDrawLayer_8hpp.html#a5d7c904d4b6dfd090a787bfd774d0308", null ],

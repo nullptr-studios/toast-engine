@@ -6,5 +6,6 @@ var dir_a0f25bf18771e567fd6bc64e9166ed26 =
     [ "HtmlView.hpp", "d0/d47/HtmlView_8hpp.html", "d0/d47/HtmlView_8hpp" ],
     [ "MeshRendererComponent.hpp", "d7/de2/MeshRendererComponent_8hpp.html", "d7/de2/MeshRendererComponent_8hpp" ],
     [ "SpineRendererComponent.hpp", "d2/d92/SpineRendererComponent_8hpp.html", "d2/d92/SpineRendererComponent_8hpp" ],
-    [ "TransformComponent.hpp", "d9/da8/TransformComponent_8hpp.html", "d9/da8/TransformComponent_8hpp" ]
+    [ "TransformComponent.hpp", "d9/da8/TransformComponent_8hpp.html", "d9/da8/TransformComponent_8hpp" ],
+    [ "WaterRendererComponent.hpp", "db/de7/WaterRendererComponent_8hpp.html", "db/de7/WaterRendererComponent_8hpp" ]
 ];

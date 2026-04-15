@@ -1,6 +1,9 @@
 <map id="renderer::IRendererBase::DrawScreenQuad" name="renderer::IRendererBase::DrawScreenQuad">
-<area shape="rect" id="node1" title=" " alt="" coords="243,47,423,87"/>
-<area shape="rect" id="node2" href="$db/db7/structColorgrading.html#a26a3dd10ae0ac4f27f953e4ca37bcd09" title=" " alt="" coords="18,5,182,31"/>
-<area shape="rect" id="node3" href="$d6/da0/structTonemaping.html#ab36322f98efed50cd103678c74e9a8d3" title=" " alt="" coords="20,55,180,80"/>
-<area shape="rect" id="node4" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#ab63becb2cab80e073e26b63b0806b1d3" title="Render the UI to the HUD framebuffer." alt="" coords="5,105,195,145"/>
+<area shape="rect" id="node1" title=" " alt="" coords="243,138,423,178"/>
+<area shape="rect" id="node2" href="$d6/d83/structBloom.html#aa01e3275a43107bae0435f38d488ecdc" title=" " alt="" coords="39,5,161,31"/>
+<area shape="rect" id="node3" href="$d5/dfa/structChromaticAberration.html#ac8e30e02f66fe2080dba0f33f8e1ea58" title=" " alt="" coords="21,55,179,95"/>
+<area shape="rect" id="node4" href="$db/db7/structColorgrading.html#a26a3dd10ae0ac4f27f953e4ca37bcd09" title=" " alt="" coords="18,120,182,145"/>
+<area shape="rect" id="node5" href="$db/d3d/structDepthOfField.html#aa11061e7f292c78ccd70025d73882289" title=" " alt="" coords="17,169,183,195"/>
+<area shape="rect" id="node6" href="$d6/da0/structTonemaping.html#ab36322f98efed50cd103678c74e9a8d3" title=" " alt="" coords="20,219,180,244"/>
+<area shape="rect" id="node7" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#ab63becb2cab80e073e26b63b0806b1d3" title="Render the UI to the HUD framebuffer." alt="" coords="5,269,195,309"/>
 </map>

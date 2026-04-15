@@ -94,6 +94,7 @@ $(document).ready(function(){initNavTree('df/de5/Audio_8hpp.html','../../'); ini
 <div class="header">
   <div class="summary">
 <a href="#namespaces">Namespaces</a> &#124;
+<a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">Audio.hpp File Reference</div></div>
 </div><!--header-->
@@ -131,6 +132,16 @@ Namespaces</h2></td></tr>
 <tr class="memdesc:d0/d66/namespaceaudio_1_1core"><td class="mdescLeft">&#160;</td><td class="mdescRight">Low-level (FMOD Core) API for raw sound playback. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
+Enumerations</h2></td></tr>
+<tr class="memitem:ae7cdc7425826c225dd28dac1f14ec801"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801">audio::AudioMode</a> : uint8_t { <a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801a5d9b47bd3b65072e0d5daf55f01da086">audio::Mono</a>
+, <a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801abbc45d9b35436f5f0ed9e33499efcea9">audio::Stereo</a>
+, <a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801a1ba0aa75055b4a8b0280d8fd5f48a291">audio::Binaural</a>
+, <a class="el" href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801a428ea67d6ee5702028ad01753503828c">audio::Surround</a>
+ }</td></tr>
+<tr class="memdesc:ae7cdc7425826c225dd28dac1f14ec801"><td class="mdescLeft">&#160;</td><td class="mdescRight">Audio output mode for speaker configuration.  <a href="../../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801">More...</a><br /></td></tr>
+<tr class="separator:ae7cdc7425826c225dd28dac1f14ec801"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a90407f0821d35a766bc0d730cb38524c"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#a90407f0821d35a766bc0d730cb38524c">audio::load_bank</a> (std::string_view filepath) -&gt; std::expected&lt; void, AudioError &gt;</td></tr>
@@ -163,6 +174,24 @@ Functions</h2></td></tr>
 <tr class="memitem:af7aebbc251293268c81dc3fe7f9375b6"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#af7aebbc251293268c81dc3fe7f9375b6">audio::is_muted</a> () -&gt; bool</td></tr>
 <tr class="memdesc:af7aebbc251293268c81dc3fe7f9375b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether the audio system is muted.  <br /></td></tr>
 <tr class="separator:af7aebbc251293268c81dc3fe7f9375b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a770d883e641e41c365a6a311f9615e06"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#a770d883e641e41c365a6a311f9615e06">audio::set_music_volume</a> (float volume) -&gt; void</td></tr>
+<tr class="memdesc:a770d883e641e41c365a6a311f9615e06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the music bus volume (0.0 to 1.0)  <br /></td></tr>
+<tr class="separator:a770d883e641e41c365a6a311f9615e06"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae98b736ef9c5da6f41816b81f080572e"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#ae98b736ef9c5da6f41816b81f080572e">audio::get_music_volume</a> () -&gt; float</td></tr>
+<tr class="memdesc:ae98b736ef9c5da6f41816b81f080572e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the current music volume.  <br /></td></tr>
+<tr class="separator:ae98b736ef9c5da6f41816b81f080572e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52bb868db7009f975eff9af6718dc978"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#a52bb868db7009f975eff9af6718dc978">audio::set_effects_volume</a> (float volume) -&gt; void</td></tr>
+<tr class="memdesc:a52bb868db7009f975eff9af6718dc978"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the effects/SFX bus volume (0.0 to 1.0)  <br /></td></tr>
+<tr class="separator:a52bb868db7009f975eff9af6718dc978"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34699d422711134b0360916dfa1e97a8"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#a34699d422711134b0360916dfa1e97a8">audio::get_effects_volume</a> () -&gt; float</td></tr>
+<tr class="memdesc:a34699d422711134b0360916dfa1e97a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the current effects volume.  <br /></td></tr>
+<tr class="separator:a34699d422711134b0360916dfa1e97a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a761fe97cbd1c1b0d9051e0f0497dcb43"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#a761fe97cbd1c1b0d9051e0f0497dcb43">audio::set_audio_mode</a> (AudioMode mode) -&gt; void</td></tr>
+<tr class="memdesc:a761fe97cbd1c1b0d9051e0f0497dcb43"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the audio output mode.  <br /></td></tr>
+<tr class="separator:a761fe97cbd1c1b0d9051e0f0497dcb43"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef285a90925bf779500f6b65ddda976b"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d11/namespaceaudio.html#aef285a90925bf779500f6b65ddda976b">audio::get_audio_mode</a> () -&gt; AudioMode</td></tr>
+<tr class="memdesc:aef285a90925bf779500f6b65ddda976b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the current audio mode.  <br /></td></tr>
+<tr class="separator:aef285a90925bf779500f6b65ddda976b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af11ac9095c00441bb448d614c400936f"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d66/namespaceaudio_1_1core.html#af11ac9095c00441bb448d614c400936f">audio::core::load</a> (Data &amp;audio_data) -&gt; std::expected&lt; void, AudioError &gt;</td></tr>
 <tr class="memdesc:af11ac9095c00441bb448d614c400936f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads a sound into the core cache.  <br /></td></tr>
 <tr class="separator:af11ac9095c00441bb448d614c400936f"><td class="memSeparator" colspan="2">&#160;</td></tr>

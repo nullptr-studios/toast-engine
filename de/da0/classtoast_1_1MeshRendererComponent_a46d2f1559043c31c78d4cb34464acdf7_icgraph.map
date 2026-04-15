@@ -1,0 +1,7 @@
+<map id="toast::MeshRendererComponent::UnregisterFromRenderer" name="toast::MeshRendererComponent::UnregisterFromRenderer">
+<area shape="rect" id="node1" title=" " alt="" coords="851,37,1083,77"/>
+<area shape="rect" id="node2" href="$de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40" title="This function runs when the object is set to be destroyed." alt="" coords="571,5,803,45"/>
+<area shape="rect" id="node3" href="$de/da0/classtoast_1_1MeshRendererComponent.html#adbab2e4de44c05f6ecb0bda09a215da3" title=" " alt="" coords="571,69,803,109"/>
+<area shape="rect" id="node4" href="$dc/df8/classtoast_1_1WaterRendererComponent.html#a8e76eca1978116034c31ef1d65fa87c1" title=" " alt="" coords="288,69,523,109"/>
+<area shape="rect" id="node5" href="$dc/df8/classtoast_1_1WaterRendererComponent.html#abce0f091ac91bef441bafc46fc45d5a8" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,69,240,109"/>
+</map>

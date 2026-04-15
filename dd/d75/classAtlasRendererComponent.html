@@ -135,6 +135,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:afcaceadb679fa164398a29b173c9a089"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d75/classAtlasRendererComponent.html#afcaceadb679fa164398a29b173c9a089">OnRender</a> (<a class="el" href="../../d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1b">renderer::IRenderablePass</a> pass, const glm::mat4 &amp;precomputed_mat) noexcept override</td></tr>
 <tr class="memdesc:afcaceadb679fa164398a29b173c9a089"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called during the geometry pass to render this object.  <br /></td></tr>
 <tr class="separator:afcaceadb679fa164398a29b173c9a089"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abd035f7928873353d78ecedd2986acb9"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d75/classAtlasRendererComponent.html#abd035f7928873353d78ecedd2986acb9">GetTransparentSortDepth</a> (const glm::mat4 &amp;view_matrix) noexcept override</td></tr>
+<tr class="separator:abd035f7928873353d78ecedd2986acb9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a02efcff53bc16a39b7adc651f9548b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a7a02efcff53bc16a39b7adc651f9548b">LoadTextures</a> () override</td></tr>
 <tr class="separator:a7a02efcff53bc16a39b7adc651f9548b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abd67ce261735dcf4ca9a5955c89d1844"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d75/classAtlasRendererComponent.html#abd67ce261735dcf4ca9a5955c89d1844">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true) override</td></tr>
@@ -171,6 +173,14 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa72e32a2941c9cfaa1fde20754805c1c inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#aa72e32a2941c9cfaa1fde20754805c1c">GetDepth</a> () noexcept</td></tr>
 <tr class="memdesc:aa72e32a2941c9cfaa1fde20754805c1c inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the Z-depth for sorting purposes.  <br /></td></tr>
 <tr class="separator:aa72e32a2941c9cfaa1fde20754805c1c inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adfc96d3e8454ad1819f711172861d4c1 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#adfc96d3e8454ad1819f711172861d4c1">GetGeometrySortPriority</a> () noexcept</td></tr>
+<tr class="memdesc:adfc96d3e8454ad1819f711172861d4c1 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Geometry sorting priority. Higher values are rendered later in GeometryPass.  <br /></td></tr>
+<tr class="separator:adfc96d3e8454ad1819f711172861d4c1 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a841d3c007704846b3752ed1dc116b237 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a841d3c007704846b3752ed1dc116b237">GetTransparentSortDepth</a> (const glm::mat4 &amp;view_matrix) noexcept</td></tr>
+<tr class="separator:a841d3c007704846b3752ed1dc116b237 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a74cfe5f7b4edb11d1813b3403a59eb71">GetTransparentSortPriority</a> () noexcept</td></tr>
+<tr class="memdesc:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transparent sorting priority. Higher values are rendered later in SpritePass.  <br /></td></tr>
+<tr class="separator:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1TransformComponent"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classtoast_1_1TransformComponent')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html">toast::TransformComponent</a></td></tr>
 <tr class="memitem:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a0077d521827b8e0f9c6814efc7fb55c7">TransformComponent</a> ()</td></tr>
 <tr class="memdesc:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a transform at the origin with no rotation and unit scale.  <br /></td></tr>
@@ -266,9 +276,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true) override</td></tr>
 <tr class="memdesc:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef">SoftLoad</a> () override</td></tr>
-<tr class="memdesc:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
-<tr class="separator:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa11cd2c18489d042e6fd27295d622c38">SoftLoad</a> (bool editorStop=false) override</td></tr>
+<tr class="memdesc:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
+<tr class="separator:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656">SoftSave</a> () const override</td></tr>
 <tr class="memdesc:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -324,9 +334,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a706ca4214d997840d82bc83e0c3ab85b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true)=0</td></tr>
 <tr class="memdesc:a706ca4214d997840d82bc83e0c3ab85b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a706ca4214d997840d82bc83e0c3ab85b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a7a5705e9dd33a51039af65c3928ea4ef">SoftLoad</a> ()=0</td></tr>
-<tr class="memdesc:a7a5705e9dd33a51039af65c3928ea4ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
-<tr class="separator:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09513da3769afa0f69615204c28dbad4"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a09513da3769afa0f69615204c28dbad4">SoftLoad</a> (bool editorStop)=0</td></tr>
+<tr class="memdesc:a09513da3769afa0f69615204c28dbad4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
+<tr class="separator:a09513da3769afa0f69615204c28dbad4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66284559a3d768dcad01459ce3688f82"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">Save</a> () const =0</td></tr>
 <tr class="memdesc:a66284559a3d768dcad01459ce3688f82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a66284559a3d768dcad01459ce3688f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -372,6 +382,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a3a157db711665ad9a516126ffa503f18"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7c441f2d45fba13561a7c5ad9d3a50eb"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a1a97292d0a78f4a126ec3b7d066c09f6">isOccluder</a> = false</td></tr>
 <tr class="separator:a7c441f2d45fba13561a7c5ad9d3a50eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27f2c6a058a9b6a0420e9b048d334322"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#a36fedc4ab36be2763590d6c1f34d7738">castsDirectionalShadow</a> = true</td></tr>
+<tr class="separator:a27f2c6a058a9b6a0420e9b048d334322"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0206238de6d870bec09caf891a99a64b"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ab9c44b133cf59e5956948b24efe8a8de">drawToDepth</a> = true</td></tr>
 <tr class="separator:a0206238de6d870bec09caf891a99a64b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0f8a7b7c4068e7b91b23659f30a224f4"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../dd/d75/classAtlasRendererComponent.html#ac8dbf1934a5a50e79f192193125f43fd">isOnScreen</a> = true</td></tr>
@@ -467,7 +479,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00309">309</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00356">356</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -523,7 +535,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00217">217</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00264">264</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -554,7 +566,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a1b6e927d9c508dd81a308d45a52afecb">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00022">22</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00024">24</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -581,7 +593,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00201">201</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00248">248</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -610,7 +622,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00326">326</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00373">373</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -640,7 +652,38 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00333">333</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00380">380</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+
+</div>
+</div>
+<a id="abd035f7928873353d78ecedd2986acb9" name="abd035f7928873353d78ecedd2986acb9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abd035f7928873353d78ecedd2986acb9">&#9670;&#160;</a></span>GetTransparentSortDepth()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">float AtlasRendererComponent::GetTransparentSortDepth </td>
+          <td>(</td>
+          <td class="paramtype">const glm::mat4 &amp;&#160;</td>
+          <td class="paramname"><em>view_matrix</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Camera-space depth key used for transparent sorting. Higher Z in view space is closer to the camera in the engine's OpenGL convention. </p>
+
+<p>Reimplemented from <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a841d3c007704846b3752ed1dc116b237">renderer::IRenderable</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00175">175</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -671,7 +714,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a4673a66a1498d98db8ffb0ba7b418247">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00038">38</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00040">40</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -721,7 +764,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">toast::ISerializable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00174">174</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00213">213</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -750,7 +793,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a144d8696ae8da523c8e1c9b03e0754f9">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00164">164</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00203">203</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -781,7 +824,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa9867880b2966b5ccb8be7c9abf37618">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00032">32</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00034">34</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -812,7 +855,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#abe84982fe050e7f6ba09f8f0ccec6ee5">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00026">26</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00028">28</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -864,7 +907,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Implements <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a6edfc119b8464b5540e78703af327091">renderer::IRenderable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00065">65</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00067">67</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -883,7 +926,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00287">287</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00334">334</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -921,7 +964,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00302">302</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00349">349</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -954,7 +997,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">toast::ISerializable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00192">192</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00238">238</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -981,7 +1024,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00348">348</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html#l00395">395</a> of file <a class="el" href="../../de/d70/AtlasRendererComponent_8cpp_source.html">AtlasRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -998,7 +1041,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00060">60</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00062">62</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1014,7 +1057,23 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00058">58</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00060">60</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a36fedc4ab36be2763590d6c1f34d7738" name="a36fedc4ab36be2763590d6c1f34d7738"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a36fedc4ab36be2763590d6c1f34d7738">&#9670;&#160;</a></span>castsDirectionalShadow</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool AtlasRendererComponent::castsDirectionalShadow = true</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00083">83</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1030,7 +1089,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00082">82</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00085">85</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1046,7 +1105,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00064">64</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00066">66</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1070,7 +1129,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00055">55</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00057">57</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1086,7 +1145,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00080">80</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00082">82</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1102,7 +1161,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00084">84</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00087">87</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1118,7 +1177,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00071">71</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00073">73</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1148,7 +1207,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00062">62</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00064">64</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1164,7 +1223,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00074">74</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00076">76</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1180,7 +1239,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00075">75</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00077">77</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1196,7 +1255,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00061">61</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00063">63</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1212,7 +1271,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00077">77</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00079">79</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1228,7 +1287,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00078">78</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00080">80</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1244,7 +1303,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00068">68</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00070">70</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1260,7 +1319,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00067">67</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html#l00069">69</a> of file <a class="el" href="../../d2/d4d/AtlasRendererComponent_8hpp_source.html">AtlasRendererComponent.hpp</a>.</p>
 
 </div>
 </div>

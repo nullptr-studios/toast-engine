@@ -15,5 +15,6 @@ var dir_382f3111e0ef46ab1be4ebfcc0bdbaad =
     [ "Material.hpp", "d0/d70/Material_8hpp.html", "d0/d70/Material_8hpp" ],
     [ "OclussionVolume.hpp", "de/dd7/OclussionVolume_8hpp.html", "de/dd7/OclussionVolume_8hpp" ],
     [ "PostProcessManager.hpp", "dc/d2c/PostProcessManager_8hpp.html", "dc/d2c/PostProcessManager_8hpp" ],
+    [ "PostProcessVolume.hpp", "de/dd5/PostProcessVolume_8hpp.html", "de/dd5/PostProcessVolume_8hpp" ],
     [ "Shader.hpp", "d4/d6e/Shader_8hpp.html", "d4/d6e/Shader_8hpp" ]
 ];

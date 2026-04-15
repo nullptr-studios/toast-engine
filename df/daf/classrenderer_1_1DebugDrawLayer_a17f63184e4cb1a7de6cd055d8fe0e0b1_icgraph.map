@@ -1,6 +1,7 @@
 <map id="renderer::DebugDrawLayer::DrawLine" name="renderer::DebugDrawLayer::DrawLine">
-<area shape="rect" id="node1" title="Draws a simple line." alt="" coords="251,69,448,109"/>
-<area shape="rect" id="node2" href="$df/daf/classrenderer_1_1DebugDrawLayer.html#a927fddc7c6b3766a2067964fe6b62aa6" title="Draws a circle." alt="" coords="5,5,203,45"/>
-<area shape="rect" id="node3" href="$df/daf/classrenderer_1_1DebugDrawLayer.html#a2ad015abba3e6aea39dc584707b88c2e" title="Draws a polygon shape." alt="" coords="5,69,203,109"/>
-<area shape="rect" id="node4" href="$df/daf/classrenderer_1_1DebugDrawLayer.html#a49c4ae5dce36fa6813b30cc438c5d048" title="Draws a rectangle." alt="" coords="5,133,203,173"/>
+<area shape="rect" id="node1" title="Draws a simple line." alt="" coords="251,101,448,141"/>
+<area shape="rect" id="node2" href="$df/daf/classrenderer_1_1DebugDrawLayer.html#ad168b60daee23ea41301e45f65fc5454" title=" " alt="" coords="5,5,203,45"/>
+<area shape="rect" id="node3" href="$df/daf/classrenderer_1_1DebugDrawLayer.html#a927fddc7c6b3766a2067964fe6b62aa6" title="Draws a circle." alt="" coords="5,69,203,109"/>
+<area shape="rect" id="node4" href="$df/daf/classrenderer_1_1DebugDrawLayer.html#a2ad015abba3e6aea39dc584707b88c2e" title="Draws a polygon shape." alt="" coords="5,133,203,173"/>
+<area shape="rect" id="node5" href="$df/daf/classrenderer_1_1DebugDrawLayer.html#a49c4ae5dce36fa6813b30cc438c5d048" title="Draws a rectangle." alt="" coords="5,197,203,237"/>
 </map>

@@ -98,9 +98,11 @@ $(document).ready(function(){initNavTree('df/de9/Manager_8cpp.html','../../'); i
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../d0/d82/Log_8hpp_source.html">Toast/Log.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d2/d69/Localization_8hpp_source.html">Toast/Localization.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../de/d8a/HUDLayer_8hpp_source.html">Toast/Renderer/HUD/HUDLayer.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../d2/deb/LayerStack_8hpp_source.html">Toast/Renderer/LayerStack.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../d3/d61/ToastFileSystem_8hpp_source.html">Toast/Resources/ToastFileSystem.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d4/d91/GameEvents_8hpp_source.html">Toast/GameEvents.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../d0/d4e/Events_8hpp_source.html">Toast/Ui/Events.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../de/daf/FontHandler_8hpp_source.html">Toast/Ui/FontHandler.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../d9/d11/Logger_8hpp_source.html">Toast/Ui/Logger.hpp</a>&quot;</code><br />
@@ -110,55 +112,56 @@ Include dependency graph for Manager.cpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d3/d78/Manager_8cpp__incl.png" border="0" usemap="#asrc_2Ui_2Manager_8cpp" alt=""/></div>
 <map name="asrc_2Ui_2Manager_8cpp" id="asrc_2Ui_2Manager_8cpp">
-<area shape="rect" title=" " alt="" coords="989,5,1136,31"/>
-<area shape="rect" href="../../d0/d82/Log_8hpp.html" title=" " alt="" coords="171,636,282,661"/>
-<area shape="rect" href="../../de/d8a/HUDLayer_8hpp.html" title="HUD rendering layer using Ultralight for web&#45;based UI." alt="" coords="927,152,1081,192"/>
-<area shape="rect" href="../../d2/deb/LayerStack_8hpp.html" title=" " alt="" coords="675,159,898,185"/>
-<area shape="rect" href="../../d3/d61/ToastFileSystem_8hpp.html" title=" " alt="" coords="1422,460,1610,500"/>
-<area shape="rect" href="../../d0/d4e/Events_8hpp.html" title="[TODO: Brief description of the file&#39;s purpose]" alt="" coords="42,240,193,265"/>
-<area shape="rect" href="../../de/daf/FontHandler_8hpp.html" title="rewrite of the ai generated dario code" alt="" coords="1611,79,1795,104"/>
-<area shape="rect" href="../../d9/d11/Logger_8hpp.html" title=" " alt="" coords="1819,79,1968,104"/>
-<area shape="rect" href="../../d9/d54/Manager_8hpp.html" title="general ui instance" alt="" coords="1041,79,1204,104"/>
-<area shape="rect" href="../../dc/dbc/Profiler_8hpp.html" title="Wrapper of the Tracy Profiler." alt="" coords="1209,709,1343,735"/>
-<area shape="rect" title=" " alt="" coords="107,709,176,735"/>
-<area shape="rect" title=" " alt="" coords="200,709,267,735"/>
-<area shape="rect" title=" " alt="" coords="5,709,83,735"/>
-<area shape="rect" title=" " alt="" coords="291,709,415,735"/>
-<area shape="rect" title=" " alt="" coords="2053,709,2112,735"/>
-<area shape="rect" title=" " alt="" coords="439,709,537,735"/>
-<area shape="rect" href="../../d2/dd6/ILayer_8hpp.html" title="Base interface for rendering layers." alt="" coords="558,240,749,265"/>
-<area shape="rect" title=" " alt="" coords="875,240,1035,265"/>
-<area shape="rect" title=" " alt="" coords="1173,636,1235,661"/>
-<area shape="rect" href="../../df/d7d/Event_8hpp.html" title="Base Event class." alt="" coords="570,313,737,339"/>
-<area shape="rect" href="../../d0/d1c/ListenerComponent_8hpp.html" title=" " alt="" coords="565,387,742,412"/>
-<area shape="rect" href="../../df/d1f/Component_8hpp.html" title="Base component class." alt="" coords="318,467,567,493"/>
-<area shape="rect" title=" " alt="" coords="591,467,638,493"/>
-<area shape="rect" title=" " alt="" coords="662,467,754,493"/>
-<area shape="rect" title=" " alt="" coords="778,467,865,493"/>
-<area shape="rect" href="../../d7/d3f/Object_8hpp.html" title="Base Object Class." alt="" coords="421,555,603,581"/>
-<area shape="rect" href="../../d7/d5a/RTTIMacros_8h.html" title=" " alt="" coords="834,636,955,661"/>
-<area shape="rect" href="../../d5/d03/Factory_8hpp.html" title="Class in charge of Object creation (not anmymore)" alt="" coords="307,636,440,661"/>
-<area shape="rect" href="../../df/da3/ISerializable_8hpp.html" title="Interface for objects that can be saved and loaded from JSON." alt="" coords="980,636,1148,661"/>
-<area shape="rect" title=" " alt="" coords="515,636,581,661"/>
-<area shape="rect" title=" " alt="" coords="87,636,147,661"/>
-<area shape="rect" href="../../da/d8d/Children_8inl.html" title=" " alt="" coords="605,636,701,661"/>
-<area shape="rect" href="../../de/d16/Object_8inl.html" title=" " alt="" coords="726,636,810,661"/>
-<area shape="rect" title=" " alt="" coords="991,709,1137,735"/>
-<area shape="rect" href="../../d5/d46/PackLoader_8hpp.html" title=" " alt="" coords="1578,555,1822,581"/>
-<area shape="rect" title=" " alt="" coords="1311,548,1454,588"/>
-<area shape="rect" title=" " alt="" coords="1479,555,1553,581"/>
-<area shape="rect" title=" " alt="" coords="1361,636,1447,661"/>
-<area shape="rect" title=" " alt="" coords="1471,636,1537,661"/>
-<area shape="rect" title=" " alt="" coords="1561,636,1652,661"/>
-<area shape="rect" title=" " alt="" coords="1677,636,1750,661"/>
-<area shape="rect" title=" " alt="" coords="1775,636,1855,661"/>
-<area shape="rect" title=" " alt="" coords="1879,636,1932,661"/>
-<area shape="rect" title=" " alt="" coords="1956,636,2020,661"/>
-<area shape="rect" title=" " alt="" coords="1631,152,1774,192"/>
-<area shape="rect" title=" " alt="" coords="1822,152,1965,192"/>
-<area shape="rect" href="../../d0/de3/Window_8hpp.html" title="Window management for the Toast Engine." alt="" coords="1197,159,1392,185"/>
-<area shape="rect" title=" " alt="" coords="1425,240,1535,265"/>
-<area shape="rect" title=" " alt="" coords="1261,240,1400,265"/>
+<area shape="rect" title=" " alt="" coords="1441,5,1588,31"/>
+<area shape="rect" href="../../d0/d82/Log_8hpp.html" title=" " alt="" coords="1277,636,1387,661"/>
+<area shape="rect" href="../../d2/d69/Localization_8hpp.html" title=" " alt="" coords="911,555,1078,581"/>
+<area shape="rect" href="../../de/d8a/HUDLayer_8hpp.html" title="HUD rendering layer using Ultralight for web&#45;based UI." alt="" coords="1265,152,1418,192"/>
+<area shape="rect" href="../../d2/deb/LayerStack_8hpp.html" title=" " alt="" coords="875,159,1098,185"/>
+<area shape="rect" href="../../d3/d61/ToastFileSystem_8hpp.html" title=" " alt="" coords="613,460,801,500"/>
+<area shape="rect" href="../../d4/d91/GameEvents_8hpp.html" title="[TODO: Brief description of the file&#39;s purpose]" alt="" coords="1893,240,2064,265"/>
+<area shape="rect" href="../../d0/d4e/Events_8hpp.html" title="[TODO: Brief description of the file&#39;s purpose]" alt="" coords="2089,240,2239,265"/>
+<area shape="rect" href="../../de/daf/FontHandler_8hpp.html" title="rewrite of the ai generated dario code" alt="" coords="1864,79,2048,104"/>
+<area shape="rect" href="../../d9/d11/Logger_8hpp.html" title=" " alt="" coords="2072,79,2221,104"/>
+<area shape="rect" href="../../d9/d54/Manager_8hpp.html" title="general ui instance" alt="" coords="1493,79,1656,104"/>
+<area shape="rect" href="../../dc/dbc/Profiler_8hpp.html" title="Wrapper of the Tracy Profiler." alt="" coords="471,709,604,735"/>
+<area shape="rect" title=" " alt="" coords="1421,709,1491,735"/>
+<area shape="rect" title=" " alt="" coords="1515,709,1581,735"/>
+<area shape="rect" title=" " alt="" coords="1171,709,1248,735"/>
+<area shape="rect" title=" " alt="" coords="1273,709,1397,735"/>
+<area shape="rect" title=" " alt="" coords="965,709,1024,735"/>
+<area shape="rect" title=" " alt="" coords="1049,709,1146,735"/>
+<area shape="rect" title=" " alt="" coords="1085,636,1147,661"/>
+<area shape="rect" href="../../d2/dd6/ILayer_8hpp.html" title="Base interface for rendering layers." alt="" coords="891,240,1082,265"/>
+<area shape="rect" title=" " alt="" coords="1107,240,1267,265"/>
+<area shape="rect" href="../../df/d7d/Event_8hpp.html" title="Base Event class." alt="" coords="1655,313,1822,339"/>
+<area shape="rect" href="../../d0/d1c/ListenerComponent_8hpp.html" title=" " alt="" coords="1650,387,1827,412"/>
+<area shape="rect" href="../../df/d1f/Component_8hpp.html" title="Base component class." alt="" coords="1661,467,1910,493"/>
+<area shape="rect" title=" " alt="" coords="2045,467,2091,493"/>
+<area shape="rect" title=" " alt="" coords="1494,467,1586,493"/>
+<area shape="rect" title=" " alt="" coords="1934,467,2021,493"/>
+<area shape="rect" href="../../d7/d3f/Object_8hpp.html" title="Base Object Class." alt="" coords="1759,555,1942,581"/>
+<area shape="rect" href="../../d7/d5a/RTTIMacros_8h.html" title=" " alt="" coords="2131,636,2253,661"/>
+<area shape="rect" href="../../d5/d03/Factory_8hpp.html" title="Class in charge of Object creation (not anmymore)" alt="" coords="1412,636,1545,661"/>
+<area shape="rect" href="../../df/da3/ISerializable_8hpp.html" title="Interface for objects that can be saved and loaded from JSON." alt="" coords="1569,636,1737,661"/>
+<area shape="rect" title=" " alt="" coords="1761,636,1828,661"/>
+<area shape="rect" title=" " alt="" coords="2329,636,2389,661"/>
+<area shape="rect" href="../../da/d8d/Children_8inl.html" title=" " alt="" coords="1903,636,1999,661"/>
+<area shape="rect" href="../../de/d16/Object_8inl.html" title=" " alt="" coords="2023,636,2107,661"/>
+<area shape="rect" href="../../d5/d46/PackLoader_8hpp.html" title=" " alt="" coords="275,555,519,581"/>
+<area shape="rect" title=" " alt="" coords="543,548,686,588"/>
+<area shape="rect" title=" " alt="" coords="761,555,836,581"/>
+<area shape="rect" title=" " alt="" coords="376,636,461,661"/>
+<area shape="rect" title=" " alt="" coords="485,636,552,661"/>
+<area shape="rect" title=" " alt="" coords="576,636,667,661"/>
+<area shape="rect" title=" " alt="" coords="691,636,765,661"/>
+<area shape="rect" title=" " alt="" coords="5,636,85,661"/>
+<area shape="rect" title=" " alt="" coords="109,636,163,661"/>
+<area shape="rect" title=" " alt="" coords="288,636,352,661"/>
+<area shape="rect" title=" " alt="" coords="1885,152,2027,192"/>
+<area shape="rect" title=" " alt="" coords="2075,152,2218,192"/>
+<area shape="rect" href="../../d0/de3/Window_8hpp.html" title="Window management for the Toast Engine." alt="" coords="1544,159,1739,185"/>
+<area shape="rect" title=" " alt="" coords="1545,240,1655,265"/>
+<area shape="rect" title=" " alt="" coords="1731,240,1869,265"/>
 </map>
 </div>
 </div>

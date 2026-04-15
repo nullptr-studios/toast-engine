@@ -1,0 +1,5 @@
+<map id="HUDActor::DestroyView" name="HUDActor::DestroyView">
+<area shape="rect" id="node1" title=" " alt="" coords="215,31,392,56"/>
+<area shape="rect" id="node2" href="$d9/da2/classHUDActor.html#a71fbe50d283cf19f71a8ffbc714d6e0a" title="This function runs when the object is set to be destroyed." alt="" coords="13,5,159,31"/>
+<area shape="rect" id="node3" href="$d9/da2/classHUDActor.html#adb2279030384ec50c31f0c85dc4b2488" title="This function runs when the object is disabled." alt="" coords="5,55,167,80"/>
+</map>

@@ -1,6 +1,7 @@
 var classtoast_1_1HtmlView =
 [
     [ "ConsoleCallback", "d4/da6/classtoast_1_1HtmlView.html#a06220cb0becaf065c12c0d655d67da43", null ],
+    [ "DOMReadyCallback", "d4/da6/classtoast_1_1HtmlView.html#ae43d20a5ab5c1c5f4ac0ab6fade54c09", null ],
     [ "Begin", "d4/da6/classtoast_1_1HtmlView.html#a0314f1331c55f069fd64aabe9052d491", null ],
     [ "CreateUlView", "d4/da6/classtoast_1_1HtmlView.html#a588dd927b31f47534585b7579258ad3e", null ],
     [ "Destroy", "d4/da6/classtoast_1_1HtmlView.html#aa89f224e59135b7116786ded008b68d2", null ],
@@ -15,9 +16,12 @@ var classtoast_1_1HtmlView =
     [ "REGISTER_TYPE", "d4/da6/classtoast_1_1HtmlView.html#aee1ed9cf319f5ca02cc9072bc67113ad", null ],
     [ "Save", "d4/da6/classtoast_1_1HtmlView.html#a477d2793098b8a432f2628e0203d47bb", null ],
     [ "SetConsoleCallback", "d4/da6/classtoast_1_1HtmlView.html#ad815be7b3e07eaf4537fe747e0402d7d", null ],
+    [ "SetDOMReadyCallback", "d4/da6/classtoast_1_1HtmlView.html#af63a64b431fdbb3105d46817e5e0be99", null ],
     [ "SetSortOrder", "d4/da6/classtoast_1_1HtmlView.html#a0dfd0b7185e38a7fb84fa6f1655cdcfe", null ],
     [ "SetUrl", "d4/da6/classtoast_1_1HtmlView.html#a4e6789d05608d44bfdbd60dd142ccd21", null ],
     [ "m_consoleCb", "d4/da6/classtoast_1_1HtmlView.html#ae98b2c94c65391fdfa35386331d4a4b3", null ],
+    [ "m_domReadyCb", "d4/da6/classtoast_1_1HtmlView.html#a590b827e8b7a5d7e3fe434943841b24f", null ],
+    [ "m_loadListener", "d4/da6/classtoast_1_1HtmlView.html#aeae7f00f73c53071b6da8cb917275e36", null ],
     [ "m_sortOrder", "d4/da6/classtoast_1_1HtmlView.html#ac1821b3ba7436356e9c46a9f989bf0cf", null ],
     [ "m_url", "d4/da6/classtoast_1_1HtmlView.html#a877eea5b80e964aa977b845f207f5374", null ],
     [ "m_view", "d4/da6/classtoast_1_1HtmlView.html#a7555afdb77cf0938bf30c6f9466d3abf", null ],

@@ -7,5 +7,7 @@ var searchData=
   ['spine_5fatlas_4',['SPINE_ATLAS',['../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fa864c645f8df49590ab2e27a202b43fb7',1,'resource']]],
   ['spine_5fskeleton_5fdata_5',['SPINE_SKELETON_DATA',['../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fa955043a12a09c679ff30ded113a1f8f4',1,'resource']]],
   ['start_6',['Start',['../d9/d0f/structSpineAnimationPlaybackEvent.html#aea4800c9403e7ac5d60155aaa456b37aaa6122a65eaa676f700ae68d393054a37',1,'SpineAnimationPlaybackEvent']]],
-  ['started_7',['Started',['../da/d9c/structinput_1_1Action.html#acdea4e9a7d78e342be3f23e7753996ceaeb2e5fb8230b8635e8400b121a388d85',1,'input::Action']]]
+  ['started_7',['Started',['../da/d9c/structinput_1_1Action.html#acdea4e9a7d78e342be3f23e7753996ceaeb2e5fb8230b8635e8400b121a388d85',1,'input::Action']]],
+  ['stereo_8',['Stereo',['../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801abbc45d9b35436f5f0ed9e33499efcea9',1,'audio']]],
+  ['surround_9',['Surround',['../d2/d11/namespaceaudio.html#ae7cdc7425826c225dd28dac1f14ec801a428ea67d6ee5702028ad01753503828c',1,'audio']]]
 ];

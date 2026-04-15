@@ -1,6 +1,7 @@
 <map id="Framebuffer::AddColorAttachment" name="Framebuffer::AddColorAttachment">
-<area shape="rect" id="node1" title=" " alt="" coords="248,77,492,102"/>
-<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="5,5,200,45"/>
-<area shape="rect" id="node3" href="$d7/d13/classPostProcessManager.html#ab9037823e679cff0abc7e649cbe0a864" title=" " alt="" coords="24,69,181,109"/>
-<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,133,200,173"/>
+<area shape="rect" id="node1" title=" " alt="" coords="419,63,663,88"/>
+<area shape="rect" id="node2" href="$d6/d83/structBloom.html#af332b89570965ebf6610c48df908836c" title=" " alt="" coords="192,5,355,31"/>
+<area shape="rect" id="node4" href="$d7/d13/classPostProcessManager.html#ab9037823e679cff0abc7e649cbe0a864" title=" " alt="" coords="195,55,352,95"/>
+<area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="176,119,371,159"/>
+<area shape="rect" id="node3" href="$d6/d83/structBloom.html#aa01e3275a43107bae0435f38d488ecdc" title=" " alt="" coords="5,5,128,31"/>
 </map>

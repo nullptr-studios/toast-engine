@@ -3,6 +3,7 @@ var classrenderer_1_1DebugDrawLayer =
     [ "DebugDrawLayer", "df/daf/classrenderer_1_1DebugDrawLayer.html#a94b640740dfd0a9c0b427f711f559f53", null ],
     [ "~DebugDrawLayer", "df/daf/classrenderer_1_1DebugDrawLayer.html#af6d7be23652884763d6fbcf91881f549", null ],
     [ "Clear", "df/daf/classrenderer_1_1DebugDrawLayer.html#a24967d94b4ae369f2747bca6ce8e20a1", null ],
+    [ "DrawArrow3D", "df/daf/classrenderer_1_1DebugDrawLayer.html#ad168b60daee23ea41301e45f65fc5454", null ],
     [ "DrawCircle", "df/daf/classrenderer_1_1DebugDrawLayer.html#a927fddc7c6b3766a2067964fe6b62aa6", null ],
     [ "DrawCircle", "df/daf/classrenderer_1_1DebugDrawLayer.html#aa907a29b8c0b4b4396878e076e21833c", null ],
     [ "DrawFrustum", "df/daf/classrenderer_1_1DebugDrawLayer.html#a6cee472319d03837d02097653269e053", null ],

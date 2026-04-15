@@ -108,6 +108,8 @@ $(document).ready(function(){initNavTree('d0/db9/namespacerenderer.html','../../
 Namespaces</h2></td></tr>
 <tr class="memitem:dc/d2a/namespacerenderer_1_1HUD"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2a/namespacerenderer_1_1HUD.html">HUD</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:db/dde/namespacerenderer_1_1post"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/dde/namespacerenderer_1_1post.html">post</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -156,6 +158,7 @@ Enumerations</h2></td></tr>
 <tr class="memitem:aaace186f1b25ce4be32328162a1dcd1b"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1b">IRenderablePass</a> : uint8_t { <a class="el" href="../../d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1bab22957ad8078e8d73de61aef53d13a74">GEOMETRY</a>
 , <a class="el" href="../../d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1babc2f2b159cc56de34d757ac7c93b9100">LIGHTS</a>
 , <a class="el" href="../../d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1ba8307d318a3a8fd7a3acd8eb50fc95701">OCCLUSION</a>
+, <a class="el" href="../../d0/db9/namespacerenderer.html#aaace186f1b25ce4be32328162a1dcd1ba6a6660e77f9b5b3118f44085dad23246">DIRECTIONAL_SHADOW</a>
  }</td></tr>
 <tr class="separator:aaace186f1b25ce4be32328162a1dcd1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a157aaedd17cff1e92376e40949f2ef56"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#a157aaedd17cff1e92376e40949f2ef56">Stage</a> : uint16_t { <a class="el" href="../../d0/db9/namespacerenderer.html#a157aaedd17cff1e92376e40949f2ef56ab22b929ba52471a02d18bb3a4e4472e6">Vertex</a> = GL_VERTEX_SHADER
@@ -190,6 +193,8 @@ Functions</h2></td></tr>
 <tr class="separator:a37c288e9290405ef60d602157db1288c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4a7f0edbb5c2cbc3f842f44c0bef253d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#a4a7f0edbb5c2cbc3f842f44c0bef253d">DrawDebugArrow</a> (const glm::vec2 &amp;start, const glm::vec2 &amp;direction, float length, const glm::vec4 &amp;color)</td></tr>
 <tr class="separator:a4a7f0edbb5c2cbc3f842f44c0bef253d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a92a56b217dbaea6013d92825eda6c0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#a2a92a56b217dbaea6013d92825eda6c0">DebugArrow3D</a> (const glm::vec3 &amp;start, const glm::vec3 &amp;direction, float length, const glm::vec4 &amp;color={ 1, 1, 1, 1 })</td></tr>
+<tr class="separator:a2a92a56b217dbaea6013d92825eda6c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af6b1b845e609cab39d1febc72715d3a5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5">LoadRendererSettings</a> ()</td></tr>
 <tr class="separator:af6b1b845e609cab39d1febc72715d3a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaccd4db22dcd63f95d1186b2cbaaaed7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/db9/namespacerenderer.html#aaccd4db22dcd63f95d1186b2cbaaaed7">SaveRendererSettings</a> ()</td></tr>
@@ -221,6 +226,7 @@ Functions</h2></td></tr>
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="aaace186f1b25ce4be32328162a1dcd1bab22957ad8078e8d73de61aef53d13a74" name="aaace186f1b25ce4be32328162a1dcd1bab22957ad8078e8d73de61aef53d13a74"></a>GEOMETRY&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aaace186f1b25ce4be32328162a1dcd1babc2f2b159cc56de34d757ac7c93b9100" name="aaace186f1b25ce4be32328162a1dcd1babc2f2b159cc56de34d757ac7c93b9100"></a>LIGHTS&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aaace186f1b25ce4be32328162a1dcd1ba8307d318a3a8fd7a3acd8eb50fc95701" name="aaace186f1b25ce4be32328162a1dcd1ba8307d318a3a8fd7a3acd8eb50fc95701"></a>OCCLUSION&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aaace186f1b25ce4be32328162a1dcd1ba6a6660e77f9b5b3118f44085dad23246" name="aaace186f1b25ce4be32328162a1dcd1ba6a6660e77f9b5b3118f44085dad23246"></a>DIRECTIONAL_SHADOW&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
 <p class="definition">Definition at line <a class="el" href="../../d7/d78/IRenderable_8hpp_source.html#l00020">20</a> of file <a class="el" href="../../d7/d78/IRenderable_8hpp_source.html">IRenderable.hpp</a>.</p>
@@ -260,6 +266,56 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="a2a92a56b217dbaea6013d92825eda6c0" name="a2a92a56b217dbaea6013d92825eda6c0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2a92a56b217dbaea6013d92825eda6c0">&#9670;&#160;</a></span>DebugArrow3D()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::DebugArrow3D </td>
+          <td>(</td>
+          <td class="paramtype">const glm::vec3 &amp;&#160;</td>
+          <td class="paramname"><em>start</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const glm::vec3 &amp;&#160;</td>
+          <td class="paramname"><em>direction</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>length</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const glm::vec4 &amp;&#160;</td>
+          <td class="paramname"><em>color</em> = <code>{&#160;1,&#160;1,&#160;1,&#160;1&#160;}</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00146">146</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
+
+</div>
+</div>
 <a id="a1ffee1c771d40ee0be7f69862c7c0204" name="a1ffee1c771d40ee0be7f69862c7c0204"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a1ffee1c771d40ee0be7f69862c7c0204">&#9670;&#160;</a></span>DebugCallback()</h2>
 
@@ -316,7 +372,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00079">79</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00146">146</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -381,7 +437,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00105">105</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00106">106</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -447,7 +503,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00109">109</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00110">110</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -491,7 +547,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00097">97</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00098">98</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -548,7 +604,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00101">101</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00102">102</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -598,7 +654,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00121">121</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00122">122</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -648,7 +704,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00125">125</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00126">126</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -698,7 +754,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00113">113</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00114">114</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -754,7 +810,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00117">117</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00118">118</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -804,7 +860,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00129">129</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html#l00130">130</a> of file <a class="el" href="../../d7/d47/DebugDrawLayer_8hpp_source.html">DebugDrawLayer.hpp</a>.</p>
 
 </div>
 </div>
@@ -832,7 +888,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00059">59</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html#l00126">126</a> of file <a class="el" href="../../d2/d7b/OpenGLRenderer_8cpp_source.html">OpenGLRenderer.cpp</a>.</p>
 
 </div>
 </div>
@@ -859,7 +915,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00446">446</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00590">590</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>
@@ -886,7 +942,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00450">450</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html#l00594">594</a> of file <a class="el" href="../../d7/dcb/IRendererBase_8hpp_source.html">IRendererBase.hpp</a>.</p>
 
 </div>
 </div>

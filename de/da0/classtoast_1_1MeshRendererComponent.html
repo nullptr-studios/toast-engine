@@ -94,6 +94,7 @@ $(document).ready(function(){initNavTree('de/da0/classtoast_1_1MeshRendererCompo
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="../../dd/ddb/classtoast_1_1MeshRendererComponent-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">toast::MeshRendererComponent Class Reference</div></div>
@@ -103,6 +104,8 @@ $(document).ready(function(){initNavTree('de/da0/classtoast_1_1MeshRendererCompo
 <p><code>#include &lt;<a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>&gt;</code></p>
 
 <p>Inherits <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">renderer::IRenderable</a>.</p>
+
+<p>Inherited by <a class="el" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html">toast::WaterRendererComponent</a>.</p>
 <div class="dynheader">
 Collaboration diagram for toast::MeshRendererComponent:</div>
 <div class="dyncontent">
@@ -157,6 +160,16 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a0e8d5ae064ee6e4c5da68454d991eece"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f81e014fd09e5d5fda75a2b7c84b8fd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a4f81e014fd09e5d5fda75a2b7c84b8fd">SetMesh</a> (const std::string_view &amp;path)</td></tr>
 <tr class="separator:a4f81e014fd09e5d5fda75a2b7c84b8fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adbab2e4de44c05f6ecb0bda09a215da3"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#adbab2e4de44c05f6ecb0bda09a215da3">SetTransparent</a> (bool transparent)</td></tr>
+<tr class="separator:adbab2e4de44c05f6ecb0bda09a215da3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7abf38bceba01c6ea368252d0704ec23"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a7abf38bceba01c6ea368252d0704ec23">SetUseExternalTextureOnly</a> (bool <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a6b68efce8207b26d5c0acda01e9dcdea">enabled</a>)</td></tr>
+<tr class="separator:a7abf38bceba01c6ea368252d0704ec23"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad898ed330876d1e3d1e42adb792b4fea"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ad898ed330876d1e3d1e42adb792b4fea">IsTransparent</a> () const</td></tr>
+<tr class="separator:ad898ed330876d1e3d1e42adb792b4fea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8609d93fc9f9f41e8466045e85d71018"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a8609d93fc9f9f41e8466045e85d71018">SetExternalTexture</a> (unsigned int texture_id, std::string sampler_name=&quot;gTexture&quot;, int texture_unit=0)</td></tr>
+<tr class="separator:a8609d93fc9f9f41e8466045e85d71018"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade31f26a3b62ac591d24815c3d364448"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ade31f26a3b62ac591d24815c3d364448">ClearExternalTexture</a> ()</td></tr>
+<tr class="separator:ade31f26a3b62ac591d24815c3d364448"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classrenderer_1_1IRenderable"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classrenderer_1_1IRenderable')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">renderer::IRenderable</a></td></tr>
 <tr class="memitem:ab1f1a56a5680b260fdcd92d7d76ee27d inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#ab1f1a56a5680b260fdcd92d7d76ee27d">~IRenderable</a> () override=default</td></tr>
 <tr class="separator:ab1f1a56a5680b260fdcd92d7d76ee27d inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -166,6 +179,14 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa72e32a2941c9cfaa1fde20754805c1c inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#aa72e32a2941c9cfaa1fde20754805c1c">GetDepth</a> () noexcept</td></tr>
 <tr class="memdesc:aa72e32a2941c9cfaa1fde20754805c1c inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the Z-depth for sorting purposes.  <br /></td></tr>
 <tr class="separator:aa72e32a2941c9cfaa1fde20754805c1c inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adfc96d3e8454ad1819f711172861d4c1 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#adfc96d3e8454ad1819f711172861d4c1">GetGeometrySortPriority</a> () noexcept</td></tr>
+<tr class="memdesc:adfc96d3e8454ad1819f711172861d4c1 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Geometry sorting priority. Higher values are rendered later in GeometryPass.  <br /></td></tr>
+<tr class="separator:adfc96d3e8454ad1819f711172861d4c1 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a841d3c007704846b3752ed1dc116b237 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a841d3c007704846b3752ed1dc116b237">GetTransparentSortDepth</a> (const glm::mat4 &amp;view_matrix) noexcept</td></tr>
+<tr class="separator:a841d3c007704846b3752ed1dc116b237 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a74cfe5f7b4edb11d1813b3403a59eb71">GetTransparentSortPriority</a> () noexcept</td></tr>
+<tr class="memdesc:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transparent sorting priority. Higher values are rendered later in SpritePass.  <br /></td></tr>
+<tr class="separator:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1TransformComponent"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classtoast_1_1TransformComponent')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html">toast::TransformComponent</a></td></tr>
 <tr class="memitem:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a0077d521827b8e0f9c6814efc7fb55c7">TransformComponent</a> ()</td></tr>
 <tr class="memdesc:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a transform at the origin with no rotation and unit scale.  <br /></td></tr>
@@ -261,9 +282,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true) override</td></tr>
 <tr class="memdesc:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef">SoftLoad</a> () override</td></tr>
-<tr class="memdesc:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
-<tr class="separator:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa11cd2c18489d042e6fd27295d622c38">SoftLoad</a> (bool editorStop=false) override</td></tr>
+<tr class="memdesc:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
+<tr class="separator:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656">SoftSave</a> () const override</td></tr>
 <tr class="memdesc:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -319,9 +340,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a706ca4214d997840d82bc83e0c3ab85b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true)=0</td></tr>
 <tr class="memdesc:a706ca4214d997840d82bc83e0c3ab85b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a706ca4214d997840d82bc83e0c3ab85b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a7a5705e9dd33a51039af65c3928ea4ef">SoftLoad</a> ()=0</td></tr>
-<tr class="memdesc:a7a5705e9dd33a51039af65c3928ea4ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
-<tr class="separator:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09513da3769afa0f69615204c28dbad4"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a09513da3769afa0f69615204c28dbad4">SoftLoad</a> (bool editorStop)=0</td></tr>
+<tr class="memdesc:a09513da3769afa0f69615204c28dbad4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
+<tr class="separator:a09513da3769afa0f69615204c28dbad4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66284559a3d768dcad01459ce3688f82"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">Save</a> () const =0</td></tr>
 <tr class="memdesc:a66284559a3d768dcad01459ce3688f82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a66284559a3d768dcad01459ce3688f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -329,38 +350,20 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a58c24747a2bcdd94fa3d69b81761cd03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
-Private Attributes</h2></td></tr>
-<tr class="memitem:ad0a88f22cd16598753f7a61c073fbb9a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dd/ddc/classeditor_1_1ResourceSlot.html">editor::ResourceSlot</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ad0a88f22cd16598753f7a61c073fbb9a">m_materialSlot</a> { <a class="el" href="../../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fac740ce1ae95095daaa5eb2362f3151b3">resource::ResourceType::MATERIAL</a> }</td></tr>
-<tr class="separator:ad0a88f22cd16598753f7a61c073fbb9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5f4fe811e33c2ee0810481af499e73cc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dd/ddc/classeditor_1_1ResourceSlot.html">editor::ResourceSlot</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a5f4fe811e33c2ee0810481af499e73cc">m_modelSlot</a> { <a class="el" href="../../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fa7a03bac2692f8d17e2cda1b0721ffd0e">resource::ResourceType::MODEL</a> }</td></tr>
-<tr class="separator:a5f4fe811e33c2ee0810481af499e73cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39a569675848361c01fc6ab6b76c6e32"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a39a569675848361c01fc6ab6b76c6e32">m_meshPath</a> = &quot;MODELS/quad.obj&quot;</td></tr>
-<tr class="separator:a39a569675848361c01fc6ab6b76c6e32"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2a5ec94d952678d682f2834721c3867b"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a2a5ec94d952678d682f2834721c3867b">m_materialPath</a> = &quot;MATERIALS/default.mat&quot;</td></tr>
-<tr class="separator:a2a5ec94d952678d682f2834721c3867b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afb7ed025dd079f80d5130d9dc67670fa"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="../../d4/d8c/classrenderer_1_1Mesh.html">renderer::Mesh</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#afb7ed025dd079f80d5130d9dc67670fa">m_mesh</a></td></tr>
-<tr class="separator:afb7ed025dd079f80d5130d9dc67670fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a78eb8eef548ec2a3b72dd42e9fa33a0b"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="../../d4/de6/classrenderer_1_1Material.html">renderer::Material</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a78eb8eef548ec2a3b72dd42e9fa33a0b">m_material</a></td></tr>
-<tr class="separator:a78eb8eef548ec2a3b72dd42e9fa33a0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1172f45230ee1f42e3223bbd2ff323bd"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a1172f45230ee1f42e3223bbd2ff323bd">m_occlusionShader</a></td></tr>
-<tr class="separator:a1172f45230ee1f42e3223bbd2ff323bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a291b7cc1c803a7f31380d353c2e96d2b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a291b7cc1c803a7f31380d353c2e96d2b">m_isOccluder</a> = false</td></tr>
-<tr class="separator:a291b7cc1c803a7f31380d353c2e96d2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6b94c1e9aaca2b251d9f097230a70d07"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a6b94c1e9aaca2b251d9f097230a70d07">m_drawToDepth</a> = true</td></tr>
-<tr class="separator:a6b94c1e9aaca2b251d9f097230a70d07"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
-Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pub_static_methods_classtoast_1_1Object"><td colspan="2" onclick="javascript:toggleInherit('pub_static_methods_classtoast_1_1Object')"><img src="../../closed.png" alt="-"/>&#160;Static Public Member Functions inherited from <a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a></td></tr>
-<tr class="memitem:a71ecedef54b6348ea33ccfb5503bcde0 inherit pub_static_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a71ecedef54b6348ea33ccfb5503bcde0">Register</a> (const std::string &amp;<a class="el" href="../../d1/da3/classtoast_1_1Object.html#a9ae515365126c17df9c86e1ac6a80e69">name</a>, <a class="el" href="../../da/d8d/Children_8inl.html#ac8137d1a5cdf0985e80eedae0c02cece">FactoryFunction</a> func)</td></tr>
-<tr class="separator:a71ecedef54b6348ea33ccfb5503bcde0 inherit pub_static_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:affe9053e09e9e130a9255d1c53d55104 inherit pub_static_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">static const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#affe9053e09e9e130a9255d1c53d55104">static_type</a> ()</td></tr>
-<tr class="memdesc:affe9053e09e9e130a9255d1c53d55104 inherit pub_static_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the name of the class.  <br /></td></tr>
-<tr class="separator:affe9053e09e9e130a9255d1c53d55104 inherit pub_static_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_attribs_classtoast_1_1Object"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_classtoast_1_1Object')"><img src="../../closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a></td></tr>
-<tr class="memitem:adf6362bc2273177668430a2cd9500806 inherit pub_attribs_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d87/classChildren.html">Children</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#adf6362bc2273177668430a2cd9500806">children</a></td></tr>
-<tr class="separator:adf6362bc2273177668430a2cd9500806 inherit pub_attribs_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
+Protected Member Functions</h2></td></tr>
+<tr class="memitem:a01894da89e8b9b1edef7f5f84d0e8a6a"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a01894da89e8b9b1edef7f5f84d0e8a6a">RegisterWithRenderer</a> (<a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html">renderer::IRendererBase</a> *renderer)</td></tr>
+<tr class="separator:a01894da89e8b9b1edef7f5f84d0e8a6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a46d2f1559043c31c78d4cb34464acdf7"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a46d2f1559043c31c78d4cb34464acdf7">UnregisterFromRenderer</a> (<a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html">renderer::IRendererBase</a> *renderer)</td></tr>
+<tr class="separator:a46d2f1559043c31c78d4cb34464acdf7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4d8cb9d5e894d5499a832ff1d2d6bc4f"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a4d8cb9d5e894d5499a832ff1d2d6bc4f">EnableInRenderer</a> (<a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html">renderer::IRendererBase</a> *renderer)</td></tr>
+<tr class="separator:a4d8cb9d5e894d5499a832ff1d2d6bc4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab5ca11f656ba004aaa6f8a90380e6915"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ab5ca11f656ba004aaa6f8a90380e6915">DisableInRenderer</a> (<a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html">renderer::IRendererBase</a> *renderer)</td></tr>
+<tr class="separator:ab5ca11f656ba004aaa6f8a90380e6915"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1f9267ade198a049930911d92c8961d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ab1f9267ade198a049930911d92c8961d">ApplyCustomUniforms</a> (<a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> *shader) noexcept</td></tr>
+<tr class="separator:ab1f9267ade198a049930911d92c8961d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a369792e4bdb878f5265ef63d03107c94"><td class="memItemLeft" align="right" valign="top">const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a369792e4bdb878f5265ef63d03107c94">GetMaterialPath</a> () const</td></tr>
+<tr class="separator:a369792e4bdb878f5265ef63d03107c94"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classrenderer_1_1IRenderable"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classrenderer_1_1IRenderable')"><img src="../../closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">renderer::IRenderable</a></td></tr>
 <tr class="memitem:a14774d1b0b21868a593cfa3dd041fe46 inherit pro_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a14774d1b0b21868a593cfa3dd041fe46">IRenderable</a> ()=default</td></tr>
 <tr class="separator:a14774d1b0b21868a593cfa3dd041fe46 inherit pro_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -412,11 +415,121 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:aa9867880b2966b5ccb8be7c9abf37618"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa9867880b2966b5ccb8be7c9abf37618">OnDisable</a> ()</td></tr>
 <tr class="memdesc:aa9867880b2966b5ccb8be7c9abf37618"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function runs when the object is disabled.  <br /></td></tr>
 <tr class="separator:aa9867880b2966b5ccb8be7c9abf37618"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
+Private Attributes</h2></td></tr>
+<tr class="memitem:ad0a88f22cd16598753f7a61c073fbb9a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dd/ddc/classeditor_1_1ResourceSlot.html">editor::ResourceSlot</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ad0a88f22cd16598753f7a61c073fbb9a">m_materialSlot</a> { <a class="el" href="../../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fac740ce1ae95095daaa5eb2362f3151b3">resource::ResourceType::MATERIAL</a> }</td></tr>
+<tr class="separator:ad0a88f22cd16598753f7a61c073fbb9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f4fe811e33c2ee0810481af499e73cc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dd/ddc/classeditor_1_1ResourceSlot.html">editor::ResourceSlot</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a5f4fe811e33c2ee0810481af499e73cc">m_modelSlot</a> { <a class="el" href="../../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fa7a03bac2692f8d17e2cda1b0721ffd0e">resource::ResourceType::MODEL</a> }</td></tr>
+<tr class="separator:a5f4fe811e33c2ee0810481af499e73cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39a569675848361c01fc6ab6b76c6e32"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a39a569675848361c01fc6ab6b76c6e32">m_meshPath</a> = &quot;MODELS/quad.obj&quot;</td></tr>
+<tr class="separator:a39a569675848361c01fc6ab6b76c6e32"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a5ec94d952678d682f2834721c3867b"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a2a5ec94d952678d682f2834721c3867b">m_materialPath</a> = &quot;MATERIALS/default.mat&quot;</td></tr>
+<tr class="separator:a2a5ec94d952678d682f2834721c3867b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb7ed025dd079f80d5130d9dc67670fa"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="../../d4/d8c/classrenderer_1_1Mesh.html">renderer::Mesh</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#afb7ed025dd079f80d5130d9dc67670fa">m_mesh</a></td></tr>
+<tr class="separator:afb7ed025dd079f80d5130d9dc67670fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78eb8eef548ec2a3b72dd42e9fa33a0b"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="../../d4/de6/classrenderer_1_1Material.html">renderer::Material</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a78eb8eef548ec2a3b72dd42e9fa33a0b">m_material</a></td></tr>
+<tr class="separator:a78eb8eef548ec2a3b72dd42e9fa33a0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1172f45230ee1f42e3223bbd2ff323bd"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a1172f45230ee1f42e3223bbd2ff323bd">m_occlusionShader</a></td></tr>
+<tr class="separator:a1172f45230ee1f42e3223bbd2ff323bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4b6872b8a0e6caa74578033d5e712c3c"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a4b6872b8a0e6caa74578033d5e712c3c">m_externalShader</a></td></tr>
+<tr class="separator:a4b6872b8a0e6caa74578033d5e712c3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc5780d0eb4c56ea78156a48e64fe8a4"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#afc5780d0eb4c56ea78156a48e64fe8a4">m_defaultShader</a></td></tr>
+<tr class="separator:afc5780d0eb4c56ea78156a48e64fe8a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a291b7cc1c803a7f31380d353c2e96d2b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a291b7cc1c803a7f31380d353c2e96d2b">m_isOccluder</a> = false</td></tr>
+<tr class="separator:a291b7cc1c803a7f31380d353c2e96d2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6724a86b32fb0bd03eb7fd0bd2a75ed3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a6724a86b32fb0bd03eb7fd0bd2a75ed3">m_castsDirectionalShadow</a> = true</td></tr>
+<tr class="separator:a6724a86b32fb0bd03eb7fd0bd2a75ed3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3de5f8cc85e09c2d24f297bc8c042338"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a3de5f8cc85e09c2d24f297bc8c042338">m_isTransparent</a> = false</td></tr>
+<tr class="separator:a3de5f8cc85e09c2d24f297bc8c042338"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b94c1e9aaca2b251d9f097230a70d07"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a6b94c1e9aaca2b251d9f097230a70d07">m_drawToDepth</a> = true</td></tr>
+<tr class="separator:a6b94c1e9aaca2b251d9f097230a70d07"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a264c4b3eec8b66dfe03fcd3839a44a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a7a264c4b3eec8b66dfe03fcd3839a44a">m_useExternalTexture</a> = false</td></tr>
+<tr class="separator:a7a264c4b3eec8b66dfe03fcd3839a44a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a774d7cc85fbf58b0409164af7172c03f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a774d7cc85fbf58b0409164af7172c03f">m_useExternalTextureOnly</a> = false</td></tr>
+<tr class="separator:a774d7cc85fbf58b0409164af7172c03f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c7d6eac4a9930c1d95ef65f4f6b0290"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a2c7d6eac4a9930c1d95ef65f4f6b0290">m_externalTextureId</a> = 0</td></tr>
+<tr class="separator:a2c7d6eac4a9930c1d95ef65f4f6b0290"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42d7edf8d3d1128984cfcb9e9564237d"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a42d7edf8d3d1128984cfcb9e9564237d">m_externalTextureSampler</a> = &quot;gTexture&quot;</td></tr>
+<tr class="separator:a42d7edf8d3d1128984cfcb9e9564237d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5bd309ecd707bac69d7b595e246dba60"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a5bd309ecd707bac69d7b595e246dba60">m_externalTextureUnit</a> = 0</td></tr>
+<tr class="separator:a5bd309ecd707bac69d7b595e246dba60"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8a748b177daa91afd9bba997708809df"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a8a748b177daa91afd9bba997708809df">m_isRegisteredInRenderer</a> = false</td></tr>
+<tr class="separator:a8a748b177daa91afd9bba997708809df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pub_static_methods_classtoast_1_1Object"><td colspan="2" onclick="javascript:toggleInherit('pub_static_methods_classtoast_1_1Object')"><img src="../../closed.png" alt="-"/>&#160;Static Public Member Functions inherited from <a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a></td></tr>
+<tr class="memitem:a71ecedef54b6348ea33ccfb5503bcde0 inherit pub_static_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a71ecedef54b6348ea33ccfb5503bcde0">Register</a> (const std::string &amp;<a class="el" href="../../d1/da3/classtoast_1_1Object.html#a9ae515365126c17df9c86e1ac6a80e69">name</a>, <a class="el" href="../../da/d8d/Children_8inl.html#ac8137d1a5cdf0985e80eedae0c02cece">FactoryFunction</a> func)</td></tr>
+<tr class="separator:a71ecedef54b6348ea33ccfb5503bcde0 inherit pub_static_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affe9053e09e9e130a9255d1c53d55104 inherit pub_static_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">static const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#affe9053e09e9e130a9255d1c53d55104">static_type</a> ()</td></tr>
+<tr class="memdesc:affe9053e09e9e130a9255d1c53d55104 inherit pub_static_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the name of the class.  <br /></td></tr>
+<tr class="separator:affe9053e09e9e130a9255d1c53d55104 inherit pub_static_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_attribs_classtoast_1_1Object"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_classtoast_1_1Object')"><img src="../../closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a></td></tr>
+<tr class="memitem:adf6362bc2273177668430a2cd9500806 inherit pub_attribs_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d87/classChildren.html">Children</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#adf6362bc2273177668430a2cd9500806">children</a></td></tr>
+<tr class="separator:adf6362bc2273177668430a2cd9500806 inherit pub_attribs_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00020">20</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00026">26</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="ab1f9267ade198a049930911d92c8961d" name="ab1f9267ade198a049930911d92c8961d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab1f9267ade198a049930911d92c8961d">&#9670;&#160;</a></span>ApplyCustomUniforms()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void toast::MeshRendererComponent::ApplyCustomUniforms </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> *&#160;</td>
+          <td class="paramname"><em>shader</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span><span class="mlabel">virtual</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented in <a class="el" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#a827dd91303e5c642e91870413c67ed8c">toast::WaterRendererComponent</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00050">50</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ade31f26a3b62ac591d24815c3d364448" name="ade31f26a3b62ac591d24815c3d364448"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade31f26a3b62ac591d24815c3d364448">&#9670;&#160;</a></span>ClearExternalTexture()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void toast::MeshRendererComponent::ClearExternalTexture </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00114">114</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
 <a id="abc159d6bd6ba0ebd106a651fbb6f9b40" name="abc159d6bd6ba0ebd106a651fbb6f9b40"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#abc159d6bd6ba0ebd106a651fbb6f9b40">&#9670;&#160;</a></span>Destroy()</h2>
 
@@ -444,7 +557,112 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a1b6e927d9c508dd81a308d45a52afecb">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00191">191</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00318">318</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ab5ca11f656ba004aaa6f8a90380e6915" name="ab5ca11f656ba004aaa6f8a90380e6915"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab5ca11f656ba004aaa6f8a90380e6915">&#9670;&#160;</a></span>DisableInRenderer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void toast::MeshRendererComponent::DisableInRenderer </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html">renderer::IRendererBase</a> *&#160;</td>
+          <td class="paramname"><em>renderer</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented in <a class="el" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#af68ddc20f39e4126ed3d42bb9754016b">toast::WaterRendererComponent</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00042">42</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../de/da0/classtoast_1_1MeshRendererComponent_ab5ca11f656ba004aaa6f8a90380e6915_icgraph.png" border="0" usemap="#ade/da0/classtoast_1_1MeshRendererComponent_ab5ca11f656ba004aaa6f8a90380e6915_icgraph" alt=""/></div>
+<map name="ade/da0/classtoast_1_1MeshRendererComponent_ab5ca11f656ba004aaa6f8a90380e6915_icgraph" id="ade/da0/classtoast_1_1MeshRendererComponent_ab5ca11f656ba004aaa6f8a90380e6915_icgraph">
+<area shape="rect" title=" " alt="" coords="285,5,517,45"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ae2f9f68cd082084d115e300c82a077e4" title="This function runs when the object is disabled." alt="" coords="5,5,237,45"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a4d8cb9d5e894d5499a832ff1d2d6bc4f" name="a4d8cb9d5e894d5499a832ff1d2d6bc4f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4d8cb9d5e894d5499a832ff1d2d6bc4f">&#9670;&#160;</a></span>EnableInRenderer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void toast::MeshRendererComponent::EnableInRenderer </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html">renderer::IRendererBase</a> *&#160;</td>
+          <td class="paramname"><em>renderer</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented in <a class="el" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#ac6545ced33243a2783e05f05b53574f3">toast::WaterRendererComponent</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00034">34</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../de/da0/classtoast_1_1MeshRendererComponent_a4d8cb9d5e894d5499a832ff1d2d6bc4f_icgraph.png" border="0" usemap="#ade/da0/classtoast_1_1MeshRendererComponent_a4d8cb9d5e894d5499a832ff1d2d6bc4f_icgraph" alt=""/></div>
+<map name="ade/da0/classtoast_1_1MeshRendererComponent_a4d8cb9d5e894d5499a832ff1d2d6bc4f_icgraph" id="ade/da0/classtoast_1_1MeshRendererComponent_a4d8cb9d5e894d5499a832ff1d2d6bc4f_icgraph">
+<area shape="rect" title=" " alt="" coords="285,5,517,45"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a7e03ccc7b57d8c9617fe8ab6d04d091f" title="This function runs when the object is enabled after being disabled." alt="" coords="5,5,237,45"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a369792e4bdb878f5265ef63d03107c94" name="a369792e4bdb878f5265ef63d03107c94"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a369792e4bdb878f5265ef63d03107c94">&#9670;&#160;</a></span>GetMaterialPath()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const std::string &amp; toast::MeshRendererComponent::GetMaterialPath </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00133">133</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -471,7 +689,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00077">77</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00083">83</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -502,7 +720,45 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d3/d63/classtoast_1_1Component.html#a187729a1cd745c75fab01fe8001d012c">toast::Component</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00083">83</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<p>Reimplemented in <a class="el" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#abce0f091ac91bef441bafc46fc45d5a8">toast::WaterRendererComponent</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00148">148</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../de/da0/classtoast_1_1MeshRendererComponent_a6c0554ccc0f646263c59529ba8ee8bea_icgraph.png" border="0" usemap="#ade/da0/classtoast_1_1MeshRendererComponent_a6c0554ccc0f646263c59529ba8ee8bea_icgraph" alt=""/></div>
+<map name="ade/da0/classtoast_1_1MeshRendererComponent_a6c0554ccc0f646263c59529ba8ee8bea_icgraph" id="ade/da0/classtoast_1_1MeshRendererComponent_a6c0554ccc0f646263c59529ba8ee8bea_icgraph">
+<area shape="rect" title="This function runs just after the object is created (scene load thread)" alt="" coords="288,5,520,45"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#abce0f091ac91bef441bafc46fc45d5a8" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,240,45"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="ad898ed330876d1e3d1e42adb792b4fea" name="ad898ed330876d1e3d1e42adb792b4fea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad898ed330876d1e3d1e42adb792b4fea">&#9670;&#160;</a></span>IsTransparent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool toast::MeshRendererComponent::IsTransparent </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00103">103</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -552,7 +808,18 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">toast::ISerializable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00018">18</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<p>Reimplemented in <a class="el" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#a653ae01aab44968879b103c6c25b3e8b">toast::WaterRendererComponent</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00069">69</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../de/da0/classtoast_1_1MeshRendererComponent_af29ed8cef0413a30e528c011a20e4bd0_icgraph.png" border="0" usemap="#ade/da0/classtoast_1_1MeshRendererComponent_af29ed8cef0413a30e528c011a20e4bd0_icgraph" alt=""/></div>
+<map name="ade/da0/classtoast_1_1MeshRendererComponent_af29ed8cef0413a30e528c011a20e4bd0_icgraph" id="ade/da0/classtoast_1_1MeshRendererComponent_af29ed8cef0413a30e528c011a20e4bd0_icgraph">
+<area shape="rect" title="Loads object state from JSON." alt="" coords="288,5,520,45"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#a653ae01aab44968879b103c6c25b3e8b" title="Loads object state from JSON." alt="" coords="5,5,240,45"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -581,7 +848,18 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a144d8696ae8da523c8e1c9b03e0754f9">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00116">116</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<p>Reimplemented in <a class="el" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#a2e573f3f1245a6efe65d780f3192badd">toast::WaterRendererComponent</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00183">183</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../de/da0/classtoast_1_1MeshRendererComponent_a5a4303d004d5551abfa9f42bf27e4ea6_icgraph.png" border="0" usemap="#ade/da0/classtoast_1_1MeshRendererComponent_a5a4303d004d5551abfa9f42bf27e4ea6_icgraph" alt=""/></div>
+<map name="ade/da0/classtoast_1_1MeshRendererComponent_a5a4303d004d5551abfa9f42bf27e4ea6_icgraph" id="ade/da0/classtoast_1_1MeshRendererComponent_a5a4303d004d5551abfa9f42bf27e4ea6_icgraph">
+<area shape="rect" title=" " alt="" coords="288,5,520,45"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#a2e573f3f1245a6efe65d780f3192badd" title=" " alt="" coords="5,5,240,45"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -612,7 +890,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa9867880b2966b5ccb8be7c9abf37618">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00201">201</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00331">331</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -643,7 +921,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#abe84982fe050e7f6ba09f8f0ccec6ee5">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00195">195</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00325">325</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -695,7 +973,9 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Implements <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a6edfc119b8464b5540e78703af327091">renderer::IRenderable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00124">124</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<p>Reimplemented in <a class="el" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#aef4f2af17382a5b2dcb585ad09506c62">toast::WaterRendererComponent</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00194">194</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -714,6 +994,49 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="a01894da89e8b9b1edef7f5f84d0e8a6a" name="a01894da89e8b9b1edef7f5f84d0e8a6a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a01894da89e8b9b1edef7f5f84d0e8a6a">&#9670;&#160;</a></span>RegisterWithRenderer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void toast::MeshRendererComponent::RegisterWithRenderer </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html">renderer::IRendererBase</a> *&#160;</td>
+          <td class="paramname"><em>renderer</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented in <a class="el" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#a041af29300f42f8f4579ce87bf339612">toast::WaterRendererComponent</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00018">18</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../de/da0/classtoast_1_1MeshRendererComponent_a01894da89e8b9b1edef7f5f84d0e8a6a_icgraph.png" border="0" usemap="#ade/da0/classtoast_1_1MeshRendererComponent_a01894da89e8b9b1edef7f5f84d0e8a6a_icgraph" alt=""/></div>
+<map name="ade/da0/classtoast_1_1MeshRendererComponent_a01894da89e8b9b1edef7f5f84d0e8a6a_icgraph" id="ade/da0/classtoast_1_1MeshRendererComponent_a01894da89e8b9b1edef7f5f84d0e8a6a_icgraph">
+<area shape="rect" title=" " alt="" coords="851,37,1083,77"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a5a4303d004d5551abfa9f42bf27e4ea6" title=" " alt="" coords="571,5,803,45"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#adbab2e4de44c05f6ecb0bda09a215da3" title=" " alt="" coords="571,69,803,109"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#a2e573f3f1245a6efe65d780f3192badd" title=" " alt="" coords="288,5,523,45"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#a8e76eca1978116034c31ef1d65fa87c1" title=" " alt="" coords="288,69,523,109"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#abce0f091ac91bef441bafc46fc45d5a8" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,69,240,109"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -746,7 +1069,62 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">toast::ISerializable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00048">48</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<p>Reimplemented in <a class="el" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#ab32781940bca2e74fa77588d7f051764">toast::WaterRendererComponent</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00106">106</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../de/da0/classtoast_1_1MeshRendererComponent_a280b3b0aa0dc11e1e4969188efac3d4e_icgraph.png" border="0" usemap="#ade/da0/classtoast_1_1MeshRendererComponent_a280b3b0aa0dc11e1e4969188efac3d4e_icgraph" alt=""/></div>
+<map name="ade/da0/classtoast_1_1MeshRendererComponent_a280b3b0aa0dc11e1e4969188efac3d4e_icgraph" id="ade/da0/classtoast_1_1MeshRendererComponent_a280b3b0aa0dc11e1e4969188efac3d4e_icgraph">
+<area shape="rect" title="Saves object state to JSON." alt="" coords="288,5,520,45"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#ab32781940bca2e74fa77588d7f051764" title="Saves object state to JSON." alt="" coords="5,5,240,45"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a8609d93fc9f9f41e8466045e85d71018" name="a8609d93fc9f9f41e8466045e85d71018"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8609d93fc9f9f41e8466045e85d71018">&#9670;&#160;</a></span>SetExternalTexture()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void toast::MeshRendererComponent::SetExternalTexture </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>texture_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>sampler_name</em> = <code>&quot;gTexture&quot;</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>texture_unit</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00107">107</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -774,14 +1152,15 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00042">42</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00048">48</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../de/da0/classtoast_1_1MeshRendererComponent_aeb94c065b4cf1a7f341b48610b02d54f_icgraph.png" border="0" usemap="#ade/da0/classtoast_1_1MeshRendererComponent_aeb94c065b4cf1a7f341b48610b02d54f_icgraph" alt=""/></div>
 <map name="ade/da0/classtoast_1_1MeshRendererComponent_aeb94c065b4cf1a7f341b48610b02d54f_icgraph" id="ade/da0/classtoast_1_1MeshRendererComponent_aeb94c065b4cf1a7f341b48610b02d54f_icgraph">
-<area shape="rect" title=" " alt="" coords="285,5,517,45"/>
-<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a6c0554ccc0f646263c59529ba8ee8bea" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,237,45"/>
+<area shape="rect" title=" " alt="" coords="568,5,800,45"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a6c0554ccc0f646263c59529ba8ee8bea" title="This function runs just after the object is created (scene load thread)" alt="" coords="288,5,520,45"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#abce0f091ac91bef441bafc46fc45d5a8" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,240,45"/>
 </map>
 </div>
 
@@ -811,14 +1190,15 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00081">81</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00087">87</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../de/da0/classtoast_1_1MeshRendererComponent_a0e8d5ae064ee6e4c5da68454d991eece_icgraph.png" border="0" usemap="#ade/da0/classtoast_1_1MeshRendererComponent_a0e8d5ae064ee6e4c5da68454d991eece_icgraph" alt=""/></div>
 <map name="ade/da0/classtoast_1_1MeshRendererComponent_a0e8d5ae064ee6e4c5da68454d991eece_icgraph" id="ade/da0/classtoast_1_1MeshRendererComponent_a0e8d5ae064ee6e4c5da68454d991eece_icgraph">
-<area shape="rect" title=" " alt="" coords="285,5,517,45"/>
-<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a6c0554ccc0f646263c59529ba8ee8bea" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,237,45"/>
+<area shape="rect" title=" " alt="" coords="568,5,800,45"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a6c0554ccc0f646263c59529ba8ee8bea" title="This function runs just after the object is created (scene load thread)" alt="" coords="288,5,520,45"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#abce0f091ac91bef441bafc46fc45d5a8" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,240,45"/>
 </map>
 </div>
 
@@ -848,11 +1228,178 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00085">85</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00091">91</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="adbab2e4de44c05f6ecb0bda09a215da3" name="adbab2e4de44c05f6ecb0bda09a215da3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adbab2e4de44c05f6ecb0bda09a215da3">&#9670;&#160;</a></span>SetTransparent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void toast::MeshRendererComponent::SetTransparent </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>transparent</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented in <a class="el" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#a8e76eca1978116034c31ef1d65fa87c1">toast::WaterRendererComponent</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00052">52</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../de/da0/classtoast_1_1MeshRendererComponent_adbab2e4de44c05f6ecb0bda09a215da3_icgraph.png" border="0" usemap="#ade/da0/classtoast_1_1MeshRendererComponent_adbab2e4de44c05f6ecb0bda09a215da3_icgraph" alt=""/></div>
+<map name="ade/da0/classtoast_1_1MeshRendererComponent_adbab2e4de44c05f6ecb0bda09a215da3_icgraph" id="ade/da0/classtoast_1_1MeshRendererComponent_adbab2e4de44c05f6ecb0bda09a215da3_icgraph">
+<area shape="rect" title=" " alt="" coords="571,5,803,45"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#a8e76eca1978116034c31ef1d65fa87c1" title=" " alt="" coords="288,5,523,45"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#abce0f091ac91bef441bafc46fc45d5a8" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,240,45"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a7abf38bceba01c6ea368252d0704ec23" name="a7abf38bceba01c6ea368252d0704ec23"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7abf38bceba01c6ea368252d0704ec23">&#9670;&#160;</a></span>SetUseExternalTextureOnly()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void toast::MeshRendererComponent::SetUseExternalTextureOnly </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>enabled</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00098">98</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../de/da0/classtoast_1_1MeshRendererComponent_a7abf38bceba01c6ea368252d0704ec23_icgraph.png" border="0" usemap="#ade/da0/classtoast_1_1MeshRendererComponent_a7abf38bceba01c6ea368252d0704ec23_icgraph" alt=""/></div>
+<map name="ade/da0/classtoast_1_1MeshRendererComponent_a7abf38bceba01c6ea368252d0704ec23_icgraph" id="ade/da0/classtoast_1_1MeshRendererComponent_a7abf38bceba01c6ea368252d0704ec23_icgraph">
+<area shape="rect" title=" " alt="" coords="288,5,520,45"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#abce0f091ac91bef441bafc46fc45d5a8" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,240,45"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a46d2f1559043c31c78d4cb34464acdf7" name="a46d2f1559043c31c78d4cb34464acdf7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a46d2f1559043c31c78d4cb34464acdf7">&#9670;&#160;</a></span>UnregisterFromRenderer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void toast::MeshRendererComponent::UnregisterFromRenderer </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d9/dc4/classrenderer_1_1IRendererBase.html">renderer::IRendererBase</a> *&#160;</td>
+          <td class="paramname"><em>renderer</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented in <a class="el" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#ae0cbeca9eced257b5f869241c7f6026c">toast::WaterRendererComponent</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00026">26</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../de/da0/classtoast_1_1MeshRendererComponent_a46d2f1559043c31c78d4cb34464acdf7_icgraph.png" border="0" usemap="#ade/da0/classtoast_1_1MeshRendererComponent_a46d2f1559043c31c78d4cb34464acdf7_icgraph" alt=""/></div>
+<map name="ade/da0/classtoast_1_1MeshRendererComponent_a46d2f1559043c31c78d4cb34464acdf7_icgraph" id="ade/da0/classtoast_1_1MeshRendererComponent_a46d2f1559043c31c78d4cb34464acdf7_icgraph">
+<area shape="rect" title=" " alt="" coords="851,37,1083,77"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#abc159d6bd6ba0ebd106a651fbb6f9b40" title="This function runs when the object is set to be destroyed." alt="" coords="571,5,803,45"/>
+<area shape="rect" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#adbab2e4de44c05f6ecb0bda09a215da3" title=" " alt="" coords="571,69,803,109"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#a8e76eca1978116034c31ef1d65fa87c1" title=" " alt="" coords="288,69,523,109"/>
+<area shape="rect" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#abce0f091ac91bef441bafc46fc45d5a8" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,69,240,109"/>
+</map>
+</div>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
+<a id="a6724a86b32fb0bd03eb7fd0bd2a75ed3" name="a6724a86b32fb0bd03eb7fd0bd2a75ed3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6724a86b32fb0bd03eb7fd0bd2a75ed3">&#9670;&#160;</a></span>m_castsDirectionalShadow</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool toast::MeshRendererComponent::m_castsDirectionalShadow = true</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00156">156</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="afc5780d0eb4c56ea78156a48e64fe8a4" name="afc5780d0eb4c56ea78156a48e64fe8a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afc5780d0eb4c56ea78156a48e64fe8a4">&#9670;&#160;</a></span>m_defaultShader</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a>&gt; toast::MeshRendererComponent::m_defaultShader</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00153">153</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
 <a id="a6b94c1e9aaca2b251d9f097230a70d07" name="a6b94c1e9aaca2b251d9f097230a70d07"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6b94c1e9aaca2b251d9f097230a70d07">&#9670;&#160;</a></span>m_drawToDepth</h2>
 
@@ -873,7 +1420,103 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00114">114</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00159">159</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a4b6872b8a0e6caa74578033d5e712c3c" name="a4b6872b8a0e6caa74578033d5e712c3c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4b6872b8a0e6caa74578033d5e712c3c">&#9670;&#160;</a></span>m_externalShader</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a>&gt; toast::MeshRendererComponent::m_externalShader</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00152">152</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a2c7d6eac4a9930c1d95ef65f4f6b0290" name="a2c7d6eac4a9930c1d95ef65f4f6b0290"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2c7d6eac4a9930c1d95ef65f4f6b0290">&#9670;&#160;</a></span>m_externalTextureId</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">unsigned int toast::MeshRendererComponent::m_externalTextureId = 0</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00163">163</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a42d7edf8d3d1128984cfcb9e9564237d" name="a42d7edf8d3d1128984cfcb9e9564237d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a42d7edf8d3d1128984cfcb9e9564237d">&#9670;&#160;</a></span>m_externalTextureSampler</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string toast::MeshRendererComponent::m_externalTextureSampler = &quot;gTexture&quot;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00164">164</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a5bd309ecd707bac69d7b595e246dba60" name="a5bd309ecd707bac69d7b595e246dba60"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5bd309ecd707bac69d7b595e246dba60">&#9670;&#160;</a></span>m_externalTextureUnit</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int toast::MeshRendererComponent::m_externalTextureUnit = 0</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00165">165</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -897,7 +1540,55 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00112">112</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00155">155</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a8a748b177daa91afd9bba997708809df" name="a8a748b177daa91afd9bba997708809df"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8a748b177daa91afd9bba997708809df">&#9670;&#160;</a></span>m_isRegisteredInRenderer</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool toast::MeshRendererComponent::m_isRegisteredInRenderer = false</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00167">167</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a3de5f8cc85e09c2d24f297bc8c042338" name="a3de5f8cc85e09c2d24f297bc8c042338"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3de5f8cc85e09c2d24f297bc8c042338">&#9670;&#160;</a></span>m_isTransparent</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool toast::MeshRendererComponent::m_isTransparent = false</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00157">157</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -921,7 +1612,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00109">109</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00150">150</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -945,7 +1636,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00104">104</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00145">145</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -969,7 +1660,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00097">97</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00138">138</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -993,7 +1684,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00108">108</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00149">149</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1017,7 +1708,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00103">103</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00144">144</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1041,7 +1732,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00099">99</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00140">140</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1065,7 +1756,55 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00110">110</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00151">151</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a7a264c4b3eec8b66dfe03fcd3839a44a" name="a7a264c4b3eec8b66dfe03fcd3839a44a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a264c4b3eec8b66dfe03fcd3839a44a">&#9670;&#160;</a></span>m_useExternalTexture</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool toast::MeshRendererComponent::m_useExternalTexture = false</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00161">161</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a774d7cc85fbf58b0409164af7172c03f" name="a774d7cc85fbf58b0409164af7172c03f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a774d7cc85fbf58b0409164af7172c03f">&#9670;&#160;</a></span>m_useExternalTextureOnly</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool toast::MeshRendererComponent::m_useExternalTextureOnly = false</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00162">162</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>

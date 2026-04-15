@@ -124,6 +124,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a54a7de33527e0673b7cfa4c13b04da28"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d72/classGlobalLight.html#a54a7de33527e0673b7cfa4c13b04da28">Init</a> () override</td></tr>
 <tr class="memdesc:a54a7de33527e0673b7cfa4c13b04da28"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function runs just after the object is created (scene load thread)  <br /></td></tr>
 <tr class="separator:a54a7de33527e0673b7cfa4c13b04da28"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca02c6d875f500ef2941032df74bbbfa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d72/classGlobalLight.html#aca02c6d875f500ef2941032df74bbbfa">Tick</a> () override</td></tr>
+<tr class="memdesc:aca02c6d875f500ef2941032df74bbbfa"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function runs every frame.  <br /></td></tr>
+<tr class="separator:aca02c6d875f500ef2941032df74bbbfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aec962114f97474140d3f958c3bdda599"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d72/classGlobalLight.html#aec962114f97474140d3f958c3bdda599">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create) override</td></tr>
 <tr class="memdesc:aec962114f97474140d3f958c3bdda599"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:aec962114f97474140d3f958c3bdda599"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -166,9 +169,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true) override</td></tr>
 <tr class="memdesc:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef">SoftLoad</a> () override</td></tr>
-<tr class="memdesc:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
-<tr class="separator:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa11cd2c18489d042e6fd27295d622c38">SoftLoad</a> (bool editorStop=false) override</td></tr>
+<tr class="memdesc:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
+<tr class="separator:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656">SoftSave</a> () const override</td></tr>
 <tr class="memdesc:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -224,9 +227,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a706ca4214d997840d82bc83e0c3ab85b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true)=0</td></tr>
 <tr class="memdesc:a706ca4214d997840d82bc83e0c3ab85b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a706ca4214d997840d82bc83e0c3ab85b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a7a5705e9dd33a51039af65c3928ea4ef">SoftLoad</a> ()=0</td></tr>
-<tr class="memdesc:a7a5705e9dd33a51039af65c3928ea4ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
-<tr class="separator:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09513da3769afa0f69615204c28dbad4"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a09513da3769afa0f69615204c28dbad4">SoftLoad</a> (bool editorStop)=0</td></tr>
+<tr class="memdesc:a09513da3769afa0f69615204c28dbad4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
+<tr class="separator:a09513da3769afa0f69615204c28dbad4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66284559a3d768dcad01459ce3688f82"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">Save</a> () const =0</td></tr>
 <tr class="memdesc:a66284559a3d768dcad01459ce3688f82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a66284559a3d768dcad01459ce3688f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -242,6 +245,14 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a39a86edeb37d2269c321d70ec120c62c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a76e7870a24daef00a7bc1847a0eca8ae"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d72/classGlobalLight.html#a76e7870a24daef00a7bc1847a0eca8ae">m_enableLight</a> = true</td></tr>
 <tr class="separator:a76e7870a24daef00a7bc1847a0eca8ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d7b005f29cb93281361c63e25cd6832"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d72/classGlobalLight.html#a6d7b005f29cb93281361c63e25cd6832">m_useTransformDirection</a> = true</td></tr>
+<tr class="separator:a6d7b005f29cb93281361c63e25cd6832"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add657065baa811adb9545d2c5a7021e3"><td class="memItemLeft" align="right" valign="top">glm::vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d72/classGlobalLight.html#add657065baa811adb9545d2c5a7021e3">m_manualDirection</a> = glm::normalize(glm::vec3(-0.35f, -1.0f, -0.25f))</td></tr>
+<tr class="separator:add657065baa811adb9545d2c5a7021e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af107e7bb2670317aa8def602e6a43f8c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d72/classGlobalLight.html#af107e7bb2670317aa8def602e6a43f8c">m_showDirectionalShadowArrow</a> = true</td></tr>
+<tr class="separator:af107e7bb2670317aa8def602e6a43f8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a13b2919d998d42a329ac197215d62517"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d72/classGlobalLight.html#a13b2919d998d42a329ac197215d62517">m_directionalShadowArrowLength</a> = 6.0f</td></tr>
+<tr class="separator:a13b2919d998d42a329ac197215d62517"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -344,7 +355,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#a9c31ed3e4ced90dd05b1bc252cea8091">toast::Actor</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html#l00013">13</a> of file <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html">GlobalLight.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html#l00039">39</a> of file <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html">GlobalLight.cpp</a>.</p>
 
 </div>
 </div>
@@ -394,7 +405,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#a3c5f4cd8fa387e57077847750ec6b9b2">toast::Actor</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html#l00021">21</a> of file <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html">GlobalLight.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html#l00060">60</a> of file <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html">GlobalLight.cpp</a>.</p>
 
 </div>
 </div>
@@ -445,7 +456,38 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#aa0f38730d8269175616034687227f635">toast::Actor</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html#l00034">34</a> of file <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html">GlobalLight.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html#l00085">85</a> of file <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html">GlobalLight.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aca02c6d875f500ef2941032df74bbbfa" name="aca02c6d875f500ef2941032df74bbbfa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aca02c6d875f500ef2941032df74bbbfa">&#9670;&#160;</a></span>Tick()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void GlobalLight::Tick </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>This function runs every frame. </p>
+
+<p>Reimplemented from <a class="el" href="../../d8/d92/classtoast_1_1Actor.html#a1c6e52d679db0a2566d2627ac7d28b18">toast::Actor</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html#l00049">49</a> of file <a class="el" href="../../d5/d73/GlobalLight_8cpp_source.html">GlobalLight.cpp</a>.</p>
 
 </div>
 </div>
@@ -470,7 +512,31 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html#l00025">25</a> of file <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html">GlobalLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html#l00026">26</a> of file <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html">GlobalLight.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a13b2919d998d42a329ac197215d62517" name="a13b2919d998d42a329ac197215d62517"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a13b2919d998d42a329ac197215d62517">&#9670;&#160;</a></span>m_directionalShadowArrowLength</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">float GlobalLight::m_directionalShadowArrowLength = 6.0f</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html#l00031">31</a> of file <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html">GlobalLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -494,7 +560,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html#l00026">26</a> of file <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html">GlobalLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html#l00027">27</a> of file <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html">GlobalLight.hpp</a>.</p>
 
 </div>
 </div>
@@ -518,7 +584,79 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html#l00024">24</a> of file <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html">GlobalLight.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html#l00025">25</a> of file <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html">GlobalLight.hpp</a>.</p>
+
+</div>
+</div>
+<a id="add657065baa811adb9545d2c5a7021e3" name="add657065baa811adb9545d2c5a7021e3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#add657065baa811adb9545d2c5a7021e3">&#9670;&#160;</a></span>m_manualDirection</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">glm::vec3 GlobalLight::m_manualDirection = glm::normalize(glm::vec3(-0.35f, -1.0f, -0.25f))</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html#l00029">29</a> of file <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html">GlobalLight.hpp</a>.</p>
+
+</div>
+</div>
+<a id="af107e7bb2670317aa8def602e6a43f8c" name="af107e7bb2670317aa8def602e6a43f8c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af107e7bb2670317aa8def602e6a43f8c">&#9670;&#160;</a></span>m_showDirectionalShadowArrow</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool GlobalLight::m_showDirectionalShadowArrow = true</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html#l00030">30</a> of file <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html">GlobalLight.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a6d7b005f29cb93281361c63e25cd6832" name="a6d7b005f29cb93281361c63e25cd6832"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6d7b005f29cb93281361c63e25cd6832">&#9670;&#160;</a></span>m_useTransformDirection</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool GlobalLight::m_useTransformDirection = true</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html#l00028">28</a> of file <a class="el" href="../../dc/dc6/GlobalLight_8hpp_source.html">GlobalLight.hpp</a>.</p>
 
 </div>
 </div>

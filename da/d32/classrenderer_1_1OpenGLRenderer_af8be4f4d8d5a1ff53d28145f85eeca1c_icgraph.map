@@ -1,7 +1,4 @@
 <map id="renderer::OpenGLRenderer::DestroyShadowResources" name="renderer::OpenGLRenderer::DestroyShadowResources">
-<area shape="rect" id="node1" title=" " alt="" coords="503,69,701,109"/>
-<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ae680aabf61731c942b6dcb99069087eb" title=" " alt="" coords="248,37,455,77"/>
-<area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a6149a4410afb1a7c0db21ed53f1995e1" title=" " alt="" coords="254,101,449,141"/>
-<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="5,5,200,45"/>
-<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,69,200,109"/>
+<area shape="rect" id="node1" title=" " alt="" coords="248,5,447,45"/>
+<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a6149a4410afb1a7c0db21ed53f1995e1" title=" " alt="" coords="5,5,200,45"/>
 </map>

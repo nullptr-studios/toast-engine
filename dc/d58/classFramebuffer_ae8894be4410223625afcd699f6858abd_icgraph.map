@@ -1,7 +1,8 @@
 <map id="Framebuffer::bindDraw" name="Framebuffer::bindDraw">
-<area shape="rect" id="node1" title=" " alt="" coords="491,55,661,80"/>
-<area shape="rect" id="node2" href="$db/db7/structColorgrading.html#a26a3dd10ae0ac4f27f953e4ca37bcd09" title=" " alt="" coords="263,5,427,31"/>
-<area shape="rect" id="node3" href="$d6/da0/structTonemaping.html#ab36322f98efed50cd103678c74e9a8d3" title=" " alt="" coords="265,55,425,80"/>
-<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="248,105,443,145"/>
-<area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,105,200,145"/>
+<area shape="rect" id="node1" title=" " alt="" coords="220,120,391,145"/>
+<area shape="rect" id="node2" href="$d6/d83/structBloom.html#aa01e3275a43107bae0435f38d488ecdc" title=" " alt="" coords="27,5,150,31"/>
+<area shape="rect" id="node3" href="$d5/dfa/structChromaticAberration.html#ac8e30e02f66fe2080dba0f33f8e1ea58" title=" " alt="" coords="10,55,167,95"/>
+<area shape="rect" id="node4" href="$db/db7/structColorgrading.html#a26a3dd10ae0ac4f27f953e4ca37bcd09" title=" " alt="" coords="7,120,171,145"/>
+<area shape="rect" id="node5" href="$db/d3d/structDepthOfField.html#aa11061e7f292c78ccd70025d73882289" title=" " alt="" coords="5,169,172,195"/>
+<area shape="rect" id="node6" href="$d6/da0/structTonemaping.html#ab36322f98efed50cd103678c74e9a8d3" title=" " alt="" coords="9,219,169,244"/>
 </map>

@@ -26,6 +26,8 @@ var namespacephysics =
     [ "BoxMeshCollision", "d5/dd0/namespacephysics.html#a0fc11376b2499ebcf4d7cf0ccb7cf63d", null ],
     [ "BoxMeshResolution", "d5/dd0/namespacephysics.html#a46f160106603c30fe08f473710634331", null ],
     [ "BoxResetVelocity", "d5/dd0/namespacephysics.html#a0e080f7c8e05180f30e5621c14b41587", null ],
+    [ "BuildCircleConvexManifold", "d5/dd0/namespacephysics.html#a3bcf9160d0c6fa0bf3c68a3491bddca1", null ],
+    [ "BuildCircleConvexManifold", "d5/dd0/namespacephysics.html#a72c32865b4af477cecafa7709aa916be", null ],
     [ "ClipLineSegmentToLine", "d5/dd0/namespacephysics.html#a6df5e9daff3b599535853d1cd368261c", null ],
     [ "ConvexRayCollision", "d5/dd0/namespacephysics.html#a740edf213e0fd126ea757f5aea74e90b", null ],
     [ "GetAllRigidbodies", "d5/dd0/namespacephysics.html#a9a34db3da7e8ac1dbaf8ac3e1b08e53c", null ],

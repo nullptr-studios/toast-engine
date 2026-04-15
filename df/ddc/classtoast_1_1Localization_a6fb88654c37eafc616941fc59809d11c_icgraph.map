@@ -1,0 +1,9 @@
+<map id="toast::Localization::BuildApplyScript" name="toast::Localization::BuildApplyScript">
+<area shape="rect" id="node1" title=" " alt="" coords="544,105,685,145"/>
+<area shape="rect" id="node2" href="$d4/da6/classtoast_1_1HtmlView.html#a588dd927b31f47534585b7579258ad3e" title=" " alt="" coords="273,55,496,80"/>
+<area shape="rect" id="node5" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a2bf779ea45be09e1f69d5d2a1389a337" title="Called by the per&#45;instance LoadListener when the main&#45;frame DOM is ready." alt="" coords="290,105,479,145"/>
+<area shape="rect" id="node7" href="$df/d5b/classui_1_1UiSystem.html#a3aeafa5b40b261778e89c6d9025c4930" title=" " alt="" coords="297,169,473,195"/>
+<area shape="rect" id="node3" href="$d4/da6/classtoast_1_1HtmlView.html#a0314f1331c55f069fd64aabe9052d491" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="30,5,201,31"/>
+<area shape="rect" id="node4" href="$d4/da6/classtoast_1_1HtmlView.html#a57cbb2da6a42f36ca1c01f34e736f10a" title="This function runs when the object is enabled after being disabled." alt="" coords="17,55,213,80"/>
+<area shape="rect" id="node6" href="$de/dbb/classrenderer_1_1HUD_1_1HUDLayerLoadListener.html#a3f8636c215124d9ba4ca376d41082b5b" title=" " alt="" coords="5,105,225,145"/>
+</map>

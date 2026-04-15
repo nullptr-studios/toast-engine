@@ -96,6 +96,7 @@ $(document).ready(function(){initNavTree('d6/dd8/classphysics_1_1PhysicsSystem.h
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pri-types">Private Types</a> &#124;
 <a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-static-methods">Static Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
@@ -126,6 +127,8 @@ Collaboration diagram for physics::PhysicsSystem:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/dbe/structphysics_1_1PhysicsSystem_1_1M.html">M</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d01/structphysics_1_1PhysicsSystem_1_1PendingMutation.html">PendingMutation</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
@@ -204,10 +207,36 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:acfae8ad3c9328e9bf7ee8290d70ba03f"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#acfae8ad3c9328e9bf7ee8290d70ba03f">MainThreadLateTick</a> ()</td></tr>
 <tr class="separator:acfae8ad3c9328e9bf7ee8290d70ba03f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-types" name="pri-types"></a>
+Private Types</h2></td></tr>
+<tr class="memitem:a730fc75334cd32f9612ade62d88269f6"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6">MutationType</a> : unsigned char { <br />
+&#160;&#160;<a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6abf991507ce86aae7cf81842d2367d37e">AddRigidbody</a>
+, <a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6afc004f2133842d60e16e62741044820c">RemoveRigidbody</a>
+, <a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6aa0091fedcf67417cfb1e5dc185c8c387">AddCollider</a>
+, <a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6a8e4cb43282b3610bb3b896325076e329">RemoveCollider</a>
+, <br />
+&#160;&#160;<a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6a1e26e4a2205604ea64b66319d256b2e0">AddTrigger</a>
+, <a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6a9d9c25efc797eb010b61801cf0e54b33">RemoveTrigger</a>
+, <a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6a017ac2b7bc9e996a83be4f1dab623594">AddBox</a>
+, <a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6ae3c17aa9d6d1c555e8037d62e837f793">RemoveBox</a>
+<br />
+ }</td></tr>
+<tr class="separator:a730fc75334cd32f9612ade62d88269f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
 <tr class="memitem:a4228ce051340b69a1c777e7d633153cf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a4228ce051340b69a1c777e7d633153cf">Tick</a> ()</td></tr>
 <tr class="separator:a4228ce051340b69a1c777e7d633153cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad93122945e51f88899575db09dbf2695"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ad93122945e51f88899575db09dbf2695">QueueMutation</a> (<a class="el" href="../../d0/d01/structphysics_1_1PhysicsSystem_1_1PendingMutation.html">PendingMutation</a> mutation)</td></tr>
+<tr class="separator:ad93122945e51f88899575db09dbf2695"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7804e5b4650141f1295b56c75a5ce9e9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a7804e5b4650141f1295b56c75a5ce9e9">FlushPendingMutations</a> ()</td></tr>
+<tr class="separator:a7804e5b4650141f1295b56c75a5ce9e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59a54e8d1206aaf5c51c1b785bc4d49e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a59a54e8d1206aaf5c51c1b785bc4d49e">ApplyPendingMutation</a> (const <a class="el" href="../../d0/d01/structphysics_1_1PhysicsSystem_1_1PendingMutation.html">PendingMutation</a> &amp;mutation)</td></tr>
+<tr class="separator:a59a54e8d1206aaf5c51c1b785bc4d49e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaed877669bdd64d0effa7bf804d75dbf"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#aaed877669bdd64d0effa7bf804d75dbf">CanQueueMutations</a> () const</td></tr>
+<tr class="separator:aaed877669bdd64d0effa7bf804d75dbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa10af0322e5bc486f32dda862cd2a26e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#aa10af0322e5bc486f32dda862cd2a26e">IsPhysicsThread</a> () const</td></tr>
+<tr class="separator:aa10af0322e5bc486f32dda862cd2a26e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6963546bf6bad5b4b18c8990feb99703"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a6963546bf6bad5b4b18c8990feb99703">RigidbodyPhysics</a> (<a class="el" href="../../d6/d41/classphysics_1_1Rigidbody.html">Rigidbody</a> *rb, std::list&lt; std::function&lt; void()&gt; &gt; &amp;localCallbacks)</td></tr>
 <tr class="separator:a6963546bf6bad5b4b18c8990feb99703"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad03fd861486789cef524e7f69618e8c9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9">BoxPhysics</a> (<a class="el" href="../../d4/db0/classphysics_1_1BoxRigidbody.html">BoxRigidbody</a> *rb)</td></tr>
@@ -234,8 +263,43 @@ Static Private Attributes</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00031">31</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00034">34</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+</div><h2 class="groupheader">Member Enumeration Documentation</h2>
+<a id="a730fc75334cd32f9612ade62d88269f6" name="a730fc75334cd32f9612ade62d88269f6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a730fc75334cd32f9612ade62d88269f6">&#9670;&#160;</a></span>MutationType</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum class <a class="el" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6">physics::PhysicsSystem::MutationType</a> : unsigned char</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a730fc75334cd32f9612ade62d88269f6abf991507ce86aae7cf81842d2367d37e" name="a730fc75334cd32f9612ade62d88269f6abf991507ce86aae7cf81842d2367d37e"></a>AddRigidbody&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a730fc75334cd32f9612ade62d88269f6afc004f2133842d60e16e62741044820c" name="a730fc75334cd32f9612ade62d88269f6afc004f2133842d60e16e62741044820c"></a>RemoveRigidbody&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a730fc75334cd32f9612ade62d88269f6aa0091fedcf67417cfb1e5dc185c8c387" name="a730fc75334cd32f9612ade62d88269f6aa0091fedcf67417cfb1e5dc185c8c387"></a>AddCollider&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a730fc75334cd32f9612ade62d88269f6a8e4cb43282b3610bb3b896325076e329" name="a730fc75334cd32f9612ade62d88269f6a8e4cb43282b3610bb3b896325076e329"></a>RemoveCollider&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a730fc75334cd32f9612ade62d88269f6a1e26e4a2205604ea64b66319d256b2e0" name="a730fc75334cd32f9612ade62d88269f6a1e26e4a2205604ea64b66319d256b2e0"></a>AddTrigger&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a730fc75334cd32f9612ade62d88269f6a9d9c25efc797eb010b61801cf0e54b33" name="a730fc75334cd32f9612ade62d88269f6a9d9c25efc797eb010b61801cf0e54b33"></a>RemoveTrigger&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a730fc75334cd32f9612ade62d88269f6a017ac2b7bc9e996a83be4f1dab623594" name="a730fc75334cd32f9612ade62d88269f6a017ac2b7bc9e996a83be4f1dab623594"></a>AddBox&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a730fc75334cd32f9612ade62d88269f6ae3c17aa9d6d1c555e8037d62e837f793" name="a730fc75334cd32f9612ade62d88269f6ae3c17aa9d6d1c555e8037d62e837f793"></a>RemoveBox&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00083">83</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a34757355e7ec79f24c8ce4fa594a7d7f" name="a34757355e7ec79f24c8ce4fa594a7d7f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a34757355e7ec79f24c8ce4fa594a7d7f">&#9670;&#160;</a></span>PhysicsSystem() <span class="overload">[1/3]</span></h2>
 
@@ -351,16 +415,7 @@ Static Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00324">324</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d6/dd8/classphysics_1_1PhysicsSystem_a200d653ca225f3fefb1cad124b6925a8_icgraph.png" border="0" usemap="#ad6/dd8/classphysics_1_1PhysicsSystem_a200d653ca225f3fefb1cad124b6925a8_icgraph" alt=""/></div>
-<map name="ad6/dd8/classphysics_1_1PhysicsSystem_a200d653ca225f3fefb1cad124b6925a8_icgraph" id="ad6/dd8/classphysics_1_1PhysicsSystem_a200d653ca225f3fefb1cad124b6925a8_icgraph">
-<area shape="rect" title=" " alt="" coords="223,5,400,45"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a400465190114a535ceb4997ac6be4565" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,175,45"/>
-</map>
-</div>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00500">500</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -388,16 +443,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00276">276</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d6/dd8/classphysics_1_1PhysicsSystem_a63bec7e220f569f4a18c714360cd8264_icgraph.png" border="0" usemap="#ad6/dd8/classphysics_1_1PhysicsSystem_a63bec7e220f569f4a18c714360cd8264_icgraph" alt=""/></div>
-<map name="ad6/dd8/classphysics_1_1PhysicsSystem_a63bec7e220f569f4a18c714360cd8264_icgraph" id="ad6/dd8/classphysics_1_1PhysicsSystem_a63bec7e220f569f4a18c714360cd8264_icgraph">
-<area shape="rect" title=" " alt="" coords="232,5,409,45"/>
-<area shape="rect" href="../../dd/d88/classphysics_1_1ConvexCollider.html#a4f36e15379013bcd603f75f1255b8bf3" title=" " alt="" coords="5,5,184,45"/>
-</map>
-</div>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00414">414</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -425,16 +471,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00251">251</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d6/dd8/classphysics_1_1PhysicsSystem_a3598cf465d7fae76997336d52f559894_icgraph.png" border="0" usemap="#ad6/dd8/classphysics_1_1PhysicsSystem_a3598cf465d7fae76997336d52f559894_icgraph" alt=""/></div>
-<map name="ad6/dd8/classphysics_1_1PhysicsSystem_a3598cf465d7fae76997336d52f559894_icgraph" id="ad6/dd8/classphysics_1_1PhysicsSystem_a3598cf465d7fae76997336d52f559894_icgraph">
-<area shape="rect" title=" " alt="" coords="197,5,375,45"/>
-<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#a462a8f1bf385bb9e88e17494cdf7d9b8" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,149,45"/>
-</map>
-</div>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00371">371</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -462,16 +499,35 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00300">300</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d6/dd8/classphysics_1_1PhysicsSystem_ad7333a348e7238f961549a0e0d80c71b_icgraph.png" border="0" usemap="#ad6/dd8/classphysics_1_1PhysicsSystem_ad7333a348e7238f961549a0e0d80c71b_icgraph" alt=""/></div>
-<map name="ad6/dd8/classphysics_1_1PhysicsSystem_ad7333a348e7238f961549a0e0d80c71b_icgraph" id="ad6/dd8/classphysics_1_1PhysicsSystem_ad7333a348e7238f961549a0e0d80c71b_icgraph">
-<area shape="rect" title=" " alt="" coords="221,5,399,45"/>
-<area shape="rect" href="../../d4/d9c/classphysics_1_1Trigger.html#a7bdc2533c9899d4491acfb96b2b79904" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="5,13,173,38"/>
-</map>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00457">457</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+
 </div>
+</div>
+<a id="a59a54e8d1206aaf5c51c1b785bc4d49e" name="a59a54e8d1206aaf5c51c1b785bc4d49e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a59a54e8d1206aaf5c51c1b785bc4d49e">&#9670;&#160;</a></span>ApplyPendingMutation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void physics::PhysicsSystem::ApplyPendingMutation </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="../../d0/d01/structphysics_1_1PhysicsSystem_1_1PendingMutation.html">PendingMutation</a> &amp;&#160;</td>
+          <td class="paramname"><em>mutation</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00290">290</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -499,7 +555,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00558">558</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00753">753</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -526,7 +582,34 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00599">599</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00794">794</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aaed877669bdd64d0effa7bf804d75dbf" name="aaed877669bdd64d0effa7bf804d75dbf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaed877669bdd64d0effa7bf804d75dbf">&#9670;&#160;</a></span>CanQueueMutations()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool physics::PhysicsSystem::CanQueueMutations </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00351">351</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -553,19 +636,16 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00402">402</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00597">597</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d6/dd8/classphysics_1_1PhysicsSystem_a0bc237b9a0e56eaf1713af2e96783f32_icgraph.png" border="0" usemap="#ad6/dd8/classphysics_1_1PhysicsSystem_a0bc237b9a0e56eaf1713af2e96783f32_icgraph" alt=""/></div>
 <map name="ad6/dd8/classphysics_1_1PhysicsSystem_a0bc237b9a0e56eaf1713af2e96783f32_icgraph" id="ad6/dd8/classphysics_1_1PhysicsSystem_a0bc237b9a0e56eaf1713af2e96783f32_icgraph">
-<area shape="rect" title=" " alt="" coords="473,80,681,105"/>
+<area shape="rect" title=" " alt="" coords="473,31,681,56"/>
 <area shape="rect" href="../../d5/dd0/namespacephysics.html#afd721919c6e6937b568f0eae110ffad7" title=" " alt="" coords="235,5,421,31"/>
 <area shape="rect" href="../../d5/dd0/namespacephysics.html#a0fc11376b2499ebcf4d7cf0ccb7cf63d" title=" " alt="" coords="231,55,425,80"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#ae7051f57845ca7267e232f0eeb73ff99" title=" " alt="" coords="239,104,417,129"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a2e71122566921cc33ddc9a429065ef4a" title=" " alt="" coords="235,153,421,179"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="5,31,183,71"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a6963546bf6bad5b4b18c8990feb99703" title=" " alt="" coords="5,113,183,153"/>
+<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="5,23,183,63"/>
 </map>
 </div>
 
@@ -594,20 +674,60 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00411">411</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00606">606</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d6/dd8/classphysics_1_1PhysicsSystem_a9b80ffbb68320686a638a023f9174f7c_icgraph.png" border="0" usemap="#ad6/dd8/classphysics_1_1PhysicsSystem_a9b80ffbb68320686a638a023f9174f7c_icgraph" alt=""/></div>
 <map name="ad6/dd8/classphysics_1_1PhysicsSystem_a9b80ffbb68320686a638a023f9174f7c_icgraph" id="ad6/dd8/classphysics_1_1PhysicsSystem_a9b80ffbb68320686a638a023f9174f7c_icgraph">
-<area shape="rect" title=" " alt="" coords="907,47,1084,87"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a4b4e1e3b2202add3d8299be29043fa23" title=" " alt="" coords="669,55,859,80"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#afd721919c6e6937b568f0eae110ffad7" title=" " alt="" coords="424,5,609,31"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a0fc11376b2499ebcf4d7cf0ccb7cf63d" title=" " alt="" coords="419,55,614,80"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a740edf213e0fd126ea757f5aea74e90b" title=" " alt="" coords="412,104,621,129"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="187,15,364,55"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#aa25ace6e8dfe7a75026f8ca430bcf062" title=" " alt="" coords="187,97,364,137"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#a9bf58af059ac112e456dc6cd15d23c99" title=" " alt="" coords="5,104,139,129"/>
+<area shape="rect" title=" " alt="" coords="925,47,1103,87"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a4d57204353d7e78fd76b1ec199b1a2d1" title=" " alt="" coords="674,5,873,31"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a46f160106603c30fe08f473710634331" title=" " alt="" coords="669,55,877,80"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a4b4e1e3b2202add3d8299be29043fa23" title=" " alt="" coords="679,129,868,155"/>
+<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ad03fd861486789cef524e7f69618e8c9" title=" " alt="" coords="187,73,364,113"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#afd721919c6e6937b568f0eae110ffad7" title=" " alt="" coords="424,105,609,131"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a0fc11376b2499ebcf4d7cf0ccb7cf63d" title=" " alt="" coords="419,155,614,180"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a740edf213e0fd126ea757f5aea74e90b" title=" " alt="" coords="412,204,621,229"/>
+<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#aa25ace6e8dfe7a75026f8ca430bcf062" title=" " alt="" coords="187,197,364,237"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#a9bf58af059ac112e456dc6cd15d23c99" title=" " alt="" coords="5,204,139,229"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a7804e5b4650141f1295b56c75a5ce9e9" name="a7804e5b4650141f1295b56c75a5ce9e9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7804e5b4650141f1295b56c75a5ce9e9">&#9670;&#160;</a></span>FlushPendingMutations()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void physics::PhysicsSystem::FlushPendingMutations </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00264">264</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d6/dd8/classphysics_1_1PhysicsSystem_a7804e5b4650141f1295b56c75a5ce9e9_icgraph.png" border="0" usemap="#ad6/dd8/classphysics_1_1PhysicsSystem_a7804e5b4650141f1295b56c75a5ce9e9_icgraph" alt=""/></div>
+<map name="ad6/dd8/classphysics_1_1PhysicsSystem_a7804e5b4650141f1295b56c75a5ce9e9_icgraph" id="ad6/dd8/classphysics_1_1PhysicsSystem_a7804e5b4650141f1295b56c75a5ce9e9_icgraph">
+<area shape="rect" title=" " alt="" coords="456,27,639,67"/>
+<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a358728deb74601eae6513f11507facba" title=" " alt="" coords="231,27,408,67"/>
+<area shape="rect" href="../../d6/d7d/classtoast_1_1World.html#a2dc00aff3cd712501e57c940a3b4f0fa" title=" " alt="" coords="21,5,167,31"/>
+<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ae560303c7d4db9ca280852c6ed46d64a" title=" " alt="" coords="5,55,183,95"/>
 </map>
 </div>
 
@@ -676,7 +796,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00749">749</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00946">946</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -713,7 +833,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00741">741</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00938">938</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -742,7 +862,7 @@ Here is the caller graph for this function:</div>
 
 <p>Get the fixed timestep in seconds (1/50 = 0.02) </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00448">448</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00643">643</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -769,7 +889,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00357">357</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00552">552</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -808,7 +928,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00366">366</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00561">561</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -845,7 +965,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00375">375</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00570">570</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -882,7 +1002,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00348">348</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00543">543</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -893,6 +1013,33 @@ Here is the caller graph for this function:</div>
 <area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a6963546bf6bad5b4b18c8990feb99703" title=" " alt="" coords="5,5,183,45"/>
 </map>
 </div>
+
+</div>
+</div>
+<a id="aa10af0322e5bc486f32dda862cd2a26e" name="aa10af0322e5bc486f32dda862cd2a26e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa10af0322e5bc486f32dda862cd2a26e">&#9670;&#160;</a></span>IsPhysicsThread()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool physics::PhysicsSystem::IsPhysicsThread </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00363">363</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -919,7 +1066,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00784">784</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00981">981</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1019,7 +1166,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00690">690</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00887">887</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1055,7 +1202,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00393">393</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00588">588</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1097,7 +1244,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00384">384</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00579">579</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1113,6 +1260,34 @@ Here is the caller graph for this function:</div>
 <area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a6963546bf6bad5b4b18c8990feb99703" title=" " alt="" coords="5,146,183,186"/>
 </map>
 </div>
+
+</div>
+</div>
+<a id="ad93122945e51f88899575db09dbf2695" name="ad93122945e51f88899575db09dbf2695"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad93122945e51f88899575db09dbf2695">&#9670;&#160;</a></span>QueueMutation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void physics::PhysicsSystem::QueueMutation </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d0/d01/structphysics_1_1PhysicsSystem_1_1PendingMutation.html">PendingMutation</a>&#160;</td>
+          <td class="paramname"><em>mutation</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00259">259</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -1150,7 +1325,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00622">622</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00819">819</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1187,16 +1362,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00337">337</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d6/dd8/classphysics_1_1PhysicsSystem_afbb4dcf8da9bc015f456ffdfc6733e29_icgraph.png" border="0" usemap="#ad6/dd8/classphysics_1_1PhysicsSystem_afbb4dcf8da9bc015f456ffdfc6733e29_icgraph" alt=""/></div>
-<map name="ad6/dd8/classphysics_1_1PhysicsSystem_afbb4dcf8da9bc015f456ffdfc6733e29_icgraph" id="ad6/dd8/classphysics_1_1PhysicsSystem_afbb4dcf8da9bc015f456ffdfc6733e29_icgraph">
-<area shape="rect" title=" " alt="" coords="223,5,400,45"/>
-<area shape="rect" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#a7549182afe912f14f810ed8c6ee8fe5d" title="This function runs when the object is set to be destroyed." alt="" coords="5,5,175,45"/>
-</map>
-</div>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00517">517</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -1224,16 +1390,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00289">289</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d6/dd8/classphysics_1_1PhysicsSystem_a3d3c5ff80bf9254fa245dad58a0e88c6_icgraph.png" border="0" usemap="#ad6/dd8/classphysics_1_1PhysicsSystem_a3d3c5ff80bf9254fa245dad58a0e88c6_icgraph" alt=""/></div>
-<map name="ad6/dd8/classphysics_1_1PhysicsSystem_a3d3c5ff80bf9254fa245dad58a0e88c6_icgraph" id="ad6/dd8/classphysics_1_1PhysicsSystem_a3d3c5ff80bf9254fa245dad58a0e88c6_icgraph">
-<area shape="rect" title=" " alt="" coords="232,5,409,45"/>
-<area shape="rect" href="../../dd/d88/classphysics_1_1ConvexCollider.html#a4d88df92252405e2d8ccb01c416b200b" title=" " alt="" coords="5,5,184,45"/>
-</map>
-</div>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00431">431</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -1261,16 +1418,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00264">264</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d6/dd8/classphysics_1_1PhysicsSystem_a9f3c05e4574ff7bbfe9ffa8352c59ecf_icgraph.png" border="0" usemap="#ad6/dd8/classphysics_1_1PhysicsSystem_a9f3c05e4574ff7bbfe9ffa8352c59ecf_icgraph" alt=""/></div>
-<map name="ad6/dd8/classphysics_1_1PhysicsSystem_a9f3c05e4574ff7bbfe9ffa8352c59ecf_icgraph" id="ad6/dd8/classphysics_1_1PhysicsSystem_a9f3c05e4574ff7bbfe9ffa8352c59ecf_icgraph">
-<area shape="rect" title=" " alt="" coords="197,5,375,45"/>
-<area shape="rect" href="../../d6/d41/classphysics_1_1Rigidbody.html#abee44c40fe214b3b58d1745dd8c86521" title="This function runs when the object is set to be destroyed." alt="" coords="5,5,149,45"/>
-</map>
-</div>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00388">388</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -1298,16 +1446,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00313">313</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="../../d6/dd8/classphysics_1_1PhysicsSystem_ace2f723dd2ad8de512c39179bdb40673_icgraph.png" border="0" usemap="#ad6/dd8/classphysics_1_1PhysicsSystem_ace2f723dd2ad8de512c39179bdb40673_icgraph" alt=""/></div>
-<map name="ad6/dd8/classphysics_1_1PhysicsSystem_ace2f723dd2ad8de512c39179bdb40673_icgraph" id="ad6/dd8/classphysics_1_1PhysicsSystem_ace2f723dd2ad8de512c39179bdb40673_icgraph">
-<area shape="rect" title=" " alt="" coords="236,5,413,45"/>
-<area shape="rect" href="../../d4/d9c/classphysics_1_1Trigger.html#a093b461caa0f5bd9d6aca67ec62b5efd" title="This function runs when the object is set to be destroyed." alt="" coords="5,13,188,38"/>
-</map>
-</div>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00474">474</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -1345,7 +1484,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00456">456</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00651">651</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -1373,7 +1512,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00766">766</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00963">963</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -1401,7 +1540,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00775">775</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00972">972</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -1429,7 +1568,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00757">757</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00954">954</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -1495,7 +1634,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00183">183</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00187">187</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1532,7 +1671,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00212">212</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00220">220</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -1561,7 +1700,7 @@ Here is the caller graph for this function:</div>
 
 <p>Call from render thread (Tick/LateTick) to update visual transforms with interpolation. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00422">422</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00617">617</a> of file <a class="el" href="../../d6/d4a/PhysicsSystem_8cpp_source.html">PhysicsSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1596,7 +1735,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00081">81</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00101">101</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -1642,7 +1781,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00125">125</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00152">152</a> of file <a class="el" href="../../d1/d91/PhysicsSystem_8hpp_source.html">PhysicsSystem.hpp</a>.</p>
 
 </div>
 </div>

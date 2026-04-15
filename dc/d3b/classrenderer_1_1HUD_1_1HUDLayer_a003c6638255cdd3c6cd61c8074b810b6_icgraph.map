@@ -1,0 +1,4 @@
+<map id="renderer::HUD::HUDLayer::GetViewTextureGL" name="renderer::HUD::HUDLayer::GetViewTextureGL">
+<area shape="rect" id="node1" title="Resolve a specific view&#39;s Ultralight render target to an OpenGL texture ID." alt="" coords="243,5,432,45"/>
+<area shape="rect" id="node2" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a4b4f3ff90c7b254945354f333a51f940" title="Get the raw Ultralight render target texture ID (for debugging)" alt="" coords="5,5,195,45"/>
+</map>

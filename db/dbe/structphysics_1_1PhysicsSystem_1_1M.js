@@ -16,6 +16,8 @@ var structphysics_1_1PhysicsSystem_1_1M =
     [ "gravityPointScale", "db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#a9cc334a5fa1e32c7ac449c826f265237", null ],
     [ "gravityType", "db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#a4bd079a2476678fd17bc17672c2a09a9", null ],
     [ "lastPhysicsTime", "db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#a404ae08cb1ce0fcc50665915581c96b5", null ],
+    [ "mutationQueueMutex", "db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#a35faf6b817d61ba6ced60b5e3927c79b", null ],
+    [ "pendingMutations", "db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#aa7638ed157d77052f84ad2ce72432228", null ],
     [ "positionCorrectionPtc", "db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#a78bdd7ad2790a390281146d6ce36a60d", null ],
     [ "positionCorrectionSlop", "db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#a75140a93daf4bd8e6f463a740e6539a2", null ],
     [ "rigidbodies", "db/dbe/structphysics_1_1PhysicsSystem_1_1M.html#a6db9ec19a31fa4b4dd769a85318d487e", null ],

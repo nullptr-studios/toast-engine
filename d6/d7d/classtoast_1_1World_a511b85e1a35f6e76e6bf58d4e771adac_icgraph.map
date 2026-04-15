@@ -1,6 +1,5 @@
 <map id="toast::World::IsRunning" name="toast::World::IsRunning">
-<area shape="rect" id="node1" title=" " alt="" coords="212,63,384,88"/>
+<area shape="rect" id="node1" title=" " alt="" coords="212,35,384,60"/>
 <area shape="rect" id="node2" href="$db/d71/classphysics_1_1Collider.html#a52f2eb7420c7743d41ea1e718a56aac7" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,5,164,31"/>
 <area shape="rect" id="node3" href="$d6/d41/classphysics_1_1Rigidbody.html#a462a8f1bf385bb9e88e17494cdf7d9b8" title="This function runs just after the object is created (scene load thread)" alt="" coords="13,55,157,95"/>
-<area shape="rect" id="node4" href="$d4/d9c/classphysics_1_1Trigger.html#a04fccf26c778f5d6886070069f936043" title="This function runs just after the object is created (scene load thread)" alt="" coords="9,120,161,145"/>
 </map>

@@ -158,6 +158,12 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:ad68b3ea3c76099b46e4593c843b4121a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf2b458ac79ba0ff1b18d649f24e0804"><td class="memItemLeft" align="right" valign="top">static auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#abf2b458ac79ba0ff1b18d649f24e0804">GetMouseDelta</a> () -&gt; glm::vec2</td></tr>
 <tr class="separator:abf2b458ac79ba0ff1b18d649f24e0804"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af2db84a296d7b0641e0ec8199895b972"><td class="memItemLeft" align="right" valign="top">static auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#af2db84a296d7b0641e0ec8199895b972">GetFirstConnectedGamepad</a> () -&gt; SDL_Gamepad *</td></tr>
+<tr class="memdesc:af2db84a296d7b0641e0ec8199895b972"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the first connected gamepad handle, or nullptr if none Used by haptics system to send rumble commands without exposing controller internals.  <br /></td></tr>
+<tr class="separator:af2db84a296d7b0641e0ec8199895b972"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34625ecac68144d9e3a0bd50688f2424"><td class="memItemLeft" align="right" valign="top">static auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#a34625ecac68144d9e3a0bd50688f2424">GetGamepadType</a> () -&gt; SDL_GamepadType</td></tr>
+<tr class="memdesc:a34625ecac68144d9e3a0bd50688f2424"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the type of the first connected gamepad Used to detect DualSense controllers for adaptive trigger effects.  <br /></td></tr>
+<tr class="separator:a34625ecac68144d9e3a0bd50688f2424"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac5bc60ecae5bf0d5f204fc01f97c3261"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#ac5bc60ecae5bf0d5f204fc01f97c3261">SetViewportPosition</a> (glm::vec2 position)</td></tr>
 <tr class="separator:ac5bc60ecae5bf0d5f204fc01f97c3261"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab63de01abe2406cd1d2e0f9fe1167ca"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d0b/classinput_1_1InputSystem.html#aab63de01abe2406cd1d2e0f9fe1167ca">SetViewportSize</a> (glm::vec2 size)</td></tr>
@@ -247,7 +253,7 @@ Static Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00054">54</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00062">62</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -399,7 +405,7 @@ template&lt;typename ActionType &gt; </div>
 
 <p>Adds an action to the dispatch queue if not already present O(1) flag check instead of O(n) linear search. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00089">89</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00097">97</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -460,7 +466,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00722">722</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00741">741</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -498,7 +504,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00646">646</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00665">665</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -540,7 +546,7 @@ template&lt;typename ActionType , typename CallbackType &gt; </div>
 
 <p>Dispatches all actions in the queue to registered listeners. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00061">61</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00069">69</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -598,6 +604,80 @@ Here is the caller graph for this function:</div>
 <area shape="rect" href="../../dc/d06/classinput_1_1Listener.html#a3106c28fe591706f6b8472b74ec57b04" title=" " alt="" coords="220,333,407,358"/>
 </map>
 </div>
+
+</div>
+</div>
+<a id="af2db84a296d7b0641e0ec8199895b972" name="af2db84a296d7b0641e0ec8199895b972"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af2db84a296d7b0641e0ec8199895b972">&#9670;&#160;</a></span>GetFirstConnectedGamepad()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto input::InputSystem::GetFirstConnectedGamepad </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> -&gt; SDL_Gamepad*</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns the first connected gamepad handle, or nullptr if none Used by haptics system to send rumble commands without exposing controller internals. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00203">203</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../da/d0b/classinput_1_1InputSystem_af2db84a296d7b0641e0ec8199895b972_icgraph.png" border="0" usemap="#ada/d0b/classinput_1_1InputSystem_af2db84a296d7b0641e0ec8199895b972_icgraph" alt=""/></div>
+<map name="ada/d0b/classinput_1_1InputSystem_af2db84a296d7b0641e0ec8199895b972_icgraph" id="ada/d0b/classinput_1_1InputSystem_af2db84a296d7b0641e0ec8199895b972_icgraph">
+<area shape="rect" title="Returns the first connected gamepad handle, or nullptr if none Used by haptics system to send rumble ..." alt="" coords="436,146,649,186"/>
+<area shape="rect" href="../../d7/d1d/namespacehaptics.html#aad52917168e4c988a14aae0217b5f8e2" title="Sends dual&#45;motor rumble to the connected gamepad Low frequency is the heavy/left motor,..." alt="" coords="239,104,366,129"/>
+<area shape="rect" href="../../d7/d1d/namespacehaptics.html#ad076a6c5a2ad2611bbcd4a1252b9e107" title="Stops all active haptics immediately." alt="" coords="249,153,356,179"/>
+<area shape="rect" href="../../d7/d1d/namespacehaptics.html#a5d0bc17efb149cfb4cee0c09a41ce67b" title="Sends rumble to the gamepad&#39;s triggers Not all controllers support this." alt="" coords="217,203,388,228"/>
+<area shape="rect" href="../../d7/d1d/namespacehaptics.html#a102c15821ca66400849de0fe74f59ad3" title=" " alt="" coords="21,5,153,31"/>
+<area shape="rect" href="../../d7/d1d/namespacehaptics.html#ab1768904151a202e290ca1d83026bb8f" title=" " alt="" coords="17,55,157,80"/>
+<area shape="rect" href="../../d7/d1d/namespacehaptics.html#ac744f30201fbf0d6bf7b47849a80d5d6" title=" " alt="" coords="5,104,169,129"/>
+<area shape="rect" href="../../d7/d1d/namespacehaptics.html#a4d1ed6a8ea52429286babe833e872a4f" title=" " alt="" coords="10,153,165,179"/>
+<area shape="rect" href="../../d7/d1d/namespacehaptics.html#a09722c5c407830e0dd9a1520ad98efa5" title=" " alt="" coords="16,203,159,228"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a34625ecac68144d9e3a0bd50688f2424" name="a34625ecac68144d9e3a0bd50688f2424"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a34625ecac68144d9e3a0bd50688f2424">&#9670;&#160;</a></span>GetGamepadType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto input::InputSystem::GetGamepadType </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> -&gt; SDL_GamepadType</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns the type of the first connected gamepad Used to detect DualSense controllers for adaptive trigger effects. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00214">214</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 
 </div>
 </div>
@@ -719,7 +799,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00213">213</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00232">232</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -781,7 +861,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00253">253</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00272">272</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -843,7 +923,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00292">292</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00311">311</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -905,7 +985,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00331">331</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00350">350</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -944,7 +1024,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00452">452</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00471">471</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -982,7 +1062,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00478">478</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00497">497</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1020,7 +1100,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00508">508</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00527">527</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1101,7 +1181,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00546">546</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00565">565</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1138,7 +1218,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00340">340</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00359">359</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1175,7 +1255,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00347">347</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00366">366</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1212,7 +1292,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00352">352</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00371">371</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1249,7 +1329,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00534">534</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00553">553</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1337,7 +1417,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00569">569</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00588">588</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1448,7 +1528,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00203">203</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00222">222</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1486,7 +1566,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00207">207</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html#l00226">226</a> of file <a class="el" href="../../da/d9c/InputSystem_8cpp_source.html">InputSystem.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1577,7 +1657,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00055">55</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00063">63</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>
@@ -1623,7 +1703,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00053">53</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html#l00061">61</a> of file <a class="el" href="../../dd/d15/InputSystem_8hpp_source.html">InputSystem.hpp</a>.</p>
 
 </div>
 </div>

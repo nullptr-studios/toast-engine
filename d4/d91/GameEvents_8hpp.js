@@ -5,5 +5,6 @@ var GameEvents_8hpp =
     [ "toast::NextWorld", "d3/d64/structtoast_1_1NextWorld.html", null ],
     [ "toast::NextLevel", "d5/d90/structtoast_1_1NextLevel.html", null ],
     [ "toast::ResetGameFlow", "d9/db4/structtoast_1_1ResetGameFlow.html", null ],
-    [ "toast::RestartLevel", "d1/dda/structtoast_1_1RestartLevel.html", null ]
+    [ "toast::RestartLevel", "d1/dda/structtoast_1_1RestartLevel.html", null ],
+    [ "toast::LocalizationChanged", "da/d79/structtoast_1_1LocalizationChanged.html", "da/d79/structtoast_1_1LocalizationChanged" ]
 ];

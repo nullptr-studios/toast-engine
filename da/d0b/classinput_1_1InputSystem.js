@@ -11,6 +11,8 @@ var classinput_1_1InputSystem =
     [ "ControllerButton", "da/d0b/classinput_1_1InputSystem.html#adbc18d9cd75290d8c046542ecbd51941", null ],
     [ "DispatchQueue", "da/d0b/classinput_1_1InputSystem.html#ae67a8c083bc107a0825daf7377e272ea", null ],
     [ "get", "da/d0b/classinput_1_1InputSystem.html#a4c5ec69d0c239e4705e9264f96f560ce", null ],
+    [ "GetFirstConnectedGamepad", "da/d0b/classinput_1_1InputSystem.html#af2db84a296d7b0641e0ec8199895b972", null ],
+    [ "GetGamepadType", "da/d0b/classinput_1_1InputSystem.html#a34625ecac68144d9e3a0bd50688f2424", null ],
     [ "GetMouseDelta", "da/d0b/classinput_1_1InputSystem.html#abf2b458ac79ba0ff1b18d649f24e0804", null ],
     [ "GetMousePosition", "da/d0b/classinput_1_1InputSystem.html#ad68b3ea3c76099b46e4593c843b4121a", null ],
     [ "Handle0DAction", "da/d0b/classinput_1_1InputSystem.html#ac76ae51ef28bf6796431bb528b44b0ce", null ],

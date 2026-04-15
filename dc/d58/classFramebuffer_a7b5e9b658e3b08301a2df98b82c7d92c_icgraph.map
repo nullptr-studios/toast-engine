@@ -1,14 +1,10 @@
 <map id="Framebuffer::bind" name="Framebuffer::bind">
-<area shape="rect" id="node1" title=" " alt="" coords="976,257,1113,282"/>
-<area shape="rect" id="node2" href="$dc/d58/classFramebuffer.html#a96e90bfc422ceaa34cbd470957bba664" title=" " alt="" coords="759,103,902,129"/>
-<area shape="rect" id="node8" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#aaa760df2f9d791a8088fb27cc9dc84b5" title=" " alt="" coords="733,281,928,321"/>
-<area shape="rect" id="node9" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="491,244,685,284"/>
-<area shape="rect" id="node10" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ae710c3e5e20e988eb3e5af541eac17c8" title=" " alt="" coords="733,153,928,193"/>
-<area shape="rect" id="node11" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="733,217,928,257"/>
-<area shape="rect" id="node12" href="$d7/d13/classPostProcessManager.html#ada11314e85d3c40d28c02aec93317743" title=" " alt="" coords="752,396,909,436"/>
-<area shape="rect" id="node3" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="5,5,200,45"/>
-<area shape="rect" id="node4" href="$d7/d13/classPostProcessManager.html#ab9037823e679cff0abc7e649cbe0a864" title=" " alt="" coords="267,127,424,167"/>
-<area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="5,127,200,167"/>
-<area shape="rect" id="node6" href="$dc/d58/classFramebuffer.html#aa16fe7b9d734100fc6817cb131362f60" title=" " alt="" coords="512,77,664,102"/>
-<area shape="rect" id="node7" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="248,63,443,103"/>
+<area shape="rect" id="node1" title=" " alt="" coords="835,90,972,116"/>
+<area shape="rect" id="node2" href="$dc/d58/classFramebuffer.html#a96e90bfc422ceaa34cbd470957bba664" title=" " alt="" coords="637,61,779,86"/>
+<area shape="rect" id="node8" href="$d7/d13/classPostProcessManager.html#ada11314e85d3c40d28c02aec93317743" title=" " alt="" coords="629,111,787,151"/>
+<area shape="rect" id="node3" href="$d6/d83/structBloom.html#af332b89570965ebf6610c48df908836c" title=" " alt="" coords="176,6,339,32"/>
+<area shape="rect" id="node5" href="$d7/d13/classPostProcessManager.html#ab9037823e679cff0abc7e649cbe0a864" title=" " alt="" coords="179,84,336,124"/>
+<area shape="rect" id="node6" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="387,82,581,122"/>
+<area shape="rect" id="node7" href="$dc/d58/classFramebuffer.html#aa16fe7b9d734100fc6817cb131362f60" title=" " alt="" coords="408,32,560,57"/>
+<area shape="rect" id="node4" href="$d6/d83/structBloom.html#aa01e3275a43107bae0435f38d488ecdc" title=" " alt="" coords="5,6,128,32"/>
 </map>

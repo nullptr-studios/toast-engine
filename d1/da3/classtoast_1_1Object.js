@@ -50,7 +50,7 @@ var classtoast_1_1Object =
     [ "SetRunTick", "d1/da3/classtoast_1_1Object.html#a9b1a3bf5fe1a7b9d9ec307b8fed16533", null ],
     [ "SetScene", "d1/da3/classtoast_1_1Object.html#a2d173fcb83cd6a64996df7a77604236a", null ],
     [ "SetSerialize", "d1/da3/classtoast_1_1Object.html#aee4606b6c9a3a4e914824c1f9fd77df5", null ],
-    [ "SoftLoad", "d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef", null ],
+    [ "SoftLoad", "d1/da3/classtoast_1_1Object.html#aa11cd2c18489d042e6fd27295d622c38", null ],
     [ "SoftSave", "d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656", null ],
     [ "static_type", "d1/da3/classtoast_1_1Object.html#affe9053e09e9e130a9255d1c53d55104", null ],
     [ "Tick", "d1/da3/classtoast_1_1Object.html#ad915aa44fd66ae609dea20902d44a119", null ],

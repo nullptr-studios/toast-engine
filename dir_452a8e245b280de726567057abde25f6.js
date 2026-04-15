@@ -19,6 +19,7 @@ var dir_452a8e245b280de726567057abde25f6 =
     [ "GameFlow.hpp", "db/d8b/GameFlow_8hpp.html", "db/d8b/GameFlow_8hpp" ],
     [ "GlmJson.hpp", "d1/d21/GlmJson_8hpp.html", "d1/d21/GlmJson_8hpp" ],
     [ "ISerializable.hpp", "df/da3/ISerializable_8hpp.html", "df/da3/ISerializable_8hpp" ],
+    [ "Localization.hpp", "d2/d69/Localization_8hpp.html", "d2/d69/Localization_8hpp" ],
     [ "Log.hpp", "d0/d82/Log_8hpp.html", "d0/d82/Log_8hpp" ],
     [ "Memory.hpp", "d4/d18/Memory_8hpp.html", null ],
     [ "Pool.hpp", "df/d0f/Pool_8hpp.html", "df/d0f/Pool_8hpp" ],

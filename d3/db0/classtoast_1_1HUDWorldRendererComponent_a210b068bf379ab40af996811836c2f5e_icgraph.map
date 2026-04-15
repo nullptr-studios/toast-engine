@@ -1,0 +1,5 @@
+<map id="toast::HUDWorldRendererComponent::SetMeshPath" name="toast::HUDWorldRendererComponent::SetMeshPath">
+<area shape="rect" id="node1" title=" " alt="" coords="179,23,443,63"/>
+<area shape="rect" id="node2" href="$d9/da2/classHUDActor.html#ad8e9987ceb83f9f7ab779a6200323450" title="This function runs just after the object is created (scene load thread)" alt="" coords="11,5,125,31"/>
+<area shape="rect" id="node3" href="$d9/da2/classHUDActor.html#aa02212ff6f4e5a51681afbb8e5c4f425" title="Loads object state from JSON." alt="" coords="5,55,131,80"/>
+</map>

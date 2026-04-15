@@ -116,8 +116,14 @@ Collaboration diagram for toast::HtmlViewListener:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae46878fe260a8a69bad16fd73e0ceca0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/daf/classtoast_1_1HtmlViewListener.html#ae46878fe260a8a69bad16fd73e0ceca0">HtmlViewListener</a> (<a class="el" href="../../d4/da6/classtoast_1_1HtmlView.html#a06220cb0becaf065c12c0d655d67da43">HtmlView::ConsoleCallback</a> cb)</td></tr>
-<tr class="separator:ae46878fe260a8a69bad16fd73e0ceca0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a967fc3cceb173aa8318e77224675c9d6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/daf/classtoast_1_1HtmlViewListener.html#a967fc3cceb173aa8318e77224675c9d6">HtmlViewListener</a> (<a class="el" href="../../d4/da6/classtoast_1_1HtmlView.html#a06220cb0becaf065c12c0d655d67da43">HtmlView::ConsoleCallback</a> cb, ultralight::ViewListener *forward)</td></tr>
+<tr class="separator:a967fc3cceb173aa8318e77224675c9d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8de02852548f22f4f5cf8be3e861458"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/daf/classtoast_1_1HtmlViewListener.html#ae8de02852548f22f4f5cf8be3e861458">OnChangeTitle</a> (ultralight::View *caller, const ultralight::String &amp;title) override</td></tr>
+<tr class="separator:ae8de02852548f22f4f5cf8be3e861458"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29a5b97303d65dbe2f38df15aff5571b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/daf/classtoast_1_1HtmlViewListener.html#a29a5b97303d65dbe2f38df15aff5571b">OnChangeURL</a> (ultralight::View *caller, const ultralight::String &amp;url) override</td></tr>
+<tr class="separator:a29a5b97303d65dbe2f38df15aff5571b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2be9f1bd6e2c34da9acc1507b8eff9bf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/daf/classtoast_1_1HtmlViewListener.html#a2be9f1bd6e2c34da9acc1507b8eff9bf">OnChangeCursor</a> (ultralight::View *caller, ultralight::Cursor cursor) override</td></tr>
+<tr class="separator:a2be9f1bd6e2c34da9acc1507b8eff9bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5f3da14a5905ad5f6630e8bec3c2abd0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/daf/classtoast_1_1HtmlViewListener.html#a5f3da14a5905ad5f6630e8bec3c2abd0">OnAddConsoleMessage</a> (ultralight::View *caller, const ultralight::ConsoleMessage &amp;msg) override</td></tr>
 <tr class="separator:a5f3da14a5905ad5f6630e8bec3c2abd0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -125,14 +131,16 @@ Public Member Functions</h2></td></tr>
 Private Attributes</h2></td></tr>
 <tr class="memitem:a0fe0d567e525d0696f931b6d4b0ae4ae"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/da6/classtoast_1_1HtmlView.html#a06220cb0becaf065c12c0d655d67da43">HtmlView::ConsoleCallback</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/daf/classtoast_1_1HtmlViewListener.html#a0fe0d567e525d0696f931b6d4b0ae4ae">m_cb</a></td></tr>
 <tr class="separator:a0fe0d567e525d0696f931b6d4b0ae4ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8436e7cbc3776c86d7f181568d318a94"><td class="memItemLeft" align="right" valign="top">ultralight::ViewListener *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/daf/classtoast_1_1HtmlViewListener.html#a8436e7cbc3776c86d7f181568d318a94">m_forward</a> = nullptr</td></tr>
+<tr class="separator:a8436e7cbc3776c86d7f181568d318a94"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Per-view listener that forwards console messages to a callback. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html#l00019">19</a> of file <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html">HtmlView.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html#l00020">20</a> of file <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html">HtmlView.cpp</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ae46878fe260a8a69bad16fd73e0ceca0" name="ae46878fe260a8a69bad16fd73e0ceca0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae46878fe260a8a69bad16fd73e0ceca0">&#9670;&#160;</a></span>HtmlViewListener()</h2>
+<a id="a967fc3cceb173aa8318e77224675c9d6" name="a967fc3cceb173aa8318e77224675c9d6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a967fc3cceb173aa8318e77224675c9d6">&#9670;&#160;</a></span>HtmlViewListener()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -144,8 +152,18 @@ Private Attributes</h2></td></tr>
           <td class="memname">toast::HtmlViewListener::HtmlViewListener </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="../../d4/da6/classtoast_1_1HtmlView.html#a06220cb0becaf065c12c0d655d67da43">HtmlView::ConsoleCallback</a>&#160;</td>
-          <td class="paramname"><em>cb</em></td><td>)</td>
+          <td class="paramname"><em>cb</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">ultralight::ViewListener *&#160;</td>
+          <td class="paramname"><em>forward</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -155,7 +173,7 @@ Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html#l00021">21</a> of file <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html">HtmlView.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html#l00022">22</a> of file <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html">HtmlView.cpp</a>.</p>
 
 </div>
 </div>
@@ -194,7 +212,121 @@ Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html#l00023">23</a> of file <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html">HtmlView.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html#l00043">43</a> of file <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html">HtmlView.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a2be9f1bd6e2c34da9acc1507b8eff9bf" name="a2be9f1bd6e2c34da9acc1507b8eff9bf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2be9f1bd6e2c34da9acc1507b8eff9bf">&#9670;&#160;</a></span>OnChangeCursor()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void toast::HtmlViewListener::OnChangeCursor </td>
+          <td>(</td>
+          <td class="paramtype">ultralight::View *&#160;</td>
+          <td class="paramname"><em>caller</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ultralight::Cursor&#160;</td>
+          <td class="paramname"><em>cursor</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html#l00037">37</a> of file <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html">HtmlView.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ae8de02852548f22f4f5cf8be3e861458" name="ae8de02852548f22f4f5cf8be3e861458"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae8de02852548f22f4f5cf8be3e861458">&#9670;&#160;</a></span>OnChangeTitle()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void toast::HtmlViewListener::OnChangeTitle </td>
+          <td>(</td>
+          <td class="paramtype">ultralight::View *&#160;</td>
+          <td class="paramname"><em>caller</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const ultralight::String &amp;&#160;</td>
+          <td class="paramname"><em>title</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html#l00025">25</a> of file <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html">HtmlView.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a29a5b97303d65dbe2f38df15aff5571b" name="a29a5b97303d65dbe2f38df15aff5571b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a29a5b97303d65dbe2f38df15aff5571b">&#9670;&#160;</a></span>OnChangeURL()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void toast::HtmlViewListener::OnChangeURL </td>
+          <td>(</td>
+          <td class="paramtype">ultralight::View *&#160;</td>
+          <td class="paramname"><em>caller</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const ultralight::String &amp;&#160;</td>
+          <td class="paramname"><em>url</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html#l00031">31</a> of file <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html">HtmlView.cpp</a>.</p>
 
 </div>
 </div>
@@ -219,7 +351,31 @@ Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html#l00032">32</a> of file <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html">HtmlView.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html#l00055">55</a> of file <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html">HtmlView.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a8436e7cbc3776c86d7f181568d318a94" name="a8436e7cbc3776c86d7f181568d318a94"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8436e7cbc3776c86d7f181568d318a94">&#9670;&#160;</a></span>m_forward</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">ultralight::ViewListener* toast::HtmlViewListener::m_forward = nullptr</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html#l00056">56</a> of file <a class="el" href="../../d9/d38/HtmlView_8cpp_source.html">HtmlView.cpp</a>.</p>
 
 </div>
 </div>

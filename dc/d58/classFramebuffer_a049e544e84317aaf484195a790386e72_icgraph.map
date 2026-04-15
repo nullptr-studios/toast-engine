@@ -1,11 +1,12 @@
 <map id="Framebuffer::GetColorTexture" name="Framebuffer::GetColorTexture">
-<area shape="rect" id="node1" title=" " alt="" coords="491,199,705,224"/>
-<area shape="rect" id="node2" href="$db/db7/structColorgrading.html#a26a3dd10ae0ac4f27f953e4ca37bcd09" title=" " alt="" coords="263,5,427,31"/>
-<area shape="rect" id="node3" href="$d6/da0/structTonemaping.html#ab36322f98efed50cd103678c74e9a8d3" title=" " alt="" coords="265,55,425,80"/>
-<area shape="rect" id="node4" href="$d7/d13/classPostProcessManager.html#ad13f04f30f0fa99ef5ded116a7b4b12c" title=" " alt="" coords="267,105,424,145"/>
-<area shape="rect" id="node5" href="$d7/d13/classPostProcessManager.html#ada11314e85d3c40d28c02aec93317743" title=" " alt="" coords="24,134,181,174"/>
-<area shape="rect" id="node6" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ae710c3e5e20e988eb3e5af541eac17c8" title=" " alt="" coords="248,219,443,259"/>
-<area shape="rect" id="node7" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,277,200,317"/>
-<area shape="rect" id="node8" href="$d7/d13/classPostProcessManager.html#ab9037823e679cff0abc7e649cbe0a864" title=" " alt="" coords="267,334,424,374"/>
-<area shape="rect" id="node9" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="248,398,443,438"/>
+<area shape="rect" id="node1" title=" " alt="" coords="453,219,668,244"/>
+<area shape="rect" id="node2" href="$d6/d83/structBloom.html#aa01e3275a43107bae0435f38d488ecdc" title=" " alt="" coords="247,5,369,31"/>
+<area shape="rect" id="node3" href="$d5/dfa/structChromaticAberration.html#ac8e30e02f66fe2080dba0f33f8e1ea58" title=" " alt="" coords="229,55,387,95"/>
+<area shape="rect" id="node4" href="$db/db7/structColorgrading.html#a26a3dd10ae0ac4f27f953e4ca37bcd09" title=" " alt="" coords="226,120,390,145"/>
+<area shape="rect" id="node5" href="$db/d3d/structDepthOfField.html#aa11061e7f292c78ccd70025d73882289" title=" " alt="" coords="225,169,391,195"/>
+<area shape="rect" id="node6" href="$d6/da0/structTonemaping.html#ab36322f98efed50cd103678c74e9a8d3" title=" " alt="" coords="228,219,388,244"/>
+<area shape="rect" id="node7" href="$d7/d13/classPostProcessManager.html#a816f19377989996bc69b9637d454727d" title=" " alt="" coords="229,269,387,309"/>
+<area shape="rect" id="node8" href="$d7/d13/classPostProcessManager.html#ada11314e85d3c40d28c02aec93317743" title=" " alt="" coords="5,298,163,338"/>
+<area shape="rect" id="node9" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ae710c3e5e20e988eb3e5af541eac17c8" title=" " alt="" coords="211,383,405,423"/>
+<area shape="rect" id="node10" href="$d7/d13/classPostProcessManager.html#ab9037823e679cff0abc7e649cbe0a864" title=" " alt="" coords="229,447,387,487"/>
 </map>

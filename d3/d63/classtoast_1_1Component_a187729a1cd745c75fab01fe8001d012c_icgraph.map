@@ -1,7 +1,9 @@
 <map id="toast::Component::Init" name="toast::Component::Init">
-<area shape="rect" id="node1" title="This function runs just after the object is created (scene load thread)" alt="" coords="285,109,452,134"/>
-<area shape="rect" id="node2" href="$d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a823e81f2669065e8df1bb437080cda37" title="This function runs just after the object is created (scene load thread)" alt="" coords="17,5,226,45"/>
-<area shape="rect" id="node3" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a6c0554ccc0f646263c59529ba8ee8bea" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,69,237,109"/>
-<area shape="rect" id="node4" href="$df/d2b/classtoast_1_1ParticleSystem.html#a30a3f0c9b2ecfa0ae770a3cc6ddbf798" title="This function runs just after the object is created (scene load thread)" alt="" coords="41,133,201,173"/>
-<area shape="rect" id="node5" href="$de/d96/classphysics_1_1ColliderRenderable.html#acfc5ac5b18793c71ebf7ae21051ca214" title="This function runs just after the object is created (scene load thread)" alt="" coords="20,197,223,237"/>
+<area shape="rect" id="node1" title="This function runs just after the object is created (scene load thread)" alt="" coords="600,141,767,166"/>
+<area shape="rect" id="node2" href="$d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a823e81f2669065e8df1bb437080cda37" title="This function runs just after the object is created (scene load thread)" alt="" coords="315,5,525,45"/>
+<area shape="rect" id="node3" href="$de/da0/classtoast_1_1MeshRendererComponent.html#a6c0554ccc0f646263c59529ba8ee8bea" title="This function runs just after the object is created (scene load thread)" alt="" coords="304,69,536,109"/>
+<area shape="rect" id="node5" href="$df/d2b/classtoast_1_1ParticleSystem.html#a30a3f0c9b2ecfa0ae770a3cc6ddbf798" title="This function runs just after the object is created (scene load thread)" alt="" coords="340,133,500,173"/>
+<area shape="rect" id="node6" href="$de/d96/classphysics_1_1ColliderRenderable.html#acfc5ac5b18793c71ebf7ae21051ca214" title="This function runs just after the object is created (scene load thread)" alt="" coords="319,197,521,237"/>
+<area shape="rect" id="node7" href="$d3/db0/classtoast_1_1HUDWorldRendererComponent.html#a95f1347295d32007c09beddd23929825" title="This function runs just after the object is created (scene load thread)" alt="" coords="288,261,552,301"/>
+<area shape="rect" id="node4" href="$dc/df8/classtoast_1_1WaterRendererComponent.html#abce0f091ac91bef441bafc46fc45d5a8" title="This function runs just after the object is created (scene load thread)" alt="" coords="5,69,240,109"/>
 </map>

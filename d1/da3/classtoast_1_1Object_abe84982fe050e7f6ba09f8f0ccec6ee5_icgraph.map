@@ -1,6 +1,7 @@
 <map id="toast::Object::OnEnable" name="toast::Object::OnEnable">
-<area shape="rect" id="node1" title="This function runs when the object is enabled after being disabled." alt="" coords="456,31,631,56"/>
-<area shape="rect" id="node2" href="$d1/da3/classtoast_1_1Object.html#aed52a56e0795659d3f262bc9d947d3cb" title=" " alt="" coords="225,31,408,56"/>
+<area shape="rect" id="node1" title="This function runs when the object is enabled after being disabled." alt="" coords="456,59,631,84"/>
+<area shape="rect" id="node2" href="$d1/da3/classtoast_1_1Object.html#aed52a56e0795659d3f262bc9d947d3cb" title=" " alt="" coords="225,29,408,55"/>
+<area shape="rect" id="node5" href="$df/d2b/classtoast_1_1ParticleSystem.html#a6e598806ac8d15834b7e75e287ff22b7" title="This function runs when the object is enabled after being disabled." alt="" coords="237,79,397,119"/>
 <area shape="rect" id="node3" href="$d1/da3/classtoast_1_1Object.html#ada6c4d2aadb757d2b0f2d0cc646d95b2" title=" " alt="" coords="5,5,177,31"/>
 <area shape="rect" id="node4" href="$d1/da3/classtoast_1_1Object.html#adf1e92ab96f2a7da61726d068b6755b7" title="An object that is not enabled will not be ticked and its components will be treated as disabled as we..." alt="" coords="9,55,174,80"/>
 </map>

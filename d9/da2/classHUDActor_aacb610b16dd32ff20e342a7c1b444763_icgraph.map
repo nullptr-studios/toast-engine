@@ -1,0 +1,7 @@
+<map id="HUDActor::EnsureRendererComponent" name="HUDActor::EnsureRendererComponent">
+<area shape="rect" id="node1" title=" " alt="" coords="184,73,381,113"/>
+<area shape="rect" id="node2" href="$d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="5,5,136,31"/>
+<area shape="rect" id="node3" href="$d9/da2/classHUDActor.html#ad8e9987ceb83f9f7ab779a6200323450" title="This function runs just after the object is created (scene load thread)" alt="" coords="13,55,128,80"/>
+<area shape="rect" id="node4" href="$d9/da2/classHUDActor.html#aa02212ff6f4e5a51681afbb8e5c4f425" title="Loads object state from JSON." alt="" coords="8,104,133,129"/>
+<area shape="rect" id="node5" href="$d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8" title="This function runs every frame." alt="" coords="10,153,131,179"/>
+</map>

@@ -1,0 +1,14 @@
+<map id="toast::HUDWorldRendererComponent" name="toast::HUDWorldRendererComponent">
+<area shape="rect" id="node1" title=" " alt="" coords="229,445,493,471"/>
+<area shape="rect" id="node2" href="$d5/dfe/classrenderer_1_1IRenderable.html" title="Interface for objects that can be rendered by the rendering system." alt="" coords="446,357,546,383"/>
+<area shape="rect" id="node3" href="$d0/dd9/classtoast_1_1TransformComponent.html" title="Component that manages position, rotation, and scale." alt="" coords="395,269,597,295"/>
+<area shape="rect" id="node4" href="$d3/d63/classtoast_1_1Component.html" title="Base Component class." alt="" coords="183,181,321,207"/>
+<area shape="rect" id="node12" href="$d8/d7b/classevent_1_1ListenerComponent.html" title=" " alt="" coords="155,269,349,295"/>
+<area shape="rect" id="node5" href="$d1/da3/classtoast_1_1Object.html" title="Base from all the tickable objects on the engine An object is the most basic unit of our engine...." alt="" coords="333,93,438,119"/>
+<area shape="rect" id="node8" href="$d6/dd4/classtoast_1_1Scene.html" title="A collection of Actors The scene manages its Actor children with the ChildMap abstraction." alt="" coords="346,181,449,207"/>
+<area shape="rect" id="node9" href="$d8/d92/classtoast_1_1Actor.html" title=" " alt="" coords="473,181,570,207"/>
+<area shape="rect" id="node6" href="$dd/d8b/classtoast_1_1ISerializable.html" title="Interface for objects that support JSON serialization." alt="" coords="247,5,390,31"/>
+<area shape="rect" id="node7" href="$d8/d87/classChildren.html" title=" " alt="" coords="414,5,490,31"/>
+<area shape="rect" id="node10" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html" title="Rendering layer for HTML/CSS/JS based UI using Ultralight." alt="" coords="135,357,324,383"/>
+<area shape="rect" id="node11" href="$d4/deb/classrenderer_1_1ILayer.html" title="Abstract base class for render layers." alt="" coords="5,269,131,295"/>
+</map>

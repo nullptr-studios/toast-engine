@@ -1,6 +1,9 @@
 <map id="resource::ResourceManager::LoadConfig" name="resource::ResourceManager::LoadConfig">
-<area shape="rect" id="node1" title="Loads content from a file on disk." alt="" coords="509,27,712,67"/>
-<area shape="rect" id="node2" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a0e2a08967ff0d9ffb1db23e45288961b" title=" " alt="" coords="281,27,461,67"/>
-<area shape="rect" id="node3" href="$d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="5,5,233,31"/>
-<area shape="rect" id="node4" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="22,55,217,95"/>
+<area shape="rect" id="node1" title="Loads content from a file on disk." alt="" coords="532,69,735,109"/>
+<area shape="rect" id="node2" href="$d7/d13/classPostProcessManager.html#a85143cfc30a33bde9300916684496303" title=" " alt="" coords="294,5,471,45"/>
+<area shape="rect" id="node4" href="$d7/d13/classPostProcessManager.html#a3dd4eaa42fbde1b006897fff77e4c638" title=" " alt="" coords="281,69,484,109"/>
+<area shape="rect" id="node5" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a0e2a08967ff0d9ffb1db23e45288961b" title=" " alt="" coords="293,133,473,173"/>
+<area shape="rect" id="node3" href="$d7/d13/classPostProcessManager.html#a5f2a7411b6dc5a132bea8a963ab4f227" title=" " alt="" coords="41,5,198,45"/>
+<area shape="rect" id="node6" href="$d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="5,111,233,137"/>
+<area shape="rect" id="node7" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="22,161,217,201"/>
 </map>

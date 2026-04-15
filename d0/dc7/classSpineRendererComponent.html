@@ -94,6 +94,7 @@ $(document).ready(function(){initNavTree('d0/dc7/classSpineRendererComponent.htm
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="#pri-static-attribs">Static Private Attributes</a> &#124;
 <a href="../../db/df9/classSpineRendererComponent-members.html">List of all members</a>  </div>
@@ -199,6 +200,16 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:af63704ab3d04c605fa01fc815870450f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a638c389cf7698a37cd6d8a0b650f469d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a638c389cf7698a37cd6d8a0b650f469d">SetIsOccluder</a> (bool value)</td></tr>
 <tr class="separator:a638c389cf7698a37cd6d8a0b650f469d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a46b4535b7b5899533f7f22b9c7fb42af"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a46b4535b7b5899533f7f22b9c7fb42af">SetDrawToDepth</a> (bool v)</td></tr>
+<tr class="separator:a46b4535b7b5899533f7f22b9c7fb42af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c41a2e0f44a64277cc275d8c1697106"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a2c41a2e0f44a64277cc275d8c1697106">SetRenderLastInGeometry</a> (bool v)</td></tr>
+<tr class="separator:a2c41a2e0f44a64277cc275d8c1697106"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac170ce5341ed29038c6e6827e5aadf78"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ac170ce5341ed29038c6e6827e5aadf78">GetGeometrySortPriority</a> () noexcept override</td></tr>
+<tr class="memdesc:ac170ce5341ed29038c6e6827e5aadf78"><td class="mdescLeft">&#160;</td><td class="mdescRight">Geometry sorting priority. Higher values are rendered later in GeometryPass.  <br /></td></tr>
+<tr class="separator:ac170ce5341ed29038c6e6827e5aadf78"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab12b8a9168ad2118cd99ea5c70c936cd"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ab12b8a9168ad2118cd99ea5c70c936cd">GetTransparentSortPriority</a> () noexcept override</td></tr>
+<tr class="memdesc:ab12b8a9168ad2118cd99ea5c70c936cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transparent sorting priority. Higher values are rendered later in SpritePass.  <br /></td></tr>
+<tr class="separator:ab12b8a9168ad2118cd99ea5c70c936cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5b4c0fbbd333d913f481a6ba4c09a155"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a5b4c0fbbd333d913f481a6ba4c09a155">OnAnimationStart</a> (std::string_view, int)</td></tr>
 <tr class="separator:a5b4c0fbbd333d913f481a6ba4c09a155"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9a830bcc3dec429b6585500f265ad037"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a9a830bcc3dec429b6585500f265ad037">OnAnimationCompleted</a> (std::string_view, int)</td></tr>
@@ -220,6 +231,14 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa72e32a2941c9cfaa1fde20754805c1c inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#aa72e32a2941c9cfaa1fde20754805c1c">GetDepth</a> () noexcept</td></tr>
 <tr class="memdesc:aa72e32a2941c9cfaa1fde20754805c1c inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the Z-depth for sorting purposes.  <br /></td></tr>
 <tr class="separator:aa72e32a2941c9cfaa1fde20754805c1c inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adfc96d3e8454ad1819f711172861d4c1 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#adfc96d3e8454ad1819f711172861d4c1">GetGeometrySortPriority</a> () noexcept</td></tr>
+<tr class="memdesc:adfc96d3e8454ad1819f711172861d4c1 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Geometry sorting priority. Higher values are rendered later in GeometryPass.  <br /></td></tr>
+<tr class="separator:adfc96d3e8454ad1819f711172861d4c1 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a841d3c007704846b3752ed1dc116b237 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a841d3c007704846b3752ed1dc116b237">GetTransparentSortDepth</a> (const glm::mat4 &amp;view_matrix) noexcept</td></tr>
+<tr class="separator:a841d3c007704846b3752ed1dc116b237 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a74cfe5f7b4edb11d1813b3403a59eb71">GetTransparentSortPriority</a> () noexcept</td></tr>
+<tr class="memdesc:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transparent sorting priority. Higher values are rendered later in SpritePass.  <br /></td></tr>
+<tr class="separator:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1TransformComponent"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classtoast_1_1TransformComponent')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html">toast::TransformComponent</a></td></tr>
 <tr class="memitem:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a0077d521827b8e0f9c6814efc7fb55c7">TransformComponent</a> ()</td></tr>
 <tr class="memdesc:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a transform at the origin with no rotation and unit scale.  <br /></td></tr>
@@ -315,9 +334,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true) override</td></tr>
 <tr class="memdesc:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef">SoftLoad</a> () override</td></tr>
-<tr class="memdesc:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
-<tr class="separator:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa11cd2c18489d042e6fd27295d622c38">SoftLoad</a> (bool editorStop=false) override</td></tr>
+<tr class="memdesc:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
+<tr class="separator:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656">SoftSave</a> () const override</td></tr>
 <tr class="memdesc:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -373,9 +392,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a706ca4214d997840d82bc83e0c3ab85b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true)=0</td></tr>
 <tr class="memdesc:a706ca4214d997840d82bc83e0c3ab85b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a706ca4214d997840d82bc83e0c3ab85b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a7a5705e9dd33a51039af65c3928ea4ef">SoftLoad</a> ()=0</td></tr>
-<tr class="memdesc:a7a5705e9dd33a51039af65c3928ea4ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
-<tr class="separator:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09513da3769afa0f69615204c28dbad4"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a09513da3769afa0f69615204c28dbad4">SoftLoad</a> (bool editorStop)=0</td></tr>
+<tr class="memdesc:a09513da3769afa0f69615204c28dbad4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
+<tr class="separator:a09513da3769afa0f69615204c28dbad4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66284559a3d768dcad01459ce3688f82"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">Save</a> () const =0</td></tr>
 <tr class="memdesc:a66284559a3d768dcad01459ce3688f82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a66284559a3d768dcad01459ce3688f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -383,49 +402,68 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a58c24747a2bcdd94fa3d69b81761cd03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a58c24747a2bcdd94fa3d69b81761cd03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
+Private Member Functions</h2></td></tr>
+<tr class="memitem:a4c5957b7aa50c4c9ca5808cc46d6c679"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a4c5957b7aa50c4c9ca5808cc46d6c679">ReloadSkeletonFromPaths</a> ()</td></tr>
+<tr class="separator:a4c5957b7aa50c4c9ca5808cc46d6c679"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf02ffea702b0f12e0b8b75a43e67ebf"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#aaf02ffea702b0f12e0b8b75a43e67ebf">HasAnimation</a> (std::string_view animation_name) const</td></tr>
+<tr class="separator:aaf02ffea702b0f12e0b8b75a43e67ebf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb8accb52da7b5ef99c882d295f8635c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#abb8accb52da7b5ef99c882d295f8635c">TryPlayAnimationByName</a> (std::string_view animation_name, bool loop) const</td></tr>
+<tr class="separator:abb8accb52da7b5ef99c882d295f8635c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:a0c14946e7b0fc100ebb6b1745df39c10"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:ae78fd3f63e60251f30c6410e5f27feaf"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; <a class="el" href="../../d9/d94/classSpineEventHandler.html">SpineEventHandler</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#afcef4a856acbb7f32441d9bb0b5ac6c2">eventHandler</a></td></tr>
-<tr class="separator:ae78fd3f63e60251f30c6410e5f27feaf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a74a222a5bb6ac684b56c189b2073e422"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../dd/ddc/classeditor_1_1ResourceSlot.html">editor::ResourceSlot</a>&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a8f920e9cca2c10ccaa1085646cb99739">atlasResource</a> { <a class="el" href="../../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fa864c645f8df49590ab2e27a202b43fb7">resource::ResourceType::SPINE_ATLAS</a> }</td></tr>
-<tr class="separator:a74a222a5bb6ac684b56c189b2073e422"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6385d0e0f8e6da28fb6c34da235daf5c"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../dd/ddc/classeditor_1_1ResourceSlot.html">editor::ResourceSlot</a>&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ab10ef2d5efd3fadb1e18c3fde590fce9">skeletonDataResource</a> { <a class="el" href="../../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fa955043a12a09c679ff30ded113a1f8f4">resource::ResourceType::SPINE_SKELETON_DATA</a> }</td></tr>
-<tr class="separator:a6385d0e0f8e6da28fb6c34da235daf5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afcac43f279eae0b45b8287ebc7b69973"><td class="memItemLeft" >&#160;&#160;&#160;std::string&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a920dc08b724c7d70257a1e068adb833c">atlasPath</a></td></tr>
-<tr class="separator:afcac43f279eae0b45b8287ebc7b69973"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9921bc704db50212a02b5a80677ce2ba"><td class="memItemLeft" >&#160;&#160;&#160;std::string&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a3a425cf1c65c6cfd385871a884a81394">skeletonDataPath</a></td></tr>
-<tr class="separator:a9921bc704db50212a02b5a80677ce2ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a286d1aa26842cf85da7a2b83859b7d86"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../de/d02/classSpineSkeletonData.html">SpineSkeletonData</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a0ebd1192b581f2ce801fc228438f7574">skeletonData</a></td></tr>
-<tr class="separator:a286d1aa26842cf85da7a2b83859b7d86"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af74850f57b5bf3d299161297c12408ee"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a716158e088d102886a117efd1c2713e2">shader</a></td></tr>
-<tr class="separator:af74850f57b5bf3d299161297c12408ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a05eee3afd8d81df836f953a429cc7b3f"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a3917465a36279566092d697fa7187be0">occlusionShader</a></td></tr>
-<tr class="separator:a05eee3afd8d81df836f953a429cc7b3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abd0a3c629186fa9fee537baa42780673"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; spine::Skeleton &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a8ea4c2b23a471bfd3346873095aa3ac5">skeleton</a></td></tr>
-<tr class="separator:abd0a3c629186fa9fee537baa42780673"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c129d95f2ebd1a6a2a2c77cd9b2cd88"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; spine::AnimationStateData &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ae55fbd69aedb31ed5facc41ed823e3af">animationStateData</a></td></tr>
-<tr class="separator:a2c129d95f2ebd1a6a2a2c77cd9b2cd88"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad61d7568ad7e66c9fcc312959a1551d3"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; spine::AnimationState &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#abecd0060cf4c03ee72fe848e0850b79b">animationState</a></td></tr>
-<tr class="separator:ad61d7568ad7e66c9fcc312959a1551d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2464c214c8d54c743ac3b8c9acd79718"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d4/d8c/classrenderer_1_1Mesh.html">renderer::Mesh</a>&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ade3b0bba52af583ce458e1089ab8c1b9">dynamicMesh</a></td></tr>
-<tr class="separator:a2464c214c8d54c743ac3b8c9acd79718"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2f3eb6627e4b957b90924f67bd7feed1"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a6eb9d3931e4551db5ce36313b87f28d3">isOccluder</a> = false</td></tr>
-<tr class="separator:a2f3eb6627e4b957b90924f67bd7feed1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:accd8e47b2250ae63f2a5434babf25660"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a72598c4ada61817f0866602dda2d429c">onScreen</a> = true</td></tr>
-<tr class="separator:accd8e47b2250ae63f2a5434babf25660"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a57360690100a8f8ea71a96b9e98be56c"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a81b0ee0ac3c37d0c6fe8faca8978f4f5">drawToDepth</a> = true</td></tr>
-<tr class="separator:a57360690100a8f8ea71a96b9e98be56c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3883a45226e06c03c986a71a876a6cdf"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; <a class="el" href="../../d1/d64/structrenderer_1_1SpineVertex.html">renderer::SpineVertex</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a1fa928c16b20dd602f0cda1ec13de47d">tempVerts</a></td></tr>
-<tr class="separator:a3883a45226e06c03c986a71a876a6cdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae12f60342d22572a30a3e2a660ad55b9"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; uint16_t &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a63eb2ba564b14f5d1b6a511398792e4d">tempIndices</a></td></tr>
-<tr class="separator:ae12f60342d22572a30a3e2a660ad55b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2f34b700b323b00edc859cf31e9a8f21"><td class="memItemLeft" >&#160;&#160;&#160;unsigned int&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a605509f9d747cc482e82729fe889c4f6">lastBoundTexture</a> = 0</td></tr>
-<tr class="separator:a2f34b700b323b00edc859cf31e9a8f21"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a04d77d0c1a3c01be55046eaa23c0e822"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; std::string, glm::vec2 &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#aa750d6eed2e175fd60fce92579b04dc6">boneLocalOverrides</a></td></tr>
-<tr class="separator:a04d77d0c1a3c01be55046eaa23c0e822"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0c14946e7b0fc100ebb6b1745df39c10"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a0c14946e7b0fc100ebb6b1745df39c10">m</a></td></tr>
-<tr class="separator:a0c14946e7b0fc100ebb6b1745df39c10"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3005f82c97407ee42b6743c59f2ff015"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:a00c2c15914306d13ca3104a8dc99d365"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; <a class="el" href="../../d9/d94/classSpineEventHandler.html">SpineEventHandler</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#afcef4a856acbb7f32441d9bb0b5ac6c2">eventHandler</a></td></tr>
+<tr class="separator:a00c2c15914306d13ca3104a8dc99d365"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a98bee2e55f8f64fc1ec86e0771e35c25"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../dd/ddc/classeditor_1_1ResourceSlot.html">editor::ResourceSlot</a>&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a8f920e9cca2c10ccaa1085646cb99739">atlasResource</a> { <a class="el" href="../../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fa864c645f8df49590ab2e27a202b43fb7">resource::ResourceType::SPINE_ATLAS</a> }</td></tr>
+<tr class="separator:a98bee2e55f8f64fc1ec86e0771e35c25"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa73b8591e4572c5c8f6e6659c6244e45"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../dd/ddc/classeditor_1_1ResourceSlot.html">editor::ResourceSlot</a>&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ab10ef2d5efd3fadb1e18c3fde590fce9">skeletonDataResource</a> { <a class="el" href="../../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fa955043a12a09c679ff30ded113a1f8f4">resource::ResourceType::SPINE_SKELETON_DATA</a> }</td></tr>
+<tr class="separator:aa73b8591e4572c5c8f6e6659c6244e45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affd5eb3744d97fb6a8e59c2549fa3835"><td class="memItemLeft" >&#160;&#160;&#160;std::string&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a920dc08b724c7d70257a1e068adb833c">atlasPath</a></td></tr>
+<tr class="separator:affd5eb3744d97fb6a8e59c2549fa3835"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af8c935ef681f28233b608d2fa7eacb86"><td class="memItemLeft" >&#160;&#160;&#160;std::string&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a3a425cf1c65c6cfd385871a884a81394">skeletonDataPath</a></td></tr>
+<tr class="separator:af8c935ef681f28233b608d2fa7eacb86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca8462f2675d20c2353c947e93a5d38b"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../de/d02/classSpineSkeletonData.html">SpineSkeletonData</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a0ebd1192b581f2ce801fc228438f7574">skeletonData</a></td></tr>
+<tr class="separator:aca8462f2675d20c2353c947e93a5d38b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4a1302bfa8adce329e72a2edb5716366"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a716158e088d102886a117efd1c2713e2">shader</a></td></tr>
+<tr class="separator:a4a1302bfa8adce329e72a2edb5716366"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a762479ebe643dd33af7a9074f3016269"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a3917465a36279566092d697fa7187be0">occlusionShader</a></td></tr>
+<tr class="separator:a762479ebe643dd33af7a9074f3016269"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17cf4f37b383b9181e8842eba1e7b611"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; spine::Skeleton &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a8ea4c2b23a471bfd3346873095aa3ac5">skeleton</a></td></tr>
+<tr class="separator:a17cf4f37b383b9181e8842eba1e7b611"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7173909f7a70d11c02ed13045751b6bc"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; spine::AnimationStateData &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ae55fbd69aedb31ed5facc41ed823e3af">animationStateData</a></td></tr>
+<tr class="separator:a7173909f7a70d11c02ed13045751b6bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e5e581597eb64234158b96f718763f5"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; spine::AnimationState &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#abecd0060cf4c03ee72fe848e0850b79b">animationState</a></td></tr>
+<tr class="separator:a3e5e581597eb64234158b96f718763f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a28a46217db89ee8346fb758f98ab83b9"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d4/d8c/classrenderer_1_1Mesh.html">renderer::Mesh</a>&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ade3b0bba52af583ce458e1089ab8c1b9">dynamicMesh</a></td></tr>
+<tr class="separator:a28a46217db89ee8346fb758f98ab83b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af8d7875d116f3dff2423b6780fd87109"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a6eb9d3931e4551db5ce36313b87f28d3">isOccluder</a> = false</td></tr>
+<tr class="separator:af8d7875d116f3dff2423b6780fd87109"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0fae6a18382b6de2afd516972b9c24e8"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a84ff219f193a7e18d37c8f4c856c1e52">castsDirectionalShadow</a> = true</td></tr>
+<tr class="separator:a0fae6a18382b6de2afd516972b9c24e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa99a4f2bca0608de1e51a0f45bf0806a"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a72598c4ada61817f0866602dda2d429c">onScreen</a> = true</td></tr>
+<tr class="separator:aa99a4f2bca0608de1e51a0f45bf0806a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0fa5ae6d6eafaebe366cdef1342a6666"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a81b0ee0ac3c37d0c6fe8faca8978f4f5">drawToDepth</a> = true</td></tr>
+<tr class="separator:a0fa5ae6d6eafaebe366cdef1342a6666"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a635ee8edac2dea4c0acf352ff4d3f1a0"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a8cac29e983ee9059ede64370d32841b1">renderLastInGeometry</a> = false</td></tr>
+<tr class="separator:a635ee8edac2dea4c0acf352ff4d3f1a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec3c40351fe8846fe45c16a4bd04d8da"><td class="memItemLeft" >&#160;&#160;&#160;std::string&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a0ce548d909d2dab537de57ce8433ebec">selectedAnimationName</a></td></tr>
+<tr class="separator:aec3c40351fe8846fe45c16a4bd04d8da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6c8fd3c6f0dd88fd777faaba0d3797b3"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ab475854b830e4320a26952516cc66e6b">selectedAnimationLoop</a> = false</td></tr>
+<tr class="separator:a6c8fd3c6f0dd88fd777faaba0d3797b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5237fd8c0fe87c0bbc50723bc86ed510"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ac71d0ea2fc42dfdaf8c1a8d63a24c1a3">playSelectedAnimationOnBegin</a> = false</td></tr>
+<tr class="separator:a5237fd8c0fe87c0bbc50723bc86ed510"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a906070c2d74e078414574f69237cde34"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; <a class="el" href="../../d1/d64/structrenderer_1_1SpineVertex.html">renderer::SpineVertex</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a1fa928c16b20dd602f0cda1ec13de47d">tempVerts</a></td></tr>
+<tr class="separator:a906070c2d74e078414574f69237cde34"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae3c12ee07559d30b4b16346a78b5f83d"><td class="memItemLeft" >&#160;&#160;&#160;std::vector&lt; uint16_t &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a63eb2ba564b14f5d1b6a511398792e4d">tempIndices</a></td></tr>
+<tr class="separator:ae3c12ee07559d30b4b16346a78b5f83d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aebf6d4f08ccd8eaa7697b5ae32994cbe"><td class="memItemLeft" >&#160;&#160;&#160;unsigned int&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a605509f9d747cc482e82729fe889c4f6">lastBoundTexture</a> = 0</td></tr>
+<tr class="separator:aebf6d4f08ccd8eaa7697b5ae32994cbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe32f0515ca7243f08103d012e0a76c4"><td class="memItemLeft" >&#160;&#160;&#160;std::unordered_map&lt; std::string, glm::vec2 &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#aa750d6eed2e175fd60fce92579b04dc6">boneLocalOverrides</a></td></tr>
+<tr class="separator:afe32f0515ca7243f08103d012e0a76c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3005f82c97407ee42b6743c59f2ff015"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a3005f82c97407ee42b6743c59f2ff015">m</a></td></tr>
+<tr class="separator:a3005f82c97407ee42b6743c59f2ff015"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-static-attribs" name="pri-static-attribs"></a>
 Static Private Attributes</h2></td></tr>
@@ -526,7 +564,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d3/d63/classtoast_1_1Component.html#af4588d5c543f8b194d31cba0e9f4a0ec">toast::Component</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00090">90</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00124">124</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -545,7 +583,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00507">507</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00604">604</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -565,7 +603,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00503">503</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00600">600</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -595,7 +633,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00471">471</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00568">568</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -626,7 +664,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a1b6e927d9c508dd81a308d45a52afecb">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00271">271</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00334">334</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -646,7 +684,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00475">475</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00572">572</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -666,7 +704,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00511">511</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00608">608</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -688,7 +726,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Returns the bone's world position (after applying the component's world transform). Useful for attaching game objects (e.g. weapon actors) to spine bones. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00566">566</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00663">663</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -708,7 +746,38 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00535">535</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00632">632</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ac170ce5341ed29038c6e6827e5aadf78" name="ac170ce5341ed29038c6e6827e5aadf78"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac170ce5341ed29038c6e6827e5aadf78">&#9670;&#160;</a></span>GetGeometrySortPriority()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int SpineRendererComponent::GetGeometrySortPriority </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Geometry sorting priority. Higher values are rendered later in GeometryPass. </p>
+
+<p>Reimplemented from <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#adfc96d3e8454ad1819f711172861d4c1">renderer::IRenderable</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00108">108</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -739,6 +808,80 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="ab12b8a9168ad2118cd99ea5c70c936cd" name="ab12b8a9168ad2118cd99ea5c70c936cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab12b8a9168ad2118cd99ea5c70c936cd">&#9670;&#160;</a></span>GetTransparentSortPriority()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int SpineRendererComponent::GetTransparentSortPriority </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Transparent sorting priority. Higher values are rendered later in SpritePass. </p>
+
+<p>Reimplemented from <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a74cfe5f7b4edb11d1813b3403a59eb71">renderer::IRenderable</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00113">113</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="aaf02ffea702b0f12e0b8b75a43e67ebf" name="aaf02ffea702b0f12e0b8b75a43e67ebf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaf02ffea702b0f12e0b8b75a43e67ebf">&#9670;&#160;</a></span>HasAnimation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool SpineRendererComponent::HasAnimation </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>animation_name</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00055">55</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d0/dc7/classSpineRendererComponent_aaf02ffea702b0f12e0b8b75a43e67ebf_icgraph.png" border="0" usemap="#ad0/dc7/classSpineRendererComponent_aaf02ffea702b0f12e0b8b75a43e67ebf_icgraph" alt=""/></div>
+<map name="ad0/dc7/classSpineRendererComponent_aaf02ffea702b0f12e0b8b75a43e67ebf_icgraph" id="ad0/dc7/classSpineRendererComponent_aaf02ffea702b0f12e0b8b75a43e67ebf_icgraph">
+<area shape="rect" title=" " alt="" coords="493,101,685,141"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a6fd92e0e723525ba2746325030958911" title=" " alt="" coords="249,5,441,45"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a15033e2bd6c88dbf36a88a1045458194" title=" " alt="" coords="249,69,441,109"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a4c5957b7aa50c4c9ca5808cc46d6c679" title=" " alt="" coords="246,133,445,173"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#abb8accb52da7b5ef99c882d295f8635c" title=" " alt="" coords="245,197,445,237"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ad1952cbfc3a232ad54536c0170b36f39" title="TODO:SPINE RESOURCE SLOTS." alt="" coords="5,69,197,109"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a17b4928799669c1fbe648df6afe88fef" title="Loads object state from JSON." alt="" coords="5,133,197,173"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a6c9bd075357976e95fdc457478aa1cab" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="5,197,197,237"/>
+</map>
+</div>
+
+</div>
+</div>
 <a id="ad1952cbfc3a232ad54536c0170b36f39" name="ad1952cbfc3a232ad54536c0170b36f39"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad1952cbfc3a232ad54536c0170b36f39">&#9670;&#160;</a></span>Init()</h2>
 
@@ -766,7 +909,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d3/d63/classtoast_1_1Component.html#a187729a1cd745c75fab01fe8001d012c">toast::Component</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00023">23</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00070">70</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -816,7 +959,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">toast::ISerializable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00428">428</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00495">495</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -845,7 +988,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a144d8696ae8da523c8e1c9b03e0754f9">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00081">81</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00107">107</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -875,7 +1018,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00467">467</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00564">564</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -917,7 +1060,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00463">463</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00557">557</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -955,7 +1098,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00102">102</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00120">120</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1002,7 +1145,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00108">108</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00126">126</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1049,7 +1192,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00104">104</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00122">122</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1120,7 +1263,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00587">587</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00684">684</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1167,7 +1310,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00106">106</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00124">124</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1214,7 +1357,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00100">100</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00118">118</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1254,7 +1397,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa9867880b2966b5ccb8be7c9abf37618">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00103">103</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00143">143</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1285,7 +1428,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#abe84982fe050e7f6ba09f8f0ccec6ee5">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00097">97</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00137">137</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1337,7 +1480,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Implements <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a6edfc119b8464b5540e78703af327091">renderer::IRenderable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00277">277</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00340">340</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1373,7 +1516,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00455">455</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00546">546</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1392,6 +1535,43 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="a4c5957b7aa50c4c9ca5808cc46d6c679" name="a4c5957b7aa50c4c9ca5808cc46d6c679"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c5957b7aa50c4c9ca5808cc46d6c679">&#9670;&#160;</a></span>ReloadSkeletonFromPaths()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool SpineRendererComponent::ReloadSkeletonFromPaths </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00024">24</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d0/dc7/classSpineRendererComponent_a4c5957b7aa50c4c9ca5808cc46d6c679_icgraph.png" border="0" usemap="#ad0/dc7/classSpineRendererComponent_a4c5957b7aa50c4c9ca5808cc46d6c679_icgraph" alt=""/></div>
+<map name="ad0/dc7/classSpineRendererComponent_a4c5957b7aa50c4c9ca5808cc46d6c679_icgraph" id="ad0/dc7/classSpineRendererComponent_a4c5957b7aa50c4c9ca5808cc46d6c679_icgraph">
+<area shape="rect" title=" " alt="" coords="245,37,444,77"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#ad1952cbfc3a232ad54536c0170b36f39" title="TODO:SPINE RESOURCE SLOTS." alt="" coords="5,5,197,45"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a17b4928799669c1fbe648df6afe88fef" title="Loads object state from JSON." alt="" coords="5,69,197,109"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -1451,7 +1631,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">toast::ISerializable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00445">445</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00532">532</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1481,7 +1661,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00487">487</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00584">584</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1511,7 +1691,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00523">523</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00620">620</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1541,7 +1721,35 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00547">547</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00644">644</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a46b4535b7b5899533f7f22b9c7fb42af" name="a46b4535b7b5899533f7f22b9c7fb42af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a46b4535b7b5899533f7f22b9c7fb42af">&#9670;&#160;</a></span>SetDrawToDepth()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void SpineRendererComponent::SetDrawToDepth </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>v</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00099">99</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1570,6 +1778,34 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00095">95</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a2c41a2e0f44a64277cc275d8c1697106" name="a2c41a2e0f44a64277cc275d8c1697106"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2c41a2e0f44a64277cc275d8c1697106">&#9670;&#160;</a></span>SetRenderLastInGeometry()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void SpineRendererComponent::SetRenderLastInGeometry </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>v</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00103">103</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1617,7 +1853,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00459">459</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00553">553</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1648,7 +1884,54 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Reimplemented from <a class="el" href="../../d3/d63/classtoast_1_1Component.html#a8ead9044b0a5e2109cab94d1cc3d8854">toast::Component</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00109">109</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00149">149</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+
+</div>
+</div>
+<a id="abb8accb52da7b5ef99c882d295f8635c" name="abb8accb52da7b5ef99c882d295f8635c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abb8accb52da7b5ef99c882d295f8635c">&#9670;&#160;</a></span>TryPlayAnimationByName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void SpineRendererComponent::TryPlayAnimationByName </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>animation_name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>loop</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00062">62</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../d0/dc7/classSpineRendererComponent_abb8accb52da7b5ef99c882d295f8635c_icgraph.png" border="0" usemap="#ad0/dc7/classSpineRendererComponent_abb8accb52da7b5ef99c882d295f8635c_icgraph" alt=""/></div>
+<map name="ad0/dc7/classSpineRendererComponent_abb8accb52da7b5ef99c882d295f8635c_icgraph" id="ad0/dc7/classSpineRendererComponent_abb8accb52da7b5ef99c882d295f8635c_icgraph">
+<area shape="rect" title=" " alt="" coords="245,5,445,45"/>
+<area shape="rect" href="../../d0/dc7/classSpineRendererComponent.html#a6c9bd075357976e95fdc457478aa1cab" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="5,5,197,45"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -1670,7 +1953,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Converts a 2-D world-space position into spine root-local space. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00581">581</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00678">678</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1687,7 +1970,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00133">133</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00151">151</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1703,7 +1986,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00132">132</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00150">150</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1719,7 +2002,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00124">124</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00142">142</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1735,7 +2018,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00120">120</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00138">138</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1759,7 +2042,23 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00149">149</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00174">174</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a84ff219f193a7e18d37c8f4c856c1e52" name="a84ff219f193a7e18d37c8f4c856c1e52"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a84ff219f193a7e18d37c8f4c856c1e52">&#9670;&#160;</a></span>castsDirectionalShadow</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool SpineRendererComponent::castsDirectionalShadow = true</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00156">156</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1775,7 +2074,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00140">140</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00159">159</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1791,7 +2090,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00135">135</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00153">153</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1807,7 +2106,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00118">118</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00136">136</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1831,7 +2130,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00115">115</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00133">133</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1847,7 +2146,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00137">137</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00155">155</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1863,12 +2162,12 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00147">147</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00172">172</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
-<a id="a0c14946e7b0fc100ebb6b1745df39c10" name="a0c14946e7b0fc100ebb6b1745df39c10"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0c14946e7b0fc100ebb6b1745df39c10">&#9670;&#160;</a></span></h2>
+<a id="a3005f82c97407ee42b6743c59f2ff015" name="a3005f82c97407ee42b6743c59f2ff015"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3005f82c97407ee42b6743c59f2ff015">&#9670;&#160;</a></span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1893,7 +2192,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00129">129</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00147">147</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1909,7 +2208,71 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00138">138</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00157">157</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ac71d0ea2fc42dfdaf8c1a8d63a24c1a3" name="ac71d0ea2fc42dfdaf8c1a8d63a24c1a3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac71d0ea2fc42dfdaf8c1a8d63a24c1a3">&#9670;&#160;</a></span>playSelectedAnimationOnBegin</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool SpineRendererComponent::playSelectedAnimationOnBegin = false</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00165">165</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a8cac29e983ee9059ede64370d32841b1" name="a8cac29e983ee9059ede64370d32841b1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8cac29e983ee9059ede64370d32841b1">&#9670;&#160;</a></span>renderLastInGeometry</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool SpineRendererComponent::renderLastInGeometry = false</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00160">160</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ab475854b830e4320a26952516cc66e6b" name="ab475854b830e4320a26952516cc66e6b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab475854b830e4320a26952516cc66e6b">&#9670;&#160;</a></span>selectedAnimationLoop</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool SpineRendererComponent::selectedAnimationLoop = false</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00164">164</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a0ce548d909d2dab537de57ce8433ebec" name="a0ce548d909d2dab537de57ce8433ebec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ce548d909d2dab537de57ce8433ebec">&#9670;&#160;</a></span>selectedAnimationName</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string SpineRendererComponent::selectedAnimationName</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00163">163</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1925,7 +2288,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00128">128</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00146">146</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1941,7 +2304,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00131">131</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00149">149</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1957,7 +2320,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00127">127</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00145">145</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1973,7 +2336,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00125">125</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00143">143</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1989,7 +2352,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00121">121</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00139">139</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2005,7 +2368,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00144">144</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00169">169</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2021,7 +2384,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00143">143</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00168">168</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>

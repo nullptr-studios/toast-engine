@@ -1,0 +1,49 @@
+<map id="src/Renderer/HUD/HUDActor.cpp" name="src/Renderer/HUD/HUDActor.cpp">
+<area shape="rect" id="node1" title=" " alt="" coords="789,5,1021,31"/>
+<area shape="rect" id="node2" href="$dd/d93/HUDActor_8hpp.html" title=" " alt="" coords="1142,167,1295,207"/>
+<area shape="rect" id="node32" href="$de/d8a/HUDLayer_8hpp.html" title="HUD rendering layer using Ultralight for web&#45;based UI." alt="" coords="1097,79,1250,119"/>
+<area shape="rect" id="node35" href="$d0/d09/HUDWorldRendererComponent_8hpp.html" title="World&#45;space HUD renderer that draws an Ultralight texture directly on a mesh." alt="" coords="421,167,675,207"/>
+<area shape="rect" id="node44" href="$db/d16/ResourceManager_8hpp.html" title="Resource loading and caching system." alt="" coords="453,255,643,295"/>
+<area shape="rect" id="node3" href="$d3/d1b/Actor_8hpp.html" title="The simplest Object that exists on the game world." alt="" coords="1483,262,1658,287"/>
+<area shape="rect" id="node15" title=" " alt="" coords="783,651,841,676"/>
+<area shape="rect" id="node29" title=" " alt="" coords="921,262,1081,287"/>
+<area shape="rect" id="node30" title=" " alt="" coords="1019,577,1085,603"/>
+<area shape="rect" id="node31" title=" " alt="" coords="1090,504,1153,529"/>
+<area shape="rect" id="node4" href="$d7/d3f/Object_8hpp.html" title="Base Object Class." alt="" coords="1642,504,1734,529"/>
+<area shape="rect" id="node21" href="$d9/da8/TransformComponent_8hpp.html" title="Transform component for position, rotation, and scale." alt="" coords="1369,343,1580,383"/>
+<area shape="rect" id="node25" href="$d0/d1c/ListenerComponent_8hpp.html" title=" " alt="" coords="1804,350,2060,375"/>
+<area shape="rect" id="node5" href="$d7/d5a/RTTIMacros_8h.html" title=" " alt="" coords="1807,577,1929,603"/>
+<area shape="rect" id="node6" href="$d5/d03/Factory_8hpp.html" title="Class in charge of Object creation (not anmymore)" alt="" coords="1953,577,2087,603"/>
+<area shape="rect" id="node7" href="$df/da3/ISerializable_8hpp.html" title="Interface for objects that can be saved and loaded from JSON." alt="" coords="1296,577,1464,603"/>
+<area shape="rect" id="node9" href="$d0/d82/Log_8hpp.html" title=" " alt="" coords="2162,577,2273,603"/>
+<area shape="rect" id="node16" title=" " alt="" coords="1769,651,1866,676"/>
+<area shape="rect" id="node17" title=" " alt="" coords="1488,577,1555,603"/>
+<area shape="rect" id="node18" title=" " alt="" coords="1161,577,1221,603"/>
+<area shape="rect" id="node19" href="$da/d8d/Children_8inl.html" title=" " alt="" coords="1579,577,1675,603"/>
+<area shape="rect" id="node20" href="$de/d16/Object_8inl.html" title=" " alt="" coords="1699,577,1783,603"/>
+<area shape="rect" id="node8" title=" " alt="" coords="1307,651,1453,676"/>
+<area shape="rect" id="node10" href="$dc/dbc/Profiler_8hpp.html" title="Wrapper of the Tracy Profiler." alt="" coords="2131,651,2264,676"/>
+<area shape="rect" id="node11" title=" " alt="" coords="2288,651,2357,676"/>
+<area shape="rect" id="node12" title=" " alt="" coords="1891,651,1957,676"/>
+<area shape="rect" id="node13" title=" " alt="" coords="2381,651,2459,676"/>
+<area shape="rect" id="node14" title=" " alt="" coords="1982,651,2106,676"/>
+<area shape="rect" id="node22" href="$df/d1f/Component_8hpp.html" title="Base component class." alt="" coords="1708,431,1833,456"/>
+<area shape="rect" id="node23" title=" " alt="" coords="613,504,717,529"/>
+<area shape="rect" id="node24" title=" " alt="" coords="1460,431,1633,456"/>
+<area shape="rect" id="node26" title=" " alt="" coords="1909,431,1955,456"/>
+<area shape="rect" id="node27" title=" " alt="" coords="1979,431,2071,456"/>
+<area shape="rect" id="node28" title=" " alt="" coords="2095,431,2182,456"/>
+<area shape="rect" id="node33" href="$d2/dd6/ILayer_8hpp.html" title="Base interface for rendering layers." alt="" coords="1563,174,1754,199"/>
+<area shape="rect" id="node34" href="$df/d7d/Event_8hpp.html" title="Base Event class." alt="" coords="1766,262,1933,287"/>
+<area shape="rect" id="node36" href="$d7/d78/IRenderable_8hpp.html" title="Interface for objects that can be rendered." alt="" coords="668,262,897,287"/>
+<area shape="rect" id="node37" href="$d4/d6e/Shader_8hpp.html" title=" " alt="" coords="272,431,467,456"/>
+<area shape="rect" id="node43" href="$d1/d62/Mesh_8hpp.html" title=" " alt="" coords="491,431,685,456"/>
+<area shape="rect" id="node38" href="$d5/dd0/IResource_8hpp.html" title=" " alt="" coords="742,504,965,529"/>
+<area shape="rect" id="node40" title=" " alt="" coords="293,504,384,529"/>
+<area shape="rect" id="node41" title=" " alt="" coords="459,504,538,529"/>
+<area shape="rect" id="node42" title=" " alt="" coords="145,504,269,529"/>
+<area shape="rect" id="node39" title=" " alt="" coords="849,577,916,603"/>
+<area shape="rect" id="node45" href="$da/d46/ResourceSlot_8hpp.html" title=" " alt="" coords="785,350,919,375"/>
+<area shape="rect" id="node46" href="$d0/ddc/Texture_8hpp.html" title=" " alt="" coords="932,431,1031,456"/>
+<area shape="rect" id="node47" title=" " alt="" coords="585,350,649,375"/>
+</map>

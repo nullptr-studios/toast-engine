@@ -9,9 +9,11 @@ var searchData=
   ['listenercomponent_2ecpp_6',['ListenerComponent.cpp',['../d8/ddc/ListenerComponent_8cpp.html',1,'']]],
   ['listenercomponent_2edox_7',['ListenerComponent.dox',['../dc/d20/ListenerComponent_8dox.html',1,'']]],
   ['listenercomponent_2ehpp_8',['ListenerComponent.hpp',['../d0/d1c/ListenerComponent_8hpp.html',1,'']]],
-  ['log_2ecpp_9',['Log.cpp',['../d4/d88/Log_8cpp.html',1,'']]],
-  ['log_2edox_10',['Log.dox',['../d3/dda/Log_8dox.html',1,'']]],
-  ['log_2ehpp_11',['Log.hpp',['../d0/d82/Log_8hpp.html',1,'']]],
-  ['logger_2ecpp_12',['Logger.cpp',['../d9/df5/Logger_8cpp.html',1,'']]],
-  ['logger_2ehpp_13',['Logger.hpp',['../d9/d11/Logger_8hpp.html',1,'']]]
+  ['localization_2ecpp_9',['Localization.cpp',['../d5/da4/Localization_8cpp.html',1,'']]],
+  ['localization_2ehpp_10',['Localization.hpp',['../d2/d69/Localization_8hpp.html',1,'']]],
+  ['log_2ecpp_11',['Log.cpp',['../d4/d88/Log_8cpp.html',1,'']]],
+  ['log_2edox_12',['Log.dox',['../d3/dda/Log_8dox.html',1,'']]],
+  ['log_2ehpp_13',['Log.hpp',['../d0/d82/Log_8hpp.html',1,'']]],
+  ['logger_2ecpp_14',['Logger.cpp',['../d9/df5/Logger_8cpp.html',1,'']]],
+  ['logger_2ehpp_15',['Logger.hpp',['../d9/d11/Logger_8hpp.html',1,'']]]
 ];

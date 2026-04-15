@@ -1,11 +1,10 @@
 <map id="Framebuffer::Height" name="Framebuffer::Height">
-<area shape="rect" id="node1" title=" " alt="" coords="491,206,643,231"/>
-<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="248,5,443,45"/>
-<area shape="rect" id="node3" href="$db/db7/structColorgrading.html#a26a3dd10ae0ac4f27f953e4ca37bcd09" title=" " alt="" coords="263,70,427,95"/>
-<area shape="rect" id="node4" href="$d6/da0/structTonemaping.html#ab36322f98efed50cd103678c74e9a8d3" title=" " alt="" coords="265,119,425,145"/>
-<area shape="rect" id="node5" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#aaa760df2f9d791a8088fb27cc9dc84b5" title=" " alt="" coords="248,169,443,209"/>
-<area shape="rect" id="node6" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,256,200,296"/>
-<area shape="rect" id="node7" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ae710c3e5e20e988eb3e5af541eac17c8" title=" " alt="" coords="248,284,443,324"/>
-<area shape="rect" id="node8" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="248,348,443,388"/>
-<area shape="rect" id="node9" href="$d7/d13/classPostProcessManager.html#ada11314e85d3c40d28c02aec93317743" title=" " alt="" coords="267,412,424,452"/>
+<area shape="rect" id="node1" title=" " alt="" coords="391,171,543,196"/>
+<area shape="rect" id="node2" href="$d6/d83/structBloom.html#af332b89570965ebf6610c48df908836c" title=" " alt="" coords="178,5,341,31"/>
+<area shape="rect" id="node3" href="$d6/d83/structBloom.html#aa01e3275a43107bae0435f38d488ecdc" title=" " alt="" coords="5,31,128,56"/>
+<area shape="rect" id="node4" href="$d5/dfa/structChromaticAberration.html#ac8e30e02f66fe2080dba0f33f8e1ea58" title=" " alt="" coords="181,106,338,146"/>
+<area shape="rect" id="node5" href="$db/db7/structColorgrading.html#a26a3dd10ae0ac4f27f953e4ca37bcd09" title=" " alt="" coords="177,171,341,196"/>
+<area shape="rect" id="node6" href="$db/d3d/structDepthOfField.html#aa11061e7f292c78ccd70025d73882289" title=" " alt="" coords="176,220,343,245"/>
+<area shape="rect" id="node7" href="$d6/da0/structTonemaping.html#ab36322f98efed50cd103678c74e9a8d3" title=" " alt="" coords="179,269,339,295"/>
+<area shape="rect" id="node8" href="$d7/d13/classPostProcessManager.html#ada11314e85d3c40d28c02aec93317743" title=" " alt="" coords="181,319,338,359"/>
 </map>

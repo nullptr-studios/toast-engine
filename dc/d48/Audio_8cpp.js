@@ -1,6 +1,9 @@
 var Audio_8cpp =
 [
+    [ "get_audio_mode", "dc/d48/Audio_8cpp.html#aef285a90925bf779500f6b65ddda976b", null ],
+    [ "get_effects_volume", "dc/d48/Audio_8cpp.html#a34699d422711134b0360916dfa1e97a8", null ],
     [ "get_length", "dc/d48/Audio_8cpp.html#aae0e2dfe4f02eff127c4e9cf93482bf3", null ],
+    [ "get_music_volume", "dc/d48/Audio_8cpp.html#ae98b736ef9c5da6f41816b81f080572e", null ],
     [ "is_muted", "dc/d48/Audio_8cpp.html#af7aebbc251293268c81dc3fe7f9375b6", null ],
     [ "is_playing", "dc/d48/Audio_8cpp.html#a3857c8ce72407b569112656510fe666c", null ],
     [ "is_playing", "dc/d48/Audio_8cpp.html#a990a58d10e954238fbfed6ab2f259d61", null ],
@@ -10,7 +13,10 @@ var Audio_8cpp =
     [ "mute_all", "dc/d48/Audio_8cpp.html#ac26aef4dd79de9eba8125e9c307965c7", null ],
     [ "play", "dc/d48/Audio_8cpp.html#ab53c01d076a77af07ba94c820581476e", null ],
     [ "play", "dc/d48/Audio_8cpp.html#a2d7927eb01677afe1e350e6a9c76550b", null ],
+    [ "set_audio_mode", "dc/d48/Audio_8cpp.html#a761fe97cbd1c1b0d9051e0f0497dcb43", null ],
+    [ "set_effects_volume", "dc/d48/Audio_8cpp.html#a52bb868db7009f975eff9af6718dc978", null ],
     [ "set_listener", "dc/d48/Audio_8cpp.html#a983d37d053c5ad7b43a58dbd45819efd", null ],
+    [ "set_music_volume", "dc/d48/Audio_8cpp.html#a770d883e641e41c365a6a311f9615e06", null ],
     [ "set_param", "dc/d48/Audio_8cpp.html#aa3265f52c98a21c1c8ecb1e9b7b2267a", null ],
     [ "set_volume", "dc/d48/Audio_8cpp.html#a4d17fc7c67ad3d4ac19c74e9646569db", null ],
     [ "stop", "dc/d48/Audio_8cpp.html#ae0ff73790f5de57d45fb01b89f0f473a", null ],

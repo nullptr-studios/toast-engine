@@ -1,4 +1,4 @@
 var Bloom_8hpp =
 [
-    [ "Bloom", "d0/dd5/classBloom.html", null ]
+    [ "Bloom", "d6/d83/structBloom.html", "d6/d83/structBloom" ]
 ];

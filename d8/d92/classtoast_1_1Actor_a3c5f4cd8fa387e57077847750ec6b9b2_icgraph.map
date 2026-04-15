@@ -1,4 +1,5 @@
 <map id="toast::Actor::Load" name="toast::Actor::Load">
-<area shape="rect" id="node1" title="Loads object state from JSON." alt="" coords="207,5,343,31"/>
+<area shape="rect" id="node1" title="Loads object state from JSON." alt="" coords="207,31,343,56"/>
 <area shape="rect" id="node2" href="$d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005" title="Loads object state from JSON." alt="" coords="5,5,159,31"/>
+<area shape="rect" id="node3" href="$d9/da2/classHUDActor.html#aa02212ff6f4e5a51681afbb8e5c4f425" title="Loads object state from JSON." alt="" coords="19,55,145,80"/>
 </map>

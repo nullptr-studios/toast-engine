@@ -1,0 +1,8 @@
+<map id="haptics::Rumble" name="haptics::Rumble">
+<area shape="rect" id="node1" title="Sends dual&#45;motor rumble to the connected gamepad Low frequency is the heavy/left motor,..." alt="" coords="217,104,344,129"/>
+<area shape="rect" id="node2" href="$d7/d1d/namespacehaptics.html#a102c15821ca66400849de0fe74f59ad3" title=" " alt="" coords="21,5,153,31"/>
+<area shape="rect" id="node3" href="$d7/d1d/namespacehaptics.html#ab1768904151a202e290ca1d83026bb8f" title=" " alt="" coords="17,55,157,80"/>
+<area shape="rect" id="node4" href="$d7/d1d/namespacehaptics.html#ac744f30201fbf0d6bf7b47849a80d5d6" title=" " alt="" coords="5,104,169,129"/>
+<area shape="rect" id="node5" href="$d7/d1d/namespacehaptics.html#a4d1ed6a8ea52429286babe833e872a4f" title=" " alt="" coords="10,153,165,179"/>
+<area shape="rect" id="node6" href="$d7/d1d/namespacehaptics.html#a09722c5c407830e0dd9a1520ad98efa5" title=" " alt="" coords="16,203,159,228"/>
+</map>

@@ -105,7 +105,7 @@ $(document).ready(function(){initNavTree('d8/d92/classtoast_1_1Actor.html','../.
 
 <p>Inherits <a class="el" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a>.</p>
 
-<p>Inherited by <a class="el" href="../../d8/d72/classGlobalLight.html">GlobalLight</a>, <a class="el" href="../../d0/db0/classLight2D.html">Light2D</a>, <a class="el" href="../../d5/d0b/classPool.html">Pool&lt; T, size &gt;</a>, <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html">physics::Trigger</a>, and <a class="el" href="../../d8/db9/classtoast_1_1Camera.html">toast::Camera</a>.</p>
+<p>Inherited by <a class="el" href="../../d8/d72/classGlobalLight.html">GlobalLight</a>, <a class="el" href="../../d9/da2/classHUDActor.html">HUDActor</a>, <a class="el" href="../../d0/db0/classLight2D.html">Light2D</a>, <a class="el" href="../../d5/d0b/classPool.html">Pool&lt; T, size &gt;</a>, <a class="el" href="../../d1/dc7/classPostProcessVolume.html">PostProcessVolume</a>, <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html">physics::Trigger</a>, and <a class="el" href="../../d8/db9/classtoast_1_1Camera.html">toast::Camera</a>.</p>
 <div class="dynheader">
 Collaboration diagram for toast::Actor:</div>
 <div class="dyncontent">
@@ -156,9 +156,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a61b7f00ff983927c256560e8a508778d">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true) override</td></tr>
 <tr class="memdesc:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a61b7f00ff983927c256560e8a508778d inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa94f2fa9b30d36e39c45bb21f0a88cef">SoftLoad</a> () override</td></tr>
-<tr class="memdesc:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
-<tr class="separator:aa94f2fa9b30d36e39c45bb21f0a88cef inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa11cd2c18489d042e6fd27295d622c38">SoftLoad</a> (bool editorStop=false) override</td></tr>
+<tr class="memdesc:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
+<tr class="separator:aa11cd2c18489d042e6fd27295d622c38 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/da3/classtoast_1_1Object.html#a3a8f2a39c01ed70ccd985e749ebf3656">SoftSave</a> () const override</td></tr>
 <tr class="memdesc:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caches current state for quick restoration.  <br /></td></tr>
 <tr class="separator:a3a8f2a39c01ed70ccd985e749ebf3656 inherit pub_methods_classtoast_1_1Object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -214,9 +214,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a706ca4214d997840d82bc83e0c3ab85b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">Load</a> (<a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a> j, bool force_create=true)=0</td></tr>
 <tr class="memdesc:a706ca4214d997840d82bc83e0c3ab85b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads object state from JSON.  <br /></td></tr>
 <tr class="separator:a706ca4214d997840d82bc83e0c3ab85b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a7a5705e9dd33a51039af65c3928ea4ef">SoftLoad</a> ()=0</td></tr>
-<tr class="memdesc:a7a5705e9dd33a51039af65c3928ea4ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
-<tr class="separator:a7a5705e9dd33a51039af65c3928ea4ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09513da3769afa0f69615204c28dbad4"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a09513da3769afa0f69615204c28dbad4">SoftLoad</a> (bool editorStop)=0</td></tr>
+<tr class="memdesc:a09513da3769afa0f69615204c28dbad4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads from cached JSON.  <br /></td></tr>
+<tr class="separator:a09513da3769afa0f69615204c28dbad4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66284559a3d768dcad01459ce3688f82"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="../../d4/d0f/Material_8cpp.html#a4639603c23a42546f6e44921d3c8b0a3">json_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">Save</a> () const =0</td></tr>
 <tr class="memdesc:a66284559a3d768dcad01459ce3688f82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves object state to JSON.  <br /></td></tr>
 <tr class="separator:a66284559a3d768dcad01459ce3688f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -383,7 +383,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a7153a04208dd687a14e4561a84ee6804">toast::Object</a>.</p>
 
-<p>Reimplemented in <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a7bdc2533c9899d4491acfb96b2b79904">physics::Trigger</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94">toast::Camera</a>, and <a class="el" href="../../d0/db0/classLight2D.html#aec8083b5ea0c7c762d7f22d8d8bb57d7">Light2D</a>.</p>
+<p>Reimplemented in <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a7bdc2533c9899d4491acfb96b2b79904">physics::Trigger</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94">toast::Camera</a>, <a class="el" href="../../d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0">HUDActor</a>, and <a class="el" href="../../d0/db0/classLight2D.html#aec8083b5ea0c7c762d7f22d8d8bb57d7">Light2D</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../d3/d1b/Actor_8hpp_source.html#l00033">33</a> of file <a class="el" href="../../d3/d1b/Actor_8hpp_source.html">Actor.hpp</a>.</p>
 <div class="dynheader">
@@ -391,8 +391,9 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d8/d92/classtoast_1_1Actor_afd0964d1aabd3a7119e416e8f6327852_icgraph.png" border="0" usemap="#ad8/d92/classtoast_1_1Actor_afd0964d1aabd3a7119e416e8f6327852_icgraph" alt=""/></div>
 <map name="ad8/d92/classtoast_1_1Actor_afd0964d1aabd3a7119e416e8f6327852_icgraph" id="ad8/d92/classtoast_1_1Actor_afd0964d1aabd3a7119e416e8f6327852_icgraph">
-<area shape="rect" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="212,5,355,31"/>
+<area shape="rect" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="212,31,355,56"/>
 <area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a18d829852453d3ba3bdb796d63591a94" title="Called when the camera becomes active." alt="" coords="5,5,164,31"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="19,55,150,80"/>
 </map>
 </div>
 
@@ -425,7 +426,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a1b6e927d9c508dd81a308d45a52afecb">toast::Object</a>.</p>
 
-<p>Reimplemented in <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a093b461caa0f5bd9d6aca67ec62b5efd">physics::Trigger</a>, <a class="el" href="../../d5/d0b/classPool.html#ae95c8020651bccdd20286a393bb598de">Pool&lt; T, size &gt;</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5">toast::Camera</a>, and <a class="el" href="../../d0/db0/classLight2D.html#aba3ddfa8edeeac944158a97efe965800">Light2D</a>.</p>
+<p>Reimplemented in <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a093b461caa0f5bd9d6aca67ec62b5efd">physics::Trigger</a>, <a class="el" href="../../d5/d0b/classPool.html#ae95c8020651bccdd20286a393bb598de">Pool&lt; T, size &gt;</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#afd930a22ca2ebaa02d7072eacc8269c5">toast::Camera</a>, <a class="el" href="../../d9/da2/classHUDActor.html#a71fbe50d283cf19f71a8ffbc714d6e0a">HUDActor</a>, and <a class="el" href="../../d0/db0/classLight2D.html#aba3ddfa8edeeac944158a97efe965800">Light2D</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../d3/d1b/Actor_8hpp_source.html#l00043">43</a> of file <a class="el" href="../../d3/d1b/Actor_8hpp_source.html">Actor.hpp</a>.</p>
 <div class="dynheader">
@@ -500,17 +501,18 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a4673a66a1498d98db8ffb0ba7b418247">toast::Object</a>.</p>
 
-<p>Reimplemented in <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a04fccf26c778f5d6886070069f936043">physics::Trigger</a>, <a class="el" href="../../d5/d0b/classPool.html#a1482d253225e87870c64876806e8235d">Pool&lt; T, size &gt;</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a498786ac096d8130f8173abc30ce179f">toast::Camera</a>, <a class="el" href="../../d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c">Light2D</a>, and <a class="el" href="../../d8/d72/classGlobalLight.html#a54a7de33527e0673b7cfa4c13b04da28">GlobalLight</a>.</p>
+<p>Reimplemented in <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a04fccf26c778f5d6886070069f936043">physics::Trigger</a>, <a class="el" href="../../d5/d0b/classPool.html#a1482d253225e87870c64876806e8235d">Pool&lt; T, size &gt;</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a498786ac096d8130f8173abc30ce179f">toast::Camera</a>, <a class="el" href="../../d9/da2/classHUDActor.html#ad8e9987ceb83f9f7ab779a6200323450">HUDActor</a>, <a class="el" href="../../d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c">Light2D</a>, <a class="el" href="../../d8/d72/classGlobalLight.html#a54a7de33527e0673b7cfa4c13b04da28">GlobalLight</a>, and <a class="el" href="../../d1/dc7/classPostProcessVolume.html#ac287402b25c45f7fb3701b257bda3c19">PostProcessVolume</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d4/d34/Actor_8cpp_source.html#l00059">59</a> of file <a class="el" href="../../d4/d34/Actor_8cpp_source.html">Actor.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d4/d34/Actor_8cpp_source.html#l00061">61</a> of file <a class="el" href="../../d4/d34/Actor_8cpp_source.html">Actor.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d8/d92/classtoast_1_1Actor_a9c31ed3e4ced90dd05b1bc252cea8091_icgraph.png" border="0" usemap="#ad8/d92/classtoast_1_1Actor_a9c31ed3e4ced90dd05b1bc252cea8091_icgraph" alt=""/></div>
 <map name="ad8/d92/classtoast_1_1Actor_a9c31ed3e4ced90dd05b1bc252cea8091_icgraph" id="ad8/d92/classtoast_1_1Actor_a9c31ed3e4ced90dd05b1bc252cea8091_icgraph">
-<area shape="rect" title="This function runs just after the object is created (scene load thread)" alt="" coords="196,31,323,56"/>
+<area shape="rect" title="This function runs just after the object is created (scene load thread)" alt="" coords="196,55,323,80"/>
 <area shape="rect" href="../../d5/d0b/classPool.html#a1482d253225e87870c64876806e8235d" title="This function runs just after the object is created (scene load thread)" alt="" coords="37,5,116,31"/>
 <area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a498786ac096d8130f8173abc30ce179f" title="Initializes the camera." alt="" coords="5,55,148,80"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#ad8e9987ceb83f9f7ab779a6200323450" title="This function runs just after the object is created (scene load thread)" alt="" coords="19,104,134,129"/>
 </map>
 </div>
 
@@ -562,7 +564,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d4/d34/Actor_8cpp_source.html#l00068">68</a> of file <a class="el" href="../../d4/d34/Actor_8cpp_source.html">Actor.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d4/d34/Actor_8cpp_source.html#l00070">70</a> of file <a class="el" href="../../d4/d34/Actor_8cpp_source.html">Actor.cpp</a>.</p>
 
 </div>
 </div>
@@ -612,7 +614,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">toast::ISerializable</a>.</p>
 
-<p>Reimplemented in <a class="el" href="../../d8/d72/classGlobalLight.html#aec962114f97474140d3f958c3bdda599">GlobalLight</a>, <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#ad2a82bcbfde1f41b94204f2778298529">physics::Trigger</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005">toast::Camera</a>, and <a class="el" href="../../d0/db0/classLight2D.html#ab111d55ff108f23ce448e43f72ef1ce4">Light2D</a>.</p>
+<p>Reimplemented in <a class="el" href="../../d8/d72/classGlobalLight.html#aec962114f97474140d3f958c3bdda599">GlobalLight</a>, <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#ad2a82bcbfde1f41b94204f2778298529">physics::Trigger</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005">toast::Camera</a>, <a class="el" href="../../d9/da2/classHUDActor.html#aa02212ff6f4e5a51681afbb8e5c4f425">HUDActor</a>, <a class="el" href="../../d0/db0/classLight2D.html#ab111d55ff108f23ce448e43f72ef1ce4">Light2D</a>, and <a class="el" href="../../d1/dc7/classPostProcessVolume.html#a1adc1b58fe472599570517025cd7240c">PostProcessVolume</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../d4/d34/Actor_8cpp_source.html#l00037">37</a> of file <a class="el" href="../../d4/d34/Actor_8cpp_source.html">Actor.cpp</a>.</p>
 <div class="dynheader">
@@ -620,8 +622,9 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d8/d92/classtoast_1_1Actor_a3c5f4cd8fa387e57077847750ec6b9b2_icgraph.png" border="0" usemap="#ad8/d92/classtoast_1_1Actor_a3c5f4cd8fa387e57077847750ec6b9b2_icgraph" alt=""/></div>
 <map name="ad8/d92/classtoast_1_1Actor_a3c5f4cd8fa387e57077847750ec6b9b2_icgraph" id="ad8/d92/classtoast_1_1Actor_a3c5f4cd8fa387e57077847750ec6b9b2_icgraph">
-<area shape="rect" title="Loads object state from JSON." alt="" coords="207,5,343,31"/>
+<area shape="rect" title="Loads object state from JSON." alt="" coords="207,31,343,56"/>
 <area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a86a7bb5a611344133eb3fe39445ed005" title="Loads object state from JSON." alt="" coords="5,5,159,31"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#aa02212ff6f4e5a51681afbb8e5c4f425" title="Loads object state from JSON." alt="" coords="19,55,145,80"/>
 </map>
 </div>
 
@@ -654,7 +657,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa9867880b2966b5ccb8be7c9abf37618">toast::Object</a>.</p>
 
-<p>Reimplemented in <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a60160fcc80998afbc41397e27900dbbf">physics::Trigger</a>.</p>
+<p>Reimplemented in <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a60160fcc80998afbc41397e27900dbbf">physics::Trigger</a>, and <a class="el" href="../../d9/da2/classHUDActor.html#adb2279030384ec50c31f0c85dc4b2488">HUDActor</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../d3/d1b/Actor_8hpp_source.html#l00047">47</a> of file <a class="el" href="../../d3/d1b/Actor_8hpp_source.html">Actor.hpp</a>.</p>
 
@@ -687,7 +690,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#abe84982fe050e7f6ba09f8f0ccec6ee5">toast::Object</a>.</p>
 
-<p>Reimplemented in <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a0ac64f82aeb6647ebc4cf14e5f18058e">physics::Trigger</a>.</p>
+<p>Reimplemented in <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#a0ac64f82aeb6647ebc4cf14e5f18058e">physics::Trigger</a>, and <a class="el" href="../../d9/da2/classHUDActor.html#adabf1a2c2f3cb0fe55bf484fafffce52">HUDActor</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../d3/d1b/Actor_8hpp_source.html#l00045">45</a> of file <a class="el" href="../../d3/d1b/Actor_8hpp_source.html">Actor.hpp</a>.</p>
 
@@ -771,7 +774,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">toast::ISerializable</a>.</p>
 
-<p>Reimplemented in <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#abaac0ac8d67fd603c193a1bf8b0724e5">physics::Trigger</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b">toast::Camera</a>, <a class="el" href="../../d0/db0/classLight2D.html#a5c4939babc74eaf4c42825ff76133fad">Light2D</a>, and <a class="el" href="../../d8/d72/classGlobalLight.html#ad0331865a84b28bec1fe94a1f43d7cb3">GlobalLight</a>.</p>
+<p>Reimplemented in <a class="el" href="../../d4/d9c/classphysics_1_1Trigger.html#abaac0ac8d67fd603c193a1bf8b0724e5">physics::Trigger</a>, <a class="el" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b">toast::Camera</a>, <a class="el" href="../../d9/da2/classHUDActor.html#afa8f845aa5510f56df4226cb04b4a795">HUDActor</a>, <a class="el" href="../../d0/db0/classLight2D.html#a5c4939babc74eaf4c42825ff76133fad">Light2D</a>, <a class="el" href="../../d8/d72/classGlobalLight.html#ad0331865a84b28bec1fe94a1f43d7cb3">GlobalLight</a>, and <a class="el" href="../../d1/dc7/classPostProcessVolume.html#a8b5d11414e9bd3c6e24930b367a87ef6">PostProcessVolume</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="../../d4/d34/Actor_8cpp_source.html#l00026">26</a> of file <a class="el" href="../../d4/d34/Actor_8cpp_source.html">Actor.cpp</a>.</p>
 <div class="dynheader">
@@ -779,8 +782,9 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d8/d92/classtoast_1_1Actor_aa0f38730d8269175616034687227f635_icgraph.png" border="0" usemap="#ad8/d92/classtoast_1_1Actor_aa0f38730d8269175616034687227f635_icgraph" alt=""/></div>
 <map name="ad8/d92/classtoast_1_1Actor_aa0f38730d8269175616034687227f635_icgraph" id="ad8/d92/classtoast_1_1Actor_aa0f38730d8269175616034687227f635_icgraph">
-<area shape="rect" title="Saves object state to JSON." alt="" coords="208,5,345,31"/>
+<area shape="rect" title="Saves object state to JSON." alt="" coords="208,31,345,56"/>
 <area shape="rect" href="../../d8/db9/classtoast_1_1Camera.html#a9c08ce7bc2e23547c2637cd78dde1e9b" title="Saves object state to JSON." alt="" coords="5,5,160,31"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#afa8f845aa5510f56df4226cb04b4a795" title="Saves object state to JSON." alt="" coords="19,55,146,80"/>
 </map>
 </div>
 
@@ -813,6 +817,8 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#ad915aa44fd66ae609dea20902d44a119">toast::Object</a>.</p>
 
+<p>Reimplemented in <a class="el" href="../../d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8">HUDActor</a>, <a class="el" href="../../d8/d72/classGlobalLight.html#aca02c6d875f500ef2941032df74bbbfa">GlobalLight</a>, and <a class="el" href="../../d1/dc7/classPostProcessVolume.html#a3950f36d82adaf2c19bfac8713d571e1">PostProcessVolume</a>.</p>
+
 <p class="definition">Definition at line <a class="el" href="../../d3/d1b/Actor_8hpp_source.html#l00037">37</a> of file <a class="el" href="../../d3/d1b/Actor_8hpp_source.html">Actor.hpp</a>.</p>
 
 </div>
@@ -832,22 +838,32 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d4/d34/Actor_8cpp_source.html#l00061">61</a> of file <a class="el" href="../../d4/d34/Actor_8cpp_source.html">Actor.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d4/d34/Actor_8cpp_source.html#l00063">63</a> of file <a class="el" href="../../d4/d34/Actor_8cpp_source.html">Actor.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d8/d92/classtoast_1_1Actor_a6cdbfe64d0f9038c61faa0d463803fc9_icgraph.png" border="0" usemap="#ad8/d92/classtoast_1_1Actor_a6cdbfe64d0f9038c61faa0d463803fc9_icgraph" alt=""/></div>
 <map name="ad8/d92/classtoast_1_1Actor_a6cdbfe64d0f9038c61faa0d463803fc9_icgraph" id="ad8/d92/classtoast_1_1Actor_a6cdbfe64d0f9038c61faa0d463803fc9_icgraph">
-<area shape="rect" title=" " alt="" coords="495,169,664,195"/>
-<area shape="rect" href="../../dc/da1/classLightRenderable.html#a515126e8d0f1b1176d82a8c3fd7f6f32" title="Gets the Z&#45;depth for sorting purposes." alt="" coords="248,5,447,31"/>
-<area shape="rect" href="../../d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="297,55,398,80"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="250,105,445,145"/>
-<area shape="rect" href="../../d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="275,169,419,195"/>
-<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a9299dea8472706f936400b0b7a71dc4b" title="Called during the geometry pass to render this object." alt="" coords="267,219,427,259"/>
-<area shape="rect" href="../../d5/dd0/namespacephysics.html#aa3a7e4c9e02abd1798c4843fd5273a33" title=" " alt="" coords="249,284,445,309"/>
-<area shape="rect" href="../../d5/d10/structtoast_1_1Transform2.html#ad1c1969f56ed7c1efe51f3b5e8776084" title=" " alt="" coords="262,334,433,374"/>
-<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="5,105,200,145"/>
-<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a6963546bf6bad5b4b18c8990feb99703" title=" " alt="" coords="14,277,191,317"/>
+<area shape="rect" title=" " alt="" coords="712,356,881,381"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#a6dcfb2d0e83ebb5109e58ae9b7d2811f" title=" " alt="" coords="463,121,664,161"/>
+<area shape="rect" href="../../dc/da1/classLightRenderable.html#a515126e8d0f1b1176d82a8c3fd7f6f32" title="Gets the Z&#45;depth for sorting purposes." alt="" coords="464,185,663,211"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#a1c7578b62c0c57804c4cc15266b8840c" title="This function runs just after the object is created (scene load thread)" alt="" coords="513,235,614,260"/>
+<area shape="rect" href="../../d1/dc7/classPostProcessVolume.html#a5871d18bcf0bcc1c294766005cfa2f5f" title=" " alt="" coords="485,285,642,325"/>
+<area shape="rect" href="../../da/d32/classrenderer_1_1OpenGLRenderer.html#a707b8109452b9fd4260859ec795f90f9" title=" " alt="" coords="466,349,661,389"/>
+<area shape="rect" href="../../d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="491,413,635,439"/>
+<area shape="rect" href="../../df/d2b/classtoast_1_1ParticleSystem.html#a9299dea8472706f936400b0b7a71dc4b" title="Called during the geometry pass to render this object." alt="" coords="483,463,643,503"/>
+<area shape="rect" href="../../d5/dd0/namespacephysics.html#aa3a7e4c9e02abd1798c4843fd5273a33" title=" " alt="" coords="465,528,661,553"/>
+<area shape="rect" href="../../d5/d10/structtoast_1_1Transform2.html#ad1c1969f56ed7c1efe51f3b5e8776084" title=" " alt="" coords="478,578,649,618"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#aa15a3dd4398860f54db039de7e907f68" title=" " alt="" coords="241,79,411,104"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#ad8e9987ceb83f9f7ab779a6200323450" title="This function runs just after the object is created (scene load thread)" alt="" coords="269,128,383,153"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#aa02212ff6f4e5a51681afbb8e5c4f425" title="Loads object state from JSON." alt="" coords="263,177,389,203"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="32,5,163,31"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#adabf1a2c2f3cb0fe55bf484fafffce52" title="This function runs when the object is enabled after being disabled." alt="" coords="19,55,175,80"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#aaae91463121566f983c99a2b0adce335" title=" " alt="" coords="30,104,165,129"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8" title="This function runs every frame." alt="" coords="37,153,158,179"/>
+<area shape="rect" href="../../d1/dc7/classPostProcessVolume.html#aacc5b44e952234ac0c590d3357ddbfab" title=" " alt="" coords="245,285,407,325"/>
+<area shape="rect" href="../../d1/dc7/classPostProcessVolume.html#a3950f36d82adaf2c19bfac8713d571e1" title="This function runs every frame." alt="" coords="5,292,189,317"/>
+<area shape="rect" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a6963546bf6bad5b4b18c8990feb99703" title=" " alt="" coords="237,521,415,561"/>
 </map>
 </div>
 

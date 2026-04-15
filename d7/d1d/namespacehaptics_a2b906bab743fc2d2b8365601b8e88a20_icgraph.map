@@ -1,0 +1,4 @@
+<map id="haptics::TriggerClearAll" name="haptics::TriggerClearAll">
+<area shape="rect" id="node1" title="Clears all adaptive trigger effects on both triggers." alt="" coords="160,5,332,31"/>
+<area shape="rect" id="node2" href="$d7/d1d/namespacehaptics.html#ad076a6c5a2ad2611bbcd4a1252b9e107" title="Stops all active haptics immediately." alt="" coords="5,5,112,31"/>
+</map>

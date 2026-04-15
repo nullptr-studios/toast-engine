@@ -1,6 +1,6 @@
 <map id="event::EventSystem::SendEvent" name="event::EventSystem::SendEvent">
-<area shape="rect" id="node1" title="See event::Send instead." alt="" coords="683,408,836,448"/>
-<area shape="rect" id="node2" href="$dc/dd0/namespaceevent.html#ac371b5226ab6b0eba839ac3aec88c6ab" title=" " alt="" coords="536,415,635,441"/>
+<area shape="rect" id="node1" title="See event::Send instead." alt="" coords="683,440,836,480"/>
+<area shape="rect" id="node2" href="$dc/dd0/namespaceevent.html#ac371b5226ab6b0eba839ac3aec88c6ab" title=" " alt="" coords="536,447,635,473"/>
 <area shape="rect" id="node3" href="$d4/d30/structevent_1_1WindowMouseScroll.html#a1fc980d26934a1c4d830e03de7240abf" title=" " alt="" coords="281,5,480,45"/>
 <area shape="rect" id="node5" href="$de/d75/structevent_1_1WindowMousePosition.html#abf9d45701bc68d8f3774b9adb37e51fc" title=" " alt="" coords="273,69,488,109"/>
 <area shape="rect" id="node6" href="$d2/dd1/structevent_1_1WindowMouseButton.html#a077f6807ef32af3287e93562cea2af67" title=" " alt="" coords="278,133,483,173"/>
@@ -15,6 +15,7 @@
 <area shape="rect" id="node19" href="$d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b" title=" " alt="" coords="312,655,449,681"/>
 <area shape="rect" id="node20" href="$d0/dc7/classSpineRendererComponent.html#aabf06d586ecc1c6021f9685762a8a0d0" title=" " alt="" coords="285,705,477,745"/>
 <area shape="rect" id="node21" href="$d4/ddb/structtoast_1_1ProjectSettings.html#a118a7097eb32aa181086d459f8974bdb" title=" " alt="" coords="300,769,461,809"/>
+<area shape="rect" id="node22" href="$df/ddc/classtoast_1_1Localization.html#ac74919c66e6aba65181e2d8d2eb88b0b" title=" " alt="" coords="310,833,451,873"/>
 <area shape="rect" id="node4" href="$d8/d8e/classtoast_1_1Window.html#aa040bba8b272d0790c3ff839abfcf262" title="Polls OS events without swapping buffers." alt="" coords="5,234,225,259"/>
 <area shape="rect" id="node14" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="10,431,221,457"/>
 <area shape="rect" id="node15" href="$d6/dbd/classtoast_1_1GameFlow.html#a03e770afc70716334eb4037d9151c8a5" title=" " alt="" coords="12,481,219,506"/>

@@ -1,24 +1,27 @@
 <map id="inc/Toast/Renderer" name="inc/Toast/Renderer">
-<area shape="rect" id="node1" href="dir_38bae9d20f9b3c7e7e9adca9ef28dc0a.html" title="Resources" alt="" coords="331,209,421,235"/>
-<area shape="rect" id="node2" href="dir_3c129a1b22b59ce43b961ad3e80ddb8c.html" title="Window" alt="" coords="53,136,128,161"/>
-<area shape="rect" id="node3" href="dir_822ed52c734c982480a7f8f301d47fb0.html" title="Objects" alt="" coords="554,209,625,235"/>
-<area shape="rect" id="node4" href="dir_a0f25bf18771e567fd6bc64e9166ed26.html" title="Components" alt="" coords="571,136,675,161"/>
-<area shape="rect" id="node5" href="dir_d172ab4fa3714607a9365eb5cf7b4d15.html" title="Event" alt="" coords="725,136,784,161"/>
-<area shape="rect" id="edge1-headlabel" href="dir_000025_000028.html" title="6" alt="" coords="381,184,390,199"/>
-<area shape="rect" id="edge2-headlabel" href="dir_000025_000038.html" title="1" alt="" coords="143,134,153,149"/>
-<area shape="rect" id="edge3-headlabel" href="dir_000025_000016.html" title="3" alt="" coords="640,208,650,222"/>
-<area shape="rect" id="edge4-headlabel" href="dir_000025_000002.html" title="1" alt="" coords="573,114,582,129"/>
-<area shape="rect" id="edge6-headlabel" href="dir_000025_000005.html" title="3" alt="" coords="705,121,714,135"/>
-<area shape="rect" id="node8" href="dir_b8002934830c5b0b4d33328aecc9eec6.html" title="Lights" alt="" coords="401,136,463,161"/>
-<area shape="rect" id="edge5-headlabel" href="dir_000025_000013.html" title="2" alt="" coords="436,110,445,125"/>
-<area shape="rect" id="node7" href="dir_458f244752aa9da4f7a331ced6219690.html" title="HUD" alt="" coords="497,63,549,88"/>
-<area shape="rect" id="edge7-headlabel" href="dir_000008_000005.html" title="1" alt="" coords="706,118,715,132"/>
-<area shape="rect" id="edge8-headlabel" href="dir_000013_000028.html" title="1" alt="" coords="398,193,408,208"/>
-<area shape="rect" id="edge9-headlabel" href="dir_000013_000016.html" title="2" alt="" coords="538,188,547,202"/>
-<area shape="rect" id="node9" href="dir_60e2013924bbb9b9bcfcc2ac34fb9b8b.html" title="OpenGL" alt="" coords="294,63,367,88"/>
-<area shape="rect" id="edge10-headlabel" href="dir_000018_000013.html" title="1" alt="" coords="401,111,410,126"/>
-<area shape="rect" id="node10" href="dir_dfa3e29387984d01ee14fd0ed1f71063.html" title="PostProcessing" alt="" coords="149,63,269,88"/>
-<area shape="rect" id="edge11-headlabel" href="dir_000024_000028.html" title="1" alt="" coords="309,205,318,220"/>
-<area shape="rect" id="clust2" href="dir_382f3111e0ef46ab1be4ebfcc0bdbaad.html" alt="" coords="139,52,560,172"/>
-<area shape="rect" id="clust1" href="dir_452a8e245b280de726567057abde25f6.html" title="Toast" alt="" coords="16,16,795,245"/>
+<area shape="rect" id="node1" href="dir_38bae9d20f9b3c7e7e9adca9ef28dc0a.html" title="Resources" alt="" coords="159,209,249,235"/>
+<area shape="rect" id="node2" href="dir_3c129a1b22b59ce43b961ad3e80ddb8c.html" title="Window" alt="" coords="80,136,155,161"/>
+<area shape="rect" id="node3" href="dir_822ed52c734c982480a7f8f301d47fb0.html" title="Objects" alt="" coords="403,209,474,235"/>
+<area shape="rect" id="node4" href="dir_a0f25bf18771e567fd6bc64e9166ed26.html" title="Components" alt="" coords="521,136,625,161"/>
+<area shape="rect" id="node5" href="dir_d172ab4fa3714607a9365eb5cf7b4d15.html" title="Event" alt="" coords="559,209,617,235"/>
+<area shape="rect" id="edge1-headlabel" href="dir_000025_000028.html" title="10" alt="" coords="134,199,152,213"/>
+<area shape="rect" id="edge2-headlabel" href="dir_000025_000038.html" title="1" alt="" coords="170,134,179,149"/>
+<area shape="rect" id="edge3-headlabel" href="dir_000025_000016.html" title="5" alt="" coords="489,216,498,231"/>
+<area shape="rect" id="edge4-headlabel" href="dir_000025_000002.html" title="1" alt="" coords="539,112,548,126"/>
+<area shape="rect" id="edge6-headlabel" href="dir_000025_000005.html" title="3" alt="" coords="626,199,635,213"/>
+<area shape="rect" id="node8" href="dir_b8002934830c5b0b4d33328aecc9eec6.html" title="Lights" alt="" coords="327,136,388,161"/>
+<area shape="rect" id="edge5-headlabel" href="dir_000025_000013.html" title="2" alt="" coords="389,125,398,140"/>
+<area shape="rect" id="node7" href="dir_458f244752aa9da4f7a331ced6219690.html" title="HUD" alt="" coords="413,136,465,161"/>
+<area shape="rect" id="edge7-headlabel" href="dir_000008_000028.html" title="2" alt="" coords="263,211,273,225"/>
+<area shape="rect" id="edge8-headlabel" href="dir_000008_000016.html" title="1" alt="" coords="442,184,452,198"/>
+<area shape="rect" id="edge9-headlabel" href="dir_000008_000005.html" title="1" alt="" coords="540,189,549,203"/>
+<area shape="rect" id="edge10-headlabel" href="dir_000013_000028.html" title="1" alt="" coords="251,203,260,218"/>
+<area shape="rect" id="edge11-headlabel" href="dir_000013_000016.html" title="2" alt="" coords="413,184,422,198"/>
+<area shape="rect" id="node9" href="dir_60e2013924bbb9b9bcfcc2ac34fb9b8b.html" title="OpenGL" alt="" coords="321,63,394,88"/>
+<area shape="rect" id="edge12-headlabel" href="dir_000018_000008.html" title="1" alt="" coords="413,110,422,125"/>
+<area shape="rect" id="edge13-headlabel" href="dir_000018_000013.html" title="1" alt="" coords="361,110,370,125"/>
+<area shape="rect" id="node10" href="dir_dfa3e29387984d01ee14fd0ed1f71063.html" title="PostProcessing" alt="" coords="176,63,296,88"/>
+<area shape="rect" id="edge14-headlabel" href="dir_000024_000028.html" title="3" alt="" coords="137,203,147,217"/>
+<area shape="rect" id="clust2" href="dir_382f3111e0ef46ab1be4ebfcc0bdbaad.html" alt="" coords="165,52,511,172"/>
+<area shape="rect" id="clust1" href="dir_452a8e245b280de726567057abde25f6.html" title="Toast" alt="" coords="16,16,689,245"/>
 </map>

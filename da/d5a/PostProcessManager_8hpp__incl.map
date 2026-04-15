@@ -1,13 +1,14 @@
 <map id="inc/Toast/Renderer/PostProcessManager.hpp" name="inc/Toast/Renderer/PostProcessManager.hpp">
-<area shape="rect" id="node1" title=" " alt="" coords="161,5,349,45"/>
-<area shape="rect" id="node2" href="$d9/d2c/Framebuffer_8hpp.html" title=" " alt="" coords="131,167,259,192"/>
-<area shape="rect" id="node6" title=" " alt="" coords="5,240,68,265"/>
-<area shape="rect" id="node7" href="$de/d02/IPostProcess_8hpp.html" title=" " alt="" coords="189,93,321,119"/>
-<area shape="rect" id="node10" title=" " alt="" coords="345,93,456,119"/>
-<area shape="rect" id="node11" title=" " alt="" coords="481,93,558,119"/>
-<area shape="rect" id="node3" title=" " alt="" coords="176,240,255,265"/>
-<area shape="rect" id="node4" title=" " alt="" coords="279,240,359,265"/>
-<area shape="rect" id="node5" title=" " alt="" coords="93,240,151,265"/>
-<area shape="rect" id="node8" href="$df/da3/ISerializable_8hpp.html" title="Interface for objects that can be saved and loaded from JSON." alt="" coords="327,167,495,192"/>
-<area shape="rect" id="node9" title=" " alt="" coords="383,240,530,265"/>
+<area shape="rect" id="node1" title=" " alt="" coords="141,5,329,45"/>
+<area shape="rect" id="node2" href="$d9/d2c/Framebuffer_8hpp.html" title=" " alt="" coords="144,167,272,192"/>
+<area shape="rect" id="node5" title=" " alt="" coords="5,240,64,265"/>
+<area shape="rect" id="node6" title=" " alt="" coords="89,240,151,265"/>
+<area shape="rect" id="node7" href="$de/d02/IPostProcess_8hpp.html" title=" " alt="" coords="221,93,353,119"/>
+<area shape="rect" id="node11" title=" " alt="" coords="377,93,487,119"/>
+<area shape="rect" id="node12" title=" " alt="" coords="512,93,589,119"/>
+<area shape="rect" id="node3" title=" " alt="" coords="281,240,359,265"/>
+<area shape="rect" id="node4" title=" " alt="" coords="176,240,256,265"/>
+<area shape="rect" id="node8" href="$df/da3/ISerializable_8hpp.html" title="Interface for objects that can be saved and loaded from JSON." alt="" coords="419,167,587,192"/>
+<area shape="rect" id="node10" title=" " alt="" coords="297,167,394,192"/>
+<area shape="rect" id="node9" title=" " alt="" coords="429,240,576,265"/>
 </map>

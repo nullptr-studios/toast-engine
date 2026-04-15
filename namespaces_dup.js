@@ -3,6 +3,26 @@ var namespaces_dup =
     [ "audio", "d2/d11/namespaceaudio.html", "d2/d11/namespaceaudio" ],
     [ "editor", "db/d4c/namespaceeditor.html", "db/d4c/namespaceeditor" ],
     [ "event", "dc/dd0/namespaceevent.html", "dc/dd0/namespaceevent" ],
+    [ "haptics", "d7/d1d/namespacehaptics.html", [
+      [ "Trigger", "d7/d1d/namespacehaptics.html#ab1e2e3eebf20fd5769d1283ee429e34a", [
+        [ "Left", "d7/d1d/namespacehaptics.html#ab1e2e3eebf20fd5769d1283ee429e34aa945d5e233cf7d6240f6b783b36a374ff", null ],
+        [ "Right", "d7/d1d/namespacehaptics.html#ab1e2e3eebf20fd5769d1283ee429e34aa92b09c7c48c520c3c55e497875da437c", null ],
+        [ "Both", "d7/d1d/namespacehaptics.html#ab1e2e3eebf20fd5769d1283ee429e34aa130c5b3473c57faa76e2a1c54e26f88e", null ]
+      ] ],
+      [ "Damage", "d7/d1d/namespacehaptics.html#a102c15821ca66400849de0fe74f59ad3", null ],
+      [ "Explosion", "d7/d1d/namespacehaptics.html#ab1768904151a202e290ca1d83026bb8f", null ],
+      [ "ImpactHeavy", "d7/d1d/namespacehaptics.html#ac744f30201fbf0d6bf7b47849a80d5d6", null ],
+      [ "ImpactLight", "d7/d1d/namespacehaptics.html#a4d1ed6a8ea52429286babe833e872a4f", null ],
+      [ "Rumble", "d7/d1d/namespacehaptics.html#aad52917168e4c988a14aae0217b5f8e2", null ],
+      [ "Stop", "d7/d1d/namespacehaptics.html#ad076a6c5a2ad2611bbcd4a1252b9e107", null ],
+      [ "TriggerClear", "d7/d1d/namespacehaptics.html#af1c1a212070626d2ca02439db4b2e7f8", null ],
+      [ "TriggerClearAll", "d7/d1d/namespacehaptics.html#a2b906bab743fc2d2b8365601b8e88a20", null ],
+      [ "TriggerClick", "d7/d1d/namespacehaptics.html#ae6acb2923fa18610ba940df29babbfd5", null ],
+      [ "TriggerResistance", "d7/d1d/namespacehaptics.html#ac7e9cbe68dbc124222858ddc382cfad0", null ],
+      [ "TriggerRumble", "d7/d1d/namespacehaptics.html#a5d0bc17efb149cfb4cee0c09a41ce67b", null ],
+      [ "TriggerWeapon", "d7/d1d/namespacehaptics.html#ad6865c57f792c55a22407ac4be095cdc", null ],
+      [ "UIConfirm", "d7/d1d/namespacehaptics.html#a09722c5c407830e0dd9a1520ad98efa5", null ]
+    ] ],
     [ "input", "dc/d73/namespaceinput.html", "dc/d73/namespaceinput" ],
     [ "nlohmann", "d3/d9b/namespacenlohmann.html", [
       [ "from_json", "d3/d9b/namespacenlohmann.html#ad274601e0601210d89846d61a6dd53b6", null ],

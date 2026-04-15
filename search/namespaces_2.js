@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['input_0',['input',['../dc/d73/namespaceinput.html',1,'']]]
+  ['haptics_0',['haptics',['../d7/d1d/namespacehaptics.html',1,'']]]
 ];

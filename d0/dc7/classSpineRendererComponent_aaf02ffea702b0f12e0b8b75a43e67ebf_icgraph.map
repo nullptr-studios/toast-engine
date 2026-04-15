@@ -1,0 +1,10 @@
+<map id="SpineRendererComponent::HasAnimation" name="SpineRendererComponent::HasAnimation">
+<area shape="rect" id="node1" title=" " alt="" coords="493,101,685,141"/>
+<area shape="rect" id="node2" href="$d0/dc7/classSpineRendererComponent.html#a6fd92e0e723525ba2746325030958911" title=" " alt="" coords="249,5,441,45"/>
+<area shape="rect" id="node3" href="$d0/dc7/classSpineRendererComponent.html#a15033e2bd6c88dbf36a88a1045458194" title=" " alt="" coords="249,69,441,109"/>
+<area shape="rect" id="node4" href="$d0/dc7/classSpineRendererComponent.html#a4c5957b7aa50c4c9ca5808cc46d6c679" title=" " alt="" coords="246,133,445,173"/>
+<area shape="rect" id="node7" href="$d0/dc7/classSpineRendererComponent.html#abb8accb52da7b5ef99c882d295f8635c" title=" " alt="" coords="245,197,445,237"/>
+<area shape="rect" id="node5" href="$d0/dc7/classSpineRendererComponent.html#ad1952cbfc3a232ad54536c0170b36f39" title="TODO:SPINE RESOURCE SLOTS." alt="" coords="5,69,197,109"/>
+<area shape="rect" id="node6" href="$d0/dc7/classSpineRendererComponent.html#a17b4928799669c1fbe648df6afe88fef" title="Loads object state from JSON." alt="" coords="5,133,197,173"/>
+<area shape="rect" id="node8" href="$d0/dc7/classSpineRendererComponent.html#a6c9bd075357976e95fdc457478aa1cab" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="5,197,197,237"/>
+</map>

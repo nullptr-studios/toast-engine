@@ -1,14 +1,14 @@
 <map id="toast::Window::GetInstance" name="toast::Window::GetInstance">
-<area shape="rect" id="node1" title="Gets the singleton window instance." alt="" coords="767,242,967,267"/>
-<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="281,143,476,183"/>
-<area shape="rect" id="node3" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a39ce4f6ba44499434438b9ba8878f51e" title="Applies only VSync and FPS cap — safe to call at any time, no window resize side&#45;effects." alt="" coords="524,5,719,45"/>
-<area shape="rect" id="node6" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="22,120,217,160"/>
-<area shape="rect" id="node7" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a874eca459b55e550d33374080f8e20d9" title="Initialize the Ultralight renderer and create views." alt="" coords="527,171,716,211"/>
-<area shape="rect" id="node8" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="524,235,719,275"/>
-<area shape="rect" id="node9" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="524,299,719,339"/>
+<area shape="rect" id="node1" title="Gets the singleton window instance." alt="" coords="767,255,967,281"/>
+<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a5a8ec59e47da330fcdbf43ff8e2dc0e0" title="Applies current render settings to the renderer implementation." alt="" coords="524,5,719,45"/>
+<area shape="rect" id="node3" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a39ce4f6ba44499434438b9ba8878f51e" title="Applies only VSync and FPS cap — safe to call at any time, no window resize side&#45;effects." alt="" coords="524,69,719,109"/>
+<area shape="rect" id="node6" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="22,155,217,195"/>
+<area shape="rect" id="node7" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a874eca459b55e550d33374080f8e20d9" title="Initialize the Ultralight renderer and create views." alt="" coords="527,184,716,224"/>
+<area shape="rect" id="node8" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ab25d92a858551385f47a1a63528eb4a0" title="Main render function, called every frame to render the scene." alt="" coords="524,248,719,288"/>
+<area shape="rect" id="node9" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#acce2b81b1f465848d3ce8ebb36099d72" title="Resizes the viewport and updates internal render targets." alt="" coords="281,227,476,267"/>
 <area shape="rect" id="node10" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a431b2a634d0674c39597dad74834a2ec" title="Enables or disables VSync and immediately applies it. Does NOT call the full ApplyRenderSettings." alt="" coords="531,363,711,403"/>
-<area shape="rect" id="node11" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a0418bbc4c403c998c16b52ccf33616f4" title=" " alt="" coords="289,396,469,436"/>
+<area shape="rect" id="node11" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a0418bbc4c403c998c16b52ccf33616f4" title=" " alt="" coords="289,376,469,416"/>
 <area shape="rect" id="node12" href="$df/d3f/structevent_1_1WindowResize.html#ab646014d214524bfdfd6818e8b65544b" title=" " alt="" coords="540,477,703,517"/>
-<area shape="rect" id="node4" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a0e2a08967ff0d9ffb1db23e45288961b" title=" " alt="" coords="289,5,469,45"/>
-<area shape="rect" id="node5" href="$d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="5,13,233,38"/>
+<area shape="rect" id="node4" href="$d9/dc4/classrenderer_1_1IRendererBase.html#a0e2a08967ff0d9ffb1db23e45288961b" title=" " alt="" coords="289,69,469,109"/>
+<area shape="rect" id="node5" href="$d0/db9/namespacerenderer.html#af6b1b845e609cab39d1febc72715d3a5" title=" " alt="" coords="5,77,233,102"/>
 </map>

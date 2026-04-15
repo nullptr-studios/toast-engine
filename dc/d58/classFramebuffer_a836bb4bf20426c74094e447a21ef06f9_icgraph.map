@@ -1,4 +1,5 @@
 <map id="Framebuffer::BlitTo" name="Framebuffer::BlitTo">
-<area shape="rect" id="node1" title=" " alt="" coords="211,13,356,38"/>
-<area shape="rect" id="node2" href="$d7/d13/classPostProcessManager.html#ada11314e85d3c40d28c02aec93317743" title=" " alt="" coords="5,5,163,45"/>
+<area shape="rect" id="node1" title=" " alt="" coords="211,35,356,60"/>
+<area shape="rect" id="node2" href="$d6/d83/structBloom.html#aa01e3275a43107bae0435f38d488ecdc" title=" " alt="" coords="23,5,145,31"/>
+<area shape="rect" id="node3" href="$d7/d13/classPostProcessManager.html#ada11314e85d3c40d28c02aec93317743" title=" " alt="" coords="5,55,163,95"/>
 </map>
