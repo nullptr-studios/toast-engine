@@ -16,5 +16,6 @@ var classtoast_1_1Scene =
     [ "Restart", "d6/dd4/classtoast_1_1Scene.html#acb44061f0eea603b846970680ce5be30", null ],
     [ "Save", "d6/dd4/classtoast_1_1Scene.html#a0de5ddc8d90b763799bb7046870d8686", null ],
     [ "Tick", "d6/dd4/classtoast_1_1Scene.html#a75d1850258d9bb6014bcba1fec080c2d", null ],
+    [ "enemy_kills", "d6/dd4/classtoast_1_1Scene.html#acabd25f483d53d898a68ad0838f47856", null ],
     [ "m_jsonPath", "d6/dd4/classtoast_1_1Scene.html#aa6f14ff1ef18ac8f755777f05c92363c", null ]
 ];

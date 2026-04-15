@@ -12,7 +12,7 @@ var classphysics_1_1ColliderRenderable =
     [ "horizontal_offset", "de/d96/classphysics_1_1ColliderRenderable.html#a3d091b6c28112ad579bc4f948a935a5a", null ],
     [ "indices", "de/d96/classphysics_1_1ColliderRenderable.html#a3c7064eadd0ec05599b1e8967c342609", null ],
     [ "isOccluder", "de/d96/classphysics_1_1ColliderRenderable.html#a640a72f6f4a47ca0003e69c75e4f59d1", null ],
-    [ "m", "de/d96/classphysics_1_1ColliderRenderable.html#af8b96915c95cbdf0cb375c2fcde3bda2", null ],
+    [ "m", "de/d96/classphysics_1_1ColliderRenderable.html#a3341b1cd0d25c3a237e5c10074eadaf0", null ],
     [ "material", "de/d96/classphysics_1_1ColliderRenderable.html#a3bbb6d62913ae25b1ca5e13761ca6d86", null ],
     [ "material_path", "de/d96/classphysics_1_1ColliderRenderable.html#a4e2867fd0b576ec2e9a03526fcb0dd2d", null ],
     [ "material_slot", "de/d96/classphysics_1_1ColliderRenderable.html#ae45294eeb7a64370db902da456449288", null ],
