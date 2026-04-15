@@ -827,7 +827,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	std::optional<RayResult> result = std::nullopt;
 	std::optional<dvec2> col_hit;
 	std::optional<dvec2> rb_hit;
-	Rigidbody* rigidbody = nullptr;
+	BoxRigidbody* rigidbody = nullptr;
 
 	for (auto* c : physics->m.colliders) {
 		if (!c->parent->enabled()) {
@@ -883,7 +883,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	}
 
 	for (auto* c : physics->m.boxes) {
-		
+
 		auto collision = BoxRayCollision(ray, c);
 		if (not collision.has_value()) {
 			continue;
@@ -903,7 +903,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 
 	if (rigidbody != nullptr) {
 		if (rigidbody->enterCallback) {
-			rigidbody->enterCallback(rigidbody);
+			rigidbody->enterCallback(&result.value());
 		}
 	}
 	return result;

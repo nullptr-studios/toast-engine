@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Line.hpp"
+#include "Raycast.hpp"
 
 #include <Toast/Components/Component.hpp>
 #include <Toast/Resources/Mesh.hpp>
@@ -38,6 +39,8 @@ public:
 	auto GetPoints() const -> const std::vector<glm::vec2>&;
 	auto GetEdges() const -> const std::vector<Line>&;
 	auto GetAABB() const -> const renderer::BoundingBox&;
+	std::function<void(RayResult*)> enterCallback;
+	std::function<void(RayResult*)> exitCallback;
 
 	void InvalidateCache() const;
 
