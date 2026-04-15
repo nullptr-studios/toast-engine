@@ -61,6 +61,7 @@ protected:
 
 public:
 	void Restart();
+	int enemy_kills = 0;
 };
 
 }
