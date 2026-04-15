@@ -19,6 +19,53 @@
 #include "spine/Animation.h"
 #include "spine/Bone.h"
 
+#include <algorithm>
+
+bool SpineRendererComponent::ReloadSkeletonFromPaths() {
+	if (m.atlasPath.empty()) {
+		m.atlasPath = "CHARS/PLAYER/ANIMATIONS/CH_Cat.atlas";
+	}
+	if (m.skeletonDataPath.empty()) {
+		m.skeletonDataPath = "CHARS/PLAYER/ANIMATIONS/CH_Cat.json";
+	}
+
+	auto atlas = resource::LoadResource<SpineAtlas>(m.atlasPath);
+	m.skeletonData = resource::LoadResource<SpineSkeletonData>(m.skeletonDataPath, atlas);
+	if (!m.skeletonData || !m.skeletonData->GetSkeletonData()) {
+		TOAST_WARN("SpineRendererComponent::ReloadSkeletonFromPaths() Failed loading skeleton data: {}", m.skeletonDataPath);
+		return false;
+	}
+
+	m.skeleton = std::make_unique<spine::Skeleton>(m.skeletonData->GetSkeletonData());
+	m.animationStateData = std::make_unique<spine::AnimationStateData>(m.skeletonData->GetSkeletonData());
+	m.animationStateData->setDefaultMix(.4f);
+	m.animationState = std::make_unique<spine::AnimationState>(m.animationStateData.get());
+	m.animationState->setListener(m.eventHandler.get());
+
+	m.skeleton->update(0.0f);
+	m.skeleton->updateWorldTransform(spine::Physics_None);
+
+	if (!m.selectedAnimationName.empty() && !HasAnimation(m.selectedAnimationName)) {
+		m.selectedAnimationName.clear();
+	}
+
+	return true;
+}
+
+bool SpineRendererComponent::HasAnimation(std::string_view animation_name) const {
+	if (animation_name.empty() || !m.skeletonData || !m.skeletonData->GetSkeletonData()) {
+		return false;
+	}
+	return m.skeletonData->GetSkeletonData()->findAnimation(animation_name.data()) != nullptr;
+}
+
+void SpineRendererComponent::TryPlayAnimationByName(std::string_view animation_name, bool loop) const {
+	if (!m.animationState || !HasAnimation(animation_name)) {
+		return;
+	}
+	m.animationState->setAnimation(0, animation_name.data(), loop);
+}
+
 /// TODO:SPINE RESOURCE SLOTS
 void SpineRendererComponent::Init() {
 	TransformComponent::Init();
@@ -36,35 +83,14 @@ void SpineRendererComponent::Init() {
 
 	m.eventHandler = std::make_unique<SpineEventHandler>(this);
 
-	// Load resources either from persisted paths (preferred) or fallback to defaults
-	if (!m.atlasPath.empty() && !m.skeletonDataPath.empty()) {
-		auto atlas = resource::LoadResource<SpineAtlas>(m.atlasPath);
-		m.skeletonData = resource::LoadResource<SpineSkeletonData>(m.skeletonDataPath, atlas);
-	} else {
-		m.atlasPath = "CHARS/PLAYER/ANIMATIONS/CH_Cat.atlas";
-		m.skeletonDataPath = "CHARS/PLAYER/ANIMATIONS/CH_Cat.json";
-
-		// Fallback to legacy defaults to keep previous behavior
-		auto atlas = resource::LoadResource<SpineAtlas>(m.atlasPath);
-		m.skeletonData = resource::LoadResource<SpineSkeletonData>(m.skeletonDataPath, atlas);
-	}
-
-	if (m.skeletonData) {
-		m.skeleton = std::make_unique<spine::Skeleton>(m.skeletonData->GetSkeletonData());
-		m.animationStateData = std::make_unique<spine::AnimationStateData>(m.skeletonData->GetSkeletonData());
-		m.animationStateData->setDefaultMix(.4f);
-		m.animationState = std::make_unique<spine::AnimationState>(m.animationStateData.get());
-		m.animationState->setListener(m.eventHandler.get());
-
-		// Initial update to ensure world transforms are valid
-		m.skeleton->update(0.0f);
-		m.skeleton->updateWorldTransform(spine::Physics_None);
+	if (ReloadSkeletonFromPaths()) {
 #ifdef TOAST_EDITOR
 		RefreshAnimationList();
-		// Auto-select first animation if available
-		if (!debug.animationNames.empty()) {
-			debug.selectedAnimation = 0;
-			m.animationState->setAnimation(0, debug.animationNames[debug.selectedAnimation].c_str(), debug.loopAnimation);
+		if (!m.selectedAnimationName.empty()) {
+			auto selected_it = std::find(debug.animationNames.begin(), debug.animationNames.end(), m.selectedAnimationName);
+			if (selected_it != debug.animationNames.end()) {
+				debug.runtimeSelectedAnimation = static_cast<int>(std::distance(debug.animationNames.begin(), selected_it));
+			}
 		}
 
 		m.atlasResource.name("Atlas Resource");
@@ -82,7 +108,15 @@ void SpineRendererComponent::LoadTextures() {
 	m.shader->Use();
 	m.shader->SetSampler("Texture", 0);
 
-	renderer::IRendererBase::GetInstance()->AddRenderable(this);
+	if (auto* r = renderer::IRendererBase::GetInstance()) {
+		r->AddTransparent(this);
+		// Keep renderer-side visibility in sync when async load order triggers callbacks early.
+		if (enabled()) {
+			r->EnableTransparent(this);
+		} else {
+			r->DisableTransparent(this);
+		}
+	}
 
 	m.dynamicMesh.InitDynamicSpine();
 }
@@ -91,18 +125,24 @@ void SpineRendererComponent::Begin() {
 	TransformComponent::Begin();
 
 	// reset skeleton
-	m.skeleton->setToSetupPose();
+	if (m.skeleton) {
+		m.skeleton->setToSetupPose();
+	}
+
+	if (m.playSelectedAnimationOnBegin) {
+		TryPlayAnimationByName(m.selectedAnimationName, m.selectedAnimationLoop);
+	}
 }
 
 void SpineRendererComponent::OnEnable() {
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		r->EnableRenderable(this);
+		r->EnableTransparent(this);
 	}
 }
 
 void SpineRendererComponent::OnDisable() {
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		r->DisableRenderable(this);
+		r->DisableTransparent(this);
 	}
 }
 
@@ -139,7 +179,8 @@ void SpineRendererComponent::Tick() {
 
 void SpineRendererComponent::RefreshAnimationList() {
 	debug.animationNames.clear();
-	debug.selectedAnimation = -1;
+	debug.runtimeSelectedAnimation = -1;
+	debug.previewSelectedAnimation = -1;
 	if (!m.skeletonData) {
 		return;
 	}
@@ -167,7 +208,8 @@ void SpineRendererComponent::Inspector() {
 		ImGui::Unindent(20);
 	}
 	ImGui::Spacing();
-	// Animation controls
+
+	// Resource controls
 	m.atlasResource.Show();
 	m.skeletonDataResource.Show();
 
@@ -182,55 +224,45 @@ void SpineRendererComponent::Inspector() {
 		m.atlasPath = m.atlasResource.GetResourcePath();
 		m.skeletonDataPath = m.skeletonDataResource.GetResourcePath();
 
-		auto atlas = resource::LoadResource<SpineAtlas>(m.atlasPath);
-		m.skeletonData = resource::LoadResource<SpineSkeletonData>(m.skeletonDataPath, atlas);
-		m.skeleton = std::make_unique<spine::Skeleton>(m.skeletonData->GetSkeletonData());
-		m.animationStateData = std::make_unique<spine::AnimationStateData>(m.skeletonData->GetSkeletonData());
-		m.animationState = std::make_unique<spine::AnimationState>(m.animationStateData.get());
-		m.animationState->setListener(m.eventHandler.get());
-
-		// Tick once
-		double dt = Time::delta();
-
-		m.animationState->update(dt);
-		m.animationState->apply(*m.skeleton);
-
-		m.skeleton->update(dt);
-		m.skeleton->updateWorldTransform(spine::Physics_None);
-
-		resources_changed = true;
+		resources_changed = ReloadSkeletonFromPaths();
 	}
 
 	if (resources_changed) {
+		// New skeleton/atlas can invalidate the previously serialized animation name.
+		m.selectedAnimationName.clear();
+		debug.runtimeSelectedAnimation = -1;
+		debug.previewSelectedAnimation = -1;
+		debug.previewPlaying = false;
+
 		RefreshAnimationList();
-		if (!debug.animationNames.empty()) {
-			debug.selectedAnimation = 0;
-			m.animationState->setAnimation(0, debug.animationNames[debug.selectedAnimation].c_str(), debug.loopAnimation);
-		}
 	}
 
-	ImGui::Checkbox("Is Occluder", &m.isOccluder);
-	ImGui::Checkbox("Draw to depth", &m.drawToDepth);
-
+	ImGui::Checkbox("2D Light Occluder", &m.isOccluder);
 	ImGui::Separator();
-	ImGui::Text("Animation Preview");
+	ImGui::Text("Runtime Animation (Serialized)");
+	ImGui::Checkbox("Casts Directional Shadow", &m.castsDirectionalShadow);
+	ImGui::Checkbox("Draw to depth", &m.drawToDepth);
+	ImGui::Checkbox("Play Selected On Begin", &m.playSelectedAnimationOnBegin);
 
 	if (debug.animationNames.empty()) {
 		ImGui::Text("No animations found");
 	} else {
-		// Build preview label
-		const char* current = (debug.selectedAnimation >= 0 && debug.selectedAnimation < (int)debug.animationNames.size())
-		                          ? debug.animationNames[debug.selectedAnimation].c_str()
-		                          : "<none>";
-		if (ImGui::BeginCombo("##SpineAnimCombo", current)) {
-			for (int i = 0; i < (int)debug.animationNames.size(); ++i) {
-				bool selected = (debug.selectedAnimation == i);
-				if (ImGui::Selectable(debug.animationNames[i].c_str(), selected)) {
-					debug.selectedAnimation = i;
+		auto selected_it = std::find(debug.animationNames.begin(), debug.animationNames.end(), m.selectedAnimationName);
+		if (selected_it != debug.animationNames.end()) {
+			debug.runtimeSelectedAnimation = static_cast<int>(std::distance(debug.animationNames.begin(), selected_it));
+		} else {
+			debug.runtimeSelectedAnimation = -1;
+		}
 
-					if (m.animationState && m.skeleton) {
-						m.animationState->setAnimation(0, debug.animationNames[i].c_str(), debug.loopAnimation);
-					}
+		const char* current = (debug.runtimeSelectedAnimation >= 0 && debug.runtimeSelectedAnimation < (int)debug.animationNames.size())
+		                          ? debug.animationNames[debug.runtimeSelectedAnimation].c_str()
+		                          : "<none>";
+		if (ImGui::BeginCombo("##SpineRuntimeAnimCombo", current)) {
+			for (int i = 0; i < (int)debug.animationNames.size(); ++i) {
+				const bool selected = (debug.runtimeSelectedAnimation == i);
+				if (ImGui::Selectable(debug.animationNames[i].c_str(), selected)) {
+					debug.runtimeSelectedAnimation = i;
+					m.selectedAnimationName = debug.animationNames[i];
 				}
 				if (selected) {
 					ImGui::SetItemDefaultFocus();
@@ -239,24 +271,55 @@ void SpineRendererComponent::Inspector() {
 			ImGui::EndCombo();
 		}
 
-		ImGui::Checkbox("Loop", &debug.loopAnimation);
-		ImGui::SameLine();
-		if (ImGui::Button("Play")) {
-			if (m.animationState && debug.selectedAnimation >= 0 && debug.selectedAnimation < (int)debug.animationNames.size()) {
-				m.animationState->setAnimation(0, debug.animationNames[debug.selectedAnimation].c_str(), debug.loopAnimation);
-			}
-			debug.playing = true;
+		ImGui::Checkbox("Loop (Runtime)", &m.selectedAnimationLoop);
+		if (ImGui::Button("Play Runtime Now")) {
+			TryPlayAnimationByName(m.selectedAnimationName, m.selectedAnimationLoop);
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Stop")) {
+		if (ImGui::Button("Stop Runtime")) {
 			if (m.animationState) {
 				m.animationState->clearTrack(0);
 			}
-			debug.playing = false;
 		}
 	}
 
-	if (debug.playing) {
+	ImGui::Separator();
+	ImGui::Text("Debug Animation Preview (Editor-only, Not Serialized)");
+
+	if (!debug.animationNames.empty()) {
+		const char* preview_current = (debug.previewSelectedAnimation >= 0 && debug.previewSelectedAnimation < (int)debug.animationNames.size())
+		                                  ? debug.animationNames[debug.previewSelectedAnimation].c_str()
+		                                  : "<none>";
+		if (ImGui::BeginCombo("##SpinePreviewAnimCombo", preview_current)) {
+			for (int i = 0; i < (int)debug.animationNames.size(); ++i) {
+				const bool selected = (debug.previewSelectedAnimation == i);
+				if (ImGui::Selectable(debug.animationNames[i].c_str(), selected)) {
+					debug.previewSelectedAnimation = i;
+				}
+				if (selected) {
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::Checkbox("Loop (Preview)", &debug.previewLoopAnimation);
+		if (ImGui::Button("Play Preview")) {
+			if (m.animationState && debug.previewSelectedAnimation >= 0 && debug.previewSelectedAnimation < (int)debug.animationNames.size()) {
+				m.animationState->setAnimation(0, debug.animationNames[debug.previewSelectedAnimation].c_str(), debug.previewLoopAnimation);
+				debug.previewPlaying = true;
+			}
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Stop Preview")) {
+			if (m.animationState) {
+				m.animationState->clearTrack(0);
+			}
+			debug.previewPlaying = false;
+		}
+	}
+
+	if (debug.previewPlaying && m.animationState && m.skeleton) {
 		double dt = Time::delta();
 
 		m.animationState->update(dt);
@@ -270,7 +333,7 @@ void SpineRendererComponent::Inspector() {
 
 void SpineRendererComponent::Destroy() {
 	TransformComponent::Destroy();
-	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveTransparent(this);
 }
 
 // optimize
@@ -283,7 +346,8 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		return;
 	}
 
-	if (pass != renderer::IRenderablePass::GEOMETRY && pass != renderer::IRenderablePass::OCCLUSION) {
+	if (pass != renderer::IRenderablePass::GEOMETRY && pass != renderer::IRenderablePass::OCCLUSION &&
+	    pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
 		return;
 	}
 
@@ -300,7 +364,7 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	const glm::mat4 mvp = precomputed_mat * model;
 
 	// done just at occlusion step and reused
-	if (pass == renderer::IRenderablePass::OCCLUSION) {
+	if (pass == renderer::IRenderablePass::OCCLUSION || pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
 		// First pass: collect all vertices to compute bounding box for frustum culling
 		{
 			// Compute dynamic bounding box
@@ -310,7 +374,8 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 			m.onScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), model);
 		}
 
-		if (!m.isOccluder) {
+		const bool castsForPass = (pass == renderer::IRenderablePass::OCCLUSION) ? m.isOccluder : m.castsDirectionalShadow;
+		if (!castsForPass) {
 			return;
 		}
 	}
@@ -318,12 +383,12 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	// cache last bound texture to avoid redundant binds
 	m.lastBoundTexture = 0;
 
-	if (pass == renderer::IRenderablePass::GEOMETRY) {
+	if (pass == renderer::IRenderablePass::GEOMETRY || pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
 		m.shader->Use();
 		m.shader->Set("transform", mvp);
 	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
 		if (!m.isOccluder) {
-			return;    // Skip occlusion pass if not an occluder
+			return;
 		}
 
 		m.occlusionShader->Use();
@@ -333,7 +398,7 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		m.occlusionShader->Set("gMVP", mvp);
 	}
 
-	if (!m.onScreen) {
+	if (pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW && !m.onScreen) {
 		return;
 	}
 
@@ -410,13 +475,15 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	}
 
 	// flush any remaining geometry
-	if (m.drawToDepth) {
+	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+		glDepthMask(GL_TRUE);
+	} else if (m.drawToDepth) {
 		glDepthMask(GL_TRUE);
 	} else {
 		glDepthMask(GL_FALSE);
 	}
 
-	if (pass != renderer::IRenderablePass::OCCLUSION) {
+	if (pass != renderer::IRenderablePass::OCCLUSION && pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	} else {
@@ -437,8 +504,28 @@ void SpineRendererComponent::Load(json_t j, bool force_create) {
 	if (j.contains("isOccluder")) {
 		m.isOccluder = j.at("isOccluder").get<bool>();
 	}
+	if (j.contains("castsDirectionalShadow")) {
+		m.castsDirectionalShadow = j.at("castsDirectionalShadow").get<bool>();
+	}
 	if (j.contains("drawToDepth")) {
 		m.drawToDepth = j.at("drawToDepth").get<bool>();
+	}
+	if (j.contains("selectedAnimation")) {
+		m.selectedAnimationName = j.at("selectedAnimation").get<std::string>();
+	}
+	if (j.contains("selectedAnimationLoop")) {
+		m.selectedAnimationLoop = j.at("selectedAnimationLoop").get<bool>();
+	}
+	if (j.contains("playSelectedAnimationOnBegin")) {
+		m.playSelectedAnimationOnBegin = j.at("playSelectedAnimationOnBegin").get<bool>();
+	}
+
+	// If already initialized, immediately apply newly loaded resource paths.
+	if (m.eventHandler) {
+		ReloadSkeletonFromPaths();
+#ifdef TOAST_EDITOR
+		RefreshAnimationList();
+#endif
 	}
 }
 
@@ -448,11 +535,18 @@ json_t SpineRendererComponent::Save() const {
 	j["atlasResourcePath"] = m.atlasPath;
 	j["skeletonDataResourcePath"] = m.skeletonDataPath;
 	j["isOccluder"] = m.isOccluder;
+	j["castsDirectionalShadow"] = m.castsDirectionalShadow;
 	j["drawToDepth"] = m.drawToDepth;
+	j["selectedAnimation"] = m.selectedAnimationName;
+	j["selectedAnimationLoop"] = m.selectedAnimationLoop;
+	j["playSelectedAnimationOnBegin"] = m.playSelectedAnimationOnBegin;
 	return j;
 }
 
 void SpineRendererComponent::PlayAnimation(std::string_view name, bool loop, int track) const {
+	if (!m.animationState || !HasAnimation(name)) {
+		return;
+	}
 	m.animationState->setAnimation(track, name.data(), loop);
 }
 
@@ -461,6 +555,9 @@ void SpineRendererComponent::StopAnimation(int track) const {
 }
 
 void SpineRendererComponent::NextPlayAnimation(std::string_view name, bool loop, float delay, int track) const {
+	if (!m.animationState || !HasAnimation(name)) {
+		return;
+	}
 	m.animationState->addAnimation(track, name.data(), loop, delay);
 }
 

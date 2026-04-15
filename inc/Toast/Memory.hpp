@@ -9,6 +9,11 @@
 
 #include <cstddef>
 
+#ifdef TRACY_ENABLE
+/// Disables Tracy profiling during shutdown to prevent crashes
+extern "C" void DisableTracyProfiling() noexcept;
+#endif
+
 namespace toast::memory {
 
 // No pool allocator - all allocations go through the default global operator new/delete.

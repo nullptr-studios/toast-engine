@@ -9,6 +9,8 @@
 #pragma once
 
 #include "Toast/Event/Event.hpp"
+#include <string>
+#include <utility>
 
 namespace toast {
 struct LoadWorld : public event::Event<LoadWorld> {
@@ -31,4 +33,10 @@ struct NextLevel : public event::Event<NextLevel> { };
 struct ResetGameFlow : public event::Event<ResetGameFlow> { };
 
 struct RestartLevel : public event::Event<RestartLevel> { };
+
+struct LocalizationChanged : public event::Event<LocalizationChanged> {
+	std::string language;
+
+	explicit LocalizationChanged(std::string language) : language(std::move(language)) { }
+};
 }

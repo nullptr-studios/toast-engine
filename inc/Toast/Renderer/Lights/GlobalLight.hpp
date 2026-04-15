@@ -12,6 +12,7 @@ public:
 	REGISTER_TYPE(GlobalLight);
 
 	void Init() override;
+	void Tick() override;
 
 	void Load(json_t j, bool force_create) override;
 	json_t Save() const override;
@@ -24,4 +25,8 @@ private:
 	float m_intensity = 1.0f;
 	glm::vec3 m_color = glm::vec3(1.0f);
 	bool m_enableLight = true;
+	bool m_useTransformDirection = true;
+	glm::vec3 m_manualDirection = glm::normalize(glm::vec3(-0.35f, -1.0f, -0.25f));
+	bool m_showDirectionalShadowArrow = true;
+	float m_directionalShadowArrowLength = 6.0f;
 };

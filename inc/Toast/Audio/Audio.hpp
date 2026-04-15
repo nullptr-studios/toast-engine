@@ -12,6 +12,14 @@
 
 namespace audio {
 
+/// @brief Audio output mode for speaker configuration
+enum class AudioMode : uint8_t {
+	Mono,
+	Stereo,
+	Binaural,
+	Surround
+};
+
 /// @brief Loads an FMOD Studio soundbank for event playback.
 auto load_bank(std::string_view filepath) -> std::expected<void, AudioError>;
 
@@ -43,6 +51,27 @@ auto unmute_all() -> void;
 /// @brief Returns whether the audio system is muted.
 [[nodiscard]]
 auto is_muted() -> bool;
+
+/// @brief Sets the music bus volume (0.0 to 1.0)
+auto set_music_volume(float volume) -> void;
+
+/// @brief Gets the current music volume
+[[nodiscard]]
+auto get_music_volume() -> float;
+
+/// @brief Sets the effects/SFX bus volume (0.0 to 1.0)
+auto set_effects_volume(float volume) -> void;
+
+/// @brief Gets the current effects volume
+[[nodiscard]]
+auto get_effects_volume() -> float;
+
+/// @brief Sets the audio output mode
+auto set_audio_mode(AudioMode mode) -> void;
+
+/// @brief Gets the current audio mode
+[[nodiscard]]
+auto get_audio_mode() -> AudioMode;
 
 /// @brief Low-level (FMOD Core) API for raw sound playback.
 namespace core {

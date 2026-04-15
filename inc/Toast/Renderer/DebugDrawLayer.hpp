@@ -36,6 +36,7 @@ public:
 	///@param color Color of the line (default white)
 	void DrawLine(const glm::vec2& a, const glm::vec2& b, const glm::vec4& color = { 1, 1, 1, 1 });
 	void DrawLine(const glm::vec3& a, const glm::vec3& b, const glm::vec4& color = { 1, 1, 1, 1 });
+	void DrawArrow3D(const glm::vec3& start, const glm::vec3& direction, float length, const glm::vec4& color = { 1, 1, 1, 1 });
 
 	///@brief Draws a rectangle
 	///@param pos Center position
@@ -140,6 +141,10 @@ inline void DrawDebugArrow(const glm::vec2& start, const glm::vec2& direction, f
 
 	renderer::DebugLine(end, arrowPoint1, color);
 	renderer::DebugLine(end, arrowPoint2, color);
+}
+
+inline void DebugArrow3D(const glm::vec3& start, const glm::vec3& direction, float length, const glm::vec4& color = { 1, 1, 1, 1 }) {
+	DebugDrawLayer::GetInstance()->DrawArrow3D(start, direction, length, color);
 }
 
 }

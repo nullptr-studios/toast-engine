@@ -21,6 +21,7 @@ enum class IRenderablePass : uint8_t {
 	GEOMETRY,
 	LIGHTS,
 	OCCLUSION,
+	DIRECTIONAL_SHADOW,
 };
 
 /**
@@ -87,6 +88,25 @@ public:
 	[[nodiscard]]
 	virtual float GetDepth() noexcept {
 		return worldPosition().z;
+	}
+
+	/// Geometry sorting priority. Higher values are rendered later in GeometryPass.
+	[[nodiscard]]
+	virtual int GetGeometrySortPriority() noexcept {
+		return 0;
+	}
+
+	/// Camera-space depth key used for transparent sorting.
+	/// Higher Z in view space is closer to the camera in the engine's OpenGL convention.
+	[[nodiscard]]
+	virtual float GetTransparentSortDepth(const glm::mat4& view_matrix) noexcept {
+		return (view_matrix * glm::vec4(worldPosition(), 1.0f)).z;
+	}
+
+	/// Transparent sorting priority. Higher values are rendered later in SpritePass.
+	[[nodiscard]]
+	virtual int GetTransparentSortPriority() noexcept {
+		return 0;
 	}
 
 protected:

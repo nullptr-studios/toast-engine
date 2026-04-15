@@ -200,6 +200,25 @@ auto InputSystem::GetMouseDelta() -> glm::vec2 {
 	return get()->m.mouseDelta;
 }
 
+auto InputSystem::GetFirstConnectedGamepad() -> SDL_Gamepad* {
+	auto* instance = get();
+	// Return first gamepad that's still connected
+	for (auto& [jid, state] : instance->m.controllers) {
+		if (state.handle && SDL_GamepadConnected(state.handle)) {
+			return state.handle;
+		}
+	}
+	return nullptr;
+}
+
+auto InputSystem::GetGamepadType() -> SDL_GamepadType {
+	auto* gamepad = GetFirstConnectedGamepad();
+	if (not gamepad) {
+		return SDL_GAMEPAD_TYPE_UNKNOWN;
+	}
+	return SDL_GetGamepadType(gamepad);
+}
+
 void InputSystem::SetViewportPosition(glm::vec2 position) {
 	get()->m.viewportPosition = position;
 }

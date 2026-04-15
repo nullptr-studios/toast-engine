@@ -12,14 +12,18 @@
 
 // Renderer
 #include <Toast/Renderer/Camera.hpp>
+#include <Toast/Renderer/HUD/HUDActor.hpp>
+#include <Toast/Renderer/HUD/HUDWorldRendererComponent.hpp>
 #include <Toast/Renderer/Lights/2DLight.hpp>
 #include <Toast/Renderer/Lights/GlobalLight.hpp>
+#include <Toast/Renderer/PostProcessVolume.hpp>
 
 // Components
 #include <Toast/Components/AtlasRendererComponent.hpp>
 #include <Toast/Components/HtmlView.hpp>
 #include <Toast/Components/MeshRendererComponent.hpp>
 #include <Toast/Components/SpineRendererComponent.hpp>
+#include <Toast/Components/WaterRendererComponent.hpp>
 #include <Toast/Components/TransformComponent.hpp>
 #include <Toast/Physics/Collider.hpp>
 #include <Toast/Physics/Rigidbody.hpp>

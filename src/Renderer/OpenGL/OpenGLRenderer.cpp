@@ -17,6 +17,7 @@
 
 #include <SDL3/SDL.h>
 #include <glad/gl.h>
+#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #ifdef TOAST_EDITOR
@@ -30,10 +31,17 @@
 
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
+#include "Toast/Renderer/PostProcessing/Bloom.hpp"
+#include "Toast/Renderer/PostProcessing/ChromaticAberration.hpp"
 #include "Toast/Renderer/PostProcessing/ColorGrading.hpp"
+#include "Toast/Renderer/PostProcessing/DepthOfField.hpp"
 #include "Toast/Renderer/PostProcessing/Tonemaping.hpp"
+#include "Toast/Components/WaterRendererComponent.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <limits>
 #include <sstream>
 #include <stb_image.h>
 
@@ -42,6 +50,65 @@
 #endif
 
 namespace renderer {
+
+namespace {
+constexpr float kDirectionalShadowSnapEpsilon = 0.05f;
+
+struct CachedGlState {
+	bool valid = false;
+	bool depthTest = false;
+	bool blend = false;
+	bool depthMask = true;
+	GLenum depthFunc = GL_LESS;
+	GLenum blendSrc = GL_ONE;
+	GLenum blendDst = GL_ZERO;
+	std::array<GLboolean, 4> colorMask { GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE };
+};
+
+CachedGlState g_state;
+
+void InvalidateCachedGlState() {
+	g_state.valid = false;
+}
+
+void SetDepthTest(bool enabled) {
+	enabled ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
+	g_state.depthTest = enabled;
+	g_state.valid = true;
+}
+
+void SetBlend(bool enabled) {
+	enabled ? glEnable(GL_BLEND) : glDisable(GL_BLEND);
+	g_state.blend = enabled;
+	g_state.valid = true;
+}
+
+void SetDepthMask(bool enabled) {
+	glDepthMask(enabled ? GL_TRUE : GL_FALSE);
+	g_state.depthMask = enabled;
+	g_state.valid = true;
+}
+
+void SetDepthFunc(GLenum func) {
+	glDepthFunc(func);
+	g_state.depthFunc = func;
+	g_state.valid = true;
+}
+
+void SetBlendFunc(GLenum src, GLenum dst) {
+	glBlendFunc(src, dst);
+	g_state.blendSrc = src;
+	g_state.blendDst = dst;
+	g_state.valid = true;
+}
+
+void SetColorMask(GLboolean r, GLboolean g, GLboolean b, GLboolean a) {
+	const std::array<GLboolean, 4> next { r, g, b, a };
+	glColorMask(r, g, b, a);
+	g_state.colorMask = next;
+	g_state.valid = true;
+}
+}
 
 IRendererBase* IRendererBase::m_instance = nullptr;
 
@@ -190,7 +257,10 @@ OpenGLRenderer::OpenGLRenderer() {
 	}
 
 	// Load OpenGL functions using GLAD
-	int version = gladLoadGL(SDL_GL_GetProcAddress);
+	auto gl_loader = [](const char* name) -> GLADapiproc {
+		return reinterpret_cast<GLADapiproc>(SDL_GL_GetProcAddress(name));
+	};
+	int version = gladLoadGL(gl_loader);
 	if (!version) {
 		TOAST_ERROR("Failed to initialize OpenGL context");
 	}
@@ -236,7 +306,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	Framebuffer::Specs geometrySpecs = { 1920, 1080, /*clampedSamples > 1*/ false };
 	m_geometryFramebuffer = new Framebuffer(geometrySpecs);
 	m_geometryFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);    // albedo HDR buffer
-	m_geometryFramebuffer->AddDepthAttachment();
+	m_geometryFramebuffer->AddDepthAttachment(true, GL_DEPTH_COMPONENT32F);
 	m_geometryFramebuffer->Build();
 
 	Framebuffer::Specs lightSpecs = { (int)(1920 * m_config.lightResolutionScale), (int)(1080 * m_config.lightResolutionScale), false };
@@ -248,6 +318,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	m.postProcessFramebuffer = new Framebuffer(geometrySpecs);
 	m.postProcessFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);
 	m.postProcessFramebuffer->Build();
+	CreateOrResizeWaterSceneCopyTexture(m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
 
 	Framebuffer::Specs outputSpecs = { 1920, 1080, false };
 	m_outputFramebuffer = new Framebuffer(outputSpecs);
@@ -260,6 +331,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	// m_geometryResolveFramebuffer->Build();
 
 	RecreateShadowResources(m_config.shadowMapResolution);
+	RecreateDirectionalShadowResources(m_config.directionalShadowMapResolution);
 
 	m.sdfComputeShader = resource::LoadResource<Shader>("SHADERS/occlusionSDF.shader");
 	m.jfaInitComputeShader = resource::LoadResource<Shader>("SHADERS/occlusionJFAInit.shader");
@@ -269,11 +341,15 @@ OpenGLRenderer::OpenGLRenderer() {
 	// post process
 	m_postProcessManager = std::make_unique<PostProcessManager>();
 	m_postProcessManager->InitBuffers(m_config.resolution);
-
-	std::unique_ptr<Tonemaping> tonemapping = std::make_unique<Tonemaping>();
-	std::unique_ptr<Colorgrading> colorgrading = std::make_unique<Colorgrading>();
-	m_postProcessManager->AddGlobalProcess(std::move(tonemapping));
-	m_postProcessManager->AddGlobalProcess(std::move(colorgrading));
+	if (!m_postProcessManager->LoadGlobalFromConfig()) {
+		m_postProcessManager->AddGlobalProcess(std::make_unique<Bloom>());
+		m_postProcessManager->AddGlobalProcess(std::make_unique<ChromaticAberration>());
+		auto dof = std::make_unique<DepthOfField>();
+		dof->SetEnabled(false);
+		m_postProcessManager->AddGlobalProcess(std::move(dof));
+		m_postProcessManager->AddGlobalProcess(std::make_unique<Tonemaping>());
+		m_postProcessManager->AddGlobalProcess(std::make_unique<Colorgrading>());
+	}
 
 	// Listen to window resize events
 	m_listener.Subscribe<event::WindowResize>([this](event::WindowResize* e) -> bool {
@@ -336,8 +412,12 @@ OpenGLRenderer::~OpenGLRenderer() {
 	TOAST_INFO("Shutting down OpenGL Renderer...");
 
 	delete m_geometryFramebuffer;
+	delete m_lightFramebuffer;
+	delete m.postProcessFramebuffer;
+	DestroyWaterSceneCopyTexture();
 	delete m_outputFramebuffer;
 	DestroyShadowResources();
+	DestroyDirectionalShadowResources();
 #ifdef TOAST_EDITOR
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL3_Shutdown();
@@ -386,6 +466,7 @@ void OpenGLRenderer::EndImGuiFrame() {
 }
 
 void OpenGLRenderer::Render() {
+	InvalidateCachedGlState();
 	if (toast::Window::GetInstance()->IsMinimized()) {
 		return;
 	}
@@ -422,11 +503,77 @@ void OpenGLRenderer::Render() {
 	// HACK: FOR OPTIMIZATION PURPOSES WE JUST SORT WHEN ADDING OBJECTS
 	if (m.combinedRenderables.size() > 1) {
 		std::stable_sort(m.combinedRenderables.begin(), m.combinedRenderables.end(), [](IRenderable* a, IRenderable* b) {
+			const int priority_a = a->GetGeometrySortPriority();
+			const int priority_b = b->GetGeometrySortPriority();
+			if (priority_a != priority_b) {
+				return priority_a < priority_b;
+			}
 			return a->GetDepth() < b->GetDepth();
+		});
+	}
+	
+	if (m_transparentsSortDirty) {
+		m.combinedTransparents.clear();
+		m.combinedTransparents.reserve(m_transparentRenderables.size());
+		for (auto* r : m_transparentRenderables) {
+			if (r && m_disabledTransparents.find(r) == m_disabledTransparents.end()) {
+				m.combinedTransparents.push_back(r);
+			}
+		}
+		m_transparentsSortDirty = false;
+	}
+
+	if (m.combinedTransparents.size() > 1) {
+		std::stable_sort(m.combinedTransparents.begin(), m.combinedTransparents.end(), [&](IRenderable* a, IRenderable* b) {
+			const int priority_a = a->GetTransparentSortPriority();
+			const int priority_b = b->GetTransparentSortPriority();
+			if (priority_a != priority_b) {
+				return priority_a < priority_b;
+			}
+
+			const float depthA = a->GetTransparentSortDepth(m_viewMatrix);
+			const float depthB = b->GetTransparentSortDepth(m_viewMatrix);
+			if (std::abs(depthA - depthB) > 1e-4f) {
+				// View-space: smaller Z is farther, so draw farther first for blending.
+				return depthA < depthB;
+			}
+			return a < b;
+		});
+
+	}
+
+	if (m_watersSortDirty) {
+		m.combinedWaters.clear();
+		m.combinedWaters.reserve(m_waterRenderables.size());
+		for (auto* r : m_waterRenderables) {
+			if (r && m_disabledWaters.find(r) == m_disabledWaters.end()) {
+				m.combinedWaters.push_back(r);
+			}
+		}
+		m_watersSortDirty = false;
+	}
+
+	if (m.combinedWaters.size() > 1) {
+		std::stable_sort(m.combinedWaters.begin(), m.combinedWaters.end(), [&](IRenderable* a, IRenderable* b) {
+			const int priority_a = a->GetTransparentSortPriority();
+			const int priority_b = b->GetTransparentSortPriority();
+			if (priority_a != priority_b) {
+				return priority_a < priority_b;
+			}
+
+			const float depthA = a->GetTransparentSortDepth(m_viewMatrix);
+			const float depthB = b->GetTransparentSortDepth(m_viewMatrix);
+			if (std::abs(depthA - depthB) > 1e-4f) {
+				return depthA < depthB;
+			}
+			return a < b;
 		});
 	}
 
 	OcclusionPass();
+	CHECK_GL();
+
+	DirectionalShadowPass();
 	CHECK_GL();
 
 	GeometryPass();
@@ -437,6 +584,10 @@ void OpenGLRenderer::Render() {
 
 	// Lighting
 	LightingPass();
+	CHECK_GL();
+
+	WaterPass();
+	CHECK_GL();
 
 	PostProcessPass();
 	CHECK_GL();
@@ -514,11 +665,11 @@ void OpenGLRenderer::GeometryPass() {
 	glDepthRange(0.0, 1.0);
 
 	glDisable(GL_CULL_FACE);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LEQUAL);
+	SetBlend(true);
+	SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	SetDepthTest(true);
+	SetDepthMask(true);
+	SetDepthFunc(GL_LEQUAL);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	Clear();
 
@@ -539,12 +690,12 @@ void OpenGLRenderer::OcclusionPass() {
 
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glDisable(GL_BLEND);
+	SetBlend(false);
 
 	for (auto* r : m.combinedRenderables) {
 		r->OnRender(renderer::IRenderablePass::OCCLUSION, m_multipliedMatrix);
 	}
-	for (auto* r : m_transparentRenderables) {
+ 	for (auto* r : m.combinedTransparents) {
 		r->OnRender(renderer::IRenderablePass::OCCLUSION, m_multipliedMatrix);
 	}
 
@@ -583,6 +734,44 @@ void OpenGLRenderer::OcclusionPass() {
 	m.finalComputeShader->Set("resolution", glm::ivec2(m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height()));
 	glDispatchCompute((m.occlusionFramebuffer->Width() + 15) / 16, (m.occlusionFramebuffer->Height() + 15) / 16, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+}
+
+
+void OpenGLRenderer::DirectionalShadowPass() {
+	if (!IsDirectionalShadowsEnabled() || !m.directionalShadowFramebuffer) {
+		return;
+	}
+
+	UpdateDirectionalShadowMatrix();
+
+	m.directionalShadowFramebuffer->bind();
+	glViewport(0, 0, m.directionalShadowFramebuffer->Width(), m.directionalShadowFramebuffer->Height());
+	glScissor(0, 0, m.directionalShadowFramebuffer->Width(), m.directionalShadowFramebuffer->Height());
+	glClearDepth(1.0);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glActiveTexture(GL_TEXTURE0);
+
+	SetColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glDisable(GL_CULL_FACE);
+	SetDepthTest(true);
+	SetDepthMask(true);
+	SetDepthFunc(GL_LEQUAL);
+	SetBlend(false);
+
+	const glm::mat4 shadowMatrix = GetDirectionalShadowMatrix();
+	for (auto* r : m.combinedRenderables) {
+		r->OnRender(renderer::IRenderablePass::DIRECTIONAL_SHADOW, shadowMatrix);
+	}
+	for (auto* r : m.combinedTransparents) {
+		r->OnRender(renderer::IRenderablePass::DIRECTIONAL_SHADOW, shadowMatrix);
+	}
+	for (auto* r : m.combinedWaters) {
+		r->OnRender(renderer::IRenderablePass::DIRECTIONAL_SHADOW, shadowMatrix);
+	}
+
+	SetColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	Framebuffer::unbind();
 }
 
 void OpenGLRenderer::PostProcessPass() {
@@ -625,9 +814,8 @@ void OpenGLRenderer::LightingPass() {
 	);
 	m_lightFramebuffer->bind();
 
-	glDepthMask(GL_FALSE);
-
-	glDisable(GL_DEPTH_TEST);
+	SetDepthMask(false);
+	SetDepthTest(false);
 
 	if (!m_lights.empty()) {
 		for (auto* light : m_lights) {
@@ -638,7 +826,7 @@ void OpenGLRenderer::LightingPass() {
 	}
 
 	m.postProcessFramebuffer->bind();
-	glDisable(GL_BLEND);
+	SetBlend(false);
 
 	glViewport(0, 0, m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
 	glScissor(0, 0, m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
@@ -682,6 +870,7 @@ void OpenGLRenderer::Resize(glm::uvec2 size) {
 	m_postProcessManager->InitBuffers(size);
 
 	m.postProcessFramebuffer->Resize(static_cast<int>(width), static_cast<int>(height));
+	CreateOrResizeWaterSceneCopyTexture(m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
 
 	if (m.layerStack) {
 		for (auto* layer : m.layerStack->GetLayers()) {
@@ -697,6 +886,8 @@ void OpenGLRenderer::Resize(glm::uvec2 size) {
 	if (windowFramebufferSize.x == width && windowFramebufferSize.y == height) {
 		m_config.resolution = glm::uvec2(width, height);
 	}
+
+	m.directionalShadowMatrixDirty = true;
 }
 
 void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
@@ -716,7 +907,89 @@ void OpenGLRenderer::RemoveRenderable(IRenderable* renderable) {
 	m_renderablesSortDirty = true;
 }
 
-void OpenGLRenderer::SpritePass() { }
+void OpenGLRenderer::AddTransparent(IRenderable* renderable) {
+	m_transparentRenderables.push_back(renderable);
+	m_transparentsSortDirty = true;
+}
+
+void OpenGLRenderer::RemoveTransparent(IRenderable* renderable) {
+	auto it = std::find(m_transparentRenderables.begin(), m_transparentRenderables.end(), renderable);
+	if (it != m_transparentRenderables.end()) {
+		m_transparentRenderables.erase(it);
+	}
+	m_disabledTransparents.erase(renderable);
+	m_transparentsSortDirty = true;
+}
+
+void OpenGLRenderer::AddWater(IRenderable* renderable) {
+	if (!renderable) {
+		return;
+	}
+	m_waterRenderables.push_back(renderable);
+	m_watersSortDirty = true;
+}
+
+void OpenGLRenderer::RemoveWater(IRenderable* renderable) {
+	auto it = std::find(m_waterRenderables.begin(), m_waterRenderables.end(), renderable);
+	if (it != m_waterRenderables.end()) {
+		m_waterRenderables.erase(it);
+	}
+	m_disabledWaters.erase(renderable);
+	m_watersSortDirty = true;
+}
+
+void OpenGLRenderer::SpritePass() {
+	for (const auto& renderable : m.combinedTransparents) {
+		renderable->OnRender(IRenderablePass::GEOMETRY, m_multipliedMatrix);
+	}
+}
+
+void OpenGLRenderer::WaterPass() {
+	if (m.combinedWaters.empty()) {
+		return;
+	}
+	if (m.waterSceneCopyTexture == 0) {
+		return;
+	}
+
+	const GLuint litColorTex = m.postProcessFramebuffer->GetColorTexture(0);
+	if (litColorTex == 0) {
+		return;
+	}
+
+	glCopyImageSubData(
+	    litColorTex,
+	    GL_TEXTURE_2D,
+	    0,
+	    0,
+	    0,
+	    0,
+	    m.waterSceneCopyTexture,
+	    GL_TEXTURE_2D,
+	    0,
+	    0,
+	    0,
+	    0,
+	    m.postProcessFramebuffer->Width(),
+	    m.postProcessFramebuffer->Height(),
+	    1
+	);
+
+	m.postProcessFramebuffer->bind();
+	glViewport(0, 0, m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
+	glScissor(0, 0, m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
+	SetBlend(true);
+	SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	SetDepthTest(true);
+
+	const GLuint sceneTex = m.waterSceneCopyTexture;
+	for (auto* renderable : m.combinedWaters) {
+		if (auto* water = dynamic_cast<toast::WaterRendererComponent*>(renderable)) {
+			water->SetRefractionTexture(sceneTex);
+		}
+		renderable->OnRender(IRenderablePass::GEOMETRY, m_multipliedMatrix);
+	}
+}
 
 void OpenGLRenderer::AddLight(Light2D* light) {
 	m_lights.push_back(light);
@@ -756,12 +1029,12 @@ void OpenGLRenderer::ApplyRenderSettings() {
 
 		delete m_geometryFramebuffer;
 		Framebuffer::Specs geometrySpecs = { static_cast<int>(geometryWidth),
-			                                   static_cast<int>(geometryHeight),
-			                                   /*clampedSamples > 1*/ false,
-			                                   static_cast<int>(clampedSamples) };
+			                               static_cast<int>(geometryHeight),
+			                               /*clampedSamples > 1*/ false,
+			                               static_cast<int>(clampedSamples) };
 		m_geometryFramebuffer = new Framebuffer(geometrySpecs);
 		m_geometryFramebuffer->AddColorAttachment(GL_RGBA16F, GL_RGBA, GL_FLOAT);
-		m_geometryFramebuffer->AddDepthAttachment();
+		m_geometryFramebuffer->AddDepthAttachment(true, GL_DEPTH_COMPONENT32F);
 		m_geometryFramebuffer->Build();
 	}
 
@@ -770,15 +1043,183 @@ void OpenGLRenderer::ApplyRenderSettings() {
 	);
 
 	m.postProcessFramebuffer->Resize(m_geometryFramebuffer->Width(), m_geometryFramebuffer->Height());
+	CreateOrResizeWaterSceneCopyTexture(m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
 
 	if (!m.occlusionFramebuffer || static_cast<unsigned>(m.occlusionFramebuffer->Width()) != m_config.shadowMapResolution ||
 	    static_cast<unsigned>(m.occlusionFramebuffer->Height()) != m_config.shadowMapResolution) {
 		RecreateShadowResources(m_config.shadowMapResolution);
 	}
 
+	if (!m.directionalShadowFramebuffer || static_cast<unsigned>(m.directionalShadowFramebuffer->Width()) != m_config.directionalShadowMapResolution ||
+	    static_cast<unsigned>(m.directionalShadowFramebuffer->Height()) != m_config.directionalShadowMapResolution) {
+		RecreateDirectionalShadowResources(m_config.directionalShadowMapResolution);
+	}
+
 	Resize(window->GetFramebufferSize());
 
 	SaveRenderSettings();
+}
+
+void OpenGLRenderer::DestroyDirectionalShadowResources() {
+	delete m.directionalShadowFramebuffer;
+	m.directionalShadowFramebuffer = nullptr;
+	SetDirectionalShadowMapTexture(0);
+}
+
+void OpenGLRenderer::RecreateDirectionalShadowResources(unsigned resolution) {
+	const unsigned clampedResolution = std::clamp(resolution, 64u, 8192u);
+
+	DestroyDirectionalShadowResources();
+
+	Framebuffer::Specs specs = { static_cast<int>(clampedResolution), static_cast<int>(clampedResolution), false };
+	m.directionalShadowFramebuffer = new Framebuffer(specs);
+	m.directionalShadowFramebuffer->AddDepthAttachment(true, GL_DEPTH_COMPONENT32F);
+	m.directionalShadowFramebuffer->Build();
+
+	SetDirectionalShadowMapTexture(m.directionalShadowFramebuffer->GetDepthTexture());
+	m.directionalShadowMatrixDirty = true;
+}
+
+void OpenGLRenderer::UpdateDirectionalShadowMatrix() {
+	glm::vec3 cameraPos = glm::vec3(0.0f);
+	if (m_activeCamera) {
+		cameraPos = m_activeCamera->transform()->worldPosition();
+	}
+
+	const glm::vec3 lightDir = GetGlobalLightDirection();
+	const glm::mat4 viewProj = m_projectionMatrix * m_viewMatrix;
+	const bool cameraMoved = glm::length(cameraPos - m.lastDirectionalCameraPos) > kDirectionalShadowSnapEpsilon;
+	const bool lightChanged = glm::length(lightDir - m.lastDirectionalLightDir) > 1e-4f;
+	const bool viewProjChanged = glm::length(glm::vec4(viewProj[0] - m.lastDirectionalViewProj[0])) > 1e-4f ||
+	                           glm::length(glm::vec4(viewProj[1] - m.lastDirectionalViewProj[1])) > 1e-4f ||
+	                           glm::length(glm::vec4(viewProj[2] - m.lastDirectionalViewProj[2])) > 1e-4f ||
+	                           glm::length(glm::vec4(viewProj[3] - m.lastDirectionalViewProj[3])) > 1e-4f;
+	if (!m.directionalShadowMatrixDirty && !cameraMoved && !lightChanged && !viewProjChanged) {
+		return;
+	}
+
+	float nearClip = 0.1f;
+	float farClip = 1000.0f;
+	{
+		const float a = m_projectionMatrix[2][2];
+		const float b = m_projectionMatrix[3][2];
+		nearClip = std::max(0.01f, b / (a - 1.0f));
+		farClip = std::max(nearClip + 1.0f, b / (a + 1.0f));
+	}
+
+	const float projectionY = std::max(1e-4f, std::abs(m_projectionMatrix[1][1]));
+	const float projectionX = std::max(1e-4f, std::abs(m_projectionMatrix[0][0]));
+	const float fovY = 2.0f * std::atan(1.0f / projectionY);
+	const float aspect = std::max(0.1f, projectionY / projectionX);
+	const float directionalShadowDistance = std::max(16.0f, m_config.directionalShadowDistance);
+	const float directionalShadowRange = std::max(8.0f, m_config.directionalShadowRange);
+	const float coverageNear = nearClip;
+	const float coverageFar = std::clamp(directionalShadowDistance, coverageNear + 12.0f, farClip);
+
+	const glm::mat4 invView = glm::inverse(m_viewMatrix);
+	const glm::vec3 camPos = glm::vec3(invView[3]);
+	const glm::vec3 camRight = glm::normalize(glm::vec3(invView[0]));
+	const glm::vec3 camUp = glm::normalize(glm::vec3(invView[1]));
+	const glm::vec3 camForward = glm::normalize(-glm::vec3(invView[2]));
+
+	auto buildFrustumCorners = [&](float zNear, float zFar) -> std::array<glm::vec3, 8> {
+		const float tanHalfFovY = std::tan(fovY * 0.5f);
+		const float nearHalfY = zNear * tanHalfFovY;
+		const float nearHalfX = nearHalfY * aspect;
+		const float farHalfY = zFar * tanHalfFovY;
+		const float farHalfX = farHalfY * aspect;
+
+		const glm::vec3 nearCenter = camPos + camForward * zNear;
+		const glm::vec3 farCenter = camPos + camForward * zFar;
+
+		return {
+			nearCenter + camUp * nearHalfY - camRight * nearHalfX,
+			nearCenter + camUp * nearHalfY + camRight * nearHalfX,
+			nearCenter - camUp * nearHalfY - camRight * nearHalfX,
+			nearCenter - camUp * nearHalfY + camRight * nearHalfX,
+			farCenter + camUp * farHalfY - camRight * farHalfX,
+			farCenter + camUp * farHalfY + camRight * farHalfX,
+			farCenter - camUp * farHalfY - camRight * farHalfX,
+			farCenter - camUp * farHalfY + camRight * farHalfX,
+		};
+	};
+
+	auto buildShadow = [&](const std::array<glm::vec3, 8>& corners, int shadowRes) -> glm::mat4 {
+
+		glm::vec3 frustumCenter(0.0f);
+		for (const glm::vec3& c : corners) {
+			frustumCenter += c;
+		}
+		frustumCenter /= static_cast<float>(corners.size());
+
+		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+		if (std::abs(glm::dot(up, lightDir)) > 0.99f) {
+			up = glm::vec3(1.0f, 0.0f, 0.0f);
+		}
+
+		const glm::vec3 lightPos = frustumCenter - lightDir * (directionalShadowDistance * 0.5f);
+		const glm::mat4 lightView = glm::lookAt(lightPos, frustumCenter, up);
+
+		glm::vec3 minLs(std::numeric_limits<float>::max());
+		glm::vec3 maxLs(std::numeric_limits<float>::lowest());
+		for (const glm::vec3& c : corners) {
+			const glm::vec3 ls = glm::vec3(lightView * glm::vec4(c, 1.0f));
+			minLs = glm::min(minLs, ls);
+			maxLs = glm::max(maxLs, ls);
+		}
+
+		const float padXY = 6.0f;
+		minLs.x -= padXY;
+		maxLs.x += padXY;
+		minLs.y -= padXY;
+		maxLs.y += padXY;
+
+		const float minHalfExtent = std::max(8.0f, directionalShadowRange);
+		const float centerX = (minLs.x + maxLs.x) * 0.5f;
+		const float centerY = (minLs.y + maxLs.y) * 0.5f;
+		const float halfX = std::max((maxLs.x - minLs.x) * 0.5f, minHalfExtent);
+		const float halfY = std::max((maxLs.y - minLs.y) * 0.5f, minHalfExtent);
+		minLs.x = centerX - halfX;
+		maxLs.x = centerX + halfX;
+		minLs.y = centerY - halfY;
+		maxLs.y = centerY + halfY;
+
+		const float resolution = static_cast<float>(std::max(1, shadowRes));
+		const float extentX = std::max(maxLs.x - minLs.x, 1.0f);
+		const float extentY = std::max(maxLs.y - minLs.y, 1.0f);
+		const float texelX = extentX / resolution;
+		const float texelY = extentY / resolution;
+
+		glm::vec2 centerLs((minLs.x + maxLs.x) * 0.5f, (minLs.y + maxLs.y) * 0.5f);
+		centerLs.x = std::floor(centerLs.x / texelX) * texelX;
+		centerLs.y = std::floor(centerLs.y / texelY) * texelY;
+
+		minLs.x = centerLs.x - extentX * 0.5f;
+		maxLs.x = centerLs.x + extentX * 0.5f;
+		minLs.y = centerLs.y - extentY * 0.5f;
+		maxLs.y = centerLs.y + extentY * 0.5f;
+
+		const float padZ = 20.0f;
+		// Convert RH light-view Z extents to positive ortho near/far distances.
+		float nearPlane = -maxLs.z - padZ;
+		float farPlane = -minLs.z + padZ;
+		nearPlane = std::max(0.01f, nearPlane);
+		if (!std::isfinite(nearPlane) || !std::isfinite(farPlane) || farPlane <= nearPlane + 0.01f) {
+			nearPlane = 0.01f;
+			farPlane = nearPlane + 500.0f;
+		}
+		const glm::mat4 lightProj = glm::ortho(minLs.x, maxLs.x, minLs.y, maxLs.y, nearPlane, farPlane);
+		return lightProj * lightView;
+	};
+
+	const int resolution = m.directionalShadowFramebuffer ? m.directionalShadowFramebuffer->Width() : static_cast<int>(m_config.directionalShadowMapResolution);
+	const std::array<glm::vec3, 8> shadowCoverageCorners = buildFrustumCorners(coverageNear, coverageFar);
+	SetDirectionalShadowMatrix(buildShadow(shadowCoverageCorners, resolution));
+
+	m.lastDirectionalCameraPos = cameraPos;
+	m.lastDirectionalLightDir = lightDir;
+	m.lastDirectionalViewProj = viewProj;
+	m.directionalShadowMatrixDirty = false;
 }
 
 void OpenGLRenderer::DestroyShadowResources() {
@@ -837,6 +1278,39 @@ void OpenGLRenderer::RecreateShadowResources(unsigned resolution) {
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+void OpenGLRenderer::CreateOrResizeWaterSceneCopyTexture(int width, int height) {
+	width = std::max(width, 1);
+	height = std::max(height, 1);
+
+	if (m.waterSceneCopyTexture == 0) {
+		glGenTextures(1, &m.waterSceneCopyTexture);
+	}
+
+	if (m.waterSceneCopyWidth == width && m.waterSceneCopyHeight == height) {
+		return;
+	}
+
+	glBindTexture(GL_TEXTURE_2D, m.waterSceneCopyTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	m.waterSceneCopyWidth = width;
+	m.waterSceneCopyHeight = height;
+}
+
+void OpenGLRenderer::DestroyWaterSceneCopyTexture() {
+	if (m.waterSceneCopyTexture != 0) {
+		glDeleteTextures(1, &m.waterSceneCopyTexture);
+		m.waterSceneCopyTexture = 0;
+	}
+	m.waterSceneCopyWidth = 0;
+	m.waterSceneCopyHeight = 0;
+}
+
 void OpenGLRenderer::DrawScreenQuad(bool flipY, bool useShader) {
 	if (useShader) {
 		if (flipY) {
@@ -882,9 +1356,9 @@ void OpenGLRenderer::HUDPass() {
 			glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
 			glScissor(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
 
-			glDisable(GL_DEPTH_TEST);
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			SetDepthTest(false);
+			SetBlend(true);
+			SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 			m.screenShader->Use();
 		}
@@ -903,10 +1377,11 @@ void OpenGLRenderer::HUDPass() {
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
+	SetBlend(false);
+	SetDepthTest(true);
 
 	Framebuffer::unbind();
 }
 
 }
+

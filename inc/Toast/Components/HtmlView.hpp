@@ -30,6 +30,7 @@ public:
 	REGISTER_TYPE(HtmlView);
 
 	using ConsoleCallback = std::function<void(const std::string&)>;
+	using DOMReadyCallback = std::function<void()>;
 
 	void Begin() override;
 
@@ -41,6 +42,9 @@ public:
 
 	void SetConsoleCallback(ConsoleCallback cb) {
 		m_consoleCb = std::move(cb);
+	}
+	void SetDOMReadyCallback(DOMReadyCallback cb) {
+		m_domReadyCb = std::move(cb);
 	}
 
 	ultralight::RefPtr<ultralight::View> GetView() const {
@@ -76,7 +80,9 @@ private:
 	int m_sortOrder = 0;
 	ultralight::RefPtr<ultralight::View> m_view;
 	ConsoleCallback m_consoleCb;
+	DOMReadyCallback m_domReadyCb;
 	std::unique_ptr<ultralight::ViewListener> m_viewListener;
+	std::unique_ptr<ultralight::LoadListener> m_loadListener;
 };
 
 }    // namespace toast

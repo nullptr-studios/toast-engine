@@ -259,6 +259,7 @@ void physics::ColliderRenderable::Load(json_t j, bool force_create) {
 	m.topOffset = j.value("topOffset", -0.2f);
 	m.topMaterialPath = j.value("topMaterialPath", "");
 	m.isOccluder = j.value("isOccluder", false);
+	m.castsDirectionalShadow = j.value("castsDirectionalShadow", true);
 	m.show = j.value("show", true);
 	m.horizontal_offset = j.value("horizontal_offset", .10f);
 }
@@ -272,6 +273,7 @@ json_t physics::ColliderRenderable::Save() const {
 	j["topOffset"] = m.topOffset;
 	j["topMaterialPath"] = m.topMaterialPath;
 	j["isOccluder"] = m.isOccluder;
+	j["castsDirectionalShadow"] = m.castsDirectionalShadow;
 	j["show"] = m.show;
 	j["horizontal_offset"] = m.horizontal_offset;
 	return j;
@@ -282,7 +284,8 @@ void physics::ColliderRenderable::Inspector() {
 	m.material_slot.Show();
 	ImGui::Separator();
 	ImGui::Checkbox("Visible", &m.show);
-	ImGui::Checkbox("Is Occluder", &m.isOccluder);
+	ImGui::Checkbox("2D Light Occluder", &m.isOccluder);
+	ImGui::Checkbox("Casts Directional Shadow", &m.castsDirectionalShadow);
 	ImGui::Checkbox("Show Top Layer", &m.showTop);
 	if (m.showTop) {
 		ImGui::DragFloat("Max Slope (Deg)", &m.maxSlope, 0.5f, 0.0f, 90.0f);
@@ -307,8 +310,13 @@ void physics::ColliderRenderable::OnRender(renderer::IRenderablePass pass, const
 		return;
 	}
 
-	if (not OclussionVolume::isTransformedAABBOnPlanes(m.boundingBox, toast::TransformComponent::GetWorldMatrix())) {
+	if (pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW &&
+	    not OclussionVolume::isTransformedAABBOnPlanes(m.boundingBox, toast::TransformComponent::GetWorldMatrix())) {
 		return;
+	}
+
+	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+		glDepthMask(GL_TRUE);
 	}
 
 	// compute transform once
@@ -321,8 +329,9 @@ void physics::ColliderRenderable::OnRender(renderer::IRenderablePass pass, const
 			auto shader = m.material->GetShader();
 			shader->Set("gWorld", model);
 			shader->Set("gMVP", mvp);
-		} else if (pass == renderer::IRenderablePass::OCCLUSION) {
-			if (!m.isOccluder) {
+		} else if (pass == renderer::IRenderablePass::OCCLUSION || pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+			const bool castsForPass = (pass == renderer::IRenderablePass::OCCLUSION) ? m.isOccluder : m.castsDirectionalShadow;
+			if (!castsForPass) {
 				return;
 			}
 
@@ -340,7 +349,11 @@ void physics::ColliderRenderable::OnRender(renderer::IRenderablePass pass, const
 			auto shader = m.topMaterial->GetShader();
 			shader->Set("gWorld", model);
 			shader->Set("gMVP", mvp);
-		} else if (pass == renderer::IRenderablePass::OCCLUSION) {
+		} else if (pass == renderer::IRenderablePass::OCCLUSION || pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+			const bool castsForPass = (pass == renderer::IRenderablePass::OCCLUSION) ? m.isOccluder : m.castsDirectionalShadow;
+			if (!castsForPass) {
+				return;
+			}
 			m.occlusionShader->Use();
 			m.occlusionShader->Set("gWorld", model);
 			m.occlusionShader->Set("gMVP", mvp);

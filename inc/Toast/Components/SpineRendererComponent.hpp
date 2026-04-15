@@ -95,6 +95,24 @@ public:
 	void SetIsOccluder(bool value) {
 		m.isOccluder = value;
 	}
+	
+	void SetDrawToDepth(bool v) {
+		m.drawToDepth = v;
+	}
+
+	void SetRenderLastInGeometry(bool v) {
+		m.renderLastInGeometry = v;
+	}
+
+	[[nodiscard]]
+	int GetGeometrySortPriority() noexcept override {
+		return m.renderLastInGeometry ? 1000 : 0;
+	}
+
+	[[nodiscard]]
+	int GetTransparentSortPriority() noexcept override {
+		return m.renderLastInGeometry ? 1000 : 0;
+	}
 
 	// Events
 	virtual void OnAnimationStart(std::string_view /*animation_name*/, int /*track*/) { }
@@ -135,9 +153,16 @@ private:
 		renderer::Mesh dynamicMesh;
 
 		bool isOccluder = false;
+		bool castsDirectionalShadow = true;
 		bool onScreen = true;
 
 		bool drawToDepth = true;
+		bool renderLastInGeometry = false;
+
+		// Runtime-serialized animation selection used by both editor and game builds.
+		std::string selectedAnimationName;
+		bool selectedAnimationLoop = false;
+		bool playSelectedAnimationOnBegin = false;
 
 		// buffers
 		std::vector<renderer::SpineVertex> tempVerts;
@@ -151,14 +176,19 @@ private:
 
 #ifdef TOAST_EDITOR
 	struct {
-		// Editor-only: UI state for animation preview
+		// Editor-only UI state.
 		std::vector<std::string> animationNames;
-		int selectedAnimation = -1;
-		bool loopAnimation = false;
-		bool playing = false;
+		int runtimeSelectedAnimation = -1;
+		int previewSelectedAnimation = -1;
+		bool previewLoopAnimation = false;
+		bool previewPlaying = false;
 	} debug;
 
 	// Helper to populate animation names from current skeleton data
 	void RefreshAnimationList();
 #endif
+
+	bool ReloadSkeletonFromPaths();
+	bool HasAnimation(std::string_view animation_name) const;
+	void TryPlayAnimationByName(std::string_view animation_name, bool loop) const;
 };

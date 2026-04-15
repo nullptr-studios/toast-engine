@@ -7,6 +7,7 @@
 
 #include <functional>
 #include <list>
+#include <vector>
 
 namespace physics {
 struct Line;
@@ -15,6 +16,8 @@ class Rigidbody;
 class BoxRigidbody;
 class ConvexCollider;
 class Trigger;
+
+auto BuildCircleConvexManifold(const glm::dvec2& center, double radius, const std::vector<Line>& edges) -> std::optional<Manifold>;
 
 void RbKinematics(Rigidbody* rb);
 void RbIntegration(Rigidbody* rb);

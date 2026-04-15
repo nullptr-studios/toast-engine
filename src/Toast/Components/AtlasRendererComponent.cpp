@@ -12,7 +12,9 @@
 #include "Toast/Resources/Texture.hpp"
 
 #include <functional>
+#include <limits>
 #include <ranges>
+#include <array>
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
@@ -20,18 +22,18 @@
 #endif
 
 void AtlasRendererComponent::Destroy() {
-	renderer::IRendererBase::GetInstance()->RemoveRenderable(this);
+	renderer::IRendererBase::GetInstance()->RemoveTransparent(this);
 }
 
 void AtlasRendererComponent::OnEnable() {
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		r->EnableRenderable(this);
+		r->EnableTransparent(this);
 	}
 }
 
 void AtlasRendererComponent::OnDisable() {
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
-		r->DisableRenderable(this);
+		r->DisableTransparent(this);
 	}
 }
 
@@ -119,14 +121,21 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		}
 	}
 
+	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+		m.isOnScreen = OclussionVolume::isTransformedAABBOnPlanes(m.dynamicMesh.dynamicBoundingBox(), glm::mat4(1.0f));
+		if (!m.castsDirectionalShadow) {
+			return;
+		}
+	}
+
 	// Frustum culling
-	if (!m.isOnScreen) {
+	if (pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW && !m.isOnScreen) {
 		return;
 	}
 
 	const glm::mat4 mvp = precomputed_mat;
 
-	if (pass == renderer::IRenderablePass::GEOMETRY) {
+	if (pass == renderer::IRenderablePass::GEOMETRY || pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
 		m.shader->Use();
 		m.shader->Set("transform", mvp);
 	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
@@ -146,13 +155,15 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	}
 
 	// Draw all sprites in one call
-	if (m.drawToDepth) {
+	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+		glDepthMask(GL_TRUE);
+	} else if (m.drawToDepth) {
 		glDepthMask(GL_TRUE);
 	} else {
 		glDepthMask(GL_FALSE);
 	}
 
-	if (pass != renderer::IRenderablePass::OCCLUSION) {
+	if (pass != renderer::IRenderablePass::OCCLUSION && pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	} else {
@@ -161,12 +172,40 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	m.dynamicMesh.DrawDynamicSpine(m.tempIndices.size());
 }
 
+float AtlasRendererComponent::GetTransparentSortDepth(const glm::mat4& view_matrix) noexcept {
+	const auto& bounds = m.dynamicMesh.dynamicBoundingBox();
+	if (!bounds.isValid()) {
+		return IRenderable::GetTransparentSortDepth(view_matrix);
+	}
+
+	const glm::vec3 min = bounds.min;
+	const glm::vec3 max = bounds.max;
+	const std::array<glm::vec3, 8> corners = {
+		glm::vec3(min.x, min.y, min.z),
+		glm::vec3(max.x, min.y, min.z),
+		glm::vec3(min.x, max.y, min.z),
+		glm::vec3(max.x, max.y, min.z),
+		glm::vec3(min.x, min.y, max.z),
+		glm::vec3(max.x, min.y, max.z),
+		glm::vec3(min.x, max.y, max.z),
+		glm::vec3(max.x, max.y, max.z),
+	};
+
+	float nearest_view_z = std::numeric_limits<float>::lowest();
+	for (const glm::vec3& corner : corners) {
+		const float view_z = (view_matrix * glm::vec4(corner, 1.0f)).z;
+		nearest_view_z = std::max(nearest_view_z, view_z);
+	}
+
+	return nearest_view_z;
+}
+
 void AtlasRendererComponent::LoadTextures() {
 	PROFILE_ZONE_C(0xFFFF00);    // Yellow for resource loading
 	m.shader->Use();
 	m.shader->SetSampler("Texture", 0);
 
-	renderer::IRendererBase::GetInstance()->AddRenderable(this);
+	renderer::IRendererBase::GetInstance()->AddTransparent(this);
 
 	m.dynamicMesh.InitDynamicSpine();
 }
@@ -179,8 +218,15 @@ void AtlasRendererComponent::Load(json_t j, bool force_create) {
 	if (j.contains("isOccluder")) {
 		m.isOccluder = j.at("isOccluder").get<bool>();
 	}
+	if (j.contains("castsDirectionalShadow")) {
+		m.castsDirectionalShadow = j.at("castsDirectionalShadow").get<bool>();
+	}
 	if (j.contains("drawToDepth")) {
 		m.drawToDepth = j.at("drawToDepth").get<bool>();
+	}
+	
+	if (!m.castsDirectionalShadow) {
+		TOAST_ERROR("NODIRECTIONALSHADOW");
 	}
 
 	TransformComponent::Load(j, force_create);
@@ -193,6 +239,7 @@ json_t AtlasRendererComponent::Save() const {
 	json_t j = TransformComponent::Save();
 	j["atlasResourcePath"] = m.atlasPath;
 	j["isOccluder"] = m.isOccluder;
+	j["castsDirectionalShadow"] = m.castsDirectionalShadow;
 	j["drawToDepth"] = m.drawToDepth;
 
 	return j;
@@ -446,7 +493,8 @@ void AtlasRendererComponent::Inspector() {
 		}
 	}
 
-	ImGui::Checkbox("Is Occluder", &m.isOccluder);
+	ImGui::Checkbox("2D Light Occluder", &m.isOccluder);
+	ImGui::Checkbox("Casts Directional Shadow", &m.castsDirectionalShadow);
 	ImGui::Checkbox("Draw to depth", &m.drawToDepth);
 
 	/////////////// Browser ///////////////

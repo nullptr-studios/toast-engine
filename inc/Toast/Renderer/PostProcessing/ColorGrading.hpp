@@ -9,7 +9,15 @@
 struct Colorgrading : public IPostProcess {
 	Colorgrading();
 
+	[[nodiscard]]
+	std::string_view GetTypeId() const override {
+		return "ColorGrading";
+	}
+
 	void Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) override;
+	[[nodiscard]]
+	json_t SaveParams() const override;
+	void LoadParams(const json_t& j) override;
 
 #ifdef TOAST_EDITOR
 	void Inspector() override;
