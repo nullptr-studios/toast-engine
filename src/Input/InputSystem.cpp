@@ -131,7 +131,7 @@ void InputSystem::SetState(std::string_view state) {
 		return;
 	}
 	auto& state_list = instance->m.activeLayout->m.states;
-	if (std::find(state_list.begin(), state_list.end(), state) != state_list.end()) {
+	if (std::find(state_list.begin(), state_list.end(), state) == state_list.end()) {
 		TOAST_WARN("State {} not found on active layout", state);
 		instance->m.currentState.clear();
 		return;
