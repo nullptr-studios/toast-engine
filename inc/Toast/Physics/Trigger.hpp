@@ -47,6 +47,7 @@ public:
 	std::function<void(toast::Object*)> enterCallback;
 	std::function<void(toast::Object*)> exitCallback;
 	std::list<Rigidbody*> rigidbodies;    ///< Used to avoid a rigidbody triggering twice
+	glm::vec3 scale_for_dante = { 1, 1, 1 };
 
 	struct M {
 		glm::vec4 color = { 0.0f, 1.0f, 1.0f, 0.5f };

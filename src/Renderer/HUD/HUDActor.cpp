@@ -44,7 +44,7 @@ void HUDActor::EnsureRendererComponent() {
 
 void HUDActor::Init() {
 	toast::Actor::Init();
- 	EnsureRendererComponent();
+	EnsureRendererComponent();
 
 	if (m_worldRenderer) {
 		m_meshPath = ResolveExistingPath(m_meshPath, "MODELS/quad.obj", "models/quad.obj");
@@ -291,3 +291,10 @@ void HUDActor::ApplyMeshScaleFromViewSize() {
 	transform()->scale(glm::vec3(width_units, height_units, 1.0f));
 }
 
+void HUDActor::SetDimestion(uint32_t width, uint32_t height) {
+	m_viewWidth = width;
+	m_viewHeight = height;
+	ApplyMeshScaleFromViewSize();
+	DestroyView();
+	CreateView();
+}

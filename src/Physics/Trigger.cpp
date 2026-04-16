@@ -46,7 +46,7 @@ json_t Trigger::Save() const {
 	SAVE(debug.log);
 	SAVE(debug.defaultColor);
 	SAVE(debug.collideColor);
-
+	SAVE(scale_for_dante);
 	return j;
 }
 
@@ -55,6 +55,7 @@ void Trigger::Load(json_t j, bool force_create) {
 	LOAD(debug.log);
 	LOAD(debug.defaultColor);
 	LOAD(debug.collideColor);
+	LOAD(scale_for_dante);
 
 	enterCallback = [this](Object* o) {
 		if (!enabled()) {
@@ -89,7 +90,7 @@ void Trigger::EditorTick() {
 	}
 	if (debug.draw) {
 		// TODO: Make this fillable
-		renderer::DebugRect(transform()->worldPosition(), transform()->scale(), m.color);
+		renderer::DebugRect(transform()->worldPosition(), transform()->scale() * scale_for_dante, m.color);
 	}
 }
 #endif
