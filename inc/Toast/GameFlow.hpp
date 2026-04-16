@@ -44,6 +44,8 @@ public:
 	static auto GetLevel() -> std::optional<unsigned>;
 	static auto GetWorld() -> std::optional<unsigned>;
 	static Scene* CurrentScene();
+
+	static auto GetLevelName(unsigned world, unsigned level) -> std::string;
 };
 
 }
