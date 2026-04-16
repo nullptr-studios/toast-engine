@@ -437,10 +437,11 @@ void RbTriggerCollision(Rigidbody* rb1, Trigger* t, std::list<std::function<void
 
 	// calculate points
 	const auto& tr = t->transform();
-	double left = tr->worldPosition().x - (tr->scale().x / 2);
-	double right = tr->worldPosition().x + (tr->scale().x / 2);
-	double top = tr->worldPosition().y + (tr->scale().y / 2);
-	double bottom = tr->worldPosition().y - (tr->scale().y / 2);
+	const auto& dante_scl = t->scale_for_dante;
+	double left = (tr->worldPosition().x - (tr->scale().x / 2) * dante_scl.x);
+	double right = (tr->worldPosition().x + (tr->scale().x / 2) * dante_scl.x);
+	double top = (tr->worldPosition().y + (tr->scale().y / 2) * dante_scl.y);
+	double bottom = (tr->worldPosition().y - (tr->scale().y / 2) * dante_scl.y);
 
 	const auto& pos = rb1->GetPosition();
 	const double scl = rb1->radius;
