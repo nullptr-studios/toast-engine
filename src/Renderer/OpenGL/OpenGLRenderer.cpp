@@ -539,8 +539,7 @@ void OpenGLRenderer::Render() {
 				m.combinedRenderables.push_back(r);
 			}
 		}
-		m_renderablesSortDirty = false;
-	}
+
 
 	// Depth can change every frame, so keep sort per-frame but only for enabled list.
 	// HACK: FOR OPTIMIZATION PURPOSES WE JUST SORT WHEN ADDING OBJECTS
@@ -553,6 +552,8 @@ void OpenGLRenderer::Render() {
 			}
 			return a->GetDepth() < b->GetDepth();
 		});
+	}
+		m_renderablesSortDirty = false;
 	}
 	
 	if (m_transparentsSortDirty) {
@@ -945,29 +946,41 @@ void OpenGLRenderer::AddRenderable(IRenderable* renderable) {
 	if (!renderable) {
 		return;
 	}
+		if (std::find(m_renderables.begin(), m_renderables.end(), renderable) != m_renderables.end()) {
+		return;
+	}
 	m_renderables.push_back(renderable);
 	m_renderablesSortDirty = true;
 }
 
 void OpenGLRenderer::RemoveRenderable(IRenderable* renderable) {
-	auto it = std::find(m_renderables.begin(), m_renderables.end(), renderable);
-	if (it != m_renderables.end()) {
-		m_renderables.erase(it);
+	if (!renderable) {
+		return;
 	}
+	m_renderables.erase(std::remove(m_renderables.begin(), m_renderables.end(), renderable), m_renderables.end());
 	m_disabledRenderables.erase(renderable);    // clean up if it was disabled
 	m_renderablesSortDirty = true;
 }
 
 void OpenGLRenderer::AddTransparent(IRenderable* renderable) {
+	if (!renderable) {
+		return;
+	}
+	if (std::find(m_transparentRenderables.begin(), m_transparentRenderables.end(), renderable) != m_transparentRenderables.end()) {
+		return;
+	}
 	m_transparentRenderables.push_back(renderable);
 	m_transparentsSortDirty = true;
 }
 
 void OpenGLRenderer::RemoveTransparent(IRenderable* renderable) {
-	auto it = std::find(m_transparentRenderables.begin(), m_transparentRenderables.end(), renderable);
-	if (it != m_transparentRenderables.end()) {
-		m_transparentRenderables.erase(it);
+	if (!renderable) {
+		return;
 	}
+	m_transparentRenderables.erase(
+	    std::remove(m_transparentRenderables.begin(), m_transparentRenderables.end(), renderable),
+	    m_transparentRenderables.end()
+	);
 	m_disabledTransparents.erase(renderable);
 	m_transparentsSortDirty = true;
 }
@@ -976,15 +989,18 @@ void OpenGLRenderer::AddWater(IRenderable* renderable) {
 	if (!renderable) {
 		return;
 	}
+	if (std::find(m_waterRenderables.begin(), m_waterRenderables.end(), renderable) != m_waterRenderables.end()) {
+		return;
+	}
 	m_waterRenderables.push_back(renderable);
 	m_watersSortDirty = true;
 }
 
 void OpenGLRenderer::RemoveWater(IRenderable* renderable) {
-	auto it = std::find(m_waterRenderables.begin(), m_waterRenderables.end(), renderable);
-	if (it != m_waterRenderables.end()) {
-		m_waterRenderables.erase(it);
+	if (!renderable) {
+		return;
 	}
+	m_waterRenderables.erase(std::remove(m_waterRenderables.begin(), m_waterRenderables.end(), renderable), m_waterRenderables.end());
 	m_disabledWaters.erase(renderable);
 	m_watersSortDirty = true;
 }

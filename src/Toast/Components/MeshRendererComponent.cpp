@@ -185,6 +185,10 @@ void MeshRendererComponent::LoadTextures() {
 	// opengl calls eso si que es en el main thread
 	// m_shader->Use();
 	// m_shader->SetSampler("Texture", 0);
+	if (m_isRegisteredInRenderer) {
+		return;
+	}
+
 	if (auto* r = renderer::IRendererBase::GetInstance()) {
 		RegisterWithRenderer(r);
 		m_isRegisteredInRenderer = true;
