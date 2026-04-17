@@ -36,7 +36,7 @@ struct RendererConfig {
 	glm::uvec2 resolution { 1280, 720 };                                     ///< windowed rendering resolution
 	float lightResolutionScale = 1.0f;
 	bool vSync { true };                                                     ///< Enable/disable vertical sync
-	toast::DisplayMode currentDisplayMode = toast::DisplayMode::WINDOWED;    ///< Current display mode
+	toast::DisplayMode currentDisplayMode = toast::DisplayMode::FULLSCREEN;    ///< Current display mode
 
 	unsigned maxFPS = 144;
 

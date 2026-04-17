@@ -40,6 +40,14 @@ unsigned DecodeUTF8Codepoint(const char* text, int& consumed) {
 
 namespace toast {
 
+void Window::SetShowMouseCursor(bool show) {
+	if (show) {
+		SDL_ShowCursor();
+	} else {
+		SDL_HideCursor();
+	}
+}
+
 Window* Window::m_instance = nullptr;
 
 Window::Window(unsigned width, unsigned height, std::string_view name) {

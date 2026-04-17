@@ -201,6 +201,8 @@ public:
 	SDL_GLContext GetGLContext() const {
 		return m_glContext;
 	}
+	
+	void SetShowMouseCursor(bool show);
 
 private:
 	/// @brief Singleton instance pointer.
