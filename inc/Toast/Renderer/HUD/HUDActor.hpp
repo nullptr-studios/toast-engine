@@ -2,7 +2,6 @@
 /// @author dario
 /// @date 08/04/2026.
 
-
 #pragma once
 #include "Toast/Objects/Actor.hpp"
 
@@ -16,7 +15,7 @@ class HUDWorldRendererComponent;
 }
 
 class HUDActor : public toast::Actor {
-	public:
+public:
 	using ViewRef = ultralight::RefPtr<ultralight::View>;
 
 	void Init() override;
@@ -35,6 +34,8 @@ class HUDActor : public toast::Actor {
 
 	void SetUrl(const std::string& url);
 	void ExecuteJS(const std::string& script);
+
+	void SetDimestion(uint32_t width, uint32_t height);
 
 	REGISTER_TYPE(HUDActor);
 
@@ -59,3 +60,4 @@ private:
 	std::string m_meshPath = "MODELS/quad.obj";
 	std::string m_materialPath = "MATERIALS/default.mat";
 };
+

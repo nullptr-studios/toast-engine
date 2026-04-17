@@ -25,8 +25,114 @@
 #include <Ultralight/platform/Config.h>
 #include <Ultralight/platform/Platform.h>
 #include <algorithm>
+#include <array>
 
 namespace renderer::HUD {
+
+namespace {
+
+struct ScopedGLState {
+	GLint drawFramebuffer = 0;
+	GLint readFramebuffer = 0;
+	GLint viewport[4] = { 0, 0, 0, 0 };
+	GLint scissorBox[4] = { 0, 0, 0, 0 };
+	GLint activeTexture = GL_TEXTURE0;
+	GLint currentProgram = 0;
+	GLint vertexArray = 0;
+	GLint arrayBuffer = 0;
+	GLint elementArrayBuffer = 0;
+	GLint depthFunc = GL_LESS;
+	GLint unpackAlignment = 4;
+	GLint unpackRowLength = 0;
+	GLint blendSrcRGB = GL_ONE;
+	GLint blendDstRGB = GL_ZERO;
+	GLint blendSrcAlpha = GL_ONE;
+	GLint blendDstAlpha = GL_ZERO;
+	GLboolean depthTest = GL_FALSE;
+	GLboolean cullFace = GL_FALSE;
+	GLboolean stencilTest = GL_FALSE;
+	GLboolean blend = GL_FALSE;
+	GLboolean scissorTest = GL_FALSE;
+	GLboolean depthMask = GL_TRUE;
+	std::array<GLint, 3> textureBinding2D { 0, 0, 0 };
+
+	ScopedGLState() {
+		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &drawFramebuffer);
+		glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &readFramebuffer);
+		glGetIntegerv(GL_VIEWPORT, viewport);
+		glGetIntegerv(GL_SCISSOR_BOX, scissorBox);
+		glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
+		glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+		glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vertexArray);
+		glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &arrayBuffer);
+		glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &elementArrayBuffer);
+		glGetIntegerv(GL_DEPTH_FUNC, &depthFunc);
+		glGetIntegerv(GL_UNPACK_ALIGNMENT, &unpackAlignment);
+		glGetIntegerv(GL_UNPACK_ROW_LENGTH, &unpackRowLength);
+		glGetIntegerv(GL_BLEND_SRC_RGB, &blendSrcRGB);
+		glGetIntegerv(GL_BLEND_DST_RGB, &blendDstRGB);
+		glGetIntegerv(GL_BLEND_SRC_ALPHA, &blendSrcAlpha);
+		glGetIntegerv(GL_BLEND_DST_ALPHA, &blendDstAlpha);
+		glGetBooleanv(GL_DEPTH_TEST, &depthTest);
+		glGetBooleanv(GL_CULL_FACE, &cullFace);
+		glGetBooleanv(GL_STENCIL_TEST, &stencilTest);
+		glGetBooleanv(GL_BLEND, &blend);
+		glGetBooleanv(GL_SCISSOR_TEST, &scissorTest);
+		glGetBooleanv(GL_DEPTH_WRITEMASK, &depthMask);
+
+		for (int unit = 0; unit < static_cast<int>(textureBinding2D.size()); ++unit) {
+			glActiveTexture(GL_TEXTURE0 + unit);
+			glGetIntegerv(GL_TEXTURE_BINDING_2D, &textureBinding2D[unit]);
+		}
+		glActiveTexture(activeTexture);
+	}
+
+	~ScopedGLState() {
+		Restore();
+	}
+
+	void Restore() const {
+		auto restoreCap = [](GLenum cap, GLboolean enabled) {
+			enabled ? glEnable(cap) : glDisable(cap);
+		};
+
+		restoreCap(GL_DEPTH_TEST, depthTest);
+		restoreCap(GL_CULL_FACE, cullFace);
+		restoreCap(GL_STENCIL_TEST, stencilTest);
+		restoreCap(GL_BLEND, blend);
+		restoreCap(GL_SCISSOR_TEST, scissorTest);
+
+		glDepthMask(depthMask);
+		glDepthFunc(static_cast<GLenum>(depthFunc));
+		glBlendFuncSeparate(
+		    static_cast<GLenum>(blendSrcRGB),
+		    static_cast<GLenum>(blendDstRGB),
+		    static_cast<GLenum>(blendSrcAlpha),
+		    static_cast<GLenum>(blendDstAlpha)
+		);
+
+		for (int unit = 0; unit < static_cast<int>(textureBinding2D.size()); ++unit) {
+			glActiveTexture(GL_TEXTURE0 + unit);
+			glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(textureBinding2D[unit]));
+		}
+		glActiveTexture(activeTexture);
+
+		glUseProgram(static_cast<GLuint>(currentProgram));
+		glBindVertexArray(static_cast<GLuint>(vertexArray));
+		glBindBuffer(GL_ARRAY_BUFFER, static_cast<GLuint>(arrayBuffer));
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLuint>(elementArrayBuffer));
+
+		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+		glScissor(scissorBox[0], scissorBox[1], scissorBox[2], scissorBox[3]);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, unpackAlignment);
+		glPixelStorei(GL_UNPACK_ROW_LENGTH, unpackRowLength);
+
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(drawFramebuffer));
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(readFramebuffer));
+	}
+};
+
+}    // namespace
 
 // Initialize static instance pointer
 HUDLayer* renderer::HUD::HUDLayer::s_Instance = nullptr;
@@ -372,6 +478,9 @@ void HUDLayer::OnRender() {
 		return;
 	}
 
+	// Ultralight renders with raw OpenGL calls, so preserve and restore state to avoid leaking into engine passes.
+	ScopedGLState glStateGuard;
+
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_STENCIL_TEST);
@@ -389,9 +498,6 @@ void HUDLayer::OnRender() {
 
 	// End drawing
 	gpu_context_->EndDrawing();
-
-	GLint prev_fbo = 0;
-	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prev_fbo);
 
 	// Bind HUD framebuffer
 	framebuffer_->bind();
@@ -435,9 +541,6 @@ void HUDLayer::OnRender() {
 	}
 
 	glDisable(GL_BLEND);
-
-	// Restore previous framebuffer
-	glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
 }
 
 void HUDLayer::LoadURL(const std::string& url) {

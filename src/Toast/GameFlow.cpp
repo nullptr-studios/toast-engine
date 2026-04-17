@@ -309,4 +309,26 @@ void GameFlow::Restart() {
 	scene->SoftLoad();
 	toast::World::ScheduleBegin(scene);
 }
+
+auto GameFlow::GetLevelName(unsigned world, unsigned level) -> std::string {
+	sol::state lua;
+
+	lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
+
+	auto file = resource::Open(instance->m.worldList[world]);
+	if (!file.has_value()) {
+		TOAST_ERROR("File {} couldn't be open", instance->m.worldList[world]);
+		return "NULL";
+	}
+
+	auto result = lua.script(*file);
+	if (not result.valid()) {
+		sol::error err = result;
+		TOAST_WARN("{} failed: {}", instance->m.worldList[world], err.what());
+		return "NULL";
+	}
+
+	sol::table table = result;
+	return table.as<std::vector<std::string>>()[level];
+}
 }

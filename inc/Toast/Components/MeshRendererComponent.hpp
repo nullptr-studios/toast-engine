@@ -104,6 +104,11 @@ public:
 		return m_isTransparent;
 	}
 
+	[[nodiscard]]
+	bool WritesDepthInGeometryPass() const noexcept override {
+		return m_drawToDepth;
+	}
+
 	void SetExternalTexture(unsigned int texture_id, std::string sampler_name = "gTexture", int texture_unit = 0) {
 		m_externalTextureId = texture_id;
 		m_externalTextureSampler = std::move(sampler_name);
