@@ -21,6 +21,7 @@ var classtoast_1_1Window =
     [ "SetDisplayMode", "d8/d8e/classtoast_1_1Window.html#a7eeda0a85a14a1b6088bccdec636f571", null ],
     [ "SetRefreshFrameTime", "d8/d8e/classtoast_1_1Window.html#a6f0bb962da4f7bd7b831d1c807a9befa", null ],
     [ "SetResolution", "d8/d8e/classtoast_1_1Window.html#a91aa9be5e20cd8249fe0bd52446a8c80", null ],
+    [ "SetShowMouseCursor", "d8/d8e/classtoast_1_1Window.html#add40842a1c1d69df25a97883869e33db", null ],
     [ "SetVSync", "d8/d8e/classtoast_1_1Window.html#a77994bfcd2a459b67cd791c67ce1ff39", null ],
     [ "ShouldClose", "d8/d8e/classtoast_1_1Window.html#a160b1bc9570692c7a3205e34ee4253fd", null ],
     [ "SwapBuffers", "d8/d8e/classtoast_1_1Window.html#a42536664f9dcb1a7fd537965a8cf2f34", null ],

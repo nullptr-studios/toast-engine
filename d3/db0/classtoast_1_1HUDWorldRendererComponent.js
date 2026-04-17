@@ -14,6 +14,7 @@ var classtoast_1_1HUDWorldRendererComponent =
     [ "SetMeshPath", "d3/db0/classtoast_1_1HUDWorldRendererComponent.html#a210b068bf379ab40af996811836c2f5e", null ],
     [ "SetTexture", "d3/db0/classtoast_1_1HUDWorldRendererComponent.html#ab734c403cff0f369543c142fa66601fd", null ],
     [ "SetView", "d3/db0/classtoast_1_1HUDWorldRendererComponent.html#a3d40c59d0198095d6b7ab8aaed8ee171", null ],
+    [ "WritesDepthInGeometryPass", "d3/db0/classtoast_1_1HUDWorldRendererComponent.html#ad2d08c0a56c0726b89efe0618f406756", null ],
     [ "m_drawToDepth", "d3/db0/classtoast_1_1HUDWorldRendererComponent.html#af1a06ee4699ff9a753abcc3e49beefaf", null ],
     [ "m_hudLayer", "d3/db0/classtoast_1_1HUDWorldRendererComponent.html#ac9d088eaf1b647e161906d0d7acf8423", null ],
     [ "m_mesh", "d3/db0/classtoast_1_1HUDWorldRendererComponent.html#ab281923d01cb7e43716b846428d47a7e", null ],

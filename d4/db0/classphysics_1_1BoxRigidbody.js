@@ -25,6 +25,8 @@ var classphysics_1_1BoxRigidbody =
     [ "debug", "d4/db0/classphysics_1_1BoxRigidbody.html#afafcc5dac3fd213b779a78a9e1ffcb7e", null ],
     [ "defaultColor", "d4/db0/classphysics_1_1BoxRigidbody.html#a1ce88ee3f7462de5ab61d26692615b83", null ],
     [ "disableAngular", "d4/db0/classphysics_1_1BoxRigidbody.html#a288eaaa423131d88bfaed371d3b8d372", null ],
+    [ "enterCallback", "d4/db0/classphysics_1_1BoxRigidbody.html#ae07dcc28a00bdc8c1427a2e61b9722a4", null ],
+    [ "exitCallback", "d4/db0/classphysics_1_1BoxRigidbody.html#ad1edf9d09a832a6ac14db79a4654fa44", null ],
     [ "forces", "d4/db0/classphysics_1_1BoxRigidbody.html#a296e8469f74ac49122d6911cd2f188b2", null ],
     [ "friction", "d4/db0/classphysics_1_1BoxRigidbody.html#ae566ae919c8a5a1300528cb32e1ec449", null ],
     [ "gravityScale", "d4/db0/classphysics_1_1BoxRigidbody.html#ae9a707b27d95639374a22a5965fd6273", null ],

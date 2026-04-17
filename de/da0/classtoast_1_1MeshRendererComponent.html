@@ -166,6 +166,9 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a7abf38bceba01c6ea368252d0704ec23"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad898ed330876d1e3d1e42adb792b4fea"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ad898ed330876d1e3d1e42adb792b4fea">IsTransparent</a> () const</td></tr>
 <tr class="separator:ad898ed330876d1e3d1e42adb792b4fea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4bb284f881be72aabfeb8fa3352d2f73"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a4bb284f881be72aabfeb8fa3352d2f73">WritesDepthInGeometryPass</a> () const noexcept override</td></tr>
+<tr class="memdesc:a4bb284f881be72aabfeb8fa3352d2f73"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether this renderable should write depth when rendered via transparent geometry path.  <br /></td></tr>
+<tr class="separator:a4bb284f881be72aabfeb8fa3352d2f73"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8609d93fc9f9f41e8466045e85d71018"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a8609d93fc9f9f41e8466045e85d71018">SetExternalTexture</a> (unsigned int texture_id, std::string sampler_name=&quot;gTexture&quot;, int texture_unit=0)</td></tr>
 <tr class="separator:a8609d93fc9f9f41e8466045e85d71018"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ade31f26a3b62ac591d24815c3d364448"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ade31f26a3b62ac591d24815c3d364448">ClearExternalTexture</a> ()</td></tr>
@@ -187,6 +190,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a74cfe5f7b4edb11d1813b3403a59eb71">GetTransparentSortPriority</a> () noexcept</td></tr>
 <tr class="memdesc:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transparent sorting priority. Higher values are rendered later in SpritePass.  <br /></td></tr>
 <tr class="separator:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfdb15aa21e71641d45454862e308cff inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#acfdb15aa21e71641d45454862e308cff">WritesDepthInGeometryPass</a> () const noexcept</td></tr>
+<tr class="memdesc:acfdb15aa21e71641d45454862e308cff inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether this renderable should write depth when rendered via transparent geometry path.  <br /></td></tr>
+<tr class="separator:acfdb15aa21e71641d45454862e308cff inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1TransformComponent"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classtoast_1_1TransformComponent')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html">toast::TransformComponent</a></td></tr>
 <tr class="memitem:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a0077d521827b8e0f9c6814efc7fb55c7">TransformComponent</a> ()</td></tr>
 <tr class="memdesc:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a transform at the origin with no rotation and unit scale.  <br /></td></tr>
@@ -526,7 +532,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00114">114</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00119">119</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -557,7 +563,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a1b6e927d9c508dd81a308d45a52afecb">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00318">318</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00326">326</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -662,7 +668,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00133">133</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00138">138</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -890,7 +896,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa9867880b2966b5ccb8be7c9abf37618">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00331">331</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00339">339</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -921,7 +927,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#abe84982fe050e7f6ba09f8f0ccec6ee5">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00325">325</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00333">333</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -975,7 +981,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Reimplemented in <a class="el" href="../../dc/df8/classtoast_1_1WaterRendererComponent.html#aef4f2af17382a5b2dcb585ad09506c62">toast::WaterRendererComponent</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00194">194</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html#l00198">198</a> of file <a class="el" href="../../d6/dac/MeshRendererComponent_8cpp_source.html">MeshRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1124,7 +1130,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00107">107</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00112">112</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1351,6 +1357,37 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="a4bb284f881be72aabfeb8fa3352d2f73" name="a4bb284f881be72aabfeb8fa3352d2f73"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4bb284f881be72aabfeb8fa3352d2f73">&#9670;&#160;</a></span>WritesDepthInGeometryPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool toast::MeshRendererComponent::WritesDepthInGeometryPass </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Whether this renderable should write depth when rendered via transparent geometry path. </p>
+
+<p>Reimplemented from <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#acfdb15aa21e71641d45454862e308cff">renderer::IRenderable</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00108">108</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
 <h2 class="groupheader">Member Data Documentation</h2>
 <a id="a6724a86b32fb0bd03eb7fd0bd2a75ed3" name="a6724a86b32fb0bd03eb7fd0bd2a75ed3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6724a86b32fb0bd03eb7fd0bd2a75ed3">&#9670;&#160;</a></span>m_castsDirectionalShadow</h2>
@@ -1372,7 +1409,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00156">156</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00161">161</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1396,7 +1433,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00153">153</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00158">158</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1420,7 +1457,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00159">159</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00164">164</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1444,7 +1481,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00152">152</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00157">157</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1468,7 +1505,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00163">163</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00168">168</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1492,7 +1529,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00164">164</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00169">169</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1516,7 +1553,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00165">165</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00170">170</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1540,7 +1577,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00155">155</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00160">160</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1564,7 +1601,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00167">167</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00172">172</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1588,7 +1625,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00157">157</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00162">162</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1612,7 +1649,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00150">150</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00155">155</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1636,7 +1673,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00145">145</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00150">150</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1660,7 +1697,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00138">138</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00143">143</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1684,7 +1721,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00149">149</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00154">154</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1708,7 +1745,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00144">144</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00149">149</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1732,7 +1769,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00140">140</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00145">145</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1756,7 +1793,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00151">151</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00156">156</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1780,7 +1817,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00161">161</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00166">166</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1804,7 +1841,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00162">162</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html#l00167">167</a> of file <a class="el" href="../../d7/de2/MeshRendererComponent_8hpp_source.html">MeshRendererComponent.hpp</a>.</p>
 
 </div>
 </div>

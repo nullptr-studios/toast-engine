@@ -210,6 +210,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab12b8a9168ad2118cd99ea5c70c936cd"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ab12b8a9168ad2118cd99ea5c70c936cd">GetTransparentSortPriority</a> () noexcept override</td></tr>
 <tr class="memdesc:ab12b8a9168ad2118cd99ea5c70c936cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transparent sorting priority. Higher values are rendered later in SpritePass.  <br /></td></tr>
 <tr class="separator:ab12b8a9168ad2118cd99ea5c70c936cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a63046b8f17d351a68e7452ac33bd0bf5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a63046b8f17d351a68e7452ac33bd0bf5">WritesDepthInGeometryPass</a> () const noexcept override</td></tr>
+<tr class="memdesc:a63046b8f17d351a68e7452ac33bd0bf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether this renderable should write depth when rendered via transparent geometry path.  <br /></td></tr>
+<tr class="separator:a63046b8f17d351a68e7452ac33bd0bf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5b4c0fbbd333d913f481a6ba4c09a155"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a5b4c0fbbd333d913f481a6ba4c09a155">OnAnimationStart</a> (std::string_view, int)</td></tr>
 <tr class="separator:a5b4c0fbbd333d913f481a6ba4c09a155"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9a830bcc3dec429b6585500f265ad037"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a9a830bcc3dec429b6585500f265ad037">OnAnimationCompleted</a> (std::string_view, int)</td></tr>
@@ -239,6 +242,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a74cfe5f7b4edb11d1813b3403a59eb71">GetTransparentSortPriority</a> () noexcept</td></tr>
 <tr class="memdesc:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transparent sorting priority. Higher values are rendered later in SpritePass.  <br /></td></tr>
 <tr class="separator:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfdb15aa21e71641d45454862e308cff inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#acfdb15aa21e71641d45454862e308cff">WritesDepthInGeometryPass</a> () const noexcept</td></tr>
+<tr class="memdesc:acfdb15aa21e71641d45454862e308cff inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether this renderable should write depth when rendered via transparent geometry path.  <br /></td></tr>
+<tr class="separator:acfdb15aa21e71641d45454862e308cff inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1TransformComponent"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classtoast_1_1TransformComponent')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html">toast::TransformComponent</a></td></tr>
 <tr class="memitem:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a0077d521827b8e0f9c6814efc7fb55c7">TransformComponent</a> ()</td></tr>
 <tr class="memdesc:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a transform at the origin with no rotation and unit scale.  <br /></td></tr>
@@ -430,6 +436,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a4a1302bfa8adce329e72a2edb5716366"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a762479ebe643dd33af7a9074f3016269"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a3917465a36279566092d697fa7187be0">occlusionShader</a></td></tr>
 <tr class="separator:a762479ebe643dd33af7a9074f3016269"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e0a9a3829df76eff614ba000a4c8783"><td class="memItemLeft" >&#160;&#160;&#160;std::shared_ptr&lt; <a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a> &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a98719440a055fb128d3904f95c0aa435">shadowDepthShader</a></td></tr>
+<tr class="separator:a3e0a9a3829df76eff614ba000a4c8783"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a17cf4f37b383b9181e8842eba1e7b611"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; spine::Skeleton &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a8ea4c2b23a471bfd3346873095aa3ac5">skeleton</a></td></tr>
 <tr class="separator:a17cf4f37b383b9181e8842eba1e7b611"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7173909f7a70d11c02ed13045751b6bc"><td class="memItemLeft" >&#160;&#160;&#160;std::unique_ptr&lt; spine::AnimationStateData &gt;&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ae55fbd69aedb31ed5facc41ed823e3af">animationStateData</a></td></tr>
@@ -438,6 +446,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a3e5e581597eb64234158b96f718763f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a28a46217db89ee8346fb758f98ab83b9"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="../../d4/d8c/classrenderer_1_1Mesh.html">renderer::Mesh</a>&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#ade3b0bba52af583ce458e1089ab8c1b9">dynamicMesh</a></td></tr>
 <tr class="separator:a28a46217db89ee8346fb758f98ab83b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aecdf57da5cdf5a627ad5cec6372dbad5"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a9459a47ae1c0936be0dd041265bbb549">lobotomized</a> = false</td></tr>
+<tr class="separator:aecdf57da5cdf5a627ad5cec6372dbad5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af8d7875d116f3dff2423b6780fd87109"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a6eb9d3931e4551db5ce36313b87f28d3">isOccluder</a> = false</td></tr>
 <tr class="separator:af8d7875d116f3dff2423b6780fd87109"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0fae6a18382b6de2afd516972b9c24e8"><td class="memItemLeft" >&#160;&#160;&#160;bool&#160;&#160;&#160;<a class="el" href="../../d0/dc7/classSpineRendererComponent.html#a84ff219f193a7e18d37c8f4c856c1e52">castsDirectionalShadow</a> = true</td></tr>
@@ -564,7 +574,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d3/d63/classtoast_1_1Component.html#af4588d5c543f8b194d31cba0e9f4a0ec">toast::Component</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00124">124</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00125">125</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -583,7 +593,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00604">604</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00601">601</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -603,7 +613,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00600">600</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00597">597</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -633,7 +643,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00568">568</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00565">565</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -664,7 +674,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a1b6e927d9c508dd81a308d45a52afecb">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00334">334</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00335">335</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -684,7 +694,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00572">572</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00569">569</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -704,7 +714,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00608">608</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00605">605</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -726,7 +736,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Returns the bone's world position (after applying the component's world transform). Useful for attaching game objects (e.g. weapon actors) to spine bones. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00663">663</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00660">660</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -746,7 +756,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00632">632</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00629">629</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -777,7 +787,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#adfc96d3e8454ad1819f711172861d4c1">renderer::IRenderable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00108">108</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00110">110</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -804,7 +814,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00061">61</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00063">63</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -835,7 +845,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a74cfe5f7b4edb11d1813b3403a59eb71">renderer::IRenderable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00113">113</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00115">115</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -959,7 +969,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a706ca4214d997840d82bc83e0c3ab85b">toast::ISerializable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00495">495</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00492">492</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -988,7 +998,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a144d8696ae8da523c8e1c9b03e0754f9">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00107">107</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00108">108</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1018,7 +1028,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00564">564</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00561">561</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1060,7 +1070,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00557">557</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00554">554</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1098,7 +1108,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00120">120</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00127">127</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1145,7 +1155,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00126">126</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00133">133</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1192,7 +1202,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00122">122</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00129">129</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1263,7 +1273,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00684">684</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00681">681</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1310,7 +1320,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00124">124</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00131">131</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1357,7 +1367,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00118">118</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00125">125</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1397,7 +1407,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa9867880b2966b5ccb8be7c9abf37618">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00143">143</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00144">144</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1428,7 +1438,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#abe84982fe050e7f6ba09f8f0ccec6ee5">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00137">137</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00138">138</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1480,7 +1490,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Implements <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a6edfc119b8464b5540e78703af327091">renderer::IRenderable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00340">340</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00341">341</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1516,7 +1526,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00546">546</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00543">543</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1598,7 +1608,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00054">54</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00056">56</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1631,7 +1641,7 @@ Here is the caller graph for this function:</div>
 
 <p>Implements <a class="el" href="../../dd/d8b/classtoast_1_1ISerializable.html#a66284559a3d768dcad01459ce3688f82">toast::ISerializable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00532">532</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00529">529</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1661,7 +1671,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00584">584</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00581">581</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1691,7 +1701,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00620">620</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00617">617</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1721,7 +1731,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00644">644</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00641">641</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1749,7 +1759,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00099">99</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00101">101</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1777,7 +1787,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00095">95</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00097">97</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1805,7 +1815,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00103">103</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00105">105</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1853,7 +1863,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00553">553</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00550">550</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1884,7 +1894,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d3/d63/classtoast_1_1Component.html#a8ead9044b0a5e2109cab94d1cc3d8854">toast::Component</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00149">149</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00150">150</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -1953,7 +1963,38 @@ Here is the caller graph for this function:</div>
 
 <p>Converts a 2-D world-space position into spine root-local space. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00678">678</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html#l00675">675</a> of file <a class="el" href="../../d0/d0f/SpineRendererComponent_8cpp_source.html">SpineRendererComponent.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a63046b8f17d351a68e7452ac33bd0bf5" name="a63046b8f17d351a68e7452ac33bd0bf5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a63046b8f17d351a68e7452ac33bd0bf5">&#9670;&#160;</a></span>WritesDepthInGeometryPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool SpineRendererComponent::WritesDepthInGeometryPass </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Whether this renderable should write depth when rendered via transparent geometry path. </p>
+
+<p>Reimplemented from <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#acfdb15aa21e71641d45454862e308cff">renderer::IRenderable</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00120">120</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1970,7 +2011,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00151">151</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00159">159</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1986,7 +2027,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00150">150</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00158">158</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2002,7 +2043,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00142">142</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00149">149</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2018,7 +2059,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00138">138</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00145">145</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2042,7 +2083,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00174">174</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00184">184</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2058,7 +2099,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00156">156</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00166">166</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2074,7 +2115,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00159">159</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00169">169</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2090,7 +2131,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00153">153</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00161">161</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2106,7 +2147,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00136">136</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00143">143</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2130,7 +2171,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00133">133</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00140">140</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2146,7 +2187,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00155">155</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00165">165</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2162,7 +2203,23 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00172">172</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00182">182</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a9459a47ae1c0936be0dd041265bbb549" name="a9459a47ae1c0936be0dd041265bbb549"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9459a47ae1c0936be0dd041265bbb549">&#9670;&#160;</a></span>lobotomized</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool SpineRendererComponent::lobotomized = false</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00163">163</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2192,7 +2249,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00147">147</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00154">154</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2208,7 +2265,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00157">157</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00167">167</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2224,7 +2281,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00165">165</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00175">175</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2240,7 +2297,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00160">160</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00170">170</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2256,7 +2313,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00164">164</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00174">174</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2272,7 +2329,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00163">163</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00173">173</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2288,7 +2345,23 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00146">146</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00153">153</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a98719440a055fb128d3904f95c0aa435" name="a98719440a055fb128d3904f95c0aa435"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a98719440a055fb128d3904f95c0aa435">&#9670;&#160;</a></span>shadowDepthShader</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="../../d9/d50/classrenderer_1_1Shader.html">renderer::Shader</a>&gt; SpineRendererComponent::shadowDepthShader</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00155">155</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2304,7 +2377,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00149">149</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00157">157</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2320,7 +2393,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00145">145</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00152">152</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2336,7 +2409,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00143">143</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00150">150</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2352,7 +2425,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00139">139</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00146">146</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2368,7 +2441,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00169">169</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00179">179</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -2384,7 +2457,7 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00168">168</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html#l00178">178</a> of file <a class="el" href="../../d2/d92/SpineRendererComponent_8hpp_source.html">SpineRendererComponent.hpp</a>.</p>
 
 </div>
 </div>

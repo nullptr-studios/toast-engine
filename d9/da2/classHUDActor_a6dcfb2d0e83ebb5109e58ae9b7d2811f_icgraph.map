@@ -1,10 +1,11 @@
 <map id="HUDActor::ApplyMeshScaleFromViewSize" name="HUDActor::ApplyMeshScaleFromViewSize">
-<area shape="rect" id="node1" title=" " alt="" coords="427,121,628,161"/>
-<area shape="rect" id="node2" href="$d9/da2/classHUDActor.html#aa15a3dd4398860f54db039de7e907f68" title=" " alt="" coords="209,79,379,104"/>
-<area shape="rect" id="node7" href="$d9/da2/classHUDActor.html#ad8e9987ceb83f9f7ab779a6200323450" title="This function runs just after the object is created (scene load thread)" alt="" coords="237,128,351,153"/>
-<area shape="rect" id="node8" href="$d9/da2/classHUDActor.html#aa02212ff6f4e5a51681afbb8e5c4f425" title="Loads object state from JSON." alt="" coords="231,177,357,203"/>
-<area shape="rect" id="node3" href="$d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="18,5,149,31"/>
-<area shape="rect" id="node4" href="$d9/da2/classHUDActor.html#adabf1a2c2f3cb0fe55bf484fafffce52" title="This function runs when the object is enabled after being disabled." alt="" coords="5,55,161,80"/>
-<area shape="rect" id="node5" href="$d9/da2/classHUDActor.html#aaae91463121566f983c99a2b0adce335" title=" " alt="" coords="16,104,151,129"/>
-<area shape="rect" id="node6" href="$d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8" title="This function runs every frame." alt="" coords="23,153,144,179"/>
+<area shape="rect" id="node1" title=" " alt="" coords="453,209,655,249"/>
+<area shape="rect" id="node2" href="$d9/da2/classHUDActor.html#aa15a3dd4398860f54db039de7e907f68" title=" " alt="" coords="236,116,405,141"/>
+<area shape="rect" id="node5" href="$d9/da2/classHUDActor.html#a1efd38da2d4e467548b9702d2ef34926" title=" " alt="" coords="5,203,188,228"/>
+<area shape="rect" id="node8" href="$d9/da2/classHUDActor.html#ad8e9987ceb83f9f7ab779a6200323450" title="This function runs just after the object is created (scene load thread)" alt="" coords="263,241,378,267"/>
+<area shape="rect" id="node9" href="$d9/da2/classHUDActor.html#aa02212ff6f4e5a51681afbb8e5c4f425" title="Loads object state from JSON." alt="" coords="258,291,383,316"/>
+<area shape="rect" id="node3" href="$d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="31,5,162,31"/>
+<area shape="rect" id="node4" href="$d9/da2/classHUDActor.html#adabf1a2c2f3cb0fe55bf484fafffce52" title="This function runs when the object is enabled after being disabled." alt="" coords="19,55,175,80"/>
+<area shape="rect" id="node6" href="$d9/da2/classHUDActor.html#aaae91463121566f983c99a2b0adce335" title=" " alt="" coords="29,104,164,129"/>
+<area shape="rect" id="node7" href="$d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8" title="This function runs every frame." alt="" coords="36,153,157,179"/>
 </map>

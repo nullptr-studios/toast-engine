@@ -186,6 +186,9 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a7abf38bceba01c6ea368252d0704ec23 inherit pub_methods_classtoast_1_1MeshRendererComponent"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad898ed330876d1e3d1e42adb792b4fea inherit pub_methods_classtoast_1_1MeshRendererComponent"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ad898ed330876d1e3d1e42adb792b4fea">IsTransparent</a> () const</td></tr>
 <tr class="separator:ad898ed330876d1e3d1e42adb792b4fea inherit pub_methods_classtoast_1_1MeshRendererComponent"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4bb284f881be72aabfeb8fa3352d2f73 inherit pub_methods_classtoast_1_1MeshRendererComponent"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a4bb284f881be72aabfeb8fa3352d2f73">WritesDepthInGeometryPass</a> () const noexcept override</td></tr>
+<tr class="memdesc:a4bb284f881be72aabfeb8fa3352d2f73 inherit pub_methods_classtoast_1_1MeshRendererComponent"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether this renderable should write depth when rendered via transparent geometry path.  <br /></td></tr>
+<tr class="separator:a4bb284f881be72aabfeb8fa3352d2f73 inherit pub_methods_classtoast_1_1MeshRendererComponent"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8609d93fc9f9f41e8466045e85d71018 inherit pub_methods_classtoast_1_1MeshRendererComponent"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a8609d93fc9f9f41e8466045e85d71018">SetExternalTexture</a> (unsigned int texture_id, std::string sampler_name=&quot;gTexture&quot;, int texture_unit=0)</td></tr>
 <tr class="separator:a8609d93fc9f9f41e8466045e85d71018 inherit pub_methods_classtoast_1_1MeshRendererComponent"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ade31f26a3b62ac591d24815c3d364448 inherit pub_methods_classtoast_1_1MeshRendererComponent"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ade31f26a3b62ac591d24815c3d364448">ClearExternalTexture</a> ()</td></tr>
@@ -207,6 +210,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a74cfe5f7b4edb11d1813b3403a59eb71">GetTransparentSortPriority</a> () noexcept</td></tr>
 <tr class="memdesc:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transparent sorting priority. Higher values are rendered later in SpritePass.  <br /></td></tr>
 <tr class="separator:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfdb15aa21e71641d45454862e308cff inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#acfdb15aa21e71641d45454862e308cff">WritesDepthInGeometryPass</a> () const noexcept</td></tr>
+<tr class="memdesc:acfdb15aa21e71641d45454862e308cff inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether this renderable should write depth when rendered via transparent geometry path.  <br /></td></tr>
+<tr class="separator:acfdb15aa21e71641d45454862e308cff inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1TransformComponent"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classtoast_1_1TransformComponent')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html">toast::TransformComponent</a></td></tr>
 <tr class="memitem:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a0077d521827b8e0f9c6814efc7fb55c7">TransformComponent</a> ()</td></tr>
 <tr class="memdesc:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a transform at the origin with no rotation and unit scale.  <br /></td></tr>
@@ -540,7 +546,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ab1f9267ade198a049930911d92c8961d">toast::MeshRendererComponent</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00333">333</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00330">330</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -570,7 +576,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#ab5ca11f656ba004aaa6f8a90380e6915">toast::MeshRendererComponent</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00329">329</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00326">326</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -600,7 +606,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a4d8cb9d5e894d5499a832ff1d2d6bc4f">toast::MeshRendererComponent</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00325">325</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00322">322</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -681,7 +687,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#af29ed8cef0413a30e528c011a20e4bd0">toast::MeshRendererComponent</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00113">113</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00110">110</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -810,7 +816,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Reimplemented from <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a01894da89e8b9b1edef7f5f84d0e8a6a">toast::MeshRendererComponent</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00317">317</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00314">314</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -843,7 +849,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Reimplemented from <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a280b3b0aa0dc11e1e4969188efac3d4e">toast::MeshRendererComponent</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00184">184</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00181">181</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -873,7 +879,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00308">308</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00305">305</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -903,7 +909,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Reimplemented from <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#adbab2e4de44c05f6ecb0bda09a215da3">toast::MeshRendererComponent</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00313">313</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00310">310</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -942,7 +948,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../de/da0/classtoast_1_1MeshRendererComponent.html#a46d2f1559043c31c78d4cb34464acdf7">toast::MeshRendererComponent</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00321">321</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html#l00318">318</a> of file <a class="el" href="../../db/d35/WaterRendererComponent_8cpp_source.html">WaterRendererComponent.cpp</a>.</p>
 
 </div>
 </div>

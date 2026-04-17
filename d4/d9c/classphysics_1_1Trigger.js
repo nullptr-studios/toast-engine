@@ -22,5 +22,6 @@ var classphysics_1_1Trigger =
     [ "flags", "d4/d9c/classphysics_1_1Trigger.html#a0c567ea8f2ef514d2f8727dbe3aad932", null ],
     [ "log", "d4/d9c/classphysics_1_1Trigger.html#a6fb36f90404615d73072d2b983dbb9d5", null ],
     [ "m", "d4/d9c/classphysics_1_1Trigger.html#a6fe24246c94154e57236faa0d4d6cdf4", null ],
-    [ "rigidbodies", "d4/d9c/classphysics_1_1Trigger.html#ab8b93ad31bc392146b3996eb4f33c223", null ]
+    [ "rigidbodies", "d4/d9c/classphysics_1_1Trigger.html#ab8b93ad31bc392146b3996eb4f33c223", null ],
+    [ "scale_for_dante", "d4/d9c/classphysics_1_1Trigger.html#a4e5d8be541249e402ae264425b82b239", null ]
 ];

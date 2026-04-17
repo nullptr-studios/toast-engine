@@ -24,6 +24,7 @@ var classtoast_1_1MeshRendererComponent =
     [ "SetTransparent", "de/da0/classtoast_1_1MeshRendererComponent.html#adbab2e4de44c05f6ecb0bda09a215da3", null ],
     [ "SetUseExternalTextureOnly", "de/da0/classtoast_1_1MeshRendererComponent.html#a7abf38bceba01c6ea368252d0704ec23", null ],
     [ "UnregisterFromRenderer", "de/da0/classtoast_1_1MeshRendererComponent.html#a46d2f1559043c31c78d4cb34464acdf7", null ],
+    [ "WritesDepthInGeometryPass", "de/da0/classtoast_1_1MeshRendererComponent.html#a4bb284f881be72aabfeb8fa3352d2f73", null ],
     [ "m_castsDirectionalShadow", "de/da0/classtoast_1_1MeshRendererComponent.html#a6724a86b32fb0bd03eb7fd0bd2a75ed3", null ],
     [ "m_defaultShader", "de/da0/classtoast_1_1MeshRendererComponent.html#afc5780d0eb4c56ea78156a48e64fe8a4", null ],
     [ "m_drawToDepth", "de/da0/classtoast_1_1MeshRendererComponent.html#a6b94c1e9aaca2b251d9f097230a70d07", null ],

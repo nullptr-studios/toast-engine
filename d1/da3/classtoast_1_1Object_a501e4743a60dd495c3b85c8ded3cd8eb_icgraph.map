@@ -1,52 +1,52 @@
 <map id="toast::Object::parent" name="toast::Object::parent">
-<area shape="rect" id="node1" title=" " alt="" coords="993,847,1148,873"/>
-<area shape="rect" id="node2" href="$d1/da3/classtoast_1_1Object.html#a7dfbd4969b0fbce5826fd089ab93aeec" title=" " alt="" coords="765,83,916,109"/>
-<area shape="rect" id="node3" href="$db/d71/classphysics_1_1Collider.html#a3793262624cd3d2ae10368f544e86d1f" title=" " alt="" coords="772,133,909,173"/>
-<area shape="rect" id="node7" href="$d0/dd9/classtoast_1_1TransformComponent.html#adb1353f26528ba24408c881447f04c18" title=" " alt="" coords="739,293,942,333"/>
-<area shape="rect" id="node12" href="$d5/dd0/namespacephysics.html#aa3a7e4c9e02abd1798c4843fd5273a33" title=" " alt="" coords="232,390,428,415"/>
-<area shape="rect" id="node13" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a6963546bf6bad5b4b18c8990feb99703" title=" " alt="" coords="5,433,183,473"/>
-<area shape="rect" id="node16" href="$d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a05930612e5edf5c7980ab5816678a8a4" title="This function runs when the object is set to be destroyed." alt="" coords="736,491,945,531"/>
-<area shape="rect" id="node17" href="$d6/d41/classphysics_1_1Rigidbody.html#abee44c40fe214b3b58d1745dd8c86521" title="This function runs when the object is set to be destroyed." alt="" coords="769,555,913,595"/>
-<area shape="rect" id="node18" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a148c420419d84982a2815a383e90c324" title=" " alt="" coords="756,1104,925,1144"/>
-<area shape="rect" id="node25" href="$d4/db0/classphysics_1_1BoxRigidbody.html#afabc04475f1a0d9040073a6a9b904015" title=" " alt="" coords="756,683,925,723"/>
-<area shape="rect" id="node26" href="$d0/dd9/classtoast_1_1TransformComponent.html#ae9f6cf2808b058b31ca476212b7acac1" title=" " alt="" coords="739,619,942,659"/>
-<area shape="rect" id="node31" href="$d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a823e81f2669065e8df1bb437080cda37" title="This function runs just after the object is created (scene load thread)" alt="" coords="736,811,945,851"/>
-<area shape="rect" id="node32" href="$db/d71/classphysics_1_1Collider.html#a52f2eb7420c7743d41ea1e718a56aac7" title="This function runs just after the object is created (scene load thread)" alt="" coords="761,875,920,901"/>
-<area shape="rect" id="node33" href="$d6/d41/classphysics_1_1Rigidbody.html#a462a8f1bf385bb9e88e17494cdf7d9b8" title="This function runs just after the object is created (scene load thread)" alt="" coords="769,925,913,965"/>
-<area shape="rect" id="node34" href="$db/d71/classphysics_1_1Collider.html#aa35f24c4edaa6cef3bf8ded1949dfca6" title=" " alt="" coords="772,989,909,1029"/>
-<area shape="rect" id="node35" href="$d1/da3/classtoast_1_1Object.html#a951d9c058d1d04212d5c9da193a47d25" title="Destroys this object." alt="" coords="767,1054,914,1079"/>
-<area shape="rect" id="node36" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#acee90b5e7fdfb9662451c909726d09f1" title=" " alt="" coords="752,1283,929,1323"/>
-<area shape="rect" id="node38" href="$d1/da3/classtoast_1_1Object.html#a04135b1bb33fd5c23d6ca9951c685263" title=" " alt="" coords="753,1169,928,1194"/>
-<area shape="rect" id="node39" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a0e976cd951b9d55e8083757dde996199" title=" " alt="" coords="756,1219,925,1259"/>
-<area shape="rect" id="node40" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a01cfa357e09d697f44a092940cfbddd7" title=" " alt="" coords="756,747,925,787"/>
-<area shape="rect" id="node41" href="$d8/d7b/classevent_1_1ListenerComponent.html#a84ac7af8b87e3ae70d8288f3ce113cce" title="Subscribes a function to a specific event." alt="" coords="743,1441,938,1481"/>
-<area shape="rect" id="node49" href="$d6/d41/classphysics_1_1Rigidbody.html#a4dfcd7de012b486a089892c43e77c0f0" title="Sync rigidbody position from transform." alt="" coords="761,1533,920,1573"/>
-<area shape="rect" id="node50" href="$d6/d41/classphysics_1_1Rigidbody.html#a03e9508170b42fb6e25ce25a90279b74" title="Update the visual transform using interpolated position (call from Tick/LateTick)" alt="" coords="491,1705,674,1745"/>
-<area shape="rect" id="node4" href="$db/d71/classphysics_1_1Collider.html#a577b15c3856391f11179c2e7d7ea5cb4" title=" " alt="" coords="514,5,651,45"/>
-<area shape="rect" id="node5" href="$db/d71/classphysics_1_1Collider.html#aab58749055baebe612df19032b255d23" title=" " alt="" coords="514,69,651,109"/>
-<area shape="rect" id="node6" href="$db/d71/classphysics_1_1Collider.html#a9785c816451a3924e34fa5d9153aae7c" title="This function runs when the object is enabled after being disabled." alt="" coords="514,133,651,173"/>
-<area shape="rect" id="node8" href="$d0/dd9/classtoast_1_1TransformComponent.html#a2a7f731402488a3d3cb8155d28f9c066" title=" " alt="" coords="481,261,684,301"/>
-<area shape="rect" id="node14" href="$d0/dd9/classtoast_1_1TransformComponent.html#aab6cb058834c07e0124b167d6eeec44e" title=" " alt="" coords="481,197,684,237"/>
-<area shape="rect" id="node15" href="$d0/dd9/classtoast_1_1TransformComponent.html#affb082be9b9abdc317d0500b4955e236" title=" " alt="" coords="481,325,684,365"/>
-<area shape="rect" id="node9" href="$df/d2b/classtoast_1_1ParticleSystem.html#aa2aabb66d742c74a9ae2ade9e44b6929" title="Emit a burst from all emitters." alt="" coords="250,197,410,237"/>
-<area shape="rect" id="node10" href="$d5/dfe/classrenderer_1_1IRenderable.html#aa72e32a2941c9cfaa1fde20754805c1c" title="Gets the Z&#45;depth for sorting purposes." alt="" coords="249,261,411,301"/>
-<area shape="rect" id="node11" href="$dc/da1/classLightRenderable.html#a515126e8d0f1b1176d82a8c3fd7f6f32" title="Gets the Z&#45;depth for sorting purposes." alt="" coords="231,326,429,351"/>
-<area shape="rect" id="node19" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a6d02bdd5228f0da82e3687ece5aaaa69" title=" " alt="" coords="498,1021,667,1061"/>
-<area shape="rect" id="node20" href="$d5/dd0/namespacephysics.html#a4d57204353d7e78fd76b1ec199b1a2d1" title=" " alt="" coords="483,1135,682,1161"/>
-<area shape="rect" id="node21" href="$d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="495,939,670,965"/>
-<area shape="rect" id="node22" href="$d5/dd0/namespacephysics.html#a46f160106603c30fe08f473710634331" title=" " alt="" coords="479,1185,687,1210"/>
-<area shape="rect" id="node23" href="$d5/dd0/namespacephysics.html#aa70a3effdf01388626ffda84731e1a56" title=" " alt="" coords="487,1086,678,1111"/>
-<area shape="rect" id="node24" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a6cb1ec92c309c4e60c9bb99fe8450667" title=" " alt="" coords="498,804,667,844"/>
-<area shape="rect" id="node27" href="$d0/dc7/classSpineRendererComponent.html#a75ba8047dcd4530c718005a1ce114633" title="Returns the bone&#39;s world position (after applying the component&#39;s world transform)...." alt="" coords="487,589,679,629"/>
-<area shape="rect" id="node28" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="511,654,655,679"/>
-<area shape="rect" id="node29" href="$de/d96/classphysics_1_1ColliderRenderable.html#ac25c9fa7764ddd9734812f1cd82f73f0" title="Called during the geometry pass to render this object." alt="" coords="481,704,684,744"/>
-<area shape="rect" id="node30" href="$d0/dc7/classSpineRendererComponent.html#a3aac564cd362be9f447a076d6dc3a178" title="Converts a 2&#45;D world&#45;space position into spine root&#45;local space." alt="" coords="481,525,684,565"/>
-<area shape="rect" id="node37" href="$d5/dd0/namespacephysics.html#a80a86dffe491109581f3afd69cf37b66" title=" " alt="" coords="512,1234,653,1259"/>
-<area shape="rect" id="node42" href="$d7/da4/classtoast_1_1CoroutineHandler.html#a4ae717115afc41be011bcfbb80267b84" title=" " alt="" coords="494,1527,671,1567"/>
-<area shape="rect" id="node43" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="477,1591,688,1617"/>
-<area shape="rect" id="node44" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a60e4c37b45b29617f840b0074d2c41fb" title="Construct a new HUD Layer." alt="" coords="488,1641,677,1681"/>
-<area shape="rect" id="node45" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="510,1284,655,1324"/>
-<area shape="rect" id="node46" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="485,1348,680,1388"/>
-<area shape="rect" id="node47" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a34757355e7ec79f24c8ce4fa594a7d7f" title=" " alt="" coords="494,1412,671,1452"/>
-<area shape="rect" id="node48" href="$d8/d8e/classtoast_1_1Window.html#a3ad3d9acdc93f96a4a7097d8989828e5" title="Creates a window with the specified dimensions." alt="" coords="495,1477,670,1502"/>
+<area shape="rect" id="node1" title=" " alt="" coords="768,798,923,823"/>
+<area shape="rect" id="node2" href="$d1/da3/classtoast_1_1Object.html#a7dfbd4969b0fbce5826fd089ab93aeec" title=" " alt="" coords="540,83,691,109"/>
+<area shape="rect" id="node3" href="$db/d71/classphysics_1_1Collider.html#a3793262624cd3d2ae10368f544e86d1f" title=" " alt="" coords="547,133,684,173"/>
+<area shape="rect" id="node7" href="$d0/dd9/classtoast_1_1TransformComponent.html#adb1353f26528ba24408c881447f04c18" title=" " alt="" coords="514,265,717,305"/>
+<area shape="rect" id="node14" href="$d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a05930612e5edf5c7980ab5816678a8a4" title="This function runs when the object is set to be destroyed." alt="" coords="511,333,720,373"/>
+<area shape="rect" id="node15" href="$d6/d41/classphysics_1_1Rigidbody.html#abee44c40fe214b3b58d1745dd8c86521" title="This function runs when the object is set to be destroyed." alt="" coords="543,397,687,437"/>
+<area shape="rect" id="node16" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a148c420419d84982a2815a383e90c324" title=" " alt="" coords="531,525,700,565"/>
+<area shape="rect" id="node22" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a6963546bf6bad5b4b18c8990feb99703" title=" " alt="" coords="16,711,193,751"/>
+<area shape="rect" id="node24" href="$d4/db0/classphysics_1_1BoxRigidbody.html#afabc04475f1a0d9040073a6a9b904015" title=" " alt="" coords="531,653,700,693"/>
+<area shape="rect" id="node25" href="$d0/dd9/classtoast_1_1TransformComponent.html#ae9f6cf2808b058b31ca476212b7acac1" title=" " alt="" coords="514,819,717,859"/>
+<area shape="rect" id="node30" href="$d3/dd3/classtoast_1_1AtlasSpriteComponent.html#a823e81f2669065e8df1bb437080cda37" title="This function runs just after the object is created (scene load thread)" alt="" coords="511,883,720,923"/>
+<area shape="rect" id="node31" href="$db/d71/classphysics_1_1Collider.html#a52f2eb7420c7743d41ea1e718a56aac7" title="This function runs just after the object is created (scene load thread)" alt="" coords="536,947,695,973"/>
+<area shape="rect" id="node32" href="$d6/d41/classphysics_1_1Rigidbody.html#a462a8f1bf385bb9e88e17494cdf7d9b8" title="This function runs just after the object is created (scene load thread)" alt="" coords="543,997,687,1037"/>
+<area shape="rect" id="node33" href="$db/d71/classphysics_1_1Collider.html#aa35f24c4edaa6cef3bf8ded1949dfca6" title=" " alt="" coords="547,1061,684,1101"/>
+<area shape="rect" id="node34" href="$d1/da3/classtoast_1_1Object.html#a951d9c058d1d04212d5c9da193a47d25" title="Destroys this object." alt="" coords="542,1126,689,1151"/>
+<area shape="rect" id="node35" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#acee90b5e7fdfb9662451c909726d09f1" title=" " alt="" coords="527,1176,704,1216"/>
+<area shape="rect" id="node37" href="$d5/dd0/namespacephysics.html#aa3a7e4c9e02abd1798c4843fd5273a33" title=" " alt="" coords="517,769,713,794"/>
+<area shape="rect" id="node38" href="$d1/da3/classtoast_1_1Object.html#a04135b1bb33fd5c23d6ca9951c685263" title=" " alt="" coords="528,1241,703,1266"/>
+<area shape="rect" id="node39" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a0e976cd951b9d55e8083757dde996199" title=" " alt="" coords="531,461,700,501"/>
+<area shape="rect" id="node40" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a01cfa357e09d697f44a092940cfbddd7" title=" " alt="" coords="531,589,700,629"/>
+<area shape="rect" id="node41" href="$d8/d7b/classevent_1_1ListenerComponent.html#a84ac7af8b87e3ae70d8288f3ce113cce" title="Subscribes a function to a specific event." alt="" coords="518,1295,713,1335"/>
+<area shape="rect" id="node49" href="$d6/d41/classphysics_1_1Rigidbody.html#a4dfcd7de012b486a089892c43e77c0f0" title="Sync rigidbody position from transform." alt="" coords="536,1500,695,1540"/>
+<area shape="rect" id="node50" href="$d6/d41/classphysics_1_1Rigidbody.html#a03e9508170b42fb6e25ce25a90279b74" title="Update the visual transform using interpolated position (call from Tick/LateTick)" alt="" coords="266,1533,449,1573"/>
+<area shape="rect" id="node4" href="$db/d71/classphysics_1_1Collider.html#a577b15c3856391f11179c2e7d7ea5cb4" title=" " alt="" coords="289,5,426,45"/>
+<area shape="rect" id="node5" href="$db/d71/classphysics_1_1Collider.html#aab58749055baebe612df19032b255d23" title=" " alt="" coords="289,69,426,109"/>
+<area shape="rect" id="node6" href="$db/d71/classphysics_1_1Collider.html#a9785c816451a3924e34fa5d9153aae7c" title="This function runs when the object is enabled after being disabled." alt="" coords="289,133,426,173"/>
+<area shape="rect" id="node8" href="$d0/dd9/classtoast_1_1TransformComponent.html#a2a7f731402488a3d3cb8155d28f9c066" title=" " alt="" coords="256,261,459,301"/>
+<area shape="rect" id="node12" href="$d0/dd9/classtoast_1_1TransformComponent.html#aab6cb058834c07e0124b167d6eeec44e" title=" " alt="" coords="256,197,459,237"/>
+<area shape="rect" id="node13" href="$d0/dd9/classtoast_1_1TransformComponent.html#affb082be9b9abdc317d0500b4955e236" title=" " alt="" coords="256,325,459,365"/>
+<area shape="rect" id="node9" href="$df/d2b/classtoast_1_1ParticleSystem.html#aa2aabb66d742c74a9ae2ade9e44b6929" title="Emit a burst from all emitters." alt="" coords="25,197,185,237"/>
+<area shape="rect" id="node10" href="$d5/dfe/classrenderer_1_1IRenderable.html#aa72e32a2941c9cfaa1fde20754805c1c" title="Gets the Z&#45;depth for sorting purposes." alt="" coords="23,261,186,301"/>
+<area shape="rect" id="node11" href="$dc/da1/classLightRenderable.html#a515126e8d0f1b1176d82a8c3fd7f6f32" title="Gets the Z&#45;depth for sorting purposes." alt="" coords="5,326,204,351"/>
+<area shape="rect" id="node17" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a6d02bdd5228f0da82e3687ece5aaaa69" title=" " alt="" coords="273,539,442,579"/>
+<area shape="rect" id="node18" href="$d5/dd0/namespacephysics.html#a4d57204353d7e78fd76b1ec199b1a2d1" title=" " alt="" coords="258,390,457,415"/>
+<area shape="rect" id="node19" href="$d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f" title=" " alt="" coords="270,603,445,629"/>
+<area shape="rect" id="node20" href="$d5/dd0/namespacephysics.html#a46f160106603c30fe08f473710634331" title=" " alt="" coords="253,439,461,465"/>
+<area shape="rect" id="node21" href="$d5/dd0/namespacephysics.html#aa70a3effdf01388626ffda84731e1a56" title=" " alt="" coords="262,489,453,514"/>
+<area shape="rect" id="node23" href="$d4/db0/classphysics_1_1BoxRigidbody.html#a6cb1ec92c309c4e60c9bb99fe8450667" title=" " alt="" coords="273,653,442,693"/>
+<area shape="rect" id="node26" href="$d0/dc7/classSpineRendererComponent.html#a75ba8047dcd4530c718005a1ce114633" title="Returns the bone&#39;s world position (after applying the component&#39;s world transform)...." alt="" coords="261,883,453,923"/>
+<area shape="rect" id="node27" href="$d0/db0/classLight2D.html#a42bc4318a291769f0d02f65f7cebdbb6" title=" " alt="" coords="285,947,429,973"/>
+<area shape="rect" id="node28" href="$de/d96/classphysics_1_1ColliderRenderable.html#ac25c9fa7764ddd9734812f1cd82f73f0" title="Called during the geometry pass to render this object." alt="" coords="256,997,459,1037"/>
+<area shape="rect" id="node29" href="$d0/dc7/classSpineRendererComponent.html#a3aac564cd362be9f447a076d6dc3a178" title="Converts a 2&#45;D world&#45;space position into spine root&#45;local space." alt="" coords="256,819,459,859"/>
+<area shape="rect" id="node36" href="$d5/dd0/namespacephysics.html#a80a86dffe491109581f3afd69cf37b66" title=" " alt="" coords="287,1062,428,1087"/>
+<area shape="rect" id="node42" href="$d7/da4/classtoast_1_1CoroutineHandler.html#a4ae717115afc41be011bcfbb80267b84" title=" " alt="" coords="269,1355,446,1395"/>
+<area shape="rect" id="node43" href="$d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f" title=" " alt="" coords="252,1419,463,1445"/>
+<area shape="rect" id="node44" href="$dc/d3b/classrenderer_1_1HUD_1_1HUDLayer.html#a60e4c37b45b29617f840b0074d2c41fb" title="Construct a new HUD Layer." alt="" coords="263,1469,452,1509"/>
+<area shape="rect" id="node45" href="$da/d0b/classinput_1_1InputSystem.html#a772fcbe1d507fdd5256543b916c2786f" title=" " alt="" coords="285,1112,430,1152"/>
+<area shape="rect" id="node46" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#a46f35d041e0a7a2feef5fd7109ecdd9e" title=" " alt="" coords="260,1176,455,1216"/>
+<area shape="rect" id="node47" href="$d6/dd8/classphysics_1_1PhysicsSystem.html#a34757355e7ec79f24c8ce4fa594a7d7f" title=" " alt="" coords="269,1240,446,1280"/>
+<area shape="rect" id="node48" href="$d8/d8e/classtoast_1_1Window.html#a3ad3d9acdc93f96a4a7097d8989828e5" title="Creates a window with the specified dimensions." alt="" coords="270,1305,445,1330"/>
 </map>

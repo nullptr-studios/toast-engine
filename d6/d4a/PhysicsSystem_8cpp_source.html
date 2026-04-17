@@ -924,199 +924,224 @@ $(document).ready(function(){initNavTree('d6/d4a/PhysicsSystem_8cpp_source.html'
 <div class="line"><a id="l00827" name="l00827"></a><span class="lineno">  827</span>  std::optional&lt;RayResult&gt; result = std::nullopt;</div>
 <div class="line"><a id="l00828" name="l00828"></a><span class="lineno">  828</span>  std::optional&lt;dvec2&gt; col_hit;</div>
 <div class="line"><a id="l00829" name="l00829"></a><span class="lineno">  829</span>  std::optional&lt;dvec2&gt; rb_hit;</div>
-<div class="line"><a id="l00830" name="l00830"></a><span class="lineno">  830</span> </div>
-<div class="line"><a id="l00831" name="l00831"></a><span class="lineno">  831</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span>* c : <a class="code hl_namespace" href="../../d5/dd0/namespacephysics.html">physics</a>-&gt;m.colliders) {</div>
-<div class="line"><a id="l00832" name="l00832"></a><span class="lineno">  832</span>    <span class="keywordflow">if</span> (!c-&gt;parent-&gt;enabled()) {</div>
-<div class="line"><a id="l00833" name="l00833"></a><span class="lineno">  833</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00834" name="l00834"></a><span class="lineno">  834</span>    }</div>
-<div class="line"><a id="l00835" name="l00835"></a><span class="lineno">  835</span> </div>
-<div class="line"><a id="l00836" name="l00836"></a><span class="lineno">  836</span>    <span class="keywordflow">if</span> ((<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(flags) &amp; <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(c-&gt;flags)) == 0u) {</div>
-<div class="line"><a id="l00837" name="l00837"></a><span class="lineno">  837</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00838" name="l00838"></a><span class="lineno">  838</span>    }</div>
-<div class="line"><a id="l00839" name="l00839"></a><span class="lineno">  839</span>    <span class="keyword">auto</span> collision = <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#a740edf213e0fd126ea757f5aea74e90b">ConvexRayCollision</a>(ray, c);</div>
-<div class="line"><a id="l00840" name="l00840"></a><span class="lineno">  840</span>    <span class="keywordflow">if</span> (not collision.has_value()) {</div>
-<div class="line"><a id="l00841" name="l00841"></a><span class="lineno">  841</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00842" name="l00842"></a><span class="lineno">  842</span>    }</div>
-<div class="line"><a id="l00843" name="l00843"></a><span class="lineno">  843</span> </div>
-<div class="line"><a id="l00844" name="l00844"></a><span class="lineno">  844</span>    <span class="keywordflow">if</span> (not col_hit.has_value() || length2(collision-&gt;first - ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>) &lt; length2(*col_hit - ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>)) {</div>
-<div class="line"><a id="l00845" name="l00845"></a><span class="lineno">  845</span>      col_hit = collision-&gt;first;</div>
-<div class="line"><a id="l00846" name="l00846"></a><span class="lineno">  846</span>      <span class="keyword">const</span> <span class="keywordtype">float</span> d = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>(distance(*col_hit, ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>));</div>
-<div class="line"><a id="l00847" name="l00847"></a><span class="lineno">  847</span> </div>
-<div class="line"><a id="l00848" name="l00848"></a><span class="lineno">  848</span>      <span class="comment">// same as below</span></div>
-<div class="line"><a id="l00849" name="l00849"></a><span class="lineno">  849</span>      <span class="keywordflow">if</span> (result &amp;&amp; result.value().distance &lt; d) {</div>
-<div class="line"><a id="l00850" name="l00850"></a><span class="lineno">  850</span>        <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00851" name="l00851"></a><span class="lineno">  851</span>      }</div>
-<div class="line"><a id="l00852" name="l00852"></a><span class="lineno">  852</span>      result = { .type = RayResult::Collider, .point = *col_hit, .normal = collision-&gt;second, .distance = d, .other = c-&gt;parent };</div>
-<div class="line"><a id="l00853" name="l00853"></a><span class="lineno">  853</span>    }</div>
-<div class="line"><a id="l00854" name="l00854"></a><span class="lineno">  854</span>  }</div>
-<div class="line"><a id="l00855" name="l00855"></a><span class="lineno">  855</span> </div>
-<div class="line"><a id="l00856" name="l00856"></a><span class="lineno">  856</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span>* r : <a class="code hl_namespace" href="../../d5/dd0/namespacephysics.html">physics</a>-&gt;m.rigidbodies) {</div>
-<div class="line"><a id="l00857" name="l00857"></a><span class="lineno">  857</span>    <span class="keywordflow">if</span> (!r-&gt;enabled()) {</div>
-<div class="line"><a id="l00858" name="l00858"></a><span class="lineno">  858</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00859" name="l00859"></a><span class="lineno">  859</span>    }</div>
-<div class="line"><a id="l00860" name="l00860"></a><span class="lineno">  860</span> </div>
-<div class="line"><a id="l00861" name="l00861"></a><span class="lineno">  861</span>    <span class="keywordflow">if</span> ((<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(flags) &amp; <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(r-&gt;flags)) == 0u) {</div>
-<div class="line"><a id="l00862" name="l00862"></a><span class="lineno">  862</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00863" name="l00863"></a><span class="lineno">  863</span>    }</div>
-<div class="line"><a id="l00864" name="l00864"></a><span class="lineno">  864</span>    std::optional&lt;dvec2&gt; collision = <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#a4924f71c844f8adfafae48531455f910">RbRayCollision</a>(ray, r);</div>
-<div class="line"><a id="l00865" name="l00865"></a><span class="lineno">  865</span>    <span class="keywordflow">if</span> (not collision.has_value()) {</div>
-<div class="line"><a id="l00866" name="l00866"></a><span class="lineno">  866</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00867" name="l00867"></a><span class="lineno">  867</span>    }</div>
-<div class="line"><a id="l00868" name="l00868"></a><span class="lineno">  868</span> </div>
-<div class="line"><a id="l00869" name="l00869"></a><span class="lineno">  869</span>    <span class="keywordflow">if</span> (not rb_hit.has_value() || length(*collision - ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>) &lt; length2(*rb_hit - ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>)) {</div>
-<div class="line"><a id="l00870" name="l00870"></a><span class="lineno">  870</span>      rb_hit = collision.value();</div>
-<div class="line"><a id="l00871" name="l00871"></a><span class="lineno">  871</span>      <span class="keyword">const</span> <span class="keywordtype">float</span> d = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>(distance(*rb_hit, ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>));</div>
-<div class="line"><a id="l00872" name="l00872"></a><span class="lineno">  872</span> </div>
-<div class="line"><a id="l00873" name="l00873"></a><span class="lineno">  873</span>      <span class="comment">// Do not modify result if theres already one with less distance</span></div>
-<div class="line"><a id="l00874" name="l00874"></a><span class="lineno">  874</span>      <span class="keywordflow">if</span> (result &amp;&amp; result.value().distance &lt; d) {</div>
-<div class="line"><a id="l00875" name="l00875"></a><span class="lineno">  875</span>        <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00876" name="l00876"></a><span class="lineno">  876</span>      }</div>
-<div class="line"><a id="l00877" name="l00877"></a><span class="lineno">  877</span>      result = { .type = RayResult::Rigidbody, .point = *rb_hit, .normal = ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#a362695688fc4253d9d14130157e3bc48">tangent</a>, .distance = d, .other = r-&gt;parent() };</div>
-<div class="line"><a id="l00878" name="l00878"></a><span class="lineno">  878</span>    }</div>
-<div class="line"><a id="l00879" name="l00879"></a><span class="lineno">  879</span>  }</div>
-<div class="line"><a id="l00880" name="l00880"></a><span class="lineno">  880</span>  <span class="keywordflow">if</span> (result != std::nullopt) {</div>
-<div class="line"><a id="l00881" name="l00881"></a><span class="lineno">  881</span>    <span class="comment">// renderer::DebugLine(ray-&gt;p1, result-&gt;point, vec4(0.0f, 0.0f, 1.0f, 1.0f));</span></div>
+<div class="line"><a id="l00830" name="l00830"></a><span class="lineno">  830</span>  <a class="code hl_class" href="../../d4/db0/classphysics_1_1BoxRigidbody.html">BoxRigidbody</a>* rigidbody = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00831" name="l00831"></a><span class="lineno">  831</span> </div>
+<div class="line"><a id="l00832" name="l00832"></a><span class="lineno">  832</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span>* c : <a class="code hl_namespace" href="../../d5/dd0/namespacephysics.html">physics</a>-&gt;m.colliders) {</div>
+<div class="line"><a id="l00833" name="l00833"></a><span class="lineno">  833</span>    <span class="keywordflow">if</span> (!c-&gt;parent-&gt;enabled()) {</div>
+<div class="line"><a id="l00834" name="l00834"></a><span class="lineno">  834</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00835" name="l00835"></a><span class="lineno">  835</span>    }</div>
+<div class="line"><a id="l00836" name="l00836"></a><span class="lineno">  836</span> </div>
+<div class="line"><a id="l00837" name="l00837"></a><span class="lineno">  837</span>    <span class="keywordflow">if</span> ((<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(flags) &amp; <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(c-&gt;flags)) == 0u) {</div>
+<div class="line"><a id="l00838" name="l00838"></a><span class="lineno">  838</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00839" name="l00839"></a><span class="lineno">  839</span>    }</div>
+<div class="line"><a id="l00840" name="l00840"></a><span class="lineno">  840</span>    <span class="keyword">auto</span> collision = <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#a740edf213e0fd126ea757f5aea74e90b">ConvexRayCollision</a>(ray, c);</div>
+<div class="line"><a id="l00841" name="l00841"></a><span class="lineno">  841</span>    <span class="keywordflow">if</span> (not collision.has_value()) {</div>
+<div class="line"><a id="l00842" name="l00842"></a><span class="lineno">  842</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00843" name="l00843"></a><span class="lineno">  843</span>    }</div>
+<div class="line"><a id="l00844" name="l00844"></a><span class="lineno">  844</span> </div>
+<div class="line"><a id="l00845" name="l00845"></a><span class="lineno">  845</span>    <span class="keywordflow">if</span> (not col_hit.has_value() || length2(collision-&gt;first - ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>) &lt; length2(*col_hit - ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>)) {</div>
+<div class="line"><a id="l00846" name="l00846"></a><span class="lineno">  846</span>      col_hit = collision-&gt;first;</div>
+<div class="line"><a id="l00847" name="l00847"></a><span class="lineno">  847</span>      <span class="keyword">const</span> <span class="keywordtype">float</span> d = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>(distance(*col_hit, ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>));</div>
+<div class="line"><a id="l00848" name="l00848"></a><span class="lineno">  848</span> </div>
+<div class="line"><a id="l00849" name="l00849"></a><span class="lineno">  849</span>      <span class="comment">// same as below</span></div>
+<div class="line"><a id="l00850" name="l00850"></a><span class="lineno">  850</span>      <span class="keywordflow">if</span> (result &amp;&amp; result.value().distance &lt; d) {</div>
+<div class="line"><a id="l00851" name="l00851"></a><span class="lineno">  851</span>        <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00852" name="l00852"></a><span class="lineno">  852</span>      }</div>
+<div class="line"><a id="l00853" name="l00853"></a><span class="lineno">  853</span>      result = { .type = RayResult::Collider, .point = *col_hit, .normal = collision-&gt;second, .distance = d, .other = c-&gt;parent };</div>
+<div class="line"><a id="l00854" name="l00854"></a><span class="lineno">  854</span>    }</div>
+<div class="line"><a id="l00855" name="l00855"></a><span class="lineno">  855</span>  }</div>
+<div class="line"><a id="l00856" name="l00856"></a><span class="lineno">  856</span> </div>
+<div class="line"><a id="l00857" name="l00857"></a><span class="lineno">  857</span> </div>
+<div class="line"><a id="l00858" name="l00858"></a><span class="lineno">  858</span> </div>
+<div class="line"><a id="l00859" name="l00859"></a><span class="lineno">  859</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span>* r : <a class="code hl_namespace" href="../../d5/dd0/namespacephysics.html">physics</a>-&gt;m.rigidbodies) {</div>
+<div class="line"><a id="l00860" name="l00860"></a><span class="lineno">  860</span>    <span class="keywordflow">if</span> (!r-&gt;enabled()) {</div>
+<div class="line"><a id="l00861" name="l00861"></a><span class="lineno">  861</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00862" name="l00862"></a><span class="lineno">  862</span>    }</div>
+<div class="line"><a id="l00863" name="l00863"></a><span class="lineno">  863</span> </div>
+<div class="line"><a id="l00864" name="l00864"></a><span class="lineno">  864</span>    <span class="keywordflow">if</span> ((<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(flags) &amp; <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(r-&gt;flags)) == 0u) {</div>
+<div class="line"><a id="l00865" name="l00865"></a><span class="lineno">  865</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00866" name="l00866"></a><span class="lineno">  866</span>    }</div>
+<div class="line"><a id="l00867" name="l00867"></a><span class="lineno">  867</span>    std::optional&lt;dvec2&gt; collision = <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#a4924f71c844f8adfafae48531455f910">RbRayCollision</a>(ray, r);</div>
+<div class="line"><a id="l00868" name="l00868"></a><span class="lineno">  868</span>    <span class="keywordflow">if</span> (not collision.has_value()) {</div>
+<div class="line"><a id="l00869" name="l00869"></a><span class="lineno">  869</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00870" name="l00870"></a><span class="lineno">  870</span>    }</div>
+<div class="line"><a id="l00871" name="l00871"></a><span class="lineno">  871</span> </div>
+<div class="line"><a id="l00872" name="l00872"></a><span class="lineno">  872</span>    <span class="keywordflow">if</span> (not rb_hit.has_value() || length(*collision - ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>) &lt; length2(*rb_hit - ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>)) {</div>
+<div class="line"><a id="l00873" name="l00873"></a><span class="lineno">  873</span>      rb_hit = collision.value();</div>
+<div class="line"><a id="l00874" name="l00874"></a><span class="lineno">  874</span>      <span class="keyword">const</span> <span class="keywordtype">float</span> d = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>(distance(*rb_hit, ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>));</div>
+<div class="line"><a id="l00875" name="l00875"></a><span class="lineno">  875</span> </div>
+<div class="line"><a id="l00876" name="l00876"></a><span class="lineno">  876</span>      <span class="comment">// Do not modify result if theres already one with less distance</span></div>
+<div class="line"><a id="l00877" name="l00877"></a><span class="lineno">  877</span>      <span class="keywordflow">if</span> (result &amp;&amp; result.value().distance &lt; d) {</div>
+<div class="line"><a id="l00878" name="l00878"></a><span class="lineno">  878</span>        <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00879" name="l00879"></a><span class="lineno">  879</span>      }</div>
+<div class="line"><a id="l00880" name="l00880"></a><span class="lineno">  880</span>      result = { .type = RayResult::Rigidbody, .point = *rb_hit, .normal = ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#a362695688fc4253d9d14130157e3bc48">tangent</a>, .distance = d, .other = r-&gt;parent() };</div>
+<div class="line"><a id="l00881" name="l00881"></a><span class="lineno">  881</span>    }</div>
 <div class="line"><a id="l00882" name="l00882"></a><span class="lineno">  882</span>  }</div>
 <div class="line"><a id="l00883" name="l00883"></a><span class="lineno">  883</span> </div>
-<div class="line"><a id="l00884" name="l00884"></a><span class="lineno">  884</span>  <span class="keywordflow">return</span> result;</div>
-<div class="line"><a id="l00885" name="l00885"></a><span class="lineno">  885</span>}</div>
-<div class="line"><a id="l00886" name="l00886"></a><span class="lineno">  886</span> </div>
-<div class="line"><a id="l00887" name="l00887"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#acee90b5e7fdfb9662451c909726d09f1">  887</a></span><a class="code hl_class" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a>* PhysicsSystem::PointCollision(glm::vec2 point, <a class="code hl_enumeration" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6">ColliderFlags</a> flags) {</div>
-<div class="line"><a id="l00888" name="l00888"></a><span class="lineno">  888</span>  <span class="keywordflow">if</span> (not get().has_value()) {</div>
-<div class="line"><a id="l00889" name="l00889"></a><span class="lineno">  889</span>    <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00890" name="l00890"></a><span class="lineno">  890</span>  }</div>
-<div class="line"><a id="l00891" name="l00891"></a><span class="lineno">  891</span>  <span class="keyword">auto</span>* <a class="code hl_namespace" href="../../d5/dd0/namespacephysics.html">physics</a> = get().value();</div>
-<div class="line"><a id="l00892" name="l00892"></a><span class="lineno">  892</span>  std::lock_guard sim_lock(<a class="code hl_namespace" href="../../d5/dd0/namespacephysics.html">physics</a>-&gt;m.simulationMutex);</div>
-<div class="line"><a id="l00893" name="l00893"></a><span class="lineno">  893</span> </div>
-<div class="line"><a id="l00894" name="l00894"></a><span class="lineno">  894</span>  <span class="keyword">const</span> dvec2 pt { point };</div>
-<div class="line"><a id="l00895" name="l00895"></a><span class="lineno">  895</span> </div>
-<div class="line"><a id="l00896" name="l00896"></a><span class="lineno">  896</span>  <span class="comment">// Colliders</span></div>
-<div class="line"><a id="l00897" name="l00897"></a><span class="lineno">  897</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span>* c : <a class="code hl_namespace" href="../../d5/dd0/namespacephysics.html">physics</a>-&gt;m.colliders) {</div>
-<div class="line"><a id="l00898" name="l00898"></a><span class="lineno">  898</span>    <span class="keywordflow">if</span> (!c-&gt;parent-&gt;enabled()) {</div>
-<div class="line"><a id="l00899" name="l00899"></a><span class="lineno">  899</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00900" name="l00900"></a><span class="lineno">  900</span>    }</div>
-<div class="line"><a id="l00901" name="l00901"></a><span class="lineno">  901</span>    <span class="keywordflow">if</span> ((<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(flags) &amp; <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(c-&gt;flags)) == 0u) {</div>
-<div class="line"><a id="l00902" name="l00902"></a><span class="lineno">  902</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00903" name="l00903"></a><span class="lineno">  903</span>    }</div>
-<div class="line"><a id="l00904" name="l00904"></a><span class="lineno">  904</span>    <span class="keywordflow">if</span> (c-&gt;edges.empty()) {</div>
-<div class="line"><a id="l00905" name="l00905"></a><span class="lineno">  905</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00906" name="l00906"></a><span class="lineno">  906</span>    }</div>
-<div class="line"><a id="l00907" name="l00907"></a><span class="lineno">  907</span> </div>
-<div class="line"><a id="l00908" name="l00908"></a><span class="lineno">  908</span>    <span class="keywordtype">bool</span> inside = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00909" name="l00909"></a><span class="lineno">  909</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; edge : c-&gt;edges) {</div>
-<div class="line"><a id="l00910" name="l00910"></a><span class="lineno">  910</span>      dvec2 to_point = pt - edge.p1;</div>
-<div class="line"><a id="l00911" name="l00911"></a><span class="lineno">  911</span>      <span class="comment">// If dot with the outward normal is positive, point is outside this edge</span></div>
-<div class="line"><a id="l00912" name="l00912"></a><span class="lineno">  912</span>      <span class="keywordflow">if</span> (glm::dot(to_point, edge.normal) &gt; 0.0) {</div>
-<div class="line"><a id="l00913" name="l00913"></a><span class="lineno">  913</span>        inside = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00914" name="l00914"></a><span class="lineno">  914</span>        <span class="keywordflow">break</span>;</div>
-<div class="line"><a id="l00915" name="l00915"></a><span class="lineno">  915</span>      }</div>
-<div class="line"><a id="l00916" name="l00916"></a><span class="lineno">  916</span>    }</div>
-<div class="line"><a id="l00917" name="l00917"></a><span class="lineno">  917</span>    <span class="keywordflow">if</span> (inside) {</div>
-<div class="line"><a id="l00918" name="l00918"></a><span class="lineno">  918</span>      <span class="keywordflow">return</span> c-&gt;parent-&gt;parent();</div>
-<div class="line"><a id="l00919" name="l00919"></a><span class="lineno">  919</span>    }</div>
-<div class="line"><a id="l00920" name="l00920"></a><span class="lineno">  920</span>  }</div>
-<div class="line"><a id="l00921" name="l00921"></a><span class="lineno">  921</span> </div>
-<div class="line"><a id="l00922" name="l00922"></a><span class="lineno">  922</span>  <span class="comment">// Check rigidbodies</span></div>
-<div class="line"><a id="l00923" name="l00923"></a><span class="lineno">  923</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span>* rb : <a class="code hl_namespace" href="../../d5/dd0/namespacephysics.html">physics</a>-&gt;m.rigidbodies) {</div>
-<div class="line"><a id="l00924" name="l00924"></a><span class="lineno">  924</span>    <span class="keywordflow">if</span> (!rb-&gt;<a class="code hl_function" href="../../d1/da3/classtoast_1_1Object.html#a6b68efce8207b26d5c0acda01e9dcdea">enabled</a>()) {</div>
-<div class="line"><a id="l00925" name="l00925"></a><span class="lineno">  925</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00926" name="l00926"></a><span class="lineno">  926</span>    }</div>
-<div class="line"><a id="l00927" name="l00927"></a><span class="lineno">  927</span>    <span class="keywordflow">if</span> ((<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(flags) &amp; <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(rb-&gt;<a class="code hl_variable" href="../../d6/d41/classphysics_1_1Rigidbody.html#ae833768540d886947197ca6e58bd9836">flags</a>)) == 0u) {</div>
-<div class="line"><a id="l00928" name="l00928"></a><span class="lineno">  928</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00929" name="l00929"></a><span class="lineno">  929</span>    }</div>
-<div class="line"><a id="l00930" name="l00930"></a><span class="lineno">  930</span>    <span class="keywordflow">if</span> (glm::length2(pt - rb-&gt;<a class="code hl_function" href="../../d6/d41/classphysics_1_1Rigidbody.html#a60945624ec1a89156734ffb74c61f424">GetPosition</a>()) &lt;= rb-&gt;<a class="code hl_variable" href="../../d6/d41/classphysics_1_1Rigidbody.html#a1325e646c3014e2e31cea49d04812e70">radius</a> * rb-&gt;<a class="code hl_variable" href="../../d6/d41/classphysics_1_1Rigidbody.html#a1325e646c3014e2e31cea49d04812e70">radius</a>) {</div>
-<div class="line"><a id="l00931" name="l00931"></a><span class="lineno">  931</span>      <span class="keywordflow">return</span> rb-&gt;<a class="code hl_function" href="../../d1/da3/classtoast_1_1Object.html#a501e4743a60dd495c3b85c8ded3cd8eb">parent</a>();</div>
-<div class="line"><a id="l00932" name="l00932"></a><span class="lineno">  932</span>    }</div>
-<div class="line"><a id="l00933" name="l00933"></a><span class="lineno">  933</span>  }</div>
-<div class="line"><a id="l00934" name="l00934"></a><span class="lineno">  934</span> </div>
-<div class="line"><a id="l00935" name="l00935"></a><span class="lineno">  935</span>  <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00936" name="l00936"></a><span class="lineno">  936</span>}</div>
-<div class="line"><a id="l00937" name="l00937"></a><span class="lineno">  937</span> </div>
-<div class="line"><a id="l00938" name="l00938"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ae5eb01efcbc4f6bc768f369b7bd08deb">  938</a></span><span class="keyword">auto</span> PhysicsSystem::GetAllRigidbodies() -&gt; std::list&lt;Rigidbody*&gt;&amp; {</div>
-<div class="line"><a id="l00939" name="l00939"></a><span class="lineno">  939</span>  <span class="keyword">auto</span> i = PhysicsSystem::get();</div>
-<div class="line"><a id="l00940" name="l00940"></a><span class="lineno">  940</span>  <span class="comment">// high cortison std::optional vs low cortison c assert</span></div>
-<div class="line"><a id="l00941" name="l00941"></a><span class="lineno">  941</span>  assert(i.has_value() &amp;&amp; <span class="stringliteral">&quot;Physics System does not exist&quot;</span>);</div>
-<div class="line"><a id="l00942" name="l00942"></a><span class="lineno">  942</span>  std::lock_guard sim_lock(i.value()-&gt;m.simulationMutex);</div>
-<div class="line"><a id="l00943" name="l00943"></a><span class="lineno">  943</span>  <span class="keywordflow">return</span> i.value()-&gt;m.rigidbodies;</div>
-<div class="line"><a id="l00944" name="l00944"></a><span class="lineno">  944</span>}</div>
-<div class="line"><a id="l00945" name="l00945"></a><span class="lineno">  945</span> </div>
-<div class="line"><a id="l00946" name="l00946"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a8577eb9ebc6ca6f593ba08c86e208884">  946</a></span><span class="keyword">auto</span> PhysicsSystem::GetAllCollidingRb() -&gt; std::list&lt;Rigidbody*&gt;&amp; {</div>
-<div class="line"><a id="l00947" name="l00947"></a><span class="lineno">  947</span>  <span class="keyword">auto</span> i = PhysicsSystem::get();</div>
-<div class="line"><a id="l00948" name="l00948"></a><span class="lineno">  948</span>  <span class="comment">// high cortison std::optional vs low cortison c assert</span></div>
-<div class="line"><a id="l00949" name="l00949"></a><span class="lineno">  949</span>  assert(i.has_value() &amp;&amp; <span class="stringliteral">&quot;Physics System does not exist&quot;</span>);</div>
-<div class="line"><a id="l00950" name="l00950"></a><span class="lineno">  950</span>  std::lock_guard sim_lock(i.value()-&gt;m.simulationMutex);</div>
-<div class="line"><a id="l00951" name="l00951"></a><span class="lineno">  951</span>  <span class="keywordflow">return</span> i.value()-&gt;m.colliding;</div>
-<div class="line"><a id="l00952" name="l00952"></a><span class="lineno">  952</span>}</div>
-<div class="line"><a id="l00953" name="l00953"></a><span class="lineno">  953</span> </div>
-<div class="line"><a id="l00954" name="l00954"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a6f09badd10f3e114b6a7ee4738b5f10e">  954</a></span><span class="keywordtype">void</span> PhysicsSystem::SetGravityType(<a class="code hl_struct" href="../../df/d1e/structphysics_1_1GravityType.html">GravityType</a> type) {</div>
-<div class="line"><a id="l00955" name="l00955"></a><span class="lineno">  955</span>  <span class="keyword">auto</span> i = PhysicsSystem::get();</div>
-<div class="line"><a id="l00956" name="l00956"></a><span class="lineno">  956</span>  <span class="keywordflow">if</span> (not i.has_value()) {</div>
-<div class="line"><a id="l00957" name="l00957"></a><span class="lineno">  957</span>    <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00884" name="l00884"></a><span class="lineno">  884</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span>* c : <a class="code hl_namespace" href="../../d5/dd0/namespacephysics.html">physics</a>-&gt;m.boxes) {</div>
+<div class="line"><a id="l00885" name="l00885"></a><span class="lineno">  885</span> </div>
+<div class="line"><a id="l00886" name="l00886"></a><span class="lineno">  886</span>    <span class="keyword">auto</span> collision = <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#a7967a3069ff39c41032a3fce02e605e7">BoxRayCollision</a>(ray, c);</div>
+<div class="line"><a id="l00887" name="l00887"></a><span class="lineno">  887</span>    <span class="keywordflow">if</span> (not collision.has_value()) {</div>
+<div class="line"><a id="l00888" name="l00888"></a><span class="lineno">  888</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00889" name="l00889"></a><span class="lineno">  889</span>    }</div>
+<div class="line"><a id="l00890" name="l00890"></a><span class="lineno">  890</span> </div>
+<div class="line"><a id="l00891" name="l00891"></a><span class="lineno">  891</span>    <span class="keywordflow">if</span> (not col_hit.has_value() || length2(collision-&gt;first - ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>) &lt; length2(*col_hit - ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>)) {</div>
+<div class="line"><a id="l00892" name="l00892"></a><span class="lineno">  892</span>      col_hit = collision-&gt;first;</div>
+<div class="line"><a id="l00893" name="l00893"></a><span class="lineno">  893</span>      <span class="keyword">const</span> <span class="keywordtype">float</span> d = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>(distance(*col_hit, ray-&gt;<a class="code hl_variable" href="../../d1/d1d/structphysics_1_1Line.html#ad5ba9cdd80e92745daca75a08aed2824">p1</a>));</div>
+<div class="line"><a id="l00894" name="l00894"></a><span class="lineno">  894</span> </div>
+<div class="line"><a id="l00895" name="l00895"></a><span class="lineno">  895</span>      <span class="comment">// same as below</span></div>
+<div class="line"><a id="l00896" name="l00896"></a><span class="lineno">  896</span>      <span class="keywordflow">if</span> (result &amp;&amp; result.value().distance &lt; d) {</div>
+<div class="line"><a id="l00897" name="l00897"></a><span class="lineno">  897</span>        <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00898" name="l00898"></a><span class="lineno">  898</span>      }</div>
+<div class="line"><a id="l00899" name="l00899"></a><span class="lineno">  899</span>      result = { .type = RayResult::Box, .point = *col_hit, .normal = collision-&gt;second, .distance = d, .other = c-&gt;parent() };</div>
+<div class="line"><a id="l00900" name="l00900"></a><span class="lineno">  900</span>      rigidbody = c;</div>
+<div class="line"><a id="l00901" name="l00901"></a><span class="lineno">  901</span>    }</div>
+<div class="line"><a id="l00902" name="l00902"></a><span class="lineno">  902</span>  }</div>
+<div class="line"><a id="l00903" name="l00903"></a><span class="lineno">  903</span> </div>
+<div class="line"><a id="l00904" name="l00904"></a><span class="lineno">  904</span>  <span class="keywordflow">if</span> (rigidbody != <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a id="l00905" name="l00905"></a><span class="lineno">  905</span>    <span class="keywordflow">if</span> (rigidbody-&gt;<a class="code hl_variable" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ae07dcc28a00bdc8c1427a2e61b9722a4">enterCallback</a>) {</div>
+<div class="line"><a id="l00906" name="l00906"></a><span class="lineno">  906</span>      rigidbody-&gt;<a class="code hl_variable" href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ae07dcc28a00bdc8c1427a2e61b9722a4">enterCallback</a>(&amp;result.value());</div>
+<div class="line"><a id="l00907" name="l00907"></a><span class="lineno">  907</span>    }</div>
+<div class="line"><a id="l00908" name="l00908"></a><span class="lineno">  908</span>  }</div>
+<div class="line"><a id="l00909" name="l00909"></a><span class="lineno">  909</span>  <span class="keywordflow">return</span> result;</div>
+<div class="line"><a id="l00910" name="l00910"></a><span class="lineno">  910</span>}</div>
+<div class="line"><a id="l00911" name="l00911"></a><span class="lineno">  911</span> </div>
+<div class="line"><a id="l00912" name="l00912"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#acee90b5e7fdfb9662451c909726d09f1">  912</a></span><a class="code hl_class" href="../../d1/da3/classtoast_1_1Object.html">toast::Object</a>* PhysicsSystem::PointCollision(glm::vec2 point, <a class="code hl_enumeration" href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6">ColliderFlags</a> flags) {</div>
+<div class="line"><a id="l00913" name="l00913"></a><span class="lineno">  913</span>  <span class="keywordflow">if</span> (not get().has_value()) {</div>
+<div class="line"><a id="l00914" name="l00914"></a><span class="lineno">  914</span>    <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00915" name="l00915"></a><span class="lineno">  915</span>  }</div>
+<div class="line"><a id="l00916" name="l00916"></a><span class="lineno">  916</span>  <span class="keyword">auto</span>* <a class="code hl_namespace" href="../../d5/dd0/namespacephysics.html">physics</a> = get().value();</div>
+<div class="line"><a id="l00917" name="l00917"></a><span class="lineno">  917</span>  std::lock_guard sim_lock(<a class="code hl_namespace" href="../../d5/dd0/namespacephysics.html">physics</a>-&gt;m.simulationMutex);</div>
+<div class="line"><a id="l00918" name="l00918"></a><span class="lineno">  918</span> </div>
+<div class="line"><a id="l00919" name="l00919"></a><span class="lineno">  919</span>  <span class="keyword">const</span> dvec2 pt { point };</div>
+<div class="line"><a id="l00920" name="l00920"></a><span class="lineno">  920</span> </div>
+<div class="line"><a id="l00921" name="l00921"></a><span class="lineno">  921</span>  <span class="comment">// Colliders</span></div>
+<div class="line"><a id="l00922" name="l00922"></a><span class="lineno">  922</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span>* c : <a class="code hl_namespace" href="../../d5/dd0/namespacephysics.html">physics</a>-&gt;m.colliders) {</div>
+<div class="line"><a id="l00923" name="l00923"></a><span class="lineno">  923</span>    <span class="keywordflow">if</span> (!c-&gt;parent-&gt;enabled()) {</div>
+<div class="line"><a id="l00924" name="l00924"></a><span class="lineno">  924</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00925" name="l00925"></a><span class="lineno">  925</span>    }</div>
+<div class="line"><a id="l00926" name="l00926"></a><span class="lineno">  926</span>    <span class="keywordflow">if</span> ((<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(flags) &amp; <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(c-&gt;flags)) == 0u) {</div>
+<div class="line"><a id="l00927" name="l00927"></a><span class="lineno">  927</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00928" name="l00928"></a><span class="lineno">  928</span>    }</div>
+<div class="line"><a id="l00929" name="l00929"></a><span class="lineno">  929</span>    <span class="keywordflow">if</span> (c-&gt;edges.empty()) {</div>
+<div class="line"><a id="l00930" name="l00930"></a><span class="lineno">  930</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00931" name="l00931"></a><span class="lineno">  931</span>    }</div>
+<div class="line"><a id="l00932" name="l00932"></a><span class="lineno">  932</span> </div>
+<div class="line"><a id="l00933" name="l00933"></a><span class="lineno">  933</span>    <span class="keywordtype">bool</span> inside = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00934" name="l00934"></a><span class="lineno">  934</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; edge : c-&gt;edges) {</div>
+<div class="line"><a id="l00935" name="l00935"></a><span class="lineno">  935</span>      dvec2 to_point = pt - edge.p1;</div>
+<div class="line"><a id="l00936" name="l00936"></a><span class="lineno">  936</span>      <span class="comment">// If dot with the outward normal is positive, point is outside this edge</span></div>
+<div class="line"><a id="l00937" name="l00937"></a><span class="lineno">  937</span>      <span class="keywordflow">if</span> (glm::dot(to_point, edge.normal) &gt; 0.0) {</div>
+<div class="line"><a id="l00938" name="l00938"></a><span class="lineno">  938</span>        inside = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00939" name="l00939"></a><span class="lineno">  939</span>        <span class="keywordflow">break</span>;</div>
+<div class="line"><a id="l00940" name="l00940"></a><span class="lineno">  940</span>      }</div>
+<div class="line"><a id="l00941" name="l00941"></a><span class="lineno">  941</span>    }</div>
+<div class="line"><a id="l00942" name="l00942"></a><span class="lineno">  942</span>    <span class="keywordflow">if</span> (inside) {</div>
+<div class="line"><a id="l00943" name="l00943"></a><span class="lineno">  943</span>      <span class="keywordflow">return</span> c-&gt;parent-&gt;parent();</div>
+<div class="line"><a id="l00944" name="l00944"></a><span class="lineno">  944</span>    }</div>
+<div class="line"><a id="l00945" name="l00945"></a><span class="lineno">  945</span>  }</div>
+<div class="line"><a id="l00946" name="l00946"></a><span class="lineno">  946</span> </div>
+<div class="line"><a id="l00947" name="l00947"></a><span class="lineno">  947</span>  <span class="comment">// Check rigidbodies</span></div>
+<div class="line"><a id="l00948" name="l00948"></a><span class="lineno">  948</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span>* rb : <a class="code hl_namespace" href="../../d5/dd0/namespacephysics.html">physics</a>-&gt;m.rigidbodies) {</div>
+<div class="line"><a id="l00949" name="l00949"></a><span class="lineno">  949</span>    <span class="keywordflow">if</span> (!rb-&gt;<a class="code hl_function" href="../../d1/da3/classtoast_1_1Object.html#a6b68efce8207b26d5c0acda01e9dcdea">enabled</a>()) {</div>
+<div class="line"><a id="l00950" name="l00950"></a><span class="lineno">  950</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00951" name="l00951"></a><span class="lineno">  951</span>    }</div>
+<div class="line"><a id="l00952" name="l00952"></a><span class="lineno">  952</span>    <span class="keywordflow">if</span> ((<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(flags) &amp; <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(rb-&gt;<a class="code hl_variable" href="../../d6/d41/classphysics_1_1Rigidbody.html#ae833768540d886947197ca6e58bd9836">flags</a>)) == 0u) {</div>
+<div class="line"><a id="l00953" name="l00953"></a><span class="lineno">  953</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00954" name="l00954"></a><span class="lineno">  954</span>    }</div>
+<div class="line"><a id="l00955" name="l00955"></a><span class="lineno">  955</span>    <span class="keywordflow">if</span> (glm::length2(pt - rb-&gt;<a class="code hl_function" href="../../d6/d41/classphysics_1_1Rigidbody.html#a60945624ec1a89156734ffb74c61f424">GetPosition</a>()) &lt;= rb-&gt;<a class="code hl_variable" href="../../d6/d41/classphysics_1_1Rigidbody.html#a1325e646c3014e2e31cea49d04812e70">radius</a> * rb-&gt;<a class="code hl_variable" href="../../d6/d41/classphysics_1_1Rigidbody.html#a1325e646c3014e2e31cea49d04812e70">radius</a>) {</div>
+<div class="line"><a id="l00956" name="l00956"></a><span class="lineno">  956</span>      <span class="keywordflow">return</span> rb-&gt;<a class="code hl_function" href="../../d1/da3/classtoast_1_1Object.html#a501e4743a60dd495c3b85c8ded3cd8eb">parent</a>();</div>
+<div class="line"><a id="l00957" name="l00957"></a><span class="lineno">  957</span>    }</div>
 <div class="line"><a id="l00958" name="l00958"></a><span class="lineno">  958</span>  }</div>
 <div class="line"><a id="l00959" name="l00959"></a><span class="lineno">  959</span> </div>
-<div class="line"><a id="l00960" name="l00960"></a><span class="lineno">  960</span>  i.value()-&gt;m.gravityType = type;</div>
+<div class="line"><a id="l00960" name="l00960"></a><span class="lineno">  960</span>  <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
 <div class="line"><a id="l00961" name="l00961"></a><span class="lineno">  961</span>}</div>
 <div class="line"><a id="l00962" name="l00962"></a><span class="lineno">  962</span> </div>
-<div class="line"><a id="l00963" name="l00963"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a6d629d70a5e821a051259a645f09ab48">  963</a></span><span class="keywordtype">void</span> PhysicsSystem::SetGravityPoint(glm::dvec2 pos) {</div>
+<div class="line"><a id="l00963" name="l00963"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ae5eb01efcbc4f6bc768f369b7bd08deb">  963</a></span><span class="keyword">auto</span> PhysicsSystem::GetAllRigidbodies() -&gt; std::list&lt;Rigidbody*&gt;&amp; {</div>
 <div class="line"><a id="l00964" name="l00964"></a><span class="lineno">  964</span>  <span class="keyword">auto</span> i = PhysicsSystem::get();</div>
-<div class="line"><a id="l00965" name="l00965"></a><span class="lineno">  965</span>  <span class="keywordflow">if</span> (not i.has_value()) {</div>
-<div class="line"><a id="l00966" name="l00966"></a><span class="lineno">  966</span>    <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00967" name="l00967"></a><span class="lineno">  967</span>  }</div>
-<div class="line"><a id="l00968" name="l00968"></a><span class="lineno">  968</span> </div>
-<div class="line"><a id="l00969" name="l00969"></a><span class="lineno">  969</span>  i.value()-&gt;m.gravityPoint = pos;</div>
-<div class="line"><a id="l00970" name="l00970"></a><span class="lineno">  970</span>}</div>
-<div class="line"><a id="l00971" name="l00971"></a><span class="lineno">  971</span> </div>
-<div class="line"><a id="l00972" name="l00972"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ad6dc9bc59da87a94fd46c8a9a9560ac8">  972</a></span><span class="keywordtype">void</span> PhysicsSystem::SetGravityPointScale(<span class="keywordtype">double</span> scale) {</div>
-<div class="line"><a id="l00973" name="l00973"></a><span class="lineno">  973</span>  <span class="keyword">auto</span> i = PhysicsSystem::get();</div>
-<div class="line"><a id="l00974" name="l00974"></a><span class="lineno">  974</span>  <span class="keywordflow">if</span> (not i.has_value()) {</div>
-<div class="line"><a id="l00975" name="l00975"></a><span class="lineno">  975</span>    <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00976" name="l00976"></a><span class="lineno">  976</span>  }</div>
-<div class="line"><a id="l00977" name="l00977"></a><span class="lineno">  977</span> </div>
-<div class="line"><a id="l00978" name="l00978"></a><span class="lineno">  978</span>  i.value()-&gt;m.gravityPointScale = scale;</div>
-<div class="line"><a id="l00979" name="l00979"></a><span class="lineno">  979</span>}</div>
-<div class="line"><a id="l00980" name="l00980"></a><span class="lineno">  980</span> </div>
-<div class="line"><a id="l00981" name="l00981"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#acfae8ad3c9328e9bf7ee8290d70ba03f">  981</a></span><span class="keywordtype">void</span> PhysicsSystem::MainThreadLateTick() {</div>
-<div class="line"><a id="l00982" name="l00982"></a><span class="lineno">  982</span>  <span class="keyword">auto</span> i = PhysicsSystem::get();</div>
-<div class="line"><a id="l00983" name="l00983"></a><span class="lineno">  983</span> </div>
-<div class="line"><a id="l00984" name="l00984"></a><span class="lineno">  984</span>  <span class="keywordflow">if</span> (!i.has_value()) {</div>
-<div class="line"><a id="l00985" name="l00985"></a><span class="lineno">  985</span>    <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00986" name="l00986"></a><span class="lineno">  986</span>  }</div>
+<div class="line"><a id="l00965" name="l00965"></a><span class="lineno">  965</span>  <span class="comment">// high cortison std::optional vs low cortison c assert</span></div>
+<div class="line"><a id="l00966" name="l00966"></a><span class="lineno">  966</span>  assert(i.has_value() &amp;&amp; <span class="stringliteral">&quot;Physics System does not exist&quot;</span>);</div>
+<div class="line"><a id="l00967" name="l00967"></a><span class="lineno">  967</span>  std::lock_guard sim_lock(i.value()-&gt;m.simulationMutex);</div>
+<div class="line"><a id="l00968" name="l00968"></a><span class="lineno">  968</span>  <span class="keywordflow">return</span> i.value()-&gt;m.rigidbodies;</div>
+<div class="line"><a id="l00969" name="l00969"></a><span class="lineno">  969</span>}</div>
+<div class="line"><a id="l00970" name="l00970"></a><span class="lineno">  970</span> </div>
+<div class="line"><a id="l00971" name="l00971"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a8577eb9ebc6ca6f593ba08c86e208884">  971</a></span><span class="keyword">auto</span> PhysicsSystem::GetAllCollidingRb() -&gt; std::list&lt;Rigidbody*&gt;&amp; {</div>
+<div class="line"><a id="l00972" name="l00972"></a><span class="lineno">  972</span>  <span class="keyword">auto</span> i = PhysicsSystem::get();</div>
+<div class="line"><a id="l00973" name="l00973"></a><span class="lineno">  973</span>  <span class="comment">// high cortison std::optional vs low cortison c assert</span></div>
+<div class="line"><a id="l00974" name="l00974"></a><span class="lineno">  974</span>  assert(i.has_value() &amp;&amp; <span class="stringliteral">&quot;Physics System does not exist&quot;</span>);</div>
+<div class="line"><a id="l00975" name="l00975"></a><span class="lineno">  975</span>  std::lock_guard sim_lock(i.value()-&gt;m.simulationMutex);</div>
+<div class="line"><a id="l00976" name="l00976"></a><span class="lineno">  976</span>  <span class="keywordflow">return</span> i.value()-&gt;m.colliding;</div>
+<div class="line"><a id="l00977" name="l00977"></a><span class="lineno">  977</span>}</div>
+<div class="line"><a id="l00978" name="l00978"></a><span class="lineno">  978</span> </div>
+<div class="line"><a id="l00979" name="l00979"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a6f09badd10f3e114b6a7ee4738b5f10e">  979</a></span><span class="keywordtype">void</span> PhysicsSystem::SetGravityType(<a class="code hl_struct" href="../../df/d1e/structphysics_1_1GravityType.html">GravityType</a> type) {</div>
+<div class="line"><a id="l00980" name="l00980"></a><span class="lineno">  980</span>  <span class="keyword">auto</span> i = PhysicsSystem::get();</div>
+<div class="line"><a id="l00981" name="l00981"></a><span class="lineno">  981</span>  <span class="keywordflow">if</span> (not i.has_value()) {</div>
+<div class="line"><a id="l00982" name="l00982"></a><span class="lineno">  982</span>    <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00983" name="l00983"></a><span class="lineno">  983</span>  }</div>
+<div class="line"><a id="l00984" name="l00984"></a><span class="lineno">  984</span> </div>
+<div class="line"><a id="l00985" name="l00985"></a><span class="lineno">  985</span>  i.value()-&gt;m.gravityType = type;</div>
+<div class="line"><a id="l00986" name="l00986"></a><span class="lineno">  986</span>}</div>
 <div class="line"><a id="l00987" name="l00987"></a><span class="lineno">  987</span> </div>
-<div class="line"><a id="l00988" name="l00988"></a><span class="lineno">  988</span>  std::lock_guard lock(i.value()-&gt;m.callbackMutex);</div>
-<div class="line"><a id="l00989" name="l00989"></a><span class="lineno">  989</span>  {</div>
-<div class="line"><a id="l00990" name="l00990"></a><span class="lineno">  990</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; callback : i.value()-&gt;m.callbackList) {</div>
-<div class="line"><a id="l00991" name="l00991"></a><span class="lineno">  991</span>      callback();</div>
-<div class="line"><a id="l00992" name="l00992"></a><span class="lineno">  992</span>    }</div>
-<div class="line"><a id="l00993" name="l00993"></a><span class="lineno">  993</span>    i.value()-&gt;m.callbackList.clear();</div>
-<div class="line"><a id="l00994" name="l00994"></a><span class="lineno">  994</span>  }</div>
-<div class="line"><a id="l00995" name="l00995"></a><span class="lineno">  995</span> </div>
-<div class="line"><a id="l00996" name="l00996"></a><span class="lineno">  996</span>  <span class="comment">// Main-thread supervisor: restart physics thread on unexpected exit unless intentionally stopped</span></div>
-<div class="line"><a id="l00997" name="l00997"></a><span class="lineno">  997</span>  <span class="keywordflow">if</span> (!<a class="code hl_variable" href="../../d5/dd0/namespacephysics.html#a1ac4f49fad7e8e82c39b7a25f6e2df63">g_intentionallyStopped</a>.load(std::memory_order_acquire) &amp;&amp; !<a class="code hl_variable" href="../../d5/dd0/namespacephysics.html#aefa33afe24ef9639071269aff8a8a268">g_threadAlive</a>.load(std::memory_order_acquire)) {</div>
-<div class="line"><a id="l00998" name="l00998"></a><span class="lineno">  998</span>    PhysicsSystem::start();</div>
-<div class="line"><a id="l00999" name="l00999"></a><span class="lineno">  999</span>  }</div>
-<div class="line"><a id="l01000" name="l01000"></a><span class="lineno"> 1000</span>}</div>
-<div class="line"><a id="l01001" name="l01001"></a><span class="lineno"> 1001</span> </div>
-<div class="line"><a id="l01002" name="l01002"></a><span class="lineno"><a class="line" href="../../d5/dd0/namespacephysics.html#a87606d7d4e42606e3ea00b1d88a2b2ac"> 1002</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#a87606d7d4e42606e3ea00b1d88a2b2ac">SetGravityType</a>(<a class="code hl_struct" href="../../df/d1e/structphysics_1_1GravityType.html">GravityType</a> type) {</div>
-<div class="line"><a id="l01003" name="l01003"></a><span class="lineno"> 1003</span>  PhysicsSystem::SetGravityType(type);</div>
+<div class="line"><a id="l00988" name="l00988"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a6d629d70a5e821a051259a645f09ab48">  988</a></span><span class="keywordtype">void</span> PhysicsSystem::SetGravityPoint(glm::dvec2 pos) {</div>
+<div class="line"><a id="l00989" name="l00989"></a><span class="lineno">  989</span>  <span class="keyword">auto</span> i = PhysicsSystem::get();</div>
+<div class="line"><a id="l00990" name="l00990"></a><span class="lineno">  990</span>  <span class="keywordflow">if</span> (not i.has_value()) {</div>
+<div class="line"><a id="l00991" name="l00991"></a><span class="lineno">  991</span>    <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00992" name="l00992"></a><span class="lineno">  992</span>  }</div>
+<div class="line"><a id="l00993" name="l00993"></a><span class="lineno">  993</span> </div>
+<div class="line"><a id="l00994" name="l00994"></a><span class="lineno">  994</span>  i.value()-&gt;m.gravityPoint = pos;</div>
+<div class="line"><a id="l00995" name="l00995"></a><span class="lineno">  995</span>}</div>
+<div class="line"><a id="l00996" name="l00996"></a><span class="lineno">  996</span> </div>
+<div class="line"><a id="l00997" name="l00997"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#ad6dc9bc59da87a94fd46c8a9a9560ac8">  997</a></span><span class="keywordtype">void</span> PhysicsSystem::SetGravityPointScale(<span class="keywordtype">double</span> scale) {</div>
+<div class="line"><a id="l00998" name="l00998"></a><span class="lineno">  998</span>  <span class="keyword">auto</span> i = PhysicsSystem::get();</div>
+<div class="line"><a id="l00999" name="l00999"></a><span class="lineno">  999</span>  <span class="keywordflow">if</span> (not i.has_value()) {</div>
+<div class="line"><a id="l01000" name="l01000"></a><span class="lineno"> 1000</span>    <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l01001" name="l01001"></a><span class="lineno"> 1001</span>  }</div>
+<div class="line"><a id="l01002" name="l01002"></a><span class="lineno"> 1002</span> </div>
+<div class="line"><a id="l01003" name="l01003"></a><span class="lineno"> 1003</span>  i.value()-&gt;m.gravityPointScale = scale;</div>
 <div class="line"><a id="l01004" name="l01004"></a><span class="lineno"> 1004</span>}</div>
 <div class="line"><a id="l01005" name="l01005"></a><span class="lineno"> 1005</span> </div>
-<div class="line"><a id="l01006" name="l01006"></a><span class="lineno"><a class="line" href="../../d5/dd0/namespacephysics.html#a27f31621d04cfbb97d56d971756881ff"> 1006</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#a27f31621d04cfbb97d56d971756881ff">SetGravityPoint</a>(glm::dvec2 pos) {</div>
-<div class="line"><a id="l01007" name="l01007"></a><span class="lineno"> 1007</span>  PhysicsSystem::SetGravityPoint(pos);</div>
-<div class="line"><a id="l01008" name="l01008"></a><span class="lineno"> 1008</span>}</div>
-<div class="line"><a id="l01009" name="l01009"></a><span class="lineno"> 1009</span> </div>
-<div class="line"><a id="l01010" name="l01010"></a><span class="lineno"><a class="line" href="../../d5/dd0/namespacephysics.html#a655297c3695404b71f4dff341e295390"> 1010</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#a655297c3695404b71f4dff341e295390">SetGravityPointScale</a>(<span class="keywordtype">double</span> scale) {</div>
-<div class="line"><a id="l01011" name="l01011"></a><span class="lineno"> 1011</span>  PhysicsSystem::SetGravityPointScale(scale);</div>
-<div class="line"><a id="l01012" name="l01012"></a><span class="lineno"> 1012</span>}</div>
-<div class="line"><a id="l01013" name="l01013"></a><span class="lineno"> 1013</span> </div>
-<div class="line"><a id="l01014" name="l01014"></a><span class="lineno"><a class="line" href="../../d5/dd0/namespacephysics.html#a9a34db3da7e8ac1dbaf8ac3e1b08e53c"> 1014</a></span><span class="keyword">auto</span> <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#a9a34db3da7e8ac1dbaf8ac3e1b08e53c">GetAllRigidbodies</a>() -&gt; std::list&lt;Rigidbody*&gt;&amp; {</div>
-<div class="line"><a id="l01015" name="l01015"></a><span class="lineno"> 1015</span>  <span class="keywordflow">return</span> PhysicsSystem::GetAllRigidbodies();</div>
-<div class="line"><a id="l01016" name="l01016"></a><span class="lineno"> 1016</span>}</div>
-<div class="line"><a id="l01017" name="l01017"></a><span class="lineno"> 1017</span> </div>
-<div class="line"><a id="l01018" name="l01018"></a><span class="lineno"><a class="line" href="../../d5/dd0/namespacephysics.html#aa53d891e169d147c91ff73e83093b9ff"> 1018</a></span><span class="keyword">auto</span> <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#aa53d891e169d147c91ff73e83093b9ff">Gravity</a>() -&gt; <span class="keywordtype">float</span> {</div>
-<div class="line"><a id="l01019" name="l01019"></a><span class="lineno"> 1019</span>  <span class="keywordflow">return</span> glm::length(PhysicsSystem::gravity());</div>
-<div class="line"><a id="l01020" name="l01020"></a><span class="lineno"> 1020</span>}</div>
-<div class="line"><a id="l01021" name="l01021"></a><span class="lineno"> 1021</span> </div>
-<div class="line"><a id="l01022" name="l01022"></a><span class="lineno"> 1022</span>}</div>
+<div class="line"><a id="l01006" name="l01006"></a><span class="lineno"><a class="line" href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#acfae8ad3c9328e9bf7ee8290d70ba03f"> 1006</a></span><span class="keywordtype">void</span> PhysicsSystem::MainThreadLateTick() {</div>
+<div class="line"><a id="l01007" name="l01007"></a><span class="lineno"> 1007</span>  <span class="keyword">auto</span> i = PhysicsSystem::get();</div>
+<div class="line"><a id="l01008" name="l01008"></a><span class="lineno"> 1008</span> </div>
+<div class="line"><a id="l01009" name="l01009"></a><span class="lineno"> 1009</span>  <span class="keywordflow">if</span> (!i.has_value()) {</div>
+<div class="line"><a id="l01010" name="l01010"></a><span class="lineno"> 1010</span>    <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l01011" name="l01011"></a><span class="lineno"> 1011</span>  }</div>
+<div class="line"><a id="l01012" name="l01012"></a><span class="lineno"> 1012</span> </div>
+<div class="line"><a id="l01013" name="l01013"></a><span class="lineno"> 1013</span>  std::lock_guard lock(i.value()-&gt;m.callbackMutex);</div>
+<div class="line"><a id="l01014" name="l01014"></a><span class="lineno"> 1014</span>  {</div>
+<div class="line"><a id="l01015" name="l01015"></a><span class="lineno"> 1015</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; callback : i.value()-&gt;m.callbackList) {</div>
+<div class="line"><a id="l01016" name="l01016"></a><span class="lineno"> 1016</span>      callback();</div>
+<div class="line"><a id="l01017" name="l01017"></a><span class="lineno"> 1017</span>    }</div>
+<div class="line"><a id="l01018" name="l01018"></a><span class="lineno"> 1018</span>    i.value()-&gt;m.callbackList.clear();</div>
+<div class="line"><a id="l01019" name="l01019"></a><span class="lineno"> 1019</span>  }</div>
+<div class="line"><a id="l01020" name="l01020"></a><span class="lineno"> 1020</span> </div>
+<div class="line"><a id="l01021" name="l01021"></a><span class="lineno"> 1021</span>  <span class="comment">// Main-thread supervisor: restart physics thread on unexpected exit unless intentionally stopped</span></div>
+<div class="line"><a id="l01022" name="l01022"></a><span class="lineno"> 1022</span>  <span class="keywordflow">if</span> (!<a class="code hl_variable" href="../../d5/dd0/namespacephysics.html#a1ac4f49fad7e8e82c39b7a25f6e2df63">g_intentionallyStopped</a>.load(std::memory_order_acquire) &amp;&amp; !<a class="code hl_variable" href="../../d5/dd0/namespacephysics.html#aefa33afe24ef9639071269aff8a8a268">g_threadAlive</a>.load(std::memory_order_acquire)) {</div>
+<div class="line"><a id="l01023" name="l01023"></a><span class="lineno"> 1023</span>    PhysicsSystem::start();</div>
+<div class="line"><a id="l01024" name="l01024"></a><span class="lineno"> 1024</span>  }</div>
+<div class="line"><a id="l01025" name="l01025"></a><span class="lineno"> 1025</span>}</div>
+<div class="line"><a id="l01026" name="l01026"></a><span class="lineno"> 1026</span> </div>
+<div class="line"><a id="l01027" name="l01027"></a><span class="lineno"><a class="line" href="../../d5/dd0/namespacephysics.html#a87606d7d4e42606e3ea00b1d88a2b2ac"> 1027</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#a87606d7d4e42606e3ea00b1d88a2b2ac">SetGravityType</a>(<a class="code hl_struct" href="../../df/d1e/structphysics_1_1GravityType.html">GravityType</a> type) {</div>
+<div class="line"><a id="l01028" name="l01028"></a><span class="lineno"> 1028</span>  PhysicsSystem::SetGravityType(type);</div>
+<div class="line"><a id="l01029" name="l01029"></a><span class="lineno"> 1029</span>}</div>
+<div class="line"><a id="l01030" name="l01030"></a><span class="lineno"> 1030</span> </div>
+<div class="line"><a id="l01031" name="l01031"></a><span class="lineno"><a class="line" href="../../d5/dd0/namespacephysics.html#a27f31621d04cfbb97d56d971756881ff"> 1031</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#a27f31621d04cfbb97d56d971756881ff">SetGravityPoint</a>(glm::dvec2 pos) {</div>
+<div class="line"><a id="l01032" name="l01032"></a><span class="lineno"> 1032</span>  PhysicsSystem::SetGravityPoint(pos);</div>
+<div class="line"><a id="l01033" name="l01033"></a><span class="lineno"> 1033</span>}</div>
+<div class="line"><a id="l01034" name="l01034"></a><span class="lineno"> 1034</span> </div>
+<div class="line"><a id="l01035" name="l01035"></a><span class="lineno"><a class="line" href="../../d5/dd0/namespacephysics.html#a655297c3695404b71f4dff341e295390"> 1035</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#a655297c3695404b71f4dff341e295390">SetGravityPointScale</a>(<span class="keywordtype">double</span> scale) {</div>
+<div class="line"><a id="l01036" name="l01036"></a><span class="lineno"> 1036</span>  PhysicsSystem::SetGravityPointScale(scale);</div>
+<div class="line"><a id="l01037" name="l01037"></a><span class="lineno"> 1037</span>}</div>
+<div class="line"><a id="l01038" name="l01038"></a><span class="lineno"> 1038</span> </div>
+<div class="line"><a id="l01039" name="l01039"></a><span class="lineno"><a class="line" href="../../d5/dd0/namespacephysics.html#a9a34db3da7e8ac1dbaf8ac3e1b08e53c"> 1039</a></span><span class="keyword">auto</span> <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#a9a34db3da7e8ac1dbaf8ac3e1b08e53c">GetAllRigidbodies</a>() -&gt; std::list&lt;Rigidbody*&gt;&amp; {</div>
+<div class="line"><a id="l01040" name="l01040"></a><span class="lineno"> 1040</span>  <span class="keywordflow">return</span> PhysicsSystem::GetAllRigidbodies();</div>
+<div class="line"><a id="l01041" name="l01041"></a><span class="lineno"> 1041</span>}</div>
+<div class="line"><a id="l01042" name="l01042"></a><span class="lineno"> 1042</span> </div>
+<div class="line"><a id="l01043" name="l01043"></a><span class="lineno"><a class="line" href="../../d5/dd0/namespacephysics.html#aa53d891e169d147c91ff73e83093b9ff"> 1043</a></span><span class="keyword">auto</span> <a class="code hl_function" href="../../d5/dd0/namespacephysics.html#aa53d891e169d147c91ff73e83093b9ff">Gravity</a>() -&gt; <span class="keywordtype">float</span> {</div>
+<div class="line"><a id="l01044" name="l01044"></a><span class="lineno"> 1044</span>  <span class="keywordflow">return</span> glm::length(PhysicsSystem::gravity());</div>
+<div class="line"><a id="l01045" name="l01045"></a><span class="lineno"> 1045</span>}</div>
+<div class="line"><a id="l01046" name="l01046"></a><span class="lineno"> 1046</span> </div>
+<div class="line"><a id="l01047" name="l01047"></a><span class="lineno"> 1047</span>}</div>
 <div class="ttc" id="aBoxDynamics_8hpp_html"><div class="ttname"><a href="../../dc/d35/BoxDynamics_8hpp.html">BoxDynamics.hpp</a></div></div>
 <div class="ttc" id="aBoxRigidbody_8hpp_html"><div class="ttname"><a href="../../d8/d87/BoxRigidbody_8hpp.html">BoxRigidbody.hpp</a></div></div>
 <div class="ttc" id="aColliderFlags_8hpp_html_ab24e00ae3493fd723980767febb345c6"><div class="ttname"><a href="../../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6">ColliderFlags</a></div><div class="ttdeci">ColliderFlags</div><div class="ttdef"><b>Definition:</b> <a href="../../dd/d06/ColliderFlags_8hpp_source.html#l00010">ColliderFlags.hpp:10</a></div></div>
@@ -1140,7 +1165,8 @@ $(document).ready(function(){initNavTree('d6/d4a/PhysicsSystem_8cpp_source.html'
 <div class="ttc" id="aTrigger_8hpp_html"><div class="ttname"><a href="../../d2/d29/Trigger_8hpp.html">Trigger.hpp</a></div></div>
 <div class="ttc" id="aWorld_8hpp_html"><div class="ttname"><a href="../../d0/dbb/World_8hpp.html">World.hpp</a></div></div>
 <div class="ttc" id="aclassevent_1_1ListenerComponent_html_a84ac7af8b87e3ae70d8288f3ce113cce"><div class="ttname"><a href="../../d8/d7b/classevent_1_1ListenerComponent.html#a84ac7af8b87e3ae70d8288f3ce113cce">event::ListenerComponent::Subscribe</a></div><div class="ttdeci">void Subscribe(std::string name, std::function&lt; bool(TEvent *)&gt; callback, unsigned char priority=1)</div><div class="ttdoc">Subscribes a function to a specific event.</div><div class="ttdef"><b>Definition:</b> <a href="../../d0/d1c/ListenerComponent_8hpp_source.html#l00067">ListenerComponent.hpp:67</a></div></div>
-<div class="ttc" id="aclassphysics_1_1BoxRigidbody_html"><div class="ttname"><a href="../../d4/db0/classphysics_1_1BoxRigidbody.html">physics::BoxRigidbody</a></div><div class="ttdef"><b>Definition:</b> <a href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00014">BoxRigidbody.hpp:14</a></div></div>
+<div class="ttc" id="aclassphysics_1_1BoxRigidbody_html"><div class="ttname"><a href="../../d4/db0/classphysics_1_1BoxRigidbody.html">physics::BoxRigidbody</a></div><div class="ttdef"><b>Definition:</b> <a href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00015">BoxRigidbody.hpp:15</a></div></div>
+<div class="ttc" id="aclassphysics_1_1BoxRigidbody_html_ae07dcc28a00bdc8c1427a2e61b9722a4"><div class="ttname"><a href="../../d4/db0/classphysics_1_1BoxRigidbody.html#ae07dcc28a00bdc8c1427a2e61b9722a4">physics::BoxRigidbody::enterCallback</a></div><div class="ttdeci">std::function&lt; void(RayResult *)&gt; enterCallback</div><div class="ttdef"><b>Definition:</b> <a href="../../d8/d87/BoxRigidbody_8hpp_source.html#l00042">BoxRigidbody.hpp:42</a></div></div>
 <div class="ttc" id="aclassphysics_1_1ConvexCollider_html"><div class="ttname"><a href="../../dd/d88/classphysics_1_1ConvexCollider.html">physics::ConvexCollider</a></div><div class="ttdef"><b>Definition:</b> <a href="../../de/db8/ConvexCollider_8hpp_source.html#l00013">ConvexCollider.hpp:13</a></div></div>
 <div class="ttc" id="aclassphysics_1_1PhysicsSystem_html"><div class="ttname"><a href="../../d6/dd8/classphysics_1_1PhysicsSystem.html">physics::PhysicsSystem</a></div><div class="ttdef"><b>Definition:</b> <a href="../../d1/d91/PhysicsSystem_8hpp_source.html#l00034">PhysicsSystem.hpp:34</a></div></div>
 <div class="ttc" id="aclassphysics_1_1PhysicsSystem_html_a34757355e7ec79f24c8ce4fa594a7d7f"><div class="ttname"><a href="../../d6/dd8/classphysics_1_1PhysicsSystem.html#a34757355e7ec79f24c8ce4fa594a7d7f">physics::PhysicsSystem::PhysicsSystem</a></div><div class="ttdeci">PhysicsSystem()</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00075">PhysicsSystem.cpp:75</a></div></div>
@@ -1173,7 +1199,7 @@ $(document).ready(function(){initNavTree('d6/d4a/PhysicsSystem_8cpp_source.html'
 <div class="ttc" id="anamespacephysics_html_a0fc11376b2499ebcf4d7cf0ccb7cf63d"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a0fc11376b2499ebcf4d7cf0ccb7cf63d">physics::BoxMeshCollision</a></div><div class="ttdeci">auto BoxMeshCollision(BoxRigidbody *rb, ConvexCollider *c) -&gt; std::optional&lt; BoxManifold &gt;</div><div class="ttdef"><b>Definition:</b> <a href="../../da/dfb/BoxDynamics_8cpp_source.html#l00376">BoxDynamics.cpp:376</a></div></div>
 <div class="ttc" id="anamespacephysics_html_a1ac4f49fad7e8e82c39b7a25f6e2df63"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a1ac4f49fad7e8e82c39b7a25f6e2df63">physics::g_intentionallyStopped</a></div><div class="ttdeci">static std::atomic&lt; bool &gt; g_intentionallyStopped</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00073">PhysicsSystem.cpp:73</a></div></div>
 <div class="ttc" id="anamespacephysics_html_a2570830536e313c268c0d55b73a19fa8"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a2570830536e313c268c0d55b73a19fa8">physics::RbMeshResolution</a></div><div class="ttdeci">void RbMeshResolution(Rigidbody *rb, ConvexCollider *c, Manifold manifold)</div><div class="ttdef"><b>Definition:</b> <a href="../../d1/d8c/RigidbodyDynamics_8cpp_source.html#l00332">RigidbodyDynamics.cpp:332</a></div></div>
-<div class="ttc" id="anamespacephysics_html_a27f31621d04cfbb97d56d971756881ff"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a27f31621d04cfbb97d56d971756881ff">physics::SetGravityPoint</a></div><div class="ttdeci">void SetGravityPoint(glm::dvec2 pos)</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l01006">PhysicsSystem.cpp:1006</a></div></div>
+<div class="ttc" id="anamespacephysics_html_a27f31621d04cfbb97d56d971756881ff"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a27f31621d04cfbb97d56d971756881ff">physics::SetGravityPoint</a></div><div class="ttdeci">void SetGravityPoint(glm::dvec2 pos)</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l01031">PhysicsSystem.cpp:1031</a></div></div>
 <div class="ttc" id="anamespacephysics_html_a2df048bd8f58a63d7497b090ff58a052"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a2df048bd8f58a63d7497b090ff58a052">physics::BoxKinematics</a></div><div class="ttdeci">void BoxKinematics(BoxRigidbody *rb)</div><div class="ttdef"><b>Definition:</b> <a href="../../da/dfb/BoxDynamics_8cpp_source.html#l00055">BoxDynamics.cpp:55</a></div></div>
 <div class="ttc" id="anamespacephysics_html_a2e71122566921cc33ddc9a429065ef4a"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a2e71122566921cc33ddc9a429065ef4a">physics::RbMeshCollision</a></div><div class="ttdeci">auto RbMeshCollision(Rigidbody *rb, ConvexCollider *c) -&gt; std::optional&lt; Manifold &gt;</div><div class="ttdef"><b>Definition:</b> <a href="../../d1/d8c/RigidbodyDynamics_8cpp_source.html#l00307">RigidbodyDynamics.cpp:307</a></div></div>
 <div class="ttc" id="anamespacephysics_html_a33c69640dfa002d677858f5b3536ff2c"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a33c69640dfa002d677858f5b3536ff2c">physics::RbResetVelocity</a></div><div class="ttdeci">void RbResetVelocity(Rigidbody *rb)</div><div class="ttdef"><b>Definition:</b> <a href="../../d1/d8c/RigidbodyDynamics_8cpp_source.html#l00165">RigidbodyDynamics.cpp:165</a></div></div>
@@ -1181,18 +1207,19 @@ $(document).ready(function(){initNavTree('d6/d4a/PhysicsSystem_8cpp_source.html'
 <div class="ttc" id="anamespacephysics_html_a46f160106603c30fe08f473710634331"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a46f160106603c30fe08f473710634331">physics::BoxMeshResolution</a></div><div class="ttdeci">void BoxMeshResolution(BoxRigidbody *rb, ConvexCollider *c, BoxManifold manifold)</div><div class="ttdef"><b>Definition:</b> <a href="../../da/dfb/BoxDynamics_8cpp_source.html#l00513">BoxDynamics.cpp:513</a></div></div>
 <div class="ttc" id="anamespacephysics_html_a4924f71c844f8adfafae48531455f910"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a4924f71c844f8adfafae48531455f910">physics::RbRayCollision</a></div><div class="ttdeci">std::optional&lt; dvec2 &gt; RbRayCollision(Line *ray, Rigidbody *rb)</div><div class="ttdef"><b>Definition:</b> <a href="../../d1/d8c/RigidbodyDynamics_8cpp_source.html#l00405">RigidbodyDynamics.cpp:405</a></div></div>
 <div class="ttc" id="anamespacephysics_html_a4d57204353d7e78fd76b1ec199b1a2d1"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a4d57204353d7e78fd76b1ec199b1a2d1">physics::BoxBoxResolution</a></div><div class="ttdeci">void BoxBoxResolution(BoxRigidbody *rb1, BoxRigidbody *rb2, BoxManifold manifold)</div><div class="ttdef"><b>Definition:</b> <a href="../../da/dfb/BoxDynamics_8cpp_source.html#l00227">BoxDynamics.cpp:227</a></div></div>
-<div class="ttc" id="anamespacephysics_html_a655297c3695404b71f4dff341e295390"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a655297c3695404b71f4dff341e295390">physics::SetGravityPointScale</a></div><div class="ttdeci">void SetGravityPointScale(double scale)</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l01010">PhysicsSystem.cpp:1010</a></div></div>
+<div class="ttc" id="anamespacephysics_html_a655297c3695404b71f4dff341e295390"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a655297c3695404b71f4dff341e295390">physics::SetGravityPointScale</a></div><div class="ttdeci">void SetGravityPointScale(double scale)</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l01035">PhysicsSystem.cpp:1035</a></div></div>
 <div class="ttc" id="anamespacephysics_html_a740edf213e0fd126ea757f5aea74e90b"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a740edf213e0fd126ea757f5aea74e90b">physics::ConvexRayCollision</a></div><div class="ttdeci">auto ConvexRayCollision(Line *ray, ConvexCollider *c) -&gt; std::optional&lt; std::pair&lt; dvec2, dvec2 &gt; &gt;</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/da3/ConvexCollider_8cpp_source.html#l00075">ConvexCollider.cpp:75</a></div></div>
+<div class="ttc" id="anamespacephysics_html_a7967a3069ff39c41032a3fce02e605e7"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a7967a3069ff39c41032a3fce02e605e7">physics::BoxRayCollision</a></div><div class="ttdeci">auto BoxRayCollision(Line *ray, BoxRigidbody *c) -&gt; std::optional&lt; std::pair&lt; glm::dvec2, glm::dvec2 &gt; &gt;</div><div class="ttdef"><b>Definition:</b> <a href="../../df/de4/BoxRigidbody_8cpp_source.html#l00253">BoxRigidbody.cpp:253</a></div></div>
 <div class="ttc" id="anamespacephysics_html_a82cba2d23e67fd0015fe65a3f3ae2206"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a82cba2d23e67fd0015fe65a3f3ae2206">physics::g_threadLifecycleMutex</a></div><div class="ttdeci">static std::mutex g_threadLifecycleMutex</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00071">PhysicsSystem.cpp:71</a></div></div>
-<div class="ttc" id="anamespacephysics_html_a87606d7d4e42606e3ea00b1d88a2b2ac"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a87606d7d4e42606e3ea00b1d88a2b2ac">physics::SetGravityType</a></div><div class="ttdeci">void SetGravityType(GravityType type)</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l01002">PhysicsSystem.cpp:1002</a></div></div>
+<div class="ttc" id="anamespacephysics_html_a87606d7d4e42606e3ea00b1d88a2b2ac"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a87606d7d4e42606e3ea00b1d88a2b2ac">physics::SetGravityType</a></div><div class="ttdeci">void SetGravityType(GravityType type)</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l01027">PhysicsSystem.cpp:1027</a></div></div>
 <div class="ttc" id="anamespacephysics_html_a902868438e4859d46f7e6c0741a9e38f"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a902868438e4859d46f7e6c0741a9e38f">physics::BoxIntegration</a></div><div class="ttdeci">void BoxIntegration(BoxRigidbody *rb)</div><div class="ttdef"><b>Definition:</b> <a href="../../da/dfb/BoxDynamics_8cpp_source.html#l00097">BoxDynamics.cpp:97</a></div></div>
-<div class="ttc" id="anamespacephysics_html_a9a34db3da7e8ac1dbaf8ac3e1b08e53c"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a9a34db3da7e8ac1dbaf8ac3e1b08e53c">physics::GetAllRigidbodies</a></div><div class="ttdeci">auto GetAllRigidbodies() -&gt; std::list&lt; Rigidbody * &gt; &amp;</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l01014">PhysicsSystem.cpp:1014</a></div></div>
+<div class="ttc" id="anamespacephysics_html_a9a34db3da7e8ac1dbaf8ac3e1b08e53c"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#a9a34db3da7e8ac1dbaf8ac3e1b08e53c">physics::GetAllRigidbodies</a></div><div class="ttdeci">auto GetAllRigidbodies() -&gt; std::list&lt; Rigidbody * &gt; &amp;</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l01039">PhysicsSystem.cpp:1039</a></div></div>
 <div class="ttc" id="anamespacephysics_html_aa0997ff64f451f3edfc555c6fa7a320e"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#aa0997ff64f451f3edfc555c6fa7a320e">physics::RbKinematics</a></div><div class="ttdeci">void RbKinematics(Rigidbody *rb)</div><div class="ttdef"><b>Definition:</b> <a href="../../d1/d8c/RigidbodyDynamics_8cpp_source.html#l00111">RigidbodyDynamics.cpp:111</a></div></div>
 <div class="ttc" id="anamespacephysics_html_aa3a7e4c9e02abd1798c4843fd5273a33"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#aa3a7e4c9e02abd1798c4843fd5273a33">physics::RbTriggerCollision</a></div><div class="ttdeci">void RbTriggerCollision(Rigidbody *rb1, Trigger *t, std::list&lt; std::function&lt; void()&gt; &gt; &amp;localCallbacks)</div><div class="ttdef"><b>Definition:</b> <a href="../../d1/d8c/RigidbodyDynamics_8cpp_source.html#l00429">RigidbodyDynamics.cpp:429</a></div></div>
-<div class="ttc" id="anamespacephysics_html_aa53d891e169d147c91ff73e83093b9ff"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#aa53d891e169d147c91ff73e83093b9ff">physics::Gravity</a></div><div class="ttdeci">auto Gravity() -&gt; float</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l01018">PhysicsSystem.cpp:1018</a></div></div>
-<div class="ttc" id="anamespacephysics_html_aa70a3effdf01388626ffda84731e1a56"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#aa70a3effdf01388626ffda84731e1a56">physics::RbBoxResolution</a></div><div class="ttdeci">void RbBoxResolution(Rigidbody *rb1, BoxRigidbody *rb2, Manifold manifold)</div><div class="ttdef"><b>Definition:</b> <a href="../../d1/d8c/RigidbodyDynamics_8cpp_source.html#l00516">RigidbodyDynamics.cpp:516</a></div></div>
+<div class="ttc" id="anamespacephysics_html_aa53d891e169d147c91ff73e83093b9ff"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#aa53d891e169d147c91ff73e83093b9ff">physics::Gravity</a></div><div class="ttdeci">auto Gravity() -&gt; float</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l01043">PhysicsSystem.cpp:1043</a></div></div>
+<div class="ttc" id="anamespacephysics_html_aa70a3effdf01388626ffda84731e1a56"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#aa70a3effdf01388626ffda84731e1a56">physics::RbBoxResolution</a></div><div class="ttdeci">void RbBoxResolution(Rigidbody *rb1, BoxRigidbody *rb2, Manifold manifold)</div><div class="ttdef"><b>Definition:</b> <a href="../../d1/d8c/RigidbodyDynamics_8cpp_source.html#l00517">RigidbodyDynamics.cpp:517</a></div></div>
 <div class="ttc" id="anamespacephysics_html_ab5bb62de13325b81f45958620bc2b988"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#ab5bb62de13325b81f45958620bc2b988">physics::RbIntegration</a></div><div class="ttdeci">void RbIntegration(Rigidbody *rb)</div><div class="ttdef"><b>Definition:</b> <a href="../../d1/d8c/RigidbodyDynamics_8cpp_source.html#l00157">RigidbodyDynamics.cpp:157</a></div></div>
-<div class="ttc" id="anamespacephysics_html_ae7051f57845ca7267e232f0eeb73ff99"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#ae7051f57845ca7267e232f0eeb73ff99">physics::RbBoxCollision</a></div><div class="ttdeci">auto RbBoxCollision(Rigidbody *rb1, BoxRigidbody *rb2) -&gt; std::optional&lt; Manifold &gt;</div><div class="ttdef"><b>Definition:</b> <a href="../../d1/d8c/RigidbodyDynamics_8cpp_source.html#l00491">RigidbodyDynamics.cpp:491</a></div></div>
+<div class="ttc" id="anamespacephysics_html_ae7051f57845ca7267e232f0eeb73ff99"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#ae7051f57845ca7267e232f0eeb73ff99">physics::RbBoxCollision</a></div><div class="ttdeci">auto RbBoxCollision(Rigidbody *rb1, BoxRigidbody *rb2) -&gt; std::optional&lt; Manifold &gt;</div><div class="ttdef"><b>Definition:</b> <a href="../../d1/d8c/RigidbodyDynamics_8cpp_source.html#l00492">RigidbodyDynamics.cpp:492</a></div></div>
 <div class="ttc" id="anamespacephysics_html_aefa33afe24ef9639071269aff8a8a268"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#aefa33afe24ef9639071269aff8a8a268">physics::g_threadAlive</a></div><div class="ttdeci">static std::atomic&lt; bool &gt; g_threadAlive</div><div class="ttdef"><b>Definition:</b> <a href="../../d6/d4a/PhysicsSystem_8cpp_source.html#l00072">PhysicsSystem.cpp:72</a></div></div>
 <div class="ttc" id="anamespacephysics_html_afd721919c6e6937b568f0eae110ffad7"><div class="ttname"><a href="../../d5/dd0/namespacephysics.html#afd721919c6e6937b568f0eae110ffad7">physics::BoxBoxCollision</a></div><div class="ttdeci">auto BoxBoxCollision(BoxRigidbody *rb1, BoxRigidbody *rb2) -&gt; std::optional&lt; BoxManifold &gt;</div><div class="ttdef"><b>Definition:</b> <a href="../../da/dfb/BoxDynamics_8cpp_source.html#l00115">BoxDynamics.cpp:115</a></div></div>
 <div class="ttc" id="astructOclussionVolume_html_a6f1fbf54b6f417e32c6916bd84480022"><div class="ttname"><a href="../../d8/dfe/structOclussionVolume.html#a6f1fbf54b6f417e32c6916bd84480022">OclussionVolume::isAABBOnPlanes</a></div><div class="ttdeci">static bool isAABBOnPlanes(const renderer::BoundingBox &amp;aabb)</div><div class="ttdoc">Tests if an AABB (in world space) is inside or intersecting the frustum.</div><div class="ttdef"><b>Definition:</b> <a href="../../de/dd7/OclussionVolume_8hpp_source.html#l00082">OclussionVolume.hpp:82</a></div></div>

@@ -3,6 +3,7 @@ var classtoast_1_1GameFlow =
     [ "GameFlow", "d6/dbd/classtoast_1_1GameFlow.html#a40c8439e6c88b6eda3ced9023c00998f", null ],
     [ "CurrentScene", "d6/dbd/classtoast_1_1GameFlow.html#a5bbb06d6a28be85834231504c34ee8b5", null ],
     [ "GetLevel", "d6/dbd/classtoast_1_1GameFlow.html#a894fdaa75e59b09f39e7c4fda4ca75ef", null ],
+    [ "GetLevelName", "d6/dbd/classtoast_1_1GameFlow.html#a340e8386aeb6861032453d890f59b1a3", null ],
     [ "GetWorld", "d6/dbd/classtoast_1_1GameFlow.html#aa9d42fd612c84872725d364c8e492b56", null ],
     [ "LoadLevel", "d6/dbd/classtoast_1_1GameFlow.html#a03e770afc70716334eb4037d9151c8a5", null ],
     [ "LoadWorld", "d6/dbd/classtoast_1_1GameFlow.html#ad929acb758d90809c68ba2362d8e7ed4", null ],

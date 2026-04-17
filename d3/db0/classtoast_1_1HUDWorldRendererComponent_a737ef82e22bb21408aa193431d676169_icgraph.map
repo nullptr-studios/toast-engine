@@ -1,12 +1,13 @@
 <map id="toast::HUDWorldRendererComponent::ClearView" name="toast::HUDWorldRendererComponent::ClearView">
-<area shape="rect" id="node1" title=" " alt="" coords="708,98,972,138"/>
-<area shape="rect" id="node2" href="$d9/da2/classHUDActor.html#acaabbf260904915e64355d4bb6e92ffb" title=" " alt="" coords="455,55,632,80"/>
-<area shape="rect" id="node5" href="$d9/da2/classHUDActor.html#af514a32a41cb928961a396d7fdbb7f3f" title=" " alt="" coords="427,131,660,156"/>
-<area shape="rect" id="node3" href="$d9/da2/classHUDActor.html#a71fbe50d283cf19f71a8ffbc714d6e0a" title="This function runs when the object is set to be destroyed." alt="" coords="221,5,367,31"/>
-<area shape="rect" id="node4" href="$d9/da2/classHUDActor.html#adb2279030384ec50c31f0c85dc4b2488" title="This function runs when the object is disabled." alt="" coords="213,55,375,80"/>
-<area shape="rect" id="node6" href="$d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="18,93,149,119"/>
-<area shape="rect" id="node7" href="$d9/da2/classHUDActor.html#aa15a3dd4398860f54db039de7e907f68" title=" " alt="" coords="209,156,379,181"/>
-<area shape="rect" id="node10" href="$d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8" title="This function runs every frame." alt="" coords="23,241,144,267"/>
-<area shape="rect" id="node8" href="$d9/da2/classHUDActor.html#adabf1a2c2f3cb0fe55bf484fafffce52" title="This function runs when the object is enabled after being disabled." alt="" coords="5,143,161,168"/>
-<area shape="rect" id="node9" href="$d9/da2/classHUDActor.html#aaae91463121566f983c99a2b0adce335" title=" " alt="" coords="16,192,151,217"/>
+<area shape="rect" id="node1" title=" " alt="" coords="735,149,999,189"/>
+<area shape="rect" id="node2" href="$d9/da2/classHUDActor.html#acaabbf260904915e64355d4bb6e92ffb" title=" " alt="" coords="481,80,659,105"/>
+<area shape="rect" id="node6" href="$d9/da2/classHUDActor.html#af514a32a41cb928961a396d7fdbb7f3f" title=" " alt="" coords="453,181,687,207"/>
+<area shape="rect" id="node3" href="$d9/da2/classHUDActor.html#a71fbe50d283cf19f71a8ffbc714d6e0a" title="This function runs when the object is set to be destroyed." alt="" coords="248,5,393,31"/>
+<area shape="rect" id="node4" href="$d9/da2/classHUDActor.html#adb2279030384ec50c31f0c85dc4b2488" title="This function runs when the object is disabled." alt="" coords="240,55,401,80"/>
+<area shape="rect" id="node5" href="$d9/da2/classHUDActor.html#a1efd38da2d4e467548b9702d2ef34926" title=" " alt="" coords="5,105,188,131"/>
+<area shape="rect" id="node7" href="$d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="31,155,162,180"/>
+<area shape="rect" id="node8" href="$d9/da2/classHUDActor.html#aa15a3dd4398860f54db039de7e907f68" title=" " alt="" coords="236,207,405,232"/>
+<area shape="rect" id="node11" href="$d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8" title="This function runs every frame." alt="" coords="36,303,157,328"/>
+<area shape="rect" id="node9" href="$d9/da2/classHUDActor.html#adabf1a2c2f3cb0fe55bf484fafffce52" title="This function runs when the object is enabled after being disabled." alt="" coords="19,253,175,279"/>
+<area shape="rect" id="node10" href="$d9/da2/classHUDActor.html#aaae91463121566f983c99a2b0adce335" title=" " alt="" coords="29,204,164,229"/>
 </map>

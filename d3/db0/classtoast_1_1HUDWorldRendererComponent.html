@@ -160,6 +160,9 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a210b068bf379ab40af996811836c2f5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a34fdaac33590ce564b2435d7261b1ff2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/db0/classtoast_1_1HUDWorldRendererComponent.html#a34fdaac33590ce564b2435d7261b1ff2">SetDrawToDepth</a> (bool value)</td></tr>
 <tr class="separator:a34fdaac33590ce564b2435d7261b1ff2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2d08c0a56c0726b89efe0618f406756"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/db0/classtoast_1_1HUDWorldRendererComponent.html#ad2d08c0a56c0726b89efe0618f406756">WritesDepthInGeometryPass</a> () const noexcept override</td></tr>
+<tr class="memdesc:ad2d08c0a56c0726b89efe0618f406756"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether this renderable should write depth when rendered via transparent geometry path.  <br /></td></tr>
+<tr class="separator:ad2d08c0a56c0726b89efe0618f406756"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classrenderer_1_1IRenderable"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classrenderer_1_1IRenderable')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html">renderer::IRenderable</a></td></tr>
 <tr class="memitem:ab1f1a56a5680b260fdcd92d7d76ee27d inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#ab1f1a56a5680b260fdcd92d7d76ee27d">~IRenderable</a> () override=default</td></tr>
 <tr class="separator:ab1f1a56a5680b260fdcd92d7d76ee27d inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -177,6 +180,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#a74cfe5f7b4edb11d1813b3403a59eb71">GetTransparentSortPriority</a> () noexcept</td></tr>
 <tr class="memdesc:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transparent sorting priority. Higher values are rendered later in SpritePass.  <br /></td></tr>
 <tr class="separator:a74cfe5f7b4edb11d1813b3403a59eb71 inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfdb15aa21e71641d45454862e308cff inherit pub_methods_classrenderer_1_1IRenderable"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#acfdb15aa21e71641d45454862e308cff">WritesDepthInGeometryPass</a> () const noexcept</td></tr>
+<tr class="memdesc:acfdb15aa21e71641d45454862e308cff inherit pub_methods_classrenderer_1_1IRenderable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether this renderable should write depth when rendered via transparent geometry path.  <br /></td></tr>
+<tr class="separator:acfdb15aa21e71641d45454862e308cff inherit pub_methods_classrenderer_1_1IRenderable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1TransformComponent"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classtoast_1_1TransformComponent')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html">toast::TransformComponent</a></td></tr>
 <tr class="memitem:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#a0077d521827b8e0f9c6814efc7fb55c7">TransformComponent</a> ()</td></tr>
 <tr class="memdesc:a0077d521827b8e0f9c6814efc7fb55c7 inherit pub_methods_classtoast_1_1TransformComponent"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a transform at the origin with no rotation and unit scale.  <br /></td></tr>
@@ -455,16 +461,17 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d3/db0/classtoast_1_1HUDWorldRendererComponent_a737ef82e22bb21408aa193431d676169_icgraph.png" border="0" usemap="#ad3/db0/classtoast_1_1HUDWorldRendererComponent_a737ef82e22bb21408aa193431d676169_icgraph" alt=""/></div>
 <map name="ad3/db0/classtoast_1_1HUDWorldRendererComponent_a737ef82e22bb21408aa193431d676169_icgraph" id="ad3/db0/classtoast_1_1HUDWorldRendererComponent_a737ef82e22bb21408aa193431d676169_icgraph">
-<area shape="rect" title=" " alt="" coords="708,98,972,138"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#acaabbf260904915e64355d4bb6e92ffb" title=" " alt="" coords="455,55,632,80"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#af514a32a41cb928961a396d7fdbb7f3f" title=" " alt="" coords="427,131,660,156"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#a71fbe50d283cf19f71a8ffbc714d6e0a" title="This function runs when the object is set to be destroyed." alt="" coords="221,5,367,31"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#adb2279030384ec50c31f0c85dc4b2488" title="This function runs when the object is disabled." alt="" coords="213,55,375,80"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="18,93,149,119"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#aa15a3dd4398860f54db039de7e907f68" title=" " alt="" coords="209,156,379,181"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8" title="This function runs every frame." alt="" coords="23,241,144,267"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#adabf1a2c2f3cb0fe55bf484fafffce52" title="This function runs when the object is enabled after being disabled." alt="" coords="5,143,161,168"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#aaae91463121566f983c99a2b0adce335" title=" " alt="" coords="16,192,151,217"/>
+<area shape="rect" title=" " alt="" coords="735,149,999,189"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#acaabbf260904915e64355d4bb6e92ffb" title=" " alt="" coords="481,80,659,105"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#af514a32a41cb928961a396d7fdbb7f3f" title=" " alt="" coords="453,181,687,207"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#a71fbe50d283cf19f71a8ffbc714d6e0a" title="This function runs when the object is set to be destroyed." alt="" coords="248,5,393,31"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#adb2279030384ec50c31f0c85dc4b2488" title="This function runs when the object is disabled." alt="" coords="240,55,401,80"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#a1efd38da2d4e467548b9702d2ef34926" title=" " alt="" coords="5,105,188,131"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="31,155,162,180"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#aa15a3dd4398860f54db039de7e907f68" title=" " alt="" coords="236,207,405,232"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8" title="This function runs every frame." alt="" coords="36,303,157,328"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#adabf1a2c2f3cb0fe55bf484fafffce52" title="This function runs when the object is enabled after being disabled." alt="" coords="19,253,175,279"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#aaae91463121566f983c99a2b0adce335" title=" " alt="" coords="29,204,164,229"/>
 </map>
 </div>
 
@@ -497,7 +504,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#a1b6e927d9c508dd81a308d45a52afecb">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html#l00083">83</a> of file <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html">HUDWorldRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html#l00080">80</a> of file <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html">HUDWorldRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -578,7 +585,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#af9bdc4d7afedfec4b500a09e505bb28e">toast::TransformComponent</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html#l00104">104</a> of file <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html">HUDWorldRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html#l00101">101</a> of file <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html">HUDWorldRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -638,7 +645,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#aa9867880b2966b5ccb8be7c9abf37618">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html#l00098">98</a> of file <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html">HUDWorldRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html#l00095">95</a> of file <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html">HUDWorldRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -669,7 +676,7 @@ Here is the caller graph for this function:</div>
 
 <p>Reimplemented from <a class="el" href="../../d1/da3/classtoast_1_1Object.html#abe84982fe050e7f6ba09f8f0ccec6ee5">toast::Object</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html#l00092">92</a> of file <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html">HUDWorldRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html#l00089">89</a> of file <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html">HUDWorldRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -772,7 +779,7 @@ Must be noexcept as exceptions cannot be handled in render loop. </dd></dl>
 
 <p>Reimplemented from <a class="el" href="../../d0/dd9/classtoast_1_1TransformComponent.html#adf007c932918c5e80b026e6171737e53">toast::TransformComponent</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html#l00114">114</a> of file <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html">HUDWorldRendererComponent.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html#l00111">111</a> of file <a class="el" href="../../da/d0a/HUDWorldRendererComponent_8cpp_source.html">HUDWorldRendererComponent.cpp</a>.</p>
 
 </div>
 </div>
@@ -923,15 +930,47 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="../../d3/db0/classtoast_1_1HUDWorldRendererComponent_a3d40c59d0198095d6b7ab8aaed8ee171_icgraph.png" border="0" usemap="#ad3/db0/classtoast_1_1HUDWorldRendererComponent_a3d40c59d0198095d6b7ab8aaed8ee171_icgraph" alt=""/></div>
 <map name="ad3/db0/classtoast_1_1HUDWorldRendererComponent_a3d40c59d0198095d6b7ab8aaed8ee171_icgraph" id="ad3/db0/classtoast_1_1HUDWorldRendererComponent_a3d40c59d0198095d6b7ab8aaed8ee171_icgraph">
-<area shape="rect" title=" " alt="" coords="708,61,972,101"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#af514a32a41cb928961a396d7fdbb7f3f" title=" " alt="" coords="427,68,660,93"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="18,5,149,31"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#aa15a3dd4398860f54db039de7e907f68" title=" " alt="" coords="209,68,379,93"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8" title="This function runs every frame." alt="" coords="23,153,144,179"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#adabf1a2c2f3cb0fe55bf484fafffce52" title="This function runs when the object is enabled after being disabled." alt="" coords="5,55,161,80"/>
-<area shape="rect" href="../../d9/da2/classHUDActor.html#aaae91463121566f983c99a2b0adce335" title=" " alt="" coords="16,104,151,129"/>
+<area shape="rect" title=" " alt="" coords="735,97,999,137"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#af514a32a41cb928961a396d7fdbb7f3f" title=" " alt="" coords="453,104,687,129"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="31,5,162,31"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#aa15a3dd4398860f54db039de7e907f68" title=" " alt="" coords="236,104,405,129"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8" title="This function runs every frame." alt="" coords="36,203,157,228"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#adabf1a2c2f3cb0fe55bf484fafffce52" title="This function runs when the object is enabled after being disabled." alt="" coords="19,55,175,80"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#a1efd38da2d4e467548b9702d2ef34926" title=" " alt="" coords="5,104,188,129"/>
+<area shape="rect" href="../../d9/da2/classHUDActor.html#aaae91463121566f983c99a2b0adce335" title=" " alt="" coords="29,153,164,179"/>
 </map>
 </div>
+
+</div>
+</div>
+<a id="ad2d08c0a56c0726b89efe0618f406756" name="ad2d08c0a56c0726b89efe0618f406756"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad2d08c0a56c0726b89efe0618f406756">&#9670;&#160;</a></span>WritesDepthInGeometryPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool toast::HUDWorldRendererComponent::WritesDepthInGeometryPass </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Whether this renderable should write depth when rendered via transparent geometry path. </p>
+
+<p>Reimplemented from <a class="el" href="../../d5/dfe/classrenderer_1_1IRenderable.html#acfdb15aa21e71641d45454862e308cff">renderer::IRenderable</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00061">61</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -956,7 +995,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00068">68</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00073">73</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -980,7 +1019,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00065">65</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00070">70</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1004,7 +1043,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00062">62</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00067">67</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1028,7 +1067,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00061">61</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00066">66</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1052,7 +1091,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00069">69</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00074">74</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1076,7 +1115,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00063">63</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00068">68</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1100,7 +1139,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00067">67</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00072">72</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
 
 </div>
 </div>
@@ -1124,7 +1163,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00064">64</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html#l00069">69</a> of file <a class="el" href="../../d0/d09/HUDWorldRendererComponent_8hpp_source.html">HUDWorldRendererComponent.hpp</a>.</p>
 
 </div>
 </div>

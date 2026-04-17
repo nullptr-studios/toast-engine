@@ -1,8 +1,9 @@
 <map id="HUDActor::SyncResolvedTexture" name="HUDActor::SyncResolvedTexture">
-<area shape="rect" id="node1" title=" " alt="" coords="427,68,660,93"/>
-<area shape="rect" id="node2" href="$d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="18,5,149,31"/>
-<area shape="rect" id="node3" href="$d9/da2/classHUDActor.html#aa15a3dd4398860f54db039de7e907f68" title=" " alt="" coords="209,68,379,93"/>
-<area shape="rect" id="node6" href="$d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8" title="This function runs every frame." alt="" coords="23,153,144,179"/>
-<area shape="rect" id="node4" href="$d9/da2/classHUDActor.html#adabf1a2c2f3cb0fe55bf484fafffce52" title="This function runs when the object is enabled after being disabled." alt="" coords="5,55,161,80"/>
-<area shape="rect" id="node5" href="$d9/da2/classHUDActor.html#aaae91463121566f983c99a2b0adce335" title=" " alt="" coords="16,104,151,129"/>
+<area shape="rect" id="node1" title=" " alt="" coords="453,104,687,129"/>
+<area shape="rect" id="node2" href="$d9/da2/classHUDActor.html#a8cd849344cc954083319c6a0af37d4f0" title="This function runs when the scene starts or the next frame the object is created." alt="" coords="31,5,162,31"/>
+<area shape="rect" id="node3" href="$d9/da2/classHUDActor.html#aa15a3dd4398860f54db039de7e907f68" title=" " alt="" coords="236,104,405,129"/>
+<area shape="rect" id="node7" href="$d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8" title="This function runs every frame." alt="" coords="36,203,157,228"/>
+<area shape="rect" id="node4" href="$d9/da2/classHUDActor.html#adabf1a2c2f3cb0fe55bf484fafffce52" title="This function runs when the object is enabled after being disabled." alt="" coords="19,55,175,80"/>
+<area shape="rect" id="node5" href="$d9/da2/classHUDActor.html#a1efd38da2d4e467548b9702d2ef34926" title=" " alt="" coords="5,104,188,129"/>
+<area shape="rect" id="node6" href="$d9/da2/classHUDActor.html#aaae91463121566f983c99a2b0adce335" title=" " alt="" coords="29,153,164,179"/>
 </map>

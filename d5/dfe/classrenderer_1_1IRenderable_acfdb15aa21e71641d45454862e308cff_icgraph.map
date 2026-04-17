@@ -1,0 +1,4 @@
+<map id="renderer::IRenderable::WritesDepthInGeometryPass" name="renderer::IRenderable::WritesDepthInGeometryPass">
+<area shape="rect" id="node1" title="Whether this renderable should write depth when rendered via transparent geometry path." alt="" coords="248,5,465,45"/>
+<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#aab2464f0c7da8d5ca052139d87399534" title=" " alt="" coords="5,5,200,45"/>
+</map>

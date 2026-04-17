@@ -14,6 +14,7 @@ var classHUDActor =
     [ "OnEnable", "d9/da2/classHUDActor.html#adabf1a2c2f3cb0fe55bf484fafffce52", null ],
     [ "REGISTER_TYPE", "d9/da2/classHUDActor.html#a1a689e3deefdf68214f75b4f0a8c453d", null ],
     [ "Save", "d9/da2/classHUDActor.html#afa8f845aa5510f56df4226cb04b4a795", null ],
+    [ "SetDimestion", "d9/da2/classHUDActor.html#a1efd38da2d4e467548b9702d2ef34926", null ],
     [ "SetUrl", "d9/da2/classHUDActor.html#aaae91463121566f983c99a2b0adce335", null ],
     [ "SyncResolvedTexture", "d9/da2/classHUDActor.html#af514a32a41cb928961a396d7fdbb7f3f", null ],
     [ "Tick", "d9/da2/classHUDActor.html#a19b57d9e66d92ebcc61a29738a434da8", null ],

@@ -6,5 +6,6 @@ var classrenderer_1_1IRenderable =
     [ "GetGeometrySortPriority", "d5/dfe/classrenderer_1_1IRenderable.html#adfc96d3e8454ad1819f711172861d4c1", null ],
     [ "GetTransparentSortDepth", "d5/dfe/classrenderer_1_1IRenderable.html#a841d3c007704846b3752ed1dc116b237", null ],
     [ "GetTransparentSortPriority", "d5/dfe/classrenderer_1_1IRenderable.html#a74cfe5f7b4edb11d1813b3403a59eb71", null ],
-    [ "OnRender", "d5/dfe/classrenderer_1_1IRenderable.html#a6edfc119b8464b5540e78703af327091", null ]
+    [ "OnRender", "d5/dfe/classrenderer_1_1IRenderable.html#a6edfc119b8464b5540e78703af327091", null ],
+    [ "WritesDepthInGeometryPass", "d5/dfe/classrenderer_1_1IRenderable.html#acfdb15aa21e71641d45454862e308cff", null ]
 ];

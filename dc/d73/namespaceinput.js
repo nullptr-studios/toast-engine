@@ -38,6 +38,7 @@ var namespaceinput =
     [ "ControllerAxisFromString", "dc/d73/namespaceinput.html#a0117c2093c5ae1ee335b19e3f3b5f032", null ],
     [ "ControllerButtonFromString", "dc/d73/namespaceinput.html#a32da43b6a39a115183d02163d98c2212", null ],
     [ "ControllerStickFromString", "dc/d73/namespaceinput.html#a1bbc4a5f5d3dd2b2c0cf9619d65c6e12", null ],
+    [ "GetGamepadType", "dc/d73/namespaceinput.html#ad0027e80f9e4108db9a9c35250c5a822", null ],
     [ "GetMouseDelta", "dc/d73/namespaceinput.html#a2765e356561cd439bea19002a96800e4", null ],
     [ "GetMousePosition", "dc/d73/namespaceinput.html#a627ed6e7d28f7312b972b22a7f627edb", null ],
     [ "KeyboardKeycodeFromString", "dc/d73/namespaceinput.html#ada5218a902482cfdf372d7e909f9cb10", null ],

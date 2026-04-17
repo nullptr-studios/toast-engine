@@ -1,0 +1,4 @@
+<map id="input::InputSystem::GetGamepadType" name="input::InputSystem::GetGamepadType">
+<area shape="rect" id="node1" title="Returns the type of the first connected gamepad Used to detect DualSense controllers for adaptive tri..." alt="" coords="232,5,379,45"/>
+<area shape="rect" id="node2" href="$dc/d73/namespaceinput.html#ad0027e80f9e4108db9a9c35250c5a822" title=" " alt="" coords="5,13,184,38"/>
+</map>
