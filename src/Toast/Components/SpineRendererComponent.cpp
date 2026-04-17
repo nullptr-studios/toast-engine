@@ -76,6 +76,7 @@ void SpineRendererComponent::Init() {
 	// shader and buffers
 	m.shader = resource::LoadResource<renderer::Shader>("SHADERS/spine.shader");
 	m.occlusionShader = resource::LoadResource<renderer::Shader>("SHADERS/occlusion.shader");
+	m.shadowDepthShader = resource::LoadResource<renderer::Shader>("SHADERS/spine_shadow.shader");
 
 	// Reserve temp buffers to avoid allocations
 	m.tempVerts.reserve(INITIAL_VERT_RESERVE);
@@ -383,7 +384,15 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	// cache last bound texture to avoid redundant binds
 	m.lastBoundTexture = 0;
 
-	if (pass == renderer::IRenderablePass::GEOMETRY || pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+		if (m.shadowDepthShader) {
+			m.shadowDepthShader->Use();
+			m.shadowDepthShader->Set("transform", mvp);
+		} else {
+			m.shader->Use();
+			m.shader->Set("transform", mvp);
+		}
+	} else if (pass == renderer::IRenderablePass::GEOMETRY) {
 		m.shader->Use();
 		m.shader->Set("transform", mvp);
 	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
@@ -423,20 +432,22 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 			m.tempIndices.reserve(static_cast<size_t>(command->numIndices));
 		}
 
-		// Determine command texture
-		std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(command->texture);
-		unsigned int tex_id = tex_ptr->get()->id();
+		if (pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+			// Determine command texture
+			std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(command->texture);
+			unsigned int tex_id = tex_ptr->get()->id();
 
-		if (tex_id != m.lastBoundTexture && !m.tempIndices.empty()) {
-			flush_batch();
-		}
-
-		// bind texture if needed
-		if (tex_id != m.lastBoundTexture) {
-			if (tex_id != 0) {
-				tex_ptr->get()->Bind(0);
+			if (tex_id != m.lastBoundTexture && !m.tempIndices.empty()) {
+				flush_batch();
 			}
-			m.lastBoundTexture = tex_id;
+
+			// bind texture if needed
+			if (tex_id != m.lastBoundTexture) {
+				if (tex_id != 0) {
+					tex_ptr->get()->Bind(0);
+				}
+				m.lastBoundTexture = tex_id;
+			}
 		}
 
 		// append vertices
@@ -474,21 +485,7 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		command = command->next;
 	}
 
-	// flush any remaining geometry
-	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
-		glDepthMask(GL_TRUE);
-	} else if (m.drawToDepth) {
-		glDepthMask(GL_TRUE);
-	} else {
-		glDepthMask(GL_FALSE);
-	}
-
-	if (pass != renderer::IRenderablePass::OCCLUSION && pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	} else {
-		glDisable(GL_BLEND);
-	}
+	// flush any remaining geometry; pass-level renderer state handles blend/depth write policy.
 	flush_batch();
 }
 
@@ -521,7 +518,7 @@ void SpineRendererComponent::Load(json_t j, bool force_create) {
 	}
 
 	// If already initialized, immediately apply newly loaded resource paths.
-	if (m.eventHandler) {
+	if (m.eventHandler && !m.lobotomized) {
 		ReloadSkeletonFromPaths();
 #ifdef TOAST_EDITOR
 		RefreshAnimationList();

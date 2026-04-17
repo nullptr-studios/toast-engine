@@ -315,13 +315,28 @@ void physics::ColliderRenderable::OnRender(renderer::IRenderablePass pass, const
 		return;
 	}
 
-	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
-		glDepthMask(GL_TRUE);
-	}
-
 	// compute transform once
 	const glm::mat4 model = toast::TransformComponent::GetWorldMatrix();
 	const glm::mat4 mvp = view_projection * model;
+	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+		if (auto* renderer = renderer::IRendererBase::GetInstance()) {
+			if (auto& shadowDepthShader = renderer->GetDirectionalShadowDepthShader(); shadowDepthShader) {
+				shadowDepthShader->Use();
+				shadowDepthShader->Set("gWorld", model);
+				shadowDepthShader->Set("gMVP", mvp);
+			} else if (m.occlusionShader) {
+				m.occlusionShader->Use();
+				m.occlusionShader->Set("gWorld", model);
+				m.occlusionShader->Set("gMVP", mvp);
+			}
+		}
+
+		m.mesh.DrawDynamicSpine(m.indices.size());
+		if (m.showTop) {
+			m.topMesh.DrawDynamicSpine(m.topIndices.size());
+		}
+		return;
+	}
 
 	if (m.material && m.material->GetShader()) {
 		m.material->Use();
@@ -329,12 +344,10 @@ void physics::ColliderRenderable::OnRender(renderer::IRenderablePass pass, const
 			auto shader = m.material->GetShader();
 			shader->Set("gWorld", model);
 			shader->Set("gMVP", mvp);
-		} else if (pass == renderer::IRenderablePass::OCCLUSION || pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
-			const bool castsForPass = (pass == renderer::IRenderablePass::OCCLUSION) ? m.isOccluder : m.castsDirectionalShadow;
-			if (!castsForPass) {
+		} else if (pass == renderer::IRenderablePass::OCCLUSION) {
+			if (!m.isOccluder) {
 				return;
 			}
-
 			m.occlusionShader->Use();
 			m.occlusionShader->Set("gWorld", model);
 			m.occlusionShader->Set("gMVP", mvp);
@@ -349,9 +362,8 @@ void physics::ColliderRenderable::OnRender(renderer::IRenderablePass pass, const
 			auto shader = m.topMaterial->GetShader();
 			shader->Set("gWorld", model);
 			shader->Set("gMVP", mvp);
-		} else if (pass == renderer::IRenderablePass::OCCLUSION || pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
-			const bool castsForPass = (pass == renderer::IRenderablePass::OCCLUSION) ? m.isOccluder : m.castsDirectionalShadow;
-			if (!castsForPass) {
+		} else if (pass == renderer::IRenderablePass::OCCLUSION) {
+			if (!m.isOccluder) {
 				return;
 			}
 			m.occlusionShader->Use();

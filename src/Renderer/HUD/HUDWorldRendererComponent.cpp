@@ -73,9 +73,6 @@ void HUDWorldRendererComponent::OnRender(renderer::IRenderablePass pass, const g
 	glBindTexture(GL_TEXTURE_2D, m_textureId);
 	m_shader->SetSampler("gTexture", 0);
 
-	glDepthMask(m_drawToDepth ? GL_TRUE : GL_FALSE);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	m_mesh->Draw();
 }

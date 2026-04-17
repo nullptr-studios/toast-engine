@@ -8,6 +8,7 @@
 #include "Camera.hpp"
 #include "Toast/Event/ListenerComponent.hpp"
 #include "Toast/GlmJson.hpp"
+#include "Toast/Log.hpp"
 #include "Toast/Renderer/Framebuffer.hpp"
 #include "Toast/Renderer/IRenderable.hpp"
 #include "Toast/Renderer/Lights/2DLight.hpp"
@@ -17,6 +18,7 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
 #include <glm/glm.hpp>
 #include <unordered_set>
 #include <vector>
@@ -24,6 +26,8 @@
 class PostProcessManager;
 
 namespace renderer {
+
+class Shader;
 
 /** @struct RendererConfig
  * @brief Configuration settings for the renderer.
@@ -512,6 +516,11 @@ public:
 		return m_directionalShadowMapTexture;
 	}
 
+	[[nodiscard]]
+	const std::shared_ptr<Shader>& GetDirectionalShadowDepthShader() const noexcept {
+		return m_directionalShadowDepthShader;
+	}
+
 	void SetDirectionalShadowMapTexture(GLuint texture) noexcept {
 		m_directionalShadowMapTexture = texture;
 	}
@@ -577,6 +586,7 @@ protected:
 	bool m_directionalShadowsEnabled = true;
 	glm::mat4 m_directionalShadowMatrix = glm::mat4(1.0f);
 	GLuint m_directionalShadowMapTexture = 0;
+	std::shared_ptr<Shader> m_directionalShadowDepthShader;
 	float m_directionalShadowBias = 0.0015f;
 	float m_directionalShadowStrength = 0.8f;
 

@@ -72,30 +72,45 @@ void InvalidateCachedGlState() {
 }
 
 void SetDepthTest(bool enabled) {
+	if (g_state.valid && g_state.depthTest == enabled) {
+		return;
+	}
 	enabled ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
 	g_state.depthTest = enabled;
 	g_state.valid = true;
 }
 
 void SetBlend(bool enabled) {
+	if (g_state.valid && g_state.blend == enabled) {
+		return;
+	}
 	enabled ? glEnable(GL_BLEND) : glDisable(GL_BLEND);
 	g_state.blend = enabled;
 	g_state.valid = true;
 }
 
 void SetDepthMask(bool enabled) {
+	if (g_state.valid && g_state.depthMask == enabled) {
+		return;
+	}
 	glDepthMask(enabled ? GL_TRUE : GL_FALSE);
 	g_state.depthMask = enabled;
 	g_state.valid = true;
 }
 
 void SetDepthFunc(GLenum func) {
+	if (g_state.valid && g_state.depthFunc == func) {
+		return;
+	}
 	glDepthFunc(func);
 	g_state.depthFunc = func;
 	g_state.valid = true;
 }
 
 void SetBlendFunc(GLenum src, GLenum dst) {
+	if (g_state.valid && g_state.blendSrc == src && g_state.blendDst == dst) {
+		return;
+	}
 	glBlendFunc(src, dst);
 	g_state.blendSrc = src;
 	g_state.blendDst = dst;
@@ -104,9 +119,35 @@ void SetBlendFunc(GLenum src, GLenum dst) {
 
 void SetColorMask(GLboolean r, GLboolean g, GLboolean b, GLboolean a) {
 	const std::array<GLboolean, 4> next { r, g, b, a };
+	if (g_state.valid && g_state.colorMask == next) {
+		return;
+	}
 	glColorMask(r, g, b, a);
 	g_state.colorMask = next;
 	g_state.valid = true;
+}
+
+bool IsInsideDirectionalShadowBounds(IRenderable* renderable, const glm::mat4& shadowMatrix) {
+	if (!renderable) {
+		return false;
+	}
+
+	const glm::mat4 world = renderable->GetWorldMatrix();
+	const glm::vec3 worldPos = glm::vec3(world[3]);
+	const glm::vec4 clip = shadowMatrix * glm::vec4(worldPos, 1.0f);
+	if (!std::isfinite(clip.x) || !std::isfinite(clip.y) || !std::isfinite(clip.z) || !std::isfinite(clip.w)) {
+		return false;
+	}
+
+	if (std::abs(clip.w) <= 1e-6f) {
+		return false;
+	}
+
+	const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+	constexpr float kShadowCullMargin = 0.03f;
+	return ndc.x >= -1.0f - kShadowCullMargin && ndc.x <= 1.0f + kShadowCullMargin &&
+	       ndc.y >= -1.0f - kShadowCullMargin && ndc.y <= 1.0f + kShadowCullMargin &&
+	       ndc.z >= -1.0f - kShadowCullMargin && ndc.z <= 1.0f + kShadowCullMargin;
 }
 }
 
@@ -280,6 +321,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+	InvalidateCachedGlState();
 
 	// Load renderer settings before creating framebuffer resources that depend on config values.
 	LoadRenderSettings();
@@ -337,6 +379,7 @@ OpenGLRenderer::OpenGLRenderer() {
 	m.jfaInitComputeShader = resource::LoadResource<Shader>("SHADERS/occlusionJFAInit.shader");
 	m.jfaComputeShader = resource::LoadResource<Shader>("SHADERS/occlusionJFA.shader");
 	m.finalComputeShader = resource::LoadResource<Shader>("SHADERS/occlusionFinal.shader");
+	m_directionalShadowDepthShader = resource::LoadResource<Shader>("SHADERS/shadowDepth.shader");
 
 	// post process
 	m_postProcessManager = std::make_unique<PostProcessManager>();
@@ -572,25 +615,32 @@ void OpenGLRenderer::Render() {
 
 	OcclusionPass();
 	CHECK_GL();
+	InvalidateCachedGlState();
 
 	DirectionalShadowPass();
 	CHECK_GL();
+	InvalidateCachedGlState();
 
 	GeometryPass();
 	CHECK_GL();
+	InvalidateCachedGlState();
 
 	SpritePass();
 	CHECK_GL();
+	InvalidateCachedGlState();
 
 	// Lighting
 	LightingPass();
 	CHECK_GL();
+	InvalidateCachedGlState();
 
 	WaterPass();
 	CHECK_GL();
+	InvalidateCachedGlState();
 
 	PostProcessPass();
 	CHECK_GL();
+	InvalidateCachedGlState();
 
 	// Render non-HUD editor/game layers into a dedicated layer framebuffer
 	if (m.layerStack) {
@@ -612,12 +662,14 @@ void OpenGLRenderer::Render() {
 	m_outputFramebuffer->bind();
 	glViewport(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
 	glScissor(0, 0, m_outputFramebuffer->Width(), m_outputFramebuffer->Height());
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LEQUAL);
+	SetDepthTest(true);
+	SetDepthMask(true);
+	SetDepthFunc(GL_LEQUAL);
 
 	if (m.layerStack) {
+		InvalidateCachedGlState();
 		m.layerStack->RenderLayers();
+		InvalidateCachedGlState();
 	}
 	Framebuffer::unbind();
 
@@ -630,7 +682,7 @@ void OpenGLRenderer::Render() {
 		TracyGpuZone("ScreenPass");
 #endif
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glDisable(GL_DEPTH_TEST);
+		SetDepthTest(false);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glActiveTexture(GL_TEXTURE0);
@@ -640,7 +692,7 @@ void OpenGLRenderer::Render() {
 		m.screenShader->SetSampler("screenTexture", 0);
 		m.quad->Draw();
 
-		glEnable(GL_DEPTH_TEST);
+		SetDepthTest(true);
 	}
 #endif
 
@@ -685,8 +737,11 @@ void OpenGLRenderer::OcclusionPass() {
 #endif
 
 	m.occlusionFramebuffer->bind();
-	glViewport(0, 0, m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height());
-	glScissor(0, 0, m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height());
+	const glm::ivec2 occlusionResolution { m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height() };
+	const GLuint dispatchX = static_cast<GLuint>((occlusionResolution.x + 15) / 16);
+	const GLuint dispatchY = static_cast<GLuint>((occlusionResolution.y + 15) / 16);
+	glViewport(0, 0, occlusionResolution.x, occlusionResolution.y);
+	glScissor(0, 0, occlusionResolution.x, occlusionResolution.y);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -696,32 +751,32 @@ void OpenGLRenderer::OcclusionPass() {
 		r->OnRender(renderer::IRenderablePass::OCCLUSION, m_multipliedMatrix);
 	}
  	for (auto* r : m.combinedTransparents) {
-		r->OnRender(renderer::IRenderablePass::OCCLUSION, m_multipliedMatrix);
+	 r->OnRender(renderer::IRenderablePass::OCCLUSION, m_multipliedMatrix);
 	}
 
 	m.jfaInitComputeShader->Use();
 	glBindTextureUnit(0, m.occlusionFramebuffer->GetColorTexture(0));
 	glBindImageTexture(1, m.jfaTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
-	m.jfaInitComputeShader->Set("resolution", glm::ivec2(m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height()));
-	glDispatchCompute((m.occlusionFramebuffer->Width() + 15) / 16, (m.occlusionFramebuffer->Height() + 15) / 16, 1);
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	m.jfaInitComputeShader->Set("resolution", occlusionResolution);
+	glDispatchCompute(dispatchX, dispatchY, 1);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
 	GLuint inputTex = m.jfaTex;
 	GLuint outputTex = m.pingPongTex;
 
-	int maxDim = std::max(m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height());
+	const int maxDim = std::max(occlusionResolution.x, occlusionResolution.y);
 	int step = maxDim / 2;
+	m.jfaComputeShader->Use();
+	m.jfaComputeShader->Set("resolution", occlusionResolution);
 
 	while (step > 0) {
-		m.jfaComputeShader->Use();
-		m.jfaComputeShader->Set("resolution", glm::ivec2(m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height()));
 		m.jfaComputeShader->Set("stepValue", step);
 
 		glBindTextureUnit(0, inputTex);
 		glBindImageTexture(1, outputTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
 
-		glDispatchCompute((m.occlusionFramebuffer->Width() + 15) / 16, (m.occlusionFramebuffer->Height() + 15) / 16, 1);
-		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		glDispatchCompute(dispatchX, dispatchY, 1);
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
 		std::swap(inputTex, outputTex);
 
@@ -729,11 +784,11 @@ void OpenGLRenderer::OcclusionPass() {
 	}
 
 	m.finalComputeShader->Use();
-	glBindTextureUnit(0, inputTex);    // last JFA result
+	glBindTextureUnit(0, inputTex);
 	glBindImageTexture(1, m.sdfTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-	m.finalComputeShader->Set("resolution", glm::ivec2(m.occlusionFramebuffer->Width(), m.occlusionFramebuffer->Height()));
-	glDispatchCompute((m.occlusionFramebuffer->Width() + 15) / 16, (m.occlusionFramebuffer->Height() + 15) / 16, 1);
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	m.finalComputeShader->Set("resolution", occlusionResolution);
+	glDispatchCompute(dispatchX, dispatchY, 1);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
 }
 
@@ -750,7 +805,6 @@ void OpenGLRenderer::DirectionalShadowPass() {
 	glScissor(0, 0, m.directionalShadowFramebuffer->Width(), m.directionalShadowFramebuffer->Height());
 	glClearDepth(1.0);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	glActiveTexture(GL_TEXTURE0);
 
 	SetColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	glDisable(GL_CULL_FACE);
@@ -761,12 +815,21 @@ void OpenGLRenderer::DirectionalShadowPass() {
 
 	const glm::mat4 shadowMatrix = GetDirectionalShadowMatrix();
 	for (auto* r : m.combinedRenderables) {
+		if (!IsInsideDirectionalShadowBounds(r, shadowMatrix)) {
+			continue;
+		}
 		r->OnRender(renderer::IRenderablePass::DIRECTIONAL_SHADOW, shadowMatrix);
 	}
 	for (auto* r : m.combinedTransparents) {
+		if (!IsInsideDirectionalShadowBounds(r, shadowMatrix)) {
+			continue;
+		}
 		r->OnRender(renderer::IRenderablePass::DIRECTIONAL_SHADOW, shadowMatrix);
 	}
 	for (auto* r : m.combinedWaters) {
+		if (!IsInsideDirectionalShadowBounds(r, shadowMatrix)) {
+			continue;
+		}
 		r->OnRender(renderer::IRenderablePass::DIRECTIONAL_SHADOW, shadowMatrix);
 	}
 
@@ -798,20 +861,7 @@ void OpenGLRenderer::LightingPass() {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	m_geometryFramebuffer->bindRead();
-	m_lightFramebuffer->bindDraw();
-	glBlitFramebuffer(
-	    0,
-	    0,
-	    m_geometryFramebuffer->Width(),
-	    m_geometryFramebuffer->Height(),
-	    0,
-	    0,
-	    m_lightFramebuffer->Width(),
-	    m_lightFramebuffer->Height(),
-	    GL_DEPTH_BUFFER_BIT,
-	    GL_NEAREST
-	);
+	m_geometryFramebuffer->BlitTo(m_lightFramebuffer, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	m_lightFramebuffer->bind();
 
 	SetDepthMask(false);
@@ -824,6 +874,7 @@ void OpenGLRenderer::LightingPass() {
 			}
 		}
 	}
+	InvalidateCachedGlState();
 
 	m.postProcessFramebuffer->bind();
 	SetBlend(false);
@@ -939,9 +990,32 @@ void OpenGLRenderer::RemoveWater(IRenderable* renderable) {
 }
 
 void OpenGLRenderer::SpritePass() {
-	for (const auto& renderable : m.combinedTransparents) {
+	if (m.combinedTransparents.empty()) {
+		return;
+	}
+
+	SetBlend(true);
+	SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	SetDepthTest(true);
+
+	bool currentDepthWrite = true;
+	SetDepthMask(currentDepthWrite);
+
+	for (auto* renderable : m.combinedTransparents) {
+		if (!renderable) {
+			continue;
+		}
+
+		const bool wantsDepthWrite = renderable->WritesDepthInGeometryPass();
+		if (wantsDepthWrite != currentDepthWrite) {
+			currentDepthWrite = wantsDepthWrite;
+			SetDepthMask(currentDepthWrite);
+		}
+
 		renderable->OnRender(IRenderablePass::GEOMETRY, m_multipliedMatrix);
 	}
+
+	SetDepthMask(true);
 }
 
 void OpenGLRenderer::WaterPass() {
@@ -981,6 +1055,7 @@ void OpenGLRenderer::WaterPass() {
 	SetBlend(true);
 	SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	SetDepthTest(true);
+	SetDepthMask(true);
 
 	const GLuint sceneTex = m.waterSceneCopyTexture;
 	for (auto* renderable : m.combinedWaters) {

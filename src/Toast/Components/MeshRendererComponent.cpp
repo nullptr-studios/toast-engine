@@ -232,6 +232,25 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 	// compute transform once
 	const glm::mat4 model = GetWorldMatrix();
 	const glm::mat4 mvp = precomputed_mat * model;
+	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+		if (!m_castsDirectionalShadow) {
+			return;
+		}
+
+		if (auto* renderer = renderer::IRendererBase::GetInstance()) {
+			if (auto& shadowDepthShader = renderer->GetDirectionalShadowDepthShader(); shadowDepthShader) {
+				shadowDepthShader->Use();
+				shadowDepthShader->Set("gWorld", model);
+				shadowDepthShader->Set("gMVP", mvp);
+			} else {
+				m_occlusionShader->Use();
+				m_occlusionShader->Set("gWorld", model);
+				m_occlusionShader->SetSampler("Texture", 0);
+				m_occlusionShader->Set("gMVP", mvp);
+			}
+		}
+	}
+
 	if (pass == renderer::IRenderablePass::GEOMETRY) {
 		auto shader = external_only ? m_externalShader : m_material->GetShader();
 		if (shader) {
@@ -279,7 +298,7 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 		// restore state
 		// m_texture->Unbind();
 		// m_shader->unuse();
-	} else if (pass == renderer::IRenderablePass::OCCLUSION || pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
+	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
 		// Ensure alpha-test shader samples a valid texture binding in depth-only passes.
 		if (m_useExternalTexture && m_externalTextureId != 0) {
 			glActiveTexture(GL_TEXTURE0);
@@ -296,21 +315,6 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 		m_occlusionShader->Set("gMVP", mvp);
 	}
 
-	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
-		// Shadow-map rendering must always write depth for valid caster silhouettes.
-		glDepthMask(GL_TRUE);
-	} else if (m_drawToDepth) {
-		glDepthMask(GL_TRUE);
-	} else {
-		glDepthMask(GL_FALSE);
-	}
-
-	if (pass != renderer::IRenderablePass::OCCLUSION && pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	} else {
-		glDisable(GL_BLEND);
-	}
 
 	m_mesh->Draw();
 }

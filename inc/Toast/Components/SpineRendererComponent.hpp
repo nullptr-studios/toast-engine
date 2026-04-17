@@ -49,6 +49,7 @@ public:
 			m.skeleton->update(0.0f);
 			m.skeleton->updateWorldTransform(spine::Physics_None);
 			SetSerialize(false);
+			m.lobotomized = true;
 		}
 	}
 
@@ -115,6 +116,11 @@ public:
 		return m.renderLastInGeometry ? 1000 : 0;
 	}
 
+	[[nodiscard]]
+	bool WritesDepthInGeometryPass() const noexcept override {
+		return m.drawToDepth;
+	}
+
 	// Events
 	virtual void OnAnimationStart(std::string_view /*animation_name*/, int /*track*/) { }
 
@@ -146,12 +152,15 @@ private:
 		std::shared_ptr<SpineSkeletonData> skeletonData;
 		std::shared_ptr<renderer::Shader> shader;
 		std::shared_ptr<renderer::Shader> occlusionShader;
+		std::shared_ptr<renderer::Shader> shadowDepthShader;
 
 		std::unique_ptr<spine::Skeleton> skeleton;
 		std::unique_ptr<spine::AnimationStateData> animationStateData;
 		std::unique_ptr<spine::AnimationState> animationState;
 
 		renderer::Mesh dynamicMesh;
+		
+		bool lobotomized = false;
 
 		bool isOccluder = false;
 		bool castsDirectionalShadow = true;

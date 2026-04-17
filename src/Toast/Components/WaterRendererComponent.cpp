@@ -103,9 +103,6 @@ void WaterRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	glBindTexture(GL_TEXTURE_2D, m_normalTexture->id());
 	m_waterShader->SetSampler("uNormalMap", 1);
 
-	glDepthMask(GL_TRUE);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	mesh->Draw();
 }

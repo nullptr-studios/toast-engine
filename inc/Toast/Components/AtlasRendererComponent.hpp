@@ -25,6 +25,11 @@ public:
 	[[nodiscard]]
 	float GetTransparentSortDepth(const glm::mat4& view_matrix) noexcept override;
 
+	[[nodiscard]]
+	bool WritesDepthInGeometryPass() const noexcept override {
+		return m.drawToDepth;
+	}
+
 	void LoadTextures() override;
 
 	void Load(json_t j, bool force_create = true) override;
@@ -62,6 +67,7 @@ private:
 		std::shared_ptr<SpineAtlas> atlas;
 		std::shared_ptr<renderer::Shader> shader;
 		std::shared_ptr<renderer::Shader> occlusionShader;
+		std::shared_ptr<renderer::Shader> shadowDepthShader;
 
 		renderer::Mesh dynamicMesh;
 

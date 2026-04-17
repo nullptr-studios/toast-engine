@@ -57,6 +57,11 @@ public:
 		m_drawToDepth = value;
 	}
 
+	[[nodiscard]]
+	bool WritesDepthInGeometryPass() const noexcept override {
+		return m_drawToDepth;
+	}
+
 private:
 	std::string m_meshPath = "MODELS/quad.obj";
 	std::shared_ptr<renderer::Mesh> m_mesh;
