@@ -827,6 +827,7 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 	std::optional<RayResult> result = std::nullopt;
 	std::optional<dvec2> col_hit;
 	std::optional<dvec2> rb_hit;
+	BoxRigidbody* rigidbody = nullptr;
 
 	for (auto* c : physics->m.colliders) {
 		if (!c->parent->enabled()) {
@@ -853,6 +854,8 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 		}
 	}
 
+
+
 	for (auto* r : physics->m.rigidbodies) {
 		if (!r->enabled()) {
 			continue;
@@ -877,10 +880,32 @@ std::optional<RayResult> PhysicsSystem::RayCollision(Line* ray, ColliderFlags fl
 			result = { .type = RayResult::Rigidbody, .point = *rb_hit, .normal = ray->tangent, .distance = d, .other = r->parent() };
 		}
 	}
-	if (result != std::nullopt) {
-		// renderer::DebugLine(ray->p1, result->point, vec4(0.0f, 0.0f, 1.0f, 1.0f));
+
+	for (auto* c : physics->m.boxes) {
+
+		auto collision = BoxRayCollision(ray, c);
+		if (not collision.has_value()) {
+			continue;
+		}
+
+		if (not col_hit.has_value() || length2(collision->first - ray->p1) < length2(*col_hit - ray->p1)) {
+			col_hit = collision->first;
+			const float d = static_cast<float>(distance(*col_hit, ray->p1));
+
+			// same as below
+			if (result && result.value().distance < d) {
+				continue;
+			}
+			result = { .type = RayResult::Box, .point = *col_hit, .normal = collision->second, .distance = d, .other = c->parent() };
+			rigidbody = c;
+		}
 	}
 
+	if (rigidbody != nullptr) {
+		if (rigidbody->enterCallback) {
+			rigidbody->enterCallback(&result.value());
+		}
+	}
 	return result;
 }
 

@@ -109,6 +109,12 @@ public:
 		return 0;
 	}
 
+	/// Whether this renderable should write depth when rendered via transparent geometry path.
+	[[nodiscard]]
+	virtual bool WritesDepthInGeometryPass() const noexcept {
+		return true;
+	}
+
 protected:
 	IRenderable() = default;
 };

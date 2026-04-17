@@ -28,6 +28,10 @@ void SetViewportSize(glm::vec2 size) {
 	InputSystem::SetViewportSize(size);
 }
 
+auto GetGamepadType() -> SDL_GamepadType {
+	return InputSystem::GetGamepadType();
+}
+
 Listener::Listener() {
 	InputSystem::RegisterListener(this);
 }

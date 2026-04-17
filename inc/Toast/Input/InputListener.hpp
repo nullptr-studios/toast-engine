@@ -52,4 +52,6 @@ auto GetMouseDelta() -> glm::vec2;        ///< @brief Returns the last mouse del
 void SetViewportPosition(glm::vec2 position);
 void SetViewportSize(glm::vec2 size);
 
+auto GetGamepadType() -> SDL_GamepadType;
+
 }

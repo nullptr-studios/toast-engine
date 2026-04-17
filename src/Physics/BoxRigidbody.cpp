@@ -1,9 +1,12 @@
 #include "Toast/Physics/BoxRigidbody.hpp"
 
+#include "BoxDynamics.hpp"
 #include "PhysicsSystem.hpp"
 #include "Toast/GlmJson.hpp"
 #include "Toast/Objects/Actor.hpp"
 #include "Toast/Renderer/DebugDrawLayer.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/norm.hpp"
 
 #ifdef TOAST_EDITOR
 #include <imgui.h>
@@ -245,6 +248,27 @@ void BoxRigidbody::RebuildCache() const {
 	}
 
 	m_cacheDirty = false;
+}
+
+auto BoxRayCollision(Line* ray, BoxRigidbody* c) -> std::optional<std::pair<glm::dvec2, glm::dvec2>> {
+	std::optional<std::pair<glm::dvec2, glm::dvec2>> result = std::nullopt;
+	double min_distance_sq = std::numeric_limits<double>::max();
+
+	for (Line l : c->GetEdges()) {
+		auto intersection = LineLineCollision(*ray, l);
+
+		if (intersection.has_value()) {
+			// Calculate squared distance
+			const double dist_sq = glm::length2(intersection.value() - ray->p1);
+			if (dist_sq < min_distance_sq) {
+				min_distance_sq = dist_sq;
+				result = { *intersection, l.normal };
+			}
+		}
+	}
+
+	return result;
+
 }
 
 auto BoxRigidbody::GetPoints() const -> const std::vector<glm::vec2>& {

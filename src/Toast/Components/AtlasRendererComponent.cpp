@@ -154,21 +154,7 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		}
 	}
 
-	// Draw all sprites in one call
-	if (pass == renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
-		glDepthMask(GL_TRUE);
-	} else if (m.drawToDepth) {
-		glDepthMask(GL_TRUE);
-	} else {
-		glDepthMask(GL_FALSE);
-	}
-
-	if (pass != renderer::IRenderablePass::OCCLUSION && pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	} else {
-		glDisable(GL_BLEND);
-	}
+	// Draw all sprites in one call; pass-level renderer state handles blend/depth write policy.
 	m.dynamicMesh.DrawDynamicSpine(m.tempIndices.size());
 }
 
@@ -389,7 +375,7 @@ std::string AtlasRendererComponent::GenerateSpriteName(std::string_view region_n
 	}
 
 	// Generate name
-	return std::format("{}_{}", region_name, count);
+	return std::string(region_name) + "_" + std::to_string(count);
 }
 
 void AtlasRendererComponent::UpdateMeshBounds() {

@@ -44,7 +44,36 @@
 #include <imgui.h>
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 namespace toast {
+
+#ifdef _WIN32
+static HANDLE g_singleInstanceMutex = nullptr;
+
+static bool AcquireSingleInstanceLock(const std::string& mutexName) {
+	g_singleInstanceMutex = CreateMutexA(nullptr, TRUE, mutexName.c_str());
+	if (!g_singleInstanceMutex) {
+		return false;
+	}
+	
+	if (GetLastError() == ERROR_ALREADY_EXISTS) {
+		CloseHandle(g_singleInstanceMutex);
+		g_singleInstanceMutex = nullptr;
+		return false;
+	}
+	return true;
+}
+
+static void ReleaseSingleInstanceLock() {
+	if (g_singleInstanceMutex) {
+		CloseHandle(g_singleInstanceMutex);
+		g_singleInstanceMutex = nullptr;
+	}
+}
+#endif
 
 Engine* Engine::m_instance;
 double Engine::purge_timer = 0.0;
@@ -76,6 +105,26 @@ void Engine::Run(int argc, char** argv) {
 	for (int i = 1; i < argc; ++i) {
 		m_arguments.emplace_back(argv[i]);
 	}
+
+	// Check for single-instance flag
+	bool singleInstanceMode = false;
+	for (const auto& arg : m_arguments) {
+		if (arg == "-single-instance") {
+			singleInstanceMode = true;
+			break;
+		}
+	}
+
+	// Enforce single instance if requested
+#ifdef _WIN32
+	if (singleInstanceMode) {
+		if (!AcquireSingleInstanceLock("Toast_Engine_Single_Instance")) {
+			TOAST_ERROR("Another instance of the game is already running. Exiting.");
+			MessageBoxA(nullptr, "Another instance of the game is already running.", "Game Already Running", MB_OK | MB_ICONWARNING);
+			return;
+		}
+	}
+#endif
 
 	Init();
 	purge_timer = 0.0f;
@@ -192,6 +241,9 @@ void Engine::Run(int argc, char** argv) {
 		PROFILE_FRAME;
 	}
 	Close();
+#ifdef _WIN32
+	ReleaseSingleInstanceLock();
+#endif
 }
 
 bool Engine::GetShouldClose() const {
@@ -230,7 +282,7 @@ void Engine::Init() {
 	m->projectSettings = std::make_unique<ProjectSettings>();
 
 	// Create window
-	m->window = std::make_unique<Window>(1280, 720, "ToastEngine");
+	m->window = std::make_unique<Window>(1280, 720, "Paw on the trigger");
 
 	// LayerStack must be created BEFORE renderer, as renderer gets the instance during init
 	m->layerStack = std::make_unique<renderer::LayerStack>();
