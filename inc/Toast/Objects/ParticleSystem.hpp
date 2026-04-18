@@ -213,7 +213,7 @@ public:
 	/// @brief Get particle count
 	[[nodiscard]]
 	uint32_t GetParticleCount() const {
-		return m_aliveCount;
+		return m_renderCount;
 	}
 
 	/// @brief Load texture based on config
@@ -266,6 +266,13 @@ private:
 	uint32_t* m_counterBufferPtr = nullptr;
 	GLuint m_frameParamsUBO = 0;
 	int m_currentBuffer = 0;
+	int m_frameWriteBuffer = 0;
+	bool m_frameUpdateActive = false;
+	uint32_t m_frameSpawnCount = 0;
+	uint32_t m_renderCount = 0;
+	int m_pendingBuffer = 0;
+	GLsync m_computeFence = nullptr;
+	float m_pendingDeltaTime = 0.0f;
 
 	// Shared shaders
 	std::shared_ptr<renderer::Shader> m_computeShader;
