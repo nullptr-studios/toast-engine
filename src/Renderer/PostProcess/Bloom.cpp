@@ -5,7 +5,9 @@
 #include "Toast/Renderer/PostProcessing/Bloom.hpp"
 
 #include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/OpenGL/GLStateCache.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Resources/Texture.hpp"
 
 #include <algorithm>
 
@@ -75,11 +77,11 @@ void Bloom::Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) {
 	m_extractFbo->bindDraw();
 	glViewport(0, 0, m_extractFbo->Width(), m_extractFbo->Height());
 	glScissor(0, 0, m_extractFbo->Width(), m_extractFbo->Height());
-	glDisable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-	glDepthMask(GL_FALSE);
-	glBindTextureUnit(0, inputFBO->GetColorTexture(0));
+	renderer::SetBlend(false);
+	renderer::SetDepthTest(false);
+	renderer::SetCullFace(false);
+	renderer::SetDepthMask(false);
+	Texture::BindTextureId(0, inputFBO->GetColorTexture(0));
 	m_extractShader->Use();
 	m_extractShader->SetSampler("uInputTex", 0);
 	m_extractShader->Set("uThreshold", m_threshold);
@@ -95,7 +97,7 @@ void Bloom::Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) {
 		dstBlurFbo->bindDraw();
 		glViewport(0, 0, dstBlurFbo->Width(), dstBlurFbo->Height());
 		glScissor(0, 0, dstBlurFbo->Width(), dstBlurFbo->Height());
-		glBindTextureUnit(0, srcBlurFbo->GetColorTexture(0));
+		Texture::BindTextureId(0, srcBlurFbo->GetColorTexture(0));
 		m_blurShader->Use();
 		m_blurShader->SetSampler("uInputTex", 0);
 		m_blurShader->Set("uHorizontal", horizontal ? 1 : 0);
@@ -111,13 +113,13 @@ void Bloom::Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) {
 	glViewport(0, 0, outputFBO->Width(), outputFBO->Height());
 	glScissor(0, 0, outputFBO->Width(), outputFBO->Height());
 
-	glDisable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-	glDepthMask(GL_FALSE);
+	renderer::SetBlend(false);
+	renderer::SetDepthTest(false);
+	renderer::SetCullFace(false);
+	renderer::SetDepthMask(false);
 
-	glBindTextureUnit(0, inputFBO->GetColorTexture(0));
-	glBindTextureUnit(1, srcBlurFbo->GetColorTexture(0));
+	Texture::BindTextureId(0, inputFBO->GetColorTexture(0));
+	Texture::BindTextureId(1, srcBlurFbo->GetColorTexture(0));
 	m_compositeShader->Use();
 	m_compositeShader->SetSampler("uInputTex", 0);
 	m_compositeShader->SetSampler("uBloomTex", 1);
@@ -125,8 +127,8 @@ void Bloom::Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) {
 
 	renderer::IRendererBase::GetInstance()->DrawScreenQuad(false, false);
 
-	glBindTextureUnit(1, 0);
-	glBindTextureUnit(0, 0);
+	Texture::UnbindTextureUnit(1);
+	Texture::UnbindTextureUnit(0);
 	Framebuffer::unbind();
 }
 

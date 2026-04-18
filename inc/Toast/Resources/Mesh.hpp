@@ -98,6 +98,9 @@ public:
 	///@brief Draws the mesh
 	void Draw();
 
+	/// @brief Invalidate global VAO bind cache
+	static void InvalidateBindingCache();
+
 	/// Debug name
 	void setDebugName(std::string name) {
 		m_debugName = std::move(name);

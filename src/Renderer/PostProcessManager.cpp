@@ -5,6 +5,7 @@
 #include "Toast/Renderer/PostProcessManager.hpp"
 
 #include "Toast/Log.hpp"
+#include "Toast/Renderer/OpenGL/GLStateCache.hpp"
 #include "Toast/Renderer/PostProcessing/PostProcessFactory.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
 
@@ -91,7 +92,7 @@ void PostProcessManager::PostProcessPass(Framebuffer* inputFBO, Framebuffer* out
 		return;
 	}
 
-	glDisable(GL_DEPTH_TEST);
+	renderer::SetDepthTest(false);
 
 	outputFBO->bind();
 
@@ -104,7 +105,7 @@ void PostProcessManager::PostProcessPass(Framebuffer* inputFBO, Framebuffer* out
 
 	srcFBO->BlitTo(outputFBO, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
-	glEnable(GL_DEPTH_TEST);
+	renderer::SetDepthTest(true);
 
 	Framebuffer::unbind();
 	ClearOverride();

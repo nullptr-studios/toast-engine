@@ -3,7 +3,9 @@
 /// @date 22/11/2025.
 
 #include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/OpenGL/GLStateCache.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Resources/Texture.hpp"
 #ifdef TOAST_EDITOR
 #include "imgui.h"
 #endif
@@ -68,10 +70,10 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 	glGetIntegerv(GL_BLEND_DST_RGB, &prevBlendDst);
 
 	// Setup additive light blending
-	glDepthMask(GL_FALSE);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	glEnable(GL_DEPTH_TEST);
+	renderer::SetDepthMask(false);
+	renderer::SetBlend(true);
+	renderer::SetBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	renderer::SetDepthTest(true);
 
 	auto model = transform()->GetWorldMatrix();
 	auto mvp = premultiplied_matrix * model;
@@ -80,8 +82,7 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 	m_lightShader->Set("gMVP", mvp);
 
 	// Bind SDF shadow texture
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, renderer::IRendererBase::GetInstance()->GetShadowMapTexture());
+	Texture::BindTextureId(0, renderer::IRendererBase::GetInstance()->GetShadowMapTexture());
 	m_lightShader->Set("sdfTex", 0);
 
 	auto* geometryFb = renderer::IRendererBase::GetInstance()->GetLightFramebuffer();
@@ -141,12 +142,12 @@ void Light2D::OnRender(const glm::mat4& premultiplied_matrix) const {
 	m_lightMesh->Draw();
 
 	// Restore GL state
-	glBlendFunc(static_cast<GLenum>(prevBlendSrc), static_cast<GLenum>(prevBlendDst));
-	glDisable(GL_CULL_FACE);
-	glEnable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(prevDepthMask ? GL_TRUE : GL_FALSE);
-	glDepthFunc(GL_LEQUAL);
+	renderer::SetBlendFunc(static_cast<GLenum>(prevBlendSrc), static_cast<GLenum>(prevBlendDst));
+	renderer::SetCullFace(false);
+	renderer::SetBlend(true);
+	renderer::SetDepthTest(true);
+	renderer::SetDepthMask(prevDepthMask ? GL_TRUE : GL_FALSE);
+	renderer::SetDepthFunc(GL_LEQUAL);
 	glClearDepth(1.0);
 }
 

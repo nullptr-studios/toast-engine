@@ -5,7 +5,9 @@
 #include "Toast/Renderer/PostProcessing/ColorGrading.hpp"
 
 #include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/OpenGL/GLStateCache.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Resources/Texture.hpp"
 #ifdef TOAST_EDITOR
 #include "imgui.h"
 #endif
@@ -27,12 +29,12 @@ void Colorgrading::Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) {
 	glScissor(0, 0, outputFBO->Width(), outputFBO->Height());
 
 	// OMG this took me hours
-	glDisable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-	glDepthMask(GL_FALSE);
+	renderer::SetBlend(false);
+	renderer::SetDepthTest(false);
+	renderer::SetCullFace(false);
+	renderer::SetDepthMask(false);
 
-	glBindTextureUnit(0, inTex);
+	Texture::BindTextureId(0, inTex);
 	m_colorgradingShader->Use();
 	m_colorgradingShader->SetSampler("uInputTex", 0);
 
@@ -46,7 +48,7 @@ void Colorgrading::Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) {
 
 	renderer::IRendererBase::GetInstance()->DrawScreenQuad(false, false);
 
-	glBindTextureUnit(0, 0);
+	Texture::UnbindTextureUnit(0);
 
 	Framebuffer::unbind();
 }

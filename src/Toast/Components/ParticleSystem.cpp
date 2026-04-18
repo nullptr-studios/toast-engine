@@ -9,6 +9,7 @@
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Renderer/OpenGL/GLStateCache.hpp"
 #include "Toast/Time.hpp"
 
 #include <glad/gl.h>
@@ -544,16 +545,12 @@ void ParticleEmitter::UpdateAndRender(
 			return;
 		}
 
-		glEnable(GL_BLEND);
-		if (m_config.additiveBlending) {
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-		} else {
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		}
+		renderer::SetBlend(true);
+		renderer::SetBlendFunc(GL_SRC_ALPHA, m_config.additiveBlending ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA);
 
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LEQUAL);
-		glDepthMask(GL_TRUE);
+		renderer::SetDepthTest(true);
+		renderer::SetDepthFunc(GL_LEQUAL);
+		renderer::SetDepthMask(true);
 
 		m_renderShader->Use();
 		m_renderShader->Set("u_ViewProj", viewProjection);
@@ -584,6 +581,9 @@ void ParticleEmitter::UpdateAndRender(
 		} else {
 			m_pendingDeltaTime += simDeltaTime;
 			renderParticles(m_currentBuffer, m_renderCount);
+			if (auto* renderer = renderer::IRendererBase::GetInstance()) {
+				renderer->InvalidateGLStateCaches();
+			}
 			return;
 		}
 	}
@@ -716,6 +716,9 @@ void ParticleEmitter::UpdateAndRender(
 	m_frameUpdateActive = false;
 	m_frameSpawnCount = 0;
 	renderParticles(renderBuffer, renderCount);
+	if (auto* renderer = renderer::IRendererBase::GetInstance()) {
+		renderer->InvalidateGLStateCaches();
+	}
 }
 
 void ParticleEmitter::SpawnParticles(uint32_t count, const glm::vec3& worldPos, const glm::mat3& parentRotation) {
@@ -934,8 +937,8 @@ void ParticleSystem::OnRender(renderer::IRenderablePass pass, const glm::mat4& v
 		glBindVertexArray(0);
 
 		// Restore state
-		glDepthMask(GL_TRUE);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		renderer::SetDepthMask(true);
+		renderer::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 }
 

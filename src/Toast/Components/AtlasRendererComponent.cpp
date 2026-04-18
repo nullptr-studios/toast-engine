@@ -148,9 +148,9 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 
 	spine::Vector<spine::AtlasPage*>& pages = m.atlas->GetAtlasData()->getPages();
 	if (pages.size() > 0) {
-		std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(pages[0]->texture);
-		if (tex_ptr) {
-			tex_ptr->get()->Bind(0);
+		auto* tex_ptr = static_cast<std::shared_ptr<Texture>*>(pages[0]->texture);
+		if (tex_ptr && *tex_ptr) {
+			Texture::BindTextureId(0, (*tex_ptr)->id());
 		}
 	}
 

@@ -57,6 +57,7 @@ public:
 	void ApplyRenderSettings() override;
 
 	void DrawScreenQuad(bool flipY, bool useShader) override;
+	void InvalidateGLStateCaches() override;
 
 	GLuint GetShadowMapTexture() const override;
 

@@ -52,6 +52,9 @@ public:
 	/// @brief Activate the shader
 	void Use();
 
+	/// @brief Invalidate global OpenGL program bind cache
+	static void InvalidateProgramCache();
+
 	// Deactivate the shader
 	void unuse() {
 		glUseProgram(0);

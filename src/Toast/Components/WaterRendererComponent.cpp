@@ -6,6 +6,7 @@
 #include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Resources/Texture.hpp"
 #include "Toast/Time.hpp"
 
 #ifdef TOAST_EDITOR
@@ -95,12 +96,10 @@ void WaterRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 	m_waterShader->Set("uCausticSharpness", m_causticSharpness);
 	m_waterShader->Set("time", static_cast<float>(Time::uptime()));
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_refractionTextureId);
+	Texture::BindTextureId(0, m_refractionTextureId);
 	m_waterShader->SetSampler("uSceneTex", 0);
 
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m_normalTexture->id());
+	Texture::BindTextureId(1, m_normalTexture->id());
 	m_waterShader->SetSampler("uNormalMap", 1);
 
 

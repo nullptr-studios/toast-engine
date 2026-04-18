@@ -5,6 +5,7 @@
 #include "Toast/Renderer/HUD/HUDLayer.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Log.hpp"
+#include "Toast/Resources/Texture.hpp"
 
 namespace {
 
@@ -69,8 +70,7 @@ void HUDWorldRendererComponent::OnRender(renderer::IRenderablePass pass, const g
 	m_shader->Set("gMVP", mvp);
 	m_shader->Set("gColor", glm::vec4(1.0f));
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_textureId);
+	Texture::BindTextureId(0, m_textureId);
 	m_shader->SetSampler("gTexture", 0);
 
 

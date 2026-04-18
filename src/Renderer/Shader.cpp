@@ -15,6 +15,10 @@
 
 namespace renderer {
 
+namespace {
+GLuint g_boundProgram = 0;
+}
+
 Shader::Shader(std::string path) : IResource(path, resource::ResourceType::SHADER, true) { }
 
 Shader::~Shader() {
@@ -156,6 +160,9 @@ void Shader::LoadMainThread() {
 
 void Shader::ClearProgram() {
 	if (m_program) {
+		if (g_boundProgram == m_program) {
+			g_boundProgram = 0;
+		}
 		glDeleteProgram(m_program);
 		m_program = 0;
 	}
@@ -312,7 +319,14 @@ void Shader::Use() {
 		//     " \n Did you just created shader? wait for call LoadMainThread() on the main thread!"
 		//);
 	}
-	glUseProgram(m_program);
+	if (g_boundProgram != m_program) {
+		glUseProgram(m_program);
+		g_boundProgram = m_program;
+	}
+}
+
+void Shader::InvalidateProgramCache() {
+	g_boundProgram = 0;
 }
 
 // Uniform caching

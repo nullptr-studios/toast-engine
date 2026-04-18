@@ -5,6 +5,7 @@
 #include "Toast/Profiler.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Resources/Texture.hpp"
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
@@ -275,8 +276,7 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 			}
 
 			if (m_useExternalTexture && m_externalTextureId != 0) {
-				glActiveTexture(GL_TEXTURE0 + m_externalTextureUnit);
-				glBindTexture(GL_TEXTURE_2D, m_externalTextureId);
+				Texture::BindTextureId(m_externalTextureUnit, m_externalTextureId);
 				shader->SetSampler(m_externalTextureSampler, m_externalTextureUnit);
 			}
 
@@ -288,10 +288,8 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 				shader->Set("gDirectionalShadowStrength", renderer->GetDirectionalShadowStrength());
 				shader->Set("gDirectionalShadowsEnabled", renderer->IsDirectionalShadowsEnabled() ? 1 : 0);
 
-				glActiveTexture(GL_TEXTURE15);
-				glBindTexture(GL_TEXTURE_2D, renderer->GetDirectionalShadowMapTexture());
+				Texture::BindTextureId(15, renderer->GetDirectionalShadowMapTexture());
 				shader->SetSampler("gDirectionalShadowMap", 15);
-				glActiveTexture(GL_TEXTURE0);
 			}
 
 			ApplyCustomUniforms(shader.get());
@@ -305,8 +303,7 @@ void MeshRendererComponent::OnRender(renderer::IRenderablePass pass, const glm::
 	} else if (pass == renderer::IRenderablePass::OCCLUSION) {
 		// Ensure alpha-test shader samples a valid texture binding in depth-only passes.
 		if (m_useExternalTexture && m_externalTextureId != 0) {
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, m_externalTextureId);
+			Texture::BindTextureId(0, m_externalTextureId);
 		} else if (!external_only && m_material) {
 			m_material->Use();
 		}

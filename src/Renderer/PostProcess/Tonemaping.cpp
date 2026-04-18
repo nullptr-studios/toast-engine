@@ -5,7 +5,9 @@
 #include "Toast/Renderer/PostProcessing/Tonemaping.hpp"
 
 #include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/OpenGL/GLStateCache.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Resources/Texture.hpp"
 
 #ifdef TOAST_EDITOR
 #include "imgui.h"
@@ -28,12 +30,12 @@ void Tonemaping::Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) {
 	glScissor(0, 0, outputFBO->Width(), outputFBO->Height());
 
 	// OMG this took me hours
-	glDisable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-	glDepthMask(GL_FALSE);
+	renderer::SetBlend(false);
+	renderer::SetDepthTest(false);
+	renderer::SetCullFace(false);
+	renderer::SetDepthMask(false);
 
-	glBindTextureUnit(0, inTex);
+	Texture::BindTextureId(0, inTex);
 
 	m_tonemapShader->Use();
 	m_tonemapShader->SetSampler("uInputTex", 0);
@@ -42,7 +44,7 @@ void Tonemaping::Execute(Framebuffer* inputFBO, Framebuffer* outputFBO) {
 
 	renderer::IRendererBase::GetInstance()->DrawScreenQuad(false, false);
 
-	glBindTextureUnit(0, 0);
+	Texture::UnbindTextureUnit(0);
 
 	Framebuffer::unbind();
 }
