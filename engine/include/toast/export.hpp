@@ -7,14 +7,13 @@
 #pragma once
 
 #if defined(_WIN32)
-	#if defined(TOAST_EXPORT)
-		#define TOAST_API __declspec(dllexport)
-	#else
-		#define TOAST_API __declspec(dllimport)
-	#endif
-#elif defined(__GNUC__)
-	#define TOAST_API __attribute__((visibility("default")))
+#if defined(TOAST_EXPORT)
+#define TOAST_API __declspec(dllexport)
 #else
-	#define TOAST_API
+#define TOAST_API __declspec(dllimport)
 #endif
-
+#elif defined(__GNUC__)
+#define TOAST_API __attribute__((visibility("default")))
+#else
+#define TOAST_API
+#endif

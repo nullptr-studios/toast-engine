@@ -7,7 +7,9 @@ namespace {
 
 class DummyGame : public toast::IApplication {
 	void Begin() override { }
+
 	void Tick() override { }
+
 	void Destroy() override { }
 };
 

@@ -46,19 +46,19 @@ bool Engine::shouldClose() {
 // ffi stuff
 extern "C" {
 
-	engine_t* toast_create() {
-		return reinterpret_cast<engine_t*>(new toast::Engine());
-	}
+engine_t* toast_create() {
+	return reinterpret_cast<engine_t*>(new toast::Engine());
+}
 
-	void toast_tick() {
-		toast::Engine::get()->tick();
-	}
+void toast_tick() {
+	toast::Engine::get()->tick();
+}
 
-	int toast_should_close() {
-		return toast::Engine::get()->shouldClose();
-	}
+int toast_should_close() {
+	return toast::Engine::get()->shouldClose();
+}
 
-	void toast_destroy(engine_t* e) {
-		delete reinterpret_cast<toast::Engine*>(e);
-	}
+void toast_destroy(engine_t* e) {
+	delete reinterpret_cast<toast::Engine*>(e);
+}
 }

@@ -18,4 +18,3 @@ class TOAST_API IApplication {
 void TOAST_API pushApplicationLayer(IApplication* app);
 
 }
-

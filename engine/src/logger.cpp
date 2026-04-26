@@ -184,9 +184,7 @@ void Logger::initNetworkRetry() {
 			// We set a send timeout so the engine doesn't hang if the log server stops responding or the TCP buffer fills up
 #if defined(_WIN32)
 			DWORD timeout = 1000;
-			setsockopt(
-			    m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<const char*>(&timeout), sizeof(timeout)
-			);
+			setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<const char*>(&timeout), sizeof(timeout));
 #else
 			timeval timeout {.tv_sec = 1, .tv_usec = 0};
 			setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
@@ -294,25 +292,25 @@ void Logger::flushSync() {
 }
 
 extern "C" {
-	using namespace logging;
+using namespace logging;
 
-	void toast_trace(const char* sink, const char* message, const char* file, unsigned line) {
-		Logger::log(file, line, 0, sink, message);
-	}
+void toast_trace(const char* sink, const char* message, const char* file, unsigned line) {
+	Logger::log(file, line, 0, sink, message);
+}
 
-	void toast_info(const char* sink, const char* message, const char* file, unsigned line) {
-		Logger::log(file, line, 1, sink, message);
-	}
+void toast_info(const char* sink, const char* message, const char* file, unsigned line) {
+	Logger::log(file, line, 1, sink, message);
+}
 
-	void toast_warn(const char* sink, const char* message, const char* file, unsigned line) {
-		Logger::log(file, line, 2, sink, message);
-	}
+void toast_warn(const char* sink, const char* message, const char* file, unsigned line) {
+	Logger::log(file, line, 2, sink, message);
+}
 
-	void toast_error(const char* sink, const char* message, const char* file, unsigned line) {
-		Logger::log(file, line, 3, sink, message);
-	}
+void toast_error(const char* sink, const char* message, const char* file, unsigned line) {
+	Logger::log(file, line, 3, sink, message);
+}
 
-	void toast_critical(const char* sink, const char* message, const char* file, unsigned line) {
-		Logger::log(file, line, 4, sink, message);
-	}
+void toast_critical(const char* sink, const char* message, const char* file, unsigned line) {
+	Logger::log(file, line, 4, sink, message);
+}
 }

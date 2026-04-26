@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-struct engine_t; ///< Opaque Engine ptr
+struct engine_t;                              ///< Opaque Engine ptr
 
 TOAST_C_API engine_t* toast_create(void);     ///< Initializes the game engine
 TOAST_C_API void toast_tick(void);            ///< Frame logic for the game engine
