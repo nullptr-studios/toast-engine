@@ -2,6 +2,19 @@ add_rules("mode.debug", "mode.release")
 set_defaultmode("debug")
 
 set_languages("c++23")
+
+rule("clang-format")
+	before_build(function(target)
+		cprint("${green}[  0%]: ${magenta}<" .. target:name() .. "> ${reset}format")
+		
+		local files = target:sourcefiles()
+		for _, file in ipairs(files) do
+			if file:endswith(".cpp") or file:endswith(".hpp") or file:endswith(".h") or file:endswith(".inl") then
+				os.exec("clang-format -i --style=file:" .. os.curdir() .. "/.clang-format " .. file)
+			end
+		end
+	end)
+rule_end()
 add_cxxflags("-stdlib=libc++", {tools = {"clang", "gcc"}}) -- Use LLVM STL by default
 
 -- Makes release have flto, fast math and SIMD intrinsic optimizations

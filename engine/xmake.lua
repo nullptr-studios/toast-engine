@@ -13,6 +13,9 @@ target("toast.engine", function()
 	-- External libraries go here -x
 	add_packages("asio")
 
+	-- Apply clang-format rule
+	add_rules("clang-format")
+
 	if is_plat("linux") then
 		add_syslinks("pthread")
 		add_shflags("-Wl,--no-as-needed") 

@@ -77,12 +77,13 @@ void ThreadPool::threadLoop() {
 }
 
 auto ThreadPool::create() noexcept -> std::unique_ptr<ThreadPool> {
-  assert(not instance && "ThreadPool already exists");
-  instance = new ThreadPool(THREAD_COUNT);
-  return std::unique_ptr<ThreadPool>(instance);
+	assert(not instance && "ThreadPool already exists");
+	instance = new ThreadPool(THREAD_COUNT);
+	return std::unique_ptr<ThreadPool>(instance);
 }
-auto ThreadPool::get() noexcept -> ThreadPool & {
-  assert(instance && "ThreadPool doesn't exist");
-  return *instance;
+
+auto ThreadPool::get() noexcept -> ThreadPool& {
+	assert(instance && "ThreadPool doesn't exist");
+	return *instance;
 }
-} // namespace toast
+}    // namespace toast

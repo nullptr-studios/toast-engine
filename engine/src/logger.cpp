@@ -1,16 +1,16 @@
-#include "log.hpp" // public functions
-#include "ffi/log.h" // ffi
 #include "logger.hpp"
 
+#include "ffi/log.h"    // ffi
 #include "generated/logging_easypb.h"
+#include "log.hpp"      // public functions
 #include "thread_pool.hpp"
 
-#include <easypb.hpp>
 #include <chrono>
-#include <vector>
-#include <filesystem>
 #include <cstdlib>
+#include <easypb.hpp>
+#include <filesystem>
 #include <iostream>
+#include <vector>
 
 #ifdef __linux__
 #include <unistd.h>
@@ -24,7 +24,9 @@
 
 namespace logging {
 
-void _detail::log(uint8_t severity, std::string_view file_name, unsigned line_number, std::string_view sink, std::string_view message) {
+void _detail::log(
+    uint8_t severity, std::string_view file_name, unsigned line_number, std::string_view sink, std::string_view message
+) {
 	// We wrap the singleton access here so the public headers don't need to know
 	// anything about the Logger class or its dependencies
 	Logger::log(file_name, line_number, severity, sink, message);
@@ -32,7 +34,8 @@ void _detail::log(uint8_t severity, std::string_view file_name, unsigned line_nu
 
 auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 	// Standard trick to allow make_unique with a private constructor
-	struct Helper : public Logger {};
+	struct Helper : public Logger { };
+
 	auto ptr = std::make_unique<Helper>();
 	instance = ptr.get();
 
@@ -68,7 +71,7 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 			}
 
 			std::vector<std::filesystem::path> candidates;
-			
+
 			if (!exe_dir.empty()) {
 #if defined(_WIN32)
 				candidates.push_back(exe_dir / "log_server.exe");
@@ -76,9 +79,9 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 				candidates.push_back(exe_dir / "log_server");
 #endif
 			}
-			
+
 			std::filesystem::path server_path;
-			for (auto &p : candidates) {
+			for (auto& p : candidates) {
 				if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) {
 					server_path = p;
 					break;
@@ -138,8 +141,9 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 	auto& logger = get();
 
 	logging::LogData log;
-	log.set_timestamp(std::chrono::duration_cast<std::chrono::nanoseconds>(
-		std::chrono::system_clock::now().time_since_epoch()).count()); //retarded stl library
+	log.set_timestamp(
+	    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count()
+	);    // retarded stl library
 	log.set_filepath(file);
 	log.set_line_number(line);
 	log.set_severity(static_cast<logging::LogData_Severity>(severity));
@@ -180,13 +184,15 @@ void Logger::initNetworkRetry() {
 			// We set a send timeout so the engine doesn't hang if the log server stops responding or the TCP buffer fills up
 #if defined(_WIN32)
 			DWORD timeout = 1000;
-			setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<const char*>(&timeout), sizeof(timeout));
+			setsockopt(
+			    m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<const char*>(&timeout), sizeof(timeout)
+			);
 #else
-			timeval timeout{.tv_sec = 1, .tv_usec = 0};
+			timeval timeout {.tv_sec = 1, .tv_usec = 0};
 			setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 #endif
 			return;
-		} catch (const std::exception &e) {
+		} catch (const std::exception& e) {
 			if (attempt == max_attempts) {
 				std::println(std::cerr, "[Logger] Failed to connect after {} attempts: {}", max_attempts, e.what());
 				abort();
@@ -228,12 +234,9 @@ void Logger::drain() {
 			len_buf[2] = (len >> 8) & 0xFF;
 			len_buf[3] = len & 0xFF;
 
-			std::array<asio::const_buffer, 2> bufs = {
-				asio::buffer(len_buf, 4),
-				asio::buffer(batch)
-			};
+			std::array<asio::const_buffer, 2> bufs = {asio::buffer(len_buf, 4), asio::buffer(batch)};
 			asio::write(m.socket, bufs);
-		} catch (const std::exception &e) {
+		} catch (const std::exception& e) {
 			// If sending fails, we fallback to stderr to avoid losing critical info
 			std::println(std::cerr, "[Logger] Send failure: {}", e.what());
 		}
@@ -263,7 +266,9 @@ auto Logger::collectQueue() -> std::vector<uint8_t> {
 		}
 	}
 
-	if (batch.logs.size() == 0) return {};
+	if (batch.logs.size() == 0) {
+		return {};
+	}
 
 	std::vector<uint8_t> buffer(batch.ByteSizeLong());
 	batch.SerializeToArray(buffer.data(), buffer.size());
@@ -280,15 +285,11 @@ void Logger::flushSync() {
 		len_buf[2] = (len >> 8) & 0xFF;
 		len_buf[3] = len & 0xFF;
 
-		std::array<asio::const_buffer, 2> bufs = {
-			asio::buffer(len_buf, 4),
-			asio::buffer(batch)
-		};
+		std::array<asio::const_buffer, 2> bufs = {asio::buffer(len_buf, 4), asio::buffer(batch)};
 		asio::error_code ec;
 		asio::write(m.socket, bufs, ec);
 	}
 }
-
 
 }
 
