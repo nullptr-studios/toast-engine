@@ -40,7 +40,7 @@ inline std::unordered_map<std::type_index, std::function<void(std::any)>> unsubs
 
 /// @internal
 /// Event needs to inherit from IEvent so we get the vtable for notify
-struct IEvent {
+struct TOAST_API IEvent {
 	virtual ~IEvent() = default;
 
 #ifdef DEBUG
