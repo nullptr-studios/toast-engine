@@ -10,7 +10,9 @@ before_build(function(target)
 		return
 	end
 
-	-- Ensure include directory exists and is clean
+	if os.exists(dst_dir) then
+		os.rm(dst_dir)
+	end
 	os.mkdir(dst_dir)
 
 	local count        = 0

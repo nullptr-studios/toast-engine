@@ -3,23 +3,26 @@
 
 local scriptdir = os.scriptdir()
 for _, filepath in ipairs(os.files(path.join(scriptdir, "**.cpp"))) do
-    local relpath = path.relative(filepath, scriptdir)
-    local dir = path.directory(relpath)
-    local target_name = relpath:gsub("%.cpp$", "")
+	local relpath = path.relative(filepath, scriptdir)
+	local dir = path.directory(relpath)
+	local target_name = relpath:gsub("%.cpp$", "")
 
-    target(target_name, function()
-        set_kind("binary")
-        set_default(false)
+	target(target_name, function()
+		set_kind("binary")
+		set_default(false)
 
-        add_files(filepath)
-        add_deps("toast.engine")
-				add_ldflags("-lstdc++exp") -- (adds library for stacktrace)
+		add_files(filepath)
+		add_deps("toast.engine")
+		add_ldflags("-lstdc++exp") -- (adds library for stacktrace)
 
 
-        -- Grouping logic
-        set_group("tests/" .. dir)
-        add_tests("default", { group = dir })
-        
-				add_rpathdirs("./", "../")
-    end)
+		add_defines("UNIT_TESTING")
+
+
+		-- Grouping logic
+		set_group("tests/" .. dir)
+		add_tests("default", { group = dir })
+
+		add_rpathdirs("./", "../")
+	end)
 end

@@ -10,6 +10,7 @@
 #include <easypb.hpp>
 #include <filesystem>
 #include <iostream>
+#include <print>
 #include <vector>
 
 #ifdef __linux__
