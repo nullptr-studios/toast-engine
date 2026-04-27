@@ -5,7 +5,7 @@ set_languages("c++23")
 
 rule("clang-format")
 before_build(function(target)
-	cprint("${green}[  0%]: ${magenta}<" .. target:name() .. "> ${reset}format")
+	cprint("${green}[100%]: ${magenta}<" .. target:name() .. "> ${reset}format")
 
 	local source_files = target:sourcefiles()
 	for _, file in ipairs(source_files) do
