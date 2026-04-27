@@ -25,7 +25,6 @@ rule_end()
 
 add_rules("plugin.compile_commands.autoupdate")
 add_cxxflags("-stdlib=libc++", {tools = {"clang", "gcc"}}) -- Use LLVM STL by default
-add_ldflags("-lstdc++exp") -- i needed this for std::stacktrace
 
 -- Makes release have flto, fast math and SIMD intrinsic optimizations
 if is_mode("release") then

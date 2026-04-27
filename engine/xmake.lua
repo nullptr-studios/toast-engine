@@ -13,6 +13,7 @@ target("toast.engine", function()
 
 	-- External libraries go here -x
 	add_packages("asio")
+	add_ldflags("-lstdc++exp") -- (adds library for stacktrace) i needed this for std::stacktrace
 
 	-- Apply clang-format rule
 	add_rules("clang-format")
