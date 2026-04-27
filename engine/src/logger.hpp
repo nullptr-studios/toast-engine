@@ -43,9 +43,9 @@ class Logger {
 		std::atomic<bool> drain_pending = false;
 	} m;
 
-	static constexpr uint16_t PORT = 12800;                ///< Port to connect to the server
-	static constexpr bool AUTO_SPAWN_LOG_SERVER = true;    ///< Decides if the engine should create a log server or not
-	static constexpr bool SHOW_SERVER_LOGS = false;        ///< If true, log server consoole will also appear on the terminal
+	static constexpr uint16_t port = 12800;                ///< Port to connect to the server
+	static constexpr bool auto_spawn_log_server = true;    ///< Decides if the engine should create a log server or not
+	static constexpr bool show_server_logs = false;        ///< If true, log server consoole will also appear on the terminal
 
 public:
 	/**
@@ -69,8 +69,8 @@ public:
 	// Copying a global logger doesn't make sense
 	Logger(const Logger&) = delete;
 	Logger(Logger&&) = delete;
-	Logger& operator=(const Logger&) = delete;
-	Logger& operator=(Logger&&) = delete;
+	auto operator=(const Logger&) -> Logger& = delete;
+	auto operator=(Logger&&) -> Logger& = delete;
 
 	/**
 	 * @brief Entry point for all engine logs

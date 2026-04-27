@@ -4,23 +4,23 @@ set_defaultmode("debug")
 set_languages("c++23")
 
 rule("clang-format")
-	before_build(function(target)
-		cprint("${green}[  0%]: ${magenta}<" .. target:name() .. "> ${reset}format")
+before_build(function(target)
+	cprint("${green}[  0%]: ${magenta}<" .. target:name() .. "> ${reset}format")
 
-		local source_files = target:sourcefiles()
-		for _, file in ipairs(source_files) do
-			if file:endswith(".cpp") then
-				os.exec("clang-format -i --style=file:" .. os.curdir() .. "/.clang-format " .. file)
-			end
+	local source_files = target:sourcefiles()
+	for _, file in ipairs(source_files) do
+		if file:endswith(".cpp") then
+			os.exec("clang-format -i --style=file:" .. os.curdir() .. "/.clang-format " .. file)
 		end
+	end
 
-		local header_files = target:headerfiles()
-		for _, file in ipairs(header_files) do
-			if file:endswith(".hpp") or file:endswith(".h") or file:endswith(".inl") then
-				os.exec("clang-format -i --style=file:" .. os.curdir() .. "/.clang-format " .. file)
-			end
+	local header_files = target:headerfiles()
+	for _, file in ipairs(header_files) do
+		if file:endswith(".hpp") or file:endswith(".h") or file:endswith(".inl") then
+			os.exec("clang-format -i --style=file:" .. os.curdir() .. "/.clang-format " .. file)
 		end
-	end)
+	end
+end)
 rule_end()
 
 add_rules("plugin.compile_commands.autoupdate")
@@ -48,26 +48,41 @@ includes("tools/xmake.lua")
 includes("tests/xmake.lua")
 
 task("tidy")
-set_category("plugin")
-on_run(function ()
-	local files = os.files("engine/**")
-	local target_exts = {
-		[".hpp"] = true,
-		[".cpp"] = true,
-		[".h"]   = true,
-		[".inl"] = true
-	}
-
-	for _, file in ipairs(files) do
+set_menu {
+	usage = "xmake tidy",
+	description = "Run clang-tidy on engine files with progress"
+}
+on_run(function()
+	local all_files = os.files("engine/**")
+	local targets = {}
+	for _, file in ipairs(all_files) do
 		local ext = path.extension(file)
-		if target_exts[ext] then
-			cprint("${bright}Tidying: ${reset}" .. file)
-			try {
-				function ()
-					os.execv("clang-tidy", {"-p", ".", file}) 
-				end
-			}
+		local is_valid_ext = (ext == ".hpp" or ext == ".cpp" or ext == ".h" or ext == ".inl")
+
+		-- Skip generated and external folders
+		if is_valid_ext and 
+			not file:find("engine/generated", 1, true) and
+			not file:find("engine/external", 1, true) and
+			not file:find("engine/ffi", 1, true) then
+			table.insert(targets, file)
 		end
+	end
+
+	local total = #targets
+	if total == 0 then
+		cprint("${yellow}No files found to analyze.")
+		return
+	end
+
+	for i, file in ipairs(targets) do
+		local percentage = math.floor((i / total) * 100)
+		local progress = string.format("%3d%%", percentage)
+		cprint("${green}[" .. progress .. "]: ${reset}clang-tidy.analyzing " .. file)
+		try {
+			function()
+				os.execv("clang-tidy", {"-p", ".", file}) 
+			end
+		}
 	end
 end)
 task_end()

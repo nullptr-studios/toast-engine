@@ -87,7 +87,7 @@ modernize-use-transparent-functors,
 modernize-shrink-to-fit,
 
 misc-header-include-cycle,
-misc-include-cleaner,
+#misc-include-cleaner, removed because it over-pollutes everything with useless warnings
 misc-throw-by-value-catch-by-reference,
 
 cppcoreguidelines-avoid-goto,
@@ -102,7 +102,7 @@ bugprone-compare-pointer-to-member-virtual-function,
 bugprone-copy-constructor-init,
 bugprone-crtp-constructor-accessibility,
 bugprone-empty-catch,
-bugprone-exception-escape,
+#bugprone-exception-escape, removed because we sometimes want a noexcept function to terminate if theres an exception
 bugprone-forward-declaration-namespace,
 bugprone-inaccurate-erase,
 bugprone-incorrect-roundings,
