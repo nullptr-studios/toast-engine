@@ -1,33 +1,52 @@
 rule("sync-headers")
 before_build(function(target)
-	cprint("${green}[100%%]: ${magenta}<%s> ${reset}sync-headers", target:name())
 	import("core.base.option")
 
 	local base_dir = os.scriptdir()
 	local src_dir  = path.join(base_dir, "src")
 	local dst_dir  = path.join(base_dir, "include")
 
-	if os.isdir(src_dir) then
-		if os.exists(dst_dir) and not os.isdir(dst_dir) then
-			os.rm(dst_dir)
-		end
-		os.mkdir(dst_dir)
+	if not os.isdir(src_dir) then
+		return
+	end
 
-		local count = 0
+	-- Ensure include directory exists and is clean
+	os.mkdir(dst_dir)
 
-		for _, filepath in ipairs(files) do
-			local content = io.readfile(filepath)
-			if content and content:find("TOAST_API", 1, true) then
-				local rel_path = path.relative(filepath, src_dir)
-				os.cp(filepath, dst_dir, { rootdir = src_dir })
-				count = count + 1
+	local count        = 0
+
+	-- Use os.files to find all headers in the src directory recursively
+	-- This is more reliable than relying on target:sourcefiles()
+	local header_files = os.files(path.join(src_dir, "**.h"))
+	local hpp_files    = os.files(path.join(src_dir, "**.hpp"))
+
+	-- Combine lists
+	local all_files    = table.join(header_files, hpp_files)
+
+	for _, filepath in ipairs(all_files) do
+		local content = io.readfile(filepath)
+
+		if content and content:find("TOAST_API", 1, true) then
+			-- 1. Copy the main header
+			os.cp(filepath, dst_dir, { rootdir = src_dir })
+			count = count + 1
+
+			-- 2. Scan for and copy .inl dependencies
+			for inl_include in content:gmatch('#include%s+"([^"]+%.inl)"') do
+				-- Find the .inl file relative to the current header
+				local current_dir = path.directory(filepath)
+				local inl_path = path.join(current_dir, inl_include)
+
+				if os.isfile(inl_path) then
+					os.cp(inl_path, dst_dir, { rootdir = src_dir })
+					vprint("Synced dependency: %s", inl_include)
+				end
 			end
 		end
+	end
 
-		-- Optional: A final summary if any files were moved
-		if count > 0 then
-			vprint("Total files synced: %d", count)
-		end
+	if count > 0 then
+		cprint("${green}[sync-headers]: ${reset}Synced %d API headers (and their .inl files) to /include", count)
 	end
 end)
 rule_end()
