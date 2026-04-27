@@ -9,7 +9,6 @@ auto main() -> int {
 	event::Listener listener;
 	bool called = false;
 	listener.subscribe<BasicEvent>([&](BasicEvent& e) {
-		std::print("{}", e.stacktrace);
 		called = true;
 	});
 

@@ -26,18 +26,11 @@
 namespace event {
 
 /// @brief dispatches all queued events to their callbacks
-/// @note Not thread-safe. Should be called from a single thread.
+/// @note Not thread-safe. Should be only ever called from a single thread / main thread
 void TOAST_API pollEvents() noexcept;
 
 /// @internal
 namespace _detail {
-
-/// @brief mutex for the event system
-inline std::mutex mutex;
-
-/// @brief vtable for unsubscribing callbacks
-inline std::unordered_map<std::type_index, std::function<void(std::any)>> unsubscribe_map;
-
 /// @internal
 /// Event needs to inherit from IEvent so we get the vtable for notify
 struct TOAST_API IEvent {
@@ -52,6 +45,16 @@ private:
 	virtual void notify() noexcept = 0;
 };
 
+/// @brief mutex for the event system
+inline std::mutex mutex;
+
+/// @brief vtable for unsubscribing callbacks
+inline std::unordered_map<std::type_index, std::function<void(std::any)>> unsubscribe_map;
+
+/// @brief callbacks will be cleaned up only before pollEvents
+inline std::vector<IEvent*> deleteion_queue;
+
+/// @brief allocates memory in the event queue pool
 auto allocate(std::size_t size, std::size_t align) noexcept -> void*;
 }
 

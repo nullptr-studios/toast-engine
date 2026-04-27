@@ -23,8 +23,6 @@ struct Pool {
 
 std::array<Pool, 2> pools;
 uint8_t index = 0;
-std::mutex poll_mutex;
-
 }
 
 namespace _detail {
@@ -38,7 +36,9 @@ auto allocate(std::size_t size, std::size_t align) noexcept -> void* {
 }
 
 void pollEvents() noexcept {
-	std::scoped_lock lock(poll_mutex);
+	for (auto* callback : _detail::deleteion_queue) {
+		delete callback;
+	}
 	uint32_t idx;
 	{
 		std::scoped_lock _(_detail::mutex);
