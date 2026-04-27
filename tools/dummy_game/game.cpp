@@ -6,11 +6,11 @@
 namespace {
 
 class DummyGame : public toast::IApplication {
-	void Begin() override { }
+	void begin() override { }
 
-	void Tick() override { }
+	void tick() override { }
 
-	void Destroy() override { }
+	void destroy() override { }
 };
 
 }

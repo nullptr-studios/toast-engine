@@ -27,9 +27,7 @@ Engine::Engine() noexcept {
 	instance = this;
 }
 
-Engine::~Engine() noexcept { }
-
-Engine* Engine::get() noexcept {
+auto Engine::get() noexcept -> Engine* {
 	// If at any point toast doesn't exist just crash the damn game
 	assert(instance && "Toast Engine doesn't exist");
 	return instance;
@@ -37,7 +35,7 @@ Engine* Engine::get() noexcept {
 
 void Engine::tick() { }
 
-bool Engine::shouldClose() {
+auto Engine::shouldClose() -> bool {
 	return false;
 }
 
@@ -46,7 +44,7 @@ bool Engine::shouldClose() {
 // ffi stuff
 extern "C" {
 
-engine_t* toast_create() {
+auto toast_create() -> engine_t* {
 	return reinterpret_cast<engine_t*>(new toast::Engine());
 }
 
@@ -54,7 +52,7 @@ void toast_tick() {
 	toast::Engine::get()->tick();
 }
 
-int toast_should_close() {
+auto toast_should_close() -> int {
 	return toast::Engine::get()->shouldClose();
 }
 

@@ -20,32 +20,32 @@ void ThreadPool::queueJob(std::function<void()>&& job) {
 	auto& o = get();
 
 	{
-		std::unique_lock<std::mutex> lock(o.m.queueMutex);
+		std::unique_lock<std::mutex> lock(o.m.queue_mutex);
 		o.m.jobs.emplace(std::move(job));
 	}
 
-	o.m.jobAvailable.notify_one();
+	o.m.job_available.notify_one();
 }
 
 void ThreadPool::destroy() {
 	{
-		std::unique_lock<std::mutex> lock(m.queueMutex);
-		m.shouldStop = true;
+		std::unique_lock<std::mutex> lock(m.queue_mutex);
+		m.should_stop = true;
 	}
 
-	m.jobAvailable.notify_all();
+	m.job_available.notify_all();
 	m.workers.clear();
 	// TODO: TOAST_TRACE("Destroyed thread pool");
 }
 
-bool ThreadPool::busy() {
-	std::unique_lock<std::mutex> lock(m.queueMutex);
-	return !m.jobs.empty() || m.activeJobs > 0;
+auto ThreadPool::busy() -> bool {
+	std::unique_lock<std::mutex> lock(m.queue_mutex);
+	return !m.jobs.empty() || m.active_jobs > 0;
 }
 
 void ThreadPool::waitIdle() {
-	std::unique_lock<std::mutex> lock(m.queueMutex);
-	m.allDone.wait(lock, [this] { return m.jobs.empty() && m.activeJobs == 0; });
+	std::unique_lock<std::mutex> lock(m.queue_mutex);
+	m.all_done.wait(lock, [this] { return m.jobs.empty() && m.active_jobs == 0; });
 }
 
 void ThreadPool::threadLoop() {
@@ -53,24 +53,24 @@ void ThreadPool::threadLoop() {
 		std::function<void()> job;
 
 		{
-			std::unique_lock<std::mutex> lock(m.queueMutex);
-			m.jobAvailable.wait(lock, [this] { return !m.jobs.empty() || m.shouldStop; });
-			if (m.shouldStop) {
+			std::unique_lock<std::mutex> lock(m.queue_mutex);
+			m.job_available.wait(lock, [this] { return !m.jobs.empty() || m.should_stop; });
+			if (m.should_stop) {
 				return;
 			}
 			// move out of queue rather than copy
 			job = std::move(m.jobs.front());
 			m.jobs.pop();
-			++m.activeJobs;
+			++m.active_jobs;
 		}
 
 		job();
 
 		// Decrement and notify waitIdle() if pool is now fully idle
-		if (--m.activeJobs == 0) {
-			std::unique_lock<std::mutex> lock(m.queueMutex);
+		if (--m.active_jobs == 0) {
+			std::unique_lock<std::mutex> lock(m.queue_mutex);
 			if (m.jobs.empty()) {
-				m.allDone.notify_all();
+				m.all_done.notify_all();
 			}
 		}
 	}
@@ -78,7 +78,7 @@ void ThreadPool::threadLoop() {
 
 auto ThreadPool::create() noexcept -> std::unique_ptr<ThreadPool> {
 	assert(not instance && "ThreadPool already exists");
-	instance = new ThreadPool(THREAD_COUNT);
+	instance = new ThreadPool(thread_count);
 	return std::unique_ptr<ThreadPool>(instance);
 }
 

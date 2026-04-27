@@ -50,17 +50,17 @@ private:
 	void threadLoop();
 
 	struct {
-		bool shouldStop = false;                   ///< Flag to signal workers to stop
-		std::atomic<int> activeJobs = 0;           ///< Number of jobs currently executing
-		std::mutex queueMutex;                     ///< Mutex protecting the job queue
-		std::condition_variable jobAvailable;      ///< Notified when a job is enqueued or stop is requested
-		std::condition_variable allDone;           ///< Notified when activeJobs hits 0 and queue is empty
+		bool should_stop = false;                   ///< Flag to signal workers to stop
+		std::atomic<int> active_jobs = 0;           ///< Number of jobs currently executing
+		std::mutex queue_mutex;                     ///< Mutex protecting the job queue
+		std::condition_variable job_available;      ///< Notified when a job is enqueued or stop is requested
+		std::condition_variable all_done;           ///< Notified when activeJobs hits 0 and queue is empty
 		std::vector<std::jthread> workers;         ///< Worker threads (auto-join on destruction)
 		std::queue<std::function<void()>> jobs;    ///< Pending job queue
 	} m;
 
 public:
-	static constexpr size_t THREAD_COUNT = 4;    ///< Number of workers on the pool
+	static constexpr size_t thread_count = 4;    ///< Number of workers on the pool
 
 	/**
 	 * @brief Initializes the pool and returns a pointer with ownership
@@ -109,7 +109,7 @@ public:
 	 * @return true if any work is pending or in progress.
 	 */
 	[[nodiscard]] [[deprecated("Use waitIdle() instead")]]
-	bool busy();
+	auto busy() -> bool;
 
 	/**
 	 * @brief Blocks the calling thread until all queued and active jobs complete.
@@ -122,8 +122,8 @@ public:
 	// No copy and move constructors
 	ThreadPool(ThreadPool&) = delete;
 	ThreadPool(ThreadPool&&) = delete;
-	ThreadPool& operator=(const ThreadPool&) = delete;
-	ThreadPool& operator=(ThreadPool&&) = delete;
+	auto operator=(const ThreadPool&) -> ThreadPool& = delete;
+	auto operator=(ThreadPool&&) -> ThreadPool& = delete;
 
 	~ThreadPool() {
 		waitIdle();

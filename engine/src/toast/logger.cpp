@@ -41,18 +41,18 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 
 	// We allow disabling this so it's easier to debug the server
 	// On release this should ALWAYS be on since the client is not expected to open the log server on their own
-	if constexpr (AUTO_SPAWN_LOG_SERVER) {
+	if constexpr (auto_spawn_log_server) {
 		try {
 			// Get the directory of the current executable
 			std::filesystem::path exe_dir;
 			try {
 				// Try to get the executable path using platform-specific methods
 #ifdef __linux__
-				char exe_path[4096];
-				ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+				std::array<char, 4096> exe_path;
+				ssize_t len = readlink("/proc/self/exe", exe_path.data(), exe_path.size() - 1);
 				if (len != -1) {
 					exe_path[len] = '\0';
-					exe_dir = std::filesystem::path(exe_path).parent_path();
+					exe_dir = std::filesystem::path(exe_path.data()).parent_path();
 				}
 #elif defined(__APPLE__)
 				uint32_t size = 4096;
@@ -67,7 +67,7 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 				}
 #endif
 			} catch (...) {
-				// If we can't get exe dir, fall back to cwd
+				std::println(std::cerr, "Couldnt find log server executable");
 			}
 
 			std::vector<std::filesystem::path> candidates;
@@ -90,7 +90,7 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 
 			if (!server_path.empty()) {
 				std::string cmd;
-				std::string output_redir = SHOW_SERVER_LOGS ? "" : " >/dev/null 2>&1";
+				std::string output_redir = show_server_logs ? "" : " >/dev/null 2>&1";
 
 #if defined(_WIN32)
 				// On Windows, 'start /B' runs the command in the background without opening a new window
@@ -178,7 +178,7 @@ void Logger::initNetworkRetry() {
 			m.socket = asio::ip::tcp::socket(m.io_ctx);
 
 			asio::ip::tcp::resolver resolver(m.io_ctx);
-			auto endpoints = resolver.resolve("127.0.0.1", std::to_string(PORT));
+			auto endpoints = resolver.resolve("127.0.0.1", std::to_string(port));
 			asio::connect(m.socket, endpoints);
 
 			// We set a send timeout so the engine doesn't hang if the log server stops responding or the TCP buffer fills up
@@ -226,7 +226,7 @@ void Logger::drain() {
 	if (!batch.empty() && m.socket.is_open()) {
 		try {
 			uint32_t len = static_cast<uint32_t>(batch.size());
-			uint8_t len_buf[4];
+			std::array<uint8_t, 4> len_buf;
 			len_buf[0] = (len >> 24) & 0xFF;
 			len_buf[1] = (len >> 16) & 0xFF;
 			len_buf[2] = (len >> 8) & 0xFF;
@@ -264,7 +264,7 @@ auto Logger::collectQueue() -> std::vector<uint8_t> {
 		}
 	}
 
-	if (batch.logs.size() == 0) {
+	if (batch.logs.empty()) {
 		return {};
 	}
 
@@ -277,7 +277,7 @@ void Logger::flushSync() {
 	auto batch = collectQueue();
 	if (!batch.empty() && m.socket.is_open()) {
 		uint32_t len = static_cast<uint32_t>(batch.size());
-		uint8_t len_buf[4];
+		std::array<uint8_t, 4> len_buf;
 		len_buf[0] = (len >> 24) & 0xFF;
 		len_buf[1] = (len >> 16) & 0xFF;
 		len_buf[2] = (len >> 8) & 0xFF;
