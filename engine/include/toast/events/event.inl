@@ -22,17 +22,25 @@ Event<T>::G::G() noexcept {
 template<typename T>
 auto Event<T>::subscribe(char priority, callback_t&& callback) noexcept -> iterator_t {
 	std::println("Subscribing Callback To: {}", typeid(T).name());
-	std::scoped_lock _(g.mutex);
-	g.cached = false;
-	return g.callbacks.emplace(priority, callback);
+	auto cb = new callback_t(std::move(callback));
+	{
+		std::scoped_lock _(g.mutex);
+		g.cached = false;
+		return g.callbacks.emplace(priority, cb);
+	}
 }
 
 template<typename T>
 void Event<T>::unsubscribe(iterator_t it) noexcept {
 	std::println("Unsubscribing Callback To: {}", typeid(T).name());
-	std::scoped_lock _(g.mutex);
-	g.cached = false;
-	g.callbacks.erase(it);
+
+	{
+		std::scoped_lock _(g.mutex);
+		auto deleter = [](void* p) { delete static_cast<std::move_only_function<bool(T&)>*>(p); };
+		_detail::deletion_queue.emplace_back((*it).second, deleter);
+		g.cached = false;
+		g.callbacks.erase(it);
+	}
 }
 
 template<typename T>
@@ -54,7 +62,7 @@ void Event<T>::notify() noexcept {
 
 	// disptaches all of the callbacks
 	for (auto& callback : g.processing) {
-		bool handled = callback(static_cast<T&>(*this));
+		bool handled = (*callback)(static_cast<T&>(*this));
 		if (handled) {
 			return;
 		}
@@ -67,13 +75,15 @@ void send(Args&&... args) noexcept {
 	static_assert(std::is_constructible_v<T, Args...>, "Invalid Construtor For Type T");
 	std::println("Sending Event: {}", typeid(T).name());
 	// Allocate and enqueue event
-	std::scoped_lock _(_detail::mutex);
-	void* memory = _detail::allocate(sizeof(T), alignof(T));
-	assert(memory);
-	_detail::IEvent* event = new (memory) T(std::forward<Args>(args)...);
+	{
+		std::scoped_lock _(_detail::mutex);
+		void* memory = _detail::allocate(sizeof(T), alignof(T));
+		assert(memory);
+		_detail::IEvent* event = new (memory) T(std::forward<Args>(args)...);
 #ifdef DEBUG
-	event->stacktrace = std::stacktrace::current(1);
+		event->stacktrace = std::stacktrace::current(1);
 #endif
+	}
 }
 
 }

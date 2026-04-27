@@ -8,9 +8,7 @@ struct BasicEvent : event::Event<BasicEvent> { };
 auto main() -> int {
 	event::Listener listener;
 	bool called = false;
-	listener.subscribe<BasicEvent>([&](BasicEvent& e) {
-		called = true;
-	});
+	listener.subscribe<BasicEvent>([&called](BasicEvent& e) { called = true; });
 
 	event::send<BasicEvent>();
 	event::pollEvents();

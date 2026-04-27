@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <stacktrace>
 #include <toast/export.hpp>
@@ -26,21 +27,14 @@
 namespace event {
 
 /// @brief dispatches all queued events to their callbacks
-/// @note Not thread-safe. Should be called from a single thread.
+/// @note Not thread-safe. Should be only ever called from a single thread / main thread
 void TOAST_API pollEvents() noexcept;
 
 /// @internal
 namespace _detail {
-
-/// @brief mutex for the event system
-inline std::mutex mutex;
-
-/// @brief vtable for unsubscribing callbacks
-inline std::unordered_map<std::type_index, std::function<void(std::any)>> unsubscribe_map;
-
 /// @internal
 /// Event needs to inherit from IEvent so we get the vtable for notify
-struct IEvent {
+struct TOAST_API IEvent {
 	virtual ~IEvent() = default;
 
 #ifdef DEBUG
@@ -52,6 +46,16 @@ private:
 	virtual void notify() noexcept = 0;
 };
 
+/// @brief mutex for the event system
+inline std::mutex mutex;
+
+/// @brief vtable for unsubscribing callbacks
+inline std::unordered_map<std::type_index, std::function<void(std::any)>> unsubscribe_map;
+
+/// @brief callbacks will be cleaned up only before pollEvents
+inline std::vector<std::unique_ptr<void, void (*)(void*)>> deletion_queue;
+
+/// @brief allocates memory in the event queue pool
 auto allocate(std::size_t size, std::size_t align) noexcept -> void*;
 }
 
@@ -88,15 +92,15 @@ template<typename T>
 struct TOAST_API Event : _detail::IEvent {
 	friend class Listener;
 	/// @brief callbacks that return 'true' are consumed and do not propogate
-	using callback_t = std::function<bool(T&)>;
-	using iterator_t = std::multimap<char, callback_t>::iterator;
+	using callback_t = std::move_only_function<bool(T&)>;
+	using iterator_t = std::multimap<char, callback_t*>::iterator;
 
 private:
 	static inline struct G {
 		G() noexcept;
-		std::multimap<char, callback_t, std::greater<char>> callbacks;
+		std::multimap<char, callback_t*, std::greater<char>> callbacks;
 		std::mutex mutex;
-		std::vector<callback_t> processing;
+		std::vector<callback_t*> processing;
 		bool cached;
 	} g;
 

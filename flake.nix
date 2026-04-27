@@ -22,6 +22,8 @@
 		devShells.${system}.default = pkgs.mkShell {
 			nativeBuildInputs = with pkgs; [
 				xmake
+				gdb
+				valgrind
 				rustup
 				protobuf
 				pkg-config

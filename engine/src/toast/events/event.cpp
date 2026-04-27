@@ -1,4 +1,3 @@
-// TODO: implement Circular buffer
 #include "event.hpp"
 
 #include <cassert>
@@ -36,9 +35,7 @@ auto allocate(std::size_t size, std::size_t align) noexcept -> void* {
 }
 
 void pollEvents() noexcept {
-	for (auto* callback : _detail::deleteion_queue) {
-		delete callback;
-	}
+	_detail::deletion_queue.clear();
 	uint32_t idx;
 	{
 		std::scoped_lock _(_detail::mutex);
