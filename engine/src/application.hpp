@@ -5,8 +5,8 @@
  */
 
 #pragma once
-#include "export.hpp"
 #include "_details/engine.hpp"
+#include "export.hpp"
 
 namespace toast {
 
@@ -19,4 +19,3 @@ class TOAST_API IApplication {
 void TOAST_API pushApplicationLayer(IApplication* app);
 
 }
-

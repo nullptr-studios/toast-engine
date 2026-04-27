@@ -24,7 +24,6 @@ public:
 private:
 	EnginePimpl* m;
 	static Engine* instance;
-
 };
 
 }

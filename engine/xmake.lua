@@ -8,7 +8,8 @@ target("toast.engine", function()
 	add_rpathdirs("$ORIGIN")
 
 	add_files("**.cpp")
-	add_headerfiles("ffi/(**.h)", "include/toast/(**.hpp)", { prefixdir = "toast" })
+	add_headerfiles("src/(**.hpp)", { public = false, extra = { check = true }})
+	add_headerfiles("ffi/(**.h)", "include/toast/(**.hpp)", { prefixdir = "toast", extra = { check = true }})
 
 	-- External libraries go here -x
 	add_packages("asio")

@@ -6,13 +6,13 @@
  */
 #pragma once
 #include <atomic>
+#include <cassert>
 #include <condition_variable>
 #include <functional>
 #include <memory>
-#include <vector>
 #include <queue>
 #include <thread>
-#include <cassert>
+#include <vector>
 
 namespace toast {
 
@@ -45,22 +45,22 @@ class ThreadPool {
 private:
 	ThreadPool(size_t size);
 	inline static ThreadPool* instance = nullptr;
-	static auto get() noexcept -> ThreadPool &;
+	static auto get() noexcept -> ThreadPool&;
 
 	void threadLoop();
 
 	struct {
-		bool shouldStop = false;                       ///< Flag to signal workers to stop
-		std::atomic<int> activeJobs = 0;               ///< Number of jobs currently executing
-		std::mutex queueMutex;                         ///< Mutex protecting the job queue
-		std::condition_variable jobAvailable;          ///< Notified when a job is enqueued or stop is requested
-		std::condition_variable allDone;               ///< Notified when activeJobs hits 0 and queue is empty
-		std::vector<std::jthread> workers;             ///< Worker threads (auto-join on destruction)
-		std::queue<std::function<void()>> jobs;        ///< Pending job queue
+		bool shouldStop = false;                   ///< Flag to signal workers to stop
+		std::atomic<int> activeJobs = 0;           ///< Number of jobs currently executing
+		std::mutex queueMutex;                     ///< Mutex protecting the job queue
+		std::condition_variable jobAvailable;      ///< Notified when a job is enqueued or stop is requested
+		std::condition_variable allDone;           ///< Notified when activeJobs hits 0 and queue is empty
+		std::vector<std::jthread> workers;         ///< Worker threads (auto-join on destruction)
+		std::queue<std::function<void()>> jobs;    ///< Pending job queue
 	} m;
 
 public:
-	static constexpr size_t THREAD_COUNT = 4; ///< Number of workers on the pool
+	static constexpr size_t THREAD_COUNT = 4;    ///< Number of workers on the pool
 
 	/**
 	 * @brief Initializes the pool and returns a pointer with ownership
@@ -109,7 +109,7 @@ public:
 	 * @return true if any work is pending or in progress.
 	 */
 	[[nodiscard]] [[deprecated("Use waitIdle() instead")]]
-		bool busy();
+	bool busy();
 
 	/**
 	 * @brief Blocks the calling thread until all queued and active jobs complete.
