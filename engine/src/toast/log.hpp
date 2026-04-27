@@ -27,7 +27,7 @@ void TOAST_API
     log(uint8_t severity, std::string_view file_name, unsigned line_number, std::string_view sink, std::string_view message);
 }
 
-#define TOAST_FILE_NAME ::logging::_detail::get_only_name(__FILE__)
+#define TOAST_FILE_NAME ::logging::_detail::getOnlyName(__FILE__)
 
 #define TOAST_LOG_IMPL(severity, sink, ...)                                                        \
 	do {                                                                                             \
