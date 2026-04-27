@@ -13,6 +13,10 @@
 #include <cstdlib>
 #include <string_view>
 
+#ifdef UNIT_TESTING
+#include <print>
+#endif
+
 /// @internal
 namespace logging::_detail {
 constexpr auto TOAST_API getOnlyName(std::string_view path) -> std::string_view {
@@ -115,4 +119,16 @@ void TOAST_API
 	} while (0)
 #else
 #define TOAST_ASSERT(condition, sink, ...)
+#endif
+
+// Make unit testing bypass macros
+#ifdef UNIT_TESTING
+#undef TOAST_LOG_IMPL
+#define TOAST_LOG_IMPL(severity, sink, ...)                                                        \
+	do {                                                                                             \
+		/* The sink must be a valid type or name in scope; this prevents typos in system names */      \
+		using _validate_type = sink;                                                                   \
+		::logging::_detail::log(severity, TOAST_FILE_NAME, __LINE__, #sink, std::format(__VA_ARGS__)); \
+		std::println("[{}] #sink: {}", severity, std::format(__VA_ARGS__));                            \
+	} while (0)
 #endif

@@ -158,6 +158,15 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 	if (!logger.m.drain_pending.exchange(true)) {
 		toast::ThreadPool::queueJob([&logger]() { logger.drain(); });
 	}
+
+#ifdef DEBUG
+	// If in debug we are going to print warnings and errors on console
+	if (severity >= 3) {
+		std::println("\033[31m[ERROR] {}: {}\033[0m", sink, message);
+	} else if (severity == 2) {
+		std::println("\033[33m[WARNING] {}: {}\033[0m", sink, message);
+	}
+#endif
 }
 
 void Logger::initNetworkRetry() {
