@@ -63,9 +63,7 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 					exe_dir = std::filesystem::path(exe_path).parent_path();
 				}
 #endif
-			} catch (...) {
-				// If we can't get exe dir, fall back to cwd
-			}
+			} catch (...) { std::println(std::cerr, "Couldnt find log server executable"); }
 
 			std::vector<std::filesystem::path> candidates;
 			
@@ -156,6 +154,15 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 	if (!logger.m.drain_pending.exchange(true)) {
 		toast::ThreadPool::queueJob([&logger]() { logger.drain(); });
 	}
+
+#ifdef DEBUG
+	// If in debug we are going to print warnings and errors on console
+	if (severity >= 3) {
+		std::println("\033[31m[ERROR] {}: {}\033[0m", sink, message);
+	} else if (severity == 2) {
+		std::println("\033[33m[WARNING] {}: {}\033[0m", sink, message);
+	}
+#endif
 }
 
 void Logger::initNetworkRetry() {
