@@ -66,9 +66,7 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 					exe_dir = std::filesystem::path(exe_path).parent_path();
 				}
 #endif
-			} catch (...) {
-				std::println(std::cerr, "Couldnt find log server executable");
-			}
+			} catch (...) { std::println(std::cerr, "Couldnt find log server executable"); }
 
 			std::vector<std::filesystem::path> candidates;
 

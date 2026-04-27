@@ -50,11 +50,11 @@ private:
 	void threadLoop();
 
 	struct {
-		bool should_stop = false;                   ///< Flag to signal workers to stop
-		std::atomic<int> active_jobs = 0;           ///< Number of jobs currently executing
-		std::mutex queue_mutex;                     ///< Mutex protecting the job queue
-		std::condition_variable job_available;      ///< Notified when a job is enqueued or stop is requested
-		std::condition_variable all_done;           ///< Notified when activeJobs hits 0 and queue is empty
+		bool should_stop = false;                  ///< Flag to signal workers to stop
+		std::atomic<int> active_jobs = 0;          ///< Number of jobs currently executing
+		std::mutex queue_mutex;                    ///< Mutex protecting the job queue
+		std::condition_variable job_available;     ///< Notified when a job is enqueued or stop is requested
+		std::condition_variable all_done;          ///< Notified when activeJobs hits 0 and queue is empty
 		std::vector<std::jthread> workers;         ///< Worker threads (auto-join on destruction)
 		std::queue<std::function<void()>> jobs;    ///< Pending job queue
 	} m;
