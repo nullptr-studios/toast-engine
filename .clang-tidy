@@ -86,7 +86,6 @@ modernize-pass-by-value,
 modernize-use-transparent-functors,
 modernize-shrink-to-fit,
 
-misc-header-include-cycle,
 #misc-include-cleaner, removed because it over-pollutes everything with useless warnings
 misc-throw-by-value-catch-by-reference,
 
