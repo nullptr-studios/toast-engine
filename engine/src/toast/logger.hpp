@@ -56,12 +56,6 @@ public:
 	static auto create() noexcept -> std::unique_ptr<Logger>;
 
 	/**
-	 * @brief Get the active logger
-	 * @note This function asserts a logger has been created
-	 */
-	static auto get() noexcept -> Logger&;
-
-	/**
 	 * @brief Clean shutdown: flushes remaining logs and closes the connection
 	 */
 	~Logger() noexcept;
