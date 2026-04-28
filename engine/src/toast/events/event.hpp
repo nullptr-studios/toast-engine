@@ -53,6 +53,8 @@ inline std::mutex mutex;
 inline std::unordered_map<std::type_index, std::function<void(std::any)>> unsubscribe_map;
 
 /// @brief callbacks will be cleaned up only before pollEvents
+/// @note unique pointers have the option of storing a pointer to the function that deletes the object
+/// so thats how i implement the deletion_queue
 inline std::vector<std::unique_ptr<void, void (*)(void*)>> deletion_queue;
 
 /// @brief allocates memory in the event queue pool
