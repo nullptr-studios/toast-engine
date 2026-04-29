@@ -1,0 +1,25 @@
+#include "listener.hpp"
+
+#include "event.hpp"
+
+namespace event {
+
+Listener::Listener() {
+	m.enabled = true;
+}
+
+Listener::~Listener() {
+	for (auto& [type, name, callback] : m.callbacks) {
+		_detail::unsubscribe_map[type](callback);
+	}
+}
+
+void Listener::enabled(bool state) {
+	m.enabled = state;
+}
+
+[[nodiscard]]
+auto Listener::enabled() const -> bool {
+	return m.enabled;
+}
+}

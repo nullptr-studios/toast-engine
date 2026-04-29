@@ -5,7 +5,7 @@ set_languages("c++23")
 
 rule("clang-format")
 before_build(function(target)
-	cprint("${green}[  0%]: ${magenta}<" .. target:name() .. "> ${reset}format")
+	cprint("${green}[100%]: ${magenta}<" .. target:name() .. "> ${reset}format")
 
 	local source_files = target:sourcefiles()
 	for _, file in ipairs(source_files) do
@@ -24,7 +24,7 @@ end)
 rule_end()
 
 add_rules("plugin.compile_commands.autoupdate")
-add_cxxflags("-stdlib=libc++", {tools = {"clang", "gcc"}}) -- Use LLVM STL by default
+add_cxxflags("-stdlib=libc++", { tools = { "clang", "gcc" } }) -- Use LLVM STL by default
 
 -- Makes release have flto, fast math and SIMD intrinsic optimizations
 if is_mode("release") then
@@ -32,14 +32,15 @@ if is_mode("release") then
 	set_strip("all")
 	set_optimize("aggressive")
 	set_policy("build.optimization.lto", true)
-	add_cxflags("-march=native", "-ffast-math", {force = true, tools = {"clang", "gcc"}})
-	add_cxflags("/fp:fast", "/arch:AVX2", {force = true, tools = "cl"})
+	add_cxflags("-march=native", "-ffast-math", { force = true, tools = { "clang", "gcc" } })
+	add_cxflags("/fp:fast", "/arch:AVX2", { force = true, tools = "cl" })
 end
 
 -- Enables debug optimizations, needed on newer clang and gcc versions to avoid a warning
 if is_mode("debug") then
 	set_optimize("none")
 	add_cxxflags("-Og")
+	add_defines("DEBUG")
 end
 
 includes("engine/xmake.lua")
@@ -60,10 +61,10 @@ on_run(function()
 		local is_valid_ext = (ext == ".hpp" or ext == ".cpp" or ext == ".h" or ext == ".inl")
 
 		-- Skip generated and external folders
-		if is_valid_ext and 
-			not file:find("engine/generated", 1, true) and
-			not file:find("engine/external", 1, true) and
-			not file:find("engine/ffi", 1, true) then
+		if is_valid_ext and
+				not file:find("engine/generated", 1, true) and
+				not file:find("engine/external", 1, true) and
+				not file:find("engine/ffi", 1, true) then
 			table.insert(targets, file)
 		end
 	end
@@ -80,7 +81,7 @@ on_run(function()
 		cprint("${green}[" .. progress .. "]: ${reset}clang-tidy.analyzing " .. file)
 		try {
 			function()
-				os.execv("clang-tidy", {"-p", ".", file}) 
+				os.execv("clang-tidy", { "-p", ".", file })
 			end
 		}
 	end

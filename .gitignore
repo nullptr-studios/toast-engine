@@ -14,6 +14,7 @@ logs/
 **[Bb]in**
 **[Oo]bj**
 **[Tt]arget**
+engine/include/
 
 compile_commands.json
 CMakeLists.txt
