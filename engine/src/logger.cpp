@@ -5,6 +5,8 @@
 #include "log.hpp"      // public functions
 #include "thread_pool.hpp"
 
+#include <easypb.hpp>
+#include <print>
 #include <chrono>
 #include <cstdlib>
 #include <easypb.hpp>
@@ -125,18 +127,31 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 	return ptr;
 }
 
-auto Logger::get() noexcept -> Logger& {
-	assert(instance && "Logger doesn't exist");
-	return *instance;
-}
-
 Logger::~Logger() noexcept {
 	stop();
 	instance = nullptr;
 }
 
 void Logger::log(std::string_view file, unsigned line, char severity, std::string_view sink, std::string_view message) {
-	auto& logger = get();
+	auto* logger = instance;
+
+	if (not logger) {
+		switch (severity) {
+			case 4: // critical
+			case 3: // error
+				std::println("\033[31m[ERROR] {}: {}\033[0m", sink, message);
+				return;
+			case 2: // warning
+				std::println("\033[33m[WARNING] {}: {}\033[0m", sink, message);
+				return;
+			case 1: // info
+				std::println("\033[32m[INFO] {}: {}\033[0m", sink, message);
+				return;
+			default: // trace
+				std::println("[TRACE] {}: {}", sink, message);
+				return;
+		}
+	}
 
 	logging::LogData log;
 	log.set_timestamp(
@@ -149,15 +164,24 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 	log.set_message(message);
 
 	{
-		std::lock_guard lock(logger.m.queue_mutex);
-		logger.m.log_queue.emplace_back(std::move(log));
+		std::lock_guard lock(logger->m.queue_mutex);
+		logger->m.log_queue.emplace_back(std::move(log));
 	}
 
 	// We use an atomic exchange to claim a "drain slot". This ensures that
 	// even if 100 threads log at once, only one background task is queued
-	if (!logger.m.drain_pending.exchange(true)) {
-		toast::ThreadPool::queueJob([&logger]() { logger.drain(); });
+	if (!logger->m.drain_pending.exchange(true)) {
+		toast::ThreadPool::queueJob([&logger]() { logger->drain(); });
 	}
+
+#ifdef DEBUG
+	// If in debug we are going to print warnings and errors on console
+	if (severity >= 3) {
+		std::println("\033[31m[ERROR] {}: {}\033[0m", sink, message);
+	} else if (severity == 2) {
+		std::println("\033[33m[WARNING] {}: {}\033[0m", sink, message);
+	}
+#endif
 }
 
 void Logger::initNetworkRetry() {
