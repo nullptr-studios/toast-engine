@@ -37,7 +37,7 @@ Events sent during an `event::pollEvents()` call are queued and dispatched durin
 // Example: Sending events
 event::send<BasicEvent>(); // Send an event without arguments
 event::send<MyCustomEvent>(42, "Hello from event!"); // Send an event with arguments
-event::send<MyCustomEvent>(MyCustomEvent{42, "Hello from event!"}); // Send an event with arguments
+event::send<MyCustomEvent>(MyCustomEvent{42, "Hello from event!"}); // Send a pre-constructed event
 ```
 
 ### Event Callbacks
@@ -99,7 +99,14 @@ void gameLoop() {
 }
 ```
 
-## Motivation
+## Implementation
+
+### Global Variables
+### Event Definition
+### Sending Events
+### Event Callbacks
+### Subscribing / Unsubscribing Callbacks
+### Dispatching Events
 
 ## Performance
 
