@@ -5,13 +5,12 @@
 #include "log.hpp"      // public functions
 #include "thread_pool.hpp"
 
-#include <easypb.hpp>
-#include <print>
 #include <chrono>
 #include <cstdlib>
 #include <easypb.hpp>
 #include <filesystem>
 #include <iostream>
+#include <print>
 #include <vector>
 
 #ifdef __linux__
@@ -137,17 +136,17 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 
 	if (not logger) {
 		switch (severity) {
-			case 4: // critical
-			case 3: // error
+			case 4:     // critical
+			case 3:     // error
 				std::println("\033[31m[ERROR] {}: {}\033[0m", sink, message);
 				return;
-			case 2: // warning
+			case 2:     // warning
 				std::println("\033[33m[WARNING] {}: {}\033[0m", sink, message);
 				return;
-			case 1: // info
+			case 1:     // info
 				std::println("\033[32m[INFO] {}: {}\033[0m", sink, message);
 				return;
-			default: // trace
+			default:    // trace
 				std::println("[TRACE] {}: {}", sink, message);
 				return;
 		}
