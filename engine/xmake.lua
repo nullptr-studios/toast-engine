@@ -1,58 +1,4 @@
-rule("sync-headers")
-before_build(function(target)
-	import("core.base.option")
-
-	local base_dir = os.scriptdir()
-	local src_dir  = path.join(base_dir, "src")
-	local dst_dir  = path.join(base_dir, "include")
-
-	if not os.isdir(src_dir) then
-		return
-	end
-
-	if os.exists(dst_dir) then
-		os.rm(dst_dir)
-	end
-	os.mkdir(dst_dir)
-
-	local count        = 0
-
-	-- Use os.files to find all headers in the src directory recursively
-	-- This is more reliable than relying on target:sourcefiles()
-	local header_files = os.files(path.join(src_dir, "**.h"))
-	local hpp_files    = os.files(path.join(src_dir, "**.hpp"))
-
-	-- Combine lists
-	local all_files    = table.join(header_files, hpp_files)
-
-	for _, filepath in ipairs(all_files) do
-		local content = io.readfile(filepath)
-
-		if content and content:find("TOAST_API", 1, true) then
-			-- 1. Copy the main header
-			os.cp(filepath, dst_dir, { rootdir = src_dir })
-			count = count + 1
-
-			-- 2. Scan for and copy .inl dependencies
-			for inl_include in content:gmatch('#include%s+"([^"]+%.inl)"') do
-				-- Find the .inl file relative to the current header
-				local current_dir = path.directory(filepath)
-				local inl_path = path.join(current_dir, inl_include)
-
-				if os.isfile(inl_path) then
-					os.cp(inl_path, dst_dir, { rootdir = src_dir })
-					vprint("Synced dependency: %s", inl_include)
-				end
-			end
-		end
-	end
-
-	if count > 0 then
-		cprint("${green}[sync-headers]: ${reset}Synced %d API headers (and their .inl files) to /include", count)
-	end
-end)
-rule_end()
-
+---@diagnostic disable: undefined-field, undefined-global
 add_requires("asio 1.36.0") -- networking
 
 target("toast.engine", function()
@@ -79,3 +25,70 @@ target("toast.engine", function()
 		add_shflags("-Wl,--no-as-needed")
 	end
 end)
+
+
+
+
+
+-- Include Folder Generation
+rule("sync-headers")
+---@diagnostic disable-next-line: unused-local
+before_build(function(target)
+	import("core.base.option")
+
+	local base_dir = os.scriptdir()
+	local src_dir  = path.join(base_dir, "src")
+	local dst_dir  = path.join(base_dir, "include")
+
+	-- Define the header you want to append
+	local notice   = [[
+// ============================================================
+// AUTO-GENERATED FILE - DO NOT MODIFY DIRECTLY
+// Changes will not persist
+// ============================================================
+]]
+
+	if not os.isdir(src_dir) then return end
+	if os.exists(dst_dir) then os.rm(dst_dir) end
+	os.mkdir(dst_dir)
+
+	local count = 0
+	local all_files = table.join(os.files(path.join(src_dir, "**.h")), os.files(path.join(src_dir, "**.hpp")))
+
+	for _, filepath in ipairs(all_files) do
+		local content = io.readfile(filepath)
+
+		if content and content:find("TOAST_API", 1, true) then
+			-- Determine destination path while preserving subfolder structure
+			local rel_path = path.relative(filepath, src_dir)
+			local dst_path = path.join(dst_dir, rel_path)
+
+			-- Ensure the subfolder exists in the destination
+			os.mkdir(path.directory(dst_path))
+
+			-- Write notice + content to the new file
+			io.writefile(dst_path, notice .. "\n" .. content)
+			count = count + 1
+
+			-- Scan for and copy .inl dependencies
+			for inl_include in content:gmatch('#include%s+"([^"]+%.inl)"') do
+				local current_dir = path.directory(filepath)
+				local inl_src_path = path.join(current_dir, inl_include)
+
+				if os.isfile(inl_src_path) then
+					local inl_rel_path = path.relative(inl_src_path, src_dir)
+					local inl_dst_path = path.join(dst_dir, inl_rel_path)
+
+					local inl_content = io.readfile(inl_src_path)
+					os.mkdir(path.directory(inl_dst_path))
+					io.writefile(inl_dst_path, notice .. "\n" .. inl_content)
+				end
+			end
+		end
+	end
+
+	if count > 0 then
+		cprint("${green}[sync-headers]: ${reset}Synced API")
+	end
+end)
+rule_end()

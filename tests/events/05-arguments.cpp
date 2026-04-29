@@ -23,6 +23,7 @@ auto main() -> int {
 	});
 
 	event::send<ArgEvent>(42, "hello event");
+	event::send<ArgEvent>(ArgEvent(42, "hello event"));
 	event::pollEvents();
 
 	assert(received_value == 42);

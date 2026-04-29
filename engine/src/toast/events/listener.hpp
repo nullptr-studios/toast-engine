@@ -68,6 +68,13 @@ public:
 	/// @param priority (higher priority happens first)
 	template<typename TEvent, EventCallback<TEvent&> F>
 	void subscribe(F&& callback, char priority = 0) noexcept;
+
+	/// @brief enables/disables the callbacks in the listener
+	void enabled(bool state);
+
+	/// @return enabled state
+	[[nodiscard]]
+	auto enabled() const -> bool;
 };
 }
 

@@ -14,4 +14,12 @@ Listener::~Listener() {
 	}
 }
 
+void Listener::enabled(bool state) {
+	m.enabled = state;
+}
+
+[[nodiscard]]
+auto Listener::enabled() const -> bool {
+	return m.enabled;
+}
 }
