@@ -1,4 +1,4 @@
----@diagnostic disable: undefined-field, undefined-global
+---@diagnostic disable: undefined-field, undefined-global, param-type-mismatch
 add_requires("asio 1.36.0") -- networking
 
 target("toast.engine", function()
@@ -14,7 +14,7 @@ target("toast.engine", function()
 
 	-- External libraries go here -x
 	add_packages("asio")
-	add_ldflags("-lstdc++exp") -- (adds library for stacktrace) i needed this for std::stacktrace
+	add_ldflags("-lstdc++exp", { tools = { "clang", "gcc" }, public = true }) -- adds library for stacktrace
 
 	-- Apply clang-format rule
 	add_rules("clang-format")
