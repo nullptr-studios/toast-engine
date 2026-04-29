@@ -1,0 +1,93 @@
+name: branch_rules
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: branch-rules-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate branch policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch history
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Enforce branch rules
+        shell: bash
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REPO: ${{ github.event.pull_request.base.repo.full_name }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          set -euo pipefail
+
+          fail() {
+            echo "::error::$1"
+            exit 1
+          }
+
+          echo "Validating PR branch policy: ${HEAD_REF} -> ${BASE_REF}"
+
+          if [[ "${BASE_REF}" == "dev" ]]; then
+            if [[ "${HEAD_REPO}" == "${BASE_REPO}" && ( "${HEAD_REF}" == "main" || "${HEAD_REF}" == "dev" ) ]]; then
+              echo "Allowed exception branch for dev target."
+              exit 0
+            fi
+
+            if [[ "${HEAD_REF}" != feature/* ]]; then
+              fail "PRs targeting dev must come from feature/* (exceptions: main, dev). Rename your branch and reopen the PR."
+            fi
+
+            echo "Branch naming is valid for dev target."
+            exit 0
+          fi
+
+          if [[ "${BASE_REF}" == "main" ]]; then
+            if [[ "${HEAD_REPO}" == "${BASE_REPO}" && "${HEAD_REF}" == "dev" ]]; then
+              echo "dev -> main PR is explicitly allowed."
+              exit 0
+            fi
+
+            if [[ "${HEAD_REF}" != hotfix/* ]]; then
+              fail "PRs targeting main must come from hotfix/* (or dev). Rename your branch and reopen the PR."
+            fi
+
+            git remote add base "https://github.com/${BASE_REPO}.git"
+            git fetch --no-tags --prune base main
+
+            merge_commits="$(git rev-list --merges base/main..HEAD)"
+            if [[ -n "${merge_commits}" ]]; then
+              while IFS= read -r merge_commit; do
+                [[ -z "${merge_commit}" ]] && continue
+                merged_parent="$(git rev-parse "${merge_commit}^2")"
+                if ! git merge-base --is-ancestor "${merged_parent}" base/main; then
+                  fail "hotfix/* -> main cannot include merged history from dev/feature branches. Rebase/cherry-pick onto main and remove those merges."
+                fi
+              done <<< "${merge_commits}"
+            fi
+
+            echo "Branch naming and lineage are valid for main target."
+            exit 0
+          fi
+
+          echo "No branch policy configured for base '${BASE_REF}'."

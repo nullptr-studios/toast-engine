@@ -1,0 +1,163 @@
+name: tests
+
+on:
+  pull_request:
+    branches:
+      - dev
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: tests-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    name: clang-format
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Run clang-format
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          bash ./tools/ci/clang_format.sh
+
+  build:
+    name: build ${{ matrix.os }}
+    needs: format
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup Nix
+        if: runner.os == 'Linux'
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup xmake
+        if: runner.os == 'Windows'
+        uses: xmake-io/github-action-setup-xmake@v1
+
+      - name: Setup .NET
+        if: runner.os == 'Windows'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          xmake f -m debug
+          xmake --all
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: xmake f -m debug && xmake --all
+
+  test:
+    name: test ${{ matrix.os }}
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        if: runner.os == 'Linux'
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup xmake
+        if: runner.os == 'Windows'
+        uses: xmake-io/github-action-setup-xmake@v1
+
+      - name: Setup .NET 10
+        if: runner.os == 'Windows'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run tests (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          xmake f -m debug
+          xmake test
+
+      - name: Run tests (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          xmake f -m debug
+          xmake test
+
+  tidy:
+    name: clang-tidy
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Generate compile_commands
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          xmake project -k compile_commands
+
+      - name: Run clang-tidy
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          bash ./tools/ci/clang_tidy.sh
+

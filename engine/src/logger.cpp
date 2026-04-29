@@ -1,17 +1,17 @@
-#include "log.hpp" // public functions
-#include "ffi/log.h" // ffi
 #include "logger.hpp"
 
+#include "ffi/log.h"    // ffi
 #include "generated/logging_easypb.h"
+#include "log.hpp"      // public functions
 #include "thread_pool.hpp"
 
-#include <easypb.hpp>
-#include <print>
 #include <chrono>
-#include <vector>
-#include <filesystem>
 #include <cstdlib>
+#include <easypb.hpp>
+#include <filesystem>
 #include <iostream>
+#include <print>
+#include <vector>
 
 #ifdef __linux__
 #include <unistd.h>
@@ -25,7 +25,9 @@
 
 namespace logging {
 
-void _detail::log(uint8_t severity, std::string_view file_name, unsigned line_number, std::string_view sink, std::string_view message) {
+void _detail::log(
+    uint8_t severity, std::string_view file_name, unsigned line_number, std::string_view sink, std::string_view message
+) {
 	// We wrap the singleton access here so the public headers don't need to know
 	// anything about the Logger class or its dependencies
 	Logger::log(file_name, line_number, severity, sink, message);
@@ -33,24 +35,25 @@ void _detail::log(uint8_t severity, std::string_view file_name, unsigned line_nu
 
 auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 	// Standard trick to allow make_unique with a private constructor
-	struct Helper : public Logger {};
+	struct Helper : public Logger { };
+
 	auto ptr = std::make_unique<Helper>();
 	instance = ptr.get();
 
 	// We allow disabling this so it's easier to debug the server
 	// On release this should ALWAYS be on since the client is not expected to open the log server on their own
-	if constexpr (AUTO_SPAWN_LOG_SERVER) {
+	if constexpr (auto_spawn_log_server) {
 		try {
 			// Get the directory of the current executable
 			std::filesystem::path exe_dir;
 			try {
 				// Try to get the executable path using platform-specific methods
 #ifdef __linux__
-				char exe_path[4096];
-				ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+				std::array<char, 4096> exe_path;
+				ssize_t len = readlink("/proc/self/exe", exe_path.data(), exe_path.size() - 1);
 				if (len != -1) {
 					exe_path[len] = '\0';
-					exe_dir = std::filesystem::path(exe_path).parent_path();
+					exe_dir = std::filesystem::path(exe_path.data()).parent_path();
 				}
 #elif defined(__APPLE__)
 				uint32_t size = 4096;
@@ -67,7 +70,7 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 			} catch (...) { std::println(std::cerr, "Couldnt find log server executable"); }
 
 			std::vector<std::filesystem::path> candidates;
-			
+
 			if (!exe_dir.empty()) {
 #if defined(_WIN32)
 				candidates.push_back(exe_dir / "log_server.exe");
@@ -75,9 +78,9 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 				candidates.push_back(exe_dir / "log_server");
 #endif
 			}
-			
+
 			std::filesystem::path server_path;
-			for (auto &p : candidates) {
+			for (auto& p : candidates) {
 				if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) {
 					server_path = p;
 					break;
@@ -86,7 +89,7 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 
 			if (!server_path.empty()) {
 				std::string cmd;
-				std::string output_redir = SHOW_SERVER_LOGS ? "" : " >/dev/null 2>&1";
+				std::string output_redir = show_server_logs ? "" : " >/dev/null 2>&1";
 
 #if defined(_WIN32)
 				// On Windows, 'start /B' runs the command in the background without opening a new window
@@ -133,25 +136,26 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 
 	if (not logger) {
 		switch (severity) {
-			case 4: // critical
-			case 3: // error
+			case 4:     // critical
+			case 3:     // error
 				std::println("\033[31m[ERROR] {}: {}\033[0m", sink, message);
 				return;
-			case 2: // warning
+			case 2:     // warning
 				std::println("\033[33m[WARNING] {}: {}\033[0m", sink, message);
 				return;
-			case 1: // info
+			case 1:     // info
 				std::println("\033[32m[INFO] {}: {}\033[0m", sink, message);
 				return;
-			default: // trace
+			default:    // trace
 				std::println("[TRACE] {}: {}", sink, message);
 				return;
 		}
 	}
 
 	logging::LogData log;
-	log.set_timestamp(std::chrono::duration_cast<std::chrono::nanoseconds>(
-		std::chrono::system_clock::now().time_since_epoch()).count()); //retarded stl library
+	log.set_timestamp(
+	    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count()
+	);    // retarded stl library
 	log.set_filepath(file);
 	log.set_line_number(line);
 	log.set_severity(static_cast<logging::LogData_Severity>(severity));
@@ -195,7 +199,7 @@ void Logger::initNetworkRetry() {
 			m.socket = asio::ip::tcp::socket(m.io_ctx);
 
 			asio::ip::tcp::resolver resolver(m.io_ctx);
-			auto endpoints = resolver.resolve("127.0.0.1", std::to_string(PORT));
+			auto endpoints = resolver.resolve("127.0.0.1", std::to_string(port));
 			asio::connect(m.socket, endpoints);
 
 			// We set a send timeout so the engine doesn't hang if the log server stops responding or the TCP buffer fills up
@@ -203,11 +207,11 @@ void Logger::initNetworkRetry() {
 			DWORD timeout = 1000;
 			setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<const char*>(&timeout), sizeof(timeout));
 #else
-			timeval timeout{.tv_sec = 1, .tv_usec = 0};
+			timeval timeout {.tv_sec = 1, .tv_usec = 0};
 			setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 #endif
 			return;
-		} catch (const std::exception &e) {
+		} catch (const std::exception& e) {
 			if (attempt == max_attempts) {
 				std::println(std::cerr, "[Logger] Failed to connect after {} attempts: {}", max_attempts, e.what());
 				abort();
@@ -243,18 +247,15 @@ void Logger::drain() {
 	if (!batch.empty() && m.socket.is_open()) {
 		try {
 			uint32_t len = static_cast<uint32_t>(batch.size());
-			uint8_t len_buf[4];
+			std::array<uint8_t, 4> len_buf;
 			len_buf[0] = (len >> 24) & 0xFF;
 			len_buf[1] = (len >> 16) & 0xFF;
 			len_buf[2] = (len >> 8) & 0xFF;
 			len_buf[3] = len & 0xFF;
 
-			std::array<asio::const_buffer, 2> bufs = {
-				asio::buffer(len_buf, 4),
-				asio::buffer(batch)
-			};
+			std::array<asio::const_buffer, 2> bufs = {asio::buffer(len_buf, 4), asio::buffer(batch)};
 			asio::write(m.socket, bufs);
-		} catch (const std::exception &e) {
+		} catch (const std::exception& e) {
 			// If sending fails, we fallback to stderr to avoid losing critical info
 			std::println(std::cerr, "[Logger] Send failure: {}", e.what());
 		}
@@ -284,7 +285,9 @@ auto Logger::collectQueue() -> std::vector<uint8_t> {
 		}
 	}
 
-	if (batch.logs.size() == 0) return {};
+	if (batch.logs.empty()) {
+		return {};
+	}
 
 	std::vector<uint8_t> buffer(batch.ByteSizeLong());
 	batch.SerializeToArray(buffer.data(), buffer.size());
@@ -295,44 +298,40 @@ void Logger::flushSync() {
 	auto batch = collectQueue();
 	if (!batch.empty() && m.socket.is_open()) {
 		uint32_t len = static_cast<uint32_t>(batch.size());
-		uint8_t len_buf[4];
+		std::array<uint8_t, 4> len_buf;
 		len_buf[0] = (len >> 24) & 0xFF;
 		len_buf[1] = (len >> 16) & 0xFF;
 		len_buf[2] = (len >> 8) & 0xFF;
 		len_buf[3] = len & 0xFF;
 
-		std::array<asio::const_buffer, 2> bufs = {
-			asio::buffer(len_buf, 4),
-			asio::buffer(batch)
-		};
+		std::array<asio::const_buffer, 2> bufs = {asio::buffer(len_buf, 4), asio::buffer(batch)};
 		asio::error_code ec;
 		asio::write(m.socket, bufs, ec);
 	}
 }
 
-
 }
 
 extern "C" {
-	using namespace logging;
+using namespace logging;
 
-	void toast_trace(const char* sink, const char* message, const char* file, unsigned line) {
-		Logger::log(file, line, 0, sink, message);
-	}
+void toast_trace(const char* sink, const char* message, const char* file, unsigned line) {
+	Logger::log(file, line, 0, sink, message);
+}
 
-	void toast_info(const char* sink, const char* message, const char* file, unsigned line) {
-		Logger::log(file, line, 1, sink, message);
-	}
+void toast_info(const char* sink, const char* message, const char* file, unsigned line) {
+	Logger::log(file, line, 1, sink, message);
+}
 
-	void toast_warn(const char* sink, const char* message, const char* file, unsigned line) {
-		Logger::log(file, line, 2, sink, message);
-	}
+void toast_warn(const char* sink, const char* message, const char* file, unsigned line) {
+	Logger::log(file, line, 2, sink, message);
+}
 
-	void toast_error(const char* sink, const char* message, const char* file, unsigned line) {
-		Logger::log(file, line, 3, sink, message);
-	}
+void toast_error(const char* sink, const char* message, const char* file, unsigned line) {
+	Logger::log(file, line, 3, sink, message);
+}
 
-	void toast_critical(const char* sink, const char* message, const char* file, unsigned line) {
-		Logger::log(file, line, 4, sink, message);
-	}
+void toast_critical(const char* sink, const char* message, const char* file, unsigned line) {
+	Logger::log(file, line, 4, sink, message);
+}
 }

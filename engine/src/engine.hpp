@@ -9,22 +9,21 @@ struct EnginePimpl;
 class Engine final {
 public:
 	Engine() noexcept;
-	~Engine() noexcept;
-	static Engine* get() noexcept;
+	~Engine() noexcept = default;
+	static auto get() noexcept -> Engine*;
 
 	Engine(Engine&) = delete;
 	Engine(Engine&&) = delete;
-	Engine& operator=(const Engine&) = delete;
-	Engine& operator=(const Engine&&) = delete;
+	auto operator=(const Engine&) -> Engine& = delete;
+	auto operator=(const Engine&&) -> Engine& = delete;
 
 	void tick();
-	bool shouldClose();
+	auto shouldClose() -> bool;
 	void test();
 
 private:
 	EnginePimpl* m;
 	static Engine* instance;
-
 };
 
 }

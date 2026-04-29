@@ -31,4 +31,3 @@ TOAST_C_API void toast_critical(const char* sink, const char* message, const cha
 #ifdef __cplusplus
 }
 #endif
-
