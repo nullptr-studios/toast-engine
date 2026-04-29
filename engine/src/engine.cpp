@@ -1,35 +1,39 @@
-#include "engine.h"
 #include "engine.hpp"
+#include "ffi/engine.h" // ffi
+
+#include "thread_pool.hpp"
+#include "logger.hpp"
 
 #include <cassert>
-#include <print>
-
-extern "C" void toast_rust_tick();
+#include <memory>
 
 namespace toast {
 
 Engine* Engine::instance = nullptr;
 
 struct EnginePimpl {
-
+	std::unique_ptr<ThreadPool> thread_pool;
+	std::unique_ptr<logging::Logger> logger;
 };
 
 Engine::Engine() noexcept {
-	m = new EnginePimpl{};
+	m = new EnginePimpl{
+		.thread_pool = ThreadPool::create(),
+		.logger = logging::Logger::create()
+	};
+
 	instance = this;
 }
 
-Engine::~Engine() noexcept = default;
+Engine::~Engine() noexcept { };
 
 Engine* Engine::get() noexcept {
-	// If at any point toast doesn't exist just crash the damn game -x
+	// If at any point toast doesn't exist just crash the damn game
 	assert(instance && "Toast Engine doesn't exist");
 	return instance;
 }
 
-void Engine::tick() {
-	toast_rust_tick();
-}
+void Engine::tick() { }
 
 bool Engine::shouldClose() {
 	return false;
@@ -41,7 +45,6 @@ bool Engine::shouldClose() {
 extern "C" {
 
 engine_t* toast_create() {
-	std::println("Creating Toast Engine!!");
 	return reinterpret_cast<engine_t*>(new toast::Engine());
 }
 
@@ -54,7 +57,6 @@ int toast_should_close() {
 }
 
 void toast_destroy(engine_t* e) {
-	std::println("Deleting Toast Engine!!");
 	delete reinterpret_cast<toast::Engine*>(e);
 }
 

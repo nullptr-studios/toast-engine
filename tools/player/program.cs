@@ -2,7 +2,6 @@
 
 class Program {
 	public static void Main() {
-		Console.WriteLine("Printing from C#");
 		var engine = new ToastEngine();
 		var game = new ApplicationLayer();
 
@@ -13,3 +12,4 @@ class Program {
 		Console.WriteLine("Exiting application...");
 	}
 }
+

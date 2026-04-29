@@ -21,7 +21,6 @@ public:
 	bool shouldClose();
 	void test();
 
-
 private:
 	EnginePimpl* m;
 	static Engine* instance;
