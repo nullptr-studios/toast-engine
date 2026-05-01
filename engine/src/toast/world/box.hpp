@@ -1,64 +1,63 @@
+/**
+ * @file box.hpp
+ * @author Dante Harper
+ * @date 30 Apr 26
+ */
+
+#pragma once
+
+#include "toast/export.hpp"
 
 #include <atomic>
-#include <memory_resource>
 
 namespace toast {
 class Node;
 
-struct ControlBox {
+template<typename T>
+concept NodeType = std::is_base_of_v<Node, T>;
+
+namespace _detail {
+struct TOAST_API ControlBox {
 	std::atomic<unsigned int> ref_count;
 	Node* node = nullptr;
 
 	explicit operator bool() const { return node != nullptr; }
 
 	void increment();
-
 	void decrement();
-};
 
-class Box {
-	ControlBox* m_box = nullptr;
+	auto operator new(std::size_t size) -> void*;
+	void operator delete(void* ptr, std::size_t size);
+
+	static auto getControlBlock(Node* node) -> ControlBox*;
+};
+}
+
+template<NodeType T>
+class TOAST_API Box {
+	friend class Node;
+	friend struct _detail::ControlBox;
+	_detail::ControlBox* m_box = nullptr;
 
 public:
-	Box() = default;
-
-	// Copy Constructor
-	Box(const Box& other);
-
-	// Move Constructor
-	Box(Box&& other) noexcept;
-
-	~Box();
-
-	// Copy Assignment
-	auto operator=(const Box& other) -> Box&;
-
-	// Move Assignment
-	auto operator=(Box&& other) noexcept -> Box&;
+	Box() = default;                                 // Constructor
+	~Box();                                          // Deconstructor
+	Box(Node* node);
+	Box(const Box& other);                           // Copy Constructor
+	Box(Box&& other) noexcept;                       // Move Constructor
+	auto operator=(const Box& other) -> Box&;        // Copy Assignment
+	auto operator=(Box&& other) noexcept -> Box&;    // Move Assignment
 
 	explicit operator bool() const;
-
-	auto operator->() const -> Node*;
-
-	auto operator*() const -> Node&;
+	auto operator->() -> T*;
+	auto operator->() const -> const T*;
 
 	void release();
-
-	[[nodiscard]]
-	auto get() const -> Node&;
 
 	[[nodiscard]]
 	auto hasValue() const -> bool;
 };
 
-struct BoxMemPool {
-	std::pmr::unsynchronized_pool_resource pool;
-
-	BoxMemPool() : pool(std::pmr::pool_options({.max_blocks_per_chunk = 1024, .largest_required_pool_block = sizeof(ControlBox)})) { }
-
-	auto createBox(Node* target) -> ControlBox*;
-
-	void freeBox(ControlBox* box);
-};
-
 }
+
+#include "box.inl"

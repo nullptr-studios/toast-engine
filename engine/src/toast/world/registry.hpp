@@ -8,13 +8,15 @@
 
 #pragma once
 
+#include "toast/export.hpp"
+
 #include <functional>
 #include <vector>
 
 namespace toast {
 class Node;
 
-struct NodeVTable {
+struct TOAST_API NodeVTable {
 	// std::vector<std::function<void(Node*)>> save;            // saving data
 	// std::vector<std::function<void(Node*)>> load;            // loading data
 	std::vector<std::function<void(Node*)>> pre_init;        // loading resources pre-object creation

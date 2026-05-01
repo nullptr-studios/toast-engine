@@ -8,6 +8,4 @@
 
 #pragma once
 
-
-class Node3d {
-};
+class Node3d { };
