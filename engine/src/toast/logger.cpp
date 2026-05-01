@@ -170,7 +170,7 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 	// We use an atomic exchange to claim a "drain slot". This ensures that
 	// even if 100 threads log at once, only one background task is queued
 	if (!logger->m.drain_pending.exchange(true)) {
-		toast::ThreadPool::queueJob([&logger]() { logger->drain(); });
+		toast::ThreadPool::push([&logger]() { logger->drain(); });
 	}
 
 #ifdef DEBUG
@@ -267,7 +267,7 @@ void Logger::drain() {
 	{
 		std::lock_guard lock(m.queue_mutex);
 		if (!m.log_queue.empty() && !m.drain_pending.exchange(true)) {
-			toast::ThreadPool::queueJob([this]() { drain(); });
+			auto future = toast::ThreadPool::push([this]() { drain(); });
 		}
 	}
 }

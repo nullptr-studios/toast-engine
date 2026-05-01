@@ -9,9 +9,12 @@
 #include <cassert>
 #include <condition_variable>
 #include <functional>
+#include <future>
 #include <memory>
 #include <queue>
 #include <thread>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace toast {
@@ -48,6 +51,7 @@ private:
 	static auto get() noexcept -> ThreadPool&;
 
 	void threadLoop();
+	static void enqueue(std::function<void()>&& job);
 
 	struct {
 		bool should_stop = false;                  ///< Flag to signal workers to stop
@@ -60,7 +64,7 @@ private:
 	} m;
 
 public:
-	static constexpr size_t thread_count = 4;    ///< Number of workers on the pool
+	static constexpr size_t thread_count = 6;    ///< Number of workers on the pool
 
 	/**
 	 * @brief Initializes the pool and returns a pointer with ownership
@@ -77,9 +81,9 @@ public:
 	 * @brief Queues a job for execution by a worker thread
 	 *
 	 * The job will be executed as soon as a worker thread becomes available.
-	 * Jobs are processed in FIFO order
+	 * Jobs are processed in FIFO order. The thread pool uses move_only funcions.
 	 *
-	 * @param job The function to execute (moved into the queue).
+	 * @param job The function to execute (moved into the queue)
 	 *
 	 * @par Example:
 	 * @code
@@ -88,7 +92,8 @@ public:
 	 * });
 	 * @endcode
 	 */
-	static void queueJob(std::function<void()>&& job);
+	template<typename T>
+	static auto push(T&& job) -> std::future<std::invoke_result_t<T>>;
 
 	/**
 	 * @brief Destroys the thread pool and waits for all workers to finish.
@@ -130,5 +135,15 @@ public:
 		destroy();
 	}
 };
+
+template<typename T>
+auto ThreadPool::push(T&& job) -> std::future<std::invoke_result_t<T>> {
+	using result_t = std::invoke_result_t<T>;
+
+	auto task = std::make_shared<std::packaged_task<result_t()>>(std::forward<T>(job));
+	auto future = task->get_future();
+	enqueue([task]() mutable { (*task)(); });
+	return future;
+}
 
 }

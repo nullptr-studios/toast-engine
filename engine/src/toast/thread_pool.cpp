@@ -16,7 +16,7 @@ ThreadPool::ThreadPool(size_t size) {
 	// TODO: TOAST_TRACE("Created thread pool with {0} workers", target_thread_num);
 }
 
-void ThreadPool::queueJob(std::function<void()>&& job) {
+void ThreadPool::enqueue(std::function<void()>&& job) {
 	auto& o = get();
 
 	{
