@@ -1,26 +1,17 @@
-#include "factory.hpp"
+#include "uuid.hpp"
 
 #include <array>
 #include <chrono>
 #include <string>
 #include <string_view>
 
-namespace toast {
-
+namespace {
 constexpr auto charset = std::to_array("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
-
-auto assignUuid() -> uint64_t {
-	using namespace std::chrono;
-	auto t = static_cast<uint64_t>(high_resolution_clock::now().time_since_epoch().count());
-
-	// magic
-	t = (t ^ (t >> 30)) * 0xbf58476d1ce4e5b9ULL;
-	t = (t ^ (t >> 27)) * 0x94d049bb133111ebULL;
-	t = (t ^ (t >> 31));
-	return t;
 }
 
-auto uuidToString(uint64_t uuid) -> std::string {
+namespace toast {
+
+auto UUID::toString(uint64_t uuid) -> std::string {
 	std::string result;
 	result.reserve(12);
 
@@ -48,7 +39,7 @@ auto uuidToString(uint64_t uuid) -> std::string {
 	return result;
 }
 
-auto uuidFromString(std::string_view b64) -> uint64_t {
+auto UUID::fromString(std::string_view b64) -> uint64_t {
 	static constexpr auto rev_table = []() {
 		std::array<uint8_t, 256> table {};
 		table.fill(0xFF);
@@ -87,4 +78,50 @@ auto uuidFromString(std::string_view b64) -> uint64_t {
 	return uuid;
 }
 
+UUID::UUID() {
+	using namespace std::chrono;
+	auto t = static_cast<uint64_t>(high_resolution_clock::now().time_since_epoch().count());
+
+	// magic
+	t = (t ^ (t >> 30)) * 0xbf58476d1ce4e5b9ULL;
+	t = (t ^ (t >> 27)) * 0x94d049bb133111ebULL;
+	t = (t ^ (t >> 31));
+
+	value = t;
+}
+
+UUID::UUID(std::string_view value) {
+	this->value = fromString(value);
+}
+
+auto UUID::operator=(std::string_view value) -> UUID& {
+	this->value = fromString(value);
+	return *this;
+}
+
+auto UUID::operator==(UUID& other) const noexcept -> bool {
+	return value == other.value;
+}
+
+auto UUID::operator!=(UUID& other) const noexcept -> bool {
+	return not(value == other.value);
+}
+
+UUID::operator std::string() const noexcept {
+	return get();
+}
+
+UUID::operator uint64_t() const noexcept {
+	return data();
+}
+
+[[nodiscard]]
+auto UUID::get() const noexcept -> std::string {
+	return toString(value);
+}
+
+[[nodiscard]]
+auto UUID::data() const noexcept -> uint64_t {
+	return value;
+}
 }
