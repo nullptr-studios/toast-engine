@@ -53,14 +53,32 @@ Box<T>::operator bool() const {
 
 template<NodeType T>
 auto Box<T>::operator->() -> T* {
-	TOAST_ASSERT(m_box && m_box->node, "Control Box Is NULL");
+	TOAST_ASSERT(m_box && m_box->node, Box<T>, "Control Box or Node is NULLPTR");
 	return m_box->node;
 }
 
 template<NodeType T>
 auto Box<T>::operator->() const -> const T* {
-	TOAST_ASSERT(m_box && m_box->node, "Control Box Is NULL");
+	TOAST_ASSERT(m_box && m_box->node, Box<T>, "Control Box or Node is NULLPTR");
 	return m_box->node;
+}
+
+template<NodeType T>
+inline auto Box<T>::operator*() const -> const T& {
+	TOAST_ASSERT(m_box && m_box->node, Box<T>, "Control Box or Node is NULLPTR");
+	return *m_box->node;
+}
+
+template<NodeType T>
+inline auto Box<T>::operator*() -> T& {
+	TOAST_ASSERT(m_box && m_box->node, Box<T>, "Control Box or Node is NULLPTR");
+	return *m_box->node;
+}
+
+template<NodeType T>
+inline Box<T>::operator Node&() {
+	TOAST_ASSERT(m_box && m_box->node, Box<T>, "Control Box or Node is NULLPTR");
+	return *m_box->node;
 }
 
 template<NodeType T>

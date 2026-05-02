@@ -21,7 +21,7 @@ struct TOAST_API ControlBox {
 	std::atomic<unsigned int> ref_count;
 	Node* node = nullptr;
 
-	explicit operator bool() const { return node != nullptr; }
+	explicit operator bool() const noexcept { return node != nullptr; }
 
 	void increment();
 	void decrement();
@@ -42,15 +42,22 @@ class TOAST_API Box {
 public:
 	Box() = default;                                 // Constructor
 	~Box();                                          // Deconstructor
-	Box(Node* node);
+	Box(Node* node);                                 //
 	Box(const Box& other);                           // Copy Constructor
 	Box(Box&& other) noexcept;                       // Move Constructor
 	auto operator=(const Box& other) -> Box&;        // Copy Assignment
 	auto operator=(Box&& other) noexcept -> Box&;    // Move Assignment
 
 	explicit operator bool() const;
+
+	operator Node&();
+
 	auto operator->() -> T*;
 	auto operator->() const -> const T*;
+
+	auto operator*() -> T&;
+
+	auto operator*() const -> const T&;
 
 	void release();
 

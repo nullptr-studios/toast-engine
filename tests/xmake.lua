@@ -13,7 +13,7 @@ for _, filepath in ipairs(os.files(path.join(scriptdir, "**.cpp"))) do
 
 		add_files(filepath)
 		add_deps("toast.engine")
-
+		add_ldflags("-lstdc++exp", { tools = { "clang", "gcc" }, public = true }) -- adds library for stacktrace
 
 		add_defines("UNIT_TESTING")
 

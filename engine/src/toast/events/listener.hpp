@@ -49,6 +49,9 @@ class TOAST_API Listener {
 
 public:
 	Listener();
+
+	Listener(bool enable);
+
 	~Listener();
 
 	/// @brief unsubscribes every event in type TEvent with that name

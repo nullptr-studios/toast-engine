@@ -99,7 +99,7 @@ void TOAST_API
 		std::abort();                         \
 	} while (0)
 
-#ifdef _DEBUG
+#ifdef DEBUG
 /**
  * @macro TOAST_ASSERT
  * @brief requires that a condition is met, if not, the program will

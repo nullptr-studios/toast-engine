@@ -20,14 +20,26 @@ class TOAST_API Node {
 	struct {
 		Box<Node> self;
 		NodeVTable* v_table;
-		std::unique_ptr<event::Listener> listener;
+		bool enabled;
 
+		std::unique_ptr<event::Listener> listener;
+		std::vector<Box<Node>> hierarchy;
+		std::vector<Box<Node>> connections;
 	} m;
 
 public:
 	Node();
 
 	[[nodiscard]]
-	auto listener() -> event::Listener&;
+	auto listener() noexcept -> event::Listener&;
+
+	void enabled(bool state) noexcept;
+
+	[[nodiscard]]
+	auto enabled() const noexcept -> bool;
+
+	void destroy();
+
+private:
 };
 }
