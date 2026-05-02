@@ -21,7 +21,7 @@ struct TOAST_API ControlBox {
 	std::atomic<unsigned int> ref_count;
 	Node* node = nullptr;
 
-	explicit operator bool() const noexcept { return node != nullptr; }
+	explicit operator bool() const noexcept;
 
 	void increment();
 	void decrement();
@@ -37,32 +37,35 @@ template<NodeType T>
 class TOAST_API Box {
 	friend class Node;
 	friend struct _detail::ControlBox;
-	_detail::ControlBox* m_box = nullptr;
+
+	struct {
+		_detail::ControlBox* control = nullptr;
+	} m;
 
 public:
-	Box() = default;                                 // Constructor
-	~Box();                                          // Deconstructor
-	Box(Node* node);                                 //
-	Box(const Box& other);                           // Copy Constructor
-	Box(Box&& other) noexcept;                       // Move Constructor
-	auto operator=(const Box& other) -> Box&;        // Copy Assignment
-	auto operator=(Box&& other) noexcept -> Box&;    // Move Assignment
+	Box() noexcept = default;                              // Constructor
+	~Box() noexcept;                                       // Deconstructor
+	Box(Node* node) noexcept;                              //
+	Box(const Box& other) noexcept;                        // Copy Constructor
+	Box(Box&& other) noexcept;                             // Move Constructor
 
-	explicit operator bool() const;
+	auto operator=(const Box& other) noexcept -> Box&;     // Copy Assignment
+	auto operator=(Box&& other) noexcept -> Box&;          // Move Assignment
 
-	operator Node&();
+	auto operator==(Box& other) const noexcept -> bool;    // Move Assignment
+	auto operator!=(Box& other) const noexcept -> bool;    // Move Assignment
 
-	auto operator->() -> T*;
-	auto operator->() const -> const T*;
+	inline operator T&() noexcept;                         // Implicit Node& Conversion
+	inline explicit operator bool() const noexcept;        // Explicit bool Conversion
 
-	auto operator*() -> T&;
+	inline auto operator->() noexcept -> T*;
+	inline auto operator->() const noexcept -> const T*;
 
-	auto operator*() const -> const T&;
-
-	void release();
+	inline auto operator*() noexcept -> T&;
+	inline auto operator*() const noexcept -> const T&;
 
 	[[nodiscard]]
-	auto hasValue() const -> bool;
+	auto exists() const noexcept -> bool;
 };
 
 }

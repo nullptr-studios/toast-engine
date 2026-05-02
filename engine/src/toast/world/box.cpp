@@ -16,6 +16,10 @@ void ControlBox::operator delete(void* ptr, std::size_t size) {
 	_detail::pool.deallocate(ptr, size);
 }
 
+ControlBox::operator bool() const noexcept {
+	return node != nullptr;
+}
+
 void ControlBox::increment() {
 	TOAST_TRACE(ControlBox, "increment");
 	ref_count.fetch_add(1, std::memory_order_relaxed);
@@ -33,9 +37,10 @@ auto ControlBox::getControlBlock(Node* node) -> ControlBox* {
 		TOAST_TRACE(ControlBox, "ControlBox Created and incremented");
 		return new _detail::ControlBox(1, node);
 	}
-	node->m.self.m_box->increment();
-	return node->m.self.m_box;
+	node->m.self.m.control->increment();
+	return node->m.self.m.control;
 
 	return nullptr;
 }
+
 }

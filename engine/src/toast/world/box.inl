@@ -5,32 +5,48 @@
 namespace toast {
 
 template<NodeType T>
-Box<T>::Box(Node* node) : m_box(_detail::ControlBox::getControlBlock(node)) { }
+Box<T>::Box(Node* node) noexcept {
+	m = {
+	  .control = _detail::ControlBox::getControlBlock(node),
+	};
+}
 
 template<NodeType T>
-Box<T>::Box(const Box<T>& other) : m_box(other.m_box) {
-	if (m_box) {
-		m_box->increment();
+Box<T>::Box(const Box<T>& other) noexcept {
+	m = {
+	  .control = other.m.control,
+	};
+	if (m.control) {
+		m.control->increment();
 	}
 }
 
 template<NodeType T>
-Box<T>::Box(Box<T>&& other) noexcept : m_box(other.m_box) {
-	other.m_box = nullptr;
+Box<T>::Box(Box<T>&& other) noexcept {
+	m = {
+	  .box = other.m.control,
+	};
+	other.m.control = nullptr;
 }
 
 template<NodeType T>
-Box<T>::~Box() {
-	release();
+Box<T>::~Box() noexcept {
+	if (m.control) {
+		m.control->decrement();
+		m.control = nullptr;
+	}
 }
 
 template<NodeType T>
-auto Box<T>::operator=(const Box<T>& other) -> Box<T>& {
+auto Box<T>::operator=(const Box<T>& other) noexcept -> Box<T>& {
 	if (this != &other) {
-		release();
-		m_box = other.m_box;
-		if (m_box) {
-			m_box->increment();
+		if (m.control) {
+			m.control->decrement();
+			m.control = nullptr;
+		}
+		m.control = other.m.control;
+		if (m.control) {
+			m.control->increment();
 		}
 	}
 	return *this;
@@ -39,59 +55,64 @@ auto Box<T>::operator=(const Box<T>& other) -> Box<T>& {
 template<NodeType T>
 auto Box<T>::operator=(Box<T>&& other) noexcept -> Box<T>& {
 	if (this != &other) {
-		release();
-		m_box = other.m_box;
-		other.m_box = nullptr;
+		if (m.control) {
+			m.control->decrement();
+			m.control = nullptr;
+		}
+		m.control = other.m.control;
+		other.m.control = nullptr;
 	}
 	return *this;
 }
 
 template<NodeType T>
-Box<T>::operator bool() const {
-	return hasValue();
+auto Box<T>::operator==(Box& other) const noexcept -> bool {
+	return m.control == other.m.control;
 }
 
 template<NodeType T>
-auto Box<T>::operator->() -> T* {
-	TOAST_ASSERT(m_box && m_box->node, Box<T>, "Control Box or Node is NULLPTR");
-	return m_box->node;
+auto Box<T>::operator!=(Box& other) const noexcept -> bool {
+	return not(m.control == other.m.control);
 }
 
 template<NodeType T>
-auto Box<T>::operator->() const -> const T* {
-	TOAST_ASSERT(m_box && m_box->node, Box<T>, "Control Box or Node is NULLPTR");
-	return m_box->node;
+Box<T>::operator bool() const noexcept {
+	return exists();
 }
 
 template<NodeType T>
-inline auto Box<T>::operator*() const -> const T& {
-	TOAST_ASSERT(m_box && m_box->node, Box<T>, "Control Box or Node is NULLPTR");
-	return *m_box->node;
+auto Box<T>::operator->() noexcept -> T* {
+	TOAST_ASSERT(m.control && m.control->node, Box<T>, "Control Box or Node is NULLPTR");
+	return m.control->node;
 }
 
 template<NodeType T>
-inline auto Box<T>::operator*() -> T& {
-	TOAST_ASSERT(m_box && m_box->node, Box<T>, "Control Box or Node is NULLPTR");
-	return *m_box->node;
+auto Box<T>::operator->() const noexcept -> const T* {
+	TOAST_ASSERT(m.control && m.control->node, Box<T>, "Control Box or Node is NULLPTR");
+	return m.control->node;
 }
 
 template<NodeType T>
-inline Box<T>::operator Node&() {
-	TOAST_ASSERT(m_box && m_box->node, Box<T>, "Control Box or Node is NULLPTR");
-	return *m_box->node;
+auto Box<T>::operator*() const noexcept -> const T& {
+	TOAST_ASSERT(m.control && m.control->node, Box<T>, "Control Box or Node is NULLPTR");
+	return *m.control->node;
 }
 
 template<NodeType T>
-void Box<T>::release() {
-	if (m_box) {
-		m_box->decrement();
-		m_box = nullptr;
-	}
+auto Box<T>::operator*() noexcept -> T& {
+	TOAST_ASSERT(m.control && m.control->node, Box<T>, "Control Box or Node is NULLPTR");
+	return *m.control->node;
 }
 
 template<NodeType T>
-auto Box<T>::hasValue() const -> bool {
-	return m_box && m_box->node;
+Box<T>::operator T&() noexcept {
+	TOAST_ASSERT(m.control && m.control->node, Box<T>, "Control Box or Node is NULLPTR");
+	return *m.control->node;
+}
+
+template<NodeType T>
+auto Box<T>::exists() const noexcept -> bool {
+	return m.control && m.control->node;
 }
 
 }    // namespace toast
