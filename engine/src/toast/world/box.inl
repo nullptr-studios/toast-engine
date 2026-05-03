@@ -1,6 +1,6 @@
 #pragma once
 #include "box.hpp"
-#include "toast/log.hpp"
+#include <toast/log.hpp>
 
 namespace toast {
 

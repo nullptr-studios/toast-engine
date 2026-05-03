@@ -6,10 +6,9 @@
 
 #pragma once
 
-#include "toast/export.hpp"
-
 #include <atomic>
 #include <string_view>
+#include <toast/export.hpp>
 
 namespace toast {
 class Node;

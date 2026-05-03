@@ -1,6 +1,6 @@
 #pragma once
 #include "node.hpp"
-#include "toast/world/world.hpp"
+#include <toast/world/world.hpp>
 
 namespace toast {
 	class World;

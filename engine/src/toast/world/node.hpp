@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include "toast/events/listener.hpp"
-#include "toast/world/box.hpp"
-#include "toast/world/registry.hpp"
+#include "box.hpp"
+#include "registry.hpp"
 #include "uuid.hpp"
 
 #include <memory>
+#include <toast/events/listener.hpp>
 
 // Objects Cannot Be Named
 // root

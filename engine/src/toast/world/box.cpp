@@ -1,9 +1,9 @@
 #include "box.hpp"
 
 #include "node.hpp"
-#include "toast/log.hpp"
 
 #include <memory_resource>
+#include <toast/log.hpp>
 
 namespace toast::_detail {
 static std::pmr::synchronized_pool_resource pool({1024, sizeof(ControlBox)});
@@ -33,14 +33,12 @@ void ControlBox::decrement() {
 }
 
 auto ControlBox::getControlBlock(Node* node) -> ControlBox* {
-	if (not node->m.self) {
+	if (not node->m.box) {
 		TOAST_TRACE(ControlBox, "ControlBox Created and incremented");
 		return new _detail::ControlBox(1, node);
 	}
-	node->m.self.m.control->increment();
-	return node->m.self.m.control;
-
-	return nullptr;
+	node->m.box.m.control->increment();
+	return node->m.box.m.control;
 }
 
 }

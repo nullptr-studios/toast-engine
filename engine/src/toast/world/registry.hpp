@@ -6,9 +6,8 @@
 
 #pragma once
 
-#include "toast/export.hpp"
-
 #include <functional>
+#include <toast/export.hpp>
 #include <vector>
 
 namespace toast {

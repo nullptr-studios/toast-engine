@@ -24,10 +24,9 @@
 // destroy - when the object gets added to the destroynodes
 // free - deconstructor
 
-#include "toast/export.hpp"
-#include "toast/world/node.hpp"
-
 #include <memory>
+#include <node.hpp>
+#include <toast/export.hpp>
 
 namespace toast {
 class TOAST_API World {
