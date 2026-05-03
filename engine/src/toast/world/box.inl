@@ -12,6 +12,13 @@ Box<T>::Box(Node* node) noexcept {
 }
 
 template<NodeType T>
+Box<T>::Box(Node* node, std::string_view path) noexcept {
+	// this = node->find(path);
+	// TODO:
+	
+}
+
+template<NodeType T>
 Box<T>::Box(const Box<T>& other) noexcept {
 	m = {
 	  .control = other.m.control,

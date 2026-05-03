@@ -9,6 +9,7 @@
 #include "toast/export.hpp"
 
 #include <atomic>
+#include <string_view>
 
 namespace toast {
 class Node;
@@ -45,7 +46,8 @@ class TOAST_API Box {
 public:
 	Box() noexcept = default;                              // Constructor
 	~Box() noexcept;                                       // Deconstructor
-	Box(Node* node) noexcept;                              //
+	Box(Node* node) noexcept;                              // Node Constructor
+	Box(Node* node, std::string_view path) noexcept;       // Path Constructor
 	Box(const Box& other) noexcept;                        // Copy Constructor
 	Box(Box&& other) noexcept;                             // Move Constructor
 

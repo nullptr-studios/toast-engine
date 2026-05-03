@@ -3,7 +3,7 @@
 namespace toast {
 Node::Node() {
 	m = {
-	  .self = Box<Node>(this),
+	  .box = Box<Node>(this),
 	};
 }
 
@@ -21,5 +21,14 @@ void Node::enabled(bool state) noexcept {
 
 auto Node::enabled() const noexcept -> bool {
 	return m.enabled;
+}
+
+void Node::name(std::string_view name) noexcept {
+	m.name = name;
+}
+
+[[nodiscard]]
+auto Node::name() const noexcept -> std::string {
+	return m.name;
 }
 }

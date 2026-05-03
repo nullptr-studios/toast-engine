@@ -31,6 +31,7 @@
 
 namespace toast {
 class TOAST_API World {
+	friend class Node;
 	inline static World* instance = nullptr;
 
 	struct {
@@ -51,7 +52,16 @@ public:
 	auto operator=(const World&) -> World& = delete;
 	auto operator=(World&&) -> World& = delete;
 
-private:
+	// private:
 	World() = default;
+
+	template<NodeType T = Node>
+	static auto find(std::string_view path) -> Box<T>;
+
+	template<NodeType T = Node>
+	static auto search(std::string_view path) -> Box<T>;
 };
+
 }
+
+#include "world.inl"
