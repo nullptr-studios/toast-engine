@@ -17,7 +17,8 @@ target("toast.engine", function()
 	add_ldflags("-lstdc++exp", { tools = { "clang", "gcc" }, public = true }) -- adds library for stacktrace
 
 	-- Apply clang-format rule
-	add_rules("clang-format")
+	-- FIX THIS SO CLANG FORMAT ALWAYS RUNS BEFORE THE DANTE HEADERS BULLSHIT
+	--add_rules("clang-format")
 	add_rules("sync-headers")
 
 	if is_plat("linux") then

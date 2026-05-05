@@ -1,7 +1,7 @@
 add_rules("mode.debug", "mode.release")
 set_defaultmode("debug")
 
-set_languages("c++23")
+set_languages("c++latest")
 
 rule("clang-format")
 before_build(function(target)
@@ -39,7 +39,7 @@ end
 -- Enables debug optimizations, needed on newer clang and gcc versions to avoid a warning
 if is_mode("debug") then
 	set_optimize("none")
-	add_cxxflags("-Og")
+	add_cxxflags("-Og", { tools = { "clang", "gcc" }})
 	add_defines("DEBUG")
 end
 

@@ -58,7 +58,7 @@ inline std::unordered_map<std::type_index, std::function<void(std::any)>> unsubs
 inline std::vector<std::unique_ptr<void, void (*)(void*)>> deletion_queue;
 
 /// @brief allocates memory in the event queue pool
-auto allocate(std::size_t size, std::size_t align) noexcept -> void*;
+auto TOAST_API allocate(std::size_t size, std::size_t align) noexcept -> void*;
 }
 
 /// @brief queue's up an event
@@ -91,7 +91,7 @@ void TOAST_API send(Args&&... args) noexcept;
 /// the callback itself
 ///
 template<typename T>
-struct TOAST_API Event : _detail::IEvent {
+struct Event : _detail::IEvent {
 	friend class Listener;
 	/// @brief callbacks that return 'true' are consumed and do not propogate
 	using callback_t = std::move_only_function<bool(T&)>;
