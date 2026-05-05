@@ -56,13 +56,9 @@ private:
 	[[nodiscard]]
 	auto listener() noexcept -> event::Listener&;
 
-	template<NodeType T = Node>
-	auto find(std::string_view) -> Box<T>;
+	auto find(std::string_view) -> Box<Node>;
 
-	template<NodeType T = Node>
-	auto search(std::string_view) -> Box<T>;
+	auto search(std::string_view) -> Box<Node>;
 };
 
 }
-
-#include "node.inl"

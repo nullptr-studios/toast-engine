@@ -14,7 +14,7 @@ target("toast.engine", function()
 
 	-- External libraries go here -x
 	add_packages("asio")
-	add_ldflags("-lstdc++exp", { tools = { "clang", "gcc" }, public = true }) -- adds library for stacktrace
+	add_syslinks("stdc++exp", { tools = { "clang", "gcc" }, public = true }) -- adds library for stacktrace
 
 	-- Apply clang-format rule
 	add_rules("clang-format")

@@ -1,5 +1,7 @@
 #include "node.hpp"
 
+#include "world.hpp"
+
 namespace toast {
 Node::Node() {
 	m = {
@@ -30,5 +32,39 @@ void Node::name(std::string_view name) noexcept {
 [[nodiscard]]
 auto Node::name() const noexcept -> std::string {
 	return m.name;
+}
+
+auto Node::find(std::string_view path) -> Box<Node> {
+	// TODO: syntax check
+	if ("node:/" == path.substr(0, 7)) {
+		// trim "node:/"
+	}
+	if ("/root" == path.substr(0, 5)) {
+		// finding object in root
+		return World::find(path);
+	}
+	if ("/global" == path.substr(0, 7)) {
+		// finding object in global
+		return World::find(path);
+	}
+	// Find In Children
+	return {};
+}
+
+auto Node::search(std::string_view path) -> Box<Node> {
+	// TODO: syntax check
+	if ("node:/" == path.substr(0, 7)) {
+		// trim "node:/"
+	}
+	if ("/root" == path.substr(0, 5)) {
+		// finding object in root
+		return World::search<Node>(path);
+	}
+	if ("/global" == path.substr(0, 7)) {
+		// finding object in global
+		return World::search<Node>(path);
+	}
+	// Find In Children
+	return {};
 }
 }
