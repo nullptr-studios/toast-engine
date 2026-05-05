@@ -16,7 +16,7 @@ ThreadPool::ThreadPool(size_t size) {
 	// TODO: TOAST_TRACE("Created thread pool with {0} workers", target_thread_num);
 }
 
-void ThreadPool::enqueue(std::function<void()>&& job) {
+void ThreadPool::enqueue(std::move_only_function<void()>&& job) {
 	auto& o = get();
 
 	{
@@ -50,7 +50,7 @@ void ThreadPool::waitIdle() {
 
 void ThreadPool::threadLoop() {
 	while (true) {
-		std::function<void()> job;
+		std::move_only_function<void()> job;
 
 		{
 			std::unique_lock<std::mutex> lock(m.queue_mutex);

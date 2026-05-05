@@ -51,16 +51,16 @@ private:
 	static auto get() noexcept -> ThreadPool&;
 
 	void threadLoop();
-	static void enqueue(std::function<void()>&& job);
+	static void enqueue(std::move_only_function<void()>&& job);
 
 	struct {
-		bool should_stop = false;                  ///< Flag to signal workers to stop
-		std::atomic<int> active_jobs = 0;          ///< Number of jobs currently executing
-		std::mutex queue_mutex;                    ///< Mutex protecting the job queue
-		std::condition_variable job_available;     ///< Notified when a job is enqueued or stop is requested
-		std::condition_variable all_done;          ///< Notified when activeJobs hits 0 and queue is empty
-		std::vector<std::jthread> workers;         ///< Worker threads (auto-join on destruction)
-		std::queue<std::function<void()>> jobs;    ///< Pending job queue
+		bool should_stop = false;                            ///< Flag to signal workers to stop
+		std::atomic<int> active_jobs = 0;                    ///< Number of jobs currently executing
+		std::mutex queue_mutex;                              ///< Mutex protecting the job queue
+		std::condition_variable job_available;               ///< Notified when a job is enqueued or stop is requested
+		std::condition_variable all_done;                    ///< Notified when activeJobs hits 0 and queue is empty
+		std::vector<std::jthread> workers;                   ///< Worker threads (auto-join on destruction)
+		std::queue<std::move_only_function<void()>> jobs;    ///< Pending job queue
 	} m;
 
 public:
@@ -140,9 +140,9 @@ template<typename T>
 auto ThreadPool::push(T&& job) -> std::future<std::invoke_result_t<T>> {
 	using result_t = std::invoke_result_t<T>;
 
-	auto task = std::make_shared<std::packaged_task<result_t()>>(std::forward<T>(job));
-	auto future = task->get_future();
-	enqueue([task]() mutable { (*task)(); });
+	std::packaged_task<result_t()> task(std::forward<T>(job));
+	auto future = task.get_future();
+	enqueue([task = std::move(task)]() mutable { task(); });
 	return future;
 }
 
