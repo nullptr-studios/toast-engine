@@ -47,15 +47,15 @@ private:
 };
 
 /// @brief mutex for the event system
-inline std::mutex mutex;
+extern TOAST_API std::mutex mutex;
 
 /// @brief vtable for unsubscribing callbacks
-inline std::unordered_map<std::type_index, std::function<void(std::any)>> unsubscribe_map;
+extern TOAST_API std::unordered_map<std::type_index, std::function<void(std::any)>> unsubscribe_map;
 
 /// @brief callbacks will be cleaned up only before pollEvents
 /// @note unique pointers have the option of storing a pointer to the function that deletes the object
 /// so thats how i implement the deletion_queue
-inline std::vector<std::unique_ptr<void, void (*)(void*)>> deletion_queue;
+extern TOAST_API std::vector<std::unique_ptr<void, void (*)(void*)>> deletion_queue;
 
 /// @brief allocates memory in the event queue pool
 auto TOAST_API allocate(std::size_t size, std::size_t align) noexcept -> void*;
@@ -66,7 +66,7 @@ auto TOAST_API allocate(std::size_t size, std::size_t align) noexcept -> void*;
 /// @param args arguments for the constructor
 template<typename T, typename... Args>
   requires std::is_base_of_v<_detail::IEvent, T>
-void TOAST_API send(Args&&... args) noexcept;
+void send(Args&&... args) noexcept;
 
 /// @class Event
 /// @brief Base class for all events. Derive your event type as `struct Derived : Event<Derived>`.
@@ -95,7 +95,7 @@ struct Event : _detail::IEvent {
 	friend class Listener;
 	/// @brief callbacks that return 'true' are consumed and do not propogate
 	using callback_t = std::move_only_function<bool(T&)>;
-	using iterator_t = std::multimap<char, callback_t*>::iterator;
+	using iterator_t = std::multimap<char, callback_t*, std::greater<char>>::iterator;
 
 private:
 	static inline struct G {
@@ -103,7 +103,7 @@ private:
 		std::multimap<char, callback_t*, std::greater<char>> callbacks;
 		std::mutex mutex;
 		std::vector<callback_t*> processing;
-		bool cached;
+		bool cached = false;
 	} g;
 
 	/// @brief registers a callback to the event callbacks

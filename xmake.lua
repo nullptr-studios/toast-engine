@@ -24,7 +24,10 @@ end)
 rule_end()
 
 add_rules("plugin.compile_commands.autoupdate")
-add_syslinks("stdc++exp", { tools = { "clang", "gcc" } }) -- adds library for stacktrace
+-- add_syslinks("stdc++exp", { tools = { "clang", "gcc" } }) -- adds library for stacktrace
+if is_plat("linux", "macosx") then
+    add_syslinks("stdc++exp")
+end
 
 -- Makes release have flto, fast math and SIMD intrinsic optimizations
 if is_mode("release") then

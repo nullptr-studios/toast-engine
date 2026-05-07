@@ -27,6 +27,10 @@ uint8_t index = 0;
 
 namespace _detail {
 
+std::mutex mutex;
+std::unordered_map<std::type_index, std::function<void(std::any)>> unsubscribe_map;
+std::vector<std::unique_ptr<void, void (*)(void*)>> deletion_queue;
+
 auto allocate(std::size_t size, std::size_t align) noexcept -> void* {
 	void* mem = pools[index].pool.allocate(size, align);
 	pools[index].queue.push_back(reinterpret_cast<IEvent*>(mem));

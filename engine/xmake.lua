@@ -24,6 +24,8 @@ target("toast.engine", function()
 	if is_plat("linux") then
 		add_syslinks("pthread")
 		add_shflags("-Wl,--no-as-needed")
+	elseif is_plat("windows", "mingw") then
+		add_syslinks("ws2_32", "mswsock")
 	end
 end)
 
