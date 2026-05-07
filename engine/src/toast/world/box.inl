@@ -1,5 +1,6 @@
 #pragma once
 #include "box.hpp"
+
 #include <toast/log.hpp>
 
 namespace toast {
@@ -15,7 +16,6 @@ template<NodeType T>
 Box<T>::Box(Node* node, std::string_view path) noexcept {
 	// this = node->find(path);
 	// TODO:
-	
 }
 
 template<NodeType T>

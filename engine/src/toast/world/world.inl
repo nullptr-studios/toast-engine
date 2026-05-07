@@ -20,7 +20,7 @@ auto World::find(std::string_view path) -> Box<T> {
 }
 
 template<NodeType T>
- auto World::search(std::string_view path) -> Box<T> {
+auto World::search(std::string_view path) -> Box<T> {
 	// TODO: syntax check
 	if ("node:/" == path.substr(0, 7)) {
 		// trim "node:/"
