@@ -10,6 +10,7 @@ namespace event {
 template<typename T>
 Event<T>::G::G() noexcept {
 	static_assert(std::is_base_of_v<Event<T>, T>, "CONTRACT VIOLATION: You Must Inhert as 'struct Derived : Event<Derived>'");
+	TOAST_INFO(_detail::IEvent,"Registering Event Type: {}",typeid(T).name());
 	// add function to the Event vtable
 	_detail::unsubscribe_map.emplace(typeid(T), [](std::any iter) {
 		auto it = std::any_cast<iterator_t>(iter);
