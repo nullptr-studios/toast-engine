@@ -2,32 +2,28 @@
 #include "event.hpp"
 #include "toast/log.hpp"
 
+#include <cstdlib>
 #include <mutex>
 #include <type_traits>
 
 namespace event {
 
 template<typename T>
-Event<T>::G::G() noexcept {
-	// static_assert(std::is_base_of_v<Event<T>, T>, "CONTRACT VIOLATION: You Must Inhert as 'struct Derived : Event<Derived>'");
-	// TOAST_INFO(_detail::IEvent,"Registering Event Type: {}",typeid(T).name());
-	// // add function to the Event vtable
-	// _detail::unsubscribe_map.emplace(typeid(T), [](std::any iter) {
-	// 	auto it = std::any_cast<iterator_t>(iter);
-	// 	unsubscribe(it);
-	// });
-	event::EventSystem::registerEvent<T>();
+Event<T>::_Registrar::_Registrar() : registered(true) {
+    EventSystem::registerEvent<T>();
 }
 
 template<typename T>
 auto Event<T>::subscribe(char priority, callback_t&& callback) noexcept -> iterator_t {
+	(void)registrar.registered;
 	TOAST_TRACE(_detail::IEvent, "Subscribing Callback To: {}", typeid(T).name());
 
 	auto cb = new callback_t(std::move(callback));
+	auto& g = EventSystem::event_data[typeid(T)];
 	{
 		std::scoped_lock _(g.mutex);
 		g.cached = false;
-		return g.callbacks.emplace(priority, cb);
+		return g.callbacks.emplace(priority, static_cast<void*>(cb));
 	}
 }
 
@@ -35,6 +31,7 @@ template<typename T>
 void Event<T>::unsubscribe(iterator_t it) noexcept {
 	TOAST_TRACE(_detail::IEvent, "Unsubscribing Callback To: {}", typeid(T).name());
 
+	auto& g = EventSystem::event_data[typeid(T)];
 	{
 		std::scoped_lock _(g.mutex);
 		auto deleter = [](void* p) { delete static_cast<std::move_only_function<bool(T&)>*>(p); };
@@ -47,6 +44,8 @@ void Event<T>::unsubscribe(iterator_t it) noexcept {
 template<typename T>
 void Event<T>::notify() noexcept {
 	TOAST_TRACE(_detail::IEvent, "Notifying Event: {}", typeid(T).name());
+
+	auto& g = EventSystem::event_data[typeid(T)];
 	{
 		// build cached list of all the callbacks in order
 		// locks mutex for the shortest period possible
@@ -63,7 +62,7 @@ void Event<T>::notify() noexcept {
 
 	// disptaches all of the callbacks
 	for (auto& callback : g.processing) {
-		bool handled = (*callback)(static_cast<T&>(*this));
+		bool handled = (*static_cast<callback_t*>(callback))(static_cast<T&>(*this));
 		if (handled) {
 			return;
 		}

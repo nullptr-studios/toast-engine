@@ -11,20 +11,23 @@
 #pragma once
 
 #include "toast/log.hpp"
+
+#include <any>
 #include <cassert>
 #include <cstddef>
 #include <functional>
-#include <any>
-#include <memory>
-#include <typeindex>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <stacktrace>
 #include <toast/export.hpp>
 #include <type_traits>
+#include <typeindex>
 #include <vector>
 
 namespace event {
+
+struct EventSystem;    // Forward declaration
 
 /// @brief dispatches all queued events to their callbacks
 /// @note Not thread-safe. Should be only ever called from a single thread / main thread
@@ -82,20 +85,22 @@ void send(Args&&... args) noexcept;
 template<typename T>
 struct Event : _detail::IEvent {
 	friend class Listener;
+	friend struct EventSystem;
 	/// @brief callbacks that return 'true' are consumed and do not propogate
 	using callback_t = std::move_only_function<bool(T&)>;
-	using iterator_t = std::multimap<char, callback_t*, std::greater<char>>::iterator;
+	using iterator_t = std::multimap<char, void*, std::greater<char>>::iterator;
 
 private:
-	static inline struct G {
-		G() noexcept;
-		std::multimap<char, callback_t*, std::greater<char>> callbacks;
-		std::mutex mutex;
-		std::vector<callback_t*> processing;
-		bool cached = false;
-	} g;
+	static inline struct _Registrar {
+		_Registrar();    // Declared, not defined inline
+		bool registered;
+	} registrar;
 
-	/// @brief registers a callback to the event callbacks
+	static void ensureRegistered() {
+		(void)registrar;    // Casting to void "uses" the variable
+	}
+
+	                      /// @brief registers a callback to the event callbacks
 	/// @param priority higher number callbacks first
 	/// @param callback
 	static auto subscribe(char priority, callback_t&& callback) noexcept -> iterator_t;
@@ -108,11 +113,6 @@ private:
 	void notify() noexcept override;
 };
 
-
-
-
-
-
 struct TOAST_API EventSystem {
 	struct EventInfo {
 		std::mutex mutex;
@@ -120,6 +120,9 @@ struct TOAST_API EventSystem {
 		std::vector<void*> processing;
 		bool cached = false;
 	};
+
+	/// @brief callback map for each type of event
+	static std::unordered_map<std::type_index, EventInfo> event_data;
 
 	/// @brief mutex for the event system pool
 	static std::mutex pool_mutex;
@@ -132,29 +135,27 @@ struct TOAST_API EventSystem {
 	/// so thats how i implement the deletion_queue
 	static std::vector<std::unique_ptr<void, void (*)(void*)>> deletion_queue;
 
-	static std::unordered_map<std::type_index, EventInfo> event_data;
-
-
 	template<typename T>
 	static void registerEvent() {
 		static_assert(std::is_base_of_v<Event<T>, T>, "CONTRACT VIOLATION: You Must Inhert as 'struct Derived : Event<Derived>'");
+		if (event_data.contains(typeid(T))) {
+			TOAST_INFO(_detail::IEvent, "Registered Again Because Windows Is Shit", typeid(T).name());
+			return;
+		}
 		TOAST_INFO(_detail::IEvent, "Registering Event Type: {}", typeid(T).name());
+		event_data.emplace(
+				std::piecewise_construct,
+				std::forward_as_tuple(typeid(T)),
+				std::forward_as_tuple()    // This calls the EventInfo() constructor
+				);
 
 		EventSystem::unsubscribe_map.emplace(typeid(T), [](const std::any& iter) {
-			auto it = std::any_cast<Event<T>::iterator_t>(iter);
-			unsubscribe(it);
+			auto it = std::any_cast<typename Event<T>::iterator_t>(iter);
+			Event<T>::unsubscribe(it);
 		});
 	}
 };
 
-
-
-
-
-
-
-
-
-
 }
+
 #include "event.inl"
