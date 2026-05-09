@@ -2,7 +2,6 @@
 #include "event.hpp"
 #include "toast/log.hpp"
 
-#include <cstdlib>
 #include <mutex>
 #include <type_traits>
 
