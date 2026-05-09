@@ -1,7 +1,6 @@
 #include "listener.hpp"
 
 #include "event.hpp"
-#include "toast/events/event_system.hpp"
 
 namespace event {
 

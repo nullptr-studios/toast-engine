@@ -1,6 +1,5 @@
 #pragma once
 #include "event.hpp"
-#include "toast/events/event_system.hpp"
 #include "toast/log.hpp"
 
 #include <mutex>
