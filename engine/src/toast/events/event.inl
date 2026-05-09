@@ -2,14 +2,13 @@
 #include "event.hpp"
 #include "toast/log.hpp"
 
-#include <cstdlib>
 #include <mutex>
 #include <type_traits>
 
 namespace event {
 
 template<typename T>
-Event<T>::_Registrar::_Registrar() : registered(true) {
+Event<T>::Registrar::Registrar() : registered(true) {
     EventSystem::registerEvent<T>();
 }
 
@@ -29,6 +28,7 @@ auto Event<T>::subscribe(char priority, callback_t&& callback) noexcept -> itera
 
 template<typename T>
 void Event<T>::unsubscribe(iterator_t it) noexcept {
+	(void)registrar.registered;
 	TOAST_TRACE(_detail::IEvent, "Unsubscribing Callback To: {}", typeid(T).name());
 
 	auto& g = EventSystem::event_data[typeid(T)];
@@ -43,6 +43,7 @@ void Event<T>::unsubscribe(iterator_t it) noexcept {
 
 template<typename T>
 void Event<T>::notify() noexcept {
+	(void)registrar.registered;
 	TOAST_TRACE(_detail::IEvent, "Notifying Event: {}", typeid(T).name());
 
 	auto& g = EventSystem::event_data[typeid(T)];
