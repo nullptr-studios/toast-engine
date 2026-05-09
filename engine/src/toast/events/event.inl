@@ -1,5 +1,6 @@
 #pragma once
 #include "event.hpp"
+#include "toast/events/event_system.hpp"
 #include "toast/log.hpp"
 
 #include <mutex>
@@ -9,13 +10,14 @@ namespace event {
 
 template<typename T>
 Event<T>::G::G() noexcept {
-	static_assert(std::is_base_of_v<Event<T>, T>, "CONTRACT VIOLATION: You Must Inhert as 'struct Derived : Event<Derived>'");
-	TOAST_INFO(_detail::IEvent,"Registering Event Type: {}",typeid(T).name());
-	// add function to the Event vtable
-	_detail::unsubscribe_map.emplace(typeid(T), [](std::any iter) {
-		auto it = std::any_cast<iterator_t>(iter);
-		unsubscribe(it);
-	});
+	// static_assert(std::is_base_of_v<Event<T>, T>, "CONTRACT VIOLATION: You Must Inhert as 'struct Derived : Event<Derived>'");
+	// TOAST_INFO(_detail::IEvent,"Registering Event Type: {}",typeid(T).name());
+	// // add function to the Event vtable
+	// _detail::unsubscribe_map.emplace(typeid(T), [](std::any iter) {
+	// 	auto it = std::any_cast<iterator_t>(iter);
+	// 	unsubscribe(it);
+	// });
+	event::EventSystem::registerEvent<T>();
 }
 
 template<typename T>
@@ -37,7 +39,7 @@ void Event<T>::unsubscribe(iterator_t it) noexcept {
 	{
 		std::scoped_lock _(g.mutex);
 		auto deleter = [](void* p) { delete static_cast<std::move_only_function<bool(T&)>*>(p); };
-		_detail::deletion_queue.emplace_back((*it).second, deleter);
+		EventSystem::deletion_queue.emplace_back((*it).second, deleter);
 		g.cached = false;
 		g.callbacks.erase(it);
 	}
@@ -76,7 +78,7 @@ void send(Args&&... args) noexcept {
 	TOAST_TRACE(_detail::IEvent, "Sending Event: {}", typeid(T).name());
 	// Allocate and enqueue event
 	{
-		std::scoped_lock _(_detail::mutex);
+		std::scoped_lock _(EventSystem::pool_mutex);
 		void* memory = _detail::allocate(sizeof(T), alignof(T));
 		assert(memory);
 		_detail::IEvent* event = new (memory) T(std::forward<Args>(args)...);

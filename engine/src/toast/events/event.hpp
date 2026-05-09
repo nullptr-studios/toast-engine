@@ -10,18 +10,14 @@
  */
 #pragma once
 
-#include <any>
 #include <cassert>
 #include <cstddef>
 #include <functional>
 #include <map>
-#include <memory>
 #include <mutex>
 #include <stacktrace>
 #include <toast/export.hpp>
 #include <type_traits>
-#include <typeindex>
-#include <unordered_map>
 #include <vector>
 
 namespace event {
@@ -45,17 +41,6 @@ private:
 	friend void event::pollEvents() noexcept;
 	virtual void notify() noexcept = 0;
 };
-
-/// @brief mutex for the event system
-extern TOAST_API std::mutex mutex;
-
-/// @brief vtable for unsubscribing callbacks
-extern TOAST_API std::unordered_map<std::type_index, std::function<void(std::any)>> unsubscribe_map;
-
-/// @brief callbacks will be cleaned up only before pollEvents
-/// @note unique pointers have the option of storing a pointer to the function that deletes the object
-/// so thats how i implement the deletion_queue
-extern TOAST_API std::vector<std::unique_ptr<void, void (*)(void*)>> deletion_queue;
 
 /// @brief allocates memory in the event queue pool
 auto TOAST_API allocate(std::size_t size, std::size_t align) noexcept -> void*;

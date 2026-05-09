@@ -1,4 +1,5 @@
 #include "event.hpp"
+#include "toast/events/event_system.hpp"
 
 #include <array>
 #include <cassert>
@@ -27,10 +28,6 @@ uint8_t index = 0;
 
 namespace _detail {
 
-std::mutex mutex;
-std::unordered_map<std::type_index, std::function<void(std::any)>> unsubscribe_map;
-std::vector<std::unique_ptr<void, void (*)(void*)>> deletion_queue;
-
 auto allocate(std::size_t size, std::size_t align) noexcept -> void* {
 	void* mem = pools[index].pool.allocate(size, align);
 	pools[index].queue.push_back(reinterpret_cast<IEvent*>(mem));
@@ -43,12 +40,12 @@ void pollEvents() noexcept {
 	TOAST_INFO(_detail::IEvent, "Polling Events");
 
 	// delete callbacks
-	_detail::deletion_queue.clear();
+	EventSystem::deletion_queue.clear();
 
 	// swap memory pool
 	uint32_t idx;
 	{
-		std::scoped_lock _(_detail::mutex);
+		std::scoped_lock _(EventSystem::pool_mutex);
 		idx = index;
 		index = (index + 1) % pools.size();
 	}

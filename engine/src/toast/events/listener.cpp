@@ -1,6 +1,7 @@
 #include "listener.hpp"
 
 #include "event.hpp"
+#include "toast/events/event_system.hpp"
 
 namespace event {
 
@@ -10,7 +11,7 @@ Listener::Listener() {
 
 Listener::~Listener() {
 	for (auto& [type, name, callback] : m.callbacks) {
-		_detail::unsubscribe_map[type](callback);
+		EventSystem::unsubscribe_map[type](callback);
 	}
 }
 
