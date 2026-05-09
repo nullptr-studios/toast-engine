@@ -9,7 +9,7 @@ namespace event {
 
 template<typename T>
 Event<T>::Registrar::Registrar() : registered(true) {
-    EventSystem::registerEvent<T>();
+	EventSystem::registerEvent<T>();
 }
 
 template<typename T>
