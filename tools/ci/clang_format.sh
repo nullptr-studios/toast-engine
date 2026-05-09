@@ -22,20 +22,6 @@ nix --extra-experimental-features "nix-command flakes" develop .#default -c bash
 		exit 0
 	fi
 
-	git config user.name "github-actions[bot]"
-	git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-	git add -- "${files[@]}"
-
-	if ! git commit -m "ci: apply clang-format to engine"; then
-		echo "Formatting changes detected, but nothing was committed."
-		exit 1
-	fi
-
-	if git push; then
-		echo "Formatting fixes were pushed to the PR branch. Continuing with the updated commit in this run."
-		exit 0
-	fi
-
-	echo "::error::Formatting changes were detected, but this workflow could not push fixes. Format locally and push."
+	echo "::error::Formatting changes detected. Run clang-format locally and push the results."
 	exit 1
 '
