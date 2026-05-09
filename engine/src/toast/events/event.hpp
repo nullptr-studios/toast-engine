@@ -45,7 +45,7 @@ struct TOAST_API IEvent {
 #endif
 
 private:
-	friend void event::pollEvents() noexcept;
+	friend void TOAST_API event::pollEvents() noexcept;
 	virtual void notify() noexcept = 0;
 };
 

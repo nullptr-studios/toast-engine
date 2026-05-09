@@ -11,10 +11,13 @@ target("toast.engine", function()
 	add_files("**.cpp")
 	add_headerfiles("src/(**.hpp)", { public = false, extra = { check = true } })
 	add_headerfiles("ffi/(**.h)", "include/toast/(**.hpp)", { prefixdir = "toast", extra = { check = true } })
+	set_pcxxheader("../pch.h")
 
 	-- External libraries go here -x
 	add_packages("asio")
--- add_syslinks("stdc++exp", { tools = { "clang", "gcc" }, public = true }) -- adds library for stacktrace
+	if not is_plat("windows") then
+		add_syslinks("stdc++exp")
+	end
 
 	-- Apply clang-format rule
 	-- FIX THIS SO CLANG FORMAT ALWAYS RUNS BEFORE THE DANTE HEADERS BULLSHIT

@@ -24,10 +24,7 @@ end)
 rule_end()
 
 add_rules("plugin.compile_commands.autoupdate")
--- add_syslinks("stdc++exp", { tools = { "clang", "gcc" } }) -- adds library for stacktrace
-if is_plat("linux", "macosx") then
-    add_syslinks("stdc++exp")
-end
+
 
 -- Makes release have flto, fast math and SIMD intrinsic optimizations
 if is_mode("release") then
@@ -42,7 +39,9 @@ end
 -- Enables debug optimizations, needed on newer clang and gcc versions to avoid a warning
 if is_mode("debug") then
 	set_optimize("none")
-	add_cxxflags("-Og", { tools = { "clang", "gcc" } }) -- this line doesnt quite work
+	if not is_plat("windows") then
+		add_cxxflags("-Og")
+	end
 	add_defines("DEBUG")
 end
 
