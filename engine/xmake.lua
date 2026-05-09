@@ -18,6 +18,14 @@ target("toast.engine", function()
 	if not is_plat("windows") then
 		add_syslinks("stdc++exp")
 	end
+	if is_plat("windows") and (get_config("toolchain") == "mingw" or get_config("toolchain") == "gcc") then
+		add_syslinks("stdc++exp")
+		add_defines("__cpp_lib_constexpr_exceptions=0")
+		on_load(function(target)
+			local implib = path.join(target:targetdir(), "lib" .. target:name() .. ".dll.a")
+			target:add("shflags", "-Wl,--out-implib," .. implib, { force = true })
+		end)
+	end
 
 	-- Apply clang-format rule
 	-- FIX THIS SO CLANG FORMAT ALWAYS RUNS BEFORE THE DANTE HEADERS BULLSHIT
