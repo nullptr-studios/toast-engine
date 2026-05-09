@@ -88,19 +88,15 @@ struct Event : _detail::IEvent {
 	friend struct EventSystem;
 	/// @brief callbacks that return 'true' are consumed and do not propogate
 	using callback_t = std::move_only_function<bool(T&)>;
-	using iterator_t = std::multimap<char, void*, std::greater<char>>::iterator;
+	using iterator_t = std::multimap<char, void*, std::greater<>>::iterator;
 
 private:
-	static inline struct _Registrar {
-		_Registrar();    // Declared, not defined inline
+	static inline struct Registrar {
+		Registrar();
 		bool registered;
 	} registrar;
 
-	static void ensureRegistered() {
-		(void)registrar;    // Casting to void "uses" the variable
-	}
-
-	                      /// @brief registers a callback to the event callbacks
+	/// @brief registers a callback to the event callbacks
 	/// @param priority higher number callbacks first
 	/// @param callback
 	static auto subscribe(char priority, callback_t&& callback) noexcept -> iterator_t;
@@ -144,10 +140,10 @@ struct TOAST_API EventSystem {
 		}
 		TOAST_INFO(_detail::IEvent, "Registering Event Type: {}", typeid(T).name());
 		event_data.emplace(
-				std::piecewise_construct,
-				std::forward_as_tuple(typeid(T)),
-				std::forward_as_tuple()    // This calls the EventInfo() constructor
-				);
+		    std::piecewise_construct,
+		    std::forward_as_tuple(typeid(T)),
+		    std::forward_as_tuple()    // This calls the EventInfo() constructor
+		);
 
 		EventSystem::unsubscribe_map.emplace(typeid(T), [](const std::any& iter) {
 			auto it = std::any_cast<typename Event<T>::iterator_t>(iter);
