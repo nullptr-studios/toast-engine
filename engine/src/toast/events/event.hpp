@@ -27,8 +27,6 @@
 
 namespace event {
 
-struct EventSystem;    // Forward declaration
-
 /// @brief dispatches all queued events to their callbacks
 /// @note Not thread-safe. Should be only ever called from a single thread / main thread
 void TOAST_API pollEvents() noexcept;
@@ -93,7 +91,7 @@ struct Event : _detail::IEvent {
 private:
 	static inline struct Registrar {
 		Registrar();
-		bool registered;
+		bool registered = false;
 	} registrar;
 
 	/// @brief registers a callback to the event callbacks
@@ -139,10 +137,10 @@ struct TOAST_API EventSystem {
 			return;
 		}
 		TOAST_INFO(_detail::IEvent, "Registering Event Type: {}", typeid(T).name());
-		event_data.emplace(
+		event_data.emplace( // this is goofy because eventinfo has a mutex inside it
 		    std::piecewise_construct,
 		    std::forward_as_tuple(typeid(T)),
-		    std::forward_as_tuple()    // This calls the EventInfo() constructor
+		    std::forward_as_tuple()
 		);
 
 		EventSystem::unsubscribe_map.emplace(typeid(T), [](const std::any& iter) {
