@@ -13,7 +13,12 @@ for _, filepath in ipairs(os.files(path.join(scriptdir, "**.cpp"))) do
 
 		add_files(filepath)
 		add_deps("toast.engine")
-
+		if not is_plat("windows") then
+			add_syslinks("stdc++exp")
+		end
+		if is_plat("windows") and (get_config("toolchain") == "mingw" or get_config("toolchain") == "gcc") then
+			add_syslinks("stdc++exp")
+		end
 
 		add_defines("UNIT_TESTING")
 

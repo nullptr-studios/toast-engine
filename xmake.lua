@@ -1,7 +1,7 @@
 add_rules("mode.debug", "mode.release")
 set_defaultmode("debug")
 
-set_languages("c++23")
+set_languages("c++latest")
 
 rule("clang-format")
 before_build(function(target)
@@ -24,7 +24,7 @@ end)
 rule_end()
 
 add_rules("plugin.compile_commands.autoupdate")
-add_cxxflags("-stdlib=libc++", { tools = { "clang", "gcc" } }) -- Use LLVM STL by default
+
 
 -- Makes release have flto, fast math and SIMD intrinsic optimizations
 if is_mode("release") then
@@ -39,7 +39,9 @@ end
 -- Enables debug optimizations, needed on newer clang and gcc versions to avoid a warning
 if is_mode("debug") then
 	set_optimize("none")
-	add_cxxflags("-Og")
+	if not is_plat("windows") then
+		add_cxxflags("-Og")
+	end
 	add_defines("DEBUG")
 end
 

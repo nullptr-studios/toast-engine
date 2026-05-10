@@ -10,19 +10,29 @@ target("toast.engine", function()
 	add_files("**.cpp")
 	add_headerfiles("src/(**.hpp)", { public = false, extra = { check = true } })
 	add_headerfiles("ffi/(**.h)", "include/toast/(**.hpp)", { prefixdir = "toast", extra = { check = true } })
+	set_pcxxheader("../pch.h")
 
 	-- External libraries go here
 	add_packages("asio")
-	add_packages("libsdl3")
+	add_packages ("libsdl3")
 
-    -- Compiler flags and defines
-	add_ldflags("-lstdc++exp", { tools = { "clang", "gcc" }, public = true }) -- passes flag for std::stacktrace
-    add_defines("TOAST_EXPORT")
-    add_rpathdirs("$ORIGIN")
+	if not is_plat("windows") then
+		add_syslinks("stdc++exp")
+	end
+	if is_plat("windows") and (get_config("toolchain") == "mingw" or get_config("toolchain") == "gcc") then
+		add_syslinks("stdc++exp")
+		add_defines("__cpp_lib_constexpr_exceptions=0")
+		on_load(function(target)
+			local implib = path.join(target:targetdir(), "lib" .. target:name() .. ".dll.a")
+			target:add("shflags", "-Wl,--out-implib," .. implib, { force = true })
+		end)
+	end
 
     if is_plat("linux") then
 		add_syslinks("pthread")
 		add_shflags("-Wl,--no-as-needed")
+	elseif is_plat("windows", "mingw") then
+		add_syslinks("ws2_32", "mswsock")
 	end
 
 	-- Rules
