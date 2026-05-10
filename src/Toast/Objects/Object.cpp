@@ -455,7 +455,7 @@ void Object::_EarlyTick() {
 		return;
 	}
 
-	if (!enabled() || !m_hasRunBegin) {
+	if (!m_enabled || !m_hasRunBegin) {
 		return;
 	}
 
@@ -464,14 +464,13 @@ void Object::_EarlyTick() {
 
 	EarlyTick();    // ACTOR's LOGIC
 
-	// Then continue to the children
 	for (const auto& child : children | std::views::values) {
 		child->_EarlyTick();
 	}
 }
 
 void Object::_Tick() {
-	if (!enabled() || !m_hasRunBegin || !m_runsTick) {
+	if (!m_enabled || !m_hasRunBegin || !m_runsTick) {
 		return;
 	}
 
@@ -508,7 +507,7 @@ void Object::_LateTick() {
 		return;
 	}
 
-	if (!enabled() || !m_hasRunBegin) {
+	if (!m_enabled || !m_hasRunBegin) {
 		return;
 	}
 
@@ -549,7 +548,7 @@ void Object::_Destroy() {
 }
 
 void Object::_PhysTick() {
-	if (!enabled() || !m_hasRunBegin || !m_runsPhysTick) {
+	if (!m_enabled || !m_hasRunBegin || !m_runsPhysTick) {
 		return;
 	}
 

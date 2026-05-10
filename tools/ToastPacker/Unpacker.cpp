@@ -10,6 +10,7 @@
 #include <lz4.h>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace fs = std::filesystem;
 
@@ -38,11 +39,35 @@ uint64_t fnv1a_hash64(const std::u8string& s) {
 	return hash;
 }
 
+namespace std {
+	template <>
+	struct hash<std::u8string> {
+		size_t operator()(const std::u8string& s) const {
+			return static_cast<size_t>(fnv1a_hash64(s));
+		}
+	};
+}
+
+struct FileEntry {
+	uint64_t offset;
+	uint64_t orig_size;
+	uint64_t stored_size;
+	uint8_t flags;
+};
+
+struct HashMapEntry {
+	size_t index;
+	uint64_t hash;
+	std::u8string path;
+};
+
 class PackFile {
 public:
 	bool Open(const std::string& packPath) {
 		in_.open(packPath, std::ios::binary);
 		if (!in_) { return false; }
+
+		in_.rdbuf()->pubsetbuf(nullptr, 65536);  // 64KB read buffer
 
 		PackHeader h;
 		in_.read(reinterpret_cast<char*>(&h), sizeof(h));
@@ -62,14 +87,10 @@ public:
 		in_.read(reinterpret_cast<char*>(&file_count), sizeof(file_count));
 		if (!in_) { return false; }
 
-		hashes_.clear();
-		paths_.clear();
-		offsets_.clear();
-		orig_sizes_.clear();
-		stored_sizes_.clear();
-		flags_.clear();
-		hashes_.reserve(file_count);
-		paths_.reserve(file_count);
+		entries_.clear();
+		lookup_map_.clear();
+		entries_.reserve(file_count);
+		lookup_map_.reserve(file_count);
 
 		for (uint32_t i = 0; i < file_count; ++i) {
 			uint64_t hsh;
@@ -92,12 +113,11 @@ public:
 				return false;
 			}
 
-			hashes_.push_back(hsh);
-			paths_.push_back(std::move(path));
-			offsets_.push_back(offset);
-			orig_sizes_.push_back(orig);
-			stored_sizes_.push_back(stored);
-			flags_.push_back(f);
+			// Store entry
+			size_t entry_idx = entries_.size();
+			entries_.push_back({ offset, orig, stored, f });
+
+			lookup_map_[path] = { entry_idx, hsh, path };
 		}
 
 		return true;
@@ -105,57 +125,40 @@ public:
 
 	void Close() {
 		if (in_.is_open()) { in_.close(); }
-		hashes_.clear();
-		paths_.clear();
-		offsets_.clear();
-		orig_sizes_.clear();
-		stored_sizes_.clear();
-		flags_.clear();
+		entries_.clear();
+		lookup_map_.clear();
 	}
 
 	bool ReadFile(std::string_view raw_path, std::vector<uint8_t>& out) {
 		// canonicalize lookup path same as packer
 		std::u8string path = canonical_path_for_pack(raw_path);
 
-		uint64_t h = fnv1a_hash64(path);
-		auto it = std::lower_bound(hashes_.begin(), hashes_.end(), h);
-		// not found quickly
-		if (it == hashes_.end() || *it != h) {
-			// fallback: linear scan to help debugging/compatibility
-			for (size_t i = 0; i < paths_.size(); ++i) {
-				if (paths_[i] == path) {    // found by exact string despite hash mismatch
-					return read_at_index(i, out);
-				}
-			}
+		auto it = lookup_map_.find(path);
+		if (it == lookup_map_.end()) {
 			return false;
 		}
 
-		size_t idx = static_cast<size_t>(it - hashes_.begin());
-		// collision scan
-		size_t lo = idx, hi = idx;
-		while (lo > 0 && hashes_[lo - 1] == h) {
-			--lo;
-		}
-		while (hi + 1 < hashes_.size() && hashes_[hi + 1] == h) {
-			++hi;
-		}
-
-		for (size_t i = lo; i <= hi; ++i) {
-			if (paths_[i] == path) { return read_at_index(i, out); }
-		}
-		return false;
+		size_t idx = it->second.index;
+		return read_at_index(idx, out);
 	}
 
 private:
 	bool read_at_index(size_t i, std::vector<uint8_t>& out) {
-		uint64_t offset = offsets_[i];
-		uint64_t stored = stored_sizes_[i];
-		uint64_t orig = orig_sizes_[i];
-		uint8_t f = flags_[i];
+		if (i >= entries_.size()) { return false; }
 
-		std::vector<uint8_t> stored_buf(static_cast<size_t>(stored));
+		const FileEntry& entry = entries_[i];
+		uint64_t offset = entry.offset;
+		uint64_t stored = entry.stored_size;
+		uint64_t orig = entry.orig_size;
+		uint8_t f = entry.flags;
+
+		// Reuse decompression buffer if possible
+		if (decomp_buf_.size() < stored) {
+			decomp_buf_.resize(static_cast<size_t>(stored));
+		}
+
 		in_.seekg(static_cast<std::streamoff>(offset));
-		in_.read(reinterpret_cast<char*>(stored_buf.data()), static_cast<std::streamsize>(stored));
+		in_.read(reinterpret_cast<char*>(decomp_buf_.data()), static_cast<std::streamsize>(stored));
 		if (!in_) {
 			std::cerr << "Read error at offset " << offset << "\n";
 			return false;
@@ -164,7 +167,8 @@ private:
 		if (f & 1) {
 			out.resize(static_cast<size_t>(orig));
 			int got = LZ4_decompress_safe(
-			    reinterpret_cast<const char*>(stored_buf.data()), reinterpret_cast<char*>(out.data()), static_cast<int>(stored), static_cast<int>(orig)
+			    reinterpret_cast<const char*>(decomp_buf_.data()), reinterpret_cast<char*>(out.data()), 
+			    static_cast<int>(stored), static_cast<int>(orig)
 			);
 			if (got < 0) {
 				std::cerr << "LZ4 decompress failed\n";
@@ -173,18 +177,16 @@ private:
 			return true;
 		}
 
-		out.swap(stored_buf);
+		out.resize(static_cast<size_t>(stored));
+		std::copy(decomp_buf_.begin(), decomp_buf_.begin() + static_cast<ptrdiff_t>(stored), out.begin());
 		return true;
 	}
 
 	std::ifstream in_;
 	PackHeader header_ = {};
-	std::vector<uint64_t> hashes_;
-	std::vector<std::u8string> paths_;
-	std::vector<uint64_t> offsets_;
-	std::vector<uint64_t> orig_sizes_;
-	std::vector<uint64_t> stored_sizes_;
-	std::vector<uint8_t> flags_;
+	std::vector<FileEntry> entries_;
+	std::unordered_map<std::u8string, HashMapEntry> lookup_map_;
+	std::vector<uint8_t> decomp_buf_;  // Reusable decompression buffer
 };
 
 int main(int argc, char** argv) {

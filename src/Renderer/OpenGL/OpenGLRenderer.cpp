@@ -44,6 +44,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <sstream>
 #include <stb_image.h>
@@ -56,6 +57,75 @@ namespace renderer {
 
 namespace {
 	constexpr float kDirectionalShadowSnapEpsilon = 0.05f;
+
+struct TransparentSortEntry {
+	IRenderable* renderable = nullptr;
+	int priority = 0;
+	float depth = 0.0f;
+	uintptr_t tieBreak = 0;
+};
+
+void SortTransparentRenderables(
+	std::vector<IRenderable*>& renderables,
+	const glm::mat4& viewMatrix,
+	std::vector<TransparentSortEntry>& scratch
+) {
+	if (renderables.size() <= 1) {
+		return;
+	}
+
+	scratch.clear();
+	scratch.reserve(renderables.size());
+
+	for (auto* r : renderables) {
+		if (!r) {
+			continue;
+		}
+		scratch.push_back({
+		    r,
+		    r->GetTransparentSortPriority(),
+		    r->GetTransparentSortDepth(viewMatrix),
+		    reinterpret_cast<uintptr_t>(r),
+		});
+	}
+
+	if (scratch.size() <= 1) {
+		renderables.resize(scratch.size());
+		if (!scratch.empty()) {
+			renderables[0] = scratch[0].renderable;
+		}
+		return;
+	}
+
+	std::stable_sort(scratch.begin(), scratch.end(), [](const TransparentSortEntry& a, const TransparentSortEntry& b) {
+		if (a.priority != b.priority) {
+			return a.priority < b.priority;
+		}
+		if (std::abs(a.depth - b.depth) > 1e-4f) {
+			// draw farther first for blending
+			return a.depth < b.depth;
+		}
+		return a.tieBreak < b.tieBreak;
+	});
+
+	renderables.resize(scratch.size());
+	for (size_t i = 0; i < scratch.size(); ++i) {
+		renderables[i] = scratch[i].renderable;
+	}
+}
+
+void CollectHudLayers(LayerStack* layerStack, std::vector<HUD::HUDLayer*>& outLayers) {
+	outLayers.clear();
+	if (!layerStack) {
+		return;
+	}
+
+	for (auto* layer : layerStack->GetLayers()) {
+		if (auto* hud = dynamic_cast<HUD::HUDLayer*>(layer)) {
+			outLayers.push_back(hud);
+		}
+	}
+}
 
 void InvalidateAllGlCaches() {
 	InvalidateCachedGlState();
@@ -504,24 +574,8 @@ void OpenGLRenderer::Render() {
 		m_transparentsSortDirty = false;
 	}
 
-	if (m.combinedTransparents.size() > 1) {
-		std::stable_sort(m.combinedTransparents.begin(), m.combinedTransparents.end(), [&](IRenderable* a, IRenderable* b) {
-			const int priority_a = a->GetTransparentSortPriority();
-			const int priority_b = b->GetTransparentSortPriority();
-			if (priority_a != priority_b) {
-				return priority_a < priority_b;
-			}
-
-			const float depthA = a->GetTransparentSortDepth(m_viewMatrix);
-			const float depthB = b->GetTransparentSortDepth(m_viewMatrix);
-			if (std::abs(depthA - depthB) > 1e-4f) {
-				// View-space: smaller Z is farther, so draw farther first for blending.
-				return depthA < depthB;
-			}
-			return a < b;
-		});
-
-	}
+	static thread_local std::vector<TransparentSortEntry> transparentSortScratch;
+	SortTransparentRenderables(m.combinedTransparents, m_viewMatrix, transparentSortScratch);
 
 	if (m_watersSortDirty) {
 		m.combinedWaters.clear();
@@ -534,22 +588,11 @@ void OpenGLRenderer::Render() {
 		m_watersSortDirty = false;
 	}
 
-	if (m.combinedWaters.size() > 1) {
-		std::stable_sort(m.combinedWaters.begin(), m.combinedWaters.end(), [&](IRenderable* a, IRenderable* b) {
-			const int priority_a = a->GetTransparentSortPriority();
-			const int priority_b = b->GetTransparentSortPriority();
-			if (priority_a != priority_b) {
-				return priority_a < priority_b;
-			}
+	static thread_local std::vector<TransparentSortEntry> waterSortScratch;
+	SortTransparentRenderables(m.combinedWaters, m_viewMatrix, waterSortScratch);
 
-			const float depthA = a->GetTransparentSortDepth(m_viewMatrix);
-			const float depthB = b->GetTransparentSortDepth(m_viewMatrix);
-			if (std::abs(depthA - depthB) > 1e-4f) {
-				return depthA < depthB;
-			}
-			return a < b;
-		});
-	}
+	static thread_local std::vector<HUD::HUDLayer*> hudLayers;
+	CollectHudLayers(m.layerStack, hudLayers);
 
 	OcclusionPass();
 	CHECK_GL();
@@ -581,20 +624,20 @@ void OpenGLRenderer::Render() {
 	InvalidateCachedGlState();
 
 	// Render non-HUD editor/game layers into a dedicated layer framebuffer
-	if (m.layerStack) {
-		for (auto* layer : m.layerStack->GetLayers()) {
-			if (auto* hud = dynamic_cast<HUD::HUDLayer*>(layer)) {
-				auto* fb = hud->GetFramebuffer();
-				if (fb) {
-					fb->bind();
-					glViewport(0, 0, fb->Width(), fb->Height());
-					glScissor(0, 0, fb->Width(), fb->Height());
-					glClearColor(0, 0, 0, 0);
-					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-					Framebuffer::unbind();
-				}
-			}
+	for (auto* hud : hudLayers) {
+		auto* fb = hud ? hud->GetFramebuffer() : nullptr;
+		if (!fb) {
+			continue;
 		}
+
+		fb->bind();
+		const int fbWidth = fb->Width();
+		const int fbHeight = fb->Height();
+		glViewport(0, 0, fbWidth, fbHeight);
+		glScissor(0, 0, fbWidth, fbHeight);
+		glClearColor(0, 0, 0, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		Framebuffer::unbind();
 	}
 
 	m_outputFramebuffer->bind();
@@ -611,7 +654,7 @@ void OpenGLRenderer::Render() {
 	}
 	Framebuffer::unbind();
 
-	HUDPass();
+	HUDPass(hudLayers);
 	InvalidateAllGlCaches();
 	CHECK_GL();    // Added missing semicolon
 
@@ -857,10 +900,10 @@ void OpenGLRenderer::Resize(glm::uvec2 size) {
 	CreateOrResizeWaterSceneCopyTexture(m.postProcessFramebuffer->Width(), m.postProcessFramebuffer->Height());
 
 	if (m.layerStack) {
-		for (auto* layer : m.layerStack->GetLayers()) {
-			if (auto* hudLayer = dynamic_cast<renderer::HUD::HUDLayer*>(layer)) {
-				hudLayer->Resize(width, height);
-			}
+		std::vector<HUD::HUDLayer*> hudLayers;
+		CollectHudLayers(m.layerStack, hudLayers);
+		for (auto* hudLayer : hudLayers) {
+			hudLayer->Resize(width, height);
 		}
 	}
 
@@ -1355,19 +1398,18 @@ GLuint OpenGLRenderer::GetShadowMapTexture() const {
 	return m.sdfTex;
 }
 
-void OpenGLRenderer::HUDPass() {
+void OpenGLRenderer::HUDPass(const std::vector<HUD::HUDLayer*>& hudLayers) {
 	PROFILE_ZONE;
 #ifdef TRACY_ENABLE
 	TracyGpuZone("HUD Pass");
 #endif
 
-	if (!m.layerStack) {
+	if (hudLayers.empty()) {
 		return;
 	}
 
 	bool anyHudDrawn = false;
-	for (auto* layer : m.layerStack->GetLayers()) {
-		auto* hud = dynamic_cast<HUD::HUDLayer*>(layer);
+	for (auto* hud : hudLayers) {
 		if (!hud || !hud->GetFramebuffer()) {
 			continue;
 		}

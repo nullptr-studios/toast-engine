@@ -82,7 +82,7 @@ public:
 	static Object::Children& GetChildren();
 
 	[[nodiscard]]
-	static auto GetTickables() -> const std::unordered_map<unsigned int, Scene*> {
+	static auto GetTickables() -> const std::vector<Scene*>& {
 		return Instance()->m.tickableScenes;
 	}
 
@@ -109,7 +109,10 @@ private:
 	struct {
 		Object::Children children;
 		std::unique_ptr<event::ListenerComponent> listener;
-		std::unordered_map<unsigned, Scene*> tickableScenes;
+		// Changed from unordered_map to vector for better cache locality during iteration
+		std::vector<Scene*> tickableScenes;
+		// Maintain a map for O(1) lookups when adding/removing scenes
+		std::unordered_map<unsigned, size_t> tickableScenesIndex;
 		std::unordered_map<unsigned, unsigned> sceneDestroyTimers;
 		ThreadPool* threadPool = nullptr;
 		bool simulateWorld = true;
