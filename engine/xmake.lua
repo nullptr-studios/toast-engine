@@ -1,34 +1,34 @@
 ---@diagnostic disable: undefined-field, undefined-global, param-type-mismatch
 add_requires("asio 1.36.0") -- networking
+add_requires("libsdl3 3.2.0") -- windowing + input
 
 target("toast.engine", function()
 	set_kind("shared")
 	add_includedirs(".", "src", "external", { public = false })
 	add_includedirs("include", { public = true })
-	add_defines("TOAST_EXPORT")
-	add_rpathdirs("$ORIGIN")
 
 	add_files("**.cpp")
 	add_headerfiles("src/(**.hpp)", { public = false, extra = { check = true } })
 	add_headerfiles("ffi/(**.h)", "include/toast/(**.hpp)", { prefixdir = "toast", extra = { check = true } })
 
-	-- External libraries go here -x
+	-- External libraries go here
 	add_packages("asio")
-	add_ldflags("-lstdc++exp", { tools = { "clang", "gcc" }, public = true }) -- adds library for stacktrace
+	add_packages("libsdl3")
 
-	-- Apply clang-format rule
-	add_rules("clang-format")
-	add_rules("sync-headers")
+    -- Compiler flags and defines
+	add_ldflags("-lstdc++exp", { tools = { "clang", "gcc" }, public = true }) -- passes flag for std::stacktrace
+    add_defines("TOAST_EXPORT")
+    add_rpathdirs("$ORIGIN")
 
-	if is_plat("linux") then
+    if is_plat("linux") then
 		add_syslinks("pthread")
 		add_shflags("-Wl,--no-as-needed")
 	end
+
+	-- Rules
+	add_rules("clang-format")
+	add_rules("sync-headers")
 end)
-
-
-
-
 
 -- Include Folder Generation
 rule("sync-headers")

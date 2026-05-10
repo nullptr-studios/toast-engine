@@ -11,6 +11,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
+#include <format>
 #include <string_view>
 
 /// @internal
