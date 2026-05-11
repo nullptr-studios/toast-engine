@@ -16,10 +16,10 @@ enum class WindowType : uint8_t {
 	avalonia = 1
 };
 
-class BaseWindow {
+class IBaseWindow {
 public:
-	BaseWindow();
-	virtual ~BaseWindow() = 0;
+	IBaseWindow() = default;
+	virtual ~IBaseWindow() = default;
 
 	// Functions
 	[[nodiscard]]
@@ -29,7 +29,8 @@ public:
 
 	// Variables
 
-private:
+protected:
+	WindowType type;
 };
 
 }

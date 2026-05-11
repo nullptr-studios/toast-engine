@@ -6,6 +6,7 @@ target("toast.engine", function()
 	set_kind("shared")
 	add_includedirs(".", "src", "external", { public = false })
 	add_includedirs("include", { public = true })
+	add_defines("TOAST_EXPORT")
 
 	add_files("**.cpp")
 	add_headerfiles("src/(**.hpp)", { public = false, extra = { check = true } })
@@ -14,7 +15,8 @@ target("toast.engine", function()
 
 	-- External libraries go here
 	add_packages("asio")
-	add_packages ("libsdl3")
+	add_packages("libsdl3")
+	-- add_packages("vulkansdk")
 
 	if not is_plat("windows") then
 		add_syslinks("stdc++exp")

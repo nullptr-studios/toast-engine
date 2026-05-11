@@ -14,35 +14,12 @@
 
 #include <SDL3/SDL.h>
 #include <memory>
-#include <string_view>
 
 namespace toast {
 
-class SDLWindow : public BaseWindow {
+class SDLWindow : public IBaseWindow {
 public:
-	SDLWindow(std::string_view title, unsigned width = 800, unsigned height = 600, int flags = 0) {
-		TOAST_ASSERT(SDL_Init(SDL_INIT_VIDEO) == 0, BaseWindow, "SDL cannot be initialized");
-
-		// subscribe window to events
-		m.event_listener.subscribe<event::ExitApplication>([this] { m.should_close = true; });
-		m.event_listener.subscribe<event::WindowClose>([this](const event::WindowClose& e) {
-			// check for the window ID first
-			if (e.window_id == SDL_GetWindowID(m.sdl_window.get())) {
-				m.should_close = true;
-				return true;
-			}
-
-			return false;
-		});
-
-		m = {
-		  .sdl_window = std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)>(
-		      SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_RESIZABLE), SDL_DestroyWindow
-		  ),
-		};
-
-		TOAST_ASSERT(m.sdl_window, BaseWindow, "SDL Window couldn't be created");
-	}
+	SDLWindow(const char* title, unsigned width = 1080, unsigned height = 720, int flags = 0);
 
 	// SDLWindow(std::string_view title, unsigned pos_x, unsigned pos_y, unsigned width, unsigned height, unsigned flags);
 	~SDLWindow() override = default;
@@ -52,6 +29,7 @@ public:
 	auto shouldClose() const -> bool override;
 
 	void pollEvents() override;
+	void swapFramebuffers() override;
 
 private:
 	struct {
@@ -59,7 +37,6 @@ private:
 		std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> sdl_window = {nullptr, SDL_DestroyWindow};
 		event::Listener event_listener;
 		bool should_close = false;
-		WindowType type = WindowType::sdl;
 	} m;
 };
 

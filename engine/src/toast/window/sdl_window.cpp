@@ -2,6 +2,32 @@
 
 namespace toast {
 
+SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, int flags) {
+	TOAST_ASSERT(SDL_Init(SDL_INIT_VIDEO) == 0, IBaseWindow, "SDL cannot be initialized");
+
+	type = WindowType::sdl;
+
+	// subscribe window to events
+	m.event_listener.subscribe<event::ExitApplication>([this] { m.should_close = true; });
+	m.event_listener.subscribe<event::WindowClose>([this](const event::WindowClose& e) {
+		// check for the window ID first
+		if (e.window_id == SDL_GetWindowID(m.sdl_window.get())) {
+			m.should_close = true;
+			return true;
+		}
+
+		return false;
+	});
+
+	m = {
+	  .sdl_window = std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)>(
+	      SDL_CreateWindow(title, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN), SDL_DestroyWindow
+	  ),
+	};
+
+	TOAST_ASSERT(m.sdl_window, IBaseWindow, "SDL Window couldn't be created");
+}
+
 auto SDLWindow::shouldClose() const -> bool {
 	return m.should_close;
 }
@@ -23,9 +49,10 @@ void SDLWindow::pollEvents() {
 				event::send<event::WindowClose>(event.window.windowID);
 				break;
 			}
-			default:
+			default: break;
 		}
 	}
 }
 
+void SDLWindow::swapFramebuffers() { }
 }

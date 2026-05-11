@@ -11,6 +11,8 @@ public class ToastEngine : IDisposable {
 		m_handle = toast_create();
 		if (m_handle == IntPtr.Zero)
 			throw new InvalidOperationException("Failed to create engine");
+			
+		toast_create_SDL_window("Hello from C#!!");
 	}
 
 	public void Tick() {
@@ -49,4 +51,7 @@ public class ToastEngine : IDisposable {
 
 	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
 	private static extern void toast_destroy(IntPtr engine);
+	
+	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
+    private static extern void toast_create_SDL_window(string windowName);
 }

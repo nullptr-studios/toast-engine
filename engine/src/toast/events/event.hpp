@@ -89,11 +89,6 @@ struct Event : _detail::IEvent {
 	using iterator_t = std::multimap<char, void*, std::greater<>>::iterator;
 
 private:
-	static inline struct Registrar {
-		Registrar();
-		bool registered = false;
-	} registrar;
-
 	/// @brief registers a callback to the event callbacks
 	/// @param priority higher number callbacks first
 	/// @param callback
@@ -115,35 +110,42 @@ struct TOAST_API EventSystem {
 		bool cached = false;
 	};
 
+	template<typename T>
+	static auto& singleton() {
+		static auto* value = new T();
+		return *value;
+	}
+
 	/// @brief callback map for each type of event
-	static std::unordered_map<std::type_index, EventInfo> event_data;
+	static auto& event_data() { return singleton<std::unordered_map<std::type_index, EventInfo>>(); }
 
 	/// @brief mutex for the event system pool
-	static std::mutex pool_mutex;
+	static auto& pool_mutex() { return singleton<std::mutex>(); }
 
 	/// @brief vtable for unsubscribing callbacks
-	static std::unordered_map<std::type_index, std::function<void(std::any)>> unsubscribe_map;
+	static auto& unsubscribe_map() { return singleton<std::unordered_map<std::type_index, std::function<void(std::any)>>>(); }
 
 	/// @brief callbacks will be cleaned up only before pollEvents
 	/// @note unique pointers have the option of storing a pointer to the function that deletes the object
 	/// so thats how i implement the deletion_queue
-	static std::vector<std::unique_ptr<void, void (*)(void*)>> deletion_queue;
+	static auto& deletion_queue() { return singleton<std::vector<std::unique_ptr<void, void (*)(void*)>>>(); }
 
 	template<typename T>
 	static void registerEvent() {
 		static_assert(std::is_base_of_v<Event<T>, T>, "CONTRACT VIOLATION: You Must Inhert as 'struct Derived : Event<Derived>'");
-		if (event_data.contains(typeid(T))) {
+		auto& data = event_data();
+		if (data.contains(typeid(T))) {
 			TOAST_INFO(_detail::IEvent, "Event type {} already registered (Windows Is Shit)", typeid(T).name());
 			return;
 		}
 		TOAST_INFO(_detail::IEvent, "Registering Event Type: {}", typeid(T).name());
-		event_data.emplace( // this is goofy because eventinfo has a mutex inside it
+		data.emplace( // this is goofy because eventinfo has a mutex inside it
 		    std::piecewise_construct,
 		    std::forward_as_tuple(typeid(T)),
 		    std::forward_as_tuple()
 		);
 
-		EventSystem::unsubscribe_map.emplace(typeid(T), [](const std::any& iter) {
+		unsubscribe_map().emplace(typeid(T), [](const std::any& iter) {
 			auto it = std::any_cast<typename Event<T>::iterator_t>(iter);
 			Event<T>::unsubscribe(it);
 		});

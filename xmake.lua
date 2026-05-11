@@ -1,7 +1,7 @@
 add_rules("mode.debug", "mode.release")
 set_defaultmode("debug")
 
-set_languages("c++latest")
+set_languages("c++23")
 
 rule("clang-format")
 before_build(function(target)
