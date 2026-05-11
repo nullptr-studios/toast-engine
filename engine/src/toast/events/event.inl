@@ -8,12 +8,17 @@
 namespace event {
 
 template<typename T>
-auto Event<T>::subscribe(char priority, callback_t&& callback) noexcept -> iterator_t {
+Event<T>::Registrar::Registrar() : registered(true) {
 	EventSystem::registerEvent<T>();
+}
+
+template<typename T>
+auto Event<T>::subscribe(char priority, callback_t&& callback) noexcept -> iterator_t {
+	(void)registrar.registered;
 	TOAST_TRACE(_detail::IEvent, "Subscribing Callback To: {}", typeid(T).name());
 
 	auto cb = new callback_t(std::move(callback));
-	auto& g = EventSystem::event_data()[typeid(T)];
+	auto& g = EventSystem::event_data[typeid(T)];
 	{
 		std::scoped_lock _(g.mutex);
 		g.cached = false;
@@ -23,14 +28,14 @@ auto Event<T>::subscribe(char priority, callback_t&& callback) noexcept -> itera
 
 template<typename T>
 void Event<T>::unsubscribe(iterator_t it) noexcept {
-	EventSystem::registerEvent<T>();
+	(void)registrar.registered;
 	TOAST_TRACE(_detail::IEvent, "Unsubscribing Callback To: {}", typeid(T).name());
 
-	auto& g = EventSystem::event_data()[typeid(T)];
+	auto& g = EventSystem::event_data[typeid(T)];
 	{
 		std::scoped_lock _(g.mutex);
 		auto deleter = [](void* p) { delete static_cast<std::move_only_function<bool(T&)>*>(p); };
-		EventSystem::deletion_queue().emplace_back((*it).second, deleter);
+		EventSystem::deletion_queue.emplace_back((*it).second, deleter);
 		g.cached = false;
 		g.callbacks.erase(it);
 	}
@@ -38,10 +43,10 @@ void Event<T>::unsubscribe(iterator_t it) noexcept {
 
 template<typename T>
 void Event<T>::notify() noexcept {
-	EventSystem::registerEvent<T>();
+	(void)registrar.registered;
 	TOAST_TRACE(_detail::IEvent, "Notifying Event: {}", typeid(T).name());
 
-	auto& g = EventSystem::event_data()[typeid(T)];
+	auto& g = EventSystem::event_data[typeid(T)];
 	{
 		// build cached list of all the callbacks in order
 		// locks mutex for the shortest period possible
@@ -72,7 +77,7 @@ void send(Args&&... args) noexcept {
 	TOAST_TRACE(_detail::IEvent, "Sending Event: {}", typeid(T).name());
 	// Allocate and enqueue event
 	{
-		std::scoped_lock _(EventSystem::pool_mutex());
+		std::scoped_lock _(EventSystem::pool_mutex);
 		void* memory = _detail::allocate(sizeof(T), alignof(T));
 		assert(memory);
 		_detail::IEvent* event = new (memory) T(std::forward<Args>(args)...);

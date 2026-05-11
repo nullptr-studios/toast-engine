@@ -14,7 +14,7 @@ Listener::Listener(bool state) {
 
 Listener::~Listener() {
 	for (auto& [type, name, callback] : m.callbacks) {
-		EventSystem::unsubscribe_map()[type](callback);
+		EventSystem::unsubscribe_map[type](callback);
 	}
 }
 
