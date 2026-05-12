@@ -55,7 +55,7 @@ private:
 		std::mutex queue_mutex;                    ///< Mutex protecting the job queue
 		std::condition_variable job_available;     ///< Notified when a job is enqueued or stop is requested
 		std::condition_variable all_done;          ///< Notified when activeJobs hits 0 and queue is empty
-		std::vector<std::jthread> workers;         ///< Worker threads (auto-join on destruction)
+		std::vector<std::thread> workers;         ///< Worker threads (auto-join on destruction)
 		std::queue<std::function<void()>> jobs;    ///< Pending job queue
 	} m;
 
