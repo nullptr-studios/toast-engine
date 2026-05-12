@@ -1,4 +1,4 @@
-name: clang-format
+name: ci-clang-format
 
 on:
   pull_request:
@@ -16,7 +16,7 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: clang-format-${{ github.event.pull_request.number }}
+  group: ci-clang-format-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -34,7 +34,26 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v30
 
-      - name: Run clang-format
+      - name: Run clang-format on engine/src and engine/ffi
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
-          bash ./tools/ci/clang_format.sh
+          
+          mapfile -t files < <(find engine/src engine/ffi \
+            -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" -o -name "*.inl" \) -print | sort)
+          
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No engine files matched formatting filters."
+            exit 0
+          fi
+          
+          for file in "${files[@]}"; do
+            clang-format -i --style=file:.clang-format "$file"
+          done
+          
+          if git diff --quiet -- "${files[@]}"; then
+            echo "Formatting check passed."
+            exit 0
+          fi
+          
+          echo "::error::Formatting changes detected. Run clang-format locally and push the results."
+          exit 1

@@ -1,0 +1,282 @@
+name: ci-build-windows
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-build-windows-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build-windows-msvc-debug:
+    name: build windows msvc debug
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build (Windows MSVC Debug)
+        run: |
+          cmake -B build/windows-msvc-debug -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
+          cmake --build build/windows-msvc-debug --config Debug
+
+  build-windows-msvc-release:
+    name: build windows msvc release
+    needs: build-windows-msvc-debug
+    if: github.base_ref == 'main'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build (Windows MSVC Release)
+        run: |
+          cmake -B build/windows-msvc-release -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
+          cmake --build build/windows-msvc-release --config Release
+
+  build-windows-gcc-debug:
+    name: build windows gcc debug
+    needs: build-windows-msvc-debug
+    if: github.base_ref == 'main'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Setup MinGW
+        uses: egor-tensin/setup-mingw@v2
+
+      - name: Build (Windows GCC Debug)
+        run: |
+          cmake -B build/windows-gcc-debug -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic
+          cmake --build build/windows-gcc-debug
+
+  build-windows-gcc-release:
+    name: build windows gcc release
+    needs: build-windows-msvc-debug
+    if: github.base_ref == 'main'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Setup MinGW
+        uses: egor-tensin/setup-mingw@v2
+
+      - name: Build (Windows GCC Release)
+        run: |
+          cmake -B build/windows-gcc-release -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic
+          cmake --build build/windows-gcc-release
+
+  build-windows-clang-debug:
+    name: build windows clang debug
+    needs: build-windows-msvc-debug
+    if: github.base_ref == 'main'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Setup Clang
+        uses: egor-tensin/setup-clang@v1
+
+      - name: Build (Windows Clang Debug)
+        run: |
+          cmake -B build/windows-clang-debug -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
+          cmake --build build/windows-clang-debug --config Debug
+
+  build-windows-clang-release:
+    name: build windows clang release
+    needs: build-windows-msvc-debug
+    if: github.base_ref == 'main'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Setup Clang
+        uses: egor-tensin/setup-clang@v1
+
+      - name: Build (Windows Clang Release)
+        run: |
+          cmake -B build/windows-clang-release -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
+          cmake --build build/windows-clang-release --config Release
+
+  test-windows-debug:
+    name: test windows all tests debug
+    needs: build-windows-msvc-debug
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Run tests (Windows Debug)
+        run: |
+          cmake -B build/windows-test-debug -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
+          cmake --build build/windows-test-debug --config Debug
+          ctest --build-config Debug --test-dir build/windows-test-debug --verbose
+
+  test-windows-release:
+    name: test windows all tests release
+    needs: build-windows-msvc-debug
+    if: github.base_ref == 'main'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Run tests (Windows Release)
+        run: |
+          cmake -B build/windows-test-release -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
+          cmake --build build/windows-test-release --config Release
+          ctest --build-config Release --test-dir build/windows-test-release --verbose
+
+
+
+
+
+
+
+
+
+

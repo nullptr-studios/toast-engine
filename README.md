@@ -19,15 +19,15 @@ Dependencies:
 - cargo (optional, for Rust tools)
 - dotnet 10 (optional, for player)
 
-Configure + build with presets (requires `VCPKG_ROOT` set):
+Configure + build with vcpkg toolchain (CI bootstraps vcpkg automatically):
 ```
-cmake --preset windows-msvc-debug
-cmake --build --preset windows-msvc-debug
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=<path-to-vcpkg>/scripts/buildsystems/vcpkg.cmake
+cmake --build build
 ```
 
 Run tests:
 ```
-ctest --preset windows-msvc-debug
+ctest --test-dir build
 ```
 
 To use this engine in a project, include it as a submodule and go to Get Started on the documentation
