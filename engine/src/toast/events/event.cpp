@@ -1,5 +1,6 @@
 #include "event.hpp"
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -35,8 +36,6 @@ auto allocate(std::size_t size, std::size_t align) noexcept -> void* {
 }
 
 void pollEvents() noexcept {
-	TOAST_INFO(_detail::IEvent, "Polling Events");
-
 	// delete callbacks
 	_detail::deletion_queue.clear();
 
