@@ -50,6 +50,9 @@
 				export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}:$LD_LIBRARY_PATH";
 				export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1;
 				echo "toast-engine environment loaded"
+				export VCPKG_FORCE_SYSTEM_BINARIES=1
+				export VCPKG_ROOT="${pkgs.vcpkg}/share/vcpkg"
+				export NIX_SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
 			'';
 		};
 	};
