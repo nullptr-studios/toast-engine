@@ -19,7 +19,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include <stacktrace>
+// TODO: #include <stacktrace>
 #include <toast/export.hpp>
 #include <type_traits>
 #include <typeindex>
@@ -41,7 +41,7 @@ struct TOAST_API IEvent {
 	virtual ~IEvent() = default;
 
 #ifdef DEBUG
-	std::stacktrace stacktrace;
+	// std::stacktrace stacktrace;
 #endif
 
 private:

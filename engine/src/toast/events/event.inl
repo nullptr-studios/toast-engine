@@ -79,7 +79,7 @@ void send(Args&&... args) noexcept {
 		assert(memory);
 		_detail::IEvent* event = new (memory) T(std::forward<Args>(args)...);
 #ifdef DEBUG
-		event->stacktrace = std::stacktrace::current(1);
+		// TODO: event->stacktrace = std::stacktrace::current(1);
 #endif
 	}
 }
