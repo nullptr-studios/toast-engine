@@ -10,6 +10,7 @@
 #include <any>
 #include <cassert>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <typeindex>
 #include <vector>
@@ -49,12 +50,15 @@ class TOAST_API Listener {
 
 public:
 	Listener();
+
+	Listener(bool state);
+
 	~Listener();
 
 	/// @brief unsubscribes every event in type TEvent with that name
 	/// @param name event callback name/s to remove
 	template<typename TEvent>
-	void unsubscribe(std::string name) noexcept;
+	void unsubscribe(std::string_view name) noexcept;
 
 	/// @brief subscribes a callback to an TEvent
 	/// @param name of the callback

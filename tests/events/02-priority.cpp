@@ -1,10 +1,12 @@
 #include "toast/events/event.hpp"
 #include "toast/events/listener.hpp"
 
+#include "test_registry.hpp"
+
 #include <cassert>
 #include <vector>
 
-auto main() -> int {
+TOAST_TEST_NAMED("events", "events/02-priority", test_events_02_priority) {
 	struct PriorityEvent : event::Event<PriorityEvent> { };
 
 	event::Listener listener;
@@ -23,6 +25,4 @@ auto main() -> int {
 	assert(order[0] == 3);
 	assert(order[1] == 1);
 	assert(order[2] == 2);
-
-	return 0;
 }

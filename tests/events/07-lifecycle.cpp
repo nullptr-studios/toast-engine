@@ -1,11 +1,13 @@
 #include "toast/events/event.hpp"
 #include "toast/events/listener.hpp"
 
+#include "test_registry.hpp"
+
 #include <cassert>
 
 struct LifecycleEvent : event::Event<LifecycleEvent> { };
 
-auto main() -> int {
+TOAST_TEST_NAMED("events", "events/07-lifecycle", test_events_07_lifecycle) {
 	int called = 0;
 
 	{
@@ -20,6 +22,4 @@ auto main() -> int {
 	event::send<LifecycleEvent>();
 	event::pollEvents();
 	assert(called == 1);    // should still be 1 if it unsubscribed correctly
-
-	return 0;
 }

@@ -94,7 +94,7 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 #if defined(_WIN32)
 				// On Windows, 'start /B' runs the command in the background without opening a new window
 				// For output redirection, we need to wrap it in 'cmd /C'
-				if (SHOW_SERVER_LOGS) {
+				if (show_server_logs) {
 					cmd = "start /B " + server_path.string();
 				} else {
 					cmd = "start /B cmd /C \"" + server_path.string() + " >nul 2>&1\"";
@@ -134,20 +134,28 @@ Logger::~Logger() noexcept {
 void Logger::log(std::string_view file, unsigned line, char severity, std::string_view sink, std::string_view message) {
 	auto* logger = instance;
 
+	auto pos = sink.find_last_of(':');
+	std::string_view trimmed_sink;
+	if (pos != std::string::npos) {
+		trimmed_sink = sink.substr(pos + 1);
+	} else {
+		trimmed_sink = sink;
+	}
+
 	if (not logger) {
 		switch (severity) {
 			case 4:     // critical
 			case 3:     // error
-				std::println("\033[31m[ERROR] {}: {}\033[0m", sink, message);
+				std::println("\033[31m[ERROR] {}: {}\033[0m", trimmed_sink, message);
 				return;
 			case 2:     // warning
-				std::println("\033[33m[WARNING] {}: {}\033[0m", sink, message);
+				std::println("\033[33m[WARNING] {}: {}\033[0m", trimmed_sink, message);
 				return;
 			case 1:     // info
-				std::println("\033[32m[INFO] {}: {}\033[0m", sink, message);
+				std::println("\033[32m[INFO] {}: {}\033[0m", trimmed_sink, message);
 				return;
 			default:    // trace
-				std::println("[TRACE] {}: {}", sink, message);
+				std::println("[TRACE] {}: {}", trimmed_sink, message);
 				return;
 		}
 	}
@@ -159,7 +167,7 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 	log.set_filepath(file);
 	log.set_line_number(line);
 	log.set_severity(static_cast<logging::LogData_Severity>(severity));
-	log.set_sink(sink);
+	log.set_sink(trimmed_sink);
 	log.set_message(message);
 
 	{
@@ -176,9 +184,9 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 #ifdef DEBUG
 	// If in debug we are going to print warnings and errors on console
 	if (severity >= 3) {
-		std::println("\033[31m[ERROR] {}: {}\033[0m", sink, message);
+		std::println("\033[31m[ERROR] {}: {}\033[0m", trimmed_sink, message);
 	} else if (severity == 2) {
-		std::println("\033[33m[WARNING] {}: {}\033[0m", sink, message);
+		std::println("\033[33m[WARNING] {}: {}\033[0m", trimmed_sink, message);
 	}
 #endif
 }

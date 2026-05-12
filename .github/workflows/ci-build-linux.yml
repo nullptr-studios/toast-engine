@@ -1,0 +1,430 @@
+name: ci-build-linux
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-build-linux-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build-linux-gcc-debug:
+    name: build linux gcc debug
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build (Linux GCC Debug)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-gcc-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-gcc-debug
+
+  build-linux-gcc-release:
+    name: build linux gcc release
+    needs: build-linux-gcc-debug
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build (Linux GCC Release)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-gcc-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-gcc-release
+
+  build-linux-clang-debug:
+    name: build linux clang debug
+    needs: build-linux-gcc-debug
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build (Linux Clang Debug)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-clang-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-clang-debug
+
+  build-linux-clang-release:
+    name: build linux clang release
+    needs: build-linux-gcc-debug
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build (Linux Clang Release)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-clang-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-clang-release
+
+  test-linux-debug:
+    name: test linux all tests debug
+    needs: build-linux-gcc-debug
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Run tests (Linux Debug)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-test-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-test-debug
+          ctest --test-dir build/linux-test-debug --verbose
+
+  test-linux-release:
+    name: test linux all tests release
+    needs: build-linux-gcc-debug
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Run tests (Linux Release)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-test-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-test-release
+          ctest --test-dir build/linux-test-release --verbose
+
+  build-editor-linux-debug:
+    name: build editor linux debug
+    needs: build-linux-gcc-debug
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build editor (Linux Debug)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-tools-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-tools-debug --target editor
+
+  build-editor-linux-release:
+    name: build editor linux release
+    needs: build-linux-gcc-debug
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build editor (Linux Release)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-tools-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-tools-release --target editor
+
+  build-player-linux-debug:
+    name: build player linux debug
+    needs: build-linux-gcc-debug
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build player (Linux Debug)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-tools-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-tools-debug --target player
+
+  build-player-linux-release:
+    name: build player linux release
+    needs: build-linux-gcc-debug
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build player (Linux Release)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-tools-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-tools-release --target player
+
+  build-log_server-linux-debug:
+    name: build log_server linux debug
+    needs: build-linux-gcc-debug
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build log_server (Linux Debug)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-tools-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-tools-debug --target log_server
+
+  build-log_server-linux-release:
+    name: build log_server linux release
+    needs: build-linux-gcc-debug
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build log_server (Linux Release)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-tools-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-tools-release --target log_server
+
+  build-kenzo-linux-debug:
+    name: build kenzo linux debug
+    needs: build-linux-gcc-debug
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build kenzo (Linux Debug)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-tools-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-tools-debug --target kenzo
+
+  build-kenzo-linux-release:
+    name: build kenzo linux release
+    needs: build-linux-gcc-debug
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build kenzo (Linux Release)
+        run: |
+          eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          cmake -B build/linux-tools-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cmake --build build/linux-tools-release --target kenzo
+
+
+
+
+
+
+
+

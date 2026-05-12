@@ -1,5 +1,6 @@
 #include "event.hpp"
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -10,6 +11,11 @@
 #include <vector>
 
 namespace event {
+
+std::unordered_map<std::type_index, EventSystem::EventInfo> EventSystem::event_data;
+std::mutex EventSystem::pool_mutex;
+std::unordered_map<std::type_index, std::function<void(std::any)>> EventSystem::unsubscribe_map;
+std::vector<std::unique_ptr<void, void (*)(void*)>> EventSystem::deletion_queue;
 
 namespace {
 struct Pool {
@@ -35,15 +41,13 @@ auto allocate(std::size_t size, std::size_t align) noexcept -> void* {
 }
 
 void pollEvents() noexcept {
-	TOAST_INFO(_detail::IEvent, "Polling Events");
-
 	// delete callbacks
-	_detail::deletion_queue.clear();
+	EventSystem::deletion_queue.clear();
 
 	// swap memory pool
 	uint32_t idx;
 	{
-		std::scoped_lock _(_detail::mutex);
+		std::scoped_lock _(EventSystem::pool_mutex);
 		idx = index;
 		index = (index + 1) % pools.size();
 	}

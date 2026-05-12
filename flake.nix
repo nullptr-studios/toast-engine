@@ -21,12 +21,14 @@
 	{
 		devShells.${system}.default = pkgs.mkShell {
 			nativeBuildInputs = with pkgs; [
-				xmake
+				cmake
+				ninja
 				gdb
 				valgrind
 				rustup
 				protobuf
 				pkg-config
+				vcpkg
 				dotnet-sdk
 				clang-tools
 				rust-analyzer

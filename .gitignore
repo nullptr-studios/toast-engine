@@ -1,6 +1,5 @@
 # Cache files
 .cache/
-.xmake/
 logs/
 .DS_Store
 
@@ -14,10 +13,12 @@ logs/
 **[Bb]in**
 **[Oo]bj**
 **[Tt]arget**
+[Oo]ut
 engine/include/
+vcpkg_installed/
 
 compile_commands.json
-CMakeLists.txt
+CMakeUserPresets.json
 **.sln
 vsxmake**/
 vs**/
