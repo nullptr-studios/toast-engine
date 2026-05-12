@@ -1,6 +1,6 @@
 /**
  * @file sdl_window.hpp
- * @author Xein
+ * @author Xein & Dario
  * @date 5/7/2026
  *
  * @brief TODO: Brief description of the file's purpose

@@ -20,3 +20,6 @@ add_custom_target(editor ALL
         COMMENT "[dotnet] Building ${CSHARP_ASSEMBLY_NAME} (${DOTNET_CONFIG})..."
         VERBATIM
 )
+
+add_dependencies(editor toast_engine)
+add_dependencies(editor dummy_game)

@@ -1,6 +1,7 @@
 #include "engine.hpp"
 
 #include "application.hpp"
+#include "events/event.hpp"
 #include "ffi/engine.h"    // ffi
 #include "logger.hpp"
 #include "thread_pool.hpp"
@@ -43,6 +44,14 @@ auto Engine::get() noexcept -> Engine* {
 }
 
 void Engine::tick() {
+	// Poll window events
+	if (m->window) {
+		m->window->pollEvents();
+	}
+
+	event::pollEvents();
+
+	// Run application logic
 	if (active_application) {
 		active_application->tick();
 	}
