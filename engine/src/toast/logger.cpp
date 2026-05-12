@@ -94,7 +94,7 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 #if defined(_WIN32)
 				// On Windows, 'start /B' runs the command in the background without opening a new window
 				// For output redirection, we need to wrap it in 'cmd /C'
-				if (SHOW_SERVER_LOGS) {
+				if (show_server_logs) {
 					cmd = "start /B " + server_path.string();
 				} else {
 					cmd = "start /B cmd /C \"" + server_path.string() + " >nul 2>&1\"";
