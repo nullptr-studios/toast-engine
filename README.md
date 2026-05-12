@@ -13,17 +13,21 @@ Credits:
 ## Building
 
 Dependencies:
-- xmake
-- cargo
-- dotnet
+- cmake 3.25+
+- ninja
+- vcpkg (manifest mode)
+- cargo (optional, for Rust tools)
+- dotnet 10 (optional, for player)
 
+Configure + build with vcpkg toolchain (CI bootstraps vcpkg automatically):
 ```
-xmake run toast.editor
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=<path-to-vcpkg>/scripts/buildsystems/vcpkg.cmake
+cmake --build build
 ```
 
-Generating documentation can be done by simply
+Run tests:
 ```
-xmake documentation
+ctest --test-dir build
 ```
 
 To use this engine in a project, include it as a submodule and go to Get Started on the documentation

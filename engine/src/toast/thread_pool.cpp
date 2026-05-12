@@ -1,5 +1,7 @@
 #include "thread_pool.hpp"
 
+#include "log.hpp"
+
 namespace toast {
 
 ThreadPool::ThreadPool(size_t size) {
@@ -13,7 +15,7 @@ ThreadPool::ThreadPool(size_t size) {
 	for (size_t i = 0; i < target_thread_num; ++i) {
 		m.workers.emplace_back(&ThreadPool::threadLoop, this);
 	}
-	// TODO: TOAST_TRACE("Created thread pool with {0} workers", target_thread_num);
+	TOAST_INFO("ThreadPool", "Created thread pool with {0} workers", target_thread_num);
 }
 
 void ThreadPool::queueJob(std::function<void()>&& job) {
@@ -34,8 +36,14 @@ void ThreadPool::destroy() {
 	}
 
 	m.job_available.notify_all();
+	for (auto& worker : m.workers) {
+		if (worker.joinable()) {
+			worker.join();
+		}
+	}
+
 	m.workers.clear();
-	// TODO: TOAST_TRACE("Destroyed thread pool");
+	TOAST_INFO("ThreadPool", "Destroyed thread pool");
 }
 
 auto ThreadPool::busy() -> bool {

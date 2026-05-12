@@ -17,7 +17,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include <stacktrace>
+// TODO: #include <stacktrace>
 #include <toast/export.hpp>
 #include <type_traits>
 #include <typeindex>
@@ -37,7 +37,7 @@ struct TOAST_API IEvent {
 	virtual ~IEvent() = default;
 
 #ifdef DEBUG
-	std::stacktrace stacktrace;
+	// std::stacktrace stacktrace;
 #endif
 
 private:
@@ -131,10 +131,10 @@ struct TOAST_API EventSystem {
 	static void registerEvent() {
 		static_assert(std::is_base_of_v<Event<T>, T>, "CONTRACT VIOLATION: You Must Inhert as 'struct Derived : Event<Derived>'");
 		if (event_data.contains(typeid(T))) {
-			TOAST_INFO(_detail::IEvent, "Event type {} already registered (Windows Is Shit)", typeid(T).name());
+			TOAST_INFO("Events", "Event type {} already registered (Windows Is Shit)", typeid(T).name());
 			return;
 		}
-		TOAST_INFO(_detail::IEvent, "Registering Event Type: {}", typeid(T).name());
+		TOAST_INFO("Events", "Registering Event Type: {}", typeid(T).name());
 		event_data.emplace( // this is goofy because eventinfo has a mutex inside it
 		    std::piecewise_construct,
 		    std::forward_as_tuple(typeid(T)),

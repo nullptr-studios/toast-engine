@@ -1,4 +1,4 @@
-name: clang-tidy
+name: ci-clang-tidy
 
 on:
   pull_request:
@@ -16,7 +16,7 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: clang-tidy-${{ github.event.pull_request.number }}
+  group: ci-clang-tidy-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -34,12 +34,17 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v30
 
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
       - name: Generate compile_commands
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
-          xmake project -k compile_commands -y
+          cmake -B build/clang-tidy -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+          cp build/clang-tidy/compile_commands.json .
 
-      - name: Run clang-tidy
+      - name: Run clang-tidy on engine/src
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
           bash ./tools/ci/clang_tidy.sh

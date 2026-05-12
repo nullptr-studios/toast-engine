@@ -12,6 +12,7 @@ namespace toast {
 class IApplication {
 public:
 	virtual ~IApplication() = default;
+
 	virtual void begin() = 0;
 	virtual void tick() = 0;
 	virtual void destroy() = 0;

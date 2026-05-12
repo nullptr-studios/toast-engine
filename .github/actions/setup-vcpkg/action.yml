@@ -1,0 +1,46 @@
+name: setup-vcpkg
+
+description: Bootstrap vcpkg and expose the toolchain file path
+
+outputs:
+  root:
+    description: Path to the vcpkg root
+    value: ${{ steps.vars.outputs.root }}
+  toolchain-file:
+    description: Path to the vcpkg CMake toolchain file
+    value: ${{ steps.vars.outputs.toolchain_file }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set vcpkg paths
+      id: vars
+      shell: bash
+      run: |
+        set -euo pipefail
+        root="${GITHUB_WORKSPACE}/vcpkg"
+        echo "root=${root}" >> "${GITHUB_OUTPUT}"
+        echo "toolchain_file=${root}/scripts/buildsystems/vcpkg.cmake" >> "${GITHUB_OUTPUT}"
+
+    - name: Clone vcpkg
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ ! -d "${GITHUB_WORKSPACE}/vcpkg/.git" ]]; then
+          git clone https://github.com/microsoft/vcpkg "${GITHUB_WORKSPACE}/vcpkg"
+        fi
+
+    - name: Bootstrap vcpkg (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        & "${env:GITHUB_WORKSPACE}\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
+
+    - name: Bootstrap vcpkg (Unix)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        set -euo pipefail
+        "${GITHUB_WORKSPACE}/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
+

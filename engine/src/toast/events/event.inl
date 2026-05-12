@@ -15,7 +15,6 @@ Event<T>::Registrar::Registrar() : registered(true) {
 template<typename T>
 auto Event<T>::subscribe(char priority, callback_t&& callback) noexcept -> iterator_t {
 	(void)registrar.registered;
-	TOAST_TRACE(_detail::IEvent, "Subscribing Callback To: {}", typeid(T).name());
 
 	auto cb = new callback_t(std::move(callback));
 	auto& g = EventSystem::event_data[typeid(T)];
@@ -29,7 +28,6 @@ auto Event<T>::subscribe(char priority, callback_t&& callback) noexcept -> itera
 template<typename T>
 void Event<T>::unsubscribe(iterator_t it) noexcept {
 	(void)registrar.registered;
-	TOAST_TRACE(_detail::IEvent, "Unsubscribing Callback To: {}", typeid(T).name());
 
 	auto& g = EventSystem::event_data[typeid(T)];
 	{
@@ -44,7 +42,6 @@ void Event<T>::unsubscribe(iterator_t it) noexcept {
 template<typename T>
 void Event<T>::notify() noexcept {
 	(void)registrar.registered;
-	TOAST_TRACE(_detail::IEvent, "Notifying Event: {}", typeid(T).name());
 
 	auto& g = EventSystem::event_data[typeid(T)];
 	{
@@ -74,7 +71,7 @@ template<typename T, typename... Args>
   requires std::is_base_of_v<_detail::IEvent, T>
 void send(Args&&... args) noexcept {
 	static_assert(std::is_constructible_v<T, Args...>, "Invalid Construtor For Type T");
-	TOAST_TRACE(_detail::IEvent, "Sending Event: {}", typeid(T).name());
+	TOAST_INFO("Events", "Sending Event: {}", typeid(T).name());
 	// Allocate and enqueue event
 	{
 		std::scoped_lock _(EventSystem::pool_mutex);
@@ -82,7 +79,7 @@ void send(Args&&... args) noexcept {
 		assert(memory);
 		_detail::IEvent* event = new (memory) T(std::forward<Args>(args)...);
 #ifdef DEBUG
-		event->stacktrace = std::stacktrace::current(1);
+		// TODO: event->stacktrace = std::stacktrace::current(1);
 #endif
 	}
 }
