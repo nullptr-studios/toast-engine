@@ -87,10 +87,7 @@ struct Event : _detail::IEvent {
 	using iterator_t = std::multimap<char, void*, std::greater<>>::iterator;
 
 private:
-	static inline struct Registrar {
-		Registrar();
-		bool registered = false;
-	} registrar;
+	static void ensureRegistered() noexcept;
 
 	/// @brief registers a callback to the event callbacks
 	/// @param priority higher number callbacks first

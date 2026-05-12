@@ -3,7 +3,7 @@
 namespace toast {
 
 SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, int flags) {
-	TOAST_ASSERT(SDL_Init(SDL_INIT_VIDEO) == 0, "Window", "SDL cannot be initialized");
+	TOAST_ASSERT(SDL_Init(SDL_INIT_VIDEO) == true, "Window", "SDL cannot be initialized");
 
 	type = WindowType::sdl;
 
@@ -21,11 +21,11 @@ SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, int fla
 
 	m = {
 	  .sdl_window = std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)>(
-	      SDL_CreateWindow(title, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN), SDL_DestroyWindow
+	      SDL_CreateWindow(title, width, height, SDL_WINDOW_RESIZABLE), SDL_DestroyWindow
 	  ),
 	};
 
-	TOAST_ASSERT(m.sdl_window, "Window", "SDL Window couldn't be created");
+	// TOAST_ASSERT(m.sdl_window, "Window", "SDL Window couldn't be created");
 }
 
 auto SDLWindow::shouldClose() const -> bool {
