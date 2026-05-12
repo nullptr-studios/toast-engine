@@ -1,6 +1,8 @@
 #include "toast/events/event.hpp"
 #include "toast/events/listener.hpp"
 
+#include "test_registry.hpp"
+
 #include <atomic>
 #include <cassert>
 #include <thread>
@@ -8,7 +10,7 @@
 
 struct CountEvent : event::Event<CountEvent> { };
 
-auto main() -> int {
+TOAST_TEST_NAMED("events", "events/10-concurrent_send", test_events_10_concurrent_send) {
 	event::Listener listener;
 	std::atomic<int> counter {0};
 
@@ -38,6 +40,4 @@ auto main() -> int {
 	event::pollEvents();
 
 	assert(counter == num_threads * events_per_thread);
-
-	return 0;
 }

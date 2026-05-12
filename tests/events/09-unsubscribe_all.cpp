@@ -1,11 +1,13 @@
 #include "toast/events/event.hpp"
 #include "toast/events/listener.hpp"
 
+#include "test_registry.hpp"
+
 #include <cassert>
 
 struct UnsubEvent : event::Event<UnsubEvent> { };
 
-auto main() -> int {
+TOAST_TEST_NAMED("events", "events/09-unsubscribe_all", test_events_09_unsubscribe_all) {
 	event::Listener listener;
 	int called = 0;
 
@@ -18,6 +20,4 @@ auto main() -> int {
 	event::pollEvents();
 
 	assert(called == 0);
-
-	return 0;
 }

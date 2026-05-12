@@ -7,7 +7,7 @@
 namespace event {
 
 template<typename TEvent>
-void Listener::unsubscribe(std::string name) noexcept {
+void Listener::unsubscribe(std::string_view name) noexcept {
 	TOAST_TRACE("Events", "Unsubscribing Callback {} to {}", name, typeid(TEvent).name());
 	std::erase_if(m.callbacks, [&](auto& callback) {
 		auto& [type, sub_name, any] = callback;

@@ -1,4 +1,4 @@
-name: branch_rules
+name: branch-rules
 
 on:
   pull_request:

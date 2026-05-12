@@ -8,9 +8,13 @@ Listener::Listener() {
 	m.enabled = true;
 }
 
+Listener::Listener(bool state) {
+	m.enabled = state;
+}
+
 Listener::~Listener() {
 	for (auto& [type, name, callback] : m.callbacks) {
-		_detail::unsubscribe_map[type](callback);
+		EventSystem::unsubscribe_map[type](callback);
 	}
 }
 
@@ -22,4 +26,5 @@ void Listener::enabled(bool state) {
 auto Listener::enabled() const -> bool {
 	return m.enabled;
 }
+
 }

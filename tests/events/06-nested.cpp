@@ -1,13 +1,15 @@
 #include "toast/events/event.hpp"
 #include "toast/events/listener.hpp"
 
+#include "test_registry.hpp"
+
 #include <cassert>
 
 struct EventA : event::Event<EventA> { };
 
 struct EventB : event::Event<EventB> { };
 
-auto main() -> int {
+TOAST_TEST_NAMED("events", "events/06-nested", test_events_06_nested) {
 	event::Listener listener;
 	bool b_called = false;
 
@@ -21,6 +23,4 @@ auto main() -> int {
 
 	event::pollEvents();    // Dispatches event_b
 	assert(b_called);
-
-	return 0;
 }
