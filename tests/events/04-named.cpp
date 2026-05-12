@@ -1,12 +1,13 @@
 #include "toast/events/event.hpp"
 #include "toast/events/listener.hpp"
 
+#include "test_registry.hpp"
+
 #include <cassert>
-#include <string>
 
 struct NamedEvent : event::Event<NamedEvent> { };
 
-auto main() -> int {
+TOAST_TEST_NAMED("events", "events/04-named", test_events_04_named) {
 	event::Listener listener;
 	int called = 0;
 
@@ -21,6 +22,4 @@ auto main() -> int {
 	event::send<NamedEvent>();
 	event::pollEvents();
 	assert(called == 1);    // Should still be 1 because it's unsubscribed
-
-	return 0;
 }

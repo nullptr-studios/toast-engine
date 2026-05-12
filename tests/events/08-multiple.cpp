@@ -1,13 +1,14 @@
 #include "toast/events/event.hpp"
 #include "toast/events/listener.hpp"
 
+#include "test_registry.hpp"
+
 #include <cassert>
 
 struct EventOne : event::Event<EventOne> { };
-
 struct EventTwo : event::Event<EventTwo> { };
 
-auto main() -> int {
+TOAST_TEST_NAMED("events", "events/08-multiple", test_events_08_multiple) {
 	event::Listener listener_a;
 	event::Listener listener_b;
 	int a_calls = 0;
@@ -22,6 +23,4 @@ auto main() -> int {
 
 	assert(a_calls == 1);
 	assert(b_calls == 1);
-
-	return 0;
 }

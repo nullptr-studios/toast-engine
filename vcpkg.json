@@ -1,0 +1,12 @@
+{
+  "name" : "engine",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "082b32b6c5de20fd01f61dfaa9856fcba849e73e",
+  "dependencies" : [ {
+    "name" : "asio",
+    "version>=" : "1.32.0"
+  }, {
+    "name" : "sdl3",
+    "version>=" : "3.4.8"
+  } ]
+}

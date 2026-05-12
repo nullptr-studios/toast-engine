@@ -13,17 +13,21 @@ Credits:
 ## Building
 
 Dependencies:
-- xmake
-- cargo
-- dotnet
+- cmake 3.25+
+- ninja
+- vcpkg (manifest mode)
+- cargo (optional, for Rust tools)
+- dotnet 10 (optional, for player)
 
+Configure + build with presets (requires `VCPKG_ROOT` set):
 ```
-xmake run toast.editor
+cmake --preset windows-msvc-debug
+cmake --build --preset windows-msvc-debug
 ```
 
-Generating documentation can be done by simply
+Run tests:
 ```
-xmake documentation
+ctest --preset windows-msvc-debug
 ```
 
 To use this engine in a project, include it as a submodule and go to Get Started on the documentation

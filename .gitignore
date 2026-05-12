@@ -15,9 +15,10 @@ logs/
 **[Oo]bj**
 **[Tt]arget**
 engine/include/
+vcpkg_installed/
 
 compile_commands.json
-CMakeLists.txt
+CMakeUserPresets.json
 **.sln
 vsxmake**/
 vs**/
