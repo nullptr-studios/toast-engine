@@ -30,11 +30,9 @@ void TOAST_API
 
 #define TOAST_FILE_NAME ::logging::_detail::getOnlyName(__FILE__)
 
-#define TOAST_LOG_IMPL(severity, sink, ...)                                                        \
-	do {                                                                                             \
-		/* The sink must be a valid type or name in scope; this prevents typos in system names */      \
-		using _validate_type = sink;                                                                   \
-		::logging::_detail::log(severity, TOAST_FILE_NAME, __LINE__, #sink, std::format(__VA_ARGS__)); \
+#define TOAST_LOG_IMPL(severity, sink, ...)                                                       \
+	do {                                                                                            \
+		::logging::_detail::log(severity, TOAST_FILE_NAME, __LINE__, sink, std::format(__VA_ARGS__)); \
 	} while (0)
 
 /**

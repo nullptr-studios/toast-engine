@@ -1,6 +1,5 @@
 # Cache files
 .cache/
-.xmake/
 logs/
 .DS_Store
 
@@ -14,6 +13,7 @@ logs/
 **[Bb]in**
 **[Oo]bj**
 **[Tt]arget**
+[Oo]ut
 engine/include/
 vcpkg_installed/
 

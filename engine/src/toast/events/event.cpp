@@ -41,8 +41,6 @@ auto allocate(std::size_t size, std::size_t align) noexcept -> void* {
 }
 
 void pollEvents() noexcept {
-	TOAST_INFO(_detail::IEvent, "Polling Events");
-
 	// delete callbacks
 	EventSystem::deletion_queue.clear();
 
