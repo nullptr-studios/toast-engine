@@ -50,4 +50,7 @@ public class ToastEngine : IDisposable {
 
 	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
 	private static extern void toast_destroy(IntPtr engine);
+	
+	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
+    private static extern void toast_create_SDL_window(string windowName);
 }

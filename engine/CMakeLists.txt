@@ -38,3 +38,5 @@ add_custom_target(sync_api_headers
 )
 add_dependencies(sync_api_headers clang_format)
 add_dependencies(toast_engine sync_api_headers)
+add_dependencies(toast_engine log_server)
+
