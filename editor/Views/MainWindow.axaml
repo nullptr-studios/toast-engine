@@ -10,11 +10,61 @@
         Title="editor">
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Toast">
+                <MenuItem Header="_New project"/>
+                <MenuItem Header="_Open project"/>
+                <MenuItem Header="_Close project"/>
+                <Separator/>
+                <MenuItem Header="_Project settings"/>
+                <MenuItem Header="_Toast settings"/>
+                <Separator/>
+                <MenuItem Header="_Quit Toast"/>
+            </MenuItem>
+            <MenuItem Header="_File">
+                <MenuItem Header="_New node"/>
+                <MenuItem Header="_Open node"/>
+                <MenuItem Header="_Close node"/>
+                <Separator/>
+                <MenuItem Header="_Save"/>
+                <MenuItem Header="Save _all"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo"/>
+                <MenuItem Header="_Redo"/>
+                <Separator/>
+                <MenuItem Header="Cu_t"/>
+                <MenuItem Header="_Copy"/>
+                <MenuItem Header="_Paste"/>
+                <MenuItem Header="_Delete"/>
+                <Separator/>
+                <MenuItem Header="Select _All"/>
+                <MenuItem Header="_Find"/>
+            </MenuItem>
+            <MenuItem Header="_Run">
+                <MenuItem Header="_Run"/>
+                <MenuItem Header="Run _This"/>
+                <Separator/>
+                <MenuItem Header="_Build"/>
+                <MenuItem Header="Build _settings"/>
+                <MenuItem Header="_Open build folder"/>
+            </MenuItem>
+            <MenuItem Header="_View"></MenuItem>
+            <MenuItem Header="_Window">
+                <MenuItem Header="_Logs" ToggleType="CheckBox"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_Documentation"/>
+                <MenuItem Header="Github _repository"/>
+                <MenuItem Header="Github _project"/>
+                <MenuItem Header="_About"/>
+            </MenuItem>
+        </Menu>
+        <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </DockPanel>
 
 </Window>
