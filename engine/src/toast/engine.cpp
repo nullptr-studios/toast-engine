@@ -46,9 +46,11 @@ auto Engine::get() noexcept -> Engine* {
 void Engine::tick() {
 	// Poll window events
 #if DEBUG
-	if (m->window) m->window->pollEvents();
+	if (m->window) {
+		m->window->pollEvents();
+	}
 #else
-    m->window->pollEvents();
+	m->window->pollEvents();
 #endif
 
 	event::pollEvents();
