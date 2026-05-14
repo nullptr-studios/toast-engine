@@ -17,13 +17,20 @@
 			zlib
 			stdenv.cc.cc.lib
 		];
+
+		cmake-gen = pkgs.writeShellScriptBin "cmake-gen" ''
+			exec cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=${pkgs.vcpkg}/share/vcpkg/scripts/buildsystems/vcpkg.cmake "$@"
+		'';
+
+		cmake-build = pkgs.writeShellScriptBin "cmake-build" ''
+			exec cmake --build build "$@"
+		'';
 	in
 	{
 		devShells.${system}.default = pkgs.mkShell {
 			nativeBuildInputs = with pkgs; [
 				cmake
 				ninja
-				gdb
 				valgrind
 				rustup
 				protobuf
@@ -34,7 +41,10 @@
 				rust-analyzer
 				buf
 				roslyn-ls
+				gdb
 				lldb
+				cmake-gen
+				cmake-build
 			];
 
 			buildInputs = with pkgs; [
