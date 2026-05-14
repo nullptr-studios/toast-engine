@@ -1,5 +1,6 @@
 syntax = "proto3";
 package logging;
+option csharp_namespace = "proto.logging";
 
 message LogData {
   enum Severity {
