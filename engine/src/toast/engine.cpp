@@ -61,8 +61,8 @@ auto Engine::shouldClose() -> bool {
 	return false;
 }
 
-void Engine::createSDLWindow(const char* wName) {
-	m->window = std::make_unique<SDLWindow>(wName);
+void Engine::createSDLWindow(const char* w_name) {
+	m->window = std::make_unique<SDLWindow>(w_name);
 }
 
 void Engine::createAvaloniaWindow() {
@@ -90,11 +90,11 @@ auto toast_create() -> engine_t* {
 	return reinterpret_cast<engine_t*>(new toast::Engine());
 }
 
-void toast_create_SDL_window(const char* wName) {
-	toast::Engine::get()->createSDLWindow(wName);
+void toast_create_SDL_window(const char* w_name) {
+	toast::Engine::get()->createSDLWindow(w_name);
 }
 
-void toast_create_Avalonia_window() {
+void toast_create_avalonia_window() {
 	toast::Engine::get()->createAvaloniaWindow();
 }
 
