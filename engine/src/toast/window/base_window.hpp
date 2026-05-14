@@ -1,6 +1,6 @@
 /**
  * @file base_window.hpp
- * @author Xein <xgonip@gmail.com>
+ * @author Xein
  * @date 7 May 2026
  *
  * @brief Interface for the Window class

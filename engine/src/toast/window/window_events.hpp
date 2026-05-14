@@ -1,7 +1,9 @@
-/// @file window_events.hpp
-/// @author Xein
-/// @date 06 May 25
-/// @brief All the different events a function may have
+/***
+ *  @file window_events.hpp
+ *  @author Xein
+ *  @date 06 May 25
+ *  @brief All the different events a window may have
+ */
 
 #pragma once
 #include "toast/events/event.hpp"
