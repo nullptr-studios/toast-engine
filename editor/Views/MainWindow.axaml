@@ -55,7 +55,9 @@
             </MenuItem>
             <MenuItem Header="_View"></MenuItem>
             <MenuItem Header="_Window">
-                <MenuItem Header="_Logs" ToggleType="CheckBox"/>
+                <MenuItem Header="_Logs" ToggleType="CheckBox"
+                          x:Name="log_window_button"
+                          Click="onLogWindowButton"/>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_Documentation"/>

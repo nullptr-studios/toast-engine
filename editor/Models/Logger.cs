@@ -17,6 +17,7 @@ public class LogClient {
 
 	public void Start() {
 		m_cts = new CancellationTokenSource();
+		Console.WriteLine("Starting TCP loop");
 		Task.Run(() => ListenLoop(m_cts.Token));
 	}
 
@@ -29,6 +30,7 @@ public class LogClient {
         try {
             m_client = new TcpClient();
             await m_client.ConnectAsync("127.0.0.1", 12801, token);
+            Console.WriteLine("Connected");
             using var stream = m_client.GetStream();
 
             byte[] lengthBuffer = new byte[4];
@@ -43,6 +45,7 @@ public class LogClient {
                 byte[] messageBuffer = new byte[messageLength];
                 await ReadExactlyAsync(stream, messageBuffer, (int)messageLength, token);
                 LogBatch protoBatch = LogBatch.Parser.ParseFrom(messageBuffer);
+                Console.WriteLine($"Received {protoBatch.Logs.Count} logs");
 
                 // Map to avalonia type
                 List<LogEntry> batch = [];
@@ -52,7 +55,7 @@ public class LogClient {
                         severity = (uint)logData.Severity,
                         file = logData.Filepath + ":" + logData.LineNumber,
                         sink = logData.Sink,
-                        timestamp = logData.Timestamp.ToString("HH:mm:ss.ffffff")
+                        timestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(logData.Timestamp / 1_000_000)).ToLocalTime().ToString("HH:mm:ss.fff")
                     };
                     batch.Add(entry);
                 }
@@ -60,10 +63,10 @@ public class LogClient {
             }
         }
         catch (EndOfStreamException) {
-            System.Diagnostics.Debug.WriteLine("Rust server closed connection");
+            Console.WriteLine("Rust server closed connection");
         }
         catch (Exception ex) when (ex is not OperationCanceledException) {
-            System.Diagnostics.Debug.WriteLine($"Error in TCP loop: {ex.Message}");
+            Console.WriteLine($"Error in TCP loop: {ex.Message}");
         }
         finally {
             m_client.Close();
