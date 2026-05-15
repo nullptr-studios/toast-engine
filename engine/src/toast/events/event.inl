@@ -9,13 +9,17 @@
 namespace event {
 
 template<typename T>
-Event<T>::Registrar::Registrar() : registered(true) {
-	EventSystem::registerEvent<T>();
+void Event<T>::ensureRegistered() noexcept {
+	static const bool registered = [] {
+		EventSystem::registerEvent<T>();
+		return true;
+	}();
+	(void)registered;
 }
 
 template<typename T>
 auto Event<T>::subscribe(char priority, callback_t&& callback) noexcept -> iterator_t {
-	(void)registrar.registered;
+	ensureRegistered();
 
 	auto cb = new callback_t(std::move(callback));
 	auto& g = EventSystem::event_data[typeid(T)];
@@ -28,7 +32,7 @@ auto Event<T>::subscribe(char priority, callback_t&& callback) noexcept -> itera
 
 template<typename T>
 void Event<T>::unsubscribe(iterator_t it) noexcept {
-	(void)registrar.registered;
+	ensureRegistered();
 
 	auto& g = EventSystem::event_data[typeid(T)];
 	{
@@ -43,7 +47,8 @@ void Event<T>::unsubscribe(iterator_t it) noexcept {
 template<typename T>
 void Event<T>::notify() noexcept {
 	ZoneScoped;
-	(void)registrar.registered;
+	
+	ensureRegistered();
 
 	auto& g = EventSystem::event_data[typeid(T)];
 	{

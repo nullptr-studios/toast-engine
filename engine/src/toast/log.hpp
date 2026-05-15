@@ -20,7 +20,7 @@
 
 /// @internal
 namespace logging::_detail {
-constexpr auto TOAST_API getOnlyName(std::string_view path) -> std::string_view {
+constexpr auto getOnlyName(std::string_view path) -> std::string_view {
 	size_t last_slash = path.find_last_of("\\/");
 	if (last_slash == std::string_view::npos) {
 		return path;

@@ -17,7 +17,7 @@ class DummyGame : public toast::IApplication {
 
 game_t* game_create(void) {
 	auto* game = new DummyGame();
-	std::println("Hi from game!!!");
-	// toast::pushApplicationLayer(game);
+	//std::println("Hi from game!!!");
+	toast::pushApplicationLayer(game);
 	return reinterpret_cast<game_t*>(game);
 }

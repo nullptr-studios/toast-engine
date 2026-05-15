@@ -1,7 +1,7 @@
 use crate::proto::{LogData, LogBatch};
 use crate::tui::Tui;
 use anyhow::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers, KeyEventKind};
 use prost::Message;
 use std::time::Duration;
 use tokio::net::TcpStream;
@@ -177,7 +177,22 @@ impl App {
 
             if crossterm::event::poll(timeout)? {
                 if let Event::Key(key) = event::read()? {
-                    self.handle_key(key).await?;
+                    if key.kind == KeyEventKind::Press
+                        || (key.kind == KeyEventKind::Repeat
+                            && matches!(
+                                key.code,
+                                KeyCode::Char('h')
+                                    | KeyCode::Char('j')
+                                    | KeyCode::Char('k')
+                                    | KeyCode::Char('l')
+                                    | KeyCode::Up
+                                    | KeyCode::Down
+                                    | KeyCode::Left
+                                    | KeyCode::Right
+                            ))
+                    {
+                        self.handle_key(key).await?;
+                    }
                 }
             }
 
@@ -307,7 +322,7 @@ impl App {
                     self.focus = AppFocus::Table;
                 }
             }
-            KeyCode::Char('d') => {
+            KeyCode::Char('s') => {
                 self.scroll_locked = !self.scroll_locked;
                 if !self.scroll_locked {
                     self.jump_to_latest();
