@@ -13,8 +13,6 @@
 #include "toast/log.hpp"
 
 #include <any>
-#include <cassert>
-#include <cstddef>
 #include <functional>
 #include <map>
 #include <memory>
@@ -26,8 +24,6 @@
 #include <vector>
 
 namespace event {
-
-struct EventSystem;    // Forward declaration
 
 /// @brief dispatches all queued events to their callbacks
 /// @note Not thread-safe. Should be only ever called from a single thread / main thread
@@ -91,10 +87,7 @@ struct Event : _detail::IEvent {
 	using iterator_t = std::multimap<char, void*, std::greater<>>::iterator;
 
 private:
-	static inline struct Registrar {
-		Registrar();
-		bool registered;
-	} registrar;
+	static void ensureRegistered() noexcept;
 
 	/// @brief registers a callback to the event callbacks
 	/// @param priority higher number callbacks first
@@ -139,10 +132,10 @@ struct TOAST_API EventSystem {
 			return;
 		}
 		TOAST_INFO("Events", "Registering Event Type: {}", typeid(T).name());
-		event_data.emplace(
+		event_data.emplace( // this is goofy because eventinfo has a mutex inside it
 		    std::piecewise_construct,
 		    std::forward_as_tuple(typeid(T)),
-		    std::forward_as_tuple()    // This calls the EventInfo() constructor
+		    std::forward_as_tuple()
 		);
 
 		EventSystem::unsubscribe_map.emplace(typeid(T), [](const std::any& iter) {

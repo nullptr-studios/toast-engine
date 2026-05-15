@@ -7,7 +7,7 @@ use ratatui::{
 };
 use crate::app::{App, ConnectionState, PopupOption, Severity, AppFocus};
 
-pub fn draw(f: &mut Frame, app: &App) {
+pub fn draw(f: &mut Frame, app: &mut App) {
     let size = f.area();
 
     match &app.state {
@@ -20,7 +20,7 @@ pub fn draw(f: &mut Frame, app: &App) {
     }
 }
 
-fn render_disconnected(f: &mut Frame, app: &App, area: Rect) {
+fn render_disconnected(f: &mut Frame, app: &mut App, area: Rect) {
     // Make popup large enough to display all options with padding
     let area = centered_rect(50, 20, area); 
     
@@ -97,7 +97,7 @@ fn render_disconnected(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(Paragraph::new(csv_text).style(csv_style), chunks[5]);
 }
 
-fn render_connected(f: &mut Frame, app: &App, area: Rect) {
+fn render_connected(f: &mut Frame, app: &mut App, area: Rect) {
     let main_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -137,7 +137,7 @@ fn render_connected(f: &mut Frame, app: &App, area: Rect) {
             let checked = if app.excluded_severities.contains(&s) { "[ ]" } else { "[x]" };
             ListItem::new(format!("{} {}", checked, label))
         }).collect();
-        f.render_stateful_widget(List::new(sev_items).block(severity_block).highlight_style(Style::default().add_modifier(Modifier::BOLD).fg(Color::Yellow)), filter_chunks[0], &mut app.severity_list_state.clone());
+        f.render_stateful_widget(List::new(sev_items).block(severity_block).highlight_style(Style::default().add_modifier(Modifier::BOLD).fg(Color::Yellow)), filter_chunks[0], &mut app.severity_list_state);
 
         // Sink Filter
         let sink_block = Block::default()
@@ -152,7 +152,7 @@ fn render_connected(f: &mut Frame, app: &App, area: Rect) {
             let checked = if app.excluded_sinks.contains(s) { "[ ]" } else { "[x]" };
             ListItem::new(format!("{} {}", checked, s))
         }).collect();
-        f.render_stateful_widget(List::new(sink_items).block(sink_block).highlight_style(Style::default().add_modifier(Modifier::BOLD).fg(Color::Yellow)), filter_chunks[1], &mut app.sink_list_state.clone());
+        f.render_stateful_widget(List::new(sink_items).block(sink_block).highlight_style(Style::default().add_modifier(Modifier::BOLD).fg(Color::Yellow)), filter_chunks[1], &mut app.sink_list_state);
     }
 
     // Table
@@ -171,7 +171,7 @@ fn render_connected(f: &mut Frame, app: &App, area: Rect) {
     let keybinds = Line::from(vec![
         Span::styled(" q ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Quit |"),
         Span::styled(" f ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Filters |"),
-        Span::styled(" d ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Auto-scroll |"),
+        Span::styled(" s ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Auto-scroll |"),
         Span::styled(" / ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Search |"),
         Span::styled(" hjkl ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Move |"),
         Span::styled(" Shift+HJKL ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Switch Focus "),
@@ -179,7 +179,7 @@ fn render_connected(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(Paragraph::new(keybinds).alignment(Alignment::Center), main_chunks[2]);
 }
 
-fn render_table(f: &mut Frame, app: &App, area: Rect) {
+fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
     let mut title = " Kenzo Logs ".to_string();
     if app.scroll_locked {
         title = " Kenzo Logs 🔒 ".to_string();
@@ -251,7 +251,7 @@ fn render_table(f: &mut Frame, app: &App, area: Rect) {
         .column_spacing(1)
         .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED));
 
-    f.render_stateful_widget(table, area, &mut app.table_state.clone());
+    f.render_stateful_widget(table, area, &mut app.table_state);
 }
 
 fn highlight_text(text: &str, query: &str, base_style: Style) -> Vec<Span<'static>> {

@@ -21,6 +21,10 @@ public:
 	auto shouldClose() -> bool;
 	void test();
 
+	// window
+	void createSDLWindow(const char*);
+	void createAvaloniaWindow();
+
 private:
 	EnginePimpl* m;
 	static Engine* instance;

@@ -31,10 +31,19 @@ add_custom_target(clang_format
     VERBATIM
 )
 
-add_custom_target(sync_api_headers
+file(GLOB_RECURSE _TOAST_API_HEADERS "src/*.h" "src/*.hpp")
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/sync_api_headers.stamp"
     COMMAND ${CMAKE_COMMAND} -DROOT_DIR=${CMAKE_CURRENT_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/sync_api_headers.cmake
+    COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/sync_api_headers.stamp"
     COMMENT "Syncing public headers"
+    DEPENDS ${_TOAST_API_HEADERS} ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/sync_api_headers.cmake ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/clang_format.cmake
     VERBATIM
 )
+
+add_custom_target(sync_api_headers DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/sync_api_headers.stamp")
 add_dependencies(sync_api_headers clang_format)
 add_dependencies(toast_engine sync_api_headers)
+add_dependencies(toast_engine log_server)
+
