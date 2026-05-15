@@ -16,7 +16,6 @@ namespace toast {
 
 namespace {
 IApplication* active_application = nullptr;
-
 }
 
 Engine* Engine::instance = nullptr;
@@ -61,6 +60,9 @@ void Engine::tick() {
 #endif
 
 	event::pollEvents();
+
+	// dummy stress test
+	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
 	// Run application logic
 	if (active_application) {
