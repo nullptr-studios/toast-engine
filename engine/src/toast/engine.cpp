@@ -64,6 +64,7 @@ void Engine::tick() {
 
 	// Run application logic
 	if (active_application) {
+		ZoneScopedN("IApplication::tick()");
 		active_application->tick();
 	}
 }

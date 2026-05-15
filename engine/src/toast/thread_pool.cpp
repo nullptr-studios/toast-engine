@@ -84,14 +84,11 @@ void ThreadPool::threadLoop(size_t id) {
 			++m.active_jobs;
 		}
 
-		FrameMarkStart("Job");
-
 		{
-			ZoneScopedN("Job");
+			ZoneScopedN("thread::job()");
+			ZoneNameF("thread_%i::job()", (int)id);
 			job();
 		}
-
-		FrameMarkEnd("Job");
 
 		// Decrement and notify waitIdle() if pool is now fully idle
 		if (--m.active_jobs == 0) {

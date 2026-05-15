@@ -8,6 +8,17 @@ find_package(Tracy CONFIG REQUIRED)
 file(GLOB_RECURSE SOURCE "src/*.cpp")
 add_library(toast_engine SHARED ${SOURCE})
 
+if (WIN32)
+    # Ensure runtime DLLs are copied to the output directory
+    add_custom_command(TARGET toast_engine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:toast_engine>
+            $<TARGET_FILE_DIR:toast_engine>
+        COMMAND_EXPAND_LISTS
+        COMMENT "Copying runtime DLLs to output directory"
+    )
+endif()
+
 target_include_directories(toast_engine
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
