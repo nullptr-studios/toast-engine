@@ -8,5 +8,12 @@
   }, {
     "name" : "sdl3",
     "version>=" : "3.4.8"
+  }, {
+    "name" : "tracy",
+    "version>=" : "0.13.1"
+  } ],
+  "overrides": [ {
+    "name": "tracy",
+    "version": "0.13.1"
   } ]
 }

@@ -2,6 +2,7 @@
 #include "event.hpp"
 #include "toast/log.hpp"
 
+#include <tracy/Tracy.hpp>
 #include <mutex>
 #include <type_traits>
 
@@ -41,6 +42,7 @@ void Event<T>::unsubscribe(iterator_t it) noexcept {
 
 template<typename T>
 void Event<T>::notify() noexcept {
+	ZoneScoped;
 	(void)registrar.registered;
 
 	auto& g = EventSystem::event_data[typeid(T)];
@@ -60,6 +62,8 @@ void Event<T>::notify() noexcept {
 
 	// disptaches all of the callbacks
 	for (auto& callback : g.processing) {
+		ZoneScopedN("Callback dispatch");
+
 		bool handled = (*static_cast<callback_t*>(callback))(static_cast<T&>(*this));
 		if (handled) {
 			return;
@@ -70,6 +74,8 @@ void Event<T>::notify() noexcept {
 template<typename T, typename... Args>
   requires std::is_base_of_v<_detail::IEvent, T>
 void send(Args&&... args) noexcept {
+	ZoneScoped;
+
 	static_assert(std::is_constructible_v<T, Args...>, "Invalid Construtor For Type T");
 	TOAST_INFO("Events", "Sending Event: {}", typeid(T).name());
 	// Allocate and enqueue event

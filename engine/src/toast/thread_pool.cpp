@@ -2,9 +2,14 @@
 
 #include "log.hpp"
 
+#include <format>
+#include <tracy/Tracy.hpp>
+
 namespace toast {
 
 ThreadPool::ThreadPool(size_t size) {
+	ZoneScoped;
+
 	// safety check, we don't want more threads than available
 	const size_t max_thread_num = std::thread::hardware_concurrency();
 	if (size == 0) {
@@ -13,12 +18,13 @@ ThreadPool::ThreadPool(size_t size) {
 
 	size_t target_thread_num = std::min(size, max_thread_num);
 	for (size_t i = 0; i < target_thread_num; ++i) {
-		m.workers.emplace_back(&ThreadPool::threadLoop, this);
+		m.workers.emplace_back(&ThreadPool::threadLoop, this, i);
 	}
 	TOAST_INFO("ThreadPool", "Created thread pool with {0} workers", target_thread_num);
 }
 
 void ThreadPool::queueJob(std::function<void()>&& job) {
+	ZoneScoped;
 	auto& o = get();
 
 	{
@@ -30,6 +36,8 @@ void ThreadPool::queueJob(std::function<void()>&& job) {
 }
 
 void ThreadPool::destroy() {
+	ZoneScoped;
+
 	{
 		std::unique_lock<std::mutex> lock(m.queue_mutex);
 		m.should_stop = true;
@@ -47,16 +55,20 @@ void ThreadPool::destroy() {
 }
 
 auto ThreadPool::busy() -> bool {
+	ZoneScoped;
 	std::unique_lock<std::mutex> lock(m.queue_mutex);
 	return !m.jobs.empty() || m.active_jobs > 0;
 }
 
 void ThreadPool::waitIdle() {
+	ZoneScoped;
 	std::unique_lock<std::mutex> lock(m.queue_mutex);
 	m.all_done.wait(lock, [this] { return m.jobs.empty() && m.active_jobs == 0; });
 }
 
-void ThreadPool::threadLoop() {
+void ThreadPool::threadLoop(size_t id) {
+	tracy::SetThreadName(std::format("Worker #{}", id).c_str());
+
 	while (true) {
 		std::function<void()> job;
 
@@ -72,7 +84,14 @@ void ThreadPool::threadLoop() {
 			++m.active_jobs;
 		}
 
-		job();
+		FrameMarkStart("Job");
+
+		{
+			ZoneScopedN("Job");
+			job();
+		}
+
+		FrameMarkEnd("Job");
 
 		// Decrement and notify waitIdle() if pool is now fully idle
 		if (--m.active_jobs == 0) {

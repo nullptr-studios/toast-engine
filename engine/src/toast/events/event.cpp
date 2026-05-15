@@ -8,6 +8,7 @@
 #include <memory_resource>
 #include <mutex>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 #include <vector>
 
 namespace event {
@@ -41,6 +42,8 @@ auto allocate(std::size_t size, std::size_t align) noexcept -> void* {
 }
 
 void pollEvents() noexcept {
+	ZoneScoped;
+
 	// delete callbacks
 	EventSystem::deletion_queue.clear();
 
