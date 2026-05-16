@@ -157,6 +157,8 @@ jobs:
         uses: ./.github/actions/setup-vcpkg
 
       - name: Run tests (Linux Debug)
+        env:
+          TRACY_NO_INVARIANT_CHECK: "1"
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
           cmake -B build/linux-test-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
@@ -187,6 +189,8 @@ jobs:
         uses: ./.github/actions/setup-vcpkg
 
       - name: Run tests (Linux Release)
+        env:
+          TRACY_NO_INVARIANT_CHECK: "1"
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
           cmake -B build/linux-test-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
