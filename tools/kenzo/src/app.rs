@@ -36,6 +36,7 @@ impl From<i32> for Severity {
 pub enum ConnectionState {
     Disconnected,
     Connecting(String), // Address
+    Reconnecting(String), // Address
     Connected,
     #[allow(dead_code)]
     CsvMode(String), // Path
@@ -158,7 +159,7 @@ impl App {
             
             if !batches.is_empty() {
                 // Transition from Connecting to Connected on first batch (even if empty)
-                if let ConnectionState::Connecting(_) = self.state {
+                if let ConnectionState::Connecting(_) | ConnectionState::Reconnecting(_) = self.state {
                     self.state = ConnectionState::Connected;
                 }
                 
@@ -204,8 +205,8 @@ impl App {
             if let Some(rx) = &mut self.log_rx {
                  if rx.is_closed() {
                      // Auto-reconnect if we were connected or connecting
-                     if let (ConnectionState::Connected | ConnectionState::Connecting(_), Some(addr)) = (&self.state, &self.last_connect_addr) {
-                         self.connect(addr.clone()).await;
+                     if let (ConnectionState::Connected | ConnectionState::Connecting(_) | ConnectionState::Reconnecting(_), Some(addr)) = (&self.state, &self.last_connect_addr) {
+                         self.reconnect(addr.clone()).await;
                      } else {
                          self.disconnect();
                      }
@@ -233,8 +234,8 @@ impl App {
         }
 
         match &self.state {
-            ConnectionState::Disconnected => self.handle_disconnected_key(key).await,
-            ConnectionState::Connected | ConnectionState::CsvMode(_) | ConnectionState::Connecting(_) => self.handle_connected_key(key).await,
+            ConnectionState::Disconnected | ConnectionState::Connecting(_) => self.handle_disconnected_key(key).await,
+            ConnectionState::Connected | ConnectionState::CsvMode(_) | ConnectionState::Reconnecting(_) => self.handle_connected_key(key).await,
         }
     }
 
@@ -504,6 +505,40 @@ impl App {
         });
     }
 
+      async fn reconnect(&mut self, addr: String) {
+        self.disconnect();
+        self.state = ConnectionState::Reconnecting(addr.clone());
+        self.last_connect_addr = Some(addr.clone());
+        let (tx, rx) = mpsc::channel(100);
+        let (stop_tx, mut stop_rx) = tokio::sync::oneshot::channel();
+        
+        self.log_rx = Some(rx);
+        self.stop_tx = Some(stop_tx);
+        
+        let addr_clone = addr.clone();
+        tokio::spawn(async move {
+            match TcpStream::connect(&addr_clone).await {
+                Ok(mut socket) => {
+                    // Send empty batch to signal successful connection
+                    let _ = tx.send(Vec::new()).await;
+                    
+                    loop {
+                        tokio::select! {
+                             _ = &mut stop_rx => break,
+                             res = read_framed(&mut socket) => {
+                                 match res {
+                                     Ok(batch) => { if tx.send(batch.logs).await.is_err() { break; } }
+                                     Err(_) => break,
+                                 }
+                             }
+                        }
+                    }
+                }
+                Err(_) => {}
+            }
+        });
+    }
+
     fn disconnect(&mut self) {
         if let Some(tx) = self.stop_tx.take() {
             let _ = tx.send(());
@@ -539,7 +574,7 @@ impl App {
     }
 
     fn process_log(&mut self, log: LogData) {
-        if let ConnectionState::Connecting(_) = self.state {
+        if let ConnectionState::Connecting(_) | ConnectionState::Reconnecting(_) = self.state {
              self.state = ConnectionState::Connected;
         }
         self.seen_severities.insert(log.severity);
