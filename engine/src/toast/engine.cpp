@@ -99,8 +99,9 @@ void pushApplicationLayer(IApplication* app) {
 
 // Tracy memory profiling
 #ifdef DEBUG
-void* operator new(std::size_t count) {
-	auto ptr = malloc(count);
+// NOLINTBEGIN(cppcoreguidelines-no-malloc)
+auto operator new(std::size_t count) -> void* {
+	auto* ptr = malloc(count);
 	TracyAlloc(ptr, count);
 	return ptr;
 }
@@ -109,6 +110,8 @@ void operator delete(void* ptr) noexcept {
 	TracyFree(ptr);
 	free(ptr);
 }
+
+// NOLINTEND(cppcoreguidelines-no-malloc)
 #endif
 
 // ffi stuff
