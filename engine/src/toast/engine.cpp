@@ -51,7 +51,7 @@ void Engine::tick() {
 	ZoneScoped;
 
 	// Poll window events
-#if DEBUG
+#ifndef NDEBUG
 	if (m->window) {
 		m->window->pollEvents();
 	}
