@@ -7,6 +7,7 @@
  */
 
 #pragma once
+#include <toast/export.hpp>
 
 namespace toast {
 class Node;

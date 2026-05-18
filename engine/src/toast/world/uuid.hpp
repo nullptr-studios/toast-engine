@@ -14,9 +14,11 @@ namespace toast {
 
 struct TOAST_API UUID {
 	UUID();
-	UUID(std::string_view value);
-	auto operator=(std::string_view value) -> UUID&;
 
+	/**
+	 * @brief Implicit cast to `std::string`
+	 * @note This will make a heap allocation as it creates a new `std::string`
+	 */
 	operator std::string() const noexcept;
 	auto operator<=>(const UUID& other) const noexcept -> std::strong_ordering;
 
@@ -30,12 +32,14 @@ struct TOAST_API UUID {
 	inline static auto fromString(std::string_view b64) -> uint64_t;
 
 private:
+	void generate();                      ///< @brief Creates a new UUID
+	void assign(std::string_view b64);    ///< @brief Loads a UUID from serialization
 	uint64_t value;
 };
 
 }
 
-template <>
+template<>
 struct std::formatter<toast::UUID> : std::formatter<std::string> {
 	auto format(const toast::UUID& uuid, std::format_context& ctx) const {
 		// Forwards the string representation to the base std::string formatter

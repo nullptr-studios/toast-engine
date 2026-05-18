@@ -84,11 +84,11 @@ void NodeFunctionTable::destroy(Node* n) {
 
 #pragma endregion FUNCTION_TABLE_ITERATIONS
 
-auto Node::uuid() const noexcept -> UUID {
+auto Node::uuid() const noexcept -> const UUID& {
 	return m.uuid;
 }
 
-auto Node::name() const noexcept -> std::string {
+auto Node::name() const noexcept -> std::string_view {
 	return m.name;
 }
 

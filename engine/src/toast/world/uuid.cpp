@@ -8,7 +8,7 @@
 
 namespace {
 constexpr auto charset = std::to_array("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
-std::atomic_uint offset;
+std::atomic<uint64_t> offset = 0;
 }
 
 namespace toast {
@@ -80,7 +80,7 @@ auto UUID::fromString(std::string_view b64) -> uint64_t {
 	return uuid;
 }
 
-UUID::UUID() {
+void UUID::generate() {
 	using namespace std::chrono;
 	auto t = static_cast<uint64_t>(high_resolution_clock::now().time_since_epoch().count());
 
@@ -93,13 +93,12 @@ UUID::UUID() {
 	offset++;
 }
 
-UUID::UUID(std::string_view value) {
-	this->value = fromString(value);
+void UUID::assign(std::string_view b64) {
+	value = fromString(b64);
 }
 
-auto UUID::operator=(std::string_view value) -> UUID& {
-	this->value = fromString(value);
-	return *this;
+UUID::UUID() {
+	value = 0;
 }
 
 UUID::operator std::string() const noexcept {
@@ -110,12 +109,10 @@ auto UUID::operator<=>(const UUID& other) const noexcept -> std::strong_ordering
 	return value <=> other.value;
 }
 
-[[nodiscard]]
 auto UUID::get() const noexcept -> std::string {
 	return toString(value);
 }
 
-[[nodiscard]]
 auto UUID::data() const noexcept -> uint64_t {
 	return value;
 }
