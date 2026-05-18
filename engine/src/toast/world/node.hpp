@@ -34,6 +34,8 @@ enum class NodeType : uint8_t {
 };
 
 class TOAST_API Node {
+	friend class World;
+
 public:
 	[[nodiscard]]
 	/// @brief Returns the serialized unique identifier of this node
@@ -54,6 +56,8 @@ public:
 
 	[[nodiscard]]
 	auto parent() const noexcept -> Node*;
+
+	void addChild();
 
 protected:
 	// listener is lazily initialized

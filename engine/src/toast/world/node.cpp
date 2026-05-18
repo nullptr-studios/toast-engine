@@ -1,83 +1,137 @@
 #include "node.hpp"
 
+#include "world.hpp"
+
 namespace toast {
 
 #pragma region FUNCTION_TABLE_ITERATIONS
 
 void NodeFunctionTable::load(Node* n) {
+	ZoneScoped;
+	ZoneNameF("%s::load()", n->name().data());
+
 	for (auto& f : table.load) {
+		ZoneScoped;
 		f(n);
 	}
 }
 
 void NodeFunctionTable::save(Node* n) {
+	ZoneScoped;
+	ZoneNameF("%s::save()", n->name().data());
+
 	for (auto& f : table.save) {
+		ZoneScoped;
 		f(n);
 	}
 }
 
 void NodeFunctionTable::preInit(Node* n) {
+	ZoneScoped;
+	ZoneNameF("%s::preInit()", n->name().data());
+
 	for (auto& f : table.pre_init) {
+		ZoneScoped;
 		f(n);
 	}
 }
 
 void NodeFunctionTable::init(Node* n) {
+	ZoneScoped;
+	ZoneNameF("%s::init()", n->name().data());
+
 	for (auto& f : table.init) {
+		ZoneScoped;
 		f(n);
 	}
 }
 
 void NodeFunctionTable::begin(Node* n) {
+	ZoneScoped;
+	ZoneNameF("%s::begin()", n->name().data());
+
 	for (auto& f : table.begin) {
+		ZoneScoped;
 		f(n);
 	}
 }
 
 void NodeFunctionTable::onEnable(Node* n) {
+	ZoneScoped;
+	ZoneNameF("%s::onEnable()", n->name().data());
+
 	for (auto& f : table.on_enable) {
+		ZoneScoped;
 		f(n);
 	}
 }
 
 void NodeFunctionTable::earlyTick(Node* n) {
+	ZoneScoped;
+	ZoneNameF("%s::earlyTick()", n->name().data());
+
 	for (auto& f : table.early_tick) {
+		ZoneScoped;
 		f(n);
 	}
 }
 
 void NodeFunctionTable::tick(Node* n) {
+	ZoneScoped;
+	ZoneNameF("%s::tick()", n->name().data());
+
 	for (auto& f : table.tick) {
+		ZoneScoped;
 		f(n);
 	}
 }
 
 void NodeFunctionTable::postPhysics(Node* n) {
+	ZoneScoped;
+	ZoneNameF("%s::postPhysics()", n->name().data());
+
 	for (auto& f : table.post_physics) {
+		ZoneScoped;
 		f(n);
 	}
 }
 
 void NodeFunctionTable::lateTick(Node* n) {
+	ZoneScoped;
+	ZoneNameF("%s::lateTick()", n->name().data());
+
 	for (auto& f : table.late_tick) {
+		ZoneScoped;
 		f(n);
 	}
 }
 
 void NodeFunctionTable::onDisable(Node* n) {
+	ZoneScoped;
+	ZoneNameF("%s::onDisable()", n->name().data());
+
 	for (auto& f : table.on_disable) {
+		ZoneScoped;
 		f(n);
 	}
 }
 
 void NodeFunctionTable::end(Node* n) {
+	ZoneScoped;
+	ZoneNameF("%s::end()", n->name().data());
+
 	for (auto& f : table.end) {
+		ZoneScoped;
 		f(n);
 	}
 }
 
 void NodeFunctionTable::destroy(Node* n) {
+	ZoneScoped;
+	ZoneNameF("%s::destroy()", n->name().data());
+
 	for (auto& f : table.destroy) {
+		ZoneScoped;
 		f(n);
 	}
 }
@@ -122,6 +176,10 @@ void Node::enabled(bool value) noexcept {
 
 auto Node::parent() const noexcept -> Node* {
 	return m.parent;
+}
+
+void Node::addChild() {
+	return World::requestRuntimeCreation(*this);
 }
 
 auto Node::listener() noexcept -> event::Listener& {

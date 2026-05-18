@@ -13,6 +13,7 @@
 namespace toast {
 
 struct TOAST_API UUID {
+	friend class World;
 	UUID();
 
 	/**
