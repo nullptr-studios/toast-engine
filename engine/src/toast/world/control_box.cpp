@@ -12,6 +12,10 @@ auto ControlBox::operator<=>(const ControlBox& other) const noexcept -> std::str
 	return rid() <=> other.rid();
 }
 
+auto ControlBox::operator==(const ControlBox& other) const noexcept -> bool {
+	return rid() == other.rid();
+}
+
 auto ControlBox::rid() const noexcept -> std::uintptr_t {
 	return reinterpret_cast<std::uintptr_t>(this);
 }
@@ -33,4 +37,5 @@ auto ControlBox::get(const Node* node) -> ControlBox* {
 auto ControlBox::get(const Node& node) -> ControlBox* {
 	return node.m.box.control;
 }
+
 }

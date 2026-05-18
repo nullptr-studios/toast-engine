@@ -25,6 +25,7 @@ struct TOAST_API ControlBox {
 
 	explicit operator bool() const noexcept;
 	auto operator<=>(const ControlBox& other) const noexcept -> std::strong_ordering;
+	auto operator==(const ControlBox& other) const noexcept -> bool;
 
 	[[nodiscard]]
 	auto rid() const noexcept -> std::uintptr_t;
