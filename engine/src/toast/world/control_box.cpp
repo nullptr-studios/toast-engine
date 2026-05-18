@@ -5,8 +5,9 @@
 namespace toast::_detail {
 
 ControlBox::ControlBox(Node* n) {
-	ref_count = 0;
+	ref_count = 1;
 	node = n;
+	node->m.box.control = this;
 }
 
 ControlBox::operator bool() const noexcept {
