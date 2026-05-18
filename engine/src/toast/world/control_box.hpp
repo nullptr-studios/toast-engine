@@ -9,7 +9,6 @@
 #pragma once
 
 #include <toast/export.hpp>
-#include <cstdint>
 
 namespace toast {
 class Node;
@@ -39,3 +38,9 @@ struct TOAST_API ControlBox {
 }
 }
 
+template<>
+struct std::hash<toast::_detail::ControlBox> {
+	auto operator()(const toast::_detail::ControlBox& a) const noexcept -> std::size_t {
+		return std::hash<std::uintptr_t> {}(a.rid());
+	}
+};
