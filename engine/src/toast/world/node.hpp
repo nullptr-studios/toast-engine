@@ -10,6 +10,8 @@
 
 #pragma once
 #include "function_table.hpp"
+#include "toast/world/box.hpp"
+#include "toast/world/control_box.hpp"
 #include "uuid.hpp"
 
 #include <toast/events/listener.hpp>
@@ -35,6 +37,7 @@ enum class NodeType : uint8_t {
 
 class TOAST_API Node {
 	friend class World;
+	friend struct _detail::ControlBox;
 
 public:
 	[[nodiscard]]
@@ -70,9 +73,9 @@ private:
 		std::string name;
 		NodeState state = NodeState::null;
 		NodeType type = NodeType::null;
-		bool local_enabled;        // is this object enabled?
-		bool inherited_enabled;    // is any parent of this object enabled?
-		// TODO: Box<Node> box;
+		bool local_enabled;            // is this object enabled?
+		bool inherited_enabled;        // is any parent of this object enabled?
+		Box<Node> box;
 		Node* parent;
 		std::vector<Node> children;    // TODO: std::vector<Box<Node>> children;
 		std::unique_ptr<event::Listener> listener;
