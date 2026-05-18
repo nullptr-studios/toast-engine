@@ -18,6 +18,8 @@ struct TOAST_API ControlBox {
 	std::atomic<unsigned int> ref_count;
 	Node* node = nullptr;
 
+	ControlBox(Node* n);
+
 	ControlBox(const ControlBox&) = delete;
 	ControlBox(ControlBox&&) = delete;
 	auto operator=(const ControlBox&) -> ControlBox& = delete;

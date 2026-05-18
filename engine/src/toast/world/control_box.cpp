@@ -4,6 +4,11 @@
 
 namespace toast::_detail {
 
+ControlBox::ControlBox(Node* n) {
+	ref_count = 0;
+	node = n;
+}
+
 ControlBox::operator bool() const noexcept {
 	return node;
 }
