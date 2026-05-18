@@ -10,12 +10,12 @@
 
 #include <cassert>
 #include <memory>
+#include <tracy/Tracy.hpp>
 
 namespace toast {
 
 namespace {
 IApplication* active_application = nullptr;
-
 }
 
 Engine* Engine::instance = nullptr;
@@ -34,6 +34,9 @@ Engine::Engine() noexcept {
 	};
 	// clang-format on
 
+	TracySetProgramName("ToastEngine");
+	tracy::SetThreadName("Main Thread");
+
 	instance = this;
 }
 
@@ -44,8 +47,11 @@ auto Engine::get() noexcept -> Engine* {
 }
 
 void Engine::tick() {
+	FrameMark;
+	ZoneScoped;
+
 	// Poll window events
-#if DEBUG
+#ifndef NDEBUG
 	if (m->window) {
 		m->window->pollEvents();
 	}
@@ -55,8 +61,12 @@ void Engine::tick() {
 
 	event::pollEvents();
 
+	// dummy stress test
+	std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
 	// Run application logic
 	if (active_application) {
+		ZoneScopedN("IApplication::tick()");
 		active_application->tick();
 	}
 }
@@ -86,6 +96,23 @@ void pushApplicationLayer(IApplication* app) {
 }
 
 }
+
+// Tracy memory profiling
+#ifdef DEBUG
+// NOLINTBEGIN(cppcoreguidelines-no-malloc)
+auto operator new(std::size_t count) -> void* {
+	auto* ptr = malloc(count);
+	TracyAlloc(ptr, count);
+	return ptr;
+}
+
+void operator delete(void* ptr) noexcept {
+	TracyFree(ptr);
+	free(ptr);
+}
+
+// NOLINTEND(cppcoreguidelines-no-malloc)
+#endif
 
 // ffi stuff
 extern "C" {

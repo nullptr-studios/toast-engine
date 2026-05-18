@@ -1,10 +1,23 @@
 project(toast_engine C CXX)
 
+# Package declarations
 find_package(asio CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
+find_package(Tracy CONFIG REQUIRED)
 
 file(GLOB_RECURSE SOURCE "src/*.cpp")
 add_library(toast_engine SHARED ${SOURCE})
+
+if (WIN32)
+    # Ensure runtime DLLs are copied to the output directory
+    add_custom_command(TARGET toast_engine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:toast_engine>
+            $<TARGET_FILE_DIR:toast_engine>
+        COMMAND_EXPAND_LISTS
+        COMMENT "Copying runtime DLLs to output directory"
+    )
+endif()
 
 target_include_directories(toast_engine
     PRIVATE
@@ -20,10 +33,17 @@ target_link_libraries(toast_engine
     PRIVATE
         asio::asio
         SDL3::SDL3
+    PUBLIC
+        Tracy::TracyClient
 )
 
 target_compile_definitions(toast_engine PRIVATE TOAST_EXPORT)
 target_precompile_headers(toast_engine PRIVATE pch.h)
+
+if (NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    # We will activate tracy on Debug and RelWithInfo
+    target_compile_definitions(toast_engine PUBLIC TRACY_ENABLE DEBUG)
+endif()
 
 add_custom_target(clang_format
     COMMAND ${CMAKE_COMMAND} -DROOT_DIR=${CMAKE_CURRENT_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/clang_format.cmake

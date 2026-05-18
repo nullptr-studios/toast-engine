@@ -253,6 +253,8 @@ jobs:
         uses: ./.github/actions/setup-vcpkg
 
       - name: Run tests (Windows Debug)
+        env:
+          TRACY_NO_INVARIANT_CHECK: "1"
         run: |
           cmake -B build/windows-test-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
           cmake --build build/windows-test-debug
@@ -287,6 +289,8 @@ jobs:
         uses: ./.github/actions/setup-vcpkg
 
       - name: Run tests (Windows Release)
+        env:
+          TRACY_NO_INVARIANT_CHECK: "1"
         run: |
           cmake -B build/windows-test-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
           cmake --build build/windows-test-release
