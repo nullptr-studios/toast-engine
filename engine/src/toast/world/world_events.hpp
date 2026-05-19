@@ -9,7 +9,16 @@
 #pragma once
 #include <toast/events/event.hpp>
 
+namespace toast {
+class Node;
+}
+
 namespace event {
 
+struct SwapWorldRoot : Event<SwapWorldRoot> {
+	SwapWorldRoot(toast::Node& node) : node(&node) { }
+
+	toast::Node* node;
+};
 
 }

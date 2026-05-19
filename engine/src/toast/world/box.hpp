@@ -23,6 +23,7 @@ class Box {
 	_detail::ControlBox* control = nullptr;
 
 public:
+	Box() noexcept = default;
 	~Box() noexcept;                                      // Deconstructor
 
 	Box(_detail::ControlBox* control_box) noexcept;       // ControlBox Constructor
@@ -66,8 +67,45 @@ public:
 	  requires std::derived_from<U, T>
 	[[nodiscard]]
 	auto as() const noexcept -> Box<U>;
+
+	auto rid() const noexcept -> size_t;
 };
 
 }
+
+template<toast::NodeConcept T>
+struct std::hash<toast::Box<T>> {
+	auto operator()(const toast::Box<T>& a) const noexcept -> std::size_t { return std::hash<std::uintptr_t> {}(a.rid()); }
+};
+
+// template<toast::NodeConcept T>
+// struct std::hash<toast::_detail::ControlBox> {
+// 	using is_transparent = void;
+//
+// 	auto operator()(const toast::_detail::ControlBox& a) const noexcept -> std::size_t {
+// 		return std::hash<std::uintptr_t> {}(a.rid());
+// 	}
+//
+// 	auto operator()(const toast::Box<T>& a) const noexcept -> std::size_t {
+// 		return std::hash<std::uintptr_t> {}(a.rid());
+// 	}
+// };
+
+// template<toast::NodeConcept T>
+// struct std::equal_to<toast::_detail::ControlBox> {
+// 	using is_transparent = void;
+//
+// 	auto operator()(const toast::_detail::ControlBox& lhs, const toast::_detail::ControlBox& rhs) const noexcept -> bool {
+// 		return lhs.rid() == rhs.rid();
+// 	}
+//
+// 	auto operator()(const toast::_detail::ControlBox& lhs, const toast::Box<T>& rhs) const noexcept -> bool {
+// 		return lhs.rid() == rhs.rid();
+// 	}
+//
+// 	auto operator()(const toast::Box<T>& lhs, const toast::_detail::ControlBox& rhs) const noexcept -> bool {
+// 		return lhs.rid() == rhs.rid();
+// 	}
+// };
 
 #include "box.inl"

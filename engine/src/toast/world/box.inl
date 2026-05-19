@@ -195,4 +195,9 @@ auto Box<T>::as() const noexcept -> Box<U> {
 	}
 	return Box<U>(nullptr);
 }
+
+template<NodeConcept T>
+auto Box<T>::rid() const noexcept -> size_t {
+	return control->rid();
+}
 }

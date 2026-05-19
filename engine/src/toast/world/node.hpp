@@ -38,6 +38,10 @@ enum class NodeType : uint8_t {
 class TOAST_API Node {
 	friend class World;
 	friend struct _detail::ControlBox;
+	friend struct NodeCluster;
+
+	Node() = default;
+	~Node() = default;
 
 public:
 	[[nodiscard]]
@@ -55,12 +59,13 @@ public:
 	auto enabled() const noexcept -> bool;
 	void enabled(bool value) noexcept;
 
-	// TODO: box()
+	[[nodiscard]]
+	auto box() const noexcept -> Box<Node>;
 
 	[[nodiscard]]
-	auto parent() const noexcept -> Node*;
+	auto parent() noexcept -> Box<Node>;
 
-	void addChild();
+	auto addChild() -> Box<Node>;
 
 protected:
 	// listener is lazily initialized
@@ -73,12 +78,12 @@ private:
 		std::string name;
 		NodeState state = NodeState::null;
 		NodeType type = NodeType::null;
-		bool local_enabled;            // is this object enabled?
-		bool inherited_enabled;        // is any parent of this object enabled?
+		bool local_enabled;        // is this object enabled?
+		bool inherited_enabled;    // is any parent of this object enabled?
 		Box<Node> box;
-		Node* parent;
-		std::vector<Node> children;    // TODO: std::vector<Box<Node>> children;
-		std::unique_ptr<event::Listener> listener;
+		Box<Node> parent;
+		std::vector<Box<Node>> children;
+		std::unique_ptr<event::Listener> listener = nullptr;
 	} m;
 
 	NodeFunctionTable* table;

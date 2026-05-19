@@ -7,7 +7,9 @@
  */
 
 #pragma once
+#include <functional>
 #include <toast/export.hpp>
+#include <vector>
 
 namespace toast {
 class Node;
@@ -29,19 +31,19 @@ struct TOAST_API NodeFunctionTable {
 		std::vector<std::function<void(Node*)>> destroy;         // moved to destroy
 	} table;
 
-	void load(Node* n);
-	void save(Node* n);
-	void preInit(Node* n);
-	void init(Node* n);
-	void begin(Node* n);
-	void onEnable(Node* n);
-	void earlyTick(Node* n);
-	void tick(Node* n);
-	void postPhysics(Node* n);
-	void lateTick(Node* n);
-	void onDisable(Node* n);
-	void end(Node* n);
-	void destroy(Node* n);
+	void load(Node& n);
+	void save(Node& n);
+	void preInit(Node& n);
+	void init(Node& n);
+	void begin(Node& n);
+	void onEnable(Node& n);
+	void earlyTick(Node& n);
+	void tick(Node& n);
+	void postPhysics(Node& n);
+	void lateTick(Node& n);
+	void onDisable(Node& n);
+	void end(Node& n);
+	void destroy(Node& n);
 };
 
 }
