@@ -8,9 +8,10 @@ if (BUILD_TESTING)
 	target_include_directories(toast_tests BEFORE PRIVATE ${CMAKE_SOURCE_DIR}/engine/src)
 	target_include_directories(toast_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 	target_link_libraries(toast_tests PRIVATE toast_engine)
-	target_compile_definitions(toast_tests PRIVATE UNIT_TESTING)
+	target_compile_definitions(toast_tests PRIVATE UNIT_TESTING TRACY_NO_INVARIANT_CHECK=1)
 
-	if (NOT WIN32)
+
+  if (NOT WIN32)
 		target_link_libraries(toast_tests PRIVATE stdc++exp)
 	elseif (WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 		target_link_libraries(toast_tests PRIVATE stdc++exp)

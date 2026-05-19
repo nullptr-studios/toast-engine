@@ -3,18 +3,23 @@
 #include "toast/log.hpp"
 
 #include <mutex>
+#include <tracy/Tracy.hpp>
 #include <type_traits>
 
 namespace event {
 
 template<typename T>
-Event<T>::Registrar::Registrar() : registered(true) {
-	EventSystem::registerEvent<T>();
+void Event<T>::ensureRegistered() noexcept {
+	static const bool registered = [] {
+		EventSystem::registerEvent<T>();
+		return true;
+	}();
+	(void)registered;
 }
 
 template<typename T>
 auto Event<T>::subscribe(char priority, callback_t&& callback) noexcept -> iterator_t {
-	(void)registrar.registered;
+	ensureRegistered();
 
 	auto cb = new callback_t(std::move(callback));
 	auto& g = EventSystem::event_data[typeid(T)];
@@ -27,7 +32,7 @@ auto Event<T>::subscribe(char priority, callback_t&& callback) noexcept -> itera
 
 template<typename T>
 void Event<T>::unsubscribe(iterator_t it) noexcept {
-	(void)registrar.registered;
+	ensureRegistered();
 
 	auto& g = EventSystem::event_data[typeid(T)];
 	{
@@ -41,7 +46,9 @@ void Event<T>::unsubscribe(iterator_t it) noexcept {
 
 template<typename T>
 void Event<T>::notify() noexcept {
-	(void)registrar.registered;
+	ZoneScoped;
+
+	ensureRegistered();
 
 	auto& g = EventSystem::event_data[typeid(T)];
 	{
@@ -60,6 +67,8 @@ void Event<T>::notify() noexcept {
 
 	// disptaches all of the callbacks
 	for (auto& callback : g.processing) {
+		ZoneScopedN("Callback dispatch");
+
 		bool handled = (*static_cast<callback_t*>(callback))(static_cast<T&>(*this));
 		if (handled) {
 			return;
@@ -70,6 +79,8 @@ void Event<T>::notify() noexcept {
 template<typename T, typename... Args>
   requires std::is_base_of_v<_detail::IEvent, T>
 void send(Args&&... args) noexcept {
+	ZoneScoped;
+
 	static_assert(std::is_constructible_v<T, Args...>, "Invalid Construtor For Type T");
 	TOAST_INFO("Events", "Sending Event: {}", typeid(T).name());
 	// Allocate and enqueue event

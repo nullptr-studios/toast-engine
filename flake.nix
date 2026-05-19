@@ -17,13 +17,20 @@
 			zlib
 			stdenv.cc.cc.lib
 		];
+
+		cmake-gen = pkgs.writeShellScriptBin "cmake-gen" ''
+			exec cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=${pkgs.vcpkg}/share/vcpkg/scripts/buildsystems/vcpkg.cmake "$@"
+		'';
+
+		cmake-build = pkgs.writeShellScriptBin "cmake-build" ''
+			exec cmake --build build "$@"
+		'';
 	in
 	{
 		devShells.${system}.default = pkgs.mkShell {
 			nativeBuildInputs = with pkgs; [
 				cmake
 				ninja
-				gdb
 				valgrind
 				rustup
 				protobuf
@@ -34,7 +41,10 @@
 				rust-analyzer
 				buf
 				roslyn-ls
+				gdb
 				lldb
+				cmake-gen
+				cmake-build
 			];
 
 			buildInputs = with pkgs; [
@@ -50,6 +60,9 @@
 				export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}:$LD_LIBRARY_PATH";
 				export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1;
 				echo "toast-engine environment loaded"
+				export VCPKG_FORCE_SYSTEM_BINARIES=1
+				export VCPKG_ROOT="${pkgs.vcpkg}/share/vcpkg"
+				export NIX_SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
 			'';
 		};
 	};

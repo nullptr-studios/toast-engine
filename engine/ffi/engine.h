@@ -16,6 +16,9 @@ TOAST_C_API void toast_tick(void);            ///< Frame logic for the game engi
 TOAST_C_API int toast_should_close(void);     ///< @return 1 if the engine should close
 TOAST_C_API void toast_destroy(engine_t*);    ///< Destroys the game engine
 
+TOAST_C_API void toast_create_SDL_window(const char*);
+TOAST_C_API void toast_create_avalonia_window();
+
 #ifdef __cplusplus
 }
 #endif

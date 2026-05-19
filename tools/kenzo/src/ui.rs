@@ -7,22 +7,29 @@ use ratatui::{
 };
 use crate::app::{App, ConnectionState, PopupOption, Severity, AppFocus};
 
-pub fn draw(f: &mut Frame, app: &App) {
+pub fn draw(f: &mut Frame, app: &mut App) {
     let size = f.area();
 
     match &app.state {
         ConnectionState::Disconnected | ConnectionState::Connecting(_) => {
             render_disconnected(f, app, size);
         }
-        ConnectionState::Connected | ConnectionState::CsvMode(_) => {
+        ConnectionState::Connected | ConnectionState::CsvMode(_) | ConnectionState::Reconnecting(_) => {
             render_connected(f, app, size);
         }
     }
 }
 
-fn render_disconnected(f: &mut Frame, app: &App, area: Rect) {
-    // Make popup large enough to display all options with padding
-    let area = centered_rect(50, 20, area); 
+fn render_disconnected(f: &mut Frame, app: &mut App, area: Rect) {
+    // Ensure the popup has enough space for all options (at least 10 lines and 60 columns)
+    let popup_width = 60.min(area.width);
+    let popup_height = 10.min(area.height);
+    let area = Rect::new(
+        area.x + (area.width.saturating_sub(popup_width)) / 2,
+        area.y + (area.height.saturating_sub(popup_height)) / 2,
+        popup_width,
+        popup_height,
+    );
     
     let block = Block::default()
         .borders(Borders::ALL)
@@ -44,7 +51,7 @@ fn render_disconnected(f: &mut Frame, app: &App, area: Rect) {
             Constraint::Length(1), // Remote IP
             Constraint::Length(1), // Empty
             Constraint::Length(1), // CSV
-            Constraint::Min(1),    // Rest
+            Constraint::Min(0),    // Rest
         ])
         .split(area);
 
@@ -97,14 +104,25 @@ fn render_disconnected(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(Paragraph::new(csv_text).style(csv_style), chunks[5]);
 }
 
-fn render_connected(f: &mut Frame, app: &App, area: Rect) {
+fn render_connected(f: &mut Frame, app: &mut App, area: Rect) {
+    let is_reconnecting = matches!(app.state, ConnectionState::Reconnecting(_));
+    
     let main_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Min(10),
-            Constraint::Length(3), // Search
-            Constraint::Length(1), // Keybinds
-        ])
+        .constraints(if is_reconnecting {
+            vec![
+                Constraint::Min(10),
+                Constraint::Length(3), // Search
+                Constraint::Length(1), // Keybinds
+                Constraint::Length(1), // Status bar
+            ]
+        } else {
+            vec![
+                Constraint::Min(10),
+                Constraint::Length(3), // Search
+                Constraint::Length(1), // Keybinds
+            ]
+        })
         .split(area);
 
     let content_chunks = Layout::default()
@@ -137,7 +155,7 @@ fn render_connected(f: &mut Frame, app: &App, area: Rect) {
             let checked = if app.excluded_severities.contains(&s) { "[ ]" } else { "[x]" };
             ListItem::new(format!("{} {}", checked, label))
         }).collect();
-        f.render_stateful_widget(List::new(sev_items).block(severity_block).highlight_style(Style::default().add_modifier(Modifier::BOLD).fg(Color::Yellow)), filter_chunks[0], &mut app.severity_list_state.clone());
+        f.render_stateful_widget(List::new(sev_items).block(severity_block).highlight_style(Style::default().add_modifier(Modifier::BOLD).fg(Color::Yellow)), filter_chunks[0], &mut app.severity_list_state);
 
         // Sink Filter
         let sink_block = Block::default()
@@ -152,7 +170,7 @@ fn render_connected(f: &mut Frame, app: &App, area: Rect) {
             let checked = if app.excluded_sinks.contains(s) { "[ ]" } else { "[x]" };
             ListItem::new(format!("{} {}", checked, s))
         }).collect();
-        f.render_stateful_widget(List::new(sink_items).block(sink_block).highlight_style(Style::default().add_modifier(Modifier::BOLD).fg(Color::Yellow)), filter_chunks[1], &mut app.sink_list_state.clone());
+        f.render_stateful_widget(List::new(sink_items).block(sink_block).highlight_style(Style::default().add_modifier(Modifier::BOLD).fg(Color::Yellow)), filter_chunks[1], &mut app.sink_list_state);
     }
 
     // Table
@@ -171,15 +189,23 @@ fn render_connected(f: &mut Frame, app: &App, area: Rect) {
     let keybinds = Line::from(vec![
         Span::styled(" q ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Quit |"),
         Span::styled(" f ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Filters |"),
-        Span::styled(" d ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Auto-scroll |"),
+        Span::styled(" s ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Auto-scroll |"),
         Span::styled(" / ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Search |"),
         Span::styled(" hjkl ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Move |"),
         Span::styled(" Shift+HJKL ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Switch Focus "),
     ]);
     f.render_widget(Paragraph::new(keybinds).alignment(Alignment::Center), main_chunks[2]);
+
+    // Reconnecting Status Bar
+    if is_reconnecting {
+        let spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+        let spinner_char = spinner[app.spinner_frame % spinner.len()];
+        let status_text = format!("{} reconnecting... Press \"q\" to go to to main menu", spinner_char);
+        f.render_widget(Paragraph::new(status_text).alignment(Alignment::Center).style(Style::default().bg(Color::Yellow).fg(Color::Black).add_modifier(Modifier::BOLD)), main_chunks[3]);
+    }
 }
 
-fn render_table(f: &mut Frame, app: &App, area: Rect) {
+fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
     let mut title = " Kenzo Logs ".to_string();
     if app.scroll_locked {
         title = " Kenzo Logs 🔒 ".to_string();
@@ -191,24 +217,31 @@ fn render_table(f: &mut Frame, app: &App, area: Rect) {
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(if app.focus == AppFocus::Table { Color::Yellow } else { Color::DarkGray }));
 
-    let widths = [
+    let show_sink = area.width > 100;
+    let show_file = area.width > 130;
+
+    let mut widths = vec![
         Constraint::Length(15), // Time
         Constraint::Length(12), // Severity
-        Constraint::Length(15), // Sink
-        Constraint::Length(25), // File
-        Constraint::Min(50),    // Message
     ];
+    if show_sink { widths.push(Constraint::Length(15)); }
+    if show_file { widths.push(Constraint::Length(25)); }
+    widths.push(Constraint::Min(20)); // Message
 
-    // Calculate approximate width for the message column to perform manual wrapping
-    // This is a rough estimation because layout can change
-    let table_width = area.width;
-    let msg_col_width = table_width.saturating_sub(17 + 12 + 15 + 25 + 10) as usize; // subtracting column sizes + separators
+    // Calculate message column width for wrapping
+    let mut occupied_width = 15 + 12 + 2; // Time + Severity + borders
+    let mut num_cols = 3;
+    if show_sink { occupied_width += 15; num_cols += 1; }
+    if show_file { occupied_width += 25; num_cols += 1; }
+    occupied_width += num_cols - 1; // Column spacing
+
+    let msg_col_width = (area.width as usize).saturating_sub(occupied_width as usize).max(20);
 
     let rows: Vec<Row> = app.filtered_logs.iter().map(|&log_idx| {
         let log = &app.logs[log_idx];
         let severity = Severity::from(log.severity);
         let (fg, bg) = match severity {
-            Severity::Trace => (Color::Gray, Color::Reset), // Lighter gray for trace
+            Severity::Trace => (Color::Gray, Color::Reset),
             Severity::Info => (Color::Green, Color::Reset),
             Severity::Warning => (Color::Yellow, Color::Reset),
             Severity::Error => (Color::Red, Color::Reset),
@@ -219,7 +252,7 @@ fn render_table(f: &mut Frame, app: &App, area: Rect) {
         
         let sev_label = match log.severity { 0 => "TRACE", 1 => "INFO", 2 => "WARNING", 3 => "ERROR", 4 => "CRITICAL", _ => "UNKNOWN" };
         let sev_str = format!("[{}]", sev_label);
-        let time_str = format!("{}  ", format_timestamp(log.timestamp)); // Two characters padding
+        let time_str = format!("{}  ", format_timestamp(log.timestamp));
         let sink_str = format!("[{}]", log.sink);
         let file_str = format!("{}:{}", log.filepath, log.line_number);
         let msg_str = log.message.replace('\t', "    ");
@@ -236,22 +269,29 @@ fn render_table(f: &mut Frame, app: &App, area: Rect) {
 
         let msg_text = Text::from(wrapped_lines.iter().map(|l| Line::from(highlight_text(l, &highlight_q, if severity == Severity::Critical { style } else if severity == Severity::Trace { style } else { Style::default().fg(Color::White) }))).collect::<Vec<_>>());
 
-        Row::new(vec![
+        let mut cells = vec![
             Cell::from(Line::from(highlight_text(&time_str, &highlight_q, style))),
             Cell::from(Line::from(highlight_text(&sev_str, &highlight_q, style))),
-            Cell::from(Line::from(highlight_text(&sink_str, &highlight_q, style))),
-            Cell::from(Line::from(highlight_text(&file_str, &highlight_q, style))),
-            Cell::from(msg_text),
-        ]).style(style).height(row_height)
+        ];
+        if show_sink { cells.push(Cell::from(Line::from(highlight_text(&sink_str, &highlight_q, style)))); }
+        if show_file { cells.push(Cell::from(Line::from(highlight_text(&file_str, &highlight_q, style)))); }
+        cells.push(Cell::from(msg_text));
+
+        Row::new(cells).style(style).height(row_height)
     }).collect();
 
+    let mut header_cells = vec!["Time", "Severity"];
+    if show_sink { header_cells.push("Sink"); }
+    if show_file { header_cells.push("File"); }
+    header_cells.push("Message");
+
     let table = Table::new(rows, widths)
-        .header(Row::new(vec!["Time", "Severity", "Sink", "File", "Message"]).style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)))
+        .header(Row::new(header_cells).style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)))
         .block(table_block)
         .column_spacing(1)
         .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED));
 
-    f.render_stateful_widget(table, area, &mut app.table_state.clone());
+    f.render_stateful_widget(table, area, &mut app.table_state);
 }
 
 fn highlight_text(text: &str, query: &str, base_style: Style) -> Vec<Span<'static>> {

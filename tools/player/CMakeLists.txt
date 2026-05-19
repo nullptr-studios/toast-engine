@@ -20,3 +20,6 @@ add_custom_target(player ALL
         COMMENT "[dotnet] Building ${CSHARP_ASSEMBLY_NAME} (${DOTNET_CONFIG})..."
         VERBATIM
 )
+
+add_dependencies(player toast_engine)
+add_dependencies(player dummy_game)

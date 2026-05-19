@@ -22,7 +22,7 @@ concurrency:
 jobs:
   validate:
     name: Validate branch policy
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     steps:
       - name: Checkout PR branch history
         uses: actions/checkout@v4
