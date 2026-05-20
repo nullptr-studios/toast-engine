@@ -60,6 +60,7 @@ pub enum PopupOption {
 pub struct App {
     pub logs: Vec<LogData>,
     pub filtered_logs: Vec<usize>, // Indices of logs that match filters
+    pub display_rows: Vec<(usize, usize)>, // Maps display row to (log_idx, chunk_idx) for split messages
     pub state: ConnectionState,
     pub popup_selection: PopupOption,
     pub input_buffer: Input,
@@ -85,6 +86,11 @@ pub struct App {
     pub severity_list_state: ratatui::widgets::ListState,
     pub sink_list_state: ratatui::widgets::ListState,
     pub focus: AppFocus,
+    
+    // Detail view
+    pub detail_view_open: bool,
+    pub detail_view_log_idx: Option<usize>,
+    pub detail_view_scroll: usize,
 
     // Communication
     pub log_rx: Option<mpsc::Receiver<Vec<LogData>>>,
@@ -102,6 +108,7 @@ impl App {
         let mut app = Self {
             logs: Vec::new(),
             filtered_logs: Vec::new(),
+            display_rows: Vec::new(),
             state: ConnectionState::Disconnected,
             popup_selection: PopupOption::Localhost,
             input_buffer: Input::default(),
@@ -119,6 +126,9 @@ impl App {
             severity_list_state: ratatui::widgets::ListState::default(),
             sink_list_state: ratatui::widgets::ListState::default(),
             focus: AppFocus::Table,
+            detail_view_open: false,
+            detail_view_log_idx: None,
+            detail_view_scroll: 0,
             log_rx: None,
             stop_tx: None,
             last_connect_addr: None,
@@ -291,31 +301,45 @@ impl App {
     }
 
     async fn handle_connected_key(&mut self, key: KeyEvent) -> Result<()> {
+        if self.detail_view_open {
+            match key.code {
+                KeyCode::Esc => self.close_detail_view(),
+                KeyCode::Char('q') => self.close_detail_view(),
+                KeyCode::Down | KeyCode::Char('j') => {
+                    self.scroll_detail_view_down(10000); // Max scrollable (will be clamped in render)
+                }
+                KeyCode::Up | KeyCode::Char('k') => self.scroll_detail_view_up(),
+                _ => {}
+            }
+            return Ok(());
+        }
+
         if self.focus == AppFocus::Search {
              match key.code {
-                 KeyCode::Enter => self.focus = AppFocus::Table,
-                 KeyCode::Esc => {
-                     self.search_query.clear();
-                     self.focus = AppFocus::Table;
-                     self.update_filtered_logs();
-                 }
-                 KeyCode::Backspace => {
-                      self.search_query.pop();
+                  KeyCode::Enter => self.focus = AppFocus::Table,
+                  KeyCode::Esc => {
+                      self.search_query.clear();
+                      self.focus = AppFocus::Table;
                       self.update_filtered_logs();
-                 }
-                 KeyCode::Char(c) => {
-                      self.search_query.push(c);
-                      self.update_filtered_logs();
-                 }
-                 _ => {}
-             }
-             return Ok(());
-        }
+                  }
+                  KeyCode::Backspace => {
+                       self.search_query.pop();
+                       self.update_filtered_logs();
+                  }
+                  KeyCode::Char(c) => {
+                       self.search_query.push(c);
+                       self.update_filtered_logs();
+                  }
+                  _ => {}
+              }
+              return Ok(());
+         }
 
         match key.code {
             KeyCode::Char('q') => {
                 self.disconnect();
             }
+            KeyCode::Char('v') => self.open_detail_view(),
             KeyCode::Char('/') => self.focus = AppFocus::Search,
             KeyCode::Char('f') => {
                 self.show_filters = !self.show_filters;
@@ -355,7 +379,7 @@ impl App {
             AppFocus::Table => {
                 self.scroll_locked = true;
                 let i = match self.table_state.selected() {
-                    Some(i) => (i + 1).min(self.filtered_logs.len().saturating_sub(1)),
+                    Some(i) => (i + 1).min(self.display_rows.len().saturating_sub(1)),
                     None => 0,
                 };
                 self.table_state.select(Some(i));
@@ -591,20 +615,26 @@ impl App {
             Some(i)
         }).collect();
 
+        // Simple 1:1 mapping between display rows and filtered logs
+        self.display_rows.clear();
+        for &log_idx in &self.filtered_logs {
+            self.display_rows.push((log_idx, 0));
+        }
+
         self.search_matches.clear();
         if !q.is_empty() {
              for (idx, &log_idx) in self.filtered_logs.iter().enumerate() {
-                 let log = &self.logs[log_idx];
-                 let severity_label = match log.severity {
-                     0 => "trace", 1 => "info", 2 => "warning", 3 => "error", 4 => "critical", _ => ""
-                 };
-                 if log.message.to_lowercase().contains(&q) ||
-                    log.sink.to_lowercase().contains(&q) ||
-                    log.filepath.to_lowercase().contains(&q) ||
-                    severity_label.contains(&q) {
-                        self.search_matches.push(idx);
-                    }
-             }
+                  let log = &self.logs[log_idx];
+                  let severity_label = match log.severity {
+                      0 => "trace", 1 => "info", 2 => "warning", 3 => "error", 4 => "critical", _ => ""
+                  };
+                  if log.message.to_lowercase().contains(&q) ||
+                     log.sink.to_lowercase().contains(&q) ||
+                     log.filepath.to_lowercase().contains(&q) ||
+                     severity_label.contains(&q) {
+                         self.search_matches.push(idx);
+                     }
+              }
         }
         
         if self.search_matches.is_empty() {
@@ -619,8 +649,42 @@ impl App {
     }
 
     fn jump_to_latest(&mut self) {
-        if !self.filtered_logs.is_empty() {
-            self.table_state.select(Some(self.filtered_logs.len() - 1));
+        if !self.display_rows.is_empty() {
+            self.table_state.select(Some(self.display_rows.len() - 1));
+        }
+    }
+
+    pub fn open_detail_view(&mut self) {
+        if let Some(selected) = self.table_state.selected() {
+            if selected < self.display_rows.len() {
+                let (log_idx, _chunk_idx) = self.display_rows[selected];
+                self.detail_view_open = true;
+                self.detail_view_log_idx = Some(log_idx);
+                self.detail_view_scroll = 0;
+            }
+        }
+    }
+
+    pub fn close_detail_view(&mut self) {
+        self.detail_view_open = false;
+        self.detail_view_log_idx = None;
+        self.detail_view_scroll = 0;
+    }
+
+    pub fn scroll_detail_view_down(&mut self, max_lines: usize) {
+        if self.detail_view_scroll < max_lines.saturating_sub(1) {
+            self.detail_view_scroll = self.detail_view_scroll.saturating_add(3); // Scroll by 3 lines
+            if self.detail_view_scroll >= max_lines {
+                self.detail_view_scroll = max_lines.saturating_sub(1);
+            }
+        }
+    }
+
+    pub fn scroll_detail_view_up(&mut self) {
+        if self.detail_view_scroll >= 3 {
+            self.detail_view_scroll -= 3;
+        } else if self.detail_view_scroll > 0 {
+            self.detail_view_scroll = 0;
         }
     }
 }
