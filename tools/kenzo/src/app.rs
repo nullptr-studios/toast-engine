@@ -79,6 +79,7 @@ pub struct App {
 
     // Scrolling
     pub scroll_locked: bool,
+    pub wrap_logs: bool,
 
     // Navigation
     pub table_state: ratatui::widgets::TableState,
@@ -115,6 +116,7 @@ impl App {
             search_matches: Vec::new(),
             current_match_idx: None,
             scroll_locked: false,
+            wrap_logs: true,
             table_state: ratatui::widgets::TableState::default(),
             severity_list_state: ratatui::widgets::ListState::default(),
             sink_list_state: ratatui::widgets::ListState::default(),
@@ -328,6 +330,9 @@ impl App {
                 if !self.scroll_locked {
                     self.jump_to_latest();
                 }
+            }
+            KeyCode::Char('w') => {
+                self.wrap_logs = !self.wrap_logs;
             }
             KeyCode::Char('n') => self.next_match(),
             KeyCode::Char('p') => self.prev_match(),

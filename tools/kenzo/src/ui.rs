@@ -186,10 +186,21 @@ fn render_connected(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_widget(Paragraph::new(search_text).block(search_block), main_chunks[1]);
 
     // Keybinds
+    let s_style = if !app.scroll_locked {
+        Style::default().fg(Color::Black).bg(Color::Yellow)
+    } else {
+        Style::default().fg(Color::Gray).bg(Color::DarkGray)
+    };
+    let w_style = if app.wrap_logs {
+        Style::default().fg(Color::Black).bg(Color::Magenta)
+    } else {
+        Style::default().fg(Color::Gray).bg(Color::DarkGray)
+    };
     let keybinds = Line::from(vec![
         Span::styled(" q ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Quit |"),
         Span::styled(" f ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Filters |"),
-        Span::styled(" s ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Auto-scroll |"),
+        Span::styled(" s ", s_style), Span::raw(" Auto-scroll |"),
+        Span::styled(" w ", w_style), Span::raw(" Wrap |"),
         Span::styled(" / ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Search |"),
         Span::styled(" hjkl ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Move |"),
         Span::styled(" Shift+HJKL ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Switch Focus "),
@@ -217,6 +228,7 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(if app.focus == AppFocus::Table { Color::Yellow } else { Color::DarkGray }));
 
+    let inner_area = table_block.inner(area);
     let show_sink = area.width > 100;
     let show_file = area.width > 130;
 
@@ -228,14 +240,14 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
     if show_file { widths.push(Constraint::Length(25)); }
     widths.push(Constraint::Min(20)); // Message
 
-    // Calculate message column width for wrapping
-    let mut occupied_width = 15 + 12 + 2; // Time + Severity + borders
-    let mut num_cols = 3;
+    // Calculate message column width for wrapping (table inner area, minus fixed columns and spacing)
+    let column_spacing = 1u16;
+    let mut occupied_width = 15u16 + 12u16; // Time + Severity
+    let mut num_cols = 2u16;
     if show_sink { occupied_width += 15; num_cols += 1; }
     if show_file { occupied_width += 25; num_cols += 1; }
-    occupied_width += num_cols - 1; // Column spacing
-
-    let msg_col_width = (area.width as usize).saturating_sub(occupied_width as usize).max(20);
+    let spacing_width = column_spacing.saturating_mul(num_cols.saturating_sub(1));
+    let msg_col_width = inner_area.width.saturating_sub(occupied_width + spacing_width).max(1) as usize;
 
     let rows: Vec<Row> = app.filtered_logs.iter().map(|&log_idx| {
         let log = &app.logs[log_idx];
@@ -258,14 +270,27 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
         let msg_str = log.message.replace('\t', "    ");
 
         let mut wrapped_lines = Vec::new();
-        for line in msg_str.lines() {
-            let wrapped = textwrap::fill(line, msg_col_width);
-            for subline in wrapped.lines() {
-                wrapped_lines.push(subline.to_string());
+        if app.wrap_logs {
+            for line in msg_str.lines() {
+                let wrapped = textwrap::fill(line, msg_col_width);
+                for subline in wrapped.lines() {
+                    wrapped_lines.push(subline.to_string());
+                }
             }
+        } else {
+            let single_line = msg_str.replace('\r', "").replace('\n', " ");
+            wrapped_lines.push(truncate_with_ellipsis(&single_line, msg_col_width));
         }
-        
-        let row_height = wrapped_lines.len().max(1) as u16;
+
+        if wrapped_lines.is_empty() {
+            wrapped_lines.push(String::new());
+        }
+
+        let row_height = if app.wrap_logs {
+            wrapped_lines.len().max(1) as u16
+        } else {
+            1
+        };
 
         let msg_text = Text::from(wrapped_lines.iter().map(|l| Line::from(highlight_text(l, &highlight_q, if severity == Severity::Critical { style } else if severity == Severity::Trace { style } else { Style::default().fg(Color::White) }))).collect::<Vec<_>>());
 
@@ -292,6 +317,28 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
         .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED));
 
     f.render_stateful_widget(table, area, &mut app.table_state);
+}
+
+fn truncate_with_ellipsis(text: &str, max_width: usize) -> String {
+    if max_width == 0 {
+        return String::new();
+    }
+    let text_len = text.chars().count();
+    if text_len <= max_width {
+        return text.to_string();
+    }
+    if max_width <= 3 {
+        return ".".repeat(max_width);
+    }
+    let mut truncated = String::new();
+    for (i, ch) in text.chars().enumerate() {
+        if i >= max_width - 3 {
+            break;
+        }
+        truncated.push(ch);
+    }
+    truncated.push_str("...");
+    truncated
 }
 
 fn highlight_text(text: &str, query: &str, base_style: Style) -> Vec<Span<'static>> {
@@ -321,15 +368,4 @@ fn format_timestamp(ts: u64) -> String {
         }
         _ => ts.to_string(),
     }
-}
-
-fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
-    let popup_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage((100 - percent_y) / 2), Constraint::Percentage(percent_y), Constraint::Percentage((100 - percent_y) / 2)])
-        .split(r);
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage((100 - percent_x) / 2), Constraint::Percentage(percent_x), Constraint::Percentage((100 - percent_x) / 2)])
-        .split(popup_layout[1])[1]
 }
