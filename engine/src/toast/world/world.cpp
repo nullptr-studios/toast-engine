@@ -1,4 +1,5 @@
 #include "world.hpp"
+
 #include <toast/thread_pool.hpp>
 
 namespace toast {
@@ -82,7 +83,7 @@ void World::swapRoot(Node* node) {
 			if (it == m.cached_nodes.end()) {
 				goto ERROR_MISSING;
 			}
-			if (m.root_node != nullptr) {
+			if (m.root_node.exists()) {
 				m.cached_nodes.emplace_back(m.root_node);
 			}
 			m.root_node = node;
@@ -94,7 +95,7 @@ void World::swapRoot(Node* node) {
 			if (it == m.global_nodes.end()) {
 				goto ERROR_MISSING;
 			}
-			if (m.root_node != nullptr) {
+			if (m.root_node.exists()) {
 				m.global_nodes.emplace_back(m.root_node);
 			}
 			m.root_node = node;
@@ -119,6 +120,5 @@ ERROR_MISSING:
 	    "World", "Trying to swap root node with {} which is not a top-level node (parent: {})", node->name(), node->parent()->name()
 	);
 }
-
 
 }

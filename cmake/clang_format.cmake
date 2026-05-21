@@ -17,8 +17,8 @@ if(NOT CLANG_FORMAT)
 endif()
 
 file(GLOB_RECURSE FORMAT_FILES
-    "${SRC_DIR}/*.h" "${SRC_DIR}/*.hpp" "${SRC_DIR}/*.cpp "${SRC_DIR}/*.inl"
-    "${FFI_DIR}/*.h" "${FFI_DIR}/*.hpp" "${FFI_DIR}/*.cpp "${FFI_DIR}/*.inl"
+    "${SRC_DIR}/*.h" "${SRC_DIR}/*.hpp" "${SRC_DIR}/*.cpp" "${SRC_DIR}/*.inl"
+    "${FFI_DIR}/*.h" "${FFI_DIR}/*.hpp" "${FFI_DIR}/*.cpp" "${FFI_DIR}/*.inl"
 )
 
 foreach(fmt_file IN LISTS FORMAT_FILES)

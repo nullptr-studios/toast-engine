@@ -16,6 +16,7 @@
 #include <future>
 #include <toast/events/listener.hpp>
 #include <unordered_set>
+#include <utility>
 #include <variant>
 
 namespace toast {
@@ -23,23 +24,28 @@ namespace toast {
 class Node;
 
 struct NodeCluster {
-	NodeCluster(std::vector<Box<Node>>& nodes) : nodes(nodes) {}
+	NodeCluster(std::vector<Box<Node>>& nodes) : nodes(nodes) { }
+
 	std::vector<Box<Node>> nodes;
+
 	void earlyTick() {
 		for (auto& node : nodes) {
 			node->table->earlyTick(*node);
 		}
 	}
+
 	void tick() {
 		for (auto& node : nodes) {
 			node->table->tick(*node);
 		}
 	}
+
 	void postPhysics() {
 		for (auto& node : nodes) {
 			node->table->postPhysics(*node);
 		}
 	}
+
 	void lateTick() {
 		for (auto& node : nodes) {
 			node->table->lateTick(*node);
@@ -84,7 +90,7 @@ public:
 
 	void computeDependencyGraph() {
 		// Guarantee every existing node exists in the subgraph
-		for (auto& node : m.nodes) {
+		for (const auto& node : m.nodes) {
 			graph.connections[node.node->box()];
 			graph.inverse_connections[node.node->box()];
 		}
@@ -96,7 +102,7 @@ public:
 
 		for (const auto& start_cn : m.nodes) {
 			auto start_node = start_cn.node->box();
-			if (visited.count(start_node)) {
+			if (visited.contains(start_node)) {
 				continue;
 			}
 
@@ -114,7 +120,7 @@ public:
 				// Walk forward edges
 				if (auto it = graph.connections.find(current->box()); it != graph.connections.end()) {
 					for (const auto& neighbor : it->second) {
-						if (visited.count(neighbor)) {
+						if (visited.contains(neighbor)) {
 							continue;
 						}
 						visited.insert(neighbor);
@@ -125,7 +131,7 @@ public:
 				// Walk backward edges
 				if (auto it = graph.inverse_connections.find(current->box()); it != graph.inverse_connections.end()) {
 					for (const auto& neighbor : it->second) {
-						if (visited.count(neighbor)) {
+						if (visited.contains(neighbor)) {
 							continue;
 						}
 						visited.insert(neighbor);
@@ -169,7 +175,7 @@ public:
 			std::unordered_map<Box<Node>, bool> on_stack;
 			std::stack<Box<Node>> stack;
 			int counter = 0;
-			std::vector<std::vector<Box<Node>>> SCCs; // reverse topology order
+			std::vector<std::vector<Box<Node>>> SCCs;    // reverse topology order
 		};
 
 		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> result_subgraphs;
@@ -177,7 +183,9 @@ public:
 		for (auto& g : subgraphs) {
 			// Build surviving nodes for edge filtering
 			std::unordered_set<Box<Node>> in_subgraph;
-			for (auto& v : g) in_subgraph.insert(std::get<Box<Node>>(v));
+			for (auto& v : g) {
+				in_subgraph.insert(std::get<Box<Node>>(v));
+			}
 
 			TarjanContext ctx;
 			std::function<void(const Box<Node>&)> strong_connect = [&](const Box<Node>& v) {
@@ -187,12 +195,12 @@ public:
 
 				if (auto it = graph.connections.find(v); it != graph.connections.end()) {
 					for (const auto& w : it->second) {
-						if (!in_subgraph.count(w)) {
+						if (!in_subgraph.contains(w)) {
 							// Skip nodes pruned in phase 2
 							continue;
 						}
 
-						if (!ctx.index.count(w)) {
+						if (!ctx.index.contains(w)) {
 							strong_connect(w);
 							ctx.low_link[v] = std::min(ctx.low_link[v], ctx.low_link[w]);
 						} else if (ctx.on_stack[w]) {
@@ -209,7 +217,9 @@ public:
 						ctx.stack.pop();
 						ctx.on_stack[w] = false;
 						scc.push_back(w);
-						if (w == v) break;
+						if (w == v) {
+							break;
+						}
 					}
 					ctx.SCCs.emplace_back(std::move(scc));
 				}
@@ -217,7 +227,7 @@ public:
 
 			for (auto& variant : g) {
 				const auto& node = std::get<Box<Node>>(variant);
-				if (!ctx.index.count(node)) {
+				if (!ctx.index.contains(node)) {
 					strong_connect(node);
 				}
 			}
@@ -231,10 +241,10 @@ public:
 					sorted_g.emplace_back(scc[0]);
 				} else {
 					TOAST_TRACE("World", "Dependency cycle detected ({} nodes) -> grouping into NodeCluster", scc.size());
-					sorted_g.emplaceBack(NodeCluster(scc));
+					sorted_g.emplace_back(NodeCluster(scc));
 				}
 			}
-			result_subraphs.emplace_back(std::move(sorted_g));
+			result_subgraphs.emplace_back(std::move(sorted_g));
 		}
 
 		subgraphs = std::move(result_subgraphs);
@@ -251,8 +261,8 @@ public:
 
 		std::unordered_map<Box<Node>, ItemRef> node_to_item;
 
-		for (int si = 0; si < (int)subgraphs.size(); ++si) {
-			for (int ii = 0; ii < (int)subgraphs[si].size(); ++ii) {
+		for (int si = 0; std::cmp_less(si ,subgraphs.size()); ++si) {
+			for (int ii = 0; std::cmp_less(ii ,subgraphs[si].size()); ++ii) {
 				std::visit(
 				    [&](auto& item) {
 					    using T = std::decay_t<decltype(item)>;
@@ -271,12 +281,12 @@ public:
 
 		// Assign wave levels
 		std::vector<std::vector<int>> waves(subgraphs.size());
-		for (int si = 0; si < (int)subgraphs.size(); ++si) {
+		for (int si = 0; std::cmp_less(si ,subgraphs.size()); ++si) {
 			waves[si].assign(subgraphs[si].size(), 0);
 		}
 
-		for (int si = 0; si < (int)subgraphs.size(); ++si) {
-			// Reverse iteration vecause of tarjan
+		for (int si = 0; std::cmp_less(si ,subgraphs.size()); ++si) {
+			// Reverse iteration because of tarjan
 			for (int ii = (int)subgraphs[si].size() - 1; ii >= 0; --ii) {
 				// Collect all physical nodes belonging to this item
 				std::vector<Box<Node>> item_nodes;
@@ -328,8 +338,8 @@ public:
 		// The next bucket will then only start when all futures join
 		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> bucket(max_wave + 1);
 
-		for (int si = 0; si < (int)subgraphs.size(); ++si) {
-			for (int ii = 0; ii < (int)subgraphs[si].size(); ++ii) {
+		for (int si = 0; std::cmp_less(si ,subgraphs.size()); ++si) {
+			for (int ii = 0; std::cmp_less(ii ,subgraphs[si].size()); ++ii) {
 				bucket[waves[si][ii]].emplace_back(std::move(subgraphs[si][ii]));
 			}
 		}
@@ -338,10 +348,10 @@ public:
 		// We are going to create 4 equal buckets representing each of the tick functions and then
 		// search for all the nodes that do not contain those functions and erase them from the list
 		TickSchedule ts = {
-			.early_tick = bucket,
-			.tick = bucket,
-			.post_physics = bucket,
-			.late_tick = bucket,
+		  .early_tick = bucket,
+		  .tick = bucket,
+		  .post_physics = bucket,
+		  .late_tick = bucket,
 		};
 
 		for (auto& wave : ts.early_tick) {
@@ -354,7 +364,9 @@ public:
 				auto cluster = std::get<NodeCluster>(item);
 				bool has_function = false;
 				for (const auto& node : cluster.nodes) {
-					if (not node->table->table.early_tick.empty()) return true;
+					if (not node->table->table.early_tick.empty()) {
+						return true;
+					}
 				}
 				return !has_function;
 			});
@@ -370,7 +382,9 @@ public:
 				auto cluster = std::get<NodeCluster>(item);
 				bool has_function = false;
 				for (const auto& node : cluster.nodes) {
-					if (not node->table->table.tick.empty()) return true;
+					if (not node->table->table.tick.empty()) {
+						return true;
+					}
 				}
 				return !has_function;
 			});
@@ -386,7 +400,9 @@ public:
 				auto cluster = std::get<NodeCluster>(item);
 				bool has_function = false;
 				for (const auto& node : cluster.nodes) {
-					if (not node->table->table.post_physics.empty()) return true;
+					if (not node->table->table.post_physics.empty()) {
+						return true;
+					}
 				}
 				return !has_function;
 			});
@@ -402,14 +418,15 @@ public:
 				auto cluster = std::get<NodeCluster>(item);
 				bool has_function = false;
 				for (const auto& node : cluster.nodes) {
-					if (not node->table->table.late_tick.empty()) return true;
+					if (not node->table->table.late_tick.empty()) {
+						return true;
+					}
 				}
 				return !has_function;
 			});
 		}
 
 		tick_schedule = std::move(ts);
-
 	}
 
 	void swapRoot(Node* node);

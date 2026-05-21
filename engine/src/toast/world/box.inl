@@ -136,6 +136,11 @@ auto Box<T>::operator=(Box<U>&& other) noexcept -> Box& {
 }
 
 template<NodeConcept T>
+auto Box<T>::exists() const noexcept -> bool {
+	return (control != nullptr) && (control->node != nullptr);
+}
+
+template<NodeConcept T>
 auto Box<T>::operator<=>(const Box& other) const noexcept -> std::strong_ordering {
 	if (this->control && other.control) {
 		return *this->control <=> *other.control;
@@ -144,8 +149,13 @@ auto Box<T>::operator<=>(const Box& other) const noexcept -> std::strong_orderin
 }
 
 template<NodeConcept T>
+auto Box<T>::operator==(const Box& other) const noexcept -> bool {
+	return (*this <=> other) == std::strong_ordering::equal;
+}
+
+template<NodeConcept T>
 Box<T>::operator bool() const noexcept {
-	return control && *control;
+	return this->exists();
 }
 
 template<NodeConcept T>

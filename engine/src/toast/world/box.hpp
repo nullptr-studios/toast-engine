@@ -50,9 +50,12 @@ public:
 
 	template<NodeConcept U>
 	  requires std::convertible_to<U*, T*>
-	auto operator=(Box<U>&& other) noexcept -> Box&;                              // Derived Move Assigment
+	auto operator=(Box<U>&& other) noexcept -> Box&;    // Derived Move Assigment
+
+	auto exists() const noexcept -> bool;
 
 	auto operator<=>(const Box& other) const noexcept -> std::strong_ordering;    // Spaceship Operator
+	auto operator==(const Box& other) const noexcept -> bool;                     // Equality operator
 	explicit operator bool() const noexcept;                                      // Bool Conversion
 
 	operator T&() noexcept;                                                       // Implicit Node& Conversion
