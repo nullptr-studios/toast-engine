@@ -39,6 +39,7 @@ class TOAST_API Node {
 	friend class World;
 	friend struct _detail::ControlBox;
 	friend struct NodeCluster;
+	friend struct _detail::WorldTestAccess;
 
 	Node() = default;
 	~Node() = default;
@@ -78,15 +79,16 @@ private:
 		std::string name;
 		NodeState state = NodeState::null;
 		NodeType type = NodeType::null;
-		bool local_enabled;        // is this object enabled?
-		bool inherited_enabled;    // is any parent of this object enabled?
+		bool local_enabled = false;        // is this object enabled?
+		bool inherited_enabled = false;    // is any parent of this object enabled?
+		std::array<uint8_t, 4> wave = {255, 255, 255, 255};
 		Box<Node> box;
 		Box<Node> parent;
 		std::vector<Box<Node>> children;
 		std::unique_ptr<event::Listener> listener = nullptr;
 	} m;
 
-	NodeFunctionTable* table;
+	NodeFunctionTable* table = nullptr;
 
 	void inheritedEnabled(bool value) noexcept;
 };

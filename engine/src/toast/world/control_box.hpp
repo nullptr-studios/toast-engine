@@ -14,6 +14,8 @@ namespace toast {
 class Node;
 
 namespace _detail {
+struct WorldTestAccess;
+
 struct TOAST_API ControlBox {
 	std::atomic<unsigned int> ref_count;
 	Node* node = nullptr;
