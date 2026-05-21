@@ -75,7 +75,7 @@ struct TickSchedule {
 };
 }
 
-class TOAST_API World {
+class World {
 public:
 	World();
 	~World() = default;
@@ -103,10 +103,10 @@ public:
 private:
 	inline static World* instance = nullptr;
 
-	/// @brief Creates a node and stores it in memory
+	/// Creates a node and stores it in memory
 	auto nodeAllocation() noexcept -> Box<Node>;
 
-	/// @brief Recalculates the dependency graph and updates the tick_schedule
+	/// Recalculates the dependency graph and updates the tick_schedule
 	void computeDependencyGraph();
 
 	/// Using a BFS flooding algorithm, separates the dependency graph into multiple independent subgraphs
@@ -123,26 +123,26 @@ private:
 
 	struct {
 		event::Listener listener;
-
+		std::thread load_thread;
 		std::unordered_set<_detail::ControlBox> nodes;
+	} m;
 
-		Box<Node> root_node;
-		std::vector<Box<Node>> global_nodes;
-		std::vector<Box<Node>> cached_nodes;
+	struct {
+		Box<Node> root;
+		std::vector<Box<Node>> global;
+		std::vector<Box<Node>> cached;
 		std::vector<Box<Node>> load_queue;
 		std::vector<Box<Node>> destroy_queue;
-
-		std::thread load_thread;
-	} m;
+	} nodes;
 
 	struct DependencyGraph {
 		std::unordered_map<Box<Node>, std::vector<Box<Node>>> connections;
 		std::unordered_map<Box<Node>, std::vector<Box<Node>>> inverse_connections;
-	} graph;
+	} dependency_graph;
 
 	_detail::TickSchedule tick_schedule;
 
-	friend struct _detail::WorldTestAccess;
+	friend struct toast::_detail::WorldTestAccess;
 };
 
 }

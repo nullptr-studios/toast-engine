@@ -42,7 +42,7 @@ class TOAST_API Node {
 	friend class World;
 	friend struct _detail::ControlBox;
 	friend struct _detail::NodeCluster;
-	friend struct _detail::WorldTestAccess;
+	friend struct toast::_detail::WorldTestAccess;
 
 	Node() = default;
 	~Node() = default;

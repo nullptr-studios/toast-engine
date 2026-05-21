@@ -2,13 +2,15 @@
 
 #include "test_registry.hpp"
 
+#include <memory>
 #include <string>
 #include <vector>
 
 using namespace toast::tests::dependency_graph;
 
 TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/08_graphviz", test_dependency_graph_08_graphviz) {
-	toast::World world;
+	std::unique_ptr<toast::World> world_owner(toast::_detail::WorldTestAccess::createWorld());
+	toast::World& world = *world_owner;
 
 	auto make_node = [&](std::string_view name, std::initializer_list<Stage> stages) {
 		auto node = toast::_detail::WorldTestAccess::createNode(world, name);
@@ -20,13 +22,13 @@ TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/08_graphviz", test_depend
 
 	auto connect_cycle = [&](std::vector<toast::Box<toast::Node>>& nodes) {
 		for (std::size_t i = 0; i < nodes.size(); ++i) {
-			toast::World::registerDependency(*nodes[i], *nodes[(i + 1) % nodes.size()]);
+			toast::_detail::WorldTestAccess::registerDependency(*nodes[i], *nodes[(i + 1) % nodes.size()]);
 		}
 	};
 
 	auto connect_chain = [&](std::vector<toast::Box<toast::Node>>& nodes) {
 		for (std::size_t i = 0; i + 1 < nodes.size(); ++i) {
-			toast::World::registerDependency(*nodes[i], *nodes[i + 1]);
+			toast::_detail::WorldTestAccess::registerDependency(*nodes[i], *nodes[i + 1]);
 		}
 	};
 
@@ -107,51 +109,51 @@ TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/08_graphviz", test_depend
 	// Main graph connections
 	// Cross connections between waves to create complex layout
 	for (int i = 0; i < 15; ++i) {
-		toast::World::registerDependency(*tick_wave_0[i], *tick_wave_1[i]);
+		toast::_detail::WorldTestAccess::registerDependency(*tick_wave_0[i], *tick_wave_1[i]);
 		if (i + 1 < 15) {
-			toast::World::registerDependency(*tick_wave_0[i + 1], *tick_wave_1[i]);
+			toast::_detail::WorldTestAccess::registerDependency(*tick_wave_0[i + 1], *tick_wave_1[i]);
 		}
 	}
 	for (int i = 0; i < 10; ++i) {
-		toast::World::registerDependency(*tick_wave_1[i], *tick_wave_2[i]);
+		toast::_detail::WorldTestAccess::registerDependency(*tick_wave_1[i], *tick_wave_2[i]);
 		if (i + 2 < 15) {
-			toast::World::registerDependency(*tick_wave_1[i + 2], *tick_wave_2[i]);
+			toast::_detail::WorldTestAccess::registerDependency(*tick_wave_1[i + 2], *tick_wave_2[i]);
 		}
 	}
 
 	// Tie clusters into the main graph waves
-	toast::World::registerDependency(*tick_wave_0[5], *tick_cluster_a.front());
-	toast::World::registerDependency(*tick_cluster_a.back(), *tick_wave_1[5]);
+	toast::_detail::WorldTestAccess::registerDependency(*tick_wave_0[5], *tick_cluster_a.front());
+	toast::_detail::WorldTestAccess::registerDependency(*tick_cluster_a.back(), *tick_wave_1[5]);
 
-	toast::World::registerDependency(*tick_wave_1[8], *tick_cluster_b.front());
-	toast::World::registerDependency(*tick_cluster_b.back(), *tick_wave_2[8]);
+	toast::_detail::WorldTestAccess::registerDependency(*tick_wave_1[8], *tick_cluster_b.front());
+	toast::_detail::WorldTestAccess::registerDependency(*tick_cluster_b.back(), *tick_wave_2[8]);
 
 	// Independent Graph 1: Simple chain + fork
 	connect_chain(indep_graph_1);
-	toast::World::registerDependency(*indep_graph_1[2], *indep_graph_1[5]);
+	toast::_detail::WorldTestAccess::registerDependency(*indep_graph_1[2], *indep_graph_1[5]);
 
 	// Independent Graph 2: Diamond pattern + small cluster
-	toast::World::registerDependency(*indep_graph_2[0], *indep_graph_2[1]);
-	toast::World::registerDependency(*indep_graph_2[0], *indep_graph_2[2]);
-	toast::World::registerDependency(*indep_graph_2[1], *indep_graph_2[3]);
-	toast::World::registerDependency(*indep_graph_2[2], *indep_graph_2[3]);
+	toast::_detail::WorldTestAccess::registerDependency(*indep_graph_2[0], *indep_graph_2[1]);
+	toast::_detail::WorldTestAccess::registerDependency(*indep_graph_2[0], *indep_graph_2[2]);
+	toast::_detail::WorldTestAccess::registerDependency(*indep_graph_2[1], *indep_graph_2[3]);
+	toast::_detail::WorldTestAccess::registerDependency(*indep_graph_2[2], *indep_graph_2[3]);
 	for(int i = 4; i < 12; ++i) {
-		toast::World::registerDependency(*indep_graph_2[3], *indep_graph_2[i]);
+		toast::_detail::WorldTestAccess::registerDependency(*indep_graph_2[3], *indep_graph_2[i]);
 	}
 
 	// Interleave pruned nodes across different parts of the graphs to test path tracing
 	connect_chain(pruned_nodes);
-	toast::World::registerDependency(*tick_wave_0[18], *pruned_nodes[0]);
-	toast::World::registerDependency(*pruned_nodes[3], *tick_wave_1[14]);
+	toast::_detail::WorldTestAccess::registerDependency(*tick_wave_0[18], *pruned_nodes[0]);
+	toast::_detail::WorldTestAccess::registerDependency(*pruned_nodes[3], *tick_wave_1[14]);
 
-	toast::World::registerDependency(*indep_graph_1[0], *pruned_nodes[5]);
-	toast::World::registerDependency(*pruned_nodes[7], *indep_graph_1[7]);
+	toast::_detail::WorldTestAccess::registerDependency(*indep_graph_1[0], *pruned_nodes[5]);
+	toast::_detail::WorldTestAccess::registerDependency(*pruned_nodes[7], *indep_graph_1[7]);
 
-	toast::World::registerDependency(*pruned_nodes[14], *post_cluster.front());
-	toast::World::registerDependency(*late_cluster.back(), *pruned_nodes[12]);
+	toast::_detail::WorldTestAccess::registerDependency(*pruned_nodes[14], *post_cluster.front());
+	toast::_detail::WorldTestAccess::registerDependency(*late_cluster.back(), *pruned_nodes[12]);
 
 	toast::_detail::WorldTestAccess::computeDependencyGraph(world);
-	const auto dot = world.dependencyGraphGraphviz();
+	const auto dot = toast::_detail::WorldTestAccess::dependencyGraphGraphviz(world);
 	TOAST_TRACE("Tests", "\n{}", dot);
 
 	assert(dot.find("cluster_early_tick") != std::string::npos);

@@ -1,5 +1,7 @@
 #include "world.hpp"
 
+#include "world_test_access.hpp"
+
 #include <sstream>
 #include <toast/thread_pool.hpp>
 
@@ -93,8 +95,8 @@ void World::registerDependency(Node& from, Node& to) {
 	//
 	// }
 
-	instance->graph.connections[from].emplace_back(to);
-	instance->graph.inverse_connections[to].emplace_back(from);
+	instance->dependency_graph.connections[from].emplace_back(to);
+	instance->dependency_graph.inverse_connections[to].emplace_back(from);
 }
 
 auto World::requestRuntimeCreation(Node& parent) -> Box<Node> {
@@ -165,8 +167,8 @@ void World::dispatchNodeCreation(int count) {
 void World::computeDependencyGraph() {
 	// Guarantee every existing node exists in the subgraph
 	for (const auto& node : m.nodes) {
-		graph.connections[node.node->box()];
-		graph.inverse_connections[node.node->box()];
+		dependency_graph.connections[node.node->box()];
+		dependency_graph.inverse_connections[node.node->box()];
 	}
 
 	auto subgraphs = subgraphSeparation();
@@ -216,7 +218,7 @@ auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
 			component.push_back(current);
 
 			// Walk forward edges
-			if (auto it = graph.connections.find(current); it != graph.connections.end()) {
+			if (auto it = dependency_graph.connections.find(current); it != dependency_graph.connections.end()) {
 				for (const auto& neighbor : it->second) {
 					if (visited.contains(neighbor)) {
 						continue;
@@ -227,7 +229,7 @@ auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
 			}
 
 			// Walk backward edges
-			if (auto it = graph.inverse_connections.find(current); it != graph.inverse_connections.end()) {
+			if (auto it = dependency_graph.inverse_connections.find(current); it != dependency_graph.inverse_connections.end()) {
 				for (const auto& neighbor : it->second) {
 					if (visited.contains(neighbor)) {
 						continue;
@@ -247,136 +249,153 @@ auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
 	return subgraphs;
 }
 
-auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& sg) -> std::vector<_detail::TickSchedule::Wave> {
-	struct TarjanContext {
+auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_subgraphs)
+    -> std::vector<_detail::TickSchedule::Wave> {
+	// SearchContext tracks the state of the DFS traversal for Tarjan's algorithm.
+	struct SearchContext {
 		std::unordered_map<Box<Node>, int> index;
 		std::unordered_map<Box<Node>, int> low_link;
 		std::unordered_map<Box<Node>, bool> on_stack;
 		std::stack<Box<Node>> stack;
 		int counter = 0;
-		std::vector<std::vector<Box<Node>>> sccs;    // reverse topology order
+		std::vector<std::vector<Box<Node>>> sccs;    // Components in reverse topological order
 	};
 
-	std::vector<_detail::TickSchedule::Wave> subgraphs;
-	subgraphs.reserve(sg.size());
-	for (const auto& v : sg) {
+	                                               // We start with a list of nodes per subgraph that survived the initial pruning
+	std::vector<_detail::TickSchedule::Wave> processed_subgraphs;
+	processed_subgraphs.reserve(input_subgraphs.size());
+	for (const auto& subgraph_nodes : input_subgraphs) {
 		_detail::TickSchedule::Wave wave;
-		wave.reserve(v.size());
-		for (const auto& w : v) {
-			wave.emplace_back(w);
+		wave.reserve(subgraph_nodes.size());
+		for (const auto& node : subgraph_nodes) {
+			wave.emplace_back(node);
 		}
-		subgraphs.emplace_back(std::move(wave));
+		processed_subgraphs.emplace_back(std::move(wave));
 	}
 
 	std::vector<_detail::TickSchedule::Wave> result;
 
-	for (const auto& g : subgraphs) {
-		// Build surviving nodes for edge filtering
-		std::unordered_set<Box<Node>> in_subgraph;
-		for (const auto& v : g) {
-			in_subgraph.insert(std::get<Box<Node>>(v));
+	for (const auto& current_subgraph : processed_subgraphs) {
+		// Create a lookup set to efficiently filter out neighbors that aren't part of this subgraph
+		std::unordered_set<Box<Node>> nodes_in_subgraph;
+		for (const auto& variant : current_subgraph) {
+			nodes_in_subgraph.insert(std::get<Box<Node>>(variant));
 		}
 
-		TarjanContext ctx;
-		std::function<void(const Box<Node>&)> strong_connect = [&](const Box<Node>& v) {
-			ctx.index[v] = ctx.low_link[v] = ctx.counter++;
-			ctx.stack.push(v);
-			ctx.on_stack[v] = true;
+		SearchContext search_context;
 
-			if (auto it = graph.connections.find(v); it != graph.connections.end()) {
-				for (const auto& w : it->second) {
-					if (!in_subgraph.contains(w)) {
-						// Skip nodes pruned in phase 2
+		// strong_connect is a recursive DFS function that finds SCCs
+		// An SCC is a group of nodes where every node is reachable from every other node in the group
+		// In our dependency graph, an SCC with >1 node indicates a circular dependency
+		std::function<void(const Box<Node>&)> strong_connect = [&](const Box<Node>& current_node) {
+			search_context.index[current_node] = search_context.low_link[current_node] = search_context.counter++;
+			search_context.stack.push(current_node);
+			search_context.on_stack[current_node] = true;
+
+			// Explore neighbors
+			if (auto it = dependency_graph.connections.find(current_node); it != dependency_graph.connections.end()) {
+				for (const auto& neighbor_node : it->second) {
+					// We only care about dependencies between nodes that are actually being ticked
+					if (!nodes_in_subgraph.contains(neighbor_node)) {
 						continue;
 					}
 
-					if (!ctx.index.contains(w)) {
-						strong_connect(w);
-						ctx.low_link[v] = std::min(ctx.low_link[v], ctx.low_link[w]);
-					} else if (ctx.on_stack[w]) {
-						ctx.low_link[v] = std::min(ctx.low_link[v], ctx.low_link[w]);
+					if (!search_context.index.contains(neighbor_node)) {
+						// Neighbor hasn't been visited yet; recurse
+						strong_connect(neighbor_node);
+						search_context.low_link[current_node] =
+						    std::min(search_context.low_link[current_node], search_context.low_link[neighbor_node]);
+					} else if (search_context.on_stack[neighbor_node]) {
+						// Neighbor is on the stack, meaning we've found a cyclw
+						search_context.low_link[current_node] =
+						    std::min(search_context.low_link[current_node], search_context.index[neighbor_node]);
 					}
 				}
 			}
 
-			// Root of an SCC: we pop it
-			if (ctx.low_link[v] == ctx.index[v]) {
+			// If current_node is the root of an SCC, pop the stack to extract the full component
+			if (search_context.low_link[current_node] == search_context.index[current_node]) {
 				std::vector<Box<Node>> scc;
 				while (true) {
-					auto w = ctx.stack.top();
-					ctx.stack.pop();
-					ctx.on_stack[w] = false;
-					scc.push_back(w);
-					if (w == v) {
+					auto popped_node = search_context.stack.top();
+					search_context.stack.pop();
+					search_context.on_stack[popped_node] = false;
+					scc.push_back(popped_node);
+					if (popped_node == current_node) {
 						break;
 					}
 				}
-				ctx.sccs.emplace_back(std::move(scc));
+				search_context.sccs.emplace_back(std::move(scc));
 			}
 		};
 
-		for (const auto& variant : g) {
+		for (const auto& variant : current_subgraph) {
 			const auto& node = std::get<Box<Node>>(variant);
-			if (!ctx.index.contains(node)) {
+			if (!search_context.index.contains(node)) {
 				strong_connect(node);
 			}
 		}
 
-		// SCCs is in reverse order so
-		_detail::TickSchedule::Wave sorted_g;
-		sorted_g.reserve(ctx.sccs.size());
+		// Convert SCCs into a wave
+		_detail::TickSchedule::Wave sorted_wave;
+		sorted_wave.reserve(search_context.sccs.size());
 
-		for (auto& scc : ctx.sccs) {
+		for (auto& scc : search_context.sccs) {
 			if (scc.size() == 1) {
-				sorted_g.emplace_back(scc[0]);
+				sorted_wave.emplace_back(scc[0]);
 			} else {
+				// Group all nodes in the cycle into a NodeCluster
+				// This ensures they are ticked as a single atomic unit to avoid race conditions
 				TOAST_TRACE("World", "Dependency cycle detected ({} nodes) -> grouping into NodeCluster", scc.size());
-				sorted_g.emplace_back(_detail::NodeCluster(scc));
+				sorted_wave.emplace_back(_detail::NodeCluster(scc));
 			}
 		}
-		result.emplace_back(std::move(sorted_g));
+		result.emplace_back(std::move(sorted_wave));
 	}
 
 	return result;
 }
 
 auto World::assignWaves(const std::vector<_detail::TickSchedule::Wave>& subgraphs) -> std::vector<_detail::TickSchedule::Wave> {
-	// Map every node back to its containing item so NodeClusters are treated as a single scheduling unit
-	struct ItemRef {
-		int subgraph;
-		int index;
+	// First, map every node back to its containing item
+	// This allows us to treat clusters as a single scheduling unit
+	struct ItemLocation {
+		int subgraph_idx;
+		int item_idx;
 	};
 
-	std::unordered_map<Box<Node>, ItemRef> node_to_item;
+	std::unordered_map<Box<Node>, ItemLocation> node_to_location;
 
-	for (int si = 0; std::cmp_less(si, subgraphs.size()); ++si) {
-		for (int ii = 0; std::cmp_less(ii, subgraphs[si].size()); ++ii) {
+	for (int subgraph_idx = 0; std::cmp_less(subgraph_idx, subgraphs.size()); ++subgraph_idx) {
+		for (int item_idx = 0; std::cmp_less(item_idx, subgraphs[subgraph_idx].size()); ++item_idx) {
 			std::visit(
 			    [&](const auto& item) {
 				    using T = std::decay_t<decltype(item)>;
 				    if constexpr (std::is_same_v<T, Box<Node>>) {
-					    node_to_item[item] = {si, ii};
-				    } else {    // NodeCluster
-					    for (const auto& n : item.nodes) {
-						    node_to_item[n] = {si, ii};
+					    node_to_location[item] = {subgraph_idx, item_idx};
+				    } else {
+				    	// NodeCluster
+					    for (const auto& node : item.nodes) {
+						    node_to_location[node] = {subgraph_idx, item_idx};
 					    }
 				    }
 			    },
-			    subgraphs[si][ii]
+			    subgraphs[subgraph_idx][item_idx]
 			);
 		}
 	}
 
-	// Assign wave levels
-	std::vector<std::vector<int>> waves(subgraphs.size());
-	for (int si = 0; std::cmp_less(si, subgraphs.size()); ++si) {
-		waves[si].assign(subgraphs[si].size(), 0);
+	// Prepare wave levels for every item in every subgraph
+	std::vector<std::vector<int>> item_wave_levels(subgraphs.size());
+	for (int subgraph_idx = 0; std::cmp_less(subgraph_idx, subgraphs.size()); ++subgraph_idx) {
+		item_wave_levels[subgraph_idx].assign(subgraphs[subgraph_idx].size(), 0);
 	}
 
-	for (int si = 0; std::cmp_less(si, subgraphs.size()); ++si) {
-		// Reverse iteration because of tarjan
-		for (int ii = (int)subgraphs[si].size() - 1; ii >= 0; --ii) {
-			// Collect all physical nodes belonging to this item
+	// Calculate the wave level for each item
+	for (int subgraph_idx = 0; std::cmp_less(subgraph_idx, subgraphs.size()); ++subgraph_idx) {
+	`	// Iterating in reverse because Tarjan's SCCs are in reverse topological order
+		for (int item_idx = (int)subgraphs[subgraph_idx].size() - 1; item_idx >= 0; --item_idx) {
+			// Collect all physical nodes in this scheduling item
 			std::vector<Box<Node>> item_nodes;
 			std::visit(
 			    [&](const auto& item) {
@@ -387,167 +406,110 @@ auto World::assignWaves(const std::vector<_detail::TickSchedule::Wave>& subgraph
 					    item_nodes.insert(item_nodes.end(), item.nodes.begin(), item.nodes.end());
 				    }
 			    },
-			    subgraphs[si][ii]
+			    subgraphs[subgraph_idx][item_idx]
 			);
 
-			int max_pred_wave = -1;
+			// A node must be scheduled in a wave strictly higher than all of its predecessors
+			int max_predecessor_wave = -1;
 			for (const auto& node : item_nodes) {
-				auto it = graph.inverse_connections.find(node);
-				if (it == graph.inverse_connections.end()) {
+				auto it = dependency_graph.inverse_connections.find(node);
+				if (it == dependency_graph.inverse_connections.end()) {
 					continue;
 				}
 
-				for (const auto& pred : it->second) {
-					auto pit = node_to_item.find(pred);
-					if (pit == node_to_item.end()) {
-						continue;    // pruned in Phase 2
+				for (const auto& predecessor : it->second) {
+					auto loc_it = node_to_location.find(predecessor);
+					if (loc_it == node_to_location.end()) {
+						continue;    // Predecessor was pruned
 					}
 
-					auto [psi, pii] = pit->second;
-					if (psi == si && pii != ii) {    // skip intra-cluster self-edges
-						max_pred_wave = std::max(max_pred_wave, waves[psi][pii]);
+					auto [pred_subgraph_idx, pred_item_idx] = loc_it->second;
+					// We only care about dependencies within the same subgraph island
+					if (pred_subgraph_idx == subgraph_idx && pred_item_idx != item_idx) {
+						max_predecessor_wave = std::max(max_predecessor_wave, item_wave_levels[pred_subgraph_idx][pred_item_idx]);
 					}
 				}
 			}
-			waves[si][ii] = max_pred_wave + 1;
+			item_wave_levels[subgraph_idx][item_idx] = max_predecessor_wave + 1;
 		}
 	}
 
-	// Find the highest wave across all subgraphs
-	int max_wave = 0;
-	for (const auto& sg : waves) {
-		for (int w : sg) {
-			max_wave = std::max(max_wave, w);
+	// Find the global maximum wave index to determine how many execution buckets we need
+	int global_max_wave = 0;
+	for (const auto& levels : item_wave_levels) {
+		for (int level : levels) {
+			global_max_wave = std::max(global_max_wave, level);
 		}
 	}
 
-	// Bucket items by wave level
-	// Each bucket is a parallel dispatch barrier: all items within a bucket can run concurrently
-	// The next bucket will then only start when all futures join
-	std::vector<_detail::TickSchedule::Wave> bucket(max_wave + 1);
+	// Group items into waves
+	std::vector<_detail::TickSchedule::Wave> buckets(global_max_wave + 1);
 
-	for (int si = 0; std::cmp_less(si, subgraphs.size()); ++si) {
-		for (int ii = 0; std::cmp_less(ii, subgraphs[si].size()); ++ii) {
-			bucket[waves[si][ii]].emplace_back(subgraphs[si][ii]);
+	for (int subgraph_idx = 0; std::cmp_less(subgraph_idx, subgraphs.size()); ++subgraph_idx) {
+		for (int item_idx = 0; std::cmp_less(item_idx, subgraphs[subgraph_idx].size()); ++item_idx) {
+			buckets[item_wave_levels[subgraph_idx][item_idx]].emplace_back(subgraphs[subgraph_idx][item_idx]);
 		}
 	}
 
-	return bucket;
+	return buckets;
 }
 
 auto World::optimizeWaves(const std::vector<_detail::TickSchedule::Wave>& waves) -> _detail::TickSchedule {
-	_detail::TickSchedule ts = {
+	_detail::TickSchedule schedule = {
 	  .early_tick = waves,
 	  .tick = waves,
 	  .post_physics = waves,
 	  .late_tick = waves,
 	};
 
-	for (auto& wave : ts.early_tick) {
-		std::erase_if(wave, [](std::variant<Box<Node>, _detail::NodeCluster>& item) -> bool {
-			if (std::holds_alternative<Box<Node>>(item)) {
-				auto node = std::get<Box<Node>>(item);
-				return node->table->table.early_tick.empty();
-			}
+	/**
+	 * filter_and_assign_wave removes nodes from a wave if they don't have the relevant
+	 * tick function for that phase, and records the wave index into the node's metadata
+	 */
+	auto filter_and_assign_wave =
+	    [](std::vector<_detail::TickSchedule::Wave>& phase_waves, int wave_meta_index, auto&& has_function_checker) {
+		    for (int wave_idx = 0; wave_idx < (int)phase_waves.size(); ++wave_idx) {
+			    auto& current_wave = phase_waves[wave_idx];
 
-			const auto& cluster = std::get<_detail::NodeCluster>(item);
-			return !std::ranges::any_of(cluster.nodes, [](const auto& node) { return !node->table->table.early_tick.empty(); });
-		});
-	}
-	std::erase_if(ts.early_tick, [](const auto& wave) { return wave.empty(); });
-	for (int i = 0; i < ts.early_tick.size(); ++i) {
-		for (const auto& variant : ts.early_tick[i]) {
-			if (std::holds_alternative<Box<Node>>(variant)) {
-				auto node = std::get<Box<Node>>(variant);
-				node->m.wave[0] = i;
-			} else {
-				const auto& cluster = std::get<_detail::NodeCluster>(variant);
-				for (auto node : cluster.nodes) {
-					node->m.wave[0] = i;
-				}
-			}
-		}
-	}
+			    // Remove items that don't participate in this phase
+			    std::erase_if(current_wave, [&](std::variant<Box<Node>, _detail::NodeCluster>& item) {
+				    if (std::holds_alternative<Box<Node>>(item)) {
+					    auto node = std::get<Box<Node>>(item);
+					    return !has_function_checker(node);
+				    }
 
-	for (auto& wave : ts.tick) {
-		std::erase_if(wave, [](std::variant<Box<Node>, _detail::NodeCluster>& item) -> bool {
-			if (std::holds_alternative<Box<Node>>(item)) {
-				auto node = std::get<Box<Node>>(item);
-				return node->table->table.tick.empty();
-			}
+				    const auto& cluster = std::get<_detail::NodeCluster>(item);
+				    return !std::ranges::any_of(cluster.nodes, [&](const auto& node) { return has_function_checker(node); });
+			    });
 
-			const auto& cluster = std::get<_detail::NodeCluster>(item);
-			return !std::ranges::any_of(cluster.nodes, [](const auto& node) { return !node->table->table.tick.empty(); });
-		});
-	}
-	std::erase_if(ts.tick, [](const auto& wave) { return wave.empty(); });
-	for (int i = 0; i < ts.tick.size(); ++i) {
-		for (const auto& variant : ts.tick[i]) {
-			if (std::holds_alternative<Box<Node>>(variant)) {
-				auto node = std::get<Box<Node>>(variant);
-				node->m.wave[1] = i;
-			} else {
-				const auto& cluster = std::get<_detail::NodeCluster>(variant);
-				for (auto node : cluster.nodes) {
-					node->m.wave[1] = i;
-				}
-			}
-		}
-	}
+			    // Assign the resulting wave index to all surviving nodes
+			    for (auto& item : current_wave) {
+				    std::visit(
+				        [&](auto& value) {
+					        using T = std::decay_t<decltype(value)>;
+					        if constexpr (std::is_same_v<T, Box<Node>>) {
+						        value->m.wave[wave_meta_index] = wave_idx;
+					        } else {
+						        for (auto node : value.nodes) {
+							        node->m.wave[wave_meta_index] = wave_idx;
+						        }
+					        }
+				        },
+				        item
+				    );
+			    }
+		    }
 
-	for (auto& wave : ts.post_physics) {
-		std::erase_if(wave, [](std::variant<Box<Node>, _detail::NodeCluster>& item) -> bool {
-			if (std::holds_alternative<Box<Node>>(item)) {
-				auto node = std::get<Box<Node>>(item);
-				return node->table->table.post_physics.empty();
-			}
+		    // Drop waves that became empty after filtering
+		    std::erase_if(phase_waves, [](const auto& wave) { return wave.empty(); });
+	    };
 
-			const auto& cluster = std::get<_detail::NodeCluster>(item);
-			return !std::ranges::any_of(cluster.nodes, [](const auto& node) { return !node->table->table.post_physics.empty(); });
-		});
-	}
-	std::erase_if(ts.post_physics, [](const auto& wave) { return wave.empty(); });
-	for (int i = 0; i < ts.post_physics.size(); ++i) {
-		for (const auto& variant : ts.post_physics[i]) {
-			if (std::holds_alternative<Box<Node>>(variant)) {
-				auto node = std::get<Box<Node>>(variant);
-				node->m.wave[2] = i;
-			} else {
-				const auto& cluster = std::get<_detail::NodeCluster>(variant);
-				for (auto node : cluster.nodes) {
-					node->m.wave[2] = i;
-				}
-			}
-		}
-	}
+	filter_and_assign_wave(schedule.early_tick, 0, [](auto n) { return !n->table->table.early_tick.empty(); });
+	filter_and_assign_wave(schedule.tick, 1, [](auto n) { return !n->table->table.tick.empty(); });
+	filter_and_assign_wave(schedule.post_physics, 2, [](auto n) { return !n->table->table.post_physics.empty(); });
+	filter_and_assign_wave(schedule.late_tick, 3, [](auto n) { return !n->table->table.late_tick.empty(); });
 
-	for (auto& wave : ts.late_tick) {
-		std::erase_if(wave, [](std::variant<Box<Node>, _detail::NodeCluster>& item) -> bool {
-			if (std::holds_alternative<Box<Node>>(item)) {
-				auto node = std::get<Box<Node>>(item);
-				return node->table->table.late_tick.empty();
-			}
-
-			const auto& cluster = std::get<_detail::NodeCluster>(item);
-			return !std::ranges::any_of(cluster.nodes, [](const auto& node) { return !node->table->table.late_tick.empty(); });
-		});
-	}
-	std::erase_if(ts.late_tick, [](const auto& wave) { return wave.empty(); });
-	for (int i = 0; i < ts.late_tick.size(); ++i) {
-		for (const auto& variant : ts.late_tick[i]) {
-			if (std::holds_alternative<Box<Node>>(variant)) {
-				auto node = std::get<Box<Node>>(variant);
-				node->m.wave[3] = i;
-			} else {
-				const auto& cluster = std::get<_detail::NodeCluster>(variant);
-				for (auto node : cluster.nodes) {
-					node->m.wave[3] = i;
-				}
-			}
-		}
-	}
-
-	return ts;
+	return schedule;
 }
 
 auto World::dependencyGraphGraphviz() const -> std::string {
@@ -654,7 +616,7 @@ auto World::dependencyGraphGraphviz() const -> std::string {
 			std::unordered_set<std::size_t> visited;
 			std::unordered_set<std::size_t> connected;
 
-			if (auto it = graph.connections.find(node); it != graph.connections.end()) {
+			if (auto it = dependency_graph.connections.find(node); it != dependency_graph.connections.end()) {
 				for (const auto& succ : it->second) {
 					q.push(succ);
 					visited.insert(succ.rid());
@@ -671,7 +633,7 @@ auto World::dependencyGraphGraphviz() const -> std::string {
 						out << "    " << node_ids.at(rid) << " -> " << node_ids.at(curr_rid) << ";\n";
 					}
 				} else {
-					if (auto it = graph.connections.find(curr); it != graph.connections.end()) {
+					if (auto it = dependency_graph.connections.find(curr); it != dependency_graph.connections.end()) {
 						for (const auto& succ : it->second) {
 							if (visited.insert(succ.rid()).second) {
 								q.push(succ);
@@ -693,5 +655,56 @@ auto World::dependencyGraphGraphviz() const -> std::string {
 	out << "}\n";
 	return out.str();
 }
+
+#pragma region TESTS
+
+namespace _detail {
+
+auto WorldTestAccess::createWorld() -> World* {
+	return new World();
+}
+
+auto WorldTestAccess::createNode(World& world, std::string_view name, NodeState state) -> Box<Node> {
+	auto node = world.nodeAllocation();
+	node->table = new NodeFunctionTable();
+	node->m.name = name;
+	node->m.state = state;
+	node->m.type = NodeType::child;
+	node->m.local_enabled = true;
+	node->m.inherited_enabled = true;
+	return node;
+}
+
+void WorldTestAccess::registerDependency(Node& from, Node& to) {
+	World::registerDependency(from, to);
+}
+
+auto WorldTestAccess::functionTable(Node& node) noexcept -> NodeFunctionTable& {
+	return *node.table;
+}
+
+auto WorldTestAccess::functionTable(const Node& node) noexcept -> const NodeFunctionTable& {
+	return *node.table;
+}
+
+auto WorldTestAccess::tickSchedule(World& world) noexcept -> _detail::TickSchedule& {
+	return world.tick_schedule;
+}
+
+auto WorldTestAccess::dependencyGraph(World& world) noexcept -> World::DependencyGraph& {
+	return world.dependency_graph;
+}
+
+void WorldTestAccess::computeDependencyGraph(World& world) {
+	world.computeDependencyGraph();
+}
+
+auto WorldTestAccess::dependencyGraphGraphviz(const World& world) -> std::string {
+	return world.dependencyGraphGraphviz();
+}
+
+}    // namespace _detail
+
+#pragma endregion TESTS
 
 }

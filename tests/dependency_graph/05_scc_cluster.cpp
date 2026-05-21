@@ -2,10 +2,13 @@
 
 #include "test_registry.hpp"
 
+#include <memory>
+
 using namespace toast::tests::dependency_graph;
 
 TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/05_scc_cluster", test_dependency_graph_05_scc_cluster) {
-	toast::World world;
+	std::unique_ptr<toast::World> world_owner(toast::_detail::WorldTestAccess::createWorld());
+	toast::World& world = *world_owner;
 
 	auto a = toast::_detail::WorldTestAccess::createNode(world, "a");
 	auto b = toast::_detail::WorldTestAccess::createNode(world, "b");
@@ -14,9 +17,9 @@ TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/05_scc_cluster", test_dep
 	addStageFunction(*b, Stage::tick);
 	addStageFunction(*c, Stage::tick);
 
-	toast::World::registerDependency(*a, *b);
-	toast::World::registerDependency(*b, *a);
-	toast::World::registerDependency(*c, *a);
+	toast::_detail::WorldTestAccess::registerDependency(*a, *b);
+	toast::_detail::WorldTestAccess::registerDependency(*b, *a);
+	toast::_detail::WorldTestAccess::registerDependency(*c, *a);
 
 	toast::_detail::WorldTestAccess::computeDependencyGraph(world);
 
