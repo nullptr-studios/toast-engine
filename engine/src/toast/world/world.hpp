@@ -13,11 +13,22 @@
 #include "node.hpp"
 #include "world_events.hpp"
 
+#include <algorithm>
+#include <compare>
+#include <concepts>
+#include <functional>
 #include <future>
+#include <iterator>
+#include <queue>
+#include <stack>
+#include <string>
 #include <toast/events/listener.hpp>
+#include <type_traits>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <variant>
+#include <vector>
 
 namespace toast {
 
@@ -53,7 +64,7 @@ struct NodeCluster {
 	}
 };
 
-class World {
+class TOAST_API World {
 public:
 	World() {
 		instance = this;
@@ -261,8 +272,8 @@ public:
 
 		std::unordered_map<Box<Node>, ItemRef> node_to_item;
 
-		for (int si = 0; std::cmp_less(si ,subgraphs.size()); ++si) {
-			for (int ii = 0; std::cmp_less(ii ,subgraphs[si].size()); ++ii) {
+		for (int si = 0; std::cmp_less(si, subgraphs.size()); ++si) {
+			for (int ii = 0; std::cmp_less(ii, subgraphs[si].size()); ++ii) {
 				std::visit(
 				    [&](auto& item) {
 					    using T = std::decay_t<decltype(item)>;
@@ -281,11 +292,11 @@ public:
 
 		// Assign wave levels
 		std::vector<std::vector<int>> waves(subgraphs.size());
-		for (int si = 0; std::cmp_less(si ,subgraphs.size()); ++si) {
+		for (int si = 0; std::cmp_less(si, subgraphs.size()); ++si) {
 			waves[si].assign(subgraphs[si].size(), 0);
 		}
 
-		for (int si = 0; std::cmp_less(si ,subgraphs.size()); ++si) {
+		for (int si = 0; std::cmp_less(si, subgraphs.size()); ++si) {
 			// Reverse iteration because of tarjan
 			for (int ii = (int)subgraphs[si].size() - 1; ii >= 0; --ii) {
 				// Collect all physical nodes belonging to this item
@@ -338,8 +349,8 @@ public:
 		// The next bucket will then only start when all futures join
 		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> bucket(max_wave + 1);
 
-		for (int si = 0; std::cmp_less(si ,subgraphs.size()); ++si) {
-			for (int ii = 0; std::cmp_less(ii ,subgraphs[si].size()); ++ii) {
+		for (int si = 0; std::cmp_less(si, subgraphs.size()); ++si) {
+			for (int ii = 0; std::cmp_less(ii, subgraphs[si].size()); ++ii) {
 				bucket[waves[si][ii]].emplace_back(std::move(subgraphs[si][ii]));
 			}
 		}
@@ -347,6 +358,7 @@ public:
 		// Phase 5: Bucket optimization
 		// We are going to create 4 equal buckets representing each of the tick functions and then
 		// search for all the nodes that do not contain those functions and erase them from the list
+		// We also store the wave number on each node so that adding a new object in runtime is trivial
 		TickSchedule ts = {
 		  .early_tick = bucket,
 		  .tick = bucket,
@@ -362,14 +374,22 @@ public:
 				}
 
 				auto cluster = std::get<NodeCluster>(item);
-				bool has_function = false;
-				for (const auto& node : cluster.nodes) {
-					if (not node->table->table.early_tick.empty()) {
-						return true;
+				return !std::ranges::any_of(cluster.nodes, [](const auto& node) { return !node->table->table.early_tick.empty(); });
+			});
+		}
+		std::erase_if(ts.early_tick, [](const auto& wave) { return wave.empty(); });
+		for (int i = 0; i < ts.early_tick.size(); ++i) {
+			for (const auto& variant : ts.early_tick[i]) {
+				if (std::holds_alternative<Box<Node>>(variant)) {
+					auto node = std::get<Box<Node>>(variant);
+					node->m.wave[0] = i;
+				} else {
+					auto cluster = std::get<NodeCluster>(variant);
+					for (auto& node : cluster.nodes) {
+						node->m.wave[0] = i;
 					}
 				}
-				return !has_function;
-			});
+			}
 		}
 
 		for (auto& wave : ts.tick) {
@@ -380,14 +400,22 @@ public:
 				}
 
 				auto cluster = std::get<NodeCluster>(item);
-				bool has_function = false;
-				for (const auto& node : cluster.nodes) {
-					if (not node->table->table.tick.empty()) {
-						return true;
+				return !std::ranges::any_of(cluster.nodes, [](const auto& node) { return !node->table->table.tick.empty(); });
+			});
+		}
+		std::erase_if(ts.tick, [](const auto& wave) { return wave.empty(); });
+		for (int i = 0; i < ts.tick.size(); ++i) {
+			for (const auto& variant : ts.tick[i]) {
+				if (std::holds_alternative<Box<Node>>(variant)) {
+					auto node = std::get<Box<Node>>(variant);
+					node->m.wave[1] = i;
+				} else {
+					auto cluster = std::get<NodeCluster>(variant);
+					for (auto& node : cluster.nodes) {
+						node->m.wave[1] = i;
 					}
 				}
-				return !has_function;
-			});
+			}
 		}
 
 		for (auto& wave : ts.post_physics) {
@@ -398,14 +426,22 @@ public:
 				}
 
 				auto cluster = std::get<NodeCluster>(item);
-				bool has_function = false;
-				for (const auto& node : cluster.nodes) {
-					if (not node->table->table.post_physics.empty()) {
-						return true;
+				return !std::ranges::any_of(cluster.nodes, [](const auto& node) { return !node->table->table.post_physics.empty(); });
+			});
+		}
+		std::erase_if(ts.post_physics, [](const auto& wave) { return wave.empty(); });
+		for (int i = 0; i < ts.post_physics.size(); ++i) {
+			for (const auto& variant : ts.post_physics[i]) {
+				if (std::holds_alternative<Box<Node>>(variant)) {
+					auto node = std::get<Box<Node>>(variant);
+					node->m.wave[2] = i;
+				} else {
+					auto cluster = std::get<NodeCluster>(variant);
+					for (auto& node : cluster.nodes) {
+						node->m.wave[2] = i;
 					}
 				}
-				return !has_function;
-			});
+			}
 		}
 
 		for (auto& wave : ts.late_tick) {
@@ -416,14 +452,22 @@ public:
 				}
 
 				auto cluster = std::get<NodeCluster>(item);
-				bool has_function = false;
-				for (const auto& node : cluster.nodes) {
-					if (not node->table->table.late_tick.empty()) {
-						return true;
+				return !std::ranges::any_of(cluster.nodes, [](const auto& node) { return !node->table->table.late_tick.empty(); });
+			});
+		}
+		std::erase_if(ts.late_tick, [](const auto& wave) { return wave.empty(); });
+		for (int i = 0; i < ts.late_tick.size(); ++i) {
+			for (const auto& variant : ts.late_tick[i]) {
+				if (std::holds_alternative<Box<Node>>(variant)) {
+					auto node = std::get<Box<Node>>(variant);
+					node->m.wave[3] = i;
+				} else {
+					auto cluster = std::get<NodeCluster>(variant);
+					for (auto& node : cluster.nodes) {
+						node->m.wave[3] = i;
 					}
 				}
-				return !has_function;
-			});
+			}
 		}
 
 		tick_schedule = std::move(ts);
@@ -434,6 +478,8 @@ public:
 	void removeGlobal();
 	void addCached();
 	void removeCached();
+	[[nodiscard]]
+	auto dependencyGraphGraphviz() const -> std::string;
 
 private:
 	inline static World* instance = nullptr;
@@ -472,6 +518,8 @@ private:
 		std::unordered_map<Box<Node>, std::vector<Box<Node>>> connections;
 		std::unordered_map<Box<Node>, std::vector<Box<Node>>> inverse_connections;
 	} graph;
+
+	friend struct _detail::WorldTestAccess;
 };
 
 }
