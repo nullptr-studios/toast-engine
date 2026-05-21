@@ -421,7 +421,10 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	std::vector<const char*> device_extensions(required_device_extensions.begin(), required_device_extensions.end());
 	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions);
 	vk::PhysicalDeviceVulkan13Features vulkan13_features {};
+	vk::PhysicalDeviceVulkan11Features vulkan11_features {};
+	vulkan13_features.pNext = &vulkan11_features;
 	vulkan13_features.dynamicRendering = VK_TRUE;
+	vulkan11_features.shaderDrawParameters = VK_TRUE;
 	device_ci.pNext = &vulkan13_features;
 
 	m_device = vk::raii::Device(m_physicalDevice, device_ci);
@@ -467,8 +470,10 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 			total_memory += static_cast<std::size_t>(heap.size);
 		}
 	}
-
-	if (total_memory > 0) {
+	if (total_memory > 12ull * k_gigabyte_bytes) {
+		// clamp to 12GB
+		score.memory = 1200;
+	} else if (total_memory > 0) {
 		score.memory = static_cast<int>(total_memory / k_gigabyte_bytes) * 100;
 	} else {
 		score.memory = 0;

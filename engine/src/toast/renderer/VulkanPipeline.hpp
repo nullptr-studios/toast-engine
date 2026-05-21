@@ -22,8 +22,6 @@ public:
 		vk::Format color_format = vk::Format::eUndefined;
 		vk::Extent2D extent {};
 		std::vector<std::byte> shader_spirv;
-		std::string vertex_entry = "vertexMain";
-		std::string fragment_entry = "fragmentMain";
 	};
 
 	VulkanPipeline() = default;

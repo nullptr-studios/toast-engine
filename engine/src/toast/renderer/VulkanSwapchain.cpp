@@ -188,12 +188,12 @@ auto VulkanSwapchain::findPresentQueueFamilyIndex() const -> uint32_t {
 		}
 	}
 
-	throw std::runtime_error("Toast Engine Error: Failed to find a present queue family!");
+	TOAST_CRITICAL("VulkanSwapchain", "Toast Engine Error: Failed to find a present queue family!");
 }
 
 auto VulkanSwapchain::selectSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& formats) const -> vk::SurfaceFormatKHR {
 	if (formats.empty()) {
-		throw std::runtime_error("Toast Engine Error: No surface formats are available!");
+		TOAST_CRITICAL("VulkanSwapchain", "Toast Engine Error: No surface formats are available!");
 	}
 
 	const auto preferred = std::find_if(formats.begin(), formats.end(), [](const vk::SurfaceFormatKHR& format) {

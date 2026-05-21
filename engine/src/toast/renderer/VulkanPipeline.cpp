@@ -65,7 +65,7 @@ auto createGraphicsPipeline(
 	    false,
 	    vk::PolygonMode::eFill,
 	    vk::CullModeFlagBits::eBack,
-	    vk::FrontFace::eCounterClockwise,
+	    vk::FrontFace::eClockwise,
 	    false,
 	    0.0f,
 	    0.0f,
@@ -137,7 +137,7 @@ auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> vo
 	TOAST_INFO("VulkanPipeline", "Pipeline layout created");
 
 	m_pipeline = createGraphicsPipeline(
-	    device, m_pipeline_layout, config.extent, *m_shader_module, config.vertex_entry, config.fragment_entry, config.color_format
+	    device, m_pipeline_layout, config.extent, *m_shader_module, "vertexMain", "fragmentMain", config.color_format
 	);
 
 	TOAST_INFO("VulkanPipeline", "Graphics pipeline created successfully");

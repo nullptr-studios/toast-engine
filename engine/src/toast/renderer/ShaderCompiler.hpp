@@ -13,7 +13,7 @@ namespace toast::renderer {
 class ShaderCompiler {
 public:
 	/// Compiles a GLSL shader file to SPIR-V
-	static std::vector<std::byte> compileShader(const std::filesystem::path& shaderPath);
+	static auto compileShader(const std::filesystem::path& shader_path) -> std::vector<std::byte>;
 };
 
 }

@@ -23,7 +23,7 @@ public:
 
 	VulkanRenderer(
 	    const VulkanCore& core, std::unique_ptr<IOutputTarget> outputTarget, std::unique_ptr<VulkanPipeline> pipeline,
-	    uint32_t framesInFlight = 10
+	    uint32_t framesInFlight = 2
 	);
 	~VulkanRenderer() = default;
 
