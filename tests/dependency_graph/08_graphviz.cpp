@@ -150,7 +150,7 @@ TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/08_graphviz", test_depend
 	toast::World::registerDependency(*pruned_nodes[14], *post_cluster.front());
 	toast::World::registerDependency(*late_cluster.back(), *pruned_nodes[12]);
 
-	world.computeDependencyGraph();
+	toast::_detail::WorldTestAccess::computeDependencyGraph(world);
 	const auto dot = world.dependencyGraphGraphviz();
 	TOAST_TRACE("Tests", "\n{}", dot);
 

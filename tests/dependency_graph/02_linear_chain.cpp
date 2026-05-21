@@ -17,7 +17,7 @@ TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/02_linear_chain", test_de
 	toast::World::registerDependency(*a, *b);
 	toast::World::registerDependency(*b, *c);
 
-	world.computeDependencyGraph();
+	toast::_detail::WorldTestAccess::computeDependencyGraph(world);
 
 	assertScheduleEquals(scheduleFor(world, Stage::tick), schedule({wave({item("a")}), wave({item("b")}), wave({item("c")})}));
 }

@@ -16,7 +16,7 @@ TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/07_stage_filtering", test
 	addStageFunction(*post, Stage::post_physics);
 	addStageFunction(*late, Stage::late_tick);
 
-	world.computeDependencyGraph();
+	toast::_detail::WorldTestAccess::computeDependencyGraph(world);
 
 	assertScheduleEquals(scheduleFor(world, Stage::early_tick), schedule({wave({item("early")})}));
 	assertScheduleEquals(scheduleFor(world, Stage::tick), schedule({wave({item("tick")})}));

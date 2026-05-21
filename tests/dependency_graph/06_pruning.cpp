@@ -18,7 +18,7 @@ TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/06_pruning", test_depende
 	toast::World::registerDependency(*source, *pruned);
 	toast::World::registerDependency(*pruned, *sink);
 
-	world.computeDependencyGraph();
+	toast::_detail::WorldTestAccess::computeDependencyGraph(world);
 
 	assertScheduleEquals(scheduleFor(world, Stage::tick), schedule({wave({item("source"), item("sink")})}));
 	assertScheduleEquals(scheduleFor(world, Stage::early_tick), schedule({}));

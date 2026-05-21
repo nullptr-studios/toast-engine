@@ -8,6 +8,9 @@
 
 #pragma once
 
+#include <atomic>
+#include <compare>
+#include <cstdint>
 #include <toast/export.hpp>
 
 namespace toast {

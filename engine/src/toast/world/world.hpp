@@ -3,74 +3,81 @@
  * @author Xein
  * @date 18 May 2026
  *
- * @brief TODO: Brief description of the file's purpose
+ * @brief This class creates, owns, ticks and manages every Node that ever exists in the engine
  */
 
 #pragma once
-#include "../log.hpp"
 #include "box.hpp"
 #include "control_box.hpp"
 #include "node.hpp"
 #include "world_events.hpp"
 
-#include <algorithm>
 #include <compare>
 #include <concepts>
-#include <functional>
 #include <future>
 #include <iterator>
 #include <queue>
 #include <stack>
-#include <string>
 #include <toast/events/listener.hpp>
+#include <toast/log.hpp>
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <variant>
-#include <vector>
 
 namespace toast {
 
 class Node;
 
+namespace _detail {
+/**
+ * @struct NodeCluster
+ *
+ * This class combines multiples nodes into one single cluster. It is used for
+ * grouping strongly connected components into one single component for the
+ * dependency graph generation.
+ *
+ * The nodes are ticked in the order they are on the vector, but in most cases
+ * this shouldn't be an issue, as the main concern is to avoid race conditions
+ * when ticking
+ */
 struct NodeCluster {
-	NodeCluster(std::vector<Box<Node>>& nodes) : nodes(nodes) { }
+	explicit NodeCluster(std::vector<Box<Node>>& nodes) : nodes(std::move(nodes)) { }
 
 	std::vector<Box<Node>> nodes;
 
-	void earlyTick() {
-		for (auto& node : nodes) {
-			node->table->earlyTick(*node);
-		}
-	}
+	// This functions call all the ticks of the nodes synchronously
+	void earlyTick();
+	void tick();
+	void postPhysics();
+	void lateTick();
 
-	void tick() {
-		for (auto& node : nodes) {
-			node->table->tick(*node);
-		}
-	}
-
-	void postPhysics() {
-		for (auto& node : nodes) {
-			node->table->postPhysics(*node);
-		}
-	}
-
-	void lateTick() {
-		for (auto& node : nodes) {
-			node->table->lateTick(*node);
-		}
-	}
+	// This functions return true if there's at least one function of that type
+	auto hasEarlyTick() -> bool;
+	auto hasTick() -> bool;
+	auto hasPostPhysics() -> bool;
+	auto hasLateTick() -> bool;
 };
+
+/**
+ * @struct TickSchedule
+ *
+ * TODO: Documentation
+ */
+struct TickSchedule {
+	/// TODO: Documentation
+	using Wave = std::vector<std::variant<Box<Node>, NodeCluster>>;
+	std::vector<Wave> early_tick;
+	std::vector<Wave> tick;
+	std::vector<Wave> post_physics;
+	std::vector<Wave> late_tick;
+};
+}
 
 class TOAST_API World {
 public:
-	World() {
-		instance = this;
-		m.listener.subscribe<event::SwapWorldRoot>([this](const auto& e) { swapRoot(e.node); });
-	}
-
+	World();
 	~World() = default;
 
 	/**
@@ -78,425 +85,46 @@ public:
 	 * @param from Node that will be ticked first
 	 * @param to Node that will be ticked last
 	 */
-	static auto registerDependency(Node& from, Node& to) {
-		if (&from == &to) {
-			TOAST_WARN("World", "{} ({}) tried to register a dependency to itself", from.name(), from.uuid());
-			return;
-		}
-		// TODO: sanity check
-		// auto& node_set = instance->m.nodes;
-		// if (node_set.find(from.box()) == node_set.end()) {
-		//
-		// }
-
-		instance->graph.connections[from].emplace_back(to);
-		instance->graph.inverse_connections[to].emplace_back(from);
-	}
+	static void registerDependency(Node& from, Node& to);
 
 	/**
 	 * @brief Requests to create a new node during runtime
 	 */
 	static auto requestRuntimeCreation(Node& parent) -> Box<Node>;
+
+	/**
+	 * @brief Creates multiple nodes asynchronously
+	 */
 	static void dispatchNodeCreation(int count);
 
-	void computeDependencyGraph() {
-		// Guarantee every existing node exists in the subgraph
-		for (const auto& node : m.nodes) {
-			graph.connections[node.node->box()];
-			graph.inverse_connections[node.node->box()];
-		}
-
-		// Phase 1: BFS flood algorithm
-		// This separates the graph into multiple subgraphs that are independent of each other
-		std::unordered_set<Box<Node>> visited;
-		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> subgraphs;
-
-		for (const auto& start_cn : m.nodes) {
-			auto start_node = start_cn.node->box();
-			if (visited.contains(start_node)) {
-				continue;
-			}
-
-			std::vector<Box<Node>> component;
-			std::queue<Box<Node>> queue;
-
-			queue.push(start_node);
-			visited.insert(start_node);
-
-			while (!queue.empty()) {
-				auto current = queue.front();
-				queue.pop();
-				component.push_back(current);
-
-				// Walk forward edges
-				if (auto it = graph.connections.find(current->box()); it != graph.connections.end()) {
-					for (const auto& neighbor : it->second) {
-						if (visited.contains(neighbor)) {
-							continue;
-						}
-						visited.insert(neighbor);
-						queue.push(neighbor);
-					}
-				}
-
-				// Walk backward edges
-				if (auto it = graph.inverse_connections.find(current->box()); it != graph.inverse_connections.end()) {
-					for (const auto& neighbor : it->second) {
-						if (visited.contains(neighbor)) {
-							continue;
-						}
-						visited.insert(neighbor);
-						queue.push(neighbor);
-					}
-				}
-			}
-
-			std::vector<std::variant<Box<Node>, NodeCluster>> subgraph;
-			subgraph.reserve(component.size());
-			subgraph.assign(std::make_move_iterator(component.begin()), std::make_move_iterator(component.end()));
-			subgraphs.push_back(std::move(subgraph));
-		}
-
-		// Phase 2: Now we can discard some nodes to make the graph quicker to compute
-		// We are gonna remove nodes that 1) don't have any tick functions and 2) are in the NodeState::cached
-		// as those nodes will not be able to be ticked
-		// OPTIMIZE: We will be able to generate multiple tick functions per function type later on
-		for (auto& g : subgraphs) {
-			std::erase_if(g, [](const auto& n_variant) {
-				const Box<Node>& n = std::get<0>(n_variant);
-				return n->table->table.early_tick.empty() && n->table->table.tick.empty() && n->table->table.post_physics.empty() &&
-				       n->table->table.late_tick.empty();
-			});
-
-			std::erase_if(g, [](const auto& n_variant) {
-				const Box<Node>& n = std::get<0>(n_variant);
-				return n->m.state == NodeState::cached;
-			});
-		}
-
-		// Drop subgraphs that became entirely empty
-		std::erase_if(subgraphs, [](const auto& g) { return g.empty(); });
-
-		// Phase 3: Tarjan algorithm and cluster nodes creation
-		// We are going to detect SCCs using the Tarjan algorithm and then create ClusterNodes from those SCCs so they
-		// are ticked synchronously and don't result in any race condition
-		struct TarjanContext {
-			std::unordered_map<Box<Node>, int> index;
-			std::unordered_map<Box<Node>, int> low_link;
-			std::unordered_map<Box<Node>, bool> on_stack;
-			std::stack<Box<Node>> stack;
-			int counter = 0;
-			std::vector<std::vector<Box<Node>>> SCCs;    // reverse topology order
-		};
-
-		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> result_subgraphs;
-
-		for (auto& g : subgraphs) {
-			// Build surviving nodes for edge filtering
-			std::unordered_set<Box<Node>> in_subgraph;
-			for (auto& v : g) {
-				in_subgraph.insert(std::get<Box<Node>>(v));
-			}
-
-			TarjanContext ctx;
-			std::function<void(const Box<Node>&)> strong_connect = [&](const Box<Node>& v) {
-				ctx.index[v] = ctx.low_link[v] = ctx.counter++;
-				ctx.stack.push(v);
-				ctx.on_stack[v] = true;
-
-				if (auto it = graph.connections.find(v); it != graph.connections.end()) {
-					for (const auto& w : it->second) {
-						if (!in_subgraph.contains(w)) {
-							// Skip nodes pruned in phase 2
-							continue;
-						}
-
-						if (!ctx.index.contains(w)) {
-							strong_connect(w);
-							ctx.low_link[v] = std::min(ctx.low_link[v], ctx.low_link[w]);
-						} else if (ctx.on_stack[w]) {
-							ctx.low_link[v] = std::min(ctx.low_link[v], ctx.low_link[w]);
-						}
-					}
-				}
-
-				// Root of an SCC: we pop it
-				if (ctx.low_link[v] == ctx.index[v]) {
-					std::vector<Box<Node>> scc;
-					while (true) {
-						auto w = ctx.stack.top();
-						ctx.stack.pop();
-						ctx.on_stack[w] = false;
-						scc.push_back(w);
-						if (w == v) {
-							break;
-						}
-					}
-					ctx.SCCs.emplace_back(std::move(scc));
-				}
-			};
-
-			for (auto& variant : g) {
-				const auto& node = std::get<Box<Node>>(variant);
-				if (!ctx.index.contains(node)) {
-					strong_connect(node);
-				}
-			}
-
-			// SCCs is in reverse order so
-			std::vector<std::variant<Box<Node>, NodeCluster>> sorted_g;
-			sorted_g.reserve(ctx.SCCs.size());
-
-			for (auto& scc : ctx.SCCs) {
-				if (scc.size() == 1) {
-					sorted_g.emplace_back(scc[0]);
-				} else {
-					TOAST_TRACE("World", "Dependency cycle detected ({} nodes) -> grouping into NodeCluster", scc.size());
-					sorted_g.emplace_back(NodeCluster(scc));
-				}
-			}
-			result_subgraphs.emplace_back(std::move(sorted_g));
-		}
-
-		subgraphs = std::move(result_subgraphs);
-
-		// Phase 4: Wave algorithm
-		// Assigns a wave number to each item
-		// Items sharing a wave have no dependency on each other and can be ticked in parallel via futures
-
-		// Map every node back to its containing item so NodeClusters are treated as a single scheduling unit
-		struct ItemRef {
-			int subgraph;
-			int index;
-		};
-
-		std::unordered_map<Box<Node>, ItemRef> node_to_item;
-
-		for (int si = 0; std::cmp_less(si, subgraphs.size()); ++si) {
-			for (int ii = 0; std::cmp_less(ii, subgraphs[si].size()); ++ii) {
-				std::visit(
-				    [&](auto& item) {
-					    using T = std::decay_t<decltype(item)>;
-					    if constexpr (std::is_same_v<T, Box<Node>>) {
-						    node_to_item[item] = {si, ii};
-					    } else {    // NodeCluster
-						    for (const auto& n : item.nodes) {
-							    node_to_item[n] = {si, ii};
-						    }
-					    }
-				    },
-				    subgraphs[si][ii]
-				);
-			}
-		}
-
-		// Assign wave levels
-		std::vector<std::vector<int>> waves(subgraphs.size());
-		for (int si = 0; std::cmp_less(si, subgraphs.size()); ++si) {
-			waves[si].assign(subgraphs[si].size(), 0);
-		}
-
-		for (int si = 0; std::cmp_less(si, subgraphs.size()); ++si) {
-			// Reverse iteration because of tarjan
-			for (int ii = (int)subgraphs[si].size() - 1; ii >= 0; --ii) {
-				// Collect all physical nodes belonging to this item
-				std::vector<Box<Node>> item_nodes;
-				std::visit(
-				    [&](auto& item) {
-					    using T = std::decay_t<decltype(item)>;
-					    if constexpr (std::is_same_v<T, Box<Node>>) {
-						    item_nodes.push_back(item);
-					    } else {
-						    item_nodes.insert(item_nodes.end(), item.nodes.begin(), item.nodes.end());
-					    }
-				    },
-				    subgraphs[si][ii]
-				);
-
-				int max_pred_wave = -1;
-				for (const auto& node : item_nodes) {
-					auto it = graph.inverse_connections.find(node);
-					if (it == graph.inverse_connections.end()) {
-						continue;
-					}
-
-					for (const auto& pred : it->second) {
-						auto pit = node_to_item.find(pred);
-						if (pit == node_to_item.end()) {
-							continue;    // pruned in Phase 2
-						}
-
-						auto [psi, pii] = pit->second;
-						if (psi == si && pii != ii) {    // skip intra-cluster self-edges
-							max_pred_wave = std::max(max_pred_wave, waves[psi][pii]);
-						}
-					}
-				}
-				waves[si][ii] = max_pred_wave + 1;
-			}
-		}
-
-		// Find the highest wave across all subgraphs
-		int max_wave = 0;
-		for (const auto& sg : waves) {
-			for (int w : sg) {
-				max_wave = std::max(max_wave, w);
-			}
-		}
-
-		// Bucket items by wave level
-		// Each bucket is a parallel dispatch barrier: all items within a bucket can run concurrently
-		// The next bucket will then only start when all futures join
-		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> bucket(max_wave + 1);
-
-		for (int si = 0; std::cmp_less(si, subgraphs.size()); ++si) {
-			for (int ii = 0; std::cmp_less(ii, subgraphs[si].size()); ++ii) {
-				bucket[waves[si][ii]].emplace_back(std::move(subgraphs[si][ii]));
-			}
-		}
-
-		// Phase 5: Bucket optimization
-		// We are going to create 4 equal buckets representing each of the tick functions and then
-		// search for all the nodes that do not contain those functions and erase them from the list
-		// We also store the wave number on each node so that adding a new object in runtime is trivial
-		TickSchedule ts = {
-		  .early_tick = bucket,
-		  .tick = bucket,
-		  .post_physics = bucket,
-		  .late_tick = bucket,
-		};
-
-		for (auto& wave : ts.early_tick) {
-			std::erase_if(wave, [](std::variant<Box<Node>, NodeCluster>& item) -> bool {
-				if (std::holds_alternative<Box<Node>>(item)) {
-					auto node = std::get<Box<Node>>(item);
-					return node->table->table.early_tick.empty();
-				}
-
-				auto cluster = std::get<NodeCluster>(item);
-				return !std::ranges::any_of(cluster.nodes, [](const auto& node) { return !node->table->table.early_tick.empty(); });
-			});
-		}
-		std::erase_if(ts.early_tick, [](const auto& wave) { return wave.empty(); });
-		for (int i = 0; i < ts.early_tick.size(); ++i) {
-			for (const auto& variant : ts.early_tick[i]) {
-				if (std::holds_alternative<Box<Node>>(variant)) {
-					auto node = std::get<Box<Node>>(variant);
-					node->m.wave[0] = i;
-				} else {
-					auto cluster = std::get<NodeCluster>(variant);
-					for (auto& node : cluster.nodes) {
-						node->m.wave[0] = i;
-					}
-				}
-			}
-		}
-
-		for (auto& wave : ts.tick) {
-			std::erase_if(wave, [](std::variant<Box<Node>, NodeCluster>& item) -> bool {
-				if (std::holds_alternative<Box<Node>>(item)) {
-					auto node = std::get<Box<Node>>(item);
-					return node->table->table.tick.empty();
-				}
-
-				auto cluster = std::get<NodeCluster>(item);
-				return !std::ranges::any_of(cluster.nodes, [](const auto& node) { return !node->table->table.tick.empty(); });
-			});
-		}
-		std::erase_if(ts.tick, [](const auto& wave) { return wave.empty(); });
-		for (int i = 0; i < ts.tick.size(); ++i) {
-			for (const auto& variant : ts.tick[i]) {
-				if (std::holds_alternative<Box<Node>>(variant)) {
-					auto node = std::get<Box<Node>>(variant);
-					node->m.wave[1] = i;
-				} else {
-					auto cluster = std::get<NodeCluster>(variant);
-					for (auto& node : cluster.nodes) {
-						node->m.wave[1] = i;
-					}
-				}
-			}
-		}
-
-		for (auto& wave : ts.post_physics) {
-			std::erase_if(wave, [](std::variant<Box<Node>, NodeCluster>& item) -> bool {
-				if (std::holds_alternative<Box<Node>>(item)) {
-					auto node = std::get<Box<Node>>(item);
-					return node->table->table.post_physics.empty();
-				}
-
-				auto cluster = std::get<NodeCluster>(item);
-				return !std::ranges::any_of(cluster.nodes, [](const auto& node) { return !node->table->table.post_physics.empty(); });
-			});
-		}
-		std::erase_if(ts.post_physics, [](const auto& wave) { return wave.empty(); });
-		for (int i = 0; i < ts.post_physics.size(); ++i) {
-			for (const auto& variant : ts.post_physics[i]) {
-				if (std::holds_alternative<Box<Node>>(variant)) {
-					auto node = std::get<Box<Node>>(variant);
-					node->m.wave[2] = i;
-				} else {
-					auto cluster = std::get<NodeCluster>(variant);
-					for (auto& node : cluster.nodes) {
-						node->m.wave[2] = i;
-					}
-				}
-			}
-		}
-
-		for (auto& wave : ts.late_tick) {
-			std::erase_if(wave, [](std::variant<Box<Node>, NodeCluster>& item) -> bool {
-				if (std::holds_alternative<Box<Node>>(item)) {
-					auto node = std::get<Box<Node>>(item);
-					return node->table->table.late_tick.empty();
-				}
-
-				auto cluster = std::get<NodeCluster>(item);
-				return !std::ranges::any_of(cluster.nodes, [](const auto& node) { return !node->table->table.late_tick.empty(); });
-			});
-		}
-		std::erase_if(ts.late_tick, [](const auto& wave) { return wave.empty(); });
-		for (int i = 0; i < ts.late_tick.size(); ++i) {
-			for (const auto& variant : ts.late_tick[i]) {
-				if (std::holds_alternative<Box<Node>>(variant)) {
-					auto node = std::get<Box<Node>>(variant);
-					node->m.wave[3] = i;
-				} else {
-					auto cluster = std::get<NodeCluster>(variant);
-					for (auto& node : cluster.nodes) {
-						node->m.wave[3] = i;
-					}
-				}
-			}
-		}
-
-		tick_schedule = std::move(ts);
-	}
-
-	void swapRoot(Node* node);
-	void addGlobal();
-	void removeGlobal();
-	void addCached();
-	void removeCached();
 	[[nodiscard]]
 	auto dependencyGraphGraphviz() const -> std::string;
 
 private:
 	inline static World* instance = nullptr;
 
-	/**
-	 * @brief Creates a node and stores it in memory
-	 *
-	 * This function is implementation only and the result is an uninitialized node;
-	 * it is used for detail implementation of the world only
-	 */
+	/// @brief Creates a node and stores it in memory
 	auto nodeAllocation() noexcept -> Box<Node>;
+
+	/// @brief Recalculates the dependency graph and updates the tick_schedule
+	void computeDependencyGraph();
+
+	/// Using a BFS flooding algorithm, separates the dependency graph into multiple independent subgraphs
+	auto subgraphSeparation() -> std::vector<std::vector<Box<Node>>>;
+
+	/// We use the tarjan algorithm to connect SSCs into clusters so that we don't have circular dependencies
+	auto tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& sg) -> std::vector<_detail::TickSchedule::Wave>;
+
+	/// Uses a wave algorithm to assign to each node the order it should be ticked in
+	auto assignWaves(const std::vector<_detail::TickSchedule::Wave>& subgraphs) -> std::vector<_detail::TickSchedule::Wave>;
+
+	/// We create a copy of each wave list for each tick function for further node discarding
+	auto optimizeWaves(const std::vector<_detail::TickSchedule::Wave>& waves) -> _detail::TickSchedule;
 
 	struct {
 		event::Listener listener;
 
 		std::unordered_set<_detail::ControlBox> nodes;
-		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> tick_schedule;
 
 		Box<Node> root_node;
 		std::vector<Box<Node>> global_nodes;
@@ -507,17 +135,12 @@ private:
 		std::thread load_thread;
 	} m;
 
-	struct TickSchedule {
-		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> early_tick;
-		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> tick;
-		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> post_physics;
-		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> late_tick;
-	} tick_schedule;
-
 	struct DependencyGraph {
 		std::unordered_map<Box<Node>, std::vector<Box<Node>>> connections;
 		std::unordered_map<Box<Node>, std::vector<Box<Node>>> inverse_connections;
 	} graph;
+
+	_detail::TickSchedule tick_schedule;
 
 	friend struct _detail::WorldTestAccess;
 };

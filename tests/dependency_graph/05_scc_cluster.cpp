@@ -18,7 +18,7 @@ TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/05_scc_cluster", test_dep
 	toast::World::registerDependency(*b, *a);
 	toast::World::registerDependency(*c, *a);
 
-	world.computeDependencyGraph();
+	toast::_detail::WorldTestAccess::computeDependencyGraph(world);
 
 	assertScheduleEquals(scheduleFor(world, Stage::tick), schedule({wave({item("c")}), wave({cluster({"a", "b"})})}));
 }

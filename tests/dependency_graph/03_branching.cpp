@@ -21,7 +21,7 @@ TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/03_branching", test_depen
 	toast::World::registerDependency(*b, *d);
 	toast::World::registerDependency(*c, *d);
 
-	world.computeDependencyGraph();
+	toast::_detail::WorldTestAccess::computeDependencyGraph(world);
 
 	assertScheduleEquals(
 	    scheduleFor(world, Stage::tick),

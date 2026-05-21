@@ -18,6 +18,9 @@
 #include <toast/export.hpp>
 
 namespace toast {
+namespace _detail {
+struct NodeCluster;
+}
 
 enum class NodeState : uint8_t {
 	null,
@@ -38,7 +41,7 @@ enum class NodeType : uint8_t {
 class TOAST_API Node {
 	friend class World;
 	friend struct _detail::ControlBox;
-	friend struct NodeCluster;
+	friend struct _detail::NodeCluster;
 	friend struct _detail::WorldTestAccess;
 
 	Node() = default;

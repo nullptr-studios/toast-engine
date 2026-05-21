@@ -12,7 +12,7 @@ TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/01_unconnected_nodes", te
 	addStageFunction(*a, Stage::tick);
 	addStageFunction(*b, Stage::tick);
 
-	world.computeDependencyGraph();
+	toast::_detail::WorldTestAccess::computeDependencyGraph(world);
 
 	assertScheduleEquals(scheduleFor(world, Stage::tick), schedule({wave({item("a"), item("b")})}));
 	assertScheduleEquals(scheduleFor(world, Stage::early_tick), schedule({}));

@@ -25,6 +25,8 @@ struct WorldTestAccess {
 	static auto tickSchedule(World& world) noexcept -> decltype(auto) { return (world.tick_schedule); }
 
 	static auto dependencyGraph(World& world) noexcept -> decltype(auto) { return (world.graph); }
+
+	static void computeDependencyGraph(World& world) { world.computeDependencyGraph(); }
 };
 
 }

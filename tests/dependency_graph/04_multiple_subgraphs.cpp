@@ -19,7 +19,7 @@ TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/04_multiple_subgraphs", t
 	toast::World::registerDependency(*a, *b);
 	toast::World::registerDependency(*x, *y);
 
-	world.computeDependencyGraph();
+	toast::_detail::WorldTestAccess::computeDependencyGraph(world);
 
 	assertScheduleEquals(scheduleFor(world, Stage::tick), schedule({wave({item("a"), item("x")}), wave({item("b"), item("y")})}));
 }
