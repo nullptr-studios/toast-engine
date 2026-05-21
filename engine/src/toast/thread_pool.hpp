@@ -9,9 +9,12 @@
 #include <cassert>
 #include <condition_variable>
 #include <functional>
+#include <future>
 #include <memory>
 #include <queue>
 #include <thread>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace toast {
@@ -42,25 +45,8 @@ namespace toast {
  * @see World (uses ThreadPool for async scene loading)
  */
 class ThreadPool {
-private:
-	ThreadPool(size_t size);
-	inline static ThreadPool* instance = nullptr;
-	static auto get() noexcept -> ThreadPool&;
-
-	void threadLoop(size_t id);
-
-	struct {
-		bool should_stop = false;                  ///< Flag to signal workers to stop
-		std::atomic<int> active_jobs = 0;          ///< Number of jobs currently executing
-		std::mutex queue_mutex;                    ///< Mutex protecting the job queue
-		std::condition_variable job_available;     ///< Notified when a job is enqueued or stop is requested
-		std::condition_variable all_done;          ///< Notified when activeJobs hits 0 and queue is empty
-		std::vector<std::thread> workers;          ///< Worker threads (auto-join on destruction)
-		std::queue<std::function<void()>> jobs;    ///< Pending job queue
-	} m;
-
 public:
-	static constexpr size_t thread_count = 4;    ///< Number of workers on the pool
+	static constexpr size_t thread_count = 6;    ///< Number of workers on the pool
 
 	/**
 	 * @brief Initializes the pool and returns a pointer with ownership
@@ -77,9 +63,9 @@ public:
 	 * @brief Queues a job for execution by a worker thread
 	 *
 	 * The job will be executed as soon as a worker thread becomes available.
-	 * Jobs are processed in FIFO order
+	 * Jobs are processed in FIFO order. The thread pool uses move_only funcions.
 	 *
-	 * @param job The function to execute (moved into the queue).
+	 * @param job The function to execute (moved into the queue)
 	 *
 	 * @par Example:
 	 * @code
@@ -88,7 +74,8 @@ public:
 	 * });
 	 * @endcode
 	 */
-	static void queueJob(std::function<void()>&& job);
+	template<typename T>
+	static auto push(T&& job) -> std::future<std::invoke_result_t<T>>;
 
 	/**
 	 * @brief Destroys the thread pool and waits for all workers to finish.
@@ -129,6 +116,34 @@ public:
 		waitIdle();
 		destroy();
 	}
+
+private:
+	ThreadPool(size_t size);
+	inline static ThreadPool* instance = nullptr;
+	static auto get() noexcept -> ThreadPool&;
+
+	void threadLoop();
+	static void enqueue(std::move_only_function<void()>&& job);
+
+	struct {
+		bool should_stop = false;                            ///< Flag to signal workers to stop
+		std::atomic<int> active_jobs = 0;                    ///< Number of jobs currently executing
+		std::mutex queue_mutex;                              ///< Mutex protecting the job queue
+		std::condition_variable job_available;               ///< Notified when a job is enqueued or stop is requested
+		std::condition_variable all_done;                    ///< Notified when activeJobs hits 0 and queue is empty
+		std::vector<std::jthread> workers;                   ///< Worker threads (auto-join on destruction)
+		std::queue<std::move_only_function<void()>> jobs;    ///< Pending job queue
+	} m;
 };
+
+template<typename T>
+auto ThreadPool::push(T&& job) -> std::future<std::invoke_result_t<T>> {
+	using result_t = std::invoke_result_t<T>;
+
+	std::packaged_task<result_t()> task(std::forward<T>(job));
+	auto future = task.get_future();
+	enqueue([task = std::move(task)]() mutable { task(); });
+	return future;
+}
 
 }
