@@ -326,15 +326,90 @@ public:
 		// Bucket items by wave level
 		// Each bucket is a parallel dispatch barrier: all items within a bucket can run concurrently
 		// The next bucket will then only start when all futures join
-		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> tick_schedule(max_wave + 1);
+		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> bucket(max_wave + 1);
 
 		for (int si = 0; si < (int)subgraphs.size(); ++si) {
 			for (int ii = 0; ii < (int)subgraphs[si].size(); ++ii) {
-				tick_schedule[waves[si][ii]].emplace_back(std::move(subgraphs[si][ii]));
+				bucket[waves[si][ii]].emplace_back(std::move(subgraphs[si][ii]));
 			}
 		}
 
-		m.tick_schedule = std::move(tick_schedule);
+		// Phase 5: Bucket optimization
+		// We are going to create 4 equal buckets representing each of the tick functions and then
+		// search for all the nodes that do not contain those functions and erase them from the list
+		TickSchedule ts = {
+			.early_tick = bucket,
+			.tick = bucket,
+			.post_physics = bucket,
+			.late_tick = bucket,
+		};
+
+		for (auto& wave : ts.early_tick) {
+			std::erase_if(wave, [](std::variant<Box<Node>, NodeCluster>& item) -> bool {
+				if (std::holds_alternative<Box<Node>>(item)) {
+					auto node = std::get<Box<Node>>(item);
+					return node->table->table.early_tick.empty();
+				}
+
+				auto cluster = std::get<NodeCluster>(item);
+				bool has_function = false;
+				for (const auto& node : cluster.nodes) {
+					if (not node->table->table.early_tick.empty()) return true;
+				}
+				return !has_function;
+			});
+		}
+
+		for (auto& wave : ts.tick) {
+			std::erase_if(wave, [](std::variant<Box<Node>, NodeCluster>& item) -> bool {
+				if (std::holds_alternative<Box<Node>>(item)) {
+					auto node = std::get<Box<Node>>(item);
+					return node->table->table.tick.empty();
+				}
+
+				auto cluster = std::get<NodeCluster>(item);
+				bool has_function = false;
+				for (const auto& node : cluster.nodes) {
+					if (not node->table->table.tick.empty()) return true;
+				}
+				return !has_function;
+			});
+		}
+
+		for (auto& wave : ts.post_physics) {
+			std::erase_if(wave, [](std::variant<Box<Node>, NodeCluster>& item) -> bool {
+				if (std::holds_alternative<Box<Node>>(item)) {
+					auto node = std::get<Box<Node>>(item);
+					return node->table->table.post_physics.empty();
+				}
+
+				auto cluster = std::get<NodeCluster>(item);
+				bool has_function = false;
+				for (const auto& node : cluster.nodes) {
+					if (not node->table->table.post_physics.empty()) return true;
+				}
+				return !has_function;
+			});
+		}
+
+		for (auto& wave : ts.late_tick) {
+			std::erase_if(wave, [](std::variant<Box<Node>, NodeCluster>& item) -> bool {
+				if (std::holds_alternative<Box<Node>>(item)) {
+					auto node = std::get<Box<Node>>(item);
+					return node->table->table.late_tick.empty();
+				}
+
+				auto cluster = std::get<NodeCluster>(item);
+				bool has_function = false;
+				for (const auto& node : cluster.nodes) {
+					if (not node->table->table.late_tick.empty()) return true;
+				}
+				return !has_function;
+			});
+		}
+
+		tick_schedule = std::move(ts);
+
 	}
 
 	void swapRoot(Node* node);
@@ -368,6 +443,13 @@ private:
 
 		std::thread load_thread;
 	} m;
+
+	struct TickSchedule {
+		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> early_tick;
+		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> tick;
+		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> post_physics;
+		std::vector<std::vector<std::variant<Box<Node>, NodeCluster>>> late_tick;
+	} tick_schedule;
 
 	struct DependencyGraph {
 		std::unordered_map<Box<Node>, std::vector<Box<Node>>> connections;
