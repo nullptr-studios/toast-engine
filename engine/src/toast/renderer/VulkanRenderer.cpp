@@ -146,7 +146,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 	frame.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->getPipeline());
 
 	// Draw triangle
-	frame.commandBuffer.draw(3, 1, 0, 0);
+	frame.commandBuffer.draw(6, 1, 0, 0);
 
 	// End rendering
 	frame.commandBuffer.endRendering();

@@ -55,9 +55,26 @@ target_link_libraries(toast_engine
 target_compile_definitions(toast_engine PRIVATE TOAST_EXPORT)
 target_precompile_headers(toast_engine PRIVATE pch.h)
 
-if (NOT CMAKE_BUILD_TYPE STREQUAL "Release")
-    # We will activate tracy on Debug and RelWithInfo
-    target_compile_definitions(toast_engine PUBLIC TRACY_ENABLE DEBUG)
+if (MSVC)
+    # MSVC: config-aware definitions and aggressive Release optimizations
+    target_compile_definitions(toast_engine PUBLIC
+        $<$<CONFIG:Debug>:DEBUG;TRACY_ENABLE>
+        $<$<CONFIG:RelWithDebInfo>:TRACY_ENABLE>
+        $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:NDEBUG>
+    )
+    target_compile_options(toast_engine PRIVATE
+        $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast>
+    )
+    target_link_options(toast_engine PRIVATE
+        $<$<CONFIG:Release>:/LTCG>
+    )
+else()
+    # GCC/Clang: CMAKE_BUILD_TYPE-based logic
+    if (NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+        target_compile_definitions(toast_engine PUBLIC TRACY_ENABLE DEBUG)
+    else()
+        target_compile_definitions(toast_engine PUBLIC NDEBUG)
+    endif()
 endif()
 
 add_custom_target(clang_format

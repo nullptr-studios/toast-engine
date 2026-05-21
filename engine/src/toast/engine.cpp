@@ -28,7 +28,7 @@ IApplication* active_application = nullptr;
 auto createTrianglePipeline(const renderer::VulkanCore& core, vk::Format color_format, vk::Extent2D extent)
     -> std::unique_ptr<renderer::VulkanPipeline> {
 	// Compile shader
-	auto shader_spirv = renderer::ShaderCompiler::compileShader("./triangle.slang");
+	auto shader_spirv = renderer::ShaderCompiler::compileShader("./turboCoolShader.slang");
 
 	// Create pipeline
 	renderer::VulkanPipeline::Config config {

@@ -1,19 +1,11 @@
 // turboCoolShader.slang
-import Standard;
 
 // --------------------------------------------------------------------------
-// SHADERTOY UNIFORMS & RESOURCES
-// Bind these in your Vulkan descriptor sets.
+// HARDCODED UNIFORMS & RESOURCES (No Descriptors Required)
 // --------------------------------------------------------------------------
-cbuffer ShadertoyUniforms
-{
-    float iTime;
-    float3 iResolution;
-    float4 iMouse;
-};
-
-Texture2D iChannel0;
-SamplerState sampler0;
+static const float  iTime = 15.0; // Hardcoded time for a nice wave/cloud state
+static const float3 iResolution = float3(1920.0, 1080.0, 1.0); // Default 1080p
+static const float4 iMouse = float4(0.0);
 
 // --------------------------------------------------------------------------
 // GLSL -> SLANG/HLSL BRIDGING MACROS & FUNCTIONS
@@ -26,8 +18,6 @@ SamplerState sampler0;
 #define mix lerp
 #define fract frac
 
-// GLSL's mod() handles negative numbers differently than HLSL's fmod(). 
-// This replicates the exact GLSL behavior required by the raymarcher.
 float glsl_mod(float x, float y) { return x - y * floor(x / y); }
 vec2 glsl_mod(vec2 x, vec2 y) { return x - y * floor(x / y); }
 vec3 glsl_mod(vec3 x, vec3 y) { return x - y * floor(x / y); }
@@ -60,7 +50,7 @@ vec3 glsl_mod(vec3 x, float y) { return x - y * floor(x / y); }
 #define NUM_AA_SAMPLES 1.
 
 // --------------------------------------------------------------------------
-// GLOBALS (Must be static in Slang)
+// GLOBALS
 // --------------------------------------------------------------------------
 static vec4  g_debugcolor  = vec4(0.0);
 static float g_time        = 0.0;
@@ -71,18 +61,34 @@ static vec3  g_camorigin   = vec3(0.0);
 static vec3  g_campointsat = vec3(0.0);
 
 // --------------------------------------------------------------------------
-// MATH UTILITIES
+// INTER-STAGE STRUCTURE
+// --------------------------------------------------------------------------
+struct VS_Output
+{
+    float4 position : SV_Position;
+};
+
+// --------------------------------------------------------------------------
+// MATH UTILITIES (Procedural Noise)
 // --------------------------------------------------------------------------
 
+// Pseudo-random hash function
+float hash(float n) { 
+    return frac(sin(n) * 43758.5453123); 
+}
+
+// Procedural 3D Value Noise (Replaces the iChannel0 texture lookup)
 float noise( in vec3 x )
 {
     vec3 p = floor(x);
-    vec3 f = fract(x);
-    f = f*f*(3.0-2.0*f);
-    vec2 uv = (p.xy + vec2(37.0, 17.0) * p.z) + f.xy;
-    // Slang/HLSL texture sampling
-    vec2 rg = iChannel0.SampleLevel(sampler0, (uv + 0.5) / 256.0, 0).yx;
-    return mix( rg.x, rg.y, f.z );
+    vec3 f = frac(x);
+    f = f * f * (3.0 - 2.0 * f);
+    float n = p.x + p.y * 157.0 + 113.0 * p.z;
+    return lerp(
+        lerp(lerp(hash(n + 0.0), hash(n + 1.0), f.x),
+             lerp(hash(n + 157.0), hash(n + 158.0), f.x), f.y),
+        lerp(lerp(hash(n + 113.0), hash(n + 114.0), f.x),
+             lerp(hash(n + 270.0), hash(n + 271.0), f.x), f.y), f.z);
 }
 
 vec3 fresnel(vec3 R, vec3 N, float eta)
@@ -134,7 +140,7 @@ vec3 intersect_sphere(vec3 ro, vec3 rd, float sphr, vec3 sphc)
     float tmin = 0.0;
     float tmax = 0.0;
 
-    float sdisc = sqrt(max(0.0, discr)); // Protected against negative sqrt
+    float sdisc = sqrt(max(0.0, discr));
     tmin = (-b - sdisc)/a;
     tmax = (-b + sdisc)/a; 
 
@@ -166,8 +172,10 @@ float flow_noise( in vec3 p )
 {
     vec3 q = p - vec3(0., .5 * g_time, 0.);
     float f;
-    f  = 0.50000 * noise( q ); q = q * 3.02 - vec3(0., .5 * g_time, 0.);
-    f += 0.35000 * noise( q ); q = q * 3.03;
+    f  = 0.50000 * noise( q );
+    q = q * 3.02 - vec3(0., .5 * g_time, 0.);
+    f += 0.35000 * noise( q );
+    q = q * 3.03;
     f += 0.15000 * noise( q ); q = q * 3.01;
     return f;
 }
@@ -177,7 +185,8 @@ float map4( in vec3 p )
     vec3 q = p;
     float f;
     f  = 0.50000 * noise( q ); q = q * 2.02;
-    f += 0.25000 * noise( q ); q = q * 2.03;
+    f += 0.25000 * noise( q );
+    q = q * 2.03;
     f += 0.12500 * noise( q ); q = q * 2.01;
     f += 0.06250 * noise( q );
     return f;
@@ -250,7 +259,6 @@ void setup_globals()
 {
     g_time = 1. * iTime;
     g_exposure = 1.;
-    
     vec2 click = iMouse.xy / iResolution.xx;
     click = 2.0 * click - 1.0;  
     
@@ -266,7 +274,6 @@ void setup_globals()
     float cosrotyang = cos(rotyang);
     float sinrotyang = sin(rotyang);    
     g_camorigin = rotate_yaxis(g_camorigin, cosrotyang, sinrotyang);
-
     g_campointsat = vec3(0., .55, 1.5);
     vec3 iu = vec3(0., 1., 0.);
     vec3 iz = normalize( g_campointsat - g_camorigin );
@@ -277,10 +284,10 @@ void setup_globals()
     vec2 click_uv = iMouse.xy / iResolution.xy - .5;
     click_uv.y *= inv_aspect_ratio;
     vec3 ray_click_dir = normalize( click_uv.x * ix + click_uv.y * iy + g_focus * iz );
-    vec3 result = intersect_isphere(g_camorigin, ray_click_dir, 40., g_camorigin);
+    vec3 result = intersect_sphere(g_camorigin, ray_click_dir, 40., g_camorigin);
 
     if (iMouse.x + iMouse.y > 1.) {
-   		g_moonpos = g_camorigin + result.z * ray_click_dir;
+        g_moonpos = g_camorigin + result.z * ray_click_dir;
     } else {
         g_moonpos = vec3(-28., 8., 3.);
     }
@@ -296,13 +303,12 @@ CameraInfo setup_camera(vec2 aaoffset, float2 fragCoord)
     vec3 iz = normalize( g_campointsat - g_camorigin );
     vec3 ix = normalize( cross(iz, iu) );
     vec3 iy = cross(ix, iz);
-    
     vec3 ray_look_direction = normalize( image_plane_uv.x * ix + image_plane_uv.y * iy + g_focus * iz );
     
     CameraInfo info;
     info.camera_origin = g_camorigin;
     info.ray_look_direction = ray_look_direction;
-    info.camera_transform = mat3(ix, iy, iz); // Slang allows this initialization
+    info.camera_transform = mat3(ix, iy, iz); 
     info.image_plane_uv = image_plane_uv;
     
     return info;
@@ -320,11 +326,9 @@ vec2 scene_df( vec3 p )
 
     vec3 mp = p - g_moonpos;
     float mdf = sphere_df(mp, 1.2);
-    
     vec3 bb = p;
     bb.x = glsl_mod(bb.x + 4., 8.) - 4.;
     bb.z = abs(bb.z) - .15;
-    
     float bdf = roundbox_df( bb, vec3(.1, 2.5, .03), .01);
     bdf = uniondf(bdf, roundbox_df( bb, vec3(.35, .12, .15), .01));
     bdf = uniondf(bdf, roundbox_df( bb - vec3(0., 2.45, -0.1), vec3(.11, .1, .3), .01));
@@ -336,7 +340,6 @@ vec2 scene_df( vec3 p )
     float m = step(2.5, bb.y) + step(.95, bb.y) * step(bb.y, 1.3);
     cb.y -= .15 + REALLY_BIG_NUMBER * m;
     
-    // Mat multiply adjusted for Slang
     cb.yz = mul(mat2(-.707, -.707, .707, -.707), cb.yz);
     bdf = uniondf(bdf, roundbox_df( cb, vec3(.03, 1., .03), .01)); 
 
@@ -350,11 +353,10 @@ vec2 scene_df( vec3 p )
     tp.x = glsl_mod(tp.x + .05, .1) - .05;
     tp.z -= .13;
     float sdf = roundbox_df(tp - vec3(0., 1.06, 0.), vec3(.0, .089 * sp.x*sp.x + .02, .0), .005);
-    
     float wldf = sphere_df(bb - vec3(0.0, 2.64, -.15), .03);
     
     vec2 bridge_obj = vec2(bdf, BRIDGE_SURFACE_ID); 
-    vec2 suspension_obj = vec2(sdf, SUSPENSION_STRUTS_SURFACE_ID);        
+    vec2 suspension_obj = vec2(sdf, SUSPENSION_STRUTS_SURFACE_ID);
     vec2 light_obj = vec2(wldf, BRIDGE_LIGHT_SURFACE_ID); 
     vec2 moon_obj = vec2(mdf, MOON_SURFACE_ID);
     
@@ -389,7 +391,6 @@ SurfaceInfo march_scene(vec3 ray_origin, vec3 ray_direction, float consider_wate
     surface.surface_uv = vec2(0.);
     surface.surface_depth = 0.;
     surface.shade_in_reflection = 0.;
-
     vec2 water = consider_water * intersect_water(ray_origin, ray_direction);
     
     float epsilon = 0.001;
@@ -402,7 +403,6 @@ SurfaceInfo march_scene(vec3 ray_origin, vec3 ray_direction, float consider_wate
     for (int i=0; i < DIST_MARCH_STEPS; i++) 
     {
         if ( abs(dist) < epsilon || curr_t + total_t > DIST_MARCH_MAXDIST ) break;
-        
         vec3 p = ro + curr_t * rd;
         vec2 dfresult = scene_df( p );
         vec2 sky_obj = vec2(-sphere_df(p, 35.), SKY_SURFACE_ID);
@@ -416,7 +416,7 @@ SurfaceInfo march_scene(vec3 ray_origin, vec3 ray_direction, float consider_wate
             surface.surface_id = WATER_SURFACE_ID;
             curr_t = water.y;
             break;
-        }                                            
+        }                                                            
     }
     
     surface.surface_point = ro + curr_t * rd;
@@ -461,7 +461,6 @@ vec4 shade_clouds(vec3 ro, vec3 rd, float depth)
 {
     vec4 cloud_rgba = vec4(0.);
     float num_clouds = 0.;
-    
     for (float i = 0.; i < 3.; i += 1.)
     {
         vec3 ch = intersect_isphere(ro, rd, 3.1 * i + 4.5, ro);
@@ -526,7 +525,6 @@ vec3 shade_reflected_world(SurfaceInfo surface)
         float c = periodicmix(c1, c2, c3, .2 * g_time + .3 * dp.y);
         float l = glsl_mod(20. * dp.y, 1.);
         c *= smoothstep(0.2, .5, l) * smoothstep(.8, .5, l);
-        
         material.emissive_color = 2. * c * vec3(.9, .9, 1.);
         material.reflection_intensity = 8.;
     } 
@@ -553,8 +551,6 @@ vec3 shade_reflected_world(SurfaceInfo surface)
         mat3 om = mat3( 0.00,  0.80,  0.60,
                        -0.80,  0.36, -0.48,
                        -0.60, -0.48,  0.64 );
-        
-        // Matrix mutliplication converted to Slang's mul()
         vec3 mp = 1.3 * mul(om, (surface.surface_point - g_moonpos));
 
         float moon = .1;
@@ -574,14 +570,12 @@ vec3 shade_reflected_world(SurfaceInfo surface)
     vec3 em = material.emissive_color * mix(1., material.reflection_intensity, step(0.5, surface.shade_in_reflection));  
     scene_rgba.rgb += em;
     vec4 clouds_rgba = shade_clouds(surface.view_origin, surface.view_dir, surface.surface_depth);
-    
     vec3 lit_color = light_from_point_light(surface, material, g_moonpos, MOON_COLOR, 0., 1.);
     lit_color *= g_exposure;
     clouds_rgba.rgb *= g_exposure;
  
     composite(scene_rgba, clouds_rgba);
     composite(scene_rgba, vec4(lit_color, 1.));
-        
     return scene_rgba.rgb;
 }
 
@@ -592,26 +586,22 @@ vec3 shade_world(SurfaceInfo surface)
     {
         MaterialInfo material;
         material.bump_normal = surface.surface_normal;
-        
         vec3 surface_color = vec3(.07,.08,.1) + mix(vec3(.18, .22, .35), vec3(.21, .25, .38), flow_noise(surface.surface_uv.xxy));
         material.diffuse_color = .6 * surface_color;
         material.emissive_color = .15 * surface_color;
         material.specular_color = .5 * MOON_COLOR;
         material.specular_exponent = 200.;
         material.reflection_intensity = 1.0;
-        
         SurfaceInfo refl_surface = march_scene( surface.surface_point, reflect(surface.view_dir, surface.surface_normal), 0. );
         refl_surface.shade_in_reflection = 1.;
         vec3 refl_color = shade_reflected_world( refl_surface );
-        
         refl_color *= (.5 + .5 * smoothstep(0.3, 2.5, surface.surface_depth));
         refl_color *= (.5 + .5 * smoothstep(3., 1., surface.surface_depth));
-        
         vec3 lit_color = light_from_point_light(surface, material, g_moonpos, MOON_COLOR, 0., 1.);
         lit_color += .2 * refl_color;        
         lit_color *= g_exposure;              
         
-        scene_color = vec4(0.); 
+        scene_color = vec4(0.);
         composite(scene_color, vec4(lit_color, 1.));
     }
     else
@@ -622,22 +612,37 @@ vec3 shade_world(SurfaceInfo surface)
 }
 
 // --------------------------------------------------------------------------
-// MAIN ENTRY POINT (FRAGMENT SHADER)
+// MAIN ENTRY POINTS (VERTEX & FRAGMENT)
 // --------------------------------------------------------------------------
 
+[shader("vertex")]
+VS_Output vertexMain(uint vertexID : SV_VertexID)
+{
+    static const float2 positions[6] = {
+        float2(-1.0, -1.0), // Triangle 1: Top-Left
+        float2(-1.0,  1.0), // Triangle 1: Bottom-Left
+        float2( 1.0, -1.0), // Triangle 1: Top-Right
+        
+        float2( 1.0, -1.0), // Triangle 2: Top-Right
+        float2(-1.0,  1.0), // Triangle 2: Bottom-Left
+        float2( 1.0,  1.0)  // Triangle 2: Bottom-Right
+    };
+
+    VS_Output output;
+    output.position = float4(positions[vertexID], 0.0, 1.0);
+    return output;
+}
+
 [shader("fragment")]
-float4 main(float4 sv_position : SV_Position) : SV_Target
+float4 fragmentMain(VS_Output input) : SV_Target
 {   
-    // Vulkan has Y going down, Shadertoy expects Y going up.
-    // Assuming your viewport maps (0,0) to top-left.
-    float2 fragCoord = sv_position.xy;
+    float2 fragCoord = input.position.xy;
+    // Vulkan has Y pointing down, Shadertoy expects Y pointing up.
     fragCoord.y = iResolution.y - fragCoord.y;
 
     setup_globals();
-
     float denom = TWO_PI / max(1., NUM_AA_SAMPLES - 1.);
     vec3 scene_color = vec3(0.);
-    
     for (float aa = 0.; aa < NUM_AA_SAMPLES; aa += 1.) 
     {
         vec2 aaoffset = step(.5, aa) * .5 * vec2( cos((aa-1.) * denom ), sin((aa-1.) * denom ) );
