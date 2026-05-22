@@ -44,6 +44,19 @@ struct TOAST_API NodeFunctionTable {
 	void onDisable(Node& n);
 	void end(Node& n);
 	void destroy(Node& n);
+
+	void loadPropagate(Node& n);
+	void savePropagate(Node& n);
+	void preInitPropagate(Node& n);
+	void initPropagate(Node& n);
+	void beginPropagate(Node& n);
+	void endPropagate(Node& n);
+	void destroyPropagate(Node& n);
+
+	auto hasEarlyTick(Node& n) -> bool;
+	auto hasTick(Node& n) -> bool;
+	auto hasPostPhysics(Node& n) -> bool;
+	auto hasLateTick(Node& n) -> bool;
 };
 
 }

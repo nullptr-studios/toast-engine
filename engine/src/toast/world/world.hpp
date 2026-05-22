@@ -80,6 +80,8 @@ public:
 	World();
 	~World() = default;
 
+	void tick();
+
 	/**
 	 * Stores a new dependency
 	 * @param from Node that will be ticked first
@@ -95,6 +97,7 @@ public:
 	/**
 	 * @brief Creates multiple nodes asynchronously
 	 */
+	[[deprecated("This was never a function meant to be used")]]
 	static void dispatchNodeCreation(int count);
 
 	[[nodiscard]]
@@ -120,6 +123,14 @@ private:
 
 	/// We create a copy of each wave list for each tick function for further node discarding
 	auto optimizeWaves(const std::vector<_detail::TickSchedule::Wave>& waves) -> _detail::TickSchedule;
+
+	auto swapRoot(Node& node) -> Box<Node>;
+
+	auto moveToCached(Node& node) -> Box<Node>;
+
+	auto moveToGlobal(Node& node) -> Box<Node>;
+
+	auto moveToChild(Node& node, Node& parent) -> Box<Node>;
 
 	struct {
 		event::Listener listener;

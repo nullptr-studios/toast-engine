@@ -6,137 +6,62 @@ namespace toast {
 
 #pragma region FUNCTION_TABLE_ITERATIONS
 
-void NodeFunctionTable::load(Node& n) {
-	ZoneScoped;
-	ZoneNameF("%s::load()", n.name().data());
-
-	for (auto& f : table.load) {
-		ZoneScoped;
-		f(&n);
+#define TOAST_NODE_FUNCTION_IMPL(fn_name, member_name) \
+	void NodeFunctionTable::fn_name(Node& n) {           \
+		ZoneScoped;                                        \
+		ZoneNameF("%s::" #fn_name "()", n.name().data());  \
+		if (not n.enabled())                               \
+			return;                                          \
+		for (auto& f : table.member_name) {                \
+			ZoneScoped;                                      \
+			f(&n);                                           \
+		}                                                  \
 	}
-}
 
-void NodeFunctionTable::save(Node& n) {
-	ZoneScoped;
-	ZoneNameF("%s::save()", n.name().data());
-
-	for (auto& f : table.save) {
-		ZoneScoped;
-		f(&n);
+#define TOAST_NODE_PROPAGATE_IMPL(fn_name)              \
+	void NodeFunctionTable::fn_name##Propagate(Node& n) { \
+		ZoneScoped;                                         \
+		fn_name(n);                                         \
+		for (auto& c : n.m.children) {                      \
+			c->table->fn_name##Propagate(c);                  \
+		}                                                   \
 	}
-}
 
-void NodeFunctionTable::preInit(Node& n) {
-	ZoneScoped;
-	ZoneNameF("%s::preInit()", n.name().data());
-
-	for (auto& f : table.pre_init) {
-		ZoneScoped;
-		f(&n);
+#define TOAST_NODE_HAS_IMPL(fn_name, member_name)       \
+	auto NodeFunctionTable::has##fn_name(Node& n)->bool { \
+		return not n.table->table.member_name.empty();      \
 	}
-}
 
-void NodeFunctionTable::init(Node& n) {
-	ZoneScoped;
-	ZoneNameF("%s::init()", n.name().data());
+TOAST_NODE_FUNCTION_IMPL(load, load)
+TOAST_NODE_FUNCTION_IMPL(save, save)
+TOAST_NODE_FUNCTION_IMPL(preInit, pre_init)
+TOAST_NODE_FUNCTION_IMPL(init, init)
+TOAST_NODE_FUNCTION_IMPL(begin, begin)
+TOAST_NODE_FUNCTION_IMPL(onEnable, on_enable)
+TOAST_NODE_FUNCTION_IMPL(earlyTick, early_tick)
+TOAST_NODE_FUNCTION_IMPL(tick, tick)
+TOAST_NODE_FUNCTION_IMPL(postPhysics, post_physics)
+TOAST_NODE_FUNCTION_IMPL(lateTick, late_tick)
+TOAST_NODE_FUNCTION_IMPL(onDisable, on_disable)
+TOAST_NODE_FUNCTION_IMPL(end, end)
+TOAST_NODE_FUNCTION_IMPL(destroy, destroy)
 
-	for (auto& f : table.init) {
-		ZoneScoped;
-		f(&n);
-	}
-}
+TOAST_NODE_PROPAGATE_IMPL(load)
+TOAST_NODE_PROPAGATE_IMPL(save)
+TOAST_NODE_PROPAGATE_IMPL(preInit)
+TOAST_NODE_PROPAGATE_IMPL(init)
+TOAST_NODE_PROPAGATE_IMPL(begin)
+TOAST_NODE_PROPAGATE_IMPL(end)
+TOAST_NODE_PROPAGATE_IMPL(destroy)
 
-void NodeFunctionTable::begin(Node& n) {
-	ZoneScoped;
-	ZoneNameF("%s::begin()", n.name().data());
+TOAST_NODE_HAS_IMPL(EarlyTick, early_tick)
+TOAST_NODE_HAS_IMPL(Tick, tick)
+TOAST_NODE_HAS_IMPL(PostPhysics, post_physics)
+TOAST_NODE_HAS_IMPL(LateTick, late_tick)
 
-	for (auto& f : table.begin) {
-		ZoneScoped;
-		f(&n);
-	}
-}
-
-void NodeFunctionTable::onEnable(Node& n) {
-	ZoneScoped;
-	ZoneNameF("%s::onEnable()", n.name().data());
-
-	for (auto& f : table.on_enable) {
-		ZoneScoped;
-		f(&n);
-	}
-}
-
-void NodeFunctionTable::earlyTick(Node& n) {
-	ZoneScoped;
-	ZoneNameF("%s::earlyTick()", n.name().data());
-
-	for (auto& f : table.early_tick) {
-		ZoneScoped;
-		f(&n);
-	}
-}
-
-void NodeFunctionTable::tick(Node& n) {
-	ZoneScoped;
-	ZoneNameF("%s::tick()", n.name().data());
-
-	for (auto& f : table.tick) {
-		ZoneScoped;
-		f(&n);
-	}
-}
-
-void NodeFunctionTable::postPhysics(Node& n) {
-	ZoneScoped;
-	ZoneNameF("%s::postPhysics()", n.name().data());
-
-	for (auto& f : table.post_physics) {
-		ZoneScoped;
-		f(&n);
-	}
-}
-
-void NodeFunctionTable::lateTick(Node& n) {
-	ZoneScoped;
-	ZoneNameF("%s::lateTick()", n.name().data());
-
-	for (auto& f : table.late_tick) {
-		ZoneScoped;
-		f(&n);
-	}
-}
-
-void NodeFunctionTable::onDisable(Node& n) {
-	ZoneScoped;
-	ZoneNameF("%s::onDisable()", n.name().data());
-
-	for (auto& f : table.on_disable) {
-		ZoneScoped;
-		f(&n);
-	}
-}
-
-void NodeFunctionTable::end(Node& n) {
-	ZoneScoped;
-	ZoneNameF("%s::end()", n.name().data());
-
-	for (auto& f : table.end) {
-		ZoneScoped;
-		f(&n);
-	}
-}
-
-void NodeFunctionTable::destroy(Node& n) {
-	ZoneScoped;
-	ZoneNameF("%s::destroy()", n.name().data());
-
-	for (auto& f : table.destroy) {
-		ZoneScoped;
-		f(&n);
-	}
-}
-
-// btw dante i hate you this was a horrible experience
+#undef TOAST_NODE_FUNCTION_IMPL
+#undef TOAST_NODE_PROPAGATE_IMPL
+#undef TOAST_NODE_HAS_IMPL
 
 #pragma endregion FUNCTION_TABLE_ITERATIONS
 
@@ -213,6 +138,13 @@ void Node::inheritedEnabled(bool value) noexcept {
 
 	for (auto& c : m.children) {
 		c->inheritedEnabled(value);
+	}
+}
+
+void Node::changeNodeState(NodeState state) noexcept {
+	m.state = state;
+	for (auto& c : m.children) {
+		c->m.state = state;
 	}
 }
 

@@ -4,8 +4,11 @@
 
 #include <sstream>
 #include <toast/thread_pool.hpp>
+#include <utility>
 
 namespace toast {
+
+using namespace _detail;
 
 #pragma region NODE_CLUSTER
 
@@ -84,6 +87,27 @@ auto World::nodeAllocation() noexcept -> Box<Node> {
 	return it->node;
 }
 
+void World::tick() {
+	for (const auto& wave : tick_schedule.tick) {
+		std::vector<std::future<void>> futures;
+		futures.reserve(wave.size());
+
+		for (const auto& n : wave) {
+			futures.emplace_back(ThreadPool::push([n] {
+				if (std::holds_alternative<Box<Node>>(n)) {
+					auto node = std::get<Box<Node>>(n);
+					node->table->tick(node);
+				}
+
+				auto cluster = std::get<NodeCluster>(n);
+				cluster.tick();
+			}));
+		}
+
+		for (auto& f : futures) f.get();
+	}
+}
+
 void World::registerDependency(Node& from, Node& to) {
 	if (&from == &to) {
 		TOAST_WARN("World", "{} ({}) tried to register a dependency to itself", from.name(), from.uuid());
@@ -104,17 +128,34 @@ auto World::requestRuntimeCreation(Node& parent) -> Box<Node> {
 
 	// Phase 1: allocation
 	Box node = instance->nodeAllocation();
-	node->table->load(node);
-	node->table->preInit(node);
+	// node->table->load(node); no load since they are not being serialized
+	node->table->preInitPropagate(node);
 
 	// Phase 2: data structure generation
 	node->m.uuid.generate();
 	node->m.parent = parent;
 	parent.m.children.emplace_back(node);
-	// TODO: dependency graph
+
+	registerDependency(parent, node);
+	std::ranges::transform(parent.m.wave, std::begin(node->m.wave), [](auto x) { return (x < 255) ? x + 1 : x; });
+	auto schedule_node = [node](auto& schedule_vec, uint8_t wave_idx) {
+		if (wave_idx >= schedule_vec.size()) {
+			schedule_vec.resize(wave_idx + 1);
+		}
+		schedule_vec[wave_idx].emplace_back(node);
+	};
+	schedule_node(instance->tick_schedule.early_tick, node->m.wave[0]);
+	schedule_node(instance->tick_schedule.tick, node->m.wave[1]);
+	schedule_node(instance->tick_schedule.post_physics, node->m.wave[2]);
+	schedule_node(instance->tick_schedule.late_tick, node->m.wave[3]);
+
+	node->m.state = parent.m.state;
+	node->m.type = NodeType::child;
+	node->m.inherited_enabled = parent.enabled();
 
 	// Phase 3: node initialization
-	node->table->init(node);
+	node->table->preInit(node);
+	node->enabled(true);
 	return node;
 }
 
@@ -249,8 +290,7 @@ auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
 	return subgraphs;
 }
 
-auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_subgraphs)
-    -> std::vector<_detail::TickSchedule::Wave> {
+auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_subgraphs) -> std::vector<TickSchedule::Wave> {
 	// SearchContext tracks the state of the DFS traversal for Tarjan's algorithm.
 	struct SearchContext {
 		std::unordered_map<Box<Node>, int> index;
@@ -262,10 +302,10 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 	};
 
 	                                               // We start with a list of nodes per subgraph that survived the initial pruning
-	std::vector<_detail::TickSchedule::Wave> processed_subgraphs;
+	std::vector<TickSchedule::Wave> processed_subgraphs;
 	processed_subgraphs.reserve(input_subgraphs.size());
 	for (const auto& subgraph_nodes : input_subgraphs) {
-		_detail::TickSchedule::Wave wave;
+		TickSchedule::Wave wave;
 		wave.reserve(subgraph_nodes.size());
 		for (const auto& node : subgraph_nodes) {
 			wave.emplace_back(node);
@@ -273,7 +313,7 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 		processed_subgraphs.emplace_back(std::move(wave));
 	}
 
-	std::vector<_detail::TickSchedule::Wave> result;
+	std::vector<TickSchedule::Wave> result;
 
 	for (const auto& current_subgraph : processed_subgraphs) {
 		// Create a lookup set to efficiently filter out neighbors that aren't part of this subgraph
@@ -337,7 +377,7 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 		}
 
 		// Convert SCCs into a wave
-		_detail::TickSchedule::Wave sorted_wave;
+		TickSchedule::Wave sorted_wave;
 		sorted_wave.reserve(search_context.sccs.size());
 
 		for (auto& scc : search_context.sccs) {
@@ -347,7 +387,7 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 				// Group all nodes in the cycle into a NodeCluster
 				// This ensures they are ticked as a single atomic unit to avoid race conditions
 				TOAST_TRACE("World", "Dependency cycle detected ({} nodes) -> grouping into NodeCluster", scc.size());
-				sorted_wave.emplace_back(_detail::NodeCluster(scc));
+				sorted_wave.emplace_back(NodeCluster(scc));
 			}
 		}
 		result.emplace_back(std::move(sorted_wave));
@@ -356,7 +396,7 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 	return result;
 }
 
-auto World::assignWaves(const std::vector<_detail::TickSchedule::Wave>& subgraphs) -> std::vector<_detail::TickSchedule::Wave> {
+auto World::assignWaves(const std::vector<TickSchedule::Wave>& subgraphs) -> std::vector<TickSchedule::Wave> {
 	// First, map every node back to its containing item
 	// This allows us to treat clusters as a single scheduling unit
 	struct ItemLocation {
@@ -374,7 +414,7 @@ auto World::assignWaves(const std::vector<_detail::TickSchedule::Wave>& subgraph
 				    if constexpr (std::is_same_v<T, Box<Node>>) {
 					    node_to_location[item] = {subgraph_idx, item_idx};
 				    } else {
-				    	// NodeCluster
+					    // NodeCluster
 					    for (const auto& node : item.nodes) {
 						    node_to_location[node] = {subgraph_idx, item_idx};
 					    }
@@ -393,7 +433,7 @@ auto World::assignWaves(const std::vector<_detail::TickSchedule::Wave>& subgraph
 
 	// Calculate the wave level for each item
 	for (int subgraph_idx = 0; std::cmp_less(subgraph_idx, subgraphs.size()); ++subgraph_idx) {
-	`	// Iterating in reverse because Tarjan's SCCs are in reverse topological order
+		// Iterating in reverse because Tarjan's SCCs are in reverse topological order
 		for (int item_idx = (int)subgraphs[subgraph_idx].size() - 1; item_idx >= 0; --item_idx) {
 			// Collect all physical nodes in this scheduling item
 			std::vector<Box<Node>> item_nodes;
@@ -443,7 +483,7 @@ auto World::assignWaves(const std::vector<_detail::TickSchedule::Wave>& subgraph
 	}
 
 	// Group items into waves
-	std::vector<_detail::TickSchedule::Wave> buckets(global_max_wave + 1);
+	std::vector<TickSchedule::Wave> buckets(global_max_wave + 1);
 
 	for (int subgraph_idx = 0; std::cmp_less(subgraph_idx, subgraphs.size()); ++subgraph_idx) {
 		for (int item_idx = 0; std::cmp_less(item_idx, subgraphs[subgraph_idx].size()); ++item_idx) {
@@ -454,8 +494,8 @@ auto World::assignWaves(const std::vector<_detail::TickSchedule::Wave>& subgraph
 	return buckets;
 }
 
-auto World::optimizeWaves(const std::vector<_detail::TickSchedule::Wave>& waves) -> _detail::TickSchedule {
-	_detail::TickSchedule schedule = {
+auto World::optimizeWaves(const std::vector<TickSchedule::Wave>& waves) -> TickSchedule {
+	TickSchedule schedule = {
 	  .early_tick = waves,
 	  .tick = waves,
 	  .post_physics = waves,
@@ -467,20 +507,23 @@ auto World::optimizeWaves(const std::vector<_detail::TickSchedule::Wave>& waves)
 	 * tick function for that phase, and records the wave index into the node's metadata
 	 */
 	auto filter_and_assign_wave =
-	    [](std::vector<_detail::TickSchedule::Wave>& phase_waves, int wave_meta_index, auto&& has_function_checker) {
-		    for (int wave_idx = 0; wave_idx < (int)phase_waves.size(); ++wave_idx) {
+	    [](std::vector<TickSchedule::Wave>& phase_waves, int wave_meta_index, auto&& has_function_checker) {
+		    for (int wave_idx = 0; std::cmp_less(wave_idx, phase_waves.size()); ++wave_idx) {
 			    auto& current_wave = phase_waves[wave_idx];
 
 			    // Remove items that don't participate in this phase
-			    std::erase_if(current_wave, [&](std::variant<Box<Node>, _detail::NodeCluster>& item) {
+			    std::erase_if(current_wave, [&](std::variant<Box<Node>, NodeCluster>& item) {
 				    if (std::holds_alternative<Box<Node>>(item)) {
 					    auto node = std::get<Box<Node>>(item);
 					    return !has_function_checker(node);
 				    }
 
-				    const auto& cluster = std::get<_detail::NodeCluster>(item);
+				    const auto& cluster = std::get<NodeCluster>(item);
 				    return !std::ranges::any_of(cluster.nodes, [&](const auto& node) { return has_function_checker(node); });
 			    });
+
+			    // Drop waves that became empty after filtering
+			    std::erase_if(phase_waves, [](const auto& wave) { return wave.empty(); });
 
 			    // Assign the resulting wave index to all surviving nodes
 			    for (auto& item : current_wave) {
@@ -499,9 +542,6 @@ auto World::optimizeWaves(const std::vector<_detail::TickSchedule::Wave>& waves)
 				    );
 			    }
 		    }
-
-		    // Drop waves that became empty after filtering
-		    std::erase_if(phase_waves, [](const auto& wave) { return wave.empty(); });
 	    };
 
 	filter_and_assign_wave(schedule.early_tick, 0, [](auto n) { return !n->table->table.early_tick.empty(); });
@@ -510,6 +550,171 @@ auto World::optimizeWaves(const std::vector<_detail::TickSchedule::Wave>& waves)
 	filter_and_assign_wave(schedule.late_tick, 3, [](auto n) { return !n->table->table.late_tick.empty(); });
 
 	return schedule;
+}
+
+auto World::swapRoot(Node& node) -> Box<Node> {
+	ZoneScoped;
+	ZoneNameF("World::swapRoot() [%s to %s]", nodes.root->name().data(), node.name().data());
+
+	if (node.m.type != NodeType::root) {
+		TOAST_ERROR("World", "You can only swap roots with another world_root node");
+	}
+
+	auto root_node = nodes.root;
+
+	switch (node.m.state) {
+		case NodeState::root: TOAST_WARN("World", "Attempted to swap root with a node already in root"); return {};
+		case NodeState::destroy:
+		case NodeState::loading:
+		case NodeState::null:
+			TOAST_WARN("World", "Attempted to swap root with a not initialized node or one that is scheduled for destruction");
+			return {};
+		case NodeState::cached:
+			std::ranges::replace(nodes.cached, node.box(), root_node);
+			node.changeNodeState(NodeState::root);
+			root_node->changeNodeState(NodeState::cached);
+			root_node->table->endPropagate(root_node);
+			root_node->enabled(false);
+			break;
+		case NodeState::global:
+			std::ranges::replace(nodes.cached, node.box(), root_node);
+			node.changeNodeState(NodeState::root);
+			root_node->changeNodeState(NodeState::global);
+			break;
+	}
+
+	computeDependencyGraph();
+
+	node.table->beginPropagate(node);
+	node.enabled(true);
+
+	return root_node;
+}
+
+auto World::moveToCached(Node& node) -> Box<Node> {
+	ZoneScoped;
+	ZoneNameF("World::moveToCached() [%s]", nodes.root->name().data());
+
+	switch (node.m.state) {
+		case NodeState::cached:
+			TOAST_WARN("World", "Tried to move to cache a node already on cache");
+			return {};
+		case NodeState::destroy:
+		case NodeState::null:
+		case NodeState::loading:
+			TOAST_WARN("World", "Tried to move to cache a node that is not initialized or scheduled for destruction");
+			return {};
+		case NodeState::root:
+			if (node.m.type == NodeType::world_root) {
+				TOAST_ERROR("World", "Tried to move root to cached, consider using swapRoot() instead");
+				return {};
+			}
+			std::erase(node.parent()->m.children, node.box());
+			node.m.parent = {};
+			break;
+		case NodeState::global:
+			if (node.m.type == NodeType::world_root) {
+				std::erase(nodes.global, node.box());
+			} else {
+				std::erase(node.parent()->m.children, node.box());
+				node.m.parent = {};
+			}
+			break;
+	}
+
+	node.changeNodeState(NodeState::cached);
+	node.enabled(false);
+	node.table->endPropagate(node);
+
+	// ensure there's only root nodes or children nodes, no world_root
+	// world_root only exists in global and root
+	if (node.m.type == NodeType::world_root) {
+		node.m.type = NodeType::root;
+	}
+
+	computeDependencyGraph();
+	return node.box();
+}
+
+auto World::moveToGlobal(Node& node) -> Box<Node> {
+	switch (node.m.state) {
+		case NodeState::root:
+			TOAST_ERROR("World", "Tried to move root to cached, consider using swapRoot() instead");
+			return {};
+		case NodeState::global:
+			TOAST_WARN("World", "Tried to move to global a Node that is already in global");
+			return {};
+		case NodeState::destroy:
+		case NodeState::null:
+		case NodeState::loading:
+			TOAST_WARN("World", "Tried to move to cache a node that is not initialized or scheduled for destruction");
+			return {};
+		case NodeState::cached:
+			break;
+	}
+
+	if (node.m.type == NodeType::child) {
+		TOAST_ERROR("World", "Only Root nodes can be moved to global, {} is a children node", nodes.root->name().data());
+	}
+
+	std::erase(nodes.cached, node.box());
+
+	node.m.type = NodeType::world_root;
+	node.changeNodeState(NodeState::global);
+
+	computeDependencyGraph();
+
+	node.table->beginPropagate(node);
+	node.enabled(true);
+	nodes.global.emplace_back(node.box());
+	return node.box();
+}
+
+auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
+	if (parent.m.state != NodeState::root) {
+		TOAST_ERROR("World", "You can only move a node into one that is on the root");
+		return {};
+	}
+
+	switch (node.m.state) {
+		case NodeState::null:
+		case NodeState::loading:
+		case NodeState::destroy:
+			TOAST_WARN("World", "Tried to move to cache a node that is not initialized or scheduled for destruction");
+			return {};
+		case NodeState::root:
+			if (node.m.type == NodeType::world_root) {
+				TOAST_ERROR("World", "Tried to move root to cached, consider using swapRoot() instead");
+				return {};
+			}
+			break;
+		case NodeState::global:
+		case NodeState::cached:
+			break;
+	}
+
+	bool run_begin = false;
+
+	if (node.parent().exists()) {
+		std::erase(node.parent()->m.children, node.box());
+	} else {
+		if (node.m.state == NodeState::global) {
+			std::erase(nodes.global, node.box());
+		} else if (node.m.state == NodeState::cached) {
+			std::erase(nodes.cached, node.box());
+			run_begin = true;
+		}
+	}
+
+	node.changeNodeState(parent.m.state);
+	if (run_begin) {
+		node.table->beginPropagate(node);
+		node.enabled(true);
+	}
+	parent.m.children.emplace_back(node.box());
+	node.m.parent = parent;
+
+	return node.box();
 }
 
 auto World::dependencyGraphGraphviz() const -> std::string {
@@ -687,7 +892,7 @@ auto WorldTestAccess::functionTable(const Node& node) noexcept -> const NodeFunc
 	return *node.table;
 }
 
-auto WorldTestAccess::tickSchedule(World& world) noexcept -> _detail::TickSchedule& {
+auto WorldTestAccess::tickSchedule(World& world) noexcept -> TickSchedule& {
 	return world.tick_schedule;
 }
 

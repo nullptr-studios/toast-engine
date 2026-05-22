@@ -43,6 +43,7 @@ class TOAST_API Node {
 	friend struct _detail::ControlBox;
 	friend struct _detail::NodeCluster;
 	friend struct toast::_detail::WorldTestAccess;
+	friend struct NodeFunctionTable;
 
 	Node() = default;
 	~Node() = default;
@@ -94,6 +95,7 @@ private:
 	NodeFunctionTable* table = nullptr;
 
 	void inheritedEnabled(bool value) noexcept;
+	void changeNodeState(NodeState state) noexcept;
 };
 
 }
