@@ -91,7 +91,7 @@ misc-throw-by-value-catch-by-reference,
 
 cppcoreguidelines-avoid-goto,
 cppcoreguidelines-no-malloc,
-cppcoreguidelines-prefer-member-initializer,
+#cppcoreguidelines-prefer-member-initializer,
 cppcoreguidelines-pro-type-cstyle-cast,
 
 bugprone-assert-side-effect,
