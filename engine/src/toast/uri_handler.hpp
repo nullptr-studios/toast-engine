@@ -11,16 +11,19 @@
 namespace toast {
 
 enum class URI : uint8_t {
-	error, asset, artwork, node,
+	error,
+	asset,
+	artwork,
+	node,
 };
 
 namespace _detail {
-	constexpr std::string_view asset_uri = "asset://";
-	constexpr std::string_view artwork_uri = "artwork://";
-	constexpr std::string_view node_uri = "node://";
+constexpr std::string_view asset_uri = "asset://";
+constexpr std::string_view artwork_uri = "artwork://";
+constexpr std::string_view node_uri = "node://";
 
-	inline std::string assets_path;
-	inline std::string artworks_path;
+inline std::string assets_path;
+inline std::string artworks_path;
 }
 
 inline auto setAssetsPath(std::string_view path) -> void {
@@ -41,10 +44,10 @@ inline auto handleURI(std::string_view path) -> std::pair<URI, std::string> {
 		return {URI::artwork, p};
 	}
 	if (path.starts_with(_detail::node_uri)) {
-		return {URI::node, std::string{path.substr(_detail::node_uri.size())}};
+		return {URI::node, std::string {path.substr(_detail::node_uri.size())}};
 	}
 
-	return {URI::error, std::string{path}};
+	return {URI::error, std::string {path}};
 }
 
 }

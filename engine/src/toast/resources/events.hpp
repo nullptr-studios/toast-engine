@@ -9,6 +9,4 @@
 #pragma once
 #include <toast/events/event.hpp>
 
-namespace events {
-
-}
+namespace events { }

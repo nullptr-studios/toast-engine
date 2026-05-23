@@ -18,12 +18,10 @@ public:
 	ResourceManager() = default;
 	~ResourceManager() = default;
 
-	auto loadFile(std::stringstream path) -> BinaryFile;
-	auto loadFileAsync(std::stringstream path) -> std::future<BinaryFile>;
+	auto loadFile(std::string_view path) -> BinaryFile;
+	auto loadFileAsync(std::string_view path) -> std::future<BinaryFile>;
 
 private:
-
-
 };
 
 }

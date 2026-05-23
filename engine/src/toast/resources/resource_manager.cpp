@@ -1,9 +1,10 @@
 #include "resource_manager.hpp"
 #include <toast/thread_pool.hpp>
+#include <toast/log.hpp>
 
 namespace toast {
-auto ResourceManager::loadFile(std::stringstream path) -> BinaryFile {
-	std::filesystem::path fs_path(path.str());
+auto ResourceManager::loadFile(std::string_view path) -> BinaryFile {
+	std::filesystem::path fs_path(path);
 	if (!std::filesystem::exists(fs_path) || !std::filesystem::is_regular_file(fs_path)) {
 		TOAST_ERROR("ResourceManager", "Tried to load {} but it doesn't exist", fs_path.string());
 		return std::nullopt;
@@ -23,9 +24,9 @@ auto ResourceManager::loadFile(std::stringstream path) -> BinaryFile {
 	return std::nullopt;
 }
 
-auto ResourceManager::loadFileAsync(std::stringstream path) -> std::future<BinaryFile> {
-	return ThreadPool::push([this, path = path.str()] mutable {
-		return loadFile(std::stringstream {std::move(path)});
+auto ResourceManager::loadFileAsync(std::string_view path) -> std::future<BinaryFile> {
+	return ThreadPool::push([this, path = std::string{path}] {
+		return loadFile(path);
 	});
 }
 
