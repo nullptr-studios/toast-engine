@@ -1,8 +1,12 @@
 #include "node_file.hpp"
 
-#include <toast/log.hpp>
+#include "toast/world/uuid.hpp"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <toast/log.hpp>
+#include <sstream>
+#include <istream>
 
 namespace {
 /**
@@ -30,6 +34,13 @@ auto getValue(std::string_view view) -> std::optional<T> {
 	auto [ptr, error] = std::from_chars(view.data(), view.data() + view.size(), val);
 
 	if (error == std::errc{}) return val;
+	return std::nullopt;
+}
+
+template<>
+auto getValue<bool>(std::string_view view) -> std::optional<bool> {
+	if (view == "true" || view == "1") return true;
+	if (view == "false" || view == "0") return false;
 	return std::nullopt;
 }
 
@@ -129,9 +140,11 @@ auto NodeFile::toFile() -> std::string {
 		writeItem(item, ss);
 	}
 
-	for (const auto& node : nodes) {
-		ss << "\n";
-		writeNode(node, ss);
+	for (size_t i = 0; i < nodes.size(); ++i) {
+		if (i > 0 || !global_items.empty()) {
+			ss << "\n";
+		}
+		writeNode(nodes[i], ss);
 	}
 
 	return ss.str();
@@ -171,7 +184,11 @@ auto NodeFile::parseNodeChunk(std::span<const std::string> lines) -> std::option
 
 			// Find end of group chunk
 			size_t chunk_end = i + 1;
-			while (chunk_end < lines.size() && !lines[chunk_end].starts_with('.')) {
+			while (chunk_end < lines.size()) {
+				if (lines[chunk_end].starts_with('[') || 
+				   (lines[chunk_end].starts_with('.') && !lines[chunk_end].starts_with(".."))) {
+					break;
+				}
 				chunk_end++;
 			}
 
@@ -365,9 +382,11 @@ auto NodeFile::parseValue(ItemType type, std::string_view value, bool& is_array)
 			case ItemType::double_t:
 				if (auto b = getValue<double>(token)) { return std::any{b.value()}; }
 				return std::nullopt;
-			case ItemType::uuid_t:
-				// TODO: I need my UUID class for this
-				return std::nullopt;
+			case ItemType::uuid_t: {
+				toast::UUID id;
+				id.assign(token);
+				return std::any{id};
+			}
 			case ItemType::vec2_t: {
 				std::string_view view = token;
 				auto x = getValue<float>(nextValue(view));
@@ -491,7 +510,7 @@ void NodeFile::writeGroup(const Group& group, std::stringstream& ss) {
 	ss << std::format(".{}\n", group.name);
 
 	for (const auto& item : group.items) {
-		writeItem(item, ss, "\t");
+		writeItem(item, ss, "    ");
 	}
 
 	for (const auto& subgroup : group.subgroups) {
@@ -500,10 +519,10 @@ void NodeFile::writeGroup(const Group& group, std::stringstream& ss) {
 }
 
 void NodeFile::writeSubgroup(const Subgroup& subgroup, std::stringstream& ss) {
-	ss << std::format("\t..{}\n", subgroup.name);
+	ss << std::format("    ..{}\n", subgroup.name);
 
 	for (const auto& item : subgroup.items) {
-		writeItem(item, ss, "\t\t");
+		writeItem(item, ss, "        ");
 	}
 }
 
@@ -515,7 +534,7 @@ void NodeFile::writeItem(const Item& item, std::stringstream& ss, std::string of
 			case ItemType::int_t: return std::to_string(std::any_cast<int>(value));
 			case ItemType::float_t: return std::format("{}", std::any_cast<float>(value));
 			case ItemType::double_t: return std::format("{}", std::any_cast<double>(value));
-			case ItemType::uuid_t: return "TODO_UUID";
+			case ItemType::uuid_t: return std::format("{}", std::any_cast<UUID>(value));
 			case ItemType::vec2_t: {
 				auto v = std::any_cast<glm::vec2>(value);
 				return std::format("{} {}", v.x, v.y);

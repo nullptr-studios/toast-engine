@@ -1,5 +1,7 @@
 #include "uuid.hpp"
 
+#include "toast/log.hpp"
+
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -15,7 +17,7 @@ namespace toast {
 
 auto UUID::toString(uint64_t uuid) -> std::string {
 	std::string result;
-	result.reserve(12);
+	result.reserve(11);
 
 	// extract bytes
 	std::array<uint8_t, 8> b;
@@ -36,7 +38,6 @@ auto UUID::toString(uint64_t uuid) -> std::string {
 	result += charset[b[6] >> 2];
 	result += charset[((b[6] & 0x03) << 4) | (b[7] >> 4)];
 	result += charset[(b[7] & 0x0f) << 2];
-	result += '=';
 
 	return result;
 }
@@ -51,7 +52,8 @@ auto UUID::fromString(std::string_view b64) -> uint64_t {
 		return table;
 	}();
 
-	if (b64.size() < 11) {
+	if (b64.size() != 11) {
+		TOAST_ERROR("UUID", "Error parsing UUID {}", b64);
 		return 0;
 	}
 

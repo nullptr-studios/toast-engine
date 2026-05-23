@@ -4,6 +4,7 @@ project(toast_engine C CXX)
 find_package(asio CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
 
 file(GLOB_RECURSE SOURCE "src/*.cpp")
 add_library(toast_engine SHARED ${SOURCE})
@@ -35,6 +36,7 @@ target_link_libraries(toast_engine
         SDL3::SDL3
     PUBLIC
         Tracy::TracyClient
+        glm::glm
 )
 
 target_compile_definitions(toast_engine PRIVATE TOAST_EXPORT)

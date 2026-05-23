@@ -10,10 +10,15 @@
 
 #include "toast/export.hpp"
 
+#include <format>
+
 namespace toast {
+
+class NodeFile;
 
 struct TOAST_API UUID {
 	UUID();
+	friend class NodeFile;
 
 	/**
 	 * @brief Implicit cast to `std::string`

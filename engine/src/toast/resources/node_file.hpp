@@ -8,6 +8,8 @@
 
 #pragma once
 #include <any>
+#include <array>
+#include <cstdint>
 #include <iosfwd>
 #include <optional>
 #include <span>
@@ -19,25 +21,25 @@ namespace toast {
 class Node;
 
 namespace _detail {
-	constexpr std::string_view array_str = "array_";
-	constexpr std::string_view bool_str = "bool";
-	constexpr std::string_view int_str = "int";
-	constexpr std::string_view float_str = "float";
-	constexpr std::string_view string_str = "string";
-	constexpr std::string_view double_str = "double";
-	constexpr std::string_view uuid_str = "uuid";
-	constexpr std::string_view vec2_str = "vec2";
-	constexpr std::string_view vec3_str = "vec3";
-	constexpr std::string_view vec4_str = "vec4";
-	constexpr std::string_view quaternion_str = "quat";
+constexpr std::string_view array_str = "array_";
+constexpr std::string_view bool_str = "bool";
+constexpr std::string_view int_str = "int";
+constexpr std::string_view float_str = "float";
+constexpr std::string_view string_str = "string";
+constexpr std::string_view double_str = "double";
+constexpr std::string_view uuid_str = "uuid";
+constexpr std::string_view vec2_str = "vec2";
+constexpr std::string_view vec3_str = "vec3";
+constexpr std::string_view vec4_str = "vec4";
+constexpr std::string_view quaternion_str = "quat";
 
-	constexpr char string_array_separator = 31; // unit separator ␟
+constexpr char string_array_separator = 31;    // unit separator ␟
 
-	struct NodeFileBinaryHeader {
-		const std::array<uint8_t, 6> magic = {'T', 'N', 'O', 'D', 'E', '\0'};
-		uint16_t version = 1;
-		uint32_t node_count;
-	};
+struct NodeFileBinaryHeader {
+	const std::array<uint8_t, 6> magic = {'T', 'N', 'O', 'D', 'E', '\0'};
+	uint16_t version = 1;
+	uint32_t node_count;
+};
 }
 
 class NodeFile {
