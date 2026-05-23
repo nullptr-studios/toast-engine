@@ -11,9 +11,12 @@
   }, {
     "name" : "tracy",
     "version>=" : "0.13.1"
+  }, {
+    "name" : "ktx",
+    "version>=" : "4.4.2"
   } ],
-  "overrides": [ {
-    "name": "tracy",
-    "version": "0.13.1"
+  "overrides" : [ {
+    "name" : "tracy",
+    "version" : "0.13.1"
   } ]
 }
