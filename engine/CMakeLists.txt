@@ -6,7 +6,7 @@ find_package(SDL3 CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 
-file(GLOB_RECURSE SOURCE "src/*.cpp")
+file(GLOB_RECURSE SOURCE "src/*.cpp", "generated/*.cpp")
 add_library(toast_engine SHARED ${SOURCE})
 
 if (WIN32)

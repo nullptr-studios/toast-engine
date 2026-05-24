@@ -55,13 +55,16 @@ public:
 	[[nodiscard]]
 	auto parent() const noexcept -> Node*;
 
+	UUID public_uuid;    // serialized unique id
+	std::string public_name;
+
 protected:
 	// listener is lazily initialized
 	[[nodiscard]]
 	auto listener() noexcept -> event::Listener&;
 
 private:
-	struct {
+	struct M {
 		UUID uuid;    // serialized unique id
 		std::string name;
 		NodeState state = NodeState::null;

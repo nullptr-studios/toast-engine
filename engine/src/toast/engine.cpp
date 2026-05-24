@@ -7,6 +7,7 @@
 #include "thread_pool.hpp"
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
+#include "world/reflect.hpp"
 
 #include <cassert>
 #include <memory>
@@ -33,6 +34,8 @@ Engine::Engine() noexcept {
 		.logger = logging::Logger::create()
 	};
 	// clang-format on
+
+	registerEngineTypes();
 
 	TracySetProgramName("ToastEngine");
 	tracy::SetThreadName("Main Thread");
