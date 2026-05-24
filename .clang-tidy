@@ -89,7 +89,7 @@ modernize-shrink-to-fit,
 #misc-include-cleaner, removed because it over-pollutes everything with useless warnings
 misc-throw-by-value-catch-by-reference,
 
-cppcoreguidelines-avoid-goto,
+#cppcoreguidelines-avoid-goto,
 cppcoreguidelines-no-malloc,
 #cppcoreguidelines-prefer-member-initializer,
 cppcoreguidelines-pro-type-cstyle-cast,

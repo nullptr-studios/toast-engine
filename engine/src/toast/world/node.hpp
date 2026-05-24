@@ -10,12 +10,17 @@
 
 #pragma once
 #include "function_table.hpp"
+#include "toast/world/box.hpp"
+#include "toast/world/control_box.hpp"
 #include "uuid.hpp"
 
 #include <toast/events/listener.hpp>
 #include <toast/export.hpp>
 
 namespace toast {
+namespace _detail {
+struct NodeCluster;
+}
 
 enum class NodeState : uint8_t {
 	null,
@@ -34,6 +39,15 @@ enum class NodeType : uint8_t {
 };
 
 class TOAST_API Node {
+	friend class World;
+	friend struct _detail::ControlBox;
+	friend struct _detail::NodeCluster;
+	friend struct toast::_detail::WorldTestAccess;
+	friend struct NodeFunctionTable;
+
+	Node() = default;
+	~Node() = default;
+
 public:
 	[[nodiscard]]
 	/// @brief Returns the serialized unique identifier of this node
@@ -50,10 +64,13 @@ public:
 	auto enabled() const noexcept -> bool;
 	void enabled(bool value) noexcept;
 
-	// TODO: box()
+	[[nodiscard]]
+	auto box() const noexcept -> Box<Node>;
 
 	[[nodiscard]]
-	auto parent() const noexcept -> Node*;
+	auto parent() noexcept -> Box<Node>;
+
+	auto addChild() -> Box<Node>;
 
 	UUID public_uuid;    // serialized unique id
 	std::string public_name;
@@ -69,17 +86,19 @@ private:
 		std::string name;
 		NodeState state = NodeState::null;
 		NodeType type = NodeType::null;
-		bool local_enabled;        // is this object enabled?
-		bool inherited_enabled;    // is any parent of this object enabled?
-		// TODO: Box<Node> box;
-		Node* parent;
-		std::vector<Node> children;    // TODO: std::vector<Box<Node>> children;
-		std::unique_ptr<event::Listener> listener;
+		bool local_enabled = false;        // is this object enabled?
+		bool inherited_enabled = false;    // is any parent of this object enabled?
+		std::array<uint8_t, 4> wave = {255, 255, 255, 255};
+		Box<Node> box;
+		Box<Node> parent;
+		std::vector<Box<Node>> children;
+		std::unique_ptr<event::Listener> listener = nullptr;
 	} m;
 
-	NodeFunctionTable* table;
+	NodeFunctionTable* table = nullptr;
 
 	void inheritedEnabled(bool value) noexcept;
+	void changeNodeState(NodeState state) noexcept;
 };
 
 }

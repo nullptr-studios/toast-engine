@@ -1,86 +1,67 @@
 #include "node.hpp"
 
+#include "world.hpp"
+
 namespace toast {
 
 #pragma region FUNCTION_TABLE_ITERATIONS
 
-void NodeFunctionTable::load(Node* n) {
-	for (auto& f : table.load) {
-		f(n);
+#define TOAST_NODE_FUNCTION_IMPL(fn_name, member_name) \
+	void NodeFunctionTable::fn_name(Node& n) {           \
+		ZoneScoped;                                        \
+		ZoneNameF("%s::" #fn_name "()", n.name().data());  \
+		if (not n.enabled())                               \
+			return;                                          \
+		for (auto& f : table.member_name) {                \
+			ZoneScoped;                                      \
+			f(&n);                                           \
+		}                                                  \
 	}
-}
 
-void NodeFunctionTable::save(Node* n) {
-	for (auto& f : table.save) {
-		f(n);
+#define TOAST_NODE_PROPAGATE_IMPL(fn_name)              \
+	void NodeFunctionTable::fn_name##Propagate(Node& n) { \
+		ZoneScoped;                                         \
+		fn_name(n);                                         \
+		for (auto& c : n.m.children) {                      \
+			c->table->fn_name##Propagate(c);                  \
+		}                                                   \
 	}
-}
 
-void NodeFunctionTable::preInit(Node* n) {
-	for (auto& f : table.pre_init) {
-		f(n);
+#define TOAST_NODE_HAS_IMPL(fn_name, member_name)       \
+	auto NodeFunctionTable::has##fn_name(Node& n)->bool { \
+		return not n.table->table.member_name.empty();      \
 	}
-}
 
-void NodeFunctionTable::init(Node* n) {
-	for (auto& f : table.init) {
-		f(n);
-	}
-}
+TOAST_NODE_FUNCTION_IMPL(load, load)
+TOAST_NODE_FUNCTION_IMPL(save, save)
+TOAST_NODE_FUNCTION_IMPL(preInit, pre_init)
+TOAST_NODE_FUNCTION_IMPL(init, init)
+TOAST_NODE_FUNCTION_IMPL(begin, begin)
+TOAST_NODE_FUNCTION_IMPL(onEnable, on_enable)
+TOAST_NODE_FUNCTION_IMPL(earlyTick, early_tick)
+TOAST_NODE_FUNCTION_IMPL(tick, tick)
+TOAST_NODE_FUNCTION_IMPL(postPhysics, post_physics)
+TOAST_NODE_FUNCTION_IMPL(lateTick, late_tick)
+TOAST_NODE_FUNCTION_IMPL(onDisable, on_disable)
+TOAST_NODE_FUNCTION_IMPL(end, end)
+TOAST_NODE_FUNCTION_IMPL(destroy, destroy)
 
-void NodeFunctionTable::begin(Node* n) {
-	for (auto& f : table.begin) {
-		f(n);
-	}
-}
+TOAST_NODE_PROPAGATE_IMPL(load)
+TOAST_NODE_PROPAGATE_IMPL(save)
+TOAST_NODE_PROPAGATE_IMPL(preInit)
+TOAST_NODE_PROPAGATE_IMPL(init)
+TOAST_NODE_PROPAGATE_IMPL(begin)
+TOAST_NODE_PROPAGATE_IMPL(end)
+TOAST_NODE_PROPAGATE_IMPL(destroy)
 
-void NodeFunctionTable::onEnable(Node* n) {
-	for (auto& f : table.on_enable) {
-		f(n);
-	}
-}
+TOAST_NODE_HAS_IMPL(EarlyTick, early_tick)
+TOAST_NODE_HAS_IMPL(Tick, tick)
+TOAST_NODE_HAS_IMPL(PostPhysics, post_physics)
+TOAST_NODE_HAS_IMPL(LateTick, late_tick)
 
-void NodeFunctionTable::earlyTick(Node* n) {
-	for (auto& f : table.early_tick) {
-		f(n);
-	}
-}
-
-void NodeFunctionTable::tick(Node* n) {
-	for (auto& f : table.tick) {
-		f(n);
-	}
-}
-
-void NodeFunctionTable::postPhysics(Node* n) {
-	for (auto& f : table.post_physics) {
-		f(n);
-	}
-}
-
-void NodeFunctionTable::lateTick(Node* n) {
-	for (auto& f : table.late_tick) {
-		f(n);
-	}
-}
-
-void NodeFunctionTable::onDisable(Node* n) {
-	for (auto& f : table.on_disable) {
-		f(n);
-	}
-}
-
-void NodeFunctionTable::end(Node* n) {
-	for (auto& f : table.end) {
-		f(n);
-	}
-}
-
-void NodeFunctionTable::destroy(Node* n) {
-	for (auto& f : table.destroy) {
-		f(n);
-	}
-}
+#undef TOAST_NODE_FUNCTION_IMPL
+#undef TOAST_NODE_PROPAGATE_IMPL
+#undef TOAST_NODE_HAS_IMPL
 
 #pragma endregion FUNCTION_TABLE_ITERATIONS
 
@@ -110,18 +91,27 @@ void Node::enabled(bool value) noexcept {
 	m.local_enabled = value;
 
 	if (value) {
-		table->onEnable(this);
+		table->onEnable(*this);
 	} else {
-		table->onDisable(this);
+		table->onDisable(*this);
 	}
 
 	for (auto& c : m.children) {
-		c.inheritedEnabled(value);
+		c->inheritedEnabled(value);
 	}
 }
 
-auto Node::parent() const noexcept -> Node* {
+auto Node::box() const noexcept -> Box<Node> {
+	return m.box;
+}
+
+auto Node::parent() noexcept -> Box<Node> {
+	World::registerDependency(m.parent, *this);
 	return m.parent;
+}
+
+auto Node::addChild() -> Box<Node> {
+	return World::requestRuntimeCreation(*this);
 }
 
 auto Node::listener() noexcept -> event::Listener& {
@@ -140,14 +130,21 @@ void Node::inheritedEnabled(bool value) noexcept {
 
 	if (m.local_enabled) {
 		if (value) {
-			table->onEnable(this);
+			table->onEnable(*this);
 		} else {
-			table->onDisable(this);
+			table->onDisable(*this);
 		}
 	}
 
 	for (auto& c : m.children) {
-		c.inheritedEnabled(value);
+		c->inheritedEnabled(value);
+	}
+}
+
+void Node::changeNodeState(NodeState state) noexcept {
+	m.state = state;
+	for (auto& c : m.children) {
+		c->m.state = state;
 	}
 }
 

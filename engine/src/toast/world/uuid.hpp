@@ -17,6 +17,7 @@ namespace toast {
 class NodeFile;
 
 struct TOAST_API UUID {
+	friend class World;
 	UUID();
 	friend class NodeFile;
 
