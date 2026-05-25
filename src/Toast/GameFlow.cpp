@@ -1,5 +1,6 @@
 #include "Toast/GameFlow.hpp"
 
+#include "Toast/Audio/Audio.hpp"
 #include "Toast/CoroutineHandler.hpp"
 #include "Toast/GameEvents.hpp"
 #include "Toast/Log.hpp"
@@ -71,7 +72,23 @@ GameFlow::GameFlow() {
 	});
 	listener.Subscribe<toast::LoadLevel>([this](toast::LoadLevel* e) {
 		this->LoadLevel(e->world, e->level);
+		if (e->world == 1) {
+			if (not audio::is_playing("event:/City")) {
+				auto res = audio::play("event:/City");
+			}
 
+			if (audio::is_playing("event:/Port")) {
+				auto res = audio::stop("event:/Port");
+			}
+		} else if (e->world == 2) {
+			if (not audio::is_playing("event:/Port")) {
+				auto res = audio::play("event:/Port");
+			}
+
+			if (audio::is_playing("event:/City")) {
+				auto res = audio::stop("event:/City");
+			}
+		}
 		return true;
 	});
 	listener.Subscribe<toast::NextWorld>([this](auto* _) {
@@ -83,7 +100,24 @@ GameFlow::GameFlow() {
 			renderer::HUD::HUDLayer::Get()->ExecuteJS("fadeIn()");
 			co_await toast::WaitSeconds(0.6f);
 			flow.NextLevel();
-			co_await toast::WaitSeconds(0.1f);
+			if (flow.m.world && flow.m.world == 1) {
+				if (not audio::is_playing("event:/City")) {
+					auto res = audio::play("event:/City");
+				}
+
+				if (audio::is_playing("event:/Port")) {
+					auto res = audio::stop("event:/Port");
+				}
+			} else if (flow.m.world && flow.m.world == 2) {
+				if (not audio::is_playing("event:/Port")) {
+					auto res = audio::play("event:/Port");
+				}
+
+				if (audio::is_playing("event:/City")) {
+					auto res = audio::stop("event:/City");
+				}
+			}
+				co_await toast::WaitSeconds(0.1f);
 			renderer::HUD::HUDLayer::Get()->ExecuteJS("fadeOut()");
 		}(*this);
 		return true;
