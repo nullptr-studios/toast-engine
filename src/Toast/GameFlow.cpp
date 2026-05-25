@@ -78,7 +78,7 @@ GameFlow::GameFlow() {
 			}
 
 			if (audio::is_playing("event:/Port")) {
-				auto res = audio::stop("event:/Port");
+				auto res = audio::set_param("event:/Port", "param:/Level End", 1);
 			}
 		} else if (e->world == 2) {
 			if (not audio::is_playing("event:/Port")) {
@@ -86,7 +86,7 @@ GameFlow::GameFlow() {
 			}
 
 			if (audio::is_playing("event:/City")) {
-				auto res = audio::stop("event:/City");
+				auto res = audio::set_param("event:/City", "param:/Level End", 1);
 			}
 		}
 		return true;
@@ -106,7 +106,7 @@ GameFlow::GameFlow() {
 				}
 
 				if (audio::is_playing("event:/Port")) {
-					auto res = audio::stop("event:/Port");
+					auto res = audio::set_param("event:/Port", "param:/Level End", 1);
 				}
 			} else if (flow.m.world && flow.m.world == 2) {
 				if (not audio::is_playing("event:/Port")) {
@@ -114,7 +114,7 @@ GameFlow::GameFlow() {
 				}
 
 				if (audio::is_playing("event:/City")) {
-					auto res = audio::stop("event:/City");
+					auto res = audio::set_param("event:/City", "param:/Level End", 1);
 				}
 			}
 				co_await toast::WaitSeconds(0.1f);
