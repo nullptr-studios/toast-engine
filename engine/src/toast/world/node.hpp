@@ -10,6 +10,7 @@
 
 #pragma once
 #include "function_table.hpp"
+#include "reflect.hpp"
 #include "toast/world/box.hpp"
 #include "toast/world/control_box.hpp"
 #include "uuid.hpp"
@@ -72,33 +73,38 @@ public:
 
 	auto addChild() -> Box<Node>;
 
-	UUID public_uuid;    // serialized unique id
-	std::string public_name;
-
 protected:
 	// listener is lazily initialized
 	[[nodiscard]]
 	auto listener() noexcept -> event::Listener&;
 
 private:
-	struct M {
-		UUID uuid;    // serialized unique id
-		std::string name;
-		NodeState state = NodeState::null;
-		NodeType type = NodeType::null;
-		bool local_enabled = false;        // is this object enabled?
-		bool inherited_enabled = false;    // is any parent of this object enabled?
-		std::array<uint8_t, 4> wave = {255, 255, 255, 255};
-		Box<Node> box;
-		Box<Node> parent;
-		std::vector<Box<Node>> children;
-		std::unique_ptr<event::Listener> listener = nullptr;
-	} m;
+	UUID m_uuid;    // serialized unique id
+	std::string m_name;
+	NodeState m_state = NodeState::null;
+	NodeType m_type = NodeType::null;
+	bool m_local_enabled = false;        // is this object enabled?
+	bool m_inherited_enabled = false;    // is any parent of this object enabled?
+	std::array<uint8_t, 4> m_wave = {255, 255, 255, 255};
+	Box<Node> m_box;
+	Box<Node> m_parent;
+	std::vector<Box<Node>> m_children;
+	std::unique_ptr<event::Listener> m_listener = nullptr;
+
+	void init() { }
+
+	void tick() { }
 
 	NodeFunctionTable* table = nullptr;
 
 	void inheritedEnabled(bool value) noexcept;
 	void changeNodeState(NodeState state) noexcept;
+
+	// Reflection dispatch: Call a tick/lifecycle function from NodeInfo
+	void callTick(const NodeInfo* info, TickFunctionList func_type) noexcept;
+
+	// Reflection dispatch: Recursively call on children after this node
+	void propagateCallTick(const NodeInfo* info, TickFunctionList func_type) noexcept;
 };
 
 }

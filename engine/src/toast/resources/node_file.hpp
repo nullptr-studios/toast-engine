@@ -51,7 +51,7 @@ public:
 	auto toFile() -> std::string;
 	auto toBinary() -> std::vector<uint8_t>;
 
-	enum class ItemType : uint8_t {
+	enum class FieldType : uint8_t {
 		bool_t,
 		int_t,
 		float_t,
@@ -64,21 +64,21 @@ public:
 		quaternion_t,
 	};
 
-	struct Item {
+	struct Field {
 		std::string name;
-		ItemType type;
+		FieldType type;
 		bool is_array;
 		std::any value;
 	};
 
 	struct Subgroup {
 		std::string name;
-		std::vector<Item> items;
+		std::vector<Field> fields;
 	};
 
 	struct Group {
 		std::string name;
-		std::vector<Item> items;
+		std::vector<Field> fields;
 		std::vector<Subgroup> subgroups;
 	};
 
@@ -86,17 +86,17 @@ public:
 		std::string name;
 		std::string type;
 
-		std::vector<Item> items;
+		std::vector<Field> fields;
 		std::vector<Group> groups;
 	};
 
-	std::vector<Item> global_items;
+	std::vector<Field> global_fields;
 	std::vector<BasicNode> nodes;
 
 private:
-	auto parseItem(std::string_view line) -> std::optional<Item>;
-	auto parseType(std::string_view type, bool& is_array) -> std::optional<ItemType>;
-	auto parseValue(ItemType type, std::string_view value, bool& is_array) -> std::optional<std::any>;
+	auto parseField(std::string_view line) -> std::optional<Field>;
+	auto parseType(std::string_view type, bool& is_array) -> std::optional<FieldType>;
+	auto parseValue(FieldType type, std::string_view value, bool& is_array) -> std::optional<std::any>;
 
 	auto parseNodeChunk(std::span<const std::string> lines) -> std::optional<BasicNode>;
 	auto parseGroupChunk(std::span<const std::string> lines) -> std::optional<Group>;
@@ -105,8 +105,8 @@ private:
 	void writeNode(const BasicNode& node, std::stringstream& ss);
 	void writeGroup(const Group& group, std::stringstream& ss);
 	void writeSubgroup(const Subgroup& subgroup, std::stringstream& ss);
-	void writeItem(const Item& item, std::stringstream& ss, std::string offset = "");
-	auto writeType(ItemType type, bool is_array = false) -> std::string;
+	void writeField(const Field& field, std::stringstream& ss, std::string offset = "");
+	auto writeType(FieldType type, bool is_array = false) -> std::string;
 };
 
 }

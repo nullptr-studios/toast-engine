@@ -1,6 +1,9 @@
 #include "resource_manager.hpp"
-#include <toast/thread_pool.hpp>
+
+#include <filesystem>
+#include <fstream>
 #include <toast/log.hpp>
+#include <toast/thread_pool.hpp>
 
 namespace toast {
 auto ResourceManager::loadFile(std::string_view path) -> BinaryFile {
@@ -25,9 +28,7 @@ auto ResourceManager::loadFile(std::string_view path) -> BinaryFile {
 }
 
 auto ResourceManager::loadFileAsync(std::string_view path) -> std::future<BinaryFile> {
-	return ThreadPool::push([this, path = std::string{path}] {
-		return loadFile(path);
-	});
+	return ThreadPool::push([this, path = std::string {path}] { return loadFile(path); });
 }
 
 }

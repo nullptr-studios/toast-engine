@@ -10,6 +10,7 @@
 #include "box.hpp"
 #include "control_box.hpp"
 #include "node.hpp"
+#include "reflect.hpp"
 #include "world_events.hpp"
 
 #include <compare>
@@ -94,6 +95,10 @@ public:
 	 */
 	static auto requestRuntimeCreation(Node& parent) -> Box<Node>;
 
+	static auto reflect(std::string_view name) -> const NodeInfo* { return instance->m.node_registry.reflect(name); }
+
+	static auto registerNode(const NodeInfo* info) { instance->m.node_registry.registerNode(info); }
+
 	/**
 	 * @brief Creates multiple nodes asynchronously
 	 */
@@ -136,6 +141,7 @@ private:
 		event::Listener listener;
 		std::thread load_thread;
 		std::unordered_set<_detail::ControlBox> nodes;
+		NodeRegistry node_registry;
 	} m;
 
 	struct {

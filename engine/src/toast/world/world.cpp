@@ -104,7 +104,9 @@ void World::tick() {
 			}));
 		}
 
-		for (auto& f : futures) f.get();
+		for (auto& f : futures) {
+			f.get();
+		}
 	}
 }
 
@@ -132,26 +134,26 @@ auto World::requestRuntimeCreation(Node& parent) -> Box<Node> {
 	node->table->preInitPropagate(node);
 
 	// Phase 2: data structure generation
-	node->m.uuid.generate();
-	node->m.parent = parent;
-	parent.m.children.emplace_back(node);
+	node->m_uuid.generate();
+	node->m_parent = parent;
+	parent.m_children.emplace_back(node);
 
 	registerDependency(parent, node);
-	std::ranges::transform(parent.m.wave, std::begin(node->m.wave), [](auto x) { return (x < 255) ? x + 1 : x; });
+	std::ranges::transform(parent.m_wave, std::begin(node->m_wave), [](auto x) { return (x < 255) ? x + 1 : x; });
 	auto schedule_node = [node](auto& schedule_vec, uint8_t wave_idx) {
 		if (wave_idx >= schedule_vec.size()) {
 			schedule_vec.resize(wave_idx + 1);
 		}
 		schedule_vec[wave_idx].emplace_back(node);
 	};
-	schedule_node(instance->tick_schedule.early_tick, node->m.wave[0]);
-	schedule_node(instance->tick_schedule.tick, node->m.wave[1]);
-	schedule_node(instance->tick_schedule.post_physics, node->m.wave[2]);
-	schedule_node(instance->tick_schedule.late_tick, node->m.wave[3]);
+	schedule_node(instance->tick_schedule.early_tick, node->m_wave[0]);
+	schedule_node(instance->tick_schedule.tick, node->m_wave[1]);
+	schedule_node(instance->tick_schedule.post_physics, node->m_wave[2]);
+	schedule_node(instance->tick_schedule.late_tick, node->m_wave[3]);
 
-	node->m.state = parent.m.state;
-	node->m.type = NodeType::child;
-	node->m.inherited_enabled = parent.enabled();
+	node->m_state = parent.m_state;
+	node->m_type = NodeType::child;
+	node->m_inherited_enabled = parent.enabled();
 
 	// Phase 3: node initialization
 	node->table->preInit(node);
@@ -170,7 +172,7 @@ void World::dispatchNodeCreation(int count) {
 			Box node = instance->nodeAllocation();
 			node->table->load(node);
 			node->table->preInit(node);
-			node->m.state = NodeState::loading;
+			node->m_state = NodeState::loading;
 			return node;
 		}));
 	}
@@ -181,7 +183,7 @@ void World::dispatchNodeCreation(int count) {
 
 	// Phase 2: data structure generation
 	for (auto& r : alloc_futures) {
-		r.get()->m.uuid.generate();
+		r.get()->m_uuid.generate();
 	}
 	// TODO: build tree
 	// TODO: build dependency graph
@@ -199,7 +201,7 @@ void World::dispatchNodeCreation(int count) {
 
 	for (auto& r : init_futures) {
 		r.wait();
-		r.get()->m.state = NodeState::cached;
+		r.get()->m_state = NodeState::cached;
 	}
 
 	// TODO: Move this to cached_list
@@ -223,7 +225,7 @@ void World::computeDependencyGraph() {
 			       n->table->table.late_tick.empty();
 		});
 
-		std::erase_if(g, [](const auto& n) { return n->m.state == NodeState::cached; });
+		std::erase_if(g, [](const auto& n) { return n->m_state == NodeState::cached; });
 	}
 
 	// Drop subgraphs that became entirely empty
@@ -531,10 +533,10 @@ auto World::optimizeWaves(const std::vector<TickSchedule::Wave>& waves) -> TickS
 				        [&](auto& value) {
 					        using T = std::decay_t<decltype(value)>;
 					        if constexpr (std::is_same_v<T, Box<Node>>) {
-						        value->m.wave[wave_meta_index] = wave_idx;
+						        value->m_wave[wave_meta_index] = wave_idx;
 					        } else {
 						        for (auto node : value.nodes) {
-							        node->m.wave[wave_meta_index] = wave_idx;
+							        node->m_wave[wave_meta_index] = wave_idx;
 						        }
 					        }
 				        },
@@ -556,13 +558,13 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 	ZoneScoped;
 	ZoneNameF("World::swapRoot() [%s to %s]", nodes.root->name().data(), node.name().data());
 
-	if (node.m.type != NodeType::root) {
+	if (node.m_type != NodeType::root) {
 		TOAST_ERROR("World", "You can only swap roots with another world_root node");
 	}
 
 	auto root_node = nodes.root;
 
-	switch (node.m.state) {
+	switch (node.m_state) {
 		case NodeState::root: TOAST_WARN("World", "Attempted to swap root with a node already in root"); return {};
 		case NodeState::destroy:
 		case NodeState::loading:
@@ -595,29 +597,27 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 	ZoneScoped;
 	ZoneNameF("World::moveToCached() [%s]", nodes.root->name().data());
 
-	switch (node.m.state) {
-		case NodeState::cached:
-			TOAST_WARN("World", "Tried to move to cache a node already on cache");
-			return {};
+	switch (node.m_state) {
+		case NodeState::cached: TOAST_WARN("World", "Tried to move to cache a node already on cache"); return {};
 		case NodeState::destroy:
 		case NodeState::null:
 		case NodeState::loading:
 			TOAST_WARN("World", "Tried to move to cache a node that is not initialized or scheduled for destruction");
 			return {};
 		case NodeState::root:
-			if (node.m.type == NodeType::world_root) {
+			if (node.m_type == NodeType::world_root) {
 				TOAST_ERROR("World", "Tried to move root to cached, consider using swapRoot() instead");
 				return {};
 			}
-			std::erase(node.parent()->m.children, node.box());
-			node.m.parent = {};
+			std::erase(node.parent()->m_children, node.box());
+			node.m_parent = {};
 			break;
 		case NodeState::global:
-			if (node.m.type == NodeType::world_root) {
+			if (node.m_type == NodeType::world_root) {
 				std::erase(nodes.global, node.box());
 			} else {
-				std::erase(node.parent()->m.children, node.box());
-				node.m.parent = {};
+				std::erase(node.parent()->m_children, node.box());
+				node.m_parent = {};
 			}
 			break;
 	}
@@ -628,8 +628,8 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 
 	// ensure there's only root nodes or children nodes, no world_root
 	// world_root only exists in global and root
-	if (node.m.type == NodeType::world_root) {
-		node.m.type = NodeType::root;
+	if (node.m_type == NodeType::world_root) {
+		node.m_type = NodeType::root;
 	}
 
 	computeDependencyGraph();
@@ -637,29 +637,24 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 }
 
 auto World::moveToGlobal(Node& node) -> Box<Node> {
-	switch (node.m.state) {
-		case NodeState::root:
-			TOAST_ERROR("World", "Tried to move root to cached, consider using swapRoot() instead");
-			return {};
-		case NodeState::global:
-			TOAST_WARN("World", "Tried to move to global a Node that is already in global");
-			return {};
+	switch (node.m_state) {
+		case NodeState::root: TOAST_ERROR("World", "Tried to move root to cached, consider using swapRoot() instead"); return {};
+		case NodeState::global: TOAST_WARN("World", "Tried to move to global a Node that is already in global"); return {};
 		case NodeState::destroy:
 		case NodeState::null:
 		case NodeState::loading:
 			TOAST_WARN("World", "Tried to move to cache a node that is not initialized or scheduled for destruction");
 			return {};
-		case NodeState::cached:
-			break;
+		case NodeState::cached: break;
 	}
 
-	if (node.m.type == NodeType::child) {
+	if (node.m_type == NodeType::child) {
 		TOAST_ERROR("World", "Only Root nodes can be moved to global, {} is a children node", nodes.root->name().data());
 	}
 
 	std::erase(nodes.cached, node.box());
 
-	node.m.type = NodeType::world_root;
+	node.m_type = NodeType::world_root;
 	node.changeNodeState(NodeState::global);
 
 	computeDependencyGraph();
@@ -671,48 +666,47 @@ auto World::moveToGlobal(Node& node) -> Box<Node> {
 }
 
 auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
-	if (parent.m.state != NodeState::root) {
+	if (parent.m_state != NodeState::root) {
 		TOAST_ERROR("World", "You can only move a node into one that is on the root");
 		return {};
 	}
 
-	switch (node.m.state) {
+	switch (node.m_state) {
 		case NodeState::null:
 		case NodeState::loading:
 		case NodeState::destroy:
 			TOAST_WARN("World", "Tried to move to cache a node that is not initialized or scheduled for destruction");
 			return {};
 		case NodeState::root:
-			if (node.m.type == NodeType::world_root) {
+			if (node.m_type == NodeType::world_root) {
 				TOAST_ERROR("World", "Tried to move root to cached, consider using swapRoot() instead");
 				return {};
 			}
 			break;
 		case NodeState::global:
-		case NodeState::cached:
-			break;
+		case NodeState::cached: break;
 	}
 
 	bool run_begin = false;
 
 	if (node.parent().exists()) {
-		std::erase(node.parent()->m.children, node.box());
+		std::erase(node.parent()->m_children, node.box());
 	} else {
-		if (node.m.state == NodeState::global) {
+		if (node.m_state == NodeState::global) {
 			std::erase(nodes.global, node.box());
-		} else if (node.m.state == NodeState::cached) {
+		} else if (node.m_state == NodeState::cached) {
 			std::erase(nodes.cached, node.box());
 			run_begin = true;
 		}
 	}
 
-	node.changeNodeState(parent.m.state);
+	node.changeNodeState(parent.m_state);
 	if (run_begin) {
 		node.table->beginPropagate(node);
 		node.enabled(true);
 	}
-	parent.m.children.emplace_back(node.box());
-	node.m.parent = parent;
+	parent.m_children.emplace_back(node.box());
+	node.m_parent = parent;
 
 	return node.box();
 }
@@ -872,11 +866,11 @@ auto WorldTestAccess::createWorld() -> World* {
 auto WorldTestAccess::createNode(World& world, std::string_view name, NodeState state) -> Box<Node> {
 	auto node = world.nodeAllocation();
 	node->table = new NodeFunctionTable();
-	node->m.name = name;
-	node->m.state = state;
-	node->m.type = NodeType::child;
-	node->m.local_enabled = true;
-	node->m.inherited_enabled = true;
+	node->m_name = name;
+	node->m_state = state;
+	node->m_type = NodeType::child;
+	node->m_local_enabled = true;
+	node->m_inherited_enabled = true;
 	return node;
 }
 

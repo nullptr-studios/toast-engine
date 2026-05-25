@@ -7,7 +7,7 @@ namespace toast::_detail {
 ControlBox::ControlBox(Node* n) {
 	ref_count = 1;
 	node = n;
-	node->m.box.control = this;
+	node->m_box.control = this;
 }
 
 ControlBox::operator bool() const noexcept {
@@ -37,11 +37,11 @@ void ControlBox::decrement() {
 }
 
 auto ControlBox::get(const Node* node) -> ControlBox* {
-	return node->m.box.control;
+	return node->m_box.control;
 }
 
 auto ControlBox::get(const Node& node) -> ControlBox* {
-	return node.m.box.control;
+	return node.m_box.control;
 }
 
 }

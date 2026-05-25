@@ -22,7 +22,7 @@ namespace toast {
 	void NodeFunctionTable::fn_name##Propagate(Node& n) { \
 		ZoneScoped;                                         \
 		fn_name(n);                                         \
-		for (auto& c : n.m.children) {                      \
+		for (auto& c : n.m_children) {                      \
 			c->table->fn_name##Propagate(c);                  \
 		}                                                   \
 	}
@@ -66,29 +66,29 @@ TOAST_NODE_HAS_IMPL(LateTick, late_tick)
 #pragma endregion FUNCTION_TABLE_ITERATIONS
 
 auto Node::uuid() const noexcept -> const UUID& {
-	return m.uuid;
+	return m_uuid;
 }
 
 auto Node::name() const noexcept -> std::string_view {
-	return m.name;
+	return m_name;
 }
 
 void Node::name(std::string_view name) noexcept {
-	m.name = name;
+	m_name = name;
 }
 
 auto Node::enabled() const noexcept -> bool {
-	return m.local_enabled && m.inherited_enabled;
+	return m_local_enabled && m_inherited_enabled;
 }
 
 void Node::enabled(bool value) noexcept {
-	if (m.local_enabled == value) {
+	if (m_local_enabled == value) {
 		return;
 	}
-	if (not m.inherited_enabled) {
+	if (not m_inherited_enabled) {
 		return;
 	}
-	m.local_enabled = value;
+	m_local_enabled = value;
 
 	if (value) {
 		table->onEnable(*this);
@@ -96,18 +96,18 @@ void Node::enabled(bool value) noexcept {
 		table->onDisable(*this);
 	}
 
-	for (auto& c : m.children) {
+	for (auto& c : m_children) {
 		c->inheritedEnabled(value);
 	}
 }
 
 auto Node::box() const noexcept -> Box<Node> {
-	return m.box;
+	return m_box;
 }
 
 auto Node::parent() noexcept -> Box<Node> {
-	World::registerDependency(m.parent, *this);
-	return m.parent;
+	World::registerDependency(m_parent, *this);
+	return m_parent;
 }
 
 auto Node::addChild() -> Box<Node> {
@@ -115,20 +115,20 @@ auto Node::addChild() -> Box<Node> {
 }
 
 auto Node::listener() noexcept -> event::Listener& {
-	if (not m.listener) {
-		m.listener = std::make_unique<event::Listener>();
+	if (not m_listener) {
+		m_listener = std::make_unique<event::Listener>();
 	}
 
-	return *m.listener;
+	return *m_listener;
 }
 
 void Node::inheritedEnabled(bool value) noexcept {
-	if (m.inherited_enabled == value) {
+	if (m_inherited_enabled == value) {
 		return;
 	}
-	m.inherited_enabled = value;
+	m_inherited_enabled = value;
 
-	if (m.local_enabled) {
+	if (m_local_enabled) {
 		if (value) {
 			table->onEnable(*this);
 		} else {
@@ -136,15 +136,66 @@ void Node::inheritedEnabled(bool value) noexcept {
 		}
 	}
 
-	for (auto& c : m.children) {
+	for (auto& c : m_children) {
 		c->inheritedEnabled(value);
 	}
 }
 
 void Node::changeNodeState(NodeState state) noexcept {
-	m.state = state;
-	for (auto& c : m.children) {
-		c->m.state = state;
+	m_state = state;
+	for (auto& c : m_children) {
+		c->m_state = state;
+	}
+}
+
+void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
+	if (!info) {
+		return;
+	}
+
+	// Walk base → derived
+	if (info->base_type) {
+		callTick(info->base_type, func_type);
+	}
+
+	// Call this level's function
+	const TickFunctions& funcs = info->functions;
+	TickFunctions::Invoker invoker = nullptr;
+
+	if (has_flag(func_type, TickFunctionList::pre_init) && has_flag(funcs.list, TickFunctionList::pre_init)) {
+		invoker = funcs.pre_init;
+	} else if (has_flag(func_type, TickFunctionList::init) && has_flag(funcs.list, TickFunctionList::init)) {
+		invoker = funcs.init;
+	} else if (has_flag(func_type, TickFunctionList::destroy) && has_flag(funcs.list, TickFunctionList::destroy)) {
+		invoker = funcs.destroy;
+	} else if (has_flag(func_type, TickFunctionList::begin) && has_flag(funcs.list, TickFunctionList::begin)) {
+		invoker = funcs.begin;
+	} else if (has_flag(func_type, TickFunctionList::end) && has_flag(funcs.list, TickFunctionList::end)) {
+		invoker = funcs.end;
+	} else if (has_flag(func_type, TickFunctionList::on_enable) && has_flag(funcs.list, TickFunctionList::on_enable)) {
+		invoker = funcs.on_enable;
+	} else if (has_flag(func_type, TickFunctionList::on_disable) && has_flag(funcs.list, TickFunctionList::on_disable)) {
+		invoker = funcs.on_disable;
+	} else if (has_flag(func_type, TickFunctionList::early_tick) && has_flag(funcs.list, TickFunctionList::early_tick)) {
+		invoker = funcs.early_tick;
+	} else if (has_flag(func_type, TickFunctionList::tick) && has_flag(funcs.list, TickFunctionList::tick)) {
+		invoker = funcs.tick;
+	} else if (has_flag(func_type, TickFunctionList::post_physics) && has_flag(funcs.list, TickFunctionList::post_physics)) {
+		invoker = funcs.post_physics;
+	} else if (has_flag(func_type, TickFunctionList::late_tick) && has_flag(funcs.list, TickFunctionList::late_tick)) {
+		invoker = funcs.late_tick;
+	}
+
+	if (invoker) {
+		invoker(this);
+	}
+}
+
+void Node::propagateCallTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
+	callTick(info, func_type);
+
+	for (auto& child : m_children) {
+		child->propagateCallTick(info, func_type);
 	}
 }
 

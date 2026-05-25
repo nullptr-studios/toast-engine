@@ -1,5 +1,3 @@
 #include "resource.hpp"
 
-namespace toast {
-
-}
+namespace toast { }

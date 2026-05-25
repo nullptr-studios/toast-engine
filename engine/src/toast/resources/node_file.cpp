@@ -4,9 +4,9 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <toast/log.hpp>
-#include <sstream>
 #include <istream>
+#include <sstream>
+#include <toast/log.hpp>
 
 namespace {
 /**
@@ -28,19 +28,27 @@ auto nextValue(std::string_view& view, char delim = ' ') {
 
 template<typename T>
 auto getValue(std::string_view view) -> std::optional<T> {
-	if (view.empty()) return std::nullopt;
+	if (view.empty()) {
+		return std::nullopt;
+	}
 
 	T val;
 	auto [ptr, error] = std::from_chars(view.data(), view.data() + view.size(), val);
 
-	if (error == std::errc{}) return val;
+	if (error == std::errc {}) {
+		return val;
+	}
 	return std::nullopt;
 }
 
 template<>
 auto getValue<bool>(std::string_view view) -> std::optional<bool> {
-	if (view == "true" || view == "1") return true;
-	if (view == "false" || view == "0") return false;
+	if (view == "true" || view == "1") {
+		return true;
+	}
+	if (view == "false" || view == "0") {
+		return false;
+	}
 	return std::nullopt;
 }
 
@@ -67,7 +75,7 @@ struct BinaryReader {
 	template<typename T>
 	T readValue() {
 		if (offset + sizeof(T) > data.size()) {
-			return T{};
+			return T {};
 		}
 		T value;
 		std::memcpy(&value, data.data() + offset, sizeof(T));
@@ -95,11 +103,15 @@ NodeFile::NodeFile(std::istream& file) {
 	while (std::getline(file, line)) {
 		// Strip leading/trailing whitespaces and tabs
 		size_t start = line.find_first_not_of(" \t\r\n\v\f");
-		if (start == std::string::npos) continue;
+		if (start == std::string::npos) {
+			continue;
+		}
 
 		size_t end = line.find_last_not_of(" \t\r\n\v\f");
 		std::string cleaned = line.substr(start, end - start + 1);
-		if (cleaned.empty()) continue;
+		if (cleaned.empty()) {
+			continue;
+		}
 
 		lines.push_back(std::move(cleaned));
 	}
@@ -122,12 +134,12 @@ NodeFile::NodeFile(std::istream& file) {
 			}
 			i = chunk_end;
 		} else {
-			// Global item
-			auto item = parseItem(current);
-			if (item) {
-				global_items.push_back(std::move(*item));
+			// Global field
+			auto field = parseField(current);
+			if (field) {
+				global_fields.push_back(std::move(*field));
 			} else {
-				TOAST_WARN("ResourceManager", "Failed to parse global item: {}", current);
+				TOAST_WARN("ResourceManager", "Failed to parse global field: {}", current);
 			}
 			i++;
 		}
@@ -136,12 +148,12 @@ NodeFile::NodeFile(std::istream& file) {
 
 auto NodeFile::toFile() -> std::string {
 	std::stringstream ss;
-	for (const auto& item : global_items) {
-		writeItem(item, ss);
+	for (const auto& field : global_fields) {
+		writeField(field, ss);
 	}
 
 	for (size_t i = 0; i < nodes.size(); ++i) {
-		if (i > 0 || !global_items.empty()) {
+		if (i > 0 || !global_fields.empty()) {
 			ss << "\n";
 		}
 		writeNode(nodes[i], ss);
@@ -151,25 +163,33 @@ auto NodeFile::toFile() -> std::string {
 }
 
 auto NodeFile::parseNodeChunk(std::span<const std::string> lines) -> std::optional<BasicNode> {
-	if (lines.empty()) return std::nullopt;
+	if (lines.empty()) {
+		return std::nullopt;
+	}
 
 	// Parse header: [name type=type]
 	std::string_view header = lines[0];
-	if (!header.starts_with('[') || !header.ends_with(']')) return std::nullopt;
+	if (!header.starts_with('[') || !header.ends_with(']')) {
+		return std::nullopt;
+	}
 	header.remove_prefix(1);
 	header.remove_suffix(1);
 
 	size_t name_end = header.find(' ');
-	if (name_end == std::string_view::npos) return std::nullopt;
+	if (name_end == std::string_view::npos) {
+		return std::nullopt;
+	}
 
-	std::string name{header.substr(0, name_end)};
+	std::string name {header.substr(0, name_end)};
 	header.remove_prefix(name_end + 1);
 
-	if (!header.starts_with("type=")) return std::nullopt;
+	if (!header.starts_with("type=")) {
+		return std::nullopt;
+	}
 	header.remove_prefix(5);
-	std::string type{header};
+	std::string type {header};
 
-	BasicNode node{.name = std::move(name), .type = std::move(type)};
+	BasicNode node {.name = std::move(name), .type = std::move(type)};
 
 	for (size_t i = 1; i < lines.size();) {
 		const std::string& current = lines[i];
@@ -185,8 +205,7 @@ auto NodeFile::parseNodeChunk(std::span<const std::string> lines) -> std::option
 			// Find end of group chunk
 			size_t chunk_end = i + 1;
 			while (chunk_end < lines.size()) {
-				if (lines[chunk_end].starts_with('[') || 
-				   (lines[chunk_end].starts_with('.') && !lines[chunk_end].starts_with(".."))) {
+				if (lines[chunk_end].starts_with('[') || (lines[chunk_end].starts_with('.') && !lines[chunk_end].starts_with(".."))) {
 					break;
 				}
 				chunk_end++;
@@ -198,9 +217,9 @@ auto NodeFile::parseNodeChunk(std::span<const std::string> lines) -> std::option
 			}
 			i = chunk_end;
 		} else {
-			auto item = parseItem(current);
-			if (item) {
-				node.items.push_back(std::move(*item));
+			auto field = parseField(current);
+			if (field) {
+				node.fields.push_back(std::move(*field));
 			}
 			i++;
 		}
@@ -210,12 +229,14 @@ auto NodeFile::parseNodeChunk(std::span<const std::string> lines) -> std::option
 }
 
 auto NodeFile::parseGroupChunk(std::span<const std::string> lines) -> std::optional<Group> {
-	if (lines.empty()) return std::nullopt;
+	if (lines.empty()) {
+		return std::nullopt;
+	}
 
 	// Header: .name
 	std::string_view header = lines[0];
 	header.remove_prefix(1);
-	Group group{.name = std::string{header}};
+	Group group {.name = std::string {header}};
 
 	for (size_t i = 1; i < lines.size();) {
 		const std::string& current = lines[i];
@@ -236,9 +257,9 @@ auto NodeFile::parseGroupChunk(std::span<const std::string> lines) -> std::optio
 			// Should not happen if chunking is correct
 			i++;
 		} else {
-			auto item = parseItem(current);
-			if (item) {
-				group.items.push_back(std::move(*item));
+			auto field = parseField(current);
+			if (field) {
+				group.fields.push_back(std::move(*field));
 			}
 			i++;
 		}
@@ -248,24 +269,26 @@ auto NodeFile::parseGroupChunk(std::span<const std::string> lines) -> std::optio
 }
 
 auto NodeFile::parseSubgroupChunk(std::span<const std::string> lines) -> std::optional<Subgroup> {
-	if (lines.empty()) return std::nullopt;
+	if (lines.empty()) {
+		return std::nullopt;
+	}
 
 	// Header: ..name
 	std::string_view header = lines[0];
 	header.remove_prefix(2);
-	Subgroup subgroup{.name = std::string{header}};
+	Subgroup subgroup {.name = std::string {header}};
 
 	for (size_t i = 1; i < lines.size(); i++) {
-		auto item = parseItem(lines[i]);
-		if (item) {
-			subgroup.items.push_back(std::move(*item));
+		auto field = parseField(lines[i]);
+		if (field) {
+			subgroup.fields.push_back(std::move(*field));
 		}
 	}
 
 	return subgroup;
 }
 
-auto NodeFile::parseItem(std::string_view line) -> std::optional<Item> {
+auto NodeFile::parseField(std::string_view line) -> std::optional<Field> {
 #ifndef NDEBUG
 	// Safety check but it should be done before sending this
 	size_t start = line.find_first_not_of(" \t\n\r\v\f");
@@ -286,7 +309,7 @@ auto NodeFile::parseItem(std::string_view line) -> std::optional<Item> {
 		TOAST_ERROR("ResourceManager", "Malformed line: Missing space after name");
 		return std::nullopt;
 	}
-	std::string name{line.substr(0, name_end)};
+	std::string name {line.substr(0, name_end)};
 	line.remove_prefix(name_end);
 
 	// Get type
@@ -335,15 +358,10 @@ auto NodeFile::parseItem(std::string_view line) -> std::optional<Item> {
 		return std::nullopt;
 	}
 
-	return Item{
-		.name = std::move(name),
-		.type = *type,
-		.is_array = is_array,
-		.value = std::move(*value)
-	};
+	return Field {.name = std::move(name), .type = *type, .is_array = is_array, .value = std::move(*value)};
 }
 
-auto NodeFile::parseType(std::string_view type, bool& is_array) -> std::optional<ItemType> {
+auto NodeFile::parseType(std::string_view type, bool& is_array) -> std::optional<FieldType> {
 	if (type.starts_with(_detail::array_str)) {
 		is_array = true;
 		type.remove_prefix(_detail::array_str.size());
@@ -351,77 +369,119 @@ auto NodeFile::parseType(std::string_view type, bool& is_array) -> std::optional
 		is_array = false;
 	}
 
-	if (type == _detail::bool_str) return ItemType::bool_t;
-	if (type == _detail::int_str) return ItemType::int_t;
-	if (type == _detail::string_str) return ItemType::string_t;
-	if (type == _detail::float_str) return ItemType::float_t;
-	if (type == _detail::double_str) return ItemType::double_t;
-	if (type == _detail::uuid_str) return ItemType::uuid_t;
-	if (type == _detail::vec2_str) return ItemType::vec2_t;
-	if (type == _detail::vec3_str) return ItemType::vec3_t;
-	if (type == _detail::vec4_str) return ItemType::vec4_t;
-	if (type == _detail::quaternion_str) return ItemType::quaternion_t;
+	if (type == _detail::bool_str) {
+		return FieldType::bool_t;
+	}
+	if (type == _detail::int_str) {
+		return FieldType::int_t;
+	}
+	if (type == _detail::string_str) {
+		return FieldType::string_t;
+	}
+	if (type == _detail::float_str) {
+		return FieldType::float_t;
+	}
+	if (type == _detail::double_str) {
+		return FieldType::double_t;
+	}
+	if (type == _detail::uuid_str) {
+		return FieldType::uuid_t;
+	}
+	if (type == _detail::vec2_str) {
+		return FieldType::vec2_t;
+	}
+	if (type == _detail::vec3_str) {
+		return FieldType::vec3_t;
+	}
+	if (type == _detail::vec4_str) {
+		return FieldType::vec4_t;
+	}
+	if (type == _detail::quaternion_str) {
+		return FieldType::quaternion_t;
+	}
 	return std::nullopt;
 }
 
-auto NodeFile::parseValue(ItemType type, std::string_view value, bool& is_array) -> std::optional<std::any> {
-	auto parse_single = [](ItemType type, std::string_view token) -> std::optional<std::any>{
+auto NodeFile::parseValue(FieldType type, std::string_view value, bool& is_array) -> std::optional<std::any> {
+	auto parse_single = [](FieldType type, std::string_view token) -> std::optional<std::any> {
 		switch (type) {
 			// holy boilerplate lil bro
-			case ItemType::string_t:
-				return std::any{std::string(token)};
-			case ItemType::bool_t:
-				if (auto b = getValue<bool>(token)) { return std::any{b.value()}; }
+			case FieldType::string_t: return std::any {std::string(token)};
+			case FieldType::bool_t:
+				if (auto b = getValue<bool>(token)) {
+					return std::any {b.value()};
+				}
 				return std::nullopt;
-			case ItemType::int_t:
-				if (auto b = getValue<int>(token)) { return std::any{b.value()}; }
+			case FieldType::int_t:
+				if (auto b = getValue<int>(token)) {
+					return std::any {b.value()};
+				}
 				return std::nullopt;
-			case ItemType::float_t:
-				if (auto b = getValue<float>(token)) { return std::any{b.value()}; }
+			case FieldType::float_t:
+				if (auto b = getValue<float>(token)) {
+					return std::any {b.value()};
+				}
 				return std::nullopt;
-			case ItemType::double_t:
-				if (auto b = getValue<double>(token)) { return std::any{b.value()}; }
+			case FieldType::double_t:
+				if (auto b = getValue<double>(token)) {
+					return std::any {b.value()};
+				}
 				return std::nullopt;
-			case ItemType::uuid_t: {
+			case FieldType::uuid_t: {
 				toast::UUID id;
 				id.assign(token);
-				return std::any{id};
+				return std::any {id};
 			}
-			case ItemType::vec2_t: {
+			case FieldType::vec2_t: {
 				std::string_view view = token;
 				auto x = getValue<float>(nextValue(view));
 				auto y = getValue<float>(nextValue(view));
-				if (x and y) return std::any{glm::vec2{*x, *y}};
+				if (x and y) {
+					return std::any {
+					  glm::vec2 {*x, *y}
+					};
+				}
 				return std::nullopt;
 			}
-			case ItemType::vec3_t: {
+			case FieldType::vec3_t: {
 				std::string_view view = token;
 				auto x = getValue<float>(nextValue(view));
 				auto y = getValue<float>(nextValue(view));
 				auto z = getValue<float>(nextValue(view));
-				if (x and y and z) return std::any{glm::vec3{*x, *y, *z}};
+				if (x and y and z) {
+					return std::any {
+					  glm::vec3 {*x, *y, *z}
+					};
+				}
 				return std::nullopt;
 			}
-			case ItemType::vec4_t: {
+			case FieldType::vec4_t: {
 				std::string_view view = token;
 				auto x = getValue<float>(nextValue(view));
 				auto y = getValue<float>(nextValue(view));
 				auto z = getValue<float>(nextValue(view));
 				auto w = getValue<float>(nextValue(view));
-				if (x and y and z and w) return std::any{glm::vec4{*x, *y, *z, *w}};
+				if (x and y and z and w) {
+					return std::any {
+					  glm::vec4 {*x, *y, *z, *w}
+					};
+				}
 				return std::nullopt;
 			}
-			case ItemType::quaternion_t: {
+			case FieldType::quaternion_t: {
 				std::string_view view = token;
 				auto x = getValue<float>(nextValue(view));
 				auto y = getValue<float>(nextValue(view));
 				auto z = getValue<float>(nextValue(view));
 				auto w = getValue<float>(nextValue(view));
-				if (x and y and z and w) return std::any{glm::quat{*w, *x, *y, *z}};
+				if (x and y and z and w) {
+					return std::any {
+					  glm::quat {*w, *x, *y, *z}
+					};
+				}
 				return std::nullopt;
 			}
-			default:
-				return std::nullopt;
+			default: return std::nullopt;
 		}
 	};
 
@@ -429,7 +489,7 @@ auto NodeFile::parseValue(ItemType type, std::string_view value, bool& is_array)
 	if (is_array) {
 		std::string_view remaining = value;
 
-		if (type == ItemType::string_t) {
+		if (type == FieldType::string_t) {
 			std::vector<std::string> result;
 			while (!remaining.empty()) {
 				result.emplace_back(nextValue(remaining, _detail::string_array_separator));
@@ -438,11 +498,11 @@ auto NodeFile::parseValue(ItemType type, std::string_view value, bool& is_array)
 		}
 
 		size_t tokens_per_element = 1;
-		if (type == ItemType::vec2_t) {
+		if (type == FieldType::vec2_t) {
 			tokens_per_element = 2;
-		} else if (type == ItemType::vec3_t) {
+		} else if (type == FieldType::vec3_t) {
 			tokens_per_element = 3;
-		} else if (type == ItemType::vec4_t || type == ItemType::quaternion_t) {
+		} else if (type == FieldType::vec4_t || type == FieldType::quaternion_t) {
 			tokens_per_element = 4;
 		}
 
@@ -479,14 +539,14 @@ auto NodeFile::parseValue(ItemType type, std::string_view value, bool& is_array)
 		};
 
 		switch (type) {
-			case ItemType::bool_t: return convert_to_vector.operator()<bool>();
-			case ItemType::int_t: return convert_to_vector.operator()<int>();
-			case ItemType::float_t: return convert_to_vector.operator()<float>();
-			case ItemType::double_t: return convert_to_vector.operator()<double>();
-			case ItemType::vec2_t: return convert_to_vector.operator()<glm::vec2>();
-			case ItemType::vec3_t: return convert_to_vector.operator()<glm::vec3>();
-			case ItemType::vec4_t: return convert_to_vector.operator()<glm::vec4>();
-			case ItemType::quaternion_t: return convert_to_vector.operator()<glm::quat>();
+			case FieldType::bool_t: return convert_to_vector.operator()<bool>();
+			case FieldType::int_t: return convert_to_vector.operator()<int>();
+			case FieldType::float_t: return convert_to_vector.operator()<float>();
+			case FieldType::double_t: return convert_to_vector.operator()<double>();
+			case FieldType::vec2_t: return convert_to_vector.operator()<glm::vec2>();
+			case FieldType::vec3_t: return convert_to_vector.operator()<glm::vec3>();
+			case FieldType::vec4_t: return convert_to_vector.operator()<glm::vec4>();
+			case FieldType::quaternion_t: return convert_to_vector.operator()<glm::quat>();
 			default: return std::nullopt;
 		}
 	}
@@ -497,8 +557,8 @@ auto NodeFile::parseValue(ItemType type, std::string_view value, bool& is_array)
 void NodeFile::writeNode(const BasicNode& node, std::stringstream& ss) {
 	ss << std::format("[{0} type={1}]\n", node.name, node.type);
 
-	for (const auto& item : node.items) {
-		writeItem(item, ss);
+	for (const auto& field : node.fields) {
+		writeField(field, ss);
 	}
 
 	for (const auto& group : node.groups) {
@@ -509,8 +569,8 @@ void NodeFile::writeNode(const BasicNode& node, std::stringstream& ss) {
 void NodeFile::writeGroup(const Group& group, std::stringstream& ss) {
 	ss << std::format(".{}\n", group.name);
 
-	for (const auto& item : group.items) {
-		writeItem(item, ss, "    ");
+	for (const auto& field : group.fields) {
+		writeField(field, ss, "    ");
 	}
 
 	for (const auto& subgroup : group.subgroups) {
@@ -521,33 +581,33 @@ void NodeFile::writeGroup(const Group& group, std::stringstream& ss) {
 void NodeFile::writeSubgroup(const Subgroup& subgroup, std::stringstream& ss) {
 	ss << std::format("    ..{}\n", subgroup.name);
 
-	for (const auto& item : subgroup.items) {
-		writeItem(item, ss, "        ");
+	for (const auto& field : subgroup.fields) {
+		writeField(field, ss, "        ");
 	}
 }
 
-void NodeFile::writeItem(const Item& item, std::stringstream& ss, std::string offset) {
-	auto stringify_single = [](ItemType type, const std::any& value) -> std::string {
+void NodeFile::writeField(const Field& field, std::stringstream& ss, std::string offset) {
+	auto stringify_single = [](FieldType type, const std::any& value) -> std::string {
 		switch (type) {
-			case ItemType::string_t: return std::any_cast<std::string>(value);
-			case ItemType::bool_t: return std::any_cast<bool>(value) ? "true" : "false";
-			case ItemType::int_t: return std::to_string(std::any_cast<int>(value));
-			case ItemType::float_t: return std::format("{}", std::any_cast<float>(value));
-			case ItemType::double_t: return std::format("{}", std::any_cast<double>(value));
-			case ItemType::uuid_t: return std::format("{}", std::any_cast<UUID>(value));
-			case ItemType::vec2_t: {
+			case FieldType::string_t: return std::any_cast<std::string>(value);
+			case FieldType::bool_t: return std::any_cast<bool>(value) ? "true" : "false";
+			case FieldType::int_t: return std::to_string(std::any_cast<int>(value));
+			case FieldType::float_t: return std::format("{}", std::any_cast<float>(value));
+			case FieldType::double_t: return std::format("{}", std::any_cast<double>(value));
+			case FieldType::uuid_t: return std::format("{}", std::any_cast<UUID>(value));
+			case FieldType::vec2_t: {
 				auto v = std::any_cast<glm::vec2>(value);
 				return std::format("{} {}", v.x, v.y);
 			}
-			case ItemType::vec3_t: {
+			case FieldType::vec3_t: {
 				auto v = std::any_cast<glm::vec3>(value);
 				return std::format("{} {} {}", v.x, v.y, v.z);
 			}
-			case ItemType::vec4_t: {
+			case FieldType::vec4_t: {
 				auto v = std::any_cast<glm::vec4>(value);
 				return std::format("{} {} {} {}", v.x, v.y, v.z, v.w);
 			}
-			case ItemType::quaternion_t: {
+			case FieldType::quaternion_t: {
 				auto q = std::any_cast<glm::quat>(value);
 				return std::format("{} {} {} {}", q.x, q.y, q.z, q.w);
 			}
@@ -556,36 +616,36 @@ void NodeFile::writeItem(const Item& item, std::stringstream& ss, std::string of
 	};
 
 	std::string value_str;
-	if (item.is_array) {
-		auto stringify_array = [&]<typename T>(ItemType type) -> std::string {
-			const auto& vec = std::any_cast<const std::vector<T>&>(item.value);
+	if (field.is_array) {
+		auto stringify_array = [&]<typename T>(FieldType type) -> std::string {
+			const auto& vec = std::any_cast<const std::vector<T>&>(field.value);
 			std::string result;
 			for (size_t i = 0; i < vec.size(); ++i) {
 				result += stringify_single(type, vec[i]);
 				if (i < vec.size() - 1) {
-					result += (type == ItemType::string_t) ? std::string(1, _detail::string_array_separator) : " ";
+					result += (type == FieldType::string_t) ? std::string(1, _detail::string_array_separator) : " ";
 				}
 			}
 			return result;
 		};
 
-		switch (item.type) {
-			case ItemType::bool_t: value_str = stringify_array.operator()<bool>(item.type); break;
-			case ItemType::int_t: value_str = stringify_array.operator()<int>(item.type); break;
-			case ItemType::float_t: value_str = stringify_array.operator()<float>(item.type); break;
-			case ItemType::double_t: value_str = stringify_array.operator()<double>(item.type); break;
-			case ItemType::string_t: value_str = stringify_array.operator()<std::string>(item.type); break;
-			case ItemType::vec2_t: value_str = stringify_array.operator()<glm::vec2>(item.type); break;
-			case ItemType::vec3_t: value_str = stringify_array.operator()<glm::vec3>(item.type); break;
-			case ItemType::vec4_t: value_str = stringify_array.operator()<glm::vec4>(item.type); break;
-			case ItemType::quaternion_t: value_str = stringify_array.operator()<glm::quat>(item.type); break;
+		switch (field.type) {
+			case FieldType::bool_t: value_str = stringify_array.operator()<bool>(field.type); break;
+			case FieldType::int_t: value_str = stringify_array.operator()<int>(field.type); break;
+			case FieldType::float_t: value_str = stringify_array.operator()<float>(field.type); break;
+			case FieldType::double_t: value_str = stringify_array.operator()<double>(field.type); break;
+			case FieldType::string_t: value_str = stringify_array.operator()<std::string>(field.type); break;
+			case FieldType::vec2_t: value_str = stringify_array.operator()<glm::vec2>(field.type); break;
+			case FieldType::vec3_t: value_str = stringify_array.operator()<glm::vec3>(field.type); break;
+			case FieldType::vec4_t: value_str = stringify_array.operator()<glm::vec4>(field.type); break;
+			case FieldType::quaternion_t: value_str = stringify_array.operator()<glm::quat>(field.type); break;
 			default: break;
 		}
 	} else {
-		value_str = stringify_single(item.type, item.value);
+		value_str = stringify_single(field.type, field.value);
 	}
 
-	ss << std::format("{0}{1} @{2} = {3}\n", offset, item.name, writeType(item.type, item.is_array), value_str);
+	ss << std::format("{0}{1} @{2} = {3}\n", offset, field.name, writeType(field.type, field.is_array), value_str);
 }
 
 auto NodeFile::toBinary() -> std::vector<uint8_t> {
@@ -594,79 +654,79 @@ auto NodeFile::toBinary() -> std::vector<uint8_t> {
 	header.node_count = static_cast<uint32_t>(nodes.size());
 	writeBytes(buffer, &header, sizeof(header));
 
-	auto write_item = [&](const Item& item) {
-		writeString(buffer, item.name);
-		writeValue(buffer, static_cast<uint8_t>(item.type));
-		writeValue(buffer, static_cast<uint8_t>(item.is_array));
+	auto write_field = [&](const Field& field) {
+		writeString(buffer, field.name);
+		writeValue(buffer, static_cast<uint8_t>(field.type));
+		writeValue(buffer, static_cast<uint8_t>(field.is_array));
 
-		auto write_single = [&](ItemType type, const std::any& value) {
+		auto write_single = [&](FieldType type, const std::any& value) {
 			switch (type) {
-				case ItemType::bool_t: writeValue(buffer, std::any_cast<bool>(value)); break;
-				case ItemType::int_t: writeValue(buffer, std::any_cast<int>(value)); break;
-				case ItemType::float_t: writeValue(buffer, std::any_cast<float>(value)); break;
-				case ItemType::double_t: writeValue(buffer, std::any_cast<double>(value)); break;
-				case ItemType::string_t: writeString(buffer, std::any_cast<std::string>(value)); break;
-				case ItemType::vec2_t: writeValue(buffer, std::any_cast<glm::vec2>(value)); break;
-				case ItemType::vec3_t: writeValue(buffer, std::any_cast<glm::vec3>(value)); break;
-				case ItemType::vec4_t: writeValue(buffer, std::any_cast<glm::vec4>(value)); break;
-				case ItemType::quaternion_t: writeValue(buffer, std::any_cast<glm::quat>(value)); break;
+				case FieldType::bool_t: writeValue(buffer, std::any_cast<bool>(value)); break;
+				case FieldType::int_t: writeValue(buffer, std::any_cast<int>(value)); break;
+				case FieldType::float_t: writeValue(buffer, std::any_cast<float>(value)); break;
+				case FieldType::double_t: writeValue(buffer, std::any_cast<double>(value)); break;
+				case FieldType::string_t: writeString(buffer, std::any_cast<std::string>(value)); break;
+				case FieldType::vec2_t: writeValue(buffer, std::any_cast<glm::vec2>(value)); break;
+				case FieldType::vec3_t: writeValue(buffer, std::any_cast<glm::vec3>(value)); break;
+				case FieldType::vec4_t: writeValue(buffer, std::any_cast<glm::vec4>(value)); break;
+				case FieldType::quaternion_t: writeValue(buffer, std::any_cast<glm::quat>(value)); break;
 				default: break;
 			}
 		};
 
-		if (item.is_array) {
-			auto write_array = [&]<typename T>(ItemType type) {
-				const auto& vec = std::any_cast<const std::vector<T>&>(item.value);
+		if (field.is_array) {
+			auto write_array = [&]<typename T>(FieldType type) {
+				const auto& vec = std::any_cast<const std::vector<T>&>(field.value);
 				writeValue(buffer, static_cast<uint32_t>(vec.size()));
 				for (const auto& v : vec) {
 					write_single(type, v);
 				}
 			};
 
-			switch (item.type) {
-				case ItemType::bool_t: write_array.operator()<bool>(item.type); break;
-				case ItemType::int_t: write_array.operator()<int>(item.type); break;
-				case ItemType::float_t: write_array.operator()<float>(item.type); break;
-				case ItemType::double_t: write_array.operator()<double>(item.type); break;
-				case ItemType::string_t: write_array.operator()<std::string>(item.type); break;
-				case ItemType::vec2_t: write_array.operator()<glm::vec2>(item.type); break;
-				case ItemType::vec3_t: write_array.operator()<glm::vec3>(item.type); break;
-				case ItemType::vec4_t: write_array.operator()<glm::vec4>(item.type); break;
-				case ItemType::quaternion_t: write_array.operator()<glm::quat>(item.type); break;
+			switch (field.type) {
+				case FieldType::bool_t: write_array.operator()<bool>(field.type); break;
+				case FieldType::int_t: write_array.operator()<int>(field.type); break;
+				case FieldType::float_t: write_array.operator()<float>(field.type); break;
+				case FieldType::double_t: write_array.operator()<double>(field.type); break;
+				case FieldType::string_t: write_array.operator()<std::string>(field.type); break;
+				case FieldType::vec2_t: write_array.operator()<glm::vec2>(field.type); break;
+				case FieldType::vec3_t: write_array.operator()<glm::vec3>(field.type); break;
+				case FieldType::vec4_t: write_array.operator()<glm::vec4>(field.type); break;
+				case FieldType::quaternion_t: write_array.operator()<glm::quat>(field.type); break;
 				default: break;
 			}
 		} else {
-			write_single(item.type, item.value);
+			write_single(field.type, field.value);
 		}
 	};
 
-	writeValue(buffer, static_cast<uint32_t>(global_items.size()));
-	for (const auto& item : global_items) {
-		write_item(item);
+	writeValue(buffer, static_cast<uint32_t>(global_fields.size()));
+	for (const auto& field : global_fields) {
+		write_field(field);
 	}
 
 	for (const auto& node : nodes) {
 		writeString(buffer, node.name);
 		writeString(buffer, node.type);
 
-		writeValue(buffer, static_cast<uint32_t>(node.items.size()));
-		for (const auto& item : node.items) {
-			write_item(item);
+		writeValue(buffer, static_cast<uint32_t>(node.fields.size()));
+		for (const auto& field : node.fields) {
+			write_field(field);
 		}
 
 		writeValue(buffer, static_cast<uint32_t>(node.groups.size()));
 		for (const auto& group : node.groups) {
 			writeString(buffer, group.name);
-			writeValue(buffer, static_cast<uint32_t>(group.items.size()));
-			for (const auto& item : group.items) {
-				write_item(item);
+			writeValue(buffer, static_cast<uint32_t>(group.fields.size()));
+			for (const auto& field : group.fields) {
+				write_field(field);
 			}
 			writeValue(buffer, static_cast<uint32_t>(group.subgroups.size()));
 			for (const auto& subgroup : group.subgroups) {
 				writeString(buffer, subgroup.name);
-				writeValue(buffer, static_cast<uint32_t>(subgroup.items.size()));
-				for (const auto& item : subgroup.items) {
-					write_item(item);
+				writeValue(buffer, static_cast<uint32_t>(subgroup.fields.size()));
+				for (const auto& field : subgroup.fields) {
+					write_field(field);
 				}
 			}
 		}
@@ -676,7 +736,7 @@ auto NodeFile::toBinary() -> std::vector<uint8_t> {
 }
 
 NodeFile::NodeFile(std::span<const uint8_t> bytes) {
-	BinaryReader reader{bytes};
+	BinaryReader reader {bytes};
 	auto header = reader.readValue<_detail::NodeFileBinaryHeader>();
 
 	static constexpr std::array<uint8_t, 6> expected_magic = {'T', 'N', 'O', 'D', 'E', '\0'};
@@ -685,31 +745,31 @@ NodeFile::NodeFile(std::span<const uint8_t> bytes) {
 		return;
 	}
 
-	auto read_item = [&]() -> Item {
-		Item item;
-		item.name = reader.readString();
-		item.type = static_cast<ItemType>(reader.readValue<uint8_t>());
-		item.is_array = static_cast<bool>(reader.readValue<uint8_t>());
+	auto read_field = [&]() -> Field {
+		Field field;
+		field.name = reader.readString();
+		field.type = static_cast<FieldType>(reader.readValue<uint8_t>());
+		field.is_array = static_cast<bool>(reader.readValue<uint8_t>());
 
-		auto read_single = [&](ItemType type) -> std::any {
+		auto read_single = [&](FieldType type) -> std::any {
 			switch (type) {
-				case ItemType::bool_t: return reader.readValue<bool>();
-				case ItemType::int_t: return reader.readValue<int>();
-				case ItemType::float_t: return reader.readValue<float>();
-				case ItemType::double_t: return reader.readValue<double>();
-				case ItemType::string_t: return reader.readString();
-				case ItemType::vec2_t: return reader.readValue<glm::vec2>();
-				case ItemType::vec3_t: return reader.readValue<glm::vec3>();
-				case ItemType::vec4_t: return reader.readValue<glm::vec4>();
-				case ItemType::quaternion_t: return reader.readValue<glm::quat>();
-				default: return std::any{};
+				case FieldType::bool_t: return reader.readValue<bool>();
+				case FieldType::int_t: return reader.readValue<int>();
+				case FieldType::float_t: return reader.readValue<float>();
+				case FieldType::double_t: return reader.readValue<double>();
+				case FieldType::string_t: return reader.readString();
+				case FieldType::vec2_t: return reader.readValue<glm::vec2>();
+				case FieldType::vec3_t: return reader.readValue<glm::vec3>();
+				case FieldType::vec4_t: return reader.readValue<glm::vec4>();
+				case FieldType::quaternion_t: return reader.readValue<glm::quat>();
+				default: return std::any {};
 			}
 		};
 
-		if (item.is_array) {
+		if (field.is_array) {
 			uint32_t count = reader.readValue<uint32_t>();
 
-			auto read_array = [&]<typename T>(ItemType type) -> std::any {
+			auto read_array = [&]<typename T>(FieldType type) -> std::any {
 				std::vector<T> vec;
 				vec.reserve(count);
 				for (uint32_t i = 0; i < count; ++i) {
@@ -721,27 +781,27 @@ NodeFile::NodeFile(std::span<const uint8_t> bytes) {
 				return vec;
 			};
 
-			switch (item.type) {
-				case ItemType::bool_t: item.value = read_array.operator()<bool>(item.type); break;
-				case ItemType::int_t: item.value = read_array.operator()<int>(item.type); break;
-				case ItemType::float_t: item.value = read_array.operator()<float>(item.type); break;
-				case ItemType::double_t: item.value = read_array.operator()<double>(item.type); break;
-				case ItemType::string_t: item.value = read_array.operator()<std::string>(item.type); break;
-				case ItemType::vec2_t: item.value = read_array.operator()<glm::vec2>(item.type); break;
-				case ItemType::vec3_t: item.value = read_array.operator()<glm::vec3>(item.type); break;
-				case ItemType::vec4_t: item.value = read_array.operator()<glm::vec4>(item.type); break;
-				case ItemType::quaternion_t: item.value = read_array.operator()<glm::quat>(item.type); break;
+			switch (field.type) {
+				case FieldType::bool_t: field.value = read_array.operator()<bool>(field.type); break;
+				case FieldType::int_t: field.value = read_array.operator()<int>(field.type); break;
+				case FieldType::float_t: field.value = read_array.operator()<float>(field.type); break;
+				case FieldType::double_t: field.value = read_array.operator()<double>(field.type); break;
+				case FieldType::string_t: field.value = read_array.operator()<std::string>(field.type); break;
+				case FieldType::vec2_t: field.value = read_array.operator()<glm::vec2>(field.type); break;
+				case FieldType::vec3_t: field.value = read_array.operator()<glm::vec3>(field.type); break;
+				case FieldType::vec4_t: field.value = read_array.operator()<glm::vec4>(field.type); break;
+				case FieldType::quaternion_t: field.value = read_array.operator()<glm::quat>(field.type); break;
 				default: break;
 			}
 		} else {
-			item.value = read_single(item.type);
+			field.value = read_single(field.type);
 		}
-		return item;
+		return field;
 	};
 
-	uint32_t global_item_count = reader.readValue<uint32_t>();
-	for (uint32_t i = 0; i < global_item_count; ++i) {
-		global_items.push_back(read_item());
+	uint32_t global_field_count = reader.readValue<uint32_t>();
+	for (uint32_t i = 0; i < global_field_count; ++i) {
+		global_fields.push_back(read_field());
 	}
 
 	for (uint32_t i = 0; i < header.node_count; ++i) {
@@ -749,26 +809,26 @@ NodeFile::NodeFile(std::span<const uint8_t> bytes) {
 		node.name = reader.readString();
 		node.type = reader.readString();
 
-		uint32_t item_count = reader.readValue<uint32_t>();
-		for (uint32_t j = 0; j < item_count; ++j) {
-			node.items.push_back(read_item());
+		uint32_t field_count = reader.readValue<uint32_t>();
+		for (uint32_t j = 0; j < field_count; ++j) {
+			node.fields.push_back(read_field());
 		}
 
 		uint32_t group_count = reader.readValue<uint32_t>();
 		for (uint32_t j = 0; j < group_count; ++j) {
 			Group group;
 			group.name = reader.readString();
-			uint32_t g_item_count = reader.readValue<uint32_t>();
-			for (uint32_t k = 0; k < g_item_count; ++k) {
-				group.items.push_back(read_item());
+			uint32_t g_field_count = reader.readValue<uint32_t>();
+			for (uint32_t k = 0; k < g_field_count; ++k) {
+				group.fields.push_back(read_field());
 			}
 			uint32_t subgroup_count = reader.readValue<uint32_t>();
 			for (uint32_t k = 0; k < subgroup_count; ++k) {
 				Subgroup subgroup;
 				subgroup.name = reader.readString();
-				uint32_t sg_item_count = reader.readValue<uint32_t>();
-				for (uint32_t l = 0; l < sg_item_count; ++l) {
-					subgroup.items.push_back(read_item());
+				uint32_t sg_field_count = reader.readValue<uint32_t>();
+				for (uint32_t l = 0; l < sg_field_count; ++l) {
+					subgroup.fields.push_back(read_field());
 				}
 				group.subgroups.push_back(std::move(subgroup));
 			}
@@ -778,19 +838,19 @@ NodeFile::NodeFile(std::span<const uint8_t> bytes) {
 	}
 }
 
-auto NodeFile::writeType(ItemType type, bool is_array) -> std::string {
+auto NodeFile::writeType(FieldType type, bool is_array) -> std::string {
 	std::string str;
 	switch (type) {
-		case ItemType::bool_t: str = _detail::bool_str; break;
-		case ItemType::int_t: str = _detail::int_str; break;
-		case ItemType::string_t: str = _detail::string_str; break;
-		case ItemType::float_t: str = _detail::float_str; break;
-		case ItemType::double_t: str = _detail::double_str; break;
-		case ItemType::uuid_t: str = _detail::uuid_str; break;
-		case ItemType::vec2_t: str = _detail::vec2_str; break;
-		case ItemType::vec3_t: str = _detail::vec3_str; break;
-		case ItemType::vec4_t: str = _detail::vec4_str; break;
-		case ItemType::quaternion_t: str = _detail::quaternion_str; break;
+		case FieldType::bool_t: str = _detail::bool_str; break;
+		case FieldType::int_t: str = _detail::int_str; break;
+		case FieldType::string_t: str = _detail::string_str; break;
+		case FieldType::float_t: str = _detail::float_str; break;
+		case FieldType::double_t: str = _detail::double_str; break;
+		case FieldType::uuid_t: str = _detail::uuid_str; break;
+		case FieldType::vec2_t: str = _detail::vec2_str; break;
+		case FieldType::vec3_t: str = _detail::vec3_str; break;
+		case FieldType::vec4_t: str = _detail::vec4_str; break;
+		case FieldType::quaternion_t: str = _detail::quaternion_str; break;
 	}
 
 	if (is_array) {
