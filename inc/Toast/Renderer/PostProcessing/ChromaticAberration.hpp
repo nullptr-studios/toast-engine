@@ -6,8 +6,10 @@
 
 #include "Toast/Renderer/IPostProcess.hpp"
 #include "Toast/Renderer/IRendererBase.hpp"
+#include "Toast/Renderer/OpenGL/GLStateCache.hpp"
 #include "Toast/Renderer/Shader.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Resources/Texture.hpp"
 
 #include <memory>
 
@@ -47,12 +49,12 @@ inline void ChromaticAberration::Execute(Framebuffer* inputFBO, Framebuffer* out
 	glViewport(0, 0, outputFBO->Width(), outputFBO->Height());
 	glScissor(0, 0, outputFBO->Width(), outputFBO->Height());
 
-	glDisable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-	glDepthMask(GL_FALSE);
+	renderer::SetBlend(false);
+	renderer::SetDepthTest(false);
+	renderer::SetCullFace(false);
+	renderer::SetDepthMask(false);
 
-	glBindTextureUnit(0, inputFBO->GetColorTexture(0));
+	Texture::BindTextureId(0, inputFBO->GetColorTexture(0));
 	m_shader->Use();
 	m_shader->SetSampler("uInputTex", 0);
 	m_shader->Set("uStrength", m_strength * GetBlend());
@@ -60,7 +62,7 @@ inline void ChromaticAberration::Execute(Framebuffer* inputFBO, Framebuffer* out
 
 	renderer::IRendererBase::GetInstance()->DrawScreenQuad(false, false);
 
-	glBindTextureUnit(0, 0);
+	Texture::UnbindTextureUnit(0);
 	Framebuffer::unbind();
 }
 

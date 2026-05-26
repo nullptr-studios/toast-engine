@@ -5,14 +5,44 @@
 #include "Toast/Renderer/Framebuffer.hpp"
 
 #include "Toast/Log.hpp"
+#include "Toast/Renderer/IRendererBase.hpp"
 
 #include <glad/gl.h>
+
+namespace {
+	void InvalidateRendererCachesAfterFramebufferChange() {
+		if (auto* renderer = renderer::IRendererBase::GetInstance()) {
+			renderer->InvalidateGLStateCaches();
+		}
+	}
+
+}
 
 Framebuffer::Framebuffer(const Specs& specs) : m_specs(specs) {
 	glGenFramebuffers(1, &m_fbo);
 	if (m_fbo == 0) {
 		throw ToastException("Failed to generate framebuffer");
 	}
+}
+
+void Framebuffer::bind() const {
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	InvalidateRendererCachesAfterFramebufferChange();
+}
+
+void Framebuffer::bindRead() const {
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
+	InvalidateRendererCachesAfterFramebufferChange();
+}
+
+void Framebuffer::bindDraw() const {
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
+	InvalidateRendererCachesAfterFramebufferChange();
+}
+
+void Framebuffer::unbind() {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	InvalidateRendererCachesAfterFramebufferChange();
 }
 
 Framebuffer::Framebuffer(Framebuffer&& o) noexcept {
@@ -202,6 +232,8 @@ void Framebuffer::BlitTo(const Framebuffer* target, GLbitfield mask, GLenum filt
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, prevReadFbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prevDrawFbo);
+
+	InvalidateRendererCachesAfterFramebufferChange();
 }
 
 uint32_t Framebuffer::ReadPixel(unsigned colorAttachmentIndex, int x, int y) const {
@@ -222,6 +254,8 @@ uint32_t Framebuffer::ReadPixel(unsigned colorAttachmentIndex, int x, int y) con
 
 	// restore
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, prev);
+
+	InvalidateRendererCachesAfterFramebufferChange();
 
 	uint32_t out = static_cast<uint32_t>(pixel[0]) | (static_cast<uint32_t>(pixel[1]) << 8) | (static_cast<uint32_t>(pixel[2]) << 16) |
 	               (static_cast<uint32_t>(pixel[3]) << 24);

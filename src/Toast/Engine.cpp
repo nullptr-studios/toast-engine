@@ -143,6 +143,15 @@ void Engine::Run(int argc, char** argv) {
 	using clock_t = std::chrono::high_resolution_clock;
 	clock_t::time_point frameStart;
 
+	Time* const time_ptr = m->time.get();
+	event::EventSystem* const event_sys = m->eventSystem.get();
+	resource::ResourceManager* const res_mgr = m->resourceManager.get();
+	input::InputSystem* const input_sys = m->inputSystem.get();
+	renderer::LayerStack* const layer_stack = m->layerStack.get();
+	renderer::IRendererBase* const renderer_ptr = m->renderer.get();
+	audio::AudioSystem* const audio_sys = m->audioSystem;
+	CoroutineHandler* const coroutine_handler = m->coroutineHandler.get();
+
 	while (!GetShouldClose()) {
 		updateTimer = 0.0;
 		// This is our frame 0x
@@ -165,17 +174,17 @@ void Engine::Run(int argc, char** argv) {
 		// Poll OS events early in the frame to reduce input latency
 		window->PollEventsOnly();
 
-		m->time->Tick();
+		time_ptr->Tick();
 
-		m->resourceManager->LoadResourcesMainThread();
+		res_mgr->LoadResourcesMainThread();
 
-		m->eventSystem->PollEvents();
+		event_sys->PollEvents();
 
 		// Ensure any pending Begin calls are executed as early as possible in the frame
 		world->RunBeginQueue();
 
-		m->coroutineHandler->Tick();
-		m->inputSystem->Tick();
+		coroutine_handler->Tick();
+		input_sys->Tick();
 
 		world->EarlyTick();
 
@@ -191,24 +200,23 @@ void Engine::Run(int argc, char** argv) {
 		world->EditorTick();
 #endif
 
-		m->layerStack->TickLayers();
+		layer_stack->TickLayers();
 
 		Render();
 
 		// Start the ImGui frame, only for editor
 #ifdef TOAST_EDITOR
-		m->renderer->StartImGuiFrame();
+		renderer_ptr->StartImGuiFrame();
 		EditorTick();
-		m->renderer->EndImGuiFrame();
+		renderer_ptr->EndImGuiFrame();
 #endif
 
-		m->audioSystem->Tick();
+		audio_sys->Tick();
 
 		// Swap after all rendering and UI is done
 		window->SwapBuffers();
 
-		// Only when VSync is OFF; when VSync is on the driver already paces us.
-		const auto& cfg = m->renderer->GetRendererConfig();
+		const auto& cfg = renderer_ptr->GetRendererConfig();
 		if (!cfg.vSync && cfg.maxFPS > 0) {
 			const auto targetDuration = std::chrono::duration<double>(1.0 / static_cast<double>(cfg.maxFPS));
 			const auto targetTime = frameStart + targetDuration;

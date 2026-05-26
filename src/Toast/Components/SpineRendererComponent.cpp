@@ -419,6 +419,9 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		m.dynamicMesh.UpdateDynamicSpine(m.tempVerts.data(), m.tempVerts.size(), m.tempIndices.data(), m.tempIndices.size());
 		// Draw  mesh
 		m.dynamicMesh.DrawDynamicSpine(m.tempIndices.size());
+		
+		m.tempVerts.clear();
+		m.tempIndices.clear();
 	};
 
 	m.tempVerts.clear();
@@ -433,9 +436,8 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 		}
 
 		if (pass != renderer::IRenderablePass::DIRECTIONAL_SHADOW) {
-			// Determine command texture
-			std::shared_ptr<Texture>* tex_ptr = static_cast<std::shared_ptr<Texture>*>(command->texture);
-			unsigned int tex_id = tex_ptr->get()->id();
+			auto* tex_ptr = static_cast<std::shared_ptr<Texture>*>(command->texture);
+			const unsigned int tex_id = (*tex_ptr)->id();
 
 			if (tex_id != m.lastBoundTexture && !m.tempIndices.empty()) {
 				flush_batch();
@@ -443,9 +445,7 @@ void SpineRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 
 			// bind texture if needed
 			if (tex_id != m.lastBoundTexture) {
-				if (tex_id != 0) {
-					tex_ptr->get()->Bind(0);
-				}
+				Texture::BindTextureId(0, tex_id);
 				m.lastBoundTexture = tex_id;
 			}
 		}

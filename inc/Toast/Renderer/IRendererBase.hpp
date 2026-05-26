@@ -34,7 +34,7 @@ class Shader;
  */
 struct RendererConfig {
 	glm::uvec2 resolution { 1280, 720 };                                     ///< windowed rendering resolution
-	float lightResolutionScale = 1.0f;
+	float lightResolutionScale = .75f;
 	bool vSync { true };                                                     ///< Enable/disable vertical sync
 	toast::DisplayMode currentDisplayMode = toast::DisplayMode::FULLSCREEN;    ///< Current display mode
 
@@ -80,6 +80,9 @@ public:
 	virtual void Resize(glm::uvec2) = 0;
 
 	virtual void DrawScreenQuad(bool flipY, bool useShader = true) = 0;
+
+	/// @brief Invalidates any renderer-side OpenGL state caches after external/raw GL usage.
+	virtual void InvalidateGLStateCaches() { }
 
 	PostProcessManager* GetPostProcessManager() const {
 		return m_postProcessManager.get();

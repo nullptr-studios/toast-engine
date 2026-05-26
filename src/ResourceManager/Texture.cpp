@@ -8,6 +8,7 @@
 #include <Toast/Resources/ResourceManager.hpp>
 #include <Toast/Resources/Texture.hpp>
 #include <algorithm>
+#include <array>
 #include <glad/gl.h>
 #include <stb_image.h>
 #include <string_view>
@@ -23,6 +24,10 @@ namespace {
 #endif
 
 constexpr float kDefaultAnisotropyLevel = 8.0f;
+constexpr unsigned kTrackedTextureUnits = 32;
+
+GLuint g_activeTextureUnit = 0;
+std::array<GLuint, kTrackedTextureUnits> g_boundTexture2DByUnit {};
 
 float GetConfiguredAnisotropyLevel() {
 	if (auto* rendererInstance = renderer::IRendererBase::GetInstance()) {
@@ -69,6 +74,11 @@ Texture::~Texture() {
 	// m_pixels is a std::vector, it cleans itself up automatically
 
 	if (m_textureId) {
+		for (auto& bound : g_boundTexture2DByUnit) {
+			if (bound == m_textureId) {
+				bound = 0;
+			}
+		}
 		glBindTexture(GL_TEXTURE_2D, m_textureId);                  // bind
 		glDeleteTextures(1, static_cast<GLuint*>(&m_textureId));    // delete
 		glBindTexture(GL_TEXTURE_2D, 0);                            // unbind
@@ -76,15 +86,44 @@ Texture::~Texture() {
 }
 
 void Texture::Bind(unsigned int slot) const {
-	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(GL_TEXTURE_2D, m_textureId);
+	BindTextureId(slot, m_textureId);
+	if (slot < kTrackedTextureUnits && g_activeTextureUnit != slot) {
+		glActiveTexture(GL_TEXTURE0 + slot);
+		g_activeTextureUnit = slot;
+	}
 }
 
 void Texture::Unbind(unsigned int slot) const {
 	if (m_textureId) {
-		glActiveTexture(GL_TEXTURE0 + slot);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		UnbindTextureUnit(slot);
+		if (slot < kTrackedTextureUnits && g_activeTextureUnit != slot) {
+			glActiveTexture(GL_TEXTURE0 + slot);
+			g_activeTextureUnit = slot;
+		}
 	}
+}
+
+void Texture::BindTextureId(unsigned int slot, unsigned int textureId) {
+	if (slot >= kTrackedTextureUnits) {
+		glBindTextureUnit(slot, textureId);
+		return;
+	}
+
+	if (g_boundTexture2DByUnit[slot] == textureId) {
+		return;
+	}
+
+	glBindTextureUnit(slot, textureId);
+	g_boundTexture2DByUnit[slot] = textureId;
+}
+
+void Texture::UnbindTextureUnit(unsigned int slot) {
+	BindTextureId(slot, 0);
+}
+
+void Texture::InvalidateBindingCache() {
+	g_activeTextureUnit = 0;
+	g_boundTexture2DByUnit.fill(0);
 }
 
 void Texture::TextureFiltering(bool linear) const {

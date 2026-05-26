@@ -24,6 +24,14 @@ public:
 	void Bind(unsigned int slot = 0) const;
 	void Unbind(unsigned int slot = 0) const;
 
+	/// @brief Bind a raw GL texture id to a unit
+	static void BindTextureId(unsigned int slot, unsigned int textureId);
+	/// @brief Unbind texture from a unit
+	static void UnbindTextureUnit(unsigned int slot = 0);
+
+	/// @brief Invalidate global OpenGL texture bind cache
+	static void InvalidateBindingCache();
+
 	void TextureFiltering(bool linear) const;
 	void TextureWrap(bool repeat) const;
 

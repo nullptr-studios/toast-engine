@@ -6,6 +6,7 @@
 
 #include "Toast/Log.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Renderer/OpenGL/GLStateCache.hpp"
 #include "glm/gtx/norm.hpp"
 
 #include <Toast/Resources/Mesh.hpp>
@@ -15,6 +16,10 @@
 
 // for error placeholder
 #include "ErrorMdl.hpp"
+
+namespace {
+GLuint g_boundVao = 0;
+}
 
 renderer::Mesh::Mesh(Mesh&& o) noexcept
     : m_vertices(o.m_vertices),
@@ -60,6 +65,9 @@ renderer::Mesh& renderer::Mesh::operator=(Mesh&& o) noexcept {
 
 renderer::Mesh::~Mesh() {
 	if (m_vao) {
+		if (g_boundVao == m_vao) {
+			g_boundVao = 0;
+		}
 		glDeleteVertexArrays(1, &m_vao);
 	}
 	if (m_vbo) {
@@ -180,17 +188,22 @@ void renderer::Mesh::bind() const {
 	if (!m_vao) {
 		throw ToastException("Mesh: Failed to bind mesh");
 	}
-	glBindVertexArray(m_vao);
+	if (g_boundVao != m_vao) {
+		glBindVertexArray(m_vao);
+		g_boundVao = m_vao;
+	}
 }
 
 void renderer::Mesh::unbind() {
-	glBindVertexArray(0);
+	if (g_boundVao != 0) {
+		glBindVertexArray(0);
+		g_boundVao = 0;
+	}
 }
 
 void renderer::Mesh::Draw() {
 	bind();
 	glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_vertices.size()));
-	unbind();
 }
 
 void renderer::Mesh::InitDynamicSpine() {
@@ -249,11 +262,17 @@ void renderer::Mesh::DrawDynamicSpine(size_t num_indices) const {
 		TOAST_ERROR("Mesh::DrawDynamicSpine called but VAO==0. Did you call InitDynamicSpine?");
 		return;
 	}
-	glBindVertexArray(m_vao);
-	glDisable(GL_CULL_FACE);
+	if (g_boundVao != m_vao) {
+		glBindVertexArray(m_vao);
+		g_boundVao = m_vao;
+	}
+	renderer::SetCullFace(false);
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(num_indices), GL_UNSIGNED_SHORT, nullptr);
-	glEnable(GL_CULL_FACE);
-	glBindVertexArray(0);
+	renderer::SetCullFace(true);
+}
+
+void renderer::Mesh::InvalidateBindingCache() {
+	g_boundVao = 0;
 }
 
 renderer::BoundingBox renderer::Mesh::ComputeSpineBoundingBox(const SpineVertex* vertices, size_t num_vertices) {

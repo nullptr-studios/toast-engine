@@ -14,6 +14,9 @@ namespace renderer {
 class LayerStack;
 class Shader;
 class Mesh;
+namespace HUD {
+class HUDLayer;
+}
 }
 
 namespace renderer {
@@ -37,7 +40,7 @@ public:
 	void CombinedRenderPass() const;
 	void SpritePass();
 	void WaterPass();
-	void HUDPass();
+	void HUDPass(const std::vector<HUD::HUDLayer*>& hudLayers);
 
 	void Clear() const override;
 	void Resize(glm::uvec2 size) override;
@@ -57,6 +60,7 @@ public:
 	void ApplyRenderSettings() override;
 
 	void DrawScreenQuad(bool flipY, bool useShader) override;
+	void InvalidateGLStateCaches() override;
 
 	GLuint GetShadowMapTexture() const override;
 

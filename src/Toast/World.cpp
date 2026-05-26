@@ -48,8 +48,9 @@ World::World() {
 			    return true;    // Scene is being destroyed
 		    }
 
-		    // set the scene as loaded in the list
-		    m.tickableScenes[e->id] = dynamic_cast<Scene*>(scene);
+		    auto* scene_ptr = dynamic_cast<Scene*>(scene);
+		    m.tickableScenesIndex[e->id] = m.tickableScenes.size();
+		    m.tickableScenes.push_back(scene_ptr);
 
 #ifdef TOAST_EDITOR
 		    {
@@ -342,7 +343,7 @@ void World::EnableScene(unsigned id) {
 
 	// We will throw an exception if the scene hasn't finished loaded so that
 	// anyone can implement a custom action for when that happens (i.e. loading screen)
-	if (!w->m.tickableScenes.contains(id)) {
+	if (!w->m.tickableScenesIndex.contains(id)) {
 		throw BadScene(id);
 	}
 
@@ -404,8 +405,8 @@ void World::EarlyTick() {
 
 	PROFILE_ZONE;
 
-	for (const auto& [_, s] : m.tickableScenes) {
-		s->_EarlyTick();
+	for (Scene* scene : m.tickableScenes) {
+		scene->_EarlyTick();
 	}
 }
 
@@ -416,8 +417,8 @@ void World::Tick() {
 
 	PROFILE_ZONE;
 
-	for (const auto& [_, s] : m.tickableScenes) {
-		s->_Tick();
+	for (Scene* scene : m.tickableScenes) {
+		scene->_Tick();
 	}
 }
 
@@ -428,8 +429,8 @@ void World::LateTick() {
 
 	PROFILE_ZONE;
 
-	for (const auto& [_, s] : m.tickableScenes) {
-		s->_LateTick();
+	for (Scene* scene : m.tickableScenes) {
+		scene->_LateTick();
 	}
 }
 
@@ -440,8 +441,8 @@ void World::PhysTick() {
 
 	PROFILE_ZONE;
 
-	for (const auto& [_, s] : m.tickableScenes) {
-		s->_PhysTick();
+	for (Scene* scene : m.tickableScenes) {
+		scene->_PhysTick();
 	}
 
 #ifdef TOAST_EDITOR
@@ -463,9 +464,8 @@ void World::EditorTick() {
 		m.editorScene->_LateTick();
 	}
 
-	// ReSharper disable once CppUseElementsView
-	for (const auto& [_, s] : m.tickableScenes) {
-		s->_EditorTick();
+	for (Scene* scene : m.tickableScenes) {
+		scene->_EditorTick();
 	}
 }
 #endif
@@ -484,24 +484,30 @@ void World::RunBeginQueue() {
 		local.swap(m.beginQueue);
 	}
 
-	for (auto* obj : local) {
+	std::list<Object*> requeue_list {};
+
+	for (Object* obj : local) {
 		if (!obj) {
 			continue;
 		}
 
 		// We need to check this so scene begin is not run while the scene is being loaded
-		if (obj->scene() && !m.tickableScenes.contains(obj->scene()->id())) {
-			std::lock_guard lock(m.queueMutex);
-			m.beginQueue.push_back(obj);
+		if (obj->scene() && !m.tickableScenesIndex.contains(obj->scene()->id())) {
+			requeue_list.push_back(obj);
 			continue;
 		}
 
 		obj->_Begin();
 		// If begin didn't run, reschedule it for later
 		if (!obj->has_run_begin()) {
-			std::lock_guard lock(m.queueMutex);
-			m.beginQueue.push_back(obj);
+			requeue_list.push_back(obj);
 		}
+	}
+
+	// Batch requeue if needed
+	if (!requeue_list.empty()) {
+		std::lock_guard lock(m.queueMutex);
+		m.beginQueue.splice(m.beginQueue.end(), requeue_list);
 	}
 }
 
@@ -519,7 +525,10 @@ void World::RunDestroyQueue() {
 		return;
 	}
 
-	for (auto* obj : local) {
+	std::vector<size_t> indices_to_remove {};
+	indices_to_remove.reserve(local.size());
+
+	for (Object* obj : local) {
 		if (!obj) {
 			continue;
 		}
@@ -531,8 +540,27 @@ void World::RunDestroyQueue() {
 		if (obj->parent()) {
 			obj->parent()->children.erase(obj->id());
 		} else {
-			m.tickableScenes.erase(obj->id());
+			const auto idx_it = m.tickableScenesIndex.find(obj->id());
+			if (idx_it != m.tickableScenesIndex.end()) {
+				indices_to_remove.push_back(idx_it->second);
+				m.tickableScenesIndex.erase(idx_it);
+			}
 			m.children.erase(obj->id());
+		}
+	}
+
+	if (!indices_to_remove.empty()) {
+		std::sort(indices_to_remove.rbegin(), indices_to_remove.rend());
+		for (size_t idx : indices_to_remove) {
+			if (idx < m.tickableScenes.size()) {
+				// Update index map for moved element
+				Scene* moved_scene = m.tickableScenes.back();
+				if (idx != m.tickableScenes.size() - 1) {
+					m.tickableScenes[idx] = moved_scene;
+					m.tickableScenesIndex[moved_scene->id()] = idx;
+				}
+				m.tickableScenes.pop_back();
+			}
 		}
 	}
 }

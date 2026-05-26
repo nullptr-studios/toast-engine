@@ -9,6 +9,7 @@
 #include "Toast/Renderer/IRendererBase.hpp"
 #include "Toast/Renderer/OclussionVolume.hpp"
 #include "Toast/Resources/ResourceManager.hpp"
+#include "Toast/Renderer/OpenGL/GLStateCache.hpp"
 #include "Toast/Time.hpp"
 
 #include <glad/gl.h>
@@ -290,7 +291,14 @@ ParticleEmitter::ParticleEmitter(ParticleEmitter&& other) noexcept
       m_renderShader(std::move(other.m_renderShader)),
       m_texture(std::move(other.m_texture)),
       m_rng(std::move(other.m_rng)),
-      m_dist(other.m_dist) {
+	  m_dist(other.m_dist),
+	  m_frameWriteBuffer(other.m_frameWriteBuffer),
+	  m_frameUpdateActive(other.m_frameUpdateActive),
+	  m_frameSpawnCount(other.m_frameSpawnCount),
+	  m_renderCount(other.m_renderCount),
+	  m_pendingBuffer(other.m_pendingBuffer),
+	  m_computeFence(other.m_computeFence),
+	  m_pendingDeltaTime(other.m_pendingDeltaTime) {
 	m_particleBuffers[0] = other.m_particleBuffers[0];
 	m_particleBuffers[1] = other.m_particleBuffers[1];
 
@@ -300,6 +308,13 @@ ParticleEmitter::ParticleEmitter(ParticleEmitter&& other) noexcept
 	other.m_counterBuffer = 0;
 	other.m_counterBufferPtr = nullptr;
 	other.m_frameParamsUBO = 0;
+	other.m_frameWriteBuffer = 0;
+	other.m_frameUpdateActive = false;
+	other.m_frameSpawnCount = 0;
+	other.m_renderCount = 0;
+	other.m_pendingBuffer = 0;
+	other.m_computeFence = nullptr;
+	other.m_pendingDeltaTime = 0.0f;
 	other.m_gpuInitialized = false;
 }
 
@@ -324,12 +339,26 @@ ParticleEmitter& ParticleEmitter::operator=(ParticleEmitter&& other) noexcept {
 		m_texture = std::move(other.m_texture);
 		m_rng = std::move(other.m_rng);
 		m_dist = other.m_dist;
+		m_frameWriteBuffer = other.m_frameWriteBuffer;
+		m_frameUpdateActive = other.m_frameUpdateActive;
+		m_frameSpawnCount = other.m_frameSpawnCount;
+		m_renderCount = other.m_renderCount;
+		m_pendingBuffer = other.m_pendingBuffer;
+		m_computeFence = other.m_computeFence;
+		m_pendingDeltaTime = other.m_pendingDeltaTime;
 
 		other.m_particleBuffers[0] = 0;
 		other.m_particleBuffers[1] = 0;
 		other.m_counterBuffer = 0;
 		other.m_counterBufferPtr = nullptr;
 		other.m_frameParamsUBO = 0;
+		other.m_frameWriteBuffer = 0;
+		other.m_frameUpdateActive = false;
+		other.m_frameSpawnCount = 0;
+		other.m_renderCount = 0;
+		other.m_pendingBuffer = 0;
+		other.m_computeFence = nullptr;
+		other.m_pendingDeltaTime = 0.0f;
 		other.m_gpuInitialized = false;
 	}
 	return *this;
@@ -392,6 +421,13 @@ void ParticleEmitter::InitGPUResources(
 
 	m_gpuInitialized = true;
 	m_currentBuffer = 0;
+	m_frameWriteBuffer = 1;
+	m_frameUpdateActive = false;
+	m_frameSpawnCount = 0;
+	m_renderCount = 0;
+	m_pendingBuffer = 0;
+	m_computeFence = nullptr;
+	m_pendingDeltaTime = 0.0f;
 }
 
 void ParticleEmitter::CleanupGPUResources() {
@@ -403,6 +439,11 @@ void ParticleEmitter::CleanupGPUResources() {
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_counterBuffer);
 		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 		m_counterBufferPtr = nullptr;
+	}
+
+	if (m_computeFence) {
+		glDeleteSync(m_computeFence);
+		m_computeFence = nullptr;
 	}
 
 	if (m_particleBuffers[0]) {
@@ -420,6 +461,12 @@ void ParticleEmitter::CleanupGPUResources() {
 
 	m_texture.reset();
 	m_gpuInitialized = false;
+	m_frameUpdateActive = false;
+	m_frameSpawnCount = 0;
+	m_frameWriteBuffer = 0;
+	m_renderCount = 0;
+	m_pendingBuffer = 0;
+	m_pendingDeltaTime = 0.0f;
 }
 
 void ParticleEmitter::ReinitializeBuffers() {
@@ -439,6 +486,15 @@ void ParticleEmitter::ReinitializeBuffers() {
 	m_aliveCount = 0;
 	m_systemTime = 0.0f;
 	m_emissionAccumulator = 0.0f;
+	m_frameUpdateActive = false;
+	m_frameSpawnCount = 0;
+	m_renderCount = 0;
+	m_pendingDeltaTime = 0.0f;
+	if (m_computeFence) {
+		glDeleteSync(m_computeFence);
+		m_computeFence = nullptr;
+	}
+	m_pendingBuffer = 0;
 	for (auto& burst : m_config.bursts) {
 		burst.triggered = false;
 	}
@@ -457,6 +513,9 @@ void ParticleEmitter::Stop() {
 	m_aliveCount = 0;
 	m_systemTime = 0.0f;
 	m_emissionAccumulator = 0.0f;
+	m_frameUpdateActive = false;
+	m_frameSpawnCount = 0;
+	m_renderCount = 0;
 
 	for (auto& burst : m_config.bursts) {
 		burst.triggered = false;
@@ -478,6 +537,64 @@ void ParticleEmitter::UpdateAndRender(
 		return;
 	}
 
+	float simDeltaTime = deltaTime + m_pendingDeltaTime;
+	m_pendingDeltaTime = 0.0f;
+
+	auto renderParticles = [&](int bufferIndex, uint32_t count) {
+		if (count == 0) {
+			return;
+		}
+
+		renderer::SetBlend(true);
+		renderer::SetBlendFunc(GL_SRC_ALPHA, m_config.additiveBlending ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA);
+
+		renderer::SetDepthTest(true);
+		renderer::SetDepthFunc(GL_LEQUAL);
+		renderer::SetDepthMask(true);
+
+		m_renderShader->Use();
+		m_renderShader->Set("u_ViewProj", viewProjection);
+		m_renderShader->Set("u_CamRight", camRight);
+		m_renderShader->Set("u_CamUp", camUp);
+
+		int useTexture = (m_texture && m_config.useTexture) ? 1 : 0;
+		m_renderShader->Set("u_UseTexture", useTexture);
+
+		if (m_texture && m_config.useTexture) {
+			m_texture->Bind(1);
+			m_renderShader->SetSampler("u_Tex", 1);
+		}
+
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_particleBuffers[bufferIndex]);
+	};
+
+	if (m_computeFence) {
+		const GLenum status = glClientWaitSync(m_computeFence, 0, 0);
+		if (status == GL_ALREADY_SIGNALED || status == GL_CONDITION_SATISFIED) {
+			glDeleteSync(m_computeFence);
+			m_computeFence = nullptr;
+			m_currentBuffer = m_pendingBuffer;
+			if (m_counterBufferPtr) {
+				m_aliveCount = std::min(m_counterBufferPtr[1], m_config.maxParticles);
+			}
+			m_renderCount = m_aliveCount;
+		} else {
+			m_pendingDeltaTime += simDeltaTime;
+			renderParticles(m_currentBuffer, m_renderCount);
+			if (auto* renderer = renderer::IRendererBase::GetInstance()) {
+				renderer->InvalidateGLStateCaches();
+			}
+			return;
+		}
+	}
+
+	const uint32_t completedCount = m_aliveCount;
+	const int readBuffer = m_currentBuffer;
+	const int writeBuffer = 1 - m_currentBuffer;
+	m_frameWriteBuffer = writeBuffer;
+	m_frameUpdateActive = true;
+	m_frameSpawnCount = 0;
+
 	// combined rotation
 	glm::mat3 localRot = glm::mat3(
 	    glm::eulerAngleYXZ(glm::radians(m_config.localRotation.y), glm::radians(m_config.localRotation.x), glm::radians(m_config.localRotation.z))
@@ -489,7 +606,7 @@ void ParticleEmitter::UpdateAndRender(
 	glm::vec3 emitterWorldPos = worldPos + transformedOffset;
 
 	if (m_isPlaying) {
-		m_systemTime += deltaTime;
+		m_systemTime += simDeltaTime;
 
 		// Check if non-looping emitter has finished
 		bool canEmit = true;
@@ -503,7 +620,7 @@ void ParticleEmitter::UpdateAndRender(
 
 		if (canEmit) {
 			if (m_config.emissionMode == EmissionMode::Continuous) {
-				m_emissionAccumulator += m_config.emissionRate * deltaTime;
+				m_emissionAccumulator += m_config.emissionRate * simDeltaTime;
 				const uint32_t toSpawn = static_cast<uint32_t>(m_emissionAccumulator);
 				if (toSpawn > 0) {
 					SpawnParticles(toSpawn, emitterWorldPos, combinedRotation);
@@ -519,7 +636,7 @@ void ParticleEmitter::UpdateAndRender(
 				// Only repeat if looping or has duration
 				if (burst.cycleInterval > 0.0f && burst.triggered && m_config.looping) {
 					const float cycleTime = fmod(m_systemTime - burst.time, burst.cycleInterval);
-					if (cycleTime < deltaTime) {
+					if (cycleTime < simDeltaTime) {
 						SpawnParticles(burst.count, emitterWorldPos, combinedRotation);
 					}
 				}
@@ -527,93 +644,81 @@ void ParticleEmitter::UpdateAndRender(
 		}
 	}
 
-	if (m_aliveCount == 0) {
+	const uint32_t spawnCount = m_frameSpawnCount;
+	if (completedCount == 0 && spawnCount == 0) {
+		m_renderCount = 0;
+		m_frameUpdateActive = false;
 		return;
 	}
 
-	// COMPUTE PASS
-	struct FrameParams {
-		float dt;
-		float gravityX, gravityY, gravityZ;
-		uint32_t maxParticles;
-		float drag;
-		float pad1, pad2;
-	} params;
+	int renderBuffer = readBuffer;
+	uint32_t renderCount = completedCount;
 
-	params.dt = deltaTime;
-	params.gravityX = m_config.gravity.x;
-	params.gravityY = m_config.gravity.y;
-	params.gravityZ = m_config.gravity.z;
-	params.maxParticles = m_config.maxParticles;
-	params.drag = m_config.drag;
-	params.pad1 = params.pad2 = 0.0f;
+	if (completedCount > 0) {
+		// COMPUTE PASS
+		struct FrameParams {
+			float dt;
+			float gravityX, gravityY, gravityZ;
+			uint32_t maxParticles;
+			float drag;
+			float pad1, pad2;
+		} params;
 
-	glBindBuffer(GL_UNIFORM_BUFFER, m_frameParamsUBO);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(params), &params);
+		params.dt = simDeltaTime;
+		params.gravityX = m_config.gravity.x;
+		params.gravityY = m_config.gravity.y;
+		params.gravityZ = m_config.gravity.z;
+		params.maxParticles = m_config.maxParticles;
+		params.drag = m_config.drag;
+		params.pad1 = params.pad2 = 0.0f;
 
-	if (m_counterBufferPtr) {
-		m_counterBufferPtr[1] = 0;
-		m_counterBufferPtr[0] = m_aliveCount;
-	}
+		glBindBuffer(GL_UNIFORM_BUFFER, m_frameParamsUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(params), &params);
 
-	glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+		if (m_counterBufferPtr) {
+			m_counterBufferPtr[0] = completedCount;
+			m_counterBufferPtr[1] = spawnCount;
+			m_counterBufferPtr[2] = spawnCount;
+			m_counterBufferPtr[3] = 0;
+		}
 
-	const int readBuffer = m_currentBuffer;
-	const int writeBuffer = 1 - m_currentBuffer;
+		glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
 
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_particleBuffers[readBuffer]);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_particleBuffers[writeBuffer]);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, m_counterBuffer);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 4, m_frameParamsUBO);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_particleBuffers[readBuffer]);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_particleBuffers[writeBuffer]);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, m_counterBuffer);
+		glBindBufferBase(GL_UNIFORM_BUFFER, 4, m_frameParamsUBO);
 
-	m_computeShader->Use();
+		m_computeShader->Use();
 
-	const uint32_t workGroups = (m_aliveCount + 255) / 256;
-	glDispatchCompute(workGroups, 1, 1);
+		const uint32_t workGroups = (completedCount + 255) / 256;
+		glDispatchCompute(workGroups, 1, 1);
 
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
-
-	GLsync sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-	glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
-	glDeleteSync(sync);
-
-	if (m_counterBufferPtr) {
-		m_aliveCount = m_counterBufferPtr[1];
-	}
-
-	m_currentBuffer = writeBuffer;
-
-	if (m_aliveCount == 0) {
-		return;
-	}
-
-	// RENDER PASS
-	glEnable(GL_BLEND);
-	if (m_config.additiveBlending) {
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+		m_pendingBuffer = writeBuffer;
+		m_computeFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 	} else {
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		// No existing particles, spawn but treat buffer as somplete
+		renderBuffer = writeBuffer;
+		renderCount = spawnCount;
+		m_currentBuffer = writeBuffer;
+		m_pendingBuffer = writeBuffer;
+		if (m_counterBufferPtr) {
+			m_counterBufferPtr[0] = 0;
+			m_counterBufferPtr[1] = renderCount;
+			m_counterBufferPtr[2] = renderCount;
+			m_counterBufferPtr[3] = 0;
+		}
 	}
 
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
-	glDepthMask(GL_TRUE);
-
-	m_renderShader->Use();
-	m_renderShader->Set("u_ViewProj", viewProjection);
-	m_renderShader->Set("u_CamRight", camRight);
-	m_renderShader->Set("u_CamUp", camUp);
-
-	// Set texture usage flag
-	int useTexture = (m_texture && m_config.useTexture) ? 1 : 0;
-	m_renderShader->Set("u_UseTexture", useTexture);
-
-	if (m_texture && m_config.useTexture) {
-		m_texture->Bind(1);
-		m_renderShader->SetSampler("u_Tex", 1);
+	m_aliveCount = std::min(completedCount + spawnCount, m_config.maxParticles);
+	m_renderCount = renderCount;
+	m_frameUpdateActive = false;
+	m_frameSpawnCount = 0;
+	renderParticles(renderBuffer, renderCount);
+	if (auto* renderer = renderer::IRendererBase::GetInstance()) {
+		renderer->InvalidateGLStateCaches();
 	}
-
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_particleBuffers[m_currentBuffer]);
 }
 
 void ParticleEmitter::SpawnParticles(uint32_t count, const glm::vec3& worldPos, const glm::mat3& parentRotation) {
@@ -621,7 +726,8 @@ void ParticleEmitter::SpawnParticles(uint32_t count, const glm::vec3& worldPos, 
 		return;
 	}
 
-	const uint32_t available = m_config.maxParticles - m_aliveCount;
+	const uint32_t usedCount = m_frameUpdateActive ? (m_aliveCount + m_frameSpawnCount) : m_aliveCount;
+	const uint32_t available = m_config.maxParticles - usedCount;
 	count = std::min(count, available);
 
 	if (count == 0) {
@@ -629,6 +735,8 @@ void ParticleEmitter::SpawnParticles(uint32_t count, const glm::vec3& worldPos, 
 	}
 
 	std::vector<GPUParticle> newParticles(count);
+	const int targetBuffer = m_frameUpdateActive ? m_frameWriteBuffer : m_currentBuffer;
+	const uint32_t writeOffset = m_frameUpdateActive ? m_frameSpawnCount : m_aliveCount;
 
 	for (uint32_t i = 0; i < count; ++i) {
 		GPUParticle& p = newParticles[i];
@@ -667,17 +775,27 @@ void ParticleEmitter::SpawnParticles(uint32_t count, const glm::vec3& worldPos, 
 		p.extra = glm::vec4(startSize, rotSpeed, m_config.drag, 0.0f);
 	}
 
-	const int writeBuffer = m_currentBuffer;
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_particleBuffers[writeBuffer]);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_particleBuffers[targetBuffer]);
 
-	const size_t offset = sizeof(GPUParticle) * m_aliveCount;
+	const size_t offset = sizeof(GPUParticle) * writeOffset;
 	const size_t size = sizeof(GPUParticle) * count;
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size), newParticles.data());
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-	m_aliveCount += count;
+	if (m_frameUpdateActive) {
+		m_frameSpawnCount += count;
+	} else {
+		m_aliveCount += count;
+		m_renderCount = m_aliveCount;
+		if (m_counterBufferPtr) {
+			m_counterBufferPtr[0] = 0;
+			m_counterBufferPtr[1] = m_aliveCount;
+			m_counterBufferPtr[2] = m_aliveCount;
+			m_counterBufferPtr[3] = 0;
+		}
+	}
 }
 
 glm::vec3 ParticleEmitter::GenerateSpawnPosition(const glm::mat3& rotation) {
@@ -819,8 +937,8 @@ void ParticleSystem::OnRender(renderer::IRenderablePass pass, const glm::mat4& v
 		glBindVertexArray(0);
 
 		// Restore state
-		glDepthMask(GL_TRUE);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		renderer::SetDepthMask(true);
+		renderer::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 }
 
