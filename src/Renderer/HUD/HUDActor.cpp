@@ -50,7 +50,6 @@ void HUDActor::Init() {
 		m_meshPath = ResolveExistingPath(m_meshPath, "MODELS/quad.obj", "models/quad.obj");
 		m_worldRenderer->SetMeshPath(m_meshPath);
 	}
-	ApplyMeshScaleFromViewSize();
 }
 
 void HUDActor::Begin() {
@@ -58,6 +57,8 @@ void HUDActor::Begin() {
 	EnsureRendererComponent();
 	CreateView();
 	SyncResolvedTexture();
+	ApplyMeshScaleFromViewSize();
+	
 }
 
 void HUDActor::Tick() {
