@@ -4,6 +4,8 @@
 
 #include "SharedTextureOutputTarget.hpp"
 
+#include "toast/log.hpp"
+
 #include <stdexcept>
 
 namespace toast::renderer {
@@ -14,7 +16,7 @@ SharedTextureOutputTarget::SharedTextureOutputTarget(const VulkanCore& core, vk:
       m_images(imageCount),
       m_imageViews(imageCount) {
 	if (imageCount == 0) {
-		throw std::runtime_error("Toast Engine Error: Shared texture output target needs at least one image!");
+		TOAST_CRITICAL("SharedTextureOutput", "Toast Engine Error: Shared texture output target needs at least one image!");
 	}
 }
 

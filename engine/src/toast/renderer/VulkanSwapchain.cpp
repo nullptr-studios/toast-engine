@@ -10,6 +10,7 @@
 #include <array>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 
 namespace toast::renderer {
 namespace {
@@ -98,9 +99,8 @@ auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 	const auto chosen_format = selectSurfaceFormat(formats);
 	const auto chosen_present_mode = selectPresentMode(present_modes);
 	const auto chosen_extent = selectExtent(capabilities, preferred_extent);
-	m_present_queue_family_index = findPresentQueueFamilyIndex();
-	m_image_format = chosen_format.format;
-	m_extent = chosen_extent;
+	const auto present_queue_family_index = findPresentQueueFamilyIndex();
+	const auto image_format = chosen_format.format;
 
 	TOAST_TRACE("VulkanSwapchain", "Surface formats: {}", formats.size());
 	TOAST_TRACE("VulkanSwapchain", "Present modes: {}", present_modes.size());
@@ -127,12 +127,12 @@ auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 		image_count = capabilities.maxImageCount;
 	}
 
-	TOAST_INFO("VulkanSwapchain", "Swapchain images: {}", image_count);
-	TOAST_INFO("VulkanSwapchain", "Supported usage flags: {}", formatUsageFlags(capabilities.supportedUsageFlags));
+	TOAST_TRACE("VulkanSwapchain", "Swapchain images: {}", image_count);
+	TOAST_TRACE("VulkanSwapchain", "Supported usage flags: {}", formatUsageFlags(capabilities.supportedUsageFlags));
 
 	const auto graphics_family = m_core->getGraphicsQueueFamilyIndex();
-	const bool concurrent_sharing = graphics_family != m_present_queue_family_index;
-	const auto queue_family_indices = uniqueQueueFamilies(graphics_family, m_present_queue_family_index);
+	const bool concurrent_sharing = graphics_family != present_queue_family_index;
+	const auto queue_family_indices = uniqueQueueFamilies(graphics_family, present_queue_family_index);
 	const uint32_t* queue_families = concurrent_sharing ? queue_family_indices.data() : nullptr;
 	const uint32_t queue_family_index_count = concurrent_sharing ? 2u : 0u;
 
@@ -140,12 +140,12 @@ auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 	if (!supportsUsage(capabilities.supportedUsageFlags, vk::ImageUsageFlagBits::eColorAttachment)) {
 		throw std::runtime_error("Toast Engine Error: Surface does not support color attachment usage!");
 	}
-	TOAST_INFO("VulkanSwapchain", "Swapchain image usage: {}", formatUsageFlags(image_usage));
+	TOAST_TRACE("VulkanSwapchain", "Swapchain image usage: {}", formatUsageFlags(image_usage));
 
 	vk::SwapchainCreateInfoKHR swapchain_ci {};
 	swapchain_ci.surface = *m_surface;
 	swapchain_ci.minImageCount = image_count;
-	swapchain_ci.imageFormat = chosen_format.format;
+	swapchain_ci.imageFormat = image_format;
 	swapchain_ci.imageColorSpace = chosen_format.colorSpace;
 	swapchain_ci.imageExtent = chosen_extent;
 	swapchain_ci.imageArrayLayers = 1;
@@ -157,17 +157,19 @@ auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 	swapchain_ci.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
 	swapchain_ci.presentMode = chosen_present_mode;
 	swapchain_ci.clipped = true;
+	if (m_swapchain != nullptr) {
+		swapchain_ci.oldSwapchain = *m_swapchain;
+	}
 
-	m_swapchain = vk::raii::SwapchainKHR(m_core->getDevice(), swapchain_ci);
-	m_images = m_swapchain.getImages();
-
-	m_image_views.clear();
-	m_image_views.reserve(m_images.size());
-	for (const auto image : m_images) {
+	auto new_swapchain = vk::raii::SwapchainKHR(m_core->getDevice(), swapchain_ci);
+	auto new_images = new_swapchain.getImages();
+	std::vector<vk::raii::ImageView> new_image_views;
+	new_image_views.reserve(new_images.size());
+	for (const auto image : new_images) {
 		vk::ImageViewCreateInfo view_ci {};
 		view_ci.image = image;
 		view_ci.viewType = vk::ImageViewType::e2D;
-		view_ci.format = m_image_format;
+		view_ci.format = image_format;
 		view_ci.components = vk::ComponentMapping {
 		  vk::ComponentSwizzle::eIdentity,
 		  vk::ComponentSwizzle::eIdentity,
@@ -176,8 +178,16 @@ auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 		};
 		view_ci.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
 
-		m_image_views.emplace_back(m_core->getDevice(), view_ci);
+		new_image_views.emplace_back(m_core->getDevice(), view_ci);
 	}
+
+	m_image_views.clear();
+	m_swapchain = std::move(new_swapchain);
+	m_images = std::move(new_images);
+	m_present_queue_family_index = present_queue_family_index;
+	m_image_format = image_format;
+	m_extent = chosen_extent;
+	m_image_views = std::move(new_image_views);
 }
 
 auto VulkanSwapchain::findPresentQueueFamilyIndex() const -> uint32_t {

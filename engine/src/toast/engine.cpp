@@ -2,6 +2,7 @@
 
 #include "application.hpp"
 #include "events/event.hpp"
+#include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
 #include "logger.hpp"
 #include "renderer/SDLOutputTarget.hpp"
@@ -13,11 +14,13 @@
 #include "thread_pool.hpp"
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
+#include "window/window_events.hpp"
 
 #include <SDL3/SDL.h>
 #include <cassert>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <span>
 
 namespace toast {
@@ -25,17 +28,29 @@ namespace toast {
 namespace {
 IApplication* active_application = nullptr;
 
-auto createTrianglePipeline(const renderer::VulkanCore& core, vk::Format color_format, vk::Extent2D extent)
-    -> std::unique_ptr<renderer::VulkanPipeline> {
+// FIXME: DEBUGGING PURPORSES
+auto createTrianglePipeline(
+    const renderer::VulkanCore& core, vk::Format color_format, vk::Extent2D extent, std::optional<vk::Format> depth_format
+) -> std::unique_ptr<renderer::VulkanPipeline> {
 	// Compile shader
-	auto shader_spirv = renderer::ShaderCompiler::compileShader("./turboCoolShader.slang");
+	auto shader_spirv = renderer::ShaderCompiler::compileShader("./mirrors.slang");
 
-	// Create pipeline
+	// Define our runtime layout payload requirements
+	std::vector<vk::DescriptorSetLayoutBinding> descriptor_bindings;
+	descriptor_bindings.emplace_back(
+	    0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment
+	);
+
+	// Create pipeline using the new generic configuration parameters
 	renderer::VulkanPipeline::Config config {
-	  .debug_name = "Triangle Pipeline",
+	  .debug_name = "triangle Pipeline",
 	  .color_format = color_format,
 	  .extent = extent,
 	  .shader_spirv = shader_spirv,
+	  .depth_format = depth_format,
+	  .descriptor_bindings = descriptor_bindings,
+	  .push_constant_ranges = {},
+	  .cull_mode = vk::CullModeFlagBits::eBack
 	};
 
 	return std::make_unique<renderer::VulkanPipeline>(core, config);
@@ -51,6 +66,7 @@ struct EnginePimpl {
 	std::unique_ptr<IBaseWindow> window;
 	std::unique_ptr<renderer::VulkanCore> vulkan_core;
 	std::unique_ptr<renderer::VulkanRenderer> renderer;
+	event::Listener resize_listener;
 };
 
 Engine::Engine() noexcept {
@@ -60,6 +76,16 @@ Engine::Engine() noexcept {
 		.logger = logging::Logger::create()
 	};
 	// clang-format on
+
+	// TODO: This should be moved into VulkanRenderer
+	m->resize_listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
+		if (!m->renderer || !m->vulkan_core || e.width <= 0 || e.height <= 0) {
+			return false;
+		}
+
+		m->renderer->resize(vk::Extent2D {static_cast<uint32_t>(e.width), static_cast<uint32_t>(e.height)});
+		return false;
+	});
 
 	instance = this;
 }
@@ -97,21 +123,28 @@ auto Engine::shouldClose() -> bool {
 }
 
 void Engine::createSDLWindow(const char* w_name) {
-	m->window = std::make_unique<SDLWindow>(w_name, 1080, 720, static_cast<int>(SDL_WINDOW_VULKAN));
+	// create window
+	m->window = std::make_unique<SDLWindow>(w_name, 1080, 720, SDL_WINDOW_VULKAN);
 
+	// get window handle
 	auto* sdl_window = static_cast<SDL_Window*>(m->window->nativeHandle());
 	auto instance_extensions = renderer::SDLOutputTarget::getRequiredInstanceExtensions(sdl_window);
 	auto device_extensions = renderer::SDLOutputTarget::getRequiredDeviceExtensions();
+	// create vulkan core
 	m->vulkan_core = std::make_unique<renderer::VulkanCore>(instance_extensions, device_extensions);
 
+	// create output texture
 	auto output_target = std::make_unique<renderer::SDLOutputTarget>(
 	    *m->vulkan_core, sdl_window, renderer::SDLOutputTarget::queryExtent(sdl_window)
 	);
 	auto extent = output_target->getExtent();
 	auto color_format = output_target->getColorFormat();
+	auto depth_format = renderer::VulkanRenderer::selectDepthFormat(*m->vulkan_core);
 
-	auto pipeline = createTrianglePipeline(*m->vulkan_core, color_format, extent);
+	// create debug pipeline
+	auto pipeline = createTrianglePipeline(*m->vulkan_core, color_format, extent, depth_format);
 
+	// create renderer
 	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target), std::move(pipeline));
 }
 
@@ -121,8 +154,9 @@ void Engine::createAvaloniaWindow() {
 	auto output_target = std::make_unique<renderer::SharedTextureOutputTarget>(*m->vulkan_core, vk::Extent2D(1080, 720));
 	auto color_format = output_target->getColorFormat();
 	auto extent = output_target->getExtent();
+	auto depth_format = renderer::VulkanRenderer::selectDepthFormat(*m->vulkan_core);
 
-	auto pipeline = createTrianglePipeline(*m->vulkan_core, color_format, extent);
+	auto pipeline = createTrianglePipeline(*m->vulkan_core, color_format, extent, depth_format);
 
 	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target), std::move(pipeline));
 }

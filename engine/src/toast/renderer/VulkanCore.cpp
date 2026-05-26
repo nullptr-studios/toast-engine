@@ -221,15 +221,16 @@ auto DeviceScore::toString() const -> std::string {
 
 VulkanCore::VulkanCore(
     std::span<const char* const> required_instance_extensions, std::span<const char* const> required_device_extensions
-) {
+)
 #ifdef DEBUG
-	m_validationEnabled = true;
+    : m_validationEnabled(true)
 #else
-	m_validationEnabled = false;
+    : m_validationEnabled(false)
 #endif
+{
 	TOAST_INFO("VulkanCore", "Validation layers: {}", m_validationEnabled ? "enabled" : "disabled");
-	TOAST_INFO("VulkanCore", "Required instance extensions: {}", joinRequiredExtensions(required_instance_extensions));
-	TOAST_INFO("VulkanCore", "Required device extensions: {}", joinRequiredExtensions(required_device_extensions));
+	TOAST_TRACE("VulkanCore", "Required instance extensions: {}", joinRequiredExtensions(required_instance_extensions));
+	TOAST_TRACE("VulkanCore", "Required device extensions: {}", joinRequiredExtensions(required_device_extensions));
 
 	vk::ApplicationInfo app_info("SUPER DUPER TOASTY GAME", 1, "TOAST ENGINE", 1, VK_API_VERSION_1_4);
 
@@ -420,10 +421,18 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 
 	std::vector<const char*> device_extensions(required_device_extensions.begin(), required_device_extensions.end());
 	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions);
+	vk::PhysicalDeviceVulkan12Features vulkan12_features {};
 	vk::PhysicalDeviceVulkan13Features vulkan13_features {};
 	vk::PhysicalDeviceVulkan11Features vulkan11_features {};
-	vulkan13_features.pNext = &vulkan11_features;
+	vulkan12_features.pNext = &vulkan11_features;
+	vulkan13_features.pNext = &vulkan12_features;
 	vulkan13_features.dynamicRendering = VK_TRUE;
+	vulkan13_features.synchronization2 = VK_TRUE;
+	vulkan12_features.descriptorIndexing = VK_TRUE;
+	vulkan12_features.runtimeDescriptorArray = VK_TRUE;
+	vulkan12_features.descriptorBindingPartiallyBound = VK_TRUE;
+	vulkan12_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
+	vulkan12_features.bufferDeviceAddress = VK_TRUE;
 	vulkan11_features.shaderDrawParameters = VK_TRUE;
 	device_ci.pNext = &vulkan13_features;
 
@@ -446,7 +455,11 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 
 	const auto props = device.getProperties();
 	vk::PhysicalDeviceFeatures2 features2 {};
+	vk::PhysicalDeviceVulkan12Features vulkan12_features {};
 	vk::PhysicalDeviceVulkan13Features vulkan13_features {};
+	vk::PhysicalDeviceVulkan11Features vulkan11_features {};
+	vulkan12_features.pNext = &vulkan11_features;
+	vulkan13_features.pNext = &vulkan12_features;
 	features2.pNext = &vulkan13_features;
 	device.getFeatures2(&features2);
 	const auto features = device.getFeatures();
@@ -539,10 +552,58 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 	int extension_score = 0;
 	std::vector<std::string> required_missing_names;
 
-	if (props.apiVersion < VK_API_VERSION_1_3 || vulkan13_features.dynamicRendering != VK_TRUE) {
+	const bool supports_dynamic_rendering = props.apiVersion >= VK_API_VERSION_1_3 && vulkan13_features.dynamicRendering == VK_TRUE;
+	if (!supports_dynamic_rendering) {
 		required_missing_names.emplace_back("Vulkan 1.3 dynamic rendering");
 	} else {
 		extension_score += 100;
+	}
+
+	const bool supports_sync2 = props.apiVersion >= VK_API_VERSION_1_3 && vulkan13_features.synchronization2 == VK_TRUE;
+	if (!supports_sync2) {
+		required_missing_names.emplace_back("Vulkan 1.3 synchronization2");
+	} else {
+		extension_score += 75;
+	}
+
+	const bool supports_descriptor_indexing =
+	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.descriptorIndexing == VK_TRUE;
+	if (!supports_descriptor_indexing) {
+		required_missing_names.emplace_back("Vulkan 1.2 descriptor indexing");
+	} else {
+		extension_score += 75;
+	}
+
+	const bool supports_runtime_descriptor_array =
+	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.runtimeDescriptorArray == VK_TRUE;
+	if (!supports_runtime_descriptor_array) {
+		required_missing_names.emplace_back("Vulkan 1.2 runtime descriptor arrays");
+	} else {
+		extension_score += 50;
+	}
+
+	const bool supports_partially_bound =
+	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.descriptorBindingPartiallyBound == VK_TRUE;
+	if (!supports_partially_bound) {
+		required_missing_names.emplace_back("Vulkan 1.2 partially bound descriptors");
+	} else {
+		extension_score += 25;
+	}
+
+	const bool supports_variable_descriptor_count =
+	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.descriptorBindingVariableDescriptorCount == VK_TRUE;
+	if (!supports_variable_descriptor_count) {
+		required_missing_names.emplace_back("Vulkan 1.2 variable descriptor count");
+	} else {
+		extension_score += 25;
+	}
+
+	const bool supports_buffer_device_address =
+	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.bufferDeviceAddress == VK_TRUE;
+	if (!supports_buffer_device_address) {
+		required_missing_names.emplace_back("Vulkan 1.2 buffer device address");
+	} else {
+		extension_score += 75;
 	}
 
 	for (const auto* required : required_device_extensions) {

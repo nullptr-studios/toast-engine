@@ -16,6 +16,7 @@ public:
 	VulkanSwapchain(const VulkanCore& core, vk::raii::SurfaceKHR& surface, vk::Extent2D preferred_extent);
 	~VulkanSwapchain() = default;
 
+	// Not Copyable nor movable
 	VulkanSwapchain(const VulkanSwapchain&) = delete;
 	auto operator=(const VulkanSwapchain&) -> VulkanSwapchain& = delete;
 	VulkanSwapchain(VulkanSwapchain&&) = delete;

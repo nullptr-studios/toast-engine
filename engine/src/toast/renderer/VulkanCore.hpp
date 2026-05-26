@@ -12,6 +12,7 @@
 #include <vector>
 
 namespace toast::renderer {
+
 struct DeviceScore {
 	int total = 0;
 	int device_type = 0;
@@ -34,6 +35,12 @@ struct DeviceScore {
 
 class VulkanCore {
 public:
+	/**
+	 * Initializes the Vulkan Core instance.
+	 * @param parameters The configuration parameters.
+	 * @return A reference to the VulkanCore object.
+	 */
+
 	VulkanCore(
 	    std::span<const char* const> required_instance_extensions, std::span<const char* const> required_device_extensions = {}
 	);
@@ -43,7 +50,6 @@ public:
 	VulkanCore(const VulkanCore&) = delete;
 	auto operator=(const VulkanCore&) -> VulkanCore& = delete;
 
-	// Getters
 	[[nodiscard]]
 	auto getInstance() const -> const vk::raii::Instance& {
 		return m_instance;
@@ -95,9 +101,31 @@ public:
 	}
 
 private:
+	/**
+	 * Evaluates available Vulkan physical devices and selects the most suitable one
+	 * based on required extension support, queue family constraints, and a calculated suitability score.
+	 * Updates internal state with the selected device and corresponding queue family indices.
+	 * Logs evaluation details, scoring breakdowns, and rejection criteria for each candidate.
+	 *
+	 * @param required_device_extensions A span of C-string pointers specifying the Vulkan device
+	 *        extensions that must be supported by the selected physical device.
+	 */
 	void pickPhysicalDevice(std::span<const char* const> required_device_extensions);
+	/**
+	 * Creates a Vulkan logical device and initializes the associated memory allocator.
+	 */
 	void createLogicalDeviceAndAllocator(std::span<const char* const> required_device_extensions);
 
+	/**
+	 * Evaluates a Vulkan physical device suitability by computing a weighted score based on device type,
+	 * available memory, hardware limits, feature support, extension availability, API version, and queue
+	 * family configuration. Required extensions are validated against the device, applying penalties for
+	 * missing capabilities and rewards for supported optional extensions and modern Vulkan features.
+	 *
+	 * @param device The Vulkan physical device to evaluate.
+	 * @param required_device_extensions A span of required device extension names that the device must support.
+	 * @return A DeviceScore structure containing individual category scores and the aggregated total score.
+	 */
 	auto calculateDeviceScore(const vk::PhysicalDevice& device, std::span<const char* const> required_device_extensions)
 	    -> DeviceScore;
 
