@@ -48,4 +48,8 @@
   <ItemGroup>
     <ClCompile Include="Assets\files\lib\src\_detail\game.cpp" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Assets\splash_images\" />
+  </ItemGroup>
 </Project>

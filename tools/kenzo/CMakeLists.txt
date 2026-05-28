@@ -12,9 +12,9 @@ message(STATUS "Cargo target directory: ${CARGO_TARGET_DIR}")
 
 add_custom_target(kenzo ALL
         COMMAND ${CARGO_EXECUTABLE} build --profile "${CARGO_PROFILE_FLAG}" --target-dir "${CARGO_TARGET_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CARGO_TARGET_DIR}/${CARGO_PROFILE_NAME}/kenzo${CMAKE_EXECUTABLE_SUFFIX}"
-        "${OUTPUT_ROOT}/$<CONFIG>/kenzo${CMAKE_EXECUTABLE_SUFFIX}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CARGO_TARGET_DIR}/${CARGO_PROFILE_NAME}"
+        "${OUTPUT_ROOT}/$<CONFIG>/kenzo"
         WORKING_DIRECTORY ${CARGO_PROJECT_DIR}
         COMMENT "[cargo] Building kenzo (${CARGO_PROFILE_NAME})..."
         VERBATIM

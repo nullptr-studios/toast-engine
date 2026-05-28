@@ -1,0 +1,25 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="500"
+        Width="1200" Height="500"
+        CanMaximize="False" CanMinimize="False" CanResize="False"
+        WindowDecorations="None" WindowStartupLocation="CenterScreen"
+        x:Class="editor.Views.SplashWindow"
+        Title="SplashWindow">
+
+	<Border CornerRadius="8">
+		<Grid ColumnDefinitions="*,*">
+			<!-- Toast Photo -->
+			<Border Grid.Column="0" Background="Transparent">
+				<Image x:Name="SplashImage" Width="600" Height="500"/>
+			</Border>
+
+			<!-- Console -->
+			<StackPanel Grid.Column="1" Background="Black">
+				<TextBlock>Toast Engine</TextBlock>
+			</StackPanel>
+		</Grid>
+	</Border>
+</Window>
