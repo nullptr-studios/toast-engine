@@ -1,0 +1,13 @@
+﻿# Toast meta files
+.toast/
+build/
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+.cache/
+
+# Other
+**/imgui.ini
+lib/compile_commands.json

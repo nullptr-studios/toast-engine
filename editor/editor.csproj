@@ -26,6 +26,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Tomlyn" Version="2.4.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,5 +38,14 @@
 
   <ItemGroup>
     <Protobuf Include="..\protos\logging.proto" Link="logging.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="Assets\files\lib\src\my_game.hpp" />
+    <ClInclude Include="Assets\files\lib\src\_detail\game.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClCompile Include="Assets\files\lib\src\_detail\game.cpp" />
   </ItemGroup>
 </Project>

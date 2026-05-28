@@ -1,4 +1,9 @@
-﻿namespace editor.ViewModels;
+﻿//
+// MainWindowViewModel.cs by Xein
+// 12 May 2026
+//
+
+namespace editor.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {

@@ -68,5 +68,4 @@
         </Menu>
         <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
     </DockPanel>
-
 </Window>

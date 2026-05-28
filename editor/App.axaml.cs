@@ -9,23 +9,18 @@ using editor.Views;
 
 namespace editor;
 
-public partial class App : Application
-{
-    public override void Initialize()
-    {
-        AvaloniaXamlLoader.Load(this);
-    }
+public partial class App : Application {
+	public override void Initialize() {
+		AvaloniaXamlLoader.Load(this);
+	}
 
-    public override void OnFrameworkInitializationCompleted()
-    {
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = new MainWindowViewModel(),
-            };
-        }
+	public override void OnFrameworkInitializationCompleted() {
+		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
+			desktop.MainWindow = new StartWindow {
+				DataContext = new StartWindowViewModel(),
+			};
+		}
 
-        base.OnFrameworkInitializationCompleted();
-    }
+		base.OnFrameworkInitializationCompleted();
+	}
 }

@@ -1,4 +1,9 @@
-﻿using Avalonia.Data.Converters;
+﻿//
+// Converters.cs by Xein
+// 14 May 2026
+//
+
+using Avalonia.Data.Converters;
 using Avalonia.Media;
 using System;
 using System.Globalization;

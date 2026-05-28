@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+﻿//
+// LoggerViewModel.cs by Xein
+// 14 May 2026
+//
+
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using editor.Models;
@@ -23,8 +28,8 @@ public partial class LoggerViewModel : ViewModelBase  {
 		m_client.on_log_received += handleNewLogs;
 	}
 
-	public void start() => m_client.Start();
-	public void stop() => m_client.Stop();
+	public void start() => m_client.start();
+	public void stop() => m_client.stop();
 
 	private void handleNewLogs(List<LogEntry> new_logs) {
 		Dispatcher.UIThread.InvokeAsync(() => {
