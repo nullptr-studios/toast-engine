@@ -72,21 +72,21 @@ GameFlow::GameFlow() {
 	});
 	listener.Subscribe<toast::LoadLevel>([this](toast::LoadLevel* e) {
 		this->LoadLevel(e->world, e->level);
-		if (e->world == 1) {
+		if (e->level < 14) {
 			if (not audio::is_playing("event:/City")) {
 				auto res = audio::play("event:/City");
 			}
 
 			if (audio::is_playing("event:/Port")) {
-				auto res = audio::set_param("event:/Port", "param:/Level End", 1);
+				auto res = audio::stop("event:/Port");
 			}
-		} else if (e->world == 2) {
+		} else {
 			if (not audio::is_playing("event:/Port")) {
 				auto res = audio::play("event:/Port");
 			}
 
 			if (audio::is_playing("event:/City")) {
-				auto res = audio::set_param("event:/City", "param:/Level End", 1);
+				auto res = audio::stop("event:/City");
 			}
 		}
 		return true;
@@ -100,23 +100,23 @@ GameFlow::GameFlow() {
 			renderer::HUD::HUDLayer::Get()->ExecuteJS("fadeIn()");
 			co_await toast::WaitSeconds(0.6f);
 			flow.NextLevel();
-			if (flow.m.world && flow.m.world == 1) {
-				if (not audio::is_playing("event:/City")) {
-					auto res = audio::play("event:/City");
-				}
-
-				if (audio::is_playing("event:/Port")) {
-					auto res = audio::set_param("event:/Port", "param:/Level End", 1);
-				}
-			} else if (flow.m.world && flow.m.world == 2) {
-				if (not audio::is_playing("event:/Port")) {
-					auto res = audio::play("event:/Port");
-				}
-
-				if (audio::is_playing("event:/City")) {
-					auto res = audio::set_param("event:/City", "param:/Level End", 1);
-				}
+		if (flow.m.level && flow.m.level < 14) {
+			if (not audio::is_playing("event:/City")) {
+				auto res = audio::play("event:/City");
 			}
+
+			if (audio::is_playing("event:/Port")) {
+				auto res = audio::stop("event:/Port");
+			}
+		} else if (flow.m.level) {
+			if (not audio::is_playing("event:/Port")) {
+				auto res = audio::play("event:/Port");
+			}
+
+			if (audio::is_playing("event:/City")) {
+				auto res = audio::stop("event:/City");
+			}
+		}
 				co_await toast::WaitSeconds(0.1f);
 			renderer::HUD::HUDLayer::Get()->ExecuteJS("fadeOut()");
 		}(*this);
