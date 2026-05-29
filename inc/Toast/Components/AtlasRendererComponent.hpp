@@ -41,6 +41,10 @@ public:
 	void OnEnable() override;
 	void OnDisable() override;
 
+	void InvalidateSpriteCache() noexcept {
+		m.spriteCacheDirty = true;
+	}
+
 #ifdef TOAST_EDITOR
 	void Inspector() override;
 #endif
@@ -91,6 +95,12 @@ private:
 		bool drawToDepth = true;
 
 		bool isOnScreen = true;
+
+		// Cached transform state for detecting runtime movement/rotation/scale changes
+		bool transformCacheValid = false;
+		glm::vec3 lastWorldPosition { 0.0f, 0.0f, 0.0f };
+		glm::quat lastWorldRotation { 1.0f, 0.0f, 0.0f, 0.0f };
+		glm::vec3 lastWorldScale { 1.0f, 1.0f, 1.0f };
 	} m;
 
 #ifdef TOAST_EDITOR

@@ -1,4 +1,4 @@
-/// @file AtlasRendererComponent.cpp
+ /// @file AtlasRendererComponent.cpp
 /// @author dario
 /// @date 21/11/2025.
 
@@ -61,6 +61,7 @@ void AtlasRendererComponent::Init() {
 		debug.atlasResource.SetInitialResource(m.atlasPath);
 #endif
 	}
+	m.transformCacheValid = false;
 }
 
 // optimize
@@ -76,6 +77,19 @@ void AtlasRendererComponent::OnRender(renderer::IRenderablePass pass, const glm:
 #ifdef TOAST_EDITOR
 	m.spriteCacheDirty = true;
 #endif
+
+	const glm::vec3 worldPos = worldPosition();
+	const glm::quat worldRot = worldRotationQuat();
+	const glm::vec3 worldScl = worldScale();
+	const bool transformChanged = !m.transformCacheValid || worldPos != m.lastWorldPosition || worldRot != m.lastWorldRotation ||
+	                              worldScl != m.lastWorldScale;
+	if (transformChanged) {
+		m.spriteCacheDirty = true;
+		m.transformCacheValid = true;
+		m.lastWorldPosition = worldPos;
+		m.lastWorldRotation = worldRot;
+		m.lastWorldScale = worldScl;
+	}
 
 	// Refresh sprite cache if dirty
 	if (m.spriteCacheDirty) {
@@ -219,6 +233,7 @@ void AtlasRendererComponent::Load(json_t j, bool force_create) {
 
 	// Mark cache as dirty so sprites get refreshed with proper regions on next render
 	m.spriteCacheDirty = true;
+	m.transformCacheValid = false;
 }
 
 json_t AtlasRendererComponent::Save() const {

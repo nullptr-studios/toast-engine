@@ -27,6 +27,12 @@ DebugDrawLayer::DebugDrawLayer() : ILayer("Debug Draw Layer") {
 DebugDrawLayer::~DebugDrawLayer() = default;
 
 void DebugDrawLayer::OnAttach() {
+	
+#ifndef TOAST_EDITOR
+	m_enabled = false;
+	return;
+#endif
+	
 	// create shader
 	m_shader = resource::LoadResource<renderer::Shader>("SHADERS/debug.shader");
 
@@ -77,6 +83,8 @@ void DebugDrawLayer::OnDetach() { }
 void DebugDrawLayer::OnTick() { }
 
 void DebugDrawLayer::OnRender() {
+	
+	
 	if ((m_vertices.empty() && m_filledVertices.empty()) || !m_enabled) {
 		return;
 	}

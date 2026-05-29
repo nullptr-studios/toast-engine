@@ -12,6 +12,19 @@
 
 namespace toast {
 
+namespace {
+	void MarkParentDirty(AtlasSpriteComponent* self) {
+		if (!self) {
+			return;
+		}
+
+		if (auto* parent = dynamic_cast<AtlasRendererComponent*>(self->parent())) {
+						parent->InvalidateSpriteCache();
+		}
+	}
+
+}
+
 void AtlasSpriteComponent::Init() {
 	TransformComponent::Init();
 
@@ -35,6 +48,56 @@ void AtlasSpriteComponent::Destroy() {
 		}
 		p = p->parent();
 	}
+}
+
+void AtlasSpriteComponent::position(const glm::vec3& position) noexcept {
+	TransformComponent::position(position);
+	MarkParentDirty(this);
+}
+
+void AtlasSpriteComponent::rotation(const glm::vec3& degrees) noexcept {
+	TransformComponent::rotation(degrees);
+	MarkParentDirty(this);
+}
+
+void AtlasSpriteComponent::rotationRadians(const glm::vec3& rotation) noexcept {
+	TransformComponent::rotationRadians(rotation);
+	MarkParentDirty(this);
+}
+
+void AtlasSpriteComponent::rotationQuat(const glm::quat& quaternion) noexcept {
+	TransformComponent::rotationQuat(quaternion);
+	MarkParentDirty(this);
+}
+
+void AtlasSpriteComponent::scale(const glm::vec3& scale) noexcept {
+	TransformComponent::scale(scale);
+	MarkParentDirty(this);
+}
+
+void AtlasSpriteComponent::worldPosition(const glm::vec3& worldPos) noexcept {
+	TransformComponent::worldPosition(worldPos);
+	MarkParentDirty(this);
+}
+
+void AtlasSpriteComponent::worldRotationQuat(const glm::quat& worldRot) noexcept {
+	TransformComponent::worldRotationQuat(worldRot);
+	MarkParentDirty(this);
+}
+
+void AtlasSpriteComponent::worldRotationRadians(const glm::vec3& worldRotRadians) noexcept {
+	TransformComponent::worldRotationRadians(worldRotRadians);
+	MarkParentDirty(this);
+}
+
+void AtlasSpriteComponent::worldRotation(const glm::vec3& worldRotDegrees) noexcept {
+	TransformComponent::worldRotation(worldRotDegrees);
+	MarkParentDirty(this);
+}
+
+void AtlasSpriteComponent::worldScale(const glm::vec3& worldScale) noexcept {
+	TransformComponent::worldScale(worldScale);
+	MarkParentDirty(this);
 }
 
 void AtlasSpriteComponent::Load(json_t j, bool force_create) {

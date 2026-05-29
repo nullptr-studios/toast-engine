@@ -22,6 +22,28 @@ public:
 	void Init() override;
 	void Destroy() override;
 
+	void position(const glm::vec3& position) noexcept;
+	void rotation(const glm::vec3& degrees) noexcept;
+	void rotationRadians(const glm::vec3& rotation) noexcept;
+	void rotationQuat(const glm::quat& quaternion) noexcept;
+	void scale(const glm::vec3& scale) noexcept;
+	void worldPosition(const glm::vec3& worldPos) noexcept;
+	void worldRotationQuat(const glm::quat& worldRot) noexcept;
+	void worldRotationRadians(const glm::vec3& worldRotRadians) noexcept;
+	void worldRotation(const glm::vec3& worldRotDegrees) noexcept;
+	void worldScale(const glm::vec3& worldScale) noexcept;
+
+	using TransformComponent::position;
+	using TransformComponent::rotation;
+	using TransformComponent::rotationRadians;
+	using TransformComponent::rotationQuat;
+	using TransformComponent::scale;
+	using TransformComponent::worldPosition;
+	using TransformComponent::worldRotationQuat;
+	using TransformComponent::worldRotationRadians;
+	using TransformComponent::worldRotation;
+	using TransformComponent::worldScale;
+
 	void Load(json_t j, bool force_create = true) override;
 	json_t Save() const override;
 

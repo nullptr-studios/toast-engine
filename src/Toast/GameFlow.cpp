@@ -363,6 +363,12 @@ auto GameFlow::GetLevelName(unsigned world, unsigned level) -> std::string {
 	}
 
 	sol::table table = result;
-	return table.as<std::vector<std::string>>()[level];
+	
+	// act fuck u dante
+	auto vec = table.as<std::vector<std::string>>();
+	if (level >= vec.size()) {
+		return "NULL";
+	}
+	return vec[level];
 }
 }

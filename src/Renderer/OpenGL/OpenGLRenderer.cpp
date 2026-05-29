@@ -546,10 +546,10 @@ void OpenGLRenderer::Render() {
 				m.combinedRenderables.push_back(r);
 			}
 		}
+		m_renderablesSortDirty = false;
+	}
 
-
-	// Depth can change every frame, so keep sort per-frame but only for enabled list.
-	// HACK: FOR OPTIMIZATION PURPOSES WE JUST SORT WHEN ADDING OBJECTS
+	// Depth can change every frame, so keep ordering up to date even when membership is unchanged.
 	if (m.combinedRenderables.size() > 1) {
 		std::stable_sort(m.combinedRenderables.begin(), m.combinedRenderables.end(), [](IRenderable* a, IRenderable* b) {
 			const int priority_a = a->GetGeometrySortPriority();
@@ -559,8 +559,6 @@ void OpenGLRenderer::Render() {
 			}
 			return a->GetDepth() < b->GetDepth();
 		});
-	}
-		m_renderablesSortDirty = false;
 	}
 	
 	if (m_transparentsSortDirty) {
