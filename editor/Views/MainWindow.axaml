@@ -7,65 +7,92 @@
         x:Class="editor.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="editor">
+        Title="editor"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        WindowDecorations="BorderOnly">
 
-    <Design.DataContext>
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
+	<Design.DataContext>
+		<vm:MainWindowViewModel />
+	</Design.DataContext>
 
-    <DockPanel>
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_Toast">
-                <MenuItem Header="_New project"/>
-                <MenuItem Header="_Open project"/>
-                <MenuItem Header="_Close project"/>
-                <Separator/>
-                <MenuItem Header="_Project settings"/>
-                <MenuItem Header="_Toast settings"/>
-                <Separator/>
-                <MenuItem Header="_Quit Toast"/>
-            </MenuItem>
-            <MenuItem Header="_File">
-                <MenuItem Header="_New node"/>
-                <MenuItem Header="_Open node"/>
-                <MenuItem Header="_Close node"/>
-                <Separator/>
-                <MenuItem Header="_Save"/>
-                <MenuItem Header="Save _all"/>
-            </MenuItem>
-            <MenuItem Header="_Edit">
-                <MenuItem Header="_Undo"/>
-                <MenuItem Header="_Redo"/>
-                <Separator/>
-                <MenuItem Header="Cu_t"/>
-                <MenuItem Header="_Copy"/>
-                <MenuItem Header="_Paste"/>
-                <MenuItem Header="_Delete"/>
-                <Separator/>
-                <MenuItem Header="Select _All"/>
-                <MenuItem Header="_Find"/>
-            </MenuItem>
-            <MenuItem Header="_Run">
-                <MenuItem Header="_Run"/>
-                <MenuItem Header="Run _This"/>
-                <Separator/>
-                <MenuItem Header="_Build"/>
-                <MenuItem Header="Build _settings"/>
-                <MenuItem Header="_Open build folder"/>
-            </MenuItem>
-            <MenuItem Header="_View"></MenuItem>
-            <MenuItem Header="_Window">
-                <MenuItem Header="_Logs" ToggleType="CheckBox"
-                          x:Name="log_window_button"
-                          Click="onLogWindowButton"/>
-            </MenuItem>
-            <MenuItem Header="_Help">
-                <MenuItem Header="_Documentation"/>
-                <MenuItem Header="Github _repository"/>
-                <MenuItem Header="Github _project"/>
-                <MenuItem Header="_About"/>
-            </MenuItem>
-        </Menu>
-        <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-    </DockPanel>
+	<DockPanel>
+		<DockPanel DockPanel.Dock="Top" x:Name="menuBorder">
+
+			<!-- Window buttons -->
+			<StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+				<Button Content="&#x2013;" Click="onMinimize" Width="46" Height="30" Padding="0"
+				        VerticalContentAlignment="Center"
+				        HorizontalContentAlignment="Center" />
+				<Button Content="&#x25A1;" Click="onMaximize" Width="46" Height="30" Padding="0"
+				        VerticalContentAlignment="Center"
+				        HorizontalContentAlignment="Center" />
+				<Button Content="&#x2715;" Click="onClose" Width="46" Height="30" Padding="0, 0, 0, 1"
+				        VerticalContentAlignment="Center"
+				        HorizontalContentAlignment="Center" />
+			</StackPanel>
+
+			<!-- Menu -->
+			<Menu DockPanel.Dock="Left">
+				<MenuItem Header="_Toast Engine" Foreground="DeepPink" FontWeight="Bold">
+					<MenuItem Header="_New project" FontWeight="Normal" />
+					<MenuItem Header="_Open project" FontWeight="Normal" />
+					<MenuItem Header="_Close project" FontWeight="Normal" />
+					<Separator />
+					<MenuItem Header="_Project settings" FontWeight="Normal" />
+					<MenuItem Header="_Toast settings" FontWeight="Normal" />
+					<Separator />
+					<MenuItem Header="_Quit Toast" FontWeight="Normal" />
+				</MenuItem>
+				<MenuItem Header="_File">
+					<MenuItem Header="_New node" />
+					<MenuItem Header="_Open node" />
+					<MenuItem Header="_Close node" />
+					<Separator />
+					<MenuItem Header="_Save" />
+					<MenuItem Header="Save _all" />
+				</MenuItem>
+				<MenuItem Header="_Edit">
+					<MenuItem Header="_Undo" />
+					<MenuItem Header="_Redo" />
+					<Separator />
+					<MenuItem Header="Cu_t" />
+					<MenuItem Header="_Copy" />
+					<MenuItem Header="_Paste" />
+					<MenuItem Header="_Delete" />
+					<Separator />
+					<MenuItem Header="Select _All" />
+					<MenuItem Header="_Find" />
+				</MenuItem>
+				<MenuItem Header="_Run">
+					<MenuItem Header="_Run" />
+					<MenuItem Header="Run _This" />
+					<Separator />
+					<MenuItem Header="_Build" />
+					<MenuItem Header="Build _settings" />
+					<MenuItem Header="_Open build folder" />
+				</MenuItem>
+				<MenuItem Header="_View" />
+				<MenuItem Header="_Window">
+					<MenuItem Header="_Logs" ToggleType="CheckBox"
+					          x:Name="log_window_button"
+					          Click="onLogWindowButton" />
+				</MenuItem>
+				<MenuItem Header="_Help">
+					<MenuItem Header="_Documentation" />
+					<MenuItem Header="Github _repository" />
+					<MenuItem Header="Github _project" />
+					<MenuItem Header="_About" />
+				</MenuItem>
+			</Menu>
+
+			<!-- Drag region -->
+			<Border Background="Transparent"
+			        PointerPressed="onTitleBarPointerPressed" />
+		</DockPanel>
+
+		<TextBlock Text="{Binding Greeting}"
+		           HorizontalAlignment="Center"
+		           VerticalAlignment="Center" />
+	</DockPanel>
 </Window>

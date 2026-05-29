@@ -1,4 +1,6 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using editor.ViewModels;
 
@@ -6,13 +8,36 @@ namespace editor.Views;
 
 public partial class MainWindow : Window {
 	private Window? m_logs_window;
+
 	public MainWindow() {
 		InitializeComponent();
 	}
 
+	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
+		base.OnPropertyChanged(change);
+		if (change.Property == WindowDecorationMarginProperty && menuBorder is not null) {
+			var margin = (Thickness)change.NewValue!;
+			menuBorder.Margin = new Thickness(margin.Left, 0, 0, 0);
+		}
+	}
+
+	private void onTitleBarPointerPressed(object? sender, PointerPressedEventArgs e) {
+		if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+			BeginMoveDrag(e);
+	}
+
+	private void onMinimize(object? sender, RoutedEventArgs e) =>
+		WindowState = WindowState.Minimized;
+
+	private void onMaximize(object? sender, RoutedEventArgs e) =>
+		WindowState = WindowState == WindowState.Maximized
+			? WindowState.Normal
+			: WindowState.Maximized;
+
+	private void onClose(object? sender, RoutedEventArgs e) => Close();
+
 	private void onLogWindowButton(object? sender, RoutedEventArgs e) {
 		if (log_window_button.IsChecked) {
-			// If there's no window create it, otherwise, do nothing
 			if (m_logs_window is null) {
 				m_logs_window = new LogsWindow {
 					DataContext = new LoggerViewModel()
@@ -22,7 +47,6 @@ public partial class MainWindow : Window {
 					m_logs_window = null;
 				};
 			}
-
 			m_logs_window.Show();
 		} else {
 			m_logs_window?.Close();

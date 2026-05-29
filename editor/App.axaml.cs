@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using editor.ViewModels;
@@ -13,11 +14,12 @@ public partial class App : Application {
 
 	public override void OnFrameworkInitializationCompleted() {
 		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
-			//desktop.MainWindow = new StartWindow {
-			//	DataContext = new StartWindowViewModel(),
-			//};
+			desktop.ShutdownMode = ShutdownMode.OnLastWindowClose;
 
-			desktop.MainWindow = new SplashWindow();
+			var splash_window = new StartWindow {
+				DataContext = new StartWindowViewModel()
+			};
+			splash_window.Show();
 		}
 
 		base.OnFrameworkInitializationCompleted();

@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System;
 using System.Xml.Serialization;
+using System.Linq;
 
 namespace editor.Models;
 
@@ -27,7 +29,7 @@ public struct ProjectListItem {
 public class ProjectList {
 	[XmlArray("Projects")]
 	[XmlArrayItem("Project")]
-	public List<ProjectListItem> projects {get; set;} = [];
+	public ObservableCollection<ProjectListItem> projects {get; set;} = [];
 
 	private static string m_path = Path.Combine(
 		Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -47,7 +49,18 @@ public class ProjectList {
 
 		var serializer = new XmlSerializer(typeof(ProjectList));
 		using FileStream stream = File.OpenRead(m_path);
-		return serializer.Deserialize(stream) as ProjectList ?? new ProjectList();
+		var loaded = serializer.Deserialize(stream) as ProjectList ?? new ProjectList();
+		
+		// Sort by date (newest first)
+		var sorted = loaded.projects.OrderByDescending(p => {
+			if (DateTime.TryParseExact(p.date, "dd MMM yyyy HH:mm", null, System.Globalization.DateTimeStyles.None, out var parsedDate)) {
+				return parsedDate;
+			}
+			return DateTime.MinValue;
+		}).ToList();
+		
+		loaded.projects = new ObservableCollection<ProjectListItem>(sorted);
+		return loaded;
 	}
 
 	public void saveList() {
