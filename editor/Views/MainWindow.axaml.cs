@@ -1,16 +1,29 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using editor.Models;
 using editor.ViewModels;
 
 namespace editor.Views;
 
 public partial class MainWindow : Window {
 	private Window? m_logs_window;
+	private ToastEngine? m_toast;
 
 	public MainWindow() {
 		InitializeComponent();
+	}
+
+	public MainWindow(ToastEngine toast) {
+		InitializeComponent();
+		m_toast = toast;
+	}
+
+	protected override void OnClosed(EventArgs e) {
+		base.OnClosed(e);
+		m_toast?.removeWindow(this);
 	}
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {

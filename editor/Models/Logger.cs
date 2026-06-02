@@ -50,7 +50,7 @@ public class LogClient {
 				byte[] message_buffer = new byte[message_length];
 				await readExactlyAsync(stream, message_buffer, (int)message_length, token);
 				LogBatch proto_batch = LogBatch.Parser.ParseFrom(message_buffer);
-				Console.WriteLine($"Received {proto_batch.Logs.Count} logs");
+				// Console.WriteLine($"Received {proto_batch.Logs.Count} logs");
 
 				// Map to avalonia type
 				List<LogEntry> batch = [];

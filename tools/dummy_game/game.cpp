@@ -17,7 +17,12 @@ class DummyGame : public toast::IApplication {
 
 game_t* game_create(void) {
 	auto* game = new DummyGame();
-	std::println("Hi from game!!!");
 	// toast::pushApplicationLayer(game);
 	return reinterpret_cast<game_t*>(game);
+}
+
+void game_destroy(game_t* g) {
+	DummyGame* game = reinterpret_cast<DummyGame*>(g);
+	// toast::popApplicationLayer(game);
+	delete game;
 }

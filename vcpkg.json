@@ -8,5 +8,11 @@
   }, {
     "name" : "sdl3",
     "version>=" : "3.4.8"
+  }, {
+    "name" : "tomlplusplus",
+    "version>=" : "3.4.0#1"
+  }, {
+    "name" : "nlohmann-json",
+    "version>=" : "3.12.0#2"
   } ]
 }

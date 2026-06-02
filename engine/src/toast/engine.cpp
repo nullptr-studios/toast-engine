@@ -43,9 +43,12 @@ auto Engine::get() noexcept -> Engine* {
 }
 
 void Engine::tick() {
+	TOAST_TRACE("Engine", "Tick");
 	if (active_application) {
 		active_application->tick();
 	}
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 }
 
 auto Engine::shouldClose() -> bool {
