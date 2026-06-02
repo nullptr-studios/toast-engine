@@ -5,7 +5,7 @@
         mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="190"
         Width="350" Height="190"
         CanResize="False" CanMinimize="False"
-        x:Class="editor.Views.NewProjectWindow"
+        x:Class="editor.StartWindow.NewProjectWindow"
         Title="New Project">
 
 	<StackPanel Margin="10">

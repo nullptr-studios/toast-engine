@@ -6,9 +6,8 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
-using editor.Models;
 
-namespace editor.ViewModels;
+namespace editor.Logger;
 
 public class LogEntry {
 	public string sink {get; set;}

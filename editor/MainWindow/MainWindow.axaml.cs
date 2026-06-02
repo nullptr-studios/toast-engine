@@ -3,10 +3,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using editor.Models;
-using editor.ViewModels;
+using editor.Logger;
 
-namespace editor.Views;
+namespace editor.MainWindow;
 
 public partial class MainWindow : Window {
 	private Window? m_logs_window;

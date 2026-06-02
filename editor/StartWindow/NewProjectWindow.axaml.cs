@@ -6,7 +6,7 @@ using Avalonia.Platform.Storage;
 using Tomlyn.Model;
 using Tomlyn;
 
-namespace editor.Views;
+namespace editor.StartWindow;
 
 public partial class NewProjectWindow : Window {
 	public string project_title { get; private set; } = "";
@@ -85,15 +85,15 @@ public partial class NewProjectWindow : Window {
 		Directory.CreateDirectory(Path.Combine(m_project_folder, "build"));
 
 		// Gitignore
-		File.Copy("res/files/project.gitignore", Path.Combine(m_project_folder, ".gitignore"));
+		File.Copy("Resources/files/project.gitignore", Path.Combine(m_project_folder, ".gitignore"));
 
 		// C++ library
 		Directory.CreateDirectory(Path.Combine(m_project_folder, "lib", "src"));
 		Directory.CreateDirectory(Path.Combine(m_project_folder, "lib", "src", "_detail"));
-		File.Copy("res/files/lib/CMakeLists.txt",  Path.Combine(m_project_folder, "lib", "CMakeLists.txt"));
-		File.Copy("res/files/lib/src/my_game.hpp",  Path.Combine(m_project_folder, "lib", "src", "my_game.hpp"));
-		File.Copy("res/files/lib/src/_detail/game.h",  Path.Combine(m_project_folder, "lib", "src", "_detail","game.h"));
-		File.Copy("res/files/lib/src/_detail/game.cpp",  Path.Combine(m_project_folder, "lib", "src", "_detail","game.cpp"));
+		File.Copy("Resources/files/lib/CMakeLists.txt",  Path.Combine(m_project_folder, "lib", "CMakeLists.txt"));
+		File.Copy("Resources/files/lib/src/my_game.hpp",  Path.Combine(m_project_folder, "lib", "src", "my_game.hpp"));
+		File.Copy("Resources/files/lib/src/_detail/game.h",  Path.Combine(m_project_folder, "lib", "src", "_detail","game.h"));
+		File.Copy("Resources/files/lib/src/_detail/game.cpp",  Path.Combine(m_project_folder, "lib", "src", "_detail","game.cpp"));
 
 		Close(true);
 	}

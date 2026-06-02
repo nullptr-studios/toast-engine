@@ -20,61 +20,61 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
-    <AvaloniaResource Include="res\files\lib\CMakeLists.txt" />
-    <AvaloniaResource Include="res\files\lib\src\my_game.hpp" />
-    <AvaloniaResource Include="res\files\lib\src\_detail\game.cpp" />
-    <AvaloniaResource Include="res\files\lib\src\_detail\game.h" />
-    <AvaloniaResource Include="res\files\project.gitignore" />
-    <AvaloniaResource Include="res\splash_images\0a595c5f-f376-47f1-a1fa-0eed898793f4.jpg" />
-    <AvaloniaResource Include="res\splash_images\318cef63-fb2c-4640-a812-ce540b70331d.jpg" />
-    <AvaloniaResource Include="res\splash_images\3b9fe1d7-b61c-4f69-b62d-a87104a56c67.jpg" />
-    <AvaloniaResource Include="res\splash_images\3e81a06d-f37b-472e-b68c-6ac1cebe0237.jpg" />
-    <AvaloniaResource Include="res\splash_images\41b9c5b5-7893-4b98-afb5-e2cfe8a7af5c.jpg" />
-    <AvaloniaResource Include="res\splash_images\4368b9e6-15a2-4a15-92ff-6394b7e90240.jpg" />
-    <AvaloniaResource Include="res\splash_images\46257ee0-f9e4-4808-90ef-332b5a41d01c.jpg" />
-    <AvaloniaResource Include="res\splash_images\48edc5cc-6e3c-471f-9dac-955c3f25ed1c.jpg" />
-    <AvaloniaResource Include="res\splash_images\56087d5d-3575-4c15-9f9b-8b0663498d8f.jpg" />
-    <AvaloniaResource Include="res\splash_images\63dc51e1-86cc-48ac-85d2-ad3f5601218f.jpg" />
-    <AvaloniaResource Include="res\splash_images\65250a27-a7f5-4fd5-a7ed-57e3273c062a.jpg" />
-    <AvaloniaResource Include="res\splash_images\6a24c52a-0300-4d0a-922f-34b1fe1b0329.jpg" />
-    <AvaloniaResource Include="res\splash_images\7e850dda-eaaa-457c-89b4-6e71089e15d7.jpg" />
-    <AvaloniaResource Include="res\splash_images\85c5d904-8aac-4598-b473-848a0ed32b0e.jpg" />
-    <AvaloniaResource Include="res\splash_images\8a6e88d6-5c97-4c1c-9bd1-0b17fb1a2989.jpg" />
-    <AvaloniaResource Include="res\splash_images\94af3881-2c39-4ee2-bff4-61783b2effa2.jpg" />
-    <AvaloniaResource Include="res\splash_images\a6558b28-af88-4cb7-b046-b387c8f685b7.jpg" />
-    <AvaloniaResource Include="res\splash_images\afd94355-1ed3-4c34-803d-bc5431050731.jpg" />
-    <AvaloniaResource Include="res\splash_images\b6cbe67b-dbf7-4436-9379-582cd74899de.jpg" />
-    <AvaloniaResource Include="res\splash_images\b82b5117-8815-4c2b-8931-028262ae9a43.jpg" />
-    <AvaloniaResource Include="res\splash_images\bca9f958-23f9-41e7-9ded-eb840b78b00b.jpg" />
-    <AvaloniaResource Include="res\splash_images\ca22aad5-35af-485e-a4f4-c3940309773e.jpg" />
-    <AvaloniaResource Include="res\splash_images\d5b40bd8-1a9a-46cc-bb49-d5faeec17466.jpg" />
-    <AvaloniaResource Include="res\splash_images\d963dd97-bd98-4f08-84f6-7c0f8e2cb3a4.jpg" />
-    <AvaloniaResource Include="res\splash_images\e573b17c-7d38-46b1-baf8-57d735718745.jpg" />
-    <AvaloniaResource Include="res\splash_images\e67307f4-7c14-48a9-b891-a351e381d1d4.jpg" />
-    <AvaloniaResource Include="res\splash_images\ee8c6f93-4cba-4a54-ad13-d1a6b9e40dc3.jpg" />
-    <AvaloniaResource Include="res\splash_images\f4520bcf-f141-4d0e-b97e-20e4ed87306e.jpg" />
-    <AvaloniaResource Include="res\splash_images\f491a249-9e92-4330-8f30-5200655fb7a1.jpg" />
-    <AvaloniaResource Include="res\splash_images\fcbbd48f-8dbc-491a-a705-74ef0db27268.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_0001.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_0162.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_0169.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_0279.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_0850.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_0970.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_2265.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_2327.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_4230.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_4773.JPG" />
-    <AvaloniaResource Include="res\splash_images\IMG_4776.JPG" />
-    <AvaloniaResource Include="res\splash_images\IMG_4777.JPG" />
-    <AvaloniaResource Include="res\splash_images\IMG_4778.JPG" />
-    <AvaloniaResource Include="res\splash_images\IMG_5092.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_6103.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_8147.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_8631.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_8707.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_9464.jpg" />
-    <AvaloniaResource Include="res\splash_images\IMG_9468.jpg" />
+    <AvaloniaResource Include="Resources\files\lib\CMakeLists.txt" />
+    <AvaloniaResource Include="Resources\files\lib\src\my_game.hpp" />
+    <AvaloniaResource Include="Resources\files\lib\src\_detail\game.cpp" />
+    <AvaloniaResource Include="Resources\files\lib\src\_detail\game.h" />
+    <AvaloniaResource Include="Resources\files\project.gitignore" />
+    <AvaloniaResource Include="Resources\splash_images\0a595c5f-f376-47f1-a1fa-0eed898793f4.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\318cef63-fb2c-4640-a812-ce540b70331d.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\3b9fe1d7-b61c-4f69-b62d-a87104a56c67.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\3e81a06d-f37b-472e-b68c-6ac1cebe0237.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\41b9c5b5-7893-4b98-afb5-e2cfe8a7af5c.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\4368b9e6-15a2-4a15-92ff-6394b7e90240.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\46257ee0-f9e4-4808-90ef-332b5a41d01c.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\48edc5cc-6e3c-471f-9dac-955c3f25ed1c.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\56087d5d-3575-4c15-9f9b-8b0663498d8f.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\63dc51e1-86cc-48ac-85d2-ad3f5601218f.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\65250a27-a7f5-4fd5-a7ed-57e3273c062a.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\6a24c52a-0300-4d0a-922f-34b1fe1b0329.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\7e850dda-eaaa-457c-89b4-6e71089e15d7.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\85c5d904-8aac-4598-b473-848a0ed32b0e.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\8a6e88d6-5c97-4c1c-9bd1-0b17fb1a2989.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\94af3881-2c39-4ee2-bff4-61783b2effa2.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\a6558b28-af88-4cb7-b046-b387c8f685b7.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\afd94355-1ed3-4c34-803d-bc5431050731.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\b6cbe67b-dbf7-4436-9379-582cd74899de.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\b82b5117-8815-4c2b-8931-028262ae9a43.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\bca9f958-23f9-41e7-9ded-eb840b78b00b.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\ca22aad5-35af-485e-a4f4-c3940309773e.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\d5b40bd8-1a9a-46cc-bb49-d5faeec17466.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\d963dd97-bd98-4f08-84f6-7c0f8e2cb3a4.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\e573b17c-7d38-46b1-baf8-57d735718745.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\e67307f4-7c14-48a9-b891-a351e381d1d4.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\ee8c6f93-4cba-4a54-ad13-d1a6b9e40dc3.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\f4520bcf-f141-4d0e-b97e-20e4ed87306e.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\f491a249-9e92-4330-8f30-5200655fb7a1.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\fcbbd48f-8dbc-491a-a705-74ef0db27268.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_0001.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_0162.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_0169.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_0279.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_0850.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_0970.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_2265.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_2327.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_4230.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_4773.JPG" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_4776.JPG" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_4777.JPG" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_4778.JPG" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_5092.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_6103.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_8147.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_8631.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_8707.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_9464.jpg" />
+    <AvaloniaResource Include="Resources\splash_images\IMG_9468.jpg" />
   </ItemGroup>
 
   <ItemGroup>
@@ -88,6 +88,11 @@
     </PackageReference>
     <PackageReference Include="ClangSharp" Version="21.1.8.3" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1" />
+    <PackageReference Include="Dock.Avalonia" Version="12.0.0.2" />
+    <PackageReference Include="Dock.Avalonia.Themes.Fluent" Version="12.0.0.2" />
+    <PackageReference Include="Dock.Model.Mvvm" Version="12.0.0.2" />
+    <PackageReference Include="Dock.Serializer.Protobuf" Version="12.0.0.2" />
+    <PackageReference Include="Dock.Serializer.SystemTextJson" Version="12.0.0.2" />
     <PackageReference Include="Google.Protobuf" Version="3.35.0-rc2" />
     <PackageReference Include="Grpc.Tools" Version="2.80.0">
       <PrivateAssets>all</PrivateAssets>
@@ -97,7 +102,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Views\LogsWindow.axaml.cs">
+    <Compile Update="Logger\LogsWindow.axaml.cs">
       <DependentUpon>LogsWindow.axaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
@@ -108,16 +113,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="res\" />
+    <Folder Include="Resources\" />
   </ItemGroup>
 
   <ItemGroup>
-    <ClCompile Include="res\files\lib\src\_detail\game.cpp" />
+    <ClCompile Include="Resources\files\lib\src\_detail\game.cpp" />
   </ItemGroup>
 
   <ItemGroup>
-    <ClInclude Include="res\files\lib\src\my_game.hpp" />
-    <ClInclude Include="res\files\lib\src\_detail\game.h" />
+    <ClInclude Include="Resources\files\lib\src\my_game.hpp" />
+    <ClInclude Include="Resources\files\lib\src\_detail\game.h" />
   </ItemGroup>
 
 

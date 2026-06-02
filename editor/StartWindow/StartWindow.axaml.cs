@@ -1,10 +1,8 @@
-﻿using System;
+using System;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using editor.ViewModels;
-using editor.Models;
 
-namespace editor.Views;
+namespace editor.StartWindow;
 
 public partial class StartWindow : Window {
 	public StartWindow() {

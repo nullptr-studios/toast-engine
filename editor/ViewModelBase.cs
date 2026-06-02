@@ -5,6 +5,6 @@
 
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace editor.ViewModels;
+namespace editor;
 
 public abstract class ViewModelBase : ObservableObject { }

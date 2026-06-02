@@ -10,10 +10,9 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using editor.ViewModels;
 using proto.logging;
 
-namespace editor.Models;
+namespace editor.Logger;
 
 public class LogClient {
 	public event Action<List<LogEntry>> on_log_received;

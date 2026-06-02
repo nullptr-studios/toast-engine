@@ -1,21 +1,20 @@
-﻿//
+//
 // StartWindowViewModel.cs by Xein
 // 26 May 2026
 //
 
-using editor.Models;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
-using editor.Views;
 using Tomlyn;
 using Tomlyn.Model;
 using CommunityToolkit.Mvvm.Input;
+using editor.Loader;
 
-namespace editor.ViewModels;
+namespace editor.StartWindow;
 
 public partial class StartWindowViewModel : ViewModelBase {
 	private ProjectList m_project_list = ProjectList.loadList();

@@ -1,11 +1,9 @@
-﻿//
+//
 // MainWindowViewModel.cs by Xein
 // 12 May 2026
 //
 
-using editor.Models;
-
-namespace editor.ViewModels;
+namespace editor.MainWindow;
 
 public partial class MainWindowViewModel : ViewModelBase
 {

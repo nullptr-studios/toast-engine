@@ -6,7 +6,7 @@
         Width="1200" Height="500"
         CanMaximize="False" CanMinimize="False" CanResize="False"
         WindowDecorations="None" WindowStartupLocation="CenterScreen"
-        x:Class="editor.Views.SplashWindow"
+        x:Class="editor.Loader.SplashWindow"
         TransparencyLevelHint="Transparent" Background="Transparent"
         Title="SplashWindow">
 

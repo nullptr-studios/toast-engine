@@ -5,7 +5,7 @@ using System;
 using System.Xml.Serialization;
 using System.Linq;
 
-namespace editor.Models;
+namespace editor.StartWindow;
 
 [XmlRoot("Project")]
 public struct ProjectListItem {

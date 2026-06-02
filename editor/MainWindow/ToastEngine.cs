@@ -1,10 +1,8 @@
-﻿//
+//
 // ToastEngine.cs by Xein
 // 2 Jun 2026
 //
 
-using editor.ViewModels;
-using editor.Views;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,7 +11,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace editor.Models;
+namespace editor.MainWindow;
 
 public class ToastEngine : IDisposable {
 	private List<MainWindow> m_toast_windows = [];

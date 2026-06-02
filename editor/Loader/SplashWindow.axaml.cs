@@ -7,9 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
-using editor.Models;
+using editor.MainWindow;
 
-namespace editor.Views;
+namespace editor.Loader;
 
 
 public partial class SplashWindow : Window
@@ -51,7 +51,7 @@ public partial class SplashWindow : Window
 	{
 		try
 		{
-			var folder_path = Path.Combine(AppContext.BaseDirectory, "res/splash_images");
+			var folder_path = Path.Combine(AppContext.BaseDirectory, "Resources/splash_images");
 			if (!Directory.Exists(folder_path)) return;
 
 			var files = Directory.GetFiles(folder_path).Where(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)).ToArray();

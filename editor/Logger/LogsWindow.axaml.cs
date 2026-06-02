@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using Avalonia.Controls;
-using editor.ViewModels;
 
-namespace editor.Views;
+namespace editor.Logger;
 
 public partial class LogsWindow : Window {
 	public LogsWindow() {
