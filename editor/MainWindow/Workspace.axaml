@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:editor.MainWindow"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="editor.MainWindow.Workspace"
+        x:DataType="vm:WorkspaceViewModel"
+        >
+	<Grid ColumnDefinitions="300, *, 300">
+		<vm:Hierarchy Grid.Column="0" DataContext="{Binding hierarchy}"/>
+		<Border Grid.Column="1" Background="Black">
+			<TextBlock Text="{Binding viewport.label}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+		</Border>
+		<vm:Inspector Grid.Column="2" DataContext="{Binding inspector}"/>
+	</Grid>
+</UserControl>

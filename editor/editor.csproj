@@ -90,6 +90,7 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1" />
     <PackageReference Include="Dock.Avalonia" Version="12.0.0.2" />
     <PackageReference Include="Dock.Avalonia.Themes.Fluent" Version="12.0.0.2" />
+    <PackageReference Include="Dock.Controls.ProportionalStackPanel" Version="12.0.0.2" />
     <PackageReference Include="Dock.Model.Mvvm" Version="12.0.0.2" />
     <PackageReference Include="Dock.Serializer.Protobuf" Version="12.0.0.2" />
     <PackageReference Include="Dock.Serializer.SystemTextJson" Version="12.0.0.2" />
@@ -125,12 +126,11 @@
     <ClInclude Include="Resources\files\lib\src\_detail\game.h" />
   </ItemGroup>
 
-
   <Target Name="CopyResources" AfterTargets="Build">
     <ItemGroup>
-      <ResFiles Include="$(ProjectDir)res\**\*" />
+      <ResFiles Include="$(ProjectDir)Resources\**\*" />
     </ItemGroup>
-      <Copy SourceFiles="@(ResFiles)" DestinationFiles="@(ResFiles->'$(OutputPath)res\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+      <Copy SourceFiles="@(ResFiles)" DestinationFiles="@(ResFiles->'$(OutputPath)Resources\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>

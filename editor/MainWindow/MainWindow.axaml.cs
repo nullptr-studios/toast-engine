@@ -1,3 +1,8 @@
+//
+// MainWindow.axaml.cs by Xein
+// 2 Jun 2026
+//
+
 using System;
 using Avalonia;
 using Avalonia.Controls;
@@ -18,10 +23,16 @@ public partial class MainWindow : Window {
 	public MainWindow(ToastEngine toast) {
 		InitializeComponent();
 		m_toast = toast;
+		editorDockControl.HostWindowFactory = () => new ToastHostWindow(toast);
 	}
 
 	protected override void OnClosed(EventArgs e) {
 		base.OnClosed(e);
+
+		if (DataContext is MainWindowViewModel vm) {
+			vm.closeLayout();
+		}
+
 		m_toast?.removeWindow(this);
 	}
 

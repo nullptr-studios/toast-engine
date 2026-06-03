@@ -10,6 +10,8 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Dock.Model.Controls;
+using Dock.Model.Core;
 
 namespace editor.MainWindow;
 
@@ -68,9 +70,9 @@ public class ToastEngine : IDisposable {
 		m_cancellation_source?.Dispose();
 	}
 
-	public MainWindow createWindow(bool show = true) {
+	public MainWindow createWindow(bool show = true, IRootDock? layout = null) {
 		var w = new MainWindow(this) {
-			DataContext = new MainWindowViewModel(this)
+			DataContext = new MainWindowViewModel(this, layout)
 		};
 
 		lock (m_windows_lock) {

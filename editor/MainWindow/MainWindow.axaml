@@ -16,6 +16,12 @@
 		<vm:MainWindowViewModel />
 	</Design.DataContext>
 
+	<Window.DataTemplates>
+		<DataTemplate DataType="vm:WorkspaceViewModel">
+			<vm:Workspace />
+		</DataTemplate>
+	</Window.DataTemplates>
+
 	<DockPanel>
 		<DockPanel DockPanel.Dock="Top" x:Name="menuBorder">
 
@@ -91,8 +97,7 @@
 			        PointerPressed="onTitleBarPointerPressed" />
 		</DockPanel>
 
-		<TextBlock Text="{Binding Greeting}"
-		           HorizontalAlignment="Center"
-		           VerticalAlignment="Center" />
+		<DockControl x:Name="editorDockControl"
+		             Layout="{Binding layout}" />
 	</DockPanel>
 </Window>
