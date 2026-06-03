@@ -11,112 +11,101 @@ using editor.MainWindow;
 
 namespace editor.Loader;
 
+public partial class SplashWindow : Window {
+	private record SplashTask(string Label, string? Exe = null, string? Args = null, Func<Task<string>>? Action = null);
 
-public partial class SplashWindow : Window
-{
-	private record SplashTask(string label, string? exe = null, string? args = null, Func<Task<string>>? action = null);
-	private static readonly string toast_path = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../toast_engine"));
+	private static readonly string ToastPath =
+		Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../toast_engine"));
+
 	private List<SplashTask> m_tasks = [
-		new SplashTask("git init", exe: "git", args: "init"),
-		new SplashTask("git add .", exe: "git", args: "add ."),
-		new SplashTask("git commit -m \"Initial commit\"", exe: "git", args: "commit -m \"Initial commit\" --author \"nullptr Studios <toast-engine@nullptr.es>\""),
-		new SplashTask("cmake lib/ -B .toast/cmake_cache -G \"Visual Studio 18 2026", exe: "cmake",
-			args: $"lib/ -B .toast/cmake_cache -G \"Visual Studio 18 2026\" -DTOAST_PATH={toast_path}"),
-		new SplashTask("cmake --build .toast/cmake_cache", exe: "cmake", args: "--build .toast/cmake_cache"),
+		new SplashTask("git init", Exe: "git", Args: "init"),
+		new SplashTask("git add .", Exe: "git", Args: "add ."),
+		new SplashTask("git commit -m \"Initial commit\"", Exe: "git",
+			Args: "commit -m \"Initial commit\" --author \"nullptr Studios <toast-engine@nullptr.es>\""),
+		new SplashTask("cmake lib/ -B .toast/cmake_cache -G \"Visual Studio 18 2026", Exe: "cmake",
+			Args: $"lib/ -B .toast/cmake_cache -G \"Visual Studio 18 2026\" -DTOAST_PATH={ToastPath}"),
+		new SplashTask("cmake --build .toast/cmake_cache", Exe: "cmake", Args: "--build .toast/cmake_cache"),
 		// TODO: new SplashTask("cache game.dll", action: );
 	];
 
-	private static string m_project;
+	private static string? m_project;
 
-	public SplashWindow(string project_path)
-	{
+	public SplashWindow(string projectPath) {
 		InitializeComponent();
-		m_project = project_path;
+		m_project = projectPath;
 
-		if (Directory.Exists(Path.Combine(Path.GetDirectoryName(m_project)!, ".git")))
-		{
+		if (Directory.Exists(Path.Combine(Path.GetDirectoryName(m_project)!, ".git"))) {
 			m_tasks.RemoveRange(0, 3);
 		}
 
-		Opened += async (_, __) => await runCommandsAsync();
+		Opened += async (_, _) => await RunCommandsAsync();
 	}
 
-	protected override void OnOpened(EventArgs e)
-	{
+	protected override void OnOpened(EventArgs e) {
 		base.OnOpened(e);
-		setSplashImage();
+		SetSplashImage();
 	}
 
-	private void setSplashImage()
-	{
-		try
-		{
-			var folder_path = Path.Combine(AppContext.BaseDirectory, "Resources/splash_images");
-			if (!Directory.Exists(folder_path)) return;
+	private void SetSplashImage() {
+		try {
+			var folderPath = Path.Combine(AppContext.BaseDirectory, "Resources/splash_images");
+			if (!Directory.Exists(folderPath)) return;
 
-			var files = Directory.GetFiles(folder_path).Where(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)).ToArray();
+			var files = Directory.GetFiles(folderPath).Where(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase))
+				.ToArray();
 			if (files.Length <= 0) return;
 
 			var random = new Random();
-			var random_image = files[random.Next(files.Length)];
-			SplashImage.Source = new Bitmap(random_image);
-
-		}
-		catch (Exception e)
-		{
+			var randomImage = files[random.Next(files.Length)];
+			SplashImage.Source = new Bitmap(randomImage);
+		} catch (Exception e) {
 			Debug.WriteLine($"Error setting splash image: {e.Message}");
 			throw;
 		}
 	}
 
-	private async Task runCommandsAsync()
-	{
+	private async Task RunCommandsAsync() {
 		int total = m_tasks.Count;
-		for (int i = 0; i < total; i++)
-		{
+		for (int i = 0; i < total; i++) {
 			var task = m_tasks[i];
-			int step_number = i + 1;
+			int stepNumber = i + 1;
 
-			appendLine($"> [{step_number}/{total}] {task.label}", "#00d4ff");
-			string output = task.action is not null
-				? await task.action()
-				: await runProcessAsync(task.exe!, task.args ?? "");
+			AppendLine($"> [{stepNumber}/{total}] {task.Label}");
+			string output = task.Action is not null
+				? await task.Action()
+				: await RunProcessAsync(task.Exe!, task.Args ?? "");
 
-			foreach (var line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-			{
-				appendLine(line.TrimEnd(), "#a0a0a0");
+			foreach (var line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries)) {
+				AppendLine(line.TrimEnd());
 			}
 
-			appendLine("", null);
+			AppendLine("");
 
-			double progress = (double)step_number / total * 100.0;
+			double progress = (double)stepNumber / total * 100.0;
 			await Dispatcher.InvokeAsync(() => ProgressBar.Value = progress);
 
 			await Task.Delay(120);
 		}
 
-		var engine = new ToastEngine(m_project);
+		if (m_project != null) {
+			var engine = new ToastEngine(m_project);
+		}
+
 		Close();
 	}
 
-	private void appendLine(string text, string? color)
-	{
-		Dispatcher.Post(() =>
-		{
+	private void AppendLine(string text) {
+		Dispatcher.Post(() => {
 			ConsoleOutput.Text += text + '\n';
 			ConsoleScroll.ScrollToEnd();
 		});
 	}
 
-	private Task<string> runProcessAsync(string exe, string args)
-	{
-		return Task.Run(() =>
-		{
-			try
-			{
+	private Task<string> RunProcessAsync(string exe, string args) {
+		return Task.Run(() => {
+			try {
 				using var proc = new Process();
-				proc.StartInfo = new ProcessStartInfo
-				{
+				proc.StartInfo = new ProcessStartInfo {
 					FileName = exe,
 					Arguments = args,
 					WorkingDirectory = Path.GetDirectoryName(m_project),
@@ -127,12 +116,10 @@ public partial class SplashWindow : Window
 				};
 
 				var sb = new StringBuilder();
-				proc.OutputDataReceived += (_, e) =>
-				{
+				proc.OutputDataReceived += (_, e) => {
 					if (e.Data is not null) sb.AppendLine(e.Data);
 				};
-				proc.ErrorDataReceived += (_, e) =>
-				{
+				proc.ErrorDataReceived += (_, e) => {
 					if (e.Data is not null) sb.AppendLine(e.Data);
 				};
 
@@ -142,9 +129,7 @@ public partial class SplashWindow : Window
 				proc.WaitForExit();
 
 				return sb.Length > 0 ? sb.ToString() : "(No output)";
-			}
-			catch (Exception e)
-			{
+			} catch (Exception e) {
 				return $"error: {e.Message}";
 			}
 		});

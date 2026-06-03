@@ -24,7 +24,7 @@ public partial class LoggerViewModel : ViewModelBase  {
 	public LoggerViewModel() {
 		log_entries = [];
 		m_client = new LogClient();
-		m_client.on_log_received += handleNewLogs;
+		m_client.OnLogReceived += handleNewLogs;
 	}
 
 	public void start() => m_client.start();

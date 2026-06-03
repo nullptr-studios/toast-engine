@@ -2,10 +2,14 @@
 /// @author Xein
 /// @date 10 Feb 2026
 
+#include <cstdint>
+
 namespace toast {
 namespace renderer {
 class VulkanCore;
 class VulkanRenderer;
+class SharedTextureOutputTarget;
+struct ViewportFrameDesc;
 }
 
 struct EnginePimpl;
@@ -28,6 +32,10 @@ public:
 	// window
 	void createSDLWindow(const char*);
 	void createAvaloniaWindow();
+
+	/// @brief Copies the latest viewport frame into @p dst
+	/// @return 1 copied, 0 none available, -1 destination too small
+	int getViewportFrame(void* dst, uint32_t dstCapacity, renderer::ViewportFrameDesc* out);
 
 private:
 	EnginePimpl* m;

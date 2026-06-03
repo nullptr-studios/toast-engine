@@ -45,6 +45,8 @@ public:
 	[[nodiscard]]
 	auto present(uint32_t image_index, vk::Semaphore render_finished) -> vk::Result override;
 
+	auto recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) -> void override;
+
 	auto recreate(vk::Extent2D extent) -> void override;
 
 	[[nodiscard]]

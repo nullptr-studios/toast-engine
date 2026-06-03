@@ -17,40 +17,40 @@ using editor.Loader;
 namespace editor.StartWindow;
 
 public partial class StartWindowViewModel : ViewModelBase {
-	private ProjectList m_project_list = ProjectList.loadList();
+	private ProjectList m_projectList = ProjectList.LoadList();
 	private Window? m_window;
 
-	public ObservableCollection<ProjectListItem> projects => m_project_list.projects;
-	public void saveProjects() => m_project_list.saveList();
-	public void setWindow(Window window) => m_window = window;
+	public ObservableCollection<ProjectListItem> Projects => m_projectList.Projects;
+	public void SaveProjects() => m_projectList.SaveList();
+	public void SetWindow(Window window) => m_window = window;
 
-	private void LaunchProject(string project_path, Window parent_window) {
-		var project_item = m_project_list.projects.FirstOrDefault(p => p.path == project_path);
-		if (project_item.path != null) {
-			project_item.date = System.DateTime.Now.ToString("dd MMM yyyy HH:mm");
+	private void LaunchProject(string projectPath, Window parentWindow) {
+		var projectItem = m_projectList.Projects.FirstOrDefault(p => p.Path == projectPath);
+		if (projectItem.Path != null) {
+			projectItem.Date = System.DateTime.Now.ToString("dd MMM yyyy HH:mm");
 		}
 
-		var splash_screen = new SplashWindow(project_path);
-		splash_screen.Show();
-		parent_window.Close();
+		var splashScreen = new SplashWindow(projectPath);
+		splashScreen.Show();
+		parentWindow.Close();
 	}
 
-	private void LaunchProjectFromList(string project_path, Window parent_window) {
-		if (!File.Exists(project_path)) {
-			var project_to_remove = m_project_list.projects.FirstOrDefault(p => p.path == project_path);
-			if (project_to_remove.path != null) {
-				removeProject(project_to_remove);
+	private void LaunchProjectFromList(string projectPath, Window parentWindow) {
+		if (!File.Exists(projectPath)) {
+			var projectToRemove = m_projectList.Projects.FirstOrDefault(p => p.Path == projectPath);
+			if (projectToRemove.Path != null) {
+				RemoveProject(projectToRemove);
 			}
 			return;
 		}
 
-		LaunchProject(project_path, parent_window);
+		LaunchProject(projectPath, parentWindow);
 	}
 
 	[RelayCommand]
-	public async Task openProject(Window parent_window) {
-		var top_level = TopLevel.GetTopLevel(parent_window);
-		var files = await top_level.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
+	public async Task OpenProject(Window parentWindow) {
+		var topLevel = TopLevel.GetTopLevel(parentWindow);
+		var files = await topLevel!.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
 			Title = "Open Project",
 			AllowMultiple = false,
 			FileTypeFilter = [
@@ -61,82 +61,83 @@ public partial class StartWindowViewModel : ViewModelBase {
 		});
 
 		if (files.Count > 0) {
-			var project_path = files[0].Path.LocalPath;
+			var projectPath = files[0].Path.LocalPath;
 			
-			if (!m_project_list.projects.Any(p => p.path == project_path)) {
+			if (m_projectList.Projects.All(p => p.Path != projectPath)) {
 				try {
-					var project_content = File.ReadAllText(project_path);
-					var project_data = TomlSerializer.Deserialize<TomlTable>(project_content);
-					var thumbnail_path = Path.Combine(Path.GetDirectoryName(project_path)!, ".toast", "thumbnails", "project.png");
+					var projectContent = File.ReadAllText(projectPath);
+					var projectData = TomlSerializer.Deserialize<TomlTable>(projectContent);
+					var thumbnailPath = Path.Combine(Path.GetDirectoryName(projectPath)!, ".toast", "thumbnails", "project.png");
 					
-					m_project_list.projects.Add(new ProjectListItem {
-						title = project_data?["name"].ToString() ?? "Untitled Project",
-						path = project_path,
-						date = System.DateTime.Now.ToString("dd MMM yyyy HH:mm"),
-						version = project_data?["version"].ToString() ?? "",
-						thumbnail_path = File.Exists(thumbnail_path) ? thumbnail_path : ""
+					m_projectList.Projects.Add(new ProjectListItem {
+						Title = projectData?["name"].ToString() ?? "Untitled Project",
+						Path = projectPath,
+						Date = System.DateTime.Now.ToString("dd MMM yyyy HH:mm"),
+						Version = projectData?["version"].ToString() ?? "",
+						ThumbnailPath = File.Exists(thumbnailPath) ? thumbnailPath : ""
 					});
 				}
 				catch {
-					m_project_list.projects.Add(new ProjectListItem {
-						title = "Untitled Project",
-						path = project_path,
-						date = System.DateTime.Now.ToString("dd MMM yyyy HH:mm"),
-						version = "",
-						thumbnail_path = ""
+					m_projectList.Projects.Add(new ProjectListItem {
+						Title = "Untitled Project",
+						Path = projectPath,
+						Date = System.DateTime.Now.ToString("dd MMM yyyy HH:mm"),
+						Version = "",
+						ThumbnailPath = ""
 					});
 				}
 			}
 
-			LaunchProject(project_path, parent_window);
+			LaunchProject(projectPath, parentWindow);
 		}
 	}
 
 	[RelayCommand]
-	public async Task newProject(Window parent_window) {
-		var dialog = new NewProjectWindow();
-		dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-		var result = await dialog.ShowDialog<bool>(parent_window);
+	public async Task NewProject(Window parentWindow) {
+		var dialog = new NewProjectWindow {
+			WindowStartupLocation = WindowStartupLocation.CenterOwner
+		};
+		var result = await dialog.ShowDialog<bool>(parentWindow);
 
 		if (result) {
-			if (!m_project_list.projects.Any(p => p.path == dialog.project_path)) {
+			if (m_projectList.Projects.All(p => p.Path != dialog.ProjectPath)) {
 				try {
-					var project_content = File.ReadAllText(dialog.project_path);
-					var project_data = TomlSerializer.Deserialize<TomlTable>(project_content);
-					var thumbnail_path = dialog.project_thumbnail;
+					var projectContent = File.ReadAllText(dialog.ProjectPath);
+					var projectData = TomlSerializer.Deserialize<TomlTable>(projectContent);
+					var thumbnailPath = dialog.ProjectThumbnail;
 					
-					m_project_list.projects.Add(new ProjectListItem {
-						title = dialog.project_title,
-						path = dialog.project_path,
-						date = System.DateTime.Now.ToString("dd MMM yyyy HH:mm"),
-						version = project_data?["version"].ToString() ?? dialog.project_version,
-						thumbnail_path = File.Exists(thumbnail_path) ? thumbnail_path : ""
+					m_projectList.Projects.Add(new ProjectListItem {
+						Title = dialog.ProjectTitle,
+						Path = dialog.ProjectPath,
+						Date = System.DateTime.Now.ToString("dd MMM yyyy HH:mm"),
+						Version = projectData?["version"].ToString() ?? dialog.ProjectVersion,
+						ThumbnailPath = File.Exists(thumbnailPath) ? thumbnailPath : ""
 					});
 				}
 				catch {
-					m_project_list.projects.Add(new ProjectListItem {
-						title = dialog.project_title,
-						path = dialog.project_path,
-						date = System.DateTime.Now.ToString("dd MMM yyyy HH:mm"),
-						version = dialog.project_version,
-						thumbnail_path = ""
+					m_projectList.Projects.Add(new ProjectListItem {
+						Title = dialog.ProjectTitle,
+						Path = dialog.ProjectPath,
+						Date = System.DateTime.Now.ToString("dd MMM yyyy HH:mm"),
+						Version = dialog.ProjectVersion,
+						ThumbnailPath = ""
 					});
 				}
 			}
 
-			LaunchProject(dialog.project_path, parent_window);
+			LaunchProject(dialog.ProjectPath, parentWindow);
 		}
 	}
 
 	[RelayCommand]
-	public void openProjectFromList(ProjectListItem item) {
+	public void OpenProjectFromList(ProjectListItem item) {
 		if (m_window != null) {
-			LaunchProjectFromList(item.path, m_window);
+			LaunchProjectFromList(item.Path, m_window);
 		}
 	}
 
 	[RelayCommand]
-	public void removeProject(ProjectListItem item) {
-		m_project_list.projects.Remove(item);
+	public void RemoveProject(ProjectListItem item) {
+		m_projectList.Projects.Remove(item);
 	}
 }

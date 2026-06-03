@@ -11,7 +11,7 @@
 	<Border Background="#252525" Padding="5">
 		<StackPanel>
 			<TextBlock Text="Inspector" FontWeight="Bold" Margin="0,0,0,10" />
-			<TextBlock Text="{Binding label}" HorizontalAlignment="Center" />
+			<TextBlock Text="{Binding Label}" HorizontalAlignment="Center" />
 		</StackPanel>
 	</Border>
 </UserControl>

@@ -67,6 +67,9 @@ struct EnginePimpl {
 	std::unique_ptr<renderer::VulkanCore> vulkan_core;
 	std::unique_ptr<renderer::VulkanRenderer> renderer;
 	event::Listener resize_listener;
+
+	// owned by renderer's output target
+	renderer::SharedTextureOutputTarget* shared_target = nullptr;
 };
 
 Engine::Engine() noexcept {
@@ -116,6 +119,8 @@ void Engine::tick() {
 	if (m->renderer) {
 		m->renderer->drawFrame();
 	}
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(16));
 }
 
 auto Engine::shouldClose() -> bool {
@@ -156,9 +161,18 @@ void Engine::createAvaloniaWindow() {
 	auto extent = output_target->getExtent();
 	auto depth_format = renderer::VulkanRenderer::selectDepthFormat(*m->vulkan_core);
 
+	m->shared_target = output_target.get();
+
 	auto pipeline = createTrianglePipeline(*m->vulkan_core, color_format, extent, depth_format);
 
 	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target), std::move(pipeline));
+}
+
+int Engine::getViewportFrame(void* dst, uint32_t dstCapacity, renderer::ViewportFrameDesc* out) {
+	if (!m->shared_target) {
+		return 0;
+	}
+	return m->shared_target->copyLatestFrame(dst, dstCapacity, out);
 }
 
 void pushApplicationLayer(IApplication* app) {
@@ -200,5 +214,41 @@ auto toast_should_close() -> int {
 
 void toast_destroy(engine_t* e) {
 	delete reinterpret_cast<toast::Engine*>(e);
+}
+
+int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) {
+	toast::renderer::ViewportFrameDesc desc {};
+	const int result = toast::Engine::get()->getViewportFrame(dst, dst_capacity, &desc);
+	if (out) {
+		out->width = desc.width;
+		out->height = desc.height;
+		out->row_pitch = desc.row_pitch;
+		out->frame_id = desc.frame_id;
+	}
+	return result;
+}
+
+void toast_send_mouse_position(float x, float y) {
+	event::send<event::WindowMousePosition>(x, y);
+}
+
+void toast_send_mouse_button(int button, int action, int mods) {
+	event::send<event::WindowMouseButton>(button, action, mods);
+}
+
+void toast_send_mouse_scroll(float x, float y) {
+	event::send<event::WindowMouseScroll>(x, y);
+}
+
+void toast_send_key(int key, int scancode, int action, int mods) {
+	event::send<event::WindowKey>(key, scancode, action, mods);
+}
+
+void toast_send_char(unsigned codepoint) {
+	event::send<event::WindowChar>(codepoint);
+}
+
+void toast_send_resize(int width, int height) {
+	event::send<event::WindowResize>(width, height);
 }
 }

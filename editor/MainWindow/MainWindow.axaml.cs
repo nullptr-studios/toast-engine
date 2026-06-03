@@ -13,8 +13,8 @@ using editor.Logger;
 namespace editor.MainWindow;
 
 public partial class MainWindow : Window {
-	private Window? m_logs_window;
-	private ToastEngine? m_toast;
+	private Window? m_logsWindow;
+	private readonly ToastEngine? m_toast;
 
 	public MainWindow() {
 		InitializeComponent();
@@ -23,56 +23,56 @@ public partial class MainWindow : Window {
 	public MainWindow(ToastEngine toast) {
 		InitializeComponent();
 		m_toast = toast;
-		editorDockControl.HostWindowFactory = () => new ToastHostWindow(toast);
+		EditorDockControl.HostWindowFactory = () => new ToastHostWindow(toast);
 	}
 
 	protected override void OnClosed(EventArgs e) {
 		base.OnClosed(e);
 
 		if (DataContext is MainWindowViewModel vm) {
-			vm.closeLayout();
+			vm.CloseLayout();
 		}
 
-		m_toast?.removeWindow(this);
+		m_toast?.RemoveWindow(this);
 	}
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
 		base.OnPropertyChanged(change);
-		if (change.Property == WindowDecorationMarginProperty && menuBorder is not null) {
+		if (change.Property == WindowDecorationMarginProperty && MenuBorder is not null) {
 			var margin = (Thickness)change.NewValue!;
-			menuBorder.Margin = new Thickness(margin.Left, 0, 0, 0);
+			MenuBorder.Margin = new Thickness(margin.Left, 0, 0, 0);
 		}
 	}
 
-	private void onTitleBarPointerPressed(object? sender, PointerPressedEventArgs e) {
+	private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e) {
 		if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
 			BeginMoveDrag(e);
 	}
 
-	private void onMinimize(object? sender, RoutedEventArgs e) =>
+	private void OnMinimize(object? sender, RoutedEventArgs e) =>
 		WindowState = WindowState.Minimized;
 
-	private void onMaximize(object? sender, RoutedEventArgs e) =>
+	private void OnMaximize(object? sender, RoutedEventArgs e) =>
 		WindowState = WindowState == WindowState.Maximized
 			? WindowState.Normal
 			: WindowState.Maximized;
 
-	private void onClose(object? sender, RoutedEventArgs e) => Close();
+	private void OnClose(object? sender, RoutedEventArgs e) => Close();
 
-	private void onLogWindowButton(object? sender, RoutedEventArgs e) {
-		if (log_window_button.IsChecked) {
-			if (m_logs_window is null) {
-				m_logs_window = new LogsWindow {
+	private void OnLogWindowButton(object? sender, RoutedEventArgs e) {
+		if (LogWindowButton.IsChecked) {
+			if (m_logsWindow is null) {
+				m_logsWindow = new LogsWindow {
 					DataContext = new LoggerViewModel()
 				};
-				m_logs_window.Closed += (s, args) => {
-					log_window_button.IsChecked = false;
-					m_logs_window = null;
+				m_logsWindow.Closed += (_, _) => {
+					LogWindowButton.IsChecked = false;
+					m_logsWindow = null;
 				};
 			}
-			m_logs_window.Show();
+			m_logsWindow.Show();
 		} else {
-			m_logs_window?.Close();
+			m_logsWindow?.Close();
 		}
 	}
 }

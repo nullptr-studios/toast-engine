@@ -9,91 +9,91 @@ using Tomlyn;
 namespace editor.StartWindow;
 
 public partial class NewProjectWindow : Window {
-	public string project_title { get; private set; } = "";
-	public string project_path { get; private set; } = "";
-	public string project_version { get; private set; } = "v1.0.0";
-	public string project_thumbnail { get; private set; } = "";
+	public string ProjectTitle { get; private set; } = "";
+	public string ProjectPath { get; private set; } = "";
+	public string ProjectVersion { get; private set; } = "v1.0.0";
+	public string ProjectThumbnail { get; private set; } = "";
 
-	private string m_base_folder_path;
-	private string m_project_folder;
+	private string m_baseFolderPath;
+	private string m_projectFolder;
 
 	public NewProjectWindow() {
 		InitializeComponent();
 
-		m_base_folder_path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-		updateProjectData();
+		m_baseFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+		UpdateProjectData();
 	}
 
-	private void updateProjectData() {
-		project_title = string.IsNullOrWhiteSpace(TitleTextbox.Text) ? "Untitled Project" : TitleTextbox.Text;
-		var formatted_title = project_title.ToLowerInvariant().Replace(" ", "_");
+	private void UpdateProjectData() {
+		ProjectTitle = string.IsNullOrWhiteSpace(TitleTextbox.Text) ? "Untitled Project" : TitleTextbox.Text;
+		var formattedTitle = ProjectTitle.ToLowerInvariant().Replace(" ", "_");
 
-		var project_directory = Path.Combine(m_base_folder_path, formatted_title);
-		m_project_folder = project_directory;
+		var projectDirectory = Path.Combine(m_baseFolderPath, formattedTitle);
+		m_projectFolder = projectDirectory;
 
 		if (PathTextbox != null) {
-			PathTextbox.Text = project_directory;
+			PathTextbox.Text = projectDirectory;
 		}
 
-		project_path = Path.Combine(project_directory, formatted_title + ".toast");
-		project_thumbnail = Path.Combine(project_directory, ".toast", "thumbnails", "project.png");
+		ProjectPath = Path.Combine(projectDirectory, formattedTitle + ".toast");
+		ProjectThumbnail = Path.Combine(projectDirectory, ".toast", "thumbnails", "project.png");
 	}
 
 	private void Name_OnTextChanged(object? sender, TextChangedEventArgs e) {
-		updateProjectData();
+		UpdateProjectData();
 	}
 
 	private async void Folder_OnClick(object? sender, RoutedEventArgs e) {
-		var top_level = TopLevel.GetTopLevel(this);
-		if (top_level == null) return;
+		var topLevel = TopLevel.GetTopLevel(this);
+		if (topLevel == null) return;
 
-		var folders = await top_level.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions() {
+		var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions() {
 			Title = "Select Project Location",
 			AllowMultiple = false,
 		});
 
 		if (folders.Count <= 0) return;
 
-		m_base_folder_path = folders[0].Path.LocalPath;
-		updateProjectData();
+		m_baseFolderPath = folders[0].Path.LocalPath;
+		UpdateProjectData();
 	}
 
 	private void Create_OnClick(object? sender, RoutedEventArgs e) {
-		updateProjectData();
-		project_version = "v1.0.0";
+		UpdateProjectData();
+		ProjectVersion = "v1.0.0";
 
-		if (Directory.Exists(m_project_folder)) {
+		if (Directory.Exists(m_projectFolder)) {
 			// TODO: Error
 			return;
 		}
 
-		Directory.CreateDirectory(m_project_folder);
+		Directory.CreateDirectory(m_projectFolder);
 
 		// TODO: This should be created in c++
-		var project_file = new TomlTable {
-			["name"] = project_title,
-			["version"] = project_version
+		var projectFile = new TomlTable {
+			["name"] = ProjectTitle,
+			["version"] = ProjectVersion
 		};
 
-		var project_file_str = TomlSerializer.Serialize(project_file);
-		File.WriteAllText(project_path,  project_file_str);
+		var projectFileStr = TomlSerializer.Serialize(projectFile);
+		File.WriteAllText(ProjectPath,  projectFileStr);
 
-		Directory.CreateDirectory(Path.Combine(m_project_folder, ".toast"));
-		Directory.CreateDirectory(Path.Combine(m_project_folder, "artwork"));
-		Directory.CreateDirectory(Path.Combine(m_project_folder, "assets"));
-		Directory.CreateDirectory(Path.Combine(m_project_folder, "lib"));
-		Directory.CreateDirectory(Path.Combine(m_project_folder, "build"));
+		Directory.CreateDirectory(Path.Combine(m_projectFolder, ".toast"));
+		Directory.CreateDirectory(Path.Combine(m_projectFolder, "artwork"));
+		Directory.CreateDirectory(Path.Combine(m_projectFolder, "assets"));
+		Directory.CreateDirectory(Path.Combine(m_projectFolder, "lib"));
+		Directory.CreateDirectory(Path.Combine(m_projectFolder, "build"));
 
 		// Gitignore
-		File.Copy("Resources/files/project.gitignore", Path.Combine(m_project_folder, ".gitignore"));
+		File.Copy("Resources/files/project.gitignore", Path.Combine(m_projectFolder, ".gitignore"));
 
 		// C++ library
-		Directory.CreateDirectory(Path.Combine(m_project_folder, "lib", "src"));
-		Directory.CreateDirectory(Path.Combine(m_project_folder, "lib", "src", "_detail"));
-		File.Copy("Resources/files/lib/CMakeLists.txt",  Path.Combine(m_project_folder, "lib", "CMakeLists.txt"));
-		File.Copy("Resources/files/lib/src/my_game.hpp",  Path.Combine(m_project_folder, "lib", "src", "my_game.hpp"));
-		File.Copy("Resources/files/lib/src/_detail/game.h",  Path.Combine(m_project_folder, "lib", "src", "_detail","game.h"));
-		File.Copy("Resources/files/lib/src/_detail/game.cpp",  Path.Combine(m_project_folder, "lib", "src", "_detail","game.cpp"));
+		Directory.CreateDirectory(Path.Combine(m_projectFolder, "lib", "src"));
+		Directory.CreateDirectory(Path.Combine(m_projectFolder, "lib", "src", "_detail"));
+		File.Copy("Resources/files/lib/CMakeLists.txt",  Path.Combine(m_projectFolder, "lib", "CMakeLists.txt"));
+		File.Copy("Resources/files/lib/src/my_game.hpp",  Path.Combine(m_projectFolder, "lib", "src", "my_game.hpp"));
+		File.Copy("Resources/files/lib/src/_detail/game.h",  Path.Combine(m_projectFolder, "lib", "src", "_detail","game.h"));
+		File.Copy("Resources/files/lib/src/_detail/game.cpp",  Path.Combine(m_projectFolder, "lib", "src", "_detail","game.cpp"));
 
 		Close(true);
 	}

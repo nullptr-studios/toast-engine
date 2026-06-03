@@ -9,33 +9,31 @@ using Dock.Model.Core;
 
 namespace editor.MainWindow;
 
-public partial class MainWindowViewModel : ViewModelBase {
+public class MainWindowViewModel : ViewModelBase {
 	private ToastEngine m_toast;
-	public IFactory factory { get; }
-	public IRootDock layout { get; }
+	public IFactory Factory { get; }
+	public IRootDock? Layout { get; }
 
 	public MainWindowViewModel(ToastEngine toast, IRootDock? layout = null) {
 		m_toast = toast;
-		factory = layout?.Factory ?? new EditorDockFactory(toast);
+		Factory = layout?.Factory ?? new EditorDockFactory(toast);
 
 		if (layout is null) {
-			this.layout = factory.CreateLayout();
-			factory.InitLayout(this.layout);
+			this.Layout = Factory.CreateLayout();
+			Factory.InitLayout(this.Layout ?? throw new InvalidOperationException());
 		}
 		else {
-			this.layout = layout;
-			if (this.layout.Factory is null) {
-				this.layout.Factory = factory;
-				factory.InitLayout(this.layout);
-			}
+			this.Layout = layout;
+
+			if (this.Layout.Factory is not null) return;
+			this.Layout.Factory = Factory;
+			Factory.InitLayout(this.Layout);
 		}
 	}
 
-	public void closeLayout() {
-		if (layout is IDisposable disposable) {
+	public void CloseLayout() {
+		if (Layout is IDisposable disposable) {
 			disposable.Dispose();
 		}
 	}
-
-	public string Greeting { get; } = "Welcome to Toast Engine!";
 }

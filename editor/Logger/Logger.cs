@@ -15,7 +15,7 @@ using proto.logging;
 namespace editor.Logger;
 
 public class LogClient {
-	public event Action<List<LogEntry>> on_log_received;
+	public event Action<List<LogEntry>> OnLogReceived;
 	private TcpClient m_client;
 	private CancellationTokenSource m_cts;
 
@@ -63,7 +63,7 @@ public class LogClient {
 					};
 					batch.Add(entry);
 				}
-				on_log_received?.Invoke(batch);
+				OnLogReceived?.Invoke(batch);
 			}
 		}
 		catch (EndOfStreamException) {

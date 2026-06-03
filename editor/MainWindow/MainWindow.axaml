@@ -23,17 +23,17 @@
 	</Window.DataTemplates>
 
 	<DockPanel>
-		<DockPanel DockPanel.Dock="Top" x:Name="menuBorder">
+		<DockPanel DockPanel.Dock="Top" x:Name="MenuBorder">
 
 			<!-- Window buttons -->
 			<StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-				<Button Content="&#x2013;" Click="onMinimize" Width="46" Height="30" Padding="0"
+				<Button Content="&#x2013;" Click="OnMinimize" Width="46" Height="30" Padding="0"
 				        VerticalContentAlignment="Center"
 				        HorizontalContentAlignment="Center" />
-				<Button Content="&#x25A1;" Click="onMaximize" Width="46" Height="30" Padding="0"
+				<Button Content="&#x25A1;" Click="OnMaximize" Width="46" Height="30" Padding="0"
 				        VerticalContentAlignment="Center"
 				        HorizontalContentAlignment="Center" />
-				<Button Content="&#x2715;" Click="onClose" Width="46" Height="30" Padding="0, 0, 0, 1"
+				<Button Content="&#x2715;" Click="OnClose" Width="46" Height="30" Padding="0, 0, 0, 1"
 				        VerticalContentAlignment="Center"
 				        HorizontalContentAlignment="Center" />
 			</StackPanel>
@@ -81,8 +81,8 @@
 				<MenuItem Header="_View" />
 				<MenuItem Header="_Window">
 					<MenuItem Header="_Logs" ToggleType="CheckBox"
-					          x:Name="log_window_button"
-					          Click="onLogWindowButton" />
+					          x:Name="LogWindowButton"
+					          Click="OnLogWindowButton" />
 				</MenuItem>
 				<MenuItem Header="_Help">
 					<MenuItem Header="_Documentation" />
@@ -94,10 +94,10 @@
 
 			<!-- Drag region -->
 			<Border Background="Transparent"
-			        PointerPressed="onTitleBarPointerPressed" />
+			        PointerPressed="OnTitleBarPointerPressed" />
 		</DockPanel>
 
-		<DockControl x:Name="editorDockControl"
-		             Layout="{Binding layout}" />
+		<DockControl x:Name="EditorDockControl"
+		             Layout="{Binding Layout}" />
 	</DockPanel>
 </Window>

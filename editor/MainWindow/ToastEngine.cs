@@ -11,72 +11,105 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Dock.Model.Controls;
-using Dock.Model.Core;
 
 namespace editor.MainWindow;
 
-public class ToastEngine : IDisposable {
-	private List<MainWindow> m_toast_windows = [];
-	private object m_windows_lock = new object();
+/// @brief Description of the latest rendered viewport frame
+[StructLayout(LayoutKind.Sequential)]
+public struct ToastViewportFrame {
+	public uint width;
+	public uint height;
+	public uint row_pitch;
+	public ulong frame_id;
+}
 
-	private IntPtr m_engine_handle = IntPtr.Zero;
-	private IntPtr m_game_handle = IntPtr.Zero;
+public partial class ToastEngine : IDisposable {
+	private const string EngineLib = "toast_engine";
 
-	private IntPtr m_engine_instance = IntPtr.Zero;
-	private IntPtr m_game_instance = IntPtr.Zero;
+	private List<MainWindow> m_toastWindows = [];
+	private Lock m_windowsLock = new Lock();
 
-	private string path;
+	private IntPtr m_gameHandle = IntPtr.Zero;
 
-	private Task m_tick_task;
-	private CancellationTokenSource m_cancellation_source;
-	private bool m_close_event_sent;
+	private IntPtr m_engineInstance;
+	private IntPtr m_gameInstance;
 
-	public ToastEngine(string toast_path) {
-		path = Directory.Exists(toast_path) ? toast_path : Path.GetDirectoryName(toast_path)!;
+	private string m_path;
 
-		prepareLogServer();
+	private Task m_tickTask;
+	private CancellationTokenSource m_cancellationSource;
+	private bool m_closeEventSent;
 
-		loadToast();
-		loadGame();
-
-		// Then we initialize
-		m_engine_instance = m_toast_create?.Invoke() ?? IntPtr.Zero;
-		m_game_instance = m_game_create?.Invoke() ?? IntPtr.Zero;
-
-		m_uri_set_working_directory?.Invoke(path);
-		// m_toast_init?.Invoke();
-
-		// Then we create a window
-		createWindow();
-
-		// Start the tick loop on a background thread to avoid blocking the Avalonia render thread
-		m_cancellation_source = new CancellationTokenSource();
-		m_tick_task = Task.Run(() => tickLoop(m_cancellation_source.Token));
+	// The engine DLL lives next to the executable at ../toast_engine/bin
+	// We need to specify its location before the application runs
+	static ToastEngine() {
+		NativeLibrary.SetDllImportResolver(typeof(ToastEngine).Assembly, (name, _, _) => {
+			if (name != EngineLib) return IntPtr.Zero;
+			return NativeLibrary.Load(EngineDllPath());
+		});
 	}
 
-	private void tickLoop(CancellationToken _unused) {
-		while (m_toast_should_close() != 1) {
-			m_toast_tick();
+	private static string EngineDllPath() {
+		var dll = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "toast_engine", "bin", "toast_engine.dll"));
+		if (!File.Exists(dll))
+			throw new FileNotFoundException($"Engine not found at path {dll}");
+		return dll;
+	}
+
+	public ToastEngine(string toastPath) {
+		m_path = Directory.Exists(toastPath) ? toastPath : Path.GetDirectoryName(toastPath)!;
+
+		PrepareLogServer();
+
+		// Load the engine DLL into the process FIRST
+		// the game DLL depends on toast_engine.dll, and the OS loader resolves that dependency by base name
+		// against already-loaded modules
+		// Without this, LibraryImport load would happen too late and game_temp.dll would fail to load
+		// Omg this took me so long to fix
+		NativeLibrary.Load(EngineDllPath());
+
+		LoadGame();
+
+		// Then we initialize
+		m_engineInstance = toast_create();
+		m_gameInstance = m_gameCreate?.Invoke() ?? IntPtr.Zero;
+
+		uri_set_working_directory(m_path);
+
+		// Create the engine's render surface
+		toast_create_avalonia_window();
+
+		// Then we create a window
+		CreateWindow();
+
+		// Start the tick loop on a background thread
+		m_cancellationSource = new CancellationTokenSource();
+		m_tickTask = Task.Run(() => TickLoop(m_cancellationSource.Token));
+	}
+
+	private void TickLoop(CancellationToken unused) {
+		while (toast_should_close() != 1) {
+			toast_tick();
 		}
 	}
 
 	public void Dispose() {
 		// Wait for the tick loop to finish before destroying
-		m_tick_task?.Wait();
+		m_tickTask.Wait();
 
-		m_game_destroy?.Invoke(m_game_instance);
-		m_toast_destroy?.Invoke(m_engine_instance);
+		m_gameDestroy?.Invoke(m_gameInstance);
+		toast_destroy(m_engineInstance);
 
-		m_cancellation_source?.Dispose();
+		m_cancellationSource.Dispose();
 	}
 
-	public MainWindow createWindow(bool show = true, IRootDock? layout = null) {
+	public MainWindow CreateWindow(bool show = true, IRootDock? layout = null) {
 		var w = new MainWindow(this) {
 			DataContext = new MainWindowViewModel(this, layout)
 		};
 
-		lock (m_windows_lock) {
-			m_toast_windows.Add(w);
+		lock (m_windowsLock) {
+			m_toastWindows.Add(w);
 		}
 		if (show) {
 			w.Show();
@@ -85,108 +118,97 @@ public class ToastEngine : IDisposable {
 		return w;
 	}
 
-	public void removeWindow(MainWindow w) {
-		lock (m_windows_lock) {
-			m_toast_windows.Remove(w);
+	public void RemoveWindow(MainWindow w) {
+		lock (m_windowsLock) {
+			m_toastWindows.Remove(w);
 
 			// When all windows are closed, send close event to game engine
-			if (m_toast_windows.Count == 0 && !m_close_event_sent) {
-				m_close_event_sent = true;
+			if (m_toastWindows.Count == 0 && !m_closeEventSent) {
+				m_closeEventSent = true;
 				// TODO: m_toast_close_engine?.Invoke();
 			}
 
 		}
 	}
 
-	public void reloadGame() {
-		m_game_destroy?.Invoke(m_game_instance);
+	/// @brief Copies the latest viewport frame into @p dst (capacity bytes)
+	/// @return 1 copied, 0 none yet, -1 dst too small
+	public int TryGetViewportFrame(IntPtr dst, uint capacity, out ToastViewportFrame frame) =>
+		toast_viewport_get_frame(dst, capacity, out frame);
+
+	public void SendMousePosition(float x, float y) => toast_send_mouse_position(x, y);
+	public void SendMouseButton(int button, int action, int mods) => toast_send_mouse_button(button, action, mods);
+	public void SendMouseScroll(float x, float y) => toast_send_mouse_scroll(x, y);
+	public void SendKey(int key, int scancode, int action, int mods) => toast_send_key(key, scancode, action, mods);
+	public void SendChar(uint codepoint) => toast_send_char(codepoint);
+	public void SendResize(int width, int height) => toast_send_resize(width, height);
+
+	public void ReloadGame() {
+		m_gameDestroy?.Invoke(m_gameInstance);
 		Thread.Sleep(150);
-		loadGame();
+		LoadGame();
 	}
 
-	private void loadToast() {
-		// Load the Toast Engine DLL
-		var app_dir = AppDomain.CurrentDomain.BaseDirectory;
-		var engine_dll_path = Path.GetFullPath(Path.Combine(app_dir, "..", "toast_engine", "bin", "toast_engine.dll"));
+	private void LoadGame() {
+		var gameDllPath = Directory.EnumerateFiles(Path.Combine(m_path, "build"), "*.dll").FirstOrDefault();
+		if (gameDllPath is null)
+			throw new FileNotFoundException($"Game not found at path {m_path}");
 
-		if (!File.Exists(engine_dll_path))
-			throw new FileNotFoundException($"Engine not found at path {engine_dll_path}");
+		File.Copy(gameDllPath, Path.Combine(m_path, ".toast", "game_temp.dll"), true);
+		gameDllPath = Path.Combine(m_path, ".toast", "game_temp.dll"); // update path to new one
 
-		m_engine_handle = NativeLibrary.Load(engine_dll_path);
+		m_gameHandle = NativeLibrary.Load(gameDllPath);
 
 		// Set functions
-		m_toast_create =
-			Marshal.GetDelegateForFunctionPointer<ToastCreate>(NativeLibrary.GetExport(m_engine_handle,
-				"toast_create"));
-		m_toast_tick =
-			Marshal.GetDelegateForFunctionPointer<ToastTick>(NativeLibrary.GetExport(m_engine_handle, "toast_tick"));
-		m_toast_should_close =
-			Marshal.GetDelegateForFunctionPointer<ToastShouldClose>(NativeLibrary.GetExport(m_engine_handle,
-				"toast_should_close"));
-		m_toast_destroy =
-			Marshal.GetDelegateForFunctionPointer<ToastDestroy>(NativeLibrary.GetExport(m_engine_handle,
-				"toast_destroy"));
-		m_uri_set_working_directory =
-			Marshal.GetDelegateForFunctionPointer<UriSetWorkingDirectory>(
-				NativeLibrary.GetExport(m_engine_handle, "uri_set_working_directory"));
+		m_gameCreate =
+			Marshal.GetDelegateForFunctionPointer<GameCreate>(NativeLibrary.GetExport(m_gameHandle, "game_create"));
+		m_gameDestroy =
+			Marshal.GetDelegateForFunctionPointer<GameDestroy>(NativeLibrary.GetExport(m_gameHandle, "game_destroy"));
 	}
 
-	private void loadGame() {
-		var game_dll_path = Directory.EnumerateFiles(Path.Combine(path, "build"), "*.dll").FirstOrDefault();
-		if (game_dll_path is null)
-			throw new FileNotFoundException($"Game not found at path {path}");
+	private void PrepareLogServer() {
+		string appDir = AppDomain.CurrentDomain.BaseDirectory;
+		string exeExtension = OperatingSystem.IsWindows() ? ".exe" : "";
+		string binaryName = $"log_server{exeExtension}";
 
-		File.Copy(game_dll_path, Path.Combine(path, ".toast", "game_temp.dll"), true);
-		game_dll_path = Path.Combine(path, ".toast", "game_temp.dll"); // update path to new one
+		var targetLinkPath = Path.Combine(appDir, binaryName);
+		var sourceLinkPath = Path.GetFullPath(Path.Combine(appDir, "..", "toast_engine", "bin", binaryName));
 
-		m_game_handle = NativeLibrary.Load(game_dll_path);
-
-		// Set functions
-		m_game_create =
-			Marshal.GetDelegateForFunctionPointer<GameCreate>(NativeLibrary.GetExport(m_game_handle, "game_create"));
-		m_game_destroy =
-			Marshal.GetDelegateForFunctionPointer<GameDestroy>(NativeLibrary.GetExport(m_game_handle, "game_destroy"));
-	}
-
-	private void prepareLogServer() {
-		string app_dir = AppDomain.CurrentDomain.BaseDirectory;
-		string exe_extension = OperatingSystem.IsWindows() ? ".exe" : "";
-		string binary_name = $"log_server{exe_extension}";
-
-		var target_link_path = Path.Combine(app_dir, binary_name);
-		var source_link_path = Path.GetFullPath(Path.Combine(app_dir, "..", "toast_engine", "bin", binary_name));
-
-		if (!File.Exists(target_link_path) && File.Exists(source_link_path)) {
+		if (!File.Exists(targetLinkPath) && File.Exists(sourceLinkPath)) {
 			try {
-				File.CreateSymbolicLink(target_link_path, source_link_path);
+				File.CreateSymbolicLink(targetLinkPath, sourceLinkPath);
 			}
 			catch (UnauthorizedAccessException) {
 				// just in case we cannot create a symlink we just copy the executable
-				File.Copy(source_link_path, target_link_path, true);
+				File.Copy(sourceLinkPath, targetLinkPath, true);
 			}
 		}
 	}
 
-	// TODO: Do wrappers or provide an easy way of calling c++ functions from the dll
-	private delegate IntPtr ToastCreate();
-	private delegate void ToastTick();
-	private delegate int ToastShouldClose();
-	private delegate void ToastDestroy(IntPtr engine);
-	private delegate void ToastCreateAvaloniaWindow();
-	private delegate void UriSetWorkingDirectory([MarshalAs(UnmanagedType.LPStr)] string path);
-	private delegate void ToastCloseEngine();
+	// --------------------- Engine C ABI shit ---------------------
+	[LibraryImport(EngineLib)] private static partial IntPtr toast_create();
+	[LibraryImport(EngineLib)] private static partial void toast_tick();
+	[LibraryImport(EngineLib)] private static partial int toast_should_close();
+	[LibraryImport(EngineLib)] private static partial void toast_destroy(IntPtr engine);
+	[LibraryImport(EngineLib)] private static partial void toast_create_avalonia_window();
 
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial void uri_set_working_directory(string path);
+
+	[LibraryImport(EngineLib)]
+	private static partial int toast_viewport_get_frame(IntPtr dst, uint dstCapacity, out ToastViewportFrame outFrame);
+
+	[LibraryImport(EngineLib)] private static partial void toast_send_mouse_position(float x, float y);
+	[LibraryImport(EngineLib)] private static partial void toast_send_mouse_button(int button, int action, int mods);
+	[LibraryImport(EngineLib)] private static partial void toast_send_mouse_scroll(float x, float y);
+	[LibraryImport(EngineLib)] private static partial void toast_send_key(int key, int scancode, int action, int mods);
+	[LibraryImport(EngineLib)] private static partial void toast_send_char(uint codepoint);
+	[LibraryImport(EngineLib)] private static partial void toast_send_resize(int width, int height);
+
+	// --------------------- Game ABI shit ---------------------
 	private delegate IntPtr GameCreate();
 	private delegate void GameDestroy(IntPtr game);
 
-	private ToastCreate m_toast_create;
-	private ToastTick m_toast_tick;
-	private ToastShouldClose m_toast_should_close;
-	private ToastDestroy m_toast_destroy;
-	private ToastCreateAvaloniaWindow m_toast_create_avalonia;
-	private UriSetWorkingDirectory m_uri_set_working_directory;
-	private ToastCloseEngine m_toast_close_engine;
-
-	private GameCreate m_game_create;
-	private GameDestroy m_game_destroy;
+	private GameCreate? m_gameCreate;
+	private GameDestroy? m_gameDestroy;
 }

@@ -11,7 +11,7 @@
 	<Border Background="#333333" Padding="5">
 		<StackPanel>
 			<TextBlock Text="Scene Hierarchy" FontWeight="Bold" Margin="0,0,0,10"/>
-			<TextBlock Text="{Binding label}" HorizontalAlignment="Center"/>
+			<TextBlock Text="{Binding Label}" HorizontalAlignment="Center"/>
 		</StackPanel>
 	</Border>
 </UserControl>

@@ -412,19 +412,9 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 	// End rendering
 	frame.commandBuffer.endRendering();
 
-	// Transition the image to PresentSrcKHR
-	const vk::ImageLayout present_layout = vk::ImageLayout::ePresentSrcKHR;
-	transitionImageLayout(
-	    frame.commandBuffer,
-	    image,
-	    color_attachment_layout,
-	    present_layout,
-	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    vk::AccessFlags {},
-	    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-	    vk::PipelineStageFlagBits::eBottomOfPipe,
-	    colorAttachmentRange()
-	);
+	// Let the output target finalize the image
+	// different outputs will need to do this differently
+	m_outputTarget->recordFinalize(frame.commandBuffer, image_index);
 
 	// End frame record
 	frame.commandBuffer.end();
@@ -440,7 +430,11 @@ auto VulkanRenderer::drawFrame() -> void {
 
 	// Frame rendering
 	auto& frame = m_frames[m_currentFrame];
-	m_core->getDevice().waitForFences(*frame.inFlight, true, std::numeric_limits<uint64_t>::max());
+	auto result = m_core->getDevice().waitForFences(*frame.inFlight, true, std::numeric_limits<uint64_t>::max());
+
+	if (frame.hasSubmitted) {
+		m_outputTarget->onImageRenderComplete(frame.lastImageIndex);
+	}
 
 	const auto acquired =
 	    m_outputTarget->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.imageAvailable, VK_NULL_HANDLE);
@@ -455,7 +449,7 @@ auto VulkanRenderer::drawFrame() -> void {
 
 	const uint32_t image_index = acquired.value;
 	if (m_imagesInFlight.at(image_index)) {
-		m_core->getDevice().waitForFences(m_imagesInFlight.at(image_index), true, std::numeric_limits<uint64_t>::max());
+		auto res = m_core->getDevice().waitForFences(m_imagesInFlight.at(image_index), true, std::numeric_limits<uint64_t>::max());
 	}
 
 	m_core->getDevice().resetFences(*frame.inFlight);
@@ -474,18 +468,37 @@ auto VulkanRenderer::drawFrame() -> void {
 	m_core->getTransferQueue().submit(transfer_submit_info);
 
 	// Starting graghics submission
-	// Needs to wait for the transfer to complete and if an image is available
-	const std::array wait_semaphores {*frame.imageAvailable, transfer_wait_semaphore};
-	const std::array<vk::PipelineStageFlags, 2> wait_stages {
-	  vk::PipelineStageFlagBits::eColorAttachmentOutput,
-	  vk::PipelineStageFlagBits::eFragmentShader    // FIXME: some errors might arrise because of this
-	};
+	// Always wait for the transfer
+	const bool present_sync = m_outputTarget->usesAcquirePresentSemaphores();
+
+	std::array<vk::Semaphore, 2> wait_semaphores {};
+	std::array<vk::PipelineStageFlags, 2> wait_stages {};
+	uint32_t wait_count = 0;
+	if (present_sync) {
+		wait_semaphores[wait_count] = *frame.imageAvailable;
+		wait_stages[wait_count] = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+		++wait_count;
+	}
+	wait_semaphores[wait_count] = transfer_wait_semaphore;
+	wait_stages[wait_count] = vk::PipelineStageFlagBits::eFragmentShader;
+	++wait_count;
+
 	const vk::CommandBuffer command_buffer = *frame.commandBuffer;
 	const vk::Semaphore signal_semaphore = *m_renderFinishedPerImage.at(image_index);
 	const vk::SubmitInfo submit_info(
-	    wait_semaphores.size(), wait_semaphores.data(), wait_stages.data(), 1, &command_buffer, 1, &signal_semaphore
+	    wait_count,
+	    wait_semaphores.data(),
+	    wait_stages.data(),
+	    1,
+	    &command_buffer,
+	    present_sync ? 1U : 0U,
+	    present_sync ? &signal_semaphore : nullptr
 	);
 	m_core->getGraphicsQueue().submit(submit_info, *frame.inFlight);
+
+	// Remember which image this slot rendered so it can be published once its fence signals
+	frame.lastImageIndex = image_index;
+	frame.hasSubmitted = true;
 
 	// Present onto target texture
 	const auto present_result = m_outputTarget->present(image_index, signal_semaphore);
@@ -517,6 +530,10 @@ auto VulkanRenderer::resize(vk::Extent2D extent) -> void {
 		createPerImageSync();
 		createDepthResources();
 		m_currentFrame = 0;
+		// The staging buffers were just reallocated; don't republish a pre-resize image
+		for (auto& frame : m_frames) {
+			frame.hasSubmitted = false;
+		}
 	} catch (const std::exception& e) {
 		TOAST_CRITICAL("VulkanRenderer", "Failed to recreate output target on resize: {}", e.what());
 	}

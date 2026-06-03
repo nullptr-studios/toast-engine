@@ -1,6 +1,9 @@
-﻿using Avalonia;
+﻿//
+// Workspace.axaml.cs by Xein
+// 4 Jun 2026
+//
+
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 
 namespace editor.MainWindow;
 

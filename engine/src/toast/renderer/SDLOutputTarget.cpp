@@ -20,6 +20,7 @@ auto SDLOutputTarget::getRequiredInstanceExtensions() -> std::vector<const char*
 
 auto SDLOutputTarget::getRequiredInstanceExtensions(SDL_Window* window) -> std::vector<const char*> {
 	// SDL3 does not require a window for this query, but keep the overload for compatibility.
+	// Bro vibecoded this ong
 	if (!window) {
 		return getRequiredInstanceExtensions();
 	}
@@ -99,6 +100,23 @@ auto SDLOutputTarget::acquireNextImage(uint64_t timeout, vk::Semaphore image_ava
 
 auto SDLOutputTarget::present(uint32_t image_index, vk::Semaphore render_finished) -> vk::Result {
 	return m_swapchain->present(image_index, render_finished);
+}
+
+auto SDLOutputTarget::recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) -> void {
+	// Transition the rendered image from color-attachment to present-source for the swapchain
+	const vk::ImageMemoryBarrier barrier(
+	    vk::AccessFlagBits::eColorAttachmentWrite,
+	    vk::AccessFlags {},
+	    vk::ImageLayout::eColorAttachmentOptimal,
+	    vk::ImageLayout::ePresentSrcKHR,
+	    VK_QUEUE_FAMILY_IGNORED,
+	    VK_QUEUE_FAMILY_IGNORED,
+	    m_swapchain->getImage(image_index),
+	    vk::ImageSubresourceRange {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
+	);
+	command_buffer.pipelineBarrier(
+	    vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eBottomOfPipe, {}, {}, {}, barrier
+	);
 }
 
 auto SDLOutputTarget::recreate(vk::Extent2D extent) -> void {

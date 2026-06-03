@@ -44,6 +44,8 @@ public:
 		vk::raii::Semaphore imageAvailable = nullptr;
 		vk::raii::Semaphore transferFinished = nullptr;
 		vk::raii::Fence inFlight = nullptr;
+		uint32_t lastImageIndex = 0;
+		bool hasSubmitted = false;
 	};
 
 	VulkanRenderer(

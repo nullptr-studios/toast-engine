@@ -1,3 +1,8 @@
+//
+// ToastHostWindow.cs by Xein
+// 4 Jun 2026
+//
+
 using System;
 using Avalonia;
 using Avalonia.Controls;
@@ -6,8 +11,7 @@ using Dock.Model.Core;
 
 namespace editor.MainWindow;
 
-internal sealed class ToastHostWindow : IHostWindow {
-	private readonly ToastEngine m_toast;
+internal sealed class ToastHostWindow(ToastEngine toast) : IHostWindow {
 	private MainWindow? m_window;
 	private IRootDock? m_layout;
 	private string? m_title;
@@ -17,10 +21,6 @@ internal sealed class ToastHostWindow : IHostWindow {
 	private double m_height = 600;
 	private DockWindowState m_state = DockWindowState.Normal;
 	private bool m_pendingPresent;
-
-	public ToastHostWindow(ToastEngine toast) {
-		m_toast = toast;
-	}
 
 	public IHostWindowState? HostWindowState => null;
 
@@ -72,13 +72,11 @@ internal sealed class ToastHostWindow : IHostWindow {
 
 	public void SetWindowState(DockWindowState windowState) {
 		m_state = windowState;
-		if (m_window is { }) {
-			m_window.WindowState = ToAvaloniaWindowState(windowState);
-		}
+		m_window?.WindowState = ToAvaloniaWindowState(windowState);
 	}
 
 	public DockWindowState GetWindowState() {
-		if (m_window is { }) {
+		if (m_window is not null) {
 			m_state = ToDockWindowState(m_window.WindowState);
 		}
 
@@ -87,9 +85,7 @@ internal sealed class ToastHostWindow : IHostWindow {
 
 	public void SetTitle(string? title) {
 		m_title = title;
-		if (m_window is { }) {
-			m_window.Title = title;
-		}
+		m_window?.Title = title;
 	}
 
 	public void SetLayout(IDock layout) {
@@ -120,7 +116,7 @@ internal sealed class ToastHostWindow : IHostWindow {
 			return;
 		}
 
-		m_window = m_toast.createWindow(false, m_layout);
+		m_window = toast.CreateWindow(false, m_layout);
 		ApplyWindowDataContext();
 		ApplyPendingState();
 	}
@@ -144,7 +140,7 @@ internal sealed class ToastHostWindow : IHostWindow {
 		}
 
 		var layout = m_layout;
-		m_window.DataContext = new MainWindowViewModel(m_toast, layout);
+		m_window.DataContext = new MainWindowViewModel(toast, layout);
 	}
 
 	private void ApplyPendingState() {
