@@ -47,7 +47,7 @@ private:
 	inline static ThreadPool* instance = nullptr;
 	static auto get() noexcept -> ThreadPool&;
 
-	void threadLoop();
+	void threadLoop(size_t id);
 
 	struct {
 		bool should_stop = false;                  ///< Flag to signal workers to stop

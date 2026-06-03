@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.20)
 project(engine)
 
 include(CTest)
@@ -12,6 +12,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_ROOT}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_ROOT}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_ROOT}")
 set(CMAKE_PDB_OUTPUT_DIRECTORY "${OUTPUT_ROOT}")
+
+if (MSVC)
+	# Enable multi-processor compilation
+	add_compile_options(/MP)
+	if (CMAKE_GENERATOR MATCHES "Visual Studio")
+		set(CMAKE_VS_GLOBALS "UseMultiToolTask=true")
+	endif()
+endif()
 
 foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
 	string(TOUPPER "${config}" config_upper)

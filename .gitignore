@@ -17,6 +17,8 @@ logs/
 engine/include/
 vcpkg_installed/
 
+!engine/src/**
+
 compile_commands.json
 CMakeUserPresets.json
 **.sln

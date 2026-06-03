@@ -1,6 +1,6 @@
 /**
  * @file base_window.hpp
- * @author Xein <xgonip@gmail.com>
+ * @author Xein
  * @date 7 May 2026
  *
  * @brief Interface for the Window class
@@ -24,6 +24,8 @@ public:
 	// Functions
 	[[nodiscard]]
 	virtual auto shouldClose() const -> bool = 0;
+	[[nodiscard]]
+	virtual void* nativeHandle() const = 0;
 	virtual void pollEvents() = 0;
 	virtual void swapFramebuffers() = 0;
 

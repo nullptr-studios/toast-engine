@@ -1,7 +1,7 @@
 use crate::proto::{LogData, LogBatch};
 use crate::tui::Tui;
 use anyhow::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers, KeyEventKind};
 use prost::Message;
 use std::time::Duration;
 use tokio::net::TcpStream;
@@ -36,6 +36,7 @@ impl From<i32> for Severity {
 pub enum ConnectionState {
     Disconnected,
     Connecting(String), // Address
+    Reconnecting(String), // Address
     Connected,
     #[allow(dead_code)]
     CsvMode(String), // Path
@@ -59,6 +60,7 @@ pub enum PopupOption {
 pub struct App {
     pub logs: Vec<LogData>,
     pub filtered_logs: Vec<usize>, // Indices of logs that match filters
+    pub display_rows: Vec<(usize, usize)>, // Maps display row to (log_idx, chunk_idx) for split messages
     pub state: ConnectionState,
     pub popup_selection: PopupOption,
     pub input_buffer: Input,
@@ -84,6 +86,11 @@ pub struct App {
     pub severity_list_state: ratatui::widgets::ListState,
     pub sink_list_state: ratatui::widgets::ListState,
     pub focus: AppFocus,
+    
+    // Detail view
+    pub detail_view_open: bool,
+    pub detail_view_log_idx: Option<usize>,
+    pub detail_view_scroll: usize,
 
     // Communication
     pub log_rx: Option<mpsc::Receiver<Vec<LogData>>>,
@@ -101,6 +108,7 @@ impl App {
         let mut app = Self {
             logs: Vec::new(),
             filtered_logs: Vec::new(),
+            display_rows: Vec::new(),
             state: ConnectionState::Disconnected,
             popup_selection: PopupOption::Localhost,
             input_buffer: Input::default(),
@@ -118,6 +126,9 @@ impl App {
             severity_list_state: ratatui::widgets::ListState::default(),
             sink_list_state: ratatui::widgets::ListState::default(),
             focus: AppFocus::Table,
+            detail_view_open: false,
+            detail_view_log_idx: None,
+            detail_view_scroll: 0,
             log_rx: None,
             stop_tx: None,
             last_connect_addr: None,
@@ -158,7 +169,7 @@ impl App {
             
             if !batches.is_empty() {
                 // Transition from Connecting to Connected on first batch (even if empty)
-                if let ConnectionState::Connecting(_) = self.state {
+                if let ConnectionState::Connecting(_) | ConnectionState::Reconnecting(_) = self.state {
                     self.state = ConnectionState::Connected;
                 }
                 
@@ -177,7 +188,22 @@ impl App {
 
             if crossterm::event::poll(timeout)? {
                 if let Event::Key(key) = event::read()? {
-                    self.handle_key(key).await?;
+                    if key.kind == KeyEventKind::Press
+                        || (key.kind == KeyEventKind::Repeat
+                            && matches!(
+                                key.code,
+                                KeyCode::Char('h')
+                                    | KeyCode::Char('j')
+                                    | KeyCode::Char('k')
+                                    | KeyCode::Char('l')
+                                    | KeyCode::Up
+                                    | KeyCode::Down
+                                    | KeyCode::Left
+                                    | KeyCode::Right
+                            ))
+                    {
+                        self.handle_key(key).await?;
+                    }
                 }
             }
 
@@ -189,8 +215,8 @@ impl App {
             if let Some(rx) = &mut self.log_rx {
                  if rx.is_closed() {
                      // Auto-reconnect if we were connected or connecting
-                     if let (ConnectionState::Connected | ConnectionState::Connecting(_), Some(addr)) = (&self.state, &self.last_connect_addr) {
-                         self.connect(addr.clone()).await;
+                     if let (ConnectionState::Connected | ConnectionState::Connecting(_) | ConnectionState::Reconnecting(_), Some(addr)) = (&self.state, &self.last_connect_addr) {
+                         self.reconnect(addr.clone()).await;
                      } else {
                          self.disconnect();
                      }
@@ -218,8 +244,8 @@ impl App {
         }
 
         match &self.state {
-            ConnectionState::Disconnected => self.handle_disconnected_key(key).await,
-            ConnectionState::Connected | ConnectionState::CsvMode(_) | ConnectionState::Connecting(_) => self.handle_connected_key(key).await,
+            ConnectionState::Disconnected | ConnectionState::Connecting(_) => self.handle_disconnected_key(key).await,
+            ConnectionState::Connected | ConnectionState::CsvMode(_) | ConnectionState::Reconnecting(_) => self.handle_connected_key(key).await,
         }
     }
 
@@ -275,31 +301,45 @@ impl App {
     }
 
     async fn handle_connected_key(&mut self, key: KeyEvent) -> Result<()> {
+        if self.detail_view_open {
+            match key.code {
+                KeyCode::Esc => self.close_detail_view(),
+                KeyCode::Char('q') => self.close_detail_view(),
+                KeyCode::Down | KeyCode::Char('j') => {
+                    self.scroll_detail_view_down(10000); // Max scrollable (will be clamped in render)
+                }
+                KeyCode::Up | KeyCode::Char('k') => self.scroll_detail_view_up(),
+                _ => {}
+            }
+            return Ok(());
+        }
+
         if self.focus == AppFocus::Search {
              match key.code {
-                 KeyCode::Enter => self.focus = AppFocus::Table,
-                 KeyCode::Esc => {
-                     self.search_query.clear();
-                     self.focus = AppFocus::Table;
-                     self.update_filtered_logs();
-                 }
-                 KeyCode::Backspace => {
-                      self.search_query.pop();
+                  KeyCode::Enter => self.focus = AppFocus::Table,
+                  KeyCode::Esc => {
+                      self.search_query.clear();
+                      self.focus = AppFocus::Table;
                       self.update_filtered_logs();
-                 }
-                 KeyCode::Char(c) => {
-                      self.search_query.push(c);
-                      self.update_filtered_logs();
-                 }
-                 _ => {}
-             }
-             return Ok(());
-        }
+                  }
+                  KeyCode::Backspace => {
+                       self.search_query.pop();
+                       self.update_filtered_logs();
+                  }
+                  KeyCode::Char(c) => {
+                       self.search_query.push(c);
+                       self.update_filtered_logs();
+                  }
+                  _ => {}
+              }
+              return Ok(());
+         }
 
         match key.code {
             KeyCode::Char('q') => {
                 self.disconnect();
             }
+            KeyCode::Char('v') => self.open_detail_view(),
             KeyCode::Char('/') => self.focus = AppFocus::Search,
             KeyCode::Char('f') => {
                 self.show_filters = !self.show_filters;
@@ -307,7 +347,7 @@ impl App {
                     self.focus = AppFocus::Table;
                 }
             }
-            KeyCode::Char('d') => {
+            KeyCode::Char('s') => {
                 self.scroll_locked = !self.scroll_locked;
                 if !self.scroll_locked {
                     self.jump_to_latest();
@@ -339,7 +379,7 @@ impl App {
             AppFocus::Table => {
                 self.scroll_locked = true;
                 let i = match self.table_state.selected() {
-                    Some(i) => (i + 1).min(self.filtered_logs.len().saturating_sub(1)),
+                    Some(i) => (i + 1).min(self.display_rows.len().saturating_sub(1)),
                     None => 0,
                 };
                 self.table_state.select(Some(i));
@@ -489,6 +529,40 @@ impl App {
         });
     }
 
+      async fn reconnect(&mut self, addr: String) {
+        self.disconnect();
+        self.state = ConnectionState::Reconnecting(addr.clone());
+        self.last_connect_addr = Some(addr.clone());
+        let (tx, rx) = mpsc::channel(100);
+        let (stop_tx, mut stop_rx) = tokio::sync::oneshot::channel();
+        
+        self.log_rx = Some(rx);
+        self.stop_tx = Some(stop_tx);
+        
+        let addr_clone = addr.clone();
+        tokio::spawn(async move {
+            match TcpStream::connect(&addr_clone).await {
+                Ok(mut socket) => {
+                    // Send empty batch to signal successful connection
+                    let _ = tx.send(Vec::new()).await;
+                    
+                    loop {
+                        tokio::select! {
+                             _ = &mut stop_rx => break,
+                             res = read_framed(&mut socket) => {
+                                 match res {
+                                     Ok(batch) => { if tx.send(batch.logs).await.is_err() { break; } }
+                                     Err(_) => break,
+                                 }
+                             }
+                        }
+                    }
+                }
+                Err(_) => {}
+            }
+        });
+    }
+
     fn disconnect(&mut self) {
         if let Some(tx) = self.stop_tx.take() {
             let _ = tx.send(());
@@ -524,7 +598,7 @@ impl App {
     }
 
     fn process_log(&mut self, log: LogData) {
-        if let ConnectionState::Connecting(_) = self.state {
+        if let ConnectionState::Connecting(_) | ConnectionState::Reconnecting(_) = self.state {
              self.state = ConnectionState::Connected;
         }
         self.seen_severities.insert(log.severity);
@@ -541,20 +615,26 @@ impl App {
             Some(i)
         }).collect();
 
+        // Simple 1:1 mapping between display rows and filtered logs
+        self.display_rows.clear();
+        for &log_idx in &self.filtered_logs {
+            self.display_rows.push((log_idx, 0));
+        }
+
         self.search_matches.clear();
         if !q.is_empty() {
              for (idx, &log_idx) in self.filtered_logs.iter().enumerate() {
-                 let log = &self.logs[log_idx];
-                 let severity_label = match log.severity {
-                     0 => "trace", 1 => "info", 2 => "warning", 3 => "error", 4 => "critical", _ => ""
-                 };
-                 if log.message.to_lowercase().contains(&q) ||
-                    log.sink.to_lowercase().contains(&q) ||
-                    log.filepath.to_lowercase().contains(&q) ||
-                    severity_label.contains(&q) {
-                        self.search_matches.push(idx);
-                    }
-             }
+                  let log = &self.logs[log_idx];
+                  let severity_label = match log.severity {
+                      0 => "trace", 1 => "info", 2 => "warning", 3 => "error", 4 => "critical", _ => ""
+                  };
+                  if log.message.to_lowercase().contains(&q) ||
+                     log.sink.to_lowercase().contains(&q) ||
+                     log.filepath.to_lowercase().contains(&q) ||
+                     severity_label.contains(&q) {
+                         self.search_matches.push(idx);
+                     }
+              }
         }
         
         if self.search_matches.is_empty() {
@@ -569,8 +649,42 @@ impl App {
     }
 
     fn jump_to_latest(&mut self) {
-        if !self.filtered_logs.is_empty() {
-            self.table_state.select(Some(self.filtered_logs.len() - 1));
+        if !self.display_rows.is_empty() {
+            self.table_state.select(Some(self.display_rows.len() - 1));
+        }
+    }
+
+    pub fn open_detail_view(&mut self) {
+        if let Some(selected) = self.table_state.selected() {
+            if selected < self.display_rows.len() {
+                let (log_idx, _chunk_idx) = self.display_rows[selected];
+                self.detail_view_open = true;
+                self.detail_view_log_idx = Some(log_idx);
+                self.detail_view_scroll = 0;
+            }
+        }
+    }
+
+    pub fn close_detail_view(&mut self) {
+        self.detail_view_open = false;
+        self.detail_view_log_idx = None;
+        self.detail_view_scroll = 0;
+    }
+
+    pub fn scroll_detail_view_down(&mut self, max_lines: usize) {
+        if self.detail_view_scroll < max_lines.saturating_sub(1) {
+            self.detail_view_scroll = self.detail_view_scroll.saturating_add(3); // Scroll by 3 lines
+            if self.detail_view_scroll >= max_lines {
+                self.detail_view_scroll = max_lines.saturating_sub(1);
+            }
+        }
+    }
+
+    pub fn scroll_detail_view_up(&mut self) {
+        if self.detail_view_scroll >= 3 {
+            self.detail_view_scroll -= 3;
+        } else if self.detail_view_scroll > 0 {
+            self.detail_view_scroll = 0;
         }
     }
 }

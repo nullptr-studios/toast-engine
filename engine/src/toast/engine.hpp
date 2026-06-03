@@ -3,6 +3,10 @@
 /// @date 10 Feb 2026
 
 namespace toast {
+namespace renderer {
+class VulkanCore;
+class VulkanRenderer;
+}
 
 struct EnginePimpl;
 

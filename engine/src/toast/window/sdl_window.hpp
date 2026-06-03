@@ -1,9 +1,9 @@
 /**
  * @file sdl_window.hpp
- * @author Xein
- * @date 5/7/2026
+ * @author Xein & Dario
+ * @date 7 May 2026
  *
- * @brief TODO: Brief description of the file's purpose
+ * @brief Wrapper around the SDL library
  */
 
 #pragma once
@@ -21,12 +21,13 @@ class SDLWindow : public IBaseWindow {
 public:
 	SDLWindow(const char* title, unsigned width = 1080, unsigned height = 720, int flags = 0);
 
-	// SDLWindow(std::string_view title, unsigned pos_x, unsigned pos_y, unsigned width, unsigned height, unsigned flags);
 	~SDLWindow() override = default;
 
 	// Lifetime
 	[[nodiscard]]
 	auto shouldClose() const -> bool override;
+	[[nodiscard]]
+	auto nativeHandle() const -> void* override;
 
 	void pollEvents() override;
 	void swapFramebuffers() override;

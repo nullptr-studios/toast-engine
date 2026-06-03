@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <iostream>
 #include <print>
+#include <tracy/Tracy.hpp>
 #include <vector>
 
 #ifdef __linux__
@@ -34,6 +35,8 @@ void _detail::log(
 }
 
 auto Logger::create() noexcept -> std::unique_ptr<Logger> {
+	ZoneScoped;
+
 	// Standard trick to allow make_unique with a private constructor
 	struct Helper : public Logger { };
 
@@ -142,6 +145,7 @@ Logger::~Logger() noexcept {
 void Logger::log(std::string_view file, unsigned line, char severity, std::string_view sink, std::string_view message) {
 	auto* logger = instance;
 
+	// DEPRECATED: This is not used anymore
 	auto pos = sink.find_last_of(':');
 	std::string_view trimmed_sink;
 	if (pos != std::string::npos) {
@@ -200,12 +204,17 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 }
 
 void Logger::initNetworkRetry() {
+	ZoneScoped;
+
 	// The server might be slow to start, so we give it a few seconds
 	// to avoid crashing the engine immediately on boot
 	constexpr int max_attempts = 10;
 	constexpr int delay_ms = 1000;
 
 	for (int attempt = 1; attempt <= max_attempts; ++attempt) {
+		ZoneScopedN("Connection attempt");
+		ZoneNameF("Connection attempt %i", attempt);
+
 		try {
 			if (m.socket.is_open()) {
 				asio::error_code ec;
@@ -238,6 +247,8 @@ void Logger::initNetworkRetry() {
 }
 
 void Logger::stop() {
+	ZoneScoped;
+
 	// We spin briefly to wait for any active background write to finish
 	// This prevents us from closing the socket while a ThreadPool worker is using it
 	while (m.drain_pending.load(std::memory_order_acquire)) {
@@ -258,6 +269,8 @@ void Logger::stop() {
 }
 
 void Logger::drain() {
+	ZoneScoped;
+
 	auto batch = collectQueue();
 
 	if (!batch.empty() && m.socket.is_open()) {
@@ -289,6 +302,8 @@ void Logger::drain() {
 }
 
 auto Logger::collectQueue() -> std::vector<uint8_t> {
+	ZoneScoped;
+
 	// Batching logs together significantly reduces the number of TCP packets
 	// and system calls, which is better for performance
 	logging::LogBatch batch;
@@ -311,6 +326,8 @@ auto Logger::collectQueue() -> std::vector<uint8_t> {
 }
 
 void Logger::flushSync() {
+	ZoneScoped;
+
 	auto batch = collectQueue();
 	if (!batch.empty() && m.socket.is_open()) {
 		uint32_t len = static_cast<uint32_t>(batch.size());

@@ -1,7 +1,9 @@
-/// @file window_events.hpp
-/// @author Xein
-/// @date 06 May 25
-/// @brief All the different events a function may have
+/***
+ *  @file window_events.hpp
+ *  @author Xein
+ *  @date 06 May 25
+ *  @brief All the different events a window may have
+ */
 
 #pragma once
 #include "toast/events/event.hpp"
@@ -52,9 +54,9 @@ struct WindowChar : Event<WindowChar> {
 
 /// @brief Event sent when user moves the mouse
 struct WindowMousePosition : Event<WindowMousePosition> {
-	double x, y;
+	float x, y;
 
-	WindowMousePosition(double x_pos, double y_pos) : x(x_pos), y(y_pos) { }
+	WindowMousePosition(float x_pos, float y_pos) : x(x_pos), y(y_pos) { }
 };
 
 /// @brief Event sent when user clicks a button on the mouse
@@ -68,7 +70,7 @@ struct WindowMouseButton : Event<WindowMouseButton> {
 struct WindowMouseScroll : Event<WindowMouseScroll> {
 	double x, y;
 
-	WindowMouseScroll(double x_offset, double y_offset) : x(x_offset), y(y_offset) { }
+	WindowMouseScroll(float x_offset, float y_offset) : x(x_offset), y(y_offset) { }
 };
 
 /// @brief Event sent when the window framebuffer is resized

@@ -7,7 +7,29 @@
     "version>=" : "1.32.0"
   }, {
     "name" : "sdl3",
+    "features" : [ "vulkan" ],
     "version>=" : "3.4.8"
+  }, {
+    "name" : "vulkan",
+    "version>=" : "2023-12-17"
+  }, {
+    "name" : "glm",
+    "version>=" : "1.0.3"
+  }, {
+    "name" : "vulkan-loader",
+    "version>=" : "1.4.341.0"
+  }, {
+    "name" : "vulkan-memory-allocator-hpp",
+    "version>=" : "3.3.0"
+  }, {
+    "name" : "vulkan-memory-allocator",
+    "version>=" : "3.3.0"
+  }, {
+    "name" : "tracy",
+    "version>=" : "0.13.1"
+  }, {
+    "name" : "shader-slang",
+    "version>=" : "2026.7.1"
   }, {
     "name" : "tomlplusplus",
     "version>=" : "3.4.0#1"
