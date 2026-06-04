@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Dock.Settings;
 using StartWindowClass = editor.StartWindow.StartWindow;
 using StartWindowViewModelClass = editor.StartWindow.StartWindowViewModel;
 
@@ -9,6 +10,9 @@ namespace editor;
 
 public partial class App : Application {
 	public override void Initialize() {
+		DockSettings.GlobalDockingPreset = DockGlobalDockingPreset.GlobalFirst;
+		DockSettings.GlobalDockingProportion = 0.2;
+
 		AvaloniaXamlLoader.Load(this);
 	}
 

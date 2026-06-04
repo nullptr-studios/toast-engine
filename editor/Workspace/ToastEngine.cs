@@ -4,15 +4,16 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Dock.Model.Core;
+using System.Collections.Generic;
 using Dock.Model.Controls;
 
-namespace editor.MainWindow;
+namespace editor.Workspace;
 
 /// @brief Description of the latest rendered viewport frame
 [StructLayout(LayoutKind.Sequential)]
@@ -26,7 +27,7 @@ public struct ToastViewportFrame {
 public partial class ToastEngine : IDisposable {
 	private const string EngineLib = "toast_engine";
 
-	private List<MainWindow> m_toastWindows = [];
+	private List<Workspace> m_toastWindows = [];
 	private Lock m_windowsLock = new Lock();
 
 	private IntPtr m_gameHandle = IntPtr.Zero;
@@ -64,8 +65,6 @@ public partial class ToastEngine : IDisposable {
 		// Load the engine DLL into the process FIRST
 		// the game DLL depends on toast_engine.dll, and the OS loader resolves that dependency by base name
 		// against already-loaded modules
-		// Without this, LibraryImport load would happen too late and game_temp.dll would fail to load
-		// Omg this took me so long to fix
 		NativeLibrary.Load(EngineDllPath());
 
 		LoadGame();
@@ -80,9 +79,9 @@ public partial class ToastEngine : IDisposable {
 		toast_create_avalonia_window();
 
 		// Then we create a window
-		CreateWindow();
+		CreateWorkspace();
 
-		// Start the tick loop on a background thread
+		// Start the tick loop on a background thread to avoid blocking the Avalonia render thread
 		m_cancellationSource = new CancellationTokenSource();
 		m_tickTask = Task.Run(() => TickLoop(m_cancellationSource.Token));
 	}
@@ -103,9 +102,9 @@ public partial class ToastEngine : IDisposable {
 		m_cancellationSource.Dispose();
 	}
 
-	public MainWindow CreateWindow(bool show = true, IRootDock? layout = null) {
-		var w = new MainWindow(this) {
-			DataContext = new MainWindowViewModel(this, layout)
+	public Workspace CreateWorkspace(bool show = true, IRootDock? layout = null) {
+		var w = new Workspace(this) {
+			DataContext = new WorkspaceViewModel(this, layout)
 		};
 
 		lock (m_windowsLock) {
@@ -118,7 +117,7 @@ public partial class ToastEngine : IDisposable {
 		return w;
 	}
 
-	public void RemoveWindow(MainWindow w) {
+	public void RemoveWorkspace(Workspace w) {
 		lock (m_windowsLock) {
 			m_toastWindows.Remove(w);
 
@@ -127,7 +126,13 @@ public partial class ToastEngine : IDisposable {
 				m_closeEventSent = true;
 				// TODO: m_toast_close_engine?.Invoke();
 			}
+		}
+	}
 
+	public void SignalClose() {
+		if (!m_closeEventSent) {
+			m_closeEventSent = true;
+			// TODO: m_toast_close_engine?.Invoke();
 		}
 	}
 

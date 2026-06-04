@@ -11,7 +11,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
 
-namespace editor.MainWindow;
+namespace editor.Workspace;
 
 public partial class Viewport : UserControl {
 	private ToastEngine? m_engine;
@@ -48,12 +48,29 @@ public partial class Viewport : UserControl {
 	// ---- Frame pump --------------------------------------------------------------------------------
 
 	private void OnTick(object? sender, EventArgs e) {
+		if (!IsEffectivelyVisible)
+			return;
+
 		m_engine ??= (DataContext as ViewportViewModel)?.Engine;
 		if (m_engine is null)
 			return;
 
 		SendResizeIfChanged();
-		EnsureBitmap();
+
+		// Peek the engine's current frame dimensions without copying (null dst => -1 with dims filled
+		// when a frame exists, 0 when none yet). The engine packs rows tightly at width*4.
+		var peek = m_engine.TryGetViewportFrame(IntPtr.Zero, 0, out var dims);
+		if (peek == 0 || dims.width == 0 || dims.height == 0)
+			return; // no frame published yet
+
+		// Keep the bitmap locked to the engine's exact size. Reallocating only on the "buffer too small"
+		// path misses shrinks (engine returns 1 and memcpys new-stride data into the old bitmap => skew).
+		if (m_bitmap is null
+		    || m_bitmap.PixelSize.Width != (int) dims.width
+		    || m_bitmap.PixelSize.Height != (int) dims.height) {
+			AllocateBitmap((int) dims.width, (int) dims.height);
+		}
+
 		if (m_bitmap is null)
 			return;
 
@@ -70,27 +87,8 @@ public partial class Viewport : UserControl {
 			}
 		}
 
-		switch (result) {
-			case 1: {
-				if (changed)
-					Surface.InvalidateVisual();
-				break;
-			}
-			case -1:
-				// Engine surface size changed (e.g. after a resize); reallocate to match and pick it up next tick.
-				AllocateBitmap((int) info.width, (int) info.height);
-				break;
-		}
-	}
-
-	private void EnsureBitmap() {
-		if (m_bitmap is not null || m_engine is null)
-			return;
-
-		// Query current dimensions without copying (null dst => -1 with dims filled, when a frame exists).
-		var result = m_engine.TryGetViewportFrame(IntPtr.Zero, 0, out var info);
-		if (result == -1 && info.width > 0 && info.height > 0)
-			AllocateBitmap((int) info.width, (int) info.height);
+		if (result == 1 && changed)
+			Surface.InvalidateVisual();
 	}
 
 	private void AllocateBitmap(int width, int height) {

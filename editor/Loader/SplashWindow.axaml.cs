@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -7,7 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
-using editor.MainWindow;
+using editor.Workspace;
+using Avalonia.Threading;
 
 namespace editor.Loader;
 
@@ -82,20 +83,20 @@ public partial class SplashWindow : Window {
 			AppendLine("");
 
 			double progress = (double)stepNumber / total * 100.0;
-			await Dispatcher.InvokeAsync(() => ProgressBar.Value = progress);
+			await Dispatcher.UIThread.InvokeAsync(() => ProgressBar.Value = progress);
 
 			await Task.Delay(120);
 		}
 
 		if (m_project != null) {
-			var engine = new ToastEngine(m_project);
+			_ = new ToastEngine(m_project);
 		}
-
+		
 		Close();
 	}
 
 	private void AppendLine(string text) {
-		Dispatcher.Post(() => {
+		Dispatcher.UIThread.Post(() => {
 			ConsoleOutput.Text += text + '\n';
 			ConsoleScroll.ScrollToEnd();
 		});

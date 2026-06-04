@@ -131,7 +131,7 @@
     <ItemGroup>
       <ResFiles Include="$(ProjectDir)Resources\**\*" />
     </ItemGroup>
-      <Copy SourceFiles="@(ResFiles)" DestinationFiles="@(ResFiles->'$(OutputPath)Resources\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+      <Copy SourceFiles="@(ResFiles)" DestinationFiles="@(ResFiles->'$(OutputPath)/Resources\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>

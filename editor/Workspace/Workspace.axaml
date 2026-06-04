@@ -1,29 +1,31 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:editor.MainWindow"
+        xmlns:vm="using:editor.Workspace"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="editor.MainWindow.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
+        x:Class="editor.Workspace.Workspace"
+        x:DataType="vm:WorkspaceViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="editor"
         ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaTitleBarHeightHint="-1"
         WindowDecorations="BorderOnly">
 
-	<Design.DataContext>
-		<vm:MainWindowViewModel />
-	</Design.DataContext>
-
 	<Window.DataTemplates>
-		<DataTemplate DataType="vm:WorkspaceViewModel">
-			<vm:Workspace />
+		<DataTemplate DataType="vm:ViewportViewModel">
+			<vm:Viewport />
+		</DataTemplate>
+		<DataTemplate DataType="vm:HierarchyViewModel">
+			<vm:Hierarchy />
+		</DataTemplate>
+		<DataTemplate DataType="vm:InspectorViewModel">
+			<vm:Inspector />
 		</DataTemplate>
 	</Window.DataTemplates>
 
-	<DockPanel>
-		<DockPanel DockPanel.Dock="Top" x:Name="MenuBorder">
+	<Grid RowDefinitions="Auto,*">
+		<DockPanel x:Name="MenuBorder" Grid.Row="0">
 
 			<!-- Window buttons -->
 			<StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
@@ -80,6 +82,13 @@
 				</MenuItem>
 				<MenuItem Header="_View" />
 				<MenuItem Header="_Window">
+					<MenuItem Header="_Hierarchy" ToggleType="CheckBox"
+					          x:Name="HierarchyMenuItem"
+					          Click="OnHierarchyMenuItem" />
+					<MenuItem Header="_Inspector" ToggleType="CheckBox"
+					          x:Name="InspectorMenuItem"
+					          Click="OnInspectorMenuItem" />
+					<Separator />
 					<MenuItem Header="_Logs" ToggleType="CheckBox"
 					          x:Name="LogWindowButton"
 					          Click="OnLogWindowButton" />
@@ -97,7 +106,7 @@
 			        PointerPressed="OnTitleBarPointerPressed" />
 		</DockPanel>
 
-		<DockControl x:Name="EditorDockControl"
+		<DockControl Grid.Row="1" x:Name="EditorDockControl"
 		             Layout="{Binding Layout}" />
-	</DockPanel>
+	</Grid>
 </Window>
