@@ -1,0 +1,301 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:editor.AssetBrowser"
+        mc:Ignorable="d" d:DesignWidth="1800" d:DesignHeight="400"
+        Width="1920" Height="400"
+        MinWidth="1200" MinHeight="250"
+        WindowStartupLocation="CenterScreen"
+        x:Class="editor.AssetBrowser.AssetBrowser"
+        x:DataType="vm:AssetBrowserViewModel"
+        Title="Asset Browser">
+
+    <Window.Styles>
+        <!-- Strip default ListBoxItem chrome -->
+        <Style Selector="ListBox#AssetList > ListBoxItem">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+        <!-- Hover -->
+        <Style Selector="ListBox#AssetList > ListBoxItem:pointerover Border.card-border">
+            <Setter Property="BorderBrush" Value="#555566"/>
+        </Style>
+        <!-- Selected -->
+        <Style Selector="ListBox#AssetList > ListBoxItem:selected Border.card-border">
+            <Setter Property="BorderBrush" Value="#5588FF"/>
+            <Setter Property="Background" Value="#1a2a48"/>
+        </Style>
+        <!-- Breadcrumb buttons -->
+        <Style Selector="Button.breadcrumb">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid ColumnDefinitions="250, *" Margin="8" ColumnSpacing="8">
+
+        <!-- Folder tree -->
+        <Border Grid.Column="0" Background="DimGray" CornerRadius="8">
+            <DockPanel>
+                <!-- Header -->
+                <Border DockPanel.Dock="Top"
+                        Padding="10,6,6,6">
+                    <Grid ColumnDefinitions="*, Auto, Auto">
+                        <TextBlock Text="Folders" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                        <Button Grid.Column="1"
+                                Command="{Binding ExpandAllCommand}"
+                                ToolTip.Tip="Expand All"
+                                Background="Transparent" Padding="4" Margin="0,0,2,0">
+                            <LucideIcon Kind="ChevronsUpDown" Size="14"/>
+                        </Button>
+                        <Button Grid.Column="2"
+                                Command="{Binding CollapseAllCommand}"
+                                ToolTip.Tip="Collapse All"
+                                Background="Transparent" Padding="4">
+                            <LucideIcon Kind="ChevronsDownUp" Size="14"/>
+                        </Button>
+                    </Grid>
+                </Border>
+                <!-- Tree -->
+                <ScrollViewer>
+                    <TreeView ItemsSource="{Binding Folders}"
+                              SelectedItem="{Binding SelectedFolder, Mode=TwoWay}"
+                              SelectionMode="Single"
+                              Margin="8" Background="Transparent">
+                        <TreeView.Styles>
+                            <Style Selector="TreeViewItem">
+                                <Setter Property="IsExpanded"
+                                        Value="{ReflectionBinding IsExpanded, Mode=TwoWay}"/>
+                            </Style>
+                        </TreeView.Styles>
+                        <TreeView.ItemTemplate>
+                            <TreeDataTemplate x:DataType="vm:AssetFolder"
+                                              ItemsSource="{Binding SubFolders}">
+                                <TextBlock Text="{Binding Name}"/>
+                            </TreeDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- ── Right panel ── -->
+        <DockPanel Grid.Column="1" VerticalSpacing="8">
+
+            <!-- Toolbar -->
+            <Border DockPanel.Dock="Top" Background="DimGray" CornerRadius="8">
+                <Grid ColumnDefinitions="85, 85, 85, *, Auto, Auto, Auto"
+                      Margin="6" ColumnSpacing="4">
+
+                    <Button Grid.Column="0" Content="+ New"
+                            MinWidth="85" HorizontalContentAlignment="Center" CornerRadius="6"/>
+                    <Button Grid.Column="1" Content="+ Folder"
+                            MinWidth="85" HorizontalContentAlignment="Center" CornerRadius="6"/>
+                    <Button Grid.Column="2" Content="Import"
+                            MinWidth="85" HorizontalContentAlignment="Center" CornerRadius="6"/>
+
+                    <!-- Breadcrumbs -->
+                    <ScrollViewer Grid.Column="3"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  VerticalAlignment="Center">
+                        <ItemsControl ItemsSource="{Binding BreadcrumbItems}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:BreadcrumbItem">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button Content="{Binding Label}"
+                                                Command="{Binding Navigate}"
+                                                Classes="breadcrumb"/>
+                                        <TextBlock Text=" /"
+                                                   IsVisible="{Binding !IsLast}"
+                                                   VerticalAlignment="Center"
+                                                   Opacity="0.4"
+                                                   Margin="0,0,2,0"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Search -->
+                    <TextBox Grid.Column="4"
+                             Text="{Binding SearchText, Mode=TwoWay}"
+                             PlaceholderText="Search… or Type=Texture"
+                             MinWidth="320" MaxWidth="480"
+                             CornerRadius="6"/>
+
+                    <!-- Refresh -->
+                    <Button Grid.Column="5"
+                            Command="{Binding RefreshCommand}"
+                            Content="↻" FontSize="16"
+                            ToolTip.Tip="Refresh"
+                            Margin="4,0,0,0" CornerRadius="6"/>
+
+                    <!-- Filters -->
+                    <Button Grid.Column="6" Content="Filters"
+                            Margin="4,0,0,0" CornerRadius="6">
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                                <Border Background="#2a2a2a" CornerRadius="8" Padding="12">
+                                    <StackPanel Spacing="6" MinWidth="150">
+                                        <TextBlock Text="Filter by type" FontWeight="SemiBold"
+                                                   Margin="0,0,0,2"/>
+                                        <CheckBox Content="All types"
+                                                  IsChecked="{Binding FilterAll}"
+                                                  IsThreeState="True"/>
+                                        <Separator Margin="0,2"/>
+                                        <CheckBox Content="Nodes"     IsChecked="{Binding FilterNode}"/>
+                                        <CheckBox Content="Textures"  IsChecked="{Binding FilterTexture}"/>
+                                        <CheckBox Content="Models"    IsChecked="{Binding FilterModel}"/>
+                                        <CheckBox Content="Materials" IsChecked="{Binding FilterMaterial}"/>
+                                        <CheckBox Content="Shaders"   IsChecked="{Binding FilterShader}"/>
+                                        <CheckBox Content="Scripts"   IsChecked="{Binding FilterScript}"/>
+                                        <CheckBox Content="Unknown"   IsChecked="{Binding FilterUnknown}"/>
+                                    </StackPanel>
+                                </Border>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+
+                </Grid>
+            </Border>
+
+            <!-- Asset view — ContextMenu on outer Border catches right-clicks on empty space -->
+            <Border Background="DimGray" CornerRadius="8">
+                <Border.ContextMenu>
+                    <ContextMenu x:DataType="vm:AssetBrowserViewModel">
+                        <MenuItem Header="New Asset"/>
+                        <MenuItem Header="New Folder"/>
+                        <Separator/>
+                        <MenuItem Header="Refresh" Command="{Binding RefreshCommand}"/>
+                    </ContextMenu>
+                </Border.ContextMenu>
+
+                <DockPanel Margin="8" VerticalSpacing="8">
+
+                    <!-- Item counter -->
+                    <TextBlock DockPanel.Dock="Bottom" Text="{Binding ItemCount}"
+                               Opacity="0.5" FontSize="11"/>
+
+                    <!-- Asset grid -->
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                        <ListBox x:Name="AssetList"
+                                 ItemsSource="{Binding CurrentItems}"
+                                 SelectionMode="Multiple"
+                                 SelectionChanged="OnSelectionChanged"
+                                 Background="Transparent">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"
+                                               ItemWidth="130" ItemHeight="170"
+                                               ItemSpacing="8" LineSpacing="8"
+                                               Margin="4"/>
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+
+                            <ListBox.DataTemplates>
+
+                                <!-- Folder card -->
+                                <DataTemplate x:DataType="vm:AssetFolder">
+                                    <Border Classes="card-border"
+                                            Width="130" Height="170"
+                                            CornerRadius="8" ClipToBounds="True"
+                                            Background="#252525"
+                                            BorderThickness="3" BorderBrush="Transparent"
+                                            DoubleTapped="OnFolderDoubleTapped">
+                                        <Border.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Open"/>
+                                                <MenuItem Header="Rename"/>
+                                                <Separator/>
+                                                <MenuItem Header="Delete"/>
+                                            </ContextMenu>
+                                        </Border.ContextMenu>
+                                        <Grid RowDefinitions="110, *">
+                                            <Border Grid.Row="0" Background="#2c2c2c">
+                                                <TextBlock Text="🗂" FontSize="52"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel Grid.Row="1" Margin="8,5,8,4" Spacing="1">
+                                                <TextBlock Text="{Binding Name}"
+                                                           TextWrapping="Wrap" MaxLines="2"
+                                                           FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="#EBEBEB"/>
+                                                <TextBlock Text="Folder"
+                                                           FontSize="11" Foreground="#888888"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+
+                                <!-- File card -->
+                                <DataTemplate x:DataType="vm:AssetFile">
+                                    <Border Classes="card-border"
+                                            Width="130" Height="170"
+                                            CornerRadius="8" ClipToBounds="True"
+                                            Background="#252525"
+                                            BorderThickness="3" BorderBrush="Transparent">
+                                        <Border.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Open"/>
+                                                <MenuItem Header="Rename"/>
+                                                <Separator/>
+                                                <MenuItem Header="Delete"/>
+                                            </ContextMenu>
+                                        </Border.ContextMenu>
+                                        <Grid RowDefinitions="110, *">
+                                            <!-- Preview: checkerboard, image at natural size -->
+                                            <Border Grid.Row="0"
+                                                    Background="{x:Static vm:CheckerBrush.Instance}"
+                                                    ClipToBounds="True">
+                                                <Panel>
+                                                    <Image Source="/Assets/avalonia-logo.ico"
+                                                           Stretch="None"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                                    <Border VerticalAlignment="Bottom"
+                                                            HorizontalAlignment="Left"
+                                                            Background="{Binding TypeColor}"
+                                                            CornerRadius="4"
+                                                            Padding="6,2" Margin="6,0,0,6">
+                                                        <TextBlock Text="{Binding TypeLabel}"
+                                                                   FontSize="10" FontWeight="Bold"
+                                                                   Foreground="#111111"/>
+                                                    </Border>
+                                                </Panel>
+                                            </Border>
+                                            <!-- Name section -->
+                                            <StackPanel Grid.Row="1" Margin="8,5,8,4" Spacing="1">
+                                                <TextBlock Text="{Binding Name}"
+                                                           TextWrapping="Wrap" MaxLines="2"
+                                                           FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="#EBEBEB"/>
+                                                <TextBlock Text="{Binding TypeLabel}"
+                                                           FontSize="11"
+                                                           Foreground="{Binding TypeColor}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+
+                            </ListBox.DataTemplates>
+                        </ListBox>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+        </DockPanel>
+    </Grid>
+</Window>

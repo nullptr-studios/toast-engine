@@ -1,0 +1,116 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:editor.Import"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="900"
+        Height="900" Width="800"
+        MinHeight="900" MaxHeight="900"
+        CanResize="True"
+        CanMaximize="False"
+        x:Class="editor.Import.ImportWindow"
+        x:DataType="local:ImportWindowViewModel"
+        Title="Import"
+        Background="#202020">
+
+	<Window.Styles>
+		<Style Selector="Button.TreeViewRow">
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="Padding" Value="0"/>
+			<Setter Property="HorizontalAlignment" Value="Stretch"/>
+			<Setter Property="HorizontalContentAlignment" Value="Left"/>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="Transparent"/>
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="Transparent"/>
+			</Style>
+		</Style>
+	</Window.Styles>
+
+	<Grid ColumnDefinitions="Auto, *" Margin="12" ColumnSpacing="8">
+		<!-- Tree view -->
+		<Grid Grid.Column="0" RowDefinitions="*, Auto" RowSpacing="8">
+			<Border Grid.Row="0" Background="#101010" CornerRadius="8">
+				<DockPanel Margin="8" VerticalSpacing="8" MinWidth="400">
+					<TextBox DockPanel.Dock="Bottom" Grid.Row="0"
+					         Text="{Binding SearchText}"
+					         PlaceholderText="Search artwork..."
+					         Margin="0,0,0,4"/>
+
+					<TreeView ItemsSource="{Binding ImportNodes}">
+						<TreeView.ItemTemplate>
+							<TreeDataTemplate ItemsSource="{Binding (local:ImportFolderViewModel).Children}">
+								<Button Command="{Binding ToggleSelection}"
+								        Classes="TreeViewRow"
+								        IsVisible="{Binding IsVisible}">
+									<StackPanel Orientation="Horizontal"
+									            Opacity="{Binding IsEnabled, Converter={StaticResource BoolToOpacityConverter}}">
+										<CheckBox IsChecked="{Binding IsSelected}"
+										          IsThreeState="True"
+										          IsEnabled="{Binding !IsReadOnly}"
+										          IsHitTestVisible="False"
+										          VerticalAlignment="Center"/>
+										<TextBlock Text="{Binding Name}"
+										           VerticalAlignment="Center"
+										           Margin="4,0,0,0"
+										           Foreground="{Binding IsEnabled, Converter={StaticResource EnabledToColorConverter}}"/>
+									</StackPanel>
+								</Button>
+							</TreeDataTemplate>
+						</TreeView.ItemTemplate>
+						<TreeView.Styles>
+							<Style Selector="TreeViewItem" x:DataType="local:ImportNodeViewModel">
+								<Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+								<Setter Property="IsVisible" Value="{Binding IsVisible}"/>
+								<!-- Disable default selection highlight -->
+								<Style Selector="^:selected /template/ ContentPresenter#PART_HeaderPresenter">
+									<Setter Property="Background" Value="Transparent" />
+								</Style>
+								<Style Selector="^:pointerover /template/ ContentPresenter#PART_HeaderPresenter">
+									<Setter Property="Background" Value="Transparent" />
+								</Style>
+							</Style>
+						</TreeView.Styles>
+					</TreeView>
+				</DockPanel>
+			</Border>
+			
+			<TreeView Grid.Row="1">
+				<TreeViewItem Header="External Artwork" IsEnabled="False">
+					<StackPanel Spacing="4" Margin="4">
+						<TextBlock Text="Files"/>
+						<TextBox PlaceholderText="C:/path/goes/here.exe"/>
+						<CheckBox Content="Copy to artwork:// folder" IsHitTestVisible="False"/>
+						<TextBlock Text="Location"/>
+						<TextBox Text="artwork://"/>
+					</StackPanel>
+				</TreeViewItem>
+			</TreeView>
+		</Grid>
+
+		<!-- Import settings -->
+		<DockPanel Grid.Column="1">
+			<StackPanel DockPanel.Dock="Top">
+				<TextBlock Text="Location"/>
+				<TextBox Text="assets://"/>
+			</StackPanel>
+			<StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" FlowDirection="RightToLeft">
+				<Button Content="Import" Background="Green" Command="{Binding ImportCommand}"/>
+				<Button Content="Cancel" Command="{Binding CancelCommand}"/>
+			</StackPanel>
+			<TreeView>
+				<TreeViewItem Header="GLTF">
+					<TextBox Text="Lorem ipsum dolor" Margin="4"/>
+				</TreeViewItem>
+				<TreeViewItem Header="Textures">
+					<TextBox Text="Lorem ipsum dolor" Margin="4"/>
+				</TreeViewItem>
+				<TreeViewItem Header="PSD">
+					<TextBox Text="Lorem ipsum dolor" Margin="4"/>
+				</TreeViewItem>
+			</TreeView>
+		</DockPanel>
+	</Grid>
+</Window>

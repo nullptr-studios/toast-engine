@@ -8,12 +8,13 @@ namespace toast { }
 
 extern "C" {
 
-void uri_set_working_directory(const char* path_str) {
-	auto path = std::filesystem::path(path_str);
-	auto assets_path = path / "assets";
-	auto artwork_path = path / "artwork";
+void uri_set_working_directory(const char* project, const char* engine) {
+	auto path = std::filesystem::path(project);
+	auto engine_path = std::filesystem::path(engine);
 
-	toast::setAssetsPath(assets_path.string());
-	toast::setArtworkPath(artwork_path.string());
+	toast::setAssetsPath((path / "assets").string());
+	toast::setArtworkPath((path / "artwork").string());
+	toast::setCachePath((path / ".toast").string());
+	toast::setCorePath((engine_path / "assets").string());
 }
 }

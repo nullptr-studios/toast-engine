@@ -20,7 +20,9 @@ auto colorSubresourceRange() -> vk::ImageSubresourceRange {
 }
 
 SharedTextureOutputTarget::SharedTextureOutputTarget(const VulkanCore& core, vk::Extent2D preferredExtent, uint32_t imageCount)
-    : m_core(&core), m_extent(preferredExtent), m_images(imageCount) {
+    : m_core(&core),
+      m_extent(preferredExtent),
+      m_images(imageCount) {
 	if (imageCount == 0) {
 		TOAST_CRITICAL("SharedTextureOutput", "Toast Engine Error: Shared texture output target needs at least one image!");
 	}

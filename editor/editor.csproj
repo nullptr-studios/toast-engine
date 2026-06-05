@@ -100,6 +100,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Ktx2Sharp" Version="1.0.2" />
+    <PackageReference Include="Lucide.Avalonia" Version="0.2.9" />
     <PackageReference Include="Tomlyn" Version="2.4.0" />
   </ItemGroup>
 

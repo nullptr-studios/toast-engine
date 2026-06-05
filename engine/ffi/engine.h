@@ -21,7 +21,7 @@ TOAST_C_API void toast_destroy(engine_t*);    ///< Destroys the game engine
 TOAST_C_API void toast_create_SDL_window(const char*);
 TOAST_C_API void toast_create_avalonia_window();
 
-TOAST_C_API void uri_set_working_directory(const char*);
+TOAST_C_API void uri_set_working_directory(const char* project, const char* engine);
 
 /// @brief Description of the latest rendered viewport frame
 typedef struct {

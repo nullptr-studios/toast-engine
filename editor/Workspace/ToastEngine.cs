@@ -36,10 +36,14 @@ public partial class ToastEngine : IDisposable {
 	private IntPtr m_gameInstance;
 
 	private string m_path;
+	private string m_corePath;
 
 	private Task m_tickTask;
 	private CancellationTokenSource m_cancellationSource;
 	private bool m_closeEventSent;
+
+	public string ProjectPath => m_path;
+	public string CorePath  => m_corePath;
 
 	// The engine DLL lives next to the executable at ../toast_engine/bin
 	// We need to specify its location before the application runs
@@ -59,6 +63,8 @@ public partial class ToastEngine : IDisposable {
 
 	public ToastEngine(string toastPath) {
 		m_path = Directory.Exists(toastPath) ? toastPath : Path.GetDirectoryName(toastPath)!;
+		var dll = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "toast_engine", "bin"));
+		m_corePath = Path.Combine(dll, "assets");
 
 		PrepareLogServer();
 
@@ -73,7 +79,7 @@ public partial class ToastEngine : IDisposable {
 		m_engineInstance = toast_create();
 		m_gameInstance = m_gameCreate?.Invoke() ?? IntPtr.Zero;
 
-		uri_set_working_directory(m_path);
+		uri_set_working_directory(m_path, dll);
 
 		// Create the engine's render surface
 		toast_create_avalonia_window();
@@ -198,7 +204,7 @@ public partial class ToastEngine : IDisposable {
 	[LibraryImport(EngineLib)] private static partial void toast_create_avalonia_window();
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
-	private static partial void uri_set_working_directory(string path);
+	private static partial void uri_set_working_directory(string project, string engine);
 
 	[LibraryImport(EngineLib)]
 	private static partial int toast_viewport_get_frame(IntPtr dst, uint dstCapacity, out ToastViewportFrame outFrame);
