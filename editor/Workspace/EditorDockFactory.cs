@@ -16,35 +16,40 @@ using Dock.Model.Mvvm.Controls;
 namespace editor.Workspace;
 
 public class EditorDockFactory : Factory {
+	/// @brief Proportion a tool panel gets when docked to a side
+	private const double SideProportion = 0.2;
+
 	private readonly ToastEngine m_toast;
+
+	private bool m_closingFloat; // re-entrancy guard for floating-window teardown
+	private DocumentDock m_documentDock = null!;
+	private ProportionalDock m_leftPane = null!;
+	private ProportionalDockSplitter m_leftSplitter = null!;
+	private ToolDock m_leftTools = null!;
+	private ProportionalDock m_mainLayout = null!;
+	private ProportionalDock m_rightPane = null!;
+	private ProportionalDockSplitter m_rightSplitter = null!;
+	private ToolDock m_rightTools = null!;
+
+	private IRootDock m_root = null!;
+
+	public EditorDockFactory(ToastEngine toast) {
+		m_toast = toast;
+		HideToolsOnClose = true;
+	}
 
 	public HierarchyViewModel Hierarchy { get; } = new();
 	public InspectorViewModel Inspector { get; } = new();
 
 	/// @brief The scene document currently selected/focused
 	public ViewportViewModel? ActiveScene { get; private set; }
+
 	public event Action<ViewportViewModel?>? ActiveSceneChanged;
 
 	/// @brief Raised when a tool is hidden or restored
 	public event Action<IDockable>? DockableHidden;
+
 	public event Action<IDockable>? DockableShown;
-
-	private IRootDock m_root = null!;
-	private ProportionalDock m_mainLayout = null!;
-	private ProportionalDock m_leftPane = null!;
-	private ProportionalDock m_rightPane = null!;
-	private ToolDock m_leftTools = null!;
-	private ToolDock m_rightTools = null!;
-	private DocumentDock m_documentDock = null!;
-	private ProportionalDockSplitter m_leftSplitter = null!;
-	private ProportionalDockSplitter m_rightSplitter = null!;
-
-	private bool m_closingFloat; // re-entrancy guard for floating-window teardown
-
-	public EditorDockFactory(ToastEngine toast) {
-		m_toast = toast;
-		HideToolsOnClose = true;
-	}
 
 	public override IRootDock CreateLayout() {
 		var scene1 = new ViewportViewModel("Scene 1", m_toast);
@@ -110,11 +115,11 @@ public class EditorDockFactory : Factory {
 		rootDock.DefaultDockable = m_mainLayout;
 		rootDock.VisibleDockables = CreateList<IDockable>(m_mainLayout);
 
-		rootDock.LeftPinnedDockables   = CreateList<IDockable>();
-		rootDock.RightPinnedDockables  = CreateList<IDockable>();
-		rootDock.TopPinnedDockables    = CreateList<IDockable>();
+		rootDock.LeftPinnedDockables = CreateList<IDockable>();
+		rootDock.RightPinnedDockables = CreateList<IDockable>();
+		rootDock.TopPinnedDockables = CreateList<IDockable>();
 		rootDock.BottomPinnedDockables = CreateList<IDockable>();
-		rootDock.HiddenDockables       = CreateList<IDockable>();
+		rootDock.HiddenDockables = CreateList<IDockable>();
 		rootDock.PinnedDock = null;
 
 		m_root = rootDock;
@@ -124,10 +129,10 @@ public class EditorDockFactory : Factory {
 	public override void InitLayout(IDockable layout) {
 		ContextLocator = new Dictionary<string, Func<object?>> {
 			["MainLayout"] = () => layout,
-			["LeftPane"]   = () => layout,
-			["LeftTools"]  = () => layout,
-			["Scenes"]     = () => layout,
-			["RightPane"]  = () => layout,
+			["LeftPane"] = () => layout,
+			["LeftTools"] = () => layout,
+			["Scenes"] = () => layout,
+			["RightPane"] = () => layout,
 			["RightTools"] = () => layout
 		};
 
@@ -145,11 +150,9 @@ public class EditorDockFactory : Factory {
 		base.InitLayout(layout);
 	}
 
-	public bool IsHidden(IDockable tool) =>
-		m_root?.HiddenDockables?.Contains(tool) ?? false;
-
-	/// @brief Proportion a tool panel gets when docked to a side
-	private const double SideProportion = 0.2;
+	public bool IsHidden(IDockable tool) {
+		return m_root?.HiddenDockables?.Contains(tool) ?? false;
+	}
 
 	public override void CloseDockable(IDockable dockable) {
 		var root = ResolveRoot(dockable);
@@ -166,6 +169,7 @@ public class EditorDockFactory : Factory {
 			} finally {
 				m_closingFloat = false;
 			}
+
 			return;
 		}
 
@@ -216,6 +220,7 @@ public class EditorDockFactory : Factory {
 			tool.Owner = home;
 			AddDockable(home, tool);
 		}
+
 		home.ActiveDockable = tool;
 
 		pane.VisibleDockables ??= CreateList<IDockable>();
@@ -261,11 +266,13 @@ public class EditorDockFactory : Factory {
 	}
 
 
-	private bool IsManagedTool(IDockable dockable) =>
-		ReferenceEquals(dockable, Hierarchy) || ReferenceEquals(dockable, Inspector);
+	private bool IsManagedTool(IDockable dockable) {
+		return ReferenceEquals(dockable, Hierarchy) || ReferenceEquals(dockable, Inspector);
+	}
 
-	private (ProportionalDock pane, ToolDock home) HomeFor(IDockable tool) =>
-		ReferenceEquals(tool, Inspector) ? (m_rightPane, m_rightTools) : (m_leftPane, m_leftTools);
+	private (ProportionalDock pane, ToolDock home) HomeFor(IDockable tool) {
+		return ReferenceEquals(tool, Inspector) ? (m_rightPane, m_rightTools) : (m_leftPane, m_leftTools);
+	}
 
 	private void CollapsePane(ProportionalDock pane) {
 		var splitter = ReferenceEquals(pane, m_leftPane) ? m_leftSplitter : m_rightSplitter;
@@ -299,6 +306,7 @@ public class EditorDockFactory : Factory {
 				return root;
 			current = current.Owner;
 		}
+
 		return null;
 	}
 
@@ -307,7 +315,7 @@ public class EditorDockFactory : Factory {
 			yield return tool;
 		if (dockable is IDock dock && dock.VisibleDockables is { } children)
 			foreach (var child in children)
-				foreach (var nested in CollectTools(child))
-					yield return nested;
+			foreach (var nested in CollectTools(child))
+				yield return nested;
 	}
 }

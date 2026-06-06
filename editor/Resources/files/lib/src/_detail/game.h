@@ -21,12 +21,13 @@
 
 #ifdef __cplusplus
 extern "C" {
+
 #endif
 
-struct game_t;                         ///< Opaque Engine ptr
+struct game_t; ///< Opaque Engine ptr
 
-GAME_API game_t* game_create(void);    ///< Initializes the game engine
-GAME_API void game_destroy(game_t*);   ///< Destroys the game
+GAME_API game_t* game_create(void); ///< Initializes the game engine
+GAME_API void game_destroy(game_t*); ///< Destroys the game
 
 #ifdef __cplusplus
 }

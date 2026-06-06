@@ -11,16 +11,12 @@ public partial class LogsWindow : Window {
 	protected override void OnOpened(EventArgs e) {
 		base.OnOpened(e);
 
-		if (DataContext is LoggerViewModel vm) {
-			vm.start();
-		}
+		if (DataContext is LoggerViewModel vm) vm.start();
 	}
 
 	protected override void OnClosed(EventArgs e) {
 		base.OnClosed(e);
 
-		if (DataContext is LoggerViewModel vm) {
-			vm.stop();
-		}
+		if (DataContext is LoggerViewModel vm) vm.stop();
 	}
 }

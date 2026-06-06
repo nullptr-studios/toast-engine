@@ -14,13 +14,17 @@ using Avalonia.Threading;
 namespace editor.Workspace;
 
 public partial class Viewport : UserControl {
-	private ToastEngine? m_engine;
+	private const int ActionReleased = 0;
+	private const int ActionPressed = 1;
+
+	private const int ScancodeMask = 1 << 30; // SDLK_SCANCODE_MASK
 	private WriteableBitmap? m_bitmap;
-	private DispatcherTimer? m_timer;
+	private ToastEngine? m_engine;
 	private ulong m_lastFrameId;
+	private int m_surfaceH;
 
 	private int m_surfaceW;
-	private int m_surfaceH;
+	private DispatcherTimer? m_timer;
 
 	public Viewport() {
 		InitializeComponent();
@@ -57,29 +61,24 @@ public partial class Viewport : UserControl {
 
 		SendResizeIfChanged();
 
-		// Peek the engine's current frame dimensions without copying (null dst => -1 with dims filled
-		// when a frame exists, 0 when none yet). The engine packs rows tightly at width*4.
 		var peek = m_engine.TryGetViewportFrame(IntPtr.Zero, 0, out var dims);
 		if (peek == 0 || dims.width == 0 || dims.height == 0)
 			return; // no frame published yet
 
-		// Keep the bitmap locked to the engine's exact size. Reallocating only on the "buffer too small"
-		// path misses shrinks (engine returns 1 and memcpys new-stride data into the old bitmap => skew).
 		if (m_bitmap is null
-		    || m_bitmap.PixelSize.Width != (int) dims.width
-		    || m_bitmap.PixelSize.Height != (int) dims.height) {
-			AllocateBitmap((int) dims.width, (int) dims.height);
-		}
+		    || m_bitmap.PixelSize.Width != (int)dims.width
+		    || m_bitmap.PixelSize.Height != (int)dims.height)
+			AllocateBitmap((int)dims.width, (int)dims.height);
 
 		if (m_bitmap is null)
 			return;
 
 		int result;
 		ToastViewportFrame info;
-		bool changed = false;
+		var changed = false;
 
 		using (var fb = m_bitmap.Lock()) {
-			var capacity = (uint) (fb.RowBytes * fb.Size.Height);
+			var capacity = (uint)(fb.RowBytes * fb.Size.Height);
 			result = m_engine.TryGetViewportFrame(fb.Address, capacity, out info);
 			if (result == 1) {
 				changed = info.frame_id != m_lastFrameId;
@@ -101,17 +100,19 @@ public partial class Viewport : UserControl {
 		m_lastFrameId = 0;
 	}
 
-	// ---- Resize ------------------------------------------------------------------------------------
+	// Resize
 
-	private double RenderScaling() => TopLevel.GetTopLevel(this)?.RenderScaling ?? 1.0;
+	private double RenderScaling() {
+		return TopLevel.GetTopLevel(this)?.RenderScaling ?? 1.0;
+	}
 
 	private void SendResizeIfChanged() {
 		if (m_engine is null)
 			return;
 
 		var scale = RenderScaling();
-		var width = Math.Max(1, (int) Math.Round(Bounds.Width * scale));
-		var height = Math.Max(1, (int) Math.Round(Bounds.Height * scale));
+		var width = Math.Max(1, (int)Math.Round(Bounds.Width * scale));
+		var height = Math.Max(1, (int)Math.Round(Bounds.Height * scale));
 
 		if (width == m_surfaceW && height == m_surfaceH)
 			return;
@@ -121,7 +122,7 @@ public partial class Viewport : UserControl {
 		m_engine.SendResize(width, height);
 	}
 
-	// ---- Input forwarding (only while this viewport is selected/focused) ----------------------------
+	// Input forwarding
 
 	protected override void OnPointerMoved(PointerEventArgs e) {
 		base.OnPointerMoved(e);
@@ -130,7 +131,7 @@ public partial class Viewport : UserControl {
 
 		var p = e.GetPosition(this);
 		var scale = RenderScaling();
-		m_engine.SendMousePosition((float) (p.X * scale), (float) (p.Y * scale));
+		m_engine.SendMousePosition((float)(p.X * scale), (float)(p.Y * scale));
 	}
 
 	protected override void OnPointerPressed(PointerPressedEventArgs e) {
@@ -160,7 +161,7 @@ public partial class Viewport : UserControl {
 		if (!IsFocused || m_engine is null)
 			return;
 
-		m_engine.SendMouseScroll((float) e.Delta.X, (float) e.Delta.Y);
+		m_engine.SendMouseScroll((float)e.Delta.X, (float)e.Delta.Y);
 	}
 
 	protected override void OnKeyDown(KeyEventArgs e) {
@@ -189,24 +190,17 @@ public partial class Viewport : UserControl {
 			return;
 
 		foreach (var rune in e.Text.AsSpan().EnumerateRunes())
-			m_engine.SendChar((uint) rune.Value);
+			m_engine.SendChar((uint)rune.Value);
 	}
 
-	// ---- SDL value mapping (must stay in sync with the SDL window path) -----------------------------
-	// Action / scancode / keycode / modifier values mirror SDL3 so engine-side consumers see identical
-	// data whether input comes from the SDL window or this Avalonia viewport.
-
-	private const int ActionReleased = 0;
-	private const int ActionPressed = 1;
-
-	private const int ScancodeMask = 1 << 30; // SDLK_SCANCODE_MASK
-
-	private static int ButtonFromUpdateKind(PointerUpdateKind kind) => kind switch {
-		PointerUpdateKind.LeftButtonPressed or PointerUpdateKind.LeftButtonReleased => 1,    // SDL_BUTTON_LEFT
-		PointerUpdateKind.MiddleButtonPressed or PointerUpdateKind.MiddleButtonReleased => 2, // SDL_BUTTON_MIDDLE
-		PointerUpdateKind.RightButtonPressed or PointerUpdateKind.RightButtonReleased => 3,   // SDL_BUTTON_RIGHT
-		_ => 0
-	};
+	private static int ButtonFromUpdateKind(PointerUpdateKind kind) {
+		return kind switch {
+			PointerUpdateKind.LeftButtonPressed or PointerUpdateKind.LeftButtonReleased => 1,     // SDL_BUTTON_LEFT
+			PointerUpdateKind.MiddleButtonPressed or PointerUpdateKind.MiddleButtonReleased => 2, // SDL_BUTTON_MIDDLE
+			PointerUpdateKind.RightButtonPressed or PointerUpdateKind.RightButtonReleased => 3,   // SDL_BUTTON_RIGHT
+			_ => 0
+		};
+	}
 
 	private static int SdlMods(KeyModifiers mods) {
 		var result = 0;
@@ -217,8 +211,6 @@ public partial class Viewport : UserControl {
 		return result;
 	}
 
-	/// @brief Maps an Avalonia Key to an (SDL keycode, SDL scancode) pair. Covers the common keys;
-	/// unmapped keys return (0, 0). This is the single place to extend for fuller parity.
 	private static (int key, int scancode) MapKey(Key k) {
 		// Letters: SDL keycode = lowercase ascii, scancode SDL_SCANCODE_A(4)..Z(29).
 		if (k is >= Key.A and <= Key.Z) {
@@ -235,9 +227,9 @@ public partial class Viewport : UserControl {
 
 		return k switch {
 			Key.Space => (32, 44),
-			Key.Enter => (13, 40),       // SDLK_RETURN
+			Key.Enter => (13, 40), // SDLK_RETURN
 			Key.Escape => (27, 41),
-			Key.Back => (8, 42),         // Backspace
+			Key.Back => (8, 42), // Backspace
 			Key.Tab => (9, 43),
 			Key.Right => (ScancodeMask | 79, 79),
 			Key.Left => (ScancodeMask | 80, 80),

@@ -4,42 +4,24 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
+using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Tomlyn.Model;
+using editor.Loader;
+using editor.Services;
 
 namespace editor.Import;
 
 public abstract partial class ImportNodeViewModel : ViewModelBase {
-	[ObservableProperty]
-	private string m_name = string.Empty;
-
-	[ObservableProperty]
-	private string m_fullPath = string.Empty;
+	[ObservableProperty] private string m_fullPath = string.Empty;
+	[ObservableProperty] private bool m_isEnabled = true;
+	[ObservableProperty] private bool m_isExpanded = true;
+	[ObservableProperty] private bool m_isReadOnly;
 
 	private bool? m_isSelected = false;
-	public bool? IsSelected {
-		get => m_isSelected;
-		set {
-			if (SetProperty(ref m_isSelected, value)) {
-				OnSelectionChanged(value);
-			}
-		}
-	}
-
-	[ObservableProperty]
-	private bool m_isEnabled = true;
-
-	[ObservableProperty]
-	private bool m_isReadOnly = false;
-
-	[ObservableProperty]
-	private bool m_isExpanded = true;
-
-	[ObservableProperty]
-	private bool m_isVisible = true;
-
-	public ImportFolderViewModel? Parent { get; }
+	[ObservableProperty] private bool m_isVisible = true;
+	[ObservableProperty] private string m_name = string.Empty;
 
 	protected ImportNodeViewModel(string path, ImportFolderViewModel? parent) {
 		FullPath = Path.GetFullPath(path);
@@ -47,11 +29,19 @@ public abstract partial class ImportNodeViewModel : ViewModelBase {
 		Parent = parent;
 	}
 
+	public bool? IsSelected {
+		get => m_isSelected;
+		set {
+			if (SetProperty(ref m_isSelected, value)) OnSelectionChanged(value);
+		}
+	}
+
+	public ImportFolderViewModel? Parent { get; }
+
 	protected virtual void OnSelectionChanged(bool? value) { }
 
 	public void ToggleSelection() {
 		if (!IsEnabled || IsReadOnly) return;
-		// Users can only toggle between True and False. Partial (null) is automatic.
 		IsSelected = IsSelected != true;
 	}
 
@@ -62,15 +52,15 @@ public abstract partial class ImportNodeViewModel : ViewModelBase {
 	public abstract void ApplyFilter(string filter);
 }
 
-public partial class ImportFileViewModel : ImportNodeViewModel {
-	public ImportFileViewModel(string path, ImportFolderViewModel? parent, List<string> allowedExtensions, HashSet<string> importedFiles)
+public class ImportFileViewModel : ImportNodeViewModel {
+	public ImportFileViewModel(
+		string path, ImportFolderViewModel? parent,
+		List<string> allowedExtensions, HashSet<string> importedFiles)
 		: base(path, parent) {
 		var ext = Path.GetExtension(path).ToLowerInvariant();
-		
 		if (importedFiles.Contains(path) || importedFiles.Contains(FullPath)) {
 			IsReadOnly = true;
 			IsSelected = true;
-			IsEnabled = true;
 		} else if (!allowedExtensions.Contains(ext)) {
 			IsEnabled = false;
 			IsSelected = false;
@@ -82,53 +72,38 @@ public partial class ImportFileViewModel : ImportNodeViewModel {
 	}
 
 	public override void ApplyFilter(string filter) {
-		if (string.IsNullOrWhiteSpace(filter)) {
-			IsVisible = true;
-			return;
-		}
-		IsVisible = Name.Contains(filter, StringComparison.OrdinalIgnoreCase);
+		IsVisible = string.IsNullOrWhiteSpace(filter) ||
+		            Name.Contains(filter, StringComparison.OrdinalIgnoreCase);
 	}
 }
 
-public partial class ImportFolderViewModel : ImportNodeViewModel {
-	public ObservableCollection<ImportNodeViewModel> Children { get; } = [];
-
-	public ImportFolderViewModel(string path, ImportFolderViewModel? parent, List<string> allowedExtensions, HashSet<string> importedFiles)
+public class ImportFolderViewModel : ImportNodeViewModel {
+	public ImportFolderViewModel(
+		string path, ImportFolderViewModel? parent,
+		List<string> allowedExtensions, HashSet<string> importedFiles)
 		: base(path, parent) {
-		
-		foreach (var dir in Directory.EnumerateDirectories(path)) {
+		foreach (var dir in Directory.EnumerateDirectories(path))
 			Children.Add(new ImportFolderViewModel(dir, this, allowedExtensions, importedFiles));
-		}
-
-		foreach (var file in Directory.EnumerateFiles(path)) {
+		foreach (var file in Directory.EnumerateFiles(path))
 			Children.Add(new ImportFileViewModel(file, this, allowedExtensions, importedFiles));
-		}
-
 		IsEnabled = Children.Any(c => c.IsEnabled);
 		UpdateSelectionFromChildren();
 	}
 
+	public ObservableCollection<ImportNodeViewModel> Children { get; } = [];
+
 	protected override void OnSelectionChanged(bool? value) {
 		if (value == null) return;
-
-		foreach (var child in Children) {
-			if (!child.IsReadOnly && child.IsEnabled) {
-				child.IsSelected = value;
-			}
-		}
-		
+		foreach (var child in Children.Where(c => !c.IsReadOnly && c.IsEnabled))
+			child.IsSelected = value;
 		Parent?.UpdateSelectionFromChildren();
 	}
 
 	public void UpdateSelectionFromChildren() {
-		bool allChecked = true;
-		bool allUnchecked = true;
-		bool anyEnabled = false;
-
+		bool allChecked = true, allUnchecked = true, anyEnabled = false;
 		foreach (var child in Children) {
 			if (!child.IsEnabled) continue;
 			anyEnabled = true;
-
 			if (child.IsSelected == true) {
 				allUnchecked = false;
 			} else if (child.IsSelected == false) {
@@ -140,13 +115,7 @@ public partial class ImportFolderViewModel : ImportNodeViewModel {
 		}
 
 		IsEnabled = anyEnabled;
-
-		bool? newState;
-		if (!anyEnabled) newState = false;
-		else if (allChecked) newState = true;
-		else if (allUnchecked) newState = false;
-		else newState = null;
-
+		bool? newState = !anyEnabled ? false : allChecked ? true : allUnchecked ? false : null;
 		UpdateSelectionSilently(newState);
 		Parent?.UpdateSelectionFromChildren();
 	}
@@ -158,93 +127,143 @@ public partial class ImportFolderViewModel : ImportNodeViewModel {
 			return;
 		}
 
-		bool anyChildVisible = false;
+		var anyVisible = false;
 		foreach (var child in Children) {
 			child.ApplyFilter(filter);
-			if (child.IsVisible) anyChildVisible = true;
+			if (child.IsVisible) anyVisible = true;
 		}
 
-		IsVisible = anyChildVisible || Name.Contains(filter, StringComparison.OrdinalIgnoreCase);
+		IsVisible = anyVisible || Name.Contains(filter, StringComparison.OrdinalIgnoreCase);
 		if (IsVisible) IsExpanded = true;
 	}
 }
 
 public partial class ImportWindowViewModel : ViewModelBase {
-	private readonly List<string> m_allowedExtensions = [
-		".png", ".tga",
-	];
+	private static readonly List<string> s_allowedExtensions = [".png", ".tga"];
+	[ObservableProperty] private string m_locationPath = "assets://";
 
-	public ObservableCollection<ImportNodeViewModel> ImportNodes { get; } = [];
+	[ObservableProperty] private string m_searchText = string.Empty;
 
-	[ObservableProperty]
-	private string m_searchText = string.Empty;
-
-	partial void OnSearchTextChanged(string value) {
-		foreach (var node in ImportNodes) {
-			node.ApplyFilter(value);
-		}
-	}
+	private Window? m_window;
 
 	public ImportWindowViewModel() {
-		var artworkPath = @"C:\Users\Xein\Desktop\unnamed_project\artwork";
-		var artworkDatabasePath = @"C:\Users\Xein\Desktop\unnamed_project\.toast\artwork_database.json";
+		if (!ProjectContext.IsInitialized) return;
 
-		HashSet<string> importedFiles = [];
-		if (File.Exists(artworkDatabasePath)) {
-			try {
-				var json = File.ReadAllText(artworkDatabasePath);
-				using var doc = JsonDocument.Parse(json);
-				if (doc.RootElement.TryGetProperty("type", out var type) && type.GetString() == "artwork_database") {
-					foreach (var property in doc.RootElement.EnumerateObject()) {
-						if (property.Name is not ("type" or "version")) {
-							importedFiles.Add(Path.GetFullPath(property.Name));
-						}
-					}
-				}
-			} catch {
-				// Handle parse errors silently for now
-			}
-		}
+		var artworkPath = ProjectContext.ArtworkPath;
+		var artworkDbPath = ProjectContext.Resolve("cache://artwork_database.json");
+		var importedFiles = LoadImportedFiles(artworkDbPath);
 
-		if (Directory.Exists(artworkPath)) {
-			ImportNodes.Add(new ImportFolderViewModel(artworkPath, null, m_allowedExtensions, importedFiles));
-		}
+		if (Directory.Exists(artworkPath))
+			ImportNodes.Add(new ImportFolderViewModel(artworkPath, null, s_allowedExtensions, importedFiles));
+	}
+
+	public ObservableCollection<ImportNodeViewModel> ImportNodes { get; } = [];
+	public TextureImportSettings TextureSettings { get; } = new();
+
+	public void SetWindow(Window window) {
+		m_window = window;
+	}
+
+	partial void OnSearchTextChanged(string value) {
+		foreach (var node in ImportNodes) node.ApplyFilter(value);
+	}
+
+	private static HashSet<string> LoadImportedFiles(string dbPath) {
+		var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		if (!File.Exists(dbPath)) return result;
+		try {
+			using var doc = JsonDocument.Parse(File.ReadAllText(dbPath));
+			if (doc.RootElement.TryGetProperty("type", out var t) && t.GetString() == "artwork_database")
+				foreach (var prop in doc.RootElement.EnumerateObject())
+					if (prop.Name is not ("type" or "version"))
+						result.Add(Path.GetFullPath(ProjectContext.Resolve(prop.Name)));
+		} catch { }
+
+		return result;
 	}
 
 	[RelayCommand]
-	private void Import() {
-		var selectedFiles = GetSelectedFiles(ImportNodes);
-
-		foreach (var file in selectedFiles) {
-			var meta = CreateMeta(file);
-			ImportFile();
-			UpdateDatabases(file);
-		}
-		// TODO: Process files
-		Console.WriteLine($"Importing {selectedFiles.Count} files:");
-		foreach (var file in selectedFiles) {
-			Console.WriteLine($"- {file}");
-		}
+	private async Task BrowseLocation() {
+		if (m_window is null) return;
+		var dialog = new AssetFolderPickerDialog();
+		var result = await dialog.ShowDialog<string?>(m_window);
+		if (result is not null) LocationPath = result;
 	}
 
-	private TomlTable CreateMeta(string file) {
+	[RelayCommand]
+	private async void Import() {
+		var selectedFiles = GetSelectedFiles(ImportNodes);
+		if (selectedFiles.Count == 0) return;
 
+		var tasks = selectedFiles.Select(file => new LoaderTask(
+			Path.GetFileName(file),
+			async log => await ImportSingleFile(file, log)
+		));
+
+		var vm = new LoaderViewModel(tasks) {
+			OnComplete = async () => {
+				AssetDatabase.RebuildAssetDatabase();
+				ProjectContext.RaiseAssetsChanged();
+				await Task.CompletedTask;
+			}
+		};
+
+		var loader = new DefaultLoaderWindow(vm);
+		await loader.ShowDialog(m_window);
+		m_window.Close();
 	}
 
 	[RelayCommand]
 	private void Cancel() {
-		// This requires a way to close the window, usually via a service or event
+		m_window?.Close();
 	}
 
-	private List<string> GetSelectedFiles(IEnumerable<ImportNodeViewModel> nodes) {
-		var list = new List<string>();
-		foreach (var node in nodes) {
-			if (node is ImportFileViewModel file && file.IsSelected == true && !file.IsReadOnly) {
-				list.Add(file.FullPath);
-			} else if (node is ImportFolderViewModel folder) {
-				list.AddRange(GetSelectedFiles(folder.Children));
+	private async Task ImportSingleFile(string realSourcePath, Action<string> log) {
+		try {
+			var sourceVirtual = ProjectContext.ToVirtual(realSourcePath)
+			                    ?? throw new InvalidOperationException($"File is outside artwork path: {realSourcePath}");
+
+			log("Checking if up to date...");
+			var hash = AssetDatabase.ComputeHash(realSourcePath);
+			if (AssetDatabase.IsUpToDate(sourceVirtual, hash)) {
+				log("Already up to date, skipping.");
+				return;
 			}
+
+			var uid = UidGenerator.Generate();
+			var name = Path.GetFileNameWithoutExtension(realSourcePath);
+			var destDir = ProjectContext.Resolve(LocationPath);
+			Directory.CreateDirectory(destDir);
+			var destPath = Path.Combine(destDir, name + ".ktx2");
+
+			log("Converting to KTX2...");
+			await KtxWriter.ConvertTexture(realSourcePath, destPath, TextureSettings, log);
+
+			log("Generating thumbnail...");
+			await Task.Run(() => ThumbnailService.Generate(realSourcePath, uid));
+
+			log("Writing .meta sidecar...");
+			var meta = TextureSettings.ToMeta(uid, sourceVirtual);
+			MetaFile.Write(destPath, meta);
+
+			AssetDatabase.UpdateArtworkDatabase(sourceVirtual, hash, [uid]);
+			log("Done.");
+		} catch (Exception ex) {
+			log($"ERROR: {ex.Message}");
+			await ModalPopup.ShowError(
+				"Import Failed",
+				$"Could not import {Path.GetFileName(realSourcePath)}:\n{ex.Message}",
+				m_window);
 		}
+	}
+
+	private static List<string> GetSelectedFiles(IEnumerable<ImportNodeViewModel> nodes) {
+		var list = new List<string>();
+		foreach (var node in nodes)
+			if (node is ImportFileViewModel file && file.IsSelected == true && !file.IsReadOnly)
+				list.Add(file.FullPath);
+			else if (node is ImportFolderViewModel folder)
+				list.AddRange(GetSelectedFiles(folder.Children));
 		return list;
 	}
 }

@@ -10,16 +10,15 @@ using Avalonia.Threading;
 namespace editor.Logger;
 
 public class LogEntry {
-	public string sink {get; set;}
-	public string message {get; set;}
-	public string timestamp {get; set;}
-	public string file {get; set;}
-	public uint severity {get; set;}
+	public string sink { get; set; }
+	public string message { get; set; }
+	public string timestamp { get; set; }
+	public string file { get; set; }
+	public uint severity { get; set; }
 }
 
-public partial class LoggerViewModel : ViewModelBase  {
-	public ObservableCollection<LogEntry> log_entries {get; set;}
-	private LogClient m_client;
+public class LoggerViewModel : ViewModelBase {
+	private readonly LogClient m_client;
 
 	public LoggerViewModel() {
 		log_entries = [];
@@ -27,14 +26,19 @@ public partial class LoggerViewModel : ViewModelBase  {
 		m_client.OnLogReceived += handleNewLogs;
 	}
 
-	public void start() => m_client.start();
-	public void stop() => m_client.stop();
+	public ObservableCollection<LogEntry> log_entries { get; set; }
+
+	public void start() {
+		m_client.start();
+	}
+
+	public void stop() {
+		m_client.stop();
+	}
 
 	private void handleNewLogs(List<LogEntry> new_logs) {
 		Dispatcher.UIThread.InvokeAsync(() => {
-			foreach (var l in new_logs) {
-				log_entries.Add(l);
-			}
+			foreach (var l in new_logs) log_entries.Add(l);
 
 			// TODO: Lock scroll, filters, etc should be here
 		});

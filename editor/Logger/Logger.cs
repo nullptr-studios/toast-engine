@@ -15,9 +15,9 @@ using proto.logging;
 namespace editor.Logger;
 
 public class LogClient {
-	public event Action<List<LogEntry>> OnLogReceived;
 	private TcpClient m_client;
 	private CancellationTokenSource m_cts;
+	public event Action<List<LogEntry>> OnLogReceived;
 
 	public void start() {
 		m_cts = new CancellationTokenSource();
@@ -37,18 +37,18 @@ public class LogClient {
 			Console.WriteLine("Connected");
 			using var stream = m_client.GetStream();
 
-			byte[] length_buffer = new byte[4];
+			var length_buffer = new byte[4];
 
 			while (!token.IsCancellationRequested) {
 				// Read length prefix
 				await readExactlyAsync(stream, length_buffer, 4, token);
-				uint message_length = BinaryPrimitives.ReadUInt32BigEndian(length_buffer);
+				var message_length = BinaryPrimitives.ReadUInt32BigEndian(length_buffer);
 				if (message_length == 0) continue;
 
 				// Parse protocol buffer
-				byte[] message_buffer = new byte[message_length];
+				var message_buffer = new byte[message_length];
 				await readExactlyAsync(stream, message_buffer, (int)message_length, token);
-				LogBatch proto_batch = LogBatch.Parser.ParseFrom(message_buffer);
+				var proto_batch = LogBatch.Parser.ParseFrom(message_buffer);
 				// Console.WriteLine($"Received {proto_batch.Logs.Count} logs");
 
 				// Map to avalonia type
@@ -59,33 +59,31 @@ public class LogClient {
 						severity = (uint)log_data.Severity,
 						file = log_data.Filepath + ":" + log_data.LineNumber,
 						sink = log_data.Sink,
-						timestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(log_data.Timestamp / 1_000_000)).ToLocalTime().ToString("HH:mm:ss.fff")
+						timestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(log_data.Timestamp / 1_000_000))
+							.ToLocalTime().ToString("HH:mm:ss.fff")
 					};
 					batch.Add(entry);
 				}
+
 				OnLogReceived?.Invoke(batch);
 			}
-		}
-		catch (EndOfStreamException) {
+		} catch (EndOfStreamException) {
 			Console.WriteLine("Rust server closed connection");
-		}
-		catch (Exception ex) when (ex is not OperationCanceledException) {
+		} catch (Exception ex) when (ex is not OperationCanceledException) {
 			Console.WriteLine($"Error in TCP loop: {ex.Message}");
-		}
-		finally {
+		} finally {
 			m_client.Close();
 		}
 	}
 
-	private static async Task readExactlyAsync(NetworkStream stream, byte[] buffer, int bytesToRead, CancellationToken token) {
-		int total_bytes_read = 0;
+	private static async Task readExactlyAsync(
+		NetworkStream stream, byte[] buffer, int bytesToRead, CancellationToken token) {
+		var total_bytes_read = 0;
 		while (total_bytes_read < bytesToRead) {
-			int bytes_read = await stream.ReadAsync(buffer.AsMemory(total_bytes_read, bytesToRead - total_bytes_read), token);
-			if (bytes_read == 0) {
-				throw new EndOfStreamException("TCP connection closed unexpectedly while reading");
-			}
+			var bytes_read =
+				await stream.ReadAsync(buffer.AsMemory(total_bytes_read, bytesToRead - total_bytes_read), token);
+			if (bytes_read == 0) throw new EndOfStreamException("TCP connection closed unexpectedly while reading");
 			total_bytes_read += bytes_read;
 		}
 	}
-
 }

@@ -2,9 +2,9 @@
 project(my_game CXX)
 set(CMAKE_CXX_STANDARD 23)
 
-if(NOT TOAST_PATH)
-    message(FATAL_ERROR "TOAST_PATH not defined! Please pass -DTOAST_PATH=\"path/to/toast/engine\"")
-endif()
+if (NOT TOAST_PATH)
+  message(FATAL_ERROR "TOAST_PATH not defined! Please pass -DTOAST_PATH=\"path/to/toast/engine\"")
+endif ()
 
 
 get_filename_component(BUILD_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/../build" ABSOLUTE)
@@ -12,18 +12,18 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_OUTPUT})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${BUILD_OUTPUT})
 set(CMAKE_PDB_OUTPUT_DIRECTORY ${BUILD_OUTPUT})
 
-foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
+foreach (OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
   string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${BUILD_OUTPUT})
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${BUILD_OUTPUT})
   set(CMAKE_PDB_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${BUILD_OUTPUT})
-endforeach()
+endforeach ()
 
 add_library(toast_engine SHARED IMPORTED)
 set_target_properties(toast_engine PROPERTIES
-    IMPORTED_IMPLIB "${TOAST_PATH}/lib/toast_engine.lib"
-    IMPORTED_LOCATION "${TOAST_PATH}/bin/toast_engine.dll"
-    INTERFACE_INCLUDE_DIRECTORIES "${TOAST_PATH}/include"
+        IMPORTED_IMPLIB "${TOAST_PATH}/lib/toast_engine.lib"
+        IMPORTED_LOCATION "${TOAST_PATH}/bin/toast_engine.dll"
+        INTERFACE_INCLUDE_DIRECTORIES "${TOAST_PATH}/include"
 )
 
 file(GLOB_RECURSE SOURCE "src/*.cpp")

@@ -9,10 +9,8 @@ using Dock.Model.Core;
 
 namespace editor.Workspace;
 
-public partial class WorkspaceViewModel : ViewModelBase {
+public class WorkspaceViewModel : ViewModelBase {
 	private ToastEngine m_toast;
-	public IFactory Factory { get; }
-	public IRootDock Layout { get; }
 
 	public WorkspaceViewModel(ToastEngine toast, IRootDock? layout = null) {
 		m_toast = toast;
@@ -21,8 +19,7 @@ public partial class WorkspaceViewModel : ViewModelBase {
 		if (layout is null) {
 			Layout = Factory.CreateLayout();
 			Factory.InitLayout(Layout);
-		}
-		else {
+		} else {
 			Layout = layout;
 			if (Layout.Factory is null) {
 				Layout.Factory = Factory;
@@ -31,9 +28,10 @@ public partial class WorkspaceViewModel : ViewModelBase {
 		}
 	}
 
+	public IFactory Factory { get; }
+	public IRootDock Layout { get; }
+
 	public void CloseLayout() {
-		if (Layout is IDisposable disposable) {
-			disposable.Dispose();
-		}
+		if (Layout is IDisposable disposable) disposable.Dispose();
 	}
 }

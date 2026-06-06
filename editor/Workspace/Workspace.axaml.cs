@@ -8,14 +8,14 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using editor.Logger;
 using Dock.Model.Core;
+using editor.Logger;
 
 namespace editor.Workspace;
 
 public partial class Workspace : Window {
 	private Window? m_logsWindow;
-	private ToastEngine? m_toast;
+	private readonly ToastEngine? m_toast;
 
 	public Workspace() {
 		InitializeComponent();
@@ -24,7 +24,7 @@ public partial class Workspace : Window {
 	public Workspace(ToastEngine toast) {
 		InitializeComponent();
 		m_toast = toast;
-		
+
 		DataContextChanged += OnDataContextChanged;
 	}
 
@@ -76,15 +76,19 @@ public partial class Workspace : Window {
 			BeginMoveDrag(e);
 	}
 
-	private void OnMinimize(object? sender, RoutedEventArgs e) =>
+	private void OnMinimize(object? sender, RoutedEventArgs e) {
 		WindowState = WindowState.Minimized;
+	}
 
-	private void OnMaximize(object? sender, RoutedEventArgs e) =>
+	private void OnMaximize(object? sender, RoutedEventArgs e) {
 		WindowState = WindowState == WindowState.Maximized
 			? WindowState.Normal
 			: WindowState.Maximized;
+	}
 
-	private void OnClose(object? sender, RoutedEventArgs e) => Close();
+	private void OnClose(object? sender, RoutedEventArgs e) {
+		Close();
+	}
 
 	private void OnLogWindowButton(object? sender, RoutedEventArgs e) {
 		if (LogWindowButton.IsChecked) {
@@ -97,6 +101,7 @@ public partial class Workspace : Window {
 					m_logsWindow = null;
 				};
 			}
+
 			m_logsWindow.Show();
 		} else {
 			m_logsWindow?.Close();

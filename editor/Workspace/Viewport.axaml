@@ -9,5 +9,5 @@
              Focusable="True"
              Background="Black">
 
-	<Image Name="Surface" Stretch="Fill"/>
+	<Image Name="Surface" Stretch="Fill" />
 </UserControl>

@@ -13,9 +13,9 @@ public class InspectorViewModel : Tool {
 		Id = "Inspector";
 		Title = "Inspector";
 		CanFloat = true;
-		CanDockAsDocument = false;   // blocks docking into the document/center (AllowsDocumentDocking)
+		CanDockAsDocument = false; // blocks docking into the document/center (AllowsDocumentDocking)
 		AllowedDockOperations = DockOperationMask.Fill | DockOperationMask.Left
-		                      | DockOperationMask.Right | DockOperationMask.Window;
+		                                               | DockOperationMask.Right | DockOperationMask.Window;
 		AllowedDropOperations = DockOperationMask.Fill;
 	}
 }
@@ -25,16 +25,14 @@ public class HierarchyViewModel : Tool {
 		Id = "Hierarchy";
 		Title = "Hierarchy";
 		CanFloat = true;
-		CanDockAsDocument = false;   // blocks docking into the document/center (AllowsDocumentDocking)
+		CanDockAsDocument = false; // blocks docking into the document/center (AllowsDocumentDocking)
 		AllowedDockOperations = DockOperationMask.Fill | DockOperationMask.Left
-		                      | DockOperationMask.Right | DockOperationMask.Window;
+		                                               | DockOperationMask.Right | DockOperationMask.Window;
 		AllowedDropOperations = DockOperationMask.Fill;
 	}
 }
 
 public class ViewportViewModel : Document {
-	public ToastEngine? Engine { get; }
-
 	public ViewportViewModel(string title = "Untitled", ToastEngine? engine = null) {
 		Engine = engine;
 		Id = title;
@@ -45,4 +43,6 @@ public class ViewportViewModel : Document {
 		AllowedDockOperations = DockOperationMask.Fill | DockOperationMask.Left | DockOperationMask.Right;
 		AllowedDropOperations = DockOperationMask.Fill | DockOperationMask.Left | DockOperationMask.Right;
 	}
+
+	public ToastEngine? Engine { get; }
 }

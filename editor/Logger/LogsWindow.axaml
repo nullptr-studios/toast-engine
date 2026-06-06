@@ -11,38 +11,38 @@
         Title="Logs">
 
 	<Window.Resources>
-		<conv:SeverityToColorConverter x:Key="SeverityColorConverter"/>
+		<conv:SeverityToColorConverter x:Key="SeverityColorConverter" />
 	</Window.Resources>
 
 	<DockPanel>
 		<!-- Toolbar -->
 		<Menu DockPanel.Dock="Top">
-			<MenuItem Header="Lock Scroll" ToggleType="CheckBox"/>
+			<MenuItem Header="Lock Scroll" ToggleType="CheckBox" />
 			<Separator Height="NaN" Width="1" />
-			<MenuItem Header="Critical" ToggleType="CheckBox"/>
-			<MenuItem Header="Error" ToggleType="CheckBox"/>
-			<MenuItem Header="Warning" ToggleType="CheckBox"/>
-			<MenuItem Header="Info" ToggleType="CheckBox"/>
-			<MenuItem Header="Trace" ToggleType="CheckBox"/>
+			<MenuItem Header="Critical" ToggleType="CheckBox" />
+			<MenuItem Header="Error" ToggleType="CheckBox" />
+			<MenuItem Header="Warning" ToggleType="CheckBox" />
+			<MenuItem Header="Info" ToggleType="CheckBox" />
+			<MenuItem Header="Trace" ToggleType="CheckBox" />
 			<Separator Height="NaN" Width="1" />
-			<MenuItem Header="Editor logs" ToggleType="CheckBox"/>
+			<MenuItem Header="Editor logs" ToggleType="CheckBox" />
 			<Separator Height="NaN" Width="1" />
 			<MenuItem Header="Filters">
-				<MenuItem Header="Filter 1" ToggleType="CheckBox"/>
-				<MenuItem Header="Filter 2" ToggleType="CheckBox"/>
+				<MenuItem Header="Filter 1" ToggleType="CheckBox" />
+				<MenuItem Header="Filter 2" ToggleType="CheckBox" />
 			</MenuItem>
 		</Menu>
 
 		<!-- Column headers -->
 		<Grid DockPanel.Dock="Top" ColumnDefinitions="1*, 2*, 4*, 1*" Height="30">
-			<TextBlock Grid.Column="0" Text="Sink" FontWeight="Bold" VerticalAlignment="Center" Padding="10,0"/>
-			<TextBlock Grid.Column="1" Text="File" FontWeight="Bold" VerticalAlignment="Center"/>
-			<TextBlock Grid.Column="2" Text="Message" FontWeight="Bold" VerticalAlignment="Center"/>
-			<TextBlock Grid.Column="3" Text="Time" FontWeight="Bold" VerticalAlignment="Center"/>
+			<TextBlock Grid.Column="0" Text="Sink" FontWeight="Bold" VerticalAlignment="Center" Padding="10,0" />
+			<TextBlock Grid.Column="1" Text="File" FontWeight="Bold" VerticalAlignment="Center" />
+			<TextBlock Grid.Column="2" Text="Message" FontWeight="Bold" VerticalAlignment="Center" />
+			<TextBlock Grid.Column="3" Text="Time" FontWeight="Bold" VerticalAlignment="Center" />
 		</Grid>
 
 		<!-- Actual log list -->
-		<TextBox DockPanel.Dock="Bottom" PlaceholderText="Search..."/>
+		<TextBox DockPanel.Dock="Bottom" PlaceholderText="Search..." />
 		<ListBox ScrollViewer.VerticalScrollBarVisibility="Auto"
 		         ItemsSource="{Binding log_entries}">
 			<!-- Force virtualization to be on for performance with large log lists -->
@@ -56,13 +56,13 @@
 					<Grid ColumnDefinitions="1*, 2*, 4*, 1*">
 						<TextBlock Grid.Column="0" Text="{Binding sink}"
 						           Padding="10,0"
-						           Foreground="{Binding severity, Converter={StaticResource SeverityColorConverter}}"/>
+						           Foreground="{Binding severity, Converter={StaticResource SeverityColorConverter}}" />
 						<TextBlock Grid.Column="1" Text="{Binding file}"
-						           Foreground="{Binding severity, Converter={StaticResource SeverityColorConverter}}"/>
+						           Foreground="{Binding severity, Converter={StaticResource SeverityColorConverter}}" />
 						<TextBlock Grid.Column="2" Text="{Binding message}"
-						           Foreground="{Binding severity, Converter={StaticResource SeverityColorConverter}}"/>
+						           Foreground="{Binding severity, Converter={StaticResource SeverityColorConverter}}" />
 						<TextBlock Grid.Column="3" Text="{Binding timestamp}"
-						           Foreground="{Binding severity, Converter={StaticResource SeverityColorConverter}}"/>
+						           Foreground="{Binding severity, Converter={StaticResource SeverityColorConverter}}" />
 					</Grid>
 				</DataTemplate>
 			</ListBox.ItemTemplate>
