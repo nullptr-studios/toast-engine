@@ -61,11 +61,11 @@ auto createTrianglePipeline(
 Engine* Engine::instance = nullptr;
 
 struct EnginePimpl {
-	std::unique_ptr<ThreadPool> thread_pool;
-	std::unique_ptr<logging::Logger> logger;
-	std::unique_ptr<IBaseWindow> window;
-	std::unique_ptr<renderer::VulkanCore> vulkan_core;
-	std::unique_ptr<renderer::VulkanRenderer> renderer;
+	std::unique_ptr<ThreadPool> thread_pool = nullptr;
+	std::unique_ptr<logging::Logger> logger = nullptr;
+	std::unique_ptr<IBaseWindow> window = nullptr;
+	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
+	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
 	event::Listener resize_listener;
 
 	// owned by renderer's output target
@@ -73,6 +73,8 @@ struct EnginePimpl {
 };
 
 Engine::Engine() noexcept {
+	instance = this;
+
 	// clang-format off
 	m = new EnginePimpl {
 		.thread_pool = ThreadPool::create(),
@@ -80,6 +82,27 @@ Engine::Engine() noexcept {
 	};
 	// clang-format on
 
+	/*
+	 *	IMPORTANT:
+	 *	If you are planning on initializing something here you should
+	 *	consider doing it on Engine::init() instead
+	 *
+	 *	This code runs before we even set our working directory and create our
+	 *	game project, so there's not a lot of reason something outside the logger
+	 *	and the thread pool (logger depends on it) to be here
+	 *
+	 *	Be smart like toast and initialize things on the init() function
+	 *	- xein <3
+	 */
+}
+
+auto Engine::get() noexcept -> Engine* {
+	// If at any point toast doesn't exist just crash the damn game
+	assert(instance && "Toast Engine doesn't exist");
+	return instance;
+}
+
+void Engine::init() {
 	// TODO: This should be moved into VulkanRenderer
 	m->resize_listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
 		if (!m->renderer || !m->vulkan_core || e.width <= 0 || e.height <= 0) {
@@ -89,14 +112,6 @@ Engine::Engine() noexcept {
 		m->renderer->resize(vk::Extent2D {static_cast<uint32_t>(e.width), static_cast<uint32_t>(e.height)});
 		return false;
 	});
-
-	instance = this;
-}
-
-auto Engine::get() noexcept -> Engine* {
-	// If at any point toast doesn't exist just crash the damn game
-	assert(instance && "Toast Engine doesn't exist");
-	return instance;
 }
 
 void Engine::tick() {
@@ -178,13 +193,10 @@ int Engine::getViewportFrame(void* dst, uint32_t dstCapacity, renderer::Viewport
 void pushApplicationLayer(IApplication* app) {
 	if (active_application && active_application != app) {
 		active_application->destroy();
+		delete active_application;
 	}
 
 	active_application = app;
-
-	if (active_application) {
-		active_application->begin();
-	}
 }
 
 }
@@ -194,6 +206,14 @@ extern "C" {
 
 auto toast_create() -> engine_t* {
 	return reinterpret_cast<engine_t*>(new toast::Engine());
+}
+
+void toast_init() {
+	toast::Engine::get()->init();
+
+	if (toast::active_application) {
+		toast::active_application->begin();
+	}
 }
 
 void toast_create_SDL_window(const char* w_name) {

@@ -25,6 +25,7 @@ public:
 	auto operator=(const Engine&) -> Engine& = delete;
 	auto operator=(const Engine&&) -> Engine& = delete;
 
+	void init();
 	void tick();
 	auto shouldClose() -> bool;
 	void test();
@@ -41,5 +42,14 @@ private:
 	EnginePimpl* m;
 	static Engine* instance;
 };
+
+/*
+ *	The order to call and initialize the engine on the Editor and the Player should be:
+ *		- Create an engine -> toast_create()
+ *		- Create a game -> game_create()
+ *		- Set the working directories -> uri_set_working_directory()
+ *		- Call Init() -> toast_init()
+ *		- Create window -> toast_create_[...]_window()
+ */
 
 }

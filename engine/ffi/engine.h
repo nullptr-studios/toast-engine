@@ -13,7 +13,8 @@ extern "C" {
 
 struct engine_t;                              ///< Opaque Engine ptr
 
-TOAST_C_API engine_t* toast_create(void);     ///< Initializes the game engine
+TOAST_C_API engine_t* toast_create(void);     ///< Creates the game engine
+TOAST_C_API void toast_init(void);            ///< Initializes the game engine after setting a working directory
 TOAST_C_API void toast_tick(void);            ///< Frame logic for the game engine
 TOAST_C_API int toast_should_close(void);     ///< @return 1 if the engine should close
 TOAST_C_API void toast_destroy(engine_t*);    ///< Destroys the game engine
