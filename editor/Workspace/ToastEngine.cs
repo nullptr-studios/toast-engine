@@ -69,7 +69,7 @@ public partial class ToastEngine : IDisposable {
 		m_engineInstance = toast_create();
 		m_gameInstance = m_gameCreate?.Invoke() ?? IntPtr.Zero;
 
-		uri_set_working_directory(ProjectPath, dll);
+		toast_set_working_directory(ProjectPath, dll);
 
 		if (!ProjectContext.IsInitialized)
 			ProjectContext.Initialize(ProjectPath, CorePath);
@@ -227,7 +227,7 @@ public partial class ToastEngine : IDisposable {
 	private static partial void toast_create_avalonia_window();
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
-	private static partial void uri_set_working_directory(string project, string engine);
+	private static partial void toast_set_working_directory(string project, string engine);
 
 	[LibraryImport(EngineLib)]
 	private static partial int toast_viewport_get_frame(IntPtr dst, uint dstCapacity, out ToastViewportFrame outFrame);

@@ -15,6 +15,7 @@ public static class ProjectContext {
 	public static string AssetsPath { get; private set; } = "";
 	public static string CachePath { get; private set; } = "";
 	public static string CorePath { get; private set; } = "";
+	public static string SavedPath { get; private set; } = "";
 	public static bool IsInitialized { get; private set; }
 
 	// Fired after an import batch completes
@@ -29,6 +30,7 @@ public static class ProjectContext {
 		ArtworkPath = Path.Combine(ProjectPath, "artwork");
 		AssetsPath = Path.Combine(ProjectPath, "assets");
 		CachePath = Path.Combine(ProjectPath, ".toast");
+		SavedPath = Path.Combine(ProjectPath, ".toast", "save_data");
 		CorePath = Path.GetFullPath(corePath);
 
 		s_schemes.Clear();
@@ -36,6 +38,7 @@ public static class ProjectContext {
 		s_schemes["artwork://"] = ArtworkPath;
 		s_schemes["cache://"] = CachePath;
 		s_schemes["core://"] = CorePath;
+		s_schemes["saved://"] = SavedPath;
 
 		EnsureDirectories();
 		Ktx.Init(); // initialise Ktx2Sharp's native library

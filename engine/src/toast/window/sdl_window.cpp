@@ -5,7 +5,7 @@
 
 namespace toast {
 
-SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, int flags) {
+SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, uint64_t flags) {
 	ZoneScoped;
 	TOAST_ASSERT(SDL_Init(SDL_INIT_VIDEO) == true, "Window", "SDL cannot be initialized");
 

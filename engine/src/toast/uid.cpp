@@ -1,4 +1,4 @@
-#include "uuid.hpp"
+#include "uid.hpp"
 
 #include <array>
 #include <atomic>
@@ -13,14 +13,14 @@ std::atomic<uint64_t> offset = 0;
 
 namespace toast {
 
-auto UUID::toString(uint64_t uuid) -> std::string {
+auto UID::toString(uint64_t uid) -> std::string {
 	std::string result;
 	result.reserve(12);
 
 	// extract bytes
 	std::array<uint8_t, 8> b;
 	for (int i = 0; i < 8; ++i) {
-		b[i] = static_cast<uint8_t>(uuid >> (56 - (i * 8)));
+		b[i] = static_cast<uint8_t>(uid >> (56 - (i * 8)));
 	}
 
 	result += charset[b[0] >> 2];
@@ -41,7 +41,7 @@ auto UUID::toString(uint64_t uuid) -> std::string {
 	return result;
 }
 
-auto UUID::fromString(std::string_view b64) -> uint64_t {
+auto UID::fromString(std::string_view b64) -> uint64_t {
 	static constexpr auto rev_table = []() {
 		std::array<uint8_t, 256> table {};
 		table.fill(0xFF);
@@ -67,20 +67,20 @@ auto UUID::fromString(std::string_view b64) -> uint64_t {
 	uint64_t b9 = rev_table[static_cast<uint8_t>(b64[9])];
 	uint64_t b10 = rev_table[static_cast<uint8_t>(b64[10])];
 
-	uint64_t uuid = 0;
-	uuid |= (b0 << 2 | b1 >> 4) << 56;
-	uuid |= ((b1 & 0xF) << 4 | b2 >> 2) << 48;
-	uuid |= ((b2 & 0x3) << 6 | b3) << 40;
-	uuid |= (b4 << 2 | b5 >> 4) << 32;
-	uuid |= ((b5 & 0xF) << 4 | b6 >> 2) << 24;
-	uuid |= ((b6 & 0x3) << 6 | b7) << 16;
-	uuid |= (b8 << 2 | b9 >> 4) << 8;
-	uuid |= ((b9 & 0xF) << 4 | b10 >> 2);
+	uint64_t uid = 0;
+	uid |= (b0 << 2 | b1 >> 4) << 56;
+	uid |= ((b1 & 0xF) << 4 | b2 >> 2) << 48;
+	uid |= ((b2 & 0x3) << 6 | b3) << 40;
+	uid |= (b4 << 2 | b5 >> 4) << 32;
+	uid |= ((b5 & 0xF) << 4 | b6 >> 2) << 24;
+	uid |= ((b6 & 0x3) << 6 | b7) << 16;
+	uid |= (b8 << 2 | b9 >> 4) << 8;
+	uid |= ((b9 & 0xF) << 4 | b10 >> 2);
 
-	return uuid;
+	return uid;
 }
 
-void UUID::generate() {
+void UID::generate() {
 	using namespace std::chrono;
 	auto t = static_cast<uint64_t>(high_resolution_clock::now().time_since_epoch().count());
 
@@ -93,27 +93,27 @@ void UUID::generate() {
 	offset++;
 }
 
-void UUID::assign(std::string_view b64) {
+void UID::assign(std::string_view b64) {
 	value = fromString(b64);
 }
 
-UUID::UUID() {
+UID::UID() {
 	value = 0;
 }
 
-UUID::operator std::string() const noexcept {
+UID::operator std::string() const noexcept {
 	return get();
 }
 
-auto UUID::operator<=>(const UUID& other) const noexcept -> std::strong_ordering {
+auto UID::operator<=>(const UID& other) const noexcept -> std::strong_ordering {
 	return value <=> other.value;
 }
 
-auto UUID::get() const noexcept -> std::string {
+auto UID::get() const noexcept -> std::string {
 	return toString(value);
 }
 
-auto UUID::data() const noexcept -> uint64_t {
+auto UID::data() const noexcept -> uint64_t {
 	return value;
 }
 }

@@ -13,7 +13,10 @@ public class ToastEngine : IDisposable {
 		m_handle = toast_create();
 		if (m_handle == IntPtr.Zero)
 			throw new InvalidOperationException("Failed to create engine");
-		toast_create_SDL_window("Hello from C#!!");
+	}
+
+	public void Init() {
+		toast_init();
 	}
 
 	public void Dispose() {
@@ -35,6 +38,14 @@ public class ToastEngine : IDisposable {
 		return toast_should_close(m_handle) != 0;
 	}
 
+	public void CreateSdlWindow(string windowName) {
+		toast_create_SDL_window(windowName);
+	}
+
+	public void SetWorkingDirectory(string assets, string artworks, string cached, string saved, string core) {
+		toast_set_working_directory( assets, artworks, cached, saved, core );
+	}
+
 	~ToastEngine() {
 		Dispose();
 	}
@@ -42,6 +53,9 @@ public class ToastEngine : IDisposable {
 	// Native methods
 	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
 	private static extern IntPtr toast_create();
+
+	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
+	private static extern void toast_init();
 
 	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
 	private static extern void toast_tick(IntPtr engine);
@@ -54,4 +68,7 @@ public class ToastEngine : IDisposable {
 
 	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
 	private static extern void toast_create_SDL_window(string windowName);
+
+	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
+	private static extern void toast_set_working_directory(string assets, string artworks, string cached, string saved, string core);
 }

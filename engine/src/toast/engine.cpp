@@ -1,6 +1,7 @@
 #include "engine.hpp"
 
 #include "application.hpp"
+#include "assets/asset_manager.hpp"
 #include "events/event.hpp"
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
@@ -64,6 +65,7 @@ struct EnginePimpl {
 	std::unique_ptr<ThreadPool> thread_pool = nullptr;
 	std::unique_ptr<logging::Logger> logger = nullptr;
 	std::unique_ptr<IBaseWindow> window = nullptr;
+	std::unique_ptr<assets::AssetManager> asset_manager = nullptr;
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
 	event::Listener resize_listener;
@@ -103,6 +105,8 @@ auto Engine::get() noexcept -> Engine* {
 }
 
 void Engine::init() {
+	m->asset_manager = std::make_unique<assets::AssetManager>();
+
 	// TODO: This should be moved into VulkanRenderer
 	m->resize_listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
 		if (!m->renderer || !m->vulkan_core || e.width <= 0 || e.height <= 0) {
@@ -251,6 +255,16 @@ auto toast_should_close() -> int {
 
 void toast_destroy(engine_t* e) {
 	delete reinterpret_cast<toast::Engine*>(e);
+}
+
+void toast_set_working_directory(const char* assets, const char* artworks, const char* cache, const char* saved, const char* core) {
+	assets::AssetManager::setPaths({
+		.assets = assets,
+		.artworks = artworks,
+		.cache = cache,
+		.saved = saved,
+		.core = core
+	});
 }
 
 int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) {

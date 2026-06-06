@@ -19,7 +19,7 @@ namespace toast {
 
 class SDLWindow : public IBaseWindow {
 public:
-	SDLWindow(const char* title, unsigned width = 1080, unsigned height = 720, int flags = 0);
+	SDLWindow(const char* title, unsigned width = 1080, unsigned height = 720, uint64_t flags = 0);
 
 	~SDLWindow() override = default;
 

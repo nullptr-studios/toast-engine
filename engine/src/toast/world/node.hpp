@@ -10,10 +10,10 @@
 
 #pragma once
 #include "function_table.hpp"
-#include "uuid.hpp"
 
 #include <toast/events/listener.hpp>
 #include <toast/export.hpp>
+#include <toast/uid.hpp>
 
 namespace toast {
 
@@ -37,7 +37,7 @@ class TOAST_API Node {
 public:
 	[[nodiscard]]
 	/// @brief Returns the serialized unique identifier of this node
-	auto uuid() const noexcept -> const UUID&;
+	auto uid() const noexcept -> const UID&;
 
 	[[nodiscard]]
 	/// @brief Returns the name of this node
@@ -62,7 +62,7 @@ protected:
 
 private:
 	struct {
-		UUID uuid;    // serialized unique id
+		UID uid;    // serialized unique id
 		std::string name;
 		NodeState state = NodeState::null;
 		NodeType type = NodeType::null;
