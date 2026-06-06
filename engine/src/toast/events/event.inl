@@ -2,8 +2,8 @@
 #include "event.hpp"
 #include "toast/log.hpp"
 
-#include <tracy/Tracy.hpp>
 #include <mutex>
+#include <tracy/Tracy.hpp>
 #include <type_traits>
 
 namespace event {
@@ -47,7 +47,7 @@ void Event<T>::unsubscribe(iterator_t it) noexcept {
 template<typename T>
 void Event<T>::notify() noexcept {
 	ZoneScoped;
-	
+
 	ensureRegistered();
 
 	auto& g = EventSystem::event_data[typeid(T)];

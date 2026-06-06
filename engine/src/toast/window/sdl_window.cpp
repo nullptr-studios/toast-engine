@@ -1,10 +1,12 @@
 #include "sdl_window.hpp"
 
+#include <tracy/Tracy.hpp>
 #include <SDL3/SDL_vulkan.h>
 
 namespace toast {
 
 SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, int flags) {
+	ZoneScoped;
 	TOAST_ASSERT(SDL_Init(SDL_INIT_VIDEO) == true, "Window", "SDL cannot be initialized");
 
 	if ((flags & SDL_WINDOW_VULKAN) != 0) {
@@ -45,7 +47,11 @@ auto SDLWindow::nativeHandle() const -> void* {
 }
 
 void SDLWindow::pollEvents() {
+	ZoneScoped;
+
 	for (SDL_Event event; SDL_PollEvent(&event);) {
+		ZoneScopedN("SDLWindow::event");
+
 		if (event.window.windowID != SDL_GetWindowID(m.sdl_window.get())) {
 			continue;
 		}
@@ -127,6 +133,8 @@ void SDLWindow::pollEvents() {
 	}
 }
 
-void SDLWindow::swapFramebuffers() { }
+void SDLWindow::swapFramebuffers() {
+	ZoneScoped;
+}
 
 }
