@@ -21,9 +21,9 @@ TOAST_TEST_NAMED("node_file", "node_file/01-from_file", test_node_file_01_from_f
 	assert(nf.nodes[4].groups[1].name == "audio_engine");
 	assert(nf.nodes[4].groups[1].subgroups.size() == 1);
 	assert(nf.nodes[4].groups[1].subgroups[0].name == "synth_parameters");
-	assert(nf.nodes[4].groups[1].subgroups[0].items.size() == 4);
-	
-	auto& DetuneCents = nf.nodes[4].groups[1].subgroups[0].items[1];
+	assert(nf.nodes[4].groups[1].subgroups[0].fields.size() == 4);
+
+	auto& DetuneCents = nf.nodes[4].groups[1].subgroups[0].fields[1];
 	assert(DetuneCents.name == "detune_cents");
 	assert(std::any_cast<float>(DetuneCents.value) == 14.25f);
 }

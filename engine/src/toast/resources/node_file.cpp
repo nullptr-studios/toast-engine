@@ -1,12 +1,12 @@
 #include "node_file.hpp"
 
-#include "toast/world/uuid.hpp"
-
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <istream>
 #include <sstream>
 #include <toast/log.hpp>
+#include <toast/world/node.hpp>
+#include <toast/world/uuid.hpp>
 
 namespace {
 /**
@@ -547,6 +547,7 @@ auto NodeFile::parseValue(FieldType type, std::string_view value, bool& is_array
 			case FieldType::vec3_t: return convert_to_vector.operator()<glm::vec3>();
 			case FieldType::vec4_t: return convert_to_vector.operator()<glm::vec4>();
 			case FieldType::quaternion_t: return convert_to_vector.operator()<glm::quat>();
+			case FieldType::uuid_t: return convert_to_vector.operator()<UUID>();
 			default: return std::nullopt;
 		}
 	}
@@ -639,6 +640,7 @@ void NodeFile::writeField(const Field& field, std::stringstream& ss, std::string
 			case FieldType::vec3_t: value_str = stringify_array.operator()<glm::vec3>(field.type); break;
 			case FieldType::vec4_t: value_str = stringify_array.operator()<glm::vec4>(field.type); break;
 			case FieldType::quaternion_t: value_str = stringify_array.operator()<glm::quat>(field.type); break;
+			case FieldType::uuid_t: value_str = stringify_array.operator()<UUID>(field.type); break;
 			default: break;
 		}
 	} else {
@@ -670,6 +672,7 @@ auto NodeFile::toBinary() -> std::vector<uint8_t> {
 				case FieldType::vec3_t: writeValue(buffer, std::any_cast<glm::vec3>(value)); break;
 				case FieldType::vec4_t: writeValue(buffer, std::any_cast<glm::vec4>(value)); break;
 				case FieldType::quaternion_t: writeValue(buffer, std::any_cast<glm::quat>(value)); break;
+				case FieldType::uuid_t: writeValue(buffer, std::any_cast<UUID>(value).data()); break;
 				default: break;
 			}
 		};
@@ -693,6 +696,7 @@ auto NodeFile::toBinary() -> std::vector<uint8_t> {
 				case FieldType::vec3_t: write_array.operator()<glm::vec3>(field.type); break;
 				case FieldType::vec4_t: write_array.operator()<glm::vec4>(field.type); break;
 				case FieldType::quaternion_t: write_array.operator()<glm::quat>(field.type); break;
+				case FieldType::uuid_t: write_array.operator()<UUID>(field.type); break;
 				default: break;
 			}
 		} else {
@@ -762,6 +766,11 @@ NodeFile::NodeFile(std::span<const uint8_t> bytes) {
 				case FieldType::vec3_t: return reader.readValue<glm::vec3>();
 				case FieldType::vec4_t: return reader.readValue<glm::vec4>();
 				case FieldType::quaternion_t: return reader.readValue<glm::quat>();
+				case FieldType::uuid_t: {
+					UUID id;
+					id.value = reader.readValue<uint64_t>();
+					return id;
+				}
 				default: return std::any {};
 			}
 		};
@@ -791,6 +800,7 @@ NodeFile::NodeFile(std::span<const uint8_t> bytes) {
 				case FieldType::vec3_t: field.value = read_array.operator()<glm::vec3>(field.type); break;
 				case FieldType::vec4_t: field.value = read_array.operator()<glm::vec4>(field.type); break;
 				case FieldType::quaternion_t: field.value = read_array.operator()<glm::quat>(field.type); break;
+				case FieldType::uuid_t: field.value = read_array.operator()<UUID>(field.type); break;
 				default: break;
 			}
 		} else {
@@ -836,6 +846,69 @@ NodeFile::NodeFile(std::span<const uint8_t> bytes) {
 		}
 		nodes.push_back(std::move(node));
 	}
+}
+
+NodeFile::NodeFile(const Node& node) {
+	const auto* node_info = node.info();
+	if (!node_info) {
+		TOAST_ERROR("ResourceManager", "Cannot serialize node '{}': no reflection info attached", node.name());
+		return;
+	}
+
+	BasicNode root = {
+	  .name = std::string {node.name()},
+	  .type = std::string {node_info->type},
+	};
+
+	// FieldInfo::get takes void*; the getter only reads, so the const_cast is safe.
+	auto make_field = [&node](const FieldInfo* f_info) -> Field {
+		return Field {
+		  .name = std::string {f_info->name},
+		  .type = f_info->value_type,
+		  .is_array = f_info->is_array,
+		  .value = f_info->get(const_cast<Node*>(&node)),
+		};
+	};
+
+	// Groups are matched by name so a group split across base/derived types merges cleanly.
+	auto find_or_add_group = [&root](std::string_view name) -> Group& {
+		for (auto& g : root.groups) {
+			if (g.name == name) {
+				return g;
+			}
+		}
+		root.groups.push_back(Group {.name = std::string {name}});
+		return root.groups.back();
+	};
+	auto find_or_add_subgroup = [](Group& group, std::string_view name) -> Subgroup& {
+		for (auto& s : group.subgroups) {
+			if (s.name == name) {
+				return s;
+			}
+		}
+		group.subgroups.push_back(Subgroup {.name = std::string {name}});
+		return group.subgroups.back();
+	};
+
+	node_info->forEachBaseType([&](const NodeInfo& info) {
+		for (const FieldInfo* f_info : info.fields) {
+			root.fields.push_back(make_field(f_info));
+		}
+		for (const GroupInfo& group : info.groups) {
+			Group& out_group = find_or_add_group(group.name);
+			for (const FieldInfo* f_info : group.fields) {
+				out_group.fields.push_back(make_field(f_info));
+			}
+			for (const SubgroupInfo& subgroup : group.subgroups) {
+				Subgroup& out_subgroup = find_or_add_subgroup(out_group, subgroup.name);
+				for (const FieldInfo* f_info : subgroup.fields) {
+					out_subgroup.fields.push_back(make_field(f_info));
+				}
+			}
+		}
+	});
+
+	nodes.push_back(std::move(root));
 }
 
 auto NodeFile::writeType(FieldType type, bool is_array) -> std::string {

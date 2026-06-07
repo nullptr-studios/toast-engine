@@ -15,6 +15,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <toast/world/reflect.hpp>
 #include <vector>
 
 namespace toast {
@@ -50,19 +51,6 @@ public:
 
 	auto toFile() -> std::string;
 	auto toBinary() -> std::vector<uint8_t>;
-
-	enum class FieldType : uint8_t {
-		bool_t,
-		int_t,
-		float_t,
-		string_t,
-		double_t,
-		uuid_t,
-		vec2_t,
-		vec3_t,
-		vec4_t,
-		quaternion_t,
-	};
 
 	struct Field {
 		std::string name;

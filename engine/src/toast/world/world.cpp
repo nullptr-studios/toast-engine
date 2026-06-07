@@ -15,31 +15,31 @@ using namespace _detail;
 namespace _detail {
 void NodeCluster::earlyTick() {
 	for (auto& node : nodes) {
-		node->table->earlyTick(*node);
+		node->callTick(node->info(), TickFunctionList::early_tick);
 	}
 }
 
 void NodeCluster::tick() {
 	for (auto& node : nodes) {
-		node->table->tick(*node);
+		node->callTick(node->info(), TickFunctionList::tick);
 	}
 }
 
 void NodeCluster::postPhysics() {
 	for (auto& node : nodes) {
-		node->table->postPhysics(*node);
+		node->callTick(node->info(), TickFunctionList::post_physics);
 	}
 }
 
 void NodeCluster::lateTick() {
 	for (auto& node : nodes) {
-		node->table->lateTick(*node);
+		node->callTick(node->info(), TickFunctionList::late_tick);
 	}
 }
 
 auto NodeCluster::hasEarlyTick() -> bool {
 	for (auto& node : nodes) {
-		if (not node->table->table.early_tick.empty()) {
+		if (node->info() && node->info()->hasFunction(TickFunctionList::early_tick)) {
 			return true;
 		}
 	}
@@ -48,7 +48,7 @@ auto NodeCluster::hasEarlyTick() -> bool {
 
 auto NodeCluster::hasTick() -> bool {
 	for (auto& node : nodes) {
-		if (not node->table->table.tick.empty()) {
+		if (node->info() && node->info()->hasFunction(TickFunctionList::tick)) {
 			return true;
 		}
 	}
@@ -57,7 +57,7 @@ auto NodeCluster::hasTick() -> bool {
 
 auto NodeCluster::hasPostPhysics() -> bool {
 	for (auto& node : nodes) {
-		if (not node->table->table.post_physics.empty()) {
+		if (node->info() && node->info()->hasFunction(TickFunctionList::post_physics)) {
 			return true;
 		}
 	}
@@ -66,7 +66,7 @@ auto NodeCluster::hasPostPhysics() -> bool {
 
 auto NodeCluster::hasLateTick() -> bool {
 	for (auto& node : nodes) {
-		if (not node->table->table.late_tick.empty()) {
+		if (node->info() && node->info()->hasFunction(TickFunctionList::late_tick)) {
 			return true;
 		}
 	}
@@ -84,6 +84,9 @@ auto World::nodeAllocation() noexcept -> Box<Node> {
 	ZoneScoped;
 	auto [it, result] = m.nodes.emplace(new Node());
 	TOAST_ASSERT(result, "World", "Node allocation failed");
+	// Attach reflection metadata so info()/serialization/RTTI work on this instance.
+	// Runtime-created nodes are plain Nodes today; typed creation will pass its own NodeInfo.
+	it->node->m_info = m.node_registry.reflect("toast::Node");
 	return it->node;
 }
 
@@ -96,7 +99,7 @@ void World::tick() {
 			futures.emplace_back(ThreadPool::push([n] {
 				if (std::holds_alternative<Box<Node>>(n)) {
 					auto node = std::get<Box<Node>>(n);
-					node->table->tick(node);
+					node->callTick(node->info(), TickFunctionList::tick);
 				}
 
 				auto cluster = std::get<NodeCluster>(n);
@@ -130,8 +133,8 @@ auto World::requestRuntimeCreation(Node& parent) -> Box<Node> {
 
 	// Phase 1: allocation
 	Box node = instance->nodeAllocation();
-	// node->table->load(node); no load since they are not being serialized
-	node->table->preInitPropagate(node);
+	// no load since they are not being serialized
+	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 
 	// Phase 2: data structure generation
 	node->m_uuid.generate();
@@ -156,7 +159,7 @@ auto World::requestRuntimeCreation(Node& parent) -> Box<Node> {
 	node->m_inherited_enabled = parent.enabled();
 
 	// Phase 3: node initialization
-	node->table->preInit(node);
+	node->callTick(node->info(), TickFunctionList::pre_init);
 	node->enabled(true);
 	return node;
 }
@@ -170,8 +173,8 @@ void World::dispatchNodeCreation(int count) {
 	for (int i = 0; i < count; i++) {
 		alloc_futures.emplace_back(ThreadPool::push([]() {
 			Box node = instance->nodeAllocation();
-			node->table->load(node);
-			node->table->preInit(node);
+			node->callTick(node->info(), TickFunctionList::load);
+			node->callTick(node->info(), TickFunctionList::pre_init);
 			node->m_state = NodeState::loading;
 			return node;
 		}));
@@ -194,7 +197,7 @@ void World::dispatchNodeCreation(int count) {
 	init_futures.reserve(count);
 	for (int i = 0; i < count; i++) {
 		init_futures.emplace_back(ThreadPool::push([node = alloc_futures[i].get()]() mutable {
-			node->table->init(node);
+			node->callTick(node->info(), TickFunctionList::init);
 			return node;
 		}));
 	}
@@ -220,10 +223,7 @@ void World::computeDependencyGraph() {
 	//		1) they don't have any tick functions
 	//		2) they are in the NodeState::cached
 	for (auto& g : subgraphs) {
-		std::erase_if(g, [](const auto& n) {
-			return n->table->table.early_tick.empty() && n->table->table.tick.empty() && n->table->table.post_physics.empty() &&
-			       n->table->table.late_tick.empty();
-		});
+		std::erase_if(g, [](const auto& n) { return not n->info() || not n->info()->hasFunction(TickFunctionList::tick_mask); });
 
 		std::erase_if(g, [](const auto& n) { return n->m_state == NodeState::cached; });
 	}
@@ -546,10 +546,16 @@ auto World::optimizeWaves(const std::vector<TickSchedule::Wave>& waves) -> TickS
 		    }
 	    };
 
-	filter_and_assign_wave(schedule.early_tick, 0, [](auto n) { return !n->table->table.early_tick.empty(); });
-	filter_and_assign_wave(schedule.tick, 1, [](auto n) { return !n->table->table.tick.empty(); });
-	filter_and_assign_wave(schedule.post_physics, 2, [](auto n) { return !n->table->table.post_physics.empty(); });
-	filter_and_assign_wave(schedule.late_tick, 3, [](auto n) { return !n->table->table.late_tick.empty(); });
+	filter_and_assign_wave(schedule.early_tick, 0, [](auto n) {
+		return n->info() && n->info()->hasFunction(TickFunctionList::early_tick);
+	});
+	filter_and_assign_wave(schedule.tick, 1, [](auto n) { return n->info() && n->info()->hasFunction(TickFunctionList::tick); });
+	filter_and_assign_wave(schedule.post_physics, 2, [](auto n) {
+		return n->info() && n->info()->hasFunction(TickFunctionList::post_physics);
+	});
+	filter_and_assign_wave(schedule.late_tick, 3, [](auto n) {
+		return n->info() && n->info()->hasFunction(TickFunctionList::late_tick);
+	});
 
 	return schedule;
 }
@@ -575,7 +581,7 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 			std::ranges::replace(nodes.cached, node.box(), root_node);
 			node.changeNodeState(NodeState::root);
 			root_node->changeNodeState(NodeState::cached);
-			root_node->table->endPropagate(root_node);
+			root_node->propagateCallTick(root_node->info(), TickFunctionList::end);
 			root_node->enabled(false);
 			break;
 		case NodeState::global:
@@ -587,7 +593,7 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 
 	computeDependencyGraph();
 
-	node.table->beginPropagate(node);
+	node.propagateCallTick(node.info(), TickFunctionList::begin);
 	node.enabled(true);
 
 	return root_node;
@@ -624,7 +630,7 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 
 	node.changeNodeState(NodeState::cached);
 	node.enabled(false);
-	node.table->endPropagate(node);
+	node.propagateCallTick(node.info(), TickFunctionList::end);
 
 	// ensure there's only root nodes or children nodes, no world_root
 	// world_root only exists in global and root
@@ -659,7 +665,7 @@ auto World::moveToGlobal(Node& node) -> Box<Node> {
 
 	computeDependencyGraph();
 
-	node.table->beginPropagate(node);
+	node.propagateCallTick(node.info(), TickFunctionList::begin);
 	node.enabled(true);
 	nodes.global.emplace_back(node.box());
 	return node.box();
@@ -702,7 +708,7 @@ auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
 
 	node.changeNodeState(parent.m_state);
 	if (run_begin) {
-		node.table->beginPropagate(node);
+		node.propagateCallTick(node.info(), TickFunctionList::begin);
 		node.enabled(true);
 	}
 	parent.m_children.emplace_back(node.box());
@@ -865,7 +871,6 @@ auto WorldTestAccess::createWorld() -> World* {
 
 auto WorldTestAccess::createNode(World& world, std::string_view name, NodeState state) -> Box<Node> {
 	auto node = world.nodeAllocation();
-	node->table = new NodeFunctionTable();
 	node->m_name = name;
 	node->m_state = state;
 	node->m_type = NodeType::child;
@@ -878,12 +883,15 @@ void WorldTestAccess::registerDependency(Node& from, Node& to) {
 	World::registerDependency(from, to);
 }
 
-auto WorldTestAccess::functionTable(Node& node) noexcept -> NodeFunctionTable& {
-	return *node.table;
-}
-
-auto WorldTestAccess::functionTable(const Node& node) noexcept -> const NodeFunctionTable& {
-	return *node.table;
+void WorldTestAccess::addTickStage(Node& node, TickFunctionList stage) {
+	// Test-only: fabricate a per-instance NodeInfo carrying the requested tick flags so the
+	// scheduler (which reads m_info) treats this node as participating in `stage`. Real nodes
+	// get their NodeInfo from the type registry instead.
+	static std::unordered_map<const Node*, NodeInfo> infos;
+	NodeInfo& info = infos[&node];
+	info.type = "test::Node";
+	info.functions.list = info.functions.list | stage;
+	node.m_info = &info;
 }
 
 auto WorldTestAccess::tickSchedule(World& world) noexcept -> TickSchedule& {

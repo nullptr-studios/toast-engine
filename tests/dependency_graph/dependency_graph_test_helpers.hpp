@@ -90,21 +90,22 @@ inline void assertScheduleEquals(const ScheduleSnapshot& actual, const ScheduleS
 }
 
 inline void addStageFunction(toast::Node& node, Stage stage) {
-	auto& table = toast::_detail::WorldTestAccess::functionTable(node).table;
+	auto flag = toast::TickFunctionList::none;
 	switch (stage) {
 		case Stage::early_tick:
-			table.early_tick.emplace_back([](toast::Node*) {});
+			flag = toast::TickFunctionList::early_tick;
 			break;
 		case Stage::tick:
-			table.tick.emplace_back([](toast::Node*) {});
+			flag = toast::TickFunctionList::tick;
 			break;
 		case Stage::post_physics:
-			table.post_physics.emplace_back([](toast::Node*) {});
+			flag = toast::TickFunctionList::post_physics;
 			break;
 		case Stage::late_tick:
-			table.late_tick.emplace_back([](toast::Node*) {});
+			flag = toast::TickFunctionList::late_tick;
 			break;
 	}
+	toast::_detail::WorldTestAccess::addTickStage(node, flag);
 }
 
 inline auto scheduleFor(toast::World& world, Stage stage) -> ScheduleSnapshot {

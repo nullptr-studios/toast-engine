@@ -4,67 +4,6 @@
 
 namespace toast {
 
-#pragma region FUNCTION_TABLE_ITERATIONS
-
-#define TOAST_NODE_FUNCTION_IMPL(fn_name, member_name) \
-	void NodeFunctionTable::fn_name(Node& n) {           \
-		ZoneScoped;                                        \
-		ZoneNameF("%s::" #fn_name "()", n.name().data());  \
-		if (not n.enabled())                               \
-			return;                                          \
-		for (auto& f : table.member_name) {                \
-			ZoneScoped;                                      \
-			f(&n);                                           \
-		}                                                  \
-	}
-
-#define TOAST_NODE_PROPAGATE_IMPL(fn_name)              \
-	void NodeFunctionTable::fn_name##Propagate(Node& n) { \
-		ZoneScoped;                                         \
-		fn_name(n);                                         \
-		for (auto& c : n.m_children) {                      \
-			c->table->fn_name##Propagate(c);                  \
-		}                                                   \
-	}
-
-#define TOAST_NODE_HAS_IMPL(fn_name, member_name)       \
-	auto NodeFunctionTable::has##fn_name(Node& n)->bool { \
-		return not n.table->table.member_name.empty();      \
-	}
-
-TOAST_NODE_FUNCTION_IMPL(load, load)
-TOAST_NODE_FUNCTION_IMPL(save, save)
-TOAST_NODE_FUNCTION_IMPL(preInit, pre_init)
-TOAST_NODE_FUNCTION_IMPL(init, init)
-TOAST_NODE_FUNCTION_IMPL(begin, begin)
-TOAST_NODE_FUNCTION_IMPL(onEnable, on_enable)
-TOAST_NODE_FUNCTION_IMPL(earlyTick, early_tick)
-TOAST_NODE_FUNCTION_IMPL(tick, tick)
-TOAST_NODE_FUNCTION_IMPL(postPhysics, post_physics)
-TOAST_NODE_FUNCTION_IMPL(lateTick, late_tick)
-TOAST_NODE_FUNCTION_IMPL(onDisable, on_disable)
-TOAST_NODE_FUNCTION_IMPL(end, end)
-TOAST_NODE_FUNCTION_IMPL(destroy, destroy)
-
-TOAST_NODE_PROPAGATE_IMPL(load)
-TOAST_NODE_PROPAGATE_IMPL(save)
-TOAST_NODE_PROPAGATE_IMPL(preInit)
-TOAST_NODE_PROPAGATE_IMPL(init)
-TOAST_NODE_PROPAGATE_IMPL(begin)
-TOAST_NODE_PROPAGATE_IMPL(end)
-TOAST_NODE_PROPAGATE_IMPL(destroy)
-
-TOAST_NODE_HAS_IMPL(EarlyTick, early_tick)
-TOAST_NODE_HAS_IMPL(Tick, tick)
-TOAST_NODE_HAS_IMPL(PostPhysics, post_physics)
-TOAST_NODE_HAS_IMPL(LateTick, late_tick)
-
-#undef TOAST_NODE_FUNCTION_IMPL
-#undef TOAST_NODE_PROPAGATE_IMPL
-#undef TOAST_NODE_HAS_IMPL
-
-#pragma endregion FUNCTION_TABLE_ITERATIONS
-
 auto Node::uuid() const noexcept -> const UUID& {
 	return m_uuid;
 }
@@ -91,9 +30,9 @@ void Node::enabled(bool value) noexcept {
 	m_local_enabled = value;
 
 	if (value) {
-		table->onEnable(*this);
+		callTick(m_info, TickFunctionList::on_enable);
 	} else {
-		table->onDisable(*this);
+		callTick(m_info, TickFunctionList::on_disable);
 	}
 
 	for (auto& c : m_children) {
@@ -114,6 +53,10 @@ auto Node::addChild() -> Box<Node> {
 	return World::requestRuntimeCreation(*this);
 }
 
+auto Node::info() const -> const NodeInfo* {
+	return m_info;
+}
+
 auto Node::listener() noexcept -> event::Listener& {
 	if (not m_listener) {
 		m_listener = std::make_unique<event::Listener>();
@@ -130,9 +73,9 @@ void Node::inheritedEnabled(bool value) noexcept {
 
 	if (m_local_enabled) {
 		if (value) {
-			table->onEnable(*this);
+			callTick(m_info, TickFunctionList::on_enable);
 		} else {
-			table->onDisable(*this);
+			callTick(m_info, TickFunctionList::on_disable);
 		}
 	}
 
@@ -153,6 +96,11 @@ void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 		return;
 	}
 
+	// Frame-tick functions only run on enabled nodes; lifecycle/enable callbacks always run.
+	if (has_flag(TickFunctionList::tick_mask, func_type) && not enabled()) {
+		return;
+	}
+
 	// Walk base → derived
 	if (info->base_type) {
 		callTick(info->base_type, func_type);
@@ -162,7 +110,11 @@ void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 	const TickFunctions& funcs = info->functions;
 	TickFunctions::Invoker invoker = nullptr;
 
-	if (has_flag(func_type, TickFunctionList::pre_init) && has_flag(funcs.list, TickFunctionList::pre_init)) {
+	if (has_flag(func_type, TickFunctionList::load) && has_flag(funcs.list, TickFunctionList::load)) {
+		invoker = funcs.load;
+	} else if (has_flag(func_type, TickFunctionList::save) && has_flag(funcs.list, TickFunctionList::save)) {
+		invoker = funcs.save;
+	} else if (has_flag(func_type, TickFunctionList::pre_init) && has_flag(funcs.list, TickFunctionList::pre_init)) {
 		invoker = funcs.pre_init;
 	} else if (has_flag(func_type, TickFunctionList::init) && has_flag(funcs.list, TickFunctionList::init)) {
 		invoker = funcs.init;

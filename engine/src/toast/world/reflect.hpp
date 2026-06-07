@@ -9,9 +9,17 @@
 #pragma once
 
 #include <any>
+#include <array>
+#include <cstdint>
+#include <span>
+#include <string>
+#include <string_view>
 #include <toast/export.hpp>
+#include <unordered_map>
 
 namespace toast {
+
+class Node;
 
 enum class TickFunctionList : uint16_t {
 	none = 0,
@@ -26,10 +34,23 @@ enum class TickFunctionList : uint16_t {
 	tick = 1 << 9,
 	post_physics = 1 << 10,
 	late_tick = 1 << 11,
-	// load = 1 << 12,
-	// save = 1 << 13,
+	load = 1 << 12,
+	save = 1 << 13,
 	tick_mask = early_tick | tick | post_physics | late_tick,
 	all = 0xFFFF,
+};
+
+enum class FieldType : uint8_t {
+	bool_t,
+	int_t,
+	float_t,
+	string_t,
+	double_t,
+	uuid_t,
+	vec2_t,
+	vec3_t,
+	vec4_t,
+	quaternion_t,
 };
 
 // Bitwise operators for TickFunctionList
@@ -62,6 +83,8 @@ struct TickFunctions {
 
 	TickFunctionList list;
 
+	Invoker load = nullptr;
+	Invoker save = nullptr;
 	Invoker pre_init = nullptr;
 	Invoker init = nullptr;
 	Invoker destroy = nullptr;
@@ -80,8 +103,10 @@ struct TOAST_API FieldInfo {
 	using FieldSetterPtr = void (*)(void*, std::any);
 
 	std::string_view name;
-	std::string_view type;
+	std::string_view type;    // C++ type name, for diagnostics only
+	FieldType value_type;     // serialization kind, drives NodeFile
 	std::string_view attributes;
+	bool is_array = false;    // True if field is array/vector/collection
 
 	FieldGetterPtr get;
 	FieldSetterPtr set;
@@ -102,6 +127,49 @@ struct TOAST_API FieldInfo {
 			return "";
 		}
 		return attributes.substr(start + 1, end - start - 1);
+	}
+
+	// Helper: check if attribute string contains a specific attribute name
+	[[nodiscard]]
+	auto hasAttribute(std::string_view attr_name) const -> bool {
+		if (attributes.empty()) {
+			return false;
+		}
+		auto pos = attributes.find(attr_name);
+		while (pos != std::string_view::npos) {
+			// Check if it's a whole word (not part of another attribute)
+			bool valid_start = (pos == 0 || attributes[pos - 1] == ';');
+			bool valid_end =
+			    (pos + attr_name.length() >= attributes.length() || attributes[pos + attr_name.length()] == '(' ||
+			     attributes[pos + attr_name.length()] == ';');
+			if (valid_start && valid_end) {
+				return true;
+			}
+			pos = attributes.find(attr_name, pos + 1);
+		}
+		return false;
+	}
+
+	// Helper: get attribute argument, e.g., getAttribute("Group") -> "General"
+	[[nodiscard]]
+	auto getAttribute(std::string_view attr_name) const -> std::string_view {
+		auto pos = attributes.find(attr_name);
+		if (pos == std::string_view::npos) {
+			return "";
+		}
+		auto paren_start = attributes.find('(', pos);
+		if (paren_start == std::string_view::npos) {
+			return "";
+		}
+		auto quote_start = attributes.find('"', paren_start);
+		if (quote_start == std::string_view::npos) {
+			return "";
+		}
+		auto quote_end = attributes.find('"', quote_start + 1);
+		if (quote_end == std::string_view::npos) {
+			return "";
+		}
+		return attributes.substr(quote_start + 1, quote_end - quote_start - 1);
 	}
 };
 
@@ -147,22 +215,69 @@ struct TOAST_API GroupInfo {
 };
 
 struct TOAST_API NodeInfo {
+	using Factory = Node* (*)();
+	using Deleter = void (*)(Node*);
+
 	std::string_view type;
-	NodeInfo* base_type;
+	const NodeInfo* base_type;
 	std::span<const FieldInfo> all_fields;
 	std::span<const FieldInfo* const> fields;
 	std::span<const GroupInfo> groups;
 
 	TickFunctions functions;
 
+	// Construct/destroy an instance of this exact type (bodies generated, so they can
+	// reach the private ctor/dtor). Needed to instantiate a node from its type name.
+	Factory construct = nullptr;
+	Deleter destroy = nullptr;
+
+	// getField searches every field (grouped or not), then walks up to base types.
 	[[nodiscard]]
 	auto getField(std::string_view field_name) const -> const FieldInfo* {
-		for (const auto& f : fields) {
-			if (field_name == f->name) {
-				return f;
+		for (const auto& f : all_fields) {
+			if (field_name == f.name) {
+				return &f;
 			}
 		}
+		// Check base type
+		if (base_type) {
+			return base_type->getField(field_name);
+		}
 		return nullptr;
+	}
+
+	// RTTI: is this type the same as, or derived from, `other`?
+	[[nodiscard]]
+	auto isA(const NodeInfo* other) const -> bool {
+		for (const NodeInfo* cur = this; cur; cur = cur->base_type) {
+			if (cur == other) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// True if this type or any base registers any tick function overlapping `mask`.
+	// Accepts a single flag (e.g. TickFunctionList::tick) or a mask (e.g. tick_mask).
+	[[nodiscard]]
+	auto hasFunction(TickFunctionList mask) const -> bool {
+		for (const NodeInfo* cur = this; cur; cur = cur->base_type) {
+			if ((cur->functions.list & mask) != TickFunctionList::none) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Stable numeric id derived from the type name (FNV-1a, 32-bit).
+	[[nodiscard]]
+	constexpr auto id() const -> uint32_t {
+		uint32_t hash = 2166136261u;
+		for (char c : type) {
+			hash ^= static_cast<uint8_t>(c);
+			hash *= 16777619u;
+		}
+		return hash;
 	}
 
 	[[nodiscard]]
@@ -171,6 +286,10 @@ struct TOAST_API NodeInfo {
 			if (group_name == g.name) {
 				return &g;
 			}
+		}
+		// Check base type
+		if (base_type) {
+			return base_type->getGroup(group_name);
 		}
 		return nullptr;
 	}
@@ -182,7 +301,20 @@ struct TOAST_API NodeInfo {
 				return &f;
 			}
 		}
+		// Check base type
+		if (base_type) {
+			return base_type->search(field_name);
+		}
 		return nullptr;
+	}
+
+	// Walk the inheritance chain and call fn for each NodeInfo (base → derived)
+	template<typename F>
+	void forEachBaseType(F&& fn) const {
+		if (base_type) {
+			base_type->forEachBaseType(fn);
+		}
+		fn(*this);
 	}
 };
 
@@ -193,7 +325,12 @@ template<class Class, typename FieldType, FieldType Class::* MemberPtr>
 struct FieldAccess {
 	static auto get(void* obj) -> std::any { return static_cast<Class*>(obj)->*MemberPtr; }
 
-	static void set(void* obj, std::any value) { static_cast<Class*>(obj)->*MemberPtr = std::any_cast<FieldType>(value); }
+	// Guarded: a value of the wrong stored type is ignored rather than throwing std::bad_any_cast.
+	static void set(void* obj, std::any value) {
+		if (auto* typed = std::any_cast<FieldType>(&value)) {
+			static_cast<Class*>(obj)->*MemberPtr = *typed;
+		}
+	}
 };
 
 class TOAST_API NodeRegistry {

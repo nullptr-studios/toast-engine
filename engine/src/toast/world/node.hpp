@@ -9,7 +9,6 @@
  */
 
 #pragma once
-#include "function_table.hpp"
 #include "reflect.hpp"
 #include "toast/world/box.hpp"
 #include "toast/world/control_box.hpp"
@@ -39,13 +38,16 @@ enum class NodeType : uint8_t {
 	world_root,    ///< This node is the root that resides in the world
 };
 
-class TOAST_API Node {
+class [[ToastNode]] TOAST_API Node {
 	friend class World;
 	friend struct _detail::ControlBox;
 	friend struct _detail::NodeCluster;
 	friend struct toast::_detail::WorldTestAccess;
-	friend struct NodeFunctionTable;
 
+	// Explicit `private:` (not the implicit class default) so the generated reflection TU,
+	// which does `#define private public`, can reach the ctor/dtor for its factory.
+
+private:
 	Node() = default;
 	~Node() = default;
 
@@ -73,29 +75,35 @@ public:
 
 	auto addChild() -> Box<Node>;
 
+	[[nodiscard]]
+	auto info() const -> const NodeInfo*;
+
 protected:
 	// listener is lazily initialized
 	[[nodiscard]]
 	auto listener() noexcept -> event::Listener&;
 
 private:
+	[[Serialize, Name("UID")]]
 	UUID m_uuid;    // serialized unique id
+	[[Serialize, Name("Name")]]
 	std::string m_name;
 	NodeState m_state = NodeState::null;
 	NodeType m_type = NodeType::null;
+	[[Serialize, Name("Enabled")]]
 	bool m_local_enabled = false;        // is this object enabled?
 	bool m_inherited_enabled = false;    // is any parent of this object enabled?
 	std::array<uint8_t, 4> m_wave = {255, 255, 255, 255};
 	Box<Node> m_box;
+	[[Serialize, Name("Parent")]]
 	Box<Node> m_parent;
 	std::vector<Box<Node>> m_children;
 	std::unique_ptr<event::Listener> m_listener = nullptr;
+	const NodeInfo* m_info = nullptr;
 
 	void init() { }
 
 	void tick() { }
-
-	NodeFunctionTable* table = nullptr;
 
 	void inheritedEnabled(bool value) noexcept;
 	void changeNodeState(NodeState state) noexcept;
@@ -106,5 +114,15 @@ private:
 	// Reflection dispatch: Recursively call on children after this node
 	void propagateCallTick(const NodeInfo* info, TickFunctionList func_type) noexcept;
 };
+
+// Safe down/cross-cast using reflected RTTI; returns nullptr if `n` is not a `T`.
+// The caller must have the `Reflect<T>` specialization (generated header) in scope.
+template<typename T>
+auto reflect_cast(Node* n) -> T* {
+	if (n && n->info() && n->info()->isA(&Reflect<T>::type_info)) {
+		return static_cast<T*>(n);
+	}
+	return nullptr;
+}
 
 }

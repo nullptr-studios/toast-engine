@@ -14,9 +14,9 @@ struct TOAST_API WorldTestAccess {
 
 	static void registerDependency(Node& from, Node& to);
 
-	static auto functionTable(Node& node) noexcept -> NodeFunctionTable&;
-
-	static auto functionTable(const Node& node) noexcept -> const NodeFunctionTable&;
+	// Test-only: make `node` participate in the given tick stage by attaching a fabricated
+	// NodeInfo (the per-instance NodeFunctionTable no longer exists).
+	static void addTickStage(Node& node, TickFunctionList stage);
 
 	static auto tickSchedule(World& world) noexcept -> _detail::TickSchedule&;
 

@@ -1,160 +1,192 @@
 use super::*;
+use tree_sitter::StreamingIterator;
+use std::collections::BTreeMap;
 
-// TODO: anon structs should inherit attributes i guess
+fn has_attribute(attributes: &BTreeMap<String, Vec<String>>, name: &str) -> bool {
+	attributes.contains_key(name)
+}
+
+fn clean_argument(arg: &str) -> String {
+	let trimmed = arg.trim();
+	// Remove surrounding quotes if present
+	if (trimmed.starts_with('"') && trimmed.ends_with('"')) ||
+	   (trimmed.starts_with('\'') && trimmed.ends_with('\'')) {
+		trimmed[1..trimmed.len()-1].to_string()
+	} else {
+		trimmed.to_string()
+	}
+}
 
 pub fn get_class(node: tree_sitter::Node, source_code: &str) -> Option<Class> {
-    let class_name = if let Some(name_node) = node.child_by_field_name("name") {
-        source_code[name_node.byte_range()].to_string()
-    } else {
-        return None; // we dont need to reflect anon classes
-    };
+	let class_name = if let Some(name_node) = node.child_by_field_name("name") {
+		source_code[name_node.byte_range()].to_string()
+	} else {
+		return None;
+	};
 
-    let mut class = Class {
-        name: class_name,
-        functions: get_functions(node, source_code),
-        variable: get_variables(node, source_code),
-        attributes: get_attributes(node, source_code),
-    };
+	// Extract parent class name if it exists
+	let mut parent = String::new();
+	let query = Query::new(
+		&tree_sitter_cpp::LANGUAGE.into(),
+		"(base_class_clause(qualified_identifier) @name)"
+	).unwrap();
+	let mut cursor = QueryCursor::new();
+	let mut captures = cursor.captures(&query, node, source_code.as_bytes());
 
-    if let Some(list) = class.attributes.as_ref()
-        && !list.iter().any(|a| a.name == "ToastNode")
-    {
-        return None; // every class needs to be a ToastNode class
-    }
+	if let Some((m, _)) = captures.next() {
+		parent = source_code[m.captures[0].node.byte_range()].to_string();
+	}
 
-    dbg!(Some(class))
-}
-fn get_functions(node: tree_sitter::Node, source_code: &str) -> Vec<Function> {
-    let mut functions = Vec::new();
-    let query = Query::new(
-        &tree_sitter_cpp::LANGUAGE.into(),
-        "(field_identifier) @field",
-    )
-    .unwrap();
-    let mut cursor = QueryCursor::new();
-    let mut captures = cursor.captures(&query, node, source_code.as_bytes());
+	// Get all attributes first to check for ToastNode
+	let all_attributes = get_attributes(node, source_code);
 
-    while let Some((m, _)) = captures.next() {
-        let field_node = m.captures[0].node;
+	// Only include ToastNode classes
+	if !has_attribute(&all_attributes, "ToastNode") {
+		return None;
+	}
 
-        // check function
-        if let Some(parent) = field_node.parent()
-            && parent.kind() == "function_declarator"
-            && let Some(root) = parent.parent()
-        {
-            let func = Function {
-                name: source_code[field_node.byte_range()].to_string(),
-                attributes: get_attributes(root, source_code),
-            };
-            functions.push(func);
-        }
-    }
-    functions
+	let class = Class {
+		name: class_name,
+		parent,
+		attributes: get_attributes_skip(node, source_code, &["ToastNode"]),
+		functions: get_functions(node, source_code),
+		variables: get_variables(node, source_code),
+	};
+
+	Some(class)
 }
 
-fn get_variables(node: tree_sitter::Node, source_code: &str) -> Vec<Variable> {
-    let mut variables = Vec::new();
+fn get_functions(node: tree_sitter::Node, source_code: &str) -> BTreeMap<String, bool> {
+	let mut functions = BTreeMap::new();
+	let lifecycle_methods = vec!["preInit", "init", "begin", "earlyTick", "tick", "postPhysics", "lateTick", "end", "destroy", "onEnable", "onDisable"];
 
-    let query = Query::new(
-        &tree_sitter_cpp::LANGUAGE.into(),
-        "(field_identifier) @field",
-    )
-    .unwrap();
-    let mut cursor = QueryCursor::new();
-    let mut captures = cursor.captures(&query, node, source_code.as_bytes());
+	// Initialize all lifecycle methods as false
+	for method in &lifecycle_methods {
+		functions.insert(method.to_string(), false);
+	}
 
-    while let Some((m, _)) = captures.next() {
-        let field_node = m.captures[0].node;
-        let name = &source_code[field_node.byte_range()];
+	let query = Query::new(
+		&tree_sitter_cpp::LANGUAGE.into(),
+		"(field_identifier) @field",
+	)
+		.unwrap();
+	let mut cursor = QueryCursor::new();
+	let mut captures = cursor.captures(&query, node, source_code.as_bytes());
 
-        // find thing
-        if let Some(parent) = field_node.parent()
-            && parent.kind() == "field_declaration"
-        {
-            if let Some(data_type) = parent.child_by_field_name("type")
-                && data_type.kind() == "struct_specifier"
-            {
-                continue;
-            }
+	while let Some((m, _)) = captures.next() {
+		let field_node = m.captures[0].node;
 
-            let var = Variable {
-                name: source_code[field_node.byte_range()].to_string(),
-                prefix: get_var_prefix(parent, source_code),
-                attributes: get_attributes(parent, source_code),
-            };
-            variables.push(var);
-        }
-    }
-    variables
+		if let Some(parent) = field_node.parent()
+			&& parent.kind() == "function_declarator"
+			&& let Some(_root) = parent.parent()
+		{
+			let func_name = source_code[field_node.byte_range()].to_string();
+			// Only mark as true if it's a tick function
+			if functions.contains_key(&func_name) {
+				functions.insert(func_name, true);
+			}
+		}
+	}
+	functions
 }
 
-fn get_var_prefix(node: tree_sitter::Node, source_code: &str) -> String {
-    let mut prefix = String::new();
-    let mut current_node = Some(node);
+fn get_variables(node: tree_sitter::Node, source_code: &str) -> BTreeMap<String, VariableInfo> {
+	let mut variables = BTreeMap::new();
 
-    while let Some(parent) = current_node.and_then(|n| n.parent()) {
-        if parent.kind() == "struct_specifier"
-            && let Some(field_decl) = parent.parent()
-            && let Some(declarator) = field_decl.child_by_field_name("declarator")
-        {
-            let instance_name = &source_code[declarator.byte_range()];
-            prefix = format!("{instance_name}.{prefix}");
-        }
+	let query = Query::new(
+		&tree_sitter_cpp::LANGUAGE.into(),
+		"(field_identifier) @field",
+	)
+		.unwrap();
+	let mut cursor = QueryCursor::new();
+	let mut captures = cursor.captures(&query, node, source_code.as_bytes());
 
-        if parent.kind() == "class_specifier" {
-            prefix = format!("this->{prefix}");
-        }
+	while let Some((m, _)) = captures.next() {
+		let field_node = m.captures[0].node;
 
-        current_node = Some(parent);
-    }
-    prefix
+		if let Some(parent) = field_node.parent()
+			&& parent.kind() == "field_declaration"
+		{
+			// Skip nested struct definitions
+			if let Some(data_type) = parent.child_by_field_name("type")
+				&& data_type.kind() == "struct_specifier"
+			{
+				continue;
+			}
+
+			// Get all attributes to check for Serialize
+			let all_attributes = get_attributes(parent, source_code);
+
+			// Only include variables with Serialize attribute
+			if !has_attribute(&all_attributes, "Serialize") {
+				continue;
+			}
+
+			let attributes = get_attributes_skip(parent, source_code, &["Serialize"]);
+
+			// Extract type
+			let type_name = parent.child_by_field_name("type")
+				.map(|t| source_code[t.byte_range()].trim().to_string())
+				.unwrap_or_default();
+
+			// Extract default value from initializer if present
+			let default = parent.child_by_field_name("default_value")
+				.map(|init| source_code[init.byte_range()].trim().to_string());
+
+			let var_name = source_code[field_node.byte_range()].to_string();
+			variables.insert(var_name, VariableInfo {
+				type_name,
+				default,
+				attributes,
+			});
+		}
+	}
+	variables
 }
 
-fn get_attributes(node: tree_sitter::Node, source_code: &str) -> Option<Vec<Attribute>> {
-    let mut attributes = Vec::new();
+fn get_attributes(node: tree_sitter::Node, source_code: &str) -> BTreeMap<String, Vec<String>> {
+	get_attributes_skip(node, source_code, &[])
+}
 
-    for list in node.children(&mut node.walk()) {
-        if list.kind() != "attribute_declaration" {
-            continue;
-        }
-        for attr_node in list.children(&mut list.walk()) {
-            if attr_node.kind() != "attribute" {
-                continue;
-            }
-            let attrib_name = if let Some(name_node) = attr_node.child_by_field_name("name") {
-                source_code[name_node.byte_range()].to_string()
-            } else {
-                continue;
-            };
+fn get_attributes_skip(node: tree_sitter::Node, source_code: &str, skip: &[&str]) -> BTreeMap<String, Vec<String>> {
+	let mut attributes = BTreeMap::new();
 
-            let mut attrib = Attribute {
-                name: attrib_name,
-                arguments: None,
-            };
+	for list in node.children(&mut node.walk()) {
+		if list.kind() != "attribute_declaration" {
+			continue;
+		}
+		for attr_node in list.children(&mut list.walk()) {
+			if attr_node.kind() != "attribute" {
+				continue;
+			}
+			let attrib_name = if let Some(name_node) = attr_node.child_by_field_name("name") {
+				source_code[name_node.byte_range()].to_string()
+			} else {
+				continue;
+			};
 
-            if let Some(arg_list) = attr_node
-                .child_by_field_name("name")
-                .and_then(|n| n.next_named_sibling())
-            {
-                let mut args_vec = Vec::new();
-                for arg in arg_list.children(&mut arg_list.walk()) {
-                    if !arg.is_named() {
-                        continue;
-                    }
-                    let arg_text = source_code[arg.byte_range()].to_string();
-                    args_vec.push(arg_text);
-                }
-                if !args_vec.is_empty() {
-                    attrib.arguments = Some(args_vec);
-                }
-            };
+			// Skip this attribute if it's in the skip list
+			if skip.contains(&attrib_name.as_str()) {
+				continue;
+			}
 
-            attributes.push(attrib);
-        }
-    }
-    if attributes.is_empty() {
-        None
-    } else {
-        Some(attributes)
-    }
+			let mut arguments = Vec::new();
+
+			if let Some(arg_list) = attr_node
+				.child_by_field_name("name")
+				.and_then(|n| n.next_named_sibling())
+			{
+				for arg in arg_list.children(&mut arg_list.walk()) {
+					if !arg.is_named() {
+						continue;
+					}
+					let arg_text = source_code[arg.byte_range()].to_string();
+					arguments.push(clean_argument(&arg_text));
+				}
+			}
+
+			attributes.insert(attrib_name, arguments);
+		}
+	}
+	attributes
 }
