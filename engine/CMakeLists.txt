@@ -120,12 +120,19 @@ add_custom_command(TARGET toast_engine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/ffi"
         "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-        "${TOAST_ENGINE_BIN_DIR}/assets"
-    COMMENT "Copying toast_engine headers and assets into the package layout"
+    COMMENT "Copying toast_engine headers into the package layout"
     VERBATIM
 )
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+    add_custom_command(TARGET toast_engine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+            "${TOAST_ENGINE_BIN_DIR}/assets"
+        COMMENT "Copying toast_engine assets"
+        VERBATIM
+    )
+endif()
 
 if (WIN32)
     add_custom_command(TARGET toast_engine POST_BUILD

@@ -9,9 +9,9 @@
  */
 
 #pragma once
-#include "function_table.hpp"
 #include "box.hpp"
 #include "control_box.hpp"
+#include "function_table.hpp"
 
 #include <toast/events/listener.hpp>
 #include <toast/export.hpp>
@@ -44,9 +44,6 @@ class TOAST_API Node {
 	friend struct _detail::NodeCluster;
 	friend struct toast::_detail::WorldTestAccess;
 
-	Node() = default;
-	~Node() = default;
-
 public:
 	[[nodiscard]]
 	/// @brief Returns the serialized unique identifier of this node
@@ -72,6 +69,9 @@ public:
 	auto addChild() -> Box<Node>;
 
 protected:
+	Node() = default;
+	virtual ~Node() = default;
+
 	// listener is lazily initialized
 	[[nodiscard]]
 	auto listener() noexcept -> event::Listener&;

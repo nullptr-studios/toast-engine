@@ -97,6 +97,7 @@ public:
 	 */
 	static void dispatchNodeCreation(int count);
 
+	static void markNode3DDependantsDirty(const Box<Node>& node) noexcept;
 	[[nodiscard]]
 	auto dependencyGraphGraphviz() const -> std::string;
 

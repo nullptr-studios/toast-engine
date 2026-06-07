@@ -1,6 +1,7 @@
 #include "world.hpp"
 
 #include "world_test_access.hpp"
+#include "node_3d.hpp"
 
 #include <sstream>
 #include <toast/thread_pool.hpp>
@@ -86,7 +87,7 @@ auto World::nodeAllocation() noexcept -> Box<Node> {
 
 void World::registerDependency(Node& from, Node& to) {
 	if (&from == &to) {
-		TOAST_WARN("World", "{} ({}) tried to register a dependency to itself", from.name(), from.uuid());
+		TOAST_WARN("World", "{} ({}) tried to register a dependency to itself", from.name(), from.uid());
 		return;
 	}
 	// TODO: sanity check
@@ -108,7 +109,7 @@ auto World::requestRuntimeCreation(Node& parent) -> Box<Node> {
 	node->table->preInit(node);
 
 	// Phase 2: data structure generation
-	node->m.uuid.generate();
+	node->m.uid.generate();
 	node->m.parent = parent;
 	parent.m.children.emplace_back(node);
 	// TODO: dependency graph
@@ -140,7 +141,7 @@ void World::dispatchNodeCreation(int count) {
 
 	// Phase 2: data structure generation
 	for (auto& r : alloc_futures) {
-		r.get()->m.uuid.generate();
+		r.get()->m.uid.generate();
 	}
 	// TODO: build tree
 	// TODO: build dependency graph
@@ -164,6 +165,18 @@ void World::dispatchNodeCreation(int count) {
 	// TODO: Move this to cached_list
 }
 
+void World::markNode3DDependantsDirty(const Box<Node>& node) noexcept {
+	if (!instance) return;
+
+	auto it = instance->dependency_graph.inverse_connections.find(node);
+	if (it != instance->dependency_graph.inverse_connections.end()) {
+		for (auto& dependent : it->second) {
+			if (auto node3d = dependent.as<Node3D>()) {
+				node3d->m_dirty_world = true;
+			}
+		}
+	}
+}
 void World::computeDependencyGraph() {
 	// Guarantee every existing node exists in the subgraph
 	for (const auto& node : m.nodes) {
@@ -374,7 +387,7 @@ auto World::assignWaves(const std::vector<_detail::TickSchedule::Wave>& subgraph
 				    if constexpr (std::is_same_v<T, Box<Node>>) {
 					    node_to_location[item] = {subgraph_idx, item_idx};
 				    } else {
-				    	// NodeCluster
+					    // NodeCluster
 					    for (const auto& node : item.nodes) {
 						    node_to_location[node] = {subgraph_idx, item_idx};
 					    }
@@ -393,7 +406,7 @@ auto World::assignWaves(const std::vector<_detail::TickSchedule::Wave>& subgraph
 
 	// Calculate the wave level for each item
 	for (int subgraph_idx = 0; std::cmp_less(subgraph_idx, subgraphs.size()); ++subgraph_idx) {
-	`	// Iterating in reverse because Tarjan's SCCs are in reverse topological order
+		// Iterating in reverse because Tarjan's SCCs are in reverse topological order
 		for (int item_idx = (int)subgraphs[subgraph_idx].size() - 1; item_idx >= 0; --item_idx) {
 			// Collect all physical nodes in this scheduling item
 			std::vector<Box<Node>> item_nodes;

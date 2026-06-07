@@ -1,7 +1,7 @@
 #include "sdl_window.hpp"
 
-#include <tracy/Tracy.hpp>
 #include <SDL3/SDL_vulkan.h>
+#include <tracy/Tracy.hpp>
 
 namespace toast {
 

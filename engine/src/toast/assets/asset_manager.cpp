@@ -90,7 +90,9 @@ void AssetManager::reloadManifest() {
 	}
 
 	auto raw_json = openFile(*db_path);
-	if (!raw_json) return;
+	if (!raw_json) {
+		return;
+	}
 
 	try {
 		auto json = nlohmann::json::parse(raw_json->begin(), raw_json->end());
@@ -104,16 +106,12 @@ void AssetManager::reloadManifest() {
 			}
 		}
 		TOAST_INFO("AssetManager", "Manifest reloaded: {} assets tracked", manifest.size());
-	} catch (const std::exception& e) {
-		TOAST_ERROR("AssetManager", "Failed to parse asset manifest: {}", e.what());
-	}
+	} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse asset manifest: {}", e.what()); }
 }
 
 void AssetManager::clearUnusedAssets() {
 	size_t initial_count = cache.size();
-	std::erase_if(cache, [](const auto& item) {
-		return item.second->refCount() == 0;
-	});
+	std::erase_if(cache, [](const auto& item) { return item.second->refCount() == 0; });
 	size_t cleared = initial_count - cache.size();
 	if (cleared > 0) {
 		TOAST_INFO("AssetManager", "Cleared {} unused assets from cache", cleared);

@@ -257,14 +257,10 @@ void toast_destroy(engine_t* e) {
 	delete reinterpret_cast<toast::Engine*>(e);
 }
 
-void toast_set_working_directory(const char* assets, const char* artworks, const char* cache, const char* saved, const char* core) {
-	assets::AssetManager::setPaths({
-		.assets = assets,
-		.artworks = artworks,
-		.cache = cache,
-		.saved = saved,
-		.core = core
-	});
+void toast_set_working_directory(
+    const char* assets, const char* artworks, const char* cache, const char* saved, const char* core
+) {
+	assets::AssetManager::setPaths({.assets = assets, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
 }
 
 int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) {
