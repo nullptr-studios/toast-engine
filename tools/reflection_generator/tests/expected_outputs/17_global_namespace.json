@@ -1,0 +1,35 @@
+[
+  {
+    "name": "GlobalNamespaceNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "17_global_namespace.hpp",
+    "attributes": {},
+    "functions": {
+      "pre_init": false,
+      "init": false,
+      "begin": false,
+      "early_tick": false,
+      "tick": true,
+      "post_physics": false,
+      "late_tick": false,
+      "end": false,
+      "destroy": false,
+      "on_enable": false,
+      "on_disable": false,
+      "load": false,
+      "save": false
+    },
+    "global_fields": [
+      {
+        "name": "m_value",
+        "typename": "int",
+        "field_type": "int_t",
+        "is_array": false,
+        "attributes": {},
+        "default": null
+      }
+    ],
+    "groups": []
+  }
+]

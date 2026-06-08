@@ -1,0 +1,75 @@
+[
+  {
+    "attributes": {},
+    "functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    },
+    "global_fields": [],
+    "groups": [
+      {
+        "fields": [],
+        "name": "Settings",
+        "subgroups": [
+          {
+            "fields": [
+              {
+                "attributes": {},
+                "default": null,
+                "field_type": "float_t",
+                "is_array": false,
+                "name": "m_volume",
+                "typename": "float"
+              },
+              {
+                "attributes": {},
+                "default": null,
+                "field_type": "float_t",
+                "is_array": false,
+                "name": "m_pitch",
+                "typename": "float"
+              }
+            ],
+            "name": "Audio"
+          },
+          {
+            "fields": [
+              {
+                "attributes": {},
+                "default": null,
+                "field_type": "int_t",
+                "is_array": false,
+                "name": "m_width",
+                "typename": "int"
+              },
+              {
+                "attributes": {},
+                "default": null,
+                "field_type": "int_t",
+                "is_array": false,
+                "name": "m_height",
+                "typename": "int"
+              }
+            ],
+            "name": "Video"
+          }
+        ]
+      }
+    ],
+    "name": "SubgroupOnlyNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "13_subgroup_only.hpp"
+  }
+]

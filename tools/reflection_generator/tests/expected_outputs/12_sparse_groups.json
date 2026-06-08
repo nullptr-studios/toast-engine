@@ -1,0 +1,104 @@
+[
+  {
+    "attributes": {},
+    "functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    },
+    "global_fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_global1",
+        "typename": "int"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_global2",
+        "typename": "int"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_global3",
+        "typename": "int"
+      }
+    ],
+    "groups": [
+      {
+        "fields": [
+          {
+            "attributes": {},
+            "default": null,
+            "field_type": "int_t",
+            "is_array": false,
+            "name": "m_a1",
+            "typename": "int"
+          },
+          {
+            "attributes": {},
+            "default": null,
+            "field_type": "int_t",
+            "is_array": false,
+            "name": "m_a2",
+            "typename": "int"
+          },
+          {
+            "attributes": {},
+            "default": null,
+            "field_type": "int_t",
+            "is_array": false,
+            "name": "m_a3",
+            "typename": "int"
+          }
+        ],
+        "name": "A",
+        "subgroups": []
+      },
+      {
+        "fields": [
+          {
+            "attributes": {},
+            "default": null,
+            "field_type": "int_t",
+            "is_array": false,
+            "name": "m_b1",
+            "typename": "int"
+          },
+          {
+            "attributes": {},
+            "default": null,
+            "field_type": "int_t",
+            "is_array": false,
+            "name": "m_b2",
+            "typename": "int"
+          }
+        ],
+        "name": "B",
+        "subgroups": []
+      }
+    ],
+    "name": "SparseGroupNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "12_sparse_groups.hpp"
+  }
+]

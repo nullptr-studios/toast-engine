@@ -1,0 +1,67 @@
+[
+  {
+    "attributes": {},
+    "functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    },
+    "global_fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_s8",
+        "typename": "int8_t"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_s16",
+        "typename": "int16_t"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_s32",
+        "typename": "int32_t"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_s64",
+        "typename": "int64_t"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_sint",
+        "typename": "signed int"
+      }
+    ],
+    "groups": [],
+    "name": "SignedNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "27_signed_integer_types.hpp"
+  }
+]
