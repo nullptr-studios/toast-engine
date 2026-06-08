@@ -23,53 +23,53 @@ struct Reflect<toast::Node> {
 	static constexpr std::string_view name = "toast::Node";
 
 	// All fields (for search)
-	static constexpr std::array<FieldInfo, 3> _all_field_info = {{
+	inline static const std::array<FieldInfo, 3> _all_field_info = {{
 		{
-			.name = "uuid",
-			.type = "toast::UUID",
+			.name       = "uuid",
+			.type       = "toast::UUID",
 			.value_type = FieldType::uuid_t,
-			.attributes = "",
-			.get = &FieldAccess<Node, UUID, &Node::m_uuid>::get,
-			.set = &FieldAccess<Node, UUID, &Node::m_uuid>::set
+			.attributes = nlohmann::json::object(),
+			.get        = &FieldAccess<Node, UUID, &Node::m_uuid>::get,
+			.set        = &FieldAccess<Node, UUID, &Node::m_uuid>::set
 		},
 		{
-			.name = "name",
-			.type = "std::string",
+			.name       = "name",
+			.type       = "std::string",
 			.value_type = FieldType::string_t,
-			.attributes = "Group(\"General\")",
-			.get = &FieldAccess<Node, std::string, &Node::m_name>::get,
-			.set = &FieldAccess<Node, std::string, &Node::m_name>::set
+			.attributes = {{"Group", {"General"}}},
+			.get        = &FieldAccess<Node, std::string, &Node::m_name>::get,
+			.set        = &FieldAccess<Node, std::string, &Node::m_name>::set
 		},
 		{
-			.name = "local_enabled",
-			.type = "bool",
+			.name       = "local_enabled",
+			.type       = "bool",
 			.value_type = FieldType::bool_t,
-			.attributes = "Group(\"General\")",
-			.get = &FieldAccess<Node, bool, &Node::m_local_enabled>::get,
-			.set = &FieldAccess<Node, bool, &Node::m_local_enabled>::set
+			.attributes = {{"Group", {"General"}}},
+			.get        = &FieldAccess<Node, bool, &Node::m_local_enabled>::get,
+			.set        = &FieldAccess<Node, bool, &Node::m_local_enabled>::set
 		}
 	}};
 
 	// Top-level fields (not in any group)
-	static constexpr std::array<const FieldInfo*, 1> field_info = {{
+	inline static const std::array<const FieldInfo*, 1> field_info = {{
 		&_all_field_info[0],  // uuid
 	}};
 
 	// Group: General
-	static constexpr std::array<const FieldInfo* const, 2> general_group_fields = {{
+	inline static const std::array<const FieldInfo* const, 2> general_group_fields = {{
 		&_all_field_info[1],  // name
 		&_all_field_info[2],  // local_enabled
 	}};
 
-	static constexpr std::array<SubgroupInfo, 0> general_subgroups = {{}};
+	inline static const std::array<SubgroupInfo, 0> general_subgroups = {{}};
 
-	static constexpr GroupInfo general_group = {
-		.name = "General",
-		.fields = general_group_fields,
+	inline static const GroupInfo general_group = {
+		.name      = "General",
+		.fields    = general_group_fields,
 		.subgroups = general_subgroups
 	};
 
-	static constexpr std::array<GroupInfo, 1> group_info = {{
+	inline static const std::array<GroupInfo, 1> group_info = {{
 		general_group
 	}};
 
@@ -79,15 +79,15 @@ struct Reflect<toast::Node> {
 		.tick = &_reflect_impl::node_tick,
 	};
 
-	static constexpr toast::NodeInfo type_info = {
-		.type = name,
+	inline static const toast::NodeInfo type_info = {
+		.type      = name,
 		.base_type = nullptr,
 		.all_fields = _all_field_info,
-		.fields = field_info,
-		.groups = group_info,
+		.fields    = field_info,
+		.groups    = group_info,
 		.functions = tick_functions,
 		.construct = &_reflect_impl::node_construct,
-		.destroy = &_reflect_impl::node_destroy
+		.destroy   = &_reflect_impl::node_destroy
 	};
 };
 

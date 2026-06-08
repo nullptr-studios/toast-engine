@@ -3,19 +3,19 @@
  * @author Xein
  * @date 24 May 2026
  *
- * @brief Runtime reflection system for Nodes, enabling serialization, ticking, and RTTI.
+ * @brief Runtime reflection system for Nodes
  */
 
 #pragma once
 
 #include <any>
-#include <array>
 #include <cstdint>
 #include <span>
 #include <string>
 #include <string_view>
 #include <toast/export.hpp>
 #include <unordered_map>
+#include <nlohmann/json.hpp>
 
 namespace toast {
 
@@ -54,32 +54,32 @@ enum class FieldType : uint8_t {
 };
 
 // Bitwise operators for TickFunctionList
-constexpr TickFunctionList operator&(TickFunctionList lhs, TickFunctionList rhs) {
+constexpr auto operator&(TickFunctionList lhs, TickFunctionList rhs) -> TickFunctionList {
 	return static_cast<TickFunctionList>(static_cast<uint16_t>(lhs) & static_cast<uint16_t>(rhs));
 }
 
-constexpr TickFunctionList operator|(TickFunctionList lhs, TickFunctionList rhs) {
+constexpr auto operator|(TickFunctionList lhs, TickFunctionList rhs) -> TickFunctionList {
 	return static_cast<TickFunctionList>(static_cast<uint16_t>(lhs) | static_cast<uint16_t>(rhs));
 }
 
-constexpr TickFunctionList& operator&=(TickFunctionList& lhs, TickFunctionList rhs) {
+constexpr auto operator&=(TickFunctionList& lhs, TickFunctionList rhs) -> TickFunctionList& {
 	lhs = lhs & rhs;
 	return lhs;
 }
 
-constexpr TickFunctionList& operator|=(TickFunctionList& lhs, TickFunctionList rhs) {
+constexpr auto operator|=(TickFunctionList& lhs, TickFunctionList rhs) -> TickFunctionList& {
 	lhs = lhs | rhs;
 	return lhs;
 }
 
 // Helper to check if a flag is set
-constexpr bool has_flag(TickFunctionList flags, TickFunctionList flag) {
+constexpr auto hasFlag(TickFunctionList flags, TickFunctionList flag) -> bool {
 	return (flags & flag) == flag;
 }
 
-// Tick function invoker: calls a member function pointer on a Node instance
+// Tick function invoker
 struct TickFunctions {
-	using Invoker = void (*)(void*);    // Takes void* (Node*), invokes the appropriate member function
+	using Invoker = void (*)(void*);
 
 	TickFunctionList list;
 
@@ -103,73 +103,29 @@ struct TOAST_API FieldInfo {
 	using FieldSetterPtr = void (*)(void*, std::any);
 
 	std::string_view name;
-	std::string_view type;    // C++ type name, for diagnostics only
-	FieldType value_type;     // serialization kind, drives NodeFile
-	std::string_view attributes;
-	bool is_array = false;    // True if field is array/vector/collection
+	std::string_view type;    // C++ type name
+	FieldType value_type;     // serialization kind
+	nlohmann::json attributes;
+	bool is_array = false;    // True if field is vector
 
 	FieldGetterPtr get;
 	FieldSetterPtr set;
 
-	// Helper: extract the group name if this field has [[Group("name")]] attribute
 	[[nodiscard]]
-	auto groupName() const -> std::string_view {
-		auto pos = attributes.find("Group");
-		if (pos == std::string_view::npos) {
-			return "";
-		}
-		auto start = attributes.find('"', pos);
-		if (start == std::string_view::npos) {
-			return "";
-		}
-		auto end = attributes.find('"', start + 1);
-		if (end == std::string_view::npos) {
-			return "";
-		}
-		return attributes.substr(start + 1, end - start - 1);
+	auto groupName() const -> std::string {
+		return getAttribute("Group");
 	}
 
-	// Helper: check if attribute string contains a specific attribute name
 	[[nodiscard]]
 	auto hasAttribute(std::string_view attr_name) const -> bool {
-		if (attributes.empty()) {
-			return false;
-		}
-		auto pos = attributes.find(attr_name);
-		while (pos != std::string_view::npos) {
-			// Check if it's a whole word (not part of another attribute)
-			bool valid_start = (pos == 0 || attributes[pos - 1] == ';');
-			bool valid_end =
-			    (pos + attr_name.length() >= attributes.length() || attributes[pos + attr_name.length()] == '(' ||
-			     attributes[pos + attr_name.length()] == ';');
-			if (valid_start && valid_end) {
-				return true;
-			}
-			pos = attributes.find(attr_name, pos + 1);
-		}
-		return false;
+		return attributes.contains(std::string(attr_name));
 	}
 
-	// Helper: get attribute argument, e.g., getAttribute("Group") -> "General"
 	[[nodiscard]]
-	auto getAttribute(std::string_view attr_name) const -> std::string_view {
-		auto pos = attributes.find(attr_name);
-		if (pos == std::string_view::npos) {
-			return "";
-		}
-		auto paren_start = attributes.find('(', pos);
-		if (paren_start == std::string_view::npos) {
-			return "";
-		}
-		auto quote_start = attributes.find('"', paren_start);
-		if (quote_start == std::string_view::npos) {
-			return "";
-		}
-		auto quote_end = attributes.find('"', quote_start + 1);
-		if (quote_end == std::string_view::npos) {
-			return "";
-		}
-		return attributes.substr(quote_start + 1, quote_end - quote_start - 1);
+	auto getAttribute(std::string_view attr_name) const -> std::string {
+		auto it = attributes.find(std::string(attr_name));
+		if (it == attributes.end() || it->empty()) return "";
+		return it->at(0).get<std::string>();
 	}
 };
 
@@ -226,12 +182,9 @@ struct TOAST_API NodeInfo {
 
 	TickFunctions functions;
 
-	// Construct/destroy an instance of this exact type (bodies generated, so they can
-	// reach the private ctor/dtor). Needed to instantiate a node from its type name.
 	Factory construct = nullptr;
 	Deleter destroy = nullptr;
 
-	// getField searches every field (grouped or not), then walks up to base types.
 	[[nodiscard]]
 	auto getField(std::string_view field_name) const -> const FieldInfo* {
 		for (const auto& f : all_fields) {
@@ -269,7 +222,6 @@ struct TOAST_API NodeInfo {
 		return false;
 	}
 
-	// Stable numeric id derived from the type name (FNV-1a, 32-bit).
 	[[nodiscard]]
 	constexpr auto id() const -> uint32_t {
 		uint32_t hash = 2166136261u;
@@ -325,7 +277,6 @@ template<class Class, typename FieldType, FieldType Class::* MemberPtr>
 struct FieldAccess {
 	static auto get(void* obj) -> std::any { return static_cast<Class*>(obj)->*MemberPtr; }
 
-	// Guarded: a value of the wrong stored type is ignored rather than throwing std::bad_any_cast.
 	static void set(void* obj, std::any value) {
 		if (auto* typed = std::any_cast<FieldType>(&value)) {
 			static_cast<Class*>(obj)->*MemberPtr = *typed;

@@ -17,6 +17,9 @@
   }, {
     "name" : "glm",
     "version>=" : "1.0.3"
+  }, {
+    "name" : "nlohmann-json",
+    "version>=" : "3.12.0#2"
   } ],
   "overrides" : [ {
     "name" : "tracy",
