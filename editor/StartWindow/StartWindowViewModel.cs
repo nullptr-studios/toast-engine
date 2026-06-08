@@ -9,7 +9,9 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.Input;
 using editor.Loader;
@@ -69,8 +71,9 @@ public partial class StartWindowViewModel : ViewModelBase {
 			}
 		};
 
-		var loader = new FullLoaderWindow(vm);
-		loader.Show();
+		var desktop = (IClassicDesktopStyleApplicationLifetime)Application.Current!.ApplicationLifetime!;
+		desktop.MainWindow = new FullLoaderWindow(vm);
+		desktop.MainWindow.Show();
 		parentWindow.Close();
 	}
 

@@ -3,20 +3,16 @@
 // 2 Jun 2026
 //
 
-using CommunityToolkit.Mvvm.ComponentModel;
+using Dock.Model.Mvvm.Controls;
 
 namespace editor.Workspace;
 
-public class InspectorViewModel : ObservableObject { }
-
-public class HierarchyViewModel : ObservableObject { }
-
-public class ViewportViewModel : ObservableObject {
-	public ViewportViewModel(string title = "Scene", ToastEngine? engine = null) {
+public class ViewportViewModel : Document {
+	public ViewportViewModel(ToastEngine? engine = null) {
 		Engine = engine;
-		Title = title;
+		Title = "Unnamed Node";
+		CanDrag = false;
 	}
 
-	public string Title { get; } = "Scene";
 	public ToastEngine? Engine { get; }
 }

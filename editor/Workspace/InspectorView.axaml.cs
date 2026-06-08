@@ -7,8 +7,8 @@ using Avalonia.Controls;
 
 namespace editor.Workspace;
 
-public partial class Inspector : UserControl {
-	public Inspector() {
+public partial class InspectorView : UserControl {
+	public InspectorView() {
 		InitializeComponent();
 	}
 }

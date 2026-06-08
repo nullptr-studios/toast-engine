@@ -13,12 +13,12 @@ public class App : Application {
 
 	public override void OnFrameworkInitializationCompleted() {
 		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
-			desktop.ShutdownMode = ShutdownMode.OnLastWindowClose;
+			desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
 
-			var splashWindow = new StartWindow.StartWindow() {
+			desktop.MainWindow = new StartWindow.StartWindow() {
 				DataContext = new StartWindowViewModel()
 			};
-			splashWindow.Show();
+			desktop.MainWindow.Show();
 		}
 
 		base.OnFrameworkInitializationCompleted();

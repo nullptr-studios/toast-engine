@@ -17,5 +17,6 @@
 
 	<Application.Styles>
 		<FluentTheme />
+		<DockFluentTheme />
 	</Application.Styles>
 </Application>

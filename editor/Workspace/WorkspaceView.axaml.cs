@@ -12,15 +12,16 @@ using editor.Logger;
 
 namespace editor.Workspace;
 
-public partial class Workspace : Window {
+public partial class WorkspaceView : Window {
 	private Window? m_logsWindow;
 	private readonly ToastEngine? m_toast;
 
-	public Workspace() {
+
+	public WorkspaceView() {
 		InitializeComponent();
 	}
 
-	public Workspace(ToastEngine toast) {
+	public WorkspaceView(ToastEngine toast) {
 		InitializeComponent();
 		m_toast = toast;
 	}

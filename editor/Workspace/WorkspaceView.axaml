@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="editor.Workspace.Workspace"
+        x:Class="editor.Workspace.WorkspaceView"
         x:DataType="vm:WorkspaceViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="editor"
@@ -87,6 +87,10 @@
 			        PointerPressed="OnTitleBarPointerPressed" />
 		</DockPanel>
 
-		<vm:Viewport Grid.Row="1" DataContext="{Binding Viewport}" />
+		<!--
+		<vm:ViewportView Grid.Row="1" DataContext="{Binding Viewport}" />
+		-->
+
+		<DockControl Grid.Row="1" x:Name="MainArea" Layout="{Binding MainLayout}"/>
 	</Grid>
 </Window>
