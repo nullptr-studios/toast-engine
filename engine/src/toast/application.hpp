@@ -20,4 +20,6 @@ public:
 
 void TOAST_API pushApplicationLayer(IApplication* app);
 
+void TOAST_API registerGameTypes();
+
 }

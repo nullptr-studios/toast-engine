@@ -10,12 +10,12 @@
 
 #include <any>
 #include <cstdint>
+#include <nlohmann/json.hpp>
 #include <span>
 #include <string>
 #include <string_view>
 #include <toast/export.hpp>
 #include <unordered_map>
-#include <nlohmann/json.hpp>
 
 namespace toast {
 
@@ -124,7 +124,9 @@ struct TOAST_API FieldInfo {
 	[[nodiscard]]
 	auto getAttribute(std::string_view attr_name) const -> std::string {
 		auto it = attributes.find(std::string(attr_name));
-		if (it == attributes.end() || it->empty()) return "";
+		if (it == attributes.end() || it->empty()) {
+			return "";
+		}
 		return it->at(0).get<std::string>();
 	}
 };

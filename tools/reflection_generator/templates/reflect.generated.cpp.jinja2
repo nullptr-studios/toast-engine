@@ -1,0 +1,25 @@
+// ============================================================
+// AUTO-GENERATED FILE - DO NOT MODIFY DIRECTLY
+// Changes will not persist
+// ============================================================
+
+{% for node in nodes %}
+#include "{{ node.snake_name }}.generated.hpp"
+{% endfor %}
+#include <toast/world/world.hpp>
+#include <toast/log.hpp>
+#include <array>
+
+namespace toast {
+void {{ register_fn }}() {
+	static const std::array<const NodeInfo*, {{ nodes | length }}> all_types = {{ '{{' }}
+{% for node in nodes %}
+		&Reflect<{{ node.qualified_name }}>::type_info,
+{% endfor %}
+	{{ '}}' }};
+	for (const auto* info : all_types) {
+		World::registerNode(info);
+	}
+	TOAST_INFO("Reflection", "Registered {} types ({{ register_fn }})", all_types.size());
+}
+} // namespace toast
