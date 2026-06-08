@@ -12,18 +12,6 @@
         ExtendClientAreaTitleBarHeightHint="-1"
         WindowDecorations="BorderOnly">
 
-	<Window.DataTemplates>
-		<DataTemplate DataType="vm:ViewportViewModel">
-			<vm:Viewport />
-		</DataTemplate>
-		<DataTemplate DataType="vm:HierarchyViewModel">
-			<vm:Hierarchy />
-		</DataTemplate>
-		<DataTemplate DataType="vm:InspectorViewModel">
-			<vm:Inspector />
-		</DataTemplate>
-	</Window.DataTemplates>
-
 	<Grid RowDefinitions="Auto,*">
 		<DockPanel x:Name="MenuBorder" Grid.Row="0">
 
@@ -82,13 +70,6 @@
 				</MenuItem>
 				<MenuItem Header="_View" />
 				<MenuItem Header="_Window">
-					<MenuItem Header="_Hierarchy" ToggleType="CheckBox"
-					          x:Name="HierarchyMenuItem"
-					          Click="OnHierarchyMenuItem" />
-					<MenuItem Header="_Inspector" ToggleType="CheckBox"
-					          x:Name="InspectorMenuItem"
-					          Click="OnInspectorMenuItem" />
-					<Separator />
 					<MenuItem Header="_Logs" ToggleType="CheckBox"
 					          x:Name="LogWindowButton"
 					          Click="OnLogWindowButton" />
@@ -106,7 +87,6 @@
 			        PointerPressed="OnTitleBarPointerPressed" />
 		</DockPanel>
 
-		<DockControl Grid.Row="1" x:Name="EditorDockControl"
-		             Layout="{Binding Layout}" />
+		<vm:Viewport Grid.Row="1" DataContext="{Binding Viewport}" />
 	</Grid>
 </Window>

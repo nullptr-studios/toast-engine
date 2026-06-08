@@ -8,7 +8,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Dock.Model.Core;
 using editor.Logger;
 
 namespace editor.Workspace;
@@ -24,42 +23,10 @@ public partial class Workspace : Window {
 	public Workspace(ToastEngine toast) {
 		InitializeComponent();
 		m_toast = toast;
-
-		DataContextChanged += OnDataContextChanged;
-	}
-
-	private void OnDataContextChanged(object? sender, EventArgs e) {
-		if (DataContext is WorkspaceViewModel vm && vm.Factory is EditorDockFactory factory) {
-			factory.DockableHidden += OnDockableHidden;
-			factory.DockableShown += OnDockableShown;
-
-			// Initialize menu state
-			HierarchyMenuItem.IsChecked = !factory.IsHidden(factory.Hierarchy);
-			InspectorMenuItem.IsChecked = !factory.IsHidden(factory.Inspector);
-		}
-	}
-
-	private void OnDockableHidden(IDockable tool) {
-		if (tool is HierarchyViewModel) HierarchyMenuItem.IsChecked = false;
-		if (tool is InspectorViewModel) InspectorMenuItem.IsChecked = false;
-	}
-
-	private void OnDockableShown(IDockable tool) {
-		if (tool is HierarchyViewModel) HierarchyMenuItem.IsChecked = true;
-		if (tool is InspectorViewModel) InspectorMenuItem.IsChecked = true;
 	}
 
 	protected override void OnClosed(EventArgs e) {
 		base.OnClosed(e);
-
-		if (DataContext is WorkspaceViewModel vm) {
-			vm.CloseLayout();
-			if (vm.Factory is EditorDockFactory factory) {
-				factory.DockableHidden -= OnDockableHidden;
-				factory.DockableShown -= OnDockableShown;
-			}
-		}
-
 		m_toast?.SignalClose();
 	}
 
@@ -105,24 +72,6 @@ public partial class Workspace : Window {
 			m_logsWindow.Show();
 		} else {
 			m_logsWindow?.Close();
-		}
-	}
-
-	private void OnHierarchyMenuItem(object? sender, RoutedEventArgs e) {
-		if (DataContext is WorkspaceViewModel vm && vm.Factory is EditorDockFactory factory) {
-			if (HierarchyMenuItem.IsChecked)
-				factory.RestoreDockable(factory.Hierarchy);
-			else
-				factory.CloseDockable(factory.Hierarchy);
-		}
-	}
-
-	private void OnInspectorMenuItem(object? sender, RoutedEventArgs e) {
-		if (DataContext is WorkspaceViewModel vm && vm.Factory is EditorDockFactory factory) {
-			if (InspectorMenuItem.IsChecked)
-				factory.RestoreDockable(factory.Inspector);
-			else
-				factory.CloseDockable(factory.Inspector);
 		}
 	}
 }

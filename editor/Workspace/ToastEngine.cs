@@ -10,7 +10,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Dock.Model.Controls;
 using editor.Services;
 
 namespace editor.Workspace;
@@ -69,7 +68,13 @@ public partial class ToastEngine : IDisposable {
 		m_engineInstance = toast_create();
 		m_gameInstance = m_gameCreate?.Invoke() ?? IntPtr.Zero;
 
-		toast_set_working_directory(ProjectPath, dll);
+		toast_set_working_directory(
+			Path.Combine(ProjectPath, "assets"),
+			Path.Combine(ProjectPath, "artworks"),
+			Path.Combine(ProjectPath, ".cache"),
+			Path.Combine(ProjectPath, ".cache", "saved_data"),
+			CorePath
+		);
 
 		if (!ProjectContext.IsInitialized)
 			ProjectContext.Initialize(ProjectPath, CorePath);
@@ -111,9 +116,9 @@ public partial class ToastEngine : IDisposable {
 		while (toast_should_close() != 1) toast_tick();
 	}
 
-	public Workspace CreateWorkspace(bool show = true, IRootDock? layout = null) {
+	public Workspace CreateWorkspace(bool show = true) {
 		var w = new Workspace(this) {
-			DataContext = new WorkspaceViewModel(this, layout)
+			DataContext = new WorkspaceViewModel(this)
 		};
 
 		lock (m_windowsLock) {
@@ -227,7 +232,7 @@ public partial class ToastEngine : IDisposable {
 	private static partial void toast_create_avalonia_window();
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
-	private static partial void toast_set_working_directory(string project, string engine);
+	private static partial void toast_set_working_directory(string assets, string artworks, string cache, string saved, string core);
 
 	[LibraryImport(EngineLib)]
 	private static partial int toast_viewport_get_frame(IntPtr dst, uint dstCapacity, out ToastViewportFrame outFrame);

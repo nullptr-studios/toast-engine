@@ -58,7 +58,7 @@ public partial class StartWindowViewModel : ViewModelBase {
 		}
 
 		tasks.Add(new LoaderTask("cmake lib/ -B .toast/cmake_cache", Exe: "cmake",
-			Args: $"lib/ -B .toast/cmake_cache -G \"Visual Studio 17 2022\" -DTOAST_PATH={ToastPath}"));
+			Args: $"lib/ -B .toast/cmake_cache -G \"Visual Studio 18 2026\" -DTOAST_PATH={ToastPath}"));
 		tasks.Add(new LoaderTask("cmake --build .toast/cmake_cache", Exe: "cmake",
 			Args: "--build .toast/cmake_cache"));
 
