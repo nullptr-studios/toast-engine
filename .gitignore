@@ -28,3 +28,5 @@ Cargo.lock
 # exclusions
 !/tests/**
 !/toast/src/**
+engine/generated
+engine/assets/engine_reflect.json

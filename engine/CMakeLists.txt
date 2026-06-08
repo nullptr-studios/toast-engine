@@ -5,8 +5,9 @@ find_package(asio CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
+find_package(protobuf CONFIG REQUIRED)
 
-file(GLOB_RECURSE SOURCE "src/*.cpp", "generated/*.cpp")
+file(GLOB_RECURSE SOURCE "src/*.cpp" "generated/*.cpp" "generated/*.cc")
 add_library(toast_engine SHARED ${SOURCE})
 
 if (WIN32)
@@ -24,6 +25,7 @@ target_include_directories(toast_engine
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_CURRENT_SOURCE_DIR}/external
+        ${CMAKE_CURRENT_SOURCE_DIR}/generated
         ${CMAKE_CURRENT_SOURCE_DIR}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -34,6 +36,7 @@ target_link_libraries(toast_engine
     PRIVATE
         asio::asio
         SDL3::SDL3
+        protobuf::libprotobuf
     PUBLIC
         Tracy::TracyClient
         glm::glm

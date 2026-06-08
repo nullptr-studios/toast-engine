@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "generated/logging_easypb.h"
+#include "generated/logging.pb.h"
 
 #include <asio.hpp>
 #include <atomic>

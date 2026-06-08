@@ -1,13 +1,12 @@
 #include "logger.hpp"
 
 #include "ffi/log.h"    // ffi
-#include "generated/logging_easypb.h"
+#include "generated/logging.pb.h"
 #include "log.hpp"      // public functions
 #include "thread_pool.hpp"
 
 #include <chrono>
 #include <cstdlib>
-#include <easypb.hpp>
 #include <filesystem>
 #include <iostream>
 #include <print>
@@ -308,7 +307,7 @@ auto Logger::collectQueue() -> std::vector<uint8_t> {
 		}
 	}
 
-	if (batch.logs.empty()) {
+	if (batch.logs_size() == 0) {
 		return {};
 	}
 

@@ -20,6 +20,9 @@
   }, {
     "name" : "nlohmann-json",
     "version>=" : "3.12.0#2"
+  }, {
+    "name" : "protobuf",
+    "version>=" : "6.33.4#2"
   } ],
   "overrides" : [ {
     "name" : "tracy",
