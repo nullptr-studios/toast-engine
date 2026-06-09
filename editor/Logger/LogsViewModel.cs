@@ -1,11 +1,12 @@
 ﻿//
-// LoggerViewModel.cs by Xein
+// LogsViewModel.cs by Xein
 // 14 May 2026
 //
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
+using Dock.Model.Mvvm.Controls;
 
 namespace editor.Logger;
 
@@ -17,10 +18,10 @@ public class LogEntry {
 	public uint severity { get; set; }
 }
 
-public class LoggerViewModel : ViewModelBase {
+public class LogsViewModel : Tool {
 	private readonly LogClient m_client;
 
-	public LoggerViewModel() {
+	public LogsViewModel() {
 		log_entries = [];
 		m_client = new LogClient();
 		m_client.OnLogReceived += handleNewLogs;

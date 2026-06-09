@@ -1,18 +1,16 @@
-﻿<Window xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:editor.Logger"
         xmlns:conv="using:editor.Converters"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        Width="1200" Height="450"
-        x:Class="editor.Logger.LogsWindow"
-        x:DataType="vm:LoggerViewModel"
-        Title="Logs">
+        x:Class="editor.Logger.LogsView"
+        x:DataType="vm:LogsViewModel">
 
-	<Window.Resources>
+	<UserControl.Resources>
 		<conv:SeverityToColorConverter x:Key="SeverityColorConverter" />
-	</Window.Resources>
+	</UserControl.Resources>
 
 	<DockPanel>
 		<!-- Toolbar -->
@@ -69,4 +67,4 @@
 		</ListBox>
 
 	</DockPanel>
-</Window>
+</UserControl>

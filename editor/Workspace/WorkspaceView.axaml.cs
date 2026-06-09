@@ -4,26 +4,72 @@
 //
 
 using System;
+using System.ComponentModel;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
+using Avalonia.Media.Transformation;
+using Avalonia.Threading;
 using editor.Logger;
 
 namespace editor.Workspace;
 
 public partial class WorkspaceView : Window {
-	private Window? m_logsWindow;
 	private readonly ToastEngine? m_toast;
-
+	private Border? m_toastBorder;
+	private CancellationTokenSource? m_toastCts;
 
 	public WorkspaceView() {
 		InitializeComponent();
+		m_toastBorder = this.FindControl<Border>("ToastZoneBorder");
+		DataContextChanged += OnDataContextChanged;
 	}
 
 	public WorkspaceView(ToastEngine toast) {
 		InitializeComponent();
 		m_toast = toast;
+		m_toastBorder = this.FindControl<Border>("ToastZoneBorder");
+		DataContextChanged += OnDataContextChanged;
+
+		AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
+		AddHandler(KeyUpEvent, OnKeyUp, RoutingStrategies.Tunnel);
+	}
+
+	private void OnDataContextChanged(object? sender, EventArgs e) {
+		if (DataContext is WorkspaceViewModel vm)
+			vm.PropertyChanged += OnViewModelPropertyChanged;
+	}
+
+	private async void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e) {
+		if (e.PropertyName != nameof(WorkspaceViewModel.ToastZoneActive)) return;
+		var active = (DataContext as WorkspaceViewModel)?.ToastZoneActive ?? false;
+		await AnimateToastZone(active);
+	}
+
+	private async Task AnimateToastZone(bool show) {
+		if (m_toastBorder is null) return;
+
+		m_toastCts?.Cancel();
+		m_toastCts = new CancellationTokenSource();
+		var ct = m_toastCts.Token;
+
+		if (show) {
+			m_toastBorder.IsVisible = true;
+			// Let Avalonia render one frame at the off-screen position before sliding in
+			await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+			if (ct.IsCancellationRequested) return;
+			m_toastBorder.RenderTransform = TransformOperations.Parse("translateY(0)");
+		} else {
+			m_toastBorder.RenderTransform = TransformOperations.Parse("translateY(400px)");
+			try {
+				await Task.Delay(220, ct); // outlast the 200ms transition
+				m_toastBorder.IsVisible = false;
+			} catch (OperationCanceledException) { }
+		}
 	}
 
 	protected override void OnClosed(EventArgs e) {
@@ -58,21 +104,21 @@ public partial class WorkspaceView : Window {
 		Close();
 	}
 
-	private void OnLogWindowButton(object? sender, RoutedEventArgs e) {
-		if (LogWindowButton.IsChecked) {
-			if (m_logsWindow is null) {
-				m_logsWindow = new LogsWindow {
-					DataContext = new LoggerViewModel()
-				};
-				m_logsWindow.Closed += (s, args) => {
-					LogWindowButton.IsChecked = false;
-					m_logsWindow = null;
-				};
-			}
+	void OnKeyDown(object? sender, KeyEventArgs e) {
+		if (e.Key != Key.Space) return;
+		e.Handled = true;
 
-			m_logsWindow.Show();
-		} else {
-			m_logsWindow?.Close();
-		}
+		if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
+			(DataContext as WorkspaceViewModel)?.PinToastZone();
+		else
+			(DataContext as WorkspaceViewModel)?.ShowToastZone(true);
+	}
+
+	void OnKeyUp(object? sender, KeyEventArgs e) {
+		if (e.Key != Key.Space) return;
+		e.Handled = true;
+
+		if (!e.KeyModifiers.HasFlag(KeyModifiers.Control))
+			(DataContext as WorkspaceViewModel)?.ShowToastZone(false);
 	}
 }

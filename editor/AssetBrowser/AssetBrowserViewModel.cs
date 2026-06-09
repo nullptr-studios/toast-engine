@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using Dock.Model.Mvvm.Controls;
 using editor.Services;
 
 namespace editor.AssetBrowser;
@@ -24,7 +25,7 @@ public sealed class BreadcrumbItem {
 	public ICommand Navigate { get; }
 }
 
-public class AssetBrowserViewModel : ViewModelBase, INotifyPropertyChanged {
+public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	private bool m_filterMaterial = true;
 	private bool m_filterModel = true;
 

@@ -106,7 +106,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Update="Logger\LogsWindow.axaml.cs">
+        <Compile Update="Logger\LogsView.axaml.cs">
             <DependentUpon>LogsWindow.axaml</DependentUpon>
             <SubType>Code</SubType>
         </Compile>

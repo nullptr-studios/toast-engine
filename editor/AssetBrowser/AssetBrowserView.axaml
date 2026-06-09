@@ -1,17 +1,13 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:vm="using:editor.AssetBrowser"
-        mc:Ignorable="d" d:DesignWidth="1800" d:DesignHeight="400"
-        Width="1920" Height="400"
-        MinWidth="1200" MinHeight="250"
-        WindowStartupLocation="CenterScreen"
-        x:Class="editor.AssetBrowser.AssetBrowser"
-        x:DataType="vm:AssetBrowserViewModel"
-        Title="Asset Browser">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:editor.AssetBrowser"
+             mc:Ignorable="d" d:DesignWidth="1800" d:DesignHeight="400"
+             x:Class="editor.AssetBrowser.AssetBrowserView"
+             x:DataType="vm:AssetBrowserViewModel">
 
-	<Window.Styles>
+	<UserControl.Styles>
 		<!-- Strip default ListBoxItem chrome -->
 		<Style Selector="ListBox#AssetList > ListBoxItem">
 			<Setter Property="Padding" Value="0" />
@@ -35,7 +31,7 @@
 			<Setter Property="CornerRadius" Value="4" />
 			<Setter Property="FontSize" Value="13" />
 		</Style>
-	</Window.Styles>
+	</UserControl.Styles>
 
 	<Grid ColumnDefinitions="250, *" Margin="8" ColumnSpacing="8" Background="#101010">
 
@@ -300,4 +296,4 @@
 
 		</DockPanel>
 	</Grid>
-</Window>
+</UserControl>

@@ -71,8 +71,7 @@
 				<MenuItem Header="_View" />
 				<MenuItem Header="_Window">
 					<MenuItem Header="_Logs" ToggleType="CheckBox"
-					          x:Name="LogWindowButton"
-					          Click="OnLogWindowButton" />
+					          x:Name="LogWindowButton" />
 				</MenuItem>
 				<MenuItem Header="_Help">
 					<MenuItem Header="_Documentation" />
@@ -91,6 +90,19 @@
 		<vm:ViewportView Grid.Row="1" DataContext="{Binding Viewport}" />
 		-->
 
-		<DockControl Grid.Row="1" x:Name="MainArea" Layout="{Binding MainLayout}"/>
+		<Panel Grid.Row="1" ClipToBounds="True">
+			<DockControl Layout="{Binding MainLayout}" ZIndex="0"/>
+			<Border x:Name="ToastZoneBorder" Background="#101010" Height="400"
+			        VerticalAlignment="Bottom" ZIndex="1"
+			        IsVisible="False"
+			        RenderTransform="translateY(400px)">
+				<Border.Transitions>
+					<Transitions>
+						<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut"/>
+					</Transitions>
+				</Border.Transitions>
+				<DockControl Layout="{Binding ToastZoneLayout}" ZIndex="2"/>
+			</Border>
+		</Panel>
 	</Grid>
 </Window>

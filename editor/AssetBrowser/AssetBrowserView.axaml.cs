@@ -5,8 +5,8 @@ using editor.Import;
 
 namespace editor.AssetBrowser;
 
-public partial class AssetBrowser : Window {
-	public AssetBrowser() {
+public partial class AssetBrowserView : UserControl {
+	public AssetBrowserView() {
 		InitializeComponent();
 	}
 
@@ -26,7 +26,9 @@ public partial class AssetBrowser : Window {
 	}
 
 	private async void Import_OnClick(object? sender, RoutedEventArgs e) {
+		var owner = TopLevel.GetTopLevel(this) as Window;
+		if (owner is null) return;
 		var importWindow = new ImportWindow();
-		await importWindow.ShowDialog(this);
+		await importWindow.ShowDialog(owner);
 	}
 }
