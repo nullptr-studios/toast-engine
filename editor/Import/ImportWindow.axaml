@@ -181,8 +181,19 @@
 					<TextBlock Text="Not yet supported" Margin="8" Foreground="#666" />
 				</TreeViewItem>
 
-				<TreeViewItem Header="PSD" IsEnabled="False">
-					<TextBlock Text="Not yet supported" Margin="8" Foreground="#666" />
+				<TreeViewItem Header="PSD">
+					<StackPanel Margin="8,6" Spacing="8" x:DataType="local:ImportWindowViewModel">
+						<CheckBox Content="Create subfolder" IsChecked="{Binding PsdSettings.CreateFolder}"/>
+
+						<Grid ColumnDefinitions="130, *" RowDefinitions="Auto"
+						      RowSpacing="6" ColumnSpacing="1">
+							<TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Mode" />
+							<ComboBox Grid.Row="0" Grid.Column="1"
+							          ItemsSource="{x:Static local:PsdImportSettings.AllImportModes}"
+							          SelectedItem="{Binding PsdSettings.ImportMode}"
+							          HorizontalAlignment="Stretch" />
+						</Grid>
+					</StackPanel>
 				</TreeViewItem>
 			</TreeView>
 		</DockPanel>

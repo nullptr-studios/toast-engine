@@ -6,13 +6,17 @@ using Tomlyn.Serialization;
 
 namespace editor.Services;
 
-public record TextureMeta {
+public interface IMetaSection { }
+
+public record MetaHeader {
 	public required string Uid { get; init; }
-	public string Type { get; init; } = "texture";
+	public required string Type { get; init; }
 	public required string Source { get; init; }
 	public string CreatedAt { get; init; } = DateTime.UtcNow.ToString("o");
 	public string ModifiedAt { get; set; } = DateTime.UtcNow.ToString("o");
+}
 
+public record TextureMetaSection : IMetaSection {
 	public bool GenerateMipmaps { get; init; } = true;
 	public int MaxResolution { get; init; } = 4096;
 	public string Compression { get; init; } = "BC7";
@@ -23,40 +27,72 @@ public record TextureMeta {
 	public float Anisotropy { get; init; } = 8.0f;
 }
 
+public record PsdMetaSection : IMetaSection {
+	public string ImportMode { get; init; } = "Combined";
+	public bool CreateFolder { get; init; } = false;
+}
+
 public static class MetaFile {
-	// Writes outputAssetRealPath + ".meta"
-	public static void Write(string outputAssetRealPath, TextureMeta meta) {
+	public static void Write(string outputAssetRealPath, MetaHeader header, params IMetaSection[] sections) {
 		var dto = new MetaFileDto {
-			Uid = meta.Uid,
-			Type = meta.Type,
-			Source = meta.Source,
-			CreatedAt = meta.CreatedAt,
-			ModifiedAt = meta.ModifiedAt,
-			Texture = new TextureSectionDto {
-				GenerateMipmaps = meta.GenerateMipmaps,
-				MaxResolution = meta.MaxResolution,
-				Compression = meta.Compression,
-				SuperCompression = meta.SuperCompression,
-				AddressU = meta.AddressU,
-				AddressV = meta.AddressV,
-				Filter = meta.Filter,
-				Anisotropy = meta.Anisotropy
-			}
+			Uid = header.Uid,
+			Type = header.Type,
+			Source = header.Source,
+			CreatedAt = header.CreatedAt,
+			ModifiedAt = header.ModifiedAt
 		};
+
+		foreach (var section in sections) {
+			switch (section) {
+				case TextureMetaSection texture:
+					dto.Texture = new TextureSectionDto {
+						GenerateMipmaps = texture.GenerateMipmaps,
+						MaxResolution = texture.MaxResolution,
+						Compression = texture.Compression,
+						SuperCompression = texture.SuperCompression,
+						AddressU = texture.AddressU,
+						AddressV = texture.AddressV,
+						Filter = texture.Filter,
+						Anisotropy = texture.Anisotropy
+					};
+					break;
+				case PsdMetaSection psd:
+					dto.Psd = new PsdSectionDto {
+						ImportMode = psd.ImportMode,
+						CreateFolder = psd.CreateFolder
+					};
+					break;
+			}
+		}
+
 		File.WriteAllText(outputAssetRealPath + ".meta", TomlSerializer.Serialize(dto));
 	}
 
-	public static TextureMeta? ReadTexture(string metaPath) {
+	public static MetaHeader? ReadHeader(string path) {
+		var metaPath = path.EndsWith(".meta") ? path : path + ".meta";
 		if (!File.Exists(metaPath)) return null;
 		try {
 			var dto = TomlSerializer.Deserialize<MetaFileDto>(File.ReadAllText(metaPath))!;
-			var t = dto.Texture ?? new TextureSectionDto();
-			return new TextureMeta {
+			return new MetaHeader {
 				Uid = dto.Uid,
 				Type = dto.Type,
 				Source = dto.Source,
 				CreatedAt = dto.CreatedAt,
-				ModifiedAt = dto.ModifiedAt,
+				ModifiedAt = dto.ModifiedAt
+			};
+		} catch {
+			return null;
+		}
+	}
+
+	public static TextureMetaSection? ReadTextureSection(string path) {
+		var metaPath = path.EndsWith(".meta") ? path : path + ".meta";
+		if (!File.Exists(metaPath)) return null;
+		try {
+			var dto = TomlSerializer.Deserialize<MetaFileDto>(File.ReadAllText(metaPath))!;
+			if (dto.Texture == null) return null;
+			var t = dto.Texture;
+			return new TextureMetaSection {
 				GenerateMipmaps = t.GenerateMipmaps,
 				MaxResolution = t.MaxResolution,
 				Compression = t.Compression,
@@ -71,6 +107,21 @@ public static class MetaFile {
 		}
 	}
 
+	public static PsdMetaSection? ReadPsdSection(string path) {
+		var metaPath = path.EndsWith(".meta") ? path : path + ".meta";
+		if (!File.Exists(metaPath)) return null;
+		try {
+			var dto = TomlSerializer.Deserialize<MetaFileDto>(File.ReadAllText(metaPath))!;
+			if (dto.Psd == null) return null;
+			return new PsdMetaSection {
+				ImportMode = dto.Psd.ImportMode,
+				CreateFolder = dto.Psd.CreateFolder
+			};
+		} catch {
+			return null;
+		}
+	}
+
 	public static IEnumerable<string> FindAll(string directory) {
 		return Directory.EnumerateFiles(directory, "*.meta", SearchOption.AllDirectories);
 	}
@@ -78,14 +129,13 @@ public static class MetaFile {
 
 file sealed class MetaFileDto {
 	[TomlPropertyName("uid")] public string Uid { get; set; } = "";
-	[TomlPropertyName("type")] public string Type { get; set; } = "texture";
+	[TomlPropertyName("type")] public string Type { get; set; } = "";
 	[TomlPropertyName("source")] public string Source { get; set; } = "";
 	[TomlPropertyName("created_at")] public string CreatedAt { get; set; } = "";
 	[TomlPropertyName("modified_at")] public string ModifiedAt { get; set; } = "";
 
-	// Section must be declared last so its [texture] header follows the root
-	// key/values, as required by TOML.
 	[TomlPropertyName("texture")] public TextureSectionDto? Texture { get; set; }
+	[TomlPropertyName("psd")] public PsdSectionDto? Psd { get; set; }
 }
 
 file sealed class TextureSectionDto {
@@ -100,4 +150,9 @@ file sealed class TextureSectionDto {
 	[TomlPropertyName("address_v")] public string AddressV { get; set; } = "Repeat";
 	[TomlPropertyName("filter")] public string Filter { get; set; } = "Trilinear";
 	[TomlPropertyName("anisotropy")] public float Anisotropy { get; set; } = 8.0f;
+}
+
+file sealed class PsdSectionDto {
+	[TomlPropertyName("import_mode")] public string ImportMode { get; set; } = "Combined";
+	[TomlPropertyName("create_folder")] public bool CreateFolder { get; set; } = false;
 }

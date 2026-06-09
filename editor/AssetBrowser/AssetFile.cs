@@ -44,9 +44,9 @@ public class AssetFile {
 			if (m_thumbnailChecked) return m_thumbnail;
 			m_thumbnailChecked = true;
 			if (Type != FileType.Texture || !ProjectContext.IsInitialized) return null;
-			var meta = MetaFile.ReadTexture(Filepath);
-			if (meta is null) return null;
-			var thumbPath = Path.Combine(ProjectContext.CachePath, "thumbnails", meta.Uid + ".png");
+			var header = MetaFile.ReadHeader(Filepath);
+			if (header is null) return null;
+			var thumbPath = Path.Combine(ProjectContext.CachePath, "thumbnails", header.Uid + ".png");
 			if (!File.Exists(thumbPath)) return null;
 			try {
 				m_thumbnail = new Bitmap(thumbPath);
