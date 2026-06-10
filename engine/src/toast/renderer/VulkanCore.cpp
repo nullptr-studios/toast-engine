@@ -335,8 +335,9 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 		}
 
 		if (!queue_families.isDistinct()) {
-			TOAST_WARN("VulkanCore", "  Device rejected: graphics, compute and transfer queues must use distinct families");
-			continue;
+			TOAST_WARN(
+			    "VulkanCore", "  Device Waring: graphics, compute and transfer are not using distinct family queues, PERFORMANCE LOSS"
+			);
 		}
 
 		TOAST_TRACE("VulkanCore", "  Device score: {}", device_score.total);

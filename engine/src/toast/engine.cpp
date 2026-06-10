@@ -5,9 +5,12 @@
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
 #include "logger.hpp"
+#include "renderer/MeshPass.hpp"
 #include "renderer/SDLOutputTarget.hpp"
 #include "renderer/ShaderCompiler.hpp"
+#include "renderer/ShaderLayout.hpp"
 #include "renderer/SharedTextureOutputTarget.hpp"
+#include "renderer/TrianglePass.hpp"
 #include "renderer/VulkanCore.hpp"
 #include "renderer/VulkanPipeline.hpp"
 #include "renderer/VulkanRenderer.hpp"
@@ -27,35 +30,6 @@ namespace toast {
 
 namespace {
 IApplication* active_application = nullptr;
-
-// FIXME: DEBUGGING PURPORSES
-auto createTrianglePipeline(
-    const renderer::VulkanCore& core, vk::Format color_format, vk::Extent2D extent, std::optional<vk::Format> depth_format
-) -> std::unique_ptr<renderer::VulkanPipeline> {
-	// Compile shader
-	auto shader_spirv = renderer::ShaderCompiler::compileShader("./mirrors.slang");
-
-	// Define our runtime layout payload requirements
-	std::vector<vk::DescriptorSetLayoutBinding> descriptor_bindings;
-	descriptor_bindings.emplace_back(
-	    0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment
-	);
-
-	// Create pipeline using the new generic configuration parameters
-	renderer::VulkanPipeline::Config config {
-	  .debug_name = "triangle Pipeline",
-	  .color_format = color_format,
-	  .extent = extent,
-	  .shader_spirv = shader_spirv,
-	  .depth_format = depth_format,
-	  .descriptor_bindings = descriptor_bindings,
-	  .push_constant_ranges = {},
-	  .cull_mode = vk::CullModeFlagBits::eBack
-	};
-
-	return std::make_unique<renderer::VulkanPipeline>(core, config);
-}
-
 }
 
 Engine* Engine::instance = nullptr;
@@ -142,10 +116,12 @@ void Engine::createSDLWindow(const char* w_name) {
 	auto depth_format = renderer::VulkanRenderer::selectDepthFormat(*m->vulkan_core);
 
 	// create debug pipeline
-	auto pipeline = createTrianglePipeline(*m->vulkan_core, color_format, extent, depth_format);
+	auto pass = std::make_unique<MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
 
 	// create renderer
-	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target), std::move(pipeline));
+	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
+
+	m->renderer->addRenderPass(std::move(pass));
 }
 
 void Engine::createAvaloniaWindow() {
@@ -156,9 +132,11 @@ void Engine::createAvaloniaWindow() {
 	auto extent = output_target->getExtent();
 	auto depth_format = renderer::VulkanRenderer::selectDepthFormat(*m->vulkan_core);
 
-	auto pipeline = createTrianglePipeline(*m->vulkan_core, color_format, extent, depth_format);
+	auto pipeline = std::make_unique<TrianglePass>(*m->vulkan_core, color_format, depth_format, extent);
 
-	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target), std::move(pipeline));
+	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
+
+	m->renderer->addRenderPass(std::move(pipeline));
 }
 
 void pushApplicationLayer(IApplication* app) {

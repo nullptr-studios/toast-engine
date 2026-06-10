@@ -5,7 +5,9 @@
 #pragma once
 
 #include "IOutputTarget.hpp"
+#include "IRenderPass.hpp"
 #include "VulkanCore.hpp"
+#include "VulkanMesh.hpp"
 #include "VulkanPipeline.hpp"
 
 #include <array>
@@ -32,10 +34,13 @@ class VulkanRenderer {
 public:
 	static auto selectDepthFormat(const VulkanCore& core) -> vk::Format;
 
-	struct FrameUniformData {
-		std::array<float, 2> iResolution;
-		float iTime;
-		float padding;
+	static constexpr uint32_t kFramesInFlight = 3;
+
+	struct PendingMeshUpload {
+		VulkanMesh* mesh = nullptr;
+		vma::raii::Buffer vertexStaging = nullptr;
+		vma::raii::Buffer indexStaging = nullptr;
+		vk::raii::Fence completionFence = nullptr;
 	};
 
 	struct FrameContext {
@@ -44,12 +49,11 @@ public:
 		vk::raii::Semaphore imageAvailable = nullptr;
 		vk::raii::Semaphore transferFinished = nullptr;
 		vk::raii::Fence inFlight = nullptr;
+		uint32_t lastImageIndex = 0;
+		bool hasSubmitted = false;
 	};
 
-	VulkanRenderer(
-	    const VulkanCore& core, std::unique_ptr<IOutputTarget> outputTarget, std::unique_ptr<VulkanPipeline> pipeline,
-	    uint32_t framesInFlight = 3
-	);
+	VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> outputTarget);
 
 	~VulkanRenderer() = default;
 
@@ -62,15 +66,16 @@ public:
 
 	void resize(vk::Extent2D extent);
 
+	void addRenderPass(std::unique_ptr<IRenderPass> pass);
+
+	void queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data);
+
 	[[nodiscard]]
 	const IOutputTarget& getOutputTarget() const {
 		return *m_outputTarget;
 	}
 
-	[[nodiscard]]
-	IOutputTarget& getOutputTarget() {
-		return *m_outputTarget;
-	}
+	static VulkanRenderer* instance;
 
 private:
 	struct DepthResources {
@@ -78,20 +83,11 @@ private:
 		std::optional<vk::raii::ImageView> view;
 	};
 
-	struct FrameUniformResources {
-		std::optional<vma::raii::Buffer> stagingBuffer;
-		std::optional<vma::raii::Buffer> gpuBuffer;
-		vk::DescriptorSet descriptorSet = nullptr;
-	};
-
 	void createGraphicsCommandPool();
 	void createTransferCommandPool();
-	void createFrameContexts(uint32_t framesInFlight);
+	void createFrameContexts();
 	void createPerImageSync();
 	void createDepthResources();
-
-	void createFrameUniformResources();
-	void updateFrameUniformData();
 
 	void recordTransferPass(FrameContext& frame);
 
@@ -99,15 +95,17 @@ private:
 
 	void recordFrame(FrameContext& frame, uint32_t imageIndex);
 
+	void processPendingUploads();
+
 	const VulkanCore* m_core = nullptr;
 
 	std::unique_ptr<IOutputTarget> m_outputTarget;
-	std::unique_ptr<VulkanPipeline> m_pipeline;
+	std::vector<std::unique_ptr<IRenderPass>> m_renderPasses;
 	vk::Format m_depthFormat = vk::Format::eUndefined;
 	DepthResources m_depthResources;
-	FrameUniformData m_frameUniformData {};    // DEBUGGING
-	FrameUniformResources m_frameUniformResources;
 	vk::ImageLayout m_depthLayout = vk::ImageLayout::eUndefined;
+
+	std::vector<PendingMeshUpload> m_pendingUploads;
 
 	vk::raii::CommandPool m_commandPool = nullptr;
 
@@ -119,9 +117,6 @@ private:
 	std::vector<vk::raii::Semaphore> m_renderFinishedPerImage;
 	std::vector<vk::Fence> m_imagesInFlight;
 	uint32_t m_currentFrame = 0;
-
-	// DEBUGGING
-	float m_totalTime = 0.0f;
 };
 
 }

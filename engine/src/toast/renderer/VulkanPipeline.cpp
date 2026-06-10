@@ -5,6 +5,7 @@
 #include "VulkanPipeline.hpp"
 
 #include "VulkanCore.hpp"
+#include "VulkanMesh.hpp"
 #include "toast/log.hpp"
 
 #include <array>
@@ -28,44 +29,9 @@ auto createShaderModule(const vk::raii::Device& device, std::span<const std::byt
 	return {device, shader_module_ci};
 }
 
-// Dynamically creates the descriptor layout based on provided configuration bindings and optional binding flags
-auto createDescriptorSetLayout(
-    const vk::raii::Device& device, std::span<const vk::DescriptorSetLayoutBinding> bindings,
-    std::span<const vk::DescriptorBindingFlags> binding_flags
-) -> vk::raii::DescriptorSetLayout {
-	if (!binding_flags.empty() && binding_flags.size() != bindings.size()) {
-		TOAST_CRITICAL("VulkanPipeline", "Descriptor binding flags must match descriptor bindings count!");
-	}
-
-	vk::DescriptorSetLayoutBindingFlagsCreateInfo binding_flags_ci {};
-	if (!binding_flags.empty()) {
-		binding_flags_ci =
-		    vk::DescriptorSetLayoutBindingFlagsCreateInfo(static_cast<uint32_t>(binding_flags.size()), binding_flags.data());
-	}
-
-	vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci({}, static_cast<uint32_t>(bindings.size()), bindings.data());
-	if (!binding_flags.empty()) {
-		descriptor_set_layout_ci.pNext = &binding_flags_ci;
-	}
-	return {device, descriptor_set_layout_ci};
-}
-
-// Binds the descriptor sets layout and arbitrary push constants generically
-auto createPipelineLayout(
-    const vk::raii::Device& device, const vk::raii::DescriptorSetLayout& descriptor_set_layout,
-    std::span<const vk::PushConstantRange> push_ranges
-) -> vk::raii::PipelineLayout {
-	const vk::DescriptorSetLayout raw_layout = *descriptor_set_layout;
-
-	const vk::PipelineLayoutCreateInfo pipeline_layout_ci(
-	    {}, 1, &raw_layout, static_cast<uint32_t>(push_ranges.size()), push_ranges.data()
-	);
-	return {device, pipeline_layout_ci};
-}
-
 auto createGraphicsPipelineImpl(
     const VulkanCore& core, const VulkanPipeline::Config& config, const vk::raii::ShaderModule& shader_module,
-    const vk::raii::PipelineLayout& pipeline_layout
+    const vk::PipelineLayout& pipeline_layout
 ) -> vk::raii::Pipeline {
 	const auto& device = core.getDevice();
 	const std::array shader_stages = {
@@ -81,7 +47,13 @@ auto createGraphicsPipelineImpl(
 		rendering_ci.depthAttachmentFormat = *config.depth_format;
 	}
 
-	const vk::PipelineVertexInputStateCreateInfo vertex_input_state_ci {};
+	// vertex
+	auto binding = Vertex::getBindingDescription();
+	auto attributes = Vertex::getAttributeDescriptions();
+
+	const vk::PipelineVertexInputStateCreateInfo vertexInputCI(
+	    {}, 1, &binding, static_cast<uint32_t>(attributes.size()), attributes.data()
+	);
 	const vk::PipelineInputAssemblyStateCreateInfo input_assembly_ci({}, vk::PrimitiveTopology::eTriangleList);
 
 	// Use dynamic viewport and scissor so the pipeline doesn't need to be rebuilt on window resize
@@ -134,7 +106,7 @@ auto createGraphicsPipelineImpl(
 	pipeline_ci.pNext = &rendering_ci;
 	pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
 	pipeline_ci.pStages = shader_stages.data();
-	pipeline_ci.pVertexInputState = &vertex_input_state_ci;
+	pipeline_ci.pVertexInputState = &vertexInputCI;
 	pipeline_ci.pInputAssemblyState = &input_assembly_ci;
 	pipeline_ci.pViewportState = &viewport_state_ci;
 	pipeline_ci.pRasterizationState = &rasterization_state_ci;
@@ -144,7 +116,7 @@ auto createGraphicsPipelineImpl(
 	if (config.depth_format.has_value()) {
 		pipeline_ci.pDepthStencilState = &depth_stencil_state_ci;
 	}
-	pipeline_ci.layout = *pipeline_layout;
+	pipeline_ci.layout = pipeline_layout;
 	pipeline_ci.renderPass = nullptr;
 
 	auto pipelines = device.createGraphicsPipelines(nullptr, pipeline_ci);
@@ -153,13 +125,15 @@ auto createGraphicsPipelineImpl(
 
 auto createComputePipelineImpl(
     const VulkanCore& core, const VulkanPipeline::Config& config, const vk::raii::ShaderModule& shader_module,
-    const vk::raii::PipelineLayout& pipeline_layout
+    const vk::PipelineLayout& pipeline_layout
 ) -> vk::raii::Pipeline {
 	const auto& device = core.getDevice();
 	const vk::PipelineShaderStageCreateInfo shader_stage_ci(
 	    {}, vk::ShaderStageFlagBits::eCompute, *shader_module, config.compute_entry.c_str()
 	);
-	const vk::ComputePipelineCreateInfo pipeline_ci({}, shader_stage_ci, *pipeline_layout);
+
+	// Use the explicitly passed layout
+	const vk::ComputePipelineCreateInfo pipeline_ci({}, shader_stage_ci, pipeline_layout);
 	auto pipelines = device.createComputePipelines(nullptr, pipeline_ci);
 	return std::move(pipelines[0]);
 }
@@ -172,6 +146,10 @@ VulkanPipeline::VulkanPipeline(const VulkanCore& core, const Config& config) {
 auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> void {
 	reset();
 	m_pipeline_type = config.pipeline_type;
+
+	if (!config.pipeline_layout) {
+		TOAST_CRITICAL("VulkanPipeline", "A valid pipeline_layout must be provided!");
+	}
 
 	if (config.depth_format.has_value() && *config.depth_format == vk::Format::eUndefined) {
 		TOAST_CRITICAL("VulkanPipeline", "Pipeline depth format cannot be undefined!");
@@ -186,24 +164,17 @@ auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> vo
 	}
 
 	const auto& device = core.getDevice();
-
 	m_shader_module.emplace(createShaderModule(device, config.shader_spirv));
 
-	// Process descriptor and layout chains dynamically
-	m_descriptor_set_layout = createDescriptorSetLayout(device, config.descriptor_bindings, config.descriptor_binding_flags);
-	m_pipeline_layout = createPipelineLayout(device, m_descriptor_set_layout, config.push_constant_ranges);
-
 	if (config.pipeline_type == PipelineType::Graphics) {
-		m_pipeline = createGraphicsPipelineImpl(core, config, *m_shader_module, m_pipeline_layout);
+		m_pipeline = createGraphicsPipelineImpl(core, config, *m_shader_module, config.pipeline_layout);
 	} else {
-		m_pipeline = createComputePipelineImpl(core, config, *m_shader_module, m_pipeline_layout);
+		m_pipeline = createComputePipelineImpl(core, config, *m_shader_module, config.pipeline_layout);
 	}
 }
 
 auto VulkanPipeline::reset() -> void {
 	m_shader_module.reset();
-	m_descriptor_set_layout = nullptr;
-	m_pipeline_layout = nullptr;
 	m_pipeline = nullptr;
 }
 
