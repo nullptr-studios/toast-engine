@@ -5,7 +5,8 @@
 
 #include <chrono>
 #include <sstream>
-#include <toast/assets/node_file.hpp>
+#include <toast/assets/assets.hpp>
+#include <toast/assets/types.hpp>
 #include <toast/thread_pool.hpp>
 #include <utility>
 
@@ -83,7 +84,7 @@ World::World() {
 	instance = this;
 }
 
-auto World::nodeAllocation(std::optional<assets::NodeFile::BasicNode> node_data) noexcept -> Box<Node> {
+auto World::nodeAllocation(std::optional<assets::Prefab::BasicNode> node_data) noexcept -> Box<Node> {
 	ZoneScoped;
 
 	// Identify the type and get reflection info
@@ -272,7 +273,7 @@ void World::loadNode(UID uid) {
 	//				- init()
 
 	auto future = std::async(std::launch::async, [uid]() {
-		auto node_file = assets::load<assets::NodeFile>(uid);
+		auto node_file = assets::load<assets::Prefab>(uid);
 		if (not node_file.hasValue()) {
 			TOAST_ERROR("World", "Couldn't load Node {}", uid);
 			return;
@@ -874,7 +875,7 @@ auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
 	return node.box();
 }
 
-auto World::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::NodeFile>& file) -> Box<Node> {
+auto World::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node> {
 	std::unordered_map<uint64_t, Box<Node>> uid_map;
 	uid_map.reserve(nodes.size());
 	for (auto& node : nodes) {
@@ -883,7 +884,7 @@ auto World::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<
 
 	Box<Node> root;
 
-	// NodeFile serialization guarantees exactly one rootless node, written first.
+	// Prefab serialization guarantees exactly one rootless node, written first.
 	// nodes[i] pairs with file->nodes[i]: the alloc futures are collected in
 	// submission order, which is the file order.
 	for (size_t i = 0; i < nodes.size(); ++i) {
@@ -913,7 +914,7 @@ auto World::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<
 		if (not has_parent) {
 #ifndef NDEBUG
 			if (root.exists()) {
-				TOAST_WARN("World", "Multiple rootless nodes in NodeFile ({} and {}), keeping the last one", root->name(), data.name);
+				TOAST_WARN("World", "Multiple rootless nodes in Prefab ({} and {}), keeping the last one", root->name(), data.name);
 			}
 #endif
 			root = node;
@@ -922,7 +923,7 @@ auto World::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<
 
 #ifndef NDEBUG
 	if (not root.exists()) {
-		TOAST_ERROR("World", "NodeFile contains no rootless node, the loaded tree has no root");
+		TOAST_ERROR("World", "Prefab contains no rootless node, the loaded tree has no root");
 	}
 #endif
 

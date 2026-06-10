@@ -1,6 +1,6 @@
 #include "asset_manager.hpp"
 
-#include "node_file.hpp"
+#include "prefab.hpp"
 
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -64,7 +64,7 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 			return nullptr;
 		}
 	} else if (info.type == "node") {
-		asset = std::make_unique<NodeFile>(std::span<const uint8_t>(*raw_data));
+		asset = std::make_unique<Prefab>(std::span<const uint8_t>(*raw_data));
 	} else {
 		TOAST_ERROR("AssetManager", "Unknown asset type '{}' for asset {}", info.type, info.path);
 		return nullptr;
@@ -88,6 +88,55 @@ auto AssetManager::load(std::string_view uri) -> Asset* {
 		return nullptr;
 	}
 	return load(*uid);
+}
+
+auto AssetManager::save(toast::UID uid) -> bool {
+	std::lock_guard lock(mutex);
+
+	auto cache_it = cache.find(uid.data());
+	if (cache_it == cache.end()) {
+		TOAST_ERROR("AssetManager", "Cannot save asset {}: not in cache", uid);
+		return false;
+	}
+
+	auto* saveable = dynamic_cast<ISaveable*>(cache_it->second.get());
+	TOAST_ASSERT(saveable != nullptr, "AssetManager", "Attempted to save non-saveable asset {}", uid);
+	if (!saveable) {
+		return false;
+	}
+
+	auto manifest_it = manifest.find(uid.data());
+	if (manifest_it == manifest.end()) {
+		TOAST_ERROR("AssetManager", "Cannot save asset {}: not in manifest", uid);
+		return false;
+	}
+
+	auto real_path = resolveVirtualPath(manifest_it->second.path);
+	if (!real_path) {
+		TOAST_ERROR("AssetManager", "Cannot save asset {}: could not resolve path {}", uid, manifest_it->second.path);
+		return false;
+	}
+
+	auto bytes = saveable->serialize(SaveMode::editor);
+	if (!saveFile(*real_path, bytes)) {
+		return false;
+	}
+
+	TOAST_INFO("AssetManager", "Saved asset: {} ({})", manifest_it->second.path, manifest_it->second.type);
+	return true;
+}
+
+auto AssetManager::save(std::string_view uri) -> bool {
+	std::optional<toast::UID> uid;
+	{
+		std::lock_guard lock(mutex);
+		uid = resolveURI(uri);
+	}
+	if (!uid) {
+		TOAST_ERROR("AssetManager", "Could not resolve URI to UID: {}", uri);
+		return false;
+	}
+	return save(*uid);
 }
 
 void AssetManager::reloadManifest() {
@@ -176,6 +225,24 @@ auto AssetManager::openFile(const std::filesystem::path& path) -> std::optional<
 	return data;
 }
 
+auto AssetManager::saveFile(const std::filesystem::path& path, const std::vector<uint8_t>& data) -> bool {
+	std::ofstream ofs(path, std::ios::binary | std::ios::trunc);
+	if (not ofs.is_open()) {
+		TOAST_ERROR("AssetManager", "Could not create or open file {}", path.string());
+		return false;
+	}
+
+	ofs.write(reinterpret_cast<const char*>(data.data()), data.size());
+
+	if (ofs.fail()) {
+		TOAST_ERROR("AssetManager", "Could not write to file {}", path.string());
+		return false;
+	}
+
+	ofs.close();
+	return true;
+}
+
 auto AssetManager::resolveURI(std::string_view uri) -> std::optional<toast::UID> {
 	for (const auto& [uid_val, info] : instance->manifest) {
 		if (info.path == uri) {
@@ -196,5 +263,9 @@ auto load(std::string_view uri) -> AssetHandleBase {
 
 auto resolveURI(std::string_view uri) -> std::optional<toast::UID> {
 	return AssetManager::resolveURI(uri);
+}
+
+auto save(toast::UID uid) -> bool {
+	return AssetManager::get().save(uid);
 }
 }

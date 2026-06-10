@@ -13,14 +13,14 @@
 #include <format>
 
 namespace assets {
-class NodeFile;
+class Prefab;
 }
 
 namespace toast {
 
 struct TOAST_API UID {
 	friend class World;
-	friend class assets::NodeFile;
+	friend class assets::Prefab;
 
 	UID();
 

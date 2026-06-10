@@ -1,4 +1,4 @@
-#include "../../engine/src/toast/assets/node_file.hpp"
+#include "../../engine/src/toast/assets/prefab.hpp"
 #include "test_registry.hpp"
 #include "sample.hpp"
 
@@ -12,7 +12,7 @@ using namespace assets;
 
 TOAST_TEST_NAMED("node_file", "node_file/03-to_binary", test_node_file_03_to_binary) {
 	std::stringstream ss(sample_text);
-	NodeFile nf(ss);
+	Prefab nf(ss);
 	
 	std::vector<uint8_t> binary = nf.toBinary();
 	assert(!binary.empty());

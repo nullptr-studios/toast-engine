@@ -7,7 +7,7 @@
  */
 
 #pragma once
-#include "assets.hpp"
+#include "core_types.hpp"
 
 #include <any>
 #include <array>
@@ -48,19 +48,21 @@ struct NodeFileBinaryHeader {
 };
 }
 
-class NodeFile : public Asset {
+class Prefab : public Asset, public ISaveable {
 public:
-	NodeFile(std::istream& file);
-	NodeFile(std::span<const uint8_t> bytes);
-	NodeFile(const toast::Node& node);
+	Prefab(std::istream& file);
+	Prefab(std::span<const uint8_t> bytes);
+	Prefab(const toast::Node& node);
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
 		return "node";
 	}
 
-	auto toFile() -> std::string;
-	auto toBinary() -> std::vector<uint8_t>;
+	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
+
+	auto toFile() const -> std::string;
+	auto toBinary() const -> std::vector<uint8_t>;
 
 	struct Field {
 		std::string name;
@@ -145,11 +147,11 @@ private:
 
 	void serializeNode(const toast::Node& node, bool is_root);
 
-	void writeNode(const BasicNode& node, std::stringstream& ss);
-	void writeGroup(const Group& group, std::stringstream& ss);
-	void writeSubgroup(const Subgroup& subgroup, std::stringstream& ss);
-	void writeField(const Field& field, std::stringstream& ss, std::string offset = "");
-	auto writeType(toast::FieldType type, bool is_array = false) -> std::string;
+	void writeNode(const BasicNode& node, std::stringstream& ss) const;
+	void writeGroup(const Group& group, std::stringstream& ss) const;
+	void writeSubgroup(const Subgroup& subgroup, std::stringstream& ss) const;
+	void writeField(const Field& field, std::stringstream& ss, std::string offset = "") const;
+	auto writeType(toast::FieldType type, bool is_array = false) const -> std::string;
 };
 
 }

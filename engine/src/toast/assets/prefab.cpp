@@ -99,7 +99,7 @@ struct BinaryReader {
 }
 
 namespace assets {
-NodeFile::NodeFile(std::istream& file) {
+Prefab::Prefab(std::istream& file) {
 	std::vector<std::string> lines;
 	std::string line;
 	while (std::getline(file, line)) {
@@ -148,7 +148,15 @@ NodeFile::NodeFile(std::istream& file) {
 	}
 }
 
-auto NodeFile::toFile() -> std::string {
+auto Prefab::serialize(SaveMode mode) const -> std::vector<uint8_t> {
+	if (mode == SaveMode::game) {
+		return toBinary();
+	}
+	auto str = toFile();
+	return std::vector<uint8_t>(str.begin(), str.end());
+}
+
+auto Prefab::toFile() const -> std::string {
 	std::stringstream ss;
 	for (const auto& field : global_fields) {
 		writeField(field, ss);
@@ -164,7 +172,7 @@ auto NodeFile::toFile() -> std::string {
 	return ss.str();
 }
 
-auto NodeFile::parseNodeChunk(std::span<const std::string> lines) -> std::optional<BasicNode> {
+auto Prefab::parseNodeChunk(std::span<const std::string> lines) -> std::optional<BasicNode> {
 	if (lines.empty()) {
 		return std::nullopt;
 	}
@@ -230,7 +238,7 @@ auto NodeFile::parseNodeChunk(std::span<const std::string> lines) -> std::option
 	return node;
 }
 
-auto NodeFile::parseGroupChunk(std::span<const std::string> lines) -> std::optional<Group> {
+auto Prefab::parseGroupChunk(std::span<const std::string> lines) -> std::optional<Group> {
 	if (lines.empty()) {
 		return std::nullopt;
 	}
@@ -270,7 +278,7 @@ auto NodeFile::parseGroupChunk(std::span<const std::string> lines) -> std::optio
 	return group;
 }
 
-auto NodeFile::parseSubgroupChunk(std::span<const std::string> lines) -> std::optional<Subgroup> {
+auto Prefab::parseSubgroupChunk(std::span<const std::string> lines) -> std::optional<Subgroup> {
 	if (lines.empty()) {
 		return std::nullopt;
 	}
@@ -290,17 +298,17 @@ auto NodeFile::parseSubgroupChunk(std::span<const std::string> lines) -> std::op
 	return subgroup;
 }
 
-auto NodeFile::parseField(std::string_view line) -> std::optional<Field> {
+auto Prefab::parseField(std::string_view line) -> std::optional<Field> {
 #ifndef NDEBUG
 	// Safety check but it should be done before sending this
 	size_t start = line.find_first_not_of(" \t\n\r\v\f");
 	if (start == std::string_view::npos) {
-		TOAST_WARN("ResourceManager", "NodeFile::parseItem() received a completely empty line");
+		TOAST_WARN("ResourceManager", "Prefab::parseItem() received a completely empty line");
 		return std::nullopt;
 	}
 
 	if (start != 0) {
-		TOAST_WARN("ResourceManager", "NodeFile::parseItem() didn't have a proper line (leading whitespaces)");
+		TOAST_WARN("ResourceManager", "Prefab::parseItem() didn't have a proper line (leading whitespaces)");
 		line = line.substr(start);
 	}
 #endif
@@ -363,7 +371,7 @@ auto NodeFile::parseField(std::string_view line) -> std::optional<Field> {
 	return Field {.name = std::move(name), .type = *type, .is_array = is_array, .value = std::move(*value)};
 }
 
-auto NodeFile::parseType(std::string_view type, bool& is_array) -> std::optional<FieldType> {
+auto Prefab::parseType(std::string_view type, bool& is_array) -> std::optional<FieldType> {
 	if (type.starts_with(_detail::array_str)) {
 		is_array = true;
 		type.remove_prefix(_detail::array_str.size());
@@ -404,7 +412,7 @@ auto NodeFile::parseType(std::string_view type, bool& is_array) -> std::optional
 	return std::nullopt;
 }
 
-auto NodeFile::parseValue(FieldType type, std::string_view value, bool& is_array) -> std::optional<std::any> {
+auto Prefab::parseValue(FieldType type, std::string_view value, bool& is_array) -> std::optional<std::any> {
 	auto parse_single = [](FieldType type, std::string_view token) -> std::optional<std::any> {
 		switch (type) {
 			// holy boilerplate lil bro
@@ -557,7 +565,7 @@ auto NodeFile::parseValue(FieldType type, std::string_view value, bool& is_array
 	return parse_single(type, value);
 }
 
-void NodeFile::writeNode(const BasicNode& node, std::stringstream& ss) {
+void Prefab::writeNode(const BasicNode& node, std::stringstream& ss) const {
 	ss << std::format("[{0} type={1}]\n", node.name, node.type);
 
 	for (const auto& field : node.fields) {
@@ -569,7 +577,7 @@ void NodeFile::writeNode(const BasicNode& node, std::stringstream& ss) {
 	}
 }
 
-void NodeFile::writeGroup(const Group& group, std::stringstream& ss) {
+void Prefab::writeGroup(const Group& group, std::stringstream& ss) const {
 	ss << std::format(".{}\n", group.name);
 
 	for (const auto& field : group.fields) {
@@ -581,7 +589,7 @@ void NodeFile::writeGroup(const Group& group, std::stringstream& ss) {
 	}
 }
 
-void NodeFile::writeSubgroup(const Subgroup& subgroup, std::stringstream& ss) {
+void Prefab::writeSubgroup(const Subgroup& subgroup, std::stringstream& ss) const {
 	ss << std::format("    ..{}\n", subgroup.name);
 
 	for (const auto& field : subgroup.fields) {
@@ -589,7 +597,7 @@ void NodeFile::writeSubgroup(const Subgroup& subgroup, std::stringstream& ss) {
 	}
 }
 
-void NodeFile::writeField(const Field& field, std::stringstream& ss, std::string offset) {
+void Prefab::writeField(const Field& field, std::stringstream& ss, std::string offset) const {
 	auto stringify_single = [](FieldType type, const std::any& value) -> std::string {
 		switch (type) {
 			case FieldType::string_t: return std::any_cast<std::string>(value);
@@ -652,7 +660,7 @@ void NodeFile::writeField(const Field& field, std::stringstream& ss, std::string
 	ss << std::format("{0}{1} @{2} = {3}\n", offset, field.name, writeType(field.type, field.is_array), value_str);
 }
 
-auto NodeFile::toBinary() -> std::vector<uint8_t> {
+auto Prefab::toBinary() const -> std::vector<uint8_t> {
 	std::vector<uint8_t> buffer;
 	_detail::NodeFileBinaryHeader header;
 	header.node_count = static_cast<uint32_t>(nodes.size());
@@ -741,13 +749,13 @@ auto NodeFile::toBinary() -> std::vector<uint8_t> {
 	return buffer;
 }
 
-NodeFile::NodeFile(std::span<const uint8_t> bytes) {
+Prefab::Prefab(std::span<const uint8_t> bytes) {
 	BinaryReader reader {bytes};
 	auto header = reader.readValue<_detail::NodeFileBinaryHeader>();
 
 	static constexpr std::array<uint8_t, 6> expected_magic = {'T', 'N', 'O', 'D', 'E', '\0'};
 	if (header.magic != expected_magic) {
-		TOAST_ERROR("ResourceManager", "Invalid NodeFile binary magic");
+		TOAST_ERROR("ResourceManager", "Invalid Prefab binary magic");
 		return;
 	}
 
@@ -850,13 +858,13 @@ NodeFile::NodeFile(std::span<const uint8_t> bytes) {
 	}
 }
 
-NodeFile::NodeFile(const toast::Node& node) {
+Prefab::Prefab(const toast::Node& node) {
 	// The node passed in becomes the file's root
 	// It is written first and it is the only one that wont have a "parent" property
 	serializeNode(node, true);
 }
 
-void NodeFile::serializeNode(const toast::Node& node, bool is_root) {
+void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 	const auto* node_info = node.info();
 	if (!node_info) {
 		TOAST_ERROR("ResourceManager", "Cannot serialize node '{}': no reflection info attached", node.name());
@@ -941,7 +949,7 @@ void NodeFile::serializeNode(const toast::Node& node, bool is_root) {
 	}
 }
 
-auto NodeFile::writeType(FieldType type, bool is_array) -> std::string {
+auto Prefab::writeType(FieldType type, bool is_array) const -> std::string {
 	std::string str;
 	switch (type) {
 		case FieldType::bool_t: str = _detail::bool_str; break;

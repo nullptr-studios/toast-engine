@@ -44,6 +44,9 @@ public:
 	auto load(toast::UID uid) -> Asset*;
 	auto load(std::string_view uri) -> Asset*;
 
+	auto save(toast::UID uid) -> bool;
+	auto save(std::string_view uri) -> bool;
+
 	void reloadManifest();
 	void clearUnusedAssets();
 
@@ -66,6 +69,7 @@ private:
 
 	auto resolveVirtualPath(std::string_view virtual_path) -> std::optional<std::filesystem::path>;
 	auto openFile(const std::filesystem::path& path) -> std::optional<std::vector<uint8_t>>;
+	auto saveFile(const std::filesystem::path& path, const std::vector<uint8_t>& data) -> bool;
 
 	static constexpr std::string_view assets_uri = "assets://";
 	static constexpr std::string_view artwork_uri = "artwork://";

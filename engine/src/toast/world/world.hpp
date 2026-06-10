@@ -20,7 +20,7 @@
 #include <mutex>
 #include <queue>
 #include <stack>
-#include <toast/assets/node_file.hpp>
+#include <toast/assets/prefab.hpp>
 #include <toast/events/listener.hpp>
 #include <toast/log.hpp>
 #include <type_traits>
@@ -126,7 +126,7 @@ private:
 	inline static World* instance = nullptr;
 
 	/// Creates a node and stores it in memory
-	auto nodeAllocation(std::optional<assets::NodeFile::BasicNode> node_data = std::nullopt) noexcept -> Box<Node>;
+	auto nodeAllocation(std::optional<assets::Prefab::BasicNode> node_data = std::nullopt) noexcept -> Box<Node>;
 
 	/// Recalculates the dependency graph and updates the tick_schedule
 	void computeDependencyGraph();
@@ -151,7 +151,7 @@ private:
 
 	auto moveToChild(Node& node, Node& parent) -> Box<Node>;
 
-	auto buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::NodeFile>& file) -> Box<Node>;
+	auto buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node>;
 
 	void drainLoadQueue();
 

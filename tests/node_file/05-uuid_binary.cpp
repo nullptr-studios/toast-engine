@@ -1,4 +1,4 @@
-#include "../../engine/src/toast/assets/node_file.hpp"
+#include "../../engine/src/toast/assets/prefab.hpp"
 #include <toast/uid.hpp>
 #include "test_registry.hpp"
 
@@ -19,7 +19,7 @@ TOAST_TEST_NAMED("node_file", "node_file/05-uuid_binary", test_node_file_05_uid_
 	    "refs @array_uid = LMNOPQRSTUV bcdefghijkl\n";
 
 	std::stringstream ss(text);
-	NodeFile nf(ss);
+	Prefab nf(ss);
 
 	assert(nf.nodes.size() == 1);
 	assert(nf.nodes[0].fields.size() == 2);
@@ -32,7 +32,7 @@ TOAST_TEST_NAMED("node_file", "node_file/05-uuid_binary", test_node_file_05_uid_
 	// Binary round-trip (UID exposes value via data(); it has no operator==)
 	std::vector<uint8_t> binary = nf.toBinary();
 	std::span<const uint8_t> bytes(binary);
-	NodeFile from_binary(bytes);
+	Prefab from_binary(bytes);
 
 	assert(from_binary.nodes.size() == 1);
 	auto single_rt = std::any_cast<UID>(from_binary.nodes[0].fields[0].value);
@@ -44,6 +44,6 @@ TOAST_TEST_NAMED("node_file", "node_file/05-uuid_binary", test_node_file_05_uid_
 
 	// Text round-trip too, for good measure
 	std::stringstream round(nf.toFile());
-	NodeFile from_text(round);
+	Prefab from_text(round);
 	assert(std::any_cast<UID>(from_text.nodes[0].fields[0].value).data() == single.data());
 }

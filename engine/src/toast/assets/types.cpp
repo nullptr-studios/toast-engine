@@ -1,5 +1,7 @@
 #include "types.hpp"
 
+#include <sstream>
+
 namespace assets {
 void Asset::addRef() noexcept {
 	m_ref_count.fetch_add(1, std::memory_order_relaxed);
@@ -81,5 +83,12 @@ auto Texture::get() const noexcept -> const std::vector<uint8_t>& {
 
 auto Data::get() const noexcept -> const toml::table& {
 	return m_table;
+}
+
+auto Data::serialize(SaveMode) const -> std::vector<uint8_t> {
+	std::ostringstream ss;
+	ss << m_table;
+	auto str = ss.str();
+	return std::vector<uint8_t>(str.begin(), str.end());
 }
 }

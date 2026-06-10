@@ -23,6 +23,8 @@ auto TOAST_API load(toast::UID uid) -> AssetHandleBase;
 auto TOAST_API load(std::string_view uri) -> AssetHandleBase;
 auto TOAST_API resolveURI(std::string_view uri) -> std::optional<toast::UID>;
 
+auto TOAST_API save(toast::UID uid) -> bool;
+
 /**
  * @brief Type-safe load helper
  */

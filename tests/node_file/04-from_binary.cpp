@@ -1,4 +1,4 @@
-#include "../../engine/src/toast/assets/node_file.hpp"
+#include "../../engine/src/toast/assets/prefab.hpp"
 #include "test_registry.hpp"
 #include "sample.hpp"
 
@@ -19,7 +19,7 @@ TOAST_TEST_NAMED("node_file", "node_file/04-from_binary", test_node_file_04_from
 	
 	std::vector<uint8_t> binary(size);
 	if (in.read(reinterpret_cast<char*>(binary.data()), size)) {
-		NodeFile nf(binary);
+		Prefab nf(binary);
 		std::string output = nf.toFile();
 		
 		if (output != sample_text) {

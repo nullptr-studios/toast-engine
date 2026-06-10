@@ -1,4 +1,4 @@
-#include "../../engine/src/toast/assets/node_file.hpp"
+#include "../../engine/src/toast/assets/prefab.hpp"
 #include "test_registry.hpp"
 #include "sample.hpp"
 
@@ -11,7 +11,7 @@ using namespace assets;
 
 TOAST_TEST_NAMED("node_file", "node_file/02-to_file", test_node_file_02_to_file) {
 	std::stringstream ss(sample_text);
-	NodeFile nf(ss);
+	Prefab nf(ss);
 	
 	std::string output = nf.toFile();
 	

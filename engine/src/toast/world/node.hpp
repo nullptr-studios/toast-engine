@@ -18,7 +18,7 @@
 #include <toast/uid.hpp>
 
 namespace assets {
-class NodeFile;
+class Prefab;
 }
 
 namespace toast {
@@ -44,7 +44,7 @@ enum class NodeType : uint8_t {
 
 class [[ToastNode]] TOAST_API Node {
 	friend class World;
-	friend class assets::NodeFile;
+	friend class assets::Prefab;
 	friend struct _detail::ControlBox;
 	friend struct _detail::NodeCluster;
 	friend struct toast::_detail::WorldTestAccess;
