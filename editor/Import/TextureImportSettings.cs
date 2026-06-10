@@ -28,12 +28,8 @@ public partial class TextureImportSettings : ObservableObject {
 	public static FilterMode[] AllFilterModes => Enum.GetValues<FilterMode>();
 	public static int[] AllMaxResolutions => [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384];
 
-	public TextureMeta ToMeta(string uid, string sourceVirtualPath) {
-		return new TextureMeta {
-			Uid = uid,
-			Source = sourceVirtualPath,
-			CreatedAt = DateTime.UtcNow.ToString("o"),
-			ModifiedAt = DateTime.UtcNow.ToString("o"),
+	public TextureMetaSection ToSection() {
+		return new TextureMetaSection {
 			GenerateMipmaps = GenerateMipmaps,
 			MaxResolution = MaxResolution,
 			Compression = Compression.ToString(),
@@ -42,6 +38,22 @@ public partial class TextureImportSettings : ObservableObject {
 			AddressV = AddressV.ToString(),
 			Filter = Filter.ToString(),
 			Anisotropy = Anisotropy
+		};
+	}
+}
+
+public enum PsdImportMode { Layers, Folders, Combined }
+
+public partial class PsdImportSettings : ObservableObject {
+	[ObservableProperty] private bool m_createFolder = false;
+	[ObservableProperty] private PsdImportMode m_importMode = PsdImportMode.Combined;
+
+	public static PsdImportMode[] AllImportModes => Enum.GetValues<PsdImportMode>();
+
+	public PsdMetaSection ToSection() {
+		return new PsdMetaSection {
+			ImportMode = ImportMode.ToString(),
+			CreateFolder = CreateFolder
 		};
 	}
 }

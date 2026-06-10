@@ -60,17 +60,17 @@ public static class AssetDatabase {
 	private static void ScanDirectory(string directory, JsonObject assets) {
 		if (!Directory.Exists(directory)) return;
 		foreach (var metaPath in MetaFile.FindAll(directory)) {
-			var meta = MetaFile.ReadTexture(metaPath);
-			if (meta is null) continue;
+			var header = MetaFile.ReadHeader(metaPath);
+			if (header is null) continue;
 
 			// meta lives at "foo.ktx2.meta", asset is "foo.ktx2"
 			var assetRealPath = metaPath[..^5]; // strip ".meta"
 			var virtualPath = ProjectContext.ToVirtual(assetRealPath);
 			if (virtualPath is null) continue;
 
-			assets[meta.Uid] = new JsonObject {
+			assets[header.Uid] = new JsonObject {
 				["path"] = virtualPath,
-				["type"] = meta.Type
+				["type"] = header.Type
 			};
 		}
 	}

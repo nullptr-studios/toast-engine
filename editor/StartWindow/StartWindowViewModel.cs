@@ -9,7 +9,9 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.Input;
 using editor.Loader;
@@ -58,7 +60,7 @@ public partial class StartWindowViewModel : ViewModelBase {
 		}
 
 		tasks.Add(new LoaderTask("cmake lib/ -B .toast/cmake_cache", Exe: "cmake",
-			Args: $"lib/ -B .toast/cmake_cache -G \"Visual Studio 17 2022\" -DTOAST_PATH={ToastPath}"));
+			Args: $"lib/ -B .toast/cmake_cache -G \"Visual Studio 18 2026\" -DTOAST_PATH={ToastPath}"));
 		tasks.Add(new LoaderTask("cmake --build .toast/cmake_cache", Exe: "cmake",
 			Args: "--build .toast/cmake_cache"));
 
@@ -69,8 +71,9 @@ public partial class StartWindowViewModel : ViewModelBase {
 			}
 		};
 
-		var loader = new FullLoaderWindow(vm);
-		loader.Show();
+		var desktop = (IClassicDesktopStyleApplicationLifetime)Application.Current!.ApplicationLifetime!;
+		desktop.MainWindow = new FullLoaderWindow(vm);
+		desktop.MainWindow.Show();
 		parentWindow.Close();
 	}
 

@@ -7,8 +7,8 @@ using Avalonia.Controls;
 
 namespace editor.Workspace;
 
-public partial class Hierarchy : UserControl {
-	public Hierarchy() {
+public partial class HierarchyView : UserControl {
+	public HierarchyView() {
 		InitializeComponent();
 	}
 }

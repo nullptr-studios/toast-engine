@@ -139,7 +139,8 @@ public class ImportFolderViewModel : ImportNodeViewModel {
 }
 
 public partial class ImportWindowViewModel : ViewModelBase {
-	private static readonly List<string> s_allowedExtensions = [".png", ".tga"];
+	private readonly List<IAssetImporter> m_importers;
+	private readonly List<string> m_allowedExtensions;
 	[ObservableProperty] private string m_locationPath = "assets://";
 
 	[ObservableProperty] private string m_searchText = string.Empty;
@@ -147,6 +148,14 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	private Window? m_window;
 
 	public ImportWindowViewModel() {
+		m_importers = [
+			new TextureImporter(TextureSettings),
+			new PsdImporter(TextureSettings, PsdSettings),
+		];
+		m_allowedExtensions = [];
+		foreach (var importer in m_importers)
+			m_allowedExtensions.AddRange(importer.SupportedExtensions);
+
 		if (!ProjectContext.IsInitialized) return;
 
 		var artworkPath = ProjectContext.ArtworkPath;
@@ -154,11 +163,12 @@ public partial class ImportWindowViewModel : ViewModelBase {
 		var importedFiles = LoadImportedFiles(artworkDbPath);
 
 		if (Directory.Exists(artworkPath))
-			ImportNodes.Add(new ImportFolderViewModel(artworkPath, null, s_allowedExtensions, importedFiles));
+			ImportNodes.Add(new ImportFolderViewModel(artworkPath, null, m_allowedExtensions, importedFiles));
 	}
 
 	public ObservableCollection<ImportNodeViewModel> ImportNodes { get; } = [];
 	public TextureImportSettings TextureSettings { get; } = new();
+	public PsdImportSettings PsdSettings { get; } = new();
 
 	public void SetWindow(Window window) {
 		m_window = window;
@@ -177,7 +187,9 @@ public partial class ImportWindowViewModel : ViewModelBase {
 				foreach (var prop in doc.RootElement.EnumerateObject())
 					if (prop.Name is not ("type" or "version"))
 						result.Add(Path.GetFullPath(ProjectContext.Resolve(prop.Name)));
-		} catch { }
+		} catch (Exception e) {
+			Console.WriteLine(e);
+		}
 
 		return result;
 	}
@@ -192,6 +204,13 @@ public partial class ImportWindowViewModel : ViewModelBase {
 
 	[RelayCommand]
 	private async void Import() {
+		try {
+			var destDir = ProjectContext.Resolve(LocationPath);
+			Directory.CreateDirectory(destDir);
+		} catch {
+			// ignore: folder creation failure won't stop import
+		}
+
 		var selectedFiles = GetSelectedFiles(ImportNodes);
 		if (selectedFiles.Count == 0) return;
 
@@ -209,8 +228,8 @@ public partial class ImportWindowViewModel : ViewModelBase {
 		};
 
 		var loader = new DefaultLoaderWindow(vm);
-		await loader.ShowDialog(m_window);
-		m_window.Close();
+		await loader.ShowDialog(m_window!);
+		m_window!.Close();
 	}
 
 	[RelayCommand]
@@ -230,23 +249,14 @@ public partial class ImportWindowViewModel : ViewModelBase {
 				return;
 			}
 
-			var uid = UidGenerator.Generate();
-			var name = Path.GetFileNameWithoutExtension(realSourcePath);
 			var destDir = ProjectContext.Resolve(LocationPath);
-			Directory.CreateDirectory(destDir);
-			var destPath = Path.Combine(destDir, name + ".ktx2");
+			var ext = Path.GetExtension(realSourcePath).ToLowerInvariant();
+			var importer = m_importers.First(i => i.SupportedExtensions.Contains(ext));
 
-			log("Converting to KTX2...");
-			await KtxWriter.ConvertTexture(realSourcePath, destPath, TextureSettings, log);
+			var ctx = new ImportContext { DestDir = destDir, SourceVirtualPath = sourceVirtual };
+			var uids = await importer.Import(realSourcePath, ctx, log);
 
-			log("Generating thumbnail...");
-			await Task.Run(() => ThumbnailService.Generate(realSourcePath, uid));
-
-			log("Writing .meta sidecar...");
-			var meta = TextureSettings.ToMeta(uid, sourceVirtual);
-			MetaFile.Write(destPath, meta);
-
-			AssetDatabase.UpdateArtworkDatabase(sourceVirtual, hash, [uid]);
+			AssetDatabase.UpdateArtworkDatabase(sourceVirtual, hash, uids);
 			log("Done.");
 		} catch (Exception ex) {
 			log($"ERROR: {ex.Message}");
@@ -260,7 +270,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	private static List<string> GetSelectedFiles(IEnumerable<ImportNodeViewModel> nodes) {
 		var list = new List<string>();
 		foreach (var node in nodes)
-			if (node is ImportFileViewModel file && file.IsSelected == true && !file.IsReadOnly)
+			if (node is ImportFileViewModel { IsSelected: true, IsReadOnly: false } file)
 				list.Add(file.FullPath);
 			else if (node is ImportFolderViewModel folder)
 				list.AddRange(GetSelectedFiles(folder.Children));

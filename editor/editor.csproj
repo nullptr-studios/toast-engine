@@ -89,12 +89,11 @@
         </PackageReference>
         <PackageReference Include="ClangSharp" Version="21.1.8.3"/>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1"/>
-        <PackageReference Include="Dock.Avalonia" Version="12.0.0.2"/>
-        <PackageReference Include="Dock.Avalonia.Themes.Fluent" Version="12.0.0.2"/>
-        <PackageReference Include="Dock.Controls.ProportionalStackPanel" Version="12.0.0.2"/>
-        <PackageReference Include="Dock.Model.Mvvm" Version="12.0.0.2"/>
-        <PackageReference Include="Dock.Serializer.Protobuf" Version="12.0.0.2"/>
-        <PackageReference Include="Dock.Serializer.SystemTextJson" Version="12.0.0.2"/>
+        <PackageReference Include="Dock.Avalonia" Version="12.0.0.2" />
+        <PackageReference Include="Dock.Avalonia.Diagnostics" Version="12.0.0.2" />
+        <PackageReference Include="Dock.Avalonia.Themes.Fluent" Version="12.0.0.2" />
+        <PackageReference Include="Dock.Model.Mvvm" Version="12.0.0.2" />
+        <PackageReference Include="Dock.Serializer.SystemTextJson" Version="12.0.0.2" />
         <PackageReference Include="Google.Protobuf" Version="3.35.0-rc2"/>
         <PackageReference Include="Grpc.Tools" Version="2.80.0">
             <PrivateAssets>all</PrivateAssets>
@@ -107,7 +106,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Update="Logger\LogsWindow.axaml.cs">
+        <Compile Update="Logger\LogsView.axaml.cs">
             <DependentUpon>LogsWindow.axaml</DependentUpon>
             <SubType>Code</SubType>
         </Compile>

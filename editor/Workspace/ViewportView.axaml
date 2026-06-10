@@ -4,12 +4,10 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="editor.Workspace.Hierarchy"
-             x:DataType="vm:HierarchyViewModel">
+             x:Class="editor.Workspace.ViewportView"
+             x:DataType="vm:ViewportViewModel"
+             Focusable="True"
+             Background="Black">
 
-	<Border Background="#333333" Padding="5">
-		<StackPanel>
-			<TextBlock Text="Scene Hierarchy" FontWeight="Bold" Margin="0,0,0,10" />
-		</StackPanel>
-	</Border>
+	<Image Name="Surface" Stretch="Fill" />
 </UserControl>

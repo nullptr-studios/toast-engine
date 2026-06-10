@@ -13,7 +13,7 @@ using Avalonia.Threading;
 
 namespace editor.Workspace;
 
-public partial class Viewport : UserControl {
+public partial class ViewportView : UserControl {
 	private const int ActionReleased = 0;
 	private const int ActionPressed = 1;
 
@@ -26,7 +26,7 @@ public partial class Viewport : UserControl {
 	private int m_surfaceW;
 	private DispatcherTimer? m_timer;
 
-	public Viewport() {
+	public ViewportView() {
 		InitializeComponent();
 
 		Focusable = true;

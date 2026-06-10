@@ -4,34 +4,45 @@
 //
 
 using System;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Dock.Model.Controls;
-using Dock.Model.Core;
 
 namespace editor.Workspace;
 
-public class WorkspaceViewModel : ViewModelBase {
-	private ToastEngine m_toast;
+public partial class WorkspaceViewModel : ViewModelBase {
+	private readonly ToastEngine m_toast;
+	private readonly DockFactory m_dockFactory;
+	private readonly ToastZoneFactory m_toastZoneFactory;
+	public IRootDock MainLayout { get; set; }
+	public IRootDock ToastZoneLayout { get; set; }
 
-	public WorkspaceViewModel(ToastEngine toast, IRootDock? layout = null) {
+	[ObservableProperty]
+	private bool m_toastZoneActive;
+
+	private bool m_toastZonePinned;
+
+	public WorkspaceViewModel(ToastEngine toast) {
 		m_toast = toast;
-		Factory = layout?.Factory ?? new EditorDockFactory(toast);
 
-		if (layout is null) {
-			Layout = Factory.CreateLayout();
-			Factory.InitLayout(Layout);
-		} else {
-			Layout = layout;
-			if (Layout.Factory is null) {
-				Layout.Factory = Factory;
-				Factory.InitLayout(Layout);
-			}
-		}
+		// Main docking area
+		m_dockFactory = new DockFactory(toast);
+		MainLayout = m_dockFactory.CreateLayout();
+		m_dockFactory.InitLayout(MainLayout);
+
+		// Toast docking area
+		m_toastZoneFactory = new ToastZoneFactory();
+		ToastZoneLayout = m_toastZoneFactory.CreateLayout();
+		m_toastZoneFactory.InitLayout(ToastZoneLayout);
+
 	}
 
-	public IFactory Factory { get; }
-	public IRootDock Layout { get; }
+	public void ShowToastZone(bool active) {
+		if (m_toastZonePinned == true) return;
+		ToastZoneActive = active;
+	}
 
-	public void CloseLayout() {
-		if (Layout is IDisposable disposable) disposable.Dispose();
+	public void PinToastZone() {
+		m_toastZonePinned = !m_toastZonePinned;
+		ToastZoneActive = m_toastZonePinned;
 	}
 }
