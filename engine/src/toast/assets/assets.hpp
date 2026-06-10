@@ -1,0 +1,54 @@
+/**
+ * @file assets.hpp
+ * @author Xein
+ * @date 06 Jun 2026
+ *
+ * @brief Public API for the asset management system
+ */
+
+#pragma once
+
+#include "types.hpp"
+
+#include <atomic>
+#include <string_view>
+#include <toast/events/event.hpp>
+#include <toast/export.hpp>
+#include <toast/uid.hpp>
+
+namespace assets {
+
+// Public load functions
+auto TOAST_API load(toast::UID uid) -> AssetHandleBase;
+auto TOAST_API load(std::string_view uri) -> AssetHandleBase;
+
+/**
+ * @brief Type-safe load helper
+ */
+template<typename T>
+auto load(toast::UID uid) -> AssetHandle<T> {
+	auto base = load(uid);
+	return AssetHandle<T>(base.hasValue() ? const_cast<Asset*>(&base.get()) : nullptr);
+}
+
+template<typename T>
+auto load(std::string_view uri) -> AssetHandle<T> {
+	auto base = load(uri);
+	return AssetHandle<T>(base.hasValue() ? const_cast<Asset*>(&base.get()) : nullptr);
+}
+
+}
+
+namespace event {
+
+/**
+ * @brief Fired to request a refresh of the asset manifest
+ */
+struct ReloadAssetsManifest : public Event<ReloadAssetsManifest> { };
+
+/**
+ * @brief Fired to request the unloading of all unused assets
+ */
+struct ClearUnusedAssets : public Event<ClearUnusedAssets> { };
+
+}

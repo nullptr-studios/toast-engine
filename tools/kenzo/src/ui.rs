@@ -20,6 +20,11 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             render_connected(f, app, size);
         }
     }
+
+    // Render detail view on top if open
+    if app.detail_view_open {
+        render_detail_view(f, app, size);
+    }
 }
 
 fn render_disconnected(f: &mut Frame, app: &mut App, area: Rect) {
@@ -263,38 +268,42 @@ fn render_connected(f: &mut Frame, app: &mut App, area: Rect) {
     );
 
     // Keybinds
-    let s_style = if !app.scroll_locked {
-        Style::default().fg(Color::Black).bg(Color::Yellow)
+    let keybinds = if !app.detail_view_open {
+        Line::from(vec![
+        ])
+        let s_style = if !app.scroll_locked {
+            Style::default().fg(Color::Black).bg(Color::Yellow)
+        } else {
+            Style::default().fg(Color::Gray).bg(Color::DarkGray)
+        };
+        let w_style = if app.wrap_logs {
+            Style::default().fg(Color::Black).bg(Color::Magenta)
+        } else {
+            Style::default().fg(Color::Gray).bg(Color::DarkGray)
+        };
+            Span::styled(" q ", Style::default().fg(Color::Gray).bg(Color::DarkGray)),
+            Span::raw(" Quit |"),
+            Span::styled(" v ", Style::default().fg(Color::Gray).bg(Color::DarkGray)),
+            Span::raw(" View |"),
+            Span::styled(" f ", Style::default().fg(Color::Gray).bg(Color::DarkGray)),
+            Span::raw(" Filters |"),
+            Span::styled(" s ", s_style),
+            Span::raw(" Auto-scroll |"),
+            Span::styled(" w ", w_style),
+            Span::raw(" Wrap |"),
+            Span::styled(" / ", Style::default().fg(Color::Gray).bg(Color::DarkGray)),
+            Span::raw(" Search |"),
+            Span::styled(" hjkl ", Style::default().fg(Color::Gray).bg(Color::DarkGray)),
+            Span::raw(" Move |"),
+            Span::styled(" Shift+HJKL ", Style::default().fg(Color::Gray).bg(Color::DarkGray)),
+            Span::raw(" Switch Focus "),
     } else {
-        Style::default().fg(Color::Gray).bg(Color::DarkGray)
+        Line::from(vec![
+            Span::styled("DETAIL VIEW ACTIVE", Style::default().fg(Color::Black).bg(Color::Yellow).add_modifier(Modifier::BOLD)), Span::raw(" - "),
+            Span::styled(" ↑↓/jk ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Scroll |"),
+            Span::styled(" ESC/q ", Style::default().fg(Color::Gray).bg(Color::DarkGray)), Span::raw(" Close "),
+        ])
     };
-    let w_style = if app.wrap_logs {
-        Style::default().fg(Color::Black).bg(Color::Magenta)
-    } else {
-        Style::default().fg(Color::Gray).bg(Color::DarkGray)
-    };
-    let keybinds = Line::from(vec![
-        Span::styled(" q ", Style::default().fg(Color::Gray).bg(Color::DarkGray)),
-        Span::raw(" Quit |"),
-        Span::styled(" f ", Style::default().fg(Color::Gray).bg(Color::DarkGray)),
-        Span::raw(" Filters |"),
-        Span::styled(" s ", s_style),
-        Span::raw(" Auto-scroll |"),
-        Span::styled(" w ", w_style),
-        Span::raw(" Wrap |"),
-        Span::styled(" / ", Style::default().fg(Color::Gray).bg(Color::DarkGray)),
-        Span::raw(" Search |"),
-        Span::styled(
-            " hjkl ",
-            Style::default().fg(Color::Gray).bg(Color::DarkGray),
-        ),
-        Span::raw(" Move |"),
-        Span::styled(
-            " Shift+HJKL ",
-            Style::default().fg(Color::Gray).bg(Color::DarkGray),
-        ),
-        Span::raw(" Switch Focus "),
-    ]);
     f.render_widget(
         Paragraph::new(keybinds).alignment(Alignment::Center),
         main_chunks[2],
@@ -548,4 +557,125 @@ fn format_timestamp(ts: u64) -> String {
         }
         _ => ts.to_string(),
     }
+}
+
+fn render_detail_view(f: &mut Frame, app: &mut App, area: Rect) {
+    if let Some(log_idx) = app.detail_view_log_idx {
+        let log = &app.logs[log_idx];
+
+        // Calculate dialog dimensions
+        let dialog_width = (area.width as usize).saturating_sub(4).max(80) as u16;
+        let dialog_height = (area.height as usize).saturating_sub(4).max(20) as u16;
+
+        let dialog_area = Rect::new(
+            area.x + (area.width.saturating_sub(dialog_width)) / 2,
+            area.y + (area.height.saturating_sub(dialog_height)) / 2,
+            dialog_width,
+            dialog_height,
+        );
+
+        let severity = Severity::from(log.severity);
+        let (fg, _bg) = match severity {
+            Severity::Trace => (Color::Gray, Color::Reset),
+            Severity::Info => (Color::Green, Color::Reset),
+            Severity::Warning => (Color::Yellow, Color::Reset),
+            Severity::Error => (Color::Red, Color::Reset),
+            Severity::Critical => (Color::Black, Color::Red),
+        };
+
+        let sev_label = match log.severity { 0 => "TRACE", 1 => "INFO", 2 => "WARNING", 3 => "ERROR", 4 => "CRITICAL", _ => "UNKNOWN" };
+        let time_str = format_timestamp(log.timestamp);
+
+        // Create header
+        let header = format!("[{}] {} - {} ({}:{})", sev_label, time_str, log.sink, log.filepath, log.line_number);
+
+        // Split message into lines and wrap long lines
+        let msg_lines: Vec<&str> = log.message.lines().collect();
+        let content_width = (dialog_width as usize).saturating_sub(4);
+
+        let mut wrapped_lines = Vec::new();
+        for line in msg_lines.iter() {
+            if line.is_empty() {
+                wrapped_lines.push(String::new());
+            } else if line.len() > content_width {
+                // Wrap long lines
+                let wrapped = textwrap::fill(line, content_width);
+                for subline in wrapped.lines() {
+                    wrapped_lines.push(subline.to_string());
+                }
+            } else {
+                wrapped_lines.push(line.to_string());
+            }
+        }
+
+        let available_lines = (dialog_height as usize).saturating_sub(6); // Account for header, blank line, controls
+
+        // Clamp scroll position to valid range
+        let max_scroll = wrapped_lines.len().saturating_sub(available_lines);
+        if app.detail_view_scroll > max_scroll {
+            app.detail_view_scroll = max_scroll;
+        }
+
+        let start_line = app.detail_view_scroll;
+        let end_line = (start_line + available_lines).min(wrapped_lines.len());
+
+        let mut content_lines = vec![
+            Line::from(Span::styled(header, Style::default().add_modifier(Modifier::BOLD).fg(Color::Cyan))),
+            Line::from(""),
+        ];
+
+        // Add message lines with proper formatting
+        for line in &wrapped_lines[start_line..end_line] {
+            content_lines.push(Line::from(Span::styled(line.clone(), Style::default().fg(fg))));
+        }
+
+        let content = Text::from(content_lines);
+
+        let scroll_info = if wrapped_lines.len() > available_lines {
+            format!("Line {}/{}", start_line + 1, wrapped_lines.len())
+        } else {
+            String::new()
+        };
+
+        // Use bright yellow border to indicate focus
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(" Message Details (FOCUSED) ")
+            .border_type(BorderType::Rounded)
+            .border_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+            .title_alignment(Alignment::Center);
+
+        let paragraph = Paragraph::new(content)
+            .block(block)
+            .style(Style::default());
+
+        f.render_widget(Clear, dialog_area);
+        f.render_widget(paragraph, dialog_area);
+
+        // Draw footer with controls and scroll info
+        let footer_text = if scroll_info.is_empty() {
+            "Press ↑↓/jk to scroll • ESC/q to close".to_string()
+        } else {
+            format!("Press ↑↓/jk to scroll • {} • ESC/q to close", scroll_info)
+        };
+
+        let footer_area = Rect::new(
+            dialog_area.x + 1,
+            dialog_area.y + dialog_area.height.saturating_sub(1),
+            dialog_area.width.saturating_sub(2),
+            1,
+        );
+        f.render_widget(Paragraph::new(footer_text).style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)), footer_area);
+    }
+}
+
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage((100 - percent_y) / 2), Constraint::Percentage(percent_y), Constraint::Percentage((100 - percent_y) / 2)])
+        .split(r);
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage((100 - percent_x) / 2), Constraint::Percentage(percent_x), Constraint::Percentage((100 - percent_x) / 2)])
+        .split(popup_layout[1])[1]
 }

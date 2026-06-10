@@ -90,28 +90,36 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 			}
 
 			if (!server_path.empty()) {
+#if defined(_WIN32)
+				STARTUPINFOA si;
+				PROCESS_INFORMATION pi;
+				ZeroMemory(&si, sizeof(si));
+				si.cb = sizeof(si);
+				ZeroMemory(&pi, sizeof(pi));
+
+				std::string cmd_args = server_path.string();
+				DWORD creation_flags = CREATE_NO_WINDOW;
+
+				if (CreateProcessA(nullptr, cmd_args.data(), nullptr, nullptr, FALSE, creation_flags, nullptr, nullptr, &si, &pi)) {
+					// Close handles immediately so the log server runs independently
+					CloseHandle(pi.hProcess);
+					CloseHandle(pi.hThread);
+				} else {
+					std::println(std::cerr, "[Logger] CreateProcessA failed with error: {}", GetLastError());
+				}
+#elif defined(__APPLE__) || defined(__linux__)
 				std::string cmd;
 				std::string output_redir = show_server_logs ? "" : " >/dev/null 2>&1";
 
-#if defined(_WIN32)
-				// On Windows, 'start /B' runs the command in the background without opening a new window
-				// For output redirection, we need to wrap it in 'cmd /C'
-				if (show_server_logs) {
-					cmd = "start /B " + server_path.string();
-				} else {
-					cmd = "start /B cmd /C \"" + server_path.string() + " >nul 2>&1\"";
-				}
-#elif defined(__APPLE__) || defined(__linux__)
-				// setsid detaches the server from the engine's process group on Linux/macOS.
-				// The trailing & ensures std::system() returns immediately without waiting
 				cmd = "setsid " + server_path.string() + output_redir + " &";
-#endif
+
 				if (!cmd.empty()) {
 					int ret = std::system(cmd.c_str());
 					if (ret != 0) {
 						std::println(std::cerr, "[Logger] Failed to execute log server spawn command: {}", ret);
 					}
 				}
+#endif
 			} else {
 				std::println(std::cerr, "[Logger] Could not find log server binary. Candidates checked:");
 				for (const auto& candidate : candidates) {

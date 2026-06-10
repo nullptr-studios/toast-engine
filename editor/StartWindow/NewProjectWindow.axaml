@@ -1,0 +1,24 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="190"
+        Width="350" Height="190"
+        CanResize="False" CanMinimize="False"
+        x:Class="editor.StartWindow.NewProjectWindow"
+        Title="New Project">
+
+	<StackPanel Margin="10">
+		<TextBlock>Name:</TextBlock>
+		<TextBox Text="Unnamed Project" TextChanged="Name_OnTextChanged" x:Name="TitleTextbox" />
+		<TextBlock Margin="0, 20, 0, 0">Path:</TextBlock>
+		<Grid ColumnDefinitions="*, Auto">
+			<TextBox x:Name="PathTextbox" Grid.Column="0" IsReadOnly="True" />
+			<Button Click="Folder_OnClick" Grid.Column="1" Content="..." Margin="5, 0, 0, 0" />
+		</Grid>
+		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0, 20, 0, 0" Spacing="10">
+			<Button Click="Exit_OnClick">Cancel</Button>
+			<Button Click="Create_OnClick" Background="Green" Foreground="White">Create</Button>
+		</StackPanel>
+	</StackPanel>
+</Window>

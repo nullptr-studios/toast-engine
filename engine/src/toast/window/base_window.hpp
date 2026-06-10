@@ -24,6 +24,8 @@ public:
 	// Functions
 	[[nodiscard]]
 	virtual auto shouldClose() const -> bool = 0;
+	[[nodiscard]]
+	virtual void* nativeHandle() const = 0;
 	virtual void pollEvents() = 0;
 	virtual void swapFramebuffers() = 0;
 

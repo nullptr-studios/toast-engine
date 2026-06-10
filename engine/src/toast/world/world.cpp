@@ -1,6 +1,7 @@
 #include "world.hpp"
 
 #include "world_test_access.hpp"
+#include "node_3d.hpp"
 
 #include <sstream>
 #include <toast/thread_pool.hpp>
@@ -115,7 +116,7 @@ void World::tick() {
 
 void World::registerDependency(Node& from, Node& to) {
 	if (&from == &to) {
-		TOAST_WARN("World", "{} ({}) tried to register a dependency to itself", from.name(), from.uuid());
+		TOAST_WARN("World", "{} ({}) tried to register a dependency to itself", from.name(), from.uid());
 		return;
 	}
 	// TODO: sanity check
@@ -186,7 +187,7 @@ void World::dispatchNodeCreation(int count) {
 
 	// Phase 2: data structure generation
 	for (auto& r : alloc_futures) {
-		r.get()->m_uuid.generate();
+		r.get()->m.uid.generate();
 	}
 	// TODO: build tree
 	// TODO: build dependency graph
@@ -210,6 +211,18 @@ void World::dispatchNodeCreation(int count) {
 	// TODO: Move this to cached_list
 }
 
+void World::markNode3DDependantsDirty(const Box<Node>& node) noexcept {
+	if (!instance) return;
+
+	auto it = instance->dependency_graph.inverse_connections.find(node);
+	if (it != instance->dependency_graph.inverse_connections.end()) {
+		for (auto& dependent : it->second) {
+			if (auto node3d = dependent.as<Node3D>()) {
+				node3d->m_dirty_world = true;
+			}
+		}
+	}
+}
 void World::computeDependencyGraph() {
 	// Guarantee every existing node exists in the subgraph
 	for (const auto& node : m.nodes) {

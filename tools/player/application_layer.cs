@@ -3,35 +3,30 @@
 namespace player;
 
 public class ApplicationLayer : IDisposable {
-    static ApplicationLayer() {
-        NativeResolver.EnsureRegistered();
-    }
+	private IntPtr m_handle;
 
-    public ApplicationLayer() {
-        m_handle = game_create();
-        if (m_handle == IntPtr.Zero)
-            throw new InvalidOperationException("Failed to create application layer");
-    }
+	static ApplicationLayer() {
+		NativeResolver.EnsureRegistered();
+	}
 
-    public void Dispose()
-    {
-        if (m_handle != IntPtr.Zero)
-        {
-            // toast_destroy(m_handle);
-            m_handle = IntPtr.Zero;
-        }
-        GC.SuppressFinalize(this);
-    }
+	public ApplicationLayer() {
+		m_handle = game_create();
+		if (m_handle == IntPtr.Zero)
+			throw new InvalidOperationException("Failed to create application layer");
+	}
 
-    ~ApplicationLayer()
-    {
-        Dispose();
-    }
+	public void Dispose() {
+		if (m_handle != IntPtr.Zero)
+			// toast_destroy(m_handle);
+			m_handle = IntPtr.Zero;
+		GC.SuppressFinalize(this);
+	}
 
-    private IntPtr m_handle;
+	~ApplicationLayer() {
+		Dispose();
+	}
 
-    // Native methods
-    [DllImport("__APPLICATION_LIB__", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr game_create();
-
+	// Native methods
+	[DllImport("__APPLICATION_LIB__", CallingConvention = CallingConvention.Cdecl)]
+	private static extern IntPtr game_create();
 }

@@ -10,12 +10,13 @@
 
 #pragma once
 #include "reflect.hpp"
-#include "toast/world/box.hpp"
-#include "toast/world/control_box.hpp"
-#include "uuid.hpp"
+#include "box.hpp"
+#include "control_box.hpp"
+#include "function_table.hpp"
 
 #include <toast/events/listener.hpp>
 #include <toast/export.hpp>
+#include <toast/uid.hpp>
 
 namespace toast {
 namespace _detail {
@@ -44,17 +45,10 @@ class [[ToastNode]] TOAST_API Node {
 	friend struct _detail::NodeCluster;
 	friend struct toast::_detail::WorldTestAccess;
 
-	// Explicit `private:` (not the implicit class default) so the generated reflection TU,
-	// which does `#define private public`, can reach the ctor/dtor for its factory.
-
-private:
-	Node() = default;
-	~Node() = default;
-
 public:
 	[[nodiscard]]
 	/// @brief Returns the serialized unique identifier of this node
-	auto uuid() const noexcept -> const UUID&;
+	auto uid() const noexcept -> const UID&;
 
 	[[nodiscard]]
 	/// @brief Returns the name of this node
@@ -79,13 +73,16 @@ public:
 	auto info() const -> const NodeInfo*;
 
 protected:
+	Node() = default;
+	virtual ~Node() = default;
+
 	// listener is lazily initialized
 	[[nodiscard]]
 	auto listener() noexcept -> event::Listener&;
 
 private:
 	[[Serialize, Name("UID")]]
-	UUID m_uuid;    // serialized unique id
+	UID m_uid;    // serialized unique id
 	[[Serialize, Name("Name")]]
 	std::string m_name;
 	NodeState m_state = NodeState::null;

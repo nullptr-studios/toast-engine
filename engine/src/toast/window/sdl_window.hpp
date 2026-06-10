@@ -19,14 +19,15 @@ namespace toast {
 
 class SDLWindow : public IBaseWindow {
 public:
-	SDLWindow(const char* title, unsigned width = 1080, unsigned height = 720, int flags = 0);
+	SDLWindow(const char* title, unsigned width = 1080, unsigned height = 720, uint64_t flags = 0);
 
-	// SDLWindow(std::string_view title, unsigned pos_x, unsigned pos_y, unsigned width, unsigned height, unsigned flags);
 	~SDLWindow() override = default;
 
 	// Lifetime
 	[[nodiscard]]
 	auto shouldClose() const -> bool override;
+	[[nodiscard]]
+	auto nativeHandle() const -> void* override;
 
 	void pollEvents() override;
 	void swapFramebuffers() override;

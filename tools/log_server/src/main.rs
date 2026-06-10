@@ -4,6 +4,8 @@
  * @date 26 Mar 2026
  */
 
+#![windows_subsystem = "windows"]
+
 use clap::Parser;
 use std::sync::Arc;
 

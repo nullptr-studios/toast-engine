@@ -14,7 +14,7 @@ add_custom_target(player ALL
         COMMAND ${DOTNET_EXECUTABLE} build
         "${CSHARP_PROJECT}"
         --configuration ${DOTNET_CONFIG}
-        --output "${OUTPUT_ROOT}/$<CONFIG>"
+        --output "${OUTPUT_ROOT}/$<CONFIG>/player"
         --nologo
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "[dotnet] Building ${CSHARP_ASSEMBLY_NAME} (${DOTNET_CONFIG})..."
