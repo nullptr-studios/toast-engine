@@ -6,7 +6,7 @@ enum ItemType : u8 {
     float_t = 2,
     string_t = 3,
     double_t = 4,
-    uuid_t = 5,
+    uid_t = 5,
     vec2_t = 6,
     vec3_t = 7,
     vec4_t = 8,
@@ -43,7 +43,7 @@ struct Quat {
     float w;
 };
 
-struct UUID {
+struct UID {
     u8 data[11];
 };
 
@@ -59,7 +59,7 @@ struct Item {
         else if (type == ItemType::float_t) { float values[count]; }
         else if (type == ItemType::double_t) { double values[count]; }
         else if (type == ItemType::string_t) { String values[count]; }
-        else if (type == ItemType::uuid_t) { UUID values[count]; }
+        else if (type == ItemType::uid_t) { UID values[count]; }
         else if (type == ItemType::vec2_t) { Vec2 values[count]; }
         else if (type == ItemType::vec3_t) { Vec3 values[count]; }
         else if (type == ItemType::vec4_t) { Vec4 values[count]; }
@@ -70,7 +70,7 @@ struct Item {
         else if (type == ItemType::float_t) { float value; }
         else if (type == ItemType::double_t) { double value; }
         else if (type == ItemType::string_t) { String value; }
-        else if (type == ItemType::uuid_t) { UUID value; }
+        else if (type == ItemType::uid_t) { UID value; }
         else if (type == ItemType::vec2_t) { Vec2 value; }
         else if (type == ItemType::vec3_t) { Vec3 value; }
         else if (type == ItemType::vec4_t) { Vec4 value; }

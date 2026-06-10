@@ -11,6 +11,6 @@ public:
     [[Serialize]] glm::vec3 m_vec3_val;
     [[Serialize]] glm::vec4 m_vec4_val;
     [[Serialize]] glm::quat m_quat_val;
-    [[Serialize]] UUID m_uuid_val;
+    [[Serialize]] UID m_uid_val;
     [[Serialize]] std::vector<int> m_int_array;
 };

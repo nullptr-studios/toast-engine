@@ -1,7 +1,7 @@
 #include "world.hpp"
 
-#include "world_test_access.hpp"
 #include "node_3d.hpp"
+#include "world_test_access.hpp"
 
 #include <sstream>
 #include <toast/thread_pool.hpp>
@@ -138,7 +138,7 @@ auto World::requestRuntimeCreation(Node& parent) -> Box<Node> {
 	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 
 	// Phase 2: data structure generation
-	node->m_uuid.generate();
+	node->m_uid.generate();
 	node->m_parent = parent;
 	parent.m_children.emplace_back(node);
 
@@ -187,7 +187,7 @@ void World::dispatchNodeCreation(int count) {
 
 	// Phase 2: data structure generation
 	for (auto& r : alloc_futures) {
-		r.get()->m.uid.generate();
+		r.get()->m_uid.generate();
 	}
 	// TODO: build tree
 	// TODO: build dependency graph
@@ -212,7 +212,9 @@ void World::dispatchNodeCreation(int count) {
 }
 
 void World::markNode3DDependantsDirty(const Box<Node>& node) noexcept {
-	if (!instance) return;
+	if (!instance) {
+		return;
+	}
 
 	auto it = instance->dependency_graph.inverse_connections.find(node);
 	if (it != instance->dependency_graph.inverse_connections.end()) {
@@ -223,6 +225,7 @@ void World::markNode3DDependantsDirty(const Box<Node>& node) noexcept {
 		}
 	}
 }
+
 void World::computeDependencyGraph() {
 	// Guarantee every existing node exists in the subgraph
 	for (const auto& node : m.nodes) {

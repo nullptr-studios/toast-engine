@@ -5,8 +5,8 @@
 #include <istream>
 #include <sstream>
 #include <toast/log.hpp>
+#include <toast/uid.hpp>
 #include <toast/world/node.hpp>
-#include <toast/world/uuid.hpp>
 
 namespace {
 /**
@@ -384,8 +384,8 @@ auto NodeFile::parseType(std::string_view type, bool& is_array) -> std::optional
 	if (type == _detail::double_str) {
 		return FieldType::double_t;
 	}
-	if (type == _detail::uuid_str) {
-		return FieldType::uuid_t;
+	if (type == _detail::uid_str) {
+		return FieldType::uid_t;
 	}
 	if (type == _detail::vec2_str) {
 		return FieldType::vec2_t;
@@ -427,8 +427,8 @@ auto NodeFile::parseValue(FieldType type, std::string_view value, bool& is_array
 					return std::any {b.value()};
 				}
 				return std::nullopt;
-			case FieldType::uuid_t: {
-				toast::UUID id;
+			case FieldType::uid_t: {
+				toast::UID id;
 				id.assign(token);
 				return std::any {id};
 			}
@@ -547,7 +547,7 @@ auto NodeFile::parseValue(FieldType type, std::string_view value, bool& is_array
 			case FieldType::vec3_t: return convert_to_vector.operator()<glm::vec3>();
 			case FieldType::vec4_t: return convert_to_vector.operator()<glm::vec4>();
 			case FieldType::quaternion_t: return convert_to_vector.operator()<glm::quat>();
-			case FieldType::uuid_t: return convert_to_vector.operator()<UUID>();
+			case FieldType::uid_t: return convert_to_vector.operator()<UID>();
 			default: return std::nullopt;
 		}
 	}
@@ -595,7 +595,7 @@ void NodeFile::writeField(const Field& field, std::stringstream& ss, std::string
 			case FieldType::int_t: return std::to_string(std::any_cast<int>(value));
 			case FieldType::float_t: return std::format("{}", std::any_cast<float>(value));
 			case FieldType::double_t: return std::format("{}", std::any_cast<double>(value));
-			case FieldType::uuid_t: return std::format("{}", std::any_cast<UUID>(value));
+			case FieldType::uid_t: return std::format("{}", std::any_cast<UID>(value));
 			case FieldType::vec2_t: {
 				auto v = std::any_cast<glm::vec2>(value);
 				return std::format("{} {}", v.x, v.y);
@@ -640,7 +640,7 @@ void NodeFile::writeField(const Field& field, std::stringstream& ss, std::string
 			case FieldType::vec3_t: value_str = stringify_array.operator()<glm::vec3>(field.type); break;
 			case FieldType::vec4_t: value_str = stringify_array.operator()<glm::vec4>(field.type); break;
 			case FieldType::quaternion_t: value_str = stringify_array.operator()<glm::quat>(field.type); break;
-			case FieldType::uuid_t: value_str = stringify_array.operator()<UUID>(field.type); break;
+			case FieldType::uid_t: value_str = stringify_array.operator()<UID>(field.type); break;
 			default: break;
 		}
 	} else {
@@ -672,7 +672,7 @@ auto NodeFile::toBinary() -> std::vector<uint8_t> {
 				case FieldType::vec3_t: writeValue(buffer, std::any_cast<glm::vec3>(value)); break;
 				case FieldType::vec4_t: writeValue(buffer, std::any_cast<glm::vec4>(value)); break;
 				case FieldType::quaternion_t: writeValue(buffer, std::any_cast<glm::quat>(value)); break;
-				case FieldType::uuid_t: writeValue(buffer, std::any_cast<UUID>(value).data()); break;
+				case FieldType::uid_t: writeValue(buffer, std::any_cast<UID>(value).data()); break;
 				default: break;
 			}
 		};
@@ -696,7 +696,7 @@ auto NodeFile::toBinary() -> std::vector<uint8_t> {
 				case FieldType::vec3_t: write_array.operator()<glm::vec3>(field.type); break;
 				case FieldType::vec4_t: write_array.operator()<glm::vec4>(field.type); break;
 				case FieldType::quaternion_t: write_array.operator()<glm::quat>(field.type); break;
-				case FieldType::uuid_t: write_array.operator()<UUID>(field.type); break;
+				case FieldType::uid_t: write_array.operator()<UID>(field.type); break;
 				default: break;
 			}
 		} else {
@@ -766,8 +766,8 @@ NodeFile::NodeFile(std::span<const uint8_t> bytes) {
 				case FieldType::vec3_t: return reader.readValue<glm::vec3>();
 				case FieldType::vec4_t: return reader.readValue<glm::vec4>();
 				case FieldType::quaternion_t: return reader.readValue<glm::quat>();
-				case FieldType::uuid_t: {
-					UUID id;
+				case FieldType::uid_t: {
+					UID id;
 					id.value = reader.readValue<uint64_t>();
 					return id;
 				}
@@ -800,7 +800,7 @@ NodeFile::NodeFile(std::span<const uint8_t> bytes) {
 				case FieldType::vec3_t: field.value = read_array.operator()<glm::vec3>(field.type); break;
 				case FieldType::vec4_t: field.value = read_array.operator()<glm::vec4>(field.type); break;
 				case FieldType::quaternion_t: field.value = read_array.operator()<glm::quat>(field.type); break;
-				case FieldType::uuid_t: field.value = read_array.operator()<UUID>(field.type); break;
+				case FieldType::uid_t: field.value = read_array.operator()<UID>(field.type); break;
 				default: break;
 			}
 		} else {
@@ -919,7 +919,7 @@ auto NodeFile::writeType(FieldType type, bool is_array) -> std::string {
 		case FieldType::string_t: str = _detail::string_str; break;
 		case FieldType::float_t: str = _detail::float_str; break;
 		case FieldType::double_t: str = _detail::double_str; break;
-		case FieldType::uuid_t: str = _detail::uuid_str; break;
+		case FieldType::uid_t: str = _detail::uid_str; break;
 		case FieldType::vec2_t: str = _detail::vec2_str; break;
 		case FieldType::vec3_t: str = _detail::vec3_str; break;
 		case FieldType::vec4_t: str = _detail::vec4_str; break;

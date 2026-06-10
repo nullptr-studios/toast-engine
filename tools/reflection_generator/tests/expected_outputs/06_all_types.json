@@ -94,9 +94,9 @@
         "default": null
       },
       {
-        "name": "m_uuid_val",
-        "typename": "UUID",
-        "field_type": "uuid_t",
+        "name": "m_uid_val",
+        "typename": "UID",
+        "field_type": "uid_t",
         "is_array": false,
         "attributes": {},
         "default": null

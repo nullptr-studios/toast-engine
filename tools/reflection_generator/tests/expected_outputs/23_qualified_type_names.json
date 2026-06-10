@@ -36,10 +36,10 @@
       {
         "attributes": {},
         "default": null,
-        "field_type": "uuid_t",
+        "field_type": "uid_t",
         "is_array": false,
         "name": "m_id",
-        "typename": "toast::UUID"
+        "typename": "toast::UID"
       },
       {
         "attributes": {},

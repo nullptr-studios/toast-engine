@@ -269,8 +269,6 @@ fn render_connected(f: &mut Frame, app: &mut App, area: Rect) {
 
     // Keybinds
     let keybinds = if !app.detail_view_open {
-        Line::from(vec![
-        ])
         let s_style = if !app.scroll_locked {
             Style::default().fg(Color::Black).bg(Color::Yellow)
         } else {
@@ -281,6 +279,7 @@ fn render_connected(f: &mut Frame, app: &mut App, area: Rect) {
         } else {
             Style::default().fg(Color::Gray).bg(Color::DarkGray)
         };
+        Line::from(vec![
             Span::styled(" q ", Style::default().fg(Color::Gray).bg(Color::DarkGray)),
             Span::raw(" Quit |"),
             Span::styled(" v ", Style::default().fg(Color::Gray).bg(Color::DarkGray)),
@@ -297,6 +296,7 @@ fn render_connected(f: &mut Frame, app: &mut App, area: Rect) {
             Span::raw(" Move |"),
             Span::styled(" Shift+HJKL ", Style::default().fg(Color::Gray).bg(Color::DarkGray)),
             Span::raw(" Switch Focus "),
+        ])
     } else {
         Line::from(vec![
             Span::styled("DETAIL VIEW ACTIVE", Style::default().fg(Color::Black).bg(Color::Yellow).add_modifier(Modifier::BOLD)), Span::raw(" - "),

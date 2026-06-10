@@ -108,9 +108,9 @@ auto Engine::get() noexcept -> Engine* {
 void Engine::init() {
 	TracySetProgramName("ToastEngine");
 	tracy::SetThreadName("Main Thread");
-	
+
 	registerEngineTypes();
-	
+
 	m->asset_manager = std::make_unique<assets::AssetManager>();
 
 	// TODO: This should be moved into VulkanRenderer

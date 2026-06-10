@@ -35,30 +35,21 @@ macro(run_codegen)
     endforeach()
     message(STATUS "Protobuf sources generated")
 
-    # Reflection
+    message(STATUS "Building reflection_generator tool...")
+    find_program(CARGO cargo REQUIRED)
+    execute_process(
+        COMMAND ${CARGO} build
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tools/reflection_generator"
+        RESULT_VARIABLE _cargo_result
+        ERROR_VARIABLE  _cargo_error
+    )
+    if(NOT _cargo_result EQUAL 0)
+        message(FATAL_ERROR "Failed to build reflection_generator:\n${_cargo_error}")
+    endif()
     find_program(REFLECTION_GENERATOR reflection_generator
         PATHS "${CMAKE_SOURCE_DIR}/tools/reflection_generator/target/debug"
-              "${CMAKE_SOURCE_DIR}/tools/reflection_generator/target/release"
-        NO_DEFAULT_PATH
+        NO_DEFAULT_PATH REQUIRED
     )
-
-    if(NOT REFLECTION_GENERATOR)
-        message(STATUS "Building reflection_generator tool...")
-        find_program(CARGO cargo REQUIRED)
-        execute_process(
-            COMMAND ${CARGO} build
-            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tools/reflection_generator"
-            RESULT_VARIABLE _cargo_result
-            ERROR_VARIABLE  _cargo_error
-        )
-        if(NOT _cargo_result EQUAL 0)
-            message(FATAL_ERROR "Failed to build reflection_generator:\n${_cargo_error}")
-        endif()
-        find_program(REFLECTION_GENERATOR reflection_generator
-            PATHS "${CMAKE_SOURCE_DIR}/tools/reflection_generator/target/debug"
-            NO_DEFAULT_PATH REQUIRED
-        )
-    endif()
 
     message(STATUS "Using reflection_generator: ${REFLECTION_GENERATOR}")
     execute_process(

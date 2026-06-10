@@ -46,7 +46,7 @@ enum class FieldType : uint8_t {
 	float_t,
 	string_t,
 	double_t,
-	uuid_t,
+	uid_t,
 	vec2_t,
 	vec3_t,
 	vec4_t,
@@ -275,13 +275,32 @@ struct TOAST_API NodeInfo {
 template<class T>
 class Reflect;
 
-template<class Class, typename FieldType, FieldType Class::* MemberPtr>
+namespace _reflect_impl {
+// These templates allow accessing private members without changing their access modifier.
+// This avoids MSVC mangling mismatches caused by #define private public.
+template<typename Tag>
+struct Accessor {
+	inline static typename Tag::type member;
+};
+
+template<typename Tag, typename Tag::type Ptr>
+struct Robber {
+	Robber() { Accessor<Tag>::member = Ptr; }
+
+	static Robber instance;
+};
+
+template<typename Tag, typename Tag::type Ptr>
+Robber<Tag, Ptr> Robber<Tag, Ptr>::instance;
+}
+
+template<class Class, typename FieldType, typename Tag>
 struct FieldAccess {
-	static auto get(void* obj) -> std::any { return static_cast<Class*>(obj)->*MemberPtr; }
+	static auto get(void* obj) -> std::any { return static_cast<Class*>(obj)->*_reflect_impl::template Accessor<Tag>::member; }
 
 	static void set(void* obj, std::any value) {
 		if (auto* typed = std::any_cast<FieldType>(&value)) {
-			static_cast<Class*>(obj)->*MemberPtr = *typed;
+			static_cast<Class*>(obj)->*_reflect_impl::template Accessor<Tag>::member = *typed;
 		}
 	}
 };

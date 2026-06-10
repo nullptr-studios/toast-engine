@@ -8,16 +8,21 @@
 #include <array>
 #include <toast/world/reflect.hpp>
 
-#define private public
-#define protected public
 #include <{{ source_file }}>
-#undef private
-#undef protected
 
 namespace toast {
 namespace _reflect_impl {
+
+{% for f in all_fields_flat %}
+	struct {{ snake_name }}_{{ f.name }}_tag { typedef {{ f.typename }} {{ qualified_name }}::*type; };
+	template struct Robber<{{ snake_name }}_{{ f.name }}_tag, &{{ qualified_name }}::{{ f.member_name }}>;
+{% endfor %}
+
 {% for fn in active_tick_fns %}
-	inline void {{ snake_name }}_{{ fn.flag }}(void* obj) { static_cast<{{ qualified_name }}*>(obj)->{{ fn.method }}(); }
+	struct {{ snake_name }}_{{ fn.flag }}_tag { typedef void ({{ qualified_name }}::*type)(); };
+	template struct Robber<{{ snake_name }}_{{ fn.flag }}_tag, &{{ qualified_name }}::{{ fn.method }}>;
+
+	inline void {{ snake_name }}_{{ fn.flag }}(void* obj) { (static_cast<{{ qualified_name }}*>(obj)->*Accessor<{{ snake_name }}_{{ fn.flag }}_tag>::member)(); }
 {% endfor %}
 	inline {{ qualified_name }}* {{ snake_name }}_construct() { return new {{ qualified_name }}(); }
 	inline void {{ snake_name }}_destroy({{ qualified_name }}* obj) { delete obj; }
@@ -35,8 +40,8 @@ struct Reflect<{{ qualified_name }}> {
 			.value_type = FieldType::{{ f.field_type }},
 			.attributes = {{ '{{' }}{% for a in f.attrs_list %}{"{{ a.name }}", {{ '{' }}{% for v in a.args %}"{{ v }}"{% if not loop.last %}, {% endif %}{% endfor %}{{ '}' }}}{% if not loop.last %}, {% endif %}{% endfor %}{{ '}}' }},
 			.is_array   = {{ f.is_array | lower }},
-			.get        = &FieldAccess<{{ qualified_name }}, {{ f.typename }}, &{{ qualified_name }}::{{ f.member_name }}>::get,
-			.set        = &FieldAccess<{{ qualified_name }}, {{ f.typename }}, &{{ qualified_name }}::{{ f.member_name }}>::set,
+			.get        = &FieldAccess<{{ qualified_name }}, {{ f.typename }}, _reflect_impl::{{ snake_name }}_{{ f.name }}_tag>::get,
+			.set        = &FieldAccess<{{ qualified_name }}, {{ f.typename }}, _reflect_impl::{{ snake_name }}_{{ f.name }}_tag>::set,
 		}{% if not loop.last %},{% endif %}
 
 {% endfor %}

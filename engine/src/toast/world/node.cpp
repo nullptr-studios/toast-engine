@@ -4,8 +4,8 @@
 
 namespace toast {
 
-auto Node::uuid() const noexcept -> const UUID& {
-	return m_uuid;
+auto Node::uid() const noexcept -> const UID& {
+	return m_uid;
 }
 
 auto Node::name() const noexcept -> std::string_view {

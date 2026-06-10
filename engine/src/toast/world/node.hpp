@@ -9,10 +9,9 @@
  */
 
 #pragma once
-#include "reflect.hpp"
 #include "box.hpp"
 #include "control_box.hpp"
-#include "function_table.hpp"
+#include "reflect.hpp"
 
 #include <toast/events/listener.hpp>
 #include <toast/export.hpp>
@@ -72,11 +71,9 @@ public:
 	[[nodiscard]]
 	auto info() const -> const NodeInfo*;
 
-protected:
 	Node() = default;
 	virtual ~Node() = default;
 
-	// listener is lazily initialized
 	[[nodiscard]]
 	auto listener() noexcept -> event::Listener&;
 

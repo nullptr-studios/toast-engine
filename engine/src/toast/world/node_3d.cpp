@@ -1,6 +1,7 @@
 #include "node_3d.hpp"
 
 #include "world.hpp"
+
 #include <tracy/Tracy.hpp>
 
 namespace toast {
@@ -63,12 +64,14 @@ void Node3D::lookAt(glm::vec3 target, glm::vec3 up) {
 	glm::vec3 forward = target - pos();
 
 	// target is at the exact same position
-	if (glm::length(forward) < 0.0001f) return;
+	if (glm::length(forward) < 0.0001f) {
+		return;
+	}
 	forward = glm::normalize(forward);
 
 	// Calculate the right vector
 	if (glm::abs(glm::dot(forward, up)) > 0.999f) {
-		up = glm::vec3(1.0f, 0.0f, 0.0f); // Fallback if looking straight up or down
+		up = glm::vec3(1.0f, 0.0f, 0.0f);    // Fallback if looking straight up or down
 	}
 	glm::vec3 right = glm::normalize(glm::cross(forward, up));
 
@@ -89,10 +92,12 @@ void Node3D::lookAtZ(glm::vec3 target) {
 
 	// Calculate direction vector on the XY plane only
 	glm::vec3 forward = target - pos();
-	forward.z = 0.0f; // Flatten the Z axis
+	forward.z = 0.0f;    // Flatten the Z axis
 
 	// target is directly above or below
-	if (glm::length(forward) < 0.0001f) return;
+	if (glm::length(forward) < 0.0001f) {
+		return;
+	}
 	forward = glm::normalize(forward);
 
 	glm::vec3 worldUp = glm::vec3(0.0f, 0.0f, 1.0f);

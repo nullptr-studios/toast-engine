@@ -16,8 +16,9 @@
 
 namespace toast {
 
-class [[ToastNode]] Node3D : public Node {
+class [[ToastNode]] TOAST_API Node3D : public Node {
 	friend class World;
+
 public:
 	// clang-format off
 	void pos(glm::vec3 pos);
@@ -50,11 +51,10 @@ public:
 
 protected:
 	[[nodiscard]]
-	auto getTransform() noexcept -> const glm::mat4 &;
+	auto getTransform() noexcept -> const glm::mat4&;
 
 	[[nodiscard]]
 	auto getWorldTransform() noexcept -> const glm::mat4&;
-
 
 private:
 	bool m_dirty_local = true;
@@ -72,6 +72,7 @@ private:
 	glm::mat4 m_world_transform;
 
 	void recalculateTransforms();
+
 	void init();
 };
 

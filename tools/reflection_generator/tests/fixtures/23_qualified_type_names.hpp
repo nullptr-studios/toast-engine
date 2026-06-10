@@ -5,7 +5,7 @@ class [[ToastNode]] QualifiedNode {
 public:
     [[Serialize]] std::string m_str;
     [[Serialize]] glm::vec3 m_pos;
-    [[Serialize]] toast::UUID m_id;
+    [[Serialize]] toast::UID m_id;
     [[Serialize]] ::global::Type m_global;
 };
 }

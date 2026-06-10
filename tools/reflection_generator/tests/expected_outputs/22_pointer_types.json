@@ -20,7 +20,7 @@
       {
         "attributes": {},
         "default": null,
-        "field_type": "uuid_t",
+        "field_type": "uid_t",
         "is_array": false,
         "name": "m_texture",
         "typename": "Box<Texture>"
