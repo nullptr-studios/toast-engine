@@ -8,6 +8,8 @@
 #include <toast/uid.hpp>
 #include <toast/world/node.hpp>
 
+using namespace toast;
+
 namespace {
 /**
  * Gets the first value and modifies the view so it contains the rest of them
@@ -73,7 +75,7 @@ struct BinaryReader {
 	size_t offset = 0;
 
 	template<typename T>
-	T readValue() {
+	auto readValue() -> T {
 		if (offset + sizeof(T) > data.size()) {
 			return T {};
 		}
@@ -83,7 +85,7 @@ struct BinaryReader {
 		return value;
 	}
 
-	std::string readString() {
+	auto readString() -> std::string {
 		uint32_t length = readValue<uint32_t>();
 		if (offset + length > data.size()) {
 			return "";
@@ -96,7 +98,7 @@ struct BinaryReader {
 
 }
 
-namespace toast {
+namespace assets {
 NodeFile::NodeFile(std::istream& file) {
 	std::vector<std::string> lines;
 	std::string line;

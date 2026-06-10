@@ -7,6 +7,8 @@
  */
 
 #pragma once
+#include "assets.hpp"
+
 #include <any>
 #include <array>
 #include <cstdint>
@@ -18,7 +20,7 @@
 #include <toast/world/reflect.hpp>
 #include <vector>
 
-namespace toast {
+namespace assets {
 class Node;
 
 namespace _detail {
@@ -43,31 +45,58 @@ struct NodeFileBinaryHeader {
 };
 }
 
-class NodeFile {
+class NodeFile : Asset{
 public:
 	NodeFile(std::istream& file);
 	NodeFile(std::span<const uint8_t> bytes);
 	NodeFile(const Node& node);
+
+	[[nodiscard]]
+	auto type() const -> std::string_view override {
+		return "node";
+	}
 
 	auto toFile() -> std::string;
 	auto toBinary() -> std::vector<uint8_t>;
 
 	struct Field {
 		std::string name;
-		FieldType type;
+		toast::FieldType type;
 		bool is_array;
 		std::any value;
+
+		template<typename T>
+		T as() const {
+			return std::any_cast<T>(value);
+		}
 	};
 
 	struct Subgroup {
 		std::string name;
 		std::vector<Field> fields;
+
+		auto find(std::string_view name) const -> std::optional<Field> {
+			auto it = std::ranges::find_if(fields, [name](auto field) { return field.name == name; });
+			if (it != fields.end()) return *it;
+			return {};
+		}
 	};
 
 	struct Group {
 		std::string name;
 		std::vector<Field> fields;
 		std::vector<Subgroup> subgroups;
+
+		auto find(std::string_view name) const -> std::optional<Field> {
+			auto it = std::ranges::find_if(fields, [&name](auto field) { return field.name == name; });
+			if (it != fields.end()) return *it;
+			for (auto& g : subgroups) {
+				auto g_it = g.find(name);
+				if (g_it.has_value()) return g_it;
+			}
+
+			return {};
+		}
 	};
 
 	struct BasicNode {
@@ -76,6 +105,17 @@ public:
 
 		std::vector<Field> fields;
 		std::vector<Group> groups;
+
+		auto find(std::string_view name) const -> std::optional<Field> {
+			auto it = std::ranges::find_if(fields, [&name](auto field) { return field.name == name; });
+			if (it != fields.end()) return *it;
+			for (auto& g : groups) {
+				auto g_it = g.find(name);
+				if (g_it.has_value()) return g_it;
+			}
+
+			return {};
+		}
 	};
 
 	std::vector<Field> global_fields;
@@ -83,8 +123,8 @@ public:
 
 private:
 	auto parseField(std::string_view line) -> std::optional<Field>;
-	auto parseType(std::string_view type, bool& is_array) -> std::optional<FieldType>;
-	auto parseValue(FieldType type, std::string_view value, bool& is_array) -> std::optional<std::any>;
+	auto parseType(std::string_view type, bool& is_array) -> std::optional<toast::FieldType>;
+	auto parseValue(toast::FieldType type, std::string_view value, bool& is_array) -> std::optional<std::any>;
 
 	auto parseNodeChunk(std::span<const std::string> lines) -> std::optional<BasicNode>;
 	auto parseGroupChunk(std::span<const std::string> lines) -> std::optional<Group>;
@@ -94,7 +134,7 @@ private:
 	void writeGroup(const Group& group, std::stringstream& ss);
 	void writeSubgroup(const Subgroup& subgroup, std::stringstream& ss);
 	void writeField(const Field& field, std::stringstream& ss, std::string offset = "");
-	auto writeType(FieldType type, bool is_array = false) -> std::string;
+	auto writeType(toast::FieldType type, bool is_array = false) -> std::string;
 };
 
 }

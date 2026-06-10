@@ -12,11 +12,15 @@
 
 #include <format>
 
+namespace assets {
+class NodeFile;
+}
+
 namespace toast {
 
 struct TOAST_API UID {
 	friend class World;
-	friend class NodeFile;
+	friend class assets::NodeFile;
 
 	UID();
 

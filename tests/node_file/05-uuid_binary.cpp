@@ -1,4 +1,4 @@
-#include "toast/resources/node_file.hpp"
+#include "../../engine/src/toast/assets/node_file.hpp"
 #include <toast/uid.hpp>
 #include "test_registry.hpp"
 

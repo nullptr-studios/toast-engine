@@ -201,7 +201,6 @@ struct TOAST_API NodeInfo {
 		return nullptr;
 	}
 
-	// RTTI: is this type the same as, or derived from, `other`?
 	[[nodiscard]]
 	auto isA(const NodeInfo* other) const -> bool {
 		for (const NodeInfo* cur = this; cur; cur = cur->base_type) {
@@ -212,8 +211,6 @@ struct TOAST_API NodeInfo {
 		return false;
 	}
 
-	// True if this type or any base registers any tick function overlapping `mask`.
-	// Accepts a single flag (e.g. TickFunctionList::tick) or a mask (e.g. tick_mask).
 	[[nodiscard]]
 	auto hasFunction(TickFunctionList mask) const -> bool {
 		for (const NodeInfo* cur = this; cur; cur = cur->base_type) {
@@ -276,8 +273,6 @@ template<class T>
 class Reflect;
 
 namespace _reflect_impl {
-// These templates allow accessing private members without changing their access modifier.
-// This avoids MSVC mangling mismatches caused by #define private public.
 template<typename Tag>
 struct Accessor {
 	inline static typename Tag::type member;
