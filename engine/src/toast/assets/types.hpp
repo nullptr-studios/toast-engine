@@ -61,12 +61,16 @@ public:
 	auto hasValue() const noexcept -> bool;
 
 	[[nodiscard]]
+	auto get() noexcept -> Asset&;
+
+	[[nodiscard]]
 	auto get() const noexcept -> const Asset&;
 
 	[[nodiscard]]
-	auto operator->() const noexcept -> const Asset* {
-		return m_asset;
-	}
+	auto operator->() noexcept -> Asset* ;
+
+	[[nodiscard]]
+	auto operator->() const noexcept -> const Asset* ;
 
 protected:
 	Asset* m_asset = nullptr;
@@ -81,13 +85,28 @@ public:
 	using AssetHandleBase::AssetHandleBase;
 
 	[[nodiscard]]
+	auto operator->() noexcept -> T* {
+		return static_cast<T*>(this->m_asset);
+	}
+
+	[[nodiscard]]
 	auto operator->() const noexcept -> const T* {
 		return static_cast<const T*>(this->m_asset);
 	}
 
 	[[nodiscard]]
+	auto operator*() noexcept -> T& {
+		return *static_cast<T*>(this->m_asset);
+	}
+
+	[[nodiscard]]
 	auto operator*() const noexcept -> const T& {
 		return *static_cast<const T*>(this->m_asset);
+	}
+
+	[[nodiscard]]
+	auto get() noexcept -> T& {
+		return *static_cast<T*>(this->m_asset);
 	}
 
 	[[nodiscard]]

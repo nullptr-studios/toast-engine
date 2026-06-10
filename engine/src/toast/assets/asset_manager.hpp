@@ -14,6 +14,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -47,11 +48,13 @@ public:
 	void clearUnusedAssets();
 
 	static void setPaths(Paths&& paths);
+	static auto resolveURI(std::string_view uri) -> std::optional<toast::UID>;
 
 private:
 	static inline AssetManager* instance = nullptr;
 
 	event::Listener listener;
+	std::mutex mutex;
 	std::unordered_map<uint64_t, AssetInfo> manifest;
 	std::unordered_map<uint64_t, std::unique_ptr<Asset>> cache;
 
@@ -63,7 +66,6 @@ private:
 
 	auto resolveVirtualPath(std::string_view virtual_path) -> std::optional<std::filesystem::path>;
 	auto openFile(const std::filesystem::path& path) -> std::optional<std::vector<uint8_t>>;
-	auto resolveURI(std::string_view uri) -> std::optional<toast::UID>;
 
 	static constexpr std::string_view assets_uri = "assets://";
 	static constexpr std::string_view artwork_uri = "artwork://";

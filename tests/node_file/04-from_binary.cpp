@@ -9,6 +9,7 @@
 #include <iostream>
 
 using namespace toast;
+using namespace assets;
 
 TOAST_TEST_NAMED("node_file", "node_file/04-from_binary", test_node_file_04_from_binary) {
 	std::ifstream in("sample.tbnode", std::ios::binary | std::ios::ate);

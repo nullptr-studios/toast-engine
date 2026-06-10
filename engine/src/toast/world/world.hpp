@@ -17,8 +17,10 @@
 #include <concepts>
 #include <future>
 #include <iterator>
+#include <mutex>
 #include <queue>
 #include <stack>
+#include <toast/assets/node_file.hpp>
 #include <toast/events/listener.hpp>
 #include <toast/log.hpp>
 #include <type_traits>
@@ -79,7 +81,15 @@ struct TickSchedule {
 class World {
 public:
 	World();
-	~World() = default;
+
+	// Keep inline so tests can destroy world
+	~World() {
+		for (auto& f : m.load_futures) {
+			if (f.valid()) {
+				f.wait();
+			}
+		}
+	}
 
 	void tick();
 
@@ -105,6 +115,9 @@ public:
 	[[deprecated("This was never a function meant to be used")]]
 	static void dispatchNodeCreation(int count);
 
+	static void loadNode(UID uid);
+	static void loadNode(std::string_view uri);
+
 	static void markNode3DDependantsDirty(const Box<Node>& node) noexcept;
 	[[nodiscard]]
 	auto dependencyGraphGraphviz() const -> std::string;
@@ -113,7 +126,7 @@ private:
 	inline static World* instance = nullptr;
 
 	/// Creates a node and stores it in memory
-	auto nodeAllocation() noexcept -> Box<Node>;
+	auto nodeAllocation(std::optional<assets::NodeFile::BasicNode> node_data = std::nullopt) noexcept -> Box<Node>;
 
 	/// Recalculates the dependency graph and updates the tick_schedule
 	void computeDependencyGraph();
@@ -138,9 +151,15 @@ private:
 
 	auto moveToChild(Node& node, Node& parent) -> Box<Node>;
 
+	auto buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::NodeFile>& file) -> Box<Node>;
+
+	void drainLoadQueue();
+
 	struct {
 		event::Listener listener;
-		std::thread load_thread;
+		std::mutex nodes_mutex;
+		std::mutex load_mutex;
+		std::vector<std::future<void>> load_futures;
 		std::unordered_set<_detail::ControlBox> nodes;
 		NodeRegistry node_registry;
 	} m;

@@ -59,8 +59,20 @@ auto AssetHandleBase::hasValue() const noexcept -> bool {
 	return m_asset != nullptr;
 }
 
+auto AssetHandleBase::get() noexcept -> Asset& {
+	return *m_asset;
+}
+
 auto AssetHandleBase::get() const noexcept -> const Asset& {
 	return *m_asset;
+}
+
+auto AssetHandleBase::operator->() noexcept -> Asset* {
+	return m_asset;
+}
+
+auto AssetHandleBase::operator->() const noexcept -> const Asset* {
+	return m_asset;
 }
 
 auto Texture::get() const noexcept -> const std::vector<uint8_t>& {

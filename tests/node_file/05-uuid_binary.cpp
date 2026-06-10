@@ -8,10 +8,11 @@
 #include <vector>
 
 using namespace toast;
+using namespace assets;
 
 // Regression test: uid_t fields must survive a binary round-trip (the binary
 // write_single/read_single and array paths previously had no uid_t case).
-TOAST_TEST_NAMED("node_file", "node_file/05-uid_binary", test_node_file_05_uid_binary) {
+TOAST_TEST_NAMED("node_file", "node_file/05-uuid_binary", test_node_file_05_uid_binary) {
 	const char* text =
 	    "[node type=Foo]\n"
 	    "my_ref @uid = ABCDEFGHIJK\n"

@@ -87,7 +87,7 @@ void Node::inheritedEnabled(bool value) noexcept {
 void Node::changeNodeState(NodeState state) noexcept {
 	m_state = state;
 	for (auto& c : m_children) {
-		c->m_state = state;
+		c->changeNodeState(state);
 	}
 }
 
@@ -147,7 +147,7 @@ void Node::propagateCallTick(const NodeInfo* info, TickFunctionList func_type) n
 	callTick(info, func_type);
 
 	for (auto& child : m_children) {
-		child->propagateCallTick(info, func_type);
+		child->propagateCallTick(child->info(), func_type);
 	}
 }
 

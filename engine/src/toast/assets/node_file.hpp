@@ -20,8 +20,11 @@
 #include <toast/world/reflect.hpp>
 #include <vector>
 
-namespace assets {
+namespace toast {
 class Node;
+}
+
+namespace assets {
 
 namespace _detail {
 constexpr std::string_view array_str = "array_";
@@ -45,11 +48,11 @@ struct NodeFileBinaryHeader {
 };
 }
 
-class NodeFile : Asset{
+class NodeFile : public Asset {
 public:
 	NodeFile(std::istream& file);
 	NodeFile(std::span<const uint8_t> bytes);
-	NodeFile(const Node& node);
+	NodeFile(const toast::Node& node);
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
@@ -77,7 +80,9 @@ public:
 
 		auto find(std::string_view name) const -> std::optional<Field> {
 			auto it = std::ranges::find_if(fields, [name](auto field) { return field.name == name; });
-			if (it != fields.end()) return *it;
+			if (it != fields.end()) {
+				return *it;
+			}
 			return {};
 		}
 	};
@@ -89,10 +94,14 @@ public:
 
 		auto find(std::string_view name) const -> std::optional<Field> {
 			auto it = std::ranges::find_if(fields, [&name](auto field) { return field.name == name; });
-			if (it != fields.end()) return *it;
+			if (it != fields.end()) {
+				return *it;
+			}
 			for (auto& g : subgroups) {
 				auto g_it = g.find(name);
-				if (g_it.has_value()) return g_it;
+				if (g_it.has_value()) {
+					return g_it;
+				}
 			}
 
 			return {};
@@ -108,10 +117,14 @@ public:
 
 		auto find(std::string_view name) const -> std::optional<Field> {
 			auto it = std::ranges::find_if(fields, [&name](auto field) { return field.name == name; });
-			if (it != fields.end()) return *it;
+			if (it != fields.end()) {
+				return *it;
+			}
 			for (auto& g : groups) {
 				auto g_it = g.find(name);
-				if (g_it.has_value()) return g_it;
+				if (g_it.has_value()) {
+					return g_it;
+				}
 			}
 
 			return {};
@@ -129,6 +142,8 @@ private:
 	auto parseNodeChunk(std::span<const std::string> lines) -> std::optional<BasicNode>;
 	auto parseGroupChunk(std::span<const std::string> lines) -> std::optional<Group>;
 	auto parseSubgroupChunk(std::span<const std::string> lines) -> std::optional<Subgroup>;
+
+	void serializeNode(const toast::Node& node, bool is_root);
 
 	void writeNode(const BasicNode& node, std::stringstream& ss);
 	void writeGroup(const Group& group, std::stringstream& ss);

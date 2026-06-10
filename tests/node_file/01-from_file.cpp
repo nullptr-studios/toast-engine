@@ -6,6 +6,7 @@
 #include <sstream>
 
 using namespace toast;
+using namespace assets;
 
 TOAST_TEST_NAMED("node_file", "node_file/01-from_file", test_node_file_01_from_file) {
 	std::stringstream ss(sample_text);

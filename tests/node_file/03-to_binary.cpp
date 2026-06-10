@@ -8,6 +8,7 @@
 #include <fstream>
 
 using namespace toast;
+using namespace assets;
 
 TOAST_TEST_NAMED("node_file", "node_file/03-to_binary", test_node_file_03_to_binary) {
 	std::stringstream ss(sample_text);

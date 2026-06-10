@@ -21,6 +21,7 @@ namespace assets {
 // Public load functions
 auto TOAST_API load(toast::UID uid) -> AssetHandleBase;
 auto TOAST_API load(std::string_view uri) -> AssetHandleBase;
+auto TOAST_API resolveURI(std::string_view uri) -> std::optional<toast::UID>;
 
 /**
  * @brief Type-safe load helper
@@ -28,13 +29,13 @@ auto TOAST_API load(std::string_view uri) -> AssetHandleBase;
 template<typename T>
 auto load(toast::UID uid) -> AssetHandle<T> {
 	auto base = load(uid);
-	return AssetHandle<T>(base.hasValue() ? const_cast<Asset*>(&base.get()) : nullptr);
+	return AssetHandle<T>(base.hasValue() ? &base.get() : nullptr);
 }
 
 template<typename T>
 auto load(std::string_view uri) -> AssetHandle<T> {
 	auto base = load(uri);
-	return AssetHandle<T>(base.hasValue() ? const_cast<Asset*>(&base.get()) : nullptr);
+	return AssetHandle<T>(base.hasValue() ? &base.get() : nullptr);
 }
 
 }

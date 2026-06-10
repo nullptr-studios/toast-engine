@@ -850,37 +850,55 @@ NodeFile::NodeFile(std::span<const uint8_t> bytes) {
 	}
 }
 
-NodeFile::NodeFile(const Node& node) {
+NodeFile::NodeFile(const toast::Node& node) {
+	// The node passed in becomes the file's root
+	// It is written first and it is the only one that wont have a "parent" property
+	serializeNode(node, true);
+}
+
+void NodeFile::serializeNode(const toast::Node& node, bool is_root) {
 	const auto* node_info = node.info();
 	if (!node_info) {
 		TOAST_ERROR("ResourceManager", "Cannot serialize node '{}': no reflection info attached", node.name());
 		return;
 	}
 
-	BasicNode root = {
+	BasicNode out = {
 	  .name = std::string {node.name()},
 	  .type = std::string {node_info->type},
 	};
 
-	// FieldInfo::get takes void*; the getter only reads, so the const_cast is safe.
-	auto make_field = [&node](const FieldInfo* f_info) -> Field {
+	auto make_field = [&node, is_root](const FieldInfo* f_info) -> std::optional<Field> {
+		std::any value = f_info->get(const_cast<toast::Node*>(&node));
+
+		// Node references are stored as Box<Node> in memory but serialized as UIDs
+		if (auto* box = std::any_cast<Box<toast::Node>>(&value)) {
+			if (is_root && f_info->name == "Parent") {
+				return std::nullopt;    // the file root is parentless by definition
+			}
+			if (not box->exists()) {
+				return std::nullopt;
+			}
+			value = (*box)->uid();
+		}
+
 		return Field {
 		  .name = std::string {f_info->name},
 		  .type = f_info->value_type,
 		  .is_array = f_info->is_array,
-		  .value = f_info->get(const_cast<Node*>(&node)),
+		  .value = std::move(value),
 		};
 	};
 
 	// Groups are matched by name so a group split across base/derived types merges cleanly.
-	auto find_or_add_group = [&root](std::string_view name) -> Group& {
-		for (auto& g : root.groups) {
+	auto find_or_add_group = [&out](std::string_view name) -> Group& {
+		for (auto& g : out.groups) {
 			if (g.name == name) {
 				return g;
 			}
 		}
-		root.groups.push_back(Group {.name = std::string {name}});
-		return root.groups.back();
+		out.groups.push_back(Group {.name = std::string {name}});
+		return out.groups.back();
 	};
 	auto find_or_add_subgroup = [](Group& group, std::string_view name) -> Subgroup& {
 		for (auto& s : group.subgroups) {
@@ -894,23 +912,33 @@ NodeFile::NodeFile(const Node& node) {
 
 	node_info->forEachBaseType([&](const NodeInfo& info) {
 		for (const FieldInfo* f_info : info.fields) {
-			root.fields.push_back(make_field(f_info));
+			if (auto field = make_field(f_info)) {
+				out.fields.push_back(std::move(*field));
+			}
 		}
 		for (const GroupInfo& group : info.groups) {
 			Group& out_group = find_or_add_group(group.name);
 			for (const FieldInfo* f_info : group.fields) {
-				out_group.fields.push_back(make_field(f_info));
+				if (auto field = make_field(f_info)) {
+					out_group.fields.push_back(std::move(*field));
+				}
 			}
 			for (const SubgroupInfo& subgroup : group.subgroups) {
 				Subgroup& out_subgroup = find_or_add_subgroup(out_group, subgroup.name);
 				for (const FieldInfo* f_info : subgroup.fields) {
-					out_subgroup.fields.push_back(make_field(f_info));
+					if (auto field = make_field(f_info)) {
+						out_subgroup.fields.push_back(std::move(*field));
+					}
 				}
 			}
 		}
 	});
 
-	nodes.push_back(std::move(root));
+	nodes.push_back(std::move(out));
+
+	for (const auto& child : node.m_children) {
+		serializeNode(*child, false);
+	}
 }
 
 auto NodeFile::writeType(FieldType type, bool is_array) -> std::string {

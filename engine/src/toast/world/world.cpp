@@ -3,7 +3,9 @@
 #include "node_3d.hpp"
 #include "world_test_access.hpp"
 
+#include <chrono>
 #include <sstream>
+#include <toast/assets/node_file.hpp>
 #include <toast/thread_pool.hpp>
 #include <utility>
 
@@ -81,17 +83,62 @@ World::World() {
 	instance = this;
 }
 
-auto World::nodeAllocation() noexcept -> Box<Node> {
+auto World::nodeAllocation(std::optional<assets::NodeFile::BasicNode> node_data) noexcept -> Box<Node> {
 	ZoneScoped;
-	auto [it, result] = m.nodes.emplace(new Node());
-	TOAST_ASSERT(result, "World", "Node allocation failed");
-	// Attach reflection metadata so info()/serialization/RTTI work on this instance.
-	// Runtime-created nodes are plain Nodes today; typed creation will pass its own NodeInfo.
-	it->node->m_info = m.node_registry.reflect("toast::Node");
-	return it->node;
+
+	// Identify the type and get reflection info
+	std::string type = node_data.has_value() ? node_data->type : "toast::Node";
+	const NodeInfo* info = m.node_registry.reflect(type);
+
+#ifndef NDEBUG
+	if (!info) {
+		TOAST_WARN("World", "Reflection information for type {} not found. Falling back to toast::Node", type);
+		info = m.node_registry.reflect("toast::Node");
+	}
+#endif
+
+	// Node allocation
+#ifdef NDEBUG
+	Node* raw_node = info->construct();
+#else
+	Node* raw_node = (info && info->construct) ? info->construct() : new Node();
+#endif
+
+	{
+		std::scoped_lock lock(m.nodes_mutex);
+		auto [it, result] = m.nodes.emplace(raw_node);
+		TOAST_ASSERT(result, "World", "Node allocation failed");
+	}
+	raw_node->m_info = info;    // attach reflection data
+
+	if (node_data.has_value()) {
+		raw_node->name(node_data->name);
+
+		if (info) {
+			for (const auto& f : info->all_fields) {
+				auto f_data = node_data->find(f.name);
+				if (not f_data.has_value()) {
+					continue;
+				}
+
+#ifndef NDEBUG
+				if (not f.set) {
+					TOAST_WARN("World", "No valid set function found for {}", f.name);
+					continue;
+				}
+#endif
+
+				f.set(raw_node, f_data->value);
+			}
+		}
+	}
+
+	return raw_node->box();
 }
 
 void World::tick() {
+	drainLoadQueue();
+
 	for (const auto& wave : tick_schedule.tick) {
 		std::vector<std::future<void>> futures;
 		futures.reserve(wave.size());
@@ -101,6 +148,7 @@ void World::tick() {
 				if (std::holds_alternative<Box<Node>>(n)) {
 					auto node = std::get<Box<Node>>(n);
 					node->callTick(node->info(), TickFunctionList::tick);
+					return;
 				}
 
 				auto cluster = std::get<NodeCluster>(n);
@@ -211,6 +259,91 @@ void World::dispatchNodeCreation(int count) {
 	// TODO: Move this to cached_list
 }
 
+void World::loadNode(UID uid) {
+	// Load stages:
+	//		1: get the node_file
+	//		2: dispatch 1:
+	//				- control block allocation
+	//				- deserialize
+	//				- preInit()
+	//		3: data structure building:
+	//				- build tree structure
+	//		4: dispatch 2:
+	//				- init()
+
+	auto future = std::async(std::launch::async, [uid]() {
+		auto node_file = assets::load<assets::NodeFile>(uid);
+		if (not node_file.hasValue()) {
+			TOAST_ERROR("World", "Couldn't load Node {}", uid);
+			return;
+		}
+
+		// parallel allocation + deserialization
+		std::vector<std::future<Box<Node>>> alloc_futures;
+		std::vector<Box<Node>> nodes;
+		size_t size = node_file->nodes.size();
+		alloc_futures.reserve(size);
+		nodes.reserve(size);
+		for (const auto& node : node_file->nodes) {
+			alloc_futures.emplace_back(ThreadPool::push([node_data = node]() {
+				Box node = instance->nodeAllocation(node_data);
+				node->callTick(node->info(), TickFunctionList::load);
+				node->callTick(node->info(), TickFunctionList::pre_init);    // TODO: deprecate pre_init
+				node->m_state = NodeState::loading;
+				return node;
+			}));
+		}
+
+		for (auto& f : alloc_futures) {
+			nodes.emplace_back(f.get());
+		}
+
+		Box<Node> root = instance->buildTree(std::move(nodes), node_file);
+
+		root->propagateCallTick(root->info(), TickFunctionList::init);
+
+		std::scoped_lock lock(instance->m.load_mutex);
+		instance->nodes.load_queue.emplace_back(std::move(root));
+	});
+
+	std::scoped_lock lock(instance->m.load_mutex);
+	std::erase_if(instance->m.load_futures, [](std::future<void>& f) {
+		return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+	});
+	instance->m.load_futures.emplace_back(std::move(future));
+}
+
+void World::loadNode(std::string_view uri) {
+	// just reroute to the actual loadNode() implementation
+	auto id = assets::resolveURI(uri);
+
+#ifndef NDEBUG
+	if (not id.has_value()) {
+		TOAST_WARN("World", "Couldn't load Node {}", uri);
+		return;
+	}
+#endif
+
+	loadNode(*id);
+}
+
+void World::drainLoadQueue() {
+	std::vector<Box<Node>> loaded;
+	{
+		std::scoped_lock lock(m.load_mutex);
+		if (nodes.load_queue.empty()) {
+			return;
+		}
+		std::swap(loaded, nodes.load_queue);
+	}
+
+	// Freshly loaded trees go to the cached list and are ready to be activated
+	for (auto& root : loaded) {
+		root->changeNodeState(NodeState::cached);
+		nodes.cached.emplace_back(std::move(root));
+	}
+}
+
 void World::markNode3DDependantsDirty(const Box<Node>& node) noexcept {
 	if (!instance) {
 		return;
@@ -227,21 +360,27 @@ void World::markNode3DDependantsDirty(const Box<Node>& node) noexcept {
 }
 
 void World::computeDependencyGraph() {
-	// Guarantee every existing node exists in the subgraph
-	for (const auto& node : m.nodes) {
-		dependency_graph.connections[node.node->box()];
-		dependency_graph.inverse_connections[node.node->box()];
-	}
+	std::vector<std::vector<Box<Node>>> subgraphs;
+	{
+		// Loader threads insert into m.nodes concurrently
+		std::scoped_lock lock(m.nodes_mutex);
 
-	auto subgraphs = subgraphSeparation();
+		// Guarantee every existing node exists in the subgraph
+		for (const auto& node : m.nodes) {
+			dependency_graph.connections[node.node->box()];
+			dependency_graph.inverse_connections[node.node->box()];
+		}
+
+		subgraphs = subgraphSeparation();
+	}
 
 	// We are gonna remove nodes that will not be able to get ticked because:
 	//		1) they don't have any tick functions
-	//		2) they are in the NodeState::cached
+	//		2) they are not in an active state (cached, mid-load, etc. don't tick)
 	for (auto& g : subgraphs) {
 		std::erase_if(g, [](const auto& n) { return not n->info() || not n->info()->hasFunction(TickFunctionList::tick_mask); });
 
-		std::erase_if(g, [](const auto& n) { return n->m_state == NodeState::cached; });
+		std::erase_if(g, [](const auto& n) { return n->m_state != NodeState::root && n->m_state != NodeState::global; });
 	}
 
 	// Drop subgraphs that became entirely empty
@@ -654,6 +793,8 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 		node.m_type = NodeType::root;
 	}
 
+	nodes.cached.emplace_back(node.box());
+
 	computeDependencyGraph();
 	return node.box();
 }
@@ -731,6 +872,61 @@ auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
 	node.m_parent = parent;
 
 	return node.box();
+}
+
+auto World::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::NodeFile>& file) -> Box<Node> {
+	std::unordered_map<uint64_t, Box<Node>> uid_map;
+	uid_map.reserve(nodes.size());
+	for (auto& node : nodes) {
+		uid_map[node->uid().data()] = node;
+	}
+
+	Box<Node> root;
+
+	// NodeFile serialization guarantees exactly one rootless node, written first.
+	// nodes[i] pairs with file->nodes[i]: the alloc futures are collected in
+	// submission order, which is the file order.
+	for (size_t i = 0; i < nodes.size(); ++i) {
+		auto& node = nodes[i];
+		const auto& data = file->nodes[i];
+
+		auto parent_field = data.find("Parent");
+		bool has_parent = false;
+
+		if (parent_field.has_value()) {
+			try {
+				UID parent_uid = parent_field->as<UID>();
+
+				auto it = uid_map.find(parent_uid.data());
+				if (it != uid_map.end()) {
+					node->m_parent = it->second;
+					it->second->m_children.emplace_back(node);
+					has_parent = true;
+				}
+			} catch (const std::bad_any_cast&) {
+				TOAST_WARN("World", "Cast to UID of field Parent in {} failed, treating as Root", data.name);
+			}
+		}
+
+		node->m_type = has_parent ? NodeType::child : NodeType::root;
+
+		if (not has_parent) {
+#ifndef NDEBUG
+			if (root.exists()) {
+				TOAST_WARN("World", "Multiple rootless nodes in NodeFile ({} and {}), keeping the last one", root->name(), data.name);
+			}
+#endif
+			root = node;
+		}
+	}
+
+#ifndef NDEBUG
+	if (not root.exists()) {
+		TOAST_ERROR("World", "NodeFile contains no rootless node, the loaded tree has no root");
+	}
+#endif
+
+	return root;
 }
 
 auto World::dependencyGraphGraphviz() const -> std::string {

@@ -1,5 +1,7 @@
 #include "asset_manager.hpp"
 
+#include "node_file.hpp"
+
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <toast/log.hpp>
@@ -22,6 +24,8 @@ auto AssetManager::get() noexcept -> AssetManager& {
 
 auto AssetManager::load(toast::UID uid) -> Asset* {
 	uint64_t id = uid.data();
+
+	std::lock_guard lock(mutex);
 
 	// Check cache
 	if (auto it = cache.find(id); it != cache.end()) {
@@ -59,6 +63,8 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 			TOAST_ERROR("AssetManager", "Failed to parse TOML asset {}: {}", info.path, err.description());
 			return nullptr;
 		}
+	} else if (info.type == "node") {
+		asset = std::make_unique<NodeFile>(std::span<const uint8_t>(*raw_data));
 	} else {
 		TOAST_ERROR("AssetManager", "Unknown asset type '{}' for asset {}", info.type, info.path);
 		return nullptr;
@@ -72,7 +78,11 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 }
 
 auto AssetManager::load(std::string_view uri) -> Asset* {
-	auto uid = resolveURI(uri);
+	std::optional<toast::UID> uid;
+	{
+		std::lock_guard lock(mutex);
+		uid = resolveURI(uri);
+	}
 	if (!uid) {
 		TOAST_ERROR("AssetManager", "Could not resolve URI to UID: {}", uri);
 		return nullptr;
@@ -81,6 +91,7 @@ auto AssetManager::load(std::string_view uri) -> Asset* {
 }
 
 void AssetManager::reloadManifest() {
+	std::lock_guard lock(mutex);
 	manifest.clear();
 
 	auto db_path = resolveVirtualPath("cache://database.json");
@@ -110,6 +121,7 @@ void AssetManager::reloadManifest() {
 }
 
 void AssetManager::clearUnusedAssets() {
+	std::lock_guard lock(mutex);
 	size_t initial_count = cache.size();
 	std::erase_if(cache, [](const auto& item) { return item.second->refCount() == 0; });
 	size_t cleared = initial_count - cache.size();
@@ -165,7 +177,7 @@ auto AssetManager::openFile(const std::filesystem::path& path) -> std::optional<
 }
 
 auto AssetManager::resolveURI(std::string_view uri) -> std::optional<toast::UID> {
-	for (const auto& [uid_val, info] : manifest) {
+	for (const auto& [uid_val, info] : instance->manifest) {
 		if (info.path == uri) {
 			return toast::UID(uid_val);
 		}
@@ -182,4 +194,7 @@ auto load(std::string_view uri) -> AssetHandleBase {
 	return AssetHandleBase(AssetManager::get().load(uri));
 }
 
+auto resolveURI(std::string_view uri) -> std::optional<toast::UID> {
+	return AssetManager::resolveURI(uri);
+}
 }
