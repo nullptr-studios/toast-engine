@@ -22,6 +22,16 @@ runs:
         echo "root=${root}" >> "${GITHUB_OUTPUT}"
         echo "toolchain_file=${root}/scripts/buildsystems/vcpkg.cmake" >> "${GITHUB_OUTPUT}"
 
+    - name: Setup vcpkg cache
+      uses: actions/cache@v5
+      with:
+        path: |
+          ${{ env.GITHUB_WORKSPACE }}/vcpkg/.git
+          ${{ env.GITHUB_WORKSPACE }}/vcpkg/.vcpkg-root
+          ${{ env.GITHUB_WORKSPACE }}/vcpkg_installed
+        key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+        restore-keys: vcpkg-${{ runner.os }}-
+
     - name: Clone vcpkg
       shell: bash
       run: |

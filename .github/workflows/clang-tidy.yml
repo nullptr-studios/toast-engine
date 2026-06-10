@@ -25,18 +25,28 @@ jobs:
     runs-on: [self-hosted, linux]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v30
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Setup vcpkg
         id: vcpkg
         uses: ./.github/actions/setup-vcpkg
+
+      - name: Restore CMake cache
+        uses: actions/cache@v4
+        with:
+          path: build/clang-tidy
+          key: cmake-clang-tidy-${{ hashFiles('CMakeLists.txt', 'vcpkg.json') }}
+          restore-keys: cmake-clang-tidy-
 
       - name: Generate compile_commands
         run: |
