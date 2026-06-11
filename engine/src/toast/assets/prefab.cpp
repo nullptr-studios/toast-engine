@@ -878,7 +878,9 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 
 	auto make_field = [&node, is_root](const FieldInfo* f_info) -> std::optional<Field> {
 		// Ignore fields with ReadOnly attribute
-		if (f_info->hasAttribute("ReadOnly")) return {};
+		if (f_info->hasAttribute("ReadOnly")) {
+			return {};
+		}
 
 		std::any value = f_info->get(const_cast<toast::Node*>(&node));
 

@@ -108,10 +108,6 @@ public:
 	 */
 	static auto requestRuntimeCreation(Node& parent) -> Box<Node>;
 
-	static auto reflect(std::string_view name) -> const NodeInfo* { return instance->m.node_registry.reflect(name); }
-
-	static auto registerNode(const NodeInfo* info) { instance->m.node_registry.registerNode(info); }
-
 	static void loadNode(UID uid);
 	static void loadNode(std::string_view uri);
 
@@ -123,14 +119,14 @@ public:
 
 	/**
 	 * @brief Moves a node out of the active tree into the cached list, disabling it
-	 * 
+	 *
 	 * Caching the active world root leaves the world without a root
 	 */
 	static auto cacheNode(Node& node) -> Box<Node>;
 
 	/**
 	 * @brief Queues a cached node for destruction
-	 * 
+	 *
 	 * The queue is drained at the start of the next World::tick()
 	 */
 	static void destroyNode(Node& node);
@@ -187,7 +183,6 @@ private:
 		std::mutex load_mutex;
 		std::vector<std::future<void>> load_futures;
 		std::unordered_set<_detail::ControlBox> nodes;
-		NodeRegistry node_registry;
 		size_t tombstones = 0;    ///< Control boxes of destroyed nodes waiting for their last Box to release them
 	} m;
 

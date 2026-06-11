@@ -136,6 +136,7 @@ struct EnginePimpl {
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
 	event::Listener resize_listener;
+	toast::NodeRegistry reflection_registry;
 
 	// owned by renderer's output target
 	renderer::SharedTextureOutputTarget* shared_target = nullptr;
@@ -175,8 +176,10 @@ void Engine::init() {
 	TracySetProgramName("ToastEngine");
 	tracy::SetThreadName("Main Thread");
 
-	m->world = std::make_unique<World>();    // must exist before type registration
 	registerEngineTypes();
+
+	// TODO: this should be moved somehwere else
+	m->world = std::make_unique<World>();
 
 	m->asset_manager = std::make_unique<assets::AssetManager>();
 

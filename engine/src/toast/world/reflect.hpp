@@ -302,16 +302,19 @@ struct FieldAccess {
 
 class TOAST_API NodeRegistry {
 public:
-	void registerNode(const NodeInfo* info) { types[info->type] = info; }
+	NodeRegistry() { instance = this; }
+
+	static void registerNode(const NodeInfo* info) { (*instance).types[info->type] = info; }
 
 	[[nodiscard]]
-	auto reflect(std::string_view name) const -> const NodeInfo* {
-		auto it = types.find(name);
-		return it != types.end() ? it->second : nullptr;
+	static auto reflect(std::string_view name) -> const NodeInfo* {
+		auto it = (*instance).types.find(name);
+		return it != (*instance).types.end() ? it->second : nullptr;
 	}
 
 private:
 	std::unordered_map<std::string_view, const NodeInfo*> types;
+	static inline NodeRegistry* instance = nullptr;
 };
 
 void registerEngineTypes();
