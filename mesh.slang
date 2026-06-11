@@ -3,6 +3,9 @@ struct CameraUBO
     float4x4 view;
     float4x4 projection;
     float4x4 viewProjection;
+    
+    float3 position;
+    float time;
 };
 
 [[vk::binding(0,0)]]
@@ -29,6 +32,9 @@ struct VSInput
 
     [[vk::location(3)]]
     float4 tangent : TANGENT;
+    
+    [[vk::location(4)]]
+    float3 color : COLOR;
 };
 
 struct VSOutput
@@ -40,6 +46,9 @@ struct VSOutput
 
     [[vk::location(1)]]
     float2 uv : TEXCOORD0;
+    
+    [[vk::location(2)]]
+    float3 color : COLOR;
 };
 
 [shader("vertex")]
@@ -65,6 +74,8 @@ VSOutput vertexMain(VSInput input)
 
     output.uv =
         input.uv;
+        
+    output.color = input.color;
 
     return output;
 }
@@ -72,8 +83,13 @@ VSOutput vertexMain(VSInput input)
 [shader("fragment")]
 float4 fragmentMain(VSOutput input) : SV_Target0
 {
+    float intensity =
+        dot(input.worldNormal, float3(1.0, -1.0, 1.0)) * 0.5 + 0.5;
     float3 color =
-        input.worldNormal * 0.5 + 0.5;
+        input.color * intensity;
+        
+    // float3 color =
+    //     input.worldNormal * 0.5 + 0.5;
 
     return float4(color, 1.0);
 }

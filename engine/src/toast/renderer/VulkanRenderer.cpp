@@ -90,6 +90,11 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	createPerImageSync();
 	createDepthResources();
 	m_imagesInFlight.assign(m_outputTarget->getImageCount(), vk::Fence {});
+
+	createDescriptorPool();
+
+	// Create FrameData UBO
+	createFrameResources();
 }
 
 auto VulkanRenderer::createGraphicsCommandPool() -> void {
@@ -192,6 +197,26 @@ auto VulkanRenderer::createDepthResources() -> void {
 	    extent.height,
 	    vk::to_string(m_depthFormat)
 	);
+}
+
+void VulkanRenderer::createDescriptorPool() {
+	std::array poolSizes {
+	  vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1024),
+
+	  vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 4096),
+
+	  vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 1024)
+	};
+	vk::DescriptorPoolCreateInfo poolCI {};
+	poolCI.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+
+	poolCI.maxSets = 8192;
+
+	poolCI.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+
+	poolCI.pPoolSizes = poolSizes.data();
+
+	m_descriptorPool = vk::raii::DescriptorPool(m_core->getDevice(), poolCI);
 }
 
 auto VulkanRenderer::recordTransferPass(FrameContext& frame) -> void {
@@ -334,20 +359,84 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 	frame.commandBuffer.end();
 }
 
-void VulkanRenderer::processPendingUploads() {
-	auto& device = m_core->getDevice();
+void VulkanRenderer::createFrameResources() {
+	m_frameUBORes.resize(kFramesInFlight);
+	m_frameUBOs.resize(kFramesInFlight);
 
-	for (auto it = m_pendingUploads.begin(); it != m_pendingUploads.end();) {
-		const auto status = vkGetFenceStatus(*device, *it->completionFence);
+	const auto& device = m_core->getDevice();
 
-		if (status == VkResult::VK_SUCCESS) {
-			// Fence signaled, staging buffers can die here
-			it = m_pendingUploads.erase(it);
-		} else if (status == VK_NOT_READY) {
-			++it;
-		} else {
-			TOAST_CRITICAL("VulkanRenderer", "Fence status query failed during mesh upload cleanup");
-		}
+	const vk::DeviceSize bufferSize = sizeof(FrameUBO);
+
+	vk::DescriptorSetLayoutBinding frameBinding {};
+	frameBinding.binding = 0;
+	frameBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
+	frameBinding.descriptorCount = 1;
+	frameBinding.stageFlags = vk::ShaderStageFlagBits::eAll;    // FIXME: Changethis
+
+	vk::DescriptorSetLayoutCreateInfo layoutCI {};
+	layoutCI.bindingCount = 1;
+	layoutCI.pBindings = &frameBinding;
+
+	const vk::raii::DescriptorSetLayout descriptorLayout = vk::raii::DescriptorSetLayout(device, layoutCI);
+
+	std::array layouts {*descriptorLayout};
+
+	vk::PipelineLayoutCreateInfo pipelineLayoutCI {};
+	pipelineLayoutCI.setLayoutCount = static_cast<uint32_t>(layouts.size());
+
+	pipelineLayoutCI.pSetLayouts = layouts.data();
+
+	m_frameUBOPipelineLayout = vk::raii::PipelineLayout(device, pipelineLayoutCI);
+
+	for (auto& frame : m_frameUBORes) {
+		// create ubo
+		vk::BufferCreateInfo bufferCI {};
+		bufferCI.size = bufferSize;
+		bufferCI.usage = vk::BufferUsageFlagBits::eUniformBuffer;
+
+		// allocation
+		vma::AllocationCreateInfo allocCI {};
+		allocCI.usage = vma::MemoryUsage::eAutoPreferHost;
+
+		allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+		// create buffer
+		frame.gpuBuffer.emplace(m_core->getAllocator().createBuffer(bufferCI, allocCI));
+
+		// no staging buffer
+
+		// allocate descriptor
+		auto descriptorSets = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(*m_descriptorPool, 1, &*descriptorLayout));
+
+		frame.descriptorSet = std::move(descriptorSets[0]);
+		// write descriptor
+		vk::DescriptorBufferInfo bufferInfo(**frame.gpuBuffer, 0, bufferSize);
+
+		vk::WriteDescriptorSet write(frame.descriptorSet, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &bufferInfo);
+
+		device.updateDescriptorSets(write, nullptr);
+	}
+}
+
+void VulkanRenderer::updateFrameResources(uint32_t frameIndex, float dt) {
+	m_frameUBOs[frameIndex].cameraPosition = m_camera ? m_camera->position : glm::vec3(0.0f);
+	float aspect = static_cast<float>(m_outputTarget->getExtent().width) / static_cast<float>(m_outputTarget->getExtent().height);
+
+	m_frameUBOs[frameIndex].projection = m_camera ? m_camera->getProjection(aspect) : glm::mat4(1.0f);
+	m_frameUBOs[frameIndex].view = m_camera ? m_camera->getView() : glm::mat4(1.0f);
+	m_frameUBOs[frameIndex].viewProjection = m_frameUBOs[frameIndex].projection * m_frameUBOs[frameIndex].view;
+
+	m_totalTime += dt;
+	m_frameUBOs[frameIndex].time = m_totalTime;
+
+	auto& allocation = m_frameUBORes[frameIndex].gpuBuffer->getAllocation();
+	// With VMA_ALLOCATION_CREATE_MAPPED
+	auto* mapped = allocation.getInfo().pMappedData;
+
+	if (mapped) {
+		std::memcpy(mapped, &m_frameUBOs[frameIndex], sizeof(FrameUBO));
+
+		allocation.flush(0, sizeof(FrameUBO));
 	}
 }
 
@@ -380,6 +469,9 @@ auto VulkanRenderer::drawFrame() -> void {
 
 	m_core->getDevice().resetFences(*frame.inFlight);
 	m_imagesInFlight[image_index] = *frame.inFlight;
+
+	// Update FrameData
+	updateFrameResources(m_currentFrame, 0.016f);    // FIXME: dt
 
 	// Update the Render passes TODO: Move outside of renderloop
 	for (auto& pass : m_renderPasses) {
@@ -450,9 +542,29 @@ void VulkanRenderer::addRenderPass(std::unique_ptr<IRenderPass> pass) {
 	m_renderPasses.push_back(std::move(pass));
 }
 
+void VulkanRenderer::processPendingUploads() {
+	auto& device = m_core->getDevice();
+
+	for (auto it = m_pendingUploads.begin(); it != m_pendingUploads.end();) {
+		const auto status = vkGetFenceStatus(*device, *it->completionFence);
+
+		if (status == VK_SUCCESS) {
+			it->mesh->markReady();
+
+			it = m_pendingUploads.erase(it);
+		} else if (status == VK_NOT_READY) {
+			++it;
+		} else {
+			TOAST_CRITICAL("VulkanRenderer", "Fence status query failed during mesh upload cleanup");
+		}
+	}
+}
+
 void VulkanRenderer::queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data) {
 	// Create the final GPU buffers in the mesh
 	mesh.create(*m_core, data, m_core->getGraphicsQueueFamilyIndex(), m_core->getTransferQueueFamilyIndex());
+
+	mesh.markUploading();
 
 	PendingMeshUpload job;
 	job.mesh = &mesh;
@@ -511,7 +623,9 @@ void VulkanRenderer::queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData da
 	transferCmd.reset();
 
 	const vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-	transferCmd.begin(beginInfo);
+	transferCmd.begin(
+	    beginInfo
+	);    // FIXME: we should have a list of all the meshes trying to load in a list and transfer them all at once
 
 	mesh.recordUpload(*transferCmd, *job.vertexStaging, *job.indexStaging);
 
@@ -527,5 +641,9 @@ void VulkanRenderer::queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData da
 
 	// Keep staging alive until the fence signals
 	m_pendingUploads.push_back(std::move(job));
+}
+
+void VulkanRenderer::setActiveCamera(Camera* camera) {
+	m_camera = camera;
 }
 }

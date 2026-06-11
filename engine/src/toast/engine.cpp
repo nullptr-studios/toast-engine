@@ -30,6 +30,8 @@ namespace toast {
 
 namespace {
 IApplication* active_application = nullptr;
+Camera* camera = nullptr;
+float totalTime = 0.0f;
 }
 
 Engine* Engine::instance = nullptr;
@@ -86,6 +88,8 @@ void Engine::tick() {
 	if (active_application) {
 		active_application->tick();
 	}
+	totalTime += 0.00016f;
+	camera->position = glm::vec3(sin(totalTime) * 5.0f, cos(totalTime) * 5.0f, 5);
 
 	if (m->renderer) {
 		m->renderer->drawFrame();
@@ -115,11 +119,19 @@ void Engine::createSDLWindow(const char* w_name) {
 	auto color_format = output_target->getColorFormat();
 	auto depth_format = renderer::VulkanRenderer::selectDepthFormat(*m->vulkan_core);
 
+	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
+
+	// FIXME: change this
+	camera = new Camera();
+	camera->position = {10, -15, -10};
+	camera->rotation = {0, 0, 0};
+
+	m->renderer->setActiveCamera(camera);
+
 	// create debug pipeline
 	auto pass = std::make_unique<MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
 
 	// create renderer
-	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
 
 	m->renderer->addRenderPass(std::move(pass));
 }

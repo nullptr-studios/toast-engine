@@ -42,7 +42,8 @@ public:
 
 		// Raster state
 		vk::CullModeFlags cull_mode = vk::CullModeFlagBits::eBack;
-		vk::FrontFace front_face = vk::FrontFace::eClockwise;
+		vk::FrontFace front_face = vk::FrontFace::eCounterClockwise;    // this got me tweaking for hours, since im inverting the
+		                                                                // projection this is the other way arround FUCK
 	};
 
 	VulkanPipeline() = default;

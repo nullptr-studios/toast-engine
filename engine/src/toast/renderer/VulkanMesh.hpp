@@ -15,16 +15,21 @@ struct Vertex {
 	glm::vec3 normal;
 	glm::vec2 uv;
 	glm::vec4 tangent;
+	glm::vec3 color;
 
 	/*
-	COLOR_0
 	JOINTS_0
 	WEIGHTS_0
 	*/
 
 	static vk::VertexInputBindingDescription getBindingDescription();
 
-	static std::array<vk::VertexInputAttributeDescription, 4> getAttributeDescriptions();
+	static std::array<vk::VertexInputAttributeDescription, 5> getAttributeDescriptions();
+};
+
+enum class ResourceUploadState : uint8_t {
+	Uploading,
+	Ready
 };
 
 class VulkanMesh {
@@ -48,10 +53,11 @@ public:
 
 	void recordUpload(vk::CommandBuffer cmd, vk::Buffer stagingVB, vk::Buffer stagingIB) const;
 
-	[[nodiscard]]
-	bool isReady() const {
-		return m_vertexBuffer.has_value() && m_indexBuffer.has_value() && m_vertexCount > 0 && m_indexCount > 0;
-	}
+	void markUploading() { m_uploadState = ResourceUploadState::Uploading; }
+
+	void markReady() { m_uploadState = ResourceUploadState::Ready; }
+
+	bool isReady() const { return m_uploadState == ResourceUploadState::Ready; }
 
 private:
 	std::optional<vma::raii::Buffer> m_vertexBuffer;
@@ -62,5 +68,7 @@ private:
 
 	uint32_t m_vertexCount = 0;
 	uint32_t m_indexCount = 0;
+
+	ResourceUploadState m_uploadState = ResourceUploadState::Uploading;
 };
 }

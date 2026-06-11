@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "Camera.hpp"
 #include "IOutputTarget.hpp"
 #include "IRenderPass.hpp"
 #include "VulkanCore.hpp"
@@ -53,6 +54,16 @@ public:
 		bool hasSubmitted = false;
 	};
 
+	struct FrameUBO {
+		glm::mat4 view;
+		glm::mat4 projection;
+		glm::mat4 viewProjection;
+
+		glm::vec3 cameraPosition;
+
+		float time;
+	};
+
 	VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> outputTarget);
 
 	~VulkanRenderer() = default;
@@ -69,6 +80,15 @@ public:
 	void addRenderPass(std::unique_ptr<IRenderPass> pass);
 
 	void queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data);
+
+	const FrameResources* getFrameUBORes(uint32_t currentFrame) const {
+		;
+		return &m_frameUBORes[currentFrame];
+	}
+
+	void setActiveCamera(Camera* camera);
+
+	Camera* getActiveCamera() { return m_camera; }
 
 	[[nodiscard]]
 	const IOutputTarget& getOutputTarget() const {
@@ -88,6 +108,7 @@ private:
 	void createFrameContexts();
 	void createPerImageSync();
 	void createDepthResources();
+	void createDescriptorPool();
 
 	void recordTransferPass(FrameContext& frame);
 
@@ -117,6 +138,18 @@ private:
 	std::vector<vk::raii::Semaphore> m_renderFinishedPerImage;
 	std::vector<vk::Fence> m_imagesInFlight;
 	uint32_t m_currentFrame = 0;
+
+	// MAYBE EXPAND THIS??
+	Camera* m_camera = nullptr;
+
+	// FrameUBO
+	std::vector<FrameUBO> m_frameUBOs;
+	std::vector<FrameResources> m_frameUBORes;
+	vk::raii::PipelineLayout m_frameUBOPipelineLayout = nullptr;
+	float m_totalTime = 0.0f;
+
+	void createFrameResources();
+	void updateFrameResources(uint32_t frameIndex, float dt);
 };
 
 }

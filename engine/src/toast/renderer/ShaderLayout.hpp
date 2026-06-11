@@ -1,17 +1,12 @@
-/// @file ShaderLayout.hpp
-/// @author dario
-/// @date 07/06/2026.
-
 #pragma once
 
-#include "vulkan_common.hpp"
-
+#include <cstdint>
 #include <map>
 #include <slang.h>
 #include <vector>
+#include <vulkan/vulkan_raii.hpp>
 
 namespace toast::renderer {
-
 class VulkanCore;
 
 class ShaderLayout {
@@ -44,5 +39,4 @@ private:
 	vk::raii::PipelineLayout m_pipeline_layout = nullptr;
 	std::vector<vk::PushConstantRange> m_push_constant_ranges;
 };
-
-}    // namespace toast::renderer
+}

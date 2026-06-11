@@ -12,12 +12,13 @@ vk::VertexInputBindingDescription Vertex::getBindingDescription() {
 	return vk::VertexInputBindingDescription(0, sizeof(Vertex), vk::VertexInputRate::eVertex);
 }
 
-std::array<vk::VertexInputAttributeDescription, 4> Vertex::getAttributeDescriptions() {
+std::array<vk::VertexInputAttributeDescription, 5> Vertex::getAttributeDescriptions() {
 	return {
 	  vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, position)),
 	  vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, normal)),
 	  vk::VertexInputAttributeDescription(2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, uv)),
-	  vk::VertexInputAttributeDescription(3, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(Vertex, tangent))
+	  vk::VertexInputAttributeDescription(3, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(Vertex, tangent)),
+	  vk::VertexInputAttributeDescription(4, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color))
 	};
 }
 
@@ -87,47 +88,9 @@ void VulkanMesh::recordUpload(vk::CommandBuffer cmd, vk::Buffer stagingVB, vk::B
 		TOAST_CRITICAL("VulkanMesh", "Mesh buffers were not created before upload");
 	}
 
-	if (m_vertexSize == 0 || m_indexSize == 0) {
-		TOAST_CRITICAL("VulkanMesh", "Mesh buffer sizes are invalid");
-	}
+	cmd.copyBuffer(stagingVB, **m_vertexBuffer, vk::BufferCopy(0, 0, m_vertexSize));
 
-	// Copy vertex data
-	{
-		const vk::BufferCopy copyRegion(0, 0, m_vertexSize);
-
-		cmd.copyBuffer(stagingVB, **m_vertexBuffer, copyRegion);
-
-		const vk::BufferMemoryBarrier barrier(
-		    vk::AccessFlagBits::eTransferWrite,
-		    vk::AccessFlagBits::eVertexAttributeRead,
-		    VK_QUEUE_FAMILY_IGNORED,
-		    VK_QUEUE_FAMILY_IGNORED,
-		    **m_vertexBuffer,
-		    0,
-		    m_vertexSize
-		);
-
-		cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput, {}, {}, barrier, {});
-	}
-
-	// Copy index data
-	{
-		const vk::BufferCopy copyRegion(0, 0, m_indexSize);
-
-		cmd.copyBuffer(stagingIB, **m_indexBuffer, copyRegion);
-
-		const vk::BufferMemoryBarrier barrier(
-		    vk::AccessFlagBits::eTransferWrite,
-		    vk::AccessFlagBits::eIndexRead,
-		    VK_QUEUE_FAMILY_IGNORED,
-		    VK_QUEUE_FAMILY_IGNORED,
-		    **m_indexBuffer,
-		    0,
-		    m_indexSize
-		);
-
-		cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput, {}, {}, barrier, {});
-	}
+	cmd.copyBuffer(stagingIB, **m_indexBuffer, vk::BufferCopy(0, 0, m_indexSize));
 }
 
 void VulkanMesh::bind(vk::CommandBuffer cmd) const {
@@ -137,6 +100,10 @@ void VulkanMesh::bind(vk::CommandBuffer cmd) const {
 }
 
 void VulkanMesh::draw(vk::CommandBuffer cmd) const {
+	if (!isReady()) {
+		return;
+	}
+
 	cmd.drawIndexed(m_indexCount, 1, 0, 0, 0);
 }
 }

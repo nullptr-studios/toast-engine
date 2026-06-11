@@ -6,12 +6,6 @@
 
 #include "vulkan_common.hpp"
 
-struct FrameResources {
-	std::optional<vma::raii::Buffer> stagingBuffer;
-	std::optional<vma::raii::Buffer> gpuBuffer;
-	vk::raii::DescriptorSet descriptorSet = nullptr;
-};
-
 class IRenderPass {
 public:
 	virtual ~IRenderPass() = default;

@@ -39,11 +39,6 @@ private:
 
 	toast::renderer::VulkanPipeline m_pipeline;
 
-	vk::raii::DescriptorPool m_descriptorPool = nullptr;
-
-	std::vector<CameraUBO> cameraUBO;
-	std::vector<FrameResources> cameraUBORes;
-
 	toast::renderer::ShaderLayout shaderLayout;
 
 	toast::renderer::VulkanMesh mesh;
