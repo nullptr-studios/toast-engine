@@ -61,9 +61,9 @@ private:
 	bool m_dirty_world = true;
 	Box<Node3D> m_transform_parent;
 
-	[[Serialize, Group("Transform")]] alignas(16) glm::vec3 m_position;
-	[[Serialize, Group("Transform")]] alignas(16) glm::quat m_rotation;
-	[[Serialize, Group("Transform")]] alignas(16) glm::vec3 m_scale;
+	[[Reflect, Group("Transform")]] alignas(16) glm::vec3 m_position;
+	[[Reflect, Group("Transform")]] alignas(16) glm::quat m_rotation;
+	[[Reflect, Group("Transform")]] alignas(16) glm::vec3 m_scale;
 
 	alignas(16) glm::vec3 m_world_position;
 	alignas(16) glm::quat m_world_rotation;

@@ -35,7 +35,7 @@ struct Reflect<{{ qualified_name }}> {
 	inline static const std::array<FieldInfo, {{ all_fields_flat | length }}> _all_field_info = {{ '{{' }}
 {% for f in all_fields_flat %}
 		{
-			.name       = "{{ f.display_name }}",
+			.name       = "{{ f.name }}",
 			.type       = "{{ f.typename }}",
 			.value_type = FieldType::{{ f.field_type }},
 			.attributes = {{ '{{' }}{% for a in f.attrs_list %}{"{{ a.name }}", {{ '{' }}{% for v in a.args %}"{{ v }}"{% if not loop.last %}, {% endif %}{% endfor %}{{ '}' }}}{% if not loop.last %}, {% endif %}{% endfor %}{{ '}}' }},

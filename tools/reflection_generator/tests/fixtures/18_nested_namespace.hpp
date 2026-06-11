@@ -3,6 +3,6 @@ namespace foo::bar::baz {
 
 class [[ToastNode]] DeepNode {
 public:
-    [[Serialize]] float m_x;
+    [[Reflect]] float m_x;
 };
 }

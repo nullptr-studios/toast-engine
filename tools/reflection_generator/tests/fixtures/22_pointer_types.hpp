@@ -2,7 +2,7 @@
 
 class [[ToastNode]] PointerNode {
 public:
-    [[Serialize]] int* m_ptr;
-    [[Serialize]] int& m_ref;
-    [[Serialize]] Box<Texture> m_texture;
+    [[Reflect]] int* m_ptr;
+    [[Reflect]] int& m_ref;
+    [[Reflect]] Box<Texture> m_texture;
 };

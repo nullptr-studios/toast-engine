@@ -114,17 +114,12 @@ fn attr_arg(attrs: &[Attribute], name: &str) -> Option<std::string::String> {
 }
 
 fn build_field(field: &Field) -> FieldInfo {
-	let attrs: Vec<_> = field.attributes.iter()
-		.filter(|a| a.name != "Group" && a.name != "Subgroup")
-		.cloned()
-		.collect();
-
 	FieldInfo {
 		name:       field.name.clone(),
 		typename:   field.type_name.clone(),
 		field_type: infer_field_type(&field.type_name),
 		is_array:   field.type_name.contains("vector<"),
-		attributes: attrs_to_json(&attrs),
+		attributes: attrs_to_json(&field.attributes),
 		default:    field.default.clone(),
 	}
 }
@@ -212,20 +207,9 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 	let mut global_field_indices: Vec<usize> = Vec::new();
 
 	let augment_field = |f: &FieldInfo, idx: usize| -> json_t {
-		// display_name: Name attr arg[0], else strip m_ prefix
-		let display_name = f.attributes.get("Name")
-			.and_then(|v| v.as_array())
-			.and_then(|a| a.first())
-			.and_then(|v| v.as_str())
-			.map(|s| s.to_string())
-			.unwrap_or_else(|| {
-				f.name.strip_prefix("m_").unwrap_or(&f.name).to_string()
-			});
-
-		// attrs_list: remaining attributes excluding Group / Subgroup / Name
+		// attrs_list: all attributes kept as metadata (Name, Group, Subgroup, etc.)
 		let attrs_list: Vec<json_t> = if let json_t::Object(map) = &f.attributes {
 			map.iter()
-				.filter(|(k, _)| k.as_str() != "Name")
 				.map(|(k, v)| serde_json::json!({ "name": k, "args": v }))
 				.collect()
 		} else {
@@ -233,16 +217,15 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 		};
 
 		serde_json::json!({
-			"index":        idx,
-			"name":         f.name,
-			"member_name":  f.name,
-			"display_name": display_name,
-			"typename":     f.typename,
-			"field_type":   to_value(&f.field_type).unwrap(),
-			"is_array":     f.is_array,
-			"attributes":   f.attributes,
-			"attrs_list":   attrs_list,
-			"default":      f.default,
+			"index":      idx,
+			"name":       f.name,
+			"member_name": f.name,
+			"typename":   f.typename,
+			"field_type": to_value(&f.field_type).unwrap(),
+			"is_array":   f.is_array,
+			"attributes": f.attributes,
+			"attrs_list": attrs_list,
+			"default":    f.default,
 		})
 	};
 

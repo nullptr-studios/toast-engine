@@ -2,7 +2,7 @@
 
 class [[ToastNode]] PrefixNode {
 public:
-    [[Serialize]] int m_value;
-    [[Serialize]] int raw_value;
-    [[Serialize, Name("Custom")]] int m_hidden;
+    [[Reflect]] int m_value;
+    [[Reflect]] int raw_value;
+    [[Reflect, Name("Custom")]] int m_hidden;
 };

@@ -162,6 +162,11 @@ auto World::nodeAllocation(std::optional<assets::Prefab::BasicNode> node_data) n
 						continue;
 					}
 
+					// Read only attributes shouldn't be serialized
+					if (f.hasAttribute("ReadOnly")) {
+						continue;
+					}
+
 #ifndef NDEBUG
 					if (not f.set) {
 						TOAST_WARN("World", "No valid set function found for {}", f.name);

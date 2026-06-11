@@ -2,6 +2,6 @@
 
 class [[ToastNode]] DuplicateFieldNode {
 public:
-    [[Serialize, Group("A")]] int m_value;
-    [[Serialize, Group("B")]] int m_value;
+    [[Reflect, Group("A")]] int m_value;
+    [[Reflect, Group("B")]] int m_value;
 };

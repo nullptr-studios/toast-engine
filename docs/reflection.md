@@ -32,6 +32,27 @@ auto World::newNode(std::string_view type) -> Node* {
 }
 ```
 
+## Allowed attributes
+
+### Node level attributes
+
+- `[[ToastNode]]`: every node should have this attribute to generate reflection information
+- `[[Color("str")]]`: changes the color a Node will have on the Inspector and Hierarchy panels
+- `[[Icon("str")]]`: changes the icon a Node will have on the Inspector and Hierarchy panels
+- `[[Hidden]]`: hides this Node from the Create Node window
+
+### Field level attributes
+
+- `[[Reflect]]`: marks a field to be reflected
+- `[[Name("str")]]`: overrides the attribute name on the Inspector panel
+- `[[ReadOnly]]`: value will appear as read-only on the Inspector panel
+- `[[Hidden]]`: value will be saved on files but won't appear on the Inspector panel
+- `[[Group("str")]]`: adds attribute to a given group
+- `[[Subgroup("str")]]`: adds attribute to a given subgroup (must have a valid Group attribute)
+- `[[Range(int, int)]]`: limits the range in the Inspector panel
+- `[[Enum("str", ...)]]`: makes the int field appears as a drop-down menu
+- `[[BitEnum("str", ...)]]`: makes the int field appear as a multiple choice drop-down menu
+
 ## Motivation
 
 We needed a reflection system for our game engine, which will be used for a lot of core
@@ -61,10 +82,10 @@ out all the information required by the `Reflect<T>` class.
 A simple header file
 ```c++
 class [[ToastNode]] Demo {
-    [[Serialize]]
+    [[Reflect
     int my_variable;
     
-    [[Serialize, Name("Enable")]]
+    [[Reflect, Name("Enable")]]
     bool is_enabled;
 };
 ```

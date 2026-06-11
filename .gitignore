@@ -19,6 +19,10 @@ vcpkg_installed/
 
 !engine/src/**
 
+# Generated
+engine/generated
+engine/assets/engine_reflect.json
+
 compile_commands.json
 CMakeUserPresets.json
 **.sln
@@ -30,5 +34,5 @@ Cargo.lock
 # exclusions
 !/tests/**
 !/toast/src/**
-engine/generated
-engine/assets/engine_reflect.json
+
+!/tools/reflection_generator/build.rs

@@ -2,6 +2,6 @@
 
 class [[ToastNode]] GlobalNamespaceNode {
 public:
-    [[Serialize]] int m_value;
+    [[Reflect]] int m_value;
     void tick() {}
 };

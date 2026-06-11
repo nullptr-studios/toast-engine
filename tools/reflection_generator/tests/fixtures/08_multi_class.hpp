@@ -3,13 +3,13 @@ namespace test {
 
 class [[ToastNode]] FirstNode {
 public:
-    [[Serialize]] int m_value;
+    [[Reflect]] int m_value;
     void tick() {}
 };
 
 
 class [[ToastNode]] SecondNode {
 public:
-    [[Serialize]] std::string m_name;
+    [[Reflect]] std::string m_name;
 };
 }

@@ -3,9 +3,9 @@ namespace game {
 
 class [[ToastNode]] QualifiedNode {
 public:
-    [[Serialize]] std::string m_str;
-    [[Serialize]] glm::vec3 m_pos;
-    [[Serialize]] toast::UID m_id;
-    [[Serialize]] ::global::Type m_global;
+    [[Reflect]] std::string m_str;
+    [[Reflect]] glm::vec3 m_pos;
+    [[Reflect]] toast::UID m_id;
+    [[Reflect]] ::global::Type m_global;
 };
 }

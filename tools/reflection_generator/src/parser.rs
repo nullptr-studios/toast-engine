@@ -159,10 +159,10 @@ fn get_fields(node: tree_sitter::Node, source: &str) -> Vec<Field> {
 		}
 
 		let all_attrs = get_attributes(parent, source);
-		if !all_attrs.iter().any(|a| a.name == "Serialize") {
+		if !all_attrs.iter().any(|a| a.name == "Reflect") {
 			continue;
 		}
-		let attributes = all_attrs.into_iter().filter(|a| a.name != "Serialize").collect();
+		let attributes = all_attrs.into_iter().filter(|a| a.name != "Reflect").collect();
 
 		let type_name = parent.child_by_field_name("type")
 			.map(|t| source[t.byte_range()].trim().to_string())

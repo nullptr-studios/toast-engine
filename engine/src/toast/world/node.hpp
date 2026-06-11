@@ -84,18 +84,18 @@ public:
 	auto listener() noexcept -> event::Listener&;
 
 private:
-	[[Serialize, Name("UID")]]
+	[[Reflect, Name("UID")]]
 	UID m_uid;    // serialized unique id
-	[[Serialize, Name("Name")]]
+	[[Reflect, Name("Name")]]
 	std::string m_name;
 	NodeState m_state = NodeState::null;
 	NodeType m_type = NodeType::null;
-	[[Serialize, Name("Enabled")]]
+	[[Reflect, Name("Enabled")]]
 	bool m_local_enabled = false;        // is this object enabled?
 	bool m_inherited_enabled = false;    // is any parent of this object enabled?
 	std::array<uint8_t, 4> m_wave = {255, 255, 255, 255};
 	Box<Node> m_box;
-	[[Serialize, Name("Parent")]]
+	[[Reflect, Name("Parent")]]
 	Box<Node> m_parent;
 	std::vector<Box<Node>> m_children;
 	std::unique_ptr<event::Listener> m_listener = nullptr;

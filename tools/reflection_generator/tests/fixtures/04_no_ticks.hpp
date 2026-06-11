@@ -3,7 +3,7 @@ namespace data {
 
 class [[ToastNode]] DataNode {
 public:
-    [[Serialize]] float m_value;
-    [[Serialize]] std::vector<int> m_items;
+    [[Reflect]] float m_value;
+    [[Reflect]] std::vector<int> m_items;
 };
 }

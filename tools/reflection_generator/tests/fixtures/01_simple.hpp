@@ -2,9 +2,9 @@
 namespace toast {
 class [[ToastNode]] SimpleNode {
 public:
-    [[Serialize, Group("Transform")]] int m_x = 0;
-    [[Serialize, Group("Transform")]] int m_y = 0;
-    [[Serialize]] std::string m_name;
+    [[Reflect, Group("Transform")]] int m_x = 0;
+    [[Reflect, Group("Transform")]] int m_y = 0;
+    [[Reflect]] std::string m_name;
 
     void tick() {}
 };
