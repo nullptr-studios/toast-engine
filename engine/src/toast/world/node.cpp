@@ -21,6 +21,8 @@ auto Node::enabled() const noexcept -> bool {
 }
 
 void Node::enabled(bool value) noexcept {
+	ZoneScoped;
+
 	if (m_local_enabled == value) {
 		return;
 	}
@@ -28,6 +30,7 @@ void Node::enabled(bool value) noexcept {
 		return;
 	}
 	m_local_enabled = value;
+	TOAST_TRACE("Node", "{} ({}) {}", name(), uid(), value ? "enabled" : "disabled");
 
 	if (value) {
 		callTick(m_info, TickFunctionList::on_enable);
@@ -62,12 +65,15 @@ auto Node::info() const -> const NodeInfo* {
 auto Node::listener() noexcept -> event::Listener& {
 	if (not m_listener) {
 		m_listener = std::make_unique<event::Listener>();
+		TOAST_TRACE("Node", "Created listener for {} ({})", name(), uid());
 	}
 
 	return *m_listener;
 }
 
 void Node::inheritedEnabled(bool value) noexcept {
+	ZoneScoped;
+
 	if (m_inherited_enabled == value) {
 		return;
 	}
@@ -95,8 +101,12 @@ void Node::changeNodeState(NodeState state) noexcept {
 
 void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 	if (!info) {
+		TOAST_WARN("Node", "Tried to call a tick function but reflection data is null");
 		return;
 	}
+
+	ZoneScoped;
+	ZoneNameF("%s [%s] callTick()", name().data(), info->type.data());
 
 	// Frame-tick functions only run on enabled nodes; lifecycle/enable callbacks always run.
 	if (hasFlag(TickFunctionList::tick_mask, func_type) && not enabled()) {
@@ -141,11 +151,14 @@ void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 	}
 
 	if (invoker) {
+		ZoneScopedN("Function call");
 		invoker(this);
 	}
 }
 
 void Node::propagateCallTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
+	ZoneScoped;
+
 	callTick(info, func_type);
 
 	for (auto& child : m_children) {

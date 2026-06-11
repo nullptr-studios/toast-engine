@@ -84,11 +84,14 @@ public:
 
 	// Keep inline so tests can destroy world
 	~World() {
+		ZoneScoped;
 		for (auto& f : m.load_futures) {
 			if (f.valid()) {
 				f.wait();
 			}
 		}
+
+		TOAST_INFO("World", "Destroyed world");
 	}
 
 	void tick();

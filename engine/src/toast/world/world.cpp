@@ -10,6 +10,8 @@
 #include <toast/thread_pool.hpp>
 #include <utility>
 
+#include "toast/uri_handler.hpp"
+
 namespace toast {
 
 using namespace _detail;
@@ -82,6 +84,43 @@ auto NodeCluster::hasLateTick() -> bool {
 
 World::World() {
 	instance = this;
+
+	m.listener.subscribe<event::LoadNode>("load_node", [](event::LoadNode& e) {
+		loadNode(e.uid);
+		return false;
+	});
+
+	m.listener.subscribe<event::LoadNodeByURI>("load_node_uri", [](event::LoadNodeByURI& e) {
+		loadNode(e.uri);
+		return false;
+	});
+
+	m.listener.subscribe<event::SetWorldRoot>("set_world_root", [](event::SetWorldRoot& e) {
+		setRoot(*e.node);
+		return false;
+	});
+
+	m.listener.subscribe<event::CacheNode>("cache_node", [](event::CacheNode& e) {
+		cacheNode(*e.node);
+		return false;
+	});
+
+	m.listener.subscribe<event::DestroyNode>("destroy_node", [](event::DestroyNode& e) {
+		destroyNode(*e.node);
+		return false;
+	});
+
+	m.listener.subscribe<event::MakeNodeGlobal>("make_node_global", [](event::MakeNodeGlobal& e) {
+		instance->moveToGlobal(*e.node);
+		return false;
+	});
+
+	m.listener.subscribe<event::AttachNode>("attach_node", [](event::AttachNode& e) {
+		instance->moveToChild(*e.node, *e.parent);
+		return false;
+	});
+
+	TOAST_INFO("World", "Created world");
 }
 
 auto World::nodeAllocation(std::optional<assets::Prefab::BasicNode> node_data) noexcept -> Box<Node> {
@@ -140,15 +179,24 @@ auto World::nodeAllocation(std::optional<assets::Prefab::BasicNode> node_data) n
 }
 
 void World::tick() {
+	ZoneScoped;
+
 	drainDestroyQueue();
 	drainLoadQueue();
 
-	auto run_phase = [](const std::vector<TickSchedule::Wave>& phase, TickFunctionList func) {
+	auto run_phase = [](const std::vector<TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) {
+		ZoneScopedN("World::tick()::function"); // NOLINT
+		ZoneNameF("World::tick()::%s", name.data());
+
 		for (const auto& wave : phase) {
 			std::vector<std::future<void>> futures;
 			futures.reserve(wave.size());
 
+			int count = 1;
 			for (const auto& n : wave) {
+				ZoneScopedN("World::tick()::function::wave"); // NOLINT
+				ZoneNameF("Wave #%i", count++);
+
 				futures.emplace_back(ThreadPool::push([n, func] {
 					if (std::holds_alternative<Box<Node>>(n)) {
 						auto node = std::get<Box<Node>>(n);
@@ -164,17 +212,20 @@ void World::tick() {
 				}));
 			}
 
-			for (auto& f : futures) {
-				f.get();
+			{
+				ZoneScopedN("Thread Pool semaphore"); // NOLINT
+				for (auto& f : futures) {
+					f.get();
+				}
 			}
 		}
 	};
 
-	run_phase(tick_schedule.early_tick, TickFunctionList::early_tick);
-	run_phase(tick_schedule.tick, TickFunctionList::tick);
+	run_phase(tick_schedule.early_tick, TickFunctionList::early_tick, "early_tick");
+	run_phase(tick_schedule.tick, TickFunctionList::tick, "tick");
 	// TODO: physics step goes between tick and post_physics
-	run_phase(tick_schedule.post_physics, TickFunctionList::post_physics);
-	run_phase(tick_schedule.late_tick, TickFunctionList::late_tick);
+	run_phase(tick_schedule.post_physics, TickFunctionList::post_physics, "post_physics");
+	run_phase(tick_schedule.late_tick, TickFunctionList::late_tick, "late_tick");
 }
 
 void World::registerDependency(Node& from, Node& to) {
@@ -196,6 +247,7 @@ void World::registerDependency(Node& from, Node& to) {
 
 	edges.emplace_back(to);
 	instance->dependency_graph.inverse_connections[to].emplace_back(from);
+	TOAST_TRACE("World", "Added dependency from {} to {}", from.name(), from.uid());
 }
 
 auto World::requestRuntimeCreation(Node& parent) -> Box<Node> {
@@ -231,10 +283,15 @@ auto World::requestRuntimeCreation(Node& parent) -> Box<Node> {
 	// Phase 3: node initialization
 	node->callTick(node->info(), TickFunctionList::pre_init);
 	node->enabled(true);
+	TOAST_TRACE("World", "Created node in {} ({}) during runtime", parent.name(), parent.uid());
 	return node;
 }
 
 void World::loadNode(UID uid) {
+	ZoneScoped;
+	ZoneNameF("World::loadNode(%s)", uid.get().c_str());
+	TOAST_INFO("World", "Loading node {} from file", uid);
+
 	// Load stages:
 	//		1: get the node_file
 	//		2: dispatch 1:
@@ -247,6 +304,10 @@ void World::loadNode(UID uid) {
 	//				- init()
 
 	auto future = std::async(std::launch::async, [uid]() {
+		tracy::SetThreadName("World::loadNode worker");
+		ZoneScoped; // NOLINT
+		ZoneNameF("World::loadNode(%s)::async", uid.get().c_str());
+
 		auto node_file = assets::load<assets::Prefab>(uid);
 		if (not node_file.hasValue()) {
 			TOAST_ERROR("World", "Couldn't load Node {}", uid);
@@ -269,13 +330,15 @@ void World::loadNode(UID uid) {
 			}));
 		}
 
-		for (auto& f : alloc_futures) {
-			nodes.emplace_back(f.get());
+		{
+			ZoneScopedN("Thread Pool semaphore"); // NOLINT
+			for (auto& f: alloc_futures) { nodes.emplace_back(f.get()); }
 		}
 
 		Box<Node> root = instance->buildTree(std::move(nodes), node_file);
 
 		root->propagateCallTick(root->info(), TickFunctionList::init);
+		TOAST_TRACE("World", "Node {} ({}) finished loading", root->name(), root->uid());
 
 		std::scoped_lock lock(instance->m.load_mutex);
 		instance->nodes.load_queue.emplace_back(std::move(root));
@@ -312,9 +375,12 @@ void World::drainLoadQueue() {
 		std::swap(loaded, nodes.load_queue);
 	}
 
+	ZoneScoped;
+
 	// Freshly loaded trees go to the cached list and are ready to be activated
 	for (auto& root : loaded) {
 		root->changeNodeState(NodeState::cached);
+		TOAST_TRACE("World", "Node {} ({}) moved to cache", root->name(), root->uid());
 		nodes.cached.emplace_back(std::move(root));
 	}
 }
@@ -328,11 +394,15 @@ auto World::cacheNode(Node& node) -> Box<Node> {
 }
 
 auto World::findCached(std::string_view name) -> Box<Node> {
+	ZoneScoped;
+
 	for (const auto& node : instance->nodes.cached) {
 		if (node->name() == name) {
 			return node;
 		}
 	}
+
+	TOAST_TRACE("World", "Node {} not found in cached", name);
 	return {};
 }
 
@@ -341,6 +411,9 @@ auto World::graphviz() -> std::string {
 }
 
 void World::destroyNode(Node& node) {
+	ZoneScoped;
+	ZoneNameF("World::destroyNode(%s)", node.name().data());
+
 	if (node.m_state != NodeState::cached) {
 		TOAST_WARN("World", "Only cached nodes can be destroyed, {} ({}) is still in use", node.name(), node.uid());
 		return;
@@ -349,6 +422,7 @@ void World::destroyNode(Node& node) {
 	std::erase(instance->nodes.cached, node.box());
 	node.changeNodeState(NodeState::destroy);
 	instance->nodes.destroy_queue.emplace_back(node.box());
+	TOAST_TRACE("World", "Queued node {} ({}) for destruction", node.name(), node.uid());
 }
 
 void World::drainDestroyQueue() {
@@ -397,8 +471,7 @@ void World::drainDestroyQueue() {
 			victim->m_listener.reset();
 		}
 
-		// Free the nodes. The control box is tombstoned (node = nullptr) instead of freed,
-		// so any stale Box<Node> still held elsewhere safely reports exists() == false
+		// Free the nodes
 		{
 			std::scoped_lock lock(m.nodes_mutex);
 			for (Node* victim : victims) {
@@ -444,6 +517,9 @@ void World::markNode3DDependantsDirty(const Box<Node>& node) noexcept {
 }
 
 void World::computeDependencyGraph() {
+	ZoneScoped;
+	TOAST_TRACE("World", "Computing dependency graph");
+
 	std::vector<std::vector<Box<Node>>> subgraphs;
 	{
 		// Loader threads insert into m.nodes concurrently
@@ -478,9 +554,14 @@ void World::computeDependencyGraph() {
 	auto waves = assignWaves(result);
 	auto ts = optimizeWaves(waves);
 	tick_schedule = std::move(ts);
+	TOAST_TRACE("World", "Dependency graph: early={} tick={} post_physics={} late={} waves",
+	    tick_schedule.early_tick.size(), tick_schedule.tick.size(),
+	    tick_schedule.post_physics.size(), tick_schedule.late_tick.size());
 }
 
 auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
+	ZoneScoped;
+
 	using NodeGraph = std::vector<Box<Node>>;
 	std::unordered_set<Box<Node>> visited;
 	std::vector<NodeGraph> subgraphs;
@@ -494,6 +575,8 @@ auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
 			continue;
 		}
 
+		ZoneScoped;
+
 		NodeGraph component;
 		std::queue<Box<Node>> queue;
 
@@ -501,6 +584,8 @@ auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
 		visited.insert(start_node);
 
 		while (!queue.empty()) {
+			ZoneScoped;
+
 			auto current = queue.front();
 			queue.pop();
 			component.push_back(current);
@@ -538,6 +623,8 @@ auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
 }
 
 auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_subgraphs) -> std::vector<TickSchedule::Wave> {
+	ZoneScoped;
+
 	// SearchContext tracks the state of the DFS traversal for Tarjan's algorithm.
 	struct SearchContext {
 		std::unordered_map<Box<Node>, int> index;
@@ -548,7 +635,8 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 		std::vector<std::vector<Box<Node>>> sccs;    // Components in reverse topological order
 	};
 
-	                                               // We start with a list of nodes per subgraph that survived the initial pruning
+	// clang-format off
+	// We start with a list of nodes per subgraph that survived the initial pruning
 	std::vector<TickSchedule::Wave> processed_subgraphs;
 	processed_subgraphs.reserve(input_subgraphs.size());
 	for (const auto& subgraph_nodes : input_subgraphs) {
@@ -559,10 +647,13 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 		}
 		processed_subgraphs.emplace_back(std::move(wave));
 	}
+	// clang-format on
 
 	std::vector<TickSchedule::Wave> result;
 
 	for (const auto& current_subgraph : processed_subgraphs) {
+		ZoneScoped;
+
 		// Create a lookup set to efficiently filter out neighbors that aren't part of this subgraph
 		std::unordered_set<Box<Node>> nodes_in_subgraph;
 		for (const auto& variant : current_subgraph) {
@@ -575,6 +666,8 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 		// An SCC is a group of nodes where every node is reachable from every other node in the group
 		// In our dependency graph, an SCC with >1 node indicates a circular dependency
 		std::function<void(const Box<Node>&)> strong_connect = [&](const Box<Node>& current_node) {
+			ZoneScopedN("strong_connect"); // NOLINT
+
 			search_context.index[current_node] = search_context.low_link[current_node] = search_context.counter++;
 			search_context.stack.push(current_node);
 			search_context.on_stack[current_node] = true;
@@ -651,6 +744,8 @@ auto World::assignWaves(const std::vector<TickSchedule::Wave>& subgraphs) -> std
 		int item_idx;
 	};
 
+	ZoneScoped;
+
 	std::unordered_map<Box<Node>, ItemLocation> node_to_location;
 
 	for (int subgraph_idx = 0; std::cmp_less(subgraph_idx, subgraphs.size()); ++subgraph_idx) {
@@ -680,6 +775,8 @@ auto World::assignWaves(const std::vector<TickSchedule::Wave>& subgraphs) -> std
 
 	// Calculate the wave level for each item
 	for (int subgraph_idx = 0; std::cmp_less(subgraph_idx, subgraphs.size()); ++subgraph_idx) {
+		ZoneScopedN("Calculate wave level");
+
 		// Iterating in reverse because Tarjan's SCCs are in reverse topological order
 		for (int item_idx = (int)subgraphs[subgraph_idx].size() - 1; item_idx >= 0; --item_idx) {
 			// Collect all physical nodes in this scheduling item
@@ -749,6 +846,8 @@ auto World::optimizeWaves(const std::vector<TickSchedule::Wave>& waves) -> TickS
 	  .late_tick = waves,
 	};
 
+	ZoneScoped;
+
 	/**
 	 * filter_and_assign_wave removes nodes from a wave if they don't have the relevant
 	 * tick function for that phase, and records the wave index into the node's metadata
@@ -810,7 +909,7 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 	ZoneNameF("World::swapRoot() [to %s]", node.name().data());
 
 	if (node.m_type != NodeType::root) {
-		TOAST_ERROR("World", "You can only swap roots with a root node");
+		TOAST_WARN("World", "You can only swap roots with a root node");
 		return {};
 	}
 
@@ -853,6 +952,7 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 
 	node.propagateCallTick(node.info(), TickFunctionList::begin);
 	node.enabled(true);
+	TOAST_INFO("World", "Swapped root to {} ({})", node.name(), node.uid());
 
 	return root_node;
 }
@@ -900,12 +1000,13 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 	nodes.cached.emplace_back(node.box());
 
 	computeDependencyGraph();
+	TOAST_TRACE("World", "Node {} ({}) moved to cache", node.name(), node.uid());
 	return node.box();
 }
 
 auto World::moveToGlobal(Node& node) -> Box<Node> {
 	switch (node.m_state) {
-		case NodeState::root: TOAST_ERROR("World", "Tried to move root to cached, consider using swapRoot() instead"); return {};
+		case NodeState::root: TOAST_WARN("World", "Tried to move root to cached, consider using swapRoot() instead"); return {};
 		case NodeState::global: TOAST_WARN("World", "Tried to move to global a Node that is already in global"); return {};
 		case NodeState::destroy:
 		case NodeState::null:
@@ -916,7 +1017,8 @@ auto World::moveToGlobal(Node& node) -> Box<Node> {
 	}
 
 	if (node.m_type == NodeType::child) {
-		TOAST_ERROR("World", "Only Root nodes can be moved to global, {} is a children node", nodes.root->name().data());
+		TOAST_WARN("World", "Only Root nodes can be moved to global, {} is a children node", node.name());
+		return {};
 	}
 
 	std::erase(nodes.cached, node.box());
@@ -929,12 +1031,13 @@ auto World::moveToGlobal(Node& node) -> Box<Node> {
 	node.propagateCallTick(node.info(), TickFunctionList::begin);
 	node.enabled(true);
 	nodes.global.emplace_back(node.box());
+	TOAST_TRACE("World", "Node {} ({}) moved to global", node.name(), node.uid());
 	return node.box();
 }
 
 auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
 	if (parent.m_state != NodeState::root) {
-		TOAST_ERROR("World", "You can only move a node into one that is on the root");
+		TOAST_WARN("World", "You can only move a node into one that is on the root");
 		return {};
 	}
 
@@ -946,7 +1049,7 @@ auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
 			return {};
 		case NodeState::root:
 			if (node.m_type == NodeType::world_root) {
-				TOAST_ERROR("World", "Tried to move root to cached, consider using swapRoot() instead");
+				TOAST_WARN("World", "Tried to move root to cached, consider using swapRoot() instead");
 				return {};
 			}
 			break;
@@ -974,11 +1077,14 @@ auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
 	}
 	parent.m_children.emplace_back(node.box());
 	node.m_parent = parent;
+	TOAST_TRACE("World", "Moved node {} ({}) under {} ({})", node.name(), node.uid(), parent.name(), parent.uid());
 
 	return node.box();
 }
 
 auto World::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node> {
+	ZoneScoped;
+
 	std::unordered_map<uint64_t, Box<Node>> uid_map;
 	uid_map.reserve(nodes.size());
 	for (auto& node : nodes) {
@@ -1041,6 +1147,9 @@ auto World::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<
 		propagate_inherited(*root, true);
 	}
 
+	if (root.exists()) {
+		TOAST_TRACE("World", "Built tree {} ({}) with {} nodes", root->name(), root->uid(), nodes.size());
+	}
 	return root;
 }
 

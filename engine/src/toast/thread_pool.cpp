@@ -57,6 +57,10 @@ void ThreadPool::waitIdle() {
 }
 
 void ThreadPool::threadLoop() {
+	static std::atomic<int> worker_id = 0;
+	thread_local static std::string name = std::format("ThreadPool::worker-{}", worker_id++);
+	tracy::SetThreadName(name.c_str());
+
 	while (true) {
 		std::move_only_function<void()> job;
 
@@ -72,7 +76,10 @@ void ThreadPool::threadLoop() {
 			++m.active_jobs;
 		}
 
-		job();
+		{
+			ZoneScopedN("ThreadPool::job()");
+			job();
+		}
 
 		// Decrement and notify waitIdle() if pool is now fully idle
 		if (--m.active_jobs == 0) {
