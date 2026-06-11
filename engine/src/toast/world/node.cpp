@@ -45,7 +45,9 @@ auto Node::box() const noexcept -> Box<Node> {
 }
 
 auto Node::parent() noexcept -> Box<Node> {
-	World::registerDependency(m_parent, *this);
+	if (m_parent.exists()) {
+		World::registerDependency(*m_parent, *this);
+	}
 	return m_parent;
 }
 

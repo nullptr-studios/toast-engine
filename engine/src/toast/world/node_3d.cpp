@@ -130,7 +130,7 @@ void Node3D::recalculateTransforms() {
 		// get updated when we use the setters
 
 		// We update world transform as well
-		m_world_transform = m_transform_parent->getTransform() * m_transform;
+		m_world_transform = m_transform_parent.exists() ? m_transform_parent->getTransform() * m_transform : m_transform;
 
 		World::markNode3DDependantsDirty(box());
 
@@ -138,7 +138,7 @@ void Node3D::recalculateTransforms() {
 	}
 
 	if (m_dirty_world) {
-		const auto& parent_mat = m_transform_parent->getWorldTransform();
+		const glm::mat4 parent_mat = m_transform_parent.exists() ? m_transform_parent->getWorldTransform() : glm::mat4(1.0f);
 		m_world_position = parent_mat * glm::vec4(m_position, 1.0f);
 		m_world_rotation = glm::quat(parent_mat * glm::mat4_cast(m_rotation));
 		m_world_scale = parent_mat * glm::vec4(m_scale, 0.0f);
@@ -224,17 +224,13 @@ const glm::vec3& Node3D::worldScale() const {
 }
 
 void Node3D::init() {
-	// find parent
-	Box<Node> p = parent();
-	while (not m_transform_parent.exists()) {
-		Box<Node3D> target = p.as<Node3D>();
-		if (target.exists()) {
+	// Find the closest Node3D parent
+	// we ONLY register dependency on the found one
+	for (Box<Node> p = parentInternal(); p.exists(); p = p->parentInternal()) {
+		if (Box<Node3D> target = p.as<Node3D>(); target.exists()) {
 			m_transform_parent = target;
-		}
-
-		p = p->parent();
-		if (not p.exists()) {
-			// no parent available
+			// we hold a reference to the transform parent, so it must tick before us
+			World::registerDependency(*target, *this);
 			break;
 		}
 	}

@@ -14,6 +14,24 @@ find_package(protobuf CONFIG REQUIRED)
 file(GLOB_RECURSE SOURCE "src/*.cpp" "generated/*.cpp" "generated/*.cc")
 add_library(toast_engine SHARED ${SOURCE})
 
+# Re-run the reflection generator at build time whenever an engine header changes
+file(GLOB_RECURSE TOAST_REFLECTED_HEADERS CONFIGURE_DEPENDS "src/toast/*.hpp" "src/toast/*.h")
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
+    COMMAND ${REFLECTION_GENERATOR}
+        --database "${CMAKE_SOURCE_DIR}/engine/assets/engine_reflect.json"
+        --output   "${CMAKE_SOURCE_DIR}/engine/generated"
+        --input    "${CMAKE_SOURCE_DIR}/engine/src/toast"
+        --include-root "${CMAKE_SOURCE_DIR}/engine/src"
+        --register-fn "registerEngineTypes"
+    COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
+    DEPENDS ${TOAST_REFLECTED_HEADERS}
+    COMMENT "Regenerating reflection metadata"
+    VERBATIM
+)
+add_custom_target(reflection_gen DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp")
+add_dependencies(toast_engine reflection_gen)
+
 set(TOAST_ENGINE_OUTPUT_ROOT "${OUTPUT_ROOT}/$<CONFIG>/toast_engine")
 set(TOAST_ENGINE_BIN_DIR "${TOAST_ENGINE_OUTPUT_ROOT}/bin")
 set(TOAST_ENGINE_LIB_DIR "${TOAST_ENGINE_OUTPUT_ROOT}/lib")

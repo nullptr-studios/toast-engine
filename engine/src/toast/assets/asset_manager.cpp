@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <sstream>
 #include <toast/log.hpp>
 
 namespace assets {
@@ -64,7 +65,13 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 			return nullptr;
 		}
 	} else if (info.type == "node") {
-		asset = std::make_unique<Prefab>(std::span<const uint8_t>(*raw_data));
+		// TODO: At some point we need to handle toast packs
+		if constexpr (load_mode == SaveMode::editor) {
+			std::istringstream stream(std::string(reinterpret_cast<const char*>(raw_data->data()), raw_data->size()));
+			asset = std::make_unique<Prefab>(stream);
+		} else {
+			asset = std::make_unique<Prefab>(std::span<const uint8_t>(*raw_data));
+		}
 	} else {
 		TOAST_ERROR("AssetManager", "Unknown asset type '{}' for asset {}", info.type, info.path);
 		return nullptr;

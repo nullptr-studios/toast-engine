@@ -56,6 +56,9 @@ public:
 private:
 	static inline AssetManager* instance = nullptr;
 
+	/// TODO: this is hardcoded
+	static constexpr SaveMode load_mode = SaveMode::editor;
+
 	event::Listener listener;
 	std::mutex mutex;
 	std::unordered_map<uint64_t, AssetInfo> manifest;

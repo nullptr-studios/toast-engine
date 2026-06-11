@@ -39,7 +39,7 @@ namespace _detail {
  *
  * This class combines multiples nodes into one single cluster. It is used for
  * grouping strongly connected components into one single component for the
- * dependency graph generation.
+ * dependency graph generation
  *
  * The nodes are ticked in the order they are on the vector, but in most cases
  * this shouldn't be an issue, as the main concern is to avoid race conditions
@@ -109,16 +109,37 @@ public:
 
 	static auto registerNode(const NodeInfo* info) { instance->m.node_registry.registerNode(info); }
 
-	/**
-	 * @brief Creates multiple nodes asynchronously
-	 */
-	[[deprecated("This was never a function meant to be used")]]
-	static void dispatchNodeCreation(int count);
-
 	static void loadNode(UID uid);
 	static void loadNode(std::string_view uri);
 
+	/**
+	 * @brief Promotes a cached (or global) root node to be the world root
+	 * @return The previous world root (now cached), or an empty box if the world was empty
+	 */
+	static auto setRoot(Node& node) -> Box<Node>;
+
+	/**
+	 * @brief Moves a node out of the active tree into the cached list, disabling it
+	 * 
+	 * Caching the active world root leaves the world without a root
+	 */
+	static auto cacheNode(Node& node) -> Box<Node>;
+
+	/**
+	 * @brief Queues a cached node for destruction
+	 * 
+	 * The queue is drained at the start of the next World::tick()
+	 */
+	static void destroyNode(Node& node);
+
+	[[nodiscard]]
+	static auto findCached(std::string_view name) -> Box<Node>;
+
+	[[nodiscard]]
+	static auto graphviz() -> std::string;
+
 	static void markNode3DDependantsDirty(const Box<Node>& node) noexcept;
+
 	[[nodiscard]]
 	auto dependencyGraphGraphviz() const -> std::string;
 
@@ -155,6 +176,8 @@ private:
 
 	void drainLoadQueue();
 
+	void drainDestroyQueue();
+
 	struct {
 		event::Listener listener;
 		std::mutex nodes_mutex;
@@ -162,6 +185,7 @@ private:
 		std::vector<std::future<void>> load_futures;
 		std::unordered_set<_detail::ControlBox> nodes;
 		NodeRegistry node_registry;
+		size_t tombstones = 0;    ///< Control boxes of destroyed nodes waiting for their last Box to release them
 	} m;
 
 	struct {

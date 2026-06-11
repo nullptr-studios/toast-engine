@@ -116,21 +116,23 @@ auto World::nodeAllocation(std::optional<assets::Prefab::BasicNode> node_data) n
 		raw_node->name(node_data->name);
 
 		if (info) {
-			for (const auto& f : info->all_fields) {
-				auto f_data = node_data->find(f.name);
-				if (not f_data.has_value()) {
-					continue;
-				}
+			info->forEachBaseType([&](const NodeInfo& level) {
+				for (const auto& f : level.all_fields) {
+					auto f_data = node_data->find(f.name);
+					if (not f_data.has_value()) {
+						continue;
+					}
 
 #ifndef NDEBUG
-				if (not f.set) {
-					TOAST_WARN("World", "No valid set function found for {}", f.name);
-					continue;
-				}
+					if (not f.set) {
+						TOAST_WARN("World", "No valid set function found for {}", f.name);
+						continue;
+					}
 #endif
 
-				f.set(raw_node, f_data->value);
-			}
+					f.set(raw_node, f_data->value);
+				}
+			});
 		}
 	}
 
@@ -138,29 +140,41 @@ auto World::nodeAllocation(std::optional<assets::Prefab::BasicNode> node_data) n
 }
 
 void World::tick() {
+	drainDestroyQueue();
 	drainLoadQueue();
 
-	for (const auto& wave : tick_schedule.tick) {
-		std::vector<std::future<void>> futures;
-		futures.reserve(wave.size());
+	auto run_phase = [](const std::vector<TickSchedule::Wave>& phase, TickFunctionList func) {
+		for (const auto& wave : phase) {
+			std::vector<std::future<void>> futures;
+			futures.reserve(wave.size());
 
-		for (const auto& n : wave) {
-			futures.emplace_back(ThreadPool::push([n] {
-				if (std::holds_alternative<Box<Node>>(n)) {
-					auto node = std::get<Box<Node>>(n);
-					node->callTick(node->info(), TickFunctionList::tick);
-					return;
-				}
+			for (const auto& n : wave) {
+				futures.emplace_back(ThreadPool::push([n, func] {
+					if (std::holds_alternative<Box<Node>>(n)) {
+						auto node = std::get<Box<Node>>(n);
+						node->callTick(node->info(), func);
+						return;
+					}
 
-				auto cluster = std::get<NodeCluster>(n);
-				cluster.tick();
-			}));
+					// Clusters tick their nodes synchronously to avoid race conditions
+					auto cluster = std::get<NodeCluster>(n);
+					for (auto& node : cluster.nodes) {
+						node->callTick(node->info(), func);
+					}
+				}));
+			}
+
+			for (auto& f : futures) {
+				f.get();
+			}
 		}
+	};
 
-		for (auto& f : futures) {
-			f.get();
-		}
-	}
+	run_phase(tick_schedule.early_tick, TickFunctionList::early_tick);
+	run_phase(tick_schedule.tick, TickFunctionList::tick);
+	// TODO: physics step goes between tick and post_physics
+	run_phase(tick_schedule.post_physics, TickFunctionList::post_physics);
+	run_phase(tick_schedule.late_tick, TickFunctionList::late_tick);
 }
 
 void World::registerDependency(Node& from, Node& to) {
@@ -174,7 +188,13 @@ void World::registerDependency(Node& from, Node& to) {
 	//
 	// }
 
-	instance->dependency_graph.connections[from].emplace_back(to);
+	// don't store duplicates
+	auto& edges = instance->dependency_graph.connections[from];
+	if (std::ranges::contains(edges, Box<Node>(to))) {
+		return;
+	}
+
+	edges.emplace_back(to);
 	instance->dependency_graph.inverse_connections[to].emplace_back(from);
 }
 
@@ -212,52 +232,6 @@ auto World::requestRuntimeCreation(Node& parent) -> Box<Node> {
 	node->callTick(node->info(), TickFunctionList::pre_init);
 	node->enabled(true);
 	return node;
-}
-
-void World::dispatchNodeCreation(int count) {
-	ZoneScoped;
-
-	// Phase 1: allocation
-	std::vector<std::future<Box<Node>>> alloc_futures;
-	alloc_futures.reserve(count);
-	for (int i = 0; i < count; i++) {
-		alloc_futures.emplace_back(ThreadPool::push([]() {
-			Box node = instance->nodeAllocation();
-			node->callTick(node->info(), TickFunctionList::load);
-			node->callTick(node->info(), TickFunctionList::pre_init);
-			node->m_state = NodeState::loading;
-			return node;
-		}));
-	}
-
-	for (auto& r : alloc_futures) {
-		r.wait();
-	}
-
-	// Phase 2: data structure generation
-	for (auto& r : alloc_futures) {
-		r.get()->m_uid.generate();
-	}
-	// TODO: build tree
-	// TODO: build dependency graph
-
-	// Phase 3: node initialization
-	// TODO: placeholder
-	std::vector<std::future<Box<Node>>> init_futures;
-	init_futures.reserve(count);
-	for (int i = 0; i < count; i++) {
-		init_futures.emplace_back(ThreadPool::push([node = alloc_futures[i].get()]() mutable {
-			node->callTick(node->info(), TickFunctionList::init);
-			return node;
-		}));
-	}
-
-	for (auto& r : init_futures) {
-		r.wait();
-		r.get()->m_state = NodeState::cached;
-	}
-
-	// TODO: Move this to cached_list
 }
 
 void World::loadNode(UID uid) {
@@ -345,6 +319,115 @@ void World::drainLoadQueue() {
 	}
 }
 
+auto World::setRoot(Node& node) -> Box<Node> {
+	return instance->swapRoot(node);
+}
+
+auto World::cacheNode(Node& node) -> Box<Node> {
+	return instance->moveToCached(node);
+}
+
+auto World::findCached(std::string_view name) -> Box<Node> {
+	for (const auto& node : instance->nodes.cached) {
+		if (node->name() == name) {
+			return node;
+		}
+	}
+	return {};
+}
+
+auto World::graphviz() -> std::string {
+	return instance->dependencyGraphGraphviz();
+}
+
+void World::destroyNode(Node& node) {
+	if (node.m_state != NodeState::cached) {
+		TOAST_WARN("World", "Only cached nodes can be destroyed, {} ({}) is still in use", node.name(), node.uid());
+		return;
+	}
+
+	std::erase(instance->nodes.cached, node.box());
+	node.changeNodeState(NodeState::destroy);
+	instance->nodes.destroy_queue.emplace_back(node.box());
+}
+
+void World::drainDestroyQueue() {
+	std::vector<Box<Node>> doomed;
+	std::swap(doomed, nodes.destroy_queue);
+
+	if (!doomed.empty()) {
+		ZoneScopedN("World::drainDestroyQueue()");
+
+		// Run the destroy lifecycle while the trees are still intact
+		for (auto& root : doomed) {
+			root->propagateCallTick(root->info(), TickFunctionList::destroy);
+		}
+
+		// Collect every node of every doomed tree
+		std::vector<Node*> victims;
+		auto collect = [&victims](this auto&& self, Node& node) -> void {
+			victims.push_back(&node);
+			for (auto& child : node.m_children) {
+				self(*child);
+			}
+		};
+		for (auto& root : doomed) {
+			collect(*root);
+		}
+		doomed.clear();    // drop our own references before tearing the trees down
+
+		std::unordered_set<const Node*> victim_set(victims.begin(), victims.end());
+
+		// Scrub every edge that involves a victim from the dependency graph
+		auto scrub = [&](std::unordered_map<Box<Node>, std::vector<Box<Node>>>& connections) {
+			for (Node* victim : victims) {
+				connections.erase(victim->box());
+			}
+			for (auto& [node, edges] : connections) {
+				std::erase_if(edges, [&](const Box<Node>& edge) { return edge.exists() && victim_set.contains(&*edge); });
+			}
+		};
+		scrub(dependency_graph.connections);
+		scrub(dependency_graph.inverse_connections);
+
+		// Detach the tree structure so no victim holds a Box to another
+		for (Node* victim : victims) {
+			victim->m_parent = {};
+			victim->m_children.clear();
+			victim->m_listener.reset();
+		}
+
+		// Free the nodes. The control box is tombstoned (node = nullptr) instead of freed,
+		// so any stale Box<Node> still held elsewhere safely reports exists() == false
+		{
+			std::scoped_lock lock(m.nodes_mutex);
+			for (Node* victim : victims) {
+				ControlBox* control = ControlBox::get(victim);
+				const NodeInfo* info = victim->info();
+				TOAST_TRACE("World", "Destroying node {} ({})", victim->name(), victim->uid());
+
+				if (info && info->destroy) {
+					info->destroy(victim);
+				} else {
+					delete victim;
+				}
+				control->node = nullptr;
+				m.tombstones++;
+			}
+		}
+
+		computeDependencyGraph();
+	}
+
+	// Reap tombstones once their last Box released them
+	if (m.tombstones > 0) {
+		std::scoped_lock lock(m.nodes_mutex);
+		m.tombstones -= std::erase_if(m.nodes, [](const ControlBox& control) {
+			return control.node == nullptr && control.ref_count.load(std::memory_order_acquire) == 0;
+		});
+	}
+}
+
 void World::markNode3DDependantsDirty(const Box<Node>& node) noexcept {
 	if (!instance) {
 		return;
@@ -368,6 +451,9 @@ void World::computeDependencyGraph() {
 
 		// Guarantee every existing node exists in the subgraph
 		for (const auto& node : m.nodes) {
+			if (!node.node || node.node->m_state == NodeState::destroy) {
+				continue;
+			}
 			dependency_graph.connections[node.node->box()];
 			dependency_graph.inverse_connections[node.node->box()];
 		}
@@ -400,6 +486,9 @@ auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
 	std::vector<NodeGraph> subgraphs;
 
 	for (const auto& start_cn : m.nodes) {
+		if (!start_cn.node || start_cn.node->m_state == NodeState::destroy) {
+			continue;
+		}
 		auto start_node = start_cn.node->box();
 		if (visited.contains(start_node)) {
 			continue;
@@ -666,11 +755,9 @@ auto World::optimizeWaves(const std::vector<TickSchedule::Wave>& waves) -> TickS
 	 */
 	auto filter_and_assign_wave =
 	    [](std::vector<TickSchedule::Wave>& phase_waves, int wave_meta_index, auto&& has_function_checker) {
-		    for (int wave_idx = 0; std::cmp_less(wave_idx, phase_waves.size()); ++wave_idx) {
-			    auto& current_wave = phase_waves[wave_idx];
-
-			    // Remove items that don't participate in this phase
-			    std::erase_if(current_wave, [&](std::variant<Box<Node>, NodeCluster>& item) {
+		    // Remove items that don't participate in this phase
+		    for (auto& wave : phase_waves) {
+			    std::erase_if(wave, [&](std::variant<Box<Node>, NodeCluster>& item) {
 				    if (std::holds_alternative<Box<Node>>(item)) {
 					    auto node = std::get<Box<Node>>(item);
 					    return !has_function_checker(node);
@@ -679,12 +766,14 @@ auto World::optimizeWaves(const std::vector<TickSchedule::Wave>& waves) -> TickS
 				    const auto& cluster = std::get<NodeCluster>(item);
 				    return !std::ranges::any_of(cluster.nodes, [&](const auto& node) { return has_function_checker(node); });
 			    });
+		    }
 
-			    // Drop waves that became empty after filtering
-			    std::erase_if(phase_waves, [](const auto& wave) { return wave.empty(); });
+		    // Drop waves that became empty after filtering
+		    std::erase_if(phase_waves, [](const auto& wave) { return wave.empty(); });
 
-			    // Assign the resulting wave index to all surviving nodes
-			    for (auto& item : current_wave) {
+		    // Assign the resulting wave index to all surviving nodes
+		    for (int wave_idx = 0; std::cmp_less(wave_idx, phase_waves.size()); ++wave_idx) {
+			    for (auto& item : phase_waves[wave_idx]) {
 				    std::visit(
 				        [&](auto& value) {
 					        using T = std::decay_t<decltype(value)>;
@@ -718,12 +807,14 @@ auto World::optimizeWaves(const std::vector<TickSchedule::Wave>& waves) -> TickS
 
 auto World::swapRoot(Node& node) -> Box<Node> {
 	ZoneScoped;
-	ZoneNameF("World::swapRoot() [%s to %s]", nodes.root->name().data(), node.name().data());
+	ZoneNameF("World::swapRoot() [to %s]", node.name().data());
 
 	if (node.m_type != NodeType::root) {
-		TOAST_ERROR("World", "You can only swap roots with another world_root node");
+		TOAST_ERROR("World", "You can only swap roots with a root node");
+		return {};
 	}
 
+	// The world may be empty; in that case the node is simply promoted
 	auto root_node = nodes.root;
 
 	switch (node.m_state) {
@@ -734,18 +825,29 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 			TOAST_WARN("World", "Attempted to swap root with a not initialized node or one that is scheduled for destruction");
 			return {};
 		case NodeState::cached:
-			std::ranges::replace(nodes.cached, node.box(), root_node);
-			node.changeNodeState(NodeState::root);
-			root_node->changeNodeState(NodeState::cached);
-			root_node->propagateCallTick(root_node->info(), TickFunctionList::end);
-			root_node->enabled(false);
+			if (root_node.exists()) {
+				std::ranges::replace(nodes.cached, node.box(), root_node);
+				root_node->m_type = NodeType::root;    // world_root only exists in root and global
+				root_node->changeNodeState(NodeState::cached);
+				root_node->propagateCallTick(root_node->info(), TickFunctionList::end);
+				root_node->enabled(false);
+			} else {
+				std::erase(nodes.cached, node.box());
+			}
 			break;
 		case NodeState::global:
-			std::ranges::replace(nodes.cached, node.box(), root_node);
-			node.changeNodeState(NodeState::root);
-			root_node->changeNodeState(NodeState::global);
+			if (root_node.exists()) {
+				std::ranges::replace(nodes.global, node.box(), root_node);
+				root_node->changeNodeState(NodeState::global);
+			} else {
+				std::erase(nodes.global, node.box());
+			}
 			break;
 	}
+
+	node.m_type = NodeType::world_root;
+	node.changeNodeState(NodeState::root);
+	nodes.root = node.box();
 
 	computeDependencyGraph();
 
@@ -757,7 +859,7 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 
 auto World::moveToCached(Node& node) -> Box<Node> {
 	ZoneScoped;
-	ZoneNameF("World::moveToCached() [%s]", nodes.root->name().data());
+	ZoneNameF("World::moveToCached() [%s]", node.name().data());
 
 	switch (node.m_state) {
 		case NodeState::cached: TOAST_WARN("World", "Tried to move to cache a node already on cache"); return {};
@@ -768,11 +870,12 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 			return {};
 		case NodeState::root:
 			if (node.m_type == NodeType::world_root) {
-				TOAST_ERROR("World", "Tried to move root to cached, consider using swapRoot() instead");
-				return {};
+				// Caching the active root leaves the world empty
+				nodes.root = {};
+			} else {
+				std::erase(node.parent()->m_children, node.box());
+				node.m_parent = {};
 			}
-			std::erase(node.parent()->m_children, node.box());
-			node.m_parent = {};
 			break;
 		case NodeState::global:
 			if (node.m_type == NodeType::world_root) {
@@ -926,6 +1029,17 @@ auto World::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<
 		TOAST_ERROR("World", "Prefab contains no rootless node, the loaded tree has no root");
 	}
 #endif
+
+	// Serialization only stores the local enabled flag; the inherited one is derived from the tree
+	if (root.exists()) {
+		auto propagate_inherited = [](this auto&& self, Node& n, bool inherited) -> void {
+			n.m_inherited_enabled = inherited;
+			for (auto& child : n.m_children) {
+				self(*child, n.enabled());
+			}
+		};
+		propagate_inherited(*root, true);
+	}
 
 	return root;
 }

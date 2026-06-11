@@ -17,10 +17,12 @@
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
 #include "world/reflect.hpp"
+#include "world/world.hpp"
 
 #include <SDL3/SDL.h>
 #include <cassert>
 #include <filesystem>
+#include <fstream>
 #include <memory>
 #include <optional>
 #include <span>
@@ -58,6 +60,69 @@ auto createTrianglePipeline(
 	return std::make_unique<renderer::VulkanPipeline>(core, config);
 }
 
+// FIXME: DEBUGGING PURPOSES
+void runWorldDemo() {
+	enum class DemoStage : uint8_t {
+		load,
+		wait_cached,
+		ticking,
+		unload,
+		destroy,
+		done
+	};
+	static DemoStage stage = DemoStage::load;
+	static Box<Node> demo_root;
+	static int frames = 0;
+
+	switch (stage) {
+		case DemoStage::load:
+			TOAST_INFO("WorldDemo", "Loading assets://demo.node");
+			World::loadNode("assets://demo.node");
+			stage = DemoStage::wait_cached;
+			break;
+
+		case DemoStage::wait_cached: {
+			demo_root = World::findCached("DemoRoot");
+			if (!demo_root.exists()) {
+				break;
+			}
+
+			TOAST_INFO("WorldDemo", "Prefab finished loading, promoting from cached to root");
+			World::setRoot(*demo_root);
+
+			std::string graph = World::graphviz();
+			TOAST_INFO("WorldDemo", "Dependency graph:\n{}", graph);
+			std::ofstream("dependency_graph.dot") << graph;
+
+			stage = DemoStage::ticking;
+			break;
+		}
+
+		case DemoStage::ticking:
+			if (++frames >= 10) {
+				TOAST_INFO("WorldDemo", "Ticked {} frames, moving DemoRoot back to cached", frames);
+				World::cacheNode(*demo_root);
+				stage = DemoStage::unload;
+			}
+			break;
+
+		case DemoStage::unload:
+			TOAST_INFO("WorldDemo", "Destroying DemoRoot");
+			World::destroyNode(*demo_root);
+			demo_root = {};
+			stage = DemoStage::destroy;
+			break;
+
+		case DemoStage::destroy:
+			// the destroy queue drained on the previous tick
+			TOAST_INFO("WorldDemo", "Demo complete");
+			stage = DemoStage::done;
+			break;
+
+		case DemoStage::done: break;
+	}
+}
+
 }
 
 Engine* Engine::instance = nullptr;
@@ -66,6 +131,7 @@ struct EnginePimpl {
 	std::unique_ptr<ThreadPool> thread_pool = nullptr;
 	std::unique_ptr<logging::Logger> logger = nullptr;
 	std::unique_ptr<IBaseWindow> window = nullptr;
+	std::unique_ptr<World> world = nullptr;
 	std::unique_ptr<assets::AssetManager> asset_manager = nullptr;
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
@@ -109,6 +175,7 @@ void Engine::init() {
 	TracySetProgramName("ToastEngine");
 	tracy::SetThreadName("Main Thread");
 
+	m->world = std::make_unique<World>();    // must exist before type registration
 	registerEngineTypes();
 
 	m->asset_manager = std::make_unique<assets::AssetManager>();
@@ -135,6 +202,11 @@ void Engine::tick() {
 #endif
 
 	event::pollEvents();
+
+	if (m->world) {
+		runWorldDemo();    // FIXME: DEBUGGING PURPOSES
+		m->world->tick();
+	}
 
 	// Run application logic
 	if (active_application) {
