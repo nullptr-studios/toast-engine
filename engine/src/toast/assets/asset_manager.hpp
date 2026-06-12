@@ -53,6 +53,8 @@ public:
 	static void setPaths(Paths&& paths);
 	static auto resolveURI(std::string_view uri) -> std::optional<toast::UID>;
 
+	auto getCachePath() const -> const std::filesystem::path&;
+
 private:
 	static inline AssetManager* instance = nullptr;
 

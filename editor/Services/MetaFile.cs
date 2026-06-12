@@ -32,6 +32,15 @@ public record PsdMetaSection : IMetaSection {
 	public bool CreateFolder { get; init; } = false;
 }
 
+public record GltfMetaSection : IMetaSection {
+	public bool CreateFolder { get; init; } = true;
+	public bool ImportMaterials { get; init; } = true;
+	public bool ImportTextures { get; init; } = true;
+	public bool ImportCameras { get; init; } = false;
+	public bool ImportLights { get; init; } = true;
+	public bool GeneratePrefab { get; init; } = true;
+}
+
 public static class MetaFile {
 	public static void Write(string outputAssetRealPath, MetaHeader header, params IMetaSection[] sections) {
 		var dto = new MetaFileDto {

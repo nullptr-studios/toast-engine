@@ -1,7 +1,10 @@
 #include "gltf_importer.hpp"
 
+#include "gltf_importer.h"    // ffi
+
 #define GLM_ENABLE_EXPERIMENTAL
 
+#include "asset_manager.hpp"
 #include "mesh.hpp"
 
 #include <glm/glm.hpp>
@@ -14,7 +17,7 @@
 using namespace tinygltf3;
 
 namespace assets {
-auto importGltf(const std::filesystem::path& path) {
+auto generateIntermediates(const std::filesystem::path& path) {
 	tg3_parse_options options;
 	tg3_error_stack errors;
 	tg3_model model;
@@ -175,12 +178,10 @@ auto importGltf(const std::filesystem::path& path) {
 
 		std::string mat_name(mat.name.data, mat.name.len);
 		toml::table material_table;
-
-		toml::table meta;
-		meta.insert("uid", "");
-		meta.insert("name", mat_name);
-		meta.insert("shader", "");
-		material_table.insert("material", std::move(meta));
+		material_table.insert("uid", "");
+		material_table.insert("name", mat_name);
+		material_table.insert("vertex", "NOT IMPLEMENTED");
+		material_table.insert("fragment", "NOT IMPLEMENTED");
 
 		toml::table params;
 		if (pbr.base_color_texture.index != -1) {
@@ -378,7 +379,7 @@ auto importGltf(const std::filesystem::path& path) {
 
 	// Save files in cache://<name_without_extension>/
 	std::string base_name = path.stem().string();
-	std::filesystem::path cache_dir = std::filesystem::path("cache") / base_name;
+	std::filesystem::path cache_dir = AssetManager::get().getCachePath() / base_name;
 	std::filesystem::create_directories(cache_dir);
 
 	// Save meshes
@@ -408,7 +409,7 @@ auto importGltf(const std::filesystem::path& path) {
 	// Save scenes
 	for (const auto& scene : scenes) {
 		std::string name = scene["name"].get<std::string>();
-		std::filesystem::path out = cache_dir / (name + ".tscene");
+		std::filesystem::path out = cache_dir / (name + ".json");
 		std::ofstream f(out);
 		f << scene.dump(2);
 	}
@@ -416,4 +417,13 @@ auto importGltf(const std::filesystem::path& path) {
 	tg3_model_free(&model);
 	tg3_error_stack_free(&errors);
 }
+}
+
+extern "C" {
+
+void gltf_generate_intermediates(const char* path) {
+	std::filesystem::path dir {path};
+	assets::generateIntermediates(dir);
+}
+
 }

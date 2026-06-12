@@ -168,6 +168,8 @@ public partial class ToastEngine : IDisposable {
 		LoadGame();
 	}
 
+	public static void GltfGenerateIntermediates(string path) => gltf_generate_intermediates(path);
+
 	private void LoadGame() {
 		var gameDllPath = Directory.EnumerateFiles(Path.Combine(ProjectPath, "build"), "*.dll").FirstOrDefault();
 		if (gameDllPath is null)
@@ -241,6 +243,9 @@ public partial class ToastEngine : IDisposable {
 
 	[LibraryImport(EngineLib)]
 	private static partial void toast_send_resize(int width, int height);
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial void gltf_generate_intermediates(string path);
 
 	// --------------------- Game ABI shit ---------------------
 	private delegate IntPtr GameCreate();
