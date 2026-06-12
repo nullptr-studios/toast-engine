@@ -49,13 +49,13 @@ auto Node::box() const noexcept -> Box<Node> {
 
 auto Node::parent() noexcept -> Box<Node> {
 	if (m_parent.exists()) {
-		World::registerDependency(*m_parent, *this);
+		m_owner->registerDependency(*m_parent, *this);
 	}
 	return m_parent;
 }
 
 auto Node::addChild() -> Box<Node> {
-	return World::requestRuntimeCreation(*this);
+	return m_owner->requestRuntimeCreation(*this);
 }
 
 auto Node::info() const -> const NodeInfo* {

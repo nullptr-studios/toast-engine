@@ -10,6 +10,7 @@
 #include "box.hpp"
 #include "control_box.hpp"
 #include "node.hpp"
+#include "node_owner.hpp"
 #include "reflect.hpp"
 #include "world_events.hpp"
 
@@ -78,7 +79,7 @@ struct TickSchedule {
 };
 }
 
-class World {
+class World final : public NodeOwner {
 public:
 	World();
 
@@ -101,12 +102,12 @@ public:
 	 * @param from Node that will be ticked first
 	 * @param to Node that will be ticked last
 	 */
-	static void registerDependency(Node& from, Node& to);
+	void registerDependency(Node& from, Node& to) override;
 
 	/**
 	 * @brief Requests to create a new node during runtime
 	 */
-	static auto requestRuntimeCreation(Node& parent) -> Box<Node>;
+	auto requestRuntimeCreation(Node& parent) -> Box<Node> override;
 
 	static void loadNode(UID uid);
 	static void loadNode(std::string_view uri);
@@ -145,9 +146,6 @@ public:
 private:
 	inline static World* instance = nullptr;
 
-	/// Creates a node and stores it in memory
-	auto nodeAllocation(std::optional<assets::Prefab::BasicNode> node_data = std::nullopt) noexcept -> Box<Node>;
-
 	/// Recalculates the dependency graph and updates the tick_schedule
 	void computeDependencyGraph();
 
@@ -171,28 +169,23 @@ private:
 
 	auto moveToChild(Node& node, Node& parent) -> Box<Node>;
 
-	auto buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node>;
-
 	void drainLoadQueue();
 
 	void drainDestroyQueue();
 
 	struct {
 		event::Listener listener;
-		std::mutex nodes_mutex;
 		std::mutex load_mutex;
 		std::vector<std::future<void>> load_futures;
-		std::unordered_set<_detail::ControlBox> nodes;
-		size_t tombstones = 0;    ///< Control boxes of destroyed nodes waiting for their last Box to release them
 	} m;
 
-	struct {
+	struct Trees {
 		Box<Node> root;
 		std::vector<Box<Node>> global;
 		std::vector<Box<Node>> cached;
 		std::vector<Box<Node>> load_queue;
 		std::vector<Box<Node>> destroy_queue;
-	} nodes;
+	} trees;
 
 	struct DependencyGraph {
 		std::unordered_map<Box<Node>, std::vector<Box<Node>>> connections;
@@ -201,6 +194,7 @@ private:
 
 	_detail::TickSchedule tick_schedule;
 
+	// for testing only
 	friend struct toast::_detail::WorldTestAccess;
 };
 

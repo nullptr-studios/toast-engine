@@ -47,6 +47,12 @@ if (WIN32)
     )
 endif()
 
+target_compile_options(toast_engine PUBLIC
+        $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:-Wno-unknown-attributes>
+        $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
+        $<$<CXX_COMPILER_ID:MSVC>:/wd5030>
+)
+
 target_include_directories(toast_engine
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src

@@ -22,6 +22,8 @@ class Prefab;
 }
 
 namespace toast {
+class NodeOwner;
+
 namespace _detail {
 struct NodeCluster;
 }
@@ -43,6 +45,7 @@ enum class NodeType : uint8_t {
 };
 
 class [[ToastNode]] TOAST_API Node {
+	friend class NodeOwner;
 	friend class World;
 	friend class Node3D;
 	friend class assets::Prefab;
@@ -83,6 +86,9 @@ public:
 	[[nodiscard]]
 	auto listener() noexcept -> event::Listener&;
 
+protected:
+	NodeOwner* m_owner = nullptr;
+
 private:
 	[[Reflect, Name("UID")]]
 	UID m_uid;    // serialized unique id
@@ -113,15 +119,13 @@ private:
 	void inheritedEnabled(bool value) noexcept;
 	void changeNodeState(NodeState state) noexcept;
 
-	// Reflection dispatch: Call a tick/lifecycle function from NodeInfo
+	// call a tick function from NodeInfo
 	void callTick(const NodeInfo* info, TickFunctionList func_type) noexcept;
 
-	// Reflection dispatch: Recursively call on children after this node
+	// recursively call on children after this node
 	void propagateCallTick(const NodeInfo* info, TickFunctionList func_type) noexcept;
 };
 
-// Safe down/cross-cast using reflected RTTI; returns nullptr if `n` is not a `T`.
-// The caller must have the `Reflect<T>` specialization (generated header) in scope.
 template<typename T>
 auto reflect_cast(Node* n) -> T* {
 	if (n && n->info() && n->info()->isA(&Reflect<T>::type_info)) {

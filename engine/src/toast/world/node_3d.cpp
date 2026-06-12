@@ -230,7 +230,7 @@ void Node3D::init() {
 		if (Box<Node3D> target = p.as<Node3D>(); target.exists()) {
 			m_transform_parent = target;
 			// we hold a reference to the transform parent, so it must tick before us
-			World::registerDependency(*target, *this);
+			m_owner->registerDependency(*target, *this);
 			break;
 		}
 	}

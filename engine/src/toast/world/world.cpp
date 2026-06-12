@@ -86,6 +86,7 @@ World::World() {
 
 	m.listener.subscribe<event::LoadNode>("load_node", [](event::LoadNode& e) {
 		loadNode(e.uid);
+		loadNode(e.uid);
 		return false;
 	});
 
@@ -120,66 +121,6 @@ World::World() {
 	});
 
 	TOAST_INFO("World", "Created world");
-}
-
-auto World::nodeAllocation(std::optional<assets::Prefab::BasicNode> node_data) noexcept -> Box<Node> {
-	ZoneScoped;
-
-	// Identify the type and get reflection info
-	std::string type = node_data.has_value() ? node_data->type : "toast::Node";
-	const NodeInfo* info = NodeRegistry::reflect(type);
-
-#ifndef NDEBUG
-	if (!info) {
-		TOAST_WARN("World", "Reflection information for type {} not found. Falling back to toast::Node", type);
-		info = NodeRegistry::reflect("toast::Node");
-	}
-#endif
-
-	// Node allocation
-#ifdef NDEBUG
-	Node* raw_node = info->construct();
-#else
-	Node* raw_node = (info && info->construct) ? info->construct() : new Node();
-#endif
-
-	{
-		std::scoped_lock lock(m.nodes_mutex);
-		auto [it, result] = m.nodes.emplace(raw_node);
-		TOAST_ASSERT(result, "World", "Node allocation failed");
-	}
-	raw_node->m_info = info;    // attach reflection data
-
-	if (node_data.has_value()) {
-		raw_node->name(node_data->name);
-
-		if (info) {
-			info->forEachBaseType([&](const NodeInfo& level) {
-				for (const auto& f : level.all_fields) {
-					auto f_data = node_data->find(f.name);
-					if (not f_data.has_value()) {
-						continue;
-					}
-
-					// Read only attributes shouldn't be serialized
-					if (f.hasAttribute("ReadOnly")) {
-						continue;
-					}
-
-#ifndef NDEBUG
-					if (not f.set) {
-						TOAST_WARN("World", "No valid set function found for {}", f.name);
-						continue;
-					}
-#endif
-
-					f.set(raw_node, f_data->value);
-				}
-			});
-		}
-	}
-
-	return raw_node->box();
 }
 
 void World::tick() {
@@ -347,7 +288,7 @@ void World::loadNode(UID uid) {
 		TOAST_TRACE("World", "Node {} ({}) finished loading", root->name(), root->uid());
 
 		std::scoped_lock lock(instance->m.load_mutex);
-		instance->nodes.load_queue.emplace_back(std::move(root));
+		instance->trees.load_queue.emplace_back(std::move(root));
 	});
 
 	std::scoped_lock lock(instance->m.load_mutex);
@@ -375,10 +316,10 @@ void World::drainLoadQueue() {
 	std::vector<Box<Node>> loaded;
 	{
 		std::scoped_lock lock(m.load_mutex);
-		if (nodes.load_queue.empty()) {
+		if (trees.load_queue.empty()) {
 			return;
 		}
-		std::swap(loaded, nodes.load_queue);
+		std::swap(loaded, trees.load_queue);
 	}
 
 	ZoneScoped;
@@ -387,7 +328,7 @@ void World::drainLoadQueue() {
 	for (auto& root : loaded) {
 		root->changeNodeState(NodeState::cached);
 		TOAST_TRACE("World", "Node {} ({}) moved to cache", root->name(), root->uid());
-		nodes.cached.emplace_back(std::move(root));
+		trees.cached.emplace_back(std::move(root));
 	}
 }
 
@@ -402,7 +343,7 @@ auto World::cacheNode(Node& node) -> Box<Node> {
 auto World::findCached(std::string_view name) -> Box<Node> {
 	ZoneScoped;
 
-	for (const auto& node : instance->nodes.cached) {
+	for (const auto& node : instance->trees.cached) {
 		if (node->name() == name) {
 			return node;
 		}
@@ -425,15 +366,15 @@ void World::destroyNode(Node& node) {
 		return;
 	}
 
-	std::erase(instance->nodes.cached, node.box());
+	std::erase(instance->trees.cached, node.box());
 	node.changeNodeState(NodeState::destroy);
-	instance->nodes.destroy_queue.emplace_back(node.box());
+	instance->trees.destroy_queue.emplace_back(node.box());
 	TOAST_TRACE("World", "Queued node {} ({}) for destruction", node.name(), node.uid());
 }
 
 void World::drainDestroyQueue() {
 	std::vector<Box<Node>> doomed;
-	std::swap(doomed, nodes.destroy_queue);
+	std::swap(doomed, trees.destroy_queue);
 
 	if (!doomed.empty()) {
 		ZoneScopedN("World::drainDestroyQueue()");
@@ -479,7 +420,7 @@ void World::drainDestroyQueue() {
 
 		// Free the nodes
 		{
-			std::scoped_lock lock(m.nodes_mutex);
+			std::scoped_lock lock(nodes_mutex);
 			for (Node* victim : victims) {
 				ControlBox* control = ControlBox::get(victim);
 				const NodeInfo* info = victim->info();
@@ -490,21 +431,14 @@ void World::drainDestroyQueue() {
 				} else {
 					delete victim;
 				}
-				control->node = nullptr;
-				m.tombstones++;
+				releaseNode(*control);
 			}
 		}
 
 		computeDependencyGraph();
 	}
 
-	// Reap tombstones once their last Box released them
-	if (m.tombstones > 0) {
-		std::scoped_lock lock(m.nodes_mutex);
-		m.tombstones -= std::erase_if(m.nodes, [](const ControlBox& control) {
-			return control.node == nullptr && control.ref_count.load(std::memory_order_acquire) == 0;
-		});
-	}
+	reapTombstones();
 }
 
 void World::markNode3DDependantsDirty(const Box<Node>& node) noexcept {
@@ -529,16 +463,16 @@ void World::computeDependencyGraph() {
 	std::vector<std::vector<Box<Node>>> subgraphs;
 	{
 		// Loader threads insert into m.nodes concurrently
-		std::scoped_lock lock(m.nodes_mutex);
+		std::scoped_lock lock(nodes_mutex);
 
 		// Guarantee every existing node exists in the subgraph
-		for (const auto& node : m.nodes) {
+		forEachNode([&](const ControlBox& node) {
 			if (!node.node || node.node->m_state == NodeState::destroy) {
-				continue;
+				return;
 			}
 			dependency_graph.connections[node.node->box()];
 			dependency_graph.inverse_connections[node.node->box()];
-		}
+		});
 
 		subgraphs = subgraphSeparation();
 	}
@@ -577,13 +511,13 @@ auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
 	std::unordered_set<Box<Node>> visited;
 	std::vector<NodeGraph> subgraphs;
 
-	for (const auto& start_cn : m.nodes) {
+	forEachNode([&](const ControlBox& start_cn) {
 		if (!start_cn.node || start_cn.node->m_state == NodeState::destroy) {
-			continue;
+			return;
 		}
 		auto start_node = start_cn.node->box();
 		if (visited.contains(start_node)) {
-			continue;
+			return;
 		}
 
 		ZoneScoped;
@@ -628,7 +562,7 @@ auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
 		subgraph.reserve(component.size());
 		subgraph.assign(std::make_move_iterator(component.begin()), std::make_move_iterator(component.end()));
 		subgraphs.push_back(std::move(subgraph));
-	}
+	});
 
 	return subgraphs;
 }
@@ -925,7 +859,7 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 	}
 
 	// The world may be empty; in that case the node is simply promoted
-	auto root_node = nodes.root;
+	auto root_node = trees.root;
 
 	switch (node.m_state) {
 		case NodeState::root: TOAST_WARN("World", "Attempted to swap root with a node already in root"); return {};
@@ -936,28 +870,28 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 			return {};
 		case NodeState::cached:
 			if (root_node.exists()) {
-				std::ranges::replace(nodes.cached, node.box(), root_node);
+				std::ranges::replace(trees.cached, node.box(), root_node);
 				root_node->m_type = NodeType::root;    // world_root only exists in root and global
 				root_node->changeNodeState(NodeState::cached);
 				root_node->propagateCallTick(root_node->info(), TickFunctionList::end);
 				root_node->enabled(false);
 			} else {
-				std::erase(nodes.cached, node.box());
+				std::erase(trees.cached, node.box());
 			}
 			break;
 		case NodeState::global:
 			if (root_node.exists()) {
-				std::ranges::replace(nodes.global, node.box(), root_node);
+				std::ranges::replace(trees.global, node.box(), root_node);
 				root_node->changeNodeState(NodeState::global);
 			} else {
-				std::erase(nodes.global, node.box());
+				std::erase(trees.global, node.box());
 			}
 			break;
 	}
 
 	node.m_type = NodeType::world_root;
 	node.changeNodeState(NodeState::root);
-	nodes.root = node.box();
+	trees.root = node.box();
 
 	computeDependencyGraph();
 
@@ -982,7 +916,7 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 		case NodeState::root:
 			if (node.m_type == NodeType::world_root) {
 				// Caching the active root leaves the world empty
-				nodes.root = {};
+				trees.root = {};
 			} else {
 				std::erase(node.parent()->m_children, node.box());
 				node.m_parent = {};
@@ -990,7 +924,7 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 			break;
 		case NodeState::global:
 			if (node.m_type == NodeType::world_root) {
-				std::erase(nodes.global, node.box());
+				std::erase(trees.global, node.box());
 			} else {
 				std::erase(node.parent()->m_children, node.box());
 				node.m_parent = {};
@@ -1008,7 +942,7 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 		node.m_type = NodeType::root;
 	}
 
-	nodes.cached.emplace_back(node.box());
+	trees.cached.emplace_back(node.box());
 
 	computeDependencyGraph();
 	TOAST_TRACE("World", "Node {} ({}) moved to cache", node.name(), node.uid());
@@ -1032,7 +966,7 @@ auto World::moveToGlobal(Node& node) -> Box<Node> {
 		return {};
 	}
 
-	std::erase(nodes.cached, node.box());
+	std::erase(trees.cached, node.box());
 
 	node.m_type = NodeType::world_root;
 	node.changeNodeState(NodeState::global);
@@ -1041,7 +975,7 @@ auto World::moveToGlobal(Node& node) -> Box<Node> {
 
 	node.propagateCallTick(node.info(), TickFunctionList::begin);
 	node.enabled(true);
-	nodes.global.emplace_back(node.box());
+	trees.global.emplace_back(node.box());
 	TOAST_TRACE("World", "Node {} ({}) moved to global", node.name(), node.uid());
 	return node.box();
 }
@@ -1074,9 +1008,9 @@ auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
 		std::erase(node.parent()->m_children, node.box());
 	} else {
 		if (node.m_state == NodeState::global) {
-			std::erase(nodes.global, node.box());
+			std::erase(trees.global, node.box());
 		} else if (node.m_state == NodeState::cached) {
-			std::erase(nodes.cached, node.box());
+			std::erase(trees.cached, node.box());
 			run_begin = true;
 		}
 	}
@@ -1091,77 +1025,6 @@ auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
 	TOAST_TRACE("World", "Moved node {} ({}) under {} ({})", node.name(), node.uid(), parent.name(), parent.uid());
 
 	return node.box();
-}
-
-auto World::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node> {
-	ZoneScoped;
-
-	std::unordered_map<uint64_t, Box<Node>> uid_map;
-	uid_map.reserve(nodes.size());
-	for (auto& node : nodes) {
-		uid_map[node->uid().data()] = node;
-	}
-
-	Box<Node> root;
-
-	// Prefab serialization guarantees exactly one rootless node, written first.
-	// nodes[i] pairs with file->nodes[i]: the alloc futures are collected in
-	// submission order, which is the file order.
-	for (size_t i = 0; i < nodes.size(); ++i) {
-		auto& node = nodes[i];
-		const auto& data = file->nodes[i];
-
-		auto parent_field = data.find("Parent");
-		bool has_parent = false;
-
-		if (parent_field.has_value()) {
-			try {
-				UID parent_uid = parent_field->as<UID>();
-
-				auto it = uid_map.find(parent_uid.data());
-				if (it != uid_map.end()) {
-					node->m_parent = it->second;
-					it->second->m_children.emplace_back(node);
-					has_parent = true;
-				}
-			} catch (const std::bad_any_cast&) {
-				TOAST_WARN("World", "Cast to UID of field Parent in {} failed, treating as Root", data.name);
-			}
-		}
-
-		node->m_type = has_parent ? NodeType::child : NodeType::root;
-
-		if (not has_parent) {
-#ifndef NDEBUG
-			if (root.exists()) {
-				TOAST_WARN("World", "Multiple rootless nodes in Prefab ({} and {}), keeping the last one", root->name(), data.name);
-			}
-#endif
-			root = node;
-		}
-	}
-
-#ifndef NDEBUG
-	if (not root.exists()) {
-		TOAST_ERROR("World", "Prefab contains no rootless node, the loaded tree has no root");
-	}
-#endif
-
-	// Serialization only stores the local enabled flag; the inherited one is derived from the tree
-	if (root.exists()) {
-		auto propagate_inherited = [](this auto&& self, Node& n, bool inherited) -> void {
-			n.m_inherited_enabled = inherited;
-			for (auto& child : n.m_children) {
-				self(*child, n.enabled());
-			}
-		};
-		propagate_inherited(*root, true);
-	}
-
-	if (root.exists()) {
-		TOAST_TRACE("World", "Built tree {} ({}) with {} nodes", root->name(), root->uid(), nodes.size());
-	}
-	return root;
 }
 
 auto World::dependencyGraphGraphviz() const -> std::string {
@@ -1327,7 +1190,7 @@ auto WorldTestAccess::createNode(World& world, std::string_view name, NodeState 
 }
 
 void WorldTestAccess::registerDependency(Node& from, Node& to) {
-	World::registerDependency(from, to);
+	World::instance->registerDependency(from, to);
 }
 
 void WorldTestAccess::addTickStage(Node& node, TickFunctionList stage) {
