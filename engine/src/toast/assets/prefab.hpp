@@ -48,7 +48,7 @@ struct NodeFileBinaryHeader {
 };
 }
 
-class Prefab : public Asset, public ISaveable {
+class Prefab final : public Asset, public ISaveable {
 public:
 	Prefab(std::istream& file);
 	Prefab(std::span<const uint8_t> bytes);

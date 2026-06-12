@@ -17,3 +17,4 @@
 #include "data.hpp"
 #include "prefab.hpp"
 #include "texture.hpp"
+#include "mesh.hpp"
