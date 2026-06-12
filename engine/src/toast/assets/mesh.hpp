@@ -8,10 +8,10 @@
 
 #pragma once
 #include "core_types.hpp"
-#include <toast/log.hpp>
-#include <toast/export.hpp>
 
 #include <glm/glm.hpp>
+#include <toast/export.hpp>
+#include <toast/log.hpp>
 
 namespace assets {
 
@@ -27,10 +27,7 @@ struct MeshFileHeader {
 
 class TOAST_API Mesh final : public Asset {
 public:
-	explicit Mesh(const std::vector<uint8_t>& data);
-
-	[[nodiscard]]
-	auto type() const -> std::string_view override { return "Mesh"; }
+	using Index = uint32_t;
 
 	struct Vertex {
 		glm::vec3 position;
@@ -40,18 +37,39 @@ public:
 		glm::vec3 color;
 	};
 
-	const std::vector<Vertex>& vertices = m_vertices;
-	const std::vector<uint32_t>& indices = m_indices;
+	explicit Mesh(const std::vector<uint8_t>& data);
 
-private:
-	Mesh(std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices)
-	    : m_vertices(std::move(vertices)),
+	Mesh(std::string_view name, std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices)
+	    : m_name(name),
+	      m_vertices(std::move(vertices)),
 	      m_indices(std::move(indices)) { }
 
-	auto toBinary() const;
+	[[nodiscard]]
+	auto type() const -> std::string_view override {
+		return "Mesh";
+	}
 
+	[[nodiscard]]
+	auto vertices() const -> const std::vector<Vertex>& {
+		return m_vertices;
+	}
+
+	[[nodiscard]]
+	auto indices() const -> const std::vector<Index>& {
+		return m_indices;
+	}
+
+	[[nodiscard]]
+	auto name() const -> const std::string& {
+		return m_name;
+	}
+
+	auto toBinary() const -> std::vector<uint8_t>;
+
+private:
+	std::string m_name;
 	std::vector<Vertex> m_vertices;
-	std::vector<uint32_t> m_indices;
+	std::vector<Index> m_indices;
 };
 
 }

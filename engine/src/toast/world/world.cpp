@@ -1,6 +1,7 @@
 #include "world.hpp"
 
 #include "node_3d.hpp"
+#include "toast/uri_handler.hpp"
 #include "world_test_access.hpp"
 
 #include <chrono>
@@ -9,8 +10,6 @@
 #include <toast/assets/types.hpp>
 #include <toast/thread_pool.hpp>
 #include <utility>
-
-#include "toast/uri_handler.hpp"
 
 namespace toast {
 
@@ -185,7 +184,7 @@ void World::tick() {
 	drainLoadQueue();
 
 	auto run_phase = [](const std::vector<TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) {
-		ZoneScopedN("World::tick()::function"); // NOLINT
+		ZoneScopedN("World::tick()::function");    // NOLINT
 		ZoneNameF("World::tick()::%s", name.data());
 
 		for (const auto& wave : phase) {
@@ -194,7 +193,7 @@ void World::tick() {
 
 			int count = 1;
 			for (const auto& n : wave) {
-				ZoneScopedN("World::tick()::function::wave"); // NOLINT
+				ZoneScopedN("World::tick()::function::wave");    // NOLINT
 				ZoneNameF("Wave #%i", count++);
 
 				futures.emplace_back(ThreadPool::push([n, func] {
@@ -213,7 +212,7 @@ void World::tick() {
 			}
 
 			{
-				ZoneScopedN("Thread Pool semaphore"); // NOLINT
+				ZoneScopedN("Thread Pool semaphore");    // NOLINT
 				for (auto& f : futures) {
 					f.get();
 				}
@@ -305,7 +304,7 @@ void World::loadNode(UID uid) {
 
 	auto future = std::async(std::launch::async, [uid]() {
 		tracy::SetThreadName("World::loadNode worker");
-		ZoneScoped; // NOLINT
+		ZoneScoped;    // NOLINT
 		ZoneNameF("World::loadNode(%s)::async", uid.get().c_str());
 
 		auto node_file = assets::load<assets::Prefab>(uid);
@@ -331,8 +330,10 @@ void World::loadNode(UID uid) {
 		}
 
 		{
-			ZoneScopedN("Thread Pool semaphore"); // NOLINT
-			for (auto& f: alloc_futures) { nodes.emplace_back(f.get()); }
+			ZoneScopedN("Thread Pool semaphore");    // NOLINT
+			for (auto& f : alloc_futures) {
+				nodes.emplace_back(f.get());
+			}
 		}
 
 		Box<Node> root = instance->buildTree(std::move(nodes), node_file);
@@ -554,9 +555,14 @@ void World::computeDependencyGraph() {
 	auto waves = assignWaves(result);
 	auto ts = optimizeWaves(waves);
 	tick_schedule = std::move(ts);
-	TOAST_TRACE("World", "Dependency graph: early={} tick={} post_physics={} late={} waves",
-	    tick_schedule.early_tick.size(), tick_schedule.tick.size(),
-	    tick_schedule.post_physics.size(), tick_schedule.late_tick.size());
+	TOAST_TRACE(
+	    "World",
+	    "Dependency graph: early={} tick={} post_physics={} late={} waves",
+	    tick_schedule.early_tick.size(),
+	    tick_schedule.tick.size(),
+	    tick_schedule.post_physics.size(),
+	    tick_schedule.late_tick.size()
+	);
 }
 
 auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
@@ -635,7 +641,7 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 		std::vector<std::vector<Box<Node>>> sccs;    // Components in reverse topological order
 	};
 
-	// clang-format off
+	                                               // clang-format off
 	// We start with a list of nodes per subgraph that survived the initial pruning
 	std::vector<TickSchedule::Wave> processed_subgraphs;
 	processed_subgraphs.reserve(input_subgraphs.size());
@@ -666,7 +672,7 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 		// An SCC is a group of nodes where every node is reachable from every other node in the group
 		// In our dependency graph, an SCC with >1 node indicates a circular dependency
 		std::function<void(const Box<Node>&)> strong_connect = [&](const Box<Node>& current_node) {
-			ZoneScopedN("strong_connect"); // NOLINT
+			ZoneScopedN("strong_connect");    // NOLINT
 
 			search_context.index[current_node] = search_context.low_link[current_node] = search_context.counter++;
 			search_context.stack.push(current_node);

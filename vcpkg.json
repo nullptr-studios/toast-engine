@@ -40,14 +40,11 @@
     "name" : "ktx",
     "version>=" : "4.4.2"
   }, {
-    "name" : "glm",
-    "version>=" : "1.0.3"
-  }, {
-    "name" : "nlohmann-json",
-    "version>=" : "3.12.0#2"
-  }, {
     "name" : "protobuf",
     "version>=" : "6.33.4#2"
+  }, {
+    "name" : "tinygltf",
+    "version>=" : "3.0.0"
   } ],
   "overrides" : [ {
     "name" : "tracy",

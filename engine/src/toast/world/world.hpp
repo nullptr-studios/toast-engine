@@ -123,14 +123,14 @@ public:
 
 	/**
 	 * @brief Moves a node out of the active tree into the cached list, disabling it
-	 * 
+	 *
 	 * Caching the active world root leaves the world without a root
 	 */
 	static auto cacheNode(Node& node) -> Box<Node>;
 
 	/**
 	 * @brief Queues a cached node for destruction
-	 * 
+	 *
 	 * The queue is drained at the start of the next World::tick()
 	 */
 	static void destroyNode(Node& node);

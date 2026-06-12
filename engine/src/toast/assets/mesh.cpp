@@ -18,22 +18,35 @@ Mesh::Mesh(const std::vector<uint8_t>& data) {
 			    data.size() == expected_size, "AssetManager", "Mesh data size does not match expected size based on header information"
 			);
 
+			const uint8_t* data_start = data.data() + sizeof(header);
+
+			// name
+			uint8_t name_length = 0;
+			memcpy(&name_length, data_start, sizeof(name_length));
+			data_start += sizeof(name_length);
+
+			m_name.resize(name_length);
+			memcpy(m_name.data(), data_start, name_length);
+			data_start += name_length;
+
 			// Reserve sizes
 			m_vertices.resize(header.vertex_count);
 			m_indices.resize(header.index_count);
 
 			// Import sizes
 			// clang-format off
-				memcpy(
-				    m_vertices.data(),
-				    data.data() + sizeof(header),
-				    header.vertex_count * sizeof(Vertex)
-				);
-				memcpy(
-				    m_indices.data(),
-				    data.data() + sizeof(header) + header.vertex_count * sizeof(Vertex),
-				    header.index_count * sizeof(uint32_t)
-				);
+			memcpy(
+			    m_vertices.data(),
+			    data_start,
+			    header.vertex_count * sizeof(Vertex)
+			);
+			data_start += header.vertex_count * sizeof(Vertex);
+
+			memcpy(
+			    m_indices.data(),
+			    data_start,
+			    header.index_count * sizeof(uint32_t)
+			);
 			// clang-format on
 			break;
 		}
@@ -41,7 +54,7 @@ Mesh::Mesh(const std::vector<uint8_t>& data) {
 	}
 }
 
-auto Mesh::toBinary() const {
+auto Mesh::toBinary() const -> std::vector<uint8_t> {
 	std::vector<uint8_t> buffer;
 
 	// File header
@@ -51,10 +64,17 @@ auto Mesh::toBinary() const {
 	const uint8_t* header_start = header.magic.data();
 	buffer.insert(buffer.end(), header_start, header_start + sizeof(header));
 
+	// name
+	uint8_t name_length = static_cast<uint8_t>(m_name.size());
+	buffer.insert(buffer.end(), &name_length, &name_length + sizeof(name_length));
+	buffer.insert(buffer.end(), m_name.begin(), m_name.end());
+
 	// vectors
 	const uint8_t* vertices_start = reinterpret_cast<const uint8_t*>(m_vertices.data());
-	buffer.insert(buffer.end(), vertices_start, vertices_start + sizeof(m_vertices));
+	buffer.insert(buffer.end(), vertices_start, vertices_start + (sizeof(Vertex) * m_vertices.size()));
 	const uint8_t* indices_start = reinterpret_cast<const uint8_t*>(m_indices.data());
-	buffer.insert(buffer.end(), indices_start, indices_start + sizeof(m_vertices));
+	buffer.insert(buffer.end(), indices_start, indices_start + (sizeof(uint32_t) * m_indices.size()));
+
+	return buffer;
 }
 }

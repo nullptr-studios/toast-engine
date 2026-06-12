@@ -15,6 +15,7 @@
 // clang-format on
 
 #include "data.hpp"
+#include "material.hpp"
+#include "mesh.hpp"
 #include "prefab.hpp"
 #include "texture.hpp"
-#include "mesh.hpp"
