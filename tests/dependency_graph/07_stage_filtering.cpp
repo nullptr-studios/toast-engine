@@ -7,7 +7,7 @@
 using namespace toast::tests::dependency_graph;
 
 TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/07_stage_filtering", test_dependency_graph_07_stage_filtering) {
-	std::unique_ptr<toast::World> world_owner(toast::_detail::WorldTestAccess::createWorld());
+	auto world_owner = toast::_detail::WorldTestAccess::createWorld();
 	toast::World& world = *world_owner;
 
 	auto early = toast::_detail::WorldTestAccess::createNode(world, "early");

@@ -9,6 +9,7 @@
 #pragma once
 
 #include <toast/export.hpp>
+#include <toast/uid.hpp>
 #include <toml++/toml.hpp>
 #include <vector>
 
@@ -62,17 +63,32 @@ class TOAST_API AssetHandleBase {
 public:
 	AssetHandleBase() = default;
 	explicit AssetHandleBase(Asset* asset);
+
+	/**
+	 * @brief Constructs a handle that stores its source UID
+	 *
+	 * If the pointer is null (unresolved handle), the AssetHandle will still have a uid
+	 * so serialization won't explode the engine. It also will make handling missing
+	 * assets easier
+	 */
+	AssetHandleBase(Asset* asset, toast::UID uid);
+
 	virtual ~AssetHandleBase();
 
 	AssetHandleBase(const AssetHandleBase& other);
 	auto operator=(const AssetHandleBase& other) -> AssetHandleBase&;
 
-	AssetHandleBase(AssetHandleBase&& other) noexcept : m_asset(other.m_asset) { other.m_asset = nullptr; }
+	AssetHandleBase(AssetHandleBase&& other) noexcept : m_asset(other.m_asset), m_uid(other.m_uid) { other.m_asset = nullptr; }
 
 	auto operator=(AssetHandleBase&& other) noexcept -> AssetHandleBase&;
 
 	[[nodiscard]]
 	auto hasValue() const noexcept -> bool;
+
+	[[nodiscard]]
+	auto uid() const noexcept -> toast::UID {
+		return m_uid;
+	}
 
 	[[nodiscard]]
 	auto get() noexcept -> Asset&;
@@ -88,6 +104,7 @@ public:
 
 protected:
 	Asset* m_asset = nullptr;
+	toast::UID m_uid;
 };
 
 /**
@@ -96,6 +113,7 @@ protected:
 template<typename T>
 class AssetHandle : public AssetHandleBase {
 public:
+	using asset_type = T;
 	using AssetHandleBase::AssetHandleBase;
 
 	[[nodiscard]]

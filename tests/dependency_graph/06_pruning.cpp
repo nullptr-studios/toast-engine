@@ -7,7 +7,7 @@
 using namespace toast::tests::dependency_graph;
 
 TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/06_pruning", test_dependency_graph_06_pruning) {
-	std::unique_ptr<toast::World> world_owner(toast::_detail::WorldTestAccess::createWorld());
+	auto world_owner = toast::_detail::WorldTestAccess::createWorld();
 	toast::World& world = *world_owner;
 
 	auto source = toast::_detail::WorldTestAccess::createNode(world, "source");

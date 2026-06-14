@@ -84,6 +84,9 @@ fn infer_field_type(type_name: &str) -> FieldType {
 		.trim_start_matches("std::")
 		.trim_start_matches("glm::");
 
+	// AssetHandle<T> and Box<Node> are both held by value in code but exchanged as a UID across
+	// the reflection boundary
+	if type_name.contains("AssetHandle<") { return FieldType::Uid; }
 	if base.starts_with("Box<") { return FieldType::Uid; }
 
 	match base {
@@ -122,6 +125,45 @@ fn build_field(field: &Field) -> FieldInfo {
 		attributes: attrs_to_json(&field.attributes),
 		default:    field.default.clone(),
 	}
+}
+
+const RESERVED_FIELD_NAMES: &[&str] = &["m_uid", "m_name", "m_local_enabled", "m_parent", "m_source_prefab"];
+
+/// Rejects reflected definitions that would collide with engine-reserved member names
+pub fn validate_class(class: &Class) -> Result<(), std::string::String> {
+	let qualified = match &class.namespace {
+		Some(ns) => format!("{}::{}", ns, class.name),
+		None     => class.name.clone(),
+	};
+
+	// toast::Node legitimately owns the reserved members
+	if qualified == "toast::Node" {
+		return Ok(());
+	}
+
+	for field in &class.fields {
+		if RESERVED_FIELD_NAMES.contains(&field.name.as_str()) {
+			return Err(format!(
+				"{qualified}: reflected field '{}' uses a reserved engine member name (only toast::Node may)",
+				field.name
+			));
+		}
+		if let Some(group) = attr_arg(&field.attributes, "Group") {
+			if group.starts_with('~') {
+				return Err(format!("{qualified}: group name '{group}' may not start with '~' (reserved)"));
+			}
+		}
+
+		// Arrays of asset handles are not supported by the v1 reflection accessor
+		if field.type_name.contains("vector<") && field.type_name.contains("AssetHandle<") {
+			return Err(format!(
+				"{qualified}: field '{}' is a vector of AssetHandle, which is not supported",
+				field.name
+			));
+		}
+	}
+
+	Ok(())
 }
 
 pub fn build_node(class: &Class, source_file: &str) -> NodeInfo {
@@ -217,15 +259,16 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 		};
 
 		serde_json::json!({
-			"index":      idx,
-			"name":       f.name,
-			"member_name": f.name,
-			"typename":   f.typename,
-			"field_type": to_value(&f.field_type).unwrap(),
-			"is_array":   f.is_array,
-			"attributes": f.attributes,
-			"attrs_list": attrs_list,
-			"default":    f.default,
+			"index":          idx,
+			"name":           f.name,
+			"member_name":    f.name,
+			"typename":       f.typename,
+			"field_type":     to_value(&f.field_type).unwrap(),
+			"is_array":       f.is_array,
+			"is_asset_handle": f.typename.contains("AssetHandle<"),
+			"attributes":     f.attributes,
+			"attrs_list":     attrs_list,
+			"default":        f.default,
 		})
 	};
 
@@ -309,6 +352,13 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 		.map(|(flag, method)| serde_json::json!({ "flag": flag, "method": method }))
 		.collect();
 
+	// Whether any reflected field is an asset handle
+	let has_asset_handle = node.global_fields.iter().any(|f| f.typename.contains("AssetHandle<"))
+		|| node.groups.iter().any(|g| {
+			g.fields.iter().any(|f| f.typename.contains("AssetHandle<"))
+				|| g.subgroups.iter().any(|sg| sg.fields.iter().any(|f| f.typename.contains("AssetHandle<")))
+		});
+
 	serde_json::json!({
 		"name":                  node.name,
 		"namespace":             node.namespace,
@@ -321,6 +371,7 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 		"global_field_indices":  global_field_indices,
 		"groups":                augmented_groups,
 		"active_tick_fns":       active_tick_fns,
+		"has_asset_handle":      has_asset_handle,
 	})
 }
 

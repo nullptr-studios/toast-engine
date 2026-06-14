@@ -261,11 +261,16 @@ auto AssetManager::resolveURI(std::string_view uri) -> std::optional<toast::UID>
 
 // Public API Implementations
 auto load(toast::UID uid) -> AssetHandleBase {
-	return AssetHandleBase(AssetManager::get().load(uid));
+	return AssetHandleBase(AssetManager::get().load(uid), uid);
 }
 
 auto load(std::string_view uri) -> AssetHandleBase {
-	return AssetHandleBase(AssetManager::get().load(uri));
+	auto uid = AssetManager::resolveURI(uri);
+	if (not uid.has_value()) {
+		TOAST_ERROR("AssetManager", "Could not resolve URI to UID: {}", uri);
+		return AssetHandleBase(nullptr);
+	}
+	return load(*uid);
 }
 
 auto resolveURI(std::string_view uri) -> std::optional<toast::UID> {

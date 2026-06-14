@@ -31,13 +31,14 @@ auto TOAST_API save(toast::UID uid) -> bool;
 template<typename T>
 auto load(toast::UID uid) -> AssetHandle<T> {
 	auto base = load(uid);
-	return AssetHandle<T>(base.hasValue() ? &base.get() : nullptr);
+	// Carry the UID anyway, so the result is an unresolved handle (uid set, ptr null)
+	return AssetHandle<T>(base.hasValue() ? &base.get() : nullptr, base.uid());
 }
 
 template<typename T>
 auto load(std::string_view uri) -> AssetHandle<T> {
 	auto base = load(uri);
-	return AssetHandle<T>(base.hasValue() ? &base.get() : nullptr);
+	return AssetHandle<T>(base.hasValue() ? &base.get() : nullptr, base.uid());
 }
 
 }

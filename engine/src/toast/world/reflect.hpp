@@ -317,6 +317,6 @@ private:
 	static inline NodeRegistry* instance = nullptr;
 };
 
-void registerEngineTypes();
+TOAST_API void registerEngineTypes();
 
 }

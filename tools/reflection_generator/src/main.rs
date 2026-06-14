@@ -2,7 +2,7 @@ mod parser;
 mod generator;
 
 pub use parser::{parse, Attribute, Parent, Field, Class};
-pub use generator::{NodeInfo, build_node, generate_json, generate_files};
+pub use generator::{NodeInfo, build_node, generate_json, generate_files, validate_class};
 
 use clap::Parser;
 use walkdir::WalkDir;
@@ -69,6 +69,10 @@ fn main() {
 		let classes = parse(&preprocessed);
 
 		for class in &classes {
+			if let Err(msg) = validate_class(class) {
+				eprintln!("error: {msg}");
+				std::process::exit(1);
+			}
 			all_nodes.push(build_node(class, &include_path));
 		}
 	}

@@ -83,17 +83,8 @@ class World final : public NodeOwner {
 public:
 	World();
 
-	// Keep inline so tests can destroy world
-	~World() {
-		ZoneScoped;
-		for (auto& f : m.load_futures) {
-			if (f.valid()) {
-				f.wait();
-			}
-		}
 
-		TOAST_INFO("World", "Destroyed world");
-	}
+	~World();
 
 	void tick();
 
@@ -111,6 +102,10 @@ public:
 
 	static void loadNode(UID uid);
 	static void loadNode(std::string_view uri);
+
+	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;
+	auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> override;
+	void spawnInto(Node& parent, UID prefab) override;
 
 	/**
 	 * @brief Promotes a cached (or global) root node to be the world root
@@ -173,10 +168,31 @@ private:
 
 	void drainDestroyQueue();
 
+	void drainSpawnQueue();
+
+	static void regenerateUid(Node& node);
+
+	static void spawn(UID prefab, Node& parent);
+
+	[[nodiscard]]
+	static auto findNode(const UID& uid, Node* scope = nullptr) -> Box<Node>;
+
+	[[nodiscard]]
+	static auto findNode(std::string_view path) -> Box<Node>;
+
+	[[nodiscard]]
+	static auto uidPath(const Node& node) -> std::string;
+
+	[[nodiscard]]
+	static auto findScoped(Node& scope, std::string_view seg, bool by_uid) -> Box<Node>;
+
+	static void searchScoped(Node& scope, std::string_view seg, bool by_uid, std::vector<Box<Node>>& out);
+
 	struct {
 		event::Listener listener;
 		std::mutex load_mutex;
 		std::vector<std::future<void>> load_futures;
+		std::vector<std::pair<Box<Node>, Box<Node>>> spawn_queue;
 	} m;
 
 	struct Trees {

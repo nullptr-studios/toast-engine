@@ -13,13 +13,11 @@
 #include "control_box.hpp"
 #include "reflect.hpp"
 
+#include <memory>
+#include <toast/assets/prefab.hpp>
 #include <toast/events/listener.hpp>
 #include <toast/export.hpp>
 #include <toast/uid.hpp>
-
-namespace assets {
-class Prefab;
-}
 
 namespace toast {
 class NodeOwner;
@@ -80,6 +78,23 @@ public:
 	[[nodiscard]]
 	auto info() const -> const NodeInfo*;
 
+	[[nodiscard]]
+	auto sourcePrefab() const noexcept -> const assets::AssetHandle<assets::Prefab>&;
+
+	[[nodiscard]]
+	auto isInstanceRoot() const noexcept -> bool;
+
+	[[nodiscard]]
+	auto root() const noexcept -> Box<Node>;
+
+	[[nodiscard]]
+	auto find(std::string_view query) -> Box<Node>;
+
+	[[nodiscard]]
+	auto search(std::string_view query) -> std::vector<Box<Node>>;
+
+	void spawn(UID prefab);
+
 	Node() = default;
 	virtual ~Node() = default;
 
@@ -103,9 +118,13 @@ private:
 	Box<Node> m_box;
 	[[Reflect, Name("Parent")]]
 	Box<Node> m_parent;
+	[[Reflect, Name("Prefab")]]
+	assets::AssetHandle<assets::Prefab> m_source_prefab;
 	std::vector<Box<Node>> m_children;
 	std::unique_ptr<event::Listener> m_listener = nullptr;
 	const NodeInfo* m_info = nullptr;
+	bool m_prefab_interior = false;
+	std::shared_ptr<const assets::Prefab::BasicNode> m_unresolved_chunk;
 
 	void init() { }
 

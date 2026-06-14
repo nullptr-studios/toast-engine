@@ -9,7 +9,7 @@
 #include <string_view>
 
 namespace {
-constexpr auto charset = std::to_array("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+constexpr auto charset = std::to_array("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_");
 std::atomic<uint64_t> offset = 0;
 }
 
@@ -49,6 +49,9 @@ auto UID::fromString(std::string_view b64) -> uint64_t {
 		for (uint8_t i = 0; i < 64; ++i) {
 			table[static_cast<uint8_t>(charset[i])] = i;
 		}
+		// just in case convert from standard b64 to b64url
+		table[static_cast<uint8_t>('+')] = 62;
+		table[static_cast<uint8_t>('/')] = 63;
 		return table;
 	}();
 
@@ -57,17 +60,17 @@ auto UID::fromString(std::string_view b64) -> uint64_t {
 		return 0;
 	}
 
-	uint64_t b0 = rev_table[static_cast<uint8_t>(b64[0])];
-	uint64_t b1 = rev_table[static_cast<uint8_t>(b64[1])];
-	uint64_t b2 = rev_table[static_cast<uint8_t>(b64[2])];
-	uint64_t b3 = rev_table[static_cast<uint8_t>(b64[3])];
-	uint64_t b4 = rev_table[static_cast<uint8_t>(b64[4])];
-	uint64_t b5 = rev_table[static_cast<uint8_t>(b64[5])];
-	uint64_t b6 = rev_table[static_cast<uint8_t>(b64[6])];
-	uint64_t b7 = rev_table[static_cast<uint8_t>(b64[7])];
-	uint64_t b8 = rev_table[static_cast<uint8_t>(b64[8])];
-	uint64_t b9 = rev_table[static_cast<uint8_t>(b64[9])];
-	uint64_t b10 = rev_table[static_cast<uint8_t>(b64[10])];
+	std::array<uint64_t, 11> b {};
+	for (size_t i = 0; i < 11; ++i) {
+		b[i] = rev_table[static_cast<uint8_t>(b64[i])];
+		if (b[i] == 0xFF) {
+			TOAST_ERROR("UID", "Invalid character in UID {}", b64);
+			return 0;
+		}
+	}
+
+	const uint64_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4], b5 = b[5];
+	const uint64_t b6 = b[6], b7 = b[7], b8 = b[8], b9 = b[9], b10 = b[10];
 
 	uint64_t uid = 0;
 	uid |= (b0 << 2 | b1 >> 4) << 56;
