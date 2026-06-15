@@ -238,7 +238,7 @@ auto World::requestRuntimeCreation(Node& parent) -> Box<Node> {
 	node->m_inherited_enabled = parent.enabled();
 
 	// Phase 3: node initialization
-	node->callTick(node->info(), TickFunctionList::pre_init);
+	node->callTick(node->info(), TickFunctionList::init);
 	node->enabled(true);
 	TOAST_TRACE("World", "Created node in {} ({}) during runtime", parent.name(), parent.uid());
 	return node;

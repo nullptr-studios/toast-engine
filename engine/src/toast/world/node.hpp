@@ -45,6 +45,7 @@ enum class NodeType : uint8_t {
 class [[ToastNode]] TOAST_API Node {
 	friend class NodeOwner;
 	friend class World;
+	friend class Workspace;
 	friend class Node3D;
 	friend class assets::Prefab;
 	friend struct _detail::ControlBox;

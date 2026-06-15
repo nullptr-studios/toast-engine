@@ -31,6 +31,10 @@ public:
 	virtual auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> = 0;
 	virtual void spawnInto(Node& parent, toast::UID prefab) = 0;
 
+	auto requestRuntimeCreate(Node& parent, std::string_view type) -> Box<Node>;
+	auto requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node>;
+	auto requestRuntimeSpawn(Node& parent, std::string_view) -> Box<Node>;
+
 	struct InstantiateContext {
 		std::vector<uint64_t> asset_chain;    // Chain of asset UIDs currently being instanciated
 		std::function<assets::AssetHandle<assets::Prefab>(toast::UID)> resolver;    // Resolves a node UID to its asset

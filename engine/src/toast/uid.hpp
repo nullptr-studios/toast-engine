@@ -20,6 +20,7 @@ namespace toast {
 
 struct TOAST_API UID {
 	friend class World;
+	friend class Workspace;
 	friend class assets::Prefab;
 
 	UID();
