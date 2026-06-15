@@ -47,7 +47,7 @@ private:
  *	The order to call and initialize the engine on the Editor and the Player should be:
  *		- Create an engine -> toast_create()
  *		- Create a game -> game_create()
- *		- Set the working directories -> uri_set_working_directory()
+ *		- Set the working directories -> toast_set_working_directory()
  *		- Call Init() -> toast_init()
  *		- Create window -> toast_create_[...]_window()
  */

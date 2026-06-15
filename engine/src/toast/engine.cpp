@@ -176,6 +176,7 @@ void Engine::init() {
 	TracySetProgramName("ToastEngine");
 	tracy::SetThreadName("Main Thread");
 
+	event::registerProtoEvents();
 	registerEngineTypes();
 
 	// TODO: this should be moved somehwere else
@@ -354,29 +355,5 @@ int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_fr
 		out->frame_id = desc.frame_id;
 	}
 	return result;
-}
-
-void toast_send_mouse_position(float x, float y) {
-	event::send<event::WindowMousePosition>(x, y);
-}
-
-void toast_send_mouse_button(int button, int action, int mods) {
-	event::send<event::WindowMouseButton>(button, action, mods);
-}
-
-void toast_send_mouse_scroll(float x, float y) {
-	event::send<event::WindowMouseScroll>(x, y);
-}
-
-void toast_send_key(int key, int scancode, int action, int mods) {
-	event::send<event::WindowKey>(key, scancode, action, mods);
-}
-
-void toast_send_char(unsigned codepoint) {
-	event::send<event::WindowChar>(codepoint);
-}
-
-void toast_send_resize(int width, int height) {
-	event::send<event::WindowResize>(width, height);
 }
 }

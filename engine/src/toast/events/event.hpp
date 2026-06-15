@@ -128,7 +128,7 @@ struct TOAST_API EventSystem {
 	static void registerEvent() {
 		static_assert(std::is_base_of_v<Event<T>, T>, "CONTRACT VIOLATION: You Must Inhert as 'struct Derived : Event<Derived>'");
 		if (event_data.contains(typeid(T))) {
-			TOAST_INFO("Events", "Event type {} already registered (Windows Is Shit)", typeid(T).name());
+			// TOAST_INFO("Events", "Event type {} already registered (Windows Is Shit)", typeid(T).name());
 			return;
 		}
 		TOAST_INFO("Events", "Registering Event Type: {}", typeid(T).name());
@@ -144,6 +144,28 @@ struct TOAST_API EventSystem {
 		});
 	}
 };
+
+/**
+ * @brief Helps to convert C++ events to protocol buffers
+ *
+ * Must implement:
+ * - @c using Proto
+ * - @c toProto()
+ * - @c fromProto()
+ */
+template<typename T>
+struct ProtoTraits;
+
+template<typename T>
+concept ExposedEvent = requires(const T& e, const typename ProtoTraits<T>::Proto& p) {
+	typename ProtoTraits<T>::Proto;
+	typename ProtoTraits<T>::Event;
+	{ ProtoTraits<T>::toProto(e) } -> std::same_as<typename ProtoTraits<T>::Proto>;
+	{ ProtoTraits<T>::fromProto(p) } -> std::same_as<typename ProtoTraits<T>::Event>;
+};
+
+// register all exposed events into a registry
+void registerProtoEvents();
 
 }
 

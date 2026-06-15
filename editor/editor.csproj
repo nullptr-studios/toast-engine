@@ -113,10 +113,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Protobuf Include="..\protos\logging.proto" Link="logging.proto"/>
-    </ItemGroup>
-
-    <ItemGroup>
         <Folder Include="Resources\"/>
     </ItemGroup>
 
@@ -130,16 +126,24 @@
     </ItemGroup>
 
     <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
-        <Content Include="$(MSBuildThisFileDirectory)native\win-x64\**\*"
-                 Exclude="$(MSBuildThisFileDirectory)native\win-x64\.gitkeep"
-                 Link="native\%(RecursiveDir)%(Filename)%(Extension)"
-                 CopyToOutputDirectory="PreserveNewest"/>
+        <Content Include="$(MSBuildThisFileDirectory)native\win-x64\**\*" Exclude="$(MSBuildThisFileDirectory)native\win-x64\.gitkeep" Link="native\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
     <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
-        <Content Include="$(MSBuildThisFileDirectory)native/linux-x64/**/*"
-                 Exclude="$(MSBuildThisFileDirectory)native/linux-x64/.gitkeep"
-                 Link="native/%(RecursiveDir)%(Filename)%(Extension)"
-                 CopyToOutputDirectory="PreserveNewest"/>
+        <Content Include="$(MSBuildThisFileDirectory)native/linux-x64/**/*" Exclude="$(MSBuildThisFileDirectory)native/linux-x64/.gitkeep" Link="native/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+    <ItemGroup>
+      <Protobuf Include="..\protos\logging.proto">
+        <GrpcServices>Both</GrpcServices>
+        <Access>Public</Access>
+        <ProtoCompile>True</ProtoCompile>
+        <CompileOutputs>True</CompileOutputs>
+        <OutputDir>obj\Debug\</OutputDir>
+        <Generator>MSBuild:Compile</Generator>
+        <Link>Protos\logging.proto</Link>
+      </Protobuf>
+        <Protobuf Include="..\protos\window_events.proto">
+            <Link>Protos\window_events.proto</Link>
+        </Protobuf>
     </ItemGroup>
 
     <Target Name="MakeToktxExecutable" AfterTargets="Build" Condition="!$([MSBuild]::IsOSPlatform('Windows'))">

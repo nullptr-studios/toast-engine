@@ -10,6 +10,7 @@ using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using editor.Services;
 
 namespace editor.Workspace;
 
@@ -49,8 +50,6 @@ public partial class ViewportView : UserControl {
 		m_timer = null;
 	}
 
-	// ---- Frame pump --------------------------------------------------------------------------------
-
 	private void OnTick(object? sender, EventArgs e) {
 		if (!IsEffectivelyVisible)
 			return;
@@ -74,12 +73,11 @@ public partial class ViewportView : UserControl {
 			return;
 
 		int result;
-		ToastViewportFrame info;
 		var changed = false;
 
 		using (var fb = m_bitmap.Lock()) {
 			var capacity = (uint)(fb.RowBytes * fb.Size.Height);
-			result = m_engine.TryGetViewportFrame(fb.Address, capacity, out info);
+			result = m_engine.TryGetViewportFrame(fb.Address, capacity, out var info);
 			if (result == 1) {
 				changed = info.frame_id != m_lastFrameId;
 				m_lastFrameId = info.frame_id;
@@ -119,7 +117,10 @@ public partial class ViewportView : UserControl {
 
 		m_surfaceW = width;
 		m_surfaceH = height;
-		m_engine.SendResize(width, height);
+		Events.Send(new Proto.Window.WindowResize {
+			Width = width,
+			Height = height
+		});
 	}
 
 	// Input forwarding
@@ -131,7 +132,10 @@ public partial class ViewportView : UserControl {
 
 		var p = e.GetPosition(this);
 		var scale = RenderScaling();
-		m_engine.SendMousePosition((float)(p.X * scale), (float)(p.Y * scale));
+		Events.Send(new Proto.Window.WindowMousePosition {
+			X = (float)(p.X * scale),
+			Y = (float)(p.Y * scale)
+		});
 	}
 
 	protected override void OnPointerPressed(PointerPressedEventArgs e) {
@@ -142,8 +146,13 @@ public partial class ViewportView : UserControl {
 			return;
 
 		var button = ButtonFromUpdateKind(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
-		if (button != 0)
-			m_engine.SendMouseButton(button, ActionPressed, SdlMods(e.KeyModifiers));
+		if (button != 0) {
+			Events.Send(new Proto.Window.WindowMouseButton {
+				Button = button,
+				Action = ActionPressed,
+				Mods = SdlMods(e.KeyModifiers)
+			});
+		}
 	}
 
 	protected override void OnPointerReleased(PointerReleasedEventArgs e) {
@@ -152,8 +161,13 @@ public partial class ViewportView : UserControl {
 			return;
 
 		var button = ButtonFromUpdateKind(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
-		if (button != 0)
-			m_engine.SendMouseButton(button, ActionReleased, SdlMods(e.KeyModifiers));
+		if (button != 0) {
+			Events.Send(new Proto.Window.WindowMouseButton {
+				Button = button,
+				Action = ActionReleased,
+				Mods = SdlMods(e.KeyModifiers)
+			});
+		}
 	}
 
 	protected override void OnPointerWheelChanged(PointerWheelEventArgs e) {
@@ -161,7 +175,10 @@ public partial class ViewportView : UserControl {
 		if (!IsFocused || m_engine is null)
 			return;
 
-		m_engine.SendMouseScroll((float)e.Delta.X, (float)e.Delta.Y);
+		Events.Send(new Proto.Window.WindowMouseScroll {
+			X = (float)e.Delta.X,
+			Y = (float)e.Delta.Y
+		});
 	}
 
 	protected override void OnKeyDown(KeyEventArgs e) {
@@ -169,8 +186,12 @@ public partial class ViewportView : UserControl {
 		if (!IsFocused || m_engine is null)
 			return;
 
-		var (key, scancode) = MapKey(e.Key);
-		m_engine.SendKey(key, scancode, ActionPressed, SdlMods(e.KeyModifiers));
+		var (key, _) = MapKey(e.Key);
+		Events.Send(new Proto.Window.WindowKey {
+			Key = key,
+			Actions = ActionPressed,
+			Mods = SdlMods(e.KeyModifiers)
+		});
 		e.Handled = true;
 	}
 
@@ -179,8 +200,12 @@ public partial class ViewportView : UserControl {
 		if (!IsFocused || m_engine is null)
 			return;
 
-		var (key, scancode) = MapKey(e.Key);
-		m_engine.SendKey(key, scancode, ActionReleased, SdlMods(e.KeyModifiers));
+		var (key, _) = MapKey(e.Key);
+		Events.Send(new Proto.Window.WindowKey {
+			Key = key,
+			Actions = ActionReleased,
+			Mods = SdlMods(e.KeyModifiers)
+		});
 		e.Handled = true;
 	}
 
@@ -189,8 +214,11 @@ public partial class ViewportView : UserControl {
 		if (!IsFocused || m_engine is null || string.IsNullOrEmpty(e.Text))
 			return;
 
-		foreach (var rune in e.Text.AsSpan().EnumerateRunes())
-			m_engine.SendChar((uint)rune.Value);
+		foreach (var rune in e.Text.AsSpan().EnumerateRunes()) {
+			Events.Send(new Proto.Window.WindowChar{
+				Key = (uint)rune.Value
+			});
+		}
 	}
 
 	private static int ButtonFromUpdateKind(PointerUpdateKind kind) {
@@ -212,13 +240,13 @@ public partial class ViewportView : UserControl {
 	}
 
 	private static (int key, int scancode) MapKey(Key k) {
-		// Letters: SDL keycode = lowercase ascii, scancode SDL_SCANCODE_A(4)..Z(29).
+		// Letters: SDL keycode = lowercase ascii, scancode SDL_SCANCODE_A(4)..Z(29)
 		if (k is >= Key.A and <= Key.Z) {
 			var offset = k - Key.A;
 			return ('a' + offset, 4 + offset);
 		}
 
-		// Top-row digits: keycode ascii '0'..'9'; scancode 1..9 = 30..38, 0 = 39.
+		// Top-row digits: keycode ascii '0'..'9'; scancode 1..9 = 30..38, 0 = 39
 		if (k is >= Key.D0 and <= Key.D9) {
 			var digit = k - Key.D0;
 			var scancode = digit == 0 ? 39 : 29 + digit;

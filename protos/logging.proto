@@ -1,6 +1,5 @@
 syntax = "proto3";
-package logging;
-option csharp_namespace = "proto.logging";
+package proto.logging;
 
 message LogData {
   enum Severity {
@@ -24,4 +23,3 @@ message LogData {
 message LogBatch {
   repeated LogData logs = 1;
 }
-

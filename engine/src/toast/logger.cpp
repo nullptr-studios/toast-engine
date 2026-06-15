@@ -171,13 +171,13 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 		}
 	}
 
-	logging::LogData log;
+	proto::logging::LogData log;
 	log.set_timestamp(
 	    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count()
 	);    // retarded stl library
 	log.set_filepath(file);
 	log.set_line_number(line);
-	log.set_severity(static_cast<logging::LogData_Severity>(severity));
+	log.set_severity(static_cast<proto::logging::LogData_Severity>(severity));
 	log.set_sink(trimmed_sink);
 	log.set_message(message);
 
@@ -305,7 +305,7 @@ auto Logger::collectQueue() -> std::vector<uint8_t> {
 
 	// Batching logs together significantly reduces the number of TCP packets
 	// and system calls, which is better for performance
-	logging::LogBatch batch;
+	proto::logging::LogBatch batch;
 	{
 		std::lock_guard lock(m.queue_mutex);
 		while (!m.log_queue.empty()) {

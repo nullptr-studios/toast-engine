@@ -83,7 +83,6 @@ class World final : public NodeOwner {
 public:
 	World();
 
-
 	~World();
 
 	void tick();

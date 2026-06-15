@@ -10,7 +10,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using proto.logging;
+using Proto.Logging;
 
 namespace editor.Logger;
 

@@ -66,10 +66,11 @@ public partial class ToastEngine : IDisposable {
 
 		LoadGame();
 
-		// Then we initialize
+		// Then we create
 		m_engineInstance = toast_create();
 		m_gameInstance = m_gameCreate?.Invoke() ?? IntPtr.Zero;
 
+		// we set the working directory
 		toast_set_working_directory(
 			Path.Combine(ProjectPath, "assets"),
 			Path.Combine(ProjectPath, "artworks"),
@@ -80,6 +81,9 @@ public partial class ToastEngine : IDisposable {
 
 		if (!ProjectContext.IsInitialized)
 			ProjectContext.Initialize(ProjectPath, CorePath);
+
+		// and we initialize the engines
+		toast_init();
 
 		// Create the engine's render surface
 		toast_create_avalonia_window();
@@ -128,38 +132,15 @@ public partial class ToastEngine : IDisposable {
 	}
 
 	public void SignalClose() {
-		if (!m_closeEventSent) m_closeEventSent = true;
-		// TODO: m_toast_close_engine?.Invoke();
+		if (m_closeEventSent) return;
+		m_closeEventSent = true;
+		Events.Send(new Proto.Window.ExitApplication());
 	}
 
 	/// @brief Copies the latest viewport frame into @p dst (capacity bytes)
 	/// @return 1 copied, 0 none yet, -1 dst too small
 	public int TryGetViewportFrame(IntPtr dst, uint capacity, out ToastViewportFrame frame) {
 		return toast_viewport_get_frame(dst, capacity, out frame);
-	}
-
-	public void SendMousePosition(float x, float y) {
-		toast_send_mouse_position(x, y);
-	}
-
-	public void SendMouseButton(int button, int action, int mods) {
-		toast_send_mouse_button(button, action, mods);
-	}
-
-	public void SendMouseScroll(float x, float y) {
-		toast_send_mouse_scroll(x, y);
-	}
-
-	public void SendKey(int key, int scancode, int action, int mods) {
-		toast_send_key(key, scancode, action, mods);
-	}
-
-	public void SendChar(uint codepoint) {
-		toast_send_char(codepoint);
-	}
-
-	public void SendResize(int width, int height) {
-		toast_send_resize(width, height);
 	}
 
 	public void ReloadGame() {
@@ -218,6 +199,9 @@ public partial class ToastEngine : IDisposable {
 	private static partial IntPtr toast_create();
 
 	[LibraryImport(EngineLib)]
+	private static partial IntPtr toast_init();
+
+	[LibraryImport(EngineLib)]
 	private static partial void toast_tick();
 
 	[LibraryImport(EngineLib)]
@@ -234,24 +218,6 @@ public partial class ToastEngine : IDisposable {
 
 	[LibraryImport(EngineLib)]
 	private static partial int toast_viewport_get_frame(IntPtr dst, uint dstCapacity, out ToastViewportFrame outFrame);
-
-	[LibraryImport(EngineLib)]
-	private static partial void toast_send_mouse_position(float x, float y);
-
-	[LibraryImport(EngineLib)]
-	private static partial void toast_send_mouse_button(int button, int action, int mods);
-
-	[LibraryImport(EngineLib)]
-	private static partial void toast_send_mouse_scroll(float x, float y);
-
-	[LibraryImport(EngineLib)]
-	private static partial void toast_send_key(int key, int scancode, int action, int mods);
-
-	[LibraryImport(EngineLib)]
-	private static partial void toast_send_char(uint codepoint);
-
-	[LibraryImport(EngineLib)]
-	private static partial void toast_send_resize(int width, int height);
 
 	// --------------------- Game ABI shit ---------------------
 	private delegate IntPtr GameCreate();
