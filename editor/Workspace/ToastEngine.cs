@@ -193,13 +193,24 @@ public partial class ToastEngine : IDisposable {
 		var targetLinkPath = Path.Combine(appDir, binaryName);
 		var sourceLinkPath = Path.GetFullPath(Path.Combine(appDir, "..", "toast_engine", "bin", binaryName));
 
-		if (!File.Exists(targetLinkPath) && File.Exists(sourceLinkPath))
+		if (!File.Exists(sourceLinkPath)) {
+			Console.WriteLine($"Log Server in {sourceLinkPath} not found");
+			return;
+		}
+
+		try {
+			File.CreateSymbolicLink(targetLinkPath, sourceLinkPath);
+		} catch (Exception ex) when (ex is UnauthorizedAccessException or IOException) {
+			// Creating a symlink needs elevation or Developer Mode on Windows 11
+			// Microsoft you little piece of shit this is so retarded im going to kill all your family
+			// i cannot even tell you the amount of retardation layers this bug had
+			// This MFs failed in coding an OS, a compiler, a debugger and an LSP all in a simple bug
 			try {
-				File.CreateSymbolicLink(targetLinkPath, sourceLinkPath);
-			} catch (UnauthorizedAccessException) {
-				// just in case we cannot create a symlink we just copy the executable
 				File.Copy(sourceLinkPath, targetLinkPath, true);
+			} catch (IOException) {
+				Console.WriteLine("Couldn't copy log_server.exe to editor dir, using previous version");
 			}
+		}
 	}
 
 	// --------------------- Engine C ABI shit ---------------------
