@@ -54,9 +54,8 @@ auto Box<T>::operator=(const Box& other) noexcept -> Box& {
 	if (control) {
 		control->decrement();
 	}
-	_detail::ControlBox* control_box = other.control;
-	if (control_box) {
-		control = control_box;
+	control = other.control;
+	if (control) {
 		control->increment();
 	}
 	return *this;
@@ -76,11 +75,8 @@ auto Box<T>::operator=(Box&& other) noexcept -> Box& {
 	if (control) {
 		control->decrement();
 	}
-	_detail::ControlBox* control_box = other.control;
+	control = other.control;
 	other.control = nullptr;
-	if (control_box) {
-		control = control_box;
-	}
 	return *this;
 }
 

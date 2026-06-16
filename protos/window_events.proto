@@ -1,5 +1,5 @@
 syntax = "proto3";
-package proto.window;
+package proto.events;
 
 message ExitApplication {}
 

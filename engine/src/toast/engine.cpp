@@ -17,6 +17,7 @@
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
 #include "world/reflect.hpp"
+#include "world/workspace_events.hpp"
 #include "world/world.hpp"
 
 #include <SDL3/SDL.h>
@@ -99,11 +100,11 @@ void runWorldDemo() {
 		}
 
 		case DemoStage::ticking:
-			if (++frames >= 10) {
-				TOAST_INFO("WorldDemo", "Ticked {} frames, moving DemoRoot back to cached", frames);
-				World::cacheNode(*demo_root);
-				stage = DemoStage::unload;
-			}
+			// if (++frames >= 10) {
+			// TOAST_INFO("WorldDemo", "Ticked {} frames, moving DemoRoot back to cached", frames);
+			// World::cacheNode(*demo_root);
+			// stage = DemoStage::unload;
+			//}
 			break;
 
 		case DemoStage::unload:

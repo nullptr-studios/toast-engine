@@ -3,14 +3,37 @@
              xmlns:vm="using:editor.Workspace"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="900"
              x:Class="editor.Workspace.HierarchyView"
              x:DataType="vm:HierarchyViewModel">
 
-	<Border Background="#333333" Padding="5">
-		<StackPanel>
-			<TextBlock Text="Scene Hierarchy" FontWeight="Bold" Margin="0,0,0,10" />
-			<TextBox PlaceholderText="Look at me im a hierarchy"/>
-		</StackPanel>
+	<Border Background="#202020" Padding="8">
+		<DockPanel VerticalSpacing="8">
+			<Border DockPanel.Dock="Top" Background="#303030" Padding="8" CornerRadius="8">
+				<Grid ColumnDefinitions="Auto, Auto, *" ColumnSpacing="4">
+					<Button Grid.Column="0" Content="+"/>
+					<Button Grid.Column="1" Content="..."/>
+					<TextBox Grid.Column="2" PlaceholderText="Search..."/>
+				</Grid>
+			</Border>
+			<Border Background="#101010" Padding="8" CornerRadius="8">
+				<TreeView ItemsSource="{Binding Root}">
+					<TreeView.Styles>
+						<Style Selector="TreeViewItem">
+							<Setter Property="IsExpanded" Value="True"/>
+						</Style>
+					</TreeView.Styles>
+					<TreeView.ItemTemplate>
+						<TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:HierarchyElement">
+							<DockPanel VerticalAlignment="Center" HorizontalSpacing="8">
+								<CheckBox DockPanel.Dock="Right" IsEnabled="{Binding Enabled}"/>
+								<Border DockPanel.Dock="Left" Width="16" Height="16" Background="Magenta"/>
+								<TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+							</DockPanel>
+						</TreeDataTemplate>
+					</TreeView.ItemTemplate>
+				</TreeView>
+			</Border>
+		</DockPanel>
 	</Border>
 </UserControl>

@@ -137,3 +137,5 @@ void TOAST_API
 #else
 #define TOAST_ASSERT(condition, sink, ...)
 #endif
+
+#define TOAST_NOT_IMPLEMENTED TOAST_ASSERT(false, "Engine", "Not implemented")

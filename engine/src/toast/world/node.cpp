@@ -54,10 +54,6 @@ auto Node::parent() noexcept -> Box<Node> {
 	return m_parent;
 }
 
-auto Node::addChild() -> Box<Node> {
-	return m_owner->requestRuntimeCreation(*this);
-}
-
 auto Node::info() const -> const NodeInfo* {
 	return m_info;
 }
@@ -95,14 +91,6 @@ auto Node::search(std::string_view query) -> std::vector<Box<Node>> {
 		return {};
 	}
 	return m_owner->searchFrom(*this, query);
-}
-
-void Node::spawn(UID prefab) {
-	if (not m_owner) {
-		TOAST_WARN("Node", "Cannot spawn under {}: node has no owner", m_name);
-		return;
-	}
-	m_owner->spawnInto(*this, prefab);
 }
 
 auto Node::listener() noexcept -> event::Listener& {

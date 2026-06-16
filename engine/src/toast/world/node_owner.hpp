@@ -25,11 +25,9 @@ public:
 	~NodeOwner() = default;
 
 	virtual void registerDependency(Node& from, Node& to) = 0;
-	virtual auto requestRuntimeCreation(Node& parent) -> Box<Node> = 0;
 
 	virtual auto findFrom(const Node& origin, std::string_view query) -> Box<Node> = 0;
 	virtual auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> = 0;
-	virtual void spawnInto(Node& parent, toast::UID prefab) = 0;
 
 	auto requestRuntimeCreate(Node& parent, std::string_view type) -> Box<Node>;
 	auto requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node>;
@@ -41,8 +39,11 @@ public:
 	};
 
 protected:
+	void generateUid(Node& node);
+
 	/// Creates a node and stores it in memory
-	auto nodeAllocation(std::optional<assets::Prefab::BasicNode> node_data = std::nullopt) noexcept -> Box<Node>;
+	auto nodeAllocation(std::string_view type = "toast::Node") noexcept -> Box<Node>;
+	auto nodeAllocation(const assets::Prefab::BasicNode& node_data) noexcept -> Box<Node>;
 
 	auto buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node>;
 

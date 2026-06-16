@@ -11,6 +11,7 @@
 #pragma once
 
 #include "node_owner.hpp"
+
 #include <toast/events/listener.hpp>
 
 namespace toast {
@@ -22,17 +23,13 @@ public:
 
 	void registerDependency(Node& from, Node& to) override;
 
-	auto requestRuntimeCreation(Node& parent) -> Box<Node> override;
-
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;
 
 	auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> override;
 
-	void spawnInto(Node& parent, toast::UID prefab) override;
-
 private:
 	Box<Node> m_root_node;
-	event::Listener listener;
+	event::Listener m_listener;
 
 	void eventSubscriptions();
 };

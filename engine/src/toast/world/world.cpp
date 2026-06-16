@@ -1,7 +1,7 @@
 #include "world.hpp"
 
 #include "node_3d.hpp"
-#include "toast/uri_handler.hpp"
+#include "workspace_events.hpp"
 #include "world_test_access.hpp"
 
 #include <chrono>
@@ -207,43 +207,6 @@ void World::registerDependency(Node& from, Node& to) {
 	TOAST_TRACE("World", "Added dependency from {} to {}", from.name(), from.uid());
 }
 
-auto World::requestRuntimeCreation(Node& parent) -> Box<Node> {
-	ZoneScoped;
-
-	// Phase 1: allocation
-	Box node = instance->nodeAllocation();
-	// no load since they are not being serialized
-	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
-
-	// Phase 2: data structure generation
-	node->m_uid.generate();
-	node->m_parent = parent;
-	parent.m_children.emplace_back(node);
-
-	registerDependency(parent, node);
-	std::ranges::transform(parent.m_wave, std::begin(node->m_wave), [](auto x) { return (x < 255) ? x + 1 : x; });
-	auto schedule_node = [node](auto& schedule_vec, uint8_t wave_idx) {
-		if (wave_idx >= schedule_vec.size()) {
-			schedule_vec.resize(wave_idx + 1);
-		}
-		schedule_vec[wave_idx].emplace_back(node);
-	};
-	schedule_node(instance->tick_schedule.early_tick, node->m_wave[0]);
-	schedule_node(instance->tick_schedule.tick, node->m_wave[1]);
-	schedule_node(instance->tick_schedule.post_physics, node->m_wave[2]);
-	schedule_node(instance->tick_schedule.late_tick, node->m_wave[3]);
-
-	node->m_state = parent.m_state;
-	node->m_type = NodeType::child;
-	node->m_inherited_enabled = parent.enabled();
-
-	// Phase 3: node initialization
-	node->callTick(node->info(), TickFunctionList::init);
-	node->enabled(true);
-	TOAST_TRACE("World", "Created node in {} ({}) during runtime", parent.name(), parent.uid());
-	return node;
-}
-
 void World::loadNode(UID uid) {
 	ZoneScoped;
 	ZoneNameF("World::loadNode(%s)", uid.get().c_str());
@@ -369,7 +332,7 @@ void World::spawn(UID prefab, Node& parent) {
 }
 
 void World::regenerateUid(Node& node) {
-	node.m_uid.generate();
+	regenerateUid(node);
 }
 
 void World::drainSpawnQueue() {
@@ -720,10 +683,6 @@ auto World::searchFrom(const Node& origin, std::string_view query) -> std::vecto
 	return out;
 }
 
-void World::spawnInto(Node& parent, UID prefab) {
-	spawn(prefab, parent);
-}
-
 auto World::setRoot(Node& node) -> Box<Node> {
 	return instance->swapRoot(node);
 }
@@ -735,6 +694,7 @@ auto World::cacheNode(Node& node) -> Box<Node> {
 auto World::findCached(std::string_view name) -> Box<Node> {
 	ZoneScoped;
 
+	auto t = instance->trees;
 	for (const auto& node : instance->trees.cached) {
 		if (node->name() == name) {
 			return node;
@@ -1289,6 +1249,9 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 
 	node.propagateCallTick(node.info(), TickFunctionList::begin);
 	node.enabled(true);
+	event::send<event::RequestHierarchyUpdate>();
+	// HACK: TODO:
+	event::send<event::UpdateHierarchyData>(instance->trees.root);
 	TOAST_INFO("World", "Swapped root to {} ({})", node.name(), node.uid());
 
 	return root_node;

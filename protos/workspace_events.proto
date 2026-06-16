@@ -1,0 +1,32 @@
+syntax = "proto3";
+package proto.events;
+
+message HierarchyElement {
+  string uid = 1;
+  string name = 2;
+  string type = 3;
+  bool enabled = 4;
+  repeated HierarchyElement children = 5;
+}
+
+message UpdateHierarchyData {
+  HierarchyElement root = 1;
+}
+
+message RequestHierarchyUpdate {}
+
+message WorkspaceCreate {
+  string parent = 1;
+  string type = 2;
+}
+
+message WorkspaceSpawn {
+  string parent = 1;
+  bool is_uri = 2;
+  string uid = 3;
+  string uri = 4;
+}
+
+message WorkspaceRemove {
+  string target = 1;
+}

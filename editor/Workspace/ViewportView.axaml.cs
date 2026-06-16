@@ -117,7 +117,7 @@ public partial class ViewportView : UserControl {
 
 		m_surfaceW = width;
 		m_surfaceH = height;
-		Events.Send(new Proto.Window.WindowResize {
+		Events.Send(new Proto.Events.WindowResize {
 			Width = width,
 			Height = height
 		});
@@ -132,7 +132,7 @@ public partial class ViewportView : UserControl {
 
 		var p = e.GetPosition(this);
 		var scale = RenderScaling();
-		Events.Send(new Proto.Window.WindowMousePosition {
+		Events.Send(new Proto.Events.WindowMousePosition {
 			X = (float)(p.X * scale),
 			Y = (float)(p.Y * scale)
 		});
@@ -147,7 +147,7 @@ public partial class ViewportView : UserControl {
 
 		var button = ButtonFromUpdateKind(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
 		if (button != 0) {
-			Events.Send(new Proto.Window.WindowMouseButton {
+			Events.Send(new Proto.Events.WindowMouseButton {
 				Button = button,
 				Action = ActionPressed,
 				Mods = SdlMods(e.KeyModifiers)
@@ -162,7 +162,7 @@ public partial class ViewportView : UserControl {
 
 		var button = ButtonFromUpdateKind(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
 		if (button != 0) {
-			Events.Send(new Proto.Window.WindowMouseButton {
+			Events.Send(new Proto.Events.WindowMouseButton {
 				Button = button,
 				Action = ActionReleased,
 				Mods = SdlMods(e.KeyModifiers)
@@ -175,7 +175,7 @@ public partial class ViewportView : UserControl {
 		if (!IsFocused || m_engine is null)
 			return;
 
-		Events.Send(new Proto.Window.WindowMouseScroll {
+		Events.Send(new Proto.Events.WindowMouseScroll {
 			X = (float)e.Delta.X,
 			Y = (float)e.Delta.Y
 		});
@@ -187,7 +187,7 @@ public partial class ViewportView : UserControl {
 			return;
 
 		var (key, _) = MapKey(e.Key);
-		Events.Send(new Proto.Window.WindowKey {
+		Events.Send(new Proto.Events.WindowKey {
 			Key = key,
 			Actions = ActionPressed,
 			Mods = SdlMods(e.KeyModifiers)
@@ -201,7 +201,7 @@ public partial class ViewportView : UserControl {
 			return;
 
 		var (key, _) = MapKey(e.Key);
-		Events.Send(new Proto.Window.WindowKey {
+		Events.Send(new Proto.Events.WindowKey {
 			Key = key,
 			Actions = ActionReleased,
 			Mods = SdlMods(e.KeyModifiers)
@@ -215,7 +215,7 @@ public partial class ViewportView : UserControl {
 			return;
 
 		foreach (var rune in e.Text.AsSpan().EnumerateRunes()) {
-			Events.Send(new Proto.Window.WindowChar{
+			Events.Send(new Proto.Events.WindowChar{
 				Key = (uint)rune.Value
 			});
 		}

@@ -16,6 +16,8 @@ std::atomic<uint64_t> offset = 0;
 namespace toast {
 
 auto UID::toString(uint64_t uid) -> std::string {
+	// on uid = 0 this will return "AAAAAAAAAAA" (A x11 times)
+
 	std::string result;
 	result.reserve(11);
 

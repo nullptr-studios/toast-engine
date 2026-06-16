@@ -7,7 +7,7 @@ namespace event {
 
 template<>
 struct ProtoTraits<ExitApplication> {
-	using Proto = proto::window::ExitApplication;
+	using Proto = proto::events::ExitApplication;
 	using Event = ExitApplication;
 
 	static auto toProto(const Event&) -> Proto { return {}; }
@@ -19,7 +19,7 @@ TOAST_PROTO_EVENT(ExitApplication);
 
 template<>
 struct ProtoTraits<WindowClose> {
-	using Proto = proto::window::WindowClose;
+	using Proto = proto::events::WindowClose;
 	using Event = WindowClose;
 
 	static auto toProto(const Event& e) -> Proto {
@@ -35,7 +35,7 @@ TOAST_PROTO_EVENT(WindowClose);
 
 template<>
 struct ProtoTraits<WindowDrop> {
-	using Proto = proto::window::WindowDrop;
+	using Proto = proto::events::WindowDrop;
 	using Event = WindowDrop;
 
 	static auto toProto(const Event& e) -> Proto {
@@ -57,7 +57,7 @@ TOAST_PROTO_EVENT(WindowDrop);
 
 template<>
 struct ProtoTraits<WindowKey> {
-	using Proto = proto::window::WindowKey;
+	using Proto = proto::events::WindowKey;
 	using Event = WindowKey;
 
 	static auto toProto(const Event& e) -> Proto {
@@ -76,7 +76,7 @@ TOAST_PROTO_EVENT(WindowKey);
 
 template<>
 struct ProtoTraits<WindowChar> {
-	using Proto = proto::window::WindowChar;
+	using Proto = proto::events::WindowChar;
 	using Event = WindowChar;
 
 	static auto toProto(const Event& e) -> Proto {
@@ -92,7 +92,7 @@ TOAST_PROTO_EVENT(WindowChar);
 
 template<>
 struct ProtoTraits<WindowMousePosition> {
-	using Proto = proto::window::WindowMousePosition;
+	using Proto = proto::events::WindowMousePosition;
 	using Event = WindowMousePosition;
 
 	static auto toProto(const Event& e) -> Proto {
@@ -109,7 +109,7 @@ TOAST_PROTO_EVENT(WindowMousePosition);
 
 template<>
 struct ProtoTraits<WindowMouseButton> {
-	using Proto = proto::window::WindowMouseButton;
+	using Proto = proto::events::WindowMouseButton;
 	using Event = WindowMouseButton;
 
 	static auto toProto(const Event& e) -> Proto {
@@ -127,7 +127,7 @@ TOAST_PROTO_EVENT(WindowMouseButton);
 
 template<>
 struct ProtoTraits<WindowMouseScroll> {
-	using Proto = proto::window::WindowMouseScroll;
+	using Proto = proto::events::WindowMouseScroll;
 	using Event = WindowMouseScroll;
 
 	static auto toProto(const Event& e) -> Proto {
@@ -144,7 +144,7 @@ TOAST_PROTO_EVENT(WindowMouseScroll);
 
 template<>
 struct ProtoTraits<WindowResize> {
-	using Proto = proto::window::WindowResize;
+	using Proto = proto::events::WindowResize;
 	using Event = WindowResize;
 
 	static auto toProto(const Event& e) -> Proto {

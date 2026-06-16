@@ -134,7 +134,7 @@ public partial class ToastEngine : IDisposable {
 	public void SignalClose() {
 		if (m_closeEventSent) return;
 		m_closeEventSent = true;
-		Events.Send(new Proto.Window.ExitApplication());
+		Events.Send(new Proto.Events.ExitApplication());
 	}
 
 	/// @brief Copies the latest viewport frame into @p dst (capacity bytes)

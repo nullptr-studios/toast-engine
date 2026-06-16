@@ -94,17 +94,11 @@ public:
 	 */
 	void registerDependency(Node& from, Node& to) override;
 
-	/**
-	 * @brief Requests to create a new node during runtime
-	 */
-	auto requestRuntimeCreation(Node& parent) -> Box<Node> override;
-
 	static void loadNode(UID uid);
 	static void loadNode(std::string_view uri);
 
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;
 	auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> override;
-	void spawnInto(Node& parent, UID prefab) override;
 
 	/**
 	 * @brief Promotes a cached (or global) root node to be the world root

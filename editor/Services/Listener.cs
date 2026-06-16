@@ -30,6 +30,12 @@ public sealed class Listener : IDisposable {
 		if (id != 0) m_subs[name] = id;
 	}
 
+	public void Subscribe<T>(Action<T> handler, sbyte priority = 0) where T : IMessage<T>, new() {
+		Subscribe<T>(e => { handler(e);
+			return false;
+		}, priority);
+	}
+
 	public void SubscribeOnUiThread<T>(Action<T> handler, sbyte priority = 0) where T : IMessage<T>, new() =>
 		Subscribe<T>(e => {
 			Dispatcher.UIThread.Post(() => handler(e));

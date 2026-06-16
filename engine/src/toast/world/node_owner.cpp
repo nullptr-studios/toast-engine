@@ -1,12 +1,15 @@
 #include "node_owner.hpp"
 
 #include "node.hpp"
+#include "toast/log.hpp"
+#include "toast/world/workspace_events.hpp"
 
 #include <algorithm>
 #include <future>
 #include <memory>
 #include <toast/assets/assets.hpp>
 #include <toast/thread_pool.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace toast {
 
@@ -15,17 +18,91 @@ auto referenceUid(const assets::Prefab::BasicNode& chunk) -> uint64_t {
 	if (auto field = chunk.find("m_source_prefab")) {
 		try {
 			return field->as<toast::UID>().data();
-		} catch (const std::bad_any_cast&) { }
+		} catch (const std::bad_any_cast& e) { TOAST_ERROR("World", "Bad cast at {}: {}", chunk.name, e.what()); }
 	}
 	return 0;
 }
 }
 
-auto NodeOwner::nodeAllocation(std::optional<assets::Prefab::BasicNode> node_data) noexcept -> Box<Node> {
+auto NodeOwner::requestRuntimeCreate(Node& parent, std::string_view type) -> Box<Node> {
 	ZoneScoped;
 
-	// Identify the type and get reflection info
-	std::string type = node_data.has_value() ? node_data->type : "toast::Node";
+	// Allocation
+	Box node = this->nodeAllocation();
+	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
+
+	// Data structure generation
+	generateUid(node);
+	node->m_parent = parent;
+	parent.m_children.emplace_back(node);
+	node->m_state = parent.m_state;
+	node->m_type = NodeType::child;
+	node->m_inherited_enabled = parent.enabled();
+
+	// Initialization
+	node->callTick(node->info(), TickFunctionList::init);
+	node->callTick(node->info(), TickFunctionList::begin);
+	node->enabled(true);
+
+	event::send<event::RequestHierarchyUpdate>();
+	TOAST_TRACE("World", "Spawned node in {}", parent.name());
+	return node;
+}
+
+auto NodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
+	ZoneScoped;
+
+	// Obtain asset
+	auto file = assets::load<assets::Prefab>(uid);
+	if (not file.hasValue()) {
+		TOAST_ERROR("World", "Couldn't load prefab {} to spawn", uid);
+		return {};
+	}
+
+	// Allocation
+	NodeOwner::InstantiateContext ctx;
+	ctx.resolver = [](UID id) { return assets::load<assets::Prefab>(id); };
+	Box<Node> root = this->instantiate(file, ctx);
+	if (not root.exists()) {
+		TOAST_ERROR("World", "Failed to instantiate prefab {} to spawn", uid);
+		return {};
+	}
+
+	// Data structure generation
+	root->m_uid.generate();
+	root->m_parent = parent;
+	parent.m_children.emplace_back(root);
+	root->m_state = parent.m_state;
+	root->m_type = NodeType::root;
+	root->m_inherited_enabled = parent.enabled();
+
+	// Initialiazation
+	root->propagateCallTick(root->info(), TickFunctionList::init);
+	root->propagateCallTick(root->info(), TickFunctionList::begin);
+	root->enabled(true);
+
+	event::send<event::RequestHierarchyUpdate>();
+	TOAST_TRACE("World", "Spawned node {} in {}", root->name(), parent.name());
+	return root;
+}
+
+auto NodeOwner::requestRuntimeSpawn(Node& parent, std::string_view uri) -> Box<Node> {
+	auto uid = assets::resolveURI(uri);
+	if (not uid.has_value()) {
+		TOAST_WARN("World", "Couldn't find file {} to do runtime spawn", uri);
+		return {};
+	}
+
+	return requestRuntimeSpawn(parent, *uid);
+}
+
+void NodeOwner::generateUid(Node& node) {
+	node.m_uid.generate();
+}
+
+auto NodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {
+	ZoneScoped;
+
 	const NodeInfo* info = NodeRegistry::reflect(type);
 
 #ifndef NDEBUG
@@ -50,11 +127,14 @@ auto NodeOwner::nodeAllocation(std::optional<assets::Prefab::BasicNode> node_dat
 	raw_node->m_info = info;     // attach reflection data
 	raw_node->m_owner = this;    // attach owner ptr
 
-	if (node_data.has_value()) {
-		applyFields(*raw_node, *node_data);
-	}
-
 	return raw_node->box();
+}
+
+auto NodeOwner::nodeAllocation(const assets::Prefab::BasicNode& node_data) noexcept -> Box<Node> {
+	std::string type = node_data.type;
+	auto box = nodeAllocation(type);
+	applyFields(*box, node_data);
+	return box;
 }
 
 void NodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) {
