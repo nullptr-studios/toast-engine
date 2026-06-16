@@ -8,6 +8,8 @@
 
 #include <toast/application.hpp>
 
+namespace toast { void registerGameTypes(); }
+
 class MyGame : public toast::IApplication {
 public:
 	// Try adding stuff here! -xein
@@ -15,4 +17,6 @@ public:
 	void begin() override {}
 	void tick() override {}
 	void destroy() override {}
+
+	void registerTypes() override { toast::registerGameTypes(); }
 };

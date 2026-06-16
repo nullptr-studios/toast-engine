@@ -234,7 +234,7 @@ void World::loadNode(UID uid) {
 			return;
 		}
 
-		NodeOwner::InstantiateContext ctx;
+		INodeOwner::InstantiateContext ctx;
 		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
 		Box<Node> root = instance->instantiate(node_file, ctx);
 
@@ -306,7 +306,7 @@ void World::spawn(UID prefab, Node& parent) {
 			return;
 		}
 
-		NodeOwner::InstantiateContext ctx;
+		INodeOwner::InstantiateContext ctx;
 		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
 		Box<Node> root = instance->instantiate(file, ctx);
 		if (not root.exists()) {
@@ -316,7 +316,7 @@ void World::spawn(UID prefab, Node& parent) {
 
 		// on nodes that come from prefab we need to regenerate their UID
 		// it will be unique
-		regenerateUid(*root);
+		generateUid(*root);
 		root->propagateCallTick(root->info(), TickFunctionList::init);
 		root->changeNodeState(NodeState::cached);
 
@@ -329,10 +329,6 @@ void World::spawn(UID prefab, Node& parent) {
 		return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 	});
 	instance->m.load_futures.emplace_back(std::move(future));
-}
-
-void World::regenerateUid(Node& node) {
-	regenerateUid(node);
 }
 
 void World::drainSpawnQueue() {
@@ -355,7 +351,7 @@ void World::drainSpawnQueue() {
 
 		// Keep the placement UID unique within the parents namespace
 		while (findNode(root->uid(), &*parent).exists()) {
-			regenerateUid(*root);
+			generateUid(*root);
 		}
 
 		moveToChild(*root, *parent);
@@ -1249,9 +1245,7 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 
 	node.propagateCallTick(node.info(), TickFunctionList::begin);
 	node.enabled(true);
-	event::send<event::RequestHierarchyUpdate>();
-	// HACK: TODO:
-	event::send<event::UpdateHierarchyData>(instance->trees.root);
+	event::send<event::RequestHierarchyUpdate>();    // TODO: should the world send this?
 	TOAST_INFO("World", "Swapped root to {} ({})", node.name(), node.uid());
 
 	return root_node;
@@ -1591,7 +1585,7 @@ void WorldTestAccess::computeDependencyGraph(World& world) {
 }
 
 auto WorldTestAccess::instantiate(
-    World& world, const assets::AssetHandle<assets::Prefab>& file, NodeOwner::InstantiateContext& ctx
+    World& world, const assets::AssetHandle<assets::Prefab>& file, INodeOwner::InstantiateContext& ctx
 ) -> Box<Node> {
 	return world.instantiate(file, ctx);
 }
@@ -1648,16 +1642,16 @@ void WorldTestAccess::drainLoadQueue(World& world) {
 }
 
 auto WorldTestAccess::spawnSync(
-    World& world, const assets::AssetHandle<assets::Prefab>& file, Node& parent, NodeOwner::InstantiateContext& ctx
+    World& world, const assets::AssetHandle<assets::Prefab>& file, Node& parent, INodeOwner::InstantiateContext& ctx
 ) -> Box<Node> {
 	Box<Node> root = world.instantiate(file, ctx);
 	if (not root.exists()) {
 		return {};
 	}
-	World::regenerateUid(*root);
+	World::generateUid(*root);
 	root->changeNodeState(NodeState::cached);
 	while (World::findNode(root->uid(), &parent).exists()) {
-		World::regenerateUid(*root);
+		World::generateUid(*root);
 	}
 	world.moveToChild(*root, parent);
 	return root;

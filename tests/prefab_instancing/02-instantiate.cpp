@@ -78,7 +78,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/02-instantiate", test_p
 	);
 
 	auto world = WorldTestAccess::createWorld();
-	NodeOwner::InstantiateContext ctx;
+	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = store.resolver();
 
 	Box<Node> root = WorldTestAccess::instantiate(*world, store.handle(A_ASSET), ctx);
@@ -132,7 +132,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/02-instantiate", test_p
 	);
 
 	auto world = WorldTestAccess::createWorld();
-	NodeOwner::InstantiateContext ctx;
+	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = store.resolver();
 
 	Box<Node> root = WorldTestAccess::instantiate(*world, store.handle(A_ASSET), ctx);
@@ -168,7 +168,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/02-instantiate", test_p
 	);
 
 	auto world = WorldTestAccess::createWorld();
-	NodeOwner::InstantiateContext ctx;
+	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = store.resolver();
 
 	Box<Node> root = WorldTestAccess::instantiate(*world, store.handle(A_ASSET), ctx);
@@ -211,7 +211,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/02-instantiate", test_p
 	);
 
 	auto world = WorldTestAccess::createWorld();
-	NodeOwner::InstantiateContext ctx;
+	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = store.resolver();
 
 	Box<Node> root = WorldTestAccess::instantiate(*world, store.handle(A_ASSET), ctx);

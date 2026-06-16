@@ -24,7 +24,7 @@
 #include <toast/uid.hpp>
 
 namespace toast {
-class NodeOwner;
+class INodeOwner;
 
 namespace _detail {
 struct NodeCluster;
@@ -47,7 +47,7 @@ enum class NodeType : uint8_t {
 };
 
 class [[ToastNode]] TOAST_API Node {
-	friend class NodeOwner;
+	friend class INodeOwner;
 	friend class World;
 	friend class Workspace;
 	friend class Node3D;
@@ -147,7 +147,7 @@ public:
 	auto search(std::string_view query) -> std::vector<Box<Node>>;
 
 protected:
-	NodeOwner* m_owner = nullptr;
+	INodeOwner* m_owner = nullptr;
 
 private:
 	[[Reflect, Name("UID")]]

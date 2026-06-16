@@ -59,6 +59,32 @@ public partial class StartWindowViewModel : ViewModelBase {
 				Args: "commit -m \"Initial commit\" --author \"nullptr Studios <toast-engine@nullptr.es>\""));
 		}
 
+		// Generate the game's reflection metadata before configuring\
+		var libSrc = Path.Combine(projectDir, "lib", "src");
+		var libGenerated = Path.Combine(projectDir, "lib", "generated");
+		Directory.CreateDirectory(libGenerated);
+
+		var refgen = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+			"..", "reflection_generator", "reflection_generator.exe"));
+		var gameDb = ProjectContext.Resolve("cache://game_reflect.json");
+		tasks.Add(new LoaderTask("Generate game reflection", Exe: refgen,
+			Args: $"--database \"{gameDb}\" --output \"{libGenerated}\" --input \"{libSrc}\" " +
+			      $"--include-root \"{libSrc}\" --register-fn registerGameTypes --attribute Game"));
+
+		// Copy the engine reflection database to cache://
+		tasks.Add(new LoaderTask("Copy engine reflection", async log => {
+			var src = Path.Combine(corePath, "engine_reflect.json");
+			var dst = ProjectContext.Resolve("cache://engine_reflect.json");
+			if (File.Exists(src)) {
+				File.Copy(src, dst, true);
+				log($"Copied engine_reflect.json -> {dst}");
+			} else {
+				log($"warning: engine_reflect.json not found at {src}");
+			}
+
+			await Task.CompletedTask;
+		}));
+
 		tasks.Add(new LoaderTask("cmake lib/ -B .toast/cmake_cache", Exe: "cmake",
 			Args: $"lib/ -B .toast/cmake_cache -G \"Visual Studio 18 2026\" -DTOAST_PATH={ToastPath}"));
 		tasks.Add(new LoaderTask("cmake --build .toast/cmake_cache", Exe: "cmake",

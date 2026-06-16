@@ -17,6 +17,7 @@
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
 #include "world/reflect.hpp"
+#include "world/workspace.hpp"
 #include "world/workspace_events.hpp"
 #include "world/world.hpp"
 
@@ -61,69 +62,6 @@ auto createTrianglePipeline(
 	return std::make_unique<renderer::VulkanPipeline>(core, config);
 }
 
-// FIXME: DEBUGGING PURPOSES
-void runWorldDemo() {
-	enum class DemoStage : uint8_t {
-		load,
-		wait_cached,
-		ticking,
-		unload,
-		destroy,
-		done
-	};
-	static DemoStage stage = DemoStage::load;
-	static Box<Node> demo_root;
-	static int frames = 0;
-
-	switch (stage) {
-		case DemoStage::load:
-			TOAST_INFO("WorldDemo", "Loading assets://demo.node");
-			World::loadNode("assets://demo.node");
-			stage = DemoStage::wait_cached;
-			break;
-
-		case DemoStage::wait_cached: {
-			demo_root = World::findCached("DemoRoot");
-			if (!demo_root.exists()) {
-				break;
-			}
-
-			TOAST_INFO("WorldDemo", "Prefab finished loading, promoting from cached to root");
-			World::setRoot(*demo_root);
-
-			std::string graph = World::graphviz();
-			TOAST_INFO("WorldDemo", "Dependency graph:\n{}", graph);
-			std::ofstream("dependency_graph.dot") << graph;
-
-			stage = DemoStage::ticking;
-			break;
-		}
-
-		case DemoStage::ticking:
-			// if (++frames >= 10) {
-			// TOAST_INFO("WorldDemo", "Ticked {} frames, moving DemoRoot back to cached", frames);
-			// World::cacheNode(*demo_root);
-			// stage = DemoStage::unload;
-			//}
-			break;
-
-		case DemoStage::unload:
-			TOAST_INFO("WorldDemo", "Destroying DemoRoot");
-			World::destroyNode(*demo_root);
-			demo_root = {};
-			stage = DemoStage::destroy;
-			break;
-
-		case DemoStage::destroy:
-			// the destroy queue drained on the previous tick
-			TOAST_INFO("WorldDemo", "Demo complete");
-			stage = DemoStage::done;
-			break;
-
-		case DemoStage::done: break;
-	}
-}
-
 }
 
 Engine* Engine::instance = nullptr;
@@ -136,11 +74,13 @@ struct EnginePimpl {
 	std::unique_ptr<assets::AssetManager> asset_manager = nullptr;
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
-	event::Listener resize_listener;
+	event::Listener listener;
 	toast::NodeRegistry reflection_registry;
 
 	// owned by renderer's output target
 	renderer::SharedTextureOutputTarget* shared_target = nullptr;
+
+	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
 };
 
 Engine::Engine() noexcept {
@@ -180,13 +120,10 @@ void Engine::init() {
 	event::registerProtoEvents();
 	registerEngineTypes();
 
-	// TODO: this should be moved somehwere else
-	m->world = std::make_unique<World>();
-
 	m->asset_manager = std::make_unique<assets::AssetManager>();
 
 	// TODO: This should be moved into VulkanRenderer
-	m->resize_listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
+	m->listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
 		if (!m->renderer || !m->vulkan_core || e.width <= 0 || e.height <= 0) {
 			return false;
 		}
@@ -208,12 +145,12 @@ void Engine::tick() {
 
 	event::pollEvents();
 
-	if (m->world) {
-		runWorldDemo();    // FIXME: DEBUGGING PURPOSES
-		m->world->tick();
+	// Ticking logic
+	for (const auto& [_, node_owner] : m->owners) {
+		node_owner->tick();
 	}
 
-	// Run application logic
+	// Run application layer
 	if (active_application) {
 		active_application->tick();
 	}
@@ -222,7 +159,8 @@ void Engine::tick() {
 		m->renderer->drawFrame();
 	}
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(16));
+	// TODO: HACK: we should introduce a proper relax mode
+	std::this_thread::sleep_for(std::chrono::milliseconds(5));
 }
 
 auto Engine::shouldClose() -> bool {
@@ -268,6 +206,27 @@ void Engine::createAvaloniaWindow() {
 	auto pipeline = createTrianglePipeline(*m->vulkan_core, color_format, extent, depth_format);
 
 	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target), std::move(pipeline));
+}
+
+auto Engine::createWorkspace(std::string_view type) -> UID {
+	UID uid;
+	uid.generate();
+	m->owners.emplace(uid, std::make_unique<Workspace>(type));
+	return uid;
+}
+
+auto Engine::openWorkspace(UID uid) -> UID {
+	if (m->owners.find(uid) != m->owners.end()) {
+		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
+		return {};
+	}
+
+	m->owners.emplace(uid, std::make_unique<Workspace>(uid));
+	return uid;
+}
+
+void Engine::destroyWorkspace(UID handle) {
+	m->owners.erase(handle);
 }
 
 int Engine::getViewportFrame(void* dst, uint32_t dstCapacity, renderer::ViewportFrameDesc* out) {
@@ -356,5 +315,17 @@ int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_fr
 		out->frame_id = desc.frame_id;
 	}
 	return result;
+}
+
+uint64_t toast_create_workspace(const char* type) {
+	return toast::Engine::get()->createWorkspace(type).data();
+}
+
+uint64_t toast_open_workspace(uint64_t uid) {
+	return toast::Engine::get()->openWorkspace(uid).data();
+}
+
+void toast_destroy_workspace(uint64_t handle) {
+	toast::Engine::get()->destroyWorkspace(handle);
 }
 }

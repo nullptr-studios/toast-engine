@@ -19,10 +19,12 @@
 #include <vector>
 
 namespace toast {
-class TOAST_API NodeOwner {
+class TOAST_API INodeOwner {
 public:
-	NodeOwner() = default;
-	~NodeOwner() = default;
+	INodeOwner() = default;
+	~INodeOwner() = default;
+
+	virtual void tick() = 0;
 
 	virtual void registerDependency(Node& from, Node& to) = 0;
 
@@ -39,7 +41,7 @@ public:
 	};
 
 protected:
-	void generateUid(Node& node);
+	static void generateUid(Node& node);
 
 	/// Creates a node and stores it in memory
 	auto nodeAllocation(std::string_view type = "toast::Node") noexcept -> Box<Node>;

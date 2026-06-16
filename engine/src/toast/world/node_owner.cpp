@@ -24,7 +24,7 @@ auto referenceUid(const assets::Prefab::BasicNode& chunk) -> uint64_t {
 }
 }
 
-auto NodeOwner::requestRuntimeCreate(Node& parent, std::string_view type) -> Box<Node> {
+auto INodeOwner::requestRuntimeCreate(Node& parent, std::string_view type) -> Box<Node> {
 	ZoneScoped;
 
 	// Allocation
@@ -49,7 +49,7 @@ auto NodeOwner::requestRuntimeCreate(Node& parent, std::string_view type) -> Box
 	return node;
 }
 
-auto NodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
+auto INodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
 	ZoneScoped;
 
 	// Obtain asset
@@ -60,7 +60,7 @@ auto NodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
 	}
 
 	// Allocation
-	NodeOwner::InstantiateContext ctx;
+	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = [](UID id) { return assets::load<assets::Prefab>(id); };
 	Box<Node> root = this->instantiate(file, ctx);
 	if (not root.exists()) {
@@ -86,7 +86,7 @@ auto NodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
 	return root;
 }
 
-auto NodeOwner::requestRuntimeSpawn(Node& parent, std::string_view uri) -> Box<Node> {
+auto INodeOwner::requestRuntimeSpawn(Node& parent, std::string_view uri) -> Box<Node> {
 	auto uid = assets::resolveURI(uri);
 	if (not uid.has_value()) {
 		TOAST_WARN("World", "Couldn't find file {} to do runtime spawn", uri);
@@ -96,11 +96,11 @@ auto NodeOwner::requestRuntimeSpawn(Node& parent, std::string_view uri) -> Box<N
 	return requestRuntimeSpawn(parent, *uid);
 }
 
-void NodeOwner::generateUid(Node& node) {
+void INodeOwner::generateUid(Node& node) {
 	node.m_uid.generate();
 }
 
-auto NodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {
+auto INodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {
 	ZoneScoped;
 
 	const NodeInfo* info = NodeRegistry::reflect(type);
@@ -130,14 +130,14 @@ auto NodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {
 	return raw_node->box();
 }
 
-auto NodeOwner::nodeAllocation(const assets::Prefab::BasicNode& node_data) noexcept -> Box<Node> {
+auto INodeOwner::nodeAllocation(const assets::Prefab::BasicNode& node_data) noexcept -> Box<Node> {
 	std::string type = node_data.type;
 	auto box = nodeAllocation(type);
 	applyFields(*box, node_data);
 	return box;
 }
 
-void NodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) {
+void INodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) {
 	ZoneScoped;
 
 	node.name(data.name);
@@ -175,7 +175,7 @@ void NodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) {
 	});
 }
 
-auto NodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node> {
+auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node> {
 	ZoneScoped;
 
 	std::unordered_map<uint64_t, Box<Node>> uid_map;
@@ -255,7 +255,7 @@ auto NodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHan
 	return root;
 }
 
-auto NodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, InstantiateContext& ctx) -> Box<Node> {
+auto INodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, InstantiateContext& ctx) -> Box<Node> {
 	ZoneScoped;
 
 	if (not file.hasValue()) {
@@ -343,12 +343,12 @@ auto NodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, Ins
 	return root;
 }
 
-void NodeOwner::releaseNode(_detail::ControlBox& control) noexcept {
+void INodeOwner::releaseNode(_detail::ControlBox& control) noexcept {
 	control.node = nullptr;
 	tombstones++;
 }
 
-void NodeOwner::reapTombstones() noexcept {
+void INodeOwner::reapTombstones() noexcept {
 	if (tombstones == 0) {
 		return;
 	}

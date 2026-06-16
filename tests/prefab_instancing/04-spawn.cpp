@@ -57,7 +57,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/04-spawn", test_prefab_
 		store.add("SceneS00000", PREFAB_S);
 
 		auto world = WorldTestAccess::createWorld();
-		NodeOwner::InstantiateContext ctx;
+		INodeOwner::InstantiateContext ctx;
 		ctx.resolver = store.resolver();
 
 		Box<Node> root = WorldTestAccess::instantiate(*world, store.handle("SceneS00000"), ctx);
@@ -100,11 +100,11 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/04-spawn", test_prefab_
 		auto world = WorldTestAccess::createWorld();
 		Box<Node> parent = WorldTestAccess::createNode(*world, "spawn_parent", NodeState::root);
 
-		NodeOwner::InstantiateContext ctx1;
+		INodeOwner::InstantiateContext ctx1;
 		ctx1.resolver = store.resolver();
 		Box<Node> first = WorldTestAccess::spawnSync(*world, store.handle("AssetP00000"), *parent, ctx1);
 
-		NodeOwner::InstantiateContext ctx2;
+		INodeOwner::InstantiateContext ctx2;
 		ctx2.resolver = store.resolver();
 		Box<Node> second = WorldTestAccess::spawnSync(*world, store.handle("AssetP00000"), *parent, ctx2);
 

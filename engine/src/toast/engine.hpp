@@ -3,6 +3,7 @@
 /// @date 10 Feb 2026
 
 #include <cstdint>
+#include <toast/uid.hpp>
 
 namespace toast {
 namespace renderer {
@@ -33,6 +34,11 @@ public:
 	// window
 	void createSDLWindow(const char*);
 	void createAvaloniaWindow();
+
+	// nodes
+	auto createWorkspace(std::string_view type) -> UID;
+	auto openWorkspace(UID uid) -> UID;
+	void destroyWorkspace(UID handle);
 
 	/// @brief Copies the latest viewport frame into @p dst
 	/// @return 1 copied, 0 none available, -1 destination too small

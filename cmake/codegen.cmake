@@ -36,9 +36,17 @@ macro(run_codegen)
     message(STATUS "Protobuf sources generated")
 
     message(STATUS "Building reflection_generator tool...")
+
+    set(_cfg "${CMAKE_BUILD_TYPE}")
+    if(NOT _cfg)
+        set(_cfg "Debug")
+    endif()
+    set(_refgen_cargo_dir "${OUTPUT_ROOT}/${_cfg}/cargo")
+    set(_refgen_stage_dir "${OUTPUT_ROOT}/${_cfg}/reflection_generator")
+
     find_program(CARGO cargo REQUIRED)
     execute_process(
-        COMMAND ${CARGO} build
+        COMMAND ${CARGO} build --target-dir "${_refgen_cargo_dir}"
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tools/reflection_generator"
         RESULT_VARIABLE _cargo_result
         ERROR_VARIABLE  _cargo_error
@@ -46,10 +54,20 @@ macro(run_codegen)
     if(NOT _cargo_result EQUAL 0)
         message(FATAL_ERROR "Failed to build reflection_generator:\n${_cargo_error}")
     endif()
-    find_program(REFLECTION_GENERATOR reflection_generator
-        PATHS "${CMAKE_SOURCE_DIR}/tools/reflection_generator/target/debug"
-        NO_DEFAULT_PATH REQUIRED
+
+    file(MAKE_DIRECTORY "${_refgen_stage_dir}")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${_refgen_cargo_dir}/debug"
+            "${_refgen_stage_dir}"
+        RESULT_VARIABLE _stage_result
+        ERROR_VARIABLE  _stage_error
     )
+    if(NOT _stage_result EQUAL 0)
+        message(FATAL_ERROR "Failed to stage reflection_generator:\n${_stage_error}")
+    endif()
+
+    set(REFLECTION_GENERATOR "${_refgen_stage_dir}/reflection_generator${CMAKE_EXECUTABLE_SUFFIX}")
 
     message(STATUS "Using reflection_generator: ${REFLECTION_GENERATOR}")
     execute_process(

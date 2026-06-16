@@ -51,7 +51,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/03-save", test_prefab_i
 	store.add(A_ASSET, PREFAB_A);
 
 	auto world = WorldTestAccess::createWorld();
-	NodeOwner::InstantiateContext ctx;
+	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = store.resolver();
 
 	Box<Node> root = WorldTestAccess::instantiate(*world, store.handle(A_ASSET), ctx);
@@ -84,7 +84,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/03-save", test_prefab_i
 
 		// --- Round-trip: re-instantiating the saved prefab rebuilds the same shape --------------
 		auto world2 = WorldTestAccess::createWorld();
-		NodeOwner::InstantiateContext ctx2;
+		INodeOwner::InstantiateContext ctx2;
 		ctx2.resolver = store.resolver();
 		assets::AssetHandle<Prefab> saved_handle(&saved, UID(uidOf(A_ASSET)));
 
@@ -119,7 +119,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/03-save", test_prefab_i
 	// --- Plain definition (no instances): no chunk carries a Prefab field, interior recursed ----
 	{
 		auto worldB = WorldTestAccess::createWorld();
-		NodeOwner::InstantiateContext ctxB;
+		INodeOwner::InstantiateContext ctxB;
 		ctxB.resolver = store.resolver();
 		Box<Node> b_root = WorldTestAccess::instantiate(*worldB, store.handle(B_ASSET), ctxB);
 		assert(b_root.exists());

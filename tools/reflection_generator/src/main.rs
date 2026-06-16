@@ -31,6 +31,9 @@ struct Cli {
 	/// Name of the registration function to emit
 	#[arg(long, default_value = "registerEngineTypes")]
 	register_fn: std::string::String,
+
+	#[arg(long = "attribute")]
+	attributes: Vec<std::string::String>,
 }
 
 fn main() {
@@ -73,7 +76,9 @@ fn main() {
 				eprintln!("error: {msg}");
 				std::process::exit(1);
 			}
-			all_nodes.push(build_node(class, &include_path));
+			let mut node = build_node(class, &include_path);
+			inject_attributes(&mut node, &cli.attributes);
+			all_nodes.push(node);
 		}
 	}
 
@@ -98,6 +103,20 @@ fn main() {
 		cli.output.display(),
 		cli.register_fn
 	);
+}
+
+/// Inject extra attributes
+fn inject_attributes(node: &mut NodeInfo, attributes: &[std::string::String]) {
+	if attributes.is_empty() {
+		return;
+	}
+	if !node.attributes.is_object() {
+		node.attributes = serde_json::Value::Object(serde_json::Map::new());
+	}
+	let map = node.attributes.as_object_mut().expect("attributes is an object");
+	for name in attributes {
+		map.entry(name.clone()).or_insert_with(|| serde_json::json!([]));
+	}
 }
 
 /// Walk all input dirs and return paths of .hpp files containing [[ToastNode]]

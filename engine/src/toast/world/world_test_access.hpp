@@ -31,7 +31,7 @@ struct TOAST_API WorldTestAccess {
 
 	static void computeDependencyGraph(World& world);
 
-	static auto instantiate(World& world, const assets::AssetHandle<assets::Prefab>& file, NodeOwner::InstantiateContext& ctx)
+	static auto instantiate(World& world, const assets::AssetHandle<assets::Prefab>& file, INodeOwner::InstantiateContext& ctx)
 	    -> Box<Node>;
 
 	static auto childrenOf(const Node& node) -> const std::vector<Box<Node>>&;
@@ -42,7 +42,7 @@ struct TOAST_API WorldTestAccess {
 	static void setWorldRoot(World& world, Node& node);
 
 	static auto
-	    spawnSync(World& world, const assets::AssetHandle<assets::Prefab>& file, Node& parent, NodeOwner::InstantiateContext& ctx)
+	    spawnSync(World& world, const assets::AssetHandle<assets::Prefab>& file, Node& parent, INodeOwner::InstantiateContext& ctx)
 	        -> Box<Node>;
 
 	static void initAssetManager(std::string_view assets_dir, std::string_view cache_dir);

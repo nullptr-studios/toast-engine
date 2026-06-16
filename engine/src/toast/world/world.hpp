@@ -79,13 +79,13 @@ struct TickSchedule {
 };
 }
 
-class World final : public NodeOwner {
+class World final : public INodeOwner {
 public:
 	World();
 
 	~World();
 
-	void tick();
+	void tick() override;
 
 	/**
 	 * Stores a new dependency
@@ -162,8 +162,6 @@ private:
 	void drainDestroyQueue();
 
 	void drainSpawnQueue();
-
-	static void regenerateUid(Node& node);
 
 	static void spawn(UID prefab, Node& parent);
 

@@ -5,6 +5,7 @@ find_package(asio CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(unofficial-vulkan-memory-allocator-hpp CONFIG REQUIRED)
@@ -18,7 +19,7 @@ add_library(toast_engine SHARED ${SOURCE})
 file(GLOB_RECURSE TOAST_REFLECTED_HEADERS CONFIGURE_DEPENDS "src/toast/*.hpp" "src/toast/*.h")
 add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
-    COMMAND ${REFLECTION_GENERATOR}
+    COMMAND "${OUTPUT_ROOT}/$<CONFIG>/reflection_generator/reflection_generator${CMAKE_EXECUTABLE_SUFFIX}"
         --database "${CMAKE_SOURCE_DIR}/engine/assets/engine_reflect.json"
         --output   "${CMAKE_SOURCE_DIR}/engine/generated"
         --input    "${CMAKE_SOURCE_DIR}/engine/src/toast"
@@ -30,6 +31,7 @@ add_custom_command(
     VERBATIM
 )
 add_custom_target(reflection_gen DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp")
+add_dependencies(reflection_gen reflection_generator)
 add_dependencies(toast_engine reflection_gen)
 
 set(TOAST_ENGINE_OUTPUT_ROOT "${OUTPUT_ROOT}/$<CONFIG>/toast_engine")
@@ -80,7 +82,7 @@ target_link_libraries(toast_engine
     PUBLIC
         Tracy::TracyClient
         glm::glm
-        
+        nlohmann_json::nlohmann_json
 )
 
 foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
@@ -140,6 +142,9 @@ add_dependencies(sync_api_headers clang_format)
 add_dependencies(toast_engine sync_api_headers)
 add_dependencies(toast_engine log_server)
 
+get_target_property(_nlohmann_include_list nlohmann_json::nlohmann_json INTERFACE_INCLUDE_DIRECTORIES)
+list(GET _nlohmann_include_list 0 _nlohmann_include)
+
 add_custom_command(TARGET toast_engine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -147,6 +152,9 @@ add_custom_command(TARGET toast_engine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/ffi"
         "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${_nlohmann_include}/nlohmann"
+        "${TOAST_ENGINE_OUTPUT_ROOT}/include/nlohmann"
     COMMENT "Copying toast_engine headers into the package layout"
     VERBATIM
 )

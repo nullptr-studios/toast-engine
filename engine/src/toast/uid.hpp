@@ -19,7 +19,8 @@ class Prefab;
 namespace toast {
 
 struct TOAST_API UID {
-	friend class NodeOwner;
+	friend class Engine;
+	friend class INodeOwner;
 	friend class assets::Prefab;
 
 	UID();
@@ -39,8 +40,8 @@ struct TOAST_API UID {
 	[[nodiscard]]
 	auto data() const noexcept -> uint64_t;
 
-	inline static auto toString(uint64_t uid) -> std::string;
-	inline static auto fromString(std::string_view b64) -> uint64_t;
+	static auto toString(uint64_t uid) -> std::string;
+	static auto fromString(std::string_view b64) -> uint64_t;
 
 private:
 	void generate();                      ///< @brief Creates a new UID

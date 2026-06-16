@@ -26,9 +26,18 @@ set_target_properties(toast_engine PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${TOAST_PATH}/include"
 )
 
-file(GLOB_RECURSE SOURCE "src/*.cpp")
+file(GLOB_RECURSE SOURCE "src/*.cpp" "generated/*.cpp")
 add_library(my_game SHARED ${SOURCE})
-target_include_directories(my_game PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(my_game PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/generated
+)
+
+target_compile_options(my_game PRIVATE
+        $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:-Wno-unknown-attributes>
+        $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
+        $<$<CXX_COMPILER_ID:MSVC>:/wd5030>
+)
 
 target_link_libraries(my_game PUBLIC toast_engine)
 target_compile_definitions(my_game PRIVATE GAME_EXPORT)

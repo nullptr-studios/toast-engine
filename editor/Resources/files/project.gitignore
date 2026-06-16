@@ -1,6 +1,7 @@
 ﻿# Toast meta files
 .toast/
 build/
+lib/generated/
 
 # IDE files
 .vs/

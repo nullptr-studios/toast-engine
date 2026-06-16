@@ -15,10 +15,9 @@
 #include <toast/events/listener.hpp>
 
 namespace toast {
-class Workspace : public NodeOwner {
+class Workspace : public INodeOwner {
 public:
-	Workspace(std::string_view type, std::string_view name);
-	Workspace(std::string_view uri);
+	Workspace(std::string_view type, std::string_view name = "Unnamed Root");
 	Workspace(UID uid);
 
 	void registerDependency(Node& from, Node& to) override;
@@ -32,5 +31,8 @@ private:
 	event::Listener m_listener;
 
 	void eventSubscriptions();
+
+public:
+	void tick() override { }
 };
 }
