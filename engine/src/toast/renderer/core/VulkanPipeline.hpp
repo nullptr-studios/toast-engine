@@ -17,13 +17,13 @@ class VulkanCore;
 
 class VulkanPipeline {
 public:
-	enum class PipelineType {
-		Graphics,
-		Compute
+	enum class PipelineType : uint8_t {
+		graphics,
+		compute
 	};
 
 	struct Config {
-		PipelineType pipeline_type = PipelineType::Graphics;
+		PipelineType pipeline_type = PipelineType::graphics;
 		std::string debug_name;
 
 		// Render state
@@ -76,7 +76,7 @@ public:
 private:
 	std::optional<vk::raii::ShaderModule> m_shader_module;
 	vk::raii::Pipeline m_pipeline = nullptr;
-	PipelineType m_pipeline_type = PipelineType::Graphics;
+	PipelineType m_pipeline_type = PipelineType::graphics;
 };
 
 }    // namespace toast::renderer

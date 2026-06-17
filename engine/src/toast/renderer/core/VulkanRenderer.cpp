@@ -8,6 +8,7 @@
 
 #include <array>
 #include <cstring>
+#include <iostream>
 #include <limits>
 #include <stdexcept>
 
@@ -418,16 +419,10 @@ void VulkanRenderer::createFrameResources() {
 	}
 }
 
-void VulkanRenderer::updateFrameResources(uint32_t frameIndex, float dt) {
-	m_frameUBOs[frameIndex].cameraPosition = m_camera ? m_camera->position : glm::vec3(0.0f);
-	float aspect = static_cast<float>(m_outputTarget->getExtent().width) / static_cast<float>(m_outputTarget->getExtent().height);
+void VulkanRenderer::updateFrameResources(uint32_t frameIndex, RenderFrame& frameData) {
+	// TODO CHANGE TO SUPPORT THREADSAFE FRAMEDATA
 
-	m_frameUBOs[frameIndex].projection = m_camera ? m_camera->getProjection(aspect) : glm::mat4(1.0f);
-	m_frameUBOs[frameIndex].view = m_camera ? m_camera->getView() : glm::mat4(1.0f);
-	m_frameUBOs[frameIndex].viewProjection = m_frameUBOs[frameIndex].projection * m_frameUBOs[frameIndex].view;
-
-	m_totalTime += dt;
-	m_frameUBOs[frameIndex].time = m_totalTime;
+	m_frameUBOs[frameIndex] = frameData.frameData;
 
 	auto& allocation = m_frameUBORes[frameIndex].gpuBuffer->getAllocation();
 	// With VMA_ALLOCATION_CREATE_MAPPED
@@ -440,7 +435,7 @@ void VulkanRenderer::updateFrameResources(uint32_t frameIndex, float dt) {
 	}
 }
 
-auto VulkanRenderer::drawFrame() -> void {
+auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 	if (m_frames.empty()) {
 		return;
 	}
@@ -471,7 +466,7 @@ auto VulkanRenderer::drawFrame() -> void {
 	m_imagesInFlight[image_index] = *frame.inFlight;
 
 	// Update FrameData
-	updateFrameResources(m_currentFrame, 0.016f);    // FIXME: dt
+	updateFrameResources(m_currentFrame, frameData);    // FIXME: dt
 
 	// Update the Render passes TODO: Move outside of renderloop
 	for (auto& pass : m_renderPasses) {
@@ -516,6 +511,55 @@ auto VulkanRenderer::drawFrame() -> void {
 	if (present_result != vk::Result::eSuccess) {
 		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: Failed to present the current output image!");
 	}
+}
+
+void VulkanRenderer::mainRenderThread() {
+	while (m_running) {
+		uint32_t frameIndex;
+
+		{
+			std::unique_lock lock(m_queueMutex);
+
+			m_frameCV.wait(lock, [this] { return !m_readyFrames.empty() || !m_running; });
+
+			if (!m_running) {
+				return;
+			}
+
+			frameIndex = m_readyFrames.front();
+
+			m_readyFrames.pop();
+		}
+
+		drawFrame(m_render_frames[frameIndex]);
+
+		m_freeFrames.release();
+	}
+}
+
+void VulkanRenderer::start() {
+	TOAST_TRACE("VulkanRenderer", "Starting renderer");
+
+	m_running = true;
+
+	m_render_thread = std::thread([this] { mainRenderThread(); });
+}
+
+void VulkanRenderer::submitFrame() {
+	{
+		std::lock_guard lock(m_queueMutex);
+
+		m_readyFrames.push(m_writeIndex);
+
+		m_writeIndex = (m_writeIndex + 1) % kRenderFrames;
+	}
+
+	m_frameCV.notify_one();
+}
+
+void VulkanRenderer::stop() {
+	m_running = false;
+	m_frameCV.notify_all();
 }
 
 auto VulkanRenderer::resize(vk::Extent2D extent) -> void {

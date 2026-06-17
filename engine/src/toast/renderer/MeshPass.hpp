@@ -3,10 +3,10 @@
 /// @date 08/06/2026.
 
 #pragma once
-#include "IRenderPass.hpp"
-#include "ShaderLayout.hpp"
-#include "VulkanMesh.hpp"
-#include "VulkanPipeline.hpp"
+#include "core/IRenderPass.hpp"
+#include "core/ShaderLayout.hpp"
+#include "core/VulkanMesh.hpp"
+#include "core/VulkanPipeline.hpp"
 
 #include <glm/glm.hpp>
 

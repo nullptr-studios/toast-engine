@@ -4,9 +4,9 @@
 
 #include "MeshPass.hpp"
 
-#include "ShaderCompiler.hpp"
-#include "VulkanCore.hpp"
-#include "VulkanRenderer.hpp"
+#include "core/ShaderCompiler.hpp"
+#include "core/VulkanCore.hpp"
+#include "core/VulkanRenderer.hpp"
 #include "gizmo.hpp"
 #include "toast/log.hpp"
 
@@ -20,7 +20,7 @@ MeshPass::MeshPass(const toast::renderer::VulkanCore& core, vk::Format colorForm
 	shaderLayout.rebuild(core, shaderSpirv.program->getLayout());
 
 	toast::renderer::VulkanPipeline::Config config {
-	  .pipeline_type = toast::renderer::VulkanPipeline::PipelineType::Graphics,
+	  .pipeline_type = toast::renderer::VulkanPipeline::PipelineType::graphics,
 	  .color_format = colorFormat,
 	  .depth_format = depthFormat,
 	  .extent = extent,
@@ -52,8 +52,7 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t image
 
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.getPipeline());
 
-	
-	//FIXME: GUIZMO MODEL Y IS POINTING Y-
+	// FIXME: GUIZMO MODEL Y IS POINTING Y-
 	mesh.bind(cmd);
 
 	// Bind once the frameData

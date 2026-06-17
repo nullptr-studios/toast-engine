@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "VulkanMesh.hpp"
+#include "core/VulkanMesh.hpp"
 
 #include <vector>
 

@@ -6,14 +6,13 @@
 #include "ffi/engine.h"    // ffi
 #include "logger.hpp"
 #include "renderer/MeshPass.hpp"
-#include "renderer/SDLOutputTarget.hpp"
-#include "renderer/ShaderCompiler.hpp"
-#include "renderer/ShaderLayout.hpp"
-#include "renderer/SharedTextureOutputTarget.hpp"
 #include "renderer/TrianglePass.hpp"
-#include "renderer/VulkanCore.hpp"
-#include "renderer/VulkanPipeline.hpp"
-#include "renderer/VulkanRenderer.hpp"
+#include "renderer/core/SDLOutputTarget.hpp"
+#include "renderer/core/ShaderCompiler.hpp"
+#include "renderer/core/ShaderLayout.hpp"
+#include "renderer/core/SharedTextureOutputTarget.hpp"
+#include "renderer/core/VulkanCore.hpp"
+#include "renderer/core/VulkanRenderer.hpp"
 #include "thread_pool.hpp"
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
@@ -92,7 +91,29 @@ void Engine::tick() {
 	camera->position = glm::vec3(sin(totalTime) * 5.0f, cos(totalTime) * 5.0f, 5);
 
 	if (m->renderer) {
-		m->renderer->drawFrame();
+		m->renderer->getFreeFramesSemaphore().acquire();
+		auto& frame = toast::renderer::beginFrameBuild();
+
+		frame.draws.clear();
+
+		auto cam = renderer::getActiveCamera();
+		auto cameraData = renderer::VulkanRenderer::FrameUBO {
+		  .view = cam->getView(),
+		  .projection = cam->getProjection(1080.0f / 720.0f),
+		  .viewProjection = cam->getProjection(1080.0f / 720.0f) * cam->getView(),
+		  .cameraPosition = cam->position,
+		  .time = totalTime
+		};
+
+		frame.frameData = cameraData;
+
+		// frame.draws.push_back(
+		// {
+		// 		mesh,
+		// 		transform
+		// });
+
+		renderer::submitFrame();
 	}
 }
 
@@ -134,6 +155,8 @@ void Engine::createSDLWindow(const char* w_name) {
 	// create renderer
 
 	m->renderer->addRenderPass(std::move(pass));
+
+	m->renderer->start();
 }
 
 void Engine::createAvaloniaWindow() {

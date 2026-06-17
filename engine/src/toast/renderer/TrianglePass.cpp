@@ -4,10 +4,10 @@
 
 #include "TrianglePass.hpp"
 
-#include "ShaderCompiler.hpp"
-#include "ShaderLayout.hpp"
-#include "VulkanCore.hpp"
-#include "VulkanRenderer.hpp"
+#include "core/ShaderCompiler.hpp"
+#include "core/ShaderLayout.hpp"
+#include "core/VulkanCore.hpp"
+#include "core/VulkanRenderer.hpp"
 #include "toast/log.hpp"
 
 TrianglePass::TrianglePass(
@@ -18,7 +18,6 @@ TrianglePass::TrianglePass(
 	m_shaderlayout.rebuild(core, shaderSpirv.program->getLayout());
 
 	toast::renderer::VulkanPipeline::Config config {
-	  .pipeline_type = toast::renderer::VulkanPipeline::PipelineType::Graphics,
 	  .color_format = colorFormat,
 	  .depth_format = depthFormat,
 	  .extent = extent,

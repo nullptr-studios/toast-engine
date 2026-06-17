@@ -154,7 +154,7 @@ auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> vo
 	if (config.depth_format.has_value() && *config.depth_format == vk::Format::eUndefined) {
 		TOAST_CRITICAL("VulkanPipeline", "Pipeline depth format cannot be undefined!");
 	}
-	if (config.pipeline_type == PipelineType::Graphics) {
+	if (config.pipeline_type == PipelineType::graphics) {
 		if (config.color_format == vk::Format::eUndefined) {
 			TOAST_CRITICAL("VulkanPipeline", "Graphics pipeline requires a valid color format!");
 		}
@@ -166,7 +166,7 @@ auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> vo
 	const auto& device = core.getDevice();
 	m_shader_module.emplace(createShaderModule(device, config.shader_spirv));
 
-	if (config.pipeline_type == PipelineType::Graphics) {
+	if (config.pipeline_type == PipelineType::graphics) {
 		m_pipeline = createGraphicsPipelineImpl(core, config, *m_shader_module, config.pipeline_layout);
 	} else {
 		m_pipeline = createComputePipelineImpl(core, config, *m_shader_module, config.pipeline_layout);

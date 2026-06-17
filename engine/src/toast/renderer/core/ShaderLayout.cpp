@@ -41,7 +41,7 @@ void ShaderLayout::rebuild(const VulkanCore& core, slang::ProgramLayout* slang_l
 			max_set_index = set_index;
 		}
 	}
-	
+
 	m_descriptor_set_layouts.reserve(max_set_index + 1);
 	std::vector<vk::DescriptorSetLayout> raw_layout_handles;
 	raw_layout_handles.reserve(max_set_index + 1);
@@ -80,7 +80,7 @@ void ShaderLayout::reflectBindings(
 	if (!var_layout) {
 		return;
 	}
-	
+
 	uint32_t binding_offset = var_layout->getOffset(slang::ParameterCategory::DescriptorTableSlot);
 	uint32_t space_offset = var_layout->getOffset(slang::ParameterCategory::SubElementRegisterSpace);
 
