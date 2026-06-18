@@ -7,7 +7,15 @@
              x:Class="editor.Workspace.ViewportView"
              x:DataType="vm:ViewportViewModel"
              Focusable="True"
-             Background="Black">
+             Background="#101010">
 
-	<Image Name="Surface" Stretch="Fill" />
+	<Panel>
+		<Image Name="Surface" Stretch="Fill" />
+		<Border Background="#202020" VerticalAlignment="Top"
+		        Margin="4" Padding="8" CornerRadius="8">
+			<StackPanel Orientation="Horizontal">
+				<Button Content="Test"/>
+			</StackPanel>
+		</Border>
+	</Panel>
 </UserControl>

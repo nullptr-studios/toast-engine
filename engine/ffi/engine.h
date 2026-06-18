@@ -22,9 +22,13 @@ TOAST_C_API void toast_destroy(engine_t*);    ///< Destroys the game engine
 TOAST_C_API void toast_create_SDL_window(const char*);
 TOAST_C_API void toast_create_avalonia_window();
 
-TOAST_C_API uint64_t toast_create_workspace(const char* type);
-TOAST_C_API uint64_t toast_open_workspace(uint64_t uid);
-TOAST_C_API void toast_destroy_workspace(uint64_t handle);
+typedef struct {
+	uint64_t uid;
+	const char* name;
+} workspace_result;
+
+TOAST_C_API workspace_result toast_create_workspace(const char* type);
+TOAST_C_API workspace_result toast_open_workspace(const char* uid);
 
 TOAST_C_API void
     toast_set_working_directory(const char* assets, const char* artworks, const char* cache, const char* saved, const char* core);

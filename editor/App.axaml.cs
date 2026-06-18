@@ -7,6 +7,9 @@ using editor.StartWindow;
 namespace editor;
 
 public class App : Application {
+	public static Window? MainWindow
+		=> (Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+
 	public override void Initialize() {
 		AvaloniaXamlLoader.Load(this);
 	}

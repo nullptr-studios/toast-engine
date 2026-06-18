@@ -203,7 +203,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	private async void Import() {
+	private async Task Import() {
 		try {
 			var destDir = ProjectContext.Resolve(LocationPath);
 			Directory.CreateDirectory(destDir);

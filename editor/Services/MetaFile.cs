@@ -11,7 +11,7 @@ public interface IMetaSection { }
 public record MetaHeader {
 	public required string Uid { get; init; }
 	public required string Type { get; init; }
-	public required string Source { get; init; }
+	public string? Source { get; init; }
 	public string CreatedAt { get; init; } = DateTime.UtcNow.ToString("o");
 	public string ModifiedAt { get; set; } = DateTime.UtcNow.ToString("o");
 }
@@ -130,7 +130,8 @@ public static class MetaFile {
 file sealed class MetaFileDto {
 	[TomlPropertyName("uid")] public string Uid { get; set; } = "";
 	[TomlPropertyName("type")] public string Type { get; set; } = "";
-	[TomlPropertyName("source")] public string Source { get; set; } = "";
+	// Source is omitted from the TOML output when assets have no artwork source
+	[TomlPropertyName("source")] public string? Source { get; set; }
 	[TomlPropertyName("created_at")] public string CreatedAt { get; set; } = "";
 	[TomlPropertyName("modified_at")] public string ModifiedAt { get; set; } = "";
 

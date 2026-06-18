@@ -36,9 +36,11 @@ public:
 	void createAvaloniaWindow();
 
 	// nodes
-	auto createWorkspace(std::string_view type) -> UID;
-	auto openWorkspace(UID uid) -> UID;
+	auto createWorkspace(std::string_view type) -> std::pair<UID, std::string>;
+	auto openWorkspace(UID uid) -> std::pair<UID, std::string>;
 	void destroyWorkspace(UID handle);
+
+	auto activeWorkspace() -> UID;
 
 	/// @brief Copies the latest viewport frame into @p dst
 	/// @return 1 copied, 0 none available, -1 destination too small

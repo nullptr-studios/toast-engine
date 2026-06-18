@@ -4,8 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="editor.Workspace.WorkspaceView"
-        x:DataType="vm:WorkspaceViewModel"
+        x:Class="editor.Workspace.MainWindowView"
+        x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="editor"
         ExtendClientAreaToDecorationsHint="True"
@@ -31,7 +31,7 @@
 			<!-- Menu -->
 			<Menu DockPanel.Dock="Left">
 				<MenuItem Header="_Toast Engine" Foreground="DeepPink" FontWeight="Bold">
-					<MenuItem Header="_New project" FontWeight="Normal" />
+					<MenuItem Header="_New project" FontWeight="Normal"/>
 					<MenuItem Header="_Open project" FontWeight="Normal" />
 					<MenuItem Header="_Close project" FontWeight="Normal" />
 					<Separator />
@@ -41,12 +41,18 @@
 					<MenuItem Header="_Quit Toast" FontWeight="Normal" />
 				</MenuItem>
 				<MenuItem Header="_File">
-					<MenuItem Header="_New node" />
-					<MenuItem Header="_Open node" />
-					<MenuItem Header="_Close node" />
+					<MenuItem Header="_New Node file" InputGesture="Ctrl+N"
+					          Command="{Binding NewNodeCommand}"
+					          CommandParameter="{Binding $parent[Window]}"/>
+					<MenuItem Header="_Open Node file" InputGesture="Ctrl+O"
+					          Command="{Binding OpenNodeFileCommand}"
+					          CommandParameter="{Binding $parent[Window]}"/>
+					<MenuItem Header="_Close Node file" InputGesture="Ctrl+W"
+					          Command="{Binding CloseNodeFileCommand}"/>
 					<Separator />
-					<MenuItem Header="_Save" />
-					<MenuItem Header="Save _all" />
+					<MenuItem Header="_Save" InputGesture="Ctrl+S"/>
+					<MenuItem Header="Save _as..." InputGesture="Ctrl+Shift+S"/>
+					<MenuItem Header="Save a_ll nodes" InputGesture="Ctrl+Alt+S"/>
 				</MenuItem>
 				<MenuItem Header="_Edit">
 					<MenuItem Header="_Undo" />
@@ -69,7 +75,7 @@
 					<MenuItem Header="_Open build folder" />
 				</MenuItem>
 				<MenuItem Header="_View" />
-				<MenuItem Header="_Window">
+				<MenuItem Header="_Tools">
 					<MenuItem Header="_Logs" ToggleType="CheckBox"
 					          x:Name="LogWindowButton" />
 				</MenuItem>
@@ -85,10 +91,6 @@
 			<Border Background="Transparent"
 			        PointerPressed="OnTitleBarPointerPressed" />
 		</DockPanel>
-
-		<!--
-		<vm:ViewportView Grid.Row="1" DataContext="{Binding Viewport}" />
-		-->
 
 		<Panel Grid.Row="1" ClipToBounds="True">
 			<DockControl Layout="{Binding MainLayout}" ZIndex="0"/>

@@ -8,10 +8,11 @@ using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 
+// ReSharper disable once CheckNamespace
 namespace editor.Converters;
 
 public class SeverityToColorConverter : IValueConverter {
-	public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
 		if (value is uint severity)
 			return severity switch {
 				0 => Brushes.Gray,          // Trace
@@ -25,29 +26,29 @@ public class SeverityToColorConverter : IValueConverter {
 		return Brushes.White;
 	}
 
-	public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) {
 		throw new NotSupportedException();
 	}
 }
 
 public class BoolToOpacityConverter : IValueConverter {
-	public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
 		if (value is bool b) return b ? 1.0 : 0.5;
 		return 1.0;
 	}
 
-	public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) {
 		throw new NotSupportedException();
 	}
 }
 
 public class EnabledToColorConverter : IValueConverter {
-	public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
 		if (value is bool b) return b ? Brushes.White : Brushes.Gray;
 		return Brushes.White;
 	}
 
-	public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) {
 		throw new NotSupportedException();
 	}
 }

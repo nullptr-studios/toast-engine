@@ -15,6 +15,8 @@ message UpdateHierarchyData {
 
 message RequestHierarchyUpdate {}
 
+message ReloadAssetsManifest {}
+
 message WorkspaceCreate {
   string parent = 1;
   string type = 2;
@@ -29,4 +31,32 @@ message WorkspaceSpawn {
 
 message WorkspaceRemove {
   string target = 1;
+}
+
+message WorkspaceDestroy {
+  uint64 handle = 1;
+}
+
+message SetActiveWorkspace {
+  uint64 handle = 1;
+}
+
+message WorkspaceSave {
+  string target = 1;
+  string path = 2;
+}
+
+message WorkspaceCreateNode {
+  string parent = 1;
+  string type = 2;
+}
+
+message WorkspaceRemoveNode {
+  string target = 1;
+}
+
+message WorkspaceMoveNodeTo {
+  string target = 1;
+  string new_parent = 2;
+  string predecessor = 3;
 }

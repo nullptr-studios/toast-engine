@@ -26,6 +26,7 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <span>
 
@@ -80,7 +81,9 @@ struct EnginePimpl {
 	// owned by renderer's output target
 	renderer::SharedTextureOutputTarget* shared_target = nullptr;
 
+	std::mutex owners_mutex;
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
+	toast::UID active_workspace {0};
 };
 
 Engine::Engine() noexcept {
@@ -131,6 +134,18 @@ void Engine::init() {
 		m->renderer->resize(vk::Extent2D {static_cast<uint32_t>(e.width), static_cast<uint32_t>(e.height)});
 		return false;
 	});
+
+	m->listener.subscribe<event::WorkspaceDestroy>([this](const event::WorkspaceDestroy& e) {
+		destroyWorkspace(e.handle);
+		return false;
+	});
+
+	// The editor tells us which workspace is focused; only that one answers hierarchy requests
+	m->listener.subscribe<event::SetActiveWorkspace>([this](const event::SetActiveWorkspace& e) {
+		m->active_workspace = e.handle;
+		event::send<event::RequestHierarchyUpdate>();
+		return false;
+	});
 }
 
 void Engine::tick() {
@@ -145,9 +160,11 @@ void Engine::tick() {
 
 	event::pollEvents();
 
-	// Ticking logic
-	for (const auto& [_, node_owner] : m->owners) {
-		node_owner->tick();
+	{
+		std::scoped_lock lock(m->owners_mutex);
+		for (const auto& [_, node_owner] : m->owners) {
+			node_owner->tick();
+		}
 	}
 
 	// Run application layer
@@ -208,25 +225,34 @@ void Engine::createAvaloniaWindow() {
 	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target), std::move(pipeline));
 }
 
-auto Engine::createWorkspace(std::string_view type) -> UID {
+auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::string> {
 	UID uid;
 	uid.generate();
-	m->owners.emplace(uid, std::make_unique<Workspace>(type));
-	return uid;
+	std::scoped_lock lock(m->owners_mutex);
+	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(type, uid));
+	std::string name = it->second->name();
+	return {uid, name};
 }
 
-auto Engine::openWorkspace(UID uid) -> UID {
+auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
+	std::scoped_lock lock(m->owners_mutex);
 	if (m->owners.find(uid) != m->owners.end()) {
 		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
 		return {};
 	}
 
-	m->owners.emplace(uid, std::make_unique<Workspace>(uid));
-	return uid;
+	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(uid));
+	std::string name = it->second->name();
+	return {uid, name};
 }
 
 void Engine::destroyWorkspace(UID handle) {
+	std::scoped_lock lock(m->owners_mutex);
 	m->owners.erase(handle);
+}
+
+auto Engine::activeWorkspace() -> UID {
+	return m->active_workspace;
 }
 
 int Engine::getViewportFrame(void* dst, uint32_t dstCapacity, renderer::ViewportFrameDesc* out) {
@@ -317,15 +343,18 @@ int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_fr
 	return result;
 }
 
-uint64_t toast_create_workspace(const char* type) {
-	return toast::Engine::get()->createWorkspace(type).data();
+workspace_result toast_create_workspace(const char* type) {
+	auto [uid, name] = toast::Engine::get()->createWorkspace(type);
+
+	static thread_local std::string s_name;
+	s_name = std::move(name);
+	return {.uid = uid.data(), .name = s_name.c_str()};
 }
 
-uint64_t toast_open_workspace(uint64_t uid) {
-	return toast::Engine::get()->openWorkspace(uid).data();
-}
-
-void toast_destroy_workspace(uint64_t handle) {
-	toast::Engine::get()->destroyWorkspace(handle);
+workspace_result toast_open_workspace(const char* uid) {
+	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid));
+	static thread_local std::string s_name;
+	s_name = std::move(name);
+	return {.uid = root_uid.data(), .name = s_name.c_str()};
 }
 }

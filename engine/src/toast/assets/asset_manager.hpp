@@ -47,6 +47,9 @@ public:
 	auto save(toast::UID uid) -> bool;
 	auto save(std::string_view uri) -> bool;
 
+	/// @brief Writes bytes to the file backing a virtual path, bypassing the manifest
+	auto saveBytes(std::string_view uri, const std::vector<uint8_t>& data) -> bool;
+
 	void reloadManifest();
 	void clearUnusedAssets();
 

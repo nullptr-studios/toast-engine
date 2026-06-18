@@ -1,6 +1,7 @@
 #include "workspace_events.hpp"
 
 #include <generated/workspace_events.pb.h>
+#include <toast/assets/assets.hpp>
 #include <toast/events/proto_event.hpp>
 #include <toast/world/node.hpp>
 
@@ -89,6 +90,18 @@ struct ProtoTraits<RequestHierarchyUpdate> {
 TOAST_PROTO_EVENT(RequestHierarchyUpdate);
 
 template<>
+struct ProtoTraits<ReloadAssetsManifest> {
+	using Proto = proto::events::ReloadAssetsManifest;
+	using Event = ReloadAssetsManifest;
+
+	static auto toProto(const Event& e) -> Proto { return {}; }
+
+	static auto fromProto(const Proto& p) -> Event { return {}; }
+};
+
+TOAST_PROTO_EVENT(ReloadAssetsManifest);
+
+template<>
 struct ProtoTraits<WorkspaceCreate> {
 	using Proto = proto::events::WorkspaceCreate;
 	using Event = WorkspaceCreate;
@@ -146,5 +159,111 @@ struct ProtoTraits<WorkspaceRemove> {
 };
 
 TOAST_PROTO_EVENT(RequestHierarchyUpdate);
+
+template<>
+struct ProtoTraits<WorkspaceDestroy> {
+	using Proto = proto::events::WorkspaceDestroy;
+	using Event = WorkspaceDestroy;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_handle(e.handle);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.handle()}; }
+};
+
+TOAST_PROTO_EVENT(WorkspaceDestroy);
+
+template<>
+struct ProtoTraits<SetActiveWorkspace> {
+	using Proto = proto::events::SetActiveWorkspace;
+	using Event = SetActiveWorkspace;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_handle(e.handle);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.handle()}; }
+};
+
+TOAST_PROTO_EVENT(SetActiveWorkspace);
+
+template<>
+struct ProtoTraits<WorkspaceSave> {
+	using Proto = proto::events::WorkspaceSave;
+	using Event = WorkspaceSave;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_target(e.target);
+		p.set_path(e.uri);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.target()), p.path()}; }
+};
+
+TOAST_PROTO_EVENT(WorkspaceSave);
+
+template<>
+struct ProtoTraits<WorkspaceCreateNode> {
+	using Proto = proto::events::WorkspaceCreateNode;
+	using Event = WorkspaceCreateNode;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_parent(e.parent);
+		p.set_type(e.type);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.parent()), p.type()}; }
+};
+
+TOAST_PROTO_EVENT(WorkspaceCreateNode);
+
+template<>
+struct ProtoTraits<WorkspaceRemoveNode> {
+	using Proto = proto::events::WorkspaceRemoveNode;
+	using Event = WorkspaceRemoveNode;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_target(e.target);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.target())}; }
+};
+
+TOAST_PROTO_EVENT(WorkspaceRemoveNode);
+
+template<>
+struct ProtoTraits<WorkspaceMoveNodeTo> {
+	using Proto = proto::events::WorkspaceMoveNodeTo;
+	using Event = WorkspaceMoveNodeTo;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_target(e.target);
+		p.set_new_parent(e.new_parent);
+		p.set_predecessor(e.predecessor);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		return {
+		  toast::UID::fromString(p.target()),
+		  p.new_parent() == "" ? 0 : toast::UID::fromString(p.new_parent()),
+		  p.predecessor() == "" ? 0 : (p.predecessor() == "end" ? -1 : toast::UID::fromString(p.predecessor()))
+		};
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspaceMoveNodeTo);
 
 }

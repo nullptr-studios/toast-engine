@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Dock.Avalonia.Controls;
 using Dock.Model.Controls;
 using Dock.Model.Core;
@@ -13,16 +14,20 @@ public class DockFactory(ToastEngine toast) : Factory {
 	private IRootDock? m_rootDock;
 	private IDocumentDock? m_documentDock;
 
+	public HierarchyViewModel? Hierarchy { get; private set; }
+
+	// Asked by MainWindowViewModel whether a viewport may close
+	public Func<ViewportViewModel, Task<bool>>? ConfirmClose { get; set; }
+
 	public override IRootDock CreateLayout() {
-		var document  = new ViewportViewModel(toast) { Id = "Viewport",  Title = "Unnamed Node" };
 		var hierarchy = new HierarchyViewModel       { Id = "Hierarchy", Title = "Hierarchy" };
+		Hierarchy = hierarchy;
 		var inspector = new InspectorViewModel       { Id = "Inspector", Title = "Inspector" };
 
 		var documentDock = new DocumentDock {
 			IsCollapsable    = false,
 			AllowedDropOperations = DockOperationMask.Left | DockOperationMask.Right,
-			ActiveDockable   = document,
-			VisibleDockables = CreateList<IDockable>(document),
+			VisibleDockables = CreateList<IDockable>(),
 		};
 
 		var leftDock = new ProportionalDock {
@@ -101,7 +106,20 @@ public class DockFactory(ToastEngine toast) : Factory {
 
 	public override void CloseDockable(IDockable dockable) {
 		if (dockable is null) return;
+
+		if (dockable is ViewportViewModel vp && !vp.PendingClose && ConfirmClose is { } confirm) {
+			_ = GatedClose(vp, confirm);
+			return;
+		}
+
 		base.CloseDockable(dockable);
+	}
+
+	private async Task GatedClose(ViewportViewModel vp, Func<ViewportViewModel, Task<bool>> confirm) {
+		if (await confirm(vp)) {
+			vp.PendingClose = true;
+			CloseDockable(vp);
+		}
 	}
 
 	public override IDock CreateSplitLayout(IDock dock, IDockable dockable, DockOperation operation) {
@@ -115,5 +133,19 @@ public class DockFactory(ToastEngine toast) : Factory {
 			return layout;
 		}
 		return layout;
+	}
+
+	// The currently focused workspace document, or null if none is open
+	public ViewportViewModel? ActiveViewport => m_documentDock?.ActiveDockable as ViewportViewModel;
+
+	public ViewportViewModel AddViewport(ulong handle, string name) {
+		var doc = new ViewportViewModel(toast) { Id = $"Viewport_{handle}", Title = name, Handle = handle };
+		AddDockable(m_documentDock!, doc);
+		SetActiveDockable(doc);
+		return doc;
+	}
+
+	public void RemoveViewport(IDockable dockable) {
+		RemoveDockable(dockable, collapse: true);
 	}
 }

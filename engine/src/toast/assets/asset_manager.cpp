@@ -146,6 +146,16 @@ auto AssetManager::save(std::string_view uri) -> bool {
 	return save(*uid);
 }
 
+auto AssetManager::saveBytes(std::string_view uri, const std::vector<uint8_t>& data) -> bool {
+	std::lock_guard lock(mutex);
+	auto real_path = resolveVirtualPath(uri);
+	if (!real_path) {
+		TOAST_ERROR("AssetManager", "Cannot save bytes: could not resolve path {}", uri);
+		return false;
+	}
+	return saveFile(*real_path, data);
+}
+
 void AssetManager::reloadManifest() {
 	std::lock_guard lock(mutex);
 	manifest.clear();

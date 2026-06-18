@@ -74,8 +74,8 @@ public partial class ToastEngine : IDisposable {
 		toast_set_working_directory(
 			Path.Combine(ProjectPath, "assets"),
 			Path.Combine(ProjectPath, "artworks"),
-			Path.Combine(ProjectPath, ".cache"),
-			Path.Combine(ProjectPath, ".cache", "saved_data"),
+			Path.Combine(ProjectPath, ".toast"),
+			Path.Combine(ProjectPath, ".toast", "saved_data"),
 			CorePath
 		);
 
@@ -89,6 +89,7 @@ public partial class ToastEngine : IDisposable {
 		toast_create_avalonia_window();
 
 		// Then we create a window
+		ReflectionDatabase.Update();
 		CreateWorkspace();
 
 		// Start the tick loop on a background thread to avoid blocking the Avalonia render thread
@@ -124,8 +125,8 @@ public partial class ToastEngine : IDisposable {
 
 	private void CreateWorkspace() {
 		var desktop = (IClassicDesktopStyleApplicationLifetime)Application.Current!.ApplicationLifetime!;
-		desktop.MainWindow = new WorkspaceView(this) {
-			DataContext = new WorkspaceViewModel(this)
+		desktop.MainWindow = new MainWindowView(this) {
+			DataContext = new MainWindowViewModel(this)
 		};
 
 		desktop.MainWindow.Show();

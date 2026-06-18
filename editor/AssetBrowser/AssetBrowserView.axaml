@@ -171,8 +171,21 @@
 			<Border Background="#202020" CornerRadius="8">
 				<Border.ContextMenu>
 					<ContextMenu x:DataType="vm:AssetBrowserViewModel">
-						<MenuItem Header="New Asset" />
 						<MenuItem Header="New Folder" />
+						<MenuItem Header="Import" />
+						<Separator />
+						<MenuItem Header="Nodes" IsEnabled="False" Classes="section-header" />
+						<MenuItem Header="Node">
+							<MenuItem.Icon>
+								<Border Width="32" Height="32" Background="Magenta" CornerRadius="4" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<MenuItem Header="Node3D">
+							<MenuItem.Icon>
+								<Border Width="64" Height="64" Background="Green" CornerRadius="4" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<MenuItem Header="Other nodes..." />
 						<Separator />
 						<MenuItem Header="Refresh" Command="{Binding RefreshCommand}" />
 					</ContextMenu>

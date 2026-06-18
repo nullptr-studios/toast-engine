@@ -18,18 +18,18 @@ using editor.Logger;
 
 namespace editor.Workspace;
 
-public partial class WorkspaceView : Window {
+public partial class MainWindowView : Window {
 	private readonly ToastEngine? m_toast;
 	private Border? m_toastBorder;
 	private CancellationTokenSource? m_toastCts;
 
-	public WorkspaceView() {
+	public MainWindowView() {
 		InitializeComponent();
 		m_toastBorder = this.FindControl<Border>("ToastZoneBorder");
 		DataContextChanged += OnDataContextChanged;
 	}
 
-	public WorkspaceView(ToastEngine toast) {
+	public MainWindowView(ToastEngine toast) {
 		InitializeComponent();
 		m_toast = toast;
 		m_toastBorder = this.FindControl<Border>("ToastZoneBorder");
@@ -40,13 +40,13 @@ public partial class WorkspaceView : Window {
 	}
 
 	private void OnDataContextChanged(object? sender, EventArgs e) {
-		if (DataContext is WorkspaceViewModel vm)
+		if (DataContext is MainWindowViewModel vm)
 			vm.PropertyChanged += OnViewModelPropertyChanged;
 	}
 
 	private async void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e) {
-		if (e.PropertyName != nameof(WorkspaceViewModel.ToastZoneActive)) return;
-		var active = (DataContext as WorkspaceViewModel)?.ToastZoneActive ?? false;
+		if (e.PropertyName != nameof(MainWindowViewModel.ToastZoneActive)) return;
+		var active = (DataContext as MainWindowViewModel)?.ToastZoneActive ?? false;
 		await AnimateToastZone(active);
 	}
 
@@ -109,9 +109,9 @@ public partial class WorkspaceView : Window {
 		e.Handled = true;
 
 		if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
-			(DataContext as WorkspaceViewModel)?.PinToastZone();
+			(DataContext as MainWindowViewModel)?.PinToastZone();
 		else
-			(DataContext as WorkspaceViewModel)?.ShowToastZone(true);
+			(DataContext as MainWindowViewModel)?.ShowToastZone(true);
 	}
 
 	void OnKeyUp(object? sender, KeyEventArgs e) {
@@ -119,6 +119,6 @@ public partial class WorkspaceView : Window {
 		e.Handled = true;
 
 		if (!e.KeyModifiers.HasFlag(KeyModifiers.Control))
-			(DataContext as WorkspaceViewModel)?.ShowToastZone(false);
+			(DataContext as MainWindowViewModel)?.ShowToastZone(false);
 	}
 }

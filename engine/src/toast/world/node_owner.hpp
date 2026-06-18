@@ -23,6 +23,7 @@ class TOAST_API INodeOwner {
 public:
 	INodeOwner() = default;
 	~INodeOwner() = default;
+	virtual auto name() -> std::string = 0;
 
 	virtual void tick() = 0;
 
@@ -42,6 +43,11 @@ public:
 
 protected:
 	static void generateUid(Node& node);
+
+	static auto stripNamespace(std::string_view type) -> std::string_view;
+
+	/// appendins " 2", " 3", ... on collision
+	static auto uniqueChildName(const Node& parent, std::string_view base) -> std::string;
 
 	/// Creates a node and stores it in memory
 	auto nodeAllocation(std::string_view type = "toast::Node") noexcept -> Box<Node>;

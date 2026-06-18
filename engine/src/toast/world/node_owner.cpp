@@ -28,7 +28,7 @@ auto INodeOwner::requestRuntimeCreate(Node& parent, std::string_view type) -> Bo
 	ZoneScoped;
 
 	// Allocation
-	Box node = this->nodeAllocation();
+	Box node = this->nodeAllocation(type);
 	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 
 	// Data structure generation
@@ -38,6 +38,7 @@ auto INodeOwner::requestRuntimeCreate(Node& parent, std::string_view type) -> Bo
 	node->m_state = parent.m_state;
 	node->m_type = NodeType::child;
 	node->m_inherited_enabled = parent.enabled();
+	node->m_name = uniqueChildName(parent, stripNamespace(node->m_info->type));
 
 	// Initialization
 	node->callTick(node->info(), TickFunctionList::init);
@@ -98,6 +99,23 @@ auto INodeOwner::requestRuntimeSpawn(Node& parent, std::string_view uri) -> Box<
 
 void INodeOwner::generateUid(Node& node) {
 	node.m_uid.generate();
+}
+
+auto INodeOwner::stripNamespace(std::string_view type) -> std::string_view {
+	auto pos = type.rfind("::");
+	return pos == std::string_view::npos ? type : type.substr(pos + 2);
+}
+
+auto INodeOwner::uniqueChildName(const Node& parent, std::string_view base) -> std::string {
+	auto taken = [&](std::string_view candidate) {
+		return std::ranges::any_of(parent.children(), [&](const Box<Node>& c) { return c->name() == candidate; });
+	};
+
+	std::string candidate {base};
+	for (int n = 2; taken(candidate); ++n) {
+		candidate = std::string {base} + ' ' + std::to_string(n);
+	}
+	return candidate;
 }
 
 auto INodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {

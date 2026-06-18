@@ -17,8 +17,9 @@
 namespace toast {
 class Workspace : public INodeOwner {
 public:
-	Workspace(std::string_view type, std::string_view name = "Unnamed Root");
+	Workspace(std::string_view type, UID handle);
 	Workspace(UID uid);
+	auto name() -> std::string override;
 
 	void registerDependency(Node& from, Node& to) override;
 
@@ -27,6 +28,7 @@ public:
 	auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> override;
 
 private:
+	UID m_handle;
 	Box<Node> m_root_node;
 	event::Listener m_listener;
 

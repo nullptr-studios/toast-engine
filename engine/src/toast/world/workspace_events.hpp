@@ -61,4 +61,47 @@ struct WorkspaceRemove : Event<WorkspaceRemove> {
 	WorkspaceRemove(toast::UID target) : target(target) { }
 };
 
+struct WorkspaceDestroy : Event<WorkspaceDestroy> {
+	uint64_t handle;
+
+	WorkspaceDestroy(uint64_t handle) : handle(handle) { }
+};
+
+struct SetActiveWorkspace : Event<SetActiveWorkspace> {
+	uint64_t handle;
+
+	SetActiveWorkspace(uint64_t handle) : handle(handle) { }
+};
+
+struct WorkspaceSave : Event<WorkspaceSave> {
+	toast::UID target;
+	std::string uri;
+
+	WorkspaceSave(toast::UID target, std::string uri) : target(target), uri(uri) { }
+};
+
+struct WorkspaceCreateNode : Event<WorkspaceCreateNode> {
+	toast::UID parent;
+	std::string type;
+
+	WorkspaceCreateNode(toast::UID parent, std::string_view type) : parent(parent), type(type) { }
+};
+
+struct WorkspaceRemoveNode : Event<WorkspaceRemoveNode> {
+	toast::UID target;
+
+	WorkspaceRemoveNode(toast::UID target) : target(target) { }
+};
+
+struct WorkspaceMoveNodeTo : Event<WorkspaceMoveNodeTo> {
+	toast::UID target;
+	toast::UID new_parent;
+	toast::UID predecessor;
+
+	WorkspaceMoveNodeTo(toast::UID target, toast::UID new_parent, toast::UID predecessor)
+	    : target(target),
+	      new_parent(new_parent),
+	      predecessor(predecessor) { }
+};
+
 }
