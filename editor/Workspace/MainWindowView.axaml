@@ -6,7 +6,7 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="editor.Workspace.MainWindowView"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Resources/avalonia-logo.ico"
         Title="editor"
         ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaTitleBarHeightHint="-1"
@@ -31,7 +31,7 @@
 			<!-- Menu -->
 			<Menu DockPanel.Dock="Left">
 				<MenuItem Header="_Toast Engine" Foreground="DeepPink" FontWeight="Bold">
-					<MenuItem Header="_New project" FontWeight="Normal"/>
+					<MenuItem Header="_New project" FontWeight="Normal" />
 					<MenuItem Header="_Open project" FontWeight="Normal" />
 					<MenuItem Header="_Close project" FontWeight="Normal" />
 					<Separator />
@@ -43,16 +43,16 @@
 				<MenuItem Header="_File">
 					<MenuItem Header="_New Node file" InputGesture="Ctrl+N"
 					          Command="{Binding NewNodeCommand}"
-					          CommandParameter="{Binding $parent[Window]}"/>
+					          CommandParameter="{Binding $parent[Window]}" />
 					<MenuItem Header="_Open Node file" InputGesture="Ctrl+O"
 					          Command="{Binding OpenNodeFileCommand}"
-					          CommandParameter="{Binding $parent[Window]}"/>
+					          CommandParameter="{Binding $parent[Window]}" />
 					<MenuItem Header="_Close Node file" InputGesture="Ctrl+W"
-					          Command="{Binding CloseNodeFileCommand}"/>
+					          Command="{Binding CloseNodeFileCommand}" />
 					<Separator />
-					<MenuItem Header="_Save" InputGesture="Ctrl+S"/>
-					<MenuItem Header="Save _as..." InputGesture="Ctrl+Shift+S"/>
-					<MenuItem Header="Save a_ll nodes" InputGesture="Ctrl+Alt+S"/>
+					<MenuItem Header="_Save" InputGesture="Ctrl+S" />
+					<MenuItem Header="Save _as..." InputGesture="Ctrl+Shift+S" />
+					<MenuItem Header="Save a_ll nodes" InputGesture="Ctrl+Alt+S" />
 				</MenuItem>
 				<MenuItem Header="_Edit">
 					<MenuItem Header="_Undo" />
@@ -93,17 +93,17 @@
 		</DockPanel>
 
 		<Panel Grid.Row="1" ClipToBounds="True">
-			<DockControl Layout="{Binding MainLayout}" ZIndex="0"/>
-			<Border x:Name="ToastZoneBorder" Background="#101010" Height="400"
+			<DockControl Layout="{Binding MainLayout}" ZIndex="0" />
+			<Border x:Name="ToastZoneBorder" Background="{StaticResource E1}" Height="400"
 			        VerticalAlignment="Bottom" ZIndex="1"
 			        IsVisible="False"
 			        RenderTransform="translateY(400px)">
 				<Border.Transitions>
 					<Transitions>
-						<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut"/>
+						<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut" />
 					</Transitions>
 				</Border.Transitions>
-				<DockControl Layout="{Binding ToastZoneLayout}" ZIndex="2"/>
+				<DockControl Layout="{Binding ToastZoneLayout}" ZIndex="2" />
 			</Border>
 		</Panel>
 	</Grid>

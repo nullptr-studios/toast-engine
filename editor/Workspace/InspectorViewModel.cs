@@ -2,8 +2,4 @@
 
 namespace editor.Workspace;
 
-public class InspectorViewModel : Tool {
-	public InspectorViewModel() {
-
-	}
-}
+public class InspectorViewModel : Tool { }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dock.Avalonia.Controls;
@@ -9,93 +9,95 @@ using Dock.Model.Mvvm.Controls;
 
 namespace editor.Workspace;
 
-
-public class DockFactory(ToastEngine toast) : Factory {
-	private IRootDock? m_rootDock;
+/// <summary>Builds the editor dock layout, gates workspace close on unsaved changes.</summary>
+public class DockFactory : Factory {
 	private IDocumentDock? m_documentDock;
+	private IRootDock? m_rootDock;
 
 	public HierarchyViewModel? Hierarchy { get; private set; }
 
-	// Asked by MainWindowViewModel whether a viewport may close
-	public Func<ViewportViewModel, Task<bool>>? ConfirmClose { get; set; }
+	// the currently focused workspace document, or null if none is open
+	public WorkspaceViewModel? ActiveWorkspace => m_documentDock?.ActiveDockable as WorkspaceViewModel;
 
 	public override IRootDock CreateLayout() {
-		var hierarchy = new HierarchyViewModel       { Id = "Hierarchy", Title = "Hierarchy" };
+		var hierarchy = new HierarchyViewModel { Id = "Hierarchy", Title = "Hierarchy" };
 		Hierarchy = hierarchy;
-		var inspector = new InspectorViewModel       { Id = "Inspector", Title = "Inspector" };
+		var inspector = new InspectorViewModel { Id = "Inspector", Title = "Inspector" };
 
 		var documentDock = new DocumentDock {
-			IsCollapsable    = false,
+			IsCollapsable = false,
 			AllowedDropOperations = DockOperationMask.Left | DockOperationMask.Right,
-			VisibleDockables = CreateList<IDockable>(),
+			VisibleDockables = CreateList<IDockable>()
 		};
 
+		// left panel (hierarchy) takes 20% of the width
 		var leftDock = new ProportionalDock {
-			Proportion       = 0.2,
+			Proportion = 0.2,
 			AllowedDropOperations = DockOperationMask.None,
-			Orientation      = Orientation.Vertical,
+			Orientation = Orientation.Vertical,
 			VisibleDockables = CreateList<IDockable>(
 				new ToolDock {
-					ActiveDockable   = hierarchy,
+					ActiveDockable = hierarchy,
 					AllowedDropOperations = DockOperationMask.Fill | DockOperationMask.Top | DockOperationMask.Bottom,
 					VisibleDockables = CreateList<IDockable>(hierarchy),
-					Alignment        = Alignment.Left,
-					GripMode         = GripMode.Visible,
+					Alignment = Alignment.Left,
+					GripMode = GripMode.Visible
 				}
-			),
+			)
 		};
 
+		// right panel (inspector) takes 20% too, document area gets the rest
 		var rightDock = new ProportionalDock {
-			Proportion       = 0.2,
-			Orientation      = Orientation.Vertical,
+			Proportion = 0.2,
+			Orientation = Orientation.Vertical,
 			VisibleDockables = CreateList<IDockable>(
 				new ToolDock {
-					ActiveDockable   = inspector,
+					ActiveDockable = inspector,
 					VisibleDockables = CreateList<IDockable>(inspector),
-					Alignment        = Alignment.Right,
-					GripMode         = GripMode.Visible,
+					Alignment = Alignment.Right,
+					GripMode = GripMode.Visible
 				}
-			),
+			)
 		};
 
 		var mainLayout = new ProportionalDock {
-			Orientation      = Orientation.Horizontal,
-			IsCollapsable    = false,
+			Orientation = Orientation.Horizontal,
+			IsCollapsable = false,
 			VisibleDockables = CreateList<IDockable>(
 				leftDock,
 				new ProportionalDockSplitter(),
 				documentDock,
 				new ProportionalDockSplitter(),
 				rightDock
-			),
+			)
 		};
 
 		var windowLayout = CreateRootDock();
-		windowLayout.Title           = "Default";
-		windowLayout.IsCollapsable   = false;
+		windowLayout.Title = "Default";
+		windowLayout.IsCollapsable = false;
 		windowLayout.VisibleDockables = CreateList<IDockable>(mainLayout);
-		windowLayout.ActiveDockable   = mainLayout;
+		windowLayout.ActiveDockable = mainLayout;
 
 		var root = CreateRootDock();
-		root.IsCollapsable    = false;
+		root.IsCollapsable = false;
 		root.VisibleDockables = CreateList<IDockable>(windowLayout);
-		root.ActiveDockable   = windowLayout;
-		root.DefaultDockable  = windowLayout;
+		root.ActiveDockable = windowLayout;
+		root.DefaultDockable = windowLayout;
 
-		m_rootDock     = root;
+		m_rootDock = root;
 		m_documentDock = documentDock;
 		return root;
 	}
 
 	public override void InitLayout(IDockable layout) {
 		ContextLocator = new Dictionary<string, Func<object?>> {
-			["Viewport"]  = () => layout,
+			["Workspace"] = () => layout,
 			["Hierarchy"] = () => layout,
-			["Inspector"] = () => layout,
+			["Inspector"] = () => layout
 		};
 		DockableLocator = new Dictionary<string, Func<IDockable?>> {
-			["Root"]      = () => m_rootDock,
-			["Documents"] = () => m_documentDock,
+			["Root"] = () => m_rootDock,
+			["Documents"] = () => m_documentDock
 		};
 		HostWindowLocator = new Dictionary<string, Func<IHostWindow?>> {
 			[nameof(IDockWindow)] = () => new HostWindow()
@@ -107,18 +109,21 @@ public class DockFactory(ToastEngine toast) : Factory {
 	public override void CloseDockable(IDockable dockable) {
 		if (dockable is null) return;
 
-		if (dockable is ViewportViewModel vp && !vp.PendingClose && ConfirmClose is { } confirm) {
-			_ = GatedClose(vp, confirm);
+		// intercept workspace close -> show save dialog before actually closing
+		// PendingClose is set to true by GatedClose after the user confirms
+		// so the second call goes through to base without looping
+		if (dockable is WorkspaceViewModel ws && !ws.PendingClose) {
+			_ = GatedClose(ws);
 			return;
 		}
 
 		base.CloseDockable(dockable);
 	}
 
-	private async Task GatedClose(ViewportViewModel vp, Func<ViewportViewModel, Task<bool>> confirm) {
-		if (await confirm(vp)) {
-			vp.PendingClose = true;
-			CloseDockable(vp);
+	private async Task GatedClose(WorkspaceViewModel ws) {
+		if (await ws.ConfirmCloseAsync()) {
+			ws.PendingClose = true;
+			CloseDockable(ws);
 		}
 	}
 
@@ -126,26 +131,20 @@ public class DockFactory(ToastEngine toast) : Factory {
 		var layout = base.CreateSplitLayout(dock, dockable, operation);
 		var isTool = dockable is ITool or IToolDock;
 		if (!isTool || layout.VisibleDockables == null) return layout;
+		// tools default to 20% width when splitting horizontally, 50% otherwise
 		var proportion = operation is DockOperation.Left or DockOperation.Right ? 0.2 : 0.5;
 		foreach (var child in layout.VisibleDockables) {
 			if (child is not IDock childDock || childDock == dock) continue;
 			childDock.Proportion = proportion;
 			return layout;
 		}
+
 		return layout;
 	}
 
-	// The currently focused workspace document, or null if none is open
-	public ViewportViewModel? ActiveViewport => m_documentDock?.ActiveDockable as ViewportViewModel;
-
-	public ViewportViewModel AddViewport(ulong handle, string name) {
-		var doc = new ViewportViewModel(toast) { Id = $"Viewport_{handle}", Title = name, Handle = handle };
-		AddDockable(m_documentDock!, doc);
-		SetActiveDockable(doc);
-		return doc;
-	}
-
-	public void RemoveViewport(IDockable dockable) {
-		RemoveDockable(dockable, collapse: true);
+	public WorkspaceViewModel AddWorkspace(WorkspaceViewModel workspace) {
+		AddDockable(m_documentDock!, workspace);
+		SetActiveDockable(workspace);
+		return workspace;
 	}
 }

@@ -11,16 +11,15 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using Avalonia.Media.Transformation;
 using Avalonia.Threading;
-using editor.Logger;
+using editor.Engine;
 
 namespace editor.Workspace;
 
 public partial class MainWindowView : Window {
 	private readonly ToastEngine? m_toast;
-	private Border? m_toastBorder;
+	private readonly Border? m_toastBorder;
 	private CancellationTokenSource? m_toastCts;
 
 	public MainWindowView() {
@@ -104,7 +103,7 @@ public partial class MainWindowView : Window {
 		Close();
 	}
 
-	void OnKeyDown(object? sender, KeyEventArgs e) {
+	private void OnKeyDown(object? sender, KeyEventArgs e) {
 		if (e.Key != Key.Space) return;
 		e.Handled = true;
 
@@ -114,7 +113,7 @@ public partial class MainWindowView : Window {
 			(DataContext as MainWindowViewModel)?.ShowToastZone(true);
 	}
 
-	void OnKeyUp(object? sender, KeyEventArgs e) {
+	private void OnKeyUp(object? sender, KeyEventArgs e) {
 		if (e.Key != Key.Space) return;
 		e.Handled = true;
 

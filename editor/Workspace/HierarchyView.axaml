@@ -7,90 +7,90 @@
              x:Class="editor.Workspace.HierarchyView"
              x:DataType="vm:HierarchyViewModel">
 
-	<Border Background="#202020" Padding="8">
+	<Border Background="{StaticResource E2}" Padding="8">
 		<DockPanel VerticalSpacing="8">
-			<Border DockPanel.Dock="Top" Background="#303030" Padding="8" CornerRadius="8">
+			<Border DockPanel.Dock="Top" Background="{StaticResource E3}" Padding="8" CornerRadius="8">
 				<Grid ColumnDefinitions="Auto, Auto, *" ColumnSpacing="4">
-					<Button Grid.Column="0" Content="+" Command="{Binding AddNodeCommand}"/>
-					<Button Grid.Column="1" Content="..." Command="{Binding LoadNodeCommand}"/>
-					<TextBox Grid.Column="2" PlaceholderText="Search..."/>
+					<Button Grid.Column="0" Content="+" Command="{Binding AddNodeCommand}" />
+					<Button Grid.Column="1" Content="..." Command="{Binding LoadNodeCommand}" />
+					<TextBox Grid.Column="2" PlaceholderText="Search..." Text="{Binding FilterText}" />
 				</Grid>
 			</Border>
-			<Border Background="#101010" Padding="8" CornerRadius="8">
+			<Border Background="{StaticResource E1}" Padding="8" CornerRadius="8">
 				<TreeView x:Name="Tree" ItemsSource="{Binding Root}" SelectedItem="{Binding SelectedNode}">
 					<TreeView.KeyBindings>
-						<KeyBinding Gesture="Ctrl+A" Command="{Binding AddNodeCommand}" CommandParameter="{Binding SelectedNode}"/>
-						<KeyBinding Gesture="Ctrl+Shift+A" Command="{Binding LoadNodeCommand}" CommandParameter="{Binding SelectedNode}"/>
-						<KeyBinding Gesture="Ctrl+X" Command="{Binding CutCommand}" CommandParameter="{Binding SelectedNode}"/>
-						<KeyBinding Gesture="Ctrl+C" Command="{Binding CopyCommand}" CommandParameter="{Binding SelectedNode}"/>
-						<KeyBinding Gesture="Ctrl+V" Command="{Binding PasteCommand}" CommandParameter="{Binding SelectedNode}"/>
-						<KeyBinding Gesture="F2" Command="{Binding RenameCommand}" CommandParameter="{Binding SelectedNode}"/>
-						<KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateCommand}" CommandParameter="{Binding SelectedNode}"/>
-						<KeyBinding Gesture="Ctrl+Up" Command="{Binding MoveUpCommand}" CommandParameter="{Binding SelectedNode}"/>
-						<KeyBinding Gesture="Ctrl+Down" Command="{Binding MoveDownCommand}" CommandParameter="{Binding SelectedNode}"/>
-						<KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" CommandParameter="{Binding SelectedNode}"/>
-						<KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" CommandParameter="{Binding SelectedNode}"/>
-						<KeyBinding Gesture="Delete" Command="{Binding DeleteCommand}" CommandParameter="{Binding SelectedNode}"/>
+						<KeyBinding Gesture="Ctrl+A" Command="{Binding AddNodeCommand}" CommandParameter="{Binding SelectedNode}" />
+						<KeyBinding Gesture="Ctrl+Shift+A" Command="{Binding LoadNodeCommand}" CommandParameter="{Binding SelectedNode}" />
+						<KeyBinding Gesture="Ctrl+X" Command="{Binding CutCommand}" CommandParameter="{Binding SelectedNode}" />
+						<KeyBinding Gesture="Ctrl+C" Command="{Binding CopyCommand}" CommandParameter="{Binding SelectedNode}" />
+						<KeyBinding Gesture="Ctrl+V" Command="{Binding PasteCommand}" CommandParameter="{Binding SelectedNode}" />
+						<KeyBinding Gesture="F2" Command="{Binding RenameCommand}" CommandParameter="{Binding SelectedNode}" />
+						<KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateCommand}" CommandParameter="{Binding SelectedNode}" />
+						<KeyBinding Gesture="Ctrl+Up" Command="{Binding MoveUpCommand}" CommandParameter="{Binding SelectedNode}" />
+						<KeyBinding Gesture="Ctrl+Down" Command="{Binding MoveDownCommand}" CommandParameter="{Binding SelectedNode}" />
+						<KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" CommandParameter="{Binding SelectedNode}" />
+						<KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" CommandParameter="{Binding SelectedNode}" />
+						<KeyBinding Gesture="Delete" Command="{Binding DeleteCommand}" CommandParameter="{Binding SelectedNode}" />
 					</TreeView.KeyBindings>
 					<TreeView.Styles>
 						<Style Selector="TreeViewItem">
-							<Setter Property="IsExpanded" Value="True"/>
+							<Setter Property="IsExpanded" Value="True" />
 						</Style>
 					</TreeView.Styles>
 					<TreeView.ContextMenu>
 						<ContextMenu x:DataType="vm:HierarchyViewModel" Opening="OnEmptySpaceMenuOpening">
-							<MenuItem Header="Add child Node" Command="{Binding AddNodeCommand}"/>
-							<MenuItem Header="Load child Node" Command="{Binding LoadNodeCommand}"/>
+							<MenuItem Header="Add child Node" Command="{Binding AddNodeCommand}" />
+							<MenuItem Header="Load child Node" Command="{Binding LoadNodeCommand}" />
 						</ContextMenu>
 					</TreeView.ContextMenu>
 					<TreeView.ItemTemplate>
-						<TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:HierarchyElement">
+						<TreeDataTemplate ItemsSource="{Binding FilteredChildren}" x:DataType="vm:HierarchyElement">
 							<DockPanel Background="Transparent" VerticalAlignment="Center" HorizontalSpacing="8">
 								<DockPanel.ContextMenu>
 									<ContextMenu x:DataType="vm:HierarchyElement">
 										<MenuItem Header="Add child Node" InputGesture="Ctrl+A"
-										          Command="{Binding Owner.AddNodeCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.AddNodeCommand}" CommandParameter="{Binding}" />
 										<MenuItem Header="Load child Node" InputGesture="Ctrl+Shift+A"
-										          Command="{Binding Owner.LoadNodeCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.LoadNodeCommand}" CommandParameter="{Binding}" />
 
-										<Separator/>
+										<Separator />
 										<MenuItem Header="Cut" IsVisible="{Binding !IsRoot}" InputGesture="Ctrl+X"
-										          Command="{Binding Owner.CutCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.CutCommand}" CommandParameter="{Binding}" />
 										<MenuItem Header="Copy" InputGesture="Ctrl+C"
-										          Command="{Binding Owner.CopyCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.CopyCommand}" CommandParameter="{Binding}" />
 										<MenuItem Header="Paste" InputGesture="Ctrl+V"
-										          Command="{Binding Owner.PasteCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.PasteCommand}" CommandParameter="{Binding}" />
 
-										<Separator/>
+										<Separator />
 										<MenuItem Header="Rename" InputGesture="F2"
-										          Command="{Binding Owner.RenameCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.RenameCommand}" CommandParameter="{Binding}" />
 										<MenuItem Header="Change type"
-										          Command="{Binding Owner.ChangeTypeCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.ChangeTypeCommand}" CommandParameter="{Binding}" />
 
-										<Separator/>
+										<Separator />
 										<MenuItem Header="Duplicate" IsVisible="{Binding !IsRoot}" InputGesture="Ctrl+D"
-										          Command="{Binding Owner.DuplicateCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.DuplicateCommand}" CommandParameter="{Binding}" />
 										<MenuItem Header="Move up" IsVisible="{Binding !IsRoot}" InputGesture="Ctrl+Up"
-										          Command="{Binding Owner.MoveUpCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.MoveUpCommand}" CommandParameter="{Binding}" />
 										<MenuItem Header="Move down" IsVisible="{Binding !IsRoot}" InputGesture="Ctrl+Down"
-										          Command="{Binding Owner.MoveDownCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.MoveDownCommand}" CommandParameter="{Binding}" />
 										<MenuItem Header="Change parent" IsVisible="{Binding !IsRoot}"
-										          Command="{Binding Owner.ChangeParentCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.ChangeParentCommand}" CommandParameter="{Binding}" />
 										<MenuItem Header="Promote to Node file" IsVisible="{Binding !IsRoot}"
-										          Command="{Binding Owner.PromoteCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.PromoteCommand}" CommandParameter="{Binding}" />
 										<MenuItem Header="Save" IsVisible="{Binding IsRoot}" InputGesture="Ctrl+S"
-										          Command="{Binding Owner.SaveCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.SaveCommand}" CommandParameter="{Binding}" />
 										<MenuItem Header="Save as..." IsVisible="{Binding IsRoot}" InputGesture="Ctrl+Shift+S"
-										          Command="{Binding Owner.SaveAsCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.SaveAsCommand}" CommandParameter="{Binding}" />
 
-										<Separator IsVisible="{Binding !IsRoot}"/>
+										<Separator IsVisible="{Binding !IsRoot}" />
 										<MenuItem Header="Delete" IsVisible="{Binding !IsRoot}" InputGesture="Delete"
-										          Command="{Binding Owner.DeleteCommand}" CommandParameter="{Binding}"/>
+										          Command="{Binding Owner.DeleteCommand}" CommandParameter="{Binding}" />
 									</ContextMenu>
 								</DockPanel.ContextMenu>
-								<CheckBox DockPanel.Dock="Right" IsEnabled="{Binding Enabled}"/>
-								<Border DockPanel.Dock="Left" Width="16" Height="16" Background="Magenta"/>
-								<TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+								<CheckBox DockPanel.Dock="Right" IsEnabled="{Binding Enabled}" />
+								<Border DockPanel.Dock="Left" Width="16" Height="16" Background="Magenta" />
+								<TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
 							</DockPanel>
 						</TreeDataTemplate>
 					</TreeView.ItemTemplate>

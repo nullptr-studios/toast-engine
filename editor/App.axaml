@@ -6,9 +6,14 @@
              RequestedThemeVariant="Dark">
 
 	<Application.Resources>
-		<conv:SeverityToColorConverter x:Key="SeverityToColorConverter" />
-		<conv:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
-		<conv:EnabledToColorConverter x:Key="EnabledToColorConverter" />
+		<ResourceDictionary>
+			<ResourceDictionary.MergedDictionaries>
+				<ResourceInclude Source="avares://editor/Resources/EditorColors.axaml" />
+			</ResourceDictionary.MergedDictionaries>
+			<conv:SeverityToColorConverter x:Key="SeverityToColorConverter" />
+			<conv:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
+			<conv:EnabledToColorConverter x:Key="EnabledToColorConverter" />
+		</ResourceDictionary>
 	</Application.Resources>
 
 	<Application.DataTemplates>

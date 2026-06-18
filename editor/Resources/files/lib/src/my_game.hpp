@@ -8,7 +8,9 @@
 
 #include <toast/application.hpp>
 
-namespace toast { void registerGameTypes(); }
+namespace toast {
+void registerGameTypes();
+}
 
 class MyGame : public toast::IApplication {
 public:

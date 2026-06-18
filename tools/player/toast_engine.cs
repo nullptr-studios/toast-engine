@@ -15,10 +15,6 @@ public class ToastEngine : IDisposable {
 			throw new InvalidOperationException("Failed to create engine");
 	}
 
-	public void Init() {
-		toast_init();
-	}
-
 	public void Dispose() {
 		if (m_handle != IntPtr.Zero) {
 			toast_destroy(m_handle);
@@ -26,6 +22,10 @@ public class ToastEngine : IDisposable {
 		}
 
 		GC.SuppressFinalize(this);
+	}
+
+	public void Init() {
+		toast_init();
 	}
 
 	public void Tick() {
@@ -43,7 +43,7 @@ public class ToastEngine : IDisposable {
 	}
 
 	public void SetWorkingDirectory(string assets, string artworks, string cached, string saved, string core) {
-		toast_set_working_directory( assets, artworks, cached, saved, core );
+		toast_set_working_directory(assets, artworks, cached, saved, core);
 	}
 
 	~ToastEngine() {
@@ -70,5 +70,6 @@ public class ToastEngine : IDisposable {
 	private static extern void toast_create_SDL_window(string windowName);
 
 	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
-	private static extern void toast_set_working_directory(string assets, string artworks, string cached, string saved, string core);
+	private static extern void toast_set_working_directory(
+		string assets, string artworks, string cached, string saved, string core);
 }
