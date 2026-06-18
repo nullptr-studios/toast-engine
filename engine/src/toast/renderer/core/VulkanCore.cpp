@@ -222,12 +222,14 @@ auto DeviceScore::toString() const -> std::string {
 VulkanCore::VulkanCore(
     std::span<const char* const> required_instance_extensions, std::span<const char* const> required_device_extensions
 )
-#ifdef DEBUG
-    : m_validationEnabled(true)
-#else
-    : m_validationEnabled(false)
-#endif
 {
+#ifdef DEBUG
+	m_validationEnabled = checkValidationLayerSupport();
+#else
+	m_validationEnabled = false;
+#endif
+
+
 	TOAST_INFO("VulkanCore", "Validation layers: {}", m_validationEnabled ? "enabled" : "disabled");
 	TOAST_TRACE("VulkanCore", "Required instance extensions: {}", joinRequiredExtensions(required_instance_extensions));
 	TOAST_TRACE("VulkanCore", "Required device extensions: {}", joinRequiredExtensions(required_device_extensions));
@@ -686,5 +688,17 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 	score.missing_extensions = required_missing_names;
 
 	return score;
+}
+
+bool VulkanCore::checkValidationLayerSupport() {
+	{
+		uint32_t layerCount;
+		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+		std::vector<VkLayerProperties> availableLayers(layerCount);
+		vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+		return false;
+	}
 }
 }

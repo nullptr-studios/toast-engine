@@ -81,7 +81,7 @@ public:
 
 	VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> outputTarget);
 
-	~VulkanRenderer() = default;
+	~VulkanRenderer();
 
 	VulkanRenderer(const VulkanRenderer&) = delete;
 	VulkanRenderer& operator=(const VulkanRenderer&) = delete;
@@ -135,6 +135,8 @@ private:
 	std::condition_variable m_frameCV;
 
 	std::queue<uint32_t> m_readyFrames;
+	RenderFrame m_cachedFrame;
+	bool m_hasCachedFrame = false;
 
 	std::counting_semaphore<kRenderFrames> m_freeFrames {kRenderFrames};
 

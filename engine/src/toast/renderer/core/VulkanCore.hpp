@@ -129,6 +129,8 @@ private:
 	auto calculateDeviceScore(const vk::PhysicalDevice& device, std::span<const char* const> required_device_extensions)
 	    -> DeviceScore;
 
+	bool checkValidationLayerSupport();
+
 	bool m_validationEnabled = false;
 
 	vk::raii::Context m_context;

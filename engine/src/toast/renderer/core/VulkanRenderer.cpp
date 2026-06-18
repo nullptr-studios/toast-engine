@@ -98,6 +98,12 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	createFrameResources();
 }
 
+//FIXME
+VulkanRenderer::~VulkanRenderer() {
+	stop();
+	instance = nullptr;
+}
+
 auto VulkanRenderer::createGraphicsCommandPool() -> void {
 	const vk::CommandPoolCreateInfo pool_ci(
 	    vk::CommandPoolCreateFlagBits::eResetCommandBuffer, m_core->getGraphicsQueueFamilyIndex()
@@ -436,6 +442,7 @@ void VulkanRenderer::updateFrameResources(uint32_t frameIndex, RenderFrame& fram
 }
 
 auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
+	// ZoneScoped;
 	if (m_frames.empty()) {
 		return;
 	}
@@ -514,26 +521,43 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 }
 
 void VulkanRenderer::mainRenderThread() {
+	// tracy::SetThreadName("Renderer Thread");
 	while (m_running) {
-		uint32_t frameIndex;
+		// ZoneScopedN("VulkanRenderer::mainRenderThread");
+		RenderFrame frameToDraw;
+		bool consumedQueuedFrame = false;
 
 		{
 			std::unique_lock lock(m_queueMutex);
 
-			m_frameCV.wait(lock, [this] { return !m_readyFrames.empty() || !m_running; });
-
-			if (!m_running) {
-				return;
+			if (m_readyFrames.empty()) {
+				if (!m_hasCachedFrame) {
+					m_frameCV.wait(lock, [this] { return !m_readyFrames.empty() || !m_running; });
+					if (!m_running) {
+						return;
+					}
+				}
 			}
 
-			frameIndex = m_readyFrames.front();
-
-			m_readyFrames.pop();
+			if (!m_readyFrames.empty()) {
+				const auto frameIndex = m_readyFrames.front();
+				m_readyFrames.pop();
+				frameToDraw = m_render_frames[frameIndex];
+				m_cachedFrame = frameToDraw;
+				m_hasCachedFrame = true;
+				consumedQueuedFrame = true;
+			} else if (m_hasCachedFrame) {
+				frameToDraw = m_cachedFrame;
+			} else {
+				continue;
+			}
 		}
 
-		drawFrame(m_render_frames[frameIndex]);
+		drawFrame(frameToDraw);
 
-		m_freeFrames.release();
+		if (consumedQueuedFrame) {
+			m_freeFrames.release();
+		}
 	}
 }
 
@@ -546,6 +570,7 @@ void VulkanRenderer::start() {
 }
 
 void VulkanRenderer::submitFrame() {
+	// TracyMessage("Swapped frame resource", 256);
 	{
 		std::lock_guard lock(m_queueMutex);
 
@@ -560,6 +585,7 @@ void VulkanRenderer::submitFrame() {
 void VulkanRenderer::stop() {
 	m_running = false;
 	m_frameCV.notify_all();
+	m_render_thread.join();
 }
 
 auto VulkanRenderer::resize(vk::Extent2D extent) -> void {
