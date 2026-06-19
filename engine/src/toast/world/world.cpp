@@ -1552,6 +1552,7 @@ void WorldTestAccess::WorldDeleter::operator()(World* world) const noexcept {
 }
 
 auto WorldTestAccess::createWorld() -> WorldPtr {
+	testNodeInfos().clear();
 	return WorldPtr(new World());
 }
 

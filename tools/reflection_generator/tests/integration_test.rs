@@ -140,18 +140,12 @@ fn test_single_fixture(fixture_path: &Path, fixture_name: &str, output_dir: impl
             }
         }
 
-        // Change to output dir temporarily so generator looks for templates there
-        let original_dir = std::env::current_dir().unwrap();
-        let _ = std::env::set_current_dir(output_dir);
-
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            generate_files(&nodes, Path::new("."), "testRegisterTypes");
+            generate_files(&nodes, Path::new(output_dir), "testRegisterTypes");
         })) {
             Ok(_) => println!("  ✓ Generated .hpp files in: {}", output_dir),
             Err(_) => println!("  ⚠ Skipped .hpp generation"),
         }
-
-        let _ = std::env::set_current_dir(original_dir);
     } else {
         println!("  ⚠ Template directory not found");
     }

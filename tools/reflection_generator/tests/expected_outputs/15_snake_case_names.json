@@ -25,7 +25,14 @@
           {
             "fields": [
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "AI_Behavior"
+                  ],
+                  "Subgroup": [
+                    "Pathfinding_Weights"
+                  ]
+                },
                 "default": null,
                 "field_type": "float_t",
                 "is_array": false,
@@ -44,7 +51,14 @@
           {
             "fields": [
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "Physics Settings"
+                  ],
+                  "Subgroup": [
+                    "Rigid Body"
+                  ]
+                },
                 "default": null,
                 "field_type": "float_t",
                 "is_array": false,
@@ -52,7 +66,14 @@
                 "typename": "float"
               },
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "Physics Settings"
+                  ],
+                  "Subgroup": [
+                    "Rigid Body"
+                  ]
+                },
                 "default": null,
                 "field_type": "float_t",
                 "is_array": false,
@@ -71,7 +92,14 @@
           {
             "fields": [
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "UI Components"
+                  ],
+                  "Subgroup": [
+                    "Button State"
+                  ]
+                },
                 "default": null,
                 "field_type": "bool_t",
                 "is_array": false,

@@ -4,8 +4,7 @@ use reflection_generator::parse;
 fn debug_parse_simple() {
     let source = r#"
 namespace toast {
-[[ToastNode]]
-class SimpleNode {
+class [[ToastNode]] SimpleNode {
 public:
     [[Reflect, Group("Transform")]] int m_x = 0;
     [[Reflect]] std::string m_name;

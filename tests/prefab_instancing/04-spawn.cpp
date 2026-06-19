@@ -116,7 +116,12 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/04-spawn", test_prefab_
 		assert(first->isInstanceRoot() && second->isInstanceRoot());
 		assert(first->sourcePrefab().uid().data() == uidOf("AssetP00000"));
 
-		// Both spawned roots participate in the tick schedule (toast::Node carries a tick stub).
+		// Give both spawned roots a tick function so the scheduler includes them,
+		// then recompute so the new stages are reflected in the schedule.
+		WorldTestAccess::addTickStage(*first, TickFunctionList::tick);
+		WorldTestAccess::addTickStage(*second, TickFunctionList::tick);
+		WorldTestAccess::computeDependencyGraph(*world);
+
 		std::set<uint64_t> scheduled = scheduledTickUids(*world);
 		assert(scheduled.contains(first->uid().data()));
 		assert(scheduled.contains(second->uid().data()));

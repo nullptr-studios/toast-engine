@@ -46,7 +46,11 @@
       {
         "fields": [
           {
-            "attributes": {},
+            "attributes": {
+              "Group": [
+                "A"
+              ]
+            },
             "default": null,
             "field_type": "int_t",
             "is_array": false,
@@ -54,7 +58,11 @@
             "typename": "int"
           },
           {
-            "attributes": {},
+            "attributes": {
+              "Group": [
+                "A"
+              ]
+            },
             "default": null,
             "field_type": "int_t",
             "is_array": false,
@@ -62,7 +70,11 @@
             "typename": "int"
           },
           {
-            "attributes": {},
+            "attributes": {
+              "Group": [
+                "A"
+              ]
+            },
             "default": null,
             "field_type": "int_t",
             "is_array": false,
@@ -76,7 +88,11 @@
       {
         "fields": [
           {
-            "attributes": {},
+            "attributes": {
+              "Group": [
+                "B"
+              ]
+            },
             "default": null,
             "field_type": "int_t",
             "is_array": false,
@@ -84,7 +100,11 @@
             "typename": "int"
           },
           {
-            "attributes": {},
+            "attributes": {
+              "Group": [
+                "B"
+              ]
+            },
             "default": null,
             "field_type": "int_t",
             "is_array": false,
