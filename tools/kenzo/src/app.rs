@@ -75,11 +75,11 @@ pub struct App {
     pub seen_sinks: std::collections::HashSet<String>,
 
     // Search navigation
-    pub search_matches: Vec<usize>, // Indices in filtered_logs
+    pub search_matches: Vec<usize>, // indices into filtered_logs, not logs; must be recalculated when filters change
     pub current_match_idx: Option<usize>,
 
     // Scrolling
-    pub scroll_locked: bool,
+    pub scroll_locked: bool, // true = user is scrolling manually; false = view auto-follows newest log
     pub wrap_logs: bool,
 
     // Navigation
@@ -534,7 +534,7 @@ impl App {
         tokio::spawn(async move {
             match TcpStream::connect(&addr_clone).await {
                 Ok(mut socket) => {
-                    // Send empty batch to signal successful connection
+                    // empty batch signals "connected, no logs yet" so the app transitions out of Connecting
                     let _ = tx.send(Vec::new()).await;
 
                     loop {
@@ -568,7 +568,7 @@ impl App {
         tokio::spawn(async move {
             match TcpStream::connect(&addr_clone).await {
                 Ok(mut socket) => {
-                    // Send empty batch to signal successful connection
+                    // empty batch signals "connected, no logs yet" so the app transitions out of Connecting
                     let _ = tx.send(Vec::new()).await;
 
                     loop {
@@ -734,6 +734,7 @@ impl App {
     }
 }
 
+// wire format: 4-byte big-endian length prefix then protobuf bytes; matches log_server framing
 async fn read_framed(socket: &mut TcpStream) -> Result<LogBatch> {
     let len = socket.read_u32().await? as usize;
     let mut buf = vec![0u8; len];

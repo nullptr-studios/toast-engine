@@ -1,8 +1,8 @@
-mod parser;
-mod generator;
+//! CLI driver; walks input dirs for `[[ToastNode]]` headers, parses with tree-sitter,
+//! validates against reserved names, emits one `.generated.hpp` per class and one
+//! `reflect.generated.cpp` registration file
 
-pub use parser::{parse, Attribute, Parent, Field, Class};
-pub use generator::{NodeInfo, build_node, generate_json, generate_files, validate_class};
+use reflection_generator::{parse, NodeInfo, build_node, generate_json, generate_files, validate_class, strip_export_macros};
 
 use clap::Parser;
 use walkdir::WalkDir;
@@ -138,7 +138,7 @@ fn find_headers(inputs: &[PathBuf]) -> Vec<PathBuf> {
 	result
 }
 
-/// Strip --include-root prefix and normalize to forward slashes
+// strips --include-root prefix and normalizes to forward slashes so the path can be used in a #include directive
 fn compute_include_path(file: &Path, include_root: Option<&Path>) -> std::string::String {
 	if let Some(root) = include_root {
 		if let Ok(rel) = file.strip_prefix(root) {
@@ -148,11 +148,4 @@ fn compute_include_path(file: &Path, include_root: Option<&Path>) -> std::string
 	file.file_name()
 		.map(|n| n.to_string_lossy().into_owned())
 		.unwrap_or_default()
-}
-
-pub fn strip_export_macros(source: &str) -> std::string::String {
-	source
-		.replace("TOAST_API ", "")
-		.replace("__declspec(dllexport) ", "")
-		.replace("__declspec(dllimport) ", "")
 }

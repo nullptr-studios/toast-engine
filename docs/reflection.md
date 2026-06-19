@@ -14,8 +14,8 @@ all the information about its reflected data:
 
 ```c++
 auto info = my_node->info();
-auto player_health = info.search("health");
-if (player_health) player_health.set(my_node, 100.0f);
+auto player_health = info->search("health");
+if (player_health) player_health->set(my_node, 100.0f);
 ```
 
 It also allows as, for example, to create a `newNode()` function that can return different
@@ -27,7 +27,7 @@ auto World::newNode(std::string_view type) -> Node* {
     const toast::NodeInfo* info = m.node_registry.reflect(type);
     
     // generate it using the constructor function on the reflect info
-    Node* raw_node = info ? info.construct() : new Node;
+    Node* raw_node = info ? info->construct() : new Node;
     return raw_node;
 }
 ```

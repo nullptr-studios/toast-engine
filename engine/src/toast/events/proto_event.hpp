@@ -19,12 +19,22 @@ namespace event {
 
 namespace _detail {
 
+/**
+ * @brief Dispatch table for one protobuf-backed event type over the FFI
+ *
+ * Populated by registerProtoEvent<T>() and stored in the proto registry.
+ * The three function pointers cover the three directions of the FFI bridge:
+ * sending from C#, subscribing from C#, and cancelling a subscription.
+ */
 struct ProtoEntry {
-	int (*send)(const uint8_t* data, uint32_t size);                                                    ///< C# -> engine
-	void (*subscribe)(Listener&, event_callback, void* user_data, char priority, const char* label);    ///< engine -> C#
-	void (*unsubscribe)(Listener&, const char* label);                                                  ///< drop a subscription
+	int (*send)(const uint8_t* data, uint32_t size);      ///< C# -> engine: deserializes bytes and dispatches the event
+	void (*subscribe)(
+	    Listener&, event_callback, void* user_data, char priority, const char* label
+	);                                                    ///< engine -> C#: serializes the event and calls the C# callback
+	void (*unsubscribe)(Listener&, const char* label);    ///< cancels a subscription by label
 };
 
+/// Inserts a ProtoEntry into the global proto registry under the protobuf message name
 void registerProtoEntry(std::string name, ProtoEntry entry);
 
 }
@@ -60,7 +70,11 @@ void registerProtoEvent() {
 				                     static_cast<uint32_t>(bytes.size()),
 				                     user_data
 				                 ) != 0;
-			          } catch (...) { return false; }
+			          } catch (const std::exception& e) {
+				          // swallow serialization failures so one bad event doesn't kill the whole chain
+				          TOAST_WARN("Events", "Failed to serialize event {}: {}", Proto::descriptor()->full_name(), e.what());
+				          return false;
+			          }
 		          },
 		          priority
 		      );
@@ -73,11 +87,14 @@ void registerProtoEvent() {
 
 namespace _detail {
 
+/// Returns the global list of proto registration callbacks; each TOAST_PROTO_EVENT() macro appends one entry
 inline auto protoRegistrars() -> std::vector<void (*)()>& {
 	static std::vector<void (*)()> registrars;
 	return registrars;
 }
 
+/// each TOAST_PROTO_EVENT() macro creates a static instance of this; the constructor queues the
+/// registration so registerProtoEvents() can flush them all in one call at startup
 template<ExposedEvent T>
 struct ProtoAutoRegister {
 	ProtoAutoRegister() {

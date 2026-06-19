@@ -7,8 +7,8 @@
 namespace toast {
 
 void Node3D::pos(glm::vec3 pos) {
-	auto delta = pos - m_position;
-	m_position += delta;
+	const auto delta = pos - m_position;
+	m_position = pos;
 	m_world_position += delta;
 	m_dirty_local = true;
 }
@@ -18,8 +18,8 @@ auto Node3D::pos() const -> const glm::vec3& {
 }
 
 void Node3D::rotQuat(glm::quat rot) {
-	auto delta = rot - m_rotation;
-	m_rotation += delta;
+	const auto delta = rot - m_rotation;
+	m_rotation = rot;
 	m_world_rotation += delta;
 	m_dirty_local = true;
 }
@@ -47,8 +47,8 @@ const glm::vec3 Node3D::rotDeg() const {
 }
 
 void Node3D::scale(glm::vec3 scl) {
-	auto delta = scl - m_scale;
-	m_scale += delta;
+	const auto delta = scl - m_scale;
+	m_scale = scl;
 	m_world_scale += delta;
 	m_dirty_local = true;
 }
@@ -145,6 +145,7 @@ void Node3D::recalculateTransforms() {
 		m_world_transform = parent_mat * m_transform;
 
 		m_dirty_local = true;
+		m_dirty_world = false;
 	}
 }
 
@@ -169,13 +170,13 @@ auto Node3D::getWorldTransform() noexcept -> const glm::mat4& {
 	}
 
 	recalculateTransforms();
-	return m_transform;
+	return m_world_transform;
 }
 
 void Node3D::worldPos(glm::vec3 wpos) {
-	auto delta = wpos - m_world_position;
+	const auto delta = wpos - m_world_position;
 	m_position += delta;
-	m_world_position += delta;
+	m_world_position = wpos;
 	m_dirty_local = true;
 }
 
@@ -184,9 +185,9 @@ auto Node3D::worldPos() const -> const glm::vec3& {
 }
 
 void Node3D::worldRotQuat(glm::quat wrot) {
-	auto delta = wrot - m_world_rotation;
+	const auto delta = wrot - m_world_rotation;
 	m_rotation += delta;
-	m_world_rotation += delta;
+	m_world_rotation = wrot;
 	m_dirty_local = true;
 }
 
@@ -213,9 +214,9 @@ const glm::vec3 Node3D::worldRotDeg() const {
 }
 
 void Node3D::worldScale(glm::vec3 wscl) {
-	auto delta = wscl - m_world_scale;
+	const auto delta = wscl - m_world_scale;
 	m_scale += delta;
-	m_world_scale += delta;
+	m_world_scale = wscl;
 	m_dirty_local = true;
 }
 

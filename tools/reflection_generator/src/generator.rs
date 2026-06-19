@@ -1,3 +1,5 @@
+//! Converts parsed Class structs into NodeInfo data and emits C++ files via Jinja2 templates
+
 use crate::{Class, Field, Attribute};
 use serde::Serialize;
 use serde_json::{to_value, Value as json_t};
@@ -84,8 +86,8 @@ fn infer_field_type(type_name: &str) -> FieldType {
 		.trim_start_matches("std::")
 		.trim_start_matches("glm::");
 
-	// AssetHandle<T> and Box<Node> are both held by value in code but exchanged as a UID across
-	// the reflection boundary
+	// both are held by value in C++ but the reflection boundary only exchanges UIDs;
+	// the accessor resolves/unresolves the handle on get/set
 	if type_name.contains("AssetHandle<") { return FieldType::Uid; }
 	if base.starts_with("Box<") { return FieldType::Uid; }
 
@@ -101,7 +103,7 @@ fn infer_field_type(type_name: &str) -> FieldType {
 		"vec3"                                                         => FieldType::Vec3,
 		"vec4"                                                         => FieldType::Vec4,
 		"quat" | "quaternion"                                          => FieldType::Quaternion,
-		_                                                              => FieldType::Int,
+		_ => FieldType::Int,    // unknown types silently become Int; accessor compiles but the inspector widget will be wrong
 	}
 }
 
@@ -136,7 +138,7 @@ pub fn validate_class(class: &Class) -> Result<(), std::string::String> {
 		None     => class.name.clone(),
 	};
 
-	// toast::Node legitimately owns the reserved members
+	// toast::Node legitimately owns the reserved members; user subclasses must not shadow them
 	if qualified == "toast::Node" {
 		return Ok(());
 	}
@@ -184,7 +186,8 @@ pub fn build_node(class: &Class, source_file: &str) -> NodeInfo {
 		save:         fns.contains(&"save".to_string()),
 	};
 
-	// Bucket fields by Group
+	// flatten fields into global / group / subgroup buckets so the template can emit a single
+	// flat std::array<FieldInfo> and index back into it per group/subgroup
 	let mut global_fields: Vec<FieldInfo> = Vec::new();
 	let mut group_map: std::collections::BTreeMap<
 		std::string::String,

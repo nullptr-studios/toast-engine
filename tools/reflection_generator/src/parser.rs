@@ -1,3 +1,6 @@
+//! Uses tree-sitter-cpp to extract `[[ToastNode]]` classes, `[[Reflect]]` fields,
+//! and tick-function declarations from C++ header files
+
 use tree_sitter::{Parser, Query, QueryCursor, StreamingIterator};
 use serde::Serialize;
 
@@ -113,6 +116,7 @@ fn get_parent(node: tree_sitter::Node, source: &str) -> Option<Parent> {
 }
 
 fn get_functions(node: tree_sitter::Node, source: &str) -> Vec<String> {
+	// must match TickFunctionList in reflect.hpp; add new lifecycle methods here too
 	const TICK_FUNCTIONS: &[&str] = &[
 		"preInit", "init", "begin", "earlyTick", "tick", "postPhysics",
 		"lateTick", "end", "destroy", "onEnable", "onDisable", "load", "save",
@@ -182,6 +186,7 @@ fn get_fields(node: tree_sitter::Node, source: &str) -> Vec<Field> {
 }
 
 fn get_attributes(node: tree_sitter::Node, source: &str) -> Vec<Attribute> {
+	// two-level walk: attribute_declaration wraps one or more attribute nodes
 	let mut attributes = Vec::new();
 
 	for list in node.children(&mut node.walk()) {
@@ -211,6 +216,7 @@ fn get_attributes(node: tree_sitter::Node, source: &str) -> Vec<Attribute> {
 	attributes
 }
 
+// tree-sitter includes surrounding double-quotes in string literal nodes; strip them
 fn clean_argument(arg: &str) -> String {
 	let trimmed = arg.trim();
 	if (trimmed.starts_with('"') && trimmed.ends_with('"'))

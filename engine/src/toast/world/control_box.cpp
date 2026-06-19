@@ -31,9 +31,7 @@ void ControlBox::increment() {
 }
 
 void ControlBox::decrement() {
-	if (ref_count.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-		// TODO: handle deletion
-	}
+	ref_count.fetch_sub(1, std::memory_order_acq_rel);
 }
 
 auto ControlBox::get(const Node* node) -> ControlBox* {

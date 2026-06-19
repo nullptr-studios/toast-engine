@@ -141,6 +141,10 @@ void World::tick() {
 	drainLoadQueue();
 	drainSpawnQueue();
 
+	/**
+	 * dispatches one phase: submits each wave to the thread pool and joins before advancing to the next wave;
+	 * clusters tick their nodes synchronously within the thread to preserve SCC ordering
+	 */
 	auto run_phase = [](const std::vector<TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) {
 		ZoneScopedN("World::tick()::function");    // NOLINT
 		ZoneNameF("World::tick()::%s", name.data());
@@ -190,11 +194,6 @@ void World::registerDependency(Node& from, Node& to) {
 		TOAST_WARN("World", "{} ({}) tried to register a dependency to itself", from.name(), from.uid());
 		return;
 	}
-	// TODO: sanity check
-	// auto& node_set = instance->m.nodes;
-	// if (node_set.find(from.box()) == node_set.end()) {
-	//
-	// }
 
 	// don't store duplicates
 	auto& edges = instance->dependency_graph.connections[from];
@@ -314,8 +313,8 @@ void World::spawn(UID prefab, Node& parent) {
 			return;
 		}
 
-		// on nodes that come from prefab we need to regenerate their UID
-		// it will be unique
+		// spawned instances need a unique UID within the parent's namespace
+		// even if two copies of the same prefab are spawned concurrently
 		generateUid(*root);
 		root->propagateCallTick(root->info(), TickFunctionList::init);
 		root->changeNodeState(NodeState::cached);
@@ -690,7 +689,6 @@ auto World::cacheNode(Node& node) -> Box<Node> {
 auto World::findCached(std::string_view name) -> Box<Node> {
 	ZoneScoped;
 
-	auto t = instance->trees;
 	for (const auto& node : instance->trees.cached) {
 		if (node->name() == name) {
 			return node;
@@ -727,7 +725,10 @@ void World::drainDestroyQueue() {
 	if (!doomed.empty()) {
 		ZoneScopedN("World::drainDestroyQueue()");
 
-		// Run the destroy lifecycle while the trees are still intact
+		/**
+		 * order matters: destroy() callbacks first (tree is still intact), then sever Box<> edges, then free;
+		 * this way destroy() can safely read its own children and parent
+		 */
 		for (auto& root : doomed) {
 			root->propagateCallTick(root->info(), TickFunctionList::destroy);
 		}
@@ -915,6 +916,10 @@ auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
 	return subgraphs;
 }
 
+/**
+ * produces SCCs in reverse topological order so assignWaves iterates in the right direction;
+ * SCCs with more than one node indicate a dependency cycle and are bundled into a NodeCluster
+ */
 auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_subgraphs) -> std::vector<TickSchedule::Wave> {
 	ZoneScoped;
 
@@ -979,7 +984,7 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 						search_context.low_link[current_node] =
 						    std::min(search_context.low_link[current_node], search_context.low_link[neighbor_node]);
 					} else if (search_context.on_stack[neighbor_node]) {
-						// Neighbor is on the stack, meaning we've found a cyclw
+						// Neighbor is on the stack, meaning we've found a cycle
 						search_context.low_link[current_node] =
 						    std::min(search_context.low_link[current_node], search_context.index[neighbor_node]);
 					}
@@ -1029,6 +1034,10 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 	return result;
 }
 
+/**
+ * assigns each item a wave index equal to max(predecessor wave) + 1;
+ * items with no predecessors land on wave 0 and run fully in parallel
+ */
 auto World::assignWaves(const std::vector<TickSchedule::Wave>& subgraphs) -> std::vector<TickSchedule::Wave> {
 	// First, map every node back to its containing item
 	// This allows us to treat clusters as a single scheduling unit
@@ -1131,6 +1140,10 @@ auto World::assignWaves(const std::vector<TickSchedule::Wave>& subgraphs) -> std
 	return buckets;
 }
 
+/**
+ * prunes items that don't implement the relevant tick function for each phase,
+ * then bakes the final wave index into Node::m_wave for O(1) lookup at dispatch time
+ */
 auto World::optimizeWaves(const std::vector<TickSchedule::Wave>& waves) -> TickSchedule {
 	TickSchedule schedule = {
 	  .early_tick = waves,

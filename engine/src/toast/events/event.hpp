@@ -3,10 +3,8 @@
  * @author Dante and Xein
  * @date 15/03/26
  *
- * @brief
- * - Derive your event type as `struct Derived : Event<Derived>`.
- * - Call event::Send<T>(...) to enqueue events
- * - Call event::PollEvents() to dispatch them
+ * @brief Derive your event type as `struct Derived : Event<Derived>`,
+ *        call event::send<T>() to enqueue, and event::pollEvents() to dispatch
  */
 #pragma once
 
@@ -25,8 +23,11 @@
 
 namespace event {
 
-/// @brief dispatches all queued events to their callbacks
-/// @note Not thread-safe. Should be only ever called from a single thread / main thread
+/**
+ * @brief Dispatches all queued events to their registered callbacks in priority order
+ * @note Not thread-safe; call only from the main or game-logic thread
+ * @note Events sent during dispatch are deferred and processed on the next call
+ */
 void TOAST_API pollEvents() noexcept;
 
 /// @internal
@@ -61,22 +62,18 @@ void send(Args&&... args) noexcept;
 ///
 /// @details
 ///
-/// Maps callbacks to specfic prioritys that define the execution order of the callback
+/// Maps callbacks to specific priorities that define the execution order
 /// If a callback returns @c true it consumes the event, preventing further propagation
 ///
 /// @internal
 ///
-/// We have a multimap<priority, callback>> that maps callbacks to their prioritys when we subscribe a callback we return
-/// a iterator to that specfic callback to the event::Listener this way we implment the unsubscribe function so that it
-/// takes that iterator and removes it from the map. We can do this because std::multimap does not invalidate iterators
-/// on insert/erase
+/// We have a multimap<priority, callback> that maps callbacks to their priorities; when we subscribe we return
+/// an iterator to that specific callback to the event::Listener, which is how unsubscribe works; it just
+/// erases that iterator. std::multimap guarantees iterators are never invalidated on insert/erase
 ///
-/// To keep it thread safe as well as leverage cache locality every time we subscribe or unsubscribe a callback we
-/// mark the cache as dirty and on notify we cache the callbacks into a std::vector processing and iterate through that to
-/// run the callbacks
-///
-/// this allows us to keep the callback list thread safe as well as allow the user to remove and add more callbacks during
-/// the callback itself
+/// To keep it thread safe and leverage cache locality, every subscribe/unsubscribe marks the cache dirty;
+/// on notify we rebuild the processing vector from the map and iterate that; this lets the user safely
+/// add or remove callbacks from within a callback itself
 ///
 template<typename T>
 struct Event : _detail::IEvent {
@@ -102,7 +99,21 @@ private:
 	void notify() noexcept override;
 };
 
+/**
+ * @brief Internal dispatch table for the event system
+ *
+ * One EventInfo entry exists per registered event type. Do not use this struct directly;
+ * go through Listener::subscribe() to register callbacks and event::send() to enqueue events.
+ */
 struct TOAST_API EventSystem {
+	/**
+	 * @brief Per-type callback registry
+	 *
+	 * callbacks is a priority-sorted multimap from priority char to type-erased function pointer.
+	 * processing is a flat snapshot rebuilt from callbacks when cached is false; rebuilding
+	 * on-demand lets subscribers add or remove callbacks from within a callback without
+	 * invalidating iteration.
+	 */
 	struct EventInfo {
 		std::mutex mutex;
 		std::multimap<char, void*, std::greater<>> callbacks;
@@ -110,25 +121,24 @@ struct TOAST_API EventSystem {
 		bool cached = false;
 	};
 
-	/// @brief callback map for each type of event
+	/// Dispatch table keyed by event type; one entry per registered event type
 	static std::unordered_map<std::type_index, EventInfo> event_data;
 
-	/// @brief mutex for the event system pool
+	/// Protects the event queue memory pool during concurrent sends
 	static std::mutex pool_mutex;
 
-	/// @brief vtable for unsubscribing callbacks
+	/// Type-erased unsubscribe functions keyed by event type; used by Listener to erase iterators without the concrete type
 	static std::unordered_map<std::type_index, std::function<void(std::any)>> unsubscribe_map;
 
-	/// @brief callbacks will be cleaned up only before pollEvents
-	/// @note unique pointers have the option of storing a pointer to the function that deletes the object
-	/// so thats how i implement the deletion_queue
+	/// Deferred-delete queue; callbacks that unsubscribed during pollEvents are freed here on the next call
+	/// to avoid invalidating the processing vector mid-dispatch
 	static std::vector<std::unique_ptr<void, void (*)(void*)>> deletion_queue;
 
 	template<typename T>
 	static void registerEvent() {
 		static_assert(std::is_base_of_v<Event<T>, T>, "CONTRACT VIOLATION: You Must Inhert as 'struct Derived : Event<Derived>'");
 		if (event_data.contains(typeid(T))) {
-			// TOAST_INFO("Events", "Event type {} already registered (Windows Is Shit)", typeid(T).name());
+			// guard against cross-DLL double-registration; same type can be registered from multiple translation units on Windows
 			return;
 		}
 		TOAST_INFO("Events", "Registering Event Type: {}", typeid(T).name());
@@ -146,16 +156,27 @@ struct TOAST_API EventSystem {
 };
 
 /**
- * @brief Helps to convert C++ events to protocol buffers
+ * @brief Specialization point that exposes a C++ event type over the C# FFI via protobuf
  *
- * Must implement:
- * - @c using Proto
- * - @c toProto()
- * - @c fromProto()
+ * Specialize this template next to your ProtoTraits and use TOAST_PROTO_EVENT() to register it.
+ * The specialization must define:
+ *   - using Proto: the generated protobuf message type
+ *   - using Event: the C++ event type (usually the same as T)
+ *   - toProto(const T&): converts a C++ event to its protobuf form for serialization
+ *   - fromProto(const Proto&): reconstructs a C++ event from its protobuf form
+ *
+ * @tparam T The C++ event type; must also satisfy ExposedEvent after specialization
+ * @see ExposedEvent, TOAST_PROTO_EVENT
  */
 template<typename T>
 struct ProtoTraits;
 
+/**
+ * @brief Satisfied when ProtoTraits<T> is fully specialized with both conversion functions
+ *
+ * Used as a constraint on registerProtoEvent<T>() and TOAST_PROTO_EVENT(). An event type
+ * that satisfies ExposedEvent can be sent from C# and received in C++, and vice versa.
+ */
 template<typename T>
 concept ExposedEvent = requires(const T& e, const typename ProtoTraits<T>::Proto& p) {
 	typename ProtoTraits<T>::Proto;

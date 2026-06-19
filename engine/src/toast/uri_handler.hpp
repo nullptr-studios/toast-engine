@@ -26,10 +26,12 @@ inline std::string assets_path;
 inline std::string artworks_path;
 }
 
+/// must be called before any handleURI(); not thread-safe after initialization
 inline auto setAssetsPath(std::string_view path) -> void {
 	_detail::assets_path = path;
 }
 
+/// must be called before any handleURI(); not thread-safe after initialization
 inline auto setArtworkPath(std::string_view path) -> void {
 	_detail::artworks_path = path;
 }

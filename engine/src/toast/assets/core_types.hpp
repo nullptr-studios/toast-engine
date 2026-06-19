@@ -3,7 +3,10 @@
  * @author Xein
  * @date 10 Jun 2026
  *
- * @brief TODO: Brief description of the file's purpose
+ * @brief Base types for the asset system
+ *
+ * Defines Asset (refcounted base), ISaveable (serialization interface),
+ * AssetHandle<T> (typed smart pointer), and SaveMode (editor vs game)
  */
 
 #pragma once
@@ -15,7 +18,10 @@
 
 namespace assets {
 // clang-format off
-enum class SaveMode : uint8_t { editor, game };
+enum class SaveMode : uint8_t {
+	editor,    ///< human-readable text format; used in the editor
+	game,      ///< compact binary format; used at runtime
+};
 
 /**
  * @brief Inherit from this class to allow an asset to be saved
@@ -53,7 +59,7 @@ protected:
 	friend class AssetHandleBase;
 
 private:
-	std::atomic<uint32_t> m_ref_count {0};
+	std::atomic<uint32_t> m_ref_count {0};    ///< starts at 0; AssetHandleBase increments on copy and decrements on destroy
 };
 
 /**

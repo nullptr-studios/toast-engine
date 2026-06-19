@@ -77,7 +77,7 @@ auto INodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
 	root->m_type = NodeType::root;
 	root->m_inherited_enabled = parent.enabled();
 
-	// Initialiazation
+	// Initialization
 	root->propagateCallTick(root->info(), TickFunctionList::init);
 	root->propagateCallTick(root->info(), TickFunctionList::begin);
 	root->enabled(true);
