@@ -109,6 +109,7 @@ public partial class LoaderViewModel : ViewModelBase {
 
 	// posts to the UI thread because this is called from background tasks and process callbacks
 	private void AppendLine(string text) {
+		Console.WriteLine(text);
 		Dispatcher.UIThread.Post(() => ConsoleLines.Add(text));
 	}
 }

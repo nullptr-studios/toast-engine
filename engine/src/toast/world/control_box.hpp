@@ -11,6 +11,7 @@
 #include <atomic>
 #include <compare>
 #include <cstdint>
+#include <functional>
 #include <toast/export.hpp>
 
 namespace toast {

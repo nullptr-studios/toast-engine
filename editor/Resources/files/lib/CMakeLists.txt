@@ -9,22 +9,31 @@ endif ()
 
 get_filename_component(BUILD_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/../build" ABSOLUTE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_OUTPUT})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${BUILD_OUTPUT})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${BUILD_OUTPUT})
 set(CMAKE_PDB_OUTPUT_DIRECTORY ${BUILD_OUTPUT})
 
 foreach (OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
   string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${BUILD_OUTPUT})
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${BUILD_OUTPUT})
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${BUILD_OUTPUT})
   set(CMAKE_PDB_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${BUILD_OUTPUT})
 endforeach ()
 
 add_library(toast_engine SHARED IMPORTED)
-set_target_properties(toast_engine PROPERTIES
-        IMPORTED_IMPLIB "${TOAST_PATH}/lib/toast_engine.lib"
-        IMPORTED_LOCATION "${TOAST_PATH}/bin/toast_engine.dll"
-        INTERFACE_INCLUDE_DIRECTORIES "${TOAST_PATH}/include"
-)
+if (WIN32)
+  set_target_properties(toast_engine PROPERTIES
+          IMPORTED_IMPLIB "${TOAST_PATH}/lib/toast_engine.lib"
+          IMPORTED_LOCATION "${TOAST_PATH}/bin/toast_engine.dll"
+          INTERFACE_INCLUDE_DIRECTORIES "${TOAST_PATH}/include"
+  )
+else ()
+  set_target_properties(toast_engine PROPERTIES
+          IMPORTED_LOCATION "${TOAST_PATH}/lib/libtoast_engine.so"
+          INTERFACE_INCLUDE_DIRECTORIES "${TOAST_PATH}/include"
+  )
+endif ()
 
 file(GLOB_RECURSE SOURCE "src/*.cpp" "generated/*.cpp")
 add_library(my_game SHARED ${SOURCE})

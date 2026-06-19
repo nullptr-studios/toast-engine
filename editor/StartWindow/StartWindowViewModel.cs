@@ -13,6 +13,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using editor.Assets;
 using editor.Components.Modals;
@@ -64,8 +65,9 @@ public partial class StartWindowViewModel : ViewModelBase {
 		var libGenerated = Path.Combine(projectDir, "lib", "generated");
 		Directory.CreateDirectory(libGenerated);
 
+		var exeExt = OperatingSystem.IsWindows() ? ".exe" : "";
 		var refgen = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
-			"..", "reflection_generator", "reflection_generator.exe"));
+			"..", "reflection_generator", $"reflection_generator{exeExt}"));
 		var gameDb = ProjectContext.Resolve("cache://game_reflect.json");
 		tasks.Add(LoaderTask.Run("Generate game reflection", refgen,
 			$"--database \"{gameDb}\" --output \"{libGenerated}\" --input \"{libSrc}\" " +
@@ -85,15 +87,16 @@ public partial class StartWindowViewModel : ViewModelBase {
 			await Task.CompletedTask;
 		}));
 
+		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
 		tasks.Add(LoaderTask.Run("cmake lib/ -B .toast/cmake_cache", "cmake",
-			$"lib/ -B .toast/cmake_cache -G \"Visual Studio 18 2026\" -DTOAST_PATH={ToastPath}"));
+			$"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH={ToastPath}"));
 		tasks.Add(LoaderTask.Run("cmake --build .toast/cmake_cache", "cmake",
 			"--build .toast/cmake_cache"));
 
 		var vm = new LoaderViewModel(tasks) {
 			OnComplete = async () => {
+				await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
 				_ = new ToastEngine(projectPath);
-				await Task.CompletedTask;
 			}
 		};
 

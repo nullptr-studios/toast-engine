@@ -140,12 +140,17 @@ public partial class ToastEngine : IDisposable {
 
 	// ----- Private -----
 
+	private static string NativeLibDir    => OperatingSystem.IsWindows() ? "bin" : "lib";
+	private static string NativeLibPrefix => OperatingSystem.IsWindows() ? ""    : "lib";
+	private static string NativeLibExt    => OperatingSystem.IsWindows() ? ".dll" : ".so";
+
 	private static string EngineDllPath() {
-		var dll = Path.GetFullPath(
-			Path.Combine(AppContext.BaseDirectory, "..", "toast_engine", "bin", "toast_engine.dll"));
-		if (!File.Exists(dll))
-			throw new FileNotFoundException($"Engine not found at path {dll}");
-		return dll;
+		var name = $"{NativeLibPrefix}toast_engine{NativeLibExt}";
+		var path = Path.GetFullPath(
+			Path.Combine(AppContext.BaseDirectory, "..", "toast_engine", NativeLibDir, name));
+		if (!File.Exists(path))
+			throw new FileNotFoundException($"Engine not found at path {path}");
+		return path;
 	}
 
 	private void TickLoop(CancellationToken unused) {
@@ -161,14 +166,15 @@ public partial class ToastEngine : IDisposable {
 	}
 
 	private void LoadGame() {
-		var gameDllPath = Directory.EnumerateFiles(Path.Combine(ProjectPath, "build"), "*.dll").FirstOrDefault();
+		var gameDllPath = Directory.EnumerateFiles(Path.Combine(ProjectPath, "build"), $"*{NativeLibExt}").FirstOrDefault();
 		if (gameDllPath is null)
 			throw new FileNotFoundException($"Game not found at path {ProjectPath}");
 
 		// copy to a temp path so the original stays unlocked and the build system
 		// can overwrite it while the editor is running without us holding the file
-		File.Copy(gameDllPath, Path.Combine(ProjectPath, ".toast", "game_temp.dll"), true);
-		gameDllPath = Path.Combine(ProjectPath, ".toast", "game_temp.dll");
+		var tempFile = $"game_temp{NativeLibExt}";
+		File.Copy(gameDllPath, Path.Combine(ProjectPath, ".toast", tempFile), true);
+		gameDllPath = Path.Combine(ProjectPath, ".toast", tempFile);
 
 		m_gameHandle = NativeLibrary.Load(gameDllPath);
 
@@ -192,6 +198,7 @@ public partial class ToastEngine : IDisposable {
 		}
 
 		try {
+			if (File.Exists(targetLinkPath)) File.Delete(targetLinkPath);
 			File.CreateSymbolicLink(targetLinkPath, sourceLinkPath);
 		} catch (Exception ex) when (ex is UnauthorizedAccessException or IOException) {
 			// Creating a symlink needs elevation or Developer Mode on Windows 11
@@ -201,7 +208,7 @@ public partial class ToastEngine : IDisposable {
 			try {
 				File.Copy(sourceLinkPath, targetLinkPath, true);
 			} catch (IOException) {
-				Console.WriteLine("Couldn't copy log_server.exe to editor dir, using previous version");
+				Console.WriteLine($"Couldn't copy {binaryName} to editor dir, using previous version");
 			}
 		}
 	}

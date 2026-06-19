@@ -94,7 +94,8 @@ fn main() {
 	fs::write(&cli.database, json)
 		.unwrap_or_else(|e| eprintln!("warning: cannot write database '{}': {e}", cli.database.display()));
 
-	// Generate files
+	// Generate files, sorted so base classes are included before derived classes
+	let all_nodes = topological_sort(all_nodes);
 	generate_files(&all_nodes, &cli.output, &cli.register_fn);
 
 	println!(
@@ -135,6 +136,64 @@ fn find_headers(inputs: &[PathBuf]) -> Vec<PathBuf> {
 			}
 		}
 	}
+	result
+}
+
+fn topological_sort(nodes: Vec<NodeInfo>) -> Vec<NodeInfo> {
+	let mut result: Vec<NodeInfo> = Vec::with_capacity(nodes.len());
+	let mut remaining: Vec<NodeInfo> = nodes;
+
+	loop {
+		if remaining.is_empty() {
+			break;
+		}
+
+		let placed_names: std::collections::HashSet<String> = result.iter()
+			.map(|n| match &n.namespace {
+				Some(ns) => format!("{}::{}", ns, n.name),
+				None     => n.name.clone(),
+			})
+			.collect();
+
+		let mut next: Vec<NodeInfo> = Vec::new();
+		let mut placed_any = false;
+
+		for node in remaining {
+			let parent_ready = node.parent.as_ref()
+				.map(|p| {
+					let pname = match &p.namespace {
+						Some(ns) => format!("{}::{}", ns, p.name),
+						None     => p.name.clone(),
+					};
+					// If the parent has no namespace qualifier, also try the child's namespace
+					// since unqualified parent names in C++ implicitly resolve to the enclosing namespace
+					let pname_in_child_ns = if p.namespace.is_none() {
+						node.namespace.as_ref().map(|ns| format!("{}::{}", ns, p.name))
+					} else {
+						None
+					};
+					placed_names.contains(&pname)
+						|| pname_in_child_ns.map_or(false, |n| placed_names.contains(&n))
+				})
+				.unwrap_or(true);
+
+			if parent_ready {
+				result.push(node);
+				placed_any = true;
+			} else {
+				next.push(node);
+			}
+		}
+
+		remaining = next;
+
+		if !placed_any {
+			// Cycle or external parent, append the rest as-is
+			result.extend(remaining);
+			break;
+		}
+	}
+
 	result
 }
 

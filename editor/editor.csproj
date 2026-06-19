@@ -95,8 +95,8 @@
     </ItemGroup>
 
     <Target Name="MakeToktxExecutable" AfterTargets="Build" Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
-        <Exec Command="chmod +x &quot;$(OutDir)Resources/native/toktx&quot;"
-              Condition="Exists('$(OutDir)Resources/native/toktx')"
+        <Exec Command="chmod +x &quot;$(OutDir)native/toktx&quot;"
+              Condition="Exists('$(OutDir)native/toktx')"
               IgnoreExitCode="true"/>
     </Target>
 

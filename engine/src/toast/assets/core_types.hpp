@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <toast/export.hpp>
 #include <toast/uid.hpp>
 #include <toml++/toml.hpp>

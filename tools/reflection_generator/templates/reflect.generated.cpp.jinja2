@@ -3,12 +3,14 @@
 // Changes will not persist
 // ============================================================
 
+// clang-format off
 {% for node in nodes %}
 #include "{{ node.snake_name }}.generated.hpp"
 {% endfor %}
 #include <toast/world/reflect.hpp>
 #include <toast/log.hpp>
 #include <array>
+// clang-format on
 
 namespace toast {
 void {{ register_fn }}() {
