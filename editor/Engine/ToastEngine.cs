@@ -99,6 +99,7 @@ public partial class ToastEngine : IDisposable {
 	public string CorePath { get; }
 
 	public void Dispose() {
+		m_cancellationSource.Cancel();
 		m_tickTask.Wait();
 		m_gameDestroy?.Invoke(m_gameInstance);
 		toast_destroy(m_engineInstance);
@@ -153,8 +154,8 @@ public partial class ToastEngine : IDisposable {
 		return path;
 	}
 
-	private void TickLoop(CancellationToken unused) {
-		while (toast_should_close() != 1) toast_tick();
+	private void TickLoop(CancellationToken token) {
+		while (!token.IsCancellationRequested && toast_should_close() != 1) toast_tick();
 	}
 
 	private void CreateMainWindow() {

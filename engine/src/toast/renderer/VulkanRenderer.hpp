@@ -53,7 +53,7 @@ public:
 	    uint32_t framesInFlight = 3
 	);
 
-	~VulkanRenderer() = default;
+	~VulkanRenderer();
 
 	VulkanRenderer(const VulkanRenderer&) = delete;
 	VulkanRenderer& operator=(const VulkanRenderer&) = delete;

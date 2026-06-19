@@ -55,6 +55,12 @@ auto transitionImageLayout(
 
 }
 
+VulkanRenderer::~VulkanRenderer() {
+	if (m_core) {
+		m_core->getDevice().waitIdle();
+	}
+}
+
 auto VulkanRenderer::selectDepthFormat(const VulkanCore& core) -> vk::Format {
 	const std::array candidates {
 	  vk::Format::eD32Sfloat, vk::Format::eD24UnormS8Uint, vk::Format::eD32SfloatS8Uint, vk::Format::eD16Unorm

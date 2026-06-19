@@ -73,7 +73,7 @@ public partial class MainWindowView : Window {
 
 	protected override void OnClosed(EventArgs e) {
 		base.OnClosed(e);
-		m_toast?.SignalClose();
+		m_toast?.Dispose();
 	}
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {

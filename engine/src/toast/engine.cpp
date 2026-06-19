@@ -86,6 +86,11 @@ struct EnginePimpl {
 	toast::UID active_workspace {0};
 };
 
+Engine::~Engine() noexcept {
+	delete m;
+	instance = nullptr;
+}
+
 Engine::Engine() noexcept {
 	instance = this;
 
