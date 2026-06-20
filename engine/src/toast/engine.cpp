@@ -6,12 +6,12 @@
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
 #include "logger.hpp"
-#include "renderer/SDLOutputTarget.hpp"
-#include "renderer/ShaderCompiler.hpp"
-#include "renderer/SharedTextureOutputTarget.hpp"
-#include "renderer/VulkanCore.hpp"
-#include "renderer/VulkanPipeline.hpp"
-#include "renderer/VulkanRenderer.hpp"
+#include "renderer/sdl_output_target.hpp"
+#include "renderer/shader_compiler.hpp"
+#include "renderer/shared_texture_output_target.hpp"
+#include "renderer/vulkan_core.hpp"
+#include "renderer/vulkan_pipeline.hpp"
+#include "renderer/vulkan_renderer.hpp"
 #include "thread_pool.hpp"
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
@@ -243,7 +243,7 @@ auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::strin
 
 auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
 	std::scoped_lock lock(m->owners_mutex);
-	if (m->owners.find(uid) != m->owners.end()) {
+	if (m->owners.contains(uid)) {
 		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
 		return {};
 	}
@@ -262,11 +262,11 @@ auto Engine::activeWorkspace() -> UID {
 	return m->active_workspace;
 }
 
-int Engine::getViewportFrame(void* dst, uint32_t dstCapacity, renderer::ViewportFrameDesc* out) {
+auto Engine::getViewportFrame(void* dst, uint32_t dst_capacity, renderer::ViewportFrameDesc* out) -> int {
 	if (!m->shared_target) {
 		return 0;
 	}
-	return m->shared_target->copyLatestFrame(dst, dstCapacity, out);
+	return m->shared_target->copyLatestFrame(dst, dst_capacity, out);
 }
 
 void pushApplicationLayer(IApplication* app) {
@@ -338,7 +338,7 @@ void toast_set_working_directory(
 	assets::AssetManager::setPaths({.assets = assets, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
 }
 
-int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) {
+auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) -> int {
 	toast::renderer::ViewportFrameDesc desc {};
 	const int result = toast::Engine::get()->getViewportFrame(dst, dst_capacity, &desc);
 	if (out) {
@@ -350,7 +350,7 @@ int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_fr
 	return result;
 }
 
-workspace_result toast_create_workspace(const char* type) {
+auto toast_create_workspace(const char* type) -> workspace_result {
 	auto [uid, name] = toast::Engine::get()->createWorkspace(type);
 
 	static thread_local std::string s_name;
@@ -358,7 +358,7 @@ workspace_result toast_create_workspace(const char* type) {
 	return {.uid = uid.data(), .name = s_name.c_str()};
 }
 
-workspace_result toast_open_workspace(const char* uid) {
+auto toast_open_workspace(const char* uid) -> workspace_result {
 	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid));
 	static thread_local std::string s_name;
 	s_name = std::move(name);

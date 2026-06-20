@@ -97,6 +97,6 @@ auto Data::serialize(SaveMode) const -> std::vector<uint8_t> {
 	std::ostringstream ss;
 	ss << m_table;
 	auto str = ss.str();
-	return std::vector<uint8_t>(str.begin(), str.end());
+	return {str.begin(), str.end()};
 }
 }

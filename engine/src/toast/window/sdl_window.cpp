@@ -10,8 +10,8 @@ SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, uint64_
 	TOAST_ASSERT(SDL_Init(SDL_INIT_VIDEO) == true, "Window", "SDL cannot be initialized");
 
 	if ((flags & SDL_WINDOW_VULKAN) != 0) {
-		const char* videoDriver = SDL_GetCurrentVideoDriver();
-		TOAST_INFO("SDLWindow", "SDL video driver: {}", videoDriver ? videoDriver : "(null)");
+		const char* video_driver = SDL_GetCurrentVideoDriver();
+		TOAST_INFO("SDLWindow", "SDL video driver: {}", video_driver ? video_driver : "(null)");
 	}
 
 	type = WindowType::sdl;

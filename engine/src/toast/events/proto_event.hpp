@@ -106,8 +106,8 @@ struct ProtoAutoRegister {
 
 }
 
-#define TOAST_PROTO_CAT_(a, b) a##b
-#define TOAST_PROTO_CAT(a, b) TOAST_PROTO_CAT_(a, b)
+#define TOAST_PROTO_CAT_IMPL(a, b) a##b
+#define TOAST_PROTO_CAT(a, b) TOAST_PROTO_CAT_IMPL(a, b)
 
 /// @brief Place next to a @c ProtoTraits<EventType> specialization to expose it over the FFI.
 #define TOAST_PROTO_EVENT(EventType)                                                                      \

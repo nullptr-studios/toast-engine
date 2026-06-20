@@ -2,7 +2,7 @@
 /// @author dario
 /// @date 16/05/2026.
 
-#include "SDLOutputTarget.hpp"
+#include "sdl_output_target.hpp"
 
 #include "toast/log.hpp"
 

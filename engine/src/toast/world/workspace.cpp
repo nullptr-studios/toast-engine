@@ -6,6 +6,7 @@
 #include "workspace_events.hpp"
 #include "workspace_events.pb.h"
 
+#include <limits>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/assets/prefab.hpp>
@@ -248,7 +249,7 @@ void Workspace::eventSubscriptions() {
 		uint64_t pred = e.predecessor.data();
 		if (pred == 0) {
 			children.insert(children.begin(), node);
-		} else if (pred == static_cast<uint64_t>(-1)) {
+		} else if (pred == std::numeric_limits<uint64_t>::max()) {
 			children.push_back(node);
 		} else {
 			auto it = std::ranges::find_if(children, [pred](const Box<Node>& c) { return c->m_uid.data() == pred; });

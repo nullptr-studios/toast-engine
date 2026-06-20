@@ -162,7 +162,7 @@ auto Prefab::serialize(SaveMode mode) const -> std::vector<uint8_t> {
 		return toBinary();
 	}
 	auto str = toFile();
-	return std::vector<uint8_t>(str.begin(), str.end());
+	return {str.begin(), str.end()};
 }
 
 auto Prefab::toFile() const -> std::string {
@@ -1109,7 +1109,7 @@ auto Prefab::flattenedRootFields(const AssetHandle<Prefab>& source) const -> std
 		if (auto f = chunk.find("m_source_prefab")) {
 			try {
 				return f->as<UID>().data();
-			} catch (const std::bad_any_cast&) { }
+			} catch (const std::bad_any_cast&) { }    // NOLINT(bugprone-empty-catch)
 		}
 		return 0;
 	};
@@ -1152,7 +1152,7 @@ auto Prefab::validate() const -> bool {
 					TOAST_WARN("ResourceManager", "Duplicate chunk UID {} in prefab (chunk '{}')", uid_field->as<UID>(), node.name);
 					ok = false;
 				}
-			} catch (const std::bad_any_cast&) { }
+			} catch (const std::bad_any_cast&) { }    // NOLINT(bugprone-empty-catch)
 		}
 
 		// Exactly one parentless chunk, and it must come first

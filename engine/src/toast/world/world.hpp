@@ -180,7 +180,7 @@ private:
 	auto subgraphSeparation() -> std::vector<std::vector<Box<Node>>>;
 
 	/// Tarjan SCC; bundles cycles into NodeClusters and returns items in reverse topological order
-	auto tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& sg) -> std::vector<_detail::TickSchedule::Wave>;
+	auto tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_subgraphs) -> std::vector<_detail::TickSchedule::Wave>;
 
 	/// Assigns each item wave = max(predecessor wave) + 1; items with no predecessors land on wave 0
 	auto assignWaves(const std::vector<_detail::TickSchedule::Wave>& subgraphs) -> std::vector<_detail::TickSchedule::Wave>;

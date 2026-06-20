@@ -87,6 +87,7 @@ public:
 	 * @return false if the box is empty or if the node has been freed by World::drainDestroyQueue();
 	 *         always check exists() before dereferencing
 	 */
+	[[nodiscard]]
 	auto exists() const noexcept -> bool;
 
 	auto operator<=>(const Box& other) const noexcept -> std::strong_ordering;
@@ -108,6 +109,7 @@ public:
 	auto as() const noexcept -> Box<U>;
 
 	/// Raw identity of the underlying ControlBox as a pointer value; stable for the node's lifetime; used as a hash key
+	[[nodiscard]]
 	auto rid() const noexcept -> size_t;
 };
 

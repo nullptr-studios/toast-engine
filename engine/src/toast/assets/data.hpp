@@ -24,6 +24,7 @@ public:
 	[[nodiscard]]
 	auto get() const noexcept -> const toml::table&;
 
+	[[nodiscard]]
 	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 
 private:

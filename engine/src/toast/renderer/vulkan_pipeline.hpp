@@ -17,13 +17,13 @@ class VulkanCore;
 
 class VulkanPipeline {
 public:
-	enum class PipelineType {
-		Graphics,
-		Compute
+	enum class PipelineType : uint8_t {
+		graphics,
+		compute
 	};
 
 	struct Config {
-		PipelineType pipeline_type = PipelineType::Graphics;
+		PipelineType pipeline_type = PipelineType::graphics;
 		std::string debug_name;
 		vk::Format color_format = vk::Format::eUndefined;
 		vk::Extent2D extent {};
@@ -83,7 +83,7 @@ private:
 	vk::raii::DescriptorSetLayout m_descriptor_set_layout = nullptr;
 	vk::raii::PipelineLayout m_pipeline_layout = nullptr;
 	vk::raii::Pipeline m_pipeline = nullptr;
-	PipelineType m_pipeline_type = PipelineType::Graphics;
+	PipelineType m_pipeline_type = PipelineType::graphics;
 };
 
 }    // namespace toast::renderer

@@ -2,7 +2,7 @@
 /// @author dario
 /// @date 17/05/2026.
 
-#include "ShaderCompiler.hpp"
+#include "shader_compiler.hpp"
 
 #include "toast/log.hpp"
 
@@ -32,28 +32,28 @@ static void ensureSlangGlobalSession() {
 
 auto ShaderCompiler::compileShader(const std::filesystem::path& shader_path) -> std::vector<std::byte> {
 	// TODO: SWAP WITH RESOURCE MANAGER!
-	std::filesystem::path resolvedPath = shader_path;
-	if (!resolvedPath.is_absolute()) {
-		auto cwdPath = std::filesystem::current_path() / shader_path;
-		if (std::filesystem::exists(cwdPath)) {
-			resolvedPath = cwdPath;
+	std::filesystem::path resolved_path = shader_path;
+	if (!resolved_path.is_absolute()) {
+		auto cwd_path = std::filesystem::current_path() / shader_path;
+		if (std::filesystem::exists(cwd_path)) {
+			resolved_path = cwd_path;
 		} else {
-			resolvedPath = shader_path;
+			resolved_path = shader_path;
 		}
 	}
 
-	TOAST_TRACE("ShaderCompiler", "Attempting to compile shader from: {}", resolvedPath.string());
+	TOAST_TRACE("ShaderCompiler", "Attempting to compile shader from: {}", resolved_path.string());
 	TOAST_TRACE("ShaderCompiler", "Current working directory: {}", std::filesystem::current_path().string());
 
-	if (!std::filesystem::exists(resolvedPath)) {
-		std::string errorMsg = "Shader file not found: " + resolvedPath.string() +
-		                       "\nCurrent working directory: " + std::filesystem::current_path().string();
-		TOAST_CRITICAL("ShaderCompiler", "{}", errorMsg);
+	if (!std::filesystem::exists(resolved_path)) {
+		std::string error_msg = "Shader file not found: " + resolved_path.string() +
+		                        "\nCurrent working directory: " + std::filesystem::current_path().string();
+		TOAST_CRITICAL("ShaderCompiler", "{}", error_msg);
 	}
 
-	std::ifstream file(resolvedPath, std::ios::binary);
+	std::ifstream file(resolved_path, std::ios::binary);
 	if (!file) {
-		TOAST_CRITICAL("ShaderCompiler", "Failed to open shader file: {}", resolvedPath.string());
+		TOAST_CRITICAL("ShaderCompiler", "Failed to open shader file: {}", resolved_path.string());
 	}
 	std::string source;
 	source.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
@@ -103,8 +103,8 @@ auto ShaderCompiler::compileShader(const std::filesystem::path& shader_path) -> 
 	session_desc.targetCount = SlangInt(slang_targets.size());
 	session_desc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;    // glm
 	session_desc.searchPathCount = 1;
-	std::array<const char*, 1> searchPaths {resolvedPath.parent_path().string().c_str()};
-	session_desc.searchPaths = searchPaths.data();
+	std::array<const char*, 1> search_paths {resolved_path.parent_path().string().c_str()};
+	session_desc.searchPaths = search_paths.data();
 
 	// TODO Implement SLANGFilesystem
 
@@ -129,42 +129,42 @@ auto ShaderCompiler::compileShader(const std::filesystem::path& shader_path) -> 
 	Slang::ComPtr<slang::IBlob> slang_diagnostics;
 
 	slang_module = slang_session->loadModuleFromSource(
-	    module_name.c_str(), resolvedPath.string().c_str(), nullptr, slang_diagnostics.writeRef()
+	    module_name.c_str(), resolved_path.string().c_str(), nullptr, slang_diagnostics.writeRef()
 	);
 
 	if (slang_diagnostics) {
-		const void* diagPtr = slang_diagnostics->getBufferPointer();
-		size_t diagSize = slang_diagnostics->getBufferSize();
-		if (diagPtr && diagSize > 0) {
-			const char* diagC = reinterpret_cast<const char*>(diagPtr);
-			std::string diagStr(diagC, diagC + diagSize);
-			TOAST_ERROR("ShaderCompiler", "Slang diagnostics (module load) for '{}':\n{}", resolvedPath.string(), diagStr);
+		const void* diag_ptr = slang_diagnostics->getBufferPointer();
+		size_t diag_size = slang_diagnostics->getBufferSize();
+		if (diag_ptr && diag_size > 0) {
+			const char* diag_c = reinterpret_cast<const char*>(diag_ptr);
+			std::string diag_str(diag_c, diag_c + diag_size);
+			TOAST_ERROR("ShaderCompiler", "Slang diagnostics (module load) for '{}':\n{}", resolved_path.string(), diag_str);
 		}
 	}
 
 	if (!slang_module) {
-		TOAST_CRITICAL("ShaderCompiler", "Failed to load Slang module from source: {}", resolvedPath.string());
+		TOAST_CRITICAL("ShaderCompiler", "Failed to load Slang module from source: {}", resolved_path.string());
 	}
 
-	Slang::ComPtr<slang::IBlob> spirvBlob;
-	SlangResult got = slang_module->getTargetCode(0, spirvBlob.writeRef());
-	if (SLANG_FAILED(got) || !spirvBlob) {
+	Slang::ComPtr<slang::IBlob> spirv_blob;
+	SlangResult got = slang_module->getTargetCode(0, spirv_blob.writeRef());
+	if (SLANG_FAILED(got) || !spirv_blob) {
 		TOAST_CRITICAL("ShaderCompiler", "Failed to get SPIR-V target code from Slang module");
 	}
 
-	const auto bufferSize = spirvBlob->getBufferSize();
-	if (bufferSize == 0) {
+	const auto buffer_size = spirv_blob->getBufferSize();
+	if (buffer_size == 0) {
 		TOAST_CRITICAL("ShaderCompiler", "SPIR-V binary is empty");
 	}
 
-	const void* bufferPtr = spirvBlob->getBufferPointer();
-	const auto* bytes = reinterpret_cast<const std::byte*>(bufferPtr);
+	const void* buffer_ptr = spirv_blob->getBufferPointer();
+	const auto* bytes = reinterpret_cast<const std::byte*>(buffer_ptr);
 
 	std::vector<std::byte> out;
-	out.assign(bytes, bytes + bufferSize);
+	out.assign(bytes, bytes + buffer_size);
 
 	TOAST_TRACE(
-	    "ShaderCompiler", "Successfully compiled shader from '{}' -> {} bytes of SPIR-V", resolvedPath.string(), bufferSize
+	    "ShaderCompiler", "Successfully compiled shader from '{}' -> {} bytes of SPIR-V", resolved_path.string(), buffer_size
 	);
 
 	return out;

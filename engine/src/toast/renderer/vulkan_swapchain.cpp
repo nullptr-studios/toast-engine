@@ -2,7 +2,7 @@
 /// @author dario
 /// @date 16/05/2026.
 
-#include "VulkanSwapchain.hpp"
+#include "vulkan_swapchain.hpp"
 
 #include "toast/log.hpp"
 

@@ -44,7 +44,7 @@ public:
 
 	/// @brief Copies the latest viewport frame into @p dst
 	/// @return 1 copied, 0 none available, -1 destination too small
-	int getViewportFrame(void* dst, uint32_t dstCapacity, renderer::ViewportFrameDesc* out);
+	auto getViewportFrame(void* dst, uint32_t dst_capacity, renderer::ViewportFrameDesc* out) -> int;
 
 private:
 	EnginePimpl* m;

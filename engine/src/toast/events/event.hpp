@@ -79,11 +79,14 @@ template<typename T>
 struct Event : _detail::IEvent {
 	friend class Listener;
 	friend struct EventSystem;
+	friend T;
 	/// @brief callbacks that return 'true' are consumed and do not propogate
 	using callback_t = std::move_only_function<bool(T&)>;
 	using iterator_t = std::multimap<char, void*, std::greater<>>::iterator;
 
 private:
+	Event() = default;
+
 	static void ensureRegistered() noexcept;
 
 	/// @brief registers a callback to the event callbacks

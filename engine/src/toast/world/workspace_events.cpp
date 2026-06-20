@@ -1,6 +1,7 @@
 #include "workspace_events.hpp"
 
 #include <generated/workspace_events.pb.h>
+#include <limits>
 #include <toast/assets/assets.hpp>
 #include <toast/events/proto_event.hpp>
 #include <toast/world/node.hpp>
@@ -256,10 +257,15 @@ struct ProtoTraits<WorkspaceMoveNodeTo> {
 	}
 
 	static auto fromProto(const Proto& p) -> Event {
+		toast::UID predecessor_uid = 0;
+		if (!p.predecessor().empty()) {
+			predecessor_uid =
+			    (p.predecessor() == "end") ? std::numeric_limits<uint64_t>::max() : toast::UID::fromString(p.predecessor());
+		}
 		return {
 		  toast::UID::fromString(p.target()),
-		  p.new_parent() == "" ? 0 : toast::UID::fromString(p.new_parent()),
-		  p.predecessor() == "" ? 0 : (p.predecessor() == "end" ? -1 : toast::UID::fromString(p.predecessor()))
+		  p.new_parent().empty() ? toast::UID(0) : toast::UID::fromString(p.new_parent()),
+		  predecessor_uid
 		};
 	}
 };

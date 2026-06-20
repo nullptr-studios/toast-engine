@@ -62,7 +62,7 @@ public:
 
 	[[nodiscard]]
 	auto getPhysicalDevice() const -> const vk::raii::PhysicalDevice& {
-		return m_physicalDevice;
+		return m_physical_device;
 	}
 
 	[[nodiscard]]
@@ -72,32 +72,32 @@ public:
 
 	[[nodiscard]]
 	auto getGraphicsQueueFamilyIndex() const -> uint32_t {
-		return m_graphicsQueueFamilyIndex;
+		return m_graphics_queue_family_index;
 	}
 
 	[[nodiscard]]
 	auto getComputeQueueFamilyIndex() const -> uint32_t {
-		return m_computeQueueFamilyIndex;
+		return m_compute_queue_family_index;
 	}
 
 	[[nodiscard]]
 	auto getTransferQueueFamilyIndex() const -> uint32_t {
-		return m_transferQueueFamilyIndex;
+		return m_transfer_queue_family_index;
 	}
 
 	[[nodiscard]]
 	auto getGraphicsQueue() const -> vk::Queue {
-		return m_graphicsQueue;
+		return m_graphics_queue;
 	}
 
 	[[nodiscard]]
 	auto getComputeQueue() const -> vk::Queue {
-		return m_computeQueue;
+		return m_compute_queue;
 	}
 
 	[[nodiscard]]
 	auto getTransferQueue() const -> vk::Queue {
-		return m_transferQueue;
+		return m_transfer_queue;
 	}
 
 private:
@@ -129,25 +129,25 @@ private:
 	auto calculateDeviceScore(const vk::PhysicalDevice& device, std::span<const char* const> required_device_extensions)
 	    -> DeviceScore;
 
-	bool m_validationEnabled = false;
+	bool m_validation_enabled = false;
 
 	vk::raii::Context m_context;
 	vk::raii::Instance m_instance = nullptr;
 #ifndef NDEBUG
-	vk::raii::DebugUtilsMessengerEXT m_debugMessenger = nullptr;
+	vk::raii::DebugUtilsMessengerEXT m_debug_messenger = nullptr;
 #endif
 
-	vk::raii::PhysicalDevice m_physicalDevice = nullptr;
+	vk::raii::PhysicalDevice m_physical_device = nullptr;
 	vk::raii::Device m_device = nullptr;
 
 	std::optional<vma::raii::Allocator> m_allocator;
 
 	// Use a sentinel invalid value so index 0 is a legitimate family index
-	uint32_t m_graphicsQueueFamilyIndex = std::numeric_limits<uint32_t>::max();
-	uint32_t m_computeQueueFamilyIndex = std::numeric_limits<uint32_t>::max();
-	uint32_t m_transferQueueFamilyIndex = std::numeric_limits<uint32_t>::max();
-	vk::Queue m_graphicsQueue = nullptr;
-	vk::Queue m_computeQueue = nullptr;
-	vk::Queue m_transferQueue = nullptr;
+	uint32_t m_graphics_queue_family_index = std::numeric_limits<uint32_t>::max();
+	uint32_t m_compute_queue_family_index = std::numeric_limits<uint32_t>::max();
+	uint32_t m_transfer_queue_family_index = std::numeric_limits<uint32_t>::max();
+	vk::Queue m_graphics_queue = nullptr;
+	vk::Queue m_compute_queue = nullptr;
+	vk::Queue m_transfer_queue = nullptr;
 };
 }

@@ -77,7 +77,7 @@ struct WorkspaceSave : Event<WorkspaceSave> {
 	toast::UID target;
 	std::string uri;
 
-	WorkspaceSave(toast::UID target, std::string uri) : target(target), uri(uri) { }
+	WorkspaceSave(toast::UID target, std::string uri) : target(target), uri(std::move(uri)) { }
 };
 
 struct WorkspaceCreateNode : Event<WorkspaceCreateNode> {

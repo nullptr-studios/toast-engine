@@ -101,7 +101,7 @@ protected:
 	template<typename Fn>
 	void forEachNode(Fn&& fn) const {
 		for (const auto& cb : nodes) {
-			std::forward<Fn>(fn)(cb);
+			fn(cb);
 		}
 	}
 

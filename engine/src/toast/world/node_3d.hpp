@@ -62,13 +62,13 @@ public:
 	 * @brief Local-space Euler rotation in radians, decomposed from the stored quaternion
 	 * @note Prefer rotQuat() to avoid gimbal-lock decomposition artifacts
 	 */
-	[[nodiscard]] auto rot() const -> const glm::vec3;
+	[[nodiscard]] auto rot() const -> glm::vec3;
 
 	/// Returns the cached local rotation quaternion; no recalculation occurs
 	[[nodiscard]] auto rotQuat() const -> const glm::quat &;
 
 	/// Returns the local rotation in degrees, decomposed from the stored quaternion
-	[[nodiscard]] auto rotDeg() const -> const glm::vec3;
+	[[nodiscard]] auto rotDeg() const -> glm::vec3;
 
 	/// Returns the cached local scale; no recalculation occurs
 	[[nodiscard]] auto scale() const -> const glm::vec3 &;
@@ -117,13 +117,13 @@ public:
 	 * @brief Returns the world-space Euler rotation in radians, recalculating if dirty
 	 * @note Prefer worldRotQuat() to avoid gimbal-lock decomposition artifacts
 	 */
-	[[nodiscard]] auto worldRot() const -> const glm::vec3;
+	[[nodiscard]] auto worldRot() const -> glm::vec3;
 
 	/// Returns the world-space rotation quaternion, recalculating if m_dirty_world is set
 	[[nodiscard]] auto worldRotQuat() const -> const glm::quat &;
 
 	/// Returns the world-space rotation in degrees, recalculating if m_dirty_world is set
-	[[nodiscard]] auto worldRotDeg() const -> const glm::vec3;
+	[[nodiscard]] auto worldRotDeg() const -> glm::vec3;
 
 	/// Returns the world-space scale, recalculating if m_dirty_world is set
 	[[nodiscard]] auto worldScale() const -> const glm::vec3 &;

@@ -121,7 +121,8 @@ public:
 		std::any value;
 
 		template<typename T>
-		T as() const {
+		[[nodiscard]]
+		auto as() const -> T {
 			return std::any_cast<T>(value);
 		}
 	};
@@ -136,8 +137,9 @@ public:
 		std::string name;
 		std::vector<Field> fields;
 
+		[[nodiscard]]
 		auto find(std::string_view name) const -> std::optional<Field> {
-			auto it = std::ranges::find_if(fields, [name](auto field) { return field.name == name; });
+			auto it = std::ranges::find_if(fields, [name](const auto& field) { return field.name == name; });
 			if (it != fields.end()) {
 				return *it;
 			}
@@ -156,12 +158,13 @@ public:
 		std::vector<Field> fields;
 		std::vector<Subgroup> subgroups;
 
+		[[nodiscard]]
 		auto find(std::string_view name) const -> std::optional<Field> {
-			auto it = std::ranges::find_if(fields, [&name](auto field) { return field.name == name; });
+			auto it = std::ranges::find_if(fields, [&name](const auto& field) { return field.name == name; });
 			if (it != fields.end()) {
 				return *it;
 			}
-			for (auto& g : subgroups) {
+			for (const auto& g : subgroups) {
 				auto g_it = g.find(name);
 				if (g_it.has_value()) {
 					return g_it;
@@ -186,12 +189,13 @@ public:
 		std::vector<Field> fields;
 		std::vector<Group> groups;
 
+		[[nodiscard]]
 		auto find(std::string_view name) const -> std::optional<Field> {
-			auto it = std::ranges::find_if(fields, [&name](auto field) { return field.name == name; });
+			auto it = std::ranges::find_if(fields, [&name](const auto& field) { return field.name == name; });
 			if (it != fields.end()) {
 				return *it;
 			}
-			for (auto& g : groups) {
+			for (const auto& g : groups) {
 				auto g_it = g.find(name);
 				if (g_it.has_value()) {
 					return g_it;

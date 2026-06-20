@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "IOutputTarget.hpp"
-#include "VulkanSwapchain.hpp"
+#include "output_target.hpp"
+#include "vulkan_swapchain.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>

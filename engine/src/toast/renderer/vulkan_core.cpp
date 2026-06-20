@@ -2,7 +2,7 @@
 /// @author dario
 /// @date 14/05/2026.
 
-#include "VulkanCore.hpp"
+#include "vulkan_core.hpp"
 
 #include "toast/log.hpp"
 
@@ -223,31 +223,31 @@ VulkanCore::VulkanCore(
     std::span<const char* const> required_instance_extensions, std::span<const char* const> required_device_extensions
 )
 #ifdef DEBUG
-    : m_validationEnabled(true)
+    : m_validation_enabled(true)
 #else
-    : m_validationEnabled(false)
+    : m_validation_enabled(false)
 #endif
 {
-	TOAST_INFO("VulkanCore", "Validation layers: {}", m_validationEnabled ? "enabled" : "disabled");
+	TOAST_INFO("VulkanCore", "Validation layers: {}", m_validation_enabled ? "enabled" : "disabled");
 	TOAST_TRACE("VulkanCore", "Required instance extensions: {}", joinRequiredExtensions(required_instance_extensions));
 	TOAST_TRACE("VulkanCore", "Required device extensions: {}", joinRequiredExtensions(required_device_extensions));
 
 	vk::ApplicationInfo app_info("SUPER DUPER TOASTY GAME", 1, "TOAST ENGINE", 1, VK_API_VERSION_1_4);
 
 	std::vector<const char*> layers;
-	if (m_validationEnabled) {
+	if (m_validation_enabled) {
 		layers.push_back("VK_LAYER_KHRONOS_validation");
 	}
 
 	std::vector extensions(required_instance_extensions.begin(), required_instance_extensions.end());
-	if (m_validationEnabled) {
+	if (m_validation_enabled) {
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
 
 	vk::InstanceCreateInfo instance_ci({}, &app_info, layers, extensions);
 	m_instance = vk::raii::Instance(m_context, instance_ci);
 
-	if (m_validationEnabled) {
+	if (m_validation_enabled) {
 		vk::DebugUtilsMessengerCreateInfoEXT debug_ci {};
 		debug_ci.messageSeverity =
 		    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
@@ -255,7 +255,7 @@ VulkanCore::VulkanCore(
 		                       vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
 		debug_ci.pfnUserCallback = reinterpret_cast<vk::PFN_DebugUtilsMessengerCallbackEXT>(debugCallback);
 #ifndef NDEBUG
-		m_debugMessenger = vk::raii::DebugUtilsMessengerEXT(m_instance, debug_ci);
+		m_debug_messenger = vk::raii::DebugUtilsMessengerEXT(m_instance, debug_ci);
 #endif
 	}
 
@@ -352,12 +352,12 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 		TOAST_CRITICAL("VulkanCore", "Toast Engine Error: No suitable Vulkan device found!");
 	}
 
-	m_physicalDevice = best_device;
-	m_graphicsQueueFamilyIndex = best_queue_families.graphics;
-	m_computeQueueFamilyIndex = best_queue_families.compute;
-	m_transferQueueFamilyIndex = best_queue_families.transfer;
+	m_physical_device = best_device;
+	m_graphics_queue_family_index = best_queue_families.graphics;
+	m_compute_queue_family_index = best_queue_families.compute;
+	m_transfer_queue_family_index = best_queue_families.transfer;
 
-	const auto selected_props = m_physicalDevice.getProperties();
+	const auto selected_props = m_physical_device.getProperties();
 	TOAST_INFO(
 	    "VulkanCore",
 	    "Selected device: {} (type: {}, API: {}) with score {}",
@@ -369,33 +369,33 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 }
 
 void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> required_device_extensions) {
-	if (m_graphicsQueueFamilyIndex == k_invalid_queue_family) {
+	if (m_graphics_queue_family_index == k_invalid_queue_family) {
 		TOAST_CRITICAL("VulkanCore", "Failed to find a graphics queue family for the selected device!");
 	}
-	if (m_computeQueueFamilyIndex == k_invalid_queue_family) {
+	if (m_compute_queue_family_index == k_invalid_queue_family) {
 		TOAST_CRITICAL("VulkanCore", "Failed to find a compute queue family for the selected device!");
 	}
-	if (m_transferQueueFamilyIndex == k_invalid_queue_family) {
+	if (m_transfer_queue_family_index == k_invalid_queue_family) {
 		TOAST_CRITICAL("VulkanCore", "Failed to find a transfer queue family for the selected device!");
 	}
 
 	TOAST_TRACE(
 	    "VulkanCore",
 	    "Selected graphics queue family index: {} (flags: {})",
-	    m_graphicsQueueFamilyIndex,
-	    formatQueueFlags(m_physicalDevice.getQueueFamilyProperties()[m_graphicsQueueFamilyIndex].queueFlags)
+	    m_graphics_queue_family_index,
+	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_graphics_queue_family_index].queueFlags)
 	);
 	TOAST_TRACE(
 	    "VulkanCore",
 	    "Selected compute queue family index: {} (flags: {})",
-	    m_computeQueueFamilyIndex,
-	    formatQueueFlags(m_physicalDevice.getQueueFamilyProperties()[m_computeQueueFamilyIndex].queueFlags)
+	    m_compute_queue_family_index,
+	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_compute_queue_family_index].queueFlags)
 	);
 	TOAST_TRACE(
 	    "VulkanCore",
 	    "Selected transfer queue family index: {} (flags: {})",
-	    m_transferQueueFamilyIndex,
-	    formatQueueFlags(m_physicalDevice.getQueueFamilyProperties()[m_transferQueueFamilyIndex].queueFlags)
+	    m_transfer_queue_family_index,
+	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_transfer_queue_family_index].queueFlags)
 	);
 
 	std::vector<uint32_t> unique_queue_families;
@@ -408,9 +408,9 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 		}
 	};
 
-	push_unique(m_graphicsQueueFamilyIndex);
-	push_unique(m_computeQueueFamilyIndex);
-	push_unique(m_transferQueueFamilyIndex);
+	push_unique(m_graphics_queue_family_index);
+	push_unique(m_compute_queue_family_index);
+	push_unique(m_transfer_queue_family_index);
 
 	float queue_priority = 1.0f;
 	std::vector<vk::DeviceQueueCreateInfo> queue_create_infos;
@@ -436,15 +436,15 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vulkan11_features.shaderDrawParameters = VK_TRUE;
 	device_ci.pNext = &vulkan13_features;
 
-	m_device = vk::raii::Device(m_physicalDevice, device_ci);
+	m_device = vk::raii::Device(m_physical_device, device_ci);
 
-	m_graphicsQueue = m_device.getQueue(m_graphicsQueueFamilyIndex, 0);
-	m_computeQueue = m_device.getQueue(m_computeQueueFamilyIndex, 0);
-	m_transferQueue = m_device.getQueue(m_transferQueueFamilyIndex, 0);
+	m_graphics_queue = m_device.getQueue(m_graphics_queue_family_index, 0);
+	m_compute_queue = m_device.getQueue(m_compute_queue_family_index, 0);
+	m_transfer_queue = m_device.getQueue(m_transfer_queue_family_index, 0);
 
 	vma::AllocatorCreateInfo allocator_ci {};
 	allocator_ci.vulkanApiVersion = VK_API_VERSION_1_4;
-	allocator_ci.physicalDevice = *m_physicalDevice;
+	allocator_ci.physicalDevice = *m_physical_device;
 
 	m_allocator.emplace(m_instance, m_device, allocator_ci);
 }

@@ -108,7 +108,7 @@ void registerProtoEvents() {
 
 extern "C" {
 
-uint32_t events_listener_create(void) {
+auto events_listener_create(void) -> uint32_t {
 	auto listener = std::make_unique<event::Listener>();
 	uint32_t handle = event::next_listener.fetch_add(1);
 	std::scoped_lock lock(event::ffi_mutex);
@@ -121,7 +121,8 @@ void events_listener_destroy(uint32_t handle) {
 	event::listeners.erase(handle);
 }
 
-int events_listener_subscribe(uint32_t handle, const char* name, event_callback callback, void* user_data, char priority) {
+auto events_listener_subscribe(uint32_t handle, const char* name, event_callback callback, void* user_data, char priority)
+    -> int {
 	if (!name || !callback) {
 		return -1;
 	}
@@ -155,7 +156,7 @@ void events_listener_unsubscribe(uint32_t handle, const char* name) {
 	eit->second.unsubscribe(*lit->second, name);
 }
 
-int events_send(const char* name, const uint8_t* data, uint32_t size) {
+auto events_send(const char* name, const uint8_t* data, uint32_t size) -> int {
 	if (!name) {
 		return -1;
 	}
@@ -171,12 +172,12 @@ int events_send(const char* name, const uint8_t* data, uint32_t size) {
 	return entry.send(data, size);    // enqueue outside the lock
 }
 
-uint32_t events_count(void) {
+auto events_count(void) -> uint32_t {
 	std::scoped_lock lock(event::ffi_mutex);
 	return static_cast<uint32_t>(event::names.size());
 }
 
-const char* events_name(uint32_t index) {
+auto events_name(uint32_t index) -> const char* {
 	std::scoped_lock lock(event::ffi_mutex);
 	if (index >= event::names.size()) {
 		return nullptr;
