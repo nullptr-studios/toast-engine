@@ -21,12 +21,12 @@ namespace toast {
 template<class Class, typename Handle, typename Tag>
 struct AssetFieldAccess {
 	static auto get(void* obj) -> std::any {
-		return std::any {(static_cast<Class*>(obj)->*_reflect_impl::template Accessor<Tag>::member).uid()};
+		return std::any {(static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member).uid()};
 	}
 
 	static void set(void* obj, std::any value) {
 		if (auto* uid = std::any_cast<toast::UID>(&value)) {
-			static_cast<Class*>(obj)->*_reflect_impl::template Accessor<Tag>::member = assets::load<typename Handle::asset_type>(*uid);
+			static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member = assets::load<typename Handle::asset_type>(*uid);
 		}
 	}
 };

@@ -387,7 +387,7 @@ class Reflect;
  *
  * @note This namespace is an implementation detail; user code should never reference it directly
  */
-namespace _reflect_impl {
+namespace _detail {
 template<typename Tag>
 struct Accessor {
 	inline static typename Tag::type member;
@@ -407,7 +407,7 @@ Robber<Tag, Ptr> Robber<Tag, Ptr>::instance;
 /**
  * @brief Generated getter/setter pair binding a private member pointer to the FieldInfo interface
  *
- * Produced by the reflection code generator using the Robber pattern in _reflect_impl.
+ * Produced by the reflection code generator using the Robber pattern in toast::_detail.
  * Allows the inspector and serialization layer to read and write private fields without
  * modifying the Node class header.
  *
@@ -417,11 +417,11 @@ Robber<Tag, Ptr> Robber<Tag, Ptr>::instance;
  */
 template<class Class, typename FieldType, typename Tag>
 struct FieldAccess {
-	static auto get(void* obj) -> std::any { return static_cast<Class*>(obj)->*_reflect_impl::template Accessor<Tag>::member; }
+	static auto get(void* obj) -> std::any { return static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member; }
 
 	static void set(void* obj, std::any value) {
 		if (auto* typed = std::any_cast<FieldType>(&value)) {
-			static_cast<Class*>(obj)->*_reflect_impl::template Accessor<Tag>::member = *typed;
+			static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member = *typed;
 		}
 	}
 };
