@@ -55,6 +55,7 @@ macro(run_codegen)
         message(FATAL_ERROR "Failed to build reflection_generator:\n${_cargo_error}")
     endif()
 
+    file(REMOVE_RECURSE "${_refgen_stage_dir}")
     file(MAKE_DIRECTORY "${_refgen_stage_dir}")
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E copy_directory
