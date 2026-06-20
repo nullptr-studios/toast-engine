@@ -13,10 +13,7 @@
 #include <cstdlib>
 #include <format>
 #include <string_view>
-
-#ifdef DEBUG
 #include <tracy/Tracy.hpp>
-#endif
 
 /// @internal
 namespace logging::_detail {
@@ -137,3 +134,5 @@ void TOAST_API
 #else
 #define TOAST_ASSERT(condition, sink, ...)
 #endif
+
+#define TOAST_NOT_IMPLEMENTED TOAST_ASSERT(false, "Engine", "Not implemented")

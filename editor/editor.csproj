@@ -1,26 +1,110 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <Company>nullptr Studios</Company>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+        <OutputPath>../out/Debug/editor</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <OutputPath>../out/Release/editor</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Models\" />
-    <AvaloniaResource Include="Assets\**" />
-  </ItemGroup>
+    <ItemGroup>
+        <AvaloniaResource Include="Resources\**\*" Exclude="Resources\native\**"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.0.3" />
-    <PackageReference Include="Avalonia.Desktop" Version="12.0.3" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.3" />
-    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.1">
-      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
-      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="12.0.3"/>
+        <PackageReference Include="Avalonia.Desktop" Version="12.0.3"/>
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3"/>
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.3"/>
+        <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.1">
+            <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+            <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="ClangSharp" Version="21.1.8.3"/>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1"/>
+        <PackageReference Include="Dock.Avalonia" Version="12.0.0.2"/>
+        <PackageReference Include="Dock.Avalonia.Diagnostics" Version="12.0.0.2"/>
+        <PackageReference Include="Dock.Avalonia.Themes.Fluent" Version="12.0.0.2"/>
+        <PackageReference Include="Dock.Model.Mvvm" Version="12.0.0.2"/>
+        <PackageReference Include="Dock.Serializer.SystemTextJson" Version="12.0.0.2"/>
+        <PackageReference Include="Google.Protobuf" Version="3.35.0-rc2"/>
+        <PackageReference Include="Grpc.Tools" Version="2.80.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Ktx2Sharp" Version="1.0.2"/>
+        <PackageReference Include="Lucide.Avalonia" Version="0.2.9"/>
+        <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.*"/>
+        <PackageReference Include="Tomlyn" Version="2.4.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Update="Logger\LogsView.axaml.cs">
+            <DependentUpon>LogsView.axaml</DependentUpon>
+            <SubType>Code</SubType>
+        </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Resources\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ClCompile Include="Resources\files\lib\src\_detail\game.cpp"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ClInclude Include="Resources\files\lib\src\my_game.hpp"/>
+        <ClInclude Include="Resources\files\lib\src\_detail\game.h"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+        <Content Include="$(MSBuildThisFileDirectory)Resources\native\win-x64\**\*" Exclude="$(MSBuildThisFileDirectory)Resources\native\win-x64\.gitkeep" Link="native\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
+    </ItemGroup>
+    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
+        <Content Include="$(MSBuildThisFileDirectory)Resources/native/linux-x64/**/*" Exclude="$(MSBuildThisFileDirectory)Resources/native/linux-x64/.gitkeep" Link="native/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Protobuf Include="..\protos\logging.proto">
+            <GrpcServices>Both</GrpcServices>
+            <Access>Public</Access>
+            <ProtoCompile>True</ProtoCompile>
+            <CompileOutputs>True</CompileOutputs>
+            <OutputDir>obj\Debug\</OutputDir>
+            <Generator>MSBuild:Compile</Generator>
+            <Link>Protos\logging.proto</Link>
+        </Protobuf>
+        <Protobuf Include="..\protos\window_events.proto">
+            <Link>Protos\window_events.proto</Link>
+        </Protobuf>
+        <Protobuf Include="..\protos\workspace_events.proto">
+            <Link>Protos\workspace_events.proto</Link>
+        </Protobuf>
+    </ItemGroup>
+
+    <Target Name="MakeToktxExecutable" AfterTargets="Build" Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
+        <Exec Command="chmod +x &quot;$(OutDir)native/toktx&quot;"
+              Condition="Exists('$(OutDir)native/toktx')"
+              IgnoreExitCode="true"/>
+    </Target>
+
+    <Target Name="CopyResources" AfterTargets="Build">
+        <ItemGroup>
+            <ResFiles Include="$(ProjectDir)Resources\**\*"/>
+        </ItemGroup>
+        <Copy SourceFiles="@(ResFiles)" DestinationFiles="@(ResFiles->'$(OutputPath)/Resources\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true"/>
+    </Target>
+
 </Project>

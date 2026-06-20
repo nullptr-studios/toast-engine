@@ -1,0 +1,26 @@
+[
+  {
+    "attributes": {},
+    "functions": {
+      "begin": false,
+      "destroy": true,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": true,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": true,
+      "save": false,
+      "tick": true
+    },
+    "global_fields": [],
+    "groups": [],
+    "name": "TickOnlyNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "03_no_fields.hpp"
+  }
+]

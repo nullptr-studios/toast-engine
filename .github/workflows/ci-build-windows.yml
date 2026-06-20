@@ -20,19 +20,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-windows-msvc-debug:
-    name: build windows msvc debug
-    runs-on: [self-hosted, windows]
+  build-windows-msvc:
+    name: build windows msvc ${{ matrix.build_type }}
+    runs-on: [ self-hosted, windows ]
+    strategy:
+      matrix:
+        build_type: [ debug, release ]
+      fail-fast: false
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "10.0.x"
 
@@ -46,199 +51,32 @@ jobs:
         id: vcpkg
         uses: ./.github/actions/setup-vcpkg
 
-      - name: Build (Windows MSVC Debug)
+      - name: Build
         run: |
-          cmake -B build/windows-msvc-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
-          cmake --build build/windows-msvc-debug
-
-  build-windows-msvc-release:
-    name: build windows msvc release
-    needs: build-windows-msvc-debug
-    if: github.base_ref == 'main'
-    runs-on: [self-hosted, windows]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Setup vcpkg
-        id: vcpkg
-        uses: ./.github/actions/setup-vcpkg
-
-      - name: Build (Windows MSVC Release)
-        run: |
-          cmake -B build/windows-msvc-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
-          cmake --build build/windows-msvc-release
-
-  build-windows-gcc-debug:
-    name: build windows gcc debug
-    needs: build-windows-msvc-debug
-    if: github.base_ref == 'main'
-    runs-on: [self-hosted, windows]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Setup vcpkg
-        id: vcpkg
-        uses: ./.github/actions/setup-vcpkg
-
-      - name: Setup MinGW
-        uses: egor-tensin/setup-mingw@v2
-
-      - name: Build (Windows GCC Debug)
-        run: |
-          cmake -B build/windows-gcc-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic
-          cmake --build build/windows-gcc-debug
-
-  build-windows-gcc-release:
-    name: build windows gcc release
-    needs: build-windows-msvc-debug
-    if: github.base_ref == 'main'
-    runs-on: [self-hosted, windows]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup vcpkg
-        id: vcpkg
-        uses: ./.github/actions/setup-vcpkg
-
-      - name: Setup MinGW
-        uses: egor-tensin/setup-mingw@v2
-
-      - name: Build (Windows GCC Release)
-        run: |
-          cmake -B build/windows-gcc-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic
-          cmake --build build/windows-gcc-release
-
-  build-windows-clang-debug:
-    name: build windows clang debug
-    needs: build-windows-msvc-debug
-    if: github.base_ref == 'main'
-    runs-on: [self-hosted, windows]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Setup vcpkg
-        id: vcpkg
-        uses: ./.github/actions/setup-vcpkg
-
-      - name: Setup Clang
-        uses: egor-tensin/setup-clang@v1
-
-      - name: Build (Windows Clang Debug)
-        run: |
-          cmake -B build/windows-clang-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
-          cmake --build build/windows-clang-debug
-
-  build-windows-clang-release:
-    name: build windows clang release
-    needs: build-windows-msvc-debug
-    if: github.base_ref == 'main'
-    runs-on: [self-hosted, windows]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Setup vcpkg
-        id: vcpkg
-        uses: ./.github/actions/setup-vcpkg
-
-      - name: Setup Clang
-        uses: egor-tensin/setup-clang@v1
-
-      - name: Build (Windows Clang Release)
-        run: |
-          cmake -B build/windows-clang-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
-          cmake --build build/windows-clang-release
+          cmake -B build/windows-msvc-${{ matrix.build_type }} `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type == 'debug' && 'Debug' || 'Release' }} `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_CXX_COMPILER=cl `
+            -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows
+          cmake --build build/windows-msvc-${{ matrix.build_type }}
 
   test-windows-debug:
-    name: test windows all tests debug
-    needs: build-windows-msvc-debug
+    name: test windows debug
+    needs: build-windows-msvc
     runs-on: [self-hosted, windows]
+    
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
-          fetch-depth: 0
+          fetch-depth: 1
 
-      - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "10.0.x"
 
@@ -252,29 +90,36 @@ jobs:
         id: vcpkg
         uses: ./.github/actions/setup-vcpkg
 
-      - name: Run tests (Windows Debug)
+      - name: Run tests
         env:
           TRACY_NO_INVARIANT_CHECK: "1"
         run: |
-          cmake -B build/windows-test-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
+          cmake -B build/windows-test-debug `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=Debug `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_CXX_COMPILER=cl `
+            -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows
           cmake --build build/windows-test-debug
           ctest --test-dir build/windows-test-debug --verbose
 
   test-windows-release:
-    name: test windows all tests release
-    needs: build-windows-msvc-debug
+    name: test windows release
+    needs: build-windows-msvc
     if: github.base_ref == 'main'
     runs-on: [self-hosted, windows]
+    
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
-          fetch-depth: 0
+          fetch-depth: 1
 
-      - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "10.0.x"
 
@@ -288,20 +133,19 @@ jobs:
         id: vcpkg
         uses: ./.github/actions/setup-vcpkg
 
-      - name: Run tests (Windows Release)
+      - name: Run tests
         env:
           TRACY_NO_INVARIANT_CHECK: "1"
         run: |
-          cmake -B build/windows-test-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" -DVCPKG_TARGET_TRIPLET=x64-windows
+          cmake -B build/windows-test-release `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_CXX_COMPILER=cl `
+            -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows
           cmake --build build/windows-test-release
           ctest --test-dir build/windows-test-release --verbose
-
-
-
-
-
-
-
 
 
 

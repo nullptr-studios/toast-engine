@@ -1,10 +1,11 @@
-use crate::proto::LogBatch;
+use crate::proto::{log_data::Severity, LogBatch, LogData};
 use crate::storage::LogStorage;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use prost::Message;
 use std::sync::Arc;
 use tokio::sync::{Mutex, broadcast};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct Server {
     storage: LogStorage,
@@ -50,7 +51,7 @@ impl Server {
             {
                 let mut connected = self.engine_connected.lock().await;
                 if *connected {
-                    // Reject every engine connection if we're already conneccted to one instance
+                    // Reject every engine connection if we're already connected to one instance
                     println!("Engine already connected, rejecting {}", peer_addr);
                     continue;
                 }
@@ -63,7 +64,7 @@ impl Server {
             }
 
             println!("Engine disconnected: {}", peer_addr);
-            
+
             {
                 let mut connected = self.engine_connected.lock().await;
                 *connected = false;
@@ -84,25 +85,55 @@ impl Server {
     }
 }
 
+fn build_disconnect_log() -> LogData {
+    let timestamp = match SystemTime::now().duration_since(UNIX_EPOCH) {
+        Ok(duration) => duration.as_millis() as u64,
+        Err(_) => 0,
+    };
+
+    LogData {
+        timestamp,
+        severity: Severity::Critical as i32,
+        filepath: String::new(),
+        line_number: 0,
+        sink: "Log Server".to_string(),
+        message: "Toast Engine disconnected".to_string(),
+    }
+}
+
 async fn handle_engine_connection(socket: &mut TcpStream, storage: LogStorage) -> Result<(), Box<dyn std::error::Error>> {
     loop {
         let len = match socket.read_u32().await {
             Ok(l) => l,
-            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => return Ok(()),
-            Err(e) => return Err(e.into()),
+            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
+                send_disconnect_notice(&storage).await;
+                return Ok(());
+            }
+            Err(e) => {
+                send_disconnect_notice(&storage).await;
+                return Err(e.into());
+            }
         };
 
         let mut buf = vec![0u8; len as usize];
         if let Err(e) = socket.read_exact(&mut buf).await {
             if e.kind() == std::io::ErrorKind::UnexpectedEof {
+                send_disconnect_notice(&storage).await;
                 return Ok(());
             }
+            send_disconnect_notice(&storage).await;
             return Err(e.into());
         }
 
         let batch = LogBatch::decode(&buf[..])?;
         storage.add_logs(batch).await;
     }
+}
+
+async fn send_disconnect_notice(storage: &LogStorage) {
+    let disconnect_log = build_disconnect_log();
+    storage.add_logs(LogBatch { logs: vec![disconnect_log] }).await;
+    tokio::task::yield_now().await;
 }
 
 async fn handle_tui_connection(socket: &mut TcpStream, storage: LogStorage) -> Result<(), Box<dyn std::error::Error>> {
@@ -131,7 +162,7 @@ async fn handle_tui_connection(socket: &mut TcpStream, storage: LogStorage) -> R
                 send_framed(socket, &update_batch).await?;
             }
             Err(broadcast::error::RecvError::Lagged(_)) => {
-                // TODO: Handle lag?
+                // FIXME: lagged subscribers silently drop messages (broadcast capacity 1000)
             }
             Err(broadcast::error::RecvError::Closed) => {
                 break;

@@ -1,0 +1,38 @@
+[
+  {
+    "attributes": {},
+    "functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    },
+    "global_fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_extra",
+        "typename": "int"
+      }
+    ],
+    "groups": [],
+    "name": "GrandchildNode",
+    "namespace": "game",
+    "parent": {
+      "name": "ParentNode",
+      "namespace": "game"
+    },
+    "source_file": "10_inheritance_chain.hpp"
+  }
+]

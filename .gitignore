@@ -17,6 +17,12 @@ logs/
 engine/include/
 vcpkg_installed/
 
+!engine/src/**
+
+# Generated
+engine/generated
+engine/assets/engine_reflect.json
+
 compile_commands.json
 CMakeUserPresets.json
 **.sln
@@ -24,3 +30,9 @@ vsxmake**/
 vs**/
 Cargo.lock
 *.user
+
+# exclusions
+!/tests/**
+!/toast/src/**
+
+!/tools/reflection_generator/build.rs

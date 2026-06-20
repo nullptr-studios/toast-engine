@@ -1,0 +1,7 @@
+Diagnostics:
+  Suppress:
+    - unknown_attribute
+
+CompileFlags:
+  Add:
+    - -Wno-unknown-attributes

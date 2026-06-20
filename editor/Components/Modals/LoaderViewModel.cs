@@ -1,0 +1,115 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
+using editor.Assets;
+
+namespace editor.Components.Modals;
+
+public partial class LoaderViewModel : ViewModelBase {
+	private readonly List<LoaderTask> m_tasks;
+	[ObservableProperty] private bool m_isRunning;
+	[ObservableProperty] private double m_progress;
+
+	public LoaderViewModel(IEnumerable<LoaderTask> tasks) {
+		m_tasks = [..tasks];
+	}
+
+	// design-time only (fills fake data so the window looks right in the designer)
+	public LoaderViewModel() {
+		m_tasks = [];
+		ConsoleLines.Add("> [1/3] Initializing project...");
+		ConsoleLines.Add("> [2/3] Loading assets...");
+		ConsoleLines.Add("warning: something minor happened");
+		ConsoleLines.Add("> [3/3] Finalizing...");
+		m_progress = 66;
+	}
+
+	public ObservableCollection<string> ConsoleLines { get; } = [];
+
+	// set by the window before calling StartAsync
+	public Func<Task>? OnComplete { get; set; }
+	public Action? OnClose { get; set; }
+
+	// called from the window's Opened event
+	public async Task StartAsync() {
+		IsRunning = true;
+		var total = m_tasks.Count;
+
+		for (var i = 0; i < total; i++) {
+			var task = m_tasks[i];
+			AppendLine($"> [{i + 1}/{total}] {task.Label}");
+
+			try {
+				await RunTaskAsync(task);
+			} catch (Exception ex) {
+				AppendLine($"error: {ex.Message}");
+			}
+
+			Progress = (double)(i + 1) / total * 100.0;
+		}
+
+		if (OnComplete is not null)
+			try {
+				await OnComplete();
+			} catch (Exception ex) {
+				AppendLine($"error during completion: {ex.Message}");
+			}
+
+		IsRunning = false;
+		OnClose?.Invoke();
+	}
+
+	private async Task RunTaskAsync(LoaderTask task) {
+		switch (task) {
+			case ActionTask a: await a.Action(AppendLine); break;
+			case ProcessTask p: await RunProcessAsync(p.Exe, p.Args); break;
+		}
+
+		AppendLine("");
+	}
+
+	// streams stdout and stderr to the console lines as the process runs (not buffered)
+	private Task RunProcessAsync(string exe, string args) {
+		return Task.Run(() => {
+			try {
+				using var proc = new Process();
+				proc.StartInfo = new ProcessStartInfo {
+					FileName = exe,
+					Arguments = args,
+					WorkingDirectory = ProjectContext.IsInitialized ? ProjectContext.ProjectPath : "",
+					RedirectStandardOutput = true,
+					RedirectStandardError = true,
+					UseShellExecute = false,
+					CreateNoWindow = true
+				};
+
+				proc.OutputDataReceived += (_, e) => {
+					if (e.Data is not null) AppendLine(e.Data);
+				};
+				proc.ErrorDataReceived += (_, e) => {
+					if (e.Data is not null) AppendLine(e.Data);
+				};
+
+				proc.Start();
+				proc.BeginOutputReadLine();
+				proc.BeginErrorReadLine();
+				proc.WaitForExit();
+
+				if (proc.ExitCode != 0)
+					AppendLine($"(exited with code {proc.ExitCode})");
+			} catch (Exception ex) {
+				AppendLine($"error: {ex.Message}");
+			}
+		});
+	}
+
+	// posts to the UI thread because this is called from background tasks and process callbacks
+	private void AppendLine(string text) {
+		Console.WriteLine(text);
+		Dispatcher.UIThread.Post(() => ConsoleLines.Add(text));
+	}
+}

@@ -1,0 +1,61 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:lucide="using:Lucide.Avalonia"
+        xmlns:local="clr-namespace:editor.Components.Modals"
+        x:Class="editor.Components.Modals.MessageModal"
+        x:DataType="local:MessageModalViewModel"
+        SizeToContent="Height"
+        Width="420"
+        MinWidth="320"
+        MaxWidth="600"
+        CanResize="False"
+        CanMaximize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="{StaticResource E2}"
+        Title="{Binding Title}">
+
+	<Design.DataContext>
+		<local:MessageModalViewModel />
+	</Design.DataContext>
+
+	<Window.Styles>
+		<Style Selector="Button.primary">
+			<Setter Property="Background" Value="{StaticResource Blue}" />
+			<Setter Property="Foreground" Value="White" />
+			<Setter Property="MinWidth" Value="80" />
+		</Style>
+	</Window.Styles>
+
+	<StackPanel Margin="24" Spacing="16">
+		<StackPanel Orientation="Horizontal" Spacing="12">
+			<lucide:LucideIcon Width="24" Height="24"
+			                   IsVisible="{Binding ShowIcon}"
+			                   Kind="{Binding IconKind}"
+			                   Foreground="{Binding IconColor}" />
+			<TextBlock Text="{Binding Title}"
+			           FontSize="16" FontWeight="SemiBold"
+			           VerticalAlignment="Center" />
+		</StackPanel>
+
+		<TextBlock Text="{Binding Message}"
+		           TextWrapping="Wrap"
+		           Foreground="{StaticResource Fg}"
+		           Margin="36,0,0,0" />
+
+		<StackPanel Orientation="Horizontal"
+		            HorizontalAlignment="Right"
+		            Spacing="8"
+		            Margin="0,8,0,0">
+			<Button Content="{Binding CancelLabel}"
+			        IsVisible="{Binding ShowCancel}"
+			        Click="OnCancel" />
+			<Button Content="{Binding NoLabel}"
+			        IsVisible="{Binding ShowNo}"
+			        Click="OnNo" />
+			<Button Content="{Binding OkLabel}"
+			        Classes="primary"
+			        Click="OnOk" />
+		</StackPanel>
+	</StackPanel>
+</Window>

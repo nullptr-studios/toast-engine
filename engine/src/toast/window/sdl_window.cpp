@@ -1,12 +1,18 @@
 #include "sdl_window.hpp"
 
+#include <SDL3/SDL_vulkan.h>
 #include <tracy/Tracy.hpp>
 
 namespace toast {
 
-SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, int flags) {
+SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, uint64_t flags) {
 	ZoneScoped;
 	TOAST_ASSERT(SDL_Init(SDL_INIT_VIDEO) == true, "Window", "SDL cannot be initialized");
+
+	if ((flags & SDL_WINDOW_VULKAN) != 0) {
+		const char* video_driver = SDL_GetCurrentVideoDriver();
+		TOAST_INFO("SDLWindow", "SDL video driver: {}", video_driver ? video_driver : "(null)");
+	}
 
 	type = WindowType::sdl;
 
@@ -23,14 +29,21 @@ SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, int fla
 	});
 
 	m.sdl_window = std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)>(
-	    SDL_CreateWindow(title, width, height, SDL_WINDOW_RESIZABLE), SDL_DestroyWindow
+	    SDL_CreateWindow(title, width, height, SDL_WINDOW_RESIZABLE | flags), SDL_DestroyWindow
 	);
 
-	TOAST_ASSERT(m.sdl_window, "Window", "SDL Window couldn't be created, check vulkan context creation?");
+	if (!m.sdl_window) {
+		TOAST_ERROR("SDLWindow", "SDL_CreateWindow failed: {}", SDL_GetError());
+	}
+	TOAST_ASSERT(m.sdl_window, "Window", "SDL Window couldn't be created: {}", SDL_GetError());
 }
 
 auto SDLWindow::shouldClose() const -> bool {
 	return m.should_close;
+}
+
+auto SDLWindow::nativeHandle() const -> void* {
+	return m.sdl_window.get();
 }
 
 void SDLWindow::pollEvents() {

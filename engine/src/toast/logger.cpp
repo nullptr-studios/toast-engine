@@ -1,13 +1,12 @@
 #include "logger.hpp"
 
 #include "ffi/log.h"    // ffi
-#include "generated/logging_easypb.h"
+#include "generated/logging.pb.h"
 #include "log.hpp"      // public functions
 #include "thread_pool.hpp"
 
 #include <chrono>
 #include <cstdlib>
-#include <easypb.hpp>
 #include <filesystem>
 #include <iostream>
 #include <print>
@@ -91,28 +90,36 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 			}
 
 			if (!server_path.empty()) {
+#if defined(_WIN32)
+				STARTUPINFOA si;
+				PROCESS_INFORMATION pi;
+				ZeroMemory(&si, sizeof(si));
+				si.cb = sizeof(si);
+				ZeroMemory(&pi, sizeof(pi));
+
+				std::string cmd_args = server_path.string();
+				DWORD creation_flags = CREATE_NO_WINDOW;
+
+				if (CreateProcessA(nullptr, cmd_args.data(), nullptr, nullptr, FALSE, creation_flags, nullptr, nullptr, &si, &pi)) {
+					// Close handles immediately so the log server runs independently
+					CloseHandle(pi.hProcess);
+					CloseHandle(pi.hThread);
+				} else {
+					std::println(std::cerr, "[Logger] CreateProcessA failed with error: {}", GetLastError());
+				}
+#elif defined(__APPLE__) || defined(__linux__)
 				std::string cmd;
 				std::string output_redir = show_server_logs ? "" : " >/dev/null 2>&1";
 
-#if defined(_WIN32)
-				// On Windows, 'start /B' runs the command in the background without opening a new window
-				// For output redirection, we need to wrap it in 'cmd /C'
-				if (show_server_logs) {
-					cmd = "start /B " + server_path.string();
-				} else {
-					cmd = "start /B cmd /C \"" + server_path.string() + " >nul 2>&1\"";
-				}
-#elif defined(__APPLE__) || defined(__linux__)
-				// setsid detaches the server from the engine's process group on Linux/macOS.
-				// The trailing & ensures std::system() returns immediately without waiting
 				cmd = "setsid " + server_path.string() + output_redir + " &";
-#endif
+
 				if (!cmd.empty()) {
 					int ret = std::system(cmd.c_str());
 					if (ret != 0) {
 						std::println(std::cerr, "[Logger] Failed to execute log server spawn command: {}", ret);
 					}
 				}
+#endif
 			} else {
 				std::println(std::cerr, "[Logger] Could not find log server binary. Candidates checked:");
 				for (const auto& candidate : candidates) {
@@ -164,13 +171,13 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 		}
 	}
 
-	logging::LogData log;
+	proto::logging::LogData log;
 	log.set_timestamp(
 	    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count()
 	);    // retarded stl library
 	log.set_filepath(file);
 	log.set_line_number(line);
-	log.set_severity(static_cast<logging::LogData_Severity>(severity));
+	log.set_severity(static_cast<proto::logging::LogData_Severity>(severity));
 	log.set_sink(trimmed_sink);
 	log.set_message(message);
 
@@ -182,7 +189,7 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 	// We use an atomic exchange to claim a "drain slot". This ensures that
 	// even if 100 threads log at once, only one background task is queued
 	if (!logger->m.drain_pending.exchange(true)) {
-		toast::ThreadPool::queueJob([logger]() { logger->drain(); });
+		toast::ThreadPool::push([logger]() { logger->drain(); });
 	}
 
 #ifdef DEBUG
@@ -288,7 +295,7 @@ void Logger::drain() {
 	{
 		std::lock_guard lock(m.queue_mutex);
 		if (!m.log_queue.empty() && !m.drain_pending.exchange(true)) {
-			toast::ThreadPool::queueJob([this]() { drain(); });
+			toast::ThreadPool::push([this]() { drain(); });
 		}
 	}
 }
@@ -298,7 +305,7 @@ auto Logger::collectQueue() -> std::vector<uint8_t> {
 
 	// Batching logs together significantly reduces the number of TCP packets
 	// and system calls, which is better for performance
-	logging::LogBatch batch;
+	proto::logging::LogBatch batch;
 	{
 		std::lock_guard lock(m.queue_mutex);
 		while (!m.log_queue.empty()) {
@@ -308,7 +315,7 @@ auto Logger::collectQueue() -> std::vector<uint8_t> {
 		}
 	}
 
-	if (batch.logs.empty()) {
+	if (batch.logs_size() == 0) {
 		return {};
 	}
 

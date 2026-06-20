@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:editor.Workspace"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="editor.Workspace.InspectorView"
+             x:DataType="vm:InspectorViewModel">
+
+	<Border Background="{StaticResource E2}" Padding="5">
+		<StackPanel>
+			<TextBlock Text="Inspector" FontWeight="Bold" Margin="0,0,0,10" />
+			<TextBlock Text="This is a test for the inspector yay" />
+			<Button Content="Press me i do nothing!!!" />
+		</StackPanel>
+	</Border>
+</UserControl>
