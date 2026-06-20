@@ -13,10 +13,7 @@
 #include <cstdlib>
 #include <format>
 #include <string_view>
-
-#ifdef DEBUG
 #include <tracy/Tracy.hpp>
-#endif
 
 /// @internal
 namespace logging::_detail {

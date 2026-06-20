@@ -123,7 +123,9 @@ auto Engine::get() noexcept -> Engine* {
 
 void Engine::init() {
 	TracySetProgramName("ToastEngine");
+#ifdef TRACY_ENABLE
 	tracy::SetThreadName("Main Thread");
+#endif
 
 	event::registerProtoEvents();
 	registerEngineTypes();

@@ -223,7 +223,9 @@ void World::loadNode(UID uid) {
 	//				- init()
 
 	auto future = std::async(std::launch::async, [uid]() {
+#ifdef TRACY_ENABLE
 		tracy::SetThreadName("World::loadNode worker");
+#endif
 		ZoneScoped;    // NOLINT
 		ZoneNameF("World::loadNode(%s)::async", uid.get().c_str());
 
@@ -296,7 +298,9 @@ void World::spawn(UID prefab, Node& parent) {
 
 	Box<Node> parent_box = parent.box();
 	auto future = std::async(std::launch::async, [prefab, parent_box]() {
+#ifdef TRACY_ENABLE
 		tracy::SetThreadName("World::spawn worker");
+#endif
 		ZoneScoped;    // NOLINT
 
 		auto file = assets::load<assets::Prefab>(prefab);
