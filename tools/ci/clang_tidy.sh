@@ -5,7 +5,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."
 
-BUILD_DIR="${1:-build/Debug}"
+BUILD_DIR="${1:-build/clang-tidy}"
 
 if [[ ! -f "$BUILD_DIR/compile_commands.json" ]]; then
     echo "Error: compile_commands.json not found in '$BUILD_DIR'. Pass the build directory as the first argument."

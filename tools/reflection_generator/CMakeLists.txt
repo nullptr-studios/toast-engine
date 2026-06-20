@@ -12,9 +12,13 @@ message(STATUS "Cargo target directory: ${CARGO_TARGET_DIR}")
 
 add_custom_target(reflection_generator ALL
         COMMAND ${CARGO_EXECUTABLE} build --profile "${CARGO_PROFILE_FLAG}" --target-dir "${CARGO_TARGET_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CARGO_TARGET_DIR}/${CARGO_PROFILE_NAME}"
-        "${OUTPUT_ROOT}/$<CONFIG>/reflection_generator"
+        COMMAND ${CMAKE_COMMAND}
+            -DCARGO_TARGET_DIR=${CARGO_TARGET_DIR}
+            -DPROFILE_NAME=${CARGO_PROFILE_NAME}
+            -DBINARY_NAME=reflection_generator
+            -DEXE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}
+            -DDEST_DIR=${OUTPUT_ROOT}/$<CONFIG>/reflection_generator
+            -P ${CMAKE_SOURCE_DIR}/cmake/install_cargo_output.cmake
         WORKING_DIRECTORY ${CARGO_PROJECT_DIR}
         COMMENT "[cargo] Building reflection_generator (${CARGO_PROFILE_NAME})..."
         VERBATIM
