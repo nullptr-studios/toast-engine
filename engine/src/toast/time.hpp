@@ -41,9 +41,9 @@ class TOAST_API Time final {
 
 public:
 	Time(const Time&) = delete;
-	Time& operator=(const Time&) = delete;
+	auto operator=(const Time&) -> Time& = delete;
 	Time(Time&&) = delete;
-	Time& operator=(Time&&) = delete;
+	auto operator=(Time&&) -> Time& = delete;
 
 	~Time();
 
