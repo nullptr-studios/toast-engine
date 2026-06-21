@@ -23,6 +23,8 @@ public partial class TextureImporter : IAssetImporter {
 
 	public IReadOnlyList<string> SupportedExtensions => [".png", ".jpg", ".jpeg", ".tga"];
 
+	public string VectorName => "textures";
+
 	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log) {
 		var uid = ctx.UidFor(0);
 		var name = Path.GetFileNameWithoutExtension(realSourcePath);
@@ -36,7 +38,7 @@ public partial class TextureImporter : IAssetImporter {
 		await Task.Run(() => ThumbnailService.Generate(realSourcePath, uid));
 
 		log("Writing .meta sidecar...");
-		var header = new MetaHeader { Uid = uid, Type = "texture", Source = ctx.SourceVirtualPath };
+		var header = new MetaHeader { Uid = uid, VectorName = VectorName, Source = ctx.SourceVirtualPath };
 		MetaFile.Write(destPath, header, m_settings.ToSection());
 
 		return [uid];

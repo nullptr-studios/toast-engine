@@ -69,16 +69,13 @@ public static class AssetDatabase {
 
 	// full re-scan of all .meta files, rewrites database.json from scratch
 	public static void RebuildAssetDatabase() {
-		var assets = new JsonObject();
-
-		ScanDirectory(ProjectContext.AssetsPath, assets);
-		ScanDirectory(ProjectContext.CorePath, assets);
-
 		var db = new JsonObject {
-			["version"] = 1,
-			["generated_at"] = DateTime.UtcNow.ToString("o"),
-			["assets"] = assets
+			["version"] = 2,
+			["generated_at"] = DateTime.UtcNow.ToString("o")
 		};
+
+		ScanDirectory(ProjectContext.AssetsPath, db);
+		ScanDirectory(ProjectContext.CorePath, db);
 
 		var path = ProjectContext.Resolve("cache://database.json");
 		File.WriteAllText(path, db.ToJsonString(s_prettyJson));
@@ -356,7 +353,8 @@ public static class AssetDatabase {
 		}
 	}
 
-	private static void ScanDirectory(string directory, JsonObject assets) {
+	// collections are created on demand
+	private static void ScanDirectory(string directory, JsonObject db) {
 		if (!Directory.Exists(directory)) return;
 		foreach (var metaPath in MetaFile.FindAll(directory)) {
 			var header = MetaFile.ReadHeader(metaPath);
@@ -366,10 +364,12 @@ public static class AssetDatabase {
 			var virtualPath = ProjectContext.ToVirtual(assetRealPath);
 			if (virtualPath is null) continue;
 
-			assets[header.Uid] = new JsonObject {
-				["path"] = virtualPath,
-				["type"] = header.Type
-			};
+			if (db[header.VectorName] is not JsonObject collection) {
+				collection = new JsonObject();
+				db[header.VectorName] = collection;
+			}
+
+			collection[header.Uid] = virtualPath;
 		}
 	}
 

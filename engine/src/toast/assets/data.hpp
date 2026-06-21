@@ -14,6 +14,8 @@ namespace assets {
  */
 class TOAST_API Data : public Asset, public ISaveable {
 public:
+	static constexpr std::string_view collection = "data";
+
 	explicit Data(toml::table table) : m_table(std::move(table)) { }
 
 	[[nodiscard]]
