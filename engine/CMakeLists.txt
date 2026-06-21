@@ -145,6 +145,9 @@ add_dependencies(toast_engine log_server)
 get_target_property(_nlohmann_include_list nlohmann_json::nlohmann_json INTERFACE_INCLUDE_DIRECTORIES)
 list(GET _nlohmann_include_list 0 _nlohmann_include)
 
+get_target_property(_tracy_include_list Tracy::TracyClient INTERFACE_INCLUDE_DIRECTORIES)
+list(GET _tracy_include_list 0 _tracy_include)
+
 add_custom_command(TARGET toast_engine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -155,6 +158,15 @@ add_custom_command(TARGET toast_engine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${_nlohmann_include}/nlohmann"
         "${TOAST_ENGINE_OUTPUT_ROOT}/include/nlohmann"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${_tracy_include}/tracy"
+        "${TOAST_ENGINE_OUTPUT_ROOT}/include/tracy"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${_tracy_include}/common"
+        "${TOAST_ENGINE_OUTPUT_ROOT}/include/common"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${_tracy_include}/client"
+        "${TOAST_ENGINE_OUTPUT_ROOT}/include/client"
     COMMENT "Copying toast_engine headers into the package layout"
     VERBATIM
 )

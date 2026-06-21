@@ -1,16 +1,3 @@
-# Installs a cargo binary and optional templates into DEST_DIR.
-#
-# Handles both output layouts:
-#   <CARGO_TARGET_DIR>/<PROFILE_NAME>/          (no explicit --target)
-#   <CARGO_TARGET_DIR>/<triple>/<PROFILE_NAME>/ (--target set via config.toml)
-#
-# Required variables (pass via cmake -D):
-#   CARGO_TARGET_DIR  - value of --target-dir given to cargo
-#   PROFILE_NAME      - "release" or "debug"
-#   BINARY_NAME       - executable name without suffix
-#   EXE_SUFFIX        - platform suffix ("" or ".exe")
-#   DEST_DIR          - installation directory
-
 set(_binary "${BINARY_NAME}${EXE_SUFFIX}")
 set(_direct "${CARGO_TARGET_DIR}/${PROFILE_NAME}/${_binary}")
 
