@@ -27,6 +27,7 @@
       }
     ],
     "groups": [],
+    "methods": [],
     "name": "GlobalNamespaceNode",
     "namespace": null,
     "parent": null,

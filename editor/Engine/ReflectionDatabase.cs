@@ -39,6 +39,21 @@ public record GroupInfo(
 	[property: JsonPropertyName("fields")] FieldInfo[] Fields
 );
 
+public record ParameterInfo(
+	[property: JsonPropertyName("name")] string Name,
+	[property: JsonPropertyName("type")] string Type,
+	[property: JsonPropertyName("default")]
+	string? Default
+);
+
+public record FunctionInfo(
+	[property: JsonPropertyName("name")] string Name,
+	[property: JsonPropertyName("return_type")]
+	string ReturnType,
+	[property: JsonPropertyName("parameters")]
+	ParameterInfo[] Parameters
+);
+
 public record NodeInfo(
 	[property: JsonPropertyName("name")] string Name,
 	[property: JsonPropertyName("namespace")]
@@ -51,6 +66,8 @@ public record NodeInfo(
 	[property: JsonPropertyName("groups")] GroupInfo[] Groups,
 	[property: JsonPropertyName("global_fields")]
 	FieldInfo[] GlobalFields,
+	[property: JsonPropertyName("methods")]
+	FunctionInfo[] Methods,
 	[property: JsonPropertyName("source_file")]
 	string SourceFile
 );
