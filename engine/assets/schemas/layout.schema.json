@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "toast://schemas/layout.schema.json",
+  "title": "Toast Input Layout (.tlayout)",
+  "description": "",
+  "type": "object",
+  "required": ["name"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string", "default": "Unnamed Layout", "description": "Display name of the layout." },
+    "layers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Named layers. The hidden 'default' layer is implicit and always present."
+    },
+    "action": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/entry" },
+      "description": "Action references owned by this layout."
+    }
+  },
+  "definitions": {
+    "entry": {
+      "type": "object",
+      "required": ["id"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "description": "UID of the referenced asset::Action (base64url string)." },
+        "included": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Whitelist of layers. Empty means active on every layer."
+        },
+        "excluded": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Blacklist of layers. An excluded layer always disables the action."
+        }
+      }
+    }
+  }
+}

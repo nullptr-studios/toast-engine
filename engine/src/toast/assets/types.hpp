@@ -15,5 +15,8 @@
 // clang-format on
 
 #include "data.hpp"
+#include "input_action.hpp"
+#include "input_layout.hpp"
+#include "input_settings.hpp"
 #include "prefab.hpp"
 #include "texture.hpp"

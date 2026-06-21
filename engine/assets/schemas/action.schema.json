@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "toast://schemas/action.schema.json",
+  "title": "Toast Input Action (.taction)",
+  "description": "",
+  "type": "object",
+  "required": ["name", "function_name", "type"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string", "default": "unnamed", "description": "Display name of the action." },
+    "function_name": { "type": "string", "default": "onUnnamed", "description": "Reflected parent function invoked when the action fires." },
+    "description": { "type": "string", "default": "", "description": "Human-readable description." },
+    "type": { "enum": ["Action0D", "Action1D", "Action2D"], "default": "Action0D", "description": "Value domain: bool, float or vec2." },
+    "accumulation": { "type": "boolean", "default": false, "description": "true keeps the highest-magnitude bind; false averages all active binds." },
+    "bind": { "type": "array", "items": { "$ref": "#/definitions/bind" }, "description": "Binds that drive the action." },
+    "modifier": { "type": "array", "items": { "$ref": "#/definitions/modifier" }, "description": "Action-wide modifiers applied after accumulation." }
+  },
+  "definitions": {
+    "bind": {
+      "type": "object",
+      "required": ["keycode"],
+      "additionalProperties": false,
+      "properties": {
+        "keycode": { "type": "string", "description": "Input keycode, e.g. 'keyboard/space', 'mouse/left', 'controller/left_stick'." },
+        "trigger": { "type": "array", "items": { "$ref": "#/definitions/trigger" } },
+        "modifier": { "type": "array", "items": { "$ref": "#/definitions/modifier" }, "description": "Per-bind modifiers, affecting only this bind's value." }
+      }
+    },
+    "value": {
+      "description": "A bool (Action0D), number (Action1D) or two-element array (Action2D).",
+      "oneOf": [
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }
+      ]
+    },
+    "threshold_range": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2, "description": "(min, max) absolute bounds." },
+    "trigger": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "enum": ["start", "release", "hold", "pulse", "axis1d", "axis2d", "cursor"] }
+      },
+      "allOf": [
+        { "if": { "properties": { "name": { "const": "start" } } }, "then": {
+          "properties": { "name": {}, "threshold": { "type": "number", "default": 0.5 }, "value": { "$ref": "#/definitions/value" }, "countdown": { "type": "number", "default": 0 } },
+          "additionalProperties": false } },
+        { "if": { "properties": { "name": { "const": "release" } } }, "then": {
+          "properties": { "name": {}, "threshold": { "type": "number", "default": 0.5 }, "value": { "$ref": "#/definitions/value" } },
+          "additionalProperties": false } },
+        { "if": { "properties": { "name": { "const": "hold" } } }, "then": {
+          "properties": { "name": {}, "threshold_start": { "type": "number", "default": 0.5 }, "threshold_release": { "type": "number", "default": 0.5 }, "value": { "$ref": "#/definitions/value" }, "send_start": { "type": "boolean", "default": false }, "send_release": { "type": "boolean", "default": false }, "countdown": { "type": "number", "default": 0 } },
+          "additionalProperties": false } },
+        { "if": { "properties": { "name": { "const": "pulse" } } }, "then": {
+          "properties": { "name": {}, "threshold_start": { "type": "number", "default": 0.5 }, "threshold_release": { "type": "number", "default": 0.5 }, "value": { "$ref": "#/definitions/value" }, "rate": { "type": "number", "default": 1 }, "send_start": { "type": "boolean", "default": false }, "send_release": { "type": "boolean", "default": false }, "countdown": { "type": "number", "default": 0 } },
+          "additionalProperties": false } },
+        { "if": { "properties": { "name": { "const": "axis1d" } } }, "then": {
+          "properties": { "name": {}, "threshold": { "$ref": "#/definitions/threshold_range" }, "normalize": { "type": "boolean", "default": false }, "axis": { "type": "integer", "enum": [0, 1], "default": 0 }, "send_start": { "type": "boolean", "default": false }, "send_release": { "type": "boolean", "default": false } },
+          "additionalProperties": false } },
+        { "if": { "properties": { "name": { "const": "axis2d" } } }, "then": {
+          "properties": { "name": {}, "threshold_x": { "$ref": "#/definitions/threshold_range" }, "threshold_y": { "$ref": "#/definitions/threshold_range" }, "normalize": { "type": "boolean", "default": false }, "send_start": { "type": "boolean", "default": false }, "send_release": { "type": "boolean", "default": false } },
+          "additionalProperties": false } },
+        { "if": { "properties": { "name": { "const": "cursor" } } }, "then": {
+          "properties": { "name": {}, "space": { "type": "integer", "enum": [0, 1, 2, 3], "default": 1, "description": "0 screen, 1 NDC, 2 camera, 3 world." }, "delta": { "type": "boolean", "default": false } },
+          "additionalProperties": false } }
+      ]
+    },
+    "modifier": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "enum": ["deadzone", "invert", "exponential", "scale", "scale_by_deltatime", "smooth", "key"] }
+      },
+      "allOf": [
+        { "if": { "properties": { "name": { "const": "deadzone" } } }, "then": {
+          "properties": { "name": {}, "lower_threshold": { "type": "number", "default": 0.2 }, "upper_threshold": { "type": "number", "default": 1.0 } }, "additionalProperties": false } },
+        { "if": { "properties": { "name": { "const": "invert" } } }, "then": {
+          "properties": { "name": {}, "x": { "type": "boolean", "default": true }, "y": { "type": "boolean", "default": false } }, "additionalProperties": false } },
+        { "if": { "properties": { "name": { "const": "exponential" } } }, "then": {
+          "properties": { "name": {}, "power": { "type": "number", "default": 2.0 } }, "additionalProperties": false } },
+        { "if": { "properties": { "name": { "const": "scale" } } }, "then": {
+          "properties": { "name": {}, "x": { "type": "number", "default": 1.0 }, "y": { "type": "number", "default": 1.0 } }, "additionalProperties": false } },
+        { "if": { "properties": { "name": { "const": "scale_by_deltatime" } } }, "then": {
+          "properties": { "name": {}, "x": { "type": "boolean", "default": true }, "y": { "type": "boolean", "default": true } }, "additionalProperties": false } },
+        { "if": { "properties": { "name": { "const": "smooth" } } }, "then": {
+          "properties": { "name": {}, "x": { "type": "boolean", "default": true }, "y": { "type": "boolean", "default": true }, "speed": { "type": "number", "default": 10.0 } }, "additionalProperties": false } },
+        { "if": { "properties": { "name": { "const": "key" } } }, "then": {
+          "properties": { "name": {}, "control": { "type": "boolean", "default": false }, "shift": { "type": "boolean", "default": false }, "alt": { "type": "boolean", "default": false } }, "additionalProperties": false } }
+      ]
+    }
+  }
+}

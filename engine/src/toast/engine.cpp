@@ -5,6 +5,7 @@
 #include "events/event.hpp"
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
+#include "input/input_system.hpp"
 #include "logger.hpp"
 #include "renderer/sdl_output_target.hpp"
 #include "renderer/shader_compiler.hpp"
@@ -73,6 +74,7 @@ struct EnginePimpl {
 	std::unique_ptr<IBaseWindow> window = nullptr;
 	std::unique_ptr<World> world = nullptr;
 	std::unique_ptr<assets::AssetManager> asset_manager = nullptr;
+	std::unique_ptr<input::InputSystem> input_system = nullptr;
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
 	event::Listener listener;
@@ -132,6 +134,8 @@ void Engine::init() {
 
 	m->asset_manager = std::make_unique<assets::AssetManager>();
 
+	m->input_system = std::make_unique<input::InputSystem>();
+
 	// TODO: This should be moved into VulkanRenderer
 	m->listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
 		if (!m->renderer || !m->vulkan_core || e.width <= 0 || e.height <= 0) {
@@ -166,6 +170,11 @@ void Engine::tick() {
 #endif
 
 	event::pollEvents();
+
+	// Read fresh device state and queue this frame's input events for the next dispatch
+	if (m->input_system) {
+		m->input_system->tick();
+	}
 
 	{
 		std::scoped_lock lock(m->owners_mutex);

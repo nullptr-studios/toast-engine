@@ -50,8 +50,8 @@ struct Reflect<{{ qualified_name }}> {
 			.value_type = FieldType::{{ f.field_type }},
 			.attributes = {{ '{{' }}{% for a in f.attrs_list %}{"{{ a.name }}", {{ '{' }}{% for v in a.args %}"{{ v }}"{% if not loop.last %}, {% endif %}{% endfor %}{{ '}' }}}{% if not loop.last %}, {% endif %}{% endfor %}{{ '}}' }},
 			.is_array   = {{ f.is_array | lower }},
-			.get        = &{% if f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::get,
-			.set        = &{% if f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::set,
+			.get        = &{% if f.is_asset_handle and f.is_array %}AssetArrayFieldAccess{% elif f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::get,
+			.set        = &{% if f.is_asset_handle and f.is_array %}AssetArrayFieldAccess{% elif f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::set,
 		}{% if not loop.last %},{% endif %}
 
 {% endfor %}

@@ -64,6 +64,21 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 			TOAST_ERROR("AssetManager", "Failed to parse TOML asset {}: {}", info.path, err.description());
 			return nullptr;
 		}
+	} else if (info.type == "input_action" || info.type == "input_layout" || info.type == "input_settings") {
+		try {
+			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
+			auto table = toml::parse(toml_str);
+			if (info.type == "input_action") {
+				asset = std::make_unique<Action>(std::move(table));
+			} else if (info.type == "input_layout") {
+				asset = std::make_unique<InputLayout>(std::move(table));
+			} else {
+				asset = std::make_unique<InputSettings>(std::move(table));
+			}
+		} catch (const toml::parse_error& err) {
+			TOAST_ERROR("AssetManager", "Failed to parse TOML asset {}: {}", info.path, err.description());
+			return nullptr;
+		}
 	} else if (info.type == "node") {
 		// TODO: At some point we need to handle toast packs
 		if constexpr (load_mode == SaveMode::editor) {
@@ -192,6 +207,9 @@ void AssetManager::reloadManifest() {
 		load_collection(Texture::collection, "texture");
 		load_collection(Data::collection, "data");
 		load_collection(Prefab::collection, "node");
+		load_collection(Action::collection, "input_action");
+		load_collection(InputLayout::collection, "input_layout");
+		load_collection(InputSettings::collection, "input_settings");
 
 		TOAST_INFO("AssetManager", "Manifest reloaded: {} assets tracked", manifest.size());
 	} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse asset manifest: {}", e.what()); }
@@ -280,6 +298,17 @@ auto AssetManager::resolveURI(std::string_view uri) -> std::optional<toast::UID>
 	return std::nullopt;
 }
 
+auto AssetManager::listByType(std::string_view type) -> std::vector<toast::UID> {
+	std::vector<toast::UID> result;
+	std::lock_guard lock(instance->mutex);
+	for (const auto& [uid_val, info] : instance->manifest) {
+		if (info.type == type) {
+			result.emplace_back(uid_val);
+		}
+	}
+	return result;
+}
+
 // Public API Implementations
 auto load(toast::UID uid) -> AssetHandleBase {
 	return {AssetManager::get().load(uid), uid};
@@ -296,6 +325,10 @@ auto load(std::string_view uri) -> AssetHandleBase {
 
 auto resolveURI(std::string_view uri) -> std::optional<toast::UID> {
 	return AssetManager::resolveURI(uri);
+}
+
+auto listByType(std::string_view type) -> std::vector<toast::UID> {
+	return AssetManager::listByType(type);
 }
 
 auto save(toast::UID uid) -> bool {

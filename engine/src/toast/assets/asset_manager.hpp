@@ -124,6 +124,13 @@ public:
 	 */
 	static auto resolveURI(std::string_view uri) -> std::optional<toast::UID>;
 
+	/**
+	 * @brief Lists every manifest UID whose asset type matches
+	 * @param type The asset type string, e.g. "input_action"
+	 * @return The matching UIDs in unspecified order
+	 */
+	static auto listByType(std::string_view type) -> std::vector<toast::UID>;
+
 private:
 	static inline AssetManager* instance = nullptr;
 
