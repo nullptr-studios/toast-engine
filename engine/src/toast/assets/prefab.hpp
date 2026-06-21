@@ -56,6 +56,8 @@ struct NodeFileBinaryHeader {
 
 class Prefab : public Asset, public ISaveable {
 public:
+	static constexpr std::string_view collection = "nodes";
+
 	/**
 	 * @brief Parses a prefab from a text (.node) stream
 	 * @param file Open input stream positioned at the start of the file

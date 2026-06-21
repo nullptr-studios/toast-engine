@@ -13,5 +13,8 @@ public record ImportContext {
 /// <summary>Interface for file format importers</summary>
 public interface IAssetImporter {
 	IReadOnlyList<string> SupportedExtensions { get; }
+
+	string VectorName { get; }
+
 	Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log);
 }

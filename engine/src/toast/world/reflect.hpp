@@ -252,7 +252,7 @@ struct TOAST_API GroupInfo {
  */
 struct TOAST_API ParameterInfo {
 	std::string_view name;
-	std::string_view type;    // C++ type name, as spelled in the header
+	std::string_view type;            // C++ type name, as spelled in the header
 	std::optional<std::string_view> default_value;
 	const std::type_info* type_id;    // typeid(std::decay_t<param>), for call-time validation
 };
@@ -267,7 +267,7 @@ struct TOAST_API FunctionInfo {
 	using Invoker = void (*)();
 
 	std::string_view name;
-	std::string_view return_type;        // C++ return type name, as spelled in the header
+	std::string_view return_type;            // C++ return type name, as spelled in the header
 	const std::type_info* return_type_id;    // typeid(std::decay_t<return>), for call-time validation
 	std::span<const ParameterInfo> parameters;
 	Invoker invoke = nullptr;
@@ -358,8 +358,8 @@ struct TOAST_API NodeInfo {
 			}
 		}
 
-		bool signature_ok = fn->parameters.size() == sizeof...(Args) && fn->return_type_id != nullptr
-		                    && *fn->return_type_id == typeid(std::decay_t<R>);
+		bool signature_ok = fn->parameters.size() == sizeof...(Args) && fn->return_type_id != nullptr &&
+		                    *fn->return_type_id == typeid(std::decay_t<R>);
 		if (signature_ok) {
 			const std::array<const std::type_info*, sizeof...(Args)> expected = {&typeid(std::decay_t<Args>)...};
 			for (std::size_t i = 0; i < expected.size(); ++i) {
@@ -370,8 +370,7 @@ struct TOAST_API NodeInfo {
 			}
 		}
 		if (!signature_ok) {
-			TOAST_WARN("Reflect", "call(): signature mismatch for '{}' on '{}'; invoking is undefined behavior",
-			           method_name, type);
+			TOAST_WARN("Reflect", "call(): signature mismatch for '{}' on '{}'; invoking is undefined behavior", method_name, type);
 			assert(false && "NodeInfo::call(): argument or return type mismatch");
 		}
 

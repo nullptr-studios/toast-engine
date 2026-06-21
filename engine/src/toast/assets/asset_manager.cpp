@@ -173,15 +173,26 @@ void AssetManager::reloadManifest() {
 
 	try {
 		auto json = nlohmann::json::parse(raw_json->begin(), raw_json->end());
-		if (json.contains("assets") && json["assets"].is_object()) {
-			for (const auto& [key, value] : json["assets"].items()) {
+
+		// an entry is a "uid": "virtual path" pair
+		auto load_collection = [&](std::string_view collection, std::string_view type) {
+			auto it = json.find(collection);
+			if (it == json.end() || !it->is_object()) {
+				return;
+			}
+			for (const auto& [key, value] : it->items()) {
 				uint64_t uid_val = toast::UID::fromString(key);
 				AssetInfo info;
-				info.path = value.value("path", "");
-				info.type = value.value("type", "");
+				info.path = value.get<std::string>();
+				info.type = type;
 				manifest[uid_val] = std::move(info);
 			}
-		}
+		};
+
+		load_collection(Texture::collection, "texture");
+		load_collection(Data::collection, "data");
+		load_collection(Prefab::collection, "node");
+
 		TOAST_INFO("AssetManager", "Manifest reloaded: {} assets tracked", manifest.size());
 	} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse asset manifest: {}", e.what()); }
 }
