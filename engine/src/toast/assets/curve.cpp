@@ -56,7 +56,7 @@ auto Curve::fromToml(const toml::table& tbl) -> std::unique_ptr<Curve> {
 	auto type = splineTypeFromString(spline_type_str);
 	size_t n_components = (dim == CurveDimension::d2) ? 2 : 3;
 
-	auto* points_arr = tbl["points"].as_array();
+	const auto* points_arr = tbl["points"].as_array();
 	if (!points_arr) {
 		throw std::runtime_error("Curve: missing 'points' array");
 	}
@@ -70,8 +70,8 @@ auto Curve::fromToml(const toml::table& tbl) -> std::unique_ptr<Curve> {
 			throw std::runtime_error("Curve: points entry is not a table");
 		}
 
-		auto x = pt->get("x");
-		auto y = pt->get("y");
+		const auto* x = pt->get("x");
+		const auto* y = pt->get("y");
 		if (!x || !y) {
 			throw std::runtime_error("Curve: point missing x or y");
 		}
@@ -80,7 +80,7 @@ auto Curve::fromToml(const toml::table& tbl) -> std::unique_ptr<Curve> {
 		points.push_back((float)y->value<double>().value_or(0.0));
 
 		if (dim == CurveDimension::d3) {
-			auto z = pt->get("z");
+			const auto* z = pt->get("z");
 			points.push_back(z ? (float)z->value<double>().value_or(0.0) : 0.0f);
 		}
 	}
@@ -94,15 +94,15 @@ auto Curve::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 	ss << "dimension   = \"" << dimToString(m_dim) << "\"\n";
 	ss << "t_scale     = " << m_t_scale << "\n";
 
-	size_t dim = dim_count();
+	size_t dim = dimCount();
 	size_t n = m_points.size() / dim;
 
 	for (size_t i = 0; i < n; ++i) {
 		ss << "\n[[points]]\n";
-		ss << "x = " << m_points[i * dim + 0] << "\n";
-		ss << "y = " << m_points[i * dim + 1] << "\n";
+		ss << "x = " << m_points[(i * dim) + 0] << "\n";
+		ss << "y = " << m_points[(i * dim) + 1] << "\n";
 		if (dim == 3) {
-			ss << "z = " << m_points[i * dim + 2] << "\n";
+			ss << "z = " << m_points[(i * dim) + 2] << "\n";
 		}
 	}
 
@@ -128,7 +128,7 @@ void Curve::setPoints(std::vector<float> points) {
 }
 
 void Curve::rebuildSpline() {
-	size_t dim = dim_count();
+	size_t dim = dimCount();
 	size_t n = m_points.size() / dim;
 
 	if (n < 2) {

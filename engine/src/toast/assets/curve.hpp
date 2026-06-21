@@ -63,14 +63,14 @@ public:
 
 	[[nodiscard]]
 	auto numPoints() const noexcept -> size_t {
-		return m_points.size() / dim_count();
+		return m_points.size() / dimCount();
 	}
 
 	void setPoints(std::vector<float> points);
 
 private:
 	[[nodiscard]]
-	auto dim_count() const noexcept -> size_t {
+	auto dimCount() const noexcept -> size_t {
 		return m_dim == CurveDimension::d2 ? 2 : 3;
 	}
 
