@@ -120,6 +120,7 @@
         ]
       }
     ],
+    "methods": [],
     "name": "MixedSubgroupNode",
     "namespace": null,
     "parent": null,
