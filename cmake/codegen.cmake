@@ -37,13 +37,8 @@ macro(run_codegen)
 
     message(STATUS "Building reflection_generator tool...")
 
-    # Resolve config + cargo profile. Mirror tools/reflection_generator/CMakeLists.txt
-    # so this configure-time build reuses the same cargo artifacts the build-time
-    # target produces (instead of emitting a mismatched second profile).
     set(_cfg "${CMAKE_BUILD_TYPE}")
     if(NOT _cfg)
-        # Multi-config generators leave CMAKE_BUILD_TYPE empty at configure time.
-        # The tool's own profile does not affect generated output, so default to Debug.
         set(_cfg "Debug")
     endif()
     if(_cfg STREQUAL "Release" OR _cfg STREQUAL "RelWithDebInfo" OR _cfg STREQUAL "MinSizeRel")
@@ -66,10 +61,6 @@ macro(run_codegen)
         message(FATAL_ERROR "Failed to build reflection_generator:\n${_cargo_error}")
     endif()
 
-    # Run the binary in place: build.rs places templates/ next to it and the tool
-    # resolves them via current_exe(), so no staging copy is needed. Handle both the
-    # plain <target>/<profile>/ layout and the <target>/<triple>/<profile>/ layout
-    # that appears when a default --target triple is configured.
     set(_bin "reflection_generator${CMAKE_EXECUTABLE_SUFFIX}")
     set(_direct "${_refgen_cargo_dir}/${_profile_dir}/${_bin}")
     if(EXISTS "${_direct}")
