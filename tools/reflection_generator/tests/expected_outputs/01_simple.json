@@ -1,58 +1,66 @@
 [
   {
-    "name": "SimpleNode",
-    "namespace": "toast",
-    "parent": null,
-    "source_file": "01_simple.hpp",
     "attributes": {},
     "functions": {
-      "pre_init": false,
-      "init": false,
       "begin": false,
-      "early_tick": false,
-      "tick": true,
-      "post_physics": false,
-      "late_tick": false,
-      "end": false,
       "destroy": false,
-      "on_enable": false,
-      "on_disable": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
       "load": false,
-      "save": false
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": true
     },
     "global_fields": [
       {
-        "name": "m_name",
-        "typename": "std::string",
+        "attributes": {},
+        "default": null,
         "field_type": "string_t",
         "is_array": false,
-        "attributes": {},
-        "default": null
+        "name": "m_name",
+        "typename": "std::string"
       }
     ],
     "groups": [
       {
-        "name": "Transform",
         "fields": [
           {
-            "name": "m_x",
-            "typename": "int",
+            "attributes": {
+              "Group": [
+                "Transform"
+              ]
+            },
+            "default": "0",
             "field_type": "int_t",
             "is_array": false,
-            "attributes": {},
-            "default": "0"
+            "name": "m_x",
+            "typename": "int"
           },
           {
-            "name": "m_y",
-            "typename": "int",
+            "attributes": {
+              "Group": [
+                "Transform"
+              ]
+            },
+            "default": "0",
             "field_type": "int_t",
             "is_array": false,
-            "attributes": {},
-            "default": "0"
+            "name": "m_y",
+            "typename": "int"
           }
         ],
+        "name": "Transform",
         "subgroups": []
       }
-    ]
+    ],
+    "name": "SimpleNode",
+    "namespace": "toast",
+    "parent": null,
+    "source_file": "01_simple.hpp"
   }
 ]

@@ -7,7 +7,7 @@
 using namespace toast::tests::dependency_graph;
 
 TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/04_multiple_subgraphs", test_dependency_graph_04_multiple_subgraphs) {
-	std::unique_ptr<toast::World> world_owner(toast::_detail::WorldTestAccess::createWorld());
+	auto world_owner = toast::_detail::WorldTestAccess::createWorld();
 	toast::World& world = *world_owner;
 
 	auto a = toast::_detail::WorldTestAccess::createNode(world, "a");

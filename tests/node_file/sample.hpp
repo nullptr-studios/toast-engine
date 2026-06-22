@@ -2,7 +2,9 @@
 #include <string>
 
 namespace {
-inline const std::string sample_text = 
+inline const std::string sample_text =
+	"~format @int = 2\n"
+	"\n"
 	"[station_master type=SpaceStationManager]\n"
 	"id @string = 4e3d2c1b0a9\n"
 	"sector_name @string = Kepler Orbital Outpost Delta\n"

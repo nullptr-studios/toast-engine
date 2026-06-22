@@ -21,7 +21,11 @@
       {
         "fields": [
           {
-            "attributes": {},
+            "attributes": {
+              "Group": [
+                "Data"
+              ]
+            },
             "default": null,
             "field_type": "int_t",
             "is_array": false,
@@ -29,7 +33,11 @@
             "typename": "int"
           },
           {
-            "attributes": {},
+            "attributes": {
+              "Group": [
+                "Data"
+              ]
+            },
             "default": null,
             "field_type": "string_t",
             "is_array": false,
@@ -42,7 +50,14 @@
           {
             "fields": [
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "Data"
+                  ],
+                  "Subgroup": [
+                    "Content"
+                  ]
+                },
                 "default": null,
                 "field_type": "string_t",
                 "is_array": false,
@@ -50,7 +65,14 @@
                 "typename": "std::string"
               },
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "Data"
+                  ],
+                  "Subgroup": [
+                    "Content"
+                  ]
+                },
                 "default": null,
                 "field_type": "int_t",
                 "is_array": false,
@@ -63,7 +85,14 @@
           {
             "fields": [
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "Data"
+                  ],
+                  "Subgroup": [
+                    "Metadata"
+                  ]
+                },
                 "default": null,
                 "field_type": "int_t",
                 "is_array": false,
@@ -71,7 +100,14 @@
                 "typename": "int"
               },
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "Data"
+                  ],
+                  "Subgroup": [
+                    "Metadata"
+                  ]
+                },
                 "default": null,
                 "field_type": "int_t",
                 "is_array": false,

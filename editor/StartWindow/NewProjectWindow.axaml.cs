@@ -10,7 +10,7 @@ namespace editor.StartWindow;
 
 public partial class NewProjectWindow : Window {
 	private string m_baseFolderPath;
-	private string m_projectFolder;
+	private string? m_projectFolder;
 
 	public NewProjectWindow() {
 		InitializeComponent();
@@ -31,7 +31,7 @@ public partial class NewProjectWindow : Window {
 		var projectDirectory = Path.Combine(m_baseFolderPath, formattedTitle);
 		m_projectFolder = projectDirectory;
 
-		if (PathTextbox != null) PathTextbox.Text = projectDirectory;
+		PathTextbox?.Text = projectDirectory;
 
 		ProjectPath = Path.Combine(projectDirectory, formattedTitle + ".toast");
 		ProjectThumbnail = Path.Combine(projectDirectory, ".toast", "thumbnails", "project.png");
@@ -64,7 +64,7 @@ public partial class NewProjectWindow : Window {
 			// TODO: Error
 			return;
 
-		Directory.CreateDirectory(m_projectFolder);
+		Directory.CreateDirectory(m_projectFolder!);
 
 		// TODO: This should be created in c++
 		var projectFile = new TomlTable {
@@ -75,7 +75,7 @@ public partial class NewProjectWindow : Window {
 		var projectFileStr = TomlSerializer.Serialize(projectFile);
 		File.WriteAllText(ProjectPath, projectFileStr);
 
-		Directory.CreateDirectory(Path.Combine(m_projectFolder, ".toast"));
+		Directory.CreateDirectory(Path.Combine(m_projectFolder ?? throw new InvalidOperationException(), ".toast"));
 		Directory.CreateDirectory(Path.Combine(m_projectFolder, "artwork"));
 		Directory.CreateDirectory(Path.Combine(m_projectFolder, "assets"));
 		Directory.CreateDirectory(Path.Combine(m_projectFolder, "lib"));

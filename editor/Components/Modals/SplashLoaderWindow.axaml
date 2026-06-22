@@ -1,0 +1,66 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:editor.Components.Modals"
+        x:Class="editor.Components.Modals.SplashLoaderWindow"
+        x:DataType="local:LoaderViewModel"
+        Width="1200" Height="500"
+        CanMaximize="False" CanMinimize="False" CanResize="False"
+        WindowDecorations="None"
+        WindowStartupLocation="CenterScreen"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        Title="Toast Engine">
+
+	<Design.DataContext>
+		<local:LoaderViewModel />
+	</Design.DataContext>
+
+	<Border CornerRadius="12" ClipToBounds="True" Background="Transparent">
+		<Grid ColumnDefinitions="*,*">
+			<!-- Splash image -->
+			<Border Grid.Column="0" Background="Transparent">
+				<Image x:Name="SplashImage" Stretch="UniformToFill" />
+			</Border>
+
+			<!-- Console side -->
+			<Grid Grid.Column="1" RowDefinitions="Auto,*,Auto" Background="{StaticResource E2}">
+				<StackPanel Grid.Row="0" Orientation="Horizontal" Margin="20,10,20,0">
+					<TextBlock FontSize="50" Padding="0,10">Toast Engine</TextBlock>
+					<TextBlock FontSize="16" Padding="12,18,0,0"
+					           VerticalAlignment="Bottom" Foreground="Gray">
+						<Run Text="by" />
+						<Run Text="nullptr" Foreground="DeepPink" />
+						<Run Text="* studios" />
+					</TextBlock>
+				</StackPanel>
+
+				<Border Grid.Row="1" Margin="8,8,8,0">
+					<ScrollViewer x:Name="ConsoleScroll"
+					              Padding="8"
+					              Background="Black"
+					              CornerRadius="8,8,0,0">
+						<ItemsControl ItemsSource="{Binding ConsoleLines}">
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<SelectableTextBlock Text="{Binding}"
+									                     FontFamily="Consolas,Courier New,monospace"
+									                     FontSize="13"
+									                     Foreground="Gray"
+									                     TextWrapping="Wrap"
+									                     Margin="12,2" />
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</ScrollViewer>
+				</Border>
+
+				<Border Grid.Row="2" Padding="8,0,8,8">
+					<ProgressBar Value="{Binding Progress}"
+					             Minimum="0" Maximum="100"
+					             Height="20"
+					             CornerRadius="0,0,8,8" />
+				</Border>
+			</Grid>
+		</Grid>
+	</Border>
+</Window>

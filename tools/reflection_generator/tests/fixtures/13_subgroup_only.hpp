@@ -2,8 +2,8 @@
 
 class [[ToastNode]] SubgroupOnlyNode {
 public:
-    [[Serialize, Group("Settings"), Subgroup("Audio")]] float m_volume;
-    [[Serialize, Group("Settings"), Subgroup("Audio")]] float m_pitch;
-    [[Serialize, Group("Settings"), Subgroup("Video")]] int m_width;
-    [[Serialize, Group("Settings"), Subgroup("Video")]] int m_height;
+    [[Reflect, Group("Settings"), Subgroup("Audio")]] float m_volume;
+    [[Reflect, Group("Settings"), Subgroup("Audio")]] float m_pitch;
+    [[Reflect, Group("Settings"), Subgroup("Video")]] int m_width;
+    [[Reflect, Group("Settings"), Subgroup("Video")]] int m_height;
 };

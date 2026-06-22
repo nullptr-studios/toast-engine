@@ -1,26 +1,26 @@
 [
   {
+    "attributes": {},
+    "functions": {
+      "begin": false,
+      "destroy": true,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": true,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": true,
+      "save": false,
+      "tick": true
+    },
+    "global_fields": [],
+    "groups": [],
     "name": "TickOnlyNode",
     "namespace": null,
     "parent": null,
-    "source_file": "03_no_fields.hpp",
-    "attributes": {},
-    "functions": {
-      "pre_init": true,
-      "init": false,
-      "begin": false,
-      "early_tick": false,
-      "tick": true,
-      "post_physics": false,
-      "late_tick": true,
-      "end": false,
-      "destroy": true,
-      "on_enable": false,
-      "on_disable": false,
-      "load": false,
-      "save": false
-    },
-    "global_fields": [],
-    "groups": []
+    "source_file": "03_no_fields.hpp"
   }
 ]

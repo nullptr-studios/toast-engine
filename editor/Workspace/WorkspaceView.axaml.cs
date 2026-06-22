@@ -1,124 +1,265 @@
-//
-// Workspace.axaml.cs by Xein
-// 2 Jun 2026
-//
-
 using System;
-using System.ComponentModel;
-using System.Threading;
-using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
-using Avalonia.Media;
-using Avalonia.Media.Transformation;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Threading;
-using editor.Logger;
+using editor.Engine;
+using Proto.Events;
 
 namespace editor.Workspace;
 
-public partial class WorkspaceView : Window {
-	private readonly ToastEngine? m_toast;
-	private Border? m_toastBorder;
-	private CancellationTokenSource? m_toastCts;
+public partial class WorkspaceView : UserControl {
+	private const int ActionReleased = 0;
+	private const int ActionPressed = 1;
+
+	private const int ScancodeMask = 1 << 30; // SDLK_SCANCODE_MASK
+	private WriteableBitmap? m_bitmap;
+	private ToastEngine? m_engine;
+	private ulong m_lastFrameId;
+	private int m_surfaceH;
+
+	private int m_surfaceW;
+	private DispatcherTimer? m_timer;
 
 	public WorkspaceView() {
 		InitializeComponent();
-		m_toastBorder = this.FindControl<Border>("ToastZoneBorder");
-		DataContextChanged += OnDataContextChanged;
+
+		Focusable = true;
+		AttachedToVisualTree += OnAttached;
+		DetachedFromVisualTree += OnDetached;
 	}
 
-	public WorkspaceView(ToastEngine toast) {
-		InitializeComponent();
-		m_toast = toast;
-		m_toastBorder = this.FindControl<Border>("ToastZoneBorder");
-		DataContextChanged += OnDataContextChanged;
+	private void OnAttached(object? sender, VisualTreeAttachmentEventArgs e) {
+		m_engine ??= (DataContext as WorkspaceViewModel)?.Engine;
 
-		AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
-		AddHandler(KeyUpEvent, OnKeyUp, RoutingStrategies.Tunnel);
+		m_timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+		m_timer.Tick += OnTick;
+		m_timer.Start();
 	}
 
-	private void OnDataContextChanged(object? sender, EventArgs e) {
-		if (DataContext is WorkspaceViewModel vm)
-			vm.PropertyChanged += OnViewModelPropertyChanged;
+	private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e) {
+		if (m_timer is null) return;
+		m_timer.Stop();
+		m_timer.Tick -= OnTick;
+		m_timer = null;
 	}
 
-	private async void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e) {
-		if (e.PropertyName != nameof(WorkspaceViewModel.ToastZoneActive)) return;
-		var active = (DataContext as WorkspaceViewModel)?.ToastZoneActive ?? false;
-		await AnimateToastZone(active);
-	}
+	private void OnTick(object? sender, EventArgs e) {
+		if (!IsEffectivelyVisible)
+			return;
 
-	private async Task AnimateToastZone(bool show) {
-		if (m_toastBorder is null) return;
+		m_engine ??= (DataContext as WorkspaceViewModel)?.Engine;
+		if (m_engine is null)
+			return;
 
-		m_toastCts?.Cancel();
-		m_toastCts = new CancellationTokenSource();
-		var ct = m_toastCts.Token;
+		SendResizeIfChanged();
 
-		if (show) {
-			m_toastBorder.IsVisible = true;
-			// Let Avalonia render one frame at the off-screen position before sliding in
-			await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
-			if (ct.IsCancellationRequested) return;
-			m_toastBorder.RenderTransform = TransformOperations.Parse("translateY(0)");
-		} else {
-			m_toastBorder.RenderTransform = TransformOperations.Parse("translateY(400px)");
-			try {
-				await Task.Delay(220, ct); // outlast the 200ms transition
-				m_toastBorder.IsVisible = false;
-			} catch (OperationCanceledException) { }
+		var peek = m_engine.TryGetViewportFrame(IntPtr.Zero, 0, out var dims);
+		if (peek == 0 || dims.width == 0 || dims.height == 0)
+			return;
+
+		if (m_bitmap is null
+		    || m_bitmap.PixelSize.Width != (int)dims.width
+		    || m_bitmap.PixelSize.Height != (int)dims.height)
+			AllocateBitmap((int)dims.width, (int)dims.height);
+
+		if (m_bitmap is null)
+			return;
+
+		int result;
+		var changed = false;
+
+		using (var fb = m_bitmap.Lock()) {
+			var capacity = (uint)(fb.RowBytes * fb.Size.Height);
+			result = m_engine.TryGetViewportFrame(fb.Address, capacity, out var info);
+			if (result == 1) {
+				changed = info.frame_id != m_lastFrameId;
+				m_lastFrameId = info.frame_id;
+			}
 		}
+
+		if (result == 1 && changed)
+			Surface.InvalidateVisual();
 	}
 
-	protected override void OnClosed(EventArgs e) {
-		base.OnClosed(e);
-		m_toast?.SignalClose();
+	private void AllocateBitmap(int width, int height) {
+		if (width <= 0 || height <= 0)
+			return;
+
+		m_bitmap = new WriteableBitmap(
+			new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Opaque);
+		Surface.Source = m_bitmap;
+		m_lastFrameId = 0;
 	}
 
-	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
-		base.OnPropertyChanged(change);
-		if (change.Property == WindowDecorationMarginProperty && MenuBorder is not null) {
-			var margin = (Thickness)change.NewValue!;
-			MenuBorder.Margin = new Thickness(margin.Left, 0, 0, 0);
+	private double RenderScaling() {
+		return TopLevel.GetTopLevel(this)?.RenderScaling ?? 1.0;
+	}
+
+	private void SendResizeIfChanged() {
+		if (m_engine is null)
+			return;
+
+		var scale = RenderScaling();
+		var width = Math.Max(1, (int)Math.Round(Bounds.Width * scale));
+		var height = Math.Max(1, (int)Math.Round(Bounds.Height * scale));
+
+		if (width == m_surfaceW && height == m_surfaceH)
+			return;
+
+		m_surfaceW = width;
+		m_surfaceH = height;
+		Events.Send(new WindowResize {
+			Width = width,
+			Height = height
+		});
+	}
+
+	protected override void OnPointerMoved(PointerEventArgs e) {
+		base.OnPointerMoved(e);
+		if (!IsFocused || m_engine is null) return;
+
+		var p = e.GetPosition(this);
+		var scale = RenderScaling();
+		Events.Send(new WindowMousePosition {
+			X = (float)(p.X * scale),
+			Y = (float)(p.Y * scale)
+		});
+	}
+
+	protected override void OnPointerPressed(PointerPressedEventArgs e) {
+		base.OnPointerPressed(e);
+		Focus();
+
+		if (m_engine is null) return;
+
+		var button = ButtonFromUpdateKind(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
+		if (button != 0)
+			Events.Send(new WindowMouseButton {
+				Button = button,
+				Action = ActionPressed,
+				Mods = SdlMods(e.KeyModifiers)
+			});
+	}
+
+	protected override void OnPointerReleased(PointerReleasedEventArgs e) {
+		base.OnPointerReleased(e);
+		if (!IsFocused || m_engine is null) return;
+
+		var button = ButtonFromUpdateKind(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
+		if (button != 0)
+			Events.Send(new WindowMouseButton {
+				Button = button,
+				Action = ActionReleased,
+				Mods = SdlMods(e.KeyModifiers)
+			});
+	}
+
+	protected override void OnPointerWheelChanged(PointerWheelEventArgs e) {
+		base.OnPointerWheelChanged(e);
+		if (!IsFocused || m_engine is null) return;
+
+		Events.Send(new WindowMouseScroll {
+			X = (float)e.Delta.X,
+			Y = (float)e.Delta.Y
+		});
+	}
+
+	protected override void OnKeyDown(KeyEventArgs e) {
+		base.OnKeyDown(e);
+		if (!IsFocused || m_engine is null) return;
+
+		var (key, _) = MapKey(e.Key);
+		Events.Send(new WindowKey {
+			Key = key,
+			Actions = ActionPressed,
+			Mods = SdlMods(e.KeyModifiers)
+		});
+		e.Handled = true;
+	}
+
+	protected override void OnKeyUp(KeyEventArgs e) {
+		base.OnKeyUp(e);
+		if (!IsFocused || m_engine is null) return;
+
+		var (key, _) = MapKey(e.Key);
+		Events.Send(new WindowKey {
+			Key = key,
+			Actions = ActionReleased,
+			Mods = SdlMods(e.KeyModifiers)
+		});
+		e.Handled = true;
+	}
+
+	protected override void OnTextInput(TextInputEventArgs e) {
+		base.OnTextInput(e);
+		if (!IsFocused || m_engine is null || string.IsNullOrEmpty(e.Text)) return;
+
+		foreach (var rune in e.Text.AsSpan().EnumerateRunes()) Events.Send(new WindowChar { Key = (uint)rune.Value });
+	}
+
+	private static int ButtonFromUpdateKind(PointerUpdateKind kind) {
+		return kind switch {
+			PointerUpdateKind.LeftButtonPressed or PointerUpdateKind.LeftButtonReleased => 1,
+			PointerUpdateKind.MiddleButtonPressed or PointerUpdateKind.MiddleButtonReleased => 2,
+			PointerUpdateKind.RightButtonPressed or PointerUpdateKind.RightButtonReleased => 3,
+			_ => 0
+		};
+	}
+
+	private static int SdlMods(KeyModifiers mods) {
+		var result = 0;
+		if (mods.HasFlag(KeyModifiers.Shift)) result |= 0x0001;
+		if (mods.HasFlag(KeyModifiers.Control)) result |= 0x0040;
+		if (mods.HasFlag(KeyModifiers.Alt)) result |= 0x0100;
+		if (mods.HasFlag(KeyModifiers.Meta)) result |= 0x0400;
+		return result;
+	}
+
+	private static (int key, int scancode) MapKey(Key k) {
+		if (k is >= Key.A and <= Key.Z) {
+			var offset = k - Key.A;
+			return ('a' + offset, 4 + offset);
 		}
-	}
 
-	private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e) {
-		if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-			BeginMoveDrag(e);
-	}
+		if (k is >= Key.D0 and <= Key.D9) {
+			var digit = k - Key.D0;
+			var scancode = digit == 0 ? 39 : 29 + digit;
+			return ('0' + digit, scancode);
+		}
 
-	private void OnMinimize(object? sender, RoutedEventArgs e) {
-		WindowState = WindowState.Minimized;
-	}
-
-	private void OnMaximize(object? sender, RoutedEventArgs e) {
-		WindowState = WindowState == WindowState.Maximized
-			? WindowState.Normal
-			: WindowState.Maximized;
-	}
-
-	private void OnClose(object? sender, RoutedEventArgs e) {
-		Close();
-	}
-
-	void OnKeyDown(object? sender, KeyEventArgs e) {
-		if (e.Key != Key.Space) return;
-		e.Handled = true;
-
-		if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
-			(DataContext as WorkspaceViewModel)?.PinToastZone();
-		else
-			(DataContext as WorkspaceViewModel)?.ShowToastZone(true);
-	}
-
-	void OnKeyUp(object? sender, KeyEventArgs e) {
-		if (e.Key != Key.Space) return;
-		e.Handled = true;
-
-		if (!e.KeyModifiers.HasFlag(KeyModifiers.Control))
-			(DataContext as WorkspaceViewModel)?.ShowToastZone(false);
+		return k switch {
+			Key.Space => (32, 44),
+			Key.Enter => (13, 40),
+			Key.Escape => (27, 41),
+			Key.Back => (8, 42),
+			Key.Tab => (9, 43),
+			Key.Right => (ScancodeMask | 79, 79),
+			Key.Left => (ScancodeMask | 80, 80),
+			Key.Down => (ScancodeMask | 81, 81),
+			Key.Up => (ScancodeMask | 82, 82),
+			Key.Delete => (127, 76),
+			Key.LeftShift => (ScancodeMask | 225, 225),
+			Key.RightShift => (ScancodeMask | 229, 229),
+			Key.LeftCtrl => (ScancodeMask | 224, 224),
+			Key.RightCtrl => (ScancodeMask | 228, 228),
+			Key.LeftAlt => (ScancodeMask | 226, 226),
+			Key.RightAlt => (ScancodeMask | 230, 230),
+			Key.F1 => (ScancodeMask | 58, 58),
+			Key.F2 => (ScancodeMask | 59, 59),
+			Key.F3 => (ScancodeMask | 60, 60),
+			Key.F4 => (ScancodeMask | 61, 61),
+			Key.F5 => (ScancodeMask | 62, 62),
+			Key.F6 => (ScancodeMask | 63, 63),
+			Key.F7 => (ScancodeMask | 64, 64),
+			Key.F8 => (ScancodeMask | 65, 65),
+			Key.F9 => (ScancodeMask | 66, 66),
+			Key.F10 => (ScancodeMask | 67, 67),
+			Key.F11 => (ScancodeMask | 68, 68),
+			Key.F12 => (ScancodeMask | 69, 69),
+			_ => (0, 0)
+		};
 	}
 }

@@ -7,11 +7,12 @@
 #include <string_view>
 #include <array>
 #include <toast/world/reflect.hpp>
-
+{% if has_asset_handle %}#include <toast/assets/asset_field_access.hpp>
+{% endif %}
 #include <{{ source_file }}>
 
 namespace toast {
-namespace _reflect_impl {
+namespace _detail {
 
 {% for f in all_fields_flat %}
 	struct {{ snake_name }}_{{ f.name }}_tag { typedef {{ f.typename }} {{ qualified_name }}::*type; };
@@ -35,13 +36,13 @@ struct Reflect<{{ qualified_name }}> {
 	inline static const std::array<FieldInfo, {{ all_fields_flat | length }}> _all_field_info = {{ '{{' }}
 {% for f in all_fields_flat %}
 		{
-			.name       = "{{ f.display_name }}",
+			.name       = "{{ f.name }}",
 			.type       = "{{ f.typename }}",
 			.value_type = FieldType::{{ f.field_type }},
 			.attributes = {{ '{{' }}{% for a in f.attrs_list %}{"{{ a.name }}", {{ '{' }}{% for v in a.args %}"{{ v }}"{% if not loop.last %}, {% endif %}{% endfor %}{{ '}' }}}{% if not loop.last %}, {% endif %}{% endfor %}{{ '}}' }},
 			.is_array   = {{ f.is_array | lower }},
-			.get        = &FieldAccess<{{ qualified_name }}, {{ f.typename }}, _reflect_impl::{{ snake_name }}_{{ f.name }}_tag>::get,
-			.set        = &FieldAccess<{{ qualified_name }}, {{ f.typename }}, _reflect_impl::{{ snake_name }}_{{ f.name }}_tag>::set,
+			.get        = &{% if f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::get,
+			.set        = &{% if f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::set,
 		}{% if not loop.last %},{% endif %}
 
 {% endfor %}
@@ -82,7 +83,7 @@ struct Reflect<{{ qualified_name }}> {
 	static constexpr TickFunctions tick_functions = {
 		.list = {% if active_tick_fns %}{% for fn in active_tick_fns %}TickFunctionList::{{ fn.flag }}{% if not loop.last %} | {% endif %}{% endfor %}{% else %}TickFunctionList::none{% endif %},
 {% for fn in active_tick_fns %}
-		.{{ fn.flag }} = &_reflect_impl::{{ snake_name }}_{{ fn.flag }},
+		.{{ fn.flag }} = &_detail::{{ snake_name }}_{{ fn.flag }},
 {% endfor %}
 	};
 
@@ -93,8 +94,8 @@ struct Reflect<{{ qualified_name }}> {
 		.fields     = field_info,
 		.groups     = group_info,
 		.functions  = tick_functions,
-		.construct  = reinterpret_cast<toast::NodeInfo::Factory>(&_reflect_impl::{{ snake_name }}_construct),
-		.destroy    = reinterpret_cast<toast::NodeInfo::Deleter>(&_reflect_impl::{{ snake_name }}_destroy),
+		.construct  = reinterpret_cast<toast::NodeInfo::Factory>(&_detail::{{ snake_name }}_construct),
+		.destroy    = reinterpret_cast<toast::NodeInfo::Deleter>(&_detail::{{ snake_name }}_destroy),
 	};
 };
 

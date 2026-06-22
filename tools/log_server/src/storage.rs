@@ -34,12 +34,14 @@ impl LogStorage {
     }
 
     pub fn subscribe(&self) -> broadcast::Receiver<LogData> {
+        // broadcast capacity is 1000; lagged subscribers silently drop messages
         self.tx.subscribe()
     }
 
     pub async fn save_csv(&self) -> Result<String, Box<dyn std::error::Error>> {
         let logs = self.logs.read().await;
         let now = Local::now();
+        // path is relative to the working directory; the logs/ dir is created if it doesn't exist
         let filename = format!("logs/{}.csv", now.format("%Y-%m-%d_%H-%M-%S"));
         let path = Path::new(&filename);
 

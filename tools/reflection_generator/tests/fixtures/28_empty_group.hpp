@@ -2,6 +2,6 @@
 
 class [[ToastNode]] EdgeCaseNode {
 public:
-    [[Serialize]] int m_value;
-    [[Serialize]] float m_another;
+    [[Reflect]] int m_value;
+    [[Reflect]] float m_another;
 };

@@ -3,12 +3,14 @@
 // Changes will not persist
 // ============================================================
 
+// clang-format off
 {% for node in nodes %}
 #include "{{ node.snake_name }}.generated.hpp"
 {% endfor %}
-#include <toast/world/world.hpp>
+#include <toast/world/reflect.hpp>
 #include <toast/log.hpp>
 #include <array>
+// clang-format on
 
 namespace toast {
 void {{ register_fn }}() {
@@ -18,7 +20,7 @@ void {{ register_fn }}() {
 {% endfor %}
 	{{ '}}' }};
 	for (const auto* info : all_types) {
-		World::registerNode(info);
+		NodeRegistry::registerNode(info);
 	}
 	TOAST_INFO("Reflection", "Registered {} types ({{ register_fn }})", all_types.size());
 }

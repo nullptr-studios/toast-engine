@@ -36,9 +36,23 @@ macro(run_codegen)
     message(STATUS "Protobuf sources generated")
 
     message(STATUS "Building reflection_generator tool...")
+
+    set(_cfg "${CMAKE_BUILD_TYPE}")
+    if(NOT _cfg)
+        set(_cfg "Debug")
+    endif()
+    if(_cfg STREQUAL "Release" OR _cfg STREQUAL "RelWithDebInfo" OR _cfg STREQUAL "MinSizeRel")
+        set(_profile_dir "release")
+        set(_profile_flag "release")
+    else()
+        set(_profile_dir "debug")
+        set(_profile_flag "dev")
+    endif()
+    set(_refgen_cargo_dir "${OUTPUT_ROOT}/${_cfg}/cargo")
+
     find_program(CARGO cargo REQUIRED)
     execute_process(
-        COMMAND ${CARGO} build
+        COMMAND ${CARGO} build --profile "${_profile_flag}" --target-dir "${_refgen_cargo_dir}"
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tools/reflection_generator"
         RESULT_VARIABLE _cargo_result
         ERROR_VARIABLE  _cargo_error
@@ -46,10 +60,22 @@ macro(run_codegen)
     if(NOT _cargo_result EQUAL 0)
         message(FATAL_ERROR "Failed to build reflection_generator:\n${_cargo_error}")
     endif()
-    find_program(REFLECTION_GENERATOR reflection_generator
-        PATHS "${CMAKE_SOURCE_DIR}/tools/reflection_generator/target/debug"
-        NO_DEFAULT_PATH REQUIRED
-    )
+
+    set(_bin "reflection_generator${CMAKE_EXECUTABLE_SUFFIX}")
+    set(_direct "${_refgen_cargo_dir}/${_profile_dir}/${_bin}")
+    if(EXISTS "${_direct}")
+        set(REFLECTION_GENERATOR "${_direct}")
+    else()
+        file(GLOB _cands "${_refgen_cargo_dir}/*/${_profile_dir}/${_bin}")
+        if(NOT _cands)
+            message(FATAL_ERROR
+                "reflection_generator binary not found.\n"
+                "Searched:\n"
+                "  ${_refgen_cargo_dir}/${_profile_dir}/${_bin}\n"
+                "  ${_refgen_cargo_dir}/*/${_profile_dir}/${_bin}")
+        endif()
+        list(GET _cands 0 REFLECTION_GENERATOR)
+    endif()
 
     message(STATUS "Using reflection_generator: ${REFLECTION_GENERATOR}")
     execute_process(

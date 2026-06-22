@@ -21,7 +21,11 @@
       {
         "fields": [
           {
-            "attributes": {},
+            "attributes": {
+              "Group": [
+                "Physics"
+              ]
+            },
             "default": null,
             "field_type": "float_t",
             "is_array": false,
@@ -34,7 +38,14 @@
           {
             "fields": [
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Acceleration"
+                  ]
+                },
                 "default": null,
                 "field_type": "float_t",
                 "is_array": false,
@@ -42,7 +53,14 @@
                 "typename": "float"
               },
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Acceleration"
+                  ]
+                },
                 "default": null,
                 "field_type": "float_t",
                 "is_array": false,
@@ -55,7 +73,14 @@
           {
             "fields": [
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Velocity"
+                  ]
+                },
                 "default": null,
                 "field_type": "float_t",
                 "is_array": false,
@@ -63,7 +88,14 @@
                 "typename": "float"
               },
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Velocity"
+                  ]
+                },
                 "default": null,
                 "field_type": "float_t",
                 "is_array": false,
@@ -78,7 +110,11 @@
       {
         "fields": [
           {
-            "attributes": {},
+            "attributes": {
+              "Group": [
+                "Rendering"
+              ]
+            },
             "default": null,
             "field_type": "string_t",
             "is_array": false,
@@ -91,7 +127,14 @@
           {
             "fields": [
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "Rendering"
+                  ],
+                  "Subgroup": [
+                    "Transform"
+                  ]
+                },
                 "default": null,
                 "field_type": "float_t",
                 "is_array": false,

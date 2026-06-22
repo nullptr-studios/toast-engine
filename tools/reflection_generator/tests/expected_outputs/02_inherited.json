@@ -21,7 +21,11 @@
       {
         "fields": [
           {
-            "attributes": {},
+            "attributes": {
+              "Group": [
+                "Stats"
+              ]
+            },
             "default": null,
             "field_type": "int_t",
             "is_array": false,
@@ -34,7 +38,14 @@
           {
             "fields": [
               {
-                "attributes": {},
+                "attributes": {
+                  "Group": [
+                    "Stats"
+                  ],
+                  "Subgroup": [
+                    "Damage"
+                  ]
+                },
                 "default": null,
                 "field_type": "int_t",
                 "is_array": false,

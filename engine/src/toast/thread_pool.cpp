@@ -59,7 +59,9 @@ void ThreadPool::waitIdle() {
 void ThreadPool::threadLoop() {
 	static std::atomic<int> worker_id = 0;
 	thread_local static std::string name = std::format("ThreadPool::worker-{}", worker_id++);
+#ifdef TRACY_ENABLE
 	tracy::SetThreadName(name.c_str());
+#endif
 
 	while (true) {
 		std::move_only_function<void()> job;

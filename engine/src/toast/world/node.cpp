@@ -49,17 +49,48 @@ auto Node::box() const noexcept -> Box<Node> {
 
 auto Node::parent() noexcept -> Box<Node> {
 	if (m_parent.exists()) {
-		World::registerDependency(*m_parent, *this);
+		m_owner->registerDependency(*m_parent, *this);
 	}
 	return m_parent;
 }
 
-auto Node::addChild() -> Box<Node> {
-	return World::requestRuntimeCreation(*this);
-}
-
 auto Node::info() const -> const NodeInfo* {
 	return m_info;
+}
+
+auto Node::sourcePrefab() const noexcept -> const assets::AssetHandle<assets::Prefab>& {
+	if (m_type != NodeType::root and m_type != NodeType::world_root) {
+		TOAST_WARN("Node", "Trying to get a Node file asset of node {} that can't have one", m_name);
+	}
+	return m_source_prefab;
+}
+
+auto Node::isInstanceRoot() const noexcept -> bool {
+	return m_source_prefab.uid().data() != 0;
+}
+
+auto Node::root() const noexcept -> Box<Node> {
+	const Node* n = this;
+	while (true) {
+		if (n->isInstanceRoot() || not n->m_parent.exists()) {
+			return n->box();
+		}
+		n = &*n->m_parent;
+	}
+}
+
+auto Node::find(std::string_view query) -> Box<Node> {
+	if (not m_owner) {
+		return {};
+	}
+	return m_owner->findFrom(*this, query);
+}
+
+auto Node::search(std::string_view query) -> std::vector<Box<Node>> {
+	if (not m_owner) {
+		return {};
+	}
+	return m_owner->searchFrom(*this, query);
 }
 
 auto Node::listener() noexcept -> event::Listener& {

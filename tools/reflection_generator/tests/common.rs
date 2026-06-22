@@ -94,7 +94,7 @@ fn json_type_str(v: &JsonValue) -> &'static str {
     }
 }
 
-/// Helper to generate a minimal JSON for a single class NodeInfo
+#[allow(dead_code)]
 pub fn minimal_node_json(name: &str, namespace: Option<&str>) -> JsonValue {
     json!({
         "name": name,

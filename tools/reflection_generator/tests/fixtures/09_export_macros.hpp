@@ -3,6 +3,6 @@ namespace toast {
 
 class [[ToastNode]] TOAST_API ExportedNode {
 public:
-    [[Serialize]] int m_value;
+    [[Reflect]] int m_value;
 };
 }

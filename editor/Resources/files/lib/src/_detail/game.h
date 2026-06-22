@@ -22,6 +22,7 @@
 #ifdef __cplusplus
 extern "C" {
 
+
 #endif
 
 struct game_t; ///< Opaque Engine ptr

@@ -132,7 +132,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
           cmake --build build/linux-test-debug --parallel "$(nproc)"
-          ctest --test-dir build/linux-test-debug --verbose --parallel "$(nproc)"
+          ctest --test-dir build/linux-test-debug --verbose
 
   test-linux-release:
     name: test linux release
@@ -167,7 +167,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
           cmake --build build/linux-test-release --parallel "$(nproc)"
-          ctest --test-dir build/linux-test-release --verbose --parallel "$(nproc)"
+          ctest --test-dir build/linux-test-release --verbose
 
   build-tools-linux-debug:
     name: build ${{ matrix.tool }} linux debug

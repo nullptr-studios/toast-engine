@@ -1,3 +1,5 @@
+//! Converts parsed Class structs into NodeInfo data and emits C++ files via Jinja2 templates
+
 use crate::{Class, Field, Attribute};
 use serde::Serialize;
 use serde_json::{to_value, Value as json_t};
@@ -84,6 +86,9 @@ fn infer_field_type(type_name: &str) -> FieldType {
 		.trim_start_matches("std::")
 		.trim_start_matches("glm::");
 
+	// both are held by value in C++ but the reflection boundary only exchanges UIDs;
+	// the accessor resolves/unresolves the handle on get/set
+	if type_name.contains("AssetHandle<") { return FieldType::Uid; }
 	if base.starts_with("Box<") { return FieldType::Uid; }
 
 	match base {
@@ -98,7 +103,7 @@ fn infer_field_type(type_name: &str) -> FieldType {
 		"vec3"                                                         => FieldType::Vec3,
 		"vec4"                                                         => FieldType::Vec4,
 		"quat" | "quaternion"                                          => FieldType::Quaternion,
-		_                                                              => FieldType::Int,
+		_ => FieldType::Int,    // unknown types silently become Int; accessor compiles but the inspector widget will be wrong
 	}
 }
 
@@ -114,19 +119,53 @@ fn attr_arg(attrs: &[Attribute], name: &str) -> Option<std::string::String> {
 }
 
 fn build_field(field: &Field) -> FieldInfo {
-	let attrs: Vec<_> = field.attributes.iter()
-		.filter(|a| a.name != "Group" && a.name != "Subgroup")
-		.cloned()
-		.collect();
-
 	FieldInfo {
 		name:       field.name.clone(),
 		typename:   field.type_name.clone(),
 		field_type: infer_field_type(&field.type_name),
 		is_array:   field.type_name.contains("vector<"),
-		attributes: attrs_to_json(&attrs),
+		attributes: attrs_to_json(&field.attributes),
 		default:    field.default.clone(),
 	}
+}
+
+const RESERVED_FIELD_NAMES: &[&str] = &["m_uid", "m_name", "m_local_enabled", "m_parent", "m_source_prefab"];
+
+/// Rejects reflected definitions that would collide with engine-reserved member names
+pub fn validate_class(class: &Class) -> Result<(), std::string::String> {
+	let qualified = match &class.namespace {
+		Some(ns) => format!("{}::{}", ns, class.name),
+		None     => class.name.clone(),
+	};
+
+	// toast::Node legitimately owns the reserved members; user subclasses must not shadow them
+	if qualified == "toast::Node" {
+		return Ok(());
+	}
+
+	for field in &class.fields {
+		if RESERVED_FIELD_NAMES.contains(&field.name.as_str()) {
+			return Err(format!(
+				"{qualified}: reflected field '{}' uses a reserved engine member name (only toast::Node may)",
+				field.name
+			));
+		}
+		if let Some(group) = attr_arg(&field.attributes, "Group") {
+			if group.starts_with('~') {
+				return Err(format!("{qualified}: group name '{group}' may not start with '~' (reserved)"));
+			}
+		}
+
+		// Arrays of asset handles are not supported by the v1 reflection accessor
+		if field.type_name.contains("vector<") && field.type_name.contains("AssetHandle<") {
+			return Err(format!(
+				"{qualified}: field '{}' is a vector of AssetHandle, which is not supported",
+				field.name
+			));
+		}
+	}
+
+	Ok(())
 }
 
 pub fn build_node(class: &Class, source_file: &str) -> NodeInfo {
@@ -147,7 +186,8 @@ pub fn build_node(class: &Class, source_file: &str) -> NodeInfo {
 		save:         fns.contains(&"save".to_string()),
 	};
 
-	// Bucket fields by Group
+	// flatten fields into global / group / subgroup buckets so the template can emit a single
+	// flat std::array<FieldInfo> and index back into it per group/subgroup
 	let mut global_fields: Vec<FieldInfo> = Vec::new();
 	let mut group_map: std::collections::BTreeMap<
 		std::string::String,
@@ -212,20 +252,9 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 	let mut global_field_indices: Vec<usize> = Vec::new();
 
 	let augment_field = |f: &FieldInfo, idx: usize| -> json_t {
-		// display_name: Name attr arg[0], else strip m_ prefix
-		let display_name = f.attributes.get("Name")
-			.and_then(|v| v.as_array())
-			.and_then(|a| a.first())
-			.and_then(|v| v.as_str())
-			.map(|s| s.to_string())
-			.unwrap_or_else(|| {
-				f.name.strip_prefix("m_").unwrap_or(&f.name).to_string()
-			});
-
-		// attrs_list: remaining attributes excluding Group / Subgroup / Name
+		// attrs_list: all attributes kept as metadata (Name, Group, Subgroup, etc.)
 		let attrs_list: Vec<json_t> = if let json_t::Object(map) = &f.attributes {
 			map.iter()
-				.filter(|(k, _)| k.as_str() != "Name")
 				.map(|(k, v)| serde_json::json!({ "name": k, "args": v }))
 				.collect()
 		} else {
@@ -233,16 +262,16 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 		};
 
 		serde_json::json!({
-			"index":        idx,
-			"name":         f.name,
-			"member_name":  f.name,
-			"display_name": display_name,
-			"typename":     f.typename,
-			"field_type":   to_value(&f.field_type).unwrap(),
-			"is_array":     f.is_array,
-			"attributes":   f.attributes,
-			"attrs_list":   attrs_list,
-			"default":      f.default,
+			"index":          idx,
+			"name":           f.name,
+			"member_name":    f.name,
+			"typename":       f.typename,
+			"field_type":     to_value(&f.field_type).unwrap(),
+			"is_array":       f.is_array,
+			"is_asset_handle": f.typename.contains("AssetHandle<"),
+			"attributes":     f.attributes,
+			"attrs_list":     attrs_list,
+			"default":        f.default,
 		})
 	};
 
@@ -326,6 +355,13 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 		.map(|(flag, method)| serde_json::json!({ "flag": flag, "method": method }))
 		.collect();
 
+	// Whether any reflected field is an asset handle
+	let has_asset_handle = node.global_fields.iter().any(|f| f.typename.contains("AssetHandle<"))
+		|| node.groups.iter().any(|g| {
+			g.fields.iter().any(|f| f.typename.contains("AssetHandle<"))
+				|| g.subgroups.iter().any(|sg| sg.fields.iter().any(|f| f.typename.contains("AssetHandle<")))
+		});
+
 	serde_json::json!({
 		"name":                  node.name,
 		"namespace":             node.namespace,
@@ -338,6 +374,7 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 		"global_field_indices":  global_field_indices,
 		"groups":                augmented_groups,
 		"active_tick_fns":       active_tick_fns,
+		"has_asset_handle":      has_asset_handle,
 	})
 }
 

@@ -1,0 +1,46 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:editor.Components.Modals"
+        x:Class="editor.Components.Modals.SimpleLoaderWindow"
+        x:DataType="local:LoaderViewModel"
+        Title="Processing..."
+        Width="640" Height="400"
+        CanResize="False"
+        CanMaximize="False"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource E2}">
+
+	<Design.DataContext>
+		<local:LoaderViewModel />
+	</Design.DataContext>
+
+	<Grid RowDefinitions="Auto,*,Auto" Margin="16" RowSpacing="8">
+		<TextBlock Grid.Row="0"
+		           Text="Processing..."
+		           FontSize="18" FontWeight="SemiBold"
+		           Margin="0,0,0,4" />
+
+		<Border Grid.Row="1" Background="Black" CornerRadius="6">
+			<ScrollViewer x:Name="ConsoleScroll" Padding="2">
+				<ItemsControl ItemsSource="{Binding ConsoleLines}">
+					<ItemsControl.ItemTemplate>
+						<DataTemplate>
+							<SelectableTextBlock Text="{Binding}"
+							                     FontFamily="Consolas,Courier New,monospace"
+							                     FontSize="12"
+							                     Foreground="{StaticResource FgMuted}"
+							                     TextWrapping="Wrap"
+							                     Margin="12,2" />
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</ScrollViewer>
+		</Border>
+
+		<ProgressBar Grid.Row="2"
+		             Value="{Binding Progress}"
+		             Minimum="0" Maximum="100"
+		             Height="6"
+		             CornerRadius="3" />
+	</Grid>
+</Window>

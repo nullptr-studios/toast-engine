@@ -51,7 +51,7 @@ impl Server {
             {
                 let mut connected = self.engine_connected.lock().await;
                 if *connected {
-                    // Reject every engine connection if we're already conneccted to one instance
+                    // Reject every engine connection if we're already connected to one instance
                     println!("Engine already connected, rejecting {}", peer_addr);
                     continue;
                 }
@@ -162,7 +162,7 @@ async fn handle_tui_connection(socket: &mut TcpStream, storage: LogStorage) -> R
                 send_framed(socket, &update_batch).await?;
             }
             Err(broadcast::error::RecvError::Lagged(_)) => {
-                // TODO: Handle lag?
+                // FIXME: lagged subscribers silently drop messages (broadcast capacity 1000)
             }
             Err(broadcast::error::RecvError::Closed) => {
                 break;

@@ -17,9 +17,9 @@ add_custom_target(player ALL
         --output "${OUTPUT_ROOT}/$<CONFIG>/player"
         --nologo
         COMMAND ${CMAKE_COMMAND}
-            -DSRC_DIR=$<TARGET_FILE_DIR:toast_engine>
-            -DDST_DIR=${OUTPUT_ROOT}/$<CONFIG>/player
-            -P "${CMAKE_SOURCE_DIR}/cmake/link_or_copy_dir.cmake"
+        -DSRC_DIR=$<TARGET_FILE_DIR:toast_engine>
+        -DDST_DIR=${OUTPUT_ROOT}/$<CONFIG>/player
+        -P "${CMAKE_SOURCE_DIR}/cmake/link_or_copy_dir.cmake"
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "[dotnet] Building ${CSHARP_ASSEMBLY_NAME} (${DOTNET_CONFIG})..."
         VERBATIM

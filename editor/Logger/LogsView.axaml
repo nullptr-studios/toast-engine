@@ -1,12 +1,12 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:editor.Logger"
-        xmlns:conv="using:editor.Converters"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="editor.Logger.LogsView"
-        x:DataType="vm:LogsViewModel">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:editor.Logger"
+             xmlns:conv="using:editor.Converters"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="editor.Logger.LogsView"
+             x:DataType="vm:LogsViewModel">
 
 	<UserControl.Resources>
 		<conv:SeverityToColorConverter x:Key="SeverityColorConverter" />
@@ -42,7 +42,7 @@
 		<!-- Actual log list -->
 		<TextBox DockPanel.Dock="Bottom" PlaceholderText="Search..." />
 		<ListBox ScrollViewer.VerticalScrollBarVisibility="Auto"
-		         ItemsSource="{Binding log_entries}">
+		         ItemsSource="{Binding LogEntries}">
 			<!-- Force virtualization to be on for performance with large log lists -->
 			<ListBox.ItemsPanel>
 				<ItemsPanelTemplate>
@@ -52,15 +52,15 @@
 			<ListBox.ItemTemplate>
 				<DataTemplate>
 					<Grid ColumnDefinitions="1*, 2*, 4*, 1*">
-						<TextBlock Grid.Column="0" Text="{Binding sink}"
+						<TextBlock Grid.Column="0" Text="{Binding Sink}"
 						           Padding="10,0"
-						           Foreground="{Binding severity, Converter={StaticResource SeverityColorConverter}}" />
-						<TextBlock Grid.Column="1" Text="{Binding file}"
-						           Foreground="{Binding severity, Converter={StaticResource SeverityColorConverter}}" />
-						<TextBlock Grid.Column="2" Text="{Binding message}"
-						           Foreground="{Binding severity, Converter={StaticResource SeverityColorConverter}}" />
-						<TextBlock Grid.Column="3" Text="{Binding timestamp}"
-						           Foreground="{Binding severity, Converter={StaticResource SeverityColorConverter}}" />
+						           Foreground="{Binding Severity, Converter={StaticResource SeverityColorConverter}}" />
+						<TextBlock Grid.Column="1" Text="{Binding File}"
+						           Foreground="{Binding Severity, Converter={StaticResource SeverityColorConverter}}" />
+						<TextBlock Grid.Column="2" Text="{Binding Message}"
+						           Foreground="{Binding Severity, Converter={StaticResource SeverityColorConverter}}" />
+						<TextBlock Grid.Column="3" Text="{Binding Timestamp}"
+						           Foreground="{Binding Severity, Converter={StaticResource SeverityColorConverter}}" />
 					</Grid>
 				</DataTemplate>
 			</ListBox.ItemTemplate>

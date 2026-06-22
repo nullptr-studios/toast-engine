@@ -2,8 +2,8 @@
 
 class [[ToastNode]] VectorTypesNode {
 public:
-    [[Serialize]] std::vector<int> m_ints;
-    [[Serialize]] std::vector<float> m_floats;
-    [[Serialize]] std::vector<std::string> m_strings;
-    [[Serialize]] std::vector<glm::vec3> m_vectors;
+    [[Reflect]] std::vector<int> m_ints;
+    [[Reflect]] std::vector<float> m_floats;
+    [[Reflect]] std::vector<std::string> m_strings;
+    [[Reflect]] std::vector<glm::vec3> m_vectors;
 };

@@ -64,6 +64,17 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 			TOAST_ERROR("AssetManager", "Failed to parse TOML asset {}: {}", info.path, err.description());
 			return nullptr;
 		}
+	} else if (info.type == "curve") {
+		try {
+			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
+			asset = Curve::fromToml(toml::parse(toml_str));
+		} catch (const toml::parse_error& err) {
+			TOAST_ERROR("AssetManager", "Failed to parse curve asset {}: {}", info.path, err.description());
+			return nullptr;
+		} catch (const std::exception& err) {
+			TOAST_ERROR("AssetManager", "Failed to load curve asset {}: {}", info.path, err.what());
+			return nullptr;
+		}
 	} else if (info.type == "node") {
 		// TODO: At some point we need to handle toast packs
 		if constexpr (load_mode == SaveMode::editor) {
@@ -144,6 +155,16 @@ auto AssetManager::save(std::string_view uri) -> bool {
 		return false;
 	}
 	return save(*uid);
+}
+
+auto AssetManager::saveBytes(std::string_view uri, const std::vector<uint8_t>& data) -> bool {
+	std::lock_guard lock(mutex);
+	auto real_path = resolveVirtualPath(uri);
+	if (!real_path) {
+		TOAST_ERROR("AssetManager", "Cannot save bytes: could not resolve path {}", uri);
+		return false;
+	}
+	return saveFile(*real_path, data);
 }
 
 void AssetManager::reloadManifest() {
@@ -265,11 +286,16 @@ auto AssetManager::getCachePath() const -> const std::filesystem::path& {
 
 // Public API Implementations
 auto load(toast::UID uid) -> AssetHandleBase {
-	return AssetHandleBase(AssetManager::get().load(uid));
+	return {AssetManager::get().load(uid), uid};
 }
 
 auto load(std::string_view uri) -> AssetHandleBase {
-	return AssetHandleBase(AssetManager::get().load(uri));
+	auto uid = AssetManager::resolveURI(uri);
+	if (not uid.has_value()) {
+		TOAST_ERROR("AssetManager", "Could not resolve URI to UID: {}", uri);
+		return AssetHandleBase(nullptr);
+	}
+	return load(*uid);
 }
 
 auto resolveURI(std::string_view uri) -> std::optional<toast::UID> {

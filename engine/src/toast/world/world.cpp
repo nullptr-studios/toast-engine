@@ -1,11 +1,13 @@
 #include "world.hpp"
 
 #include "node_3d.hpp"
-#include "toast/uri_handler.hpp"
+#include "workspace_events.hpp"
 #include "world_test_access.hpp"
 
 #include <chrono>
 #include <sstream>
+#include <toast/assets/asset_manager.hpp>
+#include <toast/uri_handler.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/assets/types.hpp>
 #include <toast/thread_pool.hpp>
@@ -122,59 +124,15 @@ World::World() {
 	TOAST_INFO("World", "Created world");
 }
 
-auto World::nodeAllocation(std::optional<assets::Prefab::BasicNode> node_data) noexcept -> Box<Node> {
+World::~World() {
 	ZoneScoped;
-
-	// Identify the type and get reflection info
-	std::string type = node_data.has_value() ? node_data->type : "toast::Node";
-	const NodeInfo* info = m.node_registry.reflect(type);
-
-#ifndef NDEBUG
-	if (!info) {
-		TOAST_WARN("World", "Reflection information for type {} not found. Falling back to toast::Node", type);
-		info = m.node_registry.reflect("toast::Node");
-	}
-#endif
-
-	// Node allocation
-#ifdef NDEBUG
-	Node* raw_node = info->construct();
-#else
-	Node* raw_node = (info && info->construct) ? info->construct() : new Node();
-#endif
-
-	{
-		std::scoped_lock lock(m.nodes_mutex);
-		auto [it, result] = m.nodes.emplace(raw_node);
-		TOAST_ASSERT(result, "World", "Node allocation failed");
-	}
-	raw_node->m_info = info;    // attach reflection data
-
-	if (node_data.has_value()) {
-		raw_node->name(node_data->name);
-
-		if (info) {
-			info->forEachBaseType([&](const NodeInfo& level) {
-				for (const auto& f : level.all_fields) {
-					auto f_data = node_data->find(f.name);
-					if (not f_data.has_value()) {
-						continue;
-					}
-
-#ifndef NDEBUG
-					if (not f.set) {
-						TOAST_WARN("World", "No valid set function found for {}", f.name);
-						continue;
-					}
-#endif
-
-					f.set(raw_node, f_data->value);
-				}
-			});
+	for (auto& f : m.load_futures) {
+		if (f.valid()) {
+			f.wait();
 		}
 	}
 
-	return raw_node->box();
+	TOAST_INFO("World", "Destroyed world");
 }
 
 void World::tick() {
@@ -182,7 +140,12 @@ void World::tick() {
 
 	drainDestroyQueue();
 	drainLoadQueue();
+	drainSpawnQueue();
 
+	/**
+	 * dispatches one phase: submits each wave to the thread pool and joins before advancing to the next wave;
+	 * clusters tick their nodes synchronously within the thread to preserve SCC ordering
+	 */
 	auto run_phase = [](const std::vector<TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) {
 		ZoneScopedN("World::tick()::function");    // NOLINT
 		ZoneNameF("World::tick()::%s", name.data());
@@ -232,11 +195,6 @@ void World::registerDependency(Node& from, Node& to) {
 		TOAST_WARN("World", "{} ({}) tried to register a dependency to itself", from.name(), from.uid());
 		return;
 	}
-	// TODO: sanity check
-	// auto& node_set = instance->m.nodes;
-	// if (node_set.find(from.box()) == node_set.end()) {
-	//
-	// }
 
 	// don't store duplicates
 	auto& edges = instance->dependency_graph.connections[from];
@@ -247,43 +205,6 @@ void World::registerDependency(Node& from, Node& to) {
 	edges.emplace_back(to);
 	instance->dependency_graph.inverse_connections[to].emplace_back(from);
 	TOAST_TRACE("World", "Added dependency from {} to {}", from.name(), from.uid());
-}
-
-auto World::requestRuntimeCreation(Node& parent) -> Box<Node> {
-	ZoneScoped;
-
-	// Phase 1: allocation
-	Box node = instance->nodeAllocation();
-	// no load since they are not being serialized
-	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
-
-	// Phase 2: data structure generation
-	node->m_uid.generate();
-	node->m_parent = parent;
-	parent.m_children.emplace_back(node);
-
-	registerDependency(parent, node);
-	std::ranges::transform(parent.m_wave, std::begin(node->m_wave), [](auto x) { return (x < 255) ? x + 1 : x; });
-	auto schedule_node = [node](auto& schedule_vec, uint8_t wave_idx) {
-		if (wave_idx >= schedule_vec.size()) {
-			schedule_vec.resize(wave_idx + 1);
-		}
-		schedule_vec[wave_idx].emplace_back(node);
-	};
-	schedule_node(instance->tick_schedule.early_tick, node->m_wave[0]);
-	schedule_node(instance->tick_schedule.tick, node->m_wave[1]);
-	schedule_node(instance->tick_schedule.post_physics, node->m_wave[2]);
-	schedule_node(instance->tick_schedule.late_tick, node->m_wave[3]);
-
-	node->m_state = parent.m_state;
-	node->m_type = NodeType::child;
-	node->m_inherited_enabled = parent.enabled();
-
-	// Phase 3: node initialization
-	node->callTick(node->info(), TickFunctionList::pre_init);
-	node->enabled(true);
-	TOAST_TRACE("World", "Created node in {} ({}) during runtime", parent.name(), parent.uid());
-	return node;
 }
 
 void World::loadNode(UID uid) {
@@ -303,7 +224,9 @@ void World::loadNode(UID uid) {
 	//				- init()
 
 	auto future = std::async(std::launch::async, [uid]() {
+#ifdef TRACY_ENABLE
 		tracy::SetThreadName("World::loadNode worker");
+#endif
 		ZoneScoped;    // NOLINT
 		ZoneNameF("World::loadNode(%s)::async", uid.get().c_str());
 
@@ -313,36 +236,20 @@ void World::loadNode(UID uid) {
 			return;
 		}
 
-		// parallel allocation + deserialization
-		std::vector<std::future<Box<Node>>> alloc_futures;
-		std::vector<Box<Node>> nodes;
-		size_t size = node_file->nodes.size();
-		alloc_futures.reserve(size);
-		nodes.reserve(size);
-		for (const auto& node : node_file->nodes) {
-			alloc_futures.emplace_back(ThreadPool::push([node_data = node]() {
-				Box node = instance->nodeAllocation(node_data);
-				node->callTick(node->info(), TickFunctionList::load);
-				node->callTick(node->info(), TickFunctionList::pre_init);    // TODO: deprecate pre_init
-				node->m_state = NodeState::loading;
-				return node;
-			}));
-		}
+		INodeOwner::InstantiateContext ctx;
+		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
+		Box<Node> root = instance->instantiate(node_file, ctx);
 
-		{
-			ZoneScopedN("Thread Pool semaphore");    // NOLINT
-			for (auto& f : alloc_futures) {
-				nodes.emplace_back(f.get());
-			}
+		if (not root.exists()) {
+			TOAST_ERROR("World", "Failed to instantiate Node {}", uid);
+			return;
 		}
-
-		Box<Node> root = instance->buildTree(std::move(nodes), node_file);
 
 		root->propagateCallTick(root->info(), TickFunctionList::init);
 		TOAST_TRACE("World", "Node {} ({}) finished loading", root->name(), root->uid());
 
 		std::scoped_lock lock(instance->m.load_mutex);
-		instance->nodes.load_queue.emplace_back(std::move(root));
+		instance->trees.load_queue.emplace_back(std::move(root));
 	});
 
 	std::scoped_lock lock(instance->m.load_mutex);
@@ -370,10 +277,10 @@ void World::drainLoadQueue() {
 	std::vector<Box<Node>> loaded;
 	{
 		std::scoped_lock lock(m.load_mutex);
-		if (nodes.load_queue.empty()) {
+		if (trees.load_queue.empty()) {
 			return;
 		}
-		std::swap(loaded, nodes.load_queue);
+		std::swap(loaded, trees.load_queue);
 	}
 
 	ZoneScoped;
@@ -382,8 +289,398 @@ void World::drainLoadQueue() {
 	for (auto& root : loaded) {
 		root->changeNodeState(NodeState::cached);
 		TOAST_TRACE("World", "Node {} ({}) moved to cache", root->name(), root->uid());
-		nodes.cached.emplace_back(std::move(root));
+		trees.cached.emplace_back(std::move(root));
 	}
+}
+
+void World::spawn(UID prefab, Node& parent) {
+	ZoneScoped;
+	TOAST_INFO("World", "Spawning prefab {} under {}", prefab, parent.name());
+
+	Box<Node> parent_box = parent.box();
+	auto future = std::async(std::launch::async, [prefab, parent_box]() {
+#ifdef TRACY_ENABLE
+		tracy::SetThreadName("World::spawn worker");
+#endif
+		ZoneScoped;    // NOLINT
+
+		auto file = assets::load<assets::Prefab>(prefab);
+		if (not file.hasValue()) {
+			TOAST_ERROR("World", "Couldn't load prefab {} to spawn", prefab);
+			return;
+		}
+
+		INodeOwner::InstantiateContext ctx;
+		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
+		Box<Node> root = instance->instantiate(file, ctx);
+		if (not root.exists()) {
+			TOAST_ERROR("World", "Failed to instantiate prefab {} to spawn", prefab);
+			return;
+		}
+
+		// spawned instances need a unique UID within the parent's namespace
+		// even if two copies of the same prefab are spawned concurrently
+		generateUid(*root);
+		root->propagateCallTick(root->info(), TickFunctionList::init);
+		root->changeNodeState(NodeState::cached);
+
+		std::scoped_lock lock(instance->m.load_mutex);
+		instance->m.spawn_queue.emplace_back(std::move(root), parent_box);
+	});
+
+	std::scoped_lock lock(instance->m.load_mutex);
+	std::erase_if(instance->m.load_futures, [](std::future<void>& f) {
+		return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+	});
+	instance->m.load_futures.emplace_back(std::move(future));
+}
+
+void World::drainSpawnQueue() {
+	std::vector<std::pair<Box<Node>, Box<Node>>> ready;
+	{
+		std::scoped_lock lock(m.load_mutex);
+		if (m.spawn_queue.empty()) {
+			return;
+		}
+		std::swap(ready, m.spawn_queue);
+	}
+
+	ZoneScoped;
+
+	for (auto& [root, parent] : ready) {
+		if (not parent.exists() || parent->m_state == NodeState::destroy) {
+			TOAST_WARN("World", "Spawn target for {} no longer exists; dropping the spawn", root->name());
+			continue;
+		}
+
+		// Keep the placement UID unique within the parents namespace
+		while (findNode(root->uid(), &*parent).exists()) {
+			generateUid(*root);
+		}
+
+		moveToChild(*root, *parent);
+	}
+}
+
+auto World::findNode(const UID& uid, Node* scope) -> Box<Node> {
+	ZoneScoped;
+
+	Node* start = scope;
+	if (not start) {
+		if (not instance->trees.root.exists()) {
+			return {};
+		}
+		start = &*instance->trees.root;
+	}
+
+	// Depth-first, but a nested instance root is opaque
+	auto dfs = [&uid](this auto&& self, Node& n, bool is_scope_root) -> Box<Node> {
+		if (n.uid().data() == uid.data()) {
+			return n.box();
+		}
+		if (not is_scope_root && n.isInstanceRoot()) {
+			return {};
+		}
+		for (auto& child : n.m_children) {
+			if (auto found = self(*child, false)) {
+				return found;
+			}
+		}
+		return {};
+	};
+
+	return dfs(*start, true);
+}
+
+auto World::findNode(std::string_view path) -> Box<Node> {
+	Box<Node> current;
+	Node* scope = nullptr;    // first segment is resolved from the world root
+	size_t start = 0;
+
+	while (true) {
+		size_t slash = path.find('/', start);
+		std::string_view seg = path.substr(start, slash == std::string_view::npos ? std::string_view::npos : slash - start);
+		if (seg.empty()) {
+			return {};
+		}
+
+		current = findNode(UID(UID::fromString(seg)), scope);
+		if (not current.exists()) {
+			return {};
+		}
+		scope = &*current;    // the next segment is scoped to this instance's interior
+
+		if (slash == std::string_view::npos) {
+			break;
+		}
+		start = slash + 1;
+	}
+
+	return current;
+}
+
+auto World::uidPath(const Node& node) -> std::string {
+	const Node* root = instance->trees.root.exists() ? &*instance->trees.root : nullptr;
+
+	std::vector<std::string> parts;
+	for (const Node* n = &node; n != nullptr;) {
+		if (n->isInstanceRoot()) {
+			parts.push_back(n->uid().get());
+		}
+		if (n == root) {
+			break;
+		}
+		Box<Node> parent = n->parentInternal();
+		n = parent.exists() ? &*parent : nullptr;
+	}
+	std::ranges::reverse(parts);
+
+	std::string result;
+	for (size_t i = 0; i < parts.size(); ++i) {
+		if (i != 0) {
+			result += '/';
+		}
+		result += parts[i];
+	}
+	return result;
+}
+
+namespace {
+
+auto looksLikeUid(std::string_view seg) -> bool {
+	if (seg.size() != 11) {
+		return false;
+	}
+	for (char c : seg) {
+		bool ok = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_';
+		if (not ok) {
+			return false;
+		}
+	}
+	return true;
+}
+
+enum class QueryRoot : uint8_t {
+	self,
+	prefab_root,
+	world_root,
+	global
+};
+
+struct ParsedQuery {
+	QueryRoot root = QueryRoot::self;
+	std::vector<std::string_view> segments;    // path after the namespace keyword
+	bool valid = true;
+};
+
+auto parseQuery(std::string_view q) -> ParsedQuery {
+	ParsedQuery out;
+
+	// only node:// is accepted, any other URI scheme (asset://) is an error
+	if (auto pos = q.find("://"); pos != std::string_view::npos) {
+		if (q.substr(0, pos) != "node") {
+			out.valid = false;
+			return out;
+		}
+		q.remove_prefix(pos + 3);
+	}
+
+	std::vector<std::string_view> parts;
+	size_t start = 0;
+	while (start <= q.size()) {
+		size_t slash = q.find('/', start);
+		size_t len = (slash == std::string_view::npos) ? std::string_view::npos : slash - start;
+		std::string_view seg = q.substr(start, len);
+		if (not seg.empty()) {
+			parts.push_back(seg);
+		}
+		if (slash == std::string_view::npos) {
+			break;
+		}
+		start = slash + 1;
+	}
+
+	if (parts.empty()) {
+		out.valid = false;
+		return out;
+	}
+
+	size_t first = 0;
+	if (parts[0] == "root") {
+		out.root = QueryRoot::prefab_root;
+		first = 1;
+	} else if (parts[0] == "world_root") {
+		out.root = QueryRoot::world_root;
+		first = 1;
+	} else if (parts[0] == "global") {
+		out.root = QueryRoot::global;
+		first = 1;
+	}
+
+	out.segments.assign(parts.begin() + first, parts.end());
+	return out;
+}
+
+}
+
+auto World::findScoped(Node& scope, std::string_view seg, bool by_uid) -> Box<Node> {
+	uint64_t target = by_uid ? UID::fromString(seg) : 0;
+
+	auto dfs = [&](this auto&& self, Node& n, bool is_scope_root) -> Box<Node> {
+		bool match = by_uid ? (n.uid().data() == target) : (n.name() == seg);
+		if (match) {
+			return n.box();
+		}
+		// Instances are opaque
+		if (not is_scope_root && n.isInstanceRoot()) {
+			return {};
+		}
+		for (auto& child : n.m_children) {
+			if (auto found = self(*child, false)) {
+				return found;
+			}
+		}
+		return {};
+	};
+
+	return dfs(scope, true);
+}
+
+void World::searchScoped(Node& scope, std::string_view seg, bool by_uid, std::vector<Box<Node>>& out) {
+	uint64_t target = by_uid ? UID::fromString(seg) : 0;
+
+	auto dfs = [&](this auto&& self, Node& n) -> void {
+		if (by_uid ? (n.uid().data() == target) : (n.name() == seg)) {
+			out.emplace_back(n.box());
+		}
+		// search() is the general form, it crosses into prefab interiors
+		for (auto& child : n.m_children) {
+			self(*child);
+		}
+	};
+
+	dfs(scope);
+}
+
+auto World::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
+	ZoneScoped;
+
+	ParsedQuery pq = parseQuery(query);
+	if (not pq.valid) {
+		TOAST_ERROR("World", "Invalid node query \"{}\"", query);
+		return {};
+	}
+
+	// Resolve the starting scope from the namespace keyword
+	std::vector<Node*> origins;
+	switch (pq.root) {
+		case QueryRoot::self: origins.push_back(const_cast<Node*>(&origin)); break;
+		case QueryRoot::prefab_root: origins.push_back(&*const_cast<Node&>(origin).root()); break;
+		case QueryRoot::world_root:
+			if (trees.root.exists()) {
+				origins.push_back(&*trees.root);
+			}
+			break;
+		case QueryRoot::global:
+			if (pq.segments.empty()) {
+				TOAST_ERROR("World", "find(\"global\") is ambiguous; use search(\"global\") to list global nodes");
+				return {};
+			}
+			for (auto& g : trees.global) {
+				origins.push_back(&*g);
+			}
+			break;
+	}
+
+	// A bare keyword resolves to the scope node itself
+	if (pq.segments.empty()) {
+		return origins.empty() ? Box<Node> {} : origins.front()->box();
+	}
+
+	bool by_uid = looksLikeUid(pq.segments.front());
+
+	for (Node* start : origins) {
+		Node* scope = start;
+		Box<Node> current;
+		bool ok = true;
+		for (std::string_view seg : pq.segments) {
+			current = findScoped(*scope, seg, by_uid);
+			if (not current.exists()) {
+				ok = false;
+				break;
+			}
+			scope = &*current;
+		}
+		if (ok) {
+			return current;    // find() returns the first match
+		}
+	}
+
+	return {};
+}
+
+auto World::searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> {
+	ZoneScoped;
+
+	ParsedQuery pq = parseQuery(query);
+	if (not pq.valid) {
+		TOAST_ERROR("World", "Invalid node query \"{}\"", query);
+		return {};
+	}
+
+	std::vector<Box<Node>> out;
+
+	// "global" with no path lists the world's global nodes
+	if (pq.root == QueryRoot::global && pq.segments.empty()) {
+		out.reserve(trees.global.size());
+		for (auto& g : trees.global) {
+			out.emplace_back(g);
+		}
+		return out;
+	}
+
+	std::vector<Node*> origins;
+	switch (pq.root) {
+		case QueryRoot::self: origins.push_back(const_cast<Node*>(&origin)); break;
+		case QueryRoot::prefab_root: origins.push_back(&*const_cast<Node&>(origin).root()); break;
+		case QueryRoot::world_root:
+			if (trees.root.exists()) {
+				origins.push_back(&*trees.root);
+			}
+			break;
+		case QueryRoot::global:
+			for (auto& g : trees.global) {
+				origins.push_back(&*g);
+			}
+			break;
+	}
+
+	if (pq.segments.empty()) {
+		for (Node* o : origins) {
+			out.emplace_back(o->box());
+		}
+		return out;
+	}
+
+	bool by_uid = looksLikeUid(pq.segments.front());
+
+	for (Node* start : origins) {
+		Node* scope = start;
+		bool ok = true;
+		for (size_t i = 0; i + 1 < pq.segments.size(); ++i) {
+			Box<Node> step = findScoped(*scope, pq.segments[i], by_uid);
+			if (not step.exists()) {
+				ok = false;
+				break;
+			}
+			scope = &*step;
+		}
+		if (ok) {
+			searchScoped(*scope, pq.segments.back(), by_uid, out);
+		}
+	}
+
+	return out;
 }
 
 auto World::setRoot(Node& node) -> Box<Node> {
@@ -397,7 +694,7 @@ auto World::cacheNode(Node& node) -> Box<Node> {
 auto World::findCached(std::string_view name) -> Box<Node> {
 	ZoneScoped;
 
-	for (const auto& node : instance->nodes.cached) {
+	for (const auto& node : instance->trees.cached) {
 		if (node->name() == name) {
 			return node;
 		}
@@ -420,20 +717,23 @@ void World::destroyNode(Node& node) {
 		return;
 	}
 
-	std::erase(instance->nodes.cached, node.box());
+	std::erase(instance->trees.cached, node.box());
 	node.changeNodeState(NodeState::destroy);
-	instance->nodes.destroy_queue.emplace_back(node.box());
+	instance->trees.destroy_queue.emplace_back(node.box());
 	TOAST_TRACE("World", "Queued node {} ({}) for destruction", node.name(), node.uid());
 }
 
 void World::drainDestroyQueue() {
 	std::vector<Box<Node>> doomed;
-	std::swap(doomed, nodes.destroy_queue);
+	std::swap(doomed, trees.destroy_queue);
 
 	if (!doomed.empty()) {
 		ZoneScopedN("World::drainDestroyQueue()");
 
-		// Run the destroy lifecycle while the trees are still intact
+		/**
+		 * order matters: destroy() callbacks first (tree is still intact), then sever Box<> edges, then free;
+		 * this way destroy() can safely read its own children and parent
+		 */
 		for (auto& root : doomed) {
 			root->propagateCallTick(root->info(), TickFunctionList::destroy);
 		}
@@ -474,7 +774,7 @@ void World::drainDestroyQueue() {
 
 		// Free the nodes
 		{
-			std::scoped_lock lock(m.nodes_mutex);
+			std::scoped_lock lock(nodes_mutex);
 			for (Node* victim : victims) {
 				ControlBox* control = ControlBox::get(victim);
 				const NodeInfo* info = victim->info();
@@ -485,21 +785,14 @@ void World::drainDestroyQueue() {
 				} else {
 					delete victim;
 				}
-				control->node = nullptr;
-				m.tombstones++;
+				releaseNode(*control);
 			}
 		}
 
 		computeDependencyGraph();
 	}
 
-	// Reap tombstones once their last Box released them
-	if (m.tombstones > 0) {
-		std::scoped_lock lock(m.nodes_mutex);
-		m.tombstones -= std::erase_if(m.nodes, [](const ControlBox& control) {
-			return control.node == nullptr && control.ref_count.load(std::memory_order_acquire) == 0;
-		});
-	}
+	reapTombstones();
 }
 
 void World::markNode3DDependantsDirty(const Box<Node>& node) noexcept {
@@ -524,16 +817,16 @@ void World::computeDependencyGraph() {
 	std::vector<std::vector<Box<Node>>> subgraphs;
 	{
 		// Loader threads insert into m.nodes concurrently
-		std::scoped_lock lock(m.nodes_mutex);
+		std::scoped_lock lock(nodes_mutex);
 
 		// Guarantee every existing node exists in the subgraph
-		for (const auto& node : m.nodes) {
+		forEachNode([&](const ControlBox& node) {
 			if (!node.node || node.node->m_state == NodeState::destroy) {
-				continue;
+				return;
 			}
 			dependency_graph.connections[node.node->box()];
 			dependency_graph.inverse_connections[node.node->box()];
-		}
+		});
 
 		subgraphs = subgraphSeparation();
 	}
@@ -572,13 +865,13 @@ auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
 	std::unordered_set<Box<Node>> visited;
 	std::vector<NodeGraph> subgraphs;
 
-	for (const auto& start_cn : m.nodes) {
+	forEachNode([&](const ControlBox& start_cn) {
 		if (!start_cn.node || start_cn.node->m_state == NodeState::destroy) {
-			continue;
+			return;
 		}
 		auto start_node = start_cn.node->box();
 		if (visited.contains(start_node)) {
-			continue;
+			return;
 		}
 
 		ZoneScoped;
@@ -623,11 +916,15 @@ auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
 		subgraph.reserve(component.size());
 		subgraph.assign(std::make_move_iterator(component.begin()), std::make_move_iterator(component.end()));
 		subgraphs.push_back(std::move(subgraph));
-	}
+	});
 
 	return subgraphs;
 }
 
+/**
+ * produces SCCs in reverse topological order so assignWaves iterates in the right direction;
+ * SCCs with more than one node indicate a dependency cycle and are bundled into a NodeCluster
+ */
 auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_subgraphs) -> std::vector<TickSchedule::Wave> {
 	ZoneScoped;
 
@@ -692,7 +989,7 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 						search_context.low_link[current_node] =
 						    std::min(search_context.low_link[current_node], search_context.low_link[neighbor_node]);
 					} else if (search_context.on_stack[neighbor_node]) {
-						// Neighbor is on the stack, meaning we've found a cyclw
+						// Neighbor is on the stack, meaning we've found a cycle
 						search_context.low_link[current_node] =
 						    std::min(search_context.low_link[current_node], search_context.index[neighbor_node]);
 					}
@@ -742,6 +1039,10 @@ auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_sub
 	return result;
 }
 
+/**
+ * assigns each item a wave index equal to max(predecessor wave) + 1;
+ * items with no predecessors land on wave 0 and run fully in parallel
+ */
 auto World::assignWaves(const std::vector<TickSchedule::Wave>& subgraphs) -> std::vector<TickSchedule::Wave> {
 	// First, map every node back to its containing item
 	// This allows us to treat clusters as a single scheduling unit
@@ -844,6 +1145,10 @@ auto World::assignWaves(const std::vector<TickSchedule::Wave>& subgraphs) -> std
 	return buckets;
 }
 
+/**
+ * prunes items that don't implement the relevant tick function for each phase,
+ * then bakes the final wave index into Node::m_wave for O(1) lookup at dispatch time
+ */
 auto World::optimizeWaves(const std::vector<TickSchedule::Wave>& waves) -> TickSchedule {
 	TickSchedule schedule = {
 	  .early_tick = waves,
@@ -920,7 +1225,7 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 	}
 
 	// The world may be empty; in that case the node is simply promoted
-	auto root_node = nodes.root;
+	auto root_node = trees.root;
 
 	switch (node.m_state) {
 		case NodeState::root: TOAST_WARN("World", "Attempted to swap root with a node already in root"); return {};
@@ -931,33 +1236,34 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 			return {};
 		case NodeState::cached:
 			if (root_node.exists()) {
-				std::ranges::replace(nodes.cached, node.box(), root_node);
+				std::ranges::replace(trees.cached, node.box(), root_node);
 				root_node->m_type = NodeType::root;    // world_root only exists in root and global
 				root_node->changeNodeState(NodeState::cached);
 				root_node->propagateCallTick(root_node->info(), TickFunctionList::end);
 				root_node->enabled(false);
 			} else {
-				std::erase(nodes.cached, node.box());
+				std::erase(trees.cached, node.box());
 			}
 			break;
 		case NodeState::global:
 			if (root_node.exists()) {
-				std::ranges::replace(nodes.global, node.box(), root_node);
+				std::ranges::replace(trees.global, node.box(), root_node);
 				root_node->changeNodeState(NodeState::global);
 			} else {
-				std::erase(nodes.global, node.box());
+				std::erase(trees.global, node.box());
 			}
 			break;
 	}
 
 	node.m_type = NodeType::world_root;
 	node.changeNodeState(NodeState::root);
-	nodes.root = node.box();
+	trees.root = node.box();
 
 	computeDependencyGraph();
 
 	node.propagateCallTick(node.info(), TickFunctionList::begin);
 	node.enabled(true);
+	event::send<event::RequestHierarchyUpdate>();    // TODO: should the world send this?
 	TOAST_INFO("World", "Swapped root to {} ({})", node.name(), node.uid());
 
 	return root_node;
@@ -977,7 +1283,7 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 		case NodeState::root:
 			if (node.m_type == NodeType::world_root) {
 				// Caching the active root leaves the world empty
-				nodes.root = {};
+				trees.root = {};
 			} else {
 				std::erase(node.parent()->m_children, node.box());
 				node.m_parent = {};
@@ -985,7 +1291,7 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 			break;
 		case NodeState::global:
 			if (node.m_type == NodeType::world_root) {
-				std::erase(nodes.global, node.box());
+				std::erase(trees.global, node.box());
 			} else {
 				std::erase(node.parent()->m_children, node.box());
 				node.m_parent = {};
@@ -1003,7 +1309,7 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 		node.m_type = NodeType::root;
 	}
 
-	nodes.cached.emplace_back(node.box());
+	trees.cached.emplace_back(node.box());
 
 	computeDependencyGraph();
 	TOAST_TRACE("World", "Node {} ({}) moved to cache", node.name(), node.uid());
@@ -1027,7 +1333,7 @@ auto World::moveToGlobal(Node& node) -> Box<Node> {
 		return {};
 	}
 
-	std::erase(nodes.cached, node.box());
+	std::erase(trees.cached, node.box());
 
 	node.m_type = NodeType::world_root;
 	node.changeNodeState(NodeState::global);
@@ -1036,7 +1342,7 @@ auto World::moveToGlobal(Node& node) -> Box<Node> {
 
 	node.propagateCallTick(node.info(), TickFunctionList::begin);
 	node.enabled(true);
-	nodes.global.emplace_back(node.box());
+	trees.global.emplace_back(node.box());
 	TOAST_TRACE("World", "Node {} ({}) moved to global", node.name(), node.uid());
 	return node.box();
 }
@@ -1069,94 +1375,26 @@ auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
 		std::erase(node.parent()->m_children, node.box());
 	} else {
 		if (node.m_state == NodeState::global) {
-			std::erase(nodes.global, node.box());
+			std::erase(trees.global, node.box());
 		} else if (node.m_state == NodeState::cached) {
-			std::erase(nodes.cached, node.box());
+			std::erase(trees.cached, node.box());
 			run_begin = true;
 		}
 	}
 
 	node.changeNodeState(parent.m_state);
+	parent.m_children.emplace_back(node.box());
+	node.m_parent = parent;
+
+	computeDependencyGraph();
+
 	if (run_begin) {
 		node.propagateCallTick(node.info(), TickFunctionList::begin);
 		node.enabled(true);
 	}
-	parent.m_children.emplace_back(node.box());
-	node.m_parent = parent;
 	TOAST_TRACE("World", "Moved node {} ({}) under {} ({})", node.name(), node.uid(), parent.name(), parent.uid());
 
 	return node.box();
-}
-
-auto World::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node> {
-	ZoneScoped;
-
-	std::unordered_map<uint64_t, Box<Node>> uid_map;
-	uid_map.reserve(nodes.size());
-	for (auto& node : nodes) {
-		uid_map[node->uid().data()] = node;
-	}
-
-	Box<Node> root;
-
-	// Prefab serialization guarantees exactly one rootless node, written first.
-	// nodes[i] pairs with file->nodes[i]: the alloc futures are collected in
-	// submission order, which is the file order.
-	for (size_t i = 0; i < nodes.size(); ++i) {
-		auto& node = nodes[i];
-		const auto& data = file->nodes[i];
-
-		auto parent_field = data.find("Parent");
-		bool has_parent = false;
-
-		if (parent_field.has_value()) {
-			try {
-				UID parent_uid = parent_field->as<UID>();
-
-				auto it = uid_map.find(parent_uid.data());
-				if (it != uid_map.end()) {
-					node->m_parent = it->second;
-					it->second->m_children.emplace_back(node);
-					has_parent = true;
-				}
-			} catch (const std::bad_any_cast&) {
-				TOAST_WARN("World", "Cast to UID of field Parent in {} failed, treating as Root", data.name);
-			}
-		}
-
-		node->m_type = has_parent ? NodeType::child : NodeType::root;
-
-		if (not has_parent) {
-#ifndef NDEBUG
-			if (root.exists()) {
-				TOAST_WARN("World", "Multiple rootless nodes in Prefab ({} and {}), keeping the last one", root->name(), data.name);
-			}
-#endif
-			root = node;
-		}
-	}
-
-#ifndef NDEBUG
-	if (not root.exists()) {
-		TOAST_ERROR("World", "Prefab contains no rootless node, the loaded tree has no root");
-	}
-#endif
-
-	// Serialization only stores the local enabled flag; the inherited one is derived from the tree
-	if (root.exists()) {
-		auto propagate_inherited = [](this auto&& self, Node& n, bool inherited) -> void {
-			n.m_inherited_enabled = inherited;
-			for (auto& child : n.m_children) {
-				self(*child, n.enabled());
-			}
-		};
-		propagate_inherited(*root, true);
-	}
-
-	if (root.exists()) {
-		TOAST_TRACE("World", "Built tree {} ({}) with {} nodes", root->name(), root->uid(), nodes.size());
-	}
-	return root;
 }
 
 auto World::dependencyGraphGraphviz() const -> std::string {
@@ -1307,8 +1545,20 @@ auto World::dependencyGraphGraphviz() const -> std::string {
 
 namespace _detail {
 
-auto WorldTestAccess::createWorld() -> World* {
-	return new World();
+namespace {
+auto testNodeInfos() -> std::unordered_map<const Node*, NodeInfo>& {
+	static std::unordered_map<const Node*, NodeInfo> infos;
+	return infos;
+}
+}
+
+void WorldTestAccess::WorldDeleter::operator()(World* world) const noexcept {
+	delete world;
+}
+
+auto WorldTestAccess::createWorld() -> WorldPtr {
+	testNodeInfos().clear();
+	return WorldPtr(new World());
 }
 
 auto WorldTestAccess::createNode(World& world, std::string_view name, NodeState state) -> Box<Node> {
@@ -1318,19 +1568,24 @@ auto WorldTestAccess::createNode(World& world, std::string_view name, NodeState 
 	node->m_type = NodeType::child;
 	node->m_local_enabled = true;
 	node->m_inherited_enabled = true;
+
+	NodeInfo& info = testNodeInfos()[&*node];
+	info.type = "test::Node";
+	info.functions.list = TickFunctionList::none;
+	node->m_info = &info;
+
 	return node;
 }
 
 void WorldTestAccess::registerDependency(Node& from, Node& to) {
-	World::registerDependency(from, to);
+	World::instance->registerDependency(from, to);
 }
 
 void WorldTestAccess::addTickStage(Node& node, TickFunctionList stage) {
 	// Test-only: fabricate a per-instance NodeInfo carrying the requested tick flags so the
 	// scheduler (which reads m_info) treats this node as participating in `stage`. Real nodes
 	// get their NodeInfo from the type registry instead.
-	static std::unordered_map<const Node*, NodeInfo> infos;
-	NodeInfo& info = infos[&node];
+	NodeInfo& info = testNodeInfos()[&node];
 	info.type = "test::Node";
 	info.functions.list = info.functions.list | stage;
 	node.m_info = &info;
@@ -1348,11 +1603,104 @@ void WorldTestAccess::computeDependencyGraph(World& world) {
 	world.computeDependencyGraph();
 }
 
+auto WorldTestAccess::instantiate(
+    World& world, const assets::AssetHandle<assets::Prefab>& file, INodeOwner::InstantiateContext& ctx
+) -> Box<Node> {
+	return world.instantiate(file, ctx);
+}
+
+auto WorldTestAccess::childrenOf(const Node& node) -> const std::vector<Box<Node>>& {
+	return node.m_children;
+}
+
+auto WorldTestAccess::isPrefabInterior(const Node& node) -> bool {
+	return node.m_prefab_interior;
+}
+
+void WorldTestAccess::initThreadPool() {
+	static std::unique_ptr<ThreadPool> pool = ThreadPool::create();
+	(void)pool;
+}
+
+void WorldTestAccess::setWorldRoot(World& world, Node& node) {
+	world.trees.root = node.box();
+}
+
+void WorldTestAccess::initAssetManager(std::string_view assets_dir, std::string_view cache_dir) {
+	static std::unique_ptr<assets::AssetManager> manager;
+
+	std::filesystem::path assets_path {std::string(assets_dir)};
+	std::filesystem::path cache_path {std::string(cache_dir)};
+	assets::AssetManager::setPaths(
+	    assets::Paths {
+	      .assets = assets_path,
+	      .artworks = assets_path,
+	      .cache = cache_path,
+	      .saved = assets_path,
+	      .core = assets_path,
+	    }
+	);
+
+	if (not manager) {
+		manager = std::make_unique<assets::AssetManager>();    // ctor reads the manifest with the paths above
+	} else {
+		manager->reloadManifest();
+	}
+}
+
+void WorldTestAccess::waitForLoads(World& world) {
+	for (auto& future : world.m.load_futures) {
+		if (future.valid()) {
+			future.wait();
+		}
+	}
+}
+
+void WorldTestAccess::drainLoadQueue(World& world) {
+	world.drainLoadQueue();
+}
+
+auto WorldTestAccess::spawnSync(
+    World& world, const assets::AssetHandle<assets::Prefab>& file, Node& parent, INodeOwner::InstantiateContext& ctx
+) -> Box<Node> {
+	Box<Node> root = world.instantiate(file, ctx);
+	if (not root.exists()) {
+		return {};
+	}
+	World::generateUid(*root);
+	root->changeNodeState(NodeState::cached);
+	while (World::findNode(root->uid(), &parent).exists()) {
+		World::generateUid(*root);
+	}
+	world.moveToChild(*root, parent);
+	return root;
+}
+
 auto WorldTestAccess::dependencyGraphGraphviz(const World& world) -> std::string {
 	return world.dependencyGraphGraphviz();
 }
 
-}    // namespace _detail
+void WorldTestAccess::loadNode(toast::UID uid) {
+	World::loadNode(uid);
+}
+
+auto WorldTestAccess::findCached(std::string_view name) -> Box<Node> {
+	return World::findCached(name);
+}
+
+auto WorldTestAccess::findNode(const UID& uid, Node* scope) -> Box<Node> {
+	return World::findNode(uid, scope);
+}
+
+auto WorldTestAccess::findNode(std::string_view path) -> Box<Node> {
+	return World::findNode(path);
+}
+
+auto WorldTestAccess::uidPath(const Node& node) -> std::string {
+	return World::uidPath(node);
+}
+
+}
 
 #pragma endregion TESTS
 

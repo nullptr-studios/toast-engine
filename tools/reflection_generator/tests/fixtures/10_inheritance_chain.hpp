@@ -3,6 +3,6 @@ namespace game {
 
 class [[ToastNode]] GrandchildNode : public game::ParentNode {
 public:
-    [[Serialize]] int m_extra;
+    [[Reflect]] int m_extra;
 };
 }

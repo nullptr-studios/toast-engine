@@ -1,4 +1,3 @@
-using System;
 using Avalonia;
 using Avalonia.Controls;
 
@@ -11,11 +10,11 @@ public partial class LogsView : UserControl {
 
 	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) {
 		base.OnAttachedToVisualTree(e);
-		if (DataContext is LogsViewModel vm) vm.start();
+		if (DataContext is LogsViewModel vm) vm.Start();
 	}
 
 	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) {
 		base.OnDetachedFromVisualTree(e);
-		if (DataContext is LogsViewModel vm) vm.stop();
+		if (DataContext is LogsViewModel vm) vm.Stop();
 	}
 }

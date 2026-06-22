@@ -10,14 +10,14 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using proto.logging;
+using Proto.Logging;
 
 namespace editor.Logger;
 
 public class LogClient {
-	private TcpClient m_client;
-	private CancellationTokenSource m_cts;
-	public event Action<List<LogEntry>> OnLogReceived;
+	private TcpClient? m_client;
+	private CancellationTokenSource? m_cts;
+	public event Action<List<LogEntry>>? OnLogReceived;
 
 	public void start() {
 		m_cts = new CancellationTokenSource();
@@ -55,11 +55,11 @@ public class LogClient {
 				List<LogEntry> batch = [];
 				foreach (var log_data in proto_batch.Logs) {
 					var entry = new LogEntry {
-						message = log_data.Message,
-						severity = (uint)log_data.Severity,
-						file = log_data.Filepath + ":" + log_data.LineNumber,
-						sink = log_data.Sink,
-						timestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(log_data.Timestamp / 1_000_000))
+						Message = log_data.Message,
+						Severity = (uint)log_data.Severity,
+						File = log_data.Filepath + ":" + log_data.LineNumber,
+						Sink = log_data.Sink,
+						Timestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(log_data.Timestamp / 1_000_000))
 							.ToLocalTime().ToString("HH:mm:ss.fff")
 					};
 					batch.Add(entry);
@@ -72,7 +72,7 @@ public class LogClient {
 		} catch (Exception ex) when (ex is not OperationCanceledException) {
 			Console.WriteLine($"Error in TCP loop: {ex.Message}");
 		} finally {
-			m_client.Close();
+			m_client?.Close();
 		}
 	}
 

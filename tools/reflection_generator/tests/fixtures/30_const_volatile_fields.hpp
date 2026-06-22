@@ -2,7 +2,7 @@
 
 class [[ToastNode]] QualifiersNode {
 public:
-    [[Serialize]] const int m_const_val;
-    [[Serialize]] volatile int m_volatile_val;
-    [[Serialize]] const volatile int m_both;
+    [[Reflect]] const int m_const_val;
+    [[Reflect]] volatile int m_volatile_val;
+    [[Reflect]] const volatile int m_both;
 };

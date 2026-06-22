@@ -2,6 +2,7 @@ add_subdirectory(player)
 add_subdirectory(dummy_game)
 add_subdirectory(kenzo)
 add_subdirectory(log_server)
+add_subdirectory(reflection_generator)
 
 if (BUILD_TESTING)
     find_program(CARGO cargo)

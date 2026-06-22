@@ -11,35 +11,35 @@ using Dock.Model.Mvvm.Controls;
 namespace editor.Logger;
 
 public class LogEntry {
-	public string sink { get; set; }
-	public string message { get; set; }
-	public string timestamp { get; set; }
-	public string file { get; set; }
-	public uint severity { get; set; }
+	public string? Sink { get; set; }
+	public string? Message { get; set; }
+	public string? Timestamp { get; set; }
+	public string? File { get; set; }
+	public uint? Severity { get; set; }
 }
 
 public class LogsViewModel : Tool {
 	private readonly LogClient m_client;
 
 	public LogsViewModel() {
-		log_entries = [];
+		LogEntries = [];
 		m_client = new LogClient();
-		m_client.OnLogReceived += handleNewLogs;
+		m_client.OnLogReceived += HandleNewLogs;
 	}
 
-	public ObservableCollection<LogEntry> log_entries { get; set; }
+	public ObservableCollection<LogEntry> LogEntries { get; set; }
 
-	public void start() {
+	public void Start() {
 		m_client.start();
 	}
 
-	public void stop() {
+	public void Stop() {
 		m_client.stop();
 	}
 
-	private void handleNewLogs(List<LogEntry> new_logs) {
+	private void HandleNewLogs(List<LogEntry> newLogs) {
 		Dispatcher.UIThread.InvokeAsync(() => {
-			foreach (var l in new_logs) log_entries.Add(l);
+			foreach (var l in newLogs) LogEntries.Add(l);
 
 			// TODO: Lock scroll, filters, etc should be here
 		});

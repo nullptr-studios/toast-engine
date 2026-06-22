@@ -1,108 +1,21 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:editor.Workspace"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="editor.Workspace.WorkspaceView"
-        x:DataType="vm:WorkspaceViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="editor"
-        ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaTitleBarHeightHint="-1"
-        WindowDecorations="BorderOnly">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:editor.Workspace"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="editor.Workspace.WorkspaceView"
+             x:DataType="vm:WorkspaceViewModel"
+             Focusable="True"
+             Background="{StaticResource E1}">
 
-	<Grid RowDefinitions="Auto,*">
-		<DockPanel x:Name="MenuBorder" Grid.Row="0">
-
-			<!-- Window buttons -->
-			<StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-				<Button Content="&#x2013;" Click="OnMinimize" Width="46" Height="30" Padding="0"
-				        VerticalContentAlignment="Center"
-				        HorizontalContentAlignment="Center" />
-				<Button Content="&#x25A1;" Click="OnMaximize" Width="46" Height="30" Padding="0"
-				        VerticalContentAlignment="Center"
-				        HorizontalContentAlignment="Center" />
-				<Button Content="&#x2715;" Click="OnClose" Width="46" Height="30" Padding="0, 0, 0, 1"
-				        VerticalContentAlignment="Center"
-				        HorizontalContentAlignment="Center" />
+	<Panel>
+		<Image Name="Surface" Stretch="Fill" />
+		<Border Background="{StaticResource E2}" VerticalAlignment="Top"
+		        Margin="4" Padding="8" CornerRadius="8">
+			<StackPanel Orientation="Horizontal">
+				<Button Content="Test" />
 			</StackPanel>
-
-			<!-- Menu -->
-			<Menu DockPanel.Dock="Left">
-				<MenuItem Header="_Toast Engine" Foreground="DeepPink" FontWeight="Bold">
-					<MenuItem Header="_New project" FontWeight="Normal" />
-					<MenuItem Header="_Open project" FontWeight="Normal" />
-					<MenuItem Header="_Close project" FontWeight="Normal" />
-					<Separator />
-					<MenuItem Header="_Project settings" FontWeight="Normal" />
-					<MenuItem Header="_Toast settings" FontWeight="Normal" />
-					<Separator />
-					<MenuItem Header="_Quit Toast" FontWeight="Normal" />
-				</MenuItem>
-				<MenuItem Header="_File">
-					<MenuItem Header="_New node" />
-					<MenuItem Header="_Open node" />
-					<MenuItem Header="_Close node" />
-					<Separator />
-					<MenuItem Header="_Save" />
-					<MenuItem Header="Save _all" />
-				</MenuItem>
-				<MenuItem Header="_Edit">
-					<MenuItem Header="_Undo" />
-					<MenuItem Header="_Redo" />
-					<Separator />
-					<MenuItem Header="Cu_t" />
-					<MenuItem Header="_Copy" />
-					<MenuItem Header="_Paste" />
-					<MenuItem Header="_Delete" />
-					<Separator />
-					<MenuItem Header="Select _All" />
-					<MenuItem Header="_Find" />
-				</MenuItem>
-				<MenuItem Header="_Run">
-					<MenuItem Header="_Run" />
-					<MenuItem Header="Run _This" />
-					<Separator />
-					<MenuItem Header="_Build" />
-					<MenuItem Header="Build _settings" />
-					<MenuItem Header="_Open build folder" />
-				</MenuItem>
-				<MenuItem Header="_View" />
-				<MenuItem Header="_Window">
-					<MenuItem Header="_Logs" ToggleType="CheckBox"
-					          x:Name="LogWindowButton" />
-				</MenuItem>
-				<MenuItem Header="_Help">
-					<MenuItem Header="_Documentation" />
-					<MenuItem Header="Github _repository" />
-					<MenuItem Header="Github _project" />
-					<MenuItem Header="_About" />
-				</MenuItem>
-			</Menu>
-
-			<!-- Drag region -->
-			<Border Background="Transparent"
-			        PointerPressed="OnTitleBarPointerPressed" />
-		</DockPanel>
-
-		<!--
-		<vm:ViewportView Grid.Row="1" DataContext="{Binding Viewport}" />
-		-->
-
-		<Panel Grid.Row="1" ClipToBounds="True">
-			<DockControl Layout="{Binding MainLayout}" ZIndex="0"/>
-			<Border x:Name="ToastZoneBorder" Background="#101010" Height="400"
-			        VerticalAlignment="Bottom" ZIndex="1"
-			        IsVisible="False"
-			        RenderTransform="translateY(400px)">
-				<Border.Transitions>
-					<Transitions>
-						<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut"/>
-					</Transitions>
-				</Border.Transitions>
-				<DockControl Layout="{Binding ToastZoneLayout}" ZIndex="2"/>
-			</Border>
-		</Panel>
-	</Grid>
-</Window>
+		</Border>
+	</Panel>
+</UserControl>

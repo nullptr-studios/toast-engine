@@ -1,115 +1,115 @@
 [
   {
-    "name": "AllTypesNode",
-    "namespace": null,
-    "parent": null,
-    "source_file": "06_all_types.hpp",
     "attributes": {},
     "functions": {
-      "pre_init": false,
-      "init": false,
       "begin": false,
-      "early_tick": false,
-      "tick": false,
-      "post_physics": false,
-      "late_tick": false,
-      "end": false,
       "destroy": false,
-      "on_enable": false,
-      "on_disable": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
       "load": false,
-      "save": false
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
     },
     "global_fields": [
       {
-        "name": "m_bool_val",
-        "typename": "bool",
+        "attributes": {},
+        "default": null,
         "field_type": "bool_t",
         "is_array": false,
-        "attributes": {},
-        "default": null
+        "name": "m_bool_val",
+        "typename": "bool"
       },
       {
-        "name": "m_int_val",
-        "typename": "int",
+        "attributes": {},
+        "default": null,
         "field_type": "int_t",
         "is_array": false,
-        "attributes": {},
-        "default": null
+        "name": "m_int_val",
+        "typename": "int"
       },
       {
-        "name": "m_float_val",
-        "typename": "float",
+        "attributes": {},
+        "default": null,
         "field_type": "float_t",
         "is_array": false,
-        "attributes": {},
-        "default": null
+        "name": "m_float_val",
+        "typename": "float"
       },
       {
-        "name": "m_double_val",
-        "typename": "double",
+        "attributes": {},
+        "default": null,
         "field_type": "double_t",
         "is_array": false,
-        "attributes": {},
-        "default": null
+        "name": "m_double_val",
+        "typename": "double"
       },
       {
-        "name": "m_string_val",
-        "typename": "std::string",
+        "attributes": {},
+        "default": null,
         "field_type": "string_t",
         "is_array": false,
-        "attributes": {},
-        "default": null
+        "name": "m_string_val",
+        "typename": "std::string"
       },
       {
-        "name": "m_vec2_val",
-        "typename": "glm::vec2",
+        "attributes": {},
+        "default": null,
         "field_type": "vec2_t",
         "is_array": false,
-        "attributes": {},
-        "default": null
+        "name": "m_vec2_val",
+        "typename": "glm::vec2"
       },
       {
-        "name": "m_vec3_val",
-        "typename": "glm::vec3",
+        "attributes": {},
+        "default": null,
         "field_type": "vec3_t",
         "is_array": false,
-        "attributes": {},
-        "default": null
+        "name": "m_vec3_val",
+        "typename": "glm::vec3"
       },
       {
-        "name": "m_vec4_val",
-        "typename": "glm::vec4",
+        "attributes": {},
+        "default": null,
         "field_type": "vec4_t",
         "is_array": false,
-        "attributes": {},
-        "default": null
+        "name": "m_vec4_val",
+        "typename": "glm::vec4"
       },
       {
-        "name": "m_quat_val",
-        "typename": "glm::quat",
+        "attributes": {},
+        "default": null,
         "field_type": "quaternion_t",
         "is_array": false,
-        "attributes": {},
-        "default": null
+        "name": "m_quat_val",
+        "typename": "glm::quat"
       },
       {
-        "name": "m_uid_val",
-        "typename": "UID",
+        "attributes": {},
+        "default": null,
         "field_type": "uid_t",
         "is_array": false,
-        "attributes": {},
-        "default": null
+        "name": "m_uid_val",
+        "typename": "UID"
       },
       {
-        "name": "m_int_array",
-        "typename": "std::vector<int>",
+        "attributes": {},
+        "default": null,
         "field_type": "int_t",
         "is_array": true,
-        "attributes": {},
-        "default": null
+        "name": "m_int_array",
+        "typename": "std::vector<int>"
       }
     ],
-    "groups": []
+    "groups": [],
+    "name": "AllTypesNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "06_all_types.hpp"
   }
 ]

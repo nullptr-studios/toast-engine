@@ -1,0 +1,44 @@
+syntax = "proto3";
+package proto.events;
+
+message ExitApplication {}
+
+message WindowClose {
+  uint32 window_id = 1;
+}
+
+message WindowDrop {
+  repeated string paths = 1;
+}
+
+message WindowKey {
+  int32 key = 1;
+  int32 scancode = 2;
+  int32 actions = 3;
+  int32 mods = 4;
+}
+
+message WindowChar {
+  uint32 key = 1;
+}
+
+message WindowMousePosition {
+  float x = 1;
+  float y = 2;
+}
+
+message WindowMouseButton {
+  int32 button = 1;
+  int32 action = 2;
+  int32 mods = 3;
+}
+
+message WindowMouseScroll {
+  float x = 1;
+  float y = 2;
+}
+
+message WindowResize {
+  int32 width = 1;
+  int32 height = 2;
+}

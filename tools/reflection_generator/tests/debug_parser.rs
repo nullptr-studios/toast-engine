@@ -4,11 +4,10 @@ use reflection_generator::parse;
 fn debug_parse_simple() {
     let source = r#"
 namespace toast {
-[[ToastNode]]
-class SimpleNode {
+class [[ToastNode]] SimpleNode {
 public:
-    [[Serialize, Group("Transform")]] int m_x = 0;
-    [[Serialize]] std::string m_name;
+    [[Reflect, Group("Transform")]] int m_x = 0;
+    [[Reflect]] std::string m_name;
 
     void tick() {}
 };

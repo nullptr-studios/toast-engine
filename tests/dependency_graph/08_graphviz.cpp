@@ -9,7 +9,7 @@
 using namespace toast::tests::dependency_graph;
 
 TOAST_TEST_NAMED("Dependency Graph", "dependency_graph/08_graphviz", test_dependency_graph_08_graphviz) {
-	std::unique_ptr<toast::World> world_owner(toast::_detail::WorldTestAccess::createWorld());
+	auto world_owner = toast::_detail::WorldTestAccess::createWorld();
 	toast::World& world = *world_owner;
 
 	auto make_node = [&](std::string_view name, std::initializer_list<Stage> stages) {

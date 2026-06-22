@@ -21,13 +21,19 @@ AssetHandleBase::AssetHandleBase(Asset* asset) : m_asset(asset) {
 	}
 }
 
+AssetHandleBase::AssetHandleBase(Asset* asset, toast::UID uid) : m_asset(asset), m_uid(uid) {
+	if (m_asset) {
+		m_asset->addRef();
+	}
+}
+
 AssetHandleBase::~AssetHandleBase() {
 	if (m_asset) {
 		m_asset->release();
 	}
 }
 
-AssetHandleBase::AssetHandleBase(const AssetHandleBase& other) : m_asset(other.m_asset) {
+AssetHandleBase::AssetHandleBase(const AssetHandleBase& other) : m_asset(other.m_asset), m_uid(other.m_uid) {
 	if (m_asset) {
 		m_asset->addRef();
 	}
@@ -39,6 +45,7 @@ auto AssetHandleBase::operator=(const AssetHandleBase& other) -> AssetHandleBase
 			m_asset->release();
 		}
 		m_asset = other.m_asset;
+		m_uid = other.m_uid;
 		if (m_asset) {
 			m_asset->addRef();
 		}
@@ -52,6 +59,7 @@ auto AssetHandleBase::operator=(AssetHandleBase&& other) noexcept -> AssetHandle
 			m_asset->release();
 		}
 		m_asset = other.m_asset;
+		m_uid = other.m_uid;
 		other.m_asset = nullptr;
 	}
 	return *this;
@@ -89,6 +97,6 @@ auto Data::serialize(SaveMode) const -> std::vector<uint8_t> {
 	std::ostringstream ss;
 	ss << m_table;
 	auto str = ss.str();
-	return std::vector<uint8_t>(str.begin(), str.end());
+	return {str.begin(), str.end()};
 }
 }

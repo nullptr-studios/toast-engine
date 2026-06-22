@@ -4,9 +4,11 @@
 #include <glm/gtc/quaternion.hpp>
 #include <istream>
 #include <sstream>
+#include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
 #include <toast/uid.hpp>
 #include <toast/world/node.hpp>
+#include <unordered_set>
 
 using namespace toast;
 
@@ -146,27 +148,36 @@ Prefab::Prefab(std::istream& file) {
 			i++;
 		}
 	}
+
+	std::erase_if(global_fields, [](const Field& f) { return f.name == "~format"; });
+
+#ifndef NDEBUG
+	validate();
+#endif
 }
 
 auto Prefab::serialize(SaveMode mode) const -> std::vector<uint8_t> {
+	validate();
 	if (mode == SaveMode::game) {
 		return toBinary();
 	}
 	auto str = toFile();
-	return std::vector<uint8_t>(str.begin(), str.end());
+	return {str.begin(), str.end()};
 }
 
 auto Prefab::toFile() const -> std::string {
 	std::stringstream ss;
+
+	ss << std::format("~format @{} = {}\n", _detail::int_str, _detail::format_version);
+
 	for (const auto& field : global_fields) {
 		writeField(field, ss);
 	}
 
-	for (size_t i = 0; i < nodes.size(); ++i) {
-		if (i > 0 || !global_fields.empty()) {
-			ss << "\n";
-		}
-		writeNode(nodes[i], ss);
+	// A blank line precedes every chunk
+	for (const auto& node : nodes) {
+		ss << "\n";
+		writeNode(node, ss);
 	}
 
 	return ss.str();
@@ -759,6 +770,16 @@ Prefab::Prefab(std::span<const uint8_t> bytes) {
 		return;
 	}
 
+	if (header.version > _detail::format_version) {
+		TOAST_ERROR(
+		    "ResourceManager",
+		    "Unsupported Prefab binary version {} (this build reads up to {})",
+		    header.version,
+		    _detail::format_version
+		);
+		return;
+	}
+
 	auto read_field = [&]() -> Field {
 		Field field;
 		field.name = reader.readString();
@@ -856,9 +877,25 @@ Prefab::Prefab(std::span<const uint8_t> bytes) {
 		}
 		nodes.push_back(std::move(node));
 	}
+
+#ifndef NDEBUG
+	validate();
+#endif
 }
 
-Prefab::Prefab(const toast::Node& node) {
+Prefab::Prefab(const toast::Node& node, toast::UID self_uid) : m_self_uid(self_uid) {
+	auto collect = [](this auto&& self, const toast::Node& n, std::unordered_set<uint64_t>& allowed) -> void {
+		allowed.insert(n.uid().data());
+		for (const auto& child : n.m_children) {
+			if (child->isInstanceRoot()) {
+				allowed.insert(child->uid().data());
+			} else {
+				self(*child, allowed);
+			}
+		}
+	};
+	collect(node, m_allowed_uids);
+
 	// The node passed in becomes the file's root
 	// It is written first and it is the only one that wont have a "parent" property
 	serializeNode(node, true);
@@ -871,27 +908,73 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 		return;
 	}
 
+	// Unresolved reference
+	if (node.m_unresolved_chunk) {
+		nodes.push_back(*node.m_unresolved_chunk);
+		return;
+	}
+
+	const uint64_t source = node.m_source_prefab.uid().data();
+
+	// We need to handle other prefabs properly
+	const bool is_reference = (not is_root && node.isInstanceRoot()) ||
+	                          (is_root && node.isInstanceRoot() && m_self_uid.data() != 0 && source != m_self_uid.data());
+
+	// For a reference chunk, only fields that differ from the prefab's root are written
+	std::optional<BasicNode> base;
+	if (is_reference) {
+		base = flattenedRootFields(node.m_source_prefab);
+	}
+
 	BasicNode out = {
 	  .name = std::string {node.name()},
 	  .type = std::string {node_info->type},
 	};
 
-	auto make_field = [&node, is_root](const FieldInfo* f_info) -> std::optional<Field> {
+	auto make_field = [&](const FieldInfo* f_info) -> std::optional<Field> {
+		// Ignore fields with ReadOnly attribute
+		if (f_info->hasAttribute("ReadOnly")) {
+			return {};
+		}
+
+		const std::string_view fname = f_info->name;
 		std::any value = f_info->get(const_cast<toast::Node*>(&node));
 
 		// Node references are stored as Box<Node> in memory but serialized as UIDs
 		if (auto* box = std::any_cast<Box<toast::Node>>(&value)) {
-			if (is_root && f_info->name == "Parent") {
+			if (is_root && fname == "m_parent") {
 				return std::nullopt;    // the file root is parentless by definition
 			}
 			if (not box->exists()) {
 				return std::nullopt;
 			}
+			uint64_t target = (*box)->uid().data();
+			if (not m_allowed_uids.contains(target)) {
+				TOAST_WARN(
+				    "ResourceManager",
+				    "Field '{}' of '{}' references UID {} outside this prefab; omitting",
+				    fname,
+				    node.name(),
+				    (*box)->uid()
+				);
+				return std::nullopt;
+			}
 			value = (*box)->uid();
 		}
 
+		if (is_reference) {
+			const bool forced = (fname == "m_uid" || fname == "m_parent" || fname == "m_source_prefab");
+			if (not forced && base) {
+				if (auto bf = base->find(fname); bf && fieldEquals(f_info->value_type, f_info->is_array, value, bf->value)) {
+					return std::nullopt;
+				}
+			}
+		} else if (fname == "m_source_prefab") {
+			return std::nullopt;
+		}
+
 		return Field {
-		  .name = std::string {f_info->name},
+		  .name = std::string {fname},
 		  .type = f_info->value_type,
 		  .is_array = f_info->is_array,
 		  .value = std::move(value),
@@ -944,9 +1027,150 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 
 	nodes.push_back(std::move(out));
 
+	// we do not go inside prefabs, no need to serialize its children
+	if (is_reference) {
+		return;
+	}
+
 	for (const auto& child : node.m_children) {
 		serializeNode(*child, false);
 	}
+}
+
+auto Prefab::fieldEquals(FieldType type, bool is_array, const std::any& a, const std::any& b) const -> bool {
+	try {
+		auto scalar_eq = [](FieldType t, const std::any& x, const std::any& y) -> bool {
+			switch (t) {
+				case FieldType::bool_t: return std::any_cast<bool>(x) == std::any_cast<bool>(y);
+				case FieldType::int_t: return std::any_cast<int>(x) == std::any_cast<int>(y);
+				case FieldType::float_t: return std::any_cast<float>(x) == std::any_cast<float>(y);
+				case FieldType::double_t: return std::any_cast<double>(x) == std::any_cast<double>(y);
+				case FieldType::string_t: return std::any_cast<std::string>(x) == std::any_cast<std::string>(y);
+				case FieldType::uid_t: return std::any_cast<UID>(x).data() == std::any_cast<UID>(y).data();
+				case FieldType::vec2_t: return std::any_cast<glm::vec2>(x) == std::any_cast<glm::vec2>(y);
+				case FieldType::vec3_t: return std::any_cast<glm::vec3>(x) == std::any_cast<glm::vec3>(y);
+				case FieldType::vec4_t: return std::any_cast<glm::vec4>(x) == std::any_cast<glm::vec4>(y);
+				case FieldType::quaternion_t: return std::any_cast<glm::quat>(x) == std::any_cast<glm::quat>(y);
+			}
+			return false;
+		};
+
+		if (not is_array) {
+			return scalar_eq(type, a, b);
+		}
+
+		auto vec_eq = [&]<typename T>() -> bool {
+			const auto& va = std::any_cast<const std::vector<T>&>(a);
+			const auto& vb = std::any_cast<const std::vector<T>&>(b);
+			if (va.size() != vb.size()) {
+				return false;
+			}
+			for (size_t i = 0; i < va.size(); ++i) {
+				if constexpr (std::is_same_v<T, UID>) {
+					if (va[i].data() != vb[i].data()) {
+						return false;
+					}
+				} else {
+					if (not(va[i] == vb[i])) {
+						return false;
+					}
+				}
+			}
+			return true;
+		};
+
+		switch (type) {
+			case FieldType::bool_t: return vec_eq.operator()<bool>();
+			case FieldType::int_t: return vec_eq.operator()<int>();
+			case FieldType::float_t: return vec_eq.operator()<float>();
+			case FieldType::double_t: return vec_eq.operator()<double>();
+			case FieldType::string_t: return vec_eq.operator()<std::string>();
+			case FieldType::uid_t: return vec_eq.operator()<UID>();
+			case FieldType::vec2_t: return vec_eq.operator()<glm::vec2>();
+			case FieldType::vec3_t: return vec_eq.operator()<glm::vec3>();
+			case FieldType::vec4_t: return vec_eq.operator()<glm::vec4>();
+			case FieldType::quaternion_t: return vec_eq.operator()<glm::quat>();
+		}
+		return false;
+	} catch (const std::bad_any_cast&) { return false; }
+}
+
+auto Prefab::flattenedRootFields(const AssetHandle<Prefab>& source) const -> std::optional<BasicNode> {
+	if (not source.hasValue()) {
+		return std::nullopt;
+	}
+
+	const Prefab& prefab = source.get();
+	if (prefab.nodes.empty()) {
+		return std::nullopt;
+	}
+
+	auto root_ref = [](const BasicNode& chunk) -> uint64_t {
+		if (auto f = chunk.find("m_source_prefab")) {
+			try {
+				return f->as<UID>().data();
+			} catch (const std::bad_any_cast&) { }    // NOLINT(bugprone-empty-catch)
+		}
+		return 0;
+	};
+
+	BasicNode flat = prefab.nodes[0];
+
+	// Walk up the variant chain
+	std::unordered_set<uint64_t> seen {source.uid().data()};
+	uint64_t parent_uid = root_ref(flat);
+	while (parent_uid != 0 && seen.insert(parent_uid).second) {
+		auto parent = assets::load<assets::Prefab>(toast::UID(parent_uid));
+		if (not parent.hasValue() || parent->nodes.empty()) {
+			break;
+		}
+		const BasicNode& parent_root = parent->nodes[0];
+		for (const Field& pf : parent_root.fields) {
+			if (not flat.find(pf.name).has_value()) {
+				flat.fields.push_back(pf);
+			}
+		}
+		parent_uid = root_ref(parent_root);
+	}
+
+	return flat;
+}
+
+auto Prefab::validate() const -> bool {
+	std::unordered_set<uint64_t> seen_uids;
+	int rootless_count = 0;
+	bool ok = true;
+
+	for (size_t i = 0; i < nodes.size(); ++i) {
+		const BasicNode& node = nodes[i];
+
+		// UID uniqueness across chunks
+		if (auto uid_field = node.find("m_uid")) {
+			try {
+				uint64_t id = uid_field->as<UID>().data();
+				if (id != 0 && not seen_uids.insert(id).second) {
+					TOAST_WARN("ResourceManager", "Duplicate chunk UID {} in prefab (chunk '{}')", uid_field->as<UID>(), node.name);
+					ok = false;
+				}
+			} catch (const std::bad_any_cast&) { }    // NOLINT(bugprone-empty-catch)
+		}
+
+		// Exactly one parentless chunk, and it must come first
+		if (not node.find("m_parent").has_value()) {
+			++rootless_count;
+			if (i != 0) {
+				TOAST_WARN("ResourceManager", "Parentless chunk '{}' is at index {} (the root must be first)", node.name, i);
+				ok = false;
+			}
+		}
+	}
+
+	if (rootless_count != 1) {
+		TOAST_WARN("ResourceManager", "Prefab has {} parentless chunks (expected exactly 1)", rootless_count);
+		ok = false;
+	}
+
+	return ok;
 }
 
 auto Prefab::writeType(FieldType type, bool is_array) const -> std::string {

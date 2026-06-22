@@ -13,10 +13,11 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
-using editor.Loader;
-using editor.Services;
-using editor.Workspace;
+using editor.Assets;
+using editor.Components.Modals;
+using editor.Engine;
 using Tomlyn;
 using Tomlyn.Model;
 
@@ -53,26 +54,54 @@ public partial class StartWindowViewModel : ViewModelBase {
 		var tasks = new List<LoaderTask>();
 
 		if (!hasGit) {
-			tasks.Add(new LoaderTask("git init", Exe: "git", Args: "init"));
-			tasks.Add(new LoaderTask("git add .", Exe: "git", Args: "add ."));
-			tasks.Add(new LoaderTask("git commit -m \"Initial commit\"", Exe: "git",
-				Args: "commit -m \"Initial commit\" --author \"nullptr Studios <toast-engine@nullptr.es>\""));
+			tasks.Add(LoaderTask.Run("git init", "git", "init"));
+			tasks.Add(LoaderTask.Run("git add .", "git", "add ."));
+			tasks.Add(LoaderTask.Run("git commit", "git",
+				"commit -m \"Initial commit\" --author \"nullptr Studios <toast-engine@nullptr.es>\""));
 		}
 
-		tasks.Add(new LoaderTask("cmake lib/ -B .toast/cmake_cache", Exe: "cmake",
-			Args: $"lib/ -B .toast/cmake_cache -G \"Visual Studio 18 2026\" -DTOAST_PATH={ToastPath}"));
-		tasks.Add(new LoaderTask("cmake --build .toast/cmake_cache", Exe: "cmake",
-			Args: "--build .toast/cmake_cache"));
+		// Generate the game's reflection metadata before configuring
+		var libSrc = Path.Combine(projectDir, "lib", "src");
+		var libGenerated = Path.Combine(projectDir, "lib", "generated");
+		Directory.CreateDirectory(libGenerated);
+
+		var exeExt = OperatingSystem.IsWindows() ? ".exe" : "";
+		var refgen = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+			"..", "reflection_generator", $"reflection_generator{exeExt}"));
+		var gameDb = ProjectContext.Resolve("cache://game_reflect.json");
+		tasks.Add(LoaderTask.Run("Generate game reflection", refgen,
+			$"--database \"{gameDb}\" --output \"{libGenerated}\" --input \"{libSrc}\" " +
+			$"--include-root \"{libSrc}\" --register-fn registerGameTypes --attribute Game"));
+
+		// Copy the engine reflection database to cache://
+		tasks.Add(LoaderTask.Do("Copy engine reflection", async log => {
+			var src = Path.Combine(corePath, "engine_reflect.json");
+			var dst = ProjectContext.Resolve("cache://engine_reflect.json");
+			if (File.Exists(src)) {
+				File.Copy(src, dst, true);
+				log($"Copied engine_reflect.json -> {dst}");
+			} else {
+				log($"warning: engine_reflect.json not found at {src}");
+			}
+
+			await Task.CompletedTask;
+		}));
+
+		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
+		tasks.Add(LoaderTask.Run("cmake lib/ -B .toast/cmake_cache", "cmake",
+			$"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH={ToastPath}"));
+		tasks.Add(LoaderTask.Run("cmake --build .toast/cmake_cache", "cmake",
+			"--build .toast/cmake_cache"));
 
 		var vm = new LoaderViewModel(tasks) {
 			OnComplete = async () => {
+				await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
 				_ = new ToastEngine(projectPath);
-				await Task.CompletedTask;
 			}
 		};
 
 		var desktop = (IClassicDesktopStyleApplicationLifetime)Application.Current!.ApplicationLifetime!;
-		desktop.MainWindow = new FullLoaderWindow(vm);
+		desktop.MainWindow = new SplashLoaderWindow(vm);
 		desktop.MainWindow.Show();
 		parentWindow.Close();
 	}

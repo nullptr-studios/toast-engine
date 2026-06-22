@@ -31,7 +31,7 @@ class Logger {
 		asio::io_context io_ctx;
 		asio::ip::tcp::socket socket {io_ctx};
 
-		std::deque<logging::LogData> log_queue;
+		std::deque<proto::logging::LogData> log_queue;
 		std::mutex queue_mutex;
 
 		/**

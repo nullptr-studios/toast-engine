@@ -7,14 +7,26 @@
     "version>=" : "1.32.0"
   }, {
     "name" : "sdl3",
-    "features" : [ "vulkan" ],
+    "default-features" : false,
+    "features" : [ {
+      "name" : "vulkan"
+    }, {
+      "name" : "x11",
+      "platform" : "linux"
+    }, {
+      "name" : "wayland",
+      "platform" : "linux"
+    }, {
+      "name" : "dbus",
+      "platform" : "linux"
+    }, {
+      "name" : "ibus",
+      "platform" : "linux"
+    } ],
     "version>=" : "3.4.8"
   }, {
     "name" : "vulkan",
     "version>=" : "2023-12-17"
-  }, {
-    "name" : "glm",
-    "version>=" : "1.0.3"
   }, {
     "name" : "vulkan-loader",
     "version>=" : "1.4.341.0"
@@ -40,8 +52,14 @@
     "name" : "ktx",
     "version>=" : "4.4.2"
   }, {
+    "name" : "glm",
+    "version>=" : "1.0.3"
+  }, {
     "name" : "protobuf",
     "version>=" : "6.33.4#2"
+  }, {
+    "name" : "tinyspline",
+    "version>=" : "0.6.0"
   }, {
     "name" : "tinygltf",
     "version>=" : "3.0.0"
