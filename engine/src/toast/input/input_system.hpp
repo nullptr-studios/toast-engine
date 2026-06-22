@@ -12,15 +12,10 @@
 #include "keycodes.hpp"
 #include "value.hpp"
 
-#include <chrono>
-#include <cstdint>
 #include <glm/glm.hpp>
-#include <memory>
-#include <string>
 #include <toast/events/listener.hpp>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
 
 struct SDL_Gamepad;
 

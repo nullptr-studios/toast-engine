@@ -6,11 +6,9 @@
 
 #pragma once
 
-#include <cstdint>
 #include <toast/assets/types.hpp>
 #include <toast/events/listener.hpp>
 #include <unordered_set>
-#include <vector>
 
 namespace input {
 

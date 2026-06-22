@@ -10,9 +10,7 @@
 
 #include "keycodes.hpp"
 
-#include <array>
 #include <cmath>
-#include <cstdint>
 #include <glm/glm.hpp>
 
 namespace input {

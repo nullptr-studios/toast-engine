@@ -12,13 +12,9 @@
 #include "modifier.hpp"
 #include "value.hpp"
 
-#include <functional>
-#include <memory>
-#include <string>
 #include <toast/assets/input_action.hpp>
 #include <toast/assets/types.hpp>
 #include <toast/uid.hpp>
-#include <vector>
 
 namespace input {
 

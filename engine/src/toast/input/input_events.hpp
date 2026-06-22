@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <cstdint>
-#include <string>
 #include <toast/assets/core_types.hpp>
 #include <toast/events/event.hpp>
 #include <toast/uid.hpp>

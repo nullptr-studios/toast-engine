@@ -15,7 +15,6 @@
 
 #include <cmath>
 #include <glm/glm.hpp>
-#include <memory>
 #include <string_view>
 #include <toml++/toml.hpp>
 

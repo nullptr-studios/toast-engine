@@ -13,6 +13,10 @@
 #include <glm/glm.hpp>
 #include <toml++/toml.hpp>
 
+namespace input {
+class Value;
+}
+
 namespace input::parse {
 
 inline auto vec2(const toml::node_view<const toml::node>& node, glm::vec2 fallback) -> glm::vec2 {

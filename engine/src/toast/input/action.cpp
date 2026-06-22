@@ -2,7 +2,6 @@
 
 #include "parse_util.hpp"
 
-#include <array>
 #include <toast/log.hpp>
 
 namespace input {

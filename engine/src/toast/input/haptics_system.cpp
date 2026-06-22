@@ -4,8 +4,6 @@
 #include "input_system.hpp"
 
 #include <SDL3/SDL_gamepad.h>
-#include <algorithm>
-#include <cstdint>
 #include <glm/glm.hpp>
 #include <toast/events/event.hpp>
 #include <toast/log.hpp>

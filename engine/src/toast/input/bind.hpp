@@ -13,10 +13,7 @@
 #include "trigger.hpp"
 #include "value.hpp"
 
-#include <memory>
-#include <string>
 #include <toml++/toml.hpp>
-#include <vector>
 
 namespace input {
 

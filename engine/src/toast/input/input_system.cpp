@@ -15,8 +15,7 @@
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_sensor.h>
-#include <algorithm>
-#include <array>
+#include <chrono>
 #include <toast/assets/assets.hpp>
 #include <toast/events/event.hpp>
 #include <toast/log.hpp>
