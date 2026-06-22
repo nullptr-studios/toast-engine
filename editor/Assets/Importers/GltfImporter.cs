@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using editor.Assets;
@@ -10,7 +11,7 @@ using editor.Workspace;
 
 namespace editor.Assets.Importers;
 
-public class GltfImporter : IAssetImporter {
+public partial class GltfImporter : IAssetImporter {
 	private readonly Settings m_settings;
 	private readonly TextureImporter.Settings m_textureSettings;
 
@@ -32,9 +33,9 @@ public class GltfImporter : IAssetImporter {
 		Directory.CreateDirectory(destDir);
 
 		log($"Generating intermediates in cached://{name}...");
-		GltfGenerateIntermediates(realSourcePath);
+		gltf_generate_intermediates(realSourcePath);
 
-		DirectoryInfo dir = new DirectoryInfo(Path.Combine(Path.GetFullPath(ProjectContext.CachePath), "name"));
+		DirectoryInfo dir = new DirectoryInfo(Path.Combine(Path.GetFullPath(ProjectContext.CachePath), name));
 		var files = dir.GetFiles();
 		if (files is null) {
 			throw new Exception($"Directory {dir.FullName} was empty");
@@ -42,9 +43,11 @@ public class GltfImporter : IAssetImporter {
 
 		var byExtension = files.GroupBy(f => f.Extension).ToDictionary(g => g.Key, g => g.ToList());
 
+		var importedPaths = new List<string>();
+
 		// Meshes
 		var meshUids = new Dictionary<string, string>();
-		var meshes = byExtension[".tmesh"];
+		var meshes = byExtension.GetValueOrDefault(".tmesh") ?? [];
 		log($"Importing {meshes.Count} meshes");
 		foreach (var m in meshes) {
 			var meshName = Path.GetFileNameWithoutExtension(m.Name);
@@ -59,12 +62,15 @@ public class GltfImporter : IAssetImporter {
 			log("Writing .meta sidecar...");
 			var header = new MetaHeader { Uid = uid, Type = "mesh", Source = ctx.SourceVirtualPath };
 			MetaFile.Write(destPath, header, m_settings.ToSection());
+			importedPaths.Add(destPath);
 		}
 
 		// Textures
 		var textureUids = new Dictionary<string, string>();
 		if (m_settings.ImportMaterials) {
-			var textures = byExtension[".png"];
+			var textures = (byExtension.GetValueOrDefault(".png") ?? [])
+				.Concat(byExtension.GetValueOrDefault(".jpg") ?? [])
+				.ToList();
 			log($"Importing {textures.Count} textures...");
 			foreach (var t in textures) {
 				var texName = Path.GetFileNameWithoutExtension(t.Name);
@@ -82,13 +88,14 @@ public class GltfImporter : IAssetImporter {
 				log("Writing .meta sidecar...");
 				var header = new MetaHeader { Uid = uid, Type = "texture", Source = ctx.SourceVirtualPath };
 				MetaFile.Write(destPath, header, m_textureSettings.ToSection(), m_settings.ToSection());
+				importedPaths.Add(destPath);
 			}
 		}
 
 		// Materials
 		var materialUids = new Dictionary<string, string>();
 		if (m_settings.ImportMaterials) {
-			var materials = byExtension[".tmat"];
+			var materials = byExtension.GetValueOrDefault(".tmat") ?? [];
 			log($"Importing {materials.Count} materials...");
 			foreach (var m in materials) {
 				var matName = Path.GetFileNameWithoutExtension(m.Name);
@@ -107,6 +114,7 @@ public class GltfImporter : IAssetImporter {
 				log("Writing .meta sidecar...");
 				var header = new MetaHeader { Uid = uid, Type = "material", Source = ctx.SourceVirtualPath };
 				MetaFile.Write(destPath, header, m_settings.ToSection());
+				importedPaths.Add(destPath);
 			}
 		}
 
@@ -122,7 +130,7 @@ public class GltfImporter : IAssetImporter {
 			var json = JsonNode.Parse(await File.ReadAllTextAsync(s.FullName))!;
 
 			void PatchNode(JsonNode node) {
-				if (node["type"]?.GetValue<string>() == "MeshNode") {
+				if (node["type"]?.GetValue<string>() == "toast::MeshNode") {
 					var p = node["params"]?.AsObject();
 					if (p != null) {
 						if (p["mesh"] is { } meshNode && meshUids.TryGetValue(meshNode.GetValue<string>(), out var meshUid))
@@ -131,20 +139,42 @@ public class GltfImporter : IAssetImporter {
 							p["material"] = matUid;
 					}
 				}
-				if (node["children"] is JsonArray children) {
-					foreach (var child in children)
-						if (child != null) PatchNode(child);
-				}
+
+				if (node["children"] is not JsonArray children) return;
+
+				foreach (var child in children)
+					if (child != null) PatchNode(child);
 			}
 
 			PatchNode(json);
 			await File.WriteAllTextAsync(s.FullName, json.ToJsonString());
 		}
 
-		throw new NotImplementedException();
-	}
+		// Scenes
+		log("Creating .tnode scene files...");
+		foreach (var s in scenes) {
+			var sceneName = Path.GetFileNameWithoutExtension(s.Name);
+			var destPath = Path.Combine(destDir, sceneName + ".tnode");
+			var uid = UidGenerator.Generate();
 
-	private static void GltfGenerateIntermediates(string path) => gltf_generate_intermediates(path);
+			log($"Scene {sceneName}");
+			log("Creating .tnode file...");
+			gltf_create_tnode(s.FullName, destPath);
+
+			log("Writing .meta sidecar...");
+			var header = new MetaHeader { Uid = uid, Type = "node", Source = ctx.SourceVirtualPath };
+			MetaFile.Write(destPath, header, m_settings.ToSection());
+			importedPaths.Add(destPath);
+		}
+
+		log("Rebuilding asset database...");
+		AssetDatabase.RebuildAssetDatabase();
+
+		log("Removing intermediates...");
+		if (Directory.Exists(destDir)) Directory.Delete(destDir, true);
+
+		return importedPaths;
+	}
 
 	public partial class Settings : ObservableObject {
 		[ObservableProperty] private bool m_createSubfolder = true;
@@ -166,7 +196,10 @@ public class GltfImporter : IAssetImporter {
 		}
 	}
 
-	[System.Runtime.InteropServices.LibraryImport("toast_engine", StringMarshalling = System.Runtime.InteropServices.StringMarshalling.Utf8)]
+	[LibraryImport("toast_engine", StringMarshalling = StringMarshalling.Utf8)]
 	private static partial void gltf_generate_intermediates(string path);
+
+	[LibraryImport("toast_engine", StringMarshalling = StringMarshalling.Utf8)]
+	private static partial void gltf_create_tnode(string jsonPath, string outputPath);
 }
 

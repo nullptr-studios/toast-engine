@@ -78,6 +78,8 @@ public:
 	 */
 	explicit Prefab(const toast::Node& node, toast::UID self_uid = toast::UID(0));
 
+	Prefab() = default;
+
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
 		return "node";

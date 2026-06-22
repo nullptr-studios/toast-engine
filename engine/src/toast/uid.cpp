@@ -104,6 +104,12 @@ void UID::assign(std::string_view b64) {
 	value = fromString(b64);
 }
 
+auto UID::make() -> UID {
+	UID u;
+	u.generate();
+	return u;
+}
+
 UID::UID() {
 	value = 0;
 }

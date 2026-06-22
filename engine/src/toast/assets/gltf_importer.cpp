@@ -6,11 +6,16 @@
 
 #include "asset_manager.hpp"
 #include "mesh.hpp"
+#include "prefab.hpp"
 
+#include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <nlohmann/json.hpp>
+#include <toast/uid.hpp>
+#define TINYGLTF3_IMPLEMENTATION
+#define TINYGLTF3_ENABLE_FS
 #include <tiny_gltf_v3.h>
 #include <toast/log.hpp>
 
@@ -23,6 +28,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 	tg3_model model;
 
 	tg3_parse_options_init(&options);
+	options.images_as_is = 1;
 	tg3_error_stack_init(&errors);
 
 	std::string path_str = path.string();
@@ -40,29 +46,28 @@ auto generateIntermediates(const std::filesystem::path& path) {
 	//		2: all textures as .png
 	//		3: all meshes as .tmesh
 
-	// Meshes
-	std::vector<std::unique_ptr<Mesh>> meshes;
-	meshes.reserve(model.meshes_count);
+	// map each GLTF mesh index to the name of the first scene node that references it
+	std::vector<std::string> mesh_node_name(model.meshes_count);
+	for (size_t i = 0; i < model.nodes_count; i++) {
+		const tg3_node& n = model.nodes[i];
+		if (n.mesh != -1 && mesh_node_name[n.mesh].empty()) {
+			std::string name(n.name.data, n.name.len);
+			mesh_node_name[n.mesh] = name.empty() ? "node_" + std::to_string(i) : name;
+		}
+	}
+
+	struct MeshFile {
+		std::unique_ptr<Mesh> mesh;
+		std::string file_name;
+	};
+
+	std::vector<MeshFile> mesh_files;
+	std::vector<std::vector<int>> mesh_prim_to_file(model.meshes_count);
+	int prim_counter = 0;
 
 	for (size_t i = 0; i < model.meshes_count; ++i) {
 		const auto& m = model.meshes[i];
-		std::string_view name = {m.name.data, m.name.len};
-		std::vector<assets::Mesh::Vertex> vertices;
-		std::vector<assets::Mesh::Index> indices;
-
-		TOAST_ASSERT(m.primitives_count == 1, "AssetManager", "Mesh has multiple primitives");
-		const tg3_primitive& prim = m.primitives[0];
-		const bool is_triangles = prim.mode == -1 || prim.mode == 4;
-		TOAST_ASSERT(is_triangles, "AssetManager", "Mesh primitive is not triangles");
-
-		auto find_attr = [&](const char* name) {
-			for (uint32_t j = 0; j < prim.attributes_count; j++) {
-				if (strcmp(prim.attributes[j].key.data, name) == 0) {
-					return prim.attributes[j].value;
-				}
-			}
-			return -1;
-		};
+		const std::string base_name = !mesh_node_name[i].empty() ? mesh_node_name[i] : std::string(m.name.data, m.name.len);
 
 		auto accessor_bytes = [&](int acc_idx) -> const uint8_t* {
 			const auto& acc = model.accessors[acc_idx];
@@ -76,57 +81,82 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			return bv.byte_stride != 0 ? bv.byte_stride : tight_size;
 		};
 
-		int pos_idx = find_attr("POSITION");
-		TOAST_ASSERT(pos_idx != -1, "AssetManager", "Mesh has no POSITION attribute");
-		int norm_idx = find_attr("NORMAL");
-		int uv_idx = find_attr("TEXCOORD_0");
-		int tan_idx = find_attr("TANGENT");
-		int col_idx = find_attr("COLOR_0");
+		mesh_prim_to_file[i].resize(m.primitives_count);
 
-		const uint32_t vertex_count = model.accessors[pos_idx].count;
-		vertices.resize(vertex_count);
+		for (uint32_t pi = 0; pi < m.primitives_count; ++pi) {
+			const tg3_primitive& prim = m.primitives[pi];
+			const bool is_triangles = prim.mode == -1 || prim.mode == 4;
+			TOAST_ASSERT(is_triangles, "AssetManager", "Mesh primitive is not triangles");
 
-		const uint8_t* pos_data = accessor_bytes(pos_idx);
-		const uint8_t* norm_data = norm_idx != -1 ? accessor_bytes(norm_idx) : nullptr;
-		const uint8_t* uv_data = uv_idx != -1 ? accessor_bytes(uv_idx) : nullptr;
-		const uint8_t* tan_data = tan_idx != -1 ? accessor_bytes(tan_idx) : nullptr;
-		const uint8_t* col_data = col_idx != -1 ? accessor_bytes(col_idx) : nullptr;
+			auto find_attr = [&](const char* attr_name) {
+				for (uint32_t j = 0; j < prim.attributes_count; j++) {
+					if (strcmp(prim.attributes[j].key.data, attr_name) == 0) {
+						return prim.attributes[j].value;
+					}
+				}
+				return -1;
+			};
 
-		for (uint32_t j = 0; j < vertex_count; j++) {
-			auto& v = vertices[j];
-			memcpy(&v.position, pos_data + (j * get_stride(pos_idx, sizeof(glm::vec3))), sizeof(glm::vec3));
-			if (norm_data) {
-				memcpy(&v.normal, norm_data + (j * get_stride(norm_idx, sizeof(glm::vec3))), sizeof(glm::vec3));
+			int pos_idx = find_attr("POSITION");
+			TOAST_ASSERT(pos_idx != -1, "AssetManager", "Mesh has no POSITION attribute");
+			int norm_idx = find_attr("NORMAL");
+			int uv_idx = find_attr("TEXCOORD_0");
+			int tan_idx = find_attr("TANGENT");
+			int col_idx = find_attr("COLOR_0");
+
+			const uint32_t vertex_count = model.accessors[pos_idx].count;
+			std::vector<assets::Mesh::Vertex> vertices(vertex_count);
+
+			const uint8_t* pos_data = accessor_bytes(pos_idx);
+			const uint8_t* norm_data = norm_idx != -1 ? accessor_bytes(norm_idx) : nullptr;
+			const uint8_t* uv_data = uv_idx != -1 ? accessor_bytes(uv_idx) : nullptr;
+			const uint8_t* tan_data = tan_idx != -1 ? accessor_bytes(tan_idx) : nullptr;
+			const uint8_t* col_data = col_idx != -1 ? accessor_bytes(col_idx) : nullptr;
+
+			for (uint32_t j = 0; j < vertex_count; j++) {
+				auto& v = vertices[j];
+				memcpy(&v.position, pos_data + (j * get_stride(pos_idx, sizeof(glm::vec3))), sizeof(glm::vec3));
+				if (norm_data) {
+					memcpy(&v.normal, norm_data + (j * get_stride(norm_idx, sizeof(glm::vec3))), sizeof(glm::vec3));
+				}
+				if (uv_data) {
+					memcpy(&v.uv, uv_data + (j * get_stride(uv_idx, sizeof(glm::vec2))), sizeof(glm::vec2));
+				}
+				if (tan_data) {
+					glm::vec4 t;
+					memcpy(&t, tan_data + (j * get_stride(tan_idx, sizeof(glm::vec4))), sizeof(glm::vec4));
+					v.tangent = glm::vec3(t);    // w is handedness, store or discard as needed
+				}
+				if (col_data) {
+					memcpy(&v.color, col_data + (j * get_stride(col_idx, sizeof(glm::vec3))), sizeof(glm::vec3));
+				}
 			}
-			if (uv_data) {
-				memcpy(&v.uv, uv_data + (j * get_stride(uv_idx, sizeof(glm::vec2))), sizeof(glm::vec2));
+
+			TOAST_ASSERT(prim.indices != -1, "AssetManager", "Mesh has no indices");
+			const auto& idx_acc = model.accessors[prim.indices];
+			const uint8_t* idx_data = accessor_bytes(prim.indices);
+			std::vector<assets::Mesh::Index> indices(idx_acc.count);
+			for (uint32_t j = 0; j < idx_acc.count; j++) {
+				if (idx_acc.component_type == 5125) {
+					indices[j] = reinterpret_cast<const uint32_t*>(idx_data)[j];
+				} else if (idx_acc.component_type == 5123) {
+					indices[j] = reinterpret_cast<const uint16_t*>(idx_data)[j];
+				} else {
+					indices[j] = idx_data[j];
+				}
 			}
-			if (tan_data) {
-				glm::vec4 t;
-				memcpy(&t, tan_data + (j * get_stride(tan_idx, sizeof(glm::vec4))), sizeof(glm::vec4));
-				v.tangent = glm::vec3(t);    // w is handedness, store or discard as needed
-			}
-			if (col_data) {
-				memcpy(&v.color, col_data + (j * get_stride(col_idx, sizeof(glm::vec3))), sizeof(glm::vec3));
-			}
+
+			std::string file_name = (m.primitives_count == 1) ? base_name : base_name + "_" + std::to_string(prim_counter);
+
+			mesh_files.push_back(
+			    {.mesh = std::make_unique<Mesh>(std::string_view(file_name), std::move(vertices), std::move(indices)),
+			     .file_name = std::move(file_name)}
+			);
+			mesh_prim_to_file[i][pi] = static_cast<int>(mesh_files.size()) - 1;
+			++prim_counter;
 		}
-
-		TOAST_ASSERT(prim.indices != -1, "AssetManager", "Mesh has no indices");
-		const auto& idx_acc = model.accessors[prim.indices];
-		const uint8_t* idx_data = accessor_bytes(prim.indices);
-		indices.resize(idx_acc.count);
-		for (uint32_t j = 0; j < idx_acc.count; j++) {
-			if (idx_acc.component_type == 5125) {
-				indices[j] = reinterpret_cast<const uint32_t*>(idx_data)[j];
-			} else if (idx_acc.component_type == 5123) {
-				indices[j] = reinterpret_cast<const uint16_t*>(idx_data)[j];
-			} else {
-				indices[j] = idx_data[j];
-			}
-		}
-
-		meshes.emplace_back(new Mesh {name, std::move(vertices), std::move(indices)});
 	}
+	TOAST_TRACE("AssetManager", "Imported {} meshes", mesh_files.size());
 
 	// Textures
 	struct TextureData {
@@ -142,7 +172,6 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		const auto& texture = model.textures[i];
 		TOAST_ASSERT(texture.source != -1, "AssetManager", "Texture has no image source");
 		const auto& img = model.images[texture.source];
-		TOAST_ASSERT(img.as_is, "AssetManager", "Image was decoded, expected raw bytes");
 
 		std::string name(img.name.data, img.name.len);
 		if (name.empty()) {
@@ -154,12 +183,18 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			}
 		}
 
+		TOAST_ASSERT(img.buffer_view != -1, "AssetManager", "Embedded image has no buffer view");
+		const auto& img_bv = model.buffer_views[img.buffer_view];
+		const auto& img_buf = model.buffers[img_bv.buffer];
+		const uint8_t* img_raw = img_buf.data.data + img_bv.byte_offset;
+
 		textures.push_back({
-		  .data = std::vector<uint8_t>(img.image.data, img.image.data + img.image.count),
+		  .data = std::vector<uint8_t>(img_raw, img_raw + img_bv.byte_length),
 		  .name = std::move(name),
 		  .format = std::string(img.mime_type.data, img.mime_type.len),
 		});
 	}
+	TOAST_TRACE("AssetManager", "Imported {} textures", textures.size());
 
 	// Materials
 	std::vector<toml::table> materials;
@@ -180,8 +215,8 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		toml::table material_table;
 		material_table.insert("uid", "");
 		material_table.insert("name", mat_name);
-		material_table.insert("vertex", "NOT IMPLEMENTED");
-		material_table.insert("fragment", "NOT IMPLEMENTED");
+		material_table.insert("vertex", "NOT IMPLEMENTED");      // TODO: Replace with UID of default vertex shader
+		material_table.insert("fragment", "NOT IMPLEMENTED");    // TODO: Replace with UID of default fragment shader
 
 		toml::table params;
 		if (pbr.base_color_texture.index != -1) {
@@ -219,6 +254,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 
 		materials.push_back(std::move(material_table));
 	}
+	TOAST_TRACE("AssetManager", "Imported {} materials", materials.size());
 
 	// Cameras
 	struct CameraData {
@@ -251,6 +287,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		  .ymag = cam.orthographic.ymag,
 		});
 	}
+	TOAST_TRACE("AssetManager", "Imported {} cameras", cameras.size());
 
 	// Lights
 	struct LightData {
@@ -278,6 +315,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		  .outer_cone_angle = light.spot.outer_cone_angle,
 		});
 	}
+	TOAST_TRACE("AssetManager", "Imported {} lights", lights.size());
 
 	// Scenes
 	std::vector<nlohmann::json> scenes;
@@ -310,16 +348,41 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		n["transform"] = node_transform(node);
 
 		if (node.mesh != -1) {
-			n["type"] = "MeshNode";
-			const auto& prim = model.meshes[node.mesh].primitives[0];
-			n["params"]["mesh"] = std::string(model.meshes[node.mesh].name.data, model.meshes[node.mesh].name.len);
-			if (prim.material != -1) {
-				n["params"]["material"] = std::string(model.materials[prim.material].name.data, model.materials[prim.material].name.len);
+			const auto& gltf_mesh = model.meshes[node.mesh];
+			const auto& prim_files = mesh_prim_to_file[node.mesh];
+
+			if (gltf_mesh.primitives_count == 1) {
+				n["type"] = "toast::MeshNode";
+				n["params"]["mesh"] = mesh_files[prim_files[0]].file_name;
+				const auto& prim = gltf_mesh.primitives[0];
+				if (prim.material != -1) {    // TODO: Update field names when MeshNode fields are created
+					n["params"]["material"] =
+					    std::string(model.materials[prim.material].name.data, model.materials[prim.material].name.len);
+				}
+			} else {
+				n["type"] = "toast::Node3D";
+				n["children"] = nlohmann::json::array();
+				for (uint32_t pi = 0; pi < gltf_mesh.primitives_count; ++pi) {
+					const auto& prim = gltf_mesh.primitives[pi];
+					const std::string& fname = mesh_files[prim_files[pi]].file_name;
+					nlohmann::json child;
+					child["name"] = fname;
+					child["type"] = "toast::MeshNode";
+					child["transform"]["pos"] = {0.0f, 0.0f, 0.0f};
+					child["transform"]["rot"] = {0.0f, 0.0f, 0.0f, 1.0f};
+					child["transform"]["scl"] = {1.0f, 1.0f, 1.0f};
+					child["params"]["mesh"] = fname;
+					if (prim.material != -1) {    // TODO: Update field names when MeshNode fields are created
+						child["params"]["material"] =
+						    std::string(model.materials[prim.material].name.data, model.materials[prim.material].name.len);
+					}
+					n["children"].push_back(std::move(child));
+				}
 			}
 		} else if (node.camera != -1) {
 			const auto& cam = cameras[node.camera];
-			n["type"] = "CameraNode";
-			n["params"]["projection"] = cam.type;
+			n["type"] = "toast::Camera";
+			n["params"]["projection"] = cam.type;    // TODO: change this once the camera has been made
 			if (cam.type == "perspective") {
 				n["params"]["fov"] = cam.yfov;
 				n["params"]["near"] = cam.znear;
@@ -334,13 +397,14 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		} else if (node.light != -1) {
 			const auto& light = lights[node.light];
 			if (light.type == "directional") {
-				n["type"] = "DirectionalLightNode";
+				n["type"] = "toast::DirectionalLight";
 			} else if (light.type == "point") {
-				n["type"] = "PointLightNode";
+				n["type"] = "toast::PointLightNode";
 			} else if (light.type == "spot") {
-				n["type"] = "SpotLightNode";
+				n["type"] = "toast::SpotLightNode";
 			}
 
+			// TODO: Change this once the lights have been made
 			n["params"]["color"] = {light.color[0], light.color[1], light.color[2]};
 			n["params"]["intensity"] = light.intensity;
 			if (light.range > 0.0) {
@@ -351,11 +415,13 @@ auto generateIntermediates(const std::filesystem::path& path) {
 				n["params"]["outer_cone_angle"] = light.outer_cone_angle;
 			}
 		} else {
-			n["type"] = "Node";
+			n["type"] = "toast::Node3D";
 		}
 
 		if (node.children_count > 0) {
-			n["children"] = nlohmann::json::array();
+			if (!n.contains("children")) {
+				n["children"] = nlohmann::json::array();
+			}
 			for (uint32_t i = 0; i < node.children_count; i++) {
 				n["children"].push_back(walk_node(node.children[i]));
 			}
@@ -376,6 +442,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 
 		scenes.push_back(std::move(scene_json));
 	}
+	TOAST_TRACE("AssetManager", "Imported {} nodes", scenes.size());
 
 	// Save files in cache://<name_without_extension>/
 	std::string base_name = path.stem().string();
@@ -383,28 +450,33 @@ auto generateIntermediates(const std::filesystem::path& path) {
 	std::filesystem::create_directories(cache_dir);
 
 	// Save meshes
-	for (const auto& mesh : meshes) {
-		auto binary = mesh->toBinary();
-		std::filesystem::path out = cache_dir / (mesh->name() + ".tmesh");
+	for (const auto& mf : mesh_files) {
+		auto binary = mf.mesh->toBinary();
+		std::filesystem::path out = cache_dir / (mf.file_name + ".tmesh");
 		std::ofstream f(out, std::ios::binary);
 		f.write(reinterpret_cast<const char*>(binary.data()), binary.size());
 	}
+	TOAST_TRACE("AssetManager", "Saved {} meshes", mesh_files.size());
 
 	// Save textures
 	for (const auto& tex : textures) {
-		std::filesystem::path out = cache_dir / (tex.name + ".tex");
+		std::string_view ext = (tex.format == "image/jpeg") ? ".jpg" : ".png";
+		std::filesystem::path out = cache_dir / (tex.name + std::string(ext));
 		std::ofstream f(out, std::ios::binary);
 		f.write(reinterpret_cast<const char*>(tex.data.data()), tex.data.size());
 	}
+	TOAST_TRACE("AssetManager", "Saved {} texture intermediates", textures.size());
 
 	// Save materials
-	for (const auto& mat : materials) {
-		const auto& meta = *mat.get_as<toml::table>("material");
-		std::string name = meta.get_as<std::string>("name")->get();
+	for (size_t i = 0; i < materials.size(); ++i) {
+		const auto& mat = materials[i];
+		const auto* name_node = mat.get_as<std::string>("name");
+		std::string name = (name_node && !name_node->get().empty()) ? name_node->get() : "material_" + std::to_string(i);
 		std::filesystem::path out = cache_dir / (name + ".tmat");
 		std::ofstream f(out);
 		f << mat;
 	}
+	TOAST_TRACE("AssetManager", "Saved {} materials", materials.size());
 
 	// Save scenes
 	for (const auto& scene : scenes) {
@@ -413,9 +485,88 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		std::ofstream f(out);
 		f << scene.dump(2);
 	}
+	TOAST_TRACE("AssetManager", "Saved {} node intermediates", scenes.size());
 
 	tg3_model_free(&model);
 	tg3_error_stack_free(&errors);
+}
+
+static void jsonToTnode(const nlohmann::json& scene_json, const std::filesystem::path& out) {
+	Prefab prefab;
+
+	std::function<void(const nlohmann::json&, const std::string&)> walk = [&](const nlohmann::json& n,
+	                                                                          const std::string& parent_uid_str) {
+		Prefab::BasicNode basic;
+		basic.name = n["name"].get<std::string>();
+		basic.type = n.value("type", "toast::Node3D");
+		if (basic.type == "Node") {
+			basic.type = "toast::Node3D";
+		}
+
+		toast::UID uid = toast::UID::make();
+		const std::string uid_str = uid.get();
+
+		basic.fields.push_back({"m_uid", toast::FieldType::uid_t, false, uid});
+		basic.fields.push_back({"m_name", toast::FieldType::string_t, false, basic.name});
+		basic.fields.push_back({"m_enabled", toast::FieldType::bool_t, false, true});
+		if (!parent_uid_str.empty()) {
+			basic.fields.push_back({"m_parent", toast::FieldType::uid_t, false, toast::UID(toast::UID::fromString(parent_uid_str))});
+		}
+
+		if (n.contains("transform")) {
+			Prefab::Group tg;
+			tg.name = "Transform";
+			const auto& t = n["transform"];
+			const auto& p = t["pos"];
+			const auto& r = t["rot"];
+			const auto& s = t["scl"];
+			tg.fields.push_back({
+			  "m_position", toast::FieldType::vec3_t, false, glm::vec3 {p[0].get<float>(), p[1].get<float>(), p[2].get<float>()}
+			});
+			tg.fields.push_back({
+			  "m_rotation",
+			  toast::FieldType::quaternion_t,
+			  false,
+			  glm::quat {r[3].get<float>(), r[0].get<float>(), r[1].get<float>(), r[2].get<float>()}
+			});
+			tg.fields.push_back({
+			  "m_scale", toast::FieldType::vec3_t, false, glm::vec3 {s[0].get<float>(), s[1].get<float>(), s[2].get<float>()}
+			});
+			basic.groups.push_back(std::move(tg));
+		}
+
+		if (basic.type == "toast::MeshNode" && n.contains("params")) {
+			const auto& params = n["params"];
+			// TODO: Update field names when MeshNode fields are created
+			if (params.contains("mesh")) {
+				basic.fields.push_back(
+				    {"m_mesh", toast::FieldType::uid_t, false, toast::UID(toast::UID::fromString(params["mesh"].get<std::string>()))}
+				);
+			}
+			if (params.contains("material")) {
+				basic.fields.push_back(
+				    {"m_material",
+				     toast::FieldType::uid_t,
+				     false,
+				     toast::UID(toast::UID::fromString(params["material"].get<std::string>()))}
+				);
+			}
+		}
+		// TODO: Update field names when Camera/Light classes are created
+
+		prefab.nodes.push_back(std::move(basic));
+
+		if (n.contains("children")) {
+			for (const auto& c : n["children"]) {
+				walk(c, uid_str);
+			}
+		}
+	};
+
+	walk(scene_json, "");
+
+	std::ofstream f(out);
+	f << prefab.toFile();
 }
 }
 
@@ -426,4 +577,8 @@ void gltf_generate_intermediates(const char* path) {
 	assets::generateIntermediates(dir);
 }
 
+void gltf_create_tnode(const char* json_path, const char* output_path) {
+	std::ifstream f(json_path);
+	assets::jsonToTnode(nlohmann::json::parse(f), std::filesystem::path(output_path));
+}
 }

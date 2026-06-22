@@ -7,10 +7,10 @@
 #include <chrono>
 #include <sstream>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/uri_handler.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/assets/types.hpp>
 #include <toast/thread_pool.hpp>
+#include <toast/uri_handler.hpp>
 #include <utility>
 
 namespace toast {

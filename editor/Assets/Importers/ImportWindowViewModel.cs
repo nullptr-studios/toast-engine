@@ -158,7 +158,8 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	public ImportWindowViewModel() {
 		m_importers = [
 			new TextureImporter(TextureSettings),
-			new PsdImporter(TextureSettings, PsdSettings)
+			new PsdImporter(TextureSettings, PsdSettings),
+			new GltfImporter(GltfSettings, TextureSettings),
 		];
 		m_allowedExtensions = [];
 		foreach (var importer in m_importers)
@@ -177,6 +178,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	public ObservableCollection<ImportNodeViewModel> ImportNodes { get; } = [];
 	public TextureImporter.Settings TextureSettings { get; } = new();
 	public PsdImporter.Settings PsdSettings { get; } = new();
+	public GltfImporter.Settings GltfSettings { get; } = new();
 
 	public void SetWindow(Window window) {
 		m_window = window;

@@ -130,7 +130,7 @@ fn find_headers(inputs: &[PathBuf]) -> Vec<PathBuf> {
 				continue;
 			}
 			if let Ok(content) = fs::read_to_string(&path) {
-				if content.contains("[[ToastNode]]") {
+				if content.contains("ToastNode") {
 					result.push(path);
 				}
 			}
