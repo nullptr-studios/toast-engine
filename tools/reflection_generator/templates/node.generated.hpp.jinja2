@@ -1,0 +1,102 @@
+// ============================================================
+// AUTO-GENERATED FILE - DO NOT MODIFY DIRECTLY
+// Changes will not persist
+// ============================================================
+
+#pragma once
+#include <string_view>
+#include <array>
+#include <toast/world/reflect.hpp>
+{% if has_asset_handle %}#include <toast/assets/asset_field_access.hpp>
+{% endif %}
+#include <{{ source_file }}>
+
+namespace toast {
+namespace _detail {
+
+{% for f in all_fields_flat %}
+	struct {{ snake_name }}_{{ f.name }}_tag { typedef {{ f.typename }} {{ qualified_name }}::*type; };
+	template struct Robber<{{ snake_name }}_{{ f.name }}_tag, &{{ qualified_name }}::{{ f.member_name }}>;
+{% endfor %}
+
+{% for fn in active_tick_fns %}
+	struct {{ snake_name }}_{{ fn.flag }}_tag { typedef void ({{ qualified_name }}::*type)(); };
+	template struct Robber<{{ snake_name }}_{{ fn.flag }}_tag, &{{ qualified_name }}::{{ fn.method }}>;
+
+	inline void {{ snake_name }}_{{ fn.flag }}(void* obj) { (static_cast<{{ qualified_name }}*>(obj)->*Accessor<{{ snake_name }}_{{ fn.flag }}_tag>::member)(); }
+{% endfor %}
+	inline {{ qualified_name }}* {{ snake_name }}_construct() { return new {{ qualified_name }}(); }
+	inline void {{ snake_name }}_destroy({{ qualified_name }}* obj) { delete obj; }
+}
+
+template<>
+struct Reflect<{{ qualified_name }}> {
+	static constexpr std::string_view name = "{{ qualified_name }}";
+
+	inline static const std::array<FieldInfo, {{ all_fields_flat | length }}> _all_field_info = {{ '{{' }}
+{% for f in all_fields_flat %}
+		{
+			.name       = "{{ f.name }}",
+			.type       = "{{ f.typename }}",
+			.value_type = FieldType::{{ f.field_type }},
+			.attributes = {{ '{{' }}{% for a in f.attrs_list %}{"{{ a.name }}", {{ '{' }}{% for v in a.args %}"{{ v }}"{% if not loop.last %}, {% endif %}{% endfor %}{{ '}' }}}{% if not loop.last %}, {% endif %}{% endfor %}{{ '}}' }},
+			.is_array   = {{ f.is_array | lower }},
+			.get        = &{% if f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::get,
+			.set        = &{% if f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::set,
+		}{% if not loop.last %},{% endif %}
+
+{% endfor %}
+	{{ '}}' }};
+
+	inline static const std::array<const FieldInfo*, {{ global_field_indices | length }}> field_info = {{ '{{' }}
+{% for idx in global_field_indices %}
+		&_all_field_info[{{ idx }}],
+{% endfor %}
+	{{ '}}' }};
+{% for g in groups %}
+
+	inline static const std::array<const FieldInfo* const, {{ g.field_indices | length }}> {{ g.snake_name }}_group_fields = {{ '{{' }}
+		{% for idx in g.field_indices %}&_all_field_info[{{ idx }}], {% endfor %}
+	{{ '}}' }};
+{% for sg in g.subgroups %}
+	inline static const std::array<const FieldInfo* const, {{ sg.field_indices | length }}> {{ g.snake_name }}_{{ sg.snake_name }}_subgroup_fields = {{ '{{' }}
+		{% for idx in sg.field_indices %}&_all_field_info[{{ idx }}], {% endfor %}
+	{{ '}}' }};
+	inline static const SubgroupInfo {{ g.snake_name }}_{{ sg.snake_name }}_subgroup = {
+		.name = "{{ sg.name }}", .fields = {{ g.snake_name }}_{{ sg.snake_name }}_subgroup_fields,
+	};
+{% endfor %}
+	inline static const std::array<SubgroupInfo, {{ g.subgroups | length }}> {{ g.snake_name }}_subgroups = {{ '{{' }}
+		{% for sg in g.subgroups %}{{ g.snake_name }}_{{ sg.snake_name }}_subgroup, {% endfor %}
+	{{ '}}' }};
+	inline static const GroupInfo {{ g.snake_name }}_group = {
+		.name      = "{{ g.name }}",
+		.fields    = {{ g.snake_name }}_group_fields,
+		.subgroups = {{ g.snake_name }}_subgroups,
+	};
+{% endfor %}
+
+	inline static const std::array<GroupInfo, {{ groups | length }}> group_info = {{ '{{' }}
+		{% for g in groups %}{{ g.snake_name }}_group, {% endfor %}
+	{{ '}}' }};
+
+	static constexpr TickFunctions tick_functions = {
+		.list = {% if active_tick_fns %}{% for fn in active_tick_fns %}TickFunctionList::{{ fn.flag }}{% if not loop.last %} | {% endif %}{% endfor %}{% else %}TickFunctionList::none{% endif %},
+{% for fn in active_tick_fns %}
+		.{{ fn.flag }} = &_detail::{{ snake_name }}_{{ fn.flag }},
+{% endfor %}
+	};
+
+	inline static const toast::NodeInfo type_info = {
+		.type       = name,
+		.base_type  = {% if parent_qualified_name %}&Reflect<{{ parent_qualified_name }}>::type_info{% else %}nullptr{% endif %},
+		.all_fields = _all_field_info,
+		.fields     = field_info,
+		.groups     = group_info,
+		.functions  = tick_functions,
+		.construct  = reinterpret_cast<toast::NodeInfo::Factory>(&_detail::{{ snake_name }}_construct),
+		.destroy    = reinterpret_cast<toast::NodeInfo::Deleter>(&_detail::{{ snake_name }}_destroy),
+	};
+};
+
+} // namespace toast

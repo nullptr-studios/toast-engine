@@ -1,15 +1,17 @@
 #include "sdl_window.hpp"
 
 #include <SDL3/SDL_vulkan.h>
+#include <tracy/Tracy.hpp>
 
 namespace toast {
 
-SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, int flags) {
+SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, uint64_t flags) {
+	ZoneScoped;
 	TOAST_ASSERT(SDL_Init(SDL_INIT_VIDEO) == true, "Window", "SDL cannot be initialized");
 
 	if ((flags & SDL_WINDOW_VULKAN) != 0) {
-		const char* videoDriver = SDL_GetCurrentVideoDriver();
-		TOAST_INFO("SDLWindow", "SDL video driver: {}", videoDriver ? videoDriver : "(null)");
+		const char* video_driver = SDL_GetCurrentVideoDriver();
+		TOAST_INFO("SDLWindow", "SDL video driver: {}", video_driver ? video_driver : "(null)");
 	}
 
 	type = WindowType::sdl;
@@ -45,7 +47,11 @@ auto SDLWindow::nativeHandle() const -> void* {
 }
 
 void SDLWindow::pollEvents() {
+	ZoneScoped;
+
 	for (SDL_Event event; SDL_PollEvent(&event);) {
+		ZoneScopedN("SDLWindow::event");
+
 		if (event.window.windowID != SDL_GetWindowID(m.sdl_window.get())) {
 			continue;
 		}
@@ -127,6 +133,8 @@ void SDLWindow::pollEvents() {
 	}
 }
 
-void SDLWindow::swapFramebuffers() { }
+void SDLWindow::swapFramebuffers() {
+	ZoneScoped;
+}
 
 }

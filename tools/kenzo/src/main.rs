@@ -1,11 +1,11 @@
-use clap::Parser;
 use anyhow::Result;
+use clap::Parser;
 
 pub mod proto;
 
 mod app;
-mod ui;
 mod tui;
+mod ui;
 
 use crate::app::App;
 
@@ -19,20 +19,20 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
-    
+
     // Set up panic handler to restore terminal
     let default_panic = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |panic_info| {
         let _ = tui::restore();
         default_panic(panic_info);
     }));
-    
+
     // Initialize Terminal
     let mut terminal = tui::init()?;
-    
+
     // Create App
     let mut app = App::new(args.csv);
-    
+
     // Run Main Loop
     let res = app.run(&mut terminal).await;
 

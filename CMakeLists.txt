@@ -13,6 +13,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_ROOT}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_ROOT}")
 set(CMAKE_PDB_OUTPUT_DIRECTORY "${OUTPUT_ROOT}")
 
+if (WIN32)
+	add_compile_definitions(_WIN32_WINNT=0x0A00)
+endif()
+
 if (MSVC)
 	# Enable multi-processor compilation
 	add_compile_options(/MP)
@@ -28,6 +32,9 @@ foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
 	set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${OUTPUT_ROOT}/${config}")
 	set(CMAKE_PDB_OUTPUT_DIRECTORY_${config_upper} "${OUTPUT_ROOT}/${config}")
 endforeach()
+
+include(cmake/codegen.cmake)
+run_codegen()
 
 add_subdirectory(engine)
 add_subdirectory(tools)

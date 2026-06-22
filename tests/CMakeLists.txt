@@ -4,11 +4,34 @@ if (BUILD_TESTING)
 	file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 	list(REMOVE_ITEM TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/test_runner.cpp")
 
-	add_executable(toast_tests ${TEST_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/test_runner.cpp")
+	add_executable(toast_tests ${TEST_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/test_runner.cpp" "${CMAKE_SOURCE_DIR}/engine/src/toast/assets/prefab.cpp")
 	target_include_directories(toast_tests BEFORE PRIVATE ${CMAKE_SOURCE_DIR}/engine/src)
 	target_include_directories(toast_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 	target_link_libraries(toast_tests PRIVATE toast_engine)
-	target_compile_definitions(toast_tests PRIVATE UNIT_TESTING)
+	target_compile_definitions(toast_tests PRIVATE UNIT_TESTING TRACY_NO_INVARIANT_CHECK=1)
+
+	foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
+		string(TOUPPER "${config}" config_upper)
+		set_target_properties(toast_tests PROPERTIES
+			"RUNTIME_OUTPUT_DIRECTORY_${config_upper}" "${OUTPUT_ROOT}/${config}/tests"
+			"PDB_OUTPUT_DIRECTORY_${config_upper}"     "${OUTPUT_ROOT}/${config}/tests"
+		)
+	endforeach()
+
+	if(WIN32)
+		add_custom_command(TARGET toast_tests POST_BUILD
+			COMMAND ${CMAKE_COMMAND}
+				-DSRC_DIR=$<TARGET_FILE_DIR:toast_engine>
+				-DDST_DIR=$<TARGET_FILE_DIR:toast_tests>
+				-P "${CMAKE_SOURCE_DIR}/cmake/link_or_copy_dir.cmake"
+			COMMENT "Deploying engine runtime to tests/"
+			VERBATIM
+		)
+	else()
+		set_target_properties(toast_tests PROPERTIES
+			BUILD_RPATH "$<TARGET_FILE_DIR:toast_engine>"
+		)
+	endif()
 
 	if (NOT WIN32)
 		target_link_libraries(toast_tests PRIVATE stdc++exp)

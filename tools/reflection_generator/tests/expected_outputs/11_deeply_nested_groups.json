@@ -1,0 +1,203 @@
+[
+  {
+    "attributes": {},
+    "functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    },
+    "global_fields": [],
+    "groups": [
+      {
+        "fields": [],
+        "name": "Physics",
+        "subgroups": [
+          {
+            "fields": [
+              {
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Collider"
+                  ]
+                },
+                "default": null,
+                "field_type": "float_t",
+                "is_array": false,
+                "name": "m_c1",
+                "typename": "float"
+              },
+              {
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Collider"
+                  ]
+                },
+                "default": null,
+                "field_type": "float_t",
+                "is_array": false,
+                "name": "m_c2",
+                "typename": "float"
+              },
+              {
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Collider"
+                  ]
+                },
+                "default": null,
+                "field_type": "float_t",
+                "is_array": false,
+                "name": "m_c3",
+                "typename": "float"
+              }
+            ],
+            "name": "Collider"
+          },
+          {
+            "fields": [
+              {
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Constraints"
+                  ]
+                },
+                "default": null,
+                "field_type": "float_t",
+                "is_array": false,
+                "name": "m_k1",
+                "typename": "float"
+              },
+              {
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Constraints"
+                  ]
+                },
+                "default": null,
+                "field_type": "float_t",
+                "is_array": false,
+                "name": "m_k2",
+                "typename": "float"
+              },
+              {
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Constraints"
+                  ]
+                },
+                "default": null,
+                "field_type": "float_t",
+                "is_array": false,
+                "name": "m_k3",
+                "typename": "float"
+              },
+              {
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Constraints"
+                  ]
+                },
+                "default": null,
+                "field_type": "float_t",
+                "is_array": false,
+                "name": "m_k4",
+                "typename": "float"
+              }
+            ],
+            "name": "Constraints"
+          },
+          {
+            "fields": [
+              {
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Debug"
+                  ]
+                },
+                "default": null,
+                "field_type": "bool_t",
+                "is_array": false,
+                "name": "m_debug",
+                "typename": "bool"
+              }
+            ],
+            "name": "Debug"
+          },
+          {
+            "fields": [
+              {
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Dynamics"
+                  ]
+                },
+                "default": null,
+                "field_type": "float_t",
+                "is_array": false,
+                "name": "m_d1",
+                "typename": "float"
+              },
+              {
+                "attributes": {
+                  "Group": [
+                    "Physics"
+                  ],
+                  "Subgroup": [
+                    "Dynamics"
+                  ]
+                },
+                "default": null,
+                "field_type": "float_t",
+                "is_array": false,
+                "name": "m_d2",
+                "typename": "float"
+              }
+            ],
+            "name": "Dynamics"
+          }
+        ]
+      }
+    ],
+    "name": "DeeplyNestedNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "11_deeply_nested_groups.hpp"
+  }
+]

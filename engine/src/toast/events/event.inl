@@ -2,8 +2,8 @@
 #include "event.hpp"
 #include "toast/log.hpp"
 
-#include <tracy/Tracy.hpp>
 #include <mutex>
+#include <tracy/Tracy.hpp>
 #include <type_traits>
 
 namespace event {
@@ -47,7 +47,7 @@ void Event<T>::unsubscribe(iterator_t it) noexcept {
 template<typename T>
 void Event<T>::notify() noexcept {
 	ZoneScoped;
-	
+
 	ensureRegistered();
 
 	auto& g = EventSystem::event_data[typeid(T)];
@@ -82,7 +82,7 @@ void send(Args&&... args) noexcept {
 	ZoneScoped;
 
 	static_assert(std::is_constructible_v<T, Args...>, "Invalid Construtor For Type T");
-	TOAST_INFO("Events", "Sending Event: {}", typeid(T).name());
+	TOAST_TRACE("Events", "Sending event: {}", typeid(T).name());
 	// Allocate and enqueue event
 	{
 		std::scoped_lock _(EventSystem::pool_mutex);

@@ -1,6 +1,7 @@
 #include "engine.hpp"
 
 #include "application.hpp"
+#include "assets/asset_manager.hpp"
 #include "events/event.hpp"
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
@@ -13,14 +14,21 @@
 #include "renderer/core/VulkanCore.hpp"
 #include "renderer/core/VulkanRenderer.hpp"
 #include "thread_pool.hpp"
+#include "time.hpp"
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
+#include "world/reflect.hpp"
+#include "world/workspace.hpp"
+#include "world/workspace_events.hpp"
+#include "world/world.hpp"
 
 #include <SDL3/SDL.h>
 #include <cassert>
 #include <filesystem>
+#include <fstream>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <span>
 
@@ -35,15 +43,33 @@ float totalTime = 0.0f;
 Engine* Engine::instance = nullptr;
 
 struct EnginePimpl {
-	std::unique_ptr<ThreadPool> thread_pool;
-	std::unique_ptr<logging::Logger> logger;
-	std::unique_ptr<IBaseWindow> window;
-	std::unique_ptr<renderer::VulkanCore> vulkan_core;
-	std::unique_ptr<renderer::VulkanRenderer> renderer;
-	event::Listener resize_listener;
+	std::unique_ptr<ThreadPool> thread_pool = nullptr;
+	std::unique_ptr<logging::Logger> logger = nullptr;
+	std::unique_ptr<IBaseWindow> window = nullptr;
+	std::unique_ptr<World> world = nullptr;
+	std::unique_ptr<assets::AssetManager> asset_manager = nullptr;
+	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
+	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
+	Time time;
+	event::Listener listener;
+	toast::NodeRegistry reflection_registry;
+
+	// owned by renderer's output target
+	renderer::SharedTextureOutputTarget* shared_target = nullptr;
+
+	std::mutex owners_mutex;
+	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
+	toast::UID active_workspace {0};
 };
 
+Engine::~Engine() noexcept {
+	delete m;
+	instance = nullptr;
+}
+
 Engine::Engine() noexcept {
+	instance = this;
+
 	// clang-format off
 	m = new EnginePimpl {
 		.thread_pool = ThreadPool::create(),
@@ -51,8 +77,39 @@ Engine::Engine() noexcept {
 	};
 	// clang-format on
 
+	/*
+	 *	IMPORTANT:
+	 *	If you are planning on initializing something here you should
+	 *	consider doing it on Engine::init() instead
+	 *
+	 *	This code runs before we even set our working directory and create our
+	 *	game project, so there's not a lot of reason something outside the logger
+	 *	and the thread pool (logger depends on it) to be here
+	 *
+	 *	Be smart like toast and initialize things on the init() function
+	 *	- xein <3
+	 */
+}
+
+auto Engine::get() noexcept -> Engine* {
+	// If at any point toast doesn't exist just crash the damn game
+	assert(instance && "Toast Engine doesn't exist");
+	return instance;
+}
+
+void Engine::init() {
+	TracySetProgramName("ToastEngine");
+#ifdef TRACY_ENABLE
+	tracy::SetThreadName("Main Thread");
+#endif
+
+	event::registerProtoEvents();
+	registerEngineTypes();
+
+	m->asset_manager = std::make_unique<assets::AssetManager>();
+
 	// TODO: This should be moved into VulkanRenderer
-	m->resize_listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
+	m->listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
 		if (!m->renderer || !m->vulkan_core || e.width <= 0 || e.height <= 0) {
 			return false;
 		}
@@ -61,7 +118,17 @@ Engine::Engine() noexcept {
 		return false;
 	});
 
-	instance = this;
+	m->listener.subscribe<event::WorkspaceDestroy>([this](const event::WorkspaceDestroy& e) {
+		destroyWorkspace(e.handle);
+		return false;
+	});
+
+	// The editor tells us which workspace is focused; only that one answers hierarchy requests
+	m->listener.subscribe<event::SetActiveWorkspace>([this](const event::SetActiveWorkspace& e) {
+		m->active_workspace = e.handle;
+		event::send<event::RequestHierarchyUpdate>();
+		return false;
+	});
 }
 
 Engine::~Engine() noexcept {
@@ -77,15 +144,13 @@ Engine::~Engine() noexcept {
 	instance = nullptr;
 }
 
-auto Engine::get() noexcept -> Engine* {
-	// If at any point toast doesn't exist just crash the damn game
-	assert(instance && "Toast Engine doesn't exist");
-	return instance;
-}
-
 void Engine::tick() {
+	ZoneScoped;
+
+	m->time.tick();
+
 	// Poll window events
-#if DEBUG
+#ifndef NDEBUG
 	if (m->window) {
 		m->window->pollEvents();
 	}
@@ -95,8 +160,17 @@ void Engine::tick() {
 
 	event::pollEvents();
 
-	// Run application logic
+	{
+		std::scoped_lock lock(m->owners_mutex);
+		ZoneScopedN("NodeOwners::tick()");
+		for (const auto& [_, node_owner] : m->owners) {
+			node_owner->tick();
+		}
+	}
+
+	// Run application layer
 	if (active_application) {
+		ZoneScopedN("GameLayer::tick()");
 		active_application->tick();
 	}
 	totalTime += 0.00016f;
@@ -179,6 +253,10 @@ void Engine::createAvaloniaWindow() {
 	auto extent = output_target->getExtent();
 	auto depth_format = renderer::VulkanRenderer::selectDepthFormat(*m->vulkan_core);
 
+	m->shared_target = output_target.get();
+
+	m->shared_target = output_target.get();
+
 	// FIXME: change this
 	camera = new Camera();
 	camera->position = {10, -15, -10};
@@ -196,25 +274,121 @@ void Engine::createAvaloniaWindow() {
 	m->renderer->start();
 }
 
+auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::string> {
+	UID uid;
+	uid.generate();
+	std::scoped_lock lock(m->owners_mutex);
+	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(type, uid));
+	std::string name = it->second->name();
+	return {uid, name};
+}
+
+auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
+	std::scoped_lock lock(m->owners_mutex);
+	if (m->owners.contains(uid)) {
+		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
+		return {};
+	}
+
+	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(uid));
+	std::string name = it->second->name();
+	return {uid, name};
+}
+
+void Engine::destroyWorkspace(UID handle) {
+	std::scoped_lock lock(m->owners_mutex);
+	m->owners.erase(handle);
+}
+
+auto Engine::activeWorkspace() -> UID {
+	return m->active_workspace;
+}
+
+auto Engine::getViewportFrame(void* dst, uint32_t dst_capacity, renderer::ViewportFrameDesc* out) -> int {
+	if (!m->shared_target) {
+		return 0;
+	}
+	return m->shared_target->copyLatestFrame(dst, dst_capacity, out);
+}
+
+auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::string> {
+	UID uid;
+	uid.generate();
+	std::scoped_lock lock(m->owners_mutex);
+	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(type, uid));
+	std::string name = it->second->name();
+	return {uid, name};
+}
+
+auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
+	std::scoped_lock lock(m->owners_mutex);
+	if (m->owners.contains(uid)) {
+		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
+		return {};
+	}
+
+	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(uid));
+	std::string name = it->second->name();
+	return {uid, name};
+}
+
+void Engine::destroyWorkspace(UID handle) {
+	std::scoped_lock lock(m->owners_mutex);
+	m->owners.erase(handle);
+}
+
+auto Engine::activeWorkspace() -> UID {
+	return m->active_workspace;
+}
+
+auto Engine::getViewportFrame(void* dst, uint32_t dst_capacity, renderer::ViewportFrameDesc* out) -> int {
+	if (!m->shared_target) {
+		return 0;
+	}
+	return m->shared_target->copyLatestFrame(dst, dst_capacity, out);
+}
+
 void pushApplicationLayer(IApplication* app) {
 	if (active_application && active_application != app) {
 		active_application->destroy();
+		delete active_application;
 	}
 
 	active_application = app;
-
-	if (active_application) {
-		active_application->begin();
-	}
 }
 
 }
+
+// Tracy memory profiling
+#ifdef DEBUG
+// NOLINTBEGIN(cppcoreguidelines-no-malloc)
+auto operator new(std::size_t count) -> void* {
+	auto* ptr = malloc(count);
+	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
+	return ptr;
+}
+
+void operator delete(void* ptr) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+
+// NOLINTEND(cppcoreguidelines-no-malloc)
+#endif
 
 // ffi stuff
 extern "C" {
 
 auto toast_create() -> engine_t* {
 	return reinterpret_cast<engine_t*>(new toast::Engine());
+}
+
+void toast_init() {
+	toast::Engine::get()->init();
+
+	if (toast::active_application) {
+		toast::active_application->begin();
+	}
 }
 
 void toast_create_SDL_window(const char* w_name) {
@@ -235,5 +409,38 @@ auto toast_should_close() -> int {
 
 void toast_destroy(engine_t* e) {
 	delete reinterpret_cast<toast::Engine*>(e);
+}
+
+void toast_set_working_directory(
+    const char* assets, const char* artworks, const char* cache, const char* saved, const char* core
+) {
+	assets::AssetManager::setPaths({.assets = assets, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
+}
+
+auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) -> int {
+	toast::renderer::ViewportFrameDesc desc {};
+	const int result = toast::Engine::get()->getViewportFrame(dst, dst_capacity, &desc);
+	if (out) {
+		out->width = desc.width;
+		out->height = desc.height;
+		out->row_pitch = desc.row_pitch;
+		out->frame_id = desc.frame_id;
+	}
+	return result;
+}
+
+auto toast_create_workspace(const char* type) -> workspace_result {
+	auto [uid, name] = toast::Engine::get()->createWorkspace(type);
+
+	static thread_local std::string s_name;
+	s_name = std::move(name);
+	return {.uid = uid.data(), .name = s_name.c_str()};
+}
+
+auto toast_open_workspace(const char* uid) -> workspace_result {
+	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid));
+	static thread_local std::string s_name;
+	s_name = std::move(name);
+	return {.uid = root_uid.data(), .name = s_name.c_str()};
 }
 }

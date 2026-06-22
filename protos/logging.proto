@@ -1,5 +1,5 @@
 syntax = "proto3";
-package logging;
+package proto.logging;
 
 message LogData {
   enum Severity {
@@ -23,4 +23,3 @@ message LogData {
 message LogBatch {
   repeated LogData logs = 1;
 }
-

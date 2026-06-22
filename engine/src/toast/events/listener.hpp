@@ -40,7 +40,8 @@ class TOAST_API Listener {
 	struct Handle {
 		std::type_index type;
 		std::string name;
-		std::any iterator;
+		std::any iterator;    ///< type-erased Event<T>::iterator_t; std::any so Handle doesn't need to be templated; safe because
+		                      ///< std::multimap never invalidates iterators on insert/erase
 	};
 
 	struct {
