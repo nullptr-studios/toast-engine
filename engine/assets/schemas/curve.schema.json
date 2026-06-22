@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "toast://schemas/curve.schema.json",
+  "title": "Toast Curve (.tcurve)",
+  "type": "object",
+  "required": ["spline_type", "dimension", "points"],
+  "additionalProperties": false,
+  "properties": {
+    "spline_type": {
+      "enum": ["linear", "catmull_rom", "bspline", "bezier"],
+      "description": "linear: piecewise straight lines. catmull_rom: smooth interpolation through all points (automatic tangents). bspline: smooth cubic approximation (does not pass through interior points). bezier: compound cubic with explicit tangent handles; requires 3k+1 points."
+    },
+    "dimension": {
+      "enum": ["2d", "3d"],
+    },
+    "t_scale": {
+      "type": "number",
+      "default": 1.0,
+      "exclusiveMinimum": 0,
+    },
+    "points": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/definitions/point" }
+    }
+  },
+  "definitions": {
+    "point": {
+      "type": "object",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "z": { "type": "number", "description": "Required when dimension is \"3d\"." }
+      }
+    }
+  }
+}

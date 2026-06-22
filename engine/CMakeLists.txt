@@ -11,6 +11,7 @@ find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(unofficial-vulkan-memory-allocator-hpp CONFIG REQUIRED)
 find_package(slang CONFIG REQUIRED)
 find_package(protobuf CONFIG REQUIRED)
+find_package(tinysplinecxx CONFIG REQUIRED)
 
 file(GLOB_RECURSE SOURCE "src/*.cpp" "generated/*.cpp" "generated/*.cc")
 add_library(toast_engine SHARED ${SOURCE})
@@ -79,6 +80,7 @@ target_link_libraries(toast_engine
         unofficial::VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-Hpp
         slang::gfx slang::slang
         protobuf::libprotobuf
+        tinysplinecxx::tinysplinecxx
     PUBLIC
         Tracy::TracyClient
         glm::glm
