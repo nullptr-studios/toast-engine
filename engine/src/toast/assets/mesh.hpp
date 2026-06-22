@@ -64,6 +64,7 @@ public:
 		return m_name;
 	}
 
+	[[nodiscard]]
 	auto toBinary() const -> std::vector<uint8_t>;
 
 private:
