@@ -76,7 +76,7 @@ enum class ActionEvent : uint8_t {
 	start,        ///< the input went from off to on
 	hold,         ///< the input is held; sent continuously or on a pulse
 	release,      ///< the input went from on to off
-	try_,         ///< the input was pressed but a countdown must elapse before it starts
+	tries,        ///< the input was pressed but a countdown must elapse before it starts
 	countdown,    ///< equivalent of hold while the start countdown is running
 	cancelled,    ///< the input was released before the countdown finished
 };

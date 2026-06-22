@@ -49,7 +49,7 @@ public:
 	 * @brief Plays a haptic effect on this controller's physical gamepad
 	 * @param haptic The effect to play, routed through @c controller_id
 	 */
-	void playHaptic(assets::AssetHandle<assets::Haptic> haptic);
+	void playHaptic(assets::AssetHandle<assets::Haptic> haptic) const;
 
 	[[Reflect, ReadOnly]]
 	std::string active_layout;

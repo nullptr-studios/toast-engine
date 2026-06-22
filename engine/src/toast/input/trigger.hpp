@@ -73,7 +73,7 @@ inline auto levelOf(const InputSample& sample) -> float {
 inline auto toNDC(glm::vec2 screen, const EvalContext& ctx) -> glm::vec2 {
 	const glm::vec2 size = glm::max(ctx.viewport_size, glm::vec2 {1.0f});
 	const glm::vec2 local = screen - ctx.viewport_pos;
-	return glm::vec2 {(local.x / size.x) * 2.0f - 1.0f, 1.0f - (local.y / size.y) * 2.0f};
+	return glm::vec2 {((local.x / size.x) * 2.0f) - 1.0f, 1.0f - ((local.y / size.y) * 2.0f)};
 }
 
 inline auto deltaToNDC(glm::vec2 screen_delta, const EvalContext& ctx) -> glm::vec2 {
@@ -119,7 +119,7 @@ public:
 				r.emit(ActionEvent::start);
 			} else {
 				m_started = false;
-				r.emit(ActionEvent::try_);
+				r.emit(ActionEvent::tries);
 			}
 		} else if (on && !m_started) {
 			m_elapsed += ctx.delta;

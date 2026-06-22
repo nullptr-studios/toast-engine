@@ -135,7 +135,7 @@ auto Action::evaluate(const Sampler& sampler, const EvalContext& ctx) -> SignalL
 }
 
 void Action::updateTiming(const SignalList& fired, bool active, float delta) {
-	if (contains(fired, ActionEvent::try_)) {
+	if (contains(fired, ActionEvent::tries)) {
 		m_time_since_try = 0.0f;
 		m_was_trying = true;
 	}
