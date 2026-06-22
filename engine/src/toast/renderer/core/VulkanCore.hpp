@@ -13,6 +13,9 @@
 
 namespace toast::renderer {
 
+/**
+ * @brief Represents the suitability score of a Vulkan physical device based on various criteria
+ */
 struct DeviceScore {
 	int total = 0;
 	int device_type = 0;
@@ -29,18 +32,17 @@ struct DeviceScore {
 
 	std::vector<std::string> missing_extensions;
 
+	/**
+	 * @brief Converts the device score to a string representation.
+	 * @return A string containing the device score details.
+	 */
 	[[nodiscard]]
 	auto toString() const -> std::string;
 };
 
+/// @brief Manages Vulkan instance, device initialization, and memory allocation
 class VulkanCore {
 public:
-	/**
-	 * Initializes the Vulkan Core instance.
-	 * @param parameters The configuration parameters.
-	 * @return A reference to the VulkanCore object.
-	 */
-
 	VulkanCore(
 	    std::span<const char* const> required_instance_extensions, std::span<const char* const> required_device_extensions = {}
 	);
@@ -104,11 +106,11 @@ private:
 	/**
 	 * Evaluates available Vulkan physical devices and selects the most suitable one
 	 * based on required extension support, queue family constraints, and a calculated suitability score.
-	 * Updates internal state with the selected device and corresponding queue family indices.
-	 * Logs evaluation details, scoring breakdowns, and rejection criteria for each candidate.
+	 * Updates internal state with the selected device and corresponding queue family indices
 	 *
+	 * Logs evaluation details, scoring breakdowns, and rejection criteria for each candidate
 	 * @param required_device_extensions A span of C-string pointers specifying the Vulkan device
-	 *        extensions that must be supported by the selected physical device.
+	 *        extensions that must be supported by the selected physical device
 	 */
 	void pickPhysicalDevice(std::span<const char* const> required_device_extensions);
 	/**
@@ -120,7 +122,7 @@ private:
 	 * Evaluates a Vulkan physical device suitability by computing a weighted score based on device type,
 	 * available memory, hardware limits, feature support, extension availability, API version, and queue
 	 * family configuration. Required extensions are validated against the device, applying penalties for
-	 * missing capabilities and rewards for supported optional extensions and modern Vulkan features.
+	 * missing capabilities and rewards for supported optional extensions and modern Vulkan features
 	 *
 	 * @param device The Vulkan physical device to evaluate.
 	 * @param required_device_extensions A span of required device extension names that the device must support.
@@ -144,7 +146,6 @@ private:
 
 	std::optional<vma::raii::Allocator> m_allocator;
 
-	// Use a sentinel invalid value so index 0 is a legitimate family index
 	uint32_t m_graphicsQueueFamilyIndex = std::numeric_limits<uint32_t>::max();
 	uint32_t m_computeQueueFamilyIndex = std::numeric_limits<uint32_t>::max();
 	uint32_t m_transferQueueFamilyIndex = std::numeric_limits<uint32_t>::max();

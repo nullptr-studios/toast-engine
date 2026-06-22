@@ -70,9 +70,9 @@ auto VulkanRenderer::selectDepthFormat(const VulkanCore& core) -> vk::Format {
 
 VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> output_target)
     : m_core(&core),
-      m_outputTarget(std::move(output_target)) {
+      m_output_target(std::move(output_target)) {
 	instance = this;
-	if (!m_outputTarget) {
+	if (!m_output_target) {
 		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: VulkanRenderer requires an output target!");
 	}
 
@@ -81,7 +81,7 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	}
 
 	TOAST_TRACE("VulkanRenderer", "Creating renderer with {} frame(s) in flight", kFramesInFlight);
-	m_depthFormat = selectDepthFormat(core);
+	m_depth_format = selectDepthFormat(core);
 
 	createGraphicsCommandPool();
 	createTransferCommandPool();
@@ -90,7 +90,7 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	createFrameContexts();
 	createPerImageSync();
 	createDepthResources();
-	m_imagesInFlight.assign(m_outputTarget->getImageCount(), vk::Fence {});
+	m_images_in_flight.assign(m_output_target->getImageCount(), vk::Fence {});
 
 	createDescriptorPool();
 
@@ -98,7 +98,6 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	createFrameResources();
 }
 
-//FIXME
 VulkanRenderer::~VulkanRenderer() {
 	stop();
 	instance = nullptr;
@@ -108,7 +107,7 @@ auto VulkanRenderer::createGraphicsCommandPool() -> void {
 	const vk::CommandPoolCreateInfo pool_ci(
 	    vk::CommandPoolCreateFlagBits::eResetCommandBuffer, m_core->getGraphicsQueueFamilyIndex()
 	);
-	m_commandPool = vk::raii::CommandPool(m_core->getDevice(), pool_ci);
+	m_command_pool = vk::raii::CommandPool(m_core->getDevice(), pool_ci);
 	TOAST_TRACE("VulkanRenderer", "Graphics command pool created (graphics family {})", m_core->getGraphicsQueueFamilyIndex());
 }
 
@@ -116,7 +115,7 @@ auto VulkanRenderer::createTransferCommandPool() -> void {
 	const vk::CommandPoolCreateInfo pool_ci(
 	    vk::CommandPoolCreateFlagBits::eResetCommandBuffer, m_core->getTransferQueueFamilyIndex()
 	);
-	m_transferCommandPool = vk::raii::CommandPool(m_core->getDevice(), pool_ci);
+	m_transfer_command_pool = vk::raii::CommandPool(m_core->getDevice(), pool_ci);
 	TOAST_TRACE("VulkanRenderer", "Transfer command pool created (transfer family {})", m_core->getTransferQueueFamilyIndex());
 }
 
@@ -126,54 +125,54 @@ auto VulkanRenderer::createFrameContexts() -> void {
 
 	const vk::SemaphoreCreateInfo semaphore_ci {};
 	const vk::FenceCreateInfo fence_ci(vk::FenceCreateFlagBits::eSignaled);
-	const vk::CommandBufferAllocateInfo command_buffer_ci(*m_commandPool, vk::CommandBufferLevel::ePrimary, kFramesInFlight);
+	const vk::CommandBufferAllocateInfo command_buffer_ci(*m_command_pool, vk::CommandBufferLevel::ePrimary, kFramesInFlight);
 	const vk::CommandBufferAllocateInfo transfer_command_buffer_ci(
-	    *m_transferCommandPool, vk::CommandBufferLevel::ePrimary, kFramesInFlight
+	    *m_transfer_command_pool, vk::CommandBufferLevel::ePrimary, kFramesInFlight
 	);
 	auto allocated_command_buffers = m_core->getDevice().allocateCommandBuffers(command_buffer_ci);
 	auto allocated_transfer_command_buffers = m_core->getDevice().allocateCommandBuffers(transfer_command_buffer_ci);
 
 	for (uint32_t frame_index = 0; frame_index < kFramesInFlight; ++frame_index) {
-		m_frames[frame_index].commandBuffer = std::move(allocated_command_buffers[frame_index]);
-		m_frames[frame_index].transferCommandBuffer = std::move(allocated_transfer_command_buffers[frame_index]);
-		m_frames[frame_index].imageAvailable = vk::raii::Semaphore(m_core->getDevice(), semaphore_ci);
-		m_frames[frame_index].transferFinished = vk::raii::Semaphore(m_core->getDevice(), semaphore_ci);
-		m_frames[frame_index].inFlight = vk::raii::Fence(m_core->getDevice(), fence_ci);
+		m_frames[frame_index].command_buffer = std::move(allocated_command_buffers[frame_index]);
+		m_frames[frame_index].transfer_command_buffer = std::move(allocated_transfer_command_buffers[frame_index]);
+		m_frames[frame_index].image_available = vk::raii::Semaphore(m_core->getDevice(), semaphore_ci);
+		m_frames[frame_index].transfer_finished = vk::raii::Semaphore(m_core->getDevice(), semaphore_ci);
+		m_frames[frame_index].in_flight = vk::raii::Fence(m_core->getDevice(), fence_ci);
 	}
 
 	TOAST_TRACE("VulkanRenderer", "Frame command buffers created: {}", kFramesInFlight);
 }
 
 auto VulkanRenderer::createPerImageSync() -> void {
-	const auto image_count = m_outputTarget->getImageCount();
-	m_renderFinishedPerImage.clear();
-	m_renderFinishedPerImage.reserve(image_count);
+	const auto image_count = m_output_target->getImageCount();
+	m_render_finished_per_image.clear();
+	m_render_finished_per_image.reserve(image_count);
 
 	const vk::SemaphoreCreateInfo semaphore_ci {};
 	for (uint32_t i = 0; i < image_count; ++i) {
-		m_renderFinishedPerImage.emplace_back(m_core->getDevice(), semaphore_ci);
+		m_render_finished_per_image.emplace_back(m_core->getDevice(), semaphore_ci);
 	}
 
 	TOAST_TRACE("VulkanRenderer", "Per-image semaphores created: {}", image_count);
 }
 
 auto VulkanRenderer::createDepthResources() -> void {
-	if (m_depthFormat == vk::Format::eUndefined) {
+	if (m_depth_format == vk::Format::eUndefined) {
 		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: VulkanRenderer requires a valid depth format!");
 	}
 
-	const auto extent = m_outputTarget->getExtent();
+	const auto extent = m_output_target->getExtent();
 	if (extent.width == 0 || extent.height == 0) {
 		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: VulkanRenderer requires a non-zero output extent for depth resources!");
 	}
 
-	m_depthResources.view.reset();
-	m_depthResources.image.reset();
+	m_depth_resources.view.reset();
+	m_depth_resources.image.reset();
 
 	// Depth image creation info
 	vk::ImageCreateInfo image_ci {};
 	image_ci.imageType = vk::ImageType::e2D;
-	image_ci.format = m_depthFormat;
+	image_ci.format = m_depth_format;
 	image_ci.extent = vk::Extent3D {extent.width, extent.height, 1};
 	image_ci.mipLevels = 1;
 	image_ci.arrayLayers = 1;
@@ -187,22 +186,22 @@ auto VulkanRenderer::createDepthResources() -> void {
 	allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
 
 	auto depth_image = m_core->getAllocator().createImage(image_ci, allocation_ci);
-	m_depthResources.image.emplace(std::move(depth_image));
+	m_depth_resources.image.emplace(std::move(depth_image));
 
 	vk::ImageViewCreateInfo view_ci {};
-	view_ci.image = **m_depthResources.image;
+	view_ci.image = **m_depth_resources.image;
 	view_ci.viewType = vk::ImageViewType::e2D;
-	view_ci.format = m_depthFormat;
-	view_ci.subresourceRange = depthAttachmentRange(m_depthFormat);
-	m_depthResources.view.emplace(m_core->getDevice(), view_ci);
+	view_ci.format = m_depth_format;
+	view_ci.subresourceRange = depthAttachmentRange(m_depth_format);
+	m_depth_resources.view.emplace(m_core->getDevice(), view_ci);
 
-	m_depthLayout = vk::ImageLayout::eUndefined;
+	m_depth_layout = vk::ImageLayout::eUndefined;
 	TOAST_TRACE(
 	    "VulkanRenderer",
 	    "Depth resources created at {}x{} with format {}",
 	    extent.width,
 	    extent.height,
-	    vk::to_string(m_depthFormat)
+	    vk::to_string(m_depth_format)
 	);
 }
 
@@ -223,7 +222,7 @@ void VulkanRenderer::createDescriptorPool() {
 
 	poolCI.pPoolSizes = poolSizes.data();
 
-	m_descriptorPool = vk::raii::DescriptorPool(m_core->getDevice(), poolCI);
+	m_descriptor_pool = vk::raii::DescriptorPool(m_core->getDevice(), poolCI);
 }
 
 auto VulkanRenderer::recordTransferPass(FrameContext& frame) -> void {
@@ -231,20 +230,20 @@ auto VulkanRenderer::recordTransferPass(FrameContext& frame) -> void {
 	// 	return;
 	// }
 	//
-	// frame.transferCommandBuffer.reset();
+	// frame.transfer_command_buffer.reset();
 	// const vk::CommandBufferBeginInfo begin_info(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	// // Start transfer recording
-	// frame.transferCommandBuffer.begin(begin_info);
+	// frame.transfer_command_buffer.begin(begin_info);
 	//
 	// // TODO: CHANGE THIS!!
 	// const vk::BufferCopy copy_region(0, 0, frameUniformSize());
 	//
-	// frame.transferCommandBuffer.copyBuffer(
+	// frame.transfer_command_buffer.copyBuffer(
 	//     **m_frameUniformResources.stagingBuffer, **m_frameUniformResources.gpuBuffer, copy_region
 	// );
 	//
 	// // End transfer recording
-	// frame.transferCommandBuffer.end();
+	// frame.transfer_command_buffer.end();
 }
 
 auto VulkanRenderer::recordComputePass(FrameContext&, uint32_t) -> void {
@@ -252,16 +251,16 @@ auto VulkanRenderer::recordComputePass(FrameContext&, uint32_t) -> void {
 }
 
 auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> void {
-	frame.commandBuffer.reset();
+	frame.command_buffer.reset();
 	const vk::CommandBufferBeginInfo begin_info(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-	frame.commandBuffer.begin(begin_info);
+	frame.command_buffer.begin(begin_info);
 
-	const vk::Image image = m_outputTarget->getColorImage(image_index);
+	const vk::Image image = m_output_target->getColorImage(image_index);
 	const vk::ImageLayout color_attachment_layout = vk::ImageLayout::eColorAttachmentOptimal;
 
 	// transition to new image
 	transitionImageLayout(
-	    frame.commandBuffer,
+	    frame.command_buffer,
 	    image,
 	    vk::ImageLayout::eUndefined,
 	    color_attachment_layout,
@@ -273,27 +272,27 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 	);
 
 	// dynamic depth
-	const vk::Image depth_image = m_depthResources.image ? **m_depthResources.image : VK_NULL_HANDLE;
-	if (depth_image != VK_NULL_HANDLE && m_depthLayout != vk::ImageLayout::eDepthAttachmentOptimal) {
+	const vk::Image depth_image = m_depth_resources.image ? **m_depth_resources.image : VK_NULL_HANDLE;
+	if (depth_image != VK_NULL_HANDLE && m_depth_layout != vk::ImageLayout::eDepthAttachmentOptimal) {
 		transitionImageLayout(
-		    frame.commandBuffer,
+		    frame.command_buffer,
 		    depth_image,
-		    m_depthLayout,
+		    m_depth_layout,
 		    vk::ImageLayout::eDepthAttachmentOptimal,
 		    vk::AccessFlags {},
 		    vk::AccessFlagBits::eDepthStencilAttachmentWrite,
 		    vk::PipelineStageFlagBits::eTopOfPipe,
 		    vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests,
-		    depthAttachmentRange(m_depthFormat)
+		    depthAttachmentRange(m_depth_format)
 		);
-		m_depthLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+		m_depth_layout = vk::ImageLayout::eDepthAttachmentOptimal;
 	}
 
 	// clearing
 	const vk::ClearValue clear_color(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 1.0f}));
 	const vk::ClearValue clear_depth(vk::ClearDepthStencilValue {1.0f, 0});
 	vk::RenderingAttachmentInfo color_attachment_info {};
-	color_attachment_info.imageView = *m_outputTarget->getColorAttachment(image_index);
+	color_attachment_info.imageView = *m_output_target->getColorAttachment(image_index);
 	color_attachment_info.imageLayout = color_attachment_layout;
 	color_attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
 	color_attachment_info.resolveImageView = nullptr;
@@ -304,8 +303,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 
 	// clearing depth
 	vk::RenderingAttachmentInfo depth_attachment_info {};
-	if (m_depthResources.view.has_value()) {
-		depth_attachment_info.imageView = **m_depthResources.view;
+	if (m_depth_resources.view.has_value()) {
+		depth_attachment_info.imageView = **m_depth_resources.view;
 		depth_attachment_info.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
 		depth_attachment_info.loadOp = vk::AttachmentLoadOp::eClear;
 		depth_attachment_info.storeOp = vk::AttachmentStoreOp::eDontCare;
@@ -314,44 +313,44 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 
 	// setup to initialize rendering
 	vk::RenderingInfo rendering_info {};
-	rendering_info.renderArea = vk::Rect2D({0, 0}, m_outputTarget->getExtent());
+	rendering_info.renderArea = vk::Rect2D({0, 0}, m_output_target->getExtent());
 	rendering_info.layerCount = 1;
 	rendering_info.colorAttachmentCount = 1;
 	rendering_info.pColorAttachments = &color_attachment_info;
-	if (m_depthResources.view.has_value()) {
+	if (m_depth_resources.view.has_value()) {
 		rendering_info.pDepthAttachment = &depth_attachment_info;
 	}
-	frame.commandBuffer.beginRendering(rendering_info);
+	frame.command_buffer.beginRendering(rendering_info);
 
 	// Set dynamic viewport and scissor to match the current output extent
-	const auto extent = m_outputTarget->getExtent();
+	const auto extent = m_output_target->getExtent();
 	const vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(extent.width), static_cast<float>(extent.height), 0.0f, 1.0f);
 	const vk::Rect2D scissor({0, 0}, extent);
-	frame.commandBuffer.setViewport(0, std::array {viewport});
-	frame.commandBuffer.setScissor(0, std::array {scissor});
+	frame.command_buffer.setViewport(0, std::array {viewport});
+	frame.command_buffer.setScissor(0, std::array {scissor});
 	// if (m_frameUniformResources.descriptorSet != VK_NULL_HANDLE) {
 	// 	const std::array<vk::DescriptorSet, 1> descriptor_sets {m_frameUniformResources.descriptorSet};
-	// 	frame.commandBuffer.bindDescriptorSets(
+	// 	frame.command_buffer.bindDescriptorSets(
 	// 	    vk::PipelineBindPoint::eGraphics, m_pipeline->getPipelineLayout(), 0, descriptor_sets, {}
 	// 	);
 	// }
 
 	// record loop
-	for (auto& pass : m_renderPasses) {
-		pass->record(*frame.commandBuffer, m_currentFrame, image_index);
+	for (auto& pass : m_render_passes) {
+		pass->record(*frame.command_buffer, m_current_frame, image_index);
 	}
 
 	// // TODO: Sending vertices!!!
 	// // Draw fullscreen
-	// frame.commandBuffer.draw(6, 1, 0, 0);
+	// frame.command_buffer.draw(6, 1, 0, 0);
 
 	// End rendering
-	frame.commandBuffer.endRendering();
+	frame.command_buffer.endRendering();
 
 	// Transition the image to PresentSrcKHR
 	const vk::ImageLayout present_layout = vk::ImageLayout::ePresentSrcKHR;
 	transitionImageLayout(
-	    frame.commandBuffer,
+	    frame.command_buffer,
 	    image,
 	    color_attachment_layout,
 	    present_layout,
@@ -363,12 +362,12 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 	);
 
 	// End frame record
-	frame.commandBuffer.end();
+	frame.command_buffer.end();
 }
 
 void VulkanRenderer::createFrameResources() {
-	m_frameUBORes.resize(kFramesInFlight);
-	m_frameUBOs.resize(kFramesInFlight);
+	m_frame_ubo_res.resize(kFramesInFlight);
+	m_frame_ubos.resize(kFramesInFlight);
 
 	const auto& device = m_core->getDevice();
 
@@ -393,9 +392,9 @@ void VulkanRenderer::createFrameResources() {
 
 	pipelineLayoutCI.pSetLayouts = layouts.data();
 
-	m_frameUBOPipelineLayout = vk::raii::PipelineLayout(device, pipelineLayoutCI);
+	m_frame_ubo_pipeline_layout = vk::raii::PipelineLayout(device, pipelineLayoutCI);
 
-	for (auto& frame : m_frameUBORes) {
+	for (auto& frame : m_frame_ubo_res) {
 		// create ubo
 		vk::BufferCreateInfo bufferCI {};
 		bufferCI.size = bufferSize;
@@ -413,7 +412,7 @@ void VulkanRenderer::createFrameResources() {
 		// no staging buffer
 
 		// allocate descriptor
-		auto descriptorSets = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(*m_descriptorPool, 1, &*descriptorLayout));
+		auto descriptorSets = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(*m_descriptor_pool, 1, &*descriptorLayout));
 
 		frame.descriptorSet = std::move(descriptorSets[0]);
 		// write descriptor
@@ -428,14 +427,14 @@ void VulkanRenderer::createFrameResources() {
 void VulkanRenderer::updateFrameResources(uint32_t frameIndex, RenderFrame& frameData) {
 	// TODO CHANGE TO SUPPORT THREADSAFE FRAMEDATA
 
-	m_frameUBOs[frameIndex] = frameData.frameData;
+	m_frame_ubos[frameIndex] = frameData.frame_data;
 
-	auto& allocation = m_frameUBORes[frameIndex].gpuBuffer->getAllocation();
+	auto& allocation = m_frame_ubo_res[frameIndex].gpuBuffer->getAllocation();
 	// With VMA_ALLOCATION_CREATE_MAPPED
 	auto* mapped = allocation.getInfo().pMappedData;
 
 	if (mapped) {
-		std::memcpy(mapped, &m_frameUBOs[frameIndex], sizeof(FrameUBO));
+		std::memcpy(mapped, &m_frame_ubos[frameIndex], sizeof(FrameUBO));
 
 		allocation.flush(0, sizeof(FrameUBO));
 	}
@@ -450,11 +449,11 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 	processPendingUploads();
 
 	// Frame rendering
-	auto& frame = m_frames[m_currentFrame];
-	m_core->getDevice().waitForFences(*frame.inFlight, true, std::numeric_limits<uint64_t>::max());
+	auto& frame = m_frames[m_current_frame];
+	m_core->getDevice().waitForFences(*frame.in_flight, true, std::numeric_limits<uint64_t>::max());
 
 	const auto acquired =
-	    m_outputTarget->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.imageAvailable, VK_NULL_HANDLE);
+	    m_output_target->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.image_available, VK_NULL_HANDLE);
 
 	if (acquired.result == vk::Result::eErrorOutOfDateKHR) {
 		TOAST_WARN("VulkanRenderer", "Swapchain out of date on acquire; skipping frame");
@@ -465,19 +464,19 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 	}
 
 	const uint32_t image_index = acquired.value;
-	if (m_imagesInFlight.at(image_index)) {
-		m_core->getDevice().waitForFences(m_imagesInFlight.at(image_index), true, std::numeric_limits<uint64_t>::max());
+	if (m_images_in_flight.at(image_index)) {
+		m_core->getDevice().waitForFences(m_images_in_flight.at(image_index), true, std::numeric_limits<uint64_t>::max());
 	}
 
-	m_core->getDevice().resetFences(*frame.inFlight);
-	m_imagesInFlight[image_index] = *frame.inFlight;
+	m_core->getDevice().resetFences(*frame.in_flight);
+	m_images_in_flight[image_index] = *frame.in_flight;
 
 	// Update FrameData
-	updateFrameResources(m_currentFrame, frameData);    // FIXME: dt
+	updateFrameResources(m_current_frame, frameData);    // FIXME: dt
 
 	// Update the Render passes TODO: Move outside of renderloop
-	for (auto& pass : m_renderPasses) {
-		pass->update(m_currentFrame, 0.016f);
+	for (auto& pass : m_render_passes) {
+		pass->update(m_current_frame, 0.016f);
 	}
 
 	// Recording the shit
@@ -486,30 +485,30 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 	recordFrame(frame, image_index);
 
 	// Starting transfer submission
-	// const vk::Semaphore transfer_wait_semaphore = *frame.transferFinished;
-	// const vk::CommandBuffer transfer_command_buffer = *frame.transferCommandBuffer;
+	// const vk::Semaphore transfer_wait_semaphore = *frame.transfer_finished;
+	// const vk::CommandBuffer transfer_command_buffer = *frame.transfer_command_buffer;
 	// const vk::SubmitInfo transfer_submit_info(0, nullptr, nullptr, 1, &transfer_command_buffer, 1, &transfer_wait_semaphore);
 	// m_core->getTransferQueue().submit(transfer_submit_info);
 
 	// Starting graghics submission
 	// Needs to wait for the transfer to complete and if an image is available
-	const std::array wait_semaphores {*frame.imageAvailable};
+	const std::array wait_semaphores {*frame.image_available};
 	const std::array<vk::PipelineStageFlags, 1> wait_stages {
 	  vk::PipelineStageFlagBits::eColorAttachmentOutput,
 	  /*vk::PipelineStageFlagBits::eAllCommands*/    // FIXME: This will be problematic in the future
 	};
-	const vk::CommandBuffer command_buffer = *frame.commandBuffer;
-	const vk::Semaphore signal_semaphore = *m_renderFinishedPerImage.at(image_index);
+	const vk::CommandBuffer command_buffer = *frame.command_buffer;
+	const vk::Semaphore signal_semaphore = *m_render_finished_per_image.at(image_index);
 	const vk::SubmitInfo submit_info(
 	    wait_semaphores.size(), wait_semaphores.data(), wait_stages.data(), 1, &command_buffer, 1, &signal_semaphore
 	);
-	m_core->getGraphicsQueue().submit(submit_info, *frame.inFlight);
+	m_core->getGraphicsQueue().submit(submit_info, *frame.in_flight);
 
 	// Present onto target texture
-	const auto present_result = m_outputTarget->present(image_index, signal_semaphore);
+	const auto present_result = m_output_target->present(image_index, signal_semaphore);
 
 	// Advance to next frame
-	m_currentFrame = (m_currentFrame + 1) % static_cast<uint32_t>(m_frames.size());
+	m_current_frame = (m_current_frame + 1) % static_cast<uint32_t>(m_frames.size());
 
 	if (present_result == vk::Result::eErrorOutOfDateKHR || present_result == vk::Result::eSuboptimalKHR) {
 		TOAST_WARN("VulkanRenderer", "Swapchain out of date or suboptimal on present; skipping frame");
@@ -522,32 +521,32 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 
 void VulkanRenderer::mainRenderThread() {
 	// tracy::SetThreadName("Renderer Thread");
-	while (m_running) {
+	while (m_running.load(std::memory_order_acquire)) {
 		// ZoneScopedN("VulkanRenderer::mainRenderThread");
 		RenderFrame frameToDraw;
 		bool consumedQueuedFrame = false;
 
 		{
-			std::unique_lock lock(m_queueMutex);
+			std::unique_lock lock(m_queue_mutex);
 
-			if (m_readyFrames.empty()) {
-				if (!m_hasCachedFrame) {
-					m_frameCV.wait(lock, [this] { return !m_readyFrames.empty() || !m_running; });
+			if (m_ready_frames.empty()) {
+				if (!m_has_cached_frame) {
+					m_frame_cv.wait(lock, [this] { return !m_ready_frames.empty() || !m_running; });
 					if (!m_running) {
 						return;
 					}
 				}
 			}
 
-			if (!m_readyFrames.empty()) {
-				const auto frameIndex = m_readyFrames.front();
-				m_readyFrames.pop();
+			if (!m_ready_frames.empty()) {
+				const auto frameIndex = m_ready_frames.front();
+				m_ready_frames.pop();
 				frameToDraw = m_render_frames[frameIndex];
-				m_cachedFrame = frameToDraw;
-				m_hasCachedFrame = true;
+				m_cached_frame = frameToDraw;
+				m_has_cached_frame = true;
 				consumedQueuedFrame = true;
-			} else if (m_hasCachedFrame) {
-				frameToDraw = m_cachedFrame;
+			} else if (m_has_cached_frame) {
+				frameToDraw = m_cached_frame;
 			} else {
 				continue;
 			}
@@ -556,7 +555,7 @@ void VulkanRenderer::mainRenderThread() {
 		drawFrame(frameToDraw);
 
 		if (consumedQueuedFrame) {
-			m_freeFrames.release();
+			m_free_frames.release();
 		}
 	}
 }
@@ -564,7 +563,7 @@ void VulkanRenderer::mainRenderThread() {
 void VulkanRenderer::start() {
 	TOAST_TRACE("VulkanRenderer", "Starting renderer");
 
-	m_running = true;
+	m_running.store(true, std::memory_order_release);
 
 	m_render_thread = std::thread([this] { mainRenderThread(); });
 }
@@ -572,20 +571,32 @@ void VulkanRenderer::start() {
 void VulkanRenderer::submitFrame() {
 	// TracyMessage("Swapped frame resource", 256);
 	{
-		std::lock_guard lock(m_queueMutex);
+		std::lock_guard lock(m_queue_mutex);
 
-		m_readyFrames.push(m_writeIndex);
+		m_ready_frames.push(m_write_index);
 
-		m_writeIndex = (m_writeIndex + 1) % kRenderFrames;
+		m_write_index = (m_write_index + 1) % kRenderFrames;
 	}
 
-	m_frameCV.notify_one();
+	m_frame_cv.notify_one();
 }
 
 void VulkanRenderer::stop() {
-	m_running = false;
-	m_frameCV.notify_all();
-	m_render_thread.join();
+	const bool was_running = m_running.exchange(false, std::memory_order_acq_rel);
+	if (!was_running) {
+		return;
+	}
+
+	// First ensure the GPU is idle so fences can reliably complete; then wake the thread.
+	if (m_core) {
+		m_core->getDevice().waitIdle();
+	}
+
+	m_frame_cv.notify_all();
+
+	if (m_render_thread.joinable()) {
+		m_render_thread.join();
+	}
 }
 
 auto VulkanRenderer::resize(vk::Extent2D extent) -> void {
@@ -597,31 +608,31 @@ auto VulkanRenderer::resize(vk::Extent2D extent) -> void {
 	// wait for free device
 	m_core->getDevice().waitIdle();
 	try {
-		m_outputTarget->recreate(extent);
-		const auto image_count = m_outputTarget->getImageCount();
-		m_imagesInFlight.assign(image_count, vk::Fence {});
+		m_output_target->recreate(extent);
+		const auto image_count = m_output_target->getImageCount();
+		m_images_in_flight.assign(image_count, vk::Fence {});
 		createPerImageSync();
 		createDepthResources();
-		m_currentFrame = 0;
+		m_current_frame = 0;
 	} catch (const std::exception& e) {
 		TOAST_CRITICAL("VulkanRenderer", "Failed to recreate output target on resize: {}", e.what());
 	}
 }
 
 void VulkanRenderer::addRenderPass(std::unique_ptr<IRenderPass> pass) {
-	m_renderPasses.push_back(std::move(pass));
+	m_render_passes.push_back(std::move(pass));
 }
 
 void VulkanRenderer::processPendingUploads() {
 	auto& device = m_core->getDevice();
 
-	for (auto it = m_pendingUploads.begin(); it != m_pendingUploads.end();) {
-		const auto status = vkGetFenceStatus(*device, *it->completionFence);
+	for (auto it = m_pending_uploads.begin(); it != m_pending_uploads.end();) {
+		const auto status = vkGetFenceStatus(*device, *it->completion_fence);
 
 		if (status == VK_SUCCESS) {
 			it->mesh->markReady();
 
-			it = m_pendingUploads.erase(it);
+			it = m_pending_uploads.erase(it);
 		} else if (status == VK_NOT_READY) {
 			++it;
 		} else {
@@ -653,9 +664,9 @@ void VulkanRenderer::queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData da
 		allocCI.usage = vma::MemoryUsage::eAutoPreferHost;
 		allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 
-		job.vertexStaging = m_core->getAllocator().createBuffer(stagingCI, allocCI);
+		job.vertex_staging = m_core->getAllocator().createBuffer(stagingCI, allocCI);
 
-		auto& allocation = job.vertexStaging.getAllocation();
+		auto& allocation = job.vertex_staging.getAllocation();
 		void* mapped = allocation.getInfo().pMappedData;
 		if (!mapped) {
 			TOAST_CRITICAL("VulkanRenderer", "Vertex staging buffer is not mapped");
@@ -676,9 +687,9 @@ void VulkanRenderer::queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData da
 		allocCI.usage = vma::MemoryUsage::eAutoPreferHost;
 		allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 
-		job.indexStaging = m_core->getAllocator().createBuffer(stagingCI, allocCI);
+		job.index_staging = m_core->getAllocator().createBuffer(stagingCI, allocCI);
 
-		auto& allocation = job.indexStaging.getAllocation();
+		auto& allocation = job.index_staging.getAllocation();
 		void* mapped = allocation.getInfo().pMappedData;
 		if (!mapped) {
 			TOAST_CRITICAL("VulkanRenderer", "Index staging buffer is not mapped");
@@ -689,28 +700,26 @@ void VulkanRenderer::queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData da
 	}
 
 	// Record the transfer command buffer
-	auto& transferCmd = m_frames[m_currentFrame].transferCommandBuffer;
+	auto& transferCmd = m_frames[m_current_frame].transfer_command_buffer;
 	transferCmd.reset();
 
 	const vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-	transferCmd.begin(
-	    beginInfo
-	);    // FIXME: we should have a list of all the meshes trying to load in a list and transfer them all at once
+	transferCmd.begin(beginInfo);    // TODO: Transfer all pending meshes in a single batch for efficiency
 
-	mesh.recordUpload(*transferCmd, *job.vertexStaging, *job.indexStaging);
+	mesh.recordUpload(*transferCmd, *job.vertex_staging, *job.index_staging);
 
 	transferCmd.end();
 
 	// Submit to transfer queue with a fence so staging buffers stay alive
-	job.completionFence = vk::raii::Fence(m_core->getDevice(), vk::FenceCreateInfo {});
+	job.completion_fence = vk::raii::Fence(m_core->getDevice(), vk::FenceCreateInfo {});
 
 	const vk::CommandBuffer rawTransferCmd = *transferCmd;
 	const vk::SubmitInfo submitInfo(0, nullptr, nullptr, 1, &rawTransferCmd);
 
-	m_core->getTransferQueue().submit(submitInfo, *job.completionFence);
+	m_core->getTransferQueue().submit(submitInfo, *job.completion_fence);
 
 	// Keep staging alive until the fence signals
-	m_pendingUploads.push_back(std::move(job));
+	m_pending_uploads.push_back(std::move(job));
 }
 
 void VulkanRenderer::setActiveCamera(Camera* camera) {

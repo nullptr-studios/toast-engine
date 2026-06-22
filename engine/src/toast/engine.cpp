@@ -6,7 +6,6 @@
 #include "ffi/engine.h"    // ffi
 #include "logger.hpp"
 #include "renderer/MeshPass.hpp"
-#include "renderer/TrianglePass.hpp"
 #include "renderer/core/SDLOutputTarget.hpp"
 #include "renderer/core/ShaderCompiler.hpp"
 #include "renderer/core/ShaderLayout.hpp"
@@ -65,6 +64,19 @@ Engine::Engine() noexcept {
 	instance = this;
 }
 
+Engine::~Engine() noexcept {
+	if (m) {
+		if (m->renderer) {
+			m->renderer->stop();
+		}
+
+		delete m;
+		m = nullptr;
+	}
+
+	instance = nullptr;
+}
+
 auto Engine::get() noexcept -> Engine* {
 	// If at any point toast doesn't exist just crash the damn game
 	assert(instance && "Toast Engine doesn't exist");
@@ -100,12 +112,12 @@ void Engine::tick() {
 		auto cameraData = renderer::VulkanRenderer::FrameUBO {
 		  .view = cam->getView(),
 		  .projection = cam->getProjection(1080.0f / 720.0f),
-		  .viewProjection = cam->getProjection(1080.0f / 720.0f) * cam->getView(),
-		  .cameraPosition = cam->position,
+		  .view_projection = cam->getProjection(1080.0f / 720.0f) * cam->getView(),
+		  .camera_position = cam->position,
 		  .time = totalTime
 		};
 
-		frame.frameData = cameraData;
+		frame.frame_data = cameraData;
 
 		// frame.draws.push_back(
 		// {
@@ -150,7 +162,7 @@ void Engine::createSDLWindow(const char* w_name) {
 	m->renderer->setActiveCamera(camera);
 
 	// create debug pipeline
-	auto pass = std::make_unique<MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
+	auto pass = std::make_unique<renderer::MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
 
 	// create renderer
 
@@ -167,11 +179,21 @@ void Engine::createAvaloniaWindow() {
 	auto extent = output_target->getExtent();
 	auto depth_format = renderer::VulkanRenderer::selectDepthFormat(*m->vulkan_core);
 
-	auto pipeline = std::make_unique<TrianglePass>(*m->vulkan_core, color_format, depth_format, extent);
+	// FIXME: change this
+	camera = new Camera();
+	camera->position = {10, -15, -10};
+	camera->rotation = {0, 0, 0};
 
-	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
+	m->renderer->setActiveCamera(camera);
 
-	m->renderer->addRenderPass(std::move(pipeline));
+	// create debug pipeline
+	auto pass = std::make_unique<renderer::MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
+
+	// create renderer
+
+	m->renderer->addRenderPass(std::move(pass));
+
+	m->renderer->start();
 }
 
 void pushApplicationLayer(IApplication* app) {

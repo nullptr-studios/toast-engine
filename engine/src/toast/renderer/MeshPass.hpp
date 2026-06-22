@@ -12,8 +12,8 @@
 
 namespace toast::renderer {
 class VulkanCore;
-}
 
+/// @brief Render pass for drawing meshes with camera matrices and transformations
 class MeshPass : public IRenderPass {
 public:
 	struct CameraUBO {
@@ -43,3 +43,4 @@ private:
 
 	toast::renderer::VulkanMesh mesh;
 };
+}

@@ -69,7 +69,7 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 		view_ci.subresourceRange = colorSubresourceRange();
 		shared.view.emplace(m_core->getDevice(), view_ci);
 
-		// stagingg buffer for CPU readback
+		// Staging buffer for CPU readback
 		vk::BufferCreateInfo buffer_ci {};
 		buffer_ci.size = staging_size;
 		buffer_ci.usage = vk::BufferUsageFlagBits::eTransferDst;
@@ -95,17 +95,17 @@ const vk::raii::ImageView& SharedTextureOutputTarget::getColorAttachment(uint32_
 }
 
 vk::ResultValue<uint32_t> SharedTextureOutputTarget::acquireNextImage(uint64_t, vk::Semaphore, vk::Fence) {
-	uint32_t imageIndex = m_nextAcquireIndex;
+	uint32_t image_index = m_nextAcquireIndex;
 	m_nextAcquireIndex = (m_nextAcquireIndex + 1) % getImageCount();
-	return vk::ResultValue<uint32_t>(vk::Result::eSuccess, std::move(imageIndex));
+	return vk::ResultValue<uint32_t>(vk::Result::eSuccess, std::move(image_index));
 }
 
 vk::Result SharedTextureOutputTarget::present(uint32_t, vk::Semaphore) {
 	return vk::Result::eSuccess;
 }
 
-void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer commandBuffer, uint32_t imageIndex) {
-	const auto& shared = m_images.at(imageIndex);
+void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) {
+	const auto& shared = m_images.at(image_index);
 	const vk::Image image = **shared.image;
 	const vk::Buffer staging = **shared.staging;
 
@@ -120,7 +120,7 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer commandBuffer, 
 	    image,
 	    colorSubresourceRange()
 	);
-	commandBuffer.pipelineBarrier(
+	command_buffer.pipelineBarrier(
 	    vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, to_transfer
 	);
 
@@ -133,7 +133,7 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer commandBuffer, 
 	    vk::Offset3D {0, 0, 0},
 	    vk::Extent3D {m_extent.width, m_extent.height, 1}
 	);
-	commandBuffer.copyImageToBuffer(image, vk::ImageLayout::eTransferSrcOptimal, staging, region);
+	command_buffer.copyImageToBuffer(image, vk::ImageLayout::eTransferSrcOptimal, staging, region);
 
 	// Make the transfer write visible to host reads
 	const vk::BufferMemoryBarrier to_host(
@@ -145,20 +145,20 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer commandBuffer, 
 	    0,
 	    VK_WHOLE_SIZE
 	);
-	commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eHost, {}, {}, to_host, {});
+	command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eHost, {}, {}, to_host, {});
 }
 
-void SharedTextureOutputTarget::onImageRenderComplete(uint32_t imageIndex) {
-	if (imageIndex >= m_images.size()) {
+void SharedTextureOutputTarget::onImageRenderComplete(uint32_t image_index) {
+	if (image_index >= m_images.size()) {
 		return;
 	}
 	// The GPU copy into this staging buffer is complete
 	// invalidate caches and publish it
-	auto& shared = m_images[imageIndex];
+	auto& shared = m_images[image_index];
 	if (shared.staging.has_value()) {
 		shared.staging->getAllocation().invalidate(0, imageByteSize());
 	}
-	m_latestReady.store(static_cast<int32_t>(imageIndex), std::memory_order_release);
+	m_latestReady.store(static_cast<int32_t>(image_index), std::memory_order_release);
 	m_frameCounter.fetch_add(1, std::memory_order_acq_rel);
 }
 

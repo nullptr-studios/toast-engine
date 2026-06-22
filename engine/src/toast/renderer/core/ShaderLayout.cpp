@@ -7,6 +7,7 @@ ShaderLayout::ShaderLayout(const VulkanCore& core, slang::ProgramLayout* slang_l
 	rebuild(core, slang_layout);
 }
 
+// TODO: Redo this shit
 void ShaderLayout::rebuild(const VulkanCore& core, slang::ProgramLayout* slang_layout) {
 	m_descriptor_set_layouts.clear();
 	m_push_constant_ranges.clear();
@@ -24,7 +25,6 @@ void ShaderLayout::rebuild(const VulkanCore& core, slang::ProgramLayout* slang_l
 		reflectBindings(global_params, 0, 0, set_layout_map);
 	}
 
-	// 2. Traverse Entry Points (Vertex, Fragment, Compute, etc.)
 	uint32_t entry_point_count = slang_layout->getEntryPointCount();
 	for (uint32_t i = 0; i < entry_point_count; ++i) {
 		if (auto* entry_point = slang_layout->getEntryPointByIndex(i)) {
@@ -34,7 +34,6 @@ void ShaderLayout::rebuild(const VulkanCore& core, slang::ProgramLayout* slang_l
 		}
 	}
 
-	// 3. Construct the Descriptor Set Layouts
 	uint32_t max_set_index = 0;
 	for (const auto& [set_index, bindings] : set_layout_map) {
 		if (set_index > max_set_index) {
@@ -107,15 +106,13 @@ void ShaderLayout::reflectBindings(
 
 	if (is_push_constant) {
 		vk::PushConstantRange range {};
-		// Track every stage this pipeline block touches (e.g., Vertex, Fragment, or eAll)
+		// Track every stage this pipeline block touches
 		range.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment;
 
 		// Pull the offset using the explicit PushConstantBuffer category
 		range.offset = static_cast<uint32_t>(var_layout->getOffset(slang::ParameterCategory::PushConstantBuffer));
 
-		// Safe Size Check: Determine size based on wrapper type layout
 		if (type_layout->getKind() == slang::TypeReflection::Kind::ConstantBuffer) {
-			// If wrapped in ConstantBuffer<T>, query the element type inside it
 			auto element_layout = type_layout->getElementTypeLayout();
 			range.size = static_cast<uint32_t>(element_layout->getSize(slang::ParameterCategory::Uniform));
 		} else {
@@ -127,17 +124,14 @@ void ShaderLayout::reflectBindings(
 			m_push_constant_ranges.push_back(range);
 		}
 
-		// Return early so this parameter isn't mistakenly added to your descriptor set layouts!
 		return;
 	}
 
-	// Handle Container Splitting: ConstantBuffer<T> vs ParameterBlock<T>
 	if (type_kind == slang::TypeReflection::Kind::ConstantBuffer || type_kind == slang::TypeReflection::Kind::ParameterBlock) {
 		slang::VariableLayoutReflection* container_layout = type_layout->getContainerVarLayout();
 		slang::VariableLayoutReflection* element_layout = type_layout->getElementVarLayout();
 
 		if (type_kind == slang::TypeReflection::Kind::ConstantBuffer) {
-			// A ConstantBuffer acts as a unique Uniform Buffer descriptor binding in Vulkan.
 			vk::DescriptorSetLayoutBinding binding {};
 			binding.binding = next_binding;
 			binding.descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -145,13 +139,10 @@ void ShaderLayout::reflectBindings(
 			binding.stageFlags = vk::ShaderStageFlagBits::eAll;
 			set_layout_map[next_space].push_back(binding);
 
-			// Per structural constraints: stop accumulating byte uniform offsets down this branch.
 			if (element_layout) {
 				reflectBindings(element_layout, next_space, next_binding, set_layout_map);
 			}
 		} else if (type_kind == slang::TypeReflection::Kind::ParameterBlock) {
-			// A ParameterBlock shifts elements into a completely isolated Descriptor Space/Set.
-			// Stop accumulating binding offsets here; nested sub-elements reset relative to 0 inside the new space.
 			if (element_layout) {
 				reflectBindings(element_layout, next_space, 0, set_layout_map);
 			}

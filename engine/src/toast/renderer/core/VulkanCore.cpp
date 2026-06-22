@@ -221,14 +221,12 @@ auto DeviceScore::toString() const -> std::string {
 
 VulkanCore::VulkanCore(
     std::span<const char* const> required_instance_extensions, std::span<const char* const> required_device_extensions
-)
-{
+) {
 #ifdef DEBUG
 	m_validationEnabled = checkValidationLayerSupport();
 #else
 	m_validationEnabled = false;
 #endif
-
 
 	TOAST_INFO("VulkanCore", "Validation layers: {}", m_validationEnabled ? "enabled" : "disabled");
 	TOAST_TRACE("VulkanCore", "Required instance extensions: {}", joinRequiredExtensions(required_instance_extensions));

@@ -7,9 +7,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-class Camera /*INHERIT FROM NODE3D*/ {
+class Camera {
 public:
-	// TODO: transform
+	// TODO: Integrate full transformation system with position, rotation, scale
 	glm::vec3 position;
 
 	glm::vec3 rotation;

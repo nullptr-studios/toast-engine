@@ -20,17 +20,10 @@
 namespace toast::renderer {
 
 /**
- * @brief Manages rendering operations and graphics resources using the Vulkan API.
+ * @brief Coordinates rendering by managing frame submissions, render passes, and GPU synchronization
  *
- * The VulkanRenderer class encapsulates the initialization of the graphics
- * pipeline and handles the lifecycle of render resources such as
- * swap chains, framebuffers, and command buffers.
- *
- * @details
- *
- * This class coordinates the rendering process by abstracting the
- * underlying Vulkan object handles. It ensures proper synchronization
- * between rendering threads and frame presentation operations.
+ * Runs on a separate render thread and handles frame timing, depth resources,
+ * and mesh upload queues.
  */
 class VulkanRenderer {
 public:
@@ -38,31 +31,31 @@ public:
 
 	static constexpr uint32_t kFramesInFlight = 3;
 
-	static constexpr uint8_t kRenderFrames = 3;    // do not confuse with konflightframes
+	static constexpr uint8_t kRenderFrames = 3;    // Number of frames queued for rendering (separate from kFramesInFlight)
 
 	struct PendingMeshUpload {
 		VulkanMesh* mesh = nullptr;
-		vma::raii::Buffer vertexStaging = nullptr;
-		vma::raii::Buffer indexStaging = nullptr;
-		vk::raii::Fence completionFence = nullptr;
+		vma::raii::Buffer vertex_staging = nullptr;
+		vma::raii::Buffer index_staging = nullptr;
+		vk::raii::Fence completion_fence = nullptr;
 	};
 
 	struct FrameContext {
-		vk::raii::CommandBuffer commandBuffer = nullptr;
-		vk::raii::CommandBuffer transferCommandBuffer = nullptr;
-		vk::raii::Semaphore imageAvailable = nullptr;
-		vk::raii::Semaphore transferFinished = nullptr;
-		vk::raii::Fence inFlight = nullptr;
-		uint32_t lastImageIndex = 0;
-		bool hasSubmitted = false;
+		vk::raii::CommandBuffer command_buffer = nullptr;
+		vk::raii::CommandBuffer transfer_command_buffer = nullptr;
+		vk::raii::Semaphore image_available = nullptr;
+		vk::raii::Semaphore transfer_finished = nullptr;
+		vk::raii::Fence in_flight = nullptr;
+		uint32_t last_image_index = 0;
+		bool has_submitted = false;
 	};
 
 	struct FrameUBO {
 		glm::mat4 view;
 		glm::mat4 projection;
-		glm::mat4 viewProjection;
+		glm::mat4 view_projection;
 
-		glm::vec3 cameraPosition;
+		glm::vec3 camera_position;
 
 		float time;
 	};
@@ -74,25 +67,25 @@ public:
 	};
 
 	struct RenderFrame {
-		FrameUBO frameData;
+		FrameUBO frame_data;
 
 		std::vector<DrawCommand> draws;
 	};
 
-	VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> outputTarget);
+	VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> output_target);
 
 	~VulkanRenderer();
 
 	VulkanRenderer(const VulkanRenderer&) = delete;
-	VulkanRenderer& operator=(const VulkanRenderer&) = delete;
+	auto operator=(const VulkanRenderer&) -> VulkanRenderer& = delete;
 	VulkanRenderer(VulkanRenderer&&) = delete;
-	VulkanRenderer& operator=(VulkanRenderer&&) = delete;
+	auto operator=(VulkanRenderer&&) -> VulkanRenderer& = delete;
 
 	void start();
 
-	auto beginFrameBuild() -> RenderFrame& { return m_render_frames[m_writeIndex]; }
+	auto beginFrameBuild() -> RenderFrame& { return m_render_frames[m_write_index]; }
 
-	std::counting_semaphore<kRenderFrames>& getFreeFramesSemaphore() { return m_freeFrames; }
+	std::counting_semaphore<kRenderFrames>& getFreeFramesSemaphore() { return m_free_frames; }
 
 	void submitFrame();
 
@@ -104,7 +97,7 @@ public:
 
 	void queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data);
 
-	auto getFrameUBORes(uint32_t currentFrame) const -> const FrameResources* { return &m_frameUBORes[currentFrame]; }
+	auto getFrameUBORes(uint32_t current_frame) const -> const FrameResources* { return &m_frame_ubo_res[current_frame]; }
 
 	void setActiveCamera(Camera* camera);
 
@@ -112,33 +105,33 @@ public:
 
 	[[nodiscard]]
 	const IOutputTarget& getOutputTarget() const {
-		return *m_outputTarget;
+		return *m_output_target;
 	}
 
 	static VulkanRenderer* instance;
 
 private:
-	void drawFrame(RenderFrame& frameData);
+	void drawFrame(RenderFrame& frame_data);
 
 	void mainRenderThread();
 
-	bool m_running = false;
+	std::atomic_bool m_running {false};
 
 	std::thread m_render_thread;
 
 	std::array<RenderFrame, kRenderFrames> m_render_frames;
-	std::atomic<uint32_t> m_writeIndex = 0;
-	std::atomic<uint32_t> m_readIndex = 0;
+	std::atomic<uint32_t> m_write_index = 0;
+	std::atomic<uint32_t> m_read_index = 0;
 
-	std::mutex m_queueMutex;
+	std::mutex m_queue_mutex;
 
-	std::condition_variable m_frameCV;
+	std::condition_variable m_frame_cv;
 
-	std::queue<uint32_t> m_readyFrames;
-	RenderFrame m_cachedFrame;
-	bool m_hasCachedFrame = false;
+	std::queue<uint32_t> m_ready_frames;
+	RenderFrame m_cached_frame;
+	bool m_has_cached_frame = false;
 
-	std::counting_semaphore<kRenderFrames> m_freeFrames {kRenderFrames};
+	std::counting_semaphore<kRenderFrames> m_free_frames {kRenderFrames};
 
 	struct DepthResources {
 		std::optional<vma::raii::Image> image;
@@ -154,67 +147,68 @@ private:
 
 	void recordTransferPass(FrameContext& frame);
 
-	void recordComputePass(FrameContext& frame, uint32_t imageIndex);
+	void recordComputePass(FrameContext& frame, uint32_t image_index);
 
-	void recordFrame(FrameContext& frame, uint32_t imageIndex);
+	void recordFrame(FrameContext& frame, uint32_t image_index);
 
 	void processPendingUploads();
 
 	const VulkanCore* m_core = nullptr;
 
-	std::unique_ptr<IOutputTarget> m_outputTarget;
-	std::vector<std::unique_ptr<IRenderPass>> m_renderPasses;
-	vk::Format m_depthFormat = vk::Format::eUndefined;
-	DepthResources m_depthResources;
-	vk::ImageLayout m_depthLayout = vk::ImageLayout::eUndefined;
+	std::unique_ptr<IOutputTarget> m_output_target;
+	std::vector<std::unique_ptr<IRenderPass>> m_render_passes;
+	vk::Format m_depth_format = vk::Format::eUndefined;
+	DepthResources m_depth_resources;
+	vk::ImageLayout m_depth_layout = vk::ImageLayout::eUndefined;
 
-	std::vector<PendingMeshUpload> m_pendingUploads;
+	std::vector<PendingMeshUpload> m_pending_uploads;
 
-	vk::raii::CommandPool m_commandPool = nullptr;
+	vk::raii::CommandPool m_command_pool = nullptr;
 
-	vk::raii::CommandPool m_transferCommandPool = nullptr;
+	vk::raii::CommandPool m_transfer_command_pool = nullptr;
 
-	vk::raii::DescriptorPool m_descriptorPool = nullptr;
+	vk::raii::DescriptorPool m_descriptor_pool = nullptr;
 
 	std::vector<FrameContext> m_frames;
-	std::vector<vk::raii::Semaphore> m_renderFinishedPerImage;
-	std::vector<vk::Fence> m_imagesInFlight;
-	uint32_t m_currentFrame = 0;
+	std::vector<vk::raii::Semaphore> m_render_finished_per_image;
+	std::vector<vk::Fence> m_images_in_flight;
+	uint32_t m_current_frame = 0;
 
-	// MAYBE EXPAND THIS??
+	/// Active camera for the renderer. Can be nullptr if no camera is set.
 	Camera* m_camera = nullptr;
 
-	// FrameUBO
-	std::vector<FrameUBO> m_frameUBOs;
-	std::vector<FrameResources> m_frameUBORes;
-	vk::raii::PipelineLayout m_frameUBOPipelineLayout = nullptr;
+	// FrameUBO and related resources
+	std::vector<FrameUBO> m_frame_ubos;
+	std::vector<FrameResources> m_frame_ubo_res;
+	vk::raii::PipelineLayout m_frame_ubo_pipeline_layout = nullptr;
 
 	void createFrameResources();
-	void updateFrameResources(uint32_t frameIndex, RenderFrame& frameData);
+	void updateFrameResources(uint32_t frame_index, RenderFrame& frame_data);
 };
 
-static void start() {
+// Free functions for convenient access to the singleton renderer
+inline void start() {
 	VulkanRenderer::instance->start();
 }
 
-static void stop() {
+inline void stop() {
 	VulkanRenderer::instance->stop();
 }
 
-static auto beginFrameBuild() -> VulkanRenderer::RenderFrame& {
+inline auto beginFrameBuild() -> VulkanRenderer::RenderFrame& {
 	return VulkanRenderer::instance->beginFrameBuild();
 }
 
-static void submitFrame() {
+inline void submitFrame() {
 	VulkanRenderer::instance->submitFrame();
 }
 
-static Camera* getActiveCamera() {
+inline Camera* getActiveCamera() {
 	return VulkanRenderer::instance->getActiveCamera();
 }
 
-static void setActiveCamera(Camera* camera) {
+inline void setActiveCamera(Camera* camera) {
 	VulkanRenderer::instance->setActiveCamera(camera);
 }
 
-}
+}    // namespace toast::renderer

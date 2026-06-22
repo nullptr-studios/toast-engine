@@ -19,12 +19,8 @@ auto SDLOutputTarget::getRequiredInstanceExtensions() -> std::vector<const char*
 }
 
 auto SDLOutputTarget::getRequiredInstanceExtensions(SDL_Window* window) -> std::vector<const char*> {
-	// SDL3 does not require a window for this query, but keep the overload for compatibility.
-	// Bro vibecoded this ong
-	// vro u bivecoded the changes on vkrenderer and now i get less frames
-	if (!window) {
-		return getRequiredInstanceExtensions();
-	}
+	// SDL3 does not require a window
+	(void)window;
 	return getRequiredInstanceExtensions();
 }
 

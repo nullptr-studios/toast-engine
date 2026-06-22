@@ -8,6 +8,7 @@
 
 #include <vector>
 
+/// @brief Stores mesh geometry data along with GPU resources
 struct MeshAsset {
 	toast::renderer::VulkanMesh mesh;
 
@@ -17,6 +18,8 @@ struct MeshAsset {
 	// TODO: future asset handling
 };
 
+/// @brief Represents an instance of a mesh ready for rendering
+/// @todo Change to actual MeshNode
 struct MeshInstance    // instance for render
 {
 	MeshAsset* mesh = nullptr;

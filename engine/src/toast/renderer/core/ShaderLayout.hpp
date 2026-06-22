@@ -9,12 +9,19 @@
 namespace toast::renderer {
 class VulkanCore;
 
+/**
+ * @class ShaderLayout
+ * @brief Constructs pipeline layouts and descriptor sets from shader reflection data
+ */
 class ShaderLayout {
 public:
 	ShaderLayout() = default;
 	ShaderLayout(const VulkanCore& core, slang::ProgramLayout* slang_layout);
 	~ShaderLayout() = default;
 
+	/**
+	 * @brief Rebuilds the shader layout based on the provided Slang program layout
+	 */
 	void rebuild(const VulkanCore& core, slang::ProgramLayout* slang_layout);
 
 	[[nodiscard]]

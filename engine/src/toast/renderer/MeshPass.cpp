@@ -14,6 +14,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtc/matrix_transform.hpp>
 
+namespace toast::renderer {
 MeshPass::MeshPass(const toast::renderer::VulkanCore& core, vk::Format colorFormat, vk::Format depthFormat, vk::Extent2D extent) {
 	auto shaderSpirv = toast::renderer::ShaderCompiler::compileShaderModuleFromSource("./mesh.slang");
 
@@ -52,10 +53,10 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t image
 
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.getPipeline());
 
-	// FIXME: GUIZMO MODEL Y IS POINTING Y-
+	// TODO: Gizmo model coordinate system needs Y-up conversion
 	mesh.bind(cmd);
 
-	// Bind once the frameData
+	// Bind the frame data UBO
 
 	const FrameResources* frameUBO = toast::renderer::VulkanRenderer::instance->getFrameUBORes(frameIndex);
 	cmd.bindDescriptorSets(
@@ -66,7 +67,7 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t image
 	    {}
 	);
 
-	// THIS SUCKS PLEASE REWRITE REFLECTION SO I DONT NEED TO SPECIFY BOTH STAGES
+	// TODO: Improve reflection system to automatically determine required shader stages
 	cmd.pushConstants(
 	    shaderLayout.getPipelineLayout(),
 	    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
@@ -81,3 +82,4 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t image
 void MeshPass::createResources(const toast::renderer::VulkanCore& core) { }
 
 void MeshPass::updateUBO(uint32_t frameIndex) { }
+}

@@ -15,6 +15,10 @@ namespace toast::renderer {
 
 class VulkanCore;
 
+/**
+ * @class VulkanPipeline
+ * @brief Wraps Vulkan graphics and compute pipelines with shader compilation
+ */
 class VulkanPipeline {
 public:
 	enum class PipelineType : uint8_t {
@@ -42,8 +46,7 @@ public:
 
 		// Raster state
 		vk::CullModeFlags cull_mode = vk::CullModeFlagBits::eBack;
-		vk::FrontFace front_face = vk::FrontFace::eCounterClockwise;    // this got me tweaking for hours, since im inverting the
-		                                                                // projection this is the other way arround FUCK
+		vk::FrontFace front_face = vk::FrontFace::eCounterClockwise;    // Note: Counter-clockwise due to inverted projection matrix
 	};
 
 	VulkanPipeline() = default;

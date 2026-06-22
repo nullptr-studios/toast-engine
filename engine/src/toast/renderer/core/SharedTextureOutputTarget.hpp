@@ -24,6 +24,7 @@ struct ViewportFrameDesc {
 	uint64_t frame_id = 0;
 };
 
+/// @brief Off-screen texture output target for headless rendering or editor viewports
 class SharedTextureOutputTarget final : public IOutputTarget {
 public:
 	SharedTextureOutputTarget(const VulkanCore& core, vk::Extent2D preferredExtent, uint32_t imageCount = 3);
@@ -54,18 +55,18 @@ public:
 	[[nodiscard]]
 	const vk::raii::ImageView& getColorAttachment(uint32_t index) const override;
 	[[nodiscard]]
-	vk::ResultValue<uint32_t> acquireNextImage(uint64_t timeout, vk::Semaphore imageAvailable, vk::Fence inFlightFence) override;
+	vk::ResultValue<uint32_t> acquireNextImage(uint64_t timeout, vk::Semaphore image_available, vk::Fence in_flight_fence) override;
 	[[nodiscard]]
-	vk::Result present(uint32_t imageIndex, vk::Semaphore renderFinished) override;
+	vk::Result present(uint32_t image_index, vk::Semaphore render_finished) override;
 
-	// no swapchain semaphre handshake on offscreen
+	// no swapchain semaphore handshake on offscreen
 	[[nodiscard]]
 	bool usesAcquirePresentSemaphores() const override {
 		return false;
 	}
 
-	void recordFinalize(vk::CommandBuffer commandBuffer, uint32_t imageIndex) override;
-	void onImageRenderComplete(uint32_t imageIndex) override;
+	void recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) override;
+	void onImageRenderComplete(uint32_t image_index) override;
 
 	void recreate(vk::Extent2D extent) override;
 

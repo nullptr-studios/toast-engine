@@ -13,7 +13,7 @@ struct EnginePimpl;
 class Engine final {
 public:
 	Engine() noexcept;
-	~Engine() noexcept = default;
+	~Engine() noexcept;
 	static auto get() noexcept -> Engine*;
 
 	Engine(Engine&) = delete;

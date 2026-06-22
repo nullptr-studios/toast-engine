@@ -11,6 +11,12 @@
 
 namespace toast::renderer {
 
+/**
+ * @class VulkanSwapchain
+ * @brief Manages image acquisition and presentation for Vulkan swapchains
+ *
+ * Handles image format selection, extent management, and present mode selection
+ */
 class VulkanSwapchain {
 public:
 	VulkanSwapchain(const VulkanCore& core, vk::raii::SurfaceKHR& surface, vk::Extent2D preferred_extent);

@@ -10,6 +10,7 @@
 namespace toast::renderer {
 class VulkanCore;
 
+/// @brief Vertex with position, normals, UVs, tangents, and colors for mesh rendering
 struct Vertex {
 	glm::vec3 position;
 	glm::vec3 normal;
@@ -27,11 +28,13 @@ struct Vertex {
 	static std::array<vk::VertexInputAttributeDescription, 5> getAttributeDescriptions();
 };
 
+// TODO: IResource interface
 enum class ResourceUploadState : uint8_t {
 	Uploading,
 	Ready
 };
 
+/// @brief GPU mesh with vertex and index buffers stored in VRAM
 class VulkanMesh {
 public:
 	VulkanMesh() = default;
