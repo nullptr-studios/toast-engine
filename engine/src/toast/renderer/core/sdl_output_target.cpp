@@ -19,16 +19,8 @@ auto SDLOutputTarget::getRequiredInstanceExtensions() -> std::vector<const char*
 }
 
 auto SDLOutputTarget::getRequiredInstanceExtensions(SDL_Window* window) -> std::vector<const char*> {
-<<<<<<<< HEAD:engine/src/toast/renderer/core/SDLOutputTarget.cpp
 	// SDL3 does not require a window
 	(void)window;
-========
-	// SDL3 does not require a window for this query, but keep the overload for compatibility.
-	// Bro vibecoded this ong
-	if (!window) {
-		return getRequiredInstanceExtensions();
-	}
->>>>>>>> origin/dev:engine/src/toast/renderer/sdl_output_target.cpp
 	return getRequiredInstanceExtensions();
 }
 

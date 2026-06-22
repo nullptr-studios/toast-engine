@@ -4,9 +4,9 @@
 
 #include "MeshPass.hpp"
 
-#include "core/ShaderCompiler.hpp"
-#include "core/VulkanCore.hpp"
-#include "core/VulkanRenderer.hpp"
+#include "core/shader_compiler.hpp"
+#include "core/vulkan_core.hpp"
+#include "core/vulkan_renderer.hpp"
 #include "gizmo.hpp"
 #include "toast/log.hpp"
 

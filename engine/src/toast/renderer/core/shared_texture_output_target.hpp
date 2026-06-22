@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "IOutputTarget.hpp"
+#include "output_target_base.hpp"
 
 #include <atomic>
 #include <cstdint>

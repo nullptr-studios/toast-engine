@@ -4,13 +4,9 @@
 
 #include "vulkan_pipeline.hpp"
 
-<<<<<<<< HEAD:engine/src/toast/renderer/core/VulkanPipeline.cpp
-#include "VulkanCore.hpp"
-#include "VulkanMesh.hpp"
-========
->>>>>>>> origin/dev:engine/src/toast/renderer/vulkan_pipeline.cpp
 #include "toast/log.hpp"
 #include "vulkan_core.hpp"
+#include "vulkan_mesh.hpp"
 
 #include <array>
 #include <stdexcept>
@@ -170,17 +166,8 @@ auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> vo
 	const auto& device = core.getDevice();
 	m_shader_module.emplace(createShaderModule(device, config.shader_spirv));
 
-<<<<<<<< HEAD:engine/src/toast/renderer/core/VulkanPipeline.cpp
 	if (config.pipeline_type == PipelineType::graphics) {
 		m_pipeline = createGraphicsPipelineImpl(core, config, *m_shader_module, config.pipeline_layout);
-========
-	// Process descriptor and layout chains dynamically
-	m_descriptor_set_layout = createDescriptorSetLayout(device, config.descriptor_bindings, config.descriptor_binding_flags);
-	m_pipeline_layout = createPipelineLayout(device, m_descriptor_set_layout, config.push_constant_ranges);
-
-	if (config.pipeline_type == PipelineType::graphics) {
-		m_pipeline = createGraphicsPipelineImpl(core, config, *m_shader_module, m_pipeline_layout);
->>>>>>>> origin/dev:engine/src/toast/renderer/vulkan_pipeline.cpp
 	} else {
 		m_pipeline = createComputePipelineImpl(core, config, *m_shader_module, config.pipeline_layout);
 	}
@@ -190,5 +177,4 @@ auto VulkanPipeline::reset() -> void {
 	m_shader_module.reset();
 	m_pipeline = nullptr;
 }
-
 }

@@ -12,18 +12,14 @@
 
 namespace toast::renderer {
 
-/**
- * @struct CompiledShaderCode
- * @brief Represents the compiled shader code and reflection data
- */
 struct CompiledShaderCode {
 	std::vector<std::byte> spirv;
-	Slang::ComPtr<slang::IComponentType> program;
+	Slang::ComPtr<slang::IComponentType> program;    // Holds the reflection data!
 };
 
-/// @brief Compiles shader source files to SPIR-V using Slang
 class ShaderCompiler {
 public:
+	/// Compiles a GLSL shader file to SPIR-V
 	static auto compileShaderModuleFromSource(const std::filesystem::path& shader_path) -> CompiledShaderCode;
 	static auto compileShaderModule(std::string_view module_name) -> CompiledShaderCode;
 };

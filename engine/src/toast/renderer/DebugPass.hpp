@@ -3,10 +3,10 @@
 /// @date 10/06/2026.
 
 #pragma once
-#include "core/IRenderPass.hpp"
-#include "core/ShaderLayout.hpp"
-#include "core/VulkanPipeline.hpp"
+#include "core/render_pass_base.hpp"
+#include "core/shader_layout.hpp"
 #include "core/vulkan_common.hpp"
+#include "core/vulkan_pipeline.hpp"
 
 namespace toast::renderer {
 class VulkanCore;

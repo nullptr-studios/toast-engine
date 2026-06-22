@@ -19,11 +19,11 @@ auto colorSubresourceRange() -> vk::ImageSubresourceRange {
 
 }
 
-SharedTextureOutputTarget::SharedTextureOutputTarget(const VulkanCore& core, vk::Extent2D preferred_extent, uint32_t image_count)
+SharedTextureOutputTarget::SharedTextureOutputTarget(const VulkanCore& core, vk::Extent2D preferredExtent, uint32_t imageCount)
     : m_core(&core),
-      m_extent(preferred_extent),
-      m_images(image_count) {
-	if (image_count == 0) {
+      m_extent(preferredExtent),
+      m_images(imageCount) {
+	if (imageCount == 0) {
 		TOAST_CRITICAL("SharedTextureOutput", "Toast Engine Error: Shared texture output target needs at least one image!");
 	}
 	allocateResources(m_extent);
@@ -47,7 +47,7 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 		// Device-local image we render into and copy out of
 		vk::ImageCreateInfo image_ci {};
 		image_ci.imageType = vk::ImageType::e2D;
-		image_ci.format = m_color_format;
+		image_ci.format = m_colorFormat;
 		image_ci.extent = vk::Extent3D {m_extent.width, m_extent.height, 1};
 		image_ci.mipLevels = 1;
 		image_ci.arrayLayers = 1;
@@ -65,11 +65,11 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 		vk::ImageViewCreateInfo view_ci {};
 		view_ci.image = **shared.image;
 		view_ci.viewType = vk::ImageViewType::e2D;
-		view_ci.format = m_color_format;
+		view_ci.format = m_colorFormat;
 		view_ci.subresourceRange = colorSubresourceRange();
 		shared.view.emplace(m_core->getDevice(), view_ci);
 
-		// stagingg buffer for CPU readback
+		// Staging buffer for CPU readback
 		vk::BufferCreateInfo buffer_ci {};
 		buffer_ci.size = staging_size;
 		buffer_ci.usage = vk::BufferUsageFlagBits::eTransferDst;
@@ -86,21 +86,21 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 	TOAST_TRACE("SharedTextureOutput", "Allocated {} shared images at {}x{}", m_images.size(), m_extent.width, m_extent.height);
 }
 
-auto SharedTextureOutputTarget::getColorImage(uint32_t index) const -> const vk::Image& {
+const vk::Image& SharedTextureOutputTarget::getColorImage(uint32_t index) const {
 	return **m_images.at(index).image;
 }
 
-auto SharedTextureOutputTarget::getColorAttachment(uint32_t index) const -> const vk::raii::ImageView& {
+const vk::raii::ImageView& SharedTextureOutputTarget::getColorAttachment(uint32_t index) const {
 	return *m_images.at(index).view;
 }
 
-auto SharedTextureOutputTarget::acquireNextImage(uint64_t, vk::Semaphore, vk::Fence) -> vk::ResultValue<uint32_t> {
-	uint32_t image_index = m_next_acquire_index;
-	m_next_acquire_index = (m_next_acquire_index + 1) % getImageCount();
-	return {vk::Result::eSuccess, image_index};
+vk::ResultValue<uint32_t> SharedTextureOutputTarget::acquireNextImage(uint64_t, vk::Semaphore, vk::Fence) {
+	uint32_t image_index = m_nextAcquireIndex;
+	m_nextAcquireIndex = (m_nextAcquireIndex + 1) % getImageCount();
+	return vk::ResultValue<uint32_t>(vk::Result::eSuccess, std::move(image_index));
 }
 
-auto SharedTextureOutputTarget::present(uint32_t, vk::Semaphore) -> vk::Result {
+vk::Result SharedTextureOutputTarget::present(uint32_t, vk::Semaphore) {
 	return vk::Result::eSuccess;
 }
 
@@ -158,14 +158,14 @@ void SharedTextureOutputTarget::onImageRenderComplete(uint32_t image_index) {
 	if (shared.staging.has_value()) {
 		shared.staging->getAllocation().invalidate(0, imageByteSize());
 	}
-	m_latest_ready.store(static_cast<int32_t>(image_index), std::memory_order_release);
-	m_frame_counter.fetch_add(1, std::memory_order_acq_rel);
+	m_latestReady.store(static_cast<int32_t>(image_index), std::memory_order_release);
+	m_frameCounter.fetch_add(1, std::memory_order_acq_rel);
 }
 
-auto SharedTextureOutputTarget::copyLatestFrame(void* dst, uint32_t dst_capacity, ViewportFrameDesc* out) -> int {
-	std::scoped_lock lock(m_frame_mutex);
+int SharedTextureOutputTarget::copyLatestFrame(void* dst, uint32_t dstCapacity, ViewportFrameDesc* out) {
+	std::scoped_lock lock(m_frameMutex);
 
-	const int32_t index = m_latest_ready.load(std::memory_order_acquire);
+	const int32_t index = m_latestReady.load(std::memory_order_acquire);
 	if (index < 0 || static_cast<size_t>(index) >= m_images.size()) {
 		return 0;
 	}
@@ -176,11 +176,11 @@ auto SharedTextureOutputTarget::copyLatestFrame(void* dst, uint32_t dst_capacity
 		out->width = m_extent.width;
 		out->height = m_extent.height;
 		out->row_pitch = row_pitch;
-		out->frame_id = m_frame_counter.load(std::memory_order_acquire);
+		out->frame_id = m_frameCounter.load(std::memory_order_acquire);
 	}
 
 	const void* src = m_images[static_cast<size_t>(index)].mapped;
-	if (dst == nullptr || src == nullptr || dst_capacity < required) {
+	if (dst == nullptr || src == nullptr || dstCapacity < required) {
 		return -1;
 	}
 
@@ -189,9 +189,9 @@ auto SharedTextureOutputTarget::copyLatestFrame(void* dst, uint32_t dst_capacity
 }
 
 void SharedTextureOutputTarget::recreate(vk::Extent2D extent) {
-	std::scoped_lock lock(m_frame_mutex);
-	m_latest_ready.store(-1, std::memory_order_release);
-	m_next_acquire_index = 0;
+	std::scoped_lock lock(m_frameMutex);
+	m_latestReady.store(-1, std::memory_order_release);
+	m_nextAcquireIndex = 0;
 	allocateResources(extent);
 }
 

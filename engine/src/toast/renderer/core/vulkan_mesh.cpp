@@ -2,10 +2,10 @@
 /// @author dario
 /// @date 07/06/2026.
 
-#include "VulkanMesh.hpp"
+#include "vulkan_mesh.hpp"
 
-#include "VulkanCore.hpp"
 #include "toast/log.hpp"
+#include "vulkan_core.hpp"
 
 namespace toast::renderer {
 vk::VertexInputBindingDescription Vertex::getBindingDescription() {

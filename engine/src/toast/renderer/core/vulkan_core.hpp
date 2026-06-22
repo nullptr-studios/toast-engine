@@ -64,7 +64,7 @@ public:
 
 	[[nodiscard]]
 	auto getPhysicalDevice() const -> const vk::raii::PhysicalDevice& {
-		return m_physical_device;
+		return m_physicalDevice;
 	}
 
 	[[nodiscard]]
@@ -74,32 +74,32 @@ public:
 
 	[[nodiscard]]
 	auto getGraphicsQueueFamilyIndex() const -> uint32_t {
-		return m_graphics_queue_family_index;
+		return m_graphicsQueueFamilyIndex;
 	}
 
 	[[nodiscard]]
 	auto getComputeQueueFamilyIndex() const -> uint32_t {
-		return m_compute_queue_family_index;
+		return m_computeQueueFamilyIndex;
 	}
 
 	[[nodiscard]]
 	auto getTransferQueueFamilyIndex() const -> uint32_t {
-		return m_transfer_queue_family_index;
+		return m_transferQueueFamilyIndex;
 	}
 
 	[[nodiscard]]
 	auto getGraphicsQueue() const -> vk::Queue {
-		return m_graphics_queue;
+		return m_graphicsQueue;
 	}
 
 	[[nodiscard]]
 	auto getComputeQueue() const -> vk::Queue {
-		return m_compute_queue;
+		return m_computeQueue;
 	}
 
 	[[nodiscard]]
 	auto getTransferQueue() const -> vk::Queue {
-		return m_transfer_queue;
+		return m_transferQueue;
 	}
 
 private:
@@ -131,40 +131,26 @@ private:
 	auto calculateDeviceScore(const vk::PhysicalDevice& device, std::span<const char* const> required_device_extensions)
 	    -> DeviceScore;
 
-<<<<<<<< HEAD:engine/src/toast/renderer/core/VulkanCore.hpp
 	bool checkValidationLayerSupport();
 
 	bool m_validationEnabled = false;
-========
-	bool m_validation_enabled = false;
->>>>>>>> origin/dev:engine/src/toast/renderer/vulkan_core.hpp
 
 	vk::raii::Context m_context;
 	vk::raii::Instance m_instance = nullptr;
 #ifndef NDEBUG
-	vk::raii::DebugUtilsMessengerEXT m_debug_messenger = nullptr;
+	vk::raii::DebugUtilsMessengerEXT m_debugMessenger = nullptr;
 #endif
 
-	vk::raii::PhysicalDevice m_physical_device = nullptr;
+	vk::raii::PhysicalDevice m_physicalDevice = nullptr;
 	vk::raii::Device m_device = nullptr;
 
 	std::optional<vma::raii::Allocator> m_allocator;
 
-<<<<<<<< HEAD:engine/src/toast/renderer/core/VulkanCore.hpp
 	uint32_t m_graphicsQueueFamilyIndex = std::numeric_limits<uint32_t>::max();
 	uint32_t m_computeQueueFamilyIndex = std::numeric_limits<uint32_t>::max();
 	uint32_t m_transferQueueFamilyIndex = std::numeric_limits<uint32_t>::max();
 	vk::Queue m_graphicsQueue = nullptr;
 	vk::Queue m_computeQueue = nullptr;
 	vk::Queue m_transferQueue = nullptr;
-========
-	// Use a sentinel invalid value so index 0 is a legitimate family index
-	uint32_t m_graphics_queue_family_index = std::numeric_limits<uint32_t>::max();
-	uint32_t m_compute_queue_family_index = std::numeric_limits<uint32_t>::max();
-	uint32_t m_transfer_queue_family_index = std::numeric_limits<uint32_t>::max();
-	vk::Queue m_graphics_queue = nullptr;
-	vk::Queue m_compute_queue = nullptr;
-	vk::Queue m_transfer_queue = nullptr;
->>>>>>>> origin/dev:engine/src/toast/renderer/vulkan_core.hpp
 };
 }

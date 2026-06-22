@@ -1,6 +1,6 @@
-#include "ShaderLayout.hpp"
+#include "shader_layout.hpp"
 
-#include "VulkanCore.hpp"
+#include "vulkan_core.hpp"
 
 namespace toast::renderer {
 ShaderLayout::ShaderLayout(const VulkanCore& core, slang::ProgramLayout* slang_layout) {

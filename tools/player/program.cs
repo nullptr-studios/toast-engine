@@ -24,6 +24,7 @@ internal class Program {
 
 		while (!engine.ShouldClose()) engine.Tick();
 
+		game.Dispose();
 		engine.Dispose();
 	}
 }

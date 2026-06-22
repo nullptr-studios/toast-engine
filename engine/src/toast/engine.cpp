@@ -7,12 +7,12 @@
 #include "ffi/engine.h"    // ffi
 #include "logger.hpp"
 #include "renderer/MeshPass.hpp"
-#include "renderer/core/SDLOutputTarget.hpp"
-#include "renderer/core/ShaderCompiler.hpp"
-#include "renderer/core/ShaderLayout.hpp"
-#include "renderer/core/SharedTextureOutputTarget.hpp"
-#include "renderer/core/VulkanCore.hpp"
-#include "renderer/core/VulkanRenderer.hpp"
+#include "renderer/core/sdl_output_target.hpp"
+#include "renderer/core/shader_compiler.hpp"
+#include "renderer/core/shader_layout.hpp"
+#include "renderer/core/shared_texture_output_target.hpp"
+#include "renderer/core/vulkan_core.hpp"
+#include "renderer/core/vulkan_renderer.hpp"
 #include "thread_pool.hpp"
 #include "time.hpp"
 #include "window/base_window.hpp"
@@ -61,11 +61,6 @@ struct EnginePimpl {
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
 	toast::UID active_workspace {0};
 };
-
-Engine::~Engine() noexcept {
-	delete m;
-	instance = nullptr;
-}
 
 Engine::Engine() noexcept {
 	instance = this;
@@ -142,6 +137,7 @@ Engine::~Engine() noexcept {
 	}
 
 	instance = nullptr;
+	instance = this;
 }
 
 void Engine::tick() {
@@ -272,43 +268,6 @@ void Engine::createAvaloniaWindow() {
 	m->renderer->addRenderPass(std::move(pass));
 
 	m->renderer->start();
-}
-
-auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::string> {
-	UID uid;
-	uid.generate();
-	std::scoped_lock lock(m->owners_mutex);
-	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(type, uid));
-	std::string name = it->second->name();
-	return {uid, name};
-}
-
-auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
-	std::scoped_lock lock(m->owners_mutex);
-	if (m->owners.contains(uid)) {
-		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
-		return {};
-	}
-
-	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(uid));
-	std::string name = it->second->name();
-	return {uid, name};
-}
-
-void Engine::destroyWorkspace(UID handle) {
-	std::scoped_lock lock(m->owners_mutex);
-	m->owners.erase(handle);
-}
-
-auto Engine::activeWorkspace() -> UID {
-	return m->active_workspace;
-}
-
-auto Engine::getViewportFrame(void* dst, uint32_t dst_capacity, renderer::ViewportFrameDesc* out) -> int {
-	if (!m->shared_target) {
-		return 0;
-	}
-	return m->shared_target->copyLatestFrame(dst, dst_capacity, out);
 }
 
 auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::string> {

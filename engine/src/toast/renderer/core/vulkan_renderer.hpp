@@ -5,16 +5,19 @@
 #pragma once
 
 #include "../Camera.hpp"
-#include "IOutputTarget.hpp"
-#include "IRenderPass.hpp"
-#include "VulkanCore.hpp"
-#include "VulkanMesh.hpp"
-#include "VulkanPipeline.hpp"
+#include "output_target_base.hpp"
+#include "render_pass_base.hpp"
+#include "vulkan_core.hpp"
+#include "vulkan_mesh.hpp"
+#include "vulkan_pipeline.hpp"
 
 #include <array>
 #include <memory>
+#include <mutex>
 #include <optional>
+#include <queue>
 #include <semaphore>
+#include <thread>
 #include <vector>
 
 namespace toast::renderer {

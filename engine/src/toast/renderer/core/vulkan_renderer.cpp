@@ -2,9 +2,10 @@
 /// @author dario
 /// @date 16/05/2026.
 
-#include "VulkanRenderer.hpp"
+#include "vulkan_renderer.hpp"
 
 #include "toast/log.hpp"
+#include "toast/time.hpp"
 
 #include <array>
 #include <cstring>
@@ -551,6 +552,8 @@ void VulkanRenderer::mainRenderThread() {
 				continue;
 			}
 		}
+
+		Time::get().renderTick();
 
 		drawFrame(frameToDraw);
 

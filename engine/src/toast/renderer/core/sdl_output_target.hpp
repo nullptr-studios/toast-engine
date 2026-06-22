@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "output_target.hpp"
+#include "output_target_base.hpp"
 #include "vulkan_swapchain.hpp"
 
 #include <SDL3/SDL.h>
