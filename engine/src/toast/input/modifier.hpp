@@ -1,7 +1,7 @@
 /**
  * @file modifier.hpp
  * @author Xein
- * @date 21 Jun 2026
+ * @date 13 Dec 2025
  *
  * @brief Modifiers post-process a value in place before it reaches the action
  */
