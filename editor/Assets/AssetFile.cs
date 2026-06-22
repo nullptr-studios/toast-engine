@@ -11,7 +11,8 @@ public enum FileType {
 	Model,
 	Material,
 	Shader,
-	Script
+	Script,
+	Curve,
 }
 
 public class AssetFile {
@@ -30,6 +31,7 @@ public class AssetFile {
 			".tmat" => FileType.Material,
 			".slang" => FileType.Shader,
 			".lua" => FileType.Script,
+			".tcurve" => FileType.Curve,
 			_ => FileType.Unknown
 		};
 	}
@@ -69,6 +71,7 @@ public class AssetFile {
 			FileType.Material => new SolidColorBrush(Color.Parse("#9370DB")),
 			FileType.Shader => new SolidColorBrush(Color.Parse("#00CED1")),
 			FileType.Script => new SolidColorBrush(Color.Parse("#FFD700")),
+			FileType.Curve => new SolidColorBrush(Color.Parse("#FF6B6B")),
 			_ => new SolidColorBrush(Color.Parse("#696969"))
 		};
 }

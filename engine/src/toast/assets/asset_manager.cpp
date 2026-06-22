@@ -79,6 +79,17 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 			TOAST_ERROR("AssetManager", "Failed to parse TOML asset {}: {}", info.path, err.description());
 			return nullptr;
 		}
+	} else if (info.type == "curve") {
+		try {
+			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
+			asset = Curve::fromToml(toml::parse(toml_str));
+		} catch (const toml::parse_error& err) {
+			TOAST_ERROR("AssetManager", "Failed to parse curve asset {}: {}", info.path, err.description());
+			return nullptr;
+		} catch (const std::exception& err) {
+			TOAST_ERROR("AssetManager", "Failed to load curve asset {}: {}", info.path, err.what());
+			return nullptr;
+		}
 	} else if (info.type == "node") {
 		// TODO: At some point we need to handle toast packs
 		if constexpr (load_mode == SaveMode::editor) {

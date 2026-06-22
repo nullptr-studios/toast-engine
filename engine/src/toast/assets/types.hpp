@@ -14,6 +14,7 @@
 #include "core_types.hpp"
 // clang-format on
 
+#include "curve.hpp"
 #include "data.hpp"
 #include "input_action.hpp"
 #include "input_layout.hpp"
