@@ -466,7 +466,8 @@ private:
  * @brief Mouse cursor position or delta
  */
 class CursorTrigger : public ITrigger {
-// TODO: Camera and world space fall back to NDC until renderer camera access is wired
+	// TODO: Camera and world space fall back to NDC until renderer camera access is wired
+
 public:
 	CursorTrigger(const toml::table& t, ValueType /*vt*/)
 	    : m_space(static_cast<int>(parse::number(t["space"], 1.0f))),

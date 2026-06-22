@@ -219,6 +219,13 @@ auto InputSystem::activeGamepad() const noexcept -> SDL_Gamepad* {
 	return m_gamepads.begin()->second;
 }
 
+auto InputSystem::activeGamepadId() const noexcept -> uint32_t {
+	if (m_gamepads.empty()) {
+		return 0;
+	}
+	return m_gamepads.begin()->first;
+}
+
 auto InputSystem::sample(const KeyCode& key) -> InputSample {
 	InputSample out;
 	if (!key.valid) {

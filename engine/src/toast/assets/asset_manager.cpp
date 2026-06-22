@@ -90,6 +90,17 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 			TOAST_ERROR("AssetManager", "Failed to load curve asset {}: {}", info.path, err.what());
 			return nullptr;
 		}
+	} else if (info.type == "haptic") {
+		try {
+			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
+			asset = std::make_unique<Haptic>(toml::parse(toml_str));
+		} catch (const toml::parse_error& err) {
+			TOAST_ERROR("AssetManager", "Failed to parse haptic asset {}: {}", info.path, err.description());
+			return nullptr;
+		} catch (const std::exception& err) {
+			TOAST_ERROR("AssetManager", "Failed to load haptic asset {}: {}", info.path, err.what());
+			return nullptr;
+		}
 	} else if (info.type == "node") {
 		// TODO: At some point we need to handle toast packs
 		if constexpr (load_mode == SaveMode::editor) {
@@ -221,6 +232,7 @@ void AssetManager::reloadManifest() {
 		load_collection(Action::collection, "input_action");
 		load_collection(InputLayout::collection, "input_layout");
 		load_collection(InputSettings::collection, "input_settings");
+		load_collection(Haptic::collection, "haptic");
 
 		TOAST_INFO("AssetManager", "Manifest reloaded: {} assets tracked", manifest.size());
 	} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse asset manifest: {}", e.what()); }

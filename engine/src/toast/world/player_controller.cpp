@@ -1,6 +1,7 @@
 #include "player_controller.hpp"
 
 #include <toast/input/action.hpp>
+#include <toast/input/haptics_system.hpp>
 #include <toast/input/input_events.hpp>
 #include <toast/log.hpp>
 #include <typeinfo>
@@ -37,6 +38,13 @@ void PlayerController::init() {
 		return false;
 	});
 
+	listener().subscribe<event::PlayHaptic>([this](const event::PlayHaptic& e) {
+		if (matchesTarget(e.target)) {
+			playHaptic(e.haptic);
+		}
+		return false;
+	});
+
 	TOAST_TRACE("Input", "PlayerController init: layout '{}', layer '{}'", active_layout, active_layer);
 }
 
@@ -48,6 +56,10 @@ void PlayerController::setLayout(std::string_view layout) {
 void PlayerController::setLayer(std::string_view layer) {
 	active_layer = std::string(layer);
 	rebuildEnabledActions();
+}
+
+void PlayerController::playHaptic(assets::AssetHandle<assets::Haptic> haptic) {
+	HapticsSystem::get().play(controller_id, std::move(haptic));
 }
 
 void PlayerController::rebuildEnabledActions() {

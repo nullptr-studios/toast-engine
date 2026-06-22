@@ -23,6 +23,7 @@ namespace event {
 struct InputEvent;
 struct SetInputLayout;
 struct SetInputLayer;
+struct PlayHaptic;
 }
 
 namespace input {
@@ -44,6 +45,12 @@ public:
 	 */
 	void setLayer(std::string_view layer);
 
+	/**
+	 * @brief Plays a haptic effect on this controller's physical gamepad
+	 * @param haptic The effect to play, routed through @c controller_id
+	 */
+	void playHaptic(assets::AssetHandle<assets::Haptic> haptic);
+
 	[[Reflect, ReadOnly]]
 	std::string active_layout;
 
@@ -64,6 +71,10 @@ public:
 
 	[[Reflect]]
 	std::string settings_name;
+
+	/// SDL_JoystickID of the controller this player drives; 0 = first/active gamepad
+	[[Reflect]]
+	uint32_t controller_id = 0;
 
 private:
 	void init();

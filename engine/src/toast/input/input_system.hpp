@@ -53,6 +53,9 @@ public:
 	[[nodiscard]]
 	auto mouseDelta() const noexcept -> glm::vec2;              ///< @returns The delta mouse movement
 
+	[[nodiscard]]
+	auto activeGamepadId() const noexcept -> uint32_t;    ///< @returns SDL_JoystickID of the first connected gamepad, or 0 if none
+
 private:
 	void subscribeEvents();
 	void refreshGamepads();

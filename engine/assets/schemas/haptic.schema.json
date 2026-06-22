@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "toast://schemas/haptic.schema.json",
+  "title": "Toast Haptic (.thaptic)",
+  "type": "object",
+  "required": ["mode", "duration_ms"],
+  "additionalProperties": false,
+  "properties": {
+    "mode": {
+      "enum": ["standard", "curve", "adaptive_trigger", "audio_haptic"],
+      "description": ""
+    },
+    "priority": {
+      "type": "integer",
+      "default": 0,
+      "description": ""
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": ""
+    },
+    "left": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": ""
+    },
+    "right": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": ""
+    },
+    "channels": {
+      "enum": ["single", "dual"],
+      "default": "single",
+      "description": ""
+    },
+    "pan": {
+      "type": "number",
+      "minimum": -1,
+      "maximum": 1,
+      "default": 0.0,
+      "description": ""
+    },
+    "multiplier": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1.0,
+      "description": ""
+    },
+    "curve": {
+      "$ref": "#/definitions/curve",
+      "description": ""
+    },
+    "curve_right": {
+      "$ref": "#/definitions/curve",
+      "description": ""
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "mode": { "const": "standard" } } },
+      "then": { "required": ["left", "right"] }
+    },
+    {
+      "if": { "properties": { "mode": { "const": "curve" } } },
+      "then": { "required": ["curve"] }
+    },
+    {
+      "if": {
+        "properties": { "channels": { "const": "dual" } },
+        "required": ["channels"]
+      },
+      "then": { "required": ["curve_right"] }
+    }
+  ],
+  "definitions": {
+    "curve": {
+      "type": "object",
+      "required": ["spline_type", "dimension", "points"],
+      "additionalProperties": false,
+      "properties": {
+        "spline_type": {
+          "enum": ["linear", "catmull_rom", "bspline", "bezier"],
+          "description": ""
+        },
+        "dimension": {
+          "enum": ["2d", "3d"]
+        },
+        "t_scale": {
+          "type": "number",
+          "default": 1.0,
+          "exclusiveMinimum": 0
+        },
+        "points": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/definitions/point" }
+        }
+      }
+    },
+    "point": {
+      "type": "object",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "z": { "type": "number", "description": "Required when dimension is \"3d\"." }
+      }
+    }
+  }
+}

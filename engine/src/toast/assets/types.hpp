@@ -16,6 +16,7 @@
 
 #include "curve.hpp"
 #include "data.hpp"
+#include "haptic.hpp"
 #include "input_action.hpp"
 #include "input_layout.hpp"
 #include "input_settings.hpp"

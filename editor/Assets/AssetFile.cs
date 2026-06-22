@@ -13,6 +13,7 @@ public enum FileType {
 	Shader,
 	Script,
 	Curve,
+	Haptic,
 }
 
 public class AssetFile {
@@ -32,6 +33,7 @@ public class AssetFile {
 			".slang" => FileType.Shader,
 			".lua" => FileType.Script,
 			".tcurve" => FileType.Curve,
+			".thaptic" => FileType.Haptic,
 			_ => FileType.Unknown
 		};
 	}
@@ -72,6 +74,7 @@ public class AssetFile {
 			FileType.Shader => new SolidColorBrush(Color.Parse("#00CED1")),
 			FileType.Script => new SolidColorBrush(Color.Parse("#FFD700")),
 			FileType.Curve => new SolidColorBrush(Color.Parse("#FF6B6B")),
+			FileType.Haptic => new SolidColorBrush(Color.Parse("#E91E63")),
 			_ => new SolidColorBrush(Color.Parse("#696969"))
 		};
 }

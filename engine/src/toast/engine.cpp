@@ -5,6 +5,7 @@
 #include "events/event.hpp"
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
+#include "input/haptics_system.hpp"
 #include "input/input_system.hpp"
 #include "logger.hpp"
 #include "renderer/sdl_output_target.hpp"
@@ -76,6 +77,7 @@ struct EnginePimpl {
 	std::unique_ptr<World> world = nullptr;
 	std::unique_ptr<assets::AssetManager> asset_manager = nullptr;
 	std::unique_ptr<input::InputSystem> input_system = nullptr;
+	std::unique_ptr<input::HapticsSystem> haptics_system = nullptr;
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
 	Time time;
@@ -137,6 +139,7 @@ void Engine::init() {
 	m->asset_manager = std::make_unique<assets::AssetManager>();
 
 	m->input_system = std::make_unique<input::InputSystem>();
+	m->haptics_system = std::make_unique<input::HapticsSystem>();
 
 	// TODO: This should be moved into VulkanRenderer
 	m->listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
@@ -177,10 +180,8 @@ void Engine::tick() {
 
 	event::pollEvents();
 
-	// Read fresh device state and queue this frame's input events for the next dispatch
-	if (m->input_system) {
-		m->input_system->tick();
-	}
+	m->input_system->tick();
+	m->haptics_system->tick();
 
 	{
 		std::scoped_lock lock(m->owners_mutex);

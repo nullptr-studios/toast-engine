@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <string>
+#include <toast/assets/core_types.hpp>
 #include <toast/events/event.hpp>
 #include <toast/uid.hpp>
 
@@ -15,6 +16,10 @@ namespace input {
 class Action;
 enum class ActionEvent : uint8_t;
 enum class Device : uint8_t;
+}
+
+namespace assets {
+class Haptic;
 }
 
 namespace event {
@@ -67,5 +72,27 @@ struct SetInputLayer : Event<SetInputLayer> {
  * @brief Requests that the input system rebuild its actions from the asset manifest
  */
 struct ReloadInputActions : Event<ReloadInputActions> { };
+
+/**
+ * @brief Requests that a controller play a haptic effect
+ */
+struct PlayHaptic : Event<PlayHaptic> {
+	/// @param target Name of the PlayerController's parent
+	PlayHaptic(std::string target, assets::AssetHandle<assets::Haptic> haptic)
+	    : target(std::move(target)),
+	      haptic(std::move(haptic)) { }
+
+	std::string target;
+	assets::AssetHandle<assets::Haptic> haptic;
+};
+
+/**
+ * @brief Sets the global haptics intensity multiplier
+ */
+struct SetHapticsMultiplier : Event<SetHapticsMultiplier> {
+	explicit SetHapticsMultiplier(float multiplier) : multiplier(multiplier) { }
+
+	float multiplier;
+};
 
 }
