@@ -13,7 +13,7 @@ Mesh::Mesh(const std::vector<uint8_t>& data) {
 	switch (header.version) {
 		case 1: {
 			size_t expected_size =
-			    sizeof(_detail::MeshFileHeader) + header.vertex_count * sizeof(Vertex) + header.index_count * sizeof(uint32_t);
+			    sizeof(_detail::MeshFileHeader) + (header.vertex_count * sizeof(Vertex)) + (header.index_count * sizeof(uint32_t));
 			TOAST_ASSERT(
 			    data.size() == expected_size, "AssetManager", "Mesh data size does not match expected size based on header information"
 			);
