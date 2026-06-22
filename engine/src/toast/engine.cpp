@@ -14,6 +14,7 @@
 #include "renderer/vulkan_pipeline.hpp"
 #include "renderer/vulkan_renderer.hpp"
 #include "thread_pool.hpp"
+#include "time.hpp"
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
@@ -77,6 +78,7 @@ struct EnginePimpl {
 	std::unique_ptr<input::InputSystem> input_system = nullptr;
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
+	Time time;
 	event::Listener listener;
 	toast::NodeRegistry reflection_registry;
 
@@ -160,6 +162,10 @@ void Engine::init() {
 }
 
 void Engine::tick() {
+	ZoneScoped;
+
+	m->time.tick();
+
 	// Poll window events
 #ifndef NDEBUG
 	if (m->window) {
@@ -178,6 +184,7 @@ void Engine::tick() {
 
 	{
 		std::scoped_lock lock(m->owners_mutex);
+		ZoneScopedN("NodeOwners::tick()");
 		for (const auto& [_, node_owner] : m->owners) {
 			node_owner->tick();
 		}
@@ -185,6 +192,7 @@ void Engine::tick() {
 
 	// Run application layer
 	if (active_application) {
+		ZoneScopedN("GameLayer::tick()");
 		active_application->tick();
 	}
 

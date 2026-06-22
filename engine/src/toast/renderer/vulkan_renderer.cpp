@@ -5,6 +5,7 @@
 #include "vulkan_renderer.hpp"
 
 #include "toast/log.hpp"
+#include "toast/time.hpp"
 
 #include <array>
 #include <cstring>
@@ -427,6 +428,9 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 }
 
 auto VulkanRenderer::drawFrame() -> void {
+	// TODO: is this the right spot dario?
+	Time::get().renderTick();
+
 	if (m_frames.empty()) {
 		return;
 	}
