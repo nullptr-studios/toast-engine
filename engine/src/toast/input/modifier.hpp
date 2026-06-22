@@ -9,6 +9,7 @@
 #pragma once
 
 #include "parse_util.hpp"
+#include "toast/time.hpp"
 #include "value.hpp"
 
 #include <cmath>
@@ -170,14 +171,12 @@ private:
  */
 class ScaleByDeltaTimeModifier : public IModifier {
 public:
-    // TODO: Needs TIme class
 	explicit ScaleByDeltaTimeModifier(const toml::table& t)
 	    : m_x(parse::boolean(t["x"], true)),
 	      m_y(parse::boolean(t["y"], true)) { }
 
 	void apply(Value& value, const EvalContext& /*ctx*/) override {
-		// TODO: multiply by the engine frame delta once a Time system exists.
-		constexpr float delta = 0.0f;
+		float delta = Time::delta();
 		if (m_x) {
 			value.data.x *= delta;
 		}
@@ -201,15 +200,13 @@ private:
  */
 class SmoothModifier : public IModifier {
 public:
-    // TODO: Needs Time class
 	explicit SmoothModifier(const toml::table& t)
 	    : m_x(parse::boolean(t["x"], true)),
 	      m_y(parse::boolean(t["y"], true)),
 	      m_speed(parse::number(t["speed"], 10.0f)) { }
 
 	void apply(Value& value, const EvalContext& /*ctx*/) override {
-		// TODO: drive the lerp with the engine frame delta once a Time system exists.
-		constexpr float delta = 0.0f;
+		float delta = Time::delta();
 		const float t = glm::clamp(m_speed * delta, 0.0f, 1.0f);
 		if (m_x) {
 			m_current.x = glm::mix(m_current.x, value.data.x, t);
