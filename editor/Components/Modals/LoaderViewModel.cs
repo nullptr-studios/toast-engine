@@ -33,6 +33,7 @@ public partial class LoaderViewModel : ViewModelBase {
 	// set by the window before calling StartAsync
 	public Func<Task>? OnComplete { get; set; }
 	public Action? OnClose { get; set; }
+	public Func<string, Task>? OnTaskError { get; set; }
 
 	// called from the window's Opened event
 	public async Task StartAsync() {
@@ -47,6 +48,8 @@ public partial class LoaderViewModel : ViewModelBase {
 				await RunTaskAsync(task);
 			} catch (Exception ex) {
 				AppendLine($"error: {ex.Message}");
+				if (OnTaskError is not null)
+					await OnTaskError(ex.Message);
 			}
 
 			Progress = (double)(i + 1) / total * 100.0;
@@ -72,7 +75,7 @@ public partial class LoaderViewModel : ViewModelBase {
 		AppendLine("");
 	}
 
-	// streams stdout and stderr to the console lines as the process runs (not buffered)
+	// streams stdout and stderr to the console lines as the process runs
 	private Task RunProcessAsync(string exe, string args) {
 		return Task.Run(() => {
 			try {
@@ -99,17 +102,22 @@ public partial class LoaderViewModel : ViewModelBase {
 				proc.BeginErrorReadLine();
 				proc.WaitForExit();
 
-				if (proc.ExitCode != 0)
-					AppendLine($"(exited with code {proc.ExitCode})");
+				if (proc.ExitCode is not 0) {
+					AppendLine($"exit code: {proc.ExitCode}");
+					throw new Exception($"exited code: {proc.ExitCode}");
+				}
+
+				AppendLine("exit code: 0 (success)");
 			} catch (Exception ex) {
 				AppendLine($"error: {ex.Message}");
+				throw new Exception(ex.Message);
 			}
 		});
 	}
 
 	// posts to the UI thread because this is called from background tasks and process callbacks
 	private void AppendLine(string text) {
-		Console.WriteLine(text);
+		Engine.Log.Trace(text);
 		Dispatcher.UIThread.Post(() => ConsoleLines.Add(text));
 	}
 }

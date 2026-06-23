@@ -251,6 +251,11 @@ void Logger::initNetworkRetry() {
 			timeval timeout {.tv_sec = 1, .tv_usec = 0};
 			setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 #endif
+			// Publish the connection, then flush anything that queued up while we were still connecting
+			m.connected.store(true, std::memory_order_release);
+			if (!m.drain_pending.exchange(true)) {
+				toast::ThreadPool::push([this] { drain(); });
+			}
 			return;
 		} catch (const std::exception& e) {
 			if (attempt == max_attempts) {
@@ -275,6 +280,8 @@ void Logger::stop() {
 	// must be flushed synchronously before the object is destroyed
 	flushSync();
 
+	m.connected.store(false, std::memory_order_release);
+
 	if (m.socket.is_open()) {
 		asio::error_code ec;
 		[[maybe_unused]]
@@ -286,6 +293,12 @@ void Logger::stop() {
 
 void Logger::drain() {
 	ZoneScoped;
+
+	// The socket is open but not yet connected while initNetworkRetry is still running
+	if (!m.connected.load(std::memory_order_acquire)) {
+		m.drain_pending.store(false, std::memory_order_release);
+		return;
+	}
 
 	auto batch = collectQueue();
 
@@ -345,7 +358,7 @@ void Logger::flushSync() {
 	ZoneScoped;
 
 	auto batch = collectQueue();
-	if (!batch.empty() && m.socket.is_open()) {
+	if (!batch.empty() && m.connected.load(std::memory_order_acquire) && m.socket.is_open()) {
 		uint32_t len = static_cast<uint32_t>(batch.size());
 		std::array<uint8_t, 4> len_buf;
 		len_buf[0] = (len >> 24) & 0xFF;

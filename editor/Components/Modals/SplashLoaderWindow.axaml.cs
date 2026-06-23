@@ -2,9 +2,12 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using Lucide.Avalonia;
 
 namespace editor.Components.Modals;
 
@@ -18,13 +21,18 @@ public partial class SplashLoaderWindow : Window {
 		DataContext = vm;
 
 		vm.OnClose = () => Dispatcher.UIThread.Post(Close);
+		vm.OnTaskError = async msg => await new MessageModal(new ModalConfig(
+			"Task Failed", msg,
+			Icon: LucideIconKind.CircleX,
+			IconColor: Application.Current!.TryGetResource("Red", null, out var r) ? r as SolidColorBrush : null
+		)).ShowDialog(this);
 
 		vm.ConsoleLines.CollectionChanged += (_, _) =>
 			ConsoleScroll.ScrollToEnd();
 
-		Opened += async (_, _) => {
+		Opened += (_, _) => {
 			SetRandomSplashImage();
-			await vm.StartAsync();
+			Dispatcher.UIThread.InvokeAsync(vm.StartAsync, DispatcherPriority.Background);
 		};
 	}
 

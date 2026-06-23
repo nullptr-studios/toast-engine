@@ -81,6 +81,36 @@ public partial class StartWindowViewModel : ViewModelBase {
 				"commit -m \"Initial commit\" --author \"nullptr Studios <toast-engine@nullptr.es>\""));
 		}
 
+		// TODO: Look for missing files in database, and pop up relocate if they appear
+		//			Title: Missing file
+		//			Icon: FileExclamationPoint
+		//			Description: File <path> could not be found, do you wish to relocate?
+		//			Ok Label: Relocate
+		//			Ok Icon: Folders
+		//			Ok function: Open Native OS file select with file extension, if empty path dont close popup, opens by default in assets://
+		//			No Label: Discard
+		//			No Icon: Shredder
+		//			No function: Remove the reference on the database for that file
+		//			Cancel Label: Skip
+		//			Cancel function: Skip error and go to next
+
+		// TODO: Look for assets that dont have a .meta and generate the .meta silently
+
+		// TODO: Look for artwork files that doesnt exist, and remove links if not relocated
+		//			Same popup but opens by default on artwork://
+
+		// TODO: Generate engine core:// and assets:// database
+
+		// TODO: Check hashes of artwork files and offer to reimport assets generated from those new artwork files
+		//			This function should be reusable as it will be called in other places
+		//			Title: Artwork changed
+		//			Description: Artwork file <path> has changed, do you wish to reimport the assets generated from it?
+		//			Ok Label: Reimport
+		//			Ok Icon: FileInput
+		//			Ok function: trigger reimport of the assets with the settings of the .meta file, make it reusable
+		//			Cancel Label: Skip
+		//			Cancel function: Skip reimport and go to next
+
 		// Generate the game's reflection metadata before configuring
 		var libSrc = Path.Combine(projectDir, "lib", "src");
 		var libGenerated = Path.Combine(projectDir, "lib", "generated");
@@ -228,8 +258,8 @@ public partial class StartWindowViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	public void OpenProjectFromList(ProjectListItem item) {
-		if (m_window != null) LaunchProjectFromList(item.Path, m_window);
+	private async Task OpenProjectFromList(ProjectListItem item) {
+		if (m_window != null) await LaunchProjectFromList(item.Path, m_window);
 	}
 
 	[RelayCommand]

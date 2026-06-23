@@ -13,7 +13,7 @@
 	<SolidColorBrush x:Key="TextMuted" Color="#a0a0a0" />
 
 	<!-- Semantic accent colors -->
-	<SolidColorBrush x:Key="Red" Color="#ff004d" />
+	<SolidColorBrush x:Key="Red" Color="#ff1659" />
 	<SolidColorBrush x:Key="Green" Color="#00cc33" />
 	<SolidColorBrush x:Key="Blue" Color="#29adff" />
 	<SolidColorBrush x:Key="Magenta" Color="#ad73ff" />
