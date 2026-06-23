@@ -56,6 +56,19 @@ public class EnabledToColorConverter : IValueConverter {
 	}
 }
 
+public class ScaleConverter : IValueConverter {
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+		if (value is double d && parameter is string s &&
+		    double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var factor))
+			return d * factor;
+		return value ?? AvaloniaProperty.UnsetValue;
+	}
+
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) {
+		throw new NotSupportedException();
+	}
+}
+
 file static class ConverterHelpers {
 	internal static IBrush? GetBrush(string key) {
 		if (Application.Current?.Resources.TryGetResource(key, ThemeVariant.Dark, out var r) == true)

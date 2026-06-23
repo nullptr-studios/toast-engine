@@ -9,10 +9,12 @@
 		<ResourceDictionary>
 			<ResourceDictionary.MergedDictionaries>
 				<ResourceInclude Source="avares://editor/Resources/EditorColors.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/DragNumberBox.axaml" />
 			</ResourceDictionary.MergedDictionaries>
 			<conv:SeverityToColorConverter x:Key="SeverityToColorConverter" />
 			<conv:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
 			<conv:EnabledToColorConverter x:Key="EnabledToColorConverter" />
+			<conv:ScaleConverter x:Key="ScaleConverter" />
 		</ResourceDictionary>
 	</Application.Resources>
 

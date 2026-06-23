@@ -52,6 +52,13 @@ auto World::newNode(std::string_view type) -> Node* {
 - `[[Range(int, int)]]`: limits the range in the Inspector panel
 - `[[Enum("str", ...)]]`: makes the int field appears as a drop-down menu
 - `[[BitEnum("str", ...)]]`: makes the int field appear as a multiple choice drop-down menu
+- `[[Axis("x", "y", "z", "w")]]`: changes the names of the axis on a vector
+- `[[Unit("m/s"]]`: displays units on the attribute
+
+### Function level attributes
+
+- `[[Reflect]]`: marks a function to be reflected
+- `[[Button("name")]]`: creates a button for a void fn(void) function, name is optional
 
 ## Motivation
 

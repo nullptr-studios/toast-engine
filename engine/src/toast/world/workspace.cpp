@@ -264,6 +264,25 @@ void Workspace::eventSubscriptions() {
 		TOAST_INFO("World", "Moved node {} in Workspace {}", node->name(), m_root_node->name());
 		return true;
 	});
+
+	m_listener.subscribe<event::SetFocusedNode>([this](const auto& e) {
+		m_focused_node = findFrom(m_root_node, e.node.get());
+	});
+
+	m_listener.subscribe<event::NodeChangeParam>([this](const auto& e) {
+		// TODO: We need a setFromString that converts the string to the value it is
+		m_focused_node->info()->search(e.parameter)->set(&*m_focused_node, e.value);
+	});
+
+	// TODO: needs function reflection for this
+	// m_listener.subscribe<event::NodeCallFunction>([this](const auto& e) {
+	// 	m_focused_node->info()->call(e.function);
+	// });
+
+	m_listener.subscribe<event::NodeEnabled>([this](const auto& e) {
+		auto node = findFrom(m_root_node, e.node.get());
+		node->enabled(e.enabled);
+	});
 }
 
 }

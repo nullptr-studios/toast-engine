@@ -1,0 +1,119 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:elements="clr-namespace:editor.Components.Elements">
+
+	<Design.PreviewWith>
+		<Border Padding="8" Background="{StaticResource Bg3}">
+			<elements:DragFloatBox MinWidth="150" Unit="km"></elements:DragFloatBox>
+		</Border>
+	</Design.PreviewWith>
+
+	<ControlTheme x:Key="{x:Type elements:DragNumberBoxBase}" TargetType="elements:DragNumberBoxBase">
+		<Setter Property="FontFamily" Value="FiraCode Nerd Font,Consolas,monospace" />
+		<Setter Property="FontSize" Value="15" />
+		<Setter Property="MinHeight" Value="34" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="EditBorderBrush" Value="{StaticResource Red}" />
+
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border x:Name="PART_Root" CornerRadius="4" Padding="8,8">
+					<Panel>
+						<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+							<!-- Sign -->
+							<TextBlock x:Name="PART_Sign"
+							           Text="{TemplateBinding DisplaySign}"
+							           MinWidth="8"
+							           VerticalAlignment="Center" />
+
+							<!-- Integer -->
+							<TextBlock x:Name="PART_Integer"
+							           Text="{TemplateBinding DisplayInteger}"
+							           Cursor="SizeWestEast"
+							           VerticalAlignment="Center" />
+
+							<!-- Decimals -->
+							<StackPanel x:Name="PART_Fraction" Orientation="Horizontal"
+							            Cursor="SizeWestEast"
+							            VerticalAlignment="Bottom">
+								<TextBlock x:Name="PART_Point"
+								           Text="{TemplateBinding DisplayPoint}"
+								           FontSize="{TemplateBinding FontSize,
+								               Converter={StaticResource ScaleConverter}, ConverterParameter=0.9}"
+								           VerticalAlignment="Bottom" />
+								<TextBlock x:Name="PART_Digits"
+								           Text="{TemplateBinding DisplayDigits}"
+								           FontSize="{TemplateBinding FontSize,
+								               Converter={StaticResource ScaleConverter}, ConverterParameter=0.9}"
+								           VerticalAlignment="Bottom" />
+							</StackPanel>
+
+							<!-- Unit -->
+							<TextBlock x:Name="PART_Unit"
+							           Text="{TemplateBinding Unit}"
+							           Margin="3,0,0,0"
+							           VerticalAlignment="Center"
+							           IsVisible="{TemplateBinding Unit,
+							               Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+						</StackPanel>
+
+						<!-- Editor -->
+						<TextBox x:Name="PART_Editor"
+						         IsVisible="{TemplateBinding IsEditing}"
+						         Background="{StaticResource Bg1}"
+						         Foreground="{StaticResource Text}"
+						         BorderBrush="{TemplateBinding EditBorderBrush}"
+						         BorderThickness="0"
+						         Padding="8"
+						         Margin="-8"
+						         MinHeight="0"
+						         VerticalAlignment="Center"
+						         VerticalContentAlignment="Center"
+						         HorizontalContentAlignment="Right" />
+					</Panel>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+
+		<!-- Default colors -->
+		<Style Selector="^ /template/ Border#PART_Root">
+			<Setter Property="Background" Value="{StaticResource Bg1}" />
+		</Style>
+		<Style Selector="^ /template/ TextBlock#PART_Sign">
+			<Setter Property="Foreground" Value="{StaticResource Text}" />
+		</Style>
+		<Style Selector="^ /template/ TextBlock#PART_Integer">
+			<Setter Property="Foreground" Value="{StaticResource Text}" />
+			<Setter Property="Background" Value="Transparent" />
+		</Style>
+		<Style Selector="^ /template/ StackPanel#PART_Fraction">
+			<Setter Property="Background" Value="Transparent" />
+		</Style>
+		<Style Selector="^ /template/ TextBlock#PART_Point">
+			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+		</Style>
+		<Style Selector="^ /template/ TextBlock#PART_Digits">
+			<Setter Property="Foreground" Value="{StaticResource Text}" />
+		</Style>
+		<Style Selector="^ /template/ TextBlock#PART_Unit">
+			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+		</Style>
+
+		<!-- Highlight -->
+		<Style Selector="^ /template/ TextBlock#PART_Integer:pointerover">
+			<Setter Property="Background" Value="{StaticResource Bg3}" />
+		</Style>
+		<Style Selector="^ /template/ StackPanel#PART_Fraction:pointerover TextBlock#PART_Digits">
+			<Setter Property="Background" Value="{StaticResource Bg3}" />
+		</Style>
+
+		<!-- Disabled colors -->
+		<Style Selector="^:disabled /template/ Border#PART_Root">
+			<Setter Property="Background" Value="{StaticResource Bg2}" />
+		</Style>
+		<Style Selector="^:disabled /template/ TextBlock">
+			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+		</Style>
+	</ControlTheme>
+
+</ResourceDictionary>

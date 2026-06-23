@@ -60,3 +60,21 @@ message WorkspaceMoveNodeTo {
   string new_parent = 2;
   string predecessor = 3;
 }
+
+message SetFocusedNode {
+  string node = 1;
+}
+
+message NodeChangeParam {
+  string parameter = 1;
+  string value = 2;
+}
+
+message NodeCallFunction {
+  string function = 1;
+}
+
+message NodeEnabled {
+  string node = 2;
+  bool enabled = 3;
+}

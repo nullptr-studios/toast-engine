@@ -1,17 +1,28 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:editor.Workspace"
+             xmlns:elements="using:editor.Components.Elements"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="1000"
              x:Class="editor.Workspace.InspectorView"
              x:DataType="vm:InspectorViewModel">
 
-	<Border Background="{StaticResource Bg2}" Padding="5">
-		<StackPanel>
-			<TextBlock Text="Inspector" FontWeight="Bold" Margin="0,0,0,10" />
-			<TextBlock Text="This is a test for the inspector yay" />
-			<Button Content="Press me i do nothing!!!" />
+	<Border Background="{StaticResource Bg3}" Padding="8">
+		<StackPanel Spacing="8" Width="150" HorizontalAlignment="Left">
+			<TextBlock Text="Inspector" FontWeight="Bold" />
+
+			<TextBlock Text="Float demo" Foreground="{StaticResource TextMuted}" />
+			<elements:DragFloatBox Value="{Binding PosX}" Unit="m"/>
+
+			<TextBlock Text="Range 0 to 10" Foreground="{StaticResource TextMuted}" />
+			<elements:DragFloatBox Value="{Binding Mass}" Unit="kg" Minimum="0" Maximum="10" />
+
+			<TextBlock Text="Int demo" Foreground="{StaticResource TextMuted}" />
+			<elements:DragIntBox Value="{Binding Count}" />
+
+			<TextBlock Text="Disabled field" Foreground="{StaticResource TextMuted}" />
+			<elements:DragFloatBox Value="{Binding PosX}" Unit="m" IsEnabled="False" />
 		</StackPanel>
 	</Border>
 </UserControl>

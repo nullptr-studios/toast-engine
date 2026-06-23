@@ -60,10 +60,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Resources\"/>
-    </ItemGroup>
-
-    <ItemGroup>
         <ClCompile Include="Resources\files\lib\src\_detail\game.cpp"/>
     </ItemGroup>
 

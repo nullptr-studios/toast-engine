@@ -272,4 +272,60 @@ struct ProtoTraits<WorkspaceMoveNodeTo> {
 
 TOAST_PROTO_EVENT(WorkspaceMoveNodeTo);
 
+template<>
+struct ProtoTraits<SetFocusedNode> {
+	using Proto = proto::events::SetFocusedNode;
+	using Event = SetFocusedNode;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_node(e.node);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		return { toast::UID::fromString(p.node()) };
+	}
+};
+
+TOAST_PROTO_EVENT(SetFocusedNode);
+
+template<>
+struct ProtoTraits<NodeChangeParam> {
+	using Proto = proto::events::NodeChangeParam;
+	using Event = NodeChangeParam;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_parameter(e.parameter);
+		p.set_value(e.value);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		return {p.parameter(), p.value()};
+	}
+};
+
+TOAST_PROTO_EVENT(NodeChangeParam);
+
+template<>
+struct ProtoTraits<NodeEnabled> {
+	using Proto = proto::events::NodeEnabled;
+	using Event = NodeEnabled;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_node(e.node);
+		p.set_enabled(e.enabled);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		return { toast::UID::fromString(p.node()), p.enabled() };
+	}
+};
+
+TOAST_PROTO_EVENT(NodeEnabled);
+
 }

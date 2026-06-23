@@ -54,6 +54,7 @@ public:
 private:
 	UID m_handle;
 	Box<Node> m_root_node;
+	Box<Node> m_focused_node;
 	event::Listener m_listener;
 
 	void eventSubscriptions();

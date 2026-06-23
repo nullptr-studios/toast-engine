@@ -104,4 +104,30 @@ struct WorkspaceMoveNodeTo : Event<WorkspaceMoveNodeTo> {
 	      predecessor(predecessor) { }
 };
 
+struct SetFocusedNode : Event<SetFocusedNode> {
+	toast::UID node;
+
+	SetFocusedNode(toast::UID n) : node(n) { }
+};
+
+struct NodeChangeParam : Event<NodeChangeParam> {
+	std::string parameter;
+	std::string value;
+
+	NodeChangeParam(std::string_view parameter, std::string_view value) : parameter(parameter), value(value) { }
+};
+
+struct NodeCallFunction : Event<NodeCallFunction> {
+	std::string function;
+
+	NodeCallFunction(std::string_view f) : function(f) { }
+};
+
+struct NodeEnabled : Event<NodeEnabled> {
+	toast::UID node;
+	bool enabled;
+
+	NodeEnabled(toast::UID n, bool enabled) : node(n), enabled(enabled) { }
+};
+
 }
