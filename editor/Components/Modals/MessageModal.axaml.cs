@@ -17,7 +17,10 @@ public record ModalConfig(
 	IBrush? IconColor = null,
 	string OkLabel = "OK",
 	string NoLabel = "Don't Save",
-	string CancelLabel = "Cancel"
+	string CancelLabel = "Cancel",
+	LucideIconKind? OkIcon = null,
+	LucideIconKind? NoIcon = null,
+	LucideIconKind? CancelIcon = null
 );
 
 public class MessageModalViewModel : ObservableObject {
@@ -27,12 +30,11 @@ public class MessageModalViewModel : ObservableObject {
 		Title = "Unsaved Changes";
 		Message = "Do you want to save changes to \"My Awesome Game\" before closing?";
 		ShowIcon = true;
-		IconKind = LucideIconKind.TriangleAlert;
-		IconColor = new SolidColorBrush(Color.Parse("#ffa300"));
+		IconKind = LucideIconKind.FilePen;
+		IconColor = (Application.Current!.TryGetResource("Blue", null, out var r) ? r as SolidColorBrush : Brushes.Blue)!;
 		ShowNo = true;
 		ShowCancel = true;
-		OkIcon = LucideIconKind.Check;
-		NoIcon = LucideIconKind.X;
+		OkIcon = LucideIconKind.Save;
 	}
 
 	public string Title { get; init; } = "";
@@ -64,7 +66,10 @@ public class MessageModalViewModel : ObservableObject {
 			ShowCancel = cfg.Buttons is ModalButtons.OkCancel or ModalButtons.OkNoCancel,
 			OkLabel = cfg.OkLabel,
 			NoLabel = cfg.NoLabel,
-			CancelLabel = cfg.CancelLabel
+			CancelLabel = cfg.CancelLabel,
+			OkIcon = cfg.OkIcon,
+			NoIcon = cfg.NoIcon,
+			CancelIcon = cfg.CancelIcon
 		};
 	}
 }

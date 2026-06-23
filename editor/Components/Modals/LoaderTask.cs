@@ -22,3 +22,12 @@ public abstract record LoaderTask(string Label) {
 internal sealed record ProcessTask(string Label, string Exe, string Args) : LoaderTask(Label);
 
 internal sealed record ActionTask(string Label, Func<Action<string>, Task> Action) : LoaderTask(Label);
+
+public sealed class LoaderTaskException : Exception {
+	public LoaderTaskException(string label, string message, Exception? inner = null)
+		: base(message, inner) {
+		Title = $"Task {label} failed";
+	}
+
+	public string Title { get; }
+}

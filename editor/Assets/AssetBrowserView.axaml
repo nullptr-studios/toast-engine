@@ -21,8 +21,8 @@
 		</Style>
 		<!-- Selected -->
 		<Style Selector="ListBox#AssetList > ListBoxItem:selected Border.card-border">
-			<Setter Property="BorderBrush" Value="{StaticResource SelectionBorder}" />
-			<Setter Property="Background" Value="{StaticResource SelectionBg}" />
+			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
+			<Setter Property="Background" Value="{StaticResource Red}" />
 		</Style>
 		<!-- Breadcrumb buttons -->
 		<Style Selector="Button.breadcrumb">

@@ -16,8 +16,8 @@ public partial class SimpleLoaderWindow : Window {
 		DataContext = vm;
 
 		vm.OnClose = () => Dispatcher.UIThread.Post(Close);
-		vm.OnTaskError = async msg => await new MessageModal(new ModalConfig(
-			"Task Failed", msg,
+		vm.OnTaskError = async (title, msg) => await new MessageModal(new ModalConfig(
+			title, msg,
 			Icon: LucideIconKind.CircleX,
 			IconColor: Application.Current!.TryGetResource("Red", null, out var r) ? r as SolidColorBrush : null
 		)).ShowDialog(this);

@@ -49,7 +49,7 @@ public partial class PsdImporter : IAssetImporter {
 						collection[0].Write(tempPng);
 						tempFiles.Add(tempPng);
 						outputs.Add((tempPng, Path.Combine(destDir, baseName + ".ktx2"),
-							UidGenerator.Generate(), baseName));
+							ctx.UidFor(outputs.Count), baseName));
 						break;
 					}
 					case PsdImportMode.Layers: {
@@ -62,7 +62,7 @@ public partial class PsdImporter : IAssetImporter {
 							img.Write(tempPng);
 							tempFiles.Add(tempPng);
 							outputs.Add((tempPng, Path.Combine(destDir, safeName + ".ktx2"),
-								UidGenerator.Generate(), label));
+								ctx.UidFor(outputs.Count), label));
 						}
 
 						break;
@@ -88,7 +88,7 @@ public partial class PsdImporter : IAssetImporter {
 							folderCollection[0].Write(tempPng);
 							tempFiles.Add(tempPng);
 							outputs.Add((tempPng, Path.Combine(destDir, $"{baseName}_{folderName}.ktx2"),
-								UidGenerator.Generate(), folderName));
+								ctx.UidFor(outputs.Count), folderName));
 						}
 
 						break;
