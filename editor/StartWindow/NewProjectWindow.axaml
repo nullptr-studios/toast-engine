@@ -2,23 +2,36 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="190"
-        Width="350" Height="190"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="190"
+        Width="400" Height="190"
         CanResize="False" CanMinimize="False"
         x:Class="editor.StartWindow.NewProjectWindow"
+        Background="{StaticResource Bg4}"
         Title="New Project">
 
-	<StackPanel Margin="10">
+	<StackPanel Margin="10" Spacing="4">
 		<TextBlock>Name:</TextBlock>
 		<TextBox Text="Unnamed Project" TextChanged="Name_OnTextChanged" x:Name="TitleTextbox" />
-		<TextBlock Margin="0, 20, 0, 0">Path:</TextBlock>
+		<TextBlock Margin="0, 10, 0, 0">Path:</TextBlock>
 		<Grid ColumnDefinitions="*, Auto">
-			<TextBox x:Name="PathTextbox" Grid.Column="0" IsReadOnly="True" />
-			<Button Click="Folder_OnClick" Grid.Column="1" Content="..." Margin="5, 0, 0, 0" />
+			<TextBox x:Name="PathTextbox" Grid.Column="0" Foreground="{StaticResource Text}" IsEnabled="False"/>
+			<Button Click="Folder_OnClick" Grid.Column="1" Margin="5, 0, 0, 0">
+				<LucideIcon Kind="Folders" Size="18" StrokeWidth="2.5"/>
+			</Button>
 		</Grid>
-		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0, 20, 0, 0" Spacing="10">
-			<Button Click="Exit_OnClick">Cancel</Button>
-			<Button Click="Create_OnClick" Background="Green" Foreground="White">Create</Button>
+		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0, 16, 0, 0" Spacing="8">
+			<Button Click="Exit_OnClick" Height="32">
+				<StackPanel Orientation="Horizontal" Spacing="4">
+					<LucideIcon Kind="X" Size="17" StrokeWidth="3"/>
+					<TextBlock Text="Cancel"></TextBlock>
+				</StackPanel>
+			</Button>
+			<Button Click="Create_OnClick" Background="{StaticResource Red}" Height="32">
+				<StackPanel Orientation="Horizontal" Spacing="4">
+					<LucideIcon Kind="Plus" Size="17" StrokeWidth="3"/>
+					<TextBlock Text="Create"></TextBlock>
+				</StackPanel>
+			</Button>
 		</StackPanel>
 	</StackPanel>
 </Window>

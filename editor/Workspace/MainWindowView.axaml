@@ -94,7 +94,7 @@
 
 		<Panel Grid.Row="1" ClipToBounds="True">
 			<DockControl Layout="{Binding MainLayout}" ZIndex="0" />
-			<Border x:Name="ToastZoneBorder" Background="{StaticResource E1}" Height="400"
+			<Border x:Name="ToastZoneBorder" Background="{StaticResource Bg1}" Height="400"
 			        VerticalAlignment="Bottom" ZIndex="1"
 			        IsVisible="False"
 			        RenderTransform="translateY(400px)">

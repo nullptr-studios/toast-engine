@@ -7,7 +7,7 @@
              x:Class="editor.Workspace.InspectorView"
              x:DataType="vm:InspectorViewModel">
 
-	<Border Background="{StaticResource E2}" Padding="5">
+	<Border Background="{StaticResource Bg2}" Padding="5">
 		<StackPanel>
 			<TextBlock Text="Inspector" FontWeight="Bold" Margin="0,0,0,10" />
 			<TextBlock Text="This is a test for the inspector yay" />

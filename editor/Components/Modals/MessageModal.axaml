@@ -12,7 +12,7 @@
         CanMaximize="False"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        Background="{StaticResource E2}"
+        Background="{StaticResource Bg2}"
         Title="{Binding Title}">
 
 	<Design.DataContext>
@@ -40,7 +40,7 @@
 
 		<TextBlock Text="{Binding Message}"
 		           TextWrapping="Wrap"
-		           Foreground="{StaticResource Fg}"
+		           Foreground="{StaticResource Text}"
 		           Margin="36,0,0,0" />
 
 		<StackPanel Orientation="Horizontal"

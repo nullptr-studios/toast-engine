@@ -8,7 +8,7 @@
         WindowStartupLocation="CenterOwner"
         x:Class="editor.Components.Modals.HierarchyPickerModal"
         Title="Select a Node..."
-        Background="{StaticResource E2}"
+        Background="{StaticResource Bg2}"
         Padding="8">
 
 	<Window.Styles>
@@ -23,7 +23,7 @@
 			<Button Content="Select" Click="OnSelect" />
 			<Button Content="Cancel" Click="OnCancel" />
 		</StackPanel>
-		<Border Background="{StaticResource E1}" CornerRadius="8" Padding="8">
+		<Border Background="{StaticResource Bg1}" CornerRadius="8" Padding="8">
 			<DockPanel VerticalSpacing="8">
 				<TextBox x:Name="SearchBox" DockPanel.Dock="Bottom" PlaceholderText="Search..." TextChanged="OnSearchChanged" />
 				<ScrollViewer>

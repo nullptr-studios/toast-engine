@@ -8,7 +8,7 @@
         CanResize="False"
         CanMaximize="False"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource E2}">
+        Background="{StaticResource Bg2}">
 
 	<Design.DataContext>
 		<local:LoaderViewModel />
@@ -28,7 +28,7 @@
 							<SelectableTextBlock Text="{Binding}"
 							                     FontFamily="Consolas,Courier New,monospace"
 							                     FontSize="12"
-							                     Foreground="{StaticResource FgMuted}"
+							                     Foreground="{StaticResource TextMuted}"
 							                     TextWrapping="Wrap"
 							                     Margin="12,2" />
 						</DataTemplate>

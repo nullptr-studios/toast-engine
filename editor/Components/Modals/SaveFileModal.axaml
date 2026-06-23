@@ -7,10 +7,10 @@
         Width="480" Height="150"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
-        Background="{StaticResource E2}">
+        Background="{StaticResource Bg2}">
 
 	<Grid RowDefinitions="Auto,Auto,*,Auto" Margin="12" RowSpacing="8">
-		<TextBlock Grid.Row="0" Text="Save location" Foreground="{StaticResource Fg}" />
+		<TextBlock Grid.Row="0" Text="Save location" Foreground="{StaticResource Text}" />
 
 		<Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
 			<TextBox Grid.Column="0" Text="{Binding Path}" PlaceholderText="assets://name.tnode" />

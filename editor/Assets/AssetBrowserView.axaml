@@ -17,7 +17,7 @@
 		</Style>
 		<!-- Hover -->
 		<Style Selector="ListBox#AssetList > ListBoxItem:pointerover Border.card-border">
-			<Setter Property="BorderBrush" Value="{StaticResource E5}" />
+			<Setter Property="BorderBrush" Value="{StaticResource Bg5}" />
 		</Style>
 		<!-- Selected -->
 		<Style Selector="ListBox#AssetList > ListBoxItem:selected Border.card-border">
@@ -33,10 +33,10 @@
 		</Style>
 	</UserControl.Styles>
 
-	<Grid ColumnDefinitions="250, *" Margin="8" ColumnSpacing="8" Background="{StaticResource E1}">
+	<Grid ColumnDefinitions="250, *" Margin="8" ColumnSpacing="8" Background="{StaticResource Bg1}">
 
 		<!-- Folder tree -->
-		<Border Grid.Column="0" Background="{StaticResource E2}" CornerRadius="8">
+		<Border Grid.Column="0" Background="{StaticResource Bg2}" CornerRadius="8">
 			<DockPanel>
 				<!-- Header -->
 				<Border DockPanel.Dock="Top"
@@ -85,7 +85,7 @@
 		<DockPanel Grid.Column="1" VerticalSpacing="8">
 
 			<!-- Toolbar -->
-			<Border DockPanel.Dock="Top" Background="{StaticResource E2}" CornerRadius="8">
+			<Border DockPanel.Dock="Top" Background="{StaticResource Bg2}" CornerRadius="8">
 				<Grid ColumnDefinitions="85, 85, 85, *, Auto, Auto, Auto"
 				      Margin="6" ColumnSpacing="4">
 
@@ -143,7 +143,7 @@
 					        Margin="4,0,0,0" CornerRadius="6">
 						<Button.Flyout>
 							<Flyout Placement="BottomEdgeAlignedRight">
-								<Border Background="{StaticResource E3}" CornerRadius="8" Padding="12">
+								<Border Background="{StaticResource Bg3}" CornerRadius="8" Padding="12">
 									<StackPanel Spacing="6" MinWidth="150">
 										<TextBlock Text="Filter by type" FontWeight="SemiBold"
 										           Margin="0,0,0,2" />
@@ -168,7 +168,7 @@
 			</Border>
 
 			<!-- Asset view -->
-			<Border Background="{StaticResource E2}" CornerRadius="8">
+			<Border Background="{StaticResource Bg2}" CornerRadius="8">
 				<Border.ContextMenu>
 					<ContextMenu x:DataType="vm:AssetBrowserViewModel">
 						<MenuItem Header="New Folder" />
@@ -220,7 +220,7 @@
 									<Border Classes="card-border"
 									        Width="130" Height="170"
 									        CornerRadius="8" ClipToBounds="True"
-									        Background="{StaticResource E3}"
+									        Background="{StaticResource Bg3}"
 									        BorderThickness="8" BorderBrush="Transparent"
 									        DoubleTapped="OnFolderDoubleTapped">
 										<Border.ContextMenu>
@@ -232,7 +232,7 @@
 											</ContextMenu>
 										</Border.ContextMenu>
 										<Grid RowDefinitions="110, *">
-											<Border Grid.Row="0" Background="{StaticResource E4}">
+											<Border Grid.Row="0" Background="{StaticResource Bg4}">
 												<TextBlock Text="🗂" FontSize="52"
 												           HorizontalAlignment="Center"
 												           VerticalAlignment="Center" />
@@ -241,7 +241,7 @@
 												<TextBlock Text="{Binding Name}"
 												           TextWrapping="Wrap" MaxLines="2"
 												           FontSize="12" FontWeight="SemiBold"
-												           Foreground="{StaticResource Fg}" />
+												           Foreground="{StaticResource Text}" />
 											</StackPanel>
 										</Grid>
 									</Border>
@@ -252,7 +252,7 @@
 									<Border Classes="card-border"
 									        Width="130" Height="170"
 									        CornerRadius="8" ClipToBounds="True"
-									        Background="{StaticResource E3}"
+									        Background="{StaticResource Bg3}"
 									        BorderThickness="8" BorderBrush="Transparent">
 										<Border.ContextMenu>
 											<ContextMenu>
@@ -286,7 +286,7 @@
 													        Padding="6,2" Margin="6,0,0,6">
 														<TextBlock Text="{Binding TypeLabel}"
 														           FontSize="10" FontWeight="Bold"
-														           Foreground="{StaticResource E1}" />
+														           Foreground="{StaticResource Bg1}" />
 													</Border>
 												</Panel>
 											</Border>
@@ -295,7 +295,7 @@
 												<TextBlock Text="{Binding Name}"
 												           TextWrapping="Wrap" MaxLines="3"
 												           FontSize="12" FontWeight="SemiBold"
-												           Foreground="{StaticResource Fg}" />
+												           Foreground="{StaticResource Text}" />
 											</StackPanel>
 										</Grid>
 									</Border>
