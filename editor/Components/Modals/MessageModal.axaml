@@ -12,7 +12,7 @@
         CanMaximize="False"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        Background="{StaticResource E2}"
+        Background="{StaticResource Bg3}"
         Title="{Binding Title}">
 
 	<Design.DataContext>
@@ -21,7 +21,7 @@
 
 	<Window.Styles>
 		<Style Selector="Button.primary">
-			<Setter Property="Background" Value="{StaticResource Blue}" />
+			<Setter Property="Background" Value="{StaticResource Red}" />
 			<Setter Property="Foreground" Value="White" />
 			<Setter Property="MinWidth" Value="80" />
 		</Style>
@@ -29,7 +29,7 @@
 
 	<StackPanel Margin="24" Spacing="16">
 		<StackPanel Orientation="Horizontal" Spacing="12">
-			<lucide:LucideIcon Width="24" Height="24"
+			<lucide:LucideIcon Size="32" StrokeWidth="2.5"
 			                   IsVisible="{Binding ShowIcon}"
 			                   Kind="{Binding IconKind}"
 			                   Foreground="{Binding IconColor}" />
@@ -40,22 +40,37 @@
 
 		<TextBlock Text="{Binding Message}"
 		           TextWrapping="Wrap"
-		           Foreground="{StaticResource Fg}"
-		           Margin="36,0,0,0" />
+		           Foreground="{StaticResource Text}"/>
 
-		<StackPanel Orientation="Horizontal"
-		            HorizontalAlignment="Right"
-		            Spacing="8"
-		            Margin="0,8,0,0">
-			<Button Content="{Binding CancelLabel}"
+		<Grid ColumnDefinitions="auto, *, auto, auto"
+		      ColumnSpacing="8" Margin="0,8,0,0">
+			<Button Grid.Column="0" MinWidth="80"
 			        IsVisible="{Binding ShowCancel}"
-			        Click="OnCancel" />
-			<Button Content="{Binding NoLabel}"
+			        Click="OnCancel" HorizontalContentAlignment="Center">
+				<StackPanel Orientation="Horizontal">
+					<LucideIcon Size="16" StrokeWidth="2.5" Margin="0,0,4,0"
+						IsVisible="{Binding HasCancelIcon}" Kind="{Binding CancelIcon}"/>
+					<TextBlock Text="{Binding CancelLabel}"/>
+				</StackPanel>
+			</Button>
+			<Button Grid.Column="2"
 			        IsVisible="{Binding ShowNo}"
-			        Click="OnNo" />
-			<Button Content="{Binding OkLabel}"
+			        Click="OnNo" HorizontalContentAlignment="Center">
+				<StackPanel Orientation="Horizontal">
+					<LucideIcon Size="16" StrokeWidth="2.5" Margin="0,0,4,0"
+					            IsVisible="{Binding HasNoIcon}" Kind="{Binding NoIcon}"/>
+					<TextBlock Text="{Binding NoLabel}"/>
+				</StackPanel>
+			</Button>
+			<Button Grid.Column="3"
 			        Classes="primary"
-			        Click="OnOk" />
-		</StackPanel>
+			        Click="OnOk" HorizontalContentAlignment="Center">
+				<StackPanel Orientation="Horizontal">
+					<LucideIcon Size="16" StrokeWidth="2.5" Margin="0,0,4,0"
+					            IsVisible="{Binding HasOkIcon}" Kind="{Binding OkIcon}"/>
+					<TextBlock Text="{Binding OkLabel}"/>
+				</StackPanel>
+			</Button>
+		</Grid>
 	</StackPanel>
 </Window>

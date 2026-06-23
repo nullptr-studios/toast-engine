@@ -8,39 +8,38 @@
         CanResize="False"
         CanMaximize="False"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource E2}">
+        Background="{StaticResource Bg2}">
 
 	<Design.DataContext>
 		<local:LoaderViewModel />
 	</Design.DataContext>
 
-	<Grid RowDefinitions="Auto,*,Auto" Margin="16" RowSpacing="8">
-		<TextBlock Grid.Row="0"
-		           Text="Processing..."
-		           FontSize="18" FontWeight="SemiBold"
-		           Margin="0,0,0,4" />
+	<Border Background="{StaticResource Bg2}" Padding="8">
+		<Grid RowDefinitions="*,Auto" Background="{StaticResource Bg2}" RowSpacing="8">
+			<Border Grid.Row="0" CornerRadius="8, 8, 0, 0" Background="{StaticResource Bg1}" Padding="8">
+				<ScrollViewer x:Name="ConsoleScroll">
+					<ItemsControl ItemsSource="{Binding ConsoleLines}">
+						<ItemsControl.ItemTemplate>
+							<DataTemplate>
+								<SelectableTextBlock Text="{Binding}"
+								                     FontFamily="FiraCode Nerd Font,Consolas,monospace"
+								                     FontSize="13"
+								                     Foreground="{StaticResource TextMuted}"
+								                     TextWrapping="Wrap"
+								                     Margin="12,2" />
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+				</ScrollViewer>
+			</Border>
 
-		<Border Grid.Row="1" Background="Black" CornerRadius="6">
-			<ScrollViewer x:Name="ConsoleScroll" Padding="2">
-				<ItemsControl ItemsSource="{Binding ConsoleLines}">
-					<ItemsControl.ItemTemplate>
-						<DataTemplate>
-							<SelectableTextBlock Text="{Binding}"
-							                     FontFamily="Consolas,Courier New,monospace"
-							                     FontSize="12"
-							                     Foreground="{StaticResource FgMuted}"
-							                     TextWrapping="Wrap"
-							                     Margin="12,2" />
-						</DataTemplate>
-					</ItemsControl.ItemTemplate>
-				</ItemsControl>
-			</ScrollViewer>
-		</Border>
-
-		<ProgressBar Grid.Row="2"
-		             Value="{Binding Progress}"
-		             Minimum="0" Maximum="100"
-		             Height="6"
-		             CornerRadius="3" />
-	</Grid>
+			<Border Grid.Row="1" Padding="0,-8,0,0">
+				<ProgressBar Value="{Binding Progress}"
+				             Minimum="0" Maximum="100" Height="20"
+				             CornerRadius="0,0,8,8"
+				             Foreground="{StaticResource Red}"
+				             Background="{StaticResource Bg1}"/>
+			</Border>
+		</Grid>
+	</Border>
 </Window>

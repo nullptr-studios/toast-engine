@@ -12,12 +12,14 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using editor.Assets;
 using editor.Components.Modals;
 using editor.Engine;
+using Lucide.Avalonia;
 using Tomlyn;
 using Tomlyn.Model;
 
@@ -29,6 +31,25 @@ public partial class StartWindowViewModel : ViewModelBase {
 
 	private readonly ProjectList m_projectList = ProjectList.LoadList();
 	private Window? m_window;
+
+	// Fake data for the previewer
+	public StartWindowViewModel() {
+		if (!Design.IsDesignMode) return;
+		m_projectList.Projects.Add(new ProjectListItem {
+			Title = "My Awesome Game",
+			Path = "C:/Projects/my_awesome_game/my_awesome_game.toast",
+			Date = "23 Jun 2026 14:30",
+			Version = "v1.0.0",
+			ThumbnailPath = ""
+		});
+		m_projectList.Projects.Add(new ProjectListItem {
+			Title = "Space Adventure",
+			Path = "C:/Projects/space_adventure/space_adventure.toast",
+			Date = "20 Jun 2026 09:15",
+			Version = "v0.2.0",
+			ThumbnailPath = ""
+		});
+	}
 
 	public ObservableCollection<ProjectListItem> Projects => m_projectList.Projects;
 
@@ -59,6 +80,22 @@ public partial class StartWindowViewModel : ViewModelBase {
 			tasks.Add(LoaderTask.Run("git commit", "git",
 				"commit -m \"Initial commit\" --author \"nullptr Studios <toast-engine@nullptr.es>\""));
 		}
+
+		tasks.Add(LoaderTask.Do("Check for missing files", AssetDatabase.RelocateMissingAssets));
+		tasks.Add(LoaderTask.Do("Check for missing artwork", AssetDatabase.RelocateMissingArtwork));
+
+		tasks.Add(LoaderTask.Do("Generate missing metadata", async log => {
+			AssetDatabase.GenerateMissingMetas(log);
+			await Task.CompletedTask;
+		}));
+
+		tasks.Add(LoaderTask.Do("Generate asset database", async log => {
+			AssetDatabase.RebuildAssetDatabase();
+			log("Rebuilt assets:// and core:// database");
+			await Task.CompletedTask;
+		}));
+
+		tasks.Add(LoaderTask.Do("Check for artwork changes", AssetDatabase.CheckArtworkChanges));
 
 		// Generate the game's reflection metadata before configuring
 		var libSrc = Path.Combine(projectDir, "lib", "src");
@@ -106,10 +143,21 @@ public partial class StartWindowViewModel : ViewModelBase {
 		parentWindow.Close();
 	}
 
-	private void LaunchProjectFromList(string projectPath, Window parentWindow) {
+	private async Task LaunchProjectFromList(string projectPath, Window parentWindow) {
 		if (!File.Exists(projectPath)) {
 			var projectToRemove = m_projectList.Projects.FirstOrDefault(p => p.Path == projectPath);
-			if (projectToRemove.Path != null) RemoveProject(projectToRemove);
+			if (projectToRemove.Path == null) return;
+
+			var modal = new MessageModal(new ModalConfig(
+				$"Project {projectToRemove.Title} not found",
+				$"Project was not found at directory {projectPath}, it will be removed from the list. If this is a mistake, add it back again with the \"Open Project\" button.",
+				Icon: LucideIconKind.CircleAlert,
+				IconColor: Application.Current!.TryGetResource("Yellow", null, out var r) ? r as SolidColorBrush : null
+			));
+
+			await modal.ShowDialog(m_window!);
+			RemoveProject(projectToRemove);
+
 			return;
 		}
 
@@ -196,8 +244,8 @@ public partial class StartWindowViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	public void OpenProjectFromList(ProjectListItem item) {
-		if (m_window != null) LaunchProjectFromList(item.Path, m_window);
+	private async Task OpenProjectFromList(ProjectListItem item) {
+		if (m_window != null) await LaunchProjectFromList(item.Path, m_window);
 	}
 
 	[RelayCommand]

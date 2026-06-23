@@ -24,7 +24,7 @@ public partial class TextureImporter : IAssetImporter {
 	public IReadOnlyList<string> SupportedExtensions => [".png", ".jpg", ".jpeg", ".tga"];
 
 	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log) {
-		var uid = UidGenerator.Generate();
+		var uid = ctx.UidFor(0);
 		var name = Path.GetFileNameWithoutExtension(realSourcePath);
 		var destPath = Path.Combine(ctx.DestDir, name + ".ktx2");
 		Directory.CreateDirectory(ctx.DestDir);

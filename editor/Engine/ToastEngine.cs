@@ -185,7 +185,7 @@ public partial class ToastEngine : IDisposable {
 		var sourceLinkPath = Path.GetFullPath(Path.Combine(appDir, "..", "toast_engine", "bin", binaryName));
 
 		if (!File.Exists(sourceLinkPath)) {
-			Console.WriteLine($"Log Server in {sourceLinkPath} not found");
+			Log.Warn($"Log Server in {sourceLinkPath} not found");
 			return;
 		}
 
@@ -200,7 +200,7 @@ public partial class ToastEngine : IDisposable {
 			try {
 				File.Copy(sourceLinkPath, targetLinkPath, true);
 			} catch (IOException) {
-				Console.WriteLine($"Couldn't copy {binaryName} to editor dir, using previous version");
+				Log.Error($"Couldn't copy {binaryName} to editor dir, using previous version");
 			}
 		}
 	}

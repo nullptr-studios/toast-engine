@@ -12,7 +12,7 @@
         x:Class="editor.Assets.Importers.ImportWindow"
         x:DataType="local:ImportWindowViewModel"
         Title="Import"
-        Background="{StaticResource E2}">
+        Background="{StaticResource Bg2}">
 
 	<Window.Styles>
 		<Style Selector="Button.TreeViewRow">
@@ -30,13 +30,13 @@
 		</Style>
 		<Style Selector="TextBlock.SettingLabel">
 			<Setter Property="VerticalAlignment" Value="Center" />
-			<Setter Property="Foreground" Value="{StaticResource FgMuted}" />
+			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
 		</Style>
 	</Window.Styles>
 
 	<Grid ColumnDefinitions="Auto, *" Margin="12" ColumnSpacing="8">
 		<!-- Tree view column -->
-		<Border Grid.Column="0" Background="{StaticResource E1}" CornerRadius="8">
+		<Border Grid.Column="0" Background="{StaticResource Bg1}" CornerRadius="8">
 			<DockPanel Margin="8" MinWidth="360">
 				<TextBox DockPanel.Dock="Bottom"
 				         Text="{Binding SearchText}"
@@ -178,7 +178,7 @@
 				</TreeViewItem>
 
 				<TreeViewItem Header="GLTF" IsEnabled="False">
-					<TextBlock Text="Not yet supported" Margin="8" Foreground="{StaticResource E5}" />
+					<TextBlock Text="Not yet supported" Margin="8" Foreground="{StaticResource Bg5}" />
 				</TreeViewItem>
 
 				<TreeViewItem Header="PSD">
