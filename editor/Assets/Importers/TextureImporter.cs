@@ -14,7 +14,6 @@ public enum AddressMode { Repeat, MirroredRepeat, ClampToEdge, ClampToBorder }
 
 public enum FilterMode { Nearest, Linear, Trilinear }
 
-/// <summary>PNG/TGA → KTX2 via toktx.</summary>
 public partial class TextureImporter : IAssetImporter {
 	private readonly Settings m_settings;
 
@@ -22,7 +21,7 @@ public partial class TextureImporter : IAssetImporter {
 		m_settings = settings;
 	}
 
-	public IReadOnlyList<string> SupportedExtensions => [".png", ".tga"];
+	public IReadOnlyList<string> SupportedExtensions => [".png", ".jpg", ".jpeg", ".tga"];
 
 	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log) {
 		var uid = UidGenerator.Generate();
@@ -43,7 +42,6 @@ public partial class TextureImporter : IAssetImporter {
 		return [uid];
 	}
 
-	/// <summary>Import settings, bound to the import window.</summary>
 	public partial class Settings : ObservableObject {
 		[ObservableProperty] private AddressMode m_addressU = AddressMode.Repeat;
 		[ObservableProperty] private AddressMode m_addressV = AddressMode.Repeat;

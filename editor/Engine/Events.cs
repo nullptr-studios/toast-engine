@@ -7,9 +7,7 @@ using Google.Protobuf;
 
 namespace editor.Engine;
 
-/// <summary>P/Invoke bridge to the engine event bus.</summary>
 public static partial class Events {
-	// concurrent because callbacks come from the engine's native thread, not the UI thread
 	private static readonly ConcurrentDictionary<ulong, Subscription> Subscribers = new();
 
 	private static ulong m_nextId;

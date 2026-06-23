@@ -10,10 +10,6 @@ namespace editor.Assets.Importers;
 
 public enum PsdImportMode { Layers, Folders, Combined }
 
-/// <summary>
-///    PSD importer — flattened, per-layer, or folder-grouped — feeds through <see cref="TextureImporter" /> for the
-///    KTX2 step
-/// </summary>
 public partial class PsdImporter : IAssetImporter {
 	private readonly Settings m_psdSettings;
 
@@ -119,7 +115,6 @@ public partial class PsdImporter : IAssetImporter {
 		return outputs.Select(o => o.uid).ToList();
 	}
 
-	/// <summary>PSD-specific settings.</summary>
 	public partial class Settings : ObservableObject {
 		[ObservableProperty] private bool m_createFolder;
 		[ObservableProperty] private PsdImportMode m_importMode = PsdImportMode.Combined;

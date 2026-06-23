@@ -9,14 +9,13 @@ using Dock.Model.Mvvm.Controls;
 
 namespace editor.Workspace;
 
-/// <summary>Builds the editor dock layout, gates workspace close on unsaved changes.</summary>
 public class DockFactory : Factory {
 	private IDocumentDock? m_documentDock;
 	private IRootDock? m_rootDock;
 
 	public HierarchyViewModel? Hierarchy { get; private set; }
 
-	// the currently focused workspace document, or null if none is open
+	// currently focused workspace document, null if none
 	public WorkspaceViewModel? ActiveWorkspace => m_documentDock?.ActiveDockable as WorkspaceViewModel;
 
 	public override IRootDock CreateLayout() {
@@ -30,7 +29,7 @@ public class DockFactory : Factory {
 			VisibleDockables = CreateList<IDockable>()
 		};
 
-		// left panel (hierarchy) takes 20% of the width
+		// left panel (hierarchy)
 		var leftDock = new ProportionalDock {
 			Proportion = 0.2,
 			AllowedDropOperations = DockOperationMask.None,
@@ -46,7 +45,7 @@ public class DockFactory : Factory {
 			)
 		};
 
-		// right panel (inspector) takes 20% too, document area gets the rest
+		// right panel (inspector)
 		var rightDock = new ProportionalDock {
 			Proportion = 0.2,
 			Orientation = Orientation.Vertical,
@@ -110,8 +109,6 @@ public class DockFactory : Factory {
 		if (dockable is null) return;
 
 		// intercept workspace close -> show save dialog before actually closing
-		// PendingClose is set to true by GatedClose after the user confirms
-		// so the second call goes through to base without looping
 		if (dockable is WorkspaceViewModel ws && !ws.PendingClose) {
 			_ = GatedClose(ws);
 			return;

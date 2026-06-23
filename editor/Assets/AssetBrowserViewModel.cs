@@ -292,7 +292,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 			yield return file;
 	}
 
-	// supports "Type=Texture some name" -> filters by type and name at the same time
+	// filters by type and name at the same time
 	private static (string text, FileType? type) ParseSearch(string query) {
 		var match = Regex.Match(query, @"Type=(\w+)", RegexOptions.IgnoreCase);
 		FileType? typeFilter = null;

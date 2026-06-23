@@ -51,6 +51,9 @@ struct TOAST_API UID {
 	/// Decodes an 11-character base64url string produced by toString(); inverse of toString()
 	static auto fromString(std::string_view b64) -> uint64_t;
 
+	/// Generates and returns a fresh unique UID using the same algorithm as the node registry
+	static auto make() -> UID;
+
 private:
 	void generate();    ///< lower 42 bits = timestamp, upper 22 bits = atomic counter mixed with a hash; gives ~4M unique IDs per
 	                    ///< millisecond

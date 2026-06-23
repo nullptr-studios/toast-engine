@@ -7,8 +7,6 @@ using System.Text.Json.Nodes;
 
 namespace editor.Assets;
 
-/// <summary>The two asset JSON databases: artwork_database (import tracking) and database (UID lookup).</summary>
-//
 // two databases because they serve different purposes and have different lifetimes:
 //   artwork_database.json  -> maps source artwork paths to output UIDs + hash
 //                             used to skip re-importing files that havent changed
@@ -44,8 +42,7 @@ public static class AssetDatabase {
 		SaveArtworkDatabase(db);
 	}
 
-	// full re-scan of all .meta files -> rewrites database.json from scratch
-	// slow but simple, only called after import completes (not on every change)
+	// full re-scan of all .meta files, rewrites database.json from scratch
 	public static void RebuildAssetDatabase() {
 		var assets = new JsonObject();
 

@@ -280,6 +280,10 @@ auto AssetManager::resolveURI(std::string_view uri) -> std::optional<toast::UID>
 	return std::nullopt;
 }
 
+auto AssetManager::getCachePath() const -> const std::filesystem::path& {
+	return cache_path;
+}
+
 // Public API Implementations
 auto load(toast::UID uid) -> AssetHandleBase {
 	return {AssetManager::get().load(uid), uid};

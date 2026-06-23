@@ -18,7 +18,7 @@ public partial class LoaderViewModel : ViewModelBase {
 		m_tasks = [..tasks];
 	}
 
-	// design-time only (fills fake data so the window looks right in the designer)
+	// fake data for the designer
 	public LoaderViewModel() {
 		m_tasks = [];
 		ConsoleLines.Add("> [1/3] Initializing project...");

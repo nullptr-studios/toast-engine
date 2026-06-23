@@ -24,7 +24,6 @@ public class WorkspaceViewModel : Document {
 	public ulong Handle { get; init; }
 
 	// set after user confirms close so DockFactory doesnt re-enter the dialog on the second call
-	// (CloseDockable calls itself recursively once PendingClose is true)
 	public bool PendingClose { get; set; }
 
 	// null until the user saves -> Save() redirects to SaveAs() when its null
@@ -100,8 +99,6 @@ public class WorkspaceViewModel : Document {
 		IsModified = false;
 		ProjectContext.RaiseAssetsChanged();
 	}
-
-	// ----- Static factory methods -----
 
 	// creates a new empty workspace of the given node type
 	public static WorkspaceViewModel? CreateNew(ToastEngine engine, string nodeType) {

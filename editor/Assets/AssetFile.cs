@@ -43,7 +43,7 @@ public class AssetFile {
 
 	public Bitmap? Thumbnail {
 		get {
-			// lazy loaded and cached -> reading from disk on every property access would be too slow
+			// reading from disk on every property access would be too slow
 			if (m_thumbnailChecked) return m_thumbnail;
 			m_thumbnailChecked = true;
 			if (Type != FileType.Texture || !ProjectContext.IsInitialized) return null;

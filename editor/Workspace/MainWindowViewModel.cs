@@ -53,7 +53,7 @@ public partial class MainWindowViewModel : ViewModelBase {
 	public IRootDock ToastZoneLayout { get; set; }
 
 	// tells the engine which workspace is focused so it routes input and viewport updates to the right one
-	// (also clears the hierarchy when no workspace is open)
+	// also clears the hierarchy when no workspace is open
 	private void SyncActiveWorkspace() {
 		var handle = m_dockFactory.ActiveWorkspace?.Handle ?? 0;
 		if (handle == m_activeWorkspaceHandle) return;

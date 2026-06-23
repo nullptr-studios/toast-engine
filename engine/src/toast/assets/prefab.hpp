@@ -54,7 +54,7 @@ struct NodeFileBinaryHeader {
 };
 }
 
-class Prefab : public Asset, public ISaveable {
+class Prefab final : public Asset, public ISaveable {
 public:
 	/**
 	 * @brief Parses a prefab from a text (.node) stream
@@ -77,6 +77,8 @@ public:
 	 *                 during instantiation
 	 */
 	explicit Prefab(const toast::Node& node, toast::UID self_uid = toast::UID(0));
+
+	Prefab() = default;
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {

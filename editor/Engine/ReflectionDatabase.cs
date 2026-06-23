@@ -61,7 +61,7 @@ public class NodeTreeItem(string name, NodeInfo info) {
 	public List<NodeTreeItem> Children { get; } = [];
 }
 
-/// <summary>Engine + game reflection JSON merged into a node tree — this is what the type picker reads.</summary>
+/// <summary>Engine + game reflection JSON merged into a node tree</summary>
 public static class ReflectionDatabase {
 	private static readonly string[] m_reflectionPaths = ["cache://engine_reflect.json", "cache://game_reflect.json"];
 	public static Dictionary<string, NodeInfo>? Nodes;
