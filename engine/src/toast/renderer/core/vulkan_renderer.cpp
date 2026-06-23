@@ -6,6 +6,7 @@
 
 #include "toast/log.hpp"
 #include "toast/time.hpp"
+#include "toast/window/window_events.hpp"
 
 #include <array>
 #include <cstring>
@@ -568,6 +569,17 @@ void VulkanRenderer::start() {
 
 	m_running.store(true, std::memory_order_release);
 
+	// TODO: This should be moved into VulkanRenderer
+	m_listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
+		if (e.width <= 0 || e.height <= 0) {
+			return false;
+		}
+
+		// FIXME
+		resize(vk::Extent2D {static_cast<uint32_t>(e.width), static_cast<uint32_t>(e.height)});
+		return false;
+	});
+
 	m_render_thread = std::thread([this] { mainRenderThread(); });
 }
 
@@ -594,6 +606,8 @@ void VulkanRenderer::stop() {
 	if (m_core) {
 		m_core->getDevice().waitIdle();
 	}
+
+	m_listener.clear();
 
 	m_frame_cv.notify_all();
 

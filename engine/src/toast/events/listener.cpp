@@ -13,9 +13,14 @@ Listener::Listener(bool state) {
 }
 
 Listener::~Listener() {
+	clear();
+}
+
+void Listener::clear() noexcept {
 	for (auto& [type, name, callback] : m.callbacks) {
 		EventSystem::unsubscribe_map[type](callback);
 	}
+	m.callbacks.clear();
 }
 
 void Listener::enabled(bool state) {

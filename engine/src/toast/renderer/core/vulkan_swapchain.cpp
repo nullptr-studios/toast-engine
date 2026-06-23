@@ -215,10 +215,17 @@ auto VulkanSwapchain::selectSurfaceFormat(const std::vector<vk::SurfaceFormatKHR
 }
 
 auto VulkanSwapchain::selectPresentMode(const std::vector<vk::PresentModeKHR>& modes) const -> vk::PresentModeKHR {
+	// Prefer immediate
+	if (std::find(modes.begin(), modes.end(), vk::PresentModeKHR::eImmediate) != modes.end()) {
+		return vk::PresentModeKHR::eImmediate;
+	}
+
+	// Prefer mailbox triple-buffering next
 	if (std::find(modes.begin(), modes.end(), vk::PresentModeKHR::eMailbox) != modes.end()) {
 		return vk::PresentModeKHR::eMailbox;
 	}
 
+	// Fall back to FIFO vsync
 	return vk::PresentModeKHR::eFifo;
 }
 

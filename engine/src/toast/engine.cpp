@@ -103,16 +103,6 @@ void Engine::init() {
 
 	m->asset_manager = std::make_unique<assets::AssetManager>();
 
-	// TODO: This should be moved into VulkanRenderer
-	m->listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
-		if (!m->renderer || !m->vulkan_core || e.width <= 0 || e.height <= 0) {
-			return false;
-		}
-
-		m->renderer->resize(vk::Extent2D {static_cast<uint32_t>(e.width), static_cast<uint32_t>(e.height)});
-		return false;
-	});
-
 	m->listener.subscribe<event::WorkspaceDestroy>([this](const event::WorkspaceDestroy& e) {
 		destroyWorkspace(e.handle);
 		return false;
@@ -169,33 +159,40 @@ void Engine::tick() {
 		ZoneScopedN("GameLayer::tick()");
 		active_application->tick();
 	}
-	totalTime += 0.00016f;
+	totalTime += Time::get().delta();
 	camera->position = glm::vec3(sin(totalTime) * 5.0f, cos(totalTime) * 5.0f, 5);
 
 	if (m->renderer) {
-		m->renderer->getFreeFramesSemaphore().acquire();
-		auto& frame = toast::renderer::beginFrameBuild();
+		auto& sem = m->renderer->getFreeFramesSemaphore();
+		// Dont block the main thread if theres no free render slot
+		if (!sem.try_acquire()) {
+			// No free frames available
+		} else {
+			auto& frame = toast::renderer::beginFrameBuild();
 
-		frame.draws.clear();
+			frame.draws.clear();
 
-		auto cam = renderer::getActiveCamera();
-		auto cameraData = renderer::VulkanRenderer::FrameUBO {
-		  .view = cam->getView(),
-		  .projection = cam->getProjection(1080.0f / 720.0f),
-		  .view_projection = cam->getProjection(1080.0f / 720.0f) * cam->getView(),
-		  .camera_position = cam->position,
-		  .time = totalTime
-		};
+			auto cam = renderer::getActiveCamera();
+			if (cam) {
+				auto cameraData = renderer::VulkanRenderer::FrameUBO {
+				  .view = cam->getView(),
+				  .projection = cam->getProjection(1080.0f / 720.0f),
+				  .view_projection = cam->getProjection(1080.0f / 720.0f) * cam->getView(),
+				  .camera_position = cam->position,
+				  .time = totalTime
+				};
 
-		frame.frame_data = cameraData;
+				frame.frame_data = cameraData;
+			}
 
-		// frame.draws.push_back(
-		// {
-		// 		mesh,
-		// 		transform
-		// });
+			// frame.draws.push_back(
+			// {
+			// 		mesh,
+			// 		transform
+			// });
 
-		renderer::submitFrame();
+			renderer::submitFrame();
+		}
 	}
 }
 
@@ -315,7 +312,6 @@ void pushApplicationLayer(IApplication* app) {
 
 	active_application = app;
 }
-
 }
 
 // Tracy memory profiling

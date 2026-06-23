@@ -7,6 +7,8 @@
 #include "../Camera.hpp"
 #include "output_target_base.hpp"
 #include "render_pass_base.hpp"
+#include "toast/events/event.inl"
+#include "toast/events/listener.hpp"
 #include "vulkan_core.hpp"
 #include "vulkan_mesh.hpp"
 #include "vulkan_pipeline.hpp"
@@ -117,6 +119,8 @@ private:
 	void drawFrame(RenderFrame& frame_data);
 
 	void mainRenderThread();
+
+	event::Listener m_listener;
 
 	std::atomic_bool m_running {false};
 
