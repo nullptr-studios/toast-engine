@@ -6,23 +6,48 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="1000"
              x:Class="editor.Workspace.InspectorView"
+             Padding="8"
+             Background="{StaticResource Bg2}"
              x:DataType="vm:InspectorViewModel">
 
-	<Border Background="{StaticResource Bg3}" Padding="8">
-		<StackPanel Spacing="8" Width="150" HorizontalAlignment="Left">
-			<TextBlock Text="Inspector" FontWeight="Bold" />
+	<StackPanel Spacing="8">
+		<Border Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
+			<Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="8">
+				<Border Grid.Column="0" Background="DeepPink" Width="24" Height="24" CornerRadius="8"/>
+				<StackPanel Grid.Column="1" Spacing="2">
+					<TextBlock Text="Unnamed Node" FontWeight="Bold" FontSize="16"/>
+					<TextBlock Text="toast::Node"/>
+				</StackPanel>
+				<CheckBox Grid.Column="2"/>
+			</Grid>
+		</Border>
+		<Border Background="{StaticResource Bg3}" Padding="8" CornerRadius="8">
+			<StackPanel Spacing="8">
+				<TextBlock Text="Inspector" FontWeight="Bold" />
 
-			<TextBlock Text="Float demo" Foreground="{StaticResource TextMuted}" />
-			<elements:DragFloatBox Value="{Binding PosX}" Unit="m"/>
+				<TextBlock Text="Float demo" Foreground="{StaticResource TextMuted}" />
+				<elements:DragFloatBox Value="{Binding PosX}" Unit="m"/>
 
-			<TextBlock Text="Range 0 to 10" Foreground="{StaticResource TextMuted}" />
-			<elements:DragFloatBox Value="{Binding Mass}" Unit="kg" Minimum="0" Maximum="10" />
+				<TextBlock Text="Range 0 to 10" Foreground="{StaticResource TextMuted}" />
+				<elements:DragFloatBox Value="{Binding Mass}" Unit="kg" Minimum="0" Maximum="10" />
 
-			<TextBlock Text="Int demo" Foreground="{StaticResource TextMuted}" />
-			<elements:DragIntBox Value="{Binding Count}" />
+				<TextBlock Text="Int demo" Foreground="{StaticResource TextMuted}" />
+				<elements:DragIntBox Value="{Binding Count}" />
 
-			<TextBlock Text="Disabled field" Foreground="{StaticResource TextMuted}" />
-			<elements:DragFloatBox Value="{Binding PosX}" Unit="m" IsEnabled="False" />
-		</StackPanel>
-	</Border>
+				<TextBlock Text="Disabled field" Foreground="{StaticResource TextMuted}" />
+				<elements:DragFloatBox Value="{Binding PosX}" Unit="m" IsEnabled="False" />
+
+				<TextBlock Text="Vec2" Foreground="{StaticResource TextMuted}" />
+				<elements:DragVec2Box X="{Binding Vec2X}" Y="{Binding Vec2Y}" Unit="m" />
+
+				<TextBlock Text="Vec3" Foreground="{StaticResource TextMuted}" />
+				<elements:DragVec3Box X="{Binding Vec3X}" Y="{Binding Vec3Y}" Z="{Binding Vec3Z}" Unit="m" />
+
+				<TextBlock Text="Vec4 (clamped 0..1)" Foreground="{StaticResource TextMuted}" />
+				<elements:DragVec4Box X="{Binding Vec4X}" Y="{Binding Vec4Y}" Z="{Binding Vec4Z}" W="{Binding Vec4W}"
+				                      Minimum="0" Maximum="1" />
+			</StackPanel>
+		</Border>
+	</StackPanel>
+
 </UserControl>

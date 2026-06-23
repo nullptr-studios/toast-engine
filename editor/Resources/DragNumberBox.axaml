@@ -13,17 +13,17 @@
 		<Setter Property="FontSize" Value="15" />
 		<Setter Property="MinHeight" Value="34" />
 		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="CornerRadius" Value="6" />
 		<Setter Property="EditBorderBrush" Value="{StaticResource Red}" />
 
 		<Setter Property="Template">
 			<ControlTemplate>
-				<Border x:Name="PART_Root" CornerRadius="4" Padding="8,8">
+				<Border x:Name="PART_Root" CornerRadius="{TemplateBinding CornerRadius}" Padding="8,8">
 					<Panel>
 						<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
 							<!-- Sign -->
 							<TextBlock x:Name="PART_Sign"
 							           Text="{TemplateBinding DisplaySign}"
-							           MinWidth="8"
 							           VerticalAlignment="Center" />
 
 							<!-- Integer -->
