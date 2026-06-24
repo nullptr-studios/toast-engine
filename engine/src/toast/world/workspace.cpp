@@ -265,9 +265,7 @@ void Workspace::eventSubscriptions() {
 		return true;
 	});
 
-	m_listener.subscribe<event::SetFocusedNode>([this](const auto& e) {
-		m_focused_node = findFrom(m_root_node, e.node.get());
-	});
+	m_listener.subscribe<event::SetFocusedNode>([this](const auto& e) { m_focused_node = findFrom(m_root_node, e.node.get()); });
 
 	m_listener.subscribe<event::NodeChangeParam>([this](const auto& e) {
 		// TODO: We need a setFromString that converts the string to the value it is

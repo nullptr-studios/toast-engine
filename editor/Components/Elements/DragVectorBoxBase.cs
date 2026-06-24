@@ -204,9 +204,10 @@ public abstract class DragVectorBoxBase : Decorator {
 		}
 		else {
 			var chipText = new TextBlock {
-				Foreground = Brush("Text"),
+				Foreground = Brush("Bg1"),
 				FontFamily = Font,
 				FontSize = FontSize,
+				FontWeight = FontWeight.Bold,
 				HorizontalAlignment = HorizontalAlignment.Center,
 				VerticalAlignment = VerticalAlignment.Center,
 				[!TextBlock.TextProperty] = this[!spec.Label]
@@ -258,6 +259,7 @@ public abstract class DragVectorBoxBase : Decorator {
 	private static IBrush? Brush(string key) {
 		if (Application.Current?.Resources.TryGetResource(key, ThemeVariant.Dark, out var r) == true)
 			return r as IBrush;
+		Engine.Log.Warn($"Brush '{key}' not found in resources");
 		return null;
 	}
 }

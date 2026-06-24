@@ -10,6 +10,9 @@
 			<ResourceDictionary.MergedDictionaries>
 				<ResourceInclude Source="avares://editor/Resources/EditorColors.axaml" />
 				<ResourceInclude Source="avares://editor/Resources/DragNumberBox.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/BoolBox.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/StringBox.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/ColorBox.axaml" />
 			</ResourceDictionary.MergedDictionaries>
 			<conv:SeverityToColorConverter x:Key="SeverityToColorConverter" />
 			<conv:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
@@ -25,5 +28,6 @@
 	<Application.Styles>
 		<FluentTheme />
 		<DockFluentTheme />
+		<StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
 	</Application.Styles>
 </Application>

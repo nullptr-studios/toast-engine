@@ -283,9 +283,7 @@ struct ProtoTraits<SetFocusedNode> {
 		return p;
 	}
 
-	static auto fromProto(const Proto& p) -> Event {
-		return { toast::UID::fromString(p.node()) };
-	}
+	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.node())}; }
 };
 
 TOAST_PROTO_EVENT(SetFocusedNode);
@@ -302,9 +300,7 @@ struct ProtoTraits<NodeChangeParam> {
 		return p;
 	}
 
-	static auto fromProto(const Proto& p) -> Event {
-		return {p.parameter(), p.value()};
-	}
+	static auto fromProto(const Proto& p) -> Event { return {p.parameter(), p.value()}; }
 };
 
 TOAST_PROTO_EVENT(NodeChangeParam);
@@ -321,9 +317,7 @@ struct ProtoTraits<NodeEnabled> {
 		return p;
 	}
 
-	static auto fromProto(const Proto& p) -> Event {
-		return { toast::UID::fromString(p.node()), p.enabled() };
-	}
+	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.node()), p.enabled()}; }
 };
 
 TOAST_PROTO_EVENT(NodeEnabled);

@@ -103,8 +103,11 @@ public partial class MainWindowView : Window {
 		Close();
 	}
 
+	// Typing takes priority
+	private bool IsTextInputFocused() => FocusManager?.GetFocusedElement() is TextBox;
+
 	private void OnKeyDown(object? sender, KeyEventArgs e) {
-		if (e.Key != Key.Space) return;
+		if (e.Key != Key.Space || IsTextInputFocused()) return;
 		e.Handled = true;
 
 		if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
@@ -114,7 +117,7 @@ public partial class MainWindowView : Window {
 	}
 
 	private void OnKeyUp(object? sender, KeyEventArgs e) {
-		if (e.Key != Key.Space) return;
+		if (e.Key != Key.Space || IsTextInputFocused()) return;
 		e.Handled = true;
 
 		if (!e.KeyModifiers.HasFlag(KeyModifiers.Control))

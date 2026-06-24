@@ -58,19 +58,18 @@ public abstract class DragNumberBoxBase : TemplatedControl {
 		AvaloniaProperty.RegisterDirect<DragNumberBoxBase, string>(nameof(DisplayDigits), o => o.m_displayDigits);
 
 	// Template parts
+	private Control? m_root;
 	private Control? m_integerRegion;
 	private Control? m_fractionRegion;
 	private TextBox? m_editor;
-	private Slider? m_slider;
 
 	// Drag state
-	private const double k_dragThreshold = 3.0;
+	private const double DragThreshold = 3.0;
 	private bool m_dragging;
 	private bool m_dragFine;
 	private bool m_dragMoved;
 	private double m_dragStartX;
 	private double m_dragStartValue;
-	private bool m_syncing;
 
 	public string? Unit {
 		get => GetValue(UnitProperty);
@@ -144,9 +143,13 @@ public abstract class DragNumberBoxBase : TemplatedControl {
 		base.OnApplyTemplate(e);
 		DetachHandlers();
 
+		m_root = e.NameScope.Find<Control>("PART_Root");
 		m_integerRegion = e.NameScope.Find<Control>("PART_Integer");
 		m_fractionRegion = e.NameScope.Find<Control>("PART_Fraction");
 		m_editor = e.NameScope.Find<TextBox>("PART_Editor");
+
+		if (m_root != null)
+			m_root.Tapped += OnRootTapped;
 
 		if (m_integerRegion != null) {
 			m_integerRegion.PointerPressed += OnIntegerPressed;
@@ -171,6 +174,9 @@ public abstract class DragNumberBoxBase : TemplatedControl {
 	}
 
 	private void DetachHandlers() {
+		if (m_root != null)
+			m_root.Tapped -= OnRootTapped;
+
 		if (m_integerRegion != null) {
 			m_integerRegion.PointerPressed -= OnIntegerPressed;
 			m_integerRegion.PointerMoved -= OnDragMoved;
@@ -195,6 +201,12 @@ public abstract class DragNumberBoxBase : TemplatedControl {
 
 	private void OnFractionPressed(object? sender, PointerPressedEventArgs e) => BeginDrag(sender, e, true);
 
+	private void OnRootTapped(object? sender, TappedEventArgs e) {
+		if (!IsEnabled || IsEditing) return;
+		BeginEdit();
+		e.Handled = true;
+	}
+
 	private void BeginDrag(object? sender, PointerPressedEventArgs e, bool fine) {
 		if (!IsEnabled || IsEditing) return;
 		if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
@@ -212,7 +224,7 @@ public abstract class DragNumberBoxBase : TemplatedControl {
 		if (!m_dragging) return;
 
 		var dx = e.GetPosition(this).X - m_dragStartX;
-		if (!m_dragMoved && Math.Abs(dx) < k_dragThreshold) return;
+		if (!m_dragMoved && Math.Abs(dx) < DragThreshold) return;
 		m_dragMoved = true;
 
 		var step = m_dragFine ? FineStepAmount : CoarseStepAmount;
