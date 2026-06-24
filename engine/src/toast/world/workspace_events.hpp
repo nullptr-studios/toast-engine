@@ -117,6 +117,13 @@ struct NodeChangeParam : Event<NodeChangeParam> {
 	NodeChangeParam(std::string_view parameter, std::string_view value) : parameter(parameter), value(value) { }
 };
 
+struct NodeChangeName : Event<NodeChangeName> {
+	toast::UID node;
+	std::string name;
+
+	NodeChangeName(toast::UID n, std::string_view name) : node(n), name(name) { }
+};
+
 struct NodeCallFunction : Event<NodeCallFunction> {
 	std::string function;
 
@@ -138,12 +145,14 @@ struct InspectorContent : Event<InspectorContent> {
 		InspectorField(std::string_view name, std::string_view value) : name(name), value(value) { }
 	};
 
+	std::string uid;
 	std::string name;
 	bool enabled;
 	std::vector<InspectorField> parameters;
 
-	InspectorContent(std::string_view name, bool enabled, std::vector<InspectorField> fields)
-	    : name(name),
+	InspectorContent(std::string_view uid, std::string_view name, bool enabled, std::vector<InspectorField> fields)
+	    : uid(uid),
+	      name(name),
 	      enabled(enabled),
 	      parameters(fields) { }
 };

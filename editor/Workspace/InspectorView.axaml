@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:editor.Workspace"
              xmlns:elements="using:editor.Components.Elements"
+             xmlns:conv="using:editor.Components.Converters"
              xmlns:lucide="using:Lucide.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -11,12 +12,25 @@
              Background="{StaticResource Bg2}"
              x:DataType="vm:InspectorViewModel">
 
+	<UserControl.Resources>
+		<conv:ResourceBrushConverter x:Key="BrushFromKey" />
+		<ItemsPanelTemplate x:Key="Spaced8">
+			<StackPanel Spacing="8" />
+		</ItemsPanelTemplate>
+	</UserControl.Resources>
+
 	<UserControl.Styles>
 		<!-- Parameter label -->
 		<Style Selector="TextBlock.lbl">
 			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
 			<Setter Property="VerticalAlignment" Value="Center" />
 			<Setter Property="TextTrimming" Value="CharacterEllipsis" />
+		</Style>
+
+		<!-- Highlighted search match -->
+		<Style Selector="TextBlock.match">
+			<Setter Property="Foreground" Value="{StaticResource Yellow}" />
+			<Setter Property="FontWeight" Value="Bold" />
 		</Style>
 
 		<!-- One row -->
@@ -27,6 +41,7 @@
 		<!-- Name cell -->
 		<Style Selector="Grid.name">
 			<Setter Property="ColumnSpacing" Value="4" />
+			<Setter Property="Height" Value="20" />
 		</Style>
 
 		<!-- Group title -->
@@ -41,6 +56,16 @@
 			<Setter Property="FontSize" Value="12" />
 			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
 			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+
+		<!-- Header rename box -->
+		<Style Selector="TextBox.rename">
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="Padding" Value="0" />
+			<Setter Property="MinHeight" Value="0" />
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="FontWeight" Value="Bold" />
+			<Setter Property="FontSize" Value="16" />
 		</Style>
 
 		<!-- Collapsible header -->
@@ -83,9 +108,6 @@
 		<Style Selector="Button.reset:pointerover /template/ ContentPresenter#PART_ContentPresenter">
 			<Setter Property="Background" Value="{StaticResource Bg4}" />
 		</Style>
-		<Style Selector="Button.reset:pressed /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background" Value="{StaticResource Bg4}" />
-		</Style>
 		<Style Selector="Button.reset lucide|LucideIcon">
 			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
 		</Style>
@@ -112,383 +134,182 @@
 		</Style>
 	</UserControl.Styles>
 
-	<Grid RowDefinitions="Auto,*" RowSpacing="8">
-		<!-- Node Header -->
-		<Border Grid.Row="0" Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
-			<StackPanel Spacing="8">
-				<Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="8">
-					<Border Grid.Column="0" Background="{StaticResource Orange}" Width="24" Height="24" CornerRadius="8" />
-					<StackPanel Grid.Column="1" Spacing="2">
-						<TextBlock Text="Hovercraft_01" FontWeight="Bold" FontSize="16" />
-						<TextBlock Text="toast::Hovercraft" Foreground="{StaticResource TextMuted}" />
-					</StackPanel>
-					<CheckBox Grid.Column="2" Classes="tick" IsChecked="True" />
+	<UserControl.DataTemplates>
+		<!-- One reflected field -->
+		<DataTemplate DataType="vm:FieldVM">
+			<Panel IsVisible="{Binding Visible}">
+				<!-- Scalar layout -->
+				<Grid Classes="row" ColumnDefinitions="110,*" IsVisible="{Binding !IsVectorLayout}">
+					<Grid Classes="name" ColumnDefinitions="*,Auto">
+						<ItemsControl ItemsSource="{Binding Segments}" VerticalAlignment="Center">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<StackPanel Orientation="Horizontal" />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate x:CompileBindings="False">
+									<TextBlock Classes="lbl" Text="{Binding Text}" Classes.match="{Binding IsHighlighted}" />
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+						<Button Classes="reset" Grid.Column="1" Command="{Binding ResetCommand}"
+						        IsVisible="{Binding ShowReset}" ToolTip.Tip="Reset to default">
+							<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
+						</Button>
+					</Grid>
+					<Panel Grid.Column="1">
+						<elements:DragFloatBox Value="{Binding Float, Mode=TwoWay}" Minimum="{Binding Min}"
+						                       Maximum="{Binding Max}" Unit="{Binding Unit}"
+						                       IsEnabled="{Binding Editable}" IsVisible="{Binding IsFloat}" />
+						<elements:DragIntBox Value="{Binding Int, Mode=TwoWay}" Minimum="{Binding Min}"
+						                     Maximum="{Binding Max}" Unit="{Binding Unit}"
+						                     IsEnabled="{Binding Editable}" IsVisible="{Binding IsInt}" />
+						<elements:BoolBox Value="{Binding Bool, Mode=TwoWay}"
+						                  IsEnabled="{Binding Editable}" IsVisible="{Binding IsBool}" />
+						<elements:StringBox Value="{Binding String, Mode=TwoWay}"
+						                    IsEnabled="{Binding Editable}" IsVisible="{Binding IsString}" />
+						<elements:AssetBox Value="{Binding Ref, Mode=TwoWay}" AssetType="{Binding RefType}"
+						                   IsEnabled="{Binding Editable}" IsVisible="{Binding IsAssetRef}" />
+						<elements:NodeBox Value="{Binding Ref, Mode=TwoWay}" NodeType="{Binding RefType}"
+						                  IsEnabled="{Binding Editable}" IsVisible="{Binding IsNodeRef}" />
+						<TextBlock Text="{Binding ReadOnlyText}" Foreground="{StaticResource TextMuted}"
+						           VerticalAlignment="Center" IsVisible="{Binding IsReadOnlyText}" />
+					</Panel>
 				</Grid>
-				<TextBox CornerRadius="8" BorderThickness="0" Background="{StaticResource Bg1}" PlaceholderText="Search parameter..." PlaceholderForeground="{StaticResource TextMuted}" />
+
+				<!-- Vector layout -->
+				<StackPanel Spacing="8" IsVisible="{Binding IsVectorLayout}">
+					<Grid Classes="name" ColumnDefinitions="*,Auto">
+						<ItemsControl ItemsSource="{Binding Segments}" VerticalAlignment="Center">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<StackPanel Orientation="Horizontal" />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate x:CompileBindings="False">
+									<TextBlock Classes="lbl" Text="{Binding Text}" Classes.match="{Binding IsHighlighted}" />
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+						<Button Classes="reset" Grid.Column="1" Command="{Binding ResetCommand}"
+						        IsVisible="{Binding ShowReset}" ToolTip.Tip="Reset to default">
+							<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
+						</Button>
+					</Grid>
+					<Panel>
+						<elements:DragVec2Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
+						                      Minimum="{Binding Min}" Maximum="{Binding Max}" Unit="{Binding Unit}"
+						                      IsEnabled="{Binding Editable}" IsVisible="{Binding IsVec2}" />
+						<elements:DragVec3Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
+						                      Z="{Binding Z, Mode=TwoWay}" Minimum="{Binding Min}"
+						                      Maximum="{Binding Max}" Unit="{Binding Unit}"
+						                      IsEnabled="{Binding Editable}" IsVisible="{Binding IsVec3}" />
+						<elements:DragVec4Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
+						                      Z="{Binding Z, Mode=TwoWay}" W="{Binding W, Mode=TwoWay}"
+						                      Minimum="{Binding Min}" Maximum="{Binding Max}" Unit="{Binding Unit}"
+						                      IsEnabled="{Binding Editable}" IsVisible="{Binding IsVec4}" />
+					</Panel>
+				</StackPanel>
+			</Panel>
+		</DataTemplate>
+
+		<!-- Subgroup -->
+		<DataTemplate DataType="vm:SubgroupVM">
+			<StackPanel IsVisible="{Binding Visible}">
+				<ToggleButton Classes="hdr" IsChecked="{Binding Expanded, Mode=TwoWay}">
+					<StackPanel Orientation="Horizontal" Spacing="6" Margin="6,0,0,0">
+						<Border Width="2" Height="12" CornerRadius="1" VerticalAlignment="Center"
+						        Background="{StaticResource TextMuted}" />
+						<TextBlock Classes="subgroup" Text="{Binding Name}" />
+					</StackPanel>
+				</ToggleButton>
+				<ItemsControl Margin="16,0,0,0" ItemsSource="{Binding Fields}"
+				              ItemsPanel="{StaticResource Spaced8}" IsVisible="{Binding Expanded}" />
+			</StackPanel>
+		</DataTemplate>
+
+		<!-- Group -->
+		<DataTemplate DataType="vm:GroupVM">
+			<StackPanel IsVisible="{Binding Visible}">
+				<ToggleButton Classes="hdr" IsChecked="{Binding Expanded, Mode=TwoWay}">
+					<StackPanel Orientation="Horizontal" Spacing="6">
+						<Border Width="3" Height="14" CornerRadius="2" VerticalAlignment="Center"
+						        Background="{Binding ColorKey, Converter={StaticResource BrushFromKey}}" />
+						<TextBlock Classes="group" Text="{Binding Name}" />
+					</StackPanel>
+				</ToggleButton>
+				<StackPanel Margin="10,0,0,0" Spacing="8" IsVisible="{Binding Expanded}">
+					<ItemsControl ItemsSource="{Binding Fields}" ItemsPanel="{StaticResource Spaced8}" />
+					<ItemsControl ItemsSource="{Binding Subgroups}" ItemsPanel="{StaticResource Spaced8}" />
+				</StackPanel>
+			</StackPanel>
+		</DataTemplate>
+
+		<!-- Button -->
+		<DataTemplate DataType="vm:ButtonVM">
+			<Button Content="{Binding Label}" Command="{Binding ClickCommand}" HorizontalAlignment="Stretch" />
+		</DataTemplate>
+
+		<!-- Class card -->
+		<DataTemplate DataType="vm:ClassCardVM">
+			<Border Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
+				<StackPanel>
+					<ToggleButton Classes="hdr" IsChecked="{Binding Expanded, Mode=TwoWay}">
+						<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+							<Border Width="16" Height="16" CornerRadius="4" VerticalAlignment="Center"
+							        Background="{Binding ColorKey, Converter={StaticResource BrushFromKey}}" />
+							<TextBlock Text="{Binding TypeName}" FontWeight="Bold" VerticalAlignment="Center" />
+						</StackPanel>
+					</ToggleButton>
+					<StackPanel Margin="0,8,0,0" Spacing="8" IsVisible="{Binding Expanded}">
+						<ItemsControl ItemsSource="{Binding Fields}" ItemsPanel="{StaticResource Spaced8}" />
+						<ItemsControl ItemsSource="{Binding Groups}" ItemsPanel="{StaticResource Spaced8}" />
+						<ItemsControl ItemsSource="{Binding Buttons}" ItemsPanel="{StaticResource Spaced8}" />
+					</StackPanel>
+				</StackPanel>
+			</Border>
+		</DataTemplate>
+	</UserControl.DataTemplates>
+
+	<Grid RowDefinitions="Auto,*" RowSpacing="8">
+		<!-- Node header -->
+		<Border Grid.Row="0" Background="{StaticResource Bg3}" CornerRadius="8" Padding="8"
+		        IsVisible="{Binding HasSelection}">
+			<StackPanel Spacing="8">
+				<Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+					<Border Grid.Column="0" Width="24" Height="24" CornerRadius="8"
+					        Background="{Binding IconColorKey, Converter={StaticResource BrushFromKey}}" />
+					<StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+						<Panel>
+							<Button Command="{Binding BeginRenameCommand}" Background="Transparent" BorderThickness="0"
+							        Padding="0" HorizontalAlignment="Left" Cursor="Hand" IsVisible="{Binding !IsEditingName}">
+								<TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16" />
+							</Button>
+							<TextBox x:Name="NameEditor" Classes="rename" Text="{Binding NameDraft, Mode=TwoWay}"
+							         IsVisible="{Binding IsEditingName}" />
+						</Panel>
+						<TextBlock Text="{Binding TypeDisplay}" Foreground="{StaticResource TextMuted}" />
+					</StackPanel>
+					<CheckBox Grid.Column="2" Classes="tick" VerticalAlignment="Center"
+					          IsChecked="{Binding Enabled, Mode=TwoWay}" />
+				</Grid>
+				<TextBox CornerRadius="8" BorderThickness="0" Background="{StaticResource Bg1}"
+				         Text="{Binding FilterText, Mode=TwoWay}" PlaceholderText="Search parameter..."
+				         PlaceholderForeground="{StaticResource TextMuted}" />
 			</StackPanel>
 		</Border>
 
-		<!-- Node Parameters -->
-		<ScrollViewer Grid.Row="1" CornerRadius="8"
-		              AllowAutoHide="True"
-		              VerticalScrollBarVisibility="Auto"
-		              HorizontalScrollBarVisibility="Disabled">
-			<StackPanel Spacing="8">
-
-
-				<Border Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
-					<StackPanel>
-						<ToggleButton x:Name="blkHov" Classes="hdr" IsChecked="True">
-							<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-								<Border Background="{StaticResource Orange}" CornerRadius="4" Width="16" Height="16" />
-								<TextBlock Text="Hovercraft" FontWeight="Bold" VerticalAlignment="Center" />
-							</StackPanel>
-						</ToggleButton>
-
-						<StackPanel Margin="0,12,0,0" Spacing="6" IsVisible="{Binding #blkHov.IsChecked}">
-							<Grid Classes="row" ColumnDefinitions="110,*">
-								<Grid Classes="name" ColumnDefinitions="*,Auto">
-									<TextBlock Classes="lbl" Text="Mass" />
-									<Button Classes="reset" Grid.Column="1">
-										<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-									</Button>
-								</Grid>
-								<elements:DragFloatBox Grid.Column="1" Value="1250.0" Decimals="1" Unit="kg" />
-							</Grid>
-							<Grid Classes="row" ColumnDefinitions="110,*">
-								<Grid Classes="name" ColumnDefinitions="*,Auto">
-									<TextBlock Classes="lbl" Text="Thrusters" />
-									<Button Classes="reset" Grid.Column="1">
-										<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-									</Button>
-								</Grid>
-								<elements:DragIntBox Grid.Column="1" Value="4" />
-							</Grid>
-							<Grid Classes="row" ColumnDefinitions="110,*">
-								<Grid Classes="name" ColumnDefinitions="*,Auto">
-									<TextBlock Classes="lbl" Text="Powered" />
-									<Button Classes="reset" Grid.Column="1">
-										<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-									</Button>
-								</Grid>
-								<elements:BoolBox Grid.Column="1" Value="True" />
-							</Grid>
-							<Grid Classes="row" ColumnDefinitions="110,*">
-								<Grid Classes="name" ColumnDefinitions="*,Auto">
-									<TextBlock Classes="lbl" Text="Callsign" />
-									<Button Classes="reset" Grid.Column="1">
-										<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-									</Button>
-								</Grid>
-								<elements:StringBox Grid.Column="1" Value="Falcon" />
-							</Grid>
-
-							<!-- Group: Propulsion -->
-							<StackPanel Margin="0,6,0,0" Spacing="6">
-								<ToggleButton x:Name="grpProp" Classes="hdr" IsChecked="True">
-									<StackPanel Orientation="Horizontal" Spacing="6">
-										<Border Width="3" Height="14" Background="{StaticResource Blue}" CornerRadius="2" />
-										<TextBlock Classes="group" Text="Propulsion" />
-									</StackPanel>
-								</ToggleButton>
-
-								<StackPanel Margin="10,0,0,0" Spacing="6" IsVisible="{Binding #grpProp.IsChecked}">
-									<Grid Classes="row" ColumnDefinitions="110,*">
-										<Grid Classes="name" ColumnDefinitions="*,Auto">
-											<TextBlock Classes="lbl" Text="Max Thrust" />
-											<Button Classes="reset" Grid.Column="1">
-												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-											</Button>
-										</Grid>
-										<elements:DragFloatBox Grid.Column="1" Value="98.5" Decimals="2" Unit="kN" />
-									</Grid>
-									<Grid Classes="row" ColumnDefinitions="110,*">
-										<Grid Classes="name" ColumnDefinitions="*,Auto">
-											<TextBlock Classes="lbl" Text="Fuel Rate" />
-											<Button Classes="reset" Grid.Column="1">
-												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-											</Button>
-										</Grid>
-										<elements:DragFloatBox Grid.Column="1" Value="0.750" />
-									</Grid>
-
-									<StackPanel Spacing="2">
-										<Grid Classes="name" ColumnDefinitions="*,Auto">
-											<TextBlock Classes="lbl" Text="Waypoints" />
-											<Button Classes="reset" Grid.Column="1">
-												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-											</Button>
-										</Grid>
-										<elements:ArrayBox x:Name="Waypoints">
-											<elements:ArrayBox.ItemTemplate>
-												<DataTemplate x:DataType="vm:Vec3Item">
-													<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
-													                      Y="{Binding Y, Mode=TwoWay}"
-													                      Z="{Binding Z, Mode=TwoWay}"
-													                      Unit="m" />
-												</DataTemplate>
-											</elements:ArrayBox.ItemTemplate>
-										</elements:ArrayBox>
-									</StackPanel>
-
-									<StackPanel Spacing="2">
-										<Grid Classes="name" ColumnDefinitions="*,Auto">
-											<TextBlock Classes="lbl" Text="Tags" />
-											<Button Classes="reset" Grid.Column="1">
-												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-											</Button>
-										</Grid>
-										<elements:ArrayBox x:Name="Tags">
-											<elements:ArrayBox.ItemTemplate>
-												<DataTemplate x:DataType="vm:StringItem">
-													<elements:StringBox Value="{Binding Value, Mode=TwoWay}" Wrap="False" />
-												</DataTemplate>
-											</elements:ArrayBox.ItemTemplate>
-										</elements:ArrayBox>
-									</StackPanel>
-
-									<StackPanel Margin="0,4,0,0" Spacing="6">
-										<ToggleButton x:Name="sgStab" Classes="hdr" IsChecked="True">
-											<StackPanel Orientation="Horizontal" Spacing="6" Margin="6,0,0,0">
-												<Border Width="2" Height="12" Background="{StaticResource TextMuted}" CornerRadius="1" />
-												<TextBlock Classes="subgroup" Text="Stabilizers" />
-											</StackPanel>
-										</ToggleButton>
-										<StackPanel Margin="16,0,0,0" Spacing="6" IsVisible="{Binding #sgStab.IsChecked}">
-											<StackPanel Spacing="2">
-												<Grid Classes="name" ColumnDefinitions="*,Auto">
-													<TextBlock Classes="lbl" Text="Damping" />
-													<Button Classes="reset" Grid.Column="1">
-														<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-													</Button>
-												</Grid>
-												<elements:DragVec2Box X="0.2" Y="0.35" />
-											</StackPanel>
-											<StackPanel Spacing="2">
-												<Grid Classes="name" ColumnDefinitions="*,Auto">
-													<TextBlock Classes="lbl" Text="Pivot Offset" />
-													<Button Classes="reset" Grid.Column="1">
-														<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-													</Button>
-												</Grid>
-												<elements:DragVec3Box X="0.0" Y="-0.5" Z="1.25" />
-											</StackPanel>
-										</StackPanel>
-									</StackPanel>
-
-									<StackPanel Margin="0,4,0,0" Spacing="6">
-										<ToggleButton x:Name="sgBoost" Classes="hdr" IsChecked="True">
-											<StackPanel Orientation="Horizontal" Spacing="6" Margin="6,0,0,0">
-												<Border Width="2" Height="12" Background="{StaticResource TextMuted}" CornerRadius="1" />
-												<TextBlock Classes="subgroup" Text="Boost" />
-											</StackPanel>
-										</ToggleButton>
-										<StackPanel Margin="16,0,0,0" Spacing="6" IsVisible="{Binding #sgBoost.IsChecked}">
-											<StackPanel Spacing="2">
-												<Grid Classes="name" ColumnDefinitions="*,Auto">
-													<TextBlock Classes="lbl" Text="Overdrive" />
-													<Button Classes="reset" Grid.Column="1">
-														<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-													</Button>
-												</Grid>
-												<elements:DragVec4Box X="1.0" Y="1.5" Z="2.0" W="0.0" />
-											</StackPanel>
-											<Grid Classes="row" ColumnDefinitions="110,*">
-												<Grid Classes="name" ColumnDefinitions="*,Auto">
-													<TextBlock Classes="lbl" Text="Cooldown" />
-													<Button Classes="reset" Grid.Column="1">
-														<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-													</Button>
-												</Grid>
-												<elements:DragFloatBox Grid.Column="1" Value="3.000" Unit="s" />
-											</Grid>
-										</StackPanel>
-									</StackPanel>
-								</StackPanel>
-							</StackPanel>
-
-							<StackPanel Margin="0,6,0,0" Spacing="6">
-								<ToggleButton x:Name="grpApp" Classes="hdr" IsChecked="True">
-									<StackPanel Orientation="Horizontal" Spacing="6">
-										<Border Width="3" Height="14" Background="{StaticResource Magenta}" CornerRadius="2" />
-										<TextBlock Classes="group" Text="Appearance" />
-									</StackPanel>
-								</ToggleButton>
-								<StackPanel Margin="10,0,0,0" Spacing="6" IsVisible="{Binding #grpApp.IsChecked}">
-									<Grid Classes="row" ColumnDefinitions="110,*">
-										<Grid Classes="name" ColumnDefinitions="*,Auto">
-											<TextBlock Classes="lbl" Text="Hull Tint" />
-											<Button Classes="reset" Grid.Column="1">
-												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-											</Button>
-										</Grid>
-										<elements:Color3Box Grid.Column="1" R="0.15" G="0.55" B="0.95" />
-									</Grid>
-									<Grid Classes="row" ColumnDefinitions="110,*">
-										<Grid Classes="name" ColumnDefinitions="*,Auto">
-											<TextBlock Classes="lbl" Text="Glow" />
-											<Button Classes="reset" Grid.Column="1">
-												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-											</Button>
-										</Grid>
-										<elements:Color4Box Grid.Column="1" R="2.5" G="0.6" B="0.2" A="1.0" />
-									</Grid>
-									<Grid Classes="row" ColumnDefinitions="110,*">
-										<Grid Classes="name" ColumnDefinitions="*,Auto">
-											<TextBlock Classes="lbl" Text="Hull Mesh" />
-											<Button Classes="reset" Grid.Column="1">
-												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-											</Button>
-										</Grid>
-										<elements:AssetBox Grid.Column="1" AssetType="Mesh" />
-									</Grid>
-								</StackPanel>
-							</StackPanel>
-
-							<StackPanel Margin="0,6,0,0" Spacing="6">
-								<ToggleButton x:Name="grpTgt" Classes="hdr" IsChecked="True">
-									<StackPanel Orientation="Horizontal" Spacing="6">
-										<Border Width="3" Height="14" Background="{StaticResource Green}" CornerRadius="2" />
-										<TextBlock Classes="group" Text="Targeting" />
-									</StackPanel>
-								</ToggleButton>
-								<StackPanel Margin="10,0,0,0" Spacing="6" IsVisible="{Binding #grpTgt.IsChecked}">
-									<Grid Classes="row" ColumnDefinitions="110,*">
-										<Grid Classes="name" ColumnDefinitions="*,Auto">
-											<TextBlock Classes="lbl" Text="Follow" />
-											<Button Classes="reset" Grid.Column="1">
-												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-											</Button>
-										</Grid>
-										<elements:NodeBox Grid.Column="1" NodeType="Node3D" />
-									</Grid>
-									<Grid Classes="row" ColumnDefinitions="110,*">
-										<Grid Classes="name" ColumnDefinitions="*,Auto">
-											<TextBlock Classes="lbl" Text="Lead Time" />
-											<Button Classes="reset" Grid.Column="1">
-												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-											</Button>
-										</Grid>
-										<elements:DragFloatBox Grid.Column="1" Value="0.250" Unit="s" />
-									</Grid>
-								</StackPanel>
-							</StackPanel>
-						</StackPanel>
-					</StackPanel>
-				</Border>
-
-				<Border Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
-					<StackPanel>
-						<ToggleButton x:Name="blkN3" Classes="hdr" IsChecked="True">
-							<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-								<Border Background="{StaticResource Blue}" CornerRadius="4" Width="16" Height="16" />
-								<TextBlock Text="Node3D" FontWeight="Bold" VerticalAlignment="Center" />
-							</StackPanel>
-						</ToggleButton>
-
-						<StackPanel Margin="0,12,0,0" Spacing="6" IsVisible="{Binding #blkN3.IsChecked}">
-							<StackPanel Spacing="6">
-								<ToggleButton x:Name="grpXform" Classes="hdr" IsChecked="True">
-									<StackPanel Orientation="Horizontal" Spacing="6">
-										<Border Width="3" Height="14" Background="{StaticResource Blue}" CornerRadius="2" />
-										<TextBlock Classes="group" Text="Transform" />
-									</StackPanel>
-								</ToggleButton>
-								<StackPanel Margin="10,0,0,0" Spacing="6" IsVisible="{Binding #grpXform.IsChecked}">
-									<StackPanel Spacing="2">
-										<Grid Classes="name" ColumnDefinitions="*,Auto">
-											<TextBlock Classes="lbl" Text="Position" />
-											<Button Classes="reset" Grid.Column="1">
-												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-											</Button>
-										</Grid>
-										<elements:DragVec3Box X="0.0" Y="2.5" Z="-4.0" Unit="m"/>
-									</StackPanel>
-									<StackPanel Spacing="2">
-										<Grid Classes="name" ColumnDefinitions="*,Auto">
-											<TextBlock Classes="lbl" Text="Rotation" />
-											<Button Classes="reset" Grid.Column="1">
-												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-											</Button>
-										</Grid>
-										<elements:DragVec3Box X="0.0" Y="45.0" Z="0.0" Unit="°"/>
-									</StackPanel>
-									<StackPanel Spacing="2">
-										<Grid Classes="name" ColumnDefinitions="*,Auto">
-											<TextBlock Classes="lbl" Text="Scale" />
-											<Button Classes="reset" Grid.Column="1">
-												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-											</Button>
-										</Grid>
-										<elements:DragVec3Box X="1.0" Y="1.0" Z="1.0" />
-									</StackPanel>
-								</StackPanel>
-							</StackPanel>
-						</StackPanel>
-					</StackPanel>
-				</Border>
-
-				<Border Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
-					<StackPanel>
-						<ToggleButton x:Name="blkNode" Classes="hdr" IsChecked="True">
-							<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-								<Border Background="{StaticResource Green}" CornerRadius="4" Width="16" Height="16" />
-								<TextBlock Text="Node" FontWeight="Bold" VerticalAlignment="Center" />
-							</StackPanel>
-						</ToggleButton>
-
-						<StackPanel Margin="0,12,0,0" Spacing="6" IsVisible="{Binding #blkNode.IsChecked}">
-							<Grid Classes="row" ColumnDefinitions="110,*">
-								<Grid Classes="name" ColumnDefinitions="*,Auto">
-									<TextBlock Classes="lbl" Text="UID" />
-									<Button Classes="reset" Grid.Column="1">
-										<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-									</Button>
-								</Grid>
-								<elements:StringBox Grid.Column="1" Value="0x4f3a91c2" IsEnabled="False" />
-							</Grid>
-							<Grid Classes="row" ColumnDefinitions="110,*">
-								<Grid Classes="name" ColumnDefinitions="*,Auto">
-									<TextBlock Classes="lbl" Text="Name" />
-									<Button Classes="reset" Grid.Column="1">
-										<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-									</Button>
-								</Grid>
-								<elements:StringBox Grid.Column="1" Value="Hovercraft_01" />
-							</Grid>
-							<Grid Classes="row" ColumnDefinitions="110,*">
-								<Grid Classes="name" ColumnDefinitions="*,Auto">
-									<TextBlock Classes="lbl" Text="Enabled" />
-									<Button Classes="reset" Grid.Column="1">
-										<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-									</Button>
-								</Grid>
-								<elements:BoolBox Grid.Column="1" Value="True" />
-							</Grid>
-							<Grid Classes="row" ColumnDefinitions="110,*">
-								<Grid Classes="name" ColumnDefinitions="*,Auto">
-									<TextBlock Classes="lbl" Text="Parent" />
-									<Button Classes="reset" Grid.Column="1">
-										<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-									</Button>
-								</Grid>
-								<elements:NodeBox Grid.Column="1" NodeType="Node" />
-							</Grid>
-							<Grid Classes="row" ColumnDefinitions="110,*">
-								<Grid Classes="name" ColumnDefinitions="*,Auto">
-									<TextBlock Classes="lbl" Text="Prefab" />
-									<Button Classes="reset" Grid.Column="1">
-										<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
-									</Button>
-								</Grid>
-								<elements:AssetBox Grid.Column="1" AssetType="Prefab" />
-							</Grid>
-						</StackPanel>
-					</StackPanel>
-				</Border>
-
-			</StackPanel>
-		</ScrollViewer>
+		<!-- Node parameters -->
+		<Panel Grid.Row="1">
+			<ScrollViewer CornerRadius="8" AllowAutoHide="True" VerticalScrollBarVisibility="Auto"
+			              HorizontalScrollBarVisibility="Disabled" IsVisible="{Binding HasSelection}">
+				<ItemsControl ItemsSource="{Binding Cards}" ItemsPanel="{StaticResource Spaced8}" />
+			</ScrollViewer>
+			<TextBlock Text="No Node selected" FontStyle="Italic" Foreground="{StaticResource TextMuted}"
+			           Padding="4" HorizontalAlignment="Center" VerticalAlignment="Center"
+			           IsVisible="{Binding !HasSelection}" />
+		</Panel>
 	</Grid>
-
 </UserControl>

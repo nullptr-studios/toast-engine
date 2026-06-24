@@ -12,7 +12,7 @@
 #include <toast/export.hpp>
 
 namespace toast {
-class [[ToastNode, Icon("Spotlight")]] TOAST_API Spotlight : public Light {
+class [[ToastNode, Icon("SpoLight")]] TOAST_API Spotlight : public Light {
 public:
 	Spotlight() = default;
 

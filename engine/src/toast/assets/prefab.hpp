@@ -111,6 +111,25 @@ public:
 	auto validate() const -> bool;
 
 	/**
+	 * @brief Converts a reflected field value to its text representation
+	 * @param type Serialization kind of the value
+	 * @param is_array True if @p value holds a std::vector of the field type
+	 * @param value The value as returned by a FieldInfo getter
+	 * @return The same text encoding used by the .node text format
+	 * @note Shared by the text serializer and the editor inspector so both agree on formatting
+	 */
+	static auto stringifyValue(toast::FieldType type, bool is_array, const std::any& value) -> std::string;
+
+	/**
+	 * @brief Parses a text value back into a typed std::any for a reflected field
+	 * @param type Serialization kind to parse as
+	 * @param is_array True if @p value encodes a std::vector of the field type
+	 * @param value The text encoding produced by stringifyValue()
+	 * @return The typed value, or std::nullopt if @p value could not be parsed
+	 */
+	static auto valueFromString(toast::FieldType type, bool is_array, std::string_view value) -> std::optional<std::any>;
+
+	/**
 	 * @brief One field value read from a prefab file
 	 *
 	 * Holds the field name, serialization type, array flag, and the deserialized value as std::any.

@@ -70,6 +70,11 @@ message NodeChangeParam {
   string value = 2;
 }
 
+message NodeChangeName {
+  string node = 1;
+  string name = 2;
+}
+
 message NodeCallFunction {
   string function = 1;
 }
@@ -88,4 +93,5 @@ message InspectorContent {
   string name = 1;
   bool enabled = 2;
   repeated InspectorField parameters = 3;
+  string uid = 4;
 }

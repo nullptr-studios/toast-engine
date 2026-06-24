@@ -424,6 +424,10 @@ auto Prefab::parseType(std::string_view type, bool& is_array) -> std::optional<F
 }
 
 auto Prefab::parseValue(FieldType type, std::string_view value, bool& is_array) -> std::optional<std::any> {
+	return valueFromString(type, is_array, value);
+}
+
+auto Prefab::valueFromString(FieldType type, bool is_array, std::string_view value) -> std::optional<std::any> {
 	auto parse_single = [](FieldType type, std::string_view token) -> std::optional<std::any> {
 		switch (type) {
 			// holy boilerplate lil bro
@@ -608,7 +612,7 @@ void Prefab::writeSubgroup(const Subgroup& subgroup, std::stringstream& ss) cons
 	}
 }
 
-void Prefab::writeField(const Field& field, std::stringstream& ss, std::string offset) const {
+auto Prefab::stringifyValue(FieldType type, bool is_array, const std::any& value) -> std::string {
 	auto stringify_single = [](FieldType type, const std::any& value) -> std::string {
 		switch (type) {
 			case FieldType::string_t: return std::any_cast<std::string>(value);
@@ -637,37 +641,39 @@ void Prefab::writeField(const Field& field, std::stringstream& ss, std::string o
 		}
 	};
 
-	std::string value_str;
-	if (field.is_array) {
-		auto stringify_array = [&]<typename T>(FieldType type) -> std::string {
-			const auto& vec = std::any_cast<const std::vector<T>&>(field.value);
-			std::string result;
-			for (size_t i = 0; i < vec.size(); ++i) {
-				result += stringify_single(type, vec[i]);
-				if (i < vec.size() - 1) {
-					result += (type == FieldType::string_t) ? std::string(1, _detail::string_array_separator) : " ";
-				}
-			}
-			return result;
-		};
-
-		switch (field.type) {
-			case FieldType::bool_t: value_str = stringify_array.operator()<bool>(field.type); break;
-			case FieldType::int_t: value_str = stringify_array.operator()<int>(field.type); break;
-			case FieldType::float_t: value_str = stringify_array.operator()<float>(field.type); break;
-			case FieldType::double_t: value_str = stringify_array.operator()<double>(field.type); break;
-			case FieldType::string_t: value_str = stringify_array.operator()<std::string>(field.type); break;
-			case FieldType::vec2_t: value_str = stringify_array.operator()<glm::vec2>(field.type); break;
-			case FieldType::vec3_t: value_str = stringify_array.operator()<glm::vec3>(field.type); break;
-			case FieldType::vec4_t: value_str = stringify_array.operator()<glm::vec4>(field.type); break;
-			case FieldType::quaternion_t: value_str = stringify_array.operator()<glm::quat>(field.type); break;
-			case FieldType::uid_t: value_str = stringify_array.operator()<UID>(field.type); break;
-			default: break;
-		}
-	} else {
-		value_str = stringify_single(field.type, field.value);
+	if (!is_array) {
+		return stringify_single(type, value);
 	}
 
+	auto stringify_array = [&]<typename T>(FieldType type) -> std::string {
+		const auto& vec = std::any_cast<const std::vector<T>&>(value);
+		std::string result;
+		for (size_t i = 0; i < vec.size(); ++i) {
+			result += stringify_single(type, vec[i]);
+			if (i < vec.size() - 1) {
+				result += (type == FieldType::string_t) ? std::string(1, _detail::string_array_separator) : " ";
+			}
+		}
+		return result;
+	};
+
+	switch (type) {
+		case FieldType::bool_t: return stringify_array.operator()<bool>(type);
+		case FieldType::int_t: return stringify_array.operator()<int>(type);
+		case FieldType::float_t: return stringify_array.operator()<float>(type);
+		case FieldType::double_t: return stringify_array.operator()<double>(type);
+		case FieldType::string_t: return stringify_array.operator()<std::string>(type);
+		case FieldType::vec2_t: return stringify_array.operator()<glm::vec2>(type);
+		case FieldType::vec3_t: return stringify_array.operator()<glm::vec3>(type);
+		case FieldType::vec4_t: return stringify_array.operator()<glm::vec4>(type);
+		case FieldType::quaternion_t: return stringify_array.operator()<glm::quat>(type);
+		case FieldType::uid_t: return stringify_array.operator()<UID>(type);
+		default: return "";
+	}
+}
+
+void Prefab::writeField(const Field& field, std::stringstream& ss, std::string offset) const {
+	std::string value_str = stringifyValue(field.type, field.is_array, field.value);
 	ss << std::format("{0}{1} @{2} = {3}\n", offset, field.name, writeType(field.type, field.is_array), value_str);
 }
 

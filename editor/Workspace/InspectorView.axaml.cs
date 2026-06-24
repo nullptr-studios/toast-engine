@@ -3,40 +3,54 @@
 // 4 Jun 2026
 //
 
-using System.Collections.ObjectModel;
+using System;
+using System.ComponentModel;
 using Avalonia.Controls;
-using CommunityToolkit.Mvvm.ComponentModel;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Threading;
 
 namespace editor.Workspace;
 
 public partial class InspectorView : UserControl {
+	private InspectorViewModel? m_vm;
+
 	public InspectorView() {
 		InitializeComponent();
 
-		// Demo data for the ArrayBox showcase rows.
-		Waypoints.Items = new ObservableCollection<Vec3Item> {
-			new() { X = 0f, Y = 1.5f, Z = -2f },
-			new() { X = 3.25f, Y = 0f, Z = 4f },
-			new() { X = -1f, Y = 2f, Z = 0.5f }
-		};
-		Waypoints.ItemFactory = () => new Vec3Item();
-
-		Tags.Items = new ObservableCollection<StringItem> {
-			new() { Value = "alpha" },
-			new() { Value = "bravo" }
-		};
-		Tags.ItemFactory = () => new StringItem { Value = "new tag" };
+		NameEditor.KeyDown += OnNameKeyDown;
+		NameEditor.LostFocus += OnNameLostFocus;
+		DataContextChanged += OnDataContextChanged;
 	}
-}
 
-/// <summary>Demo list element for the Waypoints ArrayBox.</summary>
-public sealed partial class Vec3Item : ObservableObject {
-	[ObservableProperty] private float m_x;
-	[ObservableProperty] private float m_y;
-	[ObservableProperty] private float m_z;
-}
+	private void OnDataContextChanged(object? sender, EventArgs e) {
+		if (m_vm is not null) m_vm.PropertyChanged -= OnVmPropertyChanged;
+		m_vm = DataContext as InspectorViewModel;
+		if (m_vm is not null) m_vm.PropertyChanged += OnVmPropertyChanged;
+	}
 
-/// <summary>Demo list element for the Tags ArrayBox.</summary>
-public sealed partial class StringItem : ObservableObject {
-	[ObservableProperty] private string m_value = "";
+	// focus the rename box as soon as editing starts
+	private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e) {
+		if (e.PropertyName != nameof(InspectorViewModel.IsEditingName) || m_vm?.IsEditingName != true) return;
+		Dispatcher.UIThread.Post(() => {
+			NameEditor.Focus();
+			NameEditor.SelectAll();
+		});
+	}
+
+	private void OnNameKeyDown(object? sender, KeyEventArgs e) {
+		if (m_vm is null) return;
+		switch (e.Key) {
+			case Key.Enter:
+				m_vm.CommitRename();
+				e.Handled = true;
+				break;
+			case Key.Escape:
+				m_vm.CancelRename();
+				e.Handled = true;
+				break;
+		}
+	}
+
+	private void OnNameLostFocus(object? sender, RoutedEventArgs e) => m_vm?.CommitRename();
 }

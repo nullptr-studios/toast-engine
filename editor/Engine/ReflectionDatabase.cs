@@ -105,4 +105,45 @@ public static class ReflectionDatabase {
 			current = Bare(info.Parent.Name);
 		}
 	}
+
+	// attributes serialize as { "Name": ["x"], "ReadOnly": [], ... }
+	public static bool HasAttr(JsonElement attrs, string name) {
+		return attrs.ValueKind switch {
+			JsonValueKind.Object => attrs.TryGetProperty(name, out _),
+			JsonValueKind.Array => attrs.EnumerateArray()
+				.Any(e => e.ValueKind == JsonValueKind.String && e.GetString() == name),
+			_ => false
+		};
+	}
+
+	// first string argument of an attribute
+	public static string? GetAttr(JsonElement attrs, string name) {
+		var args = GetAttrArgs(attrs, name);
+		return args.Length > 0 ? args[0] : null;
+	}
+
+	// all string arguments of an attribute
+	public static string[] GetAttrArgs(JsonElement attrs, string name) {
+		if (attrs.ValueKind != JsonValueKind.Object || !attrs.TryGetProperty(name, out var v)) return [];
+		if (v.ValueKind != JsonValueKind.Array) return [];
+		return v.EnumerateArray()
+			.Where(e => e.ValueKind == JsonValueKind.String)
+			.Select(e => e.GetString()!)
+			.ToArray();
+	}
+
+	// class Color attribute is inherited
+	public static string ResolveColor(string? typeName) {
+		if (Nodes is not null && !string.IsNullOrEmpty(typeName)) {
+			var current = Bare(typeName);
+			while (Nodes.TryGetValue(current, out var info)) {
+				var color = GetAttr(info.Attributes, "Color");
+				if (!string.IsNullOrEmpty(color)) return color;
+				if (info.Parent is null) break;
+				current = Bare(info.Parent.Name);
+			}
+		}
+
+		return "TextMuted";
+	}
 }

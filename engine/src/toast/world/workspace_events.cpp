@@ -306,6 +306,23 @@ struct ProtoTraits<NodeChangeParam> {
 TOAST_PROTO_EVENT(NodeChangeParam);
 
 template<>
+struct ProtoTraits<NodeChangeName> {
+	using Proto = proto::events::NodeChangeName;
+	using Event = NodeChangeName;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_node(e.node);
+		p.set_name(e.name);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.node()), p.name()}; }
+};
+
+TOAST_PROTO_EVENT(NodeChangeName);
+
+template<>
 struct ProtoTraits<NodeEnabled> {
 	using Proto = proto::events::NodeEnabled;
 	using Event = NodeEnabled;
@@ -344,6 +361,7 @@ struct ProtoTraits<InspectorContent> {
 
 	static auto toProto(const Event& e) -> Proto {
 		Proto p;
+		p.set_uid(e.uid);
 		p.set_name(e.name);
 		p.set_enabled(e.enabled);
 		for (const auto& f : e.parameters) {
@@ -359,8 +377,10 @@ struct ProtoTraits<InspectorContent> {
 		for (const auto& f : p.parameters()) {
 			parameters.emplace_back(ProtoTraits<InspectorContent::InspectorField>::fromProto(f));
 		}
-		return {p.name(), p.enabled(), parameters};
+		return {p.uid(), p.name(), p.enabled(), parameters};
 	}
 };
+
+TOAST_PROTO_EVENT(InspectorContent);
 
 }

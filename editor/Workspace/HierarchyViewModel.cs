@@ -79,6 +79,9 @@ public partial class HierarchyViewModel : Tool {
 
 	public event Action? HierarchyChanged;
 
+	// raised whenever the selected node changes
+	public static event Action<HierarchyElement?>? SelectionChanged;
+
 	public HierarchyViewModel() {
 		Current = this;
 		m_listener = new Listener();
@@ -106,6 +109,12 @@ public partial class HierarchyViewModel : Tool {
 	// partial method hooked by the source generator -> fires when FilterText changes
 	partial void OnFilterTextChanged(string value) {
 		ApplyFilterToRoot();
+	}
+
+	partial void OnSelectedNodeChanged(HierarchyElement? value) {
+		// tell the engine which node to stream inspector data for ("" clears the focus)
+		Events.Send(new SetFocusedNode { Node = value?.Uid ?? "" });
+		SelectionChanged?.Invoke(value);
 	}
 
 	private void ApplyFilterToRoot() {

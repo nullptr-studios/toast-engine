@@ -6,10 +6,16 @@
 #include "workspace_events.hpp"
 #include "workspace_events.pb.h"
 
+#include <format>
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/trigonometric.hpp>
 #include <limits>
+#include <sstream>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/assets/prefab.hpp>
+#include <toast/time.hpp>
 
 namespace toast {
 
@@ -268,8 +274,50 @@ void Workspace::eventSubscriptions() {
 	m_listener.subscribe<event::SetFocusedNode>([this](const auto& e) { m_focused_node = findFrom(m_root_node, e.node.get()); });
 
 	m_listener.subscribe<event::NodeChangeParam>([this](const auto& e) {
-		// TODO: We need a setFromString that converts the string to the value it is
-		m_focused_node->info()->search(e.parameter)->set(&*m_focused_node, e.value);
+		// Only the workspace that actually owns the focused node applies the change
+		if (not m_focused_node.exists()) {
+			return false;
+		}
+
+		const auto* field = m_focused_node->info()->search(e.parameter);
+		if (field == nullptr) {
+			TOAST_WARN("World", "NodeChangeParam: unknown parameter '{}'", e.parameter);
+			return true;
+		}
+
+		std::any value;
+		if (field->value_type == FieldType::quaternion_t && not field->is_array) {
+			// the inspector edits rotation as euler degrees "x y z"; store it back as a quaternion
+			glm::vec3 deg {0.0f, 0.0f, 0.0f};
+			std::istringstream ss(e.value);
+			ss >> deg.x >> deg.y >> deg.z;
+			value = std::any {glm::quat(glm::radians(deg))};
+		} else {
+			auto parsed = assets::Prefab::valueFromString(field->value_type, field->is_array, e.value);
+			if (not parsed.has_value()) {
+				TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
+				return true;
+			}
+			value = std::move(*parsed);
+		}
+
+		field->set(&*m_focused_node, value);
+		return true;
+	});
+
+	// Renames go through their own event so the engine is the single source of truth and can refresh
+	// the hierarchy itself, rather than the editor mutating the name and forcing an update
+	m_listener.subscribe<event::NodeChangeName>([this](const auto& e) {
+		if (not m_root_node.exists()) {
+			return false;
+		}
+		auto node = findFrom(m_root_node, e.node.get());
+		if (not node.exists()) {
+			return false;
+		}
+		node->m_name = e.name;
+		event::send<event::RequestHierarchyUpdate>();
+		return true;
 	});
 
 	// TODO: needs function reflection for this
@@ -278,9 +326,72 @@ void Workspace::eventSubscriptions() {
 	// });
 
 	m_listener.subscribe<event::NodeEnabled>([this](const auto& e) {
+		if (not m_root_node.exists()) {
+			return false;
+		}
 		auto node = findFrom(m_root_node, e.node.get());
+		if (not node.exists()) {
+			return false;
+		}
 		node->enabled(e.enabled);
+		event::send<event::RequestHierarchyUpdate>();
+		return true;
 	});
+}
+
+void Workspace::tick() {
+	// Only the active workspace streams inspector data, and only while a node is focused
+	if (m_handle.data() != Engine::get()->activeWorkspace().data() || not m_focused_node.exists()) {
+		m_inspector_accum = 0.0;
+		return;
+	}
+
+	// Throttle to 12 fps instead of pushing the whole field set every frame
+	m_inspector_accum += Time::delta();
+	if (m_inspector_accum < 1.0 / 12.0) {
+		return;
+	}
+	m_inspector_accum = 0.0;
+
+	std::vector<event::InspectorContent::InspectorField> fields;
+	Node* node = &*m_focused_node;
+
+	// all_fields holds only a type's own fields, so walk the inheritance chain (derived -> base)
+	// through base_type to include inherited fields too
+	for (const NodeInfo* type = node->info(); type != nullptr; type = type->base_type) {
+		for (const auto& field : type->all_fields) {
+			std::any value = field.get(node);
+
+			std::string text;
+			if (field.value_type == FieldType::quaternion_t && not field.is_array) {
+				// rotation is exchanged with the inspector as euler degrees, not as a raw quaternion
+				glm::vec3 deg = glm::degrees(glm::eulerAngles(std::any_cast<glm::quat>(value)));
+				text = std::format("{} {} {}", deg.x, deg.y, deg.z);
+			} else if (field.value_type == FieldType::uid_t && not field.is_array) {
+				// node references (Box<Node>) come back as a Box, asset handles (AssetHandle<T>) come
+				// back as a UID; normalize both to a uid string ("" when empty so the editor shows it unset)
+				if (auto* box = std::any_cast<Box<Node>>(&value); box != nullptr) {
+					text = box->exists() ? (*box)->uid().get() : "";
+				} else if (auto* id = std::any_cast<UID>(&value); id != nullptr) {
+					text = id->data() != 0 ? id->get() : "";
+				}
+			} else {
+				try {
+					text = assets::Prefab::stringifyValue(field.value_type, field.is_array, value);
+				} catch (const std::bad_any_cast&) {
+					// the field stores a representation the text serializer doesn't handle (e.g. a raw
+					// std::array); skip its value rather than crashing the whole inspector stream
+					text = "";
+				}
+			}
+
+			fields.emplace_back(field.name, text);
+		}
+	}
+
+	event::send<event::InspectorContent>(
+	    m_focused_node->uid().get(), m_focused_node->name(), m_focused_node->enabled(), std::move(fields)
+	);
 }
 
 }

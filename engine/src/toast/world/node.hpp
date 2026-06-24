@@ -246,13 +246,13 @@ protected:
 	INodeOwner* m_owner = nullptr;
 
 private:
-	[[Reflect, Internal]]
+	[[Reflect, Hidden]]
 	UID m_uid;    // serialized unique id
 
-	[[Reflect, Internal]]
+	[[Reflect, Hidden]]
 	std::string m_name;
 
-	[[Reflect, Internal]]
+	[[Reflect, Hidden]]
 	bool m_local_enabled = false;        // is this object enabled?
 	bool m_inherited_enabled = false;    // is any parent of this object enabled?
 
@@ -264,7 +264,6 @@ private:
 
 	NodeState m_state = NodeState::null;
 	NodeType m_type = NodeType::null;
-	[[Reflect, Name("Wave Index"), ReadOnly]]
 	std::array<uint8_t, 4> m_wave = {
 	  255, 255, 255, 255
 	};    ///< one wave index per tick phase (early/tick/post-physics/late); 255 = unscheduled

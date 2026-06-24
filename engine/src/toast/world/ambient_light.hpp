@@ -12,7 +12,7 @@
 #include <toast/export.hpp>
 
 namespace toast {
-class [[ToastNode, Icon("Enviroment")]] TOAST_API AmbientLight : public Node {
+class [[ToastNode, Icon("Environment")]] TOAST_API AmbientLight : public Node {
 public:
 	AmbientLight() = default;
 

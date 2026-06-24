@@ -50,8 +50,7 @@ auto World::newNode(std::string_view type) -> Node* {
 - `[[Group("str")]]`: adds attribute to a given group
 - `[[Subgroup("str")]]`: adds attribute to a given subgroup (must have a valid Group attribute)
 - `[[Range(int, int)]]`: limits the range in the Inspector panel
-- `[[Unit("m/s"]]`: displays units on the attribute
-- `[[Internal]]`: Won't be shown on the editor inspector
+- `[[Unit("m/s")]]`: displays units on the attribute
 - `[[InspectorNoModify]]`: value will appear as read-only on the Inspector, but it will be serialized
 (prefer using `ReadOnly` instead)
 

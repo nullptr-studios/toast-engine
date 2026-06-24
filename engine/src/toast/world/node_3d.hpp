@@ -18,7 +18,7 @@
 
 namespace toast {
 
-class [[ToastNode, Color("Red"), Icon("Box")]] TOAST_API Node3D : public Node {
+class [[ToastNode, Color("Red"), Icon("BoxMesh")]] TOAST_API Node3D : public Node {
 	friend class World;
 
 public:
