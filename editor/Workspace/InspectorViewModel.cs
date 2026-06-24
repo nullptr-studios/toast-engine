@@ -30,4 +30,8 @@ public partial class InspectorViewModel : Tool {
 	[ObservableProperty] private float m_col4G = 0.6f;
 	[ObservableProperty] private float m_col4B = 0.2f;
 	[ObservableProperty] private float m_col4A = 0.5f;
+
+	[ObservableProperty] private string? m_nodeRef;
+
+	[ObservableProperty] private string? m_assetRef;
 }

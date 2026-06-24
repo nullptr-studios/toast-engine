@@ -86,4 +86,23 @@ public static class ReflectionDatabase {
 
 		NodeTree = treeItems.GetValueOrDefault("Node");
 	}
+
+	// types are namespaced ("toast::Camera") but Nodes is keyed by bare name ("Camera")
+	private static string Bare(string typeName) {
+		var i = typeName.LastIndexOf(':');
+		return i >= 0 ? typeName[(i + 1)..] : typeName;
+	}
+
+	public static bool IsTypeOrSubtypeOf(string? typeName, string? baseTypeName) {
+		if (Nodes is null || string.IsNullOrEmpty(typeName) || string.IsNullOrEmpty(baseTypeName)) return false;
+
+		var target = Bare(baseTypeName);
+		var current = Bare(typeName);
+
+		while (true) {
+			if (current == target) return true;
+			if (!Nodes.TryGetValue(current, out var info) || info.Parent is null) return false;
+			current = Bare(info.Parent.Name);
+		}
+	}
 }

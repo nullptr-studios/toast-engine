@@ -253,7 +253,10 @@
 									        Width="130" Height="170"
 									        CornerRadius="8" ClipToBounds="True"
 									        Background="{StaticResource Bg3}"
-									        BorderThickness="8" BorderBrush="Transparent">
+									        BorderThickness="8" BorderBrush="Transparent"
+									        PointerPressed="OnFilePointerPressed"
+									        PointerMoved="OnFilePointerMoved"
+									        PointerReleased="OnFilePointerReleased">
 										<Border.ContextMenu>
 											<ContextMenu>
 												<MenuItem Header="Open" />

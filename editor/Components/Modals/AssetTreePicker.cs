@@ -12,7 +12,6 @@ public static class AssetTreePicker {
 		return window.ShowDialog<string?>(owner);
 	}
 
-	// Pick any asset file — folder-only mode used for now; full asset mode added in Phase 5
 	public static Task<string?> PickAsset(Window owner, FilePickerFileType? filter = null, string? title = null) {
 		return PickFolder(owner, title ?? "Select Asset");
 	}

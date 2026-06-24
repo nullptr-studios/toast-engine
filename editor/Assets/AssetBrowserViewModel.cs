@@ -37,7 +37,10 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	private int m_selectedCount;
 	private AssetFolder? m_selectedFolder;
 
+	public static AssetBrowserViewModel? Current { get; private set; }
+
 	public AssetBrowserViewModel() {
+		Current = this;
 		RefreshCommand = new RelayCommand(Refresh);
 		ExpandAllCommand = new RelayCommand(() => SetAllExpanded(true));
 		CollapseAllCommand = new RelayCommand(() => SetAllExpanded(false));
@@ -45,6 +48,24 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 
 		// auto-reload whenever the asset database changes
 		AssetDatabase.ReloadedDatabase += OnDatabaseReloaded;
+	}
+
+	public void RevealAsset(string uid) {
+		foreach (var root in Folders)
+		foreach (var file in GetAllFiles(root)) {
+			if (file.Uid != uid) continue;
+			SearchText = "";
+			SelectedFolder = FindParentFolder(root, file);
+			return;
+		}
+	}
+
+	private static AssetFolder? FindParentFolder(AssetFolder folder, AssetFile file) {
+		if (folder.Files.Contains(file)) return folder;
+		foreach (var sub in folder.SubFolders)
+			if (FindParentFolder(sub, file) is { } found)
+				return found;
+		return null;
 	}
 
 	// the database can be rebuilt from background work, so dispatch the reload back onto the UI thread

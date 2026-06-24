@@ -25,6 +25,8 @@ namespace editor.Assets;
 public static class AssetDatabase {
 	private static readonly JsonSerializerOptions s_prettyJson = new() { WriteIndented = true };
 
+	private static Dictionary<string, (string Path, string Type)>? s_uidLookup;
+
 	// extension -> engine asset type, used to generate missing .meta sidecars
 	private static readonly Dictionary<string, string> s_assetTypes = new(StringComparer.OrdinalIgnoreCase) {
 		[".tnode"] = "node",
@@ -81,7 +83,35 @@ public static class AssetDatabase {
 		var path = ProjectContext.Resolve("cache://database.json");
 		File.WriteAllText(path, db.ToJsonString(s_prettyJson));
 
+		s_uidLookup = null; // the on-disk database changed, drop the cached lookup
 		ReloadedDatabase?.Invoke();
+	}
+
+	public static bool TryResolve(string uid, out string virtualPath, out string type) {
+		s_uidLookup ??= BuildUidLookup();
+		if (s_uidLookup.TryGetValue(uid, out var entry)) {
+			virtualPath = entry.Path;
+			type = entry.Type;
+			return true;
+		}
+
+		virtualPath = "";
+		type = "";
+		return false;
+	}
+
+	private static Dictionary<string, (string Path, string Type)> BuildUidLookup() {
+		var lookup = new Dictionary<string, (string, string)>();
+		if (LoadAssetDatabaseAssets() is not { } assets) return lookup;
+
+		foreach (var (uid, node) in assets) {
+			if (node is not JsonObject entry) continue;
+			var path = entry["path"]?.GetValue<string>();
+			if (path is null) continue;
+			lookup[uid] = (path, entry["type"]?.GetValue<string>() ?? "");
+		}
+
+		return lookup;
 	}
 
 	/// <summary>

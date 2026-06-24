@@ -45,7 +45,10 @@
 					</TreeView.ContextMenu>
 					<TreeView.ItemTemplate>
 						<TreeDataTemplate ItemsSource="{Binding FilteredChildren}" x:DataType="vm:HierarchyElement">
-							<DockPanel Background="Transparent" VerticalAlignment="Center" HorizontalSpacing="8">
+							<DockPanel Background="Transparent" VerticalAlignment="Center" HorizontalSpacing="8"
+							           PointerPressed="OnItemPointerPressed"
+							           PointerMoved="OnItemPointerMoved"
+							           PointerReleased="OnItemPointerReleased">
 								<DockPanel.ContextMenu>
 									<ContextMenu x:DataType="vm:HierarchyElement">
 										<MenuItem Header="Add child Node" InputGesture="Ctrl+A"

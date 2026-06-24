@@ -3,16 +3,20 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using editor.Components.Elements;
+using editor.Engine;
 using editor.Workspace;
 
 namespace editor.Components.Modals;
 
 public class HierarchyDisplayItem : SearchableTreeItem<HierarchyDisplayItem> {
-	public HierarchyDisplayItem(HierarchyElement element, HierarchyElement? exclude, bool excludedByAncestor = false) {
+	public HierarchyDisplayItem(HierarchyElement element, HierarchyElement? exclude, string? allowedType,
+		bool excludedByAncestor = false) {
 		Name = element.Name;
 		Uid = element.Uid;
 		IsExcluded = excludedByAncestor || element == exclude;
-		AllChildren = element.Children.Select(c => new HierarchyDisplayItem(c, exclude, IsExcluded)).ToList();
+		IsTypeAllowed = string.IsNullOrEmpty(allowedType) ||
+		                ReflectionDatabase.IsTypeOrSubtypeOf(element.Type, allowedType);
+		AllChildren = element.Children.Select(c => new HierarchyDisplayItem(c, exclude, allowedType, IsExcluded)).ToList();
 		foreach (var c in AllChildren) FilteredChildren.Add(c);
 		InitSegments();
 	}
@@ -21,7 +25,12 @@ public class HierarchyDisplayItem : SearchableTreeItem<HierarchyDisplayItem> {
 
 	// True for the reparent target and everything below it
 	public bool IsExcluded { get; }
-	public double Opacity => IsExcluded ? 0.4 : 1.0;
+
+	// False when a type filter is active and this node's type does not match
+	public bool IsTypeAllowed { get; }
+
+	public bool IsSelectable => !IsExcluded && IsTypeAllowed;
+	public double Opacity => IsSelectable ? 1.0 : 0.4;
 }
 
 public partial class HierarchyPickerModal : Window {
@@ -32,8 +41,9 @@ public partial class HierarchyPickerModal : Window {
 		InitializeComponent();
 	}
 
-	public HierarchyPickerModal(IEnumerable<HierarchyElement> roots, HierarchyElement? exclude = null) : this() {
-		m_roots = roots.Select(r => new HierarchyDisplayItem(r, exclude)).ToList();
+	public HierarchyPickerModal(IEnumerable<HierarchyElement> roots, HierarchyElement? exclude = null,
+		string? allowedType = null) : this() {
+		m_roots = roots.Select(r => new HierarchyDisplayItem(r, exclude, allowedType)).ToList();
 		NodeTree.ItemsSource = m_roots;
 	}
 
@@ -44,7 +54,7 @@ public partial class HierarchyPickerModal : Window {
 
 	private void OnSelectionChanged(object? sender, SelectionChangedEventArgs e) {
 		var item = NodeTree.SelectedItem as HierarchyDisplayItem;
-		if (item?.IsExcluded == true) {
+		if (item is { IsSelectable: false }) {
 			NodeTree.SelectedItem = null;
 			m_selected = null;
 		} else {

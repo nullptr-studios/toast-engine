@@ -18,6 +18,8 @@ public enum FileType {
 public class AssetFile {
 	private Bitmap? m_thumbnail;
 	private bool m_thumbnailChecked;
+	private string? m_uid;
+	private bool m_uidChecked;
 
 	public AssetFile(string path) {
 		Filepath = Path.GetFullPath(path);
@@ -41,6 +43,15 @@ public class AssetFile {
 	public FileType Type { get; }
 	public string TypeLabel => Type.ToString();
 
+	public string? Uid {
+		get {
+			if (m_uidChecked) return m_uid;
+			m_uidChecked = true;
+			m_uid = MetaFile.ReadHeader(Filepath)?.Uid;
+			return m_uid;
+		}
+	}
+
 	public Bitmap? Thumbnail {
 		get {
 			// reading from disk on every property access would be too slow
@@ -63,8 +74,10 @@ public class AssetFile {
 
 	public bool HasThumbnail => Thumbnail is not null;
 
-	public IBrush TypeColor =>
-		Type switch {
+	public IBrush TypeColor => ColorFor(Type);
+
+	public static IBrush ColorFor(FileType type) =>
+		type switch {
 			FileType.Node => new SolidColorBrush(Color.Parse("#6495ED")),
 			FileType.Texture => new SolidColorBrush(Color.Parse("#3CB371")),
 			FileType.Model => new SolidColorBrush(Color.Parse("#FF8C00")),
