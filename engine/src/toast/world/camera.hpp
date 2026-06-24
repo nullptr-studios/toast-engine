@@ -12,7 +12,7 @@
 #include <toast/export.hpp>
 
 namespace toast {
-class [[ToastNode]] TOAST_API Camera : public Node3D {
+class [[ToastNode, Icon("Camera")]] TOAST_API Camera : public Node3D {
 public:
 	Camera() = default;
 

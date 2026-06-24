@@ -322,4 +322,45 @@ struct ProtoTraits<NodeEnabled> {
 
 TOAST_PROTO_EVENT(NodeEnabled);
 
+template<>
+struct ProtoTraits<InspectorContent::InspectorField> {
+	using Proto = proto::events::InspectorField;
+	using Event = InspectorContent::InspectorField;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_name(e.name);
+		p.set_value(e.value);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.name(), p.value()}; }
+};
+
+template<>
+struct ProtoTraits<InspectorContent> {
+	using Proto = proto::events::InspectorContent;
+	using Event = InspectorContent;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_name(e.name);
+		p.set_enabled(e.enabled);
+		for (const auto& f : e.parameters) {
+			auto* element = p.add_parameters();
+			*element = ProtoTraits<InspectorContent::InspectorField>::toProto(f);
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		std::vector<InspectorContent::InspectorField> parameters;
+		parameters.reserve(p.parameters().size());
+		for (const auto& f : p.parameters()) {
+			parameters.emplace_back(ProtoTraits<InspectorContent::InspectorField>::fromProto(f));
+		}
+		return {p.name(), p.enabled(), parameters};
+	}
+};
+
 }

@@ -212,6 +212,40 @@
 										<elements:DragFloatBox Grid.Column="1" Value="0.750" />
 									</Grid>
 
+									<StackPanel Spacing="2">
+										<Grid Classes="name" ColumnDefinitions="*,Auto">
+											<TextBlock Classes="lbl" Text="Waypoints" />
+											<Button Classes="reset" Grid.Column="1">
+												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
+											</Button>
+										</Grid>
+										<elements:ArrayBox x:Name="Waypoints">
+											<elements:ArrayBox.ItemTemplate>
+												<DataTemplate x:DataType="vm:Vec3Item">
+													<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
+													                      Y="{Binding Y, Mode=TwoWay}"
+													                      Z="{Binding Z, Mode=TwoWay}"
+													                      Unit="m" />
+												</DataTemplate>
+											</elements:ArrayBox.ItemTemplate>
+										</elements:ArrayBox>
+									</StackPanel>
+
+									<StackPanel Spacing="2">
+										<Grid Classes="name" ColumnDefinitions="*,Auto">
+											<TextBlock Classes="lbl" Text="Tags" />
+											<Button Classes="reset" Grid.Column="1">
+												<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
+											</Button>
+										</Grid>
+										<elements:ArrayBox x:Name="Tags">
+											<elements:ArrayBox.ItemTemplate>
+												<DataTemplate x:DataType="vm:StringItem">
+													<elements:StringBox Value="{Binding Value, Mode=TwoWay}" Wrap="False" />
+												</DataTemplate>
+											</elements:ArrayBox.ItemTemplate>
+										</elements:ArrayBox>
+									</StackPanel>
 
 									<StackPanel Margin="0,4,0,0" Spacing="6">
 										<ToggleButton x:Name="sgStab" Classes="hdr" IsChecked="True">

@@ -130,4 +130,22 @@ struct NodeEnabled : Event<NodeEnabled> {
 	NodeEnabled(toast::UID n, bool enabled) : node(n), enabled(enabled) { }
 };
 
+struct InspectorContent : Event<InspectorContent> {
+	struct InspectorField {
+		std::string name;
+		std::string value;
+
+		InspectorField(std::string_view name, std::string_view value) : name(name), value(value) { }
+	};
+
+	std::string name;
+	bool enabled;
+	std::vector<InspectorField> parameters;
+
+	InspectorContent(std::string_view name, bool enabled, std::vector<InspectorField> fields)
+	    : name(name),
+	      enabled(enabled),
+	      parameters(fields) { }
+};
+
 }
