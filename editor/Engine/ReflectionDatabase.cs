@@ -146,4 +146,19 @@ public static class ReflectionDatabase {
 
 		return "TextMuted";
 	}
+
+	// class Icon attribute is inherited
+	public static string ResolveIcon(string? typeName) {
+		if (Nodes is not null && !string.IsNullOrEmpty(typeName)) {
+			var current = Bare(typeName);
+			while (Nodes.TryGetValue(current, out var info)) {
+				var icon = GetAttr(info.Attributes, "Icon");
+				if (!string.IsNullOrEmpty(icon)) return icon;
+				if (info.Parent is null) break;
+				current = Bare(info.Parent.Name);
+			}
+		}
+
+		return "Circle";
+	}
 }

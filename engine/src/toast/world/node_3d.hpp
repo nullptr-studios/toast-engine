@@ -18,7 +18,7 @@
 
 namespace toast {
 
-class [[ToastNode, Color("Red"), Icon("BoxMesh")]] TOAST_API Node3D : public Node {
+class [[ToastNode, Color("Red")]] TOAST_API Node3D : public Node {
 	friend class World;
 
 public:
@@ -163,9 +163,9 @@ private:
 	bool m_dirty_world = true;
 	Box<Node3D> m_transform_parent;
 
-	[[Reflect, Unit("m")]] alignas(16) glm::vec3 m_position;
-	[[Reflect, Unit("°")]] alignas(16) glm::quat m_rotation;
-	[[Reflect]] alignas(16) glm::vec3 m_scale;
+	[[Reflect, Unit("m")]] alignas(16) glm::vec3 m_position = glm::vec3(0.0f);
+	[[Reflect, Unit("°")]] alignas(16) glm::quat m_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	[[Reflect]] alignas(16) glm::vec3 m_scale = glm::vec3(1.0f);
 
 	alignas(16) glm::vec3 m_world_position;
 	alignas(16) glm::quat m_world_rotation;

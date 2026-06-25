@@ -6,30 +6,30 @@
         Width="400" Height="190"
         CanResize="False" CanMinimize="False"
         x:Class="editor.StartWindow.NewProjectWindow"
-        Background="{StaticResource Bg4}"
+        Background="{StaticResource Bg3}"
         Title="New Project">
 
 	<StackPanel Margin="10" Spacing="4">
-		<TextBlock>Name:</TextBlock>
-		<TextBox Text="Unnamed Project" TextChanged="Name_OnTextChanged" x:Name="TitleTextbox" />
-		<TextBlock Margin="0, 10, 0, 0">Path:</TextBlock>
+		<TextBlock Foreground="{StaticResource TextMuted}">Name:</TextBlock>
+		<TextBox Text="Unnamed Project" TextChanged="Name_OnTextChanged" x:Name="TitleTextbox" CornerRadius="6" Background="{StaticResource Bg1}" BorderThickness="0"/>
+		<TextBlock Margin="0, 10, 0, 0" Foreground="{StaticResource TextMuted}">Path:</TextBlock>
 		<Grid ColumnDefinitions="*, Auto">
-			<TextBox x:Name="PathTextbox" Grid.Column="0" Foreground="{StaticResource Text}" IsEnabled="False"/>
-			<Button Click="Folder_OnClick" Grid.Column="1" Margin="5, 0, 0, 0">
+			<TextBox x:Name="PathTextbox" Grid.Column="0" Foreground="{StaticResource Text}" IsEnabled="False" BorderThickness="0" CornerRadius="6"/>
+			<Button Click="Folder_OnClick" Grid.Column="1" Margin="5, 0, 0, 0" CornerRadius="6">
 				<LucideIcon Kind="Folders" Size="18" StrokeWidth="2.5"/>
 			</Button>
 		</Grid>
 		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0, 16, 0, 0" Spacing="8">
-			<Button Click="Exit_OnClick" Height="32">
+			<Button Click="Exit_OnClick" Height="32" CornerRadius="6">
 				<StackPanel Orientation="Horizontal" Spacing="4">
 					<LucideIcon Kind="X" Size="17" StrokeWidth="3"/>
-					<TextBlock Text="Cancel"></TextBlock>
+					<TextBlock Text="Cancel"/>
 				</StackPanel>
 			</Button>
-			<Button Click="Create_OnClick" Background="{StaticResource Red}" Height="32">
+			<Button Click="Create_OnClick" Background="{StaticResource Red}" Height="32" CornerRadius="6">
 				<StackPanel Orientation="Horizontal" Spacing="4">
 					<LucideIcon Kind="Plus" Size="17" StrokeWidth="3"/>
-					<TextBlock Text="Create"></TextBlock>
+					<TextBlock Text="Create" FontWeight="Bold"/>
 				</StackPanel>
 			</Button>
 		</StackPanel>

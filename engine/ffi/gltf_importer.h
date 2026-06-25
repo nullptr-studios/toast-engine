@@ -12,8 +12,8 @@
 extern "C" {
 #endif
 
-TOAST_C_API void gltf_generate_intermediates(const char* path);
-TOAST_C_API void gltf_create_tnode(const char* json_path, const char* output_path);
+TOAST_C_API void gltf_generate_intermediates(const char* path) NOEXCEPT;
+TOAST_C_API void gltf_create_tnode(const char* json_path, const char* output_path) NOEXCEPT;
 
 #ifdef __cplusplus
 }

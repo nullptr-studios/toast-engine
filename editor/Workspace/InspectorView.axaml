@@ -12,6 +12,10 @@
              Background="{StaticResource Bg2}"
              x:DataType="vm:InspectorViewModel">
 
+	<Design.DataContext>
+		<vm:InspectorViewModel />
+	</Design.DataContext>
+
 	<UserControl.Resources>
 		<conv:ResourceBrushConverter x:Key="BrushFromKey" />
 		<ItemsPanelTemplate x:Key="Spaced8">
@@ -29,7 +33,7 @@
 
 		<!-- Highlighted search match -->
 		<Style Selector="TextBlock.match">
-			<Setter Property="Foreground" Value="{StaticResource Yellow}" />
+			<Setter Property="Background" Value="{StaticResource DarkRed}" />
 			<Setter Property="FontWeight" Value="Bold" />
 		</Style>
 
@@ -173,6 +177,26 @@
 						                   IsEnabled="{Binding Editable}" IsVisible="{Binding IsAssetRef}" />
 						<elements:NodeBox Value="{Binding Ref, Mode=TwoWay}" NodeType="{Binding RefType}"
 						                  IsEnabled="{Binding Editable}" IsVisible="{Binding IsNodeRef}" />
+						<elements:Color3Box R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
+						                    B="{Binding Z, Mode=TwoWay}" IsEnabled="{Binding Editable}"
+						                    IsVisible="{Binding IsColor3}" />
+						<elements:Color4Box R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
+						                    B="{Binding Z, Mode=TwoWay}" A="{Binding W, Mode=TwoWay}"
+						                    IsEnabled="{Binding Editable}" IsVisible="{Binding IsColor4}" />
+						<ItemsControl ItemsSource="{Binding ColorBrushes}" IsVisible="{Binding IsColorArray}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<WrapPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<Border Width="20" Height="20" Margin="0,0,4,4" CornerRadius="4" Background="{Binding}">
+										<Border CornerRadius="4" BorderThickness="1" BorderBrush="{StaticResource TextMuted}" />
+									</Border>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
 						<TextBlock Text="{Binding ReadOnlyText}" Foreground="{StaticResource TextMuted}"
 						           VerticalAlignment="Center" IsVisible="{Binding IsReadOnlyText}" />
 					</Panel>
@@ -259,14 +283,18 @@
 					<ToggleButton Classes="hdr" IsChecked="{Binding Expanded, Mode=TwoWay}">
 						<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
 							<Border Width="16" Height="16" CornerRadius="4" VerticalAlignment="Center"
-							        Background="{Binding ColorKey, Converter={StaticResource BrushFromKey}}" />
+							        Background="{Binding ColorKey, Converter={StaticResource BrushFromKey}}">
+								<Border.OpacityMask>
+									<ImageBrush Source="{Binding SmallIcon}"/>
+								</Border.OpacityMask>
+							</Border>
 							<TextBlock Text="{Binding TypeName}" FontWeight="Bold" VerticalAlignment="Center" />
 						</StackPanel>
 					</ToggleButton>
-					<StackPanel Margin="0,8,0,0" Spacing="8" IsVisible="{Binding Expanded}">
-						<ItemsControl ItemsSource="{Binding Fields}" ItemsPanel="{StaticResource Spaced8}" />
-						<ItemsControl ItemsSource="{Binding Groups}" ItemsPanel="{StaticResource Spaced8}" />
-						<ItemsControl ItemsSource="{Binding Buttons}" ItemsPanel="{StaticResource Spaced8}" />
+					<StackPanel IsVisible="{Binding Expanded}">
+						<ItemsControl Margin="0, 8, 0, 0" ItemsSource="{Binding Fields}" ItemsPanel="{StaticResource Spaced8}" IsVisible="{Binding HasFields}"/>
+						<ItemsControl Margin="0, 8, 0, 0" ItemsSource="{Binding Groups}" ItemsPanel="{StaticResource Spaced8}" IsVisible="{Binding HasGroups}"/>
+						<ItemsControl Margin="0, 8, 0, 0" ItemsSource="{Binding Buttons}" ItemsPanel="{StaticResource Spaced8}" IsVisible="{Binding HasButtons}" />
 					</StackPanel>
 				</StackPanel>
 			</Border>
@@ -279,8 +307,11 @@
 		        IsVisible="{Binding HasSelection}">
 			<StackPanel Spacing="8">
 				<Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-					<Border Grid.Column="0" Width="24" Height="24" CornerRadius="8"
-					        Background="{Binding IconColorKey, Converter={StaticResource BrushFromKey}}" />
+					<Border Grid.Column="0" Width="32" Height="32" Background="{Binding IconColorKey, Converter={StaticResource BrushFromKey}}">
+						<Border.OpacityMask>
+							<ImageBrush Source="{Binding LargeIcon}"/>
+						</Border.OpacityMask>
+					</Border>
 					<StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
 						<Panel>
 							<Button Command="{Binding BeginRenameCommand}" Background="Transparent" BorderThickness="0"

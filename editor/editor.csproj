@@ -49,6 +49,7 @@
         <PackageReference Include="Ktx2Sharp" Version="1.0.2"/>
         <PackageReference Include="Lucide.Avalonia" Version="0.2.9"/>
         <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.*"/>
+        <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.13" />
         <PackageReference Include="tinyspline" Version="0.6.0.1" />
         <PackageReference Include="Tomlyn" Version="2.4.0"/>
     </ItemGroup>
@@ -57,6 +58,10 @@
         <Compile Update="Logger\LogsView.axaml.cs">
             <DependentUpon>LogsView.axaml</DependentUpon>
             <SubType>Code</SubType>
+        </Compile>
+        <Compile Update="Workspace\ColorsDemo.axaml.cs">
+          <DependentUpon>ColorsDemo.axaml</DependentUpon>
+          <SubType>Code</SubType>
         </Compile>
     </ItemGroup>
 

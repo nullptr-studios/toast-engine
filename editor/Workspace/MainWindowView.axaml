@@ -10,7 +10,8 @@
         Title="editor"
         ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaTitleBarHeightHint="-1"
-        WindowDecorations="BorderOnly">
+        WindowDecorations="BorderOnly"
+        WindowState="Maximized">
 
 	<Grid RowDefinitions="Auto,*">
 		<DockPanel x:Name="MenuBorder" Grid.Row="0">

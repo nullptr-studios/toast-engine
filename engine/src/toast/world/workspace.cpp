@@ -123,6 +123,7 @@ void Workspace::eventSubscriptions() {
 		    if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			    return false;
 		    }
+
 		    event::send<event::UpdateHierarchyData>(m_root_node);
 		    return true;
 	    },
@@ -271,7 +272,16 @@ void Workspace::eventSubscriptions() {
 		return true;
 	});
 
-	m_listener.subscribe<event::SetFocusedNode>([this](const auto& e) { m_focused_node = findFrom(m_root_node, e.node.get()); });
+	m_listener.subscribe<event::SetFocusedNode>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		if (!m_root_node.exists()) {
+			return false;
+		}
+		m_focused_node = findFrom(m_root_node, e.node.get());
+		return false;
+	});
 
 	m_listener.subscribe<event::NodeChangeParam>([this](const auto& e) {
 		// Only the workspace that actually owns the focused node applies the change

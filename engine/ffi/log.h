@@ -12,11 +12,11 @@
 extern "C" {
 #endif
 
-TOAST_C_API void toast_trace(const char* sink, const char* message, const char* file_name, unsigned line_number);
-TOAST_C_API void toast_info(const char* sink, const char* message, const char* file_name, unsigned line_number);
-TOAST_C_API void toast_warn(const char* sink, const char* message, const char* file_name, unsigned line_number);
-TOAST_C_API void toast_error(const char* sink, const char* message, const char* file_name, unsigned line_number);
-TOAST_C_API void toast_critical(const char* sink, const char* message, const char* file_name, unsigned line_number);
+TOAST_C_API void toast_trace(const char* sink, const char* message, const char* file_name, unsigned line_number) NOEXCEPT;
+TOAST_C_API void toast_info(const char* sink, const char* message, const char* file_name, unsigned line_number) NOEXCEPT;
+TOAST_C_API void toast_warn(const char* sink, const char* message, const char* file_name, unsigned line_number) NOEXCEPT;
+TOAST_C_API void toast_error(const char* sink, const char* message, const char* file_name, unsigned line_number) NOEXCEPT;
+TOAST_C_API void toast_critical(const char* sink, const char* message, const char* file_name, unsigned line_number) NOEXCEPT;
 
 #ifdef __cplusplus
 }

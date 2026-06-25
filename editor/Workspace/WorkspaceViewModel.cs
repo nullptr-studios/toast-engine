@@ -41,6 +41,7 @@ public class WorkspaceViewModel : Document {
 	}
 
 	public override bool OnClose() {
+		Events.Send(new SetFocusedNode { Node = "" });
 		Events.Send(new WorkspaceDestroy { Handle = Handle });
 		return base.OnClose();
 	}

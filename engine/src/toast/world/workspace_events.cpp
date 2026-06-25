@@ -28,6 +28,14 @@ UpdateHierarchyData::HierarchyElement::HierarchyElement(const HierarchyElement& 
 	children = other.children;
 }
 
+UpdateHierarchyData::UpdateHierarchyData(const toast::Box<toast::Node>& node) {
+	if (node.exists()) {
+		root = HierarchyElement(node);
+	} else {
+		is_empty = true;
+	}
+}
+
 template<>
 struct ProtoTraits<UpdateHierarchyData::HierarchyElement> {
 	using Proto = proto::events::HierarchyElement;
@@ -67,12 +75,13 @@ struct ProtoTraits<UpdateHierarchyData> {
 
 	static auto toProto(const Event& e) -> Proto {
 		Proto p;
+		p.set_is_empty(e.is_empty);
 		*p.mutable_root() = ProtoTraits<UpdateHierarchyData::HierarchyElement>::toProto(e.root);
 		return p;
 	}
 
 	static auto fromProto(const Proto& p) -> Event {
-		return {ProtoTraits<UpdateHierarchyData::HierarchyElement>::fromProto(p.root())};
+		return {ProtoTraits<UpdateHierarchyData::HierarchyElement>::fromProto(p.root()), p.is_empty()};
 	}
 };
 

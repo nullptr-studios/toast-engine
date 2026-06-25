@@ -248,8 +248,6 @@ protected:
 private:
 	[[Reflect, Hidden]]
 	UID m_uid;    // serialized unique id
-
-	[[Reflect, Hidden]]
 	std::string m_name;
 
 	[[Reflect, Hidden]]

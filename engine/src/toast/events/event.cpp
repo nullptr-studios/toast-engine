@@ -108,7 +108,7 @@ void registerProtoEvents() {
 
 extern "C" {
 
-auto events_listener_create(void) -> uint32_t {
+auto events_listener_create(void) noexcept -> uint32_t {
 	auto listener = std::make_unique<event::Listener>();
 	uint32_t handle = event::next_listener.fetch_add(1);
 	std::scoped_lock lock(event::ffi_mutex);
@@ -116,13 +116,14 @@ auto events_listener_create(void) -> uint32_t {
 	return handle;
 }
 
-void events_listener_destroy(uint32_t handle) {
+void events_listener_destroy(uint32_t handle) noexcept {
 	std::scoped_lock lock(event::ffi_mutex);
 	event::listeners.erase(handle);
 }
 
-auto events_listener_subscribe(uint32_t handle, const char* name, event_callback callback, void* user_data, char priority)
-    -> int {
+auto events_listener_subscribe(
+    uint32_t handle, const char* name, event_callback callback, void* user_data, char priority
+) noexcept -> int {
 	if (!name || !callback) {
 		return -1;
 	}
@@ -140,7 +141,7 @@ auto events_listener_subscribe(uint32_t handle, const char* name, event_callback
 	return 0;
 }
 
-void events_listener_unsubscribe(uint32_t handle, const char* name) {
+void events_listener_unsubscribe(uint32_t handle, const char* name) noexcept {
 	if (!name) {
 		return;
 	}
@@ -156,7 +157,7 @@ void events_listener_unsubscribe(uint32_t handle, const char* name) {
 	eit->second.unsubscribe(*lit->second, name);
 }
 
-auto events_send(const char* name, const uint8_t* data, uint32_t size) -> int {
+auto events_send(const char* name, const uint8_t* data, uint32_t size) noexcept -> int {
 	if (!name) {
 		return -1;
 	}
@@ -172,12 +173,12 @@ auto events_send(const char* name, const uint8_t* data, uint32_t size) -> int {
 	return entry.send(data, size);    // enqueue outside the lock
 }
 
-auto events_count(void) -> uint32_t {
+auto events_count(void) noexcept -> uint32_t {
 	std::scoped_lock lock(event::ffi_mutex);
 	return static_cast<uint32_t>(event::names.size());
 }
 
-auto events_name(uint32_t index) -> const char* {
+auto events_name(uint32_t index) noexcept -> const char* {
 	std::scoped_lock lock(event::ffi_mutex);
 	if (index >= event::names.size()) {
 		return nullptr;

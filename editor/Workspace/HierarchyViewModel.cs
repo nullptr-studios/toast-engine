@@ -92,10 +92,12 @@ public partial class HierarchyViewModel : Tool {
 			Dispatcher.UIThread.Post(() => {
 				var prevUid = SelectedNode?.Uid;
 				Root.Clear();
-				Root.Add(new HierarchyElement(e.Root, this) { IsRoot = true });
+				if (!e.IsEmpty) {
+					Root.Add(new HierarchyElement(e.Root, this) { IsRoot = true });
+				}
 				// restore selection after the tree rebuilds so editing a node doesnt lose focus
 				SelectedNode = prevUid is null ? null : Find(Root, prevUid);
-				ActiveWorkspace?.SetRootNode(Root[0].Uid);
+				if (Root.Count > 0) ActiveWorkspace?.SetRootNode(Root[0].Uid);
 				ApplyFilterToRoot();
 				HierarchyChanged?.Invoke();
 			});

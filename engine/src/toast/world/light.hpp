@@ -17,5 +17,10 @@ public:
 	Light() { }
 
 private:
+	[[Reflect, Color]]
+	glm::vec3 m_light_color = glm::vec3(1.0f, 1.0f, 1.0f);
+
+	[[Reflect, Unit("lm")]]
+	float m_intensity = 1.0f;
 };
 }

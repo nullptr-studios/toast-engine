@@ -264,6 +264,9 @@ auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
 void Engine::destroyWorkspace(UID handle) {
 	std::scoped_lock lock(m->owners_mutex);
 	m->owners.erase(handle);
+	if (m->active_workspace.data() == handle.data()) {
+		m->active_workspace = UID {0};
+	}
 }
 
 auto Engine::activeWorkspace() -> UID {
@@ -308,11 +311,11 @@ void operator delete(void* ptr) noexcept {
 // ffi stuff
 extern "C" {
 
-auto toast_create() -> engine_t* {
+auto toast_create() noexcept -> engine_t* {
 	return reinterpret_cast<engine_t*>(new toast::Engine());
 }
 
-void toast_init() {
+void toast_init() noexcept {
 	toast::Engine::get()->init();
 
 	if (toast::active_application) {
@@ -320,33 +323,33 @@ void toast_init() {
 	}
 }
 
-void toast_create_SDL_window(const char* w_name) {
+void toast_create_SDL_window(const char* w_name) noexcept {
 	toast::Engine::get()->createSDLWindow(w_name);
 }
 
-void toast_create_avalonia_window() {
+void toast_create_avalonia_window() noexcept {
 	toast::Engine::get()->createAvaloniaWindow();
 }
 
-void toast_tick() {
+void toast_tick() noexcept {
 	toast::Engine::get()->tick();
 }
 
-auto toast_should_close() -> int {
+auto toast_should_close() noexcept -> int {
 	return toast::Engine::get()->shouldClose();
 }
 
-void toast_destroy(engine_t* e) {
+void toast_destroy(engine_t* e) noexcept {
 	delete reinterpret_cast<toast::Engine*>(e);
 }
 
 void toast_set_working_directory(
     const char* assets, const char* artworks, const char* cache, const char* saved, const char* core
-) {
+) noexcept {
 	assets::AssetManager::setPaths({.assets = assets, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
 }
 
-auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) -> int {
+auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) noexcept -> int {
 	toast::renderer::ViewportFrameDesc desc {};
 	const int result = toast::Engine::get()->getViewportFrame(dst, dst_capacity, &desc);
 	if (out) {
@@ -358,7 +361,7 @@ auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_f
 	return result;
 }
 
-auto toast_create_workspace(const char* type) -> workspace_result {
+auto toast_create_workspace(const char* type) noexcept -> workspace_result {
 	auto [uid, name] = toast::Engine::get()->createWorkspace(type);
 
 	static thread_local std::string s_name;
@@ -366,7 +369,7 @@ auto toast_create_workspace(const char* type) -> workspace_result {
 	return {.uid = uid.data(), .name = s_name.c_str()};
 }
 
-auto toast_open_workspace(const char* uid) -> workspace_result {
+auto toast_open_workspace(const char* uid) noexcept -> workspace_result {
 	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid));
 	static thread_local std::string s_name;
 	s_name = std::move(name);

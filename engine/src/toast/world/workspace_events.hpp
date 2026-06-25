@@ -27,10 +27,11 @@ struct UpdateHierarchyData : Event<UpdateHierarchyData> {
 	};
 
 	HierarchyElement root;
+	bool is_empty = false;
 
-	UpdateHierarchyData(const toast::Box<toast::Node>& node) : root(node) { }
+	UpdateHierarchyData(const toast::Box<toast::Node>& node);
 
-	UpdateHierarchyData(const HierarchyElement& h) : root(h) { }
+	UpdateHierarchyData(const HierarchyElement& h, bool is_empty) : root(h), is_empty(is_empty) { }
 };
 
 struct RequestHierarchyUpdate : Event<RequestHierarchyUpdate> { };

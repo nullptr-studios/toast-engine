@@ -5,6 +5,9 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using editor.Components.Elements;
@@ -22,11 +25,15 @@ public enum WidgetKind {
 	Vec4,
 	AssetRef,
 	NodeRef,
-	ReadOnly
+	ReadOnly,
+	Color3,
+	Color4,
+	Color3Array,
+	Color4Array
 }
 
 public static class InspectorFormat {
-	private static readonly Regex NumberToken = new(@"-?\d+(\.\d+)?([eE][-+]?\d+)?", RegexOptions.Compiled);
+	private static readonly Regex NumberToken = new(@"(?<!\w)-?\d+(\.\d+)?([eE][-+]?\d+)?", RegexOptions.Compiled);
 
 	public static WidgetKind KindOf(string fieldType, bool isArray, string typeName) {
 		if (isArray) return WidgetKind.ReadOnly; // TODO: editable array widgets
@@ -63,10 +70,12 @@ public static class InspectorFormat {
 	public static bool TryInt(string s, out int v) =>
 		int.TryParse(s.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out v);
 
-	public static float[] Floats(string s) =>
-		s.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+	public static float[] Floats(string s) {
+		var cleaned = s.Replace('[', ' ').Replace(']', ' ').Replace(',', ' ').Replace(';', ' ');
+		return cleaned.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
 			.Select(t => TryFloat(t, out var f) ? f : 0f)
 			.ToArray();
+	}
 
 	// the inner T of AssetHandle<T> or Box<T>, bare-named, used for picker/drag filtering
 	public static string? InnerType(string typeName) {
@@ -79,7 +88,7 @@ public static class InspectorFormat {
 	}
 
 	/// <summary>Normalizes a C++ default initializer into the engine text encoding, or null if not parseable</summary>
-	public static string? NormalizeDefault(WidgetKind kind, string? raw) {
+	public static string? NormalizeDefault(WidgetKind kind, string? raw, string? fieldType = null) {
 		if (string.IsNullOrWhiteSpace(raw)) return null;
 
 		switch (kind) {
@@ -99,11 +108,14 @@ public static class InspectorFormat {
 			}
 			case WidgetKind.Vec2:
 			case WidgetKind.Vec3:
-			case WidgetKind.Vec4: {
-				var n = kind == WidgetKind.Vec2 ? 2 : kind == WidgetKind.Vec3 ? 3 : 4;
+			case WidgetKind.Color3:
+			case WidgetKind.Vec4:
+			case WidgetKind.Color4: {
+				if (fieldType == "quaternion_t") return QuaternionDefaultToEuler(raw);
+				var n = kind is WidgetKind.Vec2 ? 2 : kind is WidgetKind.Vec3 or WidgetKind.Color3 ? 3 : 4;
 				var tokens = NumberToken.Matches(raw).Select(m => m.Value).ToList();
 				if (tokens.Count == 0) return null;
-				if (tokens.Count == 1) tokens = Enumerable.Repeat(tokens[0], n).ToList(); // glm::vecN(x) fills all
+				if (tokens.Count == 1) tokens = Enumerable.Repeat(tokens[0], n).ToList(); // glm::vecN(x) broadcasts
 				if (tokens.Count < n) return null;
 				return string.Join(' ', tokens.Take(n));
 			}
@@ -112,13 +124,36 @@ public static class InspectorFormat {
 		}
 	}
 
+	private static string? QuaternionDefaultToEuler(string raw) {
+		var tokens = NumberToken.Matches(raw).Select(m => m.Value).ToList();
+		if (tokens.Count == 0) return "0 0 0"; // {} → identity quaternion
+		if (tokens.Count != 4) return null;
+		if (!TryFloat(tokens[0], out var a) || !TryFloat(tokens[1], out var b) ||
+		    !TryFloat(tokens[2], out var c) || !TryFloat(tokens[3], out var d)) return null;
+
+		// glm brace-init uses struct member order x,y,z,w
+		// glm constructor call uses mathematical order w,x,y,z
+		// this is so retarded -x
+		float x, y, z, w;
+		if (raw.Contains('{')) { x = a; y = b; z = c; w = d; }
+		else                   { w = a; x = b; y = c; z = d; }
+
+		// XYZ intrinsic euler angles in radians → degrees
+		float roll  = MathF.Atan2(2f * (w * x + y * z), 1f - 2f * (x * x + y * y));
+		float pitch = MathF.Asin(Math.Clamp(2f * (w * y - z * x), -1f, 1f));
+		float yaw   = MathF.Atan2(2f * (w * z + x * y), 1f - 2f * (y * y + z * z));
+
+		const float toDeg = 180f / MathF.PI;
+		return $"{Float(roll * toDeg)} {Float(pitch * toDeg)} {Float(yaw * toDeg)}";
+	}
+
 	public static string? TypeZero(WidgetKind kind) => kind switch {
 		WidgetKind.Float or WidgetKind.Int => "0",
 		WidgetKind.Bool => "false",
 		WidgetKind.String => "",
 		WidgetKind.Vec2 => "0 0",
-		WidgetKind.Vec3 => "0 0 0",
-		WidgetKind.Vec4 => "0 0 0 0",
+		WidgetKind.Vec3 or WidgetKind.Color3 => "0 0 0",
+		WidgetKind.Vec4 or WidgetKind.Color4 => "0 0 0 0",
 		_ => null
 	};
 
@@ -128,7 +163,9 @@ public static class InspectorFormat {
 			case WidgetKind.Int:
 			case WidgetKind.Vec2:
 			case WidgetKind.Vec3:
-			case WidgetKind.Vec4: {
+			case WidgetKind.Color3:
+			case WidgetKind.Vec4:
+			case WidgetKind.Color4: {
 				var fa = Floats(a);
 				var fb = Floats(b);
 				if (fa.Length != fb.Length) return false;
@@ -181,6 +218,16 @@ public partial class FieldVM : ObservableObject {
 		ParameterName = info.Name;
 		Kind = InspectorFormat.KindOf(info.FieldType, info.IsArray, info.TypeName);
 
+		if (ReflectionDatabase.HasAttr(info.Attributes, "Color")) {
+			if (info.IsArray) {
+				if (info.FieldType == "vec3_t") Kind = WidgetKind.Color3Array;
+				else if (info.FieldType == "vec4_t") Kind = WidgetKind.Color4Array;
+			} else {
+				if (info.FieldType == "vec3_t") Kind = WidgetKind.Color3;
+				else if (info.FieldType == "vec4_t") Kind = WidgetKind.Color4;
+			}
+		}
+
 		var nameOverride = ReflectionDatabase.GetAttr(info.Attributes, "Name");
 		DisplayName = string.IsNullOrEmpty(nameOverride) ? InspectorFormat.DisplayName(info.Name) : nameOverride;
 
@@ -194,9 +241,13 @@ public partial class FieldVM : ObservableObject {
 		Min = range.Length > 0 && InspectorFormat.TryFloat(range[0], out var lo) ? lo : double.NegativeInfinity;
 		Max = range.Length > 1 && InspectorFormat.TryFloat(range[1], out var hi) ? hi : double.PositiveInfinity;
 
-		m_default = InspectorFormat.NormalizeDefault(Kind, info.Default) ?? InspectorFormat.TypeZero(Kind);
+		m_default = InspectorFormat.NormalizeDefault(Kind, info.Default, info.FieldType) ?? InspectorFormat.TypeZero(Kind);
 
 		Segments.Add(new TextSegment(DisplayName, false));
+
+		if (m_default != null) {
+			ApplyEngineString(m_default);
+		}
 	}
 
 	public bool IsFloat => Kind == WidgetKind.Float;
@@ -210,7 +261,12 @@ public partial class FieldVM : ObservableObject {
 	public bool IsNodeRef => Kind == WidgetKind.NodeRef;
 	public bool IsReadOnlyText => Kind == WidgetKind.ReadOnly;
 	public bool IsVectorLayout => Kind is WidgetKind.Vec2 or WidgetKind.Vec3 or WidgetKind.Vec4;
-	public bool Editable => !ReadOnly && Kind != WidgetKind.ReadOnly;
+	public bool Editable => !ReadOnly && Kind != WidgetKind.ReadOnly && Kind != WidgetKind.Color3Array && Kind != WidgetKind.Color4Array;
+
+	public bool IsColor3 => Kind == WidgetKind.Color3;
+	public bool IsColor4 => Kind == WidgetKind.Color4;
+	public bool IsColorArray => Kind is WidgetKind.Color3Array or WidgetKind.Color4Array;
+	public ObservableCollection<IBrush> ColorBrushes { get; } = [];
 
 	partial void OnFloatChanged(float value) => OnUserEdited();
 	partial void OnIntChanged(int value) => OnUserEdited();
@@ -237,8 +293,8 @@ public partial class FieldVM : ObservableObject {
 			WidgetKind.Bool => Bool ? "true" : "false",
 			WidgetKind.String => String ?? "",
 			WidgetKind.Vec2 => $"{InspectorFormat.Float(X)} {InspectorFormat.Float(Y)}",
-			WidgetKind.Vec3 => $"{InspectorFormat.Float(X)} {InspectorFormat.Float(Y)} {InspectorFormat.Float(Z)}",
-			WidgetKind.Vec4 =>
+			WidgetKind.Vec3 or WidgetKind.Color3 => $"{InspectorFormat.Float(X)} {InspectorFormat.Float(Y)} {InspectorFormat.Float(Z)}",
+			WidgetKind.Vec4 or WidgetKind.Color4 =>
 				$"{InspectorFormat.Float(X)} {InspectorFormat.Float(Y)} {InspectorFormat.Float(Z)} {InspectorFormat.Float(W)}",
 			WidgetKind.AssetRef or WidgetKind.NodeRef => Ref ?? "0",
 			_ => ReadOnlyText
@@ -266,12 +322,14 @@ public partial class FieldVM : ObservableObject {
 					if (p.Length >= 2) { X = p[0]; Y = p[1]; }
 					break;
 				}
-				case WidgetKind.Vec3: {
+				case WidgetKind.Vec3:
+				case WidgetKind.Color3: {
 					var p = InspectorFormat.Floats(s);
 					if (p.Length >= 3) { X = p[0]; Y = p[1]; Z = p[2]; }
 					break;
 				}
-				case WidgetKind.Vec4: {
+				case WidgetKind.Vec4:
+				case WidgetKind.Color4: {
 					var p = InspectorFormat.Floats(s);
 					if (p.Length >= 4) { X = p[0]; Y = p[1]; Z = p[2]; W = p[3]; }
 					break;
@@ -290,6 +348,28 @@ public partial class FieldVM : ObservableObject {
 		}
 
 		UpdateIsDefault(s);
+
+		if (Kind == WidgetKind.Color3Array || Kind == WidgetKind.Color4Array) {
+			ColorBrushes.Clear();
+			var floats = InspectorFormat.Floats(s);
+			var stride = Kind == WidgetKind.Color3Array ? 3 : 4;
+			for (var idx = 0; idx + stride <= floats.Length; idx += stride) {
+				var r = floats[idx];
+				var g = floats[idx + 1];
+				var b = floats[idx + 2];
+				var a = stride == 4 ? floats[idx + 3] : 1f;
+
+				var max = MathF.Max(r, MathF.Max(g, b));
+				var scale = max > 1f ? 1f / max : 1f;
+				var color = Color.FromArgb(
+					(byte)Math.Clamp(MathF.Round(a * 255f), 0f, 255f),
+					(byte)Math.Clamp(MathF.Round(r * scale * 255f), 0f, 255f),
+					(byte)Math.Clamp(MathF.Round(g * scale * 255f), 0f, 255f),
+					(byte)Math.Clamp(MathF.Round(b * scale * 255f), 0f, 255f)
+				);
+				ColorBrushes.Add(new SolidColorBrush(color));
+			}
+		}
 	}
 
 	private void UpdateIsDefault(string current) {
@@ -425,9 +505,14 @@ public partial class GroupVM : ObservableObject {
 public partial class ClassCardVM : ObservableObject {
 	public string TypeName { get; }
 	public string ColorKey { get; }
+	public Bitmap? SmallIcon { get; }
+	public Bitmap? LargeIcon { get; }
 	public ObservableCollection<FieldVM> Fields { get; } = [];
 	public ObservableCollection<GroupVM> Groups { get; } = [];
 	public ObservableCollection<ButtonVM> Buttons { get; } = [];
+	public bool HasFields => Fields.Any();
+	public bool HasGroups => Groups.Any();
+	public bool HasButtons => Buttons.Any();
 
 	private readonly string m_key;
 	private readonly InspectorState m_state;
@@ -435,9 +520,18 @@ public partial class ClassCardVM : ObservableObject {
 
 	[ObservableProperty] private bool m_expanded = true;
 
-	public ClassCardVM(string typeName, string colorKey, string key, InspectorState state) {
+	public ClassCardVM(string typeName, string colorKey, string iconName, string key, InspectorState state) {
 		TypeName = typeName;
 		ColorKey = colorKey;
+		try {
+			SmallIcon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1x/{iconName}.png")));
+			LargeIcon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1.5x/{iconName}.png")));
+		}
+		catch (Exception ex) {
+			Log.Warn($"Failed to load icon for {typeName} ({iconName}): {ex.Message}");
+			SmallIcon = new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/1x/Circle.png")));
+			LargeIcon = new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/1.5x/Circle.png")));
+		}
 		m_key = key;
 		m_state = state;
 		Expanded = !state.Get(key, false); // class cards default expanded
