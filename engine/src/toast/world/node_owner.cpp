@@ -23,24 +23,24 @@ auto referenceUid(const assets::Prefab::BasicNode& chunk) -> uint64_t {
 	return 0;
 }
 
-std::string snakeToNormalCase(const std::string& text) {
+auto snakeToNormalCase(const std::string& text) -> std::string {
 	if (text.empty()) {
 		return "";
 	}
 
-	std::string result = "";
-	bool capitalizeNext = true;
+	std::string result;
+	bool capitalize_next = true;
 
 	for (char ch : text) {
 		if (ch == '_') {
 			if (!result.empty() && result.back() != ' ') {
 				result += ' ';
-				capitalizeNext = true;
+				capitalize_next = true;
 			}
 		} else {
-			if (capitalizeNext) {
+			if (capitalize_next) {
 				result += std::toupper(ch);
-				capitalizeNext = false;
+				capitalize_next = false;
 			} else {
 				result += std::tolower(ch);
 			}

@@ -16,7 +16,7 @@ class [[ToastNode, Icon("SpotLight")]] TOAST_API Spotlight : public Light {
 public:
 	Spotlight() = default;
 
-	~Spotlight() = default;
+	~Spotlight() override = default;
 
 private:
 	[[Reflect, Unit("°"), Range(0.0, 90.0)]]

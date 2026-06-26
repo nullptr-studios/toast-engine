@@ -16,7 +16,7 @@ class [[ToastNode, Icon("PointLight")]] TOAST_API PointLight : public Light {
 public:
 	PointLight() = default;
 
-	~PointLight() = default;
+	~PointLight() override = default;
 
 private:
 };

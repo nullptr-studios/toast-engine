@@ -16,7 +16,7 @@ class [[ToastNode, Icon("Environment")]] TOAST_API AmbientLight : public Light {
 public:
 	AmbientLight() = default;
 
-	~AmbientLight() = default;
+	~AmbientLight() override = default;
 
 private:
 };

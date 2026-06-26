@@ -16,7 +16,7 @@ class [[ToastNode, Icon("Camera")]] TOAST_API Camera : public Node3D {
 public:
 	Camera() = default;
 
-	~Camera() = default;
+	~Camera() override = default;
 
 private:
 };

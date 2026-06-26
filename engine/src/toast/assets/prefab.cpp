@@ -82,7 +82,7 @@ struct BinaryReader {
 			return T {};
 		}
 		T value;
-		std::memcpy(&value, data.data() + offset, sizeof(T));
+		std::memcpy(&value, data.data() + offset, sizeof(T)); // NOLINT
 		offset += sizeof(T);
 		return value;
 	}
@@ -98,22 +98,22 @@ struct BinaryReader {
 	}
 };
 
-std::string toSnakeCase(const std::string& text) {
-	std::string result = "";
-	bool lastWasUnderscore = true;    // avoid underscore at the start
+auto toSnakeCase(const std::string& text) -> std::string {
+	std::string result;
+	bool last_was_underscore = true;    // avoid underscore at the start
 
 	for (char ch : text) {
 		// replace spaces, - or punctuation
 		if (std::isspace(ch) || ch == '-' || std::ispunct(ch)) {
-			if (!lastWasUnderscore) {
+			if (!last_was_underscore) {
 				result += '_';
-				lastWasUnderscore = true;
+				last_was_underscore = true;
 			}
 		}
 		// convert to lowercase
 		else if (std::isalnum(ch)) {
 			result += std::tolower(ch);
-			lastWasUnderscore = false;
+			last_was_underscore = false;
 		}
 	}
 

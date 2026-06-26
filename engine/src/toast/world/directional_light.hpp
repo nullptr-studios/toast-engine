@@ -16,7 +16,7 @@ class [[ToastNode, Icon("DirectionalLight")]] TOAST_API DirectionalLight : publi
 public:
 	DirectionalLight() = default;
 
-	~DirectionalLight() = default;
+	~DirectionalLight() override = default;
 
 private:
 };

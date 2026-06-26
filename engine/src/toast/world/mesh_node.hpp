@@ -14,7 +14,7 @@
 namespace toast {
 class [[ToastNode, Icon("MeshItem")]] TOAST_API MeshNode : public Node3D {
 public:
-	MeshNode() { }
+	MeshNode() = default;
 
 private:
 };

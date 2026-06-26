@@ -14,7 +14,7 @@
 namespace toast {
 class [[ToastNode, Hidden, Icon("PointLight")]] TOAST_API Light : public Node3D {
 public:
-	Light() { }
+	Light() = default;
 
 private:
 	[[Reflect, Color]]

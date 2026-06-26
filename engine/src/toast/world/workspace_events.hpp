@@ -8,6 +8,7 @@
 #include <toast/events/event.hpp>
 #include <toast/uid.hpp>
 #include <toast/world/box.hpp>
+#include <utility>
 
 namespace event {
 
@@ -155,7 +156,7 @@ struct InspectorContent : Event<InspectorContent> {
 	    : uid(uid),
 	      name(name),
 	      enabled(enabled),
-	      parameters(fields) { }
+	      parameters(std::move(fields)) { }
 };
 
 }
