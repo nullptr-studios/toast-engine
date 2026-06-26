@@ -16,3 +16,9 @@
 #else
 #define TOAST_C_API
 #endif
+
+#if defined(__cplusplus)
+#define NOEXCEPT noexcept
+#else
+#define NOEXCEPT
+#endif

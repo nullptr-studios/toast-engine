@@ -49,7 +49,7 @@ enum class NodeType : uint8_t {
 	world_root,    ///< This node is the root that resides in the world
 };
 
-class [[ToastNode]] TOAST_API Node {
+class [[ToastNode, Icon("Circle")]] TOAST_API Node {
 	friend class INodeOwner;
 	friend class World;
 	friend class Workspace;
@@ -246,20 +246,18 @@ protected:
 	INodeOwner* m_owner = nullptr;
 
 private:
-	[[Reflect, Name("UID")]]
+	[[Reflect, Hidden]]
 	UID m_uid;    // serialized unique id
-
-	[[Reflect, Name("Name")]]
 	std::string m_name;
 
-	[[Reflect, Name("Enabled")]]
+	[[Reflect, Hidden]]
 	bool m_local_enabled = false;        // is this object enabled?
 	bool m_inherited_enabled = false;    // is any parent of this object enabled?
 
-	[[Reflect, Name("Parent")]]
+	[[Reflect, Name("Parent"), InspectorNoModify]]
 	Box<Node> m_parent;
 
-	[[Reflect, Name("Prefab")]]
+	[[Reflect, Name("Prefab"), InspectorNoModify]]
 	assets::AssetHandle<assets::Prefab> m_source_prefab;
 
 	NodeState m_state = NodeState::null;

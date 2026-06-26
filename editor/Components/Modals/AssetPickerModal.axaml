@@ -1,0 +1,66 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="600"
+        Width="500" Height="600" CanResize="False"
+        CanMaximize="False" CanMinimize="False"
+        WindowStartupLocation="CenterOwner"
+        x:Class="editor.Components.Modals.AssetPickerModal"
+        Title="Select an Asset..."
+        Background="{StaticResource Bg2}"
+        Padding="8">
+
+	<Window.Styles>
+		<Style Selector="TextBlock.highlighted">
+			<Setter Property="FontWeight" Value="Bold" />
+			<Setter Property="Background" Value="{StaticResource Blue}" />
+		</Style>
+	</Window.Styles>
+
+	<DockPanel VerticalSpacing="8">
+		<StackPanel DockPanel.Dock="Bottom" FlowDirection="RightToLeft" Orientation="Horizontal" Spacing="8">
+			<Button Content="Select" Click="OnSelect" />
+			<Button Content="Cancel" Click="OnCancel" />
+		</StackPanel>
+		<Border Background="{StaticResource Bg1}" CornerRadius="8" Padding="8">
+			<DockPanel VerticalSpacing="8">
+				<TextBox x:Name="SearchBox" DockPanel.Dock="Top" PlaceholderText="Search..." TextChanged="OnSearchChanged" />
+				<ScrollViewer>
+					<ListBox x:Name="AssetList" SelectionChanged="OnSelectionChanged" Background="Transparent">
+						<ListBox.ItemTemplate>
+							<DataTemplate x:CompileBindings="False">
+								<Grid ColumnDefinitions="*,Auto" DoubleTapped="OnItemDoubleTapped">
+									<StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+										<Border Width="14" Height="14" CornerRadius="4"
+										        VerticalAlignment="Center"
+										        Background="{Binding TypeColor}" />
+										<ItemsControl ItemsSource="{Binding Segments}" VerticalAlignment="Center">
+											<ItemsControl.ItemsPanel>
+												<ItemsPanelTemplate>
+													<StackPanel Orientation="Horizontal" />
+												</ItemsPanelTemplate>
+											</ItemsControl.ItemsPanel>
+											<ItemsControl.ItemTemplate>
+												<DataTemplate x:CompileBindings="False">
+													<TextBlock Text="{Binding Text}"
+													           Classes.highlighted="{Binding IsHighlighted}" />
+												</DataTemplate>
+											</ItemsControl.ItemTemplate>
+										</ItemsControl>
+									</StackPanel>
+									<TextBlock Grid.Column="1"
+									           Text="{Binding Path}"
+									           Foreground="{StaticResource TextMuted}"
+									           VerticalAlignment="Center"
+									           Margin="12,0,0,0"
+									           TextTrimming="CharacterEllipsis" />
+								</Grid>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+				</ScrollViewer>
+			</DockPanel>
+		</Border>
+	</DockPanel>
+</Window>

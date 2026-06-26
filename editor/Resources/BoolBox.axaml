@@ -1,0 +1,74 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:elements="clr-namespace:editor.Components.Elements">
+
+	<Design.PreviewWith>
+		<Border Padding="8" Background="{StaticResource Bg3}">
+			<StackPanel Spacing="8" MinWidth="150">
+				<elements:BoolBox Value="True" />
+				<elements:BoolBox Value="False" />
+				<elements:BoolBox Value="True" IsEnabled="False" />
+			</StackPanel>
+		</Border>
+	</Design.PreviewWith>
+
+	<ControlTheme x:Key="{x:Type elements:BoolBox}" TargetType="elements:BoolBox">
+		<Setter Property="FontFamily" Value="FiraCode Nerd Font,Consolas,monospace" />
+		<Setter Property="FontSize" Value="15" />
+		<Setter Property="MinHeight" Value="34" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="CornerRadius" Value="6" />
+
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border x:Name="PART_Root" CornerRadius="{TemplateBinding CornerRadius}" Padding="8,8">
+					<StackPanel Orientation="Horizontal" HorizontalAlignment="Left"
+					            VerticalAlignment="Center" Spacing="6">
+						<CheckBox x:Name="PART_Check"
+						          IsChecked="{TemplateBinding Value}"
+						          IsHitTestVisible="False"
+						          MinWidth="0"
+						          MinHeight="0"
+						          Padding="0"
+						          Margin="0, -8, 0, -8"
+						          VerticalAlignment="Center">
+							<!-- Accent -->
+							<CheckBox.Resources>
+								<StaticResource x:Key="CheckBoxCheckBackgroundFillChecked" ResourceKey="Red" />
+								<StaticResource x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" ResourceKey="Red" />
+								<StaticResource x:Key="CheckBoxCheckBackgroundFillCheckedPressed" ResourceKey="Red" />
+								<StaticResource x:Key="CheckBoxCheckBackgroundStrokeChecked" ResourceKey="Red" />
+								<StaticResource x:Key="CheckBoxCheckBackgroundStrokeCheckedPointerOver" ResourceKey="Red" />
+								<StaticResource x:Key="CheckBoxCheckBackgroundStrokeCheckedPressed" ResourceKey="Red" />
+								<StaticResource x:Key="CheckBoxCheckGlyphForegroundChecked" ResourceKey="Bg1" />
+								<StaticResource x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" ResourceKey="Bg1" />
+								<StaticResource x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" ResourceKey="Bg1" />
+							</CheckBox.Resources>
+						</CheckBox>
+
+						<TextBlock x:Name="PART_Text"
+						           Text="{TemplateBinding DisplayText}"
+						           VerticalAlignment="Center" />
+					</StackPanel>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+
+		<!-- Default colors -->
+		<Style Selector="^ /template/ Border#PART_Root">
+			<Setter Property="Background" Value="{StaticResource Bg1}" />
+		</Style>
+		<Style Selector="^ /template/ TextBlock#PART_Text">
+			<Setter Property="Foreground" Value="{StaticResource Text}" />
+		</Style>
+
+		<!-- Disabled colors -->
+		<Style Selector="^:disabled /template/ Border#PART_Root">
+			<Setter Property="Background" Value="{StaticResource Bg2}" />
+		</Style>
+		<Style Selector="^:disabled /template/ TextBlock#PART_Text">
+			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+		</Style>
+	</ControlTheme>
+
+</ResourceDictionary>

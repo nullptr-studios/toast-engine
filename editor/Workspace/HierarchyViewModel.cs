@@ -18,6 +18,7 @@ public class HierarchyElement {
 		Parent = parent;
 		Name = e.Name;
 		Uid = e.Uid;
+		Type = e.Type;
 		Enabled = e.Enabled;
 		foreach (var c in e.Children) {
 			if (c is null) continue;
@@ -29,6 +30,7 @@ public class HierarchyElement {
 
 	public string Name { get; set; }
 	public string Uid { get; set; }
+	public string Type { get; set; }
 	public bool Enabled { get; set; }
 	public string? Icon { get; set; }
 	public string? Color { get; set; }
@@ -73,7 +75,15 @@ public partial class HierarchyViewModel : Tool {
 
 	[ObservableProperty] private HierarchyElement? m_selectedNode;
 
+	public static HierarchyViewModel? Current { get; private set; }
+
+	public event Action? HierarchyChanged;
+
+	// raised whenever the selected node changes
+	public static event Action<HierarchyElement?>? SelectionChanged;
+
 	public HierarchyViewModel() {
+		Current = this;
 		m_listener = new Listener();
 
 		// engine sends UpdateHierarchyData after every change (create, delete, move, rename...)
@@ -82,11 +92,14 @@ public partial class HierarchyViewModel : Tool {
 			Dispatcher.UIThread.Post(() => {
 				var prevUid = SelectedNode?.Uid;
 				Root.Clear();
-				Root.Add(new HierarchyElement(e.Root, this) { IsRoot = true });
+				if (!e.IsEmpty) {
+					Root.Add(new HierarchyElement(e.Root, this) { IsRoot = true });
+				}
 				// restore selection after the tree rebuilds so editing a node doesnt lose focus
 				SelectedNode = prevUid is null ? null : Find(Root, prevUid);
-				ActiveWorkspace?.SetRootNode(Root[0].Uid);
+				if (Root.Count > 0) ActiveWorkspace?.SetRootNode(Root[0].Uid);
 				ApplyFilterToRoot();
+				HierarchyChanged?.Invoke();
 			});
 		});
 	}
@@ -100,6 +113,12 @@ public partial class HierarchyViewModel : Tool {
 		ApplyFilterToRoot();
 	}
 
+	partial void OnSelectedNodeChanged(HierarchyElement? value) {
+		// tell the engine which node to stream inspector data for ("" clears the focus)
+		Events.Send(new SetFocusedNode { Node = value?.Uid ?? "" });
+		SelectionChanged?.Invoke(value);
+	}
+
 	private void ApplyFilterToRoot() {
 		foreach (var root in Root) root.ApplyFilter(FilterText);
 	}
@@ -110,6 +129,8 @@ public partial class HierarchyViewModel : Tool {
 			SelectedNode = null;
 		});
 	}
+
+	public HierarchyElement? Find(string uid) => Find(Root, uid);
 
 	private static HierarchyElement? Find(IEnumerable<HierarchyElement> elements, string uid) {
 		foreach (var el in elements) {

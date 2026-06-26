@@ -47,7 +47,7 @@ public class DockFactory : Factory {
 
 		// right panel (inspector)
 		var rightDock = new ProportionalDock {
-			Proportion = 0.2,
+			Proportion = 0.22,
 			Orientation = Orientation.Vertical,
 			VisibleDockables = CreateList<IDockable>(
 				new ToolDock {

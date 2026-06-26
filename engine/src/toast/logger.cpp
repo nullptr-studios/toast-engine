@@ -385,23 +385,23 @@ void Logger::flushSync() {
 extern "C" {
 using namespace logging;
 
-void toast_trace(const char* sink, const char* message, const char* file, unsigned line) {
+void toast_trace(const char* sink, const char* message, const char* file, unsigned line) noexcept {
 	Logger::log(file, line, 0, sink, message);
 }
 
-void toast_info(const char* sink, const char* message, const char* file, unsigned line) {
+void toast_info(const char* sink, const char* message, const char* file, unsigned line) noexcept {
 	Logger::log(file, line, 1, sink, message);
 }
 
-void toast_warn(const char* sink, const char* message, const char* file, unsigned line) {
+void toast_warn(const char* sink, const char* message, const char* file, unsigned line) noexcept {
 	Logger::log(file, line, 2, sink, message);
 }
 
-void toast_error(const char* sink, const char* message, const char* file, unsigned line) {
+void toast_error(const char* sink, const char* message, const char* file, unsigned line) noexcept {
 	Logger::log(file, line, 3, sink, message);
 }
 
-void toast_critical(const char* sink, const char* message, const char* file, unsigned line) {
+void toast_critical(const char* sink, const char* message, const char* file, unsigned line) noexcept {
 	Logger::log(file, line, 4, sink, message);
 }
 }

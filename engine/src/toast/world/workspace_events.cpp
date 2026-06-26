@@ -28,6 +28,14 @@ UpdateHierarchyData::HierarchyElement::HierarchyElement(const HierarchyElement& 
 	children = other.children;
 }
 
+UpdateHierarchyData::UpdateHierarchyData(const toast::Box<toast::Node>& node) {
+	if (node.exists()) {
+		root = HierarchyElement(node);
+	} else {
+		is_empty = true;
+	}
+}
+
 template<>
 struct ProtoTraits<UpdateHierarchyData::HierarchyElement> {
 	using Proto = proto::events::HierarchyElement;
@@ -67,12 +75,13 @@ struct ProtoTraits<UpdateHierarchyData> {
 
 	static auto toProto(const Event& e) -> Proto {
 		Proto p;
+		p.set_is_empty(e.is_empty);
 		*p.mutable_root() = ProtoTraits<UpdateHierarchyData::HierarchyElement>::toProto(e.root);
 		return p;
 	}
 
 	static auto fromProto(const Proto& p) -> Event {
-		return {ProtoTraits<UpdateHierarchyData::HierarchyElement>::fromProto(p.root())};
+		return {ProtoTraits<UpdateHierarchyData::HierarchyElement>::fromProto(p.root()), p.is_empty()};
 	}
 };
 
@@ -271,5 +280,116 @@ struct ProtoTraits<WorkspaceMoveNodeTo> {
 };
 
 TOAST_PROTO_EVENT(WorkspaceMoveNodeTo);
+
+template<>
+struct ProtoTraits<SetFocusedNode> {
+	using Proto = proto::events::SetFocusedNode;
+	using Event = SetFocusedNode;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_node(e.node);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.node())}; }
+};
+
+TOAST_PROTO_EVENT(SetFocusedNode);
+
+template<>
+struct ProtoTraits<NodeChangeParam> {
+	using Proto = proto::events::NodeChangeParam;
+	using Event = NodeChangeParam;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_parameter(e.parameter);
+		p.set_value(e.value);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.parameter(), p.value()}; }
+};
+
+TOAST_PROTO_EVENT(NodeChangeParam);
+
+template<>
+struct ProtoTraits<NodeChangeName> {
+	using Proto = proto::events::NodeChangeName;
+	using Event = NodeChangeName;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_node(e.node);
+		p.set_name(e.name);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.node()), p.name()}; }
+};
+
+TOAST_PROTO_EVENT(NodeChangeName);
+
+template<>
+struct ProtoTraits<NodeEnabled> {
+	using Proto = proto::events::NodeEnabled;
+	using Event = NodeEnabled;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_node(e.node);
+		p.set_enabled(e.enabled);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.node()), p.enabled()}; }
+};
+
+TOAST_PROTO_EVENT(NodeEnabled);
+
+template<>
+struct ProtoTraits<InspectorContent::InspectorField> {
+	using Proto = proto::events::InspectorField;
+	using Event = InspectorContent::InspectorField;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_name(e.name);
+		p.set_value(e.value);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.name(), p.value()}; }
+};
+
+template<>
+struct ProtoTraits<InspectorContent> {
+	using Proto = proto::events::InspectorContent;
+	using Event = InspectorContent;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_uid(e.uid);
+		p.set_name(e.name);
+		p.set_enabled(e.enabled);
+		for (const auto& f : e.parameters) {
+			auto* element = p.add_parameters();
+			*element = ProtoTraits<InspectorContent::InspectorField>::toProto(f);
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		std::vector<InspectorContent::InspectorField> parameters;
+		parameters.reserve(p.parameters().size());
+		for (const auto& f : p.parameters()) {
+			parameters.emplace_back(ProtoTraits<InspectorContent::InspectorField>::fromProto(f));
+		}
+		return {p.uid(), p.name(), p.enabled(), parameters};
+	}
+};
+
+TOAST_PROTO_EVENT(InspectorContent);
 
 }

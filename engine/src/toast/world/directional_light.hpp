@@ -12,11 +12,11 @@
 #include <toast/export.hpp>
 
 namespace toast {
-class [[ToastNode]] TOAST_API DirectionalLight : public Light {
+class [[ToastNode, Icon("DirectionalLight")]] TOAST_API DirectionalLight : public Light {
 public:
 	DirectionalLight() = default;
 
-	~DirectionalLight() = default;
+	~DirectionalLight() override = default;
 
 private:
 };

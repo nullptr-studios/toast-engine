@@ -11,6 +11,7 @@ message HierarchyElement {
 
 message UpdateHierarchyData {
   HierarchyElement root = 1;
+  bool is_empty = 2;
 }
 
 message RequestHierarchyUpdate {}
@@ -59,4 +60,39 @@ message WorkspaceMoveNodeTo {
   string target = 1;
   string new_parent = 2;
   string predecessor = 3;
+}
+
+message SetFocusedNode {
+  string node = 1;
+}
+
+message NodeChangeParam {
+  string parameter = 1;
+  string value = 2;
+}
+
+message NodeChangeName {
+  string node = 1;
+  string name = 2;
+}
+
+message NodeCallFunction {
+  string function = 1;
+}
+
+message NodeEnabled {
+  string node = 2;
+  bool enabled = 3;
+}
+
+message InspectorField {
+  string name = 1;
+  string value = 2;
+}
+
+message InspectorContent {
+  string name = 1;
+  bool enabled = 2;
+  repeated InspectorField parameters = 3;
+  string uid = 4;
 }

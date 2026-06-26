@@ -7,16 +7,16 @@
  */
 
 #pragma once
-#include "node.hpp"
+#include "light.hpp"
 
 #include <toast/export.hpp>
 
 namespace toast {
-class [[ToastNode]] TOAST_API AmbientLight : public Node {
+class [[ToastNode, Icon("Environment")]] TOAST_API AmbientLight : public Light {
 public:
 	AmbientLight() = default;
 
-	~AmbientLight() = default;
+	~AmbientLight() override = default;
 
 private:
 };

@@ -45,13 +45,19 @@ auto World::newNode(std::string_view type) -> Node* {
 
 - `[[Reflect]]`: marks a field to be reflected
 - `[[Name("str")]]`: overrides the attribute name on the Inspector panel
-- `[[ReadOnly]]`: value will appear as read-only on the Inspector panel
+- `[[ReadOnly]]`: value will appear as read-only on the Inspector panel and won't be serialized
 - `[[Hidden]]`: value will be saved on files but won't appear on the Inspector panel
 - `[[Group("str")]]`: adds attribute to a given group
 - `[[Subgroup("str")]]`: adds attribute to a given subgroup (must have a valid Group attribute)
 - `[[Range(int, int)]]`: limits the range in the Inspector panel
-- `[[Enum("str", ...)]]`: makes the int field appears as a drop-down menu
-- `[[BitEnum("str", ...)]]`: makes the int field appear as a multiple choice drop-down menu
+- `[[Unit("m/s")]]`: displays units on the attribute
+- `[[InspectorNoModify]]`: value will appear as read-only on the Inspector, but it will be serialized
+(prefer using `ReadOnly` instead)
+
+### Function level attributes
+
+- `[[Reflect]]`: marks a function to be reflected
+- `[[Button("name")]]`: creates a button for a void fn(void) function, name is optional
 
 ## Motivation
 

@@ -572,12 +572,12 @@ static void jsonToTnode(const nlohmann::json& scene_json, const std::filesystem:
 
 extern "C" {
 
-void gltf_generate_intermediates(const char* path) {
+void gltf_generate_intermediates(const char* path) noexcept {
 	std::filesystem::path dir {path};
 	assets::generateIntermediates(dir);
 }
 
-void gltf_create_tnode(const char* json_path, const char* output_path) {
+void gltf_create_tnode(const char* json_path, const char* output_path) noexcept {
 	std::ifstream f(json_path);
 	assets::jsonToTnode(nlohmann::json::parse(f), std::filesystem::path(output_path));
 }

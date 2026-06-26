@@ -22,6 +22,38 @@ auto referenceUid(const assets::Prefab::BasicNode& chunk) -> uint64_t {
 	}
 	return 0;
 }
+
+auto snakeToNormalCase(const std::string& text) -> std::string {
+	if (text.empty()) {
+		return "";
+	}
+
+	std::string result;
+	bool capitalize_next = true;
+
+	for (char ch : text) {
+		if (ch == '_') {
+			if (!result.empty() && result.back() != ' ') {
+				result += ' ';
+				capitalize_next = true;
+			}
+		} else {
+			if (capitalize_next) {
+				result += std::toupper(ch);
+				capitalize_next = false;
+			} else {
+				result += std::tolower(ch);
+			}
+		}
+	}
+
+	// cleanup if theres trailing spaces
+	if (!result.empty() && result.back() == ' ') {
+		result.pop_back();
+	}
+
+	return result;
+}
 }
 
 auto INodeOwner::requestRuntimeCreate(Node& parent, std::string_view type) -> Box<Node> {
@@ -158,7 +190,8 @@ auto INodeOwner::nodeAllocation(const assets::Prefab::BasicNode& node_data) noex
 void INodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) {
 	ZoneScoped;
 
-	node.name(data.name);
+	std::string proper_name = snakeToNormalCase(data.name);
+	node.name(proper_name);
 
 	const NodeInfo* info = node.info();
 	if (not info) {

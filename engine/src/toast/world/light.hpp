@@ -12,10 +12,15 @@
 #include <toast/export.hpp>
 
 namespace toast {
-class [[ToastNode, Hidden]] TOAST_API Light : public Node3D {
+class [[ToastNode, Hidden, Icon("PointLight")]] TOAST_API Light : public Node3D {
 public:
-	Light() { }
+	Light() = default;
 
 private:
+	[[Reflect, Color]]
+	glm::vec3 m_light_color = glm::vec3(1.0f, 1.0f, 1.0f);
+
+	[[Reflect, Unit("lm")]]
+	float m_intensity = 1.0f;
 };
 }

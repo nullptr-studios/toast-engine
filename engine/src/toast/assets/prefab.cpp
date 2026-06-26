@@ -82,7 +82,7 @@ struct BinaryReader {
 			return T {};
 		}
 		T value;
-		std::memcpy(&value, data.data() + offset, sizeof(T));
+		std::memcpy(&value, data.data() + offset, sizeof(T));    // NOLINT
 		offset += sizeof(T);
 		return value;
 	}
@@ -97,6 +97,33 @@ struct BinaryReader {
 		return str;
 	}
 };
+
+auto toSnakeCase(const std::string& text) -> std::string {
+	std::string result;
+	bool last_was_underscore = true;    // avoid underscore at the start
+
+	for (char ch : text) {
+		// replace spaces, - or punctuation
+		if (std::isspace(ch) || ch == '-' || std::ispunct(ch)) {
+			if (!last_was_underscore) {
+				result += '_';
+				last_was_underscore = true;
+			}
+		}
+		// convert to lowercase
+		else if (std::isalnum(ch)) {
+			result += std::tolower(ch);
+			last_was_underscore = false;
+		}
+	}
+
+	// remove end underscore if it exists
+	if (!result.empty() && result.back() == '_') {
+		result.pop_back();
+	}
+
+	return result;
+}
 
 }
 
@@ -424,6 +451,10 @@ auto Prefab::parseType(std::string_view type, bool& is_array) -> std::optional<F
 }
 
 auto Prefab::parseValue(FieldType type, std::string_view value, bool& is_array) -> std::optional<std::any> {
+	return valueFromString(type, is_array, value);
+}
+
+auto Prefab::valueFromString(FieldType type, bool is_array, std::string_view value) -> std::optional<std::any> {
 	auto parse_single = [](FieldType type, std::string_view token) -> std::optional<std::any> {
 		switch (type) {
 			// holy boilerplate lil bro
@@ -577,7 +608,8 @@ auto Prefab::parseValue(FieldType type, std::string_view value, bool& is_array) 
 }
 
 void Prefab::writeNode(const BasicNode& node, std::stringstream& ss) const {
-	ss << std::format("[{0} type={1}]\n", node.name, node.type);
+	std::string name_formatted = toSnakeCase(node.name);
+	ss << std::format("[{0} type={1}]\n", name_formatted, node.type);
 
 	for (const auto& field : node.fields) {
 		writeField(field, ss);
@@ -608,7 +640,7 @@ void Prefab::writeSubgroup(const Subgroup& subgroup, std::stringstream& ss) cons
 	}
 }
 
-void Prefab::writeField(const Field& field, std::stringstream& ss, std::string offset) const {
+auto Prefab::stringifyValue(FieldType type, bool is_array, const std::any& value) -> std::string {
 	auto stringify_single = [](FieldType type, const std::any& value) -> std::string {
 		switch (type) {
 			case FieldType::string_t: return std::any_cast<std::string>(value);
@@ -637,37 +669,39 @@ void Prefab::writeField(const Field& field, std::stringstream& ss, std::string o
 		}
 	};
 
-	std::string value_str;
-	if (field.is_array) {
-		auto stringify_array = [&]<typename T>(FieldType type) -> std::string {
-			const auto& vec = std::any_cast<const std::vector<T>&>(field.value);
-			std::string result;
-			for (size_t i = 0; i < vec.size(); ++i) {
-				result += stringify_single(type, vec[i]);
-				if (i < vec.size() - 1) {
-					result += (type == FieldType::string_t) ? std::string(1, _detail::string_array_separator) : " ";
-				}
-			}
-			return result;
-		};
-
-		switch (field.type) {
-			case FieldType::bool_t: value_str = stringify_array.operator()<bool>(field.type); break;
-			case FieldType::int_t: value_str = stringify_array.operator()<int>(field.type); break;
-			case FieldType::float_t: value_str = stringify_array.operator()<float>(field.type); break;
-			case FieldType::double_t: value_str = stringify_array.operator()<double>(field.type); break;
-			case FieldType::string_t: value_str = stringify_array.operator()<std::string>(field.type); break;
-			case FieldType::vec2_t: value_str = stringify_array.operator()<glm::vec2>(field.type); break;
-			case FieldType::vec3_t: value_str = stringify_array.operator()<glm::vec3>(field.type); break;
-			case FieldType::vec4_t: value_str = stringify_array.operator()<glm::vec4>(field.type); break;
-			case FieldType::quaternion_t: value_str = stringify_array.operator()<glm::quat>(field.type); break;
-			case FieldType::uid_t: value_str = stringify_array.operator()<UID>(field.type); break;
-			default: break;
-		}
-	} else {
-		value_str = stringify_single(field.type, field.value);
+	if (!is_array) {
+		return stringify_single(type, value);
 	}
 
+	auto stringify_array = [&]<typename T>(FieldType type) -> std::string {
+		const auto& vec = std::any_cast<const std::vector<T>&>(value);
+		std::string result;
+		for (size_t i = 0; i < vec.size(); ++i) {
+			result += stringify_single(type, vec[i]);
+			if (i < vec.size() - 1) {
+				result += (type == FieldType::string_t) ? std::string(1, _detail::string_array_separator) : " ";
+			}
+		}
+		return result;
+	};
+
+	switch (type) {
+		case FieldType::bool_t: return stringify_array.operator()<bool>(type);
+		case FieldType::int_t: return stringify_array.operator()<int>(type);
+		case FieldType::float_t: return stringify_array.operator()<float>(type);
+		case FieldType::double_t: return stringify_array.operator()<double>(type);
+		case FieldType::string_t: return stringify_array.operator()<std::string>(type);
+		case FieldType::vec2_t: return stringify_array.operator()<glm::vec2>(type);
+		case FieldType::vec3_t: return stringify_array.operator()<glm::vec3>(type);
+		case FieldType::vec4_t: return stringify_array.operator()<glm::vec4>(type);
+		case FieldType::quaternion_t: return stringify_array.operator()<glm::quat>(type);
+		case FieldType::uid_t: return stringify_array.operator()<UID>(type);
+		default: return "";
+	}
+}
+
+void Prefab::writeField(const Field& field, std::stringstream& ss, std::string offset) const {
+	std::string value_str = stringifyValue(field.type, field.is_array, field.value);
 	ss << std::format("{0}{1} @{2} = {3}\n", offset, field.name, writeType(field.type, field.is_array), value_str);
 }
 
@@ -731,7 +765,8 @@ auto Prefab::toBinary() const -> std::vector<uint8_t> {
 	}
 
 	for (const auto& node : nodes) {
-		writeString(buffer, node.name);
+		std::string formatted_name = toSnakeCase(node.name);
+		writeString(buffer, formatted_name);
 		writeString(buffer, node.type);
 
 		writeValue(buffer, static_cast<uint32_t>(node.fields.size()));

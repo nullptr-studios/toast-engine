@@ -1,8 +1,12 @@
+using System;
 using System.Linq;
 using System.Text.Json;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+using ClangSharp;
 using editor.Components.Elements;
 using editor.Engine;
 
@@ -13,7 +17,14 @@ public class NodeDisplayItem : SearchableTreeItem<NodeDisplayItem> {
 		Name = item.Name;
 		IsGame = HasAttr(item.Info.Attributes, "Game");
 		IsHidden = HasAttr(item.Info.Attributes, "Hidden");
-		HasIcon = HasAttr(item.Info.Attributes, "Icon");
+		Color = ReflectionDatabase.ResolveColor(item.Info.Name);
+		string iconName = ReflectionDatabase.ResolveIcon(item.Info.Name);
+		try {
+			Icon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png")));
+		} catch (Exception ex) {
+			Log.Warn($"Failed to load icon for node {item.Info.Name}: {ex.Message}");
+			Icon = new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/2x/Circle.png")));
+		}
 		AllChildren = item.Children.Select(c => new NodeDisplayItem(c)).ToList();
 		foreach (var c in AllChildren) FilteredChildren.Add(c);
 		InitSegments();
@@ -21,7 +32,8 @@ public class NodeDisplayItem : SearchableTreeItem<NodeDisplayItem> {
 
 	public bool IsGame { get; }
 	public bool IsHidden { get; }
-	public bool HasIcon { get; }
+	public string Color { get; }
+	public Bitmap? Icon { get; }
 	public FontStyle FontStyle => IsGame ? FontStyle.Italic : FontStyle.Normal;
 	public double Opacity => IsHidden ? 0.4 : 1.0;
 	public IBrush TextColor { get; } = Brushes.White;
