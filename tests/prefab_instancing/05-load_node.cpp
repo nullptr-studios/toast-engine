@@ -72,7 +72,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/05-load_node", test_pre
 	WorldTestAccess::waitForLoads(*world);
 	WorldTestAccess::drainLoadQueue(*world);
 
-	Box<Node> root = WorldTestAccess::findCached("scene_root");
+	Box<Node> root = WorldTestAccess::findCached("Scene Root");
 	assert(root.exists());
 
 	// The scene root is stamped with its own asset (scenes are prefabs).
