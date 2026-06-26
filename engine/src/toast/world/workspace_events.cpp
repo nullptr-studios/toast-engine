@@ -13,6 +13,7 @@ UpdateHierarchyData::HierarchyElement::HierarchyElement(const toast::Box<toast::
 	name = node->name();
 	type = node->info()->type;
 	enabled = node->enabled();
+	is_prefab = node->type() == toast::NodeType::root;
 	children.reserve(node->children().size());
 	for (const auto& c : node->children()) {
 		// TODO: not go down if its a prefab
@@ -26,6 +27,7 @@ UpdateHierarchyData::HierarchyElement::HierarchyElement(const HierarchyElement& 
 	type = other.type;
 	enabled = other.enabled;
 	children = other.children;
+	is_prefab = other.is_prefab;
 }
 
 UpdateHierarchyData::UpdateHierarchyData(const toast::Box<toast::Node>& node) {
@@ -47,6 +49,7 @@ struct ProtoTraits<UpdateHierarchyData::HierarchyElement> {
 		p.set_name(e.name);
 		p.set_type(e.type);
 		p.set_enabled(e.enabled);
+		p.set_is_prefab(e.is_prefab);
 		for (const auto& c : e.children) {
 			auto* element = p.add_children();
 			*element = toProto(c);
@@ -60,6 +63,7 @@ struct ProtoTraits<UpdateHierarchyData::HierarchyElement> {
 		e.name = p.name();
 		e.type = p.type();
 		e.enabled = p.enabled();
+		e.is_prefab = p.is_prefab();
 		e.children.reserve(p.children_size());
 		for (const auto& c : p.children()) {
 			e.children.emplace_back(fromProto(c));

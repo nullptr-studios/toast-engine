@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -19,10 +21,21 @@ public class HierarchyElement {
 		Name = e.Name;
 		Uid = e.Uid;
 		Type = e.Type;
+		IsPrefab = e.IsPrefab;
 		Enabled = e.Enabled;
+		Color = ReflectionDatabase.ResolveColor(e.Type);
 		foreach (var c in e.Children) {
 			if (c is null) continue;
 			Children.Add(new HierarchyElement(c, owner, this));
+		}
+
+		try {
+			string iconName = ReflectionDatabase.ResolveIcon(e.Type);
+			Icon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1.5x/{iconName}.png")));
+			SmallIcon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1x/{iconName}.png")));
+			LargeIcon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png")));
+		} catch (Exception ex) {
+			Log.Warn($"Failed to open icon for {e.Type}: {ex.Message}");
 		}
 
 		foreach (var child in Children) FilteredChildren.Add(child);
@@ -32,9 +45,12 @@ public class HierarchyElement {
 	public string Uid { get; set; }
 	public string Type { get; set; }
 	public bool Enabled { get; set; }
-	public string? Icon { get; set; }
+	public Bitmap? Icon { get; set; }      // On avares://editor/Resources/node_icons/1.5x/<Icon Attribute>.png
+	public Bitmap? SmallIcon { get; set; } // On avares://editor/Resources/node_icons/1x/<Icon Attribute>.png
+	public Bitmap? LargeIcon { get; set; } // On avares://editor/Resources/node_icons/2x/<Icon Attribute>.png
 	public string? Color { get; set; }
 	public bool IsRoot { get; set; }
+	public bool IsPrefab { get; set; }
 	public ObservableCollection<HierarchyElement> Children { get; set; } = [];
 	public ObservableCollection<HierarchyElement> FilteredChildren { get; } = [];
 

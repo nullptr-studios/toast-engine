@@ -366,8 +366,6 @@ void Workspace::tick() {
 	std::vector<event::InspectorContent::InspectorField> fields;
 	Node* node = &*m_focused_node;
 
-	// all_fields holds only a type's own fields, so walk the inheritance chain (derived -> base)
-	// through base_type to include inherited fields too
 	for (const NodeInfo* type = node->info(); type != nullptr; type = type->base_type) {
 		for (const auto& field : type->all_fields) {
 			std::any value = field.get(node);
@@ -378,8 +376,6 @@ void Workspace::tick() {
 				glm::vec3 deg = glm::degrees(glm::eulerAngles(std::any_cast<glm::quat>(value)));
 				text = std::format("{} {} {}", deg.x, deg.y, deg.z);
 			} else if (field.value_type == FieldType::uid_t && not field.is_array) {
-				// node references (Box<Node>) come back as a Box, asset handles (AssetHandle<T>) come
-				// back as a UID; normalize both to a uid string ("" when empty so the editor shows it unset)
 				if (auto* box = std::any_cast<Box<Node>>(&value); box != nullptr) {
 					text = box->exists() ? (*box)->uid().get() : "";
 				} else if (auto* id = std::any_cast<UID>(&value); id != nullptr) {
@@ -388,11 +384,7 @@ void Workspace::tick() {
 			} else {
 				try {
 					text = assets::Prefab::stringifyValue(field.value_type, field.is_array, value);
-				} catch (const std::bad_any_cast&) {
-					// the field stores a representation the text serializer doesn't handle (e.g. a raw
-					// std::array); skip its value rather than crashing the whole inspector stream
-					text = "";
-				}
+				} catch (const std::bad_any_cast&) { text = ""; }
 			}
 
 			fields.emplace_back(field.name, text);

@@ -18,6 +18,7 @@ struct UpdateHierarchyData : Event<UpdateHierarchyData> {
 		std::string name;
 		std::string type;
 		bool enabled;
+		bool is_prefab;
 		std::vector<HierarchyElement> children;
 
 		HierarchyElement(const toast::Box<toast::Node>& node);

@@ -7,6 +7,7 @@ message HierarchyElement {
   string type = 3;
   bool enabled = 4;
   repeated HierarchyElement children = 5;
+  bool is_prefab = 6;
 }
 
 message UpdateHierarchyData {
