@@ -2,26 +2,24 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
 	<!-- Background levels, E1 = darkest, E5 = lightest -->
-	<SolidColorBrush x:Key="E1" Color="#101010" />
-	<SolidColorBrush x:Key="E2" Color="#202020" />
-	<SolidColorBrush x:Key="E3" Color="#303030" />
-	<SolidColorBrush x:Key="E4" Color="#404040" />
-	<SolidColorBrush x:Key="E5" Color="#505050" />
+	<SolidColorBrush x:Key="Bg1" Color="#101010" />
+	<SolidColorBrush x:Key="Bg2" Color="#202020" />
+	<SolidColorBrush x:Key="Bg3" Color="#303030" />
+	<SolidColorBrush x:Key="Bg4" Color="#404040" />
+	<SolidColorBrush x:Key="Bg5" Color="#505050" />
 
 	<!-- Text -->
-	<SolidColorBrush x:Key="Fg" Color="#FFFFFF" />
-	<SolidColorBrush x:Key="FgMuted" Color="#b0b0b0" />
+	<SolidColorBrush x:Key="Text" Color="#fafafa" />
+	<SolidColorBrush x:Key="TextMuted" Color="#a0a0a0" />
 
 	<!-- Semantic accent colors -->
-	<SolidColorBrush x:Key="Red" Color="#ff7b72" />
-	<SolidColorBrush x:Key="Green" Color="#3fb950" />
-	<SolidColorBrush x:Key="Yellow" Color="#d29922" />
-	<SolidColorBrush x:Key="Blue" Color="#58a6ff" />
-	<SolidColorBrush x:Key="Magenta" Color="#bc8cff" />
-	<SolidColorBrush x:Key="Cyan" Color="#39c5cf" />
-
-	<!-- Selection state -->
-	<SolidColorBrush x:Key="SelectionBg" Color="#1a2a48" />
-	<SolidColorBrush x:Key="SelectionBorder" Color="#5588FF" />
+	<SolidColorBrush x:Key="Red" Color="#ff1659" />
+	<SolidColorBrush x:Key="Green" Color="#00cc33" />
+	<SolidColorBrush x:Key="Blue" Color="#29adff" />
+	<SolidColorBrush x:Key="Magenta" Color="#ad73ff" />
+	<SolidColorBrush x:Key="Orange" Color="#ffa300" />
+	<SolidColorBrush x:Key="Yellow" Color="#ffec27" />
+	<SolidColorBrush x:Key="Cyan" Color="#73ffea" />
+	<SolidColorBrush x:Key="Beige" Color="#ffccaa" />
 
 </ResourceDictionary>

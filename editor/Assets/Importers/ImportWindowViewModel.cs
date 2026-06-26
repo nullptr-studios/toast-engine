@@ -200,7 +200,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 					if (prop.Name is not ("type" or "version"))
 						result.Add(Path.GetFullPath(ProjectContext.Resolve(prop.Name)));
 		} catch (Exception e) {
-			Console.WriteLine(e);
+			Engine.Log.Error(e.Message);
 		}
 
 		return result;

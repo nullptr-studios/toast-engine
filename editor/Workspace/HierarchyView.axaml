@@ -7,16 +7,16 @@
              x:Class="editor.Workspace.HierarchyView"
              x:DataType="vm:HierarchyViewModel">
 
-	<Border Background="{StaticResource E2}" Padding="8">
+	<Border Background="{StaticResource Bg2}" Padding="8">
 		<DockPanel VerticalSpacing="8">
-			<Border DockPanel.Dock="Top" Background="{StaticResource E3}" Padding="8" CornerRadius="8">
+			<Border DockPanel.Dock="Top" Background="{StaticResource Bg3}" Padding="8" CornerRadius="8">
 				<Grid ColumnDefinitions="Auto, Auto, *" ColumnSpacing="4">
 					<Button Grid.Column="0" Content="+" Command="{Binding AddNodeCommand}" />
 					<Button Grid.Column="1" Content="..." Command="{Binding LoadNodeCommand}" />
 					<TextBox Grid.Column="2" PlaceholderText="Search..." Text="{Binding FilterText}" />
 				</Grid>
 			</Border>
-			<Border Background="{StaticResource E1}" Padding="8" CornerRadius="8">
+			<Border Background="{StaticResource Bg1}" Padding="8" CornerRadius="8">
 				<TreeView x:Name="Tree" ItemsSource="{Binding Root}" SelectedItem="{Binding SelectedNode}">
 					<TreeView.KeyBindings>
 						<KeyBinding Gesture="Ctrl+A" Command="{Binding AddNodeCommand}" CommandParameter="{Binding SelectedNode}" />

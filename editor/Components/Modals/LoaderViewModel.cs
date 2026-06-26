@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -33,6 +34,7 @@ public partial class LoaderViewModel : ViewModelBase {
 	// set by the window before calling StartAsync
 	public Func<Task>? OnComplete { get; set; }
 	public Action? OnClose { get; set; }
+	public Func<string, string, Task>? OnTaskError { get; set; }
 
 	// called from the window's Opened event
 	public async Task StartAsync() {
@@ -46,7 +48,10 @@ public partial class LoaderViewModel : ViewModelBase {
 			try {
 				await RunTaskAsync(task);
 			} catch (Exception ex) {
-				AppendLine($"error: {ex.Message}");
+				var failure = ex as LoaderTaskException ?? new LoaderTaskException(task.Label, ex.Message, ex);
+				AppendLine($"error: {failure.Message}");
+				if (OnTaskError is not null)
+					await OnTaskError(failure.Title, failure.Message);
 			}
 
 			Progress = (double)(i + 1) / total * 100.0;
@@ -72,44 +77,58 @@ public partial class LoaderViewModel : ViewModelBase {
 		AppendLine("");
 	}
 
-	// streams stdout and stderr to the console lines as the process runs (not buffered)
+	// streams stdout and stderr to the console lines as the process runs
 	private Task RunProcessAsync(string exe, string args) {
 		return Task.Run(() => {
-			try {
-				using var proc = new Process();
-				proc.StartInfo = new ProcessStartInfo {
-					FileName = exe,
-					Arguments = args,
-					WorkingDirectory = ProjectContext.IsInitialized ? ProjectContext.ProjectPath : "",
-					RedirectStandardOutput = true,
-					RedirectStandardError = true,
-					UseShellExecute = false,
-					CreateNoWindow = true
-				};
+			using var proc = new Process();
+			proc.StartInfo = new ProcessStartInfo {
+				FileName = exe,
+				Arguments = args,
+				WorkingDirectory = ProjectContext.IsInitialized ? ProjectContext.ProjectPath : "",
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+				UseShellExecute = false,
+				CreateNoWindow = true
+			};
 
-				proc.OutputDataReceived += (_, e) => {
-					if (e.Data is not null) AppendLine(e.Data);
-				};
-				proc.ErrorDataReceived += (_, e) => {
-					if (e.Data is not null) AppendLine(e.Data);
-				};
+			var stderr = new StringBuilder();
+			var lastOut = "";
 
-				proc.Start();
-				proc.BeginOutputReadLine();
-				proc.BeginErrorReadLine();
-				proc.WaitForExit();
+			proc.OutputDataReceived += (_, e) => {
+				if (e.Data is null) return;
+				if (!string.IsNullOrWhiteSpace(e.Data)) lastOut = e.Data;
+				AppendLine(e.Data);
+			};
+			proc.ErrorDataReceived += (_, e) => {
+				if (e.Data is null) return;
+				stderr.AppendLine(e.Data);
+				AppendLine(e.Data);
+			};
 
-				if (proc.ExitCode != 0)
-					AppendLine($"(exited with code {proc.ExitCode})");
-			} catch (Exception ex) {
-				AppendLine($"error: {ex.Message}");
+			proc.Start();
+			proc.BeginOutputReadLine();
+			proc.BeginErrorReadLine();
+			proc.WaitForExit();
+
+			if (proc.ExitCode is 0) {
+				AppendLine("exit code: 0 (success)");
+				return;
 			}
+
+			// last log line + stderr, finished off with the exit code on its own line
+			var detail = new StringBuilder();
+			if (!string.IsNullOrWhiteSpace(lastOut)) detail.AppendLine(lastOut);
+			var err = stderr.ToString().TrimEnd();
+			if (err.Length > 0) detail.AppendLine(err);
+			detail.Append($"(exited with code {proc.ExitCode})");
+
+			throw new Exception(detail.ToString());
 		});
 	}
 
 	// posts to the UI thread because this is called from background tasks and process callbacks
 	private void AppendLine(string text) {
-		Console.WriteLine(text);
+		Engine.Log.Trace(text);
 		Dispatcher.UIThread.Post(() => ConsoleLines.Add(text));
 	}
 }

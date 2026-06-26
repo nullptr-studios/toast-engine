@@ -17,7 +17,7 @@ public class SeverityToColorConverter : IValueConverter {
 	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
 		if (value is uint severity) {
 			var key = severity switch {
-				0 => "FgMuted", // Trace
+				0 => "TextMuted", // Trace
 				1 => "Green",   // Info
 				2 => "Yellow",  // Warning
 				_ => "Red"      // Error / Critical
@@ -47,7 +47,7 @@ public class BoolToOpacityConverter : IValueConverter {
 public class EnabledToColorConverter : IValueConverter {
 	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
 		if (value is bool b)
-			return ConverterHelpers.GetBrush(b ? "Fg" : "FgMuted") ?? Brushes.White;
+			return ConverterHelpers.GetBrush(b ? "Text" : "TextMuted") ?? Brushes.White;
 		return Brushes.White;
 	}
 

@@ -7,10 +7,10 @@
         Width="380" Height="460"
         CanResize="False" CanMaximize="False"
         WindowStartupLocation="CenterOwner"
-        Background="{StaticResource E2}">
+        Background="{StaticResource Bg2}">
 
 	<Grid RowDefinitions="*,Auto" Margin="12" RowSpacing="8">
-		<Border Grid.Row="0" Background="{StaticResource E1}" CornerRadius="8">
+		<Border Grid.Row="0" Background="{StaticResource Bg1}" CornerRadius="8">
 			<TreeView ItemsSource="{Binding Roots}"
 			          SelectedItem="{Binding SelectedFolder}"
 			          Margin="4">

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
 
@@ -41,6 +42,14 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		ExpandAllCommand = new RelayCommand(() => SetAllExpanded(true));
 		CollapseAllCommand = new RelayCommand(() => SetAllExpanded(false));
 		LoadFolders();
+
+		// auto-reload whenever the asset database changes
+		AssetDatabase.ReloadedDatabase += OnDatabaseReloaded;
+	}
+
+	// the database can be rebuilt from background work, so dispatch the reload back onto the UI thread
+	private void OnDatabaseReloaded() {
+		Dispatcher.UIThread.Post(LoadFolders);
 	}
 
 	public AssetFolder? SelectedFolder {
