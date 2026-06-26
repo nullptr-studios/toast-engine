@@ -26,6 +26,7 @@
 namespace logging {
 
 namespace {
+std::mutex fallback_database_mutex;
 std::vector<std::tuple<std::string, unsigned, char, std::string, std::string>> fallback_database;
 }
 
@@ -140,7 +141,13 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 		instance->initNetworkRetry();
 
 		// Send logs on the queue
-		for (const auto& [file, line, severity, sink, message] : fallback_database) {
+		std::vector<std::tuple<std::string, unsigned, char, std::string, std::string>> logs_to_send;
+		{
+			std::lock_guard lock(fallback_database_mutex);
+			logs_to_send = fallback_database;
+			fallback_database.clear();
+		}
+		for (const auto& [file, line, severity, sink, message] : logs_to_send) {
 			log(file, line, severity, sink, message);
 		}
 	});
@@ -157,6 +164,7 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 
 	// Add the logs to a fallback database if it doesn't exist, then send them when initialized
 	if (instance == nullptr) {
+		std::lock_guard lock(fallback_database_mutex);
 		fallback_database.emplace_back(file, line, severity, sink, message);
 		return;
 	}
