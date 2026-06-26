@@ -4,60 +4,162 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:conv="using:editor.Components.Converters"
+             xmlns:b="using:editor.Components.Behaviors"
              mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="900"
              x:Class="editor.Workspace.HierarchyView"
-             x:DataType="vm:HierarchyViewModel">
+             x:DataType="vm:HierarchyViewModel"
+             Focusable="True">
 
 	<UserControl.Resources>
 		<conv:ResourceBrushConverter x:Key="BrushFromKey" />
 	</UserControl.Resources>
 
+	<UserControl.KeyBindings>
+		<KeyBinding Gesture="Ctrl+A" Command="{Binding AddNodeCommand}" CommandParameter="{Binding SelectedNode}" />
+		<KeyBinding Gesture="Ctrl+Shift+A" Command="{Binding LoadNodeCommand}" CommandParameter="{Binding SelectedNode}" />
+		<KeyBinding Gesture="Ctrl+X" Command="{Binding CutCommand}" CommandParameter="{Binding SelectedNode}" />
+		<KeyBinding Gesture="Ctrl+C" Command="{Binding CopyCommand}" CommandParameter="{Binding SelectedNode}" />
+		<KeyBinding Gesture="Ctrl+V" Command="{Binding PasteCommand}" CommandParameter="{Binding SelectedNode}" />
+		<KeyBinding Gesture="F2" Command="{Binding RenameCommand}" CommandParameter="{Binding SelectedNode}" />
+		<KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateCommand}" CommandParameter="{Binding SelectedNode}" />
+		<KeyBinding Gesture="Ctrl+Up" Command="{Binding MoveUpCommand}" CommandParameter="{Binding SelectedNode}" />
+		<KeyBinding Gesture="Ctrl+Down" Command="{Binding MoveDownCommand}" CommandParameter="{Binding SelectedNode}" />
+		<KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" CommandParameter="{Binding SelectedNode}" />
+		<KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" CommandParameter="{Binding SelectedNode}" />
+		<KeyBinding Gesture="Delete" Command="{Binding DeleteCommand}" CommandParameter="{Binding SelectedNode}" />
+	</UserControl.KeyBindings>
+
+	<UserControl.Styles>
+		<!-- enable tick -->
+		<Style Selector="CheckBox.tick:checked /template/ Border#NormalRectangle">
+			<Setter Property="Background" Value="{StaticResource Red}" />
+			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
+		</Style>
+		<Style Selector="CheckBox.tick:checked:pointerover /template/ Border#NormalRectangle">
+			<Setter Property="Background" Value="{StaticResource Red}" />
+			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
+		</Style>
+		<Style Selector="CheckBox.tick:checked:pressed /template/ Border#NormalRectangle">
+			<Setter Property="Background" Value="{StaticResource Red}" />
+			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
+		</Style>
+		<Style Selector="CheckBox.tick:checked /template/ Path#CheckGlyph">
+			<Setter Property="Fill" Value="{StaticResource Bg1}" />
+			<Setter Property="Stroke" Value="{StaticResource Bg1}" />
+		</Style>
+
+		<!-- highlights -->
+		<Style Selector="Border.row">
+			<Setter Property="Background" Value="Transparent" />
+		</Style>
+		<Style Selector="Border.row.drop">
+			<Setter Property="Background" Value="{StaticResource DarkRed}" />
+		</Style>
+
+		<!-- selected row name -->
+		<Style Selector="TextBlock.selected">
+			<Setter Property="FontWeight" Value="SemiBold" />
+		</Style>
+
+		<!-- prefab root node -->
+		<Style Selector="TextBlock.prefab">
+			<Setter Property="FontStyle" Value="Italic" />
+		</Style>
+
+		<!-- prefab interior nodes -->
+		<Style Selector="TextBlock.prefabChild">
+			<Setter Property="FontStyle" Value="Italic" />
+			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+		</Style>
+
+		<!-- disabled node text -->
+		<Style Selector="TextBlock.disabled">
+			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+		</Style>
+
+		<!-- prefab children toggle -->
+		<Style Selector="ToggleButton.prefabToggle:checked /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Red}" />
+		</Style>
+		<Style Selector="ToggleButton.prefabToggle:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Red}" />
+		</Style>
+		<Style Selector="ToggleButton.prefabToggle:checked:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Red}" />
+		</Style>
+	</UserControl.Styles>
+
 	<Border Background="{StaticResource Bg2}" Padding="8">
 		<DockPanel VerticalSpacing="8">
-			<Border DockPanel.Dock="Top" Background="{StaticResource Bg3}" Padding="8" CornerRadius="8">
-				<Grid ColumnDefinitions="Auto, Auto, *" ColumnSpacing="4">
-					<Button Grid.Column="0" Command="{Binding AddNodeCommand}" CornerRadius="6">
-						<LucideIcon Kind="Plus" Size="18" StrokeWidth="2.5"/>
-						<ToolTip.Tip>
-							Add a new Node as child
-						</ToolTip.Tip>
-					</Button>
-					<Button Grid.Column="1" Command="{Binding LoadNodeCommand}" CornerRadius="6">
-						<LucideIcon Kind="Package" Size="18" StrokeWidth="2"/>
-						<ToolTip.Tip>
-							Load a Node File as child
-						</ToolTip.Tip>
-					</Button>
-					<TextBox Grid.Column="2"
+			<!-- Header -->
+			<Border DockPanel.Dock="Top" Background="{StaticResource Bg3}" Padding="8" CornerRadius="8"
+			        IsVisible="{Binding HasNodes}">
+				<StackPanel Spacing="8">
+					<Grid ColumnDefinitions="Auto, Auto, *, Auto, Auto, Auto, Auto" ColumnSpacing="4">
+						<Button Grid.Column="0" Command="{Binding AddNodeCommand}" CornerRadius="6" Background="{StaticResource Red}">
+							<StackPanel Orientation="Horizontal" Spacing="2">
+								<LucideIcon Kind="Plus" Size="18" StrokeWidth="2.5" Foreground="{StaticResource Text}"/>
+								<TextBlock Text="Add" Foreground="{StaticResource Text}"/>
+							</StackPanel>
+							<ToolTip.Tip>
+								Add a new Node as child
+							</ToolTip.Tip>
+						</Button>
+						<Button Grid.Column="1" Command="{Binding LoadNodeCommand}" CornerRadius="6">
+							<StackPanel Orientation="Horizontal" Spacing="2">
+								<LucideIcon Kind="Package" Size="18" StrokeWidth="2.5"/>
+								<TextBlock Text="Load"/>
+							</StackPanel>
+							<ToolTip.Tip>
+								Load a Node File as child
+							</ToolTip.Tip>
+						</Button>
+						<ToggleButton Grid.Column="3"
+						              IsChecked="{Binding ShowPrefabChildren}"
+						              CornerRadius="6"
+						              Classes="prefabToggle">
+							<LucideIcon Kind="FileBox" Size="18" StrokeWidth="2"/>
+							<ToolTip.Tip>
+								Show prefab children (read-only)
+							</ToolTip.Tip>
+						</ToggleButton>
+						<Button Grid.Column="4" Command="{Binding ExpandAllCommand}" CornerRadius="6">
+							<LucideIcon Kind="ChevronsUpDown" Size="18" StrokeWidth="2"/>
+							<ToolTip.Tip>
+								Expand all nodes (except the selected one)
+							</ToolTip.Tip>
+						</Button>
+						<Button Grid.Column="5" Command="{Binding CollapseAllCommand}" CornerRadius="6">
+							<LucideIcon Kind="ChevronsDownUp" Size="18" StrokeWidth="2"/>
+							<ToolTip.Tip>
+								Collapse all nodes (except the selected one)
+							</ToolTip.Tip>
+						</Button>
+					</Grid>
+					<TextBox
 					         PlaceholderText="Filter nodes..."
 					         Text="{Binding FilterText}"
 					         BorderThickness="0"
 					         CornerRadius="6"
 					         Background="{StaticResource Bg1}"
 					         VerticalContentAlignment="Center"/>
-				</Grid>
+				</StackPanel>
+
 			</Border>
-			<TreeView x:Name="Tree" ItemsSource="{Binding Root}" SelectedItem="{Binding SelectedNode}">
-				<TreeView.KeyBindings>
-					<KeyBinding Gesture="Ctrl+A" Command="{Binding AddNodeCommand}" CommandParameter="{Binding SelectedNode}" />
-					<KeyBinding Gesture="Ctrl+Shift+A" Command="{Binding LoadNodeCommand}" CommandParameter="{Binding SelectedNode}" />
-					<KeyBinding Gesture="Ctrl+X" Command="{Binding CutCommand}" CommandParameter="{Binding SelectedNode}" />
-					<KeyBinding Gesture="Ctrl+C" Command="{Binding CopyCommand}" CommandParameter="{Binding SelectedNode}" />
-					<KeyBinding Gesture="Ctrl+V" Command="{Binding PasteCommand}" CommandParameter="{Binding SelectedNode}" />
-					<KeyBinding Gesture="F2" Command="{Binding RenameCommand}" CommandParameter="{Binding SelectedNode}" />
-					<KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateCommand}" CommandParameter="{Binding SelectedNode}" />
-					<KeyBinding Gesture="Ctrl+Up" Command="{Binding MoveUpCommand}" CommandParameter="{Binding SelectedNode}" />
-					<KeyBinding Gesture="Ctrl+Down" Command="{Binding MoveDownCommand}" CommandParameter="{Binding SelectedNode}" />
-					<KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" CommandParameter="{Binding SelectedNode}" />
-					<KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" CommandParameter="{Binding SelectedNode}" />
-					<KeyBinding Gesture="Delete" Command="{Binding DeleteCommand}" CommandParameter="{Binding SelectedNode}" />
-				</TreeView.KeyBindings>
-				<TreeView.Styles>
-					<Style Selector="TreeViewItem">
-						<Setter Property="IsExpanded" Value="True" />
-					</Style>
-				</TreeView.Styles>
-				<TreeView.ContextMenu>
+
+			<Grid>
+				<TextBlock IsVisible="{Binding !HasNodes}"
+				           Text="No Node file opened"
+				           FontStyle="Italic"
+				           Foreground="{StaticResource TextMuted}"
+				           HorizontalAlignment="Center"
+				           VerticalAlignment="Center"
+				           Padding="0,0,3,0" />
+
+				<!-- tree -->
+				<ScrollViewer HorizontalScrollBarVisibility="Disabled" Background="Transparent"
+				              IsVisible="{Binding HasNodes}">
+				<ScrollViewer.ContextMenu>
 					<ContextMenu x:DataType="vm:HierarchyViewModel" Opening="OnEmptySpaceMenuOpening">
 						<MenuItem Command="{Binding AddNodeCommand}" InputGesture="Ctrl+A">
 							<MenuItem.Header>
@@ -76,208 +178,252 @@
 							</MenuItem.Header>
 						</MenuItem>
 					</ContextMenu>
-				</TreeView.ContextMenu>
-				<TreeView.ItemTemplate>
-					<TreeDataTemplate ItemsSource="{Binding FilteredChildren}" x:DataType="vm:HierarchyElement">
-						<Grid VerticalAlignment="Center"
-						      ColumnDefinitions="Auto, Auto, *, Auto"
-						      PointerPressed="OnItemPointerPressed"
-						      PointerMoved="OnItemPointerMoved"
-						      PointerReleased="OnItemPointerReleased">
-							<Grid.ContextMenu>
-								<ContextMenu x:DataType="vm:HierarchyElement">
-									<MenuItem InputGesture="Ctrl+A"
-									          Command="{Binding Owner.AddNodeCommand}"
-									          CommandParameter="{Binding}">
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<LucideIcon Kind="Plus" StrokeWidth="2.5" Size="16"/>
-												<TextBlock Text="Add Node"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
-									<MenuItem InputGesture="Ctrl+Shift+A"
-									          Command="{Binding Owner.LoadNodeCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<Border Background="Transparent" Width="16"/>
-												<TextBlock Text="Load Node File"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
+				</ScrollViewer.ContextMenu>
+				<Grid>
+					<vm:HierarchyConnectorLayer x:Name="Connector"
+					                            HorizontalAlignment="Stretch"
+					                            VerticalAlignment="Top" />
+					<ItemsControl x:Name="Rows" ItemsSource="{Binding Rows}">
+						<ItemsControl.ItemTemplate>
+							<DataTemplate x:DataType="vm:HierarchyElement">
+								<Border Height="28"
+								        Classes="row"
+								        Classes.drop="{Binding IsDropTarget}"
+								        DragDrop.AllowDrop="True"
+								        PointerPressed="OnItemPointerPressed"
+								        PointerMoved="OnItemPointerMoved"
+								        PointerReleased="OnItemPointerReleased">
+									<Grid VerticalAlignment="Center"
+									      Background="Transparent"
+									      ColumnDefinitions="Auto, Auto, Auto, Auto, *, Auto">
+										<Grid.ContextMenu>
+											<ContextMenu x:DataType="vm:HierarchyElement">
+												<MenuItem InputGesture="Ctrl+A"
+												          IsEnabled="{Binding CanAddChildren}"
+												          Command="{Binding Owner.AddNodeCommand}"
+												          CommandParameter="{Binding}">
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<LucideIcon Kind="Plus" StrokeWidth="2.5" Size="16"/>
+															<TextBlock Text="Add Node"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
+												<MenuItem InputGesture="Ctrl+Shift+A"
+												          IsEnabled="{Binding CanAddChildren}"
+												          Command="{Binding Owner.LoadNodeCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<Border Background="Transparent" Width="16"/>
+															<TextBlock Text="Load Node File"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
 
-									<Separator />
-									<MenuItem IsVisible="{Binding !IsRoot}"
-									          InputGesture="Ctrl+X"
-									          Command="{Binding Owner.CutCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<LucideIcon Kind="Scissors" StrokeWidth="2.5" Size="16"/>
-												<TextBlock Text="Cut"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
-									<MenuItem InputGesture="Ctrl+C"
-									          Command="{Binding Owner.CopyCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<LucideIcon Kind="ClipboardCopy" StrokeWidth="2.5" Size="16"/>
-												<TextBlock Text="Copy"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
-									<MenuItem InputGesture="Ctrl+V"
-									          Command="{Binding Owner.PasteCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<LucideIcon Kind="ClipboardPaste" StrokeWidth="2.5" Size="16"/>
-												<TextBlock Text="Paste"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
+												<Separator />
+												<MenuItem IsEnabled="{Binding !IsRoot}"
+												          InputGesture="Ctrl+X"
+												          Command="{Binding Owner.CutCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<LucideIcon Kind="Scissors" StrokeWidth="2.5" Size="16"/>
+															<TextBlock Text="Cut"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
+												<MenuItem InputGesture="Ctrl+C"
+												          Command="{Binding Owner.CopyCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<LucideIcon Kind="ClipboardCopy" StrokeWidth="2.5" Size="16"/>
+															<TextBlock Text="Copy"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
+												<MenuItem InputGesture="Ctrl+V"
+												          IsEnabled="{Binding CanAddChildren}"
+												          Command="{Binding Owner.PasteCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<LucideIcon Kind="ClipboardPaste" StrokeWidth="2.5" Size="16"/>
+															<TextBlock Text="Paste"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
 
-									<Separator />
-									<MenuItem Command="{Binding Owner.ChangeTypeCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<LucideIcon Kind="PencilRuler" StrokeWidth="2.5" Size="16"/>
-												<TextBlock Text="Change type"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
-									<MenuItem InputGesture="F2"
-									          Command="{Binding Owner.RenameCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<Border Background="Transparent" Width="16"/>
-												<TextBlock Text="Rename"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
+												<Separator />
+												<MenuItem IsEnabled="{Binding CanAddChildren}"
+												          Command="{Binding Owner.ChangeTypeCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<LucideIcon Kind="PencilRuler" StrokeWidth="2.5" Size="16"/>
+															<TextBlock Text="Change type"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
+												<MenuItem InputGesture="F2"
+												          IsEnabled="{Binding !IsRoot}"
+												          Command="{Binding Owner.RenameCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<Border Background="Transparent" Width="16"/>
+															<TextBlock Text="Rename"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
 
-									<Separator />
-									<MenuItem IsVisible="{Binding !IsRoot}"
-									          InputGesture="Ctrl+D"
-									          Command="{Binding Owner.DuplicateCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<LucideIcon Kind="Copy" StrokeWidth="2.5" Size="16"/>
-												<TextBlock Text="Duplicate"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
-									<MenuItem IsVisible="{Binding !IsRoot}"
-									          InputGesture="Ctrl+Up"
-									          Command="{Binding Owner.MoveUpCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<Border Background="Transparent" Width="16"/>
-												<TextBlock Text="Move up"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
-									<MenuItem IsVisible="{Binding !IsRoot}"
-									          InputGesture="Ctrl+Down"
-									          Command="{Binding Owner.MoveDownCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<Border Background="Transparent" Width="16"/>
-												<TextBlock Text="Move down"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
-									<MenuItem IsVisible="{Binding !IsRoot}"
-									          Command="{Binding Owner.ChangeParentCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<LucideIcon Kind="Network" StrokeWidth="2.5" Size="16"/>
-												<TextBlock Text="Change parent"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
-									<MenuItem IsVisible="{Binding !IsRoot}"
-									          Command="{Binding Owner.PromoteCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<LucideIcon Kind="FileBox" StrokeWidth="2.5" Size="16"/>
-												<TextBlock Text="Promote to Node file"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
-									<MenuItem IsVisible="{Binding IsRoot}"
-									          InputGesture="Ctrl+S"
-									          Command="{Binding Owner.SaveCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<LucideIcon Kind="Save" StrokeWidth="2.5" Size="16"/>
-												<TextBlock Text="Save"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
-									<MenuItem IsVisible="{Binding IsRoot}"
-									          InputGesture="Ctrl+Shift+S"
-									          Command="{Binding Owner.SaveAsCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<Border Background="Transparent" Width="16"/>
-												<TextBlock Text="Save as..."/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
+												<Separator />
+												<MenuItem IsVisible="{Binding !IsRoot}"
+												          InputGesture="Ctrl+D"
+												          Command="{Binding Owner.DuplicateCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<LucideIcon Kind="Copy" StrokeWidth="2.5" Size="16"/>
+															<TextBlock Text="Duplicate"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
+												<MenuItem IsVisible="{Binding !IsRoot}"
+												          InputGesture="Ctrl+Up"
+												          Command="{Binding Owner.MoveUpCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<Border Background="Transparent" Width="16"/>
+															<TextBlock Text="Move up"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
+												<MenuItem IsVisible="{Binding !IsRoot}"
+												          InputGesture="Ctrl+Down"
+												          Command="{Binding Owner.MoveDownCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<Border Background="Transparent" Width="16"/>
+															<TextBlock Text="Move down"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
+												<MenuItem IsVisible="{Binding !IsRoot}"
+												          Command="{Binding Owner.ChangeParentCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<LucideIcon Kind="Network" StrokeWidth="2.5" Size="16"/>
+															<TextBlock Text="Change parent"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
+												<MenuItem IsVisible="{Binding !IsRoot}"
+												          IsEnabled="{Binding CanAddChildren}"
+												          Command="{Binding Owner.PromoteCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<LucideIcon Kind="FileBox" StrokeWidth="2.5" Size="16"/>
+															<TextBlock Text="Promote to Node file"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
+												<MenuItem IsVisible="{Binding IsRoot}"
+												          InputGesture="Ctrl+S"
+												          Command="{Binding Owner.SaveCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<LucideIcon Kind="Save" StrokeWidth="2.5" Size="16"/>
+															<TextBlock Text="Save"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
+												<MenuItem IsVisible="{Binding IsRoot}"
+												          InputGesture="Ctrl+Shift+S"
+												          Command="{Binding Owner.SaveAsCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<Border Background="Transparent" Width="16"/>
+															<TextBlock Text="Save as..."/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
 
-									<Separator IsVisible="{Binding !IsRoot}" />
-									<MenuItem IsVisible="{Binding !IsRoot}"
-									          InputGesture="Delete"
-									          Command="{Binding Owner.DeleteCommand}"
-									          CommandParameter="{Binding}" >
-										<MenuItem.Header>
-											<StackPanel Orientation="Horizontal" Spacing="8">
-												<LucideIcon Kind="Shredder" StrokeWidth="2.5" Size="16"/>
-												<TextBlock Text="Delete"/>
-											</StackPanel>
-										</MenuItem.Header>
-									</MenuItem>
-								</ContextMenu>
-							</Grid.ContextMenu>
-							<Border Grid.Column="0"
-							        DockPanel.Dock="Left"
-							        Width="16" Height="16"
-							        Background="{Binding Color,Converter={StaticResource BrushFromKey}}"
-							        Margin="8,0,0,0">
-								<Border.OpacityMask>
-									<ImageBrush Source="{Binding SmallIcon}"/>
-								</Border.OpacityMask>
-							</Border>
-							<LucideIcon Grid.Column="1"
-							            Kind="FileBox"
-							            Size="16" StrokeWidth="2"
-							            IsVisible="{Binding IsPrefab}"
-							            Margin="8,0,0,0"/>
-							<TextBlock Grid.Column="2"
-							           Text="{Binding Name}"
-							           VerticalAlignment="Center"
-							           Margin="8,0,0,0"/>
-							<CheckBox Grid.Column="3"
-							          DockPanel.Dock="Right"
-							          IsEnabled="{Binding Enabled}"
-							          Margin="8,0,0,0"/>
-						</Grid>
-					</TreeDataTemplate>
-				</TreeView.ItemTemplate>
-			</TreeView>
+												<Separator IsVisible="{Binding !IsRoot}" />
+												<MenuItem IsVisible="{Binding !IsRoot}"
+												          InputGesture="Delete"
+												          Command="{Binding Owner.DeleteCommand}"
+												          CommandParameter="{Binding}" >
+													<MenuItem.Header>
+														<StackPanel Orientation="Horizontal" Spacing="8">
+															<LucideIcon Kind="Shredder" StrokeWidth="2.5" Size="16"/>
+															<TextBlock Text="Delete"/>
+														</StackPanel>
+													</MenuItem.Header>
+												</MenuItem>
+											</ContextMenu>
+										</Grid.ContextMenu>
+										<Border Grid.Column="0"
+										        Width="16" Height="16"
+										        Background="{Binding Color,Converter={StaticResource BrushFromKey}}"
+										        Margin="{Binding ContentMargin}">
+											<Border.OpacityMask>
+												<ImageBrush Source="{Binding SmallIcon}"/>
+											</Border.OpacityMask>
+										</Border>
+										<LucideIcon Grid.Column="1"
+										            Kind="FileBox"
+										            Size="16" StrokeWidth="2"
+										            IsVisible="{Binding IsPrefab}"
+										            Margin="8,0,0,0"/>
+										<TextBlock Grid.Column="2"
+										           Classes.selected="{Binding IsSelected}"
+										           Classes.prefab="{Binding IsPrefab}"
+										           Classes.prefabChild="{Binding IsInsidePrefab}"
+										           Classes.disabled="{Binding !Enabled}"
+										           IsVisible="{Binding !IsRenaming}"
+										           b:TextHighlight.Text="{Binding Name}"
+										           b:TextHighlight.Query="{Binding Owner.FilterText}"
+										           VerticalAlignment="Center"
+										           Margin="8,0,0,0"
+										           Padding="0,0,3,0"/>
+										<TextBox Grid.Column="2"
+										         IsVisible="{Binding IsRenaming}"
+										         Text="{Binding DraftName}"
+										         BorderThickness="0"
+										         Background="Transparent"
+										         Padding="0"
+										         VerticalContentAlignment="Center"
+										         Margin="8,0,0,0"
+										         KeyDown="OnRenameKeyDown"
+										         LostFocus="OnRenameCommit"/>
+										<LucideIcon Grid.Column="3"
+										            Kind="Ellipsis"
+										            Size="16" StrokeWidth="2"
+										            IsVisible="{Binding IsFolded}"
+										            Margin="8,0,0,0"/>
+										<CheckBox Grid.Column="5"
+										          Classes="tick"
+										          IsChecked="{Binding Enabled, Mode=OneWay}"
+										          IsEnabled="{Binding !IsInsidePrefab}"
+										          Command="{Binding Owner.ToggleEnabledCommand}"
+										          CommandParameter="{Binding}"
+										          Margin="8,0,0,0"/>
+									</Grid>
+								</Border>
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+				</Grid>
+			</ScrollViewer>
+			</Grid>
 		</DockPanel>
 	</Border>
 </UserControl>

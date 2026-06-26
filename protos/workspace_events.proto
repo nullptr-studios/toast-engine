@@ -86,6 +86,29 @@ message NodeEnabled {
   bool enabled = 3;
 }
 
+message NodeChangeType {
+  string node = 1;
+  string type = 2;
+}
+
+message WorkspaceDuplicateNode {
+  string source = 1;
+  string parent = 2;
+}
+
+message WorkspaceCopyNode {
+  string source = 1;
+}
+
+message WorkspacePasteNode {
+  string parent = 1;
+}
+
+message WorkspacePromoteNode {
+  string target = 1;
+  string path = 2;
+}
+
 message InspectorField {
   string name = 1;
   string value = 2;

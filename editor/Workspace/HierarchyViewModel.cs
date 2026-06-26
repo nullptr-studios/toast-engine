@@ -1,20 +1,25 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
+using editor.Assets;
 using editor.Components.Modals;
 using editor.Engine;
 using Proto.Events;
 
 namespace editor.Workspace;
 
-public class HierarchyElement {
+public class HierarchyElement : INotifyPropertyChanged {
 	public HierarchyElement(Proto.Events.HierarchyElement e, HierarchyViewModel owner, HierarchyElement? parent = null) {
 		Owner = owner;
 		Parent = parent;
@@ -23,6 +28,7 @@ public class HierarchyElement {
 		Type = e.Type;
 		IsPrefab = e.IsPrefab;
 		Enabled = e.Enabled;
+		m_isExpanded = !owner.IsCollapsed(e.Uid); // restore persisted fold state
 		Color = ReflectionDatabase.ResolveColor(e.Type);
 		foreach (var c in e.Children) {
 			if (c is null) continue;
@@ -57,8 +63,64 @@ public class HierarchyElement {
 	public HierarchyViewModel Owner { get; }
 	public HierarchyElement? Parent { get; }
 
-	// returns true if this element or any of its descendants match the query
-	// rebuilds FilteredChildren so the tree view only shows visible nodes
+	public bool IsInsidePrefab => Parent?.IsPrefab == true || Parent?.IsInsidePrefab == true;
+	public bool CanAddChildren => !IsPrefab && !IsInsidePrefab;
+
+	public int Depth { get; set; }
+	public int Index { get; set; }
+
+	public Thickness ContentMargin =>
+		new(HierarchyConnectorLayer.LeftPad + Depth * HierarchyConnectorLayer.IndentStep, 0, 0, 0);
+
+	private bool m_isExpanded = true;
+	public bool IsExpanded {
+		get => m_isExpanded;
+		set {
+			if (m_isExpanded == value) return;
+			m_isExpanded = value;
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsExpanded)));
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFolded)));
+		}
+	}
+
+	public bool IsFolded => !IsExpanded && Children.Count > 0 && string.IsNullOrEmpty(Owner.FilterText);
+
+	private bool m_isSelected;
+	public bool IsSelected {
+		get => m_isSelected;
+		set => SetField(ref m_isSelected, value);
+	}
+
+	private bool m_isDropTarget;
+	public bool IsDropTarget {
+		get => m_isDropTarget;
+		set => SetField(ref m_isDropTarget, value);
+	}
+
+	private bool m_isRenaming;
+	public bool IsRenaming {
+		get => m_isRenaming;
+		set => SetField(ref m_isRenaming, value);
+	}
+
+	private string m_draftName = "";
+	public string DraftName {
+		get => m_draftName;
+		set {
+			if (m_draftName == value) return;
+			m_draftName = value;
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DraftName)));
+		}
+	}
+
+	public event PropertyChangedEventHandler? PropertyChanged;
+
+	private void SetField(ref bool field, bool value, [System.Runtime.CompilerServices.CallerMemberName] string? name = null) {
+		if (field == value) return;
+		field = value;
+		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+	}
+
 	public bool ApplyFilter(string query) {
 		FilteredChildren.Clear();
 
@@ -83,17 +145,23 @@ public partial class HierarchyViewModel : Tool {
 	// "end" -> engine inserts the node after the last sibling
 	private const string MoveToEnd = "end";
 
-	// field not local -> GC would drop it and kill all the subscriptions
-	// ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
 	private readonly Listener m_listener;
+
+	private HierarchyState? m_hierState;
 
 	[ObservableProperty] private string m_filterText = "";
 
 	[ObservableProperty] private HierarchyElement? m_selectedNode;
 
+	[ObservableProperty] private bool m_showPrefabChildren;
+
+	private string? m_clipboardUid;
+	private bool m_clipboardIsCut;
+
 	public static HierarchyViewModel? Current { get; private set; }
 
 	public event Action? HierarchyChanged;
+	public event Action<HierarchyElement>? RenameStarted;
 
 	// raised whenever the selected node changes
 	public static event Action<HierarchyElement?>? SelectionChanged;
@@ -101,6 +169,7 @@ public partial class HierarchyViewModel : Tool {
 	public HierarchyViewModel() {
 		Current = this;
 		m_listener = new Listener();
+		Root.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasNodes));
 
 		// engine sends UpdateHierarchyData after every change (create, delete, move, rename...)
 		// we post to the UI thread because engine callbacks come on the native tick thread
@@ -109,12 +178,14 @@ public partial class HierarchyViewModel : Tool {
 				var prevUid = SelectedNode?.Uid;
 				Root.Clear();
 				if (!e.IsEmpty) {
+					m_hierState = HierarchyState.Load(e.Root.Uid);
 					Root.Add(new HierarchyElement(e.Root, this) { IsRoot = true });
 				}
 				// restore selection after the tree rebuilds so editing a node doesnt lose focus
 				SelectedNode = prevUid is null ? null : Find(Root, prevUid);
 				if (Root.Count > 0) ActiveWorkspace?.SetRootNode(Root[0].Uid);
 				ApplyFilterToRoot();
+				RebuildRows();
 				HierarchyChanged?.Invoke();
 			});
 		});
@@ -122,11 +193,102 @@ public partial class HierarchyViewModel : Tool {
 
 	public ObservableCollection<HierarchyElement> Root { get; } = [];
 
+	public bool HasNodes => Root.Count > 0;
+
+	public ObservableCollection<HierarchyElement> Rows { get; } = [];
+
 	private WorkspaceViewModel? ActiveWorkspace => Root.Count > 0 && Factory is DockFactory f ? f.ActiveWorkspace : null;
 
 	// partial method hooked by the source generator -> fires when FilterText changes
 	partial void OnFilterTextChanged(string value) {
+		// filtering drops the current selection so the search isn't anchored to a node
+		if (!string.IsNullOrEmpty(value)) SelectedNode = null;
 		ApplyFilterToRoot();
+		RebuildRows();
+	}
+
+	partial void OnShowPrefabChildrenChanged(bool value) {
+		RebuildRows();
+		HierarchyChanged?.Invoke();
+	}
+
+	internal bool IsCollapsed(string uid) => m_hierState?.Get(uid, false) ?? false;
+
+	public void RebuildRows() {
+		Rows.Clear();
+		bool filtering = !string.IsNullOrEmpty(FilterText);
+		foreach (var root in Root) Flatten(root, 0, filtering);
+	}
+
+	private void Flatten(HierarchyElement node, int depth, bool filtering) {
+		node.Depth = depth;
+		node.Index = Rows.Count;
+		Rows.Add(node);
+		// stop recursing into prefab children unless the toggle is on
+		if (node.IsPrefab && !ShowPrefabChildren) return;
+		if (!filtering && !node.IsExpanded) return;
+		foreach (var child in node.FilteredChildren) Flatten(child, depth + 1, filtering);
+	}
+
+	public void ToggleExpand(HierarchyElement node) {
+		node.IsExpanded = !node.IsExpanded;
+		m_hierState?.Set(node.Uid, !node.IsExpanded); // store collapsed=true, expanded=false
+		RebuildRows();
+		HierarchyChanged?.Invoke();
+	}
+
+	[RelayCommand]
+	private void ExpandAll() {
+		foreach (var root in Root) SetSubtreeExpanded(root, true);
+		RebuildRows();
+		HierarchyChanged?.Invoke();
+	}
+
+	[RelayCommand]
+	private void CollapseAll() {
+		foreach (var root in Root) SetSubtreeExpanded(root, false);
+		if (SelectedNode is { } sel) {
+			SetSubtreeExpanded(sel, true);
+			for (var p = sel.Parent; p is not null; p = p.Parent) SetExpanded(p, true);
+		}
+
+		RebuildRows();
+		HierarchyChanged?.Invoke();
+	}
+
+	private void SetSubtreeExpanded(HierarchyElement node, bool expanded) {
+		SetExpanded(node, expanded);
+		foreach (var c in node.Children) SetSubtreeExpanded(c, expanded);
+	}
+
+	private void SetExpanded(HierarchyElement node, bool expanded) {
+		node.IsExpanded = expanded;
+		m_hierState?.Set(node.Uid, !expanded);
+	}
+
+	public static bool IsSelfOrDescendant(HierarchyElement node, HierarchyElement candidate) {
+		if (ReferenceEquals(node, candidate)) return true;
+		foreach (var c in node.Children)
+			if (IsSelfOrDescendant(c, candidate))
+				return true;
+		return false;
+	}
+
+	public void DropInto(HierarchyElement dragged, HierarchyElement target) {
+		if (dragged.Uid == target.Uid) return;
+		Events.Send(new WorkspaceMoveNodeTo { Target = dragged.Uid, NewParent = target.Uid, Predecessor = MoveToEnd });
+		WorkspaceState.MarkModified();
+	}
+
+	public void DropBeside(HierarchyElement dragged, HierarchyElement target, bool after) {
+		if (target.Parent is not { } parent) return; // root has no siblings
+		var siblings = parent.Children;
+		var idx = siblings.IndexOf(target);
+		if (idx < 0) return;
+		var predecessor = after ? target.Uid : idx - 1 >= 0 ? siblings[idx - 1].Uid : "";
+		if (predecessor == dragged.Uid) return; // already in place
+		Events.Send(new WorkspaceMoveNodeTo { Target = dragged.Uid, NewParent = parent.Uid, Predecessor = predecessor });
+		WorkspaceState.MarkModified();
 	}
 
 	partial void OnSelectedNodeChanged(HierarchyElement? value) {
@@ -165,10 +327,10 @@ public partial class HierarchyViewModel : Tool {
 	[RelayCommand]
 	private async Task AddNode(HierarchyElement? target) {
 		var t = Target(target);
-		if (t is null) return;
+		if (t is null || t.IsPrefab || t.IsInsidePrefab) return;
 
 		if (App.MainWindow is not { } owner) return;
-		var type = await new NodeTypePickerModal().ShowDialog<string?>(owner);
+		var type = await new NodeTypeTree().ShowDialog<string?>(owner);
 		if (type is null) return;
 
 		Events.Send(new WorkspaceCreateNode { Parent = t.Uid, Type = type });
@@ -176,44 +338,90 @@ public partial class HierarchyViewModel : Tool {
 	}
 
 	[RelayCommand]
-	private void LoadNode(HierarchyElement? target) {
-		// TODO: Load a node from a file and add it as a child of Target(target)
+	private async Task LoadNode(HierarchyElement? target) {
+		var t = Target(target);
+		if (t is null || t.IsPrefab || t.IsInsidePrefab) return;
+
+		if (App.MainWindow is not { } owner) return;
+		var uid = await new AssetList("Node").ShowDialog<string?>(owner);
+		if (uid is null) return;
+
+		Events.Send(new WorkspaceSpawn { Parent = t.Uid, IsUri = false, Uid = uid });
+		WorkspaceState.MarkModified();
 	}
 
 	[RelayCommand]
 	private void Cut(HierarchyElement? target) {
-		// TODO: Cut the target node onto the clipboard
+		var t = Target(target);
+		if (t is null || t.IsRoot || t.IsInsidePrefab) return;
+		m_clipboardUid = t.Uid;
+		m_clipboardIsCut = true;
+		Events.Send(new WorkspaceCopyNode { Source = t.Uid });
 	}
 
 	[RelayCommand]
 	private void Copy(HierarchyElement? target) {
-		// TODO: Copy the target node onto the clipboard
+		var t = Target(target);
+		if (t is null || t.IsInsidePrefab) return;
+		m_clipboardUid = t.Uid;
+		m_clipboardIsCut = false;
+		Events.Send(new WorkspaceCopyNode { Source = t.Uid });
 	}
 
 	[RelayCommand]
 	private void Paste(HierarchyElement? target) {
-		// TODO: Paste the clipboard node as a child of the target node
+		if (m_clipboardUid is null) return;
+		var t = Target(target);
+		if (t is null || t.IsPrefab || t.IsInsidePrefab) return;
+
+		Events.Send(new WorkspacePasteNode { Parent = t.Uid });
+		if (m_clipboardIsCut) {
+			Events.Send(new WorkspaceRemoveNode { Target = m_clipboardUid });
+			m_clipboardUid = null;
+			m_clipboardIsCut = false;
+		}
+		WorkspaceState.MarkModified();
 	}
 
-	[RelayCommand]
+	[RelayCommand(CanExecute = nameof(CanRename))]
 	private void Rename(HierarchyElement? target) {
-		// TODO: Rename the target node
+		var t = Target(target);
+		if (t is null) return;
+		t.DraftName = t.Name;
+		t.IsRenaming = true;
+		RenameStarted?.Invoke(t);
+	}
+
+	private bool CanRename(HierarchyElement? target) {
+		var t = target ?? SelectedNode;
+		return t is null || !t.IsRoot;
 	}
 
 	[RelayCommand]
-	private void ChangeType(HierarchyElement? target) {
-		// TODO: Change the type of the target node
+	private async Task ChangeType(HierarchyElement? target) {
+		var t = Target(target);
+		if (t is null || t.IsPrefab || t.IsInsidePrefab) return;
+
+		if (App.MainWindow is not { } owner) return;
+		var type = await new NodeTypeTree().ShowDialog<string?>(owner);
+		if (type is null) return;
+
+		Events.Send(new NodeChangeType { Node = t.Uid, Type = type });
+		WorkspaceState.MarkModified();
 	}
 
 	[RelayCommand]
 	private void Duplicate(HierarchyElement? target) {
-		// TODO: Duplicate the target node in place
+		var t = Target(target);
+		if (t is null || t.IsRoot || t.IsInsidePrefab) return;
+		Events.Send(new WorkspaceDuplicateNode { Source = t.Uid, Parent = t.Parent?.Uid ?? "" });
+		WorkspaceState.MarkModified();
 	}
 
 	[RelayCommand]
 	private void MoveUp(HierarchyElement? target) {
 		var t = Target(target);
-		if (t?.Parent is not { } parent) return;
+		if (t?.Parent is not { } parent || t.IsInsidePrefab) return;
 		var siblings = parent.Children;
 		var i = siblings.IndexOf(t);
 		if (i <= 0) return;
@@ -227,7 +435,7 @@ public partial class HierarchyViewModel : Tool {
 	[RelayCommand]
 	private void MoveDown(HierarchyElement? target) {
 		var t = Target(target);
-		if (t?.Parent is not { } parent) return;
+		if (t?.Parent is not { } parent || t.IsInsidePrefab) return;
 		var siblings = parent.Children;
 		var i = siblings.IndexOf(t);
 		if (i < 0 || i >= siblings.Count - 1) return;
@@ -240,10 +448,10 @@ public partial class HierarchyViewModel : Tool {
 	[RelayCommand]
 	private async Task ChangeParent(HierarchyElement? target) {
 		var t = Target(target);
-		if (t?.Parent is not { } prevParent) return;
+		if (t?.Parent is not { } prevParent || t.IsInsidePrefab) return;
 
 		if (App.MainWindow is not { } owner) return;
-		var w = new HierarchyPickerModal(Root, t);
+		var w = new HierarchyTree(Root, t);
 		var newParent = await w.ShowDialog<string?>(owner);
 		if (newParent is null || newParent == t.Uid || newParent == prevParent.Uid) return;
 
@@ -252,8 +460,30 @@ public partial class HierarchyViewModel : Tool {
 	}
 
 	[RelayCommand]
-	private void Promote(HierarchyElement? target) {
-		// TODO: Promote the target node into its own Node file
+	private async Task Promote(HierarchyElement? target) {
+		var t = Target(target);
+		if (t is null || t.IsRoot || t.IsPrefab || t.IsInsidePrefab) return;
+
+		var virtualPath = await App.Modals.ShowSaveFile(t.Name);
+		if (virtualPath is null) return;
+
+		var realPath = ProjectContext.Resolve(virtualPath);
+		Directory.CreateDirectory(Path.GetDirectoryName(realPath)!);
+		File.WriteAllBytes(realPath, Array.Empty<byte>());
+		var uid = UidGenerator.Generate();
+		MetaFile.Write(realPath, new MetaHeader { Uid = uid, Type = "node" });
+		AssetDatabase.RebuildAssetDatabase();
+		Events.Send(new ReloadAssetsManifest());
+		Events.Send(new WorkspacePromoteNode { Target = t.Uid, Path = virtualPath });
+		WorkspaceState.MarkModified();
+	}
+
+	[RelayCommand]
+	private void ToggleEnabled(HierarchyElement? target) {
+		var t = target ?? SelectedNode;
+		if (t is null || t.IsInsidePrefab) return;
+		Events.Send(new NodeEnabled { Node = t.Uid, Enabled = !t.Enabled });
+		WorkspaceState.MarkModified();
 	}
 
 	[RelayCommand]
@@ -268,7 +498,8 @@ public partial class HierarchyViewModel : Tool {
 
 	[RelayCommand]
 	private void Delete(HierarchyElement? target) {
-		if (target is null || target == Root[0]) return;
+		if (Rows.Any(r => r.IsRenaming)) return;
+		if (target is null || Root.Count == 0 || target == Root[0] || target.IsInsidePrefab) return;
 		Events.Send(new WorkspaceRemoveNode { Target = target.Uid });
 		WorkspaceState.MarkModified();
 	}

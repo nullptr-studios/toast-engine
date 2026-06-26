@@ -191,7 +191,7 @@ public sealed class AssetBox : TemplatedControl {
 
 	private async void OpenPicker() {
 		if (!IsEnabled || App.MainWindow is not { } owner) return;
-		var picked = await new AssetPickerModal(AssetType).ShowDialog<string?>(owner);
+		var picked = await new AssetList(AssetType).ShowDialog<string?>(owner);
 		if (picked is not null) Value = picked;
 	}
 

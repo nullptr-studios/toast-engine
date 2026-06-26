@@ -141,7 +141,7 @@ struct ProtoTraits<WorkspaceSpawn> {
 		Proto p;
 		p.set_parent(e.parent);
 		p.set_is_uri(e.is_uri);
-		p.set_uid(e.is_uri ? e.uid : toast::UID {0});
+		p.set_uid(!e.is_uri ? e.uid : toast::UID {0});
 		p.set_uri(e.uri);
 		return p;
 	}
@@ -150,7 +150,7 @@ struct ProtoTraits<WorkspaceSpawn> {
 		Event e;
 		e.parent = toast::UID::fromString(p.parent());
 		e.is_uri = p.is_uri();
-		e.uid = e.is_uri ? toast::UID::fromString(p.uid()) : toast::UID {0};
+		e.uid = !e.is_uri ? toast::UID::fromString(p.uid()) : toast::UID {0};
 		e.uri = p.uri();
 		return e;
 	}
@@ -172,7 +172,7 @@ struct ProtoTraits<WorkspaceRemove> {
 	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.target())}; }
 };
 
-TOAST_PROTO_EVENT(RequestHierarchyUpdate);
+TOAST_PROTO_EVENT(WorkspaceRemove);
 
 template<>
 struct ProtoTraits<WorkspaceDestroy> {
@@ -395,5 +395,111 @@ struct ProtoTraits<InspectorContent> {
 };
 
 TOAST_PROTO_EVENT(InspectorContent);
+
+template<>
+struct ProtoTraits<WorkspaceDuplicateNode> {
+	using Proto = proto::events::WorkspaceDuplicateNode;
+	using Event = WorkspaceDuplicateNode;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_source(e.source);
+		p.set_parent(e.parent);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.source = toast::UID::fromString(p.source());
+		e.parent = toast::UID::fromString(p.parent());
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspaceDuplicateNode);
+
+template<>
+struct ProtoTraits<WorkspaceCopyNode> {
+	using Proto = proto::events::WorkspaceCopyNode;
+	using Event = WorkspaceCopyNode;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_source(e.source);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.source = toast::UID::fromString(p.source());
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspaceCopyNode);
+
+template<>
+struct ProtoTraits<WorkspacePasteNode> {
+	using Proto = proto::events::WorkspacePasteNode;
+	using Event = WorkspacePasteNode;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_parent(e.parent);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.parent = toast::UID::fromString(p.parent());
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspacePasteNode);
+
+template<>
+struct ProtoTraits<NodeChangeType> {
+	using Proto = proto::events::NodeChangeType;
+	using Event = NodeChangeType;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_node(e.node);
+		p.set_type(e.type);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.node = toast::UID::fromString(p.node());
+		e.type = p.type();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(NodeChangeType);
+
+template<>
+struct ProtoTraits<WorkspacePromoteNode> {
+	using Proto = proto::events::WorkspacePromoteNode;
+	using Event = WorkspacePromoteNode;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_target(e.target);
+		p.set_path(e.path);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.target = toast::UID::fromString(p.target());
+		e.path = p.path();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspacePromoteNode);
 
 }

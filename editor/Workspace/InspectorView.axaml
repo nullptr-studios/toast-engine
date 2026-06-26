@@ -33,7 +33,7 @@
 
 		<!-- Highlighted search match -->
 		<Style Selector="TextBlock.match">
-			<Setter Property="Background" Value="{StaticResource DarkRed}" />
+			<Setter Property="Foreground" Value="{StaticResource Red}" />
 			<Setter Property="FontWeight" Value="Bold" />
 		</Style>
 
@@ -278,7 +278,7 @@
 
 		<!-- Class card -->
 		<DataTemplate DataType="vm:ClassCardVM">
-			<Border Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
+			<Border Background="{StaticResource Bg3}" CornerRadius="8" Padding="8" IsVisible="{Binding Visible}">
 				<StackPanel>
 					<ToggleButton Classes="hdr" IsChecked="{Binding Expanded, Mode=TwoWay}">
 						<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
@@ -327,7 +327,7 @@
 					          IsChecked="{Binding Enabled, Mode=TwoWay}" />
 				</Grid>
 				<TextBox CornerRadius="8" BorderThickness="0" Background="{StaticResource Bg1}"
-				         Text="{Binding FilterText, Mode=TwoWay}" PlaceholderText="Search parameter..."
+				         Text="{Binding FilterText, Mode=TwoWay}" PlaceholderText="Filter parameters..."
 				         PlaceholderForeground="{StaticResource TextMuted}" />
 			</StackPanel>
 		</Border>

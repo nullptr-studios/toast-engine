@@ -12,6 +12,7 @@ namespace editor.Workspace;
 
 public class WorkspaceViewModel : Document {
 	private string? m_rootUid;
+	private string? m_pendingRootName;
 
 	private WorkspaceViewModel(ToastEngine? engine = null) {
 		Engine = engine;
@@ -33,6 +34,10 @@ public class WorkspaceViewModel : Document {
 	// called by HierarchyViewModel whenever the hierarchy tree updates
 	public void SetRootNode(string uid) {
 		m_rootUid = uid;
+		if (m_pendingRootName is { } name) {
+			m_pendingRootName = null;
+			Events.Send(new NodeChangeName { Node = uid, Name = name });
+		}
 	}
 
 	public void BindBackingFile(string virtualUri, string assetUid) {
@@ -72,6 +77,7 @@ public class WorkspaceViewModel : Document {
 			return;
 		}
 
+		Events.Send(new NodeChangeName { Node = m_rootUid, Name = Path.GetFileNameWithoutExtension(BackingUri) });
 		Events.Send(new WorkspaceSave { Target = m_rootUid, Path = BackingUri });
 		IsModified = false;
 	}
@@ -93,6 +99,7 @@ public class WorkspaceViewModel : Document {
 		AssetDatabase.RebuildAssetDatabase();
 
 		Events.Send(new ReloadAssetsManifest());
+		Events.Send(new NodeChangeName { Node = m_rootUid, Name = Path.GetFileNameWithoutExtension(virtualPath) });
 		Events.Send(new WorkspaceSave { Target = m_rootUid, Path = virtualPath });
 
 		BackingUri = virtualPath;
@@ -122,6 +129,7 @@ public class WorkspaceViewModel : Document {
 			Id = $"Workspace_{res.Uid}"
 		};
 		ws.BindBackingFile(virtualPath, assetUid);
+		ws.m_pendingRootName = Path.GetFileNameWithoutExtension(virtualPath);
 		return ws;
 	}
 }

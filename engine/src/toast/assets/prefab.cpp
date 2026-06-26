@@ -98,23 +98,15 @@ struct BinaryReader {
 	}
 };
 
-auto toSnakeCase(const std::string& text) -> std::string {
+auto removeSpaces(const std::string& text) -> std::string {
 	std::string result;
-	bool last_was_underscore = true;    // avoid underscore at the start
 
 	for (char ch : text) {
-		// replace spaces, - or punctuation
-		if (std::isspace(ch) || ch == '-' || std::ispunct(ch)) {
-			if (!last_was_underscore) {
-				result += '_';
-				last_was_underscore = true;
-			}
+		// replace spaces
+		if (std::isspace(ch)) {
+			result += '_';
 		}
-		// convert to lowercase
-		else if (std::isalnum(ch)) {
-			result += std::tolower(ch);
-			last_was_underscore = false;
-		}
+		result += ch;
 	}
 
 	// remove end underscore if it exists
@@ -608,7 +600,7 @@ auto Prefab::valueFromString(FieldType type, bool is_array, std::string_view val
 }
 
 void Prefab::writeNode(const BasicNode& node, std::stringstream& ss) const {
-	std::string name_formatted = toSnakeCase(node.name);
+	std::string name_formatted = removeSpaces(node.name);
 	ss << std::format("[{0} type={1}]\n", name_formatted, node.type);
 
 	for (const auto& field : node.fields) {
@@ -765,7 +757,7 @@ auto Prefab::toBinary() const -> std::vector<uint8_t> {
 	}
 
 	for (const auto& node : nodes) {
-		std::string formatted_name = toSnakeCase(node.name);
+		std::string formatted_name = removeSpaces(node.name);
 		writeString(buffer, formatted_name);
 		writeString(buffer, node.type);
 

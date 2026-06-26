@@ -107,6 +107,29 @@ struct WorkspaceMoveNodeTo : Event<WorkspaceMoveNodeTo> {
 	      predecessor(predecessor) { }
 };
 
+struct WorkspaceDuplicateNode : Event<WorkspaceDuplicateNode> {
+	toast::UID source;
+	toast::UID parent;
+};
+
+struct WorkspaceCopyNode : Event<WorkspaceCopyNode> {
+	toast::UID source;
+};
+
+struct WorkspacePasteNode : Event<WorkspacePasteNode> {
+	toast::UID parent;
+};
+
+struct NodeChangeType : Event<NodeChangeType> {
+	toast::UID node;
+	std::string type;
+};
+
+struct WorkspacePromoteNode : Event<WorkspacePromoteNode> {
+	toast::UID target;
+	std::string path;
+};
+
 struct SetFocusedNode : Event<SetFocusedNode> {
 	toast::UID node;
 

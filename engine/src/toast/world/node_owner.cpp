@@ -29,21 +29,12 @@ auto snakeToNormalCase(const std::string& text) -> std::string {
 	}
 
 	std::string result;
-	bool capitalize_next = true;
 
 	for (char ch : text) {
 		if (ch == '_') {
-			if (!result.empty() && result.back() != ' ') {
-				result += ' ';
-				capitalize_next = true;
-			}
+			result += ' ';
 		} else {
-			if (capitalize_next) {
-				result += std::toupper(ch);
-				capitalize_next = false;
-			} else {
-				result += std::tolower(ch);
-			}
+			result += ch;
 		}
 	}
 
@@ -143,11 +134,26 @@ auto INodeOwner::uniqueChildName(const Node& parent, std::string_view base) -> s
 		return std::ranges::any_of(parent.children(), [&](const Box<Node>& c) { return c->name() == candidate; });
 	};
 
-	std::string candidate {base};
-	for (int n = 2; taken(candidate); ++n) {
-		candidate = std::string {base} + ' ' + std::to_string(n);
+	if (not taken(base)) {
+		return std::string {base};
 	}
-	return candidate;
+
+	std::string stem {base};
+	int start_n = 2;
+	if (auto pos = base.rfind(' '); pos != std::string_view::npos) {
+		auto suffix = base.substr(pos + 1);
+		if (not suffix.empty() && std::ranges::all_of(suffix, [](char c) { return c >= '0' && c <= '9'; })) {
+			stem = std::string {base.substr(0, pos)};
+			start_n = std::stoi(std::string {suffix}) + 1;
+		}
+	}
+
+	for (int n = start_n;; ++n) {
+		auto candidate = stem + ' ' + std::to_string(n);
+		if (not taken(candidate)) {
+			return candidate;
+		}
+	}
 }
 
 auto INodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {
