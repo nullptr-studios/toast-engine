@@ -11,6 +11,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/trigonometric.hpp>
 #include <limits>
+#include <memory>
 #include <sstream>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
@@ -18,6 +19,8 @@
 #include <toast/time.hpp>
 
 namespace toast {
+
+static std::unique_ptr<assets::Prefab> s_clipboard;
 
 Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	ZoneScoped;
@@ -347,6 +350,273 @@ void Workspace::eventSubscriptions() {
 		event::send<event::RequestHierarchyUpdate>();
 		return true;
 	});
+
+	m_listener.subscribe<event::WorkspaceSpawn>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		TOAST_ASSERT(m_root_node.exists(), "World", "Trying to spawn a node in an invalid Workspace");
+
+		auto parent = findFrom(m_root_node, e.parent.get());
+		if (not parent.exists()) {
+			TOAST_WARN("World", "WorkspaceSpawn: parent {} not found", e.parent);
+			return true;
+		}
+
+		// requestRuntimeSpawn sends RequestHierarchyUpdate on success
+		if (e.is_uri) {
+			requestRuntimeSpawn(parent, e.uri);
+		} else {
+			requestRuntimeSpawn(parent, e.uid);
+		}
+		return true;
+	});
+
+	m_listener.subscribe<event::WorkspaceDuplicateNode>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+
+		auto src = findFrom(m_root_node, e.source.get());
+		auto par = findFrom(m_root_node, e.parent.get());
+		if (not src.exists() || not par.exists()) {
+			TOAST_WARN("World", "WorkspaceDuplicateNode: source or parent not found");
+			return true;
+		}
+
+		assets::Prefab prefab(*src);
+		assets::AssetHandle<assets::Prefab> handle(&prefab, toast::UID(0));
+
+		InstantiateContext ctx;
+		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
+		Box<Node> copy = instantiate(handle, ctx);
+		if (not copy.exists()) {
+			TOAST_WARN("World", "WorkspaceDuplicateNode: instantiation failed");
+			return true;
+		}
+
+		// Regenerate UIDs on every node in the copy to avoid collisions with the originals
+		auto regen = [](this auto& self, Box<Node>& node) -> void {
+			generateUid(node);
+			for (auto& child : node->m_children) {
+				self(child);
+			}
+		};
+		regen(copy);
+
+		// The in-memory prefab has no meaningful UID, so clear the root's source_prefab
+		// to avoid marking the copy as a prefab instance with UID 0
+		copy->m_source_prefab = {};
+
+		// Ensure the copy doesn't share its name with an existing sibling
+		copy->m_name = uniqueChildName(*par, copy->name());
+
+		copy->m_parent = par;
+		par->m_children.emplace_back(copy);
+		copy->m_state = par->m_state;
+		copy->m_type = NodeType::child;
+		copy->m_inherited_enabled = par->enabled();
+
+		copy->propagateCallTick(copy->info(), TickFunctionList::init);
+		copy->propagateCallTick(copy->info(), TickFunctionList::begin);
+		copy->enabled(true);
+
+		event::send<event::RequestHierarchyUpdate>();
+		TOAST_INFO("World", "Duplicated {} under {}", src->name(), par->name());
+		return true;
+	});
+
+	m_listener.subscribe<event::NodeChangeType>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+
+		auto target = findFrom(m_root_node, e.node.get());
+		if (not target.exists()) {
+			TOAST_WARN("World", "NodeChangeType: node not found");
+			return true;
+		}
+
+		auto parent = target->parentInternal();
+		if (not parent.exists()) {
+			TOAST_WARN("World", "NodeChangeType: cannot change type of root node");
+			return true;
+		}
+
+		// Allocate the replacement node
+		Box<Node> fresh = nodeAllocation(e.type);
+		fresh->propagateCallTick(fresh->info(), TickFunctionList::pre_init);
+
+		fresh->m_uid = target->m_uid;
+		fresh->m_name = target->m_name;
+		fresh->m_state = target->m_state;
+		fresh->m_type = target->m_type;
+		fresh->m_inherited_enabled = target->m_inherited_enabled;
+
+		// Transfer children from the old node to the new one
+		for (auto& child : target->m_children) {
+			child->m_parent = fresh;
+			fresh->m_children.push_back(std::move(child));
+		}
+		target->m_children.clear();
+
+		// Replace the old node in the parent's children list
+		fresh->m_parent = parent;
+		auto& siblings = parent->m_children;
+		auto it = std::ranges::find(siblings, target);
+		if (it != siblings.end()) {
+			*it = fresh;
+		}
+
+		// Destroy the old node using the same pattern as WorkspaceRemoveNode
+		Node* old_raw = &*target;
+		_detail::ControlBox* old_ctrl = _detail::ControlBox::get(old_raw);
+		const NodeInfo* old_info = old_raw->info();
+		old_raw->m_parent = {};
+		old_raw->m_listener.reset();
+		target = {};
+
+		if (old_info && old_info->destroy) {
+			old_info->destroy(old_raw);
+		} else {
+			delete old_raw;
+		}
+		releaseNode(*old_ctrl);
+		reapTombstones();
+
+		// Initialize the fresh node
+		fresh->callTick(fresh->info(), TickFunctionList::init);
+		fresh->callTick(fresh->info(), TickFunctionList::begin);
+		fresh->enabled(true);
+
+		event::send<event::RequestHierarchyUpdate>();
+		TOAST_INFO("World", "Changed node type to {}", e.type);
+		return true;
+	});
+
+	// C# side creates the empty file + meta + rebuilds the asset database before sending this
+	// Here we write the actual node content and replace the inline subtree with a prefab reference
+	// Asset creation is becoming an interconnected mess of c++ and c# and im starting to get mad -x
+	m_listener.subscribe<event::WorkspacePromoteNode>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+
+		auto target = findFrom(m_root_node, e.target.get());
+		if (not target.exists()) {
+			TOAST_WARN("World", "WorkspacePromoteNode: target not found");
+			return true;
+		}
+
+		auto parent = target->parentInternal();
+		if (not parent.exists()) {
+			TOAST_WARN("World", "WorkspacePromoteNode: cannot promote root node");
+			return true;
+		}
+
+		// Write the node content to the file the C# side already created on disk
+		assets::Prefab prefab(*target);
+		auto bytes = prefab.serialize(assets::SaveMode::editor);
+		assets::AssetManager::get().saveBytes(e.path, bytes);
+
+		std::erase(parent->m_children, target);
+
+		std::vector<Node*> victims;
+		auto collect = [&victims](this auto&& self, Node& n) -> void {
+			victims.push_back(&n);
+			for (auto& c : n.m_children) {
+				self(*c);
+			}
+		};
+		collect(*target);
+		target = {};
+
+		for (Node* victim : victims) {
+			_detail::ControlBox* ctrl = _detail::ControlBox::get(victim);
+			const NodeInfo* info = victim->info();
+			victim->m_parent = {};
+			victim->m_children.clear();
+			victim->m_listener.reset();
+			if (info && info->destroy) {
+				info->destroy(victim);
+			} else {
+				delete victim;
+			}
+			releaseNode(*ctrl);
+		}
+		reapTombstones();
+
+		// Spawn the saved file as a prefab child of the same parent
+		auto uid = assets::resolveURI(e.path);
+		if (uid.has_value()) {
+			requestRuntimeSpawn(parent, *uid);
+		} else {
+			TOAST_WARN("World", "WorkspacePromoteNode: couldn't resolve UID for {}", e.path);
+			event::send<event::RequestHierarchyUpdate>();
+		}
+
+		TOAST_INFO("World", "Promoted node to {}", e.path);
+		return true;
+	});
+
+	m_listener.subscribe<event::WorkspaceCopyNode>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		auto src = findFrom(m_root_node, e.source.get());
+		if (not src.exists()) {
+			TOAST_WARN("World", "WorkspaceCopyNode: source not found");
+			return true;
+		}
+		s_clipboard = std::make_unique<assets::Prefab>(*src);
+		return true;
+	});
+
+	m_listener.subscribe<event::WorkspacePasteNode>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		if (not s_clipboard) {
+			return true;
+		}
+		auto par = findFrom(m_root_node, e.parent.get());
+		if (not par.exists()) {
+			TOAST_WARN("World", "WorkspacePasteNode: parent not found");
+			return true;
+		}
+
+		assets::AssetHandle<assets::Prefab> handle(s_clipboard.get(), toast::UID(0));
+		InstantiateContext ctx;
+		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
+		Box<Node> copy = instantiate(handle, ctx);
+		if (not copy.exists()) {
+			TOAST_WARN("World", "WorkspacePasteNode: instantiation failed");
+			return true;
+		}
+
+		auto regen = [](this auto& self, Box<Node>& node) -> void {
+			generateUid(node);
+			for (auto& child : node->m_children) {
+				self(child);
+			}
+		};
+		regen(copy);
+
+		copy->m_source_prefab = {};
+		copy->m_name = uniqueChildName(*par, copy->name());
+		copy->m_parent = par;
+		par->m_children.emplace_back(copy);
+		copy->m_state = par->m_state;
+		copy->m_type = NodeType::child;
+		copy->m_inherited_enabled = par->enabled();
+
+		copy->propagateCallTick(copy->info(), TickFunctionList::init);
+		copy->propagateCallTick(copy->info(), TickFunctionList::begin);
+		copy->enabled(true);
+
+		event::send<event::RequestHierarchyUpdate>();
+		return true;
+	});
 }
 
 void Workspace::tick() {
@@ -366,8 +636,6 @@ void Workspace::tick() {
 	std::vector<event::InspectorContent::InspectorField> fields;
 	Node* node = &*m_focused_node;
 
-	// all_fields holds only a type's own fields, so walk the inheritance chain (derived -> base)
-	// through base_type to include inherited fields too
 	for (const NodeInfo* type = node->info(); type != nullptr; type = type->base_type) {
 		for (const auto& field : type->all_fields) {
 			std::any value = field.get(node);
@@ -378,8 +646,6 @@ void Workspace::tick() {
 				glm::vec3 deg = glm::degrees(glm::eulerAngles(std::any_cast<glm::quat>(value)));
 				text = std::format("{} {} {}", deg.x, deg.y, deg.z);
 			} else if (field.value_type == FieldType::uid_t && not field.is_array) {
-				// node references (Box<Node>) come back as a Box, asset handles (AssetHandle<T>) come
-				// back as a UID; normalize both to a uid string ("" when empty so the editor shows it unset)
 				if (auto* box = std::any_cast<Box<Node>>(&value); box != nullptr) {
 					text = box->exists() ? (*box)->uid().get() : "";
 				} else if (auto* id = std::any_cast<UID>(&value); id != nullptr) {
@@ -388,11 +654,7 @@ void Workspace::tick() {
 			} else {
 				try {
 					text = assets::Prefab::stringifyValue(field.value_type, field.is_array, value);
-				} catch (const std::bad_any_cast&) {
-					// the field stores a representation the text serializer doesn't handle (e.g. a raw
-					// std::array); skip its value rather than crashing the whole inspector stream
-					text = "";
-				}
+				} catch (const std::bad_any_cast&) { text = ""; }
 			}
 
 			fields.emplace_back(field.name, text);

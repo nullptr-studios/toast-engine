@@ -519,6 +519,7 @@ public partial class ClassCardVM : ObservableObject {
 	private bool m_ready;
 
 	[ObservableProperty] private bool m_expanded = true;
+	[ObservableProperty] private bool m_visible = true;
 
 	public ClassCardVM(string typeName, string colorKey, string iconName, string key, InspectorState state) {
 		TypeName = typeName;
@@ -545,5 +546,13 @@ public partial class ClassCardVM : ObservableObject {
 	public void ApplyFilter(string query) {
 		foreach (var f in Fields) f.ApplyFilter(query);
 		foreach (var g in Groups) g.ApplyFilter(query);
+
+		// When there's a filter, hide the card if it has no visible content
+		if (string.IsNullOrEmpty(query)) {
+			Visible = true;
+		} else {
+			var hasVisibleContent = Fields.Any(f => f.Visible) || Groups.Any(g => g.Visible);
+			Visible = hasVisibleContent;
+		}
 	}
 }

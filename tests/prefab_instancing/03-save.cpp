@@ -65,8 +65,8 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/03-save", test_prefab_i
 		// is NOT serialized — it lives in prefab B.
 		assert(saved.nodes.size() == 2);
 
-		const auto* def = chunkByName(saved, "A Root");
-		const auto* ref = chunkByName(saved, "B Instance");
+		const auto* def = chunkByName(saved, "a root");
+		const auto* ref = chunkByName(saved, "b instance");
 		assert(def != nullptr);
 		assert(ref != nullptr);
 
@@ -80,7 +80,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/03-save", test_prefab_i
 		assert(ref->find("m_parent")->as<UID>().data() == uidOf("aROOTnode00"));
 		assert(ref->find("m_source_prefab").has_value());
 		assert(ref->find("m_source_prefab")->as<UID>().data() == uidOf(B_ASSET));
-		assert(chunkByName(saved, "b_child") == nullptr);
+		assert(chunkByName(saved, "b child") == nullptr);
 
 		// --- Round-trip: re-instantiating the saved prefab rebuilds the same shape --------------
 		auto world2 = WorldTestAccess::createWorld();
@@ -109,11 +109,11 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/03-save", test_prefab_i
 		// Only the variant root is written: a reference to A. Its children belong to A's definition.
 		assert(variant.nodes.size() == 1);
 		const auto& vroot = variant.nodes[0];
-		assert(vroot.name == "A Root");
+		assert(vroot.name == "a root");
 		assert(vroot.find("m_source_prefab").has_value());
 		assert(vroot.find("m_source_prefab")->as<UID>().data() == uidOf(A_ASSET));
 		assert(vroot.find("m_uid")->as<UID>().data() == uidOf("aROOTnode00"));
-		assert(chunkByName(variant, "B Instance") == nullptr);
+		assert(chunkByName(variant, "b instance") == nullptr);
 	}
 
 	// --- Plain definition (no instances): no chunk carries a Prefab field, interior recursed ----
@@ -129,6 +129,6 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/03-save", test_prefab_i
 		for (const auto& chunk : saved_b.nodes) {
 			assert(not chunk.find("m_source_prefab").has_value());
 		}
-		assert(chunkByName(saved_b, "B Child") != nullptr);
+		assert(chunkByName(saved_b, "b child") != nullptr);
 	}
 }

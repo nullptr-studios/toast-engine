@@ -103,8 +103,8 @@ public partial class WorkspaceView : UserControl {
 			return;
 
 		var scale = RenderScaling();
-		var width = Math.Max(1, (int)Math.Round(Bounds.Width * scale));
-		var height = Math.Max(1, (int)Math.Round(Bounds.Height * scale));
+		var width = Math.Max(1, (int)Math.Round(ViewportPanel.Bounds.Width * scale));
+		var height = Math.Max(1, (int)Math.Round(ViewportPanel.Bounds.Height * scale));
 
 		if (width == m_surfaceW && height == m_surfaceH)
 			return;

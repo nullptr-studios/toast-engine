@@ -51,9 +51,12 @@
 					<MenuItem Header="_Close Node file" InputGesture="Ctrl+W"
 					          Command="{Binding CloseNodeFileCommand}" />
 					<Separator />
-					<MenuItem Header="_Save" InputGesture="Ctrl+S" />
-					<MenuItem Header="Save _as..." InputGesture="Ctrl+Shift+S" />
-					<MenuItem Header="Save a_ll nodes" InputGesture="Ctrl+Alt+S" />
+					<MenuItem Header="_Save" InputGesture="Ctrl+S"
+					          Command="{Binding SaveCurrentNodeCommand}" />
+					<MenuItem Header="Save _as..." InputGesture="Ctrl+Shift+S"
+					          Command="{Binding SaveCurrentNodeAsCommand}" />
+					<MenuItem Header="Save a_ll nodes" InputGesture="Ctrl+Alt+S"
+					          Command="{Binding SaveAllNodesCommand}" />
 				</MenuItem>
 				<MenuItem Header="_Edit">
 					<MenuItem Header="_Undo" />

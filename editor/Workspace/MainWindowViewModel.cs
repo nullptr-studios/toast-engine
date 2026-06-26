@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Avalonia.Controls;
-using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Controls;
@@ -39,7 +38,13 @@ public partial class MainWindowViewModel : ViewModelBase {
 
 		m_dockFactory.DockableClosed += (_, e) => {
 			if (e.Dockable is WorkspaceViewModel ws) m_workspaces.Remove(ws.Handle);
-			SyncActiveWorkspace();
+			m_dockFactory.Hierarchy?.Clear();
+			if (m_workspaces.Count == 0) {
+				m_activeWorkspaceHandle = 0;
+				Events.Send(new SetActiveWorkspace { Handle = 0 });
+			} else {
+				SyncActiveWorkspace();
+			}
 		};
 
 		m_dockFactory.ActiveDockableChanged += (_, _) => SyncActiveWorkspace();
@@ -53,14 +58,11 @@ public partial class MainWindowViewModel : ViewModelBase {
 	public IRootDock ToastZoneLayout { get; set; }
 
 	// tells the engine which workspace is focused so it routes input and viewport updates to the right one
-	// also clears the hierarchy when no workspace is open
 	private void SyncActiveWorkspace() {
 		var handle = m_dockFactory.ActiveWorkspace?.Handle ?? 0;
 		if (handle == m_activeWorkspaceHandle) return;
 		m_activeWorkspaceHandle = handle;
-
 		Events.Send(new SetActiveWorkspace { Handle = handle });
-		if (handle == 0) m_dockFactory.Hierarchy?.Clear();
 	}
 
 	public void ShowToastZone(bool active) {
@@ -75,7 +77,7 @@ public partial class MainWindowViewModel : ViewModelBase {
 
 	[RelayCommand]
 	private async Task NewNode(Window parent) {
-		var popup = new NodeTypePickerModal();
+		var popup = new NodeTypeTree();
 		var result = await popup.ShowDialog<string?>(parent);
 		if (result is null) return;
 
@@ -87,28 +89,13 @@ public partial class MainWindowViewModel : ViewModelBase {
 
 	[RelayCommand]
 	private async Task OpenNodeFile(Window parent) {
-		if (TopLevel.GetTopLevel(parent) is not { } topLevel) return;
+		if (App.MainWindow is not { } owner) return;
+		var uid = await new AssetList("Node").ShowDialog<string?>(owner);
+		if (uid is null) return;
 
-		var startFolder = await topLevel.StorageProvider.TryGetFolderFromPathAsync(ProjectContext.AssetsPath);
-		var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
-			Title = "Open Node File",
-			AllowMultiple = false,
-			SuggestedStartLocation = startFolder,
-			FileTypeFilter = [
-				new FilePickerFileType("Toast Node") { Patterns = ["*.tnode"] }
-			]
-		});
+		if (!AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return;
 
-		if (files.Count == 0) return;
-
-		var realPath = files[0].Path.LocalPath;
-		var header = MetaFile.ReadHeader(realPath);
-		if (header is null) return;
-
-		var virtualPath = ProjectContext.ToVirtual(realPath);
-		if (virtualPath is null) return;
-
-		if (WorkspaceViewModel.OpenFile(m_toast, header.Uid, virtualPath) is not { } ws) return;
+		if (WorkspaceViewModel.OpenFile(m_toast, uid, virtualPath) is not { } ws) return;
 		m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
 		SyncActiveWorkspace();
 	}
@@ -116,5 +103,20 @@ public partial class MainWindowViewModel : ViewModelBase {
 	[RelayCommand]
 	private void CloseNodeFile() {
 		if (m_dockFactory.ActiveWorkspace is { } ws) m_dockFactory.CloseDockable(ws);
+	}
+
+	[RelayCommand]
+	private async Task SaveCurrentNode() {
+		if (m_dockFactory.ActiveWorkspace is { } ws) await ws.Save();
+	}
+
+	[RelayCommand]
+	private async Task SaveCurrentNodeAs() {
+		if (m_dockFactory.ActiveWorkspace is { } ws) await ws.SaveAs();
+	}
+
+	[RelayCommand]
+	private async Task SaveAllNodes() {
+		foreach (var ws in m_workspaces.Values) await ws.Save();
 	}
 }
