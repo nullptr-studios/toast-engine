@@ -82,7 +82,7 @@ struct BinaryReader {
 			return T {};
 		}
 		T value;
-		std::memcpy(&value, data.data() + offset, sizeof(T)); // NOLINT
+		std::memcpy(&value, data.data() + offset, sizeof(T));    // NOLINT
 		offset += sizeof(T);
 		return value;
 	}
