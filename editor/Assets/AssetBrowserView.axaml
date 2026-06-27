@@ -73,6 +73,15 @@
 								<Setter Property="IsExpanded" Value="{ReflectionBinding IsExpanded, Mode=TwoWay}" />
 								<Setter Property="CornerRadius" Value="6" />
 							</Style>
+							<Style Selector="TreeViewItem:pointerover /template/ Border#PART_LayoutRoot">
+								<Setter Property="Background" Value="{StaticResource Bg2}" />
+							</Style>
+							<Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+								<Setter Property="Background" Value="{StaticResource Bg4}" />
+							</Style>
+							<Style Selector="TreeViewItem:selected:pointerover /template/ Border#PART_LayoutRoot">
+								<Setter Property="Background" Value="{StaticResource Bg4}" />
+							</Style>
 						</TreeView.Styles>
 						<TreeView.ItemTemplate>
 							<TreeDataTemplate x:DataType="vm:AssetFolder"
@@ -186,28 +195,76 @@
 						<MenuItem Header="New Folder" />
 						<MenuItem Header="Import" />
 						<Separator />
-						<MenuItem Header="Nodes" IsEnabled="False" Classes="section-header" />
-						<MenuItem Header="Node">
-							<MenuItem.Icon>
-								<Border Width="32" Height="32" Background="Magenta" CornerRadius="4" />
-							</MenuItem.Icon>
+						<MenuItem Header="Nodes" FontSize="13" IsEnabled="False" />
+						<MenuItem>
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<Border Width="32" Height="32" Background="Red" CornerRadius="4" />
+									<TextBlock Text="Node" VerticalAlignment="Center" />
+								</StackPanel>
+							</MenuItem.Header>
 						</MenuItem>
-						<MenuItem Header="Node3D">
-							<MenuItem.Icon>
-								<Border Width="64" Height="64" Background="Green" CornerRadius="4" />
-							</MenuItem.Icon>
+						<MenuItem>
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<Border Width="32" Height="32" Background="Green" CornerRadius="4" />
+									<TextBlock Text="Node3D" VerticalAlignment="Center" />
+								</StackPanel>
+							</MenuItem.Header>
 						</MenuItem>
 						<MenuItem Header="Other nodes..." />
-						<Separator />
+						<Separator/>
+						<MenuItem Header="Assets" FontSize="13" IsEnabled="False"/>
+						<MenuItem>
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<Border Width="32" Height="32" Background="Blue" CornerRadius="4" />
+									<TextBlock Text="Material" VerticalAlignment="Center" />
+								</StackPanel>
+							</MenuItem.Header>
+						</MenuItem>
+						<MenuItem>
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<Border Width="32" Height="32" Background="DeepPink" CornerRadius="4" />
+									<TextBlock Text="Script" VerticalAlignment="Center" />
+								</StackPanel>
+							</MenuItem.Header>
+						</MenuItem>
+						<MenuItem>
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<Border Width="32" Height="32" Background="OrangeRed" CornerRadius="4" />
+									<TextBlock Text="Data" VerticalAlignment="Center" />
+								</StackPanel>
+							</MenuItem.Header>
+						</MenuItem>
+						<MenuItem Header="Audio">
+							<MenuItem/>
+						</MenuItem>
+						<MenuItem Header="Data">
+							<MenuItem/>
+						</MenuItem>
+						<MenuItem Header="Input">
+							<MenuItem/>
+						</MenuItem>
+						<MenuItem Header="Rendering">
+							<MenuItem/>
+						</MenuItem>
+						<MenuItem Header="UI">
+							<MenuItem/>
+						</MenuItem>
+						<Separator/>
 						<MenuItem Header="Refresh" Command="{Binding RefreshCommand}" />
 					</ContextMenu>
 				</Border.ContextMenu>
 
-				<DockPanel Margin="8" VerticalSpacing="8">
-
+				<DockPanel VerticalSpacing="8">
 					<!-- Item counter -->
-					<TextBlock DockPanel.Dock="Bottom" Text="{Binding ItemCount}"
-					           Opacity="0.5" FontSize="11" />
+					<TextBlock DockPanel.Dock="Bottom"
+					           Text="{Binding ItemCount}"
+					           Foreground="{StaticResource TextMuted}"
+					           FontSize="11" />
 
 					<!-- Asset grid -->
 					<ScrollViewer HorizontalScrollBarVisibility="Disabled">
