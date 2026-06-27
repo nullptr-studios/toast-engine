@@ -14,8 +14,11 @@
 #include <atomic>
 #include <toast/export.hpp>
 #include <toast/uid.hpp>
+#include <nlohmann/json.hpp>
 #include <toml++/toml.hpp>
 #include <vector>
+
+using json_t = nlohmann::json;
 
 namespace assets {
 // clang-format off
