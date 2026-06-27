@@ -40,6 +40,8 @@ public:
 	 */
 	Workspace(UID uid);
 
+	~Workspace() override;
+
 	auto name() -> std::string override;
 
 	/// No-op; Workspace has no tick scheduler and never registers dependencies
