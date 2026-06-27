@@ -38,11 +38,12 @@ public partial class MainWindowViewModel : ViewModelBase {
 
 		m_dockFactory.DockableClosed += (_, e) => {
 			if (e.Dockable is WorkspaceViewModel ws) m_workspaces.Remove(ws.Handle);
-			m_dockFactory.Hierarchy?.Clear();
 			if (m_workspaces.Count == 0) {
 				m_activeWorkspaceHandle = 0;
+				m_dockFactory.Hierarchy?.Clear();
 				Events.Send(new SetActiveWorkspace { Handle = 0 });
 			} else {
+				m_activeWorkspaceHandle = 0;
 				SyncActiveWorkspace();
 			}
 		};

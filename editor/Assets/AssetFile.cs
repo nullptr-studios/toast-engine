@@ -1,4 +1,6 @@
+using System.ComponentModel;
 using System.IO;
+using System.Runtime.CompilerServices;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 
@@ -15,11 +17,12 @@ public enum FileType {
 	Curve,
 }
 
-public class AssetFile {
+public class AssetFile : INotifyPropertyChanged {
 	private Bitmap? m_thumbnail;
 	private bool m_thumbnailChecked;
 	private string? m_uid;
 	private bool m_uidChecked;
+	private bool m_isSelected;
 
 	public AssetFile(string path) {
 		Filepath = Path.GetFullPath(path);
@@ -42,6 +45,16 @@ public class AssetFile {
 	public string Filepath { get; }
 	public FileType Type { get; }
 	public string TypeLabel => Type.ToString();
+
+	public AssetBrowserViewModel? Owner { get; set; }
+
+	public bool IsSelected {
+		get => m_isSelected;
+		set {
+			m_isSelected = value;
+			Notify();
+		}
+	}
 
 	public string? Uid {
 		get {
@@ -87,4 +100,9 @@ public class AssetFile {
 			FileType.Curve => new SolidColorBrush(Color.Parse("#FF6B6B")),
 			_ => new SolidColorBrush(Color.Parse("#696969"))
 		};
+
+	public event PropertyChangedEventHandler? PropertyChanged;
+
+	private void Notify([CallerMemberName] string? name = null) =>
+		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }

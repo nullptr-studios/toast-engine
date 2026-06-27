@@ -107,7 +107,13 @@
 						<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut" />
 					</Transitions>
 				</Border.Transitions>
-				<DockControl Layout="{Binding ToastZoneLayout}" ZIndex="2" />
+				<DockPanel>
+					<Border x:Name="ToastResizeHandle" DockPanel.Dock="Top"
+					        Height="6" HorizontalAlignment="Stretch"
+					        Background="{StaticResource Bg4}"
+					        Cursor="SizeNorthSouth" />
+					<DockControl Layout="{Binding ToastZoneLayout}" />
+				</DockPanel>
 			</Border>
 		</Panel>
 	</Grid>

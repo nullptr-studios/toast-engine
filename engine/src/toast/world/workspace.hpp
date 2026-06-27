@@ -71,5 +71,9 @@ public:
 	 * is not the active one or when no node is focused.
 	 */
 	void tick() override;
+
+	const Node& rootNode() const { return *m_root_node; }
+
+	bool isValid() const { return m_root_node.exists(); }
 };
 }

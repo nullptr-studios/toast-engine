@@ -84,6 +84,10 @@ public static class AssetDatabase {
 		File.WriteAllText(path, db.ToJsonString(s_prettyJson));
 
 		s_uidLookup = null; // the on-disk database changed, drop the cached lookup
+
+		if (editor.Engine.ToastEngine.IsEngineReady)
+			editor.Engine.ToastEngine.ReloadManifest();
+
 		ReloadedDatabase?.Invoke();
 	}
 
@@ -443,12 +447,30 @@ public static class AssetDatabase {
 		File.WriteAllText(path, db.ToJsonString(s_prettyJson));
 	}
 
-	private static void TryDelete(string path) {
+	public static void TryDelete(string path) {
 		try {
 			if (File.Exists(path)) File.Delete(path);
 		} catch {
 			/* ignore */
 		}
+	}
+
+	public static void RemoveArtworkOutputs(string uid) {
+		var db = LoadArtworkDatabase();
+		var changed = false;
+		foreach (var key in db.Select(kv => kv.Key).ToList()) {
+			if (key is "version" or "type") continue;
+			if (db[key] is not JsonObject entry) continue;
+			if (entry["outputs"] is not JsonArray outputs) continue;
+			for (var i = outputs.Count - 1; i >= 0; i--) {
+				if (outputs[i]?.GetValue<string>() != uid) continue;
+				outputs.RemoveAt(i);
+				changed = true;
+			}
+			if (outputs.Count == 0)
+				db.Remove(key);
+		}
+		if (changed) SaveArtworkDatabase(db);
 	}
 
 	private static async Task<RelocateResult> ShowRelocateModal(

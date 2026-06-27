@@ -6,25 +6,20 @@
              mc:Ignorable="d" d:DesignWidth="1800" d:DesignHeight="400"
              Background="{StaticResource Bg2}"
              x:Class="editor.Assets.AssetBrowserView"
-             x:DataType="vm:AssetBrowserViewModel">
+             x:DataType="vm:AssetBrowserViewModel"
+             Focusable="True">
+
+	<!-- Keyboard shortcuts -->
+	<UserControl.KeyBindings>
+		<KeyBinding Gesture="F2"     Command="{Binding RenameCommand}" />
+		<KeyBinding Gesture="Delete" Command="{Binding DeleteCommand}" />
+		<KeyBinding Gesture="Ctrl+C" Command="{Binding CopyCommand}" />
+		<KeyBinding Gesture="Ctrl+X" Command="{Binding CutCommand}" />
+		<KeyBinding Gesture="Ctrl+V" Command="{Binding PasteCommand}" />
+		<KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateCommand}" />
+	</UserControl.KeyBindings>
 
 	<UserControl.Styles>
-		<!-- Strip default ListBoxItem chrome -->
-		<Style Selector="ListBox#AssetList > ListBoxItem">
-			<Setter Property="Padding" Value="0" />
-			<Setter Property="Margin" Value="0" />
-			<Setter Property="Background" Value="Transparent" />
-			<Setter Property="CornerRadius" Value="8" />
-		</Style>
-		<!-- Hover -->
-		<Style Selector="ListBox#AssetList > ListBoxItem:pointerover Border.card-border">
-			<Setter Property="BorderBrush" Value="{StaticResource Bg5}" />
-		</Style>
-		<!-- Selected -->
-		<Style Selector="ListBox#AssetList > ListBoxItem:selected Border.card-border">
-			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
-			<Setter Property="Background" Value="{StaticResource Red}" />
-		</Style>
 		<!-- Breadcrumb buttons -->
 		<Style Selector="Button.breadcrumb">
 			<Setter Property="Background" Value="Transparent" />
@@ -32,9 +27,218 @@
 			<Setter Property="CornerRadius" Value="4" />
 			<Setter Property="FontSize" Value="13" />
 		</Style>
+
+		<!-- ListBoxItem -->
+		<Style Selector="ListBox#AssetList > ListBoxItem">
+			<Setter Property="Padding" Value="0" />
+			<Setter Property="Margin" Value="0" />
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="CornerRadius" Value="8" />
+		</Style>
+		<!-- Selected card -->
+		<Style Selector="ListBox#AssetList > ListBoxItem:selected Border.card-border">
+			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
+		</Style>
+		<!-- Hover card -->
+		<Style Selector="ListBox#AssetList > ListBoxItem:pointerover Border.card-border">
+			<Setter Property="BorderBrush" Value="{StaticResource Bg5}" />
+		</Style>
+
+		<!-- TreeView -->
+		<Style Selector="TreeViewItem /template/ Border#PART_LayoutRoot:pointerover">
+			<Setter Property="Background" Value="{StaticResource Bg2}" />
+		</Style>
+		<Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+			<Setter Property="Background" Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="TreeViewItem:selected:pointerover /template/ Border#PART_LayoutRoot">
+			<Setter Property="Background" Value="{StaticResource Bg4}" />
+		</Style>
 	</UserControl.Styles>
 
-	<Grid ColumnDefinitions="250, *" Margin="8" ColumnSpacing="8">
+	<!-- Cards -->
+	<UserControl.DataTemplates>
+
+		<!-- Folder card -->
+		<DataTemplate x:DataType="vm:AssetFolder">
+			<Border Classes="card-border"
+			        Classes.selected="{Binding IsSelected}"
+			        Width="130" Height="170"
+			        CornerRadius="8" ClipToBounds="True"
+			        Background="{StaticResource Bg3}"
+			        BorderThickness="2" BorderBrush="Transparent"
+			        DragDrop.AllowDrop="True"
+			        DoubleTapped="OnFolderDoubleTapped"
+			        DragDrop.DragOver="OnFolderDragOver"
+			        DragDrop.Drop="OnFolderDrop">
+				<Border.ContextMenu>
+					<ContextMenu x:DataType="vm:AssetFolder">
+						<MenuItem Command="{Binding Owner.RenameCommand}"
+						          CommandParameter="{Binding}"
+						          InputGesture="F2">
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<LucideIcon Kind="Pencil" StrokeWidth="2.5" Size="16" />
+									<TextBlock Text="Rename" />
+								</StackPanel>
+							</MenuItem.Header>
+						</MenuItem>
+						<MenuItem Command="{Binding Owner.CreateFolderCommand}">
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<LucideIcon Kind="FolderPlus" StrokeWidth="2.5" Size="16" />
+									<TextBlock Text="New Folder" />
+								</StackPanel>
+							</MenuItem.Header>
+						</MenuItem>
+						<Separator />
+						<MenuItem Command="{Binding Owner.DeleteCommand}"
+						          CommandParameter="{Binding}"
+						          InputGesture="Delete">
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<LucideIcon Kind="Shredder" StrokeWidth="2.5" Size="16" />
+									<TextBlock Text="Delete" />
+								</StackPanel>
+							</MenuItem.Header>
+						</MenuItem>
+					</ContextMenu>
+				</Border.ContextMenu>
+				<Grid RowDefinitions="110, *">
+					<Border Grid.Row="0" Background="{StaticResource Bg4}">
+						<TextBlock Text="🗂" FontSize="52"
+						           HorizontalAlignment="Center"
+						           VerticalAlignment="Center" />
+					</Border>
+					<StackPanel Grid.Row="1" Margin="8,5,8,4" Spacing="1">
+						<TextBlock Text="{Binding Name}"
+						           TextWrapping="Wrap" MaxLines="2"
+						           FontSize="12" FontWeight="SemiBold"
+						           Foreground="{StaticResource Text}" />
+					</StackPanel>
+				</Grid>
+			</Border>
+		</DataTemplate>
+
+		<!-- File card -->
+		<DataTemplate x:DataType="vm:AssetFile">
+			<Border Classes="card-border"
+			        Classes.selected="{Binding IsSelected}"
+			        Width="130" Height="170"
+			        CornerRadius="8" ClipToBounds="True"
+			        Background="{StaticResource Bg3}"
+			        BorderThickness="2" BorderBrush="Transparent"
+			        PointerPressed="OnFilePointerPressed"
+			        PointerMoved="OnFilePointerMoved"
+			        PointerReleased="OnFilePointerReleased">
+				<Border.ContextMenu>
+					<ContextMenu x:DataType="vm:AssetFile">
+						<MenuItem Command="{Binding Owner.RenameCommand}"
+						          CommandParameter="{Binding}"
+						          InputGesture="F2">
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<LucideIcon Kind="Pencil" StrokeWidth="2.5" Size="16" />
+									<TextBlock Text="Rename" />
+								</StackPanel>
+							</MenuItem.Header>
+						</MenuItem>
+						<Separator />
+						<MenuItem Command="{Binding Owner.CutCommand}"
+						          CommandParameter="{Binding}"
+						          InputGesture="Ctrl+X">
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<LucideIcon Kind="Scissors" StrokeWidth="2.5" Size="16" />
+									<TextBlock Text="Cut" />
+								</StackPanel>
+							</MenuItem.Header>
+						</MenuItem>
+						<MenuItem Command="{Binding Owner.CopyCommand}"
+						          CommandParameter="{Binding}"
+						          InputGesture="Ctrl+C">
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<LucideIcon Kind="ClipboardCopy" StrokeWidth="2.5" Size="16" />
+									<TextBlock Text="Copy" />
+								</StackPanel>
+							</MenuItem.Header>
+						</MenuItem>
+						<MenuItem Command="{Binding Owner.PasteCommand}"
+						          InputGesture="Ctrl+V">
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<LucideIcon Kind="ClipboardPaste" StrokeWidth="2.5" Size="16" />
+									<TextBlock Text="Paste" />
+								</StackPanel>
+							</MenuItem.Header>
+						</MenuItem>
+						<MenuItem Command="{Binding Owner.DuplicateCommand}"
+						          CommandParameter="{Binding}"
+						          InputGesture="Ctrl+D">
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<LucideIcon Kind="Copy" StrokeWidth="2.5" Size="16" />
+									<TextBlock Text="Duplicate" />
+								</StackPanel>
+							</MenuItem.Header>
+						</MenuItem>
+						<Separator />
+						<MenuItem Command="{Binding Owner.DeleteCommand}"
+						          CommandParameter="{Binding}"
+						          InputGesture="Delete">
+							<MenuItem.Header>
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<LucideIcon Kind="Shredder" StrokeWidth="2.5" Size="16" />
+									<TextBlock Text="Delete" />
+								</StackPanel>
+							</MenuItem.Header>
+						</MenuItem>
+					</ContextMenu>
+				</Border.ContextMenu>
+				<Grid RowDefinitions="110, *">
+					<!-- Preview -->
+					<Border Grid.Row="0"
+					        Background="{x:Static vm:CheckerBrush.Instance}"
+					        ClipToBounds="True"
+					        CornerRadius="4">
+						<Panel>
+							<Image Source="{Binding Thumbnail}"
+							       IsVisible="{Binding HasThumbnail}"
+							       Stretch="None"
+							       HorizontalAlignment="Center"
+							       VerticalAlignment="Center" />
+							<Image Source="/Resources/avalonia-logo.ico"
+							       IsVisible="{Binding !HasThumbnail}"
+							       Stretch="None"
+							       HorizontalAlignment="Center"
+							       VerticalAlignment="Center" />
+							<Border VerticalAlignment="Bottom"
+							        HorizontalAlignment="Left"
+							        Background="{Binding TypeColor}"
+							        CornerRadius="4"
+							        Padding="6,2" Margin="6,0,0,6">
+								<TextBlock Text="{Binding TypeLabel}"
+								           FontSize="10" FontWeight="Bold"
+								           Foreground="{StaticResource Bg1}" />
+							</Border>
+						</Panel>
+					</Border>
+					<!-- Name section -->
+					<StackPanel Grid.Row="1" Margin="8,5,8,4" Spacing="1">
+						<TextBlock Text="{Binding Name}"
+						           TextWrapping="Wrap" MaxLines="3"
+						           FontSize="12" FontWeight="SemiBold"
+						           Foreground="{StaticResource Text}" />
+					</StackPanel>
+				</Grid>
+			</Border>
+		</DataTemplate>
+
+	</UserControl.DataTemplates>
+
+	<Grid ColumnDefinitions="250, 4, *" Margin="8" ColumnSpacing="0">
+
 		<!-- Folder tree -->
 		<Border Grid.Column="0" Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
 			<DockPanel>
@@ -62,7 +266,8 @@
 					</Grid>
 				</Border>
 				<!-- Tree -->
-				<ScrollViewer Margin="-6" Padding="6">
+				<ScrollViewer Margin="-6" Padding="6"
+				              HorizontalScrollBarVisibility="Disabled">
 					<TreeView ItemsSource="{Binding Folders}"
 					          SelectedItem="{Binding SelectedFolder, Mode=TwoWay}"
 					          SelectionMode="Single"
@@ -73,20 +278,46 @@
 								<Setter Property="IsExpanded" Value="{ReflectionBinding IsExpanded, Mode=TwoWay}" />
 								<Setter Property="CornerRadius" Value="6" />
 							</Style>
-							<Style Selector="TreeViewItem:pointerover /template/ Border#PART_LayoutRoot">
-								<Setter Property="Background" Value="{StaticResource Bg2}" />
-							</Style>
-							<Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
-								<Setter Property="Background" Value="{StaticResource Bg4}" />
-							</Style>
-							<Style Selector="TreeViewItem:selected:pointerover /template/ Border#PART_LayoutRoot">
-								<Setter Property="Background" Value="{StaticResource Bg4}" />
-							</Style>
 						</TreeView.Styles>
 						<TreeView.ItemTemplate>
 							<TreeDataTemplate x:DataType="vm:AssetFolder"
 							                  ItemsSource="{Binding SubFolders}">
-								<TextBlock Text="{Binding Name}" />
+								<TextBlock Text="{Binding Name}"
+								           TextTrimming="CharacterEllipsis">
+									<TextBlock.ContextMenu>
+										<ContextMenu x:DataType="vm:AssetFolder">
+											<MenuItem Command="{Binding Owner.RenameCommand}"
+											          CommandParameter="{Binding}"
+											          InputGesture="F2">
+												<MenuItem.Header>
+													<StackPanel Orientation="Horizontal" Spacing="8">
+														<LucideIcon Kind="Pencil" StrokeWidth="2.5" Size="16" />
+														<TextBlock Text="Rename" />
+													</StackPanel>
+												</MenuItem.Header>
+											</MenuItem>
+											<MenuItem Command="{Binding Owner.CreateFolderCommand}">
+												<MenuItem.Header>
+													<StackPanel Orientation="Horizontal" Spacing="8">
+														<LucideIcon Kind="FolderPlus" StrokeWidth="2.5" Size="16" />
+														<TextBlock Text="New Folder" />
+													</StackPanel>
+												</MenuItem.Header>
+											</MenuItem>
+											<Separator />
+											<MenuItem Command="{Binding Owner.DeleteCommand}"
+											          CommandParameter="{Binding}"
+											          InputGesture="Delete">
+												<MenuItem.Header>
+													<StackPanel Orientation="Horizontal" Spacing="8">
+														<LucideIcon Kind="Shredder" StrokeWidth="2.5" Size="16" />
+														<TextBlock Text="Delete" />
+													</StackPanel>
+												</MenuItem.Header>
+											</MenuItem>
+										</ContextMenu>
+									</TextBlock.ContextMenu>
+								</TextBlock>
 							</TreeDataTemplate>
 						</TreeView.ItemTemplate>
 					</TreeView>
@@ -94,30 +325,44 @@
 			</DockPanel>
 		</Border>
 
-		<DockPanel Grid.Column="1" VerticalSpacing="8">
+		<!-- Splitter -->
+		<GridSplitter Grid.Column="1"
+		              ResizeDirection="Columns"
+		              Background="Transparent"
+		              Width="4" />
+
+		<DockPanel Grid.Column="2" VerticalSpacing="8">
 			<!-- Toolbar -->
 			<Border DockPanel.Dock="Top" Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
 				<Grid ColumnDefinitions="85, 85, 85, *, Auto, Auto" ColumnSpacing="8">
+					<!-- New -->
 					<Button Grid.Column="0"
 					        MinWidth="85"
 					        HorizontalContentAlignment="Center"
 					        CornerRadius="6"
-					        Background="{StaticResource Red}">
+					        Background="{StaticResource Red}"
+					        Click="OnNewButtonClick">
 						<StackPanel Orientation="Horizontal" Spacing="4">
 							<LucideIcon Kind="Plus" Size="16" StrokeWidth="3.5" />
-							<TextBlock Text="New" FontWeight="Bold"/>
+							<TextBlock Text="New" FontWeight="Bold" />
 						</StackPanel>
 					</Button>
-					<Button Grid.Column="1" MinWidth="85" HorizontalContentAlignment="Center" CornerRadius="6">
+
+					<!-- Folder -->
+					<Button Grid.Column="1" MinWidth="85" HorizontalContentAlignment="Center"
+					        CornerRadius="6" Command="{Binding CreateFolderCommand}">
 						<StackPanel Orientation="Horizontal" Spacing="4">
 							<LucideIcon Kind="FolderPlus" Size="16" StrokeWidth="2" />
-							<TextBlock Text="Folder"/>
+							<TextBlock Text="Folder" />
 						</StackPanel>
 					</Button>
-					<Button Grid.Column="2" Click="Import_OnClick" MinWidth="85" HorizontalContentAlignment="Center" CornerRadius="6">
+
+					<!-- Import -->
+					<Button Grid.Column="2" Click="Import_OnClick" MinWidth="85"
+					        HorizontalContentAlignment="Center" CornerRadius="6">
 						<StackPanel Orientation="Horizontal" Spacing="4">
 							<LucideIcon Kind="Download" Size="16" StrokeWidth="2" />
-							<TextBlock Text="Import"/>
+							<TextBlock Text="Import" />
 						</StackPanel>
 					</Button>
 
@@ -157,13 +402,13 @@
 					         CornerRadius="6"
 					         BorderThickness="0"
 					         VerticalContentAlignment="Center"
-					         Background="{StaticResource Bg1}"/>
+					         Background="{StaticResource Bg1}" />
 
 					<!-- Filters -->
 					<Button Grid.Column="5" CornerRadius="6" Padding="8">
 						<StackPanel Orientation="Horizontal" Spacing="4">
-							<LucideIcon Kind="Funnel" Size="16" StrokeWidth="2.5"/>
-							<TextBlock Text="Filters"/>
+							<LucideIcon Kind="Funnel" Size="16" StrokeWidth="2.5" />
+							<TextBlock Text="Filters" />
 						</StackPanel>
 						<Button.Flyout>
 							<Flyout Placement="BottomEdgeAlignedRight">
@@ -189,22 +434,26 @@
 			</Border>
 
 			<!-- Asset view -->
-			<Border Background="{StaticResource Bg2}" CornerRadius="8">
+			<Border x:Name="AssetViewBackground" Background="{StaticResource Bg2}" CornerRadius="8">
 				<Border.ContextMenu>
 					<ContextMenu x:DataType="vm:AssetBrowserViewModel">
-						<MenuItem Header="New Folder" />
-						<MenuItem Header="Import" />
+						<MenuItem Header="New Folder" Command="{Binding CreateFolderCommand}">
+							<MenuItem.Icon>
+								<LucideIcon Kind="FolderPlus" Size="16" StrokeWidth="2.5" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<MenuItem Header="Import" Click="Import_OnClick" />
 						<Separator />
-						<MenuItem Header="Nodes" FontSize="13" IsEnabled="False" />
-						<MenuItem>
+						<MenuItem IsEnabled="False" Header="Nodes" FontSize="13" />
+						<MenuItem Command="{Binding NewNodeCommand}">
 							<MenuItem.Header>
 								<StackPanel Orientation="Horizontal" Spacing="8">
-									<Border Width="32" Height="32" Background="Red" CornerRadius="4" />
+									<Border Width="32" Height="32" Background="{StaticResource Red}" CornerRadius="4" />
 									<TextBlock Text="Node" VerticalAlignment="Center" />
 								</StackPanel>
 							</MenuItem.Header>
 						</MenuItem>
-						<MenuItem>
+						<MenuItem Command="{Binding NewNode3DCommand}">
 							<MenuItem.Header>
 								<StackPanel Orientation="Horizontal" Spacing="8">
 									<Border Width="32" Height="32" Background="Green" CornerRadius="4" />
@@ -212,9 +461,9 @@
 								</StackPanel>
 							</MenuItem.Header>
 						</MenuItem>
-						<MenuItem Header="Other nodes..." />
-						<Separator/>
-						<MenuItem Header="Assets" FontSize="13" IsEnabled="False"/>
+						<MenuItem Header="Other nodes..." Command="{Binding NewNodeGenericCommand}"/>
+						<Separator />
+						<MenuItem Header="Assets" FontSize="13" IsEnabled="False" />
 						<MenuItem>
 							<MenuItem.Header>
 								<StackPanel Orientation="Horizontal" Spacing="8">
@@ -239,22 +488,12 @@
 								</StackPanel>
 							</MenuItem.Header>
 						</MenuItem>
-						<MenuItem Header="Audio">
-							<MenuItem/>
-						</MenuItem>
-						<MenuItem Header="Data">
-							<MenuItem/>
-						</MenuItem>
-						<MenuItem Header="Input">
-							<MenuItem/>
-						</MenuItem>
-						<MenuItem Header="Rendering">
-							<MenuItem/>
-						</MenuItem>
-						<MenuItem Header="UI">
-							<MenuItem/>
-						</MenuItem>
-						<Separator/>
+						<MenuItem Header="Audio"><MenuItem /></MenuItem>
+						<MenuItem Header="Data"><MenuItem /></MenuItem>
+						<MenuItem Header="Input"><MenuItem /></MenuItem>
+						<MenuItem Header="Rendering"><MenuItem /></MenuItem>
+						<MenuItem Header="UI"><MenuItem /></MenuItem>
+						<Separator />
 						<MenuItem Header="Refresh" Command="{Binding RefreshCommand}" />
 					</ContextMenu>
 				</Border.ContextMenu>
@@ -267,115 +506,21 @@
 					           FontSize="11" />
 
 					<!-- Asset grid -->
-					<ScrollViewer HorizontalScrollBarVisibility="Disabled">
-						<ListBox x:Name="AssetList"
-						         ItemsSource="{Binding CurrentItems}"
-						         SelectionMode="Multiple"
-						         SelectionChanged="OnSelectionChanged"
-						         Background="Transparent">
-							<ListBox.ItemsPanel>
-								<ItemsPanelTemplate>
-									<WrapPanel Orientation="Horizontal"
-									           ItemWidth="130" ItemHeight="170"
-									           ItemSpacing="8" LineSpacing="8"
-									           Margin="4" />
-								</ItemsPanelTemplate>
-							</ListBox.ItemsPanel>
-
-							<ListBox.DataTemplates>
-
-								<!-- Folder card -->
-								<DataTemplate x:DataType="vm:AssetFolder">
-									<Border Classes="card-border"
-									        Width="130" Height="170"
-									        CornerRadius="8" ClipToBounds="True"
-									        Background="{StaticResource Bg3}"
-									        BorderThickness="8" BorderBrush="Transparent"
-									        DoubleTapped="OnFolderDoubleTapped">
-										<Border.ContextMenu>
-											<ContextMenu>
-												<MenuItem Header="Open" />
-												<MenuItem Header="Rename" />
-												<Separator />
-												<MenuItem Header="Delete" />
-											</ContextMenu>
-										</Border.ContextMenu>
-										<Grid RowDefinitions="110, *">
-											<Border Grid.Row="0" Background="{StaticResource Bg4}">
-												<TextBlock Text="🗂" FontSize="52"
-												           HorizontalAlignment="Center"
-												           VerticalAlignment="Center" />
-											</Border>
-											<StackPanel Grid.Row="1" Margin="8,5,8,4" Spacing="1">
-												<TextBlock Text="{Binding Name}"
-												           TextWrapping="Wrap" MaxLines="2"
-												           FontSize="12" FontWeight="SemiBold"
-												           Foreground="{StaticResource Text}" />
-											</StackPanel>
-										</Grid>
-									</Border>
-								</DataTemplate>
-
-								<!-- File card -->
-								<DataTemplate x:DataType="vm:AssetFile">
-									<Border Classes="card-border"
-									        Width="130" Height="170"
-									        CornerRadius="8" ClipToBounds="True"
-									        Background="{StaticResource Bg3}"
-									        BorderThickness="8" BorderBrush="Transparent"
-									        PointerPressed="OnFilePointerPressed"
-									        PointerMoved="OnFilePointerMoved"
-									        PointerReleased="OnFilePointerReleased">
-										<Border.ContextMenu>
-											<ContextMenu>
-												<MenuItem Header="Open" />
-												<MenuItem Header="Rename" />
-												<Separator />
-												<MenuItem Header="Delete" />
-											</ContextMenu>
-										</Border.ContextMenu>
-										<Grid RowDefinitions="110, *">
-											<!-- Preview -->
-											<Border Grid.Row="0"
-											        Background="{x:Static vm:CheckerBrush.Instance}"
-											        ClipToBounds="True"
-											        CornerRadius="4">
-												<Panel>
-													<Image Source="{Binding Thumbnail}"
-													       IsVisible="{Binding HasThumbnail}"
-													       Stretch="None"
-													       HorizontalAlignment="Center"
-													       VerticalAlignment="Center" />
-													<Image Source="/Resources/avalonia-logo.ico"
-													       IsVisible="{Binding !HasThumbnail}"
-													       Stretch="None"
-													       HorizontalAlignment="Center"
-													       VerticalAlignment="Center" />
-													<Border VerticalAlignment="Bottom"
-													        HorizontalAlignment="Left"
-													        Background="{Binding TypeColor}"
-													        CornerRadius="4"
-													        Padding="6,2" Margin="6,0,0,6">
-														<TextBlock Text="{Binding TypeLabel}"
-														           FontSize="10" FontWeight="Bold"
-														           Foreground="{StaticResource Bg1}" />
-													</Border>
-												</Panel>
-											</Border>
-											<!-- Name section -->
-											<StackPanel Grid.Row="1" Margin="8,5,8,4" Spacing="1">
-												<TextBlock Text="{Binding Name}"
-												           TextWrapping="Wrap" MaxLines="3"
-												           FontSize="12" FontWeight="SemiBold"
-												           Foreground="{StaticResource Text}" />
-											</StackPanel>
-										</Grid>
-									</Border>
-								</DataTemplate>
-
-							</ListBox.DataTemplates>
-						</ListBox>
-					</ScrollViewer>
+					<ListBox x:Name="AssetList"
+					         ItemsSource="{Binding CurrentItems}"
+					         SelectionMode="Multiple"
+					         SelectionChanged="OnSelectionChanged"
+					         Background="Transparent"
+					         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+						<ListBox.ItemsPanel>
+							<ItemsPanelTemplate>
+								<WrapPanel Orientation="Horizontal"
+								           ItemWidth="138" ItemHeight="178"
+								           ItemSpacing="8" LineSpacing="8"
+								           Margin="4" />
+							</ItemsPanelTemplate>
+						</ListBox.ItemsPanel>
+					</ListBox>
 				</DockPanel>
 			</Border>
 

@@ -1,3 +1,4 @@
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -38,11 +39,24 @@ public partial class AssetBrowserView : UserControl {
 		m_pressFile = null;
 		m_pressArgs = null;
 
-		if (file.Uid is not { } uid) return; // no .meta -> nothing stable to reference
+		if (file.Uid is not { } uid) return;
 
 		var data = new DataTransfer();
 		data.Add(DataTransferItem.Create(AssetDragData.Format, new AssetDragRef(uid, file.Type, file.Name)));
-		await DragDrop.DoDragDropAsync(args, data, DragDropEffects.Copy);
+
+		// collect all selected files for multi-item drag
+		var selectedFiles = AssetList.SelectedItems?
+			.OfType<AssetFile>()
+			.Where(f => f.Uid is not null)
+			.ToList();
+		if (selectedFiles is { Count: > 1 } && selectedFiles.Any(f => f.Uid == uid)) {
+			var refs = selectedFiles
+				.Select(f => new AssetDragRef(f.Uid!, f.Type, f.Name))
+				.ToList();
+			data.Add(DataTransferItem.Create(AssetDragData.MultiFormat, refs));
+		}
+
+		await DragDrop.DoDragDropAsync(args, data, DragDropEffects.Copy | DragDropEffects.Move);
 	}
 
 	private void OnFilePointerReleased(object? sender, PointerReleasedEventArgs e) {
@@ -61,6 +75,36 @@ public partial class AssetBrowserView : UserControl {
 			Vm.SelectedFolder = folder;
 			e.Handled = true;
 		}
+	}
+
+	private void OnFolderDragOver(object? sender, DragEventArgs e) {
+		var hasAsset = e.DataTransfer.TryGetValue(AssetDragData.MultiFormat) is not null
+		               || e.DataTransfer.TryGetValue(AssetDragData.Format) is not null;
+		e.DragEffects = hasAsset ? DragDropEffects.Move : DragDropEffects.None;
+		e.Handled = true;
+	}
+
+	private void OnFolderDrop(object? sender, DragEventArgs e) {
+		if (sender is not Control { DataContext: AssetFolder target }) return;
+
+		if (e.DataTransfer.TryGetValue(AssetDragData.MultiFormat) is { } refs) {
+			foreach (var r in refs)
+				Vm.MoveAsset(r.Uid, target);
+			e.Handled = true;
+			return;
+		}
+
+		if (e.DataTransfer.TryGetValue(AssetDragData.Format) is not { } dragRef) return;
+		Vm.MoveAsset(dragRef.Uid, target);
+		e.Handled = true;
+	}
+
+	private void OnNewButtonClick(object? sender, RoutedEventArgs e) {
+		var bg = this.FindControl<Border>("AssetViewBackground");
+		if (bg?.ContextMenu is not { } menu) return;
+		menu.DataContext = DataContext;
+		menu.PlacementTarget = sender as Control ?? bg;
+		menu.Open();
 	}
 
 	private async void Import_OnClick(object? sender, RoutedEventArgs e) {

@@ -158,6 +158,9 @@ public partial class HierarchyViewModel : Tool {
 	private string? m_clipboardUid;
 	private bool m_clipboardIsCut;
 
+	private bool m_pendingRenameAfterUpdate;
+	private HashSet<string>? m_rowUidsSnapshot;
+
 	public static HierarchyViewModel? Current { get; private set; }
 
 	public event Action? HierarchyChanged;
@@ -187,6 +190,19 @@ public partial class HierarchyViewModel : Tool {
 				ApplyFilterToRoot();
 				RebuildRows();
 				HierarchyChanged?.Invoke();
+
+				if (m_pendingRenameAfterUpdate && m_rowUidsSnapshot is not null) {
+					m_pendingRenameAfterUpdate = false;
+					var oldUids = m_rowUidsSnapshot;
+					m_rowUidsSnapshot = null;
+					var newNode = Rows.FirstOrDefault(r => !oldUids.Contains(r.Uid) && !r.IsRoot);
+					if (newNode is not null) {
+						SelectedNode = newNode;
+						newNode.DraftName = newNode.Name;
+						newNode.IsRenaming = true;
+						RenameStarted?.Invoke(newNode);
+					}
+				}
 			});
 		});
 	}
@@ -374,6 +390,8 @@ public partial class HierarchyViewModel : Tool {
 		var t = Target(target);
 		if (t is null || t.IsPrefab || t.IsInsidePrefab) return;
 
+		m_rowUidsSnapshot = new HashSet<string>(Rows.Select(r => r.Uid));
+		m_pendingRenameAfterUpdate = true;
 		Events.Send(new WorkspacePasteNode { Parent = t.Uid });
 		if (m_clipboardIsCut) {
 			Events.Send(new WorkspaceRemoveNode { Target = m_clipboardUid });
@@ -414,6 +432,8 @@ public partial class HierarchyViewModel : Tool {
 	private void Duplicate(HierarchyElement? target) {
 		var t = Target(target);
 		if (t is null || t.IsRoot || t.IsInsidePrefab) return;
+		m_rowUidsSnapshot = new HashSet<string>(Rows.Select(r => r.Uid));
+		m_pendingRenameAfterUpdate = true;
 		Events.Send(new WorkspaceDuplicateNode { Source = t.Uid, Parent = t.Parent?.Uid ?? "" });
 		WorkspaceState.MarkModified();
 	}

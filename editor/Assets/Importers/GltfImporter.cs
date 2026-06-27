@@ -35,15 +35,15 @@ public partial class GltfImporter : IAssetImporter {
 		log($"Generating intermediates in cached://{name}...");
 		gltf_generate_intermediates(realSourcePath);
 
-		DirectoryInfo dir = new DirectoryInfo(Path.Combine(Path.GetFullPath(ProjectContext.CachePath), name));
-		var files = dir.GetFiles();
+		DirectoryInfo tempDir = new DirectoryInfo(Path.Combine(Path.GetFullPath(ProjectContext.CachePath), name));
+		var files = tempDir.GetFiles();
 		if (files is null) {
-			throw new Exception($"Directory {dir.FullName} was empty");
+			throw new Exception($"Directory {tempDir.FullName} was empty");
 		}
 
 		var byExtension = files.GroupBy(f => f.Extension).ToDictionary(g => g.Key, g => g.ToList());
 
-		var importedPaths = new List<string>();
+		var importedUids = new List<string>();
 
 		// Meshes
 		var meshUids = new Dictionary<string, string>();
@@ -62,7 +62,7 @@ public partial class GltfImporter : IAssetImporter {
 			log("Writing .meta sidecar...");
 			var header = new MetaHeader { Uid = uid, Type = "mesh", Source = ctx.SourceVirtualPath };
 			MetaFile.Write(destPath, header, m_settings.ToSection());
-			importedPaths.Add(destPath);
+			importedUids.Add(uid);
 		}
 
 		// Textures
@@ -88,7 +88,7 @@ public partial class GltfImporter : IAssetImporter {
 				log("Writing .meta sidecar...");
 				var header = new MetaHeader { Uid = uid, Type = "texture", Source = ctx.SourceVirtualPath };
 				MetaFile.Write(destPath, header, m_textureSettings.ToSection(), m_settings.ToSection());
-				importedPaths.Add(destPath);
+				importedUids.Add(uid);
 			}
 		}
 
@@ -114,7 +114,7 @@ public partial class GltfImporter : IAssetImporter {
 				log("Writing .meta sidecar...");
 				var header = new MetaHeader { Uid = uid, Type = "material", Source = ctx.SourceVirtualPath };
 				MetaFile.Write(destPath, header, m_settings.ToSection());
-				importedPaths.Add(destPath);
+				importedUids.Add(uid);
 			}
 		}
 
@@ -164,16 +164,16 @@ public partial class GltfImporter : IAssetImporter {
 			log("Writing .meta sidecar...");
 			var header = new MetaHeader { Uid = uid, Type = "node", Source = ctx.SourceVirtualPath };
 			MetaFile.Write(destPath, header, m_settings.ToSection());
-			importedPaths.Add(destPath);
+			importedUids.Add(uid);
 		}
 
 		log("Rebuilding asset database...");
 		AssetDatabase.RebuildAssetDatabase();
 
 		log("Removing intermediates...");
-		if (Directory.Exists(destDir)) Directory.Delete(destDir, true);
+		if (Directory.Exists(tempDir.FullName)) Directory.Delete(tempDir.FullName, true);
 
-		return importedPaths;
+		return importedUids;
 	}
 
 	public partial class Settings : ObservableObject {

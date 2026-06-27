@@ -45,7 +45,6 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	node->enabled(true);
 
 	m_root_node = node;
-	event::send<event::RequestHierarchyUpdate>();
 	TOAST_INFO("World", "Created new workspace");
 }
 
@@ -82,11 +81,13 @@ Workspace::Workspace(UID uid) : m_handle(uid) {
 	node->enabled(true);
 
 	m_root_node = node;
-	event::send<event::RequestHierarchyUpdate>();
 	TOAST_INFO("World", "Opened workspace from {}", uid);
 }
 
 auto Workspace::name() -> std::string {
+	if (!m_root_node.exists()) {
+		return "";
+	}
 	return std::string {m_root_node->name()};
 }
 
