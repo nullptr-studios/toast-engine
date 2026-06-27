@@ -18,6 +18,7 @@ struct UpdateHierarchyData : Event<UpdateHierarchyData> {
 		std::string name;
 		std::string type;
 		bool enabled;
+		bool is_prefab;
 		std::vector<HierarchyElement> children;
 
 		HierarchyElement(const toast::Box<toast::Node>& node);
@@ -104,6 +105,29 @@ struct WorkspaceMoveNodeTo : Event<WorkspaceMoveNodeTo> {
 	    : target(target),
 	      new_parent(new_parent),
 	      predecessor(predecessor) { }
+};
+
+struct WorkspaceDuplicateNode : Event<WorkspaceDuplicateNode> {
+	toast::UID source;
+	toast::UID parent;
+};
+
+struct WorkspaceCopyNode : Event<WorkspaceCopyNode> {
+	toast::UID source;
+};
+
+struct WorkspacePasteNode : Event<WorkspacePasteNode> {
+	toast::UID parent;
+};
+
+struct NodeChangeType : Event<NodeChangeType> {
+	toast::UID node;
+	std::string type;
+};
+
+struct WorkspacePromoteNode : Event<WorkspacePromoteNode> {
+	toast::UID target;
+	std::string path;
 };
 
 struct SetFocusedNode : Event<SetFocusedNode> {

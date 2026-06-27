@@ -1,14 +1,14 @@
 using System;
+using System.Collections;
 using System.Linq;
 using System.Text.Json;
-using Avalonia.Controls;
-using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using ClangSharp;
 using editor.Components.Elements;
 using editor.Engine;
+using Lucide.Avalonia;
 
 namespace editor.Components.Modals;
 
@@ -37,6 +37,7 @@ public class NodeDisplayItem : SearchableTreeItem<NodeDisplayItem> {
 	public FontStyle FontStyle => IsGame ? FontStyle.Italic : FontStyle.Normal;
 	public double Opacity => IsHidden ? 0.4 : 1.0;
 	public IBrush TextColor { get; } = Brushes.White;
+	public bool IsExpanded { get; set; } = true;
 
 	private static bool HasAttr(JsonElement attrs, string attrName) {
 		return attrs.ValueKind switch {
@@ -48,37 +49,32 @@ public class NodeDisplayItem : SearchableTreeItem<NodeDisplayItem> {
 	}
 }
 
-public partial class NodeTypePickerModal : Window {
+public class NodeTypePickerViewModel : PickerViewModel {
 	private readonly NodeDisplayItem? m_root;
-	private NodeDisplayItem? m_selected;
+	private readonly NodeDisplayItem[] m_items;
 
-	public NodeTypePickerModal() {
-		InitializeComponent();
-		if (ReflectionDatabase.NodeTree is null) return;
-		m_root = new NodeDisplayItem(ReflectionDatabase.NodeTree);
-		NodeTree.ItemsSource = new[] { m_root };
-	}
-
-	private void OnSearchChanged(object? sender, TextChangedEventArgs e) {
-		var query = SearchBox.Text ?? "";
-		m_root?.UpdateFilter(query, query.Any(char.IsUpper));
-	}
-
-	private void OnSelectionChanged(object? sender, SelectionChangedEventArgs e) {
-		var item = NodeTree.SelectedItem as NodeDisplayItem;
-		if (item?.IsHidden == true) {
-			NodeTree.SelectedItem = null;
-			m_selected = null;
+	public NodeTypePickerViewModel() {
+		if (ReflectionDatabase.NodeTree is { } tree) {
+			m_root = new NodeDisplayItem(tree);
+			m_items = [m_root];
 		} else {
-			m_selected = item;
+			m_items = [];
 		}
 	}
 
-	private void OnCreate(object? sender, RoutedEventArgs e) {
-		if (m_selected is not null) Close(ReflectionDatabase.Nodes![m_selected.Name].Namespace + "::" + m_selected.Name);
-	}
+	public override string WindowTitle => "Select Node type...";
+	public override IEnumerable Items => m_items;
+	public override string AcceptLabel => "Create";
+	public override LucideIconKind AcceptIconKind => LucideIconKind.Plus;
 
-	private void OnCancel(object? sender, RoutedEventArgs e) {
-		Close(null);
+	public override void UpdateFilter(string query, bool caseSensitive)
+		=> m_root?.UpdateFilter(query, caseSensitive);
+
+	public override bool IsSelectable(object? item)
+		=> item is NodeDisplayItem { IsHidden: false };
+
+	public override string? GetResult(object? selected) {
+		if (selected is not NodeDisplayItem item) return null;
+		return ReflectionDatabase.Nodes![item.Name].Namespace + "::" + item.Name;
 	}
 }

@@ -175,7 +175,7 @@ public sealed class NodeBox : TemplatedControl {
 
 	private async void OpenPicker() {
 		if (!IsEnabled || HierarchyViewModel.Current is not { } h || App.MainWindow is not { } owner) return;
-		var picked = await new HierarchyPickerModal(h.Root, null, NodeType).ShowDialog<string?>(owner);
+		var picked = await new HierarchyTree(h.Root, null, NodeType).ShowDialog<string?>(owner);
 		if (picked is not null) Value = picked;
 	}
 

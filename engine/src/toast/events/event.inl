@@ -7,6 +7,7 @@
 #include <type_traits>
 
 namespace event {
+struct InspectorContent;
 
 template<typename T>
 void Event<T>::ensureRegistered() noexcept {
@@ -82,7 +83,10 @@ void send(Args&&... args) noexcept {
 	ZoneScoped;
 
 	static_assert(std::is_constructible_v<T, Args...>, "Invalid Construtor For Type T");
-	TOAST_TRACE("Events", "Sending event: {}", typeid(T).name());
+	if constexpr (!std::is_same_v<std::decay_t<T>, event::InspectorContent>) {
+		TOAST_TRACE("Events", "Sending event: {}", typeid(T).name());
+	}
+
 	// Allocate and enqueue event
 	{
 		std::scoped_lock _(EventSystem::pool_mutex);

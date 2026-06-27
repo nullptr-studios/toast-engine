@@ -7,6 +7,7 @@ message HierarchyElement {
   string type = 3;
   bool enabled = 4;
   repeated HierarchyElement children = 5;
+  bool is_prefab = 6;
 }
 
 message UpdateHierarchyData {
@@ -83,6 +84,29 @@ message NodeCallFunction {
 message NodeEnabled {
   string node = 2;
   bool enabled = 3;
+}
+
+message NodeChangeType {
+  string node = 1;
+  string type = 2;
+}
+
+message WorkspaceDuplicateNode {
+  string source = 1;
+  string parent = 2;
+}
+
+message WorkspaceCopyNode {
+  string source = 1;
+}
+
+message WorkspacePasteNode {
+  string parent = 1;
+}
+
+message WorkspacePromoteNode {
+  string target = 1;
+  string path = 2;
 }
 
 message InspectorField {
