@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:editor.Assets"
              mc:Ignorable="d" d:DesignWidth="1800" d:DesignHeight="400"
+             Background="{StaticResource Bg2}"
              x:Class="editor.Assets.AssetBrowserView"
              x:DataType="vm:AssetBrowserViewModel">
 
@@ -33,41 +34,44 @@
 		</Style>
 	</UserControl.Styles>
 
-	<Grid ColumnDefinitions="250, *" Margin="8" ColumnSpacing="8" Background="{StaticResource Bg1}">
-
+	<Grid ColumnDefinitions="250, *" Margin="8" ColumnSpacing="8">
 		<!-- Folder tree -->
-		<Border Grid.Column="0" Background="{StaticResource Bg2}" CornerRadius="8">
+		<Border Grid.Column="0" Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
 			<DockPanel>
 				<!-- Header -->
-				<Border DockPanel.Dock="Top"
-				        Padding="10,6,6,6">
+				<Border DockPanel.Dock="Top">
 					<Grid ColumnDefinitions="*, Auto, Auto">
-						<TextBlock Text="Folders" FontWeight="SemiBold"
-						           VerticalAlignment="Center" />
+						<TextBlock Text="Folders" FontWeight="SemiBold" VerticalAlignment="Center" />
 						<Button Grid.Column="1"
 						        Command="{Binding ExpandAllCommand}"
 						        ToolTip.Tip="Expand All"
-						        Background="Transparent" Padding="4" Margin="0,0,2,0">
-							<LucideIcon Kind="ChevronsUpDown" Size="14" />
+						        Background="{StaticResource Bg4}"
+						        Padding="4"
+						        Margin="0,0,2,0"
+						        CornerRadius="6">
+							<LucideIcon Kind="ChevronsUpDown" Size="16" StrokeWidth="2.5" />
 						</Button>
 						<Button Grid.Column="2"
 						        Command="{Binding CollapseAllCommand}"
 						        ToolTip.Tip="Collapse All"
-						        Background="Transparent" Padding="4">
-							<LucideIcon Kind="ChevronsDownUp" Size="14" />
+						        Background="{StaticResource Bg4}"
+						        Padding="4"
+						        CornerRadius="6">
+							<LucideIcon Kind="ChevronsDownUp" Size="16" StrokeWidth="2.5" />
 						</Button>
 					</Grid>
 				</Border>
 				<!-- Tree -->
-				<ScrollViewer>
+				<ScrollViewer Margin="-6" Padding="6">
 					<TreeView ItemsSource="{Binding Folders}"
 					          SelectedItem="{Binding SelectedFolder, Mode=TwoWay}"
 					          SelectionMode="Single"
-					          Margin="8" Background="Transparent">
+					          Margin="8"
+					          Background="Transparent">
 						<TreeView.Styles>
 							<Style Selector="TreeViewItem">
-								<Setter Property="IsExpanded"
-								        Value="{ReflectionBinding IsExpanded, Mode=TwoWay}" />
+								<Setter Property="IsExpanded" Value="{ReflectionBinding IsExpanded, Mode=TwoWay}" />
+								<Setter Property="CornerRadius" Value="6" />
 							</Style>
 						</TreeView.Styles>
 						<TreeView.ItemTemplate>
@@ -81,20 +85,32 @@
 			</DockPanel>
 		</Border>
 
-		<!-- ── Right panel ── -->
 		<DockPanel Grid.Column="1" VerticalSpacing="8">
-
 			<!-- Toolbar -->
-			<Border DockPanel.Dock="Top" Background="{StaticResource Bg2}" CornerRadius="8">
-				<Grid ColumnDefinitions="85, 85, 85, *, Auto, Auto, Auto"
-				      Margin="6" ColumnSpacing="4">
-
-					<Button Grid.Column="0" Content="+ New"
-					        MinWidth="85" HorizontalContentAlignment="Center" CornerRadius="6" />
-					<Button Grid.Column="1" Content="+ Folder"
-					        MinWidth="85" HorizontalContentAlignment="Center" CornerRadius="6" />
-					<Button Grid.Column="2" Content="Import" Click="Import_OnClick"
-					        MinWidth="85" HorizontalContentAlignment="Center" CornerRadius="6" />
+			<Border DockPanel.Dock="Top" Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
+				<Grid ColumnDefinitions="85, 85, 85, *, Auto, Auto" ColumnSpacing="8">
+					<Button Grid.Column="0"
+					        MinWidth="85"
+					        HorizontalContentAlignment="Center"
+					        CornerRadius="6"
+					        Background="{StaticResource Red}">
+						<StackPanel Orientation="Horizontal" Spacing="4">
+							<LucideIcon Kind="Plus" Size="16" StrokeWidth="3.5" />
+							<TextBlock Text="New" FontWeight="Bold"/>
+						</StackPanel>
+					</Button>
+					<Button Grid.Column="1" MinWidth="85" HorizontalContentAlignment="Center" CornerRadius="6">
+						<StackPanel Orientation="Horizontal" Spacing="4">
+							<LucideIcon Kind="FolderPlus" Size="16" StrokeWidth="2" />
+							<TextBlock Text="Folder"/>
+						</StackPanel>
+					</Button>
+					<Button Grid.Column="2" Click="Import_OnClick" MinWidth="85" HorizontalContentAlignment="Center" CornerRadius="6">
+						<StackPanel Orientation="Horizontal" Spacing="4">
+							<LucideIcon Kind="Download" Size="16" StrokeWidth="2" />
+							<TextBlock Text="Import"/>
+						</StackPanel>
+					</Button>
 
 					<!-- Breadcrumbs -->
 					<ScrollViewer Grid.Column="3"
@@ -129,41 +145,37 @@
 					         Text="{Binding SearchText, Mode=TwoWay}"
 					         PlaceholderText="Search… or Type=Texture"
 					         MinWidth="320" MaxWidth="480"
-					         CornerRadius="6" />
-
-					<!-- Refresh -->
-					<Button Grid.Column="5"
-					        Command="{Binding RefreshCommand}"
-					        Content="↻" FontSize="16"
-					        ToolTip.Tip="Refresh"
-					        Margin="4,0,0,0" CornerRadius="6" />
+					         CornerRadius="6"
+					         BorderThickness="0"
+					         VerticalContentAlignment="Center"
+					         Background="{StaticResource Bg1}"/>
 
 					<!-- Filters -->
-					<Button Grid.Column="6" Content="Filters"
-					        Margin="4,0,0,0" CornerRadius="6">
+					<Button Grid.Column="5" CornerRadius="6" Padding="8">
+						<StackPanel Orientation="Horizontal" Spacing="4">
+							<LucideIcon Kind="Funnel" Size="16" StrokeWidth="2.5"/>
+							<TextBlock Text="Filters"/>
+						</StackPanel>
 						<Button.Flyout>
 							<Flyout Placement="BottomEdgeAlignedRight">
-								<Border Background="{StaticResource Bg3}" CornerRadius="8" Padding="12">
-									<StackPanel Spacing="6" MinWidth="150">
-										<TextBlock Text="Filter by type" FontWeight="SemiBold"
-										           Margin="0,0,0,2" />
-										<CheckBox Content="All types"
-										          IsChecked="{Binding FilterAll}"
-										          IsThreeState="True" />
-										<Separator Margin="0,2" />
-										<CheckBox Content="Nodes" IsChecked="{Binding FilterNode}" />
-										<CheckBox Content="Textures" IsChecked="{Binding FilterTexture}" />
-										<CheckBox Content="Models" IsChecked="{Binding FilterModel}" />
-										<CheckBox Content="Materials" IsChecked="{Binding FilterMaterial}" />
-										<CheckBox Content="Shaders" IsChecked="{Binding FilterShader}" />
-										<CheckBox Content="Scripts" IsChecked="{Binding FilterScript}" />
-										<CheckBox Content="Unknown" IsChecked="{Binding FilterUnknown}" />
-									</StackPanel>
-								</Border>
+								<StackPanel MinWidth="150" Spacing="6">
+									<TextBlock Text="Filter by type" FontWeight="SemiBold"
+									           Margin="0,0,0,2" />
+									<CheckBox Content="All types"
+									          IsChecked="{Binding FilterAll}"
+									          IsThreeState="True" />
+									<Separator Margin="0,2" />
+									<CheckBox Content="Nodes" IsChecked="{Binding FilterNode}" />
+									<CheckBox Content="Textures" IsChecked="{Binding FilterTexture}" />
+									<CheckBox Content="Models" IsChecked="{Binding FilterModel}" />
+									<CheckBox Content="Materials" IsChecked="{Binding FilterMaterial}" />
+									<CheckBox Content="Shaders" IsChecked="{Binding FilterShader}" />
+									<CheckBox Content="Scripts" IsChecked="{Binding FilterScript}" />
+									<CheckBox Content="Unknown" IsChecked="{Binding FilterUnknown}" />
+								</StackPanel>
 							</Flyout>
 						</Button.Flyout>
 					</Button>
-
 				</Grid>
 			</Border>
 
