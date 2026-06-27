@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using editor.Assets.Types;
 
 namespace editor.Assets.Importers;
 
@@ -24,7 +25,11 @@ public record ImportContext {
 public interface IAssetImporter {
 	IReadOnlyList<string> SupportedExtensions { get; }
 
-	string VectorName { get; }
+	/// <summary>Primary asset type this importer produces</summary>
+	BaseAsset PrimaryOutputType { get; }
+
+	/// <summary>All asset types this importer may produce</summary>
+	IReadOnlyList<BaseAsset> OutputTypes => [PrimaryOutputType];
 
 	Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log);
 }

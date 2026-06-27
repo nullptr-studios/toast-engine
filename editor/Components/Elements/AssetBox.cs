@@ -12,7 +12,9 @@ using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Styling;
 using editor.Assets;
+using editor.Assets.Types;
 using editor.Components.Modals;
 
 namespace editor.Components.Elements;
@@ -171,7 +173,13 @@ public sealed class AssetBox : TemplatedControl {
 			var name = Path.GetFileNameWithoutExtension(path);
 			m_lastKnownName = name;
 			DisplayName = name;
-			IconColor = AssetFile.ColorFor(Enum.TryParse<FileType>(type, true, out var ft) ? ft : FileType.Unknown);
+			var def = AssetTypeRegistry.ByType(type);
+			if (def is not null &&
+			    Application.Current?.TryGetResource(def.ChipColor, ThemeVariant.Default, out var res) == true &&
+			    res is IBrush defBrush)
+				IconColor = defBrush;
+			else
+				IconColor = new SolidColorBrush(Color.Parse("#696969"));
 		}
 		else if (IsMissing) {
 			DisplayName = m_lastKnownName is not null ? $"({m_lastKnownName} missing)" : "(missing)";
@@ -203,12 +211,9 @@ public sealed class AssetBox : TemplatedControl {
 		if (IsEnabled) Value = null;
 	}
 
-	private FileType? AcceptedType =>
-		Enum.TryParse<FileType>(AssetType, true, out var ft) ? ft : null;
-
 	private bool IsAcceptable(DragEventArgs e) =>
 		e.DataTransfer.TryGetValue(AssetDragData.Format) is { } a &&
-		(string.IsNullOrEmpty(AssetType) || AcceptedType == a.Type);
+		(string.IsNullOrEmpty(AssetType) || string.Equals(AssetType, a.Type, StringComparison.OrdinalIgnoreCase));
 
 	private void OnDragOver(object? sender, DragEventArgs e) {
 		e.DragEffects = IsEnabled && IsAcceptable(e) ? DragDropEffects.Copy : DragDropEffects.None;

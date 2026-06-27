@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using editor.Assets.Types;
 using ImageMagick;
 
 namespace editor.Assets.Importers;
@@ -22,7 +23,7 @@ public partial class PsdImporter : IAssetImporter {
 
 	public IReadOnlyList<string> SupportedExtensions => [".psd"];
 
-	public string VectorName => "textures";
+	public BaseAsset PrimaryOutputType => AssetTypeRegistry.ByExtension(".ktx2")!;
 
 	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log) {
 		var baseName = Path.GetFileNameWithoutExtension(realSourcePath);
@@ -102,7 +103,7 @@ public partial class PsdImporter : IAssetImporter {
 				await KtxWriter.ConvertTexture(tempPng, destPath, m_textureSettings, log);
 
 				log("Writing .meta sidecar...");
-				var header = new MetaHeader { Uid = uid, VectorName = VectorName, Source = ctx.SourceVirtualPath };
+				var header = new MetaHeader { Uid = uid, Type = PrimaryOutputType.Type, Source = ctx.SourceVirtualPath };
 				MetaFile.Write(destPath, header, m_textureSettings.ToSection(), m_psdSettings.ToSection());
 			}
 		} finally {

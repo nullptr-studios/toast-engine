@@ -16,6 +16,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
+using editor.Assets.Types;
 using editor.Components.Modals;
 using editor.Engine;
 using Lucide.Avalonia;
@@ -35,13 +36,6 @@ public sealed class BreadcrumbItem {
 }
 
 public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
-	private bool m_filterMaterial = true;
-	private bool m_filterModel = true;
-	private bool m_filterNode = true;
-	private bool m_filterScript = true;
-	private bool m_filterShader = true;
-	private bool m_filterTexture = true;
-	private bool m_filterUnknown = true;
 	private string m_searchText = "";
 	private int m_selectedCount;
 	private AssetFolder? m_selectedFolder;
@@ -56,10 +50,19 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	// selection
 	private readonly HashSet<object> m_selectedItems = [];
 
+	private readonly AssetTypeFilter m_unknownFilter;
+
 	public static AssetBrowserViewModel? Current { get; private set; }
 
 	public AssetBrowserViewModel() {
 		Current = this;
+
+		m_unknownFilter = new AssetTypeFilter(null);
+		Filters = new ObservableCollection<AssetTypeFilter>(
+			AssetTypeRegistry.All.Select(a => new AssetTypeFilter(a)).Append(m_unknownFilter));
+		foreach (var f in Filters)
+			f.PropertyChanged += OnFilterChanged;
+
 		RefreshCommand = new RelayCommand(Refresh);
 		ExpandAllCommand = new RelayCommand(() => SetAllExpanded(true));
 		CollapseAllCommand = new RelayCommand(() => SetAllExpanded(false));
@@ -72,7 +75,8 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		DuplicateCommand = new AsyncRelayCommand<object>(DuplicateAsync);
 		NewNodeCommand = new AsyncRelayCommand(() => CreatePrefab("Node", "toast::Node"));
 		NewNode3DCommand = new AsyncRelayCommand(() => CreatePrefab("Node3D", "toast::Node3D"));
-		NewNodeGenericCommand = new AsyncRelayCommand(() => CreateGenericPrefab());
+		NewNodeGenericCommand = new AsyncRelayCommand(CreateGenericPrefab);
+		NewAssetCommand = new AsyncRelayCommand<object>(o => CreateNewAsset(o as BaseAsset));
 		LoadFolders();
 
 		// auto-reload whenever the asset database changes
@@ -129,16 +133,14 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 
 		var metaPath = file.Filepath;
 		var oldAssetPath = metaPath[..^5];
-		var assetExt = Path.GetExtension(oldAssetPath);
+		var assetExt = AssetTypeRegistry.GetExtension(Path.GetFileNameWithoutExtension(oldAssetPath));
 		var dir = Path.GetDirectoryName(oldAssetPath)!;
 		var newAssetPath = Path.Combine(dir, newName + assetExt);
 		var newMetaPath = newAssetPath + ".meta";
 
 		try {
-			File.Move(oldAssetPath, newAssetPath);
-			File.Move(metaPath, newMetaPath);
-			if (file.Type == FileType.Node)
-				ToastEngine.RenamePrefabRoot(newAssetPath, newName);
+			File.Move(oldAssetPath, newAssetPath, overwrite: false);
+			File.Move(metaPath, newMetaPath, overwrite: false);
 		} catch (Exception ex) {
 			await App.Modals.ShowError("Rename failed", ex.Message);
 			return;
@@ -154,8 +156,9 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		var newName = await new RenameModal(folder.Name).ShowDialog<string?>(window);
 		if (string.IsNullOrEmpty(newName) || newName == folder.Name) return;
 
-		var parent = Path.GetDirectoryName(folder.Filepath)!;
-		var newPath = Path.Combine(parent, newName);
+		var dir = Path.GetDirectoryName(folder.Filepath)!;
+		var newPath = Path.Combine(dir, newName);
+
 		try {
 			Directory.Move(folder.Filepath, newPath);
 		} catch (Exception ex) {
@@ -163,6 +166,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 			return;
 		}
 
+		m_refreshTargetPath = newPath;
 		AssetDatabase.RebuildAssetDatabase();
 	}
 
@@ -267,8 +271,9 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 			var src = file.Filepath[..^5];
 			var srcMeta = file.Filepath;
 			var dir = Path.GetDirectoryName(src)!;
-			var stem = Path.GetFileNameWithoutExtension(src);
-			var ext = Path.GetExtension(src);
+			var filename = Path.GetFileName(src);
+			var ext = AssetTypeRegistry.GetExtension(filename);
+			var stem = filename[..^ext.Length];
 			var dst = UniqueDestPath(Path.Combine(dir, stem + ext));
 			var dstMeta = dst + ".meta";
 			try {
@@ -300,7 +305,26 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		var path = UniqueDestPath(Path.Combine(dest, name + ".tnode"));
 		try {
 			ToastEngine.CreateTNode(path, nodeType);
-			MetaFile.Write(path, new MetaHeader { Uid = UidGenerator.Generate(), Type = "node" });
+			MetaFile.Write(path, new MetaHeader { Uid = UidGenerator.Generate(), Type = AssetTypeRegistry.ByExtension(".tnode")!.Type });
+		} catch (Exception ex) {
+			await App.Modals.ShowError("Create failed", ex.Message);
+			return;
+		}
+		AssetDatabase.RebuildAssetDatabase();
+	}
+
+	private async Task CreateNewAsset(BaseAsset? def) {
+		if (def is null) return;
+		var window = ActiveWindow();
+		if (window is null) return;
+		var name = await new RenameModal("New" + def.DisplayName).ShowDialog<string?>(window);
+		if (string.IsNullOrEmpty(name)) return;
+
+		var dest = m_selectedFolder?.Filepath ?? ProjectContext.AssetsPath;
+		var path = UniqueDestPath(Path.Combine(dest, name + def.Extension));
+		try {
+			await def.CreateAsync(path);
+			MetaFile.Write(path, new MetaHeader { Uid = UidGenerator.Generate(), Type = def.Type });
 		} catch (Exception ex) {
 			await App.Modals.ShowError("Create failed", ex.Message);
 			return;
@@ -320,7 +344,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		var srcMeta = realPath + ".meta";
 
 		try {
-			if (dstAsset == realPath) return; // same location
+			if (dstAsset == realPath) return;
 			File.Move(realPath, dstAsset, overwrite: false);
 			if (File.Exists(srcMeta)) File.Move(srcMeta, dstMeta, overwrite: false);
 		} catch { }
@@ -331,8 +355,9 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	private static string UniqueDestPath(string path) {
 		if (!File.Exists(path)) return path;
 		var dir = Path.GetDirectoryName(path)!;
-		var stem = Path.GetFileNameWithoutExtension(path);
-		var ext = Path.GetExtension(path);
+		var name = Path.GetFileName(path);
+		var ext = AssetTypeRegistry.GetExtension(name);
+		var stem = name[..^ext.Length];
 		var m = Regex.Match(stem, @"^(.*?)(\d+)$");
 		string prefix;
 		int next;
@@ -384,6 +409,13 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		Dispatcher.UIThread.Post(Refresh);
 	}
 
+	private void OnFilterChanged(object? sender, PropertyChangedEventArgs e) {
+		if (e.PropertyName != nameof(AssetTypeFilter.IsEnabled)) return;
+		Notify(nameof(FilterAll));
+		Notify(nameof(CurrentItems));
+		Notify(nameof(ItemCount));
+	}
+
 	public AssetFolder? SelectedFolder {
 		get => m_selectedFolder;
 		set {
@@ -398,16 +430,16 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 
 	public ObservableCollection<AssetFolder> Folders { get; } = [];
 
+	public ObservableCollection<AssetTypeFilter> Filters { get; }
+
 	public string SearchText {
 		get => m_searchText;
 		set {
-			// save folder before entering search mode
 			if (!string.IsNullOrWhiteSpace(value) && string.IsNullOrWhiteSpace(m_searchText))
 				m_preSearchFolder = m_selectedFolder;
 
 			m_searchText = value;
 
-			// restore folder when search is cleared
 			if (string.IsNullOrWhiteSpace(value) && m_preSearchFolder is not null) {
 				m_selectedFolder = m_preSearchFolder;
 				m_preSearchFolder = null;
@@ -425,99 +457,17 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		}
 	}
 
-	public bool FilterNode {
-		get => m_filterNode;
-		set {
-			m_filterNode = value;
-			Notify();
-			Notify(nameof(FilterAll));
-			Notify(nameof(CurrentItems));
-			Notify(nameof(ItemCount));
-		}
-	}
-
-	public bool FilterTexture {
-		get => m_filterTexture;
-		set {
-			m_filterTexture = value;
-			Notify();
-			Notify(nameof(FilterAll));
-			Notify(nameof(CurrentItems));
-			Notify(nameof(ItemCount));
-		}
-	}
-
-	public bool FilterModel {
-		get => m_filterModel;
-		set {
-			m_filterModel = value;
-			Notify();
-			Notify(nameof(FilterAll));
-			Notify(nameof(CurrentItems));
-			Notify(nameof(ItemCount));
-		}
-	}
-
-	public bool FilterMaterial {
-		get => m_filterMaterial;
-		set {
-			m_filterMaterial = value;
-			Notify();
-			Notify(nameof(FilterAll));
-			Notify(nameof(CurrentItems));
-			Notify(nameof(ItemCount));
-		}
-	}
-
-	public bool FilterShader {
-		get => m_filterShader;
-		set {
-			m_filterShader = value;
-			Notify();
-			Notify(nameof(FilterAll));
-			Notify(nameof(CurrentItems));
-			Notify(nameof(ItemCount));
-		}
-	}
-
-	public bool FilterScript {
-		get => m_filterScript;
-		set {
-			m_filterScript = value;
-			Notify();
-			Notify(nameof(FilterAll));
-			Notify(nameof(CurrentItems));
-			Notify(nameof(ItemCount));
-		}
-	}
-
-	public bool FilterUnknown {
-		get => m_filterUnknown;
-		set {
-			m_filterUnknown = value;
-			Notify();
-			Notify(nameof(FilterAll));
-			Notify(nameof(CurrentItems));
-			Notify(nameof(ItemCount));
-		}
-	}
-
 	// Tri-state: true = all, false = none, null = mixed
 	public bool? FilterAll {
 		get {
-			var all = m_filterNode && m_filterTexture && m_filterModel && m_filterMaterial && m_filterShader &&
-			          m_filterScript && m_filterUnknown;
-			var none = !m_filterNode && !m_filterTexture && !m_filterModel && !m_filterMaterial && !m_filterShader &&
-			           !m_filterScript && !m_filterUnknown;
+			var all = Filters.All(f => f.IsEnabled);
+			var none = Filters.All(f => !f.IsEnabled);
 			return all ? true : none ? false : null;
 		}
 		set {
 			var v = value ?? true;
-			m_filterNode = m_filterTexture = m_filterModel = m_filterMaterial =
-				m_filterShader = m_filterScript = m_filterUnknown = v;
-			NotifyAllFilters();
-			Notify(nameof(CurrentItems));
-			Notify(nameof(ItemCount));
+			foreach (var f in Filters)
+				f.IsEnabled = v;
 		}
 	}
 
@@ -541,8 +491,8 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 				var (textFilter, typeFilter) = ParseSearch(m_searchText);
 				return Folders
 					.SelectMany(GetAllFiles)
-					.Where(f => IsTypeVisible(f.Type))
-					.Where(f => typeFilter is null || f.Type == typeFilter)
+					.Where(f => IsTypeVisible(f.Definition))
+					.Where(f => typeFilter is null || f.Definition == typeFilter)
 					.Where(f => string.IsNullOrEmpty(textFilter) ||
 					            f.Name.Contains(textFilter, StringComparison.OrdinalIgnoreCase));
 			}
@@ -550,7 +500,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 			if (m_selectedFolder is null) return [];
 			var folders = m_selectedFolder.SubFolders.Cast<object>();
 			var files = m_selectedFolder.Files
-				.Where(f => IsTypeVisible(f.Type))
+				.Where(f => IsTypeVisible(f.Definition))
 				.Cast<object>();
 			return folders.Concat(files);
 		}
@@ -576,22 +526,12 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	public ICommand NewNodeCommand { get; }
 	public ICommand NewNode3DCommand { get; }
 	public ICommand NewNodeGenericCommand { get; }
+	public ICommand NewAssetCommand { get; }
 
 	public new event PropertyChangedEventHandler? PropertyChanged;
 
 	private void Notify([CallerMemberName] string? name = null) {
 		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-	}
-
-	private void NotifyAllFilters() {
-		Notify(nameof(FilterNode));
-		Notify(nameof(FilterTexture));
-		Notify(nameof(FilterModel));
-		Notify(nameof(FilterMaterial));
-		Notify(nameof(FilterShader));
-		Notify(nameof(FilterScript));
-		Notify(nameof(FilterUnknown));
-		Notify(nameof(FilterAll));
 	}
 
 	private void SetAllExpanded(bool expanded) {
@@ -614,7 +554,6 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	private void LoadFolders() {
 		m_selectedItems.Clear();
 
-		// fallback paths for the designer (never reached at runtime)
 		var assetsPath = ProjectContext.IsInitialized
 			? ProjectContext.AssetsPath
 			: @"C:\Users\Xein\Desktop\unnamed_project\assets";
@@ -636,7 +575,6 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		SetOwnerRecursive(assetsFolder);
 		SetOwnerRecursive(coreFolder);
 
-		// restore or default to assets:// root
 		AssetFolder? restored = null;
 		if (m_refreshTargetPath is not null)
 			restored = FindByPath(Folders, m_refreshTargetPath);
@@ -679,29 +617,19 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 			yield return file;
 	}
 
-	// filters by type and name at the same time
-	private static (string text, FileType? type) ParseSearch(string query) {
+	private static (string text, BaseAsset? type) ParseSearch(string query) {
 		var match = Regex.Match(query, @"Type=(\w+)", RegexOptions.IgnoreCase);
-		FileType? typeFilter = null;
+		BaseAsset? typeFilter = null;
 		var text = query;
 		if (match.Success) {
-			if (Enum.TryParse<FileType>(match.Groups[1].Value, true, out var ft))
-				typeFilter = ft;
+			typeFilter = AssetTypeRegistry.All
+				.FirstOrDefault(a => a.DisplayName.Equals(match.Groups[1].Value, StringComparison.OrdinalIgnoreCase));
 			text = query.Replace(match.Value, "").Trim();
 		}
-
 		return (text, typeFilter);
 	}
 
-	private bool IsTypeVisible(FileType type) {
-		return type switch {
-			FileType.Node => m_filterNode,
-			FileType.Texture => m_filterTexture,
-			FileType.Model => m_filterModel,
-			FileType.Material => m_filterMaterial,
-			FileType.Shader => m_filterShader,
-			FileType.Script => m_filterScript,
-			_ => m_filterUnknown
-		};
-	}
+	private bool IsTypeVisible(BaseAsset? def) =>
+		Filters.FirstOrDefault(f => f.Definition == def)?.IsEnabled
+		?? m_unknownFilter.IsEnabled;
 }

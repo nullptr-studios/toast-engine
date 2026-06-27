@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using editor.Assets;
+using editor.Assets.Types;
 using editor.Workspace;
 
 namespace editor.Assets.Importers;
@@ -21,6 +22,15 @@ public partial class GltfImporter : IAssetImporter {
 	}
 
 	public IReadOnlyList<string> SupportedExtensions => [".glb"];
+
+	public BaseAsset PrimaryOutputType => AssetTypeRegistry.ByExtension(".tmesh")!;
+
+	public IReadOnlyList<BaseAsset> OutputTypes => [
+		AssetTypeRegistry.ByExtension(".tmesh")!,
+		AssetTypeRegistry.ByExtension(".tnode")!,
+		AssetTypeRegistry.ByExtension(".ktx2")!,
+		AssetTypeRegistry.ByExtension(".tmat")!,
+	];
 
 	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log) {
 		var name = Path.GetFileNameWithoutExtension(realSourcePath);
@@ -60,7 +70,7 @@ public partial class GltfImporter : IAssetImporter {
 			File.Copy(m.FullName, destPath, true);
 
 			log("Writing .meta sidecar...");
-			var header = new MetaHeader { Uid = uid, Type = "mesh", Source = ctx.SourceVirtualPath };
+			var header = new MetaHeader { Uid = uid, Type = AssetTypeRegistry.ByExtension(".tmesh")!.Type, Source = ctx.SourceVirtualPath };
 			MetaFile.Write(destPath, header, m_settings.ToSection());
 			importedUids.Add(uid);
 		}
@@ -86,7 +96,7 @@ public partial class GltfImporter : IAssetImporter {
 				await Task.Run(() => ThumbnailService.Generate(t.FullName, uid));
 
 				log("Writing .meta sidecar...");
-				var header = new MetaHeader { Uid = uid, Type = "texture", Source = ctx.SourceVirtualPath };
+				var header = new MetaHeader { Uid = uid, Type = AssetTypeRegistry.ByExtension(".ktx2")!.Type, Source = ctx.SourceVirtualPath };
 				MetaFile.Write(destPath, header, m_textureSettings.ToSection(), m_settings.ToSection());
 				importedUids.Add(uid);
 			}
@@ -112,7 +122,7 @@ public partial class GltfImporter : IAssetImporter {
 				await File.WriteAllTextAsync(destPath, toml);
 
 				log("Writing .meta sidecar...");
-				var header = new MetaHeader { Uid = uid, Type = "material", Source = ctx.SourceVirtualPath };
+				var header = new MetaHeader { Uid = uid, Type = AssetTypeRegistry.ByExtension(".tmat")!.Type, Source = ctx.SourceVirtualPath };
 				MetaFile.Write(destPath, header, m_settings.ToSection());
 				importedUids.Add(uid);
 			}
@@ -162,7 +172,7 @@ public partial class GltfImporter : IAssetImporter {
 			gltf_create_tnode(s.FullName, destPath);
 
 			log("Writing .meta sidecar...");
-			var header = new MetaHeader { Uid = uid, Type = "node", Source = ctx.SourceVirtualPath };
+			var header = new MetaHeader { Uid = uid, Type = AssetTypeRegistry.ByExtension(".tnode")!.Type, Source = ctx.SourceVirtualPath };
 			MetaFile.Write(destPath, header, m_settings.ToSection());
 			importedUids.Add(uid);
 		}

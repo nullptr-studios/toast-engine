@@ -12,9 +12,9 @@
 #pragma once
 
 #include <atomic>
+#include <nlohmann/json.hpp>
 #include <toast/export.hpp>
 #include <toast/uid.hpp>
-#include <nlohmann/json.hpp>
 #include <toml++/toml.hpp>
 #include <vector>
 

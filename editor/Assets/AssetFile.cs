@@ -1,23 +1,17 @@
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
+using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Styling;
+using editor.Assets.Types;
 
 namespace editor.Assets;
 
-public enum FileType {
-	Unknown,
-	Node,
-	Texture,
-	Model,
-	Material,
-	Shader,
-	Script,
-	Curve,
-}
-
 public class AssetFile : INotifyPropertyChanged {
+	private static readonly IBrush s_unknownBrush = new SolidColorBrush(Color.Parse("#696969"));
+
 	private Bitmap? m_thumbnail;
 	private bool m_thumbnailChecked;
 	private string? m_uid;
@@ -26,25 +20,17 @@ public class AssetFile : INotifyPropertyChanged {
 
 	public AssetFile(string path) {
 		Filepath = Path.GetFullPath(path);
-		var name = Path.GetFileNameWithoutExtension(path);
-		// strip both extensions (e.g. "foo.ktx2.meta" -> name is "foo", ext is ".ktx2")
-		Name = Path.GetFileNameWithoutExtension(name);
-		Type = Path.GetExtension(name).ToLowerInvariant() switch {
-			".tnode" => FileType.Node,
-			".ktx2" => FileType.Texture,
-			".tmesh" => FileType.Model,
-			".tmat" => FileType.Material,
-			".slang" => FileType.Shader,
-			".lua" => FileType.Script,
-			".tcurve" => FileType.Curve,
-			_ => FileType.Unknown
-		};
+		// strip both extensions: "foo.ktx2.meta" → inner name "foo.ktx2", full ext ".ktx2"
+		var inner = Path.GetFileNameWithoutExtension(path);
+		var ext = AssetTypeRegistry.GetExtension(inner);
+		Name = inner[..^ext.Length];
+		Definition = AssetTypeRegistry.ByExtension(ext);
 	}
 
 	public string Name { get; }
 	public string Filepath { get; }
-	public FileType Type { get; }
-	public string TypeLabel => Type.ToString();
+	public BaseAsset? Definition { get; }
+	public string TypeLabel => Definition?.ChipText ?? "?";
 
 	public AssetBrowserViewModel? Owner { get; set; }
 
@@ -67,10 +53,9 @@ public class AssetFile : INotifyPropertyChanged {
 
 	public Bitmap? Thumbnail {
 		get {
-			// reading from disk on every property access would be too slow
 			if (m_thumbnailChecked) return m_thumbnail;
 			m_thumbnailChecked = true;
-			if (Type != FileType.Texture || !ProjectContext.IsInitialized) return null;
+			if (Definition?.HasThumbnail != true || !ProjectContext.IsInitialized) return null;
 			var header = MetaFile.ReadHeader(Filepath);
 			if (header is null) return null;
 			var thumbPath = Path.Combine(ProjectContext.CachePath, "thumbnails", header.Uid + ".png");
@@ -87,19 +72,15 @@ public class AssetFile : INotifyPropertyChanged {
 
 	public bool HasThumbnail => Thumbnail is not null;
 
-	public IBrush TypeColor => ColorFor(Type);
-
-	public static IBrush ColorFor(FileType type) =>
-		type switch {
-			FileType.Node => new SolidColorBrush(Color.Parse("#6495ED")),
-			FileType.Texture => new SolidColorBrush(Color.Parse("#3CB371")),
-			FileType.Model => new SolidColorBrush(Color.Parse("#FF8C00")),
-			FileType.Material => new SolidColorBrush(Color.Parse("#9370DB")),
-			FileType.Shader => new SolidColorBrush(Color.Parse("#00CED1")),
-			FileType.Script => new SolidColorBrush(Color.Parse("#FFD700")),
-			FileType.Curve => new SolidColorBrush(Color.Parse("#FF6B6B")),
-			_ => new SolidColorBrush(Color.Parse("#696969"))
-		};
+	public IBrush TypeColor {
+		get {
+			if (Definition is null) return s_unknownBrush;
+			if (Application.Current?.TryGetResource(Definition.ChipColor, ThemeVariant.Default, out var res) == true
+			    && res is IBrush brush)
+				return brush;
+			return s_unknownBrush;
+		}
+	}
 
 	public event PropertyChangedEventHandler? PropertyChanged;
 

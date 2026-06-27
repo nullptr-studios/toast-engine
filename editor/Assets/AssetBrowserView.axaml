@@ -419,13 +419,14 @@
 									          IsChecked="{Binding FilterAll}"
 									          IsThreeState="True" />
 									<Separator Margin="0,2" />
-									<CheckBox Content="Nodes" IsChecked="{Binding FilterNode}" />
-									<CheckBox Content="Textures" IsChecked="{Binding FilterTexture}" />
-									<CheckBox Content="Models" IsChecked="{Binding FilterModel}" />
-									<CheckBox Content="Materials" IsChecked="{Binding FilterMaterial}" />
-									<CheckBox Content="Shaders" IsChecked="{Binding FilterShader}" />
-									<CheckBox Content="Scripts" IsChecked="{Binding FilterScript}" />
-									<CheckBox Content="Unknown" IsChecked="{Binding FilterUnknown}" />
+									<ItemsControl ItemsSource="{Binding Filters}">
+										<ItemsControl.ItemTemplate>
+											<DataTemplate x:DataType="vm:AssetTypeFilter">
+												<CheckBox Content="{Binding Label}"
+												          IsChecked="{Binding IsEnabled}" />
+											</DataTemplate>
+										</ItemsControl.ItemTemplate>
+									</ItemsControl>
 								</StackPanel>
 							</Flyout>
 						</Button.Flyout>
@@ -443,58 +444,7 @@
 							</MenuItem.Icon>
 						</MenuItem>
 						<MenuItem Header="Import" Click="Import_OnClick" />
-						<Separator />
-						<MenuItem IsEnabled="False" Header="Nodes" FontSize="13" />
-						<MenuItem Command="{Binding NewNodeCommand}">
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<Border Width="32" Height="32" Background="{StaticResource Red}" CornerRadius="4" />
-									<TextBlock Text="Node" VerticalAlignment="Center" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-						<MenuItem Command="{Binding NewNode3DCommand}">
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<Border Width="32" Height="32" Background="Green" CornerRadius="4" />
-									<TextBlock Text="Node3D" VerticalAlignment="Center" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-						<MenuItem Header="Other nodes..." Command="{Binding NewNodeGenericCommand}"/>
-						<Separator />
-						<MenuItem Header="Assets" FontSize="13" IsEnabled="False" />
-						<MenuItem>
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<Border Width="32" Height="32" Background="Blue" CornerRadius="4" />
-									<TextBlock Text="Material" VerticalAlignment="Center" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-						<MenuItem>
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<Border Width="32" Height="32" Background="DeepPink" CornerRadius="4" />
-									<TextBlock Text="Script" VerticalAlignment="Center" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-						<MenuItem>
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<Border Width="32" Height="32" Background="OrangeRed" CornerRadius="4" />
-									<TextBlock Text="Data" VerticalAlignment="Center" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-						<MenuItem Header="Audio"><MenuItem /></MenuItem>
-						<MenuItem Header="Data"><MenuItem /></MenuItem>
-						<MenuItem Header="Input"><MenuItem /></MenuItem>
-						<MenuItem Header="Rendering"><MenuItem /></MenuItem>
-						<MenuItem Header="UI"><MenuItem /></MenuItem>
-						<Separator />
-						<MenuItem Header="Refresh" Command="{Binding RefreshCommand}" />
+						<!-- rest of items are built in code-behind via RebuildContextMenu -->
 					</ContextMenu>
 				</Border.ContextMenu>
 

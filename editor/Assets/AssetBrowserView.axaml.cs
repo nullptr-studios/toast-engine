@@ -3,7 +3,11 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Styling;
 using editor.Assets.Importers;
+using editor.Assets.Types;
 using editor.Components.Elements;
 
 namespace editor.Assets;
@@ -17,6 +21,11 @@ public partial class AssetBrowserView : UserControl {
 
 	public AssetBrowserView() {
 		InitializeComponent();
+
+		var bg = this.FindControl<Border>("AssetViewBackground");
+		if (bg?.ContextMenu is { } menu) {
+			menu.Opening += (_, _) => RebuildContextMenu(menu);
+		}
 	}
 
 	private AssetBrowserViewModel Vm => (AssetBrowserViewModel)DataContext!;
@@ -42,7 +51,7 @@ public partial class AssetBrowserView : UserControl {
 		if (file.Uid is not { } uid) return;
 
 		var data = new DataTransfer();
-		data.Add(DataTransferItem.Create(AssetDragData.Format, new AssetDragRef(uid, file.Type, file.Name)));
+		data.Add(DataTransferItem.Create(AssetDragData.Format, new AssetDragRef(uid, file.Definition?.Type ?? "", file.Name)));
 
 		// collect all selected files for multi-item drag
 		var selectedFiles = AssetList.SelectedItems?
@@ -51,7 +60,7 @@ public partial class AssetBrowserView : UserControl {
 			.ToList();
 		if (selectedFiles is { Count: > 1 } && selectedFiles.Any(f => f.Uid == uid)) {
 			var refs = selectedFiles
-				.Select(f => new AssetDragRef(f.Uid!, f.Type, f.Name))
+				.Select(f => new AssetDragRef(f.Uid!, f.Definition?.Type ?? "", f.Name))
 				.ToList();
 			data.Add(DataTransferItem.Create(AssetDragData.MultiFormat, refs));
 		}
@@ -112,5 +121,49 @@ public partial class AssetBrowserView : UserControl {
 		if (owner is null) return;
 		var importWindow = new ImportWindow();
 		await importWindow.ShowDialog(owner);
+	}
+
+	private void RebuildContextMenu(ContextMenu menu) {
+		// Keep only the first 2 static items
+		while (menu.Items.Count > 2)
+			menu.Items.RemoveAt(2);
+
+		var vm = Vm;
+
+		menu.Items.Add(new Separator());
+		menu.Items.Add(MakeCommandItem("Node", vm.NewNodeCommand, "Blue"));
+		menu.Items.Add(MakeCommandItem("Node 3D", vm.NewNode3DCommand, "Green"));
+		menu.Items.Add(new MenuItem { Header = "Other nodes...", Command = vm.NewNodeGenericCommand });
+
+		menu.Items.Add(new Separator());
+		menu.Items.Add(MakeCommandItem("Material", vm.NewNodeCommand, "Green"));
+		menu.Items.Add(MakeCommandItem("Script", vm.NewNode3DCommand, "Purple"));
+		menu.Items.Add(MakeCommandItem("Data", vm.NewNode3DCommand, "Cyan"));
+		foreach (var (category, types) in AssetTypeRegistry.CreatableByCategory) {
+			var sub = new MenuItem { Header = category };
+			foreach (var def in types)
+				sub.Items.Add(new MenuItem { Header = def.DisplayName, Command = vm.NewAssetCommand, CommandParameter = def });
+			menu.Items.Add(sub);
+		}
+
+		menu.Items.Add(new Separator());
+		menu.Items.Add(new MenuItem { Header = "Refresh", Command = vm.RefreshCommand });
+	}
+
+	private MenuItem MakeCommandItem(string label, System.Windows.Input.ICommand command, string colorKey) {
+		var chip = new Border {
+			Width = 32, Height = 32, CornerRadius = new CornerRadius(4),
+			Background = ResolveColor(colorKey)
+		};
+		var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+		panel.Children.Add(chip);
+		panel.Children.Add(new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center });
+		return new MenuItem { Header = panel, Command = command };
+	}
+
+	private static IBrush ResolveColor(string key) {
+		if (Application.Current?.TryGetResource(key, ThemeVariant.Default, out var res) == true && res is IBrush b)
+			return b;
+		return Brushes.Gray;
 	}
 }

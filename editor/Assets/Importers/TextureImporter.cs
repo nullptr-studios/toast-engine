@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using editor.Assets.Types;
 
 namespace editor.Assets.Importers;
 
@@ -23,7 +24,7 @@ public partial class TextureImporter : IAssetImporter {
 
 	public IReadOnlyList<string> SupportedExtensions => [".png", ".jpg", ".jpeg", ".tga"];
 
-	public string VectorName => "textures";
+	public BaseAsset PrimaryOutputType => AssetTypeRegistry.ByExtension(".ktx2")!;
 
 	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log) {
 		var uid = ctx.UidFor(0);
@@ -38,7 +39,7 @@ public partial class TextureImporter : IAssetImporter {
 		await Task.Run(() => ThumbnailService.Generate(realSourcePath, uid));
 
 		log("Writing .meta sidecar...");
-		var header = new MetaHeader { Uid = uid, VectorName = VectorName, Source = ctx.SourceVirtualPath };
+		var header = new MetaHeader { Uid = uid, Type = PrimaryOutputType.Type, Source = ctx.SourceVirtualPath };
 		MetaFile.Write(destPath, header, m_settings.ToSection());
 
 		return [uid];

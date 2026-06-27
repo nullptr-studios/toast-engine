@@ -1,26 +1,31 @@
+using System.IO;
+using System.Threading.Tasks;
 using Lucide.Avalonia;
+using Tomlyn.Model;
 
 namespace editor.Assets.Types;
 
-public interface BaseAsset {
-	static abstract string Type { get; } // This name will be used for the database separation
-	static abstract string Extension { get; } // File extension
-	static abstract string DisplayName { get; } // Display name on the UI
-	static abstract string ChipText { get; } // Text that appears on the chip decoration
-	static abstract string ChipColor { get; } // Color that appears on the chip decoration (name of a static resource)
-	static abstract LucideIconKind Icon { get; } // Icon used to represent the asset
+public abstract class BaseAsset {
+	public abstract string Type { get; }
+	public abstract string Extension { get; }
+	public abstract string DisplayName { get; }
+	public abstract string ChipText { get; }
+	public abstract string ChipColor { get; }
+	public abstract LucideIconKind Icon { get; }
+	public abstract bool CanBeCreated { get; }
+	public abstract string Category { get; }
+	public abstract bool HasThumbnail { get; }
+	public abstract bool CanBeEdited { get; }
+	public abstract string EditorTool { get; }
+	public abstract string SchemaPath { get; }
 
-	static abstract bool CanBeCreated { get; } // True if the user can create it through the AssetBrowser
-	static abstract string Category { get; } // Category the asset will appear on the Asset Browser dropdown
+	public string Uid { get; set; } = "";
+	public TomlTable? Meta { get; set; }
 
-	static abstract bool HasThumbnail { get; } // If true, use that image and fall back to the Icon
-	void GenerateThumbnail();
+	public virtual void GenerateThumbnail() { }
 
-	static abstract bool CanBeImported { get; } // True if it can be imported through the Artwork Importer window
-
-	static abstract bool CanBeEdited { get; } // True if you can double click to open
-	static abstract string EditorTool { get; } // Name of the editor tool that needs to open when you double click
-	static abstract string SchemaPath { get; } // Path to the Json Schema of the file if it has one
-
-	string Uid { get; } // Asset UID
+	public virtual Task CreateAsync(string path) {
+		File.WriteAllText(path, "");
+		return Task.CompletedTask;
+	}
 }
