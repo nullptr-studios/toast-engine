@@ -96,11 +96,11 @@ public:
 
 	void stop();
 
-	void resize(vk::Extent2D extent);
-
 	void addRenderPass(std::unique_ptr<IRenderPass> pass);
 
-	void queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data);
+	// void queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data);
+
+	void queueResourceUpload(std::unique_ptr<PendingResourceUpload> upload);
 
 	auto getFrameUBORes(uint32_t current_frame) const -> const FrameResources* { return &m_frame_ubo_res[current_frame]; }
 
@@ -119,8 +119,6 @@ private:
 	void drawFrame(RenderFrame& frame_data);
 
 	void mainRenderThread();
-
-	event::Listener m_listener;
 
 	std::atomic_bool m_running {false};
 
@@ -158,7 +156,19 @@ private:
 
 	void recordFrame(FrameContext& frame, uint32_t image_index);
 
+	// Resource uploading
+	struct BatchedUploadGroup {
+		std::vector<std::unique_ptr<PendingResourceUpload>> jobs;
+		vk::raii::Fence completionFence = nullptr;
+	};
+
+	std::vector<std::unique_ptr<PendingResourceUpload>> m_upload_staging;
+	std::queue<BatchedUploadGroup> m_pending_uploads;
 	void processPendingUploads();
+	void flushResourceUploads();
+	std::mutex m_upload_mutex;
+
+	void applyResize(vk::Extent2D extent);
 
 	const VulkanCore* m_core = nullptr;
 
@@ -167,8 +177,6 @@ private:
 	vk::Format m_depth_format = vk::Format::eUndefined;
 	DepthResources m_depth_resources;
 	vk::ImageLayout m_depth_layout = vk::ImageLayout::eUndefined;
-
-	std::vector<PendingMeshUpload> m_pending_uploads;
 
 	vk::raii::CommandPool m_command_pool = nullptr;
 
@@ -193,7 +201,6 @@ private:
 	void updateFrameResources(uint32_t frame_index, RenderFrame& frame_data);
 };
 
-// Free functions for convenient access to the singleton renderer
 inline void start() {
 	VulkanRenderer::instance->start();
 }

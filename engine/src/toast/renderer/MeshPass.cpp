@@ -10,8 +10,13 @@
 #include "gizmo.hpp"
 #include "toast/log.hpp"
 
+#include <filesystem>
+#include <fstream>
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include "core/vulkan_texture.hpp"
+
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace toast::renderer {
@@ -39,8 +44,31 @@ MeshPass::MeshPass(const toast::renderer::VulkanCore& core, vk::Format colorForm
 
 	data.indices = GizmoIndices;
 	data.vertices = GizmoVertex;
+
+	std::vector<uint8_t> texturebuffer;
+	// load all images from ImageLoadtest folder
+	{
+		const std::string imageFolder = "ImageLoadtest";
+		for (const auto& entry : std::filesystem::directory_iterator(imageFolder)) {
+			if (entry.is_regular_file() && entry.path().extension() == ".ktx2") {
+				std::vector<uint8_t> imageBuffer;
+				std::ifstream file(entry.path(), std::ios::binary | std::ios::ate);
+				if (file.is_open()) {
+					std::streamsize size = file.tellg();
+					file.seekg(0, std::ios::beg);
+					imageBuffer.resize(size);
+					file.read(reinterpret_cast<char*>(imageBuffer.data()), size);
+					file.close();
+
+					textures.emplace_back();
+					VulkanRenderer::instance->queueResourceUpload(std::make_unique<TextureUpload>(textures.back(), imageBuffer));
+				}
+			}
+		}
+	}
+
 	// mesh.create(core, data, core.getGraphicsQueueFamilyIndex(), core.getTransferQueueFamilyIndex());
-	toast::renderer::VulkanRenderer::instance->queueMeshUpload(mesh, data);
+	VulkanRenderer::instance->queueResourceUpload(std::make_unique<MeshUpload>(mesh, data));
 }
 
 void MeshPass::update(uint32_t frame_index, float dt) {

@@ -7,7 +7,9 @@
 #include "core/shader_layout.hpp"
 #include "core/vulkan_mesh.hpp"
 #include "core/vulkan_pipeline.hpp"
+#include "core/vulkan_texture.hpp"
 
+#include <deque>
 #include <glm/glm.hpp>
 
 namespace toast::renderer {
@@ -42,5 +44,6 @@ private:
 	toast::renderer::ShaderLayout shaderLayout;
 
 	toast::renderer::VulkanMesh mesh;
+	std::deque<VulkanTexture> textures;
 };
 }

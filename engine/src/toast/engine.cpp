@@ -163,6 +163,7 @@ void Engine::tick() {
 	camera->position = glm::vec3(sin(totalTime) * 5.0f, cos(totalTime) * 5.0f, 5);
 
 	if (m->renderer) {
+		ZoneScopedN("Renderer::submitFrame()");
 		auto& sem = m->renderer->getFreeFramesSemaphore();
 		// Dont block the main thread if theres no free render slot
 		if (!sem.try_acquire()) {

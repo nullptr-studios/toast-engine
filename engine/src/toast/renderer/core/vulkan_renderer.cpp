@@ -342,10 +342,6 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 		pass->record(*frame.command_buffer, m_current_frame, image_index);
 	}
 
-	// // TODO: Sending vertices!!!
-	// // Draw fullscreen
-	// frame.command_buffer.draw(6, 1, 0, 0);
-
 	// End rendering
 	frame.command_buffer.endRendering();
 
@@ -443,12 +439,16 @@ void VulkanRenderer::updateFrameResources(uint32_t frameIndex, RenderFrame& fram
 }
 
 auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
-	// ZoneScoped;
+	ZoneScoped;
 	if (m_frames.empty()) {
 		return;
 	}
 
+	// process upload fences
 	processPendingUploads();
+
+	// upload next batch of resources
+	flushResourceUploads();
 
 	// Frame rendering
 	auto& frame = m_frames[m_current_frame];
@@ -458,7 +458,8 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 	    m_output_target->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.image_available, VK_NULL_HANDLE);
 
 	if (acquired.result == vk::Result::eErrorOutOfDateKHR) {
-		TOAST_WARN("VulkanRenderer", "Swapchain out of date on acquire; skipping frame");
+		TOAST_WARN("VulkanRenderer", "Swapchain out of date on acquire; recreating");
+		applyResize(m_output_target->getExtent());
 		return;
 	}
 	if (acquired.result != vk::Result::eSuccess && acquired.result != vk::Result::eSuboptimalKHR) {
@@ -478,7 +479,7 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 
 	// Update the Render passes TODO: Move outside of renderloop
 	for (auto& pass : m_render_passes) {
-		pass->update(m_current_frame, 0.016f);
+		pass->update(m_current_frame, Time::get().renderDelta());
 	}
 
 	// Recording the shit
@@ -513,7 +514,8 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 	m_current_frame = (m_current_frame + 1) % static_cast<uint32_t>(m_frames.size());
 
 	if (present_result == vk::Result::eErrorOutOfDateKHR || present_result == vk::Result::eSuboptimalKHR) {
-		TOAST_WARN("VulkanRenderer", "Swapchain out of date or suboptimal on present; skipping frame");
+		TOAST_WARN("VulkanRenderer", "Swapchain out of date or suboptimal on present; recreating");
+		applyResize(m_output_target->getExtent());
 		return;
 	}
 	if (present_result != vk::Result::eSuccess) {
@@ -522,9 +524,9 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 }
 
 void VulkanRenderer::mainRenderThread() {
-	// tracy::SetThreadName("Renderer Thread");
+	tracy::SetThreadName("Renderer Thread");
 	while (m_running.load(std::memory_order_acquire)) {
-		// ZoneScopedN("VulkanRenderer::mainRenderThread");
+		ZoneScopedN("VulkanRenderer::mainRenderThread");
 		RenderFrame frameToDraw;
 		bool consumedQueuedFrame = false;
 
@@ -569,17 +571,6 @@ void VulkanRenderer::start() {
 
 	m_running.store(true, std::memory_order_release);
 
-	// TODO: This should be moved into VulkanRenderer
-	m_listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
-		if (e.width <= 0 || e.height <= 0) {
-			return false;
-		}
-
-		// FIXME
-		resize(vk::Extent2D {static_cast<uint32_t>(e.width), static_cast<uint32_t>(e.height)});
-		return false;
-	});
-
 	m_render_thread = std::thread([this] { mainRenderThread(); });
 }
 
@@ -607,8 +598,6 @@ void VulkanRenderer::stop() {
 		m_core->getDevice().waitIdle();
 	}
 
-	m_listener.clear();
-
 	m_frame_cv.notify_all();
 
 	if (m_render_thread.joinable()) {
@@ -616,13 +605,7 @@ void VulkanRenderer::stop() {
 	}
 }
 
-auto VulkanRenderer::resize(vk::Extent2D extent) -> void {
-	if (extent.width == 0 || extent.height == 0) {
-		TOAST_WARN("VulkanRenderer", "Ignoring resize to invalid extent {}x{}", extent.width, extent.height);
-		return;
-	}
-
-	// wait for free device
+auto VulkanRenderer::applyResize(vk::Extent2D extent) -> void {
 	m_core->getDevice().waitIdle();
 	try {
 		m_output_target->recreate(extent);
@@ -640,103 +623,67 @@ void VulkanRenderer::addRenderPass(std::unique_ptr<IRenderPass> pass) {
 	m_render_passes.push_back(std::move(pass));
 }
 
+void VulkanRenderer::queueResourceUpload(std::unique_ptr<PendingResourceUpload> uploadJob) {
+	uploadJob->build(*m_core);
+
+	std::lock_guard<std::mutex> lock(m_upload_mutex);
+	m_upload_staging.push_back(std::move(uploadJob));
+}
+
 void VulkanRenderer::processPendingUploads() {
 	auto& device = m_core->getDevice();
 
-	for (auto it = m_pending_uploads.begin(); it != m_pending_uploads.end();) {
-		const auto status = vkGetFenceStatus(*device, *it->completion_fence);
+	while (!m_pending_uploads.empty()) {
+		auto& oldestBatch = m_pending_uploads.front();
 
-		if (status == VK_SUCCESS) {
-			it->mesh->markReady();
+		const auto status = vkGetFenceStatus(*device, *oldestBatch.completionFence);
 
-			it = m_pending_uploads.erase(it);
-		} else if (status == VK_NOT_READY) {
-			++it;
+		if (status == VkResult::VK_SUCCESS) {
+			for (auto& job : oldestBatch.jobs) {
+				job->finished();
+			}
+
+			m_pending_uploads.pop();
 		} else {
-			TOAST_CRITICAL("VulkanRenderer", "Fence status query failed during mesh upload cleanup");
+			break;
 		}
 	}
 }
 
-void VulkanRenderer::queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data) {
-	// Create the final GPU buffers in the mesh
-	mesh.create(*m_core, data, m_core->getGraphicsQueueFamilyIndex(), m_core->getTransferQueueFamilyIndex());
-
-	mesh.markUploading();
-
-	PendingMeshUpload job;
-	job.mesh = &mesh;
-
-	const vk::DeviceSize vertexSize = data.vertices.size_bytes();
-	const vk::DeviceSize indexSize = data.indices.size_bytes();
-
-	// Create vertex staging buffer
+void VulkanRenderer::flushResourceUploads() {
+	std::vector<std::unique_ptr<PendingResourceUpload>> jobs_to_flush;
 	{
-		vk::BufferCreateInfo stagingCI {};
-		stagingCI.size = vertexSize;
-		stagingCI.usage = vk::BufferUsageFlagBits::eTransferSrc;
-		stagingCI.sharingMode = vk::SharingMode::eExclusive;
-
-		vma::AllocationCreateInfo allocCI {};
-		allocCI.usage = vma::MemoryUsage::eAutoPreferHost;
-		allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
-
-		job.vertex_staging = m_core->getAllocator().createBuffer(stagingCI, allocCI);
-
-		auto& allocation = job.vertex_staging.getAllocation();
-		void* mapped = allocation.getInfo().pMappedData;
-		if (!mapped) {
-			TOAST_CRITICAL("VulkanRenderer", "Vertex staging buffer is not mapped");
+		std::lock_guard<std::mutex> lock(m_upload_mutex);
+		if (m_upload_staging.empty()) {
+			return;
 		}
-
-		std::memcpy(mapped, data.vertices.data(), vertexSize);
-		allocation.flush(0, vertexSize);
+		// Move the contents to local list and clear the shared one
+		jobs_to_flush = std::move(m_upload_staging);
+		m_upload_staging.clear();
 	}
 
-	// Create index staging buffer
-	{
-		vk::BufferCreateInfo stagingCI {};
-		stagingCI.size = indexSize;
-		stagingCI.usage = vk::BufferUsageFlagBits::eTransferSrc;
-		stagingCI.sharingMode = vk::SharingMode::eExclusive;
-
-		vma::AllocationCreateInfo allocCI {};
-		allocCI.usage = vma::MemoryUsage::eAutoPreferHost;
-		allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
-
-		job.index_staging = m_core->getAllocator().createBuffer(stagingCI, allocCI);
-
-		auto& allocation = job.index_staging.getAllocation();
-		void* mapped = allocation.getInfo().pMappedData;
-		if (!mapped) {
-			TOAST_CRITICAL("VulkanRenderer", "Index staging buffer is not mapped");
-		}
-
-		std::memcpy(mapped, data.indices.data(), indexSize);
-		allocation.flush(0, indexSize);
-	}
-
-	// Record the transfer command buffer
+	auto& device = m_core->getDevice();
 	auto& transferCmd = m_frames[m_current_frame].transfer_command_buffer;
+
 	transferCmd.reset();
+	transferCmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 
-	const vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-	transferCmd.begin(beginInfo);    // TODO: Transfer all pending meshes in a single batch for efficiency
-
-	mesh.recordUpload(*transferCmd, *job.vertex_staging, *job.index_staging);
+	for (auto& job : jobs_to_flush) {
+		job->record(*transferCmd);
+	}
 
 	transferCmd.end();
 
-	// Submit to transfer queue with a fence so staging buffers stay alive
-	job.completion_fence = vk::raii::Fence(m_core->getDevice(), vk::FenceCreateInfo {});
+	// Create a single fence for the entire batch group
+	BatchedUploadGroup batch;
+	batch.completionFence = vk::raii::Fence(device, vk::FenceCreateInfo {});
+	batch.jobs = std::move(jobs_to_flush);    // Move local list into the batch tracker
 
 	const vk::CommandBuffer rawTransferCmd = *transferCmd;
 	const vk::SubmitInfo submitInfo(0, nullptr, nullptr, 1, &rawTransferCmd);
+	m_core->getTransferQueue().submit(submitInfo, *batch.completionFence);
 
-	m_core->getTransferQueue().submit(submitInfo, *job.completion_fence);
-
-	// Keep staging alive until the fence signals
-	m_pending_uploads.push_back(std::move(job));
+	m_pending_uploads.push(std::move(batch));
 }
 
 void VulkanRenderer::setActiveCamera(Camera* camera) {

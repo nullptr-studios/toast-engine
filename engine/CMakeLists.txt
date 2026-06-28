@@ -7,6 +7,7 @@ find_package(Tracy CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
+find_package(KTX REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(unofficial-vulkan-memory-allocator-hpp CONFIG REQUIRED)
 find_package(slang CONFIG REQUIRED)
@@ -76,6 +77,7 @@ target_link_libraries(toast_engine
         asio::asio
         SDL3::SDL3
         Vulkan::Vulkan
+        KTX::ktx
         GPUOpen::VulkanMemoryAllocator
         unofficial::VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-Hpp
         slang::gfx slang::slang
