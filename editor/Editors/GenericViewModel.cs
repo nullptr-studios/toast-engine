@@ -44,7 +44,7 @@ public partial class GenericViewModel : Tool {
 
     private void InitDesignData() {
         m_loading    = true;
-        SchemaLocked = true;
+        SchemaLocked = false;
         SchemaLabel  = "character";
         CurrentPath  = "hero.toml";
 
@@ -158,8 +158,8 @@ public partial class GenericViewModel : Tool {
         if (!File.Exists(schemaRealPath)) return;
 
         SchemaLabel = Path.GetFileNameWithoutExtension(schemaVirtualPath);
-        var descriptors = ParseSchemaProperties(File.ReadAllText(schemaRealPath));
-        LoadSchemaGuided(new TomlTable(), descriptors);
+        var (descriptors, definitions) = ParseSchema(File.ReadAllText(schemaRealPath));
+        LoadSchemaGuided(new TomlTable(), descriptors, definitions);
         m_prevSchemaUid = value;
     }
 
@@ -195,8 +195,8 @@ public partial class GenericViewModel : Tool {
                 var schemaPath = ProjectContext.Resolve(definition.SchemaPath);
                 SchemaLabel    = Path.GetFileNameWithoutExtension(definition.SchemaPath);
                 if (File.Exists(schemaPath)) {
-                    var descriptors = ParseSchemaProperties(File.ReadAllText(schemaPath));
-                    LoadSchemaGuided(table, descriptors);
+                    var (descriptors, definitions) = ParseSchema(File.ReadAllText(schemaPath));
+                    LoadSchemaGuided(table, descriptors, definitions);
                 } else {
                     LoadFreeForm(table);
                 }
@@ -206,8 +206,8 @@ public partial class GenericViewModel : Tool {
                     var sRealPath = ProjectContext.Resolve(sVirtPath);
                     SchemaLabel = Path.GetFileNameWithoutExtension(sVirtPath);
                     if (File.Exists(sRealPath)) {
-                        var descriptors = ParseSchemaProperties(File.ReadAllText(sRealPath));
-                        LoadSchemaGuided(table, descriptors);
+                        var (descriptors, definitions) = ParseSchema(File.ReadAllText(sRealPath));
+                        LoadSchemaGuided(table, descriptors, definitions);
                     } else {
                         LoadFreeForm(table);
                     }
@@ -231,25 +231,54 @@ public partial class GenericViewModel : Tool {
         }
     }
 
-    private void LoadSchemaGuided(TomlTable table, List<SchemaFieldDescriptor> descriptors) {
+    private void LoadSchemaGuided(TomlTable table, List<SchemaFieldDescriptor> descriptors,
+                                   Dictionary<string, List<SchemaFieldDescriptor>> definitions) {
         foreach (var desc in descriptors) {
             object? tomlVal = table.TryGetValue(desc.Name, out var v) ? v : null;
+
+            bool isStruct = definitions.ContainsKey(desc.TypeKey);
+            string vmType = isStruct ? "object" : desc.TypeKey;
 
             GenericFieldVM field;
             if (desc.IsArray) {
                 field = new GenericFieldVM {
                     Name             = desc.Name,
                     TypeKey          = "array",
-                    ArrayElementType = desc.TypeKey
+                    ArrayElementType = vmType
                 };
-                if (tomlVal is TomlArray arr) {
-                    foreach (var elem in arr) {
-                        var child = GenericFieldVM.FromToml("", elem!, desc.TypeKey);
-                        child.NameEditable = false;
+                if (isStruct) {
+                    // Factory so "Add Item" creates a properly populated struct instance
+                    var capturedDefs       = definitions;
+                    var capturedStructDefs = definitions[desc.TypeKey];
+                    field.ArrayItemFactory = () => {
+                        var item = new GenericFieldVM { TypeKey = "object", NameEditable = false, ChildrenLocked = true };
+                        LoadStructChildren(item, new TomlTable(), capturedStructDefs, capturedDefs);
+                        return item;
+                    };
+                }
+                IEnumerable? elements = tomlVal switch {
+                    TomlArray ta       => ta,
+                    TomlTableArray tta => tta,
+                    _                  => null
+                };
+                if (elements != null) {
+                    foreach (var elem in elements) {
+                        GenericFieldVM child;
+                        if (isStruct) {
+                            child = new GenericFieldVM { TypeKey = "object", NameEditable = false, ChildrenLocked = true };
+                            LoadStructChildren(child, elem as TomlTable ?? [], definitions[desc.TypeKey], definitions);
+                        } else {
+                            child = GenericFieldVM.FromToml("", elem!, vmType);
+                            child.NameEditable = false;
+                            SetChildrenNameEditable(child, false);
+                        }
                         if (desc.EnumOptions.Count > 0) child.EnumAllowedValues = desc.EnumOptions;
                         field.Children.Add(child);
                     }
                 }
+            } else if (isStruct) {
+                field = new GenericFieldVM { Name = desc.Name, TypeKey = "object", ChildrenLocked = true };
+                LoadStructChildren(field, tomlVal as TomlTable ?? [], definitions[desc.TypeKey], definitions);
             } else if (tomlVal is not null) {
                 field = GenericFieldVM.FromToml(desc.Name, tomlVal, desc.TypeKey);
             } else {
@@ -260,8 +289,39 @@ public partial class GenericViewModel : Tool {
             if (!desc.IsArray && desc.EnumOptions.Count > 0)
                 field.EnumAllowedValues = desc.EnumOptions;
 
+            if (desc.MinValue.HasValue) field.Minimum = desc.MinValue.Value;
+            if (desc.MaxValue.HasValue) field.Maximum = desc.MaxValue.Value;
+
             field.NameEditable = false;
             AddField(field);
+        }
+    }
+
+    private static void LoadStructChildren(GenericFieldVM parent, TomlTable table,
+                                            List<SchemaFieldDescriptor> structFields,
+                                            Dictionary<string, List<SchemaFieldDescriptor>> definitions) {
+        foreach (var desc in structFields) {
+            object? tomlVal = table.TryGetValue(desc.Name, out var v) ? v : null;
+
+            bool isStruct = definitions.ContainsKey(desc.TypeKey);
+            GenericFieldVM child;
+            if (isStruct) {
+                child = new GenericFieldVM { Name = desc.Name, TypeKey = "object" };
+                LoadStructChildren(child, tomlVal as TomlTable ?? [], definitions[desc.TypeKey], definitions);
+            } else if (tomlVal is not null) {
+                child = GenericFieldVM.FromToml(desc.Name, tomlVal, desc.TypeKey);
+            } else {
+                child = new GenericFieldVM { Name = desc.Name, TypeKey = desc.TypeKey };
+                ApplyDefault(child, desc.DefaultStr);
+            }
+
+            if (desc.EnumOptions.Count > 0) child.EnumAllowedValues = desc.EnumOptions;
+            if (desc.MinValue.HasValue) child.Minimum = desc.MinValue.Value;
+            if (desc.MaxValue.HasValue) child.Maximum = desc.MaxValue.Value;
+            child.NameEditable = false;
+            child.NotifyDirty  = () => parent.NotifyDirty?.Invoke();
+            child.Children.CollectionChanged += (_, _) => parent.NotifyDirty?.Invoke();
+            parent.Children.Add(child);
         }
     }
 
@@ -270,6 +330,13 @@ public partial class GenericViewModel : Tool {
         field.RemoveCallback  = f => { Fields.Remove(f); IsDirty = true; };
         field.Children.CollectionChanged += (_, _) => IsDirty = true;
         Fields.Add(field);
+    }
+
+    private static void SetChildrenNameEditable(GenericFieldVM vm, bool editable) {
+        foreach (var child in vm.Children) {
+            child.NameEditable = editable;
+            SetChildrenNameEditable(child, editable);
+        }
     }
 
     private static void ApplyDefault(GenericFieldVM field, string defaultStr) {
@@ -321,8 +388,8 @@ public partial class GenericViewModel : Tool {
         int prevCount = Fields.Count;
         m_loading = true;
         Fields.Clear();
-        var descriptors = ParseSchemaProperties(File.ReadAllText(schemaRealPath));
-        LoadSchemaGuided(table, descriptors);
+        var (descriptors, definitions) = ParseSchema(File.ReadAllText(schemaRealPath));
+        LoadSchemaGuided(table, descriptors, definitions);
         m_loading = false;
         if (Fields.Count != prevCount) IsDirty = true;
     }
@@ -368,35 +435,53 @@ public partial class GenericViewModel : Tool {
         IsDirty = false;
     }
 
-    private static List<SchemaFieldDescriptor> ParseSchemaProperties(string jsonText) {
-        var result = new List<SchemaFieldDescriptor>();
+    private static (List<SchemaFieldDescriptor> Fields, Dictionary<string, List<SchemaFieldDescriptor>> Defs)
+        ParseSchema(string jsonText) {
+        var fields = new List<SchemaFieldDescriptor>();
+        var defs   = new Dictionary<string, List<SchemaFieldDescriptor>>();
         try {
             var root = JsonNode.Parse(jsonText)?.AsObject();
-            if (root?["properties"] is not JsonObject props) return result;
+            if (root is null) return (fields, defs);
 
-            foreach (var (key, val) in props) {
-                var xType = val?["x-toast-type"]?.GetValue<string>() ?? "";
-                bool isArray = xType.EndsWith("[]");
-                string typeKey = isArray ? xType[..^2] : xType;
-                if (string.IsNullOrEmpty(typeKey)) typeKey = "string";
+            if (root["definitions"] is JsonObject defsNode)
+                foreach (var (typeName, typeNode) in defsNode)
+                    if (typeNode?["properties"] is JsonObject defProps)
+                        defs[typeName] = ParseProperties(defProps);
 
-                // Read enum options if present
-                var enumOptions = new List<string>();
-                if (typeKey == "enum" && val?["enum"] is JsonArray enumArr) {
-                    foreach (var opt in enumArr)
-                        if (opt?.GetValue<string>() is { } s) enumOptions.Add(s);
-                }
-
-                result.Add(new SchemaFieldDescriptor(
-                    Name:        key,
-                    TypeKey:     typeKey,
-                    IsArray:     isArray,
-                    DefaultStr:  val?["default"]?.ToJsonString() ?? "",
-                    Description: val?["description"]?.GetValue<string>() ?? "",
-                    EnumOptions: enumOptions
-                ));
-            }
+            if (root["properties"] is JsonObject props)
+                fields = ParseProperties(props);
         } catch { }
+        return (fields, defs);
+    }
+
+    private static List<SchemaFieldDescriptor> ParseProperties(JsonObject props) {
+        var result = new List<SchemaFieldDescriptor>();
+        foreach (var (key, val) in props) {
+            var xType = val?["x-toast-type"]?.GetValue<string>() ?? "";
+            bool isArray = xType.EndsWith("[]");
+            string typeKey = isArray ? xType[..^2] : xType;
+            if (string.IsNullOrEmpty(typeKey)) typeKey = "string";
+
+            var enumOptions = new List<string>();
+            if (typeKey == "enum" && val?["enum"] is JsonArray enumArr)
+                foreach (var opt in enumArr)
+                    if (opt?.GetValue<string>() is { } s) enumOptions.Add(s);
+
+            double? minValue = null, maxValue = null;
+            if (val?["minimum"] is JsonValue minNode && minNode.TryGetValue<double>(out var minD)) minValue = minD;
+            if (val?["maximum"] is JsonValue maxNode && maxNode.TryGetValue<double>(out var maxD)) maxValue = maxD;
+
+            result.Add(new SchemaFieldDescriptor(
+                Name:        key,
+                TypeKey:     typeKey,
+                IsArray:     isArray,
+                DefaultStr:  val?["default"]?.ToJsonString() ?? "",
+                Description: val?["description"]?.GetValue<string>() ?? "",
+                EnumOptions: enumOptions,
+                MinValue:    minValue,
+                MaxValue:    maxValue
+            ));
+        }
         return result;
     }
 }

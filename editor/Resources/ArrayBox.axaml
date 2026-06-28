@@ -28,13 +28,7 @@
 				        CornerRadius="{TemplateBinding CornerRadius}"
 				        Padding="{TemplateBinding Padding}">
 					<StackPanel Spacing="6">
-						<ItemsControl x:Name="PART_Items">
-							<ItemsControl.ItemsPanel>
-								<ItemsPanelTemplate>
-									<StackPanel Spacing="4" />
-								</ItemsPanelTemplate>
-							</ItemsControl.ItemsPanel>
-						</ItemsControl>
+						<ItemsControl x:Name="PART_Items" />
 
 						<Button x:Name="PART_Add"
 						        HorizontalAlignment="Stretch"

@@ -4,11 +4,12 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using editor.Components.Elements;
 using Tomlyn.Model;
 
 namespace editor.Editors;
 
-public partial class GenericFieldVM : ObservableObject {
+public partial class GenericFieldVM : ObservableObject, IRowSplittable {
 
     public static readonly IReadOnlyList<string> AllFieldTypes = [
         "bool", "int", "float", "string", "enum", "node", "asset",
@@ -34,7 +35,18 @@ public partial class GenericFieldVM : ObservableObject {
 
     [ObservableProperty] private float m_x, m_y, m_z, m_w;
 
+    [ObservableProperty] private double m_minimum = double.NegativeInfinity;
+    [ObservableProperty] private double m_maximum = double.PositiveInfinity;
+
     [ObservableProperty] private string m_arrayElementType = "string";
+    [ObservableProperty] private bool   m_childrenLocked;
+
+    // True when children are free-form editable
+    public bool ChildrenEditable => !ChildrenLocked;
+
+    partial void OnChildrenLockedChanged(bool value) => OnPropertyChanged(nameof(ChildrenEditable));
+
+    public Func<GenericFieldVM>? ArrayItemFactory { get; set; }
 
     private IReadOnlyList<string> m_enumAllowedValues = [];
     public IReadOnlyList<string> EnumAllowedValues {
@@ -52,6 +64,8 @@ public partial class GenericFieldVM : ObservableObject {
 
     public Action? NotifyDirty { get; set; }
     public Action<GenericFieldVM>? RemoveCallback { get; set; }
+
+    public bool ShouldSplitRow => NameEditable;
 
     public bool IsFloat  => TypeKey == "float";
     public bool IsInt    => TypeKey == "int";
@@ -113,6 +127,7 @@ public partial class GenericFieldVM : ObservableObject {
     }
 
     partial void OnNameEditableChanged(bool value) {
+        OnPropertyChanged(nameof(ShouldSplitRow));
         OnPropertyChanged(nameof(IsNamedScalar));
         OnPropertyChanged(nameof(IsArrayItem));
         OnPropertyChanged(nameof(IsNamedField));
@@ -139,7 +154,8 @@ public partial class GenericFieldVM : ObservableObject {
 
     [RelayCommand]
     private void AddArrayItem() {
-        var child = new GenericFieldVM { TypeKey = ArrayElementType, NameEditable = false };
+        var child = ArrayItemFactory?.Invoke()
+                    ?? new GenericFieldVM { TypeKey = ArrayElementType, NameEditable = false };
         WireChild(child);
         Children.Add(child);
         NotifyDirty?.Invoke();
@@ -209,6 +225,15 @@ public partial class GenericFieldVM : ObservableObject {
                 }
                 break;
             }
+            case "array" when tomlValue is TomlTableArray tableArr: {
+                vm.ArrayElementType = "object";
+                foreach (var elem in tableArr) {
+                    var child = FromToml("", elem, "object");
+                    child.NameEditable = false;
+                    vm.Children.Add(child);
+                }
+                break;
+            }
             case "object" when tomlValue is TomlTable tbl:
                 foreach (var (k, v) in tbl)
                     vm.Children.Add(FromToml(k, v));
@@ -249,6 +274,7 @@ public partial class GenericFieldVM : ObservableObject {
         long or int       => "int",
         double or float   => "float",
         TomlArray arr     => InferArrayType(arr),
+        TomlTableArray    => "array",
         TomlTable         => "object",
         _                 => "string"
     };
@@ -297,8 +323,13 @@ public record SchemaFieldDescriptor(
     bool   IsArray,
     string DefaultStr,
     string Description,
-    IReadOnlyList<string> EnumOptions
+    IReadOnlyList<string> EnumOptions,
+    double? MinValue,
+    double? MaxValue
 ) {
     public SchemaFieldDescriptor(string Name, string TypeKey, bool IsArray, string DefaultStr, string Description)
-        : this(Name, TypeKey, IsArray, DefaultStr, Description, []) { }
+        : this(Name, TypeKey, IsArray, DefaultStr, Description, [], null, null) { }
+
+    public SchemaFieldDescriptor(string Name, string TypeKey, bool IsArray, string DefaultStr, string Description, IReadOnlyList<string> EnumOptions)
+        : this(Name, TypeKey, IsArray, DefaultStr, Description, EnumOptions, null, null) { }
 }

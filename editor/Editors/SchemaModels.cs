@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using editor.Components.Elements;
 
 namespace editor.Editors;
 
@@ -14,7 +15,8 @@ public partial class StringOptionVM : ObservableObject {
     [ObservableProperty] private string m_value = "";
 }
 
-public partial class SchemaFieldItemVM : ObservableObject {
+public partial class SchemaFieldItemVM : ObservableObject, IRowSplittable {
+    public bool ShouldSplitRow => true;
     public static readonly IReadOnlyList<string> PrimitiveTypes = [
         "bool", "int", "float", "string", "enum", "node", "asset", "vec2", "vec3", "color3", "color4"
     ];
@@ -26,6 +28,8 @@ public partial class SchemaFieldItemVM : ObservableObject {
     [ObservableProperty] private bool   m_isArray;
     [ObservableProperty] private string m_defaultString = "";
     [ObservableProperty] private string m_description   = "";
+    [ObservableProperty] private string m_minString     = "";
+    [ObservableProperty] private string m_maxString     = "";
 
     public ObservableCollection<StringOptionVM> EnumOptions { get; } = [];
 
@@ -42,8 +46,10 @@ public partial class SchemaFieldItemVM : ObservableObject {
     public bool IsColor4Type => TypeKey == "color4";
 
     public bool HasTypedDefault =>
-        IsBoolType || IsIntType || IsFloatType || IsStringType ||
-        IsEnum || IsNodeType || IsAssetType || IsColor3Type || IsColor4Type;
+        !IsArray && (IsBoolType || IsIntType || IsFloatType || IsStringType ||
+        IsEnum || IsNodeType || IsAssetType || IsColor3Type || IsColor4Type);
+
+    public bool HasMinMax => (IsIntType || IsFloatType || IsVec2Type || IsVec3Type) && !IsArray;
 
     public bool DefaultBool {
         get => DefaultString == "true";
@@ -125,12 +131,19 @@ public partial class SchemaFieldItemVM : ObservableObject {
         OnPropertyChanged(nameof(IsColor3Type));
         OnPropertyChanged(nameof(IsColor4Type));
         OnPropertyChanged(nameof(HasTypedDefault));
+        OnPropertyChanged(nameof(HasMinMax));
         LoadVecDefault();
     }
 
     partial void OnNameChanged(string value)          => m_owner.IsDirty = true;
-    partial void OnIsArrayChanged(bool value)         => m_owner.IsDirty = true;
+    partial void OnIsArrayChanged(bool value) {
+        m_owner.IsDirty = true;
+        OnPropertyChanged(nameof(HasTypedDefault));
+        OnPropertyChanged(nameof(HasMinMax));
+    }
     partial void OnDescriptionChanged(string value)   => m_owner.IsDirty = true;
+    partial void OnMinStringChanged(string value)     => m_owner.IsDirty = true;
+    partial void OnMaxStringChanged(string value)     => m_owner.IsDirty = true;
 
     partial void OnDefaultStringChanged(string value) {
         m_owner.IsDirty = true;
@@ -140,7 +153,8 @@ public partial class SchemaFieldItemVM : ObservableObject {
     }
 }
 
-public partial class StructTypeVM : ObservableObject {
+public partial class StructTypeVM : ObservableObject, IRowSplittable {
+    public bool ShouldSplitRow => true;
     private readonly SchemaViewModel m_owner;
 
     [ObservableProperty] private string m_name         = "NewType";

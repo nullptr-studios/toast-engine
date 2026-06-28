@@ -238,7 +238,7 @@
 
 	</UserControl.DataTemplates>
 
-	<Grid ColumnDefinitions="250, 4, *" Margin="8" ColumnSpacing="0">
+	<Grid ColumnDefinitions="250, 8, *" Margin="8" ColumnSpacing="0">
 
 		<!-- Folder tree -->
 		<Border Grid.Column="0" Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
@@ -474,7 +474,6 @@
 					</ListBox>
 				</DockPanel>
 			</Border>
-
 		</DockPanel>
 	</Grid>
 </UserControl>

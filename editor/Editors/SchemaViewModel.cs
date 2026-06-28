@@ -16,11 +16,16 @@ using editor.Assets;
 namespace editor.Editors;
 
 public partial class SchemaViewModel : Tool {
-    [ObservableProperty] private string m_currentUid    = "";
-    [ObservableProperty] private string m_currentPath  = "";
-    [ObservableProperty] private string m_fileName     = "";
+    [ObservableProperty] private string m_currentUid      = "";
+    [ObservableProperty] private string m_currentPath    = "";
+    [ObservableProperty] private string m_fileName       = "";
     [ObservableProperty] private bool   m_isDirty;
-    [ObservableProperty] private string m_displayTitle = "Schema Editor";
+    [ObservableProperty] private string m_displayTitle   = "Schema Editor";
+    [ObservableProperty] private bool   m_showProperties = true;
+
+    public bool ShowTypes => !ShowProperties;
+
+    partial void OnShowPropertiesChanged(bool value) => OnPropertyChanged(nameof(ShowTypes));
 
     public event Action<string>? SchemaSaved;
 
@@ -162,11 +167,21 @@ public partial class SchemaViewModel : Tool {
 
             field.Description   = val?["description"]?.GetValue<string>() ?? "";
             var def             = val?["default"];
-            field.DefaultString = def is not null ? def.ToJsonString() : "";
+            field.DefaultString = !field.IsArray && def is not null ? def.ToJsonString() : "";
+
+            if (val?["minimum"] is System.Text.Json.Nodes.JsonValue minNode &&
+                minNode.TryGetValue<double>(out var minV))
+                field.MinString = minV.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (val?["maximum"] is System.Text.Json.Nodes.JsonValue maxNode &&
+                maxNode.TryGetValue<double>(out var maxV))
+                field.MaxString = maxV.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
             target.Add(field);
         }
     }
+
+    [RelayCommand] private void SelectPropertiesTab() => ShowProperties = true;
+    [RelayCommand] private void SelectTypesTab()      => ShowProperties = false;
 
     [RelayCommand]
     private void AddField() {
@@ -241,6 +256,13 @@ public partial class SchemaViewModel : Tool {
 
         if (!string.IsNullOrEmpty(field.Description))
             node["description"] = field.Description;
+
+        if (!field.IsArray && double.TryParse(field.MinString, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var minParsed))
+            node["minimum"] = minParsed;
+        if (!field.IsArray && double.TryParse(field.MaxString, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var maxParsed))
+            node["maximum"] = maxParsed;
 
         if (!string.IsNullOrEmpty(field.DefaultString)) {
             try { node["default"] = JsonNode.Parse(field.DefaultString); }

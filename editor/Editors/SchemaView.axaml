@@ -45,6 +45,15 @@
 		<Style Selector="Button.struct-hdr:pointerover /template/ ContentPresenter#PART_ContentPresenter">
 			<Setter Property="Background" Value="{StaticResource Bg4}" />
 		</Style>
+		<Style Selector="Button.tab-btn">
+			<Setter Property="CornerRadius" Value="6" />
+			<Setter Property="Width" Value="120" />
+			<Setter Property="HorizontalContentAlignment" Value="Center" />
+			<Setter Property="Background" Value="{StaticResource Bg3}" />
+		</Style>
+		<Style Selector="Button.tab-btn.selected /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Red}" />
+		</Style>
 	</UserControl.Styles>
 
 	<Design.DataContext>
@@ -60,7 +69,7 @@
 
 		<!-- Schema field card -->
 		<DataTemplate x:DataType="vm:SchemaFieldItemVM">
-			<StackPanel Spacing="5">
+			<StackPanel Spacing="8">
 
 				<!-- Name -->
 				<elements:StringBox Value="{Binding Name, Mode=TwoWay}" Wrap="False" />
@@ -77,6 +86,16 @@
 				<Grid ColumnDefinitions="150,*" ColumnSpacing="8">
 					<TextBlock Classes="lbl" Text="Array" />
 					<elements:BoolBox Grid.Column="1" Value="{Binding IsArray, Mode=TwoWay}" />
+				</Grid>
+
+				<!-- Min / Max -->
+				<Grid ColumnDefinitions="150,*" ColumnSpacing="8" IsVisible="{Binding HasMinMax}">
+					<TextBlock Classes="lbl" Text="Min" />
+					<elements:StringBox Grid.Column="1" Value="{Binding MinString, Mode=TwoWay}" Wrap="False" />
+				</Grid>
+				<Grid ColumnDefinitions="150,*" ColumnSpacing="8" IsVisible="{Binding HasMinMax}">
+					<TextBlock Classes="lbl" Text="Max" />
+					<elements:StringBox Grid.Column="1" Value="{Binding MaxString, Mode=TwoWay}" Wrap="False" />
 				</Grid>
 
 				<!-- Default -->
@@ -130,12 +149,13 @@
 
 		<!--Struct type card -->
 		<DataTemplate x:DataType="vm:StructTypeVM">
-			<StackPanel Spacing="6">
+			<StackPanel Spacing="8">
 
 				<!-- header -->
 				<Button Classes="struct-hdr"
 				        Command="{Binding BeginEditNameCommand}"
-				        IsVisible="{Binding !IsEditingName}">
+				        IsVisible="{Binding !IsEditingName}"
+				        Height="32" VerticalContentAlignment="Center">
 					<TextBlock Text="{Binding Name}" FontWeight="Bold" />
 				</Button>
 				<TextBox Text="{Binding NameDraft, Mode=TwoWay}"
@@ -149,22 +169,27 @@
 					</TextBox.KeyBindings>
 				</TextBox>
 
-				<!-- Property button -->
-				<Button Classes="add-btn" Command="{Binding AddFieldCommand}">
-					<StackPanel Orientation="Horizontal" Spacing="6">
-						<lucide:LucideIcon Kind="Plus" Size="14" StrokeWidth="2.5" />
-						<TextBlock Text="Add Property" VerticalAlignment="Center" />
-					</StackPanel>
-				</Button>
-
-				<!-- fields -->
-				<Border Background="{StaticResource Bg1}" CornerRadius="6" Padding="6">
+				<StackPanel Spacing="8">
+					<!-- fields -->
 					<elements:ArrayBox Background="Transparent" Padding="0"
-					                   RowBackground="{StaticResource Bg3}"
+					                   RowBackground="{StaticResource Bg4}"
 					                   RowCornerRadius="4" RowPadding="6,5"
 					                   Items="{Binding Fields, Mode=TwoWay}"
 					                   CanReorder="True" CanAddRemove="True" />
-				</Border>
+
+					<!-- Property button -->
+					<Button HorizontalAlignment="Stretch"
+					        HorizontalContentAlignment="Center"
+					        CornerRadius="6"
+					        Padding="6"
+					        Command="{Binding AddFieldCommand}"
+					        Background="{StaticResource Bg4}">
+						<StackPanel Orientation="Horizontal" Spacing="6">
+							<lucide:LucideIcon Kind="Plus" Size="14" StrokeWidth="2.5" Foreground="{StaticResource TextMuted}"/>
+							<TextBlock Text="Add Property" VerticalAlignment="Center" Foreground="{StaticResource TextMuted}"/>
+						</StackPanel>
+					</Button>
+				</StackPanel>
 
 			</StackPanel>
 		</DataTemplate>
@@ -197,29 +222,41 @@
 		<Panel Grid.Row="1">
 			<ScrollViewer HorizontalScrollBarVisibility="Disabled"
 			              IsVisible="{Binding HasContent, x:CompileBindings=False}">
-				<StackPanel Spacing="8">
 
-					<!-- Property button -->
-					<Button Classes="add-btn" Command="{Binding AddFieldCommand}">
-						<StackPanel Orientation="Horizontal" Spacing="6">
-							<lucide:LucideIcon Kind="Plus" Size="14" StrokeWidth="2.5" />
-							<TextBlock Text="Add Property" VerticalAlignment="Center" />
-						</StackPanel>
-					</Button>
+				<StackPanel Spacing="8">
+					<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+						<Button Classes="tab-btn" Classes.selected="{Binding ShowProperties}"
+						        Command="{Binding SelectPropertiesTabCommand}">
+							<StackPanel Orientation="Horizontal" Spacing="6">
+								<LucideIcon Kind="TableProperties" Size="16" StrokeWidth="2.5" Foreground="{StaticResource Text}"/>
+								<TextBlock Text="Fields" Foreground="{StaticResource Text}"/>
+							</StackPanel>
+						</Button>
+						<Button Classes="tab-btn" Classes.selected="{Binding ShowTypes}"
+						        Command="{Binding SelectTypesTabCommand}">
+							<StackPanel Orientation="Horizontal" Spacing="6">
+								<LucideIcon Kind="Settings2" Size="16" StrokeWidth="2.5" Foreground="{StaticResource Text}"/>
+								<TextBlock Text="Types" Foreground="{StaticResource Text}"/>
+							</StackPanel>
+						</Button>
+					</StackPanel>
 
 					<!-- Properties list -->
 					<elements:ArrayBox x:Name="FieldsBox"
 					                   Background="Transparent" Padding="0"
 					                   RowBackground="{StaticResource Bg3}"
 					                   RowCornerRadius="6" RowPadding="8,6"
+					                   ItemSpacing="8"
 					                   Items="{Binding Fields, Mode=TwoWay}"
-					                   CanReorder="True" CanAddRemove="True" />
+					                   CanReorder="True" CanAddRemove="True"
+					                   IsVisible="{Binding ShowProperties}" />
 
-					<!-- Object Type -->
-					<Button Classes="add-btn" Command="{Binding AddStructTypeCommand}">
+					<!-- Property button -->
+					<Button Classes="add-btn" Command="{Binding AddFieldCommand}"
+					        IsVisible="{Binding ShowProperties}">
 						<StackPanel Orientation="Horizontal" Spacing="6">
-							<lucide:LucideIcon Kind="Plus" Size="14" StrokeWidth="2.5" />
-							<TextBlock Text="Add Object Type" VerticalAlignment="Center" />
+							<lucide:LucideIcon Kind="Plus" Size="14" StrokeWidth="2.5" Foreground="{StaticResource TextMuted}"/>
+							<TextBlock Text="Add Field" VerticalAlignment="Center" Foreground="{StaticResource TextMuted}" />
 						</StackPanel>
 					</Button>
 
@@ -228,9 +265,19 @@
 					                   Background="Transparent" Padding="0"
 					                   RowBackground="{StaticResource Bg3}"
 					                   RowCornerRadius="6" RowPadding="8,6"
+					                   ItemSpacing="8"
 					                   Items="{Binding StructTypes, Mode=TwoWay}"
-					                   CanReorder="True" CanAddRemove="True" />
+					                   CanReorder="True" CanAddRemove="True"
+					                   IsVisible="{Binding ShowTypes}" />
 
+					<!-- Object Type -->
+					<Button Classes="add-btn" Command="{Binding AddStructTypeCommand}"
+					        IsVisible="{Binding ShowTypes}">
+						<StackPanel Orientation="Horizontal" Spacing="6">
+							<lucide:LucideIcon Kind="Plus" Size="14" StrokeWidth="2.5" Foreground="{StaticResource TextMuted}"/>
+							<TextBlock Text="Add Type" VerticalAlignment="Center" Foreground="{StaticResource TextMuted}"/>
+						</StackPanel>
+					</Button>
 				</StackPanel>
 			</ScrollViewer>
 

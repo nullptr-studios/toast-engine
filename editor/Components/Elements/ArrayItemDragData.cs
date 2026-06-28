@@ -13,3 +13,7 @@ public static class ArrayItemDragData {
 	public static readonly DataFormat<ArrayDragRef> Format =
 		DataFormat.CreateInProcessFormat<ArrayDragRef>("toast-array-item");
 }
+
+public interface IRowSplittable {
+	bool ShouldSplitRow { get; }
+}
