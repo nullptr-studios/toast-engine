@@ -13,6 +13,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_ROOT}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_ROOT}")
 set(CMAKE_PDB_OUTPUT_DIRECTORY "${OUTPUT_ROOT}")
 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+	message(STATUS "Setting build type to 'Debug' as none was specified.")
+	set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build." FORCE)
+endif()
+
 if (WIN32)
 	add_compile_definitions(_WIN32_WINNT=0x0A00)
 endif()
