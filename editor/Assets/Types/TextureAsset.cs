@@ -6,7 +6,7 @@ public sealed class TextureAsset : BaseAsset {
 	public override string Type => "texture";
 	public override string Extension => ".ktx2";
 	public override string DisplayName => "Texture";
-	public override string ChipText => "TEXT";
+	public override string ChipText => "TEX";
 	public override string ChipColor => "Orange";
 	public override LucideIconKind Icon => LucideIconKind.Image;
 	public override bool CanBeCreated => false;

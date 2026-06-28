@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using editor.Assets.Types;
+using Lucide.Avalonia;
 
 namespace editor.Assets;
 
@@ -30,6 +31,7 @@ public class AssetFile : INotifyPropertyChanged {
 	public string Name { get; }
 	public string Filepath { get; }
 	public BaseAsset? Definition { get; }
+	public LucideIconKind Icon => Definition?.Icon ?? LucideIconKind.OctagonAlert;
 	public string TypeLabel => Definition?.ChipText ?? "?";
 
 	public AssetBrowserViewModel? Owner { get; set; }

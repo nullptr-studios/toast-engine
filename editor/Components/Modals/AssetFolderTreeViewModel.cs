@@ -53,9 +53,10 @@ public class AssetFolderTreeViewModel : PickerViewModel {
 
 	public AssetFolderNode? SelectedFolder { get; set; }
 
-	public AssetFolderTreeViewModel() {
+	public AssetFolderTreeViewModel(bool useArtwork = false) {
 		if (ProjectContext.IsInitialized) {
-			var root = new AssetFolderNode(ProjectContext.AssetsPath);
+			var rootPath = useArtwork ? ProjectContext.ArtworkPath : ProjectContext.AssetsPath;
+			var root = new AssetFolderNode(rootPath);
 			m_roots.Add(root);
 			m_filtered.Add(root);
 		}

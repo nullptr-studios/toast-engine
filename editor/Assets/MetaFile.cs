@@ -71,6 +71,16 @@ public static class MetaFile {
 						CreateFolder = psd.CreateFolder
 					};
 					break;
+				case GltfMetaSection gltf:
+					dto.Gltf = new GltfSectionDto {
+						CreateFolder = gltf.CreateFolder,
+						ImportMaterials = gltf.ImportMaterials,
+						ImportTextures = gltf.ImportTextures,
+						ImportCameras = gltf.ImportCameras,
+						ImportLights = gltf.ImportLights,
+						GeneratePrefab = gltf.GeneratePrefab
+					};
+					break;
 			}
 
 		File.WriteAllText(outputAssetRealPath + ".meta", TomlSerializer.Serialize(dto));
@@ -130,6 +140,25 @@ public static class MetaFile {
 		}
 	}
 
+	public static GltfMetaSection? ReadGltfSection(string path) {
+		var metaPath = path.EndsWith(".meta") ? path : path + ".meta";
+		if (!File.Exists(metaPath)) return null;
+		try {
+			var dto = TomlSerializer.Deserialize<MetaFileDto>(File.ReadAllText(metaPath))!;
+			if (dto.Gltf == null) return null;
+			return new GltfMetaSection {
+				CreateFolder = dto.Gltf.CreateFolder,
+				ImportMaterials = dto.Gltf.ImportMaterials,
+				ImportTextures = dto.Gltf.ImportTextures,
+				ImportCameras = dto.Gltf.ImportCameras,
+				ImportLights = dto.Gltf.ImportLights,
+				GeneratePrefab = dto.Gltf.GeneratePrefab
+			};
+		} catch {
+			return null;
+		}
+	}
+
 	/// Rewrites the source of an existing .meta in place
 	public static bool UpdateSource(string path, string? newSource) {
 		var metaPath = path.EndsWith(".meta") ? path : path + ".meta";
@@ -159,6 +188,7 @@ file sealed class MetaFileDto {
 
 	[TomlPropertyName("texture")] public TextureSectionDto? Texture { get; set; }
 	[TomlPropertyName("psd")] public PsdSectionDto? Psd { get; set; }
+	[TomlPropertyName("gltf")] public GltfSectionDto? Gltf { get; set; }
 }
 
 file sealed class TextureSectionDto {
@@ -178,4 +208,13 @@ file sealed class TextureSectionDto {
 file sealed class PsdSectionDto {
 	[TomlPropertyName("import_mode")] public string ImportMode { get; set; } = "Combined";
 	[TomlPropertyName("create_folder")] public bool CreateFolder { get; set; }
+}
+
+file sealed class GltfSectionDto {
+	[TomlPropertyName("create_folder")] public bool CreateFolder { get; set; } = true;
+	[TomlPropertyName("import_materials")] public bool ImportMaterials { get; set; } = true;
+	[TomlPropertyName("import_textures")] public bool ImportTextures { get; set; } = true;
+	[TomlPropertyName("import_cameras")] public bool ImportCameras { get; set; } = false;
+	[TomlPropertyName("import_lights")] public bool ImportLights { get; set; } = true;
+	[TomlPropertyName("generate_prefab")] public bool GeneratePrefab { get; set; } = true;
 }

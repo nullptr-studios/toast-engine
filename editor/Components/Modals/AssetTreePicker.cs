@@ -11,6 +11,12 @@ public static class AssetTreePicker {
 		return window.ShowDialog<string?>(owner);
 	}
 
+	public static Task<string?> PickArtworkFolder(Window owner, string? title = null) {
+		var window = new AssetFolderTree(useArtwork: true);
+		if (title is not null) window.Title = title;
+		return window.ShowDialog<string?>(owner);
+	}
+
 	public static Task<string?> PickAsset(Window owner, string? assetType = null, string? title = null) {
 		var window = new AssetTree(assetType);
 		if (title is not null) window.Title = title;

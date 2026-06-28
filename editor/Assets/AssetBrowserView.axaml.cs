@@ -1,15 +1,19 @@
+using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using editor.Assets.Importers;
 using editor.Assets.Types;
 using editor.Components.Elements;
 using editor.Workspace;
+using Lucide.Avalonia;
 
 namespace editor.Assets;
 
@@ -131,6 +135,37 @@ public partial class AssetBrowserView : UserControl {
 		await importWindow.ShowDialog(owner);
 	}
 
+	private void OnAssetAreaDragOver(object? sender, DragEventArgs e) {
+		if (e.DataTransfer.TryGetValue(AssetDragData.Format) is not null ||
+		    e.DataTransfer.TryGetValue(AssetDragData.MultiFormat) is not null) {
+			e.DragEffects = DragDropEffects.None;
+			return;
+		}
+
+		e.DragEffects = e.DataTransfer.Contains(DataFormat.File)
+			? DragDropEffects.Copy
+			: DragDropEffects.None;
+		e.Handled = true;
+	}
+
+	private async void OnAssetAreaDrop(object? sender, DragEventArgs e) {
+		if (!e.DataTransfer.Contains(DataFormat.File)) return;
+
+		var storageItems = e.DataTransfer.TryGetFiles()?.ToList();
+		if (storageItems is not { Count: > 0 }) return;
+
+		var paths = new List<string>();
+		foreach (var item in storageItems) {
+			var local = item.TryGetLocalPath();
+			if (local is not null) paths.Add(local);
+		}
+
+		if (paths.Count > 0)
+			await Vm.HandleDroppedFilesAsync(paths);
+
+		e.Handled = true;
+	}
+
 	private void RebuildContextMenu(ContextMenu menu) {
 		// Keep only the first 2 static items
 		while (menu.Items.Count > 2)
@@ -139,14 +174,35 @@ public partial class AssetBrowserView : UserControl {
 		var vm = Vm;
 
 		menu.Items.Add(new Separator());
-		menu.Items.Add(MakeCommandItem("Node", vm.NewNodeCommand, "Blue"));
-		menu.Items.Add(MakeCommandItem("Node 3D", vm.NewNode3DCommand, "Green"));
+		menu.Items.Add(MakeCommandItem("Node", vm.NewNodeCommand, "TextMuted", LucideIconKind.Circle));
+		menu.Items.Add(MakeCommandItem("Node 3D", vm.NewNode3DCommand, "Red", LucideIconKind.Circle));
 		menu.Items.Add(new MenuItem { Header = "Other nodes...", Command = vm.NewNodeGenericCommand });
 
 		menu.Items.Add(new Separator());
-		menu.Items.Add(MakeCommandItem("Material", vm.NewNodeCommand, "Green"));
-		menu.Items.Add(MakeCommandItem("Script", vm.NewNode3DCommand, "Purple"));
-		menu.Items.Add(MakeCommandItem("Data", vm.NewNode3DCommand, "Cyan"));
+		var materialDefinition = AssetTypeRegistry.ByExtension(".tmat");
+		var luaDefinition = AssetTypeRegistry.ByExtension(".lua");
+		var tomlDefinition = AssetTypeRegistry.ByExtension(".toml");
+		menu.Items.Add(MakeCommandParameterItem(
+			"Material",
+			vm.NewAssetCommand,
+			materialDefinition,
+			materialDefinition?.ChipColor ?? "Green",
+			materialDefinition?.Icon ?? LucideIconKind.Eclipse
+			));
+		menu.Items.Add(MakeCommandParameterItem(
+			"Script",
+			vm.NewAssetCommand,
+			luaDefinition,
+			luaDefinition?.ChipColor ?? "Magenta",
+			luaDefinition?.Icon ?? LucideIconKind.CodeXml
+			));
+		menu.Items.Add(MakeCommandParameterItem(
+			"Data",
+			vm.NewAssetCommand,
+			tomlDefinition,
+			tomlDefinition?.ChipColor ?? "Cyan",
+			tomlDefinition?.Icon ?? LucideIconKind.Database
+			));
 		foreach (var (category, types) in AssetTypeRegistry.CreatableByCategory) {
 			var sub = new MenuItem { Header = category };
 			foreach (var def in types)
@@ -158,15 +214,52 @@ public partial class AssetBrowserView : UserControl {
 		menu.Items.Add(new MenuItem { Header = "Refresh", Command = vm.RefreshCommand });
 	}
 
-	private MenuItem MakeCommandItem(string label, System.Windows.Input.ICommand command, string colorKey) {
+	private IBrush? GetBrush(string key) {
+		if (Application.Current?.Resources.TryGetResource(key, ThemeVariant.Dark, out var r) == true)
+			return r as IBrush;
+		return null;
+	}
+
+	private MenuItem MakeCommandItem(string label, ICommand command, string colorKey, LucideIconKind icon) {
 		var chip = new Border {
-			Width = 32, Height = 32, CornerRadius = new CornerRadius(4),
-			Background = ResolveColor(colorKey)
+			Width = 38, Height = 38,
+			CornerRadius = new CornerRadius(4),
+			Background = CheckerBrush.Instance,
+			ClipToBounds = true,
+			BorderBrush = GetBrush("Bg2"),
+			BorderThickness = new Thickness(2),
+		};
+		chip.Child = new LucideIcon {
+			Kind = icon,
+			StrokeWidth = 2.5,
+			Size = 20,
+			Foreground = GetBrush(colorKey)
 		};
 		var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
 		panel.Children.Add(chip);
 		panel.Children.Add(new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center });
 		return new MenuItem { Header = panel, Command = command };
+	}
+
+	private MenuItem MakeCommandParameterItem(string label, ICommand command, object? parameter,string colorKey, LucideIconKind icon) {
+		var chip = new Border {
+			Width = 38, Height = 38,
+			CornerRadius = new CornerRadius(4),
+			Background = CheckerBrush.Instance,
+			ClipToBounds = true,
+			BorderBrush = GetBrush("Bg2"),
+			BorderThickness = new Thickness(2),
+		};
+		chip.Child = new LucideIcon {
+			Kind = icon,
+			StrokeWidth = 2.5,
+			Size = 20,
+			Foreground = GetBrush(colorKey)
+		};
+		var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+		panel.Children.Add(chip);
+		panel.Children.Add(new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center });
+		return new MenuItem { Header = panel, Command = command, CommandParameter = parameter };
 	}
 
 	private static IBrush ResolveColor(string key) {

@@ -16,6 +16,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
+using editor.Assets.Importers;
 using editor.Assets.Types;
 using editor.Components.Modals;
 using editor.Engine;
@@ -52,6 +53,20 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 
 	private readonly AssetTypeFilter m_unknownFilter;
 
+	// Extension sets derived dynamically from importers + asset registry
+	// TODO: Do this with reflection at some point
+	private static readonly IReadOnlyList<IAssetImporter> s_defaultImporters = [
+		new TextureImporter(new TextureImporter.Settings()),
+		new PsdImporter(new TextureImporter.Settings(), new PsdImporter.Settings()),
+		new GltfImporter(new GltfImporter.Settings(), new TextureImporter.Settings()),
+	];
+	private static readonly HashSet<string> s_artworkExts = new(
+		s_defaultImporters.SelectMany(i => i.SupportedExtensions),
+		StringComparer.OrdinalIgnoreCase);
+	private static readonly HashSet<string> s_assetExts = new(
+		AssetTypeRegistry.All.Select(a => a.Extension),
+		StringComparer.OrdinalIgnoreCase);
+
 	public static AssetBrowserViewModel? Current { get; private set; }
 
 	public AssetBrowserViewModel() {
@@ -77,6 +92,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		NewNode3DCommand = new AsyncRelayCommand(() => CreatePrefab("Node3D", "toast::Node3D"));
 		NewNodeGenericCommand = new AsyncRelayCommand(CreateGenericPrefab);
 		NewAssetCommand = new AsyncRelayCommand<object>(o => CreateNewAsset(o as BaseAsset));
+		ReimportCommand = new AsyncRelayCommand<object>(ReimportAsync);
 		LoadFolders();
 
 		// auto-reload whenever the asset database changes
@@ -110,6 +126,81 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		var parentPath = m_selectedFolder?.Filepath ?? ProjectContext.AssetsPath;
 		Directory.CreateDirectory(Path.Combine(parentPath, name));
 		Refresh();
+	}
+
+	private async Task ReimportAsync(object? param) {
+		var file = param as AssetFile ?? m_selectedItems.OfType<AssetFile>().FirstOrDefault();
+		if (file is null) return;
+
+		var header = MetaFile.ReadHeader(file.Filepath);
+		if (header?.Source is not { } sourceVirtual) {
+			await App.Modals.ShowError("Cannot reimport",
+				"This asset has no import source — it was not imported from an artwork file.");
+			return;
+		}
+
+		var task = LoaderTask.DoWithProgress(
+			$"Reimport {file.Name}",
+			(log, progress) => AssetDatabase.Reimport(sourceVirtual, log, progress));
+
+		var vm = new LoaderViewModel([task]) {
+			OnComplete = async () => {
+				AssetDatabase.RebuildAssetDatabase();
+				ProjectContext.RaiseAssetsChanged();
+				await Task.CompletedTask;
+			}
+		};
+
+		var owner = ActiveWindow();
+		if (owner is null) return;
+		await new SimpleLoaderWindow(vm).ShowDialog(owner);
+	}
+
+	public async Task HandleDroppedFilesAsync(IReadOnlyList<string> paths) {
+		if (!ProjectContext.IsInitialized) return;
+
+		var artworkFiles = new List<string>();
+		var assetFiles = new List<string>();
+
+		foreach (var path in paths) {
+			var ext = Path.GetExtension(path).ToLowerInvariant();
+			if (s_artworkExts.Contains(ext))
+				artworkFiles.Add(path);
+			else if (s_assetExts.Contains(ext))
+				assetFiles.Add(path);
+			// unknown: ignore
+		}
+
+		// Copy pre-built assets directly (no importer, just copy + meta)
+		if (assetFiles.Count > 0) {
+			var destDir = m_selectedFolder?.Filepath ?? ProjectContext.AssetsPath;
+			foreach (var src in assetFiles) {
+				var ext = Path.GetExtension(src).ToLowerInvariant();
+				var definition = AssetTypeRegistry.ByExtension(ext);
+				if (definition is null) continue;
+				var dest = UniqueDestPath(Path.Combine(destDir, Path.GetFileName(src)));
+				try {
+					File.Copy(src, dest, overwrite: false);
+					MetaFile.Write(dest, new MetaHeader { Uid = UidGenerator.Generate(), Type = definition.Type });
+				} catch {
+					/* skip unreadable files */
+				}
+			}
+			AssetDatabase.RebuildAssetDatabase();
+			Refresh();
+		}
+
+		// Open compact import window for artwork files
+		if (artworkFiles.Count > 0) {
+			var owner = ActiveWindow();
+			if (owner is null) return;
+
+			var destDir = m_selectedFolder?.Filepath ?? ProjectContext.AssetsPath;
+			var destVirtual = ProjectContext.ToVirtual(destDir) ?? "assets://";
+			var vm = new CompactImportWindowViewModel(artworkFiles, destVirtual);
+			await new CompactImportWindow(vm).ShowDialog(owner);
+			Refresh();
+		}
 	}
 
 	private async Task RenameAsync(object? param) {
@@ -527,6 +618,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	public ICommand NewNode3DCommand { get; }
 	public ICommand NewNodeGenericCommand { get; }
 	public ICommand NewAssetCommand { get; }
+	public ICommand ReimportCommand { get; }
 
 	public new event PropertyChangedEventHandler? PropertyChanged;
 

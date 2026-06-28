@@ -260,7 +260,8 @@ public static class AssetDatabase {
 		if (reimported) RebuildAssetDatabase();
 	}
 
-	public static async Task Reimport(string sourceVirtualPath, Action<string> log) {
+	public static async Task Reimport(string sourceVirtualPath, Action<string> log,
+		Action<double>? progress = null) {
 		var db = LoadArtworkDatabase();
 		if (db[sourceVirtualPath] is not JsonObject entry) {
 			log($"No import record for {sourceVirtualPath}");
@@ -278,12 +279,15 @@ public static class AssetDatabase {
 			.ToList() ?? [];
 
 		// find where the existing outputs live + the settings they were imported with
-		var (destDir, textureSection, psdSection) = LocateOutputs(uids);
+		var (destDir, textureSection, psdSection, gltfSection) = LocateOutputs(uids);
 
 		var textureSettings = SettingsFromMeta(textureSection);
-		IAssetImporter importer = Path.GetExtension(realSource).Equals(".psd", StringComparison.OrdinalIgnoreCase)
-			? new PsdImporter(textureSettings, SettingsFromMeta(psdSection))
-			: new TextureImporter(textureSettings);
+		var ext = Path.GetExtension(realSource).ToLowerInvariant();
+		IAssetImporter importer = ext switch {
+			".psd" => new PsdImporter(textureSettings, SettingsFromMeta(psdSection)),
+			".glb" or ".gltf" => new GltfImporter(SettingsFromMeta(gltfSection), textureSettings),
+			_ => new TextureImporter(textureSettings)
+		};
 
 		var ctx = new ImportContext {
 			DestDir = destDir ?? ProjectContext.AssetsPath,
@@ -292,7 +296,7 @@ public static class AssetDatabase {
 		};
 
 		log($"Reimporting {sourceVirtualPath}...");
-		var newUids = await importer.Import(realSource, ctx, log);
+		var newUids = await importer.Import(realSource, ctx, log, progress);
 		UpdateArtworkDatabase(sourceVirtualPath, ComputeHash(realSource), newUids);
 		log("Reimport done.");
 	}
@@ -350,10 +354,10 @@ public static class AssetDatabase {
 	}
 
 	// finds the directory + import settings for a set of output UIDs by scanning their .meta sidecars
-	private static (string? destDir, TextureMetaSection? texture, PsdMetaSection? psd) LocateOutputs(
-		IReadOnlyCollection<string> uids) {
+	private static (string? destDir, TextureMetaSection? texture, PsdMetaSection? psd, GltfMetaSection? gltf)
+		LocateOutputs(IReadOnlyCollection<string> uids) {
 		if (uids.Count == 0 || !Directory.Exists(ProjectContext.AssetsPath))
-			return (null, null, null);
+			return (null, null, null, null);
 
 		var wanted = new HashSet<string>(uids);
 		foreach (var metaPath in MetaFile.FindAll(ProjectContext.AssetsPath)) {
@@ -363,10 +367,11 @@ public static class AssetDatabase {
 			var assetReal = metaPath[..^5];
 			return (Path.GetDirectoryName(assetReal),
 				MetaFile.ReadTextureSection(metaPath),
-				MetaFile.ReadPsdSection(metaPath));
+				MetaFile.ReadPsdSection(metaPath),
+				MetaFile.ReadGltfSection(metaPath));
 		}
 
-		return (null, null, null);
+		return (null, null, null, null);
 	}
 
 	private static TextureImporter.Settings SettingsFromMeta(TextureMetaSection? s) {
@@ -390,6 +395,19 @@ public static class AssetDatabase {
 
 		settings.CreateFolder = s.CreateFolder;
 		if (Enum.TryParse<PsdImportMode>(s.ImportMode, true, out var m)) settings.ImportMode = m;
+		return settings;
+	}
+
+	private static GltfImporter.Settings SettingsFromMeta(GltfMetaSection? s) {
+		var settings = new GltfImporter.Settings();
+		if (s is null) return settings;
+
+		settings.CreateSubfolder = s.CreateFolder;
+		settings.ImportMaterials = s.ImportMaterials;
+		settings.ImportTextures = s.ImportTextures;
+		settings.ImportCameras = s.ImportCameras;
+		settings.ImportLights = s.ImportLights;
+		settings.GeneratePrefab = s.GeneratePrefab;
 		return settings;
 	}
 
