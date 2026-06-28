@@ -1,10 +1,12 @@
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using editor.Assets.Types;
 using Lucide.Avalonia;
 
@@ -58,17 +60,26 @@ public class AssetFile : INotifyPropertyChanged {
 			if (m_thumbnailChecked) return m_thumbnail;
 			m_thumbnailChecked = true;
 			if (Definition?.HasThumbnail != true || !ProjectContext.IsInitialized) return null;
-			var header = MetaFile.ReadHeader(Filepath);
-			if (header is null) return null;
-			var thumbPath = Path.Combine(ProjectContext.CachePath, "thumbnails", header.Uid + ".png");
-			if (!File.Exists(thumbPath)) return null;
-			try {
-				m_thumbnail = new Bitmap(thumbPath);
-			} catch {
-				/* ignore */
-			}
 
-			return m_thumbnail;
+			var filepath = Filepath;
+			Task.Run(() => {
+				var header = MetaFile.ReadHeader(filepath);
+				if (header is null) return;
+				var thumbPath = Path.Combine(ProjectContext.CachePath, "thumbnails", header.Uid + ".png");
+				if (!File.Exists(thumbPath)) return;
+				try {
+					var bmp = new Bitmap(thumbPath);
+					Dispatcher.UIThread.Post(() => {
+						m_thumbnail = bmp;
+						Notify(nameof(Thumbnail));
+						Notify(nameof(HasThumbnail));
+					});
+				} catch {
+					/* ignore */
+				}
+			});
+
+			return null;
 		}
 	}
 

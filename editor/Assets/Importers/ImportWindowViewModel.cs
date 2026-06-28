@@ -48,9 +48,6 @@ public abstract partial class ImportNodeViewModel : ViewModelBase {
 
 	public virtual bool IsImportedFile => false;
 
-	public virtual bool ShowImportAccent => false;
-	public virtual bool ShowReimportAccent => false;
-
 	public virtual Action? SelectionChangedCallback { get; set; }
 
 	protected virtual void OnSelectionChanged(bool? value) { }
@@ -128,8 +125,6 @@ public class ImportFileViewModel : ImportNodeViewModel {
 	public bool IsImported { get; }
 
 	public override bool IsImportedFile => IsImported;
-	public override bool ShowImportAccent => IsSelected == true && !IsImported;
-	public override bool ShowReimportAccent => IsSelected == true && IsImported;
 
 	public override bool ShowChip => !string.IsNullOrEmpty(m_chipText);
 	public override string ChipText => m_chipText;
@@ -137,8 +132,6 @@ public class ImportFileViewModel : ImportNodeViewModel {
 
 	protected override void OnSelectionChanged(bool? value) {
 		Parent?.UpdateSelectionFromChildren();
-		OnPropertyChanged(nameof(ShowImportAccent));
-		OnPropertyChanged(nameof(ShowReimportAccent));
 		SelectionChangedCallback?.Invoke();
 	}
 

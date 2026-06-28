@@ -195,7 +195,7 @@
 								        PointerReleased="OnItemPointerReleased">
 									<Grid VerticalAlignment="Center"
 									      Background="Transparent"
-									      ColumnDefinitions="Auto, Auto, Auto, Auto, *, Auto">
+									      ColumnDefinitions="Auto, Auto, *, Auto, Auto, Auto">
 										<Grid.ContextMenu>
 											<ContextMenu x:DataType="vm:HierarchyElement">
 												<MenuItem InputGesture="Ctrl+A"
@@ -391,6 +391,7 @@
 										           IsVisible="{Binding !IsRenaming}"
 										           b:TextHighlight.Text="{Binding Name}"
 										           b:TextHighlight.Query="{Binding Owner.FilterText}"
+										           TextTrimming="CharacterEllipsis"
 										           VerticalAlignment="Center"
 										           Margin="8,0,0,0"
 										           Padding="0,0,3,0"/>

@@ -107,6 +107,11 @@ public partial class MainWindowViewModel : ViewModelBase {
                 m_dockFactory.OpenSchemaEditor(uid, virtualPath);
                 SchemaEditorVisible = true;
                 break;
+            case "NodeEditor":
+                if (WorkspaceViewModel.OpenFile(m_toast, uid, virtualPath) is not { } ws) break;
+                m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
+                SyncActiveWorkspace();
+                break;
         }
     }
     public IRootDock MainLayout      { get; set; }

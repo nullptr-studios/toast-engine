@@ -87,11 +87,11 @@ public partial class GltfImporter : IAssetImporter {
 
 		// Count total items for fractional progress
 		var meshes = byExtension.GetValueOrDefault(".tmesh") ?? [];
-		var textures = (m_settings.ImportMaterials
+		var textures = (m_settings.ImportTextures
 			? (byExtension.GetValueOrDefault(".png") ?? []).Concat(byExtension.GetValueOrDefault(".jpg") ?? []).ToList()
 			: []);
 		var materials = m_settings.ImportMaterials ? byExtension.GetValueOrDefault(".tmat") ?? [] : [];
-		var scenes = byExtension.GetValueOrDefault(".json") ?? [];
+		var scenes = m_settings.GeneratePrefab ? byExtension.GetValueOrDefault(".json") ?? [] : [];
 		var totalItems = meshes.Count + (textures.Count * 10) + materials.Count + scenes.Count * 2; // *2: patch + create
 		var doneItems = 0;
 
@@ -122,7 +122,7 @@ public partial class GltfImporter : IAssetImporter {
 
 		// Textures
 		var textureUids = new Dictionary<string, string>();
-		if (m_settings.ImportMaterials) {
+		if (m_settings.ImportTextures) {
 			log($"Importing {textures.Count} textures...");
 			foreach (var t in textures) {
 				var texName = Path.GetFileNameWithoutExtension(t.Name);
