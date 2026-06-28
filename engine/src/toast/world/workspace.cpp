@@ -429,13 +429,13 @@ void Workspace::eventSubscriptions() {
 		}
 
 		// Regenerate UIDs on every node in the copy to avoid collisions with the originals
-		auto regen = [](this auto& self, Box<Node>& node) -> void {
-			generateUid(node);
+		auto regen = [&](auto& self, Box<Node>& node) -> void {
+			INodeOwner::generateUid(node);
 			for (auto& child : node->m_children) {
-				self(child);
+				self(self, child);
 			}
 		};
-		regen(copy);
+		regen(regen, copy);
 
 		// The in-memory prefab has no meaningful UID, so clear the root's source_prefab
 		// to avoid marking the copy as a prefab instance with UID 0
@@ -627,13 +627,13 @@ void Workspace::eventSubscriptions() {
 			return true;
 		}
 
-		auto regen = [](this auto& self, Box<Node>& node) -> void {
-			generateUid(node);
+		auto regen = [&](auto& self, Box<Node>& node) -> void {
+			INodeOwner::generateUid(node);
 			for (auto& child : node->m_children) {
-				self(child);
+				self(self, child);
 			}
 		};
-		regen(copy);
+		regen(regen, copy);
 
 		copy->m_source_prefab = {};
 		copy->m_name = uniqueChildName(*par, copy->name());
