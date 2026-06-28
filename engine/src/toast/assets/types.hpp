@@ -16,7 +16,9 @@
 
 #include "curve.hpp"
 #include "data.hpp"
+#include "data_value.hpp"
 #include "material.hpp"
 #include "mesh.hpp"
 #include "prefab.hpp"
+#include "schema.hpp"
 #include "texture.hpp"

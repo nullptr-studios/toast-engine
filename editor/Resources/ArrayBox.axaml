@@ -18,10 +18,15 @@
 	<ControlTheme x:Key="{x:Type elements:ArrayBox}" TargetType="elements:ArrayBox">
 		<Setter Property="HorizontalAlignment" Value="Stretch" />
 		<Setter Property="CornerRadius" Value="6" />
+		<Setter Property="Background" Value="{StaticResource Bg1}" />
+		<Setter Property="Padding" Value="6" />
 
 		<Setter Property="Template">
 			<ControlTemplate>
-				<Border x:Name="PART_Root" CornerRadius="{TemplateBinding CornerRadius}" Padding="6">
+				<Border x:Name="PART_Root"
+				        Background="{TemplateBinding Background}"
+				        CornerRadius="{TemplateBinding CornerRadius}"
+				        Padding="{TemplateBinding Padding}">
 					<StackPanel Spacing="6">
 						<ItemsControl x:Name="PART_Items">
 							<ItemsControl.ItemsPanel>
@@ -48,7 +53,7 @@
 							</Button.Resources>
 							<StackPanel Orientation="Horizontal" Spacing="6">
 								<lucide:LucideIcon Kind="Plus" Size="14" StrokeWidth="2.5" />
-								<TextBlock Text="Add" VerticalAlignment="Center" />
+								<TextBlock Text="{TemplateBinding AddLabel}" VerticalAlignment="Center" />
 							</StackPanel>
 						</Button>
 					</StackPanel>
@@ -56,14 +61,9 @@
 			</ControlTemplate>
 		</Setter>
 
-		<!-- Default colors -->
-		<Style Selector="^ /template/ Border#PART_Root">
-			<Setter Property="Background" Value="{StaticResource Bg1}" />
-		</Style>
-
-		<!-- Disabled colors -->
+		<!-- Disabled -->
 		<Style Selector="^:disabled /template/ Border#PART_Root">
-			<Setter Property="Background" Value="{StaticResource Bg2}" />
+			<Setter Property="Opacity" Value="0.6" />
 		</Style>
 	</ControlTheme>
 

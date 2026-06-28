@@ -34,6 +34,22 @@ public sealed class ArrayBox : TemplatedControl {
 	public static readonly StyledProperty<bool> CanAddRemoveProperty =
 		AvaloniaProperty.Register<ArrayBox, bool>(nameof(CanAddRemove), true);
 
+	public static readonly StyledProperty<string> AddLabelProperty =
+		AvaloniaProperty.Register<ArrayBox, string>(nameof(AddLabel), "Add");
+
+	public static readonly StyledProperty<System.Windows.Input.ICommand?> AddCommandProperty =
+		AvaloniaProperty.Register<ArrayBox, System.Windows.Input.ICommand?>(nameof(AddCommand));
+
+	// When set, each row is wrapped in a card Border with these styles
+	public static readonly StyledProperty<IBrush?> RowBackgroundProperty =
+		AvaloniaProperty.Register<ArrayBox, IBrush?>(nameof(RowBackground));
+
+	public static readonly StyledProperty<CornerRadius> RowCornerRadiusProperty =
+		AvaloniaProperty.Register<ArrayBox, CornerRadius>(nameof(RowCornerRadius));
+
+	public static readonly StyledProperty<Thickness> RowPaddingProperty =
+		AvaloniaProperty.Register<ArrayBox, Thickness>(nameof(RowPadding));
+
 	private ItemsControl? m_items;
 	private Button? m_add;
 
@@ -65,6 +81,31 @@ public sealed class ArrayBox : TemplatedControl {
 		set => SetValue(CanAddRemoveProperty, value);
 	}
 
+	public string AddLabel {
+		get => GetValue(AddLabelProperty);
+		set => SetValue(AddLabelProperty, value);
+	}
+
+	public System.Windows.Input.ICommand? AddCommand {
+		get => GetValue(AddCommandProperty);
+		set => SetValue(AddCommandProperty, value);
+	}
+
+	public IBrush? RowBackground {
+		get => GetValue(RowBackgroundProperty);
+		set => SetValue(RowBackgroundProperty, value);
+	}
+
+	public CornerRadius RowCornerRadius {
+		get => GetValue(RowCornerRadiusProperty);
+		set => SetValue(RowCornerRadiusProperty, value);
+	}
+
+	public Thickness RowPadding {
+		get => GetValue(RowPaddingProperty);
+		set => SetValue(RowPaddingProperty, value);
+	}
+
 	public Func<object?>? ItemFactory { get; set; }
 
 	protected override Type StyleKeyOverride => typeof(ArrayBox);
@@ -83,7 +124,7 @@ public sealed class ArrayBox : TemplatedControl {
 
 		if (m_add != null) {
 			m_add.Click += OnAddClick;
-			m_add.IsVisible = CanAddRemove && ItemFactory != null;
+			m_add.IsVisible = CanAddRemove && (ItemFactory != null || AddCommand != null);
 		}
 	}
 
@@ -97,12 +138,17 @@ public sealed class ArrayBox : TemplatedControl {
 		else if (change.Property == ItemTemplateProperty) {
 			m_items.ItemTemplate = new FuncDataTemplate<object>((item, _) => BuildRow(item), false);
 		}
-		else if ((change.Property == CanAddRemoveProperty || change.Property == IsEnabledProperty) && m_add != null) {
-			m_add.IsVisible = CanAddRemove && ItemFactory != null;
+		else if ((change.Property == CanAddRemoveProperty || change.Property == IsEnabledProperty
+		          || change.Property == AddCommandProperty) && m_add != null) {
+			m_add.IsVisible = CanAddRemove && (ItemFactory != null || AddCommand != null);
 		}
 	}
 
 	private void OnAddClick(object? sender, RoutedEventArgs e) {
+		if (AddCommand?.CanExecute(null) == true) {
+			AddCommand.Execute(null);
+			return;
+		}
 		if (ItemFactory is { } factory && Items is { } list && factory() is { } item) list.Add(item);
 	}
 
@@ -121,7 +167,7 @@ public sealed class ArrayBox : TemplatedControl {
 			Background = Brushes.Transparent,
 			Cursor = new Cursor(StandardCursorType.SizeAll),
 			Padding = new Thickness(2),
-			VerticalAlignment = VerticalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Top,
 			IsVisible = CanReorder,
 			Child = new LucideIcon {
 				Kind = LucideIconKind.GripVertical,
@@ -138,7 +184,7 @@ public sealed class ArrayBox : TemplatedControl {
 		var content = new ContentControl {
 			Content = item,
 			ContentTemplate = ItemTemplate,
-			VerticalAlignment = VerticalAlignment.Center
+			VerticalAlignment = VerticalAlignment.Stretch
 		};
 		Grid.SetColumn(content, 1);
 
@@ -150,7 +196,7 @@ public sealed class ArrayBox : TemplatedControl {
 			BorderThickness = new Thickness(0),
 			CornerRadius = new CornerRadius(6),
 			Cursor = new Cursor(StandardCursorType.Hand),
-			VerticalAlignment = VerticalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Top,
 			IsVisible = CanAddRemove,
 			Content = new LucideIcon {
 				Kind = LucideIconKind.X,
@@ -166,11 +212,21 @@ public sealed class ArrayBox : TemplatedControl {
 		grid.Children.Add(content);
 		grid.Children.Add(remove);
 
+		// When RowBackground is set, wrap everything (including grip/X) in a card Border
+		Control rowContent = RowBackground is not null
+			? new Border {
+				Background   = RowBackground,
+				CornerRadius = RowCornerRadius,
+				Padding      = RowPadding,
+				Child        = grid
+			}
+			: grid;
+
 		// Wrap the row so a red insertion line can overlay its top/bottom edge while dragging
 		var topLine = MakeInsertLine(VerticalAlignment.Top);
 		var bottomLine = MakeInsertLine(VerticalAlignment.Bottom);
 		var row = new Grid();
-		row.Children.Add(grid);
+		row.Children.Add(rowContent);
 		row.Children.Add(topLine);
 		row.Children.Add(bottomLine);
 

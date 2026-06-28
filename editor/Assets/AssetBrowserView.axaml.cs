@@ -9,6 +9,7 @@ using Avalonia.Styling;
 using editor.Assets.Importers;
 using editor.Assets.Types;
 using editor.Components.Elements;
+using editor.Workspace;
 
 namespace editor.Assets;
 
@@ -84,6 +85,13 @@ public partial class AssetBrowserView : UserControl {
 			Vm.SelectedFolder = folder;
 			e.Handled = true;
 		}
+	}
+
+	private void OnFileDoubleTapped(object? sender, TappedEventArgs e) {
+		if (sender is not Control { DataContext: AssetFile file }) return;
+		if (file.Definition?.CanBeEdited != true) return;
+		EditorManager.RequestOpen(file);
+		e.Handled = true;
 	}
 
 	private void OnFolderDragOver(object? sender, DragEventArgs e) {

@@ -130,7 +130,8 @@
 			        BorderThickness="2" BorderBrush="Transparent"
 			        PointerPressed="OnFilePointerPressed"
 			        PointerMoved="OnFilePointerMoved"
-			        PointerReleased="OnFilePointerReleased">
+			        PointerReleased="OnFilePointerReleased"
+			        DoubleTapped="OnFileDoubleTapped">
 				<Border.ContextMenu>
 					<ContextMenu x:DataType="vm:AssetFile">
 						<MenuItem Command="{Binding Owner.RenameCommand}"

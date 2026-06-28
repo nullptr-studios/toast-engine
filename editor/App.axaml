@@ -16,6 +16,7 @@
 				<ResourceInclude Source="avares://editor/Resources/NodeBox.axaml" />
 				<ResourceInclude Source="avares://editor/Resources/AssetBox.axaml" />
 				<ResourceInclude Source="avares://editor/Resources/ArrayBox.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/EnumBox.axaml" />
 			</ResourceDictionary.MergedDictionaries>
 			<conv:SeverityToColorConverter x:Key="SeverityToColorConverter" />
 			<conv:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />

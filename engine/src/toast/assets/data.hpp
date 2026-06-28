@@ -2,32 +2,41 @@
  * @file data.hpp
  * @author Xein
  * @date 10 Jun 2026
+ * @brief Typed data asset backed by schema-driven TOML
  */
 
 #pragma once
+
 #include "core_types.hpp"
+#include "data_value.hpp"
+#include "schema.hpp"
 
 namespace assets {
 
-/**
- * @brief Asset representing parsed TOML data
- */
 class TOAST_API Data : public Asset, public ISaveable {
 public:
-	explicit Data(toml::table table) : m_table(std::move(table)) { }
+	explicit Data(const toml::table& table, AssetHandle<Schema> schema = {});
 
-	[[nodiscard]]
-	auto type() const -> std::string_view override {
-		return "data";
-	}
+	auto type() const -> std::string_view override { return "data"; }
 
-	[[nodiscard]]
-	auto get() const noexcept -> const toml::table&;
+	auto operator[](std::string_view k) -> DataValue& { return m_root[k]; }
 
-	[[nodiscard]]
+	auto operator[](std::string_view k) const -> const DataValue& { return m_root[k]; }
+
+	auto contains(std::string_view k) const -> bool { return m_root.contains(k); }
+
+	auto root() const -> const DataValue& { return m_root; }
+
+	auto schema() const -> const AssetHandle<Schema>& { return m_schema; }
+
 	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 
+protected:
+	DataValue m_root;                ///< Object DataValue holding all fields
+	AssetHandle<Schema> m_schema;    ///< optional
+
 private:
-	toml::table m_table;
+	static auto buildRoot(const toml::table& table, const Schema* schema) -> DataValue;
 };
+
 }
