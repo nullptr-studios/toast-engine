@@ -12,6 +12,7 @@ using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
@@ -109,13 +110,40 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		}
 	}
 
-	public void UpdateSelection(IList? items) {
-		m_selectedItems.Clear();
-		if (items is not null)
-			foreach (var item in items)
+	public IReadOnlySet<object> SelectedItems => m_selectedItems;
+
+	public void SelectItem(object item, KeyModifiers modifiers) {
+		if (modifiers.HasFlag(KeyModifiers.Control)) {
+			if (m_selectedItems.Remove(item))
+				SetIsSelected(item, false);
+			else {
 				m_selectedItems.Add(item);
+				SetIsSelected(item, true);
+			}
+		} else {
+			foreach (var prev in m_selectedItems)
+				SetIsSelected(prev, false);
+			m_selectedItems.Clear();
+			m_selectedItems.Add(item);
+			SetIsSelected(item, true);
+		}
 		m_selectedCount = m_selectedItems.Count;
 		Notify(nameof(ItemCount));
+	}
+
+	public void ClearSelection() {
+		foreach (var item in m_selectedItems)
+			SetIsSelected(item, false);
+		m_selectedItems.Clear();
+		m_selectedCount = 0;
+		Notify(nameof(ItemCount));
+	}
+
+	private static void SetIsSelected(object item, bool selected) {
+		switch (item) {
+			case AssetFile f: f.IsSelected = selected; break;
+			case AssetFolder d: d.IsSelected = selected; break;
+		}
 	}
 
 	private async Task CreateFolder() {
@@ -503,19 +531,18 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	private void OnFilterChanged(object? sender, PropertyChangedEventArgs e) {
 		if (e.PropertyName != nameof(AssetTypeFilter.IsEnabled)) return;
 		Notify(nameof(FilterAll));
-		Notify(nameof(CurrentItems));
-		Notify(nameof(ItemCount));
+		RefreshCurrentItems();
 	}
 
 	public AssetFolder? SelectedFolder {
 		get => m_selectedFolder;
 		set {
+			ClearSelection();
 			m_selectedFolder = value;
 			if (value is not null) ExpandToFolder(value);
 			Notify();
-			Notify(nameof(CurrentItems));
+			RefreshCurrentItems();
 			Notify(nameof(BreadcrumbItems));
-			Notify(nameof(ItemCount));
 		}
 	}
 
@@ -543,8 +570,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 			}
 
 			Notify();
-			Notify(nameof(CurrentItems));
-			Notify(nameof(ItemCount));
+			RefreshCurrentItems();
 		}
 	}
 
@@ -576,33 +602,37 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		}
 	}
 
-	public IEnumerable<object> CurrentItems {
-		get {
-			if (!string.IsNullOrWhiteSpace(m_searchText)) {
-				var (textFilter, typeFilter) = ParseSearch(m_searchText);
-				return Folders
-					.SelectMany(GetAllFiles)
-					.Where(f => IsTypeVisible(f.Definition))
-					.Where(f => typeFilter is null || f.Definition == typeFilter)
-					.Where(f => string.IsNullOrEmpty(textFilter) ||
-					            f.Name.Contains(textFilter, StringComparison.OrdinalIgnoreCase));
-			}
+	public ObservableCollection<object> CurrentItems { get; } = [];
 
-			if (m_selectedFolder is null) return [];
+	private void RefreshCurrentItems() {
+		IEnumerable<object> items;
+		if (!string.IsNullOrWhiteSpace(m_searchText)) {
+			var (textFilter, typeFilter) = ParseSearch(m_searchText);
+			items = Folders
+				.SelectMany(GetAllFiles)
+				.Where(f => IsTypeVisible(f.Definition))
+				.Where(f => typeFilter is null || f.Definition == typeFilter)
+				.Where(f => string.IsNullOrEmpty(textFilter) ||
+				            f.Name.Contains(textFilter, StringComparison.OrdinalIgnoreCase))
+				.Cast<object>();
+		} else if (m_selectedFolder is not null) {
 			var folders = m_selectedFolder.SubFolders.Cast<object>();
 			var files = m_selectedFolder.Files
 				.Where(f => IsTypeVisible(f.Definition))
 				.Cast<object>();
-			return folders.Concat(files);
+			items = folders.Concat(files);
+		} else {
+			items = [];
 		}
+
+		CurrentItems.Clear();
+		foreach (var item in items)
+			CurrentItems.Add(item);
+
+		Notify(nameof(ItemCount));
 	}
 
-	public string ItemCount {
-		get {
-			var total = CurrentItems.Count();
-			return $"{total} items ({m_selectedCount} selected)";
-		}
-	}
+	public string ItemCount => $"{CurrentItems.Count} items ({m_selectedCount} selected)";
 
 	public ICommand RefreshCommand { get; }
 	public ICommand ExpandAllCommand { get; }
@@ -676,9 +706,8 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		ExpandToFolder(m_selectedFolder);
 
 		Notify(nameof(SelectedFolder));
-		Notify(nameof(CurrentItems));
+		RefreshCurrentItems();
 		Notify(nameof(BreadcrumbItems));
-		Notify(nameof(ItemCount));
 	}
 
 	private void Refresh() {

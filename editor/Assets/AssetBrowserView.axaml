@@ -28,20 +28,15 @@
 			<Setter Property="FontSize" Value="13" />
 		</Style>
 
-		<!-- ListBoxItem -->
-		<Style Selector="ListBox#AssetList > ListBoxItem">
-			<Setter Property="Padding" Value="0" />
-			<Setter Property="Margin" Value="0" />
-			<Setter Property="Background" Value="Transparent" />
-			<Setter Property="CornerRadius" Value="8" />
+		<!-- Asset cards -->
+		<Style Selector="Border.card-border">
+			<Setter Property="BorderBrush" Value="Transparent" />
 		</Style>
-		<!-- Selected card -->
-		<Style Selector="ListBox#AssetList > ListBoxItem:selected Border.card-border">
-			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
-		</Style>
-		<!-- Hover card -->
-		<Style Selector="ListBox#AssetList > ListBoxItem:pointerover Border.card-border">
+		<Style Selector="Border.card-border:pointerover">
 			<Setter Property="BorderBrush" Value="{StaticResource Bg5}" />
+		</Style>
+		<Style Selector="Border.card-border.selected">
+			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
 		</Style>
 
 		<!-- TreeView -->
@@ -55,199 +50,6 @@
 			<Setter Property="Background" Value="{StaticResource Bg4}" />
 		</Style>
 	</UserControl.Styles>
-
-	<!-- Cards -->
-	<UserControl.DataTemplates>
-
-		<!-- Folder card -->
-		<DataTemplate x:DataType="vm:AssetFolder">
-			<Border Classes="card-border"
-			        Classes.selected="{Binding IsSelected}"
-			        Width="130" Height="170"
-			        CornerRadius="8" ClipToBounds="True"
-			        Background="{StaticResource Bg3}"
-			        BorderThickness="2" BorderBrush="Transparent"
-			        DragDrop.AllowDrop="True"
-			        DoubleTapped="OnFolderDoubleTapped"
-			        DragDrop.DragOver="OnFolderDragOver"
-			        DragDrop.Drop="OnFolderDrop">
-				<Border.ContextMenu>
-					<ContextMenu x:DataType="vm:AssetFolder">
-						<MenuItem Command="{Binding Owner.RenameCommand}"
-						          CommandParameter="{Binding}"
-						          InputGesture="F2">
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<LucideIcon Kind="Pencil" StrokeWidth="2.5" Size="16" />
-									<TextBlock Text="Rename" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-						<MenuItem Command="{Binding Owner.CreateFolderCommand}">
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<LucideIcon Kind="FolderPlus" StrokeWidth="2.5" Size="16" />
-									<TextBlock Text="New Folder" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-						<Separator />
-						<MenuItem Command="{Binding Owner.DeleteCommand}"
-						          CommandParameter="{Binding}"
-						          InputGesture="Delete">
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<LucideIcon Kind="Shredder" StrokeWidth="2.5" Size="16" />
-									<TextBlock Text="Delete" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-					</ContextMenu>
-				</Border.ContextMenu>
-				<Grid RowDefinitions="110, *">
-					<Border Grid.Row="0" Background="{x:Static vm:CheckerBrush.Instance}" CornerRadius="4">
-						<LucideIcon Kind="Folder" Size="52" VerticalAlignment="Center" HorizontalAlignment="Center" StrokeWidth="2.5"/>
-					</Border>
-					<StackPanel Grid.Row="1" Margin="8,5,8,4" Spacing="1">
-						<TextBlock Text="{Binding Name}"
-						           TextWrapping="Wrap" MaxLines="2"
-						           FontSize="12" FontWeight="SemiBold"
-						           Foreground="{StaticResource Text}" />
-					</StackPanel>
-				</Grid>
-			</Border>
-		</DataTemplate>
-
-		<!-- File card -->
-		<DataTemplate x:DataType="vm:AssetFile">
-			<Border Classes="card-border"
-			        Classes.selected="{Binding IsSelected}"
-			        Width="130" Height="170"
-			        CornerRadius="8" ClipToBounds="True"
-			        Background="{StaticResource Bg3}"
-			        BorderThickness="2" BorderBrush="Transparent"
-			        PointerPressed="OnFilePointerPressed"
-			        PointerMoved="OnFilePointerMoved"
-			        PointerReleased="OnFilePointerReleased"
-			        DoubleTapped="OnFileDoubleTapped">
-				<Border.ContextMenu>
-					<ContextMenu x:DataType="vm:AssetFile">
-						<MenuItem Command="{Binding Owner.RenameCommand}"
-						          CommandParameter="{Binding}"
-						          InputGesture="F2">
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<LucideIcon Kind="Pencil" StrokeWidth="2.5" Size="16" />
-									<TextBlock Text="Rename" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-						<Separator />
-						<MenuItem Command="{Binding Owner.CutCommand}"
-						          CommandParameter="{Binding}"
-						          InputGesture="Ctrl+X">
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<LucideIcon Kind="Scissors" StrokeWidth="2.5" Size="16" />
-									<TextBlock Text="Cut" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-						<MenuItem Command="{Binding Owner.CopyCommand}"
-						          CommandParameter="{Binding}"
-						          InputGesture="Ctrl+C">
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<LucideIcon Kind="ClipboardCopy" StrokeWidth="2.5" Size="16" />
-									<TextBlock Text="Copy" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-						<MenuItem Command="{Binding Owner.PasteCommand}"
-						          InputGesture="Ctrl+V">
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<LucideIcon Kind="ClipboardPaste" StrokeWidth="2.5" Size="16" />
-									<TextBlock Text="Paste" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-						<MenuItem Command="{Binding Owner.DuplicateCommand}"
-						          CommandParameter="{Binding}"
-						          InputGesture="Ctrl+D">
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<LucideIcon Kind="Copy" StrokeWidth="2.5" Size="16" />
-									<TextBlock Text="Duplicate" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-						<Separator />
-						<MenuItem Command="{Binding Owner.ReimportCommand}"
-						          CommandParameter="{Binding}"
-						          ToolTip.Tip="Re-run the importer from the original artwork source">
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<LucideIcon Kind="RefreshCw" StrokeWidth="2.5" Size="16" />
-									<TextBlock Text="Reimport" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-						<Separator />
-						<MenuItem Command="{Binding Owner.DeleteCommand}"
-						          CommandParameter="{Binding}"
-						          InputGesture="Delete">
-							<MenuItem.Header>
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<LucideIcon Kind="Shredder" StrokeWidth="2.5" Size="16" />
-									<TextBlock Text="Delete" />
-								</StackPanel>
-							</MenuItem.Header>
-						</MenuItem>
-					</ContextMenu>
-				</Border.ContextMenu>
-				<Grid RowDefinitions="110, *">
-					<!-- Preview -->
-					<Border Grid.Row="0"
-					        Background="{x:Static vm:CheckerBrush.Instance}"
-					        ClipToBounds="True"
-					        CornerRadius="4">
-						<Panel>
-							<Image Source="{Binding Thumbnail}"
-							       IsVisible="{Binding HasThumbnail}"
-							       Stretch="None"
-							       HorizontalAlignment="Center"
-							       VerticalAlignment="Center" />
-							<LucideIcon Kind="{Binding Icon}"
-							            Size="52"
-							            VerticalAlignment="Center"
-							            HorizontalAlignment="Center"
-							            StrokeWidth="2.5"
-							            Foreground="{Binding TypeColor}"
-							            IsVisible="{Binding !HasThumbnail}"/>
-							<Border VerticalAlignment="Bottom"
-							        HorizontalAlignment="Left"
-							        Background="{Binding TypeColor}"
-							        CornerRadius="4"
-							        Padding="6,2" Margin="6,0,0,6">
-								<TextBlock Text="{Binding TypeLabel}"
-								           FontSize="10" FontWeight="Bold"
-								           Foreground="{StaticResource Bg1}" />
-							</Border>
-						</Panel>
-					</Border>
-					<!-- Name section -->
-					<StackPanel Grid.Row="1" Margin="8,5,8,4" Spacing="1">
-						<TextBlock Text="{Binding Name}"
-						           TextWrapping="Wrap" MaxLines="3"
-						           FontSize="12" FontWeight="SemiBold"
-						           Foreground="{StaticResource Text}" />
-					</StackPanel>
-				</Grid>
-			</Border>
-		</DataTemplate>
-
-	</UserControl.DataTemplates>
 
 	<Grid ColumnDefinitions="250, 8, *" Margin="8" ColumnSpacing="0">
 
@@ -467,21 +269,203 @@
 					           FontSize="11" />
 
 					<!-- Asset grid -->
-					<ListBox x:Name="AssetList"
-					         ItemsSource="{Binding CurrentItems}"
-					         SelectionMode="Multiple"
-					         SelectionChanged="OnSelectionChanged"
-					         Background="Transparent"
-					         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-						<ListBox.ItemsPanel>
-							<ItemsPanelTemplate>
-								<WrapPanel Orientation="Horizontal"
-								           ItemWidth="138" ItemHeight="178"
-								           ItemSpacing="8" LineSpacing="8"
-								           Margin="4" />
-							</ItemsPanelTemplate>
-						</ListBox.ItemsPanel>
-					</ListBox>
+					<ScrollViewer HorizontalScrollBarVisibility="Disabled"
+					              PointerPressed="OnAssetAreaPointerPressed">
+						<ItemsRepeater x:Name="AssetRepeater"
+						               ItemsSource="{Binding CurrentItems}"
+						               Margin="4"
+						               DoubleTapped="OnCardDoubleTapped"
+						               DragDrop.DragOver="OnCardDragOver"
+						               DragDrop.Drop="OnCardDrop">
+							<ItemsRepeater.ItemTemplate>
+								<RecyclingElementFactory SelectTemplateKey="OnSelectTemplateKey">
+									<RecyclingElementFactory.Templates>
+										<DataTemplate x:Key="folder" x:DataType="vm:AssetFolder">
+											<Border Classes="card-border"
+											        Classes.selected="{ReflectionBinding IsSelected}"
+											        Width="130" Height="170"
+											        CornerRadius="8" ClipToBounds="True"
+											        Background="{StaticResource Bg3}"
+											        BorderThickness="4"
+											        DragDrop.AllowDrop="True">
+												<Border.ContextMenu>
+													<ContextMenu x:DataType="vm:AssetFolder">
+														<MenuItem Command="{Binding Owner.RenameCommand}"
+														          CommandParameter="{Binding}"
+														          InputGesture="F2">
+															<MenuItem.Header>
+																<StackPanel Orientation="Horizontal" Spacing="8">
+																	<LucideIcon Kind="Pencil" StrokeWidth="2.5" Size="16" />
+																	<TextBlock Text="Rename" />
+																</StackPanel>
+															</MenuItem.Header>
+														</MenuItem>
+														<MenuItem Command="{Binding Owner.CreateFolderCommand}">
+															<MenuItem.Header>
+																<StackPanel Orientation="Horizontal" Spacing="8">
+																	<LucideIcon Kind="FolderPlus" StrokeWidth="2.5" Size="16" />
+																	<TextBlock Text="New Folder" />
+																</StackPanel>
+															</MenuItem.Header>
+														</MenuItem>
+														<Separator />
+														<MenuItem Command="{Binding Owner.DeleteCommand}"
+														          CommandParameter="{Binding}"
+														          InputGesture="Delete">
+															<MenuItem.Header>
+																<StackPanel Orientation="Horizontal" Spacing="8">
+																	<LucideIcon Kind="Shredder" StrokeWidth="2.5" Size="16" />
+																	<TextBlock Text="Delete" />
+																</StackPanel>
+															</MenuItem.Header>
+														</MenuItem>
+													</ContextMenu>
+												</Border.ContextMenu>
+												<Grid RowDefinitions="110, *">
+													<Border Grid.Row="0" Background="{x:Static vm:CheckerBrush.Instance}" CornerRadius="4">
+														<LucideIcon Kind="Folder" Size="52" VerticalAlignment="Center" HorizontalAlignment="Center" StrokeWidth="2.5"/>
+													</Border>
+													<StackPanel Grid.Row="1" Margin="8,5,8,4" Spacing="1">
+														<TextBlock Text="{Binding Name}"
+														           TextWrapping="Wrap" MaxLines="2"
+														           FontSize="12" FontWeight="SemiBold"
+														           Foreground="{StaticResource Text}" />
+													</StackPanel>
+												</Grid>
+											</Border>
+										</DataTemplate>
+										<DataTemplate x:Key="file" x:DataType="vm:AssetFile">
+											<Border Classes="card-border"
+											        Classes.selected="{ReflectionBinding IsSelected}"
+											        Width="130" Height="170"
+											        CornerRadius="8" ClipToBounds="True"
+											        Background="{StaticResource Bg3}"
+											        BorderThickness="4">
+												<Border.ContextMenu>
+													<ContextMenu x:DataType="vm:AssetFile">
+														<MenuItem Command="{Binding Owner.RenameCommand}"
+														          CommandParameter="{Binding}"
+														          InputGesture="F2">
+															<MenuItem.Header>
+																<StackPanel Orientation="Horizontal" Spacing="8">
+																	<LucideIcon Kind="Pencil" StrokeWidth="2.5" Size="16" />
+																	<TextBlock Text="Rename" />
+																</StackPanel>
+															</MenuItem.Header>
+														</MenuItem>
+														<Separator />
+														<MenuItem Command="{Binding Owner.CutCommand}"
+														          CommandParameter="{Binding}"
+														          InputGesture="Ctrl+X">
+															<MenuItem.Header>
+																<StackPanel Orientation="Horizontal" Spacing="8">
+																	<LucideIcon Kind="Scissors" StrokeWidth="2.5" Size="16" />
+																	<TextBlock Text="Cut" />
+																</StackPanel>
+															</MenuItem.Header>
+														</MenuItem>
+														<MenuItem Command="{Binding Owner.CopyCommand}"
+														          CommandParameter="{Binding}"
+														          InputGesture="Ctrl+C">
+															<MenuItem.Header>
+																<StackPanel Orientation="Horizontal" Spacing="8">
+																	<LucideIcon Kind="ClipboardCopy" StrokeWidth="2.5" Size="16" />
+																	<TextBlock Text="Copy" />
+																</StackPanel>
+															</MenuItem.Header>
+														</MenuItem>
+														<MenuItem Command="{Binding Owner.PasteCommand}"
+														          InputGesture="Ctrl+V">
+															<MenuItem.Header>
+																<StackPanel Orientation="Horizontal" Spacing="8">
+																	<LucideIcon Kind="ClipboardPaste" StrokeWidth="2.5" Size="16" />
+																	<TextBlock Text="Paste" />
+																</StackPanel>
+															</MenuItem.Header>
+														</MenuItem>
+														<MenuItem Command="{Binding Owner.DuplicateCommand}"
+														          CommandParameter="{Binding}"
+														          InputGesture="Ctrl+D">
+															<MenuItem.Header>
+																<StackPanel Orientation="Horizontal" Spacing="8">
+																	<LucideIcon Kind="Copy" StrokeWidth="2.5" Size="16" />
+																	<TextBlock Text="Duplicate" />
+																</StackPanel>
+															</MenuItem.Header>
+														</MenuItem>
+														<Separator />
+														<MenuItem Command="{Binding Owner.ReimportCommand}"
+														          CommandParameter="{Binding}"
+														          ToolTip.Tip="Re-run the importer from the original artwork source">
+															<MenuItem.Header>
+																<StackPanel Orientation="Horizontal" Spacing="8">
+																	<LucideIcon Kind="RefreshCw" StrokeWidth="2.5" Size="16" />
+																	<TextBlock Text="Reimport" />
+																</StackPanel>
+															</MenuItem.Header>
+														</MenuItem>
+														<Separator />
+														<MenuItem Command="{Binding Owner.DeleteCommand}"
+														          CommandParameter="{Binding}"
+														          InputGesture="Delete">
+															<MenuItem.Header>
+																<StackPanel Orientation="Horizontal" Spacing="8">
+																	<LucideIcon Kind="Shredder" StrokeWidth="2.5" Size="16" />
+																	<TextBlock Text="Delete" />
+																</StackPanel>
+															</MenuItem.Header>
+														</MenuItem>
+													</ContextMenu>
+												</Border.ContextMenu>
+												<Grid RowDefinitions="110, *">
+													<!-- Preview -->
+													<Border Grid.Row="0"
+													        Background="{x:Static vm:CheckerBrush.Instance}"
+													        ClipToBounds="True"
+													        CornerRadius="4">
+														<Panel>
+															<Image Source="{Binding Thumbnail}"
+															       IsVisible="{Binding HasThumbnail}"
+															       Stretch="None"
+															       HorizontalAlignment="Center"
+															       VerticalAlignment="Center" />
+															<LucideIcon Kind="{Binding Icon}"
+															            Size="52"
+															            VerticalAlignment="Center"
+															            HorizontalAlignment="Center"
+															            StrokeWidth="2.5"
+															            Foreground="{Binding TypeColor}"
+															            IsVisible="{Binding !HasThumbnail}"/>
+															<Border VerticalAlignment="Bottom"
+															        HorizontalAlignment="Left"
+															        Background="{Binding TypeColor}"
+															        CornerRadius="4"
+															        Padding="6,2" Margin="6,0,0,6">
+																<TextBlock Text="{Binding TypeLabel}"
+																           FontSize="10" FontWeight="Bold"
+																           Foreground="{StaticResource Bg1}" />
+															</Border>
+														</Panel>
+													</Border>
+													<!-- Name section -->
+													<StackPanel Grid.Row="1" Margin="8,5,8,4" Spacing="1">
+														<TextBlock Text="{Binding Name}"
+														           TextWrapping="Wrap" MaxLines="3"
+														           FontSize="12" FontWeight="SemiBold"
+														           Foreground="{StaticResource Text}" />
+													</StackPanel>
+												</Grid>
+											</Border>
+										</DataTemplate>
+									</RecyclingElementFactory.Templates>
+								</RecyclingElementFactory>
+							</ItemsRepeater.ItemTemplate>
+							<ItemsRepeater.Layout>
+								<UniformGridLayout MinItemWidth="130" MinItemHeight="170"
+								                   MinColumnSpacing="8" MinRowSpacing="8" />
+							</ItemsRepeater.Layout>
+						</ItemsRepeater>
+					</ScrollViewer>
 				</DockPanel>
 			</Border>
 		</DockPanel>

@@ -27,6 +27,10 @@ public partial class AssetBrowserView : UserControl {
 	public AssetBrowserView() {
 		InitializeComponent();
 
+		AssetRepeater.AddHandler(InputElement.PointerPressedEvent, OnCardPointerPressed, RoutingStrategies.Tunnel);
+		AssetRepeater.AddHandler(InputElement.PointerMovedEvent, OnCardPointerMoved, RoutingStrategies.Tunnel);
+		AssetRepeater.AddHandler(InputElement.PointerReleasedEvent, OnCardPointerReleased, RoutingStrategies.Tunnel);
+
 		var bg = this.FindControl<Border>("AssetViewBackground");
 		if (bg?.ContextMenu is { } menu) {
 			menu.Opening += (_, _) => RebuildContextMenu(menu);
@@ -35,15 +39,24 @@ public partial class AssetBrowserView : UserControl {
 
 	private AssetBrowserViewModel Vm => (AssetBrowserViewModel)DataContext!;
 
-	private void OnFilePointerPressed(object? sender, PointerPressedEventArgs e) {
-		if (sender is not Control { DataContext: AssetFile file }) return;
-		if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-		m_pressFile = file;
-		m_pressArgs = e;
-		m_pressPoint = e.GetPosition(this);
+	private void OnSelectTemplateKey(object? sender, SelectTemplateEventArgs e) {
+		e.TemplateKey = e.DataContext is AssetFolder ? "folder" : "file";
 	}
 
-	private async void OnFilePointerMoved(object? sender, PointerEventArgs e) {
+	private void OnCardPointerPressed(object? sender, PointerPressedEventArgs e) {
+		if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+		var item = GetCardItem(e.Source);
+		if (item is null) return;
+		Vm.SelectItem(item, e.KeyModifiers);
+		if (item is AssetFile file) {
+			m_pressFile = file;
+			m_pressArgs = e;
+			m_pressPoint = e.GetPosition(this);
+		}
+		e.Handled = true;
+	}
+
+	private async void OnCardPointerMoved(object? sender, PointerEventArgs e) {
 		if (m_pressFile is null || m_pressArgs is null || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
 		var delta = e.GetPosition(this) - m_pressPoint;
 		if (delta.X * delta.X + delta.Y * delta.Y < DragThreshold * DragThreshold) return;
@@ -58,8 +71,7 @@ public partial class AssetBrowserView : UserControl {
 		var data = new DataTransfer();
 		data.Add(DataTransferItem.Create(AssetDragData.Format, new AssetDragRef(uid, file.Definition?.Type ?? "", file.Name)));
 
-		// collect all selected files for multi-item drag
-		var selectedFiles = AssetList.SelectedItems?
+		var selectedFiles = Vm.SelectedItems
 			.OfType<AssetFile>()
 			.Where(f => f.Uid is not null)
 			.ToList();
@@ -73,40 +85,40 @@ public partial class AssetBrowserView : UserControl {
 		await DragDrop.DoDragDropAsync(args, data, DragDropEffects.Copy | DragDropEffects.Move);
 	}
 
-	private void OnFilePointerReleased(object? sender, PointerReleasedEventArgs e) {
+	private void OnCardPointerReleased(object? sender, PointerReleasedEventArgs e) {
 		m_pressFile = null;
 		m_pressArgs = null;
 	}
 
-	private void OnSelectionChanged(object? sender, SelectionChangedEventArgs e) {
-		if (sender is ListBox lb)
-			Vm.UpdateSelection(lb.SelectedItems);
-	}
-
-	private void OnFolderDoubleTapped(object? sender, TappedEventArgs e) {
-		if (sender is Border { DataContext: AssetFolder folder }) {
-			Vm.SearchText = "";
-			Vm.SelectedFolder = folder;
-			e.Handled = true;
+	private void OnCardDoubleTapped(object? sender, TappedEventArgs e) {
+		var item = GetCardItem(e.Source);
+		switch (item) {
+			case AssetFolder folder:
+				Vm.SearchText = "";
+				Vm.SelectedFolder = folder;
+				e.Handled = true;
+				break;
+			case AssetFile file when file.Definition?.CanBeEdited == true:
+				EditorManager.RequestOpen(file);
+				e.Handled = true;
+				break;
 		}
 	}
 
-	private void OnFileDoubleTapped(object? sender, TappedEventArgs e) {
-		if (sender is not Control { DataContext: AssetFile file }) return;
-		if (file.Definition?.CanBeEdited != true) return;
-		EditorManager.RequestOpen(file);
-		e.Handled = true;
-	}
-
-	private void OnFolderDragOver(object? sender, DragEventArgs e) {
+	private void OnCardDragOver(object? sender, DragEventArgs e) {
+		if (GetCardItem(e.Source) is not AssetFolder) {
+			e.DragEffects = DragDropEffects.None;
+			e.Handled = true;
+			return;
+		}
 		var hasAsset = e.DataTransfer.TryGetValue(AssetDragData.MultiFormat) is not null
 		               || e.DataTransfer.TryGetValue(AssetDragData.Format) is not null;
 		e.DragEffects = hasAsset ? DragDropEffects.Move : DragDropEffects.None;
 		e.Handled = true;
 	}
 
-	private void OnFolderDrop(object? sender, DragEventArgs e) {
-		if (sender is not Control { DataContext: AssetFolder target }) return;
+	private void OnCardDrop(object? sender, DragEventArgs e) {
+		if (GetCardItem(e.Source) is not AssetFolder target) return;
 
 		if (e.DataTransfer.TryGetValue(AssetDragData.MultiFormat) is { } refs) {
 			foreach (var r in refs)
@@ -118,6 +130,21 @@ public partial class AssetBrowserView : UserControl {
 		if (e.DataTransfer.TryGetValue(AssetDragData.Format) is not { } dragRef) return;
 		Vm.MoveAsset(dragRef.Uid, target);
 		e.Handled = true;
+	}
+
+	private static object? GetCardItem(object? source) {
+		var ctrl = source as Control;
+		while (ctrl is not null and not ItemsRepeater) {
+			if (ctrl.DataContext is AssetFolder or AssetFile)
+				return ctrl.DataContext;
+			ctrl = ctrl.Parent as Control;
+		}
+		return null;
+	}
+
+	private void OnAssetAreaPointerPressed(object? sender, PointerPressedEventArgs e) {
+		if (!e.Handled)
+			Vm.ClearSelection();
 	}
 
 	private void OnNewButtonClick(object? sender, RoutedEventArgs e) {
@@ -167,7 +194,6 @@ public partial class AssetBrowserView : UserControl {
 	}
 
 	private void RebuildContextMenu(ContextMenu menu) {
-		// Keep only the first 2 static items
 		while (menu.Items.Count > 2)
 			menu.Items.RemoveAt(2);
 
@@ -241,7 +267,7 @@ public partial class AssetBrowserView : UserControl {
 		return new MenuItem { Header = panel, Command = command };
 	}
 
-	private MenuItem MakeCommandParameterItem(string label, ICommand command, object? parameter,string colorKey, LucideIconKind icon) {
+	private MenuItem MakeCommandParameterItem(string label, ICommand command, object? parameter, string colorKey, LucideIconKind icon) {
 		var chip = new Border {
 			Width = 38, Height = 38,
 			CornerRadius = new CornerRadius(4),
