@@ -24,6 +24,7 @@ public partial class PsdImporter : IAssetImporter {
 	}
 
 	public IReadOnlyList<string> SupportedExtensions => [".psd"];
+	public bool CanHandle(string filePath) => Path.GetExtension(filePath) == ".psd";
 
 	public string DisplayName => "PSD";
 	public LucideIconKind Icon => LucideIconKind.Brush;

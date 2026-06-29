@@ -1,5 +1,25 @@
 project(toast_engine C CXX)
 
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
+    set(ARCH "arm64")
+elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
+    set(ARCH "x86_64")
+else ()
+    message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+endif ()
+
+if (WIN32)
+    set(OS "windows")
+else ()
+    set(OS "linux")
+endif ()
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(TYPE "debug")
+else ()
+    set(TYPE "release")
+endif ()
+
 # Package declarations
 find_package(asio CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
@@ -12,6 +32,18 @@ find_package(unofficial-vulkan-memory-allocator-hpp CONFIG REQUIRED)
 find_package(slang CONFIG REQUIRED)
 find_package(protobuf CONFIG REQUIRED)
 find_package(tinysplinecxx CONFIG REQUIRED)
+
+# external tools declarations
+set(EXTERNAL_INC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/inc")
+set(EXTERNAL_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/lib/${OS}/${ARCH}/${TYPE}")
+
+if (WIN32)
+   file(GLOB EXTERNAL_LIBS "${EXTERNAL_LIB_DIR}/*.lib")
+   file(GLOB EXTERNAL_RUNTIME "${EXTERNAL_LIB_DIR}/*.dll")
+else ()
+    file(GLOB EXTERNAL_LIBS "${EXTERNAL_LIB_DIR}/*.so")
+    file(GLOB EXTERNAL_RUNTIME "${EXTERNAL_LIB_DIR}/*.so")
+endif ()
 
 file(GLOB_RECURSE SOURCE "src/*.cpp" "generated/*.cpp" "generated/*.cc")
 add_library(toast_engine SHARED ${SOURCE})
@@ -59,9 +91,9 @@ target_compile_options(toast_engine PUBLIC
 target_include_directories(toast_engine
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${CMAKE_CURRENT_SOURCE_DIR}/external
         ${CMAKE_CURRENT_SOURCE_DIR}/generated
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${EXTERNAL_INC_DIR}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/ffi
@@ -69,7 +101,6 @@ target_include_directories(toast_engine
 
 # target_compile_definitions(toast_engine PRIVATE VK_NO_PROTOTYPES)
 # target_compile_definitions(toast_engine PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
-
 
 target_link_libraries(toast_engine
     PRIVATE
@@ -81,6 +112,7 @@ target_link_libraries(toast_engine
         slang::gfx slang::slang
         protobuf::libprotobuf
         tinysplinecxx::tinysplinecxx
+        ${EXTERNAL_LIBS}
     PUBLIC
         Tracy::TracyClient
         glm::glm
@@ -171,6 +203,14 @@ add_custom_command(TARGET toast_engine POST_BUILD
         "${TOAST_ENGINE_OUTPUT_ROOT}/include/client"
     COMMENT "Copying toast_engine headers into the package layout"
     VERBATIM
+)
+
+add_custom_command(TARGET toast_engine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${EXTERNAL_RUNTIME}
+        "${TOAST_ENGINE_BIN_DIR}"
+        COMMENT "Copying external runtime libraries to output"
+        VERBATIM
 )
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")

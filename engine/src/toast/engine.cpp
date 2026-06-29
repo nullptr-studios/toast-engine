@@ -3,6 +3,7 @@
 #include "application.hpp"
 #include "assets/asset_manager.hpp"
 #include "assets/prefab.hpp"
+#include "audio/audio_system.hpp"
 #include "events/event.hpp"
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
@@ -78,6 +79,7 @@ struct EnginePimpl {
 	std::unique_ptr<assets::AssetManager> asset_manager = nullptr;
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
+	std::unique_ptr<audio::AudioSystem> audio_system = nullptr;
 	Time time;
 	event::Listener listener;
 	toast::NodeRegistry reflection_registry;
@@ -157,6 +159,8 @@ void Engine::init() {
 		event::send<event::RequestHierarchyUpdate>();
 		return false;
 	});
+
+	m->audio_system = std::make_unique<audio::AudioSystem>();
 }
 
 void Engine::tick() {
