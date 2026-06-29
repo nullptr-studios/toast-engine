@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using editor.Assets.Types;
 using ImageMagick;
+using Lucide.Avalonia;
 
 namespace editor.Assets.Importers;
 
@@ -12,17 +14,36 @@ public enum PsdImportMode { Layers, Folders, Combined }
 
 public partial class PsdImporter : IAssetImporter {
 	private readonly Settings m_psdSettings;
-
 	private readonly TextureImporter.Settings m_textureSettings;
+	private readonly TextureImporter m_textureImporter;
 
 	public PsdImporter(TextureImporter.Settings textureSettings, Settings psdSettings) {
 		m_textureSettings = textureSettings;
 		m_psdSettings = psdSettings;
+		m_textureImporter = new TextureImporter(textureSettings);
 	}
 
 	public IReadOnlyList<string> SupportedExtensions => [".psd"];
 
-	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log) {
+	public string DisplayName => "PSD";
+	public LucideIconKind Icon => LucideIconKind.Brush;
+
+	public BaseAsset PrimaryOutputType => AssetTypeRegistry.ByExtension(".ktx2")!;
+
+	public IReadOnlyList<IAssetImporter> GetAllSettingsImporters() => [this, m_textureImporter];
+
+	public IReadOnlyList<ImporterSetting> GetSettings() => [
+		new ImporterSetting("Create Folder", SettingKind.Bool,
+			() => m_psdSettings.CreateFolder,
+			v => m_psdSettings.CreateFolder = (bool)v!),
+		new ImporterSetting("Import Mode", SettingKind.Enum,
+			() => m_psdSettings.ImportMode.ToString(),
+			v => m_psdSettings.ImportMode = Enum.Parse<PsdImportMode>((string)v!),
+			Options: Enum.GetNames<PsdImportMode>()),
+	];
+
+	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log,
+		Action<double>? progress = null) {
 		var baseName = Path.GetFileNameWithoutExtension(realSourcePath);
 		var destDir = ctx.DestDir;
 
@@ -92,7 +113,10 @@ public partial class PsdImporter : IAssetImporter {
 				}
 			});
 
-			foreach (var (tempPng, destPath, uid, _) in outputs) {
+			for (var idx = 0; idx < outputs.Count; idx++) {
+				var (tempPng, destPath, uid, _) = outputs[idx];
+				progress?.Invoke((double)idx / outputs.Count);
+
 				log("Generating thumbnail...");
 				await Task.Run(() => ThumbnailService.Generate(tempPng, uid));
 
@@ -100,9 +124,10 @@ public partial class PsdImporter : IAssetImporter {
 				await KtxWriter.ConvertTexture(tempPng, destPath, m_textureSettings, log);
 
 				log("Writing .meta sidecar...");
-				var header = new MetaHeader { Uid = uid, Type = "texture", Source = ctx.SourceVirtualPath };
+				var header = new MetaHeader { Uid = uid, Type = PrimaryOutputType.Type, Source = ctx.SourceVirtualPath };
 				MetaFile.Write(destPath, header, m_textureSettings.ToSection(), m_psdSettings.ToSection());
 			}
+			progress?.Invoke(1.0);
 		} finally {
 			foreach (var f in tempFiles)
 				try {

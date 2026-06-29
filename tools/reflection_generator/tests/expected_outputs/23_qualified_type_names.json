@@ -51,6 +51,7 @@
       }
     ],
     "groups": [],
+    "methods": [],
     "name": "QualifiedNode",
     "namespace": "game",
     "parent": null,

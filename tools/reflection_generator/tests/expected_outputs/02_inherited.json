@@ -58,6 +58,7 @@
         ]
       }
     ],
+    "methods": [],
     "name": "Player",
     "namespace": "game",
     "parent": {

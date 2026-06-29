@@ -57,9 +57,9 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/05-load_node", test_pre
 	// The manifest maps each asset UID to its file.
 	writeFile(
 	    cache_dir / "database.json",
-	    R"({"assets":{)"
-	    R"("Scene000000":{"path":"assets://scene.node","type":"node"},)"
-	    R"("Child000000":{"path":"assets://child_prefab.node","type":"node"}}})"
+	    R"({"node":{)"
+	    R"("Scene000000":"assets://scene.node",)"
+	    R"("Child000000":"assets://child_prefab.node"}})"
 	);
 
 	WorldTestAccess::initAssetManager(assets_dir.string(), cache_dir.string());

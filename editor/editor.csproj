@@ -22,37 +22,39 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <AvaloniaResource Include="Resources\**\*" Exclude="Resources\native\**"/>
+        <AvaloniaResource Include="Resources\**\*" Exclude="Resources\native\**" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="12.0.3"/>
-        <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.0.3"/>
-        <PackageReference Include="Avalonia.Desktop" Version="12.0.3"/>
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3"/>
-        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.3"/>
+        <PackageReference Include="Avalonia" Version="12.0.3" />
+        <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.0.3" />
+        <PackageReference Include="Avalonia.Controls.ItemsRepeater" Version="12.0.0" />
+        <PackageReference Include="Avalonia.Desktop" Version="12.0.3" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.3" />
         <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.1">
             <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
             <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="ClangSharp" Version="21.1.8.3"/>
-        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1"/>
-        <PackageReference Include="Dock.Avalonia" Version="12.0.0.2"/>
-        <PackageReference Include="Dock.Avalonia.Diagnostics" Version="12.0.0.2"/>
-        <PackageReference Include="Dock.Avalonia.Themes.Fluent" Version="12.0.0.2"/>
-        <PackageReference Include="Dock.Model.Mvvm" Version="12.0.0.2"/>
-        <PackageReference Include="Dock.Serializer.SystemTextJson" Version="12.0.0.2"/>
-        <PackageReference Include="Google.Protobuf" Version="3.35.0-rc2"/>
+        <PackageReference Include="ClangSharp" Version="21.1.8.3" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1" />
+        <PackageReference Include="Dock.Avalonia" Version="12.0.0.2" />
+        <PackageReference Include="Dock.Avalonia.Diagnostics" Version="12.0.0.2" />
+        <PackageReference Include="Dock.Avalonia.Themes.Fluent" Version="12.0.0.2" />
+        <PackageReference Include="Dock.Model.Mvvm" Version="12.0.0.2" />
+        <PackageReference Include="Dock.Serializer.SystemTextJson" Version="12.0.0.2" />
+        <PackageReference Include="Google.Protobuf" Version="3.35.0-rc2" />
         <PackageReference Include="Grpc.Tools" Version="2.80.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Ktx2Sharp" Version="1.0.2"/>
-        <PackageReference Include="Lucide.Avalonia" Version="0.2.9"/>
-        <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.*"/>
+        <PackageReference Include="JsonSchema.Net" Version="9.2.2" />
+        <PackageReference Include="Ktx2Sharp" Version="1.0.2" />
+        <PackageReference Include="Lucide.Avalonia" Version="0.2.9" />
+        <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.*" />
         <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.13" />
         <PackageReference Include="tinyspline" Version="0.6.0.1" />
-        <PackageReference Include="Tomlyn" Version="2.4.0"/>
+        <PackageReference Include="Tomlyn" Version="2.4.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -67,19 +69,19 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ClCompile Include="Resources\files\lib\src\_detail\game.cpp"/>
+        <ClCompile Include="Resources\files\lib\src\_detail\game.cpp" />
     </ItemGroup>
 
     <ItemGroup>
-        <ClInclude Include="Resources\files\lib\src\my_game.hpp"/>
-        <ClInclude Include="Resources\files\lib\src\_detail\game.h"/>
+        <ClInclude Include="Resources\files\lib\src\my_game.hpp" />
+        <ClInclude Include="Resources\files\lib\src\_detail\game.h" />
     </ItemGroup>
 
     <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
-        <Content Include="$(MSBuildThisFileDirectory)Resources\native\win-x64\**\*" Exclude="$(MSBuildThisFileDirectory)Resources\native\win-x64\.gitkeep" Link="native\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
+        <Content Include="$(MSBuildThisFileDirectory)Resources\native\win-x64\**\*" Exclude="$(MSBuildThisFileDirectory)Resources\native\win-x64\.gitkeep" Link="native\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
     <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
-        <Content Include="$(MSBuildThisFileDirectory)Resources/native/linux-x64/**/*" Exclude="$(MSBuildThisFileDirectory)Resources/native/linux-x64/.gitkeep" Link="native/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
+        <Content Include="$(MSBuildThisFileDirectory)Resources/native/linux-x64/**/*" Exclude="$(MSBuildThisFileDirectory)Resources/native/linux-x64/.gitkeep" Link="native/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
     <ItemGroup>
         <Protobuf Include="..\protos\logging.proto">
@@ -100,16 +102,14 @@
     </ItemGroup>
 
     <Target Name="MakeToktxExecutable" AfterTargets="Build" Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
-        <Exec Command="chmod +x &quot;$(OutDir)native/toktx&quot;"
-              Condition="Exists('$(OutDir)native/toktx')"
-              IgnoreExitCode="true"/>
+        <Exec Command="chmod +x &quot;$(OutDir)native/toktx&quot;" Condition="Exists('$(OutDir)native/toktx')" IgnoreExitCode="true" />
     </Target>
 
     <Target Name="CopyResources" AfterTargets="Build">
         <ItemGroup>
-            <ResFiles Include="$(ProjectDir)Resources\**\*"/>
+            <ResFiles Include="$(ProjectDir)Resources\**\*" />
         </ItemGroup>
-        <Copy SourceFiles="@(ResFiles)" DestinationFiles="@(ResFiles->'$(OutputPath)/Resources\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true"/>
+        <Copy SourceFiles="@(ResFiles)" DestinationFiles="@(ResFiles->'$(OutputPath)/Resources\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     </Target>
 
 </Project>

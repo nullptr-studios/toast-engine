@@ -27,6 +27,7 @@
       }
     ],
     "groups": [],
+    "methods": [],
     "name": "FirstNode",
     "namespace": "test",
     "parent": null,
@@ -60,6 +61,7 @@
       }
     ],
     "groups": [],
+    "methods": [],
     "name": "SecondNode",
     "namespace": "test",
     "parent": null,

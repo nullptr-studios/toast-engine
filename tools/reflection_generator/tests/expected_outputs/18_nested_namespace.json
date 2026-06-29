@@ -27,6 +27,7 @@
       }
     ],
     "groups": [],
+    "methods": [],
     "name": "DeepNode",
     "namespace": "foo::bar::baz",
     "parent": null,

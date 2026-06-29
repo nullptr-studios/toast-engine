@@ -105,8 +105,9 @@ auto removeSpaces(const std::string& text) -> std::string {
 		// replace spaces
 		if (std::isspace(ch)) {
 			result += '_';
+		} else {
+			result += ch;
 		}
-		result += ch;
 	}
 
 	// remove end underscore if it exists

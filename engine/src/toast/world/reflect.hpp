@@ -9,13 +9,20 @@
 #pragma once
 
 #include <any>
+#include <array>
+#include <cassert>
 #include <cstdint>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <toast/export.hpp>
+#include <toast/log.hpp>
+#include <type_traits>
+#include <typeinfo>
 #include <unordered_map>
+#include <utility>
 
 namespace toast {
 
@@ -241,6 +248,32 @@ struct TOAST_API GroupInfo {
 };
 
 /**
+ * @brief Runtime descriptor for one parameter of a reflected function
+ */
+struct TOAST_API ParameterInfo {
+	std::string_view name;
+	std::string_view type;            // C++ type name, as spelled in the header
+	std::optional<std::string_view> default_value;
+	const std::type_info* type_id;    // typeid(std::decay_t<param>), for call-time validation
+};
+
+/**
+ * @brief Runtime descriptor for one reflected member function
+ *
+ * @note Do not call invoke directly; go through NodeInfo::call()
+ */
+struct TOAST_API FunctionInfo {
+	/// Generic erased trampoline pointer; reinterpret_cast back to the real signature before calling
+	using Invoker = void (*)();
+
+	std::string_view name;
+	std::string_view return_type;            // C++ return type name, as spelled in the header
+	const std::type_info* return_type_id;    // typeid(std::decay_t<return>), for call-time validation
+	std::span<const ParameterInfo> parameters;
+	Invoker invoke = nullptr;
+};
+
+/**
  * @brief Complete reflection record for a registered Node type
  *
  * Populated by the generated Reflect<T> specialization at program startup.
@@ -259,6 +292,7 @@ struct TOAST_API NodeInfo {
 	std::span<const FieldInfo> all_fields;
 	std::span<const FieldInfo* const> fields;
 	std::span<const GroupInfo> groups;
+	std::span<const FunctionInfo> methods;
 
 	TickFunctions functions;
 
@@ -281,6 +315,68 @@ struct TOAST_API NodeInfo {
 			return base_type->getField(field_name);
 		}
 		return nullptr;
+	}
+
+	/**
+	 * @brief Finds a reflected function by name in this type, then walks base_type if not found
+	 * @param method_name The reflected function name to look up
+	 * @return Pointer to the matching FunctionInfo, or nullptr if the function is not reflected anywhere in the hierarchy
+	 */
+	[[nodiscard]]
+	auto getMethod(std::string_view method_name) const -> const FunctionInfo* {
+		for (const auto& m : methods) {
+			if (method_name == m.name) {
+				return &m;
+			}
+		}
+		if (base_type) {
+			return base_type->getMethod(method_name);
+		}
+		return nullptr;
+	}
+
+	/**
+	 * @brief Looks up a reflected function by name and invokes it on the given object
+	 * @tparam R The function's return type; defaults to void
+	 * @tparam Args Deduced argument types, forwarded to the function
+	 * @param obj The object to call the function on; must be an instance of this type or a subtype
+	 * @param method_name The reflected function name to call
+	 * @param args Arguments forwarded to the function
+	 * @return The function's return value, or a default-constructed R if the function is not found
+	 */
+	template<typename R = void, typename... Args>
+	auto call(void* obj, std::string_view method_name, Args&&... args) const -> R {
+		const FunctionInfo* fn = getMethod(method_name);
+
+		if (!fn) {
+			TOAST_WARN("Reflect", "call(): reflected function '{}' not found on '{}'", method_name, type);
+			assert(false && "NodeInfo::call(): reflected function not found");
+			if constexpr (std::is_void_v<R>) {
+				return;
+			} else {
+				return R {};
+			}
+		}
+
+		bool signature_ok = fn->parameters.size() == sizeof...(Args) && fn->return_type_id != nullptr &&
+		                    *fn->return_type_id == typeid(std::decay_t<R>);
+		if (signature_ok) {
+			const std::array<const std::type_info*, sizeof...(Args)> expected = {&typeid(std::decay_t<Args>)...};
+			for (std::size_t i = 0; i < expected.size(); ++i) {
+				if (fn->parameters[i].type_id == nullptr || *fn->parameters[i].type_id != *expected[i]) {
+					signature_ok = false;
+					break;
+				}
+			}
+		}
+		if (!signature_ok) {
+			TOAST_WARN("Reflect", "call(): signature mismatch for '{}' on '{}'; invoking is undefined behavior", method_name, type);
+			assert(false && "NodeInfo::call(): argument or return type mismatch");
+		}
+
+		using Trampoline = R (*)(void*, std::decay_t<Args>...);
+		auto* trampoline = reinterpret_cast<Trampoline>(fn->invoke);
+		return trampoline(obj, std::forward<Args>(args)...);
 	}
 
 	/**

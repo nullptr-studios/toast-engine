@@ -38,7 +38,7 @@
 						         Margin="-8"
 						         MinHeight="0"
 						         TextWrapping="{TemplateBinding WrapMode}"
-						         AcceptsReturn="True"
+						         AcceptsReturn="False"
 						         VerticalContentAlignment="Top"
 						         HorizontalContentAlignment="Left" />
 					</Panel>

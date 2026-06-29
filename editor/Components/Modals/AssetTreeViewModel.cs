@@ -15,7 +15,7 @@ namespace editor.Components.Modals;
 public partial class AssetTreeNode : ObservableObject {
 	[ObservableProperty] private bool m_isExpanded = true;
 
-	public AssetTreeNode(string realPath, FileType? filter) {
+	public AssetTreeNode(string realPath, string? typeFilter) {
 		RealPath = realPath;
 		Name = Path.GetFileName(realPath) is { Length: > 0 } n ? n : realPath;
 		IsFolder = true;
@@ -24,12 +24,13 @@ public partial class AssetTreeNode : ObservableObject {
 
 		var folder = new AssetFolder(realPath);
 		foreach (var sub in folder.SubFolders) {
-			var child = new AssetTreeNode(sub.Filepath, filter);
+			var child = new AssetTreeNode(sub.Filepath, typeFilter);
 			Children.Add(child);
 			FilteredChildren.Add(child);
 		}
 		foreach (var file in folder.Files) {
-			if (filter.HasValue && file.Type != filter.Value) continue;
+			if (typeFilter is not null &&
+			    !string.Equals(file.Definition?.Type, typeFilter, StringComparison.OrdinalIgnoreCase)) continue;
 			if (file.Uid is null) continue;
 			var child = new AssetTreeNode(file);
 			Children.Add(child);
@@ -77,14 +78,14 @@ public partial class AssetTreeNode : ObservableObject {
 }
 
 public class AssetTreeViewModel : PickerViewModel {
-	private readonly FileType? m_filter;
+	private readonly string? m_filter;
 	private readonly ObservableCollection<AssetTreeNode> m_roots = [];
 	private readonly ObservableCollection<AssetTreeNode> m_filtered = [];
 
-	public AssetTreeViewModel(FileType? filter = null) {
-		m_filter = filter;
+	public AssetTreeViewModel(string? typeFilter = null) {
+		m_filter = typeFilter;
 		if (ProjectContext.IsInitialized) {
-			var root = new AssetTreeNode(ProjectContext.AssetsPath, filter);
+			var root = new AssetTreeNode(ProjectContext.AssetsPath, typeFilter);
 			m_roots.Add(root);
 			m_filtered.Add(root);
 		}

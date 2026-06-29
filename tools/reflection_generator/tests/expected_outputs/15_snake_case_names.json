@@ -112,6 +112,7 @@
         ]
       }
     ],
+    "methods": [],
     "name": "SnakeCaseNode",
     "namespace": null,
     "parent": null,

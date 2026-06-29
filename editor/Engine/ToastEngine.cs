@@ -33,6 +33,8 @@ public partial class ToastEngine : IDisposable {
 	private const string EngineLib = "toast_engine";
 	private readonly CancellationTokenSource m_cancellationSource;
 
+	public static bool IsEngineReady { get; private set; }
+
 	private readonly IntPtr m_engineInstance;
 	private readonly IntPtr m_gameInstance;
 
@@ -83,6 +85,7 @@ public partial class ToastEngine : IDisposable {
 
 		// init after set_working_directory so the engine knows where to find its assets
 		toast_init();
+		IsEngineReady = true;
 		toast_create_avalonia_window();
 
 		ReflectionDatabase.Update();
@@ -98,6 +101,7 @@ public partial class ToastEngine : IDisposable {
 	public string CorePath { get; }
 
 	public void Dispose() {
+		IsEngineReady = false;
 		m_cancellationSource.Cancel();
 		m_tickTask.Wait();
 		m_gameDestroy?.Invoke(m_gameInstance);
@@ -235,6 +239,23 @@ public partial class ToastEngine : IDisposable {
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial WorkspaceResult toast_open_workspace(string uid);
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial void toast_rename_prefab_root(string path, string newName);
+
+	public static void RenamePrefabRoot(string path, string newName) =>
+		toast_rename_prefab_root(path, newName);
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial void toast_create_tnode(string path, string nodeType);
+
+	public static void CreateTNode(string path, string nodeType) =>
+		toast_create_tnode(path, nodeType);
+
+	[LibraryImport(EngineLib)]
+	private static partial void toast_reload_manifest();
+
+	public static void ReloadManifest() => toast_reload_manifest();
 
 	private delegate IntPtr GameCreate();
 

@@ -1,3 +1,4 @@
+using System;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -7,6 +8,12 @@ namespace editor.Components.Modals;
 public partial class NewFolderModal : Window {
 	public NewFolderModal() {
 		InitializeComponent();
+	}
+
+	protected override void OnOpened(EventArgs e) {
+		base.OnOpened(e);
+		FolderNameBox.SelectAll();
+		FolderNameBox.Focus();
 	}
 
 	private void OnCreate(object? sender, RoutedEventArgs e) {

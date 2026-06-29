@@ -1,6 +1,6 @@
 //! Converts parsed Class structs into NodeInfo data and emits C++ files via Jinja2 templates
 
-use crate::{Class, Field, Attribute};
+use crate::{Class, Field, Function, Attribute};
 use serde::Serialize;
 use serde_json::{to_value, Value as json_t};
 use minijinja::Environment;
@@ -14,10 +14,28 @@ pub struct NodeInfo {
 	pub parent:      Option<ParentInfo>,
 	pub attributes:  json_t,
 	pub functions:   TickFunctions,
+	pub methods:     Vec<FunctionInfo>,
 	pub groups:      Vec<GroupInfo>,
 	pub global_fields: Vec<FieldInfo>,
 	/// Path relative to --include-root
 	pub source_file: String,
+}
+
+#[derive(Serialize)]
+pub struct FunctionInfo {
+	pub name:        String,
+	pub return_type: String,
+	pub parameters:  Vec<ParameterInfo>,
+	#[serde(skip)]
+	pub is_const:    bool,
+}
+
+#[derive(Serialize)]
+pub struct ParameterInfo {
+	pub name:     String,
+	#[serde(rename = "type")]
+	pub typename: String,
+	pub default:  Option<String>,
 }
 
 #[derive(Serialize)]
@@ -129,6 +147,19 @@ fn build_field(field: &Field) -> FieldInfo {
 	}
 }
 
+fn build_method(func: &Function) -> FunctionInfo {
+	FunctionInfo {
+		name:        func.name.clone(),
+		return_type: func.return_type.clone(),
+		parameters:  func.parameters.iter().map(|p| ParameterInfo {
+			name:     p.name.clone(),
+			typename: p.type_name.clone(),
+			default:  p.default.clone(),
+		}).collect(),
+		is_const:    func.is_const,
+	}
+}
+
 const RESERVED_FIELD_NAMES: &[&str] = &["m_uid", "m_name", "m_local_enabled", "m_parent", "m_source_prefab"];
 
 /// Rejects reflected definitions that would collide with engine-reserved member names
@@ -222,6 +253,7 @@ pub fn build_node(class: &Class, source_file: &str) -> NodeInfo {
 		parent:       class.parent.as_ref().map(|p| ParentInfo { name: p.name.clone(), namespace: p.namespace.clone() }),
 		attributes:   attrs_to_json(&class.attributes),
 		functions,
+		methods:      class.methods.iter().map(build_method).collect(),
 		groups,
 		global_fields,
 		source_file:  source_file.to_string(),
@@ -355,6 +387,27 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 		.map(|(flag, method)| serde_json::json!({ "flag": flag, "method": method }))
 		.collect();
 
+	// Reflected functions
+	let methods_ctx: Vec<json_t> = node.methods.iter().map(|m| {
+		let params: Vec<json_t> = m.parameters.iter().enumerate().map(|(i, p)| {
+			serde_json::json!({
+				"index":           i,
+				"arg_name":        format!("a{i}"),
+				"name":            p.name,
+				"type":            p.typename,
+				"default":         p.default,
+				"default_escaped": p.default.as_deref().map(cpp_escape),
+			})
+		}).collect();
+
+		serde_json::json!({
+			"name":        m.name,
+			"return_type": m.return_type,
+			"parameters":  params,
+			"is_const":    m.is_const,
+		})
+	}).collect();
+
 	// Whether any reflected field is an asset handle
 	let has_asset_handle = node.global_fields.iter().any(|f| f.typename.contains("AssetHandle<"))
 		|| node.groups.iter().any(|g| {
@@ -374,12 +427,17 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 		"global_field_indices":  global_field_indices,
 		"groups":                augmented_groups,
 		"active_tick_fns":       active_tick_fns,
+		"methods":               methods_ctx,
 		"has_asset_handle":      has_asset_handle,
 	})
 }
 
 fn to_snake(s: &str) -> std::string::String {
 	s.to_lowercase().replace(' ', "_")
+}
+
+fn cpp_escape(s: &str) -> std::string::String {
+	s.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
 pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str) {

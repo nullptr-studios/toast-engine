@@ -91,7 +91,7 @@ private:
 	}
 
 	const VulkanCore* m_core = nullptr;
-	vk::Extent2D m_extent {};
+	vk::Extent2D m_extent;
 	vk::Format m_color_format = vk::Format::eB8G8R8A8Unorm;
 
 	std::mutex m_frame_mutex;

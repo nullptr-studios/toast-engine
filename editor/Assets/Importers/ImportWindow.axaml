@@ -4,17 +4,26 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:editor.Assets.Importers"
         xmlns:lucide="using:Lucide.Avalonia"
+        xmlns:elements="using:editor.Components.Elements"
+        xmlns:conv="using:editor.Components.Converters"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="900"
-        Height="900" Width="800"
-        MinHeight="600"
+        Height="900" Width="850"
+        MinHeight="600" MinWidth="850"
         CanResize="True"
         CanMaximize="False"
+        WindowStartupLocation="CenterOwner"
         x:Class="editor.Assets.Importers.ImportWindow"
         x:DataType="local:ImportWindowViewModel"
         Title="Import"
+        Padding="8"
         Background="{StaticResource Bg2}">
 
+	<Window.Resources>
+		<conv:ResourceBrushConverter x:Key="BrushFromKey" />
+	</Window.Resources>
+
 	<Window.Styles>
+		<!-- Tree row button -->
 		<Style Selector="Button.TreeViewRow">
 			<Setter Property="Background" Value="Transparent" />
 			<Setter Property="BorderThickness" Value="0" />
@@ -28,74 +37,372 @@
 				<Setter Property="Background" Value="Transparent" />
 			</Style>
 		</Style>
+
+		<!-- Name segment -->
+		<Style Selector="TextBlock.seg">
+			<Setter Property="Foreground" Value="{StaticResource Text}" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<!-- Name segment highlighted -->
+		<Style Selector="TextBlock.seg.match">
+			<Setter Property="Foreground" Value="{StaticResource Red}" />
+			<Setter Property="FontWeight" Value="Bold" />
+		</Style>
+		<!-- Imported row -->
+		<Style Selector="Button.imported TextBlock.seg">
+			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+			<Setter Property="FontStyle" Value="Italic" />
+		</Style>
+
+		<!-- Custom checkbox for tree rows -->
+		<Style Selector="Button.TreeViewRow CheckBox">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="Template">
+				<ControlTemplate>
+					<Border x:Name="Root"
+					        Width="18" Height="18"
+					        CornerRadius="3"
+					        BorderThickness="1.5"
+					        BorderBrush="{StaticResource TextMuted}"
+					        Background="{TemplateBinding Background}">
+						<Panel>
+							<!-- Checkmark -->
+							<Path x:Name="Checkmark"
+							      Width="12" Height="12"
+							      Data="M 1 5 L 4 9 L 10 1"
+							      Stretch="Uniform"
+							      Stroke="Black"
+							      StrokeThickness="2"
+							      StrokeLineCap="Round"
+							      IsVisible="False"
+							      HorizontalAlignment="Center"
+							      VerticalAlignment="Center" />
+							<!-- Indeterminate dash -->
+							<Rectangle x:Name="IndeterminateMark"
+							           Width="8" Height="2"
+							           Fill="{StaticResource Text}"
+							           IsVisible="False"
+							           HorizontalAlignment="Center"
+							           VerticalAlignment="Center" />
+						</Panel>
+					</Border>
+				</ControlTemplate>
+			</Setter>
+		</Style>
+		<!-- Show check when checked -->
+		<Style Selector="Button.TreeViewRow CheckBox:checked /template/ Path#Checkmark">
+			<Setter Property="IsVisible" Value="True" />
+		</Style>
+		<!-- Show dash when indeterminate -->
+		<Style Selector="Button.TreeViewRow CheckBox:indeterminate /template/ Rectangle#IndeterminateMark">
+			<Setter Property="IsVisible" Value="True" />
+		</Style>
+		<!-- Fresh import -->
+		<Style Selector="Button.TreeViewRow:not(.imported) CheckBox:checked">
+			<Setter Property="Background" Value="{StaticResource Red}" />
+		</Style>
+		<Style Selector="Button.TreeViewRow:not(.imported) CheckBox:checked /template/ Border#Root">
+			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
+		</Style>
+		<!-- Reimport -->
+		<Style Selector="Button.TreeViewRow.imported CheckBox:checked">
+			<Setter Property="Background" Value="{StaticResource Green}" />
+		</Style>
+		<Style Selector="Button.TreeViewRow.imported CheckBox:checked /template/ Border#Root">
+			<Setter Property="BorderBrush" Value="{StaticResource Green}" />
+		</Style>
+
+		<!-- Settings label -->
 		<Style Selector="TextBlock.SettingLabel">
 			<Setter Property="VerticalAlignment" Value="Center" />
 			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+			<Setter Property="TextTrimming" Value="CharacterEllipsis" />
+		</Style>
+
+		<!-- Collapsible header toggle button -->
+		<Style Selector="ToggleButton.hdr">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="Padding" Value="4" />
+			<Setter Property="HorizontalAlignment" Value="Stretch" />
+			<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+			<Setter Property="Foreground" Value="{StaticResource Text}" />
+			<Setter Property="Cursor" Value="Hand" />
+		</Style>
+		<Style Selector="ToggleButton.hdr /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="CornerRadius" Value="6" />
+		</Style>
+		<Style Selector="ToggleButton.hdr:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ToggleButton.hdr:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Bg4}" />
+		</Style>
+
+		<!-- Eye toggle button -->
+		<Style Selector="ToggleButton.eye">
+			<Setter Property="Background" Value="{StaticResource Bg3}" />
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="CornerRadius" Value="6" />
+			<Setter Property="Padding" Value="8,6" />
+		</Style>
+		<Style Selector="ToggleButton.eye /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Bg3}" />
+			<Setter Property="CornerRadius" Value="6" />
+		</Style>
+		<Style Selector="ToggleButton.eye:checked /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Red}" />
+		</Style>
+		<Style Selector="ToggleButton.eye:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ToggleButton.eye:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Red}" />
+		</Style>
+
+		<!-- External section header button -->
+		<Style Selector="ToggleButton.ext-hdr">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="Padding" Value="6,4" />
+			<Setter Property="HorizontalAlignment" Value="Stretch" />
+			<Setter Property="HorizontalContentAlignment" Value="Center" />
+			<Setter Property="CornerRadius" Value="6" />
+			<Setter Property="Cursor" Value="Hand" />
+		</Style>
+		<Style Selector="ToggleButton.ext-hdr /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="CornerRadius" Value="6" />
+		</Style>
+		<Style Selector="ToggleButton.ext-hdr:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ToggleButton.ext-hdr:checked /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Bg4}" />
 		</Style>
 	</Window.Styles>
 
-	<Grid ColumnDefinitions="Auto, *" Margin="12" ColumnSpacing="8">
-		<!-- Tree view column -->
-		<Border Grid.Column="0" Background="{StaticResource Bg1}" CornerRadius="8">
-			<DockPanel Margin="8" MinWidth="360">
-				<TextBox DockPanel.Dock="Bottom"
+	<Window.DataTemplates>
+		<!-- field row -->
+		<DataTemplate DataType="local:SettingFieldVM">
+			<Grid ColumnDefinitions="150,*" ColumnSpacing="8" Margin="0,2">
+				<TextBlock Grid.Column="0" Text="{Binding Label}" Classes="SettingLabel"
+				           ToolTip.Tip="{Binding Tooltip}" />
+				<Panel Grid.Column="1">
+					<elements:BoolBox Value="{Binding BoolValue, Mode=TwoWay}"
+					                  IsVisible="{Binding IsBool}" />
+					<elements:EnumBox Value="{Binding StringValue, Mode=TwoWay}"
+					                  Options="{Binding Options}"
+					                  IsVisible="{Binding IsEnum}" />
+					<elements:DragIntBox Value="{Binding IntValue, Mode=TwoWay}"
+					                     IsVisible="{Binding IsInt}" />
+					<elements:DragFloatBox Value="{Binding FloatValue, Mode=TwoWay}"
+					                       IsVisible="{Binding IsFloat}" />
+					<elements:StringBox Value="{Binding StringValue, Mode=TwoWay}"
+					                    IsVisible="{Binding IsString}" />
+				</Panel>
+			</Grid>
+		</DataTemplate>
+
+		<!--importer settings -->
+		<DataTemplate DataType="local:ImporterSettingsCardVM">
+			<Border Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
+				<StackPanel Spacing="4">
+					<ToggleButton Classes="hdr" IsChecked="{Binding Expanded, Mode=TwoWay}">
+						<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+							<lucide:LucideIcon Kind="{Binding Icon}" Size="16" StrokeWidth="2.5" />
+							<TextBlock Text="{Binding DisplayName}" FontWeight="Bold" VerticalAlignment="Center" />
+						</StackPanel>
+					</ToggleButton>
+					<ItemsControl ItemsSource="{Binding Fields}" Margin="4,0,0,0"
+					              IsVisible="{Binding Expanded}" />
+				</StackPanel>
+			</Border>
+		</DataTemplate>
+
+	</Window.DataTemplates>
+
+	<Grid ColumnDefinitions="4*, 3*" ColumnSpacing="8">
+		<Grid Grid.Column="0" RowDefinitions="Auto,*,Auto" RowSpacing="8">
+			<!-- Search bar -->
+			<Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="4">
+				<TextBox Grid.Column="0"
 				         Text="{Binding SearchText}"
 				         PlaceholderText="Search artwork..."
-				         Margin="0,4,0,0" />
+				         BorderThickness="0"
+				         VerticalContentAlignment="Center"
+				         CornerRadius="6"/>
+				<!-- Eye -->
+				<ToggleButton Grid.Column="1" CornerRadius="6" Classes="eye"
+				              IsChecked="{Binding ShowImported, Mode=TwoWay}">
+					<Panel>
+						<lucide:LucideIcon Kind="EyeOff" Size="18" StrokeWidth="2.5" IsVisible="{Binding !ShowImported}" />
+						<lucide:LucideIcon Kind="Eye" Size="18" StrokeWidth="2.5" IsVisible="{Binding ShowImported}" />
+					</Panel>
+					<ToolTip.Tip>Toggle already-imported items</ToolTip.Tip>
+				</ToggleButton>
+				<Button Grid.Column="2" CornerRadius="6" Background="{StaticResource Bg3}"
+				        Command="{Binding ExpandAllCommand}">
+					<lucide:LucideIcon Kind="ChevronsUpDown" Size="18" StrokeWidth="2.5"/>
+					<ToolTip.Tip>Expand all</ToolTip.Tip>
+				</Button>
+				<Button Grid.Column="3" CornerRadius="6" Background="{StaticResource Bg3}"
+				        Command="{Binding CollapseAllCommand}">
+					<lucide:LucideIcon Kind="ChevronsDownUp" Size="18" StrokeWidth="2.5"/>
+					<ToolTip.Tip>Collapse all</ToolTip.Tip>
+				</Button>
+			</Grid>
 
-				<TreeView ItemsSource="{Binding ImportNodes}">
-					<TreeView.ItemTemplate>
-						<TreeDataTemplate ItemsSource="{Binding (local:ImportFolderViewModel).Children}">
-							<Button Command="{Binding ToggleSelection}"
-							        Classes="TreeViewRow"
-							        IsVisible="{Binding IsVisible}">
-								<StackPanel Orientation="Horizontal"
-								            Opacity="{Binding IsEnabled, Converter={StaticResource BoolToOpacityConverter}}">
-									<CheckBox IsChecked="{Binding IsSelected}"
-									          IsThreeState="True"
-									          IsEnabled="{Binding !IsReadOnly}"
-									          IsHitTestVisible="False"
-									          VerticalAlignment="Center" />
-									<TextBlock Text="{Binding Name}"
-									           VerticalAlignment="Center"
-									           Margin="4,0,0,0"
-									           Foreground="{Binding IsEnabled, Converter={StaticResource EnabledToColorConverter}}" />
-								</StackPanel>
+			<Border Grid.Row="1" Background="{StaticResource Bg1}" CornerRadius="8" Padding="8">
+				<Panel>
+					<!-- Artwork tree -->
+					<TreeView ItemsSource="{Binding ImportNodes}"
+					          IsVisible="{Binding !IsExternal}"
+					          IsEnabled="{Binding !IsExternal}"
+					          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+						<TreeView.ItemsPanel>
+							<ItemsPanelTemplate>
+								<VirtualizingStackPanel />
+							</ItemsPanelTemplate>
+						</TreeView.ItemsPanel>
+						<TreeView.ItemTemplate>
+							<TreeDataTemplate ItemsSource="{Binding (local:ImportFolderViewModel).Children}">
+								<Button Command="{Binding ToggleSelection}"
+								        Classes="TreeViewRow"
+								        Classes.imported="{Binding IsImportedFile}"
+								        IsVisible="{Binding IsVisible}">
+									<StackPanel Orientation="Horizontal"
+									            Opacity="{Binding IsEnabled, Converter={StaticResource BoolToOpacityConverter}}">
+										<CheckBox IsChecked="{Binding IsSelected}"
+										          IsThreeState="True"
+										          IsEnabled="{Binding !IsReadOnly}"
+										          IsHitTestVisible="False"
+										          VerticalAlignment="Center" />
+										<Border IsVisible="{Binding ShowChip}"
+										        Margin="4,0,0,0" Padding="3,1" CornerRadius="3"
+										        VerticalAlignment="Center"
+										        Background="{Binding ChipColor, Converter={StaticResource BrushFromKey}}">
+											<TextBlock Text="{Binding ChipText}" FontSize="9" FontWeight="Bold"
+											           Foreground="{StaticResource Bg1}" />
+										</Border>
+										<ItemsControl Margin="4,0,0,0" VerticalAlignment="Center"
+										              ItemsSource="{Binding NameSegments}"
+										              MaxWidth="400">
+											<ItemsControl.ItemsPanel>
+												<ItemsPanelTemplate>
+													<StackPanel Orientation="Horizontal" />
+												</ItemsPanelTemplate>
+											</ItemsControl.ItemsPanel>
+											<ItemsControl.ItemTemplate>
+												<DataTemplate x:CompileBindings="False">
+													<TextBlock Text="{Binding Text}"
+													           Classes="seg"
+													           Classes.match="{Binding IsHighlighted}" />
+												</DataTemplate>
+											</ItemsControl.ItemTemplate>
+										</ItemsControl>
+									</StackPanel>
+								</Button>
+							</TreeDataTemplate>
+						</TreeView.ItemTemplate>
+						<TreeView.Styles>
+							<Style Selector="TreeViewItem" x:DataType="local:ImportNodeViewModel">
+								<Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+								<Setter Property="IsVisible" Value="{Binding IsVisible}" />
+								<Style Selector="^:selected /template/ ContentPresenter#PART_HeaderPresenter">
+									<Setter Property="Background" Value="Transparent" />
+								</Style>
+								<Style Selector="^:pointerover /template/ ContentPresenter#PART_HeaderPresenter">
+									<Setter Property="Background" Value="Transparent" />
+								</Style>
+							</Style>
+						</TreeView.Styles>
+					</TreeView>
+
+					<!-- External file -->
+					<TextBlock Text="External file import"
+					           IsVisible="{Binding IsExternal}"
+					           HorizontalAlignment="Center"
+					           VerticalAlignment="Center"
+					           FontStyle="Italic"
+					           Foreground="{StaticResource TextMuted}" />
+				</Panel>
+			</Border>
+
+			<!-- External file section -->
+			<Border Grid.Row="2" Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
+				<StackPanel Spacing="8">
+					<!-- Header / expander -->
+					<ToggleButton Classes="ext-hdr" IsChecked="{Binding IsExternal, Mode=TwoWay}">
+						<StackPanel Orientation="Horizontal" Spacing="4">
+							<lucide:LucideIcon Size="16" Kind="ExternalLink" StrokeWidth="2.5"/>
+							<TextBlock Text="External file"/>
+						</StackPanel>
+					</ToggleButton>
+
+					<!-- Expanded content -->
+					<StackPanel Spacing="8" IsVisible="{Binding IsExternal}">
+						<TextBlock Text="Source path:" Foreground="{StaticResource TextMuted}"/>
+						<Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
+							<TextBox Grid.Column="0"
+							         Text="{Binding ExternalSourcePath}"
+							         CornerRadius="6"
+							         BorderThickness="0"
+							         VerticalContentAlignment="Center"
+							         IsEnabled="False"/>
+							<Button Grid.Column="1"
+							        Command="{Binding BrowseExternalSourceCommand}"
+							        ToolTip.Tip="Browse for artwork file"
+							        CornerRadius="6">
+								<lucide:LucideIcon Kind="FileSearch" Size="18" StrokeWidth="2.5" />
 							</Button>
-						</TreeDataTemplate>
-					</TreeView.ItemTemplate>
-					<TreeView.Styles>
-						<Style Selector="TreeViewItem" x:DataType="local:ImportNodeViewModel">
-							<Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-							<Setter Property="IsVisible" Value="{Binding IsVisible}" />
-							<Style Selector="^:selected /template/ ContentPresenter#PART_HeaderPresenter">
-								<Setter Property="Background" Value="Transparent" />
-							</Style>
-							<Style Selector="^:pointerover /template/ ContentPresenter#PART_HeaderPresenter">
-								<Setter Property="Background" Value="Transparent" />
-							</Style>
-						</Style>
-					</TreeView.Styles>
-				</TreeView>
-			</DockPanel>
-		</Border>
+						</Grid>
 
-		<!-- Settings column -->
+						<Grid ColumnDefinitions="180,*">
+							<TextBlock Grid.Column="0" Text="Move to artwork folder"
+							           VerticalAlignment="Center" Foreground="{StaticResource TextMuted}"/>
+							<elements:BoolBox Grid.Column="1" Value="{Binding MoveToArtwork, Mode=TwoWay}"/>
+						</Grid>
+
+						<StackPanel Spacing="8" IsVisible="{Binding MoveToArtwork}">
+							<TextBlock Text="Artwork destination:" Foreground="{StaticResource TextMuted}"/>
+							<Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
+								<TextBox Grid.Column="0"
+								         Text="{Binding ArtworkDestination}"
+								         CornerRadius="6"
+								         BorderThickness="0"
+								         VerticalContentAlignment="Center"
+								         IsEnabled="False"/>
+								<!-- Artwork folder picker -->
+								<Button Grid.Column="1"
+								        Command="{Binding BrowseArtworkDestinationCommand}"
+								        ToolTip.Tip="Browse artwork folder"
+								        CornerRadius="6">
+									<lucide:LucideIcon Kind="FolderOpen" Size="18" StrokeWidth="2.5" />
+								</Button>
+							</Grid>
+						</StackPanel>
+					</StackPanel>
+				</StackPanel>
+			</Border>
+		</Grid>
 		<DockPanel Grid.Column="1">
-
-			<!-- Location row -->
+			<!-- Destination row -->
 			<StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
-				<TextBlock Text="Location" Foreground="#b0b0b0" />
-				<Grid ColumnDefinitions="*, Auto">
+				<TextBlock Text="Destination" Foreground="{StaticResource TextMuted}" />
+				<Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
 					<TextBox Grid.Column="0"
 					         Text="{Binding LocationPath}"
-					         CornerRadius="4,0,0,4" />
+					         CornerRadius="6"
+					         BorderThickness="0"
+					         VerticalContentAlignment="Center"
+					         IsEnabled="False"/>
 					<Button Grid.Column="1"
 					        Command="{Binding BrowseLocationCommand}"
 					        ToolTip.Tip="Browse assets folder"
-					        CornerRadius="0,4,4,0"
-					        Padding="8,4">
-						<lucide:LucideIcon Kind="FolderOpen" Size="16" />
+					        CornerRadius="6">
+						<lucide:LucideIcon Kind="FolderOpen" Size="18" StrokeWidth="2.5" />
 					</Button>
 				</Grid>
 			</StackPanel>
@@ -106,96 +413,32 @@
 			            HorizontalAlignment="Right"
 			            Spacing="8"
 			            Margin="0,8,0,0">
-				<Button Command="{Binding CancelCommand}">
-					<StackPanel Orientation="Horizontal" Spacing="6">
-						<lucide:LucideIcon Kind="X" Size="14" />
+				<Button Command="{Binding CancelCommand}" CornerRadius="6">
+					<StackPanel Orientation="Horizontal" Spacing="4">
+						<lucide:LucideIcon Kind="X" Size="16" StrokeWidth="3" />
 						<TextBlock Text="Cancel" />
 					</StackPanel>
 				</Button>
-				<Button Background="{StaticResource Green}" Command="{Binding ImportCommand}">
-					<StackPanel Orientation="Horizontal" Spacing="6">
-						<lucide:LucideIcon Kind="PackageCheck" Size="14" />
-						<TextBlock Text="Import" />
+				<Button Background="{StaticResource Red}"
+				        Command="{Binding ImportCommand}"
+				        CornerRadius="6">
+					<StackPanel Orientation="Horizontal" Spacing="4">
+						<lucide:LucideIcon Kind="PackageCheck" Size="16" StrokeWidth="2.5" />
+						<TextBlock Text="Import" FontWeight="Bold"/>
 					</StackPanel>
 				</Button>
 			</StackPanel>
 
-			<!-- Asset type settings tree -->
-			<TreeView>
-				<TreeViewItem Header="Textures" IsExpanded="True">
-					<StackPanel Margin="8,6" Spacing="8"
-					            x:DataType="local:ImportWindowViewModel">
-						<CheckBox Content="Generate Mipmaps"
-						          IsChecked="{Binding TextureSettings.GenerateMipmaps}" />
-
-						<Grid ColumnDefinitions="130, *" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
-						      RowSpacing="6" ColumnSpacing="12">
-
-							<TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Max Resolution" />
-							<ComboBox Grid.Row="0" Grid.Column="1"
-							          ItemsSource="{x:Static local:TextureImporter+Settings.AllMaxResolutions}"
-							          SelectedItem="{Binding TextureSettings.MaxResolution}"
-							          HorizontalAlignment="Stretch" />
-
-							<TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Compression" />
-							<ComboBox Grid.Row="1" Grid.Column="1"
-							          ItemsSource="{x:Static local:TextureImporter+Settings.AllCompressions}"
-							          SelectedItem="{Binding TextureSettings.Compression}"
-							          HorizontalAlignment="Stretch" />
-
-							<TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Super Compression" />
-							<ComboBox Grid.Row="2" Grid.Column="1"
-							          ItemsSource="{x:Static local:TextureImporter+Settings.AllSuperCompressions}"
-							          SelectedItem="{Binding TextureSettings.SuperCompression}"
-							          HorizontalAlignment="Stretch" />
-
-							<TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Address U" />
-							<ComboBox Grid.Row="3" Grid.Column="1"
-							          ItemsSource="{x:Static local:TextureImporter+Settings.AllAddressModes}"
-							          SelectedItem="{Binding TextureSettings.AddressU}"
-							          HorizontalAlignment="Stretch" />
-
-							<TextBlock Grid.Row="4" Grid.Column="0" Classes="SettingLabel" Text="Address V" />
-							<ComboBox Grid.Row="4" Grid.Column="1"
-							          ItemsSource="{x:Static local:TextureImporter+Settings.AllAddressModes}"
-							          SelectedItem="{Binding TextureSettings.AddressV}"
-							          HorizontalAlignment="Stretch" />
-
-							<TextBlock Grid.Row="5" Grid.Column="0" Classes="SettingLabel" Text="Filter" />
-							<ComboBox Grid.Row="5" Grid.Column="1"
-							          ItemsSource="{x:Static local:TextureImporter+Settings.AllFilterModes}"
-							          SelectedItem="{Binding TextureSettings.Filter}"
-							          HorizontalAlignment="Stretch" />
-
-							<TextBlock Grid.Row="6" Grid.Column="0" Classes="SettingLabel" Text="Anisotropy" />
-							<NumericUpDown Grid.Row="6" Grid.Column="1"
-							               Value="{Binding TextureSettings.Anisotropy}"
-							               Minimum="1" Maximum="16" Increment="1"
-							               FormatString="0.0"
-							               HorizontalAlignment="Stretch" />
-						</Grid>
-					</StackPanel>
-				</TreeViewItem>
-
-				<TreeViewItem Header="GLTF" IsEnabled="False">
-					<TextBlock Text="Not yet supported" Margin="8" Foreground="{StaticResource Bg5}" />
-				</TreeViewItem>
-
-				<TreeViewItem Header="PSD">
-					<StackPanel Margin="8,6" Spacing="8" x:DataType="local:ImportWindowViewModel">
-						<CheckBox Content="Create subfolder" IsChecked="{Binding PsdSettings.CreateFolder}" />
-
-						<Grid ColumnDefinitions="130, *" RowDefinitions="Auto"
-						      RowSpacing="6" ColumnSpacing="1">
-							<TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Mode" />
-							<ComboBox Grid.Row="0" Grid.Column="1"
-							          ItemsSource="{x:Static local:PsdImporter+Settings.AllImportModes}"
-							          SelectedItem="{Binding PsdSettings.ImportMode}"
-							          HorizontalAlignment="Stretch" />
-						</Grid>
-					</StackPanel>
-				</TreeViewItem>
-			</TreeView>
+			<!-- Importer settings -->
+			<ScrollViewer>
+				<ItemsControl ItemsSource="{Binding SettingsCards}" Margin="0,0,0,8">
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<StackPanel Spacing="8" />
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
+				</ItemsControl>
+			</ScrollViewer>
 		</DockPanel>
 	</Grid>
 </Window>

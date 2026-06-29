@@ -112,9 +112,13 @@ public sealed class StringBox : TemplatedControl {
 	}
 
 	private void OnEditorKeyDown(object? sender, KeyEventArgs e) {
-		if (e.Key != Key.Escape) return;
-		CancelEdit();
-		e.Handled = true;
+		if (e.Key == Key.Escape) {
+			CancelEdit();
+			e.Handled = true;
+		} else if (e.Key == Key.Enter) {
+			CommitEdit();
+			e.Handled = true;
+		}
 	}
 
 	private void OnEditorLostFocus(object? sender, RoutedEventArgs e) => CommitEdit();

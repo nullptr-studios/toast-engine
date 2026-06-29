@@ -34,6 +34,25 @@ public sealed class ArrayBox : TemplatedControl {
 	public static readonly StyledProperty<bool> CanAddRemoveProperty =
 		AvaloniaProperty.Register<ArrayBox, bool>(nameof(CanAddRemove), true);
 
+	public static readonly StyledProperty<string> AddLabelProperty =
+		AvaloniaProperty.Register<ArrayBox, string>(nameof(AddLabel), "Add");
+
+	public static readonly StyledProperty<System.Windows.Input.ICommand?> AddCommandProperty =
+		AvaloniaProperty.Register<ArrayBox, System.Windows.Input.ICommand?>(nameof(AddCommand));
+
+	// When set, each row is wrapped in a card Border with these styles
+	public static readonly StyledProperty<IBrush?> RowBackgroundProperty =
+		AvaloniaProperty.Register<ArrayBox, IBrush?>(nameof(RowBackground));
+
+	public static readonly StyledProperty<CornerRadius> RowCornerRadiusProperty =
+		AvaloniaProperty.Register<ArrayBox, CornerRadius>(nameof(RowCornerRadius));
+
+	public static readonly StyledProperty<Thickness> RowPaddingProperty =
+		AvaloniaProperty.Register<ArrayBox, Thickness>(nameof(RowPadding));
+
+	public static readonly StyledProperty<double> ItemSpacingProperty =
+		AvaloniaProperty.Register<ArrayBox, double>(nameof(ItemSpacing), 4.0);
+
 	private ItemsControl? m_items;
 	private Button? m_add;
 
@@ -65,6 +84,36 @@ public sealed class ArrayBox : TemplatedControl {
 		set => SetValue(CanAddRemoveProperty, value);
 	}
 
+	public string AddLabel {
+		get => GetValue(AddLabelProperty);
+		set => SetValue(AddLabelProperty, value);
+	}
+
+	public System.Windows.Input.ICommand? AddCommand {
+		get => GetValue(AddCommandProperty);
+		set => SetValue(AddCommandProperty, value);
+	}
+
+	public IBrush? RowBackground {
+		get => GetValue(RowBackgroundProperty);
+		set => SetValue(RowBackgroundProperty, value);
+	}
+
+	public CornerRadius RowCornerRadius {
+		get => GetValue(RowCornerRadiusProperty);
+		set => SetValue(RowCornerRadiusProperty, value);
+	}
+
+	public Thickness RowPadding {
+		get => GetValue(RowPaddingProperty);
+		set => SetValue(RowPaddingProperty, value);
+	}
+
+	public double ItemSpacing {
+		get => GetValue(ItemSpacingProperty);
+		set => SetValue(ItemSpacingProperty, value);
+	}
+
 	public Func<object?>? ItemFactory { get; set; }
 
 	protected override Type StyleKeyOverride => typeof(ArrayBox);
@@ -77,13 +126,14 @@ public sealed class ArrayBox : TemplatedControl {
 		m_add = e.NameScope.Find<Button>("PART_Add");
 
 		if (m_items != null) {
+			m_items.ItemsPanel = new FuncTemplate<Panel?>(() => new StackPanel { Spacing = ItemSpacing });
 			m_items.ItemTemplate = new FuncDataTemplate<object>((item, _) => BuildRow(item), false);
 			m_items.ItemsSource = Items;
 		}
 
 		if (m_add != null) {
 			m_add.Click += OnAddClick;
-			m_add.IsVisible = CanAddRemove && ItemFactory != null;
+			m_add.IsVisible = CanAddRemove && (ItemFactory != null || AddCommand != null);
 		}
 	}
 
@@ -97,88 +147,170 @@ public sealed class ArrayBox : TemplatedControl {
 		else if (change.Property == ItemTemplateProperty) {
 			m_items.ItemTemplate = new FuncDataTemplate<object>((item, _) => BuildRow(item), false);
 		}
-		else if ((change.Property == CanAddRemoveProperty || change.Property == IsEnabledProperty) && m_add != null) {
-			m_add.IsVisible = CanAddRemove && ItemFactory != null;
+		else if (change.Property == ItemSpacingProperty && m_items != null) {
+			m_items.ItemsPanel = new FuncTemplate<Panel?>(() => new StackPanel { Spacing = ItemSpacing });
+		}
+		else if ((change.Property == CanAddRemoveProperty || change.Property == IsEnabledProperty
+		          || change.Property == AddCommandProperty) && m_add != null) {
+			m_add.IsVisible = CanAddRemove && (ItemFactory != null || AddCommand != null);
 		}
 	}
 
 	private void OnAddClick(object? sender, RoutedEventArgs e) {
+		if (AddCommand?.CanExecute(null) == true) {
+			AddCommand.Execute(null);
+			return;
+		}
 		if (ItemFactory is { } factory && Items is { } list && factory() is { } item) list.Add(item);
 	}
 
+	// Walk the logical tree to find a DataTemplate that matches item
+	private IDataTemplate? FindAmbientTemplate(object item) {
+		Control? host = this;
+		while (host != null) {
+			if (host is IDataTemplateHost dth)
+				foreach (var t in dth.DataTemplates)
+					if (t.Match(item)) return t;
+			host = host.Parent as Control;
+		}
+		if (Application.Current is IDataTemplateHost app)
+			foreach (var t in app.DataTemplates)
+				if (t.Match(item)) return t;
+		return null;
+	}
+
 	private Control BuildRow(object item) {
-		var grid = new Grid {
-			ColumnSpacing = 6,
-			ColumnDefinitions = new ColumnDefinitions {
-				new(GridLength.Auto),
-				new(GridLength.Star),
-				new(GridLength.Auto)
-			}
+		var template = ItemTemplate ?? FindAmbientTemplate(item);
+		var builtContent = template?.Build(item);
+
+		// Split header from body only when the item opts in via IRowSplittable
+		bool shouldSplit = item is IRowSplittable r && r.ShouldSplitRow;
+		if (builtContent is StackPanel { Children.Count: > 1 } sp && (CanReorder || CanAddRemove)
+		    && shouldSplit)
+			return BuildSplitRow(item, sp);
+
+		return BuildSingleRow(item, builtContent);
+	}
+
+	private Control BuildSplitRow(object item, StackPanel sp) {
+		var rowSpacing = sp.Spacing;
+		var firstChild = sp.Children[0];
+		sp.Children.RemoveAt(0);
+
+		var outerGrid = new Grid {
+			RowDefinitions    = new RowDefinitions("Auto,Auto"),
+			ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+			ColumnSpacing     = 6,
+			RowSpacing        = rowSpacing
 		};
 
-		// Drag handle
-		var grip = new Border {
-			Background = Brushes.Transparent,
-			Cursor = new Cursor(StandardCursorType.SizeAll),
-			Padding = new Thickness(2),
-			VerticalAlignment = VerticalAlignment.Center,
-			IsVisible = CanReorder,
-			Child = new LucideIcon {
-				Kind = LucideIconKind.GripVertical,
-				Size = 16,
-				StrokeWidth = 2,
-				Foreground = Brush("TextMuted")
-			}
-		};
-		grip.PointerPressed += (_, e) => OnGripPressed(item, e);
-		grip.PointerMoved += OnGripMoved;
-		grip.PointerReleased += OnGripReleased;
+		var grip = MakeGrip(item);
+		Grid.SetRow(grip, 0);
 		Grid.SetColumn(grip, 0);
+		outerGrid.Children.Add(grip);
 
-		var content = new ContentControl {
-			Content = item,
-			ContentTemplate = ItemTemplate,
-			VerticalAlignment = VerticalAlignment.Center
-		};
-		Grid.SetColumn(content, 1);
+		Grid.SetRow(firstChild, 0);
+		Grid.SetColumn(firstChild, 1);
+		outerGrid.Children.Add(firstChild);
 
-		var remove = new Button {
-			Width = 20,
-			Height = 20,
-			Padding = new Thickness(0),
-			Background = Brushes.Transparent,
-			BorderThickness = new Thickness(0),
-			CornerRadius = new CornerRadius(6),
-			Cursor = new Cursor(StandardCursorType.Hand),
-			VerticalAlignment = VerticalAlignment.Center,
-			IsVisible = CanAddRemove,
-			Content = new LucideIcon {
-				Kind = LucideIconKind.X,
-				Size = 12,
-				StrokeWidth = 2.5,
-				Foreground = Brush("TextMuted")
-			}
-		};
-		remove.Click += (_, _) => Items?.Remove(item);
+		var remove = MakeRemoveButton(item);
+		Grid.SetRow(remove, 0);
 		Grid.SetColumn(remove, 2);
+		outerGrid.Children.Add(remove);
 
+		if (sp.Children.Count > 0) {
+			Grid.SetRow(sp, 1);
+			Grid.SetColumnSpan(sp, 3);
+			outerGrid.Children.Add(sp);
+		}
+
+		return WrapRow(item, outerGrid);
+	}
+
+	private Control BuildSingleRow(object item, Control? builtContent) {
+		var grid = new Grid {
+			ColumnSpacing     = 6,
+			ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto")
+		};
+
+		var grip = MakeGrip(item);
+		Grid.SetColumn(grip, 0);
 		grid.Children.Add(grip);
+
+		Control content = builtContent ?? new ContentControl { Content = item, ContentTemplate = ItemTemplate };
+		Grid.SetColumn(content, 1);
 		grid.Children.Add(content);
+
+		var remove = MakeRemoveButton(item);
+		Grid.SetColumn(remove, 2);
 		grid.Children.Add(remove);
 
-		// Wrap the row so a red insertion line can overlay its top/bottom edge while dragging
-		var topLine = MakeInsertLine(VerticalAlignment.Top);
+		return WrapRow(item, grid);
+	}
+
+	private Border MakeGrip(object item) {
+		var grip = new Border {
+			Background        = Brushes.Transparent,
+			Cursor            = new Cursor(StandardCursorType.SizeAll),
+			Padding           = new Thickness(2),
+			VerticalAlignment = VerticalAlignment.Center,
+			IsVisible         = CanReorder,
+			Child = new LucideIcon {
+				Kind        = LucideIconKind.GripVertical,
+				Size        = 16,
+				StrokeWidth = 2,
+				Foreground  = Brush("TextMuted")
+			}
+		};
+		grip.PointerPressed  += (_, e) => OnGripPressed(item, e);
+		grip.PointerMoved    += OnGripMoved;
+		grip.PointerReleased += OnGripReleased;
+		return grip;
+	}
+
+	private Button MakeRemoveButton(object item) {
+		var btn = new Button {
+			Width             = 20,
+			Height            = 20,
+			Padding           = new Thickness(0),
+			Background        = Brushes.Transparent,
+			BorderThickness   = new Thickness(0),
+			CornerRadius      = new CornerRadius(6),
+			Cursor            = new Cursor(StandardCursorType.Hand),
+			VerticalAlignment = VerticalAlignment.Center,
+			IsVisible         = CanAddRemove,
+			Content = new LucideIcon {
+				Kind        = LucideIconKind.X,
+				Size        = 16,
+				StrokeWidth = 2.5,
+				Foreground  = Brush("TextMuted")
+			}
+		};
+		btn.Click += (_, _) => Items?.Remove(item);
+		return btn;
+	}
+
+	private Control WrapRow(object item, Control rowContent) {
+		Control wrapped = RowBackground is not null
+			? new Border {
+				Background   = RowBackground,
+				CornerRadius = RowCornerRadius,
+				Padding      = RowPadding,
+				Child        = rowContent
+			}
+			: rowContent;
+
+		var topLine    = MakeInsertLine(VerticalAlignment.Top);
 		var bottomLine = MakeInsertLine(VerticalAlignment.Bottom);
-		var row = new Grid();
-		row.Children.Add(grid);
+		var row        = new Grid();
+		row.Children.Add(wrapped);
 		row.Children.Add(topLine);
 		row.Children.Add(bottomLine);
 
-		// Every row is a drop target so the dragged item can land relative to it
 		DragDrop.SetAllowDrop(row, true);
-		row.AddHandler(DragDrop.DragOverEvent, (_, e) => OnRowDragOver(row, topLine, bottomLine, e));
-		row.AddHandler(DragDrop.DropEvent, (_, e) => OnRowDrop(item, row, e));
-		row.AddHandler(DragDrop.DragLeaveEvent, (_, _) => OnRowDragLeave(topLine, bottomLine));
+		row.AddHandler(DragDrop.DragOverEvent,  (_, e) => OnRowDragOver(row, topLine, bottomLine, e));
+		row.AddHandler(DragDrop.DropEvent,       (_, e) => OnRowDrop(item, row, e));
+		row.AddHandler(DragDrop.DragLeaveEvent,  (_, _) => OnRowDragLeave(topLine, bottomLine));
 
 		return row;
 	}

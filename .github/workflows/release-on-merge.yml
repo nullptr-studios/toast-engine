@@ -13,7 +13,7 @@ permissions:
 jobs:
   release:
     name: tag and release
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
     if: github.event.pull_request.merged == true && github.event.pull_request.base.repo.fork == false && github.event.pull_request.base.repo.full_name == github.repository
     steps:
       - name: Checkout repository

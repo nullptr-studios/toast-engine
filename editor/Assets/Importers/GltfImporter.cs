@@ -7,22 +7,62 @@ using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using editor.Assets;
+using editor.Assets.Types;
 using editor.Workspace;
+using Lucide.Avalonia;
 
 namespace editor.Assets.Importers;
 
 public partial class GltfImporter : IAssetImporter {
 	private readonly Settings m_settings;
 	private readonly TextureImporter.Settings m_textureSettings;
+	private readonly TextureImporter m_textureImporter;
 
 	public GltfImporter(Settings settings, TextureImporter.Settings textureSettings) {
 		m_settings = settings;
 		m_textureSettings = textureSettings;
+		m_textureImporter = new TextureImporter(textureSettings);
 	}
 
 	public IReadOnlyList<string> SupportedExtensions => [".glb"];
 
-	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log) {
+	public string DisplayName => "Mesh";
+	public LucideIconKind Icon => LucideIconKind.Box;
+
+	public BaseAsset PrimaryOutputType => AssetTypeRegistry.ByExtension(".tmesh")!;
+
+	public IReadOnlyList<IAssetImporter> GetAllSettingsImporters() => [this, m_textureImporter];
+
+	public IReadOnlyList<ImporterSetting> GetSettings() => [
+		new ImporterSetting("Create Subfolder", SettingKind.Bool,
+			() => m_settings.CreateSubfolder,
+			v => m_settings.CreateSubfolder = (bool)v!),
+		new ImporterSetting("Import Materials", SettingKind.Bool,
+			() => m_settings.ImportMaterials,
+			v => m_settings.ImportMaterials = (bool)v!),
+		new ImporterSetting("Import Textures", SettingKind.Bool,
+			() => m_settings.ImportTextures,
+			v => m_settings.ImportTextures = (bool)v!),
+		new ImporterSetting("Import Cameras", SettingKind.Bool,
+			() => m_settings.ImportCameras,
+			v => m_settings.ImportCameras = (bool)v!),
+		new ImporterSetting("Import Lights", SettingKind.Bool,
+			() => m_settings.ImportLights,
+			v => m_settings.ImportLights = (bool)v!),
+		new ImporterSetting("Generate Prefab", SettingKind.Bool,
+			() => m_settings.GeneratePrefab,
+			v => m_settings.GeneratePrefab = (bool)v!),
+	];
+
+	public IReadOnlyList<BaseAsset> OutputTypes => [
+		AssetTypeRegistry.ByExtension(".tmesh")!,
+		AssetTypeRegistry.ByExtension(".tnode")!,
+		AssetTypeRegistry.ByExtension(".ktx2")!,
+		AssetTypeRegistry.ByExtension(".tmat")!,
+	];
+
+	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log,
+		Action<double>? progress = null) {
 		var name = Path.GetFileNameWithoutExtension(realSourcePath);
 		var destDir = ctx.DestDir;
 
@@ -35,19 +75,32 @@ public partial class GltfImporter : IAssetImporter {
 		log($"Generating intermediates in cached://{name}...");
 		gltf_generate_intermediates(realSourcePath);
 
-		DirectoryInfo dir = new DirectoryInfo(Path.Combine(Path.GetFullPath(ProjectContext.CachePath), name));
-		var files = dir.GetFiles();
+		DirectoryInfo tempDir = new DirectoryInfo(Path.Combine(Path.GetFullPath(ProjectContext.CachePath), name));
+		var files = tempDir.GetFiles();
 		if (files is null) {
-			throw new Exception($"Directory {dir.FullName} was empty");
+			throw new Exception($"Directory {tempDir.FullName} was empty");
 		}
 
 		var byExtension = files.GroupBy(f => f.Extension).ToDictionary(g => g.Key, g => g.ToList());
 
-		var importedPaths = new List<string>();
+		var importedUids = new List<string>();
+
+		// Count total items for fractional progress
+		var meshes = byExtension.GetValueOrDefault(".tmesh") ?? [];
+		var textures = (m_settings.ImportTextures
+			? (byExtension.GetValueOrDefault(".png") ?? []).Concat(byExtension.GetValueOrDefault(".jpg") ?? []).ToList()
+			: []);
+		var materials = m_settings.ImportMaterials ? byExtension.GetValueOrDefault(".tmat") ?? [] : [];
+		var scenes = m_settings.GeneratePrefab ? byExtension.GetValueOrDefault(".json") ?? [] : [];
+		var totalItems = meshes.Count + (textures.Count * 10) + materials.Count + scenes.Count * 2; // *2: patch + create
+		var doneItems = 0;
+
+		void ReportProgress() {
+			if (totalItems > 0) progress?.Invoke((double)doneItems / totalItems);
+		}
 
 		// Meshes
 		var meshUids = new Dictionary<string, string>();
-		var meshes = byExtension.GetValueOrDefault(".tmesh") ?? [];
 		log($"Importing {meshes.Count} meshes");
 		foreach (var m in meshes) {
 			var meshName = Path.GetFileNameWithoutExtension(m.Name);
@@ -60,17 +113,16 @@ public partial class GltfImporter : IAssetImporter {
 			File.Copy(m.FullName, destPath, true);
 
 			log("Writing .meta sidecar...");
-			var header = new MetaHeader { Uid = uid, Type = "mesh", Source = ctx.SourceVirtualPath };
+			var header = new MetaHeader { Uid = uid, Type = AssetTypeRegistry.ByExtension(".tmesh")!.Type, Source = ctx.SourceVirtualPath };
 			MetaFile.Write(destPath, header, m_settings.ToSection());
-			importedPaths.Add(destPath);
+			importedUids.Add(uid);
+			doneItems++;
+			ReportProgress();
 		}
 
 		// Textures
 		var textureUids = new Dictionary<string, string>();
-		if (m_settings.ImportMaterials) {
-			var textures = (byExtension.GetValueOrDefault(".png") ?? [])
-				.Concat(byExtension.GetValueOrDefault(".jpg") ?? [])
-				.ToList();
+		if (m_settings.ImportTextures) {
 			log($"Importing {textures.Count} textures...");
 			foreach (var t in textures) {
 				var texName = Path.GetFileNameWithoutExtension(t.Name);
@@ -82,20 +134,21 @@ public partial class GltfImporter : IAssetImporter {
 				log("Converting to KTX2...");
 				await KtxWriter.ConvertTexture(t.FullName, destPath, m_textureSettings, log);
 
-				log("Generating thmbnail...");
+				log("Generating thumbnail...");
 				await Task.Run(() => ThumbnailService.Generate(t.FullName, uid));
 
 				log("Writing .meta sidecar...");
-				var header = new MetaHeader { Uid = uid, Type = "texture", Source = ctx.SourceVirtualPath };
+				var header = new MetaHeader { Uid = uid, Type = AssetTypeRegistry.ByExtension(".ktx2")!.Type, Source = ctx.SourceVirtualPath };
 				MetaFile.Write(destPath, header, m_textureSettings.ToSection(), m_settings.ToSection());
-				importedPaths.Add(destPath);
+				importedUids.Add(uid);
+				doneItems += 10;
+				ReportProgress();
 			}
 		}
 
 		// Materials
 		var materialUids = new Dictionary<string, string>();
 		if (m_settings.ImportMaterials) {
-			var materials = byExtension.GetValueOrDefault(".tmat") ?? [];
 			log($"Importing {materials.Count} materials...");
 			foreach (var m in materials) {
 				var matName = Path.GetFileNameWithoutExtension(m.Name);
@@ -112,9 +165,11 @@ public partial class GltfImporter : IAssetImporter {
 				await File.WriteAllTextAsync(destPath, toml);
 
 				log("Writing .meta sidecar...");
-				var header = new MetaHeader { Uid = uid, Type = "material", Source = ctx.SourceVirtualPath };
+				var header = new MetaHeader { Uid = uid, Type = AssetTypeRegistry.ByExtension(".tmat")!.Type, Source = ctx.SourceVirtualPath };
 				MetaFile.Write(destPath, header, m_settings.ToSection());
-				importedPaths.Add(destPath);
+				importedUids.Add(uid);
+				doneItems++;
+				ReportProgress();
 			}
 		}
 
@@ -123,7 +178,6 @@ public partial class GltfImporter : IAssetImporter {
 
 		// Scenes
 		log("Updating scene intermediates with UIDs...");
-		var scenes = byExtension.GetValueOrDefault(".json") ?? [];
 		foreach (var s in scenes) {
 			log($"Scene {Path.GetFileNameWithoutExtension(s.Name)}");
 
@@ -148,6 +202,8 @@ public partial class GltfImporter : IAssetImporter {
 
 			PatchNode(json);
 			await File.WriteAllTextAsync(s.FullName, json.ToJsonString());
+			doneItems++;
+			ReportProgress();
 		}
 
 		// Scenes
@@ -162,18 +218,21 @@ public partial class GltfImporter : IAssetImporter {
 			gltf_create_tnode(s.FullName, destPath);
 
 			log("Writing .meta sidecar...");
-			var header = new MetaHeader { Uid = uid, Type = "node", Source = ctx.SourceVirtualPath };
+			var header = new MetaHeader { Uid = uid, Type = AssetTypeRegistry.ByExtension(".tnode")!.Type, Source = ctx.SourceVirtualPath };
 			MetaFile.Write(destPath, header, m_settings.ToSection());
-			importedPaths.Add(destPath);
+			importedUids.Add(uid);
+			doneItems++;
+			ReportProgress();
 		}
 
 		log("Rebuilding asset database...");
 		AssetDatabase.RebuildAssetDatabase();
 
 		log("Removing intermediates...");
-		if (Directory.Exists(destDir)) Directory.Delete(destDir, true);
+		if (Directory.Exists(tempDir.FullName)) Directory.Delete(tempDir.FullName, true);
 
-		return importedPaths;
+		progress?.Invoke(1.0);
+		return importedUids;
 	}
 
 	public partial class Settings : ObservableObject {
