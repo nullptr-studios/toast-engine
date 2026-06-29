@@ -39,11 +39,6 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 1
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v30
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
 
       - name: Setup vcpkg
         id: vcpkg
@@ -52,6 +47,7 @@ jobs:
       - name: Build
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          rustup toolchain install stable --no-self-update
           BASE_TYPE=${{ matrix.build_type }}
           BUILD_TYPE=$([ "$BASE_TYPE" == "debug" ] && echo "Debug" || echo "Release")
           cmake -B build/linux-${{ matrix.compiler }}-${{ matrix.build_type }} \
@@ -78,12 +74,6 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 1
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v30
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Setup vcpkg
         id: vcpkg
         uses: ./.github/actions/setup-vcpkg
@@ -91,6 +81,7 @@ jobs:
       - name: Build
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          rustup toolchain install stable --no-self-update
           BASE_TYPE=${{ matrix.build_type }}
           BUILD_TYPE=$([ "$BASE_TYPE" == "debug" ] && echo "Debug" || echo "Release")
           cmake -B build/linux-clang-${{ matrix.build_type }} \
@@ -113,12 +104,6 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 1
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v30
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Setup vcpkg
         id: vcpkg
         uses: ./.github/actions/setup-vcpkg
@@ -128,6 +113,7 @@ jobs:
           TRACY_NO_INVARIANT_CHECK: "1"
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          rustup toolchain install stable --no-self-update
           cmake -B build/linux-test-debug \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
@@ -151,9 +137,6 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v30
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Setup vcpkg
         id: vcpkg
         uses: ./.github/actions/setup-vcpkg
@@ -163,6 +146,7 @@ jobs:
           TRACY_NO_INVARIANT_CHECK: "1"
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          rustup toolchain install stable --no-self-update
           cmake -B build/linux-test-release \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
@@ -189,9 +173,6 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v30
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Setup vcpkg
         id: vcpkg
         uses: ./.github/actions/setup-vcpkg
@@ -199,6 +180,7 @@ jobs:
       - name: Build ${{ matrix.tool }}
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          rustup toolchain install stable --no-self-update
           cmake -B build/linux-tools-debug \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
@@ -225,9 +207,6 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v30
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Setup vcpkg
         id: vcpkg
         uses: ./.github/actions/setup-vcpkg
@@ -235,6 +214,7 @@ jobs:
       - name: Build ${{ matrix.tool }}
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          rustup toolchain install stable --no-self-update
           cmake -B build/linux-tools-release \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
