@@ -22,7 +22,7 @@ concurrency:
 jobs:
   build-linux-gcc:
     name: build linux ${{ matrix.compiler }} ${{ matrix.build_type }}
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
     strategy:
       matrix:
         compiler: [gcc]
@@ -62,7 +62,7 @@ jobs:
   build-linux-clang:
     name: build linux clang ${{ matrix.build_type }}
     if: github.base_ref == 'main'
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
     strategy:
       matrix:
         build_type: [debug, release]
@@ -99,7 +99,7 @@ jobs:
   test-linux-debug:
     name: test linux debug
     needs: build-linux-gcc
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
 
     steps:
       - name: Checkout repository
@@ -132,7 +132,7 @@ jobs:
     name: test linux release
     needs: build-linux-gcc
     if: github.base_ref == 'main'
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
     
     steps:
       - name: Checkout repository
@@ -164,7 +164,7 @@ jobs:
   build-tools-linux-debug:
     name: build ${{ matrix.tool }} linux debug
     needs: build-linux-gcc
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
     strategy:
       matrix:
         tool: [editor, player, log_server, kenzo]
@@ -198,7 +198,7 @@ jobs:
     name: build ${{ matrix.tool }} linux release
     needs: build-linux-gcc
     if: github.base_ref == 'main'
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
     strategy:
       matrix:
         tool: [editor, player, log_server, kenzo]

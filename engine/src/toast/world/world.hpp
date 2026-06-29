@@ -83,7 +83,7 @@ struct TickSchedule {
 class World final : public INodeOwner {
 public:
 	World();
-	~World();
+	~World() override;
 
 	auto name() -> std::string override { return "World"; }
 

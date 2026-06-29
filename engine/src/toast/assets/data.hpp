@@ -17,18 +17,37 @@ class TOAST_API Data : public Asset, public ISaveable {
 public:
 	explicit Data(const toml::table& table, AssetHandle<Schema> schema = {});
 
-	auto type() const -> std::string_view override { return "data"; }
+	[[nodiscard]]
+	auto type() const -> std::string_view override {
+		return "data";
+	}
 
-	auto operator[](std::string_view k) -> DataValue& { return m_root[k]; }
+	[[nodiscard]]
+	auto operator[](std::string_view k) -> DataValue& {
+		return m_root[k];
+	}
 
-	auto operator[](std::string_view k) const -> const DataValue& { return m_root[k]; }
+	[[nodiscard]]
+	auto operator[](std::string_view k) const -> const DataValue& {
+		return m_root[k];
+	}
 
-	auto contains(std::string_view k) const -> bool { return m_root.contains(k); }
+	[[nodiscard]]
+	auto contains(std::string_view k) const -> bool {
+		return m_root.contains(k);
+	}
 
-	auto root() const -> const DataValue& { return m_root; }
+	[[nodiscard]]
+	auto root() const -> const DataValue& {
+		return m_root;
+	}
 
-	auto schema() const -> const AssetHandle<Schema>& { return m_schema; }
+	[[nodiscard]]
+	auto schema() const -> const AssetHandle<Schema>& {
+		return m_schema;
+	}
 
+	[[nodiscard]]
 	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 
 protected:

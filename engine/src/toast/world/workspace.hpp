@@ -74,8 +74,14 @@ public:
 	 */
 	void tick() override;
 
-	const Node& rootNode() const { return *m_root_node; }
+	[[nodiscard]]
+	auto rootNode() const -> const Node& {
+		return *m_root_node;
+	}
 
-	bool isValid() const { return m_root_node.exists(); }
+	[[nodiscard]]
+	auto isValid() const -> bool {
+		return m_root_node.exists();
+	}
 };
 }
