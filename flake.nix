@@ -122,6 +122,7 @@
 				export VCPKG_KEEP_ENV_VARS=$(env | grep -E '^(NIX_|PKG_CONFIG)' | cut -d= -f1 | tr '\n' ';')
 				export PROTOBUF_PROTOC="${pkgs.protobuf}/bin/protoc"
 				export GRPC_PROTOC_PLUGIN="${pkgs.grpc}/bin/grpc_csharp_plugin"
+				export VK_LAYER_PATH="${pkgs.vulkan-validation-layers}/share/vulkan/explicit_layer.d:${pkgs.vulkan-extension-layer}/share/vulkan/explicit_layer.d";
 				'';
 		};
 	};
