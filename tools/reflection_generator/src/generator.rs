@@ -186,14 +186,6 @@ pub fn validate_class(class: &Class) -> Result<(), std::string::String> {
 				return Err(format!("{qualified}: group name '{group}' may not start with '~' (reserved)"));
 			}
 		}
-
-		// Arrays of asset handles are not supported by the v1 reflection accessor
-		if field.type_name.contains("vector<") && field.type_name.contains("AssetHandle<") {
-			return Err(format!(
-				"{qualified}: field '{}' is a vector of AssetHandle, which is not supported",
-				field.name
-			));
-		}
 	}
 
 	Ok(())

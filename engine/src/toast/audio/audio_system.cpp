@@ -178,6 +178,42 @@ void AudioSystem::generateIntermediates(const std::filesystem::path& path) {
 	file << json.dump(4);
 }
 
+auto AudioSystem::loadBank(assets::AssetHandle<assets::AudioBank> bank) const
+    -> std::pair<FMOD_STUDIO_BANK*, std::vector<std::string>> {
+	if (not bank.hasValue() || bank->get().size() == 0) {
+		TOAST_WARN("Audio", "Tried to load empty bank");
+		return {nullptr, {}};
+	}
+
+	FMOD_STUDIO_BANK* fmod_bank = nullptr;
+	FMOD_Studio_System_LoadBankMemory(
+		m_system,
+		reinterpret_cast<const char*>(bank->get().data()),
+		bank->get().size(), 
+		FMOD_STUDIO_LOAD_MEMORY ,
+		FMOD_STUDIO_LOAD_BANK_NORMAL,
+		&fmod_bank
+	);
+	
+	int event_count;
+	FMOD_Studio_Bank_GetEventCount(fmod_bank, &event_count);
+	std::vector<FMOD_STUDIO_EVENTDESCRIPTION*> events(event_count);
+	FMOD_Studio_Bank_GetEventList(fmod_bank, events.data(), event_count, &event_count);
+	std::vector<std::string> event_paths;
+	for (auto* desc : events) {
+		std::array<char, 512> path;
+		int retrieved = 0;
+		FMOD_Studio_EventDescription_GetPath(desc, path.data(), path.size(), &retrieved);
+		event_paths.emplace_back(path.data(), retrieved);
+	}
+	
+	return {fmod_bank, event_paths};
+}
+
+void AudioSystem::unloadBank(FMOD_STUDIO_BANK* bank) const {
+	FMOD_Studio_Bank_Unload(bank);
+}
+
 }
 
 extern "C" {

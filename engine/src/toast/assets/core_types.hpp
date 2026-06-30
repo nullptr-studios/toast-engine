@@ -111,6 +111,16 @@ public:
 
 	[[nodiscard]]
 	auto operator->() const noexcept -> const Asset*;
+	
+	[[nodiscard]]
+	bool operator==(const AssetHandleBase& other) const {
+		return m_uid.data() == other.m_uid.data();
+	}
+	
+	[[nodiscard]]
+	bool operator<(const AssetHandleBase& other) const {
+		return m_uid.data() < other.m_uid.data();
+	}
 
 protected:
 	Asset* m_asset = nullptr;

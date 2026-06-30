@@ -22,3 +22,6 @@
 #include "prefab.hpp"
 #include "schema.hpp"
 #include "texture.hpp"
+
+#include <toast/audio/assets.hpp>
+

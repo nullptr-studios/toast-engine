@@ -109,6 +109,11 @@ if (MSVC)
   target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:/LTCG>)
 endif()
 
+target_compile_options(toast_engine PUBLIC
+        $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
+        $<$<CXX_COMPILER_ID:Clang>:-Wno-attributes>
+)
+
 # Post build
 get_target_property(_nlohmann_include_list nlohmann_json::nlohmann_json INTERFACE_INCLUDE_DIRECTORIES)
 list(GET _nlohmann_include_list 0 _nlohmann_include)
