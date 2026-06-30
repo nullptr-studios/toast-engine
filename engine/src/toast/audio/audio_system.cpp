@@ -238,6 +238,17 @@ void AudioSystem::updateListenerWeight(int id, float weight) {
 	FMOD_Studio_System_SetListenerWeight(m_system, id, weight);
 }
 
+void AudioSystem::setListenerPosition(int index, glm::vec3 pos) {
+	if (index >= static_cast<int>(m_listener_positions.size())) {
+		m_listener_positions.resize(index + 1);
+	}
+	m_listener_positions[index] = pos;
+}
+
+auto AudioSystem::listenerPositions() const -> const std::vector<glm::vec3>& {
+	return m_listener_positions;
+}
+
 void AudioSystem::playEvent(std::string_view guidStr) {
 	if (FMOD_STUDIO_EVENTINSTANCE* inst = getOrCreateInstance(guidStr)) {
 		FMOD_Studio_EventInstance_Start(inst);

@@ -13,7 +13,7 @@
 
 namespace toast {
 
-class TOAST_API [[ToastNode, Color("Beige"), Icon("AudioStreamPlayer")]] AudioEvent : public Node {
+class TOAST_API [[ToastNode, Color("Beige"), Icon("AudioStreamPlayer")]] AudioEmitter : public Node {
 public:
 	[[Button]]
 	void play(); ///< Fires the event

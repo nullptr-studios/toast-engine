@@ -20,6 +20,9 @@ void AudioListener::begin() {
 }
 
 void toast::AudioListener::lateTick() {
+	// Update listener position
+	audio::AudioSystem::get().setListenerPosition(m_index, worldPos());
+
 	// Calculate velocity for doppler
 	glm::vec3 pos = worldPos();
 	glm::vec3 rot = worldRot();

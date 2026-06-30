@@ -35,6 +35,8 @@ public:
 	    int id, glm::vec3 pos, glm::vec3 velocity, glm::vec3 forward, glm::vec3 up, std::optional<glm::vec3> attenuation_override
 	);
 	void updateListenerWeight(int id, float weight);
+	void setListenerPosition(int index, glm::vec3 pos);
+	[[nodiscard]] auto listenerPositions() const -> const std::vector<glm::vec3>&;
 	
 	void playEvent(std::string_view guidStr);
 	void stopEvent(std::string_view guidStr, bool allowFadeout);
@@ -67,6 +69,8 @@ private:
 
 	uint64_t m_next_instance_id = 1; // 0 = null
 	std::unordered_map<uint64_t, FMOD_STUDIO_EVENTINSTANCE*> m_instances_3d;
+
+	std::vector<glm::vec3> m_listener_positions;
 };
 
 }
