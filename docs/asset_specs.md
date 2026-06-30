@@ -19,5 +19,6 @@
 | Audio String     | .strings.bank | BookHeadphones    | BSTR     | Beige     | false        |          | false        | false       |               |
 | Bus              | .tbus         | SlidersVertical   | BUS      | Beige     | false        |          | false        | false       |               |
 | VCA              | .tvca         | SlidersHorizontal | VCA      | Beige     | false        |          | false        | false       |               |
-| Port             | .taport       | Volume2           | PORT     | Beige     | false        |          | false        | false       |               |
+| Port             | .taport       | Speaker           | PORT     | Beige     | false        |          | false        | false       |               |
 | Audio Snapshot   | .tasnap       | Activity          | SNAP     | Beige     | false        |          | false        | false       |               |
+| Audio Event      | .tae          | Volume2           | EVENT    | Beige     | false        |          | false        | false       |               |

@@ -9,4 +9,4 @@
 #pragma once
 #include "assets/audio_bank.hpp"
 #include "assets/audio_strings.hpp"
-
+#include "assets/audio_event.hpp"

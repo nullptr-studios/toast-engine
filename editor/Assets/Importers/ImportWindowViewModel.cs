@@ -301,7 +301,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 			new PsdImporter(TextureSettings, PsdSettings),
 			new GltfImporter(GltfSettings, TextureSettings),
 			new AudioBankImporter(),
-			new AudioStringImporter(),
+			new AudioStringImporter(AudioStringSettings),
 		];
 		m_allowedExtensions = [];
 		foreach (var importer in m_importers)
@@ -331,6 +331,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	public TextureImporter.Settings TextureSettings { get; } = new();
 	public PsdImporter.Settings PsdSettings { get; } = new();
 	public GltfImporter.Settings GltfSettings { get; } = new();
+	public AudioStringImporter.Settings AudioStringSettings { get; } = new();
 
 	public void SetWindow(Window window) => m_window = window;
 

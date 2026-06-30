@@ -128,6 +128,46 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 		} else {
 			asset = std::make_unique<Prefab>(std::span<const uint8_t>(*raw_data));
 		}
+	} else if (info.type == "audio_event") {
+		try {
+			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
+			auto table = toml::parse(toml_str);
+			
+			AssetHandle<Schema> schema_handle;
+			if (auto* schema_key = table.get("schema")) {
+				if (auto schema_uid_str = schema_key->value<std::string_view>()) {
+					if (schema_uid_str->size() == 11) {
+						toast::UID schema_uid(toast::UID::fromString(*schema_uid_str));
+						if (auto it = manifest.find(schema_uid.data()); it != manifest.end()) {
+							auto schema_path = resolveVirtualPath(it->second.path);
+							if (schema_path) {
+								if (auto schema_raw = openFile(*schema_path)) {
+									if (auto cit = cache.find(schema_uid.data()); cit != cache.end()) {
+										schema_handle = AssetHandle<Schema>(static_cast<Schema*>(cit->second.get()), schema_uid);
+									} else {
+										std::string_view schema_json(reinterpret_cast<const char*>(schema_raw->data()), schema_raw->size());
+										try {
+											auto schema_asset = std::make_unique<Schema>(schema_json);
+											Schema* raw_ptr = schema_asset.get();
+											cache[schema_uid.data()] = std::move(schema_asset);
+											schema_handle = AssetHandle<Schema>(raw_ptr, schema_uid);
+										} catch (const std::exception& se) {
+											TOAST_WARN("AssetManager", "Could not parse schema for audio event asset {}: {}", info.path, se.what());
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// Instantiate your specialized AudioEvent asset
+			asset = std::make_unique<AudioEvent>(std::move(table), std::move(schema_handle));
+		} catch (const toml::parse_error& err) {
+			TOAST_ERROR("AssetManager", "Failed to parse audio event TOML asset {}: {}", info.path, err.description());
+			return nullptr;
+		}
 	} else {
 		TOAST_ERROR("AssetManager", "Unknown asset type '{}' for asset {}", info.type, info.path);
 		return nullptr;

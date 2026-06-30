@@ -343,19 +343,19 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 
 	// active_tick_fns
 	const TICK_MAP: &[(&str, &str)] = &[
+		("load",         "load"),
+		("save",         "save"),
 		("pre_init",     "preInit"),
 		("init",         "init"),
+		("destroy",      "destroy"),
 		("begin",        "begin"),
+		("end",          "end"),
+		("on_enable",    "onEnable"),
+		("on_disable",   "onDisable"),
 		("early_tick",   "earlyTick"),
 		("tick",         "tick"),
 		("post_physics", "postPhysics"),
 		("late_tick",    "lateTick"),
-		("end",          "end"),
-		("destroy",      "destroy"),
-		("on_enable",    "onEnable"),
-		("on_disable",   "onDisable"),
-		("load",         "load"),
-		("save",         "save"),
 	];
 
 	let tf = &node.functions;
