@@ -160,7 +160,7 @@ void Engine::tick() {
 		active_application->tick();
 	}
 	totalTime += Time::get().delta();
-	camera->position = glm::vec3(sin(totalTime) * 5.0f, cos(totalTime) * 5.0f, 5);
+	camera->worldPos(glm::vec3(sin(totalTime) * 5.0f, cos(totalTime) * 5.0f, 5));
 
 	if (m->renderer) {
 		ZoneScopedN("Renderer::submitFrame()");
@@ -179,7 +179,7 @@ void Engine::tick() {
 				  .view = cam->getView(),
 				  .projection = cam->getProjection(1080.0f / 720.0f),
 				  .view_projection = cam->getProjection(1080.0f / 720.0f) * cam->getView(),
-				  .camera_position = cam->position,
+				  .camera_position = cam->worldPos(),
 				  .time = totalTime
 				};
 
@@ -224,8 +224,7 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	// FIXME: change this
 	camera = new Camera();
-	camera->position = {10, -15, -10};
-	camera->rotation = {0, 0, 0};
+	camera->worldPos(glm::vec3(0));
 
 	m->renderer->setActiveCamera(camera);
 
@@ -253,8 +252,7 @@ void Engine::createAvaloniaWindow() {
 
 	// FIXME: change this
 	camera = new Camera();
-	camera->position = {10, -15, -10};
-	camera->rotation = {0, 0, 0};
+	camera->worldPos(glm::vec3(0));
 
 	m->renderer->setActiveCamera(camera);
 

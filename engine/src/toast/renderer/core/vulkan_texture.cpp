@@ -42,10 +42,8 @@ void VulkanTexture::create(const VulkanCore& core, Params params) {
 		viewCI.viewType = vk::ImageViewType::e3D;
 	} else {
 		viewCI.viewType = m_params.layerCount > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D;
-		
 	}
 	// if (isCubemap) viewCI.viewType = vk::ImageViewType::eCube;
-	
 
 	viewCI.format = m_params.format;
 	viewCI.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -116,7 +114,6 @@ void TextureUpload::build(const VulkanCore& core) {
 	std::memcpy(mappedData, m_ktxTexture->pData, totalSize);
 	m_stagingBuffer.getAllocation().flush(0, totalSize);
 
-
 	// Vulkan treats cubemap faces just as contiguous array layersx
 	uint32_t numLayers = std::max(1u, m_ktxTexture->numLayers);
 	uint32_t numFaces = m_ktxTexture->isCubemap ? 6 : 1;
@@ -125,9 +122,10 @@ void TextureUpload::build(const VulkanCore& core) {
 		for (uint32_t layer = 0; layer < numLayers; ++layer) {
 			for (uint32_t face = 0; face < numFaces; ++face) {
 				ktx_size_t offset = 0;
-				
-				if (ktxTexture2_GetImageOffset(m_ktxTexture, mip, layer, face, &offset) != KTX_SUCCESS)
+
+				if (ktxTexture2_GetImageOffset(m_ktxTexture, mip, layer, face, &offset) != KTX_SUCCESS) {
 					continue;
+				}
 
 				vk::BufferImageCopy region {};
 				region.bufferOffset = offset;

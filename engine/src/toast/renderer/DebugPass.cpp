@@ -10,8 +10,6 @@ toast::renderer::DebugPass::DebugPass(
 
 void toast::renderer::DebugPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t imageIndex) { }
 
-void toast::renderer::DebugPass::update(uint32_t frame_index, float dt) {
-	IRenderPass::update(frame_index, dt);
-}
+void toast::renderer::DebugPass::update(uint32_t frame_index, float dt) { }
 
 void toast::renderer::DebugPass::CreateResources(const toast::renderer::VulkanCore& core) { }

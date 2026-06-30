@@ -4,14 +4,16 @@
 
 #include "Camera.hpp"
 
+#include "core/vulkan_renderer.hpp"
+
 void Camera::SetActiveCamera(bool force) {
-	// todo
+	toast::renderer::VulkanRenderer::instance->setActiveCamera(this);
 }
 
 glm::mat4 Camera::getView() const {
 	glm::mat4 world(1.0f);
 
-	world = glm::lookAt(position, glm::vec3(0), glm::vec3(0, 0, 1));
+	world = glm::lookAt(worldPos(), glm::vec3(0), glm::vec3(0, 0, 1));
 
 	return world;
 }
