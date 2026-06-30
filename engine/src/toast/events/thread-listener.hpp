@@ -9,7 +9,7 @@
 
 #include <any>
 #include <cassert>
-#include <flat_map>
+#include <map>
 #include <mutex>
 #include <string>
 #include <string_view>
@@ -28,11 +28,11 @@ class TOAST_API ThreadListener {
 	};
 
 	struct {
-		std::vector<_detail::IEvent*> event_queue;                     ///< @brief copied event queue
+		std::vector<_detail::IEvent*> event_queue;                ///< @brief copied event queue
 		std::mutex queue_mutex;
-		std::map<std::type_index, std::any> recievers;                 ///< @brief callbacks that add events to the event_queue
-		std::flat_multimap<char, Handle, std::greater<>> callbacks;    ///< @brief callbacks for the vents
-		std::atomic<bool>* enabled;                                    ///< @brief enabled bool
+		std::map<std::type_index, std::any> recievers;            ///< @brief callbacks that add events to the event_queue
+		std::multimap<char, Handle, std::greater<>> callbacks;    ///< @brief callbacks for the vents
+		std::atomic<bool>* enabled;                               ///< @brief enabled bool
 	} m;
 
 public:
