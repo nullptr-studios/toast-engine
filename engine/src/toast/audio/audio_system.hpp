@@ -7,11 +7,11 @@
  */
 
 #pragma once
-#include "toast/log.hpp"
 #include "assets.hpp"
 
 #include <filesystem>
 #include <fmod/fmod_studio.h>
+#include <glm/glm.hpp>
 
 namespace audio {
 
@@ -30,6 +30,11 @@ public:
 	[[nodiscard]]
 	auto loadBank(assets::AssetHandle<assets::AudioBank> bank) const -> std::pair<FMOD_STUDIO_BANK*, std::vector<std::string>>;
 	void unloadBank(FMOD_STUDIO_BANK*) const;
+	
+	void updateListenerAttributes(
+	    int id, glm::vec3 pos, glm::vec3 velocity, glm::vec3 forward, glm::vec3 up, std::optional<glm::vec3> attenuation_override
+	);
+	void updateListenerWeight(int id, float weight);
 
 private:
 	static inline AudioSystem* instance = nullptr;

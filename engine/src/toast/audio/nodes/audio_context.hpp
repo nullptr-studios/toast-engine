@@ -7,8 +7,6 @@
  */
 
 #pragma once
-#include "fmod/fmod_studio_common.h"
-
 #include <toast/audio/assets.hpp>
 #include <toast/world/node.hpp>
 
@@ -20,7 +18,7 @@ namespace toast {
  * If you manually load or unload a bank during runtime (after init), it won't
  * be updated by default, and you need to call the @c reload() function
  */
-class [[ToastNode, Color("Beige")]] AudioContext : public Node{
+class TOAST_API [[ToastNode, Color("Beige")]] AudioContext : public Node{
 public:
 	void addBank(assets::AssetHandle<assets::AudioBank> bank);
 

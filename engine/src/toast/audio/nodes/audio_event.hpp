@@ -11,7 +11,7 @@
 
 namespace toast {
 
-class [[ToastNode, Color("Beige"), Icon("Volume2")]] AudioEvent : public Node {
+class TOAST_API [[ToastNode, Color("Beige"), Icon("AudioStreamPlayer")]] AudioEvent : public Node {
 public:
 
 private:

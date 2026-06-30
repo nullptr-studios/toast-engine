@@ -214,6 +214,30 @@ void AudioSystem::unloadBank(FMOD_STUDIO_BANK* bank) const {
 	FMOD_Studio_Bank_Unload(bank);
 }
 
+void AudioSystem::updateListenerAttributes(
+    int id, glm::vec3 pos, glm::vec3 velocity, glm::vec3 forward, glm::vec3 up, std::optional<glm::vec3> attenuation_override
+) {
+	FMOD_3D_ATTRIBUTES attr = {};
+	attr.position = { pos.x, pos.y, pos.z };
+	attr.velocity = { velocity.x, velocity.y, velocity.z };
+	attr.forward = { forward.x, forward.y, forward.z };
+	attr.up = { up.x, up.y, up.z };
+	
+	
+	FMOD_VECTOR atten = {};
+	FMOD_VECTOR* atten_ptr = nullptr;
+	if (attenuation_override) {
+		atten = {attenuation_override->x, attenuation_override->y, attenuation_override->z};
+		atten_ptr = &atten;
+	}
+
+	FMOD_Studio_System_SetListenerAttributes(m_system, id, &attr, atten_ptr);
+}
+
+void AudioSystem::updateListenerWeight(int id, float weight) {
+	FMOD_Studio_System_SetListenerWeight(m_system, id, weight);
+}
+
 }
 
 extern "C" {
