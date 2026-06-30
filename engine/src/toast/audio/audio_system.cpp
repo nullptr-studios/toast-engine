@@ -1,14 +1,15 @@
 #include "audio_system.hpp"
 
-#include "toast/assets/asset_manager.hpp"
-#include "toast/assets/core_types.hpp"
-
 #include <ffi/audio.h>
 #include <filesystem>
+#include <fmod/fmod_errors.h>
+#include <toast/assets/asset_manager.hpp>
+#include <toast/assets/core_types.hpp>
 #include <toast/log.hpp>
 
 namespace {
 
+#ifdef DEBUG
 auto fmodLogCallback(FMOD_DEBUG_FLAGS flags, const char* file, int line, const char* func, const char* message) -> FMOD_RESULT {
 	std::string msg = std::format("{}: {}", func, message);
 	uint8_t severity = 0;
@@ -34,6 +35,7 @@ auto fmodLogCallback(FMOD_DEBUG_FLAGS flags, const char* file, int line, const c
 	}
 	return FMOD_OK;
 }
+#endif
 
 std::string GuidToString(const FMOD_GUID& guid) {
 	char buffer[64];
@@ -71,14 +73,14 @@ AudioSystem::AudioSystem() noexcept {
 
 	FMOD_Studio_System_GetCoreSystem(m_system, &m_core_system);
 
-#if !defined(NDEBUG)
+#ifdef DEBUG
 	FMOD_Debug_Initialize(
 	    FMOD_DEBUG_LEVEL_LOG | FMOD_DEBUG_LEVEL_WARNING | FMOD_DEBUG_LEVEL_ERROR, FMOD_DEBUG_MODE_CALLBACK, fmodLogCallback, nullptr
 	);
 #endif
 
 	int studio_init_flags = FMOD_STUDIO_INIT_NORMAL;
-#if !defined(NDEBUG)
+#ifdef DEBUG
 	studio_init_flags |= FMOD_STUDIO_INIT_LIVEUPDATE;
 #endif
 
