@@ -9,7 +9,6 @@ on:
       - opened
       - reopened
       - synchronize
-      - edited
 
 permissions:
   contents: read
@@ -22,7 +21,7 @@ concurrency:
 jobs:
   build-linux-gcc:
     name: build linux ${{ matrix.compiler }} ${{ matrix.build_type }}
-    runs-on: [ubuntu-latest]
+    runs-on: [self-hosted, Linux, X64]
     strategy:
       matrix:
         compiler: [gcc]
@@ -33,7 +32,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
@@ -42,27 +41,29 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6
 
-      - name: Setup vcpkg
-        id: vcpkg
-        uses: ./.github/actions/setup-vcpkg
-
       - name: Build
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
           rustup toolchain install stable --no-self-update
           BASE_TYPE=${{ matrix.build_type }}
           BUILD_TYPE=$([ "$BASE_TYPE" == "debug" ] && echo "Debug" || echo "Release")
-          cmake -B build/linux-${{ matrix.compiler }}-${{ matrix.build_type }} \
+          VCPKG_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          COMMON_CMAKE_ARGS=(
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_TOOLCHAIN_FILE"
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          )
+          cmake -B build/linux-${{ matrix.compiler }}-${{ matrix.build_type }} -G Ninja \
             -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
             -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx_compiler }} \
-            -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
-          cmake --build build/linux-${{ matrix.compiler }}-${{ matrix.build_type }} --parallel "$(nproc)"
+            "${COMMON_CMAKE_ARGS[@]}"
+          cmake --build build/linux-${{ matrix.compiler }}-${{ matrix.build_type }} --parallel "$(nproc)" --target dummy_game
 
   build-linux-clang:
     name: build linux clang ${{ matrix.build_type }}
     if: github.base_ref == 'main'
-    runs-on: [ubuntu-latest]
+    runs-on: [self-hosted, Linux, X64]
     strategy:
       matrix:
         build_type: [debug, release]
@@ -70,7 +71,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
@@ -78,10 +79,6 @@ jobs:
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6
-
-      - name: Setup vcpkg
-        id: vcpkg
-        uses: ./.github/actions/setup-vcpkg
 
       - name: Build
         run: |
@@ -89,21 +86,27 @@ jobs:
           rustup toolchain install stable --no-self-update
           BASE_TYPE=${{ matrix.build_type }}
           BUILD_TYPE=$([ "$BASE_TYPE" == "debug" ] && echo "Debug" || echo "Release")
+          VCPKG_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          COMMON_CMAKE_ARGS=(
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_TOOLCHAIN_FILE"
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          )
           cmake -B build/linux-clang-${{ matrix.build_type }} \
             -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
             -DCMAKE_C_COMPILER=clang \
             -DCMAKE_CXX_COMPILER=clang++ \
-            -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
-          cmake --build build/linux-clang-${{ matrix.build_type }} --parallel "$(nproc)"
+            -G Ninja "${COMMON_CMAKE_ARGS[@]}"
+          cmake --build build/linux-clang-${{ matrix.build_type }} --parallel "$(nproc)" --target dummy_game
 
   test-linux-debug:
     name: test linux debug
     needs: build-linux-gcc
-    runs-on: [ubuntu-latest]
+    runs-on: [self-hosted, Linux, X64]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
@@ -112,31 +115,33 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6
 
-      - name: Setup vcpkg
-        id: vcpkg
-        uses: ./.github/actions/setup-vcpkg
-
       - name: Run tests
         env:
           TRACY_NO_INVARIANT_CHECK: "1"
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
           rustup toolchain install stable --no-self-update
+          VCPKG_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          COMMON_CMAKE_ARGS=(
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_TOOLCHAIN_FILE"
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          )
           cmake -B build/linux-test-debug \
             -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
-          cmake --build build/linux-test-debug --parallel "$(nproc)"
+            -G Ninja "${COMMON_CMAKE_ARGS[@]}"
+          cmake --build build/linux-test-debug --parallel "$(nproc)" --target toast_tests
           ctest --test-dir build/linux-test-debug --verbose
 
   test-linux-release:
     name: test linux release
     needs: build-linux-gcc
     if: github.base_ref == 'main'
-    runs-on: [ubuntu-latest]
+    runs-on: [self-hosted, Linux, X64]
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
@@ -144,10 +149,6 @@ jobs:
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6
-
-      - name: Setup vcpkg
-        id: vcpkg
-        uses: ./.github/actions/setup-vcpkg
 
       - name: Run tests
         env:
@@ -155,16 +156,23 @@ jobs:
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
           rustup toolchain install stable --no-self-update
+          VCPKG_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          COMMON_CMAKE_ARGS=(
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_TOOLCHAIN_FILE"
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          )
           cmake -B build/linux-test-release \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
-          cmake --build build/linux-test-release --parallel "$(nproc)"
+            -G Ninja "${COMMON_CMAKE_ARGS[@]}"
+          cmake --build build/linux-test-release --parallel "$(nproc)" --target toast_tests
           ctest --test-dir build/linux-test-release --verbose
-
+          
   build-tools-linux-debug:
     name: build ${{ matrix.tool }} linux debug
     needs: build-linux-gcc
-    runs-on: [ubuntu-latest]
+    runs-on: [ self-hosted, Linux, X64 ]
+    
     strategy:
       matrix:
         tool: [editor, player, log_server, kenzo]
@@ -172,7 +180,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
@@ -181,24 +189,27 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6
 
-      - name: Setup vcpkg
-        id: vcpkg
-        uses: ./.github/actions/setup-vcpkg
-
       - name: Build ${{ matrix.tool }}
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
           rustup toolchain install stable --no-self-update
+          VCPKG_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          COMMON_CMAKE_ARGS=(
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_TOOLCHAIN_FILE"
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          )
           cmake -B build/linux-tools-debug \
             -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+            -G Ninja "${COMMON_CMAKE_ARGS[@]}"
           cmake --build build/linux-tools-debug --parallel "$(nproc)" --target ${{ matrix.tool }}
 
   build-tools-linux-release:
     name: build ${{ matrix.tool }} linux release
     needs: build-linux-gcc
     if: github.base_ref == 'main'
-    runs-on: [ubuntu-latest]
+    runs-on: [self-hosted, Linux, X64]
+    
     strategy:
       matrix:
         tool: [editor, player, log_server, kenzo]
@@ -206,7 +217,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
@@ -215,15 +226,17 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6
 
-      - name: Setup vcpkg
-        id: vcpkg
-        uses: ./.github/actions/setup-vcpkg
-
       - name: Build ${{ matrix.tool }}
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
           rustup toolchain install stable --no-self-update
+          VCPKG_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          COMMON_CMAKE_ARGS=(
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_TOOLCHAIN_FILE"
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          )
           cmake -B build/linux-tools-release \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
+            -G Ninja "${COMMON_CMAKE_ARGS[@]}"
           cmake --build build/linux-tools-release --parallel "$(nproc)" --target ${{ matrix.tool }}

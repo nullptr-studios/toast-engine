@@ -76,6 +76,7 @@
 		devShells.${system}.default = pkgs.mkShell {
 			nativeBuildInputs = with pkgs; [
 				cmake
+							ccache
 				ninja
 				valgrind
 				rustup
@@ -90,7 +91,6 @@
 				roslyn-ls
 				gdb
 				lldb
-				pkg-config
 				cmake-gen
 				cmake-build
 
@@ -114,6 +114,8 @@
 				export PATH="${dotnet-sdk}/bin:$PATH";
 				export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}:$LD_LIBRARY_PATH";
 				export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1;
+				export CMAKE_C_COMPILER_LAUNCHER=ccache;
+				export CMAKE_CXX_COMPILER_LAUNCHER=ccache;
 				echo "toast-engine environment loaded"
 				export VCPKG_FORCE_SYSTEM_BINARIES=1
 				export VCPKG_ROOT="${pkgs.vcpkg}/share/vcpkg"
