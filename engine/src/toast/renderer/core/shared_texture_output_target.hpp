@@ -42,7 +42,7 @@ public:
 
 	[[nodiscard]]
 	vk::Format getColorFormat() const override {
-		return m_colorFormat;
+		return m_color_format;
 	}
 
 	[[nodiscard]]
@@ -91,8 +91,8 @@ private:
 	}
 
 	const VulkanCore* m_core = nullptr;
-	vk::Extent2D m_extent {};
-	vk::Format m_colorFormat = vk::Format::eB8G8R8A8Unorm;
+	vk::Extent2D m_extent;
+	vk::Format m_color_format = vk::Format::eB8G8R8A8Unorm;
 
 	std::mutex m_frameMutex;
 	std::vector<SharedImage> m_images;

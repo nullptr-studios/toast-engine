@@ -54,7 +54,7 @@ struct NodeFileBinaryHeader {
 };
 }
 
-class Prefab : public Asset, public ISaveable {
+class Prefab final : public Asset, public ISaveable {
 public:
 	/**
 	 * @brief Parses a prefab from a text (.node) stream
@@ -77,6 +77,8 @@ public:
 	 *                 during instantiation
 	 */
 	explicit Prefab(const toast::Node& node, toast::UID self_uid = toast::UID(0));
+
+	Prefab() = default;
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
@@ -107,6 +109,25 @@ public:
 	 * @return false and logs errors if nodes is empty, any UID is duplicated, or any field has an unknown type
 	 */
 	auto validate() const -> bool;
+
+	/**
+	 * @brief Converts a reflected field value to its text representation
+	 * @param type Serialization kind of the value
+	 * @param is_array True if @p value holds a std::vector of the field type
+	 * @param value The value as returned by a FieldInfo getter
+	 * @return The same text encoding used by the .node text format
+	 * @note Shared by the text serializer and the editor inspector so both agree on formatting
+	 */
+	static auto stringifyValue(toast::FieldType type, bool is_array, const std::any& value) -> std::string;
+
+	/**
+	 * @brief Parses a text value back into a typed std::any for a reflected field
+	 * @param type Serialization kind to parse as
+	 * @param is_array True if @p value encodes a std::vector of the field type
+	 * @param value The text encoding produced by stringifyValue()
+	 * @return The typed value, or std::nullopt if @p value could not be parsed
+	 */
+	static auto valueFromString(toast::FieldType type, bool is_array, std::string_view value) -> std::optional<std::any>;
 
 	/**
 	 * @brief One field value read from a prefab file

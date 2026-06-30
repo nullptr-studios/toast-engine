@@ -9,22 +9,27 @@ public partial class SaveFileModal : Window {
 		DataContext = new SaveFileViewModel();
 	}
 
-	public SaveFileModal(string defaultName) {
+	public SaveFileModal(string defaultName, string extension = ".tnode") {
 		InitializeComponent();
-		DataContext = new SaveFileViewModel(defaultName);
+		var vm = new SaveFileViewModel(defaultName, extension);
+		DataContext = vm;
 	}
 
-	private async void OnBrowse(object? sender, RoutedEventArgs e) {
-		var vm = (SaveFileViewModel)DataContext!;
-		if (await AssetTreePicker.PickFolder(this) is { } folder)
-			vm.SetFolder(folder);
+	private void Name_OnTextChanged(object? sender, TextChangedEventArgs e) {
+		// Name updates are handled by binding
 	}
 
-	private void OnConfirm(object? sender, RoutedEventArgs e) {
+	private async void Folder_OnClick(object? sender, RoutedEventArgs e) {
+		var result = await new AssetFolderTree().ShowDialog<string?>(this);
+		if (result is { })
+			((SaveFileViewModel)DataContext!).SetFolder(result);
+	}
+
+	private void Save_OnClick(object? sender, RoutedEventArgs e) {
 		Close(((SaveFileViewModel)DataContext!).Result());
 	}
 
-	private void OnCancel(object? sender, RoutedEventArgs e) {
+	private void Cancel_OnClick(object? sender, RoutedEventArgs e) {
 		Close(null);
 	}
 }

@@ -79,7 +79,7 @@ private:
 	std::vector<vk::Image> m_images;
 	std::vector<vk::raii::ImageView> m_image_views;
 
-	vk::Extent2D m_extent {};
+	vk::Extent2D m_extent;
 	vk::Format m_image_format = vk::Format::eUndefined;
 	uint32_t m_present_queue_family_index = 0;
 };

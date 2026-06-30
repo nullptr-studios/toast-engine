@@ -22,7 +22,11 @@ public abstract class SearchableTreeItem<T> where T : SearchableTreeItem<T> {
 	public bool UpdateFilter(string query, bool caseSensitive) {
 		if (string.IsNullOrEmpty(query)) {
 			FilteredChildren.Clear();
-			foreach (var c in AllChildren) FilteredChildren.Add(c);
+			foreach (var c in AllChildren) {
+				c.UpdateFilter(query, caseSensitive);
+				FilteredChildren.Add(c);
+			}
+
 			Segments.Clear();
 			Segments.Add(new TextSegment(Name, false));
 			return true;

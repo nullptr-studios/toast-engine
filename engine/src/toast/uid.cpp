@@ -58,7 +58,7 @@ auto UID::fromString(std::string_view b64) -> uint64_t {
 	}();
 
 	if (b64.size() != 11) {
-		TOAST_ERROR("UID", "Error parsing UID {}", b64);
+		TOAST_ERROR("UID", "Error parsing UID \"{}\"", b64);
 		return 0;
 	}
 
@@ -102,6 +102,12 @@ void UID::generate() {
 
 void UID::assign(std::string_view b64) {
 	value = fromString(b64);
+}
+
+auto UID::make() -> UID {
+	UID u;
+	u.generate();
+	return u;
 }
 
 UID::UID() {

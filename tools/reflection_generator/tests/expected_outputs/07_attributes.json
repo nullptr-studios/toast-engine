@@ -62,6 +62,7 @@
         "subgroups": []
       }
     ],
+    "methods": [],
     "name": "AttributeNode",
     "namespace": null,
     "parent": null,

@@ -7,6 +7,7 @@ namespace editor.Assets;
 
 public class AssetFolder : INotifyPropertyChanged {
 	private bool m_isExpanded;
+	private bool m_isSelected;
 
 	public AssetFolder(string path, AssetFolder? parent = null) {
 		Parent = parent;
@@ -24,11 +25,20 @@ public class AssetFolder : INotifyPropertyChanged {
 	public string Name { get; set; } = "";
 	public string Filepath { get; set; } = "";
 	public AssetFolder? Parent { get; }
+	public AssetBrowserViewModel? Owner { get; set; }
 
 	public bool IsExpanded {
 		get => m_isExpanded;
 		set {
 			m_isExpanded = value;
+			Notify();
+		}
+	}
+
+	public bool IsSelected {
+		get => m_isSelected;
+		set {
+			m_isSelected = value;
 			Notify();
 		}
 	}

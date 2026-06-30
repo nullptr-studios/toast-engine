@@ -147,6 +147,7 @@
         ]
       }
     ],
+    "methods": [],
     "name": "ComplexNode",
     "namespace": null,
     "parent": null,

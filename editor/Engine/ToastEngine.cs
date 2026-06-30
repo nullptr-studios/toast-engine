@@ -22,17 +22,18 @@ public struct ToastViewportFrame {
 }
 
 // returned by create/open workspace calls
-// Uid == 0 means it failed, Name points into engine memory (marshal it immediately, dont store the pointer)
+// Uid == 0 means it failed, Name points into engine memory
 [StructLayout(LayoutKind.Sequential)]
 public struct WorkspaceResult {
 	public ulong Uid;
 	public nint Name;
 }
 
-/// <summary>Bootstraps the engine and game DLLs, owns the tick loop, and tears everything down on dispose.</summary>
 public partial class ToastEngine : IDisposable {
 	private const string EngineLib = "toast_engine";
 	private readonly CancellationTokenSource m_cancellationSource;
+
+	public static bool IsEngineReady { get; private set; }
 
 	private readonly IntPtr m_engineInstance;
 	private readonly IntPtr m_gameInstance;
@@ -47,7 +48,7 @@ public partial class ToastEngine : IDisposable {
 
 	private IntPtr m_gameHandle = IntPtr.Zero;
 
-	// the engine dll lives at ../toast_engine/bin relative to the editor executable
+	// the engine dll lives at ../toast_engine/bin
 	static ToastEngine() {
 		NativeLibrary.SetDllImportResolver(typeof(ToastEngine).Assembly, (name, _, _) => {
 			if (name != EngineLib) return IntPtr.Zero;
@@ -84,6 +85,7 @@ public partial class ToastEngine : IDisposable {
 
 		// init after set_working_directory so the engine knows where to find its assets
 		toast_init();
+		IsEngineReady = true;
 		toast_create_avalonia_window();
 
 		ReflectionDatabase.Update();
@@ -99,14 +101,13 @@ public partial class ToastEngine : IDisposable {
 	public string CorePath { get; }
 
 	public void Dispose() {
+		IsEngineReady = false;
 		m_cancellationSource.Cancel();
 		m_tickTask.Wait();
 		m_gameDestroy?.Invoke(m_gameInstance);
 		toast_destroy(m_engineInstance);
 		m_cancellationSource.Dispose();
 	}
-
-	// ----- Workspace management -----
 
 	public WorkspaceResult CreateWorkspace(string type) {
 		return toast_create_workspace(type);
@@ -116,17 +117,13 @@ public partial class ToastEngine : IDisposable {
 		return toast_open_workspace(assetUid);
 	}
 
-	// ----- Viewport frame access -----
-
 	// copies the latest rendered frame into dst (capacity bytes)
 	// returns 1 = frame copied, 0 = no frame yet, -1 = dst too small
 	public int TryGetViewportFrame(IntPtr dst, uint capacity, out ToastViewportFrame frame) {
 		return toast_viewport_get_frame(dst, capacity, out frame);
 	}
 
-	// ----- Engine lifecycle -----
-
-	// guards against sending close twice (can happen if the window closes and the app exits)
+	// guards against sending close twice
 	public void SignalClose() {
 		if (m_closeEventSent) return;
 		m_closeEventSent = true;
@@ -138,8 +135,6 @@ public partial class ToastEngine : IDisposable {
 		Thread.Sleep(150); // give the OS time to release handles before loading a new copy
 		LoadGame();
 	}
-
-	// ----- Private -----
 
 	private static string NativeLibDir    => OperatingSystem.IsWindows() ? "bin" : "lib";
 	private static string NativeLibPrefix => OperatingSystem.IsWindows() ? ""    : "lib";
@@ -194,7 +189,7 @@ public partial class ToastEngine : IDisposable {
 		var sourceLinkPath = Path.GetFullPath(Path.Combine(appDir, "..", "toast_engine", "bin", binaryName));
 
 		if (!File.Exists(sourceLinkPath)) {
-			Console.WriteLine($"Log Server in {sourceLinkPath} not found");
+			Log.Warn($"Log Server in {sourceLinkPath} not found");
 			return;
 		}
 
@@ -209,12 +204,10 @@ public partial class ToastEngine : IDisposable {
 			try {
 				File.Copy(sourceLinkPath, targetLinkPath, true);
 			} catch (IOException) {
-				Console.WriteLine($"Couldn't copy {binaryName} to editor dir, using previous version");
+				Log.Error($"Couldn't copy {binaryName} to editor dir, using previous version");
 			}
 		}
 	}
-
-	// ----- Engine C ABI -----
 
 	[LibraryImport(EngineLib)]
 	private static partial IntPtr toast_create();
@@ -247,7 +240,22 @@ public partial class ToastEngine : IDisposable {
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial WorkspaceResult toast_open_workspace(string uid);
 
-	// ----- Game ABI -----
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial void toast_rename_prefab_root(string path, string newName);
+
+	public static void RenamePrefabRoot(string path, string newName) =>
+		toast_rename_prefab_root(path, newName);
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial void toast_create_tnode(string path, string nodeType);
+
+	public static void CreateTNode(string path, string nodeType) =>
+		toast_create_tnode(path, nodeType);
+
+	[LibraryImport(EngineLib)]
+	private static partial void toast_reload_manifest();
+
+	public static void ReloadManifest() => toast_reload_manifest();
 
 	private delegate IntPtr GameCreate();
 

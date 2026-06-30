@@ -12,10 +12,13 @@
 #pragma once
 
 #include <atomic>
+#include <nlohmann/json.hpp>
 #include <toast/export.hpp>
 #include <toast/uid.hpp>
 #include <toml++/toml.hpp>
 #include <vector>
+
+using json_t = nlohmann::json;
 
 namespace assets {
 // clang-format off

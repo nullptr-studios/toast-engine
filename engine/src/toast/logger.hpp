@@ -41,6 +41,11 @@ class Logger {
 		 * avoiding unnecessary context switches and thread contention.
 		 */
 		std::atomic<bool> drain_pending = false;
+
+		/**
+		 * @brief True once initNetworkRetry has established the connection
+		 */
+		std::atomic<bool> connected = false;
 	} m;
 
 	static constexpr uint16_t port = 12800;                ///< Port to connect to the server

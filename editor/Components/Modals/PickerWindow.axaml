@@ -1,0 +1,216 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:editor.Components.Modals"
+        xmlns:conv="using:editor.Components.Converters"
+        x:Class="editor.Components.Modals.PickerWindow"
+        Width="500" Height="600" CanResize="False"
+        CanMaximize="False" CanMinimize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Bg2}"
+        Padding="8">
+
+	<Window.Styles>
+		<Style Selector="TextBlock.highlighted">
+			<Setter Property="FontWeight" Value="Bold" />
+			<Setter Property="Foreground" Value="{StaticResource Red}" />
+		</Style>
+	</Window.Styles>
+
+	<Window.Resources>
+		<conv:ResourceBrushConverter x:Key="BrushFromKey" />
+	</Window.Resources>
+
+	<DockPanel VerticalSpacing="8">
+		<!-- Search -->
+		<TextBox x:Name="SearchBox" DockPanel.Dock="Top"
+		         TextChanged="OnSearchChanged"
+		         BorderThickness="0"
+		         Background="{StaticResource Bg1}"
+		         CornerRadius="6"
+		         VerticalContentAlignment="Center"
+		         PlaceholderText="Search...">
+			<TextBox.InnerLeftContent>
+				<LucideIcon Kind="Search"
+				            Foreground="{StaticResource TextMuted}"
+				            Size="16"
+				            Margin="8,0,0,0"
+				            StrokeWidth="3"/>
+			</TextBox.InnerLeftContent>
+		</TextBox>
+
+		<!-- Button bar -->
+		<Grid DockPanel.Dock="Bottom">
+			<Button x:Name="ExtraButton" HorizontalAlignment="Left" IsVisible="False"
+			        CornerRadius="6" Click="OnExtraButton">
+				<StackPanel Orientation="Horizontal" Spacing="4">
+					<LucideIcon x:Name="ExtraIcon" Kind="Plus" Size="16" StrokeWidth="3.5"/>
+					<TextBlock x:Name="ExtraLabel" Text=""/>
+				</StackPanel>
+			</Button>
+			<StackPanel HorizontalAlignment="Right" FlowDirection="RightToLeft" Orientation="Horizontal" Spacing="8">
+				<Button x:Name="AcceptButton"
+				        Click="OnAccept"
+				        CornerRadius="6"
+				        Background="{StaticResource Red}"
+				        Foreground="{StaticResource Text}"
+				        FontWeight="Bold">
+					<StackPanel Orientation="Horizontal" Spacing="4" FlowDirection="LeftToRight">
+						<LucideIcon x:Name="AcceptIcon" Kind="Check" Size="16" StrokeWidth="3.5"/>
+						<TextBlock x:Name="AcceptLabel" Text="Select"/>
+					</StackPanel>
+				</Button>
+				<Button Click="OnCancel" CornerRadius="6">
+					<StackPanel Orientation="Horizontal" Spacing="4" FlowDirection="LeftToRight">
+						<LucideIcon Kind="X" Size="16" StrokeWidth="3.5"/>
+						<TextBlock Text="Cancel"/>
+					</StackPanel>
+				</Button>
+			</StackPanel>
+		</Grid>
+
+		<!-- Content -->
+		<Border Background="{StaticResource Bg1}" CornerRadius="8" Padding="8">
+			<ScrollViewer>
+				<TreeView x:Name="ItemsTree" x:DataType="local:PickerViewModel"
+				          ItemsSource="{Binding Items}" SelectionChanged="OnSelectionChanged">
+					<TreeView.Styles>
+						<Style Selector="TreeViewItem">
+							<Setter Property="IsExpanded" Value="True"/>
+						</Style>
+					</TreeView.Styles>
+					<TreeView.DataTemplates>
+
+						<!-- NodeDisplayItem -->
+						<TreeDataTemplate DataType="local:NodeDisplayItem" x:CompileBindings="False"
+						                  ItemsSource="{Binding FilteredChildren}">
+							<StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
+							            DoubleTapped="OnItemDoubleTapped">
+								<Border Width="16" Height="16"
+								        Background="{Binding Color, Converter={StaticResource BrushFromKey}}">
+									<Border.OpacityMask>
+										<ImageBrush Source="{Binding Icon}"/>
+									</Border.OpacityMask>
+								</Border>
+								<ItemsControl ItemsSource="{Binding Segments}"
+								              Opacity="{Binding Opacity}"
+								              FontStyle="{Binding FontStyle}"
+								              Foreground="{Binding TextColor}">
+									<ItemsControl.ItemsPanel>
+										<ItemsPanelTemplate>
+											<StackPanel Orientation="Horizontal"/>
+										</ItemsPanelTemplate>
+									</ItemsControl.ItemsPanel>
+									<ItemsControl.ItemTemplate>
+										<DataTemplate x:CompileBindings="False">
+											<TextBlock Text="{Binding Text}"
+											           Classes.highlighted="{Binding IsHighlighted}"/>
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+							</StackPanel>
+						</TreeDataTemplate>
+
+						<!-- HierarchyDisplayItem -->
+						<TreeDataTemplate DataType="local:HierarchyDisplayItem"
+						                  x:CompileBindings="False"
+						                  ItemsSource="{Binding FilteredChildren}">
+							<StackPanel Orientation="Horizontal"
+							            Spacing="8" VerticalAlignment="Center"
+							            DoubleTapped="OnItemDoubleTapped">
+								<Border Width="16"
+								        Height="16" Opacity="{Binding Opacity}"
+								        Background="{Binding Color, Converter={StaticResource BrushFromKey}}">
+									<Border.OpacityMask>
+										<ImageBrush Source="{Binding Icon}"/>
+									</Border.OpacityMask>
+								</Border>
+								<ItemsControl ItemsSource="{Binding Segments}" Opacity="{Binding Opacity}">
+									<ItemsControl.ItemsPanel>
+										<ItemsPanelTemplate>
+											<StackPanel Orientation="Horizontal"/>
+										</ItemsPanelTemplate>
+									</ItemsControl.ItemsPanel>
+									<ItemsControl.ItemTemplate>
+										<DataTemplate x:CompileBindings="False">
+											<TextBlock Text="{Binding Text}" Classes.highlighted="{Binding IsHighlighted}"/>
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+							</StackPanel>
+						</TreeDataTemplate>
+
+						<!-- AssetPickerItem -->
+						<TreeDataTemplate DataType="local:AssetPickerItem" x:CompileBindings="False">
+							<StackPanel Orientation="Horizontal"
+							            DoubleTapped="OnItemDoubleTapped"
+							            VerticalAlignment="Center"
+							            Spacing="8">
+								<Border Background="{Binding TypeColor}" CornerRadius="4" Padding="6,2"
+								        VerticalAlignment="Center">
+									<TextBlock Text="{Binding TypeLabel}"
+									           FontSize="10"
+									           FontWeight="Bold"
+									           Foreground="{StaticResource Bg1}"/>
+								</Border>
+								<StackPanel>
+									<ItemsControl ItemsSource="{Binding Segments}" VerticalAlignment="Center">
+										<ItemsControl.ItemsPanel>
+											<ItemsPanelTemplate>
+												<StackPanel Orientation="Horizontal"/>
+											</ItemsPanelTemplate>
+										</ItemsControl.ItemsPanel>
+										<ItemsControl.ItemTemplate>
+											<DataTemplate x:CompileBindings="False">
+												<TextBlock Text="{Binding Text}" Classes.highlighted="{Binding IsHighlighted}"/>
+											</DataTemplate>
+										</ItemsControl.ItemTemplate>
+									</ItemsControl>
+									<TextBlock Text="{Binding Path}"
+									           Foreground="{StaticResource TextMuted}"
+									           FontSize="11"
+									           Margin="0,2,0,0"
+									           TextTrimming="CharacterEllipsis"/>
+								</StackPanel>
+							</StackPanel>
+						</TreeDataTemplate>
+
+						<!-- AssetFolderNode -->
+						<TreeDataTemplate DataType="local:AssetFolderNode"
+						                  ItemsSource="{Binding FilteredChildren}">
+							<StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
+							            DoubleTapped="OnItemDoubleTapped">
+								<Panel Width="16" Height="16">
+									<LucideIcon Kind="FolderOpen" Size="16" StrokeWidth="2.5"
+									            IsVisible="{Binding $parent[TreeViewItem].IsExpanded}"/>
+									<LucideIcon Kind="Folder" Size="16" StrokeWidth="2.5"
+									            IsVisible="{Binding !$parent[TreeViewItem].IsExpanded}"/>
+								</Panel>
+								<TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+							</StackPanel>
+						</TreeDataTemplate>
+
+						<!-- AssetTreeNode -->
+						<TreeDataTemplate DataType="local:AssetTreeNode"
+						                  ItemsSource="{Binding FilteredChildren}">
+							<StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
+							            DoubleTapped="OnItemDoubleTapped">
+								<Panel Width="16" Height="16" IsVisible="{Binding IsFolder}">
+									<LucideIcon Kind="FolderOpen" Size="16" StrokeWidth="2.5"
+									            IsVisible="{Binding $parent[TreeViewItem].IsExpanded}"/>
+									<LucideIcon Kind="Folder" Size="16" StrokeWidth="2.5"
+									            IsVisible="{Binding !$parent[TreeViewItem].IsExpanded}"/>
+								</Panel>
+								<Border IsVisible="{Binding IsAsset}" Background="{Binding TypeColor}"
+								        CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+									<TextBlock Text="{Binding TypeLabel}" FontSize="10" FontWeight="Bold"
+									           Foreground="{StaticResource Bg1}"/>
+								</Border>
+								<TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+							</StackPanel>
+						</TreeDataTemplate>
+					</TreeView.DataTemplates>
+				</TreeView>
+			</ScrollViewer>
+		</Border>
+	</DockPanel>
+</Window>

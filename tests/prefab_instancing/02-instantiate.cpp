@@ -97,7 +97,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/02-instantiate", test_p
 
 	// Grafted instance root takes the OUTER placement chunk's UID, not B's own root UID.
 	assert(instance->uid().data() == uidOf("PLACEMENT00"));
-	assert(instance->name() == "b_instance");    // name overridden by the placement chunk header
+	assert(instance->name() == "b instance");    // name overridden by the placement chunk header
 	assert(instance->isInstanceRoot());
 	assert(instance->sourcePrefab().uid().data() == uidOf(B_ASSET));
 	assert(not WorldTestAccess::isPrefabInterior(*instance));    // an instance root is not interior

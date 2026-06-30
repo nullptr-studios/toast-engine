@@ -3,7 +3,7 @@
 mod parser;
 mod generator;
 
-pub use parser::{parse, Attribute, Parent, Field, Class};
+pub use parser::{parse, Attribute, Parent, Field, Function, Parameter, Class};
 pub use generator::{NodeInfo, build_node, generate_json, generate_files, validate_class};
 
 // tree-sitter sees TOAST_API and __declspec attributes as identifiers that break field parsing

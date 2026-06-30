@@ -1,8 +1,12 @@
 ﻿using System;
 using System.IO;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using editor.Components.Modals;
+using Lucide.Avalonia;
 using Tomlyn;
 using Tomlyn.Model;
 
@@ -56,45 +60,56 @@ public partial class NewProjectWindow : Window {
 		UpdateProjectData();
 	}
 
-	private void Create_OnClick(object? sender, RoutedEventArgs e) {
+	private async void Create_OnClick(object? sender, RoutedEventArgs e) {
 		UpdateProjectData();
 		ProjectVersion = "v1.0.0";
 
-		if (Directory.Exists(m_projectFolder))
-			// TODO: Error
-			return;
+		try {
+			if (Directory.Exists(m_projectFolder))
+				throw new IOException($"A folder already exists at \"{m_projectFolder}\".");
 
-		Directory.CreateDirectory(m_projectFolder!);
+			Directory.CreateDirectory(m_projectFolder!);
 
-		// TODO: This should be created in c++
-		var projectFile = new TomlTable {
-			["name"] = ProjectTitle,
-			["version"] = ProjectVersion
-		};
+			// TODO: This should be created in c++
+			var projectFile = new TomlTable {
+				["name"] = ProjectTitle,
+				["version"] = ProjectVersion
+			};
 
-		var projectFileStr = TomlSerializer.Serialize(projectFile);
-		File.WriteAllText(ProjectPath, projectFileStr);
+			var projectFileStr = TomlSerializer.Serialize(projectFile);
+			File.WriteAllText(ProjectPath, projectFileStr);
 
-		Directory.CreateDirectory(Path.Combine(m_projectFolder ?? throw new InvalidOperationException(), ".toast"));
-		Directory.CreateDirectory(Path.Combine(m_projectFolder, "artwork"));
-		Directory.CreateDirectory(Path.Combine(m_projectFolder, "assets"));
-		Directory.CreateDirectory(Path.Combine(m_projectFolder, "lib"));
-		Directory.CreateDirectory(Path.Combine(m_projectFolder, "build"));
+			Directory.CreateDirectory(Path.Combine(m_projectFolder ?? throw new InvalidOperationException(), ".toast"));
+			Directory.CreateDirectory(Path.Combine(m_projectFolder, "artwork"));
+			Directory.CreateDirectory(Path.Combine(m_projectFolder, "assets"));
+			Directory.CreateDirectory(Path.Combine(m_projectFolder, "lib"));
+			Directory.CreateDirectory(Path.Combine(m_projectFolder, "build"));
 
-		// Gitignore
-		File.Copy("Resources/files/project.gitignore", Path.Combine(m_projectFolder, ".gitignore"));
+			// Gitignore
+			File.Copy("Resources/files/project.gitignore", Path.Combine(m_projectFolder, ".gitignore"));
 
-		// C++ library
-		Directory.CreateDirectory(Path.Combine(m_projectFolder, "lib", "src"));
-		Directory.CreateDirectory(Path.Combine(m_projectFolder, "lib", "src", "_detail"));
-		File.Copy("Resources/files/lib/CMakeLists.txt", Path.Combine(m_projectFolder, "lib", "CMakeLists.txt"));
-		File.Copy("Resources/files/lib/src/my_game.hpp", Path.Combine(m_projectFolder, "lib", "src", "my_game.hpp"));
-		File.Copy("Resources/files/lib/src/_detail/game.h",
-			Path.Combine(m_projectFolder, "lib", "src", "_detail", "game.h"));
-		File.Copy("Resources/files/lib/src/_detail/game.cpp",
-			Path.Combine(m_projectFolder, "lib", "src", "_detail", "game.cpp"));
+			// C++ library
+			Directory.CreateDirectory(Path.Combine(m_projectFolder, "lib", "src"));
+			Directory.CreateDirectory(Path.Combine(m_projectFolder, "lib", "src", "_detail"));
+			File.Copy("Resources/files/lib/CMakeLists.txt", Path.Combine(m_projectFolder, "lib", "CMakeLists.txt"));
+			File.Copy("Resources/files/lib/src/my_game.hpp", Path.Combine(m_projectFolder, "lib", "src", "my_game.hpp"));
+			File.Copy("Resources/files/lib/src/_detail/game.h",
+				Path.Combine(m_projectFolder, "lib", "src", "_detail", "game.h"));
+			File.Copy("Resources/files/lib/src/_detail/game.cpp",
+				Path.Combine(m_projectFolder, "lib", "src", "_detail", "game.cpp"));
 
-		Close(true);
+			Close(true);
+		}
+		catch (Exception ex) {
+			var modal = new MessageModal(new ModalConfig(
+				"Failed to create project",
+				ex.Message,
+				Icon: LucideIconKind.CircleX,
+				IconColor: Application.Current!.TryGetResource("Red", null, out var r) ? r as SolidColorBrush : null
+			));
+			await modal.ShowDialog(this);
+			Close(false);
+		}
 	}
 
 	private void Exit_OnClick(object? sender, RoutedEventArgs e) {

@@ -3,23 +3,39 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace editor.Components.Modals;
 
 public partial class SaveFileViewModel : ObservableObject {
-	[ObservableProperty] private string m_path = "assets://untitled.tnode";
+	[ObservableProperty] private string m_name = "Untitled";
+	[ObservableProperty] private string m_folder = "assets://";
+	private string m_extension = ".tnode";
 
 	public SaveFileViewModel() { }
 
-	public SaveFileViewModel(string defaultName) {
-		Path = $"assets://{defaultName}.tnode";
+	public SaveFileViewModel(string defaultName, string extension = ".tnode") {
+		Name = defaultName;
+		m_extension = extension;
+	}
+
+	public void SetExtension(string extension) {
+		m_extension = extension.StartsWith('.') ? extension : "." + extension;
 	}
 
 	public void SetFolder(string virtualFolder) {
-		var file = Path.Contains('/') ? Path[(Path.LastIndexOf('/') + 1)..] : Path;
-		var sep = virtualFolder.EndsWith('/') ? "" : "/";
-		Path = $"{virtualFolder}{sep}{file}";
+		Folder = virtualFolder;
 	}
 
+	// updates as user types
+	public string FullPath => Result() ?? Folder;
+
+	partial void OnNameChanged(string value) => OnPropertyChanged(nameof(FullPath));
+	partial void OnFolderChanged(string value) => OnPropertyChanged(nameof(FullPath));
+
 	public string? Result() {
-		var p = Path.Trim();
-		if (string.IsNullOrWhiteSpace(p)) return null;
-		return p.EndsWith(".tnode") ? p : p + ".tnode";
+		var trimmedName = Name.Trim();
+		if (string.IsNullOrWhiteSpace(trimmedName)) return null;
+
+		var formattedName = trimmedName.Replace(" ", "_");
+		var folderPath = Folder.EndsWith('/') ? Folder : Folder + "/";
+		var virtualPath = $"{folderPath}{formattedName}{m_extension}";
+
+		return virtualPath;
 	}
 }

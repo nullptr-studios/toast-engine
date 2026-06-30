@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "core://schemas/core.schema.json",
+  "title": "Toast Core Types",
+  "description": "Base type definitions for all Toast schemas",
+  "definitions": {
+    "bool": {
+      "type": "boolean",
+      "x-toast-type": "bool"
+    },
+    "int": {
+      "type": "integer",
+      "x-toast-type": "int"
+    },
+    "float": {
+      "type": "number",
+      "x-toast-type": "float"
+    },
+    "string": {
+      "type": "string",
+      "x-toast-type": "string"
+    },
+    "node": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{11}$",
+      "x-toast-type": "node",
+      "description": "base64url UID referencing a scene node"
+    },
+    "asset": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{11}$",
+      "x-toast-type": "asset",
+      "description": "base64url UID referencing an asset"
+    },
+    "vec2": {
+      "type": "array",
+      "x-toast-type": "vec2",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "vec3": {
+      "type": "array",
+      "x-toast-type": "vec3",
+      "items": { "type": "number" },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "color3": {
+      "type": "array",
+      "x-toast-type": "color3",
+      "items": { "type": "number" },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "color4": {
+      "type": "array",
+      "x-toast-type": "color4",
+      "items": { "type": "number" },
+      "minItems": 4,
+      "maxItems": 4
+    }
+  }
+}

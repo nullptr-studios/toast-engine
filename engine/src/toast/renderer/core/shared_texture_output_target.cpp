@@ -47,7 +47,7 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 		// Device-local image we render into and copy out of
 		vk::ImageCreateInfo image_ci {};
 		image_ci.imageType = vk::ImageType::e2D;
-		image_ci.format = m_colorFormat;
+		image_ci.format = m_color_format;
 		image_ci.extent = vk::Extent3D {m_extent.width, m_extent.height, 1};
 		image_ci.mipLevels = 1;
 		image_ci.arrayLayers = 1;
@@ -65,7 +65,7 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 		vk::ImageViewCreateInfo view_ci {};
 		view_ci.image = **shared.image;
 		view_ci.viewType = vk::ImageViewType::e2D;
-		view_ci.format = m_colorFormat;
+		view_ci.format = m_color_format;
 		view_ci.subresourceRange = colorSubresourceRange();
 		shared.view.emplace(m_core->getDevice(), view_ci);
 

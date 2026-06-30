@@ -70,7 +70,7 @@ public class ModalService : IModalService {
 		return Task.FromResult<T?>(default);
 	}
 
-	// prefer the focused window, fall back to anything open (programmatic calls have no active window)
+	// prefer the focused window, fall back to anything open
 	private static Window? FindActiveWindow() {
 		if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 			return desktop.Windows.FirstOrDefault(w => w.IsActive)

@@ -27,6 +27,7 @@
       }
     ],
     "groups": [],
+    "methods": [],
     "name": "GrandchildNode",
     "namespace": "game",
     "parent": {

@@ -58,6 +58,7 @@
         "subgroups": []
       }
     ],
+    "methods": [],
     "name": "SimpleNode",
     "namespace": "toast",
     "parent": null,

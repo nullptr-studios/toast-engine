@@ -22,7 +22,7 @@ concurrency:
 jobs:
   build-linux-gcc:
     name: build linux ${{ matrix.compiler }} ${{ matrix.build_type }}
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
     strategy:
       matrix:
         compiler: [gcc]
@@ -30,7 +30,7 @@ jobs:
         cxx_compiler: [g++]
         build_type: [debug, release]
       fail-fast: false
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -40,10 +40,7 @@ jobs:
           fetch-depth: 1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v30
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: cachix/install-nix-action@v31.10.6
 
       - name: Setup vcpkg
         id: vcpkg
@@ -52,6 +49,7 @@ jobs:
       - name: Build
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          rustup toolchain install stable --no-self-update
           BASE_TYPE=${{ matrix.build_type }}
           BUILD_TYPE=$([ "$BASE_TYPE" == "debug" ] && echo "Debug" || echo "Release")
           cmake -B build/linux-${{ matrix.compiler }}-${{ matrix.build_type }} \
@@ -64,12 +62,12 @@ jobs:
   build-linux-clang:
     name: build linux clang ${{ matrix.build_type }}
     if: github.base_ref == 'main'
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
     strategy:
       matrix:
         build_type: [debug, release]
       fail-fast: false
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -79,10 +77,7 @@ jobs:
           fetch-depth: 1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v30
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: cachix/install-nix-action@v31.10.6
 
       - name: Setup vcpkg
         id: vcpkg
@@ -91,6 +86,7 @@ jobs:
       - name: Build
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          rustup toolchain install stable --no-self-update
           BASE_TYPE=${{ matrix.build_type }}
           BUILD_TYPE=$([ "$BASE_TYPE" == "debug" ] && echo "Debug" || echo "Release")
           cmake -B build/linux-clang-${{ matrix.build_type }} \
@@ -103,8 +99,8 @@ jobs:
   test-linux-debug:
     name: test linux debug
     needs: build-linux-gcc
-    runs-on: [self-hosted, linux]
-    
+    runs-on: [ubuntu-latest]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -114,10 +110,7 @@ jobs:
           fetch-depth: 1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v30
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: cachix/install-nix-action@v31.10.6
 
       - name: Setup vcpkg
         id: vcpkg
@@ -128,6 +121,7 @@ jobs:
           TRACY_NO_INVARIANT_CHECK: "1"
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          rustup toolchain install stable --no-self-update
           cmake -B build/linux-test-debug \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
@@ -138,7 +132,7 @@ jobs:
     name: test linux release
     needs: build-linux-gcc
     if: github.base_ref == 'main'
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
     
     steps:
       - name: Checkout repository
@@ -149,10 +143,7 @@ jobs:
           fetch-depth: 1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v30
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: cachix/install-nix-action@v31.10.6
 
       - name: Setup vcpkg
         id: vcpkg
@@ -163,6 +154,7 @@ jobs:
           TRACY_NO_INVARIANT_CHECK: "1"
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          rustup toolchain install stable --no-self-update
           cmake -B build/linux-test-release \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
@@ -172,7 +164,7 @@ jobs:
   build-tools-linux-debug:
     name: build ${{ matrix.tool }} linux debug
     needs: build-linux-gcc
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
     strategy:
       matrix:
         tool: [editor, player, log_server, kenzo]
@@ -187,10 +179,7 @@ jobs:
           fetch-depth: 1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v30
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: cachix/install-nix-action@v31.10.6
 
       - name: Setup vcpkg
         id: vcpkg
@@ -199,6 +188,7 @@ jobs:
       - name: Build ${{ matrix.tool }}
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          rustup toolchain install stable --no-self-update
           cmake -B build/linux-tools-debug \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
@@ -208,7 +198,7 @@ jobs:
     name: build ${{ matrix.tool }} linux release
     needs: build-linux-gcc
     if: github.base_ref == 'main'
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
     strategy:
       matrix:
         tool: [editor, player, log_server, kenzo]
@@ -223,10 +213,7 @@ jobs:
           fetch-depth: 1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v30
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: cachix/install-nix-action@v31.10.6
 
       - name: Setup vcpkg
         id: vcpkg
@@ -235,6 +222,7 @@ jobs:
       - name: Build ${{ matrix.tool }}
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          rustup toolchain install stable --no-self-update
           cmake -B build/linux-tools-release \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"

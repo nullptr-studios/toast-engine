@@ -56,10 +56,55 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 
 	if (info.type == "texture") {
 		asset = std::make_unique<Texture>(std::move(*raw_data));
+
+	} else if (info.type == "schema") {
+		std::string_view json_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
+		try {
+			asset = std::make_unique<Schema>(json_str);
+		} catch (const std::exception& err) {
+			TOAST_ERROR("AssetManager", "Failed to parse schema asset {}: {}", info.path, err.what());
+			return nullptr;
+		}
+
 	} else if (info.type == "data") {
 		try {
 			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
-			asset = std::make_unique<Data>(toml::parse(toml_str));
+			auto table = toml::parse(toml_str);
+
+			// Resolve the embedded schema reference before constructing the Data
+			AssetHandle<Schema> schema_handle;
+			if (auto* schema_key = table.get("schema")) {
+				if (auto schema_uid_str = schema_key->value<std::string_view>()) {
+					if (schema_uid_str->size() == 11) {
+						toast::UID schema_uid(toast::UID::fromString(*schema_uid_str));
+						if (auto it = manifest.find(schema_uid.data()); it != manifest.end()) {
+							auto schema_path = resolveVirtualPath(it->second.path);
+							if (schema_path) {
+								if (auto schema_raw = openFile(*schema_path)) {
+									// Check cache first
+									if (auto cit = cache.find(schema_uid.data()); cit != cache.end()) {
+										schema_handle = AssetHandle<Schema>(static_cast<Schema*>(cit->second.get()), schema_uid);
+									} else {
+										std::string_view schema_json(reinterpret_cast<const char*>(schema_raw->data()), schema_raw->size());
+										try {
+											auto schema_asset = std::make_unique<Schema>(schema_json);
+											Schema* raw_ptr = schema_asset.get();
+											cache[schema_uid.data()] = std::move(schema_asset);
+											schema_handle = AssetHandle<Schema>(raw_ptr, schema_uid);
+										} catch (const std::exception& se) {
+											TOAST_WARN("AssetManager", "Could not parse schema for data asset {}: {}", info.path, se.what());
+										}
+									}
+								}
+							}
+						} else {
+							TOAST_WARN("AssetManager", "Schema UID {} not found in manifest (data asset {})", *schema_uid_str, info.path);
+						}
+					}
+				}
+			}
+
+			asset = std::make_unique<Data>(std::move(table), std::move(schema_handle));
 		} catch (const toml::parse_error& err) {
 			TOAST_ERROR("AssetManager", "Failed to parse TOML asset {}: {}", info.path, err.description());
 			return nullptr;
@@ -184,15 +229,23 @@ void AssetManager::reloadManifest() {
 
 	try {
 		auto json = nlohmann::json::parse(raw_json->begin(), raw_json->end());
-		if (json.contains("assets") && json["assets"].is_object()) {
-			for (const auto& [key, value] : json["assets"].items()) {
-				uint64_t uid_val = toast::UID::fromString(key);
-				AssetInfo info;
-				info.path = value.value("path", "");
-				info.type = value.value("type", "");
-				manifest[uid_val] = std::move(info);
+
+		// an entry is a "uid": "virtual path" pair
+		auto load_collection = [&](std::string_view type) {
+			auto it = json.find(type);
+			if (it == json.end() || !it->is_object()) {
+				return;
 			}
-		}
+			for (const auto& [key, value] : it->items()) {
+				manifest[toast::UID::fromString(key)] = {value.get<std::string>(), std::string(type)};
+			}
+		};
+
+		load_collection("texture");
+		load_collection("schema");
+		load_collection("data");
+		load_collection("node");
+
 		TOAST_INFO("AssetManager", "Manifest reloaded: {} assets tracked", manifest.size());
 	} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse asset manifest: {}", e.what()); }
 }
@@ -278,6 +331,10 @@ auto AssetManager::resolveURI(std::string_view uri) -> std::optional<toast::UID>
 		}
 	}
 	return std::nullopt;
+}
+
+auto AssetManager::getCachePath() const -> const std::filesystem::path& {
+	return cache_path;
 }
 
 // Public API Implementations

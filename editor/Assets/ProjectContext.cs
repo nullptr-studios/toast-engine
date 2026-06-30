@@ -5,10 +5,6 @@ using Ktx2Sharp;
 
 namespace editor.Assets;
 
-/// <summary>
-///    All project paths and virtual scheme resolution (assets://, cache://, etc) — needs <see cref="Initialize" />
-///    first
-/// </summary>
 public static class ProjectContext {
 	private static readonly Dictionary<string, string> s_schemes = new();
 

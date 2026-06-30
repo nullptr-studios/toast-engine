@@ -22,12 +22,27 @@ pub struct Field {
 	pub attributes: Vec<Attribute>,
 }
 
+pub struct Parameter {
+	pub name: String,
+	pub type_name: String,
+	pub default: Option<String>,
+}
+
+pub struct Function {
+	pub name: String,
+	pub return_type: String,
+	pub parameters: Vec<Parameter>,
+	pub is_const: bool,
+	pub attributes: Vec<Attribute>,
+}
+
 pub struct Class {
 	pub name: String,
 	pub namespace: Option<String>,
 	pub parent: Option<Parent>,
 	pub attributes: Vec<Attribute>,
 	pub functions: Vec<String>,
+	pub methods: Vec<Function>,
 	pub fields: Vec<Field>,
 }
 
@@ -67,6 +82,7 @@ fn get_class(node: tree_sitter::Node, source: &str) -> Option<Class> {
 		parent: get_parent(node, source),
 		attributes,
 		functions: get_functions(node, source),
+		methods: get_methods(node, source),
 		fields: get_fields(node, source),
 	})
 }
@@ -140,6 +156,129 @@ fn get_functions(node: tree_sitter::Node, source: &str) -> Vec<String> {
 		}
 	}
 	functions
+}
+
+fn get_methods(node: tree_sitter::Node, source: &str) -> Vec<Function> {
+	let query = Query::new(&tree_sitter_cpp::LANGUAGE.into(), "(function_declarator) @fn").unwrap();
+	let mut cursor = QueryCursor::new();
+	let mut captures = cursor.captures(&query, node, source.as_bytes());
+
+	let mut methods = Vec::new();
+	while let Some((m, _)) = captures.next() {
+		let func_decl = m.captures[0].node;
+
+		let Some(name_node) = func_decl.child_by_field_name("declarator") else { continue };
+		if name_node.kind() != "field_identifier" {
+			continue;
+		}
+
+		let Some(decl) = enclosing_declaration(func_decl) else { continue };
+		let all_attrs = get_attributes(decl, source);
+		if !all_attrs.iter().any(|a| a.name == "Reflect") {
+			continue;
+		}
+		let attributes = all_attrs.into_iter().filter(|a| a.name != "Reflect").collect();
+
+		let name = source[name_node.byte_range()].to_string();
+		if methods.iter().any(|f: &Function| f.name == name) {
+			continue;
+		}
+
+		methods.push(Function {
+			name,
+			return_type: get_return_type(decl, func_decl, source),
+			parameters: get_parameters(func_decl, source),
+			is_const: is_const_method(func_decl, source),
+			attributes,
+		});
+	}
+	methods
+}
+
+fn enclosing_declaration(func_decl: tree_sitter::Node) -> Option<tree_sitter::Node> {
+	let mut current = func_decl.parent();
+	while let Some(p) = current {
+		match p.kind() {
+			"field_declaration" | "function_definition" | "declaration" => return Some(p),
+			_ => current = p.parent(),
+		}
+	}
+	None
+}
+
+fn get_return_type(decl: tree_sitter::Node, func_decl: tree_sitter::Node, source: &str) -> String {
+	let base = decl.child_by_field_name("type")
+		.map(|t| source[t.byte_range()].trim().to_string())
+		.unwrap_or_default();
+
+	let mut suffix = String::new();
+	let mut current = decl.child_by_field_name("declarator");
+	while let Some(node) = current {
+		if node.id() == func_decl.id() {
+			break;
+		}
+		match node.kind() {
+			"pointer_declarator"   => suffix.push('*'),
+			"reference_declarator" => suffix.push('&'),
+			_ => {}
+		}
+		current = node.child_by_field_name("declarator");
+	}
+
+	format!("{base}{suffix}")
+}
+
+fn is_const_method(func_decl: tree_sitter::Node, source: &str) -> bool {
+	for child in func_decl.children(&mut func_decl.walk()) {
+		if child.kind() == "type_qualifier" && source[child.byte_range()].trim() == "const" {
+			return true;
+		}
+	}
+	false
+}
+
+fn get_parameters(func_decl: tree_sitter::Node, source: &str) -> Vec<Parameter> {
+	let Some(params) = func_decl.child_by_field_name("parameters") else { return Vec::new() };
+
+	let mut result = Vec::new();
+	for param in params.children(&mut params.walk()) {
+		if param.kind() != "parameter_declaration" && param.kind() != "optional_parameter_declaration" {
+			continue;
+		}
+
+		let default = param.child_by_field_name("default_value")
+			.map(|d| source[d.byte_range()].trim().to_string());
+
+		let name_node = param.child_by_field_name("declarator").and_then(find_identifier);
+
+		let (name, type_name) = if let Some(n) = name_node {
+			let ty = source[param.start_byte()..n.start_byte()].trim().to_string();
+			(source[n.byte_range()].to_string(), ty)
+		} else {
+			// Unnamed parameter: take the type text up to the default value, if any
+			let end = param.child_by_field_name("default_value")
+				.map(|d| d.start_byte())
+				.unwrap_or_else(|| param.end_byte());
+			let ty = source[param.start_byte()..end].trim().trim_end_matches('=').trim().to_string();
+			(String::new(), ty)
+		};
+
+		result.push(Parameter { name, type_name, default });
+	}
+	result
+}
+
+// Finds the first identifier node in a declarator subtree
+fn find_identifier(node: tree_sitter::Node) -> Option<tree_sitter::Node> {
+	if node.kind() == "identifier" {
+		return Some(node);
+	}
+	for child in node.children(&mut node.walk()) {
+		if let Some(found) = find_identifier(child) {
+			return Some(found);
+		}
+	}
+	None
 }
 
 fn get_fields(node: tree_sitter::Node, source: &str) -> Vec<Field> {

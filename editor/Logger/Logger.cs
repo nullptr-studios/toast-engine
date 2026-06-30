@@ -21,7 +21,7 @@ public class LogClient {
 
 	public void start() {
 		m_cts = new CancellationTokenSource();
-		Console.WriteLine("Starting TCP loop");
+		Engine.Log.Trace("Starting TCP loop");
 		Task.Run(() => listenLoop(m_cts.Token));
 	}
 
@@ -34,7 +34,7 @@ public class LogClient {
 		try {
 			m_client = new TcpClient();
 			await m_client.ConnectAsync("127.0.0.1", 12801, token);
-			Console.WriteLine("Connected");
+			Engine.Log.Trace("Connected");
 			using var stream = m_client.GetStream();
 
 			var length_buffer = new byte[4];
@@ -49,7 +49,7 @@ public class LogClient {
 				var message_buffer = new byte[message_length];
 				await readExactlyAsync(stream, message_buffer, (int)message_length, token);
 				var proto_batch = LogBatch.Parser.ParseFrom(message_buffer);
-				// Console.WriteLine($"Received {proto_batch.Logs.Count} logs");
+				// Engine.Log($"Received {proto_batch.Logs.Count} logs");
 
 				// Map to avalonia type
 				List<LogEntry> batch = [];
@@ -68,9 +68,9 @@ public class LogClient {
 				OnLogReceived?.Invoke(batch);
 			}
 		} catch (EndOfStreamException) {
-			Console.WriteLine("Rust server closed connection");
+			Engine.Log.Info("Rust server closed connection");
 		} catch (Exception ex) when (ex is not OperationCanceledException) {
-			Console.WriteLine($"Error in TCP loop: {ex.Message}");
+			Engine.Log.Error($"Error in TCP loop: {ex.Message}");
 		} finally {
 			m_client?.Close();
 		}

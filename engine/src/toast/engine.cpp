@@ -2,6 +2,7 @@
 
 #include "application.hpp"
 #include "assets/asset_manager.hpp"
+#include "assets/prefab.hpp"
 #include "events/event.hpp"
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
@@ -31,6 +32,7 @@
 #include <mutex>
 #include <optional>
 #include <span>
+#include <sstream>
 
 namespace toast {
 
@@ -283,6 +285,14 @@ auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
 	}
 
 	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(uid));
+
+	auto* ws = static_cast<Workspace*>(it->second.get());
+	if (!ws->isValid()) {
+		TOAST_ERROR("Engine", "Failed to load asset {} into workspace", uid);
+		m->owners.erase(it);
+		return {};
+	}
+
 	std::string name = it->second->name();
 	return {uid, name};
 }
@@ -290,6 +300,9 @@ auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
 void Engine::destroyWorkspace(UID handle) {
 	std::scoped_lock lock(m->owners_mutex);
 	m->owners.erase(handle);
+	if (m->active_workspace.data() == handle.data()) {
+		m->active_workspace = UID {0};
+	}
 }
 
 auto Engine::activeWorkspace() -> UID {
@@ -333,11 +346,11 @@ void operator delete(void* ptr) noexcept {
 // ffi stuff
 extern "C" {
 
-auto toast_create() -> engine_t* {
+auto toast_create() noexcept -> engine_t* {
 	return reinterpret_cast<engine_t*>(new toast::Engine());
 }
 
-void toast_init() {
+void toast_init() noexcept {
 	toast::Engine::get()->init();
 
 	if (toast::active_application) {
@@ -345,33 +358,33 @@ void toast_init() {
 	}
 }
 
-void toast_create_SDL_window(const char* w_name) {
+void toast_create_SDL_window(const char* w_name) noexcept {
 	toast::Engine::get()->createSDLWindow(w_name);
 }
 
-void toast_create_avalonia_window() {
+void toast_create_avalonia_window() noexcept {
 	toast::Engine::get()->createAvaloniaWindow();
 }
 
-void toast_tick() {
+void toast_tick() noexcept {
 	toast::Engine::get()->tick();
 }
 
-auto toast_should_close() -> int {
+auto toast_should_close() noexcept -> int {
 	return toast::Engine::get()->shouldClose();
 }
 
-void toast_destroy(engine_t* e) {
+void toast_destroy(engine_t* e) noexcept {
 	delete reinterpret_cast<toast::Engine*>(e);
 }
 
 void toast_set_working_directory(
     const char* assets, const char* artworks, const char* cache, const char* saved, const char* core
-) {
+) noexcept {
 	assets::AssetManager::setPaths({.assets = assets, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
 }
 
-auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) -> int {
+auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) noexcept -> int {
 	toast::renderer::ViewportFrameDesc desc {};
 	const int result = toast::Engine::get()->getViewportFrame(dst, dst_capacity, &desc);
 	if (out) {
@@ -383,7 +396,7 @@ auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_f
 	return result;
 }
 
-auto toast_create_workspace(const char* type) -> workspace_result {
+auto toast_create_workspace(const char* type) noexcept -> workspace_result {
 	auto [uid, name] = toast::Engine::get()->createWorkspace(type);
 
 	static thread_local std::string s_name;
@@ -391,10 +404,76 @@ auto toast_create_workspace(const char* type) -> workspace_result {
 	return {.uid = uid.data(), .name = s_name.c_str()};
 }
 
-auto toast_open_workspace(const char* uid) -> workspace_result {
+auto toast_open_workspace(const char* uid) noexcept -> workspace_result {
 	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid));
+
 	static thread_local std::string s_name;
 	s_name = std::move(name);
 	return {.uid = root_uid.data(), .name = s_name.c_str()};
+}
+
+void toast_rename_prefab_root(const char* path, const char* new_name) noexcept {
+	std::ifstream file_in(path, std::ios::binary | std::ios::ate);
+	if (!file_in.is_open()) {
+		return;
+	}
+
+	const auto size = static_cast<std::size_t>(file_in.tellg());
+	file_in.seekg(0, std::ios::beg);
+	std::vector<uint8_t> bytes(size);
+	if (!file_in.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size))) {
+		return;
+	}
+	file_in.close();
+
+	// Detect binary format by the TNODE magic header; otherwise it's text
+	const bool is_binary = bytes.size() >= 6 && bytes[0] == 'T' && bytes[1] == 'N' && bytes[2] == 'O' && bytes[3] == 'D' &&
+	                       bytes[4] == 'E' && bytes[5] == '\0';
+
+	std::unique_ptr<assets::Prefab> prefab;
+	if (is_binary) {
+		const std::span<const uint8_t> byte_span {bytes};
+		prefab = std::make_unique<assets::Prefab>(byte_span);
+	} else {
+		std::string text_content(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+		std::istringstream ss {text_content};
+		prefab = std::make_unique<assets::Prefab>(ss);
+	}
+
+	if (!prefab || prefab->nodes.empty()) {
+		return;
+	}
+	prefab->nodes[0].name = new_name;
+
+	std::ofstream out(path, std::ios::binary | std::ios::trunc);
+	if (is_binary) {
+		auto new_bytes = prefab->toBinary();
+		out.write(reinterpret_cast<const char*>(new_bytes.data()), static_cast<std::streamsize>(new_bytes.size()));
+	} else {
+		const auto text = prefab->toFile();
+		out.write(text.data(), static_cast<std::streamsize>(text.size()));
+	}
+}
+
+void toast_create_tnode(const char* path, const char* node_type) noexcept {
+	const auto stem = std::filesystem::path(path).stem().string();
+
+	// temp workspace
+	toast::Workspace temp_ws(node_type, toast::UID(static_cast<uint64_t>(-1ULL)));
+
+	assets::Prefab prefab(temp_ws.rootNode());
+	if (!prefab.nodes.empty()) {
+		prefab.nodes[0].name = stem;
+	}
+
+	const auto bytes = prefab.serialize(assets::SaveMode::editor);
+	std::ofstream out(path, std::ios::binary);
+	out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+}
+
+void toast_reload_manifest() noexcept {
+	auto& mgr = assets::AssetManager::get();
+	mgr.clearUnusedAssets();
+	mgr.reloadManifest();
 }
 }

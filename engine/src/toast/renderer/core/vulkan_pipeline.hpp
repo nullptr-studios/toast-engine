@@ -33,7 +33,7 @@ public:
 		// Render state
 		vk::Format color_format = vk::Format::eUndefined;
 		std::optional<vk::Format> depth_format;
-		vk::Extent2D extent {};
+		vk::Extent2D extent;
 
 		// Shader data TODO: Move this into own shader class
 		std::vector<std::byte> shader_spirv;
