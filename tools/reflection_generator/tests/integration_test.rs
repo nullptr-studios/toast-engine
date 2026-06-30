@@ -391,3 +391,11 @@ fn test_fixture_const_volatile_fields() {
         test_single_fixture(fixture_path, "30_const_volatile_fields", "target/test_outputs", "tests/expected_outputs");
     }
 }
+
+#[test]
+fn test_fixture_reflected_functions() {
+    let fixture_path = Path::new("tests/fixtures/31_reflected_functions.hpp");
+    if fixture_path.exists() {
+        test_single_fixture(fixture_path, "31_reflected_functions", "target/test_outputs", "tests/expected_outputs");
+    }
+}

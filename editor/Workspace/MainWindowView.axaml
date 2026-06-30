@@ -80,6 +80,15 @@
 				</MenuItem>
 				<MenuItem Header="_View" />
 				<MenuItem Header="_Tools">
+					<MenuItem Header="_Hierarchy" ToggleType="CheckBox"
+					          IsChecked="{Binding HierarchyVisible, Mode=TwoWay}" />
+					<MenuItem Header="_Inspector" ToggleType="CheckBox"
+					          IsChecked="{Binding InspectorVisible, Mode=TwoWay}" />
+					<MenuItem Header="_Data Editor" ToggleType="CheckBox"
+					          IsChecked="{Binding GenericEditorVisible, Mode=TwoWay}" />
+					<MenuItem Header="_Schema Editor" ToggleType="CheckBox"
+					          IsChecked="{Binding SchemaEditorVisible, Mode=TwoWay}" />
+					<Separator />
 					<MenuItem Header="_Logs" ToggleType="CheckBox"
 					          x:Name="LogWindowButton" />
 				</MenuItem>
@@ -107,7 +116,13 @@
 						<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut" />
 					</Transitions>
 				</Border.Transitions>
-				<DockControl Layout="{Binding ToastZoneLayout}" ZIndex="2" />
+				<DockPanel>
+					<Border x:Name="ToastResizeHandle" DockPanel.Dock="Top"
+					        Height="6" HorizontalAlignment="Stretch"
+					        Background="{StaticResource Bg4}"
+					        Cursor="SizeNorthSouth" />
+					<DockControl Layout="{Binding ToastZoneLayout}" />
+				</DockPanel>
 			</Border>
 		</Panel>
 	</Grid>

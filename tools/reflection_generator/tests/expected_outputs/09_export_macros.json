@@ -27,6 +27,7 @@
       }
     ],
     "groups": [],
+    "methods": [],
     "name": "ExportedNode",
     "namespace": "toast",
     "parent": null,

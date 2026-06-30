@@ -12,6 +12,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using editor.Assets.Importers;
+using editor.Assets.Types;
 using editor.Components.Modals;
 using Lucide.Avalonia;
 
@@ -27,16 +28,9 @@ public static class AssetDatabase {
 
 	private static Dictionary<string, (string Path, string Type)>? s_uidLookup;
 
-	// extension -> engine asset type, used to generate missing .meta sidecars
-	private static readonly Dictionary<string, string> s_assetTypes = new(StringComparer.OrdinalIgnoreCase) {
-		[".tnode"] = "node",
-		[".ktx2"] = "texture",
-		[".tmesh"] = "model",
-		[".tmat"] = "material",
-		[".slang"] = "shader",
-		[".lua"] = "script",
-		[".tcurve"] = "curve"
-	};
+	// extension -> engine asset type, derived from the registry
+	private static readonly Dictionary<string, string> s_assetTypes =
+		AssetTypeRegistry.All.ToDictionary(a => a.Extension, a => a.Type, StringComparer.OrdinalIgnoreCase);
 
 	public static event Action? ReloadedDatabase;
 
@@ -69,21 +63,22 @@ public static class AssetDatabase {
 
 	// full re-scan of all .meta files, rewrites database.json from scratch
 	public static void RebuildAssetDatabase() {
-		var assets = new JsonObject();
-
-		ScanDirectory(ProjectContext.AssetsPath, assets);
-		ScanDirectory(ProjectContext.CorePath, assets);
-
 		var db = new JsonObject {
-			["version"] = 1,
-			["generated_at"] = DateTime.UtcNow.ToString("o"),
-			["assets"] = assets
+			["version"] = 2,
+			["generated_at"] = DateTime.UtcNow.ToString("o")
 		};
+
+		ScanDirectory(ProjectContext.AssetsPath, db);
+		ScanDirectory(ProjectContext.CorePath, db);
 
 		var path = ProjectContext.Resolve("cache://database.json");
 		File.WriteAllText(path, db.ToJsonString(s_prettyJson));
 
 		s_uidLookup = null; // the on-disk database changed, drop the cached lookup
+
+		if (editor.Engine.ToastEngine.IsEngineReady)
+			editor.Engine.ToastEngine.ReloadManifest();
+
 		ReloadedDatabase?.Invoke();
 	}
 
@@ -102,22 +97,21 @@ public static class AssetDatabase {
 
 	private static Dictionary<string, (string Path, string Type)> BuildUidLookup() {
 		var lookup = new Dictionary<string, (string, string)>();
-		if (LoadAssetDatabaseAssets() is not { } assets) return lookup;
+		if (LoadAssetDatabase() is not { } db) return lookup;
 
-		foreach (var (uid, node) in assets) {
-			if (node is not JsonObject entry) continue;
-			var path = entry["path"]?.GetValue<string>();
-			if (path is null) continue;
-			lookup[uid] = (path, entry["type"]?.GetValue<string>() ?? "");
+		foreach (var (type, collectionNode) in db) {
+			if (type is "version" or "generated_at") continue;
+			if (collectionNode is not JsonObject collection) continue;
+			foreach (var (uid, pathNode) in collection) {
+				var path = pathNode?.GetValue<string>();
+				if (path is null) continue;
+				lookup[uid] = (path, type);
+			}
 		}
 
 		return lookup;
 	}
 
-	/// <summary>
-	///    Full project validation pass: generate missing metadata, rebuild the database, then resolve missing
-	///    files / artwork and offer reimports. Safe to run on startup and whenever the editor regains focus.
-	/// </summary>
 	public static async Task ValidateProject(Action<string>? log = null) {
 		log ??= _ => { };
 		GenerateMissingMetas(log);
@@ -128,69 +122,61 @@ public static class AssetDatabase {
 		RebuildAssetDatabase();
 	}
 
-	/// <summary>Generates a .meta sidecar (silently) for any asset under assets:// that is missing one.</summary>
 	public static void GenerateMissingMetas(Action<string>? log = null) {
-		if (!Directory.Exists(ProjectContext.AssetsPath)) return;
+		foreach (var root in new[] { ProjectContext.AssetsPath, ProjectContext.CorePath }) {
+			if (!Directory.Exists(root)) continue;
+			foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)) {
+				var ext = AssetTypeRegistry.GetExtension(Path.GetFileName(file));
+				if (!s_assetTypes.TryGetValue(ext, out var type)) continue;
+				if (File.Exists(file + ".meta")) continue;
 
-		foreach (var file in Directory.EnumerateFiles(ProjectContext.AssetsPath, "*", SearchOption.AllDirectories)) {
-			if (!s_assetTypes.TryGetValue(Path.GetExtension(file), out var type)) continue;
-			if (File.Exists(file + ".meta")) continue;
-
-			MetaFile.Write(file, new MetaHeader { Uid = UidGenerator.Generate(), Type = type });
-			log?.Invoke($"Generated .meta for {ProjectContext.ToVirtual(file) ?? file}");
+				MetaFile.Write(file, new MetaHeader { Uid = UidGenerator.Generate(), Type = type });
+				log?.Invoke($"Generated .meta for {ProjectContext.ToVirtual(file) ?? file}");
+			}
 		}
 	}
 
-	/// <summary>
-	///    Walks database.json and, for every asset whose backing file is gone, prompts the user to relocate it,
-	///    discard the reference, or skip. Rebuilds the database if any reference was discarded.
-	/// </summary>
 	public static async Task RelocateMissingAssets(Action<string> log) {
-		var assets = LoadAssetDatabaseAssets();
-		if (assets is null) return;
+		if (LoadAssetDatabase() is not { } db) return;
 
 		var changed = false;
-		foreach (var (uid, node) in assets.ToList()) {
-			if (node is not JsonObject entry) continue;
-			var virtualPath = entry["path"]?.GetValue<string>();
-			if (virtualPath is null) continue;
+		foreach (var (type, collectionNode) in db.ToList()) {
+			if (type is "version" or "generated_at") continue;
+			if (collectionNode is not JsonObject collection) continue;
+			foreach (var (uid, pathNode) in collection.ToList()) {
+				var virtualPath = pathNode?.GetValue<string>();
+				if (virtualPath is null) continue;
 
-			var realPath = ProjectContext.Resolve(virtualPath);
-			if (File.Exists(realPath)) continue;
+				var realPath = ProjectContext.Resolve(virtualPath);
+				if (File.Exists(realPath)) continue;
 
-			log($"Missing file: {virtualPath}");
-			var result = await ShowRelocateModal(
-				"Missing file",
-				$"File {virtualPath} could not be found, do you wish to relocate?",
-				"assets://",
-				Path.GetExtension(realPath));
+				log($"Missing file: {virtualPath}");
+				var result = await ShowRelocateModal(
+					"Missing file",
+					$"File {virtualPath} could not be found, do you wish to relocate?",
+					"assets://",
+					Path.GetExtension(realPath));
 
-			switch (result.Decision) {
-				case RelocateDecision.Relocate:
-					// point the asset's UID at the file the user picked: move its .meta sidecar next to the new
-					// file (keeping the UID + settings) so the rebuild remaps the UID to the new path
-					if (RelocateMeta(realPath, result.PickedPath!, uid, entry["type"]?.GetValue<string>() ?? "", log))
+				switch (result.Decision) {
+					case RelocateDecision.Relocate:
+						if (RelocateMeta(realPath, result.PickedPath!, uid, type, log))
+							changed = true;
+						break;
+					case RelocateDecision.Discard:
+						TryDelete(realPath + ".meta");
 						changed = true;
-					break;
-				case RelocateDecision.Discard:
-					// drop the reference: delete the orphan .meta so the rebuild forgets it
-					TryDelete(realPath + ".meta");
-					changed = true;
-					log($"Discarded {virtualPath}");
-					break;
-				case RelocateDecision.Skip:
-					log($"Skipped {virtualPath}");
-					break;
+						log($"Discarded {virtualPath}");
+						break;
+					case RelocateDecision.Skip:
+						log($"Skipped {virtualPath}");
+						break;
+				}
 			}
 		}
 
 		if (changed) RebuildAssetDatabase();
 	}
 
-	/// <summary>
-	///    Checks every artwork source tracked by the artwork database and, when the source file is gone, prompts
-	///    to relocate it or remove the link.
-	/// </summary>
 	public static async Task RelocateMissingArtwork(Action<string> log) {
 		var db = LoadArtworkDatabase();
 		var changed = false;
@@ -238,10 +224,6 @@ public static class AssetDatabase {
 		if (changed) SaveArtworkDatabase(db);
 	}
 
-	/// <summary>
-	///    Compares the on-disk hash of every tracked artwork file against the artwork database and offers to
-	///    reimport the assets generated from any file that changed.
-	/// </summary>
 	public static async Task CheckArtworkChanges(Action<string> log) {
 		var db = LoadArtworkDatabase();
 		var reimported = false;
@@ -278,11 +260,8 @@ public static class AssetDatabase {
 		if (reimported) RebuildAssetDatabase();
 	}
 
-	/// <summary>
-	///    Reimports the assets generated from a single artwork source, reusing the import settings stored in the
-	///    asset's .meta and preserving the original UIDs so references stay intact. Reusable from anywhere.
-	/// </summary>
-	public static async Task Reimport(string sourceVirtualPath, Action<string> log) {
+	public static async Task Reimport(string sourceVirtualPath, Action<string> log,
+		Action<double>? progress = null) {
 		var db = LoadArtworkDatabase();
 		if (db[sourceVirtualPath] is not JsonObject entry) {
 			log($"No import record for {sourceVirtualPath}");
@@ -300,12 +279,15 @@ public static class AssetDatabase {
 			.ToList() ?? [];
 
 		// find where the existing outputs live + the settings they were imported with
-		var (destDir, textureSection, psdSection) = LocateOutputs(uids);
+		var (destDir, textureSection, psdSection, gltfSection) = LocateOutputs(uids);
 
 		var textureSettings = SettingsFromMeta(textureSection);
-		IAssetImporter importer = Path.GetExtension(realSource).Equals(".psd", StringComparison.OrdinalIgnoreCase)
-			? new PsdImporter(textureSettings, SettingsFromMeta(psdSection))
-			: new TextureImporter(textureSettings);
+		var ext = Path.GetExtension(realSource).ToLowerInvariant();
+		IAssetImporter importer = ext switch {
+			".psd" => new PsdImporter(textureSettings, SettingsFromMeta(psdSection)),
+			".glb" or ".gltf" => new GltfImporter(SettingsFromMeta(gltfSection), textureSettings),
+			_ => new TextureImporter(textureSettings)
+		};
 
 		var ctx = new ImportContext {
 			DestDir = destDir ?? ProjectContext.AssetsPath,
@@ -314,13 +296,12 @@ public static class AssetDatabase {
 		};
 
 		log($"Reimporting {sourceVirtualPath}...");
-		var newUids = await importer.Import(realSource, ctx, log);
+		var newUids = await importer.Import(realSource, ctx, log, progress);
 		UpdateArtworkDatabase(sourceVirtualPath, ComputeHash(realSource), newUids);
 		log("Reimport done.");
 	}
 
-	// repoints an asset's UID at a new file by moving its .meta sidecar (or minting one with the same UID when
-	// the old sidecar is gone). The old location is left without a .meta so the next rebuild drops it.
+	// repoints an asset's UID at a new file by moving its .meta sidecar
 	private static bool RelocateMeta(string oldRealPath, string newRealPath, string uid, string type,
 		Action<string> log) {
 		var newVirtual = ProjectContext.ToVirtual(newRealPath);
@@ -352,7 +333,8 @@ public static class AssetDatabase {
 		}
 	}
 
-	private static void ScanDirectory(string directory, JsonObject assets) {
+	// collections are created on demand
+	private static void ScanDirectory(string directory, JsonObject db) {
 		if (!Directory.Exists(directory)) return;
 		foreach (var metaPath in MetaFile.FindAll(directory)) {
 			var header = MetaFile.ReadHeader(metaPath);
@@ -362,18 +344,20 @@ public static class AssetDatabase {
 			var virtualPath = ProjectContext.ToVirtual(assetRealPath);
 			if (virtualPath is null) continue;
 
-			assets[header.Uid] = new JsonObject {
-				["path"] = virtualPath,
-				["type"] = header.Type
-			};
+			if (db[header.Type] is not JsonObject collection) {
+				collection = new JsonObject();
+				db[header.Type] = collection;
+			}
+
+			collection[header.Uid] = virtualPath;
 		}
 	}
 
 	// finds the directory + import settings for a set of output UIDs by scanning their .meta sidecars
-	private static (string? destDir, TextureMetaSection? texture, PsdMetaSection? psd) LocateOutputs(
-		IReadOnlyCollection<string> uids) {
+	private static (string? destDir, TextureMetaSection? texture, PsdMetaSection? psd, GltfMetaSection? gltf)
+		LocateOutputs(IReadOnlyCollection<string> uids) {
 		if (uids.Count == 0 || !Directory.Exists(ProjectContext.AssetsPath))
-			return (null, null, null);
+			return (null, null, null, null);
 
 		var wanted = new HashSet<string>(uids);
 		foreach (var metaPath in MetaFile.FindAll(ProjectContext.AssetsPath)) {
@@ -383,10 +367,11 @@ public static class AssetDatabase {
 			var assetReal = metaPath[..^5];
 			return (Path.GetDirectoryName(assetReal),
 				MetaFile.ReadTextureSection(metaPath),
-				MetaFile.ReadPsdSection(metaPath));
+				MetaFile.ReadPsdSection(metaPath),
+				MetaFile.ReadGltfSection(metaPath));
 		}
 
-		return (null, null, null);
+		return (null, null, null, null);
 	}
 
 	private static TextureImporter.Settings SettingsFromMeta(TextureMetaSection? s) {
@@ -413,11 +398,24 @@ public static class AssetDatabase {
 		return settings;
 	}
 
-	private static JsonObject? LoadAssetDatabaseAssets() {
+	private static GltfImporter.Settings SettingsFromMeta(GltfMetaSection? s) {
+		var settings = new GltfImporter.Settings();
+		if (s is null) return settings;
+
+		settings.CreateSubfolder = s.CreateFolder;
+		settings.ImportMaterials = s.ImportMaterials;
+		settings.ImportTextures = s.ImportTextures;
+		settings.ImportCameras = s.ImportCameras;
+		settings.ImportLights = s.ImportLights;
+		settings.GeneratePrefab = s.GeneratePrefab;
+		return settings;
+	}
+
+	private static JsonObject? LoadAssetDatabase() {
 		var path = ProjectContext.Resolve("cache://database.json");
 		if (!File.Exists(path)) return null;
 		try {
-			return (JsonNode.Parse(File.ReadAllText(path)) as JsonObject)?["assets"] as JsonObject;
+			return JsonNode.Parse(File.ReadAllText(path)) as JsonObject;
 		} catch {
 			return null;
 		}
@@ -443,12 +441,30 @@ public static class AssetDatabase {
 		File.WriteAllText(path, db.ToJsonString(s_prettyJson));
 	}
 
-	private static void TryDelete(string path) {
+	public static void TryDelete(string path) {
 		try {
 			if (File.Exists(path)) File.Delete(path);
 		} catch {
 			/* ignore */
 		}
+	}
+
+	public static void RemoveArtworkOutputs(string uid) {
+		var db = LoadArtworkDatabase();
+		var changed = false;
+		foreach (var key in db.Select(kv => kv.Key).ToList()) {
+			if (key is "version" or "type") continue;
+			if (db[key] is not JsonObject entry) continue;
+			if (entry["outputs"] is not JsonArray outputs) continue;
+			for (var i = outputs.Count - 1; i >= 0; i--) {
+				if (outputs[i]?.GetValue<string>() != uid) continue;
+				outputs.RemoveAt(i);
+				changed = true;
+			}
+			if (outputs.Count == 0)
+				db.Remove(key);
+		}
+		if (changed) SaveArtworkDatabase(db);
 	}
 
 	private static async Task<RelocateResult> ShowRelocateModal(

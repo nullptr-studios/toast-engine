@@ -45,8 +45,12 @@ public partial class LoaderViewModel : ViewModelBase {
 			var task = m_tasks[i];
 			AppendLine($"> [{i + 1}/{total}] {task.Label}");
 
+			void ReportProgress(double frac) {
+				Dispatcher.UIThread.Post(() => Progress = (i + Math.Clamp(frac, 0.0, 1.0)) / total * 100.0);
+			}
+
 			try {
-				await RunTaskAsync(task);
+				await RunTaskAsync(task, ReportProgress);
 			} catch (Exception ex) {
 				var failure = ex as LoaderTaskException ?? new LoaderTaskException(task.Label, ex.Message, ex);
 				AppendLine($"error: {failure.Message}");
@@ -68,8 +72,9 @@ public partial class LoaderViewModel : ViewModelBase {
 		OnClose?.Invoke();
 	}
 
-	private async Task RunTaskAsync(LoaderTask task) {
+	private async Task RunTaskAsync(LoaderTask task, Action<double> reportProgress) {
 		switch (task) {
+			case ActionTaskWithProgress ap: await ap.Action(AppendLine, reportProgress); break;
 			case ActionTask a: await a.Action(AppendLine); break;
 			case ProcessTask p: await RunProcessAsync(p.Exe, p.Args); break;
 		}

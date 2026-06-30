@@ -52,8 +52,7 @@ public class AssetListPickerViewModel : PickerViewModel {
 	private readonly ObservableCollection<AssetPickerItem> m_filtered = [];
 
 	public AssetListPickerViewModel(string? assetType) {
-		FileType? filter = Enum.TryParse<FileType>(assetType, true, out var ft) ? ft : null;
-		foreach (var item in EnumerateAssets(filter)) m_all.Add(item);
+		foreach (var item in EnumerateAssets(assetType)) m_all.Add(item);
 		m_all.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
 		foreach (var item in m_all) m_filtered.Add(item);
 	}
@@ -61,12 +60,13 @@ public class AssetListPickerViewModel : PickerViewModel {
 	public override string WindowTitle => "Select an Asset...";
 	public override IEnumerable Items => m_filtered;
 
-	private static IEnumerable<AssetPickerItem> EnumerateAssets(FileType? filter) {
+	private static IEnumerable<AssetPickerItem> EnumerateAssets(string? typeFilter) {
 		if (!ProjectContext.IsInitialized) yield break;
 		foreach (var root in new[] { ProjectContext.AssetsPath, ProjectContext.CorePath }) {
 			if (!Directory.Exists(root)) continue;
 			foreach (var file in Flatten(new AssetFolder(root))) {
-				if (filter is { } f && file.Type != f) continue;
+				if (typeFilter is not null &&
+				    !string.Equals(file.Definition?.Type, typeFilter, StringComparison.OrdinalIgnoreCase)) continue;
 				if (file.Uid is not { } uid) continue;
 				var assetReal = file.Filepath[..^5];
 				var path = ProjectContext.ToVirtual(assetReal) ?? assetReal;

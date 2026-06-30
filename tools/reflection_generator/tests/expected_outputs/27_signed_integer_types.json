@@ -59,6 +59,7 @@
       }
     ],
     "groups": [],
+    "methods": [],
     "name": "SignedNode",
     "namespace": null,
     "parent": null,

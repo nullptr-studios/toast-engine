@@ -45,7 +45,6 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	node->enabled(true);
 
 	m_root_node = node;
-	event::send<event::RequestHierarchyUpdate>();
 	TOAST_INFO("World", "Created new workspace");
 }
 
@@ -82,11 +81,45 @@ Workspace::Workspace(UID uid) : m_handle(uid) {
 	node->enabled(true);
 
 	m_root_node = node;
-	event::send<event::RequestHierarchyUpdate>();
 	TOAST_INFO("World", "Opened workspace from {}", uid);
 }
 
+Workspace::~Workspace() {
+	if (!m_root_node.exists()) {
+		return;
+	}
+
+	std::vector<Node*> victims;
+	auto collect = [&victims](this auto&& self, Node& n) -> void {
+		victims.push_back(&n);
+		for (auto& c : n.m_children) {
+			self(*c);
+		}
+	};
+	collect(*m_root_node);
+	m_root_node = {};
+	m_focused_node = {};
+
+	for (Node* victim : victims) {
+		_detail::ControlBox* control = _detail::ControlBox::get(victim);
+		const NodeInfo* info = victim->info();
+		victim->m_parent = {};
+		victim->m_children.clear();
+		victim->m_listener.reset();
+		if (info && info->destroy) {
+			info->destroy(victim);
+		} else {
+			delete victim;
+		}
+		releaseNode(*control);
+	}
+	reapTombstones();
+}
+
 auto Workspace::name() -> std::string {
+	if (!m_root_node.exists()) {
+		return "";
+	}
 	return std::string {m_root_node->name()};
 }
 

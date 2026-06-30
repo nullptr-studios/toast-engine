@@ -179,6 +179,7 @@
       }
     ],
     "groups": [],
+    "methods": [],
     "name": "ManyGlobalsNode",
     "namespace": null,
     "parent": null,

@@ -46,7 +46,7 @@ public:
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
-		return "Mesh";
+		return "mesh";
 	}
 
 	[[nodiscard]]

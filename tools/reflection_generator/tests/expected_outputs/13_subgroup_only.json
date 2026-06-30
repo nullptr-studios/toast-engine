@@ -95,6 +95,7 @@
         ]
       }
     ],
+    "methods": [],
     "name": "SubgroupOnlyNode",
     "namespace": null,
     "parent": null,

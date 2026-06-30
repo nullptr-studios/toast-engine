@@ -40,6 +40,8 @@ public:
 	 */
 	Workspace(UID uid);
 
+	~Workspace() override;
+
 	auto name() -> std::string override;
 
 	/// No-op; Workspace has no tick scheduler and never registers dependencies
@@ -71,5 +73,15 @@ public:
 	 * is not the active one or when no node is focused.
 	 */
 	void tick() override;
+
+	[[nodiscard]]
+	auto rootNode() const -> const Node& {
+		return *m_root_node;
+	}
+
+	[[nodiscard]]
+	auto isValid() const -> bool {
+		return m_root_node.exists();
+	}
 };
 }

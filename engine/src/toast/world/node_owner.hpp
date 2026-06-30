@@ -24,7 +24,7 @@ namespace toast {
 class TOAST_API INodeOwner {
 public:
 	INodeOwner() = default;
-	~INodeOwner() = default;
+	virtual ~INodeOwner() = default;
 	virtual auto name() -> std::string = 0;
 
 	virtual void tick() = 0;

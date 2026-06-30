@@ -35,6 +35,7 @@
       }
     ],
     "groups": [],
+    "methods": [],
     "name": "DataNode",
     "namespace": "data",
     "parent": null,
