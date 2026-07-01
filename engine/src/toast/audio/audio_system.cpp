@@ -42,7 +42,7 @@ auto fmodLogCallback(FMOD_DEBUG_FLAGS flags, const char* file, int line, const c
 #endif
 
 auto guidToString(const FMOD_GUID& guid) -> std::string {
-	std::array<char, 64> buffer{};
+	std::array<char, 64> buffer {};
 	// FMOD_GUID: Data1 (uint), Data2 (ushort), Data3 (ushort), Data4 (char[8])
 	std::snprintf(
 	    buffer.data(),
@@ -380,7 +380,6 @@ auto AudioSystem::getOrCreateInstance(std::string_view guid_str) -> FMOD_STUDIO_
 	}
 
 	FMOD_STUDIO_EVENTDESCRIPTION* event_desc = nullptr;
-	// Convert view to null-terminated string for FMOD C API
 	std::string null_terminated_guid(guid_str);
 	FMOD_RESULT result = FMOD_Studio_System_GetEvent(m_system, null_terminated_guid.c_str(), &event_desc);
 
@@ -435,7 +434,7 @@ void AudioSystem::set3DAttributes(
 	if (auto it = m_instances_3d.find(instance_id); it != m_instances_3d.end()) {
 		FMOD_3D_ATTRIBUTES attributes = {0};
 
-		// Convert GLM to FMOD vectors (assuming right-handed Y-up; adjust if your engine differs)
+		// Convert GLM to FMOD vectors
 		attributes.position = {pos.x, pos.y, pos.z};
 		attributes.velocity = {vel.x, vel.y, vel.z};
 		attributes.forward = {fwd.x, fwd.y, fwd.z};
@@ -527,7 +526,7 @@ void AudioSystem::setSnapshotIntensity(std::string_view guid_str, float intensit
 		float clamped = std::clamp(intensity, 0.0f, 1.0f);
 		FMOD_Studio_EventInstance_SetParameterByName(it->second, "intensity", clamped, false);
 	} else {
-		// No active instance: store intent in logs — snapshot will pick up intensity when enabled
+		// No active instance
 		TOAST_WARN("Audio", "Snapshot intensity set for inactive snapshot {} -> {}", guid_str, intensity);
 	}
 }

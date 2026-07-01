@@ -94,7 +94,6 @@ private:
 	uint64_t m_next_instance_id = 1;    // 0 = null
 	std::unordered_map<uint64_t, FMOD_STUDIO_EVENTINSTANCE*> m_instances_3d;
 
-	// Active snapshot instances created to apply snapshot effects at runtime
 	std::unordered_map<std::string, FMOD_STUDIO_EVENTINSTANCE*> m_snapshot_instances;
 
 	std::vector<glm::vec3> m_listener_positions;
