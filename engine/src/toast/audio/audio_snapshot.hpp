@@ -1,5 +1,5 @@
 /**
- * @file AudioEvent.hpp
+ * @file audio_snapshot.hpp
  * @author Xein
  * @date 30 Jun 2026
  *
@@ -12,13 +12,13 @@
 
 namespace assets {
 
-class TOAST_API AudioEvent : public Data {
+class TOAST_API AudioSnapshot : public Data {
 public:
-	explicit AudioEvent(const toml::table& table, AssetHandle<Schema> schema = {}) : Data(table, std::move(schema)) { }
+	explicit AudioSnapshot(const toml::table& table, AssetHandle<Schema> schema = {}) : Data(table, std::move(schema)) { }
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
-		return "audio_event";
+		return "audio_snapshot";
 	}
 
 	// Type-safe string getters pulling from the underlying m_root DataValue
@@ -41,6 +41,9 @@ public:
 	auto guid() const -> std::string_view {
 		return m_root.contains("guid") ? m_root["guid"].as<std::string_view>() : "";
 	}
+
+	void setIntensity(float intensity) const;
+	void setEnabled(bool enabled) const;
 };
 
 }

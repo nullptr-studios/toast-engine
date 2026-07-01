@@ -18,9 +18,9 @@ namespace toast {
  * If you manually load or unload a bank during runtime (after init), it won't
  * be updated by default, and you need to call the @c reload() function
  */
-class TOAST_API [[ToastNode, Color("Beige")]] AudioContext : public Node{
+class TOAST_API [[ToastNode, Color("Beige")]] AudioContext : public Node {
 public:
-	void addBank(assets::AssetHandle<assets::AudioBank> bank);
+	void addBank(const assets::AssetHandle<assets::AudioBank>& bank);
 
 	void removeBank(assets::AssetHandle<assets::AudioBank> bank);
 
@@ -35,7 +35,7 @@ private:
 	[[Reflect]]
 	std::vector<assets::AssetHandle<assets::AudioBank>> m_banks;
 	std::mutex m_load_lock;
-	
+
 	[[Reflect, ReadOnly]]
 	std::vector<std::string> m_events;
 };

@@ -8,10 +8,10 @@ public:
 	void extents(glm::vec3 value);
 
 protected:
-	glm::vec3 emitterPosition(const glm::vec3& listener) override;
+	auto emitterPosition(const glm::vec3& listener) -> glm::vec3 override;
 
 	[[Reflect]]
-	glm::vec3 m_extents = glm::vec3{1.0f};
+	glm::vec3 m_extents = glm::vec3 {1.0f};
 };
 
 }

@@ -132,7 +132,7 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 		try {
 			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
 			auto table = toml::parse(toml_str);
-			
+
 			AssetHandle<Schema> schema_handle;
 			if (auto* schema_key = table.get("schema")) {
 				if (auto schema_uid_str = schema_key->value<std::string_view>()) {

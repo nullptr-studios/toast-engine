@@ -1,7 +1,8 @@
 #pragma once
+#include "../assets.hpp"
+
 #include <toast/export.hpp>
 #include <toast/world/node_3d.hpp>
-#include "../assets.hpp"
 
 namespace toast {
 
@@ -13,10 +14,10 @@ public:
 	[[Button]]
 	void stop();
 
-	void pause(bool value);
-	void setParameter(std::string_view name, float value);
-	void setParameter(std::string_view name, bool value);
-	auto isPlaying() -> bool;
+	void pause(bool value) const;
+	void setParameter(std::string_view name, float value) const;
+	void setParameter(std::string_view name, bool value) const;
+	[[nodiscard]] auto isPlaying() const -> bool;
 
 	void event(std::string_view path);
 	void event(toast::UID uid);
@@ -32,10 +33,10 @@ public:
 	void maxDistance(float value);
 
 protected:
-	virtual glm::vec3 emitterPosition(const glm::vec3& listener);
+	virtual auto emitterPosition(const glm::vec3& listener) -> glm::vec3;
 
-	virtual glm::vec3 emitterForward();
-	virtual glm::vec3 emitterUp();
+	virtual auto emitterForward() -> glm::vec3;
+	virtual auto emitterUp() -> glm::vec3;
 
 private:
 	void onEnable();
@@ -43,7 +44,7 @@ private:
 	void begin();
 	void lateTick();
 	void update3DState();
-	void applyProperties();
+	void applyProperties() const;
 
 	[[Reflect, Name("Audio Event")]]
 	assets::AssetHandle<assets::AudioEvent> m_event;
@@ -76,7 +77,7 @@ private:
 	float m_max_distance = 20.0f;
 
 	uint64_t m_instance_id = 0;
-	glm::vec3 m_last_position{0.f};
+	glm::vec3 m_last_position {0.f};
 };
 
 }

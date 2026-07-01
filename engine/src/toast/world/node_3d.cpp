@@ -113,11 +113,11 @@ void Node3D::lookAtZ(glm::vec3 target) {
 	rotQuat(glm::quat_cast(rot_mat));
 }
 
-glm::vec3 Node3D::up() {
+auto Node3D::up() const -> glm::vec3 {
 	return worldRotQuat() * world_up;
 }
 
-glm::vec3 Node3D::forward() {
+auto Node3D::forward() const -> glm::vec3 {
 	return worldRotQuat() * world_forward;
 }
 

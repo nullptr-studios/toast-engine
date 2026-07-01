@@ -12,8 +12,9 @@
 
 #pragma once
 
-#include <format>
 #include "control_box.hpp"
+
+#include <format>
 
 namespace toast {
 class Node;
@@ -122,10 +123,12 @@ struct std::hash<toast::Box<T>> {
 };
 
 /// Make nodes printable
-template <typename T>
+template<typename T>
 struct std::formatter<toast::Box<T>> : std::formatter<std::string_view> {
 	auto format(const toast::Box<T>& p, std::format_context& ctx) const {
-		if (not p.exists()) return std::format_to(ctx.out(), "(empty node)");
+		if (not p.exists()) {
+			return std::format_to(ctx.out(), "(empty node)");
+		}
 		return std::format_to(ctx.out(), "{} ({})", p->name(), p->uid());
 	}
 };

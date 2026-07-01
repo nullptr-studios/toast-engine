@@ -7,8 +7,8 @@
  */
 
 #pragma once
-#include <toast/export.hpp>
 #include <toast/assets/core_types.hpp>
+#include <toast/export.hpp>
 
 namespace assets {
 
@@ -22,8 +22,7 @@ public:
 	}
 
 	[[nodiscard]]
-	auto get() const noexcept -> const std::vector<uint8_t>&
-	{
+	auto get() const noexcept -> const std::vector<uint8_t>& {
 		return m_data;
 	}
 

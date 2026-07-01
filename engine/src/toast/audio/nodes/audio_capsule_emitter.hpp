@@ -9,7 +9,7 @@ public:
 	void halfHeight(float value);
 
 protected:
-	glm::vec3 emitterPosition(const glm::vec3& listener) override;
+	auto emitterPosition(const glm::vec3& listener) -> glm::vec3 override;
 
 	[[Reflect, Range(0.0, 100.0)]]
 	float m_radius = 0.5f;

@@ -193,6 +193,10 @@ void Engine::tick() {
 		active_application->tick();
 	}
 
+	if (m->audio_system) {
+		m->audio_system->tick();
+	}
+
 	if (m->renderer) {
 		m->renderer->drawFrame();
 	}

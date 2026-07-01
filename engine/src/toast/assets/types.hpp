@@ -24,4 +24,3 @@
 #include "texture.hpp"
 
 #include <toast/audio/assets.hpp>
-

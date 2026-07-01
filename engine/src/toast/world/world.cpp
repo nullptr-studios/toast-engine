@@ -207,6 +207,16 @@ void World::registerDependency(Node& from, Node& to) {
 	TOAST_TRACE("World", "Added dependency from {} to {}", from.name(), from.uid());
 }
 
+void World::unregisterDependency(Node& from, Node& to) {
+	// Remove the dependency from the forward graph
+	auto& edges = instance->dependency_graph.connections[from];
+	std::erase(edges, Box<Node>(to));
+
+	// Remove the dependency from the inverse graph
+	auto& inverse_edges = instance->dependency_graph.inverse_connections[to];
+	std::erase(inverse_edges, Box<Node>(from));
+}
+
 void World::loadNode(UID uid) {
 	ZoneScoped;
 	ZoneNameF("World::loadNode(%s)", uid.get().c_str());

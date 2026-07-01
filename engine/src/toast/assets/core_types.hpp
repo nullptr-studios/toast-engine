@@ -111,14 +111,14 @@ public:
 
 	[[nodiscard]]
 	auto operator->() const noexcept -> const Asset*;
-	
+
 	[[nodiscard]]
-	bool operator==(const AssetHandleBase& other) const {
+	auto operator==(const AssetHandleBase& other) const -> bool {
 		return m_uid.data() == other.m_uid.data();
 	}
-	
+
 	[[nodiscard]]
-	bool operator<(const AssetHandleBase& other) const {
+	auto operator<(const AssetHandleBase& other) const -> bool {
 		return m_uid.data() < other.m_uid.data();
 	}
 

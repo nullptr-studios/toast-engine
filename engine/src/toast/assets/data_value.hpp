@@ -102,7 +102,7 @@ public:
 	}
 
 	template<class T>
-	auto as() const -> T {
+	[[nodiscard]] auto as() const -> T {
 		TOAST_ASSERT(m_value.has_value(), "DataValue", "as<T>() called on a Null DataValue");
 		if (const T* ptr = std::any_cast<T>(&m_value)) {
 			return *ptr;

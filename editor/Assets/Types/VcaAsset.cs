@@ -5,7 +5,7 @@ namespace editor.Assets.Types;
 
 public sealed class VcaAsset : BaseAsset {
 	public override string Type => "audio_vca";
-	public override IReadOnlyList<string> CppTypeNames => ["VCA"];
+	public override IReadOnlyList<string> CppTypeNames => ["AudioVca"];
 	public override string Extension => ".tvca";
 	public override string DisplayName => "Audio VCA";
 	public override string ChipText => "VCA";

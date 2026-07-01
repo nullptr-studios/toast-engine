@@ -147,14 +147,14 @@ public:
 	 * @return Up vector of the current object
 	 */
 	[[nodiscard]]
-	auto up() -> glm::vec3;
-	
+	auto up() const -> glm::vec3;
+
 	/**
 	 * @return Forward vector of the current object
 	 */
 	[[nodiscard]]
-	auto forward() -> glm::vec3;
-	
+	auto forward() const -> glm::vec3;
+
 	static constexpr glm::vec3 world_up = {0.0f, 0.0f, 1.0f};
 	static constexpr glm::vec3 world_forward = {0.0f, 1.0f, 0.0f};
 

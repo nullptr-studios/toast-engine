@@ -20,19 +20,20 @@ public:
 private:
 	void begin();
 	void lateTick();
-	
+	void end();
+
 	[[Reflect, Range(0, 7)]]
-	int m_index = 0; ///< Fmod listener index for multiplayer
-	
+	int m_index = 0;          ///< Fmod listener index for multiplayer
+
 	[[Reflect, Range(0.0, 1.0)]]
-	float m_weight = 1.0f; ///< How much this listener contributes to the position
-	
+	float m_weight = 1.0f;    ///< How much this listener contributes to the position
+
 	[[Reflect]]
 	Box<Node3D> attenuation_override;
-	
+
 	bool is_dirty = true;
 	bool m_weight_changed = false;
-	
+
 	glm::vec3 prev_position;
 	glm::vec3 prev_rotation;
 };

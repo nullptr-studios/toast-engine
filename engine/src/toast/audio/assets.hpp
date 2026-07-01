@@ -7,6 +7,10 @@
  */
 
 #pragma once
-#include "assets/audio_bank.hpp"
-#include "assets/audio_strings.hpp"
-#include "assets/audio_event.hpp"
+#include "audio_bank.hpp"
+#include "audio_bus.hpp"
+#include "audio_event.hpp"
+#include "audio_port.hpp"
+#include "audio_snapshot.hpp"
+#include "audio_strings.hpp"
+#include "audio_vca.hpp"

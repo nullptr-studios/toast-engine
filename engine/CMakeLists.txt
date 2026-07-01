@@ -2,17 +2,17 @@ cmake_minimum_required(VERSION 3.20)
 project(toast_engine C CXX)
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
-  set(ARCH "arm64")
+    set(ARCH "arm64")
 elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
-  set(ARCH "x86_64")
+    set(ARCH "x86_64")
 else ()
-  message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+    message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
 endif ()
 
 if (WIN32)
-  set(OS "windows")
+    set(OS "windows")
 else ()
-  set(OS "linux")
+    set(OS "linux")
 endif ()
 
 # VCPKG pacakges
@@ -33,15 +33,15 @@ set(EXTERNAL_INC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/inc")
 set(EXT_LIB_BASE "${CMAKE_CURRENT_SOURCE_DIR}/external/lib/${OS}/${ARCH}")
 
 if (WIN32)
-  file(GLOB EXTERNAL_LIBS_DEBUG   "${EXT_LIB_BASE}/debug/*.lib")
-  file(GLOB EXTERNAL_LIBS_RELEASE "${EXT_LIB_BASE}/release/*.lib")
-  file(GLOB EXTERNAL_DLLS_DEBUG   "${EXT_LIB_BASE}/debug/*.dll")
-  file(GLOB EXTERNAL_DLLS_RELEASE "${EXT_LIB_BASE}/release/*.dll")
+    file(GLOB EXTERNAL_LIBS_DEBUG "${EXT_LIB_BASE}/debug/*.lib")
+    file(GLOB EXTERNAL_LIBS_RELEASE "${EXT_LIB_BASE}/release/*.lib")
+    file(GLOB EXTERNAL_DLLS_DEBUG "${EXT_LIB_BASE}/debug/*.dll")
+    file(GLOB EXTERNAL_DLLS_RELEASE "${EXT_LIB_BASE}/release/*.dll")
 else ()
-  file(GLOB EXTERNAL_LIBS_DEBUG   "${EXT_LIB_BASE}/debug/*.so")
-  file(GLOB EXTERNAL_LIBS_RELEASE "${EXT_LIB_BASE}/release/*.so")
-  set(EXTERNAL_DLLS_DEBUG   ${EXTERNAL_LIBS_DEBUG})
-  set(EXTERNAL_DLLS_RELEASE ${EXTERNAL_LIBS_RELEASE})
+    file(GLOB EXTERNAL_LIBS_DEBUG "${EXT_LIB_BASE}/debug/*.so")
+    file(GLOB EXTERNAL_LIBS_RELEASE "${EXT_LIB_BASE}/release/*.so")
+    set(EXTERNAL_DLLS_DEBUG ${EXTERNAL_LIBS_DEBUG})
+    set(EXTERNAL_DLLS_RELEASE ${EXTERNAL_LIBS_RELEASE})
 endif ()
 
 file(GLOB_RECURSE SOURCE "src/*.cpp" "generated/*.cpp" "generated/*.cc")
@@ -53,8 +53,8 @@ add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
         COMMAND "${OUTPUT_ROOT}/$<CONFIG>/reflection_generator/reflection_generator${CMAKE_EXECUTABLE_SUFFIX}"
         --database "${CMAKE_SOURCE_DIR}/engine/assets/engine_reflect.json"
-        --output   "${CMAKE_SOURCE_DIR}/engine/generated"
-        --input    "${CMAKE_SOURCE_DIR}/engine/src/toast"
+        --output "${CMAKE_SOURCE_DIR}/engine/generated"
+        --input "${CMAKE_SOURCE_DIR}/engine/src/toast"
         --include-root "${CMAKE_SOURCE_DIR}/engine/src"
         --register-fn "registerEngineTypes"
         COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
@@ -86,15 +86,15 @@ target_link_libraries(toast_engine
         Tracy::TracyClient glm::glm nlohmann_json::nlohmann_json
 )
 
-foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
-  string(TOUPPER "${config}" config_upper)
-  set_target_properties(toast_engine PROPERTIES
-          "RUNTIME_OUTPUT_DIRECTORY_${config_upper}" "${OUTPUT_ROOT}/${config}/toast_engine/bin"
-          "LIBRARY_OUTPUT_DIRECTORY_${config_upper}" "${OUTPUT_ROOT}/${config}/toast_engine/lib"
-          "ARCHIVE_OUTPUT_DIRECTORY_${config_upper}" "${OUTPUT_ROOT}/${config}/toast_engine/lib"
-          "PDB_OUTPUT_DIRECTORY_${config_upper}" "${OUTPUT_ROOT}/${config}/toast_engine/bin"
-  )
-endforeach()
+foreach (config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
+    string(TOUPPER "${config}" config_upper)
+    set_target_properties(toast_engine PROPERTIES
+            "RUNTIME_OUTPUT_DIRECTORY_${config_upper}" "${OUTPUT_ROOT}/${config}/toast_engine/bin"
+            "LIBRARY_OUTPUT_DIRECTORY_${config_upper}" "${OUTPUT_ROOT}/${config}/toast_engine/lib"
+            "ARCHIVE_OUTPUT_DIRECTORY_${config_upper}" "${OUTPUT_ROOT}/${config}/toast_engine/lib"
+            "PDB_OUTPUT_DIRECTORY_${config_upper}" "${OUTPUT_ROOT}/${config}/toast_engine/bin"
+    )
+endforeach ()
 
 target_compile_definitions(toast_engine PRIVATE TOAST_EXPORT)
 target_precompile_headers(toast_engine PRIVATE pch.h)
@@ -105,14 +105,36 @@ target_compile_definitions(toast_engine PUBLIC
 )
 
 if (MSVC)
-  target_compile_options(toast_engine PRIVATE $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast>)
-  target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:/LTCG>)
-endif()
+    target_compile_options(toast_engine PRIVATE $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast>)
+    target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:/LTCG>)
+endif ()
 
 target_compile_options(toast_engine PUBLIC
         $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
         $<$<CXX_COMPILER_ID:Clang>:-Wno-attributes>
 )
+
+add_custom_target(clang_format
+        COMMAND ${CMAKE_COMMAND} -DROOT_DIR=${CMAKE_CURRENT_SOURCE_DIR}/src -P ${CMAKE_SOURCE_DIR}/cmake/clang_format.cmake
+        COMMENT "Formatting sources"
+        VERBATIM
+)
+
+file(GLOB_RECURSE _TOAST_API_HEADERS "src/*.h" "src/*.hpp")
+
+add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/sync_api_headers.stamp"
+        COMMAND ${CMAKE_COMMAND} -DROOT_DIR=${CMAKE_CURRENT_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/cmake/sync_api_headers.cmake
+        COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/sync_api_headers.stamp"
+        COMMENT "Syncing public headers"
+        DEPENDS ${_TOAST_API_HEADERS} ${CMAKE_SOURCE_DIR}/cmake/sync_api_headers.cmake ${CMAKE_SOURCE_DIR}/cmake/clang_format.cmake
+        VERBATIM
+)
+
+add_custom_target(sync_api_headers DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/sync_api_headers.stamp")
+add_dependencies(sync_api_headers clang_format)
+add_dependencies(toast_engine sync_api_headers)
+add_dependencies(toast_engine log_server)
 
 # Post build
 get_target_property(_nlohmann_include_list nlohmann_json::nlohmann_json INTERFACE_INCLUDE_DIRECTORIES)
@@ -137,21 +159,21 @@ add_custom_command(TARGET toast_engine POST_BUILD
         VERBATIM
 )
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
-  add_custom_command(TARGET toast_engine POST_BUILD
-          COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${TOAST_ENGINE_BIN_DIR}/assets"
-          COMMENT "Copying assets"
-          VERBATIM
-  )
-endif()
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+    add_custom_command(TARGET toast_engine POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${TOAST_ENGINE_BIN_DIR}/assets"
+            COMMENT "Copying assets"
+            VERBATIM
+    )
+endif ()
 
 if (WIN32)
-  add_custom_command(TARGET toast_engine POST_BUILD
-          COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:toast_engine> "${TOAST_ENGINE_BIN_DIR}"
-          COMMENT "Copying runtime DLLs"
-          COMMAND_EXPAND_LISTS
-          VERBATIM
-  )
-endif()
+    add_custom_command(TARGET toast_engine POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:toast_engine> "${TOAST_ENGINE_BIN_DIR}"
+            COMMENT "Copying runtime DLLs"
+            COMMAND_EXPAND_LISTS
+            VERBATIM
+    )
+endif ()
 
 install(TARGETS toast_engine RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)

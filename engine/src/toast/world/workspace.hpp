@@ -46,6 +46,7 @@ public:
 
 	/// No-op; Workspace has no tick scheduler and never registers dependencies
 	void registerDependency(Node& from, Node& to) override;
+	void unregisterDependency(Node& from, Node& to) override;
 
 	/// Same query grammar as World::findFrom(); searches only within m_root_node
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;

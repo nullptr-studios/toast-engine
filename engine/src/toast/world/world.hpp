@@ -96,6 +96,7 @@ public:
 	 * @note Triggers a full rebuild of the dependency graph at the start of the next tick
 	 */
 	void registerDependency(Node& from, Node& to) override;
+	void unregisterDependency(Node& from, Node& to) override;
 
 	/**
 	 * @brief Begins asynchronous loading of a prefab into the cache

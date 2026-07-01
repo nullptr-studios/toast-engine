@@ -128,6 +128,8 @@ void Workspace::registerDependency(Node& from, Node& to) {
 	// TOAST_NOT_IMPLEMENTED;
 }
 
+void Workspace::unregisterDependency(Node& from, Node& to) { }
+
 auto Workspace::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
 	uint64_t target = UID::fromString(query);
 
