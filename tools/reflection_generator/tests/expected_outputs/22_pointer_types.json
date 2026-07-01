@@ -1,0 +1,36 @@
+[
+  {
+    "attributes": {},
+    "functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    },
+    "global_fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "uid_t",
+        "is_array": false,
+        "name": "m_texture",
+        "typename": "Box<Texture>"
+      }
+    ],
+    "groups": [],
+    "methods": [],
+    "name": "PointerNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "22_pointer_types.hpp"
+  }
+]

@@ -2,14 +2,36 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="editor.App"
              xmlns:local="using:editor"
-             RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             xmlns:conv="using:editor.Converters"
+             RequestedThemeVariant="Dark">
 
-    <Application.DataTemplates>
-        <local:ViewLocator/>
-    </Application.DataTemplates>
-  
-    <Application.Styles>
-        <FluentTheme />
-    </Application.Styles>
+	<Application.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.MergedDictionaries>
+				<ResourceInclude Source="avares://editor/Resources/EditorColors.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/DragNumberBox.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/BoolBox.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/StringBox.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/ColorBox.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/NodeBox.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/AssetBox.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/ArrayBox.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/EnumBox.axaml" />
+			</ResourceDictionary.MergedDictionaries>
+			<conv:SeverityToColorConverter x:Key="SeverityToColorConverter" />
+			<conv:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
+			<conv:EnabledToColorConverter x:Key="EnabledToColorConverter" />
+			<conv:ScaleConverter x:Key="ScaleConverter" />
+		</ResourceDictionary>
+	</Application.Resources>
+
+	<Application.DataTemplates>
+		<local:ViewLocator />
+	</Application.DataTemplates>
+
+	<Application.Styles>
+		<FluentTheme />
+		<DockFluentTheme />
+		<StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
+	</Application.Styles>
 </Application>

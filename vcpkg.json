@@ -7,13 +7,68 @@
     "version>=" : "1.32.0"
   }, {
     "name" : "sdl3",
+    "default-features" : false,
+    "features" : [ {
+      "name" : "vulkan"
+    }, {
+      "name" : "x11",
+      "platform" : "linux"
+    }, {
+      "name" : "wayland",
+      "platform" : "linux"
+    }, {
+      "name" : "dbus",
+      "platform" : "linux"
+    }, {
+      "name" : "ibus",
+      "platform" : "linux"
+    } ],
     "version>=" : "3.4.8"
+  }, {
+    "name" : "vulkan",
+    "version>=" : "2023-12-17"
+  }, {
+    "name" : "vulkan-loader",
+    "version>=" : "1.4.341.0"
+  }, {
+    "name" : "vulkan-memory-allocator-hpp",
+    "version>=" : "3.3.0"
+  }, {
+    "name" : "vulkan-memory-allocator",
+    "version>=" : "3.3.0"
   }, {
     "name" : "tracy",
     "version>=" : "0.13.1"
+  }, {
+    "name" : "shader-slang",
+    "version>=" : "2026.7.1"
+  }, {
+    "name" : "tomlplusplus",
+    "version>=" : "3.4.0#1"
+  }, {
+    "name" : "nlohmann-json",
+    "version>=" : "3.12.0#2"
+  }, {
+    "name" : "ktx",
+    "version>=" : "4.4.2"
+  }, {
+    "name" : "glm",
+    "version>=" : "1.0.3"
+  }, {
+    "name" : "protobuf",
+    "version>=" : "6.33.4#2"
+  }, {
+    "name" : "tinyspline",
+    "version>=" : "0.6.0"
+  }, {
+    "name" : "tinygltf",
+    "version>=" : "3.0.0"
+  }, {
+    "name" : "json-schema-validator",
+    "version>=" : "2.4.0"
   } ],
-  "overrides": [ {
-    "name": "tracy",
-    "version": "0.13.1"
+  "overrides" : [ {
+    "name" : "tracy",
+    "version" : "0.13.1"
   } ]
 }

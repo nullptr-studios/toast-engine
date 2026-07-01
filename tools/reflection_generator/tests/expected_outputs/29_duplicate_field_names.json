@@ -1,0 +1,64 @@
+[
+  {
+    "attributes": {},
+    "functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    },
+    "global_fields": [],
+    "groups": [
+      {
+        "fields": [
+          {
+            "attributes": {
+              "Group": [
+                "A"
+              ]
+            },
+            "default": null,
+            "field_type": "int_t",
+            "is_array": false,
+            "name": "m_value",
+            "typename": "int"
+          }
+        ],
+        "name": "A",
+        "subgroups": []
+      },
+      {
+        "fields": [
+          {
+            "attributes": {
+              "Group": [
+                "B"
+              ]
+            },
+            "default": null,
+            "field_type": "int_t",
+            "is_array": false,
+            "name": "m_value",
+            "typename": "int"
+          }
+        ],
+        "name": "B",
+        "subgroups": []
+      }
+    ],
+    "methods": [],
+    "name": "DuplicateFieldNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "29_duplicate_field_names.hpp"
+  }
+]

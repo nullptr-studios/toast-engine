@@ -1,31 +1,32 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
-using Avalonia.Data.Core.Plugins;
-using System.Linq;
 using Avalonia.Markup.Xaml;
-using editor.ViewModels;
-using editor.Views;
+using editor.Components.Modals;
+using editor.StartWindow;
 
 namespace editor;
 
-public partial class App : Application
-{
-    public override void Initialize()
-    {
-        AvaloniaXamlLoader.Load(this);
-    }
+public class App : Application {
+	public static IModalService Modals { get; } = new ModalService();
 
-    public override void OnFrameworkInitializationCompleted()
-    {
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = new MainWindowViewModel(),
-            };
-        }
+	public static Window? MainWindow =>
+		(Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
 
-        base.OnFrameworkInitializationCompleted();
-    }
+	public override void Initialize() {
+		AvaloniaXamlLoader.Load(this);
+	}
+
+	public override void OnFrameworkInitializationCompleted() {
+		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
+			desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
+
+			desktop.MainWindow = new StartWindow.StartWindow {
+				DataContext = new StartWindowViewModel()
+			};
+			desktop.MainWindow.Show();
+		}
+
+		base.OnFrameworkInitializationCompleted();
+	}
 }

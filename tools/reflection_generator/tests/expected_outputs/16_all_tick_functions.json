@@ -1,0 +1,27 @@
+[
+  {
+    "attributes": {},
+    "functions": {
+      "begin": true,
+      "destroy": true,
+      "early_tick": true,
+      "end": true,
+      "init": true,
+      "late_tick": true,
+      "load": true,
+      "on_disable": true,
+      "on_enable": true,
+      "post_physics": true,
+      "pre_init": true,
+      "save": true,
+      "tick": true
+    },
+    "global_fields": [],
+    "groups": [],
+    "methods": [],
+    "name": "AllTicksNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "16_all_tick_functions.hpp"
+  }
+]

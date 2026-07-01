@@ -68,7 +68,7 @@ struct WindowMouseButton : Event<WindowMouseButton> {
 
 /// @brief Event sent when user uses the scroll wheel
 struct WindowMouseScroll : Event<WindowMouseScroll> {
-	double x, y;
+	float x, y;
 
 	WindowMouseScroll(float x_offset, float y_offset) : x(x_offset), y(y_offset) { }
 };

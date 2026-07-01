@@ -22,25 +22,33 @@ concurrency:
 jobs:
   tidy:
     name: clang-tidy
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v30
+        uses: cachix/install-nix-action@v31.10.6
 
       - name: Setup vcpkg
         id: vcpkg
         uses: ./.github/actions/setup-vcpkg
 
+      - name: Restore CMake cache
+        uses: actions/cache@v4
+        with:
+          path: build/clang-tidy
+          key: cmake-clang-tidy-${{ hashFiles('CMakeLists.txt', 'vcpkg.json') }}
+          restore-keys: cmake-clang-tidy-
+
       - name: Generate compile_commands
         run: |
           eval "$(nix --extra-experimental-features 'nix-command flakes' print-dev-env .)"
+          rustup toolchain install stable --no-self-update
           cmake -B build/clang-tidy -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}"
           cp build/clang-tidy/compile_commands.json .
 

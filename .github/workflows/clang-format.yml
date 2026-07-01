@@ -22,17 +22,17 @@ concurrency:
 jobs:
   format:
     name: clang-format
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-latest]
     steps:
       - name: Checkout PR branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v30
+        uses: cachix/install-nix-action@v31.10.6
 
       - name: Run clang-format on engine/src and engine/ffi
         run: |
@@ -46,9 +46,7 @@ jobs:
             exit 0
           fi
           
-          for file in "${files[@]}"; do
-            clang-format -i --style=file:.clang-format "$file"
-          done
+          printf '%s\0' "${files[@]}" | xargs -0 -n 1 -P "$(nproc)" clang-format -i --style=file:.clang-format
           
           if git diff --quiet -- "${files[@]}"; then
             echo "Formatting check passed."

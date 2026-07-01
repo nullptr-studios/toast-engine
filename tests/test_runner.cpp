@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <iostream>
 #include <string_view>
+#include <toast/world/reflect.hpp>
+#include <toast/world/world_test_access.hpp>
 
 namespace {
 
@@ -13,6 +15,10 @@ void print_usage(const char* exe_name) {
 } // namespace
 
 int main(int argc, char** argv) {
+	toast::NodeRegistry reflection_registry;
+	toast::registerEngineTypes();
+	toast::_detail::WorldTestAccess::initThreadPool();
+
 	std::string_view requested_test;
 	bool list_only = false;
 

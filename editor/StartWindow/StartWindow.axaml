@@ -1,0 +1,73 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:editor.StartWindow"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        Width="800" Height="450"
+        CanResize="False" CanMaximize="False"
+        WindowStartupLocation="CenterScreen"
+        x:Class="editor.StartWindow.StartWindow"
+        x:DataType="vm:StartWindowViewModel"
+        Background="{StaticResource Bg2}"
+        Title="Start Page - Toast Engine">
+
+	<Design.DataContext>
+		<vm:StartWindowViewModel />
+	</Design.DataContext>
+
+	<DockPanel VerticalSpacing="8" Margin="8">
+		<!-- Toolbar -->
+		<Border DockPanel.Dock="Top" Background="{StaticResource Bg3}" CornerRadius="8" Padding="6">
+			<Grid DockPanel.Dock="Top" ColumnDefinitions="Auto, *, Auto, Auto" ColumnSpacing="8">
+				<TextBlock Grid.Column="0" Text="Toast Engine" FontWeight="Bold" Margin="5, 0"
+				           Foreground="{StaticResource Text}" VerticalAlignment="Center" />
+				<TextBox Grid.Column="1" PlaceholderText="Search project..." CornerRadius="6"/>
+				<Button Grid.Column="2" CornerRadius="6"
+				        Command="{Binding NewProject}" CommandParameter="{Binding $parent[Window]}">
+					<StackPanel Orientation="Horizontal" Spacing="4">
+						<LucideIcon Kind="Plus" Size="17" StrokeWidth="3"/>
+						<TextBlock Text="New project"></TextBlock>
+					</StackPanel>
+				</Button>
+				<Button Grid.Column="3" Command="{Binding OpenProject}" CommandParameter="{Binding $parent[Window]}" CornerRadius="6">
+					<StackPanel Orientation="Horizontal" Spacing="4">
+						<LucideIcon Kind="Folders" Size="17" StrokeWidth="3"/>
+						<TextBlock Text="Open project"></TextBlock>
+					</StackPanel>
+				</Button>
+			</Grid>
+		</Border>
+
+		<!-- Project list -->
+		<ListBox x:Name="ProjectListBox" ItemsSource="{Binding Projects}" Background="{StaticResource Bg1}" CornerRadius="8">
+			<ListBox.ItemTemplate>
+				<DataTemplate>
+					<Border Padding="8, 4">
+						<Grid ColumnDefinitions="Auto, *, Auto">
+							<Border Grid.Column="0" Width="64" Height="64" CornerRadius="8" Background="{StaticResource Bg2}">
+								<Image Width="64" Height="64" Source="{Binding ThumbnailPath}" />
+							</Border>
+
+							<StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,4">
+								<TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="14" />
+								<TextBlock Text="{Binding Path}" FontSize="12" Opacity="0.40" />
+							</StackPanel>
+
+							<StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center"
+							            Spacing="20" Margin="0, 0, 10, 0">
+								<TextBlock Text="{Binding Version}" Opacity="0.40" VerticalAlignment="Center" />
+								<TextBlock Text="{Binding Date}" Opacity="0.40" VerticalAlignment="Center" />
+								<Button CornerRadius="6" Background="{StaticResource Bg2}"
+								        Command="{Binding $parent[ListBox].((vm:StartWindowViewModel)DataContext).RemoveProjectCommand}"
+								        CommandParameter="{Binding}" >
+									<LucideIcon Kind="X" Size="18" StrokeWidth="3"/>
+								</Button>
+							</StackPanel>
+						</Grid>
+					</Border>
+				</DataTemplate>
+			</ListBox.ItemTemplate>
+		</ListBox>
+	</DockPanel>
+</Window>

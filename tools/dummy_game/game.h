@@ -20,7 +20,8 @@ extern "C" {
 
 struct game_t;                         ///< Opaque Engine ptr
 
-GAME_API game_t* game_create(void);    ///< Initializes the game engine
+GAME_API game_t* game_create(void);    ///< Initializes the game
+GAME_API void game_destroy(game_t*);   ///< Destroys the game
 
 #ifdef __cplusplus
 }

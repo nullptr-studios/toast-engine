@@ -1,13 +1,12 @@
 #include "logger.hpp"
 
 #include "ffi/log.h"    // ffi
-#include "generated/logging_easypb.h"
+#include "generated/logging.pb.h"
 #include "log.hpp"      // public functions
 #include "thread_pool.hpp"
 
 #include <chrono>
 #include <cstdlib>
-#include <easypb.hpp>
 #include <filesystem>
 #include <iostream>
 #include <print>
@@ -26,6 +25,11 @@
 
 namespace logging {
 
+namespace {
+std::mutex fallback_database_mutex;
+std::vector<std::tuple<std::string, unsigned, char, std::string, std::string>> fallback_database;
+}
+
 void _detail::log(
     uint8_t severity, std::string_view file_name, unsigned line_number, std::string_view sink, std::string_view message
 ) {
@@ -43,89 +47,110 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 	auto ptr = std::make_unique<Helper>();
 	instance = ptr.get();
 
-	// We allow disabling this so it's easier to debug the server
-	// On release this should ALWAYS be on since the client is not expected to open the log server on their own
-	if constexpr (auto_spawn_log_server) {
-		try {
-			// Get the directory of the current executable
-			std::filesystem::path exe_dir;
+	toast::ThreadPool::push([] {
+		// We allow disabling this so it's easier to debug the server
+		// On release this should ALWAYS be on since the client is not expected to open the log server on their own
+		if constexpr (auto_spawn_log_server) {
 			try {
-				// Try to get the executable path using platform-specific methods
+				// Get the directory of the current executable
+				std::filesystem::path exe_dir;
+				try {
+					// Try to get the executable path using platform-specific methods
 #ifdef __linux__
-				std::array<char, 4096> exe_path;
-				ssize_t len = readlink("/proc/self/exe", exe_path.data(), exe_path.size() - 1);
-				if (len != -1) {
-					exe_path[len] = '\0';
-					exe_dir = std::filesystem::path(exe_path.data()).parent_path();
-				}
+					std::array<char, 4096> exe_path;
+					ssize_t len = readlink("/proc/self/exe", exe_path.data(), exe_path.size() - 1);
+					if (len != -1) {
+						exe_path[len] = '\0';
+						exe_dir = std::filesystem::path(exe_path.data()).parent_path();
+					}
 #elif defined(__APPLE__)
-				uint32_t size = 4096;
-				char exe_path[size];
-				if (_NSGetExecutablePath(exe_path, &size) == 0) {
-					exe_dir = std::filesystem::path(exe_path).parent_path();
-				}
+					uint32_t size = 4096;
+					char exe_path[size];
+					if (_NSGetExecutablePath(exe_path, &size) == 0) {
+						exe_dir = std::filesystem::path(exe_path).parent_path();
+					}
 #elif defined(_WIN32)
-				char exe_path[MAX_PATH];
-				if (GetModuleFileNameA(nullptr, exe_path, MAX_PATH)) {
-					exe_dir = std::filesystem::path(exe_path).parent_path();
-				}
+					char exe_path[MAX_PATH];
+					if (GetModuleFileNameA(nullptr, exe_path, MAX_PATH)) {
+						exe_dir = std::filesystem::path(exe_path).parent_path();
+					}
 #endif
-			} catch (...) { std::println(std::cerr, "Couldnt find log server executable"); }
+				} catch (...) { std::println(std::cerr, "Couldnt find log server executable"); }
 
-			std::vector<std::filesystem::path> candidates;
+				std::vector<std::filesystem::path> candidates;
 
-			if (!exe_dir.empty()) {
+				if (!exe_dir.empty()) {
 #if defined(_WIN32)
-				candidates.push_back(exe_dir / "log_server.exe");
+					candidates.push_back(exe_dir / "log_server.exe");
 #else
-				candidates.push_back(exe_dir / "log_server");
+					candidates.push_back(exe_dir / "log_server");
 #endif
-			}
-
-			std::filesystem::path server_path;
-			for (auto& p : candidates) {
-				if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) {
-					server_path = p;
-					break;
 				}
-			}
 
-			if (!server_path.empty()) {
-				std::string cmd;
-				std::string output_redir = show_server_logs ? "" : " >/dev/null 2>&1";
-
-#if defined(_WIN32)
-				// On Windows, 'start /B' runs the command in the background without opening a new window
-				// For output redirection, we need to wrap it in 'cmd /C'
-				if (show_server_logs) {
-					cmd = "start /B " + server_path.string();
-				} else {
-					cmd = "start /B cmd /C \"" + server_path.string() + " >nul 2>&1\"";
-				}
-#elif defined(__APPLE__) || defined(__linux__)
-				// setsid detaches the server from the engine's process group on Linux/macOS.
-				// The trailing & ensures std::system() returns immediately without waiting
-				cmd = "setsid " + server_path.string() + output_redir + " &";
-#endif
-				if (!cmd.empty()) {
-					int ret = std::system(cmd.c_str());
-					if (ret != 0) {
-						std::println(std::cerr, "[Logger] Failed to execute log server spawn command: {}", ret);
+				std::filesystem::path server_path;
+				for (auto& p : candidates) {
+					if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) {
+						server_path = p;
+						break;
 					}
 				}
-			} else {
-				std::println(std::cerr, "[Logger] Could not find log server binary. Candidates checked:");
-				for (const auto& candidate : candidates) {
-					std::println(std::cerr, "  - {}", candidate.string());
-				}
-			}
-		} catch (...) {
-			std::println(std::cerr, "[Logger] Failed to spawn log server");
-			abort();
-		}
-	}
 
-	ptr->initNetworkRetry();
+				if (!server_path.empty()) {
+#if defined(_WIN32)
+					STARTUPINFOA si;
+					PROCESS_INFORMATION pi;
+					ZeroMemory(&si, sizeof(si));
+					si.cb = sizeof(si);
+					ZeroMemory(&pi, sizeof(pi));
+
+					std::string cmd_args = server_path.string();
+					DWORD creation_flags = CREATE_NO_WINDOW;
+
+					if (CreateProcessA(nullptr, cmd_args.data(), nullptr, nullptr, FALSE, creation_flags, nullptr, nullptr, &si, &pi)) {
+						// Close handles immediately so the log server runs independently
+						CloseHandle(pi.hProcess);
+						CloseHandle(pi.hThread);
+					} else {
+						std::println(std::cerr, "[Logger] CreateProcessA failed with error: {}", GetLastError());
+					}
+#elif defined(__APPLE__) || defined(__linux__)
+					std::string cmd;
+					std::string output_redir = show_server_logs ? "" : " >/dev/null 2>&1";
+
+					cmd = "setsid " + server_path.string() + output_redir + " &";
+
+					if (!cmd.empty()) {
+						int ret = std::system(cmd.c_str());
+						if (ret != 0) {
+							std::println(std::cerr, "[Logger] Failed to execute log server spawn command: {}", ret);
+						}
+					}
+#endif
+				} else {
+					std::println(std::cerr, "[Logger] Could not find log server binary. Candidates checked:");
+					for (const auto& candidate : candidates) {
+						std::println(std::cerr, "  - {}", candidate.string());
+					}
+				}
+			} catch (...) {
+				std::println(std::cerr, "[Logger] Failed to spawn log server");
+				abort();
+			}
+		}
+
+		instance->initNetworkRetry();
+
+		// Send logs on the queue
+		std::vector<std::tuple<std::string, unsigned, char, std::string, std::string>> logs_to_send;
+		{
+			std::lock_guard lock(fallback_database_mutex);
+			logs_to_send = fallback_database;
+			fallback_database.clear();
+		}
+		for (const auto& [file, line, severity, sink, message] : logs_to_send) {
+			log(file, line, severity, sink, message);
+		}
+	});
 	return ptr;
 }
 
@@ -136,6 +161,13 @@ Logger::~Logger() noexcept {
 
 void Logger::log(std::string_view file, unsigned line, char severity, std::string_view sink, std::string_view message) {
 	auto* logger = instance;
+
+	// Add the logs to a fallback database if it doesn't exist, then send them when initialized
+	if (instance == nullptr) {
+		std::lock_guard lock(fallback_database_mutex);
+		fallback_database.emplace_back(file, line, severity, sink, message);
+		return;
+	}
 
 	// DEPRECATED: This is not used anymore
 	auto pos = sink.find_last_of(':');
@@ -164,13 +196,13 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 		}
 	}
 
-	logging::LogData log;
+	proto::logging::LogData log;
 	log.set_timestamp(
 	    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count()
 	);    // retarded stl library
 	log.set_filepath(file);
 	log.set_line_number(line);
-	log.set_severity(static_cast<logging::LogData_Severity>(severity));
+	log.set_severity(static_cast<proto::logging::LogData_Severity>(severity));
 	log.set_sink(trimmed_sink);
 	log.set_message(message);
 
@@ -182,7 +214,7 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 	// We use an atomic exchange to claim a "drain slot". This ensures that
 	// even if 100 threads log at once, only one background task is queued
 	if (!logger->m.drain_pending.exchange(true)) {
-		toast::ThreadPool::queueJob([logger]() { logger->drain(); });
+		toast::ThreadPool::push([logger]() { logger->drain(); });
 	}
 
 #ifdef DEBUG
@@ -227,6 +259,11 @@ void Logger::initNetworkRetry() {
 			timeval timeout {.tv_sec = 1, .tv_usec = 0};
 			setsockopt(m.socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 #endif
+			// Publish the connection, then flush anything that queued up while we were still connecting
+			m.connected.store(true, std::memory_order_release);
+			if (!m.drain_pending.exchange(true)) {
+				toast::ThreadPool::push([this] { drain(); });
+			}
 			return;
 		} catch (const std::exception& e) {
 			if (attempt == max_attempts) {
@@ -251,6 +288,8 @@ void Logger::stop() {
 	// must be flushed synchronously before the object is destroyed
 	flushSync();
 
+	m.connected.store(false, std::memory_order_release);
+
 	if (m.socket.is_open()) {
 		asio::error_code ec;
 		[[maybe_unused]]
@@ -262,6 +301,12 @@ void Logger::stop() {
 
 void Logger::drain() {
 	ZoneScoped;
+
+	// The socket is open but not yet connected while initNetworkRetry is still running
+	if (!m.connected.load(std::memory_order_acquire)) {
+		m.drain_pending.store(false, std::memory_order_release);
+		return;
+	}
 
 	auto batch = collectQueue();
 
@@ -288,7 +333,7 @@ void Logger::drain() {
 	{
 		std::lock_guard lock(m.queue_mutex);
 		if (!m.log_queue.empty() && !m.drain_pending.exchange(true)) {
-			toast::ThreadPool::queueJob([this]() { drain(); });
+			toast::ThreadPool::push([this]() { drain(); });
 		}
 	}
 }
@@ -298,7 +343,7 @@ auto Logger::collectQueue() -> std::vector<uint8_t> {
 
 	// Batching logs together significantly reduces the number of TCP packets
 	// and system calls, which is better for performance
-	logging::LogBatch batch;
+	proto::logging::LogBatch batch;
 	{
 		std::lock_guard lock(m.queue_mutex);
 		while (!m.log_queue.empty()) {
@@ -308,7 +353,7 @@ auto Logger::collectQueue() -> std::vector<uint8_t> {
 		}
 	}
 
-	if (batch.logs.empty()) {
+	if (batch.logs_size() == 0) {
 		return {};
 	}
 
@@ -321,7 +366,7 @@ void Logger::flushSync() {
 	ZoneScoped;
 
 	auto batch = collectQueue();
-	if (!batch.empty() && m.socket.is_open()) {
+	if (!batch.empty() && m.connected.load(std::memory_order_acquire) && m.socket.is_open()) {
 		uint32_t len = static_cast<uint32_t>(batch.size());
 		std::array<uint8_t, 4> len_buf;
 		len_buf[0] = (len >> 24) & 0xFF;
@@ -340,23 +385,23 @@ void Logger::flushSync() {
 extern "C" {
 using namespace logging;
 
-void toast_trace(const char* sink, const char* message, const char* file, unsigned line) {
+void toast_trace(const char* sink, const char* message, const char* file, unsigned line) noexcept {
 	Logger::log(file, line, 0, sink, message);
 }
 
-void toast_info(const char* sink, const char* message, const char* file, unsigned line) {
+void toast_info(const char* sink, const char* message, const char* file, unsigned line) noexcept {
 	Logger::log(file, line, 1, sink, message);
 }
 
-void toast_warn(const char* sink, const char* message, const char* file, unsigned line) {
+void toast_warn(const char* sink, const char* message, const char* file, unsigned line) noexcept {
 	Logger::log(file, line, 2, sink, message);
 }
 
-void toast_error(const char* sink, const char* message, const char* file, unsigned line) {
+void toast_error(const char* sink, const char* message, const char* file, unsigned line) noexcept {
 	Logger::log(file, line, 3, sink, message);
 }
 
-void toast_critical(const char* sink, const char* message, const char* file, unsigned line) {
+void toast_critical(const char* sink, const char* message, const char* file, unsigned line) noexcept {
 	Logger::log(file, line, 4, sink, message);
 }
 }

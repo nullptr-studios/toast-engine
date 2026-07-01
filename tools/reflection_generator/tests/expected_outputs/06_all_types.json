@@ -1,0 +1,116 @@
+[
+  {
+    "attributes": {},
+    "functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    },
+    "global_fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "bool_t",
+        "is_array": false,
+        "name": "m_bool_val",
+        "typename": "bool"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_int_val",
+        "typename": "int"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "float_t",
+        "is_array": false,
+        "name": "m_float_val",
+        "typename": "float"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "double_t",
+        "is_array": false,
+        "name": "m_double_val",
+        "typename": "double"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "string_t",
+        "is_array": false,
+        "name": "m_string_val",
+        "typename": "std::string"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "vec2_t",
+        "is_array": false,
+        "name": "m_vec2_val",
+        "typename": "glm::vec2"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "vec3_t",
+        "is_array": false,
+        "name": "m_vec3_val",
+        "typename": "glm::vec3"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "vec4_t",
+        "is_array": false,
+        "name": "m_vec4_val",
+        "typename": "glm::vec4"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "quaternion_t",
+        "is_array": false,
+        "name": "m_quat_val",
+        "typename": "glm::quat"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "uid_t",
+        "is_array": false,
+        "name": "m_uid_val",
+        "typename": "UID"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": true,
+        "name": "m_int_array",
+        "typename": "std::vector<int>"
+      }
+    ],
+    "groups": [],
+    "methods": [],
+    "name": "AllTypesNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "06_all_types.hpp"
+  }
+]

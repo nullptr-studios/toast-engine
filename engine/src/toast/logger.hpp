@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "generated/logging_easypb.h"
+#include "generated/logging.pb.h"
 
 #include <asio.hpp>
 #include <atomic>
@@ -31,7 +31,7 @@ class Logger {
 		asio::io_context io_ctx;
 		asio::ip::tcp::socket socket {io_ctx};
 
-		std::deque<logging::LogData> log_queue;
+		std::deque<proto::logging::LogData> log_queue;
 		std::mutex queue_mutex;
 
 		/**
@@ -41,6 +41,11 @@ class Logger {
 		 * avoiding unnecessary context switches and thread contention.
 		 */
 		std::atomic<bool> drain_pending = false;
+
+		/**
+		 * @brief True once initNetworkRetry has established the connection
+		 */
+		std::atomic<bool> connected = false;
 	} m;
 
 	static constexpr uint16_t port = 12800;                ///< Port to connect to the server
