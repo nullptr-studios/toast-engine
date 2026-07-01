@@ -8,6 +8,7 @@
 
 #pragma once
 #include "core_types.hpp"
+#include "toast/renderer/core/vulkan_renderer.hpp"
 
 #include <glm/glm.hpp>
 #include <toast/export.hpp>
@@ -29,17 +30,9 @@ class TOAST_API Mesh final : public Asset {
 public:
 	using Index = uint32_t;
 
-	struct Vertex {
-		glm::vec3 position;
-		glm::vec3 normal;
-		glm::vec2 uv;
-		glm::vec3 tangent;
-		glm::vec3 color;
-	};
-
 	explicit Mesh(const std::vector<uint8_t>& data);
 
-	Mesh(std::string_view name, std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices)
+	Mesh(std::string_view name, std::vector<toast::renderer::Vertex>&& vertices, std::vector<uint32_t>&& indices)
 	    : m_name(name),
 	      m_vertices(std::move(vertices)),
 	      m_indices(std::move(indices)) { }
@@ -50,13 +43,18 @@ public:
 	}
 
 	[[nodiscard]]
-	auto vertices() const -> const std::vector<Vertex>& {
+	auto vertices() const -> const std::vector<toast::renderer::Vertex>& {
 		return m_vertices;
 	}
 
 	[[nodiscard]]
 	auto indices() const -> const std::vector<Index>& {
 		return m_indices;
+	}
+
+	[[nodiscard]]
+	auto gpuMesh() const -> const toast::renderer::VulkanMesh& {
+		return m_gpu_mesh;
 	}
 
 	[[nodiscard]]
@@ -69,8 +67,10 @@ public:
 
 private:
 	std::string m_name;
-	std::vector<Vertex> m_vertices;
+	std::vector<toast::renderer::Vertex> m_vertices;
 	std::vector<Index> m_indices;
+
+	toast::renderer::VulkanMesh m_gpu_mesh;
 };
 
 }

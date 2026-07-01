@@ -7,7 +7,7 @@ find_package(Tracy CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
-find_package(KTX REQUIRED)
+find_package(KTX CONFIG REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(unofficial-vulkan-memory-allocator-hpp CONFIG REQUIRED)
 find_package(slang CONFIG REQUIRED)
@@ -67,9 +67,6 @@ target_include_directories(toast_engine
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/ffi
 )
-
-# target_compile_definitions(toast_engine PRIVATE VK_NO_PROTOTYPES)
-# target_compile_definitions(toast_engine PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
 
 
 target_link_libraries(toast_engine

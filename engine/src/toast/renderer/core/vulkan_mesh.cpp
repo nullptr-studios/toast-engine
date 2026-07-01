@@ -49,7 +49,7 @@ void VulkanMesh::create(
 	vbCI.size = m_vertexSize;
 	vbCI.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
 
-	std::array<uint32_t, 2> familyIndices {graphicsQueueFamilyIndex, transferQueueFamilyIndex};
+	std::array familyIndices {graphicsQueueFamilyIndex, transferQueueFamilyIndex};
 
 	if (useConcurrentSharing) {
 		vbCI.sharingMode = vk::SharingMode::eConcurrent;
@@ -94,14 +94,16 @@ void VulkanMesh::destroy() {
 	m_indexSize = 0;
 }
 
-void VulkanMesh::recordUpload(vk::CommandBuffer cmd, vk::Buffer stagingVB, vk::Buffer stagingIB) const {
+void VulkanMesh::recordUpload(
+    vk::CommandBuffer cmd, vk::Buffer stagingBuffer, vk::DeviceSize vertexOffset, vk::DeviceSize indexOffset
+) const {
 	if (!m_vertexBuffer || !m_indexBuffer) {
 		TOAST_CRITICAL("VulkanMesh", "Mesh buffers were not created before upload");
 	}
 
-	cmd.copyBuffer(stagingVB, **m_vertexBuffer, vk::BufferCopy(0, 0, m_vertexSize));
-
-	cmd.copyBuffer(stagingIB, **m_indexBuffer, vk::BufferCopy(0, 0, m_indexSize));
+	// Copy using the explicit offsets out of the single staging buffer
+	cmd.copyBuffer(stagingBuffer, **m_vertexBuffer, vk::BufferCopy(vertexOffset, 0, m_vertexSize));
+	cmd.copyBuffer(stagingBuffer, **m_indexBuffer, vk::BufferCopy(indexOffset, 0, m_indexSize));
 }
 
 void VulkanMesh::bind(vk::CommandBuffer cmd) const {
@@ -126,81 +128,59 @@ MeshUpload::MeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data) {
 }
 
 void MeshUpload::build(const VulkanCore& core) {
-	// Create the final GPU buffers in the mesh
 	mesh->create(core, data, core.getGraphicsQueueFamilyIndex(), core.getTransferQueueFamilyIndex());
-
 	mesh->markUploading();
 
 	const vk::DeviceSize vertexSize = data.vertices.size_bytes();
 	const vk::DeviceSize indexSize = data.indices.size_bytes();
+	const vk::DeviceSize totalSize = vertexSize + indexSize;
 
-	// Create vertex staging buffer
-	{
-		vk::BufferCreateInfo stagingCI {};
-		stagingCI.size = vertexSize;
-		stagingCI.usage = vk::BufferUsageFlagBits::eTransferSrc;
-		stagingCI.sharingMode = vk::SharingMode::eExclusive;
+	// Single unified staging buffer
+	vk::BufferCreateInfo stagingCI {};
+	stagingCI.size = totalSize;
+	stagingCI.usage = vk::BufferUsageFlagBits::eTransferSrc;
+	stagingCI.sharingMode = vk::SharingMode::eExclusive;
 
-		vma::AllocationCreateInfo allocCI {};
-		allocCI.usage = vma::MemoryUsage::eAutoPreferHost;
-		allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+	vma::AllocationCreateInfo allocCI {};
+	allocCI.usage = vma::MemoryUsage::eAuto;
+	allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite |
+	                vma::AllocationCreateFlagBits::eHostAccessAllowTransferInstead;
 
-		vertexStaging = core.getAllocator().createBuffer(stagingCI, allocCI);
+	vertexStaging = core.getAllocator().createBuffer(stagingCI, allocCI);
 
-		auto& allocation = vertexStaging.getAllocation();
-		void* mapped = allocation.getInfo().pMappedData;
-		if (!mapped) {
-			TOAST_CRITICAL("MeshUpload", "Vertex staging buffer is not mapped");
-		}
-
-		std::memcpy(mapped, data.vertices.data(), vertexSize);
-		allocation.flush(0, vertexSize);
+	auto& allocation = vertexStaging.getAllocation();
+	uint8_t* mapped = static_cast<uint8_t*>(allocation.getInfo().pMappedData);
+	if (!mapped) {
+		TOAST_CRITICAL("MeshUpload", "Unified staging buffer is not mapped");
 	}
 
-	// Create index staging buffer
-	{
-		vk::BufferCreateInfo stagingCI {};
-		stagingCI.size = indexSize;
-		stagingCI.usage = vk::BufferUsageFlagBits::eTransferSrc;
-		stagingCI.sharingMode = vk::SharingMode::eExclusive;
-
-		vma::AllocationCreateInfo allocCI {};
-		allocCI.usage = vma::MemoryUsage::eAutoPreferHost;
-		allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
-
-		indexStaging = core.getAllocator().createBuffer(stagingCI, allocCI);
-
-		auto& allocation = indexStaging.getAllocation();
-		void* mapped = allocation.getInfo().pMappedData;
-		if (!mapped) {
-			TOAST_CRITICAL("MeshUpload", "Index staging buffer is not mapped");
-		}
-
-		std::memcpy(mapped, data.indices.data(), indexSize);
-		allocation.flush(0, indexSize);
-	}
+	// Sequential writes to contiguous memory blocks
+	std::memcpy(mapped, data.vertices.data(), vertexSize);
+	std::memcpy(mapped + vertexSize, data.indices.data(), indexSize);
 }
 
 void MeshUpload::record(vk::CommandBuffer cmd) {
-	mesh->recordUpload(cmd, *vertexStaging, *indexStaging);
+	const vk::DeviceSize vertexSize = mesh->m_vertexSize;
 
-	// Memory barrier to make transfer writes visible to Vertex reading
+	// Record using a single buffer with an offset for the indices
+	mesh->recordUpload(cmd, *vertexStaging, 0, vertexSize);
+
 	std::array<vk::BufferMemoryBarrier, 2> barriers = {
 	  vk::BufferMemoryBarrier(
 	      vk::AccessFlagBits::eTransferWrite,
 	      vk::AccessFlagBits::eVertexAttributeRead,
 	      VK_QUEUE_FAMILY_IGNORED,
 	      VK_QUEUE_FAMILY_IGNORED,
-	      &**vertexStaging,
+	      mesh->m_vertexBuffer.value(),
 	      0,
-	      mesh->m_vertexSize
+	      vertexSize
 	  ),
 	  vk::BufferMemoryBarrier(
 	      vk::AccessFlagBits::eTransferWrite,
 	      vk::AccessFlagBits::eIndexRead,
 	      VK_QUEUE_FAMILY_IGNORED,
 	      VK_QUEUE_FAMILY_IGNORED,
-	      &**indexStaging,
+	      mesh->m_indexBuffer.value(),
 	      0,
 	      mesh->m_indexSize
 	  )

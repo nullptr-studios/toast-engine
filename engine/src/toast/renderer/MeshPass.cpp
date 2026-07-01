@@ -48,7 +48,7 @@ MeshPass::MeshPass(const toast::renderer::VulkanCore& core, vk::Format colorForm
 	std::vector<uint8_t> texturebuffer;
 	// load all images from ImageLoadtest folder
 	{
-		const std::string imageFolder = "ImageLoadtest";
+		const std::string imageFolder = "ImageLoadTest";
 		for (const auto& entry : std::filesystem::directory_iterator(imageFolder)) {
 			if (entry.is_regular_file() && entry.path().extension() == ".ktx2") {
 				std::vector<uint8_t> imageBuffer;

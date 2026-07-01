@@ -105,7 +105,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			int col_idx = find_attr("COLOR_0");
 
 			const uint32_t vertex_count = model.accessors[pos_idx].count;
-			std::vector<assets::Mesh::Vertex> vertices(vertex_count);
+			std::vector<toast::renderer::Vertex> vertices(vertex_count);
 
 			const uint8_t* pos_data = accessor_bytes(pos_idx);
 			const uint8_t* norm_data = norm_idx != -1 ? accessor_bytes(norm_idx) : nullptr;
@@ -125,7 +125,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 				if (tan_data) {
 					glm::vec4 t;
 					memcpy(&t, tan_data + (j * get_stride(tan_idx, sizeof(glm::vec4))), sizeof(glm::vec4));
-					v.tangent = glm::vec3(t);    // w is handedness, store or discard as needed
+					v.tangent = t;    // w is handedness, store or discard as needed
 				}
 				if (col_data) {
 					memcpy(&v.color, col_data + (j * get_stride(col_idx, sizeof(glm::vec3))), sizeof(glm::vec3));

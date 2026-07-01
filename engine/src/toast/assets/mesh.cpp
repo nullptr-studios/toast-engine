@@ -14,8 +14,8 @@ Mesh::Mesh(const std::vector<uint8_t>& data) {
 
 	switch (header.version) {
 		case 1: {
-			size_t expected_size =
-			    sizeof(_detail::MeshFileHeader) + (header.vertex_count * sizeof(Vertex)) + (header.index_count * sizeof(uint32_t));
+			size_t expected_size = sizeof(_detail::MeshFileHeader) + (header.vertex_count * sizeof(toast::renderer::Vertex)) +
+			                       (header.index_count * sizeof(uint32_t));
 			TOAST_ASSERT(
 			    data.size() == expected_size, "AssetManager", "Mesh data size does not match expected size based on header information"
 			);
@@ -40,9 +40,9 @@ Mesh::Mesh(const std::vector<uint8_t>& data) {
 			memcpy(
 			    m_vertices.data(),
 			    data_start,
-			    header.vertex_count * sizeof(Vertex)
+			    header.vertex_count * sizeof(toast::renderer::Vertex)
 			);
-			data_start += header.vertex_count * sizeof(Vertex);
+			data_start += header.vertex_count * sizeof(toast::renderer::Vertex);
 
 			memcpy(
 			    m_indices.data(),
@@ -54,6 +54,11 @@ Mesh::Mesh(const std::vector<uint8_t>& data) {
 		}
 		default: TOAST_ASSERT(false, "AssetManager", "Mesh data has invalid version");
 	}
+
+	// create GPU Side mesh
+	toast::renderer::VulkanRenderer::instance->queueResourceUpload(
+	    std::make_unique<toast::renderer::MeshUpload>(m_gpu_mesh, toast::renderer::VulkanMesh::UploadData {m_vertices, m_indices})
+	);
 }
 
 auto Mesh::toBinary() const -> std::vector<uint8_t> {
@@ -73,7 +78,7 @@ auto Mesh::toBinary() const -> std::vector<uint8_t> {
 
 	// vectors
 	const uint8_t* vertices_start = reinterpret_cast<const uint8_t*>(m_vertices.data());
-	buffer.insert(buffer.end(), vertices_start, vertices_start + (sizeof(Vertex) * m_vertices.size()));
+	buffer.insert(buffer.end(), vertices_start, vertices_start + (sizeof(toast::renderer::Vertex) * m_vertices.size()));
 	const uint8_t* indices_start = reinterpret_cast<const uint8_t*>(m_indices.data());
 	buffer.insert(buffer.end(), indices_start, indices_start + (sizeof(uint32_t) * m_indices.size()));
 

@@ -22,7 +22,10 @@ void VulkanTexture::create(const VulkanCore& core, Params params) {
 	imageCI.sharingMode = vk::SharingMode::eExclusive;
 	imageCI.initialLayout = vk::ImageLayout::eUndefined;
 
-	// 2D or 3D images
+	if (m_params.isCubemap) {
+		imageCI.flags |= vk::ImageCreateFlagBits::eCubeCompatible;
+	}
+
 	if (m_params.extent.depth > 1) {
 		imageCI.imageType = vk::ImageType::e3D;
 	} else {
@@ -37,13 +40,14 @@ void VulkanTexture::create(const VulkanCore& core, Params params) {
 	vk::ImageViewCreateInfo viewCI {};
 	viewCI.image = **m_image;
 
-	// Match view type to image geom
 	if (m_params.extent.depth > 1) {
 		viewCI.viewType = vk::ImageViewType::e3D;
+	} else if (m_params.isCubemap) {
+		// A  cubemap has 6 layers
+		viewCI.viewType = m_params.layerCount > 6 ? vk::ImageViewType::eCubeArray : vk::ImageViewType::eCube;
 	} else {
 		viewCI.viewType = m_params.layerCount > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D;
 	}
-	// if (isCubemap) viewCI.viewType = vk::ImageViewType::eCube;
 
 	viewCI.format = m_params.format;
 	viewCI.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -68,9 +72,7 @@ void TextureUpload::build(const VulkanCore& core) {
 		TOAST_CRITICAL("TextureUpload", "Failed to open KTX image data?!");
 	}
 
-	// Handle transcoders
 	if (ktxTexture2_NeedsTranscoding(m_ktxTexture)) {
-		// Transcode into an optimal native hardware format
 		result = ktxTexture2_TranscodeBasis(reinterpret_cast<ktxTexture2*>(m_ktxTexture), KTX_TTF_BC7_RGBA, 0);
 		if (result != KTX_SUCCESS) {
 			TOAST_CRITICAL("TextureUpload", "Failed to transcode BasisUniversal texture");
@@ -84,12 +86,12 @@ void TextureUpload::build(const VulkanCore& core) {
 	}
 
 	m_texParams.extent = vk::Extent3D(m_ktxTexture->baseWidth, m_ktxTexture->baseHeight, m_ktxTexture->baseDepth);
-
-	// Vulkan images require at least 1 mip level and 1 layer
 	m_texParams.mipLevels = std::max(1u, m_ktxTexture->numLevels);
 	m_texParams.layerCount = std::max(1u, m_ktxTexture->numLayers);
 
-	// If it's a Cubemap, Vulkan treats cubemaps as a 6-layer 2D image
+	// TODO: PROPER CUBEMAP SUPPORT
+	m_texParams.isCubemap = m_ktxTexture->isCubemap;
+
 	if (m_ktxTexture->isCubemap) {
 		m_texParams.layerCount = 6 * std::max(1u, m_ktxTexture->numLayers);
 	}
@@ -97,7 +99,6 @@ void TextureUpload::build(const VulkanCore& core) {
 	m_texture->create(core, m_texParams);
 	m_texture->markUploading();
 
-	// Create single linear hosting staging buffer
 	const vk::DeviceSize totalSize = m_ktxTexture->dataSize;
 
 	vk::BufferCreateInfo stagingCI {};
@@ -105,16 +106,14 @@ void TextureUpload::build(const VulkanCore& core) {
 	stagingCI.usage = vk::BufferUsageFlagBits::eTransferSrc;
 
 	vma::AllocationCreateInfo allocCI {};
-	allocCI.usage = vma::MemoryUsage::eAutoPreferHost;
+	allocCI.usage = vma::MemoryUsage::eAuto;
 	allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 
 	m_stagingBuffer = core.getAllocator().createBuffer(stagingCI, allocCI);
 
 	uint8_t* mappedData = static_cast<uint8_t*>(m_stagingBuffer.getAllocation().getInfo().pMappedData);
 	std::memcpy(mappedData, m_ktxTexture->pData, totalSize);
-	m_stagingBuffer.getAllocation().flush(0, totalSize);
 
-	// Vulkan treats cubemap faces just as contiguous array layersx
 	uint32_t numLayers = std::max(1u, m_ktxTexture->numLayers);
 	uint32_t numFaces = m_ktxTexture->isCubemap ? 6 : 1;
 
@@ -131,14 +130,13 @@ void TextureUpload::build(const VulkanCore& core) {
 				region.bufferOffset = offset;
 				region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
 				region.imageSubresource.mipLevel = mip;
-
+				// Maps faces directly into contiguous array layers
 				region.imageSubresource.baseArrayLayer = (layer * numFaces) + face;
-
 				region.imageSubresource.layerCount = 1;
 
-				region.imageExtent.width = std::max(1u, m_texParams.extent.width >> mip);
-				region.imageExtent.height = std::max(1u, m_texParams.extent.height >> mip);
-				region.imageExtent.depth = std::max(1u, m_texParams.extent.depth >> mip);
+				region.imageExtent.width = std::max(1u, m_texParams.extent.width / (1 << mip));
+				region.imageExtent.height = std::max(1u, m_texParams.extent.height / (1 << mip));
+				region.imageExtent.depth = std::max(1u, m_texParams.extent.depth / (1 << mip));
 
 				m_copyRegions.push_back(region);
 			}
@@ -149,7 +147,6 @@ void TextureUpload::build(const VulkanCore& core) {
 void TextureUpload::record(vk::CommandBuffer cmd) {
 	vk::Image imageHandle = m_texture->getImage();
 
-	// Transition Image Layout UNDEFINED -> TRANSFER_DST_OPTIMAL
 	vk::ImageMemoryBarrier barrier {};
 	barrier.oldLayout = vk::ImageLayout::eUndefined;
 	barrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
@@ -164,16 +161,17 @@ void TextureUpload::record(vk::CommandBuffer cmd) {
 	barrier.srcAccessMask = {};
 	barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 
-	cmd.pipelineBarrier(vk::PipelineStageFlagBits::eHost, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, nullptr, barrier);
+	cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, nullptr, barrier);
 
 	cmd.copyBufferToImage(*m_stagingBuffer, imageHandle, vk::ImageLayout::eTransferDstOptimal, m_copyRegions);
 
-	// Transition Image Layout TRANSFER_DST_OPTIMAL -> SHADER_READ_ONLY_OPTIMAL
 	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
 	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
 	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
+	// PERF: If your textures are read by more than just the fragment shader
+	// consider switching eFragmentShader to eAllGraphics
 	cmd.pipelineBarrier(
 	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, barrier
 	);

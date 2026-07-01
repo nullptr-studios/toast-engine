@@ -49,7 +49,9 @@ public:
 	void bind(vk::CommandBuffer cmd) const;
 	void draw(vk::CommandBuffer cmd) const;
 
-	void recordUpload(vk::CommandBuffer cmd, vk::Buffer stagingVB, vk::Buffer stagingIB) const;
+	void recordUpload(
+	    vk::CommandBuffer cmd, vk::Buffer stagingBuffer, vk::DeviceSize vertexOffset, vk::DeviceSize indexOffset
+	) const;
 
 private:
 	std::optional<vma::raii::Buffer> m_vertexBuffer;

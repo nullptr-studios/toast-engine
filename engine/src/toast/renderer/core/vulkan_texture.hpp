@@ -16,8 +16,9 @@ public:
 	struct Params {
 		vk::Format format;
 		vk::Extent3D extent;
-		uint32_t mipLevels;
-		uint32_t layerCount;
+		uint32_t mipLevels = 1;
+		uint32_t layerCount = 1;
+		bool isCubemap = false;
 	};
 
 	void create(const VulkanCore& core, Params params);
