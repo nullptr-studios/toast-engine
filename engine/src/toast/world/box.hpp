@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <format>
 #include "control_box.hpp"
 
 namespace toast {

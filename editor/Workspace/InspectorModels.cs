@@ -29,14 +29,16 @@ public enum WidgetKind {
 	Color3,
 	Color4,
 	Color3Array,
-	Color4Array
+	Color4Array,
+	Array
 }
 
 public static class InspectorFormat {
 	private static readonly Regex NumberToken = new(@"(?<!\w)-?\d+(\.\d+)?([eE][-+]?\d+)?", RegexOptions.Compiled);
+	internal const string NullUid = "AAAAAAAAAAA";
 
 	public static WidgetKind KindOf(string fieldType, bool isArray, string typeName) {
-		if (isArray) return WidgetKind.ReadOnly; // TODO: editable array widgets
+		if (isArray) return WidgetKind.Array;
 
 		return fieldType switch {
 			"bool_t" => WidgetKind.Bool,
@@ -80,11 +82,21 @@ public static class InspectorFormat {
 	// the inner T of AssetHandle<T> or Box<T>, bare-named, used for picker/drag filtering
 	public static string? InnerType(string typeName) {
 		var open = typeName.IndexOf('<');
-		var close = typeName.LastIndexOf('>');
-		if (open < 0 || close <= open) return null;
-		var inner = typeName.Substring(open + 1, close - open - 1).Trim();
-		var sep = inner.LastIndexOf(':');
-		return sep >= 0 ? inner[(sep + 1)..] : inner;
+		if (open < 0) return null;
+		var depth = 1;
+		for (var i = open + 1; i < typeName.Length; i++) {
+			if (typeName[i] == '<') depth++;
+			else if (typeName[i] == '>') {
+				depth--;
+				if (depth == 0) {
+					var inner = typeName.Substring(open + 1, i - open - 1).Trim();
+					if (inner.Contains('<')) return InnerType(inner);
+					var sep = inner.LastIndexOf(':');
+					return sep >= 0 ? inner[(sep + 1)..] : inner;
+				}
+			}
+		}
+		return null;
 	}
 
 	/// <summary>Normalizes a C++ default initializer into the engine text encoding, or null if not parseable</summary>
@@ -154,7 +166,17 @@ public static class InspectorFormat {
 		WidgetKind.Vec2 => "0 0",
 		WidgetKind.Vec3 or WidgetKind.Color3 => "0 0 0",
 		WidgetKind.Vec4 or WidgetKind.Color4 => "0 0 0 0",
+		WidgetKind.Array => "",
 		_ => null
+	};
+
+	public static int ArrayElementStride(WidgetKind elementKind) => elementKind switch {
+		WidgetKind.Float or WidgetKind.Int or WidgetKind.Bool or WidgetKind.String
+			or WidgetKind.AssetRef or WidgetKind.NodeRef => 1,
+		WidgetKind.Vec2 => 2,
+		WidgetKind.Vec3 or WidgetKind.Color3 => 3,
+		WidgetKind.Vec4 or WidgetKind.Color4 => 4,
+		_ => 1
 	};
 
 	public static bool ValuesEqual(WidgetKind kind, string a, string b) {
@@ -171,6 +193,8 @@ public static class InspectorFormat {
 				if (fa.Length != fb.Length) return false;
 				return !fa.Where((t, i) => Math.Abs(t - fb[i]) > 1e-4f).Any();
 			}
+			case WidgetKind.Array:
+				return string.Equals(a.Trim(), b.Trim(), StringComparison.Ordinal);
 			default:
 				return string.Equals(a.Trim(), b.Trim(), StringComparison.Ordinal);
 		}
@@ -214,6 +238,10 @@ public partial class FieldVM : ObservableObject {
 
 	public ObservableCollection<TextSegment> Segments { get; } = [];
 
+	public WidgetKind ArrayElementKind { get; private set; }
+	public bool IsArray => Kind == WidgetKind.Array;
+	public ObservableCollection<FieldVM> ArrayItems { get; } = [];
+
 	public FieldVM(FieldInfo info) {
 		ParameterName = info.Name;
 		Kind = InspectorFormat.KindOf(info.FieldType, info.IsArray, info.TypeName);
@@ -248,6 +276,25 @@ public partial class FieldVM : ObservableObject {
 		if (m_default != null) {
 			ApplyEngineString(m_default);
 		}
+
+		if (Kind == WidgetKind.Array) {
+			ArrayElementKind = InspectorFormat.KindOf(info.FieldType, false, info.TypeName);
+			ArrayItems.CollectionChanged += (_, _) => OnUserEdited();
+		}
+	}
+
+	internal FieldVM(WidgetKind elementKind, string displayName, bool readOnly, string? unit, string? refType, double min, double max) {
+		ParameterName = "";
+		Kind = elementKind;
+		DisplayName = displayName;
+		ReadOnly = readOnly;
+		Unit = unit;
+		RefType = refType;
+		Min = min;
+		Max = max;
+		m_default = InspectorFormat.TypeZero(elementKind);
+		Segments.Add(new TextSegment(DisplayName, false));
+		if (m_default != null) ApplyEngineString(m_default);
 	}
 
 	public bool IsFloat => Kind == WidgetKind.Float;
@@ -278,6 +325,22 @@ public partial class FieldVM : ObservableObject {
 	partial void OnWChanged(float value) => OnUserEdited();
 	partial void OnRefChanged(string? value) => OnUserEdited();
 
+	[RelayCommand]
+	private void AddArrayItem() {
+		var child = CreateArrayElement();
+		WireChild(child);
+		ArrayItems.Add(child);
+		OnUserEdited();
+	}
+
+	private FieldVM CreateArrayElement() {
+		return new FieldVM(ArrayElementKind, "", ReadOnly, Unit, RefType, Min, Max);
+	}
+
+	private void WireChild(FieldVM child) {
+		child.Edited += (_, _) => OnUserEdited();
+	}
+
 	private void OnUserEdited() {
 		if (m_suppress) return;
 		LastEdit = DateTime.UtcNow;
@@ -296,7 +359,10 @@ public partial class FieldVM : ObservableObject {
 			WidgetKind.Vec3 or WidgetKind.Color3 => $"{InspectorFormat.Float(X)} {InspectorFormat.Float(Y)} {InspectorFormat.Float(Z)}",
 			WidgetKind.Vec4 or WidgetKind.Color4 =>
 				$"{InspectorFormat.Float(X)} {InspectorFormat.Float(Y)} {InspectorFormat.Float(Z)} {InspectorFormat.Float(W)}",
-			WidgetKind.AssetRef or WidgetKind.NodeRef => Ref ?? "0",
+			WidgetKind.AssetRef or WidgetKind.NodeRef => Ref ?? InspectorFormat.NullUid,
+			WidgetKind.Array => string.Join(
+				ArrayElementKind == WidgetKind.String ? "\x1f" : " ",
+				ArrayItems.Select(c => c.ToEngineString())),
 			_ => ReadOnlyText
 		};
 	}
@@ -336,8 +402,32 @@ public partial class FieldVM : ObservableObject {
 				}
 				case WidgetKind.AssetRef:
 				case WidgetKind.NodeRef:
-					Ref = string.IsNullOrEmpty(s) || s == "0" ? null : s;
+					Ref = string.IsNullOrEmpty(s) || s == InspectorFormat.NullUid ? null : s;
 					break;
+			case WidgetKind.Array: {
+				if (string.IsNullOrEmpty(s)) {
+					ArrayItems.Clear();
+					break;
+				}
+				if (string.Equals(s, ToEngineString(), StringComparison.Ordinal)) break;
+				ArrayItems.Clear();
+					var isStr = ArrayElementKind == WidgetKind.String;
+					var tokens = isStr
+						? s.Split('\x1f')
+						: s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+					if (tokens.Length == 0) break;
+					var stride = InspectorFormat.ArrayElementStride(ArrayElementKind);
+					for (var idx = 0; idx + stride <= tokens.Length; idx += stride) {
+						var elementStr = isStr
+							? tokens[idx]
+							: string.Join(' ', tokens.Skip(idx).Take(stride));
+						var child = new FieldVM(ArrayElementKind, "", ReadOnly, Unit, RefType, Min, Max);
+						child.ApplyEngineString(elementStr);
+						WireChild(child);
+						ArrayItems.Add(child);
+					}
+					break;
+				}
 				default:
 					ReadOnlyText = s;
 					break;

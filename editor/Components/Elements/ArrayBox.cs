@@ -359,12 +359,9 @@ public sealed class ArrayBox : TemplatedControl {
 		Items != null && e.DataTransfer.TryGetValue(ArrayItemDragData.Format) is { } r && r.Owner == this;
 
 	private void OnRowDragOver(Control row, Border topLine, Border bottomLine, DragEventArgs e) {
-		e.Handled = true;
-		if (!Accepts(e)) {
-			e.DragEffects = DragDropEffects.None;
-			return;
-		}
+		if (!Accepts(e)) return;
 
+		e.Handled = true;
 		e.DragEffects = DragDropEffects.Move;
 		var below = e.GetPosition(row).Y > row.Bounds.Height / 2;
 		ShowLine(below ? bottomLine : topLine);

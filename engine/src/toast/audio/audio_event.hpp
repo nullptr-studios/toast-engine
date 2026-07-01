@@ -7,6 +7,7 @@
  */
 
 #pragma once
+#include <toast/export.hpp>
 #include <toast/assets/data.hpp>
 
 namespace assets {
@@ -37,8 +38,6 @@ public:
 	[[nodiscard]] auto guid() const -> std::string_view {
 		return m_root.contains("guid") ? m_root["guid"].as<std::string_view>() : "";
 	}
-
-private:
 };
 
 }

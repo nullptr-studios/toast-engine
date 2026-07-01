@@ -197,6 +197,49 @@
 								</DataTemplate>
 							</ItemsControl.ItemTemplate>
 						</ItemsControl>
+						<elements:ArrayBox IsVisible="{Binding IsArray}" Items="{Binding ArrayItems}"
+						                   AddCommand="{Binding AddArrayItemCommand}"
+						                   CanReorder="{Binding Editable}" CanAddRemove="{Binding Editable}"
+						                   IsEnabled="{Binding Editable}"
+						                   RowBackground="{StaticResource Bg1}"
+						                   RowCornerRadius="6" RowPadding="4,2"
+						                   AddLabel="Add Element">
+							<elements:ArrayBox.ItemTemplate>
+								<DataTemplate DataType="vm:FieldVM">
+									<Panel>
+										<elements:DragFloatBox Value="{Binding Float, Mode=TwoWay}"
+										                       Minimum="{Binding Min}" Maximum="{Binding Max}"
+										                       Unit="{Binding Unit}"
+										                       IsEnabled="{Binding Editable}" IsVisible="{Binding IsFloat}" />
+										<elements:DragIntBox Value="{Binding Int, Mode=TwoWay}"
+										                     Minimum="{Binding Min}" Maximum="{Binding Max}"
+										                     Unit="{Binding Unit}"
+										                     IsEnabled="{Binding Editable}" IsVisible="{Binding IsInt}" />
+										<elements:BoolBox Value="{Binding Bool, Mode=TwoWay}"
+										                  IsEnabled="{Binding Editable}" IsVisible="{Binding IsBool}" />
+										<elements:StringBox Value="{Binding String, Mode=TwoWay}"
+										                    IsEnabled="{Binding Editable}" IsVisible="{Binding IsString}" />
+										<elements:AssetBox Value="{Binding Ref, Mode=TwoWay}" AssetType="{Binding RefType}"
+										                   IsEnabled="{Binding Editable}" IsVisible="{Binding IsAssetRef}" />
+										<elements:NodeBox Value="{Binding Ref, Mode=TwoWay}" NodeType="{Binding RefType}"
+										                  IsEnabled="{Binding Editable}" IsVisible="{Binding IsNodeRef}" />
+										<elements:DragVec2Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
+										                      Minimum="{Binding Min}" Maximum="{Binding Max}"
+										                      Unit="{Binding Unit}"
+										                      IsEnabled="{Binding Editable}" IsVisible="{Binding IsVec2}" />
+										<elements:DragVec3Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
+										                      Z="{Binding Z, Mode=TwoWay}" Minimum="{Binding Min}"
+										                      Maximum="{Binding Max}" Unit="{Binding Unit}"
+										                      IsEnabled="{Binding Editable}" IsVisible="{Binding IsVec3}" />
+										<elements:DragVec4Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
+										                      Z="{Binding Z, Mode=TwoWay}" W="{Binding W, Mode=TwoWay}"
+										                      Minimum="{Binding Min}" Maximum="{Binding Max}"
+										                      Unit="{Binding Unit}"
+										                      IsEnabled="{Binding Editable}" IsVisible="{Binding IsVec4}" />
+									</Panel>
+								</DataTemplate>
+							</elements:ArrayBox.ItemTemplate>
+						</elements:ArrayBox>
 						<TextBlock Text="{Binding ReadOnlyText}" Foreground="{StaticResource TextMuted}"
 						           VerticalAlignment="Center" IsVisible="{Binding IsReadOnlyText}" />
 					</Panel>
