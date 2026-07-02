@@ -50,13 +50,13 @@ public:
 	};
 
 	enum class CbType : uint8_t {
-		Beat,
-		Marker,
-		Stopped
+		beat,
+		marker,
+		stopped
 	};
 
 	struct QueuedCb {
-		CbType type = CbType::Beat;
+		CbType type = CbType::beat;
 		uint64_t instance_id = 0;
 		int bar = 0;
 		int beat = 0;

@@ -8,6 +8,7 @@
 #include <fmod/fmod_studio.h>
 #include <toast/log.hpp>
 #include <toast/time.hpp>
+#include <utility>
 
 namespace toast {
 
@@ -18,48 +19,47 @@ static_assert(
     "ParamID must be ABI-compatible with FMOD_STUDIO_PARAMETER_ID"
 );
 
-FMOD_RESULT F_CALL musicPlayerCallback(
-    FMOD_STUDIO_EVENT_CALLBACK_TYPE type, FMOD_STUDIO_EVENTINSTANCE* inst, void* parameters
-) {
+auto F_CALL musicPlayerCallback(FMOD_STUDIO_EVENT_CALLBACK_TYPE type, FMOD_STUDIO_EVENTINSTANCE* inst, void* parameters)
+    -> FMOD_RESULT {
 	MusicPlayer::CallbackData* data = nullptr;
 	FMOD_Studio_EventInstance_GetUserData(inst, reinterpret_cast<void**>(&data));
 	if (!data || !data->player) {
 		return FMOD_OK;
 	}
 
-	MusicPlayer*     self        = data->player;
-	uint64_t         instance_id = data->instance_id;
+	MusicPlayer* self = data->player;
+	uint64_t instance_id = data->instance_id;
 	MusicPlayer::QueuedCb cb;
 	cb.instance_id = instance_id;
 
 	if (type == FMOD_STUDIO_EVENT_CALLBACK_TIMELINE_BEAT) {
-		auto* p        = static_cast<FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES*>(parameters);
-		cb.type        = MusicPlayer::CbType::Beat;
-		cb.bar         = p->bar;
-		cb.beat        = p->beat;
+		auto* p = static_cast<FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES*>(parameters);
+		cb.type = MusicPlayer::CbType::beat;
+		cb.bar = p->bar;
+		cb.beat = p->beat;
 		cb.position_ms = p->position;
-		cb.tempo       = p->tempo;
-		cb.sig_upper   = p->timesignatureupper;
-		cb.sig_lower   = p->timesignaturelower;
+		cb.tempo = p->tempo;
+		cb.sig_upper = p->timesignatureupper;
+		cb.sig_lower = p->timesignaturelower;
 		self->queueCallback(cb);
 	} else if (type == FMOD_STUDIO_EVENT_CALLBACK_NESTED_TIMELINE_BEAT) {
-		auto* p        = static_cast<FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES*>(parameters);
-		cb.type        = MusicPlayer::CbType::Beat;
-		cb.bar         = p->properties.bar;
-		cb.beat        = p->properties.beat;
+		auto* p = static_cast<FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES*>(parameters);
+		cb.type = MusicPlayer::CbType::beat;
+		cb.bar = p->properties.bar;
+		cb.beat = p->properties.beat;
 		cb.position_ms = p->properties.position;
-		cb.tempo       = p->properties.tempo;
-		cb.sig_upper   = p->properties.timesignatureupper;
-		cb.sig_lower   = p->properties.timesignaturelower;
+		cb.tempo = p->properties.tempo;
+		cb.sig_upper = p->properties.timesignatureupper;
+		cb.sig_lower = p->properties.timesignaturelower;
 		self->queueCallback(cb);
 	} else if (type == FMOD_STUDIO_EVENT_CALLBACK_TIMELINE_MARKER) {
-		auto* p        = static_cast<FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES*>(parameters);
-		cb.type        = MusicPlayer::CbType::Marker;
+		auto* p = static_cast<FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES*>(parameters);
+		cb.type = MusicPlayer::CbType::marker;
 		cb.marker_name = p->name;
 		cb.position_ms = p->position;
 		self->queueCallback(cb);
 	} else if (type == FMOD_STUDIO_EVENT_CALLBACK_STOPPED) {
-		cb.type = MusicPlayer::CbType::Stopped;
+		cb.type = MusicPlayer::CbType::stopped;
 		self->queueCallback(cb);
 	}
 
@@ -80,8 +80,8 @@ void MusicPlayer::startTrack(int track_index, float fade_in) {
 		return;
 	}
 
-	auto&    sys = audio::AudioSystem::get();
-	uint64_t id  = sys.playEvent3D(event->guid());
+	auto& sys = audio::AudioSystem::get();
+	uint64_t id = sys.playEvent3D(event->guid());
 	if (id == 0) {
 		TOAST_ERROR("MusicPlayer", "Failed to start track {}", track_index);
 		return;
@@ -93,12 +93,12 @@ void MusicPlayer::startTrack(int track_index, float fade_in) {
 	sys.setVolume(id, initial_vol);
 
 	ActiveTrack at;
-	at.instance_id   = id;
-	at.track_index   = track_index;
-	at.current_vol   = initial_vol;
-	at.target_vol    = m_volume;
+	at.instance_id = id;
+	at.track_index = track_index;
+	at.current_vol = initial_vol;
+	at.target_vol = m_volume;
 	at.fade_duration = fade_in;
-	at.fade_elapsed  = 0.0f;
+	at.fade_elapsed = 0.0f;
 	m_active_tracks.push_back(at);
 
 	// Keep CallbackData stable
@@ -148,9 +148,9 @@ void MusicPlayer::stop(bool allow_fadeout) {
 
 void MusicPlayer::crossfadeTo(int track_index, float duration) {
 	for (auto& at : m_active_tracks) {
-		at.target_vol    = 0.0f;
+		at.target_vol = 0.0f;
 		at.fade_duration = duration;
-		at.fade_elapsed  = 0.0f;
+		at.fade_elapsed = 0.0f;
 	}
 	startTrack(track_index, duration);
 }
@@ -165,7 +165,7 @@ void MusicPlayer::pause(bool value) {
 void MusicPlayer::keyOff(int track_index) {
 	auto& sys = audio::AudioSystem::get();
 	for (size_t i = 0; i < m_active_tracks.size(); ++i) {
-		if (track_index == -1 || static_cast<int>(i) == track_index) {
+		if (track_index == -1 || std::cmp_equal(i, track_index)) {
 			sys.keyOffEvent(m_active_tracks[i].instance_id);
 		}
 	}
@@ -188,7 +188,7 @@ void MusicPlayer::setTimelinePosition(int ms, int track_index) {
 void MusicPlayer::setParameter(std::string_view name, float value, int track_index) {
 	auto& sys = audio::AudioSystem::get();
 	for (size_t i = 0; i < m_active_tracks.size(); ++i) {
-		if (track_index != -1 && static_cast<int>(i) != track_index) {
+		if (track_index != -1 && std::cmp_not_equal(i, track_index)) {
 			continue;
 		}
 		uint64_t id = m_active_tracks[i].instance_id;
@@ -196,7 +196,7 @@ void MusicPlayer::setParameter(std::string_view name, float value, int track_ind
 			continue;
 		}
 
-		auto&       id_map = m_param_ids[id];
+		auto& id_map = m_param_ids[id];
 		std::string key(name);
 		if (auto it = id_map.find(key); it != id_map.end()) {
 			FMOD_STUDIO_PARAMETER_ID fmod_id = std::bit_cast<FMOD_STUDIO_PARAMETER_ID>(it->second);
@@ -227,7 +227,7 @@ void MusicPlayer::setParameter(std::string_view name, bool value, int track_inde
 }
 
 void MusicPlayer::masterVolume(float value) {
-	m_volume  = std::clamp(value, 0.0f, 1.0f);
+	m_volume = std::clamp(value, 0.0f, 1.0f);
 	auto& sys = audio::AudioSystem::get();
 	for (auto& at : m_active_tracks) {
 		at.target_vol = m_volume;
@@ -239,7 +239,7 @@ void MusicPlayer::masterVolume(float value) {
 }
 
 void MusicPlayer::masterPitch(float value) {
-	m_pitch   = std::clamp(value, 0.5f, 2.0f);
+	m_pitch = std::clamp(value, 0.5f, 2.0f);
 	auto& sys = audio::AudioSystem::get();
 	for (auto& at : m_active_tracks) {
 		sys.setPitch(at.instance_id, m_pitch);
@@ -269,11 +269,11 @@ void MusicPlayer::tick() {
 	}
 
 	for (auto& cb : local_cbs) {
-		if (cb.type == CbType::Beat) {
+		if (cb.type == CbType::beat) {
 			event::send<event::MusicBeat>(cb.bar, cb.beat, cb.position_ms, cb.tempo, cb.sig_upper, cb.sig_lower);
-		} else if (cb.type == CbType::Marker) {
+		} else if (cb.type == CbType::marker) {
 			event::send<event::MusicMarker>(cb.marker_name, cb.position_ms);
-		} else if (cb.type == CbType::Stopped) {
+		} else if (cb.type == CbType::stopped) {
 			for (auto& at : m_active_tracks) {
 				if (at.instance_id == cb.instance_id) {
 					std::erase_if(m_callback_data, [&](const CallbackData& cd) { return cd.instance_id == at.instance_id; });
@@ -287,7 +287,7 @@ void MusicPlayer::tick() {
 	}
 
 	// Advance crossfade volumes
-	float dt  = static_cast<float>(Time::delta());
+	float dt = static_cast<float>(Time::delta());
 	auto& sys = audio::AudioSystem::get();
 
 	for (auto& at : m_active_tracks) {
@@ -295,10 +295,10 @@ void MusicPlayer::tick() {
 			continue;
 		}
 		at.fade_elapsed += dt;
-		float t        = std::clamp(at.fade_elapsed / at.fade_duration, 0.0f, 1.0f);
-		at.current_vol = at.current_vol + (at.target_vol - at.current_vol) * t;
+		float t = std::clamp(at.fade_elapsed / at.fade_duration, 0.0f, 1.0f);
+		at.current_vol = at.current_vol + ((at.target_vol - at.current_vol) * t);
 		if (t >= 1.0f) {
-			at.current_vol   = at.target_vol;
+			at.current_vol = at.target_vol;
 			at.fade_duration = 0.0f;
 		}
 		sys.setVolume(at.instance_id, at.current_vol);

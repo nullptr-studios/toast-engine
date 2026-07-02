@@ -6,7 +6,7 @@ namespace assets {
 
 std::unordered_map<std::string, AssetRegistry::RawLoader> AssetRegistry::s_raw;
 std::unordered_map<std::string, AssetRegistry::TomlLoader> AssetRegistry::s_toml;
-std::unordered_map<std::string, AssetRegistry::SchemaTomlLoader> AssetRegistry::s_schemaToml;
+std::unordered_map<std::string, AssetRegistry::SchemaTomlLoader> AssetRegistry::s_schema_toml;
 
 void AssetRegistry::init() {
 	static bool initialized = false;
@@ -25,24 +25,24 @@ void AssetRegistry::init() {
 	s_raw["audio_strings"] = [](std::vector<uint8_t> d) { return std::make_unique<AudioStrings>(std::move(d)); };
 
 	// Plain TOML loaders
-	s_toml["curve"] = [](toml::table t) { return Curve::fromToml(std::move(t)); };
+	s_toml["curve"] = [](const toml::table& t) { return Curve::fromToml(t); };
 
 	// TOML + Schema loaders
-	s_schemaToml["data"] = [](toml::table t, AssetHandle<Schema> s) { return std::make_unique<Data>(std::move(t), std::move(s)); };
-	s_schemaToml["audio_event"] = [](toml::table t, AssetHandle<Schema> s) {
-		return std::make_unique<AudioEvent>(std::move(t), std::move(s));
+	s_schema_toml["data"] = [](const toml::table& t, AssetHandle<Schema> s) { return std::make_unique<Data>(t, std::move(s)); };
+	s_schema_toml["audio_event"] = [](const toml::table& t, AssetHandle<Schema> s) {
+		return std::make_unique<AudioEvent>(t, std::move(s));
 	};
-	s_schemaToml["audio_bus"] = [](toml::table t, AssetHandle<Schema> s) {
-		return std::make_unique<AudioBus>(std::move(t), std::move(s));
+	s_schema_toml["audio_bus"] = [](const toml::table& t, AssetHandle<Schema> s) {
+		return std::make_unique<AudioBus>(t, std::move(s));
 	};
-	s_schemaToml["audio_port"] = [](toml::table t, AssetHandle<Schema> s) {
-		return std::make_unique<AudioPort>(std::move(t), std::move(s));
+	s_schema_toml["audio_port"] = [](const toml::table& t, AssetHandle<Schema> s) {
+		return std::make_unique<AudioPort>(t, std::move(s));
 	};
-	s_schemaToml["audio_snapshot"] = [](toml::table t, AssetHandle<Schema> s) {
-		return std::make_unique<AudioSnapshot>(std::move(t), std::move(s));
+	s_schema_toml["audio_snapshot"] = [](const toml::table& t, AssetHandle<Schema> s) {
+		return std::make_unique<AudioSnapshot>(t, std::move(s));
 	};
-	s_schemaToml["audio_vca"] = [](toml::table t, AssetHandle<Schema> s) {
-		return std::make_unique<AudioVca>(std::move(t), std::move(s));
+	s_schema_toml["audio_vca"] = [](const toml::table& t, AssetHandle<Schema> s) {
+		return std::make_unique<AudioVca>(t, std::move(s));
 	};
 }
 
@@ -55,19 +55,19 @@ void AssetRegistry::registerToml(std::string_view type, TomlLoader loader) {
 }
 
 void AssetRegistry::registerSchemaToml(std::string_view type, SchemaTomlLoader loader) {
-	s_schemaToml[std::string(type)] = std::move(loader);
+	s_schema_toml[std::string(type)] = std::move(loader);
 }
 
-bool AssetRegistry::hasRaw(std::string_view type) {
+auto AssetRegistry::hasRaw(std::string_view type) -> bool {
 	return s_raw.contains(std::string(type));
 }
 
-bool AssetRegistry::hasToml(std::string_view type) {
+auto AssetRegistry::hasToml(std::string_view type) -> bool {
 	return s_toml.contains(std::string(type));
 }
 
-bool AssetRegistry::hasSchemaToml(std::string_view type) {
-	return s_schemaToml.contains(std::string(type));
+auto AssetRegistry::hasSchemaToml(std::string_view type) -> bool {
+	return s_schema_toml.contains(std::string(type));
 }
 
 auto AssetRegistry::createRaw(std::string_view type, std::vector<uint8_t> data) -> std::unique_ptr<Asset> {
@@ -88,8 +88,8 @@ auto AssetRegistry::createToml(std::string_view type, toml::table table) -> std:
 
 auto AssetRegistry::createSchemaToml(std::string_view type, toml::table table, AssetHandle<Schema> schema)
     -> std::unique_ptr<Asset> {
-	auto it = s_schemaToml.find(std::string(type));
-	if (it != s_schemaToml.end()) {
+	auto it = s_schema_toml.find(std::string(type));
+	if (it != s_schema_toml.end()) {
 		return it->second(std::move(table), std::move(schema));
 	}
 	return nullptr;

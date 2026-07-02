@@ -56,9 +56,9 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 
 	std::unique_ptr<Asset> asset = nullptr;
 
-	auto resolveSchema = [&](const toml::table& table) -> AssetHandle<Schema> {
+	auto resolve_schema = [&](const toml::table& table) -> AssetHandle<Schema> {
 		AssetHandle<Schema> schema_handle;
-		if (auto* schema_key = table.get("schema")) {
+		if (const auto* schema_key = table.get("schema")) {
 			if (auto schema_uid_str = schema_key->value<std::string_view>()) {
 				if (schema_uid_str->size() == 11) {
 					toast::UID schema_uid(toast::UID::fromString(*schema_uid_str));
@@ -129,7 +129,7 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 		try {
 			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
 			auto table = toml::parse(toml_str);
-			auto schema_handle = resolveSchema(table);
+			auto schema_handle = resolve_schema(table);
 			asset = AssetRegistry::createSchemaToml(info.type, std::move(table), std::move(schema_handle));
 		} catch (const toml::parse_error& err) {
 			TOAST_ERROR("AssetManager", "Failed to parse TOML asset {}: {}", info.path, err.description());
@@ -370,7 +370,7 @@ auto AssetManager::search(std::string_view query) -> std::vector<AssetHandle<Ass
 	{
 		std::lock_guard lock(mutex);
 		for (const auto& [uid_val, info] : manifest) {
-			if (info.path.find(query) != std::string_view::npos) {
+			if (info.path.contains(query)) {
 				matches.emplace_back(uid_val);
 			}
 		}

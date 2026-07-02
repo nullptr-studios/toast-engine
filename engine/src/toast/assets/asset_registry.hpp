@@ -24,13 +24,13 @@ public:
 	static void registerSchemaToml(std::string_view type, SchemaTomlLoader loader);
 
 	[[nodiscard]]
-	static bool hasRaw(std::string_view type);
+	static auto hasRaw(std::string_view type) -> bool;
 
 	[[nodiscard]]
-	static bool hasToml(std::string_view type);
+	static auto hasToml(std::string_view type) -> bool;
 
 	[[nodiscard]]
-	static bool hasSchemaToml(std::string_view type);
+	static auto hasSchemaToml(std::string_view type) -> bool;
 
 	static auto createRaw(std::string_view type, std::vector<uint8_t> data) -> std::unique_ptr<Asset>;
 	static auto createToml(std::string_view type, toml::table table) -> std::unique_ptr<Asset>;
@@ -39,7 +39,7 @@ public:
 private:
 	static std::unordered_map<std::string, RawLoader> s_raw;
 	static std::unordered_map<std::string, TomlLoader> s_toml;
-	static std::unordered_map<std::string, SchemaTomlLoader> s_schemaToml;
+	static std::unordered_map<std::string, SchemaTomlLoader> s_schema_toml;
 };
 
-} // namespace assets
+}    // namespace assets
