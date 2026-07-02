@@ -34,6 +34,7 @@ AssetHandleBase::~AssetHandleBase() {
 AssetHandleBase::AssetHandleBase(const AssetHandleBase& other) : m_asset(other.m_asset), m_uid(other.m_uid) {
 	if (m_asset) {
 		m_asset->addRef();
+		dispatchOnChange();
 	}
 }
 
@@ -46,9 +47,15 @@ auto AssetHandleBase::operator=(const AssetHandleBase& other) -> AssetHandleBase
 		m_uid = other.m_uid;
 		if (m_asset) {
 			m_asset->addRef();
+			dispatchOnChange();
 		}
 	}
 	return *this;
+}
+
+AssetHandleBase::AssetHandleBase(AssetHandleBase&& other) noexcept : m_asset(other.m_asset), m_uid(other.m_uid) {
+	dispatchOnChange();
+	other.m_asset = nullptr;
 }
 
 auto AssetHandleBase::operator=(AssetHandleBase&& other) noexcept -> AssetHandleBase& {
@@ -59,8 +66,13 @@ auto AssetHandleBase::operator=(AssetHandleBase&& other) noexcept -> AssetHandle
 		m_asset = other.m_asset;
 		m_uid = other.m_uid;
 		other.m_asset = nullptr;
+		dispatchOnChange();
 	}
 	return *this;
+}
+
+void AssetHandleBase::onChangeCallback(std::function<void()>&& callback) {
+	m_callbacks.emplace_back(callback);
 }
 
 auto AssetHandleBase::hasValue() const noexcept -> bool {
@@ -81,6 +93,13 @@ auto AssetHandleBase::operator->() noexcept -> Asset* {
 
 auto AssetHandleBase::operator->() const noexcept -> const Asset* {
 	return m_asset;
+}
+
+void AssetHandleBase::dispatchOnChange() {
+	// HACK: This can lead to a racist condition
+	for (auto& callback : m_callbacks) {
+		callback();
+	}
 }
 
 auto Texture::get() const noexcept -> const std::vector<uint8_t>& {
