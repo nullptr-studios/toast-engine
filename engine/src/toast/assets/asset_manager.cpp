@@ -365,7 +365,7 @@ auto AssetManager::getURI(toast::UID uid) -> std::string {
 	return {};
 }
 
-auto AssetManager::search(std::string_view query) -> std::vector<AssetHandleBase> {
+auto AssetManager::search(std::string_view query) -> std::vector<AssetHandle<Asset>> {
 	std::vector<toast::UID> matches;
 	{
 		std::lock_guard lock(mutex);
@@ -376,7 +376,7 @@ auto AssetManager::search(std::string_view query) -> std::vector<AssetHandleBase
 		}
 	}
 
-	std::vector<AssetHandleBase> results;
+	std::vector<AssetHandle<Asset>> results;
 	results.reserve(matches.size());
 	for (const auto& uid : matches) {
 		if (auto* asset = load(uid)) {

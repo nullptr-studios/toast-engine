@@ -59,9 +59,10 @@ public:
 	[[nodiscard]]
 	auto isEventPlaying(std::string_view guid_str) -> bool;
 
-	// Runtime control for VCA and Bus assets
+	// Runtime control for VCA, Bus, and Port assets
 	void setVcaVolume(std::string_view guid_str, float volume);
 	void setBusVolume(std::string_view guid_str, float volume);
+	void setPortVolume(std::string_view guid_str, float volume);
 
 	// Snapshot runtime controls (intensity = 0.0 - 1.0, enable/disable)
 	void setSnapshotIntensity(std::string_view guid_str, float intensity);
@@ -82,6 +83,17 @@ public:
 	[[nodiscard]]
 	auto isEventPlaying(uint64_t instance_id) -> bool;
 	void set3DOverrideAttenuation(uint64_t instance_id, float min_distance, float max_distance);
+
+	void keyOffEvent(uint64_t instance_id);
+	[[nodiscard]]
+	auto getTimelinePosition(uint64_t instance_id) -> int;
+	void setTimelinePosition(uint64_t instance_id, int ms);
+	void setParameterByID(uint64_t instance_id, FMOD_STUDIO_PARAMETER_ID id, float value);
+	[[nodiscard]]
+	auto getPlaybackState(uint64_t instance_id) -> FMOD_STUDIO_PLAYBACK_STATE;
+
+	[[nodiscard]]
+	auto getRawInstance(uint64_t instance_id) -> FMOD_STUDIO_EVENTINSTANCE*;
 
 private:
 	static inline AudioSystem* instance = nullptr;

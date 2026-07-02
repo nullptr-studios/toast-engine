@@ -170,5 +170,10 @@ public:
 	auto get() const noexcept -> const T& {
 		return *static_cast<const T*>(this->m_asset);
 	}
+
+	template<typename U>
+	auto as() -> AssetHandle<U> {
+		return AssetHandle<U>(this->m_asset, this->m_uid, this->m_uri);
+	}
 };
 }

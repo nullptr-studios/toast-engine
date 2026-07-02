@@ -136,7 +136,7 @@ public:
 	 * @param query Substring to search for in manifest paths
 	 * @return Loaded asset handles for all matching entries; empty vector if none found
 	 */
-	auto search(std::string_view query) -> std::vector<AssetHandleBase>;
+	auto search(std::string_view query) -> std::vector<AssetHandle<Asset>>;
 
 	auto getCachePath() const -> const std::filesystem::path&;
 

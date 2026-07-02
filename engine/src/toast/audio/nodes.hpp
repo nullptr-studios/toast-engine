@@ -17,3 +17,4 @@
 #include "nodes/audio_listener.hpp"
 #include "nodes/audio_snapshot_volume.hpp"
 #include "nodes/audio_sphere_emitter.hpp"
+#include "nodes/music_player.hpp"

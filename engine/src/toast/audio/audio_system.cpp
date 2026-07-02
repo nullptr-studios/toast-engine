@@ -93,11 +93,22 @@ AudioSystem::AudioSystem() noexcept {
 	TOAST_ASSERT(result == FMOD_OK, "Audio", "FMOD could not be started: {}", FMOD_ErrorString(result));
 
 	// Load Master.bank and Master.strings.bank from assets://
+	// Search by exact filename suffix to avoid "Master.bank" matching "Master.strings.bank"
 	auto& asset_mgr = assets::AssetManager::get();
-	auto master_results = asset_mgr.search("Master.bank");
-	auto strings_results = asset_mgr.search("Master.strings.bank");
+	auto all_results = asset_mgr.search("Master");
 
-	if (master_results.empty() || strings_results.empty()) {
+	assets::AssetHandle<assets::AudioStrings> strings_handle;
+	assets::AssetHandle<assets::AudioBank> master_handle;
+	for (auto& handle : all_results) {
+		std::string_view p = handle.path();
+		if (p.ends_with("Master.strings.bank")) {
+			strings_handle = handle.as<assets::AudioStrings>();
+		} else if (p.ends_with("Master.bank")) {
+			master_handle = handle.as<assets::AudioBank>();
+		}
+	}
+
+	if (!strings_handle.hasValue() || !master_handle.hasValue()) {
 		TOAST_ERROR("Audio", "Master.bank or Master.strings.bank not found in assets://");
 		FMOD_Studio_System_Release(m_system);
 		m_system = nullptr;
@@ -106,12 +117,26 @@ AudioSystem::AudioSystem() noexcept {
 	}
 
 	// Strings bank must be loaded before any other bank
-	auto* strings_asset = static_cast<assets::AudioStrings*>(&strings_results[0].get());
-	TOAST_TRACE("Audio", "Loaded bank in {}", strings_results[0].path());
+	auto* strings_asset = dynamic_cast<assets::AudioStrings*>(&strings_handle.get());
+	if (!strings_asset) {
+		TOAST_ERROR("Audio", "Master.strings.bank asset is not an AudioStrings");
+		FMOD_Studio_System_Release(m_system);
+		m_system = nullptr;
+		instance = nullptr;
+		return;
+	}
+	TOAST_TRACE("Audio", "Loading strings bank from {}", strings_handle.path());
 	loadBankData(strings_asset->get());
 
-	auto* master_asset = static_cast<assets::AudioBank*>(&master_results[0].get());
-	TOAST_TRACE("Audio", "Loaded bank in {}", master_results[0].path());
+	auto* master_asset = dynamic_cast<assets::AudioBank*>(&master_handle.get());
+	if (!master_asset) {
+		TOAST_ERROR("Audio", "Master.bank asset is not an AudioBank");
+		FMOD_Studio_System_Release(m_system);
+		m_system = nullptr;
+		instance = nullptr;
+		return;
+	}
+	TOAST_TRACE("Audio", "Loading master bank from {}", master_handle.path());
 	loadBankData(master_asset->get());
 
 	m_listeners.reserve(8);
@@ -548,6 +573,65 @@ void AudioSystem::setBusVolume(std::string_view guid_str, float volume) {
 	} else {
 		TOAST_WARN("Audio", "Bus not found: {}", guid_str);
 	}
+}
+
+void AudioSystem::setPortVolume(std::string_view guid_str, float volume) {
+	FMOD_STUDIO_BUS* bus = nullptr;
+	std::string null_terminated_guid(guid_str);
+	if (FMOD_Studio_System_GetBus(m_system, null_terminated_guid.c_str(), &bus) == FMOD_OK && bus) {
+		FMOD_Studio_Bus_SetVolume(bus, volume);
+	} else {
+		TOAST_WARN("Audio", "Port not found: {}", guid_str);
+	}
+}
+
+auto AudioSystem::getRawInstance(uint64_t instance_id) -> FMOD_STUDIO_EVENTINSTANCE* {
+	if (auto it = m_instances_3d.find(instance_id); it != m_instances_3d.end()) {
+		return it->second;
+	}
+	return nullptr;
+}
+
+void AudioSystem::keyOffEvent(uint64_t instance_id) {
+	if (auto it = m_instances_3d.find(instance_id); it != m_instances_3d.end()) {
+		FMOD_RESULT result = FMOD_Studio_EventInstance_KeyOff(it->second);
+		if (result != FMOD_OK) {
+			TOAST_WARN("Audio", "KeyOff failed: {}", FMOD_ErrorString(result));
+		}
+	}
+}
+
+auto AudioSystem::getTimelinePosition(uint64_t instance_id) -> int {
+	if (auto it = m_instances_3d.find(instance_id); it != m_instances_3d.end()) {
+		int position = -1;
+		FMOD_Studio_EventInstance_GetTimelinePosition(it->second, &position);
+		return position;
+	}
+	return -1;
+}
+
+void AudioSystem::setTimelinePosition(uint64_t instance_id, int ms) {
+	if (auto it = m_instances_3d.find(instance_id); it != m_instances_3d.end()) {
+		FMOD_RESULT result = FMOD_Studio_EventInstance_SetTimelinePosition(it->second, ms);
+		if (result != FMOD_OK) {
+			TOAST_WARN("Audio", "SetTimelinePosition failed: {}", FMOD_ErrorString(result));
+		}
+	}
+}
+
+void AudioSystem::setParameterByID(uint64_t instance_id, FMOD_STUDIO_PARAMETER_ID id, float value) {
+	if (auto it = m_instances_3d.find(instance_id); it != m_instances_3d.end()) {
+		FMOD_Studio_EventInstance_SetParameterByID(it->second, id, value, false);
+	}
+}
+
+auto AudioSystem::getPlaybackState(uint64_t instance_id) -> FMOD_STUDIO_PLAYBACK_STATE {
+	if (auto it = m_instances_3d.find(instance_id); it != m_instances_3d.end()) {
+		FMOD_STUDIO_PLAYBACK_STATE state = FMOD_STUDIO_PLAYBACK_STOPPED;
+		FMOD_Studio_EventInstance_GetPlaybackState(it->second, &state);
+		return state;
+	}
+	return FMOD_STUDIO_PLAYBACK_STOPPED;
 }
 
 void AudioSystem::setSnapshotIntensity(std::string_view guid_str, float intensity) {

@@ -41,6 +41,8 @@ public:
 	auto guid() const -> std::string_view {
 		return m_root.contains("guid") ? m_root["guid"].as<std::string_view>() : "";
 	}
+
+	void setVolume(float volume) const;
 };
 
 }
