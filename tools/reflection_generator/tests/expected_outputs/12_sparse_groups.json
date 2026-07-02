@@ -116,6 +116,7 @@
         "subgroups": []
       }
     ],
+    "is_interface": false,
     "methods": [],
     "name": "SparseGroupNode",
     "namespace": null,

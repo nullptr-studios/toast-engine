@@ -55,6 +55,7 @@
         "subgroups": []
       }
     ],
+    "is_interface": false,
     "methods": [],
     "name": "DuplicateFieldNode",
     "namespace": null,

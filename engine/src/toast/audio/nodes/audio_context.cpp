@@ -2,9 +2,6 @@
 
 #include "../audio_system.hpp"
 
-namespace {
-std::vector<std::pair<assets::AssetHandle<assets::AudioBank>, FMOD_STUDIO_BANK*>> m_loaded_banks;
-}
 
 namespace toast {
 void AudioContext::addBank(const assets::AssetHandle<assets::AudioBank>& bank) {

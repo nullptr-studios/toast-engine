@@ -18,6 +18,7 @@
     },
     "global_fields": [],
     "groups": [],
+    "is_interface": false,
     "methods": [],
     "name": "AllTicksNode",
     "namespace": null,

@@ -10,6 +10,8 @@
 #include <toast/audio/assets.hpp>
 #include <toast/world/node.hpp>
 
+struct FMOD_STUDIO_BANK;
+
 namespace toast {
 
 /**
@@ -38,6 +40,8 @@ private:
 
 	[[Reflect, ReadOnly]]
 	std::vector<std::string> m_events;
+
+	std::vector<std::pair<assets::AssetHandle<assets::AudioBank>, FMOD_STUDIO_BANK*>> m_loaded_banks;
 };
 
 }

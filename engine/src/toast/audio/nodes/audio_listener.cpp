@@ -33,10 +33,14 @@ void toast::AudioListener::lateTick() {
 	// Calculate velocity for doppler
 	glm::vec3 pos = worldPos();
 	glm::vec3 rot = worldRot();
-	glm::vec3 velocity = (pos - prev_position) / static_cast<float>(Time::delta());
+	glm::vec3 velocity {0.0f};
+	if (Time::delta() > 0.0f) {
+		velocity = (pos - prev_position) / static_cast<float>(Time::delta());
+	}
 
 	if (m_weight_changed) {
 		audio::AudioSystem::get().updateListenerWeight(m_index, m_weight);
+		m_weight_changed = false;
 	}
 
 	if (pos == prev_position && rot == prev_rotation) {
@@ -48,6 +52,9 @@ void toast::AudioListener::lateTick() {
 	std::optional<glm::vec3> attenuation =
 	    attenuation_override.exists() ? std::optional {attenuation_override->pos()} : std::nullopt;
 	audio::AudioSystem::get().updateListenerAttributes(m_index, pos, velocity, forward_vec, up_vec, attenuation);
+
+	prev_position = pos;
+	prev_rotation = rot;
 }
 
 }
