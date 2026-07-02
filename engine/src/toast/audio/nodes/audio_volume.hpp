@@ -15,6 +15,13 @@
 namespace toast {
 class AudioListener;
 
+/**
+ * @brief Base interface for audio-reactive volumes
+ *
+ * Each frame, listener weights accumulate via evaluateTarget. After all listeners are
+ * processed, finalizeAccumulators is called once, then onVolumeTick fires so subclasses
+ * can push state to FMOD based on the frame's accumulated data
+ */
 class TOAST_API [[ToastNode, Hidden, Interface, Color("Beige")]] AudioVolume : public Volume {
 public:
 	virtual void onAudioTargetEnter(const VolumeTarget& target) = 0;
@@ -26,11 +33,11 @@ public:
 
 protected:
 	[[nodiscard]]
-	auto trackTarget(const VolumeTarget& target, bool inside) -> bool;
+	auto trackTarget(const VolumeTarget& target, bool inside) -> bool;  ///< returns true if the inside state changed
 	[[nodiscard]]
 	auto hasListenersInside() const -> bool;
 
-	virtual void onVolumeTick() {}
+	virtual void onVolumeTick() {}  ///< called after accumulators are finalized, safe to push to FMOD here
 
 private:
 	void begin();

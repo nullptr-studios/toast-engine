@@ -1,3 +1,10 @@
+/**
+ * @file audio_ambience_volume.hpp
+ * @author Xein
+ * @date 01 Jul 2026
+ *
+ * @brief Randomly spawns one-shot audio events at positions inside the volume
+ */
 #pragma once
 
 #include "../assets.hpp"
@@ -7,6 +14,13 @@
 
 namespace toast {
 
+/**
+ * @brief Ambient sound generator
+ *
+ * Only active when at least one listener is inside. Picks a random event from the list,
+ * spawns it at a random position inside the volume, and re-schedules at a random interval.
+ * Useful for weather, bug swarms, and nature ambience
+ */
 class TOAST_API [[ToastNode]] AmbienceVolume : public AudioVolume {
 public:
 	auto evaluateTarget(const VolumeTarget& target, float weight = 1.0f) -> bool override;
@@ -34,7 +48,7 @@ private:
 	[[Reflect, Range(0.0, 1.0)]]
 	float m_volume = 1.0f;
 
-	float m_spawn_timer = 0.0f;
+	float m_spawn_timer = 0.0f;  ///< countdown until next spawn, randomized in [min_interval, max_interval]
 	std::mt19937 m_rng {std::random_device {}()};
 };
 

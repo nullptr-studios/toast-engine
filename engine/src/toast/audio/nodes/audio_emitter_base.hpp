@@ -1,3 +1,10 @@
+/**
+ * @file audio_emitter_base.hpp
+ * @author Xein
+ * @date 01 Jul 2026
+ *
+ * @brief Abstract base for all spatialized 3D audio emitters
+ */
 #pragma once
 #include "../assets.hpp"
 
@@ -6,6 +13,13 @@
 
 namespace toast {
 
+/**
+ * @brief Base class for shape-based audio emitters
+ *
+ * Subclasses override emitterPosition() to project the listener to the nearest surface point
+ * of their shape (box, sphere, capsule). This creates the illusion that audio emanates from
+ * the surface, not the center, which works well for large ambient sources
+ */
 class TOAST_API [[ToastNode, Hidden, Color("Beige"), Icon("AudioStreamPlayer")]] AudioEmitterBase : public Node3D {
 public:
 	[[Button]]
@@ -33,8 +47,7 @@ public:
 	void maxDistance(float value);
 
 protected:
-	virtual auto emitterPosition(const glm::vec3& listener) -> glm::vec3;
-
+	virtual auto emitterPosition(const glm::vec3& listener) -> glm::vec3;  ///< override this to project listener to the shape's nearest surface
 	virtual auto emitterForward() -> glm::vec3;
 	virtual auto emitterUp() -> glm::vec3;
 
@@ -74,10 +87,10 @@ private:
 	float m_min_distance = 1.0f;
 
 	[[Reflect, Group("Override Attenuation")]]
-	float m_max_distance = 20.0f;
+	float m_max_distance = 20.0f;  ///< replaces the rolloff distances baked into the FMOD event
 
 	uint64_t m_instance_id = 0;
-	glm::vec3 m_last_position {0.f};
+	glm::vec3 m_last_position {0.f};  ///< used to compute velocity for doppler when m_calculate_velocity is true
 };
 
 }

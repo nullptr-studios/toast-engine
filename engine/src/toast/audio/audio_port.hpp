@@ -3,7 +3,7 @@
  * @author Xein
  * @date 30 Jun 2026
  *
- * @brief TODO: Brief description of the file's purpose
+ * @brief FMOD output port for routing audio to external hardware outputs
  */
 
 #pragma once

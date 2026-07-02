@@ -3,7 +3,7 @@
  * @author Xein
  * @date 30 Jun 2026
  *
- * @brief TODO: Brief description of the file's purpose
+ * @brief FMOD mixer snapshot that blends preset parameter states
  */
 
 #pragma once

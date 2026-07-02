@@ -3,7 +3,7 @@
  * @author Xein
  * @date 29 Jun 2026
  *
- * @brief TODO: Brief description of the file's purpose
+ * @brief Singleton wrapping FMOD Studio, owns all active event instances
  */
 
 #pragma once
@@ -21,6 +21,14 @@ class AudioVolume;
 
 namespace audio {
 
+/**
+ * @brief Central FMOD system manager
+ *
+ * Maintains two instance models: 2D events share one FMOD instance per GUID (since you rarely
+ * play the same 2D event multiple times overlapping), while 3D events get a unique uint64 handle
+ * returned per play() call so you can track them independently. Listeners and volumes register
+ * themselves to coordinate spatial audio state each frame
+ */
 class AudioSystem {
 public:
 	AudioSystem() noexcept;
@@ -102,15 +110,15 @@ private:
 
 	auto loadBankData(const std::vector<uint8_t>& data) const -> FMOD_STUDIO_BANK*;
 
-	std::unordered_map<std::string, FMOD_STUDIO_EVENTINSTANCE*> m_active_instances;
+	std::unordered_map<std::string, FMOD_STUDIO_EVENTINSTANCE*> m_active_instances;    ///< 2D events, one instance per GUID
 	auto getOrCreateInstance(std::string_view guid_str) -> FMOD_STUDIO_EVENTINSTANCE*;
 
 	uint64_t m_next_instance_id = 1;    // 0 = null
-	std::unordered_map<uint64_t, FMOD_STUDIO_EVENTINSTANCE*> m_instances_3d;
+	std::unordered_map<uint64_t, FMOD_STUDIO_EVENTINSTANCE*> m_instances_3d;          ///< 3D events, unique ID per play call
 
-	std::unordered_map<std::string, FMOD_STUDIO_EVENTINSTANCE*> m_snapshot_instances;
+	std::unordered_map<std::string, FMOD_STUDIO_EVENTINSTANCE*> m_snapshot_instances;  ///< snapshots tracked separately for intensity, not playback
 
-	std::vector<glm::vec3> m_listener_positions;
+	std::vector<glm::vec3> m_listener_positions;           ///< cached world positions, needed by volumes for per-listener weight blending
 	std::vector<toast::Box<toast::AudioListener>> m_listeners;
 	std::mutex m_listeners_mutex;
 

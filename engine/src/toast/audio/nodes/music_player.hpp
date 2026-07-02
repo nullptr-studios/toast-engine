@@ -1,3 +1,10 @@
+/**
+ * @file music_player.hpp
+ * @author Xein
+ * @date 01 Jul 2026
+ *
+ * @brief Multi-track FMOD music player with crossfade and beat callbacks
+ */
 #pragma once
 #include "../assets.hpp"
 
@@ -10,6 +17,14 @@
 
 namespace toast {
 
+/**
+ * @brief Manages multi-track music with smooth crossfades between tracks
+ *
+ * Each track is an FMOD event and plays in a separate instance. The player crossfades
+ * between active tracks by software-controlled volume lerp, not FMOD crossfade. Beat and
+ * marker events fire on the main thread via a queue drained each tick, so you can safely
+ * bind to them for game logic
+ */
 class TOAST_API [[ToastNode, Color("Beige"), Icon("AudioStreamMP3")]] MusicPlayer : public Node {
 public:
 	void play(int track_index = 0, float fade_in = 0.0f);
@@ -41,9 +56,10 @@ public:
 		float current_vol = 0.0f;
 		float target_vol = 1.0f;
 		float fade_duration = 0.0f;
-		float fade_elapsed = 0.0f;
+		float fade_elapsed = 0.0f;  ///< current_vol/target_vol and fade_duration/elapsed drive the crossfade lerp
 	};
 
+	// public so the static FMOD callback can read it without needing friend
 	struct CallbackData {
 		MusicPlayer* player = nullptr;
 		uint64_t instance_id = 0;
@@ -58,18 +74,18 @@ public:
 	struct QueuedCb {
 		CbType type = CbType::beat;
 		uint64_t instance_id = 0;
-		int bar = 0;
+		int bar = 0;              ///< 0-based bar and beat for musical timing
 		int beat = 0;
 		int position_ms = 0;
 		float tempo = 0.0f;
-		int sig_upper = 4;
+		int sig_upper = 4;        ///< time signature numerator and denominator
 		int sig_lower = 4;
 		std::string marker_name;
 	};
 
 	struct ParamID {
 		unsigned int data1 = 0;
-		unsigned int data2 = 0;
+		unsigned int data2 = 0;   // FMOD caches parameter IDs so we don't string-lookup every frame
 	};
 
 	void queueCallback(const QueuedCb& cb);
@@ -94,9 +110,9 @@ private:
 	std::vector<CallbackData> m_callback_data;
 
 	std::mutex m_cb_mutex;
-	std::vector<QueuedCb> m_pending_cbs;
+	std::vector<QueuedCb> m_pending_cbs;  ///< filled by FMOD callback thread, drained in tick()
 
-	std::unordered_map<uint64_t, std::unordered_map<std::string, ParamID>> m_param_ids;
+	std::unordered_map<uint64_t, std::unordered_map<std::string, ParamID>> m_param_ids;  ///< per-instance parameter ID cache, avoids FMOD string lookups per frame
 };
 
 }
