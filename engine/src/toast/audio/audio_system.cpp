@@ -1,5 +1,6 @@
 #include "audio_system.hpp"
 
+#include "audio_strings.hpp"
 #include "nodes/audio_listener.hpp"
 #include "nodes/audio_volume.hpp"
 
@@ -91,6 +92,28 @@ AudioSystem::AudioSystem() noexcept {
 	result = FMOD_Studio_System_Initialize(m_system, 512, studio_init_flags, FMOD_INIT_NORMAL, nullptr);
 	TOAST_ASSERT(result == FMOD_OK, "Audio", "FMOD could not be started: {}", FMOD_ErrorString(result));
 
+	// Load Master.bank and Master.strings.bank from assets://
+	auto& asset_mgr = assets::AssetManager::get();
+	auto master_results = asset_mgr.search("Master.bank");
+	auto strings_results = asset_mgr.search("Master.strings.bank");
+
+	if (master_results.empty() || strings_results.empty()) {
+		TOAST_ERROR("Audio", "Master.bank or Master.strings.bank not found in assets://");
+		FMOD_Studio_System_Release(m_system);
+		m_system = nullptr;
+		instance = nullptr;
+		return;
+	}
+
+	// Strings bank must be loaded before any other bank
+	auto* strings_asset = static_cast<assets::AudioStrings*>(&strings_results[0].get());
+	TOAST_TRACE("Audio", "Loaded bank in {}", strings_results[0].path());
+	loadBankData(strings_asset->get());
+
+	auto* master_asset = static_cast<assets::AudioBank*>(&master_results[0].get());
+	TOAST_TRACE("Audio", "Loaded bank in {}", master_results[0].path());
+	loadBankData(master_asset->get());
+
 	m_listeners.reserve(8);
 	m_listener_positions.reserve(8);
 
@@ -98,7 +121,9 @@ AudioSystem::AudioSystem() noexcept {
 }
 
 AudioSystem::~AudioSystem() noexcept {
-	FMOD_Studio_System_Release(m_system);
+	if (m_system) {
+		FMOD_Studio_System_Release(m_system);
+	}
 	m_system = nullptr;
 	instance = nullptr;
 	TOAST_INFO("Audio", "FMOD instance destroyed");
@@ -107,6 +132,19 @@ AudioSystem::~AudioSystem() noexcept {
 auto AudioSystem::get() noexcept -> AudioSystem& {
 	TOAST_ASSERT(instance, "Audio", "AudioSystem does not exist yet");
 	return *instance;
+}
+
+auto AudioSystem::loadBankData(const std::vector<uint8_t>& data) const -> FMOD_STUDIO_BANK* {
+	FMOD_STUDIO_BANK* fmod_bank = nullptr;
+	FMOD_Studio_System_LoadBankMemory(
+	    m_system,
+	    reinterpret_cast<const char*>(data.data()),
+	    data.size(),
+	    FMOD_STUDIO_LOAD_MEMORY,
+	    FMOD_STUDIO_LOAD_BANK_NORMAL,
+	    &fmod_bank
+	);
+	return fmod_bank;
 }
 
 void AudioSystem::tick() noexcept {
@@ -212,15 +250,7 @@ auto AudioSystem::loadBank(assets::AssetHandle<assets::AudioBank> bank) const
 		return {nullptr, {}};
 	}
 
-	FMOD_STUDIO_BANK* fmod_bank = nullptr;
-	FMOD_Studio_System_LoadBankMemory(
-	    m_system,
-	    reinterpret_cast<const char*>(bank->get().data()),
-	    bank->get().size(),
-	    FMOD_STUDIO_LOAD_MEMORY,
-	    FMOD_STUDIO_LOAD_BANK_NORMAL,
-	    &fmod_bank
-	);
+	FMOD_STUDIO_BANK* fmod_bank = loadBankData(bank->get());
 
 	int event_count;
 	FMOD_Studio_Bank_GetEventCount(fmod_bank, &event_count);

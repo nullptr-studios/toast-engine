@@ -420,7 +420,7 @@ void Workspace::eventSubscriptions() {
 		}
 
 		assets::Prefab prefab(*src);
-		assets::AssetHandle<assets::Prefab> handle(&prefab, toast::UID(0));
+		assets::AssetHandle<assets::Prefab> handle(&prefab, toast::UID(0), "");
 
 		InstantiateContext ctx;
 		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
@@ -620,7 +620,7 @@ void Workspace::eventSubscriptions() {
 			return true;
 		}
 
-		assets::AssetHandle<assets::Prefab> handle(s_clipboard.get(), toast::UID(0));
+		assets::AssetHandle<assets::Prefab> handle(s_clipboard.get(), toast::UID(0), "");
 		InstantiateContext ctx;
 		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
 		Box<Node> copy = instantiate(handle, ctx);

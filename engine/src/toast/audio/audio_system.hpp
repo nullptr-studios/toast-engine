@@ -88,6 +88,8 @@ private:
 	FMOD_STUDIO_SYSTEM* m_system;
 	FMOD_SYSTEM* m_core_system;
 
+	auto loadBankData(const std::vector<uint8_t>& data) const -> FMOD_STUDIO_BANK*;
+
 	std::unordered_map<std::string, FMOD_STUDIO_EVENTINSTANCE*> m_active_instances;
 	auto getOrCreateInstance(std::string_view guid_str) -> FMOD_STUDIO_EVENTINSTANCE*;
 

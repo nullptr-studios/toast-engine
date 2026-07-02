@@ -5,7 +5,7 @@
 
 #include <algorithm>
 #include <limits>
-#include <toast/assets/asset_manager.hpp>
+#include <toast/assets/assets.hpp>
 
 namespace toast {
 
@@ -59,17 +59,11 @@ auto AudioEmitterBase::isPlaying() const -> bool {
 }
 
 void AudioEmitterBase::event(std::string_view path) {
-	auto uid_opt = assets::AssetManager::resolveURI(path);
-	if (uid_opt) {
-		event(*uid_opt);
-	}
+	m_event = assets::load<assets::AudioEvent>(path);
 }
 
 void AudioEmitterBase::event(toast::UID uid) {
-	auto* asset_ptr = assets::AssetManager::get().load(uid);
-	if (asset_ptr && asset_ptr->type() == "audio_event") {
-		m_event = assets::AssetHandle<assets::AudioEvent>(static_cast<assets::AudioEvent*>(asset_ptr), uid);
-	}
+	m_event = assets::load<assets::AudioEvent>(uid);
 }
 
 void AudioEmitterBase::playOnEnable(bool value) {

@@ -32,13 +32,13 @@ template<typename T>
 auto load(toast::UID uid) -> AssetHandle<T> {
 	auto base = load(uid);
 	// Carry the UID anyway, so the result is an unresolved handle (uid set, ptr null)
-	return AssetHandle<T>(base.hasValue() ? &base.get() : nullptr, base.uid());
+	return AssetHandle<T>(base.hasValue() ? &base.get() : nullptr, base.uid(), base.path());
 }
 
 template<typename T>
 auto load(std::string_view uri) -> AssetHandle<T> {
 	auto base = load(uri);
-	return AssetHandle<T>(base.hasValue() ? &base.get() : nullptr, base.uid());
+	return AssetHandle<T>(base.hasValue() ? &base.get() : nullptr, base.uid(), base.path());
 }
 
 }

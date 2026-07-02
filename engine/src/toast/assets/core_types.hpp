@@ -81,15 +81,14 @@ public:
 	 * so serialization won't explode the engine. It also will make handling missing
 	 * assets easier
 	 */
-	AssetHandleBase(Asset* asset, toast::UID uid);
+	AssetHandleBase(Asset* asset, toast::UID uid, std::string_view uri);
 
 	virtual ~AssetHandleBase();
 
 	AssetHandleBase(const AssetHandleBase& other);
 	auto operator=(const AssetHandleBase& other) -> AssetHandleBase&;
 
-	AssetHandleBase(AssetHandleBase&& other) noexcept : m_asset(other.m_asset), m_uid(other.m_uid) { other.m_asset = nullptr; }
-
+	AssetHandleBase(AssetHandleBase&& other) noexcept;
 	auto operator=(AssetHandleBase&& other) noexcept -> AssetHandleBase&;
 
 	[[nodiscard]]
@@ -98,6 +97,11 @@ public:
 	[[nodiscard]]
 	auto uid() const noexcept -> toast::UID {
 		return m_uid;
+	}
+
+	[[nodiscard]]
+	auto path() const noexcept -> std::string_view {
+		return m_uri;
 	}
 
 	[[nodiscard]]
@@ -125,6 +129,7 @@ public:
 protected:
 	Asset* m_asset = nullptr;
 	toast::UID m_uid;
+	std::string m_uri;
 };
 
 /**

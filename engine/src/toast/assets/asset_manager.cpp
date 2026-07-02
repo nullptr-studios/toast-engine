@@ -67,14 +67,14 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 						if (schema_path) {
 							if (auto schema_raw = openFile(*schema_path)) {
 								if (auto cit = cache.find(schema_uid.data()); cit != cache.end()) {
-									schema_handle = AssetHandle<Schema>(static_cast<Schema*>(cit->second.get()), schema_uid);
+									schema_handle = AssetHandle<Schema>(static_cast<Schema*>(cit->second.get()), schema_uid, getURI(schema_uid));
 								} else {
 									std::string_view schema_json(reinterpret_cast<const char*>(schema_raw->data()), schema_raw->size());
 									try {
 										auto schema_asset = std::make_unique<Schema>(schema_json);
 										Schema* raw_ptr = schema_asset.get();
 										cache[schema_uid.data()] = std::move(schema_asset);
-										schema_handle = AssetHandle<Schema>(raw_ptr, schema_uid);
+										schema_handle = AssetHandle<Schema>(raw_ptr, schema_uid, getURI(schema_uid));
 									} catch (const std::exception& se) {
 										TOAST_WARN("AssetManager", "Could not parse schema for asset {}: {}", info.path, se.what());
 									}
@@ -357,13 +357,43 @@ auto AssetManager::resolveURI(std::string_view uri) -> std::optional<toast::UID>
 	return std::nullopt;
 }
 
+auto AssetManager::getURI(toast::UID uid) -> std::string {
+	auto it = instance->manifest.find(uid.data());
+	if (it != instance->manifest.end()) {
+		return it->second.path;
+	}
+	return {};
+}
+
+auto AssetManager::search(std::string_view query) -> std::vector<AssetHandleBase> {
+	std::vector<toast::UID> matches;
+	{
+		std::lock_guard lock(mutex);
+		for (const auto& [uid_val, info] : manifest) {
+			if (info.path.find(query) != std::string_view::npos) {
+				matches.emplace_back(uid_val);
+			}
+		}
+	}
+
+	std::vector<AssetHandleBase> results;
+	results.reserve(matches.size());
+	for (const auto& uid : matches) {
+		if (auto* asset = load(uid)) {
+			auto uri = getURI(uid);
+			results.emplace_back(asset, uid, uri);
+		}
+	}
+	return results;
+}
+
 auto AssetManager::getCachePath() const -> const std::filesystem::path& {
 	return cache_path;
 }
 
 // Public API Implementations
 auto load(toast::UID uid) -> AssetHandleBase {
-	return {AssetManager::get().load(uid), uid};
+	return {AssetManager::get().load(uid), uid, AssetManager::getURI(uid)};
 }
 
 auto load(std::string_view uri) -> AssetHandleBase {
