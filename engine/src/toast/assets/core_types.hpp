@@ -88,9 +88,14 @@ public:
 	AssetHandleBase(const AssetHandleBase& other);
 	auto operator=(const AssetHandleBase& other) -> AssetHandleBase&;
 
-	AssetHandleBase(AssetHandleBase&& other) noexcept : m_asset(other.m_asset), m_uid(other.m_uid) { other.m_asset = nullptr; }
-
+	AssetHandleBase(AssetHandleBase&& other) noexcept;
 	auto operator=(AssetHandleBase&& other) noexcept -> AssetHandleBase&;
+
+	/**
+	 * Registers a function that will be called whenever a change on the
+	 * handle's asset happens
+	 */
+	void onChangeCallback(std::function<void()>&& callback);
 
 	[[nodiscard]]
 	auto hasValue() const noexcept -> bool;
@@ -115,6 +120,10 @@ public:
 protected:
 	Asset* m_asset = nullptr;
 	toast::UID m_uid;
+
+private:
+	std::vector<std::function<void()>> m_callbacks;
+	void dispatchOnChange();
 };
 
 /**
