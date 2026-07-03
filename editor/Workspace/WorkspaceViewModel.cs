@@ -95,7 +95,7 @@ public class WorkspaceViewModel : Document {
 		File.WriteAllBytes(realPath, Array.Empty<byte>());
 
 		var uid = UidGenerator.Generate();
-		MetaFile.Write(realPath, new MetaHeader { Uid = uid, VectorName = "nodes" });
+		MetaFile.Write(realPath, new MetaHeader { Uid = uid, Type = "nodes" });
 		AssetDatabase.RebuildAssetDatabase();
 
 		Events.Send(new ReloadAssetsManifest());

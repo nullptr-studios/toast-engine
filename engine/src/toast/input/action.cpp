@@ -49,7 +49,7 @@ auto Action::fromAsset(assets::AssetHandle<assets::Action> handle) -> std::uniqu
 	}
 	action->m_value = zeroValue(action->m_value_type);
 
-	const toml::table& table = asset.get();
+	const toml::table table = asset.get();
 
 	if (const auto* binds = table["bind"].as_array()) {
 		for (const auto& node : *binds) {

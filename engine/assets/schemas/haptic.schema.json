@@ -1,104 +1,33 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "toast://schemas/haptic.schema.json",
+  "$id": "core://schemas/haptic.schema.json",
   "title": "Toast Haptic (.thaptic)",
+  "description": "Defines a controller haptic effect with a mode, duration, and optional curve data",
   "type": "object",
   "required": ["mode", "duration_ms"],
   "additionalProperties": false,
   "properties": {
-    "mode": {
-      "enum": ["standard", "curve", "adaptive_trigger", "audio_haptic"],
-      "description": ""
-    },
-    "priority": {
-      "type": "integer",
-      "default": 0,
-      "description": ""
-    },
-    "duration_ms": {
-      "type": "integer",
-      "minimum": 0,
-      "description": ""
-    },
-    "left": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1,
-      "description": ""
-    },
-    "right": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1,
-      "description": ""
-    },
-    "channels": {
-      "enum": ["single", "dual"],
-      "default": "single",
-      "description": ""
-    },
-    "pan": {
-      "type": "number",
-      "minimum": -1,
-      "maximum": 1,
-      "default": 0.0,
-      "description": ""
-    },
-    "multiplier": {
-      "type": "number",
-      "minimum": 0,
-      "default": 1.0,
-      "description": ""
-    },
-    "curve": {
-      "$ref": "#/definitions/curve",
-      "description": ""
-    },
-    "curve_right": {
-      "$ref": "#/definitions/curve",
-      "description": ""
-    }
+    "mode":        { "enum": ["standard", "curve", "adaptive_trigger", "audio_haptic"], "x-toast-type": "enum",  "description": "Haptic playback mode" },
+    "priority":    { "type": "integer", "x-toast-type": "int",   "default": 0,    "description": "Effect priority; higher values can preempt lower ones" },
+    "duration_ms": { "type": "integer", "x-toast-type": "int",   "minimum": 0,    "description": "Total effect duration in milliseconds" },
+    "left":        { "type": "number",  "x-toast-type": "float", "minimum": 0, "maximum": 1, "description": "Left motor intensity [0, 1] (standard mode)" },
+    "right":       { "type": "number",  "x-toast-type": "float", "minimum": 0, "maximum": 1, "description": "Right motor intensity [0, 1] (standard mode)" },
+    "channels":    { "enum": ["single", "dual"], "x-toast-type": "enum", "default": "single", "description": "single = shared curve; dual = independent left/right curves (curve mode)" },
+    "pan":         { "type": "number",  "x-toast-type": "float", "minimum": -1, "maximum": 1, "default": 0.0,  "description": "Pan between left (-1) and right (+1) motor (single-channel curve mode)" },
+    "multiplier":  { "type": "number",  "x-toast-type": "float", "minimum": 0,                "default": 1.0,  "description": "Amplitude multiplier applied to sampled curve values" },
+    "curve":       { "$ref": "#/definitions/curve", "x-toast-type": "curve",       "description": "Left (or only) motor curve (curve mode)" },
+    "curve_right": { "$ref": "#/definitions/curve", "x-toast-type": "curve",       "description": "Right motor curve (dual-channel curve mode)" }
   },
-  "allOf": [
-    {
-      "if": { "properties": { "mode": { "const": "standard" } } },
-      "then": { "required": ["left", "right"] }
-    },
-    {
-      "if": { "properties": { "mode": { "const": "curve" } } },
-      "then": { "required": ["curve"] }
-    },
-    {
-      "if": {
-        "properties": { "channels": { "const": "dual" } },
-        "required": ["channels"]
-      },
-      "then": { "required": ["curve_right"] }
-    }
-  ],
   "definitions": {
     "curve": {
       "type": "object",
       "required": ["spline_type", "dimension", "points"],
       "additionalProperties": false,
       "properties": {
-        "spline_type": {
-          "enum": ["linear", "catmull_rom", "bspline", "bezier"],
-          "description": ""
-        },
-        "dimension": {
-          "enum": ["2d", "3d"]
-        },
-        "t_scale": {
-          "type": "number",
-          "default": 1.0,
-          "exclusiveMinimum": 0
-        },
-        "points": {
-          "type": "array",
-          "minItems": 2,
-          "items": { "$ref": "#/definitions/point" }
-        }
+        "spline_type": { "enum": ["linear", "catmull_rom", "bspline", "bezier"], "x-toast-type": "enum",  "description": "Interpolation type." },
+        "dimension":   { "enum": ["2d", "3d"],                                   "x-toast-type": "enum",  "description": "Curve dimensionality; use 2d for haptics" },
+        "t_scale":     { "type": "number", "x-toast-type": "float", "default": 1.0, "exclusiveMinimum": 0, "description": "Time axis scale factor" },
+        "points":      { "type": "array",  "x-toast-type": "point[]", "minItems": 2, "description": "Control points" }
       }
     },
     "point": {
@@ -106,9 +35,9 @@
       "required": ["x", "y"],
       "additionalProperties": false,
       "properties": {
-        "x": { "type": "number" },
-        "y": { "type": "number" },
-        "z": { "type": "number", "description": "Required when dimension is \"3d\"." }
+        "x": { "type": "number", "x-toast-type": "float", "description": "Normalized time [0, 1]" },
+        "y": { "type": "number", "x-toast-type": "float", "description": "Motor intensity [0, 1]" },
+        "z": { "type": "number", "x-toast-type": "float", "description": "Z component (3D curves only)" }
       }
     }
   }

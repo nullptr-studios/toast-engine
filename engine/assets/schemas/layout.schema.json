@@ -1,24 +1,15 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "toast://schemas/layout.schema.json",
+  "$id": "core://schemas/layout.schema.json",
   "title": "Toast Input Layout (.tlayout)",
-  "description": "",
+  "description": "Maps input actions to layers, controlling which actions are active in each gameplay context",
   "type": "object",
   "required": ["name"],
   "additionalProperties": false,
   "properties": {
-    "name": { "type": "string", "default": "Unnamed Layout", "description": "Display name of the layout." },
-    "layers": {
-      "type": "array",
-      "items": { "type": "string" },
-      "default": [],
-      "description": "Named layers. The hidden 'default' layer is implicit and always present."
-    },
-    "action": {
-      "type": "array",
-      "items": { "$ref": "#/definitions/entry" },
-      "description": "Action references owned by this layout."
-    }
+    "name":   { "type": "string", "x-toast-type": "string", "default": "Unnamed Layout", "description": "Display name of the layout." },
+    "layers": { "type": "array",  "x-toast-type": "string[]", "default": [], "description": "Named layers. The hidden 'default' layer is implicit and always present" },
+    "action": { "type": "array",  "x-toast-type": "entry[]",  "description": "Action references owned by this layout" }
   },
   "definitions": {
     "entry": {
@@ -26,17 +17,9 @@
       "required": ["id"],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "description": "UID of the referenced asset::Action (base64url string)." },
-        "included": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Whitelist of layers. Empty means active on every layer."
-        },
-        "excluded": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Blacklist of layers. An excluded layer always disables the action."
-        }
+        "id":       { "type": "string", "x-toast-type": "asset",    "description": "UID of the referenced input_action asset" },
+        "included": { "type": "array",  "x-toast-type": "string[]", "description": "Whitelist of layers this action is active in" },
+        "excluded": { "type": "array",  "x-toast-type": "string[]", "description": "Blacklist of layers. An excluded layer always disables the action" }
       }
     }
   }

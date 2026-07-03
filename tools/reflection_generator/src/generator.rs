@@ -40,23 +40,6 @@ pub struct ParameterInfo {
 }
 
 #[derive(Serialize)]
-pub struct FunctionInfo {
-	pub name:        String,
-	pub return_type: String,
-	pub parameters:  Vec<ParameterInfo>,
-	#[serde(skip)]
-	pub is_const:    bool,
-}
-
-#[derive(Serialize)]
-pub struct ParameterInfo {
-	pub name:     String,
-	#[serde(rename = "type")]
-	pub typename: String,
-	pub default:  Option<String>,
-}
-
-#[derive(Serialize)]
 pub struct ParentInfo {
 	pub name:      String,
 	pub namespace: Option<String>,

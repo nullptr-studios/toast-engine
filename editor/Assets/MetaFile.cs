@@ -10,7 +10,7 @@ public interface IMetaSection { }
 
 public record MetaHeader {
 	public required string Uid { get; init; }
-	public required string VectorName { get; init; }
+	public required string Type { get; init; }
 	public string? Source { get; init; }
 	public string CreatedAt { get; init; } = DateTime.UtcNow.ToString("o");
 	public string ModifiedAt { get; set; } = DateTime.UtcNow.ToString("o");
@@ -54,7 +54,7 @@ public static class MetaFile {
 	public static void Write(string outputAssetRealPath, MetaHeader header, params IMetaSection[] sections) {
 		var dto = new MetaFileDto {
 			Uid = header.Uid,
-			VectorName = header.VectorName,
+			VectorName = header.Type,
 			Source = header.Source,
 			CreatedAt = header.CreatedAt,
 			ModifiedAt = header.ModifiedAt
@@ -102,7 +102,7 @@ public static class MetaFile {
 			var dto = TomlSerializer.Deserialize<MetaFileDto>(File.ReadAllText(metaPath))!;
 			return new MetaHeader {
 				Uid = dto.Uid,
-				VectorName = dto.VectorName,
+				Type = dto.VectorName,
 				Source = dto.Source,
 				CreatedAt = dto.CreatedAt,
 				ModifiedAt = dto.ModifiedAt

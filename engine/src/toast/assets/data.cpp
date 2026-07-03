@@ -10,6 +10,10 @@ Data::Data(const toml::table& table, AssetHandle<Schema> schema) : m_schema(std:
 	m_root = buildRoot(table, schema_ptr);
 }
 
+Data::Data(const toml::table& table, AssetHandle<Schema> schema, KeepAllKeysTag) : m_schema(std::move(schema)) {
+	m_root = buildRoot(table, nullptr);
+}
+
 auto Data::buildRoot(const toml::table& table, const Schema* schema) -> DataValue {
 	auto root = DataValue::makeObject();
 

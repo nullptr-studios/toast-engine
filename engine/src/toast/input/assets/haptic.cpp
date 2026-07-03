@@ -1,7 +1,6 @@
 #include "haptic.hpp"
 
 #include <algorithm>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <toast/log.hpp>
@@ -23,44 +22,63 @@ auto hapticModeFromString(std::string_view s) -> HapticMode {
 	return HapticMode::standard;
 }
 
-auto curveFromSubTable(const toml::table& parent, std::string_view key) -> std::unique_ptr<Curve> {
-	const auto* sub = parent[key].as_table();
-	if (sub == nullptr) {
-		return nullptr;
-	}
-	try {
-		return Curve::fromToml(*sub);
-	} catch (const std::exception& e) {
-		TOAST_ERROR("Haptic", "Failed to parse [{}] curve: {}", key, e.what());
-		return nullptr;
-	}
 }
 
-}
+Haptic::Haptic(const toml::table& table, AssetHandle<Schema> schema) : Data(table, std::move(schema), Data::KeepAllKeys) {
+	const auto& d = static_cast<const DataValue&>(m_root);
 
-Haptic::Haptic(toml::table table) : m_table(std::move(table)) {
-	m_mode = hapticModeFromString(m_table["mode"].value<std::string>().value_or("standard"));
-	m_priority = static_cast<int>(m_table["priority"].value<int64_t>().value_or(0));
-	m_duration_ms = static_cast<uint32_t>(m_table["duration_ms"].value<int64_t>().value_or(0));
+	std::string mode_str;
+	if (d.contains("mode")) {
+		mode_str = d["mode"].as<std::string>();
+	}
+	m_mode = hapticModeFromString(mode_str);
+
+	if (d.contains("priority")) {
+		m_priority = static_cast<int>(d["priority"].as<int64_t>());
+	}
+	if (d.contains("duration_ms")) {
+		m_duration_ms = static_cast<uint32_t>(d["duration_ms"].as<int64_t>());
+	}
 
 	switch (m_mode) {
 		case HapticMode::standard:
-			m_left = static_cast<float>(m_table["left"].value<double>().value_or(0.0));
-			m_right = static_cast<float>(m_table["right"].value<double>().value_or(0.0));
+			if (d.contains("left")) {
+				m_left = static_cast<float>(d["left"].as<double>());
+			}
+			if (d.contains("right")) {
+				m_right = static_cast<float>(d["right"].as<double>());
+			}
 			break;
 
 		case HapticMode::curve: {
-			const bool dual = m_table["channels"].value<std::string>().value_or("single") == "dual";
-			m_channels = dual ? HapticChannels::dual : HapticChannels::single;
-			m_pan = std::clamp(static_cast<float>(m_table["pan"].value<double>().value_or(0.0)), -1.0f, 1.0f);
-			m_multiplier = static_cast<float>(m_table["multiplier"].value<double>().value_or(1.0));
+			std::string channels_str;
+			if (d.contains("channels")) {
+				channels_str = d["channels"].as<std::string>();
+			}
+			m_channels = (channels_str == "dual") ? HapticChannels::dual : HapticChannels::single;
 
-			m_curve = curveFromSubTable(m_table, "curve");
+			if (d.contains("pan")) {
+				m_pan = std::clamp(static_cast<float>(d["pan"].as<double>()), -1.0f, 1.0f);
+			}
+			if (d.contains("multiplier")) {
+				m_multiplier = static_cast<float>(d["multiplier"].as<double>());
+			}
+
+			if (d.contains("curve") && d["curve"].isObject()) {
+				try {
+					m_curve = Curve::fromToml(d["curve"].asTomlTable());
+				} catch (const std::exception& e) { TOAST_WARN("Haptic", "Failed to parse [curve]: {}", e.what()); }
+			}
 			if (!m_curve) {
 				TOAST_WARN("Haptic", "curve mode is missing a valid [curve] table");
 			}
+
 			if (m_channels == HapticChannels::dual) {
-				m_curve_right = curveFromSubTable(m_table, "curve_right");
+				if (d.contains("curve_right") && d["curve_right"].isObject()) {
+					try {
+						m_curve_right = Curve::fromToml(d["curve_right"].asTomlTable());
+					} catch (const std::exception& e) { TOAST_WARN("Haptic", "Failed to parse [curve_right]: {}", e.what()); }
+				}
 				if (!m_curve_right) {
 					TOAST_WARN("Haptic", "dual channels need a valid [curve_right] table");
 				}
@@ -71,13 +89,6 @@ Haptic::Haptic(toml::table table) : m_table(std::move(table)) {
 		case HapticMode::adaptive_trigger:
 		case HapticMode::audio_haptic: break;
 	}
-}
-
-auto Haptic::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
-	std::ostringstream ss;
-	ss << m_table;
-	auto str = ss.str();
-	return {str.begin(), str.end()};
 }
 
 auto Haptic::sample(float t01) const -> glm::vec2 {

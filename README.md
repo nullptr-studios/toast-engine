@@ -21,8 +21,20 @@ Credits:
 
 ### Generation
 
-```bash
+Powershell
+```pwsh
 cmake -B build/Debug -G "Visual Studio 18 2026" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+```
+
+Linux
+```bash
+cmake -B build/Debug -G "Visual Studio 18 2026" -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+```
+
+Or using the Nix flake
+```bash
+nix develop
+cmake-gen
 ```
 
 ### Build
@@ -33,6 +45,11 @@ cmake --build ./build/Debug
 
 ```bash
 dotnet run --project editor
+```
+
+Or using the Nix flake
+```bash
+cmake-build
 ```
 
 ### Tests

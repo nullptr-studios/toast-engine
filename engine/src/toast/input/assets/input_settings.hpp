@@ -7,33 +7,28 @@
  */
 
 #pragma once
-#include "core_types.hpp"
+#include <toast/assets/data.hpp>
 
 namespace assets {
 
-class TOAST_API InputSettings : public Asset, public ISaveable {
+class TOAST_API InputSettings : public Data {
 public:
 	static constexpr std::string_view collection = "input_settings";
 
-	explicit InputSettings(toml::table table) : m_table(std::move(table)) { }
+	explicit InputSettings(const toml::table& table, AssetHandle<Schema> schema = {})
+	    : Data(table, std::move(schema), Data::KeepAllKeys) { }
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
 		return "input_settings";
 	}
 
-	/// @return The full parsed settings table
+	/// @return The full settings as a reconstructed TOML table
 	[[nodiscard]]
-	auto get() const noexcept -> const toml::table&;
+	auto get() const -> toml::table;
 
 	[[nodiscard]]
 	auto getFloat(std::string_view key, float fallback) const noexcept -> float;
-
-	[[nodiscard]]
-	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
-
-private:
-	toml::table m_table;
 };
 
 }

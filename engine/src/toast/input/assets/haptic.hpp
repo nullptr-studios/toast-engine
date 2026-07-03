@@ -7,12 +7,11 @@
  */
 
 #pragma once
-#include "core_types.hpp"
-#include "curve.hpp"
-
 #include <cstdint>
 #include <glm/glm.hpp>
 #include <memory>
+#include <toast/assets/curve.hpp>
+#include <toast/assets/data.hpp>
 
 namespace assets {
 
@@ -31,22 +30,16 @@ enum class HapticChannels : uint8_t {
 /**
  * @brief Asset representing a single haptic effect loaded from a .thaptic file
  */
-class TOAST_API Haptic : public Asset, public ISaveable {
+class TOAST_API Haptic : public Data {
 public:
 	static constexpr std::string_view collection = "haptics";
 
-	/**
-	 * @brief Parses the effect from a TOML table and keeps the table for serialization
-	 */
-	explicit Haptic(toml::table table);
+	explicit Haptic(const toml::table& table, AssetHandle<Schema> schema = {});
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
 		return "haptic";
 	}
-
-	[[nodiscard]]
-	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 
 	[[nodiscard]]
 	auto mode() const noexcept -> HapticMode {
@@ -72,8 +65,6 @@ public:
 	auto sample(float t) const -> glm::vec2;
 
 private:
-	toml::table m_table;
-
 	HapticMode m_mode = HapticMode::standard;
 	int m_priority = 0;
 	uint32_t m_duration_ms = 0;

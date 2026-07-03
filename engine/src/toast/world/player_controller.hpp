@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
-#include <toast/assets/input_layout.hpp>
 #include <toast/assets/types.hpp>
 #include <unordered_set>
 #include <vector>

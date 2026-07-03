@@ -7,9 +7,8 @@
  */
 
 #pragma once
-#include "core_types.hpp"
-
 #include <string>
+#include <toast/assets/data.hpp>
 
 namespace assets {
 // clang-format off
@@ -32,38 +31,32 @@ enum class AccumulationType : uint8_t { highest, average };
 /**
  * @brief Asset representing one input action loaded from a .taction file
  */
-class TOAST_API Action : public Asset, public ISaveable {
+class TOAST_API Action : public Data {
 public:
 	static constexpr std::string_view collection = "input_actions";
 
-	/**
-	 * @brief Parses the action header from a TOML table and keeps the table for the runtime
-	 */
-	explicit Action(toml::table table);
+	explicit Action(const toml::table& table, AssetHandle<Schema> schema = {});
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
 		return "input_action";
 	}
 
+	/// @returns A reconstructed TOML table preserving all bind, trigger and modifier entries
 	[[nodiscard]]
-	auto get() const noexcept -> const toml::table&;    ///< @returns The full parsed TOML table, including binds and modifiers
+	auto get() const -> toml::table;
 	[[nodiscard]]
-	auto name() const noexcept -> std::string_view;     ///< @returns The action's display name
+	auto name() const noexcept -> std::string_view;            ///< @returns The action's display name
 	[[nodiscard]]
-	auto functionName() const noexcept
-	    -> std::string_view;    ///< @returns The reflected parent function this action invokes when it fires
+	auto functionName() const noexcept -> std::string_view;    ///< @returns The reflected function this action invokes
 	[[nodiscard]]
 	auto description() const noexcept -> std::string_view;     ///< @returns The action's human-readable description
 	[[nodiscard]]
 	auto valueType() const noexcept -> ActionValueType;        ///< @returns The value domain (0D, 1D or 2D)
 	[[nodiscard]]
 	auto accumulation() const noexcept -> AccumulationType;    ///< @returns How values from multiple binds are combined
-	[[nodiscard]]
-	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 
 private:
-	toml::table m_table;
 	std::string m_name;
 	std::string m_function_name;
 	std::string m_description;

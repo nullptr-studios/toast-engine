@@ -3,13 +3,12 @@
  * @author Xein
  * @date 21 Jun 2026
  *
- * @brief Asset describing an input layout: a set of actions grouped into layers
+ * @brief Asset describing a set of actions grouped into layers
  */
 
 #pragma once
-#include "core_types.hpp"
-
 #include <string>
+#include <toast/assets/data.hpp>
 #include <vector>
 
 namespace assets {
@@ -17,7 +16,7 @@ namespace assets {
 /**
  * @brief Asset representing an input layout loaded from a .tlayout file
  */
-class TOAST_API InputLayout : public Asset, public ISaveable {
+class TOAST_API InputLayout : public Data {
 public:
 	static constexpr std::string_view collection = "input_layouts";
 
@@ -38,10 +37,10 @@ public:
 	// the doxygen to the previous documentation -x
 
 	/**
-	 * @brief Parses the layout from a TOML table
+	 * @brief Parses the layout from a TOML table, keeping all keys for round-trip serialization
 	 * @param table Parsed contents of the .tlayout file
 	 */
-	explicit InputLayout(toml::table table);
+	explicit InputLayout(const toml::table& table, AssetHandle<Schema> schema = {});
 	// clang-format on
 
 	[[nodiscard]]
@@ -70,11 +69,7 @@ public:
 	[[nodiscard]]
 	static auto isActiveForLayer(const Entry& entry, std::string_view layer) noexcept -> bool;
 
-	[[nodiscard]]
-	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
-
 private:
-	toml::table m_table;
 	std::string m_name;
 	std::vector<std::string> m_layers;
 	std::vector<Entry> m_entries;

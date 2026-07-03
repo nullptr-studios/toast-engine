@@ -138,6 +138,8 @@ public:
 	 */
 	auto search(std::string_view query) -> std::vector<AssetHandle<Asset>>;
 
+	auto listByType(std::string_view type) -> std::vector<toast::UID>;
+
 	auto getCachePath() const -> const std::filesystem::path&;
 
 private:

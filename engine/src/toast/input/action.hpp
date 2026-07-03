@@ -8,11 +8,11 @@
 
 #pragma once
 
+#include "assets/input_action.hpp"
 #include "bind.hpp"
 #include "modifier.hpp"
 #include "value.hpp"
 
-#include <toast/assets/input_action.hpp>
 #include <toast/assets/types.hpp>
 #include <toast/uid.hpp>
 

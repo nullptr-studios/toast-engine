@@ -1,12 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "toast://schemas/input_settings.schema.json",
+  "$id": "core://schemas/input_settings.schema.json",
   "title": "Toast Input User Settings (.toml)",
   "description": "",
   "type": "object",
   "additionalProperties": { "type": ["number", "boolean", "string"] },
   "properties": {
-    "look_sensitivity": { "type": "number", "description": "Multiplier applied to look/aim input." },
-    "stick_deadzone": { "type": "number", "minimum": 0, "maximum": 1, "description": "Default analog stick deadzone." }
+    "look_sensitivity": { "type": "number", "x-toast-type": "float", "description": "Multiplier applied to look/aim input" },
+    "stick_deadzone":   { "type": "number", "x-toast-type": "float", "minimum": 0, "maximum": 1, "description": "Default analog stick deadzone" }
   }
 }
