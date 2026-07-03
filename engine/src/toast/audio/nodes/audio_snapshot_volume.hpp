@@ -41,8 +41,8 @@ private:
 	[[Reflect, Unit("s")]]
 	float m_fade_out = 0.2f;
 
-	float m_accumulated_weight = 0.0f;  ///< total listener weight inside this frame, reset each tick
-	float m_current_intensity = 0.0f;   ///< smoothed intensity lerping toward accumulated weight
+	float m_accumulated_weight = 0.0f;    ///< total listener weight inside this frame, reset each tick
+	float m_current_intensity = 0.0f;     ///< smoothed intensity lerping toward accumulated weight
 };
 
 }

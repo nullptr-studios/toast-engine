@@ -16,7 +16,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/01-format_and_handle", 
 	// --- Unresolved handle keeps its UID with a null pointer ---------------------------------
 	{
 		UID id(UID::fromString("ABCDEFGHIJK"));
-		AssetHandle<Prefab> handle(nullptr, id);
+		AssetHandle<Prefab> handle(nullptr, id, "");
 		assert(not handle.hasValue());
 		assert(handle.uid().data() == id.data());
 		assert(handle.uid().data() != 0);

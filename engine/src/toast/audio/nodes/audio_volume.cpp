@@ -15,11 +15,9 @@ void AudioVolume::end() {
 	audio::AudioSystem::get().unregisterVolume(*this);
 }
 
-void AudioVolume::onEnable() {
-}
+void AudioVolume::onEnable() { }
 
-void AudioVolume::onDisable() {
-}
+void AudioVolume::onDisable() { }
 
 void AudioVolume::setListeners(const std::vector<Box<AudioListener>>& listeners) {
 	m_listeners = listeners;
@@ -86,9 +84,9 @@ void AudioVolume::lateTick() {
 		}
 
 		VolumeTarget target {
-			.listener = listener,
-			.position = listener->worldPos(),
-			.forward = listener->forward(),
+		  .listener = listener,
+		  .position = listener->worldPos(),
+		  .forward = listener->forward(),
 		};
 		evaluateTarget(target);
 	}

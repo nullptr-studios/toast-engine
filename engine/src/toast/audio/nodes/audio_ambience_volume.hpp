@@ -48,7 +48,7 @@ private:
 	[[Reflect, Range(0.0, 1.0)]]
 	float m_volume = 1.0f;
 
-	float m_spawn_timer = 0.0f;  ///< countdown until next spawn, randomized in [min_interval, max_interval]
+	float m_spawn_timer = 0.0f;    ///< countdown until next spawn, randomized in [min_interval, max_interval]
 	std::mt19937 m_rng {std::random_device {}()};
 };
 

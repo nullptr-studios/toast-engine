@@ -24,7 +24,7 @@ protected:
 	auto emitterPosition(const glm::vec3& listener) -> glm::vec3 override;
 
 	[[Reflect, Range(0.0, 100.0)]]
-	float m_radius = 2.0f;  ///< projection radius in world units
+	float m_radius = 2.0f;    ///< projection radius in world units
 };
 
 }

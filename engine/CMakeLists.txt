@@ -115,7 +115,7 @@ target_compile_options(toast_engine PUBLIC
 )
 
 add_custom_target(clang_format
-        COMMAND ${CMAKE_COMMAND} -DROOT_DIR=${CMAKE_CURRENT_SOURCE_DIR}/src -P ${CMAKE_SOURCE_DIR}/cmake/clang_format.cmake
+        COMMAND ${CMAKE_COMMAND} -DROOT_DIR=${CMAKE_CURRENT_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/cmake/clang_format.cmake
         COMMENT "Formatting sources"
         VERBATIM
 )

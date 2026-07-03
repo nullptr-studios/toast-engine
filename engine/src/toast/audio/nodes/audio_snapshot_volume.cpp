@@ -21,11 +21,9 @@ void SnapshotVolume::resetAccumulators() {
 	m_accumulated_weight = 0.0f;
 }
 
-void SnapshotVolume::onAudioTargetEnter(const VolumeTarget&) {
-}
+void SnapshotVolume::onAudioTargetEnter(const VolumeTarget&) { }
 
-void SnapshotVolume::onAudioTargetExit(const VolumeTarget&) {
-}
+void SnapshotVolume::onAudioTargetExit(const VolumeTarget&) { }
 
 void SnapshotVolume::onEnable() {
 	if (!m_snapshot.hasValue() || m_current_intensity <= 0.0f) {

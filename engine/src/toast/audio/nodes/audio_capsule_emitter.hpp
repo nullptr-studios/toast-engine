@@ -25,10 +25,10 @@ protected:
 	auto emitterPosition(const glm::vec3& listener) -> glm::vec3 override;
 
 	[[Reflect, Range(0.0, 100.0)]]
-	float m_radius = 0.5f;  ///< radius in world units
+	float m_radius = 0.5f;         ///< radius in world units
 
 	[[Reflect, Range(0.0, 100.0)]]
-	float m_half_height = 1.0f;  ///< half the capsule length along Y
+	float m_half_height = 1.0f;    ///< half the capsule length along Y
 };
 
 }

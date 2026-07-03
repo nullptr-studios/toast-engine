@@ -2,7 +2,6 @@
 
 #include "../audio_system.hpp"
 
-
 namespace toast {
 void AudioContext::addBank(const assets::AssetHandle<assets::AudioBank>& bank) {
 	ZoneScoped;

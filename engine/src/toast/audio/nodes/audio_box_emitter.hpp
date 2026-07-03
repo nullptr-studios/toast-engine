@@ -24,7 +24,7 @@ protected:
 	auto emitterPosition(const glm::vec3& listener) -> glm::vec3 override;
 
 	[[Reflect]]
-	glm::vec3 m_extents = glm::vec3 {1.0f};  ///< half-extents in local space
+	glm::vec3 m_extents = glm::vec3 {1.0f};    ///< half-extents in local space
 };
 
 }

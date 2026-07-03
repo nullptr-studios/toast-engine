@@ -113,12 +113,13 @@ private:
 	std::unordered_map<std::string, FMOD_STUDIO_EVENTINSTANCE*> m_active_instances;    ///< 2D events, one instance per GUID
 	auto getOrCreateInstance(std::string_view guid_str) -> FMOD_STUDIO_EVENTINSTANCE*;
 
-	uint64_t m_next_instance_id = 1;    // 0 = null
-	std::unordered_map<uint64_t, FMOD_STUDIO_EVENTINSTANCE*> m_instances_3d;          ///< 3D events, unique ID per play call
+	uint64_t m_next_instance_id = 1;                                                   // 0 = null
+	std::unordered_map<uint64_t, FMOD_STUDIO_EVENTINSTANCE*> m_instances_3d;           ///< 3D events, unique ID per play call
 
-	std::unordered_map<std::string, FMOD_STUDIO_EVENTINSTANCE*> m_snapshot_instances;  ///< snapshots tracked separately for intensity, not playback
+	std::unordered_map<std::string, FMOD_STUDIO_EVENTINSTANCE*>
+	    m_snapshot_instances;                       ///< snapshots tracked separately for intensity, not playback
 
-	std::vector<glm::vec3> m_listener_positions;           ///< cached world positions, needed by volumes for per-listener weight blending
+	std::vector<glm::vec3> m_listener_positions;    ///< cached world positions, needed by volumes for per-listener weight blending
 	std::vector<toast::Box<toast::AudioListener>> m_listeners;
 	std::mutex m_listeners_mutex;
 

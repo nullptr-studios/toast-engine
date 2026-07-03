@@ -56,10 +56,10 @@ public:
 		float current_vol = 0.0f;
 		float target_vol = 1.0f;
 		float fade_duration = 0.0f;
-		float fade_elapsed = 0.0f;  ///< current_vol/target_vol and fade_duration/elapsed drive the crossfade lerp
+		float fade_elapsed = 0.0f;    ///< current_vol/target_vol and fade_duration/elapsed drive the crossfade lerp
 	};
 
-	// public so the static FMOD callback can read it without needing friend
+	                                // public so the static FMOD callback can read it without needing friend
 	struct CallbackData {
 		MusicPlayer* player = nullptr;
 		uint64_t instance_id = 0;
@@ -74,18 +74,18 @@ public:
 	struct QueuedCb {
 		CbType type = CbType::beat;
 		uint64_t instance_id = 0;
-		int bar = 0;              ///< 0-based bar and beat for musical timing
+		int bar = 0;    ///< 0-based bar and beat for musical timing
 		int beat = 0;
 		int position_ms = 0;
 		float tempo = 0.0f;
-		int sig_upper = 4;        ///< time signature numerator and denominator
+		int sig_upper = 4;    ///< time signature numerator and denominator
 		int sig_lower = 4;
 		std::string marker_name;
 	};
 
 	struct ParamID {
 		unsigned int data1 = 0;
-		unsigned int data2 = 0;   // FMOD caches parameter IDs so we don't string-lookup every frame
+		unsigned int data2 = 0;    // FMOD caches parameter IDs so we don't string-lookup every frame
 	};
 
 	void queueCallback(const QueuedCb& cb);
@@ -110,9 +110,10 @@ private:
 	std::vector<CallbackData> m_callback_data;
 
 	std::mutex m_cb_mutex;
-	std::vector<QueuedCb> m_pending_cbs;  ///< filled by FMOD callback thread, drained in tick()
+	std::vector<QueuedCb> m_pending_cbs;    ///< filled by FMOD callback thread, drained in tick()
 
-	std::unordered_map<uint64_t, std::unordered_map<std::string, ParamID>> m_param_ids;  ///< per-instance parameter ID cache, avoids FMOD string lookups per frame
+	std::unordered_map<uint64_t, std::unordered_map<std::string, ParamID>>
+	    m_param_ids;                        ///< per-instance parameter ID cache, avoids FMOD string lookups per frame
 };
 
 }

@@ -17,22 +17,22 @@ namespace toast {
 class TOAST_API [[ToastNode, Color("Beige"), Icon("AudioStreamPlayer")]] AudioEmitter : public Node {
 public:
 	[[Button]]
-	void play();                                         ///< Fires the event
+	void play();                                              ///< Fires the event
 
 	[[Button]]
-	void stop();                                         ///< Stops the event using the @c allowFadeout()
+	void stop();                                              ///< Stops the event using the @c allowFadeout()
 
-	void pause(bool value);                              ///< Pauses and resumes in a location
+	void pause(bool value);                                   ///< Pauses and resumes in a location
 	void setParameter(std::string_view name, float value);    ///< Changes a parameter by name
 	void setParameter(std::string_view, bool value);          ///< Changes a parameter by name
-	auto isPlaying() -> bool;                            ///< @returns true if it's currently playing
+	auto isPlaying() -> bool;                                 ///< @returns true if it's currently playing
 
-	void event(std::string_view path);                   ///< Sets the event by URI
-	void event(toast::UID uid);                          ///< Sets the event by UID
-	void playOnEnable(bool value);                       ///< If true, will play every time the node is enabled
-	void volume(float value);                            ///< @param value 0.0 - 1.0
-	void pitch(float value);                             ///< @param value 0.5 - 2.0
-	void allowFadeout(bool value);                       ///< False forces the event to bypass envelope settings
+	void event(std::string_view path);                        ///< Sets the event by URI
+	void event(toast::UID uid);                               ///< Sets the event by UID
+	void playOnEnable(bool value);                            ///< If true, will play every time the node is enabled
+	void volume(float value);                                 ///< @param value 0.0 - 1.0
+	void pitch(float value);                                  ///< @param value 0.5 - 2.0
+	void allowFadeout(bool value);                            ///< False forces the event to bypass envelope settings
 
 private:
 	void onEnable();

@@ -33,11 +33,11 @@ public:
 
 protected:
 	[[nodiscard]]
-	auto trackTarget(const VolumeTarget& target, bool inside) -> bool;  ///< returns true if the inside state changed
+	auto trackTarget(const VolumeTarget& target, bool inside) -> bool;    ///< returns true if the inside state changed
 	[[nodiscard]]
 	auto hasListenersInside() const -> bool;
 
-	virtual void onVolumeTick() {}  ///< called after accumulators are finalized, safe to push to FMOD here
+	virtual void onVolumeTick() { }    ///< called after accumulators are finalized, safe to push to FMOD here
 
 private:
 	void begin();
