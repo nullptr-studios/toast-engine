@@ -1,4 +1,5 @@
-!/ci-build-linux.yml
-!/ci-build-macos.yml
-!/ci-build-tools-linux.yml
-!/ci-build-windows.yml
+!branch-rules.yml
+!ci-linux-dev.yml
+!ci-linux-main.yml
+!clang-format.yml
+!release-on-merge.yml
