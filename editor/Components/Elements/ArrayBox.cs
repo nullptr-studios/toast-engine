@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -311,6 +312,14 @@ public sealed class ArrayBox : TemplatedControl {
 		row.AddHandler(DragDrop.DragOverEvent,  (_, e) => OnRowDragOver(row, topLine, bottomLine, e));
 		row.AddHandler(DragDrop.DropEvent,       (_, e) => OnRowDrop(item, row, e));
 		row.AddHandler(DragDrop.DragLeaveEvent,  (_, _) => OnRowDragLeave(topLine, bottomLine));
+
+		if (item is IRowVisible rv) {
+			row.IsVisible = rv.RowVisible;
+			if (item is INotifyPropertyChanged inpc)
+				inpc.PropertyChanged += (_, e) => {
+					if (e.PropertyName == nameof(IRowVisible.RowVisible)) row.IsVisible = rv.RowVisible;
+				};
+		}
 
 		return row;
 	}

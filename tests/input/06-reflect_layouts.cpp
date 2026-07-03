@@ -2,7 +2,7 @@
 
 #include <any>
 #include <cassert>
-#include <toast/assets/input_layout.hpp>
+#include <toast/input/assets/input_layout.hpp>
 #include <toast/world/player_controller.hpp>
 #include <toast/world/reflect.hpp>
 #include <vector>
@@ -17,8 +17,8 @@ TOAST_TEST_NAMED("input", "input/06-reflect_layouts", test_input_reflect_layouts
 	assert(field->is_array);
 
 	input::PlayerController controller;
-	controller.layouts.emplace_back(nullptr, toast::UID(11));
-	controller.layouts.emplace_back(nullptr, toast::UID(22));
+	controller.layouts.emplace_back(nullptr, toast::UID(11), "");
+	controller.layouts.emplace_back(nullptr, toast::UID(22), "");
 
 	std::any value = field->get(&controller);
 	auto uids = std::any_cast<std::vector<toast::UID>>(value);

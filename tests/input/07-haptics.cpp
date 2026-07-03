@@ -2,7 +2,7 @@
 
 #include <cassert>
 #include <cmath>
-#include <toast/assets/haptic.hpp>
+#include <toast/input/assets/haptic.hpp>
 #include <toml++/toml.hpp>
 
 namespace {

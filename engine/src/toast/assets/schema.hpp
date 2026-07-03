@@ -34,6 +34,10 @@ struct TOAST_API SchemaField {
 	std::optional<double> min;
 	std::optional<double> max;
 
+	std::string asset_type;               ///< x-toast-asset-type: asset subtype constraint for asset_t fields
+	std::string node_type;                ///< x-toast-node-type: node subtype constraint for node_t fields
+	std::vector<std::string> variants;    ///< x-toast-variants: discriminator values this field applies to
+
 	std::vector<SchemaField> children;
 };
 
@@ -70,10 +74,15 @@ public:
 		return m_definitions;
 	}
 
+	/// @returns The x-toast-discriminator field name of a definition, or empty when none
+	[[nodiscard]]
+	auto discriminatorOf(std::string_view definition) const -> std::string_view;
+
 private:
 	std::string m_title;
 	std::vector<SchemaField> m_fields;
 	std::map<std::string, std::vector<SchemaField>> m_definitions;
+	std::map<std::string, std::string> m_discriminators;
 
 	/** Parse one property entry into a SchemaField */
 	static auto parseOneField(const std::string& name, const json_t& properties) -> SchemaField;

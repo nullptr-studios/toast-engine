@@ -10,6 +10,10 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+using Avalonia.Styling;
 using editor.Components.Modals;
 using editor.Engine;
 using editor.Workspace;
@@ -200,5 +204,11 @@ public sealed class NodeBox : TemplatedControl {
 	private void OnDrop(object? sender, DragEventArgs e) {
 		if (IsEnabled && IsAcceptable(e) && e.DataTransfer.TryGetValue(NodeDragData.Format) is { } el) Value = el.Uid;
 		e.Handled = true;
+	}
+	
+	private static IBrush? Brush(string key) {
+		if (Application.Current?.Resources.TryGetResource(key, ThemeVariant.Dark, out var r) == true)
+			return r as IBrush;
+		return null;
 	}
 }

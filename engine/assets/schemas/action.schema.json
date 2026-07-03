@@ -29,37 +29,51 @@
     "trigger": {
       "type": "object",
       "required": ["name"],
+      "x-toast-discriminator": "name",
       "properties": {
         "name":              { "enum": ["start", "release", "hold", "pulse", "axis1d", "axis2d", "cursor"], "x-toast-type": "enum" },
-        "threshold":         { "type": "number",  "x-toast-type": "float", "default": 0.5,  "description": "Activation threshold (start/release)" },
-        "threshold_start":   { "type": "number",  "x-toast-type": "float", "default": 0.5,  "description": "Hold/pulse start threshold" },
-        "threshold_release": { "type": "number",  "x-toast-type": "float", "default": 0.5,  "description": "Hold/pulse release threshold" },
-        "threshold_x":       { "type": "array",   "x-toast-type": "float[]","description": "axis2d X [min, max] absolute bounds" },
-        "threshold_y":       { "type": "array",   "x-toast-type": "float[]","description": "axis2d Y [min, max] absolute bounds" },
-        "countdown":         { "type": "number",  "x-toast-type": "float", "default": 0,    "description": "Seconds to wait before the trigger fires" },
-        "rate":              { "type": "number",  "x-toast-type": "float", "default": 1.0,  "description": "Pulse repeat rate (Hz)" },
-        "normalize":         { "type": "boolean", "x-toast-type": "bool",  "default": false, "description": "Normalize axis output to [-1, 1]" },
-        "axis":              { "type": "integer", "x-toast-type": "int",   "default": 0,    "description": "Axis component to extract (0=X, 1=Y)" },
-        "send_start":        { "type": "boolean", "x-toast-type": "bool",  "default": false, "description": "Emit a start event at trigger activation" },
-        "send_release":      { "type": "boolean", "x-toast-type": "bool",  "default": false, "description": "Emit a release event at deactivation" },
-        "space":             { "type": "integer", "x-toast-type": "int",   "default": 1,    "description": "Cursor coordinate space (0=screen, 1=NDC, 2=camera, 3=world)" },
-        "delta":             { "type": "boolean", "x-toast-type": "bool",  "default": false, "description": "Report cursor delta instead of absolute position" }
+        "value":             {
+          "x-toast-variants": ["start", "release", "hold", "pulse"],
+          "x-toast-type-switch": {
+            "field": "type",
+            "cases": {
+              "Action0D": { "type": "bool",  "default": true },
+              "Action1D": { "type": "float", "default": 1.0 },
+              "Action2D": { "type": "vec2",  "default": [1.0, 0.0] }
+            }
+          },
+          "description": "Value contributed while the trigger is active. Type follows the action's value domain."
+        },
+        "threshold":         { "type": "number",  "x-toast-type": "float", "default": 0.5,  "x-toast-variants": ["start", "release", "axis1d"], "description": "Activation threshold (start/release). For axis1d an array [min, max] of absolute bounds is also accepted" },
+        "threshold_start":   { "type": "number",  "x-toast-type": "float", "default": 0.5,  "x-toast-variants": ["hold", "pulse"], "description": "Hold/pulse start threshold" },
+        "threshold_release": { "type": "number",  "x-toast-type": "float", "default": 0.5,  "x-toast-variants": ["hold", "pulse"], "description": "Hold/pulse release threshold" },
+        "threshold_x":       { "type": "array",   "x-toast-type": "float[]", "x-toast-variants": ["axis2d"], "description": "axis2d X [min, max] absolute bounds" },
+        "threshold_y":       { "type": "array",   "x-toast-type": "float[]", "x-toast-variants": ["axis2d"], "description": "axis2d Y [min, max] absolute bounds" },
+        "countdown":         { "type": "number",  "x-toast-type": "float", "default": 0,    "x-toast-variants": ["start", "hold", "pulse"], "description": "Seconds to wait before the trigger fires" },
+        "rate":              { "type": "number",  "x-toast-type": "float", "default": 1.0,  "x-toast-variants": ["pulse"], "description": "Pulse repeat rate (Hz)" },
+        "normalize":         { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["axis1d", "axis2d"], "description": "Normalize axis output to [-1, 1]" },
+        "axis":              { "type": "integer", "x-toast-type": "int",   "default": 0,    "minimum": 0, "maximum": 1, "x-toast-variants": ["axis1d"], "description": "Axis component to extract (0=X, 1=Y)" },
+        "send_start":        { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["hold", "pulse", "axis1d", "axis2d"], "description": "Emit a start event at trigger activation" },
+        "send_release":      { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["hold", "pulse", "axis1d", "axis2d"], "description": "Emit a release event at deactivation" },
+        "space":             { "type": "integer", "x-toast-type": "int",   "default": 1,    "x-toast-variants": ["cursor"], "description": "Cursor coordinate space (0=screen, 1=NDC, 2=camera, 3=world)" },
+        "delta":             { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["cursor"], "description": "Report cursor delta instead of absolute position" }
       }
     },
     "modifier": {
       "type": "object",
       "required": ["name"],
+      "x-toast-discriminator": "name",
       "properties": {
         "name":            { "enum": ["deadzone", "invert", "exponential", "scale", "scale_by_deltatime", "smooth", "key"], "x-toast-type": "enum" },
-        "lower_threshold": { "type": "number",  "x-toast-type": "float", "default": 0.2,  "description": "Deadzone lower bound" },
-        "upper_threshold": { "type": "number",  "x-toast-type": "float", "default": 1.0,  "description": "Deadzone upper bound" },
-        "x":               { "type": "number",  "x-toast-type": "float", "default": 1.0,  "description": "X-axis factor (scale) or per-axis flag (invert/smooth/scale_by_deltatime as 0/1)" },
-        "y":               { "type": "number",  "x-toast-type": "float", "default": 1.0,  "description": "Y-axis factor (scale) or per-axis flag (invert/smooth/scale_by_deltatime as 0/1)" },
-        "power":           { "type": "number",  "x-toast-type": "float", "default": 2.0,  "description": "Exponent for exponential curve" },
-        "speed":           { "type": "number",  "x-toast-type": "float", "default": 10.0, "description": "Smoothing speed" },
-        "control":         { "type": "boolean", "x-toast-type": "bool",  "default": false, "description": "Require Ctrl held (key modifier)" },
-        "shift":           { "type": "boolean", "x-toast-type": "bool",  "default": false, "description": "Require Shift held (key modifier)" },
-        "alt":             { "type": "boolean", "x-toast-type": "bool",  "default": false, "description": "Require Alt held (key modifier)" }
+        "lower_threshold": { "type": "number",  "x-toast-type": "float", "default": 0.2,  "x-toast-variants": ["deadzone"], "description": "Deadzone lower bound" },
+        "upper_threshold": { "type": "number",  "x-toast-type": "float", "default": 1.0,  "x-toast-variants": ["deadzone"], "description": "Deadzone upper bound" },
+        "x":               { "type": "number",  "x-toast-type": "float", "default": 1.0,  "x-toast-variants": ["invert", "scale", "scale_by_deltatime", "smooth"], "description": "X-axis factor (scale) or per-axis flag (invert/smooth/scale_by_deltatime as 0/1)" },
+        "y":               { "type": "number",  "x-toast-type": "float", "default": 1.0,  "x-toast-variants": ["invert", "scale", "scale_by_deltatime", "smooth"], "description": "Y-axis factor (scale) or per-axis flag (invert/smooth/scale_by_deltatime as 0/1)" },
+        "power":           { "type": "number",  "x-toast-type": "float", "default": 2.0,  "x-toast-variants": ["exponential"], "description": "Exponent for exponential curve" },
+        "speed":           { "type": "number",  "x-toast-type": "float", "default": 10.0, "x-toast-variants": ["smooth"], "description": "Smoothing speed" },
+        "control":         { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["key"], "description": "Require Ctrl held (key modifier)" },
+        "shift":           { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["key"], "description": "Require Shift held (key modifier)" },
+        "alt":             { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["key"], "description": "Require Alt held (key modifier)" }
       }
     }
   }

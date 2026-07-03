@@ -88,6 +88,18 @@
 					<elements:BoolBox Grid.Column="1" Value="{Binding IsArray, Mode=TwoWay}" />
 				</Grid>
 
+				<!-- Asset / Node subtype constraint -->
+				<Grid ColumnDefinitions="150,*" ColumnSpacing="8" IsVisible="{Binding IsAssetType}">
+					<TextBlock Classes="lbl" Text="Asset Type" />
+					<elements:EnumBox Grid.Column="1"
+					                  Value="{Binding RefTypeString, Mode=TwoWay}"
+					                  Options="{Binding AssetTypeOptions}" />
+				</Grid>
+				<Grid ColumnDefinitions="150,*" ColumnSpacing="8" IsVisible="{Binding IsNodeType}">
+					<TextBlock Classes="lbl" Text="Node Type" />
+					<elements:StringBox Grid.Column="1" Value="{Binding RefTypeString, Mode=TwoWay}" Wrap="False" />
+				</Grid>
+
 				<!-- Min / Max -->
 				<Grid ColumnDefinitions="150,*" ColumnSpacing="8" IsVisible="{Binding HasMinMax}">
 					<TextBlock Classes="lbl" Text="Min" />
@@ -144,6 +156,16 @@
 					                   CanReorder="True" CanAddRemove="True" />
 				</StackPanel>
 
+				<!-- Variants -->
+				<StackPanel Spacing="4">
+					<TextBlock Classes="lbl" Text="Variants" />
+					<elements:ArrayBox Background="{StaticResource Bg0}" Padding="4"
+					                   Items="{Binding Variants, Mode=TwoWay}"
+					                   AddLabel="Add Variant"
+					                   AddCommand="{Binding AddVariantCommand}"
+					                   CanReorder="True" CanAddRemove="True" />
+				</StackPanel>
+
 			</StackPanel>
 		</DataTemplate>
 
@@ -170,6 +192,14 @@
 				</TextBox>
 
 				<StackPanel Spacing="8">
+					<!-- Discriminator -->
+					<Grid ColumnDefinitions="150,*" ColumnSpacing="8">
+						<TextBlock Classes="lbl" Text="Discriminator" />
+						<elements:EnumBox Grid.Column="1"
+						                  Value="{Binding Discriminator, Mode=TwoWay}"
+						                  Options="{Binding DiscriminatorOptions}" />
+					</Grid>
+
 					<!-- fields -->
 					<elements:ArrayBox Background="Transparent" Padding="0"
 					                   RowBackground="{StaticResource Bg4}"

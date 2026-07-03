@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using editor.Assets.Types;
 using editor.Components.Elements;
 
 namespace editor.Editors;
@@ -31,7 +32,16 @@ public partial class SchemaFieldItemVM : ObservableObject, IRowSplittable {
     [ObservableProperty] private string m_minString     = "";
     [ObservableProperty] private string m_maxString     = "";
 
+    [ObservableProperty] private string m_refTypeString = "";
+
+    public string TypeSwitchJson { get; set; } = "";
+
     public ObservableCollection<StringOptionVM> EnumOptions { get; } = [];
+
+    public ObservableCollection<StringOptionVM> Variants { get; } = [];
+
+    public IEnumerable<string> AssetTypeOptions =>
+        AssetTypeRegistry.All.Select(a => a.Type).OrderBy(t => t);
 
     public bool IsEnum       => TypeKey == "enum";
     public bool IsBoolType   => TypeKey == "bool";
@@ -103,6 +113,7 @@ public partial class SchemaFieldItemVM : ObservableObject, IRowSplittable {
     public SchemaFieldItemVM(SchemaViewModel owner) {
         m_owner = owner;
         EnumOptions.CollectionChanged += OnEnumOptionsChanged;
+        Variants.CollectionChanged    += (_, _) => m_owner.IsDirty = true;
     }
 
     private void OnEnumOptionsChanged(object? sender, NotifyCollectionChangedEventArgs e) {
@@ -112,6 +123,9 @@ public partial class SchemaFieldItemVM : ObservableObject, IRowSplittable {
 
     [RelayCommand]
     private void AddEnumOption() => EnumOptions.Add(new StringOptionVM { Value = "option" });
+
+    [RelayCommand]
+    private void AddVariant() => Variants.Add(new StringOptionVM { Value = "variant" });
 
     public IEnumerable<string> AvailableTypes => m_owner.AllTypes;
 
@@ -136,6 +150,7 @@ public partial class SchemaFieldItemVM : ObservableObject, IRowSplittable {
     }
 
     partial void OnNameChanged(string value)          => m_owner.IsDirty = true;
+    partial void OnRefTypeStringChanged(string value) => m_owner.IsDirty = true;
     partial void OnIsArrayChanged(bool value) {
         m_owner.IsDirty = true;
         OnPropertyChanged(nameof(HasTypedDefault));
@@ -160,13 +175,22 @@ public partial class StructTypeVM : ObservableObject, IRowSplittable {
     [ObservableProperty] private string m_name         = "NewType";
     [ObservableProperty] private bool   m_isEditingName;
     [ObservableProperty] private string m_nameDraft    = "";
+    [ObservableProperty] private string m_discriminator = "";
 
     public ObservableCollection<SchemaFieldItemVM> Fields { get; } = [];
 
+    public IEnumerable<string> DiscriminatorOptions =>
+        new[] { "" }.Concat(Fields.Where(f => f.TypeKey == "enum").Select(f => f.Name));
+
     public StructTypeVM(SchemaViewModel owner) {
         m_owner = owner;
-        Fields.CollectionChanged += (_, _) => m_owner.IsDirty = true;
+        Fields.CollectionChanged += (_, _) => {
+            m_owner.IsDirty = true;
+            OnPropertyChanged(nameof(DiscriminatorOptions));
+        };
     }
+
+    partial void OnDiscriminatorChanged(string value) => m_owner.IsDirty = true;
 
     [RelayCommand]
     private void BeginEditName() {

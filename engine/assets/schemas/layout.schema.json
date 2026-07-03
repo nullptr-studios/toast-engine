@@ -17,7 +17,7 @@
       "required": ["id"],
       "additionalProperties": false,
       "properties": {
-        "id":       { "type": "string", "x-toast-type": "asset",    "description": "UID of the referenced input_action asset" },
+        "id":       { "type": "string", "x-toast-type": "asset",    "x-toast-asset-type": "input_action", "description": "UID of the referenced input_action asset" },
         "included": { "type": "array",  "x-toast-type": "string[]", "description": "Whitelist of layers this action is active in" },
         "excluded": { "type": "array",  "x-toast-type": "string[]", "description": "Blacklist of layers. An excluded layer always disables the action" }
       }

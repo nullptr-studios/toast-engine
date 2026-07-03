@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using Avalonia.Controls;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
@@ -231,98 +232,151 @@ public partial class GenericViewModel : Tool {
         }
     }
 
-    private void LoadSchemaGuided(TomlTable table, List<SchemaFieldDescriptor> descriptors,
-                                   Dictionary<string, List<SchemaFieldDescriptor>> definitions) {
-        foreach (var desc in descriptors) {
-            object? tomlVal = table.TryGetValue(desc.Name, out var v) ? v : null;
+    private sealed class LoadContext(Dictionary<string, StructDef> definitions) {
+        public Dictionary<string, StructDef> Definitions { get; } = definitions;
+        public List<TypeSwitchRegistration> PendingTypeSwitches { get; } = [];
+        public Action<TypeSwitchRegistration>? WireImmediately { get; set; }
 
-            bool isStruct = definitions.ContainsKey(desc.TypeKey);
-            string vmType = isStruct ? "object" : desc.TypeKey;
-
-            GenericFieldVM field;
-            if (desc.IsArray) {
-                field = new GenericFieldVM {
-                    Name             = desc.Name,
-                    TypeKey          = "array",
-                    ArrayElementType = vmType
-                };
-                if (isStruct) {
-                    // Factory so "Add Item" creates a properly populated struct instance
-                    var capturedDefs       = definitions;
-                    var capturedStructDefs = definitions[desc.TypeKey];
-                    field.ArrayItemFactory = () => {
-                        var item = new GenericFieldVM { TypeKey = "object", NameEditable = false, ChildrenLocked = true };
-                        LoadStructChildren(item, new TomlTable(), capturedStructDefs, capturedDefs);
-                        return item;
-                    };
-                }
-                IEnumerable? elements = tomlVal switch {
-                    TomlArray ta       => ta,
-                    TomlTableArray tta => tta,
-                    _                  => null
-                };
-                if (elements != null) {
-                    foreach (var elem in elements) {
-                        GenericFieldVM child;
-                        if (isStruct) {
-                            child = new GenericFieldVM { TypeKey = "object", NameEditable = false, ChildrenLocked = true };
-                            LoadStructChildren(child, elem as TomlTable ?? [], definitions[desc.TypeKey], definitions);
-                        } else {
-                            child = GenericFieldVM.FromToml("", elem!, vmType);
-                            child.NameEditable = false;
-                            SetChildrenNameEditable(child, false);
-                        }
-                        if (desc.EnumOptions.Count > 0) child.EnumAllowedValues = desc.EnumOptions;
-                        field.Children.Add(child);
-                    }
-                }
-            } else if (isStruct) {
-                field = new GenericFieldVM { Name = desc.Name, TypeKey = "object", ChildrenLocked = true };
-                LoadStructChildren(field, tomlVal as TomlTable ?? [], definitions[desc.TypeKey], definitions);
-            } else if (tomlVal is not null) {
-                field = GenericFieldVM.FromToml(desc.Name, tomlVal, desc.TypeKey);
-            } else {
-                field = new GenericFieldVM { Name = desc.Name, TypeKey = desc.TypeKey };
-                ApplyDefault(field, desc.DefaultStr);
-            }
-
-            if (!desc.IsArray && desc.EnumOptions.Count > 0)
-                field.EnumAllowedValues = desc.EnumOptions;
-
-            if (desc.MinValue.HasValue) field.Minimum = desc.MinValue.Value;
-            if (desc.MaxValue.HasValue) field.Maximum = desc.MaxValue.Value;
-
-            field.NameEditable = false;
-            AddField(field);
+        public void RegisterTypeSwitch(GenericFieldVM vm, SchemaFieldDescriptor desc, bool hadValue) {
+            var reg = new TypeSwitchRegistration(vm, desc, hadValue);
+            if (WireImmediately is not null) WireImmediately(reg);
+            else PendingTypeSwitches.Add(reg);
         }
     }
 
-    private static void LoadStructChildren(GenericFieldVM parent, TomlTable table,
-                                            List<SchemaFieldDescriptor> structFields,
-                                            Dictionary<string, List<SchemaFieldDescriptor>> definitions) {
-        foreach (var desc in structFields) {
+    private sealed record TypeSwitchRegistration(GenericFieldVM Vm, SchemaFieldDescriptor Desc, bool HadValue);
+
+    private void LoadSchemaGuided(TomlTable table, List<SchemaFieldDescriptor> descriptors,
+                                   Dictionary<string, StructDef> definitions) {
+        var ctx = new LoadContext(definitions);
+        foreach (var desc in descriptors) {
             object? tomlVal = table.TryGetValue(desc.Name, out var v) ? v : null;
+            AddField(BuildField(desc, tomlVal, ctx));
+        }
+        WireTypeSwitches(ctx);
+    }
 
-            bool isStruct = definitions.ContainsKey(desc.TypeKey);
-            GenericFieldVM child;
+    private GenericFieldVM BuildField(SchemaFieldDescriptor desc, object? tomlVal, LoadContext ctx) {
+        bool isStruct = ctx.Definitions.ContainsKey(desc.TypeKey);
+        string vmType = isStruct ? "object" : desc.TypeKey;
+
+        GenericFieldVM field;
+        if (desc.IsArray) {
+            field = new GenericFieldVM {
+                Name             = desc.Name,
+                TypeKey          = "array",
+                ArrayElementType = vmType
+            };
             if (isStruct) {
-                child = new GenericFieldVM { Name = desc.Name, TypeKey = "object" };
-                LoadStructChildren(child, tomlVal as TomlTable ?? [], definitions[desc.TypeKey], definitions);
-            } else if (tomlVal is not null) {
-                child = GenericFieldVM.FromToml(desc.Name, tomlVal, desc.TypeKey);
-            } else {
-                child = new GenericFieldVM { Name = desc.Name, TypeKey = desc.TypeKey };
-                ApplyDefault(child, desc.DefaultStr);
+                // Factory so "Add Item" creates a properly populated struct instance
+                var capturedDef = ctx.Definitions[desc.TypeKey];
+                field.ArrayItemFactory = () => {
+                    var item = new GenericFieldVM { TypeKey = "object", NameEditable = false, ChildrenLocked = true };
+                    LoadStructChildren(item, new TomlTable(), capturedDef, ctx);
+                    return item;
+                };
             }
+            IEnumerable? elements = tomlVal switch {
+                TomlArray ta       => ta,
+                TomlTableArray tta => tta,
+                _                  => null
+            };
+            if (elements != null) {
+                foreach (var elem in elements) {
+                    GenericFieldVM child;
+                    if (isStruct) {
+                        child = new GenericFieldVM { TypeKey = "object", NameEditable = false, ChildrenLocked = true };
+                        LoadStructChildren(child, elem as TomlTable ?? [], ctx.Definitions[desc.TypeKey], ctx);
+                    } else {
+                        child = GenericFieldVM.FromToml("", elem!, vmType);
+                        child.NameEditable = false;
+                        SetChildrenNameEditable(child, false);
+                    }
+                    if (desc.EnumOptions.Count > 0) child.EnumAllowedValues = desc.EnumOptions;
+                    if (desc.MinValue.HasValue) child.Minimum = desc.MinValue.Value;
+                    if (desc.MaxValue.HasValue) child.Maximum = desc.MaxValue.Value;
+                    child.RefType = desc.RefType;
+                    field.Children.Add(child);
+                }
+            }
+        } else if (isStruct) {
+            field = new GenericFieldVM { Name = desc.Name, TypeKey = "object", ChildrenLocked = true };
+            LoadStructChildren(field, tomlVal as TomlTable ?? [], ctx.Definitions[desc.TypeKey], ctx);
+        } else if (tomlVal is not null) {
+            field = GenericFieldVM.FromToml(desc.Name, tomlVal, desc.TypeKey);
+        } else {
+            field = new GenericFieldVM { Name = desc.Name, TypeKey = desc.TypeKey };
+            ApplyDefault(field, desc.DefaultStr);
+        }
 
-            if (desc.EnumOptions.Count > 0) child.EnumAllowedValues = desc.EnumOptions;
-            if (desc.MinValue.HasValue) child.Minimum = desc.MinValue.Value;
-            if (desc.MaxValue.HasValue) child.Maximum = desc.MaxValue.Value;
-            child.NameEditable = false;
-            child.NotifyDirty  = () => parent.NotifyDirty?.Invoke();
+        if (!desc.IsArray && desc.EnumOptions.Count > 0)
+            field.EnumAllowedValues = desc.EnumOptions;
+
+        if (desc.MinValue.HasValue) field.Minimum = desc.MinValue.Value;
+        if (desc.MaxValue.HasValue) field.Maximum = desc.MaxValue.Value;
+
+        field.RefType  = desc.RefType;
+        field.Variants = desc.Variants;
+        field.NameEditable = false;
+
+        if (desc.TypeSwitch is not null)
+            ctx.RegisterTypeSwitch(field, desc, tomlVal is not null);
+
+        return field;
+    }
+
+    private void LoadStructChildren(GenericFieldVM parent, TomlTable table,
+                                    StructDef structDef, LoadContext ctx) {
+        foreach (var desc in structDef.Fields) {
+            object? tomlVal = table.TryGetValue(desc.Name, out var v) ? v : null;
+            var child = BuildField(desc, tomlVal, ctx);
+            child.NotifyDirty = () => parent.NotifyDirty?.Invoke();
             child.Children.CollectionChanged += (_, _) => parent.NotifyDirty?.Invoke();
             parent.Children.Add(child);
         }
+        WireVariantVisibility(parent, structDef.Discriminator);
+    }
+
+    /// Shows only the fields whose Variants list contains the discriminator's
+    /// current value
+    private static void WireVariantVisibility(GenericFieldVM parent, string discriminator) {
+        if (string.IsNullOrEmpty(discriminator)) return;
+        var disc = parent.Children.FirstOrDefault(c => c.Name == discriminator);
+        if (disc is null) return;
+
+        void Apply() {
+            foreach (var sibling in parent.Children) {
+                if (ReferenceEquals(sibling, disc)) continue;
+                sibling.VariantVisible = sibling.Variants.Count == 0 || sibling.Variants.Contains(disc.StringVal);
+            }
+        }
+        disc.PropertyChanged += (_, e) => {
+            if (e.PropertyName == nameof(GenericFieldVM.StringVal)) Apply();
+        };
+        Apply();
+    }
+
+    private void WireTypeSwitches(LoadContext ctx) {
+        foreach (var reg in ctx.PendingTypeSwitches) WireTypeSwitch(reg);
+        ctx.PendingTypeSwitches.Clear();
+        // items created later through ArrayItemFactory wire up on the spot
+        ctx.WireImmediately = WireTypeSwitch;
+    }
+
+    private void WireTypeSwitch(TypeSwitchRegistration reg) {
+        var sw = reg.Desc.TypeSwitch!;
+        var controller = Fields.FirstOrDefault(f => f.Name == sw.Field);
+        if (controller is null) return;
+
+        void Apply(bool applyDefault) {
+            if (!sw.Cases.TryGetValue(controller.StringVal, out var c)) return;
+            reg.Vm.TypeKey = c.TypeKey;
+            if (applyDefault) ApplyDefault(reg.Vm, c.DefaultStr);
+        }
+        controller.PropertyChanged += (_, e) => {
+            if (e.PropertyName == nameof(GenericFieldVM.StringVal)) Apply(true);
+        };
+        Apply(!reg.HadValue);
     }
 
     private void AddField(GenericFieldVM field) {
@@ -347,7 +401,14 @@ public partial class GenericViewModel : Tool {
                 case "float":  field.FloatVal  = (float)(node?.GetValue<double>() ?? 0); break;
                 case "int":    field.IntVal    = node?.GetValue<int>()    ?? 0;          break;
                 case "bool":   field.BoolVal   = node?.GetValue<bool>()   ?? false;      break;
-                case "string": field.StringVal = node?.GetValue<string>() ?? "";         break;
+                case "string" or "enum": field.StringVal = node?.GetValue<string>() ?? ""; break;
+                case "node" or "asset":  field.RefUid    = node?.GetValue<string>() ?? ""; break;
+                case "vec2" or "vec3" or "color3" or "color4":
+                    if (node is JsonArray arr) {
+                        float At(int i) => arr.Count > i ? (float)(arr[i]?.GetValue<double>() ?? 0) : 0f;
+                        field.X = At(0); field.Y = At(1); field.Z = At(2); field.W = At(3);
+                    }
+                    break;
             }
         } catch { }
     }
@@ -435,10 +496,10 @@ public partial class GenericViewModel : Tool {
         IsDirty = false;
     }
 
-    private static (List<SchemaFieldDescriptor> Fields, Dictionary<string, List<SchemaFieldDescriptor>> Defs)
+    private static (List<SchemaFieldDescriptor> Fields, Dictionary<string, StructDef> Defs)
         ParseSchema(string jsonText) {
         var fields = new List<SchemaFieldDescriptor>();
-        var defs   = new Dictionary<string, List<SchemaFieldDescriptor>>();
+        var defs   = new Dictionary<string, StructDef>();
         try {
             var root = JsonNode.Parse(jsonText)?.AsObject();
             if (root is null) return (fields, defs);
@@ -446,7 +507,9 @@ public partial class GenericViewModel : Tool {
             if (root["definitions"] is JsonObject defsNode)
                 foreach (var (typeName, typeNode) in defsNode)
                     if (typeNode?["properties"] is JsonObject defProps)
-                        defs[typeName] = ParseProperties(defProps);
+                        defs[typeName] = new StructDef(
+                            typeNode["x-toast-discriminator"]?.GetValue<string>() ?? "",
+                            ParseProperties(defProps));
 
             if (root["properties"] is JsonObject props)
                 fields = ParseProperties(props);
@@ -460,7 +523,17 @@ public partial class GenericViewModel : Tool {
             var xType = val?["x-toast-type"]?.GetValue<string>() ?? "";
             bool isArray = xType.EndsWith("[]");
             string typeKey = isArray ? xType[..^2] : xType;
-            if (string.IsNullOrEmpty(typeKey)) typeKey = "string";
+
+            var typeSwitch = ParseTypeSwitch(val?["x-toast-type-switch"]);
+
+            if (typeSwitch is not null) {
+                typeKey = "";
+                isArray = false;
+            } else if (string.IsNullOrEmpty(typeKey) && val?["type"]?.GetValue<string>() == "array") {
+                isArray = true;
+                typeKey = val["items"] is JsonObject items ? ItemsElementType(items) : "string";
+            }
+            if (string.IsNullOrEmpty(typeKey) && typeSwitch is null) typeKey = "string";
 
             var enumOptions = new List<string>();
             if (typeKey == "enum" && val?["enum"] is JsonArray enumArr)
@@ -469,7 +542,18 @@ public partial class GenericViewModel : Tool {
 
             double? minValue = null, maxValue = null;
             if (val?["minimum"] is JsonValue minNode && minNode.TryGetValue<double>(out var minD)) minValue = minD;
+            else if (val?["exclusiveMinimum"] is JsonValue exMinNode && exMinNode.TryGetValue<double>(out var exMinD)) minValue = exMinD;
             if (val?["maximum"] is JsonValue maxNode && maxNode.TryGetValue<double>(out var maxD)) maxValue = maxD;
+            else if (val?["exclusiveMaximum"] is JsonValue exMaxNode && exMaxNode.TryGetValue<double>(out var exMaxD)) maxValue = exMaxD;
+
+            var variants = new List<string>();
+            if (val?["x-toast-variants"] is JsonArray varArr)
+                foreach (var opt in varArr)
+                    if (opt?.GetValue<string>() is { } s) variants.Add(s);
+
+            var refType = val?["x-toast-asset-type"]?.GetValue<string>()
+                       ?? val?["x-toast-node-type"]?.GetValue<string>()
+                       ?? "";
 
             result.Add(new SchemaFieldDescriptor(
                 Name:        key,
@@ -479,9 +563,40 @@ public partial class GenericViewModel : Tool {
                 Description: val?["description"]?.GetValue<string>() ?? "",
                 EnumOptions: enumOptions,
                 MinValue:    minValue,
-                MaxValue:    maxValue
+                MaxValue:    maxValue,
+                Variants:    variants,
+                RefType:     refType,
+                TypeSwitch:  typeSwitch
             ));
         }
         return result;
+    }
+
+    private static string ItemsElementType(JsonObject items) {
+        if (items["x-toast-type"]?.GetValue<string>() is { Length: > 0 } xt) return xt;
+        if (items["$ref"]?.GetValue<string>() is { } refStr)
+            return refStr[(refStr.LastIndexOf('/') + 1)..];
+        return items["type"]?.GetValue<string>() switch {
+            "boolean" => "bool",
+            "integer" => "int",
+            "number"  => "float",
+            "object"  => "object",
+            _         => "string"
+        };
+    }
+
+    private static TypeSwitchDescriptor? ParseTypeSwitch(JsonNode? node) {
+        if (node is not JsonObject sw) return null;
+        if (sw["field"]?.GetValue<string>() is not { Length: > 0 } field) return null;
+        if (sw["cases"] is not JsonObject casesNode) return null;
+
+        var cases = new Dictionary<string, TypeSwitchCase>();
+        foreach (var (caseKey, caseVal) in casesNode) {
+            if (caseVal is not JsonObject caseObj) continue;
+            cases[caseKey] = new TypeSwitchCase(
+                caseObj["type"]?.GetValue<string>() ?? "string",
+                caseObj["default"]?.ToJsonString() ?? "");
+        }
+        return cases.Count > 0 ? new TypeSwitchDescriptor(field, cases) : null;
     }
 }

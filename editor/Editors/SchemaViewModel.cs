@@ -131,6 +131,7 @@ public partial class SchemaViewModel : Tool {
                 var st = new StructTypeVM(this) { Name = typeName };
                 if (typeNode?["properties"] is JsonObject stProps)
                     LoadFieldsInto(stProps, st.Fields);
+                st.Discriminator = typeNode?["x-toast-discriminator"]?.GetValue<string>() ?? "";
                 StructTypes.Add(st);
             }
         }
@@ -176,6 +177,17 @@ public partial class SchemaViewModel : Tool {
                 maxNode.TryGetValue<double>(out var maxV))
                 field.MaxString = maxV.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
+            field.RefTypeString = val?["x-toast-asset-type"]?.GetValue<string>()
+                               ?? val?["x-toast-node-type"]?.GetValue<string>()
+                               ?? "";
+
+            if (val?["x-toast-variants"] is JsonArray variantsArr)
+                foreach (var opt in variantsArr)
+                    if (opt?.GetValue<string>() is { } vs)
+                        field.Variants.Add(new StringOptionVM { Value = vs });
+
+            field.TypeSwitchJson = val?["x-toast-type-switch"]?.ToJsonString() ?? "";
+
             target.Add(field);
         }
     }
@@ -216,7 +228,11 @@ public partial class SchemaViewModel : Tool {
             foreach (var st in StructTypes) {
                 var stProps = new JsonObject();
                 foreach (var f in st.Fields) stProps[f.Name] = BuildFieldNode(f);
-                defs[st.Name] = new JsonObject { ["type"] = "object", ["properties"] = stProps };
+                var defNode = new JsonObject { ["type"] = "object" };
+                if (!string.IsNullOrEmpty(st.Discriminator))
+                    defNode["x-toast-discriminator"] = st.Discriminator;
+                defNode["properties"] = stProps;
+                defs[st.Name] = defNode;
             }
             root["definitions"] = defs;
         }
@@ -256,6 +272,22 @@ public partial class SchemaViewModel : Tool {
 
         if (!string.IsNullOrEmpty(field.Description))
             node["description"] = field.Description;
+
+        if (!string.IsNullOrEmpty(field.RefTypeString)) {
+            if (typeKey == "asset") node["x-toast-asset-type"] = field.RefTypeString;
+            else if (typeKey == "node") node["x-toast-node-type"] = field.RefTypeString;
+        }
+
+        if (field.Variants.Count > 0) {
+            var variantsArr = new JsonArray();
+            foreach (var opt in field.Variants) variantsArr.Add(JsonValue.Create(opt.Value));
+            node["x-toast-variants"] = variantsArr;
+        }
+
+        if (!string.IsNullOrEmpty(field.TypeSwitchJson)) {
+            try { node["x-toast-type-switch"] = JsonNode.Parse(field.TypeSwitchJson); }
+            catch { }
+        }
 
         if (!field.IsArray && double.TryParse(field.MinString, System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture, out var minParsed))

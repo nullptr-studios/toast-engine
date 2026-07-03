@@ -266,7 +266,7 @@ public abstract class DragNumberBoxBase : TemplatedControl {
 
 	private void CommitEdit() {
 		if (!IsEditing) return;
-		if (m_editor != null && TryParseEdit(m_editor.Text ?? "", out var value)) SetDouble(value);
+		if (m_editor != null && TryParseEdit(m_editor.Text ?? "", out var value)) SetDouble(ClampDrag(value));
 		IsEditing = false;
 	}
 

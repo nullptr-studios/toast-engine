@@ -52,13 +52,19 @@
 					<StackPanel IsVisible="{Binding !NameEditable}" Spacing="8">
 						<!-- Array item -->
 						<Panel IsVisible="{Binding IsArrayItem}">
-							<elements:DragFloatBox Value="{Binding FloatVal,  Mode=TwoWay}" IsVisible="{Binding IsFloat}" />
-							<elements:DragIntBox   Value="{Binding IntVal,    Mode=TwoWay}" IsVisible="{Binding IsInt}" />
+							<elements:DragFloatBox Value="{Binding FloatVal,  Mode=TwoWay}"
+							                       Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"
+							                       IsVisible="{Binding IsFloat}" />
+							<elements:DragIntBox   Value="{Binding IntVal,    Mode=TwoWay}"
+							                       Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"
+							                       IsVisible="{Binding IsInt}" />
 							<elements:BoolBox      Value="{Binding BoolVal,   Mode=TwoWay}" IsVisible="{Binding IsBool}" />
 							<elements:StringBox    Value="{Binding StringVal, Mode=TwoWay}" Wrap="False" IsVisible="{Binding IsString}" />
-							<elements:AssetBox     Value="{Binding RefUid,    Mode=TwoWay}" IsVisible="{Binding IsAsset}" />
-							<elements:NodeBox      Value="{Binding RefUid,    Mode=TwoWay}" IsVisible="{Binding IsNode}" />
-							<elements:DragVec2Box  X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}" IsVisible="{Binding IsVec2}" />
+							<elements:AssetBox     Value="{Binding RefUid,    Mode=TwoWay}" AssetType="{Binding RefType}" IsVisible="{Binding IsAsset}" />
+							<elements:NodeBox      Value="{Binding RefUid,    Mode=TwoWay}" NodeType="{Binding RefType}" IsVisible="{Binding IsNode}" />
+							<elements:DragVec2Box  X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
+							                       Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"
+							                       IsVisible="{Binding IsVec2}" />
 							<elements:DragVec3Box  X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
 							                       Z="{Binding Z, Mode=TwoWay}" IsVisible="{Binding IsVec3}" />
 							<elements:Color3Box    R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
@@ -96,8 +102,8 @@
 									                       IsVisible="{Binding IsInt}" />
 									<elements:BoolBox      Value="{Binding BoolVal,   Mode=TwoWay}" IsVisible="{Binding IsBool}" />
 									<elements:StringBox    Value="{Binding StringVal, Mode=TwoWay}" Wrap="False" IsVisible="{Binding IsString}" />
-									<elements:AssetBox     Value="{Binding RefUid,    Mode=TwoWay}" IsVisible="{Binding IsAsset}" />
-									<elements:NodeBox      Value="{Binding RefUid,    Mode=TwoWay}" IsVisible="{Binding IsNode}" />
+									<elements:AssetBox     Value="{Binding RefUid,    Mode=TwoWay}" AssetType="{Binding RefType}" IsVisible="{Binding IsAsset}" />
+									<elements:NodeBox      Value="{Binding RefUid,    Mode=TwoWay}" NodeType="{Binding RefType}" IsVisible="{Binding IsNode}" />
 									<elements:Color3Box    R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
 									                       B="{Binding Z, Mode=TwoWay}" IsVisible="{Binding IsColor3}" />
 									<elements:Color4Box    R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
@@ -157,8 +163,8 @@
 								<elements:DragIntBox   Value="{Binding IntVal,    Mode=TwoWay}" IsVisible="{Binding IsInt}" />
 								<elements:BoolBox      Value="{Binding BoolVal,   Mode=TwoWay}" IsVisible="{Binding IsBool}" />
 								<elements:StringBox    Value="{Binding StringVal, Mode=TwoWay}" Wrap="False" IsVisible="{Binding IsString}" />
-								<elements:AssetBox     Value="{Binding RefUid,    Mode=TwoWay}" IsVisible="{Binding IsAsset}" />
-								<elements:NodeBox      Value="{Binding RefUid,    Mode=TwoWay}" IsVisible="{Binding IsNode}" />
+								<elements:AssetBox     Value="{Binding RefUid,    Mode=TwoWay}" AssetType="{Binding RefType}" IsVisible="{Binding IsAsset}" />
+								<elements:NodeBox      Value="{Binding RefUid,    Mode=TwoWay}" NodeType="{Binding RefType}" IsVisible="{Binding IsNode}" />
 								<elements:Color3Box    R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
 								                       B="{Binding Z, Mode=TwoWay}" IsVisible="{Binding IsColor3}" />
 								<elements:Color4Box    R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"

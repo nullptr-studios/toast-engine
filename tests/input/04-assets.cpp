@@ -2,8 +2,10 @@
 
 #include <cassert>
 #include <format>
-#include <toast/assets/input_action.hpp>
-#include <toast/assets/input_layout.hpp>
+#include <toast/assets/data.hpp>
+#include <toast/assets/schema.hpp>
+#include <toast/input/assets/input_action.hpp>
+#include <toast/input/assets/input_layout.hpp>
 #include <toml++/toml.hpp>
 
 TOAST_TEST_NAMED("input", "input/04-assets", test_input_assets) {
@@ -66,5 +68,43 @@ TOAST_TEST_NAMED("input", "input/04-assets", test_input_assets) {
 
 		assert(assets::InputLayout::isActiveForLayer(entry, "default"));
 		assert(!assets::InputLayout::isActiveForLayer(entry, "menu"));
+	}
+
+	{
+		static constexpr std::string_view schema_json = R"({
+			"properties": {
+				"axis":  { "type": "integer", "x-toast-type": "int",   "minimum": 0, "maximum": 1 },
+				"power": { "type": "number",  "x-toast-type": "float", "minimum": 0.0, "maximum": 2.0 },
+				"bind":  { "type": "array",   "x-toast-type": "bind[]" }
+			},
+			"definitions": {
+				"bind": {
+					"type": "object",
+					"properties": {
+						"threshold": { "type": "number", "x-toast-type": "float", "minimum": 0.0, "maximum": 1.0 }
+					}
+				}
+			}
+		})";
+		assets::Schema schema(schema_json);
+		assets::AssetHandle<assets::Schema> handle(&schema, toast::UID(1), "");
+
+		toml::table tbl = toml::parse(
+		    "axis = 5\n"
+		    "power = -3.0\n"
+		    "custom = 99.0\n"
+		    "[[bind]]\n"
+		    "threshold = 2.5\n"
+		);
+
+		assets::Data data(tbl, handle, assets::Data::KeepAllKeys);
+		assert(data["axis"].as<int64_t>() == 1);
+		assert(data["power"].as<double>() == 0.0);
+		assert(data["custom"].as<double>() == 99.0);
+		assert(data["bind"][0]["threshold"].as<double>() == 1.0);
+
+		assets::Data guided(tbl, handle);
+		assert(guided["axis"].as<int64_t>() == 1);
+		assert(guided["power"].as<double>() == 0.0);
 	}
 }

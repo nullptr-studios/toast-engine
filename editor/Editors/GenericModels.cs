@@ -9,7 +9,7 @@ using Tomlyn.Model;
 
 namespace editor.Editors;
 
-public partial class GenericFieldVM : ObservableObject, IRowSplittable {
+public partial class GenericFieldVM : ObservableObject, IRowSplittable, IRowVisible, IStructRow {
 
     public static readonly IReadOnlyList<string> AllFieldTypes = [
         "bool", "int", "float", "string", "enum", "node", "asset",
@@ -41,6 +41,19 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable {
     [ObservableProperty] private string m_arrayElementType = "string";
     [ObservableProperty] private bool   m_childrenLocked;
 
+    // Asset/node subtype constraint (x-toast-asset-type / x-toast-node-type)
+    [ObservableProperty] private string m_refType = "";
+
+    public IReadOnlyList<string> Variants { get; set; } = [];
+    [ObservableProperty] private bool m_variantVisible = true;
+
+    public bool RowVisible => VariantVisible;
+
+    partial void OnVariantVisibleChanged(bool value) {
+        OnPropertyChanged(nameof(RowVisible));
+        NotifyDirty?.Invoke();
+    }
+
     // True when children are free-form editable
     public bool ChildrenEditable => !ChildrenLocked;
 
@@ -66,6 +79,10 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable {
     public Action<GenericFieldVM>? RemoveCallback { get; set; }
 
     public bool ShouldSplitRow => NameEditable;
+
+    // IStructRow: true only for a struct (object) array element (no name, not editable, object type)
+    public bool IsStructRow => IsArrayItem && IsObject;
+    System.Collections.IList IStructRow.StructKeys => Children;
 
     public bool IsFloat  => TypeKey == "float";
     public bool IsInt    => TypeKey == "int";
@@ -265,7 +282,10 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable {
 
     private TomlTable BuildChildTable() {
         var t = new TomlTable();
-        foreach (var c in Children) t[c.Name] = c.ToTomlValue();
+        foreach (var c in Children) {
+            if (!c.VariantVisible) continue;
+            t[c.Name] = c.ToTomlValue();
+        }
         return t;
     }
 
@@ -325,11 +345,23 @@ public record SchemaFieldDescriptor(
     string Description,
     IReadOnlyList<string> EnumOptions,
     double? MinValue,
-    double? MaxValue
+    double? MaxValue,
+    IReadOnlyList<string> Variants,
+    string RefType,
+    TypeSwitchDescriptor? TypeSwitch
 ) {
     public SchemaFieldDescriptor(string Name, string TypeKey, bool IsArray, string DefaultStr, string Description)
-        : this(Name, TypeKey, IsArray, DefaultStr, Description, [], null, null) { }
+        : this(Name, TypeKey, IsArray, DefaultStr, Description, [], null, null, [], "", null) { }
 
     public SchemaFieldDescriptor(string Name, string TypeKey, bool IsArray, string DefaultStr, string Description, IReadOnlyList<string> EnumOptions)
-        : this(Name, TypeKey, IsArray, DefaultStr, Description, EnumOptions, null, null) { }
+        : this(Name, TypeKey, IsArray, DefaultStr, Description, EnumOptions, null, null, [], "", null) { }
+
+    public SchemaFieldDescriptor(string Name, string TypeKey, bool IsArray, string DefaultStr, string Description, IReadOnlyList<string> EnumOptions, double? MinValue, double? MaxValue)
+        : this(Name, TypeKey, IsArray, DefaultStr, Description, EnumOptions, MinValue, MaxValue, [], "", null) { }
 }
+
+public record TypeSwitchCase(string TypeKey, string DefaultStr);
+
+public record TypeSwitchDescriptor(string Field, IReadOnlyDictionary<string, TypeSwitchCase> Cases);
+
+public record StructDef(string Discriminator, List<SchemaFieldDescriptor> Fields);
