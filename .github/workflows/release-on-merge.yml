@@ -102,10 +102,7 @@ jobs:
         uses: cachix/install-nix-action@v31.10.6
 
       - name: Generate docs
-        defaults:
-          run:
-            shell: nix develop --command bash -e {0}
-        run: doxygen Doxyfile
+        run: nix develop --command bash -c 'doxygen Doxyfile'
 
       - name: Deploy to docs branch
         uses: DenverCoder1/doxygen-github-pages-deploy-action@v2.0.0
