@@ -358,6 +358,9 @@ auto AssetManager::resolveURI(std::string_view uri) -> std::optional<toast::UID>
 }
 
 auto AssetManager::getURI(toast::UID uid) -> std::string {
+	if (not instance) {
+		return {};
+	}
 	auto it = instance->manifest.find(uid.data());
 	if (it != instance->manifest.end()) {
 		return it->second.path;
