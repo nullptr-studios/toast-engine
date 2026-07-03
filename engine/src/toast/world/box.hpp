@@ -14,6 +14,8 @@
 
 #include "control_box.hpp"
 
+#include <format>
+
 namespace toast {
 class Node;
 
@@ -118,6 +120,17 @@ public:
 template<typename T>
 struct std::hash<toast::Box<T>> {
 	auto operator()(const toast::Box<T>& a) const noexcept -> std::size_t { return std::hash<std::uintptr_t> {}(a.rid()); }
+};
+
+/// Make nodes printable
+template<typename T>
+struct std::formatter<toast::Box<T>> : std::formatter<std::string_view> {
+	auto format(const toast::Box<T>& p, std::format_context& ctx) const {
+		if (not p.exists()) {
+			return std::format_to(ctx.out(), "(empty node)");
+		}
+		return std::format_to(ctx.out(), "{} ({})", p->name(), p->uid());
+	}
 };
 
 #include "box.inl"

@@ -242,6 +242,9 @@ public:
 	[[nodiscard]]
 	auto search(std::string_view query) -> std::vector<Box<Node>>;
 
+	void addDependsOn(Node& other);
+	void removeDependsOn(Node& other);
+
 protected:
 	INodeOwner* m_owner = nullptr;
 

@@ -195,6 +195,7 @@
         ]
       }
     ],
+    "is_interface": false,
     "methods": [],
     "name": "DeeplyNestedNode",
     "namespace": null,

@@ -34,8 +34,10 @@ namespace _detail {
 		return (static_cast<{{ qualified_name }}*>(obj)->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{{ p.arg_name }}{% if not loop.last %}, {% endif %}{% endfor %});
 	}
 {% endfor %}
+{% if not is_interface %}
 	inline {{ qualified_name }}* {{ snake_name }}_construct() { return new {{ qualified_name }}(); }
-	inline void {{ snake_name }}_destroy({{ qualified_name }}* obj) { delete obj; }
+	inline void {{ snake_name }}_delete({{ qualified_name }}* obj) { delete obj; }
+{% endif %}
 }
 
 template<>
@@ -50,8 +52,8 @@ struct Reflect<{{ qualified_name }}> {
 			.value_type = FieldType::{{ f.field_type }},
 			.attributes = {{ '{{' }}{% for a in f.attrs_list %}{"{{ a.name }}", {{ '{' }}{% for v in a.args %}"{{ v }}"{% if not loop.last %}, {% endif %}{% endfor %}{{ '}' }}}{% if not loop.last %}, {% endif %}{% endfor %}{{ '}}' }},
 			.is_array   = {{ f.is_array | lower }},
-			.get        = &{% if f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::get,
-			.set        = &{% if f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::set,
+			.get        = &{% if f.is_asset_handle and f.is_array %}AssetArrayFieldAccess{% elif f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::get,
+			.set        = &{% if f.is_asset_handle and f.is_array %}AssetArrayFieldAccess{% elif f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::set,
 		}{% if not loop.last %},{% endif %}
 
 {% endfor %}
@@ -121,8 +123,8 @@ struct Reflect<{{ qualified_name }}> {
 		.groups     = group_info,
 		.methods    = _method_info,
 		.functions  = tick_functions,
-		.construct  = reinterpret_cast<toast::NodeInfo::Factory>(&_detail::{{ snake_name }}_construct),
-		.destroy    = reinterpret_cast<toast::NodeInfo::Deleter>(&_detail::{{ snake_name }}_destroy),
+		.construct  = {% if is_interface %}nullptr{% else %}reinterpret_cast<toast::NodeInfo::Factory>(&_detail::{{ snake_name }}_construct){% endif %},
+		.destroy    = {% if is_interface %}nullptr{% else %}reinterpret_cast<toast::NodeInfo::Deleter>(&_detail::{{ snake_name }}_delete){% endif %},
 	};
 };
 

@@ -25,6 +25,7 @@ public partial class GltfImporter : IAssetImporter {
 	}
 
 	public IReadOnlyList<string> SupportedExtensions => [".glb"];
+	public bool CanHandle(string filePath) => Path.GetExtension(filePath) == ".glb";
 
 	public string DisplayName => "Mesh";
 	public LucideIconKind Icon => LucideIconKind.Box;

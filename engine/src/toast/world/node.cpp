@@ -93,6 +93,14 @@ auto Node::search(std::string_view query) -> std::vector<Box<Node>> {
 	return m_owner->searchFrom(*this, query);
 }
 
+void Node::addDependsOn(Node& other) {
+	m_owner->registerDependency(other, *this);
+}
+
+void Node::removeDependsOn(Node& other) {
+	m_owner->unregisterDependency(other, *this);
+}
+
 auto Node::listener() noexcept -> event::Listener& {
 	if (not m_listener) {
 		m_listener = std::make_unique<event::Listener>();

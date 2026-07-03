@@ -19,6 +19,7 @@ pub struct NodeInfo {
 	pub global_fields: Vec<FieldInfo>,
 	/// Path relative to --include-root
 	pub source_file: String,
+	pub is_interface: bool,
 }
 
 #[derive(Serialize)]
@@ -186,20 +187,13 @@ pub fn validate_class(class: &Class) -> Result<(), std::string::String> {
 				return Err(format!("{qualified}: group name '{group}' may not start with '~' (reserved)"));
 			}
 		}
-
-		// Arrays of asset handles are not supported by the v1 reflection accessor
-		if field.type_name.contains("vector<") && field.type_name.contains("AssetHandle<") {
-			return Err(format!(
-				"{qualified}: field '{}' is a vector of AssetHandle, which is not supported",
-				field.name
-			));
-		}
 	}
 
 	Ok(())
 }
 
 pub fn build_node(class: &Class, source_file: &str) -> NodeInfo {
+	let is_interface = class.attributes.iter().any(|a| a.name == "Interface");
 	let fns = &class.functions;
 	let functions = TickFunctions {
 		pre_init:     fns.contains(&"preInit".to_string()),
@@ -257,6 +251,7 @@ pub fn build_node(class: &Class, source_file: &str) -> NodeInfo {
 		groups,
 		global_fields,
 		source_file:  source_file.to_string(),
+		is_interface,
 	}
 }
 
@@ -351,19 +346,19 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 
 	// active_tick_fns
 	const TICK_MAP: &[(&str, &str)] = &[
+		("load",         "load"),
+		("save",         "save"),
 		("pre_init",     "preInit"),
 		("init",         "init"),
+		("destroy",      "destroy"),
 		("begin",        "begin"),
+		("end",          "end"),
+		("on_enable",    "onEnable"),
+		("on_disable",   "onDisable"),
 		("early_tick",   "earlyTick"),
 		("tick",         "tick"),
 		("post_physics", "postPhysics"),
 		("late_tick",    "lateTick"),
-		("end",          "end"),
-		("destroy",      "destroy"),
-		("on_enable",    "onEnable"),
-		("on_disable",   "onDisable"),
-		("load",         "load"),
-		("save",         "save"),
 	];
 
 	let tf = &node.functions;
@@ -429,6 +424,7 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 		"active_tick_fns":       active_tick_fns,
 		"methods":               methods_ctx,
 		"has_asset_handle":      has_asset_handle,
+		"is_interface":         node.is_interface,
 	})
 }
 

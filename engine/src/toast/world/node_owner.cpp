@@ -1,6 +1,7 @@
 #include "node_owner.hpp"
 
 #include "node.hpp"
+#include "toast/assets/asset_manager.hpp"
 #include "toast/log.hpp"
 #include "toast/world/workspace_events.hpp"
 
@@ -334,7 +335,9 @@ auto INodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, In
 	auto make_unresolved = [&](const assets::Prefab::BasicNode& chunk, uint64_t ref_uid) -> Box<Node> {
 		Box<Node> node = alloc_leaf(chunk);
 		node->m_unresolved_chunk = std::make_shared<const assets::Prefab::BasicNode>(chunk);
-		node->m_source_prefab = assets::AssetHandle<assets::Prefab>(nullptr, toast::UID(ref_uid));
+		UID uid {ref_uid};
+		std::string uri = assets::AssetManager::getURI(uid);
+		node->m_source_prefab = assets::AssetHandle<assets::Prefab>(nullptr, uid, uri);
 		return node;
 	};
 

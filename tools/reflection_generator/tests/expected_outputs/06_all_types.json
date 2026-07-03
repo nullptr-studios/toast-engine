@@ -107,6 +107,7 @@
       }
     ],
     "groups": [],
+    "is_interface": false,
     "methods": [],
     "name": "AllTypesNode",
     "namespace": null,

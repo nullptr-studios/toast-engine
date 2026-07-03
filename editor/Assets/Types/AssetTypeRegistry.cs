@@ -30,6 +30,9 @@ public static class AssetTypeRegistry {
 	public static BaseAsset? ByType(string type) =>
 		All.FirstOrDefault(a => a.Type.Equals(type, StringComparison.OrdinalIgnoreCase));
 
+	public static BaseAsset? ByCppTypeName(string cppTypeName) =>
+		All.FirstOrDefault(a => a.CppTypeNames.Any(n => n.Equals(cppTypeName, StringComparison.OrdinalIgnoreCase)));
+
 	public static string GetExtension(string filename) {
 		foreach (var def in All) {
 			if (def.Extension.Count(c => c == '.') > 1 &&

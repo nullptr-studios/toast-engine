@@ -41,6 +41,15 @@ public record GltfMetaSection : IMetaSection {
 	public bool GeneratePrefab { get; init; } = true;
 }
 
+public record AudioStringMetaSection : IMetaSection {
+	public bool FollowFolderStructure = true;
+	public bool ImportEvents = true;
+	public bool ImportBuses = true;
+	public bool ImportVcas = true;
+	public bool ImportPorts = true;
+	public bool ImportSnapshots = true;
+}
+
 public static class MetaFile {
 	public static void Write(string outputAssetRealPath, MetaHeader header, params IMetaSection[] sections) {
 		var dto = new MetaFileDto {

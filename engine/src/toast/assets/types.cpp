@@ -19,7 +19,7 @@ AssetHandleBase::AssetHandleBase(Asset* asset) : m_asset(asset) {
 	}
 }
 
-AssetHandleBase::AssetHandleBase(Asset* asset, toast::UID uid) : m_asset(asset), m_uid(uid) {
+AssetHandleBase::AssetHandleBase(Asset* asset, toast::UID uid, std::string_view uri) : m_asset(asset), m_uid(uid), m_uri(uri) {
 	if (m_asset) {
 		m_asset->addRef();
 	}
@@ -44,11 +44,19 @@ auto AssetHandleBase::operator=(const AssetHandleBase& other) -> AssetHandleBase
 		}
 		m_asset = other.m_asset;
 		m_uid = other.m_uid;
+		m_uri = other.m_uri;
 		if (m_asset) {
 			m_asset->addRef();
 		}
 	}
 	return *this;
+}
+
+AssetHandleBase::AssetHandleBase(AssetHandleBase&& other) noexcept
+    : m_asset(other.m_asset),
+      m_uid(other.m_uid),
+      m_uri(other.m_uri) {
+	other.m_asset = nullptr;
 }
 
 auto AssetHandleBase::operator=(AssetHandleBase&& other) noexcept -> AssetHandleBase& {
@@ -58,6 +66,7 @@ auto AssetHandleBase::operator=(AssetHandleBase&& other) noexcept -> AssetHandle
 		}
 		m_asset = other.m_asset;
 		m_uid = other.m_uid;
+		m_uri = other.m_uri;
 		other.m_asset = nullptr;
 	}
 	return *this;

@@ -54,6 +54,11 @@
 			fontconfig
 			libICE
 			libSM
+
+			zip
+			unzip
+			gnutar
+			curl
 		];
 
 		runtimeLibs = with pkgs; [

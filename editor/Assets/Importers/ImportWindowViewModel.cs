@@ -110,7 +110,7 @@ public class ImportFileViewModel : ImportNodeViewModel {
 		}
 
 		// Resolve chip info from the matching importer's primary output type
-		var matchedImporter = importers.FirstOrDefault(i => i.SupportedExtensions.Contains(ext));
+		var matchedImporter = importers.FirstOrDefault(i => i.CanHandle(path));
 		if (matchedImporter != null) {
 			var outputType = matchedImporter.PrimaryOutputType;
 			m_chipText = outputType.ChipText;
@@ -300,6 +300,8 @@ public partial class ImportWindowViewModel : ViewModelBase {
 			new TextureImporter(TextureSettings),
 			new PsdImporter(TextureSettings, PsdSettings),
 			new GltfImporter(GltfSettings, TextureSettings),
+			new AudioBankImporter(),
+			new AudioStringImporter(AudioStringSettings),
 		];
 		m_allowedExtensions = [];
 		foreach (var importer in m_importers)
@@ -329,6 +331,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	public TextureImporter.Settings TextureSettings { get; } = new();
 	public PsdImporter.Settings PsdSettings { get; } = new();
 	public GltfImporter.Settings GltfSettings { get; } = new();
+	public AudioStringImporter.Settings AudioStringSettings { get; } = new();
 
 	public void SetWindow(Window window) => m_window = window;
 
@@ -379,12 +382,14 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	}
 
 	private void RebuildSettingsCards() {
-		var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-		CollectSelectedExtensions(ImportNodes, extensions);
+		var selectedFiles = new List<string>();
+		CollectSelectedFilePaths(ImportNodes, selectedFiles);
 		SettingsCards.Clear();
 		var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		
 		foreach (var importer in m_importers) {
-			if (!importer.SupportedExtensions.Any(ext => extensions.Contains(ext))) continue;
+			if (!selectedFiles.Any(path => importer.CanHandle(path))) continue;
+
 			foreach (var settingsImporter in importer.GetAllSettingsImporters()) {
 				if (seenNames.Add(settingsImporter.DisplayName))
 					SettingsCards.Add(new ImporterSettingsCardVM(settingsImporter, m_state));
@@ -392,6 +397,15 @@ public partial class ImportWindowViewModel : ViewModelBase {
 		}
 	}
 
+	private static void CollectSelectedFilePaths(IEnumerable<ImportNodeViewModel> nodes, List<string> result) {
+		foreach (var node in nodes) {
+			if (node is ImportFileViewModel { IsSelected: true, IsImported: false } file)
+				result.Add(file.FullPath);
+			else if (node is ImportFolderViewModel folder)
+				CollectSelectedFilePaths(folder.Children, result);
+		}
+	}
+	
 	private static void CollectSelectedExtensions(IEnumerable<ImportNodeViewModel> nodes, HashSet<string> result) {
 		foreach (var node in nodes) {
 			if (node is ImportFileViewModel { IsSelected: true, IsImported: false } file)
@@ -529,7 +543,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 
 			var destDir = ProjectContext.Resolve(LocationPath);
 			var ext = Path.GetExtension(realSourcePath).ToLowerInvariant();
-			var importer = m_importers.First(i => i.SupportedExtensions.Contains(ext));
+			var importer = m_importers.First(i => i.CanHandle(realSourcePath));
 			var ctx = new ImportContext { DestDir = destDir, SourceVirtualPath = sourceVirtual };
 			var uids = await importer.Import(realSourcePath, ctx, log, progress);
 			AssetDatabase.UpdateArtworkDatabase(sourceVirtual, hash, uids);
@@ -544,7 +558,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	private async Task ImportSingleFileAbsolute(string realSourcePath, Action<string> log, Action<double>? progress = null) {
 		try {
 			var ext = Path.GetExtension(realSourcePath).ToLowerInvariant();
-			var importer = m_importers.First(i => i.SupportedExtensions.Contains(ext));
+			var importer = m_importers.First(i => i.CanHandle(realSourcePath));
 			var destDir = ProjectContext.Resolve(LocationPath);
 			// Use a synthetic virtual path so importers don't crash (won't be tracked in DB).
 			var fakeVirtual = "artwork://" + Path.GetFileName(realSourcePath);

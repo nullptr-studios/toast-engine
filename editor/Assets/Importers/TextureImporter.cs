@@ -25,6 +25,10 @@ public partial class TextureImporter : IAssetImporter {
 	}
 
 	public IReadOnlyList<string> SupportedExtensions => [".png", ".jpg", ".jpeg", ".tga"];
+	public bool CanHandle(string filePath) {
+		var ext = Path.GetExtension(filePath);
+		return ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga";
+	}
 
 	public string DisplayName => "Texture";
 	public LucideIconKind Icon => LucideIconKind.Image;
