@@ -8,6 +8,7 @@
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
 #include "logger.hpp"
+#include "reflect/reflect.hpp"
 #include "renderer/sdl_output_target.hpp"
 #include "renderer/shader_compiler.hpp"
 #include "renderer/shared_texture_output_target.hpp"
@@ -19,7 +20,6 @@
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
-#include "world/reflect.hpp"
 #include "world/workspace.hpp"
 #include "world/workspace_events.hpp"
 #include "world/world.hpp"

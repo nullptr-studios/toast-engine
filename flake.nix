@@ -76,12 +76,20 @@
 		cmake-build = pkgs.writeShellScriptBin "cmake-build" ''
 			exec cmake --build ./build/Debug "$@"
 		'';
+
+		editor = pkgs.writeShellScriptBin "editor" ''
+			./out/Debug/editor/editor "$@"
+		'';
+
+		kenzo = pkgs.writeShellScriptBin "kenzo" ''
+			./out/Debug/kenzo/kenzo "$@"
+		'';
 	in
 	{
 		devShells.${system}.default = pkgs.mkShell {
 			nativeBuildInputs = with pkgs; [
 				cmake
-							ccache
+				ccache
 				ninja
 				valgrind
 				rustup
@@ -96,8 +104,12 @@
 				roslyn-ls
 				gdb
 				lldb
+				pkg-config
+
 				cmake-gen
 				cmake-build
+				editor
+				kenzo
 
 				autoconf
 				autoconf-archive

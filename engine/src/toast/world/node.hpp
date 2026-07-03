@@ -14,8 +14,8 @@
 #pragma once
 #include "box.hpp"
 #include "control_box.hpp"
-#include "reflect.hpp"
 #include "toast/log.hpp"
+#include "toast/reflect/reflect_node.hpp"
 #include "toast/world/node_owner.hpp"
 
 #include <memory>
