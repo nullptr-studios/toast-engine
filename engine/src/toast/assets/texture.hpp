@@ -7,6 +7,8 @@
 #pragma once
 #include "core_types.hpp"
 
+#include <toast/export.hpp>
+
 namespace assets {
 
 /**

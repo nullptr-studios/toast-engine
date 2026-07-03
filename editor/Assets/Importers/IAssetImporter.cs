@@ -24,6 +24,7 @@ public record ImportContext {
 
 /// <summary>Interface for file format importers</summary>
 public interface IAssetImporter {
+	bool CanHandle(string filePath);
 	IReadOnlyList<string> SupportedExtensions { get; }
 
 	/// <summary>Human-readable name shown in the settings card header</summary>

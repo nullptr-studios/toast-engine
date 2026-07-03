@@ -31,6 +31,8 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 			new TextureImporter(TextureSettings),
 			new PsdImporter(TextureSettings, PsdSettings),
 			new GltfImporter(GltfSettings, TextureSettings),
+			new AudioBankImporter(),
+			new AudioStringImporter(AudioStringSettings),
 		];
 
 		RebuildSettingsCards();
@@ -41,6 +43,7 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 	public TextureImporter.Settings TextureSettings { get; } = new();
 	public PsdImporter.Settings PsdSettings { get; } = new();
 	public GltfImporter.Settings GltfSettings { get; } = new();
+	public AudioStringImporter.Settings AudioStringSettings { get; } = new();
 
 	public string FileListSummary {
 		get {
@@ -101,7 +104,7 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 		}
 
 		var ext = Path.GetExtension(realSourcePath).ToLowerInvariant();
-		var importer = m_importers.FirstOrDefault(i => i.SupportedExtensions.Contains(ext));
+		var importer = m_importers.FirstOrDefault(i => i.CanHandle(realSourcePath));
 		if (importer is null) {
 			log($"No importer for extension '{ext}', skipping.");
 			return;
@@ -137,13 +140,18 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 	private void Cancel() => m_window?.Close();
 
 	private void RebuildSettingsCards() {
-		var extensions = m_filePaths
-			.Select(p => Path.GetExtension(p).ToLowerInvariant())
-			.ToHashSet(StringComparer.OrdinalIgnoreCase);
-
 		SettingsCards.Clear();
-		foreach (var importer in m_importers)
-			if (importer.SupportedExtensions.Any(ext => extensions.Contains(ext)))
-				SettingsCards.Add(new ImporterSettingsCardVM(importer, m_state));
+		var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+		foreach (var importer in m_importers) {
+			// Does this importer handle ANY of the provided file paths?
+			if (!m_filePaths.Any(path => importer.CanHandle(path))) continue;
+
+			// Add settings cards for all settings importers supported by this importer
+			foreach (var settingsImporter in importer.GetAllSettingsImporters()) {
+				if (seenNames.Add(settingsImporter.DisplayName))
+					SettingsCards.Add(new ImporterSettingsCardVM(settingsImporter, m_state));
+			}
+		}
 	}
 }

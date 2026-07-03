@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -16,6 +17,7 @@ using Avalonia.Styling;
 using editor.Assets;
 using editor.Assets.Types;
 using editor.Components.Modals;
+using editor.Workspace;
 
 namespace editor.Components.Elements;
 
@@ -162,10 +164,11 @@ public sealed class AssetBox : TemplatedControl {
 	}
 
 	private void Refresh() {
-		var hasValue = !string.IsNullOrEmpty(Value);
+		var effectiveValue = Value == InspectorFormat.NullUid ? null : Value;
+		var hasValue = !string.IsNullOrEmpty(effectiveValue);
 		var path = "";
 		var type = "";
-		var resolved = hasValue && AssetDatabase.TryResolve(Value!, out path, out type);
+		var resolved = hasValue && AssetDatabase.TryResolve(effectiveValue!, out path, out type);
 		HasAsset = resolved;
 		IsMissing = hasValue && !resolved;
 
@@ -197,9 +200,24 @@ public sealed class AssetBox : TemplatedControl {
 		m_clearItem.IsEnabled = IsEnabled && (HasAsset || IsMissing);
 	}
 
+	private static string? NormalizeAssetType(string? type) {
+		if (string.IsNullOrEmpty(type)) return null;
+		// Direct lookup (handles types that are already identifiers like "texture")
+		var def = AssetTypeRegistry.ByType(type);
+		if (def != null) return def.Type;
+		// C++ class name → asset type (handles "AudioBank" → "audio_bank")
+		def = AssetTypeRegistry.ByCppTypeName(type);
+		if (def != null) return def.Type;
+		// Try PascalCase conversion as fallback (handles e.g. "AudioVca" → "audio_vca")
+		def = AssetTypeRegistry.All.FirstOrDefault(a =>
+			string.Equals(a.Type, type, StringComparison.OrdinalIgnoreCase) ||
+			a.CppTypeNames.Any(n => n.Equals(type, StringComparison.OrdinalIgnoreCase)));
+		return def?.Type ?? type;
+	}
+
 	private async void OpenPicker() {
 		if (!IsEnabled || App.MainWindow is not { } owner) return;
-		var picked = await new AssetList(AssetType).ShowDialog<string?>(owner);
+		var picked = await new AssetList(NormalizeAssetType(AssetType)).ShowDialog<string?>(owner);
 		if (picked is not null) Value = picked;
 	}
 
@@ -213,7 +231,9 @@ public sealed class AssetBox : TemplatedControl {
 
 	private bool IsAcceptable(DragEventArgs e) =>
 		e.DataTransfer.TryGetValue(AssetDragData.Format) is { } a &&
-		(string.IsNullOrEmpty(AssetType) || string.Equals(AssetType, a.Type, StringComparison.OrdinalIgnoreCase));
+		(string.IsNullOrEmpty(AssetType) || string.Equals(
+			NormalizeAssetType(AssetType) ?? AssetType,
+			a.Type, StringComparison.OrdinalIgnoreCase));
 
 	private void OnDragOver(object? sender, DragEventArgs e) {
 		e.DragEffects = IsEnabled && IsAcceptable(e) ? DragDropEffects.Copy : DragDropEffects.None;

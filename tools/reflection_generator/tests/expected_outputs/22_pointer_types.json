@@ -27,6 +27,7 @@
       }
     ],
     "groups": [],
+    "is_interface": false,
     "methods": [],
     "name": "PointerNode",
     "namespace": null,

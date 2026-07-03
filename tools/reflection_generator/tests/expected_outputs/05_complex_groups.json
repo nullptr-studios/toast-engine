@@ -147,6 +147,7 @@
         ]
       }
     ],
+    "is_interface": false,
     "methods": [],
     "name": "ComplexNode",
     "namespace": null,

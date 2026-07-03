@@ -95,6 +95,7 @@
         ]
       }
     ],
+    "is_interface": false,
     "methods": [],
     "name": "SubgroupOnlyNode",
     "namespace": null,

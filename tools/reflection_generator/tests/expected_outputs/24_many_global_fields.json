@@ -179,6 +179,7 @@
       }
     ],
     "groups": [],
+    "is_interface": false,
     "methods": [],
     "name": "ManyGlobalsNode",
     "namespace": null,

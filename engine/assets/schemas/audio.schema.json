@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "core://schemas/audio.schema.json",
+  "title": "Audio Assets Schema",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "$ref": "core://schemas/core.schema.json#/definitions/asset",
+    },
+    "type": {
+      "$ref": "core://schemas/core.schema.json#/definitions/string",
+    },
+    "name": {
+      "$ref": "core://schemas/core.schema.json#/definitions/string",
+    },
+    "path": {
+      "$ref": "core://schemas/core.schema.json#/definitions/string",
+    },
+    "guid": {
+      "$ref": "core://schemas/core.schema.json#/definitions/string",
+    }
+  },
+  "required": ["type", "name", "path", "guid"],
+  "additionalProperties": false
+}

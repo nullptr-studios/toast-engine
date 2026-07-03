@@ -113,6 +113,14 @@ void Node3D::lookAtZ(glm::vec3 target) {
 	rotQuat(glm::quat_cast(rot_mat));
 }
 
+auto Node3D::up() const -> glm::vec3 {
+	return worldRotQuat() * world_up;
+}
+
+auto Node3D::forward() const -> glm::vec3 {
+	return worldRotQuat() * world_forward;
+}
+
 void Node3D::recalculateTransforms() {
 	ZoneScoped;
 	ZoneNameF("%s::recalculateTransforms()", name().data());

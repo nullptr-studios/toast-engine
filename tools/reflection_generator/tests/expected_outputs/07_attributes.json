@@ -62,6 +62,7 @@
         "subgroups": []
       }
     ],
+    "is_interface": false,
     "methods": [],
     "name": "AttributeNode",
     "namespace": null,
