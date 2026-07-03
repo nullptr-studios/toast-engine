@@ -32,7 +32,24 @@ public record PsdMetaSection : IMetaSection {
 	public bool CreateFolder { get; init; }
 }
 
-/// <summary>.meta sidecar written next to each imported asset — stores the UID and the settings used to produce it.</summary>
+public record GltfMetaSection : IMetaSection {
+	public bool CreateFolder { get; init; } = true;
+	public bool ImportMaterials { get; init; } = true;
+	public bool ImportTextures { get; init; } = true;
+	public bool ImportCameras { get; init; } = false;
+	public bool ImportLights { get; init; } = true;
+	public bool GeneratePrefab { get; init; } = true;
+}
+
+public record AudioStringMetaSection : IMetaSection {
+	public bool FollowFolderStructure = true;
+	public bool ImportEvents = true;
+	public bool ImportBuses = true;
+	public bool ImportVcas = true;
+	public bool ImportPorts = true;
+	public bool ImportSnapshots = true;
+}
+
 public static class MetaFile {
 	public static void Write(string outputAssetRealPath, MetaHeader header, params IMetaSection[] sections) {
 		var dto = new MetaFileDto {
@@ -61,6 +78,16 @@ public static class MetaFile {
 					dto.Psd = new PsdSectionDto {
 						ImportMode = psd.ImportMode,
 						CreateFolder = psd.CreateFolder
+					};
+					break;
+				case GltfMetaSection gltf:
+					dto.Gltf = new GltfSectionDto {
+						CreateFolder = gltf.CreateFolder,
+						ImportMaterials = gltf.ImportMaterials,
+						ImportTextures = gltf.ImportTextures,
+						ImportCameras = gltf.ImportCameras,
+						ImportLights = gltf.ImportLights,
+						GeneratePrefab = gltf.GeneratePrefab
 					};
 					break;
 			}
@@ -122,6 +149,40 @@ public static class MetaFile {
 		}
 	}
 
+	public static GltfMetaSection? ReadGltfSection(string path) {
+		var metaPath = path.EndsWith(".meta") ? path : path + ".meta";
+		if (!File.Exists(metaPath)) return null;
+		try {
+			var dto = TomlSerializer.Deserialize<MetaFileDto>(File.ReadAllText(metaPath))!;
+			if (dto.Gltf == null) return null;
+			return new GltfMetaSection {
+				CreateFolder = dto.Gltf.CreateFolder,
+				ImportMaterials = dto.Gltf.ImportMaterials,
+				ImportTextures = dto.Gltf.ImportTextures,
+				ImportCameras = dto.Gltf.ImportCameras,
+				ImportLights = dto.Gltf.ImportLights,
+				GeneratePrefab = dto.Gltf.GeneratePrefab
+			};
+		} catch {
+			return null;
+		}
+	}
+
+	/// Rewrites the source of an existing .meta in place
+	public static bool UpdateSource(string path, string? newSource) {
+		var metaPath = path.EndsWith(".meta") ? path : path + ".meta";
+		if (!File.Exists(metaPath)) return false;
+		try {
+			var dto = TomlSerializer.Deserialize<MetaFileDto>(File.ReadAllText(metaPath))!;
+			dto.Source = newSource;
+			dto.ModifiedAt = DateTime.UtcNow.ToString("o");
+			File.WriteAllText(metaPath, TomlSerializer.Serialize(dto));
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
 	public static IEnumerable<string> FindAll(string directory) {
 		return Directory.EnumerateFiles(directory, "*.meta", SearchOption.AllDirectories);
 	}
@@ -136,6 +197,7 @@ file sealed class MetaFileDto {
 
 	[TomlPropertyName("texture")] public TextureSectionDto? Texture { get; set; }
 	[TomlPropertyName("psd")] public PsdSectionDto? Psd { get; set; }
+	[TomlPropertyName("gltf")] public GltfSectionDto? Gltf { get; set; }
 }
 
 file sealed class TextureSectionDto {
@@ -155,4 +217,13 @@ file sealed class TextureSectionDto {
 file sealed class PsdSectionDto {
 	[TomlPropertyName("import_mode")] public string ImportMode { get; set; } = "Combined";
 	[TomlPropertyName("create_folder")] public bool CreateFolder { get; set; }
+}
+
+file sealed class GltfSectionDto {
+	[TomlPropertyName("create_folder")] public bool CreateFolder { get; set; } = true;
+	[TomlPropertyName("import_materials")] public bool ImportMaterials { get; set; } = true;
+	[TomlPropertyName("import_textures")] public bool ImportTextures { get; set; } = true;
+	[TomlPropertyName("import_cameras")] public bool ImportCameras { get; set; } = false;
+	[TomlPropertyName("import_lights")] public bool ImportLights { get; set; } = true;
+	[TomlPropertyName("generate_prefab")] public bool GeneratePrefab { get; set; } = true;
 }

@@ -1,0 +1,36 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="editor.Components.Modals.NewFolderModal"
+        Title="New Folder"
+        Width="320" Height="100"
+        CanResize="False" CanMaximize="False" CanMinimize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Bg2}"
+        Padding="12">
+
+	<DockPanel VerticalSpacing="8">
+		<StackPanel DockPanel.Dock="Bottom" HorizontalAlignment="Right"
+		            Orientation="Horizontal" Spacing="8">
+			<Button Click="OnCancel" CornerRadius="6">
+				<StackPanel Orientation="Horizontal" Spacing="4">
+					<LucideIcon Kind="X" Size="16" StrokeWidth="3.5"/>
+					<TextBlock Text="Cancel"/>
+				</StackPanel>
+			</Button>
+			<Button x:Name="CreateButton" Click="OnCreate" CornerRadius="6"
+			        Background="{StaticResource Red}" Foreground="{StaticResource Text}" FontWeight="Bold">
+				<StackPanel Orientation="Horizontal" Spacing="4">
+					<LucideIcon Kind="FolderPlus" Size="16" StrokeWidth="3.5"/>
+					<TextBlock Text="Create"/>
+				</StackPanel>
+			</Button>
+		</StackPanel>
+		<TextBox x:Name="FolderNameBox"
+		         PlaceholderText="Folder name..."
+		         BorderThickness="0"
+		         Background="{StaticResource Bg1}"
+		         CornerRadius="6"
+		         VerticalContentAlignment="Center"
+		         KeyDown="OnKeyDown"/>
+	</DockPanel>
+</Window>

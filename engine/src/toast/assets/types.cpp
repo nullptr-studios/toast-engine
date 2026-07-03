@@ -1,7 +1,5 @@
 #include "types.hpp"
 
-#include <sstream>
-
 namespace assets {
 void Asset::addRef() noexcept {
 	m_ref_count.fetch_add(1, std::memory_order_relaxed);
@@ -21,7 +19,7 @@ AssetHandleBase::AssetHandleBase(Asset* asset) : m_asset(asset) {
 	}
 }
 
-AssetHandleBase::AssetHandleBase(Asset* asset, toast::UID uid) : m_asset(asset), m_uid(uid) {
+AssetHandleBase::AssetHandleBase(Asset* asset, toast::UID uid, std::string_view uri) : m_asset(asset), m_uid(uid), m_uri(uri) {
 	if (m_asset) {
 		m_asset->addRef();
 	}
@@ -46,11 +44,19 @@ auto AssetHandleBase::operator=(const AssetHandleBase& other) -> AssetHandleBase
 		}
 		m_asset = other.m_asset;
 		m_uid = other.m_uid;
+		m_uri = other.m_uri;
 		if (m_asset) {
 			m_asset->addRef();
 		}
 	}
 	return *this;
+}
+
+AssetHandleBase::AssetHandleBase(AssetHandleBase&& other) noexcept
+    : m_asset(other.m_asset),
+      m_uid(other.m_uid),
+      m_uri(other.m_uri) {
+	other.m_asset = nullptr;
 }
 
 auto AssetHandleBase::operator=(AssetHandleBase&& other) noexcept -> AssetHandleBase& {
@@ -60,6 +66,7 @@ auto AssetHandleBase::operator=(AssetHandleBase&& other) noexcept -> AssetHandle
 		}
 		m_asset = other.m_asset;
 		m_uid = other.m_uid;
+		m_uri = other.m_uri;
 		other.m_asset = nullptr;
 	}
 	return *this;
@@ -87,16 +94,5 @@ auto AssetHandleBase::operator->() const noexcept -> const Asset* {
 
 auto Texture::get() const noexcept -> const std::vector<uint8_t>& {
 	return m_data;
-}
-
-auto Data::get() const noexcept -> const toml::table& {
-	return m_table;
-}
-
-auto Data::serialize(SaveMode) const -> std::vector<uint8_t> {
-	std::ostringstream ss;
-	ss << m_table;
-	auto str = ss.str();
-	return {str.begin(), str.end()};
 }
 }

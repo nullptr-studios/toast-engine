@@ -27,6 +27,7 @@
       }
     ],
     "groups": [],
+    "is_interface": false,
     "methods": [],
     "name": "FirstNode",
     "namespace": "test",
@@ -61,6 +62,7 @@
       }
     ],
     "groups": [],
+    "is_interface": false,
     "methods": [],
     "name": "SecondNode",
     "namespace": "test",

@@ -1,5 +1,6 @@
 #include "asset_manager.hpp"
 
+#include "asset_registry.hpp"
 #include "prefab.hpp"
 
 #include <fstream>
@@ -12,6 +13,7 @@ namespace assets {
 AssetManager::AssetManager() {
 	instance = this;
 
+	AssetRegistry::init();
 	reloadManifest();
 
 	listener.subscribe<event::ReloadAssetsManifest>([this] { reloadManifest(); });
@@ -54,54 +56,41 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 
 	std::unique_ptr<Asset> asset = nullptr;
 
-	if (info.type == "texture") {
-		asset = std::make_unique<Texture>(std::move(*raw_data));
-	} else if (info.type == "data") {
-		try {
-			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
-			asset = std::make_unique<Data>(toml::parse(toml_str));
-		} catch (const toml::parse_error& err) {
-			TOAST_ERROR("AssetManager", "Failed to parse TOML asset {}: {}", info.path, err.description());
-			return nullptr;
-		}
-	} else if (info.type == "input_action" || info.type == "input_layout" || info.type == "input_settings") {
-		try {
-			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
-			auto table = toml::parse(toml_str);
-			if (info.type == "input_action") {
-				asset = std::make_unique<Action>(std::move(table));
-			} else if (info.type == "input_layout") {
-				asset = std::make_unique<InputLayout>(std::move(table));
-			} else {
-				asset = std::make_unique<InputSettings>(std::move(table));
+	auto resolve_schema = [&](const toml::table& table) -> AssetHandle<Schema> {
+		AssetHandle<Schema> schema_handle;
+		if (const auto* schema_key = table.get("schema")) {
+			if (auto schema_uid_str = schema_key->value<std::string_view>()) {
+				if (schema_uid_str->size() == 11) {
+					toast::UID schema_uid(toast::UID::fromString(*schema_uid_str));
+					if (auto it = manifest.find(schema_uid.data()); it != manifest.end()) {
+						auto schema_path = resolveVirtualPath(it->second.path);
+						if (schema_path) {
+							if (auto schema_raw = openFile(*schema_path)) {
+								if (auto cit = cache.find(schema_uid.data()); cit != cache.end()) {
+									schema_handle = AssetHandle<Schema>(static_cast<Schema*>(cit->second.get()), schema_uid, getURI(schema_uid));
+								} else {
+									std::string_view schema_json(reinterpret_cast<const char*>(schema_raw->data()), schema_raw->size());
+									try {
+										auto schema_asset = std::make_unique<Schema>(schema_json);
+										Schema* raw_ptr = schema_asset.get();
+										cache[schema_uid.data()] = std::move(schema_asset);
+										schema_handle = AssetHandle<Schema>(raw_ptr, schema_uid, getURI(schema_uid));
+									} catch (const std::exception& se) {
+										TOAST_WARN("AssetManager", "Could not parse schema for asset {}: {}", info.path, se.what());
+									}
+								}
+							}
+						}
+					} else {
+						TOAST_WARN("AssetManager", "Schema UID {} not found in manifest (asset {})", *schema_uid_str, info.path);
+					}
+				}
 			}
-		} catch (const toml::parse_error& err) {
-			TOAST_ERROR("AssetManager", "Failed to parse TOML asset {}: {}", info.path, err.description());
-			return nullptr;
 		}
-	} else if (info.type == "curve") {
-		try {
-			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
-			asset = Curve::fromToml(toml::parse(toml_str));
-		} catch (const toml::parse_error& err) {
-			TOAST_ERROR("AssetManager", "Failed to parse curve asset {}: {}", info.path, err.description());
-			return nullptr;
-		} catch (const std::exception& err) {
-			TOAST_ERROR("AssetManager", "Failed to load curve asset {}: {}", info.path, err.what());
-			return nullptr;
-		}
-	} else if (info.type == "haptic") {
-		try {
-			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
-			asset = std::make_unique<Haptic>(toml::parse(toml_str));
-		} catch (const toml::parse_error& err) {
-			TOAST_ERROR("AssetManager", "Failed to parse haptic asset {}: {}", info.path, err.description());
-			return nullptr;
-		} catch (const std::exception& err) {
-			TOAST_ERROR("AssetManager", "Failed to load haptic asset {}: {}", info.path, err.what());
-			return nullptr;
-		}
-	} else if (info.type == "node") {
+		return schema_handle;
+	};
+
+	if (info.type == "node") {
 		// TODO: At some point we need to handle toast packs
 		if constexpr (load_mode == SaveMode::editor) {
 			std::istringstream stream(std::string(reinterpret_cast<const char*>(raw_data->data()), raw_data->size()));
@@ -109,8 +98,55 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 		} else {
 			asset = std::make_unique<Prefab>(std::span<const uint8_t>(*raw_data));
 		}
-	} else {
+	}
+
+	// raw binary
+	else if (AssetRegistry::hasRaw(info.type)) {
+		try {
+			asset = AssetRegistry::createRaw(info.type, std::move(*raw_data));
+		} catch (const std::exception& err) {
+			TOAST_ERROR("AssetManager", "Failed to create asset {}: {}", info.path, err.what());
+			return nullptr;
+		}
+	}
+
+	// plain TOML loaders
+	else if (AssetRegistry::hasToml(info.type)) {
+		try {
+			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
+			asset = AssetRegistry::createToml(info.type, toml::parse(toml_str));
+		} catch (const toml::parse_error& err) {
+			TOAST_ERROR("AssetManager", "Failed to parse TOML asset {}: {}", info.path, err.description());
+			return nullptr;
+		} catch (const std::exception& err) {
+			TOAST_ERROR("AssetManager", "Failed to load TOML asset {}: {}", info.path, err.what());
+			return nullptr;
+		}
+	}
+
+	// TOML + Schema loaders
+	else if (AssetRegistry::hasSchemaToml(info.type)) {
+		try {
+			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
+			auto table = toml::parse(toml_str);
+			auto schema_handle = resolve_schema(table);
+			asset = AssetRegistry::createSchemaToml(info.type, std::move(table), std::move(schema_handle));
+		} catch (const toml::parse_error& err) {
+			TOAST_ERROR("AssetManager", "Failed to parse TOML asset {}: {}", info.path, err.description());
+			return nullptr;
+		} catch (const std::exception& err) {
+			TOAST_ERROR("AssetManager", "Failed to load TOML+Schema asset {}: {}", info.path, err.what());
+			return nullptr;
+		}
+	}
+
+	else {
 		TOAST_ERROR("AssetManager", "Unknown asset type '{}' for asset {}", info.type, info.path);
+		return nullptr;
+	}
+
+	if (!asset) {
+		TOAST_ERROR("AssetManager", "Failed to create asset of type '{}' for {}", info.type, info.path);
 		return nullptr;
 	}
 
@@ -212,27 +248,27 @@ void AssetManager::reloadManifest() {
 		auto json = nlohmann::json::parse(raw_json->begin(), raw_json->end());
 
 		// an entry is a "uid": "virtual path" pair
-		auto load_collection = [&](std::string_view collection, std::string_view type) {
-			auto it = json.find(collection);
+		auto load_collection = [&](std::string_view type) {
+			auto it = json.find(type);
 			if (it == json.end() || !it->is_object()) {
 				return;
 			}
 			for (const auto& [key, value] : it->items()) {
-				uint64_t uid_val = toast::UID::fromString(key);
-				AssetInfo info;
-				info.path = value.get<std::string>();
-				info.type = type;
-				manifest[uid_val] = std::move(info);
+				manifest[toast::UID::fromString(key)] = {value.get<std::string>(), std::string(type)};
 			}
 		};
 
-		load_collection(Texture::collection, "texture");
-		load_collection(Data::collection, "data");
-		load_collection(Prefab::collection, "node");
-		load_collection(Action::collection, "input_action");
-		load_collection(InputLayout::collection, "input_layout");
-		load_collection(InputSettings::collection, "input_settings");
-		load_collection(Haptic::collection, "haptic");
+		load_collection("texture");
+		load_collection("schema");
+		load_collection("data");
+		load_collection("node");
+		load_collection("audio_bank");
+		load_collection("audio_bus");
+		load_collection("audio_event");
+		load_collection("audio_port");
+		load_collection("audio_snapshot");
+		load_collection("audio_strings");
+		load_collection("audio_vca");
 
 		TOAST_INFO("AssetManager", "Manifest reloaded: {} assets tracked", manifest.size());
 	} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse asset manifest: {}", e.what()); }
@@ -321,20 +357,46 @@ auto AssetManager::resolveURI(std::string_view uri) -> std::optional<toast::UID>
 	return std::nullopt;
 }
 
-auto AssetManager::listByType(std::string_view type) -> std::vector<toast::UID> {
-	std::vector<toast::UID> result;
-	std::lock_guard lock(instance->mutex);
-	for (const auto& [uid_val, info] : instance->manifest) {
-		if (info.type == type) {
-			result.emplace_back(uid_val);
+auto AssetManager::getURI(toast::UID uid) -> std::string {
+	if (not instance) {
+		return {};
+	}
+	auto it = instance->manifest.find(uid.data());
+	if (it != instance->manifest.end()) {
+		return it->second.path;
+	}
+	return {};
+}
+
+auto AssetManager::search(std::string_view query) -> std::vector<AssetHandle<Asset>> {
+	std::vector<toast::UID> matches;
+	{
+		std::lock_guard lock(mutex);
+		for (const auto& [uid_val, info] : manifest) {
+			if (info.path.contains(query)) {
+				matches.emplace_back(uid_val);
+			}
 		}
 	}
-	return result;
+
+	std::vector<AssetHandle<Asset>> results;
+	results.reserve(matches.size());
+	for (const auto& uid : matches) {
+		if (auto* asset = load(uid)) {
+			auto uri = getURI(uid);
+			results.emplace_back(asset, uid, uri);
+		}
+	}
+	return results;
+}
+
+auto AssetManager::getCachePath() const -> const std::filesystem::path& {
+	return cache_path;
 }
 
 // Public API Implementations
 auto load(toast::UID uid) -> AssetHandleBase {
-	return {AssetManager::get().load(uid), uid};
+	return {AssetManager::get().load(uid), uid, AssetManager::getURI(uid)};
 }
 
 auto load(std::string_view uri) -> AssetHandleBase {
@@ -348,10 +410,6 @@ auto load(std::string_view uri) -> AssetHandleBase {
 
 auto resolveURI(std::string_view uri) -> std::optional<toast::UID> {
 	return AssetManager::resolveURI(uri);
-}
-
-auto listByType(std::string_view type) -> std::vector<toast::UID> {
-	return AssetManager::listByType(type);
 }
 
 auto save(toast::UID uid) -> bool {

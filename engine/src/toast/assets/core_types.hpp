@@ -12,10 +12,13 @@
 #pragma once
 
 #include <atomic>
+#include <nlohmann/json.hpp>
 #include <toast/export.hpp>
 #include <toast/uid.hpp>
 #include <toml++/toml.hpp>
 #include <vector>
+
+using json_t = nlohmann::json;
 
 namespace assets {
 // clang-format off
@@ -78,15 +81,14 @@ public:
 	 * so serialization won't explode the engine. It also will make handling missing
 	 * assets easier
 	 */
-	AssetHandleBase(Asset* asset, toast::UID uid);
+	AssetHandleBase(Asset* asset, toast::UID uid, std::string_view uri);
 
 	virtual ~AssetHandleBase();
 
 	AssetHandleBase(const AssetHandleBase& other);
 	auto operator=(const AssetHandleBase& other) -> AssetHandleBase&;
 
-	AssetHandleBase(AssetHandleBase&& other) noexcept : m_asset(other.m_asset), m_uid(other.m_uid) { other.m_asset = nullptr; }
-
+	AssetHandleBase(AssetHandleBase&& other) noexcept;
 	auto operator=(AssetHandleBase&& other) noexcept -> AssetHandleBase&;
 
 	[[nodiscard]]
@@ -95,6 +97,11 @@ public:
 	[[nodiscard]]
 	auto uid() const noexcept -> toast::UID {
 		return m_uid;
+	}
+
+	[[nodiscard]]
+	auto path() const noexcept -> std::string_view {
+		return m_uri;
 	}
 
 	[[nodiscard]]
@@ -109,9 +116,20 @@ public:
 	[[nodiscard]]
 	auto operator->() const noexcept -> const Asset*;
 
+	[[nodiscard]]
+	auto operator==(const AssetHandleBase& other) const -> bool {
+		return m_uid.data() == other.m_uid.data();
+	}
+
+	[[nodiscard]]
+	auto operator<(const AssetHandleBase& other) const -> bool {
+		return m_uid.data() < other.m_uid.data();
+	}
+
 protected:
 	Asset* m_asset = nullptr;
 	toast::UID m_uid;
+	std::string m_uri;
 };
 
 /**
@@ -151,6 +169,11 @@ public:
 	[[nodiscard]]
 	auto get() const noexcept -> const T& {
 		return *static_cast<const T*>(this->m_asset);
+	}
+
+	template<typename U>
+	auto as() -> AssetHandle<U> {
+		return AssetHandle<U>(this->m_asset, this->m_uid, this->m_uri);
 	}
 };
 }

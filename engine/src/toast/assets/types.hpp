@@ -16,9 +16,11 @@
 
 #include "curve.hpp"
 #include "data.hpp"
-#include "haptic.hpp"
-#include "input_action.hpp"
-#include "input_layout.hpp"
-#include "input_settings.hpp"
+#include "data_value.hpp"
+#include "material.hpp"
+#include "mesh.hpp"
 #include "prefab.hpp"
+#include "schema.hpp"
 #include "texture.hpp"
+
+#include <toast/audio/assets.hpp>

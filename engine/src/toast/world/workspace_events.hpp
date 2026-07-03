@@ -8,6 +8,7 @@
 #include <toast/events/event.hpp>
 #include <toast/uid.hpp>
 #include <toast/world/box.hpp>
+#include <utility>
 
 namespace event {
 
@@ -17,6 +18,7 @@ struct UpdateHierarchyData : Event<UpdateHierarchyData> {
 		std::string name;
 		std::string type;
 		bool enabled;
+		bool is_prefab;
 		std::vector<HierarchyElement> children;
 
 		HierarchyElement(const toast::Box<toast::Node>& node);
@@ -27,10 +29,11 @@ struct UpdateHierarchyData : Event<UpdateHierarchyData> {
 	};
 
 	HierarchyElement root;
+	bool is_empty = false;
 
-	UpdateHierarchyData(const toast::Box<toast::Node>& node) : root(node) { }
+	UpdateHierarchyData(const toast::Box<toast::Node>& node);
 
-	UpdateHierarchyData(const HierarchyElement& h) : root(h) { }
+	UpdateHierarchyData(const HierarchyElement& h, bool is_empty) : root(h), is_empty(is_empty) { }
 };
 
 struct RequestHierarchyUpdate : Event<RequestHierarchyUpdate> { };
@@ -102,6 +105,82 @@ struct WorkspaceMoveNodeTo : Event<WorkspaceMoveNodeTo> {
 	    : target(target),
 	      new_parent(new_parent),
 	      predecessor(predecessor) { }
+};
+
+struct WorkspaceDuplicateNode : Event<WorkspaceDuplicateNode> {
+	toast::UID source;
+	toast::UID parent;
+};
+
+struct WorkspaceCopyNode : Event<WorkspaceCopyNode> {
+	toast::UID source;
+};
+
+struct WorkspacePasteNode : Event<WorkspacePasteNode> {
+	toast::UID parent;
+};
+
+struct NodeChangeType : Event<NodeChangeType> {
+	toast::UID node;
+	std::string type;
+};
+
+struct WorkspacePromoteNode : Event<WorkspacePromoteNode> {
+	toast::UID target;
+	std::string path;
+};
+
+struct SetFocusedNode : Event<SetFocusedNode> {
+	toast::UID node;
+
+	SetFocusedNode(toast::UID n) : node(n) { }
+};
+
+struct NodeChangeParam : Event<NodeChangeParam> {
+	std::string parameter;
+	std::string value;
+
+	NodeChangeParam(std::string_view parameter, std::string_view value) : parameter(parameter), value(value) { }
+};
+
+struct NodeChangeName : Event<NodeChangeName> {
+	toast::UID node;
+	std::string name;
+
+	NodeChangeName(toast::UID n, std::string_view name) : node(n), name(name) { }
+};
+
+struct NodeCallFunction : Event<NodeCallFunction> {
+	std::string function;
+
+	NodeCallFunction(std::string_view f) : function(f) { }
+};
+
+struct NodeEnabled : Event<NodeEnabled> {
+	toast::UID node;
+	bool enabled;
+
+	NodeEnabled(toast::UID n, bool enabled) : node(n), enabled(enabled) { }
+};
+
+struct InspectorContent : Event<InspectorContent> {
+	struct InspectorField {
+		std::string name;
+		std::string value;
+
+		InspectorField(std::string_view name, std::string_view value) : name(name), value(value) { }
+	};
+
+	std::string uid;
+	std::string name;
+	bool enabled;
+	std::vector<InspectorField> parameters;
+
+	InspectorContent(std::string_view uid, std::string_view name, bool enabled, std::vector<InspectorField> fields)
+	    : uid(uid),
+	      name(name),
+	      enabled(enabled),
+	      parameters(std::move(fields)) { }
 };
 
 }

@@ -10,6 +10,7 @@
 #include <toast/assets/assets.hpp>
 #include <toast/assets/types.hpp>
 #include <toast/thread_pool.hpp>
+#include <toast/uri_handler.hpp>
 #include <utility>
 
 namespace toast {
@@ -204,6 +205,16 @@ void World::registerDependency(Node& from, Node& to) {
 	edges.emplace_back(to);
 	instance->dependency_graph.inverse_connections[to].emplace_back(from);
 	TOAST_TRACE("World", "Added dependency from {} to {}", from.name(), from.uid());
+}
+
+void World::unregisterDependency(Node& from, Node& to) {
+	// Remove the dependency from the forward graph
+	auto& edges = instance->dependency_graph.connections[from];
+	std::erase(edges, Box<Node>(to));
+
+	// Remove the dependency from the inverse graph
+	auto& inverse_edges = instance->dependency_graph.inverse_connections[to];
+	std::erase(inverse_edges, Box<Node>(from));
 }
 
 void World::loadNode(UID uid) {

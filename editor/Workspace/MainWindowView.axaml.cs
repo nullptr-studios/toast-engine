@@ -22,9 +22,14 @@ public partial class MainWindowView : Window {
 	private readonly Border? m_toastBorder;
 	private CancellationTokenSource? m_toastCts;
 
+	private bool m_isResizing;
+	private double m_resizeStartY;
+	private double m_resizeStartH;
+
 	public MainWindowView() {
 		InitializeComponent();
 		m_toastBorder = this.FindControl<Border>("ToastZoneBorder");
+		WireResizeHandle();
 		DataContextChanged += OnDataContextChanged;
 	}
 
@@ -32,10 +37,41 @@ public partial class MainWindowView : Window {
 		InitializeComponent();
 		m_toast = toast;
 		m_toastBorder = this.FindControl<Border>("ToastZoneBorder");
+		WireResizeHandle();
 		DataContextChanged += OnDataContextChanged;
 
 		AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
 		AddHandler(KeyUpEvent, OnKeyUp, RoutingStrategies.Tunnel);
+	}
+
+	private void WireResizeHandle() {
+		var handle = this.FindControl<Border>("ToastResizeHandle");
+		if (handle is null) return;
+		handle.PointerPressed += OnResizePointerPressed;
+		handle.PointerMoved += OnResizePointerMoved;
+		handle.PointerReleased += OnResizePointerReleased;
+		handle.PointerCaptureLost += (_, _) => m_isResizing = false;
+	}
+
+	private void OnResizePointerPressed(object? sender, PointerPressedEventArgs e) {
+		if (m_toastBorder is null) return;
+		if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+		m_isResizing = true;
+		m_resizeStartY = e.GetPosition(this).Y;
+		m_resizeStartH = m_toastBorder.Height;
+		e.Pointer.Capture(sender as Border);
+		e.Handled = true;
+	}
+
+	private void OnResizePointerMoved(object? sender, PointerEventArgs e) {
+		if (!m_isResizing || m_toastBorder is null) return;
+		var delta = e.GetPosition(this).Y - m_resizeStartY;
+		m_toastBorder.Height = Math.Clamp(m_resizeStartH - delta, 100, Bounds.Height - 100);
+	}
+
+	private void OnResizePointerReleased(object? sender, PointerReleasedEventArgs e) {
+		m_isResizing = false;
+		e.Pointer.Capture(null);
 	}
 
 	private void OnDataContextChanged(object? sender, EventArgs e) {
@@ -56,16 +92,18 @@ public partial class MainWindowView : Window {
 		m_toastCts = new CancellationTokenSource();
 		var ct = m_toastCts.Token;
 
+		var h = m_toastBorder.Height;
+
 		if (show) {
 			m_toastBorder.IsVisible = true;
-			// Let Avalonia render one frame at the off-screen position before sliding in
+			m_toastBorder.RenderTransform = TransformOperations.Parse($"translateY({h}px)");
 			await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
 			if (ct.IsCancellationRequested) return;
 			m_toastBorder.RenderTransform = TransformOperations.Parse("translateY(0)");
 		} else {
-			m_toastBorder.RenderTransform = TransformOperations.Parse("translateY(400px)");
+			m_toastBorder.RenderTransform = TransformOperations.Parse($"translateY({h}px)");
 			try {
-				await Task.Delay(220, ct); // outlast the 200ms transition
+				await Task.Delay(220, ct);
 				m_toastBorder.IsVisible = false;
 			} catch (OperationCanceledException) { }
 		}
@@ -103,8 +141,11 @@ public partial class MainWindowView : Window {
 		Close();
 	}
 
+	// Typing takes priority
+	private bool IsTextInputFocused() => FocusManager?.GetFocusedElement() is TextBox;
+
 	private void OnKeyDown(object? sender, KeyEventArgs e) {
-		if (e.Key != Key.Space) return;
+		if (e.Key != Key.Space || IsTextInputFocused()) return;
 		e.Handled = true;
 
 		if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
@@ -114,7 +155,7 @@ public partial class MainWindowView : Window {
 	}
 
 	private void OnKeyUp(object? sender, KeyEventArgs e) {
-		if (e.Key != Key.Space) return;
+		if (e.Key != Key.Space || IsTextInputFocused()) return;
 		e.Handled = true;
 
 		if (!e.KeyModifiers.HasFlag(KeyModifiers.Control))

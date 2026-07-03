@@ -1,0 +1,48 @@
+/**
+ * @file audio_port.hpp
+ * @author Xein
+ * @date 30 Jun 2026
+ *
+ * @brief FMOD output port for routing audio to external hardware outputs
+ */
+
+#pragma once
+#include <toast/assets/data.hpp>
+#include <toast/export.hpp>
+
+namespace assets {
+
+class TOAST_API AudioPort : public Data {
+public:
+	explicit AudioPort(const toml::table& table, AssetHandle<Schema> schema = {}) : Data(table, std::move(schema)) { }
+
+	[[nodiscard]]
+	auto type() const -> std::string_view override {
+		return "audio_port";
+	}
+
+	// Type-safe string getters pulling from the underlying m_root DataValue
+	[[nodiscard]]
+	auto eventType() const -> std::string_view {
+		return m_root.contains("type") ? m_root["type"].as<std::string_view>() : "";
+	}
+
+	[[nodiscard]]
+	auto name() const -> std::string_view {
+		return m_root.contains("name") ? m_root["name"].as<std::string_view>() : "";
+	}
+
+	[[nodiscard]]
+	auto path() const -> std::string_view {
+		return m_root.contains("path") ? m_root["path"].as<std::string_view>() : "";
+	}
+
+	[[nodiscard]]
+	auto guid() const -> std::string_view {
+		return m_root.contains("guid") ? m_root["guid"].as<std::string_view>() : "";
+	}
+
+	void setVolume(float volume) const;
+};
+
+}

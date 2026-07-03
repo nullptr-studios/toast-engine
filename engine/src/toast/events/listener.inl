@@ -24,9 +24,10 @@ template<typename TEvent, EventCallback<TEvent&> F>
 void Listener::subscribe(std::string name, F&& callback, char priority) noexcept {
 	TOAST_TRACE("Events", "Subscribing Callback {} to {}", name, typeid(TEvent).name());
 	auto wrapper = [fn = std::forward<F>(callback), this](TEvent& e) mutable -> bool {
-		if (not m.enabled) {
-			return false;
-		}
+		// if (not m.enabled) {
+		//	return false; TODO: This can crash right now since the callback can live longer than the listener and will crash when
+		// m.enabled is deleted memory
+		// }
 		if constexpr (std::is_invocable_r_v<bool, F, TEvent&>) {    // Returns bool(T&)
 			return std::invoke(fn, e);
 		} else if constexpr (std::is_invocable_v<F, TEvent&>) {     // Returns void(T&)

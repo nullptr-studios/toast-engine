@@ -24,12 +24,13 @@ namespace toast {
 class TOAST_API INodeOwner {
 public:
 	INodeOwner() = default;
-	~INodeOwner() = default;
+	virtual ~INodeOwner() = default;
 	virtual auto name() -> std::string = 0;
 
 	virtual void tick() = 0;
 
 	virtual void registerDependency(Node& from, Node& to) = 0;
+	virtual void unregisterDependency(Node& from, Node& to) = 0;
 
 	virtual auto findFrom(const Node& origin, std::string_view query) -> Box<Node> = 0;
 	virtual auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> = 0;

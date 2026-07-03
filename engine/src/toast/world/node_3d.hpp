@@ -18,7 +18,7 @@
 
 namespace toast {
 
-class [[ToastNode]] TOAST_API Node3D : public Node {
+class [[ToastNode, Color("Red")]] TOAST_API Node3D : public Node {
 	friend class World;
 
 public:
@@ -143,6 +143,21 @@ public:
 	 */
 	void lookAtZ(glm::vec3 target);
 
+	/**
+	 * @return Up vector of the current object
+	 */
+	[[nodiscard]]
+	auto up() const -> glm::vec3;
+
+	/**
+	 * @return Forward vector of the current object
+	 */
+	[[nodiscard]]
+	auto forward() const -> glm::vec3;
+
+	static constexpr glm::vec3 world_up = {0.0f, 0.0f, 1.0f};
+	static constexpr glm::vec3 world_forward = {0.0f, 1.0f, 0.0f};
+
 protected:
 	/**
 	 * @brief Returns the local-space 4x4 transform matrix, rebuilding it if m_dirty_local is set
@@ -163,9 +178,9 @@ private:
 	bool m_dirty_world = true;
 	Box<Node3D> m_transform_parent;
 
-	[[Reflect, Group("Transform")]] alignas(16) glm::vec3 m_position;
-	[[Reflect, Group("Transform")]] alignas(16) glm::quat m_rotation;
-	[[Reflect, Group("Transform")]] alignas(16) glm::vec3 m_scale;
+	[[Reflect, Unit("m")]] alignas(16) glm::vec3 m_position = glm::vec3(0.0f);
+	[[Reflect, Unit("°")]] alignas(16) glm::quat m_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	[[Reflect]] alignas(16) glm::vec3 m_scale = glm::vec3(1.0f);
 
 	alignas(16) glm::vec3 m_world_position;
 	alignas(16) glm::quat m_world_rotation;

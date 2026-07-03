@@ -60,6 +60,12 @@
   }, {
     "name" : "tinyspline",
     "version>=" : "0.6.0"
+  }, {
+    "name" : "tinygltf",
+    "version>=" : "3.0.0"
+  }, {
+    "name" : "json-schema-validator",
+    "version>=" : "2.4.0"
   } ],
   "overrides" : [ {
     "name" : "tracy",

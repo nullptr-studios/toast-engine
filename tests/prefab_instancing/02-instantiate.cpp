@@ -30,13 +30,13 @@ struct PrefabStore {
 	auto resolver() {
 		return [this](toast::UID id) -> AssetHandle<Prefab> {
 			auto it = assets.find(id.data());
-			return it != assets.end() ? AssetHandle<Prefab>(it->second.get(), id) : AssetHandle<Prefab>(nullptr, id);
+			return it != assets.end() ? AssetHandle<Prefab>(it->second.get(), id, "") : AssetHandle<Prefab>(nullptr, id, "");
 		};
 	}
 
 	auto handle(std::string_view uid_str) -> AssetHandle<Prefab> {
 		UID id(UID::fromString(uid_str));
-		return AssetHandle<Prefab>(assets.at(id.data()).get(), id);
+		return AssetHandle<Prefab>(assets.at(id.data()).get(), id, "");
 	}
 };
 
@@ -97,7 +97,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/02-instantiate", test_p
 
 	// Grafted instance root takes the OUTER placement chunk's UID, not B's own root UID.
 	assert(instance->uid().data() == uidOf("PLACEMENT00"));
-	assert(instance->name() == "b_instance");    // name overridden by the placement chunk header
+	assert(instance->name() == "b instance");    // name overridden by the placement chunk header
 	assert(instance->isInstanceRoot());
 	assert(instance->sourcePrefab().uid().data() == uidOf(B_ASSET));
 	assert(not WorldTestAccess::isPrefabInterior(*instance));    // an instance root is not interior

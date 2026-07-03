@@ -125,11 +125,20 @@ public:
 	static auto resolveURI(std::string_view uri) -> std::optional<toast::UID>;
 
 	/**
-	 * @brief Lists every manifest UID whose asset type matches
-	 * @param type The asset type string, e.g. "input_action"
-	 * @return The matching UIDs in unspecified order
+	 * @returns The path of the given UID
+	 *
+	 * This is useful for debugging, or printing which file you have
 	 */
-	static auto listByType(std::string_view type) -> std::vector<toast::UID>;
+	static auto getURI(toast::UID uid) -> std::string;
+
+	/**
+	 * @brief Searches the manifest for entries whose path contains the given query string
+	 * @param query Substring to search for in manifest paths
+	 * @return Loaded asset handles for all matching entries; empty vector if none found
+	 */
+	auto search(std::string_view query) -> std::vector<AssetHandle<Asset>>;
+
+	auto getCachePath() const -> const std::filesystem::path&;
 
 private:
 	static inline AssetManager* instance = nullptr;

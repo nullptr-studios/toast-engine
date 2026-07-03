@@ -57,7 +57,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/05-load_node", test_pre
 	// The manifest maps each asset UID to its file.
 	writeFile(
 	    cache_dir / "database.json",
-	    R"({"nodes":{)"
+	    R"({"node":{)"
 	    R"("Scene000000":"assets://scene.node",)"
 	    R"("Child000000":"assets://child_prefab.node"}})"
 	);
@@ -72,7 +72,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/05-load_node", test_pre
 	WorldTestAccess::waitForLoads(*world);
 	WorldTestAccess::drainLoadQueue(*world);
 
-	Box<Node> root = WorldTestAccess::findCached("scene_root");
+	Box<Node> root = WorldTestAccess::findCached("scene root");
 	assert(root.exists());
 
 	// The scene root is stamped with its own asset (scenes are prefabs).

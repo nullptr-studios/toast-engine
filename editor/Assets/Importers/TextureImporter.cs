@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using editor.Assets.Types;
+using Lucide.Avalonia;
 
 namespace editor.Assets.Importers;
 
@@ -14,7 +17,6 @@ public enum AddressMode { Repeat, MirroredRepeat, ClampToEdge, ClampToBorder }
 
 public enum FilterMode { Nearest, Linear, Trilinear }
 
-/// <summary>PNG/TGA → KTX2 via toktx.</summary>
 public partial class TextureImporter : IAssetImporter {
 	private readonly Settings m_settings;
 
@@ -22,12 +24,53 @@ public partial class TextureImporter : IAssetImporter {
 		m_settings = settings;
 	}
 
-	public IReadOnlyList<string> SupportedExtensions => [".png", ".tga"];
+	public IReadOnlyList<string> SupportedExtensions => [".png", ".jpg", ".jpeg", ".tga"];
+	public bool CanHandle(string filePath) {
+		var ext = Path.GetExtension(filePath);
+		return ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga";
+	}
 
-	public string VectorName => "textures";
+	public string DisplayName => "Texture";
+	public LucideIconKind Icon => LucideIconKind.Image;
 
-	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log) {
-		var uid = UidGenerator.Generate();
+	public BaseAsset PrimaryOutputType => AssetTypeRegistry.ByExtension(".ktx2")!;
+
+	public IReadOnlyList<ImporterSetting> GetSettings() => [
+		new ImporterSetting("Generate Mipmaps", SettingKind.Bool,
+			() => m_settings.GenerateMipmaps,
+			v => m_settings.GenerateMipmaps = (bool)v!),
+		new ImporterSetting("Compression", SettingKind.Enum,
+			() => m_settings.Compression.ToString(),
+			v => m_settings.Compression = Enum.Parse<TextureCompression>((string)v!),
+			Options: Enum.GetNames<TextureCompression>()),
+		new ImporterSetting("Max Resolution", SettingKind.Enum,
+			() => m_settings.MaxResolution.ToString(),
+			v => m_settings.MaxResolution = int.Parse((string)v!),
+			Options: Settings.AllMaxResolutions.Select(r => r.ToString()).ToList()),
+		new ImporterSetting("Super Compression", SettingKind.Enum,
+			() => m_settings.SuperCompression.ToString(),
+			v => m_settings.SuperCompression = Enum.Parse<SuperCompression>((string)v!),
+			Options: Enum.GetNames<SuperCompression>()),
+		new ImporterSetting("Filter", SettingKind.Enum,
+			() => m_settings.Filter.ToString(),
+			v => m_settings.Filter = Enum.Parse<FilterMode>((string)v!),
+			Options: Enum.GetNames<FilterMode>()),
+		new ImporterSetting("Address U", SettingKind.Enum,
+			() => m_settings.AddressU.ToString(),
+			v => m_settings.AddressU = Enum.Parse<AddressMode>((string)v!),
+			Options: Enum.GetNames<AddressMode>()),
+		new ImporterSetting("Address V", SettingKind.Enum,
+			() => m_settings.AddressV.ToString(),
+			v => m_settings.AddressV = Enum.Parse<AddressMode>((string)v!),
+			Options: Enum.GetNames<AddressMode>()),
+		new ImporterSetting("Anisotropy", SettingKind.Float,
+			() => m_settings.Anisotropy,
+			v => m_settings.Anisotropy = (float)v!),
+	];
+
+	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log,
+		Action<double>? progress = null) {
+		var uid = ctx.UidFor(0);
 		var name = Path.GetFileNameWithoutExtension(realSourcePath);
 		var destPath = Path.Combine(ctx.DestDir, name + ".ktx2");
 		Directory.CreateDirectory(ctx.DestDir);
@@ -39,13 +82,13 @@ public partial class TextureImporter : IAssetImporter {
 		await Task.Run(() => ThumbnailService.Generate(realSourcePath, uid));
 
 		log("Writing .meta sidecar...");
-		var header = new MetaHeader { Uid = uid, VectorName = VectorName, Source = ctx.SourceVirtualPath };
+		var header = new MetaHeader { Uid = uid, Type = PrimaryOutputType.Type, Source = ctx.SourceVirtualPath };
 		MetaFile.Write(destPath, header, m_settings.ToSection());
 
+		progress?.Invoke(1.0);
 		return [uid];
 	}
 
-	/// <summary>Import settings, bound to the import window.</summary>
 	public partial class Settings : ObservableObject {
 		[ObservableProperty] private AddressMode m_addressU = AddressMode.Repeat;
 		[ObservableProperty] private AddressMode m_addressV = AddressMode.Repeat;

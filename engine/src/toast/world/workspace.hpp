@@ -40,10 +40,13 @@ public:
 	 */
 	Workspace(UID uid);
 
+	~Workspace() override;
+
 	auto name() -> std::string override;
 
 	/// No-op; Workspace has no tick scheduler and never registers dependencies
 	void registerDependency(Node& from, Node& to) override;
+	void unregisterDependency(Node& from, Node& to) override;
 
 	/// Same query grammar as World::findFrom(); searches only within m_root_node
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;
@@ -54,12 +57,32 @@ public:
 private:
 	UID m_handle;
 	Box<Node> m_root_node;
+	Box<Node> m_focused_node;
 	event::Listener m_listener;
+
+	/// Seconds accumulated since the last InspectorContent push; throttles the editor update rate
+	double m_inspector_accum = 0.0;
 
 	void eventSubscriptions();
 
 public:
-	/// Intentionally empty; Workspace nodes are never ticked
-	void tick() override { }
+	/**
+	 * @brief Streams the focused node's reflected values to the editor at a fixed rate
+	 *
+	 * Workspace nodes are never ticked for game logic; this override only throttles and emits
+	 * InspectorContent for the active workspace's focused node. It is a no-op when this workspace
+	 * is not the active one or when no node is focused.
+	 */
+	void tick() override;
+
+	[[nodiscard]]
+	auto rootNode() const -> const Node& {
+		return *m_root_node;
+	}
+
+	[[nodiscard]]
+	auto isValid() const -> bool {
+		return m_root_node.exists();
+	}
 };
 }
