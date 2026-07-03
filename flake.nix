@@ -103,6 +103,9 @@
 				vulkan-tools
 				wayland-scanner
 
+				doxygen
+				graphviz
+
 			];
 
 			buildInputs = libraries;

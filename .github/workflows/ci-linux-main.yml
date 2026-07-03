@@ -1,0 +1,412 @@
+name: ci-linux-main
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-linux-main-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  cmake-configure:
+    name: CMake Configure (${{ matrix.compiler }}, ${{ matrix.build_type }})
+    runs-on: [self-hosted, Linux, X64]
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+        build_type: [Debug, Release]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: CMake configure
+        run: |
+          cmake -B build/${{ matrix.compiler }}-${{ matrix.build_type }} -G Ninja \
+            -DCMAKE_C_COMPILER=${{ matrix.compiler }} \
+            -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }} \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Upload CMake cache
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cmake-cache-${{ matrix.compiler }}-${{ matrix.build_type }}
+          path: build/${{ matrix.compiler }}-${{ matrix.build_type }}/
+          retention-days: 1
+
+  clang-tidy:
+    name: clang-tidy (GCC Debug only)
+    runs-on: [self-hosted, Linux, X64]
+    needs: cmake-configure
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Download CMake cache (GCC Debug)
+        uses: actions/download-artifact@v4
+        with:
+          name: cmake-cache-gcc-Debug
+          path: build/gcc-Debug/
+
+      - name: Copy compile_commands.json to root
+        run: cp build/gcc-Debug/compile_commands.json .
+
+      - name: Run clang-tidy
+        run: bash ./tools/ci/clang_tidy.sh
+
+  compile-engine:
+    name: Compile toast_engine (${{ matrix.compiler }}, ${{ matrix.build_type }})
+    runs-on: [self-hosted, Linux, X64]
+    needs: cmake-configure
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+        build_type: [Debug, Release]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Download CMake cache
+        uses: actions/download-artifact@v4
+        with:
+          name: cmake-cache-${{ matrix.compiler }}-${{ matrix.build_type }}
+          path: build/${{ matrix.compiler }}-${{ matrix.build_type }}/
+
+      - name: Compile toast_engine
+        run: cmake --build build/${{ matrix.compiler }}-${{ matrix.build_type }} --target toast_engine
+
+      - name: Upload engine artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: engine-artifacts-${{ matrix.compiler }}-${{ matrix.build_type }}
+          path: |
+            build/${{ matrix.compiler }}-${{ matrix.build_type }}/
+            out/
+          retention-days: 1
+
+  compile-tests:
+    name: Compile and run toast_tests (${{ matrix.compiler }}, ${{ matrix.build_type }})
+    runs-on: [self-hosted, Linux, X64]
+    needs: compile-engine
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+        build_type: [Debug, Release]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Download engine artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: engine-artifacts-${{ matrix.compiler }}-${{ matrix.build_type }}
+          path: ./
+
+      - name: Compile toast_tests
+        run: cmake --build build/${{ matrix.compiler }}-${{ matrix.build_type }} --target toast_tests
+
+      - name: Run tests
+        run: ctest --test-dir build/${{ matrix.compiler }}-${{ matrix.build_type }} --verbose
+
+  compile-dummy-game:
+    name: Compile dummy_game (${{ matrix.compiler }}, ${{ matrix.build_type }})
+    runs-on: [self-hosted, Linux, X64]
+    needs: compile-engine
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+        build_type: [Debug, Release]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Download engine artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: engine-artifacts-${{ matrix.compiler }}-${{ matrix.build_type }}
+          path: ./
+
+      - name: Compile dummy_game
+        run: cmake --build build/${{ matrix.compiler }}-${{ matrix.build_type }} --target dummy_game
+
+  cargo-log-server-debug:
+    name: Cargo log_server (Debug)
+    runs-on: [self-hosted, Linux, X64]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Install Rust stable
+        run: rustup toolchain install stable --no-self-update && rustup default stable
+
+      - name: Cargo build
+        run: cargo build --manifest-path tools/log_server/Cargo.toml
+
+  cargo-log-server-release:
+    name: Cargo log_server (Release)
+    runs-on: [self-hosted, Linux, X64]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Install Rust stable
+        run: rustup toolchain install stable --no-self-update && rustup default stable
+
+      - name: Cargo build
+        run: cargo build --manifest-path tools/log_server/Cargo.toml --release
+
+  cargo-reflection-generator-debug:
+    name: Cargo reflection_generator (Debug)
+    runs-on: [self-hosted, Linux, X64]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Install Rust stable
+        run: rustup toolchain install stable --no-self-update && rustup default stable
+
+      - name: Cargo build
+        run: cargo build --manifest-path tools/reflection_generator/Cargo.toml
+
+  cargo-reflection-generator-release:
+    name: Cargo reflection_generator (Release)
+    runs-on: [self-hosted, Linux, X64]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Install Rust stable
+        run: rustup toolchain install stable --no-self-update && rustup default stable
+
+      - name: Cargo build
+        run: cargo build --manifest-path tools/reflection_generator/Cargo.toml --release
+
+  cargo-kenzo-debug:
+    name: Cargo kenzo (Debug)
+    runs-on: [self-hosted, Linux, X64]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Install Rust stable
+        run: rustup toolchain install stable --no-self-update && rustup default stable
+
+      - name: Cargo build
+        run: cargo build --manifest-path tools/kenzo/Cargo.toml
+
+  cargo-kenzo-release:
+    name: Cargo kenzo (Release)
+    runs-on: [self-hosted, Linux, X64]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Install Rust stable
+        run: rustup toolchain install stable --no-self-update && rustup default stable
+
+      - name: Cargo build
+        run: cargo build --manifest-path tools/kenzo/Cargo.toml --release
+
+  dotnet-editor-debug:
+    name: Dotnet editor (Debug)
+    runs-on: [self-hosted, Linux, X64]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Dotnet build
+        run: dotnet build editor/editor.csproj --configuration Debug
+
+  dotnet-editor-release:
+    name: Dotnet editor (Release)
+    runs-on: [self-hosted, Linux, X64]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Dotnet build
+        run: dotnet build editor/editor.csproj --configuration Release
+
+  dotnet-player-debug:
+    name: Dotnet player (Debug)
+    runs-on: [self-hosted, Linux, X64]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Dotnet build
+        run: dotnet build tools/player/player.csproj --configuration Debug
+
+  dotnet-player-release:
+    name: Dotnet player (Release)
+    runs-on: [self-hosted, Linux, X64]
+    defaults:
+      run:
+        shell: nix develop --command bash -e {0}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Dotnet build
+        run: dotnet build tools/player/player.csproj --configuration Release
