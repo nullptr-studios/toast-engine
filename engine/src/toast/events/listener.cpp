@@ -5,11 +5,11 @@
 namespace event {
 
 Listener::Listener() {
-	m.enabled = true;
+	m.enabled = new std::atomic<bool>(true);
 }
 
 Listener::Listener(bool state) {
-	m.enabled = state;
+	m.enabled = new std::atomic<bool>(state);
 }
 
 Listener::~Listener() {
@@ -20,16 +20,21 @@ void Listener::clear() noexcept {
 	for (auto& [type, name, callback] : m.callbacks) {
 		EventSystem::unsubscribe_map[type](callback);
 	}
-	m.callbacks.clear();
+
+	{
+		std::scoped_lock _(EventSystem::deletion_mutex);
+		auto deleter = [](void* p) { delete static_cast<std::atomic<bool>*>(p); };
+		EventSystem::deletion_queue.emplace_back(m.enabled, deleter);
+	}
 }
 
-void Listener::enabled(bool state) {
-	m.enabled = state;
+void Listener::enabled(bool state) {    // NOLINT(readability-make-member-function-const)
+	m.enabled->store(state);
 }
 
 [[nodiscard]]
 auto Listener::enabled() const -> bool {
-	return m.enabled;
+	return m.enabled->load();
 }
 
 }
