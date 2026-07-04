@@ -18,6 +18,7 @@ using editor.Assets;
 using editor.Assets.Types;
 using editor.Components.Modals;
 using editor.Workspace;
+using Lucide.Avalonia;
 
 namespace editor.Components.Elements;
 
@@ -47,6 +48,11 @@ public sealed class AssetBox : TemplatedControl {
 
 	public static readonly DirectProperty<AssetBox, IBrush?> IconColorProperty =
 		AvaloniaProperty.RegisterDirect<AssetBox, IBrush?>(nameof(IconColor), o => o.m_iconColor);
+
+	private LucideIconKind m_iconKind = LucideIconKind.Package;
+
+	public static readonly DirectProperty<AssetBox, LucideIconKind> IconKindProperty =
+		AvaloniaProperty.RegisterDirect<AssetBox, LucideIconKind>(nameof(IconKind), o => o.m_iconKind);
 
 	private readonly MenuItem m_selectItem;
 	private readonly MenuItem m_seeItem;
@@ -103,6 +109,11 @@ public sealed class AssetBox : TemplatedControl {
 	public IBrush? IconColor {
 		get => m_iconColor;
 		private set => SetAndRaise(IconColorProperty, ref m_iconColor, value);
+	}
+
+	public LucideIconKind IconKind {
+		get => m_iconKind;
+		private set => SetAndRaise(IconKindProperty, ref m_iconKind, value);
 	}
 
 	protected override Type StyleKeyOverride => typeof(AssetBox);
@@ -183,6 +194,7 @@ public sealed class AssetBox : TemplatedControl {
 				IconColor = defBrush;
 			else
 				IconColor = new SolidColorBrush(Color.Parse("#696969"));
+			IconKind = def?.Icon ?? LucideIconKind.Package;
 		}
 		else if (IsMissing) {
 			DisplayName = m_lastKnownName is not null ? $"({m_lastKnownName} missing)" : "(missing)";

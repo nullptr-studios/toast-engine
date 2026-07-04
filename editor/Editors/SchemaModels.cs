@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using editor.Assets.Types;
 using editor.Components.Elements;
+using editor.Engine;
 
 namespace editor.Editors;
 
@@ -42,6 +43,9 @@ public partial class SchemaFieldItemVM : ObservableObject, IRowSplittable {
 
     public IEnumerable<string> AssetTypeOptions =>
         AssetTypeRegistry.All.Select(a => a.Type).OrderBy(t => t);
+
+    public IEnumerable<string> NodeTypeOptions =>
+        ReflectionDatabase.Nodes?.Keys.OrderBy(n => n) ?? Enumerable.Empty<string>();
 
     public bool IsEnum       => TypeKey == "enum";
     public bool IsBoolType   => TypeKey == "bool";

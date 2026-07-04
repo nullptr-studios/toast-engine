@@ -97,7 +97,9 @@
 				</Grid>
 				<Grid ColumnDefinitions="150,*" ColumnSpacing="8" IsVisible="{Binding IsNodeType}">
 					<TextBlock Classes="lbl" Text="Node Type" />
-					<elements:StringBox Grid.Column="1" Value="{Binding RefTypeString, Mode=TwoWay}" Wrap="False" />
+					<elements:EnumBox Grid.Column="1"
+					                  Value="{Binding RefTypeString, Mode=TwoWay}"
+					                  Options="{Binding NodeTypeOptions}" />
 				</Grid>
 
 				<!-- Min / Max -->

@@ -132,6 +132,7 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable, IRowVisi
         OnPropertyChanged(nameof(IsEnumWithoutOptions));
         OnPropertyChanged(nameof(IsNamedScalar));
         OnPropertyChanged(nameof(IsUnnamedScalar));
+        OnPropertyChanged(nameof(IsStructRow));
         NotifyDirty?.Invoke();
     }
 
@@ -140,6 +141,7 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable, IRowVisi
         OnPropertyChanged(nameof(IsArrayItem));
         OnPropertyChanged(nameof(IsNamedField));
         OnPropertyChanged(nameof(IsUnnamedScalar));
+        OnPropertyChanged(nameof(IsStructRow));
         NotifyDirty?.Invoke();
     }
 
@@ -149,6 +151,7 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable, IRowVisi
         OnPropertyChanged(nameof(IsArrayItem));
         OnPropertyChanged(nameof(IsNamedField));
         OnPropertyChanged(nameof(IsUnnamedScalar));
+        OnPropertyChanged(nameof(IsStructRow));
     }
 
     // Dirty propagation

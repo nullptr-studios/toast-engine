@@ -29,10 +29,10 @@
 								<Border x:Name="PART_Icon"
 								        DockPanel.Dock="Left"
 								        Width="16" Height="16"
-								        CornerRadius="4"
 								        Margin="0,0,8,0"
 								        VerticalAlignment="Center"
-								        Background="DeepPink"
+								        Background="{TemplateBinding IconColor}"
+								        OpacityMask="{TemplateBinding NodeIcon}"
 								        IsVisible="{TemplateBinding HasNode}" />
 
 								<TextBlock x:Name="PART_Display"

@@ -42,6 +42,16 @@ public sealed class NodeBox : TemplatedControl {
 	public static readonly DirectProperty<NodeBox, bool> IsMissingProperty =
 		AvaloniaProperty.RegisterDirect<NodeBox, bool>(nameof(IsMissing), o => o.m_isMissing);
 
+	private IBrush? m_iconColor;
+
+	public static readonly DirectProperty<NodeBox, IBrush?> IconColorProperty =
+		AvaloniaProperty.RegisterDirect<NodeBox, IBrush?>(nameof(IconColor), o => o.m_iconColor);
+
+	private IBrush? m_nodeIcon;
+
+	public static readonly DirectProperty<NodeBox, IBrush?> NodeIconProperty =
+		AvaloniaProperty.RegisterDirect<NodeBox, IBrush?>(nameof(NodeIcon), o => o.m_nodeIcon);
+
 	private readonly MenuItem m_selectItem;
 	private readonly MenuItem m_seeItem;
 	private readonly MenuItem m_clearItem;
@@ -91,6 +101,16 @@ public sealed class NodeBox : TemplatedControl {
 	public bool IsMissing {
 		get => m_isMissing;
 		private set => SetAndRaise(IsMissingProperty, ref m_isMissing, value);
+	}
+
+	public IBrush? IconColor {
+		get => m_iconColor;
+		private set => SetAndRaise(IconColorProperty, ref m_iconColor, value);
+	}
+
+	public IBrush? NodeIcon {
+		get => m_nodeIcon;
+		private set => SetAndRaise(NodeIconProperty, ref m_nodeIcon, value);
 	}
 
 	protected override Type StyleKeyOverride => typeof(NodeBox);
@@ -165,7 +185,18 @@ public sealed class NodeBox : TemplatedControl {
 			DisplayName = m_lastKnownName is not null ? $"({m_lastKnownName} missing)" : "(missing)";
 		}
 		else {
-			DisplayName = $"({NodeType})";
+			DisplayName = string.IsNullOrEmpty(NodeType) ? "(Node)" : $"({NodeType})";
+		}
+
+		var resolvedType = node?.Type ?? NodeType;
+		var colorKey = ReflectionDatabase.ResolveColor(resolvedType);
+		IconColor = Brush(colorKey);
+
+		var iconName = ReflectionDatabase.ResolveIcon(resolvedType);
+		try {
+			NodeIcon = new ImageBrush(new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1x/{iconName}.png"))));
+		} catch {
+			NodeIcon = new ImageBrush(new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1x/Circle.png"))));
 		}
 
 		UpdateMenu();

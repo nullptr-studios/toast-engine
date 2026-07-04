@@ -26,14 +26,14 @@
 						<Grid ColumnDefinitions="*,Auto">
 							<!-- Data side -->
 							<DockPanel Grid.Column="0" LastChildFill="True" Margin="8" VerticalAlignment="Center">
-								<Border x:Name="PART_Icon"
-								        DockPanel.Dock="Left"
-								        Width="16" Height="16"
-								        CornerRadius="4"
-								        Margin="0,0,8,0"
-								        VerticalAlignment="Center"
-								        Background="{TemplateBinding IconColor}"
-								        IsVisible="{TemplateBinding HasAsset}" />
+								<LucideIcon Kind="{TemplateBinding IconKind}"
+								            Size="16"
+								            StrokeWidth="2.5"
+								            Foreground="{TemplateBinding IconColor}"
+								            HorizontalAlignment="Center"
+								            VerticalAlignment="Center"
+								            Margin="0, 0, 8, 0"
+								            IsVisible="{TemplateBinding HasAsset}"/>
 
 								<TextBlock x:Name="PART_Display"
 								           Text="{TemplateBinding DisplayName}"

@@ -181,6 +181,10 @@ public sealed class ArrayBox : TemplatedControl {
 	}
 
 	private Control BuildRow(object item) {
+		// Struct array elements get a dedicated card layout
+		if (item is IStructRow { IsStructRow: true } sr && sr.StructKeys is { Count: > 0 } keys)
+			return BuildStructRow(item, keys);
+
 		var template = ItemTemplate ?? FindAmbientTemplate(item);
 		var builtContent = template?.Build(item);
 
@@ -249,6 +253,71 @@ public sealed class ArrayBox : TemplatedControl {
 		return WrapRow(item, grid);
 	}
 
+	// Struct array item
+	private Control BuildStructRow(object item, IList keys) {
+		var grid = new Grid {
+			RowDefinitions    = new RowDefinitions("Auto,Auto"),
+			ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+			ColumnSpacing     = 6,
+			RowSpacing        = 0
+		};
+
+		var grip = MakeGrip(item);
+		Grid.SetRow(grip, 0);
+		Grid.SetColumn(grip, 0);
+		grid.Children.Add(grip);
+
+		var firstKey = BuildKey(keys[0]!);
+		firstKey.DataContext = keys[0];
+		BindRowVisibility(firstKey, keys[0]!);
+		Grid.SetRow(firstKey, 0);
+		Grid.SetColumn(firstKey, 1);
+		grid.Children.Add(firstKey);
+
+		var remove = MakeRemoveButton(item);
+		Grid.SetRow(remove, 0);
+		Grid.SetColumn(remove, 2);
+		grid.Children.Add(remove);
+
+		if (keys.Count > 1) {
+			var body = new StackPanel { Spacing = 0 };
+			for (int i = 1; i < keys.Count; i++) {
+				var keyItem    = keys[i]!;
+				var keyControl = BuildKey(keyItem);
+				keyControl.DataContext = keyItem;
+				keyControl.Margin = new Thickness(0, 4, 0, 0);
+				BindRowVisibility(keyControl, keyItem);
+				body.Children.Add(keyControl);
+			}
+			Grid.SetRow(body, 1);
+			Grid.SetColumnSpan(body, 3);
+			grid.Children.Add(body);
+		}
+
+		var card = new Border {
+			Background   = Brush("Bg3"),
+			CornerRadius = new CornerRadius(6),
+			Padding      = new Thickness(8),
+			Child        = grid
+		};
+		// Container RowBackground is null
+		return WrapRow(item, card);
+	}
+
+	private Control BuildKey(object keyItem) {
+		var template = ItemTemplate ?? FindAmbientTemplate(keyItem);
+		return template?.Build(keyItem) ?? new ContentControl { Content = keyItem };
+	}
+
+	private static void BindRowVisibility(Control target, object item) {
+		if (item is not IRowVisible rv) return;
+		target.IsVisible = rv.RowVisible;
+		if (item is INotifyPropertyChanged inpc)
+			inpc.PropertyChanged += (_, e) => {
+				if (e.PropertyName == nameof(IRowVisible.RowVisible)) target.IsVisible = rv.RowVisible;
+			};
+	}
+
 	private Border MakeGrip(object item) {
 		var grip = new Border {
 			Background        = Brushes.Transparent,
@@ -313,13 +382,7 @@ public sealed class ArrayBox : TemplatedControl {
 		row.AddHandler(DragDrop.DropEvent,       (_, e) => OnRowDrop(item, row, e));
 		row.AddHandler(DragDrop.DragLeaveEvent,  (_, _) => OnRowDragLeave(topLine, bottomLine));
 
-		if (item is IRowVisible rv) {
-			row.IsVisible = rv.RowVisible;
-			if (item is INotifyPropertyChanged inpc)
-				inpc.PropertyChanged += (_, e) => {
-					if (e.PropertyName == nameof(IRowVisible.RowVisible)) row.IsVisible = rv.RowVisible;
-				};
-		}
+		BindRowVisibility(row, item);
 
 		return row;
 	}

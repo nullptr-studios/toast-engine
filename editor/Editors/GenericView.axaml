@@ -75,16 +75,6 @@
 							                       Options="{Binding EnumAllowedValues}" IsVisible="{Binding IsEnumWithOptions}" />
 							<elements:StringBox    Value="{Binding StringVal, Mode=TwoWay}"
 							                       Wrap="False" IsVisible="{Binding IsEnumWithoutOptions}" />
-							<Border IsVisible="{Binding IsObject}" Background="{StaticResource Bg0}" CornerRadius="6" Padding="4">
-								<elements:ArrayBox Background="Transparent" Padding="0"
-								                   RowBackground="{StaticResource Bg3}"
-								                   RowCornerRadius="4" RowPadding="6,4"
-								                   Items="{Binding Children, Mode=TwoWay}"
-								                   AddLabel="Add Field"
-								                   AddCommand="{Binding AddObjectChildCommand}"
-								                   CanReorder="{Binding ChildrenEditable}"
-								                   CanAddRemove="{Binding ChildrenEditable}" />
-							</Border>
 						</Panel>
 
 						<!-- Named field -->
@@ -141,7 +131,7 @@
 							<!-- Array -->
 							<StackPanel Spacing="4" IsVisible="{Binding IsArray}">
 								<TextBlock Classes="lbl" Text="{Binding Name}" />
-								<elements:ArrayBox Background="{StaticResource Bg1}" Padding="4"
+								<elements:ArrayBox Background="{StaticResource Bg1}" Padding="6"
 								                   Items="{Binding Children, Mode=TwoWay}"
 								                   AddLabel="Add Item"
 								                   AddCommand="{Binding AddArrayItemCommand}"
@@ -205,7 +195,7 @@
 								                  Value="{Binding ArrayElementType, Mode=TwoWay}"
 								                  Options="{Binding FieldTypes}" />
 							</Grid>
-							<elements:ArrayBox Background="{StaticResource Bg1}" Padding="4"
+							<elements:ArrayBox Background="{StaticResource Bg1}" Padding="6"
 							                   Items="{Binding Children, Mode=TwoWay}"
 							                   AddLabel="Add Item"
 							                   AddCommand="{Binding AddArrayItemCommand}"
