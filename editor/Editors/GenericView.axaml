@@ -278,12 +278,16 @@
 
 				</StackPanel>
 			</ScrollViewer>
-			<TextBlock Text="No file open"
-			           FontStyle="Italic"
-			           Foreground="{StaticResource TextMuted}"
-			           HorizontalAlignment="Center"
-			           VerticalAlignment="Center"
-			           IsVisible="{Binding !HasContent, x:CompileBindings=False}" />
+			<StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center"
+			            IsVisible="{Binding !HasContent, x:CompileBindings=False}">
+				<lucide:LucideIcon Kind="FileText" Size="40" StrokeWidth="1.5"
+				                   Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" />
+				<TextBlock Text="No file open" FontWeight="SemiBold" FontSize="16"
+				           Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" />
+				<TextBlock Text="Double-click an asset in the Asset Browser"
+				           FontStyle="Italic" Foreground="{StaticResource TextMuted}"
+				           HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+			</StackPanel>
 		</Panel>
 
 	</Grid>

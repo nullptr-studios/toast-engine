@@ -381,9 +381,16 @@
 			              HorizontalScrollBarVisibility="Disabled" IsVisible="{Binding HasSelection}">
 				<ItemsControl ItemsSource="{Binding Cards}" ItemsPanel="{StaticResource Spaced8}" />
 			</ScrollViewer>
-			<TextBlock Text="No Node selected" FontStyle="Italic" Foreground="{StaticResource TextMuted}"
-			           Padding="4" HorizontalAlignment="Center" VerticalAlignment="Center"
-			           IsVisible="{Binding !HasSelection}" />
+			<StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center"
+			            IsVisible="{Binding !HasSelection}">
+				<lucide:LucideIcon Kind="SlidersHorizontal" Size="40" StrokeWidth="1.5"
+				                   Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" />
+				<TextBlock Text="No Node selected" FontWeight="SemiBold" FontSize="16"
+				           Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" />
+				<TextBlock Text="Select a node in the Hierarchy to inspect it"
+				           FontStyle="Italic" Foreground="{StaticResource TextMuted}"
+				           HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+			</StackPanel>
 		</Panel>
 	</Grid>
 </UserControl>

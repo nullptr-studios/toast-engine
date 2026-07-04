@@ -4,8 +4,10 @@ using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Controls;
+using Dock.Model.Mvvm.Controls;
 using editor.Assets;
 using editor.Components.Modals;
+using editor.Editors;
 using editor.Engine;
 using Proto.Events;
 using editor.Assets.Types;
@@ -27,6 +29,9 @@ public partial class MainWindowViewModel : ViewModelBase {
     [ObservableProperty] private bool m_inspectorVisible     = true;
     [ObservableProperty] private bool m_genericEditorVisible = false;
     [ObservableProperty] private bool m_schemaEditorVisible  = false;
+    [ObservableProperty] private bool m_logsVisible          = true;
+    [ObservableProperty] private bool m_hapticsEditorVisible = true;
+    [ObservableProperty] private bool m_curveEditorVisible   = true;
 
     public MainWindowViewModel(ToastEngine toast) {
         m_toast = toast;
@@ -61,6 +66,16 @@ public partial class MainWindowViewModel : ViewModelBase {
             }
         };
 
+        m_toastZoneFactory.DockableClosed += (_, e) => {
+            if (e.Dockable == m_toastZoneFactory.LogsVm)          m_logsVisible          = false;
+            if (e.Dockable == m_toastZoneFactory.HapticsEditorVm) m_hapticsEditorVisible = false;
+            if (e.Dockable == m_toastZoneFactory.CurveEditorVm)   m_curveEditorVisible   = false;
+
+            OnPropertyChanged(nameof(LogsVisible));
+            OnPropertyChanged(nameof(HapticsEditorVisible));
+            OnPropertyChanged(nameof(CurveEditorVisible));
+        };
+
         m_dockFactory.ActiveDockableChanged += (_, _) => SyncActiveWorkspace();
 
         WorkspaceState.Modified += () => {
@@ -93,6 +108,21 @@ public partial class MainWindowViewModel : ViewModelBase {
             m_dockFactory.ToggleTool("SchemaEditor");
     }
 
+    partial void OnLogsVisibleChanged(bool value) {
+        if (value != m_toastZoneFactory.IsToolVisible("Logs"))
+            m_toastZoneFactory.ToggleTool("Logs");
+    }
+
+    partial void OnHapticsEditorVisibleChanged(bool value) {
+        if (value != m_toastZoneFactory.IsToolVisible("Haptics"))
+            m_toastZoneFactory.ToggleTool("Haptics");
+    }
+
+    partial void OnCurveEditorVisibleChanged(bool value) {
+        if (value != m_toastZoneFactory.IsToolVisible("Curve"))
+            m_toastZoneFactory.ToggleTool("Curve");
+    }
+
     private void OnEditorOpenRequested(AssetFile file) {
         if (file.Definition is not { CanBeEdited: true } def) return;
         if (file.Uid is not { } uid) return;
@@ -112,7 +142,30 @@ public partial class MainWindowViewModel : ViewModelBase {
                 m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
                 SyncActiveWorkspace();
                 break;
+            case "CurveEditor":
+                if (m_toastZoneFactory.CurveEditorVm is { } curveVm) {
+                    _ = OpenToastEditorAsync(curveVm, uid, virtualPath, def);
+                    CurveEditorVisible = true;
+                }
+                break;
+            case "HapticsEditor":
+                if (m_toastZoneFactory.HapticsEditorVm is { } hapticsVm) {
+                    _ = OpenToastEditorAsync(hapticsVm, uid, virtualPath, def);
+                    HapticsEditorVisible = true;
+                }
+                break;
         }
+    }
+
+    private async Task OpenToastEditorAsync<T>(T editor, string uid, string virtualPath, BaseAsset definition)
+        where T : Tool, IToastZoneEditor {
+        if (editor.IsDirty && !await editor.ConfirmCloseCurrentAsync()) return;
+        editor.OpenFile(uid, virtualPath, definition);
+        m_toastZoneFactory.ShowTool(editor);
+
+        // pin the zone so it stays up while editing
+        m_toastZonePinned = true;
+        ToastZoneActive   = true;
     }
     public IRootDock MainLayout      { get; set; }
     public IRootDock ToastZoneLayout { get; set; }

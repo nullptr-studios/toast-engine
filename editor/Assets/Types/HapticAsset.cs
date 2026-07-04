@@ -18,7 +18,7 @@ public sealed class HapticAsset : BaseAsset {
 	public override string Category    => "Input";
 	public override bool   HasThumbnail => false;
 	public override bool   CanBeEdited  => true;
-	public override string EditorTool  => "GenericEditor";
+	public override string EditorTool  => "HapticsEditor";
 	public override string SchemaPath  => "core://schemas/haptic.schema.json";
 
 	public override Task CreateAsync(string path) {
@@ -27,6 +27,7 @@ public sealed class HapticAsset : BaseAsset {
 			$"# Toast Haptic Effect\n" +
 			$"schema = \"{schemaUid}\"\n" +
 			$"mode = \"standard\"\n" +
+			$"priority = 0\n" +
 			$"duration_ms = 200\n" +
 			$"left = 0.5\n" +
 			$"right = 0.5\n");

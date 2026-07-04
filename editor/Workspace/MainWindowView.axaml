@@ -90,7 +90,11 @@
 					          IsChecked="{Binding SchemaEditorVisible, Mode=TwoWay}" />
 					<Separator />
 					<MenuItem Header="_Logs" ToggleType="CheckBox"
-					          x:Name="LogWindowButton" />
+					          IsChecked="{Binding LogsVisible, Mode=TwoWay}" />
+					<MenuItem Header="_Curve Editor" ToggleType="CheckBox"
+					          IsChecked="{Binding CurveEditorVisible, Mode=TwoWay}" />
+					<MenuItem Header="Ha_ptics Editor" ToggleType="CheckBox"
+					          IsChecked="{Binding HapticsEditorVisible, Mode=TwoWay}" />
 				</MenuItem>
 				<MenuItem Header="_Help">
 					<MenuItem Header="_Documentation" />

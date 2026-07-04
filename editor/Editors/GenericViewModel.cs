@@ -174,8 +174,7 @@ public partial class GenericViewModel : Tool {
         SchemaLocked = !string.IsNullOrEmpty(definition.SchemaPath);
 
         var realPath = ProjectContext.Resolve(virtualPath);
-        // Always reset schema UID before loading
-        m_schemaUid     = "";
+        SchemaUid = "";
         m_prevSchemaUid = "";
         OnPropertyChanged(nameof(SchemaUid));
         OnPropertyChanged(nameof(CanAddFields));
@@ -185,9 +184,9 @@ public partial class GenericViewModel : Tool {
             var table    = TomlSerializer.Deserialize<TomlTable>(tomlText);
 
             // Restore the saved schema UID for this file
-            if (!SchemaLocked && table.TryGetValue("schema", out var savedUid)) {
-                m_schemaUid     = savedUid?.ToString() ?? "";
-                m_prevSchemaUid = m_schemaUid;
+            if (!SchemaLocked && table!.TryGetValue("schema", out var savedUid)) {
+                    SchemaUid = savedUid?.ToString() ?? "";
+                m_prevSchemaUid = SchemaUid;
             }
             OnPropertyChanged(nameof(SchemaUid));
             OnPropertyChanged(nameof(CanAddFields));
@@ -197,27 +196,29 @@ public partial class GenericViewModel : Tool {
                 SchemaLabel    = Path.GetFileNameWithoutExtension(definition.SchemaPath);
                 if (File.Exists(schemaPath)) {
                     var (descriptors, definitions) = ParseSchema(File.ReadAllText(schemaPath));
-                    LoadSchemaGuided(table, descriptors, definitions);
+                    LoadSchemaGuided(table!, descriptors, definitions);
                 } else {
-                    LoadFreeForm(table);
+                    LoadFreeForm(table!);
                 }
             } else {
-                if (!string.IsNullOrEmpty(m_schemaUid) &&
-                    AssetDatabase.TryResolve(m_schemaUid, out var sVirtPath, out _)) {
+                if (!string.IsNullOrEmpty(SchemaUid) &&
+                    AssetDatabase.TryResolve(SchemaUid, out var sVirtPath, out _)) {
                     var sRealPath = ProjectContext.Resolve(sVirtPath);
                     SchemaLabel = Path.GetFileNameWithoutExtension(sVirtPath);
                     if (File.Exists(sRealPath)) {
                         var (descriptors, definitions) = ParseSchema(File.ReadAllText(sRealPath));
-                        LoadSchemaGuided(table, descriptors, definitions);
+                        LoadSchemaGuided(table!, descriptors, definitions);
                     } else {
-                        LoadFreeForm(table);
+                        LoadFreeForm(table!);
                     }
                 } else {
                     SchemaLabel = "(no schema)";
-                    LoadFreeForm(table);
+                    LoadFreeForm(table!);
                 }
             }
-        } catch { }
+        } catch {
+            // ignored
+        }
 
         IsDirty   = false;
         m_loading = false;
@@ -482,8 +483,10 @@ public partial class GenericViewModel : Tool {
             if (File.Exists(realPath2)) {
                 try {
                     var existing = TomlSerializer.Deserialize<TomlTable>(File.ReadAllText(realPath2));
-                    if (existing.TryGetValue("schema", out var s)) table["schema"] = s;
-                } catch { }
+                    if (existing!.TryGetValue("schema", out var s)) table["schema"] = s;
+                } catch {
+                    // ignored
+                }
             }
         }
 

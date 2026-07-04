@@ -155,17 +155,17 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable, IRowVisi
     }
 
     // Dirty propagation
-    partial void OnFloatValChanged(float v)          => NotifyDirty?.Invoke();
-    partial void OnIntValChanged(int v)              => NotifyDirty?.Invoke();
-    partial void OnBoolValChanged(bool v)            => NotifyDirty?.Invoke();
-    partial void OnStringValChanged(string v)        => NotifyDirty?.Invoke();
-    partial void OnRefUidChanged(string v)           => NotifyDirty?.Invoke();
-    partial void OnXChanged(float v)                 => NotifyDirty?.Invoke();
-    partial void OnYChanged(float v)                 => NotifyDirty?.Invoke();
-    partial void OnZChanged(float v)                 => NotifyDirty?.Invoke();
-    partial void OnWChanged(float v)                 => NotifyDirty?.Invoke();
-    partial void OnArrayElementTypeChanged(string v) {
-        foreach (var child in Children) child.TypeKey = v;
+    partial void OnFloatValChanged(float value)          => NotifyDirty?.Invoke();
+    partial void OnIntValChanged(int value)              => NotifyDirty?.Invoke();
+    partial void OnBoolValChanged(bool value)            => NotifyDirty?.Invoke();
+    partial void OnStringValChanged(string value)        => NotifyDirty?.Invoke();
+    partial void OnRefUidChanged(string value)           => NotifyDirty?.Invoke();
+    partial void OnXChanged(float value)                 => NotifyDirty?.Invoke();
+    partial void OnYChanged(float value)                 => NotifyDirty?.Invoke();
+    partial void OnZChanged(float value)                 => NotifyDirty?.Invoke();
+    partial void OnWChanged(float value)                 => NotifyDirty?.Invoke();
+    partial void OnArrayElementTypeChanged(string value) {
+        foreach (var child in Children) child.TypeKey = value;
         NotifyDirty?.Invoke();
     }
 

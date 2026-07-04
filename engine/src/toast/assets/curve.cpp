@@ -153,14 +153,25 @@ void Curve::rebuildSpline() {
 			}
 
 			case SplineType::bezier: {
-				if ((n - 1) % 3 != 0) {
+				if ((n - 1) % 3 != 0 || n < 4) {
 					TOAST_WARN("Curve", "Bezier requires 3k+1 control points; got {}. Falling back to bspline.", n);
 					size_t degree = std::min<size_t>(3, n - 1);
 					m_spline = tinyspline::BSpline(n, dim, degree, tinyspline::BSpline::Type::Clamped);
+					m_spline.setControlPoints(pts);
 				} else {
-					m_spline = tinyspline::BSpline(n, dim, 3, tinyspline::BSpline::Type::Beziers);
+					size_t segments = (n - 1) / 3;
+					std::vector<double> expanded;
+					expanded.reserve(segments * 4 * dim);
+					for (size_t s = 0; s < segments; ++s) {
+						for (size_t p = 0; p <= 3; ++p) {
+							for (size_t d = 0; d < dim; ++d) {
+								expanded.push_back(pts[(((s * 3) + p) * dim) + d]);
+							}
+						}
+					}
+					m_spline = tinyspline::BSpline(segments * 4, dim, 3, tinyspline::BSpline::Type::Beziers);
+					m_spline.setControlPoints(expanded);
 				}
-				m_spline.setControlPoints(pts);
 				break;
 			}
 

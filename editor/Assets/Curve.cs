@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using TinySpline;
 using Tomlyn;
+using Tomlyn.Model;
 using Tomlyn.Serialization;
 
 namespace editor.Assets;
@@ -103,6 +104,66 @@ public sealed class Curve {
 		RebuildSpline();
 	}
 
+	public void SetSplineType(SplineType type) {
+		SplineType = type;
+		RebuildSpline();
+	}
+
+	public void SetTScale(float tScale) => TScale = MathF.Max(tScale, 1e-4f);
+
+	public Curve Clone() => new(m_points, Dimension, SplineType, TScale);
+
+	public static Curve FromToml(TomlTable table) {
+		var dim = table.TryGetValue("dimension", out var d) && d as string == "3d"
+			? CurveDimension.D3
+			: CurveDimension.D2;
+		var type = ParseSplineType(table.TryGetValue("spline_type", out var st) ? st as string ?? "" : "");
+		float tScale = table.TryGetValue("t_scale", out var ts) ? ToFloat(ts, 1f) : 1f;
+
+		var points = new List<float>();
+		if (table.TryGetValue("points", out var p) && p is TomlTableArray pts) {
+			foreach (var pt in pts) {
+				points.Add(pt.TryGetValue("x", out var x) ? ToFloat(x, 0f) : 0f);
+				points.Add(pt.TryGetValue("y", out var y) ? ToFloat(y, 0f) : 0f);
+				if (dim == CurveDimension.D3)
+					points.Add(pt.TryGetValue("z", out var z) ? ToFloat(z, 0f) : 0f);
+			}
+		}
+
+		return new Curve(points, dim, type, tScale);
+	}
+
+	public TomlTable ToToml() {
+		int dim = DimCount;
+		int n = NumPoints;
+
+		var pts = new TomlTableArray();
+		for (int i = 0; i < n; i++) {
+			var pt = new TomlTable {
+				["x"] = (double)m_points[i * dim + 0],
+				["y"] = (double)m_points[i * dim + 1],
+			};
+			if (dim == 3)
+				pt["z"] = (double)m_points[i * dim + 2];
+			pts.Add(pt);
+		}
+
+		return new TomlTable {
+			["spline_type"] = SplineTypeToString(SplineType),
+			["dimension"] = Dimension == CurveDimension.D2 ? "2d" : "3d",
+			["t_scale"] = (double)TScale,
+			["points"] = pts,
+		};
+	}
+
+	private static float ToFloat(object? v, float fallback) => v switch {
+		double d => (float)d,
+		float f => f,
+		long l => l,
+		int i => i,
+		_ => fallback
+	};
+
 	private void RebuildSpline() {
 		int dim = DimCount;
 		int n = m_points.Length / dim;
@@ -119,8 +180,8 @@ public sealed class Curve {
 			SplineType.BSpline =>
 				Build(pts, (uint)n, (uint)dim, Math.Min(3u, (uint)n - 1), TinySpline.BSpline.Type.Clamped),
 
-			SplineType.Bezier when (n - 1) % 3 == 0 =>
-				Build(pts, (uint)n, (uint)dim, 3, TinySpline.BSpline.Type.Beziers),
+			SplineType.Bezier when (n - 1) % 3 == 0 && n >= 4 =>
+				BuildBeziers(pts, n, dim),
 
 			SplineType.Bezier =>
 				Build(pts, (uint)n, (uint)dim, Math.Min(3u, (uint)n - 1), TinySpline.BSpline.Type.Clamped),
@@ -137,6 +198,16 @@ public sealed class Curve {
 		var spline = new TinySpline.BSpline(n, dim, degree, type);
 		spline.ControlPoints = pts;
 		return spline;
+	}
+
+	private static TinySpline.BSpline BuildBeziers(IList<double> pts, int n, int dim) {
+		int segments = (n - 1) / 3;
+		var expanded = new List<double>(segments * 4 * dim);
+		for (int s = 0; s < segments; s++)
+			for (int p = 0; p <= 3; p++)
+				for (int d = 0; d < dim; d++)
+					expanded.Add(pts[(s * 3 + p) * dim + d]);
+		return Build(expanded, (uint)(segments * 4), (uint)dim, 3, TinySpline.BSpline.Type.Beziers);
 	}
 
 	private static string SplineTypeToString(SplineType t) =>

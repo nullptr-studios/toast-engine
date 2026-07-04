@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:conv="using:editor.Components.Converters"
              xmlns:b="using:editor.Components.Behaviors"
+             xmlns:lucide="using:Lucide.Avalonia"
              mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="900"
              x:Class="editor.Workspace.HierarchyView"
              x:DataType="vm:HierarchyViewModel"
@@ -148,13 +149,16 @@
 			</Border>
 
 			<Grid>
-				<TextBlock IsVisible="{Binding !HasNodes}"
-				           Text="No Node file opened"
-				           FontStyle="Italic"
-				           Foreground="{StaticResource TextMuted}"
-				           HorizontalAlignment="Center"
-				           VerticalAlignment="Center"
-				           Padding="0,0,3,0" />
+				<StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center"
+				            IsVisible="{Binding !HasNodes}">
+					<lucide:LucideIcon Kind="ListTree" Size="40" StrokeWidth="1.5"
+					                   Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" />
+					<TextBlock Text="No Node file opened" FontWeight="SemiBold" FontSize="16"
+					           Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" />
+					<TextBlock Text="Open a Node file to browse its hierarchy"
+					           FontStyle="Italic" Foreground="{StaticResource TextMuted}"
+					           HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+				</StackPanel>
 
 				<!-- tree -->
 				<ScrollViewer HorizontalScrollBarVisibility="Disabled" Background="Transparent"
