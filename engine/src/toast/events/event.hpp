@@ -15,7 +15,6 @@
 #include <map>
 #include <memory>
 #include <mutex>
-// TODO: #include <stacktrace>
 #include <toast/export.hpp>
 #include <type_traits>
 #include <typeindex>
@@ -78,6 +77,7 @@ void send(Args&&... args) noexcept;
 template<typename T>
 struct Event : _detail::IEvent {
 	friend class Listener;
+	friend class ThreadListener;
 	friend struct EventSystem;
 	friend T;
 	/// @brief callbacks that return 'true' are consumed and do not propogate
@@ -136,6 +136,9 @@ struct TOAST_API EventSystem {
 	/// Deferred-delete queue; callbacks that unsubscribed during pollEvents are freed here on the next call
 	/// to avoid invalidating the processing vector mid-dispatch
 	static std::vector<std::unique_ptr<void, void (*)(void*)>> deletion_queue;
+
+	/// Protects the event queue memory pool during concurrent sends
+	static std::mutex deletion_mutex;
 
 	template<typename T>
 	static void registerEvent() {

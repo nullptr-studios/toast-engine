@@ -22,6 +22,7 @@ std::unordered_map<std::type_index, EventSystem::EventInfo> EventSystem::event_d
 std::mutex EventSystem::pool_mutex;
 std::unordered_map<std::type_index, std::function<void(std::any)>> EventSystem::unsubscribe_map;
 std::vector<std::unique_ptr<void, void (*)(void*)>> EventSystem::deletion_queue;
+std::mutex EventSystem::deletion_mutex;
 
 namespace {
 struct Pool {
@@ -50,7 +51,10 @@ void pollEvents() noexcept {
 	ZoneScoped;
 
 	// delete callbacks
-	EventSystem::deletion_queue.clear();
+	{
+		std::scoped_lock _(EventSystem::deletion_mutex);
+		EventSystem::deletion_queue.clear();
+	}
 
 	// swap memory pool
 	uint32_t idx;
