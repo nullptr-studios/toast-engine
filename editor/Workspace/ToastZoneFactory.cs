@@ -7,27 +7,30 @@ using Dock.Model.Core;
 using Dock.Model.Mvvm;
 using Dock.Model.Mvvm.Controls;
 using editor.Assets;
+using editor.Editors;
 using editor.Logger;
 
 namespace editor.Workspace;
 
 public class ToastZoneFactory : Factory {
-	private IRootDock? m_rootDock;
-	private ToolDock? m_toolDock;
 	private bool m_curveClosePending;
 	private bool m_hapticsClosePending;
+	private IRootDock? m_rootDock;
+	private ToolDock? m_toolDock;
 
 	public LogsViewModel? LogsVm { get; private set; }
-	public Editors.CurveViewModel? CurveEditorVm { get; private set; }
-	public Editors.HapticsViewModel? HapticsEditorVm { get; private set; }
+	public CurveViewModel? CurveEditorVm { get; private set; }
+	public HapticsViewModel? HapticsEditorVm { get; private set; }
 
 	public override IRootDock CreateLayout() {
-		var assetBrowser = new AssetBrowserViewModel
-			{ Id = "AssetBrowser", Title = "Asset Browser", CanPin = false, CanFloat = false, CanClose = false, CanDrag = false };
+		var assetBrowser = new AssetBrowserViewModel {
+			Id = "AssetBrowser", Title = "Asset Browser", CanPin = false, CanFloat = false, CanClose = false,
+			CanDrag = false
+		};
 		var logs = new LogsViewModel { Id = "Logs", Title = "Logs", CanPin = false };
-		var hapticsEditor = new Editors.HapticsViewModel
+		var hapticsEditor = new HapticsViewModel
 			{ Id = "Haptics", Title = "Haptics Editor", CanPin = false, CanFloat = false };
-		var curveEditor = new Editors.CurveViewModel
+		var curveEditor = new CurveViewModel
 			{ Id = "Curve", Title = "Curve Editor", CanPin = false, CanFloat = false };
 
 		LogsVm = logs;
@@ -74,19 +77,26 @@ public class ToastZoneFactory : Factory {
 			CloseDockable(tool);
 	}
 
-	private Tool? ToolById(string id) => id switch {
-		"Logs" => LogsVm,
-		"Haptics" => HapticsEditorVm,
-		"Curve" => CurveEditorVm,
-		_ => null
-	};
+	private Tool? ToolById(string id) {
+		return id switch {
+			"Logs" => LogsVm,
+			"Haptics" => HapticsEditorVm,
+			"Curve" => CurveEditorVm,
+			_ => null
+		};
+	}
 
-	public bool IsToolVisible(string id) =>
-		ToolById(id) is { } tool && m_toolDock?.VisibleDockables?.Contains(tool) == true;
+	public bool IsToolVisible(string id) {
+		return ToolById(id) is { } tool && m_toolDock?.VisibleDockables?.Contains(tool) == true;
+	}
 
 	public bool ToggleTool(string id) {
 		if (ToolById(id) is not { } tool) return false;
-		if (IsToolVisible(id)) { HideTool(tool); return false; }
+		if (IsToolVisible(id)) {
+			HideTool(tool);
+			return false;
+		}
+
 		ShowTool(tool);
 		return true;
 	}
@@ -126,7 +136,7 @@ public class ToastZoneFactory : Factory {
 		base.CloseDockable(dockable);
 	}
 
-	private async Task GatedClose(Tool tool, Editors.IToastZoneEditor editor, Action<bool> setPending) {
+	private async Task GatedClose(Tool tool, IToastZoneEditor editor, Action<bool> setPending) {
 		if (!await editor.ConfirmCloseCurrentAsync()) return;
 		setPending(true);
 		CloseDockable(tool);

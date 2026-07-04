@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Text.Json;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
@@ -21,29 +19,27 @@ public partial class InspectorViewModel : Tool {
 	private static readonly string[] Palette =
 		["Red", "Green", "Blue", "Magenta", "Orange", "Yellow", "Cyan", "Beige"];
 
+	private readonly Dictionary<string, FieldVM> m_fieldByParam = new();
+
 	// ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
 	private readonly Listener m_listener;
-
-	private readonly Dictionary<string, FieldVM> m_fieldByParam = new();
-	private InspectorState? m_state;
-	private string? m_uid;
-	private string? m_builtUid;
 	private string? m_builtType;
-	private bool m_suppressEnabled;
-
-	[ObservableProperty] private string m_name = "";
-	[ObservableProperty] private string m_typeDisplay = "";
+	private string? m_builtUid;
 	[ObservableProperty] private bool m_enabled = true;
-	[ObservableProperty] private string m_iconColorKey = "TextMuted";
-	[ObservableProperty] private Bitmap? m_largeIcon;
-	[ObservableProperty] private bool m_hasSelection;
-
-	[ObservableProperty] private bool m_isEditingName;
-	[ObservableProperty] private string m_nameDraft = "";
 
 	[ObservableProperty] private string m_filterText = "";
+	[ObservableProperty] private bool m_hasSelection;
+	[ObservableProperty] private string m_iconColorKey = "TextMuted";
 
-	public ObservableCollection<ClassCardVM> Cards { get; } = [];
+	[ObservableProperty] private bool m_isEditingName;
+	[ObservableProperty] private Bitmap? m_largeIcon;
+
+	[ObservableProperty] private string m_name = "";
+	[ObservableProperty] private string m_nameDraft = "";
+	private InspectorState? m_state;
+	private bool m_suppressEnabled;
+	[ObservableProperty] private string m_typeDisplay = "";
+	private string? m_uid;
 
 	public InspectorViewModel() {
 		if (Design.IsDesignMode) {
@@ -211,9 +207,7 @@ public partial class InspectorViewModel : Tool {
   }
 ]";
 				var engine = JsonSerializer.Deserialize<NodeInfo[]>(fallbackJson);
-				if (engine != null) {
-					ReflectionDatabase.Nodes = engine.ToDictionary(n => n.Name);
-				}
+				if (engine != null) ReflectionDatabase.Nodes = engine.ToDictionary(n => n.Name);
 			} catch {
 				// Ignore
 			}
@@ -222,13 +216,15 @@ public partial class InspectorViewModel : Tool {
 			Name = "Neptune Sun";
 			TypeDisplay = "toast::DirectionalLight";
 			IconColorKey = ReflectionDatabase.Nodes != null ? ReflectionDatabase.ResolveColor(TypeDisplay) : "TextMuted";
-			string iconName = ReflectionDatabase.ResolveColor(TypeDisplay);
+			var iconName = ReflectionDatabase.ResolveColor(TypeDisplay);
 			try {
-				LargeIcon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png")));
+				LargeIcon = new Bitmap(
+					AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png")));
 			} catch (Exception ex) {
 				Log.Warn($"Failed to load icon for {TypeDisplay} ({iconName}): {ex.Message}");
 				LargeIcon = new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/2x/Circle.png")));
 			}
+
 			SetEnabledSuppressed(true);
 			IsEditingName = false;
 			HasSelection = true;
@@ -271,7 +267,11 @@ public partial class InspectorViewModel : Tool {
 		if (HierarchyViewModel.Current?.SelectedNode is { } sel) OnSelectionChanged(sel);
 	}
 
-	partial void OnFilterTextChanged(string value) => ApplyFilter();
+	public ObservableCollection<ClassCardVM> Cards { get; } = [];
+
+	partial void OnFilterTextChanged(string value) {
+		ApplyFilter();
+	}
 
 	partial void OnEnabledChanged(bool value) {
 		if (m_suppressEnabled || m_uid is null) return;
@@ -301,13 +301,15 @@ public partial class InspectorViewModel : Tool {
 			Name = node.Name;
 			TypeDisplay = node.Type;
 			IconColorKey = ReflectionDatabase.ResolveColor(node.Type);
-			string iconName = ReflectionDatabase.ResolveIcon(node.Type);
+			var iconName = ReflectionDatabase.ResolveIcon(node.Type);
 			try {
-				LargeIcon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png")));
+				LargeIcon = new Bitmap(
+					AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png")));
 			} catch (Exception ex) {
 				Log.Warn($"Failed to load icon for {node.Type} ({iconName}): {ex.Message}");
 				LargeIcon = new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/2x/Circle.png")));
 			}
+
 			SetEnabledSuppressed(node.Enabled);
 			IsEditingName = false;
 			HasSelection = true;
@@ -341,7 +343,8 @@ public partial class InspectorViewModel : Tool {
 	private ClassCardVM BuildCard(NodeInfo info, ref int colorCounter) {
 		// class cards show the bare type name; the namespaced form lives in the header label only
 		var typeName = info.Name;
-		var card = new ClassCardVM(typeName, ReflectionDatabase.ResolveColor(typeName), ReflectionDatabase.ResolveIcon(typeName), $"class:{typeName}", m_state!);
+		var card = new ClassCardVM(typeName, ReflectionDatabase.ResolveColor(typeName),
+			ReflectionDatabase.ResolveIcon(typeName), $"class:{typeName}", m_state!);
 
 		foreach (var f in info.GlobalFields) AddField(card.Fields, f);
 
@@ -398,7 +401,9 @@ public partial class InspectorViewModel : Tool {
 		WorkspaceState.MarkModified();
 	}
 
-	public void CancelRename() => IsEditingName = false;
+	public void CancelRename() {
+		IsEditingName = false;
+	}
 
 	// toast::Camera -> Camera
 	private static string Bare(string typeName) {

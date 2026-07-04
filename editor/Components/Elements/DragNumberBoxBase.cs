@@ -15,13 +15,16 @@ using Avalonia.Threading;
 namespace editor.Components.Elements;
 
 public abstract class DragNumberBoxBase : TemplatedControl {
+	// Drag state
+	private const double DragThreshold = 3.0;
+
 	/// <summary>Optional suffix drawn after the number (e.g. "m", "kg")</summary>
 	public static readonly StyledProperty<string?> UnitProperty =
 		AvaloniaProperty.Register<DragNumberBoxBase, string?>(nameof(Unit));
 
 	public static readonly StyledProperty<double> MinimumProperty =
 		AvaloniaProperty.Register<DragNumberBoxBase, double>(nameof(Minimum), double.NegativeInfinity);
-	
+
 	public static readonly StyledProperty<double> MaximumProperty =
 		AvaloniaProperty.Register<DragNumberBoxBase, double>(nameof(Maximum), double.PositiveInfinity);
 
@@ -32,44 +35,41 @@ public abstract class DragNumberBoxBase : TemplatedControl {
 	public static readonly StyledProperty<IBrush?> EditBorderBrushProperty =
 		AvaloniaProperty.Register<DragNumberBoxBase, IBrush?>(nameof(EditBorderBrush));
 
-	private bool m_isEditing;
-
 	public static readonly DirectProperty<DragNumberBoxBase, bool> IsEditingProperty =
 		AvaloniaProperty.RegisterDirect<DragNumberBoxBase, bool>(nameof(IsEditing), o => o.m_isEditing);
-
-	private string m_displaySign = "";
 
 	public static readonly DirectProperty<DragNumberBoxBase, string> DisplaySignProperty =
 		AvaloniaProperty.RegisterDirect<DragNumberBoxBase, string>(nameof(DisplaySign), o => o.m_displaySign);
 
-	private string m_displayInteger = "0";
-
 	public static readonly DirectProperty<DragNumberBoxBase, string> DisplayIntegerProperty =
 		AvaloniaProperty.RegisterDirect<DragNumberBoxBase, string>(nameof(DisplayInteger), o => o.m_displayInteger);
-
-	private string m_displayPoint = "";
 
 	public static readonly DirectProperty<DragNumberBoxBase, string> DisplayPointProperty =
 		AvaloniaProperty.RegisterDirect<DragNumberBoxBase, string>(nameof(DisplayPoint), o => o.m_displayPoint);
 
-	private string m_displayDigits = "";
-
 	public static readonly DirectProperty<DragNumberBoxBase, string> DisplayDigitsProperty =
 		AvaloniaProperty.RegisterDirect<DragNumberBoxBase, string>(nameof(DisplayDigits), o => o.m_displayDigits);
 
-	// Template parts
-	private Control? m_root;
-	private Control? m_integerRegion;
-	private Control? m_fractionRegion;
-	private TextBox? m_editor;
+	private string m_displayDigits = "";
 
-	// Drag state
-	private const double DragThreshold = 3.0;
-	private bool m_dragging;
+	private string m_displayInteger = "0";
+
+	private string m_displayPoint = "";
+
+	private string m_displaySign = "";
 	private bool m_dragFine;
 	private bool m_dragMoved;
-	private double m_dragStartX;
 	private double m_dragStartValue;
+	private double m_dragStartX;
+	private bool m_dragging;
+	private TextBox? m_editor;
+	private Control? m_fractionRegion;
+	private Control? m_integerRegion;
+
+	private bool m_isEditing;
+
+	// Template parts
+	private Control? m_root;
 
 	public string? Unit {
 		get => GetValue(UnitProperty);
@@ -108,13 +108,13 @@ public abstract class DragNumberBoxBase : TemplatedControl {
 
 	protected override Type StyleKeyOverride => typeof(DragNumberBoxBase);
 
-	protected abstract double GetDouble();
-
-	protected abstract void SetDouble(double value);
-
 	protected abstract double CoarseStepAmount { get; }
 
 	protected abstract double FineStepAmount { get; }
+
+	protected abstract double GetDouble();
+
+	protected abstract void SetDouble(double value);
 
 	protected abstract string RawEditText();
 
@@ -197,9 +197,13 @@ public abstract class DragNumberBoxBase : TemplatedControl {
 		}
 	}
 
-	private void OnIntegerPressed(object? sender, PointerPressedEventArgs e) => BeginDrag(sender, e, false);
+	private void OnIntegerPressed(object? sender, PointerPressedEventArgs e) {
+		BeginDrag(sender, e, false);
+	}
 
-	private void OnFractionPressed(object? sender, PointerPressedEventArgs e) => BeginDrag(sender, e, true);
+	private void OnFractionPressed(object? sender, PointerPressedEventArgs e) {
+		BeginDrag(sender, e, true);
+	}
 
 	private void OnRootTapped(object? sender, TappedEventArgs e) {
 		if (!IsEnabled || IsEditing) return;
@@ -240,9 +244,13 @@ public abstract class DragNumberBoxBase : TemplatedControl {
 		e.Handled = true;
 	}
 
-	private void OnIntegerWheel(object? sender, PointerWheelEventArgs e) => Scroll(e, false);
+	private void OnIntegerWheel(object? sender, PointerWheelEventArgs e) {
+		Scroll(e, false);
+	}
 
-	private void OnFractionWheel(object? sender, PointerWheelEventArgs e) => Scroll(e, true);
+	private void OnFractionWheel(object? sender, PointerWheelEventArgs e) {
+		Scroll(e, true);
+	}
 
 	private void Scroll(PointerWheelEventArgs e, bool fine) {
 		if (!IsEnabled || IsEditing) return;
@@ -288,5 +296,7 @@ public abstract class DragNumberBoxBase : TemplatedControl {
 		}
 	}
 
-	private void OnEditorLostFocus(object? sender, RoutedEventArgs e) => CommitEdit();
+	private void OnEditorLostFocus(object? sender, RoutedEventArgs e) {
+		CommitEdit();
+	}
 }

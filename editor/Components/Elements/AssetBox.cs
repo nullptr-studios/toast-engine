@@ -29,34 +29,35 @@ public sealed class AssetBox : TemplatedControl {
 	public static readonly StyledProperty<string?> AssetTypeProperty =
 		AvaloniaProperty.Register<AssetBox, string?>(nameof(AssetType));
 
-	private string? m_displayName;
-
 	public static readonly DirectProperty<AssetBox, string?> DisplayNameProperty =
 		AvaloniaProperty.RegisterDirect<AssetBox, string?>(nameof(DisplayName), o => o.m_displayName);
-
-	private bool m_hasAsset;
 
 	public static readonly DirectProperty<AssetBox, bool> HasAssetProperty =
 		AvaloniaProperty.RegisterDirect<AssetBox, bool>(nameof(HasAsset), o => o.m_hasAsset);
 
-	private bool m_isMissing;
-
 	public static readonly DirectProperty<AssetBox, bool> IsMissingProperty =
 		AvaloniaProperty.RegisterDirect<AssetBox, bool>(nameof(IsMissing), o => o.m_isMissing);
-
-	private IBrush? m_iconColor;
 
 	public static readonly DirectProperty<AssetBox, IBrush?> IconColorProperty =
 		AvaloniaProperty.RegisterDirect<AssetBox, IBrush?>(nameof(IconColor), o => o.m_iconColor);
 
-	private LucideIconKind m_iconKind = LucideIconKind.Package;
-
 	public static readonly DirectProperty<AssetBox, LucideIconKind> IconKindProperty =
 		AvaloniaProperty.RegisterDirect<AssetBox, LucideIconKind>(nameof(IconKind), o => o.m_iconKind);
 
-	private readonly MenuItem m_selectItem;
-	private readonly MenuItem m_seeItem;
 	private readonly MenuItem m_clearItem;
+	private readonly MenuItem m_seeItem;
+
+	private readonly MenuItem m_selectItem;
+
+	private string? m_displayName;
+
+	private bool m_hasAsset;
+
+	private IBrush? m_iconColor;
+
+	private LucideIconKind m_iconKind = LucideIconKind.Package;
+
+	private bool m_isMissing;
 
 	private TopLevel? m_keyHost;
 
@@ -135,9 +136,11 @@ public sealed class AssetBox : TemplatedControl {
 		if (change.Property == ValueProperty) {
 			m_lastKnownName = null;
 			Refresh();
+		} else if (change.Property == AssetTypeProperty) {
+			Refresh();
+		} else if (change.Property == IsEnabledProperty) {
+			UpdateMenu();
 		}
-		else if (change.Property == AssetTypeProperty) Refresh();
-		else if (change.Property == IsEnabledProperty) UpdateMenu();
 	}
 
 	protected override void OnPointerPressed(PointerPressedEventArgs e) {
@@ -195,11 +198,9 @@ public sealed class AssetBox : TemplatedControl {
 			else
 				IconColor = new SolidColorBrush(Color.Parse("#696969"));
 			IconKind = def?.Icon ?? LucideIconKind.Package;
-		}
-		else if (IsMissing) {
+		} else if (IsMissing) {
 			DisplayName = m_lastKnownName is not null ? $"({m_lastKnownName} missing)" : "(missing)";
-		}
-		else {
+		} else {
 			DisplayName = string.IsNullOrEmpty(AssetType) ? "(Asset)" : $"({AssetType})";
 		}
 
@@ -241,11 +242,12 @@ public sealed class AssetBox : TemplatedControl {
 		if (IsEnabled) Value = null;
 	}
 
-	private bool IsAcceptable(DragEventArgs e) =>
-		e.DataTransfer.TryGetValue(AssetDragData.Format) is { } a &&
-		(string.IsNullOrEmpty(AssetType) || string.Equals(
-			NormalizeAssetType(AssetType) ?? AssetType,
-			a.Type, StringComparison.OrdinalIgnoreCase));
+	private bool IsAcceptable(DragEventArgs e) {
+		return e.DataTransfer.TryGetValue(AssetDragData.Format) is { } a &&
+			(string.IsNullOrEmpty(AssetType) || string.Equals(
+				NormalizeAssetType(AssetType) ?? AssetType,
+				a.Type, StringComparison.OrdinalIgnoreCase));
+	}
 
 	private void OnDragOver(object? sender, DragEventArgs e) {
 		e.DragEffects = IsEnabled && IsAcceptable(e) ? DragDropEffects.Copy : DragDropEffects.None;

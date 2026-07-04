@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
@@ -22,26 +23,35 @@ namespace editor.Editors;
 
 public partial class HapticsViewModel : Tool, IToastZoneEditor {
 	private const string BaseTitle = "Haptics Editor";
+	private readonly List<CurveCanvasItem> m_editItems = [];
+	[ObservableProperty] private int m_activeCurveIndex;
+	[ObservableProperty] private string m_bezierHint = "";
+	[ObservableProperty] private string m_channelsName = "Single";
+	[ObservableProperty] private string m_currentPath = "";
 
 	[ObservableProperty] private string m_currentUid = "";
-	[ObservableProperty] private string m_currentPath = "";
-	[ObservableProperty] private string m_fileName = "";
-	[ObservableProperty] private string m_displayTitle = BaseTitle;
-	[ObservableProperty] private bool m_isDirty;
-	[ObservableProperty] private bool m_unsupportedMode;
-	[ObservableProperty] private string m_modeName = "Standard";
-	[ObservableProperty] private int m_priority;
-	[ObservableProperty] private int m_durationMs = 200;
-	[ObservableProperty] private float m_left = 0.5f;
-	[ObservableProperty] private float m_right = 0.5f;
-	[ObservableProperty] private string m_channelsName = "Single";
-	[ObservableProperty] private float m_pan;
-	[ObservableProperty] private float m_multiplier = 1f;
-	[ObservableProperty] private string m_editTargetName = "Left";
 	[ObservableProperty] private string m_curveSplineTypeName = "Catmull-Rom";
-	[ObservableProperty] private int m_activeCurveIndex;
+	[ObservableProperty] private string m_displayTitle = BaseTitle;
+	[ObservableProperty] private int m_durationMs = 200;
+	[ObservableProperty] private string m_editTargetName = "Left";
+	[ObservableProperty] private string m_fileName = "";
+
+	private Haptic? m_haptic;
+	[ObservableProperty] private bool m_isDirty;
+	[ObservableProperty] private float m_left = 0.5f;
+	private bool m_loading;
+	[ObservableProperty] private string m_modeName = "Standard";
+	[ObservableProperty] private float m_multiplier = 1f;
+	[ObservableProperty] private float m_pan;
+	[ObservableProperty] private int m_priority;
+	[ObservableProperty] private float m_right = 0.5f;
 	[ObservableProperty] private int m_selectedPointIndex = -1;
-	[ObservableProperty] private string m_bezierHint = "";
+	private bool m_syncing;
+	[ObservableProperty] private bool m_unsupportedMode;
+
+	public HapticsViewModel() {
+		if (Design.IsDesignMode) InitDesignData();
+	}
 
 	public static IReadOnlyList<string> ModeNames { get; } = ["Standard", "Curve"];
 	public static IReadOnlyList<string> ChannelNames { get; } = ["Single", "Dual"];
@@ -59,23 +69,12 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 	public bool CanvasReadOnly => !IsCurveMode || UnsupportedMode;
 	public bool InputsEnabled => !UnsupportedMode;
 
-	private Haptic? m_haptic;
-	private readonly List<CurveCanvasItem> m_editItems = [];
-	private bool m_loading;
-	private bool m_syncing;
+	private CurveCanvasItem? ActiveEditItem =>
+		ActiveCurveIndex >= 0 && ActiveCurveIndex < m_editItems.Count
+			? m_editItems[ActiveCurveIndex]
+			: null;
 
-	public HapticsViewModel() {
-		if (Design.IsDesignMode) InitDesignData();
-	}
-
-	private void InitDesignData() {
-		var haptic = new Haptic {
-			Mode = HapticMode.Curve,
-			DurationMs = 350,
-			Curve = new Curve([0f, 0f, 0.35f, 1f, 1f, 0f], CurveDimension.D2, SplineType.CatmullRom),
-		};
-		LoadHaptic(haptic, "sample.thaptic");
-	}
+	private bool Ignore => m_loading || m_syncing || m_haptic is null || UnsupportedMode;
 
 	public void OpenFile(string uid, string virtualPath, BaseAsset definition) {
 		m_loading = true;
@@ -91,6 +90,29 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 			IsDirty = false;
 			m_loading = false;
 		}
+	}
+
+	public async Task<bool> ConfirmCloseCurrentAsync() {
+		if (!IsDirty || !HasContent) return true;
+		if (App.MainWindow is not { } owner) return true;
+		var result = await new MessageModal(new ModalConfig(
+			"Unsaved Changes",
+			$"Save changes to '{FileName}'?",
+			ModalButtons.OkNoCancel,
+			OkLabel: "Save"
+		)).ShowDialog<bool?>(owner);
+		if (result is null) return false;
+		if (result is true) await Save();
+		return true;
+	}
+
+	private void InitDesignData() {
+		var haptic = new Haptic {
+			Mode = HapticMode.Curve,
+			DurationMs = 350,
+			Curve = new Curve([0f, 0f, 0.35f, 1f, 1f, 0f], CurveDimension.D2, SplineType.CatmullRom)
+		};
+		LoadHaptic(haptic, "sample.thaptic");
 	}
 
 	private void LoadHaptic(Haptic haptic, string virtualPath) {
@@ -138,20 +160,6 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 		NotifyModeFlags();
 	}
 
-	public async Task<bool> ConfirmCloseCurrentAsync() {
-		if (!IsDirty || !HasContent) return true;
-		if (App.MainWindow is not { } owner) return true;
-		var result = await new MessageModal(new ModalConfig(
-			Title: "Unsaved Changes",
-			Message: $"Save changes to '{FileName}'?",
-			Buttons: ModalButtons.OkNoCancel,
-			OkLabel: "Save"
-		)).ShowDialog<bool?>(owner);
-		if (result is null) return false;
-		if (result is true) await Save();
-		return true;
-	}
-
 	[RelayCommand]
 	private async Task Save() {
 		if (m_haptic is null || string.IsNullOrEmpty(CurrentPath)) return;
@@ -168,11 +176,6 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 		ToastEngine.TestHaptic(m_haptic.Serialize());
 	}
 
-	private CurveCanvasItem? ActiveEditItem =>
-		ActiveCurveIndex >= 0 && ActiveCurveIndex < m_editItems.Count
-			? m_editItems[ActiveCurveIndex]
-			: null;
-
 	private void RebuildCanvas() {
 		UnhookEditItems();
 		CanvasItems.Clear();
@@ -180,7 +183,7 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 		if (m_haptic is null) return;
 
 		if (m_haptic.Mode == HapticMode.Curve) {
-			bool dual = m_haptic.Channels == HapticChannels.Dual;
+			var dual = m_haptic.Channels == HapticChannels.Dual;
 
 			var leftCurve = m_haptic.Curve;
 			if (leftCurve is null) return;
@@ -212,7 +215,7 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 		// unsupported modes: empty canvas
 	}
 
-	private void AddEditItem(Curve curve, Avalonia.Media.Color color, string label) {
+	private void AddEditItem(Curve curve, Color color, string label) {
 		var item = new CurveCanvasItem(curve, color, label);
 		item.Changed += OnCurveChanged;
 		m_editItems.Add(item);
@@ -224,14 +227,20 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 		m_editItems.Clear();
 	}
 
-	private static CurveCanvasItem MakePreviewItem(float intensity, Avalonia.Media.Color color, string label) =>
-		new(new Curve([0f, intensity, 1f, intensity], CurveDimension.D2, SplineType.Linear), color, label) {
-			IsEditable = false,
+	private static CurveCanvasItem MakePreviewItem(float intensity, Color color, string label) {
+		return new CurveCanvasItem(new Curve([0f, intensity, 1f, intensity], CurveDimension.D2, SplineType.Linear), color,
+			label) {
+			IsEditable = false
 		};
+	}
 
 	private void RefreshPreview() {
 		if (m_haptic is null || m_haptic.Mode != HapticMode.Standard) return;
-		if (CanvasItems.Count != 2) { RebuildCanvas(); return; }
+		if (CanvasItems.Count != 2) {
+			RebuildCanvas();
+			return;
+		}
+
 		CanvasItems[0].Curve.SetPoints([0f, m_haptic.Left, 1f, m_haptic.Left]);
 		CanvasItems[0].NotifyStructureChanged();
 		CanvasItems[1].Curve.SetPoints([0f, m_haptic.Right, 1f, m_haptic.Right]);
@@ -257,18 +266,18 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 		}
 
 		m_syncing = true;
-		int n = item.NumPoints;
+		var n = item.NumPoints;
 
 		if (PointRows.Count != n) {
 			PointRows.Clear();
-			for (int i = 0; i < n; i++) {
+			for (var i = 0; i < n; i++) {
 				var (x, y) = item.GetPoint(i);
 				PointRows.Add(new CurvePointVM(CommitPoint, i, x, y, item.IsHandle(i)) {
-					IsSelected = i == SelectedPointIndex,
+					IsSelected = i == SelectedPointIndex
 				});
 			}
 		} else {
-			for (int i = 0; i < n; i++) {
+			for (var i = 0; i < n; i++) {
 				var (x, y) = item.GetPoint(i);
 				PointRows[i].X = x;
 				PointRows[i].Y = y;
@@ -282,9 +291,9 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 	private void AddPoint() {
 		if (ActiveEditItem is not { } item) return;
 
-		int n = item.NumPoints;
+		var n = item.NumPoints;
 		var (lastX, lastY) = item.GetPoint(n - 1);
-		float x = Math.Clamp(lastX + 0.1f, 0f, 1f);
+		var x = Math.Clamp(lastX + 0.1f, 0f, 1f);
 		SelectedPointIndex = item.InsertPoint(x, lastY);
 	}
 
@@ -296,14 +305,12 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 	}
 
 	private void UpdateBezierHint() {
-		string hint = "";
+		var hint = "";
 		if (ActiveEditItem?.Curve is { SplineType: SplineType.Bezier } c && (c.NumPoints - 1) % 3 != 0)
 			hint = $"Bezier needs 3k+1 points (has {c.NumPoints}) — rendering as B-Spline";
 		BezierHint = hint;
 		OnPropertyChanged(nameof(HasBezierHint));
 	}
-
-	private bool Ignore => m_loading || m_syncing || m_haptic is null || UnsupportedMode;
 
 	partial void OnModeNameChanged(string value) {
 		if (Ignore) return;
@@ -387,10 +394,12 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 		IsDirty = true;
 	}
 
-	partial void OnIsDirtyChanged(bool value) => UpdateTitle();
+	partial void OnIsDirtyChanged(bool value) {
+		UpdateTitle();
+	}
 
 	partial void OnSelectedPointIndexChanged(int value) {
-		for (int i = 0; i < PointRows.Count; i++)
+		for (var i = 0; i < PointRows.Count; i++)
 			PointRows[i].IsSelected = i == value;
 	}
 
@@ -416,17 +425,21 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 			: FileName;
 	}
 
-	private static string ToName(SplineType t) => t switch {
-		SplineType.CatmullRom => "Catmull-Rom",
-		SplineType.BSpline => "B-Spline",
-		SplineType.Bezier => "Bezier",
-		_ => "Linear"
-	};
+	private static string ToName(SplineType t) {
+		return t switch {
+			SplineType.CatmullRom => "Catmull-Rom",
+			SplineType.BSpline => "B-Spline",
+			SplineType.Bezier => "Bezier",
+			_ => "Linear"
+		};
+	}
 
-	private static SplineType FromName(string s) => s switch {
-		"Catmull-Rom" => SplineType.CatmullRom,
-		"B-Spline" => SplineType.BSpline,
-		"Bezier" => SplineType.Bezier,
-		_ => SplineType.Linear
-	};
+	private static SplineType FromName(string s) {
+		return s switch {
+			"Catmull-Rom" => SplineType.CatmullRom,
+			"B-Spline" => SplineType.BSpline,
+			"Bezier" => SplineType.Bezier,
+			_ => SplineType.Linear
+		};
+	}
 }

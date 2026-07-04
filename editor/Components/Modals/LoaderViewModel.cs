@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using editor.Assets;
+using editor.Engine;
 
 namespace editor.Components.Modals;
 
@@ -133,7 +134,7 @@ public partial class LoaderViewModel : ViewModelBase {
 
 	// posts to the UI thread because this is called from background tasks and process callbacks
 	private void AppendLine(string text) {
-		Engine.Log.Trace(text);
+		Log.Trace(text);
 		Dispatcher.UIThread.Post(() => ConsoleLines.Add(text));
 	}
 }

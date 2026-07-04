@@ -19,22 +19,20 @@ namespace editor.Assets;
 
 public partial class AssetBrowserView : UserControl {
 	private const double DragThreshold = 4;
+	private PointerPressedEventArgs? m_pressArgs;
 
 	private AssetFile? m_pressFile;
 	private Point m_pressPoint;
-	private PointerPressedEventArgs? m_pressArgs;
 
 	public AssetBrowserView() {
 		InitializeComponent();
 
-		AssetRepeater.AddHandler(InputElement.PointerPressedEvent, OnCardPointerPressed, RoutingStrategies.Tunnel);
-		AssetRepeater.AddHandler(InputElement.PointerMovedEvent, OnCardPointerMoved, RoutingStrategies.Tunnel);
-		AssetRepeater.AddHandler(InputElement.PointerReleasedEvent, OnCardPointerReleased, RoutingStrategies.Tunnel);
+		AssetRepeater.AddHandler(PointerPressedEvent, OnCardPointerPressed, RoutingStrategies.Tunnel);
+		AssetRepeater.AddHandler(PointerMovedEvent, OnCardPointerMoved, RoutingStrategies.Tunnel);
+		AssetRepeater.AddHandler(PointerReleasedEvent, OnCardPointerReleased, RoutingStrategies.Tunnel);
 
 		var bg = this.FindControl<Border>("AssetViewBackground");
-		if (bg?.ContextMenu is { } menu) {
-			menu.Opening += (_, _) => RebuildContextMenu(menu);
-		}
+		if (bg?.ContextMenu is { } menu) menu.Opening += (_, _) => RebuildContextMenu(menu);
 	}
 
 	private AssetBrowserViewModel Vm => (AssetBrowserViewModel)DataContext!;
@@ -53,6 +51,7 @@ public partial class AssetBrowserView : UserControl {
 			m_pressArgs = e;
 			m_pressPoint = e.GetPosition(this);
 		}
+
 		e.Handled = true;
 	}
 
@@ -69,7 +68,8 @@ public partial class AssetBrowserView : UserControl {
 		if (file.Uid is not { } uid) return;
 
 		var data = new DataTransfer();
-		data.Add(DataTransferItem.Create(AssetDragData.Format, new AssetDragRef(uid, file.Definition?.Type ?? "", file.Name)));
+		data.Add(DataTransferItem.Create(AssetDragData.Format,
+			new AssetDragRef(uid, file.Definition?.Type ?? "", file.Name)));
 
 		var selectedFiles = Vm.SelectedItems
 			.OfType<AssetFile>()
@@ -111,8 +111,9 @@ public partial class AssetBrowserView : UserControl {
 			e.Handled = true;
 			return;
 		}
+
 		var hasAsset = e.DataTransfer.TryGetValue(AssetDragData.MultiFormat) is not null
-		               || e.DataTransfer.TryGetValue(AssetDragData.Format) is not null;
+			|| e.DataTransfer.TryGetValue(AssetDragData.Format) is not null;
 		e.DragEffects = hasAsset ? DragDropEffects.Move : DragDropEffects.None;
 		e.Handled = true;
 	}
@@ -139,6 +140,7 @@ public partial class AssetBrowserView : UserControl {
 				return ctrl.DataContext;
 			ctrl = ctrl.Parent as Control;
 		}
+
 		return null;
 	}
 
@@ -214,25 +216,26 @@ public partial class AssetBrowserView : UserControl {
 			materialDefinition,
 			materialDefinition?.ChipColor ?? "Green",
 			materialDefinition?.Icon ?? LucideIconKind.Eclipse
-			));
+		));
 		menu.Items.Add(MakeCommandParameterItem(
 			"Script",
 			vm.NewAssetCommand,
 			luaDefinition,
 			luaDefinition?.ChipColor ?? "Magenta",
 			luaDefinition?.Icon ?? LucideIconKind.CodeXml
-			));
+		));
 		menu.Items.Add(MakeCommandParameterItem(
 			"Data",
 			vm.NewAssetCommand,
 			tomlDefinition,
 			tomlDefinition?.ChipColor ?? "Cyan",
 			tomlDefinition?.Icon ?? LucideIconKind.Database
-			));
+		));
 		foreach (var (category, types) in AssetTypeRegistry.CreatableByCategory) {
 			var sub = new MenuItem { Header = category };
 			foreach (var def in types)
-				sub.Items.Add(new MenuItem { Header = def.DisplayName, Command = vm.NewAssetCommand, CommandParameter = def });
+				sub.Items.Add(new MenuItem
+					{ Header = def.DisplayName, Command = vm.NewAssetCommand, CommandParameter = def });
 			menu.Items.Add(sub);
 		}
 
@@ -253,7 +256,7 @@ public partial class AssetBrowserView : UserControl {
 			Background = CheckerBrush.Instance,
 			ClipToBounds = true,
 			BorderBrush = GetBrush("Bg2"),
-			BorderThickness = new Thickness(2),
+			BorderThickness = new Thickness(2)
 		};
 		chip.Child = new LucideIcon {
 			Kind = icon,
@@ -267,14 +270,15 @@ public partial class AssetBrowserView : UserControl {
 		return new MenuItem { Header = panel, Command = command };
 	}
 
-	private MenuItem MakeCommandParameterItem(string label, ICommand command, object? parameter, string colorKey, LucideIconKind icon) {
+	private MenuItem MakeCommandParameterItem(
+		string label, ICommand command, object? parameter, string colorKey, LucideIconKind icon) {
 		var chip = new Border {
 			Width = 38, Height = 38,
 			CornerRadius = new CornerRadius(4),
 			Background = CheckerBrush.Instance,
 			ClipToBounds = true,
 			BorderBrush = GetBrush("Bg2"),
-			BorderThickness = new Thickness(2),
+			BorderThickness = new Thickness(2)
 		};
 		chip.Child = new LucideIcon {
 			Kind = icon,

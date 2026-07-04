@@ -11,8 +11,8 @@ using Proto.Events;
 namespace editor.Workspace;
 
 public class WorkspaceViewModel : Document {
-	private string? m_rootUid;
 	private string? m_pendingRootName;
+	private string? m_rootUid;
 
 	private WorkspaceViewModel(ToastEngine? engine = null) {
 		Engine = engine;

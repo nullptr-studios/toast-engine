@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.ComponentModel;
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -38,8 +39,8 @@ public sealed class ArrayBox : TemplatedControl {
 	public static readonly StyledProperty<string> AddLabelProperty =
 		AvaloniaProperty.Register<ArrayBox, string>(nameof(AddLabel), "Add");
 
-	public static readonly StyledProperty<System.Windows.Input.ICommand?> AddCommandProperty =
-		AvaloniaProperty.Register<ArrayBox, System.Windows.Input.ICommand?>(nameof(AddCommand));
+	public static readonly StyledProperty<ICommand?> AddCommandProperty =
+		AvaloniaProperty.Register<ArrayBox, ICommand?>(nameof(AddCommand));
 
 	// When set, each row is wrapped in a card Border with these styles
 	public static readonly StyledProperty<IBrush?> RowBackgroundProperty =
@@ -54,16 +55,16 @@ public sealed class ArrayBox : TemplatedControl {
 	public static readonly StyledProperty<double> ItemSpacingProperty =
 		AvaloniaProperty.Register<ArrayBox, double>(nameof(ItemSpacing), 4.0);
 
-	private ItemsControl? m_items;
+	// Insertion indicator currently shown during a drag
+	private Border? m_activeLine;
 	private Button? m_add;
+
+	private ItemsControl? m_items;
+	private PointerPressedEventArgs? m_pressArgs;
 
 	// Active reorder drag
 	private object? m_pressItem;
-	private PointerPressedEventArgs? m_pressArgs;
 	private Point m_pressPoint;
-
-	// Insertion indicator currently shown during a drag
-	private Border? m_activeLine;
 
 	public IList? Items {
 		get => GetValue(ItemsProperty);
@@ -90,7 +91,7 @@ public sealed class ArrayBox : TemplatedControl {
 		set => SetValue(AddLabelProperty, value);
 	}
 
-	public System.Windows.Input.ICommand? AddCommand {
+	public ICommand? AddCommand {
 		get => GetValue(AddCommandProperty);
 		set => SetValue(AddCommandProperty, value);
 	}
@@ -128,7 +129,7 @@ public sealed class ArrayBox : TemplatedControl {
 
 		if (m_items != null) {
 			m_items.ItemsPanel = new FuncTemplate<Panel?>(() => new StackPanel { Spacing = ItemSpacing });
-			m_items.ItemTemplate = new FuncDataTemplate<object>((item, _) => BuildRow(item), false);
+			m_items.ItemTemplate = new FuncDataTemplate<object>((item, _) => BuildRow(item));
 			m_items.ItemsSource = Items;
 		}
 
@@ -142,19 +143,15 @@ public sealed class ArrayBox : TemplatedControl {
 		base.OnPropertyChanged(change);
 		if (m_items is null) return;
 
-		if (change.Property == ItemsProperty) {
+		if (change.Property == ItemsProperty)
 			m_items.ItemsSource = Items;
-		}
-		else if (change.Property == ItemTemplateProperty) {
-			m_items.ItemTemplate = new FuncDataTemplate<object>((item, _) => BuildRow(item), false);
-		}
-		else if (change.Property == ItemSpacingProperty && m_items != null) {
+		else if (change.Property == ItemTemplateProperty)
+			m_items.ItemTemplate = new FuncDataTemplate<object>((item, _) => BuildRow(item));
+		else if (change.Property == ItemSpacingProperty && m_items != null)
 			m_items.ItemsPanel = new FuncTemplate<Panel?>(() => new StackPanel { Spacing = ItemSpacing });
-		}
 		else if ((change.Property == CanAddRemoveProperty || change.Property == IsEnabledProperty
-		          || change.Property == AddCommandProperty) && m_add != null) {
+			         || change.Property == AddCommandProperty) && m_add != null)
 			m_add.IsVisible = CanAddRemove && (ItemFactory != null || AddCommand != null);
-		}
 	}
 
 	private void OnAddClick(object? sender, RoutedEventArgs e) {
@@ -162,6 +159,7 @@ public sealed class ArrayBox : TemplatedControl {
 			AddCommand.Execute(null);
 			return;
 		}
+
 		if (ItemFactory is { } factory && Items is { } list && factory() is { } item) list.Add(item);
 	}
 
@@ -171,12 +169,15 @@ public sealed class ArrayBox : TemplatedControl {
 		while (host != null) {
 			if (host is IDataTemplateHost dth)
 				foreach (var t in dth.DataTemplates)
-					if (t.Match(item)) return t;
+					if (t.Match(item))
+						return t;
 			host = host.Parent as Control;
 		}
+
 		if (Application.Current is IDataTemplateHost app)
 			foreach (var t in app.DataTemplates)
-				if (t.Match(item)) return t;
+				if (t.Match(item))
+					return t;
 		return null;
 	}
 
@@ -189,7 +190,7 @@ public sealed class ArrayBox : TemplatedControl {
 		var builtContent = template?.Build(item);
 
 		// Split header from body only when the item opts in via IRowSplittable
-		bool shouldSplit = item is IRowSplittable r && r.ShouldSplitRow;
+		var shouldSplit = item is IRowSplittable r && r.ShouldSplitRow;
 		if (builtContent is StackPanel { Children.Count: > 1 } sp && (CanReorder || CanAddRemove)
 		    && shouldSplit)
 			return BuildSplitRow(item, sp);
@@ -203,10 +204,10 @@ public sealed class ArrayBox : TemplatedControl {
 		sp.Children.RemoveAt(0);
 
 		var outerGrid = new Grid {
-			RowDefinitions    = new RowDefinitions("Auto,Auto"),
+			RowDefinitions = new RowDefinitions("Auto,Auto"),
 			ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
-			ColumnSpacing     = 6,
-			RowSpacing        = rowSpacing
+			ColumnSpacing = 6,
+			RowSpacing = rowSpacing
 		};
 
 		var grip = MakeGrip(item);
@@ -234,7 +235,7 @@ public sealed class ArrayBox : TemplatedControl {
 
 	private Control BuildSingleRow(object item, Control? builtContent) {
 		var grid = new Grid {
-			ColumnSpacing     = 6,
+			ColumnSpacing = 6,
 			ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto")
 		};
 
@@ -242,7 +243,7 @@ public sealed class ArrayBox : TemplatedControl {
 		Grid.SetColumn(grip, 0);
 		grid.Children.Add(grip);
 
-		Control content = builtContent ?? new ContentControl { Content = item, ContentTemplate = ItemTemplate };
+		var content = builtContent ?? new ContentControl { Content = item, ContentTemplate = ItemTemplate };
 		Grid.SetColumn(content, 1);
 		grid.Children.Add(content);
 
@@ -256,10 +257,10 @@ public sealed class ArrayBox : TemplatedControl {
 	// Struct array item
 	private Control BuildStructRow(object item, IList keys) {
 		var grid = new Grid {
-			RowDefinitions    = new RowDefinitions("Auto,Auto"),
+			RowDefinitions = new RowDefinitions("Auto,Auto"),
 			ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
-			ColumnSpacing     = 6,
-			RowSpacing        = 0
+			ColumnSpacing = 6,
+			RowSpacing = 0
 		};
 
 		var grip = MakeGrip(item);
@@ -281,24 +282,25 @@ public sealed class ArrayBox : TemplatedControl {
 
 		if (keys.Count > 1) {
 			var body = new StackPanel { Spacing = 0 };
-			for (int i = 1; i < keys.Count; i++) {
-				var keyItem    = keys[i]!;
+			for (var i = 1; i < keys.Count; i++) {
+				var keyItem = keys[i]!;
 				var keyControl = BuildKey(keyItem);
 				keyControl.DataContext = keyItem;
 				keyControl.Margin = new Thickness(0, 4, 0, 0);
 				BindRowVisibility(keyControl, keyItem);
 				body.Children.Add(keyControl);
 			}
+
 			Grid.SetRow(body, 1);
 			Grid.SetColumnSpan(body, 3);
 			grid.Children.Add(body);
 		}
 
 		var card = new Border {
-			Background   = Brush("Bg3"),
+			Background = Brush("Bg3"),
 			CornerRadius = new CornerRadius(6),
-			Padding      = new Thickness(8),
-			Child        = grid
+			Padding = new Thickness(8),
+			Child = grid
 		};
 		// Container RowBackground is null
 		return WrapRow(item, card);
@@ -320,40 +322,40 @@ public sealed class ArrayBox : TemplatedControl {
 
 	private Border MakeGrip(object item) {
 		var grip = new Border {
-			Background        = Brushes.Transparent,
-			Cursor            = new Cursor(StandardCursorType.SizeAll),
-			Padding           = new Thickness(2),
+			Background = Brushes.Transparent,
+			Cursor = new Cursor(StandardCursorType.SizeAll),
+			Padding = new Thickness(2),
 			VerticalAlignment = VerticalAlignment.Center,
-			IsVisible         = CanReorder,
+			IsVisible = CanReorder,
 			Child = new LucideIcon {
-				Kind        = LucideIconKind.GripVertical,
-				Size        = 16,
+				Kind = LucideIconKind.GripVertical,
+				Size = 16,
 				StrokeWidth = 2,
-				Foreground  = Brush("TextMuted")
+				Foreground = Brush("TextMuted")
 			}
 		};
-		grip.PointerPressed  += (_, e) => OnGripPressed(item, e);
-		grip.PointerMoved    += OnGripMoved;
+		grip.PointerPressed += (_, e) => OnGripPressed(item, e);
+		grip.PointerMoved += OnGripMoved;
 		grip.PointerReleased += OnGripReleased;
 		return grip;
 	}
 
 	private Button MakeRemoveButton(object item) {
 		var btn = new Button {
-			Width             = 20,
-			Height            = 20,
-			Padding           = new Thickness(0),
-			Background        = Brushes.Transparent,
-			BorderThickness   = new Thickness(0),
-			CornerRadius      = new CornerRadius(6),
-			Cursor            = new Cursor(StandardCursorType.Hand),
+			Width = 20,
+			Height = 20,
+			Padding = new Thickness(0),
+			Background = Brushes.Transparent,
+			BorderThickness = new Thickness(0),
+			CornerRadius = new CornerRadius(6),
+			Cursor = new Cursor(StandardCursorType.Hand),
 			VerticalAlignment = VerticalAlignment.Center,
-			IsVisible         = CanAddRemove,
+			IsVisible = CanAddRemove,
 			Content = new LucideIcon {
-				Kind        = LucideIconKind.X,
-				Size        = 16,
+				Kind = LucideIconKind.X,
+				Size = 16,
 				StrokeWidth = 2.5,
-				Foreground  = Brush("TextMuted")
+				Foreground = Brush("TextMuted")
 			}
 		};
 		btn.Click += (_, _) => Items?.Remove(item);
@@ -361,42 +363,44 @@ public sealed class ArrayBox : TemplatedControl {
 	}
 
 	private Control WrapRow(object item, Control rowContent) {
-		Control wrapped = RowBackground is not null
+		var wrapped = RowBackground is not null
 			? new Border {
-				Background   = RowBackground,
+				Background = RowBackground,
 				CornerRadius = RowCornerRadius,
-				Padding      = RowPadding,
-				Child        = rowContent
+				Padding = RowPadding,
+				Child = rowContent
 			}
 			: rowContent;
 
-		var topLine    = MakeInsertLine(VerticalAlignment.Top);
+		var topLine = MakeInsertLine(VerticalAlignment.Top);
 		var bottomLine = MakeInsertLine(VerticalAlignment.Bottom);
-		var row        = new Grid();
+		var row = new Grid();
 		row.Children.Add(wrapped);
 		row.Children.Add(topLine);
 		row.Children.Add(bottomLine);
 
 		DragDrop.SetAllowDrop(row, true);
-		row.AddHandler(DragDrop.DragOverEvent,  (_, e) => OnRowDragOver(row, topLine, bottomLine, e));
-		row.AddHandler(DragDrop.DropEvent,       (_, e) => OnRowDrop(item, row, e));
-		row.AddHandler(DragDrop.DragLeaveEvent,  (_, _) => OnRowDragLeave(topLine, bottomLine));
+		row.AddHandler(DragDrop.DragOverEvent, (_, e) => OnRowDragOver(row, topLine, bottomLine, e));
+		row.AddHandler(DragDrop.DropEvent, (_, e) => OnRowDrop(item, row, e));
+		row.AddHandler(DragDrop.DragLeaveEvent, (_, _) => OnRowDragLeave(topLine, bottomLine));
 
 		BindRowVisibility(row, item);
 
 		return row;
 	}
 
-	private static Border MakeInsertLine(VerticalAlignment side) => new() {
-		Height = 2,
-		CornerRadius = new CornerRadius(1),
-		Background = Brush("Red"),
-		HorizontalAlignment = HorizontalAlignment.Stretch,
-		// Sit on the row's top or bottom edge, inside its bounds so it is never clipped
-		VerticalAlignment = side,
-		IsHitTestVisible = false,
-		IsVisible = false
-	};
+	private static Border MakeInsertLine(VerticalAlignment side) {
+		return new Border {
+			Height = 2,
+			CornerRadius = new CornerRadius(1),
+			Background = Brush("Red"),
+			HorizontalAlignment = HorizontalAlignment.Stretch,
+			// Sit on the row's top or bottom edge, inside its bounds so it is never clipped
+			VerticalAlignment = side,
+			IsHitTestVisible = false,
+			IsVisible = false
+		};
+	}
 
 	private void OnGripPressed(object item, PointerPressedEventArgs e) {
 		if (!CanReorder || Items is null || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
@@ -427,8 +431,9 @@ public sealed class ArrayBox : TemplatedControl {
 		m_pressArgs = null;
 	}
 
-	private bool Accepts(DragEventArgs e) =>
-		Items != null && e.DataTransfer.TryGetValue(ArrayItemDragData.Format) is { } r && r.Owner == this;
+	private bool Accepts(DragEventArgs e) {
+		return Items != null && e.DataTransfer.TryGetValue(ArrayItemDragData.Format) is { } r && r.Owner == this;
+	}
 
 	private void OnRowDragOver(Control row, Border topLine, Border bottomLine, DragEventArgs e) {
 		if (!Accepts(e)) return;
@@ -446,7 +451,8 @@ public sealed class ArrayBox : TemplatedControl {
 
 	private void OnRowDrop(object target, Control row, DragEventArgs e) {
 		ClearLine();
-		if (Items is not { } list || e.DataTransfer.TryGetValue(ArrayItemDragData.Format) is not { } r || r.Owner != this) return;
+		if (Items is not { } list || e.DataTransfer.TryGetValue(ArrayItemDragData.Format) is not { } r ||
+		    r.Owner != this) return;
 		e.Handled = true;
 
 		var moved = r.Item;

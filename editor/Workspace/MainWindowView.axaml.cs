@@ -20,11 +20,11 @@ namespace editor.Workspace;
 public partial class MainWindowView : Window {
 	private readonly ToastEngine? m_toast;
 	private readonly Border? m_toastBorder;
-	private CancellationTokenSource? m_toastCts;
 
 	private bool m_isResizing;
-	private double m_resizeStartY;
 	private double m_resizeStartH;
+	private double m_resizeStartY;
+	private CancellationTokenSource? m_toastCts;
 
 	public MainWindowView() {
 		InitializeComponent();
@@ -142,7 +142,9 @@ public partial class MainWindowView : Window {
 	}
 
 	// Typing takes priority
-	private bool IsTextInputFocused() => FocusManager?.GetFocusedElement() is TextBox;
+	private bool IsTextInputFocused() {
+		return FocusManager?.GetFocusedElement() is TextBox;
+	}
 
 	private void OnKeyDown(object? sender, KeyEventArgs e) {
 		if (e.Key != Key.Space || IsTextInputFocused()) return;

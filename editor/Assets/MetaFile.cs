@@ -36,18 +36,18 @@ public record GltfMetaSection : IMetaSection {
 	public bool CreateFolder { get; init; } = true;
 	public bool ImportMaterials { get; init; } = true;
 	public bool ImportTextures { get; init; } = true;
-	public bool ImportCameras { get; init; } = false;
+	public bool ImportCameras { get; init; }
 	public bool ImportLights { get; init; } = true;
 	public bool GeneratePrefab { get; init; } = true;
 }
 
 public record AudioStringMetaSection : IMetaSection {
 	public bool FollowFolderStructure = true;
-	public bool ImportEvents = true;
 	public bool ImportBuses = true;
-	public bool ImportVcas = true;
+	public bool ImportEvents = true;
 	public bool ImportPorts = true;
 	public bool ImportSnapshots = true;
+	public bool ImportVcas = true;
 }
 
 public static class MetaFile {
@@ -223,7 +223,7 @@ file sealed class GltfSectionDto {
 	[TomlPropertyName("create_folder")] public bool CreateFolder { get; set; } = true;
 	[TomlPropertyName("import_materials")] public bool ImportMaterials { get; set; } = true;
 	[TomlPropertyName("import_textures")] public bool ImportTextures { get; set; } = true;
-	[TomlPropertyName("import_cameras")] public bool ImportCameras { get; set; } = false;
+	[TomlPropertyName("import_cameras")] public bool ImportCameras { get; set; }
 	[TomlPropertyName("import_lights")] public bool ImportLights { get; set; } = true;
 	[TomlPropertyName("generate_prefab")] public bool GeneratePrefab { get; set; } = true;
 }

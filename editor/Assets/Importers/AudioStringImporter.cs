@@ -22,49 +22,57 @@ public class FMODMetadata {
 
 public partial class AudioStringImporter(AudioStringImporter.Settings settings) : IAssetImporter {
 	private readonly Settings m_settings = settings;
-	public bool CanHandle(string filePath) => Path.GetFileName(filePath) == "Master.strings.bank";
+
+	public bool CanHandle(string filePath) {
+		return Path.GetFileName(filePath) == "Master.strings.bank";
+	}
+
 	public IReadOnlyList<string> SupportedExtensions => [".strings.bank"];
 	public string DisplayName => "Audio String";
 	public LucideIconKind Icon => LucideIconKind.BookHeadphones;
 	public BaseAsset PrimaryOutputType => AssetTypeRegistry.ByExtension(".strings.bank")!;
+
 	public IReadOnlyList<BaseAsset> OutputTypes => [
 		AssetTypeRegistry.ByExtension(".strings.bank")!,
 		AssetTypeRegistry.ByExtension(".tbus")!,
 		AssetTypeRegistry.ByExtension(".tvca")!,
 		AssetTypeRegistry.ByExtension(".taport")!,
 		AssetTypeRegistry.ByExtension(".tasnap")!,
-		AssetTypeRegistry.ByExtension(".tae")!,
-	];
-	public IReadOnlyList<ImporterSetting> GetSettings() => [
-		new ImporterSetting("Follow Folder Structure", SettingKind.Bool,
-			() => m_settings.FollowFolderStructure,
-			v => m_settings.FollowFolderStructure = (bool)v!),
-		new ImporterSetting("Import Events", SettingKind.Bool,
-			() => m_settings.ImportEvents,
-			v => m_settings.ImportEvents = (bool)v!),
-		new ImporterSetting("Import Buses", SettingKind.Bool,
-			() => m_settings.ImportBuses,
-			v => m_settings.ImportBuses = (bool)v!),
-		new ImporterSetting("Import VCAs", SettingKind.Bool,
-			() => m_settings.ImportVcas,
-			v => m_settings.ImportVcas = (bool)v!),
-		new ImporterSetting("Import Ports", SettingKind.Bool,
-			() => m_settings.ImportPorts,
-			v => m_settings.ImportPorts = (bool)v!),
-		new ImporterSetting("Import Snapshots", SettingKind.Bool,
-			() => m_settings.ImportSnapshots,
-			v => m_settings.ImportSnapshots = (bool)v!),
+		AssetTypeRegistry.ByExtension(".tae")!
 	];
 
-	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log, Action<double>? progress = null) {
+	public IReadOnlyList<ImporterSetting> GetSettings() {
+		return [
+			new ImporterSetting("Follow Folder Structure", SettingKind.Bool,
+				() => m_settings.FollowFolderStructure,
+				v => m_settings.FollowFolderStructure = (bool)v!),
+			new ImporterSetting("Import Events", SettingKind.Bool,
+				() => m_settings.ImportEvents,
+				v => m_settings.ImportEvents = (bool)v!),
+			new ImporterSetting("Import Buses", SettingKind.Bool,
+				() => m_settings.ImportBuses,
+				v => m_settings.ImportBuses = (bool)v!),
+			new ImporterSetting("Import VCAs", SettingKind.Bool,
+				() => m_settings.ImportVcas,
+				v => m_settings.ImportVcas = (bool)v!),
+			new ImporterSetting("Import Ports", SettingKind.Bool,
+				() => m_settings.ImportPorts,
+				v => m_settings.ImportPorts = (bool)v!),
+			new ImporterSetting("Import Snapshots", SettingKind.Bool,
+				() => m_settings.ImportSnapshots,
+				v => m_settings.ImportSnapshots = (bool)v!)
+		];
+	}
+
+	public async Task<IReadOnlyList<string>> Import(
+		string realSourcePath, ImportContext ctx, Action<string> log, Action<double>? progress = null) {
 		log("Generating intermediates...");
 		Directory.CreateDirectory(ctx.DestDir);
 		audio_generate_intermediates(realSourcePath);
 
 		var json_path = Path.Combine(ProjectContext.CachePath, "fmod", "audio.json");
-		if (!File.Exists(json_path)) {
+		if (!File.Exists(json_path))
 			throw new FileNotFoundException("audio.json not found", Path.Combine(ProjectContext.CachePath, "audio.json"));
-		}
 		var json = JsonNode.Parse(await File.ReadAllTextAsync(json_path))!;
 		var snapshots = json["snapshots"]?.AsObject() ?? new JsonObject();
 		var vcas = json["vcas"]?.AsObject() ?? new JsonObject();
@@ -72,7 +80,7 @@ public partial class AudioStringImporter(AudioStringImporter.Settings settings) 
 		var ports = json["ports"]?.AsObject() ?? new JsonObject();
 		var events = json["events"]?.AsObject() ?? new JsonObject();
 		float total = 1 + vcas.Count + snapshots.Count + ports.Count + buses.Count + events.Count;
-		int current = 0;
+		var current = 0;
 		List<string> uids = [];
 
 		log("Importing strings bank...");
@@ -80,9 +88,10 @@ public partial class AudioStringImporter(AudioStringImporter.Settings settings) 
 		File.Copy(realSourcePath, destPath, true);
 		var uid = ctx.UidFor(current);
 		uids.Add(uid);
-		var header = new MetaHeader { Uid = uid, Type = AssetTypeRegistry.ByType($"audio_strings")!.Type, Source = ctx.SourceVirtualPath };
+		var header = new MetaHeader
+			{ Uid = uid, Type = AssetTypeRegistry.ByType("audio_strings")!.Type, Source = ctx.SourceVirtualPath };
 		MetaFile.Write(destPath, header);
-		progress?.Invoke(++current/total);
+		progress?.Invoke(++current / total);
 
 		async Task ImportObjects(JsonObject obj, string type, string ext) {
 			log($"Importing {obj.Count} {type}s...");
@@ -95,10 +104,8 @@ public partial class AudioStringImporter(AudioStringImporter.Settings settings) 
 
 				log($"Importing {path}...");
 
-				string name = path.Split('/').Last();
-				if (path == "bus:/") {
-					name = "Master Bus";
-				}
+				var name = path.Split('/').Last();
+				if (path == "bus:/") name = "Master Bus";
 
 				if (type == "event" && m_settings.FollowFolderStructure) {
 					var relativePath = path.Substring("event:/".Length);
@@ -109,8 +116,7 @@ public partial class AudioStringImporter(AudioStringImporter.Settings settings) 
 						Directory.CreateDirectory(directory);
 
 					destPath = outputPath;
-				}
-				else {
+				} else {
 					destPath = Path.Combine(ctx.DestDir, $"{name}{ext}");
 				}
 
@@ -128,36 +134,26 @@ public partial class AudioStringImporter(AudioStringImporter.Settings settings) 
 					Type = type,
 					Name = name,
 					Path = path,
-					Guid = guid,
+					Guid = guid
 				};
 
-				string tomlString = TomlSerializer.Serialize(metadata);
+				var tomlString = TomlSerializer.Serialize(metadata);
 				await File.WriteAllTextAsync(destPath, tomlString);
 
 				progress?.Invoke(++current / total);
 			}
 		}
 
-		if (m_settings.ImportEvents) {
-			await ImportObjects(events, "event", ".tae");
-		}
+		if (m_settings.ImportEvents) await ImportObjects(events, "event", ".tae");
 
-		if (m_settings.ImportVcas) {
-			await ImportObjects(vcas, "vca", ".tvca");
-		}
+		if (m_settings.ImportVcas) await ImportObjects(vcas, "vca", ".tvca");
 
-		if (m_settings.ImportBuses) {
-			await ImportObjects(buses, "bus", ".tbus");
-		}
+		if (m_settings.ImportBuses) await ImportObjects(buses, "bus", ".tbus");
 
-		if (m_settings.ImportPorts) {
-			await ImportObjects(ports, "port", ".taport");
-		}
+		if (m_settings.ImportPorts) await ImportObjects(ports, "port", ".taport");
 
-		if (m_settings.ImportSnapshots) {
-			await ImportObjects(snapshots, "snapshot", ".tasnap");
-		}
-		
+		if (m_settings.ImportSnapshots) await ImportObjects(snapshots, "snapshot", ".tasnap");
+
 		Directory.Delete(Path.Combine(ProjectContext.CachePath, "fmod"), true);
 
 		return uids;
@@ -168,12 +164,12 @@ public partial class AudioStringImporter(AudioStringImporter.Settings settings) 
 
 	public partial class Settings : ObservableObject {
 		[ObservableProperty] private bool m_followFolderStructure = true;
-		[ObservableProperty] private bool m_importEvents = true;
 		[ObservableProperty] private bool m_importBuses = true;
-		[ObservableProperty] private bool m_importVcas = true;
+		[ObservableProperty] private bool m_importEvents = true;
 		[ObservableProperty] private bool m_importPorts = true;
 		[ObservableProperty] private bool m_importSnapshots = true;
-		
+		[ObservableProperty] private bool m_importVcas = true;
+
 		public AudioStringMetaSection ToSection() {
 			return new AudioStringMetaSection {
 				FollowFolderStructure = FollowFolderStructure,
@@ -184,6 +180,5 @@ public partial class AudioStringImporter(AudioStringImporter.Settings settings) 
 				ImportSnapshots = ImportSnapshots
 			};
 		}
-		
 	}
 }

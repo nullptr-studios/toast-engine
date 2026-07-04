@@ -26,6 +26,9 @@ public abstract class ColorBoxBase : TemplatedControl {
 	private const double Spacing = 8;
 	private const double BoxBreath = 6;
 
+	// Picker
+	private const double IntensityMax = 10.0;
+
 	private static readonly FontFamily Font = new("FiraCode Nerd Font,Consolas,monospace");
 	private static readonly Cursor DragCursor = new(StandardCursorType.SizeWestEast);
 
@@ -51,54 +54,57 @@ public abstract class ColorBoxBase : TemplatedControl {
 		AvaloniaProperty.Register<ColorBoxBase, double>(nameof(DragSensitivity), 4.0);
 
 	public static readonly StyledProperty<double> MinimumProperty =
-		AvaloniaProperty.Register<ColorBoxBase, double>(nameof(Minimum), 0.0);
+		AvaloniaProperty.Register<ColorBoxBase, double>(nameof(Minimum));
 
 	public static readonly StyledProperty<double> MaximumProperty =
 		AvaloniaProperty.Register<ColorBoxBase, double>(nameof(Maximum), double.PositiveInfinity);
 
-	private bool m_numbersVisible = true;
-
 	public static readonly DirectProperty<ColorBoxBase, bool> NumbersVisibleProperty =
 		AvaloniaProperty.RegisterDirect<ColorBoxBase, bool>(nameof(NumbersVisible), o => o.m_numbersVisible);
-
-	private IBrush? m_swatchBrush;
 
 	public static readonly DirectProperty<ColorBoxBase, IBrush?> SwatchBrushProperty =
 		AvaloniaProperty.RegisterDirect<ColorBoxBase, IBrush?>(nameof(SwatchBrush), o => o.m_swatchBrush);
 
-	private bool m_showChecker;
-
 	public static readonly DirectProperty<ColorBoxBase, bool> ShowCheckerProperty =
 		AvaloniaProperty.RegisterDirect<ColorBoxBase, bool>(nameof(ShowChecker), o => o.m_showChecker);
+
+	private readonly bool m_showChecker;
+
+	// Inline number zones
+	private int m_builtDecimals = -1;
+	private Border? m_checker;
+	private int m_dragChannel;
+	private bool m_dragFine;
+	private bool m_dragMoved;
+	private float m_dragStartValue;
+	private double m_dragStartX;
+
+	// Drag state
+	private bool m_dragging;
+	private TextBlock[]? m_fracBlocks;
+
+	private IBrush? m_hoverBrush;
+	private TextBlock[]? m_intBlocks;
+	private Slider? m_intensitySlider;
+	private IBrush? m_mutedBrush;
+
+	private bool m_numbersVisible = true;
+	private Flyout? m_pickerFlyout;
+	private bool m_pickerSyncing;
+	private ColorView? m_pickerView;
 
 	// Template parts
 	private Control? m_root;
 	private Border? m_swatch;
-	private Border? m_checker;
+
+	private IBrush? m_swatchBrush;
 	private Panel? m_value;
 
-	// Inline number zones
-	private int m_builtDecimals = -1;
-	private TextBlock[]? m_intBlocks;
-	private TextBlock[]? m_fracBlocks;
+	protected ColorBoxBase() {
+		SetAndRaise(ShowCheckerProperty, ref m_showChecker, HasAlpha);
+		UpdateSwatch();
+	}
 
-	// Drag state
-	private bool m_dragging;
-	private int m_dragChannel;
-	private bool m_dragFine;
-	private bool m_dragMoved;
-	private double m_dragStartX;
-	private float m_dragStartValue;
-
-	// Picker
-	private const double IntensityMax = 10.0;
-	private Flyout? m_pickerFlyout;
-	private ColorView? m_pickerView;
-	private Slider? m_intensitySlider;
-	private bool m_pickerSyncing;
-
-	private IBrush? m_hoverBrush;
-	private IBrush? m_mutedBrush;
 	private IBrush HoverBrush => m_hoverBrush ??= Resource("Bg3") ?? Brushes.Transparent;
 	private IBrush MutedBrush => m_mutedBrush ??= Resource("TextMuted") ?? Brushes.Gray;
 
@@ -155,16 +161,13 @@ public abstract class ColorBoxBase : TemplatedControl {
 
 	protected abstract bool HasAlpha { get; }
 
-	protected virtual float GetAlpha() => 1f;
-
-	protected virtual void SetAlpha(float value) { }
-
 	private int ChannelCount => HasAlpha ? 4 : 3;
 
-	protected ColorBoxBase() {
-		SetAndRaise(ShowCheckerProperty, ref m_showChecker, HasAlpha);
-		UpdateSwatch();
+	protected virtual float GetAlpha() {
+		return 1f;
 	}
+
+	protected virtual void SetAlpha(float value) { }
 
 	protected void RefreshDisplay() {
 		UpdateSwatch();
@@ -199,14 +202,18 @@ public abstract class ColorBoxBase : TemplatedControl {
 		UpdateSwatch();
 	}
 
-	private bool IsAlpha(int channel) => HasAlpha && channel == ChannelCount - 1;
+	private bool IsAlpha(int channel) {
+		return HasAlpha && channel == ChannelCount - 1;
+	}
 
-	private float GetChannel(int channel) => channel switch {
-		0 => R,
-		1 => G,
-		2 => B,
-		_ => GetAlpha()
-	};
+	private float GetChannel(int channel) {
+		return channel switch {
+			0 => R,
+			1 => G,
+			2 => B,
+			_ => GetAlpha()
+		};
+	}
 
 	private void SetChannel(int channel, float value) {
 		switch (channel) {
@@ -241,8 +248,7 @@ public abstract class ColorBoxBase : TemplatedControl {
 		if (double.IsInfinity(availableWidth)) {
 			decimals = maxDecimals;
 			visible = true;
-		}
-		else {
+		} else {
 			var valueWidth = availableWidth - RootPadding - SwatchSize - Spacing;
 			var floor = maxDecimals == 0 ? 0 : 1; // keep at least one decimal, else hide
 			decimals = -1;
@@ -294,7 +300,8 @@ public abstract class ColorBoxBase : TemplatedControl {
 			m_intBlocks[i] = integer;
 			m_fracBlocks[i] = fraction;
 
-			var zones = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+			var zones = new StackPanel
+				{ Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
 			zones.Children.Add(MakeZone(integer, i, false));
 			if (decimals > 0) zones.Children.Add(MakeZone(fraction, i, true));
 
@@ -352,8 +359,7 @@ public abstract class ColorBoxBase : TemplatedControl {
 			if (dot >= 0) {
 				m_intBlocks[i].Text = formatted[..dot];
 				m_fracBlocks[i].Text = formatted[dot..];
-			}
-			else {
+			} else {
 				m_intBlocks[i].Text = formatted;
 				m_fracBlocks[i].Text = "";
 			}
@@ -385,9 +391,13 @@ public abstract class ColorBoxBase : TemplatedControl {
 		SetAndRaise(SwatchBrushProperty, ref m_swatchBrush, new SolidColorBrush(color));
 	}
 
-	private static byte ToByte(float value) => (byte)Math.Clamp(MathF.Round(value * 255f), 0f, 255f);
+	private static byte ToByte(float value) {
+		return (byte)Math.Clamp(MathF.Round(value * 255f), 0f, 255f);
+	}
 
-	private void SetNumbersVisible(bool value) => SetAndRaise(NumbersVisibleProperty, ref m_numbersVisible, value);
+	private void SetNumbersVisible(bool value) {
+		SetAndRaise(NumbersVisibleProperty, ref m_numbersVisible, value);
+	}
 
 	private static IBrush? Resource(string key) {
 		if (Application.Current?.Resources.TryGetResource(key, ThemeVariant.Dark, out var r) == true)

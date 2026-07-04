@@ -3,6 +3,7 @@
 // 24 Jun 2026
 //
 
+using System.Collections;
 using Avalonia.Input;
 
 namespace editor.Components.Elements;
@@ -27,5 +28,5 @@ public interface IRowVisible {
 /// the header row (beside grip/X) and the remaining keys stacked below
 public interface IStructRow {
 	bool IsStructRow { get; }
-	System.Collections.IList StructKeys { get; }
+	IList StructKeys { get; }
 }

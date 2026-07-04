@@ -15,10 +15,10 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 	private readonly IReadOnlyList<string> m_filePaths;
 	private readonly List<IAssetImporter> m_importers;
 	private readonly ImportTreeState m_state;
+	[ObservableProperty] private string m_artworkDestination = "artwork://";
 
 	[ObservableProperty] private string m_locationPath;
 	[ObservableProperty] private bool m_moveToArtwork = true;
-	[ObservableProperty] private string m_artworkDestination = "artwork://";
 
 	private Window? m_window;
 
@@ -32,7 +32,7 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 			new PsdImporter(TextureSettings, PsdSettings),
 			new GltfImporter(GltfSettings, TextureSettings),
 			new AudioBankImporter(),
-			new AudioStringImporter(AudioStringSettings),
+			new AudioStringImporter(AudioStringSettings)
 		];
 
 		RebuildSettingsCards();
@@ -52,7 +52,9 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 		}
 	}
 
-	public void SetWindow(Window window) => m_window = window;
+	public void SetWindow(Window window) {
+		m_window = window;
+	}
 
 	[RelayCommand]
 	private async Task BrowseLocation() {
@@ -95,11 +97,11 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 	}
 
 	private async Task ImportFile(string filePath, string? artworkDir, Action<string> log, Action<double> progress) {
-		string realSourcePath = filePath;
+		var realSourcePath = filePath;
 
 		if (MoveToArtwork && artworkDir is not null) {
 			var artworkDest = Path.Combine(artworkDir, Path.GetFileName(filePath));
-			File.Copy(filePath, artworkDest, overwrite: true);
+			File.Copy(filePath, artworkDest, true);
 			realSourcePath = artworkDest;
 		}
 
@@ -115,8 +117,8 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 
 		if (MoveToArtwork) {
 			var sourceVirtual = ProjectContext.ToVirtual(realSourcePath)
-			                    ?? throw new InvalidOperationException(
-				                    $"File is outside project: {realSourcePath}");
+				?? throw new InvalidOperationException(
+					$"File is outside project: {realSourcePath}");
 			var hash = AssetDatabase.ComputeHash(realSourcePath);
 			if (AssetDatabase.IsUpToDate(sourceVirtual, hash)) {
 				log("Already up to date, skipping.");
@@ -137,7 +139,9 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	private void Cancel() => m_window?.Close();
+	private void Cancel() {
+		m_window?.Close();
+	}
 
 	private void RebuildSettingsCards() {
 		SettingsCards.Clear();
@@ -148,10 +152,9 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 			if (!m_filePaths.Any(path => importer.CanHandle(path))) continue;
 
 			// Add settings cards for all settings importers supported by this importer
-			foreach (var settingsImporter in importer.GetAllSettingsImporters()) {
+			foreach (var settingsImporter in importer.GetAllSettingsImporters())
 				if (seenNames.Add(settingsImporter.DisplayName))
 					SettingsCards.Add(new ImporterSettingsCardVM(settingsImporter, m_state));
-			}
 		}
 	}
 }

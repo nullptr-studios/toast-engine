@@ -15,14 +15,10 @@ namespace editor.Components.CurveCanvas;
 // One curve rendered by a CurveCanvas
 // All point mutations funnel through here so the canvas and any point-list UI stay consistent
 public sealed partial class CurveCanvasItem : ObservableObject {
-	public Curve Curve { get; }
-
 	[ObservableProperty] private Color m_color;
-	[ObservableProperty] private string m_label = "";
-	[ObservableProperty] private bool m_isVisible = true;
 	[ObservableProperty] private bool m_isEditable = true;
-
-	public event Action? Changed;
+	[ObservableProperty] private bool m_isVisible = true;
+	[ObservableProperty] private string m_label = "";
 
 	public CurveCanvasItem(Curve curve, Color color, string label = "") {
 		Curve = curve;
@@ -30,27 +26,36 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 		m_label = label;
 	}
 
+	public Curve Curve { get; }
+
 	// for legend swatches
 	public IBrush ColorBrush => new SolidColorBrush(Color);
-
-	partial void OnColorChanged(Color value) => OnPropertyChanged(nameof(ColorBrush));
 
 	public int NumPoints => Curve.NumPoints;
 	public int MinPoints => Curve.SplineType == SplineType.Bezier ? 4 : 2;
 	private int Dim => Curve.Dimension == CurveDimension.D2 ? 2 : 3;
 
-	// Bezier layout
-	public bool IsHandle(int index) => Curve.SplineType == SplineType.Bezier && index % 3 != 0;
+	public event Action? Changed;
 
-	public (float X, float Y) GetPoint(int index) =>
-		(Curve.Points[index * Dim], Curve.Points[index * Dim + 1]);
+	partial void OnColorChanged(Color value) {
+		OnPropertyChanged(nameof(ColorBrush));
+	}
+
+	// Bezier layout
+	public bool IsHandle(int index) {
+		return Curve.SplineType == SplineType.Bezier && index % 3 != 0;
+	}
+
+	public (float X, float Y) GetPoint(int index) {
+		return (Curve.Points[index * Dim], Curve.Points[index * Dim + 1]);
+	}
 
 	public void MovePoint(int index, float x, float y) {
 		if (index < 0 || index >= NumPoints) return;
-		int dim = Dim;
+		var dim = Dim;
 		var pts = Curve.Points.ToArray();
-		float dx = x - pts[index * dim + 0];
-		float dy = y - pts[index * dim + 1];
+		var dx = x - pts[index * dim + 0];
+		var dy = y - pts[index * dim + 1];
 		pts[index * dim + 0] = x;
 		pts[index * dim + 1] = y;
 
@@ -60,6 +65,7 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 				pts[(index - 1) * dim + 0] += dx;
 				pts[(index - 1) * dim + 1] += dy;
 			}
+
 			if (index + 1 < NumPoints) {
 				pts[(index + 1) * dim + 0] += dx;
 				pts[(index + 1) * dim + 1] += dy;
@@ -72,7 +78,7 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 
 	// Inserts at the X-sorted position and returns the new point's index
 	public int InsertPoint(float x, float y) {
-		int inserted = Curve.SplineType == SplineType.Bezier
+		var inserted = Curve.SplineType == SplineType.Bezier
 			? InsertBezierAnchor(x, y)
 			: InsertPlain(x, y);
 		Changed?.Invoke();
@@ -82,7 +88,7 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 	public bool RemovePoint(int index) {
 		if (index < 0 || index >= NumPoints) return false;
 
-		bool removed = Curve.SplineType == SplineType.Bezier
+		var removed = Curve.SplineType == SplineType.Bezier
 			? RemoveBezier(index)
 			: RemovePlain(index);
 
@@ -91,12 +97,14 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 	}
 
 	// For structural edits made directly on the Curve
-	public void NotifyStructureChanged() => Changed?.Invoke();
+	public void NotifyStructureChanged() {
+		Changed?.Invoke();
+	}
 
 	private int InsertPlain(float x, float y) {
-		int dim = Dim;
+		var dim = Dim;
 		var pts = Curve.Points.ToList();
-		int index = FindXOrderIndex(x);
+		var index = FindXOrderIndex(x);
 
 		var comps = new List<float> { x, y };
 		if (dim == 3) comps.Add(0f);
@@ -108,7 +116,7 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 
 	private bool RemovePlain(int index) {
 		if (NumPoints <= 2) return false;
-		int dim = Dim;
+		var dim = Dim;
 		var pts = Curve.Points.ToList();
 		pts.RemoveRange(index * dim, dim);
 		Curve.SetPoints(pts);
@@ -117,14 +125,14 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 
 	// Inserts an anchor plus its two handles so the count stays 3k+1
 	private int InsertBezierAnchor(float x, float y) {
-		int dim = Dim;
-		int n = NumPoints;
+		var dim = Dim;
+		var n = NumPoints;
 		var pts = Curve.Points.ToList();
 
 		// only operate on valid Bezier layouts; otherwise fall back to a plain insert
 		if ((n - 1) % 3 != 0) return InsertPlainFromList(pts, x, y);
 
-		int segments = (n - 1) / 3;
+		var segments = (n - 1) / 3;
 		var (firstX, _) = GetPoint(0);
 		var (lastX, _) = GetPoint(n - 1);
 
@@ -134,7 +142,7 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 			InsertComps(pts, 0, [
 				ax, ay,
 				Lerp(ax, bx, 1f / 3f), Lerp(ay, by, 1f / 3f),
-				Lerp(ax, bx, 2f / 3f), Lerp(ay, by, 2f / 3f),
+				Lerp(ax, bx, 2f / 3f), Lerp(ay, by, 2f / 3f)
 			], dim);
 			Curve.SetPoints(pts);
 			return 0;
@@ -146,18 +154,22 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 			InsertComps(pts, n, [
 				Lerp(ax, bx, 1f / 3f), Lerp(ay, by, 1f / 3f),
 				Lerp(ax, bx, 2f / 3f), Lerp(ay, by, 2f / 3f),
-				bx, by,
+				bx, by
 			], dim);
 			Curve.SetPoints(pts);
 			return n + 2;
 		}
 
 		// interior
-		int seg = 0;
-		for (int s = 0; s < segments; s++) {
+		var seg = 0;
+		for (var s = 0; s < segments; s++) {
 			var (a, _) = GetPoint(s * 3);
 			var (b, _) = GetPoint(s * 3 + 3);
-			if (x >= Math.Min(a, b) && x <= Math.Max(a, b)) { seg = s; break; }
+			if (x >= Math.Min(a, b) && x <= Math.Max(a, b)) {
+				seg = s;
+				break;
+			}
+
 			if (x > Math.Max(a, b)) seg = s;
 		}
 
@@ -166,14 +178,14 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 		InsertComps(pts, seg * 3 + 2, [
 			Lerp(x, prevX, 1f / 3f), Lerp(y, prevY, 1f / 3f),
 			x, y,
-			Lerp(x, nextX, 1f / 3f), Lerp(y, nextY, 1f / 3f),
+			Lerp(x, nextX, 1f / 3f), Lerp(y, nextY, 1f / 3f)
 		], dim);
 		Curve.SetPoints(pts);
 		return seg * 3 + 3;
 	}
 
 	private bool RemoveBezier(int index) {
-		int n = NumPoints;
+		var n = NumPoints;
 		if ((n - 1) % 3 != 0) return RemovePlain(index);
 
 		if (IsHandle(index)) {
@@ -186,9 +198,9 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 
 		if (n <= 4) return false; // one segment left; keep the curve valid
 
-		int dim = Dim;
+		var dim = Dim;
 		var pts = Curve.Points.ToList();
-		int start = index == 0 ? 0
+		var start = index == 0 ? 0
 			: index == n - 1 ? n - 3
 			: index - 1;
 		pts.RemoveRange(start * dim, 3 * dim);
@@ -197,8 +209,8 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 	}
 
 	private int InsertPlainFromList(List<float> pts, float x, float y) {
-		int dim = Dim;
-		int index = FindXOrderIndex(x);
+		var dim = Dim;
+		var index = FindXOrderIndex(x);
 		var comps = new List<float> { x, y };
 		if (dim == 3) comps.Add(0f);
 		pts.InsertRange(index * dim, comps);
@@ -207,7 +219,7 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 	}
 
 	private int FindXOrderIndex(float x) {
-		for (int i = 0; i < NumPoints; i++)
+		for (var i = 0; i < NumPoints; i++)
 			if (GetPoint(i).X > x)
 				return i;
 		return NumPoints;
@@ -215,13 +227,16 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 
 	private static void InsertComps(List<float> pts, int pointIndex, float[] xy, int dim) {
 		var comps = new List<float>(xy.Length / 2 * dim);
-		for (int i = 0; i < xy.Length; i += 2) {
+		for (var i = 0; i < xy.Length; i += 2) {
 			comps.Add(xy[i]);
 			comps.Add(xy[i + 1]);
 			if (dim == 3) comps.Add(0f);
 		}
+
 		pts.InsertRange(pointIndex * dim, comps);
 	}
 
-	private static float Lerp(float a, float b, float t) => a + (b - a) * t;
+	private static float Lerp(float a, float b, float t) {
+		return a + (b - a) * t;
+	}
 }

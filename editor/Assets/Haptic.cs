@@ -14,12 +14,12 @@ public enum HapticMode {
 	Standard,
 	Curve,
 	AdaptiveTrigger,
-	AudioHaptic,
+	AudioHaptic
 }
 
 public enum HapticChannels {
 	Single,
-	Dual,
+	Dual
 }
 
 public sealed class Haptic {
@@ -39,11 +39,13 @@ public sealed class Haptic {
 	public Curve? Curve { get; set; }
 	public Curve? CurveRight { get; set; }
 
-	public static Haptic FromFile(string path) => FromString(File.ReadAllText(path));
+	public static Haptic FromFile(string path) {
+		return FromString(File.ReadAllText(path));
+	}
 
 	public static Haptic FromString(string toml) {
 		var table = TomlSerializer.Deserialize<TomlTable>(toml)
-		            ?? throw new FormatException("Haptic: failed to parse TOML");
+			?? throw new FormatException("Haptic: failed to parse TOML");
 
 		var h = new Haptic {
 			SchemaUid = GetString(table, "schema", ""),
@@ -56,18 +58,20 @@ public sealed class Haptic {
 				? HapticChannels.Dual
 				: HapticChannels.Single,
 			Pan = GetFloat(table, "pan", 0f),
-			Multiplier = GetFloat(table, "multiplier", 1f),
+			Multiplier = GetFloat(table, "multiplier", 1f)
 		};
 
 		if (table.TryGetValue("curve", out var c) && c is TomlTable ct)
-			h.Curve = Assets.Curve.FromToml(ct);
+			h.Curve = Curve.FromToml(ct);
 		if (table.TryGetValue("curve_right", out var cr) && cr is TomlTable crt)
-			h.CurveRight = Assets.Curve.FromToml(crt);
+			h.CurveRight = Curve.FromToml(crt);
 
 		return h;
 	}
 
-	public void Save(string path) => File.WriteAllText(path, Serialize());
+	public void Save(string path) {
+		File.WriteAllText(path, Serialize());
+	}
 
 	public string Serialize() {
 		var table = new TomlTable();
@@ -96,33 +100,38 @@ public sealed class Haptic {
 		return TomlSerializer.Serialize(table);
 	}
 
-	private static string ModeToString(HapticMode m) =>
-		m switch {
+	private static string ModeToString(HapticMode m) {
+		return m switch {
 			HapticMode.Standard => "standard",
 			HapticMode.Curve => "curve",
 			HapticMode.AdaptiveTrigger => "adaptive_trigger",
 			HapticMode.AudioHaptic => "audio_haptic",
 			_ => "standard"
 		};
+	}
 
-	private static HapticMode ParseMode(string s) =>
-		s switch {
+	private static HapticMode ParseMode(string s) {
+		return s switch {
 			"curve" => HapticMode.Curve,
 			"adaptive_trigger" => HapticMode.AdaptiveTrigger,
 			"audio_haptic" => HapticMode.AudioHaptic,
 			_ => HapticMode.Standard
 		};
+	}
 
-	private static string GetString(TomlTable t, string key, string fallback) =>
-		t.TryGetValue(key, out var v) && v is string s ? s : fallback;
+	private static string GetString(TomlTable t, string key, string fallback) {
+		return t.TryGetValue(key, out var v) && v is string s ? s : fallback;
+	}
 
-	private static int GetInt(TomlTable t, string key, int fallback) =>
-		t.TryGetValue(key, out var v)
+	private static int GetInt(TomlTable t, string key, int fallback) {
+		return t.TryGetValue(key, out var v)
 			? v switch { long l => (int)l, int i => i, double d => (int)d, _ => fallback }
 			: fallback;
+	}
 
-	private static float GetFloat(TomlTable t, string key, float fallback) =>
-		t.TryGetValue(key, out var v)
+	private static float GetFloat(TomlTable t, string key, float fallback) {
+		return t.TryGetValue(key, out var v)
 			? v switch { double d => (float)d, float f => f, long l => l, int i => i, _ => fallback }
 			: fallback;
+	}
 }

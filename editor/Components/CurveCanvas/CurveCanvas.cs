@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
@@ -49,20 +50,23 @@ public sealed class CurveCanvas : Control {
 	public static readonly StyledProperty<bool> IsReadOnlyProperty =
 		AvaloniaProperty.Register<CurveCanvas, bool>(nameof(IsReadOnly));
 
+	private readonly List<CurveCanvasItem> m_hooked = [];
+
+	private IList<CurveCanvasItem>? m_curves;
+
+	private int m_dragIndex = -1;
+
+	// Data window is frozen while dragging so the fit doesn't chase the point under the cursor
+	private bool m_freezeView;
+
+	private int m_hoverIndex = -1;
+	private (double X0, double X1, double Y0, double Y1) m_view = (0, 1, 0, 1);
+
 	static CurveCanvas() {
 		AffectsRender<CurveCanvas>(ActiveCurveIndexProperty, SelectedPointIndexProperty,
 			XMinProperty, XMaxProperty, YMinProperty, YMaxProperty, IsReadOnlyProperty);
 		FocusableProperty.OverrideDefaultValue<CurveCanvas>(true);
 	}
-
-	private IList<CurveCanvasItem>? m_curves;
-	private readonly List<CurveCanvasItem> m_hooked = [];
-
-	private int m_hoverIndex = -1;
-	private int m_dragIndex = -1;
-	// Data window is frozen while dragging so the fit doesn't chase the point under the cursor
-	private bool m_freezeView;
-	private (double X0, double X1, double Y0, double Y1) m_view = (0, 1, 0, 1);
 
 	public IList<CurveCanvasItem>? Curves {
 		get => m_curves;
@@ -86,10 +90,25 @@ public sealed class CurveCanvas : Control {
 		set => SetValue(SelectedPointIndexProperty, value);
 	}
 
-	public double XMin { get => GetValue(XMinProperty); set => SetValue(XMinProperty, value); }
-	public double XMax { get => GetValue(XMaxProperty); set => SetValue(XMaxProperty, value); }
-	public double YMin { get => GetValue(YMinProperty); set => SetValue(YMinProperty, value); }
-	public double YMax { get => GetValue(YMaxProperty); set => SetValue(YMaxProperty, value); }
+	public double XMin {
+		get => GetValue(XMinProperty);
+		set => SetValue(XMinProperty, value);
+	}
+
+	public double XMax {
+		get => GetValue(XMaxProperty);
+		set => SetValue(XMaxProperty, value);
+	}
+
+	public double YMin {
+		get => GetValue(YMinProperty);
+		set => SetValue(YMinProperty, value);
+	}
+
+	public double YMax {
+		get => GetValue(YMaxProperty);
+		set => SetValue(YMaxProperty, value);
+	}
 
 	public bool IsReadOnly {
 		get => GetValue(IsReadOnlyProperty);
@@ -103,6 +122,12 @@ public sealed class CurveCanvas : Control {
 
 	private bool CanEdit => !IsReadOnly && ActiveItem is { IsEditable: true, IsVisible: true };
 
+	private Rect PlotRect =>
+		new(
+			InsetLeft, InsetTop,
+			Math.Max(1, Bounds.Width - InsetLeft - InsetRight),
+			Math.Max(1, Bounds.Height - InsetTop - InsetBottom));
+
 	private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) {
 		RehookItems();
 		InvalidateVisual();
@@ -113,6 +138,7 @@ public sealed class CurveCanvas : Control {
 			item.Changed -= OnItemChanged;
 			item.PropertyChanged -= OnItemPropertyChanged;
 		}
+
 		m_hooked.Clear();
 		if (m_curves is null) return;
 		foreach (var item in m_curves) {
@@ -122,15 +148,13 @@ public sealed class CurveCanvas : Control {
 		}
 	}
 
-	private void OnItemChanged() => InvalidateVisual();
-
-	private void OnItemPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
+	private void OnItemChanged() {
 		InvalidateVisual();
+	}
 
-	private Rect PlotRect => new(
-		InsetLeft, InsetTop,
-		Math.Max(1, Bounds.Width - InsetLeft - InsetRight),
-		Math.Max(1, Bounds.Height - InsetTop - InsetBottom));
+	private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e) {
+		InvalidateVisual();
+	}
 
 	private void UpdateView() {
 		if (m_freezeView) return;
@@ -138,18 +162,24 @@ public sealed class CurveCanvas : Control {
 		double x0 = double.PositiveInfinity, x1 = double.NegativeInfinity;
 		double y0 = double.PositiveInfinity, y1 = double.NegativeInfinity;
 
-		if (m_curves is { } curves) {
+		if (m_curves is { } curves)
 			foreach (var item in curves) {
 				if (!item.IsVisible) continue;
-				for (int i = 0; i < item.NumPoints; i++) {
+				for (var i = 0; i < item.NumPoints; i++) {
 					var (px, py) = item.GetPoint(i);
-					x0 = Math.Min(x0, px); x1 = Math.Max(x1, px);
-					y0 = Math.Min(y0, py); y1 = Math.Max(y1, py);
+					x0 = Math.Min(x0, px);
+					x1 = Math.Max(x1, px);
+					y0 = Math.Min(y0, py);
+					y1 = Math.Max(y1, py);
 				}
 			}
-		}
 
-		if (double.IsInfinity(x0)) { x0 = 0; x1 = 1; y0 = 0; y1 = 1; }
+		if (double.IsInfinity(x0)) {
+			x0 = 0;
+			x1 = 1;
+			y0 = 0;
+			y1 = 1;
+		}
 
 		// pinned axes win over the data bounds
 		if (!double.IsNaN(XMin)) x0 = XMin;
@@ -157,8 +187,15 @@ public sealed class CurveCanvas : Control {
 		if (!double.IsNaN(YMin)) y0 = YMin;
 		if (!double.IsNaN(YMax)) y1 = YMax;
 
-		if (x1 - x0 < 1e-6) { x0 -= 0.5; x1 += 0.5; }
-		if (y1 - y0 < 1e-6) { y0 -= 0.5; y1 += 0.5; }
+		if (x1 - x0 < 1e-6) {
+			x0 -= 0.5;
+			x1 += 0.5;
+		}
+
+		if (y1 - y0 < 1e-6) {
+			y0 -= 0.5;
+			y1 += 0.5;
+		}
 
 		// breathing room on auto-fit axes only
 		double padX = (x1 - x0) * 0.08, padY = (y1 - y0) * 0.08;
@@ -206,37 +243,38 @@ public sealed class CurveCanvas : Control {
 		var active = IsReadOnly ? null : ActiveItem;
 		foreach (var item in curves) {
 			if (!item.IsVisible || item == active) continue;
-			DrawCurve(ctx, item, dimmed: !IsReadOnly);
-			DrawPoints(ctx, item, bg1, red, active: IsReadOnly);
+			DrawCurve(ctx, item, !IsReadOnly);
+			DrawPoints(ctx, item, bg1, red, IsReadOnly);
 		}
+
 		if (active is { IsVisible: true }) {
-			DrawCurve(ctx, active, dimmed: false);
+			DrawCurve(ctx, active, false);
 			DrawControlPolygon(ctx, active);
-			DrawPoints(ctx, active, bg1, red, active: true);
+			DrawPoints(ctx, active, bg1, red, true);
 		}
 	}
 
 	private void DrawGrid(DrawingContext ctx, IBrush zeroBrush, IBrush lineBrush, IBrush textBrush) {
 		var plot = PlotRect;
 		var typeface = new Typeface(Font);
-		var linePen = new Pen(lineBrush, 1);
-		var zeroPen = new Pen(zeroBrush, 1);
+		var linePen = new Pen(lineBrush);
+		var zeroPen = new Pen(zeroBrush);
 
-		double stepX = NiceStep((m_view.X1 - m_view.X0) / Math.Max(1, plot.Width / GridTargetPx));
-		double stepY = NiceStep((m_view.Y1 - m_view.Y0) / Math.Max(1, plot.Height / GridTargetPx));
+		var stepX = NiceStep((m_view.X1 - m_view.X0) / Math.Max(1, plot.Width / GridTargetPx));
+		var stepY = NiceStep((m_view.Y1 - m_view.Y0) / Math.Max(1, plot.Height / GridTargetPx));
 
-		for (double x = Math.Ceiling(m_view.X0 / stepX) * stepX; x <= m_view.X1; x += stepX) {
-			double px = ToPixel(x, 0).X;
-			bool zero = Math.Abs(x) < stepX * 1e-6;
+		for (var x = Math.Ceiling(m_view.X0 / stepX) * stepX; x <= m_view.X1; x += stepX) {
+			var px = ToPixel(x, 0).X;
+			var zero = Math.Abs(x) < stepX * 1e-6;
 			ctx.DrawLine(zero ? zeroPen : linePen, new Point(px, plot.Y), new Point(px, plot.Bottom));
 
 			var label = Format(x, typeface, textBrush);
 			ctx.DrawText(label, new Point(px - label.Width / 2, plot.Bottom + 4));
 		}
 
-		for (double y = Math.Ceiling(m_view.Y0 / stepY) * stepY; y <= m_view.Y1; y += stepY) {
-			double py = ToPixel(0, y).Y;
-			bool zero = Math.Abs(y) < stepY * 1e-6;
+		for (var y = Math.Ceiling(m_view.Y0 / stepY) * stepY; y <= m_view.Y1; y += stepY) {
+			var py = ToPixel(0, y).Y;
+			var zero = Math.Abs(y) < stepY * 1e-6;
 			ctx.DrawLine(zero ? zeroPen : linePen, new Point(plot.X, py), new Point(plot.Right, py));
 
 			var label = Format(y, typeface, textBrush);
@@ -249,10 +287,10 @@ public sealed class CurveCanvas : Control {
 
 		var geometry = new StreamGeometry();
 		using (var g = geometry.Open()) {
-			float tScale = item.Curve.TScale;
-			bool is3D = item.Curve.Dimension == CurveDimension.D3;
-			for (int i = 0; i <= SampleSteps; i++) {
-				float t = (float)(i / SampleSteps) * tScale;
+			var tScale = item.Curve.TScale;
+			var is3D = item.Curve.Dimension == CurveDimension.D3;
+			for (var i = 0; i <= SampleSteps; i++) {
+				var t = (float)(i / SampleSteps) * tScale;
 				float x, y;
 				if (is3D) (x, y, _) = item.Curve.Eval3D(t);
 				else (x, y) = item.Curve.Eval2D(t);
@@ -261,6 +299,7 @@ public sealed class CurveCanvas : Control {
 				if (i == 0) g.BeginFigure(p, false);
 				else g.LineTo(p);
 			}
+
 			g.EndFigure(false);
 		}
 
@@ -275,22 +314,23 @@ public sealed class CurveCanvas : Control {
 
 		// Bezier: slope stems from each anchor to its tangent handles
 		if (item.Curve.SplineType == SplineType.Bezier && (item.NumPoints - 1) % 3 == 0) {
-			var stemPen = new Pen(new SolidColorBrush(Fade(item.Color, 0.55)), 1);
-			for (int i = 0; i < item.NumPoints; i++) {
+			var stemPen = new Pen(new SolidColorBrush(Fade(item.Color, 0.55)));
+			for (var i = 0; i < item.NumPoints; i++) {
 				if (!item.IsHandle(i)) continue;
-				int anchor = i % 3 == 1 ? i - 1 : i + 1;
+				var anchor = i % 3 == 1 ? i - 1 : i + 1;
 				ctx.DrawLine(stemPen,
 					ToPixel(item.GetPoint(anchor).X, item.GetPoint(anchor).Y),
 					ToPixel(item.GetPoint(i).X, item.GetPoint(i).Y));
 			}
+
 			return;
 		}
 
 		// B-Spline: faint control polygon
 		if (item.Curve.SplineType != SplineType.BSpline) return;
-		var pen = new Pen(new SolidColorBrush(Fade(item.Color, 0.35)), 1);
+		var pen = new Pen(new SolidColorBrush(Fade(item.Color, 0.35)));
 		var prev = ToPixel(item.GetPoint(0).X, item.GetPoint(0).Y);
-		for (int i = 1; i < item.NumPoints; i++) {
+		for (var i = 1; i < item.NumPoints; i++) {
 			var p = ToPixel(item.GetPoint(i).X, item.GetPoint(i).Y);
 			ctx.DrawLine(pen, prev, p);
 			prev = p;
@@ -301,15 +341,15 @@ public sealed class CurveCanvas : Control {
 		var stroke = new SolidColorBrush(active ? item.Color : Fade(item.Color, 0.4));
 		var pen = new Pen(stroke, 2);
 
-		for (int i = 0; i < item.NumPoints; i++) {
+		for (var i = 0; i < item.NumPoints; i++) {
 			var p = ToPixel(item.GetPoint(i).X, item.GetPoint(i).Y);
-			bool selected = active && i == SelectedPointIndex;
-			bool hovered = active && i == m_hoverIndex;
-			double r = selected ? 6 : hovered ? 5.5 : 4.5;
+			var selected = active && i == SelectedPointIndex;
+			var hovered = active && i == m_hoverIndex;
+			var r = selected ? 6 : hovered ? 5.5 : 4.5;
 
 			if (item.IsHandle(i)) {
 				// tangent handles: small hollow squares
-				double h = r - 1;
+				var h = r - 1;
 				ctx.DrawRectangle(fill, pen, new Rect(p.X - h, p.Y - h, h * 2, h * 2));
 			} else {
 				ctx.DrawEllipse(selected ? selectedFill : fill, pen, p, r, r);
@@ -317,20 +357,22 @@ public sealed class CurveCanvas : Control {
 		}
 	}
 
-	private static FormattedText Format(double value, Typeface typeface, IBrush brush) =>
-		new(value.ToString("0.###", CultureInfo.InvariantCulture),
+	private static FormattedText Format(double value, Typeface typeface, IBrush brush) {
+		return new FormattedText(value.ToString("0.###", CultureInfo.InvariantCulture),
 			CultureInfo.InvariantCulture, FlowDirection.LeftToRight, typeface, 11, brush);
+	}
 
 	// grid steps snap to 1/2/5 × 10^n
 	private static double NiceStep(double raw) {
 		if (raw <= 0 || double.IsNaN(raw) || double.IsInfinity(raw)) return 1;
-		double mag = Math.Pow(10, Math.Floor(Math.Log10(raw)));
-		double norm = raw / mag;
+		var mag = Math.Pow(10, Math.Floor(Math.Log10(raw)));
+		var norm = raw / mag;
 		return (norm < 1.5 ? 1 : norm < 3.5 ? 2 : norm < 7.5 ? 5 : 10) * mag;
 	}
 
-	private static Color Fade(Color c, double opacity) =>
-		Color.FromArgb((byte)(c.A * opacity), c.R, c.G, c.B);
+	private static Color Fade(Color c, double opacity) {
+		return Color.FromArgb((byte)(c.A * opacity), c.R, c.G, c.B);
+	}
 
 	// For view models building CurveCanvasItems out of the theme accents
 	public static Color ResolveColor(string key, string fallback) {
@@ -355,7 +397,7 @@ public sealed class CurveCanvas : Control {
 
 		var pos = e.GetPosition(this);
 		var props = e.GetCurrentPoint(this).Properties;
-		int hit = HitTest(item, pos);
+		var hit = HitTest(item, pos);
 
 		if (props.IsRightButtonPressed) {
 			if (hit >= 0) RemoveAt(item, hit);
@@ -380,6 +422,7 @@ public sealed class CurveCanvas : Control {
 		} else {
 			SelectedPointIndex = -1;
 		}
+
 		e.Handled = true;
 	}
 
@@ -396,7 +439,7 @@ public sealed class CurveCanvas : Control {
 			return;
 		}
 
-		int hover = CanEdit ? HitTest(item, pos) : -1;
+		var hover = CanEdit ? HitTest(item, pos) : -1;
 		if (hover != m_hoverIndex) {
 			m_hoverIndex = hover;
 			Cursor = hover >= 0 ? new Cursor(StandardCursorType.Hand) : Cursor.Default;
@@ -436,13 +479,17 @@ public sealed class CurveCanvas : Control {
 	}
 
 	private int HitTest(CurveCanvasItem item, Point pos) {
-		int best = -1;
-		double bestDist = HitRadius;
-		for (int i = 0; i < item.NumPoints; i++) {
+		var best = -1;
+		var bestDist = HitRadius;
+		for (var i = 0; i < item.NumPoints; i++) {
 			var p = ToPixel(item.GetPoint(i).X, item.GetPoint(i).Y);
-			double dist = Math.Sqrt((p.X - pos.X) * (p.X - pos.X) + (p.Y - pos.Y) * (p.Y - pos.Y));
-			if (dist < bestDist) { bestDist = dist; best = i; }
+			var dist = Math.Sqrt((p.X - pos.X) * (p.X - pos.X) + (p.Y - pos.Y) * (p.Y - pos.Y));
+			if (dist < bestDist) {
+				bestDist = dist;
+				best = i;
+			}
 		}
+
 		return best;
 	}
 

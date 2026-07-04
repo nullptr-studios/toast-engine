@@ -36,8 +36,10 @@ public partial class AssetFolderNode : ObservableObject {
 				c.UpdateFilter(query, caseSensitive);
 				FilteredChildren.Add(c);
 			}
+
 			return true;
 		}
+
 		var cmp = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 		var nameMatch = Name.Contains(query, cmp);
 		var visible = Children.Where(c => c.UpdateFilter(query, caseSensitive)).ToList();
@@ -48,10 +50,8 @@ public partial class AssetFolderNode : ObservableObject {
 }
 
 public class AssetFolderTreeViewModel : PickerViewModel {
-	private readonly ObservableCollection<AssetFolderNode> m_roots = [];
 	private readonly ObservableCollection<AssetFolderNode> m_filtered = [];
-
-	public AssetFolderNode? SelectedFolder { get; set; }
+	private readonly ObservableCollection<AssetFolderNode> m_roots = [];
 
 	public AssetFolderTreeViewModel(bool useArtwork = false) {
 		if (ProjectContext.IsInitialized) {
@@ -61,6 +61,8 @@ public class AssetFolderTreeViewModel : PickerViewModel {
 			m_filtered.Add(root);
 		}
 	}
+
+	public AssetFolderNode? SelectedFolder { get; set; }
 
 	public override string WindowTitle => "Select Destination Folder";
 	public override IEnumerable Items => m_filtered;
@@ -73,7 +75,9 @@ public class AssetFolderTreeViewModel : PickerViewModel {
 		foreach (var r in visible) m_filtered.Add(r);
 	}
 
-	public override bool IsSelectable(object? item) => item is AssetFolderNode;
+	public override bool IsSelectable(object? item) {
+		return item is AssetFolderNode;
+	}
 
 	public override string? GetResult(object? selected) {
 		if (selected is not AssetFolderNode node) return null;
@@ -85,7 +89,7 @@ public class AssetFolderTreeViewModel : PickerViewModel {
 		var folderName = await new NewFolderModal().ShowDialog<string?>(owner);
 		if (string.IsNullOrWhiteSpace(folderName)) return;
 
-		var parent = (selected as AssetFolderNode) ?? m_roots.FirstOrDefault();
+		var parent = selected as AssetFolderNode ?? m_roots.FirstOrDefault();
 		if (parent is null) return;
 
 		var newPath = Path.Combine(parent.RealPath, folderName);
