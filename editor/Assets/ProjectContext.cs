@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Ktx2Sharp;
 
 namespace editor.Assets;
 
@@ -39,7 +38,6 @@ public static class ProjectContext {
 		s_schemes["saved://"] = SavedPath;
 
 		EnsureDirectories();
-		Ktx.Init();
 		IsInitialized = true;
 	}
 

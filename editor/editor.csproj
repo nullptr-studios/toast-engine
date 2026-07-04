@@ -49,7 +49,6 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="JsonSchema.Net" Version="9.2.2" />
-        <PackageReference Include="Ktx2Sharp" Version="1.0.2" />
         <PackageReference Include="Lucide.Avalonia" Version="0.2.9" />
         <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.*" />
         <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.13" />
