@@ -37,14 +37,14 @@ void Event<T>::unsubscribe(iterator_t it) noexcept {
 
 	auto& g = EventSystem::event_data[typeid(T)];
 	{
-		std::scoped_lock _(g.mutex);
-		g.cached = false;
-		g.callbacks.erase(it);
-	}
-	{
 		std::scoped_lock _(EventSystem::deletion_mutex);
 		auto deleter = [](void* p) { delete static_cast<std::move_only_function<bool(T&)>*>(p); };
 		EventSystem::deletion_queue.emplace_back((*it).second, deleter);
+	}
+	{
+		std::scoped_lock _(g.mutex);
+		g.cached = false;
+		g.callbacks.erase(it);
 	}
 }
 
