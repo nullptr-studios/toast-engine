@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <string_view>
-#include <toast/world/reflect.hpp>
+#include <toast/reflect/reflect.hpp>
 #include <toast/world/world_test_access.hpp>
 
 namespace {
