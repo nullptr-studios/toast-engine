@@ -97,7 +97,7 @@ TOAST_TEST_NAMED("input", "input/04-assets", test_input_assets) {
 		    "threshold = 2.5\n"
 		);
 
-		assets::Data data(tbl, handle, assets::Data::KeepAllKeys);
+		assets::Data data(tbl, handle, assets::Data::keep_all_keys);
 		assert(data["axis"].as<int64_t>() == 1);
 		assert(data["power"].as<double>() == 0.0);
 		assert(data["custom"].as<double>() == 99.0);
