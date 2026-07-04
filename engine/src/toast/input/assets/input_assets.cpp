@@ -7,7 +7,7 @@
 
 namespace assets {
 
-Action::Action(const toml::table& table, AssetHandle<Schema> schema) : Data(table, std::move(schema), Data::KeepAllKeys) {
+Action::Action(const toml::table& table, AssetHandle<Schema> schema) : Data(table, std::move(schema), Data::keep_all_keys) {
 	// Cache typed fields from m_root so getters can return lightweight string_views
 	const auto& d = static_cast<const DataValue&>(m_root);
 
@@ -66,7 +66,7 @@ auto Action::accumulation() const noexcept -> AccumulationType {
 }
 
 InputLayout::InputLayout(const toml::table& table, AssetHandle<Schema> schema)
-    : Data(table, std::move(schema), Data::KeepAllKeys) {
+    : Data(table, std::move(schema), Data::keep_all_keys) {
 	const auto& d = static_cast<const DataValue&>(m_root);
 
 	if (d.contains("name")) {
@@ -162,7 +162,7 @@ auto InputSettings::get() const -> toml::table {
 }
 
 auto InputSettings::getFloat(std::string_view key, float fallback) const noexcept -> float {
-	const auto& d = static_cast<const DataValue&>(m_root);
+	const auto& d = m_root;
 	if (!d.contains(key)) {
 		return fallback;
 	}

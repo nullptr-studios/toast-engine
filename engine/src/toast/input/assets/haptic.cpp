@@ -24,7 +24,7 @@ auto hapticModeFromString(std::string_view s) -> HapticMode {
 
 }
 
-Haptic::Haptic(const toml::table& table, AssetHandle<Schema> schema) : Data(table, std::move(schema), Data::KeepAllKeys) {
+Haptic::Haptic(const toml::table& table, AssetHandle<Schema> schema) : Data(table, std::move(schema), Data::keep_all_keys) {
 	const auto& d = static_cast<const DataValue&>(m_root);
 
 	std::string mode_str;

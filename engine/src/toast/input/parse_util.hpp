@@ -22,7 +22,7 @@ namespace input::parse {
 inline auto vec2(const toml::node_view<const toml::node>& node, glm::vec2 fallback) -> glm::vec2 {
 	if (const auto* arr = node.as_array()) {
 		glm::vec2 out = fallback;
-		if (arr->size() >= 1) {
+		if (not arr->empty()) {
 			out.x = static_cast<float>((*arr)[0].value_or(static_cast<double>(fallback.x)));
 		}
 		if (arr->size() >= 2) {

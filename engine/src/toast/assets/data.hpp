@@ -18,7 +18,7 @@ public:
 	/// @brief Tag type for the keep-all-keys constructor
 	struct KeepAllKeysTag { };
 
-	static inline constexpr KeepAllKeysTag KeepAllKeys {};
+	static constexpr KeepAllKeysTag keep_all_keys {};
 
 	explicit Data(const toml::table& table, AssetHandle<Schema> schema = {});
 

@@ -38,8 +38,8 @@ void AssetRegistry::init() {
 	s_schema_toml["input_layout"] = [](const toml::table& t, AssetHandle<Schema> s) {
 		return std::make_unique<InputLayout>(t, std::move(s));
 	};
-	s_schema_toml["input_settings"] = [](const toml::table& t, AssetHandle<Schema> s) {
-		return std::make_unique<InputSettings>(t, std::move(s));
+	s_schema_toml["input_settings"] = [](const toml::table& t, const AssetHandle<Schema>& s) {
+		return std::make_unique<InputSettings>(t, s);
 	};
 	s_schema_toml["audio_event"] = [](const toml::table& t, AssetHandle<Schema> s) {
 		return std::make_unique<AudioEvent>(t, std::move(s));
