@@ -161,6 +161,13 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 		IsDirty = false;
 	}
 
+	[RelayCommand]
+	private void TestHaptic() {
+		if (m_haptic is null || !ToastEngine.IsEngineReady) return;
+		// serializes the unsaved state so tweaks are testable immediately
+		ToastEngine.TestHaptic(m_haptic.Serialize());
+	}
+
 	private CurveCanvasItem? ActiveEditItem =>
 		ActiveCurveIndex >= 0 && ActiveCurveIndex < m_editItems.Count
 			? m_editItems[ActiveCurveIndex]

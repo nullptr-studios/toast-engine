@@ -85,6 +85,21 @@ struct PlayHaptic : Event<PlayHaptic> {
 };
 
 /**
+ * @brief Requests a haptic play on a controller without routing through a PlayerController
+ *
+ * Used by the editor's haptic test button
+ */
+struct PlayHapticDirect : Event<PlayHapticDirect> {
+	/// @param controller SDL_JoystickID of the target controller; 0 = first/active gamepad
+	PlayHapticDirect(uint32_t controller, assets::AssetHandle<assets::Haptic> haptic)
+	    : controller(controller),
+	      haptic(std::move(haptic)) { }
+
+	uint32_t controller;
+	assets::AssetHandle<assets::Haptic> haptic;
+};
+
+/**
  * @brief Sets the global haptics intensity multiplier
  */
 struct SetHapticsMultiplier : Event<SetHapticsMultiplier> {

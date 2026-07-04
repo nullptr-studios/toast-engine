@@ -29,6 +29,11 @@ HapticsSystem::HapticsSystem() {
 		return false;
 	});
 
+	m_listener.subscribe<event::PlayHapticDirect>([this](const event::PlayHapticDirect& e) {
+		play(e.controller, e.haptic);
+		return false;
+	});
+
 	TOAST_INFO("Haptics", "Haptics system created");
 }
 

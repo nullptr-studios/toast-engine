@@ -8,6 +8,7 @@
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
 #include "input/haptics_system.hpp"
+#include "input/input_events.hpp"
 #include "input/input_system.hpp"
 #include "logger.hpp"
 #include "renderer/sdl_output_target.hpp"
@@ -468,5 +469,17 @@ void toast_reload_manifest() noexcept {
 	auto& mgr = assets::AssetManager::get();
 	mgr.clearUnusedAssets();
 	mgr.reloadManifest();
+}
+
+void toast_haptics_test(const char* toml_text) noexcept {
+	if (toml_text == nullptr) {
+		return;
+	}
+	try {
+		toml::table table = toml::parse(std::string_view {toml_text});
+		auto* haptic = new assets::Haptic(table);
+		assets::AssetHandle<assets::Haptic> handle {haptic, toast::UID::make(), "editor://haptic_test"};
+		event::send<event::PlayHapticDirect>(uint32_t {0}, std::move(handle));
+	} catch (const std::exception& e) { TOAST_ERROR("Haptics", "Failed to parse test haptic: {}", e.what()); }
 }
 }

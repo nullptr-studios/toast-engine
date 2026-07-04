@@ -124,6 +124,12 @@ auto Action::evaluate(const Sampler& sampler, const EvalContext& ctx) -> SignalL
 		modifier->apply(m_value, ctx);
 	}
 
+	// A 1D/2D action that just went inactive reports its zero value once so listeners
+	// see it settle, no matter which trigger types compose it
+	if (!any_active && m_was_active && m_value_type != ValueType::axis_0d && !contains(fired, ActionEvent::hold)) {
+		fired.emit(ActionEvent::hold);
+	}
+
 	m_modifier_keys = ctx.mods;
 	if (!any_active) {
 		m_device = Device::none;

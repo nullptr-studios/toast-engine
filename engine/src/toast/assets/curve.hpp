@@ -49,6 +49,9 @@ public:
 	auto eval3D(float t) const -> glm::vec3;
 
 	[[nodiscard]]
+	auto evalAtX(float x) const -> float;
+
+	[[nodiscard]]
 	auto dimension() const noexcept -> CurveDimension {
 		return m_dim;
 	}

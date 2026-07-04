@@ -102,10 +102,10 @@ auto Haptic::sample(float t01) const -> glm::vec2 {
 				return {0.0f, 0.0f};
 			}
 
-			const float left_y = m_curve->eval2D(t * m_curve->tScale()).y * m_multiplier;
+			const float left_y = m_curve->evalAtX(t) * m_multiplier;
 
 			if (m_channels == HapticChannels::dual) {
-				const float right_y = m_curve_right ? m_curve_right->eval2D(t * m_curve_right->tScale()).y * m_multiplier : 0.0f;
+				const float right_y = m_curve_right ? m_curve_right->evalAtX(t) * m_multiplier : 0.0f;
 				return {std::clamp(left_y, 0.0f, 1.0f), std::clamp(right_y, 0.0f, 1.0f)};
 			}
 

@@ -257,6 +257,12 @@ public partial class ToastEngine : IDisposable {
 
 	public static void ReloadManifest() => toast_reload_manifest();
 
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial void toast_haptics_test(string tomlText);
+
+	/// Plays a haptic described by .thaptic TOML text on the active controller
+	public static void TestHaptic(string tomlText) => toast_haptics_test(tomlText);
+
 	private delegate IntPtr GameCreate();
 
 	private delegate void GameDestroy(IntPtr game);

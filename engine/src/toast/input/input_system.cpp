@@ -154,6 +154,8 @@ void InputSystem::reloadActions() {
 }
 
 void InputSystem::refreshGamepads() {
+	SDL_UpdateGamepads();
+
 	// Reconcile the set of open gamepads with what SDL currently reports
 	int count = 0;
 	SDL_JoystickID* ids = SDL_GetGamepads(&count);

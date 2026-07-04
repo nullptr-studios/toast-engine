@@ -389,8 +389,12 @@ public:
 				r.emit(ActionEvent::start);
 			}
 			r.emit(ActionEvent::hold);
-		} else if (m_was_active && m_send_release) {
-			r.emit(ActionEvent::release);
+		} else if (m_was_active) {
+			if (m_send_release) {
+				r.emit(ActionEvent::release);
+			}
+			// One final hold so listeners see the axis settle at zero
+			r.emit(ActionEvent::hold);
 		}
 
 		m_was_active = active;
@@ -439,8 +443,12 @@ public:
 				r.emit(ActionEvent::start);
 			}
 			r.emit(ActionEvent::hold);
-		} else if (m_was_active && m_send_release) {
-			r.emit(ActionEvent::release);
+		} else if (m_was_active) {
+			if (m_send_release) {
+				r.emit(ActionEvent::release);
+			}
+			// One final hold so listeners see the axis settle at zero
+			r.emit(ActionEvent::hold);
 		}
 
 		m_was_active = active;
@@ -491,9 +499,14 @@ public:
 			out = m_delta ? detail::deltaToNDC(measured, ctx) : detail::toNDC(measured, ctx);
 		}
 
-		r.active = true;
-		r.value = Value {out};
-		r.emit(ActionEvent::hold);
+		// Only report changes; a delta run ends with a single (0, 0) report
+		if (!m_has_reported || out != m_reported) {
+			m_reported = out;
+			m_has_reported = true;
+			r.active = true;
+			r.value = Value {out};
+			r.emit(ActionEvent::hold);
+		}
 		return r;
 	}
 
@@ -507,6 +520,8 @@ private:
 	bool m_delta = false;
 	glm::vec2 m_last {0.0f};
 	bool m_has_last = false;
+	glm::vec2 m_reported {0.0f};
+	bool m_has_reported = false;
 };
 
 }

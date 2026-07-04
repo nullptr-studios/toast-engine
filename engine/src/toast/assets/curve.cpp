@@ -122,6 +122,16 @@ auto Curve::eval3D(float t) const -> glm::vec3 {
 	return {(float)v.x(), (float)v.y(), (float)v.z()};
 }
 
+auto Curve::evalAtX(float x) const -> float {
+	try {
+		auto v = m_spline.bisect((double)x).resultVec2();
+		return (float)v.y();
+	} catch (const std::exception& e) {
+		TOAST_WARN("Curve", "bisect failed at x = {}: {}; falling back to parametric eval", x, e.what());
+		return eval2D(x * m_t_scale).y;
+	}
+}
+
 void Curve::setPoints(std::vector<float> points) {
 	m_points = std::move(points);
 	rebuildSpline();
