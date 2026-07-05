@@ -65,16 +65,15 @@ public:
 		float time;
 	};
 
-	struct DrawCommand {
-		VulkanMesh* mesh;
-
-		glm::mat4 transform;
+	struct MeshInstanceProxy {
+		VulkanMesh::RenderProxy mesh;
+		glm::mat4 model = glm::mat4(1.0f);
 	};
 
 	struct RenderFrame {
 		FrameUBO frame_data;
 
-		std::vector<DrawCommand> draws;
+		std::vector<MeshInstanceProxy> mesh_instances;
 	};
 
 	VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> output_target);
@@ -111,6 +110,11 @@ public:
 	Camera* getActiveCamera() { return m_camera; }
 
 	[[nodiscard]]
+	auto renderingFrame() const -> const RenderFrame* {
+		return m_rendering_frame;
+	}
+
+	[[nodiscard]]
 	const IOutputTarget& getOutputTarget() const {
 		return *m_output_target;
 	}
@@ -137,6 +141,7 @@ private:
 	std::queue<uint32_t> m_ready_frames;
 	RenderFrame m_cached_frame;
 	bool m_has_cached_frame = false;
+	const RenderFrame* m_rendering_frame = nullptr;
 
 	std::counting_semaphore<kRenderFrames> m_free_frames {kRenderFrames};
 

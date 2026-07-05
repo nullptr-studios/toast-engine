@@ -7,17 +7,10 @@
 #include "core/shader_compiler.hpp"
 #include "core/vulkan_core.hpp"
 #include "core/vulkan_renderer.hpp"
-#include "gizmo.hpp"
 #include "toast/log.hpp"
-
-#include <filesystem>
-#include <fstream>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include "core/vulkan_texture.hpp"
-
-#include <glm/gtc/matrix_transform.hpp>
 
 namespace toast::renderer {
 MeshPass::MeshPass(const toast::renderer::VulkanCore& core, vk::Format colorFormat, vk::Format depthFormat, vk::Extent2D extent) {
@@ -38,37 +31,6 @@ MeshPass::MeshPass(const toast::renderer::VulkanCore& core, vk::Format colorForm
 	m_pipeline.rebuild(core, config);
 
 	createResources(core);
-
-	// create Mesh
-	toast::renderer::VulkanMesh::UploadData data {};
-
-	data.indices = GizmoIndices;
-	data.vertices = GizmoVertex;
-
-	// std::vector<uint8_t> texturebuffer;
-	//// load all images from ImageLoadtest folder
-	//{
-	//	const std::string imageFolder = "ImageLoadTest";
-	//	for (const auto& entry : std::filesystem::directory_iterator(imageFolder)) {
-	//		if (entry.is_regular_file() && entry.path().extension() == ".ktx2") {
-	//			std::vector<uint8_t> imageBuffer;
-	//			std::ifstream file(entry.path(), std::ios::binary | std::ios::ate);
-	//			if (file.is_open()) {
-	//				std::streamsize size = file.tellg();
-	//				file.seekg(0, std::ios::beg);
-	//				imageBuffer.resize(size);
-	//				file.read(reinterpret_cast<char*>(imageBuffer.data()), size);
-	//				file.close();
-	//
-	//				textures.emplace_back();
-	//				VulkanRenderer::instance->queueResourceUpload(std::make_unique<TextureUpload>(textures.back(), imageBuffer));
-	//			}
-	//		}
-	//	}
-	//}
-
-	// mesh.create(core, data, core.getGraphicsQueueFamilyIndex(), core.getTransferQueueFamilyIndex());
-	VulkanRenderer::instance->queueResourceUpload(std::make_unique<MeshUpload>(mesh, data));
 }
 
 void MeshPass::update(uint32_t frame_index, float dt) {
@@ -76,15 +38,8 @@ void MeshPass::update(uint32_t frame_index, float dt) {
 }
 
 void MeshPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t imageIndex) {
-	DrawPushConstants data {};
-	data.model = glm::scale(glm::identity<glm::mat4>(), glm::vec3(1, 1, 1));
-
+	(void)imageIndex;
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.getPipeline());
-
-	// TODO: Gizmo model coordinate system needs Y-up conversion
-	mesh.bind(cmd);
-
-	// Bind the frame data UBO
 
 	const FrameResources* frameUBO = toast::renderer::VulkanRenderer::instance->getFrameUBORes(frameIndex);
 	cmd.bindDescriptorSets(
@@ -95,16 +50,32 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t image
 	    {}
 	);
 
-	// TODO: Improve reflection system to automatically determine required shader stages
-	cmd.pushConstants(
-	    shaderLayout.getPipelineLayout(),
-	    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-	    0,
-	    sizeof(DrawPushConstants),
-	    &data
-	);
+	const auto* frame = toast::renderer::VulkanRenderer::instance->renderingFrame();
+	if (frame == nullptr) {
+		return;
+	}
 
-	mesh.draw(cmd);
+	for (const auto& proxy : frame->mesh_instances) {
+		if (!proxy.mesh.ready || proxy.mesh.vertex_buffer == VK_NULL_HANDLE || proxy.mesh.index_buffer == VK_NULL_HANDLE ||
+		    proxy.mesh.index_count == 0) {
+			continue;
+		}
+
+		DrawPushConstants data {};
+		data.model = proxy.model;
+
+		cmd.pushConstants(
+		    shaderLayout.getPipelineLayout(),
+		    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
+		    0,
+		    sizeof(DrawPushConstants),
+		    &data
+		);
+
+		cmd.bindVertexBuffers(0, std::array<vk::Buffer, 1> {proxy.mesh.vertex_buffer}, std::array<vk::DeviceSize, 1> {0});
+		cmd.bindIndexBuffer(proxy.mesh.index_buffer, 0, vk::IndexType::eUint32);
+		cmd.drawIndexed(proxy.mesh.index_count, 1, 0, 0, 0);
+	}
 }
 
 void MeshPass::createResources(const toast::renderer::VulkanCore& core) { }

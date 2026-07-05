@@ -6,6 +6,8 @@
 #include <toast/uid.hpp>
 
 namespace toast {
+class MeshNode;
+
 namespace renderer {
 class VulkanCore;
 class VulkanRenderer;
@@ -39,6 +41,8 @@ public:
 	auto createWorkspace(std::string_view type) -> std::pair<UID, std::string>;
 	auto openWorkspace(UID uid) -> std::pair<UID, std::string>;
 	void destroyWorkspace(UID handle);
+	void registerMeshNodeProxy(MeshNode* node);
+	void unregisterMeshNodeProxy(MeshNode* node);
 
 	auto activeWorkspace() -> UID;
 

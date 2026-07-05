@@ -477,6 +477,8 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 	// Update FrameData
 	updateFrameResources(m_current_frame, frameData);    // FIXME: dt
 
+	m_rendering_frame = &frameData;
+
 	// Update the Render passes TODO: Move outside of renderloop
 	for (auto& pass : m_render_passes) {
 		pass->update(m_current_frame, Time::get().renderDelta());
@@ -523,12 +525,15 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 
 	if (present_result == vk::Result::eErrorOutOfDateKHR || present_result == vk::Result::eSuboptimalKHR) {
 		TOAST_WARN("VulkanRenderer", "Swapchain out of date or suboptimal on present; recreating");
+		m_rendering_frame = nullptr;
 		applyResize(m_output_target->getExtent());
 		return;
 	}
 	if (present_result != vk::Result::eSuccess) {
 		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: Failed to present the current output image!");
 	}
+
+	m_rendering_frame = nullptr;
 }
 
 void VulkanRenderer::mainRenderThread() {

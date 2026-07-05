@@ -25,17 +25,20 @@
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
 #include "world/camera.hpp"
+#include "world/mesh_node.hpp"
 #include "world/workspace.hpp"
 #include "world/workspace_events.hpp"
 #include "world/world.hpp"
 
 #include <SDL3/SDL.h>
+#include <algorithm>
 #include <cassert>
 #include <filesystem>
 #include <fstream>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <ranges>
 #include <span>
 #include <sstream>
 
@@ -70,6 +73,9 @@ struct EnginePimpl {
 	std::mutex owners_mutex;
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
 	toast::UID active_workspace {0};
+
+	std::mutex mesh_proxy_mutex;
+	std::vector<MeshNode*> mesh_proxy_nodes;
 };
 
 Engine::Engine() noexcept {
@@ -203,7 +209,38 @@ void Engine::tick() {
 		} else {
 			auto& frame = toast::renderer::beginFrameBuild();
 
-			frame.draws.clear();
+			frame.mesh_instances.clear();
+
+			std::vector<MeshNode*> mesh_nodes_snapshot;
+			{
+				std::scoped_lock lock(m->mesh_proxy_mutex);
+				mesh_nodes_snapshot = m->mesh_proxy_nodes;
+			}
+			frame.mesh_instances.reserve(mesh_nodes_snapshot.size());
+
+			for (auto* node : mesh_nodes_snapshot) {
+				if (node == nullptr || !node->enabled()) {
+					continue;
+				}
+
+				auto& mesh_handle = node->getMesh();
+				if (!mesh_handle.hasValue()) {
+					continue;
+				}
+
+				auto& gpu_mesh = mesh_handle->gpuMesh();
+				auto mesh_proxy = gpu_mesh.captureRenderProxy();
+				if (!mesh_proxy.ready) {
+					continue;
+				}
+
+				frame.mesh_instances.push_back(
+				    toast::renderer::VulkanRenderer::MeshInstanceProxy {
+				      .mesh = mesh_proxy,
+				      .model = node->worldTransformForRender(),
+				    }
+				);
+			}
 
 			auto cam = renderer::getActiveCamera();
 			if (cam) {
@@ -220,12 +257,6 @@ void Engine::tick() {
 
 				frame.frame_data = cameraData;
 			}
-
-			// frame.draws.push_back(
-			// {
-			// 		mesh,
-			// 		transform
-			// });
 
 			renderer::submitFrame();
 		}
@@ -340,6 +371,26 @@ void Engine::destroyWorkspace(UID handle) {
 
 auto Engine::activeWorkspace() -> UID {
 	return m->active_workspace;
+}
+
+void Engine::registerMeshNodeProxy(MeshNode* node) {
+	if (node == nullptr) {
+		return;
+	}
+
+	std::scoped_lock lock(m->mesh_proxy_mutex);
+	if (!std::ranges::contains(m->mesh_proxy_nodes, node)) {
+		m->mesh_proxy_nodes.push_back(node);
+	}
+}
+
+void Engine::unregisterMeshNodeProxy(MeshNode* node) {
+	if (node == nullptr) {
+		return;
+	}
+
+	std::scoped_lock lock(m->mesh_proxy_mutex);
+	std::erase(m->mesh_proxy_nodes, node);
 }
 
 auto Engine::getViewportFrame(void* dst, uint32_t dst_capacity, renderer::ViewportFrameDesc* out) -> int {

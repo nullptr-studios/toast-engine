@@ -22,10 +22,11 @@ public partial class GltfImporter : IAssetImporter {
 		m_textureImporter = new TextureImporter(textureSettings);
 	}
 
-	public IReadOnlyList<string> SupportedExtensions => [".glb"];
+	public IReadOnlyList<string> SupportedExtensions => [".glb", ".gltf"];
 
 	public bool CanHandle(string filePath) {
-		return Path.GetExtension(filePath) == ".glb";
+		var ext = Path.GetExtension(filePath).ToLowerInvariant();
+		return ext is ".glb" or ".gltf";
 	}
 
 	public string DisplayName => "Mesh";

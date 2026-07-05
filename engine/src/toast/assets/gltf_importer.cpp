@@ -539,17 +539,24 @@ static void jsonToTnode(const nlohmann::json& scene_json, const std::filesystem:
 			const auto& params = n["params"];
 			// TODO: Update field names when MeshNode fields are created
 			if (params.contains("mesh")) {
-				basic.fields.push_back(
-				    {"m_mesh", toast::FieldType::uid_t, false, toast::UID(toast::UID::fromString(params["mesh"].get<std::string>()))}
-				);
+				const auto mesh_uid = params["mesh"].get<std::string>();
+				if (mesh_uid.size() == 11) {
+					basic.fields.push_back({"m_mesh", toast::FieldType::uid_t, false, toast::UID(toast::UID::fromString(mesh_uid))});
+				} else {
+					TOAST_WARN("AssetManager", "GLTF scene contains non-UID mesh reference '{}'; skipping m_mesh assignment", mesh_uid);
+				}
 			}
 			if (params.contains("material")) {
-				basic.fields.push_back(
-				    {"m_material",
-				     toast::FieldType::uid_t,
-				     false,
-				     toast::UID(toast::UID::fromString(params["material"].get<std::string>()))}
-				);
+				const auto material_uid = params["material"].get<std::string>();
+				if (material_uid.size() == 11) {
+					basic.fields.push_back(
+					    {"m_material", toast::FieldType::uid_t, false, toast::UID(toast::UID::fromString(material_uid))}
+					);
+				} else {
+					TOAST_WARN(
+					    "AssetManager", "GLTF scene contains non-UID material reference '{}'; skipping m_material assignment", material_uid
+					);
+				}
 			}
 		}
 		// TODO: Update field names when Camera/Light classes are created

@@ -58,6 +58,11 @@ public:
 	}
 
 	[[nodiscard]]
+	auto gpuMesh() -> toast::renderer::VulkanMesh& {
+		return m_gpu_mesh;
+	}
+
+	[[nodiscard]]
 	auto name() const -> const std::string& {
 		return m_name;
 	}
