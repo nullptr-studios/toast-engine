@@ -4,7 +4,9 @@
              xmlns:conv="using:editor.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d"
+             d:DesignWidth="800"
+             d:DesignHeight="450"
              x:Class="editor.Logger.LogsView"
              x:DataType="vm:LogsViewModel">
 
@@ -15,32 +17,60 @@
 	<DockPanel>
 		<!-- Toolbar -->
 		<Menu DockPanel.Dock="Top">
-			<MenuItem Header="Lock Scroll" ToggleType="CheckBox" />
-			<Separator Height="NaN" Width="1" />
-			<MenuItem Header="Critical" ToggleType="CheckBox" />
-			<MenuItem Header="Error" ToggleType="CheckBox" />
-			<MenuItem Header="Warning" ToggleType="CheckBox" />
-			<MenuItem Header="Info" ToggleType="CheckBox" />
-			<MenuItem Header="Trace" ToggleType="CheckBox" />
-			<Separator Height="NaN" Width="1" />
-			<MenuItem Header="Editor logs" ToggleType="CheckBox" />
-			<Separator Height="NaN" Width="1" />
+			<MenuItem Header="Lock Scroll"
+			          ToggleType="CheckBox" />
+			<Separator Height="NaN"
+			           Width="1" />
+			<MenuItem Header="Critical"
+			          ToggleType="CheckBox" />
+			<MenuItem Header="Error"
+			          ToggleType="CheckBox" />
+			<MenuItem Header="Warning"
+			          ToggleType="CheckBox" />
+			<MenuItem Header="Info"
+			          ToggleType="CheckBox" />
+			<MenuItem Header="Trace"
+			          ToggleType="CheckBox" />
+			<Separator Height="NaN"
+			           Width="1" />
+			<MenuItem Header="Editor logs"
+			          ToggleType="CheckBox" />
+			<Separator Height="NaN"
+			           Width="1" />
 			<MenuItem Header="Filters">
-				<MenuItem Header="Filter 1" ToggleType="CheckBox" />
-				<MenuItem Header="Filter 2" ToggleType="CheckBox" />
+				<MenuItem Header="Filter 1"
+				          ToggleType="CheckBox" />
+				<MenuItem Header="Filter 2"
+				          ToggleType="CheckBox" />
 			</MenuItem>
 		</Menu>
 
 		<!-- Column headers -->
-		<Grid DockPanel.Dock="Top" ColumnDefinitions="1*, 2*, 4*, 1*" Height="30">
-			<TextBlock Grid.Column="0" Text="Sink" FontWeight="Bold" VerticalAlignment="Center" Padding="10,0" />
-			<TextBlock Grid.Column="1" Text="File" FontWeight="Bold" VerticalAlignment="Center" />
-			<TextBlock Grid.Column="2" Text="Message" FontWeight="Bold" VerticalAlignment="Center" />
-			<TextBlock Grid.Column="3" Text="Time" FontWeight="Bold" VerticalAlignment="Center" />
+		<Grid DockPanel.Dock="Top"
+		      ColumnDefinitions="1*, 2*, 4*, 1*"
+		      Height="30">
+			<TextBlock Grid.Column="0"
+			           Text="Sink"
+			           FontWeight="Bold"
+			           VerticalAlignment="Center"
+			           Padding="10,0" />
+			<TextBlock Grid.Column="1"
+			           Text="File"
+			           FontWeight="Bold"
+			           VerticalAlignment="Center" />
+			<TextBlock Grid.Column="2"
+			           Text="Message"
+			           FontWeight="Bold"
+			           VerticalAlignment="Center" />
+			<TextBlock Grid.Column="3"
+			           Text="Time"
+			           FontWeight="Bold"
+			           VerticalAlignment="Center" />
 		</Grid>
 
 		<!-- Actual log list -->
-		<TextBox DockPanel.Dock="Bottom" PlaceholderText="Search..." />
+		<TextBox DockPanel.Dock="Bottom"
+		         PlaceholderText="Search..." />
 		<ListBox ScrollViewer.VerticalScrollBarVisibility="Auto"
 		         ItemsSource="{Binding LogEntries}">
 			<!-- Force virtualization to be on for performance with large log lists -->
@@ -52,14 +82,18 @@
 			<ListBox.ItemTemplate>
 				<DataTemplate>
 					<Grid ColumnDefinitions="1*, 2*, 4*, 1*">
-						<TextBlock Grid.Column="0" Text="{Binding Sink}"
+						<TextBlock Grid.Column="0"
+						           Text="{Binding Sink}"
 						           Padding="10,0"
 						           Foreground="{Binding Severity, Converter={StaticResource SeverityColorConverter}}" />
-						<TextBlock Grid.Column="1" Text="{Binding File}"
+						<TextBlock Grid.Column="1"
+						           Text="{Binding File}"
 						           Foreground="{Binding Severity, Converter={StaticResource SeverityColorConverter}}" />
-						<TextBlock Grid.Column="2" Text="{Binding Message}"
+						<TextBlock Grid.Column="2"
+						           Text="{Binding Message}"
 						           Foreground="{Binding Severity, Converter={StaticResource SeverityColorConverter}}" />
-						<TextBlock Grid.Column="3" Text="{Binding Timestamp}"
+						<TextBlock Grid.Column="3"
+						           Text="{Binding Timestamp}"
 						           Foreground="{Binding Severity, Converter={StaticResource SeverityColorConverter}}" />
 					</Grid>
 				</DataTemplate>

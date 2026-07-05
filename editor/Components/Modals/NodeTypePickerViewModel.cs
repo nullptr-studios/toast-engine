@@ -5,7 +5,6 @@ using System.Text.Json;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using ClangSharp;
 using editor.Components.Elements;
 using editor.Engine;
 using Lucide.Avalonia;
@@ -18,13 +17,14 @@ public class NodeDisplayItem : SearchableTreeItem<NodeDisplayItem> {
 		IsGame = HasAttr(item.Info.Attributes, "Game");
 		IsHidden = HasAttr(item.Info.Attributes, "Hidden");
 		Color = ReflectionDatabase.ResolveColor(item.Info.Name);
-		string iconName = ReflectionDatabase.ResolveIcon(item.Info.Name);
+		var iconName = ReflectionDatabase.ResolveIcon(item.Info.Name);
 		try {
 			Icon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png")));
 		} catch (Exception ex) {
 			Log.Warn($"Failed to load icon for node {item.Info.Name}: {ex.Message}");
 			Icon = new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/2x/Circle.png")));
 		}
+
 		AllChildren = item.Children.Select(c => new NodeDisplayItem(c)).ToList();
 		foreach (var c in AllChildren) FilteredChildren.Add(c);
 		InitSegments();
@@ -50,8 +50,8 @@ public class NodeDisplayItem : SearchableTreeItem<NodeDisplayItem> {
 }
 
 public class NodeTypePickerViewModel : PickerViewModel {
-	private readonly NodeDisplayItem? m_root;
 	private readonly NodeDisplayItem[] m_items;
+	private readonly NodeDisplayItem? m_root;
 
 	public NodeTypePickerViewModel() {
 		if (ReflectionDatabase.NodeTree is { } tree) {
@@ -67,11 +67,13 @@ public class NodeTypePickerViewModel : PickerViewModel {
 	public override string AcceptLabel => "Create";
 	public override LucideIconKind AcceptIconKind => LucideIconKind.Plus;
 
-	public override void UpdateFilter(string query, bool caseSensitive)
-		=> m_root?.UpdateFilter(query, caseSensitive);
+	public override void UpdateFilter(string query, bool caseSensitive) {
+		m_root?.UpdateFilter(query, caseSensitive);
+	}
 
-	public override bool IsSelectable(object? item)
-		=> item is NodeDisplayItem { IsHidden: false };
+	public override bool IsSelectable(object? item) {
+		return item is NodeDisplayItem { IsHidden: false };
+	}
 
 	public override string? GetResult(object? selected) {
 		if (selected is not NodeDisplayItem item) return null;

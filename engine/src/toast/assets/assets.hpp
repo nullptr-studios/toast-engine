@@ -23,6 +23,13 @@ auto TOAST_API load(toast::UID uid) -> AssetHandleBase;
 auto TOAST_API load(std::string_view uri) -> AssetHandleBase;
 auto TOAST_API resolveURI(std::string_view uri) -> std::optional<toast::UID>;
 
+/**
+ * @brief Lists the UIDs of every manifest asset of a given type
+ * @param type The asset type string, e.g. "input_action"
+ * @return The UIDs tracked by the manifest for that type; empty when none exist
+ */
+auto TOAST_API listByType(std::string_view type) -> std::vector<toast::UID>;
+
 auto TOAST_API save(toast::UID uid) -> bool;
 
 /**

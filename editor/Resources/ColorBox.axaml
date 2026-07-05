@@ -3,40 +3,77 @@
                     xmlns:elements="clr-namespace:editor.Components.Elements">
 
 	<Design.PreviewWith>
-		<Border Padding="8" Background="{StaticResource Bg3}">
-			<StackPanel Spacing="8" MinWidth="80" MaxWidth="200">
-				<elements:Color3Box R="1" G="0.5" B="0.25" />
-				<elements:Color4Box R="0.2" G="0.6" B="1" A="0.5" />
-				<elements:Color4Box R="2.5" G="1.2" B="0.3" A="1" />
-				<elements:Color3Box R="1" G="0.5" B="0.25" Width="70" HorizontalAlignment="Left" />
-				<elements:Color3Box R="1" G="0.5" B="0.25" Width="48" HorizontalAlignment="Left" />
-				<elements:Color4Box R="0.2" G="0.6" B="1" A="0.5" IsEnabled="False" />
+		<Border Padding="8"
+		        Background="{StaticResource Bg3}">
+			<StackPanel Spacing="8"
+			            MinWidth="80"
+			            MaxWidth="200">
+				<elements:Color3Box R="1"
+				                    G="0.5"
+				                    B="0.25" />
+				<elements:Color4Box R="0.2"
+				                    G="0.6"
+				                    B="1"
+				                    A="0.5" />
+				<elements:Color4Box R="2.5"
+				                    G="1.2"
+				                    B="0.3"
+				                    A="1" />
+				<elements:Color3Box R="1"
+				                    G="0.5"
+				                    B="0.25"
+				                    Width="70"
+				                    HorizontalAlignment="Left" />
+				<elements:Color3Box R="1"
+				                    G="0.5"
+				                    B="0.25"
+				                    Width="48"
+				                    HorizontalAlignment="Left" />
+				<elements:Color4Box R="0.2"
+				                    G="0.6"
+				                    B="1"
+				                    A="0.5"
+				                    IsEnabled="False" />
 			</StackPanel>
 		</Border>
 	</Design.PreviewWith>
 
-	<ControlTheme x:Key="{x:Type elements:ColorBoxBase}" TargetType="elements:ColorBoxBase">
-		<Setter Property="FontFamily" Value="FiraCode Nerd Font,Consolas,monospace" />
-		<Setter Property="FontSize" Value="15" />
-		<Setter Property="MinHeight" Value="34" />
-		<Setter Property="HorizontalAlignment" Value="Stretch" />
-		<Setter Property="CornerRadius" Value="6" />
-		<Setter Property="Foreground" Value="{StaticResource Text}" />
+	<ControlTheme x:Key="{x:Type elements:ColorBoxBase}"
+	              TargetType="elements:ColorBoxBase">
+		<Setter Property="FontFamily"
+		        Value="FiraCode Nerd Font,Consolas,monospace" />
+		<Setter Property="FontSize"
+		        Value="15" />
+		<Setter Property="MinHeight"
+		        Value="34" />
+		<Setter Property="HorizontalAlignment"
+		        Value="Stretch" />
+		<Setter Property="CornerRadius"
+		        Value="6" />
+		<Setter Property="Foreground"
+		        Value="{StaticResource Text}" />
 
 		<Setter Property="Template">
 			<ControlTemplate>
-				<Border x:Name="PART_Root" CornerRadius="{TemplateBinding CornerRadius}" Background="Transparent">
+				<Border x:Name="PART_Root"
+				        CornerRadius="{TemplateBinding CornerRadius}"
+				        Background="Transparent">
 					<Grid ColumnDefinitions="Auto,*">
 						<!-- Color preview -->
-						<Panel x:Name="PART_Chip" Grid.Column="0" Width="32">
-							<Border x:Name="PART_Checker" CornerRadius="6,0,0,6"
+						<Panel x:Name="PART_Chip"
+						       Grid.Column="0"
+						       Width="32">
+							<Border x:Name="PART_Checker"
+							        CornerRadius="6,0,0,6"
 							        IsVisible="{TemplateBinding ShowChecker}" />
-							<Border x:Name="PART_Swatch" CornerRadius="6,0,0,6"
+							<Border x:Name="PART_Swatch"
+							        CornerRadius="6,0,0,6"
 							        Background="{TemplateBinding SwatchBrush}" />
 						</Panel>
 
 						<!-- Values, filled in code -->
-						<Border x:Name="PART_ValueBox" Grid.Column="1"
+						<Border x:Name="PART_ValueBox"
+						        Grid.Column="1"
 						        Background="{StaticResource Bg1}"
 						        CornerRadius="0,6,6,0"
 						        Padding="8,8">
@@ -52,25 +89,32 @@
 		</Setter>
 
 		<Style Selector="^[NumbersVisible=False] /template/ Panel#PART_Chip">
-			<Setter Property="Width" Value="NaN" />
-			<Setter Property="(Grid.ColumnSpan)" Value="2" />
+			<Setter Property="Width"
+			        Value="NaN" />
+			<Setter Property="(Grid.ColumnSpan)"
+			        Value="2" />
 		</Style>
 		<Style Selector="^[NumbersVisible=False] /template/ Border#PART_Swatch">
-			<Setter Property="CornerRadius" Value="6" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
 		</Style>
 		<Style Selector="^[NumbersVisible=False] /template/ Border#PART_Checker">
-			<Setter Property="CornerRadius" Value="6" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
 		</Style>
 		<Style Selector="^[NumbersVisible=False] /template/ Border#PART_ValueBox">
-			<Setter Property="IsVisible" Value="False" />
+			<Setter Property="IsVisible"
+			        Value="False" />
 		</Style>
 
 		<!-- Disabled -->
 		<Style Selector="^:disabled /template/ Border#PART_ValueBox">
-			<Setter Property="Background" Value="{StaticResource Bg2}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Bg2}" />
 		</Style>
 		<Style Selector="^:disabled">
-			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
 		</Style>
 	</ControlTheme>
 

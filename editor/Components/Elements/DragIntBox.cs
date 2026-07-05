@@ -30,11 +30,17 @@ public sealed class DragIntBox : DragNumberBoxBase {
 	protected override double CoarseStepAmount => Step;
 	protected override double FineStepAmount => Step;
 
-	protected override double GetDouble() => Value;
+	protected override double GetDouble() {
+		return Value;
+	}
 
-	protected override void SetDouble(double value) => Value = (int)Math.Round(value);
+	protected override void SetDouble(double value) {
+		Value = (int)Math.Round(value);
+	}
 
-	protected override string RawEditText() => Value.ToString(CultureInfo.InvariantCulture);
+	protected override string RawEditText() {
+		return Value.ToString(CultureInfo.InvariantCulture);
+	}
 
 	protected override bool TryParseEdit(string text, out double value) {
 		value = 0;

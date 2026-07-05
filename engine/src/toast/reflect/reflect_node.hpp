@@ -1,26 +1,14 @@
 /**
- * @file Reflect.hpp
- * @author Xein
- * @date 24 May 2026
- *
- * @brief Runtime reflection system for Nodes
+ * @file reflect_node.hpp
+ * @author Xein Xein
+ * @date 03 Jul 26
  */
 
 #pragma once
 
-#include <any>
 #include <array>
-#include <cassert>
-#include <cstdint>
-#include <nlohmann/json.hpp>
-#include <optional>
-#include <span>
-#include <string>
-#include <string_view>
-#include <toast/export.hpp>
-#include <toast/log.hpp>
+#include <toast/reflect/reflect.hpp>
 #include <type_traits>
-#include <typeinfo>
 #include <unordered_map>
 #include <utility>
 
@@ -51,25 +39,6 @@ enum class TickFunctionList : uint16_t {
 	save = 1 << 13,
 	tick_mask = early_tick | tick | post_physics | late_tick,
 	all = 0xFFFF,
-};
-
-/**
- * @brief Serialization kind for a reflected field
- *
- * Determines how the generated accessor reads and writes the field value across the
- * FFI boundary and how the inspector widget renders the field.
- */
-enum class FieldType : uint8_t {
-	bool_t,
-	int_t,
-	float_t,
-	string_t,
-	double_t,
-	uid_t,
-	vec2_t,
-	vec3_t,
-	vec4_t,
-	quaternion_t,
 };
 
 // Bitwise operators for TickFunctionList
@@ -124,58 +93,6 @@ struct TickFunctions {
 	Invoker tick = nullptr;
 	Invoker post_physics = nullptr;
 	Invoker late_tick = nullptr;
-};
-
-/**
- * @brief Runtime descriptor for one reflected field
- *
- * Holds type metadata, JSON attributes parsed from the header annotation (e.g. Group, Name),
- * and a type-erased getter/setter pair that works without knowing the concrete Node subtype.
- *
- * @note The getter returns std::any; the setter silently does nothing on a type mismatch
- */
-struct TOAST_API FieldInfo {
-	using FieldGetterPtr = std::any (*)(void*);
-	using FieldSetterPtr = void (*)(void*, std::any);
-
-	std::string_view name;
-	std::string_view type;    // C++ type name
-	FieldType value_type;     // serialization kind
-	nlohmann::json attributes;
-	bool is_array = false;    // True if field is vector
-
-	FieldGetterPtr get;
-	FieldSetterPtr set;
-
-	/// Returns the value of the "Group" annotation, or an empty string if not present
-	[[nodiscard]]
-	auto groupName() const -> std::string {
-		return getAttribute("Group");
-	}
-
-	/**
-	 * @brief Checks whether a JSON annotation key is present on this field
-	 * @param attr_name The annotation key, e.g. "Group" or "Name"
-	 * @return true if the attribute exists, regardless of its value
-	 */
-	[[nodiscard]]
-	auto hasAttribute(std::string_view attr_name) const -> bool {
-		return attributes.contains(std::string(attr_name));
-	}
-
-	/**
-	 * @brief Returns the first string value of a JSON annotation
-	 * @param attr_name The annotation key to look up
-	 * @return The first string element, or an empty string if the key is absent or has no elements
-	 */
-	[[nodiscard]]
-	auto getAttribute(std::string_view attr_name) const -> std::string {
-		auto it = attributes.find(std::string(attr_name));
-		if (it == attributes.end() || it->empty()) {
-			return "";
-		}
-		return it->at(0).get<std::string>();
-	}
 };
 
 /**
@@ -245,32 +162,6 @@ struct TOAST_API GroupInfo {
 		}
 		return nullptr;
 	}
-};
-
-/**
- * @brief Runtime descriptor for one parameter of a reflected function
- */
-struct TOAST_API ParameterInfo {
-	std::string_view name;
-	std::string_view type;            // C++ type name, as spelled in the header
-	std::optional<std::string_view> default_value;
-	const std::type_info* type_id;    // typeid(std::decay_t<param>), for call-time validation
-};
-
-/**
- * @brief Runtime descriptor for one reflected member function
- *
- * @note Do not call invoke directly; go through NodeInfo::call()
- */
-struct TOAST_API FunctionInfo {
-	/// Generic erased trampoline pointer; reinterpret_cast back to the real signature before calling
-	using Invoker = void (*)();
-
-	std::string_view name;
-	std::string_view return_type;            // C++ return type name, as spelled in the header
-	const std::type_info* return_type_id;    // typeid(std::decay_t<return>), for call-time validation
-	std::span<const ParameterInfo> parameters;
-	Invoker invoke = nullptr;
 };
 
 /**
@@ -358,25 +249,7 @@ struct TOAST_API NodeInfo {
 			}
 		}
 
-		bool signature_ok = fn->parameters.size() == sizeof...(Args) && fn->return_type_id != nullptr &&
-		                    *fn->return_type_id == typeid(std::decay_t<R>);
-		if (signature_ok) {
-			const std::array<const std::type_info*, sizeof...(Args)> expected = {&typeid(std::decay_t<Args>)...};
-			for (std::size_t i = 0; i < expected.size(); ++i) {
-				if (fn->parameters[i].type_id == nullptr || *fn->parameters[i].type_id != *expected[i]) {
-					signature_ok = false;
-					break;
-				}
-			}
-		}
-		if (!signature_ok) {
-			TOAST_WARN("Reflect", "call(): signature mismatch for '{}' on '{}'; invoking is undefined behavior", method_name, type);
-			assert(false && "NodeInfo::call(): argument or return type mismatch");
-		}
-
-		using Trampoline = R (*)(void*, std::decay_t<Args>...);
-		auto* trampoline = reinterpret_cast<Trampoline>(fn->invoke);
-		return trampoline(obj, std::forward<Args>(args)...);
+		return fn->call(obj, std::forward<Args>(args)...);
 	}
 
 	/**
@@ -468,57 +341,6 @@ struct TOAST_API NodeInfo {
 			base_type->forEachBaseType(fn);
 		}
 		fn(*this);
-	}
-};
-
-template<class T>
-class Reflect;
-
-/**
- * @brief Member-robber pattern used by the generated reflection code
- *
- * A Robber<Tag,Ptr> static instance runs at startup and writes the private member pointer Ptr
- * into the public Accessor<Tag>::member. This is the only standards-conforming way to obtain a
- * pointer-to-private-member at compile time without modifying the Node class header.
- *
- * @note This namespace is an implementation detail; user code should never reference it directly
- */
-namespace _detail {
-template<typename Tag>
-struct Accessor {
-	inline static typename Tag::type member;
-};
-
-template<typename Tag, typename Tag::type Ptr>
-struct Robber {
-	Robber() { Accessor<Tag>::member = Ptr; }
-
-	static Robber instance;
-};
-
-template<typename Tag, typename Tag::type Ptr>
-Robber<Tag, Ptr> Robber<Tag, Ptr>::instance;
-}
-
-/**
- * @brief Generated getter/setter pair binding a private member pointer to the FieldInfo interface
- *
- * Produced by the reflection code generator using the Robber pattern in toast::_detail.
- * Allows the inspector and serialization layer to read and write private fields without
- * modifying the Node class header.
- *
- * @tparam Class The Node subtype that owns the field
- * @tparam FieldType The C++ type of the field
- * @tparam Tag Tag type that holds the pointer-to-member via Accessor<Tag>::member
- */
-template<class Class, typename FieldType, typename Tag>
-struct FieldAccess {
-	static auto get(void* obj) -> std::any { return static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member; }
-
-	static void set(void* obj, std::any value) {
-		if (auto* typed = std::any_cast<FieldType>(&value)) {
-			static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member = *typed;
-		}
 	}
 };
 

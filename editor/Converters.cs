@@ -18,9 +18,9 @@ public class SeverityToColorConverter : IValueConverter {
 		if (value is uint severity) {
 			var key = severity switch {
 				0 => "TextMuted", // Trace
-				1 => "Green",   // Info
-				2 => "Yellow",  // Warning
-				_ => "Red"      // Error / Critical
+				1 => "Green",     // Info
+				2 => "Yellow",    // Warning
+				_ => "Red"        // Error / Critical
 			};
 			return ConverterHelpers.GetBrush(key) ?? Brushes.White;
 		}

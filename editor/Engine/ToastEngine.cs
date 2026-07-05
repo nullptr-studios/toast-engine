@@ -33,8 +33,6 @@ public partial class ToastEngine : IDisposable {
 	private const string EngineLib = "toast_engine";
 	private readonly CancellationTokenSource m_cancellationSource;
 
-	public static bool IsEngineReady { get; private set; }
-
 	private readonly IntPtr m_engineInstance;
 	private readonly IntPtr m_gameInstance;
 
@@ -97,8 +95,14 @@ public partial class ToastEngine : IDisposable {
 		m_tickTask = Task.Run(() => TickLoop(m_cancellationSource.Token));
 	}
 
+	public static bool IsEngineReady { get; private set; }
+
 	public string ProjectPath { get; }
 	public string CorePath { get; }
+
+	private static string NativeLibDir => OperatingSystem.IsWindows() ? "bin" : "lib";
+	private static string NativeLibPrefix => OperatingSystem.IsWindows() ? "" : "lib";
+	private static string NativeLibExt => OperatingSystem.IsWindows() ? ".dll" : ".so";
 
 	public void Dispose() {
 		IsEngineReady = false;
@@ -136,10 +140,6 @@ public partial class ToastEngine : IDisposable {
 		LoadGame();
 	}
 
-	private static string NativeLibDir    => OperatingSystem.IsWindows() ? "bin" : "lib";
-	private static string NativeLibPrefix => OperatingSystem.IsWindows() ? ""    : "lib";
-	private static string NativeLibExt    => OperatingSystem.IsWindows() ? ".dll" : ".so";
-
 	private static string EngineDllPath() {
 		var name = $"{NativeLibPrefix}toast_engine{NativeLibExt}";
 		var path = Path.GetFullPath(
@@ -162,7 +162,8 @@ public partial class ToastEngine : IDisposable {
 	}
 
 	private void LoadGame() {
-		var gameDllPath = Directory.EnumerateFiles(Path.Combine(ProjectPath, "build"), $"*{NativeLibExt}").FirstOrDefault();
+		var gameDllPath = Directory.EnumerateFiles(Path.Combine(ProjectPath, "build"), $"*{NativeLibExt}")
+			.FirstOrDefault();
 		if (gameDllPath is null)
 			throw new FileNotFoundException($"Game not found at path {ProjectPath}");
 
@@ -243,19 +244,31 @@ public partial class ToastEngine : IDisposable {
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial void toast_rename_prefab_root(string path, string newName);
 
-	public static void RenamePrefabRoot(string path, string newName) =>
+	public static void RenamePrefabRoot(string path, string newName) {
 		toast_rename_prefab_root(path, newName);
+	}
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial void toast_create_tnode(string path, string nodeType);
 
-	public static void CreateTNode(string path, string nodeType) =>
+	public static void CreateTNode(string path, string nodeType) {
 		toast_create_tnode(path, nodeType);
+	}
 
 	[LibraryImport(EngineLib)]
 	private static partial void toast_reload_manifest();
 
-	public static void ReloadManifest() => toast_reload_manifest();
+	public static void ReloadManifest() {
+		toast_reload_manifest();
+	}
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial void toast_haptics_test(string tomlText);
+
+	/// Plays a haptic described by .thaptic TOML text on the active controller
+	public static void TestHaptic(string tomlText) {
+		toast_haptics_test(tomlText);
+	}
 
 	private delegate IntPtr GameCreate();
 

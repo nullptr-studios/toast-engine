@@ -2,7 +2,6 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Lucide.Avalonia;
 
 namespace editor.Components.Modals;
 

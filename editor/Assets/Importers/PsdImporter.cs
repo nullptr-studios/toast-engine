@@ -14,8 +14,8 @@ public enum PsdImportMode { Layers, Folders, Combined }
 
 public partial class PsdImporter : IAssetImporter {
 	private readonly Settings m_psdSettings;
-	private readonly TextureImporter.Settings m_textureSettings;
 	private readonly TextureImporter m_textureImporter;
+	private readonly TextureImporter.Settings m_textureSettings;
 
 	public PsdImporter(TextureImporter.Settings textureSettings, Settings psdSettings) {
 		m_textureSettings = textureSettings;
@@ -24,26 +24,34 @@ public partial class PsdImporter : IAssetImporter {
 	}
 
 	public IReadOnlyList<string> SupportedExtensions => [".psd"];
-	public bool CanHandle(string filePath) => Path.GetExtension(filePath) == ".psd";
+
+	public bool CanHandle(string filePath) {
+		return Path.GetExtension(filePath) == ".psd";
+	}
 
 	public string DisplayName => "PSD";
 	public LucideIconKind Icon => LucideIconKind.Brush;
 
 	public BaseAsset PrimaryOutputType => AssetTypeRegistry.ByExtension(".ktx2")!;
 
-	public IReadOnlyList<IAssetImporter> GetAllSettingsImporters() => [this, m_textureImporter];
+	public IReadOnlyList<IAssetImporter> GetAllSettingsImporters() {
+		return [this, m_textureImporter];
+	}
 
-	public IReadOnlyList<ImporterSetting> GetSettings() => [
-		new ImporterSetting("Create Folder", SettingKind.Bool,
-			() => m_psdSettings.CreateFolder,
-			v => m_psdSettings.CreateFolder = (bool)v!),
-		new ImporterSetting("Import Mode", SettingKind.Enum,
-			() => m_psdSettings.ImportMode.ToString(),
-			v => m_psdSettings.ImportMode = Enum.Parse<PsdImportMode>((string)v!),
-			Options: Enum.GetNames<PsdImportMode>()),
-	];
+	public IReadOnlyList<ImporterSetting> GetSettings() {
+		return [
+			new ImporterSetting("Create Folder", SettingKind.Bool,
+				() => m_psdSettings.CreateFolder,
+				v => m_psdSettings.CreateFolder = (bool)v!),
+			new ImporterSetting("Import Mode", SettingKind.Enum,
+				() => m_psdSettings.ImportMode.ToString(),
+				v => m_psdSettings.ImportMode = Enum.Parse<PsdImportMode>((string)v!),
+				Options: Enum.GetNames<PsdImportMode>())
+		];
+	}
 
-	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log,
+	public async Task<IReadOnlyList<string>> Import(
+		string realSourcePath, ImportContext ctx, Action<string> log,
 		Action<double>? progress = null) {
 		var baseName = Path.GetFileNameWithoutExtension(realSourcePath);
 		var destDir = ctx.DestDir;
@@ -128,6 +136,7 @@ public partial class PsdImporter : IAssetImporter {
 				var header = new MetaHeader { Uid = uid, Type = PrimaryOutputType.Type, Source = ctx.SourceVirtualPath };
 				MetaFile.Write(destPath, header, m_textureSettings.ToSection(), m_psdSettings.ToSection());
 			}
+
 			progress?.Invoke(1.0);
 		} finally {
 			foreach (var f in tempFiles)

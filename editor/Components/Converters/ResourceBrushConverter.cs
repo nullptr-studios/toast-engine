@@ -15,6 +15,7 @@ public sealed class ResourceBrushConverter : IValueConverter {
 		return Brushes.Transparent;
 	}
 
-	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) {
 		throw new NotSupportedException();
+	}
 }

@@ -16,10 +16,10 @@ public sealed class BoolBox : TemplatedControl {
 	public static readonly StyledProperty<bool> ValueProperty =
 		AvaloniaProperty.Register<BoolBox, bool>(nameof(Value), defaultBindingMode: BindingMode.TwoWay);
 
-	private string m_displayText = "false";
-
 	public static readonly DirectProperty<BoolBox, string> DisplayTextProperty =
 		AvaloniaProperty.RegisterDirect<BoolBox, string>(nameof(DisplayText), o => o.m_displayText);
+
+	private string m_displayText = "false";
 
 	private Control? m_root;
 

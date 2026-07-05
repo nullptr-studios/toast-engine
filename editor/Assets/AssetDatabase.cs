@@ -14,6 +14,7 @@ using Avalonia.Platform.Storage;
 using editor.Assets.Importers;
 using editor.Assets.Types;
 using editor.Components.Modals;
+using editor.Engine;
 using Lucide.Avalonia;
 
 namespace editor.Assets;
@@ -43,7 +44,7 @@ public static class AssetDatabase {
 	public static bool IsUpToDate(string sourceVirtualPath, string hash) {
 		var db = LoadArtworkDatabase();
 		return db[sourceVirtualPath] is JsonObject entry
-		       && entry["last_hash"]?.GetValue<string>() == hash;
+			&& entry["last_hash"]?.GetValue<string>() == hash;
 	}
 
 	public static void UpdateArtworkDatabase(
@@ -76,8 +77,8 @@ public static class AssetDatabase {
 
 		s_uidLookup = null; // the on-disk database changed, drop the cached lookup
 
-		if (editor.Engine.ToastEngine.IsEngineReady)
-			editor.Engine.ToastEngine.ReloadManifest();
+		if (ToastEngine.IsEngineReady)
+			ToastEngine.ReloadManifest();
 
 		ReloadedDatabase?.Invoke();
 	}
@@ -240,12 +241,12 @@ public static class AssetDatabase {
 
 			log($"Artwork changed: {sourceVirtual}");
 			var reimport = await ShowChoice(new ModalConfig(
-				Title: "Artwork changed",
-				Message: $"Artwork file {sourceVirtual} has changed, do you wish to reimport the assets generated from it?",
+				"Artwork changed",
+				$"Artwork file {sourceVirtual} has changed, do you wish to reimport the assets generated from it?",
 				ModalButtons.OkCancel,
 				LucideIconKind.RefreshCw,
 				new SolidColorBrush(Color.Parse("#4a9eff")),
-				OkLabel: "Reimport",
+				"Reimport",
 				CancelLabel: "Skip",
 				OkIcon: LucideIconKind.FileInput));
 
@@ -260,7 +261,8 @@ public static class AssetDatabase {
 		if (reimported) RebuildAssetDatabase();
 	}
 
-	public static async Task Reimport(string sourceVirtualPath, Action<string> log,
+	public static async Task Reimport(
+		string sourceVirtualPath, Action<string> log,
 		Action<double>? progress = null) {
 		var db = LoadArtworkDatabase();
 		if (db[sourceVirtualPath] is not JsonObject entry) {
@@ -302,7 +304,8 @@ public static class AssetDatabase {
 	}
 
 	// repoints an asset's UID at a new file by moving its .meta sidecar
-	private static bool RelocateMeta(string oldRealPath, string newRealPath, string uid, string type,
+	private static bool RelocateMeta(
+		string oldRealPath, string newRealPath, string uid, string type,
 		Action<string> log) {
 		var newVirtual = ProjectContext.ToVirtual(newRealPath);
 		if (newVirtual is null) {
@@ -430,7 +433,7 @@ public static class AssetDatabase {
 			};
 		try {
 			return JsonNode.Parse(File.ReadAllText(path)) as JsonObject
-			       ?? new JsonObject { ["version"] = 1, ["type"] = "artwork_database" };
+				?? new JsonObject { ["version"] = 1, ["type"] = "artwork_database" };
 		} catch {
 			return new JsonObject { ["version"] = 1, ["type"] = "artwork_database" };
 		}
@@ -461,9 +464,11 @@ public static class AssetDatabase {
 				outputs.RemoveAt(i);
 				changed = true;
 			}
+
 			if (outputs.Count == 0)
 				db.Remove(key);
 		}
+
 		if (changed) SaveArtworkDatabase(db);
 	}
 
@@ -532,7 +537,7 @@ public static class AssetDatabase {
 	private static Window? ActiveWindow() {
 		if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 			return desktop.Windows.FirstOrDefault(w => w.IsActive)
-			       ?? desktop.Windows.FirstOrDefault();
+				?? desktop.Windows.FirstOrDefault();
 		return null;
 	}
 

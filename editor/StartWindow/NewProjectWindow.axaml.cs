@@ -99,8 +99,7 @@ public partial class NewProjectWindow : Window {
 				Path.Combine(m_projectFolder, "lib", "src", "_detail", "game.cpp"));
 
 			Close(true);
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			var modal = new MessageModal(new ModalConfig(
 				"Failed to create project",
 				ex.Message,

@@ -112,7 +112,7 @@ internal static class KtxWriter {
 		};
 
 		using var proc = Process.Start(psi)
-		                 ?? throw new InvalidOperationException("Failed to start toktx");
+			?? throw new InvalidOperationException("Failed to start toktx");
 
 		var lastError = "";
 		proc.OutputDataReceived += (_, e) => {

@@ -262,6 +262,7 @@ void AssetManager::reloadManifest() {
 		load_collection("schema");
 		load_collection("data");
 		load_collection("node");
+		load_collection("curve");
 		load_collection("audio_bank");
 		load_collection("audio_bus");
 		load_collection("audio_event");
@@ -269,6 +270,10 @@ void AssetManager::reloadManifest() {
 		load_collection("audio_snapshot");
 		load_collection("audio_strings");
 		load_collection("audio_vca");
+		load_collection("haptic");
+		load_collection("input_action");
+		load_collection("input_layout");
+		load_collection("input_settings");
 
 		TOAST_INFO("AssetManager", "Manifest reloaded: {} assets tracked", manifest.size());
 	} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse asset manifest: {}", e.what()); }
@@ -394,6 +399,17 @@ auto AssetManager::getCachePath() const -> const std::filesystem::path& {
 	return cache_path;
 }
 
+auto AssetManager::listByType(std::string_view type) -> std::vector<toast::UID> {
+	std::vector<toast::UID> result;
+	std::lock_guard lock(mutex);
+	for (const auto& [uid_int, info] : manifest) {
+		if (info.type == type) {
+			result.emplace_back(uid_int);
+		}
+	}
+	return result;
+}
+
 // Public API Implementations
 auto load(toast::UID uid) -> AssetHandleBase {
 	return {AssetManager::get().load(uid), uid, AssetManager::getURI(uid)};
@@ -414,5 +430,9 @@ auto resolveURI(std::string_view uri) -> std::optional<toast::UID> {
 
 auto save(toast::UID uid) -> bool {
 	return AssetManager::get().save(uid);
+}
+
+auto listByType(std::string_view type) -> std::vector<toast::UID> {
+	return AssetManager::get().listByType(type);
 }
 }
