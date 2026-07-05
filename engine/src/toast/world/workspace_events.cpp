@@ -158,21 +158,21 @@ struct ProtoTraits<WorkspaceSpawn> {
 
 TOAST_PROTO_EVENT(WorkspaceSpawn);
 
-template<>
-struct ProtoTraits<WorkspaceRemove> {
-	using Proto = proto::events::WorkspaceRemove;
-	using Event = WorkspaceRemove;
-
-	static auto toProto(const Event& e) -> Proto {
-		Proto p;
-		p.set_target(e.target);
-		return p;
-	}
-
-	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.target())}; }
-};
-
-TOAST_PROTO_EVENT(WorkspaceRemove);
+// template<>
+// struct ProtoTraits<WorkspaceRemove> {
+// 	using Proto = proto::events::WorkspaceRemove;
+// 	using Event = WorkspaceRemove;
+//
+// 	static auto toProto(const Event& e) -> Proto {
+// 		Proto p;
+// 		p.set_target(e.target);
+// 		return p;
+// 	}
+//
+// 	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.target())}; }
+// };
+//
+// TOAST_PROTO_EVENT(WorkspaceRemove);
 
 template<>
 struct ProtoTraits<WorkspaceDestroy> {

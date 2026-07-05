@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using editor.Engine;
+using Proto.Events;
 
 namespace editor.Assets;
 
@@ -20,6 +22,7 @@ public static class ProjectContext {
 
 	public static void RaiseAssetsChanged() {
 		AssetsChanged?.Invoke();
+		Events.Send(new ReloadAssetsManifest());
 	}
 
 	public static void Initialize(string projectPath, string corePath) {

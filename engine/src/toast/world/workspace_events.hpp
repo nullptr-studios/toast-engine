@@ -58,7 +58,7 @@ struct WorkspaceSpawn : Event<WorkspaceSpawn> {
 	WorkspaceSpawn(toast::UID parent, std::string_view uri) : parent(parent), is_uri(true), uri(uri) { }
 };
 
-struct WorkspaceRemove : Event<WorkspaceRemove> {
+struct [[deprecated]] WorkspaceRemove : Event<WorkspaceRemove> {
 	toast::UID target;
 
 	WorkspaceRemove(toast::UID target) : target(target) { }

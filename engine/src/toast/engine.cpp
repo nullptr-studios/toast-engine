@@ -48,6 +48,7 @@ namespace {
 IApplication* active_application = nullptr;
 Camera* camera = nullptr;
 float totalTime = 0.0f;
+double clear_assets_timer = 0.0;
 }
 
 Engine* Engine::instance = nullptr;
@@ -134,6 +135,7 @@ void Engine::init() {
 
 	m->listener.subscribe<event::WorkspaceDestroy>([this](const event::WorkspaceDestroy& e) {
 		destroyWorkspace(e.handle);
+		event::send<event::ClearUnusedAssets>();
 		return false;
 	});
 
@@ -198,6 +200,11 @@ void Engine::tick() {
 
 	if (m->audio_system) {
 		m->audio_system->tick();
+	}
+
+	clear_assets_timer += Time::delta();
+	if (clear_assets_timer > 30.0) {
+		m->asset_manager->clearUnusedAssets();
 	}
 
 	if (m->renderer) {
