@@ -26,6 +26,7 @@ auto AssetManager::get() noexcept -> AssetManager& {
 }
 
 auto AssetManager::load(toast::UID uid) -> Asset* {
+	ZoneScoped;
 	uint64_t id = uid.data();
 
 	std::lock_guard lock(mutex);
@@ -230,6 +231,9 @@ auto AssetManager::saveBytes(std::string_view uri, const std::vector<uint8_t>& d
 }
 
 void AssetManager::reloadManifest() {
+	ZoneScoped;
+	clearUnusedAssets();
+
 	std::lock_guard lock(mutex);
 	manifest.clear();
 
@@ -258,6 +262,7 @@ void AssetManager::reloadManifest() {
 			}
 		};
 
+		load_collection("mesh");
 		load_collection("texture");
 		load_collection("schema");
 		load_collection("data");
@@ -280,6 +285,8 @@ void AssetManager::reloadManifest() {
 }
 
 void AssetManager::clearUnusedAssets() {
+	ZoneScoped;
+
 	std::lock_guard lock(mutex);
 	size_t initial_count = cache.size();
 	std::erase_if(cache, [](const auto& item) { return item.second->refCount() == 0; });

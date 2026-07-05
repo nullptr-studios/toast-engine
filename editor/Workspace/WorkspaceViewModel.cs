@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Dock.Model.Mvvm.Controls;
 using editor.Assets;
+using editor.Assets.Types;
 using editor.Components.Modals;
 using editor.Engine;
 using Proto.Events;
@@ -95,7 +96,7 @@ public class WorkspaceViewModel : Document {
 		File.WriteAllBytes(realPath, Array.Empty<byte>());
 
 		var uid = UidGenerator.Generate();
-		MetaFile.Write(realPath, new MetaHeader { Uid = uid, Type = "nodes" });
+		MetaFile.Write(realPath, new MetaHeader { Uid = uid, Type = AssetTypeRegistry.ByExtension(".tnode")?.Type ?? "node" });
 		AssetDatabase.RebuildAssetDatabase();
 
 		Events.Send(new ReloadAssetsManifest());

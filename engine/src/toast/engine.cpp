@@ -70,6 +70,8 @@ auto createTrianglePipeline(
 	return std::make_unique<renderer::VulkanPipeline>(core, config);
 }
 
+double clear_assets_timer = 0.0;
+
 }
 
 Engine* Engine::instance = nullptr;
@@ -158,6 +160,7 @@ void Engine::init() {
 
 	m->listener.subscribe<event::WorkspaceDestroy>([this](const event::WorkspaceDestroy& e) {
 		destroyWorkspace(e.handle);
+		event::send<event::ClearUnusedAssets>();
 		return false;
 	});
 
@@ -214,6 +217,11 @@ void Engine::tick() {
 
 	// TODO: HACK: we should introduce a proper relax mode
 	std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+	clear_assets_timer += Time::delta();
+	if (clear_assets_timer > 30.0) {
+		m->asset_manager->clearUnusedAssets();
+	}
 }
 
 auto Engine::shouldClose() -> bool {

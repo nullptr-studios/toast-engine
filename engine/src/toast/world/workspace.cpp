@@ -254,6 +254,8 @@ void Workspace::eventSubscriptions() {
 		if (assets::AssetManager::get().saveBytes(e.uri, bytes)) {
 			TOAST_INFO("World", "Saved workspace {} to {}", node->name(), e.uri);
 		}
+
+		event::send<event::ReloadAssetsManifest>();
 		return true;
 	});
 

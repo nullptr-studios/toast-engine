@@ -16,6 +16,7 @@ void AssetRegistry::init() {
 	initialized = true;
 
 	// Raw binary loaders
+	s_raw["mesh"] = [](const std::vector<uint8_t>& d) { return std::make_unique<Mesh>(d); };
 	s_raw["texture"] = [](std::vector<uint8_t> d) { return std::make_unique<Texture>(std::move(d)); };
 	s_raw["schema"] = [](std::vector<uint8_t> d) {
 		std::string_view json(reinterpret_cast<const char*>(d.data()), d.size());
