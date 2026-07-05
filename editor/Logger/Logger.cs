@@ -10,6 +10,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using editor.Engine;
 using Proto.Logging;
 
 namespace editor.Logger;
@@ -21,7 +22,7 @@ public class LogClient {
 
 	public void start() {
 		m_cts = new CancellationTokenSource();
-		Engine.Log.Trace("Starting TCP loop");
+		Log.Trace("Starting TCP loop");
 		Task.Run(() => listenLoop(m_cts.Token));
 	}
 
@@ -34,7 +35,7 @@ public class LogClient {
 		try {
 			m_client = new TcpClient();
 			await m_client.ConnectAsync("127.0.0.1", 12801, token);
-			Engine.Log.Trace("Connected");
+			Log.Trace("Connected");
 			using var stream = m_client.GetStream();
 
 			var length_buffer = new byte[4];
@@ -68,9 +69,9 @@ public class LogClient {
 				OnLogReceived?.Invoke(batch);
 			}
 		} catch (EndOfStreamException) {
-			Engine.Log.Info("Rust server closed connection");
+			Log.Info("Rust server closed connection");
 		} catch (Exception ex) when (ex is not OperationCanceledException) {
-			Engine.Log.Error($"Error in TCP loop: {ex.Message}");
+			Log.Error($"Error in TCP loop: {ex.Message}");
 		} finally {
 			m_client?.Close();
 		}

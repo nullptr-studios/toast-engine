@@ -36,25 +36,25 @@ public record GltfMetaSection : IMetaSection {
 	public bool CreateFolder { get; init; } = true;
 	public bool ImportMaterials { get; init; } = true;
 	public bool ImportTextures { get; init; } = true;
-	public bool ImportCameras { get; init; } = false;
+	public bool ImportCameras { get; init; }
 	public bool ImportLights { get; init; } = true;
 	public bool GeneratePrefab { get; init; } = true;
 }
 
 public record AudioStringMetaSection : IMetaSection {
 	public bool FollowFolderStructure = true;
-	public bool ImportEvents = true;
 	public bool ImportBuses = true;
-	public bool ImportVcas = true;
+	public bool ImportEvents = true;
 	public bool ImportPorts = true;
 	public bool ImportSnapshots = true;
+	public bool ImportVcas = true;
 }
 
 public static class MetaFile {
 	public static void Write(string outputAssetRealPath, MetaHeader header, params IMetaSection[] sections) {
 		var dto = new MetaFileDto {
 			Uid = header.Uid,
-			Type = header.Type,
+			VectorName = header.Type,
 			Source = header.Source,
 			CreatedAt = header.CreatedAt,
 			ModifiedAt = header.ModifiedAt
@@ -102,7 +102,7 @@ public static class MetaFile {
 			var dto = TomlSerializer.Deserialize<MetaFileDto>(File.ReadAllText(metaPath))!;
 			return new MetaHeader {
 				Uid = dto.Uid,
-				Type = dto.Type,
+				Type = dto.VectorName,
 				Source = dto.Source,
 				CreatedAt = dto.CreatedAt,
 				ModifiedAt = dto.ModifiedAt
@@ -190,7 +190,7 @@ public static class MetaFile {
 
 file sealed class MetaFileDto {
 	[TomlPropertyName("uid")] public string Uid { get; set; } = "";
-	[TomlPropertyName("type")] public string Type { get; set; } = "";
+	[TomlPropertyName("vector_name")] public string VectorName { get; set; } = "";
 	[TomlPropertyName("source")] public string? Source { get; set; }
 	[TomlPropertyName("created_at")] public string CreatedAt { get; set; } = "";
 	[TomlPropertyName("modified_at")] public string ModifiedAt { get; set; } = "";
@@ -223,7 +223,7 @@ file sealed class GltfSectionDto {
 	[TomlPropertyName("create_folder")] public bool CreateFolder { get; set; } = true;
 	[TomlPropertyName("import_materials")] public bool ImportMaterials { get; set; } = true;
 	[TomlPropertyName("import_textures")] public bool ImportTextures { get; set; } = true;
-	[TomlPropertyName("import_cameras")] public bool ImportCameras { get; set; } = false;
+	[TomlPropertyName("import_cameras")] public bool ImportCameras { get; set; }
 	[TomlPropertyName("import_lights")] public bool ImportLights { get; set; } = true;
 	[TomlPropertyName("generate_prefab")] public bool GeneratePrefab { get; set; } = true;
 }

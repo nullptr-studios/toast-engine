@@ -11,6 +11,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
+using editor.Engine;
 
 namespace editor.Components.Elements;
 
@@ -23,8 +24,6 @@ public abstract class DragVectorBoxBase : Decorator {
 	private const double BoxPadding = 16;
 	private const double SignWidth = 8;
 	private const double BoxBreath = 4;
-
-	private readonly record struct Compaction(bool ShowUnit, bool ThinLabel, int Decimals, bool Vertical);
 
 	private static readonly FontFamily Font = new("FiraCode Nerd Font,Consolas,monospace");
 
@@ -49,6 +48,12 @@ public abstract class DragVectorBoxBase : Decorator {
 
 	public static readonly StyledProperty<double> DragSensitivityProperty =
 		AvaloniaProperty.Register<DragVectorBoxBase, double>(nameof(DragSensitivity), 4.0);
+
+	private Compaction m_level;
+
+	protected DragVectorBoxBase() {
+		HorizontalAlignment = HorizontalAlignment.Stretch;
+	}
 
 	public string? Unit {
 		get => GetValue(UnitProperty);
@@ -85,20 +90,9 @@ public abstract class DragVectorBoxBase : Decorator {
 		set => SetValue(DragSensitivityProperty, value);
 	}
 
-	protected readonly record struct AxisSpec(
-		StyledProperty<string> Label,
-		string ColorKey,
-		StyledProperty<float> Value);
-
 	protected abstract int AxisCount { get; }
 
 	protected abstract AxisSpec[] BuildAxes();
-
-	private Compaction m_level;
-
-	protected DragVectorBoxBase() {
-		HorizontalAlignment = HorizontalAlignment.Stretch;
-	}
 
 	protected override Size MeasureOverride(Size availableSize) {
 		var level = ChooseLevel(availableSize.Width);
@@ -112,10 +106,10 @@ public abstract class DragVectorBoxBase : Decorator {
 
 	private IEnumerable<Compaction> Ladder() {
 		var max = Math.Max(0, Decimals);
-		yield return new Compaction(true, false, max, false); // full
+		yield return new Compaction(true, false, max, false);  // full
 		yield return new Compaction(false, false, max, false); // drop unit
-		yield return new Compaction(false, true, max, false); // thin label
-		for (var d = max - 1; d >= 0; d--) // trim decimals one place at a time
+		yield return new Compaction(false, true, max, false);  // thin label
+		for (var d = max - 1; d >= 0; d--)                     // trim decimals one place at a time
 			yield return new Compaction(false, true, d, false);
 	}
 
@@ -124,7 +118,8 @@ public abstract class DragVectorBoxBase : Decorator {
 		if (double.IsInfinity(available)) return full;
 
 		foreach (var level in Ladder())
-			if (FitsAt(level, available)) return level;
+			if (FitsAt(level, available))
+				return level;
 
 		return full with { Vertical = true };
 	}
@@ -156,8 +151,7 @@ public abstract class DragVectorBoxBase : Decorator {
 		if (vertical) {
 			for (var i = 0; i < axes.Length; i++)
 				grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-		}
-		else {
+		} else {
 			grid.ColumnSpacing = Spacing;
 			for (var i = 0; i < axes.Length; i++)
 				grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
@@ -184,8 +178,7 @@ public abstract class DragVectorBoxBase : Decorator {
 		if (!vertical) {
 			labelCorner = new CornerRadius(Radius, 0, 0, Radius);
 			boxCorner = new CornerRadius(0, Radius, Radius, 0);
-		}
-		else {
+		} else {
 			var first = index == 0;
 			var last = index == count - 1;
 			labelCorner = new CornerRadius(first ? Radius : 0, 0, 0, last ? Radius : 0);
@@ -201,8 +194,7 @@ public abstract class DragVectorBoxBase : Decorator {
 				Width = ThinLabelWidth,
 				VerticalAlignment = VerticalAlignment.Stretch
 			};
-		}
-		else {
+		} else {
 			var chipText = new TextBlock {
 				Foreground = Brush("Bg1"),
 				FontFamily = Font,
@@ -259,7 +251,14 @@ public abstract class DragVectorBoxBase : Decorator {
 	private static IBrush? Brush(string key) {
 		if (Application.Current?.Resources.TryGetResource(key, ThemeVariant.Dark, out var r) == true)
 			return r as IBrush;
-		Engine.Log.Warn($"Brush '{key}' not found in resources");
+		Log.Warn($"Brush '{key}' not found in resources");
 		return null;
 	}
+
+	private readonly record struct Compaction(bool ShowUnit, bool ThinLabel, int Decimals, bool Vertical);
+
+	protected readonly record struct AxisSpec(
+		StyledProperty<string> Label,
+		string ColorKey,
+		StyledProperty<float> Value);
 }

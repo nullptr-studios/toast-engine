@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "core://schemas/action.schema.json",
+  "title": "Toast Input Action (.taction)",
+  "description": "Defines a named player action with a value domain, accumulation strategy, and a list of binds",
+  "type": "object",
+  "required": ["name", "function_name", "type"],
+  "additionalProperties": false,
+  "properties": {
+    "name":          { "type": "string",  "x-toast-type": "string", "default": "unnamed",    "description": "Display name of the action." },
+    "function_name": { "type": "string",  "x-toast-type": "string", "default": "onUnnamed",  "description": "Reflected parent function invoked when the action fires." },
+    "description":   { "type": "string",  "x-toast-type": "string", "default": "",           "description": "Human-readable description." },
+    "type":          { "enum": ["Action0D", "Action1D", "Action2D"], "x-toast-type": "enum",  "default": "Action0D", "description": "Value domain: bool (0D), float (1D), or vec2 (2D)." },
+    "accumulation":  { "type": "boolean", "x-toast-type": "bool",   "default": false,         "description": "true keeps the highest-magnitude bind; false averages all active binds." },
+    "bind":     { "type": "array", "items": { "$ref": "#/definitions/bind" },     "x-toast-type": "bind[]",     "description": "Binds that drive this action." },
+    "modifier": { "type": "array", "items": { "$ref": "#/definitions/modifier" }, "x-toast-type": "modifier[]", "description": "Action-wide modifiers applied after accumulation." }
+  },
+  "definitions": {
+    "bind": {
+      "type": "object",
+      "required": ["keycode"],
+      "additionalProperties": false,
+      "properties": {
+        "keycode":  { "type": "string", "x-toast-type": "string",    "description": "Input keycode, e.g. 'keyboard/space', 'mouse/left', 'controller/left_stick'." },
+        "trigger":  { "type": "array",  "x-toast-type": "trigger[]", "description": "Trigger conditions for this bind" },
+        "modifier": { "type": "array",  "x-toast-type": "modifier[]","description": "Per-bind modifiers affecting only this bind's value" }
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "required": ["name"],
+      "x-toast-discriminator": "name",
+      "properties": {
+        "name":              { "enum": ["start", "release", "hold", "pulse", "axis1d", "axis2d", "cursor"], "x-toast-type": "enum" },
+        "value":             {
+          "x-toast-variants": ["start", "release", "hold", "pulse"],
+          "x-toast-type-switch": {
+            "field": "type",
+            "cases": {
+              "Action0D": { "type": "bool",  "default": true },
+              "Action1D": { "type": "float", "default": 1.0 },
+              "Action2D": { "type": "vec2",  "default": [1.0, 0.0] }
+            }
+          },
+          "description": "Value contributed while the trigger is active. Type follows the action's value domain."
+        },
+        "threshold":         { "type": "number",  "x-toast-type": "float", "default": 0.5,  "x-toast-variants": ["start", "release", "axis1d"], "description": "Activation threshold (start/release). For axis1d an array [min, max] of absolute bounds is also accepted" },
+        "threshold_start":   { "type": "number",  "x-toast-type": "float", "default": 0.5,  "x-toast-variants": ["hold", "pulse"], "description": "Hold/pulse start threshold" },
+        "threshold_release": { "type": "number",  "x-toast-type": "float", "default": 0.5,  "x-toast-variants": ["hold", "pulse"], "description": "Hold/pulse release threshold" },
+        "threshold_x":       { "type": "array",   "x-toast-type": "float[]", "x-toast-variants": ["axis2d"], "description": "axis2d X [min, max] absolute bounds" },
+        "threshold_y":       { "type": "array",   "x-toast-type": "float[]", "x-toast-variants": ["axis2d"], "description": "axis2d Y [min, max] absolute bounds" },
+        "countdown":         { "type": "number",  "x-toast-type": "float", "default": 0,    "x-toast-variants": ["start", "hold", "pulse"], "description": "Seconds to wait before the trigger fires" },
+        "rate":              { "type": "number",  "x-toast-type": "float", "default": 1.0,  "x-toast-variants": ["pulse"], "description": "Pulse repeat rate (Hz)" },
+        "normalize":         { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["axis1d", "axis2d"], "description": "Normalize axis output to [-1, 1]" },
+        "axis":              { "type": "integer", "x-toast-type": "int",   "default": 0,    "minimum": 0, "maximum": 1, "x-toast-variants": ["axis1d"], "description": "Axis component to extract (0=X, 1=Y)" },
+        "send_start":        { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["hold", "pulse", "axis1d", "axis2d"], "description": "Emit a start event at trigger activation" },
+        "send_release":      { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["hold", "pulse", "axis1d", "axis2d"], "description": "Emit a release event at deactivation" },
+        "space":             { "type": "integer", "x-toast-type": "int",   "default": 1,    "x-toast-variants": ["cursor"], "description": "Cursor coordinate space (0=screen, 1=NDC, 2=camera, 3=world)" },
+        "delta":             { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["cursor"], "description": "Report cursor delta instead of absolute position" }
+      }
+    },
+    "modifier": {
+      "type": "object",
+      "required": ["name"],
+      "x-toast-discriminator": "name",
+      "properties": {
+        "name":            { "enum": ["deadzone", "invert", "exponential", "scale", "scale_by_deltatime", "smooth", "key"], "x-toast-type": "enum" },
+        "lower_threshold": { "type": "number",  "x-toast-type": "float", "default": 0.2,  "x-toast-variants": ["deadzone"], "description": "Deadzone lower bound" },
+        "upper_threshold": { "type": "number",  "x-toast-type": "float", "default": 1.0,  "x-toast-variants": ["deadzone"], "description": "Deadzone upper bound" },
+        "x":               { "type": "number",  "x-toast-type": "float", "default": 1.0,  "x-toast-variants": ["invert", "scale", "scale_by_deltatime", "smooth"], "description": "X-axis factor (scale) or per-axis flag (invert/smooth/scale_by_deltatime as 0/1)" },
+        "y":               { "type": "number",  "x-toast-type": "float", "default": 1.0,  "x-toast-variants": ["invert", "scale", "scale_by_deltatime", "smooth"], "description": "Y-axis factor (scale) or per-axis flag (invert/smooth/scale_by_deltatime as 0/1)" },
+        "power":           { "type": "number",  "x-toast-type": "float", "default": 2.0,  "x-toast-variants": ["exponential"], "description": "Exponent for exponential curve" },
+        "speed":           { "type": "number",  "x-toast-type": "float", "default": 10.0, "x-toast-variants": ["smooth"], "description": "Smoothing speed" },
+        "control":         { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["key"], "description": "Require Ctrl held (key modifier)" },
+        "shift":           { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["key"], "description": "Require Shift held (key modifier)" },
+        "alt":             { "type": "boolean", "x-toast-type": "bool",  "default": false, "x-toast-variants": ["key"], "description": "Require Alt held (key modifier)" }
+      }
+    }
+  }
+}

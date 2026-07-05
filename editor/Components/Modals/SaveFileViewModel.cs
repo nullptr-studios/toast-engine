@@ -3,9 +3,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace editor.Components.Modals;
 
 public partial class SaveFileViewModel : ObservableObject {
-	[ObservableProperty] private string m_name = "Untitled";
-	[ObservableProperty] private string m_folder = "assets://";
 	private string m_extension = ".tnode";
+	[ObservableProperty] private string m_folder = "assets://";
+	[ObservableProperty] private string m_name = "Untitled";
 
 	public SaveFileViewModel() { }
 
@@ -13,6 +13,9 @@ public partial class SaveFileViewModel : ObservableObject {
 		Name = defaultName;
 		m_extension = extension;
 	}
+
+	// updates as user types
+	public string FullPath => Result() ?? Folder;
 
 	public void SetExtension(string extension) {
 		m_extension = extension.StartsWith('.') ? extension : "." + extension;
@@ -22,11 +25,13 @@ public partial class SaveFileViewModel : ObservableObject {
 		Folder = virtualFolder;
 	}
 
-	// updates as user types
-	public string FullPath => Result() ?? Folder;
+	partial void OnNameChanged(string value) {
+		OnPropertyChanged(nameof(FullPath));
+	}
 
-	partial void OnNameChanged(string value) => OnPropertyChanged(nameof(FullPath));
-	partial void OnFolderChanged(string value) => OnPropertyChanged(nameof(FullPath));
+	partial void OnFolderChanged(string value) {
+		OnPropertyChanged(nameof(FullPath));
+	}
 
 	public string? Result() {
 		var trimmedName = Name.Trim();

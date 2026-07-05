@@ -1,4 +1,3 @@
-using System.IO;
 using System.Threading.Tasks;
 using Lucide.Avalonia;
 
@@ -19,7 +18,7 @@ public sealed class CurveAsset : BaseAsset {
 	public override string SchemaPath => "core://schemas/curve.schema.json";
 
 	public override Task CreateAsync(string path) {
-		File.WriteAllText(path, "# Toast Curve\n");
+		new Curve([0f, 0f, 1f, 1f], CurveDimension.D2, SplineType.Linear).Save(path);
 		return Task.CompletedTask;
 	}
 }

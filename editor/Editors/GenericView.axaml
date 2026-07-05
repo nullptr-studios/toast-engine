@@ -5,7 +5,9 @@
              xmlns:lucide="using:Lucide.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="850"
+             mc:Ignorable="d"
+             d:DesignWidth="400"
+             d:DesignHeight="850"
              x:Class="editor.Editors.GenericView"
              x:DataType="vm:GenericViewModel"
              Background="{StaticResource Bg2}"
@@ -13,23 +15,34 @@
 
 	<UserControl.Styles>
 		<Style Selector="TextBlock.lbl">
-			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
-			<Setter Property="VerticalAlignment" Value="Center" />
-			<Setter Property="TextTrimming" Value="CharacterEllipsis" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+			<Setter Property="TextTrimming"
+			        Value="CharacterEllipsis" />
 		</Style>
 		<Style Selector="Button.add-btn">
-			<Setter Property="HorizontalAlignment" Value="Stretch" />
-			<Setter Property="HorizontalContentAlignment" Value="Center" />
-			<Setter Property="BorderThickness" Value="0" />
-			<Setter Property="Padding" Value="6" />
-			<Setter Property="CornerRadius" Value="6" />
-			<Setter Property="Cursor" Value="Hand" />
+			<Setter Property="HorizontalAlignment"
+			        Value="Stretch" />
+			<Setter Property="HorizontalContentAlignment"
+			        Value="Center" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="6" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
 		</Style>
 		<Style Selector="Button.add-btn /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background" Value="#303030" />
+			<Setter Property="Background"
+			        Value="#303030" />
 		</Style>
 		<Style Selector="Button.add-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background" Value="#404040" />
+			<Setter Property="Background"
+			        Value="#404040" />
 		</Style>
 	</UserControl.Styles>
 
@@ -42,168 +55,257 @@
 			<StackPanel Spacing="8">
 
 				<!-- Header -->
-				<elements:StringBox Value="{Binding Name, Mode=TwoWay}" Wrap="False"
+				<elements:StringBox Value="{Binding Name, Mode=TwoWay}"
+				                    Wrap="False"
 				                    IsVisible="{Binding NameEditable}" />
 
 				<!-- Body -->
 				<Panel>
 
 					<!-- Locked schema -->
-					<StackPanel IsVisible="{Binding !NameEditable}" Spacing="8">
+					<StackPanel IsVisible="{Binding !NameEditable}"
+					            Spacing="8">
 						<!-- Array item -->
 						<Panel IsVisible="{Binding IsArrayItem}">
-							<elements:DragFloatBox Value="{Binding FloatVal,  Mode=TwoWay}" IsVisible="{Binding IsFloat}" />
-							<elements:DragIntBox   Value="{Binding IntVal,    Mode=TwoWay}" IsVisible="{Binding IsInt}" />
-							<elements:BoolBox      Value="{Binding BoolVal,   Mode=TwoWay}" IsVisible="{Binding IsBool}" />
-							<elements:StringBox    Value="{Binding StringVal, Mode=TwoWay}" Wrap="False" IsVisible="{Binding IsString}" />
-							<elements:AssetBox     Value="{Binding RefUid,    Mode=TwoWay}" IsVisible="{Binding IsAsset}" />
-							<elements:NodeBox      Value="{Binding RefUid,    Mode=TwoWay}" IsVisible="{Binding IsNode}" />
-							<elements:DragVec2Box  X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}" IsVisible="{Binding IsVec2}" />
-							<elements:DragVec3Box  X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
-							                       Z="{Binding Z, Mode=TwoWay}" IsVisible="{Binding IsVec3}" />
-							<elements:Color3Box    R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
-							                       B="{Binding Z, Mode=TwoWay}" IsVisible="{Binding IsColor3}" />
-							<elements:Color4Box    R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
-							                       B="{Binding Z, Mode=TwoWay}" A="{Binding W, Mode=TwoWay}" IsVisible="{Binding IsColor4}" />
-							<elements:EnumBox      Value="{Binding StringVal, Mode=TwoWay}"
-							                       Options="{Binding EnumAllowedValues}" IsVisible="{Binding IsEnumWithOptions}" />
-							<elements:StringBox    Value="{Binding StringVal, Mode=TwoWay}"
-							                       Wrap="False" IsVisible="{Binding IsEnumWithoutOptions}" />
-							<Border IsVisible="{Binding IsObject}" Background="{StaticResource Bg0}" CornerRadius="6" Padding="4">
-								<elements:ArrayBox Background="Transparent" Padding="0"
-								                   RowBackground="{StaticResource Bg3}"
-								                   RowCornerRadius="4" RowPadding="6,4"
-								                   Items="{Binding Children, Mode=TwoWay}"
-								                   AddLabel="Add Field"
-								                   AddCommand="{Binding AddObjectChildCommand}"
-								                   CanReorder="{Binding ChildrenEditable}"
-								                   CanAddRemove="{Binding ChildrenEditable}" />
-							</Border>
+							<elements:DragFloatBox Value="{Binding FloatVal,  Mode=TwoWay}"
+							                       Minimum="{Binding Minimum}"
+							                       Maximum="{Binding Maximum}"
+							                       IsVisible="{Binding IsFloat}" />
+							<elements:DragIntBox Value="{Binding IntVal,    Mode=TwoWay}"
+							                     Minimum="{Binding Minimum}"
+							                     Maximum="{Binding Maximum}"
+							                     IsVisible="{Binding IsInt}" />
+							<elements:BoolBox Value="{Binding BoolVal,   Mode=TwoWay}"
+							                  IsVisible="{Binding IsBool}" />
+							<elements:StringBox Value="{Binding StringVal, Mode=TwoWay}"
+							                    Wrap="False"
+							                    IsVisible="{Binding IsString}" />
+							<elements:AssetBox Value="{Binding RefUid,    Mode=TwoWay}"
+							                   AssetType="{Binding RefType}"
+							                   IsVisible="{Binding IsAsset}" />
+							<elements:NodeBox Value="{Binding RefUid,    Mode=TwoWay}"
+							                  NodeType="{Binding RefType}"
+							                  IsVisible="{Binding IsNode}" />
+							<elements:DragVec2Box X="{Binding X, Mode=TwoWay}"
+							                      Y="{Binding Y, Mode=TwoWay}"
+							                      Minimum="{Binding Minimum}"
+							                      Maximum="{Binding Maximum}"
+							                      IsVisible="{Binding IsVec2}" />
+							<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
+							                      Y="{Binding Y, Mode=TwoWay}"
+							                      Z="{Binding Z, Mode=TwoWay}"
+							                      IsVisible="{Binding IsVec3}" />
+							<elements:Color3Box R="{Binding X, Mode=TwoWay}"
+							                    G="{Binding Y, Mode=TwoWay}"
+							                    B="{Binding Z, Mode=TwoWay}"
+							                    IsVisible="{Binding IsColor3}" />
+							<elements:Color4Box R="{Binding X, Mode=TwoWay}"
+							                    G="{Binding Y, Mode=TwoWay}"
+							                    B="{Binding Z, Mode=TwoWay}"
+							                    A="{Binding W, Mode=TwoWay}"
+							                    IsVisible="{Binding IsColor4}" />
+							<elements:EnumBox Value="{Binding StringVal, Mode=TwoWay}"
+							                  Options="{Binding EnumAllowedValues}"
+							                  IsVisible="{Binding IsEnumWithOptions}" />
+							<elements:StringBox Value="{Binding StringVal, Mode=TwoWay}"
+							                    Wrap="False"
+							                    IsVisible="{Binding IsEnumWithoutOptions}" />
 						</Panel>
 
 						<!-- Named field -->
-						<StackPanel IsVisible="{Binding IsNamedField}" Spacing="4">
+						<StackPanel IsVisible="{Binding IsNamedField}"
+						            Spacing="4">
 
 							<!-- Scalar -->
-							<Grid ColumnDefinitions="150,*" ColumnSpacing="8" IsVisible="{Binding IsScalar}">
-								<TextBlock Classes="lbl" Text="{Binding Name}" />
+							<Grid ColumnDefinitions="150,*"
+							      ColumnSpacing="8"
+							      IsVisible="{Binding IsScalar}">
+								<TextBlock Classes="lbl"
+								           Text="{Binding Name}" />
 								<Panel Grid.Column="1">
 									<elements:DragFloatBox Value="{Binding FloatVal,  Mode=TwoWay}"
-									                       Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"
+									                       Minimum="{Binding Minimum}"
+									                       Maximum="{Binding Maximum}"
 									                       IsVisible="{Binding IsFloat}" />
-									<elements:DragIntBox   Value="{Binding IntVal,    Mode=TwoWay}"
-									                       Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"
-									                       IsVisible="{Binding IsInt}" />
-									<elements:BoolBox      Value="{Binding BoolVal,   Mode=TwoWay}" IsVisible="{Binding IsBool}" />
-									<elements:StringBox    Value="{Binding StringVal, Mode=TwoWay}" Wrap="False" IsVisible="{Binding IsString}" />
-									<elements:AssetBox     Value="{Binding RefUid,    Mode=TwoWay}" IsVisible="{Binding IsAsset}" />
-									<elements:NodeBox      Value="{Binding RefUid,    Mode=TwoWay}" IsVisible="{Binding IsNode}" />
-									<elements:Color3Box    R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
-									                       B="{Binding Z, Mode=TwoWay}" IsVisible="{Binding IsColor3}" />
-									<elements:Color4Box    R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
-									                       B="{Binding Z, Mode=TwoWay}" A="{Binding W, Mode=TwoWay}" IsVisible="{Binding IsColor4}" />
-									<elements:EnumBox      Value="{Binding StringVal, Mode=TwoWay}"
-									                       Options="{Binding EnumAllowedValues}" IsVisible="{Binding IsEnumWithOptions}" />
-									<elements:StringBox    Value="{Binding StringVal, Mode=TwoWay}"
-									                       Wrap="False" IsVisible="{Binding IsEnumWithoutOptions}" />
+									<elements:DragIntBox Value="{Binding IntVal,    Mode=TwoWay}"
+									                     Minimum="{Binding Minimum}"
+									                     Maximum="{Binding Maximum}"
+									                     IsVisible="{Binding IsInt}" />
+									<elements:BoolBox Value="{Binding BoolVal,   Mode=TwoWay}"
+									                  IsVisible="{Binding IsBool}" />
+									<elements:StringBox Value="{Binding StringVal, Mode=TwoWay}"
+									                    Wrap="False"
+									                    IsVisible="{Binding IsString}" />
+									<elements:AssetBox Value="{Binding RefUid,    Mode=TwoWay}"
+									                   AssetType="{Binding RefType}"
+									                   IsVisible="{Binding IsAsset}" />
+									<elements:NodeBox Value="{Binding RefUid,    Mode=TwoWay}"
+									                  NodeType="{Binding RefType}"
+									                  IsVisible="{Binding IsNode}" />
+									<elements:Color3Box R="{Binding X, Mode=TwoWay}"
+									                    G="{Binding Y, Mode=TwoWay}"
+									                    B="{Binding Z, Mode=TwoWay}"
+									                    IsVisible="{Binding IsColor3}" />
+									<elements:Color4Box R="{Binding X, Mode=TwoWay}"
+									                    G="{Binding Y, Mode=TwoWay}"
+									                    B="{Binding Z, Mode=TwoWay}"
+									                    A="{Binding W, Mode=TwoWay}"
+									                    IsVisible="{Binding IsColor4}" />
+									<elements:EnumBox Value="{Binding StringVal, Mode=TwoWay}"
+									                  Options="{Binding EnumAllowedValues}"
+									                  IsVisible="{Binding IsEnumWithOptions}" />
+									<elements:StringBox Value="{Binding StringVal, Mode=TwoWay}"
+									                    Wrap="False"
+									                    IsVisible="{Binding IsEnumWithoutOptions}" />
 								</Panel>
 							</Grid>
 
 							<!-- Vec -->
-							<StackPanel Spacing="8" IsVisible="{Binding IsVectorLayout}">
-								<TextBlock Classes="lbl" Text="{Binding Name}" />
-								<elements:DragVec2Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
-								                      Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"
+							<StackPanel Spacing="8"
+							            IsVisible="{Binding IsVectorLayout}">
+								<TextBlock Classes="lbl"
+								           Text="{Binding Name}" />
+								<elements:DragVec2Box X="{Binding X, Mode=TwoWay}"
+								                      Y="{Binding Y, Mode=TwoWay}"
+								                      Minimum="{Binding Minimum}"
+								                      Maximum="{Binding Maximum}"
 								                      IsVisible="{Binding IsVec2}" />
-								<elements:DragVec3Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
+								<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
+								                      Y="{Binding Y, Mode=TwoWay}"
 								                      Z="{Binding Z, Mode=TwoWay}"
-								                      Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"
+								                      Minimum="{Binding Minimum}"
+								                      Maximum="{Binding Maximum}"
 								                      IsVisible="{Binding IsVec3}" />
 							</StackPanel>
 
 							<!-- Object -->
 							<Border IsVisible="{Binding IsObject}"
-							        Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
+							        Background="{StaticResource Bg3}"
+							        CornerRadius="8"
+							        Padding="8">
 								<StackPanel Spacing="8">
-									<TextBlock Text="{Binding Name}" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,4"/>
-									<elements:ArrayBox Background="Transparent" Padding="0"
+									<TextBlock Text="{Binding Name}"
+									           FontWeight="Bold"
+									           HorizontalAlignment="Center"
+									           Margin="0,0,0,4" />
+									<elements:ArrayBox Background="Transparent"
+									                   Padding="0"
 									                   Items="{Binding Children, Mode=TwoWay}"
-									                   CanReorder="False" CanAddRemove="False" />
+									                   CanReorder="False"
+									                   CanAddRemove="False" />
 								</StackPanel>
 							</Border>
 
 							<!-- Array -->
-							<StackPanel Spacing="4" IsVisible="{Binding IsArray}">
-								<TextBlock Classes="lbl" Text="{Binding Name}" />
-								<elements:ArrayBox Background="{StaticResource Bg1}" Padding="4"
+							<StackPanel Spacing="4"
+							            IsVisible="{Binding IsArray}">
+								<TextBlock Classes="lbl"
+								           Text="{Binding Name}" />
+								<elements:ArrayBox Background="{StaticResource Bg1}"
+								                   Padding="6"
 								                   Items="{Binding Children, Mode=TwoWay}"
 								                   AddLabel="Add Item"
 								                   AddCommand="{Binding AddArrayItemCommand}"
-								                   CanReorder="True" CanAddRemove="True" />
+								                   CanReorder="True"
+								                   CanAddRemove="True" />
 							</StackPanel>
 
 						</StackPanel>
 					</StackPanel>
 
 					<!-- Free-form display (Name is in the header slot above) -->
-					<StackPanel IsVisible="{Binding NameEditable}" Spacing="8">
+					<StackPanel IsVisible="{Binding NameEditable}"
+					            Spacing="8">
 
 						<!-- Type and value -->
-						<Grid ColumnDefinitions="*,*" ColumnSpacing="6" IsVisible="{Binding IsScalarOrVec}">
+						<Grid ColumnDefinitions="*,*"
+						      ColumnSpacing="6"
+						      IsVisible="{Binding IsScalarOrVec}">
 							<elements:EnumBox Value="{Binding TypeKey, Mode=TwoWay}"
 							                  Options="{Binding FieldTypes}" />
 							<Panel Grid.Column="1">
-								<elements:DragFloatBox Value="{Binding FloatVal,  Mode=TwoWay}" IsVisible="{Binding IsFloat}" />
-								<elements:DragIntBox   Value="{Binding IntVal,    Mode=TwoWay}" IsVisible="{Binding IsInt}" />
-								<elements:BoolBox      Value="{Binding BoolVal,   Mode=TwoWay}" IsVisible="{Binding IsBool}" />
-								<elements:StringBox    Value="{Binding StringVal, Mode=TwoWay}" Wrap="False" IsVisible="{Binding IsString}" />
-								<elements:AssetBox     Value="{Binding RefUid,    Mode=TwoWay}" IsVisible="{Binding IsAsset}" />
-								<elements:NodeBox      Value="{Binding RefUid,    Mode=TwoWay}" IsVisible="{Binding IsNode}" />
-								<elements:Color3Box    R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
-								                       B="{Binding Z, Mode=TwoWay}" IsVisible="{Binding IsColor3}" />
-								<elements:Color4Box    R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
-								                       B="{Binding Z, Mode=TwoWay}" A="{Binding W, Mode=TwoWay}" IsVisible="{Binding IsColor4}" />
-								<elements:EnumBox      Value="{Binding StringVal, Mode=TwoWay}"
-								                       Options="{Binding EnumAllowedValues}" IsVisible="{Binding IsEnumWithOptions}" />
-								<elements:StringBox    Value="{Binding StringVal, Mode=TwoWay}"
-								                       Wrap="False" IsVisible="{Binding IsEnumWithoutOptions}" />
-								<elements:DragVec2Box  X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}" IsVisible="{Binding IsVec2}" />
-								<elements:DragVec3Box  X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
-								                       Z="{Binding Z, Mode=TwoWay}" IsVisible="{Binding IsVec3}" />
+								<elements:DragFloatBox Value="{Binding FloatVal,  Mode=TwoWay}"
+								                       IsVisible="{Binding IsFloat}" />
+								<elements:DragIntBox Value="{Binding IntVal,    Mode=TwoWay}"
+								                     IsVisible="{Binding IsInt}" />
+								<elements:BoolBox Value="{Binding BoolVal,   Mode=TwoWay}"
+								                  IsVisible="{Binding IsBool}" />
+								<elements:StringBox Value="{Binding StringVal, Mode=TwoWay}"
+								                    Wrap="False"
+								                    IsVisible="{Binding IsString}" />
+								<elements:AssetBox Value="{Binding RefUid,    Mode=TwoWay}"
+								                   AssetType="{Binding RefType}"
+								                   IsVisible="{Binding IsAsset}" />
+								<elements:NodeBox Value="{Binding RefUid,    Mode=TwoWay}"
+								                  NodeType="{Binding RefType}"
+								                  IsVisible="{Binding IsNode}" />
+								<elements:Color3Box R="{Binding X, Mode=TwoWay}"
+								                    G="{Binding Y, Mode=TwoWay}"
+								                    B="{Binding Z, Mode=TwoWay}"
+								                    IsVisible="{Binding IsColor3}" />
+								<elements:Color4Box R="{Binding X, Mode=TwoWay}"
+								                    G="{Binding Y, Mode=TwoWay}"
+								                    B="{Binding Z, Mode=TwoWay}"
+								                    A="{Binding W, Mode=TwoWay}"
+								                    IsVisible="{Binding IsColor4}" />
+								<elements:EnumBox Value="{Binding StringVal, Mode=TwoWay}"
+								                  Options="{Binding EnumAllowedValues}"
+								                  IsVisible="{Binding IsEnumWithOptions}" />
+								<elements:StringBox Value="{Binding StringVal, Mode=TwoWay}"
+								                    Wrap="False"
+								                    IsVisible="{Binding IsEnumWithoutOptions}" />
+								<elements:DragVec2Box X="{Binding X, Mode=TwoWay}"
+								                      Y="{Binding Y, Mode=TwoWay}"
+								                      IsVisible="{Binding IsVec2}" />
+								<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
+								                      Y="{Binding Y, Mode=TwoWay}"
+								                      Z="{Binding Z, Mode=TwoWay}"
+								                      IsVisible="{Binding IsVec3}" />
 							</Panel>
 						</Grid>
 
 						<!-- Object -->
-						<StackPanel Spacing="5" IsVisible="{Binding IsObject}">
-							<Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+						<StackPanel Spacing="5"
+						            IsVisible="{Binding IsObject}">
+							<Grid ColumnDefinitions="*,*"
+							      ColumnSpacing="6">
 								<elements:EnumBox Value="{Binding TypeKey, Mode=TwoWay}"
 								                  Options="{Binding FieldTypes}" />
 							</Grid>
-							<Border BorderThickness="4" BorderBrush="{StaticResource Bg4}" CornerRadius="4">
-								<elements:ArrayBox Background="Transparent" Padding="4"
+							<Border BorderThickness="4"
+							        BorderBrush="{StaticResource Bg4}"
+							        CornerRadius="4">
+								<elements:ArrayBox Background="Transparent"
+								                   Padding="4"
 								                   RowBackground="{StaticResource Bg3}"
-								                   RowCornerRadius="4" RowPadding="6,4"
+								                   RowCornerRadius="4"
+								                   RowPadding="6,4"
 								                   Items="{Binding Children, Mode=TwoWay}"
 								                   AddLabel="Add Field"
 								                   AddCommand="{Binding AddObjectChildCommand}"
-								                   CanReorder="True" CanAddRemove="True" />
+								                   CanReorder="True"
+								                   CanAddRemove="True" />
 							</Border>
 						</StackPanel>
 
 						<!-- Array -->
-						<StackPanel Spacing="5" IsVisible="{Binding IsArray}">
-							<Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+						<StackPanel Spacing="5"
+						            IsVisible="{Binding IsArray}">
+							<Grid ColumnDefinitions="*,*"
+							      ColumnSpacing="6">
 								<elements:EnumBox Value="{Binding TypeKey, Mode=TwoWay}"
 								                  Options="{Binding FieldTypes}" />
 								<elements:EnumBox Grid.Column="1"
 								                  Value="{Binding ArrayElementType, Mode=TwoWay}"
 								                  Options="{Binding FieldTypes}" />
 							</Grid>
-							<elements:ArrayBox Background="{StaticResource Bg1}" Padding="4"
+							<elements:ArrayBox Background="{StaticResource Bg1}"
+							                   Padding="6"
 							                   Items="{Binding Children, Mode=TwoWay}"
 							                   AddLabel="Add Item"
 							                   AddCommand="{Binding AddArrayItemCommand}"
-							                   CanReorder="True" CanAddRemove="True" />
+							                   CanReorder="True"
+							                   CanAddRemove="True" />
 						</StackPanel>
 
 					</StackPanel>
@@ -212,10 +314,14 @@
 		</DataTemplate>
 	</UserControl.DataTemplates>
 
-	<Grid RowDefinitions="Auto,*" RowSpacing="8">
+	<Grid RowDefinitions="Auto,*"
+	      RowSpacing="8">
 
 		<!-- Header -->
-		<Border Grid.Row="0" Background="{StaticResource Bg3}" CornerRadius="8" Padding="10">
+		<Border Grid.Row="0"
+		        Background="{StaticResource Bg3}"
+		        CornerRadius="8"
+		        Padding="10">
 			<StackPanel Spacing="8">
 				<DockPanel VerticalAlignment="Center">
 					<Button DockPanel.Dock="Right"
@@ -223,15 +329,25 @@
 					        Background="{StaticResource Red}"
 					        CornerRadius="6"
 					        VerticalAlignment="Top">
-						<StackPanel Orientation="Horizontal" Spacing="4">
-							<lucide:LucideIcon Kind="Save" Size="14" StrokeWidth="2.5" />
-							<TextBlock Text="Save" FontWeight="SemiBold" />
+						<StackPanel Orientation="Horizontal"
+						            Spacing="4">
+							<lucide:LucideIcon Kind="Save"
+							                   Size="14"
+							                   StrokeWidth="2.5" />
+							<TextBlock Text="Save"
+							           FontWeight="SemiBold" />
 						</StackPanel>
 					</Button>
-					<StackPanel Spacing="4" VerticalAlignment="Center">
-						<TextBlock Text="{Binding DisplayTitle}" FontWeight="Bold" FontSize="16" />
-						<StackPanel Orientation="Horizontal" Spacing="4">
-							<lucide:LucideIcon Kind="Lock" Size="12" StrokeWidth="2.5"
+					<StackPanel Spacing="4"
+					            VerticalAlignment="Center">
+						<TextBlock Text="{Binding DisplayTitle}"
+						           FontWeight="Bold"
+						           FontSize="16" />
+						<StackPanel Orientation="Horizontal"
+						            Spacing="4">
+							<lucide:LucideIcon Kind="Lock"
+							                   Size="12"
+							                   StrokeWidth="2.5"
 							                   Foreground="{StaticResource TextMuted}"
 							                   IsVisible="{Binding SchemaLocked}" />
 							<TextBlock Text="{Binding SchemaLabel}"
@@ -254,40 +370,66 @@
 			              IsVisible="{Binding HasContent, x:CompileBindings=False}">
 				<StackPanel Spacing="8">
 					<!-- Schema-locked -->
-					<elements:ArrayBox Background="Transparent" Padding="0"
+					<elements:ArrayBox Background="Transparent"
+					                   Padding="0"
 					                   ItemSpacing="8"
 					                   Items="{Binding Fields}"
-					                   CanReorder="False" CanAddRemove="False"
+					                   CanReorder="False"
+					                   CanAddRemove="False"
 					                   IsVisible="{Binding !CanAddFields}" />
 
 					<!-- Free-form mode -->
 					<elements:ArrayBox x:Name="FieldsBox"
-					                   Background="Transparent" Padding="0"
+					                   Background="Transparent"
+					                   Padding="0"
 					                   RowBackground="{StaticResource Bg3}"
-					                   RowCornerRadius="6" RowPadding="8,6"
+					                   RowCornerRadius="6"
+					                   RowPadding="8,6"
 					                   ItemSpacing="8"
 					                   Items="{Binding Fields}"
-					                   CanReorder="True" CanAddRemove="True"
+					                   CanReorder="True"
+					                   CanAddRemove="True"
 					                   IsVisible="{Binding CanAddFields}" />
 
 					<!-- Add Field button -->
 					<Button Classes="add-btn"
 					        Command="{Binding AddFieldCommand}"
 					        IsVisible="{Binding CanAddFields}">
-						<StackPanel Orientation="Horizontal" Spacing="8">
-							<lucide:LucideIcon Kind="Plus" Size="14" StrokeWidth="2.5" Foreground="{StaticResource TextMuted}"/>
-							<TextBlock Text="Add Field" VerticalAlignment="Center" Foreground="{StaticResource TextMuted}"/>
+						<StackPanel Orientation="Horizontal"
+						            Spacing="8">
+							<lucide:LucideIcon Kind="Plus"
+							                   Size="14"
+							                   StrokeWidth="2.5"
+							                   Foreground="{StaticResource TextMuted}" />
+							<TextBlock Text="Add Field"
+							           VerticalAlignment="Center"
+							           Foreground="{StaticResource TextMuted}" />
 						</StackPanel>
 					</Button>
 
 				</StackPanel>
 			</ScrollViewer>
-			<TextBlock Text="No file open"
-			           FontStyle="Italic"
-			           Foreground="{StaticResource TextMuted}"
-			           HorizontalAlignment="Center"
-			           VerticalAlignment="Center"
-			           IsVisible="{Binding !HasContent, x:CompileBindings=False}" />
+			<StackPanel Spacing="8"
+			            HorizontalAlignment="Center"
+			            VerticalAlignment="Center"
+			            IsVisible="{Binding !HasContent, x:CompileBindings=False}">
+				<lucide:LucideIcon Kind="FileText"
+				                   Size="40"
+				                   StrokeWidth="1.5"
+				                   Foreground="{StaticResource TextMuted}"
+				                   HorizontalAlignment="Center" />
+				<TextBlock Text="No file open"
+				           FontWeight="SemiBold"
+				           FontSize="16"
+				           Foreground="{StaticResource TextMuted}"
+				           HorizontalAlignment="Center" />
+				<TextBlock Text="Double-click an asset in the Asset Browser"
+				           FontStyle="Italic"
+				           Foreground="{StaticResource TextMuted}"
+				           HorizontalAlignment="Center"
+				           TextWrapping="Wrap"
+				           TextAlignment="Center" />
+			</StackPanel>
 		</Panel>
 
 	</Grid>

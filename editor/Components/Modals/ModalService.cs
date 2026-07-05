@@ -39,9 +39,7 @@ public class ModalService : IModalService {
 			ModalButtons.OkNoCancel,
 			LucideIconKind.Save,
 			new SolidColorBrush(Color.Parse("#4a9eff")),
-			"Save",
-			"Don't Save",
-			"Cancel"
+			"Save"
 		));
 		return result switch {
 			true => SaveChangesResult.Save,
@@ -74,7 +72,7 @@ public class ModalService : IModalService {
 	private static Window? FindActiveWindow() {
 		if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 			return desktop.Windows.FirstOrDefault(w => w.IsActive)
-			       ?? desktop.Windows.FirstOrDefault();
+				?? desktop.Windows.FirstOrDefault();
 		return null;
 	}
 }

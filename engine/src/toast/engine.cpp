@@ -7,6 +7,9 @@
 #include "events/event.hpp"
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
+#include "input/haptics_system.hpp"
+#include "input/input_events.hpp"
+#include "input/input_system.hpp"
 #include "logger.hpp"
 #include "reflect/reflect.hpp"
 #include "renderer/sdl_output_target.hpp"
@@ -77,6 +80,8 @@ struct EnginePimpl {
 	std::unique_ptr<IBaseWindow> window = nullptr;
 	std::unique_ptr<World> world = nullptr;
 	std::unique_ptr<assets::AssetManager> asset_manager = nullptr;
+	std::unique_ptr<input::InputSystem> input_system = nullptr;
+	std::unique_ptr<input::HapticsSystem> haptics_system = nullptr;
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
 	std::unique_ptr<audio::AudioSystem> audio_system = nullptr;
@@ -138,6 +143,9 @@ void Engine::init() {
 
 	m->asset_manager = std::make_unique<assets::AssetManager>();
 
+	m->input_system = std::make_unique<input::InputSystem>();
+	m->haptics_system = std::make_unique<input::HapticsSystem>();
+
 	// TODO: This should be moved into VulkanRenderer
 	m->listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
 		if (!m->renderer || !m->vulkan_core || e.width <= 0 || e.height <= 0) {
@@ -178,6 +186,9 @@ void Engine::tick() {
 #endif
 
 	event::pollEvents();
+
+	m->input_system->tick();
+	m->haptics_system->tick();
 
 	{
 		std::scoped_lock lock(m->owners_mutex);
@@ -458,5 +469,17 @@ void toast_reload_manifest() noexcept {
 	auto& mgr = assets::AssetManager::get();
 	mgr.clearUnusedAssets();
 	mgr.reloadManifest();
+}
+
+void toast_haptics_test(const char* toml_text) noexcept {
+	if (toml_text == nullptr) {
+		return;
+	}
+	try {
+		toml::table table = toml::parse(std::string_view {toml_text});
+		auto* haptic = new assets::Haptic(table);
+		assets::AssetHandle<assets::Haptic> handle {haptic, toast::UID::make(), "editor://haptic_test"};
+		event::send<event::PlayHapticDirect>(uint32_t {0}, std::move(handle));
+	} catch (const std::exception& e) { TOAST_ERROR("Haptics", "Failed to parse test haptic: {}", e.what()); }
 }
 }

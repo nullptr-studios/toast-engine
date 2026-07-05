@@ -2,44 +2,75 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
 	<!-- Background levels -->
-	<SolidColorBrush x:Key="Bg1" Color="#121111" />
-	<SolidColorBrush x:Key="Bg2" Color="#1f1d1e" />
-	<SolidColorBrush x:Key="Bg3" Color="#2b2a2a" />
-	<SolidColorBrush x:Key="Bg4" Color="#383637" />
-	<SolidColorBrush x:Key="Bg5" Color="#454343" />
+	<SolidColorBrush x:Key="Bg1"
+	                 Color="#121111" />
+	<SolidColorBrush x:Key="Bg2"
+	                 Color="#1f1d1e" />
+	<SolidColorBrush x:Key="Bg3"
+	                 Color="#2b2a2a" />
+	<SolidColorBrush x:Key="Bg4"
+	                 Color="#383637" />
+	<SolidColorBrush x:Key="Bg5"
+	                 Color="#454343" />
 
 	<!-- Text -->
-	<SolidColorBrush x:Key="Text" Color="#fafafa" />
-	<SolidColorBrush x:Key="TextMuted" Color="#a0a0a0" />
+	<SolidColorBrush x:Key="Text"
+	                 Color="#fafafa" />
+	<SolidColorBrush x:Key="TextMuted"
+	                 Color="#a0a0a0" />
 
 	<!-- Accent colors -->
-	<SolidColorBrush x:Key="Red" Color="#ff1659" />
-	<SolidColorBrush x:Key="Green" Color="#00ff40" />
-	<SolidColorBrush x:Key="Blue" Color="#29adff" />
-	<SolidColorBrush x:Key="Magenta" Color="#ad73ff" />
-	<SolidColorBrush x:Key="Orange" Color="#ffa300" />
-	<SolidColorBrush x:Key="Yellow" Color="#ffec27" />
-	<SolidColorBrush x:Key="Cyan" Color="#73ffea" />
-	<SolidColorBrush x:Key="Beige" Color="#ffccaa" />
+	<SolidColorBrush x:Key="Red"
+	                 Color="#ff1659" />
+	<SolidColorBrush x:Key="Green"
+	                 Color="#00ff40" />
+	<SolidColorBrush x:Key="Blue"
+	                 Color="#29adff" />
+	<SolidColorBrush x:Key="Magenta"
+	                 Color="#ad73ff" />
+	<SolidColorBrush x:Key="Orange"
+	                 Color="#ffa300" />
+	<SolidColorBrush x:Key="Yellow"
+	                 Color="#ffec27" />
+	<SolidColorBrush x:Key="Cyan"
+	                 Color="#73ffea" />
+	<SolidColorBrush x:Key="Beige"
+	                 Color="#ffccaa" />
 
 	<!-- Dark colors -->
-	<SolidColorBrush x:Key="DarkRed" Color="#660923" />
-	<SolidColorBrush x:Key="DarkGreen" Color="#00661a" />
-	<SolidColorBrush x:Key="DarkBlue" Color="#104566" />
-	<SolidColorBrush x:Key="DarkMagenta" Color="#452e66" />
-	<SolidColorBrush x:Key="DarkOrange" Color="#664100" />
-	<SolidColorBrush x:Key="DarkYellow" Color="#665f10" />
-	<SolidColorBrush x:Key="DarkCyan" Color="#2e665e" />
-	<SolidColorBrush x:Key="DarkBeige" Color="#665244" />
+	<SolidColorBrush x:Key="DarkRed"
+	                 Color="#660923" />
+	<SolidColorBrush x:Key="DarkGreen"
+	                 Color="#00661a" />
+	<SolidColorBrush x:Key="DarkBlue"
+	                 Color="#104566" />
+	<SolidColorBrush x:Key="DarkMagenta"
+	                 Color="#452e66" />
+	<SolidColorBrush x:Key="DarkOrange"
+	                 Color="#664100" />
+	<SolidColorBrush x:Key="DarkYellow"
+	                 Color="#665f10" />
+	<SolidColorBrush x:Key="DarkCyan"
+	                 Color="#2e665e" />
+	<SolidColorBrush x:Key="DarkBeige"
+	                 Color="#665244" />
 
 	<!-- Light colors -->
-	<SolidColorBrush x:Key="BrightRed" Color="#ff99b6" />
-	<SolidColorBrush x:Key="BrightGreen" Color="#99ffb3" />
-	<SolidColorBrush x:Key="BrightBlue" Color="#99d8ff" />
-	<SolidColorBrush x:Key="BrightMagenta" Color="#dabfff" />
-	<SolidColorBrush x:Key="BrightOrange" Color="#ffaa99" />
-	<SolidColorBrush x:Key="BrightYellow" Color="#fff799" />
-	<SolidColorBrush x:Key="BrightCyan" Color="#b3fff4" />
-	<SolidColorBrush x:Key="BrightBeige" Color="#ffe5d4" />
+	<SolidColorBrush x:Key="BrightRed"
+	                 Color="#ff99b6" />
+	<SolidColorBrush x:Key="BrightGreen"
+	                 Color="#99ffb3" />
+	<SolidColorBrush x:Key="BrightBlue"
+	                 Color="#99d8ff" />
+	<SolidColorBrush x:Key="BrightMagenta"
+	                 Color="#dabfff" />
+	<SolidColorBrush x:Key="BrightOrange"
+	                 Color="#ffaa99" />
+	<SolidColorBrush x:Key="BrightYellow"
+	                 Color="#fff799" />
+	<SolidColorBrush x:Key="BrightCyan"
+	                 Color="#b3fff4" />
+	<SolidColorBrush x:Key="BrightBeige"
+	                 Color="#ffe5d4" />
 
 </ResourceDictionary>

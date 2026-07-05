@@ -37,6 +37,8 @@ TOAST_C_API void toast_rename_prefab_root(const char* path, const char* new_name
 TOAST_C_API void toast_create_tnode(const char* path, const char* node_type) NOEXCEPT;
 /// @brief Clears unused cached assets and reloads the project manifest from disk
 TOAST_C_API void toast_reload_manifest(void) NOEXCEPT;
+/// @brief Plays a haptic described by .thaptic TOML text on the active controller
+TOAST_C_API void toast_haptics_test(const char* toml_text) NOEXCEPT;
 
 // clang-format off
 /// sets all five URI roots; must be called before toast_init()

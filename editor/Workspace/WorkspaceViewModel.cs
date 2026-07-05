@@ -11,8 +11,8 @@ using Proto.Events;
 namespace editor.Workspace;
 
 public class WorkspaceViewModel : Document {
-	private string? m_rootUid;
 	private string? m_pendingRootName;
+	private string? m_rootUid;
 
 	private WorkspaceViewModel(ToastEngine? engine = null) {
 		Engine = engine;
@@ -95,7 +95,7 @@ public class WorkspaceViewModel : Document {
 		File.WriteAllBytes(realPath, Array.Empty<byte>());
 
 		var uid = UidGenerator.Generate();
-		MetaFile.Write(realPath, new MetaHeader { Uid = uid, Type = "node" });
+		MetaFile.Write(realPath, new MetaHeader { Uid = uid, Type = "nodes" });
 		AssetDatabase.RebuildAssetDatabase();
 
 		Events.Send(new ReloadAssetsManifest());

@@ -109,10 +109,8 @@ AudioSystem::AudioSystem() noexcept {
 	}
 
 	if (!strings_handle.hasValue() || !master_handle.hasValue()) {
-		TOAST_ERROR("Audio", "Master.bank or Master.strings.bank not found in assets://");
+		TOAST_ERROR("Audio", "Master.bank or Master.strings.bank not found in assets://, cannot use Audio");
 		FMOD_Studio_System_Release(m_system);
-		m_system = nullptr;
-		instance = nullptr;
 		return;
 	}
 

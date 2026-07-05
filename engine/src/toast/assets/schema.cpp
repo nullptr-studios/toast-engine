@@ -22,6 +22,9 @@ Schema::Schema(std::string_view json_content) {
 				if (def_obj.contains("properties") && def_obj["properties"].is_object()) {
 					parseFields(def_obj["properties"], def_fields);
 				}
+				if (def_obj.contains("x-toast-discriminator") && def_obj["x-toast-discriminator"].is_string()) {
+					m_discriminators[name] = def_obj["x-toast-discriminator"].get<std::string>();
+				}
 				m_definitions[name] = std::move(def_fields);
 			}
 		}
@@ -47,6 +50,11 @@ auto Schema::hasDefinition(std::string_view name) const noexcept -> bool {
 auto Schema::getDefinition(std::string_view name) const -> const std::vector<SchemaField>* {
 	auto it = m_definitions.find(std::string(name));
 	return it != m_definitions.end() ? &it->second : nullptr;
+}
+
+auto Schema::discriminatorOf(std::string_view definition) const -> std::string_view {
+	auto it = m_discriminators.find(std::string(definition));
+	return it != m_discriminators.end() ? std::string_view(it->second) : std::string_view {};
 }
 
 auto Schema::toastTypeOf(const std::string& x_type) -> DataType {
@@ -216,9 +224,30 @@ auto Schema::parseOneField(const std::string& name, const json_t& properties) ->
 	// Numeric constraints
 	if (properties.contains("minimum") && properties["minimum"].is_number()) {
 		field.min = properties["minimum"].get<double>();
+	} else if (properties.contains("exclusiveMinimum") && properties["exclusiveMinimum"].is_number()) {
+		field.min = properties["exclusiveMinimum"].get<double>();
 	}
 	if (properties.contains("maximum") && properties["maximum"].is_number()) {
 		field.max = properties["maximum"].get<double>();
+	} else if (properties.contains("exclusiveMaximum") && properties["exclusiveMaximum"].is_number()) {
+		field.max = properties["exclusiveMaximum"].get<double>();
+	}
+
+	// Reference subtype constraints
+	if (properties.contains("x-toast-asset-type") && properties["x-toast-asset-type"].is_string()) {
+		field.asset_type = properties["x-toast-asset-type"].get<std::string>();
+	}
+	if (properties.contains("x-toast-node-type") && properties["x-toast-node-type"].is_string()) {
+		field.node_type = properties["x-toast-node-type"].get<std::string>();
+	}
+
+	// Variant gating
+	if (properties.contains("x-toast-variants") && properties["x-toast-variants"].is_array()) {
+		for (const auto& v : properties["x-toast-variants"]) {
+			if (v.is_string()) {
+				field.variants.push_back(v.get<std::string>());
+			}
+		}
 	}
 
 	// Default value

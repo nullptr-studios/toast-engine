@@ -3,6 +3,7 @@
 // 4 Jun 2026
 //
 
+using System;
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
@@ -19,12 +20,12 @@ namespace editor.Workspace;
 public partial class HierarchyView : UserControl {
 	private const double DragThreshold = 4;
 
-	private HierarchyElement? m_pressItem;
+	private HierarchyElement? m_dropTarget;
 	private PointerPressedEventArgs? m_pressArgs;
+
+	private HierarchyElement? m_pressItem;
 	private Point m_pressPoint;
 	private bool m_pressWasSelected;
-
-	private HierarchyElement? m_dropTarget;
 	private HierarchyViewModel? m_vm;
 
 	public HierarchyView() {
@@ -36,19 +37,21 @@ public partial class HierarchyView : UserControl {
 
 	private HierarchyViewModel? Vm => DataContext as HierarchyViewModel;
 
-	protected override void OnDataContextChanged(System.EventArgs e) {
+	protected override void OnDataContextChanged(EventArgs e) {
 		base.OnDataContextChanged(e);
 		if (m_vm is not null) {
 			m_vm.HierarchyChanged -= RefreshConnector;
 			m_vm.PropertyChanged -= OnVmPropertyChanged;
 			m_vm.RenameStarted -= OnRenameStarted;
 		}
+
 		m_vm = DataContext as HierarchyViewModel;
 		if (m_vm is not null) {
 			m_vm.HierarchyChanged += RefreshConnector;
 			m_vm.PropertyChanged += OnVmPropertyChanged;
 			m_vm.RenameStarted += OnRenameStarted;
 		}
+
 		RefreshConnector();
 	}
 
@@ -66,6 +69,7 @@ public partial class HierarchyView : UserControl {
 			el.IsSelected = isSel;
 			if (isSel) selected = i;
 		}
+
 		Connector.SelectedIndex = selected;
 	}
 
@@ -82,7 +86,7 @@ public partial class HierarchyView : UserControl {
 		if (props.IsRightButtonPressed) {
 			// right-click selects then opens menu
 			vm.SelectedNode = el;
-			this.Focus();
+			Focus();
 			return;
 		}
 
@@ -95,7 +99,7 @@ public partial class HierarchyView : UserControl {
 		m_pressPoint = e.GetPosition(this);
 		m_pressWasSelected = ReferenceEquals(el, vm.SelectedNode);
 		if (!m_pressWasSelected) vm.SelectedNode = el;
-		this.Focus();
+		Focus();
 	}
 
 	private async void OnItemPointerMoved(object? sender, PointerEventArgs e) {
@@ -140,6 +144,7 @@ public partial class HierarchyView : UserControl {
 					textBox.Focus();
 					textBox.SelectAll();
 				}
+
 				break;
 			}
 		}, DispatcherPriority.Render);
@@ -169,8 +174,6 @@ public partial class HierarchyView : UserControl {
 		Events.Send(new NodeChangeName { Node = el.Uid, Name = name });
 		WorkspaceState.MarkModified();
 	}
-
-	private enum DropMode { None, Into, Before, After }
 
 	// the middle of a row reparents; the top/bottom edge reorders
 	private (DropMode mode, HierarchyElement? target) ResolveDrop(DragEventArgs e) {
@@ -241,4 +244,6 @@ public partial class HierarchyView : UserControl {
 				return row;
 		return null;
 	}
+
+	private enum DropMode { None, Into, Before, After }
 }

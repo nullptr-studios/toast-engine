@@ -11,17 +11,18 @@ using editor.Workspace;
 namespace editor.Components.Modals;
 
 public class HierarchyDisplayItem : SearchableTreeItem<HierarchyDisplayItem> {
-	public HierarchyDisplayItem(HierarchyElement element, HierarchyElement? exclude, string? allowedType,
+	public HierarchyDisplayItem(
+		HierarchyElement element, HierarchyElement? exclude, string? allowedType,
 		bool excludedByAncestor = false) {
 		Name = element.Name;
 		Uid = element.Uid;
 		Type = element.Type;
 		IsExcluded = excludedByAncestor || element == exclude;
 		IsTypeAllowed = string.IsNullOrEmpty(allowedType) ||
-		                ReflectionDatabase.IsTypeOrSubtypeOf(element.Type, allowedType);
+			ReflectionDatabase.IsTypeOrSubtypeOf(element.Type, allowedType);
 
 		Color = ReflectionDatabase.ResolveColor(element.Type);
-		string iconName = ReflectionDatabase.ResolveIcon(element.Type);
+		var iconName = ReflectionDatabase.ResolveIcon(element.Type);
 		try {
 			Icon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png")));
 		} catch (Exception ex) {
@@ -29,7 +30,8 @@ public class HierarchyDisplayItem : SearchableTreeItem<HierarchyDisplayItem> {
 			Icon = new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/2x/Circle.png")));
 		}
 
-		AllChildren = element.Children.Select(c => new HierarchyDisplayItem(c, exclude, allowedType, IsExcluded)).ToList();
+		AllChildren = element.Children.Select(c => new HierarchyDisplayItem(c, exclude, allowedType, IsExcluded))
+			.ToList();
 		foreach (var c in AllChildren) FilteredChildren.Add(c);
 		InitSegments();
 	}
@@ -48,7 +50,8 @@ public class HierarchyDisplayItem : SearchableTreeItem<HierarchyDisplayItem> {
 public class HierarchyPickerViewModel : PickerViewModel {
 	private readonly List<HierarchyDisplayItem> m_roots;
 
-	public HierarchyPickerViewModel(IEnumerable<HierarchyElement> roots,
+	public HierarchyPickerViewModel(
+		IEnumerable<HierarchyElement> roots,
 		HierarchyElement? exclude = null, string? allowedType = null) {
 		m_roots = roots.Select(r => new HierarchyDisplayItem(r, exclude, allowedType)).ToList();
 	}
@@ -60,9 +63,11 @@ public class HierarchyPickerViewModel : PickerViewModel {
 		foreach (var r in m_roots) r.UpdateFilter(query, caseSensitive);
 	}
 
-	public override bool IsSelectable(object? item)
-		=> item is HierarchyDisplayItem { IsSelectable: true };
+	public override bool IsSelectable(object? item) {
+		return item is HierarchyDisplayItem { IsSelectable: true };
+	}
 
-	public override string? GetResult(object? selected)
-		=> (selected as HierarchyDisplayItem)?.Uid;
+	public override string? GetResult(object? selected) {
+		return (selected as HierarchyDisplayItem)?.Uid;
+	}
 }
