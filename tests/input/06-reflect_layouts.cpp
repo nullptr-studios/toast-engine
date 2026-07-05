@@ -4,7 +4,7 @@
 #include <cassert>
 #include <toast/input/assets/input_layout.hpp>
 #include <toast/world/player_controller.hpp>
-#include <toast/world/reflect.hpp>
+#include <toast/reflect/reflect_node.hpp>
 #include <vector>
 
 TOAST_TEST_NAMED("input", "input/06-reflect_layouts", test_input_reflect_layouts) {
