@@ -15,7 +15,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <toast/assets/types.hpp>
 
 namespace toast {
 
@@ -182,9 +181,6 @@ private:
 	[[Reflect, Unit("m")]] alignas(16) glm::vec3 m_position = glm::vec3(0.0f);
 	[[Reflect, Unit("°")]] alignas(16) glm::quat m_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	[[Reflect]] alignas(16) glm::vec3 m_scale = glm::vec3(1.0f);
-
-	[[Reflect]]
-	assets::AssetHandle<assets::Mesh> m_mesh;
 
 	alignas(16) glm::vec3 m_world_position;
 	alignas(16) glm::quat m_world_rotation;

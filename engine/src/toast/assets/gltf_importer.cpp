@@ -430,7 +430,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		nlohmann::json scene_json;
 		std::string name = std::string(scene.name.data, scene.name.len);
 		if (name.empty()) {
-			name = path.filename().string();
+			name = path.filename().stem().string();
 		}
 		scene_json["name"] = name;
 		scene_json["children"] = nlohmann::json::array();
