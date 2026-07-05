@@ -40,6 +40,15 @@ public:
 	 */
 	Workspace(UID uid);
 
+	/**
+	 * @brief Opens a workspace bound to the given asset UID but loading its content from another file
+	 * @param uid Asset UID of the workspace prefab; used as the workspace handle
+	 * @param source_uri Virtual path to read the prefab bytes from
+	 *
+	 * Used to recover autosaves
+	 */
+	Workspace(UID uid, std::string_view source_uri);
+
 	~Workspace() override;
 
 	auto name() -> std::string override;
@@ -64,6 +73,9 @@ private:
 	double m_inspector_accum = 0.0;
 
 	void eventSubscriptions();
+
+	/// instantiates the prefab and sets up the root node
+	void initFromPrefab(const assets::AssetHandle<assets::Prefab>& file);
 
 public:
 	/**

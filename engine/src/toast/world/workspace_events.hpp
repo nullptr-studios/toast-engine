@@ -83,6 +83,13 @@ struct WorkspaceSave : Event<WorkspaceSave> {
 	WorkspaceSave(toast::UID target, std::string uri) : target(target), uri(std::move(uri)) { }
 };
 
+struct WorkspaceAutosave : Event<WorkspaceAutosave> {
+	uint64_t handle;
+	std::string uri;
+
+	WorkspaceAutosave(uint64_t handle, std::string uri) : handle(handle), uri(std::move(uri)) { }
+};
+
 struct WorkspaceCreateNode : Event<WorkspaceCreateNode> {
 	toast::UID parent;
 	std::string type;

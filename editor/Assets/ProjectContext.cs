@@ -76,5 +76,6 @@ public static class ProjectContext {
 		Directory.CreateDirectory(ArtworkPath);
 		Directory.CreateDirectory(CachePath);
 		Directory.CreateDirectory(Path.Combine(CachePath, "thumbnails"));
+		Directory.CreateDirectory(Path.Combine(CachePath, "autosaves"));
 	}
 }

@@ -12,11 +12,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
 using editor.Assets;
+using editor.Assets.Types;
 using editor.Components.Modals;
+using editor.Workspace;
 
 namespace editor.Editors;
 
-public partial class SchemaViewModel : Tool {
+public partial class SchemaViewModel : Tool, IAutosavable {
 	[ObservableProperty] private string m_currentPath = "";
 	[ObservableProperty] private string m_currentUid = "";
 	[ObservableProperty] private string m_displayTitle = "Schema Editor";
@@ -122,19 +124,19 @@ public partial class SchemaViewModel : Tool {
 			f.NotifyAvailableTypesChanged();
 	}
 
-	public void OpenFile(string uid, string virtualPath) {
+	public void OpenFile(string uid, string virtualPath, string? contentSourceRealPath = null) {
 		m_loading = true;
 		CurrentUid = uid;
 		CurrentPath = virtualPath;
 		Fields.Clear();
 		StructTypes.Clear();
 
-		var realPath = ProjectContext.Resolve(CurrentPath);
+		var realPath = contentSourceRealPath ?? ProjectContext.Resolve(CurrentPath);
 		try {
 			if (File.Exists(realPath)) LoadFromJson(File.ReadAllText(realPath));
 		} catch { }
 
-		IsDirty = false;
+		IsDirty = contentSourceRealPath != null;
 		m_loading = false;
 	}
 
@@ -239,6 +241,15 @@ public partial class SchemaViewModel : Tool {
 	private async Task Save() {
 		if (string.IsNullOrEmpty(CurrentPath)) return;
 
+		var realPath = ProjectContext.Resolve(CurrentPath);
+		await File.WriteAllTextAsync(realPath, SerializeDocument());
+		MetaFile.Touch(CurrentPath);
+		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
+		IsDirty = false;
+		SchemaSaved?.Invoke(realPath);
+	}
+
+	private string SerializeDocument() {
 		var root = new JsonObject {
 			["$schema"] = "http://json-schema.org/draft-07/schema",
 			["type"] = "object"
@@ -264,12 +275,15 @@ public partial class SchemaViewModel : Tool {
 		root["properties"] = props;
 
 		var options = new JsonSerializerOptions { WriteIndented = true };
-		var text = root.ToJsonString(options);
+		return root.ToJsonString(options);
+	}
 
-		var realPath = ProjectContext.Resolve(CurrentPath);
-		await File.WriteAllTextAsync(realPath, text);
-		IsDirty = false;
-		SchemaSaved?.Invoke(realPath);
+	public bool IsAutosaveDirty => IsDirty && HasContent;
+
+	public string? AutosaveFileName => HasContent ? CurrentUid + AssetTypeRegistry.GetExtension(CurrentPath) : null;
+
+	public Task WriteAutosaveAsync(string virtualPath) {
+		return File.WriteAllTextAsync(ProjectContext.Resolve(virtualPath), SerializeDocument());
 	}
 
 	public async Task<bool> ConfirmCloseCurrentAsync() {
@@ -283,6 +297,7 @@ public partial class SchemaViewModel : Tool {
 		)).ShowDialog<bool?>(owner);
 		if (result is null) return false;
 		if (result is true) await Save();
+		else AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		return true;
 	}
 

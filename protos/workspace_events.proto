@@ -48,6 +48,11 @@ message WorkspaceSave {
   string path = 2;
 }
 
+message WorkspaceAutosave {
+  uint64 handle = 1;
+  string path = 2;
+}
+
 message WorkspaceCreateNode {
   string parent = 1;
   string type = 2;

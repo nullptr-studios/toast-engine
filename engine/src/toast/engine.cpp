@@ -298,6 +298,26 @@ auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
 	return {uid, name};
 }
 
+auto Engine::openWorkspace(UID uid, std::string_view source_uri) -> std::pair<UID, std::string> {
+	std::scoped_lock lock(m->owners_mutex);
+	if (m->owners.contains(uid)) {
+		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
+		return {};
+	}
+
+	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(uid, source_uri));
+
+	auto* ws = static_cast<Workspace*>(it->second.get());
+	if (!ws->isValid()) {
+		TOAST_ERROR("Engine", "Failed to load {} into workspace {}", source_uri, uid);
+		m->owners.erase(it);
+		return {};
+	}
+
+	std::string name = it->second->name();
+	return {uid, name};
+}
+
 void Engine::destroyWorkspace(UID handle) {
 	std::scoped_lock lock(m->owners_mutex);
 	m->owners.erase(handle);
@@ -408,6 +428,14 @@ auto toast_create_workspace(const char* type) noexcept -> workspace_result {
 
 auto toast_open_workspace(const char* uid) noexcept -> workspace_result {
 	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid));
+
+	static thread_local std::string s_name;
+	s_name = std::move(name);
+	return {.uid = root_uid.data(), .name = s_name.c_str()};
+}
+
+auto toast_open_workspace_from(const char* uid, const char* source_uri) noexcept -> workspace_result {
+	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid), source_uri);
 
 	static thread_local std::string s_name;
 	s_name = std::move(name);

@@ -18,10 +18,11 @@ using editor.Assets.Types;
 using editor.Components.CurveCanvas;
 using editor.Components.Modals;
 using editor.Engine;
+using editor.Workspace;
 
 namespace editor.Editors;
 
-public partial class HapticsViewModel : Tool, IToastZoneEditor {
+public partial class HapticsViewModel : Tool, IToastZoneEditor, IAutosavable {
 	private const string BaseTitle = "Haptics Editor";
 	private readonly List<CurveCanvasItem> m_editItems = [];
 	[ObservableProperty] private int m_activeCurveIndex;
@@ -76,18 +77,20 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 
 	private bool Ignore => m_loading || m_syncing || m_haptic is null || UnsupportedMode;
 
-	public void OpenFile(string uid, string virtualPath, BaseAsset definition) {
+	public void OpenFile(string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath = null) {
 		m_loading = true;
+		var recovered = contentSourceRealPath != null;
 		try {
-			var haptic = Haptic.FromFile(ProjectContext.Resolve(virtualPath));
+			var haptic = Haptic.FromFile(contentSourceRealPath ?? ProjectContext.Resolve(virtualPath));
 			CurrentUid = uid;
 			CurrentPath = virtualPath;
 			LoadHaptic(haptic, virtualPath);
 		} catch (Exception e) {
 			Log.Error($"Haptics Editor: failed to open '{virtualPath}': {e.Message}");
 			CloseCurrent();
+			recovered = false;
 		} finally {
-			IsDirty = false;
+			IsDirty = recovered;
 			m_loading = false;
 		}
 	}
@@ -103,6 +106,7 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 		)).ShowDialog<bool?>(owner);
 		if (result is null) return false;
 		if (result is true) await Save();
+		else AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		return true;
 	}
 
@@ -166,7 +170,22 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor {
 		var haptic = m_haptic;
 		var realPath = ProjectContext.Resolve(CurrentPath);
 		await Task.Run(() => haptic.Save(realPath));
+		MetaFile.Touch(CurrentPath);
+		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		IsDirty = false;
+	}
+
+	public bool IsAutosaveDirty => IsDirty && HasContent;
+
+	public string? AutosaveFileName =>
+		HasContent && !string.IsNullOrEmpty(CurrentPath)
+			? CurrentUid + AssetTypeRegistry.GetExtension(CurrentPath)
+			: null;
+
+	public Task WriteAutosaveAsync(string virtualPath) {
+		if (m_haptic is not { } haptic) return Task.CompletedTask;
+		var realPath = ProjectContext.Resolve(virtualPath);
+		return Task.Run(() => haptic.Save(realPath));
 	}
 
 	[RelayCommand]

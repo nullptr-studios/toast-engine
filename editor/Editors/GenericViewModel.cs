@@ -13,12 +13,13 @@ using Dock.Model.Mvvm.Controls;
 using editor.Assets;
 using editor.Assets.Types;
 using editor.Components.Modals;
+using editor.Workspace;
 using Tomlyn;
 using Tomlyn.Model;
 
 namespace editor.Editors;
 
-public partial class GenericViewModel : Tool {
+public partial class GenericViewModel : Tool, IAutosavable {
 	[ObservableProperty] private string m_currentPath = "";
 	[ObservableProperty] private string m_currentUid = "";
 	[ObservableProperty] private BaseAsset? m_definition;
@@ -170,7 +171,7 @@ public partial class GenericViewModel : Tool {
 		m_prevSchemaUid = value;
 	}
 
-	public void OpenFile(string uid, string virtualPath, BaseAsset definition) {
+	public void OpenFile(string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath = null) {
 		m_loading = true;
 		CurrentUid = uid;
 		CurrentPath = virtualPath;
@@ -179,7 +180,7 @@ public partial class GenericViewModel : Tool {
 
 		SchemaLocked = !string.IsNullOrEmpty(definition.SchemaPath);
 
-		var realPath = ProjectContext.Resolve(virtualPath);
+		var realPath = contentSourceRealPath ?? ProjectContext.Resolve(virtualPath);
 		SchemaUid = "";
 		m_prevSchemaUid = "";
 		OnPropertyChanged(nameof(SchemaUid));
@@ -228,7 +229,7 @@ public partial class GenericViewModel : Tool {
 				// ignored
 			}
 
-		IsDirty = false;
+		IsDirty = contentSourceRealPath != null;
 		m_loading = false;
 	}
 
@@ -437,6 +438,7 @@ public partial class GenericViewModel : Tool {
 		)).ShowDialog<bool?>(owner);
 		if (result is null) return false;
 		if (result is true) await Save();
+		else AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		return true;
 	}
 
@@ -484,6 +486,14 @@ public partial class GenericViewModel : Tool {
 	private async Task Save() {
 		if (string.IsNullOrEmpty(CurrentPath)) return;
 
+		var realPath = ProjectContext.Resolve(CurrentPath);
+		await File.WriteAllTextAsync(realPath, SerializeDocument());
+		MetaFile.Touch(CurrentPath);
+		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
+		IsDirty = false;
+	}
+
+	private string SerializeDocument() {
 		var table = new TomlTable();
 
 		// Preserve schema UID reference in free-form mode
@@ -491,10 +501,10 @@ public partial class GenericViewModel : Tool {
 			table["schema"] = SchemaUid;
 		else if (!SchemaLocked) {
 			// Check if the original file had a schema key and preserve it
-			var realPath2 = ProjectContext.Resolve(CurrentPath);
-			if (File.Exists(realPath2)) {
+			var realPath = ProjectContext.Resolve(CurrentPath);
+			if (File.Exists(realPath)) {
 				try {
-					var existing = TomlSerializer.Deserialize<TomlTable>(File.ReadAllText(realPath2));
+					var existing = TomlSerializer.Deserialize<TomlTable>(File.ReadAllText(realPath));
 					if (existing!.TryGetValue("schema", out var s)) table["schema"] = s;
 				} catch {
 					// ignored
@@ -505,10 +515,15 @@ public partial class GenericViewModel : Tool {
 		foreach (var field in Fields)
 			table[field.Name] = field.ToTomlValue();
 
-		var text = TomlSerializer.Serialize(table);
-		var realPath = ProjectContext.Resolve(CurrentPath);
-		await File.WriteAllTextAsync(realPath, text);
-		IsDirty = false;
+		return TomlSerializer.Serialize(table);
+	}
+
+	public bool IsAutosaveDirty => IsDirty && HasContent;
+
+	public string? AutosaveFileName => HasContent ? CurrentUid + AssetTypeRegistry.GetExtension(CurrentPath) : null;
+
+	public Task WriteAutosaveAsync(string virtualPath) {
+		return File.WriteAllTextAsync(ProjectContext.Resolve(virtualPath), SerializeDocument());
 	}
 
 	private static (List<SchemaFieldDescriptor> Fields, Dictionary<string, StructDef> Defs)

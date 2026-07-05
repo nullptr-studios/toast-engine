@@ -11,9 +11,8 @@ using Proto.Events;
 
 namespace editor.Workspace;
 
-public class WorkspaceViewModel : Document {
+public class WorkspaceViewModel : Document, IAutosavable {
 	private string? m_pendingRootName;
-	private string? m_rootUid;
 
 	private WorkspaceViewModel(ToastEngine? engine = null) {
 		Engine = engine;
@@ -32,9 +31,22 @@ public class WorkspaceViewModel : Document {
 	public string? BackingUri { get; private set; }
 	public string? BackingAssetUid { get; private set; }
 
+	public string? RootUid { get; private set; }
+
+	public bool IsAutosaveDirty => IsModified;
+
+	// saved workspaces autosave under the asset uid
+	// never-saved ones fall back to the session root node uid so the data still survives a crash
+	public string? AutosaveFileName => RootUid is null ? null : (BackingAssetUid ?? RootUid) + ".tnode";
+
+	public Task WriteAutosaveAsync(string virtualPath) {
+		Events.Send(new WorkspaceAutosave { Handle = Handle, Path = virtualPath });
+		return Task.CompletedTask;
+	}
+
 	// called by HierarchyViewModel whenever the hierarchy tree updates
 	public void SetRootNode(string uid) {
-		m_rootUid = uid;
+		RootUid = uid;
 		if (m_pendingRootName is { } name) {
 			m_pendingRootName = null;
 			Events.Send(new NodeChangeName { Node = uid, Name = name });
@@ -66,25 +78,28 @@ public class WorkspaceViewModel : Document {
 				await Save();
 				return true;
 			default:
+				DeleteAutosaves(); // discarded changes -> the autosave is unwanted too
 				return true;
 		}
 	}
 
 	public async Task Save() {
-		if (m_rootUid is null) return;
+		if (RootUid is null) return;
 
 		if (BackingUri is null) {
 			await SaveAs(); // no path yet -> prompt the user
 			return;
 		}
 
-		Events.Send(new NodeChangeName { Node = m_rootUid, Name = Path.GetFileNameWithoutExtension(BackingUri) });
-		Events.Send(new WorkspaceSave { Target = m_rootUid, Path = BackingUri });
+		Events.Send(new NodeChangeName { Node = RootUid, Name = Path.GetFileNameWithoutExtension(BackingUri) });
+		Events.Send(new WorkspaceSave { Target = RootUid, Path = BackingUri });
+		MetaFile.Touch(BackingUri);
+		DeleteAutosaves();
 		IsModified = false;
 	}
 
 	public async Task SaveAs() {
-		if (m_rootUid is null) return;
+		if (RootUid is null) return;
 
 		var virtualPath = await App.Modals.ShowSaveFile(Title ?? "Unnamed Node");
 		if (virtualPath is null) return;
@@ -96,17 +111,25 @@ public class WorkspaceViewModel : Document {
 		File.WriteAllBytes(realPath, Array.Empty<byte>());
 
 		var uid = UidGenerator.Generate();
-		MetaFile.Write(realPath, new MetaHeader { Uid = uid, Type = AssetTypeRegistry.ByExtension(".tnode")?.Type ?? "node" });
+		MetaFile.Write(realPath,
+			new MetaHeader { Uid = uid, Type = AssetTypeRegistry.ByExtension(".tnode")?.Type ?? "node" });
 		AssetDatabase.RebuildAssetDatabase();
 
 		Events.Send(new ReloadAssetsManifest());
-		Events.Send(new NodeChangeName { Node = m_rootUid, Name = Path.GetFileNameWithoutExtension(virtualPath) });
-		Events.Send(new WorkspaceSave { Target = m_rootUid, Path = virtualPath });
+		Events.Send(new NodeChangeName { Node = RootUid, Name = Path.GetFileNameWithoutExtension(virtualPath) });
+		Events.Send(new WorkspaceSave { Target = RootUid, Path = virtualPath });
 
 		BackingUri = virtualPath;
 		BackingAssetUid = uid;
+		DeleteAutosaves();
 		IsModified = false;
 		ProjectContext.RaiseAssetsChanged();
+	}
+
+	// the asset-uid autosave and the root-uid one a never-saved workspace may have left
+	private void DeleteAutosaves() {
+		AutosaveService.Delete(BackingAssetUid, ".tnode");
+		AutosaveService.Delete(RootUid, ".tnode");
 	}
 
 	// creates a new empty workspace of the given node type
@@ -121,8 +144,12 @@ public class WorkspaceViewModel : Document {
 	}
 
 	// opens an existing node file by asset UID (engine deserializes it on its side)
-	public static WorkspaceViewModel? OpenFile(ToastEngine engine, string assetUid, string virtualPath) {
-		var res = engine.OpenWorkspace(assetUid);
+	// recoverVirtualPath makes the engine load the content from an autosave
+	public static WorkspaceViewModel? OpenFile(
+		ToastEngine engine, string assetUid, string virtualPath, string? recoverVirtualPath = null) {
+		var res = recoverVirtualPath is null
+			? engine.OpenWorkspace(assetUid)
+			: engine.OpenWorkspaceFrom(assetUid, recoverVirtualPath);
 		if (res.Uid == 0) return null;
 		var ws = new WorkspaceViewModel(engine) {
 			Handle = res.Uid,

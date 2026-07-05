@@ -224,6 +224,23 @@ struct ProtoTraits<WorkspaceSave> {
 TOAST_PROTO_EVENT(WorkspaceSave);
 
 template<>
+struct ProtoTraits<WorkspaceAutosave> {
+	using Proto = proto::events::WorkspaceAutosave;
+	using Event = WorkspaceAutosave;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_handle(e.handle);
+		p.set_path(e.uri);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.handle(), p.path()}; }
+};
+
+TOAST_PROTO_EVENT(WorkspaceAutosave);
+
+template<>
 struct ProtoTraits<WorkspaceCreateNode> {
 	using Proto = proto::events::WorkspaceCreateNode;
 	using Event = WorkspaceCreateNode;

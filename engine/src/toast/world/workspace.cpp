@@ -20,6 +20,13 @@
 
 namespace toast {
 
+struct VectorStreamBuf : std::streambuf {
+	VectorStreamBuf(const std::vector<uint8_t>& vec) {
+		char* p = const_cast<char*>(reinterpret_cast<const char*>(vec.data()));
+		setg(p, p, p + vec.size());
+	}
+};
+
 static std::unique_ptr<assets::Prefab> s_clipboard;
 
 Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
@@ -58,11 +65,39 @@ Workspace::Workspace(UID uid) : m_handle(uid) {
 		return;
 	}
 
+	initFromPrefab(file);
+	if (m_root_node.exists()) {
+		TOAST_INFO("World", "Opened workspace from {}", uid);
+	}
+}
+
+Workspace::Workspace(UID uid, std::string_view source_uri) : m_handle(uid) {
+	eventSubscriptions();
+
+	auto bytes = assets::AssetManager::get().loadBytes(source_uri);
+	if (not bytes.has_value()) {
+		TOAST_ERROR("World", "Couldn't open workspace source file {}", source_uri);
+		return;
+	}
+
+	// We need this because if we use the vector<uint8> constructor is going to try
+	// to load the node as a .tbnode rather than as a .tnode, we need to be careful with that
+	VectorStreamBuf buffer(*bytes);
+	std::istream autosave(&buffer);
+	assets::Prefab prefab(autosave);
+	assets::AssetHandle<assets::Prefab> file(&prefab, uid, "");
+	initFromPrefab(file);
+	if (m_root_node.exists()) {
+		TOAST_INFO("World", "Opened workspace {} from {}", uid, source_uri);
+	}
+}
+
+void Workspace::initFromPrefab(const assets::AssetHandle<assets::Prefab>& file) {
 	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
 	Box<Node> node = instantiate(file, ctx);
 	if (not node.exists()) {
-		TOAST_ERROR("World", "Failed to instantiate node {}", uid);
+		TOAST_ERROR("World", "Failed to instantiate node {}", m_handle);
 		return;
 	}
 	node->propagateCallTick(node->info(), TickFunctionList::load);
@@ -81,7 +116,6 @@ Workspace::Workspace(UID uid) : m_handle(uid) {
 	node->enabled(true);
 
 	m_root_node = node;
-	TOAST_INFO("World", "Opened workspace from {}", uid);
 }
 
 Workspace::~Workspace() {
@@ -256,6 +290,24 @@ void Workspace::eventSubscriptions() {
 		}
 
 		event::send<event::ReloadAssetsManifest>();
+		return true;
+	});
+
+	// Unlike WorkspaceSave this matches on the workspace handle, so background
+	// workspaces autosave too, and it never touches the asset manifest
+	m_listener.subscribe<event::WorkspaceAutosave>([this](const auto& e) {
+		if (e.handle != m_handle.data()) {
+			return false;
+		}
+		if (not m_root_node.exists()) {
+			return true;
+		}
+
+		assets::Prefab prefab(*m_root_node);
+		auto bytes = prefab.serialize(assets::SaveMode::editor);
+		if (assets::AssetManager::get().saveBytes(e.uri, bytes)) {
+			TOAST_INFO("World", "Autosaved workspace {} to {}", m_root_node->name(), e.uri);
+		}
 		return true;
 	});
 
