@@ -34,13 +34,6 @@ class VulkanMesh : public IVulkanResource {
 public:
 	VulkanMesh() = default;
 
-	struct RenderProxy {
-		vk::Buffer vertex_buffer = VK_NULL_HANDLE;
-		vk::Buffer index_buffer = VK_NULL_HANDLE;
-		uint32_t index_count = 0;
-		bool ready = false;
-	};
-
 	struct UploadData {
 		std::span<const Vertex> vertices;
 		std::span<const uint32_t> indices;
@@ -59,9 +52,6 @@ public:
 	void recordUpload(
 	    vk::CommandBuffer cmd, vk::Buffer stagingBuffer, vk::DeviceSize vertexOffset, vk::DeviceSize indexOffset
 	) const;
-
-	[[nodiscard]]
-	auto captureRenderProxy() const -> RenderProxy;
 
 private:
 	std::optional<vma::raii::Buffer> m_vertexBuffer;

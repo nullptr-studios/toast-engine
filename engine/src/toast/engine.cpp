@@ -237,14 +237,13 @@ void Engine::tick() {
 				}
 
 				auto& gpu_mesh = mesh_handle->gpuMesh();
-				auto mesh_proxy = gpu_mesh.captureRenderProxy();
-				if (!mesh_proxy.ready) {
+				if (!gpu_mesh.isReady()) {
 					continue;
 				}
 
 				frame.mesh_instances.push_back(
 				    toast::renderer::VulkanRenderer::MeshInstanceProxy {
-				      .mesh = mesh_proxy,
+				      .mesh = &gpu_mesh,
 				      .model = node->worldTransformForRender(),
 				    }
 				);

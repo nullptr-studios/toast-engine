@@ -66,7 +66,7 @@ public:
 	};
 
 	struct MeshInstanceProxy {
-		VulkanMesh::RenderProxy mesh;
+		VulkanMesh* mesh = nullptr;
 		glm::mat4 model = glm::mat4(1.0f);
 	};
 

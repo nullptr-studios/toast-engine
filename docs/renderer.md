@@ -35,7 +35,7 @@ The renderer keeps two domains:
 - `MeshNode` instances register/unregister themselves in the engine
 - On frame build, the engine snapshots each visible mesh into
   `VulkanRenderer::MeshInstanceProxy` with:
-  - `VulkanMesh::RenderProxy` (vertex/index buffers + index count)
+  - `VulkanMesh*` handle
   - model matrix
 - The render thread reads those copied proxies from `RenderFrame`, it does not traverse the
   scene graph or keep `MeshNode` pointers
@@ -112,5 +112,4 @@ Planned/obvious expansion points:
 - stronger resource lifetime tracking for hot-reload and streaming
 
 ## Changelog
-
 

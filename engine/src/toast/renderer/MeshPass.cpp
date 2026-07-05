@@ -56,8 +56,7 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t image
 	}
 
 	for (const auto& proxy : frame->mesh_instances) {
-		if (!proxy.mesh.ready || proxy.mesh.vertex_buffer == VK_NULL_HANDLE || proxy.mesh.index_buffer == VK_NULL_HANDLE ||
-		    proxy.mesh.index_count == 0) {
+		if (proxy.mesh == nullptr || !proxy.mesh->isReady()) {
 			continue;
 		}
 
@@ -72,9 +71,8 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t image
 		    &data
 		);
 
-		cmd.bindVertexBuffers(0, std::array<vk::Buffer, 1> {proxy.mesh.vertex_buffer}, std::array<vk::DeviceSize, 1> {0});
-		cmd.bindIndexBuffer(proxy.mesh.index_buffer, 0, vk::IndexType::eUint32);
-		cmd.drawIndexed(proxy.mesh.index_count, 1, 0, 0, 0);
+		proxy.mesh->bind(cmd);
+		proxy.mesh->draw(cmd);
 	}
 }
 

@@ -106,19 +106,6 @@ void VulkanMesh::recordUpload(
 	cmd.copyBuffer(stagingBuffer, **m_indexBuffer, vk::BufferCopy(indexOffset, 0, m_indexSize));
 }
 
-auto VulkanMesh::captureRenderProxy() const -> RenderProxy {
-	RenderProxy proxy {};
-	if (!isReady() || !m_vertexBuffer.has_value() || !m_indexBuffer.has_value() || m_indexCount == 0) {
-		return proxy;
-	}
-
-	proxy.vertex_buffer = **m_vertexBuffer;
-	proxy.index_buffer = **m_indexBuffer;
-	proxy.index_count = m_indexCount;
-	proxy.ready = true;
-	return proxy;
-}
-
 void VulkanMesh::bind(vk::CommandBuffer cmd) const {
 	cmd.bindVertexBuffers(0, {*m_vertexBuffer}, {0});
 
