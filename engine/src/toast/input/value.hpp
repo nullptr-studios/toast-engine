@@ -10,6 +10,7 @@
 
 #include "keycodes.hpp"
 
+#include <array>
 #include <cmath>
 #include <glm/glm.hpp>
 
