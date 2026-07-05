@@ -18,6 +18,18 @@ public:
 
 	~Camera() override = default;
 
+public:
+	float fov = 75.f;
+	float nearPlane = 0.01f;
+	float farPlane = 100.f;
+
+	void SetActiveCamera(bool force = true);
+
+	[[nodiscard]]
+	glm::mat4 getView() const;
+	[[nodiscard]]
+	glm::mat4 getProjection(float aspect) const;
+
 private:
 };
 }

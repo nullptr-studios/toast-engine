@@ -24,6 +24,7 @@
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
+#include "world/camera.hpp"
 #include "world/workspace.hpp"
 #include "world/workspace_events.hpp"
 #include "world/world.hpp"
@@ -121,7 +122,7 @@ void Engine::init() {
 			return false;
 		}
 
-		m->renderer->resize(vk::Extent2D {static_cast<uint32_t>(e.width), static_cast<uint32_t>(e.height)});
+		m->renderer->applyResize(vk::Extent2D {static_cast<uint32_t>(e.width), static_cast<uint32_t>(e.height)});
 		return false;
 	});
 
@@ -206,10 +207,13 @@ void Engine::tick() {
 
 			auto cam = renderer::getActiveCamera();
 			if (cam) {
+				const auto extent = m->renderer->getOutputTarget().getExtent();
+				const float aspect =
+				    extent.height > 0 ? static_cast<float>(extent.width) / static_cast<float>(extent.height) : (1080.0f / 720.0f);
 				auto cameraData = renderer::VulkanRenderer::FrameUBO {
 				  .view = cam->getView(),
-				  .projection = cam->getProjection(1080.0f / 720.0f),
-				  .view_projection = cam->getProjection(1080.0f / 720.0f) * cam->getView(),
+				  .projection = cam->getProjection(aspect),
+				  .view_projection = cam->getProjection(aspect) * cam->getView(),
 				  .camera_position = cam->worldPos(),
 				  .time = totalTime
 				};
@@ -279,7 +283,7 @@ void Engine::createAvaloniaWindow() {
 
 	m->shared_target = output_target.get();
 
-	m->shared_target = output_target.get();
+	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
 
 	// FIXME: change this
 	camera = new Camera();
@@ -399,7 +403,7 @@ void toast_tick() noexcept {
 	toast::Engine::get()->tick();
 }
 
-auto toast_should_close() noexcept -> int {
+int toast_should_close() noexcept {
 	return toast::Engine::get()->shouldClose();
 }
 
@@ -413,7 +417,7 @@ void toast_set_working_directory(
 	assets::AssetManager::setPaths({.assets = assets, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
 }
 
-auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) noexcept -> int {
+int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) noexcept {
 	toast::renderer::ViewportFrameDesc desc {};
 	const int result = toast::Engine::get()->getViewportFrame(dst, dst_capacity, &desc);
 	if (out) {

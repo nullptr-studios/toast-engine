@@ -10,10 +10,13 @@
 #include "node_3d.hpp"
 
 #include <toast/assets/types.hpp>
-#include <toast/export.hpp>
+
+namespace assets {
+class Mesh;
+}
 
 namespace toast {
-class [[ToastNode, Icon("MeshItem")]] TOAST_API MeshNode : public Node3D {
+class [[ToastNode, Icon("MeshItem")]] MeshNode : public Node3D {
 public:
 	MeshNode() = default;
 

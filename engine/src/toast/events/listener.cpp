@@ -13,10 +13,7 @@ Listener::Listener(bool state) {
 }
 
 Listener::~Listener() {
-	clear();
-}
-
-void Listener::clear() noexcept {
+	m.enabled->store(false);
 	for (auto& [type, name, callback] : m.callbacks) {
 		EventSystem::unsubscribe_map[type](callback);
 	}

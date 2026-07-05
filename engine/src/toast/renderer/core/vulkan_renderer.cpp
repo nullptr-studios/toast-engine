@@ -53,6 +53,14 @@ auto transitionImageLayout(
 	command_buffer.pipelineBarrier(src_stage_mask, dst_stage_mask, {}, {}, {}, barrier);
 }
 
+auto packExtent(vk::Extent2D extent) -> uint64_t {
+	return (static_cast<uint64_t>(extent.width) << 32u) | static_cast<uint64_t>(extent.height);
+}
+
+auto unpackExtent(uint64_t packed) -> vk::Extent2D {
+	return {static_cast<uint32_t>(packed >> 32u), static_cast<uint32_t>(packed & 0xFFFFFFFFu)};
+}
+
 }
 
 auto VulkanRenderer::selectDepthFormat(const VulkanCore& core) -> vk::Format {
@@ -345,19 +353,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 	// End rendering
 	frame.command_buffer.endRendering();
 
-	// Transition the image to PresentSrcKHR
-	const vk::ImageLayout present_layout = vk::ImageLayout::ePresentSrcKHR;
-	transitionImageLayout(
-	    frame.command_buffer,
-	    image,
-	    color_attachment_layout,
-	    present_layout,
-	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    vk::AccessFlags {},
-	    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-	    vk::PipelineStageFlagBits::eBottomOfPipe,
-	    colorAttachmentRange()
-	);
+	m_output_target->recordFinalize(frame.command_buffer, image_index);
 
 	// End frame record
 	frame.command_buffer.end();
@@ -453,6 +449,10 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 	// Frame rendering
 	auto& frame = m_frames[m_current_frame];
 	m_core->getDevice().waitForFences(*frame.in_flight, true, std::numeric_limits<uint64_t>::max());
+	if (frame.has_submitted) {
+		m_output_target->onImageRenderComplete(frame.last_image_index);
+		frame.has_submitted = false;
+	}
 
 	const auto acquired =
 	    m_output_target->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.image_available, VK_NULL_HANDLE);
@@ -494,21 +494,29 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 	// m_core->getTransferQueue().submit(transfer_submit_info);
 
 	// Starting graghics submission
-	// Needs to wait for the transfer to complete and if an image is available
-	const std::array wait_semaphores {*frame.image_available};
-	const std::array<vk::PipelineStageFlags, 1> wait_stages {
-	  vk::PipelineStageFlagBits::eColorAttachmentOutput,
-	  /*vk::PipelineStageFlagBits::eAllCommands*/    // FIXME: This will be problematic in the future
-	};
+	// Always wait for the transfer
+	const bool present_sync = m_output_target->usesAcquirePresentSemaphores();
+
 	const vk::CommandBuffer command_buffer = *frame.command_buffer;
 	const vk::Semaphore signal_semaphore = *m_render_finished_per_image.at(image_index);
-	const vk::SubmitInfo submit_info(
-	    wait_semaphores.size(), wait_semaphores.data(), wait_stages.data(), 1, &command_buffer, 1, &signal_semaphore
-	);
+	const vk::Semaphore wait_semaphore = *frame.image_available;
+	const vk::PipelineStageFlags wait_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	vk::SubmitInfo submit_info {};
+	if (present_sync) {
+		submit_info.waitSemaphoreCount = 1;
+		submit_info.pWaitSemaphores = &wait_semaphore;
+		submit_info.pWaitDstStageMask = &wait_stage;
+	}
+	submit_info.commandBufferCount = 1;
+	submit_info.pCommandBuffers = &command_buffer;
+	submit_info.signalSemaphoreCount = 1;
+	submit_info.pSignalSemaphores = &signal_semaphore;
 	m_core->getGraphicsQueue().submit(submit_info, *frame.in_flight);
 
 	// Present onto target texture
 	const auto present_result = m_output_target->present(image_index, signal_semaphore);
+	frame.last_image_index = image_index;
+	frame.has_submitted = true;
 
 	// Advance to next frame
 	m_current_frame = (m_current_frame + 1) % static_cast<uint32_t>(m_frames.size());
@@ -527,6 +535,15 @@ void VulkanRenderer::mainRenderThread() {
 	tracy::SetThreadName("Renderer Thread");
 	while (m_running.load(std::memory_order_acquire)) {
 		ZoneScopedN("VulkanRenderer::mainRenderThread");
+
+		const uint64_t pending_resize = m_pending_resize_packed.exchange(kNoPendingResize, std::memory_order_acq_rel);
+		if (pending_resize != kNoPendingResize) {
+			const auto extent = unpackExtent(pending_resize);
+			if (extent.width > 0 && extent.height > 0) {
+				applyResizeInternal(extent);
+			}
+		}
+
 		RenderFrame frameToDraw;
 		bool consumedQueuedFrame = false;
 
@@ -535,7 +552,10 @@ void VulkanRenderer::mainRenderThread() {
 
 			if (m_ready_frames.empty()) {
 				if (!m_has_cached_frame) {
-					m_frame_cv.wait(lock, [this] { return !m_ready_frames.empty() || !m_running; });
+					m_frame_cv.wait(lock, [this] {
+						return !m_ready_frames.empty() || !m_running ||
+						       m_pending_resize_packed.load(std::memory_order_acquire) != kNoPendingResize;
+					});
 					if (!m_running) {
 						return;
 					}
@@ -606,7 +626,22 @@ void VulkanRenderer::stop() {
 }
 
 auto VulkanRenderer::applyResize(vk::Extent2D extent) -> void {
+	if (extent.width == 0 || extent.height == 0) {
+		return;
+	}
+
+	m_pending_resize_packed.store(packExtent(extent), std::memory_order_release);
+	m_frame_cv.notify_one();
+}
+
+auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 	m_core->getDevice().waitIdle();
+	for (auto& frame : m_frames) {
+		if (frame.has_submitted) {
+			m_output_target->onImageRenderComplete(frame.last_image_index);
+			frame.has_submitted = false;
+		}
+	}
 	try {
 		m_output_target->recreate(extent);
 		const auto image_count = m_output_target->getImageCount();

@@ -73,8 +73,6 @@ public:
 	template<typename TEvent, EventCallback<TEvent&> F>
 	void subscribe(F&& callback, char priority = 0) noexcept;
 
-	void clear() noexcept;
-
 	/// @brief enables/disables the callbacks in the listener
 	void enabled(bool state);
 

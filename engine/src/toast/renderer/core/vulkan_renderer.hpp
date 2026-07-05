@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "../Camera.hpp"
 #include "output_target_base.hpp"
 #include "render_pass_base.hpp"
 #include "toast/events/event.inl"
 #include "toast/events/listener.hpp"
+#include "toast/world/camera.hpp"
 #include "vulkan_core.hpp"
 #include "vulkan_mesh.hpp"
 #include "vulkan_pipeline.hpp"
@@ -100,6 +100,8 @@ public:
 
 	// void queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data);
 
+	void applyResize(vk::Extent2D extent);
+
 	void queueResourceUpload(std::unique_ptr<PendingResourceUpload> upload);
 
 	auto getFrameUBORes(uint32_t current_frame) const -> const FrameResources* { return &m_frame_ubo_res[current_frame]; }
@@ -168,8 +170,6 @@ private:
 	void flushResourceUploads();
 	std::mutex m_upload_mutex;
 
-	void applyResize(vk::Extent2D extent);
-
 	const VulkanCore* m_core = nullptr;
 
 	std::unique_ptr<IOutputTarget> m_output_target;
@@ -199,6 +199,11 @@ private:
 
 	void createFrameResources();
 	void updateFrameResources(uint32_t frame_index, RenderFrame& frame_data);
+
+	void applyResizeInternal(vk::Extent2D extent);
+
+	static constexpr uint64_t kNoPendingResize = 0;
+	std::atomic<uint64_t> m_pending_resize_packed {kNoPendingResize};
 };
 
 inline void start() {

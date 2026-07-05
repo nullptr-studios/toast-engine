@@ -45,27 +45,27 @@ MeshPass::MeshPass(const toast::renderer::VulkanCore& core, vk::Format colorForm
 	data.indices = GizmoIndices;
 	data.vertices = GizmoVertex;
 
-	std::vector<uint8_t> texturebuffer;
-	// load all images from ImageLoadtest folder
-	{
-		const std::string imageFolder = "ImageLoadTest";
-		for (const auto& entry : std::filesystem::directory_iterator(imageFolder)) {
-			if (entry.is_regular_file() && entry.path().extension() == ".ktx2") {
-				std::vector<uint8_t> imageBuffer;
-				std::ifstream file(entry.path(), std::ios::binary | std::ios::ate);
-				if (file.is_open()) {
-					std::streamsize size = file.tellg();
-					file.seekg(0, std::ios::beg);
-					imageBuffer.resize(size);
-					file.read(reinterpret_cast<char*>(imageBuffer.data()), size);
-					file.close();
-
-					textures.emplace_back();
-					VulkanRenderer::instance->queueResourceUpload(std::make_unique<TextureUpload>(textures.back(), imageBuffer));
-				}
-			}
-		}
-	}
+	// std::vector<uint8_t> texturebuffer;
+	//// load all images from ImageLoadtest folder
+	//{
+	//	const std::string imageFolder = "ImageLoadTest";
+	//	for (const auto& entry : std::filesystem::directory_iterator(imageFolder)) {
+	//		if (entry.is_regular_file() && entry.path().extension() == ".ktx2") {
+	//			std::vector<uint8_t> imageBuffer;
+	//			std::ifstream file(entry.path(), std::ios::binary | std::ios::ate);
+	//			if (file.is_open()) {
+	//				std::streamsize size = file.tellg();
+	//				file.seekg(0, std::ios::beg);
+	//				imageBuffer.resize(size);
+	//				file.read(reinterpret_cast<char*>(imageBuffer.data()), size);
+	//				file.close();
+	//
+	//				textures.emplace_back();
+	//				VulkanRenderer::instance->queueResourceUpload(std::make_unique<TextureUpload>(textures.back(), imageBuffer));
+	//			}
+	//		}
+	//	}
+	//}
 
 	// mesh.create(core, data, core.getGraphicsQueueFamilyIndex(), core.getTransferQueueFamilyIndex());
 	VulkanRenderer::instance->queueResourceUpload(std::make_unique<MeshUpload>(mesh, data));

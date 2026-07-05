@@ -1,4 +1,4 @@
-/// @file ShaderCompiler.cpp
+/// @file shader_compiler.cpp
 /// @author dario
 /// @date 17/05/2026.
 

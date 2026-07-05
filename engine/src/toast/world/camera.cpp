@@ -1,11 +1,12 @@
-/// @file Camera.cpp
+/// @file camera.cpp
 /// @author dario
-/// @date 10/06/2026.
+/// @date 7/4/2026.
 
-#include "Camera.hpp"
+#include "camera.hpp"
 
-#include "core/vulkan_renderer.hpp"
+#include "toast/renderer/core/vulkan_renderer.hpp"
 
+namespace toast {
 void Camera::SetActiveCamera(bool force) {
 	toast::renderer::VulkanRenderer::instance->setActiveCamera(this);
 }
@@ -24,4 +25,5 @@ glm::mat4 Camera::getProjection(float aspect) const {
 	proj[1][1] *= -1.0f;
 
 	return proj;
+}
 }
