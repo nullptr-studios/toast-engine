@@ -28,7 +28,7 @@ namespace toast::renderer {
  * @brief Coordinates rendering by managing frame submissions, render passes, and GPU synchronization
  *
  * Runs on a separate render thread and handles frame timing, depth resources,
- * and mesh upload queues.
+ * and mesh upload queues
  */
 class VulkanRenderer {
 public:
@@ -81,13 +81,13 @@ public:
 	~VulkanRenderer();
 
 	VulkanRenderer(const VulkanRenderer&) = delete;
-	auto operator=(const VulkanRenderer&) -> VulkanRenderer& = delete;
+	VulkanRenderer& operator=(const VulkanRenderer&) = delete;
 	VulkanRenderer(VulkanRenderer&&) = delete;
-	auto operator=(VulkanRenderer&&) -> VulkanRenderer& = delete;
+	VulkanRenderer& operator=(VulkanRenderer&&) = delete;
 
 	void start();
 
-	auto beginFrameBuild() -> RenderFrame& { return m_render_frames[m_write_index]; }
+	RenderFrame& beginFrameBuild() { return m_render_frames[m_write_index]; }
 
 	std::counting_semaphore<kRenderFrames>& getFreeFramesSemaphore() { return m_free_frames; }
 
@@ -103,14 +103,14 @@ public:
 
 	void queueResourceUpload(std::unique_ptr<PendingResourceUpload> upload);
 
-	auto getFrameUBORes(uint32_t current_frame) const -> const FrameResources* { return &m_frame_ubo_res[current_frame]; }
+	const FrameResources* getFrameUBORes(uint32_t current_frame) const { return &m_frame_ubo_res[current_frame]; }
 
 	void setActiveCamera(Camera* camera);
 
 	Camera* getActiveCamera() { return m_camera; }
 
 	[[nodiscard]]
-	auto renderingFrame() const -> const RenderFrame* {
+	const RenderFrame* renderingFrame() const {
 		return m_rendering_frame;
 	}
 
@@ -233,6 +233,23 @@ inline Camera* getActiveCamera() {
 
 inline void setActiveCamera(Camera* camera) {
 	VulkanRenderer::instance->setActiveCamera(camera);
+}
+
+inline void queueResourceUpload(std::unique_ptr<PendingResourceUpload> upload) {
+	VulkanRenderer::instance->queueResourceUpload(std::move(upload));
+}
+
+inline void applyResize(vk::Extent2D extent) {
+	VulkanRenderer::instance->applyResize(extent);
+}
+
+inline const IOutputTarget& getOutputTarget() {
+	return VulkanRenderer::instance->getOutputTarget();
+}
+
+//@WARN NOT THREAD SAFE
+inline const VulkanRenderer::RenderFrame* renderingFrame() {
+	return VulkanRenderer::instance->renderingFrame();
 }
 
 }    // namespace toast::renderer

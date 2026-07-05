@@ -419,8 +419,6 @@ void VulkanRenderer::createFrameResources() {
 }
 
 void VulkanRenderer::updateFrameResources(uint32_t frameIndex, RenderFrame& frameData) {
-	// TODO CHANGE TO SUPPORT THREADSAFE FRAMEDATA
-
 	m_frame_ubos[frameIndex] = frameData.frame_data;
 
 	auto& allocation = m_frame_ubo_res[frameIndex].gpuBuffer->getAllocation();

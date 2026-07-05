@@ -205,6 +205,7 @@ void Engine::tick() {
 	clear_assets_timer += Time::delta();
 	if (clear_assets_timer > 30.0) {
 		m->asset_manager->clearUnusedAssets();
+		clear_assets_timer = 0.0;
 	}
 
 	if (m->renderer) {
