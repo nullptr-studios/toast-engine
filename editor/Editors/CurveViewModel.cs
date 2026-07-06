@@ -53,6 +53,19 @@ public partial class CurveViewModel : Tool, IToastZoneEditor, IAutosavable {
 	public bool HasContent => m_curve is not null;
 	public bool HasBezierHint => BezierHint.Length > 0;
 
+	public bool IsAutosaveDirty => IsDirty && HasContent;
+
+	public string? AutosaveFileName =>
+		HasContent && !string.IsNullOrEmpty(CurrentPath)
+			? CurrentUid + AssetTypeRegistry.GetExtension(CurrentPath)
+			: null;
+
+	public Task WriteAutosaveAsync(string virtualPath) {
+		if (m_curve is not { } curve) return Task.CompletedTask;
+		var realPath = ProjectContext.Resolve(virtualPath);
+		return Task.Run(() => curve.Save(realPath));
+	}
+
 	public void OpenFile(string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath = null) {
 		m_loading = true;
 		var recovered = contentSourceRealPath != null;
@@ -145,19 +158,6 @@ public partial class CurveViewModel : Tool, IToastZoneEditor, IAutosavable {
 		MetaFile.Touch(CurrentPath);
 		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		IsDirty = false;
-	}
-
-	public bool IsAutosaveDirty => IsDirty && HasContent;
-
-	public string? AutosaveFileName =>
-		HasContent && !string.IsNullOrEmpty(CurrentPath)
-			? CurrentUid + AssetTypeRegistry.GetExtension(CurrentPath)
-			: null;
-
-	public Task WriteAutosaveAsync(string virtualPath) {
-		if (m_curve is not { } curve) return Task.CompletedTask;
-		var realPath = ProjectContext.Resolve(virtualPath);
-		return Task.Run(() => curve.Save(realPath));
 	}
 
 	[RelayCommand]

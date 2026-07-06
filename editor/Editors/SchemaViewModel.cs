@@ -51,6 +51,14 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 
 	public bool HasContent => !string.IsNullOrEmpty(CurrentPath);
 
+	public bool IsAutosaveDirty => IsDirty && HasContent;
+
+	public string? AutosaveFileName => HasContent ? CurrentUid + AssetTypeRegistry.GetExtension(CurrentPath) : null;
+
+	public Task WriteAutosaveAsync(string virtualPath) {
+		return File.WriteAllTextAsync(ProjectContext.Resolve(virtualPath), SerializeDocument());
+	}
+
 	partial void OnShowPropertiesChanged(bool value) {
 		OnPropertyChanged(nameof(ShowTypes));
 	}
@@ -276,14 +284,6 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 
 		var options = new JsonSerializerOptions { WriteIndented = true };
 		return root.ToJsonString(options);
-	}
-
-	public bool IsAutosaveDirty => IsDirty && HasContent;
-
-	public string? AutosaveFileName => HasContent ? CurrentUid + AssetTypeRegistry.GetExtension(CurrentPath) : null;
-
-	public Task WriteAutosaveAsync(string virtualPath) {
-		return File.WriteAllTextAsync(ProjectContext.Resolve(virtualPath), SerializeDocument());
 	}
 
 	public async Task<bool> ConfirmCloseCurrentAsync() {

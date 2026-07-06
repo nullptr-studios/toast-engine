@@ -277,19 +277,22 @@ public class DockFactory : Factory {
 		};
 	}
 
-	public void OpenGenericEditor(string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath = null) {
+	public void OpenGenericEditor(
+		string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath = null) {
 		if (GenericEditorVm!.IsDirty)
 			_ = OpenGenericEditorGated(uid, virtualPath, definition, contentSourceRealPath);
 		else
 			DoOpenGenericEditor(uid, virtualPath, definition, contentSourceRealPath);
 	}
 
-	private void DoOpenGenericEditor(string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath) {
+	private void DoOpenGenericEditor(
+		string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath) {
 		GenericEditorVm!.OpenFile(uid, virtualPath, definition, contentSourceRealPath);
 		ShowRightTool(GenericEditorVm);
 	}
 
-	private async Task OpenGenericEditorGated(string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath) {
+	private async Task OpenGenericEditorGated(
+		string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath) {
 		if (await GenericEditorVm!.ConfirmCloseCurrentAsync())
 			DoOpenGenericEditor(uid, virtualPath, definition, contentSourceRealPath);
 	}

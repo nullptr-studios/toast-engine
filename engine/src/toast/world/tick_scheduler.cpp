@@ -144,7 +144,7 @@ void TickScheduler::compute(const std::vector<Box<Node>>& all_nodes) {
 	);
 }
 
-void TickScheduler::run() {
+void TickScheduler::run() const {
 	ZoneScoped;
 
 	/**

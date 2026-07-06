@@ -49,6 +49,14 @@ public partial class GenericViewModel : Tool, IAutosavable {
 	// Exposed for DataTemplate bindings in GenericView.axaml
 	public static IReadOnlyList<string> AllFieldTypes => GenericFieldVM.AllFieldTypes;
 
+	public bool IsAutosaveDirty => IsDirty && HasContent;
+
+	public string? AutosaveFileName => HasContent ? CurrentUid + AssetTypeRegistry.GetExtension(CurrentPath) : null;
+
+	public Task WriteAutosaveAsync(string virtualPath) {
+		return File.WriteAllTextAsync(ProjectContext.Resolve(virtualPath), SerializeDocument());
+	}
+
 	private void InitDesignData() {
 		m_loading = true;
 		SchemaLocked = false;
@@ -516,14 +524,6 @@ public partial class GenericViewModel : Tool, IAutosavable {
 			table[field.Name] = field.ToTomlValue();
 
 		return TomlSerializer.Serialize(table);
-	}
-
-	public bool IsAutosaveDirty => IsDirty && HasContent;
-
-	public string? AutosaveFileName => HasContent ? CurrentUid + AssetTypeRegistry.GetExtension(CurrentPath) : null;
-
-	public Task WriteAutosaveAsync(string virtualPath) {
-		return File.WriteAllTextAsync(ProjectContext.Resolve(virtualPath), SerializeDocument());
 	}
 
 	private static (List<SchemaFieldDescriptor> Fields, Dictionary<string, StructDef> Defs)

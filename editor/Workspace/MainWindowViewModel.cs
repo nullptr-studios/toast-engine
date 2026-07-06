@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Controls;
@@ -97,6 +96,9 @@ public partial class MainWindowViewModel : ViewModelBase {
 		m_autosave = new AutosaveService(EnumerateAutosavables);
 	}
 
+	public IRootDock MainLayout { get; set; }
+	public IRootDock ToastZoneLayout { get; set; }
+
 	private IEnumerable<IAutosavable> EnumerateAutosavables() {
 		foreach (var ws in m_workspaces.Values) yield return ws;
 		if (m_dockFactory.GenericEditorVm is { } generic) yield return generic;
@@ -109,9 +111,6 @@ public partial class MainWindowViewModel : ViewModelBase {
 	private Task AutosaveNow() {
 		return m_autosave.RequestAutosave();
 	}
-
-	public IRootDock MainLayout { get; set; }
-	public IRootDock ToastZoneLayout { get; set; }
 
 	partial void OnHierarchyVisibleChanged(bool value) {
 		if (value != m_dockFactory.IsToolVisible("Hierarchy"))
@@ -253,7 +252,9 @@ public partial class MainWindowViewModel : ViewModelBase {
 	}
 
 	// saving is locked while any tab is in play mode
-	private static bool CanSave() => !WorkspaceViewModel.AnyPlayActive;
+	private static bool CanSave() {
+		return !WorkspaceViewModel.AnyPlayActive;
+	}
 
 	[RelayCommand(CanExecute = nameof(CanSave))]
 	private async Task SaveCurrentNode() {

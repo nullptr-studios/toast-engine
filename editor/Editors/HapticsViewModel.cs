@@ -77,6 +77,19 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor, IAutosavable {
 
 	private bool Ignore => m_loading || m_syncing || m_haptic is null || UnsupportedMode;
 
+	public bool IsAutosaveDirty => IsDirty && HasContent;
+
+	public string? AutosaveFileName =>
+		HasContent && !string.IsNullOrEmpty(CurrentPath)
+			? CurrentUid + AssetTypeRegistry.GetExtension(CurrentPath)
+			: null;
+
+	public Task WriteAutosaveAsync(string virtualPath) {
+		if (m_haptic is not { } haptic) return Task.CompletedTask;
+		var realPath = ProjectContext.Resolve(virtualPath);
+		return Task.Run(() => haptic.Save(realPath));
+	}
+
 	public void OpenFile(string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath = null) {
 		m_loading = true;
 		var recovered = contentSourceRealPath != null;
@@ -173,19 +186,6 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor, IAutosavable {
 		MetaFile.Touch(CurrentPath);
 		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		IsDirty = false;
-	}
-
-	public bool IsAutosaveDirty => IsDirty && HasContent;
-
-	public string? AutosaveFileName =>
-		HasContent && !string.IsNullOrEmpty(CurrentPath)
-			? CurrentUid + AssetTypeRegistry.GetExtension(CurrentPath)
-			: null;
-
-	public Task WriteAutosaveAsync(string virtualPath) {
-		if (m_haptic is not { } haptic) return Task.CompletedTask;
-		var realPath = ProjectContext.Resolve(virtualPath);
-		return Task.Run(() => haptic.Save(realPath));
 	}
 
 	[RelayCommand]

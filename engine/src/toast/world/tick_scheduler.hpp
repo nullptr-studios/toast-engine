@@ -75,7 +75,7 @@ public:
 	void compute(const std::vector<Box<Node>>& all_nodes);
 
 	/// Runs all four phases (early_tick → tick → post_physics → late_tick) of the schedule
-	void run();
+	void run() const;
 
 	DependencyGraph graph;
 	_detail::TickSchedule schedule;

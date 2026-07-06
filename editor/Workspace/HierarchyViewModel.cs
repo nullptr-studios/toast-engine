@@ -524,7 +524,9 @@ public partial class HierarchyViewModel : Tool {
 	}
 
 	// saving is locked while any tab is in play mode
-	private static bool CanSave() => !WorkspaceViewModel.AnyPlayActive;
+	private static bool CanSave() {
+		return !WorkspaceViewModel.AnyPlayActive;
+	}
 
 	[RelayCommand(CanExecute = nameof(CanSave))]
 	private async Task Save(HierarchyElement? target) {

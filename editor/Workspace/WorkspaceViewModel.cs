@@ -19,7 +19,23 @@ public enum GizmoTool { Select, Translate, Rotate, Scale, Ruler }
 public enum PlayState { Stopped, Playing, PlayingExternal }
 
 public partial class WorkspaceViewModel : Document, IAutosavable {
+	private static int s_playingCount;
+
+	private bool m_countedPlaying;
+	[ObservableProperty] private bool m_gameCamera;
+	[ObservableProperty] private bool m_isPaused;
 	private string? m_pendingRootName;
+
+	[ObservableProperty] private PlayState m_playState;
+
+	private PlayWindow? m_playWindow;
+	[ObservableProperty] private double m_rotateSnap = 30;
+	[ObservableProperty] private bool m_rotateSnapEnabled = true;
+	[ObservableProperty] private double m_scaleSnap = 0.10;
+	[ObservableProperty] private bool m_scaleSnapEnabled = true;
+	[ObservableProperty] private double m_translateSnap = 0.10;
+
+	[ObservableProperty] private bool m_translateSnapEnabled = true;
 
 	private WorkspaceViewModel(ToastEngine? engine = null) {
 		Engine = engine;
@@ -39,6 +55,20 @@ public partial class WorkspaceViewModel : Document, IAutosavable {
 	public string? BackingAssetUid { get; private set; }
 
 	public string? RootUid { get; private set; }
+	public GizmoTool ActiveTool { get; private set; } = GizmoTool.Select;
+
+	public bool WorldSpace { get; private set; }
+
+	public static bool AnyPlayActive { get; private set; }
+
+	public ulong PlayHandle { get; private set; }
+
+	public ulong EffectiveHandle => PlayHandle != 0 ? PlayHandle : Handle;
+
+	public bool IsPlaying => PlayState == PlayState.Playing;
+	public bool IsPlayingExternal => PlayState == PlayState.PlayingExternal;
+	public bool IsPlayModeActive => PlayState != PlayState.Stopped;
+	public bool CanPause => PlayState != PlayState.Stopped;
 
 	public bool IsAutosaveDirty => IsModified;
 
@@ -72,33 +102,19 @@ public partial class WorkspaceViewModel : Document, IAutosavable {
 		return base.OnClose();
 	}
 
-	private GizmoTool m_activeTool = GizmoTool.Select;
-	public GizmoTool ActiveTool => m_activeTool;
-
-	private bool m_worldSpace; // false = local
-	public bool WorldSpace => m_worldSpace;
-
-	[ObservableProperty] private bool m_translateSnapEnabled = true;
-	[ObservableProperty] private bool m_rotateSnapEnabled = true;
-	[ObservableProperty] private bool m_scaleSnapEnabled = true;
-	[ObservableProperty] private double m_translateSnap = 0.10;
-	[ObservableProperty] private double m_rotateSnap = 30;
-	[ObservableProperty] private double m_scaleSnap = 0.10;
-	[ObservableProperty] private bool m_gameCamera;
-
 	[RelayCommand]
 	private void SetTool(string tool) {
-		m_activeTool = Enum.Parse<GizmoTool>(tool);
+		ActiveTool = Enum.Parse<GizmoTool>(tool);
 		// always raise so re-clicking the checked toggle re-asserts its visual state
 		OnPropertyChanged(nameof(ActiveTool));
-		Events.Send(new SetGizmoTool { Tool = (uint)m_activeTool });
+		Events.Send(new SetGizmoTool { Tool = (uint)ActiveTool });
 	}
 
 	[RelayCommand]
 	private void SetSpace(string space) {
-		m_worldSpace = space == "World";
+		WorldSpace = space == "World";
 		OnPropertyChanged(nameof(WorldSpace));
-		Events.Send(new SetCoordinateSpace { World = m_worldSpace });
+		Events.Send(new SetCoordinateSpace { World = WorldSpace });
 	}
 
 	[RelayCommand]
@@ -116,39 +132,39 @@ public partial class WorkspaceViewModel : Document, IAutosavable {
 		ScaleSnap = double.Parse(value, CultureInfo.InvariantCulture);
 	}
 
-	partial void OnTranslateSnapEnabledChanged(bool value) => SendSnapping(0, value, m_translateSnap);
-	partial void OnRotateSnapEnabledChanged(bool value) => SendSnapping(1, value, m_rotateSnap);
-	partial void OnScaleSnapEnabledChanged(bool value) => SendSnapping(2, value, m_scaleSnap);
-	partial void OnTranslateSnapChanged(double value) => SendSnapping(0, m_translateSnapEnabled, value);
-	partial void OnRotateSnapChanged(double value) => SendSnapping(1, m_rotateSnapEnabled, value);
-	partial void OnScaleSnapChanged(double value) => SendSnapping(2, m_scaleSnapEnabled, value);
+	partial void OnTranslateSnapEnabledChanged(bool value) {
+		SendSnapping(0, value, m_translateSnap);
+	}
+
+	partial void OnRotateSnapEnabledChanged(bool value) {
+		SendSnapping(1, value, m_rotateSnap);
+	}
+
+	partial void OnScaleSnapEnabledChanged(bool value) {
+		SendSnapping(2, value, m_scaleSnap);
+	}
+
+	partial void OnTranslateSnapChanged(double value) {
+		SendSnapping(0, m_translateSnapEnabled, value);
+	}
+
+	partial void OnRotateSnapChanged(double value) {
+		SendSnapping(1, m_rotateSnapEnabled, value);
+	}
+
+	partial void OnScaleSnapChanged(double value) {
+		SendSnapping(2, m_scaleSnapEnabled, value);
+	}
 
 	private static void SendSnapping(uint kind, bool enabled, double value) {
 		Events.Send(new SetSnapping { Kind = kind, Enabled = enabled, Value = (float)value });
 	}
 
-	partial void OnGameCameraChanged(bool value) => Events.Send(new SetCameraMode { Game = value });
-
-	[ObservableProperty] private PlayState m_playState;
-	[ObservableProperty] private bool m_isPaused;
-
-	private PlayWindow? m_playWindow;
-	private bool m_countedPlaying;
-
-	private static int s_playingCount;
-
-	public static bool AnyPlayActive { get; private set; }
+	partial void OnGameCameraChanged(bool value) {
+		Events.Send(new SetCameraMode { Game = value });
+	}
 
 	public static event Action? PlayModeChanged;
-
-	public ulong PlayHandle { get; private set; }
-
-	public ulong EffectiveHandle => PlayHandle != 0 ? PlayHandle : Handle;
-
-	public bool IsPlaying => PlayState == PlayState.Playing;
-	public bool IsPlayingExternal => PlayState == PlayState.PlayingExternal;
-	public bool IsPlayModeActive => PlayState != PlayState.Stopped;
-	public bool CanPause => PlayState != PlayState.Stopped;
 
 	partial void OnPlayStateChanged(PlayState value) {
 		OnPropertyChanged(nameof(IsPlaying));
@@ -172,9 +188,13 @@ public partial class WorkspaceViewModel : Document, IAutosavable {
 		TogglePlayExternalCommand.NotifyCanExecuteChanged();
 	}
 
-	private bool CanTogglePlay() => !IsPaused && PlayState != PlayState.PlayingExternal;
+	private bool CanTogglePlay() {
+		return !IsPaused && PlayState != PlayState.PlayingExternal;
+	}
 
-	private bool CanTogglePlayExternal() => !IsPaused && PlayState != PlayState.Playing;
+	private bool CanTogglePlayExternal() {
+		return !IsPaused && PlayState != PlayState.Playing;
+	}
 
 	[RelayCommand(CanExecute = nameof(CanTogglePlay))]
 	private async Task TogglePlay() {
