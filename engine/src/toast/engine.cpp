@@ -241,9 +241,15 @@ void Engine::tick() {
 					continue;
 				}
 
+				auto& material_handle = node->getMaterial();
+				if (material_handle.hasValue()) {
+					material_handle->resolveTextureHandles();
+				}
+
 				frame.mesh_instances.push_back(
 				    toast::renderer::VulkanRenderer::MeshInstanceProxy {
 				      .mesh = &gpu_mesh,
+				      .material = material_handle.hasValue() ? &material_handle.get() : nullptr,
 				      .model = node->worldTransformForRender(),
 				    }
 				);

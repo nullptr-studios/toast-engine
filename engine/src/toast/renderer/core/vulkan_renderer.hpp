@@ -22,6 +22,10 @@
 #include <thread>
 #include <vector>
 
+namespace assets {
+class Material;
+}
+
 namespace toast::renderer {
 
 /**
@@ -67,6 +71,7 @@ public:
 
 	struct MeshInstanceProxy {
 		VulkanMesh* mesh = nullptr;
+		const assets::Material* material = nullptr;
 		glm::mat4 model = glm::mat4(1.0f);
 	};
 
@@ -115,7 +120,12 @@ public:
 	}
 
 	[[nodiscard]]
-	const IOutputTarget& getOutputTarget() const {
+	const RENDERDOC_API_1_6_0* getRenderDocAPI() const noexcept {
+		return m_core->getRenderDocAPI();
+	}
+
+	[[nodiscard]]
+	const IOutputTarget& getOutputTarget() const noexcept {
 		return *m_output_target;
 	}
 
@@ -192,6 +202,7 @@ private:
 	std::vector<FrameContext> m_frames;
 	std::vector<vk::raii::Semaphore> m_render_finished_per_image;
 	std::vector<vk::Fence> m_images_in_flight;
+	std::vector<vk::ImageLayout> m_output_image_layouts;
 	uint32_t m_current_frame = 0;
 
 	/// Active camera for the renderer. Can be nullptr if no camera is set.
@@ -245,6 +256,10 @@ inline void applyResize(vk::Extent2D extent) {
 
 inline const IOutputTarget& getOutputTarget() {
 	return VulkanRenderer::instance->getOutputTarget();
+}
+
+inline const RENDERDOC_API_1_6_0* getRenderDocAPI() {
+	return VulkanRenderer::instance->getRenderDocAPI();
 }
 
 //@WARN NOT THREAD SAFE

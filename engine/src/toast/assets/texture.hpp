@@ -7,7 +7,12 @@
 #pragma once
 #include "core_types.hpp"
 
+#include <memory>
 #include <toast/export.hpp>
+
+namespace toast::renderer {
+class VulkanTexture;
+}
 
 namespace assets {
 
@@ -18,7 +23,8 @@ class TOAST_API Texture : public Asset {
 public:
 	static constexpr std::string_view collection = "textures";
 
-	explicit Texture(std::vector<uint8_t> data) : m_data(std::move(data)) { }
+	explicit Texture(std::vector<uint8_t> data);
+	~Texture() override;
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
@@ -28,7 +34,14 @@ public:
 	[[nodiscard]]
 	auto get() const noexcept -> const std::vector<uint8_t>&;
 
+	[[nodiscard]]
+	auto gpuTexture() const -> const toast::renderer::VulkanTexture&;
+
+	[[nodiscard]]
+	auto gpuTexture() -> toast::renderer::VulkanTexture&;
+
 private:
 	std::vector<uint8_t> m_data;
+	std::unique_ptr<toast::renderer::VulkanTexture> m_gpu_texture;
 };
 }

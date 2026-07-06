@@ -7,7 +7,17 @@
 #include "toast/log.hpp"
 #include "vulkan_core.hpp"
 
+#include <type_traits>
+
 namespace toast::renderer {
+static_assert(std::is_standard_layout_v<Vertex>, "Vertex must be standard layout");
+static_assert(sizeof(Vertex) == 60, "Vertex size must match mesh.slang input layout (60 bytes)");
+static_assert(offsetof(Vertex, position) == 0, "Vertex.position offset mismatch");
+static_assert(offsetof(Vertex, normal) == 12, "Vertex.normal offset mismatch");
+static_assert(offsetof(Vertex, uv) == 24, "Vertex.uv offset mismatch");
+static_assert(offsetof(Vertex, tangent) == 32, "Vertex.tangent offset mismatch");
+static_assert(offsetof(Vertex, color) == 48, "Vertex.color offset mismatch");
+
 vk::VertexInputBindingDescription Vertex::getBindingDescription() {
 	return vk::VertexInputBindingDescription(0, sizeof(Vertex), vk::VertexInputRate::eVertex);
 }

@@ -100,7 +100,9 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	createFrameContexts();
 	createPerImageSync();
 	createDepthResources();
-	m_images_in_flight.assign(m_output_target->getImageCount(), vk::Fence {});
+	const auto output_image_count = m_output_target->getImageCount();
+	m_images_in_flight.assign(output_image_count, vk::Fence {});
+	m_output_image_layouts.assign(output_image_count, vk::ImageLayout::eUndefined);
 
 	createDescriptorPool();
 
@@ -267,16 +269,42 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 
 	const vk::Image image = m_output_target->getColorImage(image_index);
 	const vk::ImageLayout color_attachment_layout = vk::ImageLayout::eColorAttachmentOptimal;
+	const vk::ImageLayout previous_layout = m_output_image_layouts.at(image_index);
 
-	// transition to new image
+	vk::AccessFlags src_access_mask {};
+	vk::PipelineStageFlags src_stage_mask = vk::PipelineStageFlagBits::eTopOfPipe;
+
+	switch (previous_layout) {
+		case vk::ImageLayout::eUndefined:
+			src_access_mask = vk::AccessFlags {};
+			src_stage_mask = vk::PipelineStageFlagBits::eTopOfPipe;
+			break;
+		case vk::ImageLayout::ePresentSrcKHR:
+			src_access_mask = vk::AccessFlags {};
+			src_stage_mask = vk::PipelineStageFlagBits::eBottomOfPipe;
+			break;
+		case vk::ImageLayout::eTransferSrcOptimal:
+			src_access_mask = vk::AccessFlagBits::eTransferRead;
+			src_stage_mask = vk::PipelineStageFlagBits::eTransfer;
+			break;
+		case vk::ImageLayout::eColorAttachmentOptimal:
+			src_access_mask = vk::AccessFlagBits::eColorAttachmentWrite;
+			src_stage_mask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+			break;
+		default:
+			src_access_mask = vk::AccessFlags {};
+			src_stage_mask = vk::PipelineStageFlagBits::eTopOfPipe;
+			break;
+	}
+
 	transitionImageLayout(
 	    frame.command_buffer,
 	    image,
-	    vk::ImageLayout::eUndefined,
+	    previous_layout,
 	    color_attachment_layout,
-	    vk::AccessFlags {},
+	    src_access_mask,
 	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    vk::PipelineStageFlagBits::eTopOfPipe,
+	    src_stage_mask,
 	    vk::PipelineStageFlagBits::eColorAttachmentOutput,
 	    colorAttachmentRange()
 	);
@@ -354,6 +382,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 	frame.command_buffer.endRendering();
 
 	m_output_target->recordFinalize(frame.command_buffer, image_index);
+	m_output_image_layouts.at(image_index) =
+	    m_output_target->usesAcquirePresentSemaphores() ? vk::ImageLayout::ePresentSrcKHR : vk::ImageLayout::eTransferSrcOptimal;
 
 	// End frame record
 	frame.command_buffer.end();
@@ -581,7 +611,11 @@ void VulkanRenderer::mainRenderThread() {
 
 		Time::get().renderTick();
 
+		// m_core->getRenderDocAPI()->StartFrameCapture(nullptr, nullptr);
+
 		drawFrame(frameToDraw);
+
+		// m_core->getRenderDocAPI()->EndFrameCapture(nullptr, nullptr);
 
 		if (consumedQueuedFrame) {
 			m_free_frames.release();
@@ -649,6 +683,7 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 		m_output_target->recreate(extent);
 		const auto image_count = m_output_target->getImageCount();
 		m_images_in_flight.assign(image_count, vk::Fence {});
+		m_output_image_layouts.assign(image_count, vk::ImageLayout::eUndefined);
 		createPerImageSync();
 		createDepthResources();
 		m_current_frame = 0;

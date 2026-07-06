@@ -7,10 +7,10 @@
 namespace toast {
 
 void Node3D::pos(glm::vec3 pos) {
-	const auto delta = pos - m_position;
 	m_position = pos;
-	m_world_position += delta;
 	m_dirty_local = true;
+	m_dirty_world = true;
+	World::markNode3DDependantsDirty(box());
 }
 
 auto Node3D::pos() const -> const glm::vec3& {
@@ -18,10 +18,10 @@ auto Node3D::pos() const -> const glm::vec3& {
 }
 
 void Node3D::rotQuat(glm::quat rot) {
-	const auto delta = rot - m_rotation;
-	m_rotation = rot;
-	m_world_rotation += delta;
+	m_rotation = glm::normalize(rot);
 	m_dirty_local = true;
+	m_dirty_world = true;
+	World::markNode3DDependantsDirty(box());
 }
 
 auto Node3D::rotQuat() const -> const glm::quat& {
@@ -47,10 +47,10 @@ auto Node3D::rotDeg() const -> glm::vec3 {
 }
 
 void Node3D::scale(glm::vec3 scl) {
-	const auto delta = scl - m_scale;
 	m_scale = scl;
-	m_world_scale += delta;
 	m_dirty_local = true;
+	m_dirty_world = true;
+	World::markNode3DDependantsDirty(box());
 }
 
 auto Node3D::scale() const -> const glm::vec3& {
@@ -121,7 +121,7 @@ auto Node3D::forward() const -> glm::vec3 {
 	return worldRotQuat() * world_forward;
 }
 
-void Node3D::recalculateTransforms() {
+void Node3D::recalculateTransforms() const {
 	ZoneScoped;
 	ZoneNameF("%s::recalculateTransforms()", name().data());
 
@@ -133,31 +133,21 @@ void Node3D::recalculateTransforms() {
 		m_transform[2] *= m_scale.z;
 
 		m_transform[3] = glm::vec4(m_position, 1.0f);
-
-		// do not need to update m_world_pos... since they
-		// get updated when we use the setters
-
-		// We update world transform as well
-		m_world_transform = m_transform_parent.exists() ? m_transform_parent->getTransform() * m_transform : m_transform;
-
-		World::markNode3DDependantsDirty(box());
-
 		m_dirty_local = false;
 	}
 
 	if (m_dirty_world) {
 		const glm::mat4 parent_mat = m_transform_parent.exists() ? m_transform_parent->getWorldTransform() : glm::mat4(1.0f);
-		m_world_position = parent_mat * glm::vec4(m_position, 1.0f);
-		m_world_rotation = glm::quat(parent_mat * glm::mat4_cast(m_rotation));
-		m_world_scale = parent_mat * glm::vec4(m_scale, 0.0f);
 		m_world_transform = parent_mat * m_transform;
-
-		m_dirty_local = true;
+		glm::vec3 skew;
+		glm::vec4 perspective;
+		glm::decompose(m_world_transform, m_world_scale, m_world_rotation, m_world_position, skew, perspective);
+		m_world_rotation = glm::normalize(m_world_rotation);
 		m_dirty_world = false;
 	}
 }
 
-auto Node3D::getTransform() noexcept -> const glm::mat4& {
+auto Node3D::getTransform() const noexcept -> const glm::mat4& {
 	ZoneScoped;
 	ZoneNameF("%s::getTransform()", name().data());
 
@@ -169,7 +159,7 @@ auto Node3D::getTransform() noexcept -> const glm::mat4& {
 	return m_transform;
 }
 
-auto Node3D::getWorldTransform() noexcept -> const glm::mat4& {
+auto Node3D::getWorldTransform() const noexcept -> const glm::mat4& {
 	ZoneScoped;
 	ZoneNameF("%s::getWorldTransform()", name().data());
 
@@ -182,24 +172,29 @@ auto Node3D::getWorldTransform() noexcept -> const glm::mat4& {
 }
 
 void Node3D::worldPos(glm::vec3 wpos) {
-	const auto delta = wpos - m_world_position;
-	m_position += delta;
-	m_world_position = wpos;
+	const glm::mat4 parent_world = m_transform_parent.exists() ? m_transform_parent->getWorldTransform() : glm::mat4(1.0f);
+	const glm::vec4 local = glm::inverse(parent_world) * glm::vec4(wpos, 1.0f);
+	m_position = glm::vec3(local);
 	m_dirty_local = true;
+	m_dirty_world = true;
+	World::markNode3DDependantsDirty(box());
 }
 
 auto Node3D::worldPos() const -> const glm::vec3& {
+	recalculateTransforms();
 	return m_world_position;
 }
 
 void Node3D::worldRotQuat(glm::quat wrot) {
-	const auto delta = wrot - m_world_rotation;
-	m_rotation += delta;
-	m_world_rotation = wrot;
+	const glm::quat parent_world_rot = m_transform_parent.exists() ? m_transform_parent->worldRotQuat() : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	m_rotation = glm::normalize(glm::inverse(parent_world_rot) * wrot);
 	m_dirty_local = true;
+	m_dirty_world = true;
+	World::markNode3DDependantsDirty(box());
 }
 
 auto Node3D::worldRotQuat() const -> const glm::quat& {
+	recalculateTransforms();
 	return m_world_rotation;
 }
 
@@ -209,6 +204,7 @@ void Node3D::worldRot(glm::vec3 rad) {
 }
 
 auto Node3D::worldRot() const -> glm::vec3 {
+	recalculateTransforms();
 	return glm::eulerAngles(m_world_rotation);
 }
 
@@ -218,17 +214,24 @@ void Node3D::worldRotDeg(glm::vec3 deg) {
 }
 
 auto Node3D::worldRotDeg() const -> glm::vec3 {
+	recalculateTransforms();
 	return glm::degrees(glm::eulerAngles(m_world_rotation));
 }
 
 void Node3D::worldScale(glm::vec3 wscl) {
-	const auto delta = wscl - m_world_scale;
-	m_scale += delta;
-	m_world_scale = wscl;
+	const glm::vec3 parent_scale = m_transform_parent.exists() ? m_transform_parent->worldScale() : glm::vec3(1.0f);
+	m_scale = glm::vec3(
+	    parent_scale.x != 0.0f ? wscl.x / parent_scale.x : wscl.x,
+	    parent_scale.y != 0.0f ? wscl.y / parent_scale.y : wscl.y,
+	    parent_scale.z != 0.0f ? wscl.z / parent_scale.z : wscl.z
+	);
 	m_dirty_local = true;
+	m_dirty_world = true;
+	World::markNode3DDependantsDirty(box());
 }
 
 auto Node3D::worldScale() const -> const glm::vec3& {
+	recalculateTransforms();
 	return m_world_scale;
 }
 

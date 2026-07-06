@@ -5,6 +5,7 @@
 #include "vulkan_core.hpp"
 
 #include "toast/log.hpp"
+#include "toast/logger.hpp"
 
 #include <algorithm>
 #include <format>
@@ -206,7 +207,7 @@ auto deviceNameString(const vk::PhysicalDeviceProperties& props) -> std::string 
 }
 }    // namespace
 
-auto DeviceScore::toString() const -> std::string {
+std::string DeviceScore::toString() const noexcept {
 	std::string str = "Device Score Breakdown:\n";
 	str += "  Device type: " + std::to_string(device_type) + "\n";
 	str += "  Memory: " + std::to_string(memory) + "\n";
@@ -221,7 +222,7 @@ auto DeviceScore::toString() const -> std::string {
 
 VulkanCore::VulkanCore(
     std::span<const char* const> required_instance_extensions, std::span<const char* const> required_device_extensions
-) {
+) noexcept {
 #ifdef DEBUG
 	m_validationEnabled = checkValidationLayerSupport();
 #else
@@ -261,6 +262,13 @@ VulkanCore::VulkanCore(
 
 	pickPhysicalDevice(required_device_extensions);
 	createLogicalDeviceAndAllocator(required_device_extensions);
+
+	// Renderdoc api
+	if (HMODULE mod = GetModuleHandleA("renderdoc.dll")) {
+		pRENDERDOC_GetAPI RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(GetProcAddress(mod, "RENDERDOC_GetAPI"));
+		RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
+		TOAST_INFO("VulkanCore", "RenderDoc API detected");
+	}
 }
 
 void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device_extensions) {

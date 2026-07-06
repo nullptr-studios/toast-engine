@@ -27,6 +27,7 @@ void AssetRegistry::init() {
 
 	// Plain TOML loaders
 	s_toml["curve"] = [](const toml::table& t) { return Curve::fromToml(t); };
+	s_toml["material"] = [](const toml::table& t) { return std::make_unique<Material>(t); };
 
 	// TOML + Schema loaders
 	s_schema_toml["data"] = [](const toml::table& t, AssetHandle<Schema> s) { return std::make_unique<Data>(t, std::move(s)); };

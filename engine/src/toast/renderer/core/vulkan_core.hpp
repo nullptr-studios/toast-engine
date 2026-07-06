@@ -6,6 +6,7 @@
 
 #include "vulkan_common.hpp"
 
+#include <external/inc/renderdoc/renderdoc_app.h>
 #include <limits>
 #include <optional>
 #include <span>
@@ -37,7 +38,7 @@ struct DeviceScore {
 	 * @return A string containing the device score details.
 	 */
 	[[nodiscard]]
-	auto toString() const -> std::string;
+	std::string toString() const noexcept;
 };
 
 /// @brief Manages Vulkan instance, device initialization, and memory allocation
@@ -45,7 +46,7 @@ class VulkanCore {
 public:
 	VulkanCore(
 	    std::span<const char* const> required_instance_extensions, std::span<const char* const> required_device_extensions = {}
-	);
+	) noexcept;
 	~VulkanCore() = default;
 
 	// Prevent copying
@@ -53,53 +54,58 @@ public:
 	auto operator=(const VulkanCore&) -> VulkanCore& = delete;
 
 	[[nodiscard]]
-	auto getInstance() const -> const vk::raii::Instance& {
+	auto getInstance() const noexcept -> const vk::raii::Instance& {
 		return m_instance;
 	}
 
 	[[nodiscard]]
-	auto getDevice() const -> const vk::raii::Device& {
+	auto getDevice() const noexcept -> const vk::raii::Device& {
 		return m_device;
 	}
 
 	[[nodiscard]]
-	auto getPhysicalDevice() const -> const vk::raii::PhysicalDevice& {
+	auto getPhysicalDevice() const noexcept -> const vk::raii::PhysicalDevice& {
 		return m_physicalDevice;
 	}
 
 	[[nodiscard]]
-	auto getAllocator() const -> const vma::raii::Allocator& {
+	auto getAllocator() const noexcept -> const vma::raii::Allocator& {
 		return *m_allocator;
 	}
 
 	[[nodiscard]]
-	auto getGraphicsQueueFamilyIndex() const -> uint32_t {
+	auto getGraphicsQueueFamilyIndex() const noexcept -> uint32_t {
 		return m_graphicsQueueFamilyIndex;
 	}
 
 	[[nodiscard]]
-	auto getComputeQueueFamilyIndex() const -> uint32_t {
+	auto getComputeQueueFamilyIndex() const noexcept -> uint32_t {
 		return m_computeQueueFamilyIndex;
 	}
 
 	[[nodiscard]]
-	auto getTransferQueueFamilyIndex() const -> uint32_t {
+	auto getTransferQueueFamilyIndex() const noexcept -> uint32_t {
 		return m_transferQueueFamilyIndex;
 	}
 
 	[[nodiscard]]
-	auto getGraphicsQueue() const -> vk::Queue {
+	vk::Queue getGraphicsQueue() const noexcept {
 		return m_graphicsQueue;
 	}
 
 	[[nodiscard]]
-	auto getComputeQueue() const -> vk::Queue {
+	vk::Queue getComputeQueue() const noexcept {
 		return m_computeQueue;
 	}
 
 	[[nodiscard]]
-	auto getTransferQueue() const -> vk::Queue {
+	vk::Queue getTransferQueue() const noexcept {
 		return m_transferQueue;
+	}
+
+	[[nodiscard]]
+	const RENDERDOC_API_1_6_0* getRenderDocAPI() const noexcept {
+		return rdoc_api;
 	}
 
 private:
@@ -152,5 +158,8 @@ private:
 	vk::Queue m_graphicsQueue = nullptr;
 	vk::Queue m_computeQueue = nullptr;
 	vk::Queue m_transferQueue = nullptr;
+
+	// renderdoc api
+	RENDERDOC_API_1_6_0* rdoc_api = nullptr;
 };
 }

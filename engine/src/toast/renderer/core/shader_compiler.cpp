@@ -6,13 +6,16 @@
 
 #include "toast/log.hpp"
 
+#include <algorithm>
 #include <array>
+#include <cctype>
 #include <cstring>
 #include <fstream>
 #include <iterator>
 #include <slang-com-ptr.h>
 #include <slang.h>
 #include <stdexcept>
+#include <string_view>
 
 namespace toast::renderer {
 
@@ -92,6 +95,109 @@ static void ensureSlangGlobalSession() {
 	if (SLANG_FAILED(r) || !slang_session) {
 		TOAST_CRITICAL("ShaderCompiler", "Failed to create Slang compilation session");
 	}
+}
+
+namespace {
+
+auto toLower(std::string_view in) -> std::string {
+	std::string out(in);
+	std::transform(out.begin(), out.end(), out.begin(), [](const unsigned char c) { return static_cast<char>(std::tolower(c)); });
+	return out;
+}
+
+auto looksLikeAlbedo(std::string_view name) -> bool {
+	const std::string lower = toLower(name);
+	return lower.contains("albedo") || lower.contains("basecolor") || lower.contains("base_color");
+}
+
+auto isSampledTextureType(slang::TypeLayoutReflection* type_layout) -> bool {
+	if (!type_layout || type_layout->getKind() != slang::TypeReflection::Kind::Resource) {
+		return false;
+	}
+
+	const auto shape = type_layout->getResourceShape();
+	const auto access = type_layout->getResourceAccess();
+	const auto base_shape = shape & SLANG_RESOURCE_BASE_SHAPE_MASK;
+	const bool is_texture = base_shape == SLANG_TEXTURE_1D || base_shape == SLANG_TEXTURE_2D || base_shape == SLANG_TEXTURE_3D ||
+	                        base_shape == SLANG_TEXTURE_CUBE;
+	return is_texture && access != SLANG_RESOURCE_ACCESS_READ_WRITE;
+}
+
+void reflectMaterialBindingsRecursive(
+    slang::VariableLayoutReflection* var_layout, uint32_t current_space, uint32_t current_binding,
+    ShaderMaterialBindings& out_bindings
+) {
+	if (!var_layout) {
+		return;
+	}
+
+	const uint32_t binding_offset = var_layout->getOffset(slang::ParameterCategory::DescriptorTableSlot);
+	const uint32_t space_offset = var_layout->getOffset(slang::ParameterCategory::SubElementRegisterSpace);
+
+	const uint32_t next_space = current_space + space_offset;
+	const uint32_t next_binding = current_binding + binding_offset;
+
+	slang::TypeLayoutReflection* type_layout = var_layout->getTypeLayout();
+	if (!type_layout) {
+		return;
+	}
+
+	const auto type_kind = type_layout->getKind();
+	const char* raw_name = var_layout->getName();
+	const std::string var_name = raw_name ? raw_name : "";
+	const bool albedo_name = looksLikeAlbedo(var_name);
+
+	if (type_kind == slang::TypeReflection::Kind::ConstantBuffer || type_kind == slang::TypeReflection::Kind::ParameterBlock) {
+		if (auto* element_layout = type_layout->getElementVarLayout()) {
+			reflectMaterialBindingsRecursive(
+			    element_layout, next_space, type_kind == slang::TypeReflection::Kind::ParameterBlock ? 0 : next_binding, out_bindings
+			);
+		}
+		return;
+	}
+
+	if (type_kind == slang::TypeReflection::Kind::Struct) {
+		const uint32_t field_count = type_layout->getFieldCount();
+		for (uint32_t i = 0; i < field_count; ++i) {
+			reflectMaterialBindingsRecursive(type_layout->getFieldByIndex(i), next_space, next_binding, out_bindings);
+		}
+		return;
+	}
+
+	if (albedo_name && var_layout->getCategory() == slang::ParameterCategory::DescriptorTableSlot) {
+		if (type_kind == slang::TypeReflection::Kind::SamplerState) {
+			out_bindings.albedo_sampler = ShaderDescriptorBinding {.set = next_space, .binding = next_binding};
+			return;
+		}
+		if (isSampledTextureType(type_layout)) {
+			out_bindings.albedo_texture = ShaderDescriptorBinding {.set = next_space, .binding = next_binding};
+			return;
+		}
+	}
+}
+
+auto reflectMaterialBindings(slang::ProgramLayout* layout) -> ShaderMaterialBindings {
+	ShaderMaterialBindings bindings;
+	if (!layout) {
+		return bindings;
+	}
+
+	if (auto* global_params = layout->getGlobalParamsVarLayout()) {
+		reflectMaterialBindingsRecursive(global_params, 0, 0, bindings);
+	}
+
+	const uint32_t entry_point_count = layout->getEntryPointCount();
+	for (uint32_t i = 0; i < entry_point_count; ++i) {
+		if (auto* entry = layout->getEntryPointByIndex(i)) {
+			if (auto* var_layout = entry->getVarLayout()) {
+				reflectMaterialBindingsRecursive(var_layout, 0, 0, bindings);
+			}
+		}
+	}
+
+	return bindings;
+}
+
 }
 
 auto ShaderCompiler::compileShaderModuleFromSource(const std::filesystem::path& shader_path) -> CompiledShaderCode {
@@ -181,6 +287,7 @@ auto ShaderCompiler::compileShaderModuleFromSource(const std::filesystem::path& 
 	CompiledShaderCode result;
 	result.spirv = std::move(out);
 	result.program = program;    // Save the composite component
+	result.material_bindings = reflectMaterialBindings(layout);
 	return result;
 }
 
@@ -239,6 +346,7 @@ auto ShaderCompiler::compileShaderModule(std::string_view module_name) -> Compil
 	CompiledShaderCode result;
 	result.spirv = std::move(out);
 	result.program = program;    // Save the composite component
+	result.material_bindings = reflectMaterialBindings(layout);
 	return result;
 }
 }

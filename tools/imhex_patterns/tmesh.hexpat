@@ -8,11 +8,15 @@ struct Vec3 {
     float x, y, z;
 };
 
+struct Vec4 {
+    float x, y, z, w;
+};
+
 struct Vertex {
     Vec3 position [[color("e74c3c")]];
     Vec3 normal   [[color("2ecc71")]];
     Vec2 uv       [[color("3498db")]];
-    Vec3 tangent  [[color("e67e22")]];
+    Vec4 tangent  [[color("e67e22")]];
     Vec3 color    [[color("9b59b6")]];
 };
 

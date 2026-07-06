@@ -95,4 +95,5 @@ auto AssetHandleBase::operator->() const noexcept -> const Asset* {
 auto Texture::get() const noexcept -> const std::vector<uint8_t>& {
 	return m_data;
 }
+
 }

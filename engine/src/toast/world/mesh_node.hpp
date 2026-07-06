@@ -13,6 +13,7 @@
 
 namespace assets {
 class Mesh;
+class Material;
 }
 
 namespace toast {
@@ -21,6 +22,10 @@ public:
 	MeshNode() = default;
 
 	MeshNode(assets::AssetHandle<assets::Mesh> mesh) : m_mesh(std::move(mesh)) { }
+
+	MeshNode(assets::AssetHandle<assets::Mesh> mesh, assets::AssetHandle<assets::Material> material)
+	    : m_mesh(std::move(mesh)),
+	      m_material(std::move(material)) { }
 
 	auto worldTransformForRender() -> const glm::mat4& { return getWorldTransform(); }
 
@@ -34,6 +39,16 @@ public:
 		return m_mesh;
 	}
 
+	[[nodiscard]]
+	auto getMaterial() const -> const assets::AssetHandle<assets::Material>& {
+		return m_material;
+	}
+
+	[[nodiscard]]
+	auto getMaterial() -> assets::AssetHandle<assets::Material>& {
+		return m_material;
+	}
+
 private:
 	void init();
 	void end();
@@ -41,6 +56,9 @@ private:
 
 	[[Reflect]]
 	assets::AssetHandle<assets::Mesh> m_mesh;
+
+	[[Reflect]]
+	assets::AssetHandle<assets::Material> m_material;
 
 	bool m_registered_proxy = false;
 };

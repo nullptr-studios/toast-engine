@@ -13,11 +13,11 @@ class VulkanCore;
 
 /// @brief Vertex with position, normals, UVs, tangents, and colors for mesh rendering
 struct Vertex {
-	glm::vec3 position;
-	glm::vec3 normal;
-	glm::vec2 uv;
-	glm::vec4 tangent;
-	glm::vec3 color;
+	glm::vec<3, float, glm::packed_highp> position;
+	glm::vec<3, float, glm::packed_highp> normal;
+	glm::vec<2, float, glm::packed_highp> uv;
+	glm::vec<4, float, glm::packed_highp> tangent;
+	glm::vec<3, float, glm::packed_highp> color;
 
 	/*
 	JOINTS_0

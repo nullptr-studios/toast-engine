@@ -6,6 +6,8 @@
 
 #include "toast/log.hpp"
 
+#include <cstring>
+
 namespace toast::renderer {
 
 void VulkanTexture::create(const VulkanCore& core, Params params) {
@@ -172,6 +174,75 @@ void TextureUpload::record(vk::CommandBuffer cmd) {
 
 	// PERF: If your textures are read by more than just the fragment shader
 	// consider switching eFragmentShader to eAllGraphics
+	cmd.pipelineBarrier(
+	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, barrier
+	);
+}
+
+void RawTextureUpload::build(const VulkanCore& core) {
+	if (m_width == 0 || m_height == 0 || m_data.empty()) {
+		TOAST_CRITICAL("RawTextureUpload", "Cannot upload raw texture with empty dimensions/data");
+	}
+
+	VulkanTexture::Params params {};
+	params.format = m_format;
+	params.extent = vk::Extent3D(m_width, m_height, 1);
+	params.mipLevels = 1;
+	params.layerCount = 1;
+	params.isCubemap = false;
+	m_texture->create(core, params);
+	m_texture->markUploading();
+
+	vk::BufferCreateInfo staging_ci {};
+	staging_ci.size = static_cast<vk::DeviceSize>(m_data.size());
+	staging_ci.usage = vk::BufferUsageFlagBits::eTransferSrc;
+
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAuto;
+	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+	m_staging_buffer = core.getAllocator().createBuffer(staging_ci, alloc_ci);
+
+	void* mapped = m_staging_buffer.getAllocation().getInfo().pMappedData;
+	if (mapped == nullptr) {
+		TOAST_CRITICAL("RawTextureUpload", "Raw texture staging buffer is not mapped");
+	}
+	std::memcpy(mapped, m_data.data(), m_data.size());
+}
+
+void RawTextureUpload::record(vk::CommandBuffer cmd) {
+	const vk::Image image = m_texture->getImage();
+
+	vk::ImageMemoryBarrier barrier {};
+	barrier.oldLayout = vk::ImageLayout::eUndefined;
+	barrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+	barrier.srcAccessMask = {};
+	barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+	cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, nullptr, barrier);
+
+	vk::BufferImageCopy region {};
+	region.bufferOffset = 0;
+	region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+	region.imageExtent = vk::Extent3D {m_width, m_height, 1};
+
+	cmd.copyBufferToImage(*m_staging_buffer, image, vk::ImageLayout::eTransferDstOptimal, region);
+
+	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
 	cmd.pipelineBarrier(
 	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, barrier
 	);

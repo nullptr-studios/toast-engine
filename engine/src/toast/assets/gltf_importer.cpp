@@ -10,6 +10,7 @@
 
 #include <functional>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <nlohmann/json.hpp>
@@ -23,6 +24,21 @@ using namespace tinygltf3;
 
 namespace assets {
 auto generateIntermediates(const std::filesystem::path& path) {
+	const glm::mat4 gltf_y_up_to_engine_z_up = glm::rotate(glm::mat4(1.0F), glm::radians(90.0F), glm::vec3(1.0F, 0.0F, 0.0F));
+	const glm::mat4 engine_z_up_to_gltf_y_up = glm::transpose(gltf_y_up_to_engine_z_up);
+
+	auto to_engine_space_vec3 = [&](const glm::vec3& v) -> glm::vec3 {
+		return glm::vec3(gltf_y_up_to_engine_z_up * glm::vec4(v, 1.0F));
+	};
+
+	auto to_engine_space_dir3 = [&](const glm::vec3& v) -> glm::vec3 {
+		return glm::vec3(gltf_y_up_to_engine_z_up * glm::vec4(v, 0.0F));
+	};
+
+	auto to_engine_space_mat4 = [&](const glm::mat4& m) -> glm::mat4 {
+		return gltf_y_up_to_engine_z_up * m * engine_z_up_to_gltf_y_up;
+	};
+
 	tg3_parse_options options;
 	tg3_error_stack errors;
 	tg3_model model;
@@ -111,8 +127,10 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			for (uint32_t j = 0; j < vertex_count; j++) {
 				auto& v = vertices[j];
 				memcpy(&v.position, pos_data + (j * get_stride(pos_idx, sizeof(glm::vec3))), sizeof(glm::vec3));
+				v.position = to_engine_space_vec3(v.position);
 				if (norm_data) {
 					memcpy(&v.normal, norm_data + (j * get_stride(norm_idx, sizeof(glm::vec3))), sizeof(glm::vec3));
+					v.normal = to_engine_space_dir3(v.normal);
 				}
 				if (uv_data) {
 					memcpy(&v.uv, uv_data + (j * get_stride(uv_idx, sizeof(glm::vec2))), sizeof(glm::vec2));
@@ -120,7 +138,8 @@ auto generateIntermediates(const std::filesystem::path& path) {
 				if (tan_data) {
 					glm::vec4 t;
 					memcpy(&t, tan_data + (j * get_stride(tan_idx, sizeof(glm::vec4))), sizeof(glm::vec4));
-					v.tangent = t;    // w is handedness, store or discard as needed
+					const glm::vec3 tangent_xyz = to_engine_space_dir3(glm::vec3(t.x, t.y, t.z));
+					v.tangent = glm::vec4(tangent_xyz, t.w);    // w is handedness
 				}
 				if (col_data) {
 					memcpy(&v.color, col_data + (j * get_stride(col_idx, sizeof(glm::vec3))), sizeof(glm::vec3));
@@ -318,21 +337,27 @@ auto generateIntermediates(const std::filesystem::path& path) {
 
 	auto node_transform = [&](const tg3_node& node) -> nlohmann::json {
 		nlohmann::json transform;
+		glm::mat4 local_transform = glm::mat4(1.0F);
+
 		if (node.has_matrix) {
-			glm::mat4 mat;
-			memcpy(&mat, node.matrix, sizeof(glm::mat4));
-			glm::vec3 t, s, skew;
-			glm::vec4 persp;
-			glm::quat r;
-			glm::decompose(mat, s, r, t, skew, persp);
-			transform["pos"] = {t.x, t.y, t.z};
-			transform["rot"] = {r.x, r.y, r.z, r.w};
-			transform["scl"] = {s.x, s.y, s.z};
+			memcpy(&local_transform, node.matrix, sizeof(glm::mat4));
 		} else {
-			transform["pos"] = {node.translation[0], node.translation[1], node.translation[2]};
-			transform["rot"] = {node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]};
-			transform["scl"] = {node.scale[0], node.scale[1], node.scale[2]};
+			const glm::vec3 t(node.translation[0], node.translation[1], node.translation[2]);
+			const glm::quat r(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]);
+			const glm::vec3 s(node.scale[0], node.scale[1], node.scale[2]);
+
+			local_transform = glm::translate(glm::mat4(1.0F), t) * glm::mat4_cast(r) * glm::scale(glm::mat4(1.0F), s);
 		}
+
+		const glm::mat4 converted = to_engine_space_mat4(local_transform);
+		glm::vec3 t, s, skew;
+		glm::vec4 persp;
+		glm::quat r;
+		glm::decompose(converted, s, r, t, skew, persp);
+
+		transform["pos"] = {t.x, t.y, t.z};
+		transform["rot"] = {r.x, r.y, r.z, r.w};
+		transform["scl"] = {s.x, s.y, s.z};
 		return transform;
 	};
 

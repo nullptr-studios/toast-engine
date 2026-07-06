@@ -60,4 +60,27 @@ private:
 	VulkanTexture::Params m_texParams;
 };
 
+class RawTextureUpload : public PendingResourceUpload {
+public:
+	RawTextureUpload(VulkanTexture& texture, std::vector<uint8_t> data, uint32_t width, uint32_t height, vk::Format format)
+	    : m_texture(&texture),
+	      m_data(std::move(data)),
+	      m_width(width),
+	      m_height(height),
+	      m_format(format) { }
+
+	void build(const VulkanCore& core) override;
+	void record(vk::CommandBuffer cmd) override;
+
+	IVulkanResource* resource() override { return m_texture; }
+
+private:
+	VulkanTexture* m_texture = nullptr;
+	std::vector<uint8_t> m_data;
+	uint32_t m_width = 0;
+	uint32_t m_height = 0;
+	vk::Format m_format = vk::Format::eUndefined;
+	vma::raii::Buffer m_staging_buffer = nullptr;
+};
+
 }
