@@ -53,6 +53,8 @@ class [[ToastNode, Icon("Circle")]] TOAST_API Node {
 	friend class INodeOwner;
 	friend class World;
 	friend class Workspace;
+	friend class PlayWorkspace;
+	friend class TickScheduler;
 	friend class Node3D;
 	friend class assets::Prefab;
 	friend struct _detail::ControlBox;

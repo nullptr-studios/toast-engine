@@ -57,6 +57,11 @@ auto UID::fromString(std::string_view b64) -> uint64_t {
 		return table;
 	}();
 
+	// empty "" UID is intended, don't show error
+	if (b64.empty()) {
+		return 0;
+	}
+
 	if (b64.size() != 11) {
 		TOAST_ERROR("UID", "Error parsing UID \"{}\"", b64);
 		return 0;

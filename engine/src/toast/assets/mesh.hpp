@@ -17,7 +17,7 @@ namespace assets {
 
 namespace _detail {
 struct MeshFileHeader {
-	const std::array<uint8_t, 6> magic = {'T', 'M', 'E', 'S', 'H', '\0'};
+	std::array<uint8_t, 6> magic = {'T', 'M', 'E', 'S', 'H', '\0'};
 	uint16_t version = 1;
 	uint32_t vertex_count = 0;
 	uint32_t index_count = 0;

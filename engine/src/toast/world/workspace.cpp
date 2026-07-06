@@ -29,6 +29,10 @@ struct VectorStreamBuf : std::streambuf {
 
 static std::unique_ptr<assets::Prefab> s_clipboard;
 
+Workspace::Workspace(UID handle, EmptyTag) : m_handle(handle) {
+	eventSubscriptions();
+}
+
 Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	ZoneScoped;
 	eventSubscriptions();
@@ -645,6 +649,45 @@ void Workspace::eventSubscriptions() {
 		}
 
 		TOAST_INFO("World", "Promoted node to {}", e.path);
+		return true;
+	});
+
+	// mirrored editor toolbar state; the active workspace is the one being edited
+	m_listener.subscribe<event::SetGizmoTool>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		m_gizmo_tool = static_cast<GizmoTool>(e.tool);
+		return true;
+	});
+
+	m_listener.subscribe<event::SetCoordinateSpace>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		m_world_space = e.world;
+		return true;
+	});
+
+	m_listener.subscribe<event::SetSnapping>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		SnapSetting setting {e.enabled, e.value};
+		switch (e.kind) {
+			case 0: m_translate_snap = setting; break;
+			case 1: m_rotate_snap = setting; break;
+			case 2: m_scale_snap = setting; break;
+			default: TOAST_WARN("World", "SetSnapping: unknown kind {}", e.kind); break;
+		}
+		return true;
+	});
+
+	m_listener.subscribe<event::SetCameraMode>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		m_game_camera = e.game;
 		return true;
 	});
 

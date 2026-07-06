@@ -199,7 +199,8 @@ public partial class MainWindowViewModel : ViewModelBase {
 	}
 
 	private void SyncActiveWorkspace() {
-		var handle = m_dockFactory.ActiveWorkspace?.Handle ?? 0;
+		// a playing tab routes to its temporary play clone, not the frozen editing workspace
+		var handle = m_dockFactory.ActiveWorkspace?.EffectiveHandle ?? 0;
 		if (handle == m_activeWorkspaceHandle) return;
 		m_activeWorkspaceHandle = handle;
 		Events.Send(new SetActiveWorkspace { Handle = handle });

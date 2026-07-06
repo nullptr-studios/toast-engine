@@ -1,7 +1,10 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
 using editor.Assets;
 using editor.Assets.Types;
@@ -11,7 +14,11 @@ using Proto.Events;
 
 namespace editor.Workspace;
 
-public class WorkspaceViewModel : Document, IAutosavable {
+public enum GizmoTool { Select, Translate, Rotate, Scale, Ruler }
+
+public enum PlayState { Stopped, Playing, PlayingExternal }
+
+public partial class WorkspaceViewModel : Document, IAutosavable {
 	private string? m_pendingRootName;
 
 	private WorkspaceViewModel(ToastEngine? engine = null) {
@@ -59,9 +66,169 @@ public class WorkspaceViewModel : Document, IAutosavable {
 	}
 
 	public override bool OnClose() {
+		StopPlay();
 		Events.Send(new SetFocusedNode { Node = "" });
 		Events.Send(new WorkspaceDestroy { Handle = Handle });
 		return base.OnClose();
+	}
+
+	private GizmoTool m_activeTool = GizmoTool.Select;
+	public GizmoTool ActiveTool => m_activeTool;
+
+	private bool m_worldSpace; // false = local
+	public bool WorldSpace => m_worldSpace;
+
+	[ObservableProperty] private bool m_translateSnapEnabled = true;
+	[ObservableProperty] private bool m_rotateSnapEnabled = true;
+	[ObservableProperty] private bool m_scaleSnapEnabled = true;
+	[ObservableProperty] private double m_translateSnap = 0.10;
+	[ObservableProperty] private double m_rotateSnap = 30;
+	[ObservableProperty] private double m_scaleSnap = 0.10;
+	[ObservableProperty] private bool m_gameCamera;
+
+	[RelayCommand]
+	private void SetTool(string tool) {
+		m_activeTool = Enum.Parse<GizmoTool>(tool);
+		// always raise so re-clicking the checked toggle re-asserts its visual state
+		OnPropertyChanged(nameof(ActiveTool));
+		Events.Send(new SetGizmoTool { Tool = (uint)m_activeTool });
+	}
+
+	[RelayCommand]
+	private void SetSpace(string space) {
+		m_worldSpace = space == "World";
+		OnPropertyChanged(nameof(WorldSpace));
+		Events.Send(new SetCoordinateSpace { World = m_worldSpace });
+	}
+
+	[RelayCommand]
+	private void SetTranslateSnap(string value) {
+		TranslateSnap = double.Parse(value, CultureInfo.InvariantCulture);
+	}
+
+	[RelayCommand]
+	private void SetRotateSnap(string value) {
+		RotateSnap = double.Parse(value, CultureInfo.InvariantCulture);
+	}
+
+	[RelayCommand]
+	private void SetScaleSnap(string value) {
+		ScaleSnap = double.Parse(value, CultureInfo.InvariantCulture);
+	}
+
+	partial void OnTranslateSnapEnabledChanged(bool value) => SendSnapping(0, value, m_translateSnap);
+	partial void OnRotateSnapEnabledChanged(bool value) => SendSnapping(1, value, m_rotateSnap);
+	partial void OnScaleSnapEnabledChanged(bool value) => SendSnapping(2, value, m_scaleSnap);
+	partial void OnTranslateSnapChanged(double value) => SendSnapping(0, m_translateSnapEnabled, value);
+	partial void OnRotateSnapChanged(double value) => SendSnapping(1, m_rotateSnapEnabled, value);
+	partial void OnScaleSnapChanged(double value) => SendSnapping(2, m_scaleSnapEnabled, value);
+
+	private static void SendSnapping(uint kind, bool enabled, double value) {
+		Events.Send(new SetSnapping { Kind = kind, Enabled = enabled, Value = (float)value });
+	}
+
+	partial void OnGameCameraChanged(bool value) => Events.Send(new SetCameraMode { Game = value });
+
+	[ObservableProperty] private PlayState m_playState;
+	[ObservableProperty] private bool m_isPaused;
+
+	private PlayWindow? m_playWindow;
+
+	public ulong PlayHandle { get; private set; }
+
+	public ulong EffectiveHandle => PlayHandle != 0 ? PlayHandle : Handle;
+
+	public bool IsPlaying => PlayState == PlayState.Playing;
+	public bool IsPlayingExternal => PlayState == PlayState.PlayingExternal;
+	public bool IsPlayModeActive => PlayState != PlayState.Stopped;
+	public bool CanPause => PlayState != PlayState.Stopped;
+
+	partial void OnPlayStateChanged(PlayState value) {
+		OnPropertyChanged(nameof(IsPlaying));
+		OnPropertyChanged(nameof(IsPlayingExternal));
+		OnPropertyChanged(nameof(IsPlayModeActive));
+		OnPropertyChanged(nameof(CanPause));
+		TogglePlayCommand.NotifyCanExecuteChanged();
+		TogglePlayExternalCommand.NotifyCanExecuteChanged();
+	}
+
+	partial void OnIsPausedChanged(bool value) {
+		if (PlayHandle != 0) Events.Send(new WorkspacePause { Handle = PlayHandle, Paused = value });
+		TogglePlayCommand.NotifyCanExecuteChanged();
+		TogglePlayExternalCommand.NotifyCanExecuteChanged();
+	}
+
+	private bool CanTogglePlay() => !IsPaused && PlayState != PlayState.PlayingExternal;
+
+	private bool CanTogglePlayExternal() => !IsPaused && PlayState != PlayState.Playing;
+
+	[RelayCommand(CanExecute = nameof(CanTogglePlay))]
+	private async Task TogglePlay() {
+		if (PlayState == PlayState.Stopped) await StartPlay(false);
+		else StopPlay();
+	}
+
+	[RelayCommand(CanExecute = nameof(CanTogglePlayExternal))]
+	private async Task TogglePlayExternal() {
+		if (PlayState == PlayState.Stopped) await StartPlay(true);
+		else StopPlay();
+	}
+
+	private async Task StartPlay(bool external) {
+		if (Engine is null) return;
+
+		// keep an autosave before going into game mode
+		if (AutosaveFileName is { } name) {
+			var virtualPath = AutosaveService.VirtualPath(name);
+			Directory.CreateDirectory(Path.GetDirectoryName(ProjectContext.Resolve(virtualPath))!);
+			await WriteAutosaveAsync(virtualPath);
+		}
+
+		var res = Engine.PlayWorkspace(Handle);
+		if (res.Uid == 0) return;
+		PlayHandle = res.Uid;
+		OnPropertyChanged(nameof(EffectiveHandle));
+
+		// clear focus while this workspace is still the active one
+		Events.Send(new SetFocusedNode { Node = "" });
+
+		// hierarchy and inspector follow the active workspace
+		Events.Send(new SetActiveWorkspace { Handle = PlayHandle });
+		GameCamera = true;
+		PlayState = external ? PlayState.PlayingExternal : PlayState.Playing;
+
+		if (external) {
+			m_playWindow = new PlayWindow { DataContext = this };
+			m_playWindow.Closed += OnPlayWindowClosed;
+			m_playWindow.Show();
+		}
+	}
+
+	public void StopPlay() {
+		if (PlayState == PlayState.Stopped) return;
+
+		if (m_playWindow is { } window) {
+			m_playWindow = null;
+			window.Closed -= OnPlayWindowClosed;
+			window.Close();
+		}
+
+		Events.Send(new SetFocusedNode { Node = "" });
+		Events.Send(new WorkspaceDestroy { Handle = PlayHandle });
+		PlayHandle = 0;
+		OnPropertyChanged(nameof(EffectiveHandle));
+		IsPaused = false;
+		PlayState = PlayState.Stopped;
+		GameCamera = false;
+
+		// the source workspace was never closed
+		Events.Send(new SetActiveWorkspace { Handle = Handle });
+	}
+
+	// closing the play window by hand behaves like pressing stop
+	private void OnPlayWindowClosed(object? sender, EventArgs e) {
+		m_playWindow = null;
+		StopPlay();
 	}
 
 	// shows the save-changes dialog and handles save/discard/cancel

@@ -69,6 +69,31 @@ public class ScaleConverter : IValueConverter {
 	}
 }
 
+// checks a bound enum value against the string in ConverterParameter
+public class EnumEqualsConverter : IValueConverter {
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+		return value?.ToString() == parameter?.ToString();
+	}
+
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) {
+		throw new NotSupportedException();
+	}
+}
+
+public class SnapValueConverter : IValueConverter {
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+		if (value is not double d) return value ?? AvaloniaProperty.UnsetValue;
+		if (parameter is string s && s == "int")
+			return ((int)Math.Round(d)).ToString(CultureInfo.InvariantCulture);
+		var text = d.ToString(d < 1 ? "0.00" : "0.0", CultureInfo.InvariantCulture);
+		return d < 1 ? text[1..] : text;
+	}
+
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) {
+		throw new NotSupportedException();
+	}
+}
+
 file static class ConverterHelpers {
 	internal static IBrush? GetBrush(string key) {
 		if (Application.Current?.Resources.TryGetResource(key, ThemeVariant.Dark, out var r) == true)

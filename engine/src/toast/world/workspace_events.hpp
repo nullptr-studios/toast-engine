@@ -170,6 +170,39 @@ struct NodeEnabled : Event<NodeEnabled> {
 	NodeEnabled(toast::UID n, bool enabled) : node(n), enabled(enabled) { }
 };
 
+struct WorkspacePause : Event<WorkspacePause> {
+	uint64_t handle;
+	bool paused;
+
+	WorkspacePause(uint64_t handle, bool paused) : handle(handle), paused(paused) { }
+};
+
+struct SetGizmoTool : Event<SetGizmoTool> {
+	uint32_t tool;
+
+	SetGizmoTool(uint32_t tool) : tool(tool) { }
+};
+
+struct SetCoordinateSpace : Event<SetCoordinateSpace> {
+	bool world;
+
+	SetCoordinateSpace(bool world) : world(world) { }
+};
+
+struct SetSnapping : Event<SetSnapping> {
+	uint32_t kind;
+	bool enabled;
+	float value;
+
+	SetSnapping(uint32_t kind, bool enabled, float value) : kind(kind), enabled(enabled), value(value) { }
+};
+
+struct SetCameraMode : Event<SetCameraMode> {
+	bool game;
+
+	SetCameraMode(bool game) : game(game) { }
+};
+
 struct InspectorContent : Event<InspectorContent> {
 	struct InspectorField {
 		std::string name;
