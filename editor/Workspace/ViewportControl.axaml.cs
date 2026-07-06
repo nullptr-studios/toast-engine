@@ -1,10 +1,12 @@
 using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -22,16 +24,27 @@ public partial class ViewportControl : UserControl {
 	public static readonly StyledProperty<bool> PlayModeProperty =
 		AvaloniaProperty.Register<ViewportControl, bool>(nameof(PlayMode));
 
+	private static readonly PropertyInfo? s_cursorImpl =
+		typeof(Cursor).GetProperty("PlatformImpl", BindingFlags.NonPublic | BindingFlags.Instance);
+
+	private static readonly MethodInfo? s_setCursor =
+		typeof(Avalonia.Platform.ITopLevelImpl).GetMethod(
+			"SetCursor", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
 	private WriteableBitmap? m_bitmap;
 	private bool m_captured;
 	private ToastEngine? m_engine;
 	private CancellationTokenSource? m_hintCts;
 	private Transitions? m_hintTransitions;
 	private ulong m_lastFrameId;
+
+	private IPointer? m_pointer;
 	private int m_surfaceH;
 
 	private int m_surfaceW;
 	private DispatcherTimer? m_timer;
+	private TopLevel? m_topLevel;
+	private bool m_wasVisible;
 
 	public ViewportControl() {
 		InitializeComponent();
@@ -39,6 +52,7 @@ public partial class ViewportControl : UserControl {
 		Focusable = true;
 		AttachedToVisualTree += OnAttached;
 		DetachedFromVisualTree += OnDetached;
+		LostFocus += OnLostFocus;
 	}
 
 	public bool PlayMode {
@@ -59,14 +73,37 @@ public partial class ViewportControl : UserControl {
 
 	private void BeginCapture() {
 		Focus();
+		// hide the cursor over the whole window
 		Cursor = new Cursor(StandardCursorType.None);
+		if (m_topLevel is not null) m_topLevel.Cursor = Cursor;
 		m_captured = true;
+		// while captured every pointer event in the app routes here, so the rest of the UI
+		// can't steal clicks or focus
+		m_pointer?.Capture(Surface);
+		ForceHiddenCursor();
 		_ = ShowFocusHintAsync();
 	}
 
 	private void ReleaseCapture() {
 		m_captured = false;
+		if (m_pointer?.Captured == Surface) m_pointer.Capture(null);
 		Cursor = Cursor.Default;
+		if (m_topLevel is not null) {
+			m_topLevel.Cursor = null;
+			if (m_topLevel.PlatformImpl is { } impl) s_setCursor?.Invoke(impl, [null]); // back to the arrow right away
+		}
+	}
+
+	// re-asserts the hidden cursor behind the property system's back; see s_cursorImpl
+	private void ForceHiddenCursor() {
+		if (!m_captured || m_topLevel?.PlatformImpl is not { } impl || Cursor is not { } cursor) return;
+		s_setCursor?.Invoke(impl, [s_cursorImpl?.GetValue(cursor)]);
+	}
+
+	// keeps the pointer grabbed during play; called from every pointer event
+	private void TrackPointer(IPointer pointer) {
+		m_pointer = pointer;
+		if (m_captured && pointer.Captured != Surface) pointer.Capture(Surface);
 	}
 
 	// visible for 2s total: 1s solid, then a 1s opacity fade
@@ -96,21 +133,47 @@ public partial class ViewportControl : UserControl {
 	private void OnAttached(object? sender, VisualTreeAttachmentEventArgs e) {
 		m_engine ??= (DataContext as WorkspaceViewModel)?.Engine;
 
+		// capture auto-clears on every mouse-up and events outside our bounds never reach us
+		m_topLevel = TopLevel.GetTopLevel(this);
+		m_topLevel?.AddHandler(PointerMovedEvent, OnTopLevelPointerMoved, RoutingStrategies.Tunnel, true);
+
 		m_timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
 		m_timer.Tick += OnTick;
 		m_timer.Start();
 	}
 
 	private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e) {
+		m_topLevel?.RemoveHandler(PointerMovedEvent, OnTopLevelPointerMoved);
+		m_topLevel = null;
+
 		if (m_timer is null) return;
 		m_timer.Stop();
 		m_timer.Tick -= OnTick;
 		m_timer = null;
 	}
 
+	private void OnTopLevelPointerMoved(object? sender, PointerEventArgs e) {
+		TrackPointer(e.Pointer);
+		ForceHiddenCursor();
+	}
+
 	private void OnTick(object? sender, EventArgs e) {
-		if (!IsEffectivelyVisible)
+		// re-grab the pointer even while the mouse sits still
+		if (m_captured && m_pointer is { } pointer && pointer.Captured != Surface) {
+			pointer.Capture(Surface);
+			ForceHiddenCursor();
+		}
+
+		if (!IsEffectivelyVisible) {
+			m_wasVisible = false;
 			return;
+		}
+
+		if (!m_wasVisible) {
+			m_wasVisible = true;
+			m_surfaceW = 0;
+			m_surfaceH = 0;
+		}
 
 		m_engine ??= (DataContext as WorkspaceViewModel)?.Engine;
 		if (m_engine is null)
@@ -179,15 +242,28 @@ public partial class ViewportControl : UserControl {
 		});
 	}
 
+	protected override void OnPointerEntered(PointerEventArgs e) {
+		base.OnPointerEntered(e);
+		TrackPointer(e.Pointer);
+	}
+
+	private void OnLostFocus(object? sender, RoutedEventArgs e) {
+		if (PlayMode && m_captured)
+			Dispatcher.UIThread.Post(() => {
+				if (PlayMode && m_captured) Focus();
+			});
+	}
+
 	protected override void OnPointerMoved(PointerEventArgs e) {
 		base.OnPointerMoved(e);
+		TrackPointer(e.Pointer);
 		if (!ShouldForward || m_engine is null) return;
 
 		var p = e.GetPosition(this);
 		var scale = RenderScaling();
 		Events.Send(new WindowMousePosition {
-			X = (float)(p.X * scale),
-			Y = (float)(p.Y * scale)
+			X = (float)(Math.Clamp(p.X, 0, Bounds.Width) * scale),
+			Y = (float)(Math.Clamp(p.Y, 0, Bounds.Height) * scale)
 		});
 	}
 
@@ -198,8 +274,8 @@ public partial class ViewportControl : UserControl {
 		if (PlayMode && !m_captured) BeginCapture();
 		else Focus();
 
+		TrackPointer(e.Pointer);
 		if (m_engine is null) return;
-		if (m_captured) e.Pointer.Capture(this); // keep drags streaming outside our bounds
 
 		var button = ButtonFromUpdateKind(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
 		if (button != 0)
@@ -212,6 +288,7 @@ public partial class ViewportControl : UserControl {
 
 	protected override void OnPointerReleased(PointerReleasedEventArgs e) {
 		base.OnPointerReleased(e);
+		TrackPointer(e.Pointer);
 		if (!ShouldForward || m_engine is null) return;
 
 		var button = ButtonFromUpdateKind(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
@@ -233,6 +310,11 @@ public partial class ViewportControl : UserControl {
 		});
 	}
 
+	// Ctrl/Meta combos in edit mode are editor shortcuts
+	private bool IsEditorShortcut(KeyEventArgs e) {
+		return !PlayMode && (e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Meta));
+	}
+
 	protected override void OnKeyDown(KeyEventArgs e) {
 		base.OnKeyDown(e);
 
@@ -243,6 +325,7 @@ public partial class ViewportControl : UserControl {
 			return;
 		}
 
+		if (IsEditorShortcut(e)) return;
 		if (!ShouldForward || m_engine is null) return;
 
 		var (key, _) = MapKey(e.Key);
@@ -256,6 +339,7 @@ public partial class ViewportControl : UserControl {
 
 	protected override void OnKeyUp(KeyEventArgs e) {
 		base.OnKeyUp(e);
+		if (IsEditorShortcut(e)) return;
 		if (!ShouldForward || m_engine is null) return;
 
 		var (key, _) = MapKey(e.Key);

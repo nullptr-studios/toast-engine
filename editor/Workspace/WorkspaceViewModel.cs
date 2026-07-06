@@ -133,6 +133,13 @@ public partial class WorkspaceViewModel : Document, IAutosavable {
 	[ObservableProperty] private bool m_isPaused;
 
 	private PlayWindow? m_playWindow;
+	private bool m_countedPlaying;
+
+	private static int s_playingCount;
+
+	public static bool AnyPlayActive { get; private set; }
+
+	public static event Action? PlayModeChanged;
 
 	public ulong PlayHandle { get; private set; }
 
@@ -150,6 +157,13 @@ public partial class WorkspaceViewModel : Document, IAutosavable {
 		OnPropertyChanged(nameof(CanPause));
 		TogglePlayCommand.NotifyCanExecuteChanged();
 		TogglePlayExternalCommand.NotifyCanExecuteChanged();
+
+		var playing = value != PlayState.Stopped;
+		if (playing == m_countedPlaying) return;
+		m_countedPlaying = playing;
+		s_playingCount += playing ? 1 : -1;
+		AnyPlayActive = s_playingCount > 0;
+		PlayModeChanged?.Invoke();
 	}
 
 	partial void OnIsPausedChanged(bool value) {

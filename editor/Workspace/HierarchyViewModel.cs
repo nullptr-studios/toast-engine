@@ -172,6 +172,11 @@ public partial class HierarchyViewModel : Tool {
 		m_listener = new Listener();
 		Root.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasNodes));
 
+		WorkspaceViewModel.PlayModeChanged += () => {
+			SaveCommand.NotifyCanExecuteChanged();
+			SaveAsCommand.NotifyCanExecuteChanged();
+		};
+
 		// engine sends UpdateHierarchyData after every change (create, delete, move, rename...)
 		// we post to the UI thread because engine callbacks come on the native tick thread
 		m_listener.Subscribe<UpdateHierarchyData>(e => {
@@ -518,12 +523,15 @@ public partial class HierarchyViewModel : Tool {
 		WorkspaceState.MarkModified();
 	}
 
-	[RelayCommand]
+	// saving is locked while any tab is in play mode
+	private static bool CanSave() => !WorkspaceViewModel.AnyPlayActive;
+
+	[RelayCommand(CanExecute = nameof(CanSave))]
 	private async Task Save(HierarchyElement? target) {
 		if (ActiveWorkspace is { } ws) await ws.Save();
 	}
 
-	[RelayCommand]
+	[RelayCommand(CanExecute = nameof(CanSave))]
 	private async Task SaveAs(HierarchyElement? target) {
 		if (ActiveWorkspace is { } ws) await ws.SaveAs();
 	}

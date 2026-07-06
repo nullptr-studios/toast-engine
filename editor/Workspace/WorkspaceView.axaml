@@ -366,7 +366,7 @@
 			            Orientation="Horizontal">
 				<ToggleButton Classes="tool red"
 				              CornerRadius="6, 0, 0, 6"
-				              ToolTip.Tip="Play/Stop"
+				              ToolTip.Tip="Play/Stop (F5)"
 				              Command="{Binding TogglePlayCommand}"
 				              IsChecked="{Binding IsPlaying, Mode=OneWay}">
 					<Panel>
@@ -391,7 +391,7 @@
 				</ToggleButton>
 				<ToggleButton Classes="tool red"
 				              CornerRadius="0, 6, 6, 0"
-				              ToolTip.Tip="Play on external window"
+				              ToolTip.Tip="Play on external window (F6)"
 				              Command="{Binding TogglePlayExternalCommand}"
 				              IsChecked="{Binding IsPlayingExternal, Mode=OneWay}">
 					<Panel>

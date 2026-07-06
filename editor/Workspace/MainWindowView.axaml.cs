@@ -147,7 +147,9 @@ public partial class MainWindowView : Window {
 	}
 
 	private void OnKeyDown(object? sender, KeyEventArgs e) {
-		if (e.Key != Key.Space || IsTextInputFocused()) return;
+		// during play the game owns the keyboard
+		// Space must reach the viewport, not the toast zone
+		if (e.Key != Key.Space || IsTextInputFocused() || WorkspaceViewModel.AnyPlayActive) return;
 		e.Handled = true;
 
 		if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
@@ -157,7 +159,7 @@ public partial class MainWindowView : Window {
 	}
 
 	private void OnKeyUp(object? sender, KeyEventArgs e) {
-		if (e.Key != Key.Space || IsTextInputFocused()) return;
+		if (e.Key != Key.Space || IsTextInputFocused() || WorkspaceViewModel.AnyPlayActive) return;
 		e.Handled = true;
 
 		if (!e.KeyModifiers.HasFlag(KeyModifiers.Control))

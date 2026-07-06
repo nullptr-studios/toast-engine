@@ -88,6 +88,12 @@ public partial class MainWindowViewModel : ViewModelBase {
 
 		EditorManager.OpenRequested += OnEditorOpenRequested;
 
+		WorkspaceViewModel.PlayModeChanged += () => {
+			SaveCurrentNodeCommand.NotifyCanExecuteChanged();
+			SaveCurrentNodeAsCommand.NotifyCanExecuteChanged();
+			SaveAllNodesCommand.NotifyCanExecuteChanged();
+		};
+
 		m_autosave = new AutosaveService(EnumerateAutosavables);
 	}
 
@@ -217,9 +223,10 @@ public partial class MainWindowViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	private async Task NewNode(Window parent) {
+	private async Task NewNode() {
+		if (App.MainWindow is not { } owner) return;
 		var popup = new NodeTypeTree();
-		var result = await popup.ShowDialog<string?>(parent);
+		var result = await popup.ShowDialog<string?>(owner);
 		if (result is null) return;
 
 		if (WorkspaceViewModel.CreateNew(m_toast, result) is not { } ws) return;
@@ -229,7 +236,7 @@ public partial class MainWindowViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	private async Task OpenNodeFile(Window parent) {
+	private async Task OpenNodeFile() {
 		if (App.MainWindow is not { } owner) return;
 		var uid = await new AssetList("Node").ShowDialog<string?>(owner);
 		if (uid is null) return;
@@ -245,17 +252,20 @@ public partial class MainWindowViewModel : ViewModelBase {
 		if (m_dockFactory.ActiveWorkspace is { } ws) m_dockFactory.CloseDockable(ws);
 	}
 
-	[RelayCommand]
+	// saving is locked while any tab is in play mode
+	private static bool CanSave() => !WorkspaceViewModel.AnyPlayActive;
+
+	[RelayCommand(CanExecute = nameof(CanSave))]
 	private async Task SaveCurrentNode() {
 		if (m_dockFactory.ActiveWorkspace is { } ws) await ws.Save();
 	}
 
-	[RelayCommand]
+	[RelayCommand(CanExecute = nameof(CanSave))]
 	private async Task SaveCurrentNodeAs() {
 		if (m_dockFactory.ActiveWorkspace is { } ws) await ws.SaveAs();
 	}
 
-	[RelayCommand]
+	[RelayCommand(CanExecute = nameof(CanSave))]
 	private async Task SaveAllNodes() {
 		foreach (var ws in m_workspaces.Values) await ws.Save();
 	}

@@ -60,7 +60,7 @@ public:
 		std::unordered_map<Box<Node>, std::vector<Box<Node>>> inverse_connections;    ///< reverse edges
 	};
 
-	// clang-format off
+	                                                                                // clang-format off
   /**
    * @brief Records a tick ordering constraint between two nodes
    * @note The schedule is NOT rebuilt automatically; the owner calls compute() when appropriate
