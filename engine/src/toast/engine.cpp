@@ -23,6 +23,7 @@
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
+#include "world/play_workspace.hpp"
 #include "world/workspace.hpp"
 #include "world/workspace_events.hpp"
 #include "world/world.hpp"
@@ -298,6 +299,58 @@ auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
 	return {uid, name};
 }
 
+auto Engine::openWorkspace(UID uid, std::string_view source_uri) -> std::pair<UID, std::string> {
+	std::scoped_lock lock(m->owners_mutex);
+	if (m->owners.contains(uid)) {
+		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
+		return {};
+	}
+
+	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(uid, source_uri));
+
+	auto* ws = static_cast<Workspace*>(it->second.get());
+	if (!ws->isValid()) {
+		TOAST_ERROR("Engine", "Failed to load {} into workspace {}", source_uri, uid);
+		m->owners.erase(it);
+		return {};
+	}
+
+	std::string name = it->second->name();
+	return {uid, name};
+}
+
+auto Engine::playWorkspace(UID source_handle) -> std::pair<UID, std::string> {
+	std::scoped_lock lock(m->owners_mutex);
+	auto source_it = m->owners.find(source_handle);
+	if (source_it == m->owners.end()) {
+		TOAST_ERROR("Engine", "Trying to play workspace {} which doesn't exist", source_handle);
+		return {};
+	}
+
+	auto* source = static_cast<Workspace*>(source_it->second.get());
+	if (!source->isValid()) {
+		TOAST_ERROR("Engine", "Trying to play invalid workspace {}", source_handle);
+		return {};
+	}
+
+	// clone the live tree in memory, the play workspace instantiates from it with the same node UIDs
+	assets::Prefab prefab(source->rootNode());
+
+	UID handle;
+	handle.generate();
+	auto [it, _] = m->owners.emplace(handle, std::make_unique<PlayWorkspace>(handle, prefab));
+
+	auto* play = static_cast<PlayWorkspace*>(it->second.get());
+	if (!play->isValid()) {
+		TOAST_ERROR("Engine", "Failed to clone workspace {} for play mode", source_handle);
+		m->owners.erase(it);
+		return {};
+	}
+
+	std::string name = it->second->name();
+	return {handle, name};
+}
+
 void Engine::destroyWorkspace(UID handle) {
 	std::scoped_lock lock(m->owners_mutex);
 	m->owners.erase(handle);
@@ -408,6 +461,22 @@ auto toast_create_workspace(const char* type) noexcept -> workspace_result {
 
 auto toast_open_workspace(const char* uid) noexcept -> workspace_result {
 	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid));
+
+	static thread_local std::string s_name;
+	s_name = std::move(name);
+	return {.uid = root_uid.data(), .name = s_name.c_str()};
+}
+
+auto toast_play_workspace(uint64_t source_handle) noexcept -> workspace_result {
+	auto [uid, name] = toast::Engine::get()->playWorkspace(toast::UID(source_handle));
+
+	static thread_local std::string s_name;
+	s_name = std::move(name);
+	return {.uid = uid.data(), .name = s_name.c_str()};
+}
+
+auto toast_open_workspace_from(const char* uid, const char* source_uri) noexcept -> workspace_result {
+	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid), source_uri);
 
 	static thread_local std::string s_name;
 	s_name = std::move(name);

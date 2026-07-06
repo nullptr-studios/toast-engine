@@ -121,6 +121,16 @@ public partial class ToastEngine : IDisposable {
 		return toast_open_workspace(assetUid);
 	}
 
+	/// Opens a workspace bound to assetUid but loading its content from an autosave
+	public WorkspaceResult OpenWorkspaceFrom(string assetUid, string sourceUri) {
+		return toast_open_workspace_from(assetUid, sourceUri);
+	}
+
+	/// Clones the given workspace's live tree into a new ticking PlayWorkspace
+	public WorkspaceResult PlayWorkspace(ulong sourceHandle) {
+		return toast_play_workspace(sourceHandle);
+	}
+
 	// copies the latest rendered frame into dst (capacity bytes)
 	// returns 1 = frame copied, 0 = no frame yet, -1 = dst too small
 	public int TryGetViewportFrame(IntPtr dst, uint capacity, out ToastViewportFrame frame) {
@@ -240,6 +250,12 @@ public partial class ToastEngine : IDisposable {
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial WorkspaceResult toast_open_workspace(string uid);
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial WorkspaceResult toast_open_workspace_from(string uid, string sourceUri);
+
+	[LibraryImport(EngineLib)]
+	private static partial WorkspaceResult toast_play_workspace(ulong sourceHandle);
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial void toast_rename_prefab_root(string path, string newName);

@@ -99,6 +99,13 @@ public:
 	auto saveBytes(std::string_view uri, const std::vector<uint8_t>& data) -> bool;
 
 	/**
+	 * @brief Reads raw bytes from the URI, bypassing the manifest
+	 *
+	 * You should 99% of the time not use this
+	 */
+	auto loadBytes(std::string_view uri) -> std::optional<std::vector<uint8_t>>;
+
+	/**
 	 * @brief Re-reads the project manifest from disk
 	 * @note Call after importing or creating a new asset; does not evict the asset cache
 	 */

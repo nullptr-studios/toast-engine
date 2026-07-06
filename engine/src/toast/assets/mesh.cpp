@@ -12,10 +12,8 @@ Mesh::Mesh(const std::vector<uint8_t>& data) {
 
 	switch (header.version) {
 		case 1: {
-			size_t expected_size =
-			    sizeof(_detail::MeshFileHeader) + (header.vertex_count * sizeof(Vertex)) + (header.index_count * sizeof(uint32_t));
 			TOAST_ASSERT(
-			    data.size() == expected_size, "AssetManager", "Mesh data size does not match expected size based on header information"
+			    data.size() >= sizeof(_detail::MeshFileHeader) + sizeof(uint8_t), "AssetManager", "Mesh data too small for name length"
 			);
 
 			const uint8_t* data_start = data.data() + sizeof(header);
@@ -23,6 +21,13 @@ Mesh::Mesh(const std::vector<uint8_t>& data) {
 			// name
 			uint8_t name_length = 0;
 			memcpy(&name_length, data_start, sizeof(name_length));
+
+			size_t expected_size = sizeof(_detail::MeshFileHeader) + sizeof(uint8_t) + name_length +
+			                       (header.vertex_count * sizeof(Vertex)) + (header.index_count * sizeof(uint32_t));
+
+			TOAST_ASSERT(
+			    data.size() == expected_size, "AssetManager", "Mesh data size does not match expected size based on header information"
+			);
 			data_start += sizeof(name_length);
 
 			m_name.resize(name_length);
@@ -61,13 +66,13 @@ auto Mesh::toBinary() const -> std::vector<uint8_t> {
 	_detail::MeshFileHeader header;
 	header.vertex_count = static_cast<uint32_t>(m_vertices.size());
 	header.index_count = static_cast<uint32_t>(m_indices.size());
-	const uint8_t* header_start = header.magic.data();
+	const uint8_t* header_start = reinterpret_cast<const uint8_t*>(&header);
 	buffer.insert(buffer.end(), header_start, header_start + sizeof(header));
 
 	// name
-	uint8_t name_length = static_cast<uint8_t>(m_name.size());
+	uint8_t name_length = static_cast<uint8_t>(std::min(m_name.size(), static_cast<size_t>(255)));
 	buffer.insert(buffer.end(), &name_length, &name_length + sizeof(name_length));
-	buffer.insert(buffer.end(), m_name.begin(), m_name.end());
+	buffer.insert(buffer.end(), m_name.begin(), m_name.begin() + name_length);
 
 	// vectors
 	const uint8_t* vertices_start = reinterpret_cast<const uint8_t*>(m_vertices.data());

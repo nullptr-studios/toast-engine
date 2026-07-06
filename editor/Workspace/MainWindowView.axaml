@@ -15,6 +15,22 @@
         WindowDecorations="BorderOnly"
         WindowState="Maximized">
 
+	<!-- menu InputGestures are display-only, these make the shortcuts actually fire window-wide -->
+	<Window.KeyBindings>
+		<KeyBinding Gesture="Ctrl+N"
+		            Command="{Binding NewNodeCommand}" />
+		<KeyBinding Gesture="Ctrl+O"
+		            Command="{Binding OpenNodeFileCommand}" />
+		<KeyBinding Gesture="Ctrl+W"
+		            Command="{Binding CloseNodeFileCommand}" />
+		<KeyBinding Gesture="Ctrl+S"
+		            Command="{Binding SaveCurrentNodeCommand}" />
+		<KeyBinding Gesture="Ctrl+Shift+S"
+		            Command="{Binding SaveCurrentNodeAsCommand}" />
+		<KeyBinding Gesture="Ctrl+Alt+S"
+		            Command="{Binding SaveAllNodesCommand}" />
+	</Window.KeyBindings>
+
 	<Grid RowDefinitions="Auto,*">
 		<DockPanel x:Name="MenuBorder"
 		           Grid.Row="0">
@@ -68,12 +84,10 @@
 				<MenuItem Header="_File">
 					<MenuItem Header="_New Node file"
 					          InputGesture="Ctrl+N"
-					          Command="{Binding NewNodeCommand}"
-					          CommandParameter="{Binding $parent[Window]}" />
+					          Command="{Binding NewNodeCommand}" />
 					<MenuItem Header="_Open Node file"
 					          InputGesture="Ctrl+O"
-					          Command="{Binding OpenNodeFileCommand}"
-					          CommandParameter="{Binding $parent[Window]}" />
+					          Command="{Binding OpenNodeFileCommand}" />
 					<MenuItem Header="_Close Node file"
 					          InputGesture="Ctrl+W"
 					          Command="{Binding CloseNodeFileCommand}" />

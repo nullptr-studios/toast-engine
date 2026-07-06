@@ -29,6 +29,11 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 	ZoneScoped;
 	uint64_t id = uid.data();
 
+	// empty asset
+	if (id == 0) {
+		return nullptr;
+	}
+
 	std::lock_guard lock(mutex);
 
 	// Check cache
@@ -230,6 +235,17 @@ auto AssetManager::saveBytes(std::string_view uri, const std::vector<uint8_t>& d
 	return saveFile(*real_path, data);
 }
 
+auto AssetManager::loadBytes(std::string_view uri) -> std::optional<std::vector<uint8_t>> {
+	std::lock_guard lock(mutex);
+	auto real_path = resolveVirtualPath(uri);
+	if (!real_path) {
+		TOAST_ERROR("AssetManager", "Cannot load bytes: could not resolve path {}", uri);
+		return std::nullopt;
+	}
+	TOAST_WARN("AssetManager", "Loading {} directly from bytes", uri);
+	return openFile(*real_path);
+}
+
 void AssetManager::reloadManifest() {
 	ZoneScoped;
 	clearUnusedAssets();
@@ -343,6 +359,9 @@ auto AssetManager::openFile(const std::filesystem::path& path) -> std::optional<
 }
 
 auto AssetManager::saveFile(const std::filesystem::path& path, const std::vector<uint8_t>& data) -> bool {
+	std::error_code ec;
+	std::filesystem::create_directories(path.parent_path(), ec);
+
 	std::ofstream ofs(path, std::ios::binary | std::ios::trunc);
 	if (not ofs.is_open()) {
 		TOAST_ERROR("AssetManager", "Could not create or open file {}", path.string());

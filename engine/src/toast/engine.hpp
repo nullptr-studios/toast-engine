@@ -38,6 +38,10 @@ public:
 	// nodes
 	auto createWorkspace(std::string_view type) -> std::pair<UID, std::string>;
 	auto openWorkspace(UID uid) -> std::pair<UID, std::string>;
+	/// @brief autosave recovery
+	auto openWorkspace(UID uid, std::string_view source_uri) -> std::pair<UID, std::string>;
+	/// @brief Clones the given workspace's into a new ticking PlayWorkspace
+	auto playWorkspace(UID source_handle) -> std::pair<UID, std::string>;
 	void destroyWorkspace(UID handle);
 
 	auto activeWorkspace() -> UID;

@@ -8,7 +8,9 @@
              d:DesignWidth="800"
              d:DesignHeight="450"
              x:Class="editor.Logger.LogsView"
-             x:DataType="vm:LogsViewModel">
+             x:DataType="vm:LogsViewModel"
+             Background="{StaticResource Bg2}"
+             Padding="8">
 
 	<UserControl.Resources>
 		<conv:SeverityToColorConverter x:Key="SeverityColorConverter" />
@@ -16,62 +18,76 @@
 
 	<DockPanel>
 		<!-- Toolbar -->
-		<Menu DockPanel.Dock="Top">
-			<MenuItem Header="Lock Scroll"
-			          ToggleType="CheckBox" />
-			<Separator Height="NaN"
-			           Width="1" />
-			<MenuItem Header="Critical"
-			          ToggleType="CheckBox" />
-			<MenuItem Header="Error"
-			          ToggleType="CheckBox" />
-			<MenuItem Header="Warning"
-			          ToggleType="CheckBox" />
-			<MenuItem Header="Info"
-			          ToggleType="CheckBox" />
-			<MenuItem Header="Trace"
-			          ToggleType="CheckBox" />
-			<Separator Height="NaN"
-			           Width="1" />
-			<MenuItem Header="Editor logs"
-			          ToggleType="CheckBox" />
-			<Separator Height="NaN"
-			           Width="1" />
-			<MenuItem Header="Filters">
-				<MenuItem Header="Filter 1"
-				          ToggleType="CheckBox" />
-				<MenuItem Header="Filter 2"
-				          ToggleType="CheckBox" />
-			</MenuItem>
-		</Menu>
+		<Border DockPanel.Dock="Top"
+		        Background="{StaticResource Bg3}"
+		        Padding="8"
+		        CornerRadius="8">
+			<Grid ColumnDefinitions="Auto,8,Auto,Auto,Auto,Auto,8,*,8,Auto"
+			      ColumnSpacing="4">
+				<Button Grid.Column="0"
+				        Background="{StaticResource Bg4}"
+				        CornerRadius="6"
+				        ToolTip.Tip="Lock auto-scroll">
+					<LucideIcon Kind="Lock"
+					            Size="18"
+					            StrokeWidth="2.5" />
+				</Button>
+				<Button Grid.Column="2"
+				        Background="{StaticResource Bg4}"
+				        CornerRadius="6"
+				        ToolTip.Tip="Show Errors">
+					<LucideIcon Kind="OctagonX"
+					            Size="18"
+					            StrokeWidth="2.5" />
+				</Button>
+				<Button Grid.Column="3"
+				        Background="{StaticResource Bg4}"
+				        CornerRadius="6"
+				        ToolTip.Tip="Show Warnings">
+					<LucideIcon Kind="TriangleAlert"
+					            Size="18"
+					            StrokeWidth="2.5" />
+				</Button>
+				<Button Grid.Column="4"
+				        Background="{StaticResource Bg4}"
+				        CornerRadius="6"
+				        ToolTip.Tip="Show Infos">
+					<LucideIcon Kind="Info"
+					            Size="18"
+					            StrokeWidth="2.5" />
+				</Button>
+				<Button Grid.Column="5"
+				        Background="{StaticResource Bg4}"
+				        CornerRadius="6"
+				        ToolTip.Tip="Show Traces">
+					<LucideIcon Kind="MessageSquare"
+					            Size="18"
+					            StrokeWidth="2.5" />
+				</Button>
 
-		<!-- Column headers -->
-		<Grid DockPanel.Dock="Top"
-		      ColumnDefinitions="1*, 2*, 4*, 1*"
-		      Height="30">
-			<TextBlock Grid.Column="0"
-			           Text="Sink"
-			           FontWeight="Bold"
-			           VerticalAlignment="Center"
-			           Padding="10,0" />
-			<TextBlock Grid.Column="1"
-			           Text="File"
-			           FontWeight="Bold"
-			           VerticalAlignment="Center" />
-			<TextBlock Grid.Column="2"
-			           Text="Message"
-			           FontWeight="Bold"
-			           VerticalAlignment="Center" />
-			<TextBlock Grid.Column="3"
-			           Text="Time"
-			           FontWeight="Bold"
-			           VerticalAlignment="Center" />
-		</Grid>
+				<TextBox Grid.Column="7"
+				         PlaceholderText="Search..."
+				         BorderThickness="0"
+				         CornerRadius="6"
+				         Background="{StaticResource Bg1}" />
+
+				<Button Grid.Column="9"
+				        Background="{StaticResource Bg4}"
+				        CornerRadius="6">
+					<StackPanel Orientation="Horizontal"
+					            Spacing="4">
+						<LucideIcon Kind="Funnel"
+						            Size="18"
+						            StrokeWidth="2.5" />
+						<TextBlock Text="Filter" />
+					</StackPanel>
+				</Button>
+			</Grid>
+		</Border>
 
 		<!-- Actual log list -->
-		<TextBox DockPanel.Dock="Bottom"
-		         PlaceholderText="Search..." />
 		<ListBox ScrollViewer.VerticalScrollBarVisibility="Auto"
+		         Background="Transparent"
 		         ItemsSource="{Binding LogEntries}">
 			<!-- Force virtualization to be on for performance with large log lists -->
 			<ListBox.ItemsPanel>
@@ -84,7 +100,6 @@
 					<Grid ColumnDefinitions="1*, 2*, 4*, 1*">
 						<TextBlock Grid.Column="0"
 						           Text="{Binding Sink}"
-						           Padding="10,0"
 						           Foreground="{Binding Severity, Converter={StaticResource SeverityColorConverter}}" />
 						<TextBlock Grid.Column="1"
 						           Text="{Binding File}"
@@ -99,6 +114,5 @@
 				</DataTemplate>
 			</ListBox.ItemTemplate>
 		</ListBox>
-
 	</DockPanel>
 </UserControl>

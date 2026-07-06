@@ -17,10 +17,11 @@ using editor.Assets.Types;
 using editor.Components.CurveCanvas;
 using editor.Components.Modals;
 using editor.Engine;
+using editor.Workspace;
 
 namespace editor.Editors;
 
-public partial class CurveViewModel : Tool, IToastZoneEditor {
+public partial class CurveViewModel : Tool, IToastZoneEditor, IAutosavable {
 	private const string BaseTitle = "Curve Editor";
 	[ObservableProperty] private string m_bezierHint = "";
 	[ObservableProperty] private string m_currentPath = "";
@@ -52,18 +53,33 @@ public partial class CurveViewModel : Tool, IToastZoneEditor {
 	public bool HasContent => m_curve is not null;
 	public bool HasBezierHint => BezierHint.Length > 0;
 
-	public void OpenFile(string uid, string virtualPath, BaseAsset definition) {
+	public bool IsAutosaveDirty => IsDirty && HasContent;
+
+	public string? AutosaveFileName =>
+		HasContent && !string.IsNullOrEmpty(CurrentPath)
+			? CurrentUid + AssetTypeRegistry.GetExtension(CurrentPath)
+			: null;
+
+	public Task WriteAutosaveAsync(string virtualPath) {
+		if (m_curve is not { } curve) return Task.CompletedTask;
+		var realPath = ProjectContext.Resolve(virtualPath);
+		return Task.Run(() => curve.Save(realPath));
+	}
+
+	public void OpenFile(string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath = null) {
 		m_loading = true;
+		var recovered = contentSourceRealPath != null;
 		try {
-			var curve = Curve.FromFile(ProjectContext.Resolve(virtualPath));
+			var curve = Curve.FromFile(contentSourceRealPath ?? ProjectContext.Resolve(virtualPath));
 			CurrentUid = uid;
 			CurrentPath = virtualPath;
 			LoadCurve(curve, virtualPath);
 		} catch (Exception e) {
 			Log.Error($"Curve Editor: failed to open '{virtualPath}': {e.Message}");
 			CloseCurrent();
+			recovered = false;
 		} finally {
-			IsDirty = false;
+			IsDirty = recovered;
 			m_loading = false;
 		}
 	}
@@ -79,6 +95,7 @@ public partial class CurveViewModel : Tool, IToastZoneEditor {
 		)).ShowDialog<bool?>(owner);
 		if (result is null) return false;
 		if (result is true) await Save();
+		else AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		return true;
 	}
 
@@ -138,6 +155,8 @@ public partial class CurveViewModel : Tool, IToastZoneEditor {
 		if (m_curve is null || string.IsNullOrEmpty(CurrentPath)) return;
 		var realPath = ProjectContext.Resolve(CurrentPath);
 		await Task.Run(() => m_curve.Save(realPath));
+		MetaFile.Touch(CurrentPath);
+		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		IsDirty = false;
 	}
 

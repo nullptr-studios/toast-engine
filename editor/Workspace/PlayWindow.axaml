@@ -1,0 +1,15 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:editor.Workspace"
+        x:Class="editor.Workspace.PlayWindow"
+        x:DataType="vm:WorkspaceViewModel"
+        Title="{Binding Title}"
+        Width="1280"
+        Height="720"
+        Background="{StaticResource Bg1}"
+        Padding="8">
+	<DockPanel VerticalSpacing="8">
+		<!-- We can put a toolbar here in case we ever need it -->
+		<vm:ViewportControl PlayMode="{Binding IsPlayingExternal}" />
+	</DockPanel>
+</Window>

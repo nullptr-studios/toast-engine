@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Controls;
@@ -15,6 +14,7 @@ using Proto.Events;
 namespace editor.Workspace;
 
 public partial class MainWindowViewModel : ViewModelBase {
+	private readonly AutosaveService m_autosave;
 	private readonly DockFactory m_dockFactory;
 	private readonly ToastEngine m_toast;
 	private readonly ToastZoneFactory m_toastZoneFactory;
@@ -86,10 +86,31 @@ public partial class MainWindowViewModel : ViewModelBase {
 			path => m_dockFactory.GenericEditorVm?.RefreshFromSchema(path);
 
 		EditorManager.OpenRequested += OnEditorOpenRequested;
+
+		WorkspaceViewModel.PlayModeChanged += () => {
+			SaveCurrentNodeCommand.NotifyCanExecuteChanged();
+			SaveCurrentNodeAsCommand.NotifyCanExecuteChanged();
+			SaveAllNodesCommand.NotifyCanExecuteChanged();
+		};
+
+		m_autosave = new AutosaveService(EnumerateAutosavables);
 	}
 
 	public IRootDock MainLayout { get; set; }
 	public IRootDock ToastZoneLayout { get; set; }
+
+	private IEnumerable<IAutosavable> EnumerateAutosavables() {
+		foreach (var ws in m_workspaces.Values) yield return ws;
+		if (m_dockFactory.GenericEditorVm is { } generic) yield return generic;
+		if (m_dockFactory.SchemaEditorVm is { } schema) yield return schema;
+		if (m_toastZoneFactory.CurveEditorVm is { } curve) yield return curve;
+		if (m_toastZoneFactory.HapticsEditorVm is { } haptics) yield return haptics;
+	}
+
+	[RelayCommand]
+	private Task AutosaveNow() {
+		return m_autosave.RequestAutosave();
+	}
 
 	partial void OnHierarchyVisibleChanged(bool value) {
 		if (value != m_dockFactory.IsToolVisible("Hierarchy"))
@@ -126,35 +147,35 @@ public partial class MainWindowViewModel : ViewModelBase {
 			m_toastZoneFactory.ToggleTool("Curve");
 	}
 
-	private void OnEditorOpenRequested(AssetFile file) {
+	private async void OnEditorOpenRequested(AssetFile file) {
 		if (file.Definition is not { CanBeEdited: true } def) return;
 		if (file.Uid is not { } uid) return;
 		if (!AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return;
 
+		var recoverPath = await AutosaveService.TryRecoverAsync(uid, virtualPath);
+
 		switch (def.EditorTool) {
 			case "GenericEditor":
-				m_dockFactory.OpenGenericEditor(uid, virtualPath, def);
+				m_dockFactory.OpenGenericEditor(uid, virtualPath, def, recoverPath);
 				GenericEditorVisible = true; // ShowRightTool already ran; IsToolVisible = true → no re-toggle
 				break;
 			case "SchemaEditor":
-				m_dockFactory.OpenSchemaEditor(uid, virtualPath);
+				m_dockFactory.OpenSchemaEditor(uid, virtualPath, recoverPath);
 				SchemaEditorVisible = true;
 				break;
 			case "NodeEditor":
-				if (WorkspaceViewModel.OpenFile(m_toast, uid, virtualPath) is not { } ws) break;
-				m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
-				SyncActiveWorkspace();
+				OpenWorkspaceFile(uid, virtualPath, recoverPath);
 				break;
 			case "CurveEditor":
 				if (m_toastZoneFactory.CurveEditorVm is { } curveVm) {
-					_ = OpenToastEditorAsync(curveVm, uid, virtualPath, def);
+					_ = OpenToastEditorAsync(curveVm, uid, virtualPath, def, recoverPath);
 					CurveEditorVisible = true;
 				}
 
 				break;
 			case "HapticsEditor":
 				if (m_toastZoneFactory.HapticsEditorVm is { } hapticsVm) {
-					_ = OpenToastEditorAsync(hapticsVm, uid, virtualPath, def);
+					_ = OpenToastEditorAsync(hapticsVm, uid, virtualPath, def, recoverPath);
 					HapticsEditorVisible = true;
 				}
 
@@ -162,10 +183,19 @@ public partial class MainWindowViewModel : ViewModelBase {
 		}
 	}
 
-	private async Task OpenToastEditorAsync<T>(T editor, string uid, string virtualPath, BaseAsset definition)
+	private void OpenWorkspaceFile(string uid, string virtualPath, string? recoverPath) {
+		var recoverVirtual = recoverPath is null ? null : ProjectContext.ToVirtual(recoverPath);
+		if (WorkspaceViewModel.OpenFile(m_toast, uid, virtualPath, recoverVirtual) is not { } ws) return;
+		m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
+		if (recoverVirtual is not null) ws.IsModified = true; // recovered content is unsaved by definition
+		SyncActiveWorkspace();
+	}
+
+	private async Task OpenToastEditorAsync<T>(
+		T editor, string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath = null)
 		where T : Tool, IToastZoneEditor {
 		if (editor.IsDirty && !await editor.ConfirmCloseCurrentAsync()) return;
-		editor.OpenFile(uid, virtualPath, definition);
+		editor.OpenFile(uid, virtualPath, definition, contentSourceRealPath);
 		m_toastZoneFactory.ShowTool(editor);
 
 		// pin the zone so it stays up while editing
@@ -174,7 +204,8 @@ public partial class MainWindowViewModel : ViewModelBase {
 	}
 
 	private void SyncActiveWorkspace() {
-		var handle = m_dockFactory.ActiveWorkspace?.Handle ?? 0;
+		// a playing tab routes to its temporary play clone, not the frozen editing workspace
+		var handle = m_dockFactory.ActiveWorkspace?.EffectiveHandle ?? 0;
 		if (handle == m_activeWorkspaceHandle) return;
 		m_activeWorkspaceHandle = handle;
 		Events.Send(new SetActiveWorkspace { Handle = handle });
@@ -191,9 +222,10 @@ public partial class MainWindowViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	private async Task NewNode(Window parent) {
+	private async Task NewNode() {
+		if (App.MainWindow is not { } owner) return;
 		var popup = new NodeTypeTree();
-		var result = await popup.ShowDialog<string?>(parent);
+		var result = await popup.ShowDialog<string?>(owner);
 		if (result is null) return;
 
 		if (WorkspaceViewModel.CreateNew(m_toast, result) is not { } ws) return;
@@ -203,16 +235,15 @@ public partial class MainWindowViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	private async Task OpenNodeFile(Window parent) {
+	private async Task OpenNodeFile() {
 		if (App.MainWindow is not { } owner) return;
 		var uid = await new AssetList("Node").ShowDialog<string?>(owner);
 		if (uid is null) return;
 
 		if (!AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return;
 
-		if (WorkspaceViewModel.OpenFile(m_toast, uid, virtualPath) is not { } ws) return;
-		m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
-		SyncActiveWorkspace();
+		var recoverPath = await AutosaveService.TryRecoverAsync(uid, virtualPath);
+		OpenWorkspaceFile(uid, virtualPath, recoverPath);
 	}
 
 	[RelayCommand]
@@ -220,17 +251,22 @@ public partial class MainWindowViewModel : ViewModelBase {
 		if (m_dockFactory.ActiveWorkspace is { } ws) m_dockFactory.CloseDockable(ws);
 	}
 
-	[RelayCommand]
+	// saving is locked while any tab is in play mode
+	private static bool CanSave() {
+		return !WorkspaceViewModel.AnyPlayActive;
+	}
+
+	[RelayCommand(CanExecute = nameof(CanSave))]
 	private async Task SaveCurrentNode() {
 		if (m_dockFactory.ActiveWorkspace is { } ws) await ws.Save();
 	}
 
-	[RelayCommand]
+	[RelayCommand(CanExecute = nameof(CanSave))]
 	private async Task SaveCurrentNodeAs() {
 		if (m_dockFactory.ActiveWorkspace is { } ws) await ws.SaveAs();
 	}
 
-	[RelayCommand]
+	[RelayCommand(CanExecute = nameof(CanSave))]
 	private async Task SaveAllNodes() {
 		foreach (var ws in m_workspaces.Values) await ws.Save();
 	}

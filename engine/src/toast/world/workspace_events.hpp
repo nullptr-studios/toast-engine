@@ -83,6 +83,13 @@ struct WorkspaceSave : Event<WorkspaceSave> {
 	WorkspaceSave(toast::UID target, std::string uri) : target(target), uri(std::move(uri)) { }
 };
 
+struct WorkspaceAutosave : Event<WorkspaceAutosave> {
+	uint64_t handle;
+	std::string uri;
+
+	WorkspaceAutosave(uint64_t handle, std::string uri) : handle(handle), uri(std::move(uri)) { }
+};
+
 struct WorkspaceCreateNode : Event<WorkspaceCreateNode> {
 	toast::UID parent;
 	std::string type;
@@ -161,6 +168,39 @@ struct NodeEnabled : Event<NodeEnabled> {
 	bool enabled;
 
 	NodeEnabled(toast::UID n, bool enabled) : node(n), enabled(enabled) { }
+};
+
+struct WorkspacePause : Event<WorkspacePause> {
+	uint64_t handle;
+	bool paused;
+
+	WorkspacePause(uint64_t handle, bool paused) : handle(handle), paused(paused) { }
+};
+
+struct SetGizmoTool : Event<SetGizmoTool> {
+	uint32_t tool;
+
+	SetGizmoTool(uint32_t tool) : tool(tool) { }
+};
+
+struct SetCoordinateSpace : Event<SetCoordinateSpace> {
+	bool world;
+
+	SetCoordinateSpace(bool world) : world(world) { }
+};
+
+struct SetSnapping : Event<SetSnapping> {
+	uint32_t kind;
+	bool enabled;
+	float value;
+
+	SetSnapping(uint32_t kind, bool enabled, float value) : kind(kind), enabled(enabled), value(value) { }
+};
+
+struct SetCameraMode : Event<SetCameraMode> {
+	bool game;
+
+	SetCameraMode(bool game) : game(game) { }
 };
 
 struct InspectorContent : Event<InspectorContent> {

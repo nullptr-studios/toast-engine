@@ -13,5 +13,7 @@ namespace editor.Editors;
 public interface IToastZoneEditor {
 	bool IsDirty { get; }
 	Task<bool> ConfirmCloseCurrentAsync();
-	void OpenFile(string uid, string virtualPath, BaseAsset definition);
+
+	// contentSourceRealPath loads the content from another file while staying bound to virtualPath
+	void OpenFile(string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath = null);
 }

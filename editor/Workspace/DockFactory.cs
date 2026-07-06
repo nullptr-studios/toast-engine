@@ -277,37 +277,40 @@ public class DockFactory : Factory {
 		};
 	}
 
-	public void OpenGenericEditor(string uid, string virtualPath, BaseAsset definition) {
+	public void OpenGenericEditor(
+		string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath = null) {
 		if (GenericEditorVm!.IsDirty)
-			_ = OpenGenericEditorGated(uid, virtualPath, definition);
+			_ = OpenGenericEditorGated(uid, virtualPath, definition, contentSourceRealPath);
 		else
-			DoOpenGenericEditor(uid, virtualPath, definition);
+			DoOpenGenericEditor(uid, virtualPath, definition, contentSourceRealPath);
 	}
 
-	private void DoOpenGenericEditor(string uid, string virtualPath, BaseAsset definition) {
-		GenericEditorVm!.OpenFile(uid, virtualPath, definition);
+	private void DoOpenGenericEditor(
+		string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath) {
+		GenericEditorVm!.OpenFile(uid, virtualPath, definition, contentSourceRealPath);
 		ShowRightTool(GenericEditorVm);
 	}
 
-	private async Task OpenGenericEditorGated(string uid, string virtualPath, BaseAsset definition) {
+	private async Task OpenGenericEditorGated(
+		string uid, string virtualPath, BaseAsset definition, string? contentSourceRealPath) {
 		if (await GenericEditorVm!.ConfirmCloseCurrentAsync())
-			DoOpenGenericEditor(uid, virtualPath, definition);
+			DoOpenGenericEditor(uid, virtualPath, definition, contentSourceRealPath);
 	}
 
-	public void OpenSchemaEditor(string uid, string virtualPath) {
+	public void OpenSchemaEditor(string uid, string virtualPath, string? contentSourceRealPath = null) {
 		if (SchemaEditorVm!.IsDirty)
-			_ = OpenSchemaEditorGated(uid, virtualPath);
+			_ = OpenSchemaEditorGated(uid, virtualPath, contentSourceRealPath);
 		else
-			DoOpenSchemaEditor(uid, virtualPath);
+			DoOpenSchemaEditor(uid, virtualPath, contentSourceRealPath);
 	}
 
-	private void DoOpenSchemaEditor(string uid, string virtualPath) {
-		SchemaEditorVm!.OpenFile(uid, virtualPath);
+	private void DoOpenSchemaEditor(string uid, string virtualPath, string? contentSourceRealPath) {
+		SchemaEditorVm!.OpenFile(uid, virtualPath, contentSourceRealPath);
 		ShowRightTool(SchemaEditorVm);
 	}
 
-	private async Task OpenSchemaEditorGated(string uid, string virtualPath) {
+	private async Task OpenSchemaEditorGated(string uid, string virtualPath, string? contentSourceRealPath) {
 		if (await SchemaEditorVm!.ConfirmCloseCurrentAsync())
-			DoOpenSchemaEditor(uid, virtualPath);
+			DoOpenSchemaEditor(uid, virtualPath, contentSourceRealPath);
 	}
 }

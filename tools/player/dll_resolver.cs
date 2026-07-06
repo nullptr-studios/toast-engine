@@ -27,11 +27,9 @@ internal static class NativeResolver {
 		};
 		if (pattern == null) return IntPtr.Zero;
 
-		// System.Console.WriteLine($"[NativeResolver] Resolve called for: {libraryName}");
-
 		var isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
-		// Search roots: AppContext.BaseDirectory, assembly location, current directory
+		// Search roots
 		var roots = new List<string>();
 		try {
 			var baseDir = AppContext.BaseDirectory;
@@ -40,17 +38,7 @@ internal static class NativeResolver {
 			Console.WriteLine($"[NativeResolver] baseDir error: {ex.Message}");
 		}
 
-		try {
-			var asmDir = Path.GetDirectoryName(assembly.Location);
-			if (!string.IsNullOrEmpty(asmDir)) roots.Add(asmDir);
-		} catch (Exception ex) {
-			Console.WriteLine($"[NativeResolver] asm location error: {ex.Message}");
-		}
-
 		roots.Add(Directory.GetCurrentDirectory());
-
-		// System.Console.WriteLine("[NativeResolver] search roots:");
-		// foreach (var r in roots) System.Console.WriteLine("  " + r);
 
 		string[] extensions = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? [".dll"]
 			: RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? [".dylib"]
@@ -63,7 +51,6 @@ internal static class NativeResolver {
 				try {
 					var engineFiles = Directory.GetFiles(root, "*engine*" + ext, SearchOption.AllDirectories);
 					if (engineFiles.Length > 0) {
-						// System.Console.WriteLine($"[NativeResolver] Preloading engine via dlopen: {engineFiles[0]}");
 						try {
 							const int RTLD_NOW = 2;
 							const int RTLD_GLOBAL = 0x100;
@@ -84,34 +71,30 @@ internal static class NativeResolver {
 		foreach (var root in roots)
 			try {
 				var files = Directory.GetFiles(root, pattern + ext, SearchOption.AllDirectories);
-				if (files.Length > 0)
-					// System.Console.WriteLine($"[NativeResolver] Loading application lib from: {files[0]}");
+				if (files.Length <= 0) continue;
+				try {
+					// Change CWD to the library's dir so '.' in RUNPATH resolves correctly
+					var libDir = Path.GetDirectoryName(files[0]);
+					var oldCwd = Directory.GetCurrentDirectory();
 					try {
-						// Change CWD to the library's dir so '.' in RUNPATH resolves correctly
-						var libDir = Path.GetDirectoryName(files[0]);
-						var oldCwd = Directory.GetCurrentDirectory();
-						try {
-							if (!string.IsNullOrEmpty(libDir)) Directory.SetCurrentDirectory(libDir);
-							if (isLinux) {
-								// Try dlopen directly to ensure DT_NEEDED deps are resolved via RTLD_GLOBAL
-								const int RTLD_NOW = 2;
-								const int RTLD_GLOBAL = 0x100;
-								var handle = dlopen(files[0], RTLD_NOW | RTLD_GLOBAL);
-								if (handle != IntPtr.Zero)
-									// System.Console.WriteLine("[NativeResolver] dlopen(app) succeeded");
-									return handle;
-								// System.Console.WriteLine("[NativeResolver] dlopen(app) returned NULL, falling back to NativeLibrary.Load");
-							}
+						if (!string.IsNullOrEmpty(libDir)) Directory.SetCurrentDirectory(libDir);
+						if (!isLinux) return NativeLibrary.Load(files[0]);
+						// Try dlopen directly to ensure DT_NEEDED deps are resolved via RTLD_GLOBAL
+						const int RTLD_NOW = 2;
+						const int RTLD_GLOBAL = 0x100;
+						var handle = dlopen(files[0], RTLD_NOW | RTLD_GLOBAL);
+						if (handle != IntPtr.Zero)
+							return handle;
 
-							return NativeLibrary.Load(files[0]);
-						} finally {
-							try {
-								Directory.SetCurrentDirectory(oldCwd);
-							} catch { }
-						}
-					} catch (Exception ex) {
-						Console.WriteLine($"[NativeResolver] Load failed: {ex.Message}");
+						return NativeLibrary.Load(files[0]);
+					} finally {
+						try {
+							Directory.SetCurrentDirectory(oldCwd);
+						} catch { }
 					}
+				} catch (Exception ex) {
+					Console.WriteLine($"[NativeResolver] Load failed: {ex.Message}");
+				}
 			} catch (Exception ex) {
 				Console.WriteLine($"[NativeResolver] search error: {ex.Message}");
 			}

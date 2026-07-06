@@ -189,6 +189,33 @@ struct FieldAccess {
 	static void set(void* obj, std::any value) {
 		if (auto* typed = std::any_cast<FieldType>(&value)) {
 			static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member = *typed;
+			return;
+		}
+
+		// HACK: Try integer type conversion if exact match fails
+		if constexpr (std::is_integral_v<FieldType>) {
+			const auto& type_info = value.type();
+			if (type_info == typeid(int)) {
+				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member = static_cast<FieldType>(std::any_cast<int>(value));
+			} else if (type_info == typeid(unsigned int)) {
+				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member =
+				    static_cast<FieldType>(std::any_cast<unsigned int>(value));
+			} else if (type_info == typeid(long)) {
+				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member = static_cast<FieldType>(std::any_cast<long>(value));
+			} else if (type_info == typeid(unsigned long)) {
+				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member =
+				    static_cast<FieldType>(std::any_cast<unsigned long>(value));
+			} else if (type_info == typeid(short)) {
+				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member = static_cast<FieldType>(std::any_cast<short>(value));
+			} else if (type_info == typeid(unsigned short)) {
+				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member =
+				    static_cast<FieldType>(std::any_cast<unsigned short>(value));
+			} else if (type_info == typeid(char)) {
+				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member = static_cast<FieldType>(std::any_cast<char>(value));
+			} else if (type_info == typeid(unsigned char)) {
+				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member =
+				    static_cast<FieldType>(std::any_cast<unsigned char>(value));
+			}
 		}
 	}
 };

@@ -48,6 +48,11 @@ message WorkspaceSave {
   string path = 2;
 }
 
+message WorkspaceAutosave {
+  uint64 handle = 1;
+  string path = 2;
+}
+
 message WorkspaceCreateNode {
   string parent = 1;
   string type = 2;
@@ -107,6 +112,31 @@ message WorkspacePasteNode {
 message WorkspacePromoteNode {
   string target = 1;
   string path = 2;
+}
+
+message WorkspacePause {
+  uint64 handle = 1;
+  bool paused = 2;
+}
+
+// 0 Select, 1 Translate, 2 Rotate, 3 Scale, 4 Ruler
+message SetGizmoTool {
+  uint32 tool = 1;
+}
+
+message SetCoordinateSpace {
+  bool world = 1;
+}
+
+// kind: 0 translate, 1 rotate, 2 scale
+message SetSnapping {
+  uint32 kind = 1;
+  bool enabled = 2;
+  float value = 3;
+}
+
+message SetCameraMode {
+  bool game = 1;
 }
 
 message InspectorField {

@@ -98,6 +98,82 @@ struct BinaryReader {
 	}
 };
 
+auto extractInteger(const std::any& value) -> std::string {
+	const std::type_info& type = value.type();
+	if (type == typeid(int)) {
+		return std::to_string(std::any_cast<int>(value));
+	}
+	if (type == typeid(unsigned int)) {
+		return std::to_string(std::any_cast<unsigned int>(value));
+	}
+	if (type == typeid(long)) {
+		return std::to_string(std::any_cast<long>(value));
+	}
+	if (type == typeid(unsigned long)) {
+		return std::to_string(std::any_cast<unsigned long>(value));
+	}
+	if (type == typeid(int64_t)) {
+		return std::to_string(std::any_cast<int64_t>(value));
+	}
+	if (type == typeid(uint64_t)) {
+		return std::to_string(std::any_cast<uint64_t>(value));
+	}
+	if (type == typeid(short)) {
+		return std::to_string(std::any_cast<short>(value));
+	}
+	if (type == typeid(unsigned short)) {
+		return std::to_string(std::any_cast<unsigned short>(value));
+	}
+	if (type == typeid(uint32_t)) {
+		return std::to_string(std::any_cast<uint32_t>(value));
+	}
+	if (type == typeid(char)) {
+		return std::to_string(std::any_cast<char>(value));
+	}
+	if (type == typeid(unsigned char)) {
+		return std::to_string(std::any_cast<unsigned char>(value));
+	}
+	return "0";
+}
+
+auto extractIntegerValue(const std::any& value) -> int64_t {
+	const std::type_info& type = value.type();
+	if (type == typeid(int)) {
+		return std::any_cast<int>(value);
+	}
+	if (type == typeid(unsigned int)) {
+		return std::any_cast<unsigned int>(value);
+	}
+	if (type == typeid(long)) {
+		return std::any_cast<long>(value);
+	}
+	if (type == typeid(unsigned long)) {
+		return std::any_cast<unsigned long>(value);
+	}
+	if (type == typeid(int64_t)) {
+		return std::any_cast<int64_t>(value);
+	}
+	if (type == typeid(uint64_t)) {
+		return static_cast<int64_t>(std::any_cast<uint64_t>(value));
+	}
+	if (type == typeid(short)) {
+		return std::any_cast<short>(value);
+	}
+	if (type == typeid(unsigned short)) {
+		return std::any_cast<unsigned short>(value);
+	}
+	if (type == typeid(uint32_t)) {
+		return std::any_cast<uint32_t>(value);
+	}
+	if (type == typeid(char)) {
+		return std::any_cast<char>(value);
+	}
+	if (type == typeid(unsigned char)) {
+		return std::any_cast<unsigned char>(value);
+	}
+	return 0;
+}
+
 auto removeSpaces(const std::string& text) -> std::string {
 	std::string result;
 
@@ -638,7 +714,7 @@ auto Prefab::stringifyValue(FieldType type, bool is_array, const std::any& value
 		switch (type) {
 			case FieldType::string_t: return std::any_cast<std::string>(value);
 			case FieldType::bool_t: return std::any_cast<bool>(value) ? "true" : "false";
-			case FieldType::int_t: return std::to_string(std::any_cast<int>(value));
+			case FieldType::int_t: return extractInteger(value);
 			case FieldType::float_t: return std::format("{}", std::any_cast<float>(value));
 			case FieldType::double_t: return std::format("{}", std::any_cast<double>(value));
 			case FieldType::uid_t: return std::format("{}", std::any_cast<UID>(value));
@@ -712,7 +788,7 @@ auto Prefab::toBinary() const -> std::vector<uint8_t> {
 		auto write_single = [&](FieldType type, const std::any& value) {
 			switch (type) {
 				case FieldType::bool_t: writeValue(buffer, std::any_cast<bool>(value)); break;
-				case FieldType::int_t: writeValue(buffer, std::any_cast<int>(value)); break;
+				case FieldType::int_t: writeValue(buffer, static_cast<int>(extractIntegerValue(value))); break;
 				case FieldType::float_t: writeValue(buffer, std::any_cast<float>(value)); break;
 				case FieldType::double_t: writeValue(buffer, std::any_cast<double>(value)); break;
 				case FieldType::string_t: writeString(buffer, std::any_cast<std::string>(value)); break;
@@ -1070,7 +1146,7 @@ auto Prefab::fieldEquals(FieldType type, bool is_array, const std::any& a, const
 		auto scalar_eq = [](FieldType t, const std::any& x, const std::any& y) -> bool {
 			switch (t) {
 				case FieldType::bool_t: return std::any_cast<bool>(x) == std::any_cast<bool>(y);
-				case FieldType::int_t: return std::any_cast<int>(x) == std::any_cast<int>(y);
+				case FieldType::int_t: return extractIntegerValue(x) == extractIntegerValue(y);
 				case FieldType::float_t: return std::any_cast<float>(x) == std::any_cast<float>(y);
 				case FieldType::double_t: return std::any_cast<double>(x) == std::any_cast<double>(y);
 				case FieldType::string_t: return std::any_cast<std::string>(x) == std::any_cast<std::string>(y);

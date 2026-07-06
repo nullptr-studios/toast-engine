@@ -224,6 +224,23 @@ struct ProtoTraits<WorkspaceSave> {
 TOAST_PROTO_EVENT(WorkspaceSave);
 
 template<>
+struct ProtoTraits<WorkspaceAutosave> {
+	using Proto = proto::events::WorkspaceAutosave;
+	using Event = WorkspaceAutosave;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_handle(e.handle);
+		p.set_path(e.uri);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.handle(), p.path()}; }
+};
+
+TOAST_PROTO_EVENT(WorkspaceAutosave);
+
+template<>
 struct ProtoTraits<WorkspaceCreateNode> {
 	using Proto = proto::events::WorkspaceCreateNode;
 	using Event = WorkspaceCreateNode;
@@ -351,6 +368,89 @@ struct ProtoTraits<NodeEnabled> {
 };
 
 TOAST_PROTO_EVENT(NodeEnabled);
+
+template<>
+struct ProtoTraits<WorkspacePause> {
+	using Proto = proto::events::WorkspacePause;
+	using Event = WorkspacePause;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_handle(e.handle);
+		p.set_paused(e.paused);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.handle(), p.paused()}; }
+};
+
+TOAST_PROTO_EVENT(WorkspacePause);
+
+template<>
+struct ProtoTraits<SetGizmoTool> {
+	using Proto = proto::events::SetGizmoTool;
+	using Event = SetGizmoTool;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_tool(e.tool);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.tool()}; }
+};
+
+TOAST_PROTO_EVENT(SetGizmoTool);
+
+template<>
+struct ProtoTraits<SetCoordinateSpace> {
+	using Proto = proto::events::SetCoordinateSpace;
+	using Event = SetCoordinateSpace;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_world(e.world);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.world()}; }
+};
+
+TOAST_PROTO_EVENT(SetCoordinateSpace);
+
+template<>
+struct ProtoTraits<SetSnapping> {
+	using Proto = proto::events::SetSnapping;
+	using Event = SetSnapping;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_kind(e.kind);
+		p.set_enabled(e.enabled);
+		p.set_value(e.value);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.kind(), p.enabled(), p.value()}; }
+};
+
+TOAST_PROTO_EVENT(SetSnapping);
+
+template<>
+struct ProtoTraits<SetCameraMode> {
+	using Proto = proto::events::SetCameraMode;
+	using Event = SetCameraMode;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_game(e.game);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.game()}; }
+};
+
+TOAST_PROTO_EVENT(SetCameraMode);
 
 template<>
 struct ProtoTraits<InspectorContent::InspectorField> {

@@ -205,4 +205,15 @@ void Node::propagateCallTick(const NodeInfo* info, TickFunctionList func_type) n
 	}
 }
 
+void Node::propagateEnable() noexcept {
+	if (!m_local_enabled) {
+		return;
+	}
+
+	callTick(info(), TickFunctionList::on_enable);
+	for (auto& child : m_children) {
+		child->inheritedEnabled(true);
+	}
+}
+
 }

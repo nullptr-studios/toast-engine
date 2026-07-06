@@ -59,14 +59,14 @@ public:
 	static constexpr std::string_view collection = "nodes";
 
 	/**
-	 * @brief Parses a prefab from a text (.node) stream
+	 * @brief Parses a prefab from a text (.tnode) stream
 	 * @param file Open input stream positioned at the start of the file
 	 * @note The text format is human-readable; missing or unknown fields are silently skipped
 	 */
 	Prefab(std::istream& file);
 
 	/**
-	 * @brief Parses a prefab from a binary (.tnode) byte span
+	 * @brief Parses a prefab from a binary (.tbnode) byte span
 	 * @param bytes Raw file bytes; must start with the TNODE magic header
 	 * @note The binary header contains a version field; a mismatch logs a warning but loading is still attempted
 	 */
