@@ -294,6 +294,9 @@ private:
 
 	/// calls callTick on this node then recurses into children
 	void propagateCallTick(const NodeInfo* info, TickFunctionList func_type) noexcept;
+
+	/// calls onEnable only on enabled objects
+	void propagateEnable() noexcept;
 };
 
 }

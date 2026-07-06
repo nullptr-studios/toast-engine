@@ -39,8 +39,8 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 
 	// Allocation
 	Box node = this->nodeAllocation(type);
-	node->propagateCallTick(node->info(), TickFunctionList::load);
 	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
+	node->propagateCallTick(node->info(), TickFunctionList::load);
 
 	// Data structure generation
 	generateUid(node);
@@ -51,9 +51,10 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	node->m_name = stripNamespace(node->info()->type);
 
 	// Initialization
-	node->callTick(node->info(), TickFunctionList::init);
-	node->callTick(node->info(), TickFunctionList::begin);
-	node->enabled(true);
+	node->propagateCallTick(node->info(), TickFunctionList::init);
+	node->propagateCallTick(node->info(), TickFunctionList::begin);
+	node->m_local_enabled = true;
+	node->propagateEnable();
 
 	m_root_node = node;
 	TOAST_INFO("World", "Created new workspace");
@@ -104,8 +105,8 @@ void Workspace::initFromPrefab(const assets::AssetHandle<assets::Prefab>& file) 
 		TOAST_ERROR("World", "Failed to instantiate node {}", m_handle);
 		return;
 	}
-	node->propagateCallTick(node->info(), TickFunctionList::load);
-	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
+	// node->propagateCallTick(node->info(), TickFunctionList::load);
+	// node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 
 	// Data structure generation
 	generateUid(node);
@@ -115,9 +116,10 @@ void Workspace::initFromPrefab(const assets::AssetHandle<assets::Prefab>& file) 
 	node->m_inherited_enabled = true;
 
 	// Initialization
-	node->callTick(node->info(), TickFunctionList::init);
-	node->callTick(node->info(), TickFunctionList::begin);
-	node->enabled(true);
+	node->propagateCallTick(node->info(), TickFunctionList::init);
+	node->propagateCallTick(node->info(), TickFunctionList::begin);
+	node->m_local_enabled = true;
+	node->propagateEnable();
 
 	m_root_node = node;
 }
@@ -126,6 +128,10 @@ Workspace::~Workspace() {
 	if (!m_root_node.exists()) {
 		return;
 	}
+
+	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::on_disable);
+	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::end);
+	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::destroy);
 
 	std::vector<Node*> victims;
 	auto collect = [&victims](this auto&& self, Node& n) -> void {

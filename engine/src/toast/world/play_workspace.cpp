@@ -20,18 +20,18 @@ PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(han
 		TOAST_ERROR("World", "Failed to instantiate play workspace {}", m_handle);
 		return;
 	}
-
-	node->propagateCallTick(node->info(), TickFunctionList::load);
-	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
+	// node->propagateCallTick(node->info(), TickFunctionList::load);
+	// node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 
 	node->m_parent = {};
-	node->changeNodeState(NodeState::root);
+	node->m_state = NodeState::root;
 	node->m_type = NodeType::world_root;
 	node->m_inherited_enabled = true;
 
 	node->propagateCallTick(node->info(), TickFunctionList::init);
 	node->propagateCallTick(node->info(), TickFunctionList::begin);
-	node->enabled(true);
+	node->m_local_enabled = true;
+	node->propagateEnable();
 
 	m_root_node = node;
 
@@ -57,10 +57,6 @@ PlayWorkspace::~PlayWorkspace() {
 		return;
 	}
 
-	// stop runs the shutdown lifecycle before Workspace's destructor frees the tree
-	m_root_node->enabled(false);
-	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::end);
-	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::destroy);
 	TOAST_INFO("World", "Destroyed play workspace {}", m_root_node->name());
 }
 

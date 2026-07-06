@@ -599,6 +599,8 @@ void World::destroyNode(Node& node) {
 
 	std::erase(instance->trees.cached, node.box());
 	node.changeNodeState(NodeState::destroy);
+	node.enabled(false);
+	node.propagateCallTick(node.info(), TickFunctionList::destroy);
 	instance->trees.destroy_queue.emplace_back(node.box());
 	TOAST_TRACE("World", "Queued node {} ({}) for destruction", node.name(), node.uid());
 }
@@ -609,14 +611,6 @@ void World::drainDestroyQueue() {
 
 	if (!doomed.empty()) {
 		ZoneScopedN("World::drainDestroyQueue()");
-
-		/**
-		 * order matters: destroy() callbacks first (tree is still intact), then sever Box<> edges, then free;
-		 * this way destroy() can safely read its own children and parent
-		 */
-		for (auto& root : doomed) {
-			root->propagateCallTick(root->info(), TickFunctionList::destroy);
-		}
 
 		// Collect every node of every doomed tree
 		std::vector<Node*> victims;

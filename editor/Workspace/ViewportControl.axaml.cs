@@ -67,8 +67,7 @@ public partial class ViewportControl : UserControl {
 		base.OnPropertyChanged(change);
 		if (change.Property != PlayModeProperty) return;
 
-		if (change.GetNewValue<bool>()) BeginCapture();
-		else ReleaseCapture();
+		if (change.GetNewValue<bool>()) { } /*BeginCapture();*/ else ReleaseCapture();
 	}
 
 	private void BeginCapture() {
