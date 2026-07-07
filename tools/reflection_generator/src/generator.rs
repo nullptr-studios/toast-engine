@@ -1,5 +1,6 @@
 //! Converts parsed Class structs into NodeInfo data and emits C++ files via Jinja2 templates
 
+use crate::parser::{FieldType, attrs_to_json, infer_field_type};
 use crate::*;
 use serde::Serialize;
 use serde_json::{to_value, Value as json_t};
@@ -20,6 +21,16 @@ pub struct NodeInfo {
     /// Path relative to --include-root
     pub source_file: String,
     pub is_interface: bool,
+}
+
+#[derive(Serialize)]
+pub struct FieldInfo {
+    pub name:       String,
+    pub typename:   String,
+    pub field_type: FieldType,
+    pub is_array:   bool,
+    pub attributes: json_t,
+    pub default:    Option<String>,
 }
 
 #[derive(Serialize)]
@@ -61,63 +72,8 @@ pub struct SubgroupInfo {
     pub fields: Vec<FieldInfo>,
 }
 
-#[derive(Serialize)]
-pub struct FieldInfo {
-    pub name:       String,
-    pub typename:   String,
-    pub field_type: FieldType,
-    pub is_array:   bool,
-    pub attributes: json_t,
-    pub default:    Option<String>,
-}
 
-#[derive(Serialize)]
-pub enum FieldType {
-    #[serde(rename = "bool_t")]        Bool,
-    #[serde(rename = "int_t")]         Int,
-    #[serde(rename = "float_t")]       Float,
-    #[serde(rename = "string_t")]      String,
-    #[serde(rename = "double_t")]      Double,
-    #[serde(rename = "uid_t")]        Uid,
-    #[serde(rename = "vec2_t")]        Vec2,
-    #[serde(rename = "vec3_t")]        Vec3,
-    #[serde(rename = "vec4_t")]        Vec4,
-    #[serde(rename = "quaternion_t")]  Quaternion,
-}
 
-fn infer_field_type(type_name: &str) -> FieldType {
-    let base = type_name.trim()
-        .trim_start_matches("toast::")
-        .trim_start_matches("std::")
-        .trim_start_matches("glm::");
-
-    // both are held by value in C++ but the reflection boundary only exchanges UIDs;
-    // the accessor resolves/unresolves the handle on get/set
-    if type_name.contains("AssetHandle<") { return FieldType::Uid; }
-    if base.starts_with("Box<") { return FieldType::Uid; }
-
-    match base {
-        "bool"                                                         => FieldType::Bool,
-        "int"  | "int8_t"  | "int16_t"  | "int32_t"  | "int64_t"
-            | "uint8_t" | "uint16_t" | "uint32_t" | "uint64_t"    => FieldType::Int,
-        "float"                                                        => FieldType::Float,
-        "string"                                                       => FieldType::String,
-        "double"                                                       => FieldType::Double,
-        "UID"                                                         => FieldType::Uid,
-        "vec2"                                                         => FieldType::Vec2,
-        "vec3"                                                         => FieldType::Vec3,
-        "vec4"                                                         => FieldType::Vec4,
-        "quat" | "quaternion"                                          => FieldType::Quaternion,
-        _ => FieldType::Int,    // unknown types silently become Int; accessor compiles but the inspector widget will be wrong
-    }
-}
-
-fn attrs_to_json(attrs: &[Attribute]) -> json_t {
-    let map: serde_json::Map<std::string::String, json_t> = attrs.iter()
-        .map(|a| (a.name.clone(), serde_json::json!(a.args)))
-        .collect();
-    json_t::Object(map)
-}
 
 fn attr_arg(attrs: &[Attribute], name: &str) -> Option<std::string::String> {
     attrs.iter().find(|a| a.name == name).and_then(|a| a.args.first().cloned())
@@ -126,9 +82,9 @@ fn attr_arg(attrs: &[Attribute], name: &str) -> Option<std::string::String> {
 fn build_field(field: &Field) -> FieldInfo {
     FieldInfo {
         name:       field.name.clone(),
-        typename:   field.type_name.clone(),
-        field_type: infer_field_type(&field.type_name),
-        is_array:   field.type_name.contains("vector<"),
+        typename:   field.typename.clone(),
+        field_type: infer_field_type(&field.typename),
+        is_array:   field.typename.contains("vector<"),
         attributes: attrs_to_json(&field.attributes),
         default:    field.default.clone(),
     }

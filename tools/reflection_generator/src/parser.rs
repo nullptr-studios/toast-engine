@@ -2,7 +2,23 @@
 //! and tick-function declarations from C++ header files
 
 use tree_sitter::{Parser, Query, QueryCursor, StreamingIterator};
+
+use serde_json::{Value as json_t};
 use serde::Serialize;
+
+#[derive(Serialize)]
+pub enum FieldType {
+    #[serde(rename = "bool_t")]        Bool,
+    #[serde(rename = "int_t")]         Int,
+    #[serde(rename = "float_t")]       Float,
+    #[serde(rename = "string_t")]      String,
+    #[serde(rename = "double_t")]      Double,
+    #[serde(rename = "uid_t")]        Uid,
+    #[serde(rename = "vec2_t")]        Vec2,
+    #[serde(rename = "vec3_t")]        Vec3,
+    #[serde(rename = "vec4_t")]        Vec4,
+    #[serde(rename = "quaternion_t")]  Quaternion,
+}
 
 #[derive(Serialize, Clone)]
 pub struct Attribute {
@@ -19,9 +35,14 @@ pub struct Parent {
 #[derive(Serialize)]
 pub struct Field {
     pub name: String,
-    pub type_name: String,
-    pub default: Option<String>,
+    pub typename: String,
+    pub field_type: FieldType,
+    pub is_array:   bool,
+    #[serde(skip)]
     pub attributes: Vec<Attribute>,
+    #[serde(rename = "attributes")]
+    pub attrib_json: json_t,
+    pub default: Option<String>,
 }
 
 #[derive(Serialize,Clone)]
@@ -310,7 +331,7 @@ fn get_fields(node: tree_sitter::Node, source: &str) -> Vec<Field> {
         if !all_attrs.iter().any(|a| a.name == "Reflect") {
             continue;
         }
-        let attributes = all_attrs.into_iter().filter(|a| a.name != "Reflect").collect();
+        let attributes: Vec<Attribute> = all_attrs.into_iter().filter(|a| a.name != "Reflect").collect();
 
         let type_name = parent.child_by_field_name("type")
             .map(|t| source[t.byte_range()].trim().to_string())
@@ -321,9 +342,12 @@ fn get_fields(node: tree_sitter::Node, source: &str) -> Vec<Field> {
 
         fields.push(Field {
             name: source[field_node.byte_range()].to_string(),
-            type_name,
+            typename: type_name.clone(),
+            field_type: infer_field_type(&type_name),
+            is_array:   type_name.contains("vector<"),
+            attributes: attributes.clone(),
+            attrib_json: attrs_to_json(&attributes),
             default,
-            attributes,
         });
     }
     fields
@@ -369,5 +393,40 @@ fn clean_argument(arg: &str) -> String {
         trimmed[1..trimmed.len() - 1].to_string()
     } else {
         trimmed.to_string()
+    }
+}
+
+pub fn attrs_to_json(attrs: &[Attribute]) -> json_t {
+    let map: serde_json::Map<std::string::String, json_t> = attrs.iter()
+        .map(|a| (a.name.clone(), serde_json::json!(a.args)))
+        .collect();
+    json_t::Object(map)
+}
+
+
+pub fn infer_field_type(type_name: &str) -> FieldType {
+    let base = type_name.trim()
+        .trim_start_matches("toast::")
+        .trim_start_matches("std::")
+        .trim_start_matches("glm::");
+
+    // both are held by value in C++ but the reflection boundary only exchanges UIDs;
+    // the accessor resolves/unresolves the handle on get/set
+    if type_name.contains("AssetHandle<") { return FieldType::Uid; }
+    if base.starts_with("Box<") { return FieldType::Uid; }
+
+    match base {
+        "bool"                                                         => FieldType::Bool,
+        "int"  | "int8_t"  | "int16_t"  | "int32_t"  | "int64_t"
+            | "uint8_t" | "uint16_t" | "uint32_t" | "uint64_t"    => FieldType::Int,
+        "float"                                                        => FieldType::Float,
+        "string"                                                       => FieldType::String,
+        "double"                                                       => FieldType::Double,
+        "UID"                                                         => FieldType::Uid,
+        "vec2"                                                         => FieldType::Vec2,
+        "vec3"                                                         => FieldType::Vec3,
+        "vec4"                                                         => FieldType::Vec4,
+        "quat" | "quaternion"                                          => FieldType::Quaternion,
+        _ => FieldType::Int,    // unknown types silently become Int; accessor compiles but the inspector widget will be wrong
     }
 }
