@@ -10,11 +10,13 @@ pub struct Attribute {
 	pub args: Vec<String>,
 }
 
+#[derive(Serialize)]
 pub struct Parent {
 	pub name: String,
 	pub namespace: Option<String>,
 }
 
+#[derive(Serialize)]
 pub struct Field {
 	pub name: String,
 	pub type_name: String,
@@ -22,12 +24,14 @@ pub struct Field {
 	pub attributes: Vec<Attribute>,
 }
 
+#[derive(Serialize)]
 pub struct Parameter {
 	pub name: String,
 	pub type_name: String,
 	pub default: Option<String>,
 }
 
+#[derive(Serialize)]
 pub struct Function {
 	pub name: String,
 	pub return_type: String,
@@ -36,6 +40,7 @@ pub struct Function {
 	pub attributes: Vec<Attribute>,
 }
 
+#[derive(Serialize)]
 pub struct Class {
 	pub name: String,
 	pub namespace: Option<String>,
