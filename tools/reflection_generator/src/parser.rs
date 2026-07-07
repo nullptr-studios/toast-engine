@@ -408,7 +408,7 @@ pub fn attrs_to_json(attrs: &[Attribute]) -> json_t {
 }
 
 
-pub fn infer_field_type(type_name: &str) -> FieldType {
+fn infer_field_type(type_name: &str) -> FieldType {
     let base = type_name.trim()
         .trim_start_matches("toast::")
         .trim_start_matches("std::")

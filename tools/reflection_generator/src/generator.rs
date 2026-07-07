@@ -1,6 +1,6 @@
 //! Converts parsed Class structs into NodeInfo data and emits C++ files via Jinja2 templates
 
-use crate::parser::{FieldType, attrs_to_json, infer_field_type};
+use crate::parser::{FieldType, attrs_to_json};
 use crate::*;
 use serde::Serialize;
 use serde_json::{to_value, Value as json_t};
