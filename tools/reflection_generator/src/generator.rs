@@ -17,20 +17,10 @@ pub struct NodeInfo {
     pub functions:   TickFunctions,
     pub methods:     Vec<FunctionInfo>,
     pub groups:      Vec<GroupInfo>,
-    pub global_fields: Vec<FieldInfo>,
+    pub global_fields: Vec<Field>,
     /// Path relative to --include-root
     pub source_file: String,
     pub is_interface: bool,
-}
-
-#[derive(Serialize)]
-pub struct FieldInfo {
-    pub name:       String,
-    pub typename:   String,
-    pub field_type: FieldType,
-    pub is_array:   bool,
-    pub attributes: json_t,
-    pub default:    Option<String>,
 }
 
 #[derive(Serialize)]
@@ -63,13 +53,13 @@ pub struct TickFunctions {
 pub struct GroupInfo {
     pub name:      String,
     pub subgroups: Vec<SubgroupInfo>,
-    pub fields:    Vec<FieldInfo>,
+    pub fields:    Vec<Field>,
 }
 
 #[derive(Serialize)]
 pub struct SubgroupInfo {
     pub name:   String,
-    pub fields: Vec<FieldInfo>,
+    pub fields: Vec<Field>,
 }
 
 
@@ -77,17 +67,6 @@ pub struct SubgroupInfo {
 
 fn attr_arg(attrs: &[Attribute], name: &str) -> Option<std::string::String> {
     attrs.iter().find(|a| a.name == name).and_then(|a| a.args.first().cloned())
-}
-
-fn build_field(field: &Field) -> FieldInfo {
-    FieldInfo {
-        name:       field.name.clone(),
-        typename:   field.typename.clone(),
-        field_type: infer_field_type(&field.typename),
-        is_array:   field.typename.contains("vector<"),
-        attributes: attrs_to_json(&field.attributes),
-        default:    field.default.clone(),
-    }
 }
 
 fn build_method(func: &Function) -> FunctionInfo {
@@ -150,17 +129,17 @@ pub fn build_node(class: &Class, source_file: &str) -> NodeInfo {
     };
 
     // flatten fields into global / group / subgroup buckets so the template can emit a single
-    // flat std::array<FieldInfo> and index back into it per group/subgroup
-    let mut global_fields: Vec<FieldInfo> = Vec::new();
+    // flat std::array<Field> and index back into it per group/subgroup
+    let mut global_fields: Vec<Field> = Vec::new();
     let mut group_map: std::collections::BTreeMap<
         std::string::String,
-        (Vec<FieldInfo>, std::collections::BTreeMap<std::string::String, Vec<FieldInfo>>),
+        (Vec<Field>, std::collections::BTreeMap<std::string::String, Vec<Field>>),
         > = std::collections::BTreeMap::new();
 
     for field in &class.fields {
         let group    = attr_arg(&field.attributes, "Group");
         let subgroup = attr_arg(&field.attributes, "Subgroup");
-        let fi       = build_field(field);
+        let fi       = field.clone();
 
         match (group, subgroup) {
             (Some(g), Some(sg)) => { group_map.entry(g).or_default().1.entry(sg).or_default().push(fi); }
@@ -216,9 +195,9 @@ fn build_template_context(node: &NodeInfo) -> json_t {
     let mut all_fields_flat: Vec<json_t>  = Vec::new();
     let mut global_field_indices: Vec<usize> = Vec::new();
 
-    let augment_field = |f: &FieldInfo, idx: usize| -> json_t {
+    let augment_field = |f: &Field, idx: usize| -> json_t {
         // attrs_list: all attributes kept as metadata (Name, Group, Subgroup, etc.)
-        let attrs_list: Vec<json_t> = if let json_t::Object(map) = &f.attributes {
+        let attrs_list: Vec<json_t> = if let json_t::Object(map) = &f.attrib_json {
             map.iter()
                 .map(|(k, v)| serde_json::json!({ "name": k, "args": v }))
                 .collect()
@@ -234,7 +213,7 @@ fn build_template_context(node: &NodeInfo) -> json_t {
             "field_type":     to_value(&f.field_type).unwrap(),
             "is_array":       f.is_array,
             "is_asset_handle": f.typename.contains("AssetHandle<"),
-            "attributes":     f.attributes,
+            "attributes":     f.attrib_json,
             "attrs_list":     attrs_list,
             "default":        f.default,
         })

@@ -6,7 +6,7 @@ use tree_sitter::{Parser, Query, QueryCursor, StreamingIterator};
 use serde_json::{Value as json_t};
 use serde::Serialize;
 
-#[derive(Serialize)]
+#[derive(Serialize,Clone)]
 pub enum FieldType {
     #[serde(rename = "bool_t")]        Bool,
     #[serde(rename = "int_t")]         Int,
@@ -32,7 +32,7 @@ pub struct Parent {
     pub namespace: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct Field {
     pub name: String,
     pub typename: String,
@@ -53,7 +53,7 @@ pub struct Parameter {
     pub default: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize,Clone)]
 pub struct Function {
     pub name: String,
     pub return_type: String,
