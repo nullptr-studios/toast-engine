@@ -8,8 +8,8 @@ pub use generator::{NodeInfo, build_node, generate_json, generate_files, validat
 
 // tree-sitter sees TOAST_API and __declspec attributes as identifiers that break field parsing
 pub fn strip_export_macros(source: &str) -> String {
-	source
-		.replace("TOAST_API ", "")
-		.replace("__declspec(dllexport) ", "")
-		.replace("__declspec(dllimport) ", "")
+    source
+        .replace("TOAST_API ", "")
+        .replace("__declspec(dllexport) ", "")
+        .replace("__declspec(dllimport) ", "")
 }
