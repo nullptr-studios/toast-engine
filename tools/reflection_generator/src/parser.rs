@@ -10,7 +10,7 @@ pub struct Attribute {
     pub args: Vec<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize,Clone)]
 pub struct Parent {
     pub name: String,
     pub namespace: Option<String>,
@@ -36,8 +36,8 @@ pub struct Function {
     pub name: String,
     pub return_type: String,
     pub parameters: Vec<Parameter>,
-    pub is_const: bool,
     pub attributes: Vec<Attribute>,
+    pub is_const: bool,
 }
 
 #[derive(Serialize)]

@@ -1,6 +1,6 @@
 //! Converts parsed Class structs into NodeInfo data and emits C++ files via Jinja2 templates
 
-use crate::{Class, Field, Function, Attribute};
+use crate::{Class, Field, Function, Attribute, Parent};
 use serde::Serialize;
 use serde_json::{to_value, Value as json_t};
 use minijinja::Environment;
@@ -11,7 +11,7 @@ use std::fs;
 pub struct NodeInfo {
     pub name:        String,
     pub namespace:   Option<String>,
-    pub parent:      Option<ParentInfo>,
+    pub parent:      Option<Parent>,
     pub attributes:  json_t,
     pub functions:   TickFunctions,
     pub methods:     Vec<FunctionInfo>,
@@ -244,7 +244,7 @@ pub fn build_node(class: &Class, source_file: &str) -> NodeInfo {
     NodeInfo {
         name:         class.name.clone(),
         namespace:    class.namespace.clone(),
-        parent:       class.parent.as_ref().map(|p| ParentInfo { name: p.name.clone(), namespace: p.namespace.clone() }),
+        parent:       class.parent.clone(),
         attributes:   attrs_to_json(&class.attributes),
         functions,
         methods:      class.methods.iter().map(build_method).collect(),
