@@ -58,7 +58,10 @@ pub struct Function {
     pub name: String,
     pub return_type: String,
     pub parameters: Vec<Parameter>,
+    #[serde(skip)]
     pub attributes: Vec<Attribute>,
+    #[serde(rename = "attributes")]
+    pub attrib_json: json_t,
     pub is_const: bool,
 }
 
@@ -203,7 +206,7 @@ fn get_methods(node: tree_sitter::Node, source: &str) -> Vec<Function> {
         if !all_attrs.iter().any(|a| a.name == "Reflect") {
             continue;
         }
-        let attributes = all_attrs.into_iter().filter(|a| a.name != "Reflect").collect();
+        let attributes: Vec<Attribute> = all_attrs.into_iter().filter(|a| a.name != "Reflect").collect();
 
         let name = source[name_node.byte_range()].to_string();
         if methods.iter().any(|f: &Function| f.name == name) {
@@ -215,7 +218,8 @@ fn get_methods(node: tree_sitter::Node, source: &str) -> Vec<Function> {
             return_type: get_return_type(decl, func_decl, source),
             parameters: get_parameters(func_decl, source),
             is_const: is_const_method(func_decl, source),
-            attributes,
+            attributes: attributes.clone(),
+            attrib_json: attrs_to_json(&attributes),
         });
     }
     methods

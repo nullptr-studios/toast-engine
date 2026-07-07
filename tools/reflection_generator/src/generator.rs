@@ -15,21 +15,12 @@ pub struct NodeInfo {
     pub parent:      Option<Parent>,
     pub attributes:  json_t,
     pub functions:   TickFunctions,
-    pub methods:     Vec<FunctionInfo>,
+    pub methods:     Vec<Function>,
     pub groups:      Vec<GroupInfo>,
     pub global_fields: Vec<Field>,
     /// Path relative to --include-root
     pub source_file: String,
     pub is_interface: bool,
-}
-
-#[derive(Serialize)]
-pub struct FunctionInfo {
-    pub name:        String,
-    pub return_type: String,
-    pub parameters:  Vec<Parameter>,
-    #[serde(skip)]
-    pub is_const:    bool,
 }
 
 #[derive(Serialize)]
@@ -67,15 +58,6 @@ pub struct SubgroupInfo {
 
 fn attr_arg(attrs: &[Attribute], name: &str) -> Option<std::string::String> {
     attrs.iter().find(|a| a.name == name).and_then(|a| a.args.first().cloned())
-}
-
-fn build_method(func: &Function) -> FunctionInfo {
-    FunctionInfo {
-        name:        func.name.clone(),
-        return_type: func.return_type.clone(),
-        parameters:  func.parameters.clone(),
-        is_const:    func.is_const,
-    }
 }
 
 const RESERVED_FIELD_NAMES: &[&str] = &["m_uid", "m_name", "m_local_enabled", "m_parent", "m_source_prefab"];
@@ -164,7 +146,7 @@ pub fn build_node(class: &Class, source_file: &str) -> NodeInfo {
         parent:       class.parent.clone(),
         attributes:   attrs_to_json(&class.attributes),
         functions,
-        methods:      class.methods.iter().map(build_method).collect(),
+        methods:      class.methods.clone(),
         groups,
         global_fields,
         source_file:  source_file.to_string(),
