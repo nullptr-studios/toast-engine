@@ -31,6 +31,8 @@ public:
 	auto shouldClose() -> bool;
 	void test();
 
+	void reloadSettings();
+
 	// window
 	void createSDLWindow(const char*);
 	void createAvaloniaWindow();

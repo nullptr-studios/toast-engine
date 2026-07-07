@@ -71,7 +71,7 @@ public partial class ToastEngine : IDisposable {
 		m_gameInstance = m_gameCreate?.Invoke() ?? IntPtr.Zero;
 
 		toast_set_working_directory(
-			Path.Combine(ProjectPath, "assets"),
+			ProjectPath,
 			Path.Combine(ProjectPath, "artworks"),
 			Path.Combine(ProjectPath, ".toast"),
 			Path.Combine(ProjectPath, ".toast", "saved_data"),
@@ -240,7 +240,7 @@ public partial class ToastEngine : IDisposable {
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial void toast_set_working_directory(
-		string assets, string artworks, string cache, string saved, string core);
+		string project, string artworks, string cache, string saved, string core);
 
 	[LibraryImport(EngineLib)]
 	private static partial int toast_viewport_get_frame(IntPtr dst, uint dstCapacity, out ToastViewportFrame outFrame);
@@ -276,6 +276,13 @@ public partial class ToastEngine : IDisposable {
 
 	public static void ReloadManifest() {
 		toast_reload_manifest();
+	}
+
+	[LibraryImport(EngineLib)]
+	private static partial void toast_reload_project_settings();
+
+	public static void ReloadProjectSettings() {
+		if (IsEngineReady) toast_reload_project_settings();
 	}
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]

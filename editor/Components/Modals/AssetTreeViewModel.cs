@@ -88,11 +88,17 @@ public class AssetTreeViewModel : PickerViewModel {
 
 	public AssetTreeViewModel(string? typeFilter = null) {
 		m_filter = typeFilter;
-		if (ProjectContext.IsInitialized) {
-			var root = new AssetTreeNode(ProjectContext.AssetsPath, typeFilter);
-			m_roots.Add(root);
-			m_filtered.Add(root);
+		if (!ProjectContext.IsInitialized) return;
+
+		// One root per content database, plus core://
+		foreach (var dbRoot in ProjectContext.DatabaseRoots) {
+			var node = new AssetTreeNode(dbRoot, typeFilter);
+			m_roots.Add(node);
+			m_filtered.Add(node);
 		}
+		var coreNode = new AssetTreeNode(ProjectContext.CorePath, typeFilter);
+		m_roots.Add(coreNode);
+		m_filtered.Add(coreNode);
 	}
 
 	public override string WindowTitle => "Select an Asset...";

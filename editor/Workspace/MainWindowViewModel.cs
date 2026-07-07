@@ -115,6 +115,22 @@ public partial class MainWindowViewModel : ViewModelBase {
 		return m_autosave.RequestAutosave();
 	}
 
+	[RelayCommand]
+	private void OpenProjectSettings() {
+		if (!ProjectContext.IsInitialized) return;
+
+		// Find the .toast project file in the project root
+		var toastFile = Directory.EnumerateFiles(ProjectContext.ProjectPath, "*.toast").FirstOrDefault();
+		if (toastFile is null) return;
+
+		var virtualPath = $"project://{Path.GetFileName(toastFile)}";
+		var definition  = new ProjectSettingsAsset();
+
+		// Use the filename as a synthetic uid so the editor can track the open file
+		m_dockFactory.OpenGenericEditor(Path.GetFileNameWithoutExtension(toastFile), virtualPath, definition);
+		GenericEditorVisible = true;
+	}
+
 	partial void OnHierarchyVisibleChanged(bool value) {
 		if (value != m_dockFactory.IsToolVisible("Hierarchy"))
 			m_dockFactory.ToggleTool("Hierarchy");
@@ -292,6 +308,7 @@ public partial class MainWindowViewModel : ViewModelBase {
 		var tasks = new List<LoaderTask>();
 		string playerPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "tools", "player"));
 		string toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../toast_engine"));
+		string packerPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../packer"));
 		string outputDirectory = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, "build"));
 		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
 
@@ -323,11 +340,11 @@ public partial class MainWindowViewModel : ViewModelBase {
 		
 		tasks.Add(LoaderTask.Run("dotnet publish engine://tools/player -c Release", "dotnet", $"publish {playerPath} -c Release p:PublishAot=true -p:PublishSingleFile=true -p:OptimizationPreference=Speed -o \"{outputDirectory}\""));
 		// TODO: This should be on release
-		tasks.Add(LoaderTask.Run("cmake lib/ -B cache://cmake_cache", "cmake", $"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH={toastPath}"));
-		tasks.Add(LoaderTask.Run("cmake --build cache://cmake_cache", "cmake", "--build .toast/cmake_cache"));
+		tasks.Add(LoaderTask.Run("cmake lib/ -B cache://cmake_release_cache", "cmake", $"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=Release"));
+		tasks.Add(LoaderTask.Run("cmake --build cache://cmake_release_cache", "cmake", "--build .toast/cmake_release_cache --config Release --parallel"));
 		tasks.Add(LoaderTask.Do("copy libraries --path build://", CopyDlls));
-		// TODO: Pack assets
-		// TODO: Pack core
+		tasks.Add(LoaderTask.Run("./packer assets:// build/assets.pak", $"./{packerPath}/packer", $"{ProjectContext.AssetsPath} {outputDirectory}/assets.pak"));
+		tasks.Add(LoaderTask.Run("./packer core:// build/core.pak", $"./{packerPath}/packer", $"{ProjectContext.CorePath} {outputDirectory}/core.pak"));
 	}
 	
 }

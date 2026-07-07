@@ -1120,7 +1120,6 @@ void WorldTestAccess::initAssetManager(std::string_view assets_dir, std::string_
 	std::filesystem::path cache_path {std::string(cache_dir)};
 	assets::AssetManager::setPaths(
 	    assets::Paths {
-	      .assets = assets_path,
 	      .artworks = assets_path,
 	      .cache = cache_path,
 	      .saved = assets_path,

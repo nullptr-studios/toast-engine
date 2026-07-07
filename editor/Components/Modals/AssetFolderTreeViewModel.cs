@@ -54,11 +54,19 @@ public class AssetFolderTreeViewModel : PickerViewModel {
 	private readonly ObservableCollection<AssetFolderNode> m_roots = [];
 
 	public AssetFolderTreeViewModel(bool useArtwork = false) {
-		if (ProjectContext.IsInitialized) {
-			var rootPath = useArtwork ? ProjectContext.ArtworkPath : ProjectContext.AssetsPath;
-			var root = new AssetFolderNode(rootPath);
+		if (!ProjectContext.IsInitialized) return;
+
+		if (useArtwork) {
+			var root = new AssetFolderNode(ProjectContext.ArtworkPath);
 			m_roots.Add(root);
 			m_filtered.Add(root);
+		} else {
+			// writable content databases only (core is read-only, excluded)
+			foreach (var dbRoot in ProjectContext.DatabaseRoots) {
+				var node = new AssetFolderNode(dbRoot);
+				m_roots.Add(node);
+				m_filtered.Add(node);
+			}
 		}
 	}
 

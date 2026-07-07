@@ -496,8 +496,14 @@ public partial class GenericViewModel : Tool, IAutosavable {
 
 		var realPath = ProjectContext.Resolve(CurrentPath);
 		await File.WriteAllTextAsync(realPath, SerializeDocument());
-		MetaFile.Touch(CurrentPath);
-		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
+
+		if (Definition is ProjectSettingsAsset) {
+			ProjectContext.ReloadProjectSettings();
+		} else {
+			MetaFile.Touch(CurrentPath);
+			AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
+		}
+
 		IsDirty = false;
 	}
 

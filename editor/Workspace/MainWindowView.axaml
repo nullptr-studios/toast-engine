@@ -9,7 +9,7 @@
         x:Class="editor.Workspace.MainWindowView"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Resources/avalonia-logo.ico"
-        Title="editor"
+        Title="Editor - Toast Engine"
         ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaTitleBarHeightHint="-1"
         WindowDecorations="BorderOnly"
@@ -74,7 +74,8 @@
 					          FontWeight="Normal" />
 					<Separator />
 					<MenuItem Header="_Project settings"
-					          FontWeight="Normal" />
+					          FontWeight="Normal"
+					          Command="{Binding OpenProjectSettingsCommand}" />
 					<MenuItem Header="_Toast settings"
 					          FontWeight="Normal" />
 					<Separator />

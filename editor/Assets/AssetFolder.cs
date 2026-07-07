@@ -27,6 +27,11 @@ public class AssetFolder : INotifyPropertyChanged {
 	public AssetFolder? Parent { get; }
 	public AssetBrowserViewModel? Owner { get; set; }
 
+	public bool CanModify =>
+		ProjectContext.IsInitialized &&
+		ProjectContext.IsUnderContentDatabase(Filepath) &&
+		!ProjectContext.IsDatabaseRoot(Filepath);
+
 	public bool IsExpanded {
 		get => m_isExpanded;
 		set {

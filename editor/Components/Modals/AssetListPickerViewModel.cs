@@ -64,7 +64,7 @@ public class AssetListPickerViewModel : PickerViewModel {
 
 	private static IEnumerable<AssetPickerItem> EnumerateAssets(string? typeFilter) {
 		if (!ProjectContext.IsInitialized) yield break;
-		foreach (var root in new[] { ProjectContext.AssetsPath, ProjectContext.CorePath }) {
+		foreach (var root in ProjectContext.DatabaseRoots.Append(ProjectContext.CorePath)) {
 			if (!Directory.Exists(root)) continue;
 			foreach (var file in Flatten(new AssetFolder(root))) {
 				if (typeFilter is not null &&

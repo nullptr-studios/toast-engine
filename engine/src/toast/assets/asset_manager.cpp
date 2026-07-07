@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 #include <toast/log.hpp>
+#include <toast/project_settings.hpp>
 
 namespace assets {
 
@@ -253,51 +254,69 @@ void AssetManager::reloadManifest() {
 	std::lock_guard lock(mutex);
 	manifest.clear();
 
-	auto db_path = resolveVirtualPath("cache://database.json");
-	if (!db_path || !std::filesystem::exists(*db_path)) {
-		TOAST_WARN("AssetManager", "Asset database not found at {}", db_path ? db_path->string() : "invalid path");
-		return;
+	// Build the list of per-database manifest paths:
+	//   cache://<db>.json  for each content database
+	//   cache://core.json  for the engine built-ins
+	std::vector<std::string> manifest_uris;
+	if (toast::ProjectSettings* ps = toast::ProjectSettings::get()) {
+		for (const auto& db : ps->databases()) {
+			manifest_uris.push_back("cache://" + db + ".json");
+		}
+	}
+	manifest_uris.emplace_back("cache://core.json");
+
+	// Load and merge every manifest file
+	auto load_manifest = [&](const std::string& uri) {
+		auto db_path = resolveVirtualPath(uri);
+		if (!db_path || !std::filesystem::exists(*db_path)) {
+			TOAST_WARN("AssetManager", "Manifest not found: {}", uri);
+			return;
+		}
+
+		auto raw_json = openFile(*db_path);
+		if (!raw_json) {
+			return;
+		}
+
+		try {
+			auto json = nlohmann::json::parse(raw_json->begin(), raw_json->end());
+
+			// an entry is a "uid": "virtual path" pair
+			auto load_collection = [&](std::string_view type) {
+				auto it = json.find(type);
+				if (it == json.end() || !it->is_object()) {
+					return;
+				}
+				for (const auto& [key, value] : it->items()) {
+					manifest[toast::UID::fromString(key)] = {value.get<std::string>(), std::string(type)};
+				}
+			};
+
+			load_collection("mesh");
+			load_collection("texture");
+			load_collection("schema");
+			load_collection("data");
+			load_collection("node");
+			load_collection("curve");
+			load_collection("audio_bank");
+			load_collection("audio_bus");
+			load_collection("audio_event");
+			load_collection("audio_port");
+			load_collection("audio_snapshot");
+			load_collection("audio_strings");
+			load_collection("audio_vca");
+			load_collection("haptic");
+			load_collection("input_action");
+			load_collection("input_layout");
+			load_collection("input_settings");
+		} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse manifest {}: {}", uri, e.what()); }
+	};
+
+	for (const auto& uri : manifest_uris) {
+		load_manifest(uri);
 	}
 
-	auto raw_json = openFile(*db_path);
-	if (!raw_json) {
-		return;
-	}
-
-	try {
-		auto json = nlohmann::json::parse(raw_json->begin(), raw_json->end());
-
-		// an entry is a "uid": "virtual path" pair
-		auto load_collection = [&](std::string_view type) {
-			auto it = json.find(type);
-			if (it == json.end() || !it->is_object()) {
-				return;
-			}
-			for (const auto& [key, value] : it->items()) {
-				manifest[toast::UID::fromString(key)] = {value.get<std::string>(), std::string(type)};
-			}
-		};
-
-		load_collection("mesh");
-		load_collection("texture");
-		load_collection("schema");
-		load_collection("data");
-		load_collection("node");
-		load_collection("curve");
-		load_collection("audio_bank");
-		load_collection("audio_bus");
-		load_collection("audio_event");
-		load_collection("audio_port");
-		load_collection("audio_snapshot");
-		load_collection("audio_strings");
-		load_collection("audio_vca");
-		load_collection("haptic");
-		load_collection("input_action");
-		load_collection("input_layout");
-		load_collection("input_settings");
-
-		TOAST_INFO("AssetManager", "Manifest reloaded: {} assets tracked", manifest.size());
-	} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse asset manifest: {}", e.what()); }
+	TOAST_INFO("AssetManager", "Manifest reloaded: {} assets tracked", manifest.size());
 }
 
 void AssetManager::clearUnusedAssets() {
@@ -313,30 +332,42 @@ void AssetManager::clearUnusedAssets() {
 }
 
 void AssetManager::setPaths(Paths&& paths) {
-	assets_path = std::move(paths.assets);
-	artworks_path = std::move(paths.artworks);
-	cache_path = std::move(paths.cache);
-	core_path = std::move(paths.core);
-	saved_path = std::move(paths.saved);
+	roots["project"] = std::move(paths.project);
+	roots["artwork"] = std::move(paths.artworks);
+	roots["cache"] = std::move(paths.cache);
+	roots["saved"] = std::move(paths.saved);
+	roots["core"] = std::move(paths.core);
+}
+
+void AssetManager::registerDatabase(std::string_view name, std::filesystem::path root) {
+	roots[std::string(name)] = std::move(root);
+}
+
+void AssetManager::clearDatabases() {
+	// Keep only the five fixed special schemes; erase everything else
+	std::erase_if(roots, [](const auto& kv) {
+		const auto& k = kv.first;
+		return k != "project" && k != "artwork" && k != "cache" && k != "saved" && k != "core";
+	});
+}
+
+auto AssetManager::projectRoot() -> const std::filesystem::path& {
+	static const std::filesystem::path empty;
+	auto it = roots.find("project");
+	return it != roots.end() ? it->second : empty;
 }
 
 auto AssetManager::resolveVirtualPath(std::string_view virtual_path) -> std::optional<std::filesystem::path> {
-	if (virtual_path.starts_with(assets_uri)) {
-		return assets_path / virtual_path.substr(assets_uri.size());
+	const auto sep = virtual_path.find("://");
+	if (sep == std::string_view::npos) {
+		return std::nullopt;
 	}
-	if (virtual_path.starts_with(artwork_uri)) {
-		return artworks_path / virtual_path.substr(artwork_uri.size());
+	const auto scheme = std::string(virtual_path.substr(0, sep));
+	const auto it = roots.find(scheme);
+	if (it == roots.end()) {
+		return std::nullopt;
 	}
-	if (virtual_path.starts_with(cache_uri)) {
-		return cache_path / virtual_path.substr(cache_uri.size());
-	}
-	if (virtual_path.starts_with(core_uri)) {
-		return core_path / virtual_path.substr(core_uri.size());
-	}
-	if (virtual_path.starts_with(saved_uri)) {
-		return saved_path / virtual_path.substr(saved_uri.size());
-	}
-	return std::nullopt;
+	return it->second / std::filesystem::path(virtual_path.substr(sep + 3));
 }
 
 auto AssetManager::openFile(const std::filesystem::path& path) -> std::optional<std::vector<uint8_t>> {
@@ -422,7 +453,9 @@ auto AssetManager::search(std::string_view query) -> std::vector<AssetHandle<Ass
 }
 
 auto AssetManager::getCachePath() const -> const std::filesystem::path& {
-	return cache_path;
+	static const std::filesystem::path empty;
+	auto it = roots.find("cache");
+	return it != roots.end() ? it->second : empty;
 }
 
 auto AssetManager::listByType(std::string_view type) -> std::vector<toast::UID> {

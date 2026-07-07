@@ -11,6 +11,7 @@
 #include "input/input_events.hpp"
 #include "input/input_system.hpp"
 #include "logger.hpp"
+#include "project_settings.hpp"
 #include "reflect/reflect.hpp"
 #include "renderer/sdl_output_target.hpp"
 #include "renderer/shader_compiler.hpp"
@@ -88,6 +89,7 @@ struct EnginePimpl {
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
 	std::unique_ptr<audio::AudioSystem> audio_system = nullptr;
+	std::unique_ptr<ProjectSettings> settings = nullptr;
 	Time time;
 	event::Listener listener;
 	toast::NodeRegistry reflection_registry;
@@ -144,6 +146,29 @@ void Engine::init() {
 	event::registerProtoEvents();
 	registerEngineTypes();
 
+	// Find the first .toast project file in the project root and load settings
+	{
+		std::filesystem::path toast_path;
+		const auto& proj_root = assets::AssetManager::projectRoot();
+		if (!proj_root.empty() && std::filesystem::is_directory(proj_root)) {
+			for (const auto& entry : std::filesystem::directory_iterator(proj_root)) {
+				if (entry.path().extension() == ".toast") {
+					toast_path = entry.path();
+					break;
+				}
+			}
+		}
+		m->settings = std::make_unique<ProjectSettings>(toast_path);
+	}
+
+	// Register content database VFS roots derived from project settings
+	{
+		const auto& proj_root = assets::AssetManager::projectRoot();
+		for (const auto& db : ProjectSettings::databases()) {
+			assets::AssetManager::registerDatabase(db, proj_root / db);
+		}
+	}
+
 	m->asset_manager = std::make_unique<assets::AssetManager>();
 
 	m->input_system = std::make_unique<input::InputSystem>();
@@ -173,6 +198,33 @@ void Engine::init() {
 	});
 
 	m->audio_system = std::make_unique<audio::AudioSystem>();
+}
+
+void Engine::reloadSettings() {
+	// Find the .toast project file in the project root
+	std::filesystem::path toast_path;
+	const auto& proj_root = assets::AssetManager::projectRoot();
+	if (!proj_root.empty() && std::filesystem::is_directory(proj_root)) {
+		for (const auto& entry : std::filesystem::directory_iterator(proj_root)) {
+			if (entry.path().extension() == ".toast") {
+				toast_path = entry.path();
+				break;
+			}
+		}
+	}
+
+	// Clear old content database routes and reload settings
+	assets::AssetManager::clearDatabases();
+	m->settings = std::make_unique<ProjectSettings>(toast_path);
+
+	// Re-register content databases from updated settings
+	for (const auto& db : ProjectSettings::databases()) {
+		assets::AssetManager::registerDatabase(db, proj_root / db);
+	}
+
+	if (m->asset_manager) {
+		m->asset_manager->reloadManifest();
+	}
 }
 
 void Engine::tick() {
@@ -434,9 +486,9 @@ void toast_destroy(engine_t* e) noexcept {
 }
 
 void toast_set_working_directory(
-    const char* assets, const char* artworks, const char* cache, const char* saved, const char* core
+    const char* project, const char* artworks, const char* cache, const char* saved, const char* core
 ) noexcept {
-	assets::AssetManager::setPaths({.assets = assets, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
+	assets::AssetManager::setPaths({.project = project, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
 }
 
 auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) noexcept -> int {
@@ -546,6 +598,10 @@ void toast_reload_manifest() noexcept {
 	auto& mgr = assets::AssetManager::get();
 	mgr.clearUnusedAssets();
 	mgr.reloadManifest();
+}
+
+void toast_reload_project_settings() noexcept {
+	toast::Engine::get()->reloadSettings();
 }
 
 void toast_haptics_test(const char* toml_text) noexcept {

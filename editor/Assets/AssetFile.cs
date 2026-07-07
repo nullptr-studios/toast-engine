@@ -38,6 +38,9 @@ public class AssetFile : INotifyPropertyChanged {
 
 	public AssetBrowserViewModel? Owner { get; set; }
 
+	public bool CanModify =>
+		ProjectContext.IsInitialized && ProjectContext.IsUnderContentDatabase(Filepath);
+
 	public bool IsSelected {
 		get => m_isSelected;
 		set {
