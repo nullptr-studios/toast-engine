@@ -186,7 +186,8 @@ auto Node3D::worldPos() const -> const glm::vec3& {
 }
 
 void Node3D::worldRotQuat(glm::quat wrot) {
-	const glm::quat parent_world_rot = m_transform_parent.exists() ? m_transform_parent->worldRotQuat() : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	const glm::quat parent_world_rot =
+	    m_transform_parent.exists() ? m_transform_parent->worldRotQuat() : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	m_rotation = glm::normalize(glm::inverse(parent_world_rot) * wrot);
 	m_dirty_local = true;
 	m_dirty_world = true;
