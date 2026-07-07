@@ -1,0 +1,19 @@
+[package]
+name = "asset_packer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+lz4 = "1.23.1"
+
+[[bin]]
+name = "packer"
+path = "src/packer.rs"
+
+[[bin]]
+name = "unpacker"
+path = "src/unpacker.rs"
+
+[[bin]]
+name = "pack_viewer"
+path = "src/pack_viewer.rs"

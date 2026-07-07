@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -270,4 +273,61 @@ public partial class MainWindowViewModel : ViewModelBase {
 	private async Task SaveAllNodes() {
 		foreach (var ws in m_workspaces.Values) await ws.Save();
 	}
+
+	[RelayCommand]
+	private async Task ReloadGame() {
+		var tasks = new List<LoaderTask>();
+		string toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../toast_engine"));
+		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
+		
+		tasks.Add(LoaderTask.Run("cmake lib/ -B cache://cmake_cache", "cmake", $"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH={toastPath}"));
+		tasks.Add(LoaderTask.Run("cmake --build cache://cmake_cache", "cmake", "--build .toast/cmake_cache"));
+		// TODO: release game DLL on cache://game_temp.so
+		// TODO: overwite game DLL with new on ProjectPath/build
+		// TODO: load game DLL back again
+	}
+	
+	[RelayCommand]
+	private async Task CompileGameRelease() {
+		var tasks = new List<LoaderTask>();
+		string playerPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "tools", "player"));
+		string toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../toast_engine"));
+		string outputDirectory = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, "build"));
+		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
+
+		async Task CopyDlls(Action<string> log) {
+			string binPath = Path.Combine(toastPath, "bin");
+			string libPath = Path.Combine(outputDirectory, "lib");
+			string libExt = OperatingSystem.IsWindows() ? ".dll" : ".so";
+			string exeExt = OperatingSystem.IsWindows() ? ".exe" : "";
+			
+		   string[] sources = [binPath, libPath];
+		   string[] extensions = new[] { libExt, exeExt }.Where(ext => !string.IsNullOrEmpty(ext)).ToArray();
+
+		   foreach (string source in sources) {
+		       if (!Directory.Exists(source)) {
+		           log($"error: Directory {source} doesnt exist");
+		           continue;
+		       }
+		       
+		       var files = Directory.EnumerateFiles(source, "*.*", SearchOption.TopDirectoryOnly)
+		                            .Where(file => extensions.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase));
+
+		       foreach (string file in files) {
+		           string destFile = Path.Combine(outputDirectory, Path.GetFileName(file));
+		           log($"Copying {Path.GetFileName(file)} a {outputDirectory}");
+		           await Task.Run(() => File.Copy(file, destFile, overwrite: true));
+		       }
+		   }
+		}
+		
+		tasks.Add(LoaderTask.Run("dotnet publish engine://tools/player -c Release", "dotnet", $"publish {playerPath} -c Release p:PublishAot=true -p:PublishSingleFile=true -p:OptimizationPreference=Speed -o \"{outputDirectory}\""));
+		// TODO: This should be on release
+		tasks.Add(LoaderTask.Run("cmake lib/ -B cache://cmake_cache", "cmake", $"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH={toastPath}"));
+		tasks.Add(LoaderTask.Run("cmake --build cache://cmake_cache", "cmake", "--build .toast/cmake_cache"));
+		tasks.Add(LoaderTask.Do("copy libraries --path build://", CopyDlls));
+		// TODO: Pack assets
+		// TODO: Pack core
+	}
+	
 }
