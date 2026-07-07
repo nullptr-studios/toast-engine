@@ -24,9 +24,10 @@ pub struct Field {
     pub attributes: Vec<Attribute>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize,Clone)]
 pub struct Parameter {
     pub name: String,
+    #[serde(rename = "type")]
     pub type_name: String,
     pub default: Option<String>,
 }

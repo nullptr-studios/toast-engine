@@ -1,6 +1,6 @@
 //! Converts parsed Class structs into NodeInfo data and emits C++ files via Jinja2 templates
 
-use crate::{Class, Field, Function, Attribute, Parent};
+use crate::*;
 use serde::Serialize;
 use serde_json::{to_value, Value as json_t};
 use minijinja::Environment;
@@ -26,23 +26,9 @@ pub struct NodeInfo {
 pub struct FunctionInfo {
     pub name:        String,
     pub return_type: String,
-    pub parameters:  Vec<ParameterInfo>,
+    pub parameters:  Vec<Parameter>,
     #[serde(skip)]
     pub is_const:    bool,
-}
-
-#[derive(Serialize)]
-pub struct ParameterInfo {
-    pub name:     String,
-    #[serde(rename = "type")]
-    pub typename: String,
-    pub default:  Option<String>,
-}
-
-#[derive(Serialize)]
-pub struct ParentInfo {
-    pub name:      String,
-    pub namespace: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -152,11 +138,7 @@ fn build_method(func: &Function) -> FunctionInfo {
     FunctionInfo {
         name:        func.name.clone(),
         return_type: func.return_type.clone(),
-        parameters:  func.parameters.iter().map(|p| ParameterInfo {
-            name:     p.name.clone(),
-            typename: p.type_name.clone(),
-            default:  p.default.clone(),
-        }).collect(),
+        parameters:  func.parameters.clone(),
         is_const:    func.is_const,
     }
 }
@@ -389,7 +371,7 @@ fn build_template_context(node: &NodeInfo) -> json_t {
                 "index":           i,
                 "arg_name":        format!("a{i}"),
                 "name":            p.name,
-                "type":            p.typename,
+                "type":            p.type_name,
                 "default":         p.default,
                 "default_escaped": p.default.as_deref().map(cpp_escape),
             })
