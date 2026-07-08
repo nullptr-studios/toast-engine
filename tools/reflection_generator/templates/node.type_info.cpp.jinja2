@@ -1,0 +1,26 @@
+// ============================================================
+// AUTO-GENERATED FILE - DO NOT MODIFY DIRECTLY
+// Changes will not persist
+// ============================================================
+
+// clang-format off
+{% if parent_snake_name %}#include "{{ parent_snake_name }}.generated.hpp"
+{% endif %}
+#include "{{ snake_name }}.generated.hpp"
+// clang-format on
+
+namespace toast {
+
+TOAST_API const toast::NodeInfo Reflect<{{ qualified_name }}>::type_info = {
+	.type       = name,
+	.base_type  = {% if parent_qualified_name %}&Reflect<{{ parent_qualified_name }}>::type_info{% else %}nullptr{% endif %},
+	.all_fields = _all_field_info,
+	.fields     = field_info,
+	.groups     = group_info,
+	.methods    = _method_info,
+	.functions  = tick_functions,
+	.construct  = {% if is_interface %}nullptr{% else %}reinterpret_cast<toast::NodeInfo::Factory>(&_detail::{{ snake_name }}_construct){% endif %},
+	.destroy    = {% if is_interface %}nullptr{% else %}reinterpret_cast<toast::NodeInfo::Deleter>(&_detail::{{ snake_name }}_delete){% endif %},
+};
+
+} // namespace toast

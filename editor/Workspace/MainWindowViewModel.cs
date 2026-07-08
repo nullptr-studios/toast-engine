@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -79,7 +80,11 @@ public partial class MainWindowViewModel : ViewModelBase {
 			OnPropertyChanged(nameof(CurveEditorVisible));
 		};
 
-		m_dockFactory.ActiveDockableChanged += (_, _) => SyncActiveWorkspace();
+		m_dockFactory.ActiveDockableChanged += (_, _) => {
+			SyncActiveWorkspace();
+			PlayCommand.NotifyCanExecuteChanged();
+			PlayInWindowCommand.NotifyCanExecuteChanged();
+		};
 
 		WorkspaceState.Modified += () => {
 			if (m_dockFactory.ActiveWorkspace is { } ws) ws.IsModified = true;
@@ -94,6 +99,8 @@ public partial class MainWindowViewModel : ViewModelBase {
 			SaveCurrentNodeCommand.NotifyCanExecuteChanged();
 			SaveCurrentNodeAsCommand.NotifyCanExecuteChanged();
 			SaveAllNodesCommand.NotifyCanExecuteChanged();
+			PlayCommand.NotifyCanExecuteChanged();
+			PlayInWindowCommand.NotifyCanExecuteChanged();
 		};
 
 		m_autosave = new AutosaveService(EnumerateAutosavables);
@@ -290,61 +297,242 @@ public partial class MainWindowViewModel : ViewModelBase {
 		foreach (var ws in m_workspaces.Values) await ws.Save();
 	}
 
-	[RelayCommand]
-	private async Task ReloadGame() {
-		var tasks = new List<LoaderTask>();
-		string toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../toast_engine"));
-		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
-		
-		tasks.Add(LoaderTask.Run("cmake lib/ -B cache://cmake_cache", "cmake", $"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH={toastPath}"));
-		tasks.Add(LoaderTask.Run("cmake --build cache://cmake_cache", "cmake", "--build .toast/cmake_cache"));
-		// TODO: release game DLL on cache://game_temp.so
-		// TODO: overwite game DLL with new on ProjectPath/build
-		// TODO: load game DLL back again
+	private static bool CanReloadGame() => ProjectContext.IsInitialized;
+
+	private static bool CanCompileGameRelease() => ProjectContext.IsInitialized;
+
+	private bool CanPlay() => m_dockFactory.ActiveWorkspace is { } ws && ws.TogglePlayCommand.CanExecute(null);
+
+	private bool CanPlayInWindow() => m_dockFactory.ActiveWorkspace is { } ws && ws.TogglePlayExternalCommand.CanExecute(null);
+
+	[RelayCommand(CanExecute = nameof(CanPlay))]
+	private void Play() {
+		if (m_dockFactory.ActiveWorkspace is { } ws)
+			ws.TogglePlayCommand.Execute(null);
 	}
-	
-	[RelayCommand]
-	private async Task CompileGameRelease() {
-		var tasks = new List<LoaderTask>();
-		string playerPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "tools", "player"));
-		string toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../toast_engine"));
-		string packerPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../packer"));
-		string outputDirectory = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, "build"));
+
+	[RelayCommand(CanExecute = nameof(CanPlayInWindow))]
+	private void PlayInWindow() {
+		if (m_dockFactory.ActiveWorkspace is { } ws)
+			ws.TogglePlayExternalCommand.Execute(null);
+	}
+
+	[RelayCommand(CanExecute = nameof(CanReloadGame))]
+	private async Task ReloadGame() {
+		if (App.MainWindow is not { } owner) return;
+		if (!ProjectContext.IsInitialized) return;
+
+		string toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "toast_engine"));
 		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
+
+		var tasks = new List<LoaderTask>();
+
+		// Generate game reflection data before cmake
+		var libSrc = Path.Combine(ProjectContext.ProjectPath, "lib", "src");
+		var libGenerated = Path.Combine(ProjectContext.ProjectPath, "lib", "generated");
+		Directory.CreateDirectory(libGenerated);
+
+		var exeExt = OperatingSystem.IsWindows() ? ".exe" : "";
+		var refgen = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+			"..", "reflection_generator", $"reflection_generator{exeExt}"));
+		var gameDb = ProjectContext.Resolve("cache://game_reflect.json");
+		tasks.Add(LoaderTask.Run("Generate game reflection", refgen,
+			$"--database \"{gameDb}\" --output \"{libGenerated}\" --input \"{libSrc}\" " +
+			$"--include-root \"{libSrc}\" --register-fn registerGameTypes --attribute Game"));
+
+		// Copy engine reflection database to cache
+		tasks.Add(LoaderTask.Do("Copy engine reflection", async log => {
+			var src = Path.Combine(ProjectContext.CorePath, "engine_reflect.json");
+			var dst = ProjectContext.Resolve("cache://engine_reflect.json");
+			if (File.Exists(src)) {
+				File.Copy(src, dst, true);
+				log("Copied engine_reflect.json");
+			}
+			await Task.CompletedTask;
+		}));
+
+		tasks.Add(LoaderTask.Run(
+			"cmake configure",
+			"cmake",
+			$"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH={toastPath}"
+		));
+		tasks.Add(LoaderTask.Run(
+			"cmake build",
+			"cmake",
+			"--build .toast/cmake_cache"
+		));
+
+		tasks.Add(LoaderTask.Do("Reload game", async log => {
+			m_toast.ReloadGame();
+			await Task.CompletedTask;
+		}));
+
+		var vm = new LoaderViewModel(tasks) {
+			OnComplete = async () => {
+				ReflectionDatabase.Update();
+				AssetDatabase.RebuildAssetDatabase();
+				if (HierarchyViewModel.Current is { } hvm) {
+					hvm.SelectedNode = null;
+				}
+				await Task.CompletedTask;
+			}
+		};
+
+		await new SimpleLoaderWindow(vm).ShowDialog(owner);
+	}
+
+	[RelayCommand(CanExecute = nameof(CanCompileGameRelease))]
+	private async Task CompileGameRelease() {
+		if (App.MainWindow is not { } owner) return;
+		if (!ProjectContext.IsInitialized) return;
+
+		string playerPath   = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "tools", "player"));
+		string toastPath    = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "toast_engine"));
+		string packerBin    = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "packer", $"packer{(OperatingSystem.IsWindows() ? ".exe" : "")}"));
+		string outputDir    = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, "build"));
+		string stageRoot    = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, ".toast", "pack_stage"));
+		var cmakeGenerator  = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
+
+		Directory.CreateDirectory(outputDir);
 
 		async Task CopyDlls(Action<string> log) {
-			string binPath = Path.Combine(toastPath, "bin");
-			string libPath = Path.Combine(outputDirectory, "lib");
-			string libExt = OperatingSystem.IsWindows() ? ".dll" : ".so";
-			string exeExt = OperatingSystem.IsWindows() ? ".exe" : "";
-			
-		   string[] sources = [binPath, libPath];
-		   string[] extensions = new[] { libExt, exeExt }.Where(ext => !string.IsNullOrEmpty(ext)).ToArray();
-
-		   foreach (string source in sources) {
-		       if (!Directory.Exists(source)) {
-		           log($"error: Directory {source} doesnt exist");
-		           continue;
-		       }
-		       
-		       var files = Directory.EnumerateFiles(source, "*.*", SearchOption.TopDirectoryOnly)
-		                            .Where(file => extensions.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase));
-
-		       foreach (string file in files) {
-		           string destFile = Path.Combine(outputDirectory, Path.GetFileName(file));
-		           log($"Copying {Path.GetFileName(file)} a {outputDirectory}");
-		           await Task.Run(() => File.Copy(file, destFile, overwrite: true));
-		       }
-		   }
+			var libExt = OperatingSystem.IsWindows() ? ".dll" : ".so";
+			var exeExt = OperatingSystem.IsWindows() ? ".exe" : "";
+			var extensions = new[] { libExt, exeExt }.Where(e => !string.IsNullOrEmpty(e)).ToArray();
+			var sources = new[] {
+				Path.Combine(toastPath, "bin"),
+				Path.Combine(ProjectContext.ProjectPath, "build"),
+			};
+			foreach (var src in sources) {
+				if (!Directory.Exists(src)) { log($"warning: source dir not found: {src}"); continue; }
+				var files = Directory.EnumerateFiles(src, "*.*", SearchOption.TopDirectoryOnly)
+					.Where(f => extensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase));
+				foreach (var file in files) {
+					var dest = Path.Combine(outputDir, Path.GetFileName(file));
+					log($"  copy {Path.GetFileName(file)}");
+					await Task.Run(() => File.Copy(file, dest, overwrite: true));
+				}
+			}
 		}
-		
-		tasks.Add(LoaderTask.Run("dotnet publish engine://tools/player -c Release", "dotnet", $"publish {playerPath} -c Release p:PublishAot=true -p:PublishSingleFile=true -p:OptimizationPreference=Speed -o \"{outputDirectory}\""));
-		// TODO: This should be on release
-		tasks.Add(LoaderTask.Run("cmake lib/ -B cache://cmake_release_cache", "cmake", $"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=Release"));
-		tasks.Add(LoaderTask.Run("cmake --build cache://cmake_release_cache", "cmake", "--build .toast/cmake_release_cache --config Release --parallel"));
-		tasks.Add(LoaderTask.Do("copy libraries --path build://", CopyDlls));
-		tasks.Add(LoaderTask.Run("./packer assets:// build/assets.pak", $"./{packerPath}/packer", $"{ProjectContext.AssetsPath} {outputDirectory}/assets.pak"));
-		tasks.Add(LoaderTask.Run("./packer core:// build/core.pak", $"./{packerPath}/packer", $"{ProjectContext.CorePath} {outputDirectory}/core.pak"));
+
+		async Task CopyProjectToast(Action<string> log) {
+			var toastFile = Directory.EnumerateFiles(ProjectContext.ProjectPath, "*.toast").FirstOrDefault();
+			if (toastFile is null) { log("warning: no .toast file found in project root"); return; }
+			var dest = Path.Combine(outputDir, Path.GetFileName(toastFile));
+			log($"  copy {Path.GetFileName(toastFile)}");
+			await Task.Run(() => File.Copy(toastFile, dest, overwrite: true));
+		}
+
+		async Task BakeAndPack(Action<string> log, string dbName, string dbSourceDir, string manifestJsonPath) {
+			var stageDir = Path.Combine(stageRoot, dbName);
+			if (Directory.Exists(stageDir)) Directory.Delete(stageDir, recursive: true);
+			Directory.CreateDirectory(stageDir);
+
+			// Copy all source files into staging
+			log($"  staging {dbName}/ ...");
+			await Task.Run(() => {
+				foreach (var srcFile in Directory.EnumerateFiles(dbSourceDir, "*", SearchOption.AllDirectories)) {
+					var rel  = Path.GetRelativePath(dbSourceDir, srcFile);
+					var dest = Path.Combine(stageDir, rel);
+					Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+					File.Copy(srcFile, dest, overwrite: true);
+				}
+			});
+
+			// Read the manifest JSON to find all node UIDs, then overwrite their staged files with binary
+			log($"  baking nodes in {dbName}/ ...");
+			if (File.Exists(manifestJsonPath)) {
+				var manifestJson = JsonNode.Parse(File.ReadAllText(manifestJsonPath));
+				if (manifestJson?["node"] is JsonObject nodeCollection) {
+					foreach (var (uid, pathNode) in nodeCollection) {
+						var virtualPath = pathNode?.GetValue<string>();
+						if (virtualPath is null) continue;
+						var sep = virtualPath.IndexOf("://", StringComparison.Ordinal);
+						if (sep < 0) continue;
+						var rel  = virtualPath[(sep + 3)..];
+						var dest = Path.Combine(stageDir, rel.Replace('/', Path.DirectorySeparatorChar));
+						Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+						log($"    bake {rel}");
+						await Task.Run(() => ToastEngine.BakeAsset(uid, dest));
+					}
+				}
+			}
+
+			// Copy the manifest JSON into the stage folder root
+			var manifestDest = Path.Combine(stageDir, $"{dbName}.json");
+			if (File.Exists(manifestJsonPath)) {
+				log($"  copying manifest {dbName}.json");
+				await Task.Run(() => File.Copy(manifestJsonPath, manifestDest, overwrite: true));
+			} else {
+				log($"  warning: manifest not found at {manifestJsonPath}");
+			}
+
+			// Run the Rust packer on the staging directory
+			var pakOut = Path.Combine(outputDir, $"{dbName}.pak");
+			log($"  packing → {dbName}.pak");
+			await Task.Run(() => {
+				using var proc = new System.Diagnostics.Process();
+				proc.StartInfo = new System.Diagnostics.ProcessStartInfo {
+					FileName               = packerBin,
+					Arguments              = $"\"{stageDir}\" \"{pakOut}\"",
+					WorkingDirectory       = ProjectContext.ProjectPath,
+					RedirectStandardOutput = true,
+					RedirectStandardError  = true,
+					UseShellExecute        = false,
+					CreateNoWindow         = true,
+				};
+				proc.OutputDataReceived += (_, e) => { if (e.Data is not null) log(e.Data); };
+				proc.ErrorDataReceived  += (_, e) => { if (e.Data is not null) log(e.Data); };
+				proc.Start();
+				proc.BeginOutputReadLine();
+				proc.BeginErrorReadLine();
+				proc.WaitForExit();
+				if (proc.ExitCode != 0)
+					throw new Exception($"packer exited with code {proc.ExitCode} for {dbName}");
+			});
+		}
+
+		AssetDatabase.RebuildAssetDatabase();
+
+		var tasks = new List<LoaderTask> {
+			// Publish player
+			LoaderTask.Run(
+				"dotnet publish player",
+				"dotnet",
+				$"publish \"{playerPath}\" -c Release -p:PublishAot=true -p:PublishSingleFile=true -p:OptimizationPreference=Speed -o \"{outputDir}\""
+			),
+			// Generate CMake on Release
+			LoaderTask.Run(
+				"cmake configure (Release)",
+				"cmake",
+				$"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=Release"
+			),
+			// Build Game DLL on Release
+			LoaderTask.Run(
+				"cmake build (Release)",
+				"cmake",
+				"--build .toast/cmake_release_cache --config Release --parallel"
+			),
+			// Copy Engine libs
+			LoaderTask.Do("copy libraries", CopyDlls),
+			// Copy project.toast
+			LoaderTask.Do("copy project.toast", CopyProjectToast),
+		};
+
+		// Bake assets
+		foreach (var db in ProjectContext.Databases) {
+			var dbSource   = Path.Combine(ProjectContext.ProjectPath, db);
+			var manifestJs = Path.Combine(ProjectContext.CachePath, $"{db}.json");
+			var dbCapture  = db;
+			tasks.Add(LoaderTask.Do($"bake & pack {db}://", (log) => BakeAndPack(log, dbCapture, dbSource, manifestJs)));
+		}
+
+		// Bake core
+		var coreManifest = Path.Combine(ProjectContext.CachePath, "core.json");
+		tasks.Add(LoaderTask.Do("bake & pack core://", (log) => BakeAndPack(log, "core", ProjectContext.CorePath, coreManifest)));
+
+		var vm = new LoaderViewModel(tasks);
+		await new SimpleLoaderWindow(vm).ShowDialog(owner);
 	}
-	
+
 }

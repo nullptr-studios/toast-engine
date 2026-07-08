@@ -429,6 +429,59 @@ void pushApplicationLayer(IApplication* app) {
 	}
 
 	active_application = app;
+	app->registerTypes();
+	toast::World::hotReload();
+}
+
+void popApplicationLayer(IApplication* app) {
+	if (active_application == app) {
+		active_application = nullptr;
+	}
+}
+
+void Engine::popApplication() {
+	if (active_application) {
+		active_application->destroy();
+		delete active_application;
+		active_application = nullptr;
+	}
+}
+
+void Engine::beginApplication() {
+	if (active_application) {
+		active_application->begin();
+	}
+}
+
+void Engine::startGame() {
+	{
+		std::scoped_lock lock(m->owners_mutex);
+		// Use a well-known sentinel UID (-1) so the world can be found/removed if needed
+		m->owners.emplace(UID {static_cast<uint64_t>(-1ULL)}, std::make_unique<World>());
+	}
+
+	// Resolve the start scene from project settings
+	const ProjectSettings* ps = ProjectSettings::get();
+	if (!ps) {
+		TOAST_WARN("Engine", "startGame: no project settings; skipping start scene");
+		return;
+	}
+
+	const auto& init_scene_handle = ps->gameplaySettings().initScene();
+	const auto path = init_scene_handle.path();
+	if (path.empty()) {
+		TOAST_WARN("Engine", "startGame: no init_scene set in project settings");
+		return;
+	}
+
+	if (path.size() == 11) {
+		const toast::UID uid(toast::UID::fromString(path));
+		TOAST_INFO("Engine", "startGame: loading init scene by UID {}", uid);
+		World::loadNode(uid, true);
+	} else {
+		TOAST_INFO("Engine", "startGame: loading init scene by URI '{}'", path);
+		World::loadNode(path, true);
+	}
 }
 
 }
@@ -602,6 +655,56 @@ void toast_reload_manifest() noexcept {
 
 void toast_reload_project_settings() noexcept {
 	toast::Engine::get()->reloadSettings();
+}
+
+void toast_set_load_mode(int mode) noexcept {
+	assets::AssetManager::setLoadMode(mode == 1 ? assets::SaveMode::game : assets::SaveMode::editor);
+}
+
+void toast_mount_pack(const char* scheme, const char* pak_path) noexcept {
+	if (!scheme || !pak_path) {
+		return;
+	}
+	assets::AssetManager::mountPack(scheme, pak_path);
+}
+
+void toast_start_game() noexcept {
+	toast::Engine::get()->startGame();
+}
+
+void toast_begin_application() noexcept {
+	toast::Engine::get()->beginApplication();
+}
+
+void toast_pop_application() noexcept {
+	toast::Engine::get()->popApplication();
+}
+
+void toast_bake_asset(const char* uid_str, const char* out_path) noexcept {
+	if (!uid_str || !out_path) {
+		return;
+	}
+	try {
+		const toast::UID uid(toast::UID::fromString(uid_str));
+		auto* asset = assets::AssetManager::get().load(uid);
+		if (!asset) {
+			TOAST_ERROR("Engine", "toast_bake_asset: could not load asset {}", uid_str);
+			return;
+		}
+		auto* prefab = dynamic_cast<assets::Prefab*>(asset);
+		if (!prefab) {
+			TOAST_WARN("Engine", "toast_bake_asset: asset {} is not a Prefab, skipping", uid_str);
+			return;
+		}
+		const auto bytes = prefab->serialize(assets::SaveMode::game);
+		std::ofstream out(out_path, std::ios::binary | std::ios::trunc);
+		if (!out.is_open()) {
+			TOAST_ERROR("Engine", "toast_bake_asset: cannot open output path {}", out_path);
+			return;
+		}
+		out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+		TOAST_TRACE("Engine", "Baked asset {} → {}", uid_str, out_path);
+	} catch (const std::exception& e) { TOAST_ERROR("Engine", "toast_bake_asset: {}", e.what()); }
 }
 
 void toast_haptics_test(const char* toml_text) noexcept {

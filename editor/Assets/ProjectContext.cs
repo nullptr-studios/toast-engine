@@ -74,7 +74,7 @@ public static class ProjectContext {
 		return Path.GetFullPath(virtualPath);
 	}
 
-	// Absolute real path → "assets://textures/foo.ktx2", null if not under any known root
+	// Absolute real path "assets://textures/foo.ktx2", null if not under any known root
 	// Uses longest-root-match so that assets:// wins over project://
 	public static string? ToVirtual(string realPath) {
 		var canonical = Path.GetFullPath(realPath);

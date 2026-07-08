@@ -16,6 +16,7 @@
 #pragma once
 
 #include "assets.hpp"
+#include "pack.hpp"
 #include "toast/events/listener.hpp"
 #include "types.hpp"
 
@@ -175,11 +176,31 @@ public:
 
 	auto getCachePath() const -> const std::filesystem::path&;
 
+	/**
+	 * @brief Selects the asset load mode
+	 */
+	static void setLoadMode(SaveMode mode);
+
+	/**
+	 * @return Current load mode
+	 */
+	static auto getLoadMode() -> SaveMode;
+
+	/**
+	 * @brief Mounts a .pak archive at a URI scheme
+	 * @param scheme URI scheme without "://"
+	 * @param pak_path Absolute path to the .pak file
+	 *
+	 * After mounting, reads for that scheme go to the pack instead of the filesystem
+	 */
+	static void mountPack(std::string_view scheme, const std::filesystem::path& pak_path);
+
 private:
 	static inline AssetManager* instance = nullptr;
 
-	// FIXME: hardcoded; needs to become runtime-selectable once the game player is built
-	static constexpr SaveMode load_mode = SaveMode::editor;
+	static inline SaveMode load_mode = SaveMode::editor;
+
+	static inline std::unordered_map<std::string, std::unique_ptr<PackArchive>> mounts;
 
 	event::Listener listener;
 	std::mutex mutex;
@@ -190,6 +211,7 @@ private:
 	static inline std::unordered_map<std::string, std::filesystem::path> roots;
 
 	auto resolveVirtualPath(std::string_view virtual_path) -> std::optional<std::filesystem::path>;
+	auto readVirtualPath(std::string_view virtual_path) -> std::optional<std::vector<uint8_t>>;
 	auto openFile(const std::filesystem::path& path) -> std::optional<std::vector<uint8_t>>;
 	auto saveFile(const std::filesystem::path& path, const std::vector<uint8_t>& data) -> bool;
 };

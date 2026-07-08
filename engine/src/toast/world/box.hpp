@@ -34,7 +34,7 @@ class Node;
  * @see ControlBox, Node
  */
 template<typename T>
-class Box {
+class TOAST_API Box {
 	template<typename U>
 	friend class Box;
 	friend struct _detail::ControlBox;

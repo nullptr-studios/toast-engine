@@ -274,6 +274,9 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 		}
 	});
 
+	let parent_snake_name: Option<std::string::String> = node.parent.as_ref()
+		.map(|p| p.name.to_lowercase());
+
 	// Build the flat field array in order
 	let mut all_fields_flat: Vec<json_t>  = Vec::new();
 	let mut global_field_indices: Vec<usize> = Vec::new();
@@ -416,6 +419,7 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 		"snake_name":            snake_name,
 		"qualified_name":        qualified_name,
 		"parent_qualified_name": parent_qualified_name,
+		"parent_snake_name":    parent_snake_name,
 		"source_file":           node.source_file,
 		"attributes":            node.attributes,
 		"all_fields_flat":       all_fields_flat,
@@ -424,7 +428,7 @@ fn build_template_context(node: &NodeInfo) -> json_t {
 		"active_tick_fns":       active_tick_fns,
 		"methods":               methods_ctx,
 		"has_asset_handle":      has_asset_handle,
-		"is_interface":         node.is_interface,
+		"is_interface":          node.is_interface,
 	})
 }
 
@@ -436,7 +440,7 @@ fn cpp_escape(s: &str) -> std::string::String {
 	s.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
-pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str) {
+pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str, split_typeinfo: bool) {
 	// Templates live next to the executable: <exe_dir>/templates/
 	let exe_dir = std::env::current_exe()
 		.expect("cannot locate executable")
@@ -452,20 +456,49 @@ pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str) {
 	let node_tmpl = env.get_template("node.generated.hpp.jinja2")
 		.unwrap_or_else(|e| panic!("cannot load node.generated.hpp.jinja2: {e}"));
 
+	let type_info_tmpl = if split_typeinfo {
+		Some(env.get_template("node.type_info.cpp.jinja2")
+			.unwrap_or_else(|e| panic!("cannot load node.type_info.cpp.jinja2: {e}")))
+	} else {
+		None
+	};
+
 	for node in nodes {
-		let ctx  = build_template_context(node);
-		let out  = output.join(format!("{}.generated.hpp", ctx["snake_name"].as_str().unwrap()));
+		let mut ctx  = build_template_context(node);
+		if split_typeinfo {
+			if let json_t::Object(map) = &mut ctx {
+				map.insert("split_typeinfo".to_string(), json_t::Bool(true));
+			}
+		}
+		let sn = ctx["snake_name"].as_str().unwrap();
+
+		let out  = output.join(format!("{sn}.generated.hpp"));
 		let text = node_tmpl.render(&ctx)
 			.unwrap_or_else(|e| panic!("template error for {}: {e}", node.name));
 		fs::write(&out, text)
 			.unwrap_or_else(|e| panic!("cannot write {}: {e}", out.display()));
+
+		if let Some(tmpl) = &type_info_tmpl {
+			let cpp_out = output.join(format!("{sn}.type_info.cpp"));
+			let cpp_text = tmpl.render(&ctx)
+				.unwrap_or_else(|e| panic!("template error for type_info.cpp ({}): {e}", node.name));
+			fs::write(&cpp_out, cpp_text)
+				.unwrap_or_else(|e| panic!("cannot write {}: {e}", cpp_out.display()));
+		}
 	}
 
 	// reflect.generated.cpp
 	let cpp_tmpl = env.get_template("reflect.generated.cpp.jinja2")
 		.unwrap_or_else(|e| panic!("cannot load reflect.generated.cpp.jinja2: {e}"));
 
-	let all_ctx: Vec<json_t> = nodes.iter().map(build_template_context).collect();
+	let mut all_ctx: Vec<json_t> = nodes.iter().map(build_template_context).collect();
+	if split_typeinfo {
+		for ctx in &mut all_ctx {
+			if let json_t::Object(map) = ctx {
+				map.insert("split_typeinfo".to_string(), json_t::Bool(true));
+			}
+		}
+	}
 	let cpp_ctx = serde_json::json!({
 		"nodes":       all_ctx,
 		"register_fn": register_fn,

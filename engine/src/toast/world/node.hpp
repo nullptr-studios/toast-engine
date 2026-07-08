@@ -273,6 +273,7 @@ private:
 
 	Box<Node> m_box;
 	const NodeInfo* m_info = nullptr;
+	std::string m_reflect_type_name;
 	bool m_prefab_interior =
 	    false;                 ///< true for nodes inside a prefab instance that are not the root; find() stops traversal here
 	std::vector<Box<Node>> m_children;
@@ -297,6 +298,9 @@ private:
 
 	/// calls onEnable only on enabled objects
 	void propagateEnable() noexcept;
+
+	/// Refresh m_info from NodeRegistry after hot reload
+	void refreshInfo();
 };
 
 }
@@ -309,3 +313,5 @@ auto reflect_cast(toast::Node* n) -> T* {    // NOLINT
 	}
 	return nullptr;
 }
+
+#include <node.generated.hpp>

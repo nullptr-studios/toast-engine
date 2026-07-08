@@ -56,17 +56,19 @@ public:
 	/**
 	 * @brief Begins asynchronous loading of a prefab into the cache
 	 * @param uid UID of the prefab asset to load
+	 * @param activate_as_root If true, automatically calls setRoot() once the node finishes loading
 	 * @note The node appears in trees.cached at the start of the next tick() after loading finishes;
-	 *       call setRoot() afterwards to make it the active scene
+	 *       if activate_as_root is false, call setRoot() afterwards to make it the active scene
 	 */
-	static void loadNode(UID uid);
+	static void loadNode(UID uid, bool activate_as_root = false);
 
 	/**
 	 * @brief Begins asynchronous loading of a prefab into the cache
 	 * @param uri Virtual URI of the prefab, e.g. "assets://levels/lobby.node"
+	 * @param activate_as_root If true, automatically calls setRoot() once the node finishes loading
 	 * @note Resolves the URI to a UID via the manifest, then delegates to loadNode(UID)
 	 */
-	static void loadNode(std::string_view uri);
+	static void loadNode(std::string_view uri, bool activate_as_root = false);
 
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;
 	auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> override;
@@ -115,6 +117,11 @@ public:
 	 */
 	[[nodiscard]]
 	static auto graphviz() -> std::string;
+
+	/**
+	 * @brief Refreshes the NodeInfo pointers on every live node after a game library hot reload
+	 */
+	static void hotReload();
 
 	/**
 	 * @brief Invalidates the world transforms of all Node3D nodes that depend on the given node
@@ -180,6 +187,7 @@ private:
 		std::mutex load_mutex;
 		std::vector<std::future<void>> load_futures;
 		std::vector<std::pair<Box<Node>, Box<Node>>> spawn_queue;
+		UID pending_root_uid {0};
 	} m;
 
 	struct Trees {

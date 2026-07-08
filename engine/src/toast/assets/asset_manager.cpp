@@ -11,6 +11,22 @@
 
 namespace assets {
 
+void AssetManager::setLoadMode(SaveMode mode) {
+	load_mode = mode;
+	TOAST_INFO("AssetManager", "Load mode set to {}", mode == SaveMode::game ? "game" : "editor");
+}
+
+auto AssetManager::getLoadMode() -> SaveMode {
+	return load_mode;
+}
+
+void AssetManager::mountPack(std::string_view scheme, const std::filesystem::path& pak_path) {
+	try {
+		mounts.emplace(std::string(scheme), std::make_unique<PackArchive>(pak_path));
+		TOAST_INFO("AssetManager", "Mounted pack '{}://' → {}", scheme, pak_path.string());
+	} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to mount pack '{}': {}", scheme, e.what()); }
+}
+
 AssetManager::AssetManager() {
 	instance = this;
 
@@ -56,7 +72,7 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 		return nullptr;
 	}
 
-	auto raw_data = openFile(*real_path);
+	auto raw_data = readVirtualPath(info.path);
 	if (!raw_data) {
 		return nullptr;
 	}
@@ -70,9 +86,8 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 				if (schema_uid_str->size() == 11) {
 					toast::UID schema_uid(toast::UID::fromString(*schema_uid_str));
 					if (auto it = manifest.find(schema_uid.data()); it != manifest.end()) {
-						auto schema_path = resolveVirtualPath(it->second.path);
-						if (schema_path) {
-							if (auto schema_raw = openFile(*schema_path)) {
+						{
+							if (auto schema_raw = readVirtualPath(it->second.path)) {
 								if (auto cit = cache.find(schema_uid.data()); cit != cache.end()) {
 									schema_handle = AssetHandle<Schema>(static_cast<Schema*>(cit->second.get()), schema_uid, getURI(schema_uid));
 								} else {
@@ -98,8 +113,7 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 	};
 
 	if (info.type == "node") {
-		// TODO: At some point we need to handle toast packs
-		if constexpr (load_mode == SaveMode::editor) {
+		if (load_mode == SaveMode::editor) {
 			std::istringstream stream(std::string(reinterpret_cast<const char*>(raw_data->data()), raw_data->size()));
 			asset = std::make_unique<Prefab>(stream);
 		} else {
@@ -254,27 +268,30 @@ void AssetManager::reloadManifest() {
 	std::lock_guard lock(mutex);
 	manifest.clear();
 
-	// Build the list of per-database manifest paths:
-	//   cache://<db>.json  for each content database
-	//   cache://core.json  for the engine built-ins
+	// Build the list of per-database manifest paths.
+	// Editor mode: manifests live under cache://
+	// Game mode: manifests are packed inside each db:// pack
 	std::vector<std::string> manifest_uris;
 	if (toast::ProjectSettings* ps = toast::ProjectSettings::get()) {
 		for (const auto& db : ps->databases()) {
-			manifest_uris.push_back("cache://" + db + ".json");
+			if (load_mode == SaveMode::game) {
+				manifest_uris.push_back(db + "://" + db + ".json");
+			} else {
+				manifest_uris.push_back("cache://" + db + ".json");
+			}
 		}
 	}
-	manifest_uris.emplace_back("cache://core.json");
+	if (load_mode == SaveMode::game) {
+		manifest_uris.emplace_back("core://core.json");
+	} else {
+		manifest_uris.emplace_back("cache://core.json");
+	}
 
 	// Load and merge every manifest file
 	auto load_manifest = [&](const std::string& uri) {
-		auto db_path = resolveVirtualPath(uri);
-		if (!db_path || !std::filesystem::exists(*db_path)) {
-			TOAST_WARN("AssetManager", "Manifest not found: {}", uri);
-			return;
-		}
-
-		auto raw_json = openFile(*db_path);
+		auto raw_json = readVirtualPath(uri);
 		if (!raw_json) {
+			TOAST_WARN("AssetManager", "Manifest not found: {}", uri);
 			return;
 		}
 
@@ -368,6 +385,35 @@ auto AssetManager::resolveVirtualPath(std::string_view virtual_path) -> std::opt
 		return std::nullopt;
 	}
 	return it->second / std::filesystem::path(virtual_path.substr(sep + 3));
+}
+
+auto AssetManager::readVirtualPath(std::string_view virtual_path) -> std::optional<std::vector<uint8_t>> {
+	const auto sep = virtual_path.find("://");
+	if (sep == std::string_view::npos) {
+		TOAST_ERROR("AssetManager", "readVirtualPath: malformed URI '{}'", virtual_path);
+		return std::nullopt;
+	}
+
+	const std::string scheme(virtual_path.substr(0, sep));
+	const std::string rel(virtual_path.substr(sep + 3));
+
+	// Consult mounted pack first
+	if (const auto mount_it = mounts.find(scheme); mount_it != mounts.end()) {
+		auto data = mount_it->second->read(rel);
+		if (data) {
+			return data;
+		}
+		// Not found in pack
+		TOAST_WARN("AssetManager", "Pack mount '{}://' does not contain '{}', falling back to filesystem", scheme, rel);
+	}
+
+	// Filesystem fallback
+	auto real_path = resolveVirtualPath(virtual_path);
+	if (!real_path) {
+		TOAST_ERROR("AssetManager", "Could not resolve virtual path: {}", virtual_path);
+		return std::nullopt;
+	}
+	return openFile(*real_path);
 }
 
 auto AssetManager::openFile(const std::filesystem::path& path) -> std::optional<std::vector<uint8_t>> {

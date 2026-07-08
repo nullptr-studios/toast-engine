@@ -31,6 +31,7 @@ private:
 class TOAST_API ProjectSettings {
 public:
 	explicit ProjectSettings(std::filesystem::path path);
+
 	static auto get() -> ProjectSettings* { return instance; }
 
 	static auto name() -> std::string_view { return instance->m_name; }
