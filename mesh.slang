@@ -10,10 +10,8 @@ struct CameraUBO
 
 [[vk::binding(0,0)]]
 ConstantBuffer<CameraUBO> gCamera;
-[[vk::binding(0,1)]]
-Texture2D<float4> gAlbedoTex;
 [[vk::binding(1,1)]]
-SamplerState gAlbedoSampler;
+Sampler2D gAlbedoSampler;
 
 struct PushConstants
 {
@@ -87,18 +85,13 @@ VSOutput vertexMain(VSInput input)
 [shader("fragment")]
 float4 fragmentMain(VSOutput input) : SV_Target0
 {
-    float3 albedo =
-        gAlbedoTex.Sample(
-            gAlbedoSampler,
-            input.uv).rgb;
+    float3 albedo = gAlbedoSampler.Sample(input.uv).rgb;
 
-    float intensity =
-        dot(input.worldNormal, float3(1.0, -1.0, 1.0)) * 0.5 + 0.5;
-    float3 color =
-        input.color * albedo * intensity;
+    float intensity = dot(input.worldNormal, float3(1.0, -1.0, 1.0)) * 0.5 + 0.5;
+    float3 color = input.color * albedo * intensity;
         
     // float3 color =
     //     input.worldNormal * 0.5 + 0.5;
 
-    return float4(1.0);
+    return float4(color, 1.0);
 }

@@ -9,6 +9,8 @@
 #pragma once
 #include "core_types.hpp"
 
+#include <vulkan/vulkan_raii.hpp>
+
 namespace assets {
 class Texture;
 
@@ -43,11 +45,15 @@ public:
 		return m_albedo_map;
 	}
 
+	vk::raii::Sampler& albedoSampler() { return m_albedoSampler; }
+
 	void resolveTextureHandles();
 
 private:
 	toml::table m_table;
+
 	AssetHandle<Texture> m_albedo_map;
+	vk::raii::Sampler m_albedoSampler = nullptr;    // THISSHOULDBECREATEDPERIMAGESAMPLER
 	toast::UID m_albedo_uid {};
 };
 }

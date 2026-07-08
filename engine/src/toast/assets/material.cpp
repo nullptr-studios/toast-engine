@@ -52,6 +52,26 @@ void Material::resolveTextureHandles() {
 	}
 
 	m_albedo_map = assets::load<Texture>(m_albedo_uid);
+
+	vk::SamplerCreateInfo sampler_info {};
+
+	sampler_info.magFilter = vk::Filter::eLinear;
+	sampler_info.minFilter = vk::Filter::eLinear;
+	sampler_info.addressModeU = vk::SamplerAddressMode::eRepeat;
+	sampler_info.addressModeV = vk::SamplerAddressMode::eRepeat;
+	sampler_info.addressModeW = vk::SamplerAddressMode::eRepeat;
+	sampler_info.anisotropyEnable = VK_TRUE;
+	sampler_info.maxAnisotropy = 16.0f;
+	sampler_info.compareEnable = vk::False;
+	sampler_info.compareOp = vk::CompareOp::eAlways;
+	sampler_info.unnormalizedCoordinates = vk::False;
+
+	sampler_info.mipmapMode = vk::SamplerMipmapMode::eLinear;
+	sampler_info.mipLodBias = 0.0f;
+	sampler_info.minLod = 0.0f;
+	sampler_info.maxLod = 0.0f;
+
+	m_albedoSampler = vk::raii::Sampler(toast::renderer::getCore().getDevice(), sampler_info);
 }
 
 }

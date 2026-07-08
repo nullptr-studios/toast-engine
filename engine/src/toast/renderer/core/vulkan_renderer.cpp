@@ -397,27 +397,7 @@ void VulkanRenderer::createFrameResources() {
 
 	const vk::DeviceSize bufferSize = sizeof(FrameUBO);
 
-	vk::DescriptorSetLayoutBinding frameBinding {};
-	frameBinding.binding = 0;
-	frameBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
-	frameBinding.descriptorCount = 1;
-	frameBinding.stageFlags = vk::ShaderStageFlagBits::eAll;    // FIXME: Changethis
-
-	vk::DescriptorSetLayoutCreateInfo layoutCI {};
-	layoutCI.bindingCount = 1;
-	layoutCI.pBindings = &frameBinding;
-
-	const vk::raii::DescriptorSetLayout descriptorLayout = vk::raii::DescriptorSetLayout(device, layoutCI);
-
-	std::array layouts {*descriptorLayout};
-
-	vk::PipelineLayoutCreateInfo pipelineLayoutCI {};
-	pipelineLayoutCI.setLayoutCount = static_cast<uint32_t>(layouts.size());
-
-	pipelineLayoutCI.pSetLayouts = layouts.data();
-
-	m_frame_ubo_pipeline_layout = vk::raii::PipelineLayout(device, pipelineLayoutCI);
-
+	// Create per-frame UBO buffers only. Descriptor sets are allocated by individual render passes (MeshPass).
 	for (auto& frame : m_frame_ubo_res) {
 		// create ubo
 		vk::BufferCreateInfo bufferCI {};
@@ -435,16 +415,7 @@ void VulkanRenderer::createFrameResources() {
 
 		// no staging buffer
 
-		// allocate descriptor
-		auto descriptorSets = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(*m_descriptor_pool, 1, &*descriptorLayout));
-
-		frame.descriptorSet = std::move(descriptorSets[0]);
-		// write descriptor
-		vk::DescriptorBufferInfo bufferInfo(**frame.gpuBuffer, 0, bufferSize);
-
-		vk::WriteDescriptorSet write(frame.descriptorSet, 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &bufferInfo);
-
-		device.updateDescriptorSets(write, nullptr);
+		// Leave descriptorSet empty; render passes will allocate and manage their own descriptor sets
 	}
 }
 

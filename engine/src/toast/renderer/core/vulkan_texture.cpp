@@ -16,15 +16,15 @@ void VulkanTexture::create(const VulkanCore& core, Params params) {
 	vk::ImageCreateInfo imageCI {};
 	imageCI.format = m_params.format;
 	imageCI.extent = m_params.extent;
-	imageCI.mipLevels = m_params.mipLevels;
-	imageCI.arrayLayers = m_params.layerCount;
+	imageCI.mipLevels = m_params.mip_levels;
+	imageCI.arrayLayers = m_params.layer_count;
 	imageCI.samples = vk::SampleCountFlagBits::e1;
 	imageCI.tiling = vk::ImageTiling::eOptimal;
 	imageCI.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 	imageCI.sharingMode = vk::SharingMode::eExclusive;
 	imageCI.initialLayout = vk::ImageLayout::eUndefined;
 
-	if (m_params.isCubemap) {
+	if (m_params.is_cubemap) {
 		imageCI.flags |= vk::ImageCreateFlagBits::eCubeCompatible;
 	}
 
@@ -44,25 +44,25 @@ void VulkanTexture::create(const VulkanCore& core, Params params) {
 
 	if (m_params.extent.depth > 1) {
 		viewCI.viewType = vk::ImageViewType::e3D;
-	} else if (m_params.isCubemap) {
+	} else if (m_params.is_cubemap) {
 		// A  cubemap has 6 layers
-		viewCI.viewType = m_params.layerCount > 6 ? vk::ImageViewType::eCubeArray : vk::ImageViewType::eCube;
+		viewCI.viewType = m_params.layer_count > 6 ? vk::ImageViewType::eCubeArray : vk::ImageViewType::eCube;
 	} else {
-		viewCI.viewType = m_params.layerCount > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D;
+		viewCI.viewType = m_params.layer_count > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D;
 	}
 
 	viewCI.format = m_params.format;
 	viewCI.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
 	viewCI.subresourceRange.baseMipLevel = 0;
-	viewCI.subresourceRange.levelCount = m_params.mipLevels;
+	viewCI.subresourceRange.levelCount = m_params.mip_levels;
 	viewCI.subresourceRange.baseArrayLayer = 0;
-	viewCI.subresourceRange.layerCount = m_params.layerCount;
+	viewCI.subresourceRange.layerCount = m_params.layer_count;
 
-	m_imageView = vk::raii::ImageView(core.getDevice(), viewCI);
+	m_image_view = vk::raii::ImageView(core.getDevice(), viewCI);
 }
 
 void VulkanTexture::destroy() {
-	m_imageView.clear();
+	m_image_view.clear();
 	m_image.reset();
 }
 
@@ -88,14 +88,14 @@ void TextureUpload::build(const VulkanCore& core) {
 	}
 
 	m_texParams.extent = vk::Extent3D(m_ktxTexture->baseWidth, m_ktxTexture->baseHeight, m_ktxTexture->baseDepth);
-	m_texParams.mipLevels = std::max(1u, m_ktxTexture->numLevels);
-	m_texParams.layerCount = std::max(1u, m_ktxTexture->numLayers);
+	m_texParams.mip_levels = std::max(1u, m_ktxTexture->numLevels);
+	m_texParams.layer_count = std::max(1u, m_ktxTexture->numLayers);
 
 	// TODO: PROPER CUBEMAP SUPPORT
-	m_texParams.isCubemap = m_ktxTexture->isCubemap;
+	m_texParams.is_cubemap = m_ktxTexture->isCubemap;
 
 	if (m_ktxTexture->isCubemap) {
-		m_texParams.layerCount = 6 * std::max(1u, m_ktxTexture->numLayers);
+		m_texParams.layer_count = 6 * std::max(1u, m_ktxTexture->numLayers);
 	}
 
 	m_texture->create(core, m_texParams);
@@ -119,7 +119,7 @@ void TextureUpload::build(const VulkanCore& core) {
 	uint32_t numLayers = std::max(1u, m_ktxTexture->numLayers);
 	uint32_t numFaces = m_ktxTexture->isCubemap ? 6 : 1;
 
-	for (uint32_t mip = 0; mip < m_texParams.mipLevels; ++mip) {
+	for (uint32_t mip = 0; mip < m_texParams.mip_levels; ++mip) {
 		for (uint32_t layer = 0; layer < numLayers; ++layer) {
 			for (uint32_t face = 0; face < numFaces; ++face) {
 				ktx_size_t offset = 0;
@@ -157,9 +157,9 @@ void TextureUpload::record(vk::CommandBuffer cmd) {
 	barrier.image = imageHandle;
 	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
 	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = m_texParams.mipLevels;
+	barrier.subresourceRange.levelCount = m_texParams.mip_levels;
 	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = m_texParams.layerCount;
+	barrier.subresourceRange.layerCount = m_texParams.layer_count;
 	barrier.srcAccessMask = {};
 	barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 
@@ -187,9 +187,9 @@ void RawTextureUpload::build(const VulkanCore& core) {
 	VulkanTexture::Params params {};
 	params.format = m_format;
 	params.extent = vk::Extent3D(m_width, m_height, 1);
-	params.mipLevels = 1;
-	params.layerCount = 1;
-	params.isCubemap = false;
+	params.mip_levels = 1;
+	params.layer_count = 1;
+	params.is_cubemap = false;
 	m_texture->create(core, params);
 	m_texture->markUploading();
 

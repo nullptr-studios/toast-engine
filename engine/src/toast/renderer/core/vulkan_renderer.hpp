@@ -71,7 +71,7 @@ public:
 
 	struct MeshInstanceProxy {
 		VulkanMesh* mesh = nullptr;
-		const assets::Material* material = nullptr;
+		assets::Material* material = nullptr;
 		glm::mat4 model = glm::mat4(1.0f);
 	};
 
@@ -110,7 +110,12 @@ public:
 
 	const FrameResources* getFrameUBORes(uint32_t current_frame) const { return &m_frame_ubo_res[current_frame]; }
 
+	// Expose raw descriptor pool handle so render passes can allocate their own descriptor sets
+	vk::DescriptorPool getDescriptorPoolHandle() const { return *m_descriptor_pool; }
+
 	void setActiveCamera(Camera* camera);
+
+	const VulkanCore& getCore() { return *m_core; }
 
 	Camera* getActiveCamera() { return m_camera; }
 
@@ -256,6 +261,10 @@ inline void applyResize(vk::Extent2D extent) {
 
 inline const IOutputTarget& getOutputTarget() {
 	return VulkanRenderer::instance->getOutputTarget();
+}
+
+inline const VulkanCore& getCore() {
+	return VulkanRenderer::instance->getCore();
 }
 
 inline const RENDERDOC_API_1_6_0* getRenderDocAPI() {

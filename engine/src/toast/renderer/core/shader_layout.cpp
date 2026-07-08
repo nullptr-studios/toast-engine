@@ -1,75 +1,31 @@
 #include "shader_layout.hpp"
 
+#include "hardcoded_pipeline_layouts.hpp"
 #include "vulkan_core.hpp"
+
+#include <algorithm>
 
 namespace toast::renderer {
 ShaderLayout::ShaderLayout(const VulkanCore& core, slang::ProgramLayout* slang_layout) {
-	rebuild(core, slang_layout);
+	// Keep constructor for compatibility but build hardcoded default layout
+	rebuild(core, "default");
 }
 
-// TODO: Redo this shit
-void ShaderLayout::rebuild(const VulkanCore& core, slang::ProgramLayout* slang_layout) {
+// Hardcoded-only rebuild: ignore Slang reflection and build from the central table
+void ShaderLayout::rebuild(const VulkanCore& core, std::string_view shader_key) {
 	m_descriptor_set_layouts.clear();
 	m_push_constant_ranges.clear();
 	m_pipeline_layout = nullptr;
 
-	if (!slang_layout) {
-		return;
-	}
+	HardcodedPipelineLayouts::buildPipelineLayout(
+	    core, shader_key, m_descriptor_set_layouts, m_push_constant_ranges, m_pipeline_layout
+	);
+}
 
-	// Map to group generated bindings by their accumulated SubElementRegisterSpace
-	std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> set_layout_map;
-
-	// Traverse Global Scope Parameters
-	if (auto* global_params = slang_layout->getGlobalParamsVarLayout()) {
-		reflectBindings(global_params, 0, 0, set_layout_map);
-	}
-
-	uint32_t entry_point_count = slang_layout->getEntryPointCount();
-	for (uint32_t i = 0; i < entry_point_count; ++i) {
-		if (auto* entry_point = slang_layout->getEntryPointByIndex(i)) {
-			if (auto* var_layout = entry_point->getVarLayout()) {
-				reflectBindings(var_layout, 0, 0, set_layout_map);
-			}
-		}
-	}
-
-	uint32_t max_set_index = 0;
-	for (const auto& [set_index, bindings] : set_layout_map) {
-		if (set_index > max_set_index) {
-			max_set_index = set_index;
-		}
-	}
-
-	m_descriptor_set_layouts.reserve(max_set_index + 1);
-	std::vector<vk::DescriptorSetLayout> raw_layout_handles;
-	raw_layout_handles.reserve(max_set_index + 1);
-
-	for (uint32_t i = 0; i <= max_set_index; ++i) {
-		vk::DescriptorSetLayoutCreateInfo layout_ci {};
-
-		auto it = set_layout_map.find(i);
-		if (it != set_layout_map.end()) {
-			layout_ci.bindingCount = static_cast<uint32_t>(it->second.size());
-			layout_ci.pBindings = it->second.data();
-		} else {
-			layout_ci.bindingCount = 0;
-			layout_ci.pBindings = nullptr;
-		}
-
-		// Instantiating modern Vulkan RAII descriptor set layout
-		m_descriptor_set_layouts.emplace_back(core.getDevice(), layout_ci);
-		raw_layout_handles.push_back(*m_descriptor_set_layouts.back());
-	}
-
-	// Construct Pipeline Layout
-	vk::PipelineLayoutCreateInfo pipeline_layout_ci {};
-	pipeline_layout_ci.setLayoutCount = static_cast<uint32_t>(raw_layout_handles.size());
-	pipeline_layout_ci.pSetLayouts = raw_layout_handles.data();
-	pipeline_layout_ci.pushConstantRangeCount = static_cast<uint32_t>(m_push_constant_ranges.size());
-	pipeline_layout_ci.pPushConstantRanges = m_push_constant_ranges.data();
-
-	m_pipeline_layout = vk::raii::PipelineLayout(core.getDevice(), pipeline_layout_ci);
+// Compatibility: keep old signature but redirect to hardcoded path
+void ShaderLayout::rebuild(const VulkanCore& core, slang::ProgramLayout* /*slang_layout*/) {
+	// Use a generic default key when callers pass a Slang layout
+	rebuild(core, "default");
 }
 
 void ShaderLayout::reflectBindings(
@@ -80,8 +36,8 @@ void ShaderLayout::reflectBindings(
 		return;
 	}
 
-	uint32_t binding_offset = var_layout->getOffset(slang::ParameterCategory::DescriptorTableSlot);
-	uint32_t space_offset = var_layout->getOffset(slang::ParameterCategory::SubElementRegisterSpace);
+	uint32_t binding_offset = static_cast<uint32_t>(var_layout->getOffset(slang::ParameterCategory::DescriptorTableSlot));
+	uint32_t space_offset = static_cast<uint32_t>(var_layout->getBindingSpace(slang::ParameterCategory::DescriptorTableSlot));
 
 	uint32_t next_space = current_space + space_offset;
 	uint32_t next_binding = current_binding + binding_offset;
@@ -160,7 +116,7 @@ void ShaderLayout::reflectBindings(
 	}
 
 	if (type_kind == slang::TypeReflection::Kind::Array) {
-		uint32_t element_count = static_cast<uint32_t>(type_layout->getElementCount());
+		size_t element_count = type_layout->getElementCount();
 		slang::TypeLayoutReflection* element_type_layout = type_layout->getElementTypeLayout();
 
 		if (element_type_layout) {
@@ -171,8 +127,9 @@ void ShaderLayout::reflectBindings(
 				vk::DescriptorSetLayoutBinding binding {};
 				binding.binding = next_binding;
 				binding.descriptorType = mapResourceToDescriptorType(element_type_layout);
-				// element_count == 0 means an unbounded/bindless descriptor array runtime size
-				binding.descriptorCount = (element_count == 0) ? 1 : element_count;
+				// Unbounded arrays return ~size_t(0) from Slang; treat them as runtime-sized bindless descriptors (use descriptorCount=1
+				// here)
+				binding.descriptorCount = (element_count == static_cast<size_t>(~0)) ? 1u : static_cast<uint32_t>(element_count);
 				binding.stageFlags = vk::ShaderStageFlagBits::eAll;
 				set_layout_map[next_space].push_back(binding);
 			}
@@ -180,14 +137,24 @@ void ShaderLayout::reflectBindings(
 		return;
 	}
 
-	// Handle Standalone Leaf Resource Bindings
-	if (var_layout->getCategory() == slang::ParameterCategory::DescriptorTableSlot) {
-		vk::DescriptorSetLayoutBinding binding {};
-		binding.binding = next_binding;
-		binding.descriptorType = mapResourceToDescriptorType(type_layout);
-		binding.descriptorCount = 1;
-		binding.stageFlags = vk::ShaderStageFlagBits::eAll;
-		set_layout_map[next_space].push_back(binding);
+	// Handle Standalone Leaf Resource Bindings (check if this variable is in a descriptor table/slot)
+	{
+		bool in_descriptor_table = false;
+		uint32_t catCount = var_layout->getCategoryCount();
+		for (uint32_t ci = 0; ci < catCount; ++ci) {
+			if (var_layout->getCategoryByIndex(ci) == slang::ParameterCategory::DescriptorTableSlot) {
+				in_descriptor_table = true;
+				break;
+			}
+		}
+		if (in_descriptor_table) {
+			vk::DescriptorSetLayoutBinding binding {};
+			binding.binding = next_binding;
+			binding.descriptorType = mapResourceToDescriptorType(type_layout);
+			binding.descriptorCount = 1;
+			binding.stageFlags = vk::ShaderStageFlagBits::eAll;
+			set_layout_map[next_space].push_back(binding);
+		}
 	}
 }
 

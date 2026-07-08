@@ -704,7 +704,9 @@ bool VulkanCore::checkValidationLayerSupport() {
 		std::vector<VkLayerProperties> availableLayers(layerCount);
 		vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-		return false;
+		return std::find_if(availableLayers.begin(), availableLayers.end(), [](const VkLayerProperties& layer) {
+			       return std::string(layer.layerName) == "VK_LAYER_KHRONOS_validation";
+		       }) != availableLayers.end();
 	}
 }
 }

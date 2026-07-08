@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <map>
 #include <slang.h>
+#include <string_view>
 #include <vector>
 #include <vulkan/vulkan_raii.hpp>
 
@@ -20,9 +21,14 @@ public:
 	~ShaderLayout() = default;
 
 	/**
-	 * @brief Rebuilds the shader layout based on the provided Slang program layout
+	 * @brief Rebuilds the shader layout based on the provided Slang program layout (ignored when hardcoding)
 	 */
 	void rebuild(const VulkanCore& core, slang::ProgramLayout* slang_layout);
+
+	/**
+	 * @brief Rebuilds the shader layout from a hardcoded shader key (preferred for hardcoded-only mode)
+	 */
+	void rebuild(const VulkanCore& core, std::string_view shader_key);
 
 	[[nodiscard]]
 	auto getPipelineLayout() const -> const vk::raii::PipelineLayout& {

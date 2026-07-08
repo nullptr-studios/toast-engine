@@ -40,5 +40,8 @@ private:
 	toast::renderer::VulkanPipeline m_pipeline;
 
 	toast::renderer::ShaderLayout shaderLayout;
+
+	// Per-frame descriptor sets owned by this pass. Allocated from the renderer's descriptor pool.
+	std::vector<vk::DescriptorSet> m_descriptor_sets;
 };
 }

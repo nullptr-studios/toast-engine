@@ -16,21 +16,27 @@ public:
 	struct Params {
 		vk::Format format;
 		vk::Extent3D extent;
-		uint32_t mipLevels = 1;
-		uint32_t layerCount = 1;
-		bool isCubemap = false;
+		uint32_t mip_levels = 1;
+		uint32_t layer_count = 1;
+		bool is_cubemap = false;
 	};
 
 	void create(const VulkanCore& core, Params params);
 	void destroy();
 
-	vk::Image getImage() const { return **m_image; }
+	[[nodiscard]]
+	auto getImage() const -> vk::Image {
+		return **m_image;
+	}
 
-	vk::ImageView getView() const { return *m_imageView; }
+	[[nodiscard]]
+	auto getView() const -> vk::ImageView {
+		return *m_image_view;
+	}
 
 private:
 	std::optional<vma::raii::Image> m_image;
-	vk::raii::ImageView m_imageView = nullptr;
+	vk::raii::ImageView m_image_view = nullptr;
 	Params m_params;
 };
 
@@ -57,7 +63,7 @@ private:
 	ktxTexture2* m_ktxTexture = nullptr;
 	vma::raii::Buffer m_stagingBuffer = nullptr;
 	std::vector<vk::BufferImageCopy> m_copyRegions;
-	VulkanTexture::Params m_texParams;
+	VulkanTexture::Params m_texParams {};
 };
 
 class RawTextureUpload : public PendingResourceUpload {

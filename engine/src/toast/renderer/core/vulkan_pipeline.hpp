@@ -42,7 +42,7 @@ public:
 		std::string compute_entry = "computeMain";
 
 		// Layouts are now provided from the outside
-		const vk::PipelineLayout pipeline_layout = nullptr;
+		vk::PipelineLayout pipeline_layout = nullptr;
 
 		// Raster state
 		vk::CullModeFlags cull_mode = vk::CullModeFlagBits::eBack;
