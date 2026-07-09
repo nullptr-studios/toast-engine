@@ -32,11 +32,10 @@ struct Cli {
     #[arg(long, default_value = "registerEngineTypes")]
     register_fn: std::string::String,
 
-	#[arg(long)]
-	split_typeinfo: bool,
-
-	#[arg(long = "attribute")]
-	attributes: Vec<std::string::String>,
+    #[arg(long)]
+    split_typeinfo: bool,
+    #[arg(long = "attribute")]
+    attributes: Vec<std::string::String>,
 }
 
 fn main() {
@@ -97,9 +96,9 @@ fn main() {
     fs::write(&cli.database, json)
         .unwrap_or_else(|e| eprintln!("warning: cannot write database '{}': {e}", cli.database.display()));
 
-	// Generate files, sorted so base classes are included before derived classes
-	let all_nodes = topological_sort(all_nodes);
-	generate_files(&all_nodes, &cli.output, &cli.register_fn, cli.split_typeinfo);
+    // Generate files, sorted so base classes are included before derived classes
+    let all_nodes = topological_sort(all_nodes);
+    generate_files(&all_nodes, &cli.output, &cli.register_fn, cli.split_typeinfo);
 
     println!(
         "refgen: generated {} type(s) → '{}' (fn: {})",
