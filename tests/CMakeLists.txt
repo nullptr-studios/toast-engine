@@ -4,7 +4,7 @@ if (BUILD_TESTING)
 	file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 	list(REMOVE_ITEM TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/test_runner.cpp")
 
-	add_executable(toast_tests ${TEST_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/test_runner.cpp" "${CMAKE_SOURCE_DIR}/engine/src/toast/assets/prefab.cpp")
+	add_executable(toast_tests ${TEST_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/test_runner.cpp")
 	target_include_directories(toast_tests BEFORE PRIVATE ${CMAKE_SOURCE_DIR}/engine/src)
 	target_include_directories(toast_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 	target_link_libraries(toast_tests PRIVATE toast_engine)

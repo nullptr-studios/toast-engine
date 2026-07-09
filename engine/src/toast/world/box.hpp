@@ -5,9 +5,7 @@
  *
  * @brief pseudo shared pointer for Nodes
  *
- * Intrusive: the ControlBox lives inside the Node allocation, so all handles
- * share one ref-count without an extra heap block. This also makes ref-counting
- * safe across DLL boundaries where std::shared_ptr's control block would differ.
+ * TOAST_API
  */
 
 #pragma once
@@ -34,7 +32,7 @@ class Node;
  * @see ControlBox, Node
  */
 template<typename T>
-class TOAST_API Box {
+class Box {
 	template<typename U>
 	friend class Box;
 	friend struct _detail::ControlBox;

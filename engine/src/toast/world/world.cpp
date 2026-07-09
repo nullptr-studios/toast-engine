@@ -1162,12 +1162,14 @@ void WorldTestAccess::initAssetManager(std::string_view assets_dir, std::string_
 	std::filesystem::path cache_path {std::string(cache_dir)};
 	assets::AssetManager::setPaths(
 	    assets::Paths {
+	      .project = assets_path,
 	      .artworks = assets_path,
 	      .cache = cache_path,
 	      .saved = assets_path,
 	      .core = assets_path,
 	    }
 	);
+	assets::AssetManager::registerDatabase("assets", assets_path);
 
 	if (not manager) {
 		manager = std::make_unique<assets::AssetManager>();    // ctor reads the manifest with the paths above

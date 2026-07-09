@@ -280,6 +280,8 @@ void AssetManager::reloadManifest() {
 				manifest_uris.push_back("cache://" + db + ".json");
 			}
 		}
+	} else {
+		manifest_uris.emplace_back("cache://database.json");
 	}
 	if (load_mode == SaveMode::game) {
 		manifest_uris.emplace_back("core://core.json");
