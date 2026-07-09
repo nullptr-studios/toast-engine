@@ -395,25 +395,25 @@ public partial class MainWindowViewModel : ViewModelBase {
 
 		Directory.CreateDirectory(outputDir);
 
-		async Task CopyDlls(Action<string> log) {
-			var libExt = OperatingSystem.IsWindows() ? ".dll" : ".so";
-			var exeExt = OperatingSystem.IsWindows() ? ".exe" : "";
-			var extensions = new[] { libExt, exeExt }.Where(e => !string.IsNullOrEmpty(e)).ToArray();
-			var sources = new[] {
-				Path.Combine(toastPath, "bin"),
-				Path.Combine(ProjectContext.ProjectPath, "build"),
-			};
-			foreach (var src in sources) {
-				if (!Directory.Exists(src)) { log($"warning: source dir not found: {src}"); continue; }
-				var files = Directory.EnumerateFiles(src, "*.*", SearchOption.TopDirectoryOnly)
-					.Where(f => extensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase));
-				foreach (var file in files) {
-					var dest = Path.Combine(outputDir, Path.GetFileName(file));
-					log($"  copy {Path.GetFileName(file)}");
-					await Task.Run(() => File.Copy(file, dest, overwrite: true));
+			async Task CopyDlls(Action<string> log) {
+				var libExt = OperatingSystem.IsWindows() ? ".dll" : ".so";
+				var exeExt = OperatingSystem.IsWindows() ? ".exe" : "";
+				var extensions = new[] { libExt, exeExt };
+				var sources = new[] {
+					Path.Combine(toastPath, "bin"),
+					Path.Combine(toastPath, "lib"),
+				};
+				foreach (var src in sources) {
+					if (!Directory.Exists(src)) { log($"warning: source dir not found: {src}"); continue; }
+					var files = Directory.EnumerateFiles(src, "*.*", SearchOption.TopDirectoryOnly)
+						.Where(f => extensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase));
+					foreach (var file in files) {
+						var dest = Path.Combine(outputDir, Path.GetFileName(file));
+						log($"  copy {Path.GetFileName(file)}");
+						await Task.Run(() => File.Copy(file, dest, overwrite: true));
+					}
 				}
 			}
-		}
 
 		async Task CopyProjectToast(Action<string> log) {
 			var toastFile = Directory.EnumerateFiles(ProjectContext.ProjectPath, "*.toast").FirstOrDefault();

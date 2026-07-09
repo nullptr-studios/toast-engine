@@ -228,7 +228,7 @@ public partial class ToastEngine : IDisposable {
 
 	private string FindGameDll() {
 		var path = Directory.EnumerateFiles(Path.Combine(ProjectPath, "build"), $"*{NativeLibExt}")
-			.FirstOrDefault();
+			.FirstOrDefault(f => Path.GetFileName(f).Contains("game", StringComparison.OrdinalIgnoreCase));
 		if (path is null)
 			throw new FileNotFoundException($"Game DLL not found in {Path.Combine(ProjectPath, "build")}");
 		return path;
