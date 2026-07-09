@@ -7,6 +7,9 @@
 #include "events/event.hpp"
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
+#include "input/haptics_system.hpp"
+#include "input/input_events.hpp"
+#include "input/input_system.hpp"
 #include "logger.hpp"
 #include "reflect/reflect.hpp"
 #include "renderer/sdl_output_target.hpp"
@@ -20,6 +23,7 @@
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
+#include "world/play_workspace.hpp"
 #include "world/workspace.hpp"
 #include "world/workspace_events.hpp"
 #include "world/world.hpp"
@@ -67,6 +71,8 @@ auto createTrianglePipeline(
 	return std::make_unique<renderer::VulkanPipeline>(core, config);
 }
 
+double clear_assets_timer = 0.0;
+
 }
 
 Engine* Engine::instance = nullptr;
@@ -77,6 +83,8 @@ struct EnginePimpl {
 	std::unique_ptr<IBaseWindow> window = nullptr;
 	std::unique_ptr<World> world = nullptr;
 	std::unique_ptr<assets::AssetManager> asset_manager = nullptr;
+	std::unique_ptr<input::InputSystem> input_system = nullptr;
+	std::unique_ptr<input::HapticsSystem> haptics_system = nullptr;
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
 	std::unique_ptr<audio::AudioSystem> audio_system = nullptr;
@@ -138,6 +146,9 @@ void Engine::init() {
 
 	m->asset_manager = std::make_unique<assets::AssetManager>();
 
+	m->input_system = std::make_unique<input::InputSystem>();
+	m->haptics_system = std::make_unique<input::HapticsSystem>();
+
 	// TODO: This should be moved into VulkanRenderer
 	m->listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
 		if (!m->renderer || !m->vulkan_core || e.width <= 0 || e.height <= 0) {
@@ -150,6 +161,7 @@ void Engine::init() {
 
 	m->listener.subscribe<event::WorkspaceDestroy>([this](const event::WorkspaceDestroy& e) {
 		destroyWorkspace(e.handle);
+		event::send<event::ClearUnusedAssets>();
 		return false;
 	});
 
@@ -179,6 +191,9 @@ void Engine::tick() {
 
 	event::pollEvents();
 
+	m->input_system->tick();
+	m->haptics_system->tick();
+
 	{
 		std::scoped_lock lock(m->owners_mutex);
 		ZoneScopedN("NodeOwners::tick()");
@@ -203,6 +218,11 @@ void Engine::tick() {
 
 	// TODO: HACK: we should introduce a proper relax mode
 	std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+	clear_assets_timer += Time::delta();
+	if (clear_assets_timer > 30.0) {
+		m->asset_manager->clearUnusedAssets();
+	}
 }
 
 auto Engine::shouldClose() -> bool {
@@ -277,6 +297,58 @@ auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
 
 	std::string name = it->second->name();
 	return {uid, name};
+}
+
+auto Engine::openWorkspace(UID uid, std::string_view source_uri) -> std::pair<UID, std::string> {
+	std::scoped_lock lock(m->owners_mutex);
+	if (m->owners.contains(uid)) {
+		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
+		return {};
+	}
+
+	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(uid, source_uri));
+
+	auto* ws = static_cast<Workspace*>(it->second.get());
+	if (!ws->isValid()) {
+		TOAST_ERROR("Engine", "Failed to load {} into workspace {}", source_uri, uid);
+		m->owners.erase(it);
+		return {};
+	}
+
+	std::string name = it->second->name();
+	return {uid, name};
+}
+
+auto Engine::playWorkspace(UID source_handle) -> std::pair<UID, std::string> {
+	std::scoped_lock lock(m->owners_mutex);
+	auto source_it = m->owners.find(source_handle);
+	if (source_it == m->owners.end()) {
+		TOAST_ERROR("Engine", "Trying to play workspace {} which doesn't exist", source_handle);
+		return {};
+	}
+
+	auto* source = static_cast<Workspace*>(source_it->second.get());
+	if (!source->isValid()) {
+		TOAST_ERROR("Engine", "Trying to play invalid workspace {}", source_handle);
+		return {};
+	}
+
+	// clone the live tree in memory, the play workspace instantiates from it with the same node UIDs
+	assets::Prefab prefab(source->rootNode());
+
+	UID handle;
+	handle.generate();
+	auto [it, _] = m->owners.emplace(handle, std::make_unique<PlayWorkspace>(handle, prefab));
+
+	auto* play = static_cast<PlayWorkspace*>(it->second.get());
+	if (!play->isValid()) {
+		TOAST_ERROR("Engine", "Failed to clone workspace {} for play mode", source_handle);
+		m->owners.erase(it);
+		return {};
+	}
+
+	std::string name = it->second->name();
+	return {handle, name};
 }
 
 void Engine::destroyWorkspace(UID handle) {
@@ -395,6 +467,22 @@ auto toast_open_workspace(const char* uid) noexcept -> workspace_result {
 	return {.uid = root_uid.data(), .name = s_name.c_str()};
 }
 
+auto toast_play_workspace(uint64_t source_handle) noexcept -> workspace_result {
+	auto [uid, name] = toast::Engine::get()->playWorkspace(toast::UID(source_handle));
+
+	static thread_local std::string s_name;
+	s_name = std::move(name);
+	return {.uid = uid.data(), .name = s_name.c_str()};
+}
+
+auto toast_open_workspace_from(const char* uid, const char* source_uri) noexcept -> workspace_result {
+	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid), source_uri);
+
+	static thread_local std::string s_name;
+	s_name = std::move(name);
+	return {.uid = root_uid.data(), .name = s_name.c_str()};
+}
+
 void toast_rename_prefab_root(const char* path, const char* new_name) noexcept {
 	std::ifstream file_in(path, std::ios::binary | std::ios::ate);
 	if (!file_in.is_open()) {
@@ -458,5 +546,17 @@ void toast_reload_manifest() noexcept {
 	auto& mgr = assets::AssetManager::get();
 	mgr.clearUnusedAssets();
 	mgr.reloadManifest();
+}
+
+void toast_haptics_test(const char* toml_text) noexcept {
+	if (toml_text == nullptr) {
+		return;
+	}
+	try {
+		toml::table table = toml::parse(std::string_view {toml_text});
+		auto* haptic = new assets::Haptic(table);
+		assets::AssetHandle<assets::Haptic> handle {haptic, toast::UID::make(), "editor://haptic_test"};
+		event::send<event::PlayHapticDirect>(uint32_t {0}, std::move(handle));
+	} catch (const std::exception& e) { TOAST_ERROR("Haptics", "Failed to parse test haptic: {}", e.what()); }
 }
 }

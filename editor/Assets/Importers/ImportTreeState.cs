@@ -1,7 +1,6 @@
-using System;
 using System.IO;
-using System.Text.Json.Nodes;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace editor.Assets.Importers;
 
@@ -30,15 +29,29 @@ public class ImportTreeState {
 		return new ImportTreeState(path, new JsonObject());
 	}
 
-	public bool? GetFileSelected(string fullPath) => TryGetBool("file:" + fullPath);
+	public bool? GetFileSelected(string fullPath) {
+		return TryGetBool("file:" + fullPath);
+	}
 
-	public bool GetFolderCollapsed(string fullPath) => TryGetBool("collapsed:" + fullPath) ?? false;
+	public bool GetFolderCollapsed(string fullPath) {
+		return TryGetBool("collapsed:" + fullPath) ?? false;
+	}
 
-	public bool GetCardCollapsed(string cardName) => TryGetBool("card:" + cardName) ?? false;
+	public bool GetCardCollapsed(string cardName) {
+		return TryGetBool("card:" + cardName) ?? false;
+	}
 
-	public void SetFileSelected(string fullPath, bool selected) => Set("file:" + fullPath, selected);
-	public void SetFolderCollapsed(string fullPath, bool collapsed) => Set("collapsed:" + fullPath, collapsed);
-	public void SetCardCollapsed(string cardName, bool collapsed) => Set("card:" + cardName, collapsed);
+	public void SetFileSelected(string fullPath, bool selected) {
+		Set("file:" + fullPath, selected);
+	}
+
+	public void SetFolderCollapsed(string fullPath, bool collapsed) {
+		Set("collapsed:" + fullPath, collapsed);
+	}
+
+	public void SetCardCollapsed(string cardName, bool collapsed) {
+		Set("card:" + cardName, collapsed);
+	}
 
 	private bool? TryGetBool(string key) {
 		if (m_data[key] is JsonValue v && v.TryGetValue<bool>(out var val))

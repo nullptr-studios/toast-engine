@@ -31,12 +31,19 @@ typedef struct {
 TOAST_C_API workspace_result toast_create_workspace(const char* type) NOEXCEPT;
 TOAST_C_API workspace_result toast_open_workspace(const char* uid) NOEXCEPT;
 
+/// @brief autosave recovery
+TOAST_C_API workspace_result toast_open_workspace_from(const char* uid, const char* source_uri) NOEXCEPT;
+
+TOAST_C_API workspace_result toast_play_workspace(uint64_t source_handle) NOEXCEPT;
+
 /// @brief Renames the root node inside a .tnode or .tbnode file in-place
 TOAST_C_API void toast_rename_prefab_root(const char* path, const char* new_name) NOEXCEPT;
 /// @brief Creates a .tnode file with a properly-initialized node of the given type
 TOAST_C_API void toast_create_tnode(const char* path, const char* node_type) NOEXCEPT;
 /// @brief Clears unused cached assets and reloads the project manifest from disk
 TOAST_C_API void toast_reload_manifest(void) NOEXCEPT;
+/// @brief Plays a haptic described by .thaptic TOML text on the active controller
+TOAST_C_API void toast_haptics_test(const char* toml_text) NOEXCEPT;
 
 // clang-format off
 /// sets all five URI roots; must be called before toast_init()

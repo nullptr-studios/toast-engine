@@ -19,9 +19,13 @@ public sealed class Color4Box : ColorBoxBase {
 
 	protected override bool HasAlpha => true;
 
-	protected override float GetAlpha() => A;
+	protected override float GetAlpha() {
+		return A;
+	}
 
-	protected override void SetAlpha(float value) => A = value;
+	protected override void SetAlpha(float value) {
+		A = value;
+	}
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
 		base.OnPropertyChanged(change);

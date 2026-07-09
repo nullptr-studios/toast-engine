@@ -16,6 +16,7 @@ void AssetRegistry::init() {
 	initialized = true;
 
 	// Raw binary loaders
+	s_raw["mesh"] = [](const std::vector<uint8_t>& d) { return std::make_unique<Mesh>(d); };
 	s_raw["texture"] = [](std::vector<uint8_t> d) { return std::make_unique<Texture>(std::move(d)); };
 	s_raw["schema"] = [](std::vector<uint8_t> d) {
 		std::string_view json(reinterpret_cast<const char*>(d.data()), d.size());
@@ -29,6 +30,18 @@ void AssetRegistry::init() {
 
 	// TOML + Schema loaders
 	s_schema_toml["data"] = [](const toml::table& t, AssetHandle<Schema> s) { return std::make_unique<Data>(t, std::move(s)); };
+
+	// Input assets
+	s_schema_toml["haptic"] = [](const toml::table& t, AssetHandle<Schema> s) { return std::make_unique<Haptic>(t, std::move(s)); };
+	s_schema_toml["input_action"] = [](const toml::table& t, AssetHandle<Schema> s) {
+		return std::make_unique<Action>(t, std::move(s));
+	};
+	s_schema_toml["input_layout"] = [](const toml::table& t, AssetHandle<Schema> s) {
+		return std::make_unique<InputLayout>(t, std::move(s));
+	};
+	s_schema_toml["input_settings"] = [](const toml::table& t, const AssetHandle<Schema>& s) {
+		return std::make_unique<InputSettings>(t, s);
+	};
 	s_schema_toml["audio_event"] = [](const toml::table& t, AssetHandle<Schema> s) {
 		return std::make_unique<AudioEvent>(t, std::move(s));
 	};

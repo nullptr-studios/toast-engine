@@ -10,6 +10,10 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+using Avalonia.Styling;
 using editor.Components.Modals;
 using editor.Engine;
 using editor.Workspace;
@@ -23,27 +27,38 @@ public sealed class NodeBox : TemplatedControl {
 	public static readonly StyledProperty<string?> NodeTypeProperty =
 		AvaloniaProperty.Register<NodeBox, string?>(nameof(NodeType));
 
-	private string? m_displayName;
-
 	public static readonly DirectProperty<NodeBox, string?> DisplayNameProperty =
 		AvaloniaProperty.RegisterDirect<NodeBox, string?>(nameof(DisplayName), o => o.m_displayName);
-
-	private bool m_hasNode;
 
 	public static readonly DirectProperty<NodeBox, bool> HasNodeProperty =
 		AvaloniaProperty.RegisterDirect<NodeBox, bool>(nameof(HasNode), o => o.m_hasNode);
 
-	private bool m_isMissing;
-
 	public static readonly DirectProperty<NodeBox, bool> IsMissingProperty =
 		AvaloniaProperty.RegisterDirect<NodeBox, bool>(nameof(IsMissing), o => o.m_isMissing);
 
-	private readonly MenuItem m_selectItem;
-	private readonly MenuItem m_seeItem;
+	public static readonly DirectProperty<NodeBox, IBrush?> IconColorProperty =
+		AvaloniaProperty.RegisterDirect<NodeBox, IBrush?>(nameof(IconColor), o => o.m_iconColor);
+
+	public static readonly DirectProperty<NodeBox, IBrush?> NodeIconProperty =
+		AvaloniaProperty.RegisterDirect<NodeBox, IBrush?>(nameof(NodeIcon), o => o.m_nodeIcon);
+
 	private readonly MenuItem m_clearItem;
+	private readonly MenuItem m_seeItem;
+
+	private readonly MenuItem m_selectItem;
+
+	private string? m_displayName;
+
+	private bool m_hasNode;
+
+	private IBrush? m_iconColor;
+
+	private bool m_isMissing;
 
 	private TopLevel? m_keyHost;
 	private string? m_lastKnownName;
+
+	private IBrush? m_nodeIcon;
 
 	public NodeBox() {
 		DragDrop.SetAllowDrop(this, true);
@@ -89,6 +104,16 @@ public sealed class NodeBox : TemplatedControl {
 		private set => SetAndRaise(IsMissingProperty, ref m_isMissing, value);
 	}
 
+	public IBrush? IconColor {
+		get => m_iconColor;
+		private set => SetAndRaise(IconColorProperty, ref m_iconColor, value);
+	}
+
+	public IBrush? NodeIcon {
+		get => m_nodeIcon;
+		private set => SetAndRaise(NodeIconProperty, ref m_nodeIcon, value);
+	}
+
 	protected override Type StyleKeyOverride => typeof(NodeBox);
 
 	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) {
@@ -108,9 +133,11 @@ public sealed class NodeBox : TemplatedControl {
 		if (change.Property == ValueProperty) {
 			m_lastKnownName = null;
 			Refresh();
+		} else if (change.Property == NodeTypeProperty) {
+			Refresh();
+		} else if (change.Property == IsEnabledProperty) {
+			UpdateMenu();
 		}
-		else if (change.Property == NodeTypeProperty) Refresh();
-		else if (change.Property == IsEnabledProperty) UpdateMenu();
 	}
 
 	protected override void OnPointerPressed(PointerPressedEventArgs e) {
@@ -156,12 +183,23 @@ public sealed class NodeBox : TemplatedControl {
 		if (node is not null) {
 			m_lastKnownName = node.Name;
 			DisplayName = node.Name;
-		}
-		else if (IsMissing) {
+		} else if (IsMissing) {
 			DisplayName = m_lastKnownName is not null ? $"({m_lastKnownName} missing)" : "(missing)";
+		} else {
+			DisplayName = string.IsNullOrEmpty(NodeType) ? "(Node)" : $"({NodeType})";
 		}
-		else {
-			DisplayName = $"({NodeType})";
+
+		var resolvedType = node?.Type ?? NodeType;
+		var colorKey = ReflectionDatabase.ResolveColor(resolvedType);
+		IconColor = Brush(colorKey);
+
+		var iconName = ReflectionDatabase.ResolveIcon(resolvedType);
+		try {
+			NodeIcon = new ImageBrush(
+				new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1x/{iconName}.png"))));
+		} catch {
+			NodeIcon = new ImageBrush(
+				new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/1x/Circle.png"))));
 		}
 
 		UpdateMenu();
@@ -188,9 +226,10 @@ public sealed class NodeBox : TemplatedControl {
 		if (IsEnabled) Value = null;
 	}
 
-	private bool IsAcceptable(DragEventArgs e) =>
-		e.DataTransfer.TryGetValue(NodeDragData.Format) is { } el &&
-		ReflectionDatabase.IsTypeOrSubtypeOf(el.Type, NodeType);
+	private bool IsAcceptable(DragEventArgs e) {
+		return e.DataTransfer.TryGetValue(NodeDragData.Format) is { } el &&
+			ReflectionDatabase.IsTypeOrSubtypeOf(el.Type, NodeType);
+	}
 
 	private void OnDragOver(object? sender, DragEventArgs e) {
 		e.DragEffects = IsEnabled && IsAcceptable(e) ? DragDropEffects.Copy : DragDropEffects.None;
@@ -200,5 +239,11 @@ public sealed class NodeBox : TemplatedControl {
 	private void OnDrop(object? sender, DragEventArgs e) {
 		if (IsEnabled && IsAcceptable(e) && e.DataTransfer.TryGetValue(NodeDragData.Format) is { } el) Value = el.Uid;
 		e.Handled = true;
+	}
+
+	private static IBrush? Brush(string key) {
+		if (Application.Current?.Resources.TryGetResource(key, ThemeVariant.Dark, out var r) == true)
+			return r as IBrush;
+		return null;
 	}
 }

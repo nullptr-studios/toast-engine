@@ -20,16 +20,16 @@ public sealed class InspectorState {
 		try {
 			if (File.Exists(path))
 				data = JsonSerializer.Deserialize<Dictionary<string, bool>>(File.ReadAllText(path));
-		}
-		catch {
+		} catch {
 			// corrupt cache -> fall back to defaults
 		}
 
 		return new InspectorState(path, data ?? new Dictionary<string, bool>());
 	}
 
-	public bool Get(string key, bool defaultCollapsed) =>
-		m_collapsed.TryGetValue(key, out var v) ? v : defaultCollapsed;
+	public bool Get(string key, bool defaultCollapsed) {
+		return m_collapsed.TryGetValue(key, out var v) ? v : defaultCollapsed;
+	}
 
 	public void Set(string key, bool collapsed) {
 		m_collapsed[key] = collapsed;
@@ -40,8 +40,7 @@ public sealed class InspectorState {
 		try {
 			Directory.CreateDirectory(Path.GetDirectoryName(m_path)!);
 			File.WriteAllText(m_path, JsonSerializer.Serialize(m_collapsed));
-		}
-		catch {
+		} catch {
 			// best-effort persistence; ignore IO errors
 		}
 	}

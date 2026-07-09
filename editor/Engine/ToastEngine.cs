@@ -33,8 +33,6 @@ public partial class ToastEngine : IDisposable {
 	private const string EngineLib = "toast_engine";
 	private readonly CancellationTokenSource m_cancellationSource;
 
-	public static bool IsEngineReady { get; private set; }
-
 	private readonly IntPtr m_engineInstance;
 	private readonly IntPtr m_gameInstance;
 
@@ -97,8 +95,14 @@ public partial class ToastEngine : IDisposable {
 		m_tickTask = Task.Run(() => TickLoop(m_cancellationSource.Token));
 	}
 
+	public static bool IsEngineReady { get; private set; }
+
 	public string ProjectPath { get; }
 	public string CorePath { get; }
+
+	private static string NativeLibDir => OperatingSystem.IsWindows() ? "bin" : "lib";
+	private static string NativeLibPrefix => OperatingSystem.IsWindows() ? "" : "lib";
+	private static string NativeLibExt => OperatingSystem.IsWindows() ? ".dll" : ".so";
 
 	public void Dispose() {
 		IsEngineReady = false;
@@ -115,6 +119,16 @@ public partial class ToastEngine : IDisposable {
 
 	public WorkspaceResult OpenWorkspace(string assetUid) {
 		return toast_open_workspace(assetUid);
+	}
+
+	/// Opens a workspace bound to assetUid but loading its content from an autosave
+	public WorkspaceResult OpenWorkspaceFrom(string assetUid, string sourceUri) {
+		return toast_open_workspace_from(assetUid, sourceUri);
+	}
+
+	/// Clones the given workspace's live tree into a new ticking PlayWorkspace
+	public WorkspaceResult PlayWorkspace(ulong sourceHandle) {
+		return toast_play_workspace(sourceHandle);
 	}
 
 	// copies the latest rendered frame into dst (capacity bytes)
@@ -135,10 +149,6 @@ public partial class ToastEngine : IDisposable {
 		Thread.Sleep(150); // give the OS time to release handles before loading a new copy
 		LoadGame();
 	}
-
-	private static string NativeLibDir    => OperatingSystem.IsWindows() ? "bin" : "lib";
-	private static string NativeLibPrefix => OperatingSystem.IsWindows() ? ""    : "lib";
-	private static string NativeLibExt    => OperatingSystem.IsWindows() ? ".dll" : ".so";
 
 	private static string EngineDllPath() {
 		var name = $"{NativeLibPrefix}toast_engine{NativeLibExt}";
@@ -162,7 +172,8 @@ public partial class ToastEngine : IDisposable {
 	}
 
 	private void LoadGame() {
-		var gameDllPath = Directory.EnumerateFiles(Path.Combine(ProjectPath, "build"), $"*{NativeLibExt}").FirstOrDefault();
+		var gameDllPath = Directory.EnumerateFiles(Path.Combine(ProjectPath, "build"), $"*{NativeLibExt}")
+			.FirstOrDefault();
 		if (gameDllPath is null)
 			throw new FileNotFoundException($"Game not found at path {ProjectPath}");
 
@@ -241,21 +252,39 @@ public partial class ToastEngine : IDisposable {
 	private static partial WorkspaceResult toast_open_workspace(string uid);
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial WorkspaceResult toast_open_workspace_from(string uid, string sourceUri);
+
+	[LibraryImport(EngineLib)]
+	private static partial WorkspaceResult toast_play_workspace(ulong sourceHandle);
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial void toast_rename_prefab_root(string path, string newName);
 
-	public static void RenamePrefabRoot(string path, string newName) =>
+	public static void RenamePrefabRoot(string path, string newName) {
 		toast_rename_prefab_root(path, newName);
+	}
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial void toast_create_tnode(string path, string nodeType);
 
-	public static void CreateTNode(string path, string nodeType) =>
+	public static void CreateTNode(string path, string nodeType) {
 		toast_create_tnode(path, nodeType);
+	}
 
 	[LibraryImport(EngineLib)]
 	private static partial void toast_reload_manifest();
 
-	public static void ReloadManifest() => toast_reload_manifest();
+	public static void ReloadManifest() {
+		toast_reload_manifest();
+	}
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial void toast_haptics_test(string tomlText);
+
+	/// Plays a haptic described by .thaptic TOML text on the active controller
+	public static void TestHaptic(string tomlText) {
+		toast_haptics_test(tomlText);
+	}
 
 	private delegate IntPtr GameCreate();
 

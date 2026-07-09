@@ -102,6 +102,49 @@ if (fn) {
 }
 ```
 
+## Reflecting functions
+
+Member functions can also be reflected. Mark any member function with `[[Reflect]]` (the same
+attribute used for fields) and the generator records its name, return type, and parameters
+(name, type, and default value if any). Functions can be public or private; the generated code
+uses the same member access pattern as fields.
+
+```c++
+class [[ToastNode]] Enemy : public Node {
+public:
+    [[Reflect, Group("Combat")]] int m_health = 100;
+
+    [[Reflect]] int takeDamage(int amount, bool crit = false);
+    [[Reflect]] void teleport(glm::vec3 destination);
+};
+```
+
+Reflected functions are called by name through `NodeInfo::call()`, mirroring how field accessors
+hang off the reflection data rather than the `Node` itself. The return type is supplied as a
+template parameter and the arguments are forwarded as variadics, so custom structs can be passed
+directly:
+
+```c++
+int hp = node->info()->call<int>(node, "takeDamage", 25, true);
+node->info()->call(node, "teleport", glm::vec3 {1, 2, 3}); // R defaults to void
+```
+
+The argument and return types must match the reflected signature after decay (top-level `const`,
+references, and so on are stripped for matching). A mismatch in arity or type logs a warning before
+invoking (and asserts in debug builds), then proceeds, which is undefined behavior. Calling a name
+that is not reflected logs a warning, asserts in debug, and returns a default-constructed `R`.
+Because arguments are passed by value through a generated trampoline, mutable reference parameters
+do not write back to the caller.
+
+Function metadata is also available through `info()`:
+
+```c++
+const FunctionInfo* fn = node->info()->getMethod("takeDamage");
+if (fn) {
+    // fn->name, fn->return_type, and fn->parameters (name, type, default_value)
+}
+```
+
 ## Motivation
 
 We needed a reflection system for our game engine, which will be used for a lot of core

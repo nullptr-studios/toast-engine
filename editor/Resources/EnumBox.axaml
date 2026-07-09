@@ -4,21 +4,31 @@
                     xmlns:lucide="using:Lucide.Avalonia">
 
 	<Design.PreviewWith>
-		<Border Padding="8" Background="{StaticResource Bg3}" Width="200">
+		<Border Padding="8"
+		        Background="{StaticResource Bg3}"
+		        Width="200">
 			<StackPanel Spacing="8">
-				<elements:EnumBox Value="float"  />
-				<elements:EnumBox Value="string" IsEnabled="False" />
+				<elements:EnumBox Value="float" />
+				<elements:EnumBox Value="string"
+				                  IsEnabled="False" />
 			</StackPanel>
 		</Border>
 	</Design.PreviewWith>
 
-	<ControlTheme x:Key="{x:Type elements:EnumBox}" TargetType="elements:EnumBox">
-		<Setter Property="FontFamily" Value="FiraCode Nerd Font,Consolas,monospace" />
-		<Setter Property="FontSize" Value="15" />
-		<Setter Property="MinHeight" Value="34" />
-		<Setter Property="HorizontalAlignment" Value="Stretch" />
-		<Setter Property="CornerRadius" Value="6" />
-		<Setter Property="Cursor" Value="Hand" />
+	<ControlTheme x:Key="{x:Type elements:EnumBox}"
+	              TargetType="elements:EnumBox">
+		<Setter Property="FontFamily"
+		        Value="FiraCode Nerd Font,Consolas,monospace" />
+		<Setter Property="FontSize"
+		        Value="15" />
+		<Setter Property="MinHeight"
+		        Value="34" />
+		<Setter Property="HorizontalAlignment"
+		        Value="Stretch" />
+		<Setter Property="CornerRadius"
+		        Value="6" />
+		<Setter Property="Cursor"
+		        Value="Hand" />
 
 		<Setter Property="Template">
 			<ControlTemplate>
@@ -26,13 +36,16 @@
 					<Border x:Name="PART_Root"
 					        CornerRadius="{TemplateBinding CornerRadius}"
 					        Padding="8,4">
-						<Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">
+						<Grid ColumnDefinitions="*,Auto"
+						      ColumnSpacing="4">
 							<TextBlock x:Name="PART_Display"
 							           Text="{TemplateBinding Value}"
 							           VerticalAlignment="Center"
 							           TextTrimming="CharacterEllipsis" />
 							<lucide:LucideIcon Grid.Column="1"
-							                   Kind="ChevronDown" Size="14" StrokeWidth="2"
+							                   Kind="ChevronDown"
+							                   Size="14"
+							                   StrokeWidth="2"
 							                   Foreground="{StaticResource TextMuted}"
 							                   VerticalAlignment="Center" />
 						</Grid>
@@ -63,23 +76,28 @@
 
 		<!-- Default colors -->
 		<Style Selector="^ /template/ Border#PART_Root">
-			<Setter Property="Background" Value="{StaticResource Bg1}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Bg1}" />
 		</Style>
 		<Style Selector="^ /template/ TextBlock#PART_Display">
-			<Setter Property="Foreground" Value="{StaticResource Text}" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Text}" />
 		</Style>
 
 		<!-- Hover -->
 		<Style Selector="^:pointerover /template/ Border#PART_Root">
-			<Setter Property="Background" Value="{StaticResource Bg2}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Bg2}" />
 		</Style>
 
 		<!-- Disabled -->
 		<Style Selector="^:disabled /template/ Border#PART_Root">
-			<Setter Property="Background" Value="{StaticResource Bg2}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Bg2}" />
 		</Style>
 		<Style Selector="^:disabled /template/ TextBlock#PART_Display">
-			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
 		</Style>
 	</ControlTheme>
 

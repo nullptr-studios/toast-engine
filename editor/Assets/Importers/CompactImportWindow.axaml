@@ -5,8 +5,11 @@
         xmlns:local="clr-namespace:editor.Assets.Importers"
         xmlns:lucide="using:Lucide.Avalonia"
         xmlns:elements="using:editor.Components.Elements"
-        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="600"
-        Width="400" MinHeight="300"
+        mc:Ignorable="d"
+        d:DesignWidth="400"
+        d:DesignHeight="600"
+        Width="400"
+        MinHeight="300"
         SizeToContent="Height"
         MaxHeight="800"
         CanResize="False"
@@ -17,156 +20,204 @@
         Padding="8"
         Background="{StaticResource Bg2}">
 
-    <Window.Styles>
-        <!-- Settings label -->
-        <Style Selector="TextBlock.SettingLabel">
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-        </Style>
+	<Window.Styles>
+		<!-- Settings label -->
+		<Style Selector="TextBlock.SettingLabel">
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
+			<Setter Property="TextTrimming"
+			        Value="CharacterEllipsis" />
+		</Style>
 
-        <!-- Header button -->
-        <Style Selector="ToggleButton.hdr">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="4" />
-            <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="Foreground" Value="{StaticResource Text}" />
-            <Setter Property="Cursor" Value="Hand" />
-        </Style>
-        <Style Selector="ToggleButton.hdr /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="CornerRadius" Value="6" />
-        </Style>
-        <Style Selector="ToggleButton.hdr:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource Bg4}" />
-        </Style>
-        <Style Selector="ToggleButton.hdr:pressed /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource Bg4}" />
-        </Style>
-    </Window.Styles>
+		<!-- Header button -->
+		<Style Selector="ToggleButton.hdr">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="4" />
+			<Setter Property="HorizontalAlignment"
+			        Value="Stretch" />
+			<Setter Property="HorizontalContentAlignment"
+			        Value="Stretch" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Text}" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+		</Style>
+		<Style Selector="ToggleButton.hdr /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+		</Style>
+		<Style Selector="ToggleButton.hdr:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ToggleButton.hdr:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+	</Window.Styles>
 
-    <Window.DataTemplates>
-        <DataTemplate DataType="local:SettingFieldVM">
-            <Grid ColumnDefinitions="150,*" ColumnSpacing="8" Margin="0,2">
-                <TextBlock Grid.Column="0" Text="{Binding Label}" Classes="SettingLabel"
-                           ToolTip.Tip="{Binding Tooltip}" />
-                <Panel Grid.Column="1">
-                    <elements:BoolBox Value="{Binding BoolValue, Mode=TwoWay}"
-                                      IsVisible="{Binding IsBool}" />
-                    <elements:EnumBox Value="{Binding StringValue, Mode=TwoWay}"
-                                      Options="{Binding Options}"
-                                      IsVisible="{Binding IsEnum}" />
-                    <elements:DragIntBox Value="{Binding IntValue, Mode=TwoWay}"
-                                         IsVisible="{Binding IsInt}" />
-                    <elements:DragFloatBox Value="{Binding FloatValue, Mode=TwoWay}"
-                                           IsVisible="{Binding IsFloat}" />
-                    <elements:StringBox Value="{Binding StringValue, Mode=TwoWay}"
-                                        IsVisible="{Binding IsString}" />
-                </Panel>
-            </Grid>
-        </DataTemplate>
+	<Window.DataTemplates>
+		<DataTemplate DataType="local:SettingFieldVM">
+			<Grid ColumnDefinitions="150,*"
+			      ColumnSpacing="8"
+			      Margin="0,2">
+				<TextBlock Grid.Column="0"
+				           Text="{Binding Label}"
+				           Classes="SettingLabel"
+				           ToolTip.Tip="{Binding Tooltip}" />
+				<Panel Grid.Column="1">
+					<elements:BoolBox Value="{Binding BoolValue, Mode=TwoWay}"
+					                  IsVisible="{Binding IsBool}" />
+					<elements:EnumBox Value="{Binding StringValue, Mode=TwoWay}"
+					                  Options="{Binding Options}"
+					                  IsVisible="{Binding IsEnum}" />
+					<elements:DragIntBox Value="{Binding IntValue, Mode=TwoWay}"
+					                     IsVisible="{Binding IsInt}" />
+					<elements:DragFloatBox Value="{Binding FloatValue, Mode=TwoWay}"
+					                       IsVisible="{Binding IsFloat}" />
+					<elements:StringBox Value="{Binding StringValue, Mode=TwoWay}"
+					                    IsVisible="{Binding IsString}" />
+				</Panel>
+			</Grid>
+		</DataTemplate>
 
-        <DataTemplate DataType="local:ImporterSettingsCardVM">
-            <Border Background="{StaticResource Bg3}" CornerRadius="8" Padding="8">
-                <StackPanel Spacing="4">
-                    <ToggleButton Classes="hdr" IsChecked="{Binding Expanded, Mode=TwoWay}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-                            <lucide:LucideIcon Kind="{Binding Icon}" Size="16" StrokeWidth="2.5" />
-                            <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </ToggleButton>
-                    <ItemsControl ItemsSource="{Binding Fields}" Margin="4,0,0,0"
-                                  IsVisible="{Binding Expanded}" />
-                </StackPanel>
-            </Border>
-        </DataTemplate>
+		<DataTemplate DataType="local:ImporterSettingsCardVM">
+			<Border Background="{StaticResource Bg3}"
+			        CornerRadius="8"
+			        Padding="8">
+				<StackPanel Spacing="4">
+					<ToggleButton Classes="hdr"
+					              IsChecked="{Binding Expanded, Mode=TwoWay}">
+						<StackPanel Orientation="Horizontal"
+						            HorizontalAlignment="Center"
+						            Spacing="8">
+							<lucide:LucideIcon Kind="{Binding Icon}"
+							                   Size="16"
+							                   StrokeWidth="2.5" />
+							<TextBlock Text="{Binding DisplayName}"
+							           FontWeight="Bold"
+							           VerticalAlignment="Center" />
+						</StackPanel>
+					</ToggleButton>
+					<ItemsControl ItemsSource="{Binding Fields}"
+					              Margin="4,0,0,0"
+					              IsVisible="{Binding Expanded}" />
+				</StackPanel>
+			</Border>
+		</DataTemplate>
 
-    </Window.DataTemplates>
+	</Window.DataTemplates>
 
-    <DockPanel>
+	<DockPanel>
 
-        <!-- Bottom buttons -->
-        <StackPanel DockPanel.Dock="Bottom"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Spacing="8"
-                    Margin="0,8,0,0">
-            <Button Command="{Binding CancelCommand}" CornerRadius="6">
-                <StackPanel Orientation="Horizontal" Spacing="4">
-                    <lucide:LucideIcon Kind="X" Size="16" StrokeWidth="3" />
-                    <TextBlock Text="Cancel" />
-                </StackPanel>
-            </Button>
-            <Button Background="{StaticResource Red}"
-                    Command="{Binding ImportCommand}"
-                    CornerRadius="6">
-                <StackPanel Orientation="Horizontal" Spacing="4">
-                    <lucide:LucideIcon Kind="PackageCheck" Size="16" StrokeWidth="2.5" />
-                    <TextBlock Text="Import" FontWeight="Bold" />
-                </StackPanel>
-            </Button>
-        </StackPanel>
+		<!-- Bottom buttons -->
+		<StackPanel DockPanel.Dock="Bottom"
+		            Orientation="Horizontal"
+		            HorizontalAlignment="Right"
+		            Spacing="8"
+		            Margin="0,8,0,0">
+			<Button Command="{Binding CancelCommand}"
+			        CornerRadius="6">
+				<StackPanel Orientation="Horizontal"
+				            Spacing="4">
+					<lucide:LucideIcon Kind="X"
+					                   Size="16"
+					                   StrokeWidth="3" />
+					<TextBlock Text="Cancel" />
+				</StackPanel>
+			</Button>
+			<Button Background="{StaticResource Red}"
+			        Command="{Binding ImportCommand}"
+			        CornerRadius="6">
+				<StackPanel Orientation="Horizontal"
+				            Spacing="4">
+					<lucide:LucideIcon Kind="PackageCheck"
+					                   Size="16"
+					                   StrokeWidth="2.5" />
+					<TextBlock Text="Import"
+					           FontWeight="Bold" />
+				</StackPanel>
+			</Button>
+		</StackPanel>
 
-        <ScrollViewer>
-        <StackPanel Spacing="8">
+		<ScrollViewer>
+			<StackPanel Spacing="8">
 
-            <!-- Destination -->
-            <StackPanel Spacing="4">
-                <TextBlock Text="Destination" Foreground="{StaticResource TextMuted}" />
-                <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
-                    <TextBox Grid.Column="0"
-                             Text="{Binding LocationPath}"
-                             CornerRadius="6"
-                             BorderThickness="0"
-                             VerticalContentAlignment="Center"
-                             IsEnabled="False" />
-                    <Button Grid.Column="1"
-                            Command="{Binding BrowseLocationCommand}"
-                            ToolTip.Tip="Browse assets folder"
-                            CornerRadius="6">
-                        <lucide:LucideIcon Kind="FolderOpen" Size="18" StrokeWidth="2.5" />
-                    </Button>
-                </Grid>
-            </StackPanel>
+				<!-- Destination -->
+				<StackPanel Spacing="4">
+					<TextBlock Text="Destination"
+					           Foreground="{StaticResource TextMuted}" />
+					<Grid ColumnDefinitions="*, Auto"
+					      ColumnSpacing="8">
+						<TextBox Grid.Column="0"
+						         Text="{Binding LocationPath}"
+						         CornerRadius="6"
+						         BorderThickness="0"
+						         VerticalContentAlignment="Center"
+						         IsEnabled="False" />
+						<Button Grid.Column="1"
+						        Command="{Binding BrowseLocationCommand}"
+						        ToolTip.Tip="Browse assets folder"
+						        CornerRadius="6">
+							<lucide:LucideIcon Kind="FolderOpen"
+							                   Size="18"
+							                   StrokeWidth="2.5" />
+						</Button>
+					</Grid>
+				</StackPanel>
 
-            <!-- Move-to-artwork toggle -->
-            <Grid ColumnDefinitions="180,*">
-                <TextBlock Grid.Column="0" Text="Move to artwork folder"
-                           VerticalAlignment="Center" Foreground="{StaticResource TextMuted}" />
-                <elements:BoolBox Grid.Column="1" Value="{Binding MoveToArtwork, Mode=TwoWay}" />
-            </Grid>
+				<!-- Move-to-artwork toggle -->
+				<Grid ColumnDefinitions="180,*">
+					<TextBlock Grid.Column="0"
+					           Text="Move to artwork folder"
+					           VerticalAlignment="Center"
+					           Foreground="{StaticResource TextMuted}" />
+					<elements:BoolBox Grid.Column="1"
+					                  Value="{Binding MoveToArtwork, Mode=TwoWay}" />
+				</Grid>
 
-            <!-- Artwork destination -->
-            <StackPanel Spacing="4" IsVisible="{Binding MoveToArtwork}">
-                <TextBlock Text="Artwork destination:" Foreground="{StaticResource TextMuted}" />
-                <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
-                    <TextBox Grid.Column="0"
-                             Text="{Binding ArtworkDestination}"
-                             CornerRadius="6"
-                             BorderThickness="0"
-                             VerticalContentAlignment="Center"
-                             IsEnabled="False" />
-                    <Button Grid.Column="1"
-                            Command="{Binding BrowseArtworkDestinationCommand}"
-                            ToolTip.Tip="Browse artwork folder"
-                            CornerRadius="6">
-                        <lucide:LucideIcon Kind="FolderOpen" Size="18" StrokeWidth="2.5" />
-                    </Button>
-                </Grid>
-            </StackPanel>
+				<!-- Artwork destination -->
+				<StackPanel Spacing="4"
+				            IsVisible="{Binding MoveToArtwork}">
+					<TextBlock Text="Artwork destination:"
+					           Foreground="{StaticResource TextMuted}" />
+					<Grid ColumnDefinitions="*, Auto"
+					      ColumnSpacing="8">
+						<TextBox Grid.Column="0"
+						         Text="{Binding ArtworkDestination}"
+						         CornerRadius="6"
+						         BorderThickness="0"
+						         VerticalContentAlignment="Center"
+						         IsEnabled="False" />
+						<Button Grid.Column="1"
+						        Command="{Binding BrowseArtworkDestinationCommand}"
+						        ToolTip.Tip="Browse artwork folder"
+						        CornerRadius="6">
+							<lucide:LucideIcon Kind="FolderOpen"
+							                   Size="18"
+							                   StrokeWidth="2.5" />
+						</Button>
+					</Grid>
+				</StackPanel>
 
-            <!-- Importer settings cards -->
-            <ItemsControl ItemsSource="{Binding SettingsCards}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Spacing="8" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
+				<!-- Importer settings cards -->
+				<ItemsControl ItemsSource="{Binding SettingsCards}">
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<StackPanel Spacing="8" />
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
+				</ItemsControl>
 
-        </StackPanel>
-        </ScrollViewer>
-    </DockPanel>
+			</StackPanel>
+		</ScrollViewer>
+	</DockPanel>
 </Window>

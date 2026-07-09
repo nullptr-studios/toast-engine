@@ -3,8 +3,11 @@
         xmlns:local="clr-namespace:editor.Components.Modals"
         x:Class="editor.Components.Modals.SplashLoaderWindow"
         x:DataType="local:LoaderViewModel"
-        Width="1200" Height="500"
-        CanMaximize="False" CanMinimize="False" CanResize="False"
+        Width="1200"
+        Height="500"
+        CanMaximize="False"
+        CanMinimize="False"
+        CanResize="False"
         WindowDecorations="None"
         WindowStartupLocation="CenterScreen"
         TransparencyLevelHint="Transparent"
@@ -15,26 +18,45 @@
 		<local:LoaderViewModel />
 	</Design.DataContext>
 
-	<Border CornerRadius="16" ClipToBounds="True" Background="Transparent">
+	<Border CornerRadius="16"
+	        ClipToBounds="True"
+	        Background="Transparent">
 		<Grid ColumnDefinitions="*,*">
 			<!-- Splash image -->
-			<Border Grid.Column="0" Background="Transparent">
-				<Image x:Name="SplashImage" Stretch="UniformToFill" />
+			<Border Grid.Column="0"
+			        Background="Transparent">
+				<Image x:Name="SplashImage"
+				       Stretch="UniformToFill" />
 			</Border>
 
 			<!-- Console side -->
-			<Border Grid.Column="1" Background="{StaticResource Bg2}" Padding="8">
-				<Grid RowDefinitions="Auto,*,Auto" Background="{StaticResource Bg2}" RowSpacing="8">
-					<StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10, 0" Spacing="10">
-						<TextBlock FontSize="50" Text="Toast Engine"/>
-						<TextBlock FontSize="16" VerticalAlignment="Bottom" Foreground="{StaticResource TextMuted}" Padding="0,0,0,4">
+			<Border Grid.Column="1"
+			        Background="{StaticResource Bg2}"
+			        Padding="8">
+				<Grid RowDefinitions="Auto,*,Auto"
+				      Background="{StaticResource Bg2}"
+				      RowSpacing="8">
+					<StackPanel Grid.Row="0"
+					            Orientation="Horizontal"
+					            Margin="10, 0"
+					            Spacing="10">
+						<TextBlock FontSize="50"
+						           Text="Toast Engine" />
+						<TextBlock FontSize="16"
+						           VerticalAlignment="Bottom"
+						           Foreground="{StaticResource TextMuted}"
+						           Padding="0,0,0,4">
 							<Run Text="by" />
-							<Run Text="nullptr" Foreground="{StaticResource Red}" />
+							<Run Text="nullptr"
+							     Foreground="{StaticResource Red}" />
 							<Run Text="* studios" />
 						</TextBlock>
 					</StackPanel>
 
-					<Border Grid.Row="1" CornerRadius="8, 8, 0, 0" Background="{StaticResource Bg1}" Padding="8">
+					<Border Grid.Row="1"
+					        CornerRadius="8, 8, 0, 0"
+					        Background="{StaticResource Bg1}"
+					        Padding="8">
 						<ScrollViewer x:Name="ConsoleScroll">
 							<ItemsControl ItemsSource="{Binding ConsoleLines}">
 								<ItemsControl.ItemTemplate>
@@ -51,12 +73,15 @@
 						</ScrollViewer>
 					</Border>
 
-					<Border Grid.Row="2" Padding="0,-8,0,0">
+					<Border Grid.Row="2"
+					        Padding="0,-8,0,0">
 						<ProgressBar Value="{Binding Progress}"
-						             Minimum="0" Maximum="100" Height="20"
+						             Minimum="0"
+						             Maximum="100"
+						             Height="20"
 						             CornerRadius="0,0,8,8"
 						             Foreground="{StaticResource Red}"
-						             Background="{StaticResource Bg1}"/>
+						             Background="{StaticResource Bg1}" />
 					</Border>
 				</Grid>
 			</Border>

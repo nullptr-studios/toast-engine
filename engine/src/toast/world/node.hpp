@@ -14,9 +14,6 @@
 #pragma once
 #include "box.hpp"
 #include "control_box.hpp"
-#include "toast/log.hpp"
-#include "toast/reflect/reflect_node.hpp"
-#include "toast/world/node_owner.hpp"
 
 #include <memory>
 #include <string>
@@ -24,7 +21,10 @@
 #include <toast/assets/prefab.hpp>
 #include <toast/events/listener.hpp>
 #include <toast/export.hpp>
+#include <toast/log.hpp>
+#include <toast/reflect/reflect_node.hpp>
 #include <toast/uid.hpp>
+#include <toast/world/node_owner.hpp>
 
 namespace toast {
 class INodeOwner;
@@ -53,6 +53,8 @@ class [[ToastNode, Icon("Circle")]] TOAST_API Node {
 	friend class INodeOwner;
 	friend class World;
 	friend class Workspace;
+	friend class PlayWorkspace;
+	friend class TickScheduler;
 	friend class Node3D;
 	friend class assets::Prefab;
 	friend struct _detail::ControlBox;
@@ -292,6 +294,9 @@ private:
 
 	/// calls callTick on this node then recurses into children
 	void propagateCallTick(const NodeInfo* info, TickFunctionList func_type) noexcept;
+
+	/// calls onEnable only on enabled objects
+	void propagateEnable() noexcept;
 };
 
 }

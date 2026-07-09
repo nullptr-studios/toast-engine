@@ -21,7 +21,7 @@ public partial class SaveFileModal : Window {
 
 	private async void Folder_OnClick(object? sender, RoutedEventArgs e) {
 		var result = await new AssetFolderTree().ShowDialog<string?>(this);
-		if (result is { })
+		if (result is not null)
 			((SaveFileViewModel)DataContext!).SetFolder(result);
 	}
 

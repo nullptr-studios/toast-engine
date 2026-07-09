@@ -3,7 +3,9 @@
         xmlns:vm="using:editor.Workspace"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d"
+        d:DesignWidth="800"
+        d:DesignHeight="450"
         x:Class="editor.Workspace.MainWindowView"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Resources/avalonia-logo.ico"
@@ -13,49 +15,91 @@
         WindowDecorations="BorderOnly"
         WindowState="Maximized">
 
+	<!-- menu InputGestures are display-only, these make the shortcuts actually fire window-wide -->
+	<Window.KeyBindings>
+		<KeyBinding Gesture="Ctrl+N"
+		            Command="{Binding NewNodeCommand}" />
+		<KeyBinding Gesture="Ctrl+O"
+		            Command="{Binding OpenNodeFileCommand}" />
+		<KeyBinding Gesture="Ctrl+W"
+		            Command="{Binding CloseNodeFileCommand}" />
+		<KeyBinding Gesture="Ctrl+S"
+		            Command="{Binding SaveCurrentNodeCommand}" />
+		<KeyBinding Gesture="Ctrl+Shift+S"
+		            Command="{Binding SaveCurrentNodeAsCommand}" />
+		<KeyBinding Gesture="Ctrl+Alt+S"
+		            Command="{Binding SaveAllNodesCommand}" />
+	</Window.KeyBindings>
+
 	<Grid RowDefinitions="Auto,*">
-		<DockPanel x:Name="MenuBorder" Grid.Row="0">
+		<DockPanel x:Name="MenuBorder"
+		           Grid.Row="0">
 
 			<!-- Window buttons -->
-			<StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-				<Button Content="&#x2013;" Click="OnMinimize" Width="46" Height="30" Padding="0"
+			<StackPanel DockPanel.Dock="Right"
+			            Orientation="Horizontal">
+				<Button Content="&#x2013;"
+				        Click="OnMinimize"
+				        Width="46"
+				        Height="30"
+				        Padding="0"
 				        VerticalContentAlignment="Center"
 				        HorizontalContentAlignment="Center" />
-				<Button Content="&#x25A1;" Click="OnMaximize" Width="46" Height="30" Padding="0"
+				<Button Content="&#x25A1;"
+				        Click="OnMaximize"
+				        Width="46"
+				        Height="30"
+				        Padding="0"
 				        VerticalContentAlignment="Center"
 				        HorizontalContentAlignment="Center" />
-				<Button Content="&#x2715;" Click="OnClose" Width="46" Height="30" Padding="0, 0, 0, 1"
+				<Button Content="&#x2715;"
+				        Click="OnClose"
+				        Width="46"
+				        Height="30"
+				        Padding="0, 0, 0, 1"
 				        VerticalContentAlignment="Center"
 				        HorizontalContentAlignment="Center" />
 			</StackPanel>
 
 			<!-- Menu -->
 			<Menu DockPanel.Dock="Left">
-				<MenuItem Header="_Toast Engine" Foreground="DeepPink" FontWeight="Bold">
-					<MenuItem Header="_New project" FontWeight="Normal" />
-					<MenuItem Header="_Open project" FontWeight="Normal" />
-					<MenuItem Header="_Close project" FontWeight="Normal" />
+				<MenuItem Header="_Toast Engine"
+				          Foreground="DeepPink"
+				          FontWeight="Bold">
+					<MenuItem Header="_New project"
+					          FontWeight="Normal" />
+					<MenuItem Header="_Open project"
+					          FontWeight="Normal" />
+					<MenuItem Header="_Close project"
+					          FontWeight="Normal" />
 					<Separator />
-					<MenuItem Header="_Project settings" FontWeight="Normal" />
-					<MenuItem Header="_Toast settings" FontWeight="Normal" />
+					<MenuItem Header="_Project settings"
+					          FontWeight="Normal" />
+					<MenuItem Header="_Toast settings"
+					          FontWeight="Normal" />
 					<Separator />
-					<MenuItem Header="_Quit Toast" FontWeight="Normal" />
+					<MenuItem Header="_Quit Toast"
+					          FontWeight="Normal" />
 				</MenuItem>
 				<MenuItem Header="_File">
-					<MenuItem Header="_New Node file" InputGesture="Ctrl+N"
-					          Command="{Binding NewNodeCommand}"
-					          CommandParameter="{Binding $parent[Window]}" />
-					<MenuItem Header="_Open Node file" InputGesture="Ctrl+O"
-					          Command="{Binding OpenNodeFileCommand}"
-					          CommandParameter="{Binding $parent[Window]}" />
-					<MenuItem Header="_Close Node file" InputGesture="Ctrl+W"
+					<MenuItem Header="_New Node file"
+					          InputGesture="Ctrl+N"
+					          Command="{Binding NewNodeCommand}" />
+					<MenuItem Header="_Open Node file"
+					          InputGesture="Ctrl+O"
+					          Command="{Binding OpenNodeFileCommand}" />
+					<MenuItem Header="_Close Node file"
+					          InputGesture="Ctrl+W"
 					          Command="{Binding CloseNodeFileCommand}" />
 					<Separator />
-					<MenuItem Header="_Save" InputGesture="Ctrl+S"
+					<MenuItem Header="_Save"
+					          InputGesture="Ctrl+S"
 					          Command="{Binding SaveCurrentNodeCommand}" />
-					<MenuItem Header="Save _as..." InputGesture="Ctrl+Shift+S"
+					<MenuItem Header="Save _as..."
+					          InputGesture="Ctrl+Shift+S"
 					          Command="{Binding SaveCurrentNodeAsCommand}" />
-					<MenuItem Header="Save a_ll nodes" InputGesture="Ctrl+Alt+S"
+					<MenuItem Header="Save a_ll nodes"
+					          InputGesture="Ctrl+Alt+S"
 					          Command="{Binding SaveAllNodesCommand}" />
 				</MenuItem>
 				<MenuItem Header="_Edit">
@@ -80,17 +124,28 @@
 				</MenuItem>
 				<MenuItem Header="_View" />
 				<MenuItem Header="_Tools">
-					<MenuItem Header="_Hierarchy" ToggleType="CheckBox"
+					<MenuItem Header="_Hierarchy"
+					          ToggleType="CheckBox"
 					          IsChecked="{Binding HierarchyVisible, Mode=TwoWay}" />
-					<MenuItem Header="_Inspector" ToggleType="CheckBox"
+					<MenuItem Header="_Inspector"
+					          ToggleType="CheckBox"
 					          IsChecked="{Binding InspectorVisible, Mode=TwoWay}" />
-					<MenuItem Header="_Data Editor" ToggleType="CheckBox"
+					<MenuItem Header="_Data Editor"
+					          ToggleType="CheckBox"
 					          IsChecked="{Binding GenericEditorVisible, Mode=TwoWay}" />
-					<MenuItem Header="_Schema Editor" ToggleType="CheckBox"
+					<MenuItem Header="_Schema Editor"
+					          ToggleType="CheckBox"
 					          IsChecked="{Binding SchemaEditorVisible, Mode=TwoWay}" />
 					<Separator />
-					<MenuItem Header="_Logs" ToggleType="CheckBox"
-					          x:Name="LogWindowButton" />
+					<MenuItem Header="_Logs"
+					          ToggleType="CheckBox"
+					          IsChecked="{Binding LogsVisible, Mode=TwoWay}" />
+					<MenuItem Header="_Curve Editor"
+					          ToggleType="CheckBox"
+					          IsChecked="{Binding CurveEditorVisible, Mode=TwoWay}" />
+					<MenuItem Header="Ha_ptics Editor"
+					          ToggleType="CheckBox"
+					          IsChecked="{Binding HapticsEditorVisible, Mode=TwoWay}" />
 				</MenuItem>
 				<MenuItem Header="_Help">
 					<MenuItem Header="_Documentation" />
@@ -105,20 +160,29 @@
 			        PointerPressed="OnTitleBarPointerPressed" />
 		</DockPanel>
 
-		<Panel Grid.Row="1" ClipToBounds="True">
-			<DockControl Layout="{Binding MainLayout}" ZIndex="0" />
-			<Border x:Name="ToastZoneBorder" Background="{StaticResource Bg1}" Height="400"
-			        VerticalAlignment="Bottom" ZIndex="1"
+		<Panel Grid.Row="1"
+		       ClipToBounds="True">
+			<DockControl Layout="{Binding MainLayout}"
+			             ZIndex="0" />
+			<Border x:Name="ToastZoneBorder"
+			        Background="{StaticResource Bg1}"
+			        Height="400"
+			        VerticalAlignment="Bottom"
+			        ZIndex="1"
 			        IsVisible="False"
 			        RenderTransform="translateY(400px)">
 				<Border.Transitions>
 					<Transitions>
-						<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut" />
+						<TransformOperationsTransition Property="RenderTransform"
+						                               Duration="0:0:0.2"
+						                               Easing="CubicEaseOut" />
 					</Transitions>
 				</Border.Transitions>
 				<DockPanel>
-					<Border x:Name="ToastResizeHandle" DockPanel.Dock="Top"
-					        Height="6" HorizontalAlignment="Stretch"
+					<Border x:Name="ToastResizeHandle"
+					        DockPanel.Dock="Top"
+					        Height="6"
+					        HorizontalAlignment="Stretch"
 					        Background="{StaticResource Bg4}"
 					        Cursor="SizeNorthSouth" />
 					<DockControl Layout="{Binding ToastZoneLayout}" />

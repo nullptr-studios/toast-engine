@@ -40,6 +40,15 @@ public:
 	 */
 	Workspace(UID uid);
 
+	/**
+	 * @brief Opens a workspace bound to the given asset UID but loading its content from another file
+	 * @param uid Asset UID of the workspace prefab; used as the workspace handle
+	 * @param source_uri Virtual path to read the prefab bytes from
+	 *
+	 * Used to recover autosaves
+	 */
+	Workspace(UID uid, std::string_view source_uri);
+
 	~Workspace() override;
 
 	auto name() -> std::string override;
@@ -54,16 +63,46 @@ public:
 	/// Same query grammar as World::searchFrom(); searches only within m_root_node
 	auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> override;
 
-private:
+protected:
+	/// disambiguates the protected ctor from Workspace(UID)
+	struct EmptyTag { };
+
+	/// Sets only the handle and subscribes to editor events; used by PlayWorkspace
+	Workspace(UID handle, EmptyTag);
+
 	UID m_handle;
 	Box<Node> m_root_node;
 	Box<Node> m_focused_node;
 	event::Listener m_listener;
 
-	/// Seconds accumulated since the last InspectorContent push; throttles the editor update rate
-	double m_inspector_accum = 0.0;
+	// mirrored editor toolbar state; defaults match the editor's
+	struct SnapSetting {
+		bool enabled = true;
+		float value = 0.0f;
+	};
+
+	enum class GizmoTool : uint8_t {
+		select,
+		translate,
+		rotate,
+		scale,
+		ruler
+	};
+
+	GizmoTool m_gizmo_tool = GizmoTool::select;
+	bool m_world_space = false;    ///< false = local coordinates
+	SnapSetting m_translate_snap {true, 0.10f};
+	SnapSetting m_rotate_snap {true, 30.0f};
+	SnapSetting m_scale_snap {true, 0.10f};
+	bool m_game_camera = false;    ///< false = editor camera
 
 	void eventSubscriptions();
+
+	/// instantiates the prefab and sets up the root node
+	void initFromPrefab(const assets::AssetHandle<assets::Prefab>& file);
+
+private:
+	double m_inspector_accum = 0.0;
 
 public:
 	/**

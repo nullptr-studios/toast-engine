@@ -47,11 +47,17 @@ public sealed class DragFloatBox : DragNumberBoxBase {
 	protected override double CoarseStepAmount => CoarseStep;
 	protected override double FineStepAmount => FineStep;
 
-	protected override double GetDouble() => Value;
+	protected override double GetDouble() {
+		return Value;
+	}
 
-	protected override void SetDouble(double value) => Value = (float)value;
+	protected override void SetDouble(double value) {
+		Value = (float)value;
+	}
 
-	protected override string RawEditText() => Value.ToString(CultureInfo.InvariantCulture);
+	protected override string RawEditText() {
+		return Value.ToString(CultureInfo.InvariantCulture);
+	}
 
 	protected override bool TryParseEdit(string text, out double value) {
 		value = 0;
@@ -73,8 +79,7 @@ public sealed class DragFloatBox : DragNumberBoxBase {
 		if (dot >= 0) {
 			integer = formatted[..dot];
 			digits = formatted[(dot + 1)..];
-		}
-		else {
+		} else {
 			integer = formatted;
 			digits = "";
 		}

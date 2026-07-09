@@ -20,7 +20,18 @@
 
 namespace toast {
 
+struct VectorStreamBuf : std::streambuf {
+	VectorStreamBuf(const std::vector<uint8_t>& vec) {
+		char* p = const_cast<char*>(reinterpret_cast<const char*>(vec.data()));
+		setg(p, p, p + vec.size());
+	}
+};
+
 static std::unique_ptr<assets::Prefab> s_clipboard;
+
+Workspace::Workspace(UID handle, EmptyTag) : m_handle(handle) {
+	eventSubscriptions();
+}
 
 Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	ZoneScoped;
@@ -28,8 +39,8 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 
 	// Allocation
 	Box node = this->nodeAllocation(type);
-	node->propagateCallTick(node->info(), TickFunctionList::load);
 	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
+	node->propagateCallTick(node->info(), TickFunctionList::load);
 
 	// Data structure generation
 	generateUid(node);
@@ -40,9 +51,10 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	node->m_name = stripNamespace(node->info()->type);
 
 	// Initialization
-	node->callTick(node->info(), TickFunctionList::init);
-	node->callTick(node->info(), TickFunctionList::begin);
-	node->enabled(true);
+	node->propagateCallTick(node->info(), TickFunctionList::init);
+	node->propagateCallTick(node->info(), TickFunctionList::begin);
+	node->m_local_enabled = true;
+	node->propagateEnable();
 
 	m_root_node = node;
 	TOAST_INFO("World", "Created new workspace");
@@ -58,15 +70,43 @@ Workspace::Workspace(UID uid) : m_handle(uid) {
 		return;
 	}
 
+	initFromPrefab(file);
+	if (m_root_node.exists()) {
+		TOAST_INFO("World", "Opened workspace from {}", uid);
+	}
+}
+
+Workspace::Workspace(UID uid, std::string_view source_uri) : m_handle(uid) {
+	eventSubscriptions();
+
+	auto bytes = assets::AssetManager::get().loadBytes(source_uri);
+	if (not bytes.has_value()) {
+		TOAST_ERROR("World", "Couldn't open workspace source file {}", source_uri);
+		return;
+	}
+
+	// We need this because if we use the vector<uint8> constructor is going to try
+	// to load the node as a .tbnode rather than as a .tnode, we need to be careful with that
+	VectorStreamBuf buffer(*bytes);
+	std::istream autosave(&buffer);
+	assets::Prefab prefab(autosave);
+	assets::AssetHandle<assets::Prefab> file(&prefab, uid, "");
+	initFromPrefab(file);
+	if (m_root_node.exists()) {
+		TOAST_INFO("World", "Opened workspace {} from {}", uid, source_uri);
+	}
+}
+
+void Workspace::initFromPrefab(const assets::AssetHandle<assets::Prefab>& file) {
 	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
 	Box<Node> node = instantiate(file, ctx);
 	if (not node.exists()) {
-		TOAST_ERROR("World", "Failed to instantiate node {}", uid);
+		TOAST_ERROR("World", "Failed to instantiate node {}", m_handle);
 		return;
 	}
-	node->propagateCallTick(node->info(), TickFunctionList::load);
-	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
+	// node->propagateCallTick(node->info(), TickFunctionList::load);
+	// node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 
 	// Data structure generation
 	generateUid(node);
@@ -76,18 +116,22 @@ Workspace::Workspace(UID uid) : m_handle(uid) {
 	node->m_inherited_enabled = true;
 
 	// Initialization
-	node->callTick(node->info(), TickFunctionList::init);
-	node->callTick(node->info(), TickFunctionList::begin);
-	node->enabled(true);
+	node->propagateCallTick(node->info(), TickFunctionList::init);
+	node->propagateCallTick(node->info(), TickFunctionList::begin);
+	node->m_local_enabled = true;
+	node->propagateEnable();
 
 	m_root_node = node;
-	TOAST_INFO("World", "Opened workspace from {}", uid);
 }
 
 Workspace::~Workspace() {
 	if (!m_root_node.exists()) {
 		return;
 	}
+
+	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::on_disable);
+	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::end);
+	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::destroy);
 
 	std::vector<Node*> victims;
 	auto collect = [&victims](this auto&& self, Node& n) -> void {
@@ -253,6 +297,26 @@ void Workspace::eventSubscriptions() {
 		auto bytes = prefab.serialize(assets::SaveMode::editor);
 		if (assets::AssetManager::get().saveBytes(e.uri, bytes)) {
 			TOAST_INFO("World", "Saved workspace {} to {}", node->name(), e.uri);
+		}
+
+		event::send<event::ReloadAssetsManifest>();
+		return true;
+	});
+
+	// Unlike WorkspaceSave this matches on the workspace handle, so background
+	// workspaces autosave too, and it never touches the asset manifest
+	m_listener.subscribe<event::WorkspaceAutosave>([this](const auto& e) {
+		if (e.handle != m_handle.data()) {
+			return false;
+		}
+		if (not m_root_node.exists()) {
+			return true;
+		}
+
+		assets::Prefab prefab(*m_root_node);
+		auto bytes = prefab.serialize(assets::SaveMode::editor);
+		if (assets::AssetManager::get().saveBytes(e.uri, bytes)) {
+			TOAST_INFO("World", "Autosaved workspace {} to {}", m_root_node->name(), e.uri);
 		}
 		return true;
 	});
@@ -591,6 +655,45 @@ void Workspace::eventSubscriptions() {
 		}
 
 		TOAST_INFO("World", "Promoted node to {}", e.path);
+		return true;
+	});
+
+	// mirrored editor toolbar state; the active workspace is the one being edited
+	m_listener.subscribe<event::SetGizmoTool>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		m_gizmo_tool = static_cast<GizmoTool>(e.tool);
+		return true;
+	});
+
+	m_listener.subscribe<event::SetCoordinateSpace>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		m_world_space = e.world;
+		return true;
+	});
+
+	m_listener.subscribe<event::SetSnapping>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		SnapSetting setting {e.enabled, e.value};
+		switch (e.kind) {
+			case 0: m_translate_snap = setting; break;
+			case 1: m_rotate_snap = setting; break;
+			case 2: m_scale_snap = setting; break;
+			default: TOAST_WARN("World", "SetSnapping: unknown kind {}", e.kind); break;
+		}
+		return true;
+	});
+
+	m_listener.subscribe<event::SetCameraMode>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		m_game_camera = e.game;
 		return true;
 	});
 

@@ -4,36 +4,50 @@
                     xmlns:elements="clr-namespace:editor.Components.Elements">
 
 	<Design.PreviewWith>
-		<Border Padding="8" Background="{StaticResource Bg3}">
-			<StackPanel Spacing="8" MinWidth="150" MaxWidth="200">
+		<Border Padding="8"
+		        Background="{StaticResource Bg3}">
+			<StackPanel Spacing="8"
+			            MinWidth="150"
+			            MaxWidth="200">
 				<elements:AssetBox AssetType="Texture" />
-				<elements:AssetBox AssetType="Material" IsEnabled="False" />
+				<elements:AssetBox AssetType="Material"
+				                   IsEnabled="False" />
 			</StackPanel>
 		</Border>
 	</Design.PreviewWith>
 
-	<ControlTheme x:Key="{x:Type elements:AssetBox}" TargetType="elements:AssetBox">
-		<Setter Property="FontFamily" Value="FiraCode Nerd Font,Consolas,monospace" />
-		<Setter Property="FontSize" Value="15" />
-		<Setter Property="MinHeight" Value="34" />
-		<Setter Property="HorizontalAlignment" Value="Stretch" />
-		<Setter Property="CornerRadius" Value="6" />
+	<ControlTheme x:Key="{x:Type elements:AssetBox}"
+	              TargetType="elements:AssetBox">
+		<Setter Property="FontFamily"
+		        Value="FiraCode Nerd Font,Consolas,monospace" />
+		<Setter Property="FontSize"
+		        Value="15" />
+		<Setter Property="MinHeight"
+		        Value="34" />
+		<Setter Property="HorizontalAlignment"
+		        Value="Stretch" />
+		<Setter Property="CornerRadius"
+		        Value="6" />
 
 		<Setter Property="Template">
 			<ControlTemplate>
-				<Border x:Name="PART_Root" CornerRadius="{TemplateBinding CornerRadius}">
+				<Border x:Name="PART_Root"
+				        CornerRadius="{TemplateBinding CornerRadius}">
 					<Panel>
 						<Grid ColumnDefinitions="*,Auto">
 							<!-- Data side -->
-							<DockPanel Grid.Column="0" LastChildFill="True" Margin="8" VerticalAlignment="Center">
-								<Border x:Name="PART_Icon"
-								        DockPanel.Dock="Left"
-								        Width="16" Height="16"
-								        CornerRadius="4"
-								        Margin="0,0,8,0"
-								        VerticalAlignment="Center"
-								        Background="{TemplateBinding IconColor}"
-								        IsVisible="{TemplateBinding HasAsset}" />
+							<DockPanel Grid.Column="0"
+							           LastChildFill="True"
+							           Margin="8"
+							           VerticalAlignment="Center">
+								<LucideIcon Kind="{TemplateBinding IconKind}"
+								            Size="16"
+								            StrokeWidth="2.5"
+								            Foreground="{TemplateBinding IconColor}"
+								            HorizontalAlignment="Center"
+								            VerticalAlignment="Center"
+								            Margin="0, 0, 8, 0"
+								            IsVisible="{TemplateBinding HasAsset}" />
 
 								<TextBlock x:Name="PART_Display"
 								           Text="{TemplateBinding DisplayName}"
@@ -48,8 +62,10 @@
 							        CornerRadius="0,6,6,0"
 							        Padding="8"
 							        VerticalAlignment="Stretch">
-								<lucide:LucideIcon Kind="Package" Size="16"
-								                   VerticalAlignment="Center" HorizontalAlignment="Center"
+								<lucide:LucideIcon Kind="Package"
+								                   Size="16"
+								                   VerticalAlignment="Center"
+								                   HorizontalAlignment="Center"
 								                   Foreground="{StaticResource Text}" />
 							</Border>
 						</Grid>
@@ -67,39 +83,49 @@
 
 		<!-- Default colors -->
 		<Style Selector="^ /template/ Border#PART_Root">
-			<Setter Property="Background" Value="{StaticResource Bg1}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Bg1}" />
 		</Style>
 
 		<!-- Resolved -->
 		<Style Selector="^[HasAsset=True] /template/ TextBlock#PART_Display">
-			<Setter Property="Foreground" Value="{StaticResource Text}" />
-			<Setter Property="FontStyle" Value="Normal" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Text}" />
+			<Setter Property="FontStyle"
+			        Value="Normal" />
 		</Style>
 		<!-- Empty -->
 		<Style Selector="^[HasAsset=False] /template/ TextBlock#PART_Display">
-			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
-			<Setter Property="FontStyle" Value="Italic" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
+			<Setter Property="FontStyle"
+			        Value="Italic" />
 		</Style>
 
 		<!-- Hover -->
 		<Style Selector="^[HasAsset=True] /template/ TextBlock#PART_Display:pointerover">
-			<Setter Property="TextDecorations" Value="Underline" />
+			<Setter Property="TextDecorations"
+			        Value="Underline" />
 		</Style>
 
 		<!-- Hover on picker button -->
 		<Style Selector="^ /template/ Border#PART_Button:pointerover">
-			<Setter Property="Background" Value="{StaticResource Bg5}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Bg5}" />
 		</Style>
 
 		<!-- Disabled colors -->
 		<Style Selector="^:disabled /template/ Border#PART_Root">
-			<Setter Property="Background" Value="{StaticResource Bg2}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Bg2}" />
 		</Style>
 		<Style Selector="^:disabled /template/ Border#PART_Button">
-			<Setter Property="Background" Value="{StaticResource Bg2}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Bg2}" />
 		</Style>
 		<Style Selector="^:disabled /template/ TextBlock#PART_Display">
-			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
 		</Style>
 	</ControlTheme>
 

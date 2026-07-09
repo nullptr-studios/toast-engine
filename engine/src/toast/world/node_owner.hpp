@@ -81,7 +81,7 @@ protected:
 	 * @brief Allocates and initializes a full node tree from a prefab asset
 	 *
 	 * Allocates every node, resolves embedded child prefabs recursively via ctx.resolver,
-	 * and calls pre_init on each node before returning.
+	 * and calls pre_init and load on each node before returning
 	 *
 	 * @param file The prefab to instantiate
 	 * @param ctx Resolver for child prefabs and the asset chain used for cycle detection;

@@ -25,6 +25,7 @@ public class AssetTypeFilter : INotifyPropertyChanged {
 
 	public event PropertyChangedEventHandler? PropertyChanged;
 
-	private void Notify([CallerMemberName] string? name = null) =>
+	private void Notify([CallerMemberName] string? name = null) {
 		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+	}
 }

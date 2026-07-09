@@ -149,6 +149,7 @@ add_custom_command(TARGET toast_engine POST_BUILD
         # Dependencies
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_nlohmann_include}/nlohmann" "${TOAST_ENGINE_OUTPUT_ROOT}/include/nlohmann"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/tracy" "${TOAST_ENGINE_OUTPUT_ROOT}/include/tracy"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/common" "${TOAST_ENGINE_OUTPUT_ROOT}/include/common"
         # Runtimes
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<$<CONFIG:Debug>:${EXTERNAL_DLLS_DEBUG}>"

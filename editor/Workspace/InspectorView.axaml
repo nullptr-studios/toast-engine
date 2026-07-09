@@ -6,7 +6,9 @@
              xmlns:lucide="using:Lucide.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="1000"
+             mc:Ignorable="d"
+             d:DesignWidth="300"
+             d:DesignHeight="1000"
              x:Class="editor.Workspace.InspectorView"
              Padding="8"
              Background="{StaticResource Bg2}"
@@ -26,115 +28,168 @@
 	<UserControl.Styles>
 		<!-- Parameter label -->
 		<Style Selector="TextBlock.lbl">
-			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
-			<Setter Property="VerticalAlignment" Value="Center" />
-			<Setter Property="TextTrimming" Value="CharacterEllipsis" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+			<Setter Property="TextTrimming"
+			        Value="CharacterEllipsis" />
 		</Style>
 
 		<!-- Highlighted search match -->
 		<Style Selector="TextBlock.match">
-			<Setter Property="Foreground" Value="{StaticResource Red}" />
-			<Setter Property="FontWeight" Value="Bold" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Red}" />
+			<Setter Property="FontWeight"
+			        Value="Bold" />
 		</Style>
 
 		<!-- One row -->
 		<Style Selector="Grid.row">
-			<Setter Property="ColumnSpacing" Value="8" />
+			<Setter Property="ColumnSpacing"
+			        Value="8" />
 		</Style>
 
 		<!-- Name cell -->
 		<Style Selector="Grid.name">
-			<Setter Property="ColumnSpacing" Value="4" />
-			<Setter Property="Height" Value="20" />
+			<Setter Property="ColumnSpacing"
+			        Value="4" />
+			<Setter Property="Height"
+			        Value="20" />
 		</Style>
 
 		<!-- Group title -->
 		<Style Selector="TextBlock.group">
-			<Setter Property="FontWeight" Value="SemiBold" />
-			<Setter Property="VerticalAlignment" Value="Center" />
+			<Setter Property="FontWeight"
+			        Value="SemiBold" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
 		</Style>
 
 		<!-- Subgroup title -->
 		<Style Selector="TextBlock.subgroup">
-			<Setter Property="FontWeight" Value="SemiBold" />
-			<Setter Property="FontSize" Value="12" />
-			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
-			<Setter Property="VerticalAlignment" Value="Center" />
+			<Setter Property="FontWeight"
+			        Value="SemiBold" />
+			<Setter Property="FontSize"
+			        Value="12" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
 		</Style>
 
 		<!-- Header rename box -->
 		<Style Selector="TextBox.rename">
-			<Setter Property="BorderThickness" Value="0" />
-			<Setter Property="Padding" Value="0" />
-			<Setter Property="MinHeight" Value="0" />
-			<Setter Property="Background" Value="Transparent" />
-			<Setter Property="FontWeight" Value="Bold" />
-			<Setter Property="FontSize" Value="16" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="0" />
+			<Setter Property="MinHeight"
+			        Value="0" />
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="FontWeight"
+			        Value="Bold" />
+			<Setter Property="FontSize"
+			        Value="16" />
 		</Style>
 
 		<!-- Collapsible header -->
 		<Style Selector="ToggleButton.hdr">
-			<Setter Property="Background" Value="Transparent" />
-			<Setter Property="BorderThickness" Value="0" />
-			<Setter Property="Padding" Value="4" />
-			<Setter Property="HorizontalAlignment" Value="Stretch" />
-			<Setter Property="HorizontalContentAlignment" Value="Stretch" />
-			<Setter Property="Foreground" Value="{StaticResource Text}" />
-			<Setter Property="Cursor" Value="Hand" />
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="4" />
+			<Setter Property="HorizontalAlignment"
+			        Value="Stretch" />
+			<Setter Property="HorizontalContentAlignment"
+			        Value="Stretch" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Text}" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
 		</Style>
 		<Style Selector="ToggleButton.hdr /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background" Value="Transparent" />
-			<Setter Property="CornerRadius" Value="6" />
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
 		</Style>
 		<Style Selector="ToggleButton.hdr:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background" Value="{StaticResource Bg4}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
 		</Style>
 		<Style Selector="ToggleButton.hdr:pressed /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background" Value="{StaticResource Bg4}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
 		</Style>
 
 		<!-- Reset button -->
 		<Style Selector="Button.reset">
-			<Setter Property="Background" Value="Transparent" />
-			<Setter Property="BorderThickness" Value="0" />
-			<Setter Property="Padding" Value="0" />
-			<Setter Property="Width" Value="20" />
-			<Setter Property="Height" Value="20" />
-			<Setter Property="CornerRadius" Value="6" />
-			<Setter Property="VerticalAlignment" Value="Center" />
-			<Setter Property="HorizontalAlignment" Value="Right" />
-			<Setter Property="Cursor" Value="Hand" />
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="0" />
+			<Setter Property="Width"
+			        Value="20" />
+			<Setter Property="Height"
+			        Value="20" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+			<Setter Property="HorizontalAlignment"
+			        Value="Right" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
 		</Style>
 		<Style Selector="Button.reset /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background" Value="Transparent" />
-			<Setter Property="CornerRadius" Value="6" />
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
 		</Style>
 		<Style Selector="Button.reset:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background" Value="{StaticResource Bg4}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
 		</Style>
 		<Style Selector="Button.reset lucide|LucideIcon">
-			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
 		</Style>
 		<Style Selector="Button.reset:pointerover lucide|LucideIcon">
-			<Setter Property="Foreground" Value="{StaticResource Text}" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Text}" />
 		</Style>
 
 		<!-- Header enable toggl -->
 		<Style Selector="CheckBox.tick:checked /template/ Border#NormalRectangle">
-			<Setter Property="Background" Value="{StaticResource Red}" />
-			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Red}" />
+			<Setter Property="BorderBrush"
+			        Value="{StaticResource Red}" />
 		</Style>
 		<Style Selector="CheckBox.tick:checked:pointerover /template/ Border#NormalRectangle">
-			<Setter Property="Background" Value="{StaticResource Red}" />
-			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Red}" />
+			<Setter Property="BorderBrush"
+			        Value="{StaticResource Red}" />
 		</Style>
 		<Style Selector="CheckBox.tick:checked:pressed /template/ Border#NormalRectangle">
-			<Setter Property="Background" Value="{StaticResource Red}" />
-			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
+			<Setter Property="Background"
+			        Value="{StaticResource Red}" />
+			<Setter Property="BorderBrush"
+			        Value="{StaticResource Red}" />
 		</Style>
 		<Style Selector="CheckBox.tick:checked /template/ Path#CheckGlyph">
-			<Setter Property="Fill" Value="{StaticResource Bg1}" />
-			<Setter Property="Stroke" Value="{StaticResource Bg1}" />
+			<Setter Property="Fill"
+			        Value="{StaticResource Bg1}" />
+			<Setter Property="Stroke"
+			        Value="{StaticResource Bg1}" />
 		</Style>
 	</UserControl.Styles>
 
@@ -143,9 +198,13 @@
 		<DataTemplate DataType="vm:FieldVM">
 			<Panel IsVisible="{Binding Visible}">
 				<!-- Scalar layout -->
-				<Grid Classes="row" ColumnDefinitions="110,*" IsVisible="{Binding !IsVectorLayout}">
-					<Grid Classes="name" ColumnDefinitions="*,Auto">
-						<ItemsControl ItemsSource="{Binding Segments}" VerticalAlignment="Center">
+				<Grid Classes="row"
+				      ColumnDefinitions="110,*"
+				      IsVisible="{Binding !IsVectorLayout}">
+					<Grid Classes="name"
+					      ColumnDefinitions="*,Auto">
+						<ItemsControl ItemsSource="{Binding Segments}"
+						              VerticalAlignment="Center">
 							<ItemsControl.ItemsPanel>
 								<ItemsPanelTemplate>
 									<StackPanel Orientation="Horizontal" />
@@ -153,102 +212,164 @@
 							</ItemsControl.ItemsPanel>
 							<ItemsControl.ItemTemplate>
 								<DataTemplate x:CompileBindings="False">
-									<TextBlock Classes="lbl" Text="{Binding Text}" Classes.match="{Binding IsHighlighted}" />
+									<TextBlock Classes="lbl"
+									           Text="{Binding Text}"
+									           Classes.match="{Binding IsHighlighted}" />
 								</DataTemplate>
 							</ItemsControl.ItemTemplate>
 						</ItemsControl>
-						<Button Classes="reset" Grid.Column="1" Command="{Binding ResetCommand}"
-						        IsVisible="{Binding ShowReset}" ToolTip.Tip="Reset to default">
-							<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
+						<Button Classes="reset"
+						        Grid.Column="1"
+						        Command="{Binding ResetCommand}"
+						        IsVisible="{Binding ShowReset}"
+						        ToolTip.Tip="Reset to default">
+							<lucide:LucideIcon Kind="RotateCcw"
+							                   Size="12"
+							                   StrokeWidth="2.5" />
 						</Button>
 					</Grid>
 					<Panel Grid.Column="1">
-						<elements:DragFloatBox Value="{Binding Float, Mode=TwoWay}" Minimum="{Binding Min}"
-						                       Maximum="{Binding Max}" Unit="{Binding Unit}"
-						                       IsEnabled="{Binding Editable}" IsVisible="{Binding IsFloat}" />
-						<elements:DragIntBox Value="{Binding Int, Mode=TwoWay}" Minimum="{Binding Min}"
-						                     Maximum="{Binding Max}" Unit="{Binding Unit}"
-						                     IsEnabled="{Binding Editable}" IsVisible="{Binding IsInt}" />
+						<elements:DragFloatBox Value="{Binding Float, Mode=TwoWay}"
+						                       Minimum="{Binding Min}"
+						                       Maximum="{Binding Max}"
+						                       Unit="{Binding Unit}"
+						                       IsEnabled="{Binding Editable}"
+						                       IsVisible="{Binding IsFloat}" />
+						<elements:DragIntBox Value="{Binding Int, Mode=TwoWay}"
+						                     Minimum="{Binding Min}"
+						                     Maximum="{Binding Max}"
+						                     Unit="{Binding Unit}"
+						                     IsEnabled="{Binding Editable}"
+						                     IsVisible="{Binding IsInt}" />
 						<elements:BoolBox Value="{Binding Bool, Mode=TwoWay}"
-						                  IsEnabled="{Binding Editable}" IsVisible="{Binding IsBool}" />
+						                  IsEnabled="{Binding Editable}"
+						                  IsVisible="{Binding IsBool}" />
 						<elements:StringBox Value="{Binding String, Mode=TwoWay}"
-						                    IsEnabled="{Binding Editable}" IsVisible="{Binding IsString}" />
-						<elements:AssetBox Value="{Binding Ref, Mode=TwoWay}" AssetType="{Binding RefType}"
-						                   IsEnabled="{Binding Editable}" IsVisible="{Binding IsAssetRef}" />
-						<elements:NodeBox Value="{Binding Ref, Mode=TwoWay}" NodeType="{Binding RefType}"
-						                  IsEnabled="{Binding Editable}" IsVisible="{Binding IsNodeRef}" />
-						<elements:Color3Box R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
-						                    B="{Binding Z, Mode=TwoWay}" IsEnabled="{Binding Editable}"
+						                    IsEnabled="{Binding Editable}"
+						                    IsVisible="{Binding IsString}" />
+						<elements:AssetBox Value="{Binding Ref, Mode=TwoWay}"
+						                   AssetType="{Binding RefType}"
+						                   IsEnabled="{Binding Editable}"
+						                   IsVisible="{Binding IsAssetRef}" />
+						<elements:NodeBox Value="{Binding Ref, Mode=TwoWay}"
+						                  NodeType="{Binding RefType}"
+						                  IsEnabled="{Binding Editable}"
+						                  IsVisible="{Binding IsNodeRef}" />
+						<elements:Color3Box R="{Binding X, Mode=TwoWay}"
+						                    G="{Binding Y, Mode=TwoWay}"
+						                    B="{Binding Z, Mode=TwoWay}"
+						                    IsEnabled="{Binding Editable}"
 						                    IsVisible="{Binding IsColor3}" />
-						<elements:Color4Box R="{Binding X, Mode=TwoWay}" G="{Binding Y, Mode=TwoWay}"
-						                    B="{Binding Z, Mode=TwoWay}" A="{Binding W, Mode=TwoWay}"
-						                    IsEnabled="{Binding Editable}" IsVisible="{Binding IsColor4}" />
-						<ItemsControl ItemsSource="{Binding ColorBrushes}" IsVisible="{Binding IsColorArray}">
+						<elements:Color4Box R="{Binding X, Mode=TwoWay}"
+						                    G="{Binding Y, Mode=TwoWay}"
+						                    B="{Binding Z, Mode=TwoWay}"
+						                    A="{Binding W, Mode=TwoWay}"
+						                    IsEnabled="{Binding Editable}"
+						                    IsVisible="{Binding IsColor4}" />
+						<ItemsControl ItemsSource="{Binding ColorBrushes}"
+						              IsVisible="{Binding IsColorArray}">
 							<ItemsControl.ItemsPanel>
 								<ItemsPanelTemplate>
-									<WrapPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" />
+									<WrapPanel Orientation="Horizontal"
+									           HorizontalAlignment="Left"
+									           VerticalAlignment="Center" />
 								</ItemsPanelTemplate>
 							</ItemsControl.ItemsPanel>
 							<ItemsControl.ItemTemplate>
 								<DataTemplate>
-									<Border Width="20" Height="20" Margin="0,0,4,4" CornerRadius="4" Background="{Binding}">
-										<Border CornerRadius="4" BorderThickness="1" BorderBrush="{StaticResource TextMuted}" />
+									<Border Width="20"
+									        Height="20"
+									        Margin="0,0,4,4"
+									        CornerRadius="4"
+									        Background="{Binding}">
+										<Border CornerRadius="4"
+										        BorderThickness="1"
+										        BorderBrush="{StaticResource TextMuted}" />
 									</Border>
 								</DataTemplate>
 							</ItemsControl.ItemTemplate>
 						</ItemsControl>
-						<elements:ArrayBox IsVisible="{Binding IsArray}" Items="{Binding ArrayItems}"
+						<elements:ArrayBox IsVisible="{Binding IsArray}"
+						                   Items="{Binding ArrayItems}"
 						                   AddCommand="{Binding AddArrayItemCommand}"
-						                   CanReorder="{Binding Editable}" CanAddRemove="{Binding Editable}"
+						                   CanReorder="{Binding Editable}"
+						                   CanAddRemove="{Binding Editable}"
 						                   IsEnabled="{Binding Editable}"
 						                   RowBackground="{StaticResource Bg1}"
-						                   RowCornerRadius="6" RowPadding="4,2"
+						                   RowCornerRadius="6"
+						                   RowPadding="4,2"
 						                   AddLabel="Add Element">
 							<elements:ArrayBox.ItemTemplate>
 								<DataTemplate DataType="vm:FieldVM">
 									<Panel>
 										<elements:DragFloatBox Value="{Binding Float, Mode=TwoWay}"
-										                       Minimum="{Binding Min}" Maximum="{Binding Max}"
+										                       Minimum="{Binding Min}"
+										                       Maximum="{Binding Max}"
 										                       Unit="{Binding Unit}"
-										                       IsEnabled="{Binding Editable}" IsVisible="{Binding IsFloat}" />
+										                       IsEnabled="{Binding Editable}"
+										                       IsVisible="{Binding IsFloat}" />
 										<elements:DragIntBox Value="{Binding Int, Mode=TwoWay}"
-										                     Minimum="{Binding Min}" Maximum="{Binding Max}"
+										                     Minimum="{Binding Min}"
+										                     Maximum="{Binding Max}"
 										                     Unit="{Binding Unit}"
-										                     IsEnabled="{Binding Editable}" IsVisible="{Binding IsInt}" />
+										                     IsEnabled="{Binding Editable}"
+										                     IsVisible="{Binding IsInt}" />
 										<elements:BoolBox Value="{Binding Bool, Mode=TwoWay}"
-										                  IsEnabled="{Binding Editable}" IsVisible="{Binding IsBool}" />
+										                  IsEnabled="{Binding Editable}"
+										                  IsVisible="{Binding IsBool}" />
 										<elements:StringBox Value="{Binding String, Mode=TwoWay}"
-										                    IsEnabled="{Binding Editable}" IsVisible="{Binding IsString}" />
-										<elements:AssetBox Value="{Binding Ref, Mode=TwoWay}" AssetType="{Binding RefType}"
-										                   IsEnabled="{Binding Editable}" IsVisible="{Binding IsAssetRef}" />
-										<elements:NodeBox Value="{Binding Ref, Mode=TwoWay}" NodeType="{Binding RefType}"
-										                  IsEnabled="{Binding Editable}" IsVisible="{Binding IsNodeRef}" />
-										<elements:DragVec2Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
-										                      Minimum="{Binding Min}" Maximum="{Binding Max}"
+										                    IsEnabled="{Binding Editable}"
+										                    IsVisible="{Binding IsString}" />
+										<elements:AssetBox Value="{Binding Ref, Mode=TwoWay}"
+										                   AssetType="{Binding RefType}"
+										                   IsEnabled="{Binding Editable}"
+										                   IsVisible="{Binding IsAssetRef}" />
+										<elements:NodeBox Value="{Binding Ref, Mode=TwoWay}"
+										                  NodeType="{Binding RefType}"
+										                  IsEnabled="{Binding Editable}"
+										                  IsVisible="{Binding IsNodeRef}" />
+										<elements:DragVec2Box X="{Binding X, Mode=TwoWay}"
+										                      Y="{Binding Y, Mode=TwoWay}"
+										                      Minimum="{Binding Min}"
+										                      Maximum="{Binding Max}"
 										                      Unit="{Binding Unit}"
-										                      IsEnabled="{Binding Editable}" IsVisible="{Binding IsVec2}" />
-										<elements:DragVec3Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
-										                      Z="{Binding Z, Mode=TwoWay}" Minimum="{Binding Min}"
-										                      Maximum="{Binding Max}" Unit="{Binding Unit}"
-										                      IsEnabled="{Binding Editable}" IsVisible="{Binding IsVec3}" />
-										<elements:DragVec4Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
-										                      Z="{Binding Z, Mode=TwoWay}" W="{Binding W, Mode=TwoWay}"
-										                      Minimum="{Binding Min}" Maximum="{Binding Max}"
+										                      IsEnabled="{Binding Editable}"
+										                      IsVisible="{Binding IsVec2}" />
+										<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
+										                      Y="{Binding Y, Mode=TwoWay}"
+										                      Z="{Binding Z, Mode=TwoWay}"
+										                      Minimum="{Binding Min}"
+										                      Maximum="{Binding Max}"
 										                      Unit="{Binding Unit}"
-										                      IsEnabled="{Binding Editable}" IsVisible="{Binding IsVec4}" />
+										                      IsEnabled="{Binding Editable}"
+										                      IsVisible="{Binding IsVec3}" />
+										<elements:DragVec4Box X="{Binding X, Mode=TwoWay}"
+										                      Y="{Binding Y, Mode=TwoWay}"
+										                      Z="{Binding Z, Mode=TwoWay}"
+										                      W="{Binding W, Mode=TwoWay}"
+										                      Minimum="{Binding Min}"
+										                      Maximum="{Binding Max}"
+										                      Unit="{Binding Unit}"
+										                      IsEnabled="{Binding Editable}"
+										                      IsVisible="{Binding IsVec4}" />
 									</Panel>
 								</DataTemplate>
 							</elements:ArrayBox.ItemTemplate>
 						</elements:ArrayBox>
-						<TextBlock Text="{Binding ReadOnlyText}" Foreground="{StaticResource TextMuted}"
-						           VerticalAlignment="Center" IsVisible="{Binding IsReadOnlyText}" />
+						<TextBlock Text="{Binding ReadOnlyText}"
+						           Foreground="{StaticResource TextMuted}"
+						           VerticalAlignment="Center"
+						           IsVisible="{Binding IsReadOnlyText}" />
 					</Panel>
 				</Grid>
 
 				<!-- Vector layout -->
-				<StackPanel Spacing="8" IsVisible="{Binding IsVectorLayout}">
-					<Grid Classes="name" ColumnDefinitions="*,Auto">
-						<ItemsControl ItemsSource="{Binding Segments}" VerticalAlignment="Center">
+				<StackPanel Spacing="8"
+				            IsVisible="{Binding IsVectorLayout}">
+					<Grid Classes="name"
+					      ColumnDefinitions="*,Auto">
+						<ItemsControl ItemsSource="{Binding Segments}"
+						              VerticalAlignment="Center">
 							<ItemsControl.ItemsPanel>
 								<ItemsPanelTemplate>
 									<StackPanel Orientation="Horizontal" />
@@ -256,27 +377,47 @@
 							</ItemsControl.ItemsPanel>
 							<ItemsControl.ItemTemplate>
 								<DataTemplate x:CompileBindings="False">
-									<TextBlock Classes="lbl" Text="{Binding Text}" Classes.match="{Binding IsHighlighted}" />
+									<TextBlock Classes="lbl"
+									           Text="{Binding Text}"
+									           Classes.match="{Binding IsHighlighted}" />
 								</DataTemplate>
 							</ItemsControl.ItemTemplate>
 						</ItemsControl>
-						<Button Classes="reset" Grid.Column="1" Command="{Binding ResetCommand}"
-						        IsVisible="{Binding ShowReset}" ToolTip.Tip="Reset to default">
-							<lucide:LucideIcon Kind="RotateCcw" Size="12" StrokeWidth="2.5" />
+						<Button Classes="reset"
+						        Grid.Column="1"
+						        Command="{Binding ResetCommand}"
+						        IsVisible="{Binding ShowReset}"
+						        ToolTip.Tip="Reset to default">
+							<lucide:LucideIcon Kind="RotateCcw"
+							                   Size="12"
+							                   StrokeWidth="2.5" />
 						</Button>
 					</Grid>
 					<Panel>
-						<elements:DragVec2Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
-						                      Minimum="{Binding Min}" Maximum="{Binding Max}" Unit="{Binding Unit}"
-						                      IsEnabled="{Binding Editable}" IsVisible="{Binding IsVec2}" />
-						<elements:DragVec3Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
-						                      Z="{Binding Z, Mode=TwoWay}" Minimum="{Binding Min}"
-						                      Maximum="{Binding Max}" Unit="{Binding Unit}"
-						                      IsEnabled="{Binding Editable}" IsVisible="{Binding IsVec3}" />
-						<elements:DragVec4Box X="{Binding X, Mode=TwoWay}" Y="{Binding Y, Mode=TwoWay}"
-						                      Z="{Binding Z, Mode=TwoWay}" W="{Binding W, Mode=TwoWay}"
-						                      Minimum="{Binding Min}" Maximum="{Binding Max}" Unit="{Binding Unit}"
-						                      IsEnabled="{Binding Editable}" IsVisible="{Binding IsVec4}" />
+						<elements:DragVec2Box X="{Binding X, Mode=TwoWay}"
+						                      Y="{Binding Y, Mode=TwoWay}"
+						                      Minimum="{Binding Min}"
+						                      Maximum="{Binding Max}"
+						                      Unit="{Binding Unit}"
+						                      IsEnabled="{Binding Editable}"
+						                      IsVisible="{Binding IsVec2}" />
+						<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
+						                      Y="{Binding Y, Mode=TwoWay}"
+						                      Z="{Binding Z, Mode=TwoWay}"
+						                      Minimum="{Binding Min}"
+						                      Maximum="{Binding Max}"
+						                      Unit="{Binding Unit}"
+						                      IsEnabled="{Binding Editable}"
+						                      IsVisible="{Binding IsVec3}" />
+						<elements:DragVec4Box X="{Binding X, Mode=TwoWay}"
+						                      Y="{Binding Y, Mode=TwoWay}"
+						                      Z="{Binding Z, Mode=TwoWay}"
+						                      W="{Binding W, Mode=TwoWay}"
+						                      Minimum="{Binding Min}"
+						                      Maximum="{Binding Max}"
+						                      Unit="{Binding Unit}"
+						                      IsEnabled="{Binding Editable}"
+						                      IsVisible="{Binding IsVec4}" />
 					</Panel>
 				</StackPanel>
 			</Panel>
@@ -285,105 +426,193 @@
 		<!-- Subgroup -->
 		<DataTemplate DataType="vm:SubgroupVM">
 			<StackPanel IsVisible="{Binding Visible}">
-				<ToggleButton Classes="hdr" IsChecked="{Binding Expanded, Mode=TwoWay}">
-					<StackPanel Orientation="Horizontal" Spacing="6" Margin="6,0,0,0">
-						<Border Width="2" Height="12" CornerRadius="1" VerticalAlignment="Center"
+				<ToggleButton Classes="hdr"
+				              IsChecked="{Binding Expanded, Mode=TwoWay}">
+					<StackPanel Orientation="Horizontal"
+					            Spacing="6"
+					            Margin="6,0,0,0">
+						<Border Width="2"
+						        Height="12"
+						        CornerRadius="1"
+						        VerticalAlignment="Center"
 						        Background="{StaticResource TextMuted}" />
-						<TextBlock Classes="subgroup" Text="{Binding Name}" />
+						<TextBlock Classes="subgroup"
+						           Text="{Binding Name}" />
 					</StackPanel>
 				</ToggleButton>
-				<ItemsControl Margin="16,0,0,0" ItemsSource="{Binding Fields}"
-				              ItemsPanel="{StaticResource Spaced8}" IsVisible="{Binding Expanded}" />
+				<ItemsControl Margin="16,0,0,0"
+				              ItemsSource="{Binding Fields}"
+				              ItemsPanel="{StaticResource Spaced8}"
+				              IsVisible="{Binding Expanded}" />
 			</StackPanel>
 		</DataTemplate>
 
 		<!-- Group -->
 		<DataTemplate DataType="vm:GroupVM">
 			<StackPanel IsVisible="{Binding Visible}">
-				<ToggleButton Classes="hdr" IsChecked="{Binding Expanded, Mode=TwoWay}">
-					<StackPanel Orientation="Horizontal" Spacing="6">
-						<Border Width="3" Height="14" CornerRadius="2" VerticalAlignment="Center"
+				<ToggleButton Classes="hdr"
+				              IsChecked="{Binding Expanded, Mode=TwoWay}">
+					<StackPanel Orientation="Horizontal"
+					            Spacing="6">
+						<Border Width="3"
+						        Height="14"
+						        CornerRadius="2"
+						        VerticalAlignment="Center"
 						        Background="{Binding ColorKey, Converter={StaticResource BrushFromKey}}" />
-						<TextBlock Classes="group" Text="{Binding Name}" />
+						<TextBlock Classes="group"
+						           Text="{Binding Name}" />
 					</StackPanel>
 				</ToggleButton>
-				<StackPanel Margin="10,0,0,0" Spacing="8" IsVisible="{Binding Expanded}">
-					<ItemsControl ItemsSource="{Binding Fields}" ItemsPanel="{StaticResource Spaced8}" />
-					<ItemsControl ItemsSource="{Binding Subgroups}" ItemsPanel="{StaticResource Spaced8}" />
+				<StackPanel Margin="10,0,0,0"
+				            Spacing="8"
+				            IsVisible="{Binding Expanded}">
+					<ItemsControl ItemsSource="{Binding Fields}"
+					              ItemsPanel="{StaticResource Spaced8}" />
+					<ItemsControl ItemsSource="{Binding Subgroups}"
+					              ItemsPanel="{StaticResource Spaced8}" />
 				</StackPanel>
 			</StackPanel>
 		</DataTemplate>
 
 		<!-- Button -->
 		<DataTemplate DataType="vm:ButtonVM">
-			<Button Content="{Binding Label}" Command="{Binding ClickCommand}" HorizontalAlignment="Stretch" />
+			<Button Content="{Binding Label}"
+			        Command="{Binding ClickCommand}"
+			        HorizontalAlignment="Stretch" />
 		</DataTemplate>
 
 		<!-- Class card -->
 		<DataTemplate DataType="vm:ClassCardVM">
-			<Border Background="{StaticResource Bg3}" CornerRadius="8" Padding="8" IsVisible="{Binding Visible}">
+			<Border Background="{StaticResource Bg3}"
+			        CornerRadius="8"
+			        Padding="8"
+			        IsVisible="{Binding Visible}">
 				<StackPanel>
-					<ToggleButton Classes="hdr" IsChecked="{Binding Expanded, Mode=TwoWay}">
-						<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-							<Border Width="16" Height="16" CornerRadius="4" VerticalAlignment="Center"
+					<ToggleButton Classes="hdr"
+					              IsChecked="{Binding Expanded, Mode=TwoWay}">
+						<StackPanel Orientation="Horizontal"
+						            HorizontalAlignment="Center"
+						            Spacing="8">
+							<Border Width="16"
+							        Height="16"
+							        CornerRadius="4"
+							        VerticalAlignment="Center"
 							        Background="{Binding ColorKey, Converter={StaticResource BrushFromKey}}">
 								<Border.OpacityMask>
-									<ImageBrush Source="{Binding SmallIcon}"/>
+									<ImageBrush Source="{Binding SmallIcon}" />
 								</Border.OpacityMask>
 							</Border>
-							<TextBlock Text="{Binding TypeName}" FontWeight="Bold" VerticalAlignment="Center" />
+							<TextBlock Text="{Binding TypeName}"
+							           FontWeight="Bold"
+							           VerticalAlignment="Center" />
 						</StackPanel>
 					</ToggleButton>
 					<StackPanel IsVisible="{Binding Expanded}">
-						<ItemsControl Margin="0, 8, 0, 0" ItemsSource="{Binding Fields}" ItemsPanel="{StaticResource Spaced8}" IsVisible="{Binding HasFields}"/>
-						<ItemsControl Margin="0, 8, 0, 0" ItemsSource="{Binding Groups}" ItemsPanel="{StaticResource Spaced8}" IsVisible="{Binding HasGroups}"/>
-						<ItemsControl Margin="0, 8, 0, 0" ItemsSource="{Binding Buttons}" ItemsPanel="{StaticResource Spaced8}" IsVisible="{Binding HasButtons}" />
+						<ItemsControl Margin="0, 8, 0, 0"
+						              ItemsSource="{Binding Fields}"
+						              ItemsPanel="{StaticResource Spaced8}"
+						              IsVisible="{Binding HasFields}" />
+						<ItemsControl Margin="0, 8, 0, 0"
+						              ItemsSource="{Binding Groups}"
+						              ItemsPanel="{StaticResource Spaced8}"
+						              IsVisible="{Binding HasGroups}" />
+						<ItemsControl Margin="0, 8, 0, 0"
+						              ItemsSource="{Binding Buttons}"
+						              ItemsPanel="{StaticResource Spaced8}"
+						              IsVisible="{Binding HasButtons}" />
 					</StackPanel>
 				</StackPanel>
 			</Border>
 		</DataTemplate>
 	</UserControl.DataTemplates>
 
-	<Grid RowDefinitions="Auto,*" RowSpacing="8">
+	<Grid RowDefinitions="Auto,*"
+	      RowSpacing="8">
 		<!-- Node header -->
-		<Border Grid.Row="0" Background="{StaticResource Bg3}" CornerRadius="8" Padding="8"
+		<Border Grid.Row="0"
+		        Background="{StaticResource Bg3}"
+		        CornerRadius="8"
+		        Padding="8"
 		        IsVisible="{Binding HasSelection}">
 			<StackPanel Spacing="8">
-				<Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-					<Border Grid.Column="0" Width="32" Height="32" Background="{Binding IconColorKey, Converter={StaticResource BrushFromKey}}">
+				<Grid ColumnDefinitions="Auto,*,Auto"
+				      ColumnSpacing="8">
+					<Border Grid.Column="0"
+					        Width="32"
+					        Height="32"
+					        Background="{Binding IconColorKey, Converter={StaticResource BrushFromKey}}">
 						<Border.OpacityMask>
-							<ImageBrush Source="{Binding LargeIcon}"/>
+							<ImageBrush Source="{Binding LargeIcon}" />
 						</Border.OpacityMask>
 					</Border>
-					<StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+					<StackPanel Grid.Column="1"
+					            Spacing="2"
+					            VerticalAlignment="Center">
 						<Panel>
-							<Button Command="{Binding BeginRenameCommand}" Background="Transparent" BorderThickness="0"
-							        Padding="0" HorizontalAlignment="Left" Cursor="Hand" IsVisible="{Binding !IsEditingName}">
-								<TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16" />
+							<Button Command="{Binding BeginRenameCommand}"
+							        Background="Transparent"
+							        BorderThickness="0"
+							        Padding="0"
+							        HorizontalAlignment="Left"
+							        Cursor="Hand"
+							        IsVisible="{Binding !IsEditingName}">
+								<TextBlock Text="{Binding Name}"
+								           FontWeight="Bold"
+								           FontSize="16" />
 							</Button>
-							<TextBox x:Name="NameEditor" Classes="rename" Text="{Binding NameDraft, Mode=TwoWay}"
+							<TextBox x:Name="NameEditor"
+							         Classes="rename"
+							         Text="{Binding NameDraft, Mode=TwoWay}"
 							         IsVisible="{Binding IsEditingName}" />
 						</Panel>
-						<TextBlock Text="{Binding TypeDisplay}" Foreground="{StaticResource TextMuted}" />
+						<TextBlock Text="{Binding TypeDisplay}"
+						           Foreground="{StaticResource TextMuted}" />
 					</StackPanel>
-					<CheckBox Grid.Column="2" Classes="tick" VerticalAlignment="Center"
+					<CheckBox Grid.Column="2"
+					          Classes="tick"
+					          VerticalAlignment="Center"
 					          IsChecked="{Binding Enabled, Mode=TwoWay}" />
 				</Grid>
-				<TextBox CornerRadius="8" BorderThickness="0" Background="{StaticResource Bg1}"
-				         Text="{Binding FilterText, Mode=TwoWay}" PlaceholderText="Filter parameters..."
+				<TextBox CornerRadius="8"
+				         BorderThickness="0"
+				         Background="{StaticResource Bg1}"
+				         Text="{Binding FilterText, Mode=TwoWay}"
+				         PlaceholderText="Filter parameters..."
 				         PlaceholderForeground="{StaticResource TextMuted}" />
 			</StackPanel>
 		</Border>
 
 		<!-- Node parameters -->
 		<Panel Grid.Row="1">
-			<ScrollViewer CornerRadius="8" AllowAutoHide="True" VerticalScrollBarVisibility="Auto"
-			              HorizontalScrollBarVisibility="Disabled" IsVisible="{Binding HasSelection}">
-				<ItemsControl ItemsSource="{Binding Cards}" ItemsPanel="{StaticResource Spaced8}" />
+			<ScrollViewer CornerRadius="8"
+			              AllowAutoHide="True"
+			              VerticalScrollBarVisibility="Auto"
+			              HorizontalScrollBarVisibility="Disabled"
+			              IsVisible="{Binding HasSelection}">
+				<ItemsControl ItemsSource="{Binding Cards}"
+				              ItemsPanel="{StaticResource Spaced8}" />
 			</ScrollViewer>
-			<TextBlock Text="No Node selected" FontStyle="Italic" Foreground="{StaticResource TextMuted}"
-			           Padding="4" HorizontalAlignment="Center" VerticalAlignment="Center"
-			           IsVisible="{Binding !HasSelection}" />
+			<StackPanel Spacing="8"
+			            HorizontalAlignment="Center"
+			            VerticalAlignment="Center"
+			            IsVisible="{Binding !HasSelection}">
+				<lucide:LucideIcon Kind="SlidersHorizontal"
+				                   Size="40"
+				                   StrokeWidth="1.5"
+				                   Foreground="{StaticResource TextMuted}"
+				                   HorizontalAlignment="Center" />
+				<TextBlock Text="No Node selected"
+				           FontWeight="SemiBold"
+				           FontSize="16"
+				           Foreground="{StaticResource TextMuted}"
+				           HorizontalAlignment="Center" />
+				<TextBlock Text="Select a node in the Hierarchy to inspect it"
+				           FontStyle="Italic"
+				           Foreground="{StaticResource TextMuted}"
+				           HorizontalAlignment="Center"
+				           TextWrapping="Wrap"
+				           TextAlignment="Center" />
+			</StackPanel>
 		</Panel>
 	</Grid>
 </UserControl>

@@ -8,14 +8,21 @@ using Lucide.Avalonia;
 namespace editor.Assets.Importers;
 
 public class AudioBankImporter : IAssetImporter {
-	public bool CanHandle(string filePath) => Path.GetExtension(filePath) == ".bank" && Path.GetFileName(filePath) != "Master.strings.bank";
+	public bool CanHandle(string filePath) {
+		return Path.GetExtension(filePath) == ".bank" && Path.GetFileName(filePath) != "Master.strings.bank";
+	}
+
 	public IReadOnlyList<string> SupportedExtensions => [".bank"];
 	public string DisplayName => "Audio Bank";
 	public LucideIconKind Icon => LucideIconKind.AudioWaveform;
 	public BaseAsset PrimaryOutputType => AssetTypeRegistry.ByExtension(".bank")!;
-	
-	public IReadOnlyList<ImporterSetting> GetSettings() => [];
-	public Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log, Action<double>? progress = null) {
+
+	public IReadOnlyList<ImporterSetting> GetSettings() {
+		return [];
+	}
+
+	public Task<IReadOnlyList<string>> Import(
+		string realSourcePath, ImportContext ctx, Action<string> log, Action<double>? progress = null) {
 		try {
 			log("Importing bank...");
 			Directory.CreateDirectory(ctx.DestDir);

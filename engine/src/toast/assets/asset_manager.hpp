@@ -99,6 +99,13 @@ public:
 	auto saveBytes(std::string_view uri, const std::vector<uint8_t>& data) -> bool;
 
 	/**
+	 * @brief Reads raw bytes from the URI, bypassing the manifest
+	 *
+	 * You should 99% of the time not use this
+	 */
+	auto loadBytes(std::string_view uri) -> std::optional<std::vector<uint8_t>>;
+
+	/**
 	 * @brief Re-reads the project manifest from disk
 	 * @note Call after importing or creating a new asset; does not evict the asset cache
 	 */
@@ -137,6 +144,8 @@ public:
 	 * @return Loaded asset handles for all matching entries; empty vector if none found
 	 */
 	auto search(std::string_view query) -> std::vector<AssetHandle<Asset>>;
+
+	auto listByType(std::string_view type) -> std::vector<toast::UID>;
 
 	auto getCachePath() const -> const std::filesystem::path&;
 

@@ -22,18 +22,19 @@ public sealed class StringBox : TemplatedControl {
 	public static readonly StyledProperty<bool> WrapProperty =
 		AvaloniaProperty.Register<StringBox, bool>(nameof(Wrap), true);
 
-	private TextWrapping m_wrapMode = TextWrapping.Wrap;
-
 	public static readonly DirectProperty<StringBox, TextWrapping> WrapModeProperty =
 		AvaloniaProperty.RegisterDirect<StringBox, TextWrapping>(nameof(WrapMode), o => o.m_wrapMode);
-
-	private bool m_isEditing;
 
 	public static readonly DirectProperty<StringBox, bool> IsEditingProperty =
 		AvaloniaProperty.RegisterDirect<StringBox, bool>(nameof(IsEditing), o => o.m_isEditing);
 
-	private Control? m_root;
 	private TextBox? m_editor;
+
+	private bool m_isEditing;
+
+	private Control? m_root;
+
+	private TextWrapping m_wrapMode = TextWrapping.Wrap;
 
 	public string? Value {
 		get => GetValue(ValueProperty);
@@ -121,5 +122,7 @@ public sealed class StringBox : TemplatedControl {
 		}
 	}
 
-	private void OnEditorLostFocus(object? sender, RoutedEventArgs e) => CommitEdit();
+	private void OnEditorLostFocus(object? sender, RoutedEventArgs e) {
+		CommitEdit();
+	}
 }

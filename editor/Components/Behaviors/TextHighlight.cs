@@ -18,10 +18,21 @@ public static class TextHighlight {
 		QueryProperty.Changed.AddClassHandler<TextBlock>((tb, _) => Apply(tb));
 	}
 
-	public static void SetText(TextBlock o, string? v) => o.SetValue(TextProperty, v);
-	public static string? GetText(TextBlock o) => o.GetValue(TextProperty);
-	public static void SetQuery(TextBlock o, string? v) => o.SetValue(QueryProperty, v);
-	public static string? GetQuery(TextBlock o) => o.GetValue(QueryProperty);
+	public static void SetText(TextBlock o, string? v) {
+		o.SetValue(TextProperty, v);
+	}
+
+	public static string? GetText(TextBlock o) {
+		return o.GetValue(TextProperty);
+	}
+
+	public static void SetQuery(TextBlock o, string? v) {
+		o.SetValue(QueryProperty, v);
+	}
+
+	public static string? GetQuery(TextBlock o) {
+		return o.GetValue(QueryProperty);
+	}
 
 	private static void Apply(TextBlock tb) {
 		var text = GetText(tb) ?? "";

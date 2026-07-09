@@ -20,16 +20,16 @@ public sealed class HierarchyState {
 		try {
 			if (File.Exists(path))
 				data = JsonSerializer.Deserialize<Dictionary<string, bool>>(File.ReadAllText(path));
-		}
-		catch {
+		} catch {
 			// corrupt cache
 		}
 
 		return new HierarchyState(path, data ?? new Dictionary<string, bool>());
 	}
 
-	public bool Get(string key, bool defaultCollapsed) =>
-		m_collapsed.TryGetValue(key, out var v) ? v : defaultCollapsed;
+	public bool Get(string key, bool defaultCollapsed) {
+		return m_collapsed.TryGetValue(key, out var v) ? v : defaultCollapsed;
+	}
 
 	public void Set(string key, bool collapsed) {
 		// only persist the collapsed entries to keep the file small
@@ -42,8 +42,7 @@ public sealed class HierarchyState {
 		try {
 			Directory.CreateDirectory(Path.GetDirectoryName(m_path)!);
 			File.WriteAllText(m_path, JsonSerializer.Serialize(m_collapsed));
-		}
-		catch {
+		} catch {
 			// ignore IO errors
 		}
 	}

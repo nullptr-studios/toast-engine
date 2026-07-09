@@ -1,3 +1,4 @@
+using System;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -10,7 +11,7 @@ public partial class RenameModal : Window {
 		NameBox.Text = initialName;
 	}
 
-	protected override void OnOpened(System.EventArgs e) {
+	protected override void OnOpened(EventArgs e) {
 		base.OnOpened(e);
 		NameBox.SelectAll();
 		NameBox.Focus();

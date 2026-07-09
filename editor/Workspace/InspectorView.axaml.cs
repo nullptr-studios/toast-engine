@@ -52,5 +52,7 @@ public partial class InspectorView : UserControl {
 		}
 	}
 
-	private void OnNameLostFocus(object? sender, RoutedEventArgs e) => m_vm?.CommitRename();
+	private void OnNameLostFocus(object? sender, RoutedEventArgs e) {
+		m_vm?.CommitRename();
+	}
 }

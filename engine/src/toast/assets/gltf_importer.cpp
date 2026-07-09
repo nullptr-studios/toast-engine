@@ -41,11 +41,6 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		return;
 	}
 
-	// TODO: we need to save on cached://<filename>/ the following data
-	//		1: all materials with a .tmat
-	//		2: all textures as .png
-	//		3: all meshes as .tmesh
-
 	// map each GLTF mesh index to the name of the first scene node that references it
 	std::vector<std::string> mesh_node_name(model.meshes_count);
 	for (size_t i = 0; i < model.nodes_count; i++) {
@@ -433,7 +428,11 @@ auto generateIntermediates(const std::filesystem::path& path) {
 	for (size_t i = 0; i < model.scenes_count; i++) {
 		const auto& scene = model.scenes[i];
 		nlohmann::json scene_json;
-		scene_json["name"] = std::string(scene.name.data, scene.name.len);
+		std::string name = std::string(scene.name.data, scene.name.len);
+		if (name.empty()) {
+			name = path.filename().stem().string();
+		}
+		scene_json["name"] = name;
 		scene_json["children"] = nlohmann::json::array();
 
 		for (uint32_t j = 0; j < scene.nodes_count; j++) {
