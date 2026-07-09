@@ -273,7 +273,7 @@ void AssetManager::reloadManifest() {
 	// Game mode: manifests are packed inside each db:// pack
 	std::vector<std::string> manifest_uris;
 	if (toast::ProjectSettings* ps = toast::ProjectSettings::get()) {
-		for (const auto& db : ps->databases()) {
+		for (const auto& db : toast::ProjectSettings::databases()) {
 			if (load_mode == SaveMode::game) {
 				manifest_uris.push_back(db + "://" + db + ".json");
 			} else {

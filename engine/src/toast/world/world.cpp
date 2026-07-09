@@ -607,19 +607,19 @@ void World::hotReload() {
 		return;
 	}
 
-	std::function<void(const Box<Node>&)> refreshFn;
-	refreshFn = [&refreshFn](const Box<Node>& box) -> void {
+	std::function<void(const Box<Node>&)> refresh_fn;
+	refresh_fn = [&refresh_fn](const Box<Node>& box) -> void {
 		if (!box.exists()) {
 			return;
 		}
 		const_cast<Node&>(*box).refreshInfo();
 		for (const auto& child : box->children()) {
-			refreshFn(child);
+			refresh_fn(child);
 		}
 	};
 
 	if (instance->trees.root.exists()) {
-		refreshFn(instance->trees.root);
+		refresh_fn(instance->trees.root);
 	}
 	for (const auto& node : instance->trees.cached) {
 		const_cast<Node&>(*node).refreshInfo();
@@ -1158,18 +1158,18 @@ void WorldTestAccess::setWorldRoot(World& world, Node& node) {
 void WorldTestAccess::initAssetManager(std::string_view assets_dir, std::string_view cache_dir) {
 	static std::unique_ptr<assets::AssetManager> manager;
 
-	std::filesystem::path assets_path {std::string(assets_dir)};
+	std::filesystem::path assets_p {std::string(assets_dir)};
 	std::filesystem::path cache_path {std::string(cache_dir)};
 	assets::AssetManager::setPaths(
 	    assets::Paths {
-	      .project = assets_path,
-	      .artworks = assets_path,
+	      .project = assets_p,
+	      .artworks = assets_p,
 	      .cache = cache_path,
-	      .saved = assets_path,
-	      .core = assets_path,
+	      .saved = assets_p,
+	      .core = assets_p,
 	    }
 	);
-	assets::AssetManager::registerDatabase("assets", assets_path);
+	assets::AssetManager::registerDatabase("assets", assets_p);
 
 	if (not manager) {
 		manager = std::make_unique<assets::AssetManager>();    // ctor reads the manifest with the paths above

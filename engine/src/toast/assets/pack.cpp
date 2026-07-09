@@ -5,15 +5,16 @@
 #include <lz4.h>
 #include <stdexcept>
 #include <toast/log.hpp>
+#include <utility>
 
 namespace assets {
 
 namespace {
-constexpr uint8_t k_magic[6] = {'P', 'A', 'C', 'K', '\0', '\0'};
+constexpr std::array<uint8_t, 6> k_magic = {'P', 'A', 'C', 'K', '\0', '\0'};
 constexpr uint16_t k_version = 2;
 
 template<typename T>
-auto read_le(std::ifstream& f) -> T {
+auto readLe(std::ifstream& f) -> T {
 	T val {};
 	f.read(reinterpret_cast<char*>(&val), sizeof(T));
 	return val;    // little-endian; host is LE on x86/ARM Linux/Windows
@@ -38,19 +39,19 @@ PackArchive::PackArchive(const std::filesystem::path& path) : m_path(path) {
 	}
 
 	// Header
-	uint8_t magic[6] {};
-	f.read(reinterpret_cast<char*>(magic), 6);
-	if (std::memcmp(magic, k_magic, 6) != 0) {
+	std::array<uint8_t, 6> magic {};
+	f.read(reinterpret_cast<char*>(magic.data()), 6);
+	if (std::memcmp(magic.data(), k_magic.data(), 6) != 0) {
 		throw std::runtime_error("PackArchive: bad magic in " + path.string());
 	}
 
-	const uint16_t version = read_le<uint16_t>(f);
+	const uint16_t version = readLe<uint16_t>(f);
 	if (version != k_version) {
 		throw std::runtime_error("PackArchive: unsupported version " + std::to_string(version));
 	}
 
-	const uint32_t file_count = read_le<uint32_t>(f);
-	const uint64_t table_offset = read_le<uint64_t>(f);
+	const uint32_t file_count = readLe<uint32_t>(f);
+	const uint64_t table_offset = readLe<uint64_t>(f);
 
 	// Seek to file table
 	f.seekg(static_cast<std::streamoff>(table_offset), std::ios::beg);
@@ -58,7 +59,7 @@ PackArchive::PackArchive(const std::filesystem::path& path) : m_path(path) {
 		throw std::runtime_error("PackArchive: cannot seek to file table in " + path.string());
 	}
 
-	const uint32_t table_count = read_le<uint32_t>(f);
+	const uint32_t table_count = readLe<uint32_t>(f);
 	if (table_count != file_count) {
 		throw std::runtime_error("PackArchive: file_count mismatch in " + path.string());
 	}
@@ -67,14 +68,14 @@ PackArchive::PackArchive(const std::filesystem::path& path) : m_path(path) {
 
 	for (uint32_t i = 0; i < file_count; ++i) {
 		Entry e;
-		const uint64_t hash = read_le<uint64_t>(f);
-		const uint32_t path_len = read_le<uint32_t>(f);
+		const uint64_t hash = readLe<uint64_t>(f);
+		const uint32_t path_len = readLe<uint32_t>(f);
 		e.rel_path.resize(path_len);
 		f.read(e.rel_path.data(), path_len);
-		e.offset = read_le<uint64_t>(f);
-		e.orig_size = read_le<uint64_t>(f);
-		e.stored_size = read_le<uint64_t>(f);
-		e.flags = read_le<uint8_t>(f);
+		e.offset = readLe<uint64_t>(f);
+		e.orig_size = readLe<uint64_t>(f);
+		e.stored_size = readLe<uint64_t>(f);
+		e.flags = readLe<uint8_t>(f);
 
 		m_entries.emplace(hash, std::move(e));
 	}
@@ -136,7 +137,7 @@ auto PackArchive::read(std::string_view rel_path) const -> std::optional<std::ve
 	    static_cast<int>(e.orig_size)
 	);
 
-	if (result < 0 || static_cast<uint64_t>(result) != e.orig_size) {
+	if (result < 0 || std::cmp_not_equal(result, e.orig_size)) {
 		TOAST_ERROR("PackArchive", "LZ4 decompression failed for '{}' in {}", key, m_path.string());
 		return std::nullopt;
 	}

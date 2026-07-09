@@ -18,9 +18,15 @@ namespace toast {
 
 class TOAST_API GameplaySettings {
 public:
-	auto initScene() const { return m_init_scene; }
+	[[nodiscard]]
+	auto initScene() const {
+		return m_init_scene;
+	}
 
-	auto player() const { return m_player; }
+	[[nodiscard]]
+	auto player() const {
+		return m_player;
+	}
 
 private:
 	friend class ProjectSettings;
@@ -30,7 +36,7 @@ private:
 
 class TOAST_API ProjectSettings {
 public:
-	explicit ProjectSettings(std::filesystem::path path);
+	explicit ProjectSettings(const std::filesystem::path& path);
 
 	static auto get() -> ProjectSettings* { return instance; }
 
