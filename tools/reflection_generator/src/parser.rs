@@ -74,7 +74,7 @@ pub struct Class {
     pub functions: Vec<String>,
     pub methods: Vec<Function>,
     pub fields: Vec<Field>,
-    pub include_path: String,
+    pub source_file: String,
 }
 
 pub fn parse(source: &str, file_path: &str) -> Vec<Class> {
@@ -115,7 +115,7 @@ fn get_class(node: tree_sitter::Node, source: &str, file_path: &str) -> Option<C
         functions: get_functions(node, source),
         methods: get_methods(node, source),
         fields: get_fields(node, source),
-        include_path: file_path.to_string(),
+        source_file: file_path.to_string(),
     })
 }
 

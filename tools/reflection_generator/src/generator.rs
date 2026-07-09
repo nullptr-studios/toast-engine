@@ -1,6 +1,6 @@
 //! Converts parsed Class structs into NodeInfo data and emits C++ files via Jinja2 templates
 
-use crate::parser::{FieldType, attrs_to_json};
+use crate::parser::{attrs_to_json};
 use crate::*;
 use serde::Serialize;
 use serde_json::{to_value, Value as json_t};
@@ -147,7 +147,7 @@ pub fn build_node(class: &Class, source_file: &str) -> NodeInfo {
         methods:      class.methods.clone(),
         groups,
         global_fields,
-        source_file:  source_file.to_string(),
+        source_file:  class.source_file.clone(),
         is_interface,
     }
 }
