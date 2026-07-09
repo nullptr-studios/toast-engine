@@ -3,15 +3,20 @@
  * @author Xein
  * @date 06 Jun 2026
  *
- * @brief Maps five URI prefixes to filesystem roots and manages asset lifetime
+ * @brief Maps URI schemes to filesystem roots and manages asset lifetime
  *
- * Supported schemes: assets://, artwork://, cache://, core://, saved://
- * Roots are configured via setPaths() before any load call
+ * Fixed special schemes: project://, artwork://, cache://, core://, saved://
+ * Content database schemes: any name registered via registerDatabase() or
+ * derived from ProjectSettings::databases() (e.g. assets://, dlc://, ...)
+ *
+ * Fixed roots are configured via setPaths() before any load call.
+ * Content databases are added via registerDatabase() after ProjectSettings loads.
  */
 
 #pragma once
 
 #include "assets.hpp"
+#include "pack.hpp"
 #include "toast/events/listener.hpp"
 #include "types.hpp"
 
@@ -30,7 +35,7 @@ struct AssetInfo {
 };
 
 struct Paths {
-	std::filesystem::path assets;
+	std::filesystem::path project;    ///< project root folder; special databases are derived from here
 	std::filesystem::path artworks;
 	std::filesystem::path cache;
 	std::filesystem::path saved;
@@ -38,19 +43,24 @@ struct Paths {
 };
 
 /**
- * @brief Maps five URI schemes to filesystem roots and manages asset lifetime
+ * @brief Maps URI schemes to filesystem roots and manages asset lifetime
  *
- * Supported schemes and their intended roots:
- *   - assets://   content addressed by UID (game data, levels, characters)
+ * Fixed special schemes (always registered via setPaths):
+ *   - project://  the project root folder
  *   - artwork://  raw art source files (textures, models before baking)
  *   - cache://    generated or baked files that can be rebuilt
  *   - core://     engine built-in assets (default shaders, primitives)
  *   - saved://    user save data and preferences
  *
- * Roots are configured once via setPaths() before any load call. Assets stay resident
- * in the cache until clearUnusedAssets() is called and their ref count is zero.
+ * Content database schemes (registered via registerDatabase after ProjectSettings loads):
+ *   - assets://   default content database (always present for a new project)
+ *   - <name>://   additional databases listed in the project's databases array
  *
- * @see Paths, AssetHandle, setPaths()
+ * Roots are configured via setPaths() then registerDatabase() before any load call.
+ * Assets stay resident in the cache until clearUnusedAssets() is called and their
+ * ref count is zero.
+ *
+ * @see Paths, AssetHandle, setPaths(), registerDatabase()
  */
 class AssetManager {
 public:
@@ -118,11 +128,28 @@ public:
 	void clearUnusedAssets();
 
 	/**
-	 * @brief Configures the five URI roots; must be called once before any load() call
-	 * @param paths Filesystem paths for each URI scheme
+	 * @brief Configures the five fixed special URI roots; must be called before Engine::init()
+	 * @param paths Filesystem paths for each fixed scheme (project, artwork, cache, core, saved)
 	 * @warning Not thread-safe after initialization; call this before creating the AssetManager or spawning load threads
 	 */
 	static void setPaths(Paths&& paths);
+
+	/**
+	 * @brief Registers a content database scheme
+	 * @note Call after setPaths and before AssetManager construction (or before reloadManifest)
+	 */
+	static void registerDatabase(std::string_view name, std::filesystem::path root);
+
+	/**
+	 * @brief Removes all content database schemes (non-fixed), leaving only special roots intact
+	 * @note Used by reloadSettings to reset before re-registering databases from updated project settings
+	 */
+	static void clearDatabases();
+
+	/**
+	 * @brief Returns the project root path (project:// root)
+	 */
+	static auto projectRoot() -> const std::filesystem::path&;
 
 	/**
 	 * @brief Maps a virtual URI to its manifest UID
@@ -149,32 +176,44 @@ public:
 
 	auto getCachePath() const -> const std::filesystem::path&;
 
+	/**
+	 * @brief Selects the asset load mode
+	 */
+	static void setLoadMode(SaveMode mode);
+
+	/**
+	 * @return Current load mode
+	 */
+	static auto getLoadMode() -> SaveMode;
+
+	/**
+	 * @brief Mounts a .pak archive at a URI scheme
+	 * @param scheme URI scheme without "://"
+	 * @param pak_path Absolute path to the .pak file
+	 *
+	 * After mounting, reads for that scheme go to the pack instead of the filesystem
+	 */
+	static void mountPack(std::string_view scheme, const std::filesystem::path& pak_path);
+
 private:
 	static inline AssetManager* instance = nullptr;
 
-	// FIXME: hardcoded; needs to become runtime-selectable once the game player is built
-	static constexpr SaveMode load_mode = SaveMode::editor;
+	static inline SaveMode load_mode = SaveMode::editor;
+
+	static inline std::unordered_map<std::string, std::unique_ptr<PackArchive>> mounts;
 
 	event::Listener listener;
 	std::mutex mutex;
 	std::unordered_map<uint64_t, AssetInfo> manifest;    ///< UID → path+type; populated from the project manifest on construction
 	std::unordered_map<uint64_t, std::unique_ptr<Asset>> cache;    ///< assets stay resident until clearUnusedAssets() is called
 
-	static inline std::filesystem::path assets_path;
-	static inline std::filesystem::path artworks_path;
-	static inline std::filesystem::path cache_path;
-	static inline std::filesystem::path core_path;
-	static inline std::filesystem::path saved_path;
+	/// Scheme name (no "://") → filesystem root. Populated by setPaths() + registerDatabase().
+	static inline std::unordered_map<std::string, std::filesystem::path> roots;
 
 	auto resolveVirtualPath(std::string_view virtual_path) -> std::optional<std::filesystem::path>;
+	auto readVirtualPath(std::string_view virtual_path) -> std::optional<std::vector<uint8_t>>;
 	auto openFile(const std::filesystem::path& path) -> std::optional<std::vector<uint8_t>>;
 	auto saveFile(const std::filesystem::path& path, const std::vector<uint8_t>& data) -> bool;
-
-	static constexpr std::string_view assets_uri = "assets://";
-	static constexpr std::string_view artwork_uri = "artwork://";
-	static constexpr std::string_view cache_uri = "cache://";
-	static constexpr std::string_view core_uri = "core://";
-	static constexpr std::string_view saved_uri = "saved://";
 };
 
 }

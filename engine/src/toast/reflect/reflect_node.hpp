@@ -367,6 +367,10 @@ public:
 	 */
 	[[nodiscard]]
 	static auto reflect(std::string_view name) -> const NodeInfo* {
+		// remove empty namespace indicator if in global space
+		if (name.starts_with("::")) {
+			name.remove_prefix(2);
+		}
 		auto it = (*instance).types.find(name);
 		return it != (*instance).types.end() ? it->second : nullptr;
 	}

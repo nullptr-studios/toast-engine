@@ -47,14 +47,14 @@ constexpr char string_array_separator =
 
 constexpr uint16_t format_version = 2;    ///< current binary layout version
 
-struct NodeFileBinaryHeader {
+struct TOAST_API NodeFileBinaryHeader {
 	const std::array<uint8_t, 6> magic = {'T', 'N', 'O', 'D', 'E', '\0'};
 	uint16_t version = format_version;
 	uint32_t node_count;
 };
 }
 
-class Prefab final : public Asset, public ISaveable {
+class TOAST_API Prefab final : public Asset, public ISaveable {
 public:
 	static constexpr std::string_view collection = "nodes";
 

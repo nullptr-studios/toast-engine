@@ -19,7 +19,6 @@ TOAST_C_API void toast_tick(void) NOEXCEPT;            ///< Frame logic for the 
 TOAST_C_API int toast_should_close(void) NOEXCEPT;     ///< @return 1 if the engine should close
 TOAST_C_API void toast_destroy(engine_t*) NOEXCEPT;    ///< Destroys the game engine
 
-/// mutually exclusive — call exactly one before toast_init(); SDL for standalone, Avalonia for editor
 TOAST_C_API void toast_create_SDL_window(const char*) NOEXCEPT;
 TOAST_C_API void toast_create_avalonia_window() NOEXCEPT;
 
@@ -44,6 +43,44 @@ TOAST_C_API void toast_create_tnode(const char* path, const char* node_type) NOE
 TOAST_C_API void toast_reload_manifest(void) NOEXCEPT;
 /// @brief Plays a haptic described by .thaptic TOML text on the active controller
 TOAST_C_API void toast_haptics_test(const char* toml_text) NOEXCEPT;
+
+/**
+ * @brief Selects the asset load mode (0 = editor text files, 1 = game binary packs)
+ * @note Must be called before toast_init(); defaults to 0 (editor)
+ */
+TOAST_C_API void toast_set_load_mode(int mode) NOEXCEPT;
+
+/**
+ * @brief Mounts a .pak archive at a URI scheme
+ * @param scheme URI scheme without "://" (e.g. "assets", "core")
+ * @param pak_path Absolute path to the .pak file
+ * @note Must be called before toast_init() so the manifest read uses the pack
+ */
+TOAST_C_API void toast_mount_pack(const char* scheme, const char* pak_path) NOEXCEPT;
+
+/**
+ * @brief Creates the World and loads the init_scene from project settings
+ */
+TOAST_C_API void toast_start_game(void) NOEXCEPT;
+
+/**
+ * @brief Calls begin() on the active application layer
+ * @note Used by hot-reload
+ */
+TOAST_C_API void toast_begin_application(void) NOEXCEPT;
+
+/**
+ * @brief Destroys the active application layer and resets the pointer to null
+ * @note Used by hot-reload
+ */
+TOAST_C_API void toast_pop_application(void) NOEXCEPT;
+
+/**
+ * @brief Serializes a node asset to binary format and writes it to out_path
+ * @param uid 11-character UID string of the node asset
+ * @param out_path Absolute filesystem path to write the binary .tnode to
+ */
+TOAST_C_API void toast_bake_asset(const char* uid, const char* out_path) NOEXCEPT;
 
 // clang-format off
 /// sets all five URI roots; must be called before toast_init()

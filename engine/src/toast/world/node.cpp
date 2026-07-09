@@ -58,6 +58,13 @@ auto Node::info() const -> const NodeInfo* {
 	return m_info;
 }
 
+void Node::refreshInfo() {
+	const NodeInfo* current = NodeRegistry::reflect(m_reflect_type_name);
+	if (current && current != m_info) {
+		m_info = current;
+	}
+}
+
 auto Node::sourcePrefab() const noexcept -> const assets::AssetHandle<assets::Prefab>& {
 	if (m_type != NodeType::root and m_type != NodeType::world_root) {
 		TOAST_WARN("Node", "Trying to get a Node file asset of node {} that can't have one", m_name);
