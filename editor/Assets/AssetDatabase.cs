@@ -444,11 +444,10 @@ public static class AssetDatabase {
 			} catch {
 				continue;
 			}
+
 			if (obj is null) continue;
 
-			if (merged is null) {
-				merged = new JsonObject { ["version"] = 2 };
-			}
+			if (merged is null) merged = new JsonObject { ["version"] = 2 };
 
 			// Union the per-type collections (skip metadata keys)
 			foreach (var (type, collectionNode) in obj) {

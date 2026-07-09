@@ -40,7 +40,7 @@
 				         PlaceholderText="Search project..."
 				         CornerRadius="6"
 				         BorderThickness="0"
-				         Background="{StaticResource Bg1}"/>
+				         Background="{StaticResource Bg1}" />
 				<Button Grid.Column="2"
 				        CornerRadius="6"
 				        Command="{Binding NewProject}"

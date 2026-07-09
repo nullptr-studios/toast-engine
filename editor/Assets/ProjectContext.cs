@@ -23,8 +23,7 @@ public static class ProjectContext {
 
 	public static IReadOnlyList<string> Databases { get; private set; } = ["assets"];
 
-	public static IEnumerable<string> DatabaseRoots =>
-		Databases.Select(db => Path.Combine(ProjectPath, db));
+	public static IEnumerable<string> DatabaseRoots => Databases.Select(db => Path.Combine(ProjectPath, db));
 
 	// Fired after an import batch completes
 	public static event Action? AssetsChanged;
@@ -37,10 +36,10 @@ public static class ProjectContext {
 	public static void Initialize(string projectPath, string corePath) {
 		ProjectPath = Path.GetFullPath(projectPath);
 		ArtworkPath = Path.Combine(ProjectPath, "artwork");
-		AssetsPath  = Path.Combine(ProjectPath, "assets");
-		CachePath   = Path.Combine(ProjectPath, ".toast");
-		SavedPath   = Path.Combine(ProjectPath, ".toast", "save_data");
-		CorePath    = Path.GetFullPath(corePath);
+		AssetsPath = Path.Combine(ProjectPath, "assets");
+		CachePath = Path.Combine(ProjectPath, ".toast");
+		SavedPath = Path.Combine(ProjectPath, ".toast", "save_data");
+		CorePath = Path.GetFullPath(corePath);
 
 		// Read databases from the project .toast file (default to ["assets"])
 		Databases = ReadDatabasesFromProject(ProjectPath);
@@ -80,7 +79,7 @@ public static class ProjectContext {
 		var canonical = Path.GetFullPath(realPath);
 		string? bestScheme = null;
 		string? bestRelative = null;
-		int bestLen = -1;
+		var bestLen = -1;
 
 		foreach (var (scheme, root) in s_schemes) {
 			var rootFull = Path.GetFullPath(root) + Path.DirectorySeparatorChar;
@@ -101,15 +100,15 @@ public static class ProjectContext {
 			if (canonical.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase))
 				return true;
 		}
+
 		return false;
 	}
 
 	public static bool IsDatabaseRoot(string realPath) {
 		var canonical = Path.GetFullPath(realPath);
-		foreach (var root in DatabaseRoots) {
+		foreach (var root in DatabaseRoots)
 			if (string.Equals(canonical, Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase))
 				return true;
-		}
 		return false;
 	}
 
@@ -119,9 +118,9 @@ public static class ProjectContext {
 		// Fixed special schemes
 		s_schemes["project://"] = ProjectPath;
 		s_schemes["artwork://"] = ArtworkPath;
-		s_schemes["cache://"]   = CachePath;
-		s_schemes["core://"]    = CorePath;
-		s_schemes["saved://"]   = SavedPath;
+		s_schemes["cache://"] = CachePath;
+		s_schemes["core://"] = CorePath;
+		s_schemes["saved://"] = SavedPath;
 
 		// Dynamic content database schemes derived from the project's databases list
 		foreach (var db in Databases)
@@ -141,6 +140,7 @@ public static class ProjectContext {
 		} catch {
 			// ignored
 		}
+
 		return ["assets"];
 	}
 

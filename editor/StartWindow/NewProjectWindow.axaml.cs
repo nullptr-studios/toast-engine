@@ -27,7 +27,7 @@ public partial class NewProjectWindow : Window {
 	public string ProjectTitle { get; private set; } = "";
 	public string ProjectPath { get; private set; } = "";
 	public List<uint> ProjectVersion { get; private set; } = [1, 0, 0];
-	public List<string> ProjectDatabases { get; private set; } = ["assets"];
+	public List<string> ProjectDatabases { get; } = ["assets"];
 	public string ProjectThumbnail { get; private set; } = "";
 
 	private void UpdateProjectData() {

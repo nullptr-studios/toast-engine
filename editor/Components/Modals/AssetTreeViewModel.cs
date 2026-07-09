@@ -96,6 +96,7 @@ public class AssetTreeViewModel : PickerViewModel {
 			m_roots.Add(node);
 			m_filtered.Add(node);
 		}
+
 		var coreNode = new AssetTreeNode(ProjectContext.CorePath, typeFilter);
 		m_roots.Add(coreNode);
 		m_filtered.Add(coreNode);

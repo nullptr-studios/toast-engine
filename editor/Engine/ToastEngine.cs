@@ -34,15 +34,15 @@ public partial class ToastEngine : IDisposable {
 	private readonly CancellationTokenSource m_cancellationSource;
 
 	private readonly IntPtr m_engineInstance;
-	private IntPtr m_currentGameInstance;
+
+	private readonly ManualResetEventSlim m_tickGate = new(true);
+	private readonly ManualResetEventSlim m_tickIdle = new(true);
 
 	private readonly Task m_tickTask;
 
-	private readonly ManualResetEventSlim m_tickGate = new(initialState: true);
-	private readonly ManualResetEventSlim m_tickIdle = new(initialState: true);
-
 	private readonly Lock m_windowsLock = new();
 	private bool m_closeEventSent;
+	private IntPtr m_currentGameInstance;
 
 	private GameCreate? m_gameCreate;
 	private GameDestroy? m_gameDestroy;
@@ -71,7 +71,7 @@ public partial class ToastEngine : IDisposable {
 		var gameDll = FindGameDll();
 		var tempPath = GameDllTempPath;
 		Directory.CreateDirectory(Path.GetDirectoryName(tempPath)!);
-		File.Copy(gameDll, tempPath, overwrite: true);
+		File.Copy(gameDll, tempPath, true);
 		LoadFrom(tempPath);
 
 		m_engineInstance = toast_create();

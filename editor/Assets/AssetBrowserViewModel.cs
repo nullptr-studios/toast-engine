@@ -691,7 +691,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 
 		if (ProjectContext.IsInitialized) {
 			// One folder per content database
-			bool isFirst = true;
+			var isFirst = true;
 			foreach (var db in ProjectContext.Databases) {
 				var dbPath = Path.Combine(ProjectContext.ProjectPath, db);
 				var folder = new AssetFolder(dbPath) { Name = db + "://", IsExpanded = isFirst };

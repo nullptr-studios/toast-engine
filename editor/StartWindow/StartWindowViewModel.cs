@@ -91,7 +91,8 @@ public partial class StartWindowViewModel : ViewModelBase {
 
 		tasks.Add(LoaderTask.Do("Generate asset database", async log => {
 			AssetDatabase.RebuildAssetDatabase();
-			log($"Rebuilt asset database ({string.Join(", ", ProjectContext.Databases.Select(db => db + "://"))}, core://)");
+			log(
+				$"Rebuilt asset database ({string.Join(", ", ProjectContext.Databases.Select(db => db + "://"))}, core://)");
 
 			await Task.CompletedTask;
 		}));

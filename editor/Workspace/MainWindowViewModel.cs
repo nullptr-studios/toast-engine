@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
@@ -131,7 +132,7 @@ public partial class MainWindowViewModel : ViewModelBase {
 		if (toastFile is null) return;
 
 		var virtualPath = $"project://{Path.GetFileName(toastFile)}";
-		var definition  = new ProjectSettingsAsset();
+		var definition = new ProjectSettingsAsset();
 
 		// Use the filename as a synthetic uid so the editor can track the open file
 		m_dockFactory.OpenGenericEditor(Path.GetFileNameWithoutExtension(toastFile), virtualPath, definition);
@@ -297,13 +298,21 @@ public partial class MainWindowViewModel : ViewModelBase {
 		foreach (var ws in m_workspaces.Values) await ws.Save();
 	}
 
-	private static bool CanReloadGame() => ProjectContext.IsInitialized;
+	private static bool CanReloadGame() {
+		return ProjectContext.IsInitialized;
+	}
 
-	private static bool CanCompileGameRelease() => ProjectContext.IsInitialized;
+	private static bool CanCompileGameRelease() {
+		return ProjectContext.IsInitialized;
+	}
 
-	private bool CanPlay() => m_dockFactory.ActiveWorkspace is { } ws && ws.TogglePlayCommand.CanExecute(null);
+	private bool CanPlay() {
+		return m_dockFactory.ActiveWorkspace is { } ws && ws.TogglePlayCommand.CanExecute(null);
+	}
 
-	private bool CanPlayInWindow() => m_dockFactory.ActiveWorkspace is { } ws && ws.TogglePlayExternalCommand.CanExecute(null);
+	private bool CanPlayInWindow() {
+		return m_dockFactory.ActiveWorkspace is { } ws && ws.TogglePlayExternalCommand.CanExecute(null);
+	}
 
 	[RelayCommand(CanExecute = nameof(CanPlay))]
 	private void Play() {
@@ -322,7 +331,7 @@ public partial class MainWindowViewModel : ViewModelBase {
 		if (App.MainWindow is not { } owner) return;
 		if (!ProjectContext.IsInitialized) return;
 
-		string toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "toast_engine"));
+		var toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "toast_engine"));
 		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
 
 		var tasks = new List<LoaderTask>();
@@ -348,6 +357,7 @@ public partial class MainWindowViewModel : ViewModelBase {
 				File.Copy(src, dst, true);
 				log("Copied engine_reflect.json");
 			}
+
 			await Task.CompletedTask;
 		}));
 
@@ -371,9 +381,7 @@ public partial class MainWindowViewModel : ViewModelBase {
 			OnComplete = async () => {
 				ReflectionDatabase.Update();
 				AssetDatabase.RebuildAssetDatabase();
-				if (HierarchyViewModel.Current is { } hvm) {
-					hvm.SelectedNode = null;
-				}
+				if (HierarchyViewModel.Current is { } hvm) hvm.SelectedNode = null;
 				await Task.CompletedTask;
 			}
 		};
@@ -386,56 +394,66 @@ public partial class MainWindowViewModel : ViewModelBase {
 		if (App.MainWindow is not { } owner) return;
 		if (!ProjectContext.IsInitialized) return;
 
-		string playerPath   = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "tools", "player"));
-		string toastPath    = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "toast_engine"));
-		string packerBin    = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "packer", $"packer{(OperatingSystem.IsWindows() ? ".exe" : "")}"));
-		string outputDir    = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, "build"));
-		string stageRoot    = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, ".toast", "pack_stage"));
-		var cmakeGenerator  = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
+		var playerPath =
+			Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "tools", "player"));
+		var toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "toast_engine"));
+		var packerBin = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "packer",
+			$"packer{(OperatingSystem.IsWindows() ? ".exe" : "")}"));
+		var outputDir = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, "build"));
+		var stageRoot = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, ".toast", "pack_stage"));
+		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
 
 		Directory.CreateDirectory(outputDir);
 
-			async Task CopyDlls(Action<string> log) {
-				var libExt = OperatingSystem.IsWindows() ? ".dll" : ".so";
-				var exeExt = OperatingSystem.IsWindows() ? ".exe" : "";
-				var extensions = new[] { libExt, exeExt };
-				var sources = new[] {
-					Path.Combine(toastPath, "bin"),
-					Path.Combine(toastPath, "lib"),
-				};
-				foreach (var src in sources) {
-					if (!Directory.Exists(src)) { log($"warning: source dir not found: {src}"); continue; }
-					var files = Directory.EnumerateFiles(src, "*.*", SearchOption.TopDirectoryOnly)
-						.Where(f => extensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase));
-					foreach (var file in files) {
-						var dest = Path.Combine(outputDir, Path.GetFileName(file));
-						log($"  copy {Path.GetFileName(file)}");
-						await Task.Run(() => File.Copy(file, dest, overwrite: true));
-					}
+		async Task CopyDlls(Action<string> log) {
+			var libExt = OperatingSystem.IsWindows() ? ".dll" : ".so";
+			var exeExt = OperatingSystem.IsWindows() ? ".exe" : "";
+			var extensions = new[] { libExt, exeExt };
+			var sources = new[] {
+				Path.Combine(toastPath, "bin"),
+				Path.Combine(toastPath, "lib")
+			};
+			foreach (var src in sources) {
+				if (!Directory.Exists(src)) {
+					log($"warning: source dir not found: {src}");
+					continue;
+				}
+
+				var files = Directory.EnumerateFiles(src, "*.*", SearchOption.TopDirectoryOnly)
+					.Where(f => extensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase));
+				foreach (var file in files) {
+					var dest = Path.Combine(outputDir, Path.GetFileName(file));
+					log($"  copy {Path.GetFileName(file)}");
+					await Task.Run(() => File.Copy(file, dest, true));
 				}
 			}
+		}
 
 		async Task CopyProjectToast(Action<string> log) {
 			var toastFile = Directory.EnumerateFiles(ProjectContext.ProjectPath, "*.toast").FirstOrDefault();
-			if (toastFile is null) { log("warning: no .toast file found in project root"); return; }
+			if (toastFile is null) {
+				log("warning: no .toast file found in project root");
+				return;
+			}
+
 			var dest = Path.Combine(outputDir, Path.GetFileName(toastFile));
 			log($"  copy {Path.GetFileName(toastFile)}");
-			await Task.Run(() => File.Copy(toastFile, dest, overwrite: true));
+			await Task.Run(() => File.Copy(toastFile, dest, true));
 		}
 
 		async Task BakeAndPack(Action<string> log, string dbName, string dbSourceDir, string manifestJsonPath) {
 			var stageDir = Path.Combine(stageRoot, dbName);
-			if (Directory.Exists(stageDir)) Directory.Delete(stageDir, recursive: true);
+			if (Directory.Exists(stageDir)) Directory.Delete(stageDir, true);
 			Directory.CreateDirectory(stageDir);
 
 			// Copy all source files into staging
 			log($"  staging {dbName}/ ...");
 			await Task.Run(() => {
 				foreach (var srcFile in Directory.EnumerateFiles(dbSourceDir, "*", SearchOption.AllDirectories)) {
-					var rel  = Path.GetRelativePath(dbSourceDir, srcFile);
+					var rel = Path.GetRelativePath(dbSourceDir, srcFile);
 					var dest = Path.Combine(stageDir, rel);
 					Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-					File.Copy(srcFile, dest, overwrite: true);
+					File.Copy(srcFile, dest, true);
 				}
 			});
 
@@ -443,26 +461,25 @@ public partial class MainWindowViewModel : ViewModelBase {
 			log($"  baking nodes in {dbName}/ ...");
 			if (File.Exists(manifestJsonPath)) {
 				var manifestJson = JsonNode.Parse(File.ReadAllText(manifestJsonPath));
-				if (manifestJson?["node"] is JsonObject nodeCollection) {
+				if (manifestJson?["node"] is JsonObject nodeCollection)
 					foreach (var (uid, pathNode) in nodeCollection) {
 						var virtualPath = pathNode?.GetValue<string>();
 						if (virtualPath is null) continue;
 						var sep = virtualPath.IndexOf("://", StringComparison.Ordinal);
 						if (sep < 0) continue;
-						var rel  = virtualPath[(sep + 3)..];
+						var rel = virtualPath[(sep + 3)..];
 						var dest = Path.Combine(stageDir, rel.Replace('/', Path.DirectorySeparatorChar));
 						Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
 						log($"    bake {rel}");
 						await Task.Run(() => ToastEngine.BakeAsset(uid, dest));
 					}
-				}
 			}
 
 			// Copy the manifest JSON into the stage folder root
 			var manifestDest = Path.Combine(stageDir, $"{dbName}.json");
 			if (File.Exists(manifestJsonPath)) {
 				log($"  copying manifest {dbName}.json");
-				await Task.Run(() => File.Copy(manifestJsonPath, manifestDest, overwrite: true));
+				await Task.Run(() => File.Copy(manifestJsonPath, manifestDest, true));
 			} else {
 				log($"  warning: manifest not found at {manifestJsonPath}");
 			}
@@ -471,18 +488,22 @@ public partial class MainWindowViewModel : ViewModelBase {
 			var pakOut = Path.Combine(outputDir, $"{dbName}.pak");
 			log($"  packing → {dbName}.pak");
 			await Task.Run(() => {
-				using var proc = new System.Diagnostics.Process();
-				proc.StartInfo = new System.Diagnostics.ProcessStartInfo {
-					FileName               = packerBin,
-					Arguments              = $"\"{stageDir}\" \"{pakOut}\"",
-					WorkingDirectory       = ProjectContext.ProjectPath,
+				using var proc = new Process();
+				proc.StartInfo = new ProcessStartInfo {
+					FileName = packerBin,
+					Arguments = $"\"{stageDir}\" \"{pakOut}\"",
+					WorkingDirectory = ProjectContext.ProjectPath,
 					RedirectStandardOutput = true,
-					RedirectStandardError  = true,
-					UseShellExecute        = false,
-					CreateNoWindow         = true,
+					RedirectStandardError = true,
+					UseShellExecute = false,
+					CreateNoWindow = true
 				};
-				proc.OutputDataReceived += (_, e) => { if (e.Data is not null) log(e.Data); };
-				proc.ErrorDataReceived  += (_, e) => { if (e.Data is not null) log(e.Data); };
+				proc.OutputDataReceived += (_, e) => {
+					if (e.Data is not null) log(e.Data);
+				};
+				proc.ErrorDataReceived += (_, e) => {
+					if (e.Data is not null) log(e.Data);
+				};
 				proc.Start();
 				proc.BeginOutputReadLine();
 				proc.BeginErrorReadLine();
@@ -516,23 +537,23 @@ public partial class MainWindowViewModel : ViewModelBase {
 			// Copy Engine libs
 			LoaderTask.Do("copy libraries", CopyDlls),
 			// Copy project.toast
-			LoaderTask.Do("copy project.toast", CopyProjectToast),
+			LoaderTask.Do("copy project.toast", CopyProjectToast)
 		};
 
 		// Bake assets
 		foreach (var db in ProjectContext.Databases) {
-			var dbSource   = Path.Combine(ProjectContext.ProjectPath, db);
+			var dbSource = Path.Combine(ProjectContext.ProjectPath, db);
 			var manifestJs = Path.Combine(ProjectContext.CachePath, $"{db}.json");
-			var dbCapture  = db;
-			tasks.Add(LoaderTask.Do($"bake & pack {db}://", (log) => BakeAndPack(log, dbCapture, dbSource, manifestJs)));
+			var dbCapture = db;
+			tasks.Add(LoaderTask.Do($"bake & pack {db}://", log => BakeAndPack(log, dbCapture, dbSource, manifestJs)));
 		}
 
 		// Bake core
 		var coreManifest = Path.Combine(ProjectContext.CachePath, "core.json");
-		tasks.Add(LoaderTask.Do("bake & pack core://", (log) => BakeAndPack(log, "core", ProjectContext.CorePath, coreManifest)));
+		tasks.Add(LoaderTask.Do("bake & pack core://",
+			log => BakeAndPack(log, "core", ProjectContext.CorePath, coreManifest)));
 
 		var vm = new LoaderViewModel(tasks);
 		await new SimpleLoaderWindow(vm).ShowDialog(owner);
 	}
-
 }

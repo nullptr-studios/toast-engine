@@ -75,20 +75,25 @@
 				          Foreground="{StaticResource Red}"
 				          FontWeight="Bold">
 					<MenuItem Header="_New project"
-					          FontWeight="Normal" IsEnabled="False"/>
+					          FontWeight="Normal"
+					          IsEnabled="False" />
 					<MenuItem Header="_Open project"
-					          FontWeight="Normal" IsEnabled="False"/>
+					          FontWeight="Normal"
+					          IsEnabled="False" />
 					<MenuItem Header="_Close project"
-					          FontWeight="Normal" IsEnabled="False"/>
+					          FontWeight="Normal"
+					          IsEnabled="False" />
 					<Separator />
 					<MenuItem Header="_Project settings"
 					          FontWeight="Normal"
 					          Command="{Binding OpenProjectSettingsCommand}" />
 					<MenuItem Header="_Toast settings"
-					          FontWeight="Normal" IsEnabled="False"/>
+					          FontWeight="Normal"
+					          IsEnabled="False" />
 					<Separator />
 					<MenuItem Header="_Quit Toast"
-					          FontWeight="Normal" IsEnabled="False" />
+					          FontWeight="Normal"
+					          IsEnabled="False" />
 				</MenuItem>
 				<MenuItem Header="_File">
 					<MenuItem Header="_New Node file"
