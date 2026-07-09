@@ -1,6 +1,6 @@
 //! Converts parsed Class structs into NodeInfo data and emits C++ files via Jinja2 templates
 
-use crate::parser::{attrs_to_json};
+use crate::parser::{AttributeExt, attrs_to_json};
 use crate::*;
 use serde::Serialize;
 use serde_json::{to_value, Value as json_t};
@@ -54,10 +54,6 @@ pub struct SubgroupInfo {
 }
 
 
-fn attr_arg(attrs: &[Attribute], name: &str) -> Option<std::string::String> {
-    attrs.iter().find(|a| a.name == name).and_then(|a| a.args.first().cloned())
-}
-
 const RESERVED_FIELD_NAMES: &[&str] = &["m_uid", "m_name", "m_local_enabled", "m_parent", "m_source_prefab"];
 
 /// Rejects reflected definitions that would collide with engine-reserved member names
@@ -79,7 +75,7 @@ pub fn validate_class(class: &Class) -> Result<(), std::string::String> {
                     field.name
             ));
         }
-        if let Some(group) = attr_arg(&field.attributes, "Group") {
+        if let Some(group) = field.attributes.get_arg("Group") {
             if group.starts_with('~') {
                 return Err(format!("{qualified}: group name '{group}' may not start with '~' (reserved)"));
             }
@@ -117,8 +113,8 @@ pub fn build_node(class: &Class, source_file: &str) -> NodeInfo {
         > = std::collections::BTreeMap::new();
 
     for field in &class.fields {
-        let group    = attr_arg(&field.attributes, "Group");
-        let subgroup = attr_arg(&field.attributes, "Subgroup");
+        let group    = field.attributes.get_arg("Group").cloned();
+        let subgroup = field.attributes.get_arg("Subgroup").cloned();
         let fi       = field.clone();
 
         match (group, subgroup) {

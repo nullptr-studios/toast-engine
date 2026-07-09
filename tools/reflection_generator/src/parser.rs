@@ -13,7 +13,7 @@ pub enum FieldType {
     #[serde(rename = "float_t")]       Float,
     #[serde(rename = "string_t")]      String,
     #[serde(rename = "double_t")]      Double,
-    #[serde(rename = "uid_t")]        Uid,
+    #[serde(rename = "uid_t")]         Uid,
     #[serde(rename = "vec2_t")]        Vec2,
     #[serde(rename = "vec3_t")]        Vec3,
     #[serde(rename = "vec4_t")]        Vec4,
@@ -75,6 +75,16 @@ pub struct Class {
     pub methods: Vec<Function>,
     pub fields: Vec<Field>,
     pub source_file: String,
+}
+
+pub trait AttributeExt {
+    fn get_arg(&self, name: &str) -> Option<&String>;
+}
+
+impl AttributeExt for [Attribute] {
+    fn get_arg(&self, name: &str) -> Option<&String> {
+        self.iter().find(|a| a.name == name).and_then(|a| a.args.first())
+    }
 }
 
 pub fn parse(source: &str, file_path: &str) -> Vec<Class> {
