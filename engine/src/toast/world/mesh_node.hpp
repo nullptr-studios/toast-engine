@@ -17,7 +17,7 @@ class Material;
 }
 
 namespace toast {
-class [[ToastNode, Icon("MeshItem")]] MeshNode : public Node3D {
+class [[ToastNode, Icon("MeshItem")]] TOAST_API MeshNode : public Node3D {
 public:
 	MeshNode() = default;
 

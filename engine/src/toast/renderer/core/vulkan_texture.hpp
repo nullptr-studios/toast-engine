@@ -23,8 +23,7 @@ public:
 		uint32_t layer_count = 1;
 		bool is_cubemap = false;
 	};
-	
-	
+
 	void create(const VulkanCore& core, Params params, std::string_view debug_name = {});
 	void destroy();
 

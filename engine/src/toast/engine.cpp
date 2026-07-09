@@ -203,6 +203,7 @@ void Engine::tick() {
 		m->audio_system->tick();
 	}
 
+	// TODO MOVE THIS
 	clear_assets_timer += Time::delta();
 	if (clear_assets_timer > 30.0) {
 		m->asset_manager->clearUnusedAssets();
@@ -259,7 +260,7 @@ void Engine::tick() {
 				    }
 				);
 
-				//DEBUG
+				// DEBUG
 				frame.debug_gizmo_instances.push_back(world_transform);
 			}
 

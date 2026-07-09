@@ -68,9 +68,6 @@ public class ToastEngine : IDisposable {
 
 	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
 	private static extern void toast_create_SDL_window(string windowName);
-
-	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
-	private static extern void toast_create_avalonia_window();
 	
 	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
 	private static extern void toast_set_working_directory(

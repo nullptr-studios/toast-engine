@@ -627,7 +627,7 @@ void VulkanRenderer::stop() {
 	if (!was_running) {
 		return;
 	}
-	
+
 	m_frame_cv.notify_all();
 
 	if (m_render_thread.joinable()) {
