@@ -65,7 +65,7 @@ pub struct Function {
     pub is_const: bool,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct Class {
     pub name: String,
     pub namespace: Option<String>,

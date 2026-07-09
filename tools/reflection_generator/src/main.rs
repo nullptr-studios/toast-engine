@@ -78,19 +78,18 @@ fn main() {
                 eprintln!("error: {msg}");
                 std::process::exit(1);
             }
-            let mut node = build_node(class, &include_path);
+            let mut node = build_node(class);
             inject_attributes(&mut node, &cli.attributes);
             all_nodes.push(node);
         }
     }
 
     // Write JSON database
-    if let Some(parent) = cli.database.parent() {
-        if !parent.as_os_str().is_empty() {
+    if let Some(parent) = cli.database.parent()
+        && !parent.as_os_str().is_empty() {
             fs::create_dir_all(parent)
                 .unwrap_or_else(|e| eprintln!("warning: cannot create database directory: {e}"));
         }
-    }
     let json = serde_json::to_string_pretty(&generate_json(&all_nodes))
         .expect("JSON serialisation failed");
     fs::write(&cli.database, json)
@@ -131,11 +130,10 @@ fn find_headers(inputs: &[PathBuf]) -> Vec<PathBuf> {
             if path.extension().and_then(|e| e.to_str()) != Some("hpp") {
                 continue;
             }
-            if let Ok(content) = fs::read_to_string(&path) {
-                if content.contains("ToastNode") {
+            if let Ok(content) = fs::read_to_string(&path)
+                && content.contains("ToastNode") {
                     result.push(path);
                 }
-            }
         }
     }
     result
@@ -175,7 +173,7 @@ fn topological_sort(nodes: Vec<NodeInfo>) -> Vec<NodeInfo> {
                         None
                     };
                     placed_names.contains(&pname)
-                        || pname_in_child_ns.map_or(false, |n| placed_names.contains(&n))
+                        || pname_in_child_ns.is_some_and(|n| placed_names.contains(&n))
                 })
             .unwrap_or(true);
 
@@ -201,11 +199,10 @@ fn topological_sort(nodes: Vec<NodeInfo>) -> Vec<NodeInfo> {
 
 // strips --include-root prefix and normalizes to forward slashes so the path can be used in a #include directive
 fn compute_include_path(file: &Path, include_root: Option<&Path>) -> std::string::String {
-    if let Some(root) = include_root {
-        if let Ok(rel) = file.strip_prefix(root) {
+    if let Some(root) = include_root
+        && let Ok(rel) = file.strip_prefix(root) {
             return rel.to_string_lossy().replace('\\', "/");
         }
-    }
     file.file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default()

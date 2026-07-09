@@ -75,17 +75,16 @@ pub fn validate_class(class: &Class) -> Result<(), std::string::String> {
                     field.name
             ));
         }
-        if let Some(group) = field.attributes.get_arg("Group") {
-            if group.starts_with('~') {
+        if let Some(group) = field.attributes.get_arg("Group")
+            && group.starts_with('~') {
                 return Err(format!("{qualified}: group name '{group}' may not start with '~' (reserved)"));
             }
-        }
     }
 
     Ok(())
 }
 
-pub fn build_node(class: &Class, source_file: &str) -> NodeInfo {
+pub fn build_node(class: &Class) -> NodeInfo {
     let is_interface = class.attributes.iter().any(|a| a.name == "Interface");
     let fns = &class.functions;
     let functions = TickFunctions {
