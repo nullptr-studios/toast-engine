@@ -16,10 +16,10 @@ pub struct NodeInfo {
     pub attributes:  json_t,
     pub functions:   TickFunctions,
     pub methods:     Vec<Function>,
-    pub groups:      Vec<GroupInfo>,
-    pub global_fields: Vec<Field>,
     /// Path relative to --include-root
     pub source_file: String,
+    pub groups:      Vec<GroupInfo>,
+    pub global_fields: Vec<Field>,
     pub is_interface: bool,
 }
 
@@ -52,8 +52,6 @@ pub struct SubgroupInfo {
     pub name:   String,
     pub fields: Vec<Field>,
 }
-
-
 
 
 fn attr_arg(attrs: &[Attribute], name: &str) -> Option<std::string::String> {

@@ -69,7 +69,7 @@ fn main() {
         };
 
         let preprocessed = strip_export_macros(&source);
-        let classes = parse(&preprocessed);
+        let classes = parse(&preprocessed,&include_path);
 
         for class in &classes {
             if let Err(msg) = validate_class(class) {

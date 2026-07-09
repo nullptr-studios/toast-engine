@@ -74,9 +74,10 @@ pub struct Class {
     pub functions: Vec<String>,
     pub methods: Vec<Function>,
     pub fields: Vec<Field>,
+    pub include_path: String,
 }
 
-pub fn parse(source: &str) -> Vec<Class> {
+pub fn parse(source: &str, file_path: &str) -> Vec<Class> {
     let mut parser = Parser::new();
     parser.set_language(&tree_sitter_cpp::LANGUAGE.into()).expect("Language error");
 
@@ -89,14 +90,14 @@ pub fn parse(source: &str) -> Vec<Class> {
     let mut classes = Vec::new();
     while let Some((m, idx)) = captures.next() {
         let node = m.captures[*idx].node;
-        if let Some(class) = get_class(node, source) {
+        if let Some(class) = get_class(node, source, file_path) {
             classes.push(class);
         }
     }
     classes
 }
 
-fn get_class(node: tree_sitter::Node, source: &str) -> Option<Class> {
+fn get_class(node: tree_sitter::Node, source: &str, file_path: &str) -> Option<Class> {
     let name = node.child_by_field_name("name")
         .map(|n| source[n.byte_range()].to_string())?;
 
@@ -114,6 +115,7 @@ fn get_class(node: tree_sitter::Node, source: &str) -> Option<Class> {
         functions: get_functions(node, source),
         methods: get_methods(node, source),
         fields: get_fields(node, source),
+        include_path: file_path.to_string(),
     })
 }
 
