@@ -190,6 +190,14 @@ private:
 	mutable glm::mat4 m_transform = glm::mat4(1.0f);
 	mutable glm::mat4 m_world_transform = glm::mat4(1.0f);
 
+	// Snapshot of m_position/m_rotation/m_scale as of the last recalculateTransforms(). Lets us notice edits
+	// that bypass pos()/rot()/scale() - e.g. the reflection system's FieldAccess::set(), which is what the
+	// editor inspector uses and writes the raw members directly - so a stale cached matrix doesn't linger
+	// forever just because the dirty flags were never set.
+	mutable alignas(16) glm::vec3 m_cached_position = glm::vec3(0.0f);
+	mutable alignas(16) glm::quat m_cached_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	mutable alignas(16) glm::vec3 m_cached_scale = glm::vec3(1.0f);
+
 	void recalculateTransforms() const;
 
 	void init();

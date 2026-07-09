@@ -10,7 +10,7 @@ struct CameraUBO
 
 [[vk::binding(0,0)]]
 ConstantBuffer<CameraUBO> gCamera;
-[[vk::binding(1,1)]]
+[[vk::binding(0,1)]]
 Sampler2D gAlbedoSampler;
 
 struct PushConstants
@@ -93,5 +93,5 @@ float4 fragmentMain(VSOutput input) : SV_Target0
     // float3 color =
     //     input.worldNormal * 0.5 + 0.5;
 
-    return float4(color, 1.0);
+    return float4(albedo, 1.0);
 }

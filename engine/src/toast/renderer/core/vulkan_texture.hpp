@@ -7,6 +7,9 @@
 #include "vulkan_common.hpp"
 #include "vulkan_resource_base.hpp"
 
+#include <string>
+#include <string_view>
+
 namespace toast::renderer {
 
 class VulkanTexture : public IVulkanResource {
@@ -20,8 +23,9 @@ public:
 		uint32_t layer_count = 1;
 		bool is_cubemap = false;
 	};
-
-	void create(const VulkanCore& core, Params params);
+	
+	
+	void create(const VulkanCore& core, Params params, std::string_view debug_name = {});
 	void destroy();
 
 	[[nodiscard]]
@@ -43,7 +47,10 @@ private:
 // Upload Resource
 class TextureUpload : public PendingResourceUpload {
 public:
-	TextureUpload(VulkanTexture& texture, const std::vector<uint8_t>& data) : m_texture(&texture), m_data(data) { }
+	TextureUpload(VulkanTexture& texture, const std::vector<uint8_t>& data, std::string_view debug_name = {})
+	    : m_texture(&texture),
+	      m_data(data),
+	      m_debug_name(debug_name) { }
 
 	~TextureUpload() override {
 		if (m_ktxTexture) {
@@ -59,6 +66,7 @@ public:
 private:
 	VulkanTexture* m_texture;
 	std::vector<uint8_t> m_data;
+	std::string m_debug_name;
 
 	ktxTexture2* m_ktxTexture = nullptr;
 	vma::raii::Buffer m_stagingBuffer = nullptr;
@@ -68,12 +76,16 @@ private:
 
 class RawTextureUpload : public PendingResourceUpload {
 public:
-	RawTextureUpload(VulkanTexture& texture, std::vector<uint8_t> data, uint32_t width, uint32_t height, vk::Format format)
+	RawTextureUpload(
+	    VulkanTexture& texture, std::vector<uint8_t> data, uint32_t width, uint32_t height, vk::Format format,
+	    std::string_view debug_name = {}
+	)
 	    : m_texture(&texture),
 	      m_data(std::move(data)),
 	      m_width(width),
 	      m_height(height),
-	      m_format(format) { }
+	      m_format(format),
+	      m_debug_name(debug_name) { }
 
 	void build(const VulkanCore& core) override;
 	void record(vk::CommandBuffer cmd) override;
@@ -86,6 +98,7 @@ private:
 	uint32_t m_width = 0;
 	uint32_t m_height = 0;
 	vk::Format m_format = vk::Format::eUndefined;
+	std::string m_debug_name;
 	vma::raii::Buffer m_staging_buffer = nullptr;
 };
 

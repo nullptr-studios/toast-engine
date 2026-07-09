@@ -8,6 +8,9 @@
 #include "vulkan_common.hpp"
 #include "vulkan_resource_base.hpp"
 
+#include <string>
+#include <string_view>
+
 namespace toast::renderer {
 class VulkanCore;
 
@@ -41,7 +44,7 @@ public:
 
 	void create(
 	    const toast::renderer::VulkanCore& core, UploadData data, uint32_t graphicsQueueFamilyIndex,
-	    uint32_t transferQueueFamilyIndex
+	    uint32_t transferQueueFamilyIndex, std::string_view debug_name = {}
 	);
 
 	void destroy();
@@ -68,11 +71,12 @@ private:
 
 class MeshUpload : public PendingResourceUpload {
 public:
-	MeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data);
+	MeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data, std::string_view debug_name = {});
 
 	VulkanMesh* mesh;
 
 	VulkanMesh::UploadData data;
+	std::string debug_name;
 
 	vma::raii::Buffer vertexStaging = nullptr;
 	vma::raii::Buffer indexStaging = nullptr;

@@ -8,9 +8,20 @@
 #include "core/vulkan_common.hpp"
 #include "core/vulkan_pipeline.hpp"
 
+#include <glm/glm.hpp>
+#include <vector>
+
 namespace toast::renderer {
 class VulkanCore;
 
+/**
+ * @brief Editor/debug visualization pass: ground grid, immediate-mode debug lines, and axis gizmos
+ *
+ * Debug lines and gizmo transforms aren't owned by this class - they're queued via the free functions in
+ * vulkan_renderer.hpp (debugDrawLine(), debugDrawBox(), debugDrawSphere(), debugDrawAxes()) between
+ * beginFrameBuild() and submitFrame(), exactly like MeshInstanceProxy. They flow through the same
+ * VulkanRenderer::RenderFrame snapshot
+ */
 class DebugPass : public IRenderPass {
 public:
 	DebugPass(const toast::renderer::VulkanCore& core, vk::Format colorFormat, vk::Format depthFormat, vk::Extent2D extent);
@@ -19,15 +30,51 @@ public:
 
 	void update(uint32_t frame_index, float dt) override;
 
-private:
-	void CreateResources(const toast::renderer::VulkanCore& core);
+	/// @brief Toggles the ground grid
+	void setGridEnabled(bool enabled) { m_grid_enabled = enabled; }
 
-	VulkanPipeline m_line_pipeline;
-	ShaderLayout m_line_shader_layout;
-	VulkanPipeline m_gizmo_pipeline;
-	ShaderLayout m_gizmo_shader_layout;
+	[[nodiscard]]
+	auto gridEnabled() const -> bool {
+		return m_grid_enabled;
+	}
+
+private:
+	struct DrawPushConstants {
+		glm::mat4 model;
+	};
+
+	/// @brief A vk::raii-owned buffer that can grow
+	struct DynamicVertexBuffer {
+		vma::raii::Buffer buffer = nullptr;
+		void* mapped = nullptr;
+		vk::DeviceSize capacity_bytes = 0;
+	};
+
+	void createResources(const toast::renderer::VulkanCore& core);
+	void createGridGeometry(const toast::renderer::VulkanCore& core);
+	void createGizmoGeometry(const toast::renderer::VulkanCore& core);
+
+	/// @brief Grows @p buffer so it can hold at least @p required_vertex_count DebugVertex entries
+	void ensureLineCapacity(const toast::renderer::VulkanCore& core, DynamicVertexBuffer& buffer, size_t required_vertex_count);
+
 	VulkanPipeline m_plane_pipeline;
-	ShaderLayout m_plane_shader_layout;
+	VulkanPipeline m_line_pipeline;
+	VulkanPipeline m_gizmo_pipeline;
+
+	ShaderLayout m_shader_layout;
+	std::vector<vk::raii::DescriptorSet> m_frame_descriptor_sets;
+
+	// Ground grid
+	bool m_grid_enabled = true;
+	vma::raii::Buffer m_grid_vertex_buffer = nullptr;
+
+	// Debug lines
+	std::vector<DynamicVertexBuffer> m_line_vertex_buffers;
+	std::vector<uint32_t> m_line_vertex_counts;
+
+	// Gizmo axis triad
+	vma::raii::Buffer m_gizmo_vertex_buffer = nullptr;
+	uint32_t m_gizmo_vertex_count = 0;
 };
 
 }

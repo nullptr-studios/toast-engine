@@ -2,7 +2,10 @@
 
 #include "assets.hpp"
 #include "texture.hpp"
+#include "toast/renderer/core/vulkan_debug.hpp"
 
+#include <algorithm>
+#include <format>
 #include <sstream>
 
 namespace assets {
@@ -53,6 +56,8 @@ void Material::resolveTextureHandles() {
 
 	m_albedo_map = assets::load<Texture>(m_albedo_uid);
 
+	const auto& core = toast::renderer::getCore();
+
 	vk::SamplerCreateInfo sampler_info {};
 
 	sampler_info.magFilter = vk::Filter::eLinear;
@@ -60,8 +65,10 @@ void Material::resolveTextureHandles() {
 	sampler_info.addressModeU = vk::SamplerAddressMode::eRepeat;
 	sampler_info.addressModeV = vk::SamplerAddressMode::eRepeat;
 	sampler_info.addressModeW = vk::SamplerAddressMode::eRepeat;
-	sampler_info.anisotropyEnable = VK_TRUE;
-	sampler_info.maxAnisotropy = 16.0f;
+	// anisotropyEnable=VK_TRUE without the samplerAnisotropy feature enabled on the device is a validation
+	// error (VUID-VkSamplerCreateInfo-anisotropyEnable-01070); only request it where it's actually supported
+	sampler_info.anisotropyEnable = core.supportsSamplerAnisotropy() ? vk::True : vk::False;
+	sampler_info.maxAnisotropy = core.supportsSamplerAnisotropy() ? std::min(16.0f, core.maxSamplerAnisotropy()) : 1.0f;
 	sampler_info.compareEnable = vk::False;
 	sampler_info.compareOp = vk::CompareOp::eAlways;
 	sampler_info.unnormalizedCoordinates = vk::False;
@@ -71,7 +78,8 @@ void Material::resolveTextureHandles() {
 	sampler_info.minLod = 0.0f;
 	sampler_info.maxLod = 0.0f;
 
-	m_albedoSampler = vk::raii::Sampler(toast::renderer::getCore().getDevice(), sampler_info);
+	m_albedoSampler = vk::raii::Sampler(core.getDevice(), sampler_info);
+	toast::renderer::setDebugName(core, *m_albedoSampler, std::format("Material AlbedoSampler ({})", m_albedo_map.path()));
 }
 
 }

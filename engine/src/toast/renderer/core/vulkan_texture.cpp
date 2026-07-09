@@ -5,13 +5,20 @@
 #include "vulkan_texture.hpp"
 
 #include "toast/log.hpp"
+#include "vulkan_debug.hpp"
 
 #include <cstring>
+#include <format>
 
 namespace toast::renderer {
 
-void VulkanTexture::create(const VulkanCore& core, Params params) {
+void VulkanTexture::create(const VulkanCore& core, Params params, std::string_view debug_name) {
 	m_params = params;
+
+	const std::string name =
+	    debug_name.empty()
+	        ? std::format("Texture {}x{} {}", params.extent.width, params.extent.height, vk::to_string(params.format))
+	        : std::string(debug_name);
 
 	vk::ImageCreateInfo imageCI {};
 	imageCI.format = m_params.format;
@@ -38,6 +45,7 @@ void VulkanTexture::create(const VulkanCore& core, Params params) {
 	allocCI.usage = vma::MemoryUsage::eAutoPreferDevice;
 
 	m_image.emplace(core.getAllocator().createImage(imageCI, allocCI));
+	setDebugName(core, **m_image, name);
 
 	vk::ImageViewCreateInfo viewCI {};
 	viewCI.image = **m_image;
@@ -59,6 +67,7 @@ void VulkanTexture::create(const VulkanCore& core, Params params) {
 	viewCI.subresourceRange.layerCount = m_params.layer_count;
 
 	m_image_view = vk::raii::ImageView(core.getDevice(), viewCI);
+	setDebugName(core, *m_image_view, name + " View");
 }
 
 void VulkanTexture::destroy() {
@@ -98,7 +107,7 @@ void TextureUpload::build(const VulkanCore& core) {
 		m_texParams.layer_count = 6 * std::max(1u, m_ktxTexture->numLayers);
 	}
 
-	m_texture->create(core, m_texParams);
+	m_texture->create(core, m_texParams, m_debug_name);
 	m_texture->markUploading();
 
 	const vk::DeviceSize totalSize = m_ktxTexture->dataSize;
@@ -112,6 +121,9 @@ void TextureUpload::build(const VulkanCore& core) {
 	allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 
 	m_stagingBuffer = core.getAllocator().createBuffer(stagingCI, allocCI);
+	if (!m_debug_name.empty()) {
+		setDebugName(core, *m_stagingBuffer, m_debug_name + " StagingBuffer");
+	}
 
 	uint8_t* mappedData = static_cast<uint8_t*>(m_stagingBuffer.getAllocation().getInfo().pMappedData);
 	std::memcpy(mappedData, m_ktxTexture->pData, totalSize);
@@ -170,12 +182,15 @@ void TextureUpload::record(vk::CommandBuffer cmd) {
 	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
 	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+	// This barrier is recorded on the transfer queue's command buffer
+	// which doesn't support the FRAGMENT_SHADER stage - only the graphics queue does, and a barrier's stage mask
+	// is scoped to the queue executing it, not the resource's eventual consumer. The layout transition to
+	// eShaderReadOnlyOptimal still happens here; cross-queue visibility for the shader read itself is handled by
+	// the upload's completion fence, since consumers only touch the texture once VulkanTexture::isReady() is true.
+	barrier.dstAccessMask = {};
 
-	// PERF: If your textures are read by more than just the fragment shader
-	// consider switching eFragmentShader to eAllGraphics
 	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, barrier
+	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe, {}, nullptr, nullptr, barrier
 	);
 }
 
@@ -190,7 +205,7 @@ void RawTextureUpload::build(const VulkanCore& core) {
 	params.mip_levels = 1;
 	params.layer_count = 1;
 	params.is_cubemap = false;
-	m_texture->create(core, params);
+	m_texture->create(core, params, m_debug_name);
 	m_texture->markUploading();
 
 	vk::BufferCreateInfo staging_ci {};
@@ -201,6 +216,9 @@ void RawTextureUpload::build(const VulkanCore& core) {
 	alloc_ci.usage = vma::MemoryUsage::eAuto;
 	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 	m_staging_buffer = core.getAllocator().createBuffer(staging_ci, alloc_ci);
+	if (!m_debug_name.empty()) {
+		setDebugName(core, *m_staging_buffer, m_debug_name + " StagingBuffer");
+	}
 
 	void* mapped = m_staging_buffer.getAllocation().getInfo().pMappedData;
 	if (mapped == nullptr) {
@@ -241,10 +259,11 @@ void RawTextureUpload::record(vk::CommandBuffer cmd) {
 	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
 	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+	barrier.dstAccessMask = {};
 
 	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, barrier
+	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe, {}, nullptr, nullptr, barrier
 	);
 }
 

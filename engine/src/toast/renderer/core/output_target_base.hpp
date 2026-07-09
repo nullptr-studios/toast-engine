@@ -47,9 +47,13 @@ public:
 	[[nodiscard]]
 	virtual const vk::raii::ImageView& getColorAttachment(uint32_t index) const = 0;
 
-	/// @deprecated These methods are obsolete. Use the modern rendering pipeline instead
+	/// @brief Acquires the next image to render into (a real swapchain acquire, or a no-op index rotation for
+	/// off-screen targets - see usesAcquirePresentSemaphores())
 	virtual vk::ResultValue<uint32_t>
 	    acquireNextImage(uint64_t timeout, vk::Semaphore image_available, vk::Fence in_flight_fence) = 0;
+
+	/// @brief Presents @p image_index (a real vkQueuePresentKHR for on-screen targets; a no-op for off-screen
+	/// targets, which publish their finished frame via onImageRenderComplete() instead)
 	virtual vk::Result present(uint32_t image_index, vk::Semaphore render_finished) = 0;
 
 	[[nodiscard]]

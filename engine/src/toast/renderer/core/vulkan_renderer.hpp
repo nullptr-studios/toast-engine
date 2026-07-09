@@ -14,12 +14,16 @@
 #include "vulkan_pipeline.hpp"
 
 #include <array>
+#include <cmath>
+#include <glm/gtc/constants.hpp>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <queue>
 #include <semaphore>
 #include <thread>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace assets {
@@ -41,13 +45,6 @@ public:
 	static constexpr uint32_t kFramesInFlight = 3;
 
 	static constexpr uint8_t kRenderFrames = 3;    // Number of frames queued for rendering (separate from kFramesInFlight)
-
-	struct PendingMeshUpload {
-		VulkanMesh* mesh = nullptr;
-		vma::raii::Buffer vertex_staging = nullptr;
-		vma::raii::Buffer index_staging = nullptr;
-		vk::raii::Fence completion_fence = nullptr;
-	};
 
 	struct FrameContext {
 		vk::raii::CommandBuffer command_buffer = nullptr;
@@ -75,10 +72,26 @@ public:
 		glm::mat4 model = glm::mat4(1.0f);
 	};
 
+	/// @brief One vertex of an immediate-mode debug line; two consecutive vertices make one line segment
+	/// @note Uses glm::packed_highp (like renderer::Vertex in vulkan_mesh.hpp) so the type is guaranteed
+	/// standard-layout for offsetof()-based vertex attribute descriptions - plain glm::vec3/vec4 aren't
+	struct DebugVertex {
+		glm::vec<3, float, glm::packed_highp> position;
+		glm::vec<4, float, glm::packed_highp> color;
+	};
+
+	static_assert(std::is_standard_layout_v<DebugVertex>, "DebugVertex must be standard layout");
+
 	struct RenderFrame {
 		FrameUBO frame_data;
 
 		std::vector<MeshInstanceProxy> mesh_instances;
+
+		// Immediate-mode debug draw data queued via debugDrawLine()/debugDrawBox()/debugDrawSphere()/
+		// debugDrawAxes() (below) and consumed by DebugPass. Cleared by the caller each frame alongside
+		// mesh_instances, before re-populating (see Engine::tick())
+		std::vector<DebugVertex> debug_line_vertices;    // consecutive pairs; each pair is one line segment
+		std::vector<glm::mat4> debug_gizmo_instances;    // one axis-triad gizmo draw per entry
 	};
 
 	VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> output_target);
@@ -101,8 +114,6 @@ public:
 	void stop();
 
 	void addRenderPass(std::unique_ptr<IRenderPass> pass);
-
-	// void queueMeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data);
 
 	void applyResize(vk::Extent2D extent);
 
@@ -172,10 +183,6 @@ private:
 	void createDepthResources();
 	void createDescriptorPool();
 
-	void recordTransferPass(FrameContext& frame);
-
-	void recordComputePass(FrameContext& frame, uint32_t image_index);
-
 	void recordFrame(FrameContext& frame, uint32_t image_index);
 
 	// Resource uploading
@@ -189,6 +196,12 @@ private:
 	void processPendingUploads();
 	void flushResourceUploads();
 	std::mutex m_upload_mutex;
+
+	// queueResourceUpload() offloads PendingResourceUpload::build() to the thread pool, and that job
+	// captures `this`/m_core by raw pointer. Tracks how many such jobs are still in flight so stop() can
+	// wait for them before returning - otherwise a still-running build() could touch a VulkanRenderer/
+	// VulkanCore the caller has already started destroying
+	std::atomic<int> m_pending_upload_builds {0};
 
 	const VulkanCore* m_core = nullptr;
 
@@ -216,7 +229,6 @@ private:
 	// FrameUBO and related resources
 	std::vector<FrameUBO> m_frame_ubos;
 	std::vector<FrameResources> m_frame_ubo_res;
-	vk::raii::PipelineLayout m_frame_ubo_pipeline_layout = nullptr;
 
 	void createFrameResources();
 	void updateFrameResources(uint32_t frame_index, RenderFrame& frame_data);
@@ -274,6 +286,102 @@ inline const RENDERDOC_API_1_6_0* getRenderDocAPI() {
 //@WARN NOT THREAD SAFE
 inline const VulkanRenderer::RenderFrame* renderingFrame() {
 	return VulkanRenderer::instance->renderingFrame();
+}
+
+/// DEBUG LINES
+
+/**
+ * @brief Queues a debug line segmentfor the frame currently being built
+ * @note Call between beginFrameBuild() and submitFrame()
+ */
+inline void debugDrawLine(glm::vec3 a, glm::vec3 b, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}) {
+	auto& frame = VulkanRenderer::instance->beginFrameBuild();
+	frame.debug_line_vertices.push_back({a, color});
+	frame.debug_line_vertices.push_back({b, color});
+}
+
+/// @brief Queues a wireframe axis-aligned box for this frame
+inline void debugDrawBox(glm::vec3 min, glm::vec3 max, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}) {
+	const std::array<glm::vec3, 8> corners {
+	  glm::vec3 {min.x, min.y, min.z},
+	  glm::vec3 {max.x, min.y, min.z},
+	  glm::vec3 {max.x, max.y, min.z},
+	  glm::vec3 {min.x, max.y, min.z},
+	  glm::vec3 {min.x, min.y, max.z},
+	  glm::vec3 {max.x, min.y, max.z},
+	  glm::vec3 {max.x, max.y, max.z},
+	  glm::vec3 {min.x, max.y, max.z},
+	};
+	static constexpr std::array<std::pair<int, int>, 12> edges {
+	  {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}}
+	};
+	for (const auto& [a, b] : edges) {
+		debugDrawLine(corners[a], corners[b], color);
+	}
+}
+
+/// @brief Queues a wireframe sphere for this frame
+inline void debugDrawSphere(glm::vec3 center, float radius, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}, int segments = 24) {
+	for (int axis = 0; axis < 3; ++axis) {
+		glm::vec3 prev {};
+		for (int i = 0; i <= segments; ++i) {
+			const float t = (static_cast<float>(i) / static_cast<float>(segments)) * glm::two_pi<float>();
+			glm::vec3 p {};
+			switch (axis) {
+				case 0: p = center + glm::vec3(0.0f, std::cos(t), std::sin(t)) * radius; break;
+				case 1: p = center + glm::vec3(std::cos(t), 0.0f, std::sin(t)) * radius; break;
+				default: p = center + glm::vec3(std::cos(t), std::sin(t), 0.0f) * radius; break;
+			}
+			if (i > 0) {
+				debugDrawLine(prev, p, color);
+			}
+			prev = p;
+		}
+	}
+}
+
+/// @brief Queues an axis-triad gizmo at @p transform
+inline void debugDrawAxes(const glm::mat4& transform) {
+	VulkanRenderer::instance->beginFrameBuild().debug_gizmo_instances.push_back(transform);
+}
+
+/**
+ * @brief Queues a wireframe frustum for @p camera
+ *
+ * Built from the camera's own fov/near/far and view matrix rather than by un-projecting NDC corners
+ */
+inline void debugDrawFrustum(const Camera& camera, float aspect, glm::vec4 color = {1.0f, 1.0f, 0.0f, 1.0f}) {
+	const float tan_half_fov_y = std::tan(glm::radians(camera.fov) * 0.5f);
+	const float near_height = 2.0f * tan_half_fov_y * camera.nearPlane;
+	const float near_width = near_height * aspect;
+	const float far_height = 2.0f * tan_half_fov_y * camera.farPlane;
+	const float far_width = far_height * aspect;
+
+	// View space follows glm::lookAt()'s convention regardless of world up axis: camera looks down -Z, +X
+	// is right, +Y is up
+	const std::array<glm::vec3, 8> view_space_corners {
+	  glm::vec3 {-near_width * 0.5f, -near_height * 0.5f, -camera.nearPlane},
+	  glm::vec3 { near_width * 0.5f, -near_height * 0.5f, -camera.nearPlane},
+	  glm::vec3 { near_width * 0.5f,  near_height * 0.5f, -camera.nearPlane},
+	  glm::vec3 {-near_width * 0.5f,  near_height * 0.5f, -camera.nearPlane},
+	  glm::vec3 { -far_width * 0.5f,  -far_height * 0.5f,  -camera.farPlane},
+	  glm::vec3 {  far_width * 0.5f,  -far_height * 0.5f,  -camera.farPlane},
+	  glm::vec3 {  far_width * 0.5f,   far_height * 0.5f,  -camera.farPlane},
+	  glm::vec3 { -far_width * 0.5f,   far_height * 0.5f,  -camera.farPlane},
+	};
+
+	const glm::mat4 inv_view = glm::inverse(camera.getView());
+	std::array<glm::vec3, 8> world_corners {};
+	for (int i = 0; i < 8; ++i) {
+		world_corners[i] = glm::vec3(inv_view * glm::vec4(view_space_corners[i], 1.0f));
+	}
+
+	static constexpr std::array<std::pair<int, int>, 12> edges {
+	  {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}}
+	};
+	for (const auto& [a, b] : edges) {
+		debugDrawLine(world_corners[a], world_corners[b], color);
+	}
 }
 
 }    // namespace toast::renderer

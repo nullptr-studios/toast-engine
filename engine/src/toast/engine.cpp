@@ -12,6 +12,7 @@
 #include "input/input_system.hpp"
 #include "logger.hpp"
 #include "reflect/reflect.hpp"
+#include "renderer/DebugPass.hpp"
 #include "renderer/MeshPass.hpp"
 #include "renderer/core/sdl_output_target.hpp"
 #include "renderer/core/shader_compiler.hpp"
@@ -218,6 +219,8 @@ void Engine::tick() {
 			auto& frame = toast::renderer::beginFrameBuild();
 
 			frame.mesh_instances.clear();
+			frame.debug_line_vertices.clear();
+			frame.debug_gizmo_instances.clear();
 
 			std::vector<MeshNode*> mesh_nodes_snapshot;
 			{
@@ -246,13 +249,18 @@ void Engine::tick() {
 					material_handle->resolveTextureHandles();
 				}
 
+				const auto world_transform = node->worldTransformForRender();
+
 				frame.mesh_instances.push_back(
 				    toast::renderer::VulkanRenderer::MeshInstanceProxy {
 				      .mesh = &gpu_mesh,
 				      .material = material_handle.hasValue() ? &material_handle.get() : nullptr,
-				      .model = node->worldTransformForRender(),
+				      .model = world_transform,
 				    }
 				);
+
+				//DEBUG
+				frame.debug_gizmo_instances.push_back(world_transform);
 			}
 
 			auto cam = renderer::getActiveCamera();
@@ -341,6 +349,10 @@ void Engine::createAvaloniaWindow() {
 	// create renderer
 
 	m->renderer->addRenderPass(std::move(pass));
+
+	// Editor viewport gets the ground grid / debug lines / gizmo overlay; the standalone game window (see
+	// createSDLWindow()) intentionally doesn't
+	m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
 
 	m->renderer->start();
 }

@@ -108,6 +108,24 @@ public:
 		return rdoc_api;
 	}
 
+	/// @brief Whether validation layers are enabled
+	[[nodiscard]]
+	bool validationEnabled() const noexcept {
+		return m_validationEnabled;
+	}
+
+	/// @brief Whether the selected device supports anisotropic filtering
+	[[nodiscard]]
+	bool supportsSamplerAnisotropy() const noexcept {
+		return m_samplerAnisotropySupported;
+	}
+
+	/// @brief Device limit to clamp requested sampler anisotropy against
+	[[nodiscard]]
+	float maxSamplerAnisotropy() const noexcept {
+		return m_maxSamplerAnisotropy;
+	}
+
 private:
 	/**
 	 * Evaluates available Vulkan physical devices and selects the most suitable one
@@ -131,8 +149,8 @@ private:
 	 * missing capabilities and rewards for supported optional extensions and modern Vulkan features
 	 *
 	 * @param device The Vulkan physical device to evaluate.
-	 * @param required_device_extensions A span of required device extension names that the device must support.
-	 * @return A DeviceScore structure containing individual category scores and the aggregated total score.
+	 * @param required_device_extensions A span of required device extension names that the device must support
+	 * @return A DeviceScore structure containing individual category scores and the aggregated total score
 	 */
 	auto calculateDeviceScore(const vk::PhysicalDevice& device, std::span<const char* const> required_device_extensions)
 	    -> DeviceScore;
@@ -158,6 +176,9 @@ private:
 	vk::Queue m_graphicsQueue = nullptr;
 	vk::Queue m_computeQueue = nullptr;
 	vk::Queue m_transferQueue = nullptr;
+
+	bool m_samplerAnisotropySupported = false;
+	float m_maxSamplerAnisotropy = 1.0f;
 
 	// renderdoc api
 	RENDERDOC_API_1_6_0* rdoc_api = nullptr;

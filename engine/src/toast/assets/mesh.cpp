@@ -62,7 +62,9 @@ Mesh::Mesh(const std::vector<uint8_t>& data) {
 
 	// create GPU Side mesh
 	toast::renderer::VulkanRenderer::instance->queueResourceUpload(
-	    std::make_unique<toast::renderer::MeshUpload>(m_gpu_mesh, toast::renderer::VulkanMesh::UploadData {m_vertices, m_indices})
+	    std::make_unique<toast::renderer::MeshUpload>(
+	        m_gpu_mesh, toast::renderer::VulkanMesh::UploadData {m_vertices, m_indices}, m_name
+	    )
 	);
 }
 

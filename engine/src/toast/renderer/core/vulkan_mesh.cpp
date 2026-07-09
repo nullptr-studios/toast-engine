@@ -6,7 +6,9 @@
 
 #include "toast/log.hpp"
 #include "vulkan_core.hpp"
+#include "vulkan_debug.hpp"
 
+#include <format>
 #include <type_traits>
 
 namespace toast::renderer {
@@ -33,7 +35,8 @@ std::array<vk::VertexInputAttributeDescription, 5> Vertex::getAttributeDescripti
 }
 
 void VulkanMesh::create(
-    const toast::renderer::VulkanCore& core, UploadData data, uint32_t graphicsQueueFamilyIndex, uint32_t transferQueueFamilyIndex
+    const toast::renderer::VulkanCore& core, UploadData data, uint32_t graphicsQueueFamilyIndex,
+    uint32_t transferQueueFamilyIndex, std::string_view debug_name
 ) {
 	if (data.vertices.empty()) {
 		TOAST_CRITICAL("VulkanMesh", "Mesh has no vertices");
@@ -73,6 +76,9 @@ void VulkanMesh::create(
 	vbAlloc.usage = vma::MemoryUsage::eAutoPreferDevice;
 
 	m_vertexBuffer.emplace(core.getAllocator().createBuffer(vbCI, vbAlloc));
+	if (!debug_name.empty()) {
+		setDebugName(core, **m_vertexBuffer, std::format("{} VertexBuffer", debug_name));
+	}
 
 	// Index buffer
 	vk::BufferCreateInfo ibCI {};
@@ -91,6 +97,9 @@ void VulkanMesh::create(
 	ibAlloc.usage = vma::MemoryUsage::eAutoPreferDevice;
 
 	m_indexBuffer.emplace(core.getAllocator().createBuffer(ibCI, ibAlloc));
+	if (!debug_name.empty()) {
+		setDebugName(core, **m_indexBuffer, std::format("{} IndexBuffer", debug_name));
+	}
 }
 
 void VulkanMesh::destroy() {
@@ -132,13 +141,14 @@ void VulkanMesh::draw(vk::CommandBuffer cmd) const {
 
 // MeshUpload
 
-MeshUpload::MeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data) {
+MeshUpload::MeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data, std::string_view debug_name) {
 	this->mesh = &mesh;
 	this->data = data;
+	this->debug_name = debug_name;
 }
 
 void MeshUpload::build(const VulkanCore& core) {
-	mesh->create(core, data, core.getGraphicsQueueFamilyIndex(), core.getTransferQueueFamilyIndex());
+	mesh->create(core, data, core.getGraphicsQueueFamilyIndex(), core.getTransferQueueFamilyIndex(), debug_name);
 	mesh->markUploading();
 
 	const vk::DeviceSize vertexSize = data.vertices.size_bytes();
@@ -157,6 +167,9 @@ void MeshUpload::build(const VulkanCore& core) {
 	                vma::AllocationCreateFlagBits::eHostAccessAllowTransferInstead;
 
 	vertexStaging = core.getAllocator().createBuffer(stagingCI, allocCI);
+	if (!debug_name.empty()) {
+		setDebugName(core, *vertexStaging, std::format("{} StagingBuffer", debug_name));
+	}
 
 	auto& allocation = vertexStaging.getAllocation();
 	uint8_t* mapped = static_cast<uint8_t*>(allocation.getInfo().pMappedData);
@@ -178,7 +191,7 @@ void MeshUpload::record(vk::CommandBuffer cmd) {
 	std::array<vk::BufferMemoryBarrier, 2> barriers = {
 	  vk::BufferMemoryBarrier(
 	      vk::AccessFlagBits::eTransferWrite,
-	      vk::AccessFlagBits::eVertexAttributeRead,
+	      vk::AccessFlags {},
 	      VK_QUEUE_FAMILY_IGNORED,
 	      VK_QUEUE_FAMILY_IGNORED,
 	      mesh->m_vertexBuffer.value(),
@@ -187,7 +200,7 @@ void MeshUpload::record(vk::CommandBuffer cmd) {
 	  ),
 	  vk::BufferMemoryBarrier(
 	      vk::AccessFlagBits::eTransferWrite,
-	      vk::AccessFlagBits::eIndexRead,
+	      vk::AccessFlags {},
 	      VK_QUEUE_FAMILY_IGNORED,
 	      VK_QUEUE_FAMILY_IGNORED,
 	      mesh->m_indexBuffer.value(),
@@ -197,7 +210,7 @@ void MeshUpload::record(vk::CommandBuffer cmd) {
 	};
 
 	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput, {}, nullptr, barriers, nullptr
+	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe, {}, nullptr, barriers, nullptr
 	);
 }
 

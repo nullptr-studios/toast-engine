@@ -428,8 +428,16 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 		queue_create_infos.emplace_back(vk::DeviceQueueCreateInfo({}, family_index, 1, &queue_priority));
 	}
 
+	// Enable antyroscopic filtering
+	const auto device_features = m_physicalDevice.getFeatures();
+	m_samplerAnisotropySupported = device_features.samplerAnisotropy == VK_TRUE;
+	m_maxSamplerAnisotropy = m_samplerAnisotropySupported ? m_physicalDevice.getProperties().limits.maxSamplerAnisotropy : 1.0f;
+
+	vk::PhysicalDeviceFeatures enabled_features {};
+	enabled_features.samplerAnisotropy = m_samplerAnisotropySupported ? VK_TRUE : VK_FALSE;
+
 	std::vector<const char*> device_extensions(required_device_extensions.begin(), required_device_extensions.end());
-	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions);
+	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions, &enabled_features);
 	vk::PhysicalDeviceVulkan12Features vulkan12_features {};
 	vk::PhysicalDeviceVulkan13Features vulkan13_features {};
 	vk::PhysicalDeviceVulkan11Features vulkan11_features {};

@@ -82,6 +82,7 @@ private:
 	vk::Extent2D m_extent;
 	vk::Format m_image_format = vk::Format::eUndefined;
 	uint32_t m_present_queue_family_index = 0;
+	vk::Queue m_present_queue = nullptr;
 };
 
 }

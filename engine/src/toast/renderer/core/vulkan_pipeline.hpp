@@ -44,9 +44,20 @@ public:
 		// Layouts are now provided from the outside
 		vk::PipelineLayout pipeline_layout = nullptr;
 
+		// Vertex input state; every graphics pipeline must set this explicitly
+		vk::VertexInputBindingDescription vertex_binding {};
+		std::vector<vk::VertexInputAttributeDescription> vertex_attributes;
+
+		vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList;
+
 		// Raster state
 		vk::CullModeFlags cull_mode = vk::CullModeFlagBits::eBack;
 		vk::FrontFace front_face = vk::FrontFace::eCounterClockwise;    // Note: Counter-clockwise due to inverted projection matrix
+
+		// Depth/blend state
+		bool depth_test = true;
+		bool depth_write = true;
+		bool blend_enable = false;    // standard alpha blending (srcAlpha, 1-srcAlpha) when true
 	};
 
 	VulkanPipeline() = default;

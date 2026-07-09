@@ -1,6 +1,9 @@
 #include "hardcoded_pipeline_layouts.hpp"
 
 #include "vulkan_core.hpp"
+#include "vulkan_debug.hpp"
+
+#include <format>
 
 namespace toast::renderer {
 namespace HardcodedPipelineLayouts {
@@ -9,8 +12,7 @@ PipelineLayoutDesc getLayoutDesc(std::string_view key) {
 	PipelineLayoutDesc desc;
 
 	if (key == "mesh") {
-		// Common mesh shader: set 0 binding 0 = camera UBO (uniform buffer)
-		// and binding 1 = combined image sampler for albedo
+		// Set 0 per-frame data, one descriptor set per frame-in-flight - binding 0 = camera UBO
 		SetLayoutDesc set0;
 		DescriptorBindingDesc b0;
 		b0.binding = 0;
@@ -18,15 +20,17 @@ PipelineLayoutDesc getLayoutDesc(std::string_view key) {
 		b0.descriptor_count = 1;
 		b0.stage_flags = vk::ShaderStageFlagBits::eAll;    // match allocations which use eAll
 		set0.bindings.push_back(b0);
+		desc.sets.push_back(std::move(set0));
 
+		// Set 1: per-material data, one descriptor set per Material - binding 0 = albedo combined image sampler
+		SetLayoutDesc set1;
 		DescriptorBindingDesc b1;
-		b1.binding = 1;
+		b1.binding = 0;
 		b1.descriptor_type = vk::DescriptorType::eCombinedImageSampler;
 		b1.descriptor_count = 1;
 		b1.stage_flags = vk::ShaderStageFlagBits::eFragment;
-		set0.bindings.push_back(b1);
-
-		desc.sets.push_back(std::move(set0));
+		set1.bindings.push_back(b1);
+		desc.sets.push_back(std::move(set1));
 
 		// Push constants for model matrix (64 bytes)
 		vk::PushConstantRange pc {};
@@ -37,7 +41,27 @@ PipelineLayoutDesc getLayoutDesc(std::string_view key) {
 		return desc;
 	}
 
-	// Default: empty layout (no sets, no push constants)
+	if (key == "debug") {
+		// Used by DebugPass
+		SetLayoutDesc set0;
+		DescriptorBindingDesc b0;
+		b0.binding = 0;
+		b0.descriptor_type = vk::DescriptorType::eUniformBuffer;
+		b0.descriptor_count = 1;
+		b0.stage_flags = vk::ShaderStageFlagBits::eAll;
+		set0.bindings.push_back(b0);
+		desc.sets.push_back(std::move(set0));
+
+		// Push constants for model matrix (64 bytes)
+		vk::PushConstantRange pc {};
+		pc.stageFlags = vk::ShaderStageFlagBits::eVertex;
+		pc.offset = 0;
+		pc.size = 64;
+		desc.push_constants.push_back(pc);
+		return desc;
+	}
+
+	// Default
 	return desc;
 }
 
@@ -70,9 +94,10 @@ void buildPipelineLayout(
 		layout_ci.bindingCount = static_cast<uint32_t>(bindings.size());
 		layout_ci.pBindings = bindings.data();
 
-		// Create RAII object (it copies the layout info immediately)
+		// Create RAII object
 		out_set_layouts.emplace_back(device, layout_ci);
 		raw_handles.push_back(*out_set_layouts.back());
+		setDebugName(core, raw_handles.back(), std::format("{} DescriptorSetLayout[{}]", key, out_set_layouts.size() - 1));
 	}
 
 	out_push_constants = desc.push_constants;
@@ -84,7 +109,8 @@ void buildPipelineLayout(
 	pipeline_layout_ci.pPushConstantRanges = out_push_constants.empty() ? nullptr : out_push_constants.data();
 
 	out_pipeline_layout = vk::raii::PipelineLayout(device, pipeline_layout_ci);
+	setDebugName(core, *out_pipeline_layout, std::format("{} PipelineLayout", key));
 }
 
-}    // namespace HardcodedPipelineLayouts
-}    // namespace toast::renderer
+}
+}

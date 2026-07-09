@@ -125,6 +125,17 @@ void Node3D::recalculateTransforms() const {
 	ZoneScoped;
 	ZoneNameF("%s::recalculateTransforms()", name().data());
 
+	// The editor inspector (and anything else going through the reflection system) writes
+	// m_position/m_rotation/m_scale directly via FieldAccess::set(), bypassing pos()/rot()/scale() and the
+	// dirty-flag bookkeeping they do. Detect that divergence here so such an edit doesn't get stuck behind
+	// a cached matrix forever.
+	if (!m_dirty_local && (m_position != m_cached_position || m_rotation != m_cached_rotation || m_scale != m_cached_scale)) {
+		m_dirty_local = true;
+		m_dirty_world = true;
+	}
+
+	const bool recomputing_world = m_dirty_world;
+
 	if (m_dirty_local) {
 		m_transform = glm::mat4_cast(m_rotation);
 
@@ -133,6 +144,10 @@ void Node3D::recalculateTransforms() const {
 		m_transform[2] *= m_scale.z;
 
 		m_transform[3] = glm::vec4(m_position, 1.0f);
+
+		m_cached_position = m_position;
+		m_cached_rotation = m_rotation;
+		m_cached_scale = m_scale;
 		m_dirty_local = false;
 	}
 
@@ -145,15 +160,20 @@ void Node3D::recalculateTransforms() const {
 		m_world_rotation = glm::normalize(m_world_rotation);
 		m_dirty_world = false;
 	}
+
+	// markNode3DDependantsDirty() only reaches nodes whose *closest* Node3D ancestor is this node - i.e. one
+	// level of the reduced Node3D tree. Re-issuing it here, every time this node's world transform actually
+	// gets recomputed (regardless of whether that was triggered by our own setters, an ancestor's cascade,
+	// or the direct-field-write case above), lets each level notify the next one in turn, so grandchildren
+	// (a MeshNode nested under an intermediate Node3D group, for example) stay in sync too.
+	if (recomputing_world) {
+		World::markNode3DDependantsDirty(box());
+	}
 }
 
 auto Node3D::getTransform() const noexcept -> const glm::mat4& {
 	ZoneScoped;
 	ZoneNameF("%s::getTransform()", name().data());
-
-	if (not m_dirty_local) {
-		return m_transform;
-	}
 
 	recalculateTransforms();
 	return m_transform;
@@ -162,10 +182,6 @@ auto Node3D::getTransform() const noexcept -> const glm::mat4& {
 auto Node3D::getWorldTransform() const noexcept -> const glm::mat4& {
 	ZoneScoped;
 	ZoneNameF("%s::getWorldTransform()", name().data());
-
-	if (not m_dirty_world) {
-		return m_world_transform;
-	}
 
 	recalculateTransforms();
 	return m_world_transform;

@@ -5,11 +5,15 @@
 #include "vulkan_renderer.hpp"
 
 #include "toast/log.hpp"
+#include "toast/thread_pool.hpp"
 #include "toast/time.hpp"
 #include "toast/window/window_events.hpp"
+#include "vulkan_debug.hpp"
 
 #include <array>
+#include <chrono>
 #include <cstring>
+#include <format>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -120,6 +124,7 @@ auto VulkanRenderer::createGraphicsCommandPool() -> void {
 	    vk::CommandPoolCreateFlagBits::eResetCommandBuffer, m_core->getGraphicsQueueFamilyIndex()
 	);
 	m_command_pool = vk::raii::CommandPool(m_core->getDevice(), pool_ci);
+	setDebugName(*m_core, *m_command_pool, "VulkanRenderer GraphicsCommandPool");
 	TOAST_TRACE("VulkanRenderer", "Graphics command pool created (graphics family {})", m_core->getGraphicsQueueFamilyIndex());
 }
 
@@ -128,6 +133,7 @@ auto VulkanRenderer::createTransferCommandPool() -> void {
 	    vk::CommandPoolCreateFlagBits::eResetCommandBuffer, m_core->getTransferQueueFamilyIndex()
 	);
 	m_transfer_command_pool = vk::raii::CommandPool(m_core->getDevice(), pool_ci);
+	setDebugName(*m_core, *m_transfer_command_pool, "VulkanRenderer TransferCommandPool");
 	TOAST_TRACE("VulkanRenderer", "Transfer command pool created (transfer family {})", m_core->getTransferQueueFamilyIndex());
 }
 
@@ -150,6 +156,22 @@ auto VulkanRenderer::createFrameContexts() -> void {
 		m_frames[frame_index].image_available = vk::raii::Semaphore(m_core->getDevice(), semaphore_ci);
 		m_frames[frame_index].transfer_finished = vk::raii::Semaphore(m_core->getDevice(), semaphore_ci);
 		m_frames[frame_index].in_flight = vk::raii::Fence(m_core->getDevice(), fence_ci);
+
+		setDebugName(
+		    *m_core, *m_frames[frame_index].command_buffer, std::format("VulkanRenderer Frame[{}] CommandBuffer", frame_index)
+		);
+		setDebugName(
+		    *m_core,
+		    *m_frames[frame_index].transfer_command_buffer,
+		    std::format("VulkanRenderer Frame[{}] TransferCommandBuffer", frame_index)
+		);
+		setDebugName(
+		    *m_core, *m_frames[frame_index].image_available, std::format("VulkanRenderer Frame[{}] ImageAvailable", frame_index)
+		);
+		setDebugName(
+		    *m_core, *m_frames[frame_index].transfer_finished, std::format("VulkanRenderer Frame[{}] TransferFinished", frame_index)
+		);
+		setDebugName(*m_core, *m_frames[frame_index].in_flight, std::format("VulkanRenderer Frame[{}] InFlightFence", frame_index));
 	}
 
 	TOAST_TRACE("VulkanRenderer", "Frame command buffers created: {}", kFramesInFlight);
@@ -163,6 +185,7 @@ auto VulkanRenderer::createPerImageSync() -> void {
 	const vk::SemaphoreCreateInfo semaphore_ci {};
 	for (uint32_t i = 0; i < image_count; ++i) {
 		m_render_finished_per_image.emplace_back(m_core->getDevice(), semaphore_ci);
+		setDebugName(*m_core, *m_render_finished_per_image.back(), std::format("VulkanRenderer RenderFinished[{}]", i));
 	}
 
 	TOAST_TRACE("VulkanRenderer", "Per-image semaphores created: {}", image_count);
@@ -199,6 +222,7 @@ auto VulkanRenderer::createDepthResources() -> void {
 
 	auto depth_image = m_core->getAllocator().createImage(image_ci, allocation_ci);
 	m_depth_resources.image.emplace(std::move(depth_image));
+	setDebugName(*m_core, **m_depth_resources.image, "VulkanRenderer DepthImage");
 
 	vk::ImageViewCreateInfo view_ci {};
 	view_ci.image = **m_depth_resources.image;
@@ -206,6 +230,7 @@ auto VulkanRenderer::createDepthResources() -> void {
 	view_ci.format = m_depth_format;
 	view_ci.subresourceRange = depthAttachmentRange(m_depth_format);
 	m_depth_resources.view.emplace(m_core->getDevice(), view_ci);
+	setDebugName(*m_core, **m_depth_resources.view, "VulkanRenderer DepthImageView");
 
 	m_depth_layout = vk::ImageLayout::eUndefined;
 	TOAST_TRACE(
@@ -235,31 +260,7 @@ void VulkanRenderer::createDescriptorPool() {
 	poolCI.pPoolSizes = poolSizes.data();
 
 	m_descriptor_pool = vk::raii::DescriptorPool(m_core->getDevice(), poolCI);
-}
-
-auto VulkanRenderer::recordTransferPass(FrameContext& frame) -> void {
-	// if (!m_frameUniformResources.stagingBuffer.has_value() || !m_frameUniformResources.gpuBuffer.has_value()) {
-	// 	return;
-	// }
-	//
-	// frame.transfer_command_buffer.reset();
-	// const vk::CommandBufferBeginInfo begin_info(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-	// // Start transfer recording
-	// frame.transfer_command_buffer.begin(begin_info);
-	//
-	// // TODO: CHANGE THIS!!
-	// const vk::BufferCopy copy_region(0, 0, frameUniformSize());
-	//
-	// frame.transfer_command_buffer.copyBuffer(
-	//     **m_frameUniformResources.stagingBuffer, **m_frameUniformResources.gpuBuffer, copy_region
-	// );
-	//
-	// // End transfer recording
-	// frame.transfer_command_buffer.end();
-}
-
-auto VulkanRenderer::recordComputePass(FrameContext&, uint32_t) -> void {
-	// TODO
+	setDebugName(*m_core, *m_descriptor_pool, "VulkanRenderer DescriptorPool");
 }
 
 auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> void {
@@ -398,7 +399,9 @@ void VulkanRenderer::createFrameResources() {
 	const vk::DeviceSize bufferSize = sizeof(FrameUBO);
 
 	// Create per-frame UBO buffers only. Descriptor sets are allocated by individual render passes (MeshPass).
-	for (auto& frame : m_frame_ubo_res) {
+	for (uint32_t i = 0; i < m_frame_ubo_res.size(); ++i) {
+		auto& frame = m_frame_ubo_res[i];
+
 		// create ubo
 		vk::BufferCreateInfo bufferCI {};
 		bufferCI.size = bufferSize;
@@ -412,6 +415,7 @@ void VulkanRenderer::createFrameResources() {
 
 		// create buffer
 		frame.gpuBuffer.emplace(m_core->getAllocator().createBuffer(bufferCI, allocCI));
+		setDebugName(*m_core, **frame.gpuBuffer, std::format("VulkanRenderer FrameUBO[{}]", i));
 
 		// no staging buffer
 
@@ -483,9 +487,6 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 		pass->update(m_current_frame, Time::get().renderDelta());
 	}
 
-	// Recording the shit
-	// recordTransferPass(frame); TODO with textures and meshes
-	// recordComputePass(frame, image_index);
 	recordFrame(frame, image_index);
 
 	// Starting transfer submission
@@ -507,15 +508,21 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 		submit_info.waitSemaphoreCount = 1;
 		submit_info.pWaitSemaphores = &wait_semaphore;
 		submit_info.pWaitDstStageMask = &wait_stage;
+
+		// Only a real present (vkQueuePresentKHR, below) actually waits on this. Off-screen output targets
+		// (the editor viewport) ignore the semaphore IOutputTarget::present() is handed, so signaling it there
+		// would leave it perpetually signaled-and-never-waited-on - the next time this per-image semaphore
+		// is reused it trips VUID-vkQueueSubmit-pSignalSemaphores-00067. Frame reuse for those targets is
+		// already gated by the in_flight fence wait above, so no semaphore is needed there at all.
+		submit_info.signalSemaphoreCount = 1;
+		submit_info.pSignalSemaphores = &signal_semaphore;
 	}
 	submit_info.commandBufferCount = 1;
 	submit_info.pCommandBuffers = &command_buffer;
-	submit_info.signalSemaphoreCount = 1;
-	submit_info.pSignalSemaphores = &signal_semaphore;
 	m_core->getGraphicsQueue().submit(submit_info, *frame.in_flight);
 
 	// Present onto target texture
-	const auto present_result = m_output_target->present(image_index, signal_semaphore);
+	const auto present_result = m_output_target->present(image_index, present_sync ? signal_semaphore : vk::Semaphore {});
 	frame.last_image_index = image_index;
 	frame.has_submitted = true;
 
@@ -581,7 +588,7 @@ void VulkanRenderer::mainRenderThread() {
 		}
 
 		Time::get().renderTick();
-
+		// TODO: Make this a editor keybind
 		// m_core->getRenderDocAPI()->StartFrameCapture(nullptr, nullptr);
 
 		drawFrame(frameToDraw);
@@ -620,16 +627,20 @@ void VulkanRenderer::stop() {
 	if (!was_running) {
 		return;
 	}
-
-	// First ensure the GPU is idle so fences can reliably complete; then wake the thread.
-	if (m_core) {
-		m_core->getDevice().waitIdle();
-	}
-
+	
 	m_frame_cv.notify_all();
 
 	if (m_render_thread.joinable()) {
 		m_render_thread.join();
+	}
+
+	// queueResourceUpload() dispatches PendingResourceUpload::build() to the thread pool
+	while (m_pending_upload_builds.load(std::memory_order_acquire) > 0) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+
+	if (m_core) {
+		m_core->getDevice().waitIdle();
 	}
 }
 
@@ -668,10 +679,17 @@ void VulkanRenderer::addRenderPass(std::unique_ptr<IRenderPass> pass) {
 }
 
 void VulkanRenderer::queueResourceUpload(std::unique_ptr<PendingResourceUpload> uploadJob) {
-	uploadJob->build(*m_core);
+	// build() can be expensive so its dispatched to the thread pool to avoid blocking the main thread
+	m_pending_upload_builds.fetch_add(1, std::memory_order_relaxed);
+	toast::ThreadPool::push([this, job = std::move(uploadJob)]() mutable {
+		job->build(*m_core);
 
-	std::lock_guard<std::mutex> lock(m_upload_mutex);
-	m_upload_staging.push_back(std::move(uploadJob));
+		{
+			std::lock_guard<std::mutex> lock(m_upload_mutex);
+			m_upload_staging.push_back(std::move(job));
+		}
+		m_pending_upload_builds.fetch_sub(1, std::memory_order_acq_rel);
+	});
 }
 
 void VulkanRenderer::processPendingUploads() {

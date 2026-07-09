@@ -20,31 +20,31 @@ using namespace _detail;
 #pragma region NODE_CLUSTER
 
 namespace _detail {
-void NodeCluster::earlyTick() {
+TOAST_FORCE_INLINE void NodeCluster::earlyTick() {
 	for (auto& node : nodes) {
 		node->callTick(node->info(), TickFunctionList::early_tick);
 	}
 }
 
-void NodeCluster::tick() {
+TOAST_FORCE_INLINE void NodeCluster::tick() {
 	for (auto& node : nodes) {
 		node->callTick(node->info(), TickFunctionList::tick);
 	}
 }
 
-void NodeCluster::postPhysics() {
+TOAST_FORCE_INLINE void NodeCluster::postPhysics() {
 	for (auto& node : nodes) {
 		node->callTick(node->info(), TickFunctionList::post_physics);
 	}
 }
 
-void NodeCluster::lateTick() {
+TOAST_FORCE_INLINE void NodeCluster::lateTick() {
 	for (auto& node : nodes) {
 		node->callTick(node->info(), TickFunctionList::late_tick);
 	}
 }
 
-auto NodeCluster::hasEarlyTick() -> bool {
+TOAST_FORCE_INLINE auto NodeCluster::hasEarlyTick() -> bool {
 	for (auto& node : nodes) {
 		if (node->info() && node->info()->hasFunction(TickFunctionList::early_tick)) {
 			return true;
@@ -53,7 +53,7 @@ auto NodeCluster::hasEarlyTick() -> bool {
 	return false;
 }
 
-auto NodeCluster::hasTick() -> bool {
+TOAST_FORCE_INLINE auto NodeCluster::hasTick() -> bool {
 	for (auto& node : nodes) {
 		if (node->info() && node->info()->hasFunction(TickFunctionList::tick)) {
 			return true;
@@ -62,7 +62,7 @@ auto NodeCluster::hasTick() -> bool {
 	return false;
 }
 
-auto NodeCluster::hasPostPhysics() -> bool {
+TOAST_FORCE_INLINE auto NodeCluster::hasPostPhysics() -> bool {
 	for (auto& node : nodes) {
 		if (node->info() && node->info()->hasFunction(TickFunctionList::post_physics)) {
 			return true;
@@ -71,7 +71,7 @@ auto NodeCluster::hasPostPhysics() -> bool {
 	return false;
 }
 
-auto NodeCluster::hasLateTick() -> bool {
+TOAST_FORCE_INLINE auto NodeCluster::hasLateTick() -> bool {
 	for (auto& node : nodes) {
 		if (node->info() && node->info()->hasFunction(TickFunctionList::late_tick)) {
 			return true;

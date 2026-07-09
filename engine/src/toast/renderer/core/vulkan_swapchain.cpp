@@ -185,6 +185,7 @@ auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 	m_swapchain = std::move(new_swapchain);
 	m_images = std::move(new_images);
 	m_present_queue_family_index = present_queue_family_index;
+	m_present_queue = m_core->getDevice().getQueue(m_present_queue_family_index, 0);
 	m_image_format = image_format;
 	m_extent = chosen_extent;
 	m_image_views = std::move(new_image_views);
@@ -250,7 +251,6 @@ auto VulkanSwapchain::acquireNextImage(uint64_t timeout, vk::Semaphore image_ava
 }
 
 auto VulkanSwapchain::present(uint32_t image_index, vk::Semaphore render_finished) const -> vk::Result {
-	const auto present_queue = m_core->getDevice().getQueue(m_present_queue_family_index, 0);
 	const VkSwapchainKHR swapchain_handle = static_cast<VkSwapchainKHR>(*m_swapchain);
 	const VkSemaphore wait_semaphore = static_cast<VkSemaphore>(render_finished);
 
@@ -262,7 +262,7 @@ auto VulkanSwapchain::present(uint32_t image_index, vk::Semaphore render_finishe
 	present_info.pSwapchains = &swapchain_handle;
 	present_info.pImageIndices = &image_index;
 
-	const VkResult result = vkQueuePresentKHR(static_cast<VkQueue>(*present_queue), &present_info);
+	const VkResult result = vkQueuePresentKHR(static_cast<VkQueue>(m_present_queue), &present_info);
 	return static_cast<vk::Result>(result);
 }
 }

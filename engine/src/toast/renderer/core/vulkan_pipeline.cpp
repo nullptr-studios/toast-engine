@@ -6,7 +6,7 @@
 
 #include "toast/log.hpp"
 #include "vulkan_core.hpp"
-#include "vulkan_mesh.hpp"
+#include "vulkan_debug.hpp"
 
 #include <array>
 #include <stdexcept>
@@ -47,14 +47,10 @@ auto createGraphicsPipelineImpl(
 		rendering_ci.depthAttachmentFormat = *config.depth_format;
 	}
 
-	// vertex
-	auto binding = Vertex::getBindingDescription();
-	auto attributes = Vertex::getAttributeDescriptions();
-
 	const vk::PipelineVertexInputStateCreateInfo vertexInputCI(
-	    {}, 1, &binding, static_cast<uint32_t>(attributes.size()), attributes.data()
+	    {}, 1, &config.vertex_binding, static_cast<uint32_t>(config.vertex_attributes.size()), config.vertex_attributes.data()
 	);
-	const vk::PipelineInputAssemblyStateCreateInfo input_assembly_ci({}, vk::PrimitiveTopology::eTriangleList);
+	const vk::PipelineInputAssemblyStateCreateInfo input_assembly_ci({}, config.topology);
 
 	// Use dynamic viewport and scissor so the pipeline doesn't need to be rebuilt on window resize
 	const vk::PipelineViewportStateCreateInfo viewport_state_ci({}, 1, nullptr, 1, nullptr);
@@ -71,9 +67,9 @@ auto createGraphicsPipelineImpl(
 
 	const vk::PipelineMultisampleStateCreateInfo multisample_state_ci({}, vk::SampleCountFlagBits::e1);
 	const vk::PipelineColorBlendAttachmentState color_blend_attachment(
-	    false,
-	    vk::BlendFactor::eOne,
-	    vk::BlendFactor::eZero,
+	    config.blend_enable,
+	    config.blend_enable ? vk::BlendFactor::eSrcAlpha : vk::BlendFactor::eOne,
+	    config.blend_enable ? vk::BlendFactor::eOneMinusSrcAlpha : vk::BlendFactor::eZero,
 	    vk::BlendOp::eAdd,
 	    vk::BlendFactor::eOne,
 	    vk::BlendFactor::eZero,
@@ -90,8 +86,8 @@ auto createGraphicsPipelineImpl(
 	if (config.depth_format.has_value()) {
 		depth_stencil_state_ci = vk::PipelineDepthStencilStateCreateInfo(
 		    {},
-		    true,                    // depthTestEnable
-		    true,                    // depthWriteEnable
+		    config.depth_test,
+		    config.depth_write,
 		    vk::CompareOp::eLess,    // depthCompareOp
 		    false,                   // depthBoundsTestEnable
 		    false,                   // stencilTestEnable
@@ -170,6 +166,11 @@ auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> vo
 		m_pipeline = createGraphicsPipelineImpl(core, config, *m_shader_module, config.pipeline_layout);
 	} else {
 		m_pipeline = createComputePipelineImpl(core, config, *m_shader_module, config.pipeline_layout);
+	}
+
+	if (!config.debug_name.empty()) {
+		setDebugName(core, **m_shader_module, config.debug_name + " ShaderModule");
+		setDebugName(core, *m_pipeline, config.debug_name + " Pipeline");
 	}
 }
 

@@ -111,5 +111,6 @@ Planned/obvious expansion points:
 - compute pass integration
 - stronger resource lifetime tracking for hot-reload and streaming
 
-## Changelog
+## Known issues
+When closing the editor the resources are not freed before deleting the engine, so it crashes
 
