@@ -15,6 +15,7 @@
 
 #include <array>
 #include <cmath>
+#include <condition_variable>
 #include <glm/gtc/constants.hpp>
 #include <memory>
 #include <mutex>

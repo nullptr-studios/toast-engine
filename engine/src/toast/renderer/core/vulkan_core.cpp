@@ -10,6 +10,10 @@
 #include <algorithm>
 #include <format>
 #include <limits>
+
+#if defined(__linux__)
+#include <dlfcn.h>
+#endif
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -264,11 +268,22 @@ VulkanCore::VulkanCore(
 	createLogicalDeviceAndAllocator(required_device_extensions);
 
 	// Renderdoc api
+#if defined(_WIN32)
 	if (HMODULE mod = GetModuleHandleA("renderdoc.dll")) {
 		pRENDERDOC_GetAPI RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(GetProcAddress(mod, "RENDERDOC_GetAPI"));
 		RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
 		TOAST_INFO("VulkanCore", "RenderDoc API detected");
 	}
+#elif defined(__linux__)
+	if (auto* mod = dlopen("librenderdoc.so", RTLD_NOLOAD | RTLD_LAZY)) {
+		auto* RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(dlsym(mod, "RENDERDOC_GetAPI"));
+		if (RENDERDOC_GetAPI) {
+			RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
+			TOAST_INFO("VulkanCore", "RenderDoc API detected");
+		}
+		dlclose(mod);
+	}
+#endif
 }
 
 void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device_extensions) {

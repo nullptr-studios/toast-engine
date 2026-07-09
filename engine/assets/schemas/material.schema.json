@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "core://schemas/material.schema.json",
+  "title": "Toast Material (.tmat)",
+  "description": "Material with albedo, normal map, and base color",
+  "type": "object",
+  "required": ["name"],
+  "additionalProperties": false,
+  "properties": {
+    "name":       { "type": "string", "x-toast-type": "string", "default": "Unnamed Material", "description": "Display name" },
+    "albedo_map": { "type": "string", "x-toast-type": "asset",  "x-toast-asset-type": "texture", "description": "Albedo texture UID" },
+    "normal_map": { "type": "string", "x-toast-type": "asset",  "x-toast-asset-type": "texture", "description": "Normal map texture UID" },
+    "color":      { "type": "array",  "x-toast-type": "color4", "default": [1.0, 1.0, 1.0, 1.0], "description": "Base color (RGBA)" }
+  }
+}

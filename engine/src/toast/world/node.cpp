@@ -4,11 +4,11 @@
 
 namespace toast {
 
-TOAST_FORCE_INLINE auto Node::uid() const noexcept -> const UID& {
+auto Node::uid() const noexcept -> const UID& {
 	return m_uid;
 }
 
-TOAST_FORCE_INLINE auto Node::name() const noexcept -> std::string_view {
+auto Node::name() const noexcept -> std::string_view {
 	return m_name;
 }
 
@@ -16,7 +16,7 @@ void Node::name(std::string_view name) noexcept {
 	m_name = name;
 }
 
-TOAST_FORCE_INLINE auto Node::enabled() const noexcept -> bool {
+auto Node::enabled() const noexcept -> bool {
 	return m_local_enabled && m_inherited_enabled;
 }
 
@@ -138,7 +138,7 @@ void Node::changeNodeState(NodeState state) noexcept {
 	}
 }
 
-TOAST_FORCE_INLINE void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
+void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 	if (!info) {
 		TOAST_WARN("Node", "Tried to call a tick function but reflection data is null");
 		return;
@@ -195,7 +195,7 @@ TOAST_FORCE_INLINE void Node::callTick(const NodeInfo* info, TickFunctionList fu
 	}
 }
 
-TOAST_FORCE_INLINE void Node::propagateCallTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
+void Node::propagateCallTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 	ZoneScoped;
 
 	callTick(info, func_type);

@@ -8,29 +8,23 @@
 
 #pragma once
 #include "core_types.hpp"
+#include "data.hpp"
 
 #include <vulkan/vulkan_raii.hpp>
 
 namespace assets {
 class Texture;
 
-/**
- * @brief Asset representing parsed material TOML data (.tmat)
- */
-class TOAST_API Material : public Asset, public ISaveable {
+class TOAST_API Material : public Data {
 public:
-	explicit Material(toml::table table);
+	static constexpr std::string_view collection = "materials";
+
+	explicit Material(const toml::table& table, AssetHandle<Schema> schema = {});
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
 		return "material";
 	}
-
-	[[nodiscard]]
-	auto get() const noexcept -> const toml::table&;
-
-	[[nodiscard]]
-	auto get() noexcept -> toml::table&;
 
 	[[nodiscard]]
 	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
@@ -45,15 +39,30 @@ public:
 		return m_albedo_map;
 	}
 
+	[[nodiscard]]
+	auto normalMap() const -> const AssetHandle<Texture>& {
+		return m_normal_map;
+	}
+
+	[[nodiscard]]
+	auto normalMap() -> AssetHandle<Texture>& {
+		return m_normal_map;
+	}
+
+	[[nodiscard]]
+	auto color() const noexcept -> const glm::vec4& {
+		return m_color;
+	}
+
 	vk::raii::Sampler& albedoSampler() { return m_albedoSampler; }
 
 	void resolveTextureHandles();
 
 private:
-	toml::table m_table;
-
 	AssetHandle<Texture> m_albedo_map;
+	AssetHandle<Texture> m_normal_map;
+	glm::vec4 m_color = glm::vec4(1.0f);
+
 	vk::raii::Sampler m_albedoSampler = nullptr;    // THISSHOULDBECREATEDPERIMAGESAMPLER
-	toast::UID m_albedo_uid {};
 };
 }

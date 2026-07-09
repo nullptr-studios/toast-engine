@@ -232,15 +232,23 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		material_table.insert("vertex", "NOT IMPLEMENTED");      // TODO: Replace with UID of default vertex shader
 		material_table.insert("fragment", "NOT IMPLEMENTED");    // TODO: Replace with UID of default fragment shader
 
-		toml::table params;
 		if (pbr.base_color_texture.index != -1) {
-			params.insert("albedo_map", tex_uid(pbr.base_color_texture.index));
+			material_table.insert("albedo_map", tex_uid(pbr.base_color_texture.index));
 		}
+		if (mat.normal_texture.index != -1) {
+			material_table.insert("normal_map", tex_uid(mat.normal_texture.index));
+		}
+		material_table.insert(
+		    "color",
+		    toml::array {pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]}
+		);
+
+		// Extended PBR fields kept in params for future use
+		toml::table params;
 		if (pbr.metallic_roughness_texture.index != -1) {
 			params.insert("metallic_roughness_map", tex_uid(pbr.metallic_roughness_texture.index));
 		}
 		if (mat.normal_texture.index != -1) {
-			params.insert("normal_map", tex_uid(mat.normal_texture.index));
 			params.insert("normal_scale", mat.normal_texture.scale);
 		}
 		if (mat.occlusion_texture.index != -1) {
@@ -250,10 +258,6 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		if (mat.emissive_texture.index != -1) {
 			params.insert("emissive_map", tex_uid(mat.emissive_texture.index));
 		}
-		params.insert(
-		    "base_color_factor",
-		    toml::array {pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]}
-		);
 		params.insert("metallic_factor", pbr.metallic_factor);
 		params.insert("roughness_factor", pbr.roughness_factor);
 		params.insert("emissive_factor", toml::array {mat.emissive_factor[0], mat.emissive_factor[1], mat.emissive_factor[2]});

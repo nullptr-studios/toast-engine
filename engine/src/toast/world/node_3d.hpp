@@ -184,9 +184,9 @@ private:
 	[[Reflect, Unit("°")]] alignas(16) glm::quat m_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	[[Reflect]] alignas(16) glm::vec3 m_scale = glm::vec3(1.0f);
 
-	mutable alignas(16) glm::vec3 m_world_position = glm::vec3(0.0f);
-	mutable alignas(16) glm::quat m_world_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-	mutable alignas(16) glm::vec3 m_world_scale = glm::vec3(1.0f);
+	alignas(16) mutable glm::vec3 m_world_position = glm::vec3(0.0f);
+	alignas(16) mutable glm::quat m_world_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	alignas(16) mutable glm::vec3 m_world_scale = glm::vec3(1.0f);
 	mutable glm::mat4 m_transform = glm::mat4(1.0f);
 	mutable glm::mat4 m_world_transform = glm::mat4(1.0f);
 
@@ -194,9 +194,10 @@ private:
 	// that bypass pos()/rot()/scale() - e.g. the reflection system's FieldAccess::set(), which is what the
 	// editor inspector uses and writes the raw members directly - so a stale cached matrix doesn't linger
 	// forever just because the dirty flags were never set.
-	mutable alignas(16) glm::vec3 m_cached_position = glm::vec3(0.0f);
-	mutable alignas(16) glm::quat m_cached_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-	mutable alignas(16) glm::vec3 m_cached_scale = glm::vec3(1.0f);
+	// ... TF IS THIS DARIO
+	alignas(16) mutable glm::vec3 m_cached_position = glm::vec3(0.0f);
+	alignas(16) mutable glm::quat m_cached_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	alignas(16) mutable glm::vec3 m_cached_scale = glm::vec3(1.0f);
 
 	void recalculateTransforms() const;
 
