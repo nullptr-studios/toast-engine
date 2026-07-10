@@ -8,6 +8,7 @@
 #include "toast/thread_pool.hpp"
 #include "toast/time.hpp"
 #include "toast/window/window_events.hpp"
+#include "toast/world/camera.hpp"
 #include "vulkan_debug.hpp"
 
 #include <array>
@@ -775,4 +776,37 @@ void VulkanRenderer::flushResourceUploads() {
 void VulkanRenderer::setActiveCamera(Camera* camera) {
 	m_camera = camera;
 }
+
+void debugDrawFrustum(const toast::Camera& camera, float aspect, glm::vec4 color) {
+	const float tan_half_fov_y = std::tan(glm::radians(camera.fov) * 0.5f);
+	const float near_height = 2.0f * tan_half_fov_y * camera.nearPlane;
+	const float near_width = near_height * aspect;
+	const float far_height = 2.0f * tan_half_fov_y * camera.farPlane;
+	const float far_width = far_height * aspect;
+
+	const std::array<glm::vec3, 8> view_space_corners {
+	  glm::vec3 {-near_width * 0.5f, -near_height * 0.5f, -camera.nearPlane},
+	  glm::vec3 { near_width * 0.5f, -near_height * 0.5f, -camera.nearPlane},
+	  glm::vec3 { near_width * 0.5f,  near_height * 0.5f, -camera.nearPlane},
+	  glm::vec3 {-near_width * 0.5f,  near_height * 0.5f, -camera.nearPlane},
+	  glm::vec3 { -far_width * 0.5f,  -far_height * 0.5f,  -camera.farPlane},
+	  glm::vec3 {  far_width * 0.5f,  -far_height * 0.5f,  -camera.farPlane},
+	  glm::vec3 {  far_width * 0.5f,   far_height * 0.5f,  -camera.farPlane},
+	  glm::vec3 { -far_width * 0.5f,   far_height * 0.5f,  -camera.farPlane},
+	};
+
+	const glm::mat4 inv_view = glm::inverse(camera.getView());
+	std::array<glm::vec3, 8> world_corners {};
+	for (int i = 0; i < 8; ++i) {
+		world_corners[i] = glm::vec3(inv_view * glm::vec4(view_space_corners[i], 1.0f));
+	}
+
+	static constexpr std::array<std::pair<int, int>, 12> edges {
+	  {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}}
+	};
+	for (const auto& [a, b] : edges) {
+		debugDrawLine(world_corners[a], world_corners[b], color);
+	}
+}
+
 }

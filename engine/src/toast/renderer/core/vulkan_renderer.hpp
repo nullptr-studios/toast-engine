@@ -8,7 +8,6 @@
 #include "render_pass_base.hpp"
 #include "toast/events/event.inl"
 #include "toast/events/listener.hpp"
-#include "toast/world/camera.hpp"
 #include "vulkan_core.hpp"
 #include "vulkan_mesh.hpp"
 #include "vulkan_pipeline.hpp"
@@ -30,6 +29,10 @@
 
 namespace assets {
 class Material;
+}
+
+namespace toast {
+class Camera;
 }
 
 namespace toast::renderer {
@@ -365,38 +368,6 @@ inline void debugDrawAxes(const glm::mat4& transform) {
  *
  * Built from the camera own fov/near/far and view matrix rather than by un-projecting NDC corners
  */
-inline void debugDrawFrustum(const Camera& camera, float aspect, glm::vec4 color = {1.0f, 1.0f, 0.0f, 1.0f}) {
-	const float tan_half_fov_y = std::tan(glm::radians(camera.fov) * 0.5f);
-	const float near_height = 2.0f * tan_half_fov_y * camera.nearPlane;
-	const float near_width = near_height * aspect;
-	const float far_height = 2.0f * tan_half_fov_y * camera.farPlane;
-	const float far_width = far_height * aspect;
-
-	// View space follows glm::lookAt()'s convention regardless of world up axis: camera looks down -Z, +X
-	// is right, +Y is up
-	const std::array<glm::vec3, 8> view_space_corners {
-	  glm::vec3 {-near_width * 0.5f, -near_height * 0.5f, -camera.nearPlane},
-	  glm::vec3 { near_width * 0.5f, -near_height * 0.5f, -camera.nearPlane},
-	  glm::vec3 { near_width * 0.5f,  near_height * 0.5f, -camera.nearPlane},
-	  glm::vec3 {-near_width * 0.5f,  near_height * 0.5f, -camera.nearPlane},
-	  glm::vec3 { -far_width * 0.5f,  -far_height * 0.5f,  -camera.farPlane},
-	  glm::vec3 {  far_width * 0.5f,  -far_height * 0.5f,  -camera.farPlane},
-	  glm::vec3 {  far_width * 0.5f,   far_height * 0.5f,  -camera.farPlane},
-	  glm::vec3 { -far_width * 0.5f,   far_height * 0.5f,  -camera.farPlane},
-	};
-
-	const glm::mat4 inv_view = glm::inverse(camera.getView());
-	std::array<glm::vec3, 8> world_corners {};
-	for (int i = 0; i < 8; ++i) {
-		world_corners[i] = glm::vec3(inv_view * glm::vec4(view_space_corners[i], 1.0f));
-	}
-
-	static constexpr std::array<std::pair<int, int>, 12> edges {
-	  {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}}
-	};
-	for (const auto& [a, b] : edges) {
-		debugDrawLine(world_corners[a], world_corners[b], color);
-	}
-}
+void debugDrawFrustum(const toast::Camera& camera, float aspect, glm::vec4 color = {1.0f, 1.0f, 0.0f, 1.0f});
 
 }    // namespace toast::renderer
