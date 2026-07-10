@@ -2,7 +2,7 @@
 //! validates against reserved names, emits one `.generated.hpp` per class and one
 //! `reflect.generated.cpp` registration file
 
-use reflection_generator::{parse, NodeInfo, build_node, generate_json, generate_files, validate_class, strip_export_macros};
+use reflection_generator::*;
 
 use clap::Parser;
 use walkdir::WalkDir;
