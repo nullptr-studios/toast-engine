@@ -141,7 +141,7 @@ fn test_single_fixture(fixture_path: &Path, fixture_name: &str, output_dir: impl
         }
 
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            generate_files(&nodes, Path::new(output_dir), "testRegisterTypes");
+            generate_files(&nodes, Path::new(output_dir), "testRegisterTypes", false);
         })) {
             Ok(_) => println!("  ✓ Generated .hpp files in: {}", output_dir),
             Err(_) => println!("  ⚠ Skipped .hpp generation"),

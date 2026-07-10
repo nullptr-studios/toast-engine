@@ -104,6 +104,8 @@ typedef struct {
 /// @return 1 copied, 0 none available yet, -1 dst too small
 TOAST_C_API int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) NOEXCEPT;
 
+TOAST_C_API void toast_reload_project_settings(void) NOEXCEPT;
+
 #ifdef __cplusplus
 }
 #endif

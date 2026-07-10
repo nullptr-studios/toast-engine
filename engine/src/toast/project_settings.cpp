@@ -5,7 +5,7 @@
 
 namespace toast {
 
-ProjectSettings::ProjectSettings(std::filesystem::path path) {
+ProjectSettings::ProjectSettings(const std::filesystem::path& path) {
 	instance = this;
 
 	if (path.empty() || !std::filesystem::exists(path)) {
@@ -33,12 +33,12 @@ ProjectSettings::ProjectSettings(std::filesystem::path path) {
 			}
 		}
 		if (m_databases.empty()) {
-			m_databases.push_back("assets");
+			m_databases.emplace_back("assets");
 		}
 
 		if (auto* gameplay = table["gameplay"].as_table()) {
 			auto make_handle = [](std::string_view uri) -> assets::AssetHandle<assets::Prefab> {
-				return assets::AssetHandle<assets::Prefab>(nullptr, toast::UID::make(), uri);
+				return {nullptr, toast::UID::make(), uri};
 			};
 			if (auto uri = (*gameplay)["init_scene"].value<std::string>()) {
 				m_gameplay_settings.m_init_scene = make_handle(*uri);

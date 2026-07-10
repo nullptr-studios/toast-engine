@@ -160,7 +160,7 @@ add_custom_command(TARGET toast_engine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/include" "${TOAST_ENGINE_OUTPUT_ROOT}/include"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/ffi" "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
         # Generated reflection headers
-        COMMAND ${CMAKE_COMMAND} -D SRC_DIR="${CMAKE_CURRENT_SOURCE_DIR}/generated" -D DST_DIR="${TOAST_ENGINE_OUTPUT_ROOT}/include" -P "${CMAKE_SOURCE_DIR}/cmake/copy_generated_headers.cmake"
+        COMMAND ${CMAKE_COMMAND} "-DSRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/generated" "-DDST_DIR=${TOAST_ENGINE_OUTPUT_ROOT}/include" -P "${CMAKE_SOURCE_DIR}/cmake/copy_generated_headers.cmake"
         # Dependencies
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_nlohmann_include}/nlohmann" "${TOAST_ENGINE_OUTPUT_ROOT}/include/nlohmann"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/tracy" "${TOAST_ENGINE_OUTPUT_ROOT}/include/tracy"

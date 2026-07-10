@@ -467,7 +467,7 @@ void Engine::startGame() {
 		return;
 	}
 
-	const auto& init_scene_handle = ps->gameplaySettings().initScene();
+	const auto& init_scene_handle = toast::ProjectSettings::gameplaySettings().initScene();
 	const auto path = init_scene_handle.path();
 	if (path.empty()) {
 		TOAST_WARN("Engine", "startGame: no init_scene set in project settings");
