@@ -328,6 +328,7 @@ void AssetManager::reloadManifest() {
 			load_collection("input_action");
 			load_collection("input_layout");
 			load_collection("input_settings");
+			load_collection("script");
 		} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse manifest {}: {}", uri, e.what()); }
 	};
 

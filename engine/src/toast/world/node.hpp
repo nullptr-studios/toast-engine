@@ -26,6 +26,10 @@
 #include <toast/uid.hpp>
 #include <toast/world/node_owner.hpp>
 
+namespace assets {
+class Script;
+}
+
 namespace toast {
 class INodeOwner;
 
@@ -281,6 +285,9 @@ private:
 	    m_unresolved_chunk;    ///< keeps raw prefab data alive until all asset-handle fields are resolved
 
 	std::unique_ptr<event::Listener> m_listener = nullptr;
+
+	[[Reflect]]
+	std::vector<assets::AssetHandle<assets::Script>> m_scripts;
 
 	[[nodiscard]]
 	auto parentInternal() const noexcept -> Box<Node> {
