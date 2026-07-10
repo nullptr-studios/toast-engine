@@ -69,9 +69,18 @@
   }, {
     "name" : "lz4",
     "version>=" : "1.10.0"
+  }, {
+    "name" : "luabridge3",
+    "version>=" : "3.0-rc12"
+  }, {
+    "name" : "lua",
+    "version>=" : "5.5.0#1"
   } ],
   "overrides" : [ {
     "name" : "tracy",
     "version" : "0.13.1"
-  } ]
+  },{
+    "name": "lua",
+    "version" : "5.4.7"
+  }]
 }
