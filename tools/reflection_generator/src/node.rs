@@ -66,6 +66,25 @@ fn cpp_escape(s: &str) -> std::string::String {
     s.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
+
+pub fn build_node(class: &Class) -> NodeInfo {
+    let is_interface = class.attributes.iter().any(|a| a.name == "Interface");
+    let (global_fields, groups) = build_field_groups(&class.fields);
+
+    NodeInfo {
+        name: class.name.clone(),
+        namespace: class.namespace.clone(),
+        parent: class.parent.clone(),
+        attributes: attrs_to_json(&class.attributes),
+        functions: build_tick_functions(class),
+        methods: class.methods.clone(),
+        groups,
+        global_fields,
+        source_file: class.source_file.clone(),
+        is_interface,
+    }
+}
+
 pub fn build_template_context(node: &NodeInfo) -> json_t {
     // --- 1. Basic Info & Namespaces ---
     let snake_name = node.name.to_lowercase();
@@ -177,24 +196,6 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
         "has_asset_handle":      has_asset_handle,
         "is_interface":          node.is_interface,
     })
-}
-
-pub fn build_node(class: &Class) -> NodeInfo {
-    let is_interface = class.attributes.iter().any(|a| a.name == "Interface");
-    let (global_fields, groups) = build_field_groups(&class.fields);
-
-    NodeInfo {
-        name: class.name.clone(),
-        namespace: class.namespace.clone(),
-        parent: class.parent.clone(),
-        attributes: attrs_to_json(&class.attributes),
-        functions: build_tick_functions(class),
-        methods: class.methods.clone(),
-        groups,
-        global_fields,
-        source_file: class.source_file.clone(),
-        is_interface,
-    }
 }
 
 pub fn validate_class(class: &Class) -> std::result::Result<(), String> {
