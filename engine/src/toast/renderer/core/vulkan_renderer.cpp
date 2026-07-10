@@ -611,7 +611,7 @@ void VulkanRenderer::mainRenderThread() {
 		}
 
 		Time::get().renderTick();
-		
+
 		// TODO: Make this a editor keybind
 		// m_core->getRenderDocAPI()->StartFrameCapture(nullptr, nullptr);
 

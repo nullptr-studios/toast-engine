@@ -251,7 +251,6 @@ private:
 	static constexpr uint64_t kNoPendingResize = 0;
 	std::atomic<uint64_t> m_pending_resize_packed {kNoPendingResize};
 
-
 	std::atomic<double> m_frame_rate_limit_hz {0.0};
 };
 

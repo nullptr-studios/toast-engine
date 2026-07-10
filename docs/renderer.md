@@ -112,4 +112,4 @@ Planned expansions:
 - When closing the editor the resources are not freed before deleting the engine, so it crashes
 - Node3D transforms are not being propagated to children
 - Material does not hotreload once its referenced
-
+- Missing shader asset

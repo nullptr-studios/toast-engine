@@ -15,8 +15,7 @@
 namespace assets {
 class Texture;
 
-
-//FIXME: This should be changed and improved, this doess not currently support material reloading
+// FIXME: This should be changed and improved, this doess not currently support material reloading
 class TOAST_API Material : public Data {
 public:
 	static constexpr std::string_view collection = "materials";

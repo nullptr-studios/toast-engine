@@ -153,7 +153,7 @@ void MeshPass::createResources(const toast::renderer::VulkanCore& core) {
 
 	auto& device = core.getDevice();
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
-	
+
 	// NOTE: allocateDescriptorSets() returns owning vk::raii::DescriptorSet objects, the pool was created with
 	// eFreeDescriptorSet, so if we only kept the raw handle the descriptor set would be
 	// freed back to the pool the instant the temporary vector went out of scope, leaving a dangling handle that
@@ -304,7 +304,8 @@ auto MeshPass::getMaterialDescriptorSet(const toast::renderer::VulkanCore& core,
 		setDebugName(core, *binding.set, std::format("MeshPass MaterialSet ({})", material.albedoMap().path()));
 	}
 
-	// Only re-issue the descriptor write when the underlying image view actually changed, instead of on every draw/frame like the previous implementation
+	// Only re-issue the descriptor write when the underlying image view actually changed, instead of on every draw/frame like the
+	// previous implementation
 	if (binding.bound_view != view) {
 		vk::DescriptorImageInfo imageInfo {};
 		imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;

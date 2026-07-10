@@ -372,7 +372,7 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	m->renderer->addRenderPass(std::move(pass));
 
-	//m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
+	// m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
 
 	// capped to 240 for now
 	m->renderer->setFrameRateLimit(240.0);

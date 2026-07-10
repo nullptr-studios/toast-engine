@@ -130,7 +130,7 @@ void Material::resolveTextureHandles() {
 
 	m_albedoSampler = vk::raii::Sampler(core.getDevice(), sampler_info);
 	toast::renderer::setDebugName(core, *m_albedoSampler, std::format("Material AlbedoSampler ({})", albedo_map.path()));
-	
+
 	m_sampler_ready = true;
 }
 

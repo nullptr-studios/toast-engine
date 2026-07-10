@@ -59,7 +59,8 @@ private:
 
 	toast::renderer::ShaderLayout shaderLayout;
 
-	// Set 0: one descriptor set per frame-in-flight, bound to the camera UBO. Owning (vk::raii) so the descriptor sets aren't freed back
+	// Set 0: one descriptor set per frame-in-flight, bound to the camera UBO. Owning (vk::raii) so the descriptor sets aren't freed
+	// back
 	std::vector<vk::raii::DescriptorSet> m_frame_descriptor_sets;
 
 	// per-material descriptor sets keyed by Material
