@@ -14,6 +14,7 @@
 #include "vulkan_pipeline.hpp"
 
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <condition_variable>
 #include <glm/gtc/constants.hpp>
@@ -45,7 +46,7 @@ public:
 
 	static constexpr uint32_t kFramesInFlight = 3;
 
-	static constexpr uint8_t kRenderFrames = 3;    // Number of frames queued for rendering (separate from kFramesInFlight)
+	static constexpr uint8_t kRenderFrames = 3;    // Number of frames queued for rendering
 
 	struct FrameContext {
 		vk::raii::CommandBuffer command_buffer = nullptr;
@@ -74,8 +75,6 @@ public:
 	};
 
 	/// @brief One vertex of an immediate-mode debug line; two consecutive vertices make one line segment
-	/// @note Uses glm::packed_highp (like renderer::Vertex in vulkan_mesh.hpp) so the type is guaranteed
-	/// standard-layout for offsetof()-based vertex attribute descriptions - plain glm::vec3/vec4 aren't
 	struct DebugVertex {
 		glm::vec<3, float, glm::packed_highp> position;
 		glm::vec<4, float, glm::packed_highp> color;
@@ -89,8 +88,7 @@ public:
 		std::vector<MeshInstanceProxy> mesh_instances;
 
 		// Immediate-mode debug draw data queued via debugDrawLine()/debugDrawBox()/debugDrawSphere()/
-		// debugDrawAxes() (below) and consumed by DebugPass. Cleared by the caller each frame alongside
-		// mesh_instances, before re-populating (see Engine::tick())
+		// debugDrawAxes() dnd consumed by DebugPass
 		std::vector<DebugVertex> debug_line_vertices;    // consecutive pairs; each pair is one line segment
 		std::vector<glm::mat4> debug_gizmo_instances;    // one axis-triad gizmo draw per entry
 	};
@@ -111,6 +109,21 @@ public:
 	std::counting_semaphore<kRenderFrames>& getFreeFramesSemaphore() { return m_free_frames; }
 
 	void submitFrame();
+
+	/**
+	 * @brief Caps how often the render thread draws & presents a frame
+	 *
+	 * Applies uniformly: a brand new frame submitted faster than the cap is still paced to it, and an
+	 * unchanged cached frame is redrawn no faster than the cap either
+	 *
+	 * @param max_fps Target draw rate in Hz. Pass 0 or a negative value to run fully uncapped
+	 */
+	void setFrameRateLimit(double max_fps) noexcept { m_frame_rate_limit_hz.store(max_fps, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto frameRateLimit() const noexcept -> double {
+		return m_frame_rate_limit_hz.load(std::memory_order_relaxed);
+	}
 
 	void stop();
 
@@ -199,9 +212,8 @@ private:
 	std::mutex m_upload_mutex;
 
 	// queueResourceUpload() offloads PendingResourceUpload::build() to the thread pool, and that job
-	// captures `this`/m_core by raw pointer. Tracks how many such jobs are still in flight so stop() can
-	// wait for them before returning - otherwise a still-running build() could touch a VulkanRenderer/
-	// VulkanCore the caller has already started destroying
+	// captures m_core by raw pointer. Tracks how many such jobs are still in flight so stop() can
+	// wait for them before returning
 	std::atomic<int> m_pending_upload_builds {0};
 
 	const VulkanCore* m_core = nullptr;
@@ -224,7 +236,7 @@ private:
 	std::vector<vk::ImageLayout> m_output_image_layouts;
 	uint32_t m_current_frame = 0;
 
-	/// Active camera for the renderer. Can be nullptr if no camera is set.
+	/// Active camera for the renderer, Can be nullptr if no camera is set
 	Camera* m_camera = nullptr;
 
 	// FrameUBO and related resources
@@ -238,6 +250,9 @@ private:
 
 	static constexpr uint64_t kNoPendingResize = 0;
 	std::atomic<uint64_t> m_pending_resize_packed {kNoPendingResize};
+
+
+	std::atomic<double> m_frame_rate_limit_hz {0.0};
 };
 
 inline void start() {
@@ -349,7 +364,7 @@ inline void debugDrawAxes(const glm::mat4& transform) {
 /**
  * @brief Queues a wireframe frustum for @p camera
  *
- * Built from the camera's own fov/near/far and view matrix rather than by un-projecting NDC corners
+ * Built from the camera own fov/near/far and view matrix rather than by un-projecting NDC corners
  */
 inline void debugDrawFrustum(const Camera& camera, float aspect, glm::vec4 color = {1.0f, 1.0f, 0.0f, 1.0f}) {
 	const float tan_half_fov_y = std::tan(glm::radians(camera.fov) * 0.5f);

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -31,6 +32,10 @@ public struct WorkspaceResult {
 
 public partial class ToastEngine : IDisposable {
 	private const string EngineLib = "toast_engine";
+
+	// Caps the tick loop rate to 240
+	private const double TargetTickHz = 240.0;
+
 	private readonly CancellationTokenSource m_cancellationSource;
 
 	private readonly IntPtr m_engineInstance;
@@ -150,7 +155,24 @@ public partial class ToastEngine : IDisposable {
 	}
 
 	private void TickLoop(CancellationToken token) {
-		while (!token.IsCancellationRequested && toast_should_close() != 1) toast_tick();
+		var targetInterval = TimeSpan.FromSeconds(1.0 / TargetTickHz);
+		var stopwatch = Stopwatch.StartNew();
+		var nextTick = stopwatch.Elapsed + targetInterval;
+
+		while (!token.IsCancellationRequested && toast_should_close() != 1) {
+			toast_tick();
+
+			var remaining = nextTick - stopwatch.Elapsed;
+			if (remaining > TimeSpan.Zero) {
+				if (remaining > TimeSpan.FromMilliseconds(2))
+					Thread.Sleep(remaining - TimeSpan.FromMilliseconds(1));
+				while (stopwatch.Elapsed < nextTick) Thread.SpinWait(50);
+				nextTick += targetInterval;
+			} else {
+				// fell behind, resync instead of bursting to catch up
+				nextTick = stopwatch.Elapsed + targetInterval;
+			}
+		}
 	}
 
 	private void CreateMainWindow() {

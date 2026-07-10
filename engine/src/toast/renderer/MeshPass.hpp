@@ -32,6 +32,7 @@ public:
 
 	struct DrawPushConstants {
 		glm::mat4 model;
+		glm::vec4 color;
 	};
 
 	MeshPass(const toast::renderer::VulkanCore& core, vk::Format colorFormat, vk::Format depthFormat, vk::Extent2D extent);
@@ -58,12 +59,10 @@ private:
 
 	toast::renderer::ShaderLayout shaderLayout;
 
-	// Set 0: one descriptor set per frame-in-flight, bound to the camera UBO. Owning (vk::raii) so the
-	// descriptor sets aren't freed back to the pool the moment allocateDescriptorSets()'s return value goes
-	// out of scope (the pool was created with eFreeDescriptorSet).
+	// Set 0: one descriptor set per frame-in-flight, bound to the camera UBO. Owning (vk::raii) so the descriptor sets aren't freed back
 	std::vector<vk::raii::DescriptorSet> m_frame_descriptor_sets;
 
-	// Set 1: per-material descriptor sets, keyed by Material. Rewritten only when the bound image view changes.
+	// per-material descriptor sets keyed by Material
 	struct MaterialGpuBinding {
 		vk::raii::DescriptorSet set = nullptr;
 		vk::ImageView bound_view {};

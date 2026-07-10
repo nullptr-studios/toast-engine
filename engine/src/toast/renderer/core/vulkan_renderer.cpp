@@ -398,7 +398,7 @@ void VulkanRenderer::createFrameResources() {
 
 	const vk::DeviceSize bufferSize = sizeof(FrameUBO);
 
-	// Create per-frame UBO buffers only. Descriptor sets are allocated by individual render passes (MeshPass).
+	// Create per-frame UBO buffers only. Descriptor sets are allocated by individual render passes
 	for (uint32_t i = 0; i < m_frame_ubo_res.size(); ++i) {
 		auto& frame = m_frame_ubo_res[i];
 
@@ -419,7 +419,7 @@ void VulkanRenderer::createFrameResources() {
 
 		// no staging buffer
 
-		// Leave descriptorSet empty; render passes will allocate and manage their own descriptor sets
+		// Leave descriptorSet empty render passes will allocate and manage their own descriptor sets
 	}
 }
 
@@ -509,11 +509,8 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 		submit_info.pWaitSemaphores = &wait_semaphore;
 		submit_info.pWaitDstStageMask = &wait_stage;
 
-		// Only a real present (vkQueuePresentKHR, below) actually waits on this. Off-screen output targets
-		// (the editor viewport) ignore the semaphore IOutputTarget::present() is handed, so signaling it there
-		// would leave it perpetually signaled-and-never-waited-on - the next time this per-image semaphore
-		// is reused it trips VUID-vkQueueSubmit-pSignalSemaphores-00067. Frame reuse for those targets is
-		// already gated by the in_flight fence wait above, so no semaphore is needed there at all.
+		// Only a real present actually waits on this. Off-screen output targets
+		// ignore the semaphore IOutputTarget::present() is handed
 		submit_info.signalSemaphoreCount = 1;
 		submit_info.pSignalSemaphores = &signal_semaphore;
 	}
@@ -544,6 +541,10 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 
 void VulkanRenderer::mainRenderThread() {
 	tracy::SetThreadName("Renderer Thread");
+
+	using clock = std::chrono::steady_clock;
+	auto next_frame_deadline = clock::now();
+
 	while (m_running.load(std::memory_order_acquire)) {
 		ZoneScopedN("VulkanRenderer::mainRenderThread");
 
@@ -557,20 +558,32 @@ void VulkanRenderer::mainRenderThread() {
 
 		RenderFrame frameToDraw;
 		bool consumedQueuedFrame = false;
+		const double limit_hz = m_frame_rate_limit_hz.load(std::memory_order_relaxed);
 
 		{
 			std::unique_lock lock(m_queue_mutex);
 
+			auto wake_condition = [this] {
+				return !m_ready_frames.empty() || !m_running ||
+				       m_pending_resize_packed.load(std::memory_order_acquire) != kNoPendingResize;
+			};
+
 			if (m_ready_frames.empty()) {
 				if (!m_has_cached_frame) {
-					m_frame_cv.wait(lock, [this] {
-						return !m_ready_frames.empty() || !m_running ||
-						       m_pending_resize_packed.load(std::memory_order_acquire) != kNoPendingResize;
-					});
-					if (!m_running) {
-						return;
+					// Nothing has ever been drawn yet, so block indefinitely for the first frame
+					m_frame_cv.wait(lock, wake_condition);
+				} else if (limit_hz > 0.0) {
+					// Capped, wait till new frame arrives
+					const auto now = clock::now();
+					if (next_frame_deadline > now) {
+						m_frame_cv.wait_for(lock, next_frame_deadline - now, wake_condition);
 					}
 				}
+				// Uncapped, draws even if no new frame data
+			}
+
+			if (!m_running) {
+				return;
 			}
 
 			if (!m_ready_frames.empty()) {
@@ -587,7 +600,18 @@ void VulkanRenderer::mainRenderThread() {
 			}
 		}
 
+		if (limit_hz > 0.0) {
+			// Pace every draw uniformly, so a burst of frames from the main thread can't exceed the cap either
+			std::this_thread::sleep_until(next_frame_deadline);
+			const auto interval = std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(1.0 / limit_hz));
+			const auto now = clock::now();
+			// If we're already behind the natural next deadline, resync to "now +
+			// interval" instead of stacking missed deadlines
+			next_frame_deadline = (next_frame_deadline + interval > now) ? next_frame_deadline + interval : now + interval;
+		}
+
 		Time::get().renderTick();
+		
 		// TODO: Make this a editor keybind
 		// m_core->getRenderDocAPI()->StartFrameCapture(nullptr, nullptr);
 

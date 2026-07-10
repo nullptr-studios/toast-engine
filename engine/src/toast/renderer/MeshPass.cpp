@@ -130,7 +130,14 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t image
 
 		DrawPushConstants data {};
 		data.model = proxy.model;
-		cmd.pushConstants(*shaderLayout.getPipelineLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(DrawPushConstants), &data);
+		data.color = proxy.material != nullptr ? proxy.material->color() : glm::vec4(1.0f);
+		cmd.pushConstants(
+		    *shaderLayout.getPipelineLayout(),
+		    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
+		    0,
+		    sizeof(DrawPushConstants),
+		    &data
+		);
 
 		proxy.mesh->bind(cmd);
 		proxy.mesh->draw(cmd);
@@ -146,12 +153,11 @@ void MeshPass::createResources(const toast::renderer::VulkanCore& core) {
 
 	auto& device = core.getDevice();
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
-
-	// Set 0: allocate one descriptor set per frame-in-flight and write the camera UBO into binding 0 once.
-	// NOTE: allocateDescriptorSets() returns owning vk::raii::DescriptorSet objects; the pool was created with
-	// eFreeDescriptorSet, so if we only kept the raw handle (as this code used to) the descriptor set would be
+	
+	// NOTE: allocateDescriptorSets() returns owning vk::raii::DescriptorSet objects, the pool was created with
+	// eFreeDescriptorSet, so if we only kept the raw handle the descriptor set would be
 	// freed back to the pool the instant the temporary vector went out of scope, leaving a dangling handle that
-	// crashes updateDescriptorSets()/bindDescriptorSets() later. Keep the raii object alive for the pass's lifetime.
+	// crashes later
 	const vk::DescriptorSetLayout frame_set_layout = *layouts[0];
 	m_frame_descriptor_sets.clear();
 	m_frame_descriptor_sets.reserve(VulkanRenderer::kFramesInFlight);
@@ -181,9 +187,7 @@ void MeshPass::createResources(const toast::renderer::VulkanCore& core) {
 void MeshPass::createDefaultMaterialResources(const toast::renderer::VulkanCore& core) {
 	auto& device = core.getDevice();
 
-	// 1x1 opaque white pixel so meshes without a material (or whose texture hasn't finished uploading yet)
-	// still have something valid bound at set 1 - the shader samples gAlbedoSampler unconditionally, so an
-	// unbound/garbage descriptor there is invalid usage even if the mesh doesn't "need" a texture
+	// 1x1 opaque white pixel so meshes without a material
 	toast::renderer::VulkanTexture::Params params {};
 	params.format = vk::Format::eR8G8B8A8Unorm;
 	params.extent = vk::Extent3D {1, 1, 1};
@@ -205,8 +209,7 @@ void MeshPass::createDefaultMaterialResources(const toast::renderer::VulkanCore&
 	setDebugName(core, *staging_buffer, "MeshPass DefaultWhiteTexture StagingBuffer");
 	std::memcpy(staging_buffer.getAllocation().getInfo().pMappedData, white_pixel.data(), white_pixel.size());
 
-	// This only runs once, at startup, so a blocking one-shot submit is fine (no need to go through the
-	// async PendingResourceUpload queue just to upload four bytes)
+	// This only runs once, at startup, so a blocking one-time submit is fine
 	vk::raii::CommandPool one_shot_pool(device, vk::CommandPoolCreateInfo({}, core.getGraphicsQueueFamilyIndex()));
 	const vk::CommandBufferAllocateInfo cmd_alloc_info(*one_shot_pool, vk::CommandBufferLevel::ePrimary, 1);
 	auto cmd_buffers = device.allocateCommandBuffers(cmd_alloc_info);
@@ -301,8 +304,7 @@ auto MeshPass::getMaterialDescriptorSet(const toast::renderer::VulkanCore& core,
 		setDebugName(core, *binding.set, std::format("MeshPass MaterialSet ({})", material.albedoMap().path()));
 	}
 
-	// Only re-issue the descriptor write when the underlying image view actually changed (first time it's
-	// seen, or the texture was reloaded), instead of on every draw/frame like the previous implementation
+	// Only re-issue the descriptor write when the underlying image view actually changed, instead of on every draw/frame like the previous implementation
 	if (binding.bound_view != view) {
 		vk::DescriptorImageInfo imageInfo {};
 		imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;

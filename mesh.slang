@@ -16,6 +16,7 @@ Sampler2D gAlbedoSampler;
 struct PushConstants
 {
     float4x4 model;
+    float4 color;
 };
 
 [[vk::push_constant]]
@@ -89,9 +90,9 @@ float4 fragmentMain(VSOutput input) : SV_Target0
 
     float intensity = dot(input.worldNormal, float3(1.0, -1.0, 1.0)) * 0.5 + 0.5;
     float3 color = input.color * albedo * intensity;
-        
+
     // float3 color =
     //     input.worldNormal * 0.5 + 0.5;
 
-    return float4(albedo, 1.0);
+    return float4(albedo * gPush.color.rgb, gPush.color.a);
 }

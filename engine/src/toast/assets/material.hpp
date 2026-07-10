@@ -15,6 +15,8 @@
 namespace assets {
 class Texture;
 
+
+//FIXME: This should be changed and improved, this doess not currently support material reloading
 class TOAST_API Material : public Data {
 public:
 	static constexpr std::string_view collection = "materials";
@@ -30,38 +32,22 @@ public:
 	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 
 	[[nodiscard]]
-	auto albedoMap() const -> const AssetHandle<Texture>& {
-		return m_albedo_map;
-	}
+	auto albedoMap() const -> AssetHandle<Texture>;
 
 	[[nodiscard]]
-	auto albedoMap() -> AssetHandle<Texture>& {
-		return m_albedo_map;
-	}
+	auto normalMap() const -> AssetHandle<Texture>;
 
 	[[nodiscard]]
-	auto normalMap() const -> const AssetHandle<Texture>& {
-		return m_normal_map;
-	}
-
-	[[nodiscard]]
-	auto normalMap() -> AssetHandle<Texture>& {
-		return m_normal_map;
-	}
-
-	[[nodiscard]]
-	auto color() const noexcept -> const glm::vec4& {
-		return m_color;
-	}
+	auto color() const -> glm::vec4;
 
 	vk::raii::Sampler& albedoSampler() { return m_albedoSampler; }
 
 	void resolveTextureHandles();
 
 private:
-	AssetHandle<Texture> m_albedo_map;
-	AssetHandle<Texture> m_normal_map;
-	glm::vec4 m_color = glm::vec4(1.0f);
+	mutable AssetHandle<Texture> m_albedo_handle;
+	mutable AssetHandle<Texture> m_normal_handle;
+	bool m_sampler_ready = false;
 
 	vk::raii::Sampler m_albedoSampler = nullptr;    // THISSHOULDBECREATEDPERIMAGESAMPLER
 };

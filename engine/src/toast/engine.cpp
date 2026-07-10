@@ -48,7 +48,7 @@ namespace toast {
 namespace {
 IApplication* active_application = nullptr;
 Camera* camera = nullptr;
-float totalTime = 0.0f;
+float totalTime = 0.0;
 double clear_assets_timer = 0.0;
 }
 
@@ -323,6 +323,11 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	m->renderer->addRenderPass(std::move(pass));
 
+	//m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
+
+	// capped to 240 for now
+	m->renderer->setFrameRateLimit(240.0);
+
 	m->renderer->start();
 }
 
@@ -351,9 +356,10 @@ void Engine::createAvaloniaWindow() {
 
 	m->renderer->addRenderPass(std::move(pass));
 
-	// Editor viewport gets the ground grid / debug lines / gizmo overlay; the standalone game window (see
-	// createSDLWindow()) intentionally doesn't
+	// Editor viewport gets the ground grid / debug lines / gizmo overlay
 	m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
+
+	m->renderer->setFrameRateLimit(240.0);
 
 	m->renderer->start();
 }

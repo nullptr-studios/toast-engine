@@ -150,7 +150,35 @@ void World::tick() {
 		ZoneScopedN("World::tick()::function");    // NOLINT
 		ZoneNameF("World::tick()::%s", name.data());
 
+		auto tick_item = [func](const std::variant<Box<Node>, NodeCluster>& n) {
+			if (std::holds_alternative<Box<Node>>(n)) {
+				auto node = std::get<Box<Node>>(n);
+				node->callTick(node->info(), func);
+				return;
+			}
+
+			// Clusters tick their nodes synchronously to avoid race conditions
+			auto cluster = std::get<NodeCluster>(n);
+			for (auto& node : cluster.nodes) {
+				node->callTick(node->info(), func);
+			}
+		};
+
 		for (const auto& wave : phase) {
+			// A wave with a single item has nothing to parallelize; dispatching it to the thread
+			// pool still pays for a packaged_task allocation, a mutex lock, a condition_variable
+			// wake, and an OS context switch to another thread, then blocks this thread on
+			// future::get() waiting for it - all of which dwarfs the cost of just ticking the node
+			// here. Run those inline instead of round-tripping through the pool.
+			if (wave.size() <= 1) {
+				for (const auto& n : wave) {
+					ZoneScopedN("World::tick()::function::wave");    // NOLINT
+					ZoneNameF("Wave #1 (inline)");
+					tick_item(n);
+				}
+				continue;
+			}
+
 			std::vector<std::future<void>> futures;
 			futures.reserve(wave.size());
 
@@ -159,19 +187,7 @@ void World::tick() {
 				ZoneScopedN("World::tick()::function::wave");    // NOLINT
 				ZoneNameF("Wave #%i", count++);
 
-				futures.emplace_back(ThreadPool::push([n, func] {
-					if (std::holds_alternative<Box<Node>>(n)) {
-						auto node = std::get<Box<Node>>(n);
-						node->callTick(node->info(), func);
-						return;
-					}
-
-					// Clusters tick their nodes synchronously to avoid race conditions
-					auto cluster = std::get<NodeCluster>(n);
-					for (auto& node : cluster.nodes) {
-						node->callTick(node->info(), func);
-					}
-				}));
+				futures.emplace_back(ThreadPool::push([n, tick_item] { tick_item(n); }));
 			}
 
 			{
