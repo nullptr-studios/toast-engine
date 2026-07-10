@@ -31,6 +31,8 @@ public:
 	auto shouldClose() -> bool;
 	void test();
 
+	void reloadSettings();
+
 	// window
 	void createSDLWindow(const char*);
 	void createAvaloniaWindow();
@@ -49,6 +51,16 @@ public:
 	/// @brief Copies the latest viewport frame into @p dst
 	/// @return 1 copied, 0 none available, -1 destination too small
 	auto getViewportFrame(void* dst, uint32_t dst_capacity, renderer::ViewportFrameDesc* out) -> int;
+
+	/// @brief Calls begin() on the currently registered application layer (if any)
+	void beginApplication();
+
+	/// @brief Destroys the active application layer and nulls the pointer
+	void popApplication();
+
+	/// @brief Creates the World, then loads and activates the init_scene from project settings
+	/// @note Must be called after toast_init() and toast_create_*_window()
+	void startGame();
 
 private:
 	EnginePimpl* m;

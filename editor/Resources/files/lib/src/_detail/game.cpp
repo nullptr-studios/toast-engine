@@ -16,6 +16,6 @@ game_t* game_create(void) {
 
 void game_destroy(game_t* g) {
 	auto game = reinterpret_cast<MyGame*>(g);
-	// toast::popApplicationLayer(game);
+	toast::popApplicationLayer(game);
 	delete game;
 }

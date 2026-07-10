@@ -46,12 +46,6 @@ public partial class WorkspaceView : UserControl {
 			case Key.G when mods == KeyModifiers.None:
 				vm.TranslateSnapEnabled = !vm.TranslateSnapEnabled;
 				break;
-			case Key.F5 when mods == KeyModifiers.None:
-				if (vm.TogglePlayCommand.CanExecute(null)) vm.TogglePlayCommand.Execute(null);
-				break;
-			case Key.F6 when mods == KeyModifiers.None:
-				if (vm.TogglePlayExternalCommand.CanExecute(null)) vm.TogglePlayExternalCommand.Execute(null);
-				break;
 			default:
 				return;
 		}

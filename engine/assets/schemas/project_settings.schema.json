@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "core://schemas/project_settings.schema.json",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "x-toast-type": "string",
+      "description": "Human-readable project name",
+      "default": "Untitled"
+    },
+    "version": {
+      "type": "array",
+      "x-toast-type": "int[]",
+      "description": "Project version as [major, minor, patch]",
+      "default": [1, 0, 0]
+    },
+    "databases": {
+      "type": "array",
+      "x-toast-type": "string[]",
+      "description": "Each entry X creates an X:// VFS scheme rooted at {ProjectPath}/X",
+      "default": ["assets"]
+    },
+    "gameplay": {
+      "x-toast-type": "gameplay",
+      "description": "Gameplay entry-point settings"
+    }
+  },
+  "definitions": {
+    "gameplay": {
+      "type": "object",
+      "properties": {
+        "init_scene": {
+          "x-toast-type": "asset",
+          "x-toast-asset-type": "node",
+          "description": "Initial scene loaded when the game starts"
+        },
+        "player": {
+          "x-toast-type": "asset",
+          "x-toast-asset-type": "node",
+          "description": "Player prefab spawned at game start"
+        }
+      }
+    }
+  }
+}

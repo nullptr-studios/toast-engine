@@ -184,6 +184,7 @@ auto INodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {
 		TOAST_ASSERT(result, "World", "Node allocation failed");
 	}
 	raw_node->m_info = info;     // attach reflection data
+	raw_node->m_reflect_type_name = info->type;
 	raw_node->m_owner = this;    // attach owner ptr
 
 	return raw_node->box();

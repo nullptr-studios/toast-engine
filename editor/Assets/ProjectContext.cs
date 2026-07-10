@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using editor.Engine;
 using Ktx2Sharp;
 using Proto.Events;
+using Tomlyn;
+using Tomlyn.Model;
 
 namespace editor.Assets;
 
@@ -17,6 +20,10 @@ public static class ProjectContext {
 	public static string CorePath { get; private set; } = "";
 	public static string SavedPath { get; private set; } = "";
 	public static bool IsInitialized { get; private set; }
+
+	public static IReadOnlyList<string> Databases { get; private set; } = ["assets"];
+
+	public static IEnumerable<string> DatabaseRoots => Databases.Select(db => Path.Combine(ProjectPath, db));
 
 	// Fired after an import batch completes
 	public static event Action? AssetsChanged;
@@ -34,16 +41,25 @@ public static class ProjectContext {
 		SavedPath = Path.Combine(ProjectPath, ".toast", "save_data");
 		CorePath = Path.GetFullPath(corePath);
 
-		s_schemes.Clear();
-		s_schemes["assets://"] = AssetsPath;
-		s_schemes["artwork://"] = ArtworkPath;
-		s_schemes["cache://"] = CachePath;
-		s_schemes["core://"] = CorePath;
-		s_schemes["saved://"] = SavedPath;
+		// Read databases from the project .toast file (default to ["assets"])
+		Databases = ReadDatabasesFromProject(ProjectPath);
 
+		RegisterSchemes();
 		EnsureDirectories();
 		Ktx.Init();
 		IsInitialized = true;
+	}
+
+	public static void ReloadProjectSettings() {
+		if (!IsInitialized) return;
+
+		Databases = ReadDatabasesFromProject(ProjectPath);
+		RegisterSchemes();
+		EnsureDirectories();
+
+		ToastEngine.ReloadProjectSettings();
+		AssetDatabase.RebuildAssetDatabase();
+		RaiseAssetsChanged();
 	}
 
 	// "assets://textures/foo.ktx2" → real absolute path
@@ -57,18 +73,75 @@ public static class ProjectContext {
 		return Path.GetFullPath(virtualPath);
 	}
 
-	// Absolute real path → "assets://textures/foo.ktx2", null if not under any known root
+	// Absolute real path "assets://textures/foo.ktx2", null if not under any known root
+	// Uses longest-root-match so that assets:// wins over project://
 	public static string? ToVirtual(string realPath) {
 		var canonical = Path.GetFullPath(realPath);
+		string? bestScheme = null;
+		string? bestRelative = null;
+		var bestLen = -1;
+
 		foreach (var (scheme, root) in s_schemes) {
 			var rootFull = Path.GetFullPath(root) + Path.DirectorySeparatorChar;
-			if (canonical.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase)) {
-				var relative = canonical[rootFull.Length..].Replace(Path.DirectorySeparatorChar, '/');
-				return scheme + relative;
+			if (canonical.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase) && rootFull.Length > bestLen) {
+				bestLen = rootFull.Length;
+				bestScheme = scheme;
+				bestRelative = canonical[rootFull.Length..].Replace(Path.DirectorySeparatorChar, '/');
 			}
 		}
 
-		return null;
+		return bestScheme is not null ? bestScheme + bestRelative : null;
+	}
+
+	public static bool IsUnderContentDatabase(string realPath) {
+		var canonical = Path.GetFullPath(realPath);
+		foreach (var root in DatabaseRoots) {
+			var rootFull = Path.GetFullPath(root) + Path.DirectorySeparatorChar;
+			if (canonical.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase))
+				return true;
+		}
+
+		return false;
+	}
+
+	public static bool IsDatabaseRoot(string realPath) {
+		var canonical = Path.GetFullPath(realPath);
+		foreach (var root in DatabaseRoots)
+			if (string.Equals(canonical, Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase))
+				return true;
+		return false;
+	}
+
+	private static void RegisterSchemes() {
+		s_schemes.Clear();
+
+		// Fixed special schemes
+		s_schemes["project://"] = ProjectPath;
+		s_schemes["artwork://"] = ArtworkPath;
+		s_schemes["cache://"] = CachePath;
+		s_schemes["core://"] = CorePath;
+		s_schemes["saved://"] = SavedPath;
+
+		// Dynamic content database schemes derived from the project's databases list
+		foreach (var db in Databases)
+			s_schemes[db + "://"] = Path.Combine(ProjectPath, db);
+	}
+
+	private static IReadOnlyList<string> ReadDatabasesFromProject(string projectPath) {
+		try {
+			var toastFile = Directory.EnumerateFiles(projectPath, "*.toast").FirstOrDefault();
+			if (toastFile is null) return ["assets"];
+
+			var table = TomlSerializer.Deserialize<TomlTable>(File.ReadAllText(toastFile));
+			if (table?["databases"] is TomlArray dbs) {
+				var list = dbs.Select(d => d?.ToString() ?? "").Where(s => s.Length > 0).ToList();
+				return list.Count > 0 ? list : ["assets"];
+			}
+		} catch {
+			// ignored
+		}
+
+		return ["assets"];
 	}
 
 	private static void EnsureDirectories() {
@@ -77,5 +150,8 @@ public static class ProjectContext {
 		Directory.CreateDirectory(CachePath);
 		Directory.CreateDirectory(Path.Combine(CachePath, "thumbnails"));
 		Directory.CreateDirectory(Path.Combine(CachePath, "autosaves"));
+
+		foreach (var root in DatabaseRoots)
+			Directory.CreateDirectory(root);
 	}
 }

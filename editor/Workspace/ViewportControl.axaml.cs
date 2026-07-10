@@ -28,7 +28,7 @@ public partial class ViewportControl : UserControl {
 		typeof(Cursor).GetProperty("PlatformImpl", BindingFlags.NonPublic | BindingFlags.Instance);
 
 	private static readonly MethodInfo? s_setCursor =
-		typeof(Avalonia.Platform.ITopLevelImpl).GetMethod(
+		typeof(ITopLevelImpl).GetMethod(
 			"SetCursor", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
 	private WriteableBitmap? m_bitmap;
@@ -67,7 +67,9 @@ public partial class ViewportControl : UserControl {
 		base.OnPropertyChanged(change);
 		if (change.Property != PlayModeProperty) return;
 
-		if (change.GetNewValue<bool>()) { } /*BeginCapture();*/ else ReleaseCapture();
+		if (change.GetNewValue<bool>()) { } /*BeginCapture();*/ else {
+			ReleaseCapture();
+		}
 	}
 
 	private void BeginCapture() {

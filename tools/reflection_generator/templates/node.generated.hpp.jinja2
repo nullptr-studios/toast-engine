@@ -115,6 +115,9 @@ struct Reflect<{{ qualified_name }}> {
 {% endfor %}
 	};
 
+{% if split_typeinfo %}
+	TOAST_API static const toast::NodeInfo type_info;
+{% else %}
 	inline static const toast::NodeInfo type_info = {
 		.type       = name,
 		.base_type  = {% if parent_qualified_name %}&Reflect<{{ parent_qualified_name }}>::type_info{% else %}nullptr{% endif %},
@@ -126,6 +129,7 @@ struct Reflect<{{ qualified_name }}> {
 		.construct  = {% if is_interface %}nullptr{% else %}reinterpret_cast<toast::NodeInfo::Factory>(&_detail::{{ snake_name }}_construct){% endif %},
 		.destroy    = {% if is_interface %}nullptr{% else %}reinterpret_cast<toast::NodeInfo::Deleter>(&_detail::{{ snake_name }}_delete){% endif %},
 	};
+{% endif %}
 };
 
 } // namespace toast

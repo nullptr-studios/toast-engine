@@ -66,6 +66,9 @@
   }, {
     "name" : "json-schema-validator",
     "version>=" : "2.4.0"
+  }, {
+    "name" : "lz4",
+    "version>=" : "1.10.0"
   } ],
   "overrides" : [ {
     "name" : "tracy",

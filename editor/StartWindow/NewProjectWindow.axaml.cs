@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Avalonia;
 using Avalonia.Controls;
@@ -25,7 +26,8 @@ public partial class NewProjectWindow : Window {
 
 	public string ProjectTitle { get; private set; } = "";
 	public string ProjectPath { get; private set; } = "";
-	public string ProjectVersion { get; private set; } = "v1.0.0";
+	public List<uint> ProjectVersion { get; private set; } = [1, 0, 0];
+	public List<string> ProjectDatabases { get; } = ["assets"];
 	public string ProjectThumbnail { get; private set; } = "";
 
 	private void UpdateProjectData() {
@@ -62,7 +64,7 @@ public partial class NewProjectWindow : Window {
 
 	private async void Create_OnClick(object? sender, RoutedEventArgs e) {
 		UpdateProjectData();
-		ProjectVersion = "v1.0.0";
+		ProjectVersion = [1, 0, 0];
 
 		try {
 			if (Directory.Exists(m_projectFolder))
@@ -71,9 +73,15 @@ public partial class NewProjectWindow : Window {
 			Directory.CreateDirectory(m_projectFolder!);
 
 			// TODO: This should be created in c++
+			var versionArray = new TomlArray();
+			foreach (var v in ProjectVersion) versionArray.Add((long)v);
+			var databasesArray = new TomlArray();
+			foreach (var db in ProjectDatabases) databasesArray.Add(db);
+
 			var projectFile = new TomlTable {
 				["name"] = ProjectTitle,
-				["version"] = ProjectVersion
+				["version"] = versionArray,
+				["databases"] = databasesArray
 			};
 
 			var projectFileStr = TomlSerializer.Serialize(projectFile);
