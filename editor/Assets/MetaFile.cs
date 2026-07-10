@@ -183,6 +183,21 @@ public static class MetaFile {
 		}
 	}
 
+	/// Rewrites the modified_at of an existing .meta in place;
+	public static bool Touch(string virtualPath) {
+		var metaPath = ProjectContext.Resolve(virtualPath);
+		if (!metaPath.EndsWith(".meta")) metaPath += ".meta";
+		if (!File.Exists(metaPath)) return false;
+		try {
+			var dto = TomlSerializer.Deserialize<MetaFileDto>(File.ReadAllText(metaPath))!;
+			dto.ModifiedAt = DateTime.UtcNow.ToString("o");
+			File.WriteAllText(metaPath, TomlSerializer.Serialize(dto));
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
 	public static IEnumerable<string> FindAll(string directory) {
 		return Directory.EnumerateFiles(directory, "*.meta", SearchOption.AllDirectories);
 	}

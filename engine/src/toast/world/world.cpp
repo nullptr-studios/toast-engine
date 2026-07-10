@@ -17,72 +17,6 @@ namespace toast {
 
 using namespace _detail;
 
-#pragma region NODE_CLUSTER
-
-namespace _detail {
-TOAST_FORCE_INLINE void NodeCluster::earlyTick() {
-	for (auto& node : nodes) {
-		node->callTick(node->info(), TickFunctionList::early_tick);
-	}
-}
-
-TOAST_FORCE_INLINE void NodeCluster::tick() {
-	for (auto& node : nodes) {
-		node->callTick(node->info(), TickFunctionList::tick);
-	}
-}
-
-TOAST_FORCE_INLINE void NodeCluster::postPhysics() {
-	for (auto& node : nodes) {
-		node->callTick(node->info(), TickFunctionList::post_physics);
-	}
-}
-
-TOAST_FORCE_INLINE void NodeCluster::lateTick() {
-	for (auto& node : nodes) {
-		node->callTick(node->info(), TickFunctionList::late_tick);
-	}
-}
-
-TOAST_FORCE_INLINE auto NodeCluster::hasEarlyTick() -> bool {
-	for (auto& node : nodes) {
-		if (node->info() && node->info()->hasFunction(TickFunctionList::early_tick)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-TOAST_FORCE_INLINE auto NodeCluster::hasTick() -> bool {
-	for (auto& node : nodes) {
-		if (node->info() && node->info()->hasFunction(TickFunctionList::tick)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-TOAST_FORCE_INLINE auto NodeCluster::hasPostPhysics() -> bool {
-	for (auto& node : nodes) {
-		if (node->info() && node->info()->hasFunction(TickFunctionList::post_physics)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-TOAST_FORCE_INLINE auto NodeCluster::hasLateTick() -> bool {
-	for (auto& node : nodes) {
-		if (node->info() && node->info()->hasFunction(TickFunctionList::late_tick)) {
-			return true;
-		}
-	}
-	return false;
-}
-}
-
-#pragma endregion NODE_CLUSTER
-
 World::World() {
 	instance = this;
 
@@ -142,101 +76,26 @@ void World::tick() {
 	drainLoadQueue();
 	drainSpawnQueue();
 
-	/**
-	 * dispatches one phase: submits each wave to the thread pool and joins before advancing to the next wave;
-	 * clusters tick their nodes synchronously within the thread to preserve SCC ordering
-	 */
-	auto run_phase = [](const std::vector<TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) {
-		ZoneScopedN("World::tick()::function");    // NOLINT
-		ZoneNameF("World::tick()::%s", name.data());
-
-		auto tick_item = [func](const std::variant<Box<Node>, NodeCluster>& n) {
-			if (std::holds_alternative<Box<Node>>(n)) {
-				auto node = std::get<Box<Node>>(n);
-				node->callTick(node->info(), func);
-				return;
-			}
-
-			// Clusters tick their nodes synchronously to avoid race conditions
-			auto cluster = std::get<NodeCluster>(n);
-			for (auto& node : cluster.nodes) {
-				node->callTick(node->info(), func);
-			}
-		};
-
-		for (const auto& wave : phase) {
-			// A wave with a single item has nothing to parallelize; dispatching it to the thread
-			// pool still pays for a packaged_task allocation, a mutex lock, a condition_variable
-			// wake, and an OS context switch to another thread, then blocks this thread on
-			// future::get() waiting for it - all of which dwarfs the cost of just ticking the node
-			// here. Run those inline instead of round-tripping through the pool.
-			if (wave.size() <= 1) {
-				for (const auto& n : wave) {
-					ZoneScopedN("World::tick()::function::wave");    // NOLINT
-					ZoneNameF("Wave #1 (inline)");
-					tick_item(n);
-				}
-				continue;
-			}
-
-			std::vector<std::future<void>> futures;
-			futures.reserve(wave.size());
-
-			int count = 1;
-			for (const auto& n : wave) {
-				ZoneScopedN("World::tick()::function::wave");    // NOLINT
-				ZoneNameF("Wave #%i", count++);
-
-				futures.emplace_back(ThreadPool::push([n, tick_item] { tick_item(n); }));
-			}
-
-			{
-				ZoneScopedN("Thread Pool semaphore");    // NOLINT
-				for (auto& f : futures) {
-					f.get();
-				}
-			}
-		}
-	};
-
-	run_phase(tick_schedule.early_tick, TickFunctionList::early_tick, "early_tick");
-	run_phase(tick_schedule.tick, TickFunctionList::tick, "tick");
-	// TODO: physics step goes between tick and post_physics
-	run_phase(tick_schedule.post_physics, TickFunctionList::post_physics, "post_physics");
-	run_phase(tick_schedule.late_tick, TickFunctionList::late_tick, "late_tick");
+	m_scheduler.run();
 }
 
 void World::registerDependency(Node& from, Node& to) {
-	if (&from == &to) {
-		TOAST_WARN("World", "{} ({}) tried to register a dependency to itself", from.name(), from.uid());
-		return;
-	}
-
-	// don't store duplicates
-	auto& edges = instance->dependency_graph.connections[from];
-	if (std::ranges::contains(edges, Box<Node>(to))) {
-		return;
-	}
-
-	edges.emplace_back(to);
-	instance->dependency_graph.inverse_connections[to].emplace_back(from);
-	TOAST_TRACE("World", "Added dependency from {} to {}", from.name(), from.uid());
+	instance->m_scheduler.registerDependency(from, to);
 }
 
 void World::unregisterDependency(Node& from, Node& to) {
-	// Remove the dependency from the forward graph
-	auto& edges = instance->dependency_graph.connections[from];
-	std::erase(edges, Box<Node>(to));
-
-	// Remove the dependency from the inverse graph
-	auto& inverse_edges = instance->dependency_graph.inverse_connections[to];
-	std::erase(inverse_edges, Box<Node>(from));
+	instance->m_scheduler.unregisterDependency(from, to);
 }
 
-void World::loadNode(UID uid) {
+void World::loadNode(UID uid, bool activate_as_root) {
 	ZoneScoped;
 	ZoneNameF("World::loadNode(%s)", uid.get().c_str());
 	TOAST_INFO("World", "Loading node {} from file", uid);
+
+	if (activate_as_root) {
+		std::scoped_lock lock(instance->m.load_mutex);
+		instance->m.pending_root_uid = uid;
+	}
 
 	// Load stages:
 	//		1: get the node_file
@@ -285,7 +144,7 @@ void World::loadNode(UID uid) {
 	instance->m.load_futures.emplace_back(std::move(future));
 }
 
-void World::loadNode(std::string_view uri) {
+void World::loadNode(std::string_view uri, bool activate_as_root) {
 	// just reroute to the actual loadNode() implementation
 	auto id = assets::resolveURI(uri);
 
@@ -296,26 +155,39 @@ void World::loadNode(std::string_view uri) {
 	}
 #endif
 
-	loadNode(*id);
+	loadNode(*id, activate_as_root);
 }
 
 void World::drainLoadQueue() {
 	std::vector<Box<Node>> loaded;
+	UID pending_uid {0};
 	{
 		std::scoped_lock lock(m.load_mutex);
 		if (trees.load_queue.empty()) {
 			return;
 		}
 		std::swap(loaded, trees.load_queue);
+		pending_uid = m.pending_root_uid;
 	}
 
 	ZoneScoped;
 
 	// Freshly loaded trees go to the cached list and are ready to be activated
 	for (auto& root : loaded) {
+		const UID node_uid = root->uid();
 		root->changeNodeState(NodeState::cached);
-		TOAST_TRACE("World", "Node {} ({}) moved to cache", root->name(), root->uid());
+		TOAST_TRACE("World", "Node {} ({}) moved to cache", root->name(), node_uid);
 		trees.cached.emplace_back(std::move(root));
+
+		// Auto-activate if this is the pending start scene
+		if (pending_uid.data() != 0 && node_uid.data() == pending_uid.data()) {
+			TOAST_INFO("World", "Auto-activating start scene {}", node_uid);
+			{
+				std::scoped_lock lock(m.load_mutex);
+				m.pending_root_uid = UID {0};
+			}
+			setRoot(*trees.cached.back());
+		}
 	}
 }
 
@@ -730,6 +602,30 @@ auto World::findCached(std::string_view name) -> Box<Node> {
 	return {};
 }
 
+void World::hotReload() {
+	if (!instance) {
+		return;
+	}
+
+	std::function<void(const Box<Node>&)> refresh_fn;
+	refresh_fn = [&refresh_fn](const Box<Node>& box) -> void {
+		if (!box.exists()) {
+			return;
+		}
+		const_cast<Node&>(*box).refreshInfo();
+		for (const auto& child : box->children()) {
+			refresh_fn(child);
+		}
+	};
+
+	if (instance->trees.root.exists()) {
+		refresh_fn(instance->trees.root);
+	}
+	for (const auto& node : instance->trees.cached) {
+		const_cast<Node&>(*node).refreshInfo();
+	}
+}
+
 auto World::graphviz() -> std::string {
 	return instance->dependencyGraphGraphviz();
 }
@@ -745,6 +641,8 @@ void World::destroyNode(Node& node) {
 
 	std::erase(instance->trees.cached, node.box());
 	node.changeNodeState(NodeState::destroy);
+	node.enabled(false);
+	node.propagateCallTick(node.info(), TickFunctionList::destroy);
 	instance->trees.destroy_queue.emplace_back(node.box());
 	TOAST_TRACE("World", "Queued node {} ({}) for destruction", node.name(), node.uid());
 }
@@ -755,14 +653,6 @@ void World::drainDestroyQueue() {
 
 	if (!doomed.empty()) {
 		ZoneScopedN("World::drainDestroyQueue()");
-
-		/**
-		 * order matters: destroy() callbacks first (tree is still intact), then sever Box<> edges, then free;
-		 * this way destroy() can safely read its own children and parent
-		 */
-		for (auto& root : doomed) {
-			root->propagateCallTick(root->info(), TickFunctionList::destroy);
-		}
 
 		// Collect every node of every doomed tree
 		std::vector<Node*> victims;
@@ -788,8 +678,8 @@ void World::drainDestroyQueue() {
 				std::erase_if(edges, [&](const Box<Node>& edge) { return edge.exists() && victim_set.contains(&*edge); });
 			}
 		};
-		scrub(dependency_graph.connections);
-		scrub(dependency_graph.inverse_connections);
+		scrub(m_scheduler.graph.connections);
+		scrub(m_scheduler.graph.inverse_connections);
 
 		// Detach the tree structure so no victim holds a Box to another
 		for (Node* victim : victims) {
@@ -826,8 +716,8 @@ void World::markNode3DDependantsDirty(const Box<Node>& node) noexcept {
 		return;
 	}
 
-	auto it = instance->dependency_graph.inverse_connections.find(node);
-	if (it != instance->dependency_graph.inverse_connections.end()) {
+	auto it = instance->m_scheduler.graph.inverse_connections.find(node);
+	if (it != instance->m_scheduler.graph.inverse_connections.end()) {
 		for (auto& dependent : it->second) {
 			if (auto node3d = dependent.as<Node3D>()) {
 				node3d->m_dirty_world = true;
@@ -838,407 +728,20 @@ void World::markNode3DDependantsDirty(const Box<Node>& node) noexcept {
 
 void World::computeDependencyGraph() {
 	ZoneScoped;
-	TOAST_TRACE("World", "Computing dependency graph");
 
-	std::vector<std::vector<Box<Node>>> subgraphs;
+	std::vector<Box<Node>> all_nodes;
 	{
 		// Loader threads insert into m.nodes concurrently
 		std::scoped_lock lock(nodes_mutex);
-
-		// Guarantee every existing node exists in the subgraph
 		forEachNode([&](const ControlBox& node) {
 			if (!node.node || node.node->m_state == NodeState::destroy) {
 				return;
 			}
-			dependency_graph.connections[node.node->box()];
-			dependency_graph.inverse_connections[node.node->box()];
+			all_nodes.emplace_back(node.node->box());
 		});
-
-		subgraphs = subgraphSeparation();
 	}
 
-	// We are gonna remove nodes that will not be able to get ticked because:
-	//		1) they don't have any tick functions
-	//		2) they are not in an active state (cached, mid-load, etc. don't tick)
-	for (auto& g : subgraphs) {
-		std::erase_if(g, [](const auto& n) { return not n->info() || not n->info()->hasFunction(TickFunctionList::tick_mask); });
-
-		std::erase_if(g, [](const auto& n) { return n->m_state != NodeState::root && n->m_state != NodeState::global; });
-	}
-
-	// Drop subgraphs that became entirely empty
-	std::erase_if(subgraphs, [](const auto& g) { return g.empty(); });
-
-	auto result = tarjanAlgorithm(subgraphs);
-
-	auto waves = assignWaves(result);
-	auto ts = optimizeWaves(waves);
-	tick_schedule = std::move(ts);
-	TOAST_TRACE(
-	    "World",
-	    "Dependency graph: early={} tick={} post_physics={} late={} waves",
-	    tick_schedule.early_tick.size(),
-	    tick_schedule.tick.size(),
-	    tick_schedule.post_physics.size(),
-	    tick_schedule.late_tick.size()
-	);
-}
-
-auto World::subgraphSeparation() -> std::vector<std::vector<Box<Node>>> {
-	ZoneScoped;
-
-	using NodeGraph = std::vector<Box<Node>>;
-	std::unordered_set<Box<Node>> visited;
-	std::vector<NodeGraph> subgraphs;
-
-	forEachNode([&](const ControlBox& start_cn) {
-		if (!start_cn.node || start_cn.node->m_state == NodeState::destroy) {
-			return;
-		}
-		auto start_node = start_cn.node->box();
-		if (visited.contains(start_node)) {
-			return;
-		}
-
-		ZoneScoped;
-
-		NodeGraph component;
-		std::queue<Box<Node>> queue;
-
-		queue.push(start_node);
-		visited.insert(start_node);
-
-		while (!queue.empty()) {
-			ZoneScoped;
-
-			auto current = queue.front();
-			queue.pop();
-			component.push_back(current);
-
-			// Walk forward edges
-			if (auto it = dependency_graph.connections.find(current); it != dependency_graph.connections.end()) {
-				for (const auto& neighbor : it->second) {
-					if (visited.contains(neighbor)) {
-						continue;
-					}
-					visited.insert(neighbor);
-					queue.push(neighbor);
-				}
-			}
-
-			// Walk backward edges
-			if (auto it = dependency_graph.inverse_connections.find(current); it != dependency_graph.inverse_connections.end()) {
-				for (const auto& neighbor : it->second) {
-					if (visited.contains(neighbor)) {
-						continue;
-					}
-					visited.insert(neighbor);
-					queue.push(neighbor);
-				}
-			}
-		}
-
-		NodeGraph subgraph;
-		subgraph.reserve(component.size());
-		subgraph.assign(std::make_move_iterator(component.begin()), std::make_move_iterator(component.end()));
-		subgraphs.push_back(std::move(subgraph));
-	});
-
-	return subgraphs;
-}
-
-/**
- * produces SCCs in reverse topological order so assignWaves iterates in the right direction;
- * SCCs with more than one node indicate a dependency cycle and are bundled into a NodeCluster
- */
-auto World::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_subgraphs) -> std::vector<TickSchedule::Wave> {
-	ZoneScoped;
-
-	// SearchContext tracks the state of the DFS traversal for Tarjan's algorithm.
-	struct SearchContext {
-		std::unordered_map<Box<Node>, int> index;
-		std::unordered_map<Box<Node>, int> low_link;
-		std::unordered_map<Box<Node>, bool> on_stack;
-		std::stack<Box<Node>> stack;
-		int counter = 0;
-		std::vector<std::vector<Box<Node>>> sccs;    // Components in reverse topological order
-	};
-
-	                                               // clang-format off
-	// We start with a list of nodes per subgraph that survived the initial pruning
-	std::vector<TickSchedule::Wave> processed_subgraphs;
-	processed_subgraphs.reserve(input_subgraphs.size());
-	for (const auto& subgraph_nodes : input_subgraphs) {
-		TickSchedule::Wave wave;
-		wave.reserve(subgraph_nodes.size());
-		for (const auto& node : subgraph_nodes) {
-			wave.emplace_back(node);
-		}
-		processed_subgraphs.emplace_back(std::move(wave));
-	}
-	// clang-format on
-
-	std::vector<TickSchedule::Wave> result;
-
-	for (const auto& current_subgraph : processed_subgraphs) {
-		ZoneScoped;
-
-		// Create a lookup set to efficiently filter out neighbors that aren't part of this subgraph
-		std::unordered_set<Box<Node>> nodes_in_subgraph;
-		for (const auto& variant : current_subgraph) {
-			nodes_in_subgraph.insert(std::get<Box<Node>>(variant));
-		}
-
-		SearchContext search_context;
-
-		// strong_connect is a recursive DFS function that finds SCCs
-		// An SCC is a group of nodes where every node is reachable from every other node in the group
-		// In our dependency graph, an SCC with >1 node indicates a circular dependency
-		std::function<void(const Box<Node>&)> strong_connect = [&](const Box<Node>& current_node) {
-			ZoneScopedN("strong_connect");    // NOLINT
-
-			search_context.index[current_node] = search_context.low_link[current_node] = search_context.counter++;
-			search_context.stack.push(current_node);
-			search_context.on_stack[current_node] = true;
-
-			// Explore neighbors
-			if (auto it = dependency_graph.connections.find(current_node); it != dependency_graph.connections.end()) {
-				for (const auto& neighbor_node : it->second) {
-					// We only care about dependencies between nodes that are actually being ticked
-					if (!nodes_in_subgraph.contains(neighbor_node)) {
-						continue;
-					}
-
-					if (!search_context.index.contains(neighbor_node)) {
-						// Neighbor hasn't been visited yet; recurse
-						strong_connect(neighbor_node);
-						search_context.low_link[current_node] =
-						    std::min(search_context.low_link[current_node], search_context.low_link[neighbor_node]);
-					} else if (search_context.on_stack[neighbor_node]) {
-						// Neighbor is on the stack, meaning we've found a cycle
-						search_context.low_link[current_node] =
-						    std::min(search_context.low_link[current_node], search_context.index[neighbor_node]);
-					}
-				}
-			}
-
-			// If current_node is the root of an SCC, pop the stack to extract the full component
-			if (search_context.low_link[current_node] == search_context.index[current_node]) {
-				std::vector<Box<Node>> scc;
-				while (true) {
-					auto popped_node = search_context.stack.top();
-					search_context.stack.pop();
-					search_context.on_stack[popped_node] = false;
-					scc.push_back(popped_node);
-					if (popped_node == current_node) {
-						break;
-					}
-				}
-				search_context.sccs.emplace_back(std::move(scc));
-			}
-		};
-
-		for (const auto& variant : current_subgraph) {
-			const auto& node = std::get<Box<Node>>(variant);
-			if (!search_context.index.contains(node)) {
-				strong_connect(node);
-			}
-		}
-
-		// Convert SCCs into a wave
-		TickSchedule::Wave sorted_wave;
-		sorted_wave.reserve(search_context.sccs.size());
-
-		for (auto& scc : search_context.sccs) {
-			if (scc.size() == 1) {
-				sorted_wave.emplace_back(scc[0]);
-			} else {
-				// Group all nodes in the cycle into a NodeCluster
-				// This ensures they are ticked as a single atomic unit to avoid race conditions
-				TOAST_TRACE("World", "Dependency cycle detected ({} nodes) -> grouping into NodeCluster", scc.size());
-				sorted_wave.emplace_back(NodeCluster(scc));
-			}
-		}
-		result.emplace_back(std::move(sorted_wave));
-	}
-
-	return result;
-}
-
-/**
- * assigns each item a wave index equal to max(predecessor wave) + 1;
- * items with no predecessors land on wave 0 and run fully in parallel
- */
-auto World::assignWaves(const std::vector<TickSchedule::Wave>& subgraphs) -> std::vector<TickSchedule::Wave> {
-	// First, map every node back to its containing item
-	// This allows us to treat clusters as a single scheduling unit
-	struct ItemLocation {
-		int subgraph_idx;
-		int item_idx;
-	};
-
-	ZoneScoped;
-
-	std::unordered_map<Box<Node>, ItemLocation> node_to_location;
-
-	for (int subgraph_idx = 0; std::cmp_less(subgraph_idx, subgraphs.size()); ++subgraph_idx) {
-		for (int item_idx = 0; std::cmp_less(item_idx, subgraphs[subgraph_idx].size()); ++item_idx) {
-			std::visit(
-			    [&](const auto& item) {
-				    using T = std::decay_t<decltype(item)>;
-				    if constexpr (std::is_same_v<T, Box<Node>>) {
-					    node_to_location[item] = {subgraph_idx, item_idx};
-				    } else {
-					    // NodeCluster
-					    for (const auto& node : item.nodes) {
-						    node_to_location[node] = {subgraph_idx, item_idx};
-					    }
-				    }
-			    },
-			    subgraphs[subgraph_idx][item_idx]
-			);
-		}
-	}
-
-	// Prepare wave levels for every item in every subgraph
-	std::vector<std::vector<int>> item_wave_levels(subgraphs.size());
-	for (int subgraph_idx = 0; std::cmp_less(subgraph_idx, subgraphs.size()); ++subgraph_idx) {
-		item_wave_levels[subgraph_idx].assign(subgraphs[subgraph_idx].size(), 0);
-	}
-
-	// Calculate the wave level for each item
-	for (int subgraph_idx = 0; std::cmp_less(subgraph_idx, subgraphs.size()); ++subgraph_idx) {
-		ZoneScopedN("Calculate wave level");
-
-		// Iterating in reverse because Tarjan's SCCs are in reverse topological order
-		for (int item_idx = (int)subgraphs[subgraph_idx].size() - 1; item_idx >= 0; --item_idx) {
-			// Collect all physical nodes in this scheduling item
-			std::vector<Box<Node>> item_nodes;
-			std::visit(
-			    [&](const auto& item) {
-				    using T = std::decay_t<decltype(item)>;
-				    if constexpr (std::is_same_v<T, Box<Node>>) {
-					    item_nodes.push_back(item);
-				    } else {
-					    item_nodes.insert(item_nodes.end(), item.nodes.begin(), item.nodes.end());
-				    }
-			    },
-			    subgraphs[subgraph_idx][item_idx]
-			);
-
-			// A node must be scheduled in a wave strictly higher than all of its predecessors
-			int max_predecessor_wave = -1;
-			for (const auto& node : item_nodes) {
-				auto it = dependency_graph.inverse_connections.find(node);
-				if (it == dependency_graph.inverse_connections.end()) {
-					continue;
-				}
-
-				for (const auto& predecessor : it->second) {
-					auto loc_it = node_to_location.find(predecessor);
-					if (loc_it == node_to_location.end()) {
-						continue;    // Predecessor was pruned
-					}
-
-					auto [pred_subgraph_idx, pred_item_idx] = loc_it->second;
-					// We only care about dependencies within the same subgraph island
-					if (pred_subgraph_idx == subgraph_idx && pred_item_idx != item_idx) {
-						max_predecessor_wave = std::max(max_predecessor_wave, item_wave_levels[pred_subgraph_idx][pred_item_idx]);
-					}
-				}
-			}
-			item_wave_levels[subgraph_idx][item_idx] = max_predecessor_wave + 1;
-		}
-	}
-
-	// Find the global maximum wave index to determine how many execution buckets we need
-	int global_max_wave = 0;
-	for (const auto& levels : item_wave_levels) {
-		for (int level : levels) {
-			global_max_wave = std::max(global_max_wave, level);
-		}
-	}
-
-	// Group items into waves
-	std::vector<TickSchedule::Wave> buckets(global_max_wave + 1);
-
-	for (int subgraph_idx = 0; std::cmp_less(subgraph_idx, subgraphs.size()); ++subgraph_idx) {
-		for (int item_idx = 0; std::cmp_less(item_idx, subgraphs[subgraph_idx].size()); ++item_idx) {
-			buckets[item_wave_levels[subgraph_idx][item_idx]].emplace_back(subgraphs[subgraph_idx][item_idx]);
-		}
-	}
-
-	return buckets;
-}
-
-/**
- * prunes items that don't implement the relevant tick function for each phase,
- * then bakes the final wave index into Node::m_wave for O(1) lookup at dispatch time
- */
-auto World::optimizeWaves(const std::vector<TickSchedule::Wave>& waves) -> TickSchedule {
-	TickSchedule schedule = {
-	  .early_tick = waves,
-	  .tick = waves,
-	  .post_physics = waves,
-	  .late_tick = waves,
-	};
-
-	ZoneScoped;
-
-	/**
-	 * filter_and_assign_wave removes nodes from a wave if they don't have the relevant
-	 * tick function for that phase, and records the wave index into the node's metadata
-	 */
-	auto filter_and_assign_wave =
-	    [](std::vector<TickSchedule::Wave>& phase_waves, int wave_meta_index, auto&& has_function_checker) {
-		    // Remove items that don't participate in this phase
-		    for (auto& wave : phase_waves) {
-			    std::erase_if(wave, [&](std::variant<Box<Node>, NodeCluster>& item) {
-				    if (std::holds_alternative<Box<Node>>(item)) {
-					    auto node = std::get<Box<Node>>(item);
-					    return !has_function_checker(node);
-				    }
-
-				    const auto& cluster = std::get<NodeCluster>(item);
-				    return !std::ranges::any_of(cluster.nodes, [&](const auto& node) { return has_function_checker(node); });
-			    });
-		    }
-
-		    // Drop waves that became empty after filtering
-		    std::erase_if(phase_waves, [](const auto& wave) { return wave.empty(); });
-
-		    // Assign the resulting wave index to all surviving nodes
-		    for (int wave_idx = 0; std::cmp_less(wave_idx, phase_waves.size()); ++wave_idx) {
-			    for (auto& item : phase_waves[wave_idx]) {
-				    std::visit(
-				        [&](auto& value) {
-					        using T = std::decay_t<decltype(value)>;
-					        if constexpr (std::is_same_v<T, Box<Node>>) {
-						        value->m_wave[wave_meta_index] = wave_idx;
-					        } else {
-						        for (auto node : value.nodes) {
-							        node->m_wave[wave_meta_index] = wave_idx;
-						        }
-					        }
-				        },
-				        item
-				    );
-			    }
-		    }
-	    };
-
-	filter_and_assign_wave(schedule.early_tick, 0, [](auto n) {
-		return n->info() && n->info()->hasFunction(TickFunctionList::early_tick);
-	});
-	filter_and_assign_wave(schedule.tick, 1, [](auto n) { return n->info() && n->info()->hasFunction(TickFunctionList::tick); });
-	filter_and_assign_wave(schedule.post_physics, 2, [](auto n) {
-		return n->info() && n->info()->hasFunction(TickFunctionList::post_physics);
-	});
-	filter_and_assign_wave(schedule.late_tick, 3, [](auto n) {
-		return n->info() && n->info()->hasFunction(TickFunctionList::late_tick);
-	});
-
-	return schedule;
+	m_scheduler.compute(all_nodes);
 }
 
 auto World::swapRoot(Node& node) -> Box<Node> {
@@ -1527,7 +1030,7 @@ auto World::dependencyGraphGraphviz() const -> std::string {
 			std::unordered_set<std::size_t> visited;
 			std::unordered_set<std::size_t> connected;
 
-			if (auto it = dependency_graph.connections.find(node); it != dependency_graph.connections.end()) {
+			if (auto it = m_scheduler.graph.connections.find(node); it != m_scheduler.graph.connections.end()) {
 				for (const auto& succ : it->second) {
 					q.push(succ);
 					visited.insert(succ.rid());
@@ -1544,7 +1047,7 @@ auto World::dependencyGraphGraphviz() const -> std::string {
 						out << "    " << node_ids.at(rid) << " -> " << node_ids.at(curr_rid) << ";\n";
 					}
 				} else {
-					if (auto it = dependency_graph.connections.find(curr); it != dependency_graph.connections.end()) {
+					if (auto it = m_scheduler.graph.connections.find(curr); it != m_scheduler.graph.connections.end()) {
 						for (const auto& succ : it->second) {
 							if (visited.insert(succ.rid()).second) {
 								q.push(succ);
@@ -1558,10 +1061,10 @@ auto World::dependencyGraphGraphviz() const -> std::string {
 		out << "  }\n";
 	};
 
-	emit_stage("early_tick", tick_schedule.early_tick);
-	emit_stage("tick", tick_schedule.tick);
-	emit_stage("post_physics", tick_schedule.post_physics);
-	emit_stage("late_tick", tick_schedule.late_tick);
+	emit_stage("early_tick", m_scheduler.schedule.early_tick);
+	emit_stage("tick", m_scheduler.schedule.tick);
+	emit_stage("post_physics", m_scheduler.schedule.post_physics);
+	emit_stage("late_tick", m_scheduler.schedule.late_tick);
 
 	out << "}\n";
 	return out.str();
@@ -1618,11 +1121,11 @@ void WorldTestAccess::addTickStage(Node& node, TickFunctionList stage) {
 }
 
 auto WorldTestAccess::tickSchedule(World& world) noexcept -> TickSchedule& {
-	return world.tick_schedule;
+	return world.m_scheduler.schedule;
 }
 
 auto WorldTestAccess::dependencyGraph(World& world) noexcept -> World::DependencyGraph& {
-	return world.dependency_graph;
+	return world.m_scheduler.graph;
 }
 
 void WorldTestAccess::computeDependencyGraph(World& world) {
@@ -1655,17 +1158,18 @@ void WorldTestAccess::setWorldRoot(World& world, Node& node) {
 void WorldTestAccess::initAssetManager(std::string_view assets_dir, std::string_view cache_dir) {
 	static std::unique_ptr<assets::AssetManager> manager;
 
-	std::filesystem::path assets_path {std::string(assets_dir)};
+	std::filesystem::path assets_p {std::string(assets_dir)};
 	std::filesystem::path cache_path {std::string(cache_dir)};
 	assets::AssetManager::setPaths(
 	    assets::Paths {
-	      .assets = assets_path,
-	      .artworks = assets_path,
+	      .project = assets_p,
+	      .artworks = assets_p,
 	      .cache = cache_path,
-	      .saved = assets_path,
-	      .core = assets_path,
+	      .saved = assets_p,
+	      .core = assets_p,
 	    }
 	);
+	assets::AssetManager::registerDatabase("assets", assets_p);
 
 	if (not manager) {
 		manager = std::make_unique<assets::AssetManager>();    // ctor reads the manifest with the paths above

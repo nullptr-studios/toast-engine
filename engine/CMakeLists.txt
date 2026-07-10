@@ -28,6 +28,8 @@ find_package(unofficial-vulkan-memory-allocator-hpp CONFIG REQUIRED)
 find_package(slang CONFIG REQUIRED)
 find_package(protobuf CONFIG REQUIRED)
 find_package(tinysplinecxx CONFIG REQUIRED)
+find_package(lz4 CONFIG REQUIRED)
+find_package(tomlplusplus CONFIG REQUIRED)
 
 # External paths
 set(EXTERNAL_INC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/inc")
@@ -58,6 +60,7 @@ add_custom_command(
         --input "${CMAKE_SOURCE_DIR}/engine/src/toast"
         --include-root "${CMAKE_SOURCE_DIR}/engine/src"
         --register-fn "registerEngineTypes"
+        --split-typeinfo
         COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
         DEPENDS ${TOAST_REFLECTED_HEADERS}
         COMMENT "Regenerating reflection metadata"
@@ -72,8 +75,8 @@ set(TOAST_ENGINE_OUTPUT_ROOT "${OUTPUT_ROOT}/$<CONFIG>/toast_engine")
 set(TOAST_ENGINE_BIN_DIR "${TOAST_ENGINE_OUTPUT_ROOT}/bin")
 
 target_include_directories(toast_engine
-        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/generated" "${CMAKE_CURRENT_SOURCE_DIR}" "${EXTERNAL_INC_DIR}"
-        PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/ffi"
+        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" "${EXTERNAL_INC_DIR}"
+        PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/ffi" "${CMAKE_CURRENT_SOURCE_DIR}/generated"
 )
 
 # target_compile_definitions(toast_engine PRIVATE VK_NO_PROTOTYPES)
@@ -89,6 +92,7 @@ target_link_libraries(toast_engine
         GPUOpen::VulkanMemoryAllocator
         unofficial::VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-Hpp
         slang::gfx slang::slang protobuf::libprotobuf tinysplinecxx::tinysplinecxx
+        LZ4::lz4
         $<$<CONFIG:Debug>:${EXTERNAL_LIBS_DEBUG}>
         $<$<NOT:$<CONFIG:Debug>>:${EXTERNAL_LIBS_RELEASE}>
         PUBLIC
@@ -152,14 +156,29 @@ list(GET _nlohmann_include_list 0 _nlohmann_include)
 get_target_property(_tracy_include_list Tracy::TracyClient INTERFACE_INCLUDE_DIRECTORIES)
 list(GET _tracy_include_list 0 _tracy_include)
 
+get_target_property(_toml_include_list tomlplusplus::tomlplusplus INTERFACE_INCLUDE_DIRECTORIES)
+list(GET _toml_include_list 0 _toml_include)
+
+get_target_property(_glm_include_list glm::glm-header-only INTERFACE_INCLUDE_DIRECTORIES)
+list(GET _glm_include_list 0 _glm_include)
+
+get_target_property(_tinyspline_include_list tinysplinecxx::tinysplinecxx INTERFACE_INCLUDE_DIRECTORIES)
+list(GET _tinyspline_include_list 0 _tinyspline_include)
+
 add_custom_command(TARGET toast_engine POST_BUILD
         # Headers
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/include" "${TOAST_ENGINE_OUTPUT_ROOT}/include"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/ffi" "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
+        # Generated reflection headers
+        COMMAND ${CMAKE_COMMAND} "-DSRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/generated" "-DDST_DIR=${TOAST_ENGINE_OUTPUT_ROOT}/include" -P "${CMAKE_SOURCE_DIR}/cmake/copy_generated_headers.cmake"
         # Dependencies
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_nlohmann_include}/nlohmann" "${TOAST_ENGINE_OUTPUT_ROOT}/include/nlohmann"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/tracy" "${TOAST_ENGINE_OUTPUT_ROOT}/include/tracy"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/common" "${TOAST_ENGINE_OUTPUT_ROOT}/include/common"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${_toml_include}/toml++" "${TOAST_ENGINE_OUTPUT_ROOT}/include/toml++"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${_glm_include}/glm" "${TOAST_ENGINE_OUTPUT_ROOT}/include/glm"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_tinyspline_include}/tinyspline.h" "${TOAST_ENGINE_OUTPUT_ROOT}/include/tinyspline.h"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_tinyspline_include}/tinysplinecxx.h" "${TOAST_ENGINE_OUTPUT_ROOT}/include/tinysplinecxx.h"
         # Runtimes
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<$<CONFIG:Debug>:${EXTERNAL_DLLS_DEBUG}>"

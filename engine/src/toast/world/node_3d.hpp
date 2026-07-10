@@ -205,3 +205,5 @@ private:
 };
 
 }
+
+#include <node3d.generated.hpp>

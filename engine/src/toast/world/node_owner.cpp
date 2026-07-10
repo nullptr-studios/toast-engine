@@ -65,9 +65,10 @@ auto INodeOwner::requestRuntimeCreate(Node& parent, std::string_view type) -> Bo
 	node->m_name = uniqueChildName(parent, stripNamespace(node->m_info->type));
 
 	// Initialization
-	node->callTick(node->info(), TickFunctionList::init);
-	node->callTick(node->info(), TickFunctionList::begin);
-	node->enabled(true);
+	node->propagateCallTick(node->info(), TickFunctionList::init);
+	node->propagateCallTick(node->info(), TickFunctionList::begin);
+	node->m_local_enabled = true;
+	node->propagateEnable();
 
 	event::send<event::RequestHierarchyUpdate>();
 	TOAST_TRACE("World", "Spawned node in {}", parent.name());
@@ -104,7 +105,8 @@ auto INodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
 	// Initialization
 	root->propagateCallTick(root->info(), TickFunctionList::init);
 	root->propagateCallTick(root->info(), TickFunctionList::begin);
-	root->enabled(true);
+	root->m_local_enabled = true;
+	root->propagateEnable();
 
 	event::send<event::RequestHierarchyUpdate>();
 	TOAST_TRACE("World", "Spawned node {} in {}", root->name(), parent.name());
@@ -182,6 +184,7 @@ auto INodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {
 		TOAST_ASSERT(result, "World", "Node allocation failed");
 	}
 	raw_node->m_info = info;     // attach reflection data
+	raw_node->m_reflect_type_name = info->type;
 	raw_node->m_owner = this;    // attach owner ptr
 
 	return raw_node->box();

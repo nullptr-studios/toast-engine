@@ -91,7 +91,9 @@ public partial class StartWindowViewModel : ViewModelBase {
 
 		tasks.Add(LoaderTask.Do("Generate asset database", async log => {
 			AssetDatabase.RebuildAssetDatabase();
-			log("Rebuilt assets:// and core:// database");
+			log(
+				$"Rebuilt asset database ({string.Join(", ", ProjectContext.Databases.Select(db => db + "://"))}, core://)");
+
 			await Task.CompletedTask;
 		}));
 
@@ -226,7 +228,7 @@ public partial class StartWindowViewModel : ViewModelBase {
 						Title = dialog.ProjectTitle,
 						Path = dialog.ProjectPath,
 						Date = DateTime.Now.ToString("dd MMM yyyy HH:mm"),
-						Version = projectData?["version"].ToString() ?? dialog.ProjectVersion,
+						Version = projectData?["version"].ToString() ?? $"v{string.Join(".", dialog.ProjectVersion)}",
 						ThumbnailPath = File.Exists(thumbnailPath) ? thumbnailPath : ""
 					});
 				} catch {
@@ -234,7 +236,7 @@ public partial class StartWindowViewModel : ViewModelBase {
 						Title = dialog.ProjectTitle,
 						Path = dialog.ProjectPath,
 						Date = DateTime.Now.ToString("dd MMM yyyy HH:mm"),
-						Version = dialog.ProjectVersion,
+						Version = $"v{string.Join(".", dialog.ProjectVersion)}",
 						ThumbnailPath = ""
 					});
 				}

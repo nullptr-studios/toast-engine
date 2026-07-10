@@ -11,7 +11,7 @@
 #include "control_box.hpp"
 #include "node.hpp"
 #include "node_owner.hpp"
-#include "toast/reflect/reflect.hpp"
+#include "tick_scheduler.hpp"
 #include "world_events.hpp"
 
 #include <compare>
@@ -24,6 +24,7 @@
 #include <toast/assets/prefab.hpp>
 #include <toast/events/listener.hpp>
 #include <toast/log.hpp>
+#include <toast/reflect/reflect.hpp>
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
@@ -33,52 +34,6 @@
 namespace toast {
 
 class Node;
-
-namespace _detail {
-/**
- * @struct NodeCluster
- *
- * This class combines multiples nodes into one single cluster. It is used for
- * grouping strongly connected components into one single component for the
- * dependency graph generation
- *
- * The nodes are ticked in the order they are on the vector, but in most cases
- * this shouldn't be an issue, as the main concern is to avoid race conditions
- * when ticking
- */
-struct NodeCluster {
-	explicit NodeCluster(std::vector<Box<Node>>& nodes) : nodes(std::move(nodes)) { }
-
-	std::vector<Box<Node>> nodes;
-
-	// This functions call all the ticks of the nodes synchronously
-	void earlyTick();
-	void tick();
-	void postPhysics();
-	void lateTick();
-
-	// This functions return true if there's at least one function of that type
-	auto hasEarlyTick() -> bool;
-	auto hasTick() -> bool;
-	auto hasPostPhysics() -> bool;
-	auto hasLateTick() -> bool;
-};
-
-/**
- * @struct TickSchedule
- *
- * Compiled execution plan produced by World::computeDependencyGraph().
- * A Wave is a batch of items that can run in parallel; each item is either
- * a single Box<Node> or a NodeCluster grouping a dependency cycle (SCC).
- */
-struct TickSchedule {
-	using Wave = std::vector<std::variant<Box<Node>, NodeCluster>>;
-	std::vector<Wave> early_tick;      ///< waves for the earlyTick phase
-	std::vector<Wave> tick;            ///< waves for the tick phase
-	std::vector<Wave> post_physics;    ///< waves for the postPhysics phase
-	std::vector<Wave> late_tick;       ///< waves for the lateTick phase
-};
-}
 
 class World final : public INodeOwner {
 public:
@@ -101,17 +56,19 @@ public:
 	/**
 	 * @brief Begins asynchronous loading of a prefab into the cache
 	 * @param uid UID of the prefab asset to load
+	 * @param activate_as_root If true, automatically calls setRoot() once the node finishes loading
 	 * @note The node appears in trees.cached at the start of the next tick() after loading finishes;
-	 *       call setRoot() afterwards to make it the active scene
+	 *       if activate_as_root is false, call setRoot() afterwards to make it the active scene
 	 */
-	static void loadNode(UID uid);
+	static void loadNode(UID uid, bool activate_as_root = false);
 
 	/**
 	 * @brief Begins asynchronous loading of a prefab into the cache
 	 * @param uri Virtual URI of the prefab, e.g. "assets://levels/lobby.node"
+	 * @param activate_as_root If true, automatically calls setRoot() once the node finishes loading
 	 * @note Resolves the URI to a UID via the manifest, then delegates to loadNode(UID)
 	 */
-	static void loadNode(std::string_view uri);
+	static void loadNode(std::string_view uri, bool activate_as_root = false);
 
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;
 	auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> override;
@@ -162,6 +119,11 @@ public:
 	static auto graphviz() -> std::string;
 
 	/**
+	 * @brief Refreshes the NodeInfo pointers on every live node after a game library hot reload
+	 */
+	static void hotReload();
+
+	/**
 	 * @brief Invalidates the world transforms of all Node3D nodes that depend on the given node
 	 * @param node The node whose transform changed
 	 * @note Called by Node3D setters; only nodes listed in inverse_connections are dirtied
@@ -176,18 +138,6 @@ private:
 
 	/// Rebuilds the dependency graph from the current node set and recomputes the tick schedule
 	void computeDependencyGraph();
-
-	/// BFS flood-fill that partitions the dependency graph into independent subgraphs with no shared edges
-	auto subgraphSeparation() -> std::vector<std::vector<Box<Node>>>;
-
-	/// Tarjan SCC; bundles cycles into NodeClusters and returns items in reverse topological order
-	auto tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& input_subgraphs) -> std::vector<_detail::TickSchedule::Wave>;
-
-	/// Assigns each item wave = max(predecessor wave) + 1; items with no predecessors land on wave 0
-	auto assignWaves(const std::vector<_detail::TickSchedule::Wave>& subgraphs) -> std::vector<_detail::TickSchedule::Wave>;
-
-	/// Prunes items that don't implement the relevant tick function per phase; bakes wave indices into Node::m_wave
-	auto optimizeWaves(const std::vector<_detail::TickSchedule::Wave>& waves) -> _detail::TickSchedule;
 
 	/// Atomically replaces the world root; the old root is returned as a cached node
 	auto swapRoot(Node& node) -> Box<Node>;
@@ -237,6 +187,7 @@ private:
 		std::mutex load_mutex;
 		std::vector<std::future<void>> load_futures;
 		std::vector<std::pair<Box<Node>, Box<Node>>> spawn_queue;
+		UID pending_root_uid {0};
 	} m;
 
 	struct Trees {
@@ -247,13 +198,8 @@ private:
 		std::vector<Box<Node>> destroy_queue;    ///< nodes queued for destruction; drained at the start of tick
 	} trees;
 
-	struct DependencyGraph {
-		std::unordered_map<Box<Node>, std::vector<Box<Node>>> connections;    ///< forward edges (from → to)
-		std::unordered_map<Box<Node>, std::vector<Box<Node>>>
-		    inverse_connections;    ///< reverse edges; lets wave assignment find predecessors in O(1)
-	} dependency_graph;
-
-	_detail::TickSchedule tick_schedule;
+	using DependencyGraph = TickScheduler::DependencyGraph;
+	TickScheduler m_scheduler;
 
 	// for testing only
 	friend struct toast::_detail::WorldTestAccess;

@@ -7,6 +7,8 @@
  * @c get() returns the handle's UID and @c set() resolves a handle from the UID
  * via @c assets::load(), if it fails the handle will have a nnullptr but it will
  * still have the UID
+ *
+ * TOAST_API
  */
 
 #pragma once

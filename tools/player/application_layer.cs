@@ -1,8 +1,10 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 namespace player;
 
 public class ApplicationLayer : IDisposable {
+	private IntPtr m_handle;
+
 	static ApplicationLayer() {
 		NativeResolver.EnsureRegistered();
 	}
@@ -15,6 +17,7 @@ public class ApplicationLayer : IDisposable {
 
 	public void Dispose() {
 		if (m_handle != IntPtr.Zero) {
+			game_destroy(m_handle);
 			m_handle = IntPtr.Zero;
 		}
 		GC.SuppressFinalize(this);
@@ -24,9 +27,10 @@ public class ApplicationLayer : IDisposable {
 		Dispose();
 	}
 
-	private IntPtr m_handle;
-
 	// Native methods
 	[DllImport("__APPLICATION_LIB__", CallingConvention = CallingConvention.Cdecl)]
 	private static extern IntPtr game_create();
+
+	[DllImport("__APPLICATION_LIB__", CallingConvention = CallingConvention.Cdecl)]
+	private static extern void game_destroy(IntPtr game);
 }

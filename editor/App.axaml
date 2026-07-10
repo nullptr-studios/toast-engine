@@ -22,6 +22,8 @@
 			<conv:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
 			<conv:EnabledToColorConverter x:Key="EnabledToColorConverter" />
 			<conv:ScaleConverter x:Key="ScaleConverter" />
+			<conv:EnumEqualsConverter x:Key="EnumEqualsConverter" />
+			<conv:SnapValueConverter x:Key="SnapValueConverter" />
 		</ResourceDictionary>
 	</Application.Resources>
 

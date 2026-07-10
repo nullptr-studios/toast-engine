@@ -9,11 +9,35 @@
         x:Class="editor.Workspace.MainWindowView"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Resources/avalonia-logo.ico"
-        Title="editor"
+        Title="Editor - Toast Engine"
         ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaTitleBarHeightHint="-1"
         WindowDecorations="BorderOnly"
         WindowState="Maximized">
+
+	<!-- menu InputGestures are display-only, these make the shortcuts actually fire window-wide -->
+	<Window.KeyBindings>
+		<KeyBinding Gesture="Ctrl+N"
+		            Command="{Binding NewNodeCommand}" />
+		<KeyBinding Gesture="Ctrl+O"
+		            Command="{Binding OpenNodeFileCommand}" />
+		<KeyBinding Gesture="Ctrl+W"
+		            Command="{Binding CloseNodeFileCommand}" />
+		<KeyBinding Gesture="Ctrl+S"
+		            Command="{Binding SaveCurrentNodeCommand}" />
+		<KeyBinding Gesture="Ctrl+Shift+S"
+		            Command="{Binding SaveCurrentNodeAsCommand}" />
+		<KeyBinding Gesture="Ctrl+Alt+S"
+		            Command="{Binding SaveAllNodesCommand}" />
+		<KeyBinding Gesture="F5"
+		            Command="{Binding PlayCommand}" />
+		<KeyBinding Gesture="F6"
+		            Command="{Binding PlayInWindowCommand}" />
+		<KeyBinding Gesture="F7"
+		            Command="{Binding ReloadGameCommand}" />
+		<KeyBinding Gesture="F8"
+		            Command="{Binding CompileGameReleaseCommand}" />
+	</Window.KeyBindings>
 
 	<Grid RowDefinitions="Auto,*">
 		<DockPanel x:Name="MenuBorder"
@@ -48,32 +72,36 @@
 			<!-- Menu -->
 			<Menu DockPanel.Dock="Left">
 				<MenuItem Header="_Toast Engine"
-				          Foreground="DeepPink"
+				          Foreground="{StaticResource Red}"
 				          FontWeight="Bold">
 					<MenuItem Header="_New project"
-					          FontWeight="Normal" />
+					          FontWeight="Normal"
+					          IsEnabled="False" />
 					<MenuItem Header="_Open project"
-					          FontWeight="Normal" />
+					          FontWeight="Normal"
+					          IsEnabled="False" />
 					<MenuItem Header="_Close project"
-					          FontWeight="Normal" />
+					          FontWeight="Normal"
+					          IsEnabled="False" />
 					<Separator />
 					<MenuItem Header="_Project settings"
-					          FontWeight="Normal" />
+					          FontWeight="Normal"
+					          Command="{Binding OpenProjectSettingsCommand}" />
 					<MenuItem Header="_Toast settings"
-					          FontWeight="Normal" />
+					          FontWeight="Normal"
+					          IsEnabled="False" />
 					<Separator />
 					<MenuItem Header="_Quit Toast"
-					          FontWeight="Normal" />
+					          FontWeight="Normal"
+					          IsEnabled="False" />
 				</MenuItem>
 				<MenuItem Header="_File">
 					<MenuItem Header="_New Node file"
 					          InputGesture="Ctrl+N"
-					          Command="{Binding NewNodeCommand}"
-					          CommandParameter="{Binding $parent[Window]}" />
+					          Command="{Binding NewNodeCommand}" />
 					<MenuItem Header="_Open Node file"
 					          InputGesture="Ctrl+O"
-					          Command="{Binding OpenNodeFileCommand}"
-					          CommandParameter="{Binding $parent[Window]}" />
+					          Command="{Binding OpenNodeFileCommand}" />
 					<MenuItem Header="_Close Node file"
 					          InputGesture="Ctrl+W"
 					          Command="{Binding CloseNodeFileCommand}" />
@@ -88,25 +116,19 @@
 					          InputGesture="Ctrl+Alt+S"
 					          Command="{Binding SaveAllNodesCommand}" />
 				</MenuItem>
-				<MenuItem Header="_Edit">
-					<MenuItem Header="_Undo" />
-					<MenuItem Header="_Redo" />
-					<Separator />
-					<MenuItem Header="Cu_t" />
-					<MenuItem Header="_Copy" />
-					<MenuItem Header="_Paste" />
-					<MenuItem Header="_Delete" />
-					<Separator />
-					<MenuItem Header="Select _All" />
-					<MenuItem Header="_Find" />
-				</MenuItem>
 				<MenuItem Header="_Run">
-					<MenuItem Header="_Run" />
-					<MenuItem Header="Run _This" />
-					<Separator />
-					<MenuItem Header="_Build" />
-					<MenuItem Header="Build _settings" />
-					<MenuItem Header="_Open build folder" />
+					<MenuItem Header="_Play"
+					          InputGesture="F5"
+					          Command="{Binding PlayCommand}" />
+					<MenuItem Header="Play in _window"
+					          InputGesture="F6"
+					          Command="{Binding PlayInWindowCommand}" />
+					<MenuItem Header="_Reload project"
+					          InputGesture="F7"
+					          Command="{Binding ReloadGameCommand}" />
+					<MenuItem Header="_Build project"
+					          InputGesture="F8"
+					          Command="{Binding CompileGameReleaseCommand}" />
 				</MenuItem>
 				<MenuItem Header="_View" />
 				<MenuItem Header="_Tools">

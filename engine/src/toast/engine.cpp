@@ -11,6 +11,7 @@
 #include "input/input_events.hpp"
 #include "input/input_system.hpp"
 #include "logger.hpp"
+#include "project_settings.hpp"
 #include "reflect/reflect.hpp"
 #include "renderer/DebugPass.hpp"
 #include "renderer/MeshPass.hpp"
@@ -25,8 +26,6 @@
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
-#include "world/camera.hpp"
-#include "world/mesh_node.hpp"
 #include "world/workspace.hpp"
 #include "world/workspace_events.hpp"
 #include "world/world.hpp"
@@ -65,6 +64,7 @@ struct EnginePimpl {
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
 	std::unique_ptr<audio::AudioSystem> audio_system = nullptr;
+	std::unique_ptr<ProjectSettings> settings = nullptr;
 	Time time;
 	event::Listener listener;
 	toast::NodeRegistry reflection_registry;
@@ -119,6 +119,29 @@ void Engine::init() {
 	event::registerProtoEvents();
 	registerEngineTypes();
 
+	// Find the first .toast project file in the project root and load settings
+	{
+		std::filesystem::path toast_path;
+		const auto& proj_root = assets::AssetManager::projectRoot();
+		if (!proj_root.empty() && std::filesystem::is_directory(proj_root)) {
+			for (const auto& entry : std::filesystem::directory_iterator(proj_root)) {
+				if (entry.path().extension() == ".toast") {
+					toast_path = entry.path();
+					break;
+				}
+			}
+		}
+		m->settings = std::make_unique<ProjectSettings>(toast_path);
+	}
+
+	// Register content database VFS roots derived from project settings
+	{
+		const auto& proj_root = assets::AssetManager::projectRoot();
+		for (const auto& db : ProjectSettings::databases()) {
+			assets::AssetManager::registerDatabase(db, proj_root / db);
+		}
+	}
+
 	m->asset_manager = std::make_unique<assets::AssetManager>();
 
 	m->input_system = std::make_unique<input::InputSystem>();
@@ -161,7 +184,33 @@ Engine::~Engine() noexcept {
 	}
 
 	instance = nullptr;
-	instance = this;
+}
+
+void Engine::reloadSettings() {
+	// Find the .toast project file in the project root
+	std::filesystem::path toast_path;
+	const auto& proj_root = assets::AssetManager::projectRoot();
+	if (!proj_root.empty() && std::filesystem::is_directory(proj_root)) {
+		for (const auto& entry : std::filesystem::directory_iterator(proj_root)) {
+			if (entry.path().extension() == ".toast") {
+				toast_path = entry.path();
+				break;
+			}
+		}
+	}
+
+	// Clear old content database routes and reload settings
+	assets::AssetManager::clearDatabases();
+	m->settings = std::make_unique<ProjectSettings>(toast_path);
+
+	// Re-register content databases from updated settings
+	for (const auto& db : ProjectSettings::databases()) {
+		assets::AssetManager::registerDatabase(db, proj_root / db);
+	}
+
+	if (m->asset_manager) {
+		m->asset_manager->reloadManifest();
+	}
 }
 
 void Engine::tick() {
@@ -393,6 +442,58 @@ auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
 	return {uid, name};
 }
 
+auto Engine::openWorkspace(UID uid, std::string_view source_uri) -> std::pair<UID, std::string> {
+	std::scoped_lock lock(m->owners_mutex);
+	if (m->owners.contains(uid)) {
+		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
+		return {};
+	}
+
+	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(uid, source_uri));
+
+	auto* ws = static_cast<Workspace*>(it->second.get());
+	if (!ws->isValid()) {
+		TOAST_ERROR("Engine", "Failed to load {} into workspace {}", source_uri, uid);
+		m->owners.erase(it);
+		return {};
+	}
+
+	std::string name = it->second->name();
+	return {uid, name};
+}
+
+auto Engine::playWorkspace(UID source_handle) -> std::pair<UID, std::string> {
+	std::scoped_lock lock(m->owners_mutex);
+	auto source_it = m->owners.find(source_handle);
+	if (source_it == m->owners.end()) {
+		TOAST_ERROR("Engine", "Trying to play workspace {} which doesn't exist", source_handle);
+		return {};
+	}
+
+	auto* source = static_cast<Workspace*>(source_it->second.get());
+	if (!source->isValid()) {
+		TOAST_ERROR("Engine", "Trying to play invalid workspace {}", source_handle);
+		return {};
+	}
+
+	// clone the live tree in memory, the play workspace instantiates from it with the same node UIDs
+	assets::Prefab prefab(source->rootNode());
+
+	UID handle;
+	handle.generate();
+	auto [it, _] = m->owners.emplace(handle, std::make_unique<PlayWorkspace>(handle, prefab));
+
+	auto* play = static_cast<PlayWorkspace*>(it->second.get());
+	if (!play->isValid()) {
+		TOAST_ERROR("Engine", "Failed to clone workspace {} for play mode", source_handle);
+		m->owners.erase(it);
+		return {};
+	}
+
+	std::string name = it->second->name();
+	return {handle, name};
+}
+
 void Engine::destroyWorkspace(UID handle) {
 	std::scoped_lock lock(m->owners_mutex);
 	m->owners.erase(handle);
@@ -439,6 +540,59 @@ void pushApplicationLayer(IApplication* app) {
 	}
 
 	active_application = app;
+	app->registerTypes();
+	toast::World::hotReload();
+}
+
+void popApplicationLayer(IApplication* app) {
+	if (active_application == app) {
+		active_application = nullptr;
+	}
+}
+
+void Engine::popApplication() {
+	if (active_application) {
+		active_application->destroy();
+		delete active_application;
+		active_application = nullptr;
+	}
+}
+
+void Engine::beginApplication() {
+	if (active_application) {
+		active_application->begin();
+	}
+}
+
+void Engine::startGame() {
+	{
+		std::scoped_lock lock(m->owners_mutex);
+		// Use a well-known sentinel UID (-1) so the world can be found/removed if needed
+		m->owners.emplace(UID {static_cast<uint64_t>(-1ULL)}, std::make_unique<World>());
+	}
+
+	// Resolve the start scene from project settings
+	const ProjectSettings* ps = ProjectSettings::get();
+	if (!ps) {
+		TOAST_WARN("Engine", "startGame: no project settings; skipping start scene");
+		return;
+	}
+
+	const auto& init_scene_handle = toast::ProjectSettings::gameplaySettings().initScene();
+	const auto path = init_scene_handle.path();
+	if (path.empty()) {
+		TOAST_WARN("Engine", "startGame: no init_scene set in project settings");
+		return;
+	}
+
+	if (path.size() == 11) {
+		const toast::UID uid(toast::UID::fromString(path));
+		TOAST_INFO("Engine", "startGame: loading init scene by UID {}", uid);
+		World::loadNode(uid, true);
+	} else {
+		TOAST_INFO("Engine", "startGame: loading init scene by URI '{}'", path);
+		World::loadNode(path, true);
+	}
 }
 }
 
@@ -495,9 +649,9 @@ void toast_destroy(engine_t* e) noexcept {
 }
 
 void toast_set_working_directory(
-    const char* assets, const char* artworks, const char* cache, const char* saved, const char* core
+    const char* project, const char* artworks, const char* cache, const char* saved, const char* core
 ) noexcept {
-	assets::AssetManager::setPaths({.assets = assets, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
+	assets::AssetManager::setPaths({.project = project, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
 }
 
 int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) noexcept {
@@ -522,6 +676,22 @@ auto toast_create_workspace(const char* type) noexcept -> workspace_result {
 
 auto toast_open_workspace(const char* uid) noexcept -> workspace_result {
 	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid));
+
+	static thread_local std::string s_name;
+	s_name = std::move(name);
+	return {.uid = root_uid.data(), .name = s_name.c_str()};
+}
+
+auto toast_play_workspace(uint64_t source_handle) noexcept -> workspace_result {
+	auto [uid, name] = toast::Engine::get()->playWorkspace(toast::UID(source_handle));
+
+	static thread_local std::string s_name;
+	s_name = std::move(name);
+	return {.uid = uid.data(), .name = s_name.c_str()};
+}
+
+auto toast_open_workspace_from(const char* uid, const char* source_uri) noexcept -> workspace_result {
+	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid), source_uri);
 
 	static thread_local std::string s_name;
 	s_name = std::move(name);
@@ -591,6 +761,60 @@ void toast_reload_manifest() noexcept {
 	auto& mgr = assets::AssetManager::get();
 	mgr.clearUnusedAssets();
 	mgr.reloadManifest();
+}
+
+void toast_reload_project_settings() noexcept {
+	toast::Engine::get()->reloadSettings();
+}
+
+void toast_set_load_mode(int mode) noexcept {
+	assets::AssetManager::setLoadMode(mode == 1 ? assets::SaveMode::game : assets::SaveMode::editor);
+}
+
+void toast_mount_pack(const char* scheme, const char* pak_path) noexcept {
+	if (!scheme || !pak_path) {
+		return;
+	}
+	assets::AssetManager::mountPack(scheme, pak_path);
+}
+
+void toast_start_game() noexcept {
+	toast::Engine::get()->startGame();
+}
+
+void toast_begin_application() noexcept {
+	toast::Engine::get()->beginApplication();
+}
+
+void toast_pop_application() noexcept {
+	toast::Engine::get()->popApplication();
+}
+
+void toast_bake_asset(const char* uid_str, const char* out_path) noexcept {
+	if (!uid_str || !out_path) {
+		return;
+	}
+	try {
+		const toast::UID uid(toast::UID::fromString(uid_str));
+		auto* asset = assets::AssetManager::get().load(uid);
+		if (!asset) {
+			TOAST_ERROR("Engine", "toast_bake_asset: could not load asset {}", uid_str);
+			return;
+		}
+		auto* prefab = dynamic_cast<assets::Prefab*>(asset);
+		if (!prefab) {
+			TOAST_WARN("Engine", "toast_bake_asset: asset {} is not a Prefab, skipping", uid_str);
+			return;
+		}
+		const auto bytes = prefab->serialize(assets::SaveMode::game);
+		std::ofstream out(out_path, std::ios::binary | std::ios::trunc);
+		if (!out.is_open()) {
+			TOAST_ERROR("Engine", "toast_bake_asset: cannot open output path {}", out_path);
+			return;
+		}
+		out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+		TOAST_TRACE("Engine", "Baked asset {} → {}", uid_str, out_path);
+	} catch (const std::exception& e) { TOAST_ERROR("Engine", "toast_bake_asset: {}", e.what()); }
 }
 
 void toast_haptics_test(const char* toml_text) noexcept {

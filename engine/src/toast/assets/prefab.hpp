@@ -47,26 +47,26 @@ constexpr char string_array_separator =
 
 constexpr uint16_t format_version = 2;    ///< current binary layout version
 
-struct NodeFileBinaryHeader {
+struct TOAST_API NodeFileBinaryHeader {
 	const std::array<uint8_t, 6> magic = {'T', 'N', 'O', 'D', 'E', '\0'};
 	uint16_t version = format_version;
 	uint32_t node_count;
 };
 }
 
-class Prefab final : public Asset, public ISaveable {
+class TOAST_API Prefab final : public Asset, public ISaveable {
 public:
 	static constexpr std::string_view collection = "nodes";
 
 	/**
-	 * @brief Parses a prefab from a text (.node) stream
+	 * @brief Parses a prefab from a text (.tnode) stream
 	 * @param file Open input stream positioned at the start of the file
 	 * @note The text format is human-readable; missing or unknown fields are silently skipped
 	 */
 	Prefab(std::istream& file);
 
 	/**
-	 * @brief Parses a prefab from a binary (.tnode) byte span
+	 * @brief Parses a prefab from a binary (.tbnode) byte span
 	 * @param bytes Raw file bytes; must start with the TNODE magic header
 	 * @note The binary header contains a version field; a mismatch logs a warning but loading is still attempted
 	 */

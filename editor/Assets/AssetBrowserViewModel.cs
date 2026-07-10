@@ -602,13 +602,13 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	}
 
 	private static bool IsEditable(AssetFile file) {
-		return ProjectContext.IsInitialized &&
-			file.Filepath.StartsWith(ProjectContext.AssetsPath, StringComparison.OrdinalIgnoreCase);
+		return ProjectContext.IsInitialized && ProjectContext.IsUnderContentDatabase(file.Filepath);
 	}
 
 	private static bool IsEditable(AssetFolder folder) {
-		return ProjectContext.IsInitialized &&
-			folder.Filepath.StartsWith(ProjectContext.AssetsPath, StringComparison.OrdinalIgnoreCase);
+		return ProjectContext.IsInitialized
+			&& ProjectContext.IsUnderContentDatabase(folder.Filepath)
+			&& !ProjectContext.IsDatabaseRoot(folder.Filepath);
 	}
 
 	private static Window? ActiveWindow() {
@@ -685,35 +685,45 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 
 	private void LoadFolders() {
 		m_selectedItems.Clear();
-
-		var assetsPath = ProjectContext.IsInitialized
-			? ProjectContext.AssetsPath
-			: @"C:\Users\Xein\Desktop\unnamed_project\assets";
-		var corePath = ProjectContext.IsInitialized
-			? ProjectContext.CorePath
-			: @"C:\Users\Xein\code\toast-engine\out\Debug\toast_engine\bin\assets";
-
 		Folders.Clear();
 
-		var assetsFolder = new AssetFolder(assetsPath);
-		assetsFolder.Name = "assets://";
-		assetsFolder.IsExpanded = true;
-		Folders.Add(assetsFolder);
+		AssetFolder? firstContentFolder = null;
 
-		var coreFolder = new AssetFolder(corePath);
-		coreFolder.Name = "core://";
-		Folders.Add(coreFolder);
+		if (ProjectContext.IsInitialized) {
+			// One folder per content database
+			var isFirst = true;
+			foreach (var db in ProjectContext.Databases) {
+				var dbPath = Path.Combine(ProjectContext.ProjectPath, db);
+				var folder = new AssetFolder(dbPath) { Name = db + "://", IsExpanded = isFirst };
+				Folders.Add(folder);
+				SetOwnerRecursive(folder);
+				if (isFirst) {
+					firstContentFolder = folder;
+					isFirst = false;
+				}
+			}
 
-		SetOwnerRecursive(assetsFolder);
-		SetOwnerRecursive(coreFolder);
+			// core:// is always appended
+			var coreFolder = new AssetFolder(ProjectContext.CorePath) { Name = "core://" };
+			Folders.Add(coreFolder);
+			SetOwnerRecursive(coreFolder);
+		} else {
+			// show a minimal placeholder
+			var fallbackFolder = new AssetFolder(@"C:\Users\Xein\Desktop\unnamed_project\assets") {
+				Name = "assets://", IsExpanded = true
+			};
+			Folders.Add(fallbackFolder);
+			SetOwnerRecursive(fallbackFolder);
+			firstContentFolder = fallbackFolder;
+		}
 
 		AssetFolder? restored = null;
 		if (m_refreshTargetPath is not null)
 			restored = FindByPath(Folders, m_refreshTargetPath);
 		m_refreshTargetPath = null;
 
-		m_selectedFolder = restored ?? assetsFolder;
-		ExpandToFolder(m_selectedFolder);
+		m_selectedFolder = restored ?? firstContentFolder ?? Folders.FirstOrDefault();
+		if (m_selectedFolder is not null) ExpandToFolder(m_selectedFolder);
 
 		Notify(nameof(SelectedFolder));
 		RefreshCurrentItems();

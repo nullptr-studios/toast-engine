@@ -25,12 +25,10 @@ struct PipelineLayoutDesc {
 	std::vector<vk::PushConstantRange> push_constants;
 };
 
-// Return a small descriptor/pipeline description for a known shader key.
-// Keep this minimal; add entries here for shaders that need hardcoded layouts.
+// Return a small descriptor/pipeline description for a known shader key
 PipelineLayoutDesc getLayoutDesc(std::string_view key);
 
-// Build actual Vulkan RAII objects from the description. The out parameters
-// are populated and will own the created objects.
+// Build actual Vulkan RAII objects from the description
 void buildPipelineLayout(
     const VulkanCore& core, std::string_view key, std::vector<vk::raii::DescriptorSetLayout>& out_set_layouts,
     std::vector<vk::PushConstantRange>& out_push_constants, vk::raii::PipelineLayout& out_pipeline_layout

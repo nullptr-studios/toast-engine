@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -32,19 +31,18 @@ public struct WorkspaceResult {
 
 public partial class ToastEngine : IDisposable {
 	private const string EngineLib = "toast_engine";
-
-	// Caps the tick loop rate to 240
-	private const double TargetTickHz = 240.0;
-
 	private readonly CancellationTokenSource m_cancellationSource;
 
 	private readonly IntPtr m_engineInstance;
-	private readonly IntPtr m_gameInstance;
+
+	private readonly ManualResetEventSlim m_tickGate = new(true);
+	private readonly ManualResetEventSlim m_tickIdle = new(true);
 
 	private readonly Task m_tickTask;
 
 	private readonly Lock m_windowsLock = new();
 	private bool m_closeEventSent;
+	private IntPtr m_currentGameInstance;
 
 	private GameCreate? m_gameCreate;
 	private GameDestroy? m_gameDestroy;
@@ -70,13 +68,17 @@ public partial class ToastEngine : IDisposable {
 		// that dep by matching base names of already-loaded modules
 		NativeLibrary.Load(EngineDllPath());
 
-		LoadGame();
+		var gameDll = FindGameDll();
+		var tempPath = GameDllTempPath;
+		Directory.CreateDirectory(Path.GetDirectoryName(tempPath)!);
+		File.Copy(gameDll, tempPath, true);
+		LoadFrom(tempPath);
 
 		m_engineInstance = toast_create();
-		m_gameInstance = m_gameCreate?.Invoke() ?? IntPtr.Zero;
+		m_currentGameInstance = m_gameCreate?.Invoke() ?? IntPtr.Zero;
 
 		toast_set_working_directory(
-			Path.Combine(ProjectPath, "assets"),
+			ProjectPath,
 			Path.Combine(ProjectPath, "artworks"),
 			Path.Combine(ProjectPath, ".toast"),
 			Path.Combine(ProjectPath, ".toast", "saved_data"),
@@ -109,11 +111,13 @@ public partial class ToastEngine : IDisposable {
 	private static string NativeLibPrefix => OperatingSystem.IsWindows() ? "" : "lib";
 	private static string NativeLibExt => OperatingSystem.IsWindows() ? ".dll" : ".so";
 
+	private string GameDllTempPath => Path.Combine(ProjectPath, ".toast", $"game_temp{NativeLibExt}");
+
 	public void Dispose() {
 		IsEngineReady = false;
 		m_cancellationSource.Cancel();
 		m_tickTask.Wait();
-		m_gameDestroy?.Invoke(m_gameInstance);
+		m_gameDestroy?.Invoke(m_currentGameInstance);
 		toast_destroy(m_engineInstance);
 		m_cancellationSource.Dispose();
 	}
@@ -124,6 +128,16 @@ public partial class ToastEngine : IDisposable {
 
 	public WorkspaceResult OpenWorkspace(string assetUid) {
 		return toast_open_workspace(assetUid);
+	}
+
+	/// Opens a workspace bound to assetUid but loading its content from an autosave
+	public WorkspaceResult OpenWorkspaceFrom(string assetUid, string sourceUri) {
+		return toast_open_workspace_from(assetUid, sourceUri);
+	}
+
+	/// Clones the given workspace's live tree into a new ticking PlayWorkspace
+	public WorkspaceResult PlayWorkspace(ulong sourceHandle) {
+		return toast_play_workspace(sourceHandle);
 	}
 
 	// copies the latest rendered frame into dst (capacity bytes)
@@ -140,9 +154,44 @@ public partial class ToastEngine : IDisposable {
 	}
 
 	public void ReloadGame() {
-		m_gameDestroy?.Invoke(m_gameInstance);
-		Thread.Sleep(150); // give the OS time to release handles before loading a new copy
-		LoadGame();
+		// Pause tick loop and wait for frame to finish
+		m_tickGate.Reset();
+		m_tickIdle.Wait();
+
+		Events.Send(new SetFocusedNode { Node = "" });
+
+		try {
+			// Overwrite the temp copy of the game DLL
+			if (File.Exists(GameDllTempPath))
+				File.Delete(GameDllTempPath);
+			File.Copy(FindGameDll(), GameDllTempPath);
+
+			// Load the NEW library while the OLD one is still loaded
+			// the old .dll stays valid until dlclose
+			// this ensures we never have a gap where no game library is available
+			var newHandle = NativeLibrary.Load(GameDllTempPath);
+			var newCreate =
+				Marshal.GetDelegateForFunctionPointer<GameCreate>(NativeLibrary.GetExport(newHandle, "game_create"));
+			var newDestroy =
+				Marshal.GetDelegateForFunctionPointer<GameDestroy>(NativeLibrary.GetExport(newHandle, "game_destroy"));
+
+			toast_pop_application();
+			m_currentGameInstance = IntPtr.Zero;
+
+			if (m_gameHandle != IntPtr.Zero)
+				NativeLibrary.Free(m_gameHandle);
+
+			m_gameHandle = newHandle;
+			m_gameCreate = newCreate;
+			m_gameDestroy = newDestroy;
+
+			m_currentGameInstance = m_gameCreate?.Invoke() ?? IntPtr.Zero;
+			toast_begin_application();
+		} catch (Exception ex) {
+			Console.Error.WriteLine($"Hot reload failed: {ex.Message}");
+		} finally {
+			m_tickGate.Set();
+		}
 	}
 
 	private static string EngineDllPath() {
@@ -155,22 +204,16 @@ public partial class ToastEngine : IDisposable {
 	}
 
 	private void TickLoop(CancellationToken token) {
-		var targetInterval = TimeSpan.FromSeconds(1.0 / TargetTickHz);
-		var stopwatch = Stopwatch.StartNew();
-		var nextTick = stopwatch.Elapsed + targetInterval;
-
 		while (!token.IsCancellationRequested && toast_should_close() != 1) {
-			toast_tick();
+			// Wait until the gate is open
+			m_tickGate.Wait(token);
+			if (token.IsCancellationRequested) break;
 
-			var remaining = nextTick - stopwatch.Elapsed;
-			if (remaining > TimeSpan.Zero) {
-				if (remaining > TimeSpan.FromMilliseconds(2))
-					Thread.Sleep(remaining - TimeSpan.FromMilliseconds(1));
-				while (stopwatch.Elapsed < nextTick) Thread.SpinWait(50);
-				nextTick += targetInterval;
-			} else {
-				// fell behind, resync instead of bursting to catch up
-				nextTick = stopwatch.Elapsed + targetInterval;
+			m_tickIdle.Reset();
+			try {
+				toast_tick();
+			} finally {
+				m_tickIdle.Set();
 			}
 		}
 	}
@@ -183,20 +226,16 @@ public partial class ToastEngine : IDisposable {
 		desktop.MainWindow.Show();
 	}
 
-	private void LoadGame() {
-		var gameDllPath = Directory.EnumerateFiles(Path.Combine(ProjectPath, "build"), $"*{NativeLibExt}")
-			.FirstOrDefault();
-		if (gameDllPath is null)
-			throw new FileNotFoundException($"Game not found at path {ProjectPath}");
+	private string FindGameDll() {
+		var path = Directory.EnumerateFiles(Path.Combine(ProjectPath, "build"), $"*{NativeLibExt}")
+			.FirstOrDefault(f => Path.GetFileName(f).Contains("game", StringComparison.OrdinalIgnoreCase));
+		if (path is null)
+			throw new FileNotFoundException($"Game DLL not found in {Path.Combine(ProjectPath, "build")}");
+		return path;
+	}
 
-		// copy to a temp path so the original stays unlocked and the build system
-		// can overwrite it while the editor is running without us holding the file
-		var tempFile = $"game_temp{NativeLibExt}";
-		File.Copy(gameDllPath, Path.Combine(ProjectPath, ".toast", tempFile), true);
-		gameDllPath = Path.Combine(ProjectPath, ".toast", tempFile);
-
-		m_gameHandle = NativeLibrary.Load(gameDllPath);
-
+	private void LoadFrom(string dllPath) {
+		m_gameHandle = NativeLibrary.Load(dllPath);
 		m_gameCreate =
 			Marshal.GetDelegateForFunctionPointer<GameCreate>(NativeLibrary.GetExport(m_gameHandle, "game_create"));
 		m_gameDestroy =
@@ -252,7 +291,7 @@ public partial class ToastEngine : IDisposable {
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial void toast_set_working_directory(
-		string assets, string artworks, string cache, string saved, string core);
+		string project, string artworks, string cache, string saved, string core);
 
 	[LibraryImport(EngineLib)]
 	private static partial int toast_viewport_get_frame(IntPtr dst, uint dstCapacity, out ToastViewportFrame outFrame);
@@ -262,6 +301,12 @@ public partial class ToastEngine : IDisposable {
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial WorkspaceResult toast_open_workspace(string uid);
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial WorkspaceResult toast_open_workspace_from(string uid, string sourceUri);
+
+	[LibraryImport(EngineLib)]
+	private static partial WorkspaceResult toast_play_workspace(ulong sourceHandle);
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial void toast_rename_prefab_root(string path, string newName);
@@ -284,12 +329,32 @@ public partial class ToastEngine : IDisposable {
 		toast_reload_manifest();
 	}
 
+	[LibraryImport(EngineLib)]
+	private static partial void toast_reload_project_settings();
+
+	public static void ReloadProjectSettings() {
+		if (IsEngineReady) toast_reload_project_settings();
+	}
+
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial void toast_haptics_test(string tomlText);
 
 	/// Plays a haptic described by .thaptic TOML text on the active controller
 	public static void TestHaptic(string tomlText) {
 		toast_haptics_test(tomlText);
+	}
+
+	[LibraryImport(EngineLib)]
+	private static partial void toast_begin_application();
+
+	[LibraryImport(EngineLib)]
+	private static partial void toast_pop_application();
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial void toast_bake_asset(string uid, string outPath);
+
+	public static void BakeAsset(string uid, string outPath) {
+		if (IsEngineReady) toast_bake_asset(uid, outPath);
 	}
 
 	private delegate IntPtr GameCreate();

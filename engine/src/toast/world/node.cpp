@@ -58,6 +58,13 @@ auto Node::info() const -> const NodeInfo* {
 	return m_info;
 }
 
+void Node::refreshInfo() {
+	const NodeInfo* current = NodeRegistry::reflect(m_reflect_type_name);
+	if (current && current != m_info) {
+		m_info = current;
+	}
+}
+
 auto Node::sourcePrefab() const noexcept -> const assets::AssetHandle<assets::Prefab>& {
 	if (m_type != NodeType::root and m_type != NodeType::world_root) {
 		TOAST_WARN("Node", "Trying to get a Node file asset of node {} that can't have one", m_name);
@@ -202,6 +209,17 @@ void Node::propagateCallTick(const NodeInfo* info, TickFunctionList func_type) n
 
 	for (auto& child : m_children) {
 		child->propagateCallTick(child->info(), func_type);
+	}
+}
+
+void Node::propagateEnable() noexcept {
+	if (!m_local_enabled) {
+		return;
+	}
+
+	callTick(info(), TickFunctionList::on_enable);
+	for (auto& child : m_children) {
+		child->inheritedEnabled(true);
 	}
 }
 
