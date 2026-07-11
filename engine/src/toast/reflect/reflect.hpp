@@ -18,6 +18,7 @@
 #include <string_view>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
+#include <toast/world/box.hpp>
 #include <typeinfo>
 
 namespace toast {
@@ -216,6 +217,26 @@ struct FieldAccess {
 				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member =
 				    static_cast<FieldType>(std::any_cast<unsigned char>(value));
 			}
+		}
+	}
+};
+
+/**
+ * @brief Partial specialization of FieldAccess for Box<T> fields
+ *
+ * Widens the stored type to Box<Node> in both directions so that the scripting layer can
+ * handle all node-reference fields uniformly, without needing per-derived-type converters
+ */
+template<class Class, typename T, typename Tag>
+struct FieldAccess<Class, Box<T>, Tag> {
+	static auto get(void* obj) -> std::any {
+		Box<T>& src = static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member;
+		return std::any {Box<Node>(src)};
+	}
+
+	static void set(void* obj, std::any value) {
+		if (auto* box = std::any_cast<Box<Node>>(&value)) {
+			static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member = box->as<T>();
 		}
 	}
 };

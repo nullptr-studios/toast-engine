@@ -1,14 +1,18 @@
 #include "lua_state.hpp"
 
+#include "asset_proxy.hpp"
+#include "node_proxy.hpp"
+
 #include <cmath>
 #include <format>
-#include <glm/common.hpp>       // min, max, abs, clamp, mix
-#include <glm/geometric.hpp>    // dot, cross, length, normalize, distance, reflect
+#include <glm/common.hpp>
+#include <glm/geometric.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
+#include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
 
 namespace scripting {
@@ -73,7 +77,7 @@ void luaToastError(const std::string& msg) {
 }
 }
 
-std::unique_ptr<LuaState> LuaState::create() noexcept {
+auto LuaState::create() noexcept -> std::unique_ptr<LuaState> {
 	TOAST_ASSERT(instance == nullptr, "Lua", "LuaState instance already exists");
 
 	class Helper : public LuaState { };
@@ -81,12 +85,12 @@ std::unique_ptr<LuaState> LuaState::create() noexcept {
 	return std::make_unique<Helper>();
 }
 
-LuaState& LuaState::get() noexcept {
+auto LuaState::get() noexcept -> LuaState& {
 	TOAST_ASSERT(instance != nullptr, "Lua", "LuaState does not exist");
 	return *LuaState::instance;
 }
 
-bool LuaState::runString(std::string_view lua_code) noexcept {
+auto LuaState::runString(std::string_view lua_code) noexcept -> bool {
 	int load_status = luaL_loadbufferx(m_state, lua_code.data(), lua_code.size(), "=runString", nullptr);
 	if (load_status != LUA_OK) {
 		TOAST_ERROR("Lua", "Failed to load Lua code: {}", lua_tostring(m_state, -1));
@@ -122,7 +126,7 @@ LuaState::LuaState() {
 	TOAST_INFO("Lua", "Created lua state");
 }
 
-LuaState::~LuaState() {
+LuaState::~LuaState() noexcept {
 	lua_close(m_state);
 	LuaState::instance = nullptr;
 	TOAST_INFO("Lua", "Destroyed lua state");
@@ -137,6 +141,10 @@ void LuaState::registerApi() noexcept {
 	    .addFunction("info", luaToastInfo)
 	    .addFunction("warn", luaToastWarn)
 	    .addFunction("error", luaToastError)
+
+	    .addFunction(
+	        "load", +[](const std::string& path) -> AssetProxy { return AssetProxy(assets::load(path)); }
+	    )
 	    .endNamespace()
 
 	    // vec2
@@ -295,6 +303,29 @@ void LuaState::registerApi() noexcept {
 	    )
 	    .addFunction("min", [](const glm::vec4& a, const glm::vec4& b) { return glm::min(a, b); })
 	    .addFunction("max", [](const glm::vec4& a, const glm::vec4& b) { return glm::max(a, b); })
+	    .endClass()
+
+	    // AssetProxy
+	    .beginClass<AssetProxy>("Asset")
+	    .addFunction("path", &AssetProxy::path)
+	    .addFunction("uid", [](const AssetProxy& a) { return a.uid().data(); })
+	    .addFunction("hasValue", &AssetProxy::hasValue)
+	    .addFunction("type", &AssetProxy::type)
+	    .addFunction("__tostring", &AssetProxy::toString)
+	    .endClass()
+
+	    // NodeProxy
+	    .beginClass<NodeProxy>("Node")
+	    .addFunction("exists", &NodeProxy::exists)
+	    .addFunction("name", &NodeProxy::name)
+	    .addFunction("uid", &NodeProxy::uid)
+	    .addFunction("find", &NodeProxy::find)
+	    .addFunction("search", &NodeProxy::search)
+	    .addFunction("create", &NodeProxy::create)
+	    .addFunction("addDependsOn", &NodeProxy::addDependsOn)
+	    .addFunction("call", &NodeProxy::call)
+	    .addIndexMetaMethod(nodeProxyIndex)
+	    .addNewIndexMetaMethod(nodeProxyNewindex)
 	    .endClass();
 
 	// color3/color4 are aliases for vec3/vec4

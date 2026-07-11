@@ -3,7 +3,7 @@
  * @author Xein
  * @date 10 Jul 2026
  *
- * @brief TODO: Brief description of the file's purpose
+ * @brief Holds the Lua interpreter and enviroment table
  */
 
 #pragma once
@@ -14,11 +14,11 @@ namespace scripting {
 
 class LuaState {
 public:
-	static std::unique_ptr<LuaState> create() noexcept;
-	static LuaState& get() noexcept;
-
-	bool runString(std::string_view lua_code) noexcept;
+	static auto create() noexcept -> std::unique_ptr<LuaState>;
+	static auto get() noexcept -> LuaState&;
 	~LuaState() noexcept;
+
+	auto runString(std::string_view lua_code) noexcept -> bool;
 
 private:
 	static inline LuaState* instance = nullptr;
