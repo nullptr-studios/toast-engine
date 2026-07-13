@@ -75,7 +75,10 @@ pub struct Class {
     pub name: String,
     pub namespace: Option<String>,
     pub parent: Option<Parent>,
+    #[serde(skip)]
     pub attributes: Vec<Attribute>,
+    #[serde(rename = "attributes")]
+    pub attrib_json: json_t,
     pub functions: Vec<String>,
     pub methods: Vec<Function>,
     pub fields: Vec<Field>,

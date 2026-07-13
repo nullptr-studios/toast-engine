@@ -62,7 +62,7 @@ fn get_class(node: tree_sitter::Node, source: &str, file_path: &str) -> Option<C
     if !all_attrs.iter().any(|a| a.name == "ToastNode") {
         return None;
     }
-    let attributes = all_attrs
+    let attributes: Vec<Attribute> = all_attrs
         .into_iter()
         .filter(|a| a.name != "ToastNode")
         .collect();
@@ -71,7 +71,8 @@ fn get_class(node: tree_sitter::Node, source: &str, file_path: &str) -> Option<C
         name,
         namespace: get_namespace(node, source),
         parent: get_parent(node, source),
-        attributes,
+        attributes: attributes.clone(),
+        attrib_json: attrs_to_json(&attributes),
         functions: get_functions(node, source),
         methods: get_methods(node, source),
         fields: get_fields(node, source),
