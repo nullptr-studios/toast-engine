@@ -4,6 +4,7 @@
 #include "vulkan_core.hpp"
 
 #include <algorithm>
+#include <utility>
 
 namespace toast::renderer {
 ShaderLayout::ShaderLayout(const VulkanCore& core, slang::ProgramLayout* slang_layout) {
@@ -69,7 +70,7 @@ void ShaderLayout::reflectBindings(
 		range.offset = static_cast<uint32_t>(var_layout->getOffset(slang::ParameterCategory::PushConstantBuffer));
 
 		if (type_layout->getKind() == slang::TypeReflection::Kind::ConstantBuffer) {
-			auto element_layout = type_layout->getElementTypeLayout();
+			auto* element_layout = type_layout->getElementTypeLayout();
 			range.size = static_cast<uint32_t>(element_layout->getSize(slang::ParameterCategory::Uniform));
 		} else {
 			// If declared as a raw struct block
@@ -129,7 +130,7 @@ void ShaderLayout::reflectBindings(
 				binding.descriptorType = mapResourceToDescriptorType(element_type_layout);
 				// Unbounded arrays return ~size_t(0) from Slang; treat them as runtime-sized bindless descriptors (use descriptorCount=1
 				// here)
-				binding.descriptorCount = (element_count == static_cast<size_t>(~0)) ? 1u : static_cast<uint32_t>(element_count);
+				binding.descriptorCount = (std::cmp_equal(element_count, ~0)) ? 1u : static_cast<uint32_t>(element_count);
 				binding.stageFlags = vk::ShaderStageFlagBits::eAll;
 				set_layout_map[next_space].push_back(binding);
 			}
@@ -140,8 +141,8 @@ void ShaderLayout::reflectBindings(
 	// Handle Standalone Leaf Resource Bindings (check if this variable is in a descriptor table/slot)
 	{
 		bool in_descriptor_table = false;
-		uint32_t catCount = var_layout->getCategoryCount();
-		for (uint32_t ci = 0; ci < catCount; ++ci) {
+		uint32_t cat_count = var_layout->getCategoryCount();
+		for (uint32_t ci = 0; ci < cat_count; ++ci) {
 			if (var_layout->getCategoryByIndex(ci) == slang::ParameterCategory::DescriptorTableSlot) {
 				in_descriptor_table = true;
 				break;

@@ -244,23 +244,23 @@ auto VulkanRenderer::createDepthResources() -> void {
 }
 
 void VulkanRenderer::createDescriptorPool() {
-	std::array poolSizes {
+	std::array pool_sizes {
 	  vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1024),
 
 	  vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 4096),
 
 	  vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 1024)
 	};
-	vk::DescriptorPoolCreateInfo poolCI {};
-	poolCI.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+	vk::DescriptorPoolCreateInfo pool_ci {};
+	pool_ci.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
 
-	poolCI.maxSets = 8192;
+	pool_ci.maxSets = 8192;
 
-	poolCI.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+	pool_ci.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
 
-	poolCI.pPoolSizes = poolSizes.data();
+	pool_ci.pPoolSizes = pool_sizes.data();
 
-	m_descriptor_pool = vk::raii::DescriptorPool(m_core->getDevice(), poolCI);
+	m_descriptor_pool = vk::raii::DescriptorPool(m_core->getDevice(), pool_ci);
 	setDebugName(*m_core, *m_descriptor_pool, "VulkanRenderer DescriptorPool");
 }
 
@@ -397,25 +397,25 @@ void VulkanRenderer::createFrameResources() {
 
 	const auto& device = m_core->getDevice();
 
-	const vk::DeviceSize bufferSize = sizeof(FrameUBO);
+	const vk::DeviceSize buffer_size = sizeof(FrameUBO);
 
 	// Create per-frame UBO buffers only. Descriptor sets are allocated by individual render passes
 	for (uint32_t i = 0; i < m_frame_ubo_res.size(); ++i) {
 		auto& frame = m_frame_ubo_res[i];
 
 		// create ubo
-		vk::BufferCreateInfo bufferCI {};
-		bufferCI.size = bufferSize;
-		bufferCI.usage = vk::BufferUsageFlagBits::eUniformBuffer;
+		vk::BufferCreateInfo buffer_ci {};
+		buffer_ci.size = buffer_size;
+		buffer_ci.usage = vk::BufferUsageFlagBits::eUniformBuffer;
 
 		// allocation
-		vma::AllocationCreateInfo allocCI {};
-		allocCI.usage = vma::MemoryUsage::eAutoPreferHost;
+		vma::AllocationCreateInfo alloc_ci {};
+		alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
 
-		allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+		alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 
 		// create buffer
-		frame.gpuBuffer.emplace(m_core->getAllocator().createBuffer(bufferCI, allocCI));
+		frame.gpuBuffer.emplace(m_core->getAllocator().createBuffer(buffer_ci, alloc_ci));
 		setDebugName(*m_core, **frame.gpuBuffer, std::format("VulkanRenderer FrameUBO[{}]", i));
 
 		// no staging buffer
@@ -424,21 +424,21 @@ void VulkanRenderer::createFrameResources() {
 	}
 }
 
-void VulkanRenderer::updateFrameResources(uint32_t frameIndex, RenderFrame& frameData) {
-	m_frame_ubos[frameIndex] = frameData.frame_data;
+void VulkanRenderer::updateFrameResources(uint32_t frame_index, RenderFrame& frame_data) {
+	m_frame_ubos[frame_index] = frame_data.frame_data;
 
-	auto& allocation = m_frame_ubo_res[frameIndex].gpuBuffer->getAllocation();
+	const auto& allocation = m_frame_ubo_res[frame_index].gpuBuffer->getAllocation();
 	// With VMA_ALLOCATION_CREATE_MAPPED
 	auto* mapped = allocation.getInfo().pMappedData;
 
 	if (mapped) {
-		std::memcpy(mapped, &m_frame_ubos[frameIndex], sizeof(FrameUBO));
+		std::memcpy(mapped, &m_frame_ubos[frame_index], sizeof(FrameUBO));
 
 		allocation.flush(0, sizeof(FrameUBO));
 	}
 }
 
-auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
+auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	ZoneScoped;
 	if (m_frames.empty()) {
 		return;
@@ -479,13 +479,13 @@ auto VulkanRenderer::drawFrame(RenderFrame& frameData) -> void {
 	m_images_in_flight[image_index] = *frame.in_flight;
 
 	// Update FrameData
-	updateFrameResources(m_current_frame, frameData);    // FIXME: dt
+	updateFrameResources(m_current_frame, frame_data);    // FIXME: dt
 
-	m_rendering_frame = &frameData;
+	m_rendering_frame = &frame_data;
 
 	// Update the Render passes TODO: Move outside of renderloop
 	for (auto& pass : m_render_passes) {
-		pass->update(m_current_frame, Time::get().renderDelta());
+		pass->update(m_current_frame, Time::renderDelta());
 	}
 
 	recordFrame(frame, image_index);
@@ -557,8 +557,8 @@ void VulkanRenderer::mainRenderThread() {
 			}
 		}
 
-		RenderFrame frameToDraw;
-		bool consumedQueuedFrame = false;
+		RenderFrame frame_to_draw;
+		bool consumed_queued_frame = false;
 		const double limit_hz = m_frame_rate_limit_hz.load(std::memory_order_relaxed);
 
 		{
@@ -588,14 +588,14 @@ void VulkanRenderer::mainRenderThread() {
 			}
 
 			if (!m_ready_frames.empty()) {
-				const auto frameIndex = m_ready_frames.front();
+				const auto frame_index = m_ready_frames.front();
 				m_ready_frames.pop();
-				frameToDraw = m_render_frames[frameIndex];
-				m_cached_frame = frameToDraw;
+				frame_to_draw = m_render_frames[frame_index];
+				m_cached_frame = frame_to_draw;
 				m_has_cached_frame = true;
-				consumedQueuedFrame = true;
+				consumed_queued_frame = true;
 			} else if (m_has_cached_frame) {
-				frameToDraw = m_cached_frame;
+				frame_to_draw = m_cached_frame;
 			} else {
 				continue;
 			}
@@ -616,11 +616,11 @@ void VulkanRenderer::mainRenderThread() {
 		// TODO: Make this a editor keybind
 		// m_core->getRenderDocAPI()->StartFrameCapture(nullptr, nullptr);
 
-		drawFrame(frameToDraw);
+		drawFrame(frame_to_draw);
 
 		// m_core->getRenderDocAPI()->EndFrameCapture(nullptr, nullptr);
 
-		if (consumedQueuedFrame) {
+		if (consumed_queued_frame) {
 			m_free_frames.release();
 		}
 	}
@@ -703,10 +703,10 @@ void VulkanRenderer::addRenderPass(std::unique_ptr<IRenderPass> pass) {
 	m_render_passes.push_back(std::move(pass));
 }
 
-void VulkanRenderer::queueResourceUpload(std::unique_ptr<PendingResourceUpload> uploadJob) {
+void VulkanRenderer::queueResourceUpload(std::unique_ptr<PendingResourceUpload> upload_job) {
 	// build() can be expensive so its dispatched to the thread pool to avoid blocking the main thread
 	m_pending_upload_builds.fetch_add(1, std::memory_order_relaxed);
-	toast::ThreadPool::push([this, job = std::move(uploadJob)]() mutable {
+	toast::ThreadPool::push([this, job = std::move(upload_job)]() mutable {
 		job->build(*m_core);
 
 		{
@@ -718,15 +718,15 @@ void VulkanRenderer::queueResourceUpload(std::unique_ptr<PendingResourceUpload> 
 }
 
 void VulkanRenderer::processPendingUploads() {
-	auto& device = m_core->getDevice();
+	const auto& device = m_core->getDevice();
 
 	while (!m_pending_uploads.empty()) {
-		auto& oldestBatch = m_pending_uploads.front();
+		auto& oldest_batch = m_pending_uploads.front();
 
-		const auto status = vkGetFenceStatus(*device, *oldestBatch.completionFence);
+		const auto status = vkGetFenceStatus(*device, *oldest_batch.completionFence);
 
 		if (status == VkResult::VK_SUCCESS) {
-			for (auto& job : oldestBatch.jobs) {
+			for (auto& job : oldest_batch.jobs) {
 				job->finished();
 			}
 
@@ -749,26 +749,26 @@ void VulkanRenderer::flushResourceUploads() {
 		m_upload_staging.clear();
 	}
 
-	auto& device = m_core->getDevice();
-	auto& transferCmd = m_frames[m_current_frame].transfer_command_buffer;
+	const auto& device = m_core->getDevice();
+	auto& transfer_cmd = m_frames[m_current_frame].transfer_command_buffer;
 
-	transferCmd.reset();
-	transferCmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+	transfer_cmd.reset();
+	transfer_cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 
 	for (auto& job : jobs_to_flush) {
-		job->record(*transferCmd);
+		job->record(*transfer_cmd);
 	}
 
-	transferCmd.end();
+	transfer_cmd.end();
 
 	// Create a single fence for the entire batch group
 	BatchedUploadGroup batch;
 	batch.completionFence = vk::raii::Fence(device, vk::FenceCreateInfo {});
 	batch.jobs = std::move(jobs_to_flush);    // Move local list into the batch tracker
 
-	const vk::CommandBuffer rawTransferCmd = *transferCmd;
-	const vk::SubmitInfo submitInfo(0, nullptr, nullptr, 1, &rawTransferCmd);
-	m_core->getTransferQueue().submit(submitInfo, *batch.completionFence);
+	const vk::CommandBuffer raw_transfer_cmd = *transfer_cmd;
+	const vk::SubmitInfo submit_info(0, nullptr, nullptr, 1, &raw_transfer_cmd);
+	m_core->getTransferQueue().submit(submit_info, *batch.completionFence);
 
 	m_pending_uploads.push(std::move(batch));
 }

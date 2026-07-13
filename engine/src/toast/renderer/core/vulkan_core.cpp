@@ -211,7 +211,7 @@ auto deviceNameString(const vk::PhysicalDeviceProperties& props) -> std::string 
 }
 }    // namespace
 
-std::string DeviceScore::toString() const noexcept {
+auto DeviceScore::toString() const noexcept -> std::string {
 	std::string str = "Device Score Breakdown:\n";
 	str += "  Device type: " + std::to_string(device_type) + "\n";
 	str += "  Memory: " + std::to_string(memory) + "\n";
@@ -270,8 +270,8 @@ VulkanCore::VulkanCore(
 	// Renderdoc api
 #if defined(_WIN32)
 	if (HMODULE mod = GetModuleHandleA("renderdoc.dll")) {
-		pRENDERDOC_GetAPI RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(GetProcAddress(mod, "RENDERDOC_GetAPI"));
-		RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
+		pRENDERDOC_GetAPI renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(GetProcAddress(mod, "RENDERDOC_GetAPI"));
+		renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
 		TOAST_INFO("VulkanCore", "RenderDoc API detected");
 	}
 #elif defined(__linux__)
@@ -719,17 +719,17 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 	return score;
 }
 
-bool VulkanCore::checkValidationLayerSupport() {
+auto VulkanCore::checkValidationLayerSupport() -> bool {
 	{
-		uint32_t layerCount;
-		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+		uint32_t layer_count;
+		vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
-		std::vector<VkLayerProperties> availableLayers(layerCount);
-		vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+		std::vector<VkLayerProperties> available_layers(layer_count);
+		vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
-		return std::find_if(availableLayers.begin(), availableLayers.end(), [](const VkLayerProperties& layer) {
+		return std::find_if(available_layers.begin(), available_layers.end(), [](const VkLayerProperties& layer) {
 			       return std::string(layer.layerName) == "VK_LAYER_KHRONOS_validation";
-		       }) != availableLayers.end();
+		       }) != available_layers.end();
 	}
 }
 }

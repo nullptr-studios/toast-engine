@@ -20,53 +20,53 @@ void VulkanTexture::create(const VulkanCore& core, Params params, std::string_vi
 	        ? std::format("Texture {}x{} {}", params.extent.width, params.extent.height, vk::to_string(params.format))
 	        : std::string(debug_name);
 
-	vk::ImageCreateInfo imageCI {};
-	imageCI.format = m_params.format;
-	imageCI.extent = m_params.extent;
-	imageCI.mipLevels = m_params.mip_levels;
-	imageCI.arrayLayers = m_params.layer_count;
-	imageCI.samples = vk::SampleCountFlagBits::e1;
-	imageCI.tiling = vk::ImageTiling::eOptimal;
-	imageCI.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-	imageCI.sharingMode = vk::SharingMode::eExclusive;
-	imageCI.initialLayout = vk::ImageLayout::eUndefined;
+	vk::ImageCreateInfo image_ci {};
+	image_ci.format = m_params.format;
+	image_ci.extent = m_params.extent;
+	image_ci.mipLevels = m_params.mip_levels;
+	image_ci.arrayLayers = m_params.layer_count;
+	image_ci.samples = vk::SampleCountFlagBits::e1;
+	image_ci.tiling = vk::ImageTiling::eOptimal;
+	image_ci.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+	image_ci.sharingMode = vk::SharingMode::eExclusive;
+	image_ci.initialLayout = vk::ImageLayout::eUndefined;
 
 	if (m_params.is_cubemap) {
-		imageCI.flags |= vk::ImageCreateFlagBits::eCubeCompatible;
+		image_ci.flags |= vk::ImageCreateFlagBits::eCubeCompatible;
 	}
 
 	if (m_params.extent.depth > 1) {
-		imageCI.imageType = vk::ImageType::e3D;
+		image_ci.imageType = vk::ImageType::e3D;
 	} else {
-		imageCI.imageType = vk::ImageType::e2D;
+		image_ci.imageType = vk::ImageType::e2D;
 	}
 
-	vma::AllocationCreateInfo allocCI {};
-	allocCI.usage = vma::MemoryUsage::eAutoPreferDevice;
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
 
-	m_image.emplace(core.getAllocator().createImage(imageCI, allocCI));
+	m_image.emplace(core.getAllocator().createImage(image_ci, alloc_ci));
 	setDebugName(core, **m_image, name);
 
-	vk::ImageViewCreateInfo viewCI {};
-	viewCI.image = **m_image;
+	vk::ImageViewCreateInfo view_ci {};
+	view_ci.image = **m_image;
 
 	if (m_params.extent.depth > 1) {
-		viewCI.viewType = vk::ImageViewType::e3D;
+		view_ci.viewType = vk::ImageViewType::e3D;
 	} else if (m_params.is_cubemap) {
 		// A  cubemap has 6 layers
-		viewCI.viewType = m_params.layer_count > 6 ? vk::ImageViewType::eCubeArray : vk::ImageViewType::eCube;
+		view_ci.viewType = m_params.layer_count > 6 ? vk::ImageViewType::eCubeArray : vk::ImageViewType::eCube;
 	} else {
-		viewCI.viewType = m_params.layer_count > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D;
+		view_ci.viewType = m_params.layer_count > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D;
 	}
 
-	viewCI.format = m_params.format;
-	viewCI.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-	viewCI.subresourceRange.baseMipLevel = 0;
-	viewCI.subresourceRange.levelCount = m_params.mip_levels;
-	viewCI.subresourceRange.baseArrayLayer = 0;
-	viewCI.subresourceRange.layerCount = m_params.layer_count;
+	view_ci.format = m_params.format;
+	view_ci.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+	view_ci.subresourceRange.baseMipLevel = 0;
+	view_ci.subresourceRange.levelCount = m_params.mip_levels;
+	view_ci.subresourceRange.baseArrayLayer = 0;
+	view_ci.subresourceRange.layerCount = m_params.layer_count;
 
-	m_image_view = vk::raii::ImageView(core.getDevice(), viewCI);
+	m_image_view = vk::raii::ImageView(core.getDevice(), view_ci);
 	setDebugName(core, *m_image_view, name + " View");
 }
 
@@ -84,7 +84,7 @@ void TextureUpload::build(const VulkanCore& core) {
 	}
 
 	if (ktxTexture2_NeedsTranscoding(m_ktxTexture)) {
-		result = ktxTexture2_TranscodeBasis(reinterpret_cast<ktxTexture2*>(m_ktxTexture), KTX_TTF_BC7_RGBA, 0);
+		result = ktxTexture2_TranscodeBasis(m_ktxTexture, KTX_TTF_BC7_RGBA, 0);
 		if (result != KTX_SUCCESS) {
 			TOAST_CRITICAL("TextureUpload", "Failed to transcode BasisUniversal texture");
 		}
@@ -110,30 +110,30 @@ void TextureUpload::build(const VulkanCore& core) {
 	m_texture->create(core, m_texParams, m_debug_name);
 	m_texture->markUploading();
 
-	const vk::DeviceSize totalSize = m_ktxTexture->dataSize;
+	const vk::DeviceSize total_size = m_ktxTexture->dataSize;
 
-	vk::BufferCreateInfo stagingCI {};
-	stagingCI.size = totalSize;
-	stagingCI.usage = vk::BufferUsageFlagBits::eTransferSrc;
+	vk::BufferCreateInfo staging_ci {};
+	staging_ci.size = total_size;
+	staging_ci.usage = vk::BufferUsageFlagBits::eTransferSrc;
 
-	vma::AllocationCreateInfo allocCI {};
-	allocCI.usage = vma::MemoryUsage::eAuto;
-	allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAuto;
+	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 
-	m_stagingBuffer = core.getAllocator().createBuffer(stagingCI, allocCI);
+	m_stagingBuffer = core.getAllocator().createBuffer(staging_ci, alloc_ci);
 	if (!m_debug_name.empty()) {
 		setDebugName(core, *m_stagingBuffer, m_debug_name + " StagingBuffer");
 	}
 
-	uint8_t* mappedData = static_cast<uint8_t*>(m_stagingBuffer.getAllocation().getInfo().pMappedData);
-	std::memcpy(mappedData, m_ktxTexture->pData, totalSize);
+	uint8_t* mapped_data = static_cast<uint8_t*>(m_stagingBuffer.getAllocation().getInfo().pMappedData);
+	std::memcpy(mapped_data, m_ktxTexture->pData, total_size);
 
-	uint32_t numLayers = std::max(1u, m_ktxTexture->numLayers);
-	uint32_t numFaces = m_ktxTexture->isCubemap ? 6 : 1;
+	uint32_t num_layers = std::max(1u, m_ktxTexture->numLayers);
+	uint32_t num_faces = m_ktxTexture->isCubemap ? 6 : 1;
 
 	for (uint32_t mip = 0; mip < m_texParams.mip_levels; ++mip) {
-		for (uint32_t layer = 0; layer < numLayers; ++layer) {
-			for (uint32_t face = 0; face < numFaces; ++face) {
+		for (uint32_t layer = 0; layer < num_layers; ++layer) {
+			for (uint32_t face = 0; face < num_faces; ++face) {
 				ktx_size_t offset = 0;
 
 				if (ktxTexture2_GetImageOffset(m_ktxTexture, mip, layer, face, &offset) != KTX_SUCCESS) {
@@ -145,7 +145,7 @@ void TextureUpload::build(const VulkanCore& core) {
 				region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
 				region.imageSubresource.mipLevel = mip;
 				// Maps faces directly into contiguous array layers
-				region.imageSubresource.baseArrayLayer = (layer * numFaces) + face;
+				region.imageSubresource.baseArrayLayer = (layer * num_faces) + face;
 				region.imageSubresource.layerCount = 1;
 
 				region.imageExtent.width = std::max(1u, m_texParams.extent.width / (1 << mip));
@@ -159,14 +159,14 @@ void TextureUpload::build(const VulkanCore& core) {
 }
 
 void TextureUpload::record(vk::CommandBuffer cmd) {
-	vk::Image imageHandle = m_texture->getImage();
+	vk::Image image_handle = m_texture->getImage();
 
 	vk::ImageMemoryBarrier barrier {};
 	barrier.oldLayout = vk::ImageLayout::eUndefined;
 	barrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = imageHandle;
+	barrier.image = image_handle;
 	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
 	barrier.subresourceRange.baseMipLevel = 0;
 	barrier.subresourceRange.levelCount = m_texParams.mip_levels;
@@ -177,7 +177,7 @@ void TextureUpload::record(vk::CommandBuffer cmd) {
 
 	cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, nullptr, barrier);
 
-	cmd.copyBufferToImage(*m_stagingBuffer, imageHandle, vk::ImageLayout::eTransferDstOptimal, m_copyRegions);
+	cmd.copyBufferToImage(*m_stagingBuffer, image_handle, vk::ImageLayout::eTransferDstOptimal, m_copyRegions);
 
 	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
 	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;

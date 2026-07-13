@@ -35,11 +35,11 @@ public:
 		glm::vec4 color;
 	};
 
-	MeshPass(const toast::renderer::VulkanCore& core, vk::Format colorFormat, vk::Format depthFormat, vk::Extent2D extent);
+	MeshPass(const toast::renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent);
 
 	void update(uint32_t frame_index, float dt) override;
 
-	void record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t imageIndex) override;
+	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
 
 private:
 	void createResources(const toast::renderer::VulkanCore& core);
@@ -53,7 +53,7 @@ private:
 	[[nodiscard]]
 	auto getMaterialDescriptorSet(const toast::renderer::VulkanCore& core, assets::Material& material) -> vk::DescriptorSet;
 
-	void updateUBO(uint32_t frameIndex);
+	void updateUBO(uint32_t frame_index);
 
 	toast::renderer::VulkanPipeline m_pipeline;
 

@@ -202,28 +202,28 @@ auto reflectMaterialBindings(slang::ProgramLayout* layout) -> ShaderMaterialBind
 
 auto ShaderCompiler::compileShaderModuleFromSource(const std::filesystem::path& shader_path) -> CompiledShaderCode {
 	// TODO: SWAP WITH RESOURCE MANAGER!
-	std::filesystem::path resolvedPath = shader_path;
-	if (!resolvedPath.is_absolute()) {
-		auto cwdPath = std::filesystem::current_path() / shader_path;
-		if (std::filesystem::exists(cwdPath)) {
-			resolvedPath = cwdPath;
+	std::filesystem::path resolved_path = shader_path;
+	if (!resolved_path.is_absolute()) {
+		auto cwd_path = std::filesystem::current_path() / shader_path;
+		if (std::filesystem::exists(cwd_path)) {
+			resolved_path = cwd_path;
 		} else {
-			resolvedPath = shader_path;
+			resolved_path = shader_path;
 		}
 	}
 
-	TOAST_TRACE("ShaderCompiler", "Attempting to compile shader from: {}", resolvedPath.string());
+	TOAST_TRACE("ShaderCompiler", "Attempting to compile shader from: {}", resolved_path.string());
 	TOAST_TRACE("ShaderCompiler", "Current working directory: {}", std::filesystem::current_path().string());
 
-	if (!std::filesystem::exists(resolvedPath)) {
-		std::string errorMsg = "Shader file not found: " + resolvedPath.string() +
-		                       "\nCurrent working directory: " + std::filesystem::current_path().string();
-		TOAST_CRITICAL("ShaderCompiler", "{}", errorMsg);
+	if (!std::filesystem::exists(resolved_path)) {
+		std::string error_msg = "Shader file not found: " + resolved_path.string() +
+		                        "\nCurrent working directory: " + std::filesystem::current_path().string();
+		TOAST_CRITICAL("ShaderCompiler", "{}", error_msg);
 	}
 
-	std::ifstream file(resolvedPath, std::ios::binary);
+	std::ifstream file(resolved_path, std::ios::binary);
 	if (!file) {
-		TOAST_CRITICAL("ShaderCompiler", "Failed to open shader file: {}", resolvedPath.string());
+		TOAST_CRITICAL("ShaderCompiler", "Failed to open shader file: {}", resolved_path.string());
 	}
 	std::string source;
 	source.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
@@ -235,53 +235,53 @@ auto ShaderCompiler::compileShaderModuleFromSource(const std::filesystem::path& 
 	Slang::ComPtr<slang::IBlob> slang_diagnostics;
 
 	slang_module = slang_session->loadModuleFromSource(
-	    module_name.c_str(), resolvedPath.string().c_str(), nullptr, slang_diagnostics.writeRef()
+	    module_name.c_str(), resolved_path.string().c_str(), nullptr, slang_diagnostics.writeRef()
 	);
 
 	if (slang_diagnostics) {
-		const void* diagPtr = slang_diagnostics->getBufferPointer();
-		size_t diagSize = slang_diagnostics->getBufferSize();
-		if (diagPtr && diagSize > 0) {
-			const char* diagC = reinterpret_cast<const char*>(diagPtr);
-			std::string diagStr(diagC, diagC + diagSize);
-			TOAST_ERROR("ShaderCompiler", "Slang diagnostics (module load) for '{}':\n{}", resolvedPath.string(), diagStr);
+		const void* diag_ptr = slang_diagnostics->getBufferPointer();
+		size_t diag_size = slang_diagnostics->getBufferSize();
+		if (diag_ptr && diag_size > 0) {
+			const char* diag_c = reinterpret_cast<const char*>(diag_ptr);
+			std::string diag_str(diag_c, diag_c + diag_size);
+			TOAST_ERROR("ShaderCompiler", "Slang diagnostics (module load) for '{}':\n{}", resolved_path.string(), diag_str);
 		}
 	}
 
-	slang::IComponentType* components[] = {slang_module};
+	const std::array<slang::IComponentType*, 1> components {slang_module};
 	Slang::ComPtr<slang::IComponentType> program;
-	slang_session->createCompositeComponentType(components, 1, program.writeRef());
+	slang_session->createCompositeComponentType(components.data(), 1, program.writeRef());
 
 	slang::ProgramLayout* layout = program->getLayout();
 
 	for (int i = 0; i < layout->getParameterCount(); i++) {
-		auto r = layout->getParameterByIndex(i);
+		auto* r = layout->getParameterByIndex(i);
 		TOAST_TRACE("ShaderCompiler", "variable name: {}\n  type: {}", r->getName(), r->getType()->getName());
 	}
 
 	if (!slang_module) {
-		TOAST_CRITICAL("ShaderCompiler", "Failed to load Slang module from source: {}", resolvedPath.string());
+		TOAST_CRITICAL("ShaderCompiler", "Failed to load Slang module from source: {}", resolved_path.string());
 	}
 
-	Slang::ComPtr<slang::IBlob> spirvBlob;
-	SlangResult got = slang_module->getTargetCode(0, spirvBlob.writeRef());
-	if (SLANG_FAILED(got) || !spirvBlob) {
+	Slang::ComPtr<slang::IBlob> spirv_blob;
+	SlangResult got = slang_module->getTargetCode(0, spirv_blob.writeRef());
+	if (SLANG_FAILED(got) || !spirv_blob) {
 		TOAST_CRITICAL("ShaderCompiler", "Failed to get SPIR-V target code from Slang module");
 	}
 
-	const auto bufferSize = spirvBlob->getBufferSize();
-	if (bufferSize == 0) {
+	const auto buffer_size = spirv_blob->getBufferSize();
+	if (buffer_size == 0) {
 		TOAST_CRITICAL("ShaderCompiler", "SPIR-V binary is empty");
 	}
 
-	const void* bufferPtr = spirvBlob->getBufferPointer();
-	const auto* bytes = reinterpret_cast<const std::byte*>(bufferPtr);
+	const void* buffer_ptr = spirv_blob->getBufferPointer();
+	const auto* bytes = reinterpret_cast<const std::byte*>(buffer_ptr);
 
 	std::vector<std::byte> out;
-	out.assign(bytes, bytes + bufferSize);
+	out.assign(bytes, bytes + buffer_size);
 
 	TOAST_TRACE(
-	    "ShaderCompiler", "Successfully compiled shader from '{}' -> {} bytes of SPIR-V", resolvedPath.string(), bufferSize
+	    "ShaderCompiler", "Successfully compiled shader from '{}' -> {} bytes of SPIR-V", resolved_path.string(), buffer_size
 	);
 
 	CompiledShaderCode result;
@@ -298,25 +298,25 @@ auto ShaderCompiler::compileShaderModule(std::string_view module_name) -> Compil
 	slang_module = slang_session->loadModule(module_name.data(), slang_diagnostics.writeRef());
 
 	if (slang_diagnostics) {
-		const void* diagPtr = slang_diagnostics->getBufferPointer();
-		size_t diagSize = slang_diagnostics->getBufferSize();
-		if (diagPtr && diagSize > 0) {
-			const char* diagC = reinterpret_cast<const char*>(diagPtr);
-			std::string diagStr(diagC, diagC + diagSize);
-			TOAST_ERROR("ShaderCompiler", "Slang diagnostics (module load) for '{}':\n{}", module_name, diagStr);
+		const void* diag_ptr = slang_diagnostics->getBufferPointer();
+		size_t diag_size = slang_diagnostics->getBufferSize();
+		if (diag_ptr && diag_size > 0) {
+			const char* diag_c = reinterpret_cast<const char*>(diag_ptr);
+			std::string diag_str(diag_c, diag_c + diag_size);
+			TOAST_ERROR("ShaderCompiler", "Slang diagnostics (module load) for '{}':\n{}", module_name, diag_str);
 		}
 	}
 
 	slang_module->getDefinedEntryPointCount();
 
-	slang::IComponentType* components[] = {slang_module};
+	const std::array<slang::IComponentType*, 1> components {slang_module};
 	Slang::ComPtr<slang::IComponentType> program;
-	slang_session->createCompositeComponentType(components, 1, program.writeRef());
+	slang_session->createCompositeComponentType(components.data(), 1, program.writeRef());
 
 	slang::ProgramLayout* layout = program->getLayout();
 
 	for (int i = 0; i < layout->getParameterCount(); i++) {
-		auto r = layout->getParameterByIndex(i);
+		auto* r = layout->getParameterByIndex(i);
 		TOAST_TRACE("ShaderCompiler", "variable name: {}\n  type: {}", r->getName(), r->getType()->getName());
 	}
 
@@ -324,24 +324,24 @@ auto ShaderCompiler::compileShaderModule(std::string_view module_name) -> Compil
 		TOAST_CRITICAL("ShaderCompiler", "Failed to load Slang module from module: {}", module_name);
 	}
 
-	Slang::ComPtr<slang::IBlob> spirvBlob;
-	SlangResult got = slang_module->getTargetCode(0, spirvBlob.writeRef());
-	if (SLANG_FAILED(got) || !spirvBlob) {
+	Slang::ComPtr<slang::IBlob> spirv_blob;
+	SlangResult got = slang_module->getTargetCode(0, spirv_blob.writeRef());
+	if (SLANG_FAILED(got) || !spirv_blob) {
 		TOAST_CRITICAL("ShaderCompiler", "Failed to get SPIR-V target code from Slang module");
 	}
 
-	const auto bufferSize = spirvBlob->getBufferSize();
-	if (bufferSize == 0) {
+	const auto buffer_size = spirv_blob->getBufferSize();
+	if (buffer_size == 0) {
 		TOAST_CRITICAL("ShaderCompiler", "SPIR-V binary is empty");
 	}
 
-	const void* bufferPtr = spirvBlob->getBufferPointer();
-	const auto* bytes = reinterpret_cast<const std::byte*>(bufferPtr);
+	const void* buffer_ptr = spirv_blob->getBufferPointer();
+	const auto* bytes = reinterpret_cast<const std::byte*>(buffer_ptr);
 
 	std::vector<std::byte> out;
-	out.assign(bytes, bytes + bufferSize);
+	out.assign(bytes, bytes + buffer_size);
 
-	TOAST_TRACE("ShaderCompiler", "Successfully compiled shader from module '{}' -> {} bytes of SPIR-V", module_name, bufferSize);
+	TOAST_TRACE("ShaderCompiler", "Successfully compiled shader from module '{}' -> {} bytes of SPIR-V", module_name, buffer_size);
 
 	CompiledShaderCode result;
 	result.spirv = std::move(out);

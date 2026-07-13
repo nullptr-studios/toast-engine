@@ -24,7 +24,7 @@ auto readAssetUID(const DataValue& v) -> toast::UID {
 	if (v.type() == DataType::string_t) {
 		const auto s = static_cast<std::string>(v);
 		if (s.size() == 11) {
-			return toast::UID(toast::UID::fromString(s));
+			return {toast::UID::fromString(s)};
 		}
 	}
 	return toast::UID(uint64_t {0});

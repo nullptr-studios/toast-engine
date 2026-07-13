@@ -101,7 +101,7 @@ void appendPyramidAlongAxis(
 }    // namespace
 
 DebugPass::DebugPass(
-    const toast::renderer::VulkanCore& core, vk::Format colorFormat, vk::Format depthFormat, vk::Extent2D extent
+    const toast::renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent
 ) {
 	m_shader_layout.rebuild(core, "debug");
 
@@ -123,8 +123,8 @@ DebugPass::DebugPass(
 		VulkanPipeline::Config config;
 		config.pipeline_type = VulkanPipeline::PipelineType::graphics;
 		config.debug_name = "DebugPass Grid";
-		config.color_format = colorFormat;
-		config.depth_format = depthFormat;
+		config.color_format = color_format;
+		config.depth_format = depth_format;
 		config.extent = extent;
 		config.shader_spirv = std::move(shader.spirv);
 		config.pipeline_layout = *m_shader_layout.getPipelineLayout();
@@ -145,8 +145,8 @@ DebugPass::DebugPass(
 		VulkanPipeline::Config config;
 		config.pipeline_type = VulkanPipeline::PipelineType::graphics;
 		config.debug_name = "DebugPass Lines";
-		config.color_format = colorFormat;
-		config.depth_format = depthFormat;
+		config.color_format = color_format;
+		config.depth_format = depth_format;
 		config.extent = extent;
 		config.shader_spirv = std::move(shader.spirv);
 		config.pipeline_layout = *m_shader_layout.getPipelineLayout();
@@ -167,8 +167,8 @@ DebugPass::DebugPass(
 		VulkanPipeline::Config config;
 		config.pipeline_type = VulkanPipeline::PipelineType::graphics;
 		config.debug_name = "DebugPass Gizmo";
-		config.color_format = colorFormat;
-		config.depth_format = depthFormat;
+		config.color_format = color_format;
+		config.depth_format = depth_format;
 		config.extent = extent;
 		config.shader_spirv = std::move(shader.spirv);
 		config.pipeline_layout = *m_shader_layout.getPipelineLayout();
@@ -207,11 +207,11 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 	buffer.buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
 }
 
-void DebugPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t imageIndex) {
-	(void)imageIndex;
+void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) {
+	(void)image_index;
 
-	if (frameIndex >= m_frame_descriptor_sets.size()) {
-		TOAST_ERROR("DebugPass", "Frame index {} out of bounds for descriptor sets", frameIndex);
+	if (frame_index >= m_frame_descriptor_sets.size()) {
+		TOAST_ERROR("DebugPass", "Frame index {} out of bounds for descriptor sets", frame_index);
 		return;
 	}
 
@@ -224,7 +224,7 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t imag
 	    vk::PipelineBindPoint::eGraphics,
 	    *m_shader_layout.getPipelineLayout(),
 	    0,
-	    std::array<vk::DescriptorSet, 1> {*m_frame_descriptor_sets[frameIndex]},
+	    std::array<vk::DescriptorSet, 1> {*m_frame_descriptor_sets[frame_index]},
 	    {}
 	);
 
@@ -232,12 +232,12 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t imag
 	if (m_grid_enabled && m_plane_pipeline.isReady()) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_plane_pipeline.getPipeline());
 
-		constexpr float kGridHalfExtent = 1000.0f;    // matches grid.slang's fade-to-zero distance
+		constexpr float k_grid_half_extent = 1000.0f;    // matches grid.slang's fade-to-zero distance
 		const glm::vec3 cam_pos = frame->frame_data.camera_position;
 
 		DrawPushConstants pc {};
 		pc.model = glm::translate(glm::mat4(1.0f), glm::vec3(cam_pos.x, cam_pos.y, 0.0f)) *
-		           glm::scale(glm::mat4(1.0f), glm::vec3(kGridHalfExtent));
+		           glm::scale(glm::mat4(1.0f), glm::vec3(k_grid_half_extent));
 		cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(DrawPushConstants), &pc);
 
 		cmd.bindVertexBuffers(0, std::array<vk::Buffer, 1> {*m_grid_vertex_buffer}, std::array<vk::DeviceSize, 1> {0});
@@ -245,7 +245,7 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t imag
 	}
 
 	// Debug lines
-	const uint32_t line_vertex_count = frameIndex < m_line_vertex_counts.size() ? m_line_vertex_counts[frameIndex] : 0;
+	const uint32_t line_vertex_count = frame_index < m_line_vertex_counts.size() ? m_line_vertex_counts[frame_index] : 0;
 	if (line_vertex_count > 0 && m_line_pipeline.isReady()) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_line_pipeline.getPipeline());
 
@@ -253,7 +253,7 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t imag
 		cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(DrawPushConstants), &pc);
 
 		cmd.bindVertexBuffers(
-		    0, std::array<vk::Buffer, 1> {*m_line_vertex_buffers[frameIndex].buffer}, std::array<vk::DeviceSize, 1> {0}
+		    0, std::array<vk::Buffer, 1> {*m_line_vertex_buffers[frame_index].buffer}, std::array<vk::DeviceSize, 1> {0}
 		);
 		cmd.draw(line_vertex_count, 1, 0, 0);
 	}
@@ -275,7 +275,7 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t imag
 }
 
 void DebugPass::createResources(const toast::renderer::VulkanCore& core) {
-	auto& device = core.getDevice();
+	const auto& device = core.getDevice();
 	const auto& layouts = m_shader_layout.getDescriptorSetLayouts();
 	if (layouts.empty()) {
 		TOAST_CRITICAL("DebugPass", "ShaderLayout has no descriptor set layouts");
@@ -289,20 +289,20 @@ void DebugPass::createResources(const toast::renderer::VulkanCore& core) {
 	m_frame_descriptor_sets.reserve(VulkanRenderer::kFramesInFlight);
 
 	for (uint32_t i = 0; i < VulkanRenderer::kFramesInFlight; ++i) {
-		const vk::DescriptorSetAllocateInfo allocInfo(pool, 1, &frame_set_layout);
-		auto allocated = device.allocateDescriptorSets(allocInfo);
+		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &frame_set_layout);
+		auto allocated = device.allocateDescriptorSets(alloc_info);
 		m_frame_descriptor_sets.push_back(std::move(allocated[0]));
 		setDebugName(core, *m_frame_descriptor_sets[i], std::format("DebugPass FrameSet[{}]", i));
 
-		const auto* frameRes = VulkanRenderer::instance->getFrameUBORes(i);
-		if (!frameRes->gpuBuffer.has_value()) {
+		const auto* frame_res = VulkanRenderer::instance->getFrameUBORes(i);
+		if (!frame_res->gpuBuffer.has_value()) {
 			TOAST_CRITICAL("DebugPass", "Frame UBO buffer missing for frame {}", i);
 			continue;
 		}
 
-		const vk::DescriptorBufferInfo bufferInfo(**frameRes->gpuBuffer, 0, sizeof(VulkanRenderer::FrameUBO));
+		const vk::DescriptorBufferInfo buffer_info(**frame_res->gpuBuffer, 0, sizeof(VulkanRenderer::FrameUBO));
 		const vk::WriteDescriptorSet write(
-		    *m_frame_descriptor_sets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &bufferInfo
+		    *m_frame_descriptor_sets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &buffer_info
 		);
 		device.updateDescriptorSets(write, {});
 	}
@@ -341,24 +341,24 @@ void DebugPass::createGridGeometry(const toast::renderer::VulkanCore& core) {
 }
 
 void DebugPass::createGizmoGeometry(const toast::renderer::VulkanCore& core) {
-	constexpr float kShaftLength = 0.8f;
-	constexpr float kShaftHalfSize = 0.02f;
-	constexpr float kHeadLength = 0.25f;
-	constexpr float kHeadHalfSize = 0.06f;
+	constexpr float k_shaft_length = 0.8f;
+	constexpr float k_shaft_half_size = 0.02f;
+	constexpr float k_head_length = 0.25f;
+	constexpr float k_head_half_size = 0.06f;
 
-	constexpr glm::vec4 kRed {1.0f, 0.1f, 0.1f, 1.0f};
-	constexpr glm::vec4 kGreen {0.1f, 1.0f, 0.1f, 1.0f};
-	constexpr glm::vec4 kBlue {0.1f, 0.1f, 1.0f, 1.0f};
+	constexpr glm::vec4 k_red {1.0f, 0.1f, 0.1f, 1.0f};
+	constexpr glm::vec4 k_green {0.1f, 1.0f, 0.1f, 1.0f};
+	constexpr glm::vec4 k_blue {0.1f, 0.1f, 1.0f, 1.0f};
 
 	std::vector<DebugVertex> vertices;
 
 	for (const auto& [axis, color] : {
-	       std::pair {0,   kRed},
-          std::pair {1, kGreen},
-          std::pair {2,  kBlue}
+	       std::pair {0,   k_red},
+          std::pair {1, k_green},
+          std::pair {2,  k_blue}
   }) {
-		appendShaftAlongAxis(vertices, axis, kShaftLength, kShaftHalfSize, color);
-		appendPyramidAlongAxis(vertices, axis, kShaftLength, kShaftLength + kHeadLength, kHeadHalfSize, color);
+		appendShaftAlongAxis(vertices, axis, k_shaft_length, k_shaft_half_size, color);
+		appendPyramidAlongAxis(vertices, axis, k_shaft_length, k_shaft_length + k_head_length, k_head_half_size, color);
 	}
 
 	m_gizmo_vertex_count = static_cast<uint32_t>(vertices.size());

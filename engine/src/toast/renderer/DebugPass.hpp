@@ -24,9 +24,9 @@ class VulkanCore;
  */
 class DebugPass : public IRenderPass {
 public:
-	DebugPass(const toast::renderer::VulkanCore& core, vk::Format colorFormat, vk::Format depthFormat, vk::Extent2D extent);
+	DebugPass(const toast::renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent);
 
-	void record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t imageIndex) override;
+	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
 
 	void update(uint32_t frame_index, float dt) override;
 

@@ -50,7 +50,7 @@ namespace toast {
 namespace {
 IApplication* active_application = nullptr;
 Camera* camera = nullptr;
-float totalTime = 0.0;
+float total_time = 0.0;
 double clear_assets_timer = 0.0;
 }
 
@@ -248,8 +248,8 @@ void Engine::tick() {
 		ZoneScopedN("GameLayer::tick()");
 		active_application->tick();
 	}
-	totalTime += Time::get().delta();
-	camera->worldPos(glm::vec3(sin(totalTime) * 5.0f, cos(totalTime) * 5.0f, 5));
+	total_time += Time::delta();
+	camera->worldPos(glm::vec3(sin(total_time) * 5.0f, cos(total_time) * 5.0f, 5));
 
 	if (m->audio_system) {
 		m->audio_system->tick();
@@ -316,20 +316,20 @@ void Engine::tick() {
 				frame.debug_gizmo_instances.push_back(world_transform);
 			}
 
-			auto cam = renderer::getActiveCamera();
+			auto* cam = renderer::getActiveCamera();
 			if (cam) {
 				const auto extent = m->renderer->getOutputTarget().getExtent();
 				const float aspect =
 				    extent.height > 0 ? static_cast<float>(extent.width) / static_cast<float>(extent.height) : (1080.0f / 720.0f);
-				auto cameraData = renderer::VulkanRenderer::FrameUBO {
+				auto camera_data = renderer::VulkanRenderer::FrameUBO {
 				  .view = cam->getView(),
 				  .projection = cam->getProjection(aspect),
 				  .view_projection = cam->getProjection(aspect) * cam->getView(),
 				  .camera_position = cam->worldPos(),
-				  .time = totalTime
+				  .time = total_time
 				};
 
-				frame.frame_data = cameraData;
+				frame.frame_data = camera_data;
 			}
 
 			renderer::submitFrame();
@@ -601,7 +601,7 @@ void Engine::startGame() {
 
 // Tracy memory profiling
 #ifdef DEBUG
-// NOLINTBEGIN(cppcoreguidelines-no-malloc)
+// NOLINTBEGIN(cppcoreguidelines-no-malloc, readability-inconsistent-declaration-parameter-name)
 auto operator new(std::size_t count) -> void* {
 	auto* ptr = malloc(count);
 	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
@@ -613,7 +613,7 @@ void operator delete(void* ptr) noexcept {
 	free(ptr);
 }
 
-// NOLINTEND(cppcoreguidelines-no-malloc)
+// NOLINTEND(cppcoreguidelines-no-malloc, readability-inconsistent-declaration-parameter-name)
 #endif
 
 // ffi stuff
@@ -643,7 +643,7 @@ void toast_tick() noexcept {
 	toast::Engine::get()->tick();
 }
 
-int toast_should_close() noexcept {
+auto toast_should_close() noexcept -> int {
 	return toast::Engine::get()->shouldClose();
 }
 
@@ -657,7 +657,7 @@ void toast_set_working_directory(
 	assets::AssetManager::setPaths({.project = project, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
 }
 
-int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) noexcept {
+auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) noexcept -> int {
 	toast::renderer::ViewportFrameDesc desc {};
 	const int result = toast::Engine::get()->getViewportFrame(dst, dst_capacity, &desc);
 	if (out) {

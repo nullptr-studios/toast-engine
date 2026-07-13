@@ -5,10 +5,9 @@
 
 #include <format>
 
-namespace toast::renderer {
-namespace HardcodedPipelineLayouts {
+namespace toast::renderer::HardcodedPipelineLayouts {
 
-PipelineLayoutDesc getLayoutDesc(std::string_view key) {
+auto getLayoutDesc(std::string_view key) -> PipelineLayoutDesc {
 	PipelineLayoutDesc desc;
 
 	if (key == "mesh") {
@@ -74,7 +73,7 @@ void buildPipelineLayout(
 	out_pipeline_layout = nullptr;
 
 	const auto desc = getLayoutDesc(key);
-	auto& device = core.getDevice();
+	const auto& device = core.getDevice();
 
 	std::vector<vk::DescriptorSetLayout> raw_handles;
 	raw_handles.reserve(desc.sets.size());
@@ -112,5 +111,4 @@ void buildPipelineLayout(
 	setDebugName(core, *out_pipeline_layout, std::format("{} PipelineLayout", key));
 }
 
-}
 }

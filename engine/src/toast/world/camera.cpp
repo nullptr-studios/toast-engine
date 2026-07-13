@@ -11,7 +11,7 @@ void Camera::SetActiveCamera(bool force) {
 	toast::renderer::VulkanRenderer::instance->setActiveCamera(this);
 }
 
-glm::mat4 Camera::getView() const {
+auto Camera::getView() const -> glm::mat4 {
 	glm::mat4 world(1.0f);
 
 	world = glm::lookAt(worldPos(), glm::vec3(0), glm::vec3(0, 0, 1));
@@ -19,7 +19,7 @@ glm::mat4 Camera::getView() const {
 	return world;
 }
 
-glm::mat4 Camera::getProjection(float aspect) const {
+auto Camera::getProjection(float aspect) const -> glm::mat4 {
 	glm::mat4 proj = glm::perspective(glm::radians(fov), aspect, nearPlane, farPlane);
 
 	proj[1][1] *= -1.0f;

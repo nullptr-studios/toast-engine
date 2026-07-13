@@ -43,8 +43,8 @@ public:
 	};
 
 	void create(
-	    const toast::renderer::VulkanCore& core, UploadData data, uint32_t graphicsQueueFamilyIndex,
-	    uint32_t transferQueueFamilyIndex, std::string_view debug_name = {}
+	    const toast::renderer::VulkanCore& core, UploadData data, uint32_t graphics_queue_family_index,
+	    uint32_t transfer_queue_family_index, std::string_view debug_name = {}
 	);
 
 	void destroy();
@@ -53,7 +53,7 @@ public:
 	void draw(vk::CommandBuffer cmd) const;
 
 	void recordUpload(
-	    vk::CommandBuffer cmd, vk::Buffer stagingBuffer, vk::DeviceSize vertexOffset, vk::DeviceSize indexOffset
+	    vk::CommandBuffer cmd, vk::Buffer staging_buffer, vk::DeviceSize vertex_offset, vk::DeviceSize index_offset
 	) const;
 
 private:

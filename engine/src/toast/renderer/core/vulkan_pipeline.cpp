@@ -47,7 +47,7 @@ auto createGraphicsPipelineImpl(
 		rendering_ci.depthAttachmentFormat = *config.depth_format;
 	}
 
-	const vk::PipelineVertexInputStateCreateInfo vertexInputCI(
+	const vk::PipelineVertexInputStateCreateInfo vertex_input_ci(
 	    {}, 1, &config.vertex_binding, static_cast<uint32_t>(config.vertex_attributes.size()), config.vertex_attributes.data()
 	);
 	const vk::PipelineInputAssemblyStateCreateInfo input_assembly_ci({}, config.topology);
@@ -102,7 +102,7 @@ auto createGraphicsPipelineImpl(
 	pipeline_ci.pNext = &rendering_ci;
 	pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
 	pipeline_ci.pStages = shader_stages.data();
-	pipeline_ci.pVertexInputState = &vertexInputCI;
+	pipeline_ci.pVertexInputState = &vertex_input_ci;
 	pipeline_ci.pInputAssemblyState = &input_assembly_ci;
 	pipeline_ci.pViewportState = &viewport_state_ci;
 	pipeline_ci.pRasterizationState = &rasterization_state_ci;

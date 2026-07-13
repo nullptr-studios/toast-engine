@@ -27,6 +27,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 	const glm::mat4 gltf_y_up_to_engine_z_up = glm::rotate(glm::mat4(1.0F), glm::radians(90.0F), glm::vec3(1.0F, 0.0F, 0.0F));
 	const glm::mat4 engine_z_up_to_gltf_y_up = glm::transpose(gltf_y_up_to_engine_z_up);
 
+	// NOLINTBEGIN(modernize-return-braced-init-list)
 	auto to_engine_space_vec3 = [&](const glm::vec3& v) -> glm::vec3 {
 		return glm::vec3(gltf_y_up_to_engine_z_up * glm::vec4(v, 1.0F));
 	};
@@ -34,6 +35,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 	auto to_engine_space_dir3 = [&](const glm::vec3& v) -> glm::vec3 {
 		return glm::vec3(gltf_y_up_to_engine_z_up * glm::vec4(v, 0.0F));
 	};
+	// NOLINTEND(modernize-return-braced-init-list)
 
 	auto to_engine_space_mat4 = [&](const glm::mat4& m) -> glm::mat4 {
 		return gltf_y_up_to_engine_z_up * m * engine_z_up_to_gltf_y_up;

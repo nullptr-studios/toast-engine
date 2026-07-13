@@ -20,11 +20,11 @@ static_assert(offsetof(Vertex, uv) == 24, "Vertex.uv offset mismatch");
 static_assert(offsetof(Vertex, tangent) == 32, "Vertex.tangent offset mismatch");
 static_assert(offsetof(Vertex, color) == 48, "Vertex.color offset mismatch");
 
-vk::VertexInputBindingDescription Vertex::getBindingDescription() {
-	return vk::VertexInputBindingDescription(0, sizeof(Vertex), vk::VertexInputRate::eVertex);
+auto Vertex::getBindingDescription() -> vk::VertexInputBindingDescription {
+	return {0, sizeof(Vertex), vk::VertexInputRate::eVertex};
 }
 
-std::array<vk::VertexInputAttributeDescription, 5> Vertex::getAttributeDescriptions() {
+auto Vertex::getAttributeDescriptions() -> std::array<vk::VertexInputAttributeDescription, 5> {
 	return {
 	  vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, position)),
 	  vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, normal)),
@@ -35,8 +35,8 @@ std::array<vk::VertexInputAttributeDescription, 5> Vertex::getAttributeDescripti
 }
 
 void VulkanMesh::create(
-    const toast::renderer::VulkanCore& core, UploadData data, uint32_t graphicsQueueFamilyIndex,
-    uint32_t transferQueueFamilyIndex, std::string_view debug_name
+    const toast::renderer::VulkanCore& core, UploadData data, uint32_t graphics_queue_family_index,
+    uint32_t transfer_queue_family_index, std::string_view debug_name
 ) {
 	if (data.vertices.empty()) {
 		TOAST_CRITICAL("VulkanMesh", "Mesh has no vertices");
@@ -55,48 +55,48 @@ void VulkanMesh::create(
 	m_vertexSize = data.vertices.size_bytes();
 	m_indexSize = data.indices.size_bytes();
 
-	const bool useConcurrentSharing = graphicsQueueFamilyIndex != transferQueueFamilyIndex;
+	const bool use_concurrent_sharing = graphics_queue_family_index != transfer_queue_family_index;
 
 	// Vertex buffer
-	vk::BufferCreateInfo vbCI {};
-	vbCI.size = m_vertexSize;
-	vbCI.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
+	vk::BufferCreateInfo vb_ci {};
+	vb_ci.size = m_vertexSize;
+	vb_ci.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
 
-	std::array familyIndices {graphicsQueueFamilyIndex, transferQueueFamilyIndex};
+	std::array family_indices {graphics_queue_family_index, transfer_queue_family_index};
 
-	if (useConcurrentSharing) {
-		vbCI.sharingMode = vk::SharingMode::eConcurrent;
-		vbCI.queueFamilyIndexCount = 2;
-		vbCI.pQueueFamilyIndices = familyIndices.data();
+	if (use_concurrent_sharing) {
+		vb_ci.sharingMode = vk::SharingMode::eConcurrent;
+		vb_ci.queueFamilyIndexCount = 2;
+		vb_ci.pQueueFamilyIndices = family_indices.data();
 	} else {
-		vbCI.sharingMode = vk::SharingMode::eExclusive;
+		vb_ci.sharingMode = vk::SharingMode::eExclusive;
 	}
 
-	vma::AllocationCreateInfo vbAlloc {};
-	vbAlloc.usage = vma::MemoryUsage::eAutoPreferDevice;
+	vma::AllocationCreateInfo vb_alloc {};
+	vb_alloc.usage = vma::MemoryUsage::eAutoPreferDevice;
 
-	m_vertexBuffer.emplace(core.getAllocator().createBuffer(vbCI, vbAlloc));
+	m_vertexBuffer.emplace(core.getAllocator().createBuffer(vb_ci, vb_alloc));
 	if (!debug_name.empty()) {
 		setDebugName(core, **m_vertexBuffer, std::format("{} VertexBuffer", debug_name));
 	}
 
 	// Index buffer
-	vk::BufferCreateInfo ibCI {};
-	ibCI.size = m_indexSize;
-	ibCI.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
+	vk::BufferCreateInfo ib_ci {};
+	ib_ci.size = m_indexSize;
+	ib_ci.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
 
-	if (useConcurrentSharing) {
-		ibCI.sharingMode = vk::SharingMode::eConcurrent;
-		ibCI.queueFamilyIndexCount = 2;
-		ibCI.pQueueFamilyIndices = familyIndices.data();
+	if (use_concurrent_sharing) {
+		ib_ci.sharingMode = vk::SharingMode::eConcurrent;
+		ib_ci.queueFamilyIndexCount = 2;
+		ib_ci.pQueueFamilyIndices = family_indices.data();
 	} else {
-		ibCI.sharingMode = vk::SharingMode::eExclusive;
+		ib_ci.sharingMode = vk::SharingMode::eExclusive;
 	}
 
-	vma::AllocationCreateInfo ibAlloc {};
-	ibAlloc.usage = vma::MemoryUsage::eAutoPreferDevice;
+	vma::AllocationCreateInfo ib_alloc {};
+	ib_alloc.usage = vma::MemoryUsage::eAutoPreferDevice;
 
-	m_indexBuffer.emplace(core.getAllocator().createBuffer(ibCI, ibAlloc));
+	m_indexBuffer.emplace(core.getAllocator().createBuffer(ib_ci, ib_alloc));
 	if (!debug_name.empty()) {
 		setDebugName(core, **m_indexBuffer, std::format("{} IndexBuffer", debug_name));
 	}
@@ -114,15 +114,15 @@ void VulkanMesh::destroy() {
 }
 
 void VulkanMesh::recordUpload(
-    vk::CommandBuffer cmd, vk::Buffer stagingBuffer, vk::DeviceSize vertexOffset, vk::DeviceSize indexOffset
+    vk::CommandBuffer cmd, vk::Buffer staging_buffer, vk::DeviceSize vertex_offset, vk::DeviceSize index_offset
 ) const {
 	if (!m_vertexBuffer || !m_indexBuffer) {
 		TOAST_CRITICAL("VulkanMesh", "Mesh buffers were not created before upload");
 	}
 
 	// Copy using the explicit offsets out of the single staging buffer
-	cmd.copyBuffer(stagingBuffer, **m_vertexBuffer, vk::BufferCopy(vertexOffset, 0, m_vertexSize));
-	cmd.copyBuffer(stagingBuffer, **m_indexBuffer, vk::BufferCopy(indexOffset, 0, m_indexSize));
+	cmd.copyBuffer(staging_buffer, **m_vertexBuffer, vk::BufferCopy(vertex_offset, 0, m_vertexSize));
+	cmd.copyBuffer(staging_buffer, **m_indexBuffer, vk::BufferCopy(index_offset, 0, m_indexSize));
 }
 
 void VulkanMesh::bind(vk::CommandBuffer cmd) const {
@@ -151,42 +151,42 @@ void MeshUpload::build(const VulkanCore& core) {
 	mesh->create(core, data, core.getGraphicsQueueFamilyIndex(), core.getTransferQueueFamilyIndex(), debug_name);
 	mesh->markUploading();
 
-	const vk::DeviceSize vertexSize = data.vertices.size_bytes();
-	const vk::DeviceSize indexSize = data.indices.size_bytes();
-	const vk::DeviceSize totalSize = vertexSize + indexSize;
+	const vk::DeviceSize vertex_size = data.vertices.size_bytes();
+	const vk::DeviceSize index_size = data.indices.size_bytes();
+	const vk::DeviceSize total_size = vertex_size + index_size;
 
 	// Single unified staging buffer
-	vk::BufferCreateInfo stagingCI {};
-	stagingCI.size = totalSize;
-	stagingCI.usage = vk::BufferUsageFlagBits::eTransferSrc;
-	stagingCI.sharingMode = vk::SharingMode::eExclusive;
+	vk::BufferCreateInfo staging_ci {};
+	staging_ci.size = total_size;
+	staging_ci.usage = vk::BufferUsageFlagBits::eTransferSrc;
+	staging_ci.sharingMode = vk::SharingMode::eExclusive;
 
-	vma::AllocationCreateInfo allocCI {};
-	allocCI.usage = vma::MemoryUsage::eAuto;
-	allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite |
-	                vma::AllocationCreateFlagBits::eHostAccessAllowTransferInstead;
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAuto;
+	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite |
+	                 vma::AllocationCreateFlagBits::eHostAccessAllowTransferInstead;
 
-	vertexStaging = core.getAllocator().createBuffer(stagingCI, allocCI);
+	vertexStaging = core.getAllocator().createBuffer(staging_ci, alloc_ci);
 	if (!debug_name.empty()) {
 		setDebugName(core, *vertexStaging, std::format("{} StagingBuffer", debug_name));
 	}
 
-	auto& allocation = vertexStaging.getAllocation();
+	const auto& allocation = vertexStaging.getAllocation();
 	uint8_t* mapped = static_cast<uint8_t*>(allocation.getInfo().pMappedData);
 	if (!mapped) {
 		TOAST_CRITICAL("MeshUpload", "Unified staging buffer is not mapped");
 	}
 
 	// Sequential writes to contiguous memory blocks
-	std::memcpy(mapped, data.vertices.data(), vertexSize);
-	std::memcpy(mapped + vertexSize, data.indices.data(), indexSize);
+	std::memcpy(mapped, data.vertices.data(), vertex_size);
+	std::memcpy(mapped + vertex_size, data.indices.data(), index_size);
 }
 
 void MeshUpload::record(vk::CommandBuffer cmd) {
-	const vk::DeviceSize vertexSize = mesh->m_vertexSize;
+	const vk::DeviceSize vertex_size = mesh->m_vertexSize;
 
 	// Record using a single buffer with an offset for the indices
-	mesh->recordUpload(cmd, *vertexStaging, 0, vertexSize);
+	mesh->recordUpload(cmd, *vertexStaging, 0, vertex_size);
 
 	std::array<vk::BufferMemoryBarrier, 2> barriers = {
 	  vk::BufferMemoryBarrier(
@@ -196,7 +196,7 @@ void MeshUpload::record(vk::CommandBuffer cmd) {
 	      VK_QUEUE_FAMILY_IGNORED,
 	      mesh->m_vertexBuffer.value(),
 	      0,
-	      vertexSize
+	      vertex_size
 	  ),
 	  vk::BufferMemoryBarrier(
 	      vk::AccessFlagBits::eTransferWrite,

@@ -24,8 +24,10 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 namespace toast::renderer {
-MeshPass::MeshPass(const toast::renderer::VulkanCore& core, vk::Format colorFormat, vk::Format depthFormat, vk::Extent2D extent) {
-	auto shaderSpirv = toast::renderer::ShaderCompiler::compileShaderModuleFromSource("./mesh.slang");
+MeshPass::MeshPass(
+    const toast::renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent
+) {
+	auto shader_spirv = toast::renderer::ShaderCompiler::compileShaderModuleFromSource("./mesh.slang");
 
 	// Use hardcoded layout keyed by "mesh"
 	shaderLayout.rebuild(core, "mesh");
@@ -33,10 +35,10 @@ MeshPass::MeshPass(const toast::renderer::VulkanCore& core, vk::Format colorForm
 	toast::renderer::VulkanPipeline::Config config;
 	config.pipeline_type = toast::renderer::VulkanPipeline::PipelineType::graphics;
 	config.debug_name = "MeshPass";
-	config.color_format = colorFormat;
-	config.depth_format = depthFormat;
+	config.color_format = color_format;
+	config.depth_format = depth_format;
 	config.extent = extent;
-	config.shader_spirv = std::move(shaderSpirv.spirv);
+	config.shader_spirv = std::move(shader_spirv.spirv);
 	// store raw pipeline layout handle
 	config.pipeline_layout = *shaderLayout.getPipelineLayout();
 
@@ -57,8 +59,8 @@ void MeshPass::update(uint32_t frame_index, float dt) {
 	updateUBO(frame_index);
 }
 
-void MeshPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t imageIndex) {
-	(void)imageIndex;
+void MeshPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) {
+	(void)image_index;
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.getPipeline());
 
 	// Ensure descriptor sets have been allocated
@@ -72,8 +74,8 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t image
 		return;
 	}
 
-	if (frameIndex >= m_frame_descriptor_sets.size()) {
-		TOAST_ERROR("MeshPass", "Frame index {} out of bounds for descriptor sets", frameIndex);
+	if (frame_index >= m_frame_descriptor_sets.size()) {
+		TOAST_ERROR("MeshPass", "Frame index {} out of bounds for descriptor sets", frame_index);
 		return;
 	}
 
@@ -101,7 +103,7 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t image
 	    vk::PipelineBindPoint::eGraphics,
 	    *shaderLayout.getPipelineLayout(),
 	    0,
-	    std::array<vk::DescriptorSet, 1> {*m_frame_descriptor_sets[frameIndex]},
+	    std::array<vk::DescriptorSet, 1> {*m_frame_descriptor_sets[frame_index]},
 	    {}
 	);
 
@@ -151,7 +153,7 @@ void MeshPass::createResources(const toast::renderer::VulkanCore& core) {
 		return;
 	}
 
-	auto& device = core.getDevice();
+	const auto& device = core.getDevice();
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
 
 	// NOTE: allocateDescriptorSets() returns owning vk::raii::DescriptorSet objects, the pool was created with
@@ -163,20 +165,20 @@ void MeshPass::createResources(const toast::renderer::VulkanCore& core) {
 	m_frame_descriptor_sets.reserve(VulkanRenderer::kFramesInFlight);
 
 	for (uint32_t i = 0; i < VulkanRenderer::kFramesInFlight; ++i) {
-		const vk::DescriptorSetAllocateInfo allocInfo(pool, 1, &frame_set_layout);
-		auto allocated = device.allocateDescriptorSets(allocInfo);
+		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &frame_set_layout);
+		auto allocated = device.allocateDescriptorSets(alloc_info);
 		m_frame_descriptor_sets.push_back(std::move(allocated[0]));
 		setDebugName(core, *m_frame_descriptor_sets[i], std::format("MeshPass FrameSet[{}]", i));
 
-		const auto* frameRes = VulkanRenderer::instance->getFrameUBORes(i);
-		if (!frameRes->gpuBuffer.has_value()) {
+		const auto* frame_res = VulkanRenderer::instance->getFrameUBORes(i);
+		if (!frame_res->gpuBuffer.has_value()) {
 			TOAST_CRITICAL("MeshPass", "Frame UBO buffer missing for frame {}", i);
 			continue;
 		}
 
-		const vk::DescriptorBufferInfo bufferInfo(**frameRes->gpuBuffer, 0, sizeof(VulkanRenderer::FrameUBO));
+		const vk::DescriptorBufferInfo buffer_info(**frame_res->gpuBuffer, 0, sizeof(VulkanRenderer::FrameUBO));
 		const vk::WriteDescriptorSet write(
-		    *m_frame_descriptor_sets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &bufferInfo
+		    *m_frame_descriptor_sets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &buffer_info
 		);
 		device.updateDescriptorSets(write, {});
 	}
@@ -185,7 +187,7 @@ void MeshPass::createResources(const toast::renderer::VulkanCore& core) {
 }
 
 void MeshPass::createDefaultMaterialResources(const toast::renderer::VulkanCore& core) {
-	auto& device = core.getDevice();
+	const auto& device = core.getDevice();
 
 	// 1x1 opaque white pixel so meshes without a material
 	toast::renderer::VulkanTexture::Params params {};
@@ -197,15 +199,15 @@ void MeshPass::createDefaultMaterialResources(const toast::renderer::VulkanCore&
 
 	const std::array<uint8_t, 4> white_pixel {255, 255, 255, 255};
 
-	vk::BufferCreateInfo stagingCI {};
-	stagingCI.size = white_pixel.size();
-	stagingCI.usage = vk::BufferUsageFlagBits::eTransferSrc;
+	vk::BufferCreateInfo staging_ci {};
+	staging_ci.size = white_pixel.size();
+	staging_ci.usage = vk::BufferUsageFlagBits::eTransferSrc;
 
-	vma::AllocationCreateInfo allocCI {};
-	allocCI.usage = vma::MemoryUsage::eAuto;
-	allocCI.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAuto;
+	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 
-	auto staging_buffer = core.getAllocator().createBuffer(stagingCI, allocCI);
+	auto staging_buffer = core.getAllocator().createBuffer(staging_ci, alloc_ci);
 	setDebugName(core, *staging_buffer, "MeshPass DefaultWhiteTexture StagingBuffer");
 	std::memcpy(staging_buffer.getAllocation().getInfo().pMappedData, white_pixel.data(), white_pixel.size());
 
@@ -254,28 +256,28 @@ void MeshPass::createDefaultMaterialResources(const toast::renderer::VulkanCore&
 
 	m_default_texture.markReady();
 
-	vk::SamplerCreateInfo samplerCI {};
-	samplerCI.magFilter = vk::Filter::eNearest;
-	samplerCI.minFilter = vk::Filter::eNearest;
-	samplerCI.addressModeU = vk::SamplerAddressMode::eRepeat;
-	samplerCI.addressModeV = vk::SamplerAddressMode::eRepeat;
-	samplerCI.addressModeW = vk::SamplerAddressMode::eRepeat;
-	samplerCI.mipmapMode = vk::SamplerMipmapMode::eNearest;
-	m_default_sampler = vk::raii::Sampler(device, samplerCI);
+	vk::SamplerCreateInfo sampler_ci {};
+	sampler_ci.magFilter = vk::Filter::eNearest;
+	sampler_ci.minFilter = vk::Filter::eNearest;
+	sampler_ci.addressModeU = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.addressModeV = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.addressModeW = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
+	m_default_sampler = vk::raii::Sampler(device, sampler_ci);
 	setDebugName(core, *m_default_sampler, "MeshPass DefaultSampler");
 
 	const vk::DescriptorSetLayout material_set_layout = *shaderLayout.getDescriptorSetLayouts()[1];
-	const vk::DescriptorSetAllocateInfo allocInfo(VulkanRenderer::instance->getDescriptorPoolHandle(), 1, &material_set_layout);
-	auto allocated = device.allocateDescriptorSets(allocInfo);
+	const vk::DescriptorSetAllocateInfo alloc_info(VulkanRenderer::instance->getDescriptorPoolHandle(), 1, &material_set_layout);
+	auto allocated = device.allocateDescriptorSets(alloc_info);
 	m_default_material_set = std::move(allocated[0]);
 	setDebugName(core, *m_default_material_set, "MeshPass DefaultMaterialSet");
 
-	vk::DescriptorImageInfo imageInfo {};
-	imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	imageInfo.imageView = m_default_texture.getView();
-	imageInfo.sampler = *m_default_sampler;
+	vk::DescriptorImageInfo image_info {};
+	image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	image_info.imageView = m_default_texture.getView();
+	image_info.sampler = *m_default_sampler;
 
-	const vk::WriteDescriptorSet write(*m_default_material_set, 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &imageInfo);
+	const vk::WriteDescriptorSet write(*m_default_material_set, 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_info);
 	device.updateDescriptorSets(write, {});
 }
 
@@ -298,8 +300,8 @@ auto MeshPass::getMaterialDescriptorSet(const toast::renderer::VulkanCore& core,
 
 	if (inserted) {
 		const vk::DescriptorSetLayout material_set_layout = *shaderLayout.getDescriptorSetLayouts()[1];
-		const vk::DescriptorSetAllocateInfo allocInfo(VulkanRenderer::instance->getDescriptorPoolHandle(), 1, &material_set_layout);
-		auto allocated = core.getDevice().allocateDescriptorSets(allocInfo);
+		const vk::DescriptorSetAllocateInfo alloc_info(VulkanRenderer::instance->getDescriptorPoolHandle(), 1, &material_set_layout);
+		auto allocated = core.getDevice().allocateDescriptorSets(alloc_info);
 		binding.set = std::move(allocated[0]);
 		setDebugName(core, *binding.set, std::format("MeshPass MaterialSet ({})", material.albedoMap().path()));
 	}
@@ -307,12 +309,12 @@ auto MeshPass::getMaterialDescriptorSet(const toast::renderer::VulkanCore& core,
 	// Only re-issue the descriptor write when the underlying image view actually changed, instead of on every draw/frame like the
 	// previous implementation
 	if (binding.bound_view != view) {
-		vk::DescriptorImageInfo imageInfo {};
-		imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		imageInfo.imageView = view;
-		imageInfo.sampler = sampler;
+		vk::DescriptorImageInfo image_info {};
+		image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		image_info.imageView = view;
+		image_info.sampler = sampler;
 
-		const vk::WriteDescriptorSet write(*binding.set, 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &imageInfo);
+		const vk::WriteDescriptorSet write(*binding.set, 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_info);
 		core.getDevice().updateDescriptorSets(write, {});
 		binding.bound_view = view;
 	}
@@ -320,5 +322,5 @@ auto MeshPass::getMaterialDescriptorSet(const toast::renderer::VulkanCore& core,
 	return *binding.set;
 }
 
-void MeshPass::updateUBO(uint32_t frameIndex) { }
+void MeshPass::updateUBO(uint32_t frame_index) { }
 }    // namespace toast::renderer
