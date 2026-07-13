@@ -22,7 +22,7 @@ public:
         eprintln!("  Attributes: {} ({:?})", class.attributes.len(), class.attributes.iter().map(|a| &a.name).collect::<Vec<_>>());
         eprintln!("  Fields: {}", class.fields.len());
         for field in &class.fields {
-            eprintln!("    - {}: {}", field.name, field.type_name);
+            eprintln!("    - {}: {}", field.name, field.typename);
         }
         eprintln!("  Functions: {:?}", class.functions);
     }
