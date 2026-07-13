@@ -21,7 +21,9 @@ public:
 	}
 
 	[[nodiscard]]
-	auto get() const noexcept -> const std::vector<uint8_t>&;
+	auto get() const noexcept -> const std::vector<uint8_t>& {
+		return m_data;
+	}
 
 private:
 	std::vector<uint8_t> m_data;

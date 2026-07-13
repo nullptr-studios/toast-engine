@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <any>
 #include <string>
 #include <toast/world/box.hpp>
 #include <vector>
@@ -52,7 +53,13 @@ public:
 	[[nodiscard]]
 	auto uid() const -> uint64_t;
 
+	/// Invokes the named reflected C++ method
+	/// and fans out to any same-named Lua function on the node's ScriptRuntime
 	auto call(const std::string& fn_name, lua_State* L) -> luabridge::LuaRef;
+
+	/// @returns true if the wrapped node has a reflected field with the given name
+	[[nodiscard]]
+	auto hasField(std::string_view key) const noexcept -> bool;
 
 private:
 	toast::Box<toast::Node> m_box;
@@ -61,5 +68,12 @@ private:
 // Called AFTER the normal LuaBridge method/property lookup fails
 luabridge::LuaRef nodeProxyIndex(NodeProxy& proxy, const luabridge::LuaRef& key, lua_State* L);
 luabridge::LuaRef nodeProxyNewindex(NodeProxy& proxy, const luabridge::LuaRef& key, const luabridge::LuaRef& value, lua_State* L);
+
+int nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* L, int args_base, int n_args);
+
+luabridge::LuaRef anyValueToLuaRef(lua_State* L, const std::any& value);
+
+/// Converts a LuaRef to a std::any by dispatching on the Lua type
+std::any luaRefValueToAny(lua_State* L, const luabridge::LuaRef& v);
 
 }

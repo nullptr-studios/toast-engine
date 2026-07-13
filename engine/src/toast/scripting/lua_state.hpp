@@ -20,6 +20,12 @@ public:
 
 	auto runString(std::string_view lua_code) noexcept -> bool;
 
+	/// Returns the raw Lua state; used by scripting subsystems
+	[[nodiscard]]
+	auto state() const noexcept -> lua_State* {
+		return m_state;
+	}
+
 private:
 	static inline LuaState* instance = nullptr;
 	lua_State* m_state = nullptr;

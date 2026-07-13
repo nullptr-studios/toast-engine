@@ -19,6 +19,7 @@
 #include "renderer/vulkan_core.hpp"
 #include "renderer/vulkan_pipeline.hpp"
 #include "renderer/vulkan_renderer.hpp"
+#include "scripting/lua_state.hpp"
 #include "thread_pool.hpp"
 #include "time.hpp"
 #include "window/base_window.hpp"
@@ -90,6 +91,7 @@ struct EnginePimpl {
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
 	std::unique_ptr<audio::AudioSystem> audio_system = nullptr;
 	std::unique_ptr<ProjectSettings> settings = nullptr;
+	std::unique_ptr<scripting::LuaState> lua_state = nullptr;
 	Time time;
 	event::Listener listener;
 	toast::NodeRegistry reflection_registry;
@@ -173,6 +175,8 @@ void Engine::init() {
 
 	m->input_system = std::make_unique<input::InputSystem>();
 	m->haptics_system = std::make_unique<input::HapticsSystem>();
+
+	m->lua_state = scripting::LuaState::create();
 
 	// TODO: This should be moved into VulkanRenderer
 	m->listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {

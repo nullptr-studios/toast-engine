@@ -12,12 +12,38 @@
 #include <glm/vec4.hpp>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
+#include <toast/assets/asset_registry.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
+#include <toast/reflect/reflect_node.hpp>
+#include <toast/time.hpp>
 
 namespace scripting {
 
 namespace {
+
+struct TypeMarker {
+	enum class Kind : uint8_t {
+		Node,
+		Asset
+	} kind;
+	std::string typeName;
+
+	[[nodiscard]]
+	auto toString() const -> std::string {
+		if (kind == Kind::Node) {
+			return std::format("NodeType({})", typeName.empty() ? "any" : typeName);
+		}
+		return std::format("AssetType({})", typeName.empty() ? "any" : typeName);
+	}
+};
+
+/// Strip namespace prefix
+std::string_view stripNamespace(std::string_view qualified) noexcept {
+	const auto pos = qualified.rfind("::");
+	return pos != std::string_view::npos ? qualified.substr(pos + 2) : qualified;
+}
+
 auto luaPrint(lua_State* state) -> int {
 	int nargs = lua_gettop(state);
 	std::string output;
@@ -326,10 +352,74 @@ void LuaState::registerApi() noexcept {
 	    .addFunction("call", &NodeProxy::call)
 	    .addIndexMetaMethod(nodeProxyIndex)
 	    .addNewIndexMetaMethod(nodeProxyNewindex)
-	    .endClass();
+	    .endClass()
+
+	    // TypeMarker
+	    .beginClass<TypeMarker>("_TypeMarker")
+	    .addFunction("__tostring", &TypeMarker::toString)
+	    .endClass()
+
+	    // Time
+	    .beginNamespace("Time")
+	    .addFunction(
+	        "delta", +[]() -> double { return Time::delta(); }
+	    )
+	    .addFunction(
+	        "rawDelta", +[]() -> double { return Time::rawDelta(); }
+	    )
+	    .addFunction(
+	        "renderDelta", +[]() -> double { return Time::renderDelta(); }
+	    )
+	    .addFunction(
+	        "frame", +[]() -> uint64_t { return Time::frame(); }
+	    )
+	    .addFunction(
+	        "uptime", +[]() -> double { return Time::uptime(); }
+	    )
+	    .addFunction(
+	        "fps", +[]() -> double { return Time::fps(); }
+	    )
+	    .addFunction(
+	        "tps", +[]() -> double { return Time::tps(); }
+	    )
+	    .addFunction("scale", overload<>(+[]() -> double { return Time::scale(); }), overload<double>(+[](double v) {
+		                 Time::scale(v);
+	                 }))
+	    .addFunction(
+	        "paused", +[]() -> bool { return Time::paused(); }
+	    )
+	    .addFunction(
+	        "pause", +[]() { Time::pause(); }
+	    )
+	    .addFunction(
+	        "resume", +[]() { Time::resume(); }
+	    )
+	    .endNamespace();
 
 	// color3/color4 are aliases for vec3/vec4
 	luaL_dostring(m_state, "color3 = vec3\ncolor4 = vec4");
+
+	// Node type markers
+	toast::NodeRegistry::forEachType([&](const toast::NodeInfo* info) {
+		const std::string_view bare = stripNamespace(info->type);
+		const std::string global_name(bare);
+		if (auto r = luabridge::Stack<TypeMarker>::push(m_state, TypeMarker {TypeMarker::Kind::Node, std::string(info->type)}); r) {
+			lua_setglobal(m_state, global_name.c_str());
+		}
+	});
+	if (auto r = luabridge::Stack<TypeMarker>::push(m_state, TypeMarker {TypeMarker::Kind::Node, ""}); r) {
+		lua_setglobal(m_state, "Node");
+	}
+
+	// Asset type markers
+	for (const auto& [type_str, lua_name] : assets::AssetRegistry::registeredLuaNames()) {
+		if (auto r = luabridge::Stack<TypeMarker>::push(m_state, TypeMarker {TypeMarker::Kind::Asset, type_str}); r) {
+			lua_setglobal(m_state, lua_name.c_str());
+		}
+	}
+	if (auto r = luabridge::Stack<TypeMarker>::push(m_state, TypeMarker {TypeMarker::Kind::Asset, ""}); r) {
+		lua_setglobal(m_state, "Asset");
+	}
 }
 
 }

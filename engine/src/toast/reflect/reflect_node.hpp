@@ -16,6 +16,12 @@ namespace toast {
 
 class Node;
 
+namespace _detail {
+void callNodeScripts(Node* node, std::string_view name, std::span<const std::any> args) noexcept;
+void setNodeScriptVar(Node* node, std::string_view name, const std::any& value) noexcept;
+auto getNodeScriptVar(const Node* node, std::string_view name) noexcept -> std::any;
+}
+
 /**
  * @brief Bit-flag set describing which lifecycle phases a Node type implements
  *
@@ -227,19 +233,13 @@ struct TOAST_API NodeInfo {
 	}
 
 	/**
-	 * @brief Looks up a reflected function by name and invokes it on the given object
-	 * @tparam R The function's return type; defaults to void
-	 * @tparam Args Deduced argument types, forwarded to the function
-	 * @param obj The object to call the function on; must be an instance of this type or a subtype
-	 * @param method_name The reflected function name to call
-	 * @param args Arguments forwarded to the function
-	 * @return The function's return value, or a default-constructed R if the function is not found
+	 * @brief Walks base->derived calling every inheritance level that defines method_name,
+	 *        then fires Lua scripts
+	 * @returns the most-derived level's return value
 	 */
 	template<typename R = void, typename... Args>
 	auto call(void* obj, std::string_view method_name, Args&&... args) const -> R {
-		const FunctionInfo* fn = getMethod(method_name);
-
-		if (!fn) {
+		if (!getMethod(method_name)) {
 			TOAST_WARN("Reflect", "call(): reflected function '{}' not found on '{}'", method_name, type);
 			assert(false && "NodeInfo::call(): reflected function not found");
 			if constexpr (std::is_void_v<R>) {
@@ -248,8 +248,35 @@ struct TOAST_API NodeInfo {
 				return R {};
 			}
 		}
+		// Build an any-args array so args are forwarded to Lua scripts as well
+		std::array<std::any, sizeof...(Args)> any_args{std::any(std::decay_t<Args>(args))...};
+		if constexpr (std::is_void_v<R>) {
+			_detail::callMethodChain(this, obj, method_name, std::forward<Args>(args)...);
+			_detail::callNodeScripts(static_cast<Node*>(obj), method_name, any_args);
+		} else {
+			R result = _detail::callMethodChain<R>(this, obj, method_name, std::forward<Args>(args)...);
+			_detail::callNodeScripts(static_cast<Node*>(obj), method_name, any_args);
+			return result;
+		}
+	}
 
-		return fn->call(obj, std::forward<Args>(args)...);
+	/**
+	 * @brief Walks base->derived via dynamic invokers, calling every level that defines method_name
+	 * @returns the most-derived level's return value
+	 */
+	[[nodiscard]]
+	auto callAllDynamic(void* obj, std::string_view method_name, std::span<const std::any> args) const -> std::any {
+		std::any result;
+		if (base_type) {
+			result = base_type->callAllDynamic(obj, method_name, args);
+		}
+		for (const auto& m : methods) {
+			if (m.name == method_name) {
+				result = m.callDynamic(obj, args);
+				break;
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -344,6 +371,38 @@ struct TOAST_API NodeInfo {
 	}
 };
 
+namespace _detail {
+
+// Walks base->derived, calling the method at every level where it is defined
+template<typename R = void, typename... Args>
+auto callMethodChain(const NodeInfo* info, void* obj, std::string_view method_name, Args... args) -> R {
+	if constexpr (std::is_void_v<R>) {
+		if (info->base_type) {
+			callMethodChain(info->base_type, obj, method_name, args...);
+		}
+		for (const auto& m : info->methods) {
+			if (m.name == method_name) {
+				m.call(obj, args...);
+				break;
+			}
+		}
+	} else {
+		R result {};
+		if (info->base_type) {
+			result = callMethodChain<R>(info->base_type, obj, method_name, args...);
+		}
+		for (const auto& m : info->methods) {
+			if (m.name == method_name) {
+				result = m.call<R>(obj, args...);
+				break;
+			}
+		}
+		return result;
+	}
+}
+
+}
+
 /**
  * @brief Global registry mapping fully-qualified type names to NodeInfo pointers
  *
@@ -373,6 +432,16 @@ public:
 		}
 		auto it = (*instance).types.find(name);
 		return it != (*instance).types.end() ? it->second : nullptr;
+	}
+
+	/// Calls fn(info) for every registered node type
+	template<typename F>
+	static void forEachType(F&& fn) {
+		if (instance) {
+			for (const auto& [key, info] : instance->types) {
+				fn(info);
+			}
+		}
 	}
 
 private:
