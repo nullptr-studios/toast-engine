@@ -1,16 +1,9 @@
 //! Converts parsed Class structs into NodeInfo data and emits C++ files via Jinja2 templates
 
-use crate::node::*;
-use crate::parser::*;
+use crate::*;
 use minijinja::Environment;
-use serde_json::Value as json_t;
-use serde_json::to_value;
 use std::fs;
 use std::path::Path;
-
-pub fn generate_json(nodes: &[NodeInfo]) -> json_t {
-    to_value(nodes).unwrap_or(json_t::Array(vec![]))
-}
 
 pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str, split_typeinfo: bool) {
     // Templates live next to the executable: <exe_dir>/templates/
@@ -40,10 +33,8 @@ pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str, spli
 
     for node in nodes {
         let mut ctx = build_template_context(node);
-        if split_typeinfo {
-            if let json_t::Object(map) = &mut ctx {
-                map.insert("split_typeinfo".to_string(), json_t::Bool(true));
-            }
+        if split_typeinfo && let json_t::Object(map) = &mut ctx {
+            map.insert("split_typeinfo".to_string(), json_t::Bool(true));
         }
         let sn = ctx["snake_name"].as_str().unwrap();
 
