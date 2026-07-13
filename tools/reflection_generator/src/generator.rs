@@ -41,13 +41,13 @@ pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str, spli
         let out = output.join(format!("{sn}.generated.hpp"));
         let text = node_tmpl
             .render(&ctx)
-            .unwrap_or_else(|e| panic!("template error for {}: {e}", node.name));
+            .unwrap_or_else(|e| panic!("template error for {}: {e}", node.class.name));
         fs::write(&out, text).unwrap_or_else(|e| panic!("cannot write {}: {e}", out.display()));
 
         if let Some(tmpl) = &type_info_tmpl {
             let cpp_out = output.join(format!("{sn}.type_info.cpp"));
             let cpp_text = tmpl.render(&ctx).unwrap_or_else(|e| {
-                panic!("template error for type_info.cpp ({}): {e}", node.name)
+                panic!("template error for type_info.cpp ({}): {e}", node.class.name)
             });
             fs::write(&cpp_out, cpp_text)
                 .unwrap_or_else(|e| panic!("cannot write {}: {e}", cpp_out.display()));

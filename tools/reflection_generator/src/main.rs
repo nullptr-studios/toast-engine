@@ -128,11 +128,11 @@ fn inject_attributes(node: &mut NodeInfo, attributes: &[std::string::String]) {
     if attributes.is_empty() {
         return;
     }
-    if !node.attributes.is_object() {
-        node.attributes = serde_json::Value::Object(serde_json::Map::new());
+    if !node.class.attrib_json.is_object() {
+        node.class.attrib_json = serde_json::Value::Object(serde_json::Map::new());
     }
     let map = node
-        .attributes
+        .class.attrib_json
         .as_object_mut()
         .expect("attributes is an object");
     for name in attributes {
@@ -171,9 +171,9 @@ fn topological_sort(nodes: Vec<NodeInfo>) -> Vec<NodeInfo> {
 
         let placed_names: std::collections::HashSet<String> = result
             .iter()
-            .map(|n| match &n.namespace {
-                Some(ns) => format!("{}::{}", ns, n.name),
-                None => n.name.clone(),
+            .map(|n| match &n.class.namespace {
+                Some(ns) => format!("{}::{}", ns, n.class.name),
+                None => n.class.name.clone(),
             })
             .collect();
 
@@ -182,7 +182,7 @@ fn topological_sort(nodes: Vec<NodeInfo>) -> Vec<NodeInfo> {
 
         for node in remaining {
             let parent_ready = node
-                .parent
+                .class.parent
                 .as_ref()
                 .map(|p| {
                     let pname = match &p.namespace {
@@ -192,7 +192,7 @@ fn topological_sort(nodes: Vec<NodeInfo>) -> Vec<NodeInfo> {
                     // If the parent has no namespace qualifier, also try the child's namespace
                     // since unqualified parent names in C++ implicitly resolve to the enclosing namespace
                     let pname_in_child_ns = if p.namespace.is_none() {
-                        node.namespace
+                        node.class.namespace
                             .as_ref()
                             .map(|ns| format!("{}::{}", ns, p.name))
                     } else {

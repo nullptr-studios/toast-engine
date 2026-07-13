@@ -4,16 +4,11 @@ use std::collections::BTreeMap;
 
 #[derive(Serialize)]
 pub struct NodeInfo {
-    pub name: String,
-    pub namespace: Option<String>,
-    pub parent: Option<Parent>,
-    pub attributes: json_t,
-    pub functions: TickFunctions,
-    pub methods: Vec<Function>,
-    /// Path relative to --include-root
-    pub source_file: String,
+    #[serde(flatten)]
+    pub class: Class,
     pub groups: Vec<GroupInfo>,
     pub global_fields: Vec<Field>,
+    pub tick_functions: TickFunctions,
     pub is_interface: bool,
 }
 
@@ -68,32 +63,30 @@ pub fn build_node(class: &Class) -> NodeInfo {
     let (global_fields, groups) = build_field_groups(&class.fields);
 
     NodeInfo {
-        name: class.name.clone(),
-        namespace: class.namespace.clone(),
-        parent: class.parent.clone(),
-        attributes: attrs_to_json(&class.attributes),
-        functions: build_tick_functions(class),
-        methods: class.methods.clone(),
+        class: class.clone(),
         groups,
         global_fields,
-        source_file: class.source_file.clone(),
+        tick_functions: build_tick_functions(class),
         is_interface,
     }
 }
 
 pub fn build_template_context(node: &NodeInfo) -> json_t {
     // --- 1. Basic Info & Namespaces ---
-    let snake_name = node.name.to_lowercase();
+    let snake_name = node.class.name.to_lowercase();
     let qualified_name = node
+        .class
         .namespace
         .as_ref()
-        .map_or(node.name.clone(), |ns| format!("{ns}::{}", node.name));
-    let parent_qualified_name = node.parent.as_ref().map(|p| {
+        .map_or(node.class.name.clone(), |ns| {
+            format!("{ns}::{}", node.class.name)
+        });
+    let parent_qualified_name = node.class.parent.as_ref().map(|p| {
         p.namespace
             .as_ref()
             .map_or(p.name.clone(), |ns| format!("{ns}::{}", p.name))
     });
-    let parent_snake_name = node.parent.as_ref().map(|p| p.name.to_lowercase());
+    let parent_snake_name = node.class.parent.as_ref().map(|p| p.name.to_lowercase());
 
     // --- 2. Field Flattening & Asset Tracking ---
     let mut all_fields_flat = Vec::new();
@@ -147,7 +140,7 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
         })
     }).collect();
     // --- 4. Active Tick Functions ---
-    let tf = &node.functions;
+    let tf = &node.tick_functions;
     let active_tick_fns: Vec<json_t> = [
         (tf.load, "load", "load"),
         (tf.save, "save", "save"),
@@ -170,6 +163,7 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
 
     // --- 5. Reflected Methods ---
     let methods_ctx: Vec<json_t> = node
+        .class
         .methods
         .iter()
         .map(|m| {
@@ -193,14 +187,14 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
 
     // --- 6. Final Payload Assembly ---
     json!({
-        "name":                  node.name,
-        "namespace":             node.namespace,
+        "name":                  node.class.name,
+        "namespace":             node.class.namespace,
         "snake_name":            snake_name,
         "qualified_name":        qualified_name,
         "parent_qualified_name": parent_qualified_name,
         "parent_snake_name":     parent_snake_name,
-        "source_file":           node.source_file,
-        "attributes":            node.attributes,
+        "source_file":           node.class.source_file,
+        "attributes":            node.class.attrib_json,
         "all_fields_flat":       all_fields_flat,
         "global_field_indices":  global_field_indices,
         "groups":                augmented_groups,
