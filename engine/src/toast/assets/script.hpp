@@ -11,7 +11,7 @@
 
 namespace assets {
 
-class Script : public Asset {
+class TOAST_API Script : public Asset {
 public:
 	explicit Script(std::vector<uint8_t> data) : m_data(std::move(data)) { }
 

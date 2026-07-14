@@ -549,7 +549,7 @@ void AssetManager::pollModifiedScripts() {
 			}
 			auto [it, first_seen] = script_mtimes.try_emplace(id, mtime);
 			if (first_seen || it->second == mtime) {
-				continue;    //unchanged
+				continue;    // unchanged
 			}
 			it->second = mtime;
 
