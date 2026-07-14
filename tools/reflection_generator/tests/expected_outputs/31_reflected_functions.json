@@ -40,6 +40,8 @@
     "is_interface": false,
     "methods": [
       {
+        "attributes": {},
+        "is_const": false,
         "name": "takeDamage",
         "parameters": [
           {
@@ -56,6 +58,8 @@
         "return_type": "int"
       },
       {
+        "attributes": {},
+        "is_const": false,
         "name": "teleport",
         "parameters": [
           {
@@ -67,6 +71,8 @@
         "return_type": "void"
       },
       {
+        "attributes": {},
+        "is_const": false,
         "name": "simulate",
         "parameters": [
           {
@@ -83,6 +89,8 @@
         "return_type": "DamageReport"
       },
       {
+        "attributes": {},
+        "is_const": true,
         "name": "isAlive",
         "parameters": [],
         "return_type": "bool"

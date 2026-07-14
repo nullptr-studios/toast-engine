@@ -15,11 +15,15 @@
 namespace toast {
 
 class Node;
+struct NodeInfo;
 
 namespace _detail {
 void callNodeScripts(Node* node, std::string_view name, std::span<const std::any> args) noexcept;
 void setNodeScriptVar(Node* node, std::string_view name, const std::any& value) noexcept;
 auto getNodeScriptVar(const Node* node, std::string_view name) noexcept -> std::any;
+
+template<typename R = void, typename... Args>
+auto callMethodChain(const NodeInfo* info, void* obj, std::string_view method_name, Args... args) -> R;
 }
 
 /**
@@ -249,7 +253,7 @@ struct TOAST_API NodeInfo {
 			}
 		}
 		// Build an any-args array so args are forwarded to Lua scripts as well
-		std::array<std::any, sizeof...(Args)> any_args{std::any(std::decay_t<Args>(args))...};
+		std::array<std::any, sizeof...(Args)> any_args {std::any(std::decay_t<Args>(args))...};
 		if constexpr (std::is_void_v<R>) {
 			_detail::callMethodChain(this, obj, method_name, std::forward<Args>(args)...);
 			_detail::callNodeScripts(static_cast<Node*>(obj), method_name, any_args);
@@ -374,7 +378,7 @@ struct TOAST_API NodeInfo {
 namespace _detail {
 
 // Walks base->derived, calling the method at every level where it is defined
-template<typename R = void, typename... Args>
+template<typename R, typename... Args>
 auto callMethodChain(const NodeInfo* info, void* obj, std::string_view method_name, Args... args) -> R {
 	if constexpr (std::is_void_v<R>) {
 		if (info->base_type) {

@@ -267,14 +267,14 @@ public:
 	 */
 	template<typename R = void, typename... Args>
 	auto call(std::string_view name, Args&&... args) -> R {
-		std::array<std::any, sizeof...(Args)> any_args{std::any(std::decay_t<Args>(args))...};
+		std::array<std::any, sizeof...(Args)> any_args {std::any(std::decay_t<Args>(args))...};
 		if constexpr (std::is_void_v<R>) {
 			if (m_info && m_info->getMethod(name)) {
 				_detail::callMethodChain(m_info, this, name, args...);
 			}
 			_detail::callNodeScripts(this, name, any_args);
 		} else {
-			R result{};
+			R result {};
 			if (m_info && m_info->getMethod(name)) {
 				result = _detail::callMethodChain<R>(m_info, this, name, args...);
 			}
@@ -303,7 +303,7 @@ public:
 		if (auto* p = std::any_cast<T>(&v)) {
 			return *p;
 		}
-		return T{};
+		return T {};
 	}
 
 	/**

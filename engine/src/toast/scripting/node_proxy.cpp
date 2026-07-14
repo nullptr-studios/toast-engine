@@ -178,7 +178,7 @@ luabridge::LuaRef anyReturnToLuaRef(lua_State* L, const std::any& val, std::stri
 	return LuaRef(L);
 }
 
-/int proxyMethodDispatch(lua_State* L);
+int proxyMethodDispatch(lua_State* L);
 
 // Strips the outer "Box<" ... ">" from a field.type string and returns the inner type name
 std::string_view innerBoxType(std::string_view type) {
@@ -508,7 +508,7 @@ luabridge::LuaRef anyValueToLuaRef(lua_State* L, const std::any& value) {
 }
 
 std::any luaRefValueToAny(lua_State* L, const luabridge::LuaRef& v) {
-	if (v.isNil() || v.isNone()) {
+	if (!v.isValid() || v.isNil()) {
 		return {};
 	}
 	if (v.isBool()) {

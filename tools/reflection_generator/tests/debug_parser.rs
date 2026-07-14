@@ -14,7 +14,7 @@ public:
 }
 "#;
 
-    let classes = parse(source);
+    let classes = parse(source, "debug_parser.hpp");
     eprintln!("Found {} classes", classes.len());
     for class in &classes {
         eprintln!("Class: {}", class.name);

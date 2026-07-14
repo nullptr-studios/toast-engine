@@ -241,7 +241,7 @@ void ScriptInstance::callWithAnyArgs(std::string_view name, std::span<const std:
 	m_self->push(L);
 	lua_pushlstring(L, name.data(), name.size());
 	lua_rawget(L, -2);
-	lua_remove(L, -2);nil) at top
+	lua_remove(L, -2);
 
 	if (!lua_isfunction(L, -1)) {
 		lua_pop(L, 1);
