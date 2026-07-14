@@ -6,6 +6,7 @@
 #include <string_view>
 #include <toast/assets/script.hpp>
 #include <toast/export.hpp>
+#include <toast/scripting/lua_value_codec.hpp>
 
 namespace toast::_detail {
 
@@ -29,6 +30,10 @@ struct TOAST_API WorldTestAccess {
 	// Test-only: appends a script asset to the node and (re)builds its ScriptRuntime;
 	// requires a LuaState to exist
 	static void attachScript(Node& node, const assets::AssetHandle<assets::Script>& script);
+
+	static void applyLuaOverrides(
+	    World& world, Node& node, const assets::Prefab::BasicNode& data, const scripting::NodeResolver& find_node
+	);
 
 	static auto tickSchedule(World& world) noexcept -> _detail::TickSchedule&;
 

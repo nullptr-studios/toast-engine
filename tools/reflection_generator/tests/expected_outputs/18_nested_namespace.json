@@ -1,21 +1,17 @@
 [
   {
     "attributes": {},
-    "functions": {
-      "begin": false,
-      "destroy": false,
-      "early_tick": false,
-      "end": false,
-      "init": false,
-      "late_tick": false,
-      "load": false,
-      "on_disable": false,
-      "on_enable": false,
-      "post_physics": false,
-      "pre_init": false,
-      "save": false,
-      "tick": false
-    },
+    "fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "float_t",
+        "is_array": false,
+        "name": "m_x",
+        "typename": "float"
+      }
+    ],
+    "functions": [],
     "global_fields": [
       {
         "attributes": {},
@@ -32,6 +28,21 @@
     "name": "DeepNode",
     "namespace": "foo::bar::baz",
     "parent": null,
-    "source_file": "18_nested_namespace.hpp"
+    "source_file": "18_nested_namespace.hpp",
+    "tick_functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    }
   }
 ]

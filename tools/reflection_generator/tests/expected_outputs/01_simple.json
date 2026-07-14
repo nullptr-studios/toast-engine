@@ -1,21 +1,43 @@
 [
   {
     "attributes": {},
-    "functions": {
-      "begin": false,
-      "destroy": false,
-      "early_tick": false,
-      "end": false,
-      "init": false,
-      "late_tick": false,
-      "load": false,
-      "on_disable": false,
-      "on_enable": false,
-      "post_physics": false,
-      "pre_init": false,
-      "save": false,
-      "tick": true
-    },
+    "fields": [
+      {
+        "attributes": {
+          "Group": [
+            "Transform"
+          ]
+        },
+        "default": "0",
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_x",
+        "typename": "int"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Transform"
+          ]
+        },
+        "default": "0",
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_y",
+        "typename": "int"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "string_t",
+        "is_array": false,
+        "name": "m_name",
+        "typename": "std::string"
+      }
+    ],
+    "functions": [
+      "tick"
+    ],
     "global_fields": [
       {
         "attributes": {},
@@ -63,6 +85,21 @@
     "name": "SimpleNode",
     "namespace": "toast",
     "parent": null,
-    "source_file": "01_simple.hpp"
+    "source_file": "01_simple.hpp",
+    "tick_functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": true
+    }
   }
 ]

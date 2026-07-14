@@ -1,21 +1,93 @@
 [
   {
     "attributes": {},
-    "functions": {
-      "begin": false,
-      "destroy": false,
-      "early_tick": false,
-      "end": false,
-      "init": false,
-      "late_tick": false,
-      "load": false,
-      "on_disable": false,
-      "on_enable": false,
-      "post_physics": false,
-      "pre_init": false,
-      "save": false,
-      "tick": false
-    },
+    "fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_global1",
+        "typename": "int"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "A"
+          ]
+        },
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_a1",
+        "typename": "int"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_global2",
+        "typename": "int"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "B"
+          ]
+        },
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_b1",
+        "typename": "int"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "A"
+          ]
+        },
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_a2",
+        "typename": "int"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_global3",
+        "typename": "int"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "B"
+          ]
+        },
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_b2",
+        "typename": "int"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "A"
+          ]
+        },
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_a3",
+        "typename": "int"
+      }
+    ],
+    "functions": [],
     "global_fields": [
       {
         "attributes": {},
@@ -121,6 +193,21 @@
     "name": "SparseGroupNode",
     "namespace": null,
     "parent": null,
-    "source_file": "12_sparse_groups.hpp"
+    "source_file": "12_sparse_groups.hpp",
+    "tick_functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    }
   }
 ]
