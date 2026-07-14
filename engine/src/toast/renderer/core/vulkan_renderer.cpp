@@ -83,7 +83,7 @@ auto VulkanRenderer::selectDepthFormat(const VulkanCore& core) -> vk::Format {
 	TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: Failed to find a supported depth format!");
 }
 
-VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> output_target)
+VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> output_target) noexcept
     : m_core(&core),
       m_output_target(std::move(output_target)) {
 	instance = this;
@@ -264,7 +264,7 @@ void VulkanRenderer::createDescriptorPool() {
 	setDebugName(*m_core, *m_descriptor_pool, "VulkanRenderer DescriptorPool");
 }
 
-auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> void {
+auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noexcept -> void {
 	frame.command_buffer.reset();
 	const vk::CommandBufferBeginInfo begin_info(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	frame.command_buffer.begin(begin_info);
@@ -626,7 +626,7 @@ void VulkanRenderer::mainRenderThread() {
 	}
 }
 
-void VulkanRenderer::start() {
+void VulkanRenderer::start() noexcept {
 	TOAST_TRACE("VulkanRenderer", "Starting renderer");
 
 	m_running.store(true, std::memory_order_release);
@@ -634,7 +634,7 @@ void VulkanRenderer::start() {
 	m_render_thread = std::thread([this] { mainRenderThread(); });
 }
 
-void VulkanRenderer::submitFrame() {
+void VulkanRenderer::submitFrame() noexcept {
 	// TracyMessage("Swapped frame resource", 256);
 	{
 		std::lock_guard lock(m_queue_mutex);

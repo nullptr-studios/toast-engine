@@ -152,9 +152,11 @@ private:
 	 * @param required_device_extensions A span of required device extension names that the device must support
 	 * @return A DeviceScore structure containing individual category scores and the aggregated total score
 	 */
+	[[nodiscard]]
 	auto calculateDeviceScore(const vk::PhysicalDevice& device, std::span<const char* const> required_device_extensions)
 	    -> DeviceScore;
 
+	[[nodiscard]]
 	auto checkValidationLayerSupport() -> bool;
 
 	bool m_validation_enabled = false;

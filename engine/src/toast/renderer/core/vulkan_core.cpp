@@ -276,9 +276,9 @@ VulkanCore::VulkanCore(
 	}
 #elif defined(__linux__)
 	if (auto* mod = dlopen("librenderdoc.so", RTLD_NOLOAD | RTLD_LAZY)) {
-		auto* RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(dlsym(mod, "RENDERDOC_GetAPI"));
-		if (RENDERDOC_GetAPI) {
-			RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
+		auto* renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(dlsym(mod, "RENDERDOC_GetAPI"));
+		if (renderdoc_get_api) {
+			renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
 			TOAST_INFO("VulkanCore", "RenderDoc API detected");
 		}
 		dlclose(mod);

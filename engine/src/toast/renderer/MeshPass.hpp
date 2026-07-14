@@ -66,7 +66,7 @@ private:
 	// per-material descriptor sets keyed by Material
 	struct MaterialGpuBinding {
 		vk::raii::DescriptorSet set = nullptr;
-		vk::ImageView bound_view {};
+		vk::ImageView bound_view;
 	};
 
 	std::unordered_map<const assets::Material*, MaterialGpuBinding> m_material_sets;

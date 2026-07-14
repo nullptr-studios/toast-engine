@@ -45,6 +45,7 @@ namespace toast::renderer {
  */
 class VulkanRenderer {
 public:
+	[[nodiscard]]
 	static auto selectDepthFormat(const VulkanCore& core) -> vk::Format;
 
 	static constexpr uint32_t k_frames_in_flight = 3;
@@ -96,7 +97,7 @@ public:
 		std::vector<glm::mat4> debug_gizmo_instances;    // one axis-triad gizmo draw per entry
 	};
 
-	VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> output_target);
+	VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> output_target) noexcept;
 
 	~VulkanRenderer();
 
@@ -105,13 +106,19 @@ public:
 	VulkanRenderer(VulkanRenderer&&) = delete;
 	auto operator=(VulkanRenderer&&) -> VulkanRenderer& = delete;
 
-	void start();
+	void start() noexcept;
 
-	auto beginFrameBuild() -> RenderFrame& { return m_render_frames[m_write_index]; }
+	[[nodiscard]]
+	auto beginFrameBuild() noexcept -> RenderFrame& {
+		return m_render_frames[m_write_index];
+	}
 
-	auto getFreeFramesSemaphore() -> std::counting_semaphore<k_render_frames>& { return m_free_frames; }
+	[[nodiscard]]
+	auto getFreeFramesSemaphore() noexcept -> std::counting_semaphore<k_render_frames>& {
+		return m_free_frames;
+	}
 
-	void submitFrame();
+	void submitFrame() noexcept;
 
 	/**
 	 * @brief Caps how often the render thread draws & presents a frame
@@ -136,16 +143,29 @@ public:
 
 	void queueResourceUpload(std::unique_ptr<PendingResourceUpload> upload);
 
-	auto getFrameUBORes(uint32_t current_frame) const -> const FrameResources* { return &m_frame_ubo_res[current_frame]; }
+	[[nodiscard]]
+	auto getFrameUBORes(uint32_t current_frame) const -> const FrameResources* {
+		return &m_frame_ubo_res[current_frame];
+	}
 
 	// Expose raw descriptor pool handle so render passes can allocate their own descriptor sets
-	auto getDescriptorPoolHandle() const -> vk::DescriptorPool { return *m_descriptor_pool; }
+	[[nodiscard]]
+	auto getDescriptorPoolHandle() const noexcept -> vk::DescriptorPool {
+		return *m_descriptor_pool;
+	}
 
+	[[nodiscard]]
 	void setActiveCamera(Camera* camera);
 
-	auto getCore() -> const VulkanCore& { return *m_core; }
+	[[nodiscard]]
+	auto getCore() -> const VulkanCore& {
+		return *m_core;
+	}
 
-	auto getActiveCamera() -> Camera* { return m_camera; }
+	[[nodiscard]]
+	auto getActiveCamera() -> Camera* {
+		return m_camera;
+	}
 
 	[[nodiscard]]
 	auto renderingFrame() const -> const RenderFrame* {
@@ -200,7 +220,7 @@ private:
 	void createDepthResources();
 	void createDescriptorPool();
 
-	void recordFrame(FrameContext& frame, uint32_t image_index);
+	void recordFrame(FrameContext& frame, uint32_t image_index) noexcept;
 
 	// Resource uploading
 	struct BatchedUploadGroup {
