@@ -23,7 +23,7 @@ void setNodeScriptVar(Node* node, std::string_view name, const std::any& value) 
 auto getNodeScriptVar(const Node* node, std::string_view name) noexcept -> std::any;
 
 template<typename R = void, typename... Args>
-auto callMethodChain(const NodeInfo* info, void* obj, std::string_view method_name, Args... args) -> R;
+auto callMethodChain(const NodeInfo* info, void* obj, std::string_view method_name, const Args&... args) -> R;
 }
 
 /**
@@ -379,7 +379,7 @@ namespace _detail {
 
 // Walks base->derived, calling the method at every level where it is defined
 template<typename R, typename... Args>
-auto callMethodChain(const NodeInfo* info, void* obj, std::string_view method_name, Args... args) -> R {
+auto callMethodChain(const NodeInfo* info, void* obj, std::string_view method_name, const Args&... args) -> R {
 	if constexpr (std::is_void_v<R>) {
 		if (info->base_type) {
 			callMethodChain(info->base_type, obj, method_name, args...);

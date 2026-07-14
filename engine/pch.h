@@ -6,18 +6,17 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
+#include <cstdint>
 #include <exception>
+#include <format>
 #include <functional>
+#include <list>
 #include <memory>
+#include <numeric>
+#include <print>
 #include <ranges>
 #include <stdexcept>
-#include <numeric>
-#include <format>
-#include <print>
-#include <cstdint>
-#include <utility>
-
-#include <array>
-#include <list>
 #include <string>
+#include <utility>
 #include <vector>
