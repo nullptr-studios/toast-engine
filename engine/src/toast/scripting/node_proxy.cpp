@@ -1,8 +1,10 @@
 #include "node_proxy.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_types.hpp"
 #include "script_runtime.hpp"
 
+#include <algorithm>
 #include <format>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/vec2.hpp>
@@ -59,17 +61,30 @@ std::any luaArgToAny(lua_State* L, const luabridge::LuaRef& v, std::string_view 
 		}
 		return v.tostring();
 	}
-	if (is_quat || is_vec4) {
-		if (!v.isInstance<glm::vec4>()) {
-			luaL_error(L, "argument '%s': expected vec4", param_name);
+	if (is_quat) {
+		if (v.isInstance<glm::quat>()) {
+			return v.unsafe_cast<glm::quat>();
 		}
-		if (is_quat) {
+		if (v.isInstance<glm::vec4>()) {
+			// accept vec4(x,y,z,w) for convenience
 			const glm::vec4 vv = v.unsafe_cast<glm::vec4>();
 			return glm::quat(vv.w, vv.x, vv.y, vv.z);
+		}
+		luaL_error(L, "argument '%s': expected quat", param_name);
+	}
+	if (is_vec4) {
+		if (v.isInstance<Color4>()) {
+			return v.unsafe_cast<Color4>().rgba;
+		}
+		if (!v.isInstance<glm::vec4>()) {
+			luaL_error(L, "argument '%s': expected vec4", param_name);
 		}
 		return v.unsafe_cast<glm::vec4>();
 	}
 	if (is_vec3) {
+		if (v.isInstance<Color3>()) {
+			return v.unsafe_cast<Color3>().rgb;
+		}
 		if (!v.isInstance<glm::vec3>()) {
 			luaL_error(L, "argument '%s': expected vec3", param_name);
 		}
@@ -114,6 +129,9 @@ std::any luaArgToAny(lua_State* L, const luabridge::LuaRef& v, std::string_view 
 	);
 	return {};
 }
+
+// Builds a Lua array table when the any holds a std::vector of a supported type
+luabridge::LuaRef anyVectorToLuaRef(lua_State* L, const std::any& value);
 
 luabridge::LuaRef anyReturnToLuaRef(lua_State* L, const std::any& val, std::string_view return_type) {
 	using LuaRef = luabridge::LuaRef;
@@ -168,13 +186,31 @@ luabridge::LuaRef anyReturnToLuaRef(lua_State* L, const std::any& val, std::stri
 	if (auto* v = std::any_cast<glm::vec4>(&val)) {
 		return LuaRef(L, *v);
 	}
+	if (auto* v = std::any_cast<glm::quat>(&val)) {
+		return LuaRef(L, *v);
+	}
+	if (auto* v = std::any_cast<Color3>(&val)) {
+		return LuaRef(L, *v);
+	}
+	if (auto* v = std::any_cast<Color4>(&val)) {
+		return LuaRef(L, *v);
+	}
 	if (auto* v = std::any_cast<toast::Box<toast::Node>>(&val)) {
 		if (!v->exists()) {
 			return LuaRef(L);
 		}
 		return LuaRef(L, NodeProxy(*v));
 	}
-	TOAST_WARN("Scripting", "anyReturnToLuaRef: unhandled return type '{}' — returning nil", return_type);
+	if (auto* v = std::any_cast<AssetProxy>(&val)) {
+		return LuaRef(L, *v);
+	}
+	if (auto* v = std::any_cast<toast::UID>(&val)) {
+		return LuaRef(L, AssetProxy(*v));
+	}
+	if (LuaRef r = anyVectorToLuaRef(L, val); !r.isNil()) {
+		return r;
+	}
+	TOAST_WARN("Lua", "anyReturnToLuaRef: unhandled return type '{}', returning nil", return_type);
 	return LuaRef(L);
 }
 
@@ -219,6 +255,91 @@ luabridge::LuaRef pushVecTable(lua_State* L, const std::any& value) {
 	return luabridge::LuaRef::fromStack(L, -1);
 }
 
+// Rebuilds a std::vector<VecT> any as a table of ColorT
+template<typename ColorT, typename VecT>
+luabridge::LuaRef pushColorTable(lua_State* L, const std::any& value) {
+	const auto* vec = std::any_cast<std::vector<VecT>>(&value);
+	if (!vec) {
+		return luabridge::LuaRef(L);
+	}
+	lua_createtable(L, static_cast<int>(vec->size()), 0);
+	for (size_t i = 0; i < vec->size(); ++i) {
+		lua_pushinteger(L, static_cast<lua_Integer>(i + 1));
+		if (auto r = luabridge::Stack<ColorT>::push(L, ColorT((*vec)[i])); !r) {
+			lua_pushnil(L);
+		}
+		lua_settable(L, -3);
+	}
+	return luabridge::LuaRef::fromStack(L, -1);
+}
+
+luabridge::LuaRef anyVectorToLuaRef(lua_State* L, const std::any& value) {
+	using luabridge::LuaRef;
+	if (auto r = pushVecTable<bool>(L, value); !r.isNil()) {
+		return r;
+	}
+	if (auto r = pushVecTable<int>(L, value); !r.isNil()) {
+		return r;
+	}
+	if (auto r = pushVecTable<float>(L, value); !r.isNil()) {
+		return r;
+	}
+	if (auto r = pushVecTable<double>(L, value); !r.isNil()) {
+		return r;
+	}
+	if (auto r = pushVecTable<std::string>(L, value); !r.isNil()) {
+		return r;
+	}
+	if (auto r = pushVecTable<glm::vec2>(L, value); !r.isNil()) {
+		return r;
+	}
+	if (auto r = pushVecTable<glm::vec3>(L, value); !r.isNil()) {
+		return r;
+	}
+	if (auto r = pushVecTable<glm::vec4>(L, value); !r.isNil()) {
+		return r;
+	}
+	if (auto r = pushVecTable<glm::quat>(L, value); !r.isNil()) {
+		return r;
+	}
+	if (auto r = pushVecTable<Color3>(L, value); !r.isNil()) {
+		return r;
+	}
+	if (auto r = pushVecTable<Color4>(L, value); !r.isNil()) {
+		return r;
+	}
+	if (auto r = pushVecTable<AssetProxy>(L, value); !r.isNil()) {
+		return r;
+	}
+	if (const auto* boxes = std::any_cast<std::vector<toast::Box<toast::Node>>>(&value)) {
+		lua_createtable(L, static_cast<int>(boxes->size()), 0);
+		for (size_t i = 0; i < boxes->size(); ++i) {
+			lua_pushinteger(L, static_cast<lua_Integer>(i + 1));
+			if ((*boxes)[i].exists()) {
+				if (auto r = luabridge::Stack<NodeProxy>::push(L, NodeProxy((*boxes)[i])); !r) {
+					lua_pushnil(L);
+				}
+			} else {
+				lua_pushnil(L);
+			}
+			lua_settable(L, -3);
+		}
+		return LuaRef::fromStack(L, -1);
+	}
+	if (const auto* uids = std::any_cast<std::vector<toast::UID>>(&value)) {
+		lua_createtable(L, static_cast<int>(uids->size()), 0);
+		for (size_t i = 0; i < uids->size(); ++i) {
+			lua_pushinteger(L, static_cast<lua_Integer>(i + 1));
+			if (auto r = luabridge::Stack<AssetProxy>::push(L, AssetProxy((*uids)[i])); !r) {
+				lua_pushnil(L);
+			}
+			lua_settable(L, -3);
+		}
+		return LuaRef::fromStack(L, -1);
+	}
+	return LuaRef(L);
+}
+
 // Handles non-uid array fields for reads
 luabridge::LuaRef nonUidArrayToLuaRef(lua_State* L, const std::any& value, std::string_view fieldType) {
 	if (fieldType.find("string") != std::string_view::npos) {
@@ -234,21 +355,7 @@ luabridge::LuaRef nonUidArrayToLuaRef(lua_State* L, const std::any& value, std::
 		return pushVecTable<glm::vec2>(L, value);
 	}
 	if (fieldType.find("quat") != std::string_view::npos) {
-		// Expose each quat as vec4(x,y,z,w) — glm::quat is not a registered Lua usertype.
-		const auto* vec = std::any_cast<std::vector<glm::quat>>(&value);
-		if (!vec) {
-			return luabridge::LuaRef(L);
-		}
-		lua_createtable(L, static_cast<int>(vec->size()), 0);
-		for (size_t i = 0; i < vec->size(); ++i) {
-			lua_pushinteger(L, static_cast<lua_Integer>(i + 1));
-			const glm::quat& q = (*vec)[i];
-			if (auto r = luabridge::Stack<glm::vec4>::push(L, glm::vec4(q.x, q.y, q.z, q.w)); !r) {
-				lua_pushnil(L);
-			}
-			lua_settable(L, -3);
-		}
-		return luabridge::LuaRef::fromStack(L, -1);
+		return pushVecTable<glm::quat>(L, value);
 	}
 	if (fieldType.find("double") != std::string_view::npos) {
 		return pushVecTable<double>(L, value);
@@ -291,20 +398,26 @@ std::any luaTableToAny(lua_State* L, const luabridge::LuaRef& table, const toast
 	if (t.find("vec4") != std::string_view::npos) {
 		std::vector<glm::vec4> v;
 		for (luabridge::Iterator it(table); !it.isNil(); ++it) {
-			if (!it.value().isInstance<glm::vec4>()) {
-				luaL_error(L, "Field '%s': expected vec4 elements", key.c_str());
+			if (it.value().isInstance<Color4>()) {
+				v.push_back(it.value().unsafe_cast<Color4>().rgba);
+			} else if (it.value().isInstance<glm::vec4>()) {
+				v.push_back(it.value().unsafe_cast<glm::vec4>());
+			} else {
+				luaL_error(L, "Field '%s': expected vec4 or color4 elements", key.c_str());
 			}
-			v.push_back(it.value().unsafe_cast<glm::vec4>());
 		}
 		return v;
 	}
 	if (t.find("vec3") != std::string_view::npos) {
 		std::vector<glm::vec3> v;
 		for (luabridge::Iterator it(table); !it.isNil(); ++it) {
-			if (!it.value().isInstance<glm::vec3>()) {
-				luaL_error(L, "Field '%s': expected vec3 elements", key.c_str());
+			if (it.value().isInstance<Color3>()) {
+				v.push_back(it.value().unsafe_cast<Color3>().rgb);
+			} else if (it.value().isInstance<glm::vec3>()) {
+				v.push_back(it.value().unsafe_cast<glm::vec3>());
+			} else {
+				luaL_error(L, "Field '%s': expected vec3 or color3 elements", key.c_str());
 			}
-			v.push_back(it.value().unsafe_cast<glm::vec3>());
 		}
 		return v;
 	}
@@ -319,14 +432,17 @@ std::any luaTableToAny(lua_State* L, const luabridge::LuaRef& table, const toast
 		return v;
 	}
 	if (t.find("quat") != std::string_view::npos) {
-		// Accept vec4(x,y,z,w)
 		std::vector<glm::quat> v;
 		for (luabridge::Iterator it(table); !it.isNil(); ++it) {
-			if (!it.value().isInstance<glm::vec4>()) {
-				luaL_error(L, "Field '%s': expected vec4(x,y,z,w) elements for quaternion", key.c_str());
+			if (it.value().isInstance<glm::quat>()) {
+				v.push_back(it.value().unsafe_cast<glm::quat>());
+			} else if (it.value().isInstance<glm::vec4>()) {
+				// accept vec4(x,y,z,w) for convenience
+				const glm::vec4 vv = it.value().unsafe_cast<glm::vec4>();
+				v.emplace_back(vv.w, vv.x, vv.y, vv.z);
+			} else {
+				luaL_error(L, "Field '%s': expected quat elements", key.c_str());
 			}
-			const glm::vec4 vv = it.value().unsafe_cast<glm::vec4>();
-			v.emplace_back(vv.w, vv.x, vv.y, vv.z);
 		}
 		return v;
 	}
@@ -378,6 +494,15 @@ luabridge::LuaRef anyToLuaRef(lua_State* L, const std::any& value, const toast::
 
 	// dispatch on field.type since value_type defaults to int_t for unknown vectors
 	if (field.is_array && field.value_type != FieldType::uid_t) {
+		// [[Color]] vec arrays surface as color usertypes
+		if (field.hasAttribute("Color")) {
+			if (field.value_type == FieldType::vec3_t) {
+				return pushColorTable<Color3, glm::vec3>(L, value);
+			}
+			if (field.value_type == FieldType::vec4_t) {
+				return pushColorTable<Color4, glm::vec4>(L, value);
+			}
+		}
 		return nonUidArrayToLuaRef(L, value, field.type);
 	}
 
@@ -447,20 +572,25 @@ luabridge::LuaRef anyToLuaRef(lua_State* L, const std::any& value, const toast::
 
 		case FieldType::vec3_t:
 			if (auto* v = std::any_cast<glm::vec3>(&value)) {
+				if (field.hasAttribute("Color")) {
+					return LuaRef(L, Color3(*v));
+				}
 				return LuaRef(L, *v);
 			}
 			break;
 
 		case FieldType::vec4_t:
 			if (auto* v = std::any_cast<glm::vec4>(&value)) {
+				if (field.hasAttribute("Color")) {
+					return LuaRef(L, Color4(*v));
+				}
 				return LuaRef(L, *v);
 			}
 			break;
 
 		case FieldType::quaternion_t:
-			// glm::quat is not a registered Lua usertype; expose as vec4(x,y,z,w)
 			if (auto* v = std::any_cast<glm::quat>(&value)) {
-				return LuaRef(L, glm::vec4(v->x, v->y, v->z, v->w));
+				return LuaRef(L, *v);
 			}
 			break;
 
@@ -500,6 +630,106 @@ luabridge::LuaRef anyToLuaRef(lua_State* L, const std::any& value, const toast::
 	return luabridge::LuaRef(L);
 }
 
+// Converts an array-style Lua table to a std::vector<T> any
+std::any luaArrayTableToAny(lua_State* L, const luabridge::LuaRef& table) {
+	luabridge::LuaRef first = table[1];
+	if (!first.isValid() || first.isNil()) {
+		return {};
+	}
+
+	// element mismatch skips the conversion
+	auto collect = [&]<typename T>(auto&& convert, auto&& matches) -> std::any {
+		std::vector<T> out;
+		for (luabridge::Iterator it(table); !it.isNil(); ++it) {
+			if (!it.key().isNumber() || !matches(it.value())) {
+				return {};
+			}
+			out.push_back(convert(it.value()));
+		}
+		return out;
+	};
+
+	if (first.isBool()) {
+		return collect.template operator()<bool>(
+		    [](const luabridge::LuaRef& e) { return e.unsafe_cast<bool>(); }, [](const luabridge::LuaRef& e) { return e.isBool(); }
+		);
+	}
+	if (first.isNumber()) {
+		// All-integer tables rounds as ints, anything else widens to double
+		std::vector<double> numbers;
+		bool all_int = true;
+		for (luabridge::Iterator it(table); !it.isNil(); ++it) {
+			if (!it.key().isNumber() || !it.value().isNumber()) {
+				return {};
+			}
+			it.value().push(L);
+			all_int = all_int && lua_isinteger(L, -1) != 0;
+			lua_pop(L, 1);
+			numbers.push_back(it.value().unsafe_cast<lua_Number>());
+		}
+		if (all_int) {
+			std::vector<int> ints(numbers.size());
+			std::ranges::transform(numbers, ints.begin(), [](double d) { return static_cast<int>(d); });
+			return ints;
+		}
+		return numbers;
+	}
+	if (first.isString()) {
+		return collect.template operator()<std::string>(
+		    [](const luabridge::LuaRef& e) { return e.tostring(); }, [](const luabridge::LuaRef& e) { return e.isString(); }
+		);
+	}
+	if (first.isInstance<glm::vec2>()) {
+		return collect.template operator()<glm::vec2>(
+		    [](const luabridge::LuaRef& e) { return e.unsafe_cast<glm::vec2>(); },
+		    [](const luabridge::LuaRef& e) { return e.isInstance<glm::vec2>(); }
+		);
+	}
+	if (first.isInstance<glm::vec3>()) {
+		return collect.template operator()<glm::vec3>(
+		    [](const luabridge::LuaRef& e) { return e.unsafe_cast<glm::vec3>(); },
+		    [](const luabridge::LuaRef& e) { return e.isInstance<glm::vec3>(); }
+		);
+	}
+	if (first.isInstance<glm::vec4>()) {
+		return collect.template operator()<glm::vec4>(
+		    [](const luabridge::LuaRef& e) { return e.unsafe_cast<glm::vec4>(); },
+		    [](const luabridge::LuaRef& e) { return e.isInstance<glm::vec4>(); }
+		);
+	}
+	if (first.isInstance<glm::quat>()) {
+		return collect.template operator()<glm::quat>(
+		    [](const luabridge::LuaRef& e) { return e.unsafe_cast<glm::quat>(); },
+		    [](const luabridge::LuaRef& e) { return e.isInstance<glm::quat>(); }
+		);
+	}
+	if (first.isInstance<Color3>()) {
+		return collect.template operator()<Color3>(
+		    [](const luabridge::LuaRef& e) { return e.unsafe_cast<Color3>(); },
+		    [](const luabridge::LuaRef& e) { return e.isInstance<Color3>(); }
+		);
+	}
+	if (first.isInstance<Color4>()) {
+		return collect.template operator()<Color4>(
+		    [](const luabridge::LuaRef& e) { return e.unsafe_cast<Color4>(); },
+		    [](const luabridge::LuaRef& e) { return e.isInstance<Color4>(); }
+		);
+	}
+	if (first.isInstance<NodeProxy>()) {
+		return collect.template operator()<toast::Box<toast::Node>>(
+		    [](const luabridge::LuaRef& e) { return toast::Box<toast::Node>(e.unsafe_cast<NodeProxy>().box()); },
+		    [](const luabridge::LuaRef& e) { return e.isInstance<NodeProxy>() && e.unsafe_cast<NodeProxy>().exists(); }
+		);
+	}
+	if (first.isInstance<AssetProxy>()) {
+		return collect.template operator()<AssetProxy>(
+		    [](const luabridge::LuaRef& e) { return e.unsafe_cast<AssetProxy>(); },
+		    [](const luabridge::LuaRef& e) { return e.isInstance<AssetProxy>(); }
+		);
+	}
+	return {};
+}
+
 }
 
 luabridge::LuaRef anyValueToLuaRef(lua_State* L, const std::any& value) {
@@ -536,12 +766,27 @@ std::any luaRefValueToAny(lua_State* L, const luabridge::LuaRef& v) {
 	if (v.isInstance<glm::vec4>()) {
 		return v.unsafe_cast<glm::vec4>();
 	}
+	if (v.isInstance<glm::quat>()) {
+		return v.unsafe_cast<glm::quat>();
+	}
+	if (v.isInstance<Color3>()) {
+		return v.unsafe_cast<Color3>();
+	}
+	if (v.isInstance<Color4>()) {
+		return v.unsafe_cast<Color4>();
+	}
 	if (v.isInstance<NodeProxy>()) {
 		const NodeProxy& np = v.unsafe_cast<NodeProxy>();
 		if (np.exists()) {
 			return toast::Box<toast::Node>(np.box());
 		}
 		return {};
+	}
+	if (v.isInstance<AssetProxy>()) {
+		return v.unsafe_cast<AssetProxy>();
+	}
+	if (v.isTable()) {
+		return luaArrayTableToAny(L, v);
 	}
 	return {};
 }
@@ -907,27 +1152,34 @@ luabridge::LuaRef
 			break;
 
 		case FieldType::vec3_t:
-			if (!value.isInstance<glm::vec3>()) {
-				luaL_error(L, "Field '%s' expects vec3", key_str.c_str());
+			if (value.isInstance<Color3>()) {
+				any_value = value.unsafe_cast<Color3>().rgb;
+			} else if (value.isInstance<glm::vec3>()) {
+				any_value = value.unsafe_cast<glm::vec3>();
+			} else {
+				luaL_error(L, "Field '%s' expects vec3 or color3", key_str.c_str());
 			}
-			any_value = value.unsafe_cast<glm::vec3>();
 			break;
 
 		case FieldType::vec4_t:
-			if (!value.isInstance<glm::vec4>()) {
-				luaL_error(L, "Field '%s' expects vec4", key_str.c_str());
+			if (value.isInstance<Color4>()) {
+				any_value = value.unsafe_cast<Color4>().rgba;
+			} else if (value.isInstance<glm::vec4>()) {
+				any_value = value.unsafe_cast<glm::vec4>();
+			} else {
+				luaL_error(L, "Field '%s' expects vec4 or color4", key_str.c_str());
 			}
-			any_value = value.unsafe_cast<glm::vec4>();
 			break;
 
 		case FieldType::quaternion_t:
-			// Accept vec4(x,y,z,w) as the Lua representation of a quaternion
-			if (!value.isInstance<glm::vec4>()) {
-				luaL_error(L, "Field '%s' expects vec4(x,y,z,w) for quaternion", key_str.c_str());
-			}
-			{
+			if (value.isInstance<glm::quat>()) {
+				any_value = value.unsafe_cast<glm::quat>();
+			} else if (value.isInstance<glm::vec4>()) {
+				// accept vec4(x,y,z,w) for convenience
 				const glm::vec4 v = value.unsafe_cast<glm::vec4>();
 				any_value = glm::quat(v.w, v.x, v.y, v.z);
+			} else {
+				luaL_error(L, "Field '%s' expects quat", key_str.c_str());
 			}
 			break;
 

@@ -174,6 +174,12 @@ public:
 
 	auto listByType(std::string_view type) -> std::vector<toast::UID>;
 
+	/**
+	 * @brief Looks up an asset's type string in the manifest without loading it
+	 * @return The manifest type
+	 */
+	static auto typeOf(toast::UID uid) -> std::string;
+
 	auto getCachePath() const -> const std::filesystem::path&;
 
 	/**

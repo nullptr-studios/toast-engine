@@ -18,6 +18,7 @@
 #include <toast/assets/script.hpp>
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/scripting/node_proxy.hpp>
+#include <toast/scripting/script_schema.hpp>
 #include <toast/world/box.hpp>
 #include <vector>
 
@@ -30,12 +31,6 @@ namespace scripting {
 // One per script
 class ScriptInstance {
 public:
-	/// A non-function key present in the returned table at load time
-	struct ExportEntry {
-		std::string name;
-		luabridge::LuaRef value;
-	};
-
 	ScriptInstance(lua_State* L, const assets::AssetHandle<assets::Script>& script, const NodeProxy& proxy);
 	~ScriptInstance() = default;
 
@@ -54,18 +49,27 @@ public:
 	void callWithAnyArgs(std::string_view name, std::span<const std::any> args) noexcept;
 
 	/// Writes `value` to the instance variable named `name`
-	void setVar(std::string_view name, const std::any& value) noexcept;
+	/// @return true if the variable exists
+	auto setVar(std::string_view name, const std::any& value) noexcept -> bool;
 
 	/// Reads the instance variable named `name`
 	[[nodiscard]]
 	auto getVar(std::string_view name) const noexcept -> std::any;
+
+	/// Reads a variable through its schema path
+	[[nodiscard]]
+	auto getVarByPath(std::string_view path) const noexcept -> std::any;
+
+	/// Writes a variable through its schema path
+	/// @return true if the variable exists
+	auto setVarByPath(std::string_view path, const std::any& value) noexcept -> bool;
 
 	/// Returns true if the self table has a callable field with this name
 	[[nodiscard]]
 	auto hasFunction(std::string_view fn_name) const noexcept -> bool;
 
 	[[nodiscard]]
-	auto schema() const noexcept -> const std::vector<ExportEntry>& {
+	auto schema() const noexcept -> const ScriptSchema& {
 		return m_schema;
 	}
 
@@ -91,12 +95,15 @@ private:
 	std::unique_ptr<luabridge::LuaRef> m_self;
 	NodeProxy m_proxy;
 	std::string m_name;
-	std::vector<ExportEntry> m_schema;
+	ScriptSchema m_schema;
 	toast::TickFunctionList m_tick_mask = toast::TickFunctionList::none;
 
 	void installMetatable() noexcept;
-	void snapshotSchema() noexcept;
+	void extractSchema(std::string_view src) noexcept;
 	void snapshotTickMask() noexcept;
+
+	/// Pushes the value at `path` onto the Lua stack
+	auto pushByPath(std::string_view path) const noexcept -> bool;
 };
 
 // One per node
@@ -126,6 +133,33 @@ public:
 	[[nodiscard]]
 	auto getVar(std::string_view name) const noexcept -> std::any;
 
+	/// Number of attached script instances
+	[[nodiscard]]
+	auto instanceCount() const noexcept -> size_t {
+		return m_instances.size();
+	}
+
+	/// Schema of one instance
+	[[nodiscard]]
+	auto instanceSchema(size_t index) const noexcept -> const ScriptSchema*;
+
+	/// Script asset path of one instance
+	[[nodiscard]]
+	auto instanceScript(size_t index) const noexcept -> std::string_view;
+
+	/// Reads a variable of one instance through its schema path
+	[[nodiscard]]
+	auto getVarByPath(size_t index, std::string_view path) const noexcept -> std::any;
+
+	/// Writes a variable of one instance through its schema path
+	auto setVarByPath(size_t index, std::string_view path, const std::any& value) noexcept -> bool;
+
+	/// Changes whenever the runtime is rebuilt
+	[[nodiscard]]
+	auto schemaVersion() const noexcept -> uint32_t {
+		return m_schema_version;
+	}
+
 	/// True if any instance defines a function matching the given phases
 	[[nodiscard]]
 	auto hasTick(toast::TickFunctionList mask = toast::TickFunctionList::tick_mask) const noexcept -> bool {
@@ -143,6 +177,7 @@ private:
 	size_t m_state_index = 0;
 	lua_State* m_lua = nullptr;
 	toast::TickFunctionList m_tick_mask = toast::TickFunctionList::none;
+	uint32_t m_schema_version = 0;
 };
 
 }

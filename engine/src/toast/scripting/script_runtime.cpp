@@ -1,13 +1,22 @@
 #include "script_runtime.hpp"
 
+#include "asset_proxy.hpp"
 #include "lua_state.hpp"
+#include "lua_types.hpp"
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
 
+#include <algorithm>
+#include <atomic>
+#include <cctype>
 #include <format>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 #include <toast/log.hpp>
 #include <toast/world/node.hpp>
 #include <tracy/Tracy.hpp>
+#include <unordered_map>
 
 namespace scripting {
 
@@ -54,6 +63,99 @@ const char* phaseToLuaName(toast::TickFunctionList phase) noexcept {
 		case F::late_tick: return "lateTick";
 		default: return nullptr;
 	}
+}
+
+bool isExportableKey(const luabridge::LuaRef& key) {
+	return key.isString() && !key.tostring().starts_with('_');
+}
+
+std::optional<LuaVarDesc> classifyLeaf(lua_State* L, const luabridge::LuaRef& v) {
+	LuaVarDesc d;
+	if (v.isBool()) {
+		d.kind = LuaVarKind::boolean;
+		return d;
+	}
+	if (v.isNumber()) {
+		v.push(L);
+		const bool is_int = lua_isinteger(L, -1) != 0;
+		lua_pop(L, 1);
+		d.kind = is_int ? LuaVarKind::integer : LuaVarKind::number;
+		return d;
+	}
+	if (v.isString()) {
+		d.kind = LuaVarKind::string;
+		return d;
+	}
+	if (v.isInstance<glm::vec2>()) {
+		d.kind = LuaVarKind::vec2;
+		return d;
+	}
+	if (v.isInstance<glm::vec3>()) {
+		d.kind = LuaVarKind::vec3;
+		return d;
+	}
+	if (v.isInstance<glm::vec4>()) {
+		d.kind = LuaVarKind::vec4;
+		return d;
+	}
+	if (v.isInstance<Color3>()) {
+		d.kind = LuaVarKind::color3;
+		return d;
+	}
+	if (v.isInstance<Color4>()) {
+		d.kind = LuaVarKind::color4;
+		return d;
+	}
+	if (v.isInstance<TypeMarker>()) {
+		const TypeMarker& marker = v.unsafe_cast<TypeMarker>();
+		d.kind = marker.kind == TypeMarker::Kind::Node ? LuaVarKind::node_ref : LuaVarKind::asset_ref;
+		d.ref_type = marker.typeName;
+		return d;
+	}
+	if (v.isInstance<NodeProxy>()) {
+		const NodeProxy& np = v.unsafe_cast<NodeProxy>();
+		d.kind = LuaVarKind::node_ref;
+		if (np.exists() && np.box()->info() != nullptr) {
+			d.ref_type = np.box()->info()->type;
+		}
+		return d;
+	}
+	if (v.isInstance<AssetProxy>()) {
+		d.kind = LuaVarKind::asset_ref;
+		d.ref_type = v.unsafe_cast<AssetProxy>().type();
+		return d;
+	}
+	return std::nullopt;
+}
+
+size_t declPos(std::string_view src, std::string_view key, size_t from) {
+	size_t pos = from;
+	while ((pos = src.find(key, pos)) != std::string_view::npos) {
+		const char before = pos > 0 ? src[pos - 1] : ' ';
+		const bool boundary = std::isalnum(static_cast<unsigned char>(before)) == 0 && before != '_' && before != '.';
+		size_t after = pos + key.size();
+		while (after < src.size() && std::isspace(static_cast<unsigned char>(src[after])) != 0) {
+			++after;
+		}
+		const bool assigned = after < src.size() && src[after] == '=' && (after + 1 >= src.size() || src[after + 1] != '=');
+		if (boundary && assigned) {
+			return pos;
+		}
+		pos += key.size();
+	}
+	return std::string_view::npos;
+}
+
+template<typename T>
+void sortByDeclaration(std::vector<T>& entries, std::string_view src, size_t from) {
+	std::ranges::stable_sort(entries, [&](const T& a, const T& b) {
+		const size_t pa = declPos(src, a.name, from);
+		const size_t pb = declPos(src, b.name, from);
+		if (pa != pb) {
+			return pa < pb;
+		}
+		return a.name < b.name;
+	});
 }
 
 int scriptInstanceIndex(lua_State* L) {
@@ -144,7 +246,7 @@ ScriptInstance::ScriptInstance(lua_State* L, const assets::AssetHandle<assets::S
 	// save the returned table in the Lua registry
 	m_self = std::make_unique<luabridge::LuaRef>(luabridge::LuaRef::fromStack(L, -1));
 	lua_pop(L, 1);
-	snapshotSchema();
+	extractSchema(src);
 	snapshotTickMask();
 	installMetatable();
 }
@@ -174,17 +276,108 @@ void ScriptInstance::snapshotTickMask() noexcept {
 	}
 }
 
-void ScriptInstance::snapshotSchema() noexcept {
+void ScriptInstance::extractSchema(std::string_view src) noexcept {
+	ZoneScopedN("Lua schema");    // NOLINT
+
+	m_schema = {};
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
+	lua_State* L = m_state;
+
+	auto classify =
+	    [&](const std::string& name, std::string_view path_prefix, const luabridge::LuaRef& val) -> std::optional<LuaVarDesc> {
+		luabridge::LuaRef element = val;
+		bool is_array = false;
+		if (val.isTable()) {
+			element = val[1];
+			if (!element.isValid() || element.isNil()) {
+				return std::nullopt;    // group, or an untypeable empty table
+			}
+			is_array = true;
+		}
+		auto desc = classifyLeaf(L, element);
+		if (!desc) {
+			TOAST_WARN("Lua", "{}: exported var '{}' has an unsupported type; skipping", m_name, name);
+			return std::nullopt;
+		}
+		desc->name = name;
+		desc->path = path_prefix.empty() ? name : std::format("{}/{}", path_prefix, name);
+		desc->is_array = is_array;
+		return desc;
+	};
+
 	for (luabridge::Iterator it(*m_self); !it.isNil(); ++it) {
-		luabridge::LuaRef key = it.key();
-		luabridge::LuaRef val = it.value();
-		if (!key.isString() || val.isFunction()) {
+		if (!isExportableKey(it.key()) || it.value().isFunction()) {
 			continue;
 		}
-		m_schema.push_back({key.tostring(), val});
+		const std::string key = it.key().tostring();
+		luabridge::LuaRef val = it.value();
+
+		// Leaf or array at the top level
+		if (auto desc = classify(key, "", val)) {
+			m_schema.fields.push_back(std::move(*desc));
+			continue;
+		}
+		if (!val.isTable()) {
+			continue;    // unsupported leaf
+		}
+
+		// Stringkeyed table = inspector group
+		LuaGroup group;
+		group.name = key;
+		for (luabridge::Iterator git(val); !git.isNil(); ++git) {
+			if (!isExportableKey(git.key()) || git.value().isFunction()) {
+				continue;
+			}
+			const std::string gkey = git.key().tostring();
+			luabridge::LuaRef gval = git.value();
+
+			if (auto desc = classify(gkey, group.name, gval)) {
+				group.fields.push_back(std::move(*desc));
+				continue;
+			}
+			if (!gval.isTable()) {
+				continue;
+			}
+
+			// Nested table inside a group = subgroup
+			// Anything deeper is just not supported
+			LuaSubgroup sub;
+			sub.name = gkey;
+			const std::string sub_prefix = std::format("{}/{}", group.name, sub.name);
+			for (luabridge::Iterator sit(gval); !sit.isNil(); ++sit) {
+				if (!isExportableKey(sit.key()) || sit.value().isFunction()) {
+					continue;
+				}
+				const std::string skey = sit.key().tostring();
+				if (auto desc = classify(skey, sub_prefix, sit.value())) {
+					sub.fields.push_back(std::move(*desc));
+				} else if (sit.value().isTable()) {
+					TOAST_WARN("Lua", "{}: table '{}/{}' nests deeper than group/subgroup; skipping", m_name, sub_prefix, skey);
+				}
+			}
+			group.subgroups.push_back(std::move(sub));
+		}
+		if (group.fields.empty() && group.subgroups.empty()) {
+			TOAST_WARN("Lua", "{}: exported table '{}' is empty and cannot be typed; skipping", m_name, key);
+			continue;
+		}
+		m_schema.groups.push_back(std::move(group));
+	}
+
+	// recover the order vars are written in the source
+	sortByDeclaration(m_schema.fields, src, 0);
+	sortByDeclaration(m_schema.groups, src, 0);
+	for (LuaGroup& group : m_schema.groups) {
+		const size_t group_pos = declPos(src, group.name, 0);
+		const size_t from = group_pos == std::string_view::npos ? 0 : group_pos;
+		sortByDeclaration(group.fields, src, from);
+		sortByDeclaration(group.subgroups, src, from);
+		for (LuaSubgroup& sub : group.subgroups) {
+			const size_t sub_pos = declPos(src, sub.name, from);
+			sortByDeclaration(sub.fields, src, sub_pos == std::string_view::npos ? from : sub_pos);
+		}
 	}
 }
 
@@ -305,9 +498,9 @@ void ScriptInstance::callWithAnyArgs(std::string_view name, std::span<const std:
 	}
 }
 
-void ScriptInstance::setVar(std::string_view name, const std::any& value) noexcept {
+auto ScriptInstance::setVar(std::string_view name, const std::any& value) noexcept -> bool {
 	if (!m_self || m_self->isNil()) {
-		return;
+		return false;
 	}
 	lua_State* L = m_state;
 
@@ -320,7 +513,7 @@ void ScriptInstance::setVar(std::string_view name, const std::any& value) noexce
 
 	if (!exists) {
 		lua_pop(L, 1);
-		return;
+		return false;
 	}
 
 	// Rawset self[name] = converted value
@@ -329,6 +522,82 @@ void ScriptInstance::setVar(std::string_view name, const std::any& value) noexce
 	ref.push(L);
 	lua_rawset(L, -3);
 	lua_pop(L, 1);
+	return true;
+}
+
+auto ScriptInstance::pushByPath(std::string_view path) const noexcept -> bool {
+	if (!m_self || m_self->isNil() || path.empty()) {
+		return false;
+	}
+	lua_State* L = m_state;
+
+	m_self->push(L);
+	size_t start = 0;
+	while (true) {
+		const size_t slash = path.find('/', start);
+		const std::string_view segment = path.substr(start, slash == std::string_view::npos ? std::string_view::npos : slash - start);
+		lua_pushlstring(L, segment.data(), segment.size());
+		lua_rawget(L, -2);
+		lua_remove(L, -2);    // drop the parent table
+		if (slash == std::string_view::npos) {
+			return true;        // value (possibly nil) at top
+		}
+		if (lua_istable(L, -1) == 0) {
+			lua_pop(L, 1);
+			return false;
+		}
+		start = slash + 1;
+	}
+}
+
+auto ScriptInstance::getVarByPath(std::string_view path) const noexcept -> std::any {
+	lua_State* L = m_state;
+	if (!pushByPath(path)) {
+		return {};
+	}
+	luabridge::LuaRef ref = luabridge::LuaRef::fromStack(L, -1);
+	lua_pop(L, 1);
+	return luaRefValueToAny(L, ref);
+}
+
+auto ScriptInstance::setVarByPath(std::string_view path, const std::any& value) noexcept -> bool {
+	if (!m_self || m_self->isNil() || path.empty()) {
+		return false;
+	}
+	lua_State* L = m_state;
+
+	// Split off the parent path and descend to the owning table
+	const size_t last_slash = path.rfind('/');
+	const std::string_view leaf = last_slash == std::string_view::npos ? path : path.substr(last_slash + 1);
+
+	if (last_slash == std::string_view::npos) {
+		m_self->push(L);
+	} else {
+		if (!pushByPath(path.substr(0, last_slash))) {
+			return false;
+		}
+		if (lua_istable(L, -1) == 0) {
+			lua_pop(L, 1);
+			return false;
+		}
+	}
+
+	// Only overwrite existing keys, same policy as setVar
+	lua_pushlstring(L, leaf.data(), leaf.size());
+	lua_rawget(L, -2);
+	const bool exists = !lua_isnil(L, -1);
+	lua_pop(L, 1);
+	if (!exists) {
+		lua_pop(L, 1);
+		return false;
+	}
+
+	luabridge::LuaRef ref = anyValueToLuaRef(L, value);
+	lua_pushlstring(L, leaf.data(), leaf.size());
+	ref.push(L);
+	lua_rawset(L, -3);
+	lua_pop(L, 1);
+	return true;
 }
 
 auto ScriptInstance::getVar(std::string_view name) const noexcept -> std::any {
@@ -382,6 +651,63 @@ ScriptRuntime::ScriptRuntime(toast::Box<toast::Node> node, const std::vector<ass
 			m_tick_mask |= m_instances.back()->tickMask();
 		}
 	}
+
+	static std::atomic<uint32_t> s_schema_version {0};
+	m_schema_version = ++s_schema_version;
+
+	// Same-named vars across scripts are ambiguous for name-based get/set: first script wins
+	std::unordered_map<std::string_view, std::string_view> seen;
+	for (const auto& inst : m_instances) {
+		for (const LuaVarDesc& field : inst->schema().fields) {
+			auto [it, inserted] = seen.try_emplace(field.name, inst->name());
+			if (!inserted) {
+				TOAST_WARN(
+				    "Lua",
+				    "Variable '{}' defined by both '{}' and '{}'; '{}' takes precedence",
+				    field.name,
+				    it->second,
+				    inst->name(),
+				    it->second
+				);
+			}
+		}
+	}
+}
+
+auto ScriptRuntime::instanceSchema(size_t index) const noexcept -> const ScriptSchema* {
+	if (index >= m_instances.size() || !m_instances[index] || !m_instances[index]->isValid()) {
+		return nullptr;
+	}
+	return &m_instances[index]->schema();
+}
+
+auto ScriptRuntime::instanceScript(size_t index) const noexcept -> std::string_view {
+	if (index >= m_instances.size() || !m_instances[index]) {
+		return {};
+	}
+	return m_instances[index]->name();
+}
+
+auto ScriptRuntime::getVarByPath(size_t index, std::string_view path) const noexcept -> std::any {
+	if (index >= m_instances.size() || !m_instances[index] || !m_instances[index]->isValid()) {
+		return {};
+	}
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return {};
+	}
+	return m_instances[index]->getVarByPath(path);
+}
+
+auto ScriptRuntime::setVarByPath(size_t index, std::string_view path, const std::any& value) noexcept -> bool {
+	if (index >= m_instances.size() || !m_instances[index] || !m_instances[index]->isValid()) {
+		return false;
+	}
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return false;
+	}
+	return m_instances[index]->setVarByPath(path, value);
 }
 
 void ScriptRuntime::call(toast::TickFunctionList phase) noexcept {
@@ -469,9 +795,10 @@ void ScriptRuntime::setVar(std::string_view name, const std::any& value) noexcep
 	if (!guard) {
 		return;
 	}
+	// First instance defining the name owns it, matching getVar's resolution order
 	for (auto& inst : m_instances) {
-		if (inst && inst->isValid()) {
-			inst->setVar(name, value);
+		if (inst && inst->isValid() && inst->setVar(name, value)) {
+			return;
 		}
 	}
 }

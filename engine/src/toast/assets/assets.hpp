@@ -30,6 +30,12 @@ auto TOAST_API resolveURI(std::string_view uri) -> std::optional<toast::UID>;
  */
 auto TOAST_API listByType(std::string_view type) -> std::vector<toast::UID>;
 
+/**
+ * @brief Looks up an asset's type string in the manifest without loading it
+ * @return The manifest type
+ */
+auto TOAST_API typeOf(toast::UID uid) -> std::string;
+
 auto TOAST_API save(toast::UID uid) -> bool;
 
 /**

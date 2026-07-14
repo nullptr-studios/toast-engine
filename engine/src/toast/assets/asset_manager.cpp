@@ -518,6 +518,13 @@ auto AssetManager::listByType(std::string_view type) -> std::vector<toast::UID> 
 	return result;
 }
 
+auto AssetManager::typeOf(toast::UID uid) -> std::string {
+	auto& manager = get();
+	std::lock_guard lock(manager.mutex);
+	auto it = manager.manifest.find(uid.data());
+	return it != manager.manifest.end() ? it->second.type : std::string {};
+}
+
 // Public API Implementations
 auto load(toast::UID uid) -> AssetHandleBase {
 	return {AssetManager::get().load(uid), uid, AssetManager::getURI(uid)};
@@ -542,5 +549,9 @@ auto save(toast::UID uid) -> bool {
 
 auto listByType(std::string_view type) -> std::vector<toast::UID> {
 	return AssetManager::get().listByType(type);
+}
+
+auto typeOf(toast::UID uid) -> std::string {
+	return AssetManager::typeOf(uid);
 }
 }

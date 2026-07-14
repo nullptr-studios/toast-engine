@@ -1,6 +1,7 @@
 #include "lua_state.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_types.hpp"
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
 
@@ -10,6 +11,7 @@
 #include <format>
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -26,22 +28,6 @@
 namespace scripting {
 
 namespace {
-
-struct TypeMarker {
-	enum class Kind : uint8_t {
-		Node,
-		Asset
-	} kind;
-	std::string typeName;
-
-	[[nodiscard]]
-	auto toString() const -> std::string {
-		if (kind == Kind::Node) {
-			return std::format("NodeType({})", typeName.empty() ? "any" : typeName);
-		}
-		return std::format("AssetType({})", typeName.empty() ? "any" : typeName);
-	}
-};
 
 /// Strip namespace prefix
 std::string_view stripNamespace(std::string_view qualified) noexcept {
@@ -445,6 +431,74 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction("max", [](const glm::vec4& a, const glm::vec4& b) { return glm::max(a, b); })
 	    .endClass()
 
+	    // quat
+	    .beginClass<glm::quat>("quat")
+	    .addProperty("x", &glm::quat::x)
+	    .addProperty("y", &glm::quat::y)
+	    .addProperty("z", &glm::quat::z)
+	    .addProperty("w", &glm::quat::w)
+	    .addStaticFunction(
+	        "new", +[](float x, float y, float z, float w) { return glm::quat(w, x, y, z); }
+	    )
+	    .addStaticFunction(
+	        "identity", +[]() { return glm::quat(1.0f, 0.0f, 0.0f, 0.0f); }
+	    )
+	    .addStaticFunction(
+	        "fromEuler", +[](const glm::vec3& degrees) { return glm::quat(glm::radians(degrees)); }
+	    )
+	    .addStaticFunction(
+	        "angleAxis",
+	        +[](float degrees, const glm::vec3& axis) { return glm::angleAxis(glm::radians(degrees), glm::normalize(axis)); }
+	    )
+	    .addFunction("toEuler", [](const glm::quat& q) { return glm::degrees(glm::eulerAngles(q)); })
+	    .addFunction("normalize", [](const glm::quat& q) { return glm::normalize(q); })
+	    .addFunction("inverse", [](const glm::quat& q) { return glm::inverse(q); })
+	    .addFunction("slerp", [](const glm::quat& a, const glm::quat& b, float t) { return glm::slerp(a, b, t); })
+	    .addFunction(
+	        "__mul",
+	        overload<const glm::quat&, const glm::quat&>(+[](const glm::quat& a, const glm::quat& b) { return a * b; }),
+	        overload<const glm::quat&, const glm::vec3&>(+[](const glm::quat& q, const glm::vec3& v) { return q * v; })
+	    )
+	    .addFunction("__eq", [](const glm::quat& a, const glm::quat& b) { return a == b; })
+	    .addFunction(
+	        "__tostring", [](const glm::quat& q) -> std::string { return std::format("quat({}, {}, {}, {})", q.x, q.y, q.z, q.w); }
+	    )
+	    .endClass()
+
+	    // colors
+	    .beginClass<Color3>("color3")
+	    .addConstructor<void (*)(float, float, float)>()
+	    .addProperty(
+	        "r", +[](const Color3* c) { return c->rgb.r; }, +[](Color3* c, float v) { c->rgb.r = v; }
+	    )
+	    .addProperty(
+	        "g", +[](const Color3* c) { return c->rgb.g; }, +[](Color3* c, float v) { c->rgb.g = v; }
+	    )
+	    .addProperty(
+	        "b", +[](const Color3* c) { return c->rgb.b; }, +[](Color3* c, float v) { c->rgb.b = v; }
+	    )
+	    .addFunction("vec3", [](const Color3& c) { return c.rgb; })
+	    .addFunction("__tostring", &Color3::toString)
+	    .endClass()
+
+	    .beginClass<Color4>("color4")
+	    .addConstructor<void (*)(float, float, float, float)>()
+	    .addProperty(
+	        "r", +[](const Color4* c) { return c->rgba.r; }, +[](Color4* c, float v) { c->rgba.r = v; }
+	    )
+	    .addProperty(
+	        "g", +[](const Color4* c) { return c->rgba.g; }, +[](Color4* c, float v) { c->rgba.g = v; }
+	    )
+	    .addProperty(
+	        "b", +[](const Color4* c) { return c->rgba.b; }, +[](Color4* c, float v) { c->rgba.b = v; }
+	    )
+	    .addProperty(
+	        "a", +[](const Color4* c) { return c->rgba.a; }, +[](Color4* c, float v) { c->rgba.a = v; }
+	    )
+	    .addFunction("vec4", [](const Color4& c) { return c.rgba; })
+	    .addFunction("__tostring", &Color4::toString)
+	    .endClass()
+
 	    // AssetProxy
 	    .beginClass<AssetProxy>("Asset")
 	    .addFunction("path", &AssetProxy::path)
@@ -509,9 +563,6 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	        "resume", +[]() { Time::resume(); }
 	    )
 	    .endNamespace();
-
-	// color3/color4 are aliases for vec3/vec4
-	luaL_dostring(state, "color3 = vec3\ncolor4 = vec4");
 
 	// Node type markers
 	toast::NodeRegistry::forEachType([&](const toast::NodeInfo* info) {

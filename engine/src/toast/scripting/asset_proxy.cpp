@@ -2,6 +2,7 @@
 
 #include <format>
 #include <toast/assets/assets.hpp>
+#include <toast/log.hpp>
 
 namespace scripting {
 
@@ -70,14 +71,18 @@ std::string expectedTypeFor(std::string_view fieldType) {
 }
 
 std::string AssetProxy::checkType(std::string_view fieldType) const {
-	if (!m_handle.hasValue()) {
+	if (m_handle.uid().data() == 0) {
 		return {};
 	}
 	const std::string expected = expectedTypeFor(fieldType);
 	if (expected.empty()) {
 		return {};
 	}
-	const std::string actual = std::string(m_handle->type());
+	const std::string actual = m_handle.hasValue() ? std::string(m_handle->type()) : assets::typeOf(m_handle.uid());
+	if (actual.empty()) {
+		TOAST_WARN("Lua", "checkType: asset {} has no manifest entry; cannot validate against '{}'", m_handle.uid(), fieldType);
+		return {};
+	}
 	if (actual != expected) {
 		return std::format("expected Asset<{}>, got Asset<{}>", expected, actual);
 	}
