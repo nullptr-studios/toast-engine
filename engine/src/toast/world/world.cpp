@@ -1129,6 +1129,11 @@ void WorldTestAccess::addTickStage(Node& node, TickFunctionList stage) {
 	node.m_info = &info;
 }
 
+void WorldTestAccess::attachScript(Node& node, const assets::AssetHandle<assets::Script>& script) {
+	node.m_scripts.push_back(script);
+	node.loadScripts();
+}
+
 auto WorldTestAccess::tickSchedule(World& world) noexcept -> TickSchedule& {
 	return world.m_scheduler.schedule;
 }

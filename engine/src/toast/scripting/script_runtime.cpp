@@ -132,7 +132,7 @@ size_t declPos(std::string_view src, std::string_view key, size_t from) {
 	size_t pos = from;
 	while ((pos = src.find(key, pos)) != std::string_view::npos) {
 		const char before = pos > 0 ? src[pos - 1] : ' ';
-		const bool boundary = std::isalnum(static_cast<unsigned char>(before)) == 0 && before != '_' && before != '.';
+		const bool boundary = std::isalnum(static_cast<unsigned char>(before)) == 0 && before != '_';
 		size_t after = pos + key.size();
 		while (after < src.size() && std::isspace(static_cast<unsigned char>(src[after])) != 0) {
 			++after;
