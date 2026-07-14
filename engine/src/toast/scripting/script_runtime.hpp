@@ -32,19 +32,19 @@ namespace scripting {
 // One per script
 class ScriptInstance {
 public:
-	ScriptInstance(lua_State* L, const assets::AssetHandle<assets::Script>& script, NodeProxy proxy);
+	ScriptInstance(lua_State* l, const assets::AssetHandle<assets::Script>& script, NodeProxy proxy);
 	~ScriptInstance() = default;
 
 	ScriptInstance(ScriptInstance&&) = default;
-	ScriptInstance& operator=(ScriptInstance&&) = default;
+	auto operator=(ScriptInstance&&) -> ScriptInstance& = default;
 	ScriptInstance(const ScriptInstance&) = delete;
-	ScriptInstance& operator=(const ScriptInstance&) = delete;
+	auto operator=(const ScriptInstance&) -> ScriptInstance& = delete;
 
 	/// Calls the named lifecycle function
 	void call(std::string_view fn_name) noexcept;
 
 	/// rawget self[name]; if a function, pcall(self, forwarded_args...).
-	void callWithLuaStack(std::string_view name, lua_State* L, int args_base, int n_args) noexcept;
+	void callWithLuaStack(std::string_view name, lua_State* l, int args_base, int n_args) noexcept;
 
 	/// Fan-out call with args provided as std::any values
 	void callWithAnyArgs(std::string_view name, std::span<const std::any> args) noexcept;
@@ -104,6 +104,7 @@ private:
 	void snapshotTickMask() noexcept;
 
 	/// Pushes the value at `path` onto the Lua stack
+	[[nodiscard]]
 	auto pushByPath(std::string_view path) const noexcept -> bool;
 };
 
@@ -114,7 +115,7 @@ public:
 	~ScriptRuntime() = default;
 
 	ScriptRuntime(const ScriptRuntime&) = delete;
-	ScriptRuntime& operator=(const ScriptRuntime&) = delete;
+	auto operator=(const ScriptRuntime&) -> ScriptRuntime& = delete;
 
 	/// Dispatch a TickFunctionList phase
 	void call(toast::TickFunctionList phase) noexcept;
@@ -122,7 +123,7 @@ public:
 	/// Call a named function on all instances
 	void call(std::string_view fn_name) noexcept;
 
-	void callWithLuaStack(std::string_view name, lua_State* L, int args_base, int n_args) noexcept;
+	void callWithLuaStack(std::string_view name, lua_State* l, int args_base, int n_args) noexcept;
 
 	/// Ccall with args provided as std::any values
 	void callWithAnyArgs(std::string_view name, std::span<const std::any> args) noexcept;

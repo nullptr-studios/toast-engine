@@ -110,8 +110,8 @@ auto classifyLeaf(lua_State* l, const luabridge::LuaRef& v) -> std::optional<Lua
 	}
 	if (v.isInstance<TypeMarker>()) {
 		const TypeMarker& marker = v.unsafe_cast<TypeMarker>();
-		d.kind = marker.kind == TypeMarker::Kind::Node ? LuaVarKind::node_ref : LuaVarKind::asset_ref;
-		d.ref_type = marker.typeName;
+		d.kind = marker.kind == TypeMarker::Kind::node ? LuaVarKind::node_ref : LuaVarKind::asset_ref;
+		d.ref_type = marker.type_name;
 		return d;
 	}
 	if (v.isInstance<NodeProxy>()) {

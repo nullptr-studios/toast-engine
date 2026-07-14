@@ -21,17 +21,17 @@ namespace scripting {
  */
 struct TypeMarker {
 	enum class Kind : uint8_t {
-		Node,
-		Asset
+		node,
+		asset
 	} kind;
-	std::string typeName;
+	std::string type_name;
 
 	[[nodiscard]]
 	auto toString() const -> std::string {
-		if (kind == Kind::Node) {
-			return std::format("NodeType({})", typeName.empty() ? "any" : typeName);
+		if (kind == Kind::node) {
+			return std::format("NodeType({})", type_name.empty() ? "any" : type_name);
 		}
-		return std::format("AssetType({})", typeName.empty() ? "any" : typeName);
+		return std::format("AssetType({})", type_name.empty() ? "any" : type_name);
 	}
 };
 

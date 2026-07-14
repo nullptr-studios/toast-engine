@@ -572,21 +572,21 @@ void LuaState::registerTypeMarkers(lua_State* state) noexcept {
 	toast::NodeRegistry::forEachType([&](const toast::NodeInfo* info) {
 		const std::string_view bare = stripNamespace(info->type);
 		const std::string global_name(bare);
-		if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::Node, std::string(info->type)}); r) {
+		if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::node, std::string(info->type)}); r) {
 			lua_setglobal(state, global_name.c_str());
 		}
 	});
-	if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::Node, ""}); r) {
+	if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::node, ""}); r) {
 		lua_setglobal(state, "Node");
 	}
 
 	// Asset type markers
 	for (const auto& [type_str, lua_name] : assets::AssetRegistry::registeredLuaNames()) {
-		if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::Asset, type_str}); r) {
+		if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::asset, type_str}); r) {
 			lua_setglobal(state, lua_name.c_str());
 		}
 	}
-	if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::Asset, ""}); r) {
+	if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::asset, ""}); r) {
 		lua_setglobal(state, "Asset");
 	}
 }
