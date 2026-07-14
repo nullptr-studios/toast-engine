@@ -39,7 +39,7 @@ public:
 	[[nodiscard]]
 	auto color() const -> glm::vec4;
 
-	vk::raii::Sampler& albedoSampler() { return m_albedoSampler; }
+	auto albedoSampler() -> vk::raii::Sampler& { return m_albedo_sampler; }
 
 	void resolveTextureHandles();
 
@@ -48,6 +48,6 @@ private:
 	mutable AssetHandle<Texture> m_normal_handle;
 	bool m_sampler_ready = false;
 
-	vk::raii::Sampler m_albedoSampler = nullptr;    // THISSHOULDBECREATEDPERIMAGESAMPLER
+	vk::raii::Sampler m_albedo_sampler = nullptr;    // THISSHOULDBECREATEDPERIMAGESAMPLER
 };
 }

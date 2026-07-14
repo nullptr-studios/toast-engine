@@ -174,6 +174,7 @@ public:
 
 	auto listByType(std::string_view type) -> std::vector<toast::UID>;
 
+	[[nodiscard]]
 	auto getCachePath() const -> const std::filesystem::path&;
 
 	/**

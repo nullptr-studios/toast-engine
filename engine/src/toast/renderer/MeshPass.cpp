@@ -30,7 +30,7 @@ MeshPass::MeshPass(
 	auto shader_spirv = toast::renderer::ShaderCompiler::compileShaderModuleFromSource("./mesh.slang");
 
 	// Use hardcoded layout keyed by "mesh"
-	shaderLayout.rebuild(core, "mesh");
+	shader_layout.rebuild(core, "mesh");
 
 	toast::renderer::VulkanPipeline::Config config;
 	config.pipeline_type = toast::renderer::VulkanPipeline::PipelineType::graphics;
@@ -40,7 +40,7 @@ MeshPass::MeshPass(
 	config.extent = extent;
 	config.shader_spirv = std::move(shader_spirv.spirv);
 	// store raw pipeline layout handle
-	config.pipeline_layout = *shaderLayout.getPipelineLayout();
+	config.pipeline_layout = *shader_layout.getPipelineLayout();
 
 	config.vertex_binding = toast::renderer::Vertex::getBindingDescription();
 	const auto vertex_attributes = toast::renderer::Vertex::getAttributeDescriptions();
@@ -64,12 +64,12 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t imag
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.getPipeline());
 
 	// Ensure descriptor sets have been allocated
-	if (m_frame_descriptor_sets.size() != VulkanRenderer::kFramesInFlight) {
+	if (m_frame_descriptor_sets.size() != VulkanRenderer::k_frames_in_flight) {
 		TOAST_ERROR(
 		    "MeshPass",
 		    "Descriptor sets not allocated for MeshPass (size={} expected={})",
 		    m_frame_descriptor_sets.size(),
-		    VulkanRenderer::kFramesInFlight
+		    VulkanRenderer::k_frames_in_flight
 		);
 		return;
 	}
@@ -101,7 +101,7 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t imag
 	// by rewriting the descriptor itself, so there is nothing to update here.
 	cmd.bindDescriptorSets(
 	    vk::PipelineBindPoint::eGraphics,
-	    *shaderLayout.getPipelineLayout(),
+	    *shader_layout.getPipelineLayout(),
 	    0,
 	    std::array<vk::DescriptorSet, 1> {*m_frame_descriptor_sets[frame_index]},
 	    {}
@@ -122,7 +122,7 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t imag
 		if (material_set != bound_material_set) {
 			cmd.bindDescriptorSets(
 			    vk::PipelineBindPoint::eGraphics,
-			    *shaderLayout.getPipelineLayout(),
+			    *shader_layout.getPipelineLayout(),
 			    1,
 			    std::array<vk::DescriptorSet, 1> {material_set},
 			    {}
@@ -134,7 +134,7 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t imag
 		data.model = proxy.model;
 		data.color = proxy.material != nullptr ? proxy.material->color() : glm::vec4(1.0f);
 		cmd.pushConstants(
-		    *shaderLayout.getPipelineLayout(),
+		    *shader_layout.getPipelineLayout(),
 		    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
 		    0,
 		    sizeof(DrawPushConstants),
@@ -147,7 +147,7 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t imag
 }
 
 void MeshPass::createResources(const toast::renderer::VulkanCore& core) {
-	const auto& layouts = shaderLayout.getDescriptorSetLayouts();
+	const auto& layouts = shader_layout.getDescriptorSetLayouts();
 	if (layouts.size() < 2) {
 		TOAST_CRITICAL("MeshPass", "ShaderLayout must provide both the frame (set 0) and material (set 1) descriptor set layouts");
 		return;
@@ -162,21 +162,21 @@ void MeshPass::createResources(const toast::renderer::VulkanCore& core) {
 	// crashes later
 	const vk::DescriptorSetLayout frame_set_layout = *layouts[0];
 	m_frame_descriptor_sets.clear();
-	m_frame_descriptor_sets.reserve(VulkanRenderer::kFramesInFlight);
+	m_frame_descriptor_sets.reserve(VulkanRenderer::k_frames_in_flight);
 
-	for (uint32_t i = 0; i < VulkanRenderer::kFramesInFlight; ++i) {
+	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &frame_set_layout);
 		auto allocated = device.allocateDescriptorSets(alloc_info);
 		m_frame_descriptor_sets.push_back(std::move(allocated[0]));
 		setDebugName(core, *m_frame_descriptor_sets[i], std::format("MeshPass FrameSet[{}]", i));
 
 		const auto* frame_res = VulkanRenderer::instance->getFrameUBORes(i);
-		if (!frame_res->gpuBuffer.has_value()) {
+		if (!frame_res->gpu_buffer.has_value()) {
 			TOAST_CRITICAL("MeshPass", "Frame UBO buffer missing for frame {}", i);
 			continue;
 		}
 
-		const vk::DescriptorBufferInfo buffer_info(**frame_res->gpuBuffer, 0, sizeof(VulkanRenderer::FrameUBO));
+		const vk::DescriptorBufferInfo buffer_info(**frame_res->gpu_buffer, 0, sizeof(VulkanRenderer::FrameUBO));
 		const vk::WriteDescriptorSet write(
 		    *m_frame_descriptor_sets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &buffer_info
 		);
@@ -266,7 +266,7 @@ void MeshPass::createDefaultMaterialResources(const toast::renderer::VulkanCore&
 	m_default_sampler = vk::raii::Sampler(device, sampler_ci);
 	setDebugName(core, *m_default_sampler, "MeshPass DefaultSampler");
 
-	const vk::DescriptorSetLayout material_set_layout = *shaderLayout.getDescriptorSetLayouts()[1];
+	const vk::DescriptorSetLayout material_set_layout = *shader_layout.getDescriptorSetLayouts()[1];
 	const vk::DescriptorSetAllocateInfo alloc_info(VulkanRenderer::instance->getDescriptorPoolHandle(), 1, &material_set_layout);
 	auto allocated = device.allocateDescriptorSets(alloc_info);
 	m_default_material_set = std::move(allocated[0]);
@@ -299,7 +299,7 @@ auto MeshPass::getMaterialDescriptorSet(const toast::renderer::VulkanCore& core,
 	MaterialGpuBinding& binding = it->second;
 
 	if (inserted) {
-		const vk::DescriptorSetLayout material_set_layout = *shaderLayout.getDescriptorSetLayouts()[1];
+		const vk::DescriptorSetLayout material_set_layout = *shader_layout.getDescriptorSetLayouts()[1];
 		const vk::DescriptorSetAllocateInfo alloc_info(VulkanRenderer::instance->getDescriptorPoolHandle(), 1, &material_set_layout);
 		auto allocated = core.getDevice().allocateDescriptorSets(alloc_info);
 		binding.set = std::move(allocated[0]);

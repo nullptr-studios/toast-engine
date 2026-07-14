@@ -286,29 +286,29 @@ void DebugPass::createResources(const toast::renderer::VulkanCore& core) {
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
 
 	m_frame_descriptor_sets.clear();
-	m_frame_descriptor_sets.reserve(VulkanRenderer::kFramesInFlight);
+	m_frame_descriptor_sets.reserve(VulkanRenderer::k_frames_in_flight);
 
-	for (uint32_t i = 0; i < VulkanRenderer::kFramesInFlight; ++i) {
+	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &frame_set_layout);
 		auto allocated = device.allocateDescriptorSets(alloc_info);
 		m_frame_descriptor_sets.push_back(std::move(allocated[0]));
 		setDebugName(core, *m_frame_descriptor_sets[i], std::format("DebugPass FrameSet[{}]", i));
 
 		const auto* frame_res = VulkanRenderer::instance->getFrameUBORes(i);
-		if (!frame_res->gpuBuffer.has_value()) {
+		if (!frame_res->gpu_buffer.has_value()) {
 			TOAST_CRITICAL("DebugPass", "Frame UBO buffer missing for frame {}", i);
 			continue;
 		}
 
-		const vk::DescriptorBufferInfo buffer_info(**frame_res->gpuBuffer, 0, sizeof(VulkanRenderer::FrameUBO));
+		const vk::DescriptorBufferInfo buffer_info(**frame_res->gpu_buffer, 0, sizeof(VulkanRenderer::FrameUBO));
 		const vk::WriteDescriptorSet write(
 		    *m_frame_descriptor_sets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &buffer_info
 		);
 		device.updateDescriptorSets(write, {});
 	}
 
-	m_line_vertex_buffers.resize(VulkanRenderer::kFramesInFlight);
-	m_line_vertex_counts.assign(VulkanRenderer::kFramesInFlight, 0);
+	m_line_vertex_buffers.resize(VulkanRenderer::k_frames_in_flight);
+	m_line_vertex_counts.assign(VulkanRenderer::k_frames_in_flight, 0);
 
 	createGridGeometry(core);
 	createGizmoGeometry(core);

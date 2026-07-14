@@ -27,7 +27,7 @@ public:
 	struct CameraUBO {
 		glm::mat4 view;
 		glm::mat4 projection;
-		glm::mat4 viewProjection;
+		glm::mat4 view_projection;
 	};
 
 	struct DrawPushConstants {
@@ -57,7 +57,7 @@ private:
 
 	toast::renderer::VulkanPipeline m_pipeline;
 
-	toast::renderer::ShaderLayout shaderLayout;
+	toast::renderer::ShaderLayout shader_layout;
 
 	// Set 0: one descriptor set per frame-in-flight, bound to the camera UBO. Owning (vk::raii) so the descriptor sets aren't freed
 	// back

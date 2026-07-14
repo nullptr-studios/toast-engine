@@ -113,6 +113,7 @@ public:
 	}
 
 	template<class T>
+	[[nodiscard]] [[nodiscard]]
 	auto value() const -> std::optional<T> {
 		if (!m_value.has_value()) {
 			return std::nullopt;

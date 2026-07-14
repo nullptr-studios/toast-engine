@@ -18,7 +18,7 @@ void ShaderLayout::rebuild(const VulkanCore& core, std::string_view shader_key) 
 	m_push_constant_ranges.clear();
 	m_pipeline_layout = nullptr;
 
-	HardcodedPipelineLayouts::buildPipelineLayout(
+	hardcoded_pipeline_layouts::buildPipelineLayout(
 	    core, shader_key, m_descriptor_set_layouts, m_push_constant_ranges, m_pipeline_layout
 	);
 }

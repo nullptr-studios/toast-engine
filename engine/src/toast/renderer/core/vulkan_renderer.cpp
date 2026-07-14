@@ -91,11 +91,11 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: VulkanRenderer requires an output target!");
 	}
 
-	if (kFramesInFlight == 0) {
+	if (k_frames_in_flight == 0) {
 		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: VulkanRenderer requires at least one frame in flight!");
 	}
 
-	TOAST_TRACE("VulkanRenderer", "Creating renderer with {} frame(s) in flight", kFramesInFlight);
+	TOAST_TRACE("VulkanRenderer", "Creating renderer with {} frame(s) in flight", k_frames_in_flight);
 	m_depth_format = selectDepthFormat(core);
 
 	createGraphicsCommandPool();
@@ -140,18 +140,18 @@ auto VulkanRenderer::createTransferCommandPool() -> void {
 
 auto VulkanRenderer::createFrameContexts() -> void {
 	m_frames.clear();
-	m_frames.resize(kFramesInFlight);
+	m_frames.resize(k_frames_in_flight);
 
 	const vk::SemaphoreCreateInfo semaphore_ci {};
 	const vk::FenceCreateInfo fence_ci(vk::FenceCreateFlagBits::eSignaled);
-	const vk::CommandBufferAllocateInfo command_buffer_ci(*m_command_pool, vk::CommandBufferLevel::ePrimary, kFramesInFlight);
+	const vk::CommandBufferAllocateInfo command_buffer_ci(*m_command_pool, vk::CommandBufferLevel::ePrimary, k_frames_in_flight);
 	const vk::CommandBufferAllocateInfo transfer_command_buffer_ci(
-	    *m_transfer_command_pool, vk::CommandBufferLevel::ePrimary, kFramesInFlight
+	    *m_transfer_command_pool, vk::CommandBufferLevel::ePrimary, k_frames_in_flight
 	);
 	auto allocated_command_buffers = m_core->getDevice().allocateCommandBuffers(command_buffer_ci);
 	auto allocated_transfer_command_buffers = m_core->getDevice().allocateCommandBuffers(transfer_command_buffer_ci);
 
-	for (uint32_t frame_index = 0; frame_index < kFramesInFlight; ++frame_index) {
+	for (uint32_t frame_index = 0; frame_index < k_frames_in_flight; ++frame_index) {
 		m_frames[frame_index].command_buffer = std::move(allocated_command_buffers[frame_index]);
 		m_frames[frame_index].transfer_command_buffer = std::move(allocated_transfer_command_buffers[frame_index]);
 		m_frames[frame_index].image_available = vk::raii::Semaphore(m_core->getDevice(), semaphore_ci);
@@ -175,7 +175,7 @@ auto VulkanRenderer::createFrameContexts() -> void {
 		setDebugName(*m_core, *m_frames[frame_index].in_flight, std::format("VulkanRenderer Frame[{}] InFlightFence", frame_index));
 	}
 
-	TOAST_TRACE("VulkanRenderer", "Frame command buffers created: {}", kFramesInFlight);
+	TOAST_TRACE("VulkanRenderer", "Frame command buffers created: {}", k_frames_in_flight);
 }
 
 auto VulkanRenderer::createPerImageSync() -> void {
@@ -368,8 +368,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 	const vk::Rect2D scissor({0, 0}, extent);
 	frame.command_buffer.setViewport(0, std::array {viewport});
 	frame.command_buffer.setScissor(0, std::array {scissor});
-	// if (m_frameUniformResources.descriptorSet != VK_NULL_HANDLE) {
-	// 	const std::array<vk::DescriptorSet, 1> descriptor_sets {m_frameUniformResources.descriptorSet};
+	// if (m_frameUniformResources.descriptor_set != VK_NULL_HANDLE) {
+	// 	const std::array<vk::DescriptorSet, 1> descriptor_sets {m_frameUniformResources.descriptor_set};
 	// 	frame.command_buffer.bindDescriptorSets(
 	// 	    vk::PipelineBindPoint::eGraphics, m_pipeline->getPipelineLayout(), 0, descriptor_sets, {}
 	// 	);
@@ -392,8 +392,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) -> v
 }
 
 void VulkanRenderer::createFrameResources() {
-	m_frame_ubo_res.resize(kFramesInFlight);
-	m_frame_ubos.resize(kFramesInFlight);
+	m_frame_ubo_res.resize(k_frames_in_flight);
+	m_frame_ubos.resize(k_frames_in_flight);
 
 	const auto& device = m_core->getDevice();
 
@@ -415,19 +415,19 @@ void VulkanRenderer::createFrameResources() {
 		alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 
 		// create buffer
-		frame.gpuBuffer.emplace(m_core->getAllocator().createBuffer(buffer_ci, alloc_ci));
-		setDebugName(*m_core, **frame.gpuBuffer, std::format("VulkanRenderer FrameUBO[{}]", i));
+		frame.gpu_buffer.emplace(m_core->getAllocator().createBuffer(buffer_ci, alloc_ci));
+		setDebugName(*m_core, **frame.gpu_buffer, std::format("VulkanRenderer FrameUBO[{}]", i));
 
 		// no staging buffer
 
-		// Leave descriptorSet empty render passes will allocate and manage their own descriptor sets
+		// Leave descriptor_set empty render passes will allocate and manage their own descriptor sets
 	}
 }
 
 void VulkanRenderer::updateFrameResources(uint32_t frame_index, RenderFrame& frame_data) {
 	m_frame_ubos[frame_index] = frame_data.frame_data;
 
-	const auto& allocation = m_frame_ubo_res[frame_index].gpuBuffer->getAllocation();
+	const auto& allocation = m_frame_ubo_res[frame_index].gpu_buffer->getAllocation();
 	// With VMA_ALLOCATION_CREATE_MAPPED
 	auto* mapped = allocation.getInfo().pMappedData;
 
@@ -549,8 +549,8 @@ void VulkanRenderer::mainRenderThread() {
 	while (m_running.load(std::memory_order_acquire)) {
 		ZoneScopedN("VulkanRenderer::mainRenderThread");
 
-		const uint64_t pending_resize = m_pending_resize_packed.exchange(kNoPendingResize, std::memory_order_acq_rel);
-		if (pending_resize != kNoPendingResize) {
+		const uint64_t pending_resize = m_pending_resize_packed.exchange(k_no_pending_resize, std::memory_order_acq_rel);
+		if (pending_resize != k_no_pending_resize) {
 			const auto extent = unpackExtent(pending_resize);
 			if (extent.width > 0 && extent.height > 0) {
 				applyResizeInternal(extent);
@@ -566,7 +566,7 @@ void VulkanRenderer::mainRenderThread() {
 
 			auto wake_condition = [this] {
 				return !m_ready_frames.empty() || !m_running ||
-				       m_pending_resize_packed.load(std::memory_order_acquire) != kNoPendingResize;
+				       m_pending_resize_packed.load(std::memory_order_acquire) != k_no_pending_resize;
 			};
 
 			if (m_ready_frames.empty()) {
@@ -641,7 +641,7 @@ void VulkanRenderer::submitFrame() {
 
 		m_ready_frames.push(m_write_index);
 
-		m_write_index = (m_write_index + 1) % kRenderFrames;
+		m_write_index = (m_write_index + 1) % k_render_frames;
 	}
 
 	m_frame_cv.notify_one();
@@ -723,7 +723,7 @@ void VulkanRenderer::processPendingUploads() {
 	while (!m_pending_uploads.empty()) {
 		auto& oldest_batch = m_pending_uploads.front();
 
-		const auto status = vkGetFenceStatus(*device, *oldest_batch.completionFence);
+		const auto status = vkGetFenceStatus(*device, *oldest_batch.completion_fence);
 
 		if (status == VkResult::VK_SUCCESS) {
 			for (auto& job : oldest_batch.jobs) {
@@ -763,12 +763,12 @@ void VulkanRenderer::flushResourceUploads() {
 
 	// Create a single fence for the entire batch group
 	BatchedUploadGroup batch;
-	batch.completionFence = vk::raii::Fence(device, vk::FenceCreateInfo {});
+	batch.completion_fence = vk::raii::Fence(device, vk::FenceCreateInfo {});
 	batch.jobs = std::move(jobs_to_flush);    // Move local list into the batch tracker
 
 	const vk::CommandBuffer raw_transfer_cmd = *transfer_cmd;
 	const vk::SubmitInfo submit_info(0, nullptr, nullptr, 1, &raw_transfer_cmd);
-	m_core->getTransferQueue().submit(submit_info, *batch.completionFence);
+	m_core->getTransferQueue().submit(submit_info, *batch.completion_fence);
 
 	m_pending_uploads.push(std::move(batch));
 }
@@ -779,20 +779,20 @@ void VulkanRenderer::setActiveCamera(Camera* camera) {
 
 void debugDrawFrustum(const toast::Camera& camera, float aspect, glm::vec4 color) {
 	const float tan_half_fov_y = std::tan(glm::radians(camera.fov) * 0.5f);
-	const float near_height = 2.0f * tan_half_fov_y * camera.nearPlane;
+	const float near_height = 2.0f * tan_half_fov_y * camera.near_plane;
 	const float near_width = near_height * aspect;
-	const float far_height = 2.0f * tan_half_fov_y * camera.farPlane;
+	const float far_height = 2.0f * tan_half_fov_y * camera.far_plane;
 	const float far_width = far_height * aspect;
 
 	const std::array<glm::vec3, 8> view_space_corners {
-	  glm::vec3 {-near_width * 0.5f, -near_height * 0.5f, -camera.nearPlane},
-	  glm::vec3 { near_width * 0.5f, -near_height * 0.5f, -camera.nearPlane},
-	  glm::vec3 { near_width * 0.5f,  near_height * 0.5f, -camera.nearPlane},
-	  glm::vec3 {-near_width * 0.5f,  near_height * 0.5f, -camera.nearPlane},
-	  glm::vec3 { -far_width * 0.5f,  -far_height * 0.5f,  -camera.farPlane},
-	  glm::vec3 {  far_width * 0.5f,  -far_height * 0.5f,  -camera.farPlane},
-	  glm::vec3 {  far_width * 0.5f,   far_height * 0.5f,  -camera.farPlane},
-	  glm::vec3 { -far_width * 0.5f,   far_height * 0.5f,  -camera.farPlane},
+	  glm::vec3 {-near_width * 0.5f, -near_height * 0.5f, -camera.near_plane},
+	  glm::vec3 { near_width * 0.5f, -near_height * 0.5f, -camera.near_plane},
+	  glm::vec3 { near_width * 0.5f,  near_height * 0.5f, -camera.near_plane},
+	  glm::vec3 {-near_width * 0.5f,  near_height * 0.5f, -camera.near_plane},
+	  glm::vec3 { -far_width * 0.5f,  -far_height * 0.5f,  -camera.far_plane},
+	  glm::vec3 {  far_width * 0.5f,  -far_height * 0.5f,  -camera.far_plane},
+	  glm::vec3 {  far_width * 0.5f,   far_height * 0.5f,  -camera.far_plane},
+	  glm::vec3 { -far_width * 0.5f,   far_height * 0.5f,  -camera.far_plane},
 	};
 
 	const glm::mat4 inv_view = glm::inverse(camera.getView());

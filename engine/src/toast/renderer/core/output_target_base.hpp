@@ -18,19 +18,19 @@ public:
 	 * @return The extent of the output target (width and height)
 	 */
 	[[nodiscard]]
-	virtual vk::Extent2D getExtent() const = 0;
+	virtual auto getExtent() const -> vk::Extent2D = 0;
 
 	/**
 	 * @return The color format of the output target
 	 */
 	[[nodiscard]]
-	virtual vk::Format getColorFormat() const = 0;
+	virtual auto getColorFormat() const -> vk::Format = 0;
 
 	/**
 	 * @return The number of images in the output target (e.g., swapchain image count)
 	 */
 	[[nodiscard]]
-	virtual uint32_t getImageCount() const = 0;
+	virtual auto getImageCount() const -> uint32_t = 0;
 
 	/**
 	 *
@@ -38,26 +38,26 @@ public:
 	 * @return The color image at the specified index
 	 */
 	[[nodiscard]]
-	virtual const vk::Image& getColorImage(uint32_t index) const = 0;
+	virtual auto getColorImage(uint32_t index) const -> const vk::Image& = 0;
 
 	/**
 	 * @param index The index of the image view to retrieve
 	 * @return The color attachment at the specified index
 	 */
 	[[nodiscard]]
-	virtual const vk::raii::ImageView& getColorAttachment(uint32_t index) const = 0;
+	virtual auto getColorAttachment(uint32_t index) const -> const vk::raii::ImageView& = 0;
 
 	/// @brief Acquires the next image to render into (a real swapchain acquire, or a no-op index rotation for
 	/// off-screen targets - see usesAcquirePresentSemaphores())
-	virtual vk::ResultValue<uint32_t>
-	    acquireNextImage(uint64_t timeout, vk::Semaphore image_available, vk::Fence in_flight_fence) = 0;
+	virtual auto acquireNextImage(uint64_t timeout, vk::Semaphore image_available, vk::Fence in_flight_fence)
+	    -> vk::ResultValue<uint32_t> = 0;
 
 	/// @brief Presents @p image_index (a real vkQueuePresentKHR for on-screen targets; a no-op for off-screen
 	/// targets, which publish their finished frame via onImageRenderComplete() instead)
-	virtual vk::Result present(uint32_t image_index, vk::Semaphore render_finished) = 0;
+	virtual auto present(uint32_t image_index, vk::Semaphore render_finished) -> vk::Result = 0;
 
 	[[nodiscard]]
-	virtual bool usesAcquirePresentSemaphores() const {
+	virtual auto usesAcquirePresentSemaphores() const -> bool {
 		return true;
 	}
 

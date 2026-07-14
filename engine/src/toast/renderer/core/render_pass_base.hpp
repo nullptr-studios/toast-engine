@@ -26,8 +26,8 @@ public:
 	 * @param frameIndex The index of the current frame in flight
 	 * @param imageIndex The index of the image to render to
 	 */
-	virtual void record(vk::CommandBuffer cmd, uint32_t frameIndex, uint32_t imageIndex) = 0;
+	virtual void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) = 0;
 
 protected:
-	std::vector<FrameResources> m_frameResources;
+	std::vector<FrameResources> m_frame_resources;
 };

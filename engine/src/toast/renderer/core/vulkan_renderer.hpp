@@ -47,9 +47,9 @@ class VulkanRenderer {
 public:
 	static auto selectDepthFormat(const VulkanCore& core) -> vk::Format;
 
-	static constexpr uint32_t kFramesInFlight = 3;
+	static constexpr uint32_t k_frames_in_flight = 3;
 
-	static constexpr uint8_t kRenderFrames = 3;    // Number of frames queued for rendering
+	static constexpr uint8_t k_render_frames = 3;    // Number of frames queued for rendering
 
 	struct FrameContext {
 		vk::raii::CommandBuffer command_buffer = nullptr;
@@ -101,15 +101,15 @@ public:
 	~VulkanRenderer();
 
 	VulkanRenderer(const VulkanRenderer&) = delete;
-	VulkanRenderer& operator=(const VulkanRenderer&) = delete;
+	auto operator=(const VulkanRenderer&) -> VulkanRenderer& = delete;
 	VulkanRenderer(VulkanRenderer&&) = delete;
-	VulkanRenderer& operator=(VulkanRenderer&&) = delete;
+	auto operator=(VulkanRenderer&&) -> VulkanRenderer& = delete;
 
 	void start();
 
-	RenderFrame& beginFrameBuild() { return m_render_frames[m_write_index]; }
+	auto beginFrameBuild() -> RenderFrame& { return m_render_frames[m_write_index]; }
 
-	std::counting_semaphore<kRenderFrames>& getFreeFramesSemaphore() { return m_free_frames; }
+	auto getFreeFramesSemaphore() -> std::counting_semaphore<k_render_frames>& { return m_free_frames; }
 
 	void submitFrame();
 
@@ -136,29 +136,29 @@ public:
 
 	void queueResourceUpload(std::unique_ptr<PendingResourceUpload> upload);
 
-	const FrameResources* getFrameUBORes(uint32_t current_frame) const { return &m_frame_ubo_res[current_frame]; }
+	auto getFrameUBORes(uint32_t current_frame) const -> const FrameResources* { return &m_frame_ubo_res[current_frame]; }
 
 	// Expose raw descriptor pool handle so render passes can allocate their own descriptor sets
-	vk::DescriptorPool getDescriptorPoolHandle() const { return *m_descriptor_pool; }
+	auto getDescriptorPoolHandle() const -> vk::DescriptorPool { return *m_descriptor_pool; }
 
 	void setActiveCamera(Camera* camera);
 
-	const VulkanCore& getCore() { return *m_core; }
+	auto getCore() -> const VulkanCore& { return *m_core; }
 
-	Camera* getActiveCamera() { return m_camera; }
+	auto getActiveCamera() -> Camera* { return m_camera; }
 
 	[[nodiscard]]
-	const RenderFrame* renderingFrame() const {
+	auto renderingFrame() const -> const RenderFrame* {
 		return m_rendering_frame;
 	}
 
 	[[nodiscard]]
-	const RENDERDOC_API_1_6_0* getRenderDocAPI() const noexcept {
+	auto getRenderDocAPI() const noexcept -> const RENDERDOC_API_1_6_0* {
 		return m_core->getRenderDocAPI();
 	}
 
 	[[nodiscard]]
-	const IOutputTarget& getOutputTarget() const noexcept {
+	auto getOutputTarget() const noexcept -> const IOutputTarget& {
 		return *m_output_target;
 	}
 
@@ -173,7 +173,7 @@ private:
 
 	std::thread m_render_thread;
 
-	std::array<RenderFrame, kRenderFrames> m_render_frames;
+	std::array<RenderFrame, k_render_frames> m_render_frames;
 	std::atomic<uint32_t> m_write_index = 0;
 	std::atomic<uint32_t> m_read_index = 0;
 
@@ -186,7 +186,7 @@ private:
 	bool m_has_cached_frame = false;
 	const RenderFrame* m_rendering_frame = nullptr;
 
-	std::counting_semaphore<kRenderFrames> m_free_frames {kRenderFrames};
+	std::counting_semaphore<k_render_frames> m_free_frames {k_render_frames};
 
 	struct DepthResources {
 		std::optional<vma::raii::Image> image;
@@ -205,7 +205,7 @@ private:
 	// Resource uploading
 	struct BatchedUploadGroup {
 		std::vector<std::unique_ptr<PendingResourceUpload>> jobs;
-		vk::raii::Fence completionFence = nullptr;
+		vk::raii::Fence completion_fence = nullptr;
 	};
 
 	std::vector<std::unique_ptr<PendingResourceUpload>> m_upload_staging;
@@ -251,8 +251,8 @@ private:
 
 	void applyResizeInternal(vk::Extent2D extent);
 
-	static constexpr uint64_t kNoPendingResize = 0;
-	std::atomic<uint64_t> m_pending_resize_packed {kNoPendingResize};
+	static constexpr uint64_t k_no_pending_resize = 0;
+	std::atomic<uint64_t> m_pending_resize_packed {k_no_pending_resize};
 
 	std::atomic<double> m_frame_rate_limit_hz {0.0};
 };
@@ -273,7 +273,7 @@ inline void submitFrame() {
 	VulkanRenderer::instance->submitFrame();
 }
 
-inline Camera* getActiveCamera() {
+inline auto getActiveCamera() -> Camera* {
 	return VulkanRenderer::instance->getActiveCamera();
 }
 
@@ -289,20 +289,20 @@ inline void applyResize(vk::Extent2D extent) {
 	VulkanRenderer::instance->applyResize(extent);
 }
 
-inline const IOutputTarget& getOutputTarget() {
+inline auto getOutputTarget() -> const IOutputTarget& {
 	return VulkanRenderer::instance->getOutputTarget();
 }
 
-inline const VulkanCore& getCore() {
+inline auto getCore() -> const VulkanCore& {
 	return VulkanRenderer::instance->getCore();
 }
 
-inline const RENDERDOC_API_1_6_0* getRenderDocAPI() {
+inline auto getRenderDocAPI() -> const RENDERDOC_API_1_6_0* {
 	return VulkanRenderer::instance->getRenderDocAPI();
 }
 
 //@WARN NOT THREAD SAFE
-inline const VulkanRenderer::RenderFrame* renderingFrame() {
+inline auto renderingFrame() -> const VulkanRenderer::RenderFrame* {
 	return VulkanRenderer::instance->renderingFrame();
 }
 

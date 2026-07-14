@@ -21,15 +21,15 @@ public:
 
 public:
 	float fov = 75.f;
-	float nearPlane = 0.01f;
-	float farPlane = 100.f;
+	float near_plane = 0.01f;
+	float far_plane = 100.f;
 
-	void SetActiveCamera(bool force = true);
+	void setActiveCamera(bool force = true);
 
 	[[nodiscard]]
-	glm::mat4 getView() const;
+	auto getView() const -> glm::mat4;
 	[[nodiscard]]
-	glm::mat4 getProjection(float aspect) const;
+	auto getProjection(float aspect) const -> glm::mat4;
 
 private:
 };

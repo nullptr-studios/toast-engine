@@ -5,7 +5,7 @@
 #include <vulkan/vulkan_raii.hpp>
 
 struct FrameResources {
-	std::optional<vma::raii::Buffer> stagingBuffer;
-	std::optional<vma::raii::Buffer> gpuBuffer;
-	vk::raii::DescriptorSet descriptorSet = nullptr;
+	std::optional<vma::raii::Buffer> staging_buffer;
+	std::optional<vma::raii::Buffer> gpu_buffer;
+	vk::raii::DescriptorSet descriptor_set = nullptr;
 };

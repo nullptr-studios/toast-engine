@@ -7,7 +7,7 @@
 namespace toast::renderer {
 class VulkanCore;
 
-namespace HardcodedPipelineLayouts {
+namespace hardcoded_pipeline_layouts {
 
 struct DescriptorBindingDesc {
 	uint32_t binding = 0;
@@ -26,7 +26,7 @@ struct PipelineLayoutDesc {
 };
 
 // Return a small descriptor/pipeline description for a known shader key
-PipelineLayoutDesc getLayoutDesc(std::string_view key);
+auto getLayoutDesc(std::string_view key) -> PipelineLayoutDesc;
 
 // Build actual Vulkan RAII objects from the description
 void buildPipelineLayout(
@@ -34,5 +34,5 @@ void buildPipelineLayout(
     std::vector<vk::PushConstantRange>& out_push_constants, vk::raii::PipelineLayout& out_pipeline_layout
 );
 
-}    // namespace HardcodedPipelineLayouts
+}    // namespace hardcoded_pipeline_layouts
 }    // namespace toast::renderer

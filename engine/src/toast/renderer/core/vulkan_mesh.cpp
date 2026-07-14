@@ -50,16 +50,16 @@ void VulkanMesh::create(
 		destroy();
 	}
 
-	m_vertexCount = static_cast<uint32_t>(data.vertices.size());
-	m_indexCount = static_cast<uint32_t>(data.indices.size());
-	m_vertexSize = data.vertices.size_bytes();
-	m_indexSize = data.indices.size_bytes();
+	m_vertex_count = static_cast<uint32_t>(data.vertices.size());
+	m_index_count = static_cast<uint32_t>(data.indices.size());
+	m_vertex_size = data.vertices.size_bytes();
+	m_index_size = data.indices.size_bytes();
 
 	const bool use_concurrent_sharing = graphics_queue_family_index != transfer_queue_family_index;
 
 	// Vertex buffer
 	vk::BufferCreateInfo vb_ci {};
-	vb_ci.size = m_vertexSize;
+	vb_ci.size = m_vertex_size;
 	vb_ci.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
 
 	std::array family_indices {graphics_queue_family_index, transfer_queue_family_index};
@@ -75,14 +75,14 @@ void VulkanMesh::create(
 	vma::AllocationCreateInfo vb_alloc {};
 	vb_alloc.usage = vma::MemoryUsage::eAutoPreferDevice;
 
-	m_vertexBuffer.emplace(core.getAllocator().createBuffer(vb_ci, vb_alloc));
+	m_vertex_buffer.emplace(core.getAllocator().createBuffer(vb_ci, vb_alloc));
 	if (!debug_name.empty()) {
-		setDebugName(core, **m_vertexBuffer, std::format("{} VertexBuffer", debug_name));
+		setDebugName(core, **m_vertex_buffer, std::format("{} VertexBuffer", debug_name));
 	}
 
 	// Index buffer
 	vk::BufferCreateInfo ib_ci {};
-	ib_ci.size = m_indexSize;
+	ib_ci.size = m_index_size;
 	ib_ci.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
 
 	if (use_concurrent_sharing) {
@@ -96,39 +96,39 @@ void VulkanMesh::create(
 	vma::AllocationCreateInfo ib_alloc {};
 	ib_alloc.usage = vma::MemoryUsage::eAutoPreferDevice;
 
-	m_indexBuffer.emplace(core.getAllocator().createBuffer(ib_ci, ib_alloc));
+	m_index_buffer.emplace(core.getAllocator().createBuffer(ib_ci, ib_alloc));
 	if (!debug_name.empty()) {
-		setDebugName(core, **m_indexBuffer, std::format("{} IndexBuffer", debug_name));
+		setDebugName(core, **m_index_buffer, std::format("{} IndexBuffer", debug_name));
 	}
 }
 
 void VulkanMesh::destroy() {
-	m_vertexBuffer.reset();
-	m_indexBuffer.reset();
+	m_vertex_buffer.reset();
+	m_index_buffer.reset();
 
-	m_vertexCount = 0;
-	m_indexCount = 0;
+	m_vertex_count = 0;
+	m_index_count = 0;
 
-	m_vertexSize = 0;
-	m_indexSize = 0;
+	m_vertex_size = 0;
+	m_index_size = 0;
 }
 
 void VulkanMesh::recordUpload(
     vk::CommandBuffer cmd, vk::Buffer staging_buffer, vk::DeviceSize vertex_offset, vk::DeviceSize index_offset
 ) const {
-	if (!m_vertexBuffer || !m_indexBuffer) {
+	if (!m_vertex_buffer || !m_index_buffer) {
 		TOAST_CRITICAL("VulkanMesh", "Mesh buffers were not created before upload");
 	}
 
 	// Copy using the explicit offsets out of the single staging buffer
-	cmd.copyBuffer(staging_buffer, **m_vertexBuffer, vk::BufferCopy(vertex_offset, 0, m_vertexSize));
-	cmd.copyBuffer(staging_buffer, **m_indexBuffer, vk::BufferCopy(index_offset, 0, m_indexSize));
+	cmd.copyBuffer(staging_buffer, **m_vertex_buffer, vk::BufferCopy(vertex_offset, 0, m_vertex_size));
+	cmd.copyBuffer(staging_buffer, **m_index_buffer, vk::BufferCopy(index_offset, 0, m_index_size));
 }
 
 void VulkanMesh::bind(vk::CommandBuffer cmd) const {
-	cmd.bindVertexBuffers(0, {*m_vertexBuffer}, {0});
+	cmd.bindVertexBuffers(0, {*m_vertex_buffer}, {0});
 
-	cmd.bindIndexBuffer(*m_indexBuffer, 0, vk::IndexType::eUint32);
+	cmd.bindIndexBuffer(*m_index_buffer, 0, vk::IndexType::eUint32);
 }
 
 void VulkanMesh::draw(vk::CommandBuffer cmd) const {
@@ -136,7 +136,7 @@ void VulkanMesh::draw(vk::CommandBuffer cmd) const {
 		return;
 	}
 
-	cmd.drawIndexed(m_indexCount, 1, 0, 0, 0);
+	cmd.drawIndexed(m_index_count, 1, 0, 0, 0);
 }
 
 // MeshUpload
@@ -166,12 +166,12 @@ void MeshUpload::build(const VulkanCore& core) {
 	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite |
 	                 vma::AllocationCreateFlagBits::eHostAccessAllowTransferInstead;
 
-	vertexStaging = core.getAllocator().createBuffer(staging_ci, alloc_ci);
+	vertex_staging = core.getAllocator().createBuffer(staging_ci, alloc_ci);
 	if (!debug_name.empty()) {
-		setDebugName(core, *vertexStaging, std::format("{} StagingBuffer", debug_name));
+		setDebugName(core, *vertex_staging, std::format("{} StagingBuffer", debug_name));
 	}
 
-	const auto& allocation = vertexStaging.getAllocation();
+	const auto& allocation = vertex_staging.getAllocation();
 	uint8_t* mapped = static_cast<uint8_t*>(allocation.getInfo().pMappedData);
 	if (!mapped) {
 		TOAST_CRITICAL("MeshUpload", "Unified staging buffer is not mapped");
@@ -183,10 +183,10 @@ void MeshUpload::build(const VulkanCore& core) {
 }
 
 void MeshUpload::record(vk::CommandBuffer cmd) {
-	const vk::DeviceSize vertex_size = mesh->m_vertexSize;
+	const vk::DeviceSize vertex_size = mesh->m_vertex_size;
 
 	// Record using a single buffer with an offset for the indices
-	mesh->recordUpload(cmd, *vertexStaging, 0, vertex_size);
+	mesh->recordUpload(cmd, *vertex_staging, 0, vertex_size);
 
 	std::array<vk::BufferMemoryBarrier, 2> barriers = {
 	  vk::BufferMemoryBarrier(
@@ -194,7 +194,7 @@ void MeshUpload::record(vk::CommandBuffer cmd) {
 	      vk::AccessFlags {},
 	      VK_QUEUE_FAMILY_IGNORED,
 	      VK_QUEUE_FAMILY_IGNORED,
-	      mesh->m_vertexBuffer.value(),
+	      mesh->m_vertex_buffer.value(),
 	      0,
 	      vertex_size
 	  ),
@@ -203,9 +203,9 @@ void MeshUpload::record(vk::CommandBuffer cmd) {
 	      vk::AccessFlags {},
 	      VK_QUEUE_FAMILY_IGNORED,
 	      VK_QUEUE_FAMILY_IGNORED,
-	      mesh->m_indexBuffer.value(),
+	      mesh->m_index_buffer.value(),
 	      0,
-	      mesh->m_indexSize
+	      mesh->m_index_size
 	  )
 	};
 

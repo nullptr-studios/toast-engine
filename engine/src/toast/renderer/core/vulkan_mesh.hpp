@@ -27,9 +27,9 @@ struct Vertex {
 	WEIGHTS_0
 	*/
 
-	static vk::VertexInputBindingDescription getBindingDescription();
+	static auto getBindingDescription() -> vk::VertexInputBindingDescription;
 
-	static std::array<vk::VertexInputAttributeDescription, 5> getAttributeDescriptions();
+	static auto getAttributeDescriptions() -> std::array<vk::VertexInputAttributeDescription, 5>;
 };
 
 /// @brief GPU mesh with vertex and index buffers stored in VRAM
@@ -57,14 +57,14 @@ public:
 	) const;
 
 private:
-	std::optional<vma::raii::Buffer> m_vertexBuffer;
-	std::optional<vma::raii::Buffer> m_indexBuffer;
+	std::optional<vma::raii::Buffer> m_vertex_buffer;
+	std::optional<vma::raii::Buffer> m_index_buffer;
 
-	vk::DeviceSize m_vertexSize = 0;
-	vk::DeviceSize m_indexSize = 0;
+	vk::DeviceSize m_vertex_size = 0;
+	vk::DeviceSize m_index_size = 0;
 
-	uint32_t m_vertexCount = 0;
-	uint32_t m_indexCount = 0;
+	uint32_t m_vertex_count = 0;
+	uint32_t m_index_count = 0;
 
 	friend class MeshUpload;
 };
@@ -78,14 +78,14 @@ public:
 	VulkanMesh::UploadData data;
 	std::string debug_name;
 
-	vma::raii::Buffer vertexStaging = nullptr;
-	vma::raii::Buffer indexStaging = nullptr;
+	vma::raii::Buffer vertex_staging = nullptr;
+	vma::raii::Buffer index_staging = nullptr;
 
 	void build(const VulkanCore& core) override;
 
 	void record(vk::CommandBuffer cmd) override;
 
-	IVulkanResource* resource() override { return mesh; }
+	auto resource() -> IVulkanResource* override { return mesh; }
 };
 
 }

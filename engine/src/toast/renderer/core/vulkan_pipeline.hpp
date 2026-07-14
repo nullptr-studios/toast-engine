@@ -45,7 +45,7 @@ public:
 		vk::PipelineLayout pipeline_layout = nullptr;
 
 		// Vertex input state; every graphics pipeline must set this explicitly
-		vk::VertexInputBindingDescription vertex_binding {};
+		vk::VertexInputBindingDescription vertex_binding;
 		std::vector<vk::VertexInputAttributeDescription> vertex_attributes;
 
 		vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList;

@@ -38,7 +38,7 @@ struct DeviceScore {
 	 * @return A string containing the device score details.
 	 */
 	[[nodiscard]]
-	std::string toString() const noexcept;
+	auto toString() const noexcept -> std::string;
 };
 
 /// @brief Manages Vulkan instance, device initialization, and memory allocation
@@ -65,7 +65,7 @@ public:
 
 	[[nodiscard]]
 	auto getPhysicalDevice() const noexcept -> const vk::raii::PhysicalDevice& {
-		return m_physicalDevice;
+		return m_physical_device;
 	}
 
 	[[nodiscard]]
@@ -75,55 +75,55 @@ public:
 
 	[[nodiscard]]
 	auto getGraphicsQueueFamilyIndex() const noexcept -> uint32_t {
-		return m_graphicsQueueFamilyIndex;
+		return m_graphics_queue_family_index;
 	}
 
 	[[nodiscard]]
 	auto getComputeQueueFamilyIndex() const noexcept -> uint32_t {
-		return m_computeQueueFamilyIndex;
+		return m_compute_queue_family_index;
 	}
 
 	[[nodiscard]]
 	auto getTransferQueueFamilyIndex() const noexcept -> uint32_t {
-		return m_transferQueueFamilyIndex;
+		return m_transfer_queue_family_index;
 	}
 
 	[[nodiscard]]
-	vk::Queue getGraphicsQueue() const noexcept {
-		return m_graphicsQueue;
+	auto getGraphicsQueue() const noexcept -> vk::Queue {
+		return m_graphics_queue;
 	}
 
 	[[nodiscard]]
-	vk::Queue getComputeQueue() const noexcept {
-		return m_computeQueue;
+	auto getComputeQueue() const noexcept -> vk::Queue {
+		return m_compute_queue;
 	}
 
 	[[nodiscard]]
-	vk::Queue getTransferQueue() const noexcept {
-		return m_transferQueue;
+	auto getTransferQueue() const noexcept -> vk::Queue {
+		return m_transfer_queue;
 	}
 
 	[[nodiscard]]
-	const RENDERDOC_API_1_6_0* getRenderDocAPI() const noexcept {
+	auto getRenderDocAPI() const noexcept -> const RENDERDOC_API_1_6_0* {
 		return rdoc_api;
 	}
 
 	/// @brief Whether validation layers are enabled
 	[[nodiscard]]
-	bool validationEnabled() const noexcept {
-		return m_validationEnabled;
+	auto validationEnabled() const noexcept -> bool {
+		return m_validation_enabled;
 	}
 
 	/// @brief Whether the selected device supports anisotropic filtering
 	[[nodiscard]]
-	bool supportsSamplerAnisotropy() const noexcept {
-		return m_samplerAnisotropySupported;
+	auto supportsSamplerAnisotropy() const noexcept -> bool {
+		return m_sampler_anisotropy_supported;
 	}
 
 	/// @brief Device limit to clamp requested sampler anisotropy against
 	[[nodiscard]]
-	float maxSamplerAnisotropy() const noexcept {
-		return m_maxSamplerAnisotropy;
+	auto maxSamplerAnisotropy() const noexcept -> float {
+		return m_max_sampler_anisotropy;
 	}
 
 private:
@@ -155,30 +155,30 @@ private:
 	auto calculateDeviceScore(const vk::PhysicalDevice& device, std::span<const char* const> required_device_extensions)
 	    -> DeviceScore;
 
-	bool checkValidationLayerSupport();
+	auto checkValidationLayerSupport() -> bool;
 
-	bool m_validationEnabled = false;
+	bool m_validation_enabled = false;
 
 	vk::raii::Context m_context;
 	vk::raii::Instance m_instance = nullptr;
 #ifndef NDEBUG
-	vk::raii::DebugUtilsMessengerEXT m_debugMessenger = nullptr;
+	vk::raii::DebugUtilsMessengerEXT m_debug_messenger = nullptr;
 #endif
 
-	vk::raii::PhysicalDevice m_physicalDevice = nullptr;
+	vk::raii::PhysicalDevice m_physical_device = nullptr;
 	vk::raii::Device m_device = nullptr;
 
 	std::optional<vma::raii::Allocator> m_allocator;
 
-	uint32_t m_graphicsQueueFamilyIndex = std::numeric_limits<uint32_t>::max();
-	uint32_t m_computeQueueFamilyIndex = std::numeric_limits<uint32_t>::max();
-	uint32_t m_transferQueueFamilyIndex = std::numeric_limits<uint32_t>::max();
-	vk::Queue m_graphicsQueue = nullptr;
-	vk::Queue m_computeQueue = nullptr;
-	vk::Queue m_transferQueue = nullptr;
+	uint32_t m_graphics_queue_family_index = std::numeric_limits<uint32_t>::max();
+	uint32_t m_compute_queue_family_index = std::numeric_limits<uint32_t>::max();
+	uint32_t m_transfer_queue_family_index = std::numeric_limits<uint32_t>::max();
+	vk::Queue m_graphics_queue = nullptr;
+	vk::Queue m_compute_queue = nullptr;
+	vk::Queue m_transfer_queue = nullptr;
 
-	bool m_samplerAnisotropySupported = false;
-	float m_maxSamplerAnisotropy = 1.0f;
+	bool m_sampler_anisotropy_supported = false;
+	float m_max_sampler_anisotropy = 1.0f;
 
 	// renderdoc api
 	RENDERDOC_API_1_6_0* rdoc_api = nullptr;

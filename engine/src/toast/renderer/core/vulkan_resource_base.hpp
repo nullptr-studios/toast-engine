@@ -11,28 +11,31 @@ namespace toast::renderer {
 
 class IVulkanResource {
 public:
-	enum class UploadState {
-		Uploading,
-		Ready
+	enum class UploadState : std::uint8_t {
+		uploading,
+		ready
 	};
 
 	virtual ~IVulkanResource() = default;
 
-	void markUploading() { m_state = UploadState::Uploading; }
+	void markUploading() { m_state = UploadState::uploading; }
 
-	void markReady() { m_state = UploadState::Ready; }
+	void markReady() { m_state = UploadState::ready; }
 
-	bool isReady() const { return m_state == UploadState::Ready; }
+	[[nodiscard]]
+	auto isReady() const -> bool {
+		return m_state == UploadState::ready;
+	}
 
 private:
-	UploadState m_state = UploadState::Uploading;
+	UploadState m_state = UploadState::uploading;
 };
 
 class PendingResourceUpload {
 public:
 	virtual ~PendingResourceUpload() = default;
 
-	virtual IVulkanResource* resource() = 0;
+	virtual auto resource() -> IVulkanResource* = 0;
 
 	virtual void build(const VulkanCore& core) = 0;
 
@@ -40,7 +43,7 @@ public:
 
 	virtual void finished() { resource()->markReady(); }
 
-	vk::raii::Fence completionFence = nullptr;
+	vk::raii::Fence completion_fence = nullptr;
 };
 
 }

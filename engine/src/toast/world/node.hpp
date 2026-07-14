@@ -25,10 +25,7 @@
 #include <toast/assets/prefab.hpp>
 #include <toast/events/listener.hpp>
 #include <toast/export.hpp>
-#include <toast/log.hpp>
-#include <toast/reflect/reflect_node.hpp>
 #include <toast/uid.hpp>
-#include <toast/world/node_owner.hpp>
 
 namespace toast {
 class INodeOwner;

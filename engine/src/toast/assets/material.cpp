@@ -128,8 +128,8 @@ void Material::resolveTextureHandles() {
 	sampler_info.minLod = 0.0f;
 	sampler_info.maxLod = 0.0f;
 
-	m_albedoSampler = vk::raii::Sampler(core.getDevice(), sampler_info);
-	toast::renderer::setDebugName(core, *m_albedoSampler, std::format("Material AlbedoSampler ({})", albedo_map.path()));
+	m_albedo_sampler = vk::raii::Sampler(core.getDevice(), sampler_info);
+	toast::renderer::setDebugName(core, *m_albedo_sampler, std::format("Material AlbedoSampler ({})", albedo_map.path()));
 
 	m_sampler_ready = true;
 }

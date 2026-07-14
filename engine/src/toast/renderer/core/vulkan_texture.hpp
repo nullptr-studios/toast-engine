@@ -52,25 +52,25 @@ public:
 	      m_debug_name(debug_name) { }
 
 	~TextureUpload() override {
-		if (m_ktxTexture) {
-			ktxTexture2_Destroy(m_ktxTexture);
+		if (m_ktx_texture) {
+			ktxTexture2_Destroy(m_ktx_texture);
 		}
 	}
 
 	void build(const VulkanCore& core) override;
 	void record(vk::CommandBuffer cmd) override;
 
-	IVulkanResource* resource() override { return m_texture; }
+	auto resource() -> IVulkanResource* override { return m_texture; }
 
 private:
 	VulkanTexture* m_texture;
 	std::vector<uint8_t> m_data;
 	std::string m_debug_name;
 
-	ktxTexture2* m_ktxTexture = nullptr;
-	vma::raii::Buffer m_stagingBuffer = nullptr;
-	std::vector<vk::BufferImageCopy> m_copyRegions;
-	VulkanTexture::Params m_texParams {};
+	ktxTexture2* m_ktx_texture = nullptr;
+	vma::raii::Buffer m_staging_buffer = nullptr;
+	std::vector<vk::BufferImageCopy> m_copy_regions;
+	VulkanTexture::Params m_tex_params {};
 };
 
 class RawTextureUpload : public PendingResourceUpload {
@@ -89,7 +89,7 @@ public:
 	void build(const VulkanCore& core) override;
 	void record(vk::CommandBuffer cmd) override;
 
-	IVulkanResource* resource() override { return m_texture; }
+	auto resource() -> IVulkanResource* override { return m_texture; }
 
 private:
 	VulkanTexture* m_texture = nullptr;

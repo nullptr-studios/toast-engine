@@ -7,7 +7,7 @@
 #include "toast/renderer/core/vulkan_renderer.hpp"
 
 namespace toast {
-void Camera::SetActiveCamera(bool force) {
+void Camera::setActiveCamera(bool force) {
 	toast::renderer::VulkanRenderer::instance->setActiveCamera(this);
 }
 
@@ -20,7 +20,7 @@ auto Camera::getView() const -> glm::mat4 {
 }
 
 auto Camera::getProjection(float aspect) const -> glm::mat4 {
-	glm::mat4 proj = glm::perspective(glm::radians(fov), aspect, nearPlane, farPlane);
+	glm::mat4 proj = glm::perspective(glm::radians(fov), aspect, near_plane, far_plane);
 
 	proj[1][1] *= -1.0f;
 
