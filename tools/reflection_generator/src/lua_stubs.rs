@@ -1,5 +1,5 @@
+use crate::{Field, FieldType, Function};
 use crate::node::NodeInfo;
-use crate::parser::{Field, FieldType, Function};
 
 /// Strips namespaces
 fn bare(name: &str) -> &str {
@@ -125,8 +125,9 @@ pub fn generate_lua_stubs(nodes: &[NodeInfo]) -> String {
     out.push_str("-- One class per reflected node type: fields, methods and the global type marker.\n\n");
 
     for node in nodes {
-        let class_name = node.name.clone();
+        let class_name = node.class.name.clone();
         let parent = node
+            .class
             .parent
             .as_ref()
             .map(|p| format!(" : {}", bare(&p.name)))
@@ -142,7 +143,7 @@ pub fn generate_lua_stubs(nodes: &[NodeInfo]) -> String {
             }
         }
 
-        for method in &node.methods {
+        for method in &node.class.methods {
             out.push_str(&format!(
                 "---@field {} {}\n",
                 method.name,

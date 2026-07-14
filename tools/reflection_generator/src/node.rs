@@ -1,22 +1,14 @@
-use crate::parser::*;
-use serde::Serialize;
-use serde_json::Value as json_t;
-use serde_json::*;
+use crate::*;
 
 use std::collections::BTreeMap;
 
 #[derive(Serialize)]
 pub struct NodeInfo {
-    pub name: String,
-    pub namespace: Option<String>,
-    pub parent: Option<Parent>,
-    pub attributes: json_t,
-    pub functions: TickFunctions,
-    pub methods: Vec<Function>,
-    /// Path relative to --include-root
-    pub source_file: String,
+    #[serde(flatten)]
+    pub class: Class,
     pub groups: Vec<GroupInfo>,
     pub global_fields: Vec<Field>,
+    pub tick_functions: TickFunctions,
     pub is_interface: bool,
 }
 
@@ -66,31 +58,35 @@ fn cpp_escape(s: &str) -> std::string::String {
     s.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
-
 pub fn build_node(class: &Class) -> NodeInfo {
     let is_interface = class.attributes.iter().any(|a| a.name == "Interface");
     let (global_fields, groups) = build_field_groups(&class.fields);
 
     NodeInfo {
-        name: class.name.clone(),
-        namespace: class.namespace.clone(),
-        parent: class.parent.clone(),
-        attributes: attrs_to_json(&class.attributes),
-        functions: build_tick_functions(class),
-        methods: class.methods.clone(),
+        class: class.clone(),
         groups,
         global_fields,
-        source_file: class.source_file.clone(),
+        tick_functions: build_tick_functions(class),
         is_interface,
     }
 }
 
 pub fn build_template_context(node: &NodeInfo) -> json_t {
     // --- 1. Basic Info & Namespaces ---
-    let snake_name = node.name.to_lowercase();
-    let qualified_name = node.namespace.as_ref().map_or(node.name.clone(), |ns| format!("{ns}::{}", node.name));
-    let parent_qualified_name = node.parent.as_ref().map(|p| p.namespace.as_ref().map_or(p.name.clone(), |ns| format!("{ns}::{}", p.name)));
-    let parent_snake_name = node.parent.as_ref().map(|p| p.name.to_lowercase());
+    let snake_name = node.class.name.to_lowercase();
+    let qualified_name = node
+        .class
+        .namespace
+        .as_ref()
+        .map_or(node.class.name.clone(), |ns| {
+            format!("{ns}::{}", node.class.name)
+        });
+    let parent_qualified_name = node.class.parent.as_ref().map(|p| {
+        p.namespace
+            .as_ref()
+            .map_or(p.name.clone(), |ns| format!("{ns}::{}", p.name))
+    });
+    let parent_snake_name = node.class.parent.as_ref().map(|p| p.name.to_lowercase());
 
     // --- 2. Field Flattening & Asset Tracking ---
     let mut all_fields_flat = Vec::new();
@@ -98,10 +94,15 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
     // This inline closure updates the flat list, checks for assets, and returns the index
     let mut process_field = |f: &Field| -> usize {
         let idx = all_fields_flat.len();
-        if f.typename.contains("AssetHandle<") { has_asset_handle = true; }
+        if f.typename.contains("AssetHandle<") {
+            has_asset_handle = true;
+        }
 
         let attrs_list: Vec<json_t> = match &f.attrib_json {
-            json_t::Object(map) => map.iter().map(|(k, v)| json!({ "name": k, "args": v })).collect(),
+            json_t::Object(map) => map
+                .iter()
+                .map(|(k, v)| json!({ "name": k, "args": v }))
+                .collect(),
             _ => vec![],
         };
 
@@ -121,7 +122,8 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
     };
 
     // --- 3. Process Fields (Global, Groups, Subgroups) ---
-    let global_field_indices: Vec<usize> = node.global_fields.iter().map(&mut process_field).collect();
+    let global_field_indices: Vec<usize> =
+        node.global_fields.iter().map(&mut process_field).collect();
 
     let augmented_groups: Vec<json_t> = node.groups.iter().map(|g| {
         json!({
@@ -138,56 +140,61 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
         })
     }).collect();
     // --- 4. Active Tick Functions ---
-    let tf = &node.functions;
+    let tf = &node.tick_functions;
     let active_tick_fns: Vec<json_t> = [
-        (tf.load,         "load",         "load"),
-        (tf.save,         "save",         "save"),
-        (tf.pre_init,     "pre_init",     "preInit"),
-        (tf.init,         "init",         "init"),
-        (tf.destroy,      "destroy",      "destroy"),
-        (tf.begin,        "begin",        "begin"),
-        (tf.end,          "end",          "end"),
-        (tf.on_enable,    "on_enable",    "onEnable"),
-        (tf.on_disable,   "on_disable",   "onDisable"),
-        (tf.early_tick,   "early_tick",   "earlyTick"),
-        (tf.tick,         "tick",         "tick"),
+        (tf.load, "load", "load"),
+        (tf.save, "save", "save"),
+        (tf.pre_init, "pre_init", "preInit"),
+        (tf.init, "init", "init"),
+        (tf.destroy, "destroy", "destroy"),
+        (tf.begin, "begin", "begin"),
+        (tf.end, "end", "end"),
+        (tf.on_enable, "on_enable", "onEnable"),
+        (tf.on_disable, "on_disable", "onDisable"),
+        (tf.early_tick, "early_tick", "earlyTick"),
+        (tf.tick, "tick", "tick"),
         (tf.post_physics, "post_physics", "postPhysics"),
-        (tf.late_tick,    "late_tick",    "lateTick"),
+        (tf.late_tick, "late_tick", "lateTick"),
     ]
-        .into_iter()
-        .filter(|(is_active, _, _)| *is_active)
-        .map(|(_, flag, method)| json!({ "flag": flag, "method": method }))
-        .collect();
+    .into_iter()
+    .filter(|(is_active, _, _)| *is_active)
+    .map(|(_, flag, method)| json!({ "flag": flag, "method": method }))
+    .collect();
 
     // --- 5. Reflected Methods ---
-    let methods_ctx: Vec<json_t> = node.methods.iter().map(|m| {
-        json!({
-            "name":        m.name,
-            "return_type": m.return_type,
-            "is_const":    m.is_const,
-            "parameters":  m.parameters.iter().enumerate().map(|(i, p)| {
-                json!({
-                    "index":           i,
-                    "arg_name":        format!("a{i}"),
-                    "name":            p.name,
-                    "type":            p.type_name,
-                    "default":         p.default,
-                    "default_escaped": p.default.as_deref().map(cpp_escape),
-                })
-            }).collect::<Vec<json_t>>(),
+    let methods_ctx: Vec<json_t> = node
+        .class
+        .methods
+        .iter()
+        .map(|m| {
+            json!({
+                "name":        m.name,
+                "return_type": m.return_type,
+                "is_const":    m.is_const,
+                "parameters":  m.parameters.iter().enumerate().map(|(i, p)| {
+                    json!({
+                        "index":           i,
+                        "arg_name":        format!("a{i}"),
+                        "name":            p.name,
+                        "type":            p.type_name,
+                        "default":         p.default,
+                        "default_escaped": p.default.as_deref().map(cpp_escape),
+                    })
+                }).collect::<Vec<json_t>>(),
+            })
         })
-    }).collect();
+        .collect();
 
     // --- 6. Final Payload Assembly ---
     json!({
-        "name":                  node.name,
-        "namespace":             node.namespace,
+        "name":                  node.class.name,
+        "namespace":             node.class.namespace,
         "snake_name":            snake_name,
         "qualified_name":        qualified_name,
         "parent_qualified_name": parent_qualified_name,
         "parent_snake_name":     parent_snake_name,
-        "source_file":           node.source_file,
-        "attributes":            node.attributes,
+        "source_file":           node.class.source_file,
+        "attributes":            node.class.attrib_json,
         "all_fields_flat":       all_fields_flat,
         "global_field_indices":  global_field_indices,
         "groups":                augmented_groups,
@@ -278,15 +285,15 @@ fn build_field_groups(fields: &[Field]) -> (Vec<Field>, Vec<GroupInfo>) {
                     name: sg_name,
                     fields: sg_fields,
                 })
-            .collect();
+                .collect();
 
             GroupInfo {
                 name,
                 fields: bucket.fields,
                 subgroups,
-        }
+            }
         })
-    .collect();
+        .collect();
 
     (global_fields, groups)
 }

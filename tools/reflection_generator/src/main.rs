@@ -5,9 +5,9 @@
 use reflection_generator::*;
 
 use clap::Parser;
-use walkdir::WalkDir;
 use std::fs;
 use std::path::{Path, PathBuf};
+use walkdir::WalkDir;
 
 #[derive(Parser)]
 #[command(name = "refgen", about = "Toast reflection code generator")]
@@ -53,7 +53,10 @@ fn main() {
         }
     }
     if !cli.output.is_dir() {
-        eprintln!("error: --output '{}' is not a directory", cli.output.display());
+        eprintln!(
+            "error: --output '{}' is not a directory",
+            cli.output.display()
+        );
         std::process::exit(1);
     }
 
@@ -70,12 +73,15 @@ fn main() {
         let include_path = compute_include_path(file_path, cli.include_root.as_deref());
 
         let source = match fs::read_to_string(file_path) {
-            Ok(s)  => s,
-            Err(e) => { eprintln!("error reading '{}': {e}", file_path.display()); continue; }
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("error reading '{}': {e}", file_path.display());
+                continue;
+            }
         };
 
         let preprocessed = strip_export_macros(&source);
-        let classes = parse(&preprocessed,&include_path);
+        let classes = parse(&preprocessed, &include_path);
 
         for class in &classes {
             if let Err(msg) = validate_class(class) {
@@ -90,18 +96,28 @@ fn main() {
 
     // Write JSON database
     if let Some(parent) = cli.database.parent()
-        && !parent.as_os_str().is_empty() {
-            fs::create_dir_all(parent)
-                .unwrap_or_else(|e| eprintln!("warning: cannot create database directory: {e}"));
-        }
+        && !parent.as_os_str().is_empty()
+    {
+        fs::create_dir_all(parent)
+            .unwrap_or_else(|e| eprintln!("warning: cannot create database directory: {e}"));
+    }
     let json = serde_json::to_string_pretty(&generate_json(&all_nodes))
         .expect("JSON serialisation failed");
-    fs::write(&cli.database, json)
-        .unwrap_or_else(|e| eprintln!("warning: cannot write database '{}': {e}", cli.database.display()));
+    fs::write(&cli.database, json).unwrap_or_else(|e| {
+        eprintln!(
+            "warning: cannot write database '{}': {e}",
+            cli.database.display()
+        )
+    });
 
     // Generate files, sorted so base classes are included before derived classes
     let all_nodes = topological_sort(all_nodes);
-    generate_files(&all_nodes, &cli.output, &cli.register_fn, cli.split_typeinfo);
+    generate_files(
+        &all_nodes,
+        &cli.output,
+        &cli.register_fn,
+        cli.split_typeinfo,
+    );
 
     if let Some(stub_path) = &cli.lua_stubs {
         if let Some(parent) = stub_path.parent()
@@ -126,12 +142,16 @@ fn inject_attributes(node: &mut NodeInfo, attributes: &[std::string::String]) {
     if attributes.is_empty() {
         return;
     }
-    if !node.attributes.is_object() {
-        node.attributes = serde_json::Value::Object(serde_json::Map::new());
+    if !node.class.attrib_json.is_object() {
+        node.class.attrib_json = serde_json::Value::Object(serde_json::Map::new());
     }
-    let map = node.attributes.as_object_mut().expect("attributes is an object");
+    let map = node
+        .class.attrib_json
+        .as_object_mut()
+        .expect("attributes is an object");
     for name in attributes {
-        map.entry(name.clone()).or_insert_with(|| serde_json::json!([]));
+        map.entry(name.clone())
+            .or_insert_with(|| serde_json::json!([]));
     }
 }
 
@@ -145,9 +165,10 @@ fn find_headers(inputs: &[PathBuf]) -> Vec<PathBuf> {
                 continue;
             }
             if let Ok(content) = fs::read_to_string(&path)
-                && content.contains("ToastNode") {
-                    result.push(path);
-                }
+                && content.contains("ToastNode")
+            {
+                result.push(path);
+            }
         }
     }
     result
@@ -162,34 +183,39 @@ fn topological_sort(nodes: Vec<NodeInfo>) -> Vec<NodeInfo> {
             break;
         }
 
-        let placed_names: std::collections::HashSet<String> = result.iter()
-            .map(|n| match &n.namespace {
-                Some(ns) => format!("{}::{}", ns, n.name),
-                None     => n.name.clone(),
+        let placed_names: std::collections::HashSet<String> = result
+            .iter()
+            .map(|n| match &n.class.namespace {
+                Some(ns) => format!("{}::{}", ns, n.class.name),
+                None => n.class.name.clone(),
             })
-        .collect();
+            .collect();
 
         let mut next: Vec<NodeInfo> = Vec::new();
         let mut placed_any = false;
 
         for node in remaining {
-            let parent_ready = node.parent.as_ref()
+            let parent_ready = node
+                .class.parent
+                .as_ref()
                 .map(|p| {
                     let pname = match &p.namespace {
                         Some(ns) => format!("{}::{}", ns, p.name),
-                        None     => p.name.clone(),
+                        None => p.name.clone(),
                     };
                     // If the parent has no namespace qualifier, also try the child's namespace
                     // since unqualified parent names in C++ implicitly resolve to the enclosing namespace
                     let pname_in_child_ns = if p.namespace.is_none() {
-                        node.namespace.as_ref().map(|ns| format!("{}::{}", ns, p.name))
+                        node.class.namespace
+                            .as_ref()
+                            .map(|ns| format!("{}::{}", ns, p.name))
                     } else {
                         None
                     };
                     placed_names.contains(&pname)
                         || pname_in_child_ns.is_some_and(|n| placed_names.contains(&n))
                 })
-            .unwrap_or(true);
+                .unwrap_or(true);
 
             if parent_ready {
                 result.push(node);
@@ -214,9 +240,10 @@ fn topological_sort(nodes: Vec<NodeInfo>) -> Vec<NodeInfo> {
 // strips --include-root prefix and normalizes to forward slashes so the path can be used in a #include directive
 fn compute_include_path(file: &Path, include_root: Option<&Path>) -> std::string::String {
     if let Some(root) = include_root
-        && let Ok(rel) = file.strip_prefix(root) {
-            return rel.to_string_lossy().replace('\\', "/");
-        }
+        && let Ok(rel) = file.strip_prefix(root)
+    {
+        return rel.to_string_lossy().replace('\\', "/");
+    }
     file.file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default()

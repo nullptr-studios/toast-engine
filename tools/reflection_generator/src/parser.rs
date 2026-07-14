@@ -3,89 +3,8 @@
 
 use tree_sitter::{Parser, Query, QueryCursor, StreamingIterator};
 
-use serde::Serialize;
-use serde_json::Value as json_t;
+use crate::*;
 
-#[derive(Serialize, Clone)]
-pub enum FieldType {
-    #[serde(rename = "bool_t")]
-    Bool,
-    #[serde(rename = "int_t")]
-    Int,
-    #[serde(rename = "float_t")]
-    Float,
-    #[serde(rename = "string_t")]
-    String,
-    #[serde(rename = "double_t")]
-    Double,
-    #[serde(rename = "uid_t")]
-    Uid,
-    #[serde(rename = "vec2_t")]
-    Vec2,
-    #[serde(rename = "vec3_t")]
-    Vec3,
-    #[serde(rename = "vec4_t")]
-    Vec4,
-    #[serde(rename = "quaternion_t")]
-    Quaternion,
-}
-
-#[derive(Serialize, Clone)]
-pub struct Attribute {
-    pub name: String,
-    pub args: Vec<String>,
-}
-
-#[derive(Serialize, Clone)]
-pub struct Parent {
-    pub name: String,
-    pub namespace: Option<String>,
-}
-
-#[derive(Serialize, Clone)]
-pub struct Field {
-    pub name: String,
-    pub typename: String,
-    pub field_type: FieldType,
-    pub is_array: bool,
-    #[serde(skip)]
-    pub attributes: Vec<Attribute>,
-    #[serde(rename = "attributes")]
-    pub attrib_json: json_t,
-    pub default: Option<String>,
-}
-
-#[derive(Serialize, Clone)]
-pub struct Parameter {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub type_name: String,
-    pub default: Option<String>,
-}
-
-#[derive(Serialize, Clone)]
-pub struct Function {
-    pub name: String,
-    pub return_type: String,
-    pub parameters: Vec<Parameter>,
-    #[serde(skip)]
-    pub attributes: Vec<Attribute>,
-    #[serde(rename = "attributes")]
-    pub attrib_json: json_t,
-    pub is_const: bool,
-}
-
-#[derive(Serialize, Clone)]
-pub struct Class {
-    pub name: String,
-    pub namespace: Option<String>,
-    pub parent: Option<Parent>,
-    pub attributes: Vec<Attribute>,
-    pub functions: Vec<String>,
-    pub methods: Vec<Function>,
-    pub fields: Vec<Field>,
-    pub source_file: String,
-}
 impl Class {
     pub fn qualified_name(&self) -> String {
         if let Some(ns) = &self.namespace {
@@ -107,7 +26,7 @@ impl AttributeExt for [Attribute] {
             .and_then(|a| a.args.first())
     }
 }
-
+//////////////////////////////////////////////////////////////////
 pub fn parse(source: &str, file_path: &str) -> Vec<Class> {
     let mut parser = Parser::new();
     parser
@@ -143,7 +62,7 @@ fn get_class(node: tree_sitter::Node, source: &str, file_path: &str) -> Option<C
     if !all_attrs.iter().any(|a| a.name == "ToastNode") {
         return None;
     }
-    let attributes = all_attrs
+    let attributes: Vec<Attribute> = all_attrs
         .into_iter()
         .filter(|a| a.name != "ToastNode")
         .collect();
@@ -152,7 +71,8 @@ fn get_class(node: tree_sitter::Node, source: &str, file_path: &str) -> Option<C
         name,
         namespace: get_namespace(node, source),
         parent: get_parent(node, source),
-        attributes,
+        attributes: attributes.clone(),
+        attrib_json: attrs_to_json(&attributes),
         functions: get_functions(node, source),
         methods: get_methods(node, source),
         fields: get_fields(node, source),
