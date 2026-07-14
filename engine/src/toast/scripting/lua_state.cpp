@@ -20,6 +20,8 @@
 #include <toast/log.hpp>
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/time.hpp>
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyLua.hpp>
 
 namespace scripting {
 
@@ -158,20 +160,55 @@ auto LuaState::get() noexcept -> LuaState& {
 auto LuaState::lock(size_t index) noexcept -> Lock {
 	Entry& entry = m_entries[index];
 
-	const bool holds_other = !t_held_states.empty() && std::ranges::find(t_held_states, index) == t_held_states.end();
+	std::unique_lock<std::recursive_timed_mutex> guard(entry.mutex, std::try_to_lock);
+	if (!guard.owns_lock()) {
+		ZoneScopedN("Lua lock wait");    // NOLINT
+		ZoneNameF("Lua lock wait #%d", static_cast<int>(index));
 
-	std::unique_lock<std::recursive_timed_mutex> guard(entry.mutex, std::defer_lock);
-	if (holds_other) {
-		if (!guard.try_lock_for(k_cross_state_timeout)) {
-			TOAST_ERROR(
-			    "Lua", "Cross-state call timed out acquiring Lua state #{}; skipping (possible call cycle between nodes)", index
-			);
-			return {};
+		const bool holds_other = !t_held_states.empty() && std::ranges::find(t_held_states, index) == t_held_states.end();
+		if (holds_other) {
+			if (!guard.try_lock_for(k_cross_state_timeout)) {
+				TOAST_ERROR(
+				    "Lua", "Cross-state call timed out acquiring Lua state #{}; skipping (possible call cycle between nodes)", index
+				);
+				return {};
+			}
+		} else {
+			guard.lock();
 		}
-	} else {
-		guard.lock();
 	}
 	return {std::move(guard), entry.state, index};
+}
+
+auto LuaState::tryLock(size_t index) noexcept -> Lock {
+	Entry& entry = m_entries[index];
+	std::unique_lock<std::recursive_timed_mutex> guard(entry.mutex, std::try_to_lock);
+	if (!guard.owns_lock()) {
+		return {};
+	}
+	return {std::move(guard), entry.state, index};
+}
+
+void LuaState::plotMemory() noexcept {
+#ifdef TRACY_ENABLE
+	// Tracy keeps plot names by pointer, so they need stable storage
+	static const auto plot_names = [] {
+		std::array<std::string, pool_size> names;
+		for (size_t i = 0; i < pool_size; ++i) {
+			names[i] = std::format("Lua memory #{} (KB)", i);
+		}
+		return names;
+	}();
+
+	for (size_t i = 0; i < pool_size; ++i) {
+		Lock guard = tryLock(i);
+		if (!guard) {
+			continue;    // busy running a script; sample it next time
+		}
+		const auto kilobytes = static_cast<int64_t>(lua_gc(guard.state(), LUA_GCCOUNT));
+		TracyPlot(plot_names[i].c_str(), kilobytes);
+	}
+#endif
 }
 
 auto LuaState::nextIndex() noexcept -> size_t {
@@ -216,6 +253,10 @@ LuaState::LuaState() {
 		});
 
 		luabridge::getGlobalNamespace(entry.state).addFunction("print", luaPrint).addFunction("warn", luaWarn);
+
+		// Tracy's lua-side profiling API (tracy.ZoneBegin/ZoneBeginN/ZoneEnd/Message);
+		// registers no-op stubs when TRACY_ENABLE is off
+		tracy::LuaRegister(entry.state);
 
 		registerApi(entry.state);
 	}

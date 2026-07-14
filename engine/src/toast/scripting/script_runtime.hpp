@@ -80,10 +80,17 @@ public:
 		return m_tick_mask;
 	}
 
+	/// Asset path of the script
+	[[nodiscard]]
+	auto name() const noexcept -> const std::string& {
+		return m_name;
+	}
+
 private:
 	lua_State* m_state = nullptr;
 	std::unique_ptr<luabridge::LuaRef> m_self;
 	NodeProxy m_proxy;
+	std::string m_name;
 	std::vector<ExportEntry> m_schema;
 	toast::TickFunctionList m_tick_mask = toast::TickFunctionList::none;
 

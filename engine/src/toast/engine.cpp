@@ -74,6 +74,7 @@ auto createTrianglePipeline(
 }
 
 double clear_assets_timer = 0.0;
+double lua_memory_plot_timer = 0.0;
 
 }
 
@@ -278,6 +279,14 @@ void Engine::tick() {
 	clear_assets_timer += Time::delta();
 	if (clear_assets_timer > 30.0) {
 		m->asset_manager->clearUnusedAssets();
+	}
+
+	lua_memory_plot_timer += Time::delta();
+	if (lua_memory_plot_timer > 1.0) {
+		lua_memory_plot_timer = 0.0;
+		if (m->lua_state) {
+			m->lua_state->plotMemory();
+		}
 	}
 }
 

@@ -7,6 +7,7 @@
 #include <format>
 #include <toast/log.hpp>
 #include <toast/world/node.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace scripting {
 
@@ -103,11 +104,15 @@ int scriptInstanceNewindex(lua_State* L) {
 
 ScriptInstance::ScriptInstance(lua_State* L, const assets::AssetHandle<assets::Script>& script, const NodeProxy& proxy)
     : m_state(L),
-      m_proxy(proxy) {
+      m_proxy(proxy),
+      m_name(script.path()) {
 	if (!script.hasValue()) {
 		TOAST_WARN("Lua", "ScriptInstance: script asset '{}' is not loaded", script.path());
 		return;
 	}
+
+	ZoneScopedN("Lua load");    // NOLINT
+	ZoneNameF("Lua load %s", m_name.c_str());
 
 	const std::vector<uint8_t>& bytes = script->get();
 	const std::string_view src(reinterpret_cast<const char*>(bytes.data()), bytes.size());
@@ -226,6 +231,10 @@ void ScriptInstance::call(std::string_view fn_name) noexcept {
 		lua_pop(L, 1);
 		return;
 	}
+
+	ZoneScopedN("Lua call");    // NOLINT
+	ZoneNameF("%s %.*s()", m_name.c_str(), static_cast<int>(fn_name.size()), fn_name.data());
+
 	// push self, then pcall(fn, self)
 	m_self->push(L);
 	if (pcallTraceback(L, 1, 0) != LUA_OK) {
@@ -248,6 +257,10 @@ void ScriptInstance::callWithLuaStack(std::string_view name, lua_State* L, int a
 		lua_pop(L, 1);
 		return;
 	}
+
+	ZoneScopedN("Lua call");    // NOLINT
+	ZoneNameF("%s %.*s()", m_name.c_str(), static_cast<int>(name.size()), name.data());
+
 	m_self->push(L);
 	for (int i = 0; i < n_args; ++i) {
 		lua_pushvalue(L, args_base + i);
@@ -274,6 +287,9 @@ void ScriptInstance::callWithAnyArgs(std::string_view name, std::span<const std:
 		lua_pop(L, 1);
 		return;
 	}
+
+	ZoneScopedN("Lua call");    // NOLINT
+	ZoneNameF("%s %.*s()", m_name.c_str(), static_cast<int>(name.size()), name.data());
 
 	// Push self as receiver, then convert each std::any arg to Lua
 	m_self->push(L);
@@ -370,15 +386,19 @@ ScriptRuntime::ScriptRuntime(toast::Box<toast::Node> node, const std::vector<ass
 
 void ScriptRuntime::call(toast::TickFunctionList phase) noexcept {
 	const char* name = phaseToLuaName(phase);
-	if (!name || m_instances.empty()) {
+	if (!name || m_instances.empty() || !toast::hasFlag(m_tick_mask, phase)) {
 		return;
 	}
+
+	ZoneScopedN("Lua phase");    // NOLINT
+	ZoneNameF("Lua phase %s", name);
+
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	if (!guard) {
 		return;
 	}
 	for (auto& inst : m_instances) {
-		if (inst && inst->isValid()) {
+		if (inst && inst->isValid() && toast::hasFlag(inst->tickMask(), phase)) {
 			inst->call(name);
 		}
 	}

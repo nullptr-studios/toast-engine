@@ -58,6 +58,12 @@ public:
 	[[nodiscard]]
 	auto lock(size_t index) noexcept -> Lock;
 
+	/// Non-blocking variant of lock()
+	[[nodiscard]]
+	auto tryLock(size_t index) noexcept -> Lock;
+
+	void plotMemory() noexcept;
+
 	[[nodiscard]]
 	auto nextIndex() noexcept -> size_t;
 
