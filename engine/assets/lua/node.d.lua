@@ -7,7 +7,7 @@
 --   M.speed = 4.0
 --
 --   function M:tick()
---       self.position = self.position + vec3(0, 0, self.speed * Time.delta())
+--       self.m_position = self.m_position + vec3(0, 0, self.speed * Time.delta())
 --   end
 --
 --   return M

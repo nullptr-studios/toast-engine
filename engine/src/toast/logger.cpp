@@ -70,9 +70,9 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 						exe_dir = std::filesystem::path(exe_path).parent_path();
 					}
 #elif defined(_WIN32)
-					char exe_path[MAX_PATH];
-					if (GetModuleFileNameA(nullptr, exe_path, MAX_PATH)) {
-						exe_dir = std::filesystem::path(exe_path).parent_path();
+					std::array<char, MAX_PATH> exe_path;
+					if (GetModuleFileNameA(nullptr, exe_path.data(), MAX_PATH)) {
+						exe_dir = std::filesystem::path(exe_path.data()).parent_path();
 					}
 #endif
 				} catch (...) { std::println(std::cerr, "Couldnt find log server executable"); }

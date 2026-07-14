@@ -32,20 +32,20 @@ void TOAST_API
 #define TOAST_FILE_NAME ::logging::_detail::getOnlyName(__FILE__)
 
 #ifdef DEBUG
-#define TOAST_LOG_IMPL(severity, sink, ...)                                  \
-	do {                                                                       \
-		std::string msg = std::format(__VA_ARGS__);                              \
-		::logging::_detail::log(severity, TOAST_FILE_NAME, __LINE__, sink, msg); \
-		constexpr uint32_t red = 0xFF0000;                                       \
-		constexpr uint32_t green = 0x00FF00;                                     \
-		constexpr uint32_t yellow = red | green; /* i love this so much -x */    \
-		switch (severity) {                                                      \
-			case 4:                                                                \
-			case 3: TracyMessageC(msg.c_str(), msg.size(), red); break;            \
-			case 2: TracyMessageC(msg.c_str(), msg.size(), yellow); break;         \
-			case 1: TracyMessageC(msg.c_str(), msg.size(), green); break;          \
-			default: break;                                                        \
-		}                                                                        \
+#define TOAST_LOG_IMPL(severity, sink, ...)                                                                  \
+	do {                                                                                                       \
+		std::string toast_log_impl_message_ = std::format(__VA_ARGS__);                                          \
+		::logging::_detail::log(severity, TOAST_FILE_NAME, __LINE__, sink, toast_log_impl_message_);             \
+		constexpr uint32_t red = 0xFF0000;                                                                       \
+		constexpr uint32_t green = 0x00FF00;                                                                     \
+		constexpr uint32_t yellow = red | green; /* i love this so much -x */                                    \
+		switch (severity) {                                                                                      \
+			case 4:                                                                                                \
+			case 3: TracyMessageC(toast_log_impl_message_.c_str(), toast_log_impl_message_.size(), red); break;    \
+			case 2: TracyMessageC(toast_log_impl_message_.c_str(), toast_log_impl_message_.size(), yellow); break; \
+			case 1: TracyMessageC(toast_log_impl_message_.c_str(), toast_log_impl_message_.size(), green); break;  \
+			default: break;                                                                                        \
+		}                                                                                                        \
 	} while (0)
 #else
 #define TOAST_LOG_IMPL(severity, sink, ...)                                                       \

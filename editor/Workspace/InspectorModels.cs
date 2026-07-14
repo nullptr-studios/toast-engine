@@ -3,7 +3,6 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -26,8 +25,6 @@ public enum WidgetKind {
 	ReadOnly,
 	Color3,
 	Color4,
-	Color3Array,
-	Color4Array,
 	Array
 }
 
@@ -69,12 +66,7 @@ public static class InspectorFormat {
 			10 => WidgetKind.AssetRef,
 			_ => WidgetKind.ReadOnly
 		};
-		if (!isArray) return baseKind;
-		return baseKind switch {
-			WidgetKind.Color3 => WidgetKind.Color3Array,
-			WidgetKind.Color4 => WidgetKind.Color4Array,
-			_ => WidgetKind.Array
-		};
+		return isArray ? WidgetKind.Array : baseKind;
 	}
 
 	// "toast::Node3D" -> "Node3D"
@@ -269,14 +261,10 @@ public partial class FieldVM : ObservableObject {
 		ParameterName = info.Name;
 		Kind = InspectorFormat.KindOf(info.FieldType, info.IsArray, info.TypeName);
 
-		if (ReflectionDatabase.HasAttr(info.Attributes, "Color")) {
-			if (info.IsArray) {
-				if (info.FieldType == "vec3_t") Kind = WidgetKind.Color3Array;
-				else if (info.FieldType == "vec4_t") Kind = WidgetKind.Color4Array;
-			} else {
-				if (info.FieldType == "vec3_t") Kind = WidgetKind.Color3;
-				else if (info.FieldType == "vec4_t") Kind = WidgetKind.Color4;
-			}
+		var isColor = ReflectionDatabase.HasAttr(info.Attributes, "Color");
+		if (isColor && !info.IsArray) {
+			if (info.FieldType == "vec3_t") Kind = WidgetKind.Color3;
+			else if (info.FieldType == "vec4_t") Kind = WidgetKind.Color4;
 		}
 
 		var nameOverride = ReflectionDatabase.GetAttr(info.Attributes, "Name");
@@ -300,7 +288,9 @@ public partial class FieldVM : ObservableObject {
 		if (m_default != null) ApplyEngineString(m_default);
 
 		if (Kind == WidgetKind.Array) {
-			ArrayElementKind = InspectorFormat.KindOf(info.FieldType, false, info.TypeName);
+			ArrayElementKind = isColor && info.FieldType == "vec3_t" ? WidgetKind.Color3
+				: isColor && info.FieldType == "vec4_t" ? WidgetKind.Color4
+				: InspectorFormat.KindOf(info.FieldType, false, info.TypeName);
 			ArrayItems.CollectionChanged += (_, _) => OnUserEdited();
 		}
 	}
@@ -315,7 +305,7 @@ public partial class FieldVM : ObservableObject {
 		RefType = string.IsNullOrEmpty(info.RefType) ? null : InspectorFormat.BareName(info.RefType);
 		Min = double.NegativeInfinity;
 		Max = double.PositiveInfinity;
-		m_default = null; // cannot have default on lua
+		m_default = string.IsNullOrEmpty(info.DefaultValue) ? null : info.DefaultValue;
 
 		Segments.Add(new TextSegment(DisplayName, false));
 
@@ -375,13 +365,10 @@ public partial class FieldVM : ObservableObject {
 	public bool IsReadOnlyText => Kind == WidgetKind.ReadOnly;
 	public bool IsVectorLayout => Kind is WidgetKind.Vec2 or WidgetKind.Vec3 or WidgetKind.Vec4;
 
-	public bool Editable =>
-		!ReadOnly && Kind != WidgetKind.ReadOnly && Kind != WidgetKind.Color3Array && Kind != WidgetKind.Color4Array;
+	public bool Editable => !ReadOnly && Kind != WidgetKind.ReadOnly;
 
 	public bool IsColor3 => Kind == WidgetKind.Color3;
 	public bool IsColor4 => Kind == WidgetKind.Color4;
-	public bool IsColorArray => Kind is WidgetKind.Color3Array or WidgetKind.Color4Array;
-	public ObservableCollection<IBrush> ColorBrushes { get; } = [];
 
 	public event Action<FieldVM, string>? Edited;
 
@@ -527,19 +514,28 @@ public partial class FieldVM : ObservableObject {
 					}
 
 					if (string.Equals(s, ToEngineString(), StringComparison.Ordinal)) break;
-					ArrayItems.Clear();
+
 					var isStr = ArrayElementKind == WidgetKind.String;
 					var tokens = isStr
 						? s.Split('\x1f')
 						: s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-					if (tokens.Length == 0) break;
 					var stride = InspectorFormat.ArrayElementStride(ArrayElementKind);
-					for (var idx = 0; idx + stride <= tokens.Length; idx += stride) {
-						var elementStr = isStr
-							? tokens[idx]
-							: string.Join(' ', tokens.Skip(idx).Take(stride));
+					var elementCount = tokens.Length / stride;
+
+					string ElementAt(int idx) => string.Join(' ', tokens.Skip(idx * stride).Take(stride));
+
+					if (elementCount == ArrayItems.Count) {
+						for (var idx = 0; idx < elementCount; idx++) {
+							ArrayItems[idx].ApplyEngineString(ElementAt(idx));
+						}
+
+						break;
+					}
+
+					ArrayItems.Clear();
+					for (var idx = 0; idx < elementCount; idx++) {
 						var child = new FieldVM(ArrayElementKind, "", ReadOnly, Unit, RefType, Min, Max);
-						child.ApplyEngineString(elementStr);
+						child.ApplyEngineString(ElementAt(idx));
 						WireChild(child);
 						ArrayItems.Add(child);
 					}
@@ -555,28 +551,6 @@ public partial class FieldVM : ObservableObject {
 		}
 
 		UpdateIsDefault(s);
-
-		if (Kind == WidgetKind.Color3Array || Kind == WidgetKind.Color4Array) {
-			ColorBrushes.Clear();
-			var floats = InspectorFormat.Floats(s);
-			var stride = Kind == WidgetKind.Color3Array ? 3 : 4;
-			for (var idx = 0; idx + stride <= floats.Length; idx += stride) {
-				var r = floats[idx];
-				var g = floats[idx + 1];
-				var b = floats[idx + 2];
-				var a = stride == 4 ? floats[idx + 3] : 1f;
-
-				var max = MathF.Max(r, MathF.Max(g, b));
-				var scale = max > 1f ? 1f / max : 1f;
-				var color = Color.FromArgb(
-					(byte)Math.Clamp(MathF.Round(a * 255f), 0f, 255f),
-					(byte)Math.Clamp(MathF.Round(r * scale * 255f), 0f, 255f),
-					(byte)Math.Clamp(MathF.Round(g * scale * 255f), 0f, 255f),
-					(byte)Math.Clamp(MathF.Round(b * scale * 255f), 0f, 255f)
-				);
-				ColorBrushes.Add(new SolidColorBrush(color));
-			}
-		}
 	}
 
 	private void UpdateIsDefault(string current) {

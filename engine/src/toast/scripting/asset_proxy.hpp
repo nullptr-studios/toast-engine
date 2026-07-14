@@ -30,7 +30,7 @@ public:
 	[[nodiscard]]
 	auto toString() const -> std::string;
 	[[nodiscard]]
-	auto checkType(std::string_view fieldType) const -> std::string;
+	auto checkType(std::string_view field_type) const -> std::string;
 
 	[[nodiscard]]
 	auto handle() const noexcept -> const assets::AssetHandleBase& {

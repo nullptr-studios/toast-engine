@@ -16,48 +16,48 @@
 #include <toast/reflect/reflect.hpp>
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/world/node.hpp>
+#include <utility>
 
 namespace scripting {
 
 namespace {
 
-std::any luaArgToAny(lua_State* L, const luabridge::LuaRef& v, std::string_view cpp_type, const char* param_name) {
-	const bool is_bool = cpp_type.find("bool") != std::string_view::npos;
-	const bool is_float = cpp_type.find("float") != std::string_view::npos;
-	const bool is_double = cpp_type.find("double") != std::string_view::npos;
-	const bool is_str = cpp_type.find("string") != std::string_view::npos;
-	const bool is_vec4 = cpp_type.find("vec4") != std::string_view::npos;
-	const bool is_vec3 = cpp_type.find("vec3") != std::string_view::npos;
-	const bool is_vec2 = cpp_type.find("vec2") != std::string_view::npos;
-	const bool is_quat = cpp_type.find("quat") != std::string_view::npos;
-	const bool is_box = cpp_type.find("Box<") != std::string_view::npos;
-	const bool is_asset = cpp_type.find("AssetHandle<") != std::string_view::npos;
+auto luaArgToAny(lua_State* l, const luabridge::LuaRef& v, std::string_view cpp_type, const char* param_name) -> std::any {
+	const bool is_bool = cpp_type.contains("bool");
+	const bool is_float = cpp_type.contains("float");
+	const bool is_double = cpp_type.contains("double");
+	const bool is_str = cpp_type.contains("string");
+	const bool is_vec4 = cpp_type.contains("vec4");
+	const bool is_vec3 = cpp_type.contains("vec3");
+	const bool is_vec2 = cpp_type.contains("vec2");
+	const bool is_quat = cpp_type.contains("quat");
+	const bool is_box = cpp_type.contains("Box<");
+	const bool is_asset = cpp_type.contains("AssetHandle<");
 	// int must come last so it doesn't match "uint64_t" etc. before float/double
 	const bool is_int = !is_float && !is_double && !is_bool &&
-	                    (cpp_type.find("int") != std::string_view::npos || cpp_type.find("long") != std::string_view::npos ||
-	                     cpp_type.find("short") != std::string_view::npos || cpp_type == "char");
+	                    (cpp_type.contains("int") || cpp_type.contains("long") || cpp_type.contains("short") || cpp_type == "char");
 
 	if (is_bool) {
 		if (!v.isBool() && !v.isNumber()) {
-			luaL_error(L, "argument '%s': expected bool", param_name);
+			luaL_error(l, "argument '%s': expected bool", param_name);
 		}
 		return v.isBool() ? v.unsafe_cast<bool>() : (v.unsafe_cast<lua_Number>() != 0.0);
 	}
 	if (is_float) {
 		if (!v.isNumber()) {
-			luaL_error(L, "argument '%s': expected number (float)", param_name);
+			luaL_error(l, "argument '%s': expected number (float)", param_name);
 		}
 		return static_cast<float>(v.unsafe_cast<lua_Number>());
 	}
 	if (is_double) {
 		if (!v.isNumber()) {
-			luaL_error(L, "argument '%s': expected number (double)", param_name);
+			luaL_error(l, "argument '%s': expected number (double)", param_name);
 		}
 		return v.unsafe_cast<lua_Number>();
 	}
 	if (is_str) {
 		if (!v.isString()) {
-			luaL_error(L, "argument '%s': expected string", param_name);
+			luaL_error(l, "argument '%s': expected string", param_name);
 		}
 		return v.tostring();
 	}
@@ -70,14 +70,14 @@ std::any luaArgToAny(lua_State* L, const luabridge::LuaRef& v, std::string_view 
 			const glm::vec4 vv = v.unsafe_cast<glm::vec4>();
 			return glm::quat(vv.w, vv.x, vv.y, vv.z);
 		}
-		luaL_error(L, "argument '%s': expected quat", param_name);
+		luaL_error(l, "argument '%s': expected quat", param_name);
 	}
 	if (is_vec4) {
 		if (v.isInstance<Color4>()) {
 			return v.unsafe_cast<Color4>().rgba;
 		}
 		if (!v.isInstance<glm::vec4>()) {
-			luaL_error(L, "argument '%s': expected vec4", param_name);
+			luaL_error(l, "argument '%s': expected vec4", param_name);
 		}
 		return v.unsafe_cast<glm::vec4>();
 	}
@@ -86,42 +86,42 @@ std::any luaArgToAny(lua_State* L, const luabridge::LuaRef& v, std::string_view 
 			return v.unsafe_cast<Color3>().rgb;
 		}
 		if (!v.isInstance<glm::vec3>()) {
-			luaL_error(L, "argument '%s': expected vec3", param_name);
+			luaL_error(l, "argument '%s': expected vec3", param_name);
 		}
 		return v.unsafe_cast<glm::vec3>();
 	}
 	if (is_vec2) {
 		if (!v.isInstance<glm::vec2>()) {
-			luaL_error(L, "argument '%s': expected vec2", param_name);
+			luaL_error(l, "argument '%s': expected vec2", param_name);
 		}
 		return v.unsafe_cast<glm::vec2>();
 	}
 	if (is_box) {
 		if (!v.isInstance<NodeProxy>()) {
-			luaL_error(L, "argument '%s': expected Node", param_name);
+			luaL_error(l, "argument '%s': expected Node", param_name);
 		}
 		// Store as Box<Node>; the dynamic trampoline downcasts via .as<DerivedType>()
 		const NodeProxy& np = v.unsafe_cast<NodeProxy>();
 		if (!np.exists()) {
-			luaL_error(L, "argument '%s': Node is dead", param_name);
+			luaL_error(l, "argument '%s': Node is dead", param_name);
 		}
 		return toast::Box<toast::Node>(np.box());
 	}
 	if (is_asset) {
 		if (!v.isInstance<AssetProxy>()) {
-			luaL_error(L, "argument '%s': expected Asset", param_name);
+			luaL_error(l, "argument '%s': expected Asset", param_name);
 		}
 		return v.unsafe_cast<AssetProxy>().uid();
 	}
 	if (is_int) {
 		if (!v.isNumber()) {
-			luaL_error(L, "argument '%s': expected int", param_name);
+			luaL_error(l, "argument '%s': expected int", param_name);
 		}
 		return static_cast<int>(v.unsafe_cast<lua_Integer>());
 	}
 
 	luaL_error(
-	    L,
+	    l,
 	    "argument '%s': unsupported C++ parameter type '%.*s' — cannot marshal from Lua",
 	    param_name,
 	    static_cast<int>(cpp_type.size()),
@@ -131,93 +131,93 @@ std::any luaArgToAny(lua_State* L, const luabridge::LuaRef& v, std::string_view 
 }
 
 // Builds a Lua array table when the any holds a std::vector of a supported type
-luabridge::LuaRef anyVectorToLuaRef(lua_State* L, const std::any& value);
+auto anyVectorToLuaRef(lua_State* l, const std::any& value) -> luabridge::LuaRef;
 
-luabridge::LuaRef anyReturnToLuaRef(lua_State* L, const std::any& val, std::string_view return_type) {
+auto anyReturnToLuaRef(lua_State* l, const std::any& val, std::string_view return_type) -> luabridge::LuaRef {
 	using LuaRef = luabridge::LuaRef;
 	if (return_type == "void" || !val.has_value()) {
-		return LuaRef(L);
+		return {l};
 	}
-	if (auto* v = std::any_cast<bool>(&val)) {
-		return LuaRef(L, *v);
+	if (const auto* v = std::any_cast<bool>(&val)) {
+		return {l, *v};
 	}
-	if (auto* v = std::any_cast<int>(&val)) {
-		return LuaRef(L, static_cast<lua_Integer>(*v));
+	if (const auto* v = std::any_cast<int>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
 	}
-	if (auto* v = std::any_cast<int32_t>(&val)) {
-		return LuaRef(L, static_cast<lua_Integer>(*v));
+	if (const auto* v = std::any_cast<int32_t>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
 	}
-	if (auto* v = std::any_cast<uint32_t>(&val)) {
-		return LuaRef(L, static_cast<lua_Integer>(*v));
+	if (const auto* v = std::any_cast<uint32_t>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
 	}
-	if (auto* v = std::any_cast<int64_t>(&val)) {
-		return LuaRef(L, static_cast<lua_Integer>(*v));
+	if (const auto* v = std::any_cast<int64_t>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
 	}
-	if (auto* v = std::any_cast<uint64_t>(&val)) {
-		return LuaRef(L, static_cast<lua_Integer>(*v));
+	if (const auto* v = std::any_cast<uint64_t>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
 	}
-	if (auto* v = std::any_cast<int16_t>(&val)) {
-		return LuaRef(L, static_cast<lua_Integer>(*v));
+	if (const auto* v = std::any_cast<int16_t>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
 	}
-	if (auto* v = std::any_cast<uint16_t>(&val)) {
-		return LuaRef(L, static_cast<lua_Integer>(*v));
+	if (const auto* v = std::any_cast<uint16_t>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
 	}
-	if (auto* v = std::any_cast<int8_t>(&val)) {
-		return LuaRef(L, static_cast<lua_Integer>(*v));
+	if (const auto* v = std::any_cast<int8_t>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
 	}
-	if (auto* v = std::any_cast<uint8_t>(&val)) {
-		return LuaRef(L, static_cast<lua_Integer>(*v));
+	if (const auto* v = std::any_cast<uint8_t>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
 	}
-	if (auto* v = std::any_cast<float>(&val)) {
-		return LuaRef(L, static_cast<lua_Number>(*v));
+	if (const auto* v = std::any_cast<float>(&val)) {
+		return {l, static_cast<lua_Number>(*v)};
 	}
-	if (auto* v = std::any_cast<double>(&val)) {
-		return LuaRef(L, static_cast<lua_Number>(*v));
+	if (const auto* v = std::any_cast<double>(&val)) {
+		return {l, static_cast<lua_Number>(*v)};
 	}
-	if (auto* v = std::any_cast<std::string>(&val)) {
-		return LuaRef(L, *v);
+	if (const auto* v = std::any_cast<std::string>(&val)) {
+		return {l, *v};
 	}
-	if (auto* v = std::any_cast<glm::vec2>(&val)) {
-		return LuaRef(L, *v);
+	if (const auto* v = std::any_cast<glm::vec2>(&val)) {
+		return {l, *v};
 	}
-	if (auto* v = std::any_cast<glm::vec3>(&val)) {
-		return LuaRef(L, *v);
+	if (const auto* v = std::any_cast<glm::vec3>(&val)) {
+		return {l, *v};
 	}
-	if (auto* v = std::any_cast<glm::vec4>(&val)) {
-		return LuaRef(L, *v);
+	if (const auto* v = std::any_cast<glm::vec4>(&val)) {
+		return {l, *v};
 	}
-	if (auto* v = std::any_cast<glm::quat>(&val)) {
-		return LuaRef(L, *v);
+	if (const auto* v = std::any_cast<glm::quat>(&val)) {
+		return {l, *v};
 	}
-	if (auto* v = std::any_cast<Color3>(&val)) {
-		return LuaRef(L, *v);
+	if (const auto* v = std::any_cast<Color3>(&val)) {
+		return {l, *v};
 	}
-	if (auto* v = std::any_cast<Color4>(&val)) {
-		return LuaRef(L, *v);
+	if (const auto* v = std::any_cast<Color4>(&val)) {
+		return {l, *v};
 	}
-	if (auto* v = std::any_cast<toast::Box<toast::Node>>(&val)) {
+	if (const auto* v = std::any_cast<toast::Box<toast::Node>>(&val)) {
 		if (!v->exists()) {
-			return LuaRef(L);
+			return {l};
 		}
-		return LuaRef(L, NodeProxy(*v));
+		return {l, NodeProxy(*v)};
 	}
-	if (auto* v = std::any_cast<AssetProxy>(&val)) {
-		return LuaRef(L, *v);
+	if (const auto* v = std::any_cast<AssetProxy>(&val)) {
+		return {l, *v};
 	}
-	if (auto* v = std::any_cast<toast::UID>(&val)) {
-		return LuaRef(L, AssetProxy(*v));
+	if (const auto* v = std::any_cast<toast::UID>(&val)) {
+		return {l, AssetProxy(*v)};
 	}
-	if (LuaRef r = anyVectorToLuaRef(L, val); !r.isNil()) {
+	if (LuaRef r = anyVectorToLuaRef(l, val); !r.isNil()) {
 		return r;
 	}
 	TOAST_WARN("Lua", "anyReturnToLuaRef: unhandled return type '{}', returning nil", return_type);
-	return LuaRef(L);
+	return {l};
 }
 
-int proxyMethodDispatch(lua_State* L);
+auto proxyMethodDispatch(lua_State* l) -> int;
 
 // Strips the outer "Box<" ... ">" from a field.type string and returns the inner type name
-std::string_view innerBoxType(std::string_view type) {
+auto innerBoxType(std::string_view type) -> std::string_view {
 	constexpr std::string_view prefix = "Box<";
 	if (!type.starts_with(prefix) || !type.ends_with('>')) {
 		return {};
@@ -227,17 +227,13 @@ std::string_view innerBoxType(std::string_view type) {
 	return type;
 }
 
-const toast::FieldInfo* lookupField(const toast::NodeInfo* info, std::string_view key) {
-	if (const toast::FieldInfo* f = info->getField(key)) {
-		return f;
-	}
-	const std::string prefixed = std::format("m_{}", key);
-	return info->getField(prefixed);
+auto lookupField(const toast::NodeInfo* info, std::string_view key) -> const toast::FieldInfo* {
+	return info->getField(key);
 }
 
 // Looks up a NodeInfo by short or fully-qualified name
-const toast::NodeInfo* lookupNodeInfo(std::string_view name) {
-	if (auto* info = toast::NodeRegistry::reflect(name)) {
+auto lookupNodeInfo(std::string_view name) -> const toast::NodeInfo* {
+	if (const auto* info = toast::NodeRegistry::reflect(name)) {
 		return info;
 	}
 	std::string qualified = "toast::";
@@ -247,163 +243,164 @@ const toast::NodeInfo* lookupNodeInfo(std::string_view name) {
 
 // Builds a Lua array table from std::vector<T> stored in a std::any
 template<typename T>
-luabridge::LuaRef pushVecTable(lua_State* L, const std::any& value) {
+auto pushVecTable(lua_State* l, const std::any& value) -> luabridge::LuaRef {
 	const auto* vec = std::any_cast<std::vector<T>>(&value);
 	if (!vec) {
-		return luabridge::LuaRef(L);
+		return {l};
 	}
-	lua_createtable(L, static_cast<int>(vec->size()), 0);
+	lua_createtable(l, static_cast<int>(vec->size()), 0);
 	for (size_t i = 0; i < vec->size(); ++i) {
-		lua_pushinteger(L, static_cast<lua_Integer>(i + 1));
-		if (auto r = luabridge::Stack<T>::push(L, (*vec)[i]); !r) {
-			lua_pushnil(L);
+		lua_pushinteger(l, static_cast<lua_Integer>(i + 1));
+		if (auto r = luabridge::Stack<T>::push(l, (*vec)[i]); !r) {
+			lua_pushnil(l);
 		}
-		lua_settable(L, -3);
+		lua_settable(l, -3);
 	}
-	return luabridge::LuaRef::fromStack(L, -1);
+	return luabridge::LuaRef::fromStack(l);
 }
 
 // Rebuilds a std::vector<VecT> any as a table of ColorT
 template<typename ColorT, typename VecT>
-luabridge::LuaRef pushColorTable(lua_State* L, const std::any& value) {
+auto pushColorTable(lua_State* l, const std::any& value) -> luabridge::LuaRef {
 	const auto* vec = std::any_cast<std::vector<VecT>>(&value);
 	if (!vec) {
-		return luabridge::LuaRef(L);
+		return {l};
 	}
-	lua_createtable(L, static_cast<int>(vec->size()), 0);
+	lua_createtable(l, static_cast<int>(vec->size()), 0);
 	for (size_t i = 0; i < vec->size(); ++i) {
-		lua_pushinteger(L, static_cast<lua_Integer>(i + 1));
-		if (auto r = luabridge::Stack<ColorT>::push(L, ColorT((*vec)[i])); !r) {
-			lua_pushnil(L);
+		lua_pushinteger(l, static_cast<lua_Integer>(i + 1));
+		if (auto r = luabridge::Stack<ColorT>::push(l, ColorT((*vec)[i])); !r) {
+			lua_pushnil(l);
 		}
-		lua_settable(L, -3);
+		lua_settable(l, -3);
 	}
-	return luabridge::LuaRef::fromStack(L, -1);
+	return luabridge::LuaRef::fromStack(l);
 }
 
-luabridge::LuaRef anyVectorToLuaRef(lua_State* L, const std::any& value) {
+auto anyVectorToLuaRef(lua_State* l, const std::any& value) -> luabridge::LuaRef {
 	using luabridge::LuaRef;
-	if (auto r = pushVecTable<bool>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<bool>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<int>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<int>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<float>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<float>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<double>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<double>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<std::string>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<std::string>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<glm::vec2>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<glm::vec2>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<glm::vec3>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<glm::vec3>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<glm::vec4>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<glm::vec4>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<glm::quat>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<glm::quat>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<Color3>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<Color3>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<Color4>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<Color4>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<AssetProxy>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<AssetProxy>(l, value); !r.isNil()) {
 		return r;
 	}
 	if (const auto* boxes = std::any_cast<std::vector<toast::Box<toast::Node>>>(&value)) {
-		lua_createtable(L, static_cast<int>(boxes->size()), 0);
+		lua_createtable(l, static_cast<int>(boxes->size()), 0);
 		for (size_t i = 0; i < boxes->size(); ++i) {
-			lua_pushinteger(L, static_cast<lua_Integer>(i + 1));
+			lua_pushinteger(l, static_cast<lua_Integer>(i + 1));
 			if ((*boxes)[i].exists()) {
-				if (auto r = luabridge::Stack<NodeProxy>::push(L, NodeProxy((*boxes)[i])); !r) {
-					lua_pushnil(L);
+				if (auto r = luabridge::Stack<NodeProxy>::push(l, NodeProxy((*boxes)[i])); !r) {
+					lua_pushnil(l);
 				}
 			} else {
-				lua_pushnil(L);
+				lua_pushnil(l);
 			}
-			lua_settable(L, -3);
+			lua_settable(l, -3);
 		}
-		return LuaRef::fromStack(L, -1);
+		return LuaRef::fromStack(l);
 	}
 	if (const auto* uids = std::any_cast<std::vector<toast::UID>>(&value)) {
-		lua_createtable(L, static_cast<int>(uids->size()), 0);
+		lua_createtable(l, static_cast<int>(uids->size()), 0);
 		for (size_t i = 0; i < uids->size(); ++i) {
-			lua_pushinteger(L, static_cast<lua_Integer>(i + 1));
-			if (auto r = luabridge::Stack<AssetProxy>::push(L, AssetProxy((*uids)[i])); !r) {
-				lua_pushnil(L);
+			lua_pushinteger(l, static_cast<lua_Integer>(i + 1));
+			if (auto r = luabridge::Stack<AssetProxy>::push(l, AssetProxy((*uids)[i])); !r) {
+				lua_pushnil(l);
 			}
-			lua_settable(L, -3);
+			lua_settable(l, -3);
 		}
-		return LuaRef::fromStack(L, -1);
+		return LuaRef::fromStack(l);
 	}
-	return LuaRef(L);
+	return {l};
 }
 
 // Handles non-uid array fields for reads
-luabridge::LuaRef nonUidArrayToLuaRef(lua_State* L, const std::any& value, std::string_view fieldType) {
-	if (fieldType.find("string") != std::string_view::npos) {
-		return pushVecTable<std::string>(L, value);
+auto nonUidArrayToLuaRef(lua_State* l, const std::any& value, std::string_view field_type) -> luabridge::LuaRef {
+	if (field_type.contains("string")) {
+		return pushVecTable<std::string>(l, value);
 	}
-	if (fieldType.find("vec4") != std::string_view::npos) {
-		return pushVecTable<glm::vec4>(L, value);
+	if (field_type.contains("vec4")) {
+		return pushVecTable<glm::vec4>(l, value);
 	}
-	if (fieldType.find("vec3") != std::string_view::npos) {
-		return pushVecTable<glm::vec3>(L, value);
+	if (field_type.contains("vec3")) {
+		return pushVecTable<glm::vec3>(l, value);
 	}
-	if (fieldType.find("vec2") != std::string_view::npos) {
-		return pushVecTable<glm::vec2>(L, value);
+	if (field_type.contains("vec2")) {
+		return pushVecTable<glm::vec2>(l, value);
 	}
-	if (fieldType.find("quat") != std::string_view::npos) {
-		return pushVecTable<glm::quat>(L, value);
+	if (field_type.contains("quat")) {
+		return pushVecTable<glm::quat>(l, value);
 	}
-	if (fieldType.find("double") != std::string_view::npos) {
-		return pushVecTable<double>(L, value);
+	if (field_type.contains("double")) {
+		return pushVecTable<double>(l, value);
 	}
-	if (fieldType.find("float") != std::string_view::npos) {
-		return pushVecTable<float>(L, value);
+	if (field_type.contains("float")) {
+		return pushVecTable<float>(l, value);
 	}
-	if (fieldType.find("bool") != std::string_view::npos) {
-		return pushVecTable<bool>(L, value);
+	if (field_type.contains("bool")) {
+		return pushVecTable<bool>(l, value);
 	}
 	// Integer fallback: try common integer types in order
-	if (auto r = pushVecTable<int>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<int>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<uint32_t>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<uint32_t>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<int64_t>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<int64_t>(l, value); !r.isNil()) {
 		return r;
 	}
-	if (auto r = pushVecTable<uint64_t>(L, value); !r.isNil()) {
+	if (auto r = pushVecTable<uint64_t>(l, value); !r.isNil()) {
 		return r;
 	}
-	return luabridge::LuaRef(L);
+	return {l};
 }
 
 // Converts a Lua table to a std::vector stored in a std::any, dispatching on field.type
-std::any luaTableToAny(lua_State* L, const luabridge::LuaRef& table, const toast::FieldInfo& field, const std::string& key) {
+auto luaTableToAny(lua_State* l, const luabridge::LuaRef& table, const toast::FieldInfo& field, const std::string& key)
+    -> std::any {
 	const std::string_view t = field.type;
-	if (t.find("string") != std::string_view::npos) {
+	if (t.contains("string")) {
 		std::vector<std::string> v;
 		for (luabridge::Iterator it(table); !it.isNil(); ++it) {
 			if (!it.value().isString()) {
-				luaL_error(L, "Field '%s': expected string elements", key.c_str());
+				luaL_error(l, "Field '%s': expected string elements", key.c_str());
 			}
 			v.push_back(it.value().tostring());
 		}
 		return v;
 	}
-	if (t.find("vec4") != std::string_view::npos) {
+	if (t.contains("vec4")) {
 		std::vector<glm::vec4> v;
 		for (luabridge::Iterator it(table); !it.isNil(); ++it) {
 			if (it.value().isInstance<Color4>()) {
@@ -411,12 +408,12 @@ std::any luaTableToAny(lua_State* L, const luabridge::LuaRef& table, const toast
 			} else if (it.value().isInstance<glm::vec4>()) {
 				v.push_back(it.value().unsafe_cast<glm::vec4>());
 			} else {
-				luaL_error(L, "Field '%s': expected vec4 or color4 elements", key.c_str());
+				luaL_error(l, "Field '%s': expected vec4 or color4 elements", key.c_str());
 			}
 		}
 		return v;
 	}
-	if (t.find("vec3") != std::string_view::npos) {
+	if (t.contains("vec3")) {
 		std::vector<glm::vec3> v;
 		for (luabridge::Iterator it(table); !it.isNil(); ++it) {
 			if (it.value().isInstance<Color3>()) {
@@ -424,22 +421,22 @@ std::any luaTableToAny(lua_State* L, const luabridge::LuaRef& table, const toast
 			} else if (it.value().isInstance<glm::vec3>()) {
 				v.push_back(it.value().unsafe_cast<glm::vec3>());
 			} else {
-				luaL_error(L, "Field '%s': expected vec3 or color3 elements", key.c_str());
+				luaL_error(l, "Field '%s': expected vec3 or color3 elements", key.c_str());
 			}
 		}
 		return v;
 	}
-	if (t.find("vec2") != std::string_view::npos) {
+	if (t.contains("vec2")) {
 		std::vector<glm::vec2> v;
 		for (luabridge::Iterator it(table); !it.isNil(); ++it) {
 			if (!it.value().isInstance<glm::vec2>()) {
-				luaL_error(L, "Field '%s': expected vec2 elements", key.c_str());
+				luaL_error(l, "Field '%s': expected vec2 elements", key.c_str());
 			}
 			v.push_back(it.value().unsafe_cast<glm::vec2>());
 		}
 		return v;
 	}
-	if (t.find("quat") != std::string_view::npos) {
+	if (t.contains("quat")) {
 		std::vector<glm::quat> v;
 		for (luabridge::Iterator it(table); !it.isNil(); ++it) {
 			if (it.value().isInstance<glm::quat>()) {
@@ -449,36 +446,36 @@ std::any luaTableToAny(lua_State* L, const luabridge::LuaRef& table, const toast
 				const glm::vec4 vv = it.value().unsafe_cast<glm::vec4>();
 				v.emplace_back(vv.w, vv.x, vv.y, vv.z);
 			} else {
-				luaL_error(L, "Field '%s': expected quat elements", key.c_str());
+				luaL_error(l, "Field '%s': expected quat elements", key.c_str());
 			}
 		}
 		return v;
 	}
-	if (t.find("double") != std::string_view::npos) {
+	if (t.contains("double")) {
 		std::vector<double> v;
 		for (luabridge::Iterator it(table); !it.isNil(); ++it) {
 			if (!it.value().isNumber()) {
-				luaL_error(L, "Field '%s': expected number elements", key.c_str());
+				luaL_error(l, "Field '%s': expected number elements", key.c_str());
 			}
 			v.push_back(it.value().unsafe_cast<lua_Number>());
 		}
 		return v;
 	}
-	if (t.find("float") != std::string_view::npos) {
+	if (t.contains("float")) {
 		std::vector<float> v;
 		for (luabridge::Iterator it(table); !it.isNil(); ++it) {
 			if (!it.value().isNumber()) {
-				luaL_error(L, "Field '%s': expected number elements", key.c_str());
+				luaL_error(l, "Field '%s': expected number elements", key.c_str());
 			}
 			v.push_back(static_cast<float>(it.value().unsafe_cast<lua_Number>()));
 		}
 		return v;
 	}
-	if (t.find("bool") != std::string_view::npos) {
+	if (t.contains("bool")) {
 		std::vector<bool> v;
 		for (luabridge::Iterator it(table); !it.isNil(); ++it) {
 			if (!it.value().isBool() && !it.value().isNumber()) {
-				luaL_error(L, "Field '%s': expected bool elements", key.c_str());
+				luaL_error(l, "Field '%s': expected bool elements", key.c_str());
 			}
 			v.push_back(it.value().isBool() ? it.value().unsafe_cast<bool>() : (it.value().unsafe_cast<lua_Number>() != 0.0));
 		}
@@ -488,7 +485,7 @@ std::any luaTableToAny(lua_State* L, const luabridge::LuaRef& table, const toast
 	std::vector<int> v;
 	for (luabridge::Iterator it(table); !it.isNil(); ++it) {
 		if (!it.value().isNumber()) {
-			luaL_error(L, "Field '%s': expected integer elements", key.c_str());
+			luaL_error(l, "Field '%s': expected integer elements", key.c_str());
 		}
 		v.push_back(static_cast<int>(it.value().unsafe_cast<lua_Integer>()));
 	}
@@ -496,7 +493,7 @@ std::any luaTableToAny(lua_State* L, const luabridge::LuaRef& table, const toast
 }
 
 // Converts a std::any to a LuaRef
-luabridge::LuaRef anyToLuaRef(lua_State* L, const std::any& value, const toast::FieldInfo& field) {
+auto anyToLuaRef(lua_State* l, const std::any& value, const toast::FieldInfo& field) -> luabridge::LuaRef {
 	using luabridge::LuaRef;
 	using toast::FieldType;
 
@@ -505,141 +502,141 @@ luabridge::LuaRef anyToLuaRef(lua_State* L, const std::any& value, const toast::
 		// [[Color]] vec arrays surface as color usertypes
 		if (field.hasAttribute("Color")) {
 			if (field.value_type == FieldType::vec3_t) {
-				return pushColorTable<Color3, glm::vec3>(L, value);
+				return pushColorTable<Color3, glm::vec3>(l, value);
 			}
 			if (field.value_type == FieldType::vec4_t) {
-				return pushColorTable<Color4, glm::vec4>(L, value);
+				return pushColorTable<Color4, glm::vec4>(l, value);
 			}
 		}
-		return nonUidArrayToLuaRef(L, value, field.type);
+		return nonUidArrayToLuaRef(l, value, field.type);
 	}
 
 	switch (field.value_type) {
 		case FieldType::bool_t:
-			if (auto* v = std::any_cast<bool>(&value)) {
-				return LuaRef(L, *v);
+			if (const auto* v = std::any_cast<bool>(&value)) {
+				return {l, *v};
 			}
 			break;
 
 		case FieldType::int_t:
-			if (auto* v = std::any_cast<int>(&value)) {
-				return LuaRef(L, *v);
+			if (const auto* v = std::any_cast<int>(&value)) {
+				return {l, *v};
 			}
-			if (auto* v = std::any_cast<int32_t>(&value)) {
-				return LuaRef(L, static_cast<lua_Integer>(*v));
+			if (const auto* v = std::any_cast<int32_t>(&value)) {
+				return {l, static_cast<lua_Integer>(*v)};
 			}
-			if (auto* v = std::any_cast<uint32_t>(&value)) {
-				return LuaRef(L, static_cast<lua_Integer>(*v));
+			if (const auto* v = std::any_cast<uint32_t>(&value)) {
+				return {l, static_cast<lua_Integer>(*v)};
 			}
-			if (auto* v = std::any_cast<int64_t>(&value)) {
-				return LuaRef(L, static_cast<lua_Integer>(*v));
+			if (const auto* v = std::any_cast<int64_t>(&value)) {
+				return {l, static_cast<lua_Integer>(*v)};
 			}
-			if (auto* v = std::any_cast<uint64_t>(&value)) {
-				return LuaRef(L, static_cast<lua_Integer>(*v));
+			if (const auto* v = std::any_cast<uint64_t>(&value)) {
+				return {l, static_cast<lua_Integer>(*v)};
 			}
-			if (auto* v = std::any_cast<int16_t>(&value)) {
-				return LuaRef(L, static_cast<lua_Integer>(*v));
+			if (const auto* v = std::any_cast<int16_t>(&value)) {
+				return {l, static_cast<lua_Integer>(*v)};
 			}
-			if (auto* v = std::any_cast<uint16_t>(&value)) {
-				return LuaRef(L, static_cast<lua_Integer>(*v));
+			if (const auto* v = std::any_cast<uint16_t>(&value)) {
+				return {l, static_cast<lua_Integer>(*v)};
 			}
-			if (auto* v = std::any_cast<int8_t>(&value)) {
-				return LuaRef(L, static_cast<lua_Integer>(*v));
+			if (const auto* v = std::any_cast<int8_t>(&value)) {
+				return {l, static_cast<lua_Integer>(*v)};
 			}
-			if (auto* v = std::any_cast<uint8_t>(&value)) {
-				return LuaRef(L, static_cast<lua_Integer>(*v));
+			if (const auto* v = std::any_cast<uint8_t>(&value)) {
+				return {l, static_cast<lua_Integer>(*v)};
 			}
 			break;
 
 		case FieldType::float_t:
-			if (auto* v = std::any_cast<float>(&value)) {
-				return LuaRef(L, static_cast<lua_Number>(*v));
+			if (const auto* v = std::any_cast<float>(&value)) {
+				return {l, static_cast<lua_Number>(*v)};
 			}
 			break;
 
 		case FieldType::double_t:
-			if (auto* v = std::any_cast<double>(&value)) {
-				return LuaRef(L, static_cast<lua_Number>(*v));
+			if (const auto* v = std::any_cast<double>(&value)) {
+				return {l, static_cast<lua_Number>(*v)};
 			}
 			break;
 
 		case FieldType::string_t:
-			if (auto* v = std::any_cast<std::string>(&value)) {
-				return LuaRef(L, *v);
+			if (const auto* v = std::any_cast<std::string>(&value)) {
+				return {l, *v};
 			}
-			if (auto* v = std::any_cast<std::string_view>(&value)) {
-				return LuaRef(L, std::string(*v));
+			if (const auto* v = std::any_cast<std::string_view>(&value)) {
+				return {l, std::string(*v)};
 			}
 			break;
 
 		case FieldType::vec2_t:
-			if (auto* v = std::any_cast<glm::vec2>(&value)) {
-				return LuaRef(L, *v);
+			if (const auto* v = std::any_cast<glm::vec2>(&value)) {
+				return {l, *v};
 			}
 			break;
 
 		case FieldType::vec3_t:
-			if (auto* v = std::any_cast<glm::vec3>(&value)) {
+			if (const auto* v = std::any_cast<glm::vec3>(&value)) {
 				if (field.hasAttribute("Color")) {
-					return LuaRef(L, Color3(*v));
+					return {l, Color3(*v)};
 				}
-				return LuaRef(L, *v);
+				return {l, *v};
 			}
 			break;
 
 		case FieldType::vec4_t:
-			if (auto* v = std::any_cast<glm::vec4>(&value)) {
+			if (const auto* v = std::any_cast<glm::vec4>(&value)) {
 				if (field.hasAttribute("Color")) {
-					return LuaRef(L, Color4(*v));
+					return {l, Color4(*v)};
 				}
-				return LuaRef(L, *v);
+				return {l, *v};
 			}
 			break;
 
 		case FieldType::quaternion_t:
-			if (auto* v = std::any_cast<glm::quat>(&value)) {
-				return LuaRef(L, *v);
+			if (const auto* v = std::any_cast<glm::quat>(&value)) {
+				return {l, *v};
 			}
 			break;
 
 		case FieldType::uid_t: {
 			if (field.is_array) {
-				if (auto* uids = std::any_cast<std::vector<toast::UID>>(&value)) {
-					lua_createtable(L, static_cast<int>(uids->size()), 0);
+				if (const auto* uids = std::any_cast<std::vector<toast::UID>>(&value)) {
+					lua_createtable(l, static_cast<int>(uids->size()), 0);
 					for (size_t i = 0; i < uids->size(); ++i) {
-						lua_pushinteger(L, static_cast<lua_Integer>(i + 1));
-						auto result = luabridge::Stack<AssetProxy>::push(L, AssetProxy((*uids)[i]));
+						lua_pushinteger(l, static_cast<lua_Integer>(i + 1));
+						auto result = luabridge::Stack<AssetProxy>::push(l, AssetProxy((*uids)[i]));
 						if (!result) {
 							TOAST_WARN("Scripting", "Failed to push AssetProxy to Lua: {}", result.message());
-							lua_pushnil(L);
+							lua_pushnil(l);
 						}
-						lua_settable(L, -3);
+						lua_settable(l, -3);
 					}
-					return luabridge::LuaRef::fromStack(L, -1);
+					return luabridge::LuaRef::fromStack(l);
 				}
 				break;
 			}
 			// Box<Node>
-			if (auto* box = std::any_cast<toast::Box<toast::Node>>(&value)) {
+			if (const auto* box = std::any_cast<toast::Box<toast::Node>>(&value)) {
 				if (!box->exists()) {
-					return LuaRef(L);
+					return {l};
 				}
-				return LuaRef(L, NodeProxy(*box));
+				return {l, NodeProxy(*box)};
 			}
 			// AssetHandle
-			if (auto* uid = std::any_cast<toast::UID>(&value)) {
-				return LuaRef(L, AssetProxy(*uid));
+			if (const auto* uid = std::any_cast<toast::UID>(&value)) {
+				return {l, AssetProxy(*uid)};
 			}
 			break;
 		}
 	}
 
 	TOAST_WARN("Scripting", "__index: unhandled field '{}' (FieldType {})", field.name, static_cast<int>(field.value_type));
-	return luabridge::LuaRef(L);
+	return {l};
 }
 
 // Converts an array-style Lua table to a std::vector<T> any
-std::any luaArrayTableToAny(lua_State* L, const luabridge::LuaRef& table) {
+auto luaArrayTableToAny(lua_State* l, const luabridge::LuaRef& table) -> std::any {
 	luabridge::LuaRef first = table[1];
 	if (!first.isValid() || first.isNil()) {
 		return {};
@@ -670,9 +667,9 @@ std::any luaArrayTableToAny(lua_State* L, const luabridge::LuaRef& table) {
 			if (!it.key().isNumber() || !it.value().isNumber()) {
 				return {};
 			}
-			it.value().push(L);
-			all_int = all_int && lua_isinteger(L, -1) != 0;
-			lua_pop(L, 1);
+			it.value().push(l);
+			all_int = all_int && lua_isinteger(l, -1) != 0;
+			lua_pop(l, 1);
 			numbers.push_back(it.value().unsafe_cast<lua_Number>());
 		}
 		if (all_int) {
@@ -740,12 +737,12 @@ std::any luaArrayTableToAny(lua_State* L, const luabridge::LuaRef& table) {
 
 }
 
-luabridge::LuaRef anyValueToLuaRef(lua_State* L, const std::any& value) {
+auto anyValueToLuaRef(lua_State* l, const std::any& value) -> luabridge::LuaRef {
 	// anyReturnToLuaRef handles empty any -> nil, then dispatches on runtime type
-	return anyReturnToLuaRef(L, value, "");
+	return anyReturnToLuaRef(l, value, "");
 }
 
-std::any luaRefValueToAny(lua_State* L, const luabridge::LuaRef& v) {
+auto luaRefValueToAny(lua_State* l, const luabridge::LuaRef& v) -> std::any {
 	if (!v.isValid() || v.isNil()) {
 		return {};
 	}
@@ -754,9 +751,9 @@ std::any luaRefValueToAny(lua_State* L, const luabridge::LuaRef& v) {
 	}
 	if (v.isNumber()) {
 		// Push temporarily so lua_isinteger can inspect the Lua subtype
-		v.push(L);
-		const bool is_int = lua_isinteger(L, -1) != 0;
-		lua_pop(L, 1);
+		v.push(l);
+		const bool is_int = lua_isinteger(l, -1) != 0;
+		lua_pop(l, 1);
 		if (is_int) {
 			return static_cast<int>(v.unsafe_cast<lua_Integer>());
 		}
@@ -794,44 +791,44 @@ std::any luaRefValueToAny(lua_State* L, const luabridge::LuaRef& v) {
 		return v.unsafe_cast<AssetProxy>();
 	}
 	if (v.isTable()) {
-		return luaArrayTableToAny(L, v);
+		return luaArrayTableToAny(l, v);
 	}
 	return {};
 }
 
 NodeProxy::NodeProxy(toast::Box<toast::Node> box) noexcept : m_box(std::move(box)) { }
 
-bool NodeProxy::exists() const noexcept {
+auto NodeProxy::exists() const noexcept -> bool {
 	return m_box.exists();
 }
 
-std::string NodeProxy::name() const {
+auto NodeProxy::name() const -> std::string {
 	if (!m_box.exists()) {
 		return "";
 	}
 	return std::string(m_box->name());
 }
 
-uint64_t NodeProxy::uid() const {
+auto NodeProxy::uid() const -> uint64_t {
 	if (!m_box.exists()) {
 		return 0;
 	}
 	return m_box->uid().data();
 }
 
-luabridge::LuaRef NodeProxy::find(const std::string& query, lua_State* L) {
+auto NodeProxy::find(const std::string& query, lua_State* l) -> luabridge::LuaRef {
 	if (!m_box.exists()) {
-		luaL_error(L, "NodeProxy::find: node reference is dead");
-		return luabridge::LuaRef(L);
+		luaL_error(l, "NodeProxy::find: node reference is dead");
+		return {l};
 	}
 	auto result = m_box->find(query);
 	if (!result.exists()) {
-		return luabridge::LuaRef(L);
+		return {l};
 	}
-	return luabridge::LuaRef(L, NodeProxy(result));
+	return {l, NodeProxy(result)};
 }
 
-std::vector<NodeProxy> NodeProxy::search(const std::string& query) {
+auto NodeProxy::search(const std::string& query) -> std::vector<NodeProxy> {
 	if (!m_box.exists()) {
 		return {};
 	}
@@ -844,16 +841,16 @@ std::vector<NodeProxy> NodeProxy::search(const std::string& query) {
 	return out;
 }
 
-luabridge::LuaRef NodeProxy::create(const std::string& type, lua_State* L) {
+auto NodeProxy::create(const std::string& type, lua_State* l) -> luabridge::LuaRef {
 	if (!m_box.exists()) {
-		luaL_error(L, "NodeProxy::create: node reference is dead");
-		return luabridge::LuaRef(L);
+		luaL_error(l, "NodeProxy::create: node reference is dead");
+		return {l};
 	}
 	auto result = m_box->create(type);
 	if (!result.exists()) {
-		return luabridge::LuaRef(L);
+		return {l};
 	}
-	return luabridge::LuaRef(L, NodeProxy(result));
+	return {l, NodeProxy(result)};
 }
 
 void NodeProxy::addDependsOn(const NodeProxy& other) {
@@ -864,7 +861,7 @@ void NodeProxy::addDependsOn(const NodeProxy& other) {
 	m_box->addDependsOn(const_cast<toast::Node&>(*other.m_box));
 }
 
-bool NodeProxy::hasField(std::string_view key) const noexcept {
+auto NodeProxy::hasField(std::string_view key) const noexcept -> bool {
 	if (!m_box.exists()) {
 		return false;
 	}
@@ -872,27 +869,27 @@ bool NodeProxy::hasField(std::string_view key) const noexcept {
 	return info != nullptr && lookupField(info, key) != nullptr;
 }
 
-luabridge::LuaRef NodeProxy::call(const std::string& fn_name, lua_State* L) {
-	int n_args = lua_gettop(L) - 2;
+auto NodeProxy::call(const std::string& fn_name, lua_State* l) -> luabridge::LuaRef {
+	int n_args = lua_gettop(l) - 2;
 	int args_base = 3;
 
-	luabridge::LuaRef result(L);
-	int n_pushed = nodeProxyDispatchMethod(*this, fn_name, L, args_base, std::max(0, n_args));
+	luabridge::LuaRef result(l);
+	int n_pushed = nodeProxyDispatchMethod(*this, fn_name, l, args_base, std::max(0, n_args));
 	if (n_pushed > 0) {
-		result = luabridge::LuaRef::fromStack(L, -1);
-		lua_pop(L, n_pushed);
+		result = luabridge::LuaRef::fromStack(l, -1);
+		lua_pop(l, n_pushed);
 	}
 	return result;
 }
 
-luabridge::LuaRef nodeProxyIndex(NodeProxy& proxy, const luabridge::LuaRef& key, lua_State* L) {
+auto nodeProxyIndex(NodeProxy& proxy, const luabridge::LuaRef& key, lua_State* l) -> luabridge::LuaRef {
 	if (!proxy.exists()) {
-		luaL_error(L, "__index: node reference is dead");
-		return luabridge::LuaRef(L);
+		luaL_error(l, "__index: node reference is dead");
+		return {l};
 	}
 
 	if (!key.isString()) {
-		return luabridge::LuaRef(L);
+		return {l};
 	}
 
 	const std::string key_str = key.tostring();
@@ -900,87 +897,87 @@ luabridge::LuaRef nodeProxyIndex(NodeProxy& proxy, const luabridge::LuaRef& key,
 
 	const toast::NodeInfo* info = n->info();
 	if (!info) {
-		return luabridge::LuaRef(L);
+		return {l};
 	}
 
 	const toast::FieldInfo* f = lookupField(info, key_str);
 	if (f) {
 		std::any value = f->get(n);
-		return anyToLuaRef(L, value, *f);
+		return anyToLuaRef(l, value, *f);
 	}
 
 	if (info->getMethod(key_str)) {
-		lua_pushstring(L, key_str.c_str());
-		lua_pushcclosure(L, proxyMethodDispatch, 1);
-		return luabridge::LuaRef::fromStack(L, -1);
+		lua_pushstring(l, key_str.c_str());
+		lua_pushcclosure(l, proxyMethodDispatch, 1);
+		return luabridge::LuaRef::fromStack(l);
 	}
 
-	return luabridge::LuaRef(L);
+	return {l};
 }
 
-int nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* L, int args_base, int n_args) {
+auto nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* l, int args_base, int n_args) -> int {
 	if (!np.exists()) {
-		luaL_error(L, "method '%.*s': node reference is dead", static_cast<int>(name.size()), name.data());
+		luaL_error(l, "method '%.*s': node reference is dead", static_cast<int>(name.size()), name.data());
 		return 0;
 	}
 
 	toast::Node* n = np.box().operator->();
 	const toast::NodeInfo* info = n->info();
 
-	luabridge::LuaRef result(L);    // nil by default
+	luabridge::LuaRef result(l);    // nil by default
 
 	// Handle built-in NodeProxy methods by name
 	if (name == "find") {
-		const char* q = n_args >= 1 ? lua_tostring(L, args_base) : nullptr;
+		const char* q = n_args >= 1 ? lua_tostring(l, args_base) : nullptr;
 		if (!q) {
-			luaL_error(L, "find: expected a query string");
+			luaL_error(l, "find: expected a query string");
 			return 0;
 		}
-		result = np.find(q, L);
-		result.push(L);
+		result = np.find(q, l);
+		result.push(l);
 		return 1;
 	}
 	if (name == "search") {
-		const char* q = n_args >= 1 ? lua_tostring(L, args_base) : nullptr;
+		const char* q = n_args >= 1 ? lua_tostring(l, args_base) : nullptr;
 		if (!q) {
-			luaL_error(L, "search: expected a query string");
+			luaL_error(l, "search: expected a query string");
 			return 0;
 		}
 		auto nodes = np.search(q);
-		lua_createtable(L, static_cast<int>(nodes.size()), 0);
+		lua_createtable(l, static_cast<int>(nodes.size()), 0);
 		for (size_t i = 0; i < nodes.size(); ++i) {
-			lua_pushinteger(L, static_cast<lua_Integer>(i + 1));
-			if (auto r = luabridge::Stack<NodeProxy>::push(L, nodes[i]); !r) {
-				lua_pushnil(L);
+			lua_pushinteger(l, static_cast<lua_Integer>(i + 1));
+			if (auto r = luabridge::Stack<NodeProxy>::push(l, nodes[i]); !r) {
+				lua_pushnil(l);
 			}
-			lua_settable(L, -3);
+			lua_settable(l, -3);
 		}
 		return 1;
 	}
 	if (name == "create") {
-		const char* type_name = n_args >= 1 ? lua_tostring(L, args_base) : "toast::Node";
-		result = np.create(type_name ? type_name : "toast::Node", L);
-		result.push(L);
+		const char* type_name = n_args >= 1 ? lua_tostring(l, args_base) : "toast::Node";
+		result = np.create(type_name ? type_name : "toast::Node", l);
+		result.push(l);
 		return 1;
 	}
 	if (name == "exists") {
-		lua_pushboolean(L, np.exists() ? 1 : 0);
+		lua_pushboolean(l, np.exists() ? 1 : 0);
 		return 1;
 	}
 	if (name == "name") {
-		lua_pushstring(L, np.name().c_str());
+		lua_pushstring(l, np.name().c_str());
 		return 1;
 	}
 	if (name == "uid") {
-		lua_pushinteger(L, static_cast<lua_Integer>(np.uid()));
+		lua_pushinteger(l, static_cast<lua_Integer>(np.uid()));
 		return 1;
 	}
 	if (name == "addDependsOn") {
-		if (n_args < 1 || !lua_isuserdata(L, args_base)) {
-			luaL_error(L, "addDependsOn: expected a Node argument");
+		if (n_args < 1 || !lua_isuserdata(l, args_base)) {
+			luaL_error(l, "addDependsOn: expected a Node argument");
 			return 0;
 		}
-		auto other_result = luabridge::Stack<NodeProxy>::get(L, args_base);
+		auto other_result = luabridge::Stack<NodeProxy>::get(l, args_base);
 		if (other_result) {
 			np.addDependsOn(*other_result);
 		}
@@ -988,23 +985,23 @@ int nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* L, 
 	}
 	if (name == "enabled") {
 		if (n_args == 0) {
-			lua_pushboolean(L, n->enabled() ? 1 : 0);
+			lua_pushboolean(l, n->enabled() ? 1 : 0);
 			return 1;
 		}
-		if (!lua_isboolean(L, args_base) && !lua_isnumber(L, args_base)) {
-			luaL_error(L, "enabled: expected bool");
+		if (!lua_isboolean(l, args_base) && !lua_isnumber(l, args_base)) {
+			luaL_error(l, "enabled: expected bool");
 			return 0;
 		}
-		n->enabled(lua_toboolean(L, args_base) != 0);
+		n->enabled(lua_toboolean(l, args_base) != 0);
 		return 0;
 	}
 	if (name == "call") {
-		if (n_args < 1 || lua_type(L, args_base) != LUA_TSTRING) {
-			luaL_error(L, "call: expected a method name string as first argument");
+		if (n_args < 1 || lua_type(l, args_base) != LUA_TSTRING) {
+			luaL_error(l, "call: expected a method name string as first argument");
 			return 0;
 		}
-		const char* method_name = lua_tostring(L, args_base);
-		return nodeProxyDispatchMethod(np, method_name, L, args_base + 1, n_args - 1);
+		const char* method_name = lua_tostring(l, args_base);
+		return nodeProxyDispatchMethod(np, method_name, l, args_base + 1, n_args - 1);
 	}
 
 	// Reflected C++ method
@@ -1020,7 +1017,7 @@ int nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* L, 
 			}
 			if (n_args < required) {
 				luaL_error(
-				    L,
+				    l,
 				    "method '%.*s': expected at least %d argument(s), got %d",
 				    static_cast<int>(name.size()),
 				    name.data(),
@@ -1035,56 +1032,56 @@ int nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* L, 
 			std::vector<std::any> args;
 			args.reserve(params.size());
 			for (int i = 0; i < effective; ++i) {
-				luabridge::LuaRef v = luabridge::LuaRef::fromStack(L, args_base + i);
-				args.push_back(luaArgToAny(L, v, params[i].type, std::string(params[i].name).c_str()));
+				luabridge::LuaRef v = luabridge::LuaRef::fromStack(l, args_base + i);
+				args.push_back(luaArgToAny(l, v, params[i].type, std::string(params[i].name).c_str()));
 			}
-			if (effective < static_cast<int>(params.size())) {
+			if (std::cmp_less(effective, params.size())) {
 				// Can't fill default args dynamically without re-generating defaults as std::any
 				// TODO: encode default_value strings to std::any in the generator for full support
-				for (int i = effective; i < static_cast<int>(params.size()); ++i) {
+				for (int i = effective; std::cmp_less(i, params.size()); ++i) {
 					args.emplace_back();
 				}
 			}
 
 			std::any ret = info->callAllDynamic(n, name, args);
-			result = anyReturnToLuaRef(L, ret, fn->return_type);
+			result = anyReturnToLuaRef(l, ret, fn->return_type);
 
 			if (scripting::ScriptRuntime* rt = n->scriptRuntime()) {
-				rt->callWithLuaStack(name, L, args_base, n_args);
+				rt->callWithLuaStack(name, l, args_base, n_args);
 			}
 		}
 	}
 
-	result.push(L);
+	result.push(l);
 	return 1;
 }
 
 namespace {
-int proxyMethodDispatch(lua_State* L) {
-	const char* name = lua_tostring(L, lua_upvalueindex(1));
-	auto np_result = luabridge::Stack<NodeProxy>::get(L, 1);
+auto proxyMethodDispatch(lua_State* l) -> int {
+	const char* name = lua_tostring(l, lua_upvalueindex(1));
+	auto np_result = luabridge::Stack<NodeProxy>::get(l, 1);
 	if (!np_result) {
-		luaL_error(L, "method '%s': invalid NodeProxy", name);
+		luaL_error(l, "method '%s': invalid NodeProxy", name);
 		return 0;
 	}
 	NodeProxy np = std::move(*np_result);
 	// Stack: [NodeProxy_userdata(1), arg1(2), arg2(3), ...]
-	int n_args = lua_gettop(L) - 1;
+	int n_args = lua_gettop(l) - 1;
 	int args_base = 2;
-	return nodeProxyDispatchMethod(np, name, L, args_base, n_args);
+	return nodeProxyDispatchMethod(np, name, l, args_base, n_args);
 }
 }
 
-luabridge::LuaRef
-    nodeProxyNewindex(NodeProxy& proxy, const luabridge::LuaRef& key, const luabridge::LuaRef& value, lua_State* L) {
+auto nodeProxyNewindex(NodeProxy& proxy, const luabridge::LuaRef& key, const luabridge::LuaRef& value, lua_State* l)
+    -> luabridge::LuaRef {
 	if (!proxy.exists()) {
-		luaL_error(L, "__newindex: node reference is dead");
-		return luabridge::LuaRef(L);
+		luaL_error(l, "__newindex: node reference is dead");
+		return {l};
 	}
 
 	if (!key.isString()) {
-		luaL_error(L, "__newindex: field key must be a string");
-		return luabridge::LuaRef(L);
+		luaL_error(l, "__newindex: field key must be a string");
+		return {l};
 	}
 
 	const std::string key_str = key.tostring();
@@ -1092,14 +1089,14 @@ luabridge::LuaRef
 
 	const toast::NodeInfo* info = n->info();
 	if (!info) {
-		luaL_error(L, "__newindex: node has no type info");
-		return luabridge::LuaRef(L);
+		luaL_error(l, "__newindex: node has no type info");
+		return {l};
 	}
 
 	const toast::FieldInfo* f = lookupField(info, key_str);
 	if (!f) {
-		luaL_error(L, "__newindex: no reflected field '%s' on %s", key_str.c_str(), info->type.data());
-		return luabridge::LuaRef(L);
+		luaL_error(l, "__newindex: no reflected field '%s' on %s", key_str.c_str(), info->type.data());
+		return {l};
 	}
 
 	using toast::FieldType;
@@ -1109,52 +1106,52 @@ luabridge::LuaRef
 	// uid arrays are handled inside the uid_t case below since they need AssetProxy validation.
 	if (f->is_array && f->value_type != FieldType::uid_t) {
 		if (!value.isTable()) {
-			luaL_error(L, "Field '%s' expects a table", key_str.c_str());
+			luaL_error(l, "Field '%s' expects a table", key_str.c_str());
 		}
-		any_value = luaTableToAny(L, value, *f, key_str);
+		any_value = luaTableToAny(l, value, *f, key_str);
 		f->set(n, std::move(any_value));
-		return luabridge::LuaRef(L);
+		return {l};
 	}
 
 	switch (f->value_type) {
 		case FieldType::bool_t:
 			if (!value.isBool() && !value.isNumber()) {
-				luaL_error(L, "Field '%s' expects bool", key_str.c_str());
+				luaL_error(l, "Field '%s' expects bool", key_str.c_str());
 			}
 			any_value = value.isBool() ? value.unsafe_cast<bool>() : (value.unsafe_cast<lua_Number>() != 0.0);
 			break;
 
 		case FieldType::int_t:
 			if (!value.isNumber()) {
-				luaL_error(L, "Field '%s' expects int", key_str.c_str());
+				luaL_error(l, "Field '%s' expects int", key_str.c_str());
 			}
 			any_value = static_cast<int>(value.unsafe_cast<lua_Integer>());
 			break;
 
 		case FieldType::float_t:
 			if (!value.isNumber()) {
-				luaL_error(L, "Field '%s' expects float", key_str.c_str());
+				luaL_error(l, "Field '%s' expects float", key_str.c_str());
 			}
 			any_value = static_cast<float>(value.unsafe_cast<lua_Number>());
 			break;
 
 		case FieldType::double_t:
 			if (!value.isNumber()) {
-				luaL_error(L, "Field '%s' expects double", key_str.c_str());
+				luaL_error(l, "Field '%s' expects double", key_str.c_str());
 			}
 			any_value = value.unsafe_cast<lua_Number>();
 			break;
 
 		case FieldType::string_t:
 			if (!value.isString()) {
-				luaL_error(L, "Field '%s' expects string", key_str.c_str());
+				luaL_error(l, "Field '%s' expects string", key_str.c_str());
 			}
 			any_value = value.tostring();
 			break;
 
 		case FieldType::vec2_t:
 			if (!value.isInstance<glm::vec2>()) {
-				luaL_error(L, "Field '%s' expects vec2", key_str.c_str());
+				luaL_error(l, "Field '%s' expects vec2", key_str.c_str());
 			}
 			any_value = value.unsafe_cast<glm::vec2>();
 			break;
@@ -1165,7 +1162,7 @@ luabridge::LuaRef
 			} else if (value.isInstance<glm::vec3>()) {
 				any_value = value.unsafe_cast<glm::vec3>();
 			} else {
-				luaL_error(L, "Field '%s' expects vec3 or color3", key_str.c_str());
+				luaL_error(l, "Field '%s' expects vec3 or color3", key_str.c_str());
 			}
 			break;
 
@@ -1175,7 +1172,7 @@ luabridge::LuaRef
 			} else if (value.isInstance<glm::vec4>()) {
 				any_value = value.unsafe_cast<glm::vec4>();
 			} else {
-				luaL_error(L, "Field '%s' expects vec4 or color4", key_str.c_str());
+				luaL_error(l, "Field '%s' expects vec4 or color4", key_str.c_str());
 			}
 			break;
 
@@ -1187,7 +1184,7 @@ luabridge::LuaRef
 				const glm::vec4 v = value.unsafe_cast<glm::vec4>();
 				any_value = glm::quat(v.w, v.x, v.y, v.z);
 			} else {
-				luaL_error(L, "Field '%s' expects quat", key_str.c_str());
+				luaL_error(l, "Field '%s' expects quat", key_str.c_str());
 			}
 			break;
 
@@ -1196,11 +1193,11 @@ luabridge::LuaRef
 
 			if (!f->is_array && type_str.starts_with("Box<")) {
 				if (!value.isInstance<NodeProxy>()) {
-					luaL_error(L, "Field '%s' expects Node", key_str.c_str());
+					luaL_error(l, "Field '%s' expects Node", key_str.c_str());
 				}
 				const NodeProxy& other = value.unsafe_cast<NodeProxy>();
 				if (!other.exists()) {
-					luaL_error(L, "Field '%s': assigned Node is dead", key_str.c_str());
+					luaL_error(l, "Field '%s': assigned Node is dead", key_str.c_str());
 				}
 				// Validate derived type
 				const std::string_view inner = innerBoxType(type_str);
@@ -1208,7 +1205,7 @@ luabridge::LuaRef
 					const toast::NodeInfo* target = lookupNodeInfo(inner);
 					if (target && !other.box()->info()->isA(target)) {
 						luaL_error(
-						    L,
+						    l,
 						    "Field '%s': expected Box<%s>, got %s",
 						    key_str.c_str(),
 						    std::string(inner).c_str(),
@@ -1221,24 +1218,24 @@ luabridge::LuaRef
 
 			} else if (!f->is_array && (type_str.starts_with("assets::AssetHandle<") || type_str.starts_with("AssetHandle<"))) {
 				if (!value.isInstance<AssetProxy>()) {
-					luaL_error(L, "Field '%s' expects Asset", key_str.c_str());
+					luaL_error(l, "Field '%s' expects Asset", key_str.c_str());
 				}
 				const AssetProxy& ap = value.unsafe_cast<AssetProxy>();
 				if (auto err = ap.checkType(type_str); !err.empty()) {
-					luaL_error(L, "Field '%s': %s", key_str.c_str(), err.c_str());
+					luaL_error(l, "Field '%s': %s", key_str.c_str(), err.c_str());
 				}
 				any_value = ap.uid();
 
 			} else if (f->is_array) {
 				if (!value.isTable()) {
-					luaL_error(L, "Field '%s' expects a table of Asset handles", key_str.c_str());
+					luaL_error(l, "Field '%s' expects a table of Asset handles", key_str.c_str());
 				}
 				std::vector<toast::UID> uids;
 				for (luabridge::Iterator it(value); !it.isNil(); ++it) {
 					if (it.value().isInstance<AssetProxy>()) {
 						const AssetProxy& ap = it.value().unsafe_cast<AssetProxy>();
 						if (auto err = ap.checkType(f->type); !err.empty()) {
-							luaL_error(L, "Field '%s': %s", key_str.c_str(), err.c_str());
+							luaL_error(l, "Field '%s': %s", key_str.c_str(), err.c_str());
 						}
 						uids.push_back(ap.uid());
 					}
@@ -1246,14 +1243,14 @@ luabridge::LuaRef
 				any_value = std::move(uids);
 
 			} else {
-				luaL_error(L, "Field '%s': unsupported uid_t field type '%s'", key_str.c_str(), std::string(type_str).c_str());
+				luaL_error(l, "Field '%s': unsupported uid_t field type '%s'", key_str.c_str(), std::string(type_str).c_str());
 			}
 			break;
 		}
 	}
 
 	f->set(n, std::move(any_value));
-	return luabridge::LuaRef(L);
+	return {l};
 }
 
 }

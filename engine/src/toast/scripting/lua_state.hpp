@@ -11,13 +11,14 @@
 #include <array>
 #include <atomic>
 #include <mutex>
+#include <toast/export.hpp>
 #include <toast/thread_pool.hpp>
 
 struct lua_State;
 
 namespace scripting {
 
-class LuaState {
+class TOAST_API LuaState {
 public:
 	static constexpr size_t pool_size = 1 + toast::ThreadPool::thread_count;
 

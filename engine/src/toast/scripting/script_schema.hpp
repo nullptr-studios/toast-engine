@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <any>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -35,6 +36,7 @@ struct LuaVarDesc {
 	LuaVarKind kind = LuaVarKind::boolean;
 	bool is_array = false;
 	std::string ref_type;
+	std::any default_value;
 };
 
 struct LuaSubgroup {

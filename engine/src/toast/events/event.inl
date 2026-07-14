@@ -87,8 +87,9 @@ void send(Args&&... args) noexcept {
 	ZoneScoped;
 
 	static_assert(std::is_constructible_v<T, Args...>, "Invalid Construtor For Type T");
-	if constexpr (!std::is_same_v<std::decay_t<T>, event::InspectorContent> &&
-	              !std::is_same_v<std::decay_t<T>, event::InspectorLuaContent>) {
+	if constexpr (
+	    !std::is_same_v<std::decay_t<T>, event::InspectorContent> && !std::is_same_v<std::decay_t<T>, event::InspectorLuaContent>
+	) {
 		TOAST_TRACE("Events", "Sending event: {}", typeid(T).name());
 	}
 

@@ -231,6 +231,7 @@ struct InspectorLuaContent : Event<InspectorLuaContent> {
 		bool is_array = false;
 		std::string ref_type;
 		std::string value;
+		std::string default_value;
 	};
 
 	struct LuaSubgroup {

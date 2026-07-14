@@ -3,7 +3,7 @@
 
 namespace {
 inline const std::string sample_text =
-	"~format @int = 2\n"
+	"~format @int = 3\n"
 	"\n"
 	"[station_master type=SpaceStationManager]\n"
 	"id @string = 4e3d2c1b0a9\n"

@@ -6,9 +6,11 @@
 #include "toast/world/workspace_events.hpp"
 
 #include <algorithm>
+#include <charconv>
 #include <future>
 #include <memory>
 #include <toast/assets/assets.hpp>
+#include <toast/scripting/script_runtime.hpp>
 #include <toast/thread_pool.hpp>
 #include <tracy/Tracy.hpp>
 
@@ -237,6 +239,39 @@ void INodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) 
 	});
 }
 
+void INodeOwner::applyLuaOverrides(Node& node, const assets::Prefab::BasicNode& data, const scripting::NodeResolver& find_node) {
+	if (data.lua_vars.empty()) {
+		return;
+	}
+	scripting::ScriptRuntime* rt = node.scriptRuntime();
+	if (!rt) {
+		return;
+	}
+
+	for (const auto& ov : data.lua_vars) {
+		const size_t colon = ov.path.find(':');
+		size_t instance = 0;
+		if (colon == std::string::npos || std::from_chars(ov.path.data(), ov.path.data() + colon, instance).ec != std::errc {}) {
+			TOAST_WARN("World", "Prefab lua_var override: malformed path '{}' on '{}'", ov.path, data.name);
+			continue;
+		}
+		const std::string_view var_path = std::string_view(ov.path).substr(colon + 1);
+
+		const scripting::ScriptSchema* schema = rt->instanceSchema(instance);
+		const scripting::LuaVarDesc* desc = schema != nullptr ? schema->find(var_path) : nullptr;
+		if (desc == nullptr) {
+			continue;    // script no longer declares this var, skip
+		}
+
+		std::any value = scripting::parseLuaValue(*desc, ov.value, find_node);
+		if (value.has_value()) {
+			rt->setVarByPath(instance, var_path, value);
+		} else {
+			TOAST_WARN("World", "Prefab lua_var override: couldn't parse '{}' for '{}'", ov.value, ov.path);
+		}
+	}
+}
+
 auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node> {
 	ZoneScoped;
 
@@ -281,6 +316,18 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHa
 				TOAST_WARN("World", "Cast to UID of field Parent in {} failed, treating as Root", data.name);
 			}
 		}
+
+		applyLuaOverrides(*node, data, [&uid_map](std::string_view uid_text) -> Box<Node> {
+			if (uid_text.empty()) {
+				return {};
+			}
+			const uint64_t id = UID::fromString(std::string(uid_text));
+			if (id == 0) {
+				return {};
+			}
+			auto it = uid_map.find(id);
+			return it != uid_map.end() ? it->second : Box<Node> {};
+		});
 
 		node->m_type = has_parent ? NodeType::child : NodeType::root;
 

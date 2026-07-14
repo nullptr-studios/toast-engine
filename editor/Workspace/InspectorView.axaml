@@ -266,29 +266,6 @@
 						                    A="{Binding W, Mode=TwoWay}"
 						                    IsEnabled="{Binding Editable}"
 						                    IsVisible="{Binding IsColor4}" />
-						<ItemsControl ItemsSource="{Binding ColorBrushes}"
-						              IsVisible="{Binding IsColorArray}">
-							<ItemsControl.ItemsPanel>
-								<ItemsPanelTemplate>
-									<WrapPanel Orientation="Horizontal"
-									           HorizontalAlignment="Left"
-									           VerticalAlignment="Center" />
-								</ItemsPanelTemplate>
-							</ItemsControl.ItemsPanel>
-							<ItemsControl.ItemTemplate>
-								<DataTemplate>
-									<Border Width="20"
-									        Height="20"
-									        Margin="0,0,4,4"
-									        CornerRadius="4"
-									        Background="{Binding}">
-										<Border CornerRadius="4"
-										        BorderThickness="1"
-										        BorderBrush="{StaticResource TextMuted}" />
-									</Border>
-								</DataTemplate>
-							</ItemsControl.ItemTemplate>
-						</ItemsControl>
 						<elements:ArrayBox IsVisible="{Binding IsArray}"
 						                   Items="{Binding ArrayItems}"
 						                   AddCommand="{Binding AddArrayItemCommand}"
@@ -328,6 +305,17 @@
 										                  NodeType="{Binding RefType}"
 										                  IsEnabled="{Binding Editable}"
 										                  IsVisible="{Binding IsNodeRef}" />
+										<elements:Color3Box R="{Binding X, Mode=TwoWay}"
+										                    G="{Binding Y, Mode=TwoWay}"
+										                    B="{Binding Z, Mode=TwoWay}"
+										                    IsEnabled="{Binding Editable}"
+										                    IsVisible="{Binding IsColor3}" />
+										<elements:Color4Box R="{Binding X, Mode=TwoWay}"
+										                    G="{Binding Y, Mode=TwoWay}"
+										                    B="{Binding Z, Mode=TwoWay}"
+										                    A="{Binding W, Mode=TwoWay}"
+										                    IsEnabled="{Binding Editable}"
+										                    IsVisible="{Binding IsColor4}" />
 										<elements:DragVec2Box X="{Binding X, Mode=TwoWay}"
 										                      Y="{Binding Y, Mode=TwoWay}"
 										                      Minimum="{Binding Min}"

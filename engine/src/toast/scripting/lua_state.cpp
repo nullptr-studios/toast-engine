@@ -30,7 +30,7 @@ namespace scripting {
 namespace {
 
 /// Strip namespace prefix
-std::string_view stripNamespace(std::string_view qualified) noexcept {
+auto stripNamespace(std::string_view qualified) noexcept -> std::string_view {
 	const auto pos = qualified.rfind("::");
 	return pos != std::string_view::npos ? qualified.substr(pos + 2) : qualified;
 }
@@ -502,7 +502,7 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    // AssetProxy
 	    .beginClass<AssetProxy>("Asset")
 	    .addFunction("path", &AssetProxy::path)
-	    .addFunction("uid", [](const AssetProxy& a) { return a.uid().data(); })
+	    .addFunction("uid", [](const AssetProxy& a) { return static_cast<lua_Integer>(a.uid().data()); })
 	    .addFunction("hasValue", &AssetProxy::hasValue)
 	    .addFunction("type", &AssetProxy::type)
 	    .addFunction("__tostring", &AssetProxy::toString)
@@ -512,7 +512,7 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .beginClass<NodeProxy>("Node")
 	    .addFunction("exists", &NodeProxy::exists)
 	    .addFunction("name", &NodeProxy::name)
-	    .addFunction("uid", &NodeProxy::uid)
+	    .addFunction("uid", [](const NodeProxy& np) { return static_cast<lua_Integer>(np.uid()); })
 	    .addFunction("find", &NodeProxy::find)
 	    .addFunction("search", &NodeProxy::search)
 	    .addFunction("create", &NodeProxy::create)

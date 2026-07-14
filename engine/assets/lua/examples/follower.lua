@@ -24,8 +24,8 @@ function M:tick()
 	end
 
 	-- reflected fields of other nodes read and write like plain lua values
-	local goal = self.target.position
-	self.position = self.position:lerp(goal, self.lerp_speed * Time.delta())
+	local goal = self.target.m_position
+	self.m_position = self.m_position:lerp(goal, self.lerp_speed * Time.delta())
 end
 
 function M:onDisable()

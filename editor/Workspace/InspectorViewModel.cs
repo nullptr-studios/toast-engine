@@ -269,7 +269,7 @@ public partial class InspectorViewModel : Tool {
 		m_listener.Subscribe<InspectorLuaContent>(e => Dispatcher.UIThread.Post(() => {
 			if (!HasSelection || e.Uid != m_builtUid) return;
 
-			if (e.SchemaVersion != m_builtLuaVersion || m_luaCards.Count == 0) {
+			if (e.SchemaVersion != m_builtLuaVersion || e.Scripts.Count != m_luaCards.Count) {
 				RebuildLuaCards(e);
 				return;
 			}
@@ -413,7 +413,7 @@ public partial class InspectorViewModel : Tool {
 		var colorCounter = 0;
 		foreach (var script in e.Scripts) {
 			var title = ScriptStem(script.Script);
-			var card = new ClassCardVM(title, "Cyan", "Circle", $"lua:{title}", m_state!);
+			var card = new ClassCardVM(title, "Magenta", "Circle", $"lua:{title}", m_state!);
 
 			foreach (var f in script.Fields) AddLuaField(card.Fields, f);
 

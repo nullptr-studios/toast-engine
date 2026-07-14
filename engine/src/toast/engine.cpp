@@ -542,12 +542,14 @@ void Engine::startGame() {
 // Tracy memory profiling
 #ifdef DEBUG
 // NOLINTBEGIN(cppcoreguidelines-no-malloc)
+// NOLINTNEXTLINE(readability-inconsistent-declaration-parameter-name)
 auto operator new(std::size_t count) -> void* {
 	auto* ptr = malloc(count);
 	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
 	return ptr;
 }
 
+// NOLINTNEXTLINE(readability-inconsistent-declaration-parameter-name)
 void operator delete(void* ptr) noexcept {
 	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
 	free(ptr);

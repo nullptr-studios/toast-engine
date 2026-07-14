@@ -509,10 +509,13 @@ struct ProtoTraits<InspectorLuaContent::LuaField> {
 		p.set_is_array(e.is_array);
 		p.set_ref_type(e.ref_type);
 		p.set_value(e.value);
+		p.set_default_value(e.default_value);
 		return p;
 	}
 
-	static auto fromProto(const Proto& p) -> Event { return {p.path(), p.name(), p.kind(), p.is_array(), p.ref_type(), p.value()}; }
+	static auto fromProto(const Proto& p) -> Event {
+		return {p.path(), p.name(), p.kind(), p.is_array(), p.ref_type(), p.value(), p.default_value()};
+	}
 };
 
 template<>

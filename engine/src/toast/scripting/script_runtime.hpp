@@ -16,6 +16,7 @@
 #include <string>
 #include <string_view>
 #include <toast/assets/script.hpp>
+#include <toast/export.hpp>
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/scripting/node_proxy.hpp>
 #include <toast/scripting/script_schema.hpp>
@@ -31,7 +32,7 @@ namespace scripting {
 // One per script
 class ScriptInstance {
 public:
-	ScriptInstance(lua_State* L, const assets::AssetHandle<assets::Script>& script, const NodeProxy& proxy);
+	ScriptInstance(lua_State* L, const assets::AssetHandle<assets::Script>& script, NodeProxy proxy);
 	~ScriptInstance() = default;
 
 	ScriptInstance(ScriptInstance&&) = default;
@@ -107,7 +108,7 @@ private:
 };
 
 // One per node
-class ScriptRuntime {
+class TOAST_API ScriptRuntime {
 public:
 	ScriptRuntime(toast::Box<toast::Node> node, const std::vector<assets::AssetHandle<assets::Script>>& scripts);
 	~ScriptRuntime() = default;

@@ -16,6 +16,7 @@
 #include <string_view>
 #include <toast/assets/prefab.hpp>
 #include <toast/export.hpp>
+#include <toast/scripting/lua_value_codec.hpp>
 #include <toast/uid.hpp>
 #include <unordered_set>
 #include <vector>
@@ -95,6 +96,11 @@ protected:
 
 	/// Copies reflected field values from the serialized BasicNode onto the live node; skips fields absent from NodeInfo
 	void applyFields(Node& node, const assets::Prefab::BasicNode& data);
+
+	/**
+	 * @brief Restores edited Lua script variables saved in the prefab
+	 */
+	void applyLuaOverrides(Node& node, const assets::Prefab::BasicNode& data, const scripting::NodeResolver& find_node);
 
 	/// Marks the ControlBox as dead and increments tombstones; does not free memory
 	void releaseNode(_detail::ControlBox& control) noexcept;

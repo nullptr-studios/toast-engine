@@ -1134,6 +1134,12 @@ void WorldTestAccess::attachScript(Node& node, const assets::AssetHandle<assets:
 	node.loadScripts();
 }
 
+void WorldTestAccess::applyLuaOverrides(
+    World& world, Node& node, const assets::Prefab::BasicNode& data, const scripting::NodeResolver& find_node
+) {
+	world.applyLuaOverrides(node, data, find_node);
+}
+
 auto WorldTestAccess::tickSchedule(World& world) noexcept -> TickSchedule& {
 	return world.m_scheduler.schedule;
 }

@@ -7,6 +7,7 @@
 #include "node_proxy.hpp"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cctype>
 #include <format>
@@ -17,12 +18,13 @@
 #include <toast/world/node.hpp>
 #include <tracy/Tracy.hpp>
 #include <unordered_map>
+#include <utility>
 
 namespace scripting {
 
 namespace {
 
-bool isCallableProxyKey(std::string_view key, const toast::NodeInfo* info) noexcept {
+auto isCallableProxyKey(std::string_view key, const toast::NodeInfo* info) noexcept -> bool {
 	// Builtin methods
 	if (key == "find" || key == "search" || key == "create" || key == "exists" || key == "name" || key == "uid" ||
 	    key == "addDependsOn" || key == "call" || key == "enabled") {
@@ -31,21 +33,21 @@ bool isCallableProxyKey(std::string_view key, const toast::NodeInfo* info) noexc
 	return info != nullptr && info->getMethod(key) != nullptr;
 }
 
-int selfMethodDispatch(lua_State* L) {
-	const char* name = lua_tostring(L, lua_upvalueindex(1));
-	auto* np = static_cast<NodeProxy*>(lua_touserdata(L, lua_upvalueindex(2)));
+auto selfMethodDispatch(lua_State* l) -> int {
+	const char* name = lua_tostring(l, lua_upvalueindex(1));
+	auto* np = static_cast<NodeProxy*>(lua_touserdata(l, lua_upvalueindex(2)));
 	if (!np || !name) {
 		if (name) {
-			luaL_error(L, "method '%s': no NodeProxy available", name);
+			luaL_error(l, "method '%s': no NodeProxy available", name);
 		}
 		return 0;
 	}
-	const int n_args = lua_gettop(L) - 1;    // exclude self at slot 1
+	const int n_args = lua_gettop(l) - 1;    // exclude self at slot 1
 	const int args_base = 2;
-	return nodeProxyDispatchMethod(*np, name, L, args_base, n_args);
+	return nodeProxyDispatchMethod(*np, name, l, args_base, n_args);
 }
 
-const char* phaseToLuaName(toast::TickFunctionList phase) noexcept {
+auto phaseToLuaName(toast::TickFunctionList phase) noexcept -> const char* {
 	using F = toast::TickFunctionList;
 	switch (phase) {
 		case F::load: return "load";
@@ -65,20 +67,20 @@ const char* phaseToLuaName(toast::TickFunctionList phase) noexcept {
 	}
 }
 
-bool isExportableKey(const luabridge::LuaRef& key) {
+auto isExportableKey(const luabridge::LuaRef& key) -> bool {
 	return key.isString() && !key.tostring().starts_with('_');
 }
 
-std::optional<LuaVarDesc> classifyLeaf(lua_State* L, const luabridge::LuaRef& v) {
+auto classifyLeaf(lua_State* l, const luabridge::LuaRef& v) -> std::optional<LuaVarDesc> {
 	LuaVarDesc d;
 	if (v.isBool()) {
 		d.kind = LuaVarKind::boolean;
 		return d;
 	}
 	if (v.isNumber()) {
-		v.push(L);
-		const bool is_int = lua_isinteger(L, -1) != 0;
-		lua_pop(L, 1);
+		v.push(l);
+		const bool is_int = lua_isinteger(l, -1) != 0;
+		lua_pop(l, 1);
 		d.kind = is_int ? LuaVarKind::integer : LuaVarKind::number;
 		return d;
 	}
@@ -128,7 +130,7 @@ std::optional<LuaVarDesc> classifyLeaf(lua_State* L, const luabridge::LuaRef& v)
 	return std::nullopt;
 }
 
-size_t declPos(std::string_view src, std::string_view key, size_t from) {
+auto declPos(std::string_view src, std::string_view key, size_t from) -> size_t {
 	size_t pos = from;
 	while ((pos = src.find(key, pos)) != std::string_view::npos) {
 		const char before = pos > 0 ? src[pos - 1] : ' ';
@@ -158,55 +160,55 @@ void sortByDeclaration(std::vector<T>& entries, std::string_view src, size_t fro
 	});
 }
 
-int scriptInstanceIndex(lua_State* L) {
-	auto* np = static_cast<NodeProxy*>(lua_touserdata(L, lua_upvalueindex(1)));
-	if (!np || lua_type(L, 2) != LUA_TSTRING) {
-		lua_pushnil(L);
+auto scriptInstanceIndex(lua_State* l) -> int {
+	auto* np = static_cast<NodeProxy*>(lua_touserdata(l, lua_upvalueindex(1)));
+	if (!np || lua_type(l, 2) != LUA_TSTRING) {
+		lua_pushnil(l);
 		return 1;
 	}
 
 	const toast::NodeInfo* info = np->exists() ? np->box()->info() : nullptr;
 
-	if (isCallableProxyKey(lua_tostring(L, 2), info)) {
-		lua_pushvalue(L, 2);             // method name string
-		lua_pushlightuserdata(L, np);    // NodeProxy*
-		lua_pushcclosure(L, selfMethodDispatch, 2);
+	if (isCallableProxyKey(lua_tostring(l, 2), info)) {
+		lua_pushvalue(l, 2);             // method name string
+		lua_pushlightuserdata(l, np);    // NodeProxy*
+		lua_pushcclosure(l, selfMethodDispatch, 2);
 		return 1;
 	}
 
 	// Not a method so delegate to nodeProxyIndex which handles field reads
-	luabridge::LuaRef key_ref = luabridge::LuaRef::fromStack(L, 2);
-	auto result = nodeProxyIndex(*np, key_ref, L);
-	result.push(L);
+	luabridge::LuaRef key_ref = luabridge::LuaRef::fromStack(l, 2);
+	auto result = nodeProxyIndex(*np, key_ref, l);
+	result.push(l);
 	return 1;
 }
 
-int scriptInstanceNewindex(lua_State* L) {
-	auto* np = static_cast<NodeProxy*>(lua_touserdata(L, lua_upvalueindex(1)));
+auto scriptInstanceNewindex(lua_State* l) -> int {
+	auto* np = static_cast<NodeProxy*>(lua_touserdata(l, lua_upvalueindex(1)));
 
-	if (np && lua_type(L, 2) == LUA_TSTRING) {
-		const char* key = lua_tostring(L, 2);
+	if (np && lua_type(l, 2) == LUA_TSTRING) {
+		const char* key = lua_tostring(l, 2);
 		if (np->hasField(key)) {
 			// Route the write through the proxy
-			luabridge::LuaRef key_ref = luabridge::LuaRef::fromStack(L, 2);
-			luabridge::LuaRef val_ref = luabridge::LuaRef::fromStack(L, 3);
-			nodeProxyNewindex(*np, key_ref, val_ref, L);
+			luabridge::LuaRef key_ref = luabridge::LuaRef::fromStack(l, 2);
+			luabridge::LuaRef val_ref = luabridge::LuaRef::fromStack(l, 3);
+			nodeProxyNewindex(*np, key_ref, val_ref, l);
 			return 0;
 		}
 	}
 
 	// Not a reflected field
-	lua_pushvalue(L, 2);
-	lua_pushvalue(L, 3);
-	lua_rawset(L, 1);
+	lua_pushvalue(l, 2);
+	lua_pushvalue(l, 3);
+	lua_rawset(l, 1);
 	return 0;
 }
 
 }
 
-ScriptInstance::ScriptInstance(lua_State* L, const assets::AssetHandle<assets::Script>& script, const NodeProxy& proxy)
-    : m_state(L),
-      m_proxy(proxy),
+ScriptInstance::ScriptInstance(lua_State* l, const assets::AssetHandle<assets::Script>& script, NodeProxy proxy)
+    : m_state(l),
+      m_proxy(std::move(proxy)),
       m_name(script.path()) {
 	if (!script.hasValue()) {
 		TOAST_WARN("Lua", "ScriptInstance: script asset '{}' is not loaded", script.path());
@@ -221,31 +223,31 @@ ScriptInstance::ScriptInstance(lua_State* L, const assets::AssetHandle<assets::S
 	const std::string chunk_name = std::format("={}", script.path());
 
 	// Load the source as a Lua chunk
-	int load_status = luaL_loadbufferx(L, src.data(), src.size(), chunk_name.c_str(), nullptr);
+	int load_status = luaL_loadbufferx(l, src.data(), src.size(), chunk_name.c_str(), nullptr);
 	if (load_status != LUA_OK) {
-		TOAST_ERROR("Lua", "ScriptInstance: failed to load '{}': {}", script.path(), lua_tostring(L, -1));
-		lua_pop(L, 1);
+		TOAST_ERROR("Lua", "ScriptInstance: failed to load '{}': {}", script.path(), lua_tostring(l, -1));
+		lua_pop(l, 1);
 		return;
 	}
 
 	// Run the chunk
 	// expect exactly a lua table as a return value
-	int pcall_status = pcallTraceback(L, 0, 1);
+	int pcall_status = pcallTraceback(l, 0, 1);
 	if (pcall_status != LUA_OK) {
-		TOAST_ERROR("Lua", "ScriptInstance: error running '{}': {}", script.path(), lua_tostring(L, -1));
-		lua_pop(L, 1);
+		TOAST_ERROR("Lua", "ScriptInstance: error running '{}': {}", script.path(), lua_tostring(l, -1));
+		lua_pop(l, 1);
 		return;
 	}
 
-	if (!lua_istable(L, -1)) {
+	if (!lua_istable(l, -1)) {
 		TOAST_ERROR("Lua", "ScriptInstance: '{}' did not return a table", script.path());
-		lua_pop(L, 1);
+		lua_pop(l, 1);
 		return;
 	}
 
 	// save the returned table in the Lua registry
-	m_self = std::make_unique<luabridge::LuaRef>(luabridge::LuaRef::fromStack(L, -1));
-	lua_pop(L, 1);
+	m_self = std::make_unique<luabridge::LuaRef>(luabridge::LuaRef::fromStack(l, -1));
+	lua_pop(l, 1);
 	extractSchema(src);
 	snapshotTickMask();
 	installMetatable();
@@ -253,7 +255,7 @@ ScriptInstance::ScriptInstance(lua_State* L, const assets::AssetHandle<assets::S
 
 void ScriptInstance::snapshotTickMask() noexcept {
 	using F = toast::TickFunctionList;
-	constexpr F all_phases[] = {
+	constexpr std::array all_phases = {
 	  F::load,
 	  F::save,
 	  F::pre_init,
@@ -283,7 +285,7 @@ void ScriptInstance::extractSchema(std::string_view src) noexcept {
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
-	lua_State* L = m_state;
+	lua_State* l = m_state;
 
 	auto classify =
 	    [&](const std::string& name, std::string_view path_prefix, const luabridge::LuaRef& val) -> std::optional<LuaVarDesc> {
@@ -296,7 +298,7 @@ void ScriptInstance::extractSchema(std::string_view src) noexcept {
 			}
 			is_array = true;
 		}
-		auto desc = classifyLeaf(L, element);
+		auto desc = classifyLeaf(l, element);
 		if (!desc) {
 			TOAST_WARN("Lua", "{}: exported var '{}' has an unsupported type; skipping", m_name, name);
 			return std::nullopt;
@@ -304,6 +306,7 @@ void ScriptInstance::extractSchema(std::string_view src) noexcept {
 		desc->name = name;
 		desc->path = path_prefix.empty() ? name : std::format("{}/{}", path_prefix, name);
 		desc->is_array = is_array;
+		desc->default_value = luaRefValueToAny(l, val);    // fresh, script-declared value; captured before any edit
 		return desc;
 	};
 
@@ -385,43 +388,43 @@ void ScriptInstance::installMetatable() noexcept {
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
-	lua_State* L = m_state;
+	lua_State* l = m_state;
 
 	// Push self table
-	m_self->push(L);
-	const int self_idx = lua_gettop(L);
+	m_self->push(l);
+	const int self_idx = lua_gettop(l);
 
 	// Create metatable
-	lua_newtable(L);
-	const int mt_idx = lua_gettop(L);
+	lua_newtable(l);
+	const int mt_idx = lua_gettop(l);
 
 	// __index / __newindex
 	// m_proxy is stable for the lifetime of this ScriptInstance
-	lua_pushlightuserdata(L, &m_proxy);
-	lua_pushcclosure(L, scriptInstanceIndex, 1);
-	lua_setfield(L, mt_idx, "__index");
+	lua_pushlightuserdata(l, &m_proxy);
+	lua_pushcclosure(l, scriptInstanceIndex, 1);
+	lua_setfield(l, mt_idx, "__index");
 
-	lua_pushlightuserdata(L, &m_proxy);
-	lua_pushcclosure(L, scriptInstanceNewindex, 1);
-	lua_setfield(L, mt_idx, "__newindex");
+	lua_pushlightuserdata(l, &m_proxy);
+	lua_pushcclosure(l, scriptInstanceNewindex, 1);
+	lua_setfield(l, mt_idx, "__newindex");
 
-	lua_setmetatable(L, self_idx);
-	lua_pop(L, 1);    // pop self table
+	lua_setmetatable(l, self_idx);
+	lua_pop(l, 1);    // pop self table
 }
 
 void ScriptInstance::call(std::string_view fn_name) noexcept {
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
-	lua_State* L = m_state;
+	lua_State* l = m_state;
 	// instance table, so rawget finds them
-	m_self->push(L);
-	lua_pushlstring(L, fn_name.data(), fn_name.size());
-	lua_rawget(L, -2);
-	lua_remove(L, -2);    // remove self table
+	m_self->push(l);
+	lua_pushlstring(l, fn_name.data(), fn_name.size());
+	lua_rawget(l, -2);
+	lua_remove(l, -2);    // remove self table
 
-	if (!lua_isfunction(L, -1)) {
-		lua_pop(L, 1);
+	if (!lua_isfunction(l, -1)) {
+		lua_pop(l, 1);
 		return;
 	}
 
@@ -429,38 +432,38 @@ void ScriptInstance::call(std::string_view fn_name) noexcept {
 	ZoneNameF("%s %.*s()", m_name.c_str(), static_cast<int>(fn_name.size()), fn_name.data());
 
 	// push self, then pcall(fn, self)
-	m_self->push(L);
-	if (pcallTraceback(L, 1, 0) != LUA_OK) {
-		TOAST_ERROR("Lua", "Error in {}(): {}", fn_name, lua_tostring(L, -1));
-		lua_pop(L, 1);
+	m_self->push(l);
+	if (pcallTraceback(l, 1, 0) != LUA_OK) {
+		TOAST_ERROR("Lua", "Error in {}(): {}", fn_name, lua_tostring(l, -1));
+		lua_pop(l, 1);
 	}
 }
 
-void ScriptInstance::callWithLuaStack(std::string_view name, lua_State* L, int args_base, int n_args) noexcept {
+void ScriptInstance::callWithLuaStack(std::string_view name, lua_State* l, int args_base, int n_args) noexcept {
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
 	// Only calls functions defined in the Lua table
-	m_self->push(L);
-	lua_pushlstring(L, name.data(), name.size());
-	lua_rawget(L, -2);
-	lua_remove(L, -2);
+	m_self->push(l);
+	lua_pushlstring(l, name.data(), name.size());
+	lua_rawget(l, -2);
+	lua_remove(l, -2);
 
-	if (!lua_isfunction(L, -1)) {
-		lua_pop(L, 1);
+	if (!lua_isfunction(l, -1)) {
+		lua_pop(l, 1);
 		return;
 	}
 
 	ZoneScopedN("Lua call");    // NOLINT
 	ZoneNameF("%s %.*s()", m_name.c_str(), static_cast<int>(name.size()), name.data());
 
-	m_self->push(L);
+	m_self->push(l);
 	for (int i = 0; i < n_args; ++i) {
-		lua_pushvalue(L, args_base + i);
+		lua_pushvalue(l, args_base + i);
 	}
-	if (pcallTraceback(L, 1 + n_args, 0) != LUA_OK) {
-		TOAST_ERROR("Lua", "Error in fan-out for '{}': {}", name, lua_tostring(L, -1));
-		lua_pop(L, 1);
+	if (pcallTraceback(l, 1 + n_args, 0) != LUA_OK) {
+		TOAST_ERROR("Lua", "Error in fan-out for '{}': {}", name, lua_tostring(l, -1));
+		lua_pop(l, 1);
 	}
 }
 
@@ -468,16 +471,16 @@ void ScriptInstance::callWithAnyArgs(std::string_view name, std::span<const std:
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
-	lua_State* L = m_state;
+	lua_State* l = m_state;
 
 	// recursion guard
-	m_self->push(L);
-	lua_pushlstring(L, name.data(), name.size());
-	lua_rawget(L, -2);
-	lua_remove(L, -2);
+	m_self->push(l);
+	lua_pushlstring(l, name.data(), name.size());
+	lua_rawget(l, -2);
+	lua_remove(l, -2);
 
-	if (!lua_isfunction(L, -1)) {
-		lua_pop(L, 1);
+	if (!lua_isfunction(l, -1)) {
+		lua_pop(l, 1);
 		return;
 	}
 
@@ -485,16 +488,16 @@ void ScriptInstance::callWithAnyArgs(std::string_view name, std::span<const std:
 	ZoneNameF("%s %.*s()", m_name.c_str(), static_cast<int>(name.size()), name.data());
 
 	// Push self as receiver, then convert each std::any arg to Lua
-	m_self->push(L);
+	m_self->push(l);
 	for (const auto& arg : args) {
-		luabridge::LuaRef ref = anyValueToLuaRef(L, arg);
-		ref.push(L);
+		luabridge::LuaRef ref = anyValueToLuaRef(l, arg);
+		ref.push(l);
 	}
 
 	const int n_args = 1 + static_cast<int>(args.size());
-	if (pcallTraceback(L, n_args, 0) != LUA_OK) {
-		TOAST_ERROR("Lua", "Error in Lua fan-out for '{}': {}", name, lua_tostring(L, -1));
-		lua_pop(L, 1);
+	if (pcallTraceback(l, n_args, 0) != LUA_OK) {
+		TOAST_ERROR("Lua", "Error in Lua fan-out for '{}': {}", name, lua_tostring(l, -1));
+		lua_pop(l, 1);
 	}
 }
 
@@ -502,26 +505,26 @@ auto ScriptInstance::setVar(std::string_view name, const std::any& value) noexce
 	if (!m_self || m_self->isNil()) {
 		return false;
 	}
-	lua_State* L = m_state;
+	lua_State* l = m_state;
 
 	// Only write to instances that already define this key
-	m_self->push(L);
-	lua_pushlstring(L, name.data(), name.size());
-	lua_rawget(L, -2);
-	const bool exists = !lua_isnil(L, -1);
-	lua_pop(L, 1);    // pop the value
+	m_self->push(l);
+	lua_pushlstring(l, name.data(), name.size());
+	lua_rawget(l, -2);
+	const bool exists = !lua_isnil(l, -1);
+	lua_pop(l, 1);    // pop the value
 
 	if (!exists) {
-		lua_pop(L, 1);
+		lua_pop(l, 1);
 		return false;
 	}
 
 	// Rawset self[name] = converted value
-	luabridge::LuaRef ref = anyValueToLuaRef(L, value);
-	lua_pushlstring(L, name.data(), name.size());
-	ref.push(L);
-	lua_rawset(L, -3);
-	lua_pop(L, 1);
+	luabridge::LuaRef ref = anyValueToLuaRef(l, value);
+	lua_pushlstring(l, name.data(), name.size());
+	ref.push(l);
+	lua_rawset(l, -3);
+	lua_pop(l, 1);
 	return true;
 }
 
@@ -529,21 +532,21 @@ auto ScriptInstance::pushByPath(std::string_view path) const noexcept -> bool {
 	if (!m_self || m_self->isNil() || path.empty()) {
 		return false;
 	}
-	lua_State* L = m_state;
+	lua_State* l = m_state;
 
-	m_self->push(L);
+	m_self->push(l);
 	size_t start = 0;
 	while (true) {
 		const size_t slash = path.find('/', start);
 		const std::string_view segment = path.substr(start, slash == std::string_view::npos ? std::string_view::npos : slash - start);
-		lua_pushlstring(L, segment.data(), segment.size());
-		lua_rawget(L, -2);
-		lua_remove(L, -2);    // drop the parent table
+		lua_pushlstring(l, segment.data(), segment.size());
+		lua_rawget(l, -2);
+		lua_remove(l, -2);    // drop the parent table
 		if (slash == std::string_view::npos) {
 			return true;        // value (possibly nil) at top
 		}
-		if (lua_istable(L, -1) == 0) {
-			lua_pop(L, 1);
+		if (lua_istable(l, -1) == 0) {
+			lua_pop(l, 1);
 			return false;
 		}
 		start = slash + 1;
@@ -551,52 +554,52 @@ auto ScriptInstance::pushByPath(std::string_view path) const noexcept -> bool {
 }
 
 auto ScriptInstance::getVarByPath(std::string_view path) const noexcept -> std::any {
-	lua_State* L = m_state;
+	lua_State* l = m_state;
 	if (!pushByPath(path)) {
 		return {};
 	}
-	luabridge::LuaRef ref = luabridge::LuaRef::fromStack(L, -1);
-	lua_pop(L, 1);
-	return luaRefValueToAny(L, ref);
+	luabridge::LuaRef ref = luabridge::LuaRef::fromStack(l, -1);
+	lua_pop(l, 1);
+	return luaRefValueToAny(l, ref);
 }
 
 auto ScriptInstance::setVarByPath(std::string_view path, const std::any& value) noexcept -> bool {
 	if (!m_self || m_self->isNil() || path.empty()) {
 		return false;
 	}
-	lua_State* L = m_state;
+	lua_State* l = m_state;
 
 	// Split off the parent path and descend to the owning table
 	const size_t last_slash = path.rfind('/');
 	const std::string_view leaf = last_slash == std::string_view::npos ? path : path.substr(last_slash + 1);
 
 	if (last_slash == std::string_view::npos) {
-		m_self->push(L);
+		m_self->push(l);
 	} else {
 		if (!pushByPath(path.substr(0, last_slash))) {
 			return false;
 		}
-		if (lua_istable(L, -1) == 0) {
-			lua_pop(L, 1);
+		if (lua_istable(l, -1) == 0) {
+			lua_pop(l, 1);
 			return false;
 		}
 	}
 
 	// Only overwrite existing keys, same policy as setVar
-	lua_pushlstring(L, leaf.data(), leaf.size());
-	lua_rawget(L, -2);
-	const bool exists = !lua_isnil(L, -1);
-	lua_pop(L, 1);
+	lua_pushlstring(l, leaf.data(), leaf.size());
+	lua_rawget(l, -2);
+	const bool exists = !lua_isnil(l, -1);
+	lua_pop(l, 1);
 	if (!exists) {
-		lua_pop(L, 1);
+		lua_pop(l, 1);
 		return false;
 	}
 
-	luabridge::LuaRef ref = anyValueToLuaRef(L, value);
-	lua_pushlstring(L, leaf.data(), leaf.size());
-	ref.push(L);
-	lua_rawset(L, -3);
-	lua_pop(L, 1);
+	luabridge::LuaRef ref = anyValueToLuaRef(l, value);
+	lua_pushlstring(l, leaf.data(), leaf.size());
+	ref.push(l);
+	lua_rawset(l, -3);
+	lua_pop(l, 1);
 	return true;
 }
 
@@ -604,29 +607,29 @@ auto ScriptInstance::getVar(std::string_view name) const noexcept -> std::any {
 	if (!m_self || m_self->isNil()) {
 		return {};
 	}
-	lua_State* L = m_state;
+	lua_State* l = m_state;
 
-	m_self->push(L);
-	lua_pushlstring(L, name.data(), name.size());
-	lua_rawget(L, -2);
-	lua_remove(L, -2);    // value at top, self gone
+	m_self->push(l);
+	lua_pushlstring(l, name.data(), name.size());
+	lua_rawget(l, -2);
+	lua_remove(l, -2);    // value at top, self gone
 
-	luabridge::LuaRef ref = luabridge::LuaRef::fromStack(L, -1);
-	lua_pop(L, 1);
+	luabridge::LuaRef ref = luabridge::LuaRef::fromStack(l, -1);
+	lua_pop(l, 1);
 
-	return luaRefValueToAny(L, ref);
+	return luaRefValueToAny(l, ref);
 }
 
-bool ScriptInstance::hasFunction(std::string_view fn_name) const noexcept {
+auto ScriptInstance::hasFunction(std::string_view fn_name) const noexcept -> bool {
 	if (!m_self || m_self->isNil()) {
 		return false;
 	}
-	lua_State* L = m_state;
-	m_self->push(L);
-	lua_pushlstring(L, fn_name.data(), fn_name.size());
-	lua_rawget(L, -2);
-	const bool is_fn = lua_isfunction(L, -1);
-	lua_pop(L, 2);    // pop result + self table
+	lua_State* l = m_state;
+	m_self->push(l);
+	lua_pushlstring(l, fn_name.data(), fn_name.size());
+	lua_rawget(l, -2);
+	const bool is_fn = lua_isfunction(l, -1);
+	lua_pop(l, 2);    // pop result + self table
 	return is_fn;
 }
 
@@ -745,17 +748,17 @@ void ScriptRuntime::call(std::string_view fn_name) noexcept {
 	}
 }
 
-void ScriptRuntime::callWithLuaStack(std::string_view name, lua_State* L, int args_base, int n_args) noexcept {
+void ScriptRuntime::callWithLuaStack(std::string_view name, lua_State* l, int args_base, int n_args) noexcept {
 	if (m_instances.empty()) {
 		return;
 	}
 
-	if (L != m_lua) {
+	if (l != m_lua) {
 		std::vector<std::any> args;
 		args.reserve(static_cast<size_t>(n_args));
 		for (int i = 0; i < n_args; ++i) {
-			luabridge::LuaRef ref = luabridge::LuaRef::fromStack(L, args_base + i);
-			args.push_back(luaRefValueToAny(L, ref));
+			luabridge::LuaRef ref = luabridge::LuaRef::fromStack(l, args_base + i);
+			args.push_back(luaRefValueToAny(l, ref));
 		}
 		callWithAnyArgs(name, args);
 		return;
@@ -767,7 +770,7 @@ void ScriptRuntime::callWithLuaStack(std::string_view name, lua_State* L, int ar
 	}
 	for (auto& inst : m_instances) {
 		if (inst && inst->isValid()) {
-			inst->callWithLuaStack(name, L, args_base, n_args);
+			inst->callWithLuaStack(name, l, args_base, n_args);
 		}
 	}
 }
