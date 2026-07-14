@@ -140,7 +140,33 @@ ScriptInstance::ScriptInstance(lua_State* L, const assets::AssetHandle<assets::S
 	m_self = std::make_unique<luabridge::LuaRef>(luabridge::LuaRef::fromStack(L, -1));
 	lua_pop(L, 1);
 	snapshotSchema();
+	snapshotTickMask();
 	installMetatable();
+}
+
+void ScriptInstance::snapshotTickMask() noexcept {
+	using F = toast::TickFunctionList;
+	constexpr F all_phases[] = {
+	  F::load,
+	  F::save,
+	  F::pre_init,
+	  F::init,
+	  F::destroy,
+	  F::begin,
+	  F::end,
+	  F::on_enable,
+	  F::on_disable,
+	  F::early_tick,
+	  F::tick,
+	  F::post_physics,
+	  F::late_tick,
+	};
+	for (F phase : all_phases) {
+		const char* name = phaseToLuaName(phase);
+		if (name && hasFunction(name)) {
+			m_tick_mask |= phase;
+		}
+	}
 }
 
 void ScriptInstance::snapshotSchema() noexcept {
@@ -337,6 +363,7 @@ ScriptRuntime::ScriptRuntime(toast::Box<toast::Node> node, const std::vector<ass
 	for (const auto& script : scripts) {
 		if (script.hasValue()) {
 			m_instances.push_back(std::make_unique<ScriptInstance>(m_lua, script, proxy));
+			m_tick_mask |= m_instances.back()->tickMask();
 		}
 	}
 }
@@ -446,32 +473,6 @@ auto ScriptRuntime::getVar(std::string_view name) const noexcept -> std::any {
 		}
 	}
 	return {};
-}
-
-bool ScriptRuntime::hasTick(toast::TickFunctionList mask) const noexcept {
-	using F = toast::TickFunctionList;
-	constexpr F kTickPhases[] = {F::early_tick, F::tick, F::post_physics, F::late_tick};
-	if (m_instances.empty()) {
-		return false;
-	}
-	LuaState::Lock guard = LuaState::get().lock(m_state_index);
-	if (!guard) {
-		return false;
-	}
-	for (auto& inst : m_instances) {
-		if (!inst || !inst->isValid()) {
-			continue;
-		}
-		for (F phase : kTickPhases) {
-			if (toast::hasFlag(mask, phase)) {
-				const char* name = phaseToLuaName(phase);
-				if (name && inst->hasFunction(name)) {
-					return true;
-				}
-			}
-		}
-	}
-	return false;
 }
 
 }

@@ -173,7 +173,15 @@ void Node::changeNodeState(NodeState state) noexcept {
 	}
 }
 
+auto Node::hasTickFunction(TickFunctionList mask) const noexcept -> bool {
+	if (m_info && m_info->hasFunction(mask)) {
+		return true;
+	}
+	return m_script_runtime && m_script_runtime->hasTick(mask);
+}
+
 void Node::loadScripts() noexcept {
+	m_script_runtime.reset();
 	if (m_scripts.empty()) {
 		return;
 	}

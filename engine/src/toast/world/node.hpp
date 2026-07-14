@@ -261,6 +261,12 @@ public:
 	}
 
 	/**
+	 * @returns true if this node implements any of the given tick functions in C++ or Lua
+	 */
+	[[nodiscard]]
+	auto hasTickFunction(TickFunctionList mask) const noexcept -> bool;
+
+	/**
 	 * @brief Invokes all C++ reflected implementations of `name` (base→derived) and
 	 *        all same-named Lua functions across every attached script, forwarding `args`
 	 * @tparam R Return type, for non-void the most-derived C++ return value is returned
@@ -381,7 +387,7 @@ private:
 	/// Refresh m_info from NodeRegistry after hot reload
 	void refreshInfo();
 
-	/// Builds m_script_runtime from m_scripts; called lazily on first callTick
+	/// Builds m_script_runtime from m_scripts
 	void loadScripts() noexcept;
 };
 

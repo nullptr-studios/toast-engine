@@ -414,6 +414,11 @@ void Workspace::eventSubscriptions() {
 		}
 
 		field->set(&*m_focused_node, value);
+
+		if (field->name == "m_scripts") {
+			m_focused_node->loadScripts();
+			event::send<event::RequestHierarchyUpdate>();
+		}
 		return true;
 	});
 

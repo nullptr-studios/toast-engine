@@ -74,14 +74,22 @@ public:
 		return m_self && !m_self->isNil();
 	}
 
+	/// Tick phases this script defines
+	[[nodiscard]]
+	auto tickMask() const noexcept -> toast::TickFunctionList {
+		return m_tick_mask;
+	}
+
 private:
 	lua_State* m_state = nullptr;
 	std::unique_ptr<luabridge::LuaRef> m_self;
 	NodeProxy m_proxy;
 	std::vector<ExportEntry> m_schema;
+	toast::TickFunctionList m_tick_mask = toast::TickFunctionList::none;
 
 	void installMetatable() noexcept;
 	void snapshotSchema() noexcept;
+	void snapshotTickMask() noexcept;
 };
 
 // One per node
@@ -111,9 +119,11 @@ public:
 	[[nodiscard]]
 	auto getVar(std::string_view name) const noexcept -> std::any;
 
-	/// True if any instance defines a function matching the given tick-mask phases
+	/// True if any instance defines a function matching the given phases
 	[[nodiscard]]
-	auto hasTick(toast::TickFunctionList mask = toast::TickFunctionList::tick_mask) const noexcept -> bool;
+	auto hasTick(toast::TickFunctionList mask = toast::TickFunctionList::tick_mask) const noexcept -> bool {
+		return (m_tick_mask & mask) != toast::TickFunctionList::none;
+	}
 
 	/// Index of the pooled Lua state this runtime is bound to
 	[[nodiscard]]
@@ -125,6 +135,7 @@ private:
 	std::vector<std::unique_ptr<ScriptInstance>> m_instances;
 	size_t m_state_index = 0;
 	lua_State* m_lua = nullptr;
+	toast::TickFunctionList m_tick_mask = toast::TickFunctionList::none;
 };
 
 }

@@ -194,6 +194,7 @@ auto INodeOwner::nodeAllocation(const assets::Prefab::BasicNode& node_data) noex
 	std::string type = node_data.type;
 	auto box = nodeAllocation(type);
 	applyFields(*box, node_data);
+	box->loadScripts();
 	return box;
 }
 
