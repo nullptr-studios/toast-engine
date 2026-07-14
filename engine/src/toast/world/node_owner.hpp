@@ -39,6 +39,9 @@ public:
 	auto requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node>;
 	auto requestRuntimeSpawn(Node& parent, std::string_view) -> Box<Node>;
 
+	void reloadScriptsUsing(UID script_uid) noexcept;
+	void refreshNodeInfos() noexcept;
+
 	struct InstantiateContext {
 		std::vector<uint64_t> asset_chain;    ///< UIDs of prefabs currently being instantiated; prevents infinite recursion
 		std::function<assets::AssetHandle<assets::Prefab>(toast::UID)> resolver;    ///< injected loader so tests can swap in a fake

@@ -422,4 +422,28 @@ void INodeOwner::reapTombstones() noexcept {
 	});
 }
 
+void INodeOwner::reloadScriptsUsing(UID script_uid) noexcept {
+	std::scoped_lock lock(nodes_mutex);
+	forEachNode([&](const _detail::ControlBox& control) {
+		if (control.node == nullptr) {
+			return;
+		}
+		const bool uses_script = std::ranges::any_of(control.node->m_scripts, [&](const auto& handle) {
+			return handle.uid().data() == script_uid.data();
+		});
+		if (uses_script) {
+			control.node->reloadScripts();
+		}
+	});
+}
+
+void INodeOwner::refreshNodeInfos() noexcept {
+	std::scoped_lock lock(nodes_mutex);
+	forEachNode([](const _detail::ControlBox& control) {
+		if (control.node != nullptr) {
+			control.node->refreshInfo();
+		}
+	});
+}
+
 }

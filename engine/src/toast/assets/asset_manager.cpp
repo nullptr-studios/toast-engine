@@ -2,6 +2,7 @@
 
 #include "asset_registry.hpp"
 #include "prefab.hpp"
+#include "script.hpp"
 
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -523,6 +524,46 @@ auto AssetManager::typeOf(toast::UID uid) -> std::string {
 	std::lock_guard lock(manager.mutex);
 	auto it = manager.manifest.find(uid.data());
 	return it != manager.manifest.end() ? it->second.type : std::string {};
+}
+
+void AssetManager::pollModifiedScripts() {
+	ZoneScoped;
+
+	std::vector<toast::UID> changed;
+	{
+		std::lock_guard lock(mutex);
+		for (auto& [id, asset] : cache) {
+			auto manifest_it = manifest.find(id);
+			if (manifest_it == manifest.end() || manifest_it->second.type != "script") {
+				continue;
+			}
+			auto real_path = resolveVirtualPath(manifest_it->second.path);
+			if (!real_path) {
+				continue;
+			}
+
+			std::error_code ec;
+			const auto mtime = std::filesystem::last_write_time(*real_path, ec);
+			if (ec) {
+				continue;
+			}
+			auto [it, first_seen] = script_mtimes.try_emplace(id, mtime);
+			if (first_seen || it->second == mtime) {
+				continue;    //unchanged
+			}
+			it->second = mtime;
+
+			if (auto raw = readVirtualPath(manifest_it->second.path)) {
+				static_cast<Script*>(asset.get())->setData(std::move(*raw));
+				changed.emplace_back(id);
+			}
+		}
+	}
+
+	for (toast::UID uid : changed) {
+		TOAST_INFO("AssetManager", "Script changed on disk, reloading: {}", getURI(uid));
+		event::send<event::ScriptAssetReloaded>(uid);
+	}
 }
 
 // Public API Implementations

@@ -626,6 +626,15 @@ void World::hotReload() {
 	}
 }
 
+void World::hotReloadScripts(toast::UID script_uid) {
+	if (!instance) {
+		return;
+	}
+	instance->reloadScriptsUsing(script_uid);
+	// a reload can add or remove Lua tick functions, so the schedule needs recompute
+	instance->computeDependencyGraph();
+}
+
 auto World::graphviz() -> std::string {
 	return instance->dependencyGraphGraphviz();
 }

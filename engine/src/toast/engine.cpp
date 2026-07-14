@@ -75,6 +75,7 @@ auto createTrianglePipeline(
 
 double clear_assets_timer = 0.0;
 double lua_memory_plot_timer = 0.0;
+double script_reload_timer = 0.0;
 
 }
 
@@ -202,7 +203,28 @@ void Engine::init() {
 		return false;
 	});
 
+	// A script source changed on disk
+	// rebuild the runtimes that use it everywhere and let the schedulers recompute
+	m->listener.subscribe<event::ScriptAssetReloaded>([this](const event::ScriptAssetReloaded& e) {
+		{
+			std::scoped_lock lock(m->owners_mutex);
+			for (const auto& [_, node_owner] : m->owners) {
+				node_owner->reloadScriptsUsing(e.uid);
+			}
+		}
+		World::hotReloadScripts(e.uid);
+		event::send<event::RequestHierarchyUpdate>();
+		return false;
+	});
+
 	m->audio_system = std::make_unique<audio::AudioSystem>();
+}
+
+void Engine::refreshNodeInfos() {
+	std::scoped_lock lock(m->owners_mutex);
+	for (const auto& [_, node_owner] : m->owners) {
+		node_owner->refreshNodeInfos();
+	}
 }
 
 void Engine::reloadSettings() {
@@ -288,6 +310,17 @@ void Engine::tick() {
 			m->lua_state->plotMemory();
 		}
 	}
+
+#ifdef DEBUG
+	// dev builds hot-reload script sources edited on disk
+	script_reload_timer += Time::delta();
+	if (script_reload_timer > 1.0) {
+		script_reload_timer = 0.0;
+		if (m->asset_manager) {
+			m->asset_manager->pollModifiedScripts();
+		}
+	}
+#endif
 }
 
 auto Engine::shouldClose() -> bool {
@@ -444,6 +477,13 @@ void pushApplicationLayer(IApplication* app) {
 	active_application = app;
 	app->registerTypes();
 	toast::World::hotReload();
+
+	if (Engine::get() != nullptr) {
+		Engine::get()->refreshNodeInfos();
+	}
+	if (scripting::LuaState::exists()) {
+		scripting::LuaState::get().refreshTypeMarkers();
+	}
 }
 
 void popApplicationLayer(IApplication* app) {

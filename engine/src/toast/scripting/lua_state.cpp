@@ -564,6 +564,10 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    )
 	    .endNamespace();
 
+	registerTypeMarkers(state);
+}
+
+void LuaState::registerTypeMarkers(lua_State* state) noexcept {
 	// Node type markers
 	toast::NodeRegistry::forEachType([&](const toast::NodeInfo* info) {
 		const std::string_view bare = stripNamespace(info->type);
@@ -585,6 +589,16 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::Asset, ""}); r) {
 		lua_setglobal(state, "Asset");
 	}
+}
+
+void LuaState::refreshTypeMarkers() noexcept {
+	for (size_t i = 0; i < pool_size; ++i) {
+		Lock guard = lock(i);
+		if (guard) {
+			registerTypeMarkers(guard.state());
+		}
+	}
+	TOAST_INFO("Lua", "Refreshed type markers on {} states", pool_size);
 }
 
 }

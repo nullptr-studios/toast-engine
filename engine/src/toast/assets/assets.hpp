@@ -64,6 +64,18 @@ namespace event {
 struct ReloadAssetsManifest : public Event<ReloadAssetsManifest> { };
 
 /**
+ * @brief Fired after a hot-reload
+ *
+ * The Script object itself was already mutated in place; listeners rebuild whatever
+ * they derived from the old source
+ */
+struct ScriptAssetReloaded : public Event<ScriptAssetReloaded> {
+	toast::UID uid;
+
+	explicit ScriptAssetReloaded(toast::UID uid) : uid(uid) { }
+};
+
+/**
  * @brief Fired to request the unloading of all unused assets
  */
 struct ClearUnusedAssets : public Event<ClearUnusedAssets> { };

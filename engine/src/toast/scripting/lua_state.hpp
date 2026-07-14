@@ -48,6 +48,12 @@ public:
 
 	static auto create() noexcept -> std::unique_ptr<LuaState>;
 	static auto get() noexcept -> LuaState&;
+
+	[[nodiscard]]
+	static auto exists() noexcept -> bool {
+		return instance != nullptr;
+	}
+
 	~LuaState() noexcept;
 
 	/**
@@ -70,6 +76,9 @@ public:
 	/// @brief Runs a chunk on state 0; intended for debug/console use
 	auto runString(std::string_view lua_code) noexcept -> bool;
 
+	/// Re-registers the Node/Asset type-marker globals on every state
+	void refreshTypeMarkers() noexcept;
+
 private:
 	static inline LuaState* instance = nullptr;
 
@@ -84,6 +93,7 @@ private:
 	LuaState();
 
 	static void registerApi(lua_State* state) noexcept;
+	static void registerTypeMarkers(lua_State* state) noexcept;
 };
 
 }

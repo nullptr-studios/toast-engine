@@ -3,7 +3,7 @@
  * @author Xein
  * @date 10 Jul 2026
  *
- * @brief TODO: Brief description of the file's purpose
+ * @brief Lua source asset attached to nodes through Node::m_scripts
  */
 
 #pragma once
@@ -24,6 +24,9 @@ public:
 	auto get() const noexcept -> const std::vector<uint8_t>& {
 		return m_data;
 	}
+
+	/// Replaces the source in place on hot reload
+	void setData(std::vector<uint8_t> data) noexcept { m_data = std::move(data); }
 
 private:
 	std::vector<uint8_t> m_data;

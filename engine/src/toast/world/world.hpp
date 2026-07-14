@@ -124,6 +124,11 @@ public:
 	static void hotReload();
 
 	/**
+	 * @brief Rebuilds script runtimes using the given script asset and recomputes the schedule
+	 */
+	static void hotReloadScripts(toast::UID script_uid);
+
+	/**
 	 * @brief Invalidates the world transforms of all Node3D nodes that depend on the given node
 	 * @param node The node whose transform changed
 	 * @note Called by Node3D setters; only nodes listed in inverse_connections are dirtied
