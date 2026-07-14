@@ -345,9 +345,11 @@ public partial class MainWindowViewModel : ViewModelBase {
 		var refgen = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
 			"..", "reflection_generator", $"reflection_generator{exeExt}"));
 		var gameDb = ProjectContext.Resolve("cache://game_reflect.json");
+		var gameLuaStubs = ProjectContext.Resolve("cache://lua/game_types.d.lua");
 		tasks.Add(LoaderTask.Run("Generate game reflection", refgen,
 			$"--database \"{gameDb}\" --output \"{libGenerated}\" --input \"{libSrc}\" " +
-			$"--include-root \"{libSrc}\" --register-fn registerGameTypes --attribute Game"));
+			$"--include-root \"{libSrc}\" --register-fn registerGameTypes --attribute Game " +
+			$"--lua-stubs \"{gameLuaStubs}\""));
 
 		// Copy engine reflection database to cache
 		tasks.Add(LoaderTask.Do("Copy engine reflection", async log => {
@@ -358,6 +360,11 @@ public partial class MainWindowViewModel : ViewModelBase {
 				log("Copied engine_reflect.json");
 			}
 
+			await Task.CompletedTask;
+		}));
+
+		tasks.Add(LoaderTask.Do("Sync lua definitions", async log => {
+			ProjectContext.SyncLuaDefinitions(log);
 			await Task.CompletedTask;
 		}));
 

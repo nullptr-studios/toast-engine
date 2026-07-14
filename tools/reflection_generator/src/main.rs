@@ -36,6 +36,10 @@ struct Cli {
     split_typeinfo: bool,
     #[arg(long = "attribute")]
     attributes: Vec<std::string::String>,
+
+    /// Path of the lua LSP to emit (types.d.lua)
+    #[arg(long)]
+    lua_stubs: Option<PathBuf>,
 }
 
 fn main() {
@@ -98,6 +102,16 @@ fn main() {
     // Generate files, sorted so base classes are included before derived classes
     let all_nodes = topological_sort(all_nodes);
     generate_files(&all_nodes, &cli.output, &cli.register_fn, cli.split_typeinfo);
+
+    if let Some(stub_path) = &cli.lua_stubs {
+        if let Some(parent) = stub_path.parent()
+            && !parent.as_os_str().is_empty() {
+                fs::create_dir_all(parent)
+                    .unwrap_or_else(|e| eprintln!("warning: cannot create lua stub directory: {e}"));
+            }
+        fs::write(stub_path, generate_lua_stubs(&all_nodes))
+            .unwrap_or_else(|e| eprintln!("warning: cannot write lua stubs '{}': {e}", stub_path.display()));
+    }
 
     println!(
         "refgen: generated {} type(s) → '{}' (fn: {})",

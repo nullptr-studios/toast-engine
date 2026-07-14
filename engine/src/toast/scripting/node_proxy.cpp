@@ -227,6 +227,14 @@ std::string_view innerBoxType(std::string_view type) {
 	return type;
 }
 
+const toast::FieldInfo* lookupField(const toast::NodeInfo* info, std::string_view key) {
+	if (const toast::FieldInfo* f = info->getField(key)) {
+		return f;
+	}
+	const std::string prefixed = std::format("m_{}", key);
+	return info->getField(prefixed);
+}
+
 // Looks up a NodeInfo by short or fully-qualified name
 const toast::NodeInfo* lookupNodeInfo(std::string_view name) {
 	if (auto* info = toast::NodeRegistry::reflect(name)) {
@@ -861,7 +869,7 @@ bool NodeProxy::hasField(std::string_view key) const noexcept {
 		return false;
 	}
 	const toast::NodeInfo* info = m_box->info();
-	return info != nullptr && info->getField(key) != nullptr;
+	return info != nullptr && lookupField(info, key) != nullptr;
 }
 
 luabridge::LuaRef NodeProxy::call(const std::string& fn_name, lua_State* L) {
@@ -895,7 +903,7 @@ luabridge::LuaRef nodeProxyIndex(NodeProxy& proxy, const luabridge::LuaRef& key,
 		return luabridge::LuaRef(L);
 	}
 
-	const toast::FieldInfo* f = info->getField(key_str);
+	const toast::FieldInfo* f = lookupField(info, key_str);
 	if (f) {
 		std::any value = f->get(n);
 		return anyToLuaRef(L, value, *f);
@@ -1088,7 +1096,7 @@ luabridge::LuaRef
 		return luabridge::LuaRef(L);
 	}
 
-	const toast::FieldInfo* f = info->getField(key_str);
+	const toast::FieldInfo* f = lookupField(info, key_str);
 	if (!f) {
 		luaL_error(L, "__newindex: no reflected field '%s' on %s", key_str.c_str(), info->type.data());
 		return luabridge::LuaRef(L);
