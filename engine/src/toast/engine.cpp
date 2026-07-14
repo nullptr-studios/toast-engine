@@ -249,7 +249,7 @@ void Engine::tick() {
 		active_application->tick();
 	}
 	total_time += Time::delta();
-	camera->worldPos(glm::vec3(sin(total_time) * 5.0f, cos(total_time) * 5.0f, 5));
+	camera->worldPos(glm::vec3(std::sin(total_time) * 5.0f, std::cos(total_time) * 5.0f, 5));
 
 	if (m->audio_system) {
 		m->audio_system->tick();
