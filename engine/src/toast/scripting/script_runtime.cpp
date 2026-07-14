@@ -1,6 +1,7 @@
 #include "script_runtime.hpp"
 
 #include "lua_state.hpp"
+#include "lua_util.hpp"
 #include "node_proxy.hpp"
 
 #include <format>
@@ -122,7 +123,7 @@ ScriptInstance::ScriptInstance(lua_State* L, const assets::AssetHandle<assets::S
 
 	// Run the chunk
 	// expect exactly a lua table as a return value
-	int pcall_status = lua_pcall(L, 0, 1, 0);
+	int pcall_status = pcallTraceback(L, 0, 1);
 	if (pcall_status != LUA_OK) {
 		TOAST_ERROR("Lua", "ScriptInstance: error running '{}': {}", script.path(), lua_tostring(L, -1));
 		lua_pop(L, 1);
@@ -201,7 +202,7 @@ void ScriptInstance::call(std::string_view fn_name) noexcept {
 	}
 	// push self, then pcall(fn, self)
 	m_self->push(L);
-	if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
+	if (pcallTraceback(L, 1, 0) != LUA_OK) {
 		TOAST_ERROR("Lua", "Error in {}(): {}", fn_name, lua_tostring(L, -1));
 		lua_pop(L, 1);
 	}
@@ -225,7 +226,7 @@ void ScriptInstance::callWithLuaStack(std::string_view name, lua_State* L, int a
 	for (int i = 0; i < n_args; ++i) {
 		lua_pushvalue(L, args_base + i);
 	}
-	if (lua_pcall(L, 1 + n_args, 0, 0) != LUA_OK) {
+	if (pcallTraceback(L, 1 + n_args, 0) != LUA_OK) {
 		TOAST_ERROR("Lua", "Error in fan-out for '{}': {}", name, lua_tostring(L, -1));
 		lua_pop(L, 1);
 	}
@@ -256,7 +257,7 @@ void ScriptInstance::callWithAnyArgs(std::string_view name, std::span<const std:
 	}
 
 	const int n_args = 1 + static_cast<int>(args.size());
-	if (lua_pcall(L, n_args, 0, 0) != LUA_OK) {
+	if (pcallTraceback(L, n_args, 0) != LUA_OK) {
 		TOAST_ERROR("Lua", "Error in Lua fan-out for '{}': {}", name, lua_tostring(L, -1));
 		lua_pop(L, 1);
 	}
@@ -322,21 +323,31 @@ ScriptRuntime::ScriptRuntime(toast::Box<toast::Node> node, const std::vector<ass
 	if (scripts.empty()) {
 		return;
 	}
-	// Confirm LuaState exists
-	lua_State* L = LuaState::get().state();
+
+	m_state_index = LuaState::get().nextIndex();
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		TOAST_ERROR("Lua", "ScriptRuntime: could not acquire Lua state #{}; scripts not loaded", m_state_index);
+		return;
+	}
+	m_lua = guard.state();
 	NodeProxy proxy(std::move(node));
 
 	m_instances.reserve(scripts.size());
 	for (const auto& script : scripts) {
 		if (script.hasValue()) {
-			m_instances.push_back(std::make_unique<ScriptInstance>(L, script, proxy));
+			m_instances.push_back(std::make_unique<ScriptInstance>(m_lua, script, proxy));
 		}
 	}
 }
 
 void ScriptRuntime::call(toast::TickFunctionList phase) noexcept {
 	const char* name = phaseToLuaName(phase);
-	if (!name) {
+	if (!name || m_instances.empty()) {
+		return;
+	}
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
 		return;
 	}
 	for (auto& inst : m_instances) {
@@ -347,6 +358,13 @@ void ScriptRuntime::call(toast::TickFunctionList phase) noexcept {
 }
 
 void ScriptRuntime::call(std::string_view fn_name) noexcept {
+	if (m_instances.empty()) {
+		return;
+	}
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return;
+	}
 	for (auto& inst : m_instances) {
 		if (inst && inst->isValid()) {
 			inst->call(fn_name);
@@ -355,6 +373,25 @@ void ScriptRuntime::call(std::string_view fn_name) noexcept {
 }
 
 void ScriptRuntime::callWithLuaStack(std::string_view name, lua_State* L, int args_base, int n_args) noexcept {
+	if (m_instances.empty()) {
+		return;
+	}
+
+	if (L != m_lua) {
+		std::vector<std::any> args;
+		args.reserve(static_cast<size_t>(n_args));
+		for (int i = 0; i < n_args; ++i) {
+			luabridge::LuaRef ref = luabridge::LuaRef::fromStack(L, args_base + i);
+			args.push_back(luaRefValueToAny(L, ref));
+		}
+		callWithAnyArgs(name, args);
+		return;
+	}
+
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return;
+	}
 	for (auto& inst : m_instances) {
 		if (inst && inst->isValid()) {
 			inst->callWithLuaStack(name, L, args_base, n_args);
@@ -363,6 +400,13 @@ void ScriptRuntime::callWithLuaStack(std::string_view name, lua_State* L, int ar
 }
 
 void ScriptRuntime::callWithAnyArgs(std::string_view name, std::span<const std::any> args) noexcept {
+	if (m_instances.empty()) {
+		return;
+	}
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return;
+	}
 	for (auto& inst : m_instances) {
 		if (inst && inst->isValid()) {
 			inst->callWithAnyArgs(name, args);
@@ -371,6 +415,13 @@ void ScriptRuntime::callWithAnyArgs(std::string_view name, std::span<const std::
 }
 
 void ScriptRuntime::setVar(std::string_view name, const std::any& value) noexcept {
+	if (m_instances.empty()) {
+		return;
+	}
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return;
+	}
 	for (auto& inst : m_instances) {
 		if (inst && inst->isValid()) {
 			inst->setVar(name, value);
@@ -379,6 +430,13 @@ void ScriptRuntime::setVar(std::string_view name, const std::any& value) noexcep
 }
 
 auto ScriptRuntime::getVar(std::string_view name) const noexcept -> std::any {
+	if (m_instances.empty()) {
+		return {};
+	}
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return {};
+	}
 	for (const auto& inst : m_instances) {
 		if (inst && inst->isValid()) {
 			std::any v = inst->getVar(name);
@@ -393,6 +451,13 @@ auto ScriptRuntime::getVar(std::string_view name) const noexcept -> std::any {
 bool ScriptRuntime::hasTick(toast::TickFunctionList mask) const noexcept {
 	using F = toast::TickFunctionList;
 	constexpr F kTickPhases[] = {F::early_tick, F::tick, F::post_physics, F::late_tick};
+	if (m_instances.empty()) {
+		return false;
+	}
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return false;
+	}
 	for (auto& inst : m_instances) {
 		if (!inst || !inst->isValid()) {
 			continue;

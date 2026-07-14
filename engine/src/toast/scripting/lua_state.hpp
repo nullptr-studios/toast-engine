@@ -3,10 +3,15 @@
  * @author Xein
  * @date 10 Jul 2026
  *
- * @brief Holds the Lua interpreter and enviroment table
+ * @brief Pool of independent Lua interpreters
  */
 
 #pragma once
+
+#include <array>
+#include <atomic>
+#include <mutex>
+#include <toast/thread_pool.hpp>
 
 struct lua_State;
 
@@ -14,25 +19,65 @@ namespace scripting {
 
 class LuaState {
 public:
+	static constexpr size_t pool_size = 1 + toast::ThreadPool::thread_count;
+
+	class Lock {
+	public:
+		Lock() = default;
+		Lock(Lock&& other) noexcept;
+		auto operator=(Lock&& other) noexcept -> Lock&;
+		Lock(const Lock&) = delete;
+		auto operator=(const Lock&) -> Lock& = delete;
+		~Lock();
+
+		explicit operator bool() const noexcept { return m_lock.owns_lock(); }
+
+		[[nodiscard]]
+		auto state() const noexcept -> lua_State* {
+			return m_state;
+		}
+
+	private:
+		friend class LuaState;
+		Lock(std::unique_lock<std::recursive_timed_mutex> lock, lua_State* state, size_t index) noexcept;
+
+		std::unique_lock<std::recursive_timed_mutex> m_lock;
+		lua_State* m_state = nullptr;
+		size_t m_index = 0;
+	};
+
 	static auto create() noexcept -> std::unique_ptr<LuaState>;
 	static auto get() noexcept -> LuaState&;
 	~LuaState() noexcept;
 
-	auto runString(std::string_view lua_code) noexcept -> bool;
-
-	/// Returns the raw Lua state; used by scripting subsystems
+	/**
+	 * @brief Acquires the state at `index` for the current thread
+	 *
+	 * Blocks if the thread holds no other pooled state
+	 */
 	[[nodiscard]]
-	auto state() const noexcept -> lua_State* {
-		return m_state;
-	}
+	auto lock(size_t index) noexcept -> Lock;
+
+	[[nodiscard]]
+	auto nextIndex() noexcept -> size_t;
+
+	/// @brief Runs a chunk on state 0; intended for debug/console use
+	auto runString(std::string_view lua_code) noexcept -> bool;
 
 private:
 	static inline LuaState* instance = nullptr;
-	lua_State* m_state = nullptr;
+
+	struct Entry {
+		lua_State* state = nullptr;
+		std::recursive_timed_mutex mutex;
+	};
+
+	std::array<Entry, pool_size> m_entries;
+	std::atomic<size_t> m_next_index = 0;
 
 	LuaState();
 
-	void registerApi() noexcept;
+	static void registerApi(lua_State* state) noexcept;
 };
 
 }

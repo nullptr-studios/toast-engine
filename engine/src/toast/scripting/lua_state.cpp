@@ -1,8 +1,11 @@
 #include "lua_state.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_util.hpp"
 #include "node_proxy.hpp"
 
+#include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <format>
 #include <glm/common.hpp>
@@ -101,6 +104,42 @@ void luaToastWarn(const std::string& msg) {
 void luaToastError(const std::string& msg) {
 	TOAST_ERROR("Lua", "{}", msg);
 }
+
+thread_local std::vector<size_t> t_held_states;    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+
+constexpr auto k_cross_state_timeout = std::chrono::milliseconds(500);
+}
+
+LuaState::Lock::Lock(std::unique_lock<std::recursive_timed_mutex> lock, lua_State* state, size_t index) noexcept
+    : m_lock(std::move(lock)),
+      m_state(state),
+      m_index(index) {
+	if (m_lock.owns_lock()) {
+		t_held_states.push_back(m_index);
+	}
+}
+
+LuaState::Lock::Lock(Lock&& other) noexcept : m_lock(std::move(other.m_lock)), m_state(other.m_state), m_index(other.m_index) {
+	other.m_state = nullptr;
+}
+
+auto LuaState::Lock::operator=(Lock&& other) noexcept -> Lock& {
+	if (this != &other) {
+		if (m_lock.owns_lock()) {
+			t_held_states.pop_back();
+		}
+		m_lock = std::move(other.m_lock);
+		m_state = other.m_state;
+		m_index = other.m_index;
+		other.m_state = nullptr;
+	}
+	return *this;
+}
+
+LuaState::Lock::~Lock() {
+	if (m_lock.owns_lock()) {
+		t_held_states.pop_back();
+	}
 }
 
 auto LuaState::create() noexcept -> std::unique_ptr<LuaState> {
@@ -116,18 +155,47 @@ auto LuaState::get() noexcept -> LuaState& {
 	return *LuaState::instance;
 }
 
+auto LuaState::lock(size_t index) noexcept -> Lock {
+	Entry& entry = m_entries[index];
+
+	const bool holds_other = !t_held_states.empty() && std::ranges::find(t_held_states, index) == t_held_states.end();
+
+	std::unique_lock<std::recursive_timed_mutex> guard(entry.mutex, std::defer_lock);
+	if (holds_other) {
+		if (!guard.try_lock_for(k_cross_state_timeout)) {
+			TOAST_ERROR(
+			    "Lua", "Cross-state call timed out acquiring Lua state #{}; skipping (possible call cycle between nodes)", index
+			);
+			return {};
+		}
+	} else {
+		guard.lock();
+	}
+	return {std::move(guard), entry.state, index};
+}
+
+auto LuaState::nextIndex() noexcept -> size_t {
+	return m_next_index.fetch_add(1, std::memory_order_relaxed) % pool_size;
+}
+
 auto LuaState::runString(std::string_view lua_code) noexcept -> bool {
-	int load_status = luaL_loadbufferx(m_state, lua_code.data(), lua_code.size(), "=runString", nullptr);
+	Lock guard = lock(0);
+	if (!guard) {
+		return false;
+	}
+	lua_State* state = guard.state();
+
+	int load_status = luaL_loadbufferx(state, lua_code.data(), lua_code.size(), "=runString", nullptr);
 	if (load_status != LUA_OK) {
-		TOAST_ERROR("Lua", "Failed to load Lua code: {}", lua_tostring(m_state, -1));
-		lua_pop(m_state, 1);
+		TOAST_ERROR("Lua", "Failed to load Lua code: {}", lua_tostring(state, -1));
+		lua_pop(state, 1);
 		return false;
 	}
 
-	int pcall_status = lua_pcall(m_state, 0, LUA_MULTRET, 0);
+	int pcall_status = pcallTraceback(state, 0, LUA_MULTRET);
 	if (pcall_status != LUA_OK) {
-		TOAST_ERROR("Lua", "Failed to execute Lua code: {}", lua_tostring(m_state, -1));
-		lua_pop(m_state, 1);
+		TOAST_ERROR("Lua", "Failed to execute Lua code: {}", lua_tostring(state, -1));
+		lua_pop(state, 1);
 		return false;
 	}
 
@@ -136,32 +204,37 @@ auto LuaState::runString(std::string_view lua_code) noexcept -> bool {
 
 LuaState::LuaState() {
 	LuaState::instance = this;
-	m_state = luaL_newstate();
-	TOAST_ASSERT(m_state != nullptr, "Lua", "Failed to create Lua state");
-	luaL_openlibs(m_state);
 
-	lua_atpanic(m_state, [](auto* state) -> int {
-		TOAST_ERROR("Lua", "Panic: {}", lua_tostring(state, -1));
-		return 0;
-	});
+	for (Entry& entry : m_entries) {
+		entry.state = luaL_newstate();
+		TOAST_ASSERT(entry.state != nullptr, "Lua", "Failed to create Lua state");
+		luaL_openlibs(entry.state);
 
-	luabridge::getGlobalNamespace(m_state).addFunction("print", luaPrint).addFunction("warn", luaWarn);
+		lua_atpanic(entry.state, [](auto* state) -> int {
+			TOAST_ERROR("Lua", "Panic: {}", lua_tostring(state, -1));
+			return 0;
+		});
 
-	registerApi();
+		luabridge::getGlobalNamespace(entry.state).addFunction("print", luaPrint).addFunction("warn", luaWarn);
 
-	TOAST_INFO("Lua", "Created lua state");
+		registerApi(entry.state);
+	}
+
+	TOAST_INFO("Lua", "Created pool of {} lua states", pool_size);
 }
 
 LuaState::~LuaState() noexcept {
-	lua_close(m_state);
+	for (Entry& entry : m_entries) {
+		lua_close(entry.state);
+	}
 	LuaState::instance = nullptr;
-	TOAST_INFO("Lua", "Destroyed lua state");
+	TOAST_INFO("Lua", "Destroyed lua state pool");
 }
 
-void LuaState::registerApi() noexcept {
+void LuaState::registerApi(lua_State* state) noexcept {
 	using namespace luabridge;
 
-	getGlobalNamespace(m_state)
+	getGlobalNamespace(state)
 	    .beginNamespace("toast")
 	    .addFunction("trace", luaToastTrace)
 	    .addFunction("info", luaToastInfo)
@@ -397,28 +470,28 @@ void LuaState::registerApi() noexcept {
 	    .endNamespace();
 
 	// color3/color4 are aliases for vec3/vec4
-	luaL_dostring(m_state, "color3 = vec3\ncolor4 = vec4");
+	luaL_dostring(state, "color3 = vec3\ncolor4 = vec4");
 
 	// Node type markers
 	toast::NodeRegistry::forEachType([&](const toast::NodeInfo* info) {
 		const std::string_view bare = stripNamespace(info->type);
 		const std::string global_name(bare);
-		if (auto r = luabridge::Stack<TypeMarker>::push(m_state, TypeMarker {TypeMarker::Kind::Node, std::string(info->type)}); r) {
-			lua_setglobal(m_state, global_name.c_str());
+		if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::Node, std::string(info->type)}); r) {
+			lua_setglobal(state, global_name.c_str());
 		}
 	});
-	if (auto r = luabridge::Stack<TypeMarker>::push(m_state, TypeMarker {TypeMarker::Kind::Node, ""}); r) {
-		lua_setglobal(m_state, "Node");
+	if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::Node, ""}); r) {
+		lua_setglobal(state, "Node");
 	}
 
 	// Asset type markers
 	for (const auto& [type_str, lua_name] : assets::AssetRegistry::registeredLuaNames()) {
-		if (auto r = luabridge::Stack<TypeMarker>::push(m_state, TypeMarker {TypeMarker::Kind::Asset, type_str}); r) {
-			lua_setglobal(m_state, lua_name.c_str());
+		if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::Asset, type_str}); r) {
+			lua_setglobal(state, lua_name.c_str());
 		}
 	}
-	if (auto r = luabridge::Stack<TypeMarker>::push(m_state, TypeMarker {TypeMarker::Kind::Asset, ""}); r) {
-		lua_setglobal(m_state, "Asset");
+	if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::Asset, ""}); r) {
+		lua_setglobal(state, "Asset");
 	}
 }
 

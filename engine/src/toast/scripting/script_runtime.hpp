@@ -115,8 +115,16 @@ public:
 	[[nodiscard]]
 	auto hasTick(toast::TickFunctionList mask = toast::TickFunctionList::tick_mask) const noexcept -> bool;
 
+	/// Index of the pooled Lua state this runtime is bound to
+	[[nodiscard]]
+	auto stateIndex() const noexcept -> size_t {
+		return m_state_index;
+	}
+
 private:
 	std::vector<std::unique_ptr<ScriptInstance>> m_instances;
+	size_t m_state_index = 0;
+	lua_State* m_lua = nullptr;
 };
 
 }
