@@ -53,6 +53,36 @@ public static class InspectorFormat {
 		};
 	}
 
+	// matches scripting::LuaVarKind on the engine side
+	public static WidgetKind LuaKindOf(uint kind, bool isArray) {
+		var baseKind = kind switch {
+			0 => WidgetKind.Bool,
+			1 => WidgetKind.Int,
+			2 => WidgetKind.Float,
+			3 => WidgetKind.String,
+			4 => WidgetKind.Vec2,
+			5 => WidgetKind.Vec3,
+			6 => WidgetKind.Vec4,
+			7 => WidgetKind.Color3,
+			8 => WidgetKind.Color4,
+			9 => WidgetKind.NodeRef,
+			10 => WidgetKind.AssetRef,
+			_ => WidgetKind.ReadOnly
+		};
+		if (!isArray) return baseKind;
+		return baseKind switch {
+			WidgetKind.Color3 => WidgetKind.Color3Array,
+			WidgetKind.Color4 => WidgetKind.Color4Array,
+			_ => WidgetKind.Array
+		};
+	}
+
+	// "toast::Node3D" -> "Node3D"
+	public static string BareName(string typeName) {
+		var i = typeName.LastIndexOf(':');
+		return i >= 0 ? typeName[(i + 1)..] : typeName;
+	}
+
 	// "m_local_position" -> "Local Position"; "m_uid" -> "Uid"
 	public static string DisplayName(string rawName) {
 		var name = rawName;
@@ -275,6 +305,28 @@ public partial class FieldVM : ObservableObject {
 		}
 	}
 
+	public FieldVM(Proto.Events.LuaField info) {
+		ParameterName = info.Path;
+		IsLua = true;
+		Kind = InspectorFormat.LuaKindOf(info.Kind, info.IsArray);
+		DisplayName = InspectorFormat.DisplayName(info.Name);
+		ReadOnly = false;
+		Unit = null;
+		RefType = string.IsNullOrEmpty(info.RefType) ? null : InspectorFormat.BareName(info.RefType);
+		Min = double.NegativeInfinity;
+		Max = double.PositiveInfinity;
+		m_default = null; // cannot have default on lua
+
+		Segments.Add(new TextSegment(DisplayName, false));
+
+		if (Kind == WidgetKind.Array) {
+			ArrayElementKind = InspectorFormat.LuaKindOf(info.Kind, false);
+			ArrayItems.CollectionChanged += (_, _) => OnUserEdited();
+		}
+
+		ApplyEngineString(info.Value);
+	}
+
 	internal FieldVM(
 		WidgetKind elementKind, string displayName, bool readOnly, string? unit, string? refType, double min,
 		double max) {
@@ -294,6 +346,7 @@ public partial class FieldVM : ObservableObject {
 	public string ParameterName { get; }
 	public string DisplayName { get; }
 	public WidgetKind Kind { get; }
+	public bool IsLua { get; }
 	public bool ReadOnly { get; }
 	public double Min { get; }
 	public double Max { get; }

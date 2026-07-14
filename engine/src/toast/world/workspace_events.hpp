@@ -223,4 +223,50 @@ struct InspectorContent : Event<InspectorContent> {
 	      parameters(std::move(fields)) { }
 };
 
+struct InspectorLuaContent : Event<InspectorLuaContent> {
+	struct LuaField {
+		std::string path;
+		std::string name;
+		uint32_t kind = 0;
+		bool is_array = false;
+		std::string ref_type;
+		std::string value;
+	};
+
+	struct LuaSubgroup {
+		std::string name;
+		std::vector<LuaField> fields;
+	};
+
+	struct LuaGroup {
+		std::string name;
+		std::vector<LuaField> fields;
+		std::vector<LuaSubgroup> subgroups;
+	};
+
+	struct LuaScriptCard {
+		std::string script;
+		std::vector<LuaField> fields;
+		std::vector<LuaGroup> groups;
+	};
+
+	std::string uid;
+	uint32_t schema_version = 0;
+	std::vector<LuaScriptCard> scripts;
+
+	InspectorLuaContent() = default;
+
+	InspectorLuaContent(std::string_view uid, uint32_t schema_version, std::vector<LuaScriptCard> scripts)
+	    : uid(uid),
+	      schema_version(schema_version),
+	      scripts(std::move(scripts)) { }
+};
+
+struct NodeChangeLuaParam : Event<NodeChangeLuaParam> {
+	std::string path;
+	std::string value;
+
+	NodeChangeLuaParam(std::string_view path, std::string_view value) : path(path), value(value) { }
+};
+
 }

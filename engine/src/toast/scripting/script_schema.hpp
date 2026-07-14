@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace scripting {
@@ -50,6 +51,36 @@ struct LuaGroup {
 struct ScriptSchema {
 	std::vector<LuaVarDesc> fields;
 	std::vector<LuaGroup> groups;
+
+	/// Calls fn(const LuaVarDesc&) for every var
+	template<typename F>
+	void forEach(F&& fn) const {
+		for (const auto& f : fields) {
+			fn(f);
+		}
+		for (const auto& g : groups) {
+			for (const auto& f : g.fields) {
+				fn(f);
+			}
+			for (const auto& s : g.subgroups) {
+				for (const auto& f : s.fields) {
+					fn(f);
+				}
+			}
+		}
+	}
+
+	/// Finds a var by its path
+	[[nodiscard]]
+	auto find(std::string_view path) const -> const LuaVarDesc* {
+		const LuaVarDesc* found = nullptr;
+		forEach([&](const LuaVarDesc& d) {
+			if (found == nullptr && d.path == path) {
+				found = &d;
+			}
+		});
+		return found;
+	}
 };
 
 }

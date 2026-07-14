@@ -497,6 +497,158 @@ struct ProtoTraits<InspectorContent> {
 TOAST_PROTO_EVENT(InspectorContent);
 
 template<>
+struct ProtoTraits<InspectorLuaContent::LuaField> {
+	using Proto = proto::events::LuaField;
+	using Event = InspectorLuaContent::LuaField;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_path(e.path);
+		p.set_name(e.name);
+		p.set_kind(e.kind);
+		p.set_is_array(e.is_array);
+		p.set_ref_type(e.ref_type);
+		p.set_value(e.value);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.path(), p.name(), p.kind(), p.is_array(), p.ref_type(), p.value()}; }
+};
+
+template<>
+struct ProtoTraits<InspectorLuaContent::LuaSubgroup> {
+	using Proto = proto::events::LuaSubgroup;
+	using Event = InspectorLuaContent::LuaSubgroup;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_name(e.name);
+		for (const auto& f : e.fields) {
+			*p.add_fields() = ProtoTraits<InspectorLuaContent::LuaField>::toProto(f);
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.name = p.name();
+		e.fields.reserve(p.fields_size());
+		for (const auto& f : p.fields()) {
+			e.fields.emplace_back(ProtoTraits<InspectorLuaContent::LuaField>::fromProto(f));
+		}
+		return e;
+	}
+};
+
+template<>
+struct ProtoTraits<InspectorLuaContent::LuaGroup> {
+	using Proto = proto::events::LuaGroup;
+	using Event = InspectorLuaContent::LuaGroup;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_name(e.name);
+		for (const auto& f : e.fields) {
+			*p.add_fields() = ProtoTraits<InspectorLuaContent::LuaField>::toProto(f);
+		}
+		for (const auto& s : e.subgroups) {
+			*p.add_subgroups() = ProtoTraits<InspectorLuaContent::LuaSubgroup>::toProto(s);
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.name = p.name();
+		e.fields.reserve(p.fields_size());
+		for (const auto& f : p.fields()) {
+			e.fields.emplace_back(ProtoTraits<InspectorLuaContent::LuaField>::fromProto(f));
+		}
+		e.subgroups.reserve(p.subgroups_size());
+		for (const auto& s : p.subgroups()) {
+			e.subgroups.emplace_back(ProtoTraits<InspectorLuaContent::LuaSubgroup>::fromProto(s));
+		}
+		return e;
+	}
+};
+
+template<>
+struct ProtoTraits<InspectorLuaContent::LuaScriptCard> {
+	using Proto = proto::events::LuaScriptCard;
+	using Event = InspectorLuaContent::LuaScriptCard;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_script(e.script);
+		for (const auto& f : e.fields) {
+			*p.add_fields() = ProtoTraits<InspectorLuaContent::LuaField>::toProto(f);
+		}
+		for (const auto& g : e.groups) {
+			*p.add_groups() = ProtoTraits<InspectorLuaContent::LuaGroup>::toProto(g);
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.script = p.script();
+		e.fields.reserve(p.fields_size());
+		for (const auto& f : p.fields()) {
+			e.fields.emplace_back(ProtoTraits<InspectorLuaContent::LuaField>::fromProto(f));
+		}
+		e.groups.reserve(p.groups_size());
+		for (const auto& g : p.groups()) {
+			e.groups.emplace_back(ProtoTraits<InspectorLuaContent::LuaGroup>::fromProto(g));
+		}
+		return e;
+	}
+};
+
+template<>
+struct ProtoTraits<InspectorLuaContent> {
+	using Proto = proto::events::InspectorLuaContent;
+	using Event = InspectorLuaContent;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_uid(e.uid);
+		p.set_schema_version(e.schema_version);
+		for (const auto& s : e.scripts) {
+			*p.add_scripts() = ProtoTraits<InspectorLuaContent::LuaScriptCard>::toProto(s);
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		std::vector<InspectorLuaContent::LuaScriptCard> scripts;
+		scripts.reserve(p.scripts_size());
+		for (const auto& s : p.scripts()) {
+			scripts.emplace_back(ProtoTraits<InspectorLuaContent::LuaScriptCard>::fromProto(s));
+		}
+		return {p.uid(), p.schema_version(), std::move(scripts)};
+	}
+};
+
+TOAST_PROTO_EVENT(InspectorLuaContent);
+
+template<>
+struct ProtoTraits<NodeChangeLuaParam> {
+	using Proto = proto::events::NodeChangeLuaParam;
+	using Event = NodeChangeLuaParam;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_path(e.path);
+		p.set_value(e.value);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.path(), p.value()}; }
+};
+
+TOAST_PROTO_EVENT(NodeChangeLuaParam);
+
+template<>
 struct ProtoTraits<WorkspaceDuplicateNode> {
 	using Proto = proto::events::WorkspaceDuplicateNode;
 	using Event = WorkspaceDuplicateNode;
