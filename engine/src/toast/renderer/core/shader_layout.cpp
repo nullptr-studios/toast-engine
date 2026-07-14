@@ -8,7 +8,6 @@
 
 namespace toast::renderer {
 ShaderLayout::ShaderLayout(const VulkanCore& core, slang::ProgramLayout* slang_layout) {
-	// Keep constructor for compatibility but build hardcoded default layout
 	rebuild(core, "default");
 }
 

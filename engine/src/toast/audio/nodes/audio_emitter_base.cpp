@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <limits>
 #include <toast/assets/assets.hpp>
+#include <toast/audio/audio_event.hpp>
 
 namespace toast {
 

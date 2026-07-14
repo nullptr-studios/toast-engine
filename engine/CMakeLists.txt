@@ -89,14 +89,13 @@ target_link_libraries(toast_engine
         SDL3::SDL3
         Vulkan::Vulkan
         KTX::ktx
-        GPUOpen::VulkanMemoryAllocator
         unofficial::VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-Hpp
         slang::gfx slang::slang protobuf::libprotobuf tinysplinecxx::tinysplinecxx
         LZ4::lz4
         $<$<CONFIG:Debug>:${EXTERNAL_LIBS_DEBUG}>
         $<$<NOT:$<CONFIG:Debug>>:${EXTERNAL_LIBS_RELEASE}>
         PUBLIC
-        Tracy::TracyClient glm::glm nlohmann_json::nlohmann_json
+        Tracy::TracyClient glm::glm nlohmann_json::nlohmann_json GPUOpen::VulkanMemoryAllocator
 )
 
 foreach (config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)

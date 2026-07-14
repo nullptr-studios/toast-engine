@@ -3,6 +3,7 @@
 #include "assets.hpp"
 #include "texture.hpp"
 #include "toast/renderer/core/vulkan_debug.hpp"
+#include "toast/renderer/core/vulkan_renderer.hpp"
 
 #include <algorithm>
 #include <format>
