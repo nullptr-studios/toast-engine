@@ -1,6 +1,6 @@
 #include "mesh.hpp"
 
-#include "toast/renderer/core/vulkan_renderer.hpp"
+#include "toast/renderer/vulkan_renderer.hpp"
 
 namespace assets {
 

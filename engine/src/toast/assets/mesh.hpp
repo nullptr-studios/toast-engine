@@ -8,7 +8,7 @@
 
 #pragma once
 #include "core_types.hpp"
-#include "toast/renderer/core/vulkan_renderer.hpp"
+#include "toast/renderer/vulkan_renderer.hpp"
 
 #include <glm/glm.hpp>
 #include <toast/export.hpp>

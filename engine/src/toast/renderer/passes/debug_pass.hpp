@@ -1,12 +1,12 @@
-/// @file DebugPass.hpp
+/// @file debug_pass.hpp
 /// @author dario
 /// @date 10/06/2026.
 
 #pragma once
-#include "core/render_pass_base.hpp"
-#include "core/shader_layout.hpp"
-#include "core/vulkan_common.hpp"
-#include "core/vulkan_pipeline.hpp"
+#include "../render_pass_base.hpp"
+#include "../shader_layout.hpp"
+#include "../vulkan_common.hpp"
+#include "../vulkan_pipeline.hpp"
 
 #include <glm/glm.hpp>
 #include <vector>

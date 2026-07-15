@@ -1,11 +1,11 @@
 #include "mesh_node.hpp"
 
-#include "toast/engine.hpp"
+#include "toast/renderer/vulkan_renderer.hpp"
 
 namespace toast {
 
 void MeshNode::init() {
-	Engine::get()->registerMeshNodeProxy(this);
+	renderer::registerMeshNodeProxy(this);
 	m_registered_proxy = true;
 }
 
@@ -14,7 +14,7 @@ void MeshNode::end() {
 		return;
 	}
 
-	Engine::get()->unregisterMeshNodeProxy(this);
+	renderer::unregisterMeshNodeProxy(this);
 	m_registered_proxy = false;
 }
 

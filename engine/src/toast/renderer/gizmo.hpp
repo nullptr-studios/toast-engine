@@ -3,7 +3,7 @@
 /// @date 10/06/2026.
 
 #pragma once
-#include "core/vulkan_mesh.hpp"
+#include "vulkan_mesh.hpp"
 
 #include <vector>
 

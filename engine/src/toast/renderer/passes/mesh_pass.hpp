@@ -1,13 +1,13 @@
-/// @file MeshPass.hpp
+/// @file mesh_pass.hpp
 /// @author dario
 /// @date 08/06/2026.
 
 #pragma once
-#include "core/render_pass_base.hpp"
-#include "core/shader_layout.hpp"
-#include "core/vulkan_mesh.hpp"
-#include "core/vulkan_pipeline.hpp"
-#include "core/vulkan_texture.hpp"
+#include "../render_pass_base.hpp"
+#include "../shader_layout.hpp"
+#include "../vulkan_mesh.hpp"
+#include "../vulkan_pipeline.hpp"
+#include "../vulkan_texture.hpp"
 #include "toast/events/listener.hpp"
 
 #include <atomic>

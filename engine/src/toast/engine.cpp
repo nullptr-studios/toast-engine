@@ -13,35 +13,32 @@
 #include "logger.hpp"
 #include "project_settings.hpp"
 #include "reflect/reflect.hpp"
-#include "renderer/DebugPass.hpp"
-#include "renderer/MeshPass.hpp"
-#include "renderer/core/sdl_output_target.hpp"
-#include "renderer/core/shader_compiler.hpp"
-#include "renderer/core/shader_layout.hpp"
-#include "renderer/core/shared_texture_output_target.hpp"
-#include "renderer/core/vulkan_core.hpp"
-#include "renderer/core/vulkan_renderer.hpp"
+#include "renderer/passes/debug_pass.hpp"
+#include "renderer/passes/mesh_pass.hpp"
+#include "renderer/sdl_output_target.hpp"
+#include "renderer/shader_compiler.hpp"
+#include "renderer/shader_layout.hpp"
+#include "renderer/shared_texture_output_target.hpp"
+#include "renderer/vulkan_core.hpp"
+#include "renderer/vulkan_renderer.hpp"
 #include "thread_pool.hpp"
 #include "time.hpp"
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
 #include "world/camera.hpp"
-#include "world/mesh_node.hpp"
 #include "world/play_workspace.hpp"
 #include "world/workspace.hpp"
 #include "world/workspace_events.hpp"
 #include "world/world.hpp"
 
 #include <SDL3/SDL.h>
-#include <algorithm>
 #include <cassert>
 #include <filesystem>
 #include <fstream>
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <ranges>
 #include <span>
 #include <sstream>
 
@@ -78,9 +75,6 @@ struct EnginePimpl {
 	std::mutex owners_mutex;
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
 	toast::UID active_workspace {0};
-
-	std::mutex mesh_proxy_mutex;
-	std::vector<MeshNode*> mesh_proxy_nodes;
 };
 
 Engine::Engine() noexcept {
@@ -263,77 +257,7 @@ void Engine::tick() {
 	}
 
 	if (m->renderer) {
-		ZoneScopedN("Renderer::submitFrame()");
-		auto& sem = m->renderer->getFreeFramesSemaphore();
-		// Dont block the main thread if theres no free render slot
-		if (!sem.try_acquire()) {
-			// No free frames available
-		} else {
-			auto& frame = toast::renderer::beginFrameBuild();
-
-			frame.mesh_instances.clear();
-			frame.debug_line_vertices.clear();
-			frame.debug_gizmo_instances.clear();
-
-			std::vector<MeshNode*> mesh_nodes_snapshot;
-			{
-				std::scoped_lock lock(m->mesh_proxy_mutex);
-				mesh_nodes_snapshot = m->mesh_proxy_nodes;
-			}
-			frame.mesh_instances.reserve(mesh_nodes_snapshot.size());
-
-			for (auto* node : mesh_nodes_snapshot) {
-				if (node == nullptr || !node->enabled()) {
-					continue;
-				}
-
-				auto& mesh_handle = node->getMesh();
-				if (!mesh_handle.hasValue()) {
-					continue;
-				}
-
-				auto& gpu_mesh = mesh_handle->gpuMesh();
-				if (!gpu_mesh.isReady()) {
-					continue;
-				}
-
-				auto& material_handle = node->getMaterial();
-				if (material_handle.hasValue()) {
-					material_handle->resolveTextureHandles();
-				}
-
-				const auto world_transform = node->worldTransformForRender();
-
-				frame.mesh_instances.push_back(
-				    toast::renderer::VulkanRenderer::MeshInstanceProxy {
-				      .mesh = &gpu_mesh,
-				      .material = material_handle.hasValue() ? &material_handle.get() : nullptr,
-				      .model = world_transform,
-				    }
-				);
-
-				// DEBUG
-				frame.debug_gizmo_instances.push_back(world_transform);
-			}
-
-			auto* cam = renderer::getActiveCamera();
-			if (cam) {
-				const auto extent = m->renderer->getOutputTarget().getExtent();
-				const float aspect =
-				    extent.height > 0 ? static_cast<float>(extent.width) / static_cast<float>(extent.height) : (1080.0f / 720.0f);
-				auto camera_data = renderer::VulkanRenderer::FrameUBO {
-				  .view = cam->getView(),
-				  .projection = cam->getProjection(aspect),
-				  .view_projection = cam->getProjection(aspect) * cam->getView(),
-				  .camera_position = cam->worldPos(),
-				  .time = total_time
-				};
-
-				frame.frame_data = camera_data;
-			}
-
-			renderer::submitFrame();
-		}
+		m->renderer->tick(total_time);
 	}
 }
 
@@ -507,26 +431,6 @@ void Engine::destroyWorkspace(UID handle) {
 
 auto Engine::activeWorkspace() -> UID {
 	return m->active_workspace;
-}
-
-void Engine::registerMeshNodeProxy(MeshNode* node) {
-	if (node == nullptr) {
-		return;
-	}
-
-	std::scoped_lock lock(m->mesh_proxy_mutex);
-	if (!std::ranges::contains(m->mesh_proxy_nodes, node)) {
-		m->mesh_proxy_nodes.push_back(node);
-	}
-}
-
-void Engine::unregisterMeshNodeProxy(MeshNode* node) {
-	if (node == nullptr) {
-		return;
-	}
-
-	std::scoped_lock lock(m->mesh_proxy_mutex);
-	std::erase(m->mesh_proxy_nodes, node);
 }
 
 auto Engine::getViewportFrame(void* dst, uint32_t dst_capacity, renderer::ViewportFrameDesc* out) -> int {

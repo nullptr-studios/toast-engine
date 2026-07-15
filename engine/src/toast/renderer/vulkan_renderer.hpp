@@ -33,6 +33,7 @@ class Material;
 
 namespace toast {
 class Camera;
+class MeshNode;
 }
 
 namespace toast::renderer {
@@ -119,6 +120,21 @@ public:
 	}
 
 	void submitFrame() noexcept;
+
+	/**
+	 * @brief Builds the next RenderFrame from the active camera and registered mesh proxies, then submits it
+	 *
+	 * Called once per simulation tick; does nothing if there's no free render slot available
+	 *
+	 * @param time Elapsed time in seconds, forwarded into the frame's FrameUBO
+	 */
+	void tick(float time) noexcept;
+
+	/// @brief Registers @p node so its mesh is drawn each frame; no-op if already registered
+	void registerMeshNodeProxy(MeshNode* node);
+
+	/// @brief Unregisters @p node so it stops being drawn
+	void unregisterMeshNodeProxy(MeshNode* node);
 
 	/**
 	 * @brief Caps how often the render thread draws & presents a frame
@@ -262,6 +278,9 @@ private:
 	/// Active camera for the renderer, Can be nullptr if no camera is set
 	Camera* m_camera = nullptr;
 
+	std::mutex m_mesh_proxy_mutex;
+	std::vector<MeshNode*> m_mesh_proxy_nodes;
+
 	// FrameUBO and related resources
 	std::vector<FrameUBO> m_frame_ubos;
 	std::vector<FrameResources> m_frame_ubo_res;
@@ -299,6 +318,14 @@ inline auto getActiveCamera() -> Camera* {
 
 inline void setActiveCamera(Camera* camera) {
 	VulkanRenderer::instance->setActiveCamera(camera);
+}
+
+inline void registerMeshNodeProxy(MeshNode* node) {
+	VulkanRenderer::instance->registerMeshNodeProxy(node);
+}
+
+inline void unregisterMeshNodeProxy(MeshNode* node) {
+	VulkanRenderer::instance->unregisterMeshNodeProxy(node);
 }
 
 inline void queueResourceUpload(std::unique_ptr<PendingResourceUpload> upload) {

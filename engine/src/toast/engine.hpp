@@ -6,7 +6,6 @@
 #include <toast/uid.hpp>
 
 namespace toast {
-class MeshNode;
 
 namespace renderer {
 class VulkanCore;
@@ -47,9 +46,6 @@ public:
 	/// @brief Clones the given workspace's into a new ticking PlayWorkspace
 	auto playWorkspace(UID source_handle) -> std::pair<UID, std::string>;
 	void destroyWorkspace(UID handle);
-
-	void registerMeshNodeProxy(MeshNode* node);
-	void unregisterMeshNodeProxy(MeshNode* node);
 
 	auto activeWorkspace() -> UID;
 

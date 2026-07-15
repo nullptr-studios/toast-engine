@@ -1,13 +1,13 @@
-/// @file DebugPass.cpp
+/// @file debug_pass.cpp
 /// @author dario
 /// @date 10/06/2026.
 
-#include "DebugPass.hpp"
+#include "debug_pass.hpp"
 
-#include "core/shader_compiler.hpp"
-#include "core/vulkan_core.hpp"
-#include "core/vulkan_debug.hpp"
-#include "core/vulkan_renderer.hpp"
+#include "../shader_compiler.hpp"
+#include "../vulkan_core.hpp"
+#include "../vulkan_debug.hpp"
+#include "../vulkan_renderer.hpp"
 #include "toast/log.hpp"
 
 #include <array>

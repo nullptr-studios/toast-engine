@@ -1,14 +1,14 @@
-/// @file MeshPass.cpp
+/// @file mesh_pass.cpp
 /// @author dario
 /// @date 08/06/2026.
 
-#include "MeshPass.hpp"
+#include "mesh_pass.hpp"
 
-#include "core/shader_compiler.hpp"
-#include "core/vulkan_core.hpp"
-#include "core/vulkan_debug.hpp"
-#include "core/vulkan_renderer.hpp"
-#include "core/vulkan_texture.hpp"
+#include "../shader_compiler.hpp"
+#include "../vulkan_core.hpp"
+#include "../vulkan_debug.hpp"
+#include "../vulkan_renderer.hpp"
+#include "../vulkan_texture.hpp"
 #include "toast/assets/assets.hpp"
 #include "toast/assets/material.hpp"
 #include "toast/assets/texture.hpp"

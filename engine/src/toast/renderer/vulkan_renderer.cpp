@@ -9,8 +9,10 @@
 #include "toast/time.hpp"
 #include "toast/window/window_events.hpp"
 #include "toast/world/camera.hpp"
+#include "toast/world/mesh_node.hpp"
 #include "vulkan_debug.hpp"
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstring>
@@ -645,6 +647,98 @@ void VulkanRenderer::submitFrame() noexcept {
 	}
 
 	m_frame_cv.notify_one();
+}
+
+void VulkanRenderer::tick(float time) noexcept {
+	ZoneScopedN("VulkanRenderer::tick()");
+
+	// Dont block the main thread if theres no free render slot
+	if (!m_free_frames.try_acquire()) {
+		return;
+	}
+
+	auto& frame = beginFrameBuild();
+
+	frame.mesh_instances.clear();
+	frame.debug_line_vertices.clear();
+	frame.debug_gizmo_instances.clear();
+
+	std::vector<MeshNode*> mesh_nodes_snapshot;
+	{
+		std::scoped_lock lock(m_mesh_proxy_mutex);
+		mesh_nodes_snapshot = m_mesh_proxy_nodes;
+	}
+	frame.mesh_instances.reserve(mesh_nodes_snapshot.size());
+
+	for (auto* node : mesh_nodes_snapshot) {
+		if (node == nullptr || !node->enabled()) {
+			continue;
+		}
+
+		auto& mesh_handle = node->getMesh();
+		if (!mesh_handle.hasValue()) {
+			continue;
+		}
+
+		auto& gpu_mesh = mesh_handle->gpuMesh();
+		if (!gpu_mesh.isReady()) {
+			continue;
+		}
+
+		auto& material_handle = node->getMaterial();
+		if (material_handle.hasValue()) {
+			material_handle->resolveTextureHandles();
+		}
+
+		const auto world_transform = node->worldTransformForRender();
+
+		frame.mesh_instances.push_back(
+		    MeshInstanceProxy {
+		      .mesh = &gpu_mesh,
+		      .material = material_handle.hasValue() ? &material_handle.get() : nullptr,
+		      .model = world_transform,
+		    }
+		);
+
+		// DEBUG
+		frame.debug_gizmo_instances.push_back(world_transform);
+	}
+
+	if (m_camera) {
+		const auto extent = m_output_target->getExtent();
+		const float aspect =
+		    extent.height > 0 ? static_cast<float>(extent.width) / static_cast<float>(extent.height) : (1080.0f / 720.0f);
+
+		frame.frame_data = FrameUBO {
+		  .view = m_camera->getView(),
+		  .projection = m_camera->getProjection(aspect),
+		  .view_projection = m_camera->getProjection(aspect) * m_camera->getView(),
+		  .camera_position = m_camera->worldPos(),
+		  .time = time
+		};
+	}
+
+	submitFrame();
+}
+
+void VulkanRenderer::registerMeshNodeProxy(MeshNode* node) {
+	if (node == nullptr) {
+		return;
+	}
+
+	std::scoped_lock lock(m_mesh_proxy_mutex);
+	if (!std::ranges::contains(m_mesh_proxy_nodes, node)) {
+		m_mesh_proxy_nodes.push_back(node);
+	}
+}
+
+void VulkanRenderer::unregisterMeshNodeProxy(MeshNode* node) {
+	if (node == nullptr) {
+		return;
+	}
+
+	std::scoped_lock lock(m_mesh_proxy_mutex);
+	std::erase(m_mesh_proxy_nodes, node);
 }
 
 void VulkanRenderer::stop() {
