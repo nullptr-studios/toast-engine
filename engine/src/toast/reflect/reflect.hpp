@@ -18,6 +18,7 @@
 #include <string_view>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
+#include <toast/world/box.hpp>
 #include <typeinfo>
 
 namespace toast {
@@ -106,17 +107,21 @@ struct TOAST_API ParameterInfo {
 /**
  * @brief Runtime descriptor for one reflected member function
  *
- * @note Do not call invoke directly; go through NodeInfo::call()
+ * @note Do not call invoke directly; go through NodeInfo::call() or callDynamic()
  */
 struct TOAST_API FunctionInfo {
 	/// Generic erased trampoline pointer; reinterpret_cast back to the real signature before calling
 	using Invoker = void (*)();
+
+	/// receives args as std::any, returns std::any (void → empty std::any)
+	using DynamicInvoker = std::any (*)(void* obj, std::span<const std::any> args);
 
 	std::string_view name;
 	std::string_view return_type;            // C++ return type name, as spelled in the header
 	const std::type_info* return_type_id;    // typeid(std::decay_t<return>), for call-time validation
 	std::span<const ParameterInfo> parameters;
 	Invoker invoke = nullptr;
+	DynamicInvoker invoke_dynamic = nullptr;
 
 	template<typename R = void, typename... Args>
 	auto call(void* obj, Args&&... args) const -> R {
@@ -139,6 +144,23 @@ struct TOAST_API FunctionInfo {
 		using Trampoline = R (*)(void*, std::decay_t<Args>...);
 		auto* trampoline = reinterpret_cast<Trampoline>(invoke);
 		return trampoline(obj, std::forward<Args>(args)...);
+	}
+
+	/**
+	 * @brief Calls the function with runtime-typed arguments for scripting dispatch
+	 *
+	 * Each element of args must hold the exact std::decay_t<ParamType> that we expect
+	 * Arg count must match parameters.size() exactly
+	 *
+	 * @returns the function's return value boxed in std::any, or an empty std::any for void functions
+	 */
+	[[nodiscard]]
+	auto callDynamic(void* obj, std::span<const std::any> args) const -> std::any {
+		if (!invoke_dynamic) {
+			TOAST_WARN("Reflect", "callDynamic(): no dynamic invoker for '{}' (was it compiled with an older generator?)", name);
+			return {};
+		}
+		return invoke_dynamic(obj, args);
 	}
 };
 
@@ -216,6 +238,26 @@ struct FieldAccess {
 				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member =
 				    static_cast<FieldType>(std::any_cast<unsigned char>(value));
 			}
+		}
+	}
+};
+
+/**
+ * @brief Partial specialization of FieldAccess for Box<T> fields
+ *
+ * Widens the stored type to Box<Node> in both directions so that the scripting layer can
+ * handle all node-reference fields uniformly, without needing per-derived-type converters
+ */
+template<class Class, typename T, typename Tag>
+struct FieldAccess<Class, Box<T>, Tag> {
+	static auto get(void* obj) -> std::any {
+		Box<T>& src = static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member;
+		return std::any {Box<Node>(src)};
+	}
+
+	static void set(void* obj, std::any value) {
+		if (auto* box = std::any_cast<Box<Node>>(&value)) {
+			static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member = box->as<T>();
 		}
 	}
 };

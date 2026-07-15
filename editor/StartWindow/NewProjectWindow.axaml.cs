@@ -95,6 +95,7 @@ public partial class NewProjectWindow : Window {
 
 			// Gitignore
 			File.Copy("Resources/files/project.gitignore", Path.Combine(m_projectFolder, ".gitignore"));
+			File.Copy("Resources/files/project.luarc.json", Path.Combine(m_projectFolder, ".luarc.json"));
 
 			// C++ library
 			Directory.CreateDirectory(Path.Combine(m_projectFolder, "lib", "src"));

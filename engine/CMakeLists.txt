@@ -29,6 +29,8 @@ find_package(protobuf CONFIG REQUIRED)
 find_package(tinysplinecxx CONFIG REQUIRED)
 find_package(lz4 CONFIG REQUIRED)
 find_package(tomlplusplus CONFIG REQUIRED)
+find_package(Lua REQUIRED)
+find_path(LUABRIDGE3_INCLUDE_DIRS "luabridge3/LuaBridge/Array.h")
 
 # External paths
 set(EXTERNAL_INC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/inc")
@@ -74,7 +76,7 @@ set(TOAST_ENGINE_OUTPUT_ROOT "${OUTPUT_ROOT}/$<CONFIG>/toast_engine")
 set(TOAST_ENGINE_BIN_DIR "${TOAST_ENGINE_OUTPUT_ROOT}/bin")
 
 target_include_directories(toast_engine
-        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" "${EXTERNAL_INC_DIR}"
+        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" "${EXTERNAL_INC_DIR}" ${LUA_INCLUDE_DIR} ${LUABRIDGE3_INCLUDE_DIRS}
         PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/ffi" "${CMAKE_CURRENT_SOURCE_DIR}/generated"
 )
 
@@ -86,6 +88,7 @@ target_link_libraries(toast_engine
         LZ4::lz4
         $<$<CONFIG:Debug>:${EXTERNAL_LIBS_DEBUG}>
         $<$<NOT:$<CONFIG:Debug>>:${EXTERNAL_LIBS_RELEASE}>
+        ${LUA_LIBRARIES}
         PUBLIC
         Tracy::TracyClient glm::glm nlohmann_json::nlohmann_json
 )

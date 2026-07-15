@@ -86,6 +86,7 @@ macro(run_codegen)
             --include-root "${CMAKE_SOURCE_DIR}/engine/src"
             --register-fn "registerEngineTypes"
             --split-typeinfo
+            --lua-stubs "${CMAKE_SOURCE_DIR}/engine/assets/lua/types.d.lua"
         RESULT_VARIABLE _refgen_result
         OUTPUT_VARIABLE _refgen_output
         ERROR_VARIABLE  _refgen_error

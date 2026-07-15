@@ -150,3 +150,41 @@ message InspectorContent {
   repeated InspectorField parameters = 3;
   string uid = 4;
 }
+
+message LuaField {
+  string path = 1;
+  string name = 2;
+  uint32 kind = 3;
+  bool is_array = 4;
+  string ref_type = 5;
+  string value = 6;
+  string default_value = 7;
+}
+
+message LuaSubgroup {
+  string name = 1;
+  repeated LuaField fields = 2;
+}
+
+message LuaGroup {
+  string name = 1;
+  repeated LuaField fields = 2;
+  repeated LuaSubgroup subgroups = 3;
+}
+
+message LuaScriptCard {
+  string script = 1;
+  repeated LuaField fields = 2;
+  repeated LuaGroup groups = 3;
+}
+
+message InspectorLuaContent {
+  string uid = 1;
+  uint32 schema_version = 2;
+  repeated LuaScriptCard scripts = 3;
+}
+
+message NodeChangeLuaParam {
+  string path = 1;
+  string value = 2;
+}

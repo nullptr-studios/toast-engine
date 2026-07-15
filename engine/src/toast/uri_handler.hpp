@@ -8,6 +8,11 @@
 
 #pragma once
 
+#include <cstdint>
+#include <string>
+#include <string_view>
+#include <utility>
+
 namespace toast {
 
 enum class URI : uint8_t {

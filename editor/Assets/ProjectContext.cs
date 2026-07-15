@@ -50,6 +50,37 @@ public static class ProjectContext {
 		IsInitialized = true;
 	}
 
+	public static void SyncLuaDefinitions(Action<string>? log = null) {
+		var src = Path.Combine(CorePath, "lua");
+		var dst = Path.Combine(CachePath, "lua");
+		Directory.CreateDirectory(dst);
+
+		if (Directory.Exists(src)) {
+			var count = 0;
+			foreach (var file in Directory.EnumerateFiles(src, "*.lua")) {
+				File.Copy(file, Path.Combine(dst, Path.GetFileName(file)), true);
+				count++;
+			}
+
+			log?.Invoke($"Copied {count} lua definition file(s) -> {dst}");
+		} else {
+			log?.Invoke($"warning: engine lua stubs not found at {src}");
+		}
+
+		var luarc = Path.Combine(ProjectPath, ".luarc.json");
+		if (File.Exists(luarc)) return;
+		File.WriteAllText(luarc,
+			"""
+			{
+				"$schema": "https://raw.githubusercontent.com/LuaLS/lua-language-server/master/setting/schema.json",
+				"runtime.version": "Lua 5.4",
+				"workspace.library": [".toast/lua"],
+				"workspace.checkThirdParty": false
+			}
+			""" + Environment.NewLine);
+		log?.Invoke("Wrote .luarc.json");
+	}
+
 	public static void ReloadProjectSettings() {
 		if (!IsInitialized) return;
 

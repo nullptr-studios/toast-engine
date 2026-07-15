@@ -13,8 +13,6 @@ namespace assets {
 
 class TOAST_API InputSettings : public Data {
 public:
-	static constexpr std::string_view collection = "input_settings";
-
 	explicit InputSettings(const toml::table& table, const AssetHandle<Schema>& schema = {})
 	    : Data(table, schema, Data::keep_all_keys) { }
 

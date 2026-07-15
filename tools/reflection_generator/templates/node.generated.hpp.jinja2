@@ -33,6 +33,16 @@ namespace _detail {
 	inline auto {{ snake_name }}_method_{{ m.name }}(void* obj{% for p in m.parameters %}, std::decay_t<{{ p.type }}> {{ p.arg_name }}{% endfor %}) {
 		return (static_cast<{{ qualified_name }}*>(obj)->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{{ p.arg_name }}{% if not loop.last %}, {% endif %}{% endfor %});
 	}
+
+	inline std::any {{ snake_name }}_method_{{ m.name }}_dyn(void* obj, std::span<const std::any> args) {
+		auto* self = static_cast<{{ qualified_name }}*>(obj);
+{% if m.return_type == "void" %}
+		(self->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{% if "Box<" in p.type %}std::any_cast<toast::Box<toast::Node>>(args[{{ loop.index0 }}]).as<{{ p.type | replace("toast::Box<", "") | replace("const ", "") | replace("&", "") | replace(">", "") | trim }}>(){% else %}std::any_cast<std::decay_t<{{ p.type }}>>(args[{{ loop.index0 }}]){% endif %}{% if not loop.last %}, {% endif %}{% endfor %});
+		return std::any{};
+{% else %}
+		return std::any{ (self->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{% if "Box<" in p.type %}std::any_cast<toast::Box<toast::Node>>(args[{{ loop.index0 }}]).as<{{ p.type | replace("toast::Box<", "") | replace("const ", "") | replace("&", "") | replace(">", "") | trim }}>(){% else %}std::any_cast<std::decay_t<{{ p.type }}>>(args[{{ loop.index0 }}]){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}) };
+{% endif %}
+	}
 {% endfor %}
 {% if not is_interface %}
 	inline {{ qualified_name }}* {{ snake_name }}_construct() { return new {{ qualified_name }}(); }
@@ -102,8 +112,9 @@ struct Reflect<{{ qualified_name }}> {
 			.name           = "{{ m.name }}",
 			.return_type    = "{{ m.return_type }}",
 			.return_type_id = &typeid(std::decay_t<{{ m.return_type }}>),
-			.parameters     = {{ m.name }}_param_info,
-			.invoke         = reinterpret_cast<FunctionInfo::Invoker>(&_detail::{{ snake_name }}_method_{{ m.name }}),
+			.parameters      = {{ m.name }}_param_info,
+			.invoke          = reinterpret_cast<FunctionInfo::Invoker>(&_detail::{{ snake_name }}_method_{{ m.name }}),
+			.invoke_dynamic  = reinterpret_cast<FunctionInfo::DynamicInvoker>(&_detail::{{ snake_name }}_method_{{ m.name }}_dyn),
 		},
 	{% endfor %}
 	{{ '}}' }};

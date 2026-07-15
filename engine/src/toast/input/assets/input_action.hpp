@@ -33,8 +33,6 @@ enum class AccumulationType : uint8_t { highest, average };
  */
 class TOAST_API Action : public Data {
 public:
-	static constexpr std::string_view collection = "input_actions";
-
 	explicit Action(const toml::table& table, AssetHandle<Schema> schema = {});
 
 	[[nodiscard]]

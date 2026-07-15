@@ -1,0 +1,6 @@
+{
+	"$schema": "https://raw.githubusercontent.com/LuaLS/lua-language-server/master/setting/schema.json",
+	"runtime.version": "Lua 5.4",
+	"workspace.library": ["engine/assets/lua"],
+	"workspace.checkThirdParty": false
+}

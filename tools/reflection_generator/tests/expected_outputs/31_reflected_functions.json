@@ -1,21 +1,23 @@
 [
   {
     "attributes": {},
-    "functions": {
-      "begin": false,
-      "destroy": false,
-      "early_tick": false,
-      "end": false,
-      "init": false,
-      "late_tick": false,
-      "load": false,
-      "on_disable": false,
-      "on_enable": false,
-      "post_physics": false,
-      "pre_init": false,
-      "save": false,
-      "tick": true
-    },
+    "fields": [
+      {
+        "attributes": {
+          "Group": [
+            "Stats"
+          ]
+        },
+        "default": "100",
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_health",
+        "typename": "int"
+      }
+    ],
+    "functions": [
+      "tick"
+    ],
     "global_fields": [],
     "groups": [
       {
@@ -40,6 +42,8 @@
     "is_interface": false,
     "methods": [
       {
+        "attributes": {},
+        "is_const": false,
         "name": "takeDamage",
         "parameters": [
           {
@@ -56,6 +60,8 @@
         "return_type": "int"
       },
       {
+        "attributes": {},
+        "is_const": false,
         "name": "teleport",
         "parameters": [
           {
@@ -67,6 +73,8 @@
         "return_type": "void"
       },
       {
+        "attributes": {},
+        "is_const": false,
         "name": "simulate",
         "parameters": [
           {
@@ -83,6 +91,8 @@
         "return_type": "DamageReport"
       },
       {
+        "attributes": {},
+        "is_const": true,
         "name": "isAlive",
         "parameters": [],
         "return_type": "bool"
@@ -91,6 +101,21 @@
     "name": "FunctionNode",
     "namespace": "toast",
     "parent": null,
-    "source_file": "31_reflected_functions.hpp"
+    "source_file": "31_reflected_functions.hpp",
+    "tick_functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": true
+    }
   }
 ]

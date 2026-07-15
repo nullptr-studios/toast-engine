@@ -37,8 +37,6 @@ public:
 		return "curve";
 	}
 
-	static constexpr std::string_view collection = "curve";
-
 	[[nodiscard]]
 	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 

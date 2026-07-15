@@ -2,7 +2,35 @@
 
 #include "world.hpp"
 
+#include <toast/scripting/script_runtime.hpp>
+
+namespace toast::_detail {
+
+void callNodeScripts(Node* node, std::string_view name, std::span<const std::any> args) noexcept {
+	if (auto* rt = node->scriptRuntime()) {
+		rt->callWithAnyArgs(name, args);
+	}
+}
+
+void setNodeScriptVar(Node* node, std::string_view name, const std::any& value) noexcept {
+	if (auto* rt = node->scriptRuntime()) {
+		rt->setVar(name, value);
+	}
+}
+
+auto getNodeScriptVar(const Node* node, std::string_view name) noexcept -> std::any {
+	if (auto* rt = const_cast<Node*>(node)->scriptRuntime()) {
+		return rt->getVar(name);
+	}
+	return {};
+}
+
+}
+
 namespace toast {
+
+Node::Node() = default;
+Node::~Node() = default;
 
 auto Node::uid() const noexcept -> const UID& {
 	return m_uid;
@@ -145,6 +173,74 @@ void Node::changeNodeState(NodeState state) noexcept {
 	}
 }
 
+auto Node::hasTickFunction(TickFunctionList mask) const noexcept -> bool {
+	if (m_info && m_info->hasFunction(mask)) {
+		return true;
+	}
+	return m_script_runtime && m_script_runtime->hasTick(mask);
+}
+
+void Node::loadScripts() noexcept {
+	m_script_runtime.reset();
+	if (m_scripts.empty()) {
+		return;
+	}
+	m_script_runtime = std::make_unique<scripting::ScriptRuntime>(m_box, m_scripts);
+}
+
+void Node::reloadScripts() noexcept {
+	ZoneScopedN("Lua reload");    // NOLINT
+	using scripting::LuaVarDesc;
+
+	struct SavedVar {
+		std::string path;
+		scripting::LuaVarKind kind;
+		bool is_array;
+		std::any value;
+	};
+
+	std::vector<std::vector<SavedVar>> saved;
+
+	if (m_script_runtime) {
+		saved.resize(m_script_runtime->instanceCount());
+		for (size_t i = 0; i < m_script_runtime->instanceCount(); ++i) {
+			const scripting::ScriptSchema* schema = m_script_runtime->instanceSchema(i);
+			if (schema == nullptr) {
+				continue;
+			}
+			schema->forEach([&](const LuaVarDesc& d) {
+				std::any value = m_script_runtime->getVarByPath(i, d.path);
+				if (value.has_value()) {
+					saved[i].push_back({d.path, d.kind, d.is_array, std::move(value)});
+				}
+			});
+		}
+	}
+
+	loadScripts();
+
+	// Restore unchanged values
+	size_t preserved = 0;
+	if (m_script_runtime) {
+		const size_t shared = std::min(saved.size(), m_script_runtime->instanceCount());
+		for (size_t i = 0; i < shared; ++i) {
+			const scripting::ScriptSchema* schema = m_script_runtime->instanceSchema(i);
+			if (schema == nullptr) {
+				continue;
+			}
+			for (const SavedVar& var : saved[i]) {
+				const LuaVarDesc* desc = schema->find(var.path);
+				if (desc != nullptr && desc->kind == var.kind && desc->is_array == var.is_array &&
+				    m_script_runtime->setVarByPath(i, var.path, var.value)) {
+					++preserved;
+				}
+			}
+		}
+	}
+
+	TOAST_INFO("Lua", "Reloaded scripts on {} ({}): {} value(s) preserved", name(), uid(), preserved);
+}
+
 void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 	if (!info) {
 		TOAST_WARN("Node", "Tried to call a tick function but reflection data is null");
@@ -162,6 +258,11 @@ void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 	// Walk base → derived
 	if (info->base_type) {
 		callTick(info->base_type, func_type);
+	}
+
+	// Lazy script loading
+	if (info == m_info && !m_script_runtime && !m_scripts.empty()) {
+		loadScripts();
 	}
 
 	// Call this level's function
@@ -199,6 +300,11 @@ void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 	if (invoker) {
 		ZoneScopedN("Function call");
 		invoker(this);
+	}
+
+	// After the C++ chain fire Lua scripts at the most-derived level
+	if (info == m_info && m_script_runtime) {
+		m_script_runtime->call(func_type);
 	}
 }
 
