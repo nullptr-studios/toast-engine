@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <format>
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>

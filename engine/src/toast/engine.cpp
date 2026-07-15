@@ -572,7 +572,7 @@ void operator delete(void* ptr) noexcept {
 	free(ptr);
 }
 
-// NOLINTEND(cppcoreguidelines-no-malloc, readability-inconsistent-declaration-parameter-name)
+// NOLINTEND(cppcoreguidelines-no-malloc)
 #endif
 
 // ffi stuff

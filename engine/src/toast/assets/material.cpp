@@ -12,7 +12,6 @@ namespace assets {
 
 namespace {
 
-
 auto readAssetUID(const DataValue& v) -> toast::UID {
 	if (v.type() == DataType::asset_t || v.type() == DataType::node_t) {
 		return static_cast<toast::UID>(v);
