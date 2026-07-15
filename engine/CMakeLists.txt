@@ -113,11 +113,19 @@ endforeach ()
 
 target_compile_definitions(toast_engine PRIVATE TOAST_EXPORT)
 target_precompile_headers(toast_engine PRIVATE pch.h)
+# vma.cpp defines VMA_IMPLEMENTATION, it must not consume the PCH
+set_source_files_properties(src/toast/renderer/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
+
+# protoc-generated .pb.cc files use file-local symbol names, so avoid UNITY inclusion
+file(GLOB _TOAST_PROTO_SOURCES "generated/*.pb.cc")
+set_source_files_properties(${_TOAST_PROTO_SOURCES} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+set_target_properties(toast_engine PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 8)
+
 target_compile_definitions(toast_engine PUBLIC
         $<$<CONFIG:Debug>:DEBUG>
         $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:NDEBUG>
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TRACY_ENABLE>
-        $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TRACY_ON_DEMAND>
+        $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:TRACY_ON_DEMAND> #Apparently tracy lua lib is precompiled and does not define TRACY_ON_DEMAND in debug builds
 )
 
 if (MSVC)

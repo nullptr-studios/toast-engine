@@ -5,6 +5,7 @@
 #pragma once
 
 #include "glm/glm.hpp"
+#include "vertex.hpp"
 #include "vulkan_common.hpp"
 #include "vulkan_resource_base.hpp"
 
@@ -14,23 +15,9 @@
 namespace toast::renderer {
 class VulkanCore;
 
-/// @brief Vertex with position, normals, UVs, tangents, and colors for mesh rendering
-struct Vertex {
-	glm::vec<3, float, glm::packed_highp> position;
-	glm::vec<3, float, glm::packed_highp> normal;
-	glm::vec<2, float, glm::packed_highp> uv;
-	glm::vec<4, float, glm::packed_highp> tangent;
-	glm::vec<3, float, glm::packed_highp> color;
+auto vertexBindingDescription() -> vk::VertexInputBindingDescription;
 
-	/*
-	JOINTS_0
-	WEIGHTS_0
-	*/
-
-	static auto getBindingDescription() -> vk::VertexInputBindingDescription;
-
-	static auto getAttributeDescriptions() -> std::array<vk::VertexInputAttributeDescription, 5>;
-};
+auto vertexAttributeDescriptions() -> std::array<vk::VertexInputAttributeDescription, 5>;
 
 /// @brief GPU mesh with vertex and index buffers stored in VRAM
 class VulkanMesh : public IVulkanResource {

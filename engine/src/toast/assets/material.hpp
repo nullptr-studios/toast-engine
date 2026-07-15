@@ -10,7 +10,12 @@
 #include "core_types.hpp"
 #include "data.hpp"
 
-#include <vulkan/vulkan_raii.hpp>
+#include <memory>
+#include <vulkan/vulkan_core.h>
+
+namespace toast::renderer {
+class VulkanSampler;
+}
 
 namespace assets {
 class Texture;
@@ -21,6 +26,7 @@ public:
 	static constexpr std::string_view collection = "materials";
 
 	explicit Material(const toml::table& table, AssetHandle<Schema> schema = {});
+	~Material() override;
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
@@ -39,7 +45,8 @@ public:
 	[[nodiscard]]
 	auto color() const -> glm::vec4;
 
-	auto albedoSampler() -> vk::raii::Sampler& { return m_albedo_sampler; }
+	[[nodiscard]]
+	auto albedoSampler() const -> VkSampler;
 
 	void resolveTextureHandles();
 
@@ -48,6 +55,6 @@ private:
 	mutable AssetHandle<Texture> m_normal_handle;
 	bool m_sampler_ready = false;
 
-	vk::raii::Sampler m_albedo_sampler = nullptr;    // THISSHOULDBECREATEDPERIMAGESAMPLER
+	std::unique_ptr<toast::renderer::VulkanSampler> m_albedo_sampler;    // THISSHOULDBECREATEDPERIMAGESAMPLER
 };
 }

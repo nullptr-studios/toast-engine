@@ -42,8 +42,8 @@ MeshPass::MeshPass(
 	// store raw pipeline layout handle
 	config.pipeline_layout = *shader_layout.getPipelineLayout();
 
-	config.vertex_binding = toast::renderer::Vertex::getBindingDescription();
-	const auto vertex_attributes = toast::renderer::Vertex::getAttributeDescriptions();
+	config.vertex_binding = toast::renderer::vertexBindingDescription();
+	const auto vertex_attributes = toast::renderer::vertexAttributeDescriptions();
 	config.vertex_attributes.assign(vertex_attributes.begin(), vertex_attributes.end());
 
 	m_pipeline.rebuild(core, config);
@@ -289,7 +289,7 @@ auto MeshPass::getMaterialDescriptorSet(const toast::renderer::VulkanCore& core,
 	}
 
 	const vk::ImageView view = texture.getView();
-	const VkSampler sampler = static_cast<VkSampler>(*material.albedoSampler());
+	const VkSampler sampler = material.albedoSampler();
 	if (!view || sampler == VK_NULL_HANDLE) {
 		TOAST_WARN("MeshPass", "Material has a ready texture but an invalid view/sampler; using fallback material");
 		return *m_default_material_set;

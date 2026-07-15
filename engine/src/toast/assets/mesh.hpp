@@ -8,11 +8,16 @@
 
 #pragma once
 #include "core_types.hpp"
-#include "toast/renderer/vulkan_renderer.hpp"
+#include "toast/renderer/vertex.hpp"
 
 #include <glm/glm.hpp>
+#include <memory>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
+
+namespace toast::renderer {
+class VulkanMesh;
+}
 
 namespace assets {
 
@@ -31,11 +36,8 @@ public:
 	using Index = uint32_t;
 
 	explicit Mesh(const std::vector<uint8_t>& data);
-
-	Mesh(std::string_view name, std::vector<toast::renderer::Vertex>&& vertices, std::vector<uint32_t>&& indices)
-	    : m_name(name),
-	      m_vertices(std::move(vertices)),
-	      m_indices(std::move(indices)) { }
+	Mesh(std::string_view name, std::vector<toast::renderer::Vertex>&& vertices, std::vector<uint32_t>&& indices);
+	~Mesh() override;
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
@@ -53,14 +55,10 @@ public:
 	}
 
 	[[nodiscard]]
-	auto gpuMesh() const -> const toast::renderer::VulkanMesh& {
-		return m_gpu_mesh;
-	}
+	auto gpuMesh() const -> const toast::renderer::VulkanMesh&;
 
 	[[nodiscard]]
-	auto gpuMesh() -> toast::renderer::VulkanMesh& {
-		return m_gpu_mesh;
-	}
+	auto gpuMesh() -> toast::renderer::VulkanMesh&;
 
 	[[nodiscard]]
 	auto name() const -> const std::string& {
@@ -75,7 +73,7 @@ private:
 	std::vector<toast::renderer::Vertex> m_vertices;
 	std::vector<Index> m_indices;
 
-	toast::renderer::VulkanMesh m_gpu_mesh;
+	std::unique_ptr<toast::renderer::VulkanMesh> m_gpu_mesh;
 };
 
 }

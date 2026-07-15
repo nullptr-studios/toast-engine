@@ -191,6 +191,19 @@ void Engine::init() {
 	m->audio_system = std::make_unique<audio::AudioSystem>();
 }
 
+Engine::~Engine() noexcept {
+	if (m) {
+		if (m->renderer) {
+			m->renderer->stop();
+		}
+
+		delete m;
+		m = nullptr;
+	}
+
+	instance = nullptr;
+}
+
 void Engine::reloadSettings() {
 	// Find the .toast project file in the project root
 	std::filesystem::path toast_path;
@@ -458,6 +471,13 @@ void Engine::destroyWorkspace(UID handle) {
 
 auto Engine::activeWorkspace() -> UID {
 	return m->active_workspace;
+}
+
+void Engine::refreshNodeInfos() {
+	std::scoped_lock lock(m->owners_mutex);
+	for (const auto& [_, node_owner] : m->owners) {
+		node_owner->refreshNodeInfos();
+	}
 }
 
 auto Engine::getViewportFrame(void* dst, uint32_t dst_capacity, renderer::ViewportFrameDesc* out) -> int {

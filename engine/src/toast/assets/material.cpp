@@ -2,8 +2,8 @@
 
 #include "assets.hpp"
 #include "texture.hpp"
-#include "toast/renderer/vulkan_debug.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
+#include "toast/renderer/vulkan_sampler.hpp"
 
 #include <algorithm>
 #include <format>
@@ -12,11 +12,6 @@ namespace assets {
 
 namespace {
 
-// Material is built with Data::keep_all_keys, which intentionally skips schema-guided parsing (see
-// Data::buildRoot) so it round-trips arbitrary keys. That means fields never get typed as asset_t/node_t
-// or color4_t the way a schema-guided Data would type them - they come in as whatever the raw TOML literal
-// naturally maps to (a UID is just a string_t, a color is just an array_t of numbers). Read them as such
-// here instead of static_cast'ing to the typed accessor, which asserts/throws on the type mismatch.
 
 auto readAssetUID(const DataValue& v) -> toast::UID {
 	if (v.type() == DataType::asset_t || v.type() == DataType::node_t) {
@@ -54,6 +49,8 @@ auto readColor(const DataValue& v) -> glm::vec4 {
 }
 
 Material::Material(const toml::table& table, AssetHandle<Schema> schema) : Data(table, std::move(schema), Data::keep_all_keys) { }
+
+Material::~Material() = default;
 
 auto Material::serialize(SaveMode mode) const -> std::vector<uint8_t> {
 	return Data::serialize(mode);
@@ -129,10 +126,15 @@ void Material::resolveTextureHandles() {
 	sampler_info.minLod = 0.0f;
 	sampler_info.maxLod = 0.0f;
 
-	m_albedo_sampler = vk::raii::Sampler(core.getDevice(), sampler_info);
-	toast::renderer::setDebugName(core, *m_albedo_sampler, std::format("Material AlbedoSampler ({})", albedo_map.path()));
+	m_albedo_sampler = std::make_unique<toast::renderer::VulkanSampler>(
+	    core, sampler_info, std::format("Material AlbedoSampler ({})", albedo_map.path())
+	);
 
 	m_sampler_ready = true;
+}
+
+auto Material::albedoSampler() const -> VkSampler {
+	return m_albedo_sampler ? m_albedo_sampler->handle() : VK_NULL_HANDLE;
 }
 
 }

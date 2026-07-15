@@ -20,11 +20,11 @@ static_assert(offsetof(Vertex, uv) == 24, "Vertex.uv offset mismatch");
 static_assert(offsetof(Vertex, tangent) == 32, "Vertex.tangent offset mismatch");
 static_assert(offsetof(Vertex, color) == 48, "Vertex.color offset mismatch");
 
-auto Vertex::getBindingDescription() -> vk::VertexInputBindingDescription {
+auto vertexBindingDescription() -> vk::VertexInputBindingDescription {
 	return {0, sizeof(Vertex), vk::VertexInputRate::eVertex};
 }
 
-auto Vertex::getAttributeDescriptions() -> std::array<vk::VertexInputAttributeDescription, 5> {
+auto vertexAttributeDescriptions() -> std::array<vk::VertexInputAttributeDescription, 5> {
 	return {
 	  vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, position)),
 	  vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, normal)),

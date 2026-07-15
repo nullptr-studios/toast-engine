@@ -4,7 +4,23 @@
 
 namespace assets {
 
-Mesh::Mesh(const std::vector<uint8_t>& data) {
+Mesh::Mesh(std::string_view name, std::vector<toast::renderer::Vertex>&& vertices, std::vector<uint32_t>&& indices)
+    : m_name(name),
+      m_vertices(std::move(vertices)),
+      m_indices(std::move(indices)),
+      m_gpu_mesh(std::make_unique<toast::renderer::VulkanMesh>()) { }
+
+Mesh::~Mesh() = default;
+
+auto Mesh::gpuMesh() const -> const toast::renderer::VulkanMesh& {
+	return *m_gpu_mesh;
+}
+
+auto Mesh::gpuMesh() -> toast::renderer::VulkanMesh& {
+	return *m_gpu_mesh;
+}
+
+Mesh::Mesh(const std::vector<uint8_t>& data) : m_gpu_mesh(std::make_unique<toast::renderer::VulkanMesh>()) {
 	TOAST_ASSERT(data.size() >= sizeof(_detail::MeshFileHeader), "AssetManager", "Mesh data is too small to contain header");
 
 	_detail::MeshFileHeader header;
@@ -63,7 +79,7 @@ Mesh::Mesh(const std::vector<uint8_t>& data) {
 	// create GPU Side mesh
 	toast::renderer::VulkanRenderer::instance->queueResourceUpload(
 	    std::make_unique<toast::renderer::MeshUpload>(
-	        m_gpu_mesh, toast::renderer::VulkanMesh::UploadData {m_vertices, m_indices}, m_name
+	        *m_gpu_mesh, toast::renderer::VulkanMesh::UploadData {m_vertices, m_indices}, m_name
 	    )
 	);
 }
