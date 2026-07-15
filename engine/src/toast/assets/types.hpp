@@ -21,6 +21,7 @@
 #include "mesh.hpp"
 #include "prefab.hpp"
 #include "schema.hpp"
+#include "script.hpp"
 #include "texture.hpp"
 
 #include <toast/audio/assets.hpp>

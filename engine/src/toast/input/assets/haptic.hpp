@@ -32,8 +32,6 @@ enum class HapticChannels : uint8_t {
  */
 class TOAST_API Haptic : public Data {
 public:
-	static constexpr std::string_view collection = "haptics";
-
 	explicit Haptic(const toml::table& table, AssetHandle<Schema> schema = {});
 
 	[[nodiscard]]

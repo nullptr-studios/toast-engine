@@ -6,6 +6,8 @@
 #include <sstream>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
+#include <toast/scripting/lua_value_codec.hpp>
+#include <toast/scripting/script_runtime.hpp>
 #include <toast/uid.hpp>
 #include <toast/world/node.hpp>
 #include <unordered_set>
@@ -333,6 +335,12 @@ auto Prefab::parseNodeChunk(std::span<const std::string> lines) -> std::optional
 				node.groups.push_back(std::move(*group));
 			}
 			i = chunk_end;
+		} else if (current.starts_with("~lua ")) {
+			auto lua_var = parseLuaVarOverride(current);
+			if (lua_var) {
+				node.lua_vars.push_back(std::move(*lua_var));
+			}
+			i++;
 		} else {
 			auto field = parseField(current);
 			if (field) {
@@ -476,6 +484,36 @@ auto Prefab::parseField(std::string_view line) -> std::optional<Field> {
 	}
 
 	return Field {.name = std::move(name), .type = *type, .is_array = is_array, .value = std::move(*value)};
+}
+
+auto Prefab::parseLuaVarOverride(std::string_view line) -> std::optional<LuaVarOverride> {
+	// "~lua <instance>:<schema path> = <value>"
+	line.remove_prefix(5);    // "~lua "
+
+	size_t path_end = line.find(' ');
+	if (path_end == std::string_view::npos || path_end == 0) {
+		TOAST_ERROR("ResourceManager", "Malformed lua var line: missing space after path");
+		return std::nullopt;
+	}
+	std::string path {line.substr(0, path_end)};
+	line.remove_prefix(path_end);
+
+	size_t value_start = line.find('=');
+	if (value_start == std::string_view::npos) {
+		TOAST_ERROR("ResourceManager", "Malformed lua var line for {}: missing '=' character", path);
+		return std::nullopt;
+	}
+	line.remove_prefix(value_start + 1);
+
+	// Skip exactly ONE space after =
+	if (!line.empty() && line.front() == ' ') {
+		line.remove_prefix(1);
+	}
+
+	size_t val_last = line.find_last_not_of(" \t\r\n");
+	std::string_view value_str = (val_last != std::string_view::npos) ? line.substr(0, val_last + 1) : line;
+
+	return LuaVarOverride {.path = std::move(path), .value = std::string(value_str)};
 }
 
 auto Prefab::parseType(std::string_view type, bool& is_array) -> std::optional<FieldType> {
@@ -684,6 +722,10 @@ void Prefab::writeNode(const BasicNode& node, std::stringstream& ss) const {
 		writeField(field, ss);
 	}
 
+	for (const auto& lua_var : node.lua_vars) {
+		ss << std::format("~lua {} = {}\n", lua_var.path, lua_var.value);
+	}
+
 	for (const auto& group : node.groups) {
 		writeGroup(group, ss);
 	}
@@ -843,6 +885,12 @@ auto Prefab::toBinary() const -> std::vector<uint8_t> {
 			write_field(field);
 		}
 
+		writeValue(buffer, static_cast<uint32_t>(node.lua_vars.size()));
+		for (const auto& lua_var : node.lua_vars) {
+			writeString(buffer, lua_var.path);
+			writeString(buffer, lua_var.value);
+		}
+
 		writeValue(buffer, static_cast<uint32_t>(node.groups.size()));
 		for (const auto& group : node.groups) {
 			writeString(buffer, group.name);
@@ -957,6 +1005,16 @@ Prefab::Prefab(std::span<const uint8_t> bytes) {
 		uint32_t field_count = reader.readValue<uint32_t>();
 		for (uint32_t j = 0; j < field_count; ++j) {
 			node.fields.push_back(read_field());
+		}
+
+		if (header.version >= 3) {
+			uint32_t lua_var_count = reader.readValue<uint32_t>();
+			for (uint32_t j = 0; j < lua_var_count; ++j) {
+				LuaVarOverride lua_var;
+				lua_var.path = reader.readString();
+				lua_var.value = reader.readString();
+				node.lua_vars.push_back(std::move(lua_var));
+			}
 		}
 
 		uint32_t group_count = reader.readValue<uint32_t>();
@@ -1129,6 +1187,43 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 		}
 	});
 
+	if (auto* rt = const_cast<toast::Node&>(node).scriptRuntime()) {
+		for (size_t i = 0; i < rt->instanceCount(); ++i) {
+			const scripting::ScriptSchema* schema = rt->instanceSchema(i);
+			if (!schema) {
+				continue;
+			}
+
+			schema->forEach([&](const scripting::LuaVarDesc& d) {
+				std::any current = rt->getVarByPath(i, d.path);
+				if (!current.has_value()) {
+					return;
+				}
+
+				const std::string var_path = std::format("{}:{}", i, d.path);
+				const std::string current_str = scripting::stringifyLuaValue(d, current);
+
+				// variant nodes diff against the source prefab's own prior override
+				// fresh nodes diff against the script's default
+				std::string baseline_str;
+				if (is_reference && base) {
+					if (const auto* prior = base->findLuaVar(var_path)) {
+						baseline_str = prior->value;
+					} else {
+						baseline_str = scripting::stringifyLuaValue(d, d.default_value);
+					}
+				} else {
+					baseline_str = scripting::stringifyLuaValue(d, d.default_value);
+				}
+
+				if (current_str == baseline_str) {
+					return;    // matches baseline, don't write it
+				}
+				out.lua_vars.push_back({.path = var_path, .value = current_str});
+			});
+		}
+	}
+
 	nodes.push_back(std::move(out));
 
 	// we do not go inside prefabs, no need to serialize its children
@@ -1232,6 +1327,11 @@ auto Prefab::flattenedRootFields(const AssetHandle<Prefab>& source) const -> std
 		for (const Field& pf : parent_root.fields) {
 			if (not flat.find(pf.name).has_value()) {
 				flat.fields.push_back(pf);
+			}
+		}
+		for (const LuaVarOverride& plv : parent_root.lua_vars) {
+			if (flat.findLuaVar(plv.path) == nullptr) {
+				flat.lua_vars.push_back(plv);
 			}
 		}
 		parent_uid = root_ref(parent_root);

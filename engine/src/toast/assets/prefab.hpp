@@ -45,7 +45,7 @@ constexpr std::string_view quaternion_str = "quat";
 constexpr char string_array_separator =
     31;    ///< ASCII 31 (unit separator), can't appear in normal text content so it's safe as an in-field delimiter
 
-constexpr uint16_t format_version = 2;    ///< current binary layout version
+constexpr uint16_t format_version = 3;    ///< current binary layout version
 
 struct TOAST_API NodeFileBinaryHeader {
 	const std::array<uint8_t, 6> magic = {'T', 'N', 'O', 'D', 'E', '\0'};
@@ -56,8 +56,6 @@ struct TOAST_API NodeFileBinaryHeader {
 
 class TOAST_API Prefab final : public Asset, public ISaveable {
 public:
-	static constexpr std::string_view collection = "nodes";
-
 	/**
 	 * @brief Parses a prefab from a text (.tnode) stream
 	 * @param file Open input stream positioned at the start of the file
@@ -199,6 +197,14 @@ public:
 	};
 
 	/**
+	 * @brief Inspector Lua script variable that differs from its declared default
+	 */
+	struct LuaVarOverride {
+		std::string path;
+		std::string value;
+	};
+
+	/**
 	 * @brief One node entry in a prefab file
 	 *
 	 * Holds the node's fully-qualified type name, display name, top-level fields, and groups.
@@ -211,6 +217,7 @@ public:
 
 		std::vector<Field> fields;
 		std::vector<Group> groups;
+		std::vector<LuaVarOverride> lua_vars;    ///< empty for old files or nodes with no edited Lua vars
 
 		[[nodiscard]]
 		auto find(std::string_view name) const -> std::optional<Field> {
@@ -227,6 +234,12 @@ public:
 
 			return {};
 		}
+
+		[[nodiscard]]
+		auto findLuaVar(std::string_view path) const -> const LuaVarOverride* {
+			auto it = std::ranges::find_if(lua_vars, [&](const auto& v) { return v.path == path; });
+			return it != lua_vars.end() ? &*it : nullptr;
+		}
 	};
 
 	std::vector<Field> global_fields;
@@ -234,6 +247,7 @@ public:
 
 private:
 	auto parseField(std::string_view line) -> std::optional<Field>;
+	auto parseLuaVarOverride(std::string_view line) -> std::optional<LuaVarOverride>;
 	auto parseType(std::string_view type, bool& is_array) -> std::optional<toast::FieldType>;
 	auto parseValue(toast::FieldType type, std::string_view value, bool& is_array) -> std::optional<std::any>;
 

@@ -41,7 +41,7 @@ void NodeCluster::lateTick() {
 
 auto NodeCluster::hasEarlyTick() -> bool {
 	for (auto& node : nodes) {
-		if (node->info() && node->info()->hasFunction(TickFunctionList::early_tick)) {
+		if (node->hasTickFunction(TickFunctionList::early_tick)) {
 			return true;
 		}
 	}
@@ -50,7 +50,7 @@ auto NodeCluster::hasEarlyTick() -> bool {
 
 auto NodeCluster::hasTick() -> bool {
 	for (auto& node : nodes) {
-		if (node->info() && node->info()->hasFunction(TickFunctionList::tick)) {
+		if (node->hasTickFunction(TickFunctionList::tick)) {
 			return true;
 		}
 	}
@@ -59,7 +59,7 @@ auto NodeCluster::hasTick() -> bool {
 
 auto NodeCluster::hasPostPhysics() -> bool {
 	for (auto& node : nodes) {
-		if (node->info() && node->info()->hasFunction(TickFunctionList::post_physics)) {
+		if (node->hasTickFunction(TickFunctionList::post_physics)) {
 			return true;
 		}
 	}
@@ -68,7 +68,7 @@ auto NodeCluster::hasPostPhysics() -> bool {
 
 auto NodeCluster::hasLateTick() -> bool {
 	for (auto& node : nodes) {
-		if (node->info() && node->info()->hasFunction(TickFunctionList::late_tick)) {
+		if (node->hasTickFunction(TickFunctionList::late_tick)) {
 			return true;
 		}
 	}
@@ -121,7 +121,7 @@ void TickScheduler::compute(const std::vector<Box<Node>>& all_nodes) {
 	//		1) they don't have any tick functions
 	//		2) they are not in an active state
 	for (auto& g : subgraphs) {
-		std::erase_if(g, [](const auto& n) { return not n->info() || not n->info()->hasFunction(TickFunctionList::tick_mask); });
+		std::erase_if(g, [](const auto& n) { return not n->hasTickFunction(TickFunctionList::tick_mask); });
 
 		std::erase_if(g, [](const auto& n) { return n->m_state != NodeState::root && n->m_state != NodeState::global; });
 	}
@@ -535,16 +535,10 @@ auto TickScheduler::optimizeWaves(const std::vector<TickSchedule::Wave>& waves) 
 		    }
 	    };
 
-	filter_and_assign_wave(schedule.early_tick, 0, [](auto n) {
-		return n->info() && n->info()->hasFunction(TickFunctionList::early_tick);
-	});
-	filter_and_assign_wave(schedule.tick, 1, [](auto n) { return n->info() && n->info()->hasFunction(TickFunctionList::tick); });
-	filter_and_assign_wave(schedule.post_physics, 2, [](auto n) {
-		return n->info() && n->info()->hasFunction(TickFunctionList::post_physics);
-	});
-	filter_and_assign_wave(schedule.late_tick, 3, [](auto n) {
-		return n->info() && n->info()->hasFunction(TickFunctionList::late_tick);
-	});
+	filter_and_assign_wave(schedule.early_tick, 0, [](auto n) { return n->hasTickFunction(TickFunctionList::early_tick); });
+	filter_and_assign_wave(schedule.tick, 1, [](auto n) { return n->hasTickFunction(TickFunctionList::tick); });
+	filter_and_assign_wave(schedule.post_physics, 2, [](auto n) { return n->hasTickFunction(TickFunctionList::post_physics); });
+	filter_and_assign_wave(schedule.late_tick, 3, [](auto n) { return n->hasTickFunction(TickFunctionList::late_tick); });
 
 	return schedule;
 }

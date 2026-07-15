@@ -1,21 +1,108 @@
 [
   {
     "attributes": {},
-    "functions": {
-      "begin": false,
-      "destroy": false,
-      "early_tick": false,
-      "end": false,
-      "init": false,
-      "late_tick": false,
-      "load": false,
-      "on_disable": false,
-      "on_enable": false,
-      "post_physics": false,
-      "pre_init": false,
-      "save": false,
-      "tick": false
-    },
+    "fields": [
+      {
+        "attributes": {
+          "Group": [
+            "Physics"
+          ]
+        },
+        "default": null,
+        "field_type": "float_t",
+        "is_array": false,
+        "name": "m_mass",
+        "typename": "float"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Physics"
+          ],
+          "Subgroup": [
+            "Velocity"
+          ]
+        },
+        "default": null,
+        "field_type": "float_t",
+        "is_array": false,
+        "name": "m_vx",
+        "typename": "float"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Physics"
+          ],
+          "Subgroup": [
+            "Velocity"
+          ]
+        },
+        "default": null,
+        "field_type": "float_t",
+        "is_array": false,
+        "name": "m_vy",
+        "typename": "float"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Physics"
+          ],
+          "Subgroup": [
+            "Acceleration"
+          ]
+        },
+        "default": null,
+        "field_type": "float_t",
+        "is_array": false,
+        "name": "m_ax",
+        "typename": "float"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Physics"
+          ],
+          "Subgroup": [
+            "Acceleration"
+          ]
+        },
+        "default": null,
+        "field_type": "float_t",
+        "is_array": false,
+        "name": "m_ay",
+        "typename": "float"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Rendering"
+          ]
+        },
+        "default": null,
+        "field_type": "string_t",
+        "is_array": false,
+        "name": "m_shader",
+        "typename": "std::string"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Rendering"
+          ],
+          "Subgroup": [
+            "Transform"
+          ]
+        },
+        "default": null,
+        "field_type": "float_t",
+        "is_array": false,
+        "name": "m_scale",
+        "typename": "float"
+      }
+    ],
+    "functions": [],
     "global_fields": [],
     "groups": [
       {
@@ -152,6 +239,21 @@
     "name": "ComplexNode",
     "namespace": null,
     "parent": null,
-    "source_file": "05_complex_groups.hpp"
+    "source_file": "05_complex_groups.hpp",
+    "tick_functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    }
   }
 ]

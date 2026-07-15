@@ -626,6 +626,15 @@ void World::hotReload() {
 	}
 }
 
+void World::hotReloadScripts(toast::UID script_uid) {
+	if (!instance) {
+		return;
+	}
+	instance->reloadScriptsUsing(script_uid);
+	// a reload can add or remove Lua tick functions, so the schedule needs recompute
+	instance->computeDependencyGraph();
+}
+
 auto World::graphviz() -> std::string {
 	return instance->dependencyGraphGraphviz();
 }
@@ -1118,6 +1127,17 @@ void WorldTestAccess::addTickStage(Node& node, TickFunctionList stage) {
 	info.type = "test::Node";
 	info.functions.list = info.functions.list | stage;
 	node.m_info = &info;
+}
+
+void WorldTestAccess::attachScript(Node& node, const assets::AssetHandle<assets::Script>& script) {
+	node.m_scripts.push_back(script);
+	node.loadScripts();
+}
+
+void WorldTestAccess::applyLuaOverrides(
+    World& world, Node& node, const assets::Prefab::BasicNode& data, const scripting::NodeResolver& find_node
+) {
+	world.applyLuaOverrides(node, data, find_node);
 }
 
 auto WorldTestAccess::tickSchedule(World& world) noexcept -> TickSchedule& {

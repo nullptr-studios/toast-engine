@@ -36,10 +36,16 @@ public:
 	static auto createToml(std::string_view type, toml::table table) -> std::unique_ptr<Asset>;
 	static auto createSchemaToml(std::string_view type, toml::table table, AssetHandle<Schema> schema) -> std::unique_ptr<Asset>;
 
+	static void registerLuaName(std::string_view type, std::string_view lua_name);
+
+	[[nodiscard]]
+	static auto registeredLuaNames() -> const std::unordered_map<std::string, std::string>&;
+
 private:
 	static std::unordered_map<std::string, RawLoader> s_raw;
 	static std::unordered_map<std::string, TomlLoader> s_toml;
 	static std::unordered_map<std::string, SchemaTomlLoader> s_schema_toml;
+	static std::unordered_map<std::string, std::string> s_lua_names;
 };
 
 }    // namespace assets

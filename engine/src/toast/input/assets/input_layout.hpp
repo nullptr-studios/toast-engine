@@ -18,8 +18,6 @@ namespace assets {
  */
 class TOAST_API InputLayout : public Data {
 public:
-	static constexpr std::string_view collection = "input_layouts";
-
 	/// @brief Hidden layer that is always present in every layout
 	static constexpr std::string_view default_layer = "default";
 

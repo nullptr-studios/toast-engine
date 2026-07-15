@@ -6,7 +6,9 @@
 #include "workspace_events.hpp"
 #include "workspace_events.pb.h"
 
+#include <charconv>
 #include <format>
+#include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/trigonometric.hpp>
@@ -16,6 +18,10 @@
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/assets/prefab.hpp>
+#include <toast/scripting/asset_proxy.hpp>
+#include <toast/scripting/lua_types.hpp>
+#include <toast/scripting/lua_value_codec.hpp>
+#include <toast/scripting/script_runtime.hpp>
 #include <toast/time.hpp>
 
 namespace toast {
@@ -26,6 +32,11 @@ struct VectorStreamBuf : std::streambuf {
 		setg(p, p, p + vec.size());
 	}
 };
+
+using scripting::LuaVarDesc;
+using scripting::LuaVarKind;
+using scripting::parseLuaValue;
+using scripting::stringifyLuaValue;
 
 static std::unique_ptr<assets::Prefab> s_clipboard;
 
@@ -414,6 +425,52 @@ void Workspace::eventSubscriptions() {
 		}
 
 		field->set(&*m_focused_node, value);
+
+		if (field->name == "m_scripts") {
+			m_focused_node->reloadScripts();
+			event::send<event::RequestHierarchyUpdate>();
+		}
+		return true;
+	});
+
+	// Lua variable edits address "<instance>:group/subgroup/name" through the script schema
+	m_listener.subscribe<event::NodeChangeLuaParam>([this](const auto& e) {
+		if (not m_focused_node.exists()) {
+			return false;
+		}
+		scripting::ScriptRuntime* rt = m_focused_node->scriptRuntime();
+		if (rt == nullptr) {
+			return true;
+		}
+
+		const size_t colon = e.path.find(':');
+		size_t instance = 0;
+		if (colon == std::string::npos || std::from_chars(e.path.data(), e.path.data() + colon, instance).ec != std::errc {}) {
+			TOAST_WARN("World", "NodeChangeLuaParam: malformed path '{}'", e.path);
+			return true;
+		}
+		const auto var_path = std::string_view(e.path).substr(colon + 1);
+
+		const scripting::ScriptSchema* schema = rt->instanceSchema(instance);
+		const LuaVarDesc* desc = schema != nullptr ? schema->find(var_path) : nullptr;
+		if (desc == nullptr) {
+			TOAST_WARN("World", "NodeChangeLuaParam: unknown variable '{}'", e.path);
+			return true;
+		}
+
+		auto find_node = [this](std::string_view uid_text) -> Box<Node> {
+			if (uid_text.empty() || toast::UID::fromString(std::string(uid_text)) == 0) {
+				return {};
+			}
+			return findFrom(m_root_node, uid_text);
+		};
+
+		std::any value = parseLuaValue(*desc, e.value, find_node);
+		if (value.has_value()) {
+			rt->setVarByPath(instance, var_path, value);
+		} else {
+			TOAST_WARN("World", "NodeChangeLuaParam: couldn't parse '{}' for '{}'", e.value, e.path);
+		}
 		return true;
 	});
 
@@ -802,6 +859,60 @@ void Workspace::tick() {
 	event::send<event::InspectorContent>(
 	    m_focused_node->uid().get(), m_focused_node->name(), m_focused_node->enabled(), std::move(fields)
 	);
+
+	// The exported script variables travel in their own message so the editor can rebuild
+	// its Lua cards independently of the reflected C++ structure
+	std::vector<event::InspectorLuaContent::LuaScriptCard> cards;
+	uint32_t lua_schema_version = 0;
+
+	if (scripting::ScriptRuntime* rt = node->scriptRuntime()) {
+		lua_schema_version = rt->schemaVersion();
+		cards.reserve(rt->instanceCount());
+
+		for (size_t i = 0; i < rt->instanceCount(); ++i) {
+			const scripting::ScriptSchema* schema = rt->instanceSchema(i);
+			if (schema == nullptr) {
+				continue;
+			}
+
+			auto make_field = [&](const LuaVarDesc& d) {
+				event::InspectorLuaContent::LuaField f;
+				f.path = std::format("{}:{}", i, d.path);
+				f.name = d.name;
+				f.kind = static_cast<uint32_t>(d.kind);
+				f.is_array = d.is_array;
+				f.ref_type = d.ref_type;
+				f.value = stringifyLuaValue(d, rt->getVarByPath(i, d.path));
+				f.default_value = stringifyLuaValue(d, d.default_value);
+				return f;
+			};
+
+			event::InspectorLuaContent::LuaScriptCard card;
+			card.script = rt->instanceScript(i);
+			for (const auto& d : schema->fields) {
+				card.fields.push_back(make_field(d));
+			}
+			for (const auto& g : schema->groups) {
+				event::InspectorLuaContent::LuaGroup group;
+				group.name = g.name;
+				for (const auto& d : g.fields) {
+					group.fields.push_back(make_field(d));
+				}
+				for (const auto& sg : g.subgroups) {
+					event::InspectorLuaContent::LuaSubgroup sub;
+					sub.name = sg.name;
+					for (const auto& d : sg.fields) {
+						sub.fields.push_back(make_field(d));
+					}
+					group.subgroups.push_back(std::move(sub));
+				}
+				card.groups.push_back(std::move(group));
+			}
+			cards.push_back(std::move(card));
+		}
+	}
+
+	event::send<event::InspectorLuaContent>(m_focused_node->uid().get(), lua_schema_version, std::move(cards));
 }
 
 }

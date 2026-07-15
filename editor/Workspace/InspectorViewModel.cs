@@ -23,8 +23,10 @@ public partial class InspectorViewModel : Tool {
 
 	// ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
 	private readonly Listener m_listener;
+	private readonly List<ClassCardVM> m_luaCards = [];
 	private string? m_builtType;
 	private string? m_builtUid;
+	private uint m_builtLuaVersion;
 	[ObservableProperty] private bool m_enabled = true;
 
 	[ObservableProperty] private string m_filterText = "";
@@ -263,6 +265,22 @@ public partial class InspectorViewModel : Tool {
 			}
 		}));
 
+		// exported script variables stream beside the reflected fields
+		m_listener.Subscribe<InspectorLuaContent>(e => Dispatcher.UIThread.Post(() => {
+			if (!HasSelection || e.Uid != m_builtUid) return;
+
+			if (e.SchemaVersion != m_builtLuaVersion || e.Scripts.Count != m_luaCards.Count) {
+				RebuildLuaCards(e);
+				return;
+			}
+
+			foreach (var f in e.Scripts.SelectMany(AllFields)) {
+				if (!m_fieldByParam.TryGetValue(f.Path, out var vm)) continue;
+				if ((DateTime.UtcNow - vm.LastEdit).TotalMilliseconds < 250) continue;
+				vm.ApplyEngineString(f.Value);
+			}
+		}));
+
 		HierarchyViewModel.SelectionChanged += OnSelectionChanged;
 		if (HierarchyViewModel.Current?.SelectedNode is { } sel) OnSelectionChanged(sel);
 	}
@@ -291,6 +309,8 @@ public partial class InspectorViewModel : Tool {
 				HasSelection = false;
 				Cards.Clear();
 				m_fieldByParam.Clear();
+				m_luaCards.Clear();
+				m_builtLuaVersion = 0;
 				m_builtUid = null;
 				m_builtType = null;
 				m_uid = null;
@@ -322,6 +342,8 @@ public partial class InspectorViewModel : Tool {
 	private void Rebuild(HierarchyElement node) {
 		Cards.Clear();
 		m_fieldByParam.Clear();
+		m_luaCards.Clear();
+		m_builtLuaVersion = 0;
 		if (ReflectionDatabase.Nodes is null) return;
 
 		m_state = InspectorState.Load(node.Uid);
@@ -375,8 +397,67 @@ public partial class InspectorViewModel : Tool {
 	}
 
 	private void OnFieldEdited(FieldVM field, string value) {
-		Events.Send(new NodeChangeParam { Parameter = field.ParameterName, Value = value });
+		if (field.IsLua) Events.Send(new NodeChangeLuaParam { Path = field.ParameterName, Value = value });
+		else Events.Send(new NodeChangeParam { Parameter = field.ParameterName, Value = value });
 		WorkspaceState.MarkModified();
+	}
+
+	// script cards sit above the class cards
+	private void RebuildLuaCards(InspectorLuaContent e) {
+		foreach (var card in m_luaCards) Cards.Remove(card);
+		m_luaCards.Clear();
+		// lua paths always contain ':', reflected C++ names never do
+		foreach (var key in m_fieldByParam.Keys.Where(k => k.Contains(':')).ToList()) m_fieldByParam.Remove(key);
+
+		var insertAt = 0;
+		var colorCounter = 0;
+		foreach (var script in e.Scripts) {
+			var title = ScriptStem(script.Script);
+			var card = new ClassCardVM(title, "Magenta", "Circle", $"lua:{title}", m_state!);
+
+			foreach (var f in script.Fields) AddLuaField(card.Fields, f);
+
+			foreach (var g in script.Groups) {
+				var colorKey = Palette[colorCounter++ % Palette.Length];
+				var group = new GroupVM(g.Name, colorKey, $"group:lua/{title}/{g.Name}", m_state!);
+				foreach (var f in g.Fields) AddLuaField(group.Fields, f);
+
+				foreach (var sg in g.Subgroups) {
+					var sub = new SubgroupVM(sg.Name, $"sub:lua/{title}/{g.Name}/{sg.Name}", m_state!);
+					foreach (var f in sg.Fields) AddLuaField(sub.Fields, f);
+					group.Subgroups.Add(sub);
+				}
+
+				card.Groups.Add(group);
+			}
+
+			Cards.Insert(insertAt++, card);
+			m_luaCards.Add(card);
+		}
+
+		m_builtLuaVersion = e.SchemaVersion;
+		ApplyFilter();
+	}
+
+	private void AddLuaField(ObservableCollection<FieldVM> target, LuaField info) {
+		var vm = new FieldVM(info);
+		vm.Edited += OnFieldEdited;
+		target.Add(vm);
+		m_fieldByParam[vm.ParameterName] = vm;
+	}
+
+	private static IEnumerable<LuaField> AllFields(LuaScriptCard script) {
+		return script.Fields
+			.Concat(script.Groups.SelectMany(g => g.Fields
+				.Concat(g.Subgroups.SelectMany(s => s.Fields))));
+	}
+
+	// "scripts/player_controller.lua" -> "player_controller"
+	private static string ScriptStem(string path) {
+		var slash = Math.Max(path.LastIndexOf('/'), path.LastIndexOf('\\'));
+		var name = slash >= 0 ? path[(slash + 1)..] : path;
+		var dot = name.LastIndexOf('.');
+		return dot > 0 ? name[..dot] : name;
 	}
 
 	private void ApplyFilter() {

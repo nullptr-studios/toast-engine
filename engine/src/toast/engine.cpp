@@ -21,6 +21,7 @@
 #include "renderer/shared_texture_output_target.hpp"
 #include "renderer/vulkan_core.hpp"
 #include "renderer/vulkan_renderer.hpp"
+#include "scripting/lua_state.hpp"
 #include "thread_pool.hpp"
 #include "time.hpp"
 #include "window/base_window.hpp"
@@ -49,6 +50,9 @@ IApplication* active_application = nullptr;
 Camera* camera = nullptr;
 float total_time = 0.0;
 double clear_assets_timer = 0.0;
+double lua_memory_plot_timer = 0.0;
+double script_reload_timer = 0.0;
+
 }
 
 Engine* Engine::instance = nullptr;
@@ -65,6 +69,7 @@ struct EnginePimpl {
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
 	std::unique_ptr<audio::AudioSystem> audio_system = nullptr;
 	std::unique_ptr<ProjectSettings> settings = nullptr;
+	std::unique_ptr<scripting::LuaState> lua_state = nullptr;
 	Time time;
 	event::Listener listener;
 	toast::NodeRegistry reflection_registry;
@@ -144,6 +149,8 @@ void Engine::init() {
 	m->input_system = std::make_unique<input::InputSystem>();
 	m->haptics_system = std::make_unique<input::HapticsSystem>();
 
+	m->lua_state = scripting::LuaState::create();
+
 	// TODO: This should be moved into VulkanRenderer
 	m->listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
 		if (!m->renderer || !m->vulkan_core || e.width <= 0 || e.height <= 0) {
@@ -167,20 +174,21 @@ void Engine::init() {
 		return false;
 	});
 
-	m->audio_system = std::make_unique<audio::AudioSystem>();
-}
-
-Engine::~Engine() noexcept {
-	if (m) {
-		if (m->renderer) {
-			m->renderer->stop();
+	// A script source changed on disk
+	// rebuild the runtimes that use it everywhere and let the schedulers recompute
+	m->listener.subscribe<event::ScriptAssetReloaded>([this](const event::ScriptAssetReloaded& e) {
+		{
+			std::scoped_lock lock(m->owners_mutex);
+			for (const auto& [_, node_owner] : m->owners) {
+				node_owner->reloadScriptsUsing(e.uid);
+			}
 		}
+		World::hotReloadScripts(e.uid);
+		event::send<event::RequestHierarchyUpdate>();
+		return false;
+	});
 
-		delete m;
-		m = nullptr;
-	}
-
-	instance = nullptr;
+	m->audio_system = std::make_unique<audio::AudioSystem>();
 }
 
 void Engine::reloadSettings() {
@@ -259,6 +267,25 @@ void Engine::tick() {
 	if (m->renderer) {
 		m->renderer->tick(total_time);
 	}
+
+	lua_memory_plot_timer += Time::delta();
+	if (lua_memory_plot_timer > 1.0) {
+		lua_memory_plot_timer = 0.0;
+		if (m->lua_state) {
+			m->lua_state->plotMemory();
+		}
+	}
+
+#ifdef DEBUG
+	// dev builds hot-reload script sources edited on disk
+	script_reload_timer += Time::delta();
+	if (script_reload_timer > 1.0) {
+		script_reload_timer = 0.0;
+		if (m->asset_manager) {
+			m->asset_manager->pollModifiedScripts();
+		}
+	}
+#endif
 }
 
 auto Engine::shouldClose() -> bool {
@@ -449,6 +476,13 @@ void pushApplicationLayer(IApplication* app) {
 	active_application = app;
 	app->registerTypes();
 	toast::World::hotReload();
+
+	if (Engine::get() != nullptr) {
+		Engine::get()->refreshNodeInfos();
+	}
+	if (scripting::LuaState::exists()) {
+		scripting::LuaState::get().refreshTypeMarkers();
+	}
 }
 
 void popApplicationLayer(IApplication* app) {
@@ -505,13 +539,14 @@ void Engine::startGame() {
 
 // Tracy memory profiling
 #ifdef DEBUG
-// NOLINTBEGIN(cppcoreguidelines-no-malloc, readability-inconsistent-declaration-parameter-name)
+// NOLINTBEGIN(cppcoreguidelines-no-malloc)
 auto operator new(std::size_t count) -> void* {
 	auto* ptr = malloc(count);
 	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
 	return ptr;
 }
 
+// NOLINTNEXTLINE(readability-inconsistent-declaration-parameter-name)
 void operator delete(void* ptr) noexcept {
 	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
 	free(ptr);

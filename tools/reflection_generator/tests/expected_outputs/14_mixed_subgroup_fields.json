@@ -1,21 +1,93 @@
 [
   {
     "attributes": {},
-    "functions": {
-      "begin": false,
-      "destroy": false,
-      "early_tick": false,
-      "end": false,
-      "init": false,
-      "late_tick": false,
-      "load": false,
-      "on_disable": false,
-      "on_enable": false,
-      "post_physics": false,
-      "pre_init": false,
-      "save": false,
-      "tick": false
-    },
+    "fields": [
+      {
+        "attributes": {
+          "Group": [
+            "Data"
+          ]
+        },
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_version",
+        "typename": "int"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Data"
+          ]
+        },
+        "default": null,
+        "field_type": "string_t",
+        "is_array": false,
+        "name": "m_title",
+        "typename": "std::string"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Data"
+          ],
+          "Subgroup": [
+            "Content"
+          ]
+        },
+        "default": null,
+        "field_type": "string_t",
+        "is_array": false,
+        "name": "m_body",
+        "typename": "std::string"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Data"
+          ],
+          "Subgroup": [
+            "Content"
+          ]
+        },
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_checksum",
+        "typename": "int"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Data"
+          ],
+          "Subgroup": [
+            "Metadata"
+          ]
+        },
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_created",
+        "typename": "int"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Data"
+          ],
+          "Subgroup": [
+            "Metadata"
+          ]
+        },
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_modified",
+        "typename": "int"
+      }
+    ],
+    "functions": [],
     "global_fields": [],
     "groups": [
       {
@@ -125,6 +197,21 @@
     "name": "MixedSubgroupNode",
     "namespace": null,
     "parent": null,
-    "source_file": "14_mixed_subgroup_fields.hpp"
+    "source_file": "14_mixed_subgroup_fields.hpp",
+    "tick_functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    }
   }
 ]

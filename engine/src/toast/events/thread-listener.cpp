@@ -3,6 +3,7 @@
 #include "event.hpp"
 
 #include <mutex>
+#include <ranges>
 
 namespace event {
 

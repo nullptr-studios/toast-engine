@@ -49,6 +49,9 @@ public:
 
 	auto activeWorkspace() -> UID;
 
+	/// @brief Re-resolves NodeInfo after a project reload
+	void refreshNodeInfos();
+
 	/// @brief Copies the latest viewport frame into @p dst
 	/// @return 1 copied, 0 none available, -1 destination too small
 	auto getViewportFrame(void* dst, uint32_t dst_capacity, renderer::ViewportFrameDesc* out) -> int;

@@ -7,6 +7,7 @@ namespace assets {
 std::unordered_map<std::string, AssetRegistry::RawLoader> AssetRegistry::s_raw;
 std::unordered_map<std::string, AssetRegistry::TomlLoader> AssetRegistry::s_toml;
 std::unordered_map<std::string, AssetRegistry::SchemaTomlLoader> AssetRegistry::s_schema_toml;
+std::unordered_map<std::string, std::string> AssetRegistry::s_lua_names;
 
 void AssetRegistry::init() {
 	static bool initialized = false;
@@ -24,6 +25,7 @@ void AssetRegistry::init() {
 	};
 	s_raw["audio_bank"] = [](std::vector<uint8_t> d) { return std::make_unique<AudioBank>(std::move(d)); };
 	s_raw["audio_strings"] = [](std::vector<uint8_t> d) { return std::make_unique<AudioStrings>(std::move(d)); };
+	s_raw["script"] = [](std::vector<uint8_t> d) { return std::make_unique<Script>(std::move(d)); };
 
 	// Plain TOML loaders
 	s_toml["curve"] = [](const toml::table& t) { return Curve::fromToml(t); };
@@ -60,6 +62,35 @@ void AssetRegistry::init() {
 	s_schema_toml["audio_vca"] = [](const toml::table& t, AssetHandle<Schema> s) {
 		return std::make_unique<AudioVca>(t, std::move(s));
 	};
+
+	// Lua global names
+	s_lua_names["mesh"] = "Mesh";
+	s_lua_names["texture"] = "Texture";
+	s_lua_names["data"] = "Data";
+	s_lua_names["material"] = "Material";
+	s_lua_names["schema"] = "Schema";
+	s_lua_names["node"] = "Prefab";
+	s_lua_names["script"] = "Script";
+	s_lua_names["curve"] = "Curve";
+	s_lua_names["audio_strings"] = "AudioStrings";
+	s_lua_names["audio_bank"] = "AudioBank";
+	s_lua_names["haptic"] = "Haptic";
+	s_lua_names["input_action"] = "Action";
+	s_lua_names["input_layout"] = "InputLayout";
+	s_lua_names["input_settings"] = "InputSettings";
+	s_lua_names["audio_event"] = "AudioEvent";
+	s_lua_names["audio_bus"] = "AudioBus";
+	s_lua_names["audio_port"] = "AudioPort";
+	s_lua_names["audio_snapshot"] = "AudioSnapshot";
+	s_lua_names["audio_vca"] = "AudioVca";
+}
+
+void AssetRegistry::registerLuaName(std::string_view type, std::string_view lua_name) {
+	s_lua_names[std::string(type)] = std::string(lua_name);
+}
+
+auto AssetRegistry::registeredLuaNames() -> const std::unordered_map<std::string, std::string>& {
+	return s_lua_names;
 }
 
 void AssetRegistry::registerRaw(std::string_view type, RawLoader loader) {

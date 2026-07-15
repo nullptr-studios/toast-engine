@@ -174,6 +174,17 @@ public:
 
 	auto listByType(std::string_view type) -> std::vector<toast::UID>;
 
+	/**
+	 * @brief Looks up an asset's type string in the manifest without loading it
+	 * @return The manifest type
+	 */
+	static auto typeOf(toast::UID uid) -> std::string;
+
+	/**
+	 * @brief Re-reads any cached Script asset whose file changed on disk (hot reload)
+	 */
+	void pollModifiedScripts();
+
 	[[nodiscard]]
 	auto getCachePath() const -> const std::filesystem::path&;
 
@@ -207,6 +218,7 @@ private:
 	std::mutex mutex;
 	std::unordered_map<uint64_t, AssetInfo> manifest;    ///< UID → path+type; populated from the project manifest on construction
 	std::unordered_map<uint64_t, std::unique_ptr<Asset>> cache;    ///< assets stay resident until clearUnusedAssets() is called
+	std::unordered_map<uint64_t, std::filesystem::file_time_type> script_mtimes;    ///< last seen mtime per cached script
 
 	/// Scheme name (no "://") → filesystem root. Populated by setPaths() + registerDatabase().
 	static inline std::unordered_map<std::string, std::filesystem::path> roots;
