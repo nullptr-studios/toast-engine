@@ -197,6 +197,16 @@ Engine::~Engine() noexcept {
 			m->renderer->stop();
 		}
 
+		// remove objects before closing
+		{
+			std::scoped_lock lock(m->owners_mutex);
+			m->owners.clear();
+		}
+		m->world.reset();
+		m->asset_manager.reset();
+		m->renderer.reset();
+		m->vulkan_core.reset();
+
 		delete m;
 		m = nullptr;
 	}
