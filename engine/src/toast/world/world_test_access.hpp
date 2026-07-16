@@ -29,7 +29,7 @@ struct TOAST_API WorldTestAccess {
 
 	// Test-only: appends a script asset to the node and (re)builds its ScriptRuntime;
 	// requires a LuaState to exist
-	static void attachScript(Node& node, const assets::AssetHandle<assets::Script>& script);
+	static void attachScript(Node& node, const assets::Handle<assets::Script>& script);
 
 	static void applyLuaOverrides(
 	    World& world, Node& node, const assets::Prefab::BasicNode& data, const scripting::NodeResolver& find_node
@@ -41,7 +41,7 @@ struct TOAST_API WorldTestAccess {
 
 	static void computeDependencyGraph(World& world);
 
-	static auto instantiate(World& world, const assets::AssetHandle<assets::Prefab>& file, INodeOwner::InstantiateContext& ctx)
+	static auto instantiate(World& world, const assets::Handle<assets::Prefab>& file, INodeOwner::InstantiateContext& ctx)
 	    -> Box<Node>;
 
 	static auto childrenOf(const Node& node) -> const std::vector<Box<Node>>&;
@@ -52,7 +52,7 @@ struct TOAST_API WorldTestAccess {
 	static void setWorldRoot(World& world, Node& node);
 
 	static auto
-	    spawnSync(World& world, const assets::AssetHandle<assets::Prefab>& file, Node& parent, INodeOwner::InstantiateContext& ctx)
+	    spawnSync(World& world, const assets::Handle<assets::Prefab>& file, Node& parent, INodeOwner::InstantiateContext& ctx)
 	        -> Box<Node>;
 
 	static void initAssetManager(std::string_view assets_dir, std::string_view cache_dir);

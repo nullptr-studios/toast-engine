@@ -33,11 +33,11 @@ private:
 
 	void spawnAmbience();
 	void scheduleNextSpawn();
-	auto randomEvent() -> assets::AssetHandle<assets::AudioEvent>;
+	auto randomEvent() -> assets::Handle<assets::AudioEvent>;
 	auto randomSpawnPosition() -> glm::vec3;
 
 	[[Reflect, Name("Audio Events")]]
-	std::vector<assets::AssetHandle<assets::AudioEvent>> m_events;
+	std::vector<assets::Handle<assets::AudioEvent>> m_events;
 
 	[[Reflect, Range(0.25, 30.0), Unit("s")]]
 	float m_min_interval = 2.0f;

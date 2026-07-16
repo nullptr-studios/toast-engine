@@ -26,7 +26,7 @@ public:
 	/**
 	 * @param controller SDL_JoystickID of the target controller; 0 = first/active gamepad
 	 */
-	void play(uint32_t controller, assets::AssetHandle<assets::Haptic> haptic);
+	void play(uint32_t controller, assets::Handle<assets::Haptic> haptic);
 
 	void setGlobalMultiplier(float multiplier) noexcept;
 
@@ -40,7 +40,7 @@ public:
 private:
 	struct Playback {
 		uint32_t controller = 0;
-		assets::AssetHandle<assets::Haptic> haptic;
+		assets::Handle<assets::Haptic> haptic;
 		float elapsed = 0.0f;
 	};
 

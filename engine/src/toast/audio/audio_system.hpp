@@ -42,7 +42,7 @@ public:
 	void generateIntermediates(const std::filesystem::path& path);
 
 	[[nodiscard]]
-	auto loadBank(assets::AssetHandle<assets::AudioBank> bank) const -> std::pair<FMOD_STUDIO_BANK*, std::vector<std::string>>;
+	auto loadBank(assets::Handle<assets::AudioBank> bank) const -> std::pair<FMOD_STUDIO_BANK*, std::vector<std::string>>;
 	void unloadBank(FMOD_STUDIO_BANK*) const;
 
 	void updateListenerAttributes(

@@ -71,6 +71,7 @@ public:
 	static void loadNode(std::string_view uri, bool activate_as_root = false);
 
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;
+	auto findFrom(const Node& origin, const UID& uid) -> Box<Node> override;
 	auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> override;
 
 	/**
@@ -182,10 +183,10 @@ private:
 
 	/// Single-segment DFS within one prefab instance scope; does not cross instance boundaries
 	[[nodiscard]]
-	static auto findScoped(Node& scope, std::string_view seg, bool by_uid) -> Box<Node>;
+	static auto findScoped(Node& scope, std::string_view seg) -> Box<Node>;
 
 	/// All-matching DFS that crosses prefab-instance boundaries; appends results to out
-	static void searchScoped(Node& scope, std::string_view seg, bool by_uid, std::vector<Box<Node>>& out);
+	static void searchScoped(Node& scope, std::string_view seg, std::vector<Box<Node>>& out);
 
 	struct {
 		event::Listener listener;

@@ -272,7 +272,7 @@ void INodeOwner::applyLuaOverrides(Node& node, const assets::Prefab::BasicNode& 
 	}
 }
 
-auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node> {
+auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<assets::Prefab>& file) -> Box<Node> {
 	ZoneScoped;
 
 	std::unordered_map<uint64_t, Box<Node>> uid_map;
@@ -364,7 +364,7 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHa
 	return root;
 }
 
-auto INodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, InstantiateContext& ctx) -> Box<Node> {
+auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, InstantiateContext& ctx) -> Box<Node> {
 	ZoneScoped;
 
 	if (not file.hasValue()) {
@@ -388,7 +388,7 @@ auto INodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, In
 		node->m_unresolved_chunk = std::make_shared<const assets::Prefab::BasicNode>(chunk);
 		UID uid {ref_uid};
 		std::string uri = assets::AssetManager::getURI(uid);
-		node->m_source_prefab = assets::AssetHandle<assets::Prefab>(nullptr, uid, uri);
+		node->m_source_prefab = assets::Handle<assets::Prefab>(nullptr, uid, uri);
 		return node;
 	};
 
@@ -407,7 +407,7 @@ auto INodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, In
 
 		// expand a nested instance synchronously on this thread
 		bool cycle = std::ranges::find(ctx.asset_chain, ref_uid) != ctx.asset_chain.end();
-		assets::AssetHandle<assets::Prefab> sub = cycle ? assets::AssetHandle<assets::Prefab> {} : ctx.resolver(toast::UID(ref_uid));
+		assets::Handle<assets::Prefab> sub = cycle ? assets::Handle<assets::Prefab> {} : ctx.resolver(toast::UID(ref_uid));
 
 		if (cycle or not sub.hasValue()) {
 			TOAST_ERROR(

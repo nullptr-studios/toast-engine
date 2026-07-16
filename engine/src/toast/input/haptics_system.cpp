@@ -47,7 +47,7 @@ auto HapticsSystem::get() noexcept -> HapticsSystem& {
 	return *instance;
 }
 
-void HapticsSystem::play(uint32_t controller, assets::AssetHandle<assets::Haptic> haptic) {
+void HapticsSystem::play(uint32_t controller, assets::Handle<assets::Haptic> haptic) {
 	if (!haptic.hasValue()) {
 		TOAST_WARN("Haptics", "Ignoring play request with an unresolved haptic asset");
 		return;

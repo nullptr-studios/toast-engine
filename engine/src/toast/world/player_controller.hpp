@@ -48,7 +48,7 @@ public:
 	 * @brief Plays a haptic effect on this controller's physical gamepad
 	 * @param haptic The effect to play, routed through @c controller_id
 	 */
-	void playHaptic(assets::AssetHandle<assets::Haptic> haptic) const;
+	void playHaptic(assets::Handle<assets::Haptic> haptic) const;
 
 	[[Reflect, ReadOnly]]
 	std::string active_layout;
@@ -63,7 +63,7 @@ public:
 	std::string default_layer;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::InputLayout>> layouts;
+	std::vector<assets::Handle<assets::InputLayout>> layouts;
 
 	[[Reflect]]
 	bool use_settings = false;

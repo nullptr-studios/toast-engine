@@ -95,7 +95,7 @@ private:
 	void stopTrack(ActiveTrack& at, bool allow_fadeout);
 
 	[[Reflect, Name("Tracks")]]
-	std::vector<assets::AssetHandle<assets::AudioEvent>> m_tracks;
+	std::vector<assets::Handle<assets::AudioEvent>> m_tracks;
 
 	[[Reflect]]
 	bool m_play_on_enable = true;

@@ -19,8 +19,8 @@
 namespace assets {
 
 // Public load functions
-auto TOAST_API load(toast::UID uid) -> AssetHandleBase;
-auto TOAST_API load(std::string_view uri) -> AssetHandleBase;
+auto TOAST_API load(toast::UID uid) -> HandleBase;
+auto TOAST_API load(std::string_view uri) -> HandleBase;
 auto TOAST_API resolveURI(std::string_view uri) -> std::optional<toast::UID>;
 
 /**
@@ -42,16 +42,16 @@ auto TOAST_API save(toast::UID uid) -> bool;
  * @brief Type-safe load helper
  */
 template<typename T>
-auto load(toast::UID uid) -> AssetHandle<T> {
+auto load(toast::UID uid) -> Handle<T> {
 	auto base = load(uid);
 	// Carry the UID anyway, so the result is an unresolved handle (uid set, ptr null)
-	return AssetHandle<T>(base.hasValue() ? &base.get() : nullptr, base.uid(), base.path());
+	return Handle<T>(base.hasValue() ? &base.get() : nullptr, base.uid(), base.path());
 }
 
 template<typename T>
-auto load(std::string_view uri) -> AssetHandle<T> {
+auto load(std::string_view uri) -> Handle<T> {
 	auto base = load(uri);
-	return AssetHandle<T>(base.hasValue() ? &base.get() : nullptr, base.uid(), base.path());
+	return Handle<T>(base.hasValue() ? &base.get() : nullptr, base.uid(), base.path());
 }
 
 }
