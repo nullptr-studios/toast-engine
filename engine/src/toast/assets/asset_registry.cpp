@@ -26,6 +26,7 @@ void AssetRegistry::init() {
 	s_raw["audio_bank"] = [](std::vector<uint8_t> d) { return std::make_unique<AudioBank>(std::move(d)); };
 	s_raw["audio_strings"] = [](std::vector<uint8_t> d) { return std::make_unique<AudioStrings>(std::move(d)); };
 	s_raw["script"] = [](std::vector<uint8_t> d) { return std::make_unique<Script>(std::move(d)); };
+	s_raw["shader"] = [](std::vector<uint8_t> d) { return std::make_unique<Shader>(std::move(d)); };
 
 	// Plain TOML loaders
 	s_toml["curve"] = [](const toml::table& t) { return Curve::fromToml(t); };
@@ -71,6 +72,7 @@ void AssetRegistry::init() {
 	s_lua_names["schema"] = "Schema";
 	s_lua_names["node"] = "Prefab";
 	s_lua_names["script"] = "Script";
+	s_lua_names["shader"] = "Shader";
 	s_lua_names["curve"] = "Curve";
 	s_lua_names["audio_strings"] = "AudioStrings";
 	s_lua_names["audio_bank"] = "AudioBank";
