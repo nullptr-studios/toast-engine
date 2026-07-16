@@ -4,14 +4,6 @@
  * @date 06 Jun 2026
  *
  * @brief Public API for the asset management system
- *
- * @note This header intentionally only pulls in core_types.hpp (Asset, AssetHandle<T>) rather
- *       than the full types.hpp aggregate. load<T>() is a template that never needs T to be a
- *       complete type here, so pulling in every concrete asset type (which drags in heavy,
- *       unrelated subsystems such as the Vulkan renderer via mesh.hpp/material.hpp) would only
- *       bloat every translation unit that just wants to call assets::load(). Callers that need a
- *       concrete asset type complete (e.g. to call methods on it) should include that type's own
- *       header directly.
  */
 
 #pragma once

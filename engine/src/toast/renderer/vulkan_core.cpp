@@ -4,12 +4,11 @@
 
 #include "vulkan_core.hpp"
 
-#include "toast/log.hpp"
-#include "toast/logger.hpp"
-
 #include <algorithm>
 #include <format>
 #include <limits>
+#include <toast/log.hpp>
+#include <toast/logger.hpp>
 
 #if defined(__linux__)
 #include <dlfcn.h>

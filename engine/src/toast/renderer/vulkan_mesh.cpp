@@ -4,11 +4,11 @@
 
 #include "vulkan_mesh.hpp"
 
-#include "toast/log.hpp"
 #include "vulkan_core.hpp"
 #include "vulkan_debug.hpp"
 
 #include <format>
+#include <toast/log.hpp>
 #include <type_traits>
 
 namespace renderer {

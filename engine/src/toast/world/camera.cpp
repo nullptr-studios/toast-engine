@@ -4,7 +4,7 @@
 
 #include "camera.hpp"
 
-#include "toast/renderer/vulkan_renderer.hpp"
+#include <toast/renderer/vulkan_renderer.hpp>
 
 namespace toast {
 void Camera::setActiveCamera(bool force) {

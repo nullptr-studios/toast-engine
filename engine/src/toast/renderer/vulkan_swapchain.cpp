@@ -4,12 +4,11 @@
 
 #include "vulkan_swapchain.hpp"
 
-#include "toast/log.hpp"
-
 #include <algorithm>
 #include <array>
 #include <limits>
 #include <stdexcept>
+#include <toast/log.hpp>
 #include <utility>
 
 namespace renderer {

@@ -4,12 +4,6 @@
 
 #include "vulkan_renderer.hpp"
 
-#include "toast/log.hpp"
-#include "toast/thread_pool.hpp"
-#include "toast/time.hpp"
-#include "toast/window/window_events.hpp"
-#include "toast/world/camera.hpp"
-#include "toast/world/mesh_node.hpp"
 #include "vulkan_debug.hpp"
 
 #include <algorithm>
@@ -20,6 +14,12 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <toast/log.hpp>
+#include <toast/thread_pool.hpp>
+#include <toast/time.hpp>
+#include <toast/window/window_events.hpp>
+#include <toast/world/camera.hpp>
+#include <toast/world/mesh_node.hpp>
 
 namespace renderer {
 
@@ -454,7 +454,7 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 
 	// Frame rendering
 	auto& frame = m_frames[m_current_frame];
-	m_core->getDevice().waitForFences(*frame.in_flight, true, std::numeric_limits<uint64_t>::max());
+	std::ignore = m_core->getDevice().waitForFences(*frame.in_flight, true, std::numeric_limits<uint64_t>::max());
 	if (frame.has_submitted) {
 		m_output_target->onImageRenderComplete(frame.last_image_index);
 		frame.has_submitted = false;
@@ -474,7 +474,8 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 
 	const uint32_t image_index = acquired.value;
 	if (m_images_in_flight.at(image_index)) {
-		m_core->getDevice().waitForFences(m_images_in_flight.at(image_index), true, std::numeric_limits<uint64_t>::max());
+		std::ignore =
+		    m_core->getDevice().waitForFences(m_images_in_flight.at(image_index), true, std::numeric_limits<uint64_t>::max());
 	}
 
 	m_core->getDevice().resetFences(*frame.in_flight);

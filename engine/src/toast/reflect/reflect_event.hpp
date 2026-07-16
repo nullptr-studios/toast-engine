@@ -7,11 +7,10 @@
  */
 
 #pragma once
-#include "toast/events/event.hpp"
-#include "toast/export.hpp"
-#include "toast/reflect/reflect.hpp"
-
 #include <asio/serial_port_base.hpp>
+#include <toast/events/event.hpp>
+#include <toast/export.hpp>
+#include <toast/reflect/reflect.hpp>
 
 namespace toast {
 

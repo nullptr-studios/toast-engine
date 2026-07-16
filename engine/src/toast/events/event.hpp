@@ -8,14 +8,13 @@
  */
 #pragma once
 
-#include "toast/log.hpp"
-
 #include <any>
 #include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <toast/export.hpp>
+#include <toast/log.hpp>
 #include <type_traits>
 #include <typeindex>
 #include <vector>

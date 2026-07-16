@@ -1,9 +1,8 @@
 #include "audio_emitter.hpp"
 
-#include "toast/audio/audio_system.hpp"
-
 #include <toast/assets/assets.hpp>
 #include <toast/audio/audio_event.hpp>
+#include <toast/audio/audio_system.hpp>
 
 namespace toast {
 

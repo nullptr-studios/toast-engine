@@ -8,9 +8,8 @@
 
 #pragma once
 
-#include "toast/export.hpp"
-
 #include <format>
+#include <toast/export.hpp>
 
 namespace assets {
 class Prefab;

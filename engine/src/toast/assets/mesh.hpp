@@ -8,12 +8,12 @@
 
 #pragma once
 #include "core_types.hpp"
-#include "toast/renderer/vertex.hpp"
 
 #include <glm/glm.hpp>
 #include <memory>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
+#include <toast/renderer/vertex.hpp>
 
 namespace renderer {
 class VulkanMesh;

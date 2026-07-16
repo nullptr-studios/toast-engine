@@ -2,11 +2,11 @@
 
 #include "assets.hpp"
 #include "texture.hpp"
-#include "toast/renderer/vulkan_renderer.hpp"
-#include "toast/renderer/vulkan_sampler.hpp"
 
 #include <algorithm>
 #include <format>
+#include <toast/renderer/vulkan_renderer.hpp>
+#include <toast/renderer/vulkan_sampler.hpp>
 
 namespace assets {
 

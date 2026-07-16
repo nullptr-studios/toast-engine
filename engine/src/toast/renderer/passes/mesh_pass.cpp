@@ -9,15 +9,15 @@
 #include "../vulkan_debug.hpp"
 #include "../vulkan_renderer.hpp"
 #include "../vulkan_texture.hpp"
-#include "toast/assets/assets.hpp"
-#include "toast/assets/material.hpp"
-#include "toast/assets/texture.hpp"
-#include "toast/log.hpp"
 
 #include <array>
 #include <cstring>
 #include <format>
 #include <limits>
+#include <toast/assets/assets.hpp>
+#include <toast/assets/material.hpp>
+#include <toast/assets/texture.hpp>
+#include <toast/log.hpp>
 #include <tuple>
 
 #define GLM_FORCE_RADIANS

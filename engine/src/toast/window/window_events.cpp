@@ -1,7 +1,8 @@
 #include "window_events.hpp"
 
-#include "toast/events/proto_event.hpp"
 #include "window_events.pb.h"
+
+#include <toast/events/proto_event.hpp>
 
 namespace event {
 

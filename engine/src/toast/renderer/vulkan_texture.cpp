@@ -4,11 +4,11 @@
 
 #include "vulkan_texture.hpp"
 
-#include "toast/log.hpp"
 #include "vulkan_debug.hpp"
 
 #include <cstring>
 #include <format>
+#include <toast/log.hpp>
 
 namespace renderer {
 

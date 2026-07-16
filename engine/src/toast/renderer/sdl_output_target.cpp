@@ -4,9 +4,8 @@
 
 #include "sdl_output_target.hpp"
 
-#include "toast/log.hpp"
-
 #include <stdexcept>
+#include <toast/log.hpp>
 
 namespace renderer {
 

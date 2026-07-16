@@ -4,8 +4,6 @@
 
 #include "shader_compiler.hpp"
 
-#include "toast/log.hpp"
-
 #include <algorithm>
 #include <array>
 #include <cctype>
@@ -16,6 +14,7 @@
 #include <slang.h>
 #include <stdexcept>
 #include <string_view>
+#include <toast/log.hpp>
 
 namespace renderer {
 

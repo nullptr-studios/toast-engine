@@ -4,12 +4,12 @@
 
 #include "vulkan_pipeline.hpp"
 
-#include "toast/log.hpp"
 #include "vulkan_core.hpp"
 #include "vulkan_debug.hpp"
 
 #include <array>
 #include <stdexcept>
+#include <toast/log.hpp>
 
 namespace renderer {
 

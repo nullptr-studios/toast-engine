@@ -1,6 +1,6 @@
 #include "mesh_node.hpp"
 
-#include "toast/renderer/vulkan_renderer.hpp"
+#include <toast/renderer/vulkan_renderer.hpp>
 
 namespace toast {
 

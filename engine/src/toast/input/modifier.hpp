@@ -9,12 +9,12 @@
 #pragma once
 
 #include "parse_util.hpp"
-#include "toast/time.hpp"
 #include "value.hpp"
 
 #include <cmath>
 #include <glm/glm.hpp>
 #include <string_view>
+#include <toast/time.hpp>
 #include <toml++/toml.hpp>
 
 namespace input {

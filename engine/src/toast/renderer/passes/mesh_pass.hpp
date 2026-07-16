@@ -8,10 +8,10 @@
 #include "../vulkan_mesh.hpp"
 #include "../vulkan_pipeline.hpp"
 #include "../vulkan_texture.hpp"
-#include "toast/events/listener.hpp"
 
 #include <atomic>
 #include <glm/glm.hpp>
+#include <toast/events/listener.hpp>
 #include <unordered_map>
 
 namespace assets {

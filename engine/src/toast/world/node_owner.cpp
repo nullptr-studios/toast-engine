@@ -1,17 +1,17 @@
 #include "node_owner.hpp"
 
 #include "node.hpp"
-#include "toast/assets/asset_manager.hpp"
-#include "toast/log.hpp"
-#include "toast/world/workspace_events.hpp"
 
 #include <algorithm>
 #include <charconv>
 #include <future>
 #include <memory>
+#include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
+#include <toast/log.hpp>
 #include <toast/scripting/script_runtime.hpp>
 #include <toast/thread_pool.hpp>
+#include <toast/world/workspace_events.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace toast {

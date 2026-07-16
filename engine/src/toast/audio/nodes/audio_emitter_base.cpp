@@ -1,12 +1,12 @@
 #include "audio_emitter_base.hpp"
 
 #include "../audio_system.hpp"
-#include "toast/time.hpp"
 
 #include <algorithm>
 #include <limits>
 #include <toast/assets/assets.hpp>
 #include <toast/audio/audio_event.hpp>
+#include <toast/time.hpp>
 
 namespace toast {
 
