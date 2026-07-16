@@ -121,6 +121,13 @@ auto Node::find(std::string_view query) -> Box<Node> {
 	return m_owner->findFrom(*this, query);
 }
 
+auto Node::find(const UID& uid) -> Box<Node> {
+	if (not m_owner) {
+		return {};
+	}
+	return m_owner->findFrom(*this, uid);
+}
+
 auto Node::search(std::string_view query) -> std::vector<Box<Node>> {
 	if (not m_owner) {
 		return {};

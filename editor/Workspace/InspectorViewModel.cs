@@ -472,11 +472,17 @@ public partial class InspectorViewModel : Tool {
 		IsEditingName = true;
 	}
 
-	public void CommitRename() {
+	private static readonly HashSet<string> s_reservedNames = ["root", "world", "global"];
+
+	public async void CommitRename() {
 		if (!IsEditingName) return;
 		IsEditingName = false;
 		var n = NameDraft.Trim();
 		if (n.Length == 0 || n == Name || m_uid is null) return;
+		if (s_reservedNames.Contains(n)) {
+			await App.Modals.ShowWarning("Reserved Name", $"'{n}' is a reserved keyword and cannot be used as a node name.");
+			return;
+		}
 
 		Events.Send(new NodeChangeName { Node = m_uid, Name = n });
 		WorkspaceState.MarkModified();

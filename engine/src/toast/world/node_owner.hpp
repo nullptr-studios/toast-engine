@@ -34,6 +34,7 @@ public:
 	virtual void unregisterDependency(Node& from, Node& to) = 0;
 
 	virtual auto findFrom(const Node& origin, std::string_view query) -> Box<Node> = 0;
+	virtual auto findFrom(const Node& origin, const UID& uid) -> Box<Node> = 0;
 	virtual auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> = 0;
 
 	auto requestRuntimeCreate(Node& parent, std::string_view type) -> Box<Node>;

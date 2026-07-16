@@ -235,13 +235,22 @@ public:
 	/**
 	 * @brief Depth-first search for a single descendant
 	 * @param query A bare name, a slash-separated path, or a node:// URI with namespace
-	 *              keywords: root, world_root, global
+	 *              keywords: root, world, global
 	 * @return The first match, or an empty box if nothing was found
 	 * @note Traversal stops at prefab-instance boundaries; interior nodes are opaque to find()
 	 * @see search()
 	 */
 	[[nodiscard]]
 	auto find(std::string_view query) -> Box<Node>;
+
+	/**
+	 * @brief Looks up a node by UID within this node's local root
+	 * @param uid UID of the node to find
+	 * @return The match, or an empty box if nothing was found
+	 * @note Scoped to the nearest instance-root ancestor
+	 */
+	[[nodiscard]]
+	auto find(const UID& uid) -> Box<Node>;
 
 	/**
 	 * @brief Depth-first search for all matching descendants

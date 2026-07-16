@@ -186,9 +186,23 @@ void Workspace::registerDependency(Node& from, Node& to) {
 void Workspace::unregisterDependency(Node& from, Node& to) { }
 
 auto Workspace::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
-	uint64_t target = UID::fromString(query);
+	auto search = [query](this auto&& self, const Node& node) -> Box<Node> {
+		if (node.name() == query) {
+			return node.box();
+		}
+		for (const auto& c : node.m_children) {
+			if (auto found = self(*c); found.exists()) {
+				return found;
+			}
+		}
+		return {};
+	};
 
-	auto search = [target](this auto&& self, const Node& node) -> Box<Node> {
+	return search(origin);
+}
+
+auto Workspace::findFrom(const Node& origin, const UID& uid) -> Box<Node> {
+	auto search = [target = uid.data()](this auto&& self, const Node& node) -> Box<Node> {
 		if (node.m_uid.data() == target) {
 			return node.box();
 		}
@@ -229,7 +243,7 @@ void Workspace::eventSubscriptions() {
 		}
 		TOAST_ASSERT(m_root_node.exists(), "World", "Trying to add a node to an invalid Workspace");
 
-		auto parent = findFrom(m_root_node, e.parent.get());
+		auto parent = findFrom(m_root_node, e.parent);
 		if (not parent.exists()) {
 			TOAST_WARN("World", "Tried to create node on Workspace {} but parent couldn't be found", m_root_node->name());
 			return true;
@@ -247,7 +261,7 @@ void Workspace::eventSubscriptions() {
 		}
 		TOAST_ASSERT(m_root_node.exists(), "World", "Trying to add a node to an invalid Workspace");
 
-		auto node = findFrom(m_root_node, e.target.get());
+		auto node = findFrom(m_root_node, e.target);
 		if (not node.exists() || not node->parentInternal().exists()) {
 			TOAST_WARN("World", "Tried to remove node on Workspace {} but the node couldn't be found", m_root_node->name());
 			return true;
@@ -297,7 +311,7 @@ void Workspace::eventSubscriptions() {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			return false;
 		}
-		auto node = findFrom(m_root_node, e.target.get());
+		auto node = findFrom(m_root_node, e.target);
 		if (not node.exists()) {
 			TOAST_WARN("World", "Tried to save workspace but the target node couldn't be found");
 			return true;
@@ -338,21 +352,21 @@ void Workspace::eventSubscriptions() {
 		}
 		TOAST_ASSERT(m_root_node.exists(), "World", "Trying to add a node to an invalid Workspace");
 
-		auto node = findFrom(m_root_node, e.target.get());
+		auto node = findFrom(m_root_node, e.target);
 		if (not node.exists() || node == m_root_node) {
 			TOAST_WARN("World", "Tried to move node on Workspace {} but the node couldn't be found", m_root_node->name());
 			return true;
 		}
 
 		// An empty new parent means "keep the current parent"
-		auto dest_parent = e.new_parent.data() == 0 ? node->parentInternal() : findFrom(m_root_node, e.new_parent.get());
+		auto dest_parent = e.new_parent.data() == 0 ? node->parentInternal() : findFrom(m_root_node, e.new_parent);
 		if (not dest_parent.exists()) {
 			TOAST_WARN("World", "Couldn't find new parent on Workspace {}", m_root_node->name());
 			return true;
 		}
 
 		// Reject reparenting a node into itself or one of its descendants
-		if (findFrom(node, dest_parent->uid().get()).exists()) {
+		if (findFrom(node, dest_parent->uid()).exists()) {
 			TOAST_WARN("World", "Tried to move node {} into its own descendant", node->name());
 			return true;
 		}
@@ -392,7 +406,7 @@ void Workspace::eventSubscriptions() {
 		if (!m_root_node.exists()) {
 			return false;
 		}
-		m_focused_node = findFrom(m_root_node, e.node.get());
+		m_focused_node = findFrom(m_root_node, e.node);
 		return false;
 	});
 
@@ -459,10 +473,14 @@ void Workspace::eventSubscriptions() {
 		}
 
 		auto find_node = [this](std::string_view uid_text) -> Box<Node> {
-			if (uid_text.empty() || toast::UID::fromString(std::string(uid_text)) == 0) {
+			if (uid_text.empty()) {
 				return {};
 			}
-			return findFrom(m_root_node, uid_text);
+			UID uid(toast::UID::fromString(std::string(uid_text)));
+			if (uid.data() == 0) {
+				return {};
+			}
+			return findFrom(m_root_node, uid);
 		};
 
 		std::any value = parseLuaValue(*desc, e.value, find_node);
@@ -480,7 +498,7 @@ void Workspace::eventSubscriptions() {
 		if (not m_root_node.exists()) {
 			return false;
 		}
-		auto node = findFrom(m_root_node, e.node.get());
+		auto node = findFrom(m_root_node, e.node);
 		if (not node.exists()) {
 			return false;
 		}
@@ -498,7 +516,7 @@ void Workspace::eventSubscriptions() {
 		if (not m_root_node.exists()) {
 			return false;
 		}
-		auto node = findFrom(m_root_node, e.node.get());
+		auto node = findFrom(m_root_node, e.node);
 		if (not node.exists()) {
 			return false;
 		}
@@ -513,7 +531,7 @@ void Workspace::eventSubscriptions() {
 		}
 		TOAST_ASSERT(m_root_node.exists(), "World", "Trying to spawn a node in an invalid Workspace");
 
-		auto parent = findFrom(m_root_node, e.parent.get());
+		auto parent = findFrom(m_root_node, e.parent);
 		if (not parent.exists()) {
 			TOAST_WARN("World", "WorkspaceSpawn: parent {} not found", e.parent);
 			return true;
@@ -533,8 +551,8 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 
-		auto src = findFrom(m_root_node, e.source.get());
-		auto par = findFrom(m_root_node, e.parent.get());
+		auto src = findFrom(m_root_node, e.source);
+		auto par = findFrom(m_root_node, e.parent);
 		if (not src.exists() || not par.exists()) {
 			TOAST_WARN("World", "WorkspaceDuplicateNode: source or parent not found");
 			return true;
@@ -587,7 +605,7 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 
-		auto target = findFrom(m_root_node, e.node.get());
+		auto target = findFrom(m_root_node, e.node);
 		if (not target.exists()) {
 			TOAST_WARN("World", "NodeChangeType: node not found");
 			return true;
@@ -658,7 +676,7 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 
-		auto target = findFrom(m_root_node, e.target.get());
+		auto target = findFrom(m_root_node, e.target);
 		if (not target.exists()) {
 			TOAST_WARN("World", "WorkspacePromoteNode: target not found");
 			return true;
@@ -758,7 +776,7 @@ void Workspace::eventSubscriptions() {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			return false;
 		}
-		auto src = findFrom(m_root_node, e.source.get());
+		auto src = findFrom(m_root_node, e.source);
 		if (not src.exists()) {
 			TOAST_WARN("World", "WorkspaceCopyNode: source not found");
 			return true;
@@ -774,7 +792,7 @@ void Workspace::eventSubscriptions() {
 		if (not s_clipboard) {
 			return true;
 		}
-		auto par = findFrom(m_root_node, e.parent.get());
+		auto par = findFrom(m_root_node, e.parent);
 		if (not par.exists()) {
 			TOAST_WARN("World", "WorkspacePasteNode: parent not found");
 			return true;

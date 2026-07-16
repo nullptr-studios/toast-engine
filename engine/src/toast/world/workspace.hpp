@@ -57,8 +57,11 @@ public:
 	void registerDependency(Node& from, Node& to) override;
 	void unregisterDependency(Node& from, Node& to) override;
 
-	/// Same query grammar as World::findFrom(); searches only within m_root_node
+	/// Name lookup over origin's subtree
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;
+
+	/// UID lookup over origin's subtree
+	auto findFrom(const Node& origin, const UID& uid) -> Box<Node> override;
 
 	/// Same query grammar as World::searchFrom(); searches only within m_root_node
 	auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> override;
