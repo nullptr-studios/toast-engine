@@ -375,8 +375,12 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	// }
 
 	// record loop
-	for (auto& pass : m_render_passes) {
-		pass->record(*frame.command_buffer, m_current_frame, image_index);
+	{
+		TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "Passes");
+		for (auto& pass : m_render_passes) {
+			TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "Pass");
+			pass->record(*frame.command_buffer, m_current_frame, image_index);
+		}
 	}
 
 	// End rendering
@@ -385,6 +389,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	m_output_target->recordFinalize(frame.command_buffer, image_index);
 	m_output_image_layouts.at(image_index) =
 	    m_output_target->usesAcquirePresentSemaphores() ? vk::ImageLayout::ePresentSrcKHR : vk::ImageLayout::eTransferSrcOptimal;
+
+	TracyVkCollect(m_tracy_vk_ctx, *frame.command_buffer);
 
 	// End frame record
 	frame.command_buffer.end();
@@ -543,6 +549,16 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 
 void VulkanRenderer::mainRenderThread() {
 	tracy::SetThreadName("Renderer Thread");
+
+#ifdef TRACY_ENABLE
+	{
+		// Calibration command buffer, only needed while creating the context
+		const vk::CommandBufferAllocateInfo alloc_info(*m_command_pool, vk::CommandBufferLevel::ePrimary, 1);
+		const auto tracy_cmd_buffers = m_core->getDevice().allocateCommandBuffers(alloc_info);
+		m_tracy_vk_ctx =
+		    TracyVkContext(*m_core->getPhysicalDevice(), *m_core->getDevice(), m_core->getGraphicsQueue(), *tracy_cmd_buffers[0]);
+	}
+#endif
 
 	using clock = std::chrono::steady_clock;
 	auto next_frame_deadline = clock::now();
@@ -762,6 +778,13 @@ void VulkanRenderer::stop() {
 	if (m_core) {
 		m_core->getDevice().waitIdle();
 	}
+
+#ifdef TRACY_ENABLE
+	if (m_tracy_vk_ctx != nullptr) {
+		TracyVkDestroy(m_tracy_vk_ctx);
+		m_tracy_vk_ctx = nullptr;
+	}
+#endif
 }
 
 auto VulkanRenderer::applyResize(vk::Extent2D extent) -> void {

@@ -23,6 +23,7 @@
 #include <thread>
 #include <toast/events/event.inl>
 #include <toast/events/listener.hpp>
+#include <tracy/TracyVulkan.hpp>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -266,6 +267,8 @@ private:
 	vk::raii::CommandPool m_command_pool = nullptr;
 
 	vk::raii::CommandPool m_transfer_command_pool = nullptr;
+
+	TracyVkCtx m_tracy_vk_ctx = nullptr; ///< Tracy GPU profiling context
 
 	vk::raii::DescriptorPool m_descriptor_pool = nullptr;
 
