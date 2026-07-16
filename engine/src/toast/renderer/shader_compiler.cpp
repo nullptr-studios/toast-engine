@@ -28,7 +28,7 @@ static void ensureSlangGlobalSession() {
 	Slang::ComPtr<slang::IGlobalSession> session;
 	SlangResult res = slang::createGlobalSession(session.writeRef());
 	if (SLANG_FAILED(res)) {
-		TOAST_CRITICAL("ShaderCompiler", "Failed to create Slang global session");
+		TOAST_CRITICAL("Render", "Failed to create Slang global session");
 	}
 	slang_global_session = session;
 
@@ -42,7 +42,7 @@ static void ensureSlangGlobalSession() {
 	std::vector<slang::CompilerOptionEntry> compiler_options;
 
 #if !defined(NDEBUG)
-	TOAST_INFO("ShaderCompiler", "Configuring Slang for DEBUG: Optimizations disabled, debug symbols enabled.");
+	TOAST_INFO("Render", "Configuring Slang for DEBUG: Optimizations disabled, debug symbols enabled.");
 
 	// Turn off optimizations entirely
 	slang::CompilerOptionEntry opt_entry {};
@@ -59,7 +59,7 @@ static void ensureSlangGlobalSession() {
 	compiler_options.push_back(dbg_entry);
 
 #else
-	TOAST_INFO("ShaderCompiler", "Configuring Slang for RELEASE: Maximum optimizations enabled.");
+	TOAST_INFO("Render", "Configuring Slang for RELEASE: Maximum optimizations enabled.");
 
 	// Enable maximal optimizations
 	slang::CompilerOptionEntry opt_entry {};
@@ -92,7 +92,7 @@ static void ensureSlangGlobalSession() {
 
 	SlangResult r = slang_global_session->createSession(session_desc, slang_session.writeRef());
 	if (SLANG_FAILED(r) || !slang_session) {
-		TOAST_CRITICAL("ShaderCompiler", "Failed to create Slang compilation session");
+		TOAST_CRITICAL("Render", "Failed to create Slang compilation session");
 	}
 }
 
@@ -211,18 +211,18 @@ auto ShaderCompiler::compileShaderModuleFromSource(const std::filesystem::path& 
 		}
 	}
 
-	TOAST_TRACE("ShaderCompiler", "Attempting to compile shader from: {}", resolved_path.string());
-	TOAST_TRACE("ShaderCompiler", "Current working directory: {}", std::filesystem::current_path().string());
+	TOAST_TRACE("Render", "Attempting to compile shader from: {}", resolved_path.string());
+	TOAST_TRACE("Render", "Current working directory: {}", std::filesystem::current_path().string());
 
 	if (!std::filesystem::exists(resolved_path)) {
 		std::string error_msg = "Shader file not found: " + resolved_path.string() +
 		                        "\nCurrent working directory: " + std::filesystem::current_path().string();
-		TOAST_CRITICAL("ShaderCompiler", "{}", error_msg);
+		TOAST_CRITICAL("Render", "{}", error_msg);
 	}
 
 	std::ifstream file(resolved_path, std::ios::binary);
 	if (!file) {
-		TOAST_CRITICAL("ShaderCompiler", "Failed to open shader file: {}", resolved_path.string());
+		TOAST_CRITICAL("Render", "Failed to open shader file: {}", resolved_path.string());
 	}
 	std::string source;
 	source.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
@@ -243,7 +243,7 @@ auto ShaderCompiler::compileShaderModuleFromSource(const std::filesystem::path& 
 		if (diag_ptr && diag_size > 0) {
 			const char* diag_c = reinterpret_cast<const char*>(diag_ptr);
 			std::string diag_str(diag_c, diag_c + diag_size);
-			TOAST_ERROR("ShaderCompiler", "Slang diagnostics (module load) for '{}':\n{}", resolved_path.string(), diag_str);
+			TOAST_ERROR("Render", "Slang diagnostics (module load) for '{}':\n{}", resolved_path.string(), diag_str);
 		}
 	}
 
@@ -255,22 +255,22 @@ auto ShaderCompiler::compileShaderModuleFromSource(const std::filesystem::path& 
 
 	for (int i = 0; i < layout->getParameterCount(); i++) {
 		auto* r = layout->getParameterByIndex(i);
-		TOAST_TRACE("ShaderCompiler", "variable name: {}\n  type: {}", r->getName(), r->getType()->getName());
+		TOAST_TRACE("Render", "variable name: {}\n  type: {}", r->getName(), r->getType()->getName());
 	}
 
 	if (!slang_module) {
-		TOAST_CRITICAL("ShaderCompiler", "Failed to load Slang module from source: {}", resolved_path.string());
+		TOAST_CRITICAL("Render", "Failed to load Slang module from source: {}", resolved_path.string());
 	}
 
 	Slang::ComPtr<slang::IBlob> spirv_blob;
 	SlangResult got = slang_module->getTargetCode(0, spirv_blob.writeRef());
 	if (SLANG_FAILED(got) || !spirv_blob) {
-		TOAST_CRITICAL("ShaderCompiler", "Failed to get SPIR-V target code from Slang module");
+		TOAST_CRITICAL("Render", "Failed to get SPIR-V target code from Slang module");
 	}
 
 	const auto buffer_size = spirv_blob->getBufferSize();
 	if (buffer_size == 0) {
-		TOAST_CRITICAL("ShaderCompiler", "SPIR-V binary is empty");
+		TOAST_CRITICAL("Render", "SPIR-V binary is empty");
 	}
 
 	const void* buffer_ptr = spirv_blob->getBufferPointer();
@@ -279,9 +279,7 @@ auto ShaderCompiler::compileShaderModuleFromSource(const std::filesystem::path& 
 	std::vector<std::byte> out;
 	out.assign(bytes, bytes + buffer_size);
 
-	TOAST_TRACE(
-	    "ShaderCompiler", "Successfully compiled shader from '{}' -> {} bytes of SPIR-V", resolved_path.string(), buffer_size
-	);
+	TOAST_TRACE("Render", "Successfully compiled shader from '{}' -> {} bytes of SPIR-V", resolved_path.string(), buffer_size);
 
 	CompiledShaderCode result;
 	result.spirv = std::move(out);
@@ -302,7 +300,7 @@ auto ShaderCompiler::compileShaderModule(std::string_view module_name) -> Compil
 		if (diag_ptr && diag_size > 0) {
 			const char* diag_c = reinterpret_cast<const char*>(diag_ptr);
 			std::string diag_str(diag_c, diag_c + diag_size);
-			TOAST_ERROR("ShaderCompiler", "Slang diagnostics (module load) for '{}':\n{}", module_name, diag_str);
+			TOAST_ERROR("Render", "Slang diagnostics (module load) for '{}':\n{}", module_name, diag_str);
 		}
 	}
 
@@ -316,22 +314,22 @@ auto ShaderCompiler::compileShaderModule(std::string_view module_name) -> Compil
 
 	for (int i = 0; i < layout->getParameterCount(); i++) {
 		auto* r = layout->getParameterByIndex(i);
-		TOAST_TRACE("ShaderCompiler", "variable name: {}\n  type: {}", r->getName(), r->getType()->getName());
+		TOAST_TRACE("Render", "variable name: {}\n  type: {}", r->getName(), r->getType()->getName());
 	}
 
 	if (!slang_module) {
-		TOAST_CRITICAL("ShaderCompiler", "Failed to load Slang module from module: {}", module_name);
+		TOAST_CRITICAL("Render", "Failed to load Slang module from module: {}", module_name);
 	}
 
 	Slang::ComPtr<slang::IBlob> spirv_blob;
 	SlangResult got = slang_module->getTargetCode(0, spirv_blob.writeRef());
 	if (SLANG_FAILED(got) || !spirv_blob) {
-		TOAST_CRITICAL("ShaderCompiler", "Failed to get SPIR-V target code from Slang module");
+		TOAST_CRITICAL("Render", "Failed to get SPIR-V target code from Slang module");
 	}
 
 	const auto buffer_size = spirv_blob->getBufferSize();
 	if (buffer_size == 0) {
-		TOAST_CRITICAL("ShaderCompiler", "SPIR-V binary is empty");
+		TOAST_CRITICAL("Render", "SPIR-V binary is empty");
 	}
 
 	const void* buffer_ptr = spirv_blob->getBufferPointer();
@@ -340,7 +338,7 @@ auto ShaderCompiler::compileShaderModule(std::string_view module_name) -> Compil
 	std::vector<std::byte> out;
 	out.assign(bytes, bytes + buffer_size);
 
-	TOAST_TRACE("ShaderCompiler", "Successfully compiled shader from module '{}' -> {} bytes of SPIR-V", module_name, buffer_size);
+	TOAST_TRACE("Render", "Successfully compiled shader from module '{}' -> {} bytes of SPIR-V", module_name, buffer_size);
 
 	CompiledShaderCode result;
 	result.spirv = std::move(out);

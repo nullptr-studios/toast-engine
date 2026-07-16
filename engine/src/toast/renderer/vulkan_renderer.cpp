@@ -82,7 +82,7 @@ auto VulkanRenderer::selectDepthFormat(const VulkanCore& core) -> vk::Format {
 		}
 	}
 
-	TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: Failed to find a supported depth format!");
+	TOAST_CRITICAL("Render", "Toast Engine Error: Failed to find a supported depth format!");
 }
 
 VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> output_target) noexcept
@@ -90,14 +90,14 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
       m_output_target(std::move(output_target)) {
 	instance = this;
 	if (!m_output_target) {
-		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: VulkanRenderer requires an output target!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires an output target!");
 	}
 
 	if (k_frames_in_flight == 0) {
-		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: VulkanRenderer requires at least one frame in flight!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires at least one frame in flight!");
 	}
 
-	TOAST_TRACE("VulkanRenderer", "Creating renderer with {} frame(s) in flight", k_frames_in_flight);
+	TOAST_TRACE("Render", "Creating renderer with {} frame(s) in flight", k_frames_in_flight);
 	m_depth_format = selectDepthFormat(core);
 
 	createGraphicsCommandPool();
@@ -128,7 +128,7 @@ auto VulkanRenderer::createGraphicsCommandPool() -> void {
 	);
 	m_command_pool = vk::raii::CommandPool(m_core->getDevice(), pool_ci);
 	setDebugName(*m_core, *m_command_pool, "VulkanRenderer GraphicsCommandPool");
-	TOAST_TRACE("VulkanRenderer", "Graphics command pool created (graphics family {})", m_core->getGraphicsQueueFamilyIndex());
+	TOAST_TRACE("Render", "Graphics command pool created (graphics family {})", m_core->getGraphicsQueueFamilyIndex());
 }
 
 auto VulkanRenderer::createTransferCommandPool() -> void {
@@ -137,7 +137,7 @@ auto VulkanRenderer::createTransferCommandPool() -> void {
 	);
 	m_transfer_command_pool = vk::raii::CommandPool(m_core->getDevice(), pool_ci);
 	setDebugName(*m_core, *m_transfer_command_pool, "VulkanRenderer TransferCommandPool");
-	TOAST_TRACE("VulkanRenderer", "Transfer command pool created (transfer family {})", m_core->getTransferQueueFamilyIndex());
+	TOAST_TRACE("Render", "Transfer command pool created (transfer family {})", m_core->getTransferQueueFamilyIndex());
 }
 
 auto VulkanRenderer::createFrameContexts() -> void {
@@ -177,7 +177,7 @@ auto VulkanRenderer::createFrameContexts() -> void {
 		setDebugName(*m_core, *m_frames[frame_index].in_flight, std::format("VulkanRenderer Frame[{}] InFlightFence", frame_index));
 	}
 
-	TOAST_TRACE("VulkanRenderer", "Frame command buffers created: {}", k_frames_in_flight);
+	TOAST_TRACE("Render", "Frame command buffers created: {}", k_frames_in_flight);
 }
 
 auto VulkanRenderer::createPerImageSync() -> void {
@@ -191,17 +191,17 @@ auto VulkanRenderer::createPerImageSync() -> void {
 		setDebugName(*m_core, *m_render_finished_per_image.back(), std::format("VulkanRenderer RenderFinished[{}]", i));
 	}
 
-	TOAST_TRACE("VulkanRenderer", "Per-image semaphores created: {}", image_count);
+	TOAST_TRACE("Render", "Per-image semaphores created: {}", image_count);
 }
 
 auto VulkanRenderer::createDepthResources() -> void {
 	if (m_depth_format == vk::Format::eUndefined) {
-		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: VulkanRenderer requires a valid depth format!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires a valid depth format!");
 	}
 
 	const auto extent = m_output_target->getExtent();
 	if (extent.width == 0 || extent.height == 0) {
-		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: VulkanRenderer requires a non-zero output extent for depth resources!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires a non-zero output extent for depth resources!");
 	}
 
 	m_depth_resources.view.reset();
@@ -237,11 +237,7 @@ auto VulkanRenderer::createDepthResources() -> void {
 
 	m_depth_layout = vk::ImageLayout::eUndefined;
 	TOAST_TRACE(
-	    "VulkanRenderer",
-	    "Depth resources created at {}x{} with format {}",
-	    extent.width,
-	    extent.height,
-	    vk::to_string(m_depth_format)
+	    "Render", "Depth resources created at {}x{} with format {}", extent.width, extent.height, vk::to_string(m_depth_format)
 	);
 }
 
@@ -464,12 +460,12 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	    m_output_target->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.image_available, VK_NULL_HANDLE);
 
 	if (acquired.result == vk::Result::eErrorOutOfDateKHR) {
-		TOAST_WARN("VulkanRenderer", "Swapchain out of date on acquire; recreating");
+		TOAST_WARN("Render", "Swapchain out of date on acquire; recreating");
 		applyResize(m_output_target->getExtent());
 		return;
 	}
 	if (acquired.result != vk::Result::eSuccess && acquired.result != vk::Result::eSuboptimalKHR) {
-		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: Failed to acquire the next output image!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to acquire the next output image!");
 	}
 
 	const uint32_t image_index = acquired.value;
@@ -531,13 +527,13 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	m_current_frame = (m_current_frame + 1) % static_cast<uint32_t>(m_frames.size());
 
 	if (present_result == vk::Result::eErrorOutOfDateKHR || present_result == vk::Result::eSuboptimalKHR) {
-		TOAST_WARN("VulkanRenderer", "Swapchain out of date or suboptimal on present; recreating");
+		TOAST_WARN("Render", "Swapchain out of date or suboptimal on present; recreating");
 		m_rendering_frame = nullptr;
 		applyResize(m_output_target->getExtent());
 		return;
 	}
 	if (present_result != vk::Result::eSuccess) {
-		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: Failed to present the current output image!");
+		TOAST_CRITICAL("Vulkan", "Toast Engine Error: Failed to present the current output image!");
 	}
 
 	m_rendering_frame = nullptr;
@@ -630,7 +626,7 @@ void VulkanRenderer::mainRenderThread() {
 }
 
 void VulkanRenderer::start() noexcept {
-	TOAST_TRACE("VulkanRenderer", "Starting renderer");
+	TOAST_TRACE("Vulkan", "Starting renderer");
 
 	m_running.store(true, std::memory_order_release);
 
@@ -789,9 +785,7 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 		createPerImageSync();
 		createDepthResources();
 		m_current_frame = 0;
-	} catch (const std::exception& e) {
-		TOAST_CRITICAL("VulkanRenderer", "Failed to recreate output target on resize: {}", e.what());
-	}
+	} catch (const std::exception& e) { TOAST_CRITICAL("Vulkan", "Failed to recreate output target on resize: {}", e.what()); }
 }
 
 void VulkanRenderer::addRenderPass(std::unique_ptr<IRenderPass> pass) {

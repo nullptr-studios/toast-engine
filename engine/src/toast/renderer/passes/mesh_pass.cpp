@@ -64,7 +64,7 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t imag
 	// Ensure descriptor sets have been allocated
 	if (m_frame_descriptor_sets.size() != VulkanRenderer::k_frames_in_flight) {
 		TOAST_ERROR(
-		    "MeshPass",
+		    "Render",
 		    "Descriptor sets not allocated for MeshPass (size={} expected={})",
 		    m_frame_descriptor_sets.size(),
 		    VulkanRenderer::k_frames_in_flight
@@ -73,7 +73,7 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t imag
 	}
 
 	if (frame_index >= m_frame_descriptor_sets.size()) {
-		TOAST_ERROR("MeshPass", "Frame index {} out of bounds for descriptor sets", frame_index);
+		TOAST_ERROR("Render", "Frame index {} out of bounds for descriptor sets", frame_index);
 		return;
 	}
 
@@ -147,7 +147,7 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t imag
 void MeshPass::createResources(const renderer::VulkanCore& core) {
 	const auto& layouts = shader_layout.getDescriptorSetLayouts();
 	if (layouts.size() < 2) {
-		TOAST_CRITICAL("MeshPass", "ShaderLayout must provide both the frame (set 0) and material (set 1) descriptor set layouts");
+		TOAST_CRITICAL("Render", "ShaderLayout must provide both the frame (set 0) and material (set 1) descriptor set layouts");
 		return;
 	}
 
@@ -170,7 +170,7 @@ void MeshPass::createResources(const renderer::VulkanCore& core) {
 
 		const auto* frame_res = VulkanRenderer::instance->getFrameUBORes(i);
 		if (!frame_res->gpu_buffer.has_value()) {
-			TOAST_CRITICAL("MeshPass", "Frame UBO buffer missing for frame {}", i);
+			TOAST_CRITICAL("Render", "Frame UBO buffer missing for frame {}", i);
 			continue;
 		}
 
@@ -288,7 +288,7 @@ auto MeshPass::getMaterialDescriptorSet(const renderer::VulkanCore& core, assets
 	const vk::ImageView view = texture.getView();
 	const VkSampler sampler = material.albedoSampler();
 	if (!view || sampler == VK_NULL_HANDLE) {
-		TOAST_WARN("MeshPass", "Material has a ready texture but an invalid view/sampler; using fallback material");
+		TOAST_WARN("Render", "Material has a ready texture but an invalid view/sampler; using fallback material");
 		return *m_default_material_set;
 	}
 

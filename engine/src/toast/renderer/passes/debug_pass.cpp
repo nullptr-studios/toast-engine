@@ -209,7 +209,7 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	(void)image_index;
 
 	if (frame_index >= m_frame_descriptor_sets.size()) {
-		TOAST_ERROR("DebugPass", "Frame index {} out of bounds for descriptor sets", frame_index);
+		TOAST_ERROR("Render", "Frame index {} out of bounds for descriptor sets", frame_index);
 		return;
 	}
 
@@ -276,7 +276,7 @@ void DebugPass::createResources(const renderer::VulkanCore& core) {
 	const auto& device = core.getDevice();
 	const auto& layouts = m_shader_layout.getDescriptorSetLayouts();
 	if (layouts.empty()) {
-		TOAST_CRITICAL("DebugPass", "ShaderLayout has no descriptor set layouts");
+		TOAST_CRITICAL("Render", "ShaderLayout has no descriptor set layouts");
 		return;
 	}
 
@@ -294,7 +294,7 @@ void DebugPass::createResources(const renderer::VulkanCore& core) {
 
 		const auto* frame_res = VulkanRenderer::instance->getFrameUBORes(i);
 		if (!frame_res->gpu_buffer.has_value()) {
-			TOAST_CRITICAL("DebugPass", "Frame UBO buffer missing for frame {}", i);
+			TOAST_CRITICAL("Render", "Frame UBO buffer missing for frame {}", i);
 			continue;
 		}
 
