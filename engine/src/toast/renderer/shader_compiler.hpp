@@ -5,42 +5,34 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <filesystem>
-#include <optional>
 #include <slang-com-ptr.h>
 #include <slang.h>
 #include <string>
+#include <string_view>
+#include <toast/uid.hpp>
 #include <vector>
 
 namespace renderer {
 
-struct ShaderDescriptorBinding {
-	uint32_t set = 0;
-	uint32_t binding = 0;
-};
-
-struct ShaderMaterialBindings {
-	std::optional<ShaderDescriptorBinding> albedo_texture;
-	std::optional<ShaderDescriptorBinding> albedo_sampler;
-
-	[[nodiscard]]
-	auto supportsAlbedoSampling() const -> bool {
-		return albedo_texture.has_value() && albedo_sampler.has_value();
-	}
-};
-
 struct CompiledShaderCode {
 	std::vector<std::byte> spirv;
 	Slang::ComPtr<slang::IComponentType> program;    // Holds the reflection data!
-	ShaderMaterialBindings material_bindings;
+	std::vector<std::string> dependencies;           // Virtual URIs the module depends on
 };
 
 class ShaderCompiler {
 public:
-	/// Compiles a GLSL shader file to SPIR-V
+	/**
+	 * @brief Compiles a Slang module from in-memory source to SPIR-V
+	 * @param uid UID of the shader asset
+	 * @param source Slang source code
+	 * @param source_uri Virtual URI of the source
+	 */
+	static auto compile(toast::UID uid, std::string_view source, std::string_view source_uri) -> CompiledShaderCode;
+
+	[[deprecated("You should be using the asset manager for loading shaders")]]
 	static auto compileShaderModuleFromSource(const std::filesystem::path& shader_path) -> CompiledShaderCode;
-	static auto compileShaderModule(std::string_view module_name) -> CompiledShaderCode;
 };
 
 }

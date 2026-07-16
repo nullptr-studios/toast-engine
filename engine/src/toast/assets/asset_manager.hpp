@@ -116,6 +116,11 @@ public:
 	auto loadBytes(std::string_view uri) -> std::optional<std::vector<uint8_t>>;
 
 	/**
+	 * @brief Like loadBytes() but silent on misses
+	 */
+	auto tryLoadBytes(std::string_view uri) -> std::optional<std::vector<uint8_t>>;
+
+	/**
 	 * @brief Re-reads the project manifest from disk
 	 * @note Call after importing or creating a new asset; does not evict the asset cache
 	 */

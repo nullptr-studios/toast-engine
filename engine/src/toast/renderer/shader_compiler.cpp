@@ -4,16 +4,13 @@
 
 #include "shader_compiler.hpp"
 
-#include <algorithm>
+#include "slang_vfs.hpp"
+
 #include <array>
-#include <cctype>
-#include <cstring>
 #include <fstream>
 #include <iterator>
 #include <slang-com-ptr.h>
 #include <slang.h>
-#include <stdexcept>
-#include <string_view>
 #include <toast/log.hpp>
 
 namespace renderer {
@@ -74,11 +71,12 @@ static void ensureSlangGlobalSession() {
 	session_desc.targets = slang_targets.data();
 	session_desc.targetCount = SlangInt(slang_targets.size());
 	session_desc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;    // glm
-	std::array<const char*, 1> search_paths {R"(.\)"};                          // TODO: configure this correctly
+
+	// Imports resolve through the engine VFS
+	session_desc.fileSystem = &SlangVfs::get();
+	std::array<const char*, 1> search_paths {"core://shaders/"};
 	session_desc.searchPaths = search_paths.data();
 	session_desc.searchPathCount = search_paths.size();
-
-	// TODO Implement SLANGFilesystem for toastpkg
 
 #if !defined(NDEBUG)
 	session_desc.skipSPIRVValidation = false;
@@ -98,126 +96,103 @@ static void ensureSlangGlobalSession() {
 
 namespace {
 
-auto toLower(std::string_view in) -> std::string {
-	std::string out(in);
-	std::transform(out.begin(), out.end(), out.begin(), [](const unsigned char c) { return static_cast<char>(std::tolower(c)); });
-	return out;
-}
-
-auto looksLikeAlbedo(std::string_view name) -> bool {
-	const std::string lower = toLower(name);
-	return lower.contains("albedo") || lower.contains("basecolor") || lower.contains("base_color");
-}
-
-auto isSampledTextureType(slang::TypeLayoutReflection* type_layout) -> bool {
-	if (!type_layout || type_layout->getKind() != slang::TypeReflection::Kind::Resource) {
-		return false;
-	}
-
-	const auto shape = type_layout->getResourceShape();
-	const auto access = type_layout->getResourceAccess();
-	const auto base_shape = shape & SLANG_RESOURCE_BASE_SHAPE_MASK;
-	const bool is_texture = base_shape == SLANG_TEXTURE_1D || base_shape == SLANG_TEXTURE_2D || base_shape == SLANG_TEXTURE_3D ||
-	                        base_shape == SLANG_TEXTURE_CUBE;
-	return is_texture && access != SLANG_RESOURCE_ACCESS_READ_WRITE;
-}
-
-void reflectMaterialBindingsRecursive(
-    slang::VariableLayoutReflection* var_layout, uint32_t current_space, uint32_t current_binding,
-    ShaderMaterialBindings& out_bindings
-) {
-	if (!var_layout) {
+void logDiagnostics(const Slang::ComPtr<slang::IBlob>& diagnostics, std::string_view source_name) {
+	if (!diagnostics) {
 		return;
 	}
-
-	const uint32_t binding_offset = var_layout->getOffset(slang::ParameterCategory::DescriptorTableSlot);
-	const uint32_t space_offset = var_layout->getOffset(slang::ParameterCategory::SubElementRegisterSpace);
-
-	const uint32_t next_space = current_space + space_offset;
-	const uint32_t next_binding = current_binding + binding_offset;
-
-	slang::TypeLayoutReflection* type_layout = var_layout->getTypeLayout();
-	if (!type_layout) {
-		return;
-	}
-
-	const auto type_kind = type_layout->getKind();
-	const char* raw_name = var_layout->getName();
-	const std::string var_name = raw_name ? raw_name : "";
-	const bool albedo_name = looksLikeAlbedo(var_name);
-
-	if (type_kind == slang::TypeReflection::Kind::ConstantBuffer || type_kind == slang::TypeReflection::Kind::ParameterBlock) {
-		if (auto* element_layout = type_layout->getElementVarLayout()) {
-			reflectMaterialBindingsRecursive(
-			    element_layout, next_space, type_kind == slang::TypeReflection::Kind::ParameterBlock ? 0 : next_binding, out_bindings
-			);
-		}
-		return;
-	}
-
-	if (type_kind == slang::TypeReflection::Kind::Struct) {
-		const uint32_t field_count = type_layout->getFieldCount();
-		for (uint32_t i = 0; i < field_count; ++i) {
-			reflectMaterialBindingsRecursive(type_layout->getFieldByIndex(i), next_space, next_binding, out_bindings);
-		}
-		return;
-	}
-
-	if (albedo_name && var_layout->getCategory() == slang::ParameterCategory::DescriptorTableSlot) {
-		if (type_kind == slang::TypeReflection::Kind::SamplerState) {
-			out_bindings.albedo_sampler = ShaderDescriptorBinding {.set = next_space, .binding = next_binding};
-			return;
-		}
-		if (isSampledTextureType(type_layout)) {
-			out_bindings.albedo_texture = ShaderDescriptorBinding {.set = next_space, .binding = next_binding};
-			return;
-		}
+	const void* diag_ptr = diagnostics->getBufferPointer();
+	const size_t diag_size = diagnostics->getBufferSize();
+	if (diag_ptr && diag_size > 0) {
+		const char* diag_c = reinterpret_cast<const char*>(diag_ptr);
+		const std::string diag_str(diag_c, diag_c + diag_size);
+		TOAST_ERROR("Render", "Slang diagnostics for '{}':\n{}", source_name, diag_str);
 	}
 }
 
-auto reflectMaterialBindings(slang::ProgramLayout* layout) -> ShaderMaterialBindings {
-	ShaderMaterialBindings bindings;
-	if (!layout) {
-		return bindings;
+auto compileModule(std::string_view module_name, std::string_view source_path, std::string_view source) -> CompiledShaderCode {
+	ensureSlangGlobalSession();
+
+	Slang::ComPtr<slang::IModule> slang_module;
+	Slang::ComPtr<slang::IBlob> slang_diagnostics;
+
+	Slang::ComPtr<ISlangBlob> source_blob;
+	source_blob.attach(SlangVfs::makeBlob(source.data(), source.size()));
+
+	const std::string module_name_str(module_name);
+	const std::string source_path_str(source_path);
+	slang_module = slang_session->loadModuleFromSource(
+	    module_name_str.c_str(), source_path_str.c_str(), source_blob, slang_diagnostics.writeRef()
+	);
+
+	logDiagnostics(slang_diagnostics, source_path);
+
+	if (!slang_module) {
+		TOAST_ERROR("Render", "Failed to load Slang module: {}", source_path);
+		return {};
 	}
 
-	if (auto* global_params = layout->getGlobalParamsVarLayout()) {
-		reflectMaterialBindingsRecursive(global_params, 0, 0, bindings);
+	const std::array<slang::IComponentType*, 1> components {slang_module};
+	Slang::ComPtr<slang::IComponentType> program;
+	slang_session->createCompositeComponentType(components.data(), 1, program.writeRef());
+	if (!program) {
+		TOAST_ERROR("Render", "Failed to create Slang composite component for: {}", source_path);
+		return {};
 	}
 
-	const uint32_t entry_point_count = layout->getEntryPointCount();
-	for (uint32_t i = 0; i < entry_point_count; ++i) {
-		if (auto* entry = layout->getEntryPointByIndex(i)) {
-			if (auto* var_layout = entry->getVarLayout()) {
-				reflectMaterialBindingsRecursive(var_layout, 0, 0, bindings);
-			}
+	Slang::ComPtr<slang::IBlob> spirv_blob;
+	Slang::ComPtr<slang::IBlob> spirv_diagnostics;
+	const SlangResult got = slang_module->getTargetCode(0, spirv_blob.writeRef(), spirv_diagnostics.writeRef());
+	logDiagnostics(spirv_diagnostics, source_path);
+	if (SLANG_FAILED(got) || !spirv_blob || spirv_blob->getBufferSize() == 0) {
+		TOAST_ERROR("Render", "Failed to get SPIR-V target code for: {}", source_path);
+		return {};
+	}
+
+	const auto* bytes = reinterpret_cast<const std::byte*>(spirv_blob->getBufferPointer());
+
+	CompiledShaderCode result;
+	result.spirv.assign(bytes, bytes + spirv_blob->getBufferSize());
+	result.program = program;
+
+	// Collect dependencies as virtual URIs
+	const SlangInt32 dependency_count = slang_module->getDependencyFileCount();
+	for (SlangInt32 i = 0; i < dependency_count; ++i) {
+		const char* dep_path = slang_module->getDependencyFilePath(i);
+		if (dep_path == nullptr) {
+			continue;
+		}
+		auto uri = SlangVfs::normalizeUri(dep_path);
+		if (!uri.empty() && uri != source_path) {
+			result.dependencies.push_back(std::move(uri));
 		}
 	}
 
-	return bindings;
+	TOAST_TRACE("Render", "Compiled shader '{}' -> {} bytes of SPIR-V", source_path, spirv_blob->getBufferSize());
+	return result;
 }
 
+}
+
+auto ShaderCompiler::compile(toast::UID uid, std::string_view source, std::string_view source_uri) -> CompiledShaderCode {
+	return compileModule(uid.get(), source_uri, source);
 }
 
 auto ShaderCompiler::compileShaderModuleFromSource(const std::filesystem::path& shader_path) -> CompiledShaderCode {
-	// TODO: SWAP WITH RESOURCE MANAGER!
 	std::filesystem::path resolved_path = shader_path;
 	if (!resolved_path.is_absolute()) {
 		auto cwd_path = std::filesystem::current_path() / shader_path;
 		if (std::filesystem::exists(cwd_path)) {
 			resolved_path = cwd_path;
-		} else {
-			resolved_path = shader_path;
 		}
 	}
 
-	TOAST_TRACE("Render", "Attempting to compile shader from: {}", resolved_path.string());
-	TOAST_TRACE("Render", "Current working directory: {}", std::filesystem::current_path().string());
-
 	if (!std::filesystem::exists(resolved_path)) {
-		std::string error_msg = "Shader file not found: " + resolved_path.string() +
-		                        "\nCurrent working directory: " + std::filesystem::current_path().string();
-		TOAST_CRITICAL("Render", "{}", error_msg);
+		TOAST_CRITICAL(
+		    "Render",
+		    "Shader file not found: {}\nCurrent working directory: {}",
+		    resolved_path.string(),
+		    std::filesystem::current_path().string()
+		);
 	}
 
 	std::ifstream file(resolved_path, std::ios::binary);
@@ -227,123 +202,11 @@ auto ShaderCompiler::compileShaderModuleFromSource(const std::filesystem::path& 
 	std::string source;
 	source.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 
-	ensureSlangGlobalSession();
-
-	const auto module_name = shader_path.stem().string();
-	Slang::ComPtr<slang::IModule> slang_module;
-	Slang::ComPtr<slang::IBlob> slang_diagnostics;
-
-	slang_module = slang_session->loadModuleFromSource(
-	    module_name.c_str(), resolved_path.string().c_str(), nullptr, slang_diagnostics.writeRef()
-	);
-
-	if (slang_diagnostics) {
-		const void* diag_ptr = slang_diagnostics->getBufferPointer();
-		size_t diag_size = slang_diagnostics->getBufferSize();
-		if (diag_ptr && diag_size > 0) {
-			const char* diag_c = reinterpret_cast<const char*>(diag_ptr);
-			std::string diag_str(diag_c, diag_c + diag_size);
-			TOAST_ERROR("Render", "Slang diagnostics (module load) for '{}':\n{}", resolved_path.string(), diag_str);
-		}
+	auto result = compileModule(shader_path.stem().string(), resolved_path.string(), source);
+	if (result.spirv.empty()) {
+		TOAST_CRITICAL("Render", "Failed to compile shader: {}", resolved_path.string());
 	}
-
-	const std::array<slang::IComponentType*, 1> components {slang_module};
-	Slang::ComPtr<slang::IComponentType> program;
-	slang_session->createCompositeComponentType(components.data(), 1, program.writeRef());
-
-	slang::ProgramLayout* layout = program->getLayout();
-
-	for (int i = 0; i < layout->getParameterCount(); i++) {
-		auto* r = layout->getParameterByIndex(i);
-		TOAST_TRACE("Render", "variable name: {}\n  type: {}", r->getName(), r->getType()->getName());
-	}
-
-	if (!slang_module) {
-		TOAST_CRITICAL("Render", "Failed to load Slang module from source: {}", resolved_path.string());
-	}
-
-	Slang::ComPtr<slang::IBlob> spirv_blob;
-	SlangResult got = slang_module->getTargetCode(0, spirv_blob.writeRef());
-	if (SLANG_FAILED(got) || !spirv_blob) {
-		TOAST_CRITICAL("Render", "Failed to get SPIR-V target code from Slang module");
-	}
-
-	const auto buffer_size = spirv_blob->getBufferSize();
-	if (buffer_size == 0) {
-		TOAST_CRITICAL("Render", "SPIR-V binary is empty");
-	}
-
-	const void* buffer_ptr = spirv_blob->getBufferPointer();
-	const auto* bytes = reinterpret_cast<const std::byte*>(buffer_ptr);
-
-	std::vector<std::byte> out;
-	out.assign(bytes, bytes + buffer_size);
-
-	TOAST_TRACE("Render", "Successfully compiled shader from '{}' -> {} bytes of SPIR-V", resolved_path.string(), buffer_size);
-
-	CompiledShaderCode result;
-	result.spirv = std::move(out);
-	result.program = program;    // Save the composite component
-	result.material_bindings = reflectMaterialBindings(layout);
 	return result;
 }
 
-auto ShaderCompiler::compileShaderModule(std::string_view module_name) -> CompiledShaderCode {
-	Slang::ComPtr<slang::IModule> slang_module;
-	Slang::ComPtr<slang::IBlob> slang_diagnostics;
-
-	slang_module = slang_session->loadModule(module_name.data(), slang_diagnostics.writeRef());
-
-	if (slang_diagnostics) {
-		const void* diag_ptr = slang_diagnostics->getBufferPointer();
-		size_t diag_size = slang_diagnostics->getBufferSize();
-		if (diag_ptr && diag_size > 0) {
-			const char* diag_c = reinterpret_cast<const char*>(diag_ptr);
-			std::string diag_str(diag_c, diag_c + diag_size);
-			TOAST_ERROR("Render", "Slang diagnostics (module load) for '{}':\n{}", module_name, diag_str);
-		}
-	}
-
-	slang_module->getDefinedEntryPointCount();
-
-	const std::array<slang::IComponentType*, 1> components {slang_module};
-	Slang::ComPtr<slang::IComponentType> program;
-	slang_session->createCompositeComponentType(components.data(), 1, program.writeRef());
-
-	slang::ProgramLayout* layout = program->getLayout();
-
-	for (int i = 0; i < layout->getParameterCount(); i++) {
-		auto* r = layout->getParameterByIndex(i);
-		TOAST_TRACE("Render", "variable name: {}\n  type: {}", r->getName(), r->getType()->getName());
-	}
-
-	if (!slang_module) {
-		TOAST_CRITICAL("Render", "Failed to load Slang module from module: {}", module_name);
-	}
-
-	Slang::ComPtr<slang::IBlob> spirv_blob;
-	SlangResult got = slang_module->getTargetCode(0, spirv_blob.writeRef());
-	if (SLANG_FAILED(got) || !spirv_blob) {
-		TOAST_CRITICAL("Render", "Failed to get SPIR-V target code from Slang module");
-	}
-
-	const auto buffer_size = spirv_blob->getBufferSize();
-	if (buffer_size == 0) {
-		TOAST_CRITICAL("Render", "SPIR-V binary is empty");
-	}
-
-	const void* buffer_ptr = spirv_blob->getBufferPointer();
-	const auto* bytes = reinterpret_cast<const std::byte*>(buffer_ptr);
-
-	std::vector<std::byte> out;
-	out.assign(bytes, bytes + buffer_size);
-
-	TOAST_TRACE("Render", "Successfully compiled shader from module '{}' -> {} bytes of SPIR-V", module_name, buffer_size);
-
-	CompiledShaderCode result;
-	result.spirv = std::move(out);
-	result.program = program;    // Save the composite component
-	result.material_bindings = reflectMaterialBindings(layout);
-	return result;
-}
 }

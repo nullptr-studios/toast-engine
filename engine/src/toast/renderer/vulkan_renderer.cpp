@@ -541,7 +541,7 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 		return;
 	}
 	if (present_result != vk::Result::eSuccess) {
-		TOAST_CRITICAL("Vulkan", "Toast Engine Error: Failed to present the current output image!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to present the current output image!");
 	}
 
 	m_rendering_frame = nullptr;
@@ -663,7 +663,7 @@ void VulkanRenderer::mainRenderThread() {
 }
 
 void VulkanRenderer::start() noexcept {
-	TOAST_TRACE("Vulkan", "Starting renderer");
+	TOAST_TRACE("Render", "Starting renderer");
 
 	m_running.store(true, std::memory_order_release);
 
@@ -829,7 +829,7 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 		createPerImageSync();
 		createDepthResources();
 		m_current_frame = 0;
-	} catch (const std::exception& e) { TOAST_CRITICAL("Vulkan", "Failed to recreate output target on resize: {}", e.what()); }
+	} catch (const std::exception& e) { TOAST_CRITICAL("Render", "Failed to recreate output target on resize: {}", e.what()); }
 }
 
 void VulkanRenderer::addRenderPass(std::unique_ptr<IRenderPass> pass) {

@@ -262,6 +262,26 @@ auto AssetManager::loadBytes(std::string_view uri) -> std::optional<std::vector<
 	return openFile(*real_path);
 }
 
+auto AssetManager::tryLoadBytes(std::string_view uri) -> std::optional<std::vector<uint8_t>> {
+	std::lock_guard lock(mutex);
+
+	const auto sep = uri.find("://");
+	if (sep == std::string_view::npos) {
+		return std::nullopt;
+	}
+
+	if (mounts.contains(std::string(uri.substr(0, sep)))) {
+		return readVirtualPath(uri);
+	}
+
+	const auto real_path = resolveVirtualPath(uri);
+	std::error_code ec;
+	if (!real_path || !std::filesystem::exists(*real_path, ec)) {
+		return std::nullopt;
+	}
+	return openFile(*real_path);
+}
+
 void AssetManager::reloadManifest() {
 	ZoneScoped;
 	clearUnusedAssets();

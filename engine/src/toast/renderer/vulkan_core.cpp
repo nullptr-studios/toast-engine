@@ -392,7 +392,7 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 
 	const auto selected_props = m_physical_device.getProperties();
 	TOAST_INFO(
-	    "Vulkan",
+	    "Render",
 	    "Selected device: {} (type: {}, API: {}) with score {}",
 	    deviceNameString(selected_props),
 	    deviceTypeToString(selected_props.deviceType),
@@ -403,29 +403,29 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 
 void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> required_device_extensions) {
 	if (m_graphics_queue_family_index == k_invalid_queue_family) {
-		TOAST_CRITICAL("Vulkan", "Failed to find a graphics queue family for the selected device!");
+		TOAST_CRITICAL("Render", "Failed to find a graphics queue family for the selected device!");
 	}
 	if (m_compute_queue_family_index == k_invalid_queue_family) {
-		TOAST_CRITICAL("Vulkan", "Failed to find a compute queue family for the selected device!");
+		TOAST_CRITICAL("Render", "Failed to find a compute queue family for the selected device!");
 	}
 	if (m_transfer_queue_family_index == k_invalid_queue_family) {
-		TOAST_CRITICAL("Vulkan", "Failed to find a transfer queue family for the selected device!");
+		TOAST_CRITICAL("Render", "Failed to find a transfer queue family for the selected device!");
 	}
 
 	TOAST_TRACE(
-	    "Vulkan",
+	    "Render",
 	    "Selected graphics queue family index: {} (flags: {})",
 	    m_graphics_queue_family_index,
 	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_graphics_queue_family_index].queueFlags)
 	);
 	TOAST_TRACE(
-	    "Vulkan",
+	    "Render",
 	    "Selected compute queue family index: {} (flags: {})",
 	    m_compute_queue_family_index,
 	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_compute_queue_family_index].queueFlags)
 	);
 	TOAST_TRACE(
-	    "Vulkan",
+	    "Render",
 	    "Selected transfer queue family index: {} (flags: {})",
 	    m_transfer_queue_family_index,
 	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_transfer_queue_family_index].queueFlags)
