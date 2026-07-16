@@ -25,7 +25,7 @@ class TOAST_API Material : public Data {
 public:
 	static constexpr std::string_view collection = "materials";
 
-	explicit Material(const toml::table& table, AssetHandle<Schema> schema = {});
+	explicit Material(const toml::table& table, Handle<Schema> schema = {});
 	~Material() override;
 
 	[[nodiscard]]
@@ -37,10 +37,10 @@ public:
 	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 
 	[[nodiscard]]
-	auto albedoMap() const -> AssetHandle<Texture>;
+	auto albedoMap() const -> Handle<Texture>;
 
 	[[nodiscard]]
-	auto normalMap() const -> AssetHandle<Texture>;
+	auto normalMap() const -> Handle<Texture>;
 
 	[[nodiscard]]
 	auto color() const -> glm::vec4;
@@ -51,8 +51,8 @@ public:
 	void resolveTextureHandles();
 
 private:
-	mutable AssetHandle<Texture> m_albedo_handle;
-	mutable AssetHandle<Texture> m_normal_handle;
+	mutable Handle<Texture> m_albedo_handle;
+	mutable Handle<Texture> m_normal_handle;
 	bool m_sampler_ready = false;
 
 	std::unique_ptr<renderer::VulkanSampler> m_albedo_sampler;    // THISSHOULDBECREATEDPERIMAGESAMPLER

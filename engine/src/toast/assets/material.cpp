@@ -47,7 +47,7 @@ auto readColor(const DataValue& v) -> glm::vec4 {
 
 }
 
-Material::Material(const toml::table& table, AssetHandle<Schema> schema) : Data(table, std::move(schema), Data::keep_all_keys) { }
+Material::Material(const toml::table& table, Handle<Schema> schema) : Data(table, std::move(schema), Data::keep_all_keys) { }
 
 Material::~Material() = default;
 
@@ -55,7 +55,7 @@ auto Material::serialize(SaveMode mode) const -> std::vector<uint8_t> {
 	return Data::serialize(mode);
 }
 
-auto Material::albedoMap() const -> AssetHandle<Texture> {
+auto Material::albedoMap() const -> Handle<Texture> {
 	if (!m_root.contains("albedo_map")) {
 		m_albedo_handle = {};
 		return m_albedo_handle;
@@ -71,7 +71,7 @@ auto Material::albedoMap() const -> AssetHandle<Texture> {
 	return m_albedo_handle;
 }
 
-auto Material::normalMap() const -> AssetHandle<Texture> {
+auto Material::normalMap() const -> Handle<Texture> {
 	if (!m_root.contains("normal_map")) {
 		m_normal_handle = {};
 		return m_normal_handle;
@@ -95,7 +95,7 @@ auto Material::color() const -> glm::vec4 {
 }
 
 void Material::resolveTextureHandles() {
-	const AssetHandle<Texture> albedo_map = albedoMap();
+	const Handle<Texture> albedo_map = albedoMap();
 	if (!albedo_map.hasValue()) {
 		return;
 	}

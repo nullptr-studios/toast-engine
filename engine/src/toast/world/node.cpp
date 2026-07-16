@@ -93,7 +93,7 @@ void Node::refreshInfo() {
 	}
 }
 
-auto Node::sourcePrefab() const noexcept -> const assets::AssetHandle<assets::Prefab>& {
+auto Node::sourcePrefab() const noexcept -> const assets::Handle<assets::Prefab>& {
 	if (m_type != NodeType::root and m_type != NodeType::world_root) {
 		TOAST_WARN("Node", "Trying to get a Node file asset of node {} that can't have one", m_name);
 	}

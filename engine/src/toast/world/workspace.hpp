@@ -102,7 +102,7 @@ protected:
 	void eventSubscriptions();
 
 	/// instantiates the prefab and sets up the root node
-	void initFromPrefab(const assets::AssetHandle<assets::Prefab>& file);
+	void initFromPrefab(const assets::Handle<assets::Prefab>& file);
 
 private:
 	double m_inspector_accum = 0.0;

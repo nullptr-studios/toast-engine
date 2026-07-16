@@ -6,7 +6,7 @@
  * @brief Base types for the asset system
  *
  * Defines Asset (refcounted base), ISaveable (serialization interface),
- * AssetHandle<T> (typed smart pointer), and SaveMode (editor vs game)
+ * Handle<T> (typed smart pointer), and SaveMode (editor vs game)
  */
 
 #pragma once
@@ -60,36 +60,36 @@ protected:
 	void addRef() noexcept;
 	void release() noexcept;
 
-	friend class AssetHandleBase;
+	friend class HandleBase;
 
 private:
-	std::atomic<uint32_t> m_ref_count {0};    ///< starts at 0; AssetHandleBase increments on copy and decrements on destroy
+	std::atomic<uint32_t> m_ref_count {0};    ///< starts at 0; HandleBase increments on copy and decrements on destroy
 };
 
 /**
  * @brief Base class for type-erased asset handles
  */
-class TOAST_API AssetHandleBase {
+class TOAST_API HandleBase {
 public:
-	AssetHandleBase() = default;
-	explicit AssetHandleBase(Asset* asset);
+	HandleBase() = default;
+	explicit HandleBase(Asset* asset);
 
 	/**
 	 * @brief Constructs a handle that stores its source UID
 	 *
-	 * If the pointer is null (unresolved handle), the AssetHandle will still have a uid
+	 * If the pointer is null (unresolved handle), the Handle will still have a uid
 	 * so serialization won't explode the engine. It also will make handling missing
 	 * assets easier
 	 */
-	AssetHandleBase(Asset* asset, toast::UID uid, std::string_view uri);
+	HandleBase(Asset* asset, toast::UID uid, std::string_view uri);
 
-	virtual ~AssetHandleBase();
+	virtual ~HandleBase();
 
-	AssetHandleBase(const AssetHandleBase& other);
-	auto operator=(const AssetHandleBase& other) -> AssetHandleBase&;
+	HandleBase(const HandleBase& other);
+	auto operator=(const HandleBase& other) -> HandleBase&;
 
-	AssetHandleBase(AssetHandleBase&& other) noexcept;
-	auto operator=(AssetHandleBase&& other) noexcept -> AssetHandleBase&;
+	HandleBase(HandleBase&& other) noexcept;
+	auto operator=(HandleBase&& other) noexcept -> HandleBase&;
 
 	/**
 	 * Registers a function that will be called whenever a change on the
@@ -123,12 +123,12 @@ public:
 	auto operator->() const noexcept -> const Asset*;
 
 	[[nodiscard]]
-	auto operator==(const AssetHandleBase& other) const -> bool {
+	auto operator==(const HandleBase& other) const -> bool {
 		return m_uid.data() == other.m_uid.data();
 	}
 
 	[[nodiscard]]
-	auto operator<(const AssetHandleBase& other) const -> bool {
+	auto operator<(const HandleBase& other) const -> bool {
 		return m_uid.data() < other.m_uid.data();
 	}
 
@@ -146,10 +146,10 @@ private:
  * @brief Type-safe smart pointer for assets
  */
 template<typename T>
-class AssetHandle : public AssetHandleBase {
+class Handle : public HandleBase {
 public:
 	using asset_type = T;
-	using AssetHandleBase::AssetHandleBase;
+	using HandleBase::HandleBase;
 
 	[[nodiscard]]
 	auto operator->() noexcept -> T* {
@@ -182,8 +182,8 @@ public:
 	}
 
 	template<typename U>
-	auto as() -> AssetHandle<U> {
-		return AssetHandle<U>(this->m_asset, this->m_uid, this->m_uri);
+	auto as() -> Handle<U> {
+		return Handle<U>(this->m_asset, this->m_uid, this->m_uri);
 	}
 };
 }

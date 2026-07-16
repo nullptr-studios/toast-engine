@@ -30,8 +30,8 @@ public:
 
 private:
 	friend class ProjectSettings;
-	assets::AssetHandle<assets::Prefab> m_init_scene;
-	assets::AssetHandle<assets::Prefab> m_player;
+	assets::Handle<assets::Prefab> m_init_scene;
+	assets::Handle<assets::Prefab> m_player;
 };
 
 class TOAST_API ProjectSettings {

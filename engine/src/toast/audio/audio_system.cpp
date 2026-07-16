@@ -97,8 +97,8 @@ AudioSystem::AudioSystem() noexcept {
 	auto& asset_mgr = assets::AssetManager::get();
 	auto all_results = asset_mgr.search("Master");
 
-	assets::AssetHandle<assets::AudioStrings> strings_handle;
-	assets::AssetHandle<assets::AudioBank> master_handle;
+	assets::Handle<assets::AudioStrings> strings_handle;
+	assets::Handle<assets::AudioBank> master_handle;
 	for (auto& handle : all_results) {
 		std::string_view p = handle.path();
 		if (p.ends_with("Master.strings.bank")) {
@@ -266,7 +266,7 @@ void AudioSystem::generateIntermediates(const std::filesystem::path& path) {
 	file << json.dump(4);
 }
 
-auto AudioSystem::loadBank(assets::AssetHandle<assets::AudioBank> bank) const
+auto AudioSystem::loadBank(assets::Handle<assets::AudioBank> bank) const
     -> std::pair<FMOD_STUDIO_BANK*, std::vector<std::string>> {
 	if (not bank.hasValue() || bank->get().empty()) {
 		TOAST_WARN("Audio", "Tried to load empty bank");

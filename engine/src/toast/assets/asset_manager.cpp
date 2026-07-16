@@ -80,8 +80,8 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 
 	std::unique_ptr<Asset> asset = nullptr;
 
-	auto resolve_schema = [&](const toml::table& table) -> AssetHandle<Schema> {
-		AssetHandle<Schema> schema_handle;
+	auto resolve_schema = [&](const toml::table& table) -> Handle<Schema> {
+		Handle<Schema> schema_handle;
 		if (const auto* schema_key = table.get("schema")) {
 			if (auto schema_uid_str = schema_key->value<std::string_view>()) {
 				if (schema_uid_str->size() == 11) {
@@ -90,14 +90,14 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 						{
 							if (auto schema_raw = readVirtualPath(it->second.path)) {
 								if (auto cit = cache.find(schema_uid.data()); cit != cache.end()) {
-									schema_handle = AssetHandle<Schema>(static_cast<Schema*>(cit->second.get()), schema_uid, getURI(schema_uid));
+									schema_handle = Handle<Schema>(static_cast<Schema*>(cit->second.get()), schema_uid, getURI(schema_uid));
 								} else {
 									std::string_view schema_json(reinterpret_cast<const char*>(schema_raw->data()), schema_raw->size());
 									try {
 										auto schema_asset = std::make_unique<Schema>(schema_json);
 										Schema* raw_ptr = schema_asset.get();
 										cache[schema_uid.data()] = std::move(schema_asset);
-										schema_handle = AssetHandle<Schema>(raw_ptr, schema_uid, getURI(schema_uid));
+										schema_handle = Handle<Schema>(raw_ptr, schema_uid, getURI(schema_uid));
 									} catch (const std::exception& se) {
 										TOAST_WARN("AssetManager", "Could not parse schema for asset {}: {}", info.path, se.what());
 									}
@@ -481,7 +481,7 @@ auto AssetManager::getURI(toast::UID uid) -> std::string {
 	return {};
 }
 
-auto AssetManager::search(std::string_view query) -> std::vector<AssetHandle<Asset>> {
+auto AssetManager::search(std::string_view query) -> std::vector<Handle<Asset>> {
 	std::vector<toast::UID> matches;
 	{
 		std::lock_guard lock(mutex);
@@ -492,7 +492,7 @@ auto AssetManager::search(std::string_view query) -> std::vector<AssetHandle<Ass
 		}
 	}
 
-	std::vector<AssetHandle<Asset>> results;
+	std::vector<Handle<Asset>> results;
 	results.reserve(matches.size());
 	for (const auto& uid : matches) {
 		if (auto* asset = load(uid)) {
@@ -568,15 +568,15 @@ void AssetManager::pollModifiedScripts() {
 }
 
 // Public API Implementations
-auto load(toast::UID uid) -> AssetHandleBase {
+auto load(toast::UID uid) -> HandleBase {
 	return {AssetManager::get().load(uid), uid, AssetManager::getURI(uid)};
 }
 
-auto load(std::string_view uri) -> AssetHandleBase {
+auto load(std::string_view uri) -> HandleBase {
 	auto uid = AssetManager::resolveURI(uri);
 	if (not uid.has_value()) {
 		TOAST_ERROR("AssetManager", "Could not resolve URI to UID: {}", uri);
-		return AssetHandleBase(nullptr);
+		return HandleBase(nullptr);
 	}
 	return load(*uid);
 }

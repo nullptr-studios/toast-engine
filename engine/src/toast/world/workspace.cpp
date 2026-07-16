@@ -101,14 +101,14 @@ Workspace::Workspace(UID uid, std::string_view source_uri) : m_handle(uid) {
 	VectorStreamBuf buffer(*bytes);
 	std::istream autosave(&buffer);
 	assets::Prefab prefab(autosave);
-	assets::AssetHandle<assets::Prefab> file(&prefab, uid, "");
+	assets::Handle<assets::Prefab> file(&prefab, uid, "");
 	initFromPrefab(file);
 	if (m_root_node.exists()) {
 		TOAST_INFO("World", "Opened workspace {} from {}", uid, source_uri);
 	}
 }
 
-void Workspace::initFromPrefab(const assets::AssetHandle<assets::Prefab>& file) {
+void Workspace::initFromPrefab(const assets::Handle<assets::Prefab>& file) {
 	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
 	Box<Node> node = instantiate(file, ctx);
@@ -559,7 +559,7 @@ void Workspace::eventSubscriptions() {
 		}
 
 		assets::Prefab prefab(*src);
-		assets::AssetHandle<assets::Prefab> handle(&prefab, toast::UID(0), "");
+		assets::Handle<assets::Prefab> handle(&prefab, toast::UID(0), "");
 
 		InstantiateContext ctx;
 		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
@@ -798,7 +798,7 @@ void Workspace::eventSubscriptions() {
 			return true;
 		}
 
-		assets::AssetHandle<assets::Prefab> handle(s_clipboard.get(), toast::UID(0), "");
+		assets::Handle<assets::Prefab> handle(s_clipboard.get(), toast::UID(0), "");
 		InstantiateContext ctx;
 		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
 		Box<Node> copy = instantiate(handle, ctx);

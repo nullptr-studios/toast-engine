@@ -127,10 +127,10 @@ public:
 
 	/**
 	 * @brief The prefab this node was instantiated from
-	 * @return An empty AssetHandle for nodes created at runtime
+	 * @return An empty Handle for nodes created at runtime
 	 */
 	[[nodiscard]]
-	auto sourcePrefab() const noexcept -> const assets::AssetHandle<assets::Prefab>&;
+	auto sourcePrefab() const noexcept -> const assets::Handle<assets::Prefab>&;
 
 	/**
 	 * @brief Whether this node is the root of a prefab instance
@@ -357,7 +357,7 @@ private:
 	Box<Node> m_parent;
 
 	[[Reflect, Name("Prefab"), InspectorNoModify]]
-	assets::AssetHandle<assets::Prefab> m_source_prefab;
+	assets::Handle<assets::Prefab> m_source_prefab;
 
 	NodeState m_state = NodeState::null;
 	NodeType m_type = NodeType::null;
@@ -377,7 +377,7 @@ private:
 	std::unique_ptr<event::Listener> m_listener = nullptr;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::Script>> m_scripts;
+	std::vector<assets::Handle<assets::Script>> m_scripts;
 
 	/// Per-node Lua script environment
 	std::unique_ptr<scripting::ScriptRuntime> m_script_runtime;

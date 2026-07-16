@@ -9,7 +9,7 @@ public:
     [[Reflect]] int m_health = 100;
     [[Reflect, Color]] glm::vec3 m_tint {1.0f};
     [[Reflect, Hidden]] int m_secret = 0;
-    [[Reflect]] std::vector<assets::AssetHandle<assets::Texture>> m_frames;
+    [[Reflect]] std::vector<assets::Handle<assets::Texture>> m_frames;
     [[Reflect]] Box<Node3D> m_target;
 
     [[Reflect]] float takeDamage(float amount, bool crit = false) { return 0.0f; }

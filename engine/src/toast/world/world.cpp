@@ -1115,7 +1115,7 @@ void WorldTestAccess::addTickStage(Node& node, TickFunctionList stage) {
 	node.m_info = &info;
 }
 
-void WorldTestAccess::attachScript(Node& node, const assets::AssetHandle<assets::Script>& script) {
+void WorldTestAccess::attachScript(Node& node, const assets::Handle<assets::Script>& script) {
 	node.m_scripts.push_back(script);
 	node.loadScripts();
 }
@@ -1138,9 +1138,8 @@ void WorldTestAccess::computeDependencyGraph(World& world) {
 	world.computeDependencyGraph();
 }
 
-auto WorldTestAccess::instantiate(
-    World& world, const assets::AssetHandle<assets::Prefab>& file, INodeOwner::InstantiateContext& ctx
-) -> Box<Node> {
+auto WorldTestAccess::instantiate(World& world, const assets::Handle<assets::Prefab>& file, INodeOwner::InstantiateContext& ctx)
+    -> Box<Node> {
 	return world.instantiate(file, ctx);
 }
 
@@ -1197,7 +1196,7 @@ void WorldTestAccess::drainLoadQueue(World& world) {
 }
 
 auto WorldTestAccess::spawnSync(
-    World& world, const assets::AssetHandle<assets::Prefab>& file, Node& parent, INodeOwner::InstantiateContext& ctx
+    World& world, const assets::Handle<assets::Prefab>& file, Node& parent, INodeOwner::InstantiateContext& ctx
 ) -> Box<Node> {
 	Box<Node> root = world.instantiate(file, ctx);
 	if (not root.exists()) {

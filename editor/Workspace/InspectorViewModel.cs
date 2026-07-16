@@ -198,7 +198,7 @@ public partial class InspectorViewModel : Tool {
         ""field_type"": ""uid_t"",
         ""is_array"": false,
         ""name"": ""m_source_prefab"",
-        ""typename"": ""assets::AssetHandle<assets::Prefab>""
+        ""typename"": ""assets::Handle<assets::Prefab>""
       }
     ],
     ""groups"": [],
