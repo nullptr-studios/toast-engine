@@ -263,6 +263,7 @@ void VulkanRenderer::createDescriptorPool() {
 }
 
 auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noexcept -> void {
+	ZoneScoped;
 	frame.command_buffer.reset();
 	const vk::CommandBufferBeginInfo begin_info(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	frame.command_buffer.begin(begin_info);
@@ -423,6 +424,7 @@ void VulkanRenderer::createFrameResources() {
 }
 
 void VulkanRenderer::updateFrameResources(uint32_t frame_index, RenderFrame& frame_data) {
+	ZoneScoped;
 	m_frame_ubos[frame_index] = frame_data.frame_data;
 
 	const auto& allocation = m_frame_ubo_res[frame_index].gpu_buffer->getAllocation();
@@ -622,6 +624,8 @@ void VulkanRenderer::mainRenderThread() {
 		if (consumed_queued_frame) {
 			m_free_frames.release();
 		}
+
+		FrameMarkNamed("RenderFrame");
 	}
 }
 
@@ -807,6 +811,7 @@ void VulkanRenderer::queueResourceUpload(std::unique_ptr<PendingResourceUpload> 
 }
 
 void VulkanRenderer::processPendingUploads() {
+	ZoneScoped;
 	const auto& device = m_core->getDevice();
 
 	while (!m_pending_uploads.empty()) {
@@ -827,6 +832,7 @@ void VulkanRenderer::processPendingUploads() {
 }
 
 void VulkanRenderer::flushResourceUploads() {
+	ZoneScoped;
 	std::vector<std::unique_ptr<PendingResourceUpload>> jobs_to_flush;
 	{
 		std::lock_guard<std::mutex> lock(m_upload_mutex);

@@ -309,6 +309,8 @@ void Engine::tick() {
 		}
 	}
 #endif
+
+	FrameMark;
 }
 
 auto Engine::shouldClose() -> bool {
