@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 
-namespace toast::renderer {
+namespace renderer {
 
 auto SDLOutputTarget::getRequiredInstanceExtensions() -> std::vector<const char*> {
 	Uint32 count = 0;

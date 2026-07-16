@@ -4,7 +4,7 @@
 #include <vector>
 #include <vulkan/vulkan_raii.hpp>
 
-namespace toast::renderer {
+namespace renderer {
 class VulkanCore;
 
 namespace hardcoded_pipeline_layouts {
@@ -35,4 +35,4 @@ void buildPipelineLayout(
 );
 
 }    // namespace hardcoded_pipeline_layouts
-}    // namespace toast::renderer
+}    // namespace renderer

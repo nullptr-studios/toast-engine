@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace toast::renderer {
+namespace renderer {
 namespace {
 
 auto formatUsageFlags(vk::ImageUsageFlags flags) -> std::string {

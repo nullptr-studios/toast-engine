@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-namespace toast::renderer {
+namespace renderer {
 
 namespace {
 constexpr std::size_t k_gigabyte_bytes = 1024ull * 1024ull * 1024ull;

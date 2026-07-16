@@ -5,7 +5,7 @@
 
 #include <format>
 
-namespace toast::renderer::hardcoded_pipeline_layouts {
+namespace renderer::hardcoded_pipeline_layouts {
 
 auto getLayoutDesc(std::string_view key) -> PipelineLayoutDesc {
 	PipelineLayoutDesc desc;

@@ -13,7 +13,7 @@
 #include <memory>
 #include <vulkan/vulkan_core.h>
 
-namespace toast::renderer {
+namespace renderer {
 class VulkanSampler;
 }
 
@@ -55,6 +55,6 @@ private:
 	mutable AssetHandle<Texture> m_normal_handle;
 	bool m_sampler_ready = false;
 
-	std::unique_ptr<toast::renderer::VulkanSampler> m_albedo_sampler;    // THISSHOULDBECREATEDPERIMAGESAMPLER
+	std::unique_ptr<renderer::VulkanSampler> m_albedo_sampler;    // THISSHOULDBECREATEDPERIMAGESAMPLER
 };
 }

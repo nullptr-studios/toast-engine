@@ -12,7 +12,7 @@
 #include <optional>
 #include <vector>
 
-namespace toast::renderer {
+namespace renderer {
 
 class SDLOutputTarget final : public IOutputTarget {
 public:

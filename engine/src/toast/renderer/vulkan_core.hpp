@@ -12,7 +12,7 @@
 #include <span>
 #include <vector>
 
-namespace toast::renderer {
+namespace renderer {
 
 /**
  * @brief Represents the suitability score of a Vulkan physical device based on various criteria

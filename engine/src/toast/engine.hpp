@@ -5,14 +5,14 @@
 #include <cstdint>
 #include <toast/uid.hpp>
 
-namespace toast {
-
 namespace renderer {
 class VulkanCore;
 class VulkanRenderer;
 class SharedTextureOutputTarget;
 struct ViewportFrameDesc;
 }
+
+namespace toast {
 
 struct EnginePimpl;
 

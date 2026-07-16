@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace toast::renderer {
+namespace renderer {
 
 class VulkanCore;
 
@@ -93,4 +93,4 @@ private:
 	PipelineType m_pipeline_type = PipelineType::graphics;
 };
 
-}    // namespace toast::renderer
+}    // namespace renderer

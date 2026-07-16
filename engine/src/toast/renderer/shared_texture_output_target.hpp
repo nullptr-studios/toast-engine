@@ -11,7 +11,7 @@
 #include <optional>
 #include <vector>
 
-namespace toast::renderer {
+namespace renderer {
 
 class VulkanCore;
 

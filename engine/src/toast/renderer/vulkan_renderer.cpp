@@ -21,7 +21,7 @@
 #include <limits>
 #include <stdexcept>
 
-namespace toast::renderer {
+namespace renderer {
 
 VulkanRenderer* VulkanRenderer::instance = nullptr;
 
@@ -663,7 +663,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	frame.debug_line_vertices.clear();
 	frame.debug_gizmo_instances.clear();
 
-	std::vector<MeshNode*> mesh_nodes_snapshot;
+	std::vector<toast::MeshNode*> mesh_nodes_snapshot;
 	{
 		std::scoped_lock lock(m_mesh_proxy_mutex);
 		mesh_nodes_snapshot = m_mesh_proxy_nodes;
@@ -721,7 +721,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	submitFrame();
 }
 
-void VulkanRenderer::registerMeshNodeProxy(MeshNode* node) {
+void VulkanRenderer::registerMeshNodeProxy(toast::MeshNode* node) {
 	if (node == nullptr) {
 		return;
 	}
@@ -732,7 +732,7 @@ void VulkanRenderer::registerMeshNodeProxy(MeshNode* node) {
 	}
 }
 
-void VulkanRenderer::unregisterMeshNodeProxy(MeshNode* node) {
+void VulkanRenderer::unregisterMeshNodeProxy(toast::MeshNode* node) {
 	if (node == nullptr) {
 		return;
 	}
@@ -867,7 +867,7 @@ void VulkanRenderer::flushResourceUploads() {
 	m_pending_uploads.push(std::move(batch));
 }
 
-void VulkanRenderer::setActiveCamera(Camera* camera) {
+void VulkanRenderer::setActiveCamera(toast::Camera* camera) {
 	m_camera = camera;
 }
 

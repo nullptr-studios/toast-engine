@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <utility>
 
-namespace toast::renderer {
+namespace renderer {
 ShaderLayout::ShaderLayout(const VulkanCore& core, slang::ProgramLayout* slang_layout) {
 	rebuild(core, "default");
 }

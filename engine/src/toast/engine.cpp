@@ -617,7 +617,7 @@ void toast_set_working_directory(
 }
 
 auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) noexcept -> int {
-	toast::renderer::ViewportFrameDesc desc {};
+	renderer::ViewportFrameDesc desc {};
 	const int result = toast::Engine::get()->getViewportFrame(dst, dst_capacity, &desc);
 	if (out) {
 		out->width = desc.width;

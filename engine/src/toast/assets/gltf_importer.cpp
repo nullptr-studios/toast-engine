@@ -118,7 +118,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			int col_idx = find_attr("COLOR_0");
 
 			const uint32_t vertex_count = model.accessors[pos_idx].count;
-			std::vector<toast::renderer::Vertex> vertices(vertex_count);
+			std::vector<renderer::Vertex> vertices(vertex_count);
 
 			const uint8_t* pos_data = accessor_bytes(pos_idx);
 			const uint8_t* norm_data = norm_idx != -1 ? accessor_bytes(norm_idx) : nullptr;

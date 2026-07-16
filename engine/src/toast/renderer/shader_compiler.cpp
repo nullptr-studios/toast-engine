@@ -17,7 +17,7 @@
 #include <stdexcept>
 #include <string_view>
 
-namespace toast::renderer {
+namespace renderer {
 
 static Slang::ComPtr<slang::IGlobalSession> slang_global_session;
 static Slang::ComPtr<slang::ISession> slang_session;

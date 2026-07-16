@@ -10,7 +10,7 @@
 #include <cstring>
 #include <format>
 
-namespace toast::renderer {
+namespace renderer {
 
 void VulkanTexture::create(const VulkanCore& core, Params params, std::string_view debug_name) {
 	m_params = params;

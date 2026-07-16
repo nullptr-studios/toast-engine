@@ -9,7 +9,7 @@
 
 #include <vector>
 
-namespace toast::renderer {
+namespace renderer {
 
 /**
  * @class VulkanSwapchain

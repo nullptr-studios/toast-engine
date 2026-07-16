@@ -8,7 +8,7 @@
 
 #include <cstdint>
 
-namespace toast::renderer {
+namespace renderer {
 
 class IOutputTarget {
 public:
@@ -77,4 +77,4 @@ public:
 	virtual void recreate(vk::Extent2D extent) = 0;
 };
 
-}    // namespace toast::renderer
+}    // namespace renderer

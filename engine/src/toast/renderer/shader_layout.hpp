@@ -7,7 +7,7 @@
 #include <vector>
 #include <vulkan/vulkan_raii.hpp>
 
-namespace toast::renderer {
+namespace renderer {
 class VulkanCore;
 
 /**

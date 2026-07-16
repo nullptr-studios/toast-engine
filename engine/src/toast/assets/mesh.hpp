@@ -15,7 +15,7 @@
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 
-namespace toast::renderer {
+namespace renderer {
 class VulkanMesh;
 }
 
@@ -36,7 +36,7 @@ public:
 	using Index = uint32_t;
 
 	explicit Mesh(const std::vector<uint8_t>& data);
-	Mesh(std::string_view name, std::vector<toast::renderer::Vertex>&& vertices, std::vector<uint32_t>&& indices);
+	Mesh(std::string_view name, std::vector<renderer::Vertex>&& vertices, std::vector<uint32_t>&& indices);
 	~Mesh() override;
 
 	[[nodiscard]]
@@ -45,7 +45,7 @@ public:
 	}
 
 	[[nodiscard]]
-	auto vertices() const -> const std::vector<toast::renderer::Vertex>& {
+	auto vertices() const -> const std::vector<renderer::Vertex>& {
 		return m_vertices;
 	}
 
@@ -55,10 +55,10 @@ public:
 	}
 
 	[[nodiscard]]
-	auto gpuMesh() const -> const toast::renderer::VulkanMesh&;
+	auto gpuMesh() const -> const renderer::VulkanMesh&;
 
 	[[nodiscard]]
-	auto gpuMesh() -> toast::renderer::VulkanMesh&;
+	auto gpuMesh() -> renderer::VulkanMesh&;
 
 	[[nodiscard]]
 	auto name() const -> const std::string& {
@@ -70,10 +70,10 @@ public:
 
 private:
 	std::string m_name;
-	std::vector<toast::renderer::Vertex> m_vertices;
+	std::vector<renderer::Vertex> m_vertices;
 	std::vector<Index> m_indices;
 
-	std::unique_ptr<toast::renderer::VulkanMesh> m_gpu_mesh;
+	std::unique_ptr<renderer::VulkanMesh> m_gpu_mesh;
 };
 
 }

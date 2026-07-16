@@ -11,7 +11,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-namespace toast::renderer {
+namespace renderer {
 class VulkanCore;
 
 /**
@@ -24,7 +24,7 @@ class VulkanCore;
  */
 class DebugPass : public IRenderPass {
 public:
-	DebugPass(const toast::renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent);
+	DebugPass(const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent);
 
 	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
 
@@ -50,12 +50,12 @@ private:
 		vk::DeviceSize capacity_bytes = 0;
 	};
 
-	void createResources(const toast::renderer::VulkanCore& core);
-	void createGridGeometry(const toast::renderer::VulkanCore& core);
-	void createGizmoGeometry(const toast::renderer::VulkanCore& core);
+	void createResources(const renderer::VulkanCore& core);
+	void createGridGeometry(const renderer::VulkanCore& core);
+	void createGizmoGeometry(const renderer::VulkanCore& core);
 
 	/// @brief Grows @p buffer so it can hold at least @p required_vertex_count DebugVertex entries
-	void ensureLineCapacity(const toast::renderer::VulkanCore& core, DynamicVertexBuffer& buffer, size_t required_vertex_count);
+	void ensureLineCapacity(const renderer::VulkanCore& core, DynamicVertexBuffer& buffer, size_t required_vertex_count);
 
 	VulkanPipeline m_plane_pipeline;
 	VulkanPipeline m_line_pipeline;

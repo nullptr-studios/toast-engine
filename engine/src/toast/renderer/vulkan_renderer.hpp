@@ -36,7 +36,7 @@ class Camera;
 class MeshNode;
 }
 
-namespace toast::renderer {
+namespace renderer {
 
 /**
  * @brief Coordinates rendering by managing frame submissions, render passes, and GPU synchronization
@@ -131,10 +131,10 @@ public:
 	void tick(float time) noexcept;
 
 	/// @brief Registers @p node so its mesh is drawn each frame; no-op if already registered
-	void registerMeshNodeProxy(MeshNode* node);
+	void registerMeshNodeProxy(toast::MeshNode* node);
 
 	/// @brief Unregisters @p node so it stops being drawn
-	void unregisterMeshNodeProxy(MeshNode* node);
+	void unregisterMeshNodeProxy(toast::MeshNode* node);
 
 	/**
 	 * @brief Caps how often the render thread draws & presents a frame
@@ -171,7 +171,7 @@ public:
 	}
 
 	[[nodiscard]]
-	void setActiveCamera(Camera* camera);
+	void setActiveCamera(toast::Camera* camera);
 
 	[[nodiscard]]
 	auto getCore() -> const VulkanCore& {
@@ -179,7 +179,7 @@ public:
 	}
 
 	[[nodiscard]]
-	auto getActiveCamera() -> Camera* {
+	auto getActiveCamera() -> toast::Camera* {
 		return m_camera;
 	}
 
@@ -276,10 +276,10 @@ private:
 	uint32_t m_current_frame = 0;
 
 	/// Active camera for the renderer, Can be nullptr if no camera is set
-	Camera* m_camera = nullptr;
+	toast::Camera* m_camera = nullptr;
 
 	std::mutex m_mesh_proxy_mutex;
-	std::vector<MeshNode*> m_mesh_proxy_nodes;
+	std::vector<toast::MeshNode*> m_mesh_proxy_nodes;
 
 	// FrameUBO and related resources
 	std::vector<FrameUBO> m_frame_ubos;
@@ -312,19 +312,19 @@ inline void submitFrame() {
 	VulkanRenderer::instance->submitFrame();
 }
 
-inline auto getActiveCamera() -> Camera* {
+inline auto getActiveCamera() -> toast::Camera* {
 	return VulkanRenderer::instance->getActiveCamera();
 }
 
-inline void setActiveCamera(Camera* camera) {
+inline void setActiveCamera(toast::Camera* camera) {
 	VulkanRenderer::instance->setActiveCamera(camera);
 }
 
-inline void registerMeshNodeProxy(MeshNode* node) {
+inline void registerMeshNodeProxy(toast::MeshNode* node) {
 	VulkanRenderer::instance->registerMeshNodeProxy(node);
 }
 
-inline void unregisterMeshNodeProxy(MeshNode* node) {
+inline void unregisterMeshNodeProxy(toast::MeshNode* node) {
 	VulkanRenderer::instance->unregisterMeshNodeProxy(node);
 }
 
@@ -417,4 +417,4 @@ inline void debugDrawAxes(const glm::mat4& transform) {
  */
 void debugDrawFrustum(const toast::Camera& camera, float aspect, glm::vec4 color = {1.0f, 1.0f, 0.0f, 1.0f});
 
-}    // namespace toast::renderer
+}    // namespace renderer

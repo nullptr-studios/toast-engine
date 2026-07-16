@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace toast::renderer {
+namespace renderer {
 
 struct ShaderDescriptorBinding {
 	uint32_t set = 0;

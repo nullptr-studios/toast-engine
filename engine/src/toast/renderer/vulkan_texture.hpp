@@ -10,7 +10,7 @@
 #include <string>
 #include <string_view>
 
-namespace toast::renderer {
+namespace renderer {
 
 class VulkanTexture : public IVulkanResource {
 public:

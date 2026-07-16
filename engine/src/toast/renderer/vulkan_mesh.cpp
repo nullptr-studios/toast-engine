@@ -11,7 +11,7 @@
 #include <format>
 #include <type_traits>
 
-namespace toast::renderer {
+namespace renderer {
 static_assert(std::is_standard_layout_v<Vertex>, "Vertex must be standard layout");
 static_assert(sizeof(Vertex) == 60, "Vertex size must match mesh.slang input layout (60 bytes)");
 static_assert(offsetof(Vertex, position) == 0, "Vertex.position offset mismatch");
@@ -35,8 +35,8 @@ auto vertexAttributeDescriptions() -> std::array<vk::VertexInputAttributeDescrip
 }
 
 void VulkanMesh::create(
-    const toast::renderer::VulkanCore& core, UploadData data, uint32_t graphics_queue_family_index,
-    uint32_t transfer_queue_family_index, std::string_view debug_name
+    const renderer::VulkanCore& core, UploadData data, uint32_t graphics_queue_family_index, uint32_t transfer_queue_family_index,
+    std::string_view debug_name
 ) {
 	if (data.vertices.empty()) {
 		TOAST_CRITICAL("VulkanMesh", "Mesh has no vertices");

@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-namespace toast::renderer {
+namespace renderer {
 
 /**
  * @brief Tags a Vulkan object with a debug name via VK_EXT_debug_utils

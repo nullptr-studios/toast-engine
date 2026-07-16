@@ -6,7 +6,7 @@
 #include "vulkan_core.hpp"
 #include "vulkan_debug.hpp"
 
-namespace toast::renderer {
+namespace renderer {
 
 VulkanSampler::VulkanSampler(const VulkanCore& core, const vk::SamplerCreateInfo& info, std::string_view debug_name)
     : m_sampler(core.getDevice(), info) {

@@ -10,7 +10,7 @@
 #include <memory>
 #include <toast/export.hpp>
 
-namespace toast::renderer {
+namespace renderer {
 class VulkanTexture;
 }
 
@@ -35,13 +35,13 @@ public:
 	auto get() const noexcept -> const std::vector<uint8_t>&;
 
 	[[nodiscard]]
-	auto gpuTexture() const -> const toast::renderer::VulkanTexture&;
+	auto gpuTexture() const -> const renderer::VulkanTexture&;
 
 	[[nodiscard]]
-	auto gpuTexture() -> toast::renderer::VulkanTexture&;
+	auto gpuTexture() -> renderer::VulkanTexture&;
 
 private:
 	std::vector<uint8_t> m_data;
-	std::unique_ptr<toast::renderer::VulkanTexture> m_gpu_texture;
+	std::unique_ptr<renderer::VulkanTexture> m_gpu_texture;
 };
 }

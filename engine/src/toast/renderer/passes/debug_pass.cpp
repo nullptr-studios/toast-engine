@@ -16,7 +16,7 @@
 #include <format>
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace toast::renderer {
+namespace renderer {
 
 namespace {
 
@@ -100,9 +100,7 @@ void appendPyramidAlongAxis(
 
 }    // namespace
 
-DebugPass::DebugPass(
-    const toast::renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent
-) {
+DebugPass::DebugPass(const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent) {
 	m_shader_layout.rebuild(core, "debug");
 
 	const vk::VertexInputBindingDescription position_only_binding(0, sizeof(glm::vec3), vk::VertexInputRate::eVertex);
@@ -118,7 +116,7 @@ DebugPass::DebugPass(
 
 	// Ground grid
 	{
-		auto shader = toast::renderer::ShaderCompiler::compileShaderModuleFromSource("./grid.slang");
+		auto shader = renderer::ShaderCompiler::compileShaderModuleFromSource("./grid.slang");
 
 		VulkanPipeline::Config config;
 		config.pipeline_type = VulkanPipeline::PipelineType::graphics;
@@ -140,7 +138,7 @@ DebugPass::DebugPass(
 
 	// Debug lines
 	{
-		auto shader = toast::renderer::ShaderCompiler::compileShaderModuleFromSource("./debug_shape.slang");
+		auto shader = renderer::ShaderCompiler::compileShaderModuleFromSource("./debug_shape.slang");
 
 		VulkanPipeline::Config config;
 		config.pipeline_type = VulkanPipeline::PipelineType::graphics;
@@ -162,7 +160,7 @@ DebugPass::DebugPass(
 
 	// Gizmo axis triad
 	{
-		auto shader = toast::renderer::ShaderCompiler::compileShaderModuleFromSource("./debug_shape.slang");
+		auto shader = renderer::ShaderCompiler::compileShaderModuleFromSource("./debug_shape.slang");
 
 		VulkanPipeline::Config config;
 		config.pipeline_type = VulkanPipeline::PipelineType::graphics;
@@ -274,7 +272,7 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	}
 }
 
-void DebugPass::createResources(const toast::renderer::VulkanCore& core) {
+void DebugPass::createResources(const renderer::VulkanCore& core) {
 	const auto& device = core.getDevice();
 	const auto& layouts = m_shader_layout.getDescriptorSetLayouts();
 	if (layouts.empty()) {
@@ -314,7 +312,7 @@ void DebugPass::createResources(const toast::renderer::VulkanCore& core) {
 	createGizmoGeometry(core);
 }
 
-void DebugPass::createGridGeometry(const toast::renderer::VulkanCore& core) {
+void DebugPass::createGridGeometry(const renderer::VulkanCore& core) {
 	const std::array<glm::vec3, 6> vertices {
 	  glm::vec3 {-1.0f, -1.0f, 0.0f},
 	  glm::vec3 { 1.0f, -1.0f, 0.0f},
@@ -340,7 +338,7 @@ void DebugPass::createGridGeometry(const toast::renderer::VulkanCore& core) {
 	m_grid_vertex_buffer.getAllocation().flush(0, sizeof(vertices));
 }
 
-void DebugPass::createGizmoGeometry(const toast::renderer::VulkanCore& core) {
+void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 	constexpr float k_shaft_length = 0.8f;
 	constexpr float k_shaft_half_size = 0.02f;
 	constexpr float k_head_length = 0.25f;
@@ -379,9 +377,7 @@ void DebugPass::createGizmoGeometry(const toast::renderer::VulkanCore& core) {
 	m_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
 }
 
-void DebugPass::ensureLineCapacity(
-    const toast::renderer::VulkanCore& core, DynamicVertexBuffer& buffer, size_t required_vertex_count
-) {
+void DebugPass::ensureLineCapacity(const renderer::VulkanCore& core, DynamicVertexBuffer& buffer, size_t required_vertex_count) {
 	const vk::DeviceSize required_bytes = required_vertex_count * sizeof(DebugVertex);
 	if (required_bytes <= buffer.capacity_bytes) {
 		return;
@@ -404,4 +400,4 @@ void DebugPass::ensureLineCapacity(
 	setDebugName(core, *buffer.buffer, "DebugPass LineVertexBuffer");
 }
 
-}    // namespace toast::renderer
+}    // namespace renderer

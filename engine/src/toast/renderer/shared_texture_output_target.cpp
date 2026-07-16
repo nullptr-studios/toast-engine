@@ -11,7 +11,7 @@
 #include <cstring>
 #include <format>
 
-namespace toast::renderer {
+namespace renderer {
 
 namespace {
 

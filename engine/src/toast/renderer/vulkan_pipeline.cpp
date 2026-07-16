@@ -11,7 +11,7 @@
 #include <array>
 #include <stdexcept>
 
-namespace toast::renderer {
+namespace renderer {
 
 namespace {
 auto createShaderModule(const vk::raii::Device& device, std::span<const std::byte> spirv) -> vk::raii::ShaderModule {

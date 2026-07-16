@@ -105,7 +105,7 @@ void Material::resolveTextureHandles() {
 		return;
 	}
 
-	const auto& core = toast::renderer::getCore();
+	const auto& core = renderer::getCore();
 
 	vk::SamplerCreateInfo sampler_info {};
 
@@ -125,7 +125,7 @@ void Material::resolveTextureHandles() {
 	sampler_info.minLod = 0.0f;
 	sampler_info.maxLod = 0.0f;
 
-	m_albedo_sampler = std::make_unique<toast::renderer::VulkanSampler>(
+	m_albedo_sampler = std::make_unique<renderer::VulkanSampler>(
 	    core, sampler_info, std::format("Material AlbedoSampler ({})", albedo_map.path())
 	);
 

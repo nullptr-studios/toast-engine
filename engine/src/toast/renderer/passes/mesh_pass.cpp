@@ -23,17 +23,15 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
-namespace toast::renderer {
-MeshPass::MeshPass(
-    const toast::renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent
-) {
-	auto shader_spirv = toast::renderer::ShaderCompiler::compileShaderModuleFromSource("./mesh.slang");
+namespace renderer {
+MeshPass::MeshPass(const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent) {
+	auto shader_spirv = renderer::ShaderCompiler::compileShaderModuleFromSource("./mesh.slang");
 
 	// Use hardcoded layout keyed by "mesh"
 	shader_layout.rebuild(core, "mesh");
 
-	toast::renderer::VulkanPipeline::Config config;
-	config.pipeline_type = toast::renderer::VulkanPipeline::PipelineType::graphics;
+	renderer::VulkanPipeline::Config config;
+	config.pipeline_type = renderer::VulkanPipeline::PipelineType::graphics;
 	config.debug_name = "MeshPass";
 	config.color_format = color_format;
 	config.depth_format = depth_format;
@@ -42,8 +40,8 @@ MeshPass::MeshPass(
 	// store raw pipeline layout handle
 	config.pipeline_layout = *shader_layout.getPipelineLayout();
 
-	config.vertex_binding = toast::renderer::vertexBindingDescription();
-	const auto vertex_attributes = toast::renderer::vertexAttributeDescriptions();
+	config.vertex_binding = renderer::vertexBindingDescription();
+	const auto vertex_attributes = renderer::vertexAttributeDescriptions();
 	config.vertex_attributes.assign(vertex_attributes.begin(), vertex_attributes.end());
 
 	m_pipeline.rebuild(core, config);
@@ -146,7 +144,7 @@ void MeshPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t imag
 	}
 }
 
-void MeshPass::createResources(const toast::renderer::VulkanCore& core) {
+void MeshPass::createResources(const renderer::VulkanCore& core) {
 	const auto& layouts = shader_layout.getDescriptorSetLayouts();
 	if (layouts.size() < 2) {
 		TOAST_CRITICAL("MeshPass", "ShaderLayout must provide both the frame (set 0) and material (set 1) descriptor set layouts");
@@ -186,11 +184,11 @@ void MeshPass::createResources(const toast::renderer::VulkanCore& core) {
 	createDefaultMaterialResources(core);
 }
 
-void MeshPass::createDefaultMaterialResources(const toast::renderer::VulkanCore& core) {
+void MeshPass::createDefaultMaterialResources(const renderer::VulkanCore& core) {
 	const auto& device = core.getDevice();
 
 	// 1x1 opaque white pixel so meshes without a material
-	toast::renderer::VulkanTexture::Params params {};
+	renderer::VulkanTexture::Params params {};
 	params.format = vk::Format::eR8G8B8A8Unorm;
 	params.extent = vk::Extent3D {1, 1, 1};
 	params.mip_levels = 1;
@@ -281,8 +279,7 @@ void MeshPass::createDefaultMaterialResources(const toast::renderer::VulkanCore&
 	device.updateDescriptorSets(write, {});
 }
 
-auto MeshPass::getMaterialDescriptorSet(const toast::renderer::VulkanCore& core, assets::Material& material)
-    -> vk::DescriptorSet {
+auto MeshPass::getMaterialDescriptorSet(const renderer::VulkanCore& core, assets::Material& material) -> vk::DescriptorSet {
 	auto& texture = material.albedoMap()->gpuTexture();
 	if (!texture.isReady()) {
 		return *m_default_material_set;
@@ -323,4 +320,4 @@ auto MeshPass::getMaterialDescriptorSet(const toast::renderer::VulkanCore& core,
 }
 
 void MeshPass::updateUBO(uint32_t frame_index) { }
-}    // namespace toast::renderer
+}    // namespace renderer

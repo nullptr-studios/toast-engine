@@ -7,7 +7,7 @@
 
 #include <string_view>
 
-namespace toast::renderer {
+namespace renderer {
 class VulkanCore;
 
 /// @brief Owns a vk::raii::Sampler

@@ -12,7 +12,7 @@
 #include <string>
 #include <string_view>
 
-namespace toast::renderer {
+namespace renderer {
 class VulkanCore;
 
 auto vertexBindingDescription() -> vk::VertexInputBindingDescription;
@@ -30,7 +30,7 @@ public:
 	};
 
 	void create(
-	    const toast::renderer::VulkanCore& core, UploadData data, uint32_t graphics_queue_family_index,
+	    const renderer::VulkanCore& core, UploadData data, uint32_t graphics_queue_family_index,
 	    uint32_t transfer_queue_family_index, std::string_view debug_name = {}
 	);
 

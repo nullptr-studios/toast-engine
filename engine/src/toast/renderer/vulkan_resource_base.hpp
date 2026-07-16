@@ -7,7 +7,7 @@
 #include "vulkan_common.hpp"
 #include "vulkan_core.hpp"
 
-namespace toast::renderer {
+namespace renderer {
 
 class IVulkanResource {
 public:

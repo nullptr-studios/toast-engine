@@ -8,7 +8,7 @@
 
 namespace toast {
 void Camera::setActiveCamera(bool force) {
-	toast::renderer::VulkanRenderer::instance->setActiveCamera(this);
+	renderer::VulkanRenderer::instance->setActiveCamera(this);
 }
 
 auto Camera::getView() const -> glm::mat4 {

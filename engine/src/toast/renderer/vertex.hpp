@@ -6,7 +6,7 @@
 
 #include <glm/glm.hpp>
 
-namespace toast::renderer {
+namespace renderer {
 
 /// @brief Vertex with position, normals, UVs, tangents, and colors for mesh rendering
 struct Vertex {

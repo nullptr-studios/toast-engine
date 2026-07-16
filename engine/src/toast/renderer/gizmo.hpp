@@ -7,7 +7,7 @@
 
 #include <vector>
 
-inline std::vector<toast::renderer::Vertex> GizmoVertex = {
+inline std::vector<renderer::Vertex> GizmoVertex = {
   {  {0.002098f, -0.016715f, 0.152412f},{-0.0f, 0.098f, 0.9952f},{1.0f, 0.5f},{1.0f, 0.0f, 0.0f, 1.0f},{0.8f, 0.004803f, 0.0f}                                                                                                                    },
   {  {2.846288f, -0.016715f, 0.152412f},       {-0.0f, 0.098f, 0.9952f},     {1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.8f, 0.004803f, 0.0f}},
   {   {2.846288f, 0.006186f, 0.150157f},
