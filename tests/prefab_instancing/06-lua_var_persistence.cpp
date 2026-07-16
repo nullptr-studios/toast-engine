@@ -50,8 +50,10 @@ TOAST_TEST_NAMED(
 	assert(rt->instanceCount() == 1);
 
 	// Edit health and target; leave tags at its script-declared default
-	assert(rt->setVarByPath(0, "health", std::any {50}));
-	assert(rt->setVarByPath(0, "target", std::any {sibling}));
+	const bool health_set = rt->setVarByPath(0, "health", std::any {50});
+	assert(health_set);
+	const bool target_set = rt->setVarByPath(0, "target", std::any {sibling});
+	assert(target_set);
 
 	// --- Serialize: only the edited vars should be diffed in --------------------------------
 	Prefab saved(*node, UID(0));
