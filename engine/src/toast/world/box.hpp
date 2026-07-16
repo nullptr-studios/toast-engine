@@ -5,14 +5,14 @@
  *
  * @brief pseudo shared pointer for Nodes
  *
- * Intrusive: the ControlBox lives inside the Node allocation, so all handles
- * share one ref-count without an extra heap block. This also makes ref-counting
- * safe across DLL boundaries where std::shared_ptr's control block would differ.
+ * TOAST_API
  */
 
 #pragma once
 
 #include "control_box.hpp"
+
+#include <format>
 
 namespace toast {
 class Node;
@@ -118,6 +118,17 @@ public:
 template<typename T>
 struct std::hash<toast::Box<T>> {
 	auto operator()(const toast::Box<T>& a) const noexcept -> std::size_t { return std::hash<std::uintptr_t> {}(a.rid()); }
+};
+
+/// Make nodes printable
+template<typename T>
+struct std::formatter<toast::Box<T>> : std::formatter<std::string_view> {
+	auto format(const toast::Box<T>& p, std::format_context& ctx) const {
+		if (not p.exists()) {
+			return std::format_to(ctx.out(), "(empty node)");
+		}
+		return std::format_to(ctx.out(), "{} ({})", p->name(), p->uid());
+	}
 };
 
 #include "box.inl"

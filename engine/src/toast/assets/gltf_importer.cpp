@@ -10,6 +10,7 @@
 
 #include <functional>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <nlohmann/json.hpp>
@@ -23,6 +24,23 @@ using namespace tinygltf3;
 
 namespace assets {
 auto generateIntermediates(const std::filesystem::path& path) {
+	const glm::mat4 gltf_y_up_to_engine_z_up = glm::rotate(glm::mat4(1.0F), glm::radians(90.0F), glm::vec3(1.0F, 0.0F, 0.0F));
+	const glm::mat4 engine_z_up_to_gltf_y_up = glm::transpose(gltf_y_up_to_engine_z_up);
+
+	// NOLINTBEGIN(modernize-return-braced-init-list)
+	auto to_engine_space_vec3 = [&](const glm::vec3& v) -> glm::vec3 {
+		return glm::vec3(gltf_y_up_to_engine_z_up * glm::vec4(v, 1.0F));
+	};
+
+	auto to_engine_space_dir3 = [&](const glm::vec3& v) -> glm::vec3 {
+		return glm::vec3(gltf_y_up_to_engine_z_up * glm::vec4(v, 0.0F));
+	};
+	// NOLINTEND(modernize-return-braced-init-list)
+
+	auto to_engine_space_mat4 = [&](const glm::mat4& m) -> glm::mat4 {
+		return gltf_y_up_to_engine_z_up * m * engine_z_up_to_gltf_y_up;
+	};
+
 	tg3_parse_options options;
 	tg3_error_stack errors;
 	tg3_model model;
@@ -40,11 +58,6 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		}
 		return;
 	}
-
-	// TODO: we need to save on cached://<filename>/ the following data
-	//		1: all materials with a .tmat
-	//		2: all textures as .png
-	//		3: all meshes as .tmesh
 
 	// map each GLTF mesh index to the name of the first scene node that references it
 	std::vector<std::string> mesh_node_name(model.meshes_count);
@@ -105,7 +118,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			int col_idx = find_attr("COLOR_0");
 
 			const uint32_t vertex_count = model.accessors[pos_idx].count;
-			std::vector<assets::Mesh::Vertex> vertices(vertex_count);
+			std::vector<renderer::Vertex> vertices(vertex_count);
 
 			const uint8_t* pos_data = accessor_bytes(pos_idx);
 			const uint8_t* norm_data = norm_idx != -1 ? accessor_bytes(norm_idx) : nullptr;
@@ -116,8 +129,10 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			for (uint32_t j = 0; j < vertex_count; j++) {
 				auto& v = vertices[j];
 				memcpy(&v.position, pos_data + (j * get_stride(pos_idx, sizeof(glm::vec3))), sizeof(glm::vec3));
+				v.position = to_engine_space_vec3(v.position);
 				if (norm_data) {
 					memcpy(&v.normal, norm_data + (j * get_stride(norm_idx, sizeof(glm::vec3))), sizeof(glm::vec3));
+					v.normal = to_engine_space_dir3(v.normal);
 				}
 				if (uv_data) {
 					memcpy(&v.uv, uv_data + (j * get_stride(uv_idx, sizeof(glm::vec2))), sizeof(glm::vec2));
@@ -125,7 +140,8 @@ auto generateIntermediates(const std::filesystem::path& path) {
 				if (tan_data) {
 					glm::vec4 t;
 					memcpy(&t, tan_data + (j * get_stride(tan_idx, sizeof(glm::vec4))), sizeof(glm::vec4));
-					v.tangent = glm::vec3(t);    // w is handedness, store or discard as needed
+					const glm::vec3 tangent_xyz = to_engine_space_dir3(glm::vec3(t.x, t.y, t.z));
+					v.tangent = glm::vec4(tangent_xyz, t.w);    // w is handedness
 				}
 				if (col_data) {
 					memcpy(&v.color, col_data + (j * get_stride(col_idx, sizeof(glm::vec3))), sizeof(glm::vec3));
@@ -218,15 +234,23 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		material_table.insert("vertex", "NOT IMPLEMENTED");      // TODO: Replace with UID of default vertex shader
 		material_table.insert("fragment", "NOT IMPLEMENTED");    // TODO: Replace with UID of default fragment shader
 
-		toml::table params;
 		if (pbr.base_color_texture.index != -1) {
-			params.insert("albedo_map", tex_uid(pbr.base_color_texture.index));
+			material_table.insert("albedo_map", tex_uid(pbr.base_color_texture.index));
 		}
+		if (mat.normal_texture.index != -1) {
+			material_table.insert("normal_map", tex_uid(mat.normal_texture.index));
+		}
+		material_table.insert(
+		    "color",
+		    toml::array {pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]}
+		);
+
+		// Extended PBR fields kept in params for future use
+		toml::table params;
 		if (pbr.metallic_roughness_texture.index != -1) {
 			params.insert("metallic_roughness_map", tex_uid(pbr.metallic_roughness_texture.index));
 		}
 		if (mat.normal_texture.index != -1) {
-			params.insert("normal_map", tex_uid(mat.normal_texture.index));
 			params.insert("normal_scale", mat.normal_texture.scale);
 		}
 		if (mat.occlusion_texture.index != -1) {
@@ -236,10 +260,6 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		if (mat.emissive_texture.index != -1) {
 			params.insert("emissive_map", tex_uid(mat.emissive_texture.index));
 		}
-		params.insert(
-		    "base_color_factor",
-		    toml::array {pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]}
-		);
 		params.insert("metallic_factor", pbr.metallic_factor);
 		params.insert("roughness_factor", pbr.roughness_factor);
 		params.insert("emissive_factor", toml::array {mat.emissive_factor[0], mat.emissive_factor[1], mat.emissive_factor[2]});
@@ -323,21 +343,27 @@ auto generateIntermediates(const std::filesystem::path& path) {
 
 	auto node_transform = [&](const tg3_node& node) -> nlohmann::json {
 		nlohmann::json transform;
+		glm::mat4 local_transform = glm::mat4(1.0F);
+
 		if (node.has_matrix) {
-			glm::mat4 mat;
-			memcpy(&mat, node.matrix, sizeof(glm::mat4));
-			glm::vec3 t, s, skew;
-			glm::vec4 persp;
-			glm::quat r;
-			glm::decompose(mat, s, r, t, skew, persp);
-			transform["pos"] = {t.x, t.y, t.z};
-			transform["rot"] = {r.x, r.y, r.z, r.w};
-			transform["scl"] = {s.x, s.y, s.z};
+			memcpy(&local_transform, node.matrix, sizeof(glm::mat4));
 		} else {
-			transform["pos"] = {node.translation[0], node.translation[1], node.translation[2]};
-			transform["rot"] = {node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]};
-			transform["scl"] = {node.scale[0], node.scale[1], node.scale[2]};
+			const glm::vec3 t(node.translation[0], node.translation[1], node.translation[2]);
+			const glm::quat r(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]);
+			const glm::vec3 s(node.scale[0], node.scale[1], node.scale[2]);
+
+			local_transform = glm::translate(glm::mat4(1.0F), t) * glm::mat4_cast(r) * glm::scale(glm::mat4(1.0F), s);
 		}
+
+		const glm::mat4 converted = to_engine_space_mat4(local_transform);
+		glm::vec3 t, s, skew;
+		glm::vec4 persp;
+		glm::quat r;
+		glm::decompose(converted, s, r, t, skew, persp);
+
+		transform["pos"] = {t.x, t.y, t.z};
+		transform["rot"] = {r.x, r.y, r.z, r.w};
+		transform["scl"] = {s.x, s.y, s.z};
 		return transform;
 	};
 
@@ -433,7 +459,11 @@ auto generateIntermediates(const std::filesystem::path& path) {
 	for (size_t i = 0; i < model.scenes_count; i++) {
 		const auto& scene = model.scenes[i];
 		nlohmann::json scene_json;
-		scene_json["name"] = std::string(scene.name.data, scene.name.len);
+		std::string name = std::string(scene.name.data, scene.name.len);
+		if (name.empty()) {
+			name = path.filename().stem().string();
+		}
+		scene_json["name"] = name;
 		scene_json["children"] = nlohmann::json::array();
 
 		for (uint32_t j = 0; j < scene.nodes_count; j++) {
@@ -539,17 +569,24 @@ static void jsonToTnode(const nlohmann::json& scene_json, const std::filesystem:
 			const auto& params = n["params"];
 			// TODO: Update field names when MeshNode fields are created
 			if (params.contains("mesh")) {
-				basic.fields.push_back(
-				    {"m_mesh", toast::FieldType::uid_t, false, toast::UID(toast::UID::fromString(params["mesh"].get<std::string>()))}
-				);
+				const auto mesh_uid = params["mesh"].get<std::string>();
+				if (mesh_uid.size() == 11) {
+					basic.fields.push_back({"m_mesh", toast::FieldType::uid_t, false, toast::UID(toast::UID::fromString(mesh_uid))});
+				} else {
+					TOAST_WARN("AssetManager", "GLTF scene contains non-UID mesh reference '{}'; skipping m_mesh assignment", mesh_uid);
+				}
 			}
 			if (params.contains("material")) {
-				basic.fields.push_back(
-				    {"m_material",
-				     toast::FieldType::uid_t,
-				     false,
-				     toast::UID(toast::UID::fromString(params["material"].get<std::string>()))}
-				);
+				const auto material_uid = params["material"].get<std::string>();
+				if (material_uid.size() == 11) {
+					basic.fields.push_back(
+					    {"m_material", toast::FieldType::uid_t, false, toast::UID(toast::UID::fromString(material_uid))}
+					);
+				} else {
+					TOAST_WARN(
+					    "AssetManager", "GLTF scene contains non-UID material reference '{}'; skipping m_material assignment", material_uid
+					);
+				}
 			}
 		}
 		// TODO: Update field names when Camera/Light classes are created

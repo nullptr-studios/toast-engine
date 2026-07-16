@@ -4,11 +4,10 @@
 
 #include "sdl_output_target.hpp"
 
-#include "toast/log.hpp"
-
 #include <stdexcept>
+#include <toast/log.hpp>
 
-namespace toast::renderer {
+namespace renderer {
 
 auto SDLOutputTarget::getRequiredInstanceExtensions() -> std::vector<const char*> {
 	Uint32 count = 0;
@@ -19,11 +18,8 @@ auto SDLOutputTarget::getRequiredInstanceExtensions() -> std::vector<const char*
 }
 
 auto SDLOutputTarget::getRequiredInstanceExtensions(SDL_Window* window) -> std::vector<const char*> {
-	// SDL3 does not require a window for this query, but keep the overload for compatibility.
-	// Bro vibecoded this ong
-	if (!window) {
-		return getRequiredInstanceExtensions();
-	}
+	// SDL3 does not require a window
+	(void)window;
 	return getRequiredInstanceExtensions();
 }
 

@@ -1,11 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -28,15 +25,15 @@ public enum WidgetKind {
 	ReadOnly,
 	Color3,
 	Color4,
-	Color3Array,
-	Color4Array
+	Array
 }
 
 public static class InspectorFormat {
+	internal const string NullUid = "AAAAAAAAAAA";
 	private static readonly Regex NumberToken = new(@"(?<!\w)-?\d+(\.\d+)?([eE][-+]?\d+)?", RegexOptions.Compiled);
 
 	public static WidgetKind KindOf(string fieldType, bool isArray, string typeName) {
-		if (isArray) return WidgetKind.ReadOnly; // TODO: editable array widgets
+		if (isArray) return WidgetKind.Array;
 
 		return fieldType switch {
 			"bool_t" => WidgetKind.Bool,
@@ -53,6 +50,31 @@ public static class InspectorFormat {
 		};
 	}
 
+	// matches scripting::LuaVarKind on the engine side
+	public static WidgetKind LuaKindOf(uint kind, bool isArray) {
+		var baseKind = kind switch {
+			0 => WidgetKind.Bool,
+			1 => WidgetKind.Int,
+			2 => WidgetKind.Float,
+			3 => WidgetKind.String,
+			4 => WidgetKind.Vec2,
+			5 => WidgetKind.Vec3,
+			6 => WidgetKind.Vec4,
+			7 => WidgetKind.Color3,
+			8 => WidgetKind.Color4,
+			9 => WidgetKind.NodeRef,
+			10 => WidgetKind.AssetRef,
+			_ => WidgetKind.ReadOnly
+		};
+		return isArray ? WidgetKind.Array : baseKind;
+	}
+
+	// "toast::Node3D" -> "Node3D"
+	public static string BareName(string typeName) {
+		var i = typeName.LastIndexOf(':');
+		return i >= 0 ? typeName[(i + 1)..] : typeName;
+	}
+
 	// "m_local_position" -> "Local Position"; "m_uid" -> "Uid"
 	public static string DisplayName(string rawName) {
 		var name = rawName;
@@ -62,13 +84,17 @@ public static class InspectorFormat {
 		return string.Join(' ', words);
 	}
 
-	public static string Float(float v) => v.ToString("R", CultureInfo.InvariantCulture);
+	public static string Float(float v) {
+		return v.ToString("R", CultureInfo.InvariantCulture);
+	}
 
-	public static bool TryFloat(string s, out float v) =>
-		float.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out v);
+	public static bool TryFloat(string s, out float v) {
+		return float.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out v);
+	}
 
-	public static bool TryInt(string s, out int v) =>
-		int.TryParse(s.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out v);
+	public static bool TryInt(string s, out int v) {
+		return int.TryParse(s.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out v);
+	}
 
 	public static float[] Floats(string s) {
 		var cleaned = s.Replace('[', ' ').Replace(']', ' ').Replace(',', ' ').Replace(';', ' ');
@@ -80,11 +106,22 @@ public static class InspectorFormat {
 	// the inner T of AssetHandle<T> or Box<T>, bare-named, used for picker/drag filtering
 	public static string? InnerType(string typeName) {
 		var open = typeName.IndexOf('<');
-		var close = typeName.LastIndexOf('>');
-		if (open < 0 || close <= open) return null;
-		var inner = typeName.Substring(open + 1, close - open - 1).Trim();
-		var sep = inner.LastIndexOf(':');
-		return sep >= 0 ? inner[(sep + 1)..] : inner;
+		if (open < 0) return null;
+		var depth = 1;
+		for (var i = open + 1; i < typeName.Length; i++)
+			if (typeName[i] == '<') {
+				depth++;
+			} else if (typeName[i] == '>') {
+				depth--;
+				if (depth == 0) {
+					var inner = typeName.Substring(open + 1, i - open - 1).Trim();
+					if (inner.Contains('<')) return InnerType(inner);
+					var sep = inner.LastIndexOf(':');
+					return sep >= 0 ? inner[(sep + 1)..] : inner;
+				}
+			}
+
+		return null;
 	}
 
 	/// <summary>Normalizes a C++ default initializer into the engine text encoding, or null if not parseable</summary>
@@ -135,27 +172,50 @@ public static class InspectorFormat {
 		// glm constructor call uses mathematical order w,x,y,z
 		// this is so retarded -x
 		float x, y, z, w;
-		if (raw.Contains('{')) { x = a; y = b; z = c; w = d; }
-		else                   { w = a; x = b; y = c; z = d; }
+		if (raw.Contains('{')) {
+			x = a;
+			y = b;
+			z = c;
+			w = d;
+		} else {
+			w = a;
+			x = b;
+			y = c;
+			z = d;
+		}
 
 		// XYZ intrinsic euler angles in radians → degrees
-		float roll  = MathF.Atan2(2f * (w * x + y * z), 1f - 2f * (x * x + y * y));
-		float pitch = MathF.Asin(Math.Clamp(2f * (w * y - z * x), -1f, 1f));
-		float yaw   = MathF.Atan2(2f * (w * z + x * y), 1f - 2f * (y * y + z * z));
+		var roll = MathF.Atan2(2f * (w * x + y * z), 1f - 2f * (x * x + y * y));
+		var pitch = MathF.Asin(Math.Clamp(2f * (w * y - z * x), -1f, 1f));
+		var yaw = MathF.Atan2(2f * (w * z + x * y), 1f - 2f * (y * y + z * z));
 
 		const float toDeg = 180f / MathF.PI;
 		return $"{Float(roll * toDeg)} {Float(pitch * toDeg)} {Float(yaw * toDeg)}";
 	}
 
-	public static string? TypeZero(WidgetKind kind) => kind switch {
-		WidgetKind.Float or WidgetKind.Int => "0",
-		WidgetKind.Bool => "false",
-		WidgetKind.String => "",
-		WidgetKind.Vec2 => "0 0",
-		WidgetKind.Vec3 or WidgetKind.Color3 => "0 0 0",
-		WidgetKind.Vec4 or WidgetKind.Color4 => "0 0 0 0",
-		_ => null
-	};
+	public static string? TypeZero(WidgetKind kind) {
+		return kind switch {
+			WidgetKind.Float or WidgetKind.Int => "0",
+			WidgetKind.Bool => "false",
+			WidgetKind.String => "",
+			WidgetKind.Vec2 => "0 0",
+			WidgetKind.Vec3 or WidgetKind.Color3 => "0 0 0",
+			WidgetKind.Vec4 or WidgetKind.Color4 => "0 0 0 0",
+			WidgetKind.Array => "",
+			_ => null
+		};
+	}
+
+	public static int ArrayElementStride(WidgetKind elementKind) {
+		return elementKind switch {
+			WidgetKind.Float or WidgetKind.Int or WidgetKind.Bool or WidgetKind.String
+				or WidgetKind.AssetRef or WidgetKind.NodeRef => 1,
+			WidgetKind.Vec2 => 2,
+			WidgetKind.Vec3 or WidgetKind.Color3 => 3,
+			WidgetKind.Vec4 or WidgetKind.Color4 => 4,
+			_ => 1
+		};
+	}
 
 	public static bool ValuesEqual(WidgetKind kind, string a, string b) {
 		switch (kind) {
@@ -171,6 +231,8 @@ public static class InspectorFormat {
 				if (fa.Length != fb.Length) return false;
 				return !fa.Where((t, i) => Math.Abs(t - fb[i]) > 1e-4f).Any();
 			}
+			case WidgetKind.Array:
+				return string.Equals(a.Trim(), b.Trim(), StringComparison.Ordinal);
 			default:
 				return string.Equals(a.Trim(), b.Trim(), StringComparison.Ordinal);
 		}
@@ -178,61 +240,38 @@ public static class InspectorFormat {
 }
 
 public partial class FieldVM : ObservableObject {
-	public string ParameterName { get; }
-	public string DisplayName { get; }
-	public WidgetKind Kind { get; }
-	public bool ReadOnly { get; }
-	public double Min { get; }
-	public double Max { get; }
-	public string? Unit { get; }
-	public string? RefType { get; }
-
 	private readonly string? m_default; // engine-encoded, null if unknown
-	private bool m_suppress;            // true while applying an engine value
-
-	public event Action<FieldVM, string>? Edited;
-
-	public DateTime LastEdit { get; private set; } = DateTime.MinValue;
+	[ObservableProperty] private bool m_bool;
 
 	[ObservableProperty] private float m_float;
 	[ObservableProperty] private int m_int;
-	[ObservableProperty] private bool m_bool;
+
+	[ObservableProperty] private bool m_isDefault = true;
+	[ObservableProperty] private string m_readOnlyText = "";
+	[ObservableProperty] private string? m_ref;
 	[ObservableProperty] private string? m_string = "";
+	private bool m_suppress; // true while applying an engine value
+	[ObservableProperty] private bool m_visible = true;
+	[ObservableProperty] private float m_w;
 	[ObservableProperty] private float m_x;
 	[ObservableProperty] private float m_y;
 	[ObservableProperty] private float m_z;
-	[ObservableProperty] private float m_w;
-	[ObservableProperty] private string? m_ref;
-	[ObservableProperty] private string m_readOnlyText = "";
-
-	[ObservableProperty] private bool m_isDefault = true;
-	[ObservableProperty] private bool m_visible = true;
-
-	public bool ShowReset => Editable && !IsDefault;
-
-	partial void OnIsDefaultChanged(bool value) => OnPropertyChanged(nameof(ShowReset));
-
-	public ObservableCollection<TextSegment> Segments { get; } = [];
 
 	public FieldVM(FieldInfo info) {
 		ParameterName = info.Name;
 		Kind = InspectorFormat.KindOf(info.FieldType, info.IsArray, info.TypeName);
 
-		if (ReflectionDatabase.HasAttr(info.Attributes, "Color")) {
-			if (info.IsArray) {
-				if (info.FieldType == "vec3_t") Kind = WidgetKind.Color3Array;
-				else if (info.FieldType == "vec4_t") Kind = WidgetKind.Color4Array;
-			} else {
-				if (info.FieldType == "vec3_t") Kind = WidgetKind.Color3;
-				else if (info.FieldType == "vec4_t") Kind = WidgetKind.Color4;
-			}
+		var isColor = ReflectionDatabase.HasAttr(info.Attributes, "Color");
+		if (isColor && !info.IsArray) {
+			if (info.FieldType == "vec3_t") Kind = WidgetKind.Color3;
+			else if (info.FieldType == "vec4_t") Kind = WidgetKind.Color4;
 		}
 
 		var nameOverride = ReflectionDatabase.GetAttr(info.Attributes, "Name");
 		DisplayName = string.IsNullOrEmpty(nameOverride) ? InspectorFormat.DisplayName(info.Name) : nameOverride;
 
 		ReadOnly = ReflectionDatabase.HasAttr(info.Attributes, "ReadOnly")
-		           || ReflectionDatabase.HasAttr(info.Attributes, "InspectorNoModify");
+			|| ReflectionDatabase.HasAttr(info.Attributes, "InspectorNoModify");
 
 		Unit = ReflectionDatabase.GetAttr(info.Attributes, "Unit");
 		RefType = InspectorFormat.InnerType(info.TypeName);
@@ -241,14 +280,78 @@ public partial class FieldVM : ObservableObject {
 		Min = range.Length > 0 && InspectorFormat.TryFloat(range[0], out var lo) ? lo : double.NegativeInfinity;
 		Max = range.Length > 1 && InspectorFormat.TryFloat(range[1], out var hi) ? hi : double.PositiveInfinity;
 
-		m_default = InspectorFormat.NormalizeDefault(Kind, info.Default, info.FieldType) ?? InspectorFormat.TypeZero(Kind);
+		m_default = InspectorFormat.NormalizeDefault(Kind, info.Default, info.FieldType) ??
+			InspectorFormat.TypeZero(Kind);
 
 		Segments.Add(new TextSegment(DisplayName, false));
 
-		if (m_default != null) {
-			ApplyEngineString(m_default);
+		if (m_default != null) ApplyEngineString(m_default);
+
+		if (Kind == WidgetKind.Array) {
+			ArrayElementKind = isColor && info.FieldType == "vec3_t" ? WidgetKind.Color3
+				: isColor && info.FieldType == "vec4_t" ? WidgetKind.Color4
+				: InspectorFormat.KindOf(info.FieldType, false, info.TypeName);
+			ArrayItems.CollectionChanged += (_, _) => OnUserEdited();
 		}
 	}
+
+	public FieldVM(Proto.Events.LuaField info) {
+		ParameterName = info.Path;
+		IsLua = true;
+		Kind = InspectorFormat.LuaKindOf(info.Kind, info.IsArray);
+		DisplayName = InspectorFormat.DisplayName(info.Name);
+		ReadOnly = false;
+		Unit = null;
+		RefType = string.IsNullOrEmpty(info.RefType) ? null : InspectorFormat.BareName(info.RefType);
+		Min = double.NegativeInfinity;
+		Max = double.PositiveInfinity;
+		m_default = string.IsNullOrEmpty(info.DefaultValue) ? null : info.DefaultValue;
+
+		Segments.Add(new TextSegment(DisplayName, false));
+
+		if (Kind == WidgetKind.Array) {
+			ArrayElementKind = InspectorFormat.LuaKindOf(info.Kind, false);
+			ArrayItems.CollectionChanged += (_, _) => OnUserEdited();
+		}
+
+		ApplyEngineString(info.Value);
+	}
+
+	internal FieldVM(
+		WidgetKind elementKind, string displayName, bool readOnly, string? unit, string? refType, double min,
+		double max) {
+		ParameterName = "";
+		Kind = elementKind;
+		DisplayName = displayName;
+		ReadOnly = readOnly;
+		Unit = unit;
+		RefType = refType;
+		Min = min;
+		Max = max;
+		m_default = InspectorFormat.TypeZero(elementKind);
+		Segments.Add(new TextSegment(DisplayName, false));
+		if (m_default != null) ApplyEngineString(m_default);
+	}
+
+	public string ParameterName { get; }
+	public string DisplayName { get; }
+	public WidgetKind Kind { get; }
+	public bool IsLua { get; }
+	public bool ReadOnly { get; }
+	public double Min { get; }
+	public double Max { get; }
+	public string? Unit { get; }
+	public string? RefType { get; }
+
+	public DateTime LastEdit { get; private set; } = DateTime.MinValue;
+
+	public bool ShowReset => Editable && !IsDefault;
+
+	public ObservableCollection<TextSegment> Segments { get; } = [];
+
+	public WidgetKind ArrayElementKind { get; }
+	public bool IsArray => Kind == WidgetKind.Array;
+	public ObservableCollection<FieldVM> ArrayItems { get; } = [];
 
 	public bool IsFloat => Kind == WidgetKind.Float;
 	public bool IsInt => Kind == WidgetKind.Int;
@@ -261,22 +364,69 @@ public partial class FieldVM : ObservableObject {
 	public bool IsNodeRef => Kind == WidgetKind.NodeRef;
 	public bool IsReadOnlyText => Kind == WidgetKind.ReadOnly;
 	public bool IsVectorLayout => Kind is WidgetKind.Vec2 or WidgetKind.Vec3 or WidgetKind.Vec4;
-	public bool Editable => !ReadOnly && Kind != WidgetKind.ReadOnly && Kind != WidgetKind.Color3Array && Kind != WidgetKind.Color4Array;
+
+	public bool Editable => !ReadOnly && Kind != WidgetKind.ReadOnly;
 
 	public bool IsColor3 => Kind == WidgetKind.Color3;
 	public bool IsColor4 => Kind == WidgetKind.Color4;
-	public bool IsColorArray => Kind is WidgetKind.Color3Array or WidgetKind.Color4Array;
-	public ObservableCollection<IBrush> ColorBrushes { get; } = [];
 
-	partial void OnFloatChanged(float value) => OnUserEdited();
-	partial void OnIntChanged(int value) => OnUserEdited();
-	partial void OnBoolChanged(bool value) => OnUserEdited();
-	partial void OnStringChanged(string? value) => OnUserEdited();
-	partial void OnXChanged(float value) => OnUserEdited();
-	partial void OnYChanged(float value) => OnUserEdited();
-	partial void OnZChanged(float value) => OnUserEdited();
-	partial void OnWChanged(float value) => OnUserEdited();
-	partial void OnRefChanged(string? value) => OnUserEdited();
+	public event Action<FieldVM, string>? Edited;
+
+	partial void OnIsDefaultChanged(bool value) {
+		OnPropertyChanged(nameof(ShowReset));
+	}
+
+	partial void OnFloatChanged(float value) {
+		OnUserEdited();
+	}
+
+	partial void OnIntChanged(int value) {
+		OnUserEdited();
+	}
+
+	partial void OnBoolChanged(bool value) {
+		OnUserEdited();
+	}
+
+	partial void OnStringChanged(string? value) {
+		OnUserEdited();
+	}
+
+	partial void OnXChanged(float value) {
+		OnUserEdited();
+	}
+
+	partial void OnYChanged(float value) {
+		OnUserEdited();
+	}
+
+	partial void OnZChanged(float value) {
+		OnUserEdited();
+	}
+
+	partial void OnWChanged(float value) {
+		OnUserEdited();
+	}
+
+	partial void OnRefChanged(string? value) {
+		OnUserEdited();
+	}
+
+	[RelayCommand]
+	private void AddArrayItem() {
+		var child = CreateArrayElement();
+		WireChild(child);
+		ArrayItems.Add(child);
+		OnUserEdited();
+	}
+
+	private FieldVM CreateArrayElement() {
+		return new FieldVM(ArrayElementKind, "", ReadOnly, Unit, RefType, Min, Max);
+	}
+
+	private void WireChild(FieldVM child) {
+		child.Edited += (_, _) => OnUserEdited();
+	}
 
 	private void OnUserEdited() {
 		if (m_suppress) return;
@@ -293,10 +443,14 @@ public partial class FieldVM : ObservableObject {
 			WidgetKind.Bool => Bool ? "true" : "false",
 			WidgetKind.String => String ?? "",
 			WidgetKind.Vec2 => $"{InspectorFormat.Float(X)} {InspectorFormat.Float(Y)}",
-			WidgetKind.Vec3 or WidgetKind.Color3 => $"{InspectorFormat.Float(X)} {InspectorFormat.Float(Y)} {InspectorFormat.Float(Z)}",
+			WidgetKind.Vec3 or WidgetKind.Color3 =>
+				$"{InspectorFormat.Float(X)} {InspectorFormat.Float(Y)} {InspectorFormat.Float(Z)}",
 			WidgetKind.Vec4 or WidgetKind.Color4 =>
 				$"{InspectorFormat.Float(X)} {InspectorFormat.Float(Y)} {InspectorFormat.Float(Z)} {InspectorFormat.Float(W)}",
-			WidgetKind.AssetRef or WidgetKind.NodeRef => Ref ?? "0",
+			WidgetKind.AssetRef or WidgetKind.NodeRef => Ref ?? InspectorFormat.NullUid,
+			WidgetKind.Array => string.Join(
+				ArrayElementKind == WidgetKind.String ? "\x1f" : " ",
+				ArrayItems.Select(c => c.ToEngineString())),
 			_ => ReadOnlyText
 		};
 	}
@@ -319,57 +473,84 @@ public partial class FieldVM : ObservableObject {
 					break;
 				case WidgetKind.Vec2: {
 					var p = InspectorFormat.Floats(s);
-					if (p.Length >= 2) { X = p[0]; Y = p[1]; }
+					if (p.Length >= 2) {
+						X = p[0];
+						Y = p[1];
+					}
+
 					break;
 				}
 				case WidgetKind.Vec3:
 				case WidgetKind.Color3: {
 					var p = InspectorFormat.Floats(s);
-					if (p.Length >= 3) { X = p[0]; Y = p[1]; Z = p[2]; }
+					if (p.Length >= 3) {
+						X = p[0];
+						Y = p[1];
+						Z = p[2];
+					}
+
 					break;
 				}
 				case WidgetKind.Vec4:
 				case WidgetKind.Color4: {
 					var p = InspectorFormat.Floats(s);
-					if (p.Length >= 4) { X = p[0]; Y = p[1]; Z = p[2]; W = p[3]; }
+					if (p.Length >= 4) {
+						X = p[0];
+						Y = p[1];
+						Z = p[2];
+						W = p[3];
+					}
+
 					break;
 				}
 				case WidgetKind.AssetRef:
 				case WidgetKind.NodeRef:
-					Ref = string.IsNullOrEmpty(s) || s == "0" ? null : s;
+					Ref = string.IsNullOrEmpty(s) || s == InspectorFormat.NullUid ? null : s;
 					break;
+				case WidgetKind.Array: {
+					if (string.IsNullOrEmpty(s)) {
+						ArrayItems.Clear();
+						break;
+					}
+
+					if (string.Equals(s, ToEngineString(), StringComparison.Ordinal)) break;
+
+					var isStr = ArrayElementKind == WidgetKind.String;
+					var tokens = isStr
+						? s.Split('\x1f')
+						: s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+					var stride = InspectorFormat.ArrayElementStride(ArrayElementKind);
+					var elementCount = tokens.Length / stride;
+
+					string ElementAt(int idx) => string.Join(' ', tokens.Skip(idx * stride).Take(stride));
+
+					if (elementCount == ArrayItems.Count) {
+						for (var idx = 0; idx < elementCount; idx++) {
+							ArrayItems[idx].ApplyEngineString(ElementAt(idx));
+						}
+
+						break;
+					}
+
+					ArrayItems.Clear();
+					for (var idx = 0; idx < elementCount; idx++) {
+						var child = new FieldVM(ArrayElementKind, "", ReadOnly, Unit, RefType, Min, Max);
+						child.ApplyEngineString(ElementAt(idx));
+						WireChild(child);
+						ArrayItems.Add(child);
+					}
+
+					break;
+				}
 				default:
 					ReadOnlyText = s;
 					break;
 			}
-		}
-		finally {
+		} finally {
 			m_suppress = false;
 		}
 
 		UpdateIsDefault(s);
-
-		if (Kind == WidgetKind.Color3Array || Kind == WidgetKind.Color4Array) {
-			ColorBrushes.Clear();
-			var floats = InspectorFormat.Floats(s);
-			var stride = Kind == WidgetKind.Color3Array ? 3 : 4;
-			for (var idx = 0; idx + stride <= floats.Length; idx += stride) {
-				var r = floats[idx];
-				var g = floats[idx + 1];
-				var b = floats[idx + 2];
-				var a = stride == 4 ? floats[idx + 3] : 1f;
-
-				var max = MathF.Max(r, MathF.Max(g, b));
-				var scale = max > 1f ? 1f / max : 1f;
-				var color = Color.FromArgb(
-					(byte)Math.Clamp(MathF.Round(a * 255f), 0f, 255f),
-					(byte)Math.Clamp(MathF.Round(r * scale * 255f), 0f, 255f),
-					(byte)Math.Clamp(MathF.Round(g * scale * 255f), 0f, 255f),
-					(byte)Math.Clamp(MathF.Round(b * scale * 255f), 0f, 255f)
-				);
-				ColorBrushes.Add(new SolidColorBrush(color));
-			}
-		}
 	}
 
 	private void UpdateIsDefault(string current) {
@@ -398,8 +579,7 @@ public partial class FieldVM : ObservableObject {
 			Segments.Add(new TextSegment(DisplayName.Substring(idx, q.Length), true));
 			if (idx + q.Length < DisplayName.Length) Segments.Add(new TextSegment(DisplayName[(idx + q.Length)..], false));
 			Visible = true;
-		}
-		else {
+		} else {
 			Segments.Add(new TextSegment(DisplayName, false));
 			// space-insensitive fallback
 			Visible = DisplayName.Replace(" ", "").Contains(q.Replace(" ", ""), StringComparison.OrdinalIgnoreCase);
@@ -410,8 +590,6 @@ public partial class FieldVM : ObservableObject {
 }
 
 public partial class ButtonVM : ObservableObject {
-	public string Label { get; }
-	public string Function { get; }
 	private readonly Action<string> m_invoke;
 
 	public ButtonVM(string label, string function, Action<string> invoke) {
@@ -420,17 +598,19 @@ public partial class ButtonVM : ObservableObject {
 		m_invoke = invoke;
 	}
 
+	public string Label { get; }
+	public string Function { get; }
+
 	[RelayCommand]
-	private void Click() => m_invoke(Function);
+	private void Click() {
+		m_invoke(Function);
+	}
 }
 
 public partial class SubgroupVM : ObservableObject {
-	public string Name { get; }
-	public ObservableCollection<FieldVM> Fields { get; } = [];
-
 	private readonly string m_key;
+	private readonly bool m_ready;
 	private readonly InspectorState m_state;
-	private bool m_ready;
 
 	[ObservableProperty] private bool m_collapsed;
 	[ObservableProperty] private bool m_visible = true;
@@ -442,6 +622,9 @@ public partial class SubgroupVM : ObservableObject {
 		Collapsed = state.Get(key, true);
 		m_ready = true;
 	}
+
+	public string Name { get; }
+	public ObservableCollection<FieldVM> Fields { get; } = [];
 
 	public bool Expanded {
 		get => !Collapsed;
@@ -462,14 +645,9 @@ public partial class SubgroupVM : ObservableObject {
 }
 
 public partial class GroupVM : ObservableObject {
-	public string Name { get; }
-	public string ColorKey { get; }
-	public ObservableCollection<FieldVM> Fields { get; } = [];
-	public ObservableCollection<SubgroupVM> Subgroups { get; } = [];
-
 	private readonly string m_key;
+	private readonly bool m_ready;
 	private readonly InspectorState m_state;
-	private bool m_ready;
 
 	[ObservableProperty] private bool m_collapsed;
 	[ObservableProperty] private bool m_visible = true;
@@ -482,6 +660,11 @@ public partial class GroupVM : ObservableObject {
 		Collapsed = state.Get(key, true);
 		m_ready = true;
 	}
+
+	public string Name { get; }
+	public string ColorKey { get; }
+	public ObservableCollection<FieldVM> Fields { get; } = [];
+	public ObservableCollection<SubgroupVM> Subgroups { get; } = [];
 
 	public bool Expanded {
 		get => !Collapsed;
@@ -503,20 +686,9 @@ public partial class GroupVM : ObservableObject {
 }
 
 public partial class ClassCardVM : ObservableObject {
-	public string TypeName { get; }
-	public string ColorKey { get; }
-	public Bitmap? SmallIcon { get; }
-	public Bitmap? LargeIcon { get; }
-	public ObservableCollection<FieldVM> Fields { get; } = [];
-	public ObservableCollection<GroupVM> Groups { get; } = [];
-	public ObservableCollection<ButtonVM> Buttons { get; } = [];
-	public bool HasFields => Fields.Any();
-	public bool HasGroups => Groups.Any();
-	public bool HasButtons => Buttons.Any();
-
 	private readonly string m_key;
+	private readonly bool m_ready;
 	private readonly InspectorState m_state;
-	private bool m_ready;
 
 	[ObservableProperty] private bool m_expanded = true;
 	[ObservableProperty] private bool m_visible = true;
@@ -527,17 +699,28 @@ public partial class ClassCardVM : ObservableObject {
 		try {
 			SmallIcon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1x/{iconName}.png")));
 			LargeIcon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1.5x/{iconName}.png")));
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			Log.Warn($"Failed to load icon for {typeName} ({iconName}): {ex.Message}");
 			SmallIcon = new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/1x/Circle.png")));
 			LargeIcon = new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/1.5x/Circle.png")));
 		}
+
 		m_key = key;
 		m_state = state;
 		Expanded = !state.Get(key, false); // class cards default expanded
 		m_ready = true;
 	}
+
+	public string TypeName { get; }
+	public string ColorKey { get; }
+	public Bitmap? SmallIcon { get; }
+	public Bitmap? LargeIcon { get; }
+	public ObservableCollection<FieldVM> Fields { get; } = [];
+	public ObservableCollection<GroupVM> Groups { get; } = [];
+	public ObservableCollection<ButtonVM> Buttons { get; } = [];
+	public bool HasFields => Fields.Any();
+	public bool HasGroups => Groups.Any();
+	public bool HasButtons => Buttons.Any();
 
 	partial void OnExpandedChanged(bool value) {
 		if (m_ready) m_state.Set(m_key, !value);

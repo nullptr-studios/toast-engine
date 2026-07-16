@@ -16,7 +16,7 @@ public abstract record LoaderTask(string Label) {
 	}
 
 	/// <summary>
-	/// C# async delegate with a log callback and a fractional progress callback
+	///    C# async delegate with a log callback and a fractional progress callback
 	/// </summary>
 	/// Use this one for large tasks as it can provide with a bit more information
 	/// to the user about the state of the current task

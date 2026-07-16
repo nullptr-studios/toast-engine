@@ -36,9 +36,18 @@ public record GltfMetaSection : IMetaSection {
 	public bool CreateFolder { get; init; } = true;
 	public bool ImportMaterials { get; init; } = true;
 	public bool ImportTextures { get; init; } = true;
-	public bool ImportCameras { get; init; } = false;
+	public bool ImportCameras { get; init; }
 	public bool ImportLights { get; init; } = true;
 	public bool GeneratePrefab { get; init; } = true;
+}
+
+public record AudioStringMetaSection : IMetaSection {
+	public bool FollowFolderStructure = true;
+	public bool ImportBuses = true;
+	public bool ImportEvents = true;
+	public bool ImportPorts = true;
+	public bool ImportSnapshots = true;
+	public bool ImportVcas = true;
 }
 
 public static class MetaFile {
@@ -174,6 +183,21 @@ public static class MetaFile {
 		}
 	}
 
+	/// Rewrites the modified_at of an existing .meta in place;
+	public static bool Touch(string virtualPath) {
+		var metaPath = ProjectContext.Resolve(virtualPath);
+		if (!metaPath.EndsWith(".meta")) metaPath += ".meta";
+		if (!File.Exists(metaPath)) return false;
+		try {
+			var dto = TomlSerializer.Deserialize<MetaFileDto>(File.ReadAllText(metaPath))!;
+			dto.ModifiedAt = DateTime.UtcNow.ToString("o");
+			File.WriteAllText(metaPath, TomlSerializer.Serialize(dto));
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
 	public static IEnumerable<string> FindAll(string directory) {
 		return Directory.EnumerateFiles(directory, "*.meta", SearchOption.AllDirectories);
 	}
@@ -214,7 +238,7 @@ file sealed class GltfSectionDto {
 	[TomlPropertyName("create_folder")] public bool CreateFolder { get; set; } = true;
 	[TomlPropertyName("import_materials")] public bool ImportMaterials { get; set; } = true;
 	[TomlPropertyName("import_textures")] public bool ImportTextures { get; set; } = true;
-	[TomlPropertyName("import_cameras")] public bool ImportCameras { get; set; } = false;
+	[TomlPropertyName("import_cameras")] public bool ImportCameras { get; set; }
 	[TomlPropertyName("import_lights")] public bool ImportLights { get; set; } = true;
 	[TomlPropertyName("generate_prefab")] public bool GeneratePrefab { get; set; } = true;
 }

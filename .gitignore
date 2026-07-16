@@ -10,7 +10,7 @@ logs/
 
 # Build files
 **[Bb]uild**
-**[Bb]in**
+**[Bb]in
 **[Oo]bj**
 **[Tt]arget**
 [Oo]ut
@@ -22,6 +22,7 @@ vcpkg_installed/
 # Generated
 engine/generated
 engine/assets/engine_reflect.json
+engine/assets/lua/types.d.lua
 
 compile_commands.json
 CMakeUserPresets.json

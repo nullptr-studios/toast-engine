@@ -1,7 +1,31 @@
 [
   {
     "attributes": {},
-    "functions": {
+    "fields": [],
+    "functions": [
+      "preInit",
+      "init",
+      "begin",
+      "earlyTick",
+      "tick",
+      "postPhysics",
+      "lateTick",
+      "end",
+      "destroy",
+      "onEnable",
+      "onDisable",
+      "load",
+      "save"
+    ],
+    "global_fields": [],
+    "groups": [],
+    "is_interface": false,
+    "methods": [],
+    "name": "AllTicksNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "16_all_tick_functions.hpp",
+    "tick_functions": {
       "begin": true,
       "destroy": true,
       "early_tick": true,
@@ -15,13 +39,6 @@
       "pre_init": true,
       "save": true,
       "tick": true
-    },
-    "global_fields": [],
-    "groups": [],
-    "methods": [],
-    "name": "AllTicksNode",
-    "namespace": null,
-    "parent": null,
-    "source_file": "16_all_tick_functions.hpp"
+    }
   }
 ]

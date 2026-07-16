@@ -1,21 +1,25 @@
 [
   {
     "attributes": {},
-    "functions": {
-      "begin": false,
-      "destroy": false,
-      "early_tick": false,
-      "end": false,
-      "init": false,
-      "late_tick": false,
-      "load": false,
-      "on_disable": false,
-      "on_enable": false,
-      "post_physics": false,
-      "pre_init": false,
-      "save": false,
-      "tick": false
-    },
+    "fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "float_t",
+        "is_array": false,
+        "name": "m_value",
+        "typename": "float"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": true,
+        "name": "m_items",
+        "typename": "std::vector<int>"
+      }
+    ],
+    "functions": [],
     "global_fields": [
       {
         "attributes": {},
@@ -35,10 +39,26 @@
       }
     ],
     "groups": [],
+    "is_interface": false,
     "methods": [],
     "name": "DataNode",
     "namespace": "data",
     "parent": null,
-    "source_file": "04_no_ticks.hpp"
+    "source_file": "04_no_ticks.hpp",
+    "tick_functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    }
   }
 ]

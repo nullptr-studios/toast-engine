@@ -1,7 +1,38 @@
 [
   {
     "attributes": {},
-    "functions": {
+    "fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_extra",
+        "typename": "int"
+      }
+    ],
+    "functions": [],
+    "global_fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_extra",
+        "typename": "int"
+      }
+    ],
+    "groups": [],
+    "is_interface": false,
+    "methods": [],
+    "name": "GrandchildNode",
+    "namespace": "game",
+    "parent": {
+      "name": "ParentNode",
+      "namespace": "game"
+    },
+    "source_file": "10_inheritance_chain.hpp",
+    "tick_functions": {
       "begin": false,
       "destroy": false,
       "early_tick": false,
@@ -15,25 +46,6 @@
       "pre_init": false,
       "save": false,
       "tick": false
-    },
-    "global_fields": [
-      {
-        "attributes": {},
-        "default": null,
-        "field_type": "int_t",
-        "is_array": false,
-        "name": "m_extra",
-        "typename": "int"
-      }
-    ],
-    "groups": [],
-    "methods": [],
-    "name": "GrandchildNode",
-    "namespace": "game",
-    "parent": {
-      "name": "ParentNode",
-      "namespace": "game"
-    },
-    "source_file": "10_inheritance_chain.hpp"
+    }
   }
 ]

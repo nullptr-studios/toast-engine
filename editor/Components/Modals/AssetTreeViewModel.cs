@@ -28,6 +28,7 @@ public partial class AssetTreeNode : ObservableObject {
 			Children.Add(child);
 			FilteredChildren.Add(child);
 		}
+
 		foreach (var file in folder.Files) {
 			if (typeFilter is not null &&
 			    !string.Equals(file.Definition?.Type, typeFilter, StringComparison.OrdinalIgnoreCase)) continue;
@@ -64,12 +65,15 @@ public partial class AssetTreeNode : ObservableObject {
 				c.UpdateFilter(query, caseSensitive);
 				FilteredChildren.Add(c);
 			}
+
 			return true;
 		}
+
 		if (!IsFolder) {
 			var cmp = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 			return Name.Contains(query, cmp);
 		}
+
 		var visible = Children.Where(c => c.UpdateFilter(query, caseSensitive)).ToList();
 		FilteredChildren.Clear();
 		foreach (var c in visible) FilteredChildren.Add(c);
@@ -79,16 +83,23 @@ public partial class AssetTreeNode : ObservableObject {
 
 public class AssetTreeViewModel : PickerViewModel {
 	private readonly string? m_filter;
-	private readonly ObservableCollection<AssetTreeNode> m_roots = [];
 	private readonly ObservableCollection<AssetTreeNode> m_filtered = [];
+	private readonly ObservableCollection<AssetTreeNode> m_roots = [];
 
 	public AssetTreeViewModel(string? typeFilter = null) {
 		m_filter = typeFilter;
-		if (ProjectContext.IsInitialized) {
-			var root = new AssetTreeNode(ProjectContext.AssetsPath, typeFilter);
-			m_roots.Add(root);
-			m_filtered.Add(root);
+		if (!ProjectContext.IsInitialized) return;
+
+		// One root per content database, plus core://
+		foreach (var dbRoot in ProjectContext.DatabaseRoots) {
+			var node = new AssetTreeNode(dbRoot, typeFilter);
+			m_roots.Add(node);
+			m_filtered.Add(node);
 		}
+
+		var coreNode = new AssetTreeNode(ProjectContext.CorePath, typeFilter);
+		m_roots.Add(coreNode);
+		m_filtered.Add(coreNode);
 	}
 
 	public override string WindowTitle => "Select an Asset...";
@@ -102,10 +113,13 @@ public class AssetTreeViewModel : PickerViewModel {
 		foreach (var r in visible) m_filtered.Add(r);
 	}
 
-	public override bool IsSelectable(object? item) => item is AssetTreeNode { IsAsset: true };
+	public override bool IsSelectable(object? item) {
+		return item is AssetTreeNode { IsAsset: true };
+	}
 
-	public override string? GetResult(object? selected)
-		=> selected is AssetTreeNode { IsAsset: true } node ? node.Uid : null;
+	public override string? GetResult(object? selected) {
+		return selected is AssetTreeNode { IsAsset: true } node ? node.Uid : null;
+	}
 
 	public override async Task OnExtraButton(Window owner, object? selected) {
 		var folderName = await new NewFolderModal().ShowDialog<string?>(owner);

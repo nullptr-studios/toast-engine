@@ -61,7 +61,7 @@ public record NodeInfo(
 	[property: JsonPropertyName("parent")] ParentInfo? Parent,
 	[property: JsonPropertyName("attributes")]
 	JsonElement Attributes,
-	[property: JsonPropertyName("functions")]
+	[property: JsonPropertyName("tick_functions")]
 	Dictionary<string, bool> Functions,
 	[property: JsonPropertyName("groups")] GroupInfo[] Groups,
 	[property: JsonPropertyName("global_fields")]

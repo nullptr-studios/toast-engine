@@ -34,12 +34,14 @@ public class AssetPickerItem {
 			Segments.Add(new TextSegment(Name, false));
 			return true;
 		}
+
 		var cmp = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 		var idx = Name.IndexOf(query, cmp);
 		if (idx < 0) {
 			Segments.Add(new TextSegment(Name, false));
 			return false;
 		}
+
 		if (idx > 0) Segments.Add(new TextSegment(Name[..idx], false));
 		Segments.Add(new TextSegment(Name.Substring(idx, query.Length), true));
 		if (idx + query.Length < Name.Length) Segments.Add(new TextSegment(Name[(idx + query.Length)..], false));
@@ -62,7 +64,7 @@ public class AssetListPickerViewModel : PickerViewModel {
 
 	private static IEnumerable<AssetPickerItem> EnumerateAssets(string? typeFilter) {
 		if (!ProjectContext.IsInitialized) yield break;
-		foreach (var root in new[] { ProjectContext.AssetsPath, ProjectContext.CorePath }) {
+		foreach (var root in ProjectContext.DatabaseRoots.Append(ProjectContext.CorePath)) {
 			if (!Directory.Exists(root)) continue;
 			foreach (var file in Flatten(new AssetFolder(root))) {
 				if (typeFilter is not null &&
@@ -88,7 +90,11 @@ public class AssetListPickerViewModel : PickerViewModel {
 		foreach (var item in visible) m_filtered.Add(item);
 	}
 
-	public override bool IsSelectable(object? item) => item is AssetPickerItem;
+	public override bool IsSelectable(object? item) {
+		return item is AssetPickerItem;
+	}
 
-	public override string? GetResult(object? selected) => (selected as AssetPickerItem)?.Uid;
+	public override string? GetResult(object? selected) {
+		return (selected as AssetPickerItem)?.Uid;
+	}
 }

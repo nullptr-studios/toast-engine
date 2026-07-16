@@ -1,21 +1,41 @@
 [
   {
     "attributes": {},
-    "functions": {
-      "begin": false,
-      "destroy": false,
-      "early_tick": false,
-      "end": false,
-      "init": false,
-      "late_tick": false,
-      "load": false,
-      "on_disable": false,
-      "on_enable": false,
-      "post_physics": false,
-      "pre_init": false,
-      "save": false,
-      "tick": false
-    },
+    "fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": true,
+        "name": "m_ints",
+        "typename": "std::vector<int>"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": true,
+        "name": "m_floats",
+        "typename": "std::vector<float>"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": true,
+        "name": "m_strings",
+        "typename": "std::vector<std::string>"
+      },
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": true,
+        "name": "m_vectors",
+        "typename": "std::vector<glm::vec3>"
+      }
+    ],
+    "functions": [],
     "global_fields": [
       {
         "attributes": {},
@@ -51,10 +71,26 @@
       }
     ],
     "groups": [],
+    "is_interface": false,
     "methods": [],
     "name": "VectorTypesNode",
     "namespace": null,
     "parent": null,
-    "source_file": "20_vector_of_different_types.hpp"
+    "source_file": "20_vector_of_different_types.hpp",
+    "tick_functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    }
   }
 ]

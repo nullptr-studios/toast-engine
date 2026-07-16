@@ -1,21 +1,32 @@
 /**
- * @file Material.hpp
+ * @file material.hpp
  * @author Xein
  * @date 12 Jun 2026
  *
- * @brief TODO: Brief description of the file's purpose
+ * @brief Material asset backed by TOML data
  */
 
 #pragma once
 #include "core_types.hpp"
+#include "data.hpp"
 
-namespace asset {
-/**
- * @brief Asset representing parsed TOML data
- */
-class TOAST_API Material : public assets::Asset {
+#include <memory>
+#include <vulkan/vulkan_core.h>
+
+namespace renderer {
+class VulkanSampler;
+}
+
+namespace assets {
+class Texture;
+
+// FIXME: This should be changed and improved, this doess not currently support material reloading
+class TOAST_API Material : public Data {
 public:
-	explicit Material(toml::table table) : m_table(std::move(table)) { }
+	static constexpr std::string_view collection = "materials";
+
+	explicit Material(const toml::table& table, AssetHandle<Schema> schema = {});
+	~Material() override;
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
@@ -23,9 +34,27 @@ public:
 	}
 
 	[[nodiscard]]
-	auto get() const noexcept -> const toml::v3::table&;
+	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
+
+	[[nodiscard]]
+	auto albedoMap() const -> AssetHandle<Texture>;
+
+	[[nodiscard]]
+	auto normalMap() const -> AssetHandle<Texture>;
+
+	[[nodiscard]]
+	auto color() const -> glm::vec4;
+
+	[[nodiscard]]
+	auto albedoSampler() const -> VkSampler;
+
+	void resolveTextureHandles();
 
 private:
-	toml::table m_table;
+	mutable AssetHandle<Texture> m_albedo_handle;
+	mutable AssetHandle<Texture> m_normal_handle;
+	bool m_sampler_ready = false;
+
+	std::unique_ptr<renderer::VulkanSampler> m_albedo_sampler;    // THISSHOULDBECREATEDPERIMAGESAMPLER
 };
 }

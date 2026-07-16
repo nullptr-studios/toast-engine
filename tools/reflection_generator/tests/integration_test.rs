@@ -62,8 +62,13 @@ fn test_single_fixture(fixture_path: &Path, fixture_name: &str, output_dir: impl
         .unwrap_or_else(|e| panic!("Cannot read fixture {}: {}", fixture_path.display(), e));
 
     // 2. Preprocess and parse
+    let filename = fixture_path
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
     let preprocessed = strip_export_macros(&source);
-    let classes = parse(&preprocessed);
+    let classes = parse(&preprocessed, &filename);
 
     if classes.is_empty() {
         println!("  WARNING: No classes found in fixture");
@@ -72,16 +77,8 @@ fn test_single_fixture(fixture_path: &Path, fixture_name: &str, output_dir: impl
 
     println!("  Found {} class(es)", classes.len());
 
-    // 3. Build nodes (use just filename for source_file, not full path)
-    let filename = fixture_path
-        .file_name()
-        .unwrap()
-        .to_string_lossy()
-        .to_string();
-    let nodes: Vec<_> = classes
-        .iter()
-        .map(|c| build_node(c, &filename))
-        .collect();
+    // 3. Build nodes
+    let nodes: Vec<_> = classes.iter().map(build_node).collect();
 
     // 4. Generate JSON
     let actual_json = generate_json(&nodes);
@@ -141,7 +138,7 @@ fn test_single_fixture(fixture_path: &Path, fixture_name: &str, output_dir: impl
         }
 
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            generate_files(&nodes, Path::new(output_dir), "testRegisterTypes");
+            generate_files(&nodes, Path::new(output_dir), "testRegisterTypes", false);
         })) {
             Ok(_) => println!("  ✓ Generated .hpp files in: {}", output_dir),
             Err(_) => println!("  ⚠ Skipped .hpp generation"),

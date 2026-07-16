@@ -48,6 +48,11 @@ message WorkspaceSave {
   string path = 2;
 }
 
+message WorkspaceAutosave {
+  uint64 handle = 1;
+  string path = 2;
+}
+
 message WorkspaceCreateNode {
   string parent = 1;
   string type = 2;
@@ -109,6 +114,31 @@ message WorkspacePromoteNode {
   string path = 2;
 }
 
+message WorkspacePause {
+  uint64 handle = 1;
+  bool paused = 2;
+}
+
+// 0 Select, 1 Translate, 2 Rotate, 3 Scale, 4 Ruler
+message SetGizmoTool {
+  uint32 tool = 1;
+}
+
+message SetCoordinateSpace {
+  bool world = 1;
+}
+
+// kind: 0 translate, 1 rotate, 2 scale
+message SetSnapping {
+  uint32 kind = 1;
+  bool enabled = 2;
+  float value = 3;
+}
+
+message SetCameraMode {
+  bool game = 1;
+}
+
 message InspectorField {
   string name = 1;
   string value = 2;
@@ -119,4 +149,42 @@ message InspectorContent {
   bool enabled = 2;
   repeated InspectorField parameters = 3;
   string uid = 4;
+}
+
+message LuaField {
+  string path = 1;
+  string name = 2;
+  uint32 kind = 3;
+  bool is_array = 4;
+  string ref_type = 5;
+  string value = 6;
+  string default_value = 7;
+}
+
+message LuaSubgroup {
+  string name = 1;
+  repeated LuaField fields = 2;
+}
+
+message LuaGroup {
+  string name = 1;
+  repeated LuaField fields = 2;
+  repeated LuaSubgroup subgroups = 3;
+}
+
+message LuaScriptCard {
+  string script = 1;
+  repeated LuaField fields = 2;
+  repeated LuaGroup groups = 3;
+}
+
+message InspectorLuaContent {
+  string uid = 1;
+  uint32 schema_version = 2;
+  repeated LuaScriptCard scripts = 3;
+}
+
+message NodeChangeLuaParam {
+  string path = 1;
+  string value = 2;
 }

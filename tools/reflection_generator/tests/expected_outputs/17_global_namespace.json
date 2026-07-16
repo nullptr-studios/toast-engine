@@ -1,7 +1,37 @@
 [
   {
     "attributes": {},
-    "functions": {
+    "fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_value",
+        "typename": "int"
+      }
+    ],
+    "functions": [
+      "tick"
+    ],
+    "global_fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_value",
+        "typename": "int"
+      }
+    ],
+    "groups": [],
+    "is_interface": false,
+    "methods": [],
+    "name": "GlobalNamespaceNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "17_global_namespace.hpp",
+    "tick_functions": {
       "begin": false,
       "destroy": false,
       "early_tick": false,
@@ -15,22 +45,6 @@
       "pre_init": false,
       "save": false,
       "tick": true
-    },
-    "global_fields": [
-      {
-        "attributes": {},
-        "default": null,
-        "field_type": "int_t",
-        "is_array": false,
-        "name": "m_value",
-        "typename": "int"
-      }
-    ],
-    "groups": [],
-    "methods": [],
-    "name": "GlobalNamespaceNode",
-    "namespace": null,
-    "parent": null,
-    "source_file": "17_global_namespace.hpp"
+    }
   }
 ]

@@ -15,7 +15,16 @@ namespace assets {
 
 class TOAST_API Data : public Asset, public ISaveable {
 public:
+	/// @brief Tag type for the keep-all-keys constructor
+	struct KeepAllKeysTag { };
+
+	static constexpr KeepAllKeysTag keep_all_keys {};
+
 	explicit Data(const toml::table& table, AssetHandle<Schema> schema = {});
+
+	/// @brief Stores the schema handle for round-trip serialization but runs free-form buildRoot,
+	///        keeping every TOML key
+	Data(const toml::table& table, AssetHandle<Schema> schema, KeepAllKeysTag);
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {

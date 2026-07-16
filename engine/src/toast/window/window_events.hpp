@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#include "toast/events/event.hpp"
+#include <toast/events/event.hpp>
 
 namespace event {
 

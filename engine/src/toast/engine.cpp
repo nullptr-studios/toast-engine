@@ -3,22 +3,32 @@
 #include "application.hpp"
 #include "assets/asset_manager.hpp"
 #include "assets/prefab.hpp"
+#include "audio/audio_system.hpp"
 #include "events/event.hpp"
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
+#include "input/haptics_system.hpp"
+#include "input/input_events.hpp"
+#include "input/input_system.hpp"
 #include "logger.hpp"
+#include "project_settings.hpp"
+#include "reflect/reflect.hpp"
+#include "renderer/passes/debug_pass.hpp"
+#include "renderer/passes/mesh_pass.hpp"
 #include "renderer/sdl_output_target.hpp"
 #include "renderer/shader_compiler.hpp"
+#include "renderer/shader_layout.hpp"
 #include "renderer/shared_texture_output_target.hpp"
 #include "renderer/vulkan_core.hpp"
-#include "renderer/vulkan_pipeline.hpp"
 #include "renderer/vulkan_renderer.hpp"
+#include "scripting/lua_state.hpp"
 #include "thread_pool.hpp"
 #include "time.hpp"
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
-#include "world/reflect.hpp"
+#include "world/camera.hpp"
+#include "world/play_workspace.hpp"
 #include "world/workspace.hpp"
 #include "world/workspace_events.hpp"
 #include "world/world.hpp"
@@ -37,34 +47,11 @@ namespace toast {
 
 namespace {
 IApplication* active_application = nullptr;
-
-// FIXME: DEBUGGING PURPORSES
-auto createTrianglePipeline(
-    const renderer::VulkanCore& core, vk::Format color_format, vk::Extent2D extent, std::optional<vk::Format> depth_format
-) -> std::unique_ptr<renderer::VulkanPipeline> {
-	// Compile shader
-	auto shader_spirv = renderer::ShaderCompiler::compileShader("./mirrors.slang");
-
-	// Define our runtime layout payload requirements
-	std::vector<vk::DescriptorSetLayoutBinding> descriptor_bindings;
-	descriptor_bindings.emplace_back(
-	    0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment
-	);
-
-	// Create pipeline using the new generic configuration parameters
-	renderer::VulkanPipeline::Config config {
-	  .debug_name = "triangle Pipeline",
-	  .color_format = color_format,
-	  .extent = extent,
-	  .shader_spirv = shader_spirv,
-	  .depth_format = depth_format,
-	  .descriptor_bindings = descriptor_bindings,
-	  .push_constant_ranges = {},
-	  .cull_mode = vk::CullModeFlagBits::eBack
-	};
-
-	return std::make_unique<renderer::VulkanPipeline>(core, config);
-}
+Camera* camera = nullptr;
+float total_time = 0.0;
+double clear_assets_timer = 0.0;
+double lua_memory_plot_timer = 0.0;
+double script_reload_timer = 0.0;
 
 }
 
@@ -76,8 +63,13 @@ struct EnginePimpl {
 	std::unique_ptr<IBaseWindow> window = nullptr;
 	std::unique_ptr<World> world = nullptr;
 	std::unique_ptr<assets::AssetManager> asset_manager = nullptr;
+	std::unique_ptr<input::InputSystem> input_system = nullptr;
+	std::unique_ptr<input::HapticsSystem> haptics_system = nullptr;
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
+	std::unique_ptr<audio::AudioSystem> audio_system = nullptr;
+	std::unique_ptr<ProjectSettings> settings = nullptr;
+	std::unique_ptr<scripting::LuaState> lua_state = nullptr;
 	Time time;
 	event::Listener listener;
 	toast::NodeRegistry reflection_registry;
@@ -89,11 +81,6 @@ struct EnginePimpl {
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
 	toast::UID active_workspace {0};
 };
-
-Engine::~Engine() noexcept {
-	delete m;
-	instance = nullptr;
-}
 
 Engine::Engine() noexcept {
 	instance = this;
@@ -134,7 +121,35 @@ void Engine::init() {
 	event::registerProtoEvents();
 	registerEngineTypes();
 
+	// Find the first .toast project file in the project root and load settings
+	{
+		std::filesystem::path toast_path;
+		const auto& proj_root = assets::AssetManager::projectRoot();
+		if (!proj_root.empty() && std::filesystem::is_directory(proj_root)) {
+			for (const auto& entry : std::filesystem::directory_iterator(proj_root)) {
+				if (entry.path().extension() == ".toast") {
+					toast_path = entry.path();
+					break;
+				}
+			}
+		}
+		m->settings = std::make_unique<ProjectSettings>(toast_path);
+	}
+
+	// Register content database VFS roots derived from project settings
+	{
+		const auto& proj_root = assets::AssetManager::projectRoot();
+		for (const auto& db : ProjectSettings::databases()) {
+			assets::AssetManager::registerDatabase(db, proj_root / db);
+		}
+	}
+
 	m->asset_manager = std::make_unique<assets::AssetManager>();
+
+	m->input_system = std::make_unique<input::InputSystem>();
+	m->haptics_system = std::make_unique<input::HapticsSystem>();
+
+	m->lua_state = scripting::LuaState::create();
 
 	// TODO: This should be moved into VulkanRenderer
 	m->listener.subscribe<event::WindowResize>([this](const event::WindowResize& e) {
@@ -142,12 +157,13 @@ void Engine::init() {
 			return false;
 		}
 
-		m->renderer->resize(vk::Extent2D {static_cast<uint32_t>(e.width), static_cast<uint32_t>(e.height)});
+		m->renderer->applyResize(vk::Extent2D {static_cast<uint32_t>(e.width), static_cast<uint32_t>(e.height)});
 		return false;
 	});
 
 	m->listener.subscribe<event::WorkspaceDestroy>([this](const event::WorkspaceDestroy& e) {
 		destroyWorkspace(e.handle);
+		event::send<event::ClearUnusedAssets>();
 		return false;
 	});
 
@@ -157,6 +173,72 @@ void Engine::init() {
 		event::send<event::RequestHierarchyUpdate>();
 		return false;
 	});
+
+	// A script source changed on disk
+	// rebuild the runtimes that use it everywhere and let the schedulers recompute
+	m->listener.subscribe<event::ScriptAssetReloaded>([this](const event::ScriptAssetReloaded& e) {
+		{
+			std::scoped_lock lock(m->owners_mutex);
+			for (const auto& [_, node_owner] : m->owners) {
+				node_owner->reloadScriptsUsing(e.uid);
+			}
+		}
+		World::hotReloadScripts(e.uid);
+		event::send<event::RequestHierarchyUpdate>();
+		return false;
+	});
+
+	m->audio_system = std::make_unique<audio::AudioSystem>();
+}
+
+Engine::~Engine() noexcept {
+	if (m) {
+		if (m->renderer) {
+			m->renderer->stop();
+		}
+
+		// remove objects before closing
+		{
+			std::scoped_lock lock(m->owners_mutex);
+			m->owners.clear();
+		}
+		m->world.reset();
+		m->asset_manager.reset();
+		m->renderer.reset();
+		m->vulkan_core.reset();
+
+		delete m;
+		m = nullptr;
+	}
+
+	instance = nullptr;
+}
+
+void Engine::reloadSettings() {
+	// Find the .toast project file in the project root
+	std::filesystem::path toast_path;
+	const auto& proj_root = assets::AssetManager::projectRoot();
+	if (!proj_root.empty() && std::filesystem::is_directory(proj_root)) {
+		for (const auto& entry : std::filesystem::directory_iterator(proj_root)) {
+			if (entry.path().extension() == ".toast") {
+				toast_path = entry.path();
+				break;
+			}
+		}
+	}
+
+	// Clear old content database routes and reload settings
+	assets::AssetManager::clearDatabases();
+	m->settings = std::make_unique<ProjectSettings>(toast_path);
+
+	// Re-register content databases from updated settings
+	for (const auto& db : ProjectSettings::databases()) {
+		assets::AssetManager::registerDatabase(db, proj_root / db);
+	}
+
+	if (m->asset_manager) {
+		m->asset_manager->reloadManifest();
+	}
 }
 
 void Engine::tick() {
@@ -175,6 +257,9 @@ void Engine::tick() {
 
 	event::pollEvents();
 
+	m->input_system->tick();
+	m->haptics_system->tick();
+
 	{
 		std::scoped_lock lock(m->owners_mutex);
 		ZoneScopedN("NodeOwners::tick()");
@@ -188,13 +273,42 @@ void Engine::tick() {
 		ZoneScopedN("GameLayer::tick()");
 		active_application->tick();
 	}
+	total_time += Time::delta();
+	camera->worldPos(glm::vec3(std::sin(total_time) * 5.0f, std::cos(total_time) * 5.0f, 5));
 
-	if (m->renderer) {
-		m->renderer->drawFrame();
+	if (m->audio_system) {
+		m->audio_system->tick();
 	}
 
-	// TODO: HACK: we should introduce a proper relax mode
-	std::this_thread::sleep_for(std::chrono::milliseconds(5));
+	// TODO MOVE THIS
+	clear_assets_timer += Time::delta();
+	if (clear_assets_timer > 30.0) {
+		m->asset_manager->clearUnusedAssets();
+		clear_assets_timer = 0.0;
+	}
+
+	if (m->renderer) {
+		m->renderer->tick(total_time);
+	}
+
+	lua_memory_plot_timer += Time::delta();
+	if (lua_memory_plot_timer > 1.0) {
+		lua_memory_plot_timer = 0.0;
+		if (m->lua_state) {
+			m->lua_state->plotMemory();
+		}
+	}
+
+#ifdef DEBUG
+	// dev builds hot-reload script sources edited on disk
+	script_reload_timer += Time::delta();
+	if (script_reload_timer > 1.0) {
+		script_reload_timer = 0.0;
+		if (m->asset_manager) {
+			m->asset_manager->pollModifiedScripts();
+		}
+	}
+#endif
 }
 
 auto Engine::shouldClose() -> bool {
@@ -220,11 +334,27 @@ void Engine::createSDLWindow(const char* w_name) {
 	auto color_format = output_target->getColorFormat();
 	auto depth_format = renderer::VulkanRenderer::selectDepthFormat(*m->vulkan_core);
 
+	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
+
+	// FIXME: change this
+	camera = new Camera();
+	camera->worldPos(glm::vec3(0));
+
+	m->renderer->setActiveCamera(camera);
+
 	// create debug pipeline
-	auto pipeline = createTrianglePipeline(*m->vulkan_core, color_format, extent, depth_format);
+	auto pass = std::make_unique<renderer::MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
 
 	// create renderer
-	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target), std::move(pipeline));
+
+	m->renderer->addRenderPass(std::move(pass));
+
+	// m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
+
+	// capped to 240 for now
+	m->renderer->setFrameRateLimit(240.0);
+
+	m->renderer->start();
 }
 
 void Engine::createAvaloniaWindow() {
@@ -237,9 +367,27 @@ void Engine::createAvaloniaWindow() {
 
 	m->shared_target = output_target.get();
 
-	auto pipeline = createTrianglePipeline(*m->vulkan_core, color_format, extent, depth_format);
+	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
 
-	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target), std::move(pipeline));
+	// FIXME: change this
+	camera = new Camera();
+	camera->worldPos(glm::vec3(0));
+
+	m->renderer->setActiveCamera(camera);
+
+	// create debug pipeline
+	auto pass = std::make_unique<renderer::MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
+
+	// create renderer
+
+	m->renderer->addRenderPass(std::move(pass));
+
+	// Editor viewport gets the ground grid / debug lines / gizmo overlay
+	m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
+
+	m->renderer->setFrameRateLimit(240.0);
+
+	m->renderer->start();
 }
 
 auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::string> {
@@ -271,6 +419,58 @@ auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
 	return {uid, name};
 }
 
+auto Engine::openWorkspace(UID uid, std::string_view source_uri) -> std::pair<UID, std::string> {
+	std::scoped_lock lock(m->owners_mutex);
+	if (m->owners.contains(uid)) {
+		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
+		return {};
+	}
+
+	auto [it, _] = m->owners.emplace(uid, std::make_unique<Workspace>(uid, source_uri));
+
+	auto* ws = static_cast<Workspace*>(it->second.get());
+	if (!ws->isValid()) {
+		TOAST_ERROR("Engine", "Failed to load {} into workspace {}", source_uri, uid);
+		m->owners.erase(it);
+		return {};
+	}
+
+	std::string name = it->second->name();
+	return {uid, name};
+}
+
+auto Engine::playWorkspace(UID source_handle) -> std::pair<UID, std::string> {
+	std::scoped_lock lock(m->owners_mutex);
+	auto source_it = m->owners.find(source_handle);
+	if (source_it == m->owners.end()) {
+		TOAST_ERROR("Engine", "Trying to play workspace {} which doesn't exist", source_handle);
+		return {};
+	}
+
+	auto* source = static_cast<Workspace*>(source_it->second.get());
+	if (!source->isValid()) {
+		TOAST_ERROR("Engine", "Trying to play invalid workspace {}", source_handle);
+		return {};
+	}
+
+	// clone the live tree in memory, the play workspace instantiates from it with the same node UIDs
+	assets::Prefab prefab(source->rootNode());
+
+	UID handle;
+	handle.generate();
+	auto [it, _] = m->owners.emplace(handle, std::make_unique<PlayWorkspace>(handle, prefab));
+
+	auto* play = static_cast<PlayWorkspace*>(it->second.get());
+	if (!play->isValid()) {
+		TOAST_ERROR("Engine", "Failed to clone workspace {} for play mode", source_handle);
+		m->owners.erase(it);
+		return {};
+	}
+
+	std::string name = it->second->name();
+	return {handle, name};
+}
+
 void Engine::destroyWorkspace(UID handle) {
 	std::scoped_lock lock(m->owners_mutex);
 	m->owners.erase(handle);
@@ -281,6 +481,13 @@ void Engine::destroyWorkspace(UID handle) {
 
 auto Engine::activeWorkspace() -> UID {
 	return m->active_workspace;
+}
+
+void Engine::refreshNodeInfos() {
+	std::scoped_lock lock(m->owners_mutex);
+	for (const auto& [_, node_owner] : m->owners) {
+		node_owner->refreshNodeInfos();
+	}
 }
 
 auto Engine::getViewportFrame(void* dst, uint32_t dst_capacity, renderer::ViewportFrameDesc* out) -> int {
@@ -297,8 +504,67 @@ void pushApplicationLayer(IApplication* app) {
 	}
 
 	active_application = app;
+	app->registerTypes();
+	toast::World::hotReload();
+
+	if (Engine::get() != nullptr) {
+		Engine::get()->refreshNodeInfos();
+	}
+	if (scripting::LuaState::exists()) {
+		scripting::LuaState::get().refreshTypeMarkers();
+	}
 }
 
+void popApplicationLayer(IApplication* app) {
+	if (active_application == app) {
+		active_application = nullptr;
+	}
+}
+
+void Engine::popApplication() {
+	if (active_application) {
+		active_application->destroy();
+		delete active_application;
+		active_application = nullptr;
+	}
+}
+
+void Engine::beginApplication() {
+	if (active_application) {
+		active_application->begin();
+	}
+}
+
+void Engine::startGame() {
+	{
+		std::scoped_lock lock(m->owners_mutex);
+		// Use a well-known sentinel UID (-1) so the world can be found/removed if needed
+		m->owners.emplace(UID {static_cast<uint64_t>(-1ULL)}, std::make_unique<World>());
+	}
+
+	// Resolve the start scene from project settings
+	const ProjectSettings* ps = ProjectSettings::get();
+	if (!ps) {
+		TOAST_WARN("Engine", "startGame: no project settings; skipping start scene");
+		return;
+	}
+
+	const auto& init_scene_handle = toast::ProjectSettings::gameplaySettings().initScene();
+	const auto path = init_scene_handle.path();
+	if (path.empty()) {
+		TOAST_WARN("Engine", "startGame: no init_scene set in project settings");
+		return;
+	}
+
+	if (path.size() == 11) {
+		const toast::UID uid(toast::UID::fromString(path));
+		TOAST_INFO("Engine", "startGame: loading init scene by UID {}", uid);
+		World::loadNode(uid, true);
+	} else {
+		TOAST_INFO("Engine", "startGame: loading init scene by URI '{}'", path);
+		World::loadNode(path, true);
+	}
+}
 }
 
 // Tracy memory profiling
@@ -310,6 +576,7 @@ auto operator new(std::size_t count) -> void* {
 	return ptr;
 }
 
+// NOLINTNEXTLINE(readability-inconsistent-declaration-parameter-name)
 void operator delete(void* ptr) noexcept {
 	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
 	free(ptr);
@@ -354,13 +621,13 @@ void toast_destroy(engine_t* e) noexcept {
 }
 
 void toast_set_working_directory(
-    const char* assets, const char* artworks, const char* cache, const char* saved, const char* core
+    const char* project, const char* artworks, const char* cache, const char* saved, const char* core
 ) noexcept {
-	assets::AssetManager::setPaths({.assets = assets, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
+	assets::AssetManager::setPaths({.project = project, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
 }
 
 auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) noexcept -> int {
-	toast::renderer::ViewportFrameDesc desc {};
+	renderer::ViewportFrameDesc desc {};
 	const int result = toast::Engine::get()->getViewportFrame(dst, dst_capacity, &desc);
 	if (out) {
 		out->width = desc.width;
@@ -381,6 +648,22 @@ auto toast_create_workspace(const char* type) noexcept -> workspace_result {
 
 auto toast_open_workspace(const char* uid) noexcept -> workspace_result {
 	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid));
+
+	static thread_local std::string s_name;
+	s_name = std::move(name);
+	return {.uid = root_uid.data(), .name = s_name.c_str()};
+}
+
+auto toast_play_workspace(uint64_t source_handle) noexcept -> workspace_result {
+	auto [uid, name] = toast::Engine::get()->playWorkspace(toast::UID(source_handle));
+
+	static thread_local std::string s_name;
+	s_name = std::move(name);
+	return {.uid = uid.data(), .name = s_name.c_str()};
+}
+
+auto toast_open_workspace_from(const char* uid, const char* source_uri) noexcept -> workspace_result {
+	auto [root_uid, name] = toast::Engine::get()->openWorkspace(toast::UID::fromString(uid), source_uri);
 
 	static thread_local std::string s_name;
 	s_name = std::move(name);
@@ -450,5 +733,71 @@ void toast_reload_manifest() noexcept {
 	auto& mgr = assets::AssetManager::get();
 	mgr.clearUnusedAssets();
 	mgr.reloadManifest();
+}
+
+void toast_reload_project_settings() noexcept {
+	toast::Engine::get()->reloadSettings();
+}
+
+void toast_set_load_mode(int mode) noexcept {
+	assets::AssetManager::setLoadMode(mode == 1 ? assets::SaveMode::game : assets::SaveMode::editor);
+}
+
+void toast_mount_pack(const char* scheme, const char* pak_path) noexcept {
+	if (!scheme || !pak_path) {
+		return;
+	}
+	assets::AssetManager::mountPack(scheme, pak_path);
+}
+
+void toast_start_game() noexcept {
+	toast::Engine::get()->startGame();
+}
+
+void toast_begin_application() noexcept {
+	toast::Engine::get()->beginApplication();
+}
+
+void toast_pop_application() noexcept {
+	toast::Engine::get()->popApplication();
+}
+
+void toast_bake_asset(const char* uid_str, const char* out_path) noexcept {
+	if (!uid_str || !out_path) {
+		return;
+	}
+	try {
+		const toast::UID uid(toast::UID::fromString(uid_str));
+		auto* asset = assets::AssetManager::get().load(uid);
+		if (!asset) {
+			TOAST_ERROR("Engine", "toast_bake_asset: could not load asset {}", uid_str);
+			return;
+		}
+		auto* prefab = dynamic_cast<assets::Prefab*>(asset);
+		if (!prefab) {
+			TOAST_WARN("Engine", "toast_bake_asset: asset {} is not a Prefab, skipping", uid_str);
+			return;
+		}
+		const auto bytes = prefab->serialize(assets::SaveMode::game);
+		std::ofstream out(out_path, std::ios::binary | std::ios::trunc);
+		if (!out.is_open()) {
+			TOAST_ERROR("Engine", "toast_bake_asset: cannot open output path {}", out_path);
+			return;
+		}
+		out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+		TOAST_TRACE("Engine", "Baked asset {} → {}", uid_str, out_path);
+	} catch (const std::exception& e) { TOAST_ERROR("Engine", "toast_bake_asset: {}", e.what()); }
+}
+
+void toast_haptics_test(const char* toml_text) noexcept {
+	if (toml_text == nullptr) {
+		return;
+	}
+	try {
+		toml::table table = toml::parse(std::string_view {toml_text});
+		auto* haptic = new assets::Haptic(table);
+		assets::AssetHandle<assets::Haptic> handle {haptic, toast::UID::make(), "editor://haptic_test"};
+		event::send<event::PlayHapticDirect>(uint32_t {0}, std::move(handle));
+	} catch (const std::exception& e) { TOAST_ERROR("Haptics", "Failed to parse test haptic: {}", e.what()); }
 }
 }

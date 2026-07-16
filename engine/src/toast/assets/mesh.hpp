@@ -10,14 +10,20 @@
 #include "core_types.hpp"
 
 #include <glm/glm.hpp>
+#include <memory>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
+#include <toast/renderer/vertex.hpp>
+
+namespace renderer {
+class VulkanMesh;
+}
 
 namespace assets {
 
 namespace _detail {
 struct MeshFileHeader {
-	const std::array<uint8_t, 6> magic = {'T', 'M', 'E', 'S', 'H', '\0'};
+	std::array<uint8_t, 6> magic = {'T', 'M', 'E', 'S', 'H', '\0'};
 	uint16_t version = 1;
 	uint32_t vertex_count = 0;
 	uint32_t index_count = 0;
@@ -29,20 +35,9 @@ class TOAST_API Mesh final : public Asset {
 public:
 	using Index = uint32_t;
 
-	struct Vertex {
-		glm::vec3 position;
-		glm::vec3 normal;
-		glm::vec2 uv;
-		glm::vec3 tangent;
-		glm::vec3 color;
-	};
-
 	explicit Mesh(const std::vector<uint8_t>& data);
-
-	Mesh(std::string_view name, std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices)
-	    : m_name(name),
-	      m_vertices(std::move(vertices)),
-	      m_indices(std::move(indices)) { }
+	Mesh(std::string_view name, std::vector<renderer::Vertex>&& vertices, std::vector<uint32_t>&& indices);
+	~Mesh() override;
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
@@ -50,7 +45,7 @@ public:
 	}
 
 	[[nodiscard]]
-	auto vertices() const -> const std::vector<Vertex>& {
+	auto vertices() const -> const std::vector<renderer::Vertex>& {
 		return m_vertices;
 	}
 
@@ -58,6 +53,12 @@ public:
 	auto indices() const -> const std::vector<Index>& {
 		return m_indices;
 	}
+
+	[[nodiscard]]
+	auto gpuMesh() const -> const renderer::VulkanMesh&;
+
+	[[nodiscard]]
+	auto gpuMesh() -> renderer::VulkanMesh&;
 
 	[[nodiscard]]
 	auto name() const -> const std::string& {
@@ -69,8 +70,10 @@ public:
 
 private:
 	std::string m_name;
-	std::vector<Vertex> m_vertices;
+	std::vector<renderer::Vertex> m_vertices;
 	std::vector<Index> m_indices;
+
+	std::unique_ptr<renderer::VulkanMesh> m_gpu_mesh;
 };
 
 }

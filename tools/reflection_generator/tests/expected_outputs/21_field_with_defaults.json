@@ -1,21 +1,49 @@
 [
   {
     "attributes": {},
-    "functions": {
-      "begin": false,
-      "destroy": false,
-      "early_tick": false,
-      "end": false,
-      "init": false,
-      "late_tick": false,
-      "load": false,
-      "on_disable": false,
-      "on_enable": false,
-      "post_physics": false,
-      "pre_init": false,
-      "save": false,
-      "tick": false
-    },
+    "fields": [
+      {
+        "attributes": {},
+        "default": "42",
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_int",
+        "typename": "int"
+      },
+      {
+        "attributes": {},
+        "default": "3.14f",
+        "field_type": "float_t",
+        "is_array": false,
+        "name": "m_float",
+        "typename": "float"
+      },
+      {
+        "attributes": {},
+        "default": "\"hello\"",
+        "field_type": "string_t",
+        "is_array": false,
+        "name": "m_str",
+        "typename": "std::string"
+      },
+      {
+        "attributes": {},
+        "default": "true",
+        "field_type": "bool_t",
+        "is_array": false,
+        "name": "m_flag",
+        "typename": "bool"
+      },
+      {
+        "attributes": {},
+        "default": "glm::vec3(1, 2, 3)",
+        "field_type": "vec3_t",
+        "is_array": false,
+        "name": "m_vec",
+        "typename": "glm::vec3"
+      }
+    ],
+    "functions": [],
     "global_fields": [
       {
         "attributes": {},
@@ -59,10 +87,26 @@
       }
     ],
     "groups": [],
+    "is_interface": false,
     "methods": [],
     "name": "DefaultsNode",
     "namespace": null,
     "parent": null,
-    "source_file": "21_field_with_defaults.hpp"
+    "source_file": "21_field_with_defaults.hpp",
+    "tick_functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    }
   }
 ]

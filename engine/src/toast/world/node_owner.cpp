@@ -1,14 +1,17 @@
 #include "node_owner.hpp"
 
 #include "node.hpp"
-#include "toast/log.hpp"
-#include "toast/world/workspace_events.hpp"
 
 #include <algorithm>
+#include <charconv>
 #include <future>
 #include <memory>
+#include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
+#include <toast/log.hpp>
+#include <toast/scripting/script_runtime.hpp>
 #include <toast/thread_pool.hpp>
+#include <toast/world/workspace_events.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace toast {
@@ -64,9 +67,10 @@ auto INodeOwner::requestRuntimeCreate(Node& parent, std::string_view type) -> Bo
 	node->m_name = uniqueChildName(parent, stripNamespace(node->m_info->type));
 
 	// Initialization
-	node->callTick(node->info(), TickFunctionList::init);
-	node->callTick(node->info(), TickFunctionList::begin);
-	node->enabled(true);
+	node->propagateCallTick(node->info(), TickFunctionList::init);
+	node->propagateCallTick(node->info(), TickFunctionList::begin);
+	node->m_local_enabled = true;
+	node->propagateEnable();
 
 	event::send<event::RequestHierarchyUpdate>();
 	TOAST_TRACE("World", "Spawned node in {}", parent.name());
@@ -103,7 +107,8 @@ auto INodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
 	// Initialization
 	root->propagateCallTick(root->info(), TickFunctionList::init);
 	root->propagateCallTick(root->info(), TickFunctionList::begin);
-	root->enabled(true);
+	root->m_local_enabled = true;
+	root->propagateEnable();
 
 	event::send<event::RequestHierarchyUpdate>();
 	TOAST_TRACE("World", "Spawned node {} in {}", root->name(), parent.name());
@@ -181,6 +186,7 @@ auto INodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {
 		TOAST_ASSERT(result, "World", "Node allocation failed");
 	}
 	raw_node->m_info = info;     // attach reflection data
+	raw_node->m_reflect_type_name = info->type;
 	raw_node->m_owner = this;    // attach owner ptr
 
 	return raw_node->box();
@@ -190,6 +196,7 @@ auto INodeOwner::nodeAllocation(const assets::Prefab::BasicNode& node_data) noex
 	std::string type = node_data.type;
 	auto box = nodeAllocation(type);
 	applyFields(*box, node_data);
+	box->loadScripts();
 	return box;
 }
 
@@ -230,6 +237,39 @@ void INodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) 
 			f.set(&node, f_data->value);
 		}
 	});
+}
+
+void INodeOwner::applyLuaOverrides(Node& node, const assets::Prefab::BasicNode& data, const scripting::NodeResolver& find_node) {
+	if (data.lua_vars.empty()) {
+		return;
+	}
+	scripting::ScriptRuntime* rt = node.scriptRuntime();
+	if (!rt) {
+		return;
+	}
+
+	for (const auto& ov : data.lua_vars) {
+		const size_t colon = ov.path.find(':');
+		size_t instance = 0;
+		if (colon == std::string::npos || std::from_chars(ov.path.data(), ov.path.data() + colon, instance).ec != std::errc {}) {
+			TOAST_WARN("World", "Prefab lua_var override: malformed path '{}' on '{}'", ov.path, data.name);
+			continue;
+		}
+		const std::string_view var_path = std::string_view(ov.path).substr(colon + 1);
+
+		const scripting::ScriptSchema* schema = rt->instanceSchema(instance);
+		const scripting::LuaVarDesc* desc = schema != nullptr ? schema->find(var_path) : nullptr;
+		if (desc == nullptr) {
+			continue;    // script no longer declares this var, skip
+		}
+
+		std::any value = scripting::parseLuaValue(*desc, ov.value, find_node);
+		if (value.has_value()) {
+			rt->setVarByPath(instance, var_path, value);
+		} else {
+			TOAST_WARN("World", "Prefab lua_var override: couldn't parse '{}' for '{}'", ov.value, ov.path);
+		}
+	}
 }
 
 auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node> {
@@ -276,6 +316,18 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHa
 				TOAST_WARN("World", "Cast to UID of field Parent in {} failed, treating as Root", data.name);
 			}
 		}
+
+		applyLuaOverrides(*node, data, [&uid_map](std::string_view uid_text) -> Box<Node> {
+			if (uid_text.empty()) {
+				return {};
+			}
+			const uint64_t id = UID::fromString(std::string(uid_text));
+			if (id == 0) {
+				return {};
+			}
+			auto it = uid_map.find(id);
+			return it != uid_map.end() ? it->second : Box<Node> {};
+		});
 
 		node->m_type = has_parent ? NodeType::child : NodeType::root;
 
@@ -334,7 +386,9 @@ auto INodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, In
 	auto make_unresolved = [&](const assets::Prefab::BasicNode& chunk, uint64_t ref_uid) -> Box<Node> {
 		Box<Node> node = alloc_leaf(chunk);
 		node->m_unresolved_chunk = std::make_shared<const assets::Prefab::BasicNode>(chunk);
-		node->m_source_prefab = assets::AssetHandle<assets::Prefab>(nullptr, toast::UID(ref_uid));
+		UID uid {ref_uid};
+		std::string uri = assets::AssetManager::getURI(uid);
+		node->m_source_prefab = assets::AssetHandle<assets::Prefab>(nullptr, uid, uri);
 		return node;
 	};
 
@@ -412,6 +466,30 @@ void INodeOwner::reapTombstones() noexcept {
 	std::scoped_lock lock(nodes_mutex);
 	tombstones -= std::erase_if(nodes, [](const _detail::ControlBox& control) {
 		return control.node == nullptr && control.ref_count.load(std::memory_order_acquire) == 0;
+	});
+}
+
+void INodeOwner::reloadScriptsUsing(UID script_uid) noexcept {
+	std::scoped_lock lock(nodes_mutex);
+	forEachNode([&](const _detail::ControlBox& control) {
+		if (control.node == nullptr) {
+			return;
+		}
+		const bool uses_script = std::ranges::any_of(control.node->m_scripts, [&](const auto& handle) {
+			return handle.uid().data() == script_uid.data();
+		});
+		if (uses_script) {
+			control.node->reloadScripts();
+		}
+	});
+}
+
+void INodeOwner::refreshNodeInfos() noexcept {
+	std::scoped_lock lock(nodes_mutex);
+	forEachNode([](const _detail::ControlBox& control) {
+		if (control.node != nullptr) {
+			control.node->refreshInfo();
+		}
 	});
 }
 

@@ -16,6 +16,7 @@
 #include <string_view>
 #include <toast/assets/prefab.hpp>
 #include <toast/export.hpp>
+#include <toast/scripting/lua_value_codec.hpp>
 #include <toast/uid.hpp>
 #include <unordered_set>
 #include <vector>
@@ -30,6 +31,7 @@ public:
 	virtual void tick() = 0;
 
 	virtual void registerDependency(Node& from, Node& to) = 0;
+	virtual void unregisterDependency(Node& from, Node& to) = 0;
 
 	virtual auto findFrom(const Node& origin, std::string_view query) -> Box<Node> = 0;
 	virtual auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> = 0;
@@ -37,6 +39,9 @@ public:
 	auto requestRuntimeCreate(Node& parent, std::string_view type) -> Box<Node>;
 	auto requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node>;
 	auto requestRuntimeSpawn(Node& parent, std::string_view) -> Box<Node>;
+
+	void reloadScriptsUsing(UID script_uid) noexcept;
+	void refreshNodeInfos() noexcept;
 
 	struct InstantiateContext {
 		std::vector<uint64_t> asset_chain;    ///< UIDs of prefabs currently being instantiated; prevents infinite recursion
@@ -80,7 +85,7 @@ protected:
 	 * @brief Allocates and initializes a full node tree from a prefab asset
 	 *
 	 * Allocates every node, resolves embedded child prefabs recursively via ctx.resolver,
-	 * and calls pre_init on each node before returning.
+	 * and calls pre_init and load on each node before returning
 	 *
 	 * @param file The prefab to instantiate
 	 * @param ctx Resolver for child prefabs and the asset chain used for cycle detection;
@@ -91,6 +96,11 @@ protected:
 
 	/// Copies reflected field values from the serialized BasicNode onto the live node; skips fields absent from NodeInfo
 	void applyFields(Node& node, const assets::Prefab::BasicNode& data);
+
+	/**
+	 * @brief Restores edited Lua script variables saved in the prefab
+	 */
+	void applyLuaOverrides(Node& node, const assets::Prefab::BasicNode& data, const scripting::NodeResolver& find_node);
 
 	/// Marks the ControlBox as dead and increments tombstones; does not free memory
 	void releaseNode(_detail::ControlBox& control) noexcept;

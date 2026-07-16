@@ -26,45 +26,53 @@ public partial class TextureImporter : IAssetImporter {
 
 	public IReadOnlyList<string> SupportedExtensions => [".png", ".jpg", ".jpeg", ".tga"];
 
+	public bool CanHandle(string filePath) {
+		var ext = Path.GetExtension(filePath);
+		return ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga";
+	}
+
 	public string DisplayName => "Texture";
 	public LucideIconKind Icon => LucideIconKind.Image;
 
 	public BaseAsset PrimaryOutputType => AssetTypeRegistry.ByExtension(".ktx2")!;
 
-	public IReadOnlyList<ImporterSetting> GetSettings() => [
-		new ImporterSetting("Generate Mipmaps", SettingKind.Bool,
-			() => m_settings.GenerateMipmaps,
-			v => m_settings.GenerateMipmaps = (bool)v!),
-		new ImporterSetting("Compression", SettingKind.Enum,
-			() => m_settings.Compression.ToString(),
-			v => m_settings.Compression = Enum.Parse<TextureCompression>((string)v!),
-			Options: Enum.GetNames<TextureCompression>()),
-		new ImporterSetting("Max Resolution", SettingKind.Enum,
-			() => m_settings.MaxResolution.ToString(),
-			v => m_settings.MaxResolution = int.Parse((string)v!),
-			Options: Settings.AllMaxResolutions.Select(r => r.ToString()).ToList()),
-		new ImporterSetting("Super Compression", SettingKind.Enum,
-			() => m_settings.SuperCompression.ToString(),
-			v => m_settings.SuperCompression = Enum.Parse<SuperCompression>((string)v!),
-			Options: Enum.GetNames<SuperCompression>()),
-		new ImporterSetting("Filter", SettingKind.Enum,
-			() => m_settings.Filter.ToString(),
-			v => m_settings.Filter = Enum.Parse<FilterMode>((string)v!),
-			Options: Enum.GetNames<FilterMode>()),
-		new ImporterSetting("Address U", SettingKind.Enum,
-			() => m_settings.AddressU.ToString(),
-			v => m_settings.AddressU = Enum.Parse<AddressMode>((string)v!),
-			Options: Enum.GetNames<AddressMode>()),
-		new ImporterSetting("Address V", SettingKind.Enum,
-			() => m_settings.AddressV.ToString(),
-			v => m_settings.AddressV = Enum.Parse<AddressMode>((string)v!),
-			Options: Enum.GetNames<AddressMode>()),
-		new ImporterSetting("Anisotropy", SettingKind.Float,
-			() => m_settings.Anisotropy,
-			v => m_settings.Anisotropy = (float)v!),
-	];
+	public IReadOnlyList<ImporterSetting> GetSettings() {
+		return [
+			new ImporterSetting("Generate Mipmaps", SettingKind.Bool,
+				() => m_settings.GenerateMipmaps,
+				v => m_settings.GenerateMipmaps = (bool)v!),
+			new ImporterSetting("Compression", SettingKind.Enum,
+				() => m_settings.Compression.ToString(),
+				v => m_settings.Compression = Enum.Parse<TextureCompression>((string)v!),
+				Options: Enum.GetNames<TextureCompression>()),
+			new ImporterSetting("Max Resolution", SettingKind.Enum,
+				() => m_settings.MaxResolution.ToString(),
+				v => m_settings.MaxResolution = int.Parse((string)v!),
+				Options: Settings.AllMaxResolutions.Select(r => r.ToString()).ToList()),
+			new ImporterSetting("Super Compression", SettingKind.Enum,
+				() => m_settings.SuperCompression.ToString(),
+				v => m_settings.SuperCompression = Enum.Parse<SuperCompression>((string)v!),
+				Options: Enum.GetNames<SuperCompression>()),
+			new ImporterSetting("Filter", SettingKind.Enum,
+				() => m_settings.Filter.ToString(),
+				v => m_settings.Filter = Enum.Parse<FilterMode>((string)v!),
+				Options: Enum.GetNames<FilterMode>()),
+			new ImporterSetting("Address U", SettingKind.Enum,
+				() => m_settings.AddressU.ToString(),
+				v => m_settings.AddressU = Enum.Parse<AddressMode>((string)v!),
+				Options: Enum.GetNames<AddressMode>()),
+			new ImporterSetting("Address V", SettingKind.Enum,
+				() => m_settings.AddressV.ToString(),
+				v => m_settings.AddressV = Enum.Parse<AddressMode>((string)v!),
+				Options: Enum.GetNames<AddressMode>()),
+			new ImporterSetting("Anisotropy", SettingKind.Float,
+				() => m_settings.Anisotropy,
+				v => m_settings.Anisotropy = (float)v!)
+		];
+	}
 
-	public async Task<IReadOnlyList<string>> Import(string realSourcePath, ImportContext ctx, Action<string> log,
+	public async Task<IReadOnlyList<string>> Import(
+		string realSourcePath, ImportContext ctx, Action<string> log,
 		Action<double>? progress = null) {
 		var uid = ctx.UidFor(0);
 		var name = Path.GetFileNameWithoutExtension(realSourcePath);

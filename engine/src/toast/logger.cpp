@@ -70,9 +70,9 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 						exe_dir = std::filesystem::path(exe_path).parent_path();
 					}
 #elif defined(_WIN32)
-					char exe_path[MAX_PATH];
-					if (GetModuleFileNameA(nullptr, exe_path, MAX_PATH)) {
-						exe_dir = std::filesystem::path(exe_path).parent_path();
+					std::array<char, MAX_PATH> exe_path;
+					if (GetModuleFileNameA(nullptr, exe_path.data(), MAX_PATH)) {
+						exe_dir = std::filesystem::path(exe_path.data()).parent_path();
 					}
 #endif
 				} catch (...) { std::println(std::cerr, "Couldnt find log server executable"); }
@@ -162,13 +162,6 @@ Logger::~Logger() noexcept {
 void Logger::log(std::string_view file, unsigned line, char severity, std::string_view sink, std::string_view message) {
 	auto* logger = instance;
 
-	// Add the logs to a fallback database if it doesn't exist, then send them when initialized
-	if (instance == nullptr) {
-		std::lock_guard lock(fallback_database_mutex);
-		fallback_database.emplace_back(file, line, severity, sink, message);
-		return;
-	}
-
 	// DEPRECATED: This is not used anymore
 	auto pos = sink.find_last_of(':');
 	std::string_view trimmed_sink;
@@ -179,21 +172,28 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 	}
 
 	if (not logger) {
+#if !defined(NDEBUG)
 		switch (severity) {
 			case 4:     // critical
 			case 3:     // error
 				std::println("\033[31m[ERROR] {}: {}\033[0m", trimmed_sink, message);
-				return;
+				break;
 			case 2:     // warning
 				std::println("\033[33m[WARNING] {}: {}\033[0m", trimmed_sink, message);
-				return;
+				break;
 			case 1:     // info
 				std::println("\033[32m[INFO] {}: {}\033[0m", trimmed_sink, message);
-				return;
+				break;
 			default:    // trace
 				std::println("[TRACE] {}: {}", trimmed_sink, message);
-				return;
+				break;
 		}
+#endif
+
+		// Add the logs to a fallback database if it doesn't exist, then send them when initialized
+		std::lock_guard lock(fallback_database_mutex);
+		fallback_database.emplace_back(file, line, severity, sink, message);
+		return;
 	}
 
 	proto::logging::LogData log;
@@ -220,7 +220,8 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 #ifdef DEBUG
 	// If in debug we are going to print warnings and errors on console
 	if (severity >= 3) {
-		std::println("\033[31m[ERROR] {}: {}\033[0m", trimmed_sink, message);
+		// FIXME: I GET A CRASH HERE WITH VK VALIDATION LAYERS!?!?!
+		//  std::println("\033[31m[ERROR] {}: {}\033[0m", trimmed_sink, message);
 	} else if (severity == 2) {
 		std::println("\033[33m[WARNING] {}: {}\033[0m", trimmed_sink, message);
 	}

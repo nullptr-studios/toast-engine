@@ -1,7 +1,35 @@
 [
   {
     "attributes": {},
-    "functions": {
+    "fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_value",
+        "typename": "int"
+      }
+    ],
+    "functions": [],
+    "global_fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_value",
+        "typename": "int"
+      }
+    ],
+    "groups": [],
+    "is_interface": false,
+    "methods": [],
+    "name": "ExportedNode",
+    "namespace": "toast",
+    "parent": null,
+    "source_file": "09_export_macros.hpp",
+    "tick_functions": {
       "begin": false,
       "destroy": false,
       "early_tick": false,
@@ -15,22 +43,6 @@
       "pre_init": false,
       "save": false,
       "tick": false
-    },
-    "global_fields": [
-      {
-        "attributes": {},
-        "default": null,
-        "field_type": "int_t",
-        "is_array": false,
-        "name": "m_value",
-        "typename": "int"
-      }
-    ],
-    "groups": [],
-    "methods": [],
-    "name": "ExportedNode",
-    "namespace": "toast",
-    "parent": null,
-    "source_file": "09_export_macros.hpp"
+    }
   }
 ]

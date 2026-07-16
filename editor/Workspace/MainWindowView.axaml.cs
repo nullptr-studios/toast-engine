@@ -20,11 +20,11 @@ namespace editor.Workspace;
 public partial class MainWindowView : Window {
 	private readonly ToastEngine? m_toast;
 	private readonly Border? m_toastBorder;
-	private CancellationTokenSource? m_toastCts;
 
 	private bool m_isResizing;
-	private double m_resizeStartY;
 	private double m_resizeStartH;
+	private double m_resizeStartY;
+	private CancellationTokenSource? m_toastCts;
 
 	public MainWindowView() {
 		InitializeComponent();
@@ -142,10 +142,14 @@ public partial class MainWindowView : Window {
 	}
 
 	// Typing takes priority
-	private bool IsTextInputFocused() => FocusManager?.GetFocusedElement() is TextBox;
+	private bool IsTextInputFocused() {
+		return FocusManager?.GetFocusedElement() is TextBox;
+	}
 
 	private void OnKeyDown(object? sender, KeyEventArgs e) {
-		if (e.Key != Key.Space || IsTextInputFocused()) return;
+		// during play the game owns the keyboard
+		// Space must reach the viewport, not the toast zone
+		if (e.Key != Key.Space || IsTextInputFocused() || WorkspaceViewModel.AnyPlayActive) return;
 		e.Handled = true;
 
 		if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
@@ -155,7 +159,7 @@ public partial class MainWindowView : Window {
 	}
 
 	private void OnKeyUp(object? sender, KeyEventArgs e) {
-		if (e.Key != Key.Space || IsTextInputFocused()) return;
+		if (e.Key != Key.Space || IsTextInputFocused() || WorkspaceViewModel.AnyPlayActive) return;
 		e.Handled = true;
 
 		if (!e.KeyModifiers.HasFlag(KeyModifiers.Control))

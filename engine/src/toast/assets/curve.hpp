@@ -37,8 +37,6 @@ public:
 		return "curve";
 	}
 
-	static constexpr std::string_view collection = "curve";
-
 	[[nodiscard]]
 	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 
@@ -47,6 +45,9 @@ public:
 
 	[[nodiscard]]
 	auto eval3D(float t) const -> glm::vec3;
+
+	[[nodiscard]]
+	auto evalAtX(float x) const -> float;
 
 	[[nodiscard]]
 	auto dimension() const noexcept -> CurveDimension {

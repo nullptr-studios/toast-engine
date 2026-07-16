@@ -14,17 +14,26 @@
 #pragma once
 #include "box.hpp"
 #include "control_box.hpp"
-#include "reflect.hpp"
-#include "toast/log.hpp"
-#include "toast/world/node_owner.hpp"
 
 #include <memory>
 #include <string>
 #include <string_view>
 #include <toast/assets/prefab.hpp>
+#include <toast/engine_defs.hpp>
 #include <toast/events/listener.hpp>
 #include <toast/export.hpp>
+#include <toast/log.hpp>
+#include <toast/reflect/reflect_node.hpp>
 #include <toast/uid.hpp>
+#include <toast/world/node_owner.hpp>
+
+namespace assets {
+class Script;
+}
+
+namespace scripting {
+class ScriptRuntime;
+}
 
 namespace toast {
 class INodeOwner;
@@ -53,6 +62,8 @@ class [[ToastNode, Icon("Circle")]] TOAST_API Node {
 	friend class INodeOwner;
 	friend class World;
 	friend class Workspace;
+	friend class PlayWorkspace;
+	friend class TickScheduler;
 	friend class Node3D;
 	friend class assets::Prefab;
 	friend struct _detail::ControlBox;
@@ -60,8 +71,8 @@ class [[ToastNode, Icon("Circle")]] TOAST_API Node {
 	friend struct toast::_detail::WorldTestAccess;
 
 public:
-	Node() = default;
-	virtual ~Node() = default;
+	Node();
+	virtual ~Node();
 
 	/**
 	 * @brief Stable unique identifier for this node
@@ -242,6 +253,85 @@ public:
 	[[nodiscard]]
 	auto search(std::string_view query) -> std::vector<Box<Node>>;
 
+	void addDependsOn(Node& other);
+	void removeDependsOn(Node& other);
+
+	[[nodiscard]]
+	auto scriptRuntime() noexcept -> scripting::ScriptRuntime* {
+		return m_script_runtime.get();
+	}
+
+	/**
+	 * @returns true if this node implements any of the given tick functions in C++ or Lua
+	 */
+	[[nodiscard]]
+	auto hasTickFunction(TickFunctionList mask) const noexcept -> bool;
+
+	/**
+	 * @brief Rebuilds the script runtime after a script asset changed (hot reload or attach)
+	 */
+	void reloadScripts() noexcept;
+
+	/**
+	 * @brief Invokes all C++ reflected implementations of `name` (base→derived) and
+	 *        all same-named Lua functions across every attached script, forwarding `args`
+	 * @tparam R Return type, for non-void the most-derived C++ return value is returned
+	 */
+	template<typename R = void, typename... Args>
+	auto call(std::string_view name, Args&&... args) -> R {
+		std::array<std::any, sizeof...(Args)> any_args {std::any(std::decay_t<Args>(args))...};
+		if constexpr (std::is_void_v<R>) {
+			if (m_info && m_info->getMethod(name)) {
+				_detail::callMethodChain(m_info, this, name, args...);
+			}
+			_detail::callNodeScripts(this, name, any_args);
+		} else {
+			R result {};
+			if (m_info && m_info->getMethod(name)) {
+				result = _detail::callMethodChain<R>(m_info, this, name, args...);
+			}
+			_detail::callNodeScripts(this, name, any_args);
+			return result;
+		}
+	}
+
+	/**
+	 * @brief Reads a named value: reflected C++ field first, then the first matching
+	 *        Lua instance variable
+	 * @return The field/variable value cast to T, or T{} on void
+	 */
+	template<typename T>
+	[[nodiscard]]
+	auto get(std::string_view name) const -> T {
+		if (m_info) {
+			if (const auto* f = m_info->getField(name)) {
+				std::any v = f->get(const_cast<Node*>(this));
+				if (auto* p = std::any_cast<T>(&v)) {
+					return *p;
+				}
+			}
+		}
+		std::any v = _detail::getNodeScriptVar(this, name);
+		if (auto* p = std::any_cast<T>(&v)) {
+			return *p;
+		}
+		return T {};
+	}
+
+	/**
+	 * @brief Writes a named value: reflected C++ field if present and every Lua instance
+	 *        variable of that name that already exists
+	 */
+	template<typename T>
+	void set(std::string_view name, const T& value) {
+		if (m_info) {
+			if (const auto* f = m_info->getField(name)) {
+				f->set(this, std::any(value));
+			}
+		}
+		_detail::setNodeScriptVar(this, name, std::any(value));
+	}
+
 protected:
 	INodeOwner* m_owner = nullptr;
 
@@ -268,6 +358,7 @@ private:
 
 	Box<Node> m_box;
 	const NodeInfo* m_info = nullptr;
+	std::string m_reflect_type_name;
 	bool m_prefab_interior =
 	    false;                 ///< true for nodes inside a prefab instance that are not the root; find() stops traversal here
 	std::vector<Box<Node>> m_children;
@@ -275,6 +366,12 @@ private:
 	    m_unresolved_chunk;    ///< keeps raw prefab data alive until all asset-handle fields are resolved
 
 	std::unique_ptr<event::Listener> m_listener = nullptr;
+
+	[[Reflect]]
+	std::vector<assets::AssetHandle<assets::Script>> m_scripts;
+
+	/// Per-node Lua script environment
+	std::unique_ptr<scripting::ScriptRuntime> m_script_runtime;
 
 	[[nodiscard]]
 	auto parentInternal() const noexcept -> Box<Node> {
@@ -289,6 +386,15 @@ private:
 
 	/// calls callTick on this node then recurses into children
 	void propagateCallTick(const NodeInfo* info, TickFunctionList func_type) noexcept;
+
+	/// calls onEnable only on enabled objects
+	void propagateEnable() noexcept;
+
+	/// Refresh m_info from NodeRegistry after hot reload
+	void refreshInfo();
+
+	/// Builds m_script_runtime from m_scripts
+	void loadScripts() noexcept;
 };
 
 }
@@ -301,3 +407,5 @@ auto reflect_cast(toast::Node* n) -> T* {    // NOLINT
 	}
 	return nullptr;
 }
+
+#include <node.generated.hpp>

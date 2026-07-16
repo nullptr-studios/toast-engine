@@ -58,7 +58,7 @@ struct WorkspaceSpawn : Event<WorkspaceSpawn> {
 	WorkspaceSpawn(toast::UID parent, std::string_view uri) : parent(parent), is_uri(true), uri(uri) { }
 };
 
-struct WorkspaceRemove : Event<WorkspaceRemove> {
+struct [[deprecated]] WorkspaceRemove : Event<WorkspaceRemove> {
 	toast::UID target;
 
 	WorkspaceRemove(toast::UID target) : target(target) { }
@@ -81,6 +81,13 @@ struct WorkspaceSave : Event<WorkspaceSave> {
 	std::string uri;
 
 	WorkspaceSave(toast::UID target, std::string uri) : target(target), uri(std::move(uri)) { }
+};
+
+struct WorkspaceAutosave : Event<WorkspaceAutosave> {
+	uint64_t handle;
+	std::string uri;
+
+	WorkspaceAutosave(uint64_t handle, std::string uri) : handle(handle), uri(std::move(uri)) { }
 };
 
 struct WorkspaceCreateNode : Event<WorkspaceCreateNode> {
@@ -163,6 +170,39 @@ struct NodeEnabled : Event<NodeEnabled> {
 	NodeEnabled(toast::UID n, bool enabled) : node(n), enabled(enabled) { }
 };
 
+struct WorkspacePause : Event<WorkspacePause> {
+	uint64_t handle;
+	bool paused;
+
+	WorkspacePause(uint64_t handle, bool paused) : handle(handle), paused(paused) { }
+};
+
+struct SetGizmoTool : Event<SetGizmoTool> {
+	uint32_t tool;
+
+	SetGizmoTool(uint32_t tool) : tool(tool) { }
+};
+
+struct SetCoordinateSpace : Event<SetCoordinateSpace> {
+	bool world;
+
+	SetCoordinateSpace(bool world) : world(world) { }
+};
+
+struct SetSnapping : Event<SetSnapping> {
+	uint32_t kind;
+	bool enabled;
+	float value;
+
+	SetSnapping(uint32_t kind, bool enabled, float value) : kind(kind), enabled(enabled), value(value) { }
+};
+
+struct SetCameraMode : Event<SetCameraMode> {
+	bool game;
+
+	SetCameraMode(bool game) : game(game) { }
+};
+
 struct InspectorContent : Event<InspectorContent> {
 	struct InspectorField {
 		std::string name;
@@ -181,6 +221,53 @@ struct InspectorContent : Event<InspectorContent> {
 	      name(name),
 	      enabled(enabled),
 	      parameters(std::move(fields)) { }
+};
+
+struct InspectorLuaContent : Event<InspectorLuaContent> {
+	struct LuaField {
+		std::string path;
+		std::string name;
+		uint32_t kind = 0;
+		bool is_array = false;
+		std::string ref_type;
+		std::string value;
+		std::string default_value;
+	};
+
+	struct LuaSubgroup {
+		std::string name;
+		std::vector<LuaField> fields;
+	};
+
+	struct LuaGroup {
+		std::string name;
+		std::vector<LuaField> fields;
+		std::vector<LuaSubgroup> subgroups;
+	};
+
+	struct LuaScriptCard {
+		std::string script;
+		std::vector<LuaField> fields;
+		std::vector<LuaGroup> groups;
+	};
+
+	std::string uid;
+	uint32_t schema_version = 0;
+	std::vector<LuaScriptCard> scripts;
+
+	InspectorLuaContent() = default;
+
+	InspectorLuaContent(std::string_view uid, uint32_t schema_version, std::vector<LuaScriptCard> scripts)
+	    : uid(uid),
+	      schema_version(schema_version),
+	      scripts(std::move(scripts)) { }
+};
+
+struct NodeChangeLuaParam : Event<NodeChangeLuaParam> {
+	std::string path;
+	std::string value;
+
+	NodeChangeLuaParam(std::string_view path, std::string_view value) : path(path), value(value) { }
 };
 
 }

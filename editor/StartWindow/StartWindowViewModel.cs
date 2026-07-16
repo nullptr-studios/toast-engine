@@ -91,7 +91,9 @@ public partial class StartWindowViewModel : ViewModelBase {
 
 		tasks.Add(LoaderTask.Do("Generate asset database", async log => {
 			AssetDatabase.RebuildAssetDatabase();
-			log("Rebuilt assets:// and core:// database");
+			log(
+				$"Rebuilt asset database ({string.Join(", ", ProjectContext.Databases.Select(db => db + "://"))}, core://)");
+
 			await Task.CompletedTask;
 		}));
 
@@ -106,9 +108,11 @@ public partial class StartWindowViewModel : ViewModelBase {
 		var refgen = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
 			"..", "reflection_generator", $"reflection_generator{exeExt}"));
 		var gameDb = ProjectContext.Resolve("cache://game_reflect.json");
+		var gameLuaStubs = ProjectContext.Resolve("cache://lua/game_types.d.lua");
 		tasks.Add(LoaderTask.Run("Generate game reflection", refgen,
 			$"--database \"{gameDb}\" --output \"{libGenerated}\" --input \"{libSrc}\" " +
-			$"--include-root \"{libSrc}\" --register-fn registerGameTypes --attribute Game"));
+			$"--include-root \"{libSrc}\" --register-fn registerGameTypes --attribute Game " +
+			$"--lua-stubs \"{gameLuaStubs}\""));
 
 		// Copy the engine reflection database to cache://
 		tasks.Add(LoaderTask.Do("Copy engine reflection", async log => {
@@ -121,6 +125,11 @@ public partial class StartWindowViewModel : ViewModelBase {
 				log($"warning: engine_reflect.json not found at {src}");
 			}
 
+			await Task.CompletedTask;
+		}));
+
+		tasks.Add(LoaderTask.Do("Sync lua definitions", async log => {
+			ProjectContext.SyncLuaDefinitions(log);
 			await Task.CompletedTask;
 		}));
 
@@ -226,7 +235,7 @@ public partial class StartWindowViewModel : ViewModelBase {
 						Title = dialog.ProjectTitle,
 						Path = dialog.ProjectPath,
 						Date = DateTime.Now.ToString("dd MMM yyyy HH:mm"),
-						Version = projectData?["version"].ToString() ?? dialog.ProjectVersion,
+						Version = projectData?["version"].ToString() ?? $"v{string.Join(".", dialog.ProjectVersion)}",
 						ThumbnailPath = File.Exists(thumbnailPath) ? thumbnailPath : ""
 					});
 				} catch {
@@ -234,7 +243,7 @@ public partial class StartWindowViewModel : ViewModelBase {
 						Title = dialog.ProjectTitle,
 						Path = dialog.ProjectPath,
 						Date = DateTime.Now.ToString("dd MMM yyyy HH:mm"),
-						Version = dialog.ProjectVersion,
+						Version = $"v{string.Join(".", dialog.ProjectVersion)}",
 						ThumbnailPath = ""
 					});
 				}

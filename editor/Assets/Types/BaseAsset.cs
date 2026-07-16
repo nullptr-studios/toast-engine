@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Lucide.Avalonia;
 using Tomlyn.Model;
@@ -21,6 +23,14 @@ public abstract class BaseAsset {
 
 	public string Uid { get; set; } = "";
 	public TomlTable? Meta { get; set; }
+
+	/// <summary>C++ class names used in AssetHandle&lt;T&gt; in reflection data</summary>
+	public virtual IReadOnlyList<string> CppTypeNames {
+		get {
+			var parts = Type.Split('_');
+			return [string.Concat(parts.Select(p => char.ToUpperInvariant(p[0]) + p[1..]))];
+		}
+	}
 
 	public virtual void GenerateThumbnail() { }
 

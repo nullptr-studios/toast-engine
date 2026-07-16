@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Media.Imaging;
@@ -20,6 +21,16 @@ using Proto.Events;
 namespace editor.Workspace;
 
 public class HierarchyElement : INotifyPropertyChanged {
+	private string m_draftName = "";
+
+	private bool m_isDropTarget;
+
+	private bool m_isExpanded = true;
+
+	private bool m_isRenaming;
+
+	private bool m_isSelected;
+
 	public HierarchyElement(Proto.Events.HierarchyElement e, HierarchyViewModel owner, HierarchyElement? parent = null) {
 		Owner = owner;
 		Parent = parent;
@@ -36,7 +47,7 @@ public class HierarchyElement : INotifyPropertyChanged {
 		}
 
 		try {
-			string iconName = ReflectionDatabase.ResolveIcon(e.Type);
+			var iconName = ReflectionDatabase.ResolveIcon(e.Type);
 			Icon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1.5x/{iconName}.png")));
 			SmallIcon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1x/{iconName}.png")));
 			LargeIcon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png")));
@@ -72,7 +83,6 @@ public class HierarchyElement : INotifyPropertyChanged {
 	public Thickness ContentMargin =>
 		new(HierarchyConnectorLayer.LeftPad + Depth * HierarchyConnectorLayer.IndentStep, 0, 0, 0);
 
-	private bool m_isExpanded = true;
 	public bool IsExpanded {
 		get => m_isExpanded;
 		set {
@@ -85,25 +95,21 @@ public class HierarchyElement : INotifyPropertyChanged {
 
 	public bool IsFolded => !IsExpanded && Children.Count > 0 && string.IsNullOrEmpty(Owner.FilterText);
 
-	private bool m_isSelected;
 	public bool IsSelected {
 		get => m_isSelected;
 		set => SetField(ref m_isSelected, value);
 	}
 
-	private bool m_isDropTarget;
 	public bool IsDropTarget {
 		get => m_isDropTarget;
 		set => SetField(ref m_isDropTarget, value);
 	}
 
-	private bool m_isRenaming;
 	public bool IsRenaming {
 		get => m_isRenaming;
 		set => SetField(ref m_isRenaming, value);
 	}
 
-	private string m_draftName = "";
 	public string DraftName {
 		get => m_draftName;
 		set {
@@ -115,7 +121,7 @@ public class HierarchyElement : INotifyPropertyChanged {
 
 	public event PropertyChangedEventHandler? PropertyChanged;
 
-	private void SetField(ref bool field, bool value, [System.Runtime.CompilerServices.CallerMemberName] string? name = null) {
+	private void SetField(ref bool field, bool value, [CallerMemberName] string? name = null) {
 		if (field == value) return;
 		field = value;
 		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
@@ -146,33 +152,30 @@ public partial class HierarchyViewModel : Tool {
 	private const string MoveToEnd = "end";
 
 	private readonly Listener m_listener;
+	private bool m_clipboardIsCut;
+
+	private string? m_clipboardUid;
+
+	[ObservableProperty] private string m_filterText = "";
 
 	private HierarchyState? m_hierState;
 
-	[ObservableProperty] private string m_filterText = "";
+	private bool m_pendingRenameAfterUpdate;
+	private HashSet<string>? m_rowUidsSnapshot;
 
 	[ObservableProperty] private HierarchyElement? m_selectedNode;
 
 	[ObservableProperty] private bool m_showPrefabChildren;
 
-	private string? m_clipboardUid;
-	private bool m_clipboardIsCut;
-
-	private bool m_pendingRenameAfterUpdate;
-	private HashSet<string>? m_rowUidsSnapshot;
-
-	public static HierarchyViewModel? Current { get; private set; }
-
-	public event Action? HierarchyChanged;
-	public event Action<HierarchyElement>? RenameStarted;
-
-	// raised whenever the selected node changes
-	public static event Action<HierarchyElement?>? SelectionChanged;
-
 	public HierarchyViewModel() {
 		Current = this;
 		m_listener = new Listener();
 		Root.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasNodes));
+
+		WorkspaceViewModel.PlayModeChanged += () => {
+			SaveCommand.NotifyCanExecuteChanged();
+			SaveAsCommand.NotifyCanExecuteChanged();
+		};
 
 		// engine sends UpdateHierarchyData after every change (create, delete, move, rename...)
 		// we post to the UI thread because engine callbacks come on the native tick thread
@@ -184,6 +187,7 @@ public partial class HierarchyViewModel : Tool {
 					m_hierState = HierarchyState.Load(e.Root.Uid);
 					Root.Add(new HierarchyElement(e.Root, this) { IsRoot = true });
 				}
+
 				// restore selection after the tree rebuilds so editing a node doesnt lose focus
 				SelectedNode = prevUid is null ? null : Find(Root, prevUid);
 				if (Root.Count > 0) ActiveWorkspace?.SetRootNode(Root[0].Uid);
@@ -207,6 +211,8 @@ public partial class HierarchyViewModel : Tool {
 		});
 	}
 
+	public static HierarchyViewModel? Current { get; private set; }
+
 	public ObservableCollection<HierarchyElement> Root { get; } = [];
 
 	public bool HasNodes => Root.Count > 0;
@@ -214,6 +220,12 @@ public partial class HierarchyViewModel : Tool {
 	public ObservableCollection<HierarchyElement> Rows { get; } = [];
 
 	private WorkspaceViewModel? ActiveWorkspace => Root.Count > 0 && Factory is DockFactory f ? f.ActiveWorkspace : null;
+
+	public event Action? HierarchyChanged;
+	public event Action<HierarchyElement>? RenameStarted;
+
+	// raised whenever the selected node changes
+	public static event Action<HierarchyElement?>? SelectionChanged;
 
 	// partial method hooked by the source generator -> fires when FilterText changes
 	partial void OnFilterTextChanged(string value) {
@@ -228,11 +240,13 @@ public partial class HierarchyViewModel : Tool {
 		HierarchyChanged?.Invoke();
 	}
 
-	internal bool IsCollapsed(string uid) => m_hierState?.Get(uid, false) ?? false;
+	internal bool IsCollapsed(string uid) {
+		return m_hierState?.Get(uid, false) ?? false;
+	}
 
 	public void RebuildRows() {
 		Rows.Clear();
-		bool filtering = !string.IsNullOrEmpty(FilterText);
+		var filtering = !string.IsNullOrEmpty(FilterText);
 		foreach (var root in Root) Flatten(root, 0, filtering);
 	}
 
@@ -324,7 +338,9 @@ public partial class HierarchyViewModel : Tool {
 		});
 	}
 
-	public HierarchyElement? Find(string uid) => Find(Root, uid);
+	public HierarchyElement? Find(string uid) {
+		return Find(Root, uid);
+	}
 
 	private static HierarchyElement? Find(IEnumerable<HierarchyElement> elements, string uid) {
 		foreach (var el in elements) {
@@ -398,6 +414,7 @@ public partial class HierarchyViewModel : Tool {
 			m_clipboardUid = null;
 			m_clipboardIsCut = false;
 		}
+
 		WorkspaceState.MarkModified();
 	}
 
@@ -506,12 +523,17 @@ public partial class HierarchyViewModel : Tool {
 		WorkspaceState.MarkModified();
 	}
 
-	[RelayCommand]
+	// saving is locked while any tab is in play mode
+	private static bool CanSave() {
+		return !WorkspaceViewModel.AnyPlayActive;
+	}
+
+	[RelayCommand(CanExecute = nameof(CanSave))]
 	private async Task Save(HierarchyElement? target) {
 		if (ActiveWorkspace is { } ws) await ws.Save();
 	}
 
-	[RelayCommand]
+	[RelayCommand(CanExecute = nameof(CanSave))]
 	private async Task SaveAs(HierarchyElement? target) {
 		if (ActiveWorkspace is { } ws) await ws.SaveAs();
 	}

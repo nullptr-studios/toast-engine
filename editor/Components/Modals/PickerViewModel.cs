@@ -17,7 +17,14 @@ public abstract class PickerViewModel {
 	public virtual LucideIconKind ExtraIconKind => LucideIconKind.Plus;
 
 	public abstract void UpdateFilter(string query, bool caseSensitive);
-	public virtual bool IsSelectable(object? item) => item is not null;
+
+	public virtual bool IsSelectable(object? item) {
+		return item is not null;
+	}
+
 	public abstract string? GetResult(object? selected);
-	public virtual Task OnExtraButton(Window owner, object? selected) => Task.CompletedTask;
+
+	public virtual Task OnExtraButton(Window owner, object? selected) {
+		return Task.CompletedTask;
+	}
 }

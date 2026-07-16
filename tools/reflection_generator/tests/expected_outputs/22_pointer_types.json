@@ -1,7 +1,35 @@
 [
   {
     "attributes": {},
-    "functions": {
+    "fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "uid_t",
+        "is_array": false,
+        "name": "m_texture",
+        "typename": "Box<Texture>"
+      }
+    ],
+    "functions": [],
+    "global_fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "uid_t",
+        "is_array": false,
+        "name": "m_texture",
+        "typename": "Box<Texture>"
+      }
+    ],
+    "groups": [],
+    "is_interface": false,
+    "methods": [],
+    "name": "PointerNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "22_pointer_types.hpp",
+    "tick_functions": {
       "begin": false,
       "destroy": false,
       "early_tick": false,
@@ -15,22 +43,6 @@
       "pre_init": false,
       "save": false,
       "tick": false
-    },
-    "global_fields": [
-      {
-        "attributes": {},
-        "default": null,
-        "field_type": "uid_t",
-        "is_array": false,
-        "name": "m_texture",
-        "typename": "Box<Texture>"
-      }
-    ],
-    "groups": [],
-    "methods": [],
-    "name": "PointerNode",
-    "namespace": null,
-    "parent": null,
-    "source_file": "22_pointer_types.hpp"
+    }
   }
 ]

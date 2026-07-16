@@ -7,7 +7,7 @@
 #include <string_view>
 #include <array>
 #include <type_traits>
-#include <toast/world/reflect.hpp>
+#include <toast/reflect/reflect_node.hpp>
 {% if has_asset_handle %}#include <toast/assets/asset_field_access.hpp>
 {% endif %}
 #include <{{ source_file }}>
@@ -33,9 +33,21 @@ namespace _detail {
 	inline auto {{ snake_name }}_method_{{ m.name }}(void* obj{% for p in m.parameters %}, std::decay_t<{{ p.type }}> {{ p.arg_name }}{% endfor %}) {
 		return (static_cast<{{ qualified_name }}*>(obj)->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{{ p.arg_name }}{% if not loop.last %}, {% endif %}{% endfor %});
 	}
+
+	inline std::any {{ snake_name }}_method_{{ m.name }}_dyn(void* obj, std::span<const std::any> args) {
+		auto* self = static_cast<{{ qualified_name }}*>(obj);
+{% if m.return_type == "void" %}
+		(self->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{% if "Box<" in p.type %}std::any_cast<toast::Box<toast::Node>>(args[{{ loop.index0 }}]).as<{{ p.type | replace("toast::Box<", "") | replace("const ", "") | replace("&", "") | replace(">", "") | trim }}>(){% else %}std::any_cast<std::decay_t<{{ p.type }}>>(args[{{ loop.index0 }}]){% endif %}{% if not loop.last %}, {% endif %}{% endfor %});
+		return std::any{};
+{% else %}
+		return std::any{ (self->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{% if "Box<" in p.type %}std::any_cast<toast::Box<toast::Node>>(args[{{ loop.index0 }}]).as<{{ p.type | replace("toast::Box<", "") | replace("const ", "") | replace("&", "") | replace(">", "") | trim }}>(){% else %}std::any_cast<std::decay_t<{{ p.type }}>>(args[{{ loop.index0 }}]){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}) };
+{% endif %}
+	}
 {% endfor %}
+{% if not is_interface %}
 	inline {{ qualified_name }}* {{ snake_name }}_construct() { return new {{ qualified_name }}(); }
-	inline void {{ snake_name }}_destroy({{ qualified_name }}* obj) { delete obj; }
+	inline void {{ snake_name }}_delete({{ qualified_name }}* obj) { delete obj; }
+{% endif %}
 }
 
 template<>
@@ -50,8 +62,8 @@ struct Reflect<{{ qualified_name }}> {
 			.value_type = FieldType::{{ f.field_type }},
 			.attributes = {{ '{{' }}{% for a in f.attrs_list %}{"{{ a.name }}", {{ '{' }}{% for v in a.args %}"{{ v }}"{% if not loop.last %}, {% endif %}{% endfor %}{{ '}' }}}{% if not loop.last %}, {% endif %}{% endfor %}{{ '}}' }},
 			.is_array   = {{ f.is_array | lower }},
-			.get        = &{% if f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::get,
-			.set        = &{% if f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::set,
+			.get        = &{% if f.is_asset_handle and f.is_array %}AssetArrayFieldAccess{% elif f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::get,
+			.set        = &{% if f.is_asset_handle and f.is_array %}AssetArrayFieldAccess{% elif f.is_asset_handle %}AssetFieldAccess{% else %}FieldAccess{% endif %}<{{ qualified_name }}, {{ f.typename }}, _detail::{{ snake_name }}_{{ f.name }}_tag>::set,
 		}{% if not loop.last %},{% endif %}
 
 {% endfor %}
@@ -100,8 +112,9 @@ struct Reflect<{{ qualified_name }}> {
 			.name           = "{{ m.name }}",
 			.return_type    = "{{ m.return_type }}",
 			.return_type_id = &typeid(std::decay_t<{{ m.return_type }}>),
-			.parameters     = {{ m.name }}_param_info,
-			.invoke         = reinterpret_cast<FunctionInfo::Invoker>(&_detail::{{ snake_name }}_method_{{ m.name }}),
+			.parameters      = {{ m.name }}_param_info,
+			.invoke          = reinterpret_cast<FunctionInfo::Invoker>(&_detail::{{ snake_name }}_method_{{ m.name }}),
+			.invoke_dynamic  = reinterpret_cast<FunctionInfo::DynamicInvoker>(&_detail::{{ snake_name }}_method_{{ m.name }}_dyn),
 		},
 	{% endfor %}
 	{{ '}}' }};
@@ -113,6 +126,9 @@ struct Reflect<{{ qualified_name }}> {
 {% endfor %}
 	};
 
+{% if split_typeinfo %}
+	TOAST_API static const toast::NodeInfo type_info;
+{% else %}
 	inline static const toast::NodeInfo type_info = {
 		.type       = name,
 		.base_type  = {% if parent_qualified_name %}&Reflect<{{ parent_qualified_name }}>::type_info{% else %}nullptr{% endif %},
@@ -121,9 +137,10 @@ struct Reflect<{{ qualified_name }}> {
 		.groups     = group_info,
 		.methods    = _method_info,
 		.functions  = tick_functions,
-		.construct  = reinterpret_cast<toast::NodeInfo::Factory>(&_detail::{{ snake_name }}_construct),
-		.destroy    = reinterpret_cast<toast::NodeInfo::Deleter>(&_detail::{{ snake_name }}_destroy),
+		.construct  = {% if is_interface %}nullptr{% else %}reinterpret_cast<toast::NodeInfo::Factory>(&_detail::{{ snake_name }}_construct){% endif %},
+		.destroy    = {% if is_interface %}nullptr{% else %}reinterpret_cast<toast::NodeInfo::Deleter>(&_detail::{{ snake_name }}_delete){% endif %},
 	};
+{% endif %}
 };
 
 } // namespace toast

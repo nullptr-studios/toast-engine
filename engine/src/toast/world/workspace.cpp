@@ -1,12 +1,12 @@
 #include "workspace.hpp"
 
 #include "node.hpp"
-#include "toast/engine.hpp"
-#include "toast/log.hpp"
 #include "workspace_events.hpp"
 #include "workspace_events.pb.h"
 
+#include <charconv>
 #include <format>
+#include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/trigonometric.hpp>
@@ -16,11 +16,33 @@
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/assets/prefab.hpp>
+#include <toast/engine.hpp>
+#include <toast/log.hpp>
+#include <toast/scripting/asset_proxy.hpp>
+#include <toast/scripting/lua_types.hpp>
+#include <toast/scripting/lua_value_codec.hpp>
+#include <toast/scripting/script_runtime.hpp>
 #include <toast/time.hpp>
 
 namespace toast {
 
+struct VectorStreamBuf : std::streambuf {
+	VectorStreamBuf(const std::vector<uint8_t>& vec) {
+		char* p = const_cast<char*>(reinterpret_cast<const char*>(vec.data()));
+		setg(p, p, p + vec.size());
+	}
+};
+
+using scripting::LuaVarDesc;
+using scripting::LuaVarKind;
+using scripting::parseLuaValue;
+using scripting::stringifyLuaValue;
+
 static std::unique_ptr<assets::Prefab> s_clipboard;
+
+Workspace::Workspace(UID handle, EmptyTag) : m_handle(handle) {
+	eventSubscriptions();
+}
 
 Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	ZoneScoped;
@@ -28,8 +50,8 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 
 	// Allocation
 	Box node = this->nodeAllocation(type);
-	node->propagateCallTick(node->info(), TickFunctionList::load);
 	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
+	node->propagateCallTick(node->info(), TickFunctionList::load);
 
 	// Data structure generation
 	generateUid(node);
@@ -40,9 +62,10 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	node->m_name = stripNamespace(node->info()->type);
 
 	// Initialization
-	node->callTick(node->info(), TickFunctionList::init);
-	node->callTick(node->info(), TickFunctionList::begin);
-	node->enabled(true);
+	node->propagateCallTick(node->info(), TickFunctionList::init);
+	node->propagateCallTick(node->info(), TickFunctionList::begin);
+	node->m_local_enabled = true;
+	node->propagateEnable();
 
 	m_root_node = node;
 	TOAST_INFO("World", "Created new workspace");
@@ -58,15 +81,43 @@ Workspace::Workspace(UID uid) : m_handle(uid) {
 		return;
 	}
 
+	initFromPrefab(file);
+	if (m_root_node.exists()) {
+		TOAST_INFO("World", "Opened workspace from {}", uid);
+	}
+}
+
+Workspace::Workspace(UID uid, std::string_view source_uri) : m_handle(uid) {
+	eventSubscriptions();
+
+	auto bytes = assets::AssetManager::get().loadBytes(source_uri);
+	if (not bytes.has_value()) {
+		TOAST_ERROR("World", "Couldn't open workspace source file {}", source_uri);
+		return;
+	}
+
+	// We need this because if we use the vector<uint8> constructor is going to try
+	// to load the node as a .tbnode rather than as a .tnode, we need to be careful with that
+	VectorStreamBuf buffer(*bytes);
+	std::istream autosave(&buffer);
+	assets::Prefab prefab(autosave);
+	assets::AssetHandle<assets::Prefab> file(&prefab, uid, "");
+	initFromPrefab(file);
+	if (m_root_node.exists()) {
+		TOAST_INFO("World", "Opened workspace {} from {}", uid, source_uri);
+	}
+}
+
+void Workspace::initFromPrefab(const assets::AssetHandle<assets::Prefab>& file) {
 	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
 	Box<Node> node = instantiate(file, ctx);
 	if (not node.exists()) {
-		TOAST_ERROR("World", "Failed to instantiate node {}", uid);
+		TOAST_ERROR("World", "Failed to instantiate node {}", m_handle);
 		return;
 	}
-	node->propagateCallTick(node->info(), TickFunctionList::load);
-	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
+	// node->propagateCallTick(node->info(), TickFunctionList::load);
+	// node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 
 	// Data structure generation
 	generateUid(node);
@@ -76,18 +127,22 @@ Workspace::Workspace(UID uid) : m_handle(uid) {
 	node->m_inherited_enabled = true;
 
 	// Initialization
-	node->callTick(node->info(), TickFunctionList::init);
-	node->callTick(node->info(), TickFunctionList::begin);
-	node->enabled(true);
+	node->propagateCallTick(node->info(), TickFunctionList::init);
+	node->propagateCallTick(node->info(), TickFunctionList::begin);
+	node->m_local_enabled = true;
+	node->propagateEnable();
 
 	m_root_node = node;
-	TOAST_INFO("World", "Opened workspace from {}", uid);
 }
 
 Workspace::~Workspace() {
 	if (!m_root_node.exists()) {
 		return;
 	}
+
+	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::on_disable);
+	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::end);
+	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::destroy);
 
 	std::vector<Node*> victims;
 	auto collect = [&victims](this auto&& self, Node& n) -> void {
@@ -127,6 +182,8 @@ void Workspace::registerDependency(Node& from, Node& to) {
 	// TODO:
 	// TOAST_NOT_IMPLEMENTED;
 }
+
+void Workspace::unregisterDependency(Node& from, Node& to) { }
 
 auto Workspace::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
 	uint64_t target = UID::fromString(query);
@@ -252,6 +309,26 @@ void Workspace::eventSubscriptions() {
 		if (assets::AssetManager::get().saveBytes(e.uri, bytes)) {
 			TOAST_INFO("World", "Saved workspace {} to {}", node->name(), e.uri);
 		}
+
+		event::send<event::ReloadAssetsManifest>();
+		return true;
+	});
+
+	// Unlike WorkspaceSave this matches on the workspace handle, so background
+	// workspaces autosave too, and it never touches the asset manifest
+	m_listener.subscribe<event::WorkspaceAutosave>([this](const auto& e) {
+		if (e.handle != m_handle.data()) {
+			return false;
+		}
+		if (not m_root_node.exists()) {
+			return true;
+		}
+
+		assets::Prefab prefab(*m_root_node);
+		auto bytes = prefab.serialize(assets::SaveMode::editor);
+		if (assets::AssetManager::get().saveBytes(e.uri, bytes)) {
+			TOAST_INFO("World", "Autosaved workspace {} to {}", m_root_node->name(), e.uri);
+		}
 		return true;
 	});
 
@@ -348,6 +425,52 @@ void Workspace::eventSubscriptions() {
 		}
 
 		field->set(&*m_focused_node, value);
+
+		if (field->name == "m_scripts") {
+			m_focused_node->reloadScripts();
+			event::send<event::RequestHierarchyUpdate>();
+		}
+		return true;
+	});
+
+	// Lua variable edits address "<instance>:group/subgroup/name" through the script schema
+	m_listener.subscribe<event::NodeChangeLuaParam>([this](const auto& e) {
+		if (not m_focused_node.exists()) {
+			return false;
+		}
+		scripting::ScriptRuntime* rt = m_focused_node->scriptRuntime();
+		if (rt == nullptr) {
+			return true;
+		}
+
+		const size_t colon = e.path.find(':');
+		size_t instance = 0;
+		if (colon == std::string::npos || std::from_chars(e.path.data(), e.path.data() + colon, instance).ec != std::errc {}) {
+			TOAST_WARN("World", "NodeChangeLuaParam: malformed path '{}'", e.path);
+			return true;
+		}
+		const auto var_path = std::string_view(e.path).substr(colon + 1);
+
+		const scripting::ScriptSchema* schema = rt->instanceSchema(instance);
+		const LuaVarDesc* desc = schema != nullptr ? schema->find(var_path) : nullptr;
+		if (desc == nullptr) {
+			TOAST_WARN("World", "NodeChangeLuaParam: unknown variable '{}'", e.path);
+			return true;
+		}
+
+		auto find_node = [this](std::string_view uid_text) -> Box<Node> {
+			if (uid_text.empty() || toast::UID::fromString(std::string(uid_text)) == 0) {
+				return {};
+			}
+			return findFrom(m_root_node, uid_text);
+		};
+
+		std::any value = parseLuaValue(*desc, e.value, find_node);
+		if (value.has_value()) {
+			rt->setVarByPath(instance, var_path, value);
+		} else {
+			TOAST_WARN("World", "NodeChangeLuaParam: couldn't parse '{}' for '{}'", e.value, e.path);
+		}
 		return true;
 	});
 
@@ -418,7 +541,7 @@ void Workspace::eventSubscriptions() {
 		}
 
 		assets::Prefab prefab(*src);
-		assets::AssetHandle<assets::Prefab> handle(&prefab, toast::UID(0));
+		assets::AssetHandle<assets::Prefab> handle(&prefab, toast::UID(0), "");
 
 		InstantiateContext ctx;
 		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
@@ -592,6 +715,45 @@ void Workspace::eventSubscriptions() {
 		return true;
 	});
 
+	// mirrored editor toolbar state; the active workspace is the one being edited
+	m_listener.subscribe<event::SetGizmoTool>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		m_gizmo_tool = static_cast<GizmoTool>(e.tool);
+		return true;
+	});
+
+	m_listener.subscribe<event::SetCoordinateSpace>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		m_world_space = e.world;
+		return true;
+	});
+
+	m_listener.subscribe<event::SetSnapping>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		SnapSetting setting {e.enabled, e.value};
+		switch (e.kind) {
+			case 0: m_translate_snap = setting; break;
+			case 1: m_rotate_snap = setting; break;
+			case 2: m_scale_snap = setting; break;
+			default: TOAST_WARN("World", "SetSnapping: unknown kind {}", e.kind); break;
+		}
+		return true;
+	});
+
+	m_listener.subscribe<event::SetCameraMode>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		m_game_camera = e.game;
+		return true;
+	});
+
 	m_listener.subscribe<event::WorkspaceCopyNode>([this](const auto& e) {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			return false;
@@ -618,7 +780,7 @@ void Workspace::eventSubscriptions() {
 			return true;
 		}
 
-		assets::AssetHandle<assets::Prefab> handle(s_clipboard.get(), toast::UID(0));
+		assets::AssetHandle<assets::Prefab> handle(s_clipboard.get(), toast::UID(0), "");
 		InstantiateContext ctx;
 		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
 		Box<Node> copy = instantiate(handle, ctx);
@@ -697,6 +859,60 @@ void Workspace::tick() {
 	event::send<event::InspectorContent>(
 	    m_focused_node->uid().get(), m_focused_node->name(), m_focused_node->enabled(), std::move(fields)
 	);
+
+	// The exported script variables travel in their own message so the editor can rebuild
+	// its Lua cards independently of the reflected C++ structure
+	std::vector<event::InspectorLuaContent::LuaScriptCard> cards;
+	uint32_t lua_schema_version = 0;
+
+	if (scripting::ScriptRuntime* rt = node->scriptRuntime()) {
+		lua_schema_version = rt->schemaVersion();
+		cards.reserve(rt->instanceCount());
+
+		for (size_t i = 0; i < rt->instanceCount(); ++i) {
+			const scripting::ScriptSchema* schema = rt->instanceSchema(i);
+			if (schema == nullptr) {
+				continue;
+			}
+
+			auto make_field = [&](const LuaVarDesc& d) {
+				event::InspectorLuaContent::LuaField f;
+				f.path = std::format("{}:{}", i, d.path);
+				f.name = d.name;
+				f.kind = static_cast<uint32_t>(d.kind);
+				f.is_array = d.is_array;
+				f.ref_type = d.ref_type;
+				f.value = stringifyLuaValue(d, rt->getVarByPath(i, d.path));
+				f.default_value = stringifyLuaValue(d, d.default_value);
+				return f;
+			};
+
+			event::InspectorLuaContent::LuaScriptCard card;
+			card.script = rt->instanceScript(i);
+			for (const auto& d : schema->fields) {
+				card.fields.push_back(make_field(d));
+			}
+			for (const auto& g : schema->groups) {
+				event::InspectorLuaContent::LuaGroup group;
+				group.name = g.name;
+				for (const auto& d : g.fields) {
+					group.fields.push_back(make_field(d));
+				}
+				for (const auto& sg : g.subgroups) {
+					event::InspectorLuaContent::LuaSubgroup sub;
+					sub.name = sg.name;
+					for (const auto& d : sg.fields) {
+						sub.fields.push_back(make_field(d));
+					}
+					group.subgroups.push_back(std::move(sub));
+				}
+				card.groups.push_back(std::move(group));
+			}
+			cards.push_back(std::move(card));
+		}
+	}
+
+	event::send<event::InspectorLuaContent>(m_focused_node->uid().get(), lua_schema_version, std::move(cards));
 }
 
 }

@@ -1,7 +1,37 @@
 [
   {
     "attributes": {},
-    "functions": {
+    "fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_value",
+        "typename": "int"
+      }
+    ],
+    "functions": [
+      "tick"
+    ],
+    "global_fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_value",
+        "typename": "int"
+      }
+    ],
+    "groups": [],
+    "is_interface": false,
+    "methods": [],
+    "name": "FirstNode",
+    "namespace": "test",
+    "parent": null,
+    "source_file": "08_multi_class.hpp",
+    "tick_functions": {
       "begin": false,
       "destroy": false,
       "early_tick": false,
@@ -15,27 +45,39 @@
       "pre_init": false,
       "save": false,
       "tick": true
-    },
+    }
+  },
+  {
+    "attributes": {},
+    "fields": [
+      {
+        "attributes": {},
+        "default": null,
+        "field_type": "string_t",
+        "is_array": false,
+        "name": "m_name",
+        "typename": "std::string"
+      }
+    ],
+    "functions": [],
     "global_fields": [
       {
         "attributes": {},
         "default": null,
-        "field_type": "int_t",
+        "field_type": "string_t",
         "is_array": false,
-        "name": "m_value",
-        "typename": "int"
+        "name": "m_name",
+        "typename": "std::string"
       }
     ],
     "groups": [],
+    "is_interface": false,
     "methods": [],
-    "name": "FirstNode",
+    "name": "SecondNode",
     "namespace": "test",
     "parent": null,
-    "source_file": "08_multi_class.hpp"
-  },
-  {
-    "attributes": {},
-    "functions": {
+    "source_file": "08_multi_class.hpp",
+    "tick_functions": {
       "begin": false,
       "destroy": false,
       "early_tick": false,
@@ -49,22 +91,6 @@
       "pre_init": false,
       "save": false,
       "tick": false
-    },
-    "global_fields": [
-      {
-        "attributes": {},
-        "default": null,
-        "field_type": "string_t",
-        "is_array": false,
-        "name": "m_name",
-        "typename": "std::string"
-      }
-    ],
-    "groups": [],
-    "methods": [],
-    "name": "SecondNode",
-    "namespace": "test",
-    "parent": null,
-    "source_file": "08_multi_class.hpp"
+    }
   }
 ]

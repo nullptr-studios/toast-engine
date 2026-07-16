@@ -14,12 +14,12 @@ namespace editor.Assets;
 
 public class AssetFile : INotifyPropertyChanged {
 	private static readonly IBrush s_unknownBrush = new SolidColorBrush(Color.Parse("#696969"));
+	private bool m_isSelected;
 
 	private Bitmap? m_thumbnail;
 	private bool m_thumbnailChecked;
 	private string? m_uid;
 	private bool m_uidChecked;
-	private bool m_isSelected;
 
 	public AssetFile(string path) {
 		Filepath = Path.GetFullPath(path);
@@ -37,6 +37,8 @@ public class AssetFile : INotifyPropertyChanged {
 	public string TypeLabel => Definition?.ChipText ?? "?";
 
 	public AssetBrowserViewModel? Owner { get; set; }
+
+	public bool CanModify => ProjectContext.IsInitialized && ProjectContext.IsUnderContentDatabase(Filepath);
 
 	public bool IsSelected {
 		get => m_isSelected;
@@ -71,7 +73,7 @@ public class AssetFile : INotifyPropertyChanged {
 					var bmp = new Bitmap(thumbPath);
 					Dispatcher.UIThread.Post(() => {
 						m_thumbnail = bmp;
-						Notify(nameof(Thumbnail));
+						Notify();
 						Notify(nameof(HasThumbnail));
 					});
 				} catch {
@@ -97,6 +99,7 @@ public class AssetFile : INotifyPropertyChanged {
 
 	public event PropertyChangedEventHandler? PropertyChanged;
 
-	private void Notify([CallerMemberName] string? name = null) =>
+	private void Notify([CallerMemberName] string? name = null) {
 		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+	}
 }

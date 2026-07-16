@@ -75,10 +75,12 @@ public sealed class DragVec4Box : DragVectorBoxBase {
 
 	protected override int AxisCount => 4;
 
-	protected override AxisSpec[] BuildAxes() => [
-		new AxisSpec(LabelXProperty, "Red", XProperty),
-		new AxisSpec(LabelYProperty, "Green", YProperty),
-		new AxisSpec(LabelZProperty, "Blue", ZProperty),
-		new AxisSpec(LabelWProperty, "Magenta", WProperty)
-	];
+	protected override AxisSpec[] BuildAxes() {
+		return [
+			new AxisSpec(LabelXProperty, "Red", XProperty),
+			new AxisSpec(LabelYProperty, "Green", YProperty),
+			new AxisSpec(LabelZProperty, "Blue", ZProperty),
+			new AxisSpec(LabelWProperty, "Magenta", WProperty)
+		];
+	}
 }

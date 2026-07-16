@@ -1,7 +1,22 @@
 [
   {
     "attributes": {},
-    "functions": {
+    "fields": [],
+    "functions": [
+      "preInit",
+      "tick",
+      "lateTick",
+      "destroy"
+    ],
+    "global_fields": [],
+    "groups": [],
+    "is_interface": false,
+    "methods": [],
+    "name": "TickOnlyNode",
+    "namespace": null,
+    "parent": null,
+    "source_file": "03_no_fields.hpp",
+    "tick_functions": {
       "begin": false,
       "destroy": true,
       "early_tick": false,
@@ -15,13 +30,6 @@
       "pre_init": true,
       "save": false,
       "tick": true
-    },
-    "global_fields": [],
-    "groups": [],
-    "methods": [],
-    "name": "TickOnlyNode",
-    "namespace": null,
-    "parent": null,
-    "source_file": "03_no_fields.hpp"
+    }
   }
 ]

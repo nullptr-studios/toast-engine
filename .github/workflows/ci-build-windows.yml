@@ -9,7 +9,6 @@ on:
       - opened
       - reopened
       - synchronize
-      - edited
 
 permissions:
   contents: read
@@ -30,7 +29,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
@@ -60,7 +59,7 @@ jobs:
             -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" `
             -DVCPKG_TARGET_TRIPLET=x64-windows
-          cmake --build build/windows-msvc-${{ matrix.build_type }}
+          cmake --build build/windows-msvc-${{ matrix.build_type }} --target dummy_game
 
   test-windows-debug:
     name: test windows debug
@@ -69,7 +68,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
@@ -101,7 +100,7 @@ jobs:
             -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" `
             -DVCPKG_TARGET_TRIPLET=x64-windows
-          cmake --build build/windows-test-debug
+          cmake --build build/windows-test-debug --target toast_tests
           ctest --test-dir build/windows-test-debug --verbose
 
   test-windows-release:
@@ -112,7 +111,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
@@ -144,7 +143,7 @@ jobs:
             -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" `
             -DVCPKG_TARGET_TRIPLET=x64-windows
-          cmake --build build/windows-test-release
+          cmake --build build/windows-test-release --target toast_tests
           ctest --test-dir build/windows-test-release --verbose
 
 

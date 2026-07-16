@@ -11,6 +11,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using editor.Components.Elements;
 using editor.Components.Modals;
+using editor.Engine;
 
 namespace editor.Assets.Importers;
 
@@ -19,11 +20,11 @@ public abstract partial class ImportNodeViewModel : ViewModelBase {
 	[ObservableProperty] private bool m_isEnabled = true;
 	[ObservableProperty] private bool m_isExpanded = true;
 	[ObservableProperty] private bool m_isReadOnly;
+
+	private bool? m_isSelected = false;
 	[ObservableProperty] private bool m_isVisible = true;
 	[ObservableProperty] private string m_name = string.Empty;
 	[ObservableProperty] private IReadOnlyList<TextSegment> m_nameSegments = [];
-
-	private bool? m_isSelected = false;
 
 	protected ImportNodeViewModel(string path, ImportFolderViewModel? parent) {
 		FullPath = Path.GetFullPath(path);
@@ -58,8 +59,9 @@ public abstract partial class ImportNodeViewModel : ViewModelBase {
 	}
 
 	// Sets the backing field without firing OnSelectionChanged (used when bubbling up)
-	public void UpdateSelectionSilently(bool? value) =>
+	public void UpdateSelectionSilently(bool? value) {
 		SetProperty(ref m_isSelected, value, nameof(IsSelected));
+	}
 
 	public abstract void ApplyFilter(string filter);
 
@@ -85,8 +87,8 @@ public abstract partial class ImportNodeViewModel : ViewModelBase {
 }
 
 public class ImportFileViewModel : ImportNodeViewModel {
-	private readonly string m_chipText;
 	private readonly string m_chipColor;
+	private readonly string m_chipText;
 
 	public ImportFileViewModel(
 		string path, ImportFolderViewModel? parent,
@@ -110,7 +112,7 @@ public class ImportFileViewModel : ImportNodeViewModel {
 		}
 
 		// Resolve chip info from the matching importer's primary output type
-		var matchedImporter = importers.FirstOrDefault(i => i.SupportedExtensions.Contains(ext));
+		var matchedImporter = importers.FirstOrDefault(i => i.CanHandle(path));
 		if (matchedImporter != null) {
 			var outputType = matchedImporter.PrimaryOutputType;
 			m_chipText = outputType.ChipText;
@@ -130,33 +132,33 @@ public class ImportFileViewModel : ImportNodeViewModel {
 	public override string ChipText => m_chipText;
 	public override string ChipColor => m_chipColor;
 
+	public override Action? SelectionChangedCallback { get; set; }
+
 	protected override void OnSelectionChanged(bool? value) {
 		Parent?.UpdateSelectionFromChildren();
 		SelectionChangedCallback?.Invoke();
 	}
 
 	public void ApplyFilter(string filter, bool showImported) {
-		if (IsImported) {
+		if (IsImported)
 			IsVisible = showImported && (string.IsNullOrWhiteSpace(filter) ||
-			                             Name.Contains(filter, StringComparison.OrdinalIgnoreCase));
-		} else {
+				Name.Contains(filter, StringComparison.OrdinalIgnoreCase));
+		else
 			IsVisible = string.IsNullOrWhiteSpace(filter) ||
-			            Name.Contains(filter, StringComparison.OrdinalIgnoreCase);
-		}
+				Name.Contains(filter, StringComparison.OrdinalIgnoreCase);
 		BuildNameSegments(filter);
 	}
 
-	public override void ApplyFilter(string filter) => ApplyFilter(filter, false);
-
-	private Action? m_selectionCallback;
-	public override Action? SelectionChangedCallback {
-		get => m_selectionCallback;
-		set => m_selectionCallback = value;
+	public override void ApplyFilter(string filter) {
+		ApplyFilter(filter, false);
 	}
 }
 
 public class ImportFolderViewModel : ImportNodeViewModel {
-	private ImportTreeState? m_state;
+	private readonly ImportTreeState? m_state;
+
+	// Override to propagate the callback to all children
+	private Action? m_selectionCallback;
 
 	public ImportFolderViewModel(
 		string path, ImportFolderViewModel? parent,
@@ -184,11 +186,20 @@ public class ImportFolderViewModel : ImportNodeViewModel {
 
 	public ObservableCollection<ImportNodeViewModel> Children { get; } = [];
 
+	public override Action? SelectionChangedCallback {
+		get => m_selectionCallback;
+		set {
+			m_selectionCallback = value;
+			foreach (var child in Children)
+				child.SelectionChangedCallback = value;
+		}
+	}
+
 	public override void ToggleSelection() {
 		if (!IsEnabled) return;
 		var selectable = SelectableChildren().ToList();
 		if (selectable.Count == 0) return;
-		bool allSelected = selectable.All(c => c.IsSelected == true);
+		var allSelected = selectable.All(c => c.IsSelected == true);
 		// Propagate via IsSelected setter
 		IsSelected = !allSelected;
 	}
@@ -205,8 +216,8 @@ public class ImportFolderViewModel : ImportNodeViewModel {
 	public void UpdateSelectionFromChildren() {
 		var importedCount = Children.Count(c => c is ImportFileViewModel { IsImported: true });
 		var selectableChildren = SelectableChildren().ToList();
-		bool hasSelectable = selectableChildren.Count > 0;
-		bool hasImported = importedCount > 0;
+		var hasSelectable = selectableChildren.Count > 0;
+		var hasImported = importedCount > 0;
 
 		if (!hasSelectable && !hasImported) {
 			// Empty folder
@@ -225,25 +236,25 @@ public class ImportFolderViewModel : ImportNodeViewModel {
 
 		IsEnabled = true;
 
-		bool allSelected = selectableChildren.All(c => c.IsSelected == true);
-		bool noneSelected = selectableChildren.All(c => c.IsSelected != true);
+		var allSelected = selectableChildren.All(c => c.IsSelected == true);
+		var noneSelected = selectableChildren.All(c => c.IsSelected != true);
 
 		bool? newState;
 		if (allSelected && !hasImported)
-			newState = true;   // fully checked
+			newState = true; // fully checked
 		else if (allSelected)
-			newState = null;   // all selectable checked but imported items force partial
+			newState = null; // all selectable checked but imported items force partial
 		else if (noneSelected)
-			newState = false;  // nothing selected
+			newState = false; // nothing selected
 		else
-			newState = null;   // mixed
+			newState = null; // mixed
 
 		UpdateSelectionSilently(newState);
 		Parent?.UpdateSelectionFromChildren();
 	}
 
 	public void ApplyFilter(string filter, bool showImported) {
-		bool anyVisible = false;
+		var anyVisible = false;
 		foreach (var child in Children) {
 			if (child is ImportFileViewModel fvm) fvm.ApplyFilter(filter, showImported);
 			else if (child is ImportFolderViewModel dvm) dvm.ApplyFilter(filter, showImported);
@@ -257,39 +268,32 @@ public class ImportFolderViewModel : ImportNodeViewModel {
 			IsVisible = anyVisible || Name.Contains(filter, StringComparison.OrdinalIgnoreCase);
 			if (IsVisible) IsExpanded = true;
 		}
+
 		BuildNameSegments(filter);
 	}
 
-	public override void ApplyFilter(string filter) => ApplyFilter(filter, false);
-
-	// Override to propagate the callback to all children
-	private Action? m_selectionCallback;
-	public override Action? SelectionChangedCallback {
-		get => m_selectionCallback;
-		set {
-			m_selectionCallback = value;
-			foreach (var child in Children)
-				child.SelectionChangedCallback = value;
-		}
+	public override void ApplyFilter(string filter) {
+		ApplyFilter(filter, false);
 	}
 
-	private IEnumerable<ImportNodeViewModel> SelectableChildren() =>
-		Children.Where(c => c.IsEnabled && c is not ImportFileViewModel { IsImported: true } && !c.IsReadOnly);
+	private IEnumerable<ImportNodeViewModel> SelectableChildren() {
+		return Children.Where(c => c.IsEnabled && c is not ImportFileViewModel { IsImported: true } && !c.IsReadOnly);
+	}
 }
 
 public partial class ImportWindowViewModel : ViewModelBase {
 	private readonly List<string> m_allowedExtensions;
 	private readonly List<IAssetImporter> m_importers;
 	private readonly ImportTreeState m_state;
-
-	[ObservableProperty] private string m_locationPath = "assets://";
-	[ObservableProperty] private string m_searchText = string.Empty;
-	[ObservableProperty] private bool m_showImported;
+	[ObservableProperty] private string m_artworkDestination = "artwork://";
+	[ObservableProperty] private string m_externalSourcePath = string.Empty;
 
 	[ObservableProperty] private bool m_isExternal;
-	[ObservableProperty] private string m_externalSourcePath = string.Empty;
+
+	[ObservableProperty] private string m_locationPath = "assets://";
 	[ObservableProperty] private bool m_moveToArtwork = true;
-	[ObservableProperty] private string m_artworkDestination = "artwork://";
+	[ObservableProperty] private string m_searchText = string.Empty;
+	[ObservableProperty] private bool m_showImported;
 
 	private Window? m_window;
 
@@ -300,6 +304,8 @@ public partial class ImportWindowViewModel : ViewModelBase {
 			new TextureImporter(TextureSettings),
 			new PsdImporter(TextureSettings, PsdSettings),
 			new GltfImporter(GltfSettings, TextureSettings),
+			new AudioBankImporter(),
+			new AudioStringImporter(AudioStringSettings)
 		];
 		m_allowedExtensions = [];
 		foreach (var importer in m_importers)
@@ -312,7 +318,8 @@ public partial class ImportWindowViewModel : ViewModelBase {
 
 		var artworkPath = ProjectContext.ArtworkPath;
 		if (Directory.Exists(artworkPath)) {
-			var rootFolder = new ImportFolderViewModel(artworkPath, null, m_allowedExtensions, importedFiles, m_importers, m_state);
+			var rootFolder = new ImportFolderViewModel(artworkPath, null, m_allowedExtensions, importedFiles, m_importers,
+				m_state);
 			rootFolder.SelectionChangedCallback = OnSelectionChangedInTree;
 			ImportNodes.Add(rootFolder);
 		}
@@ -321,19 +328,29 @@ public partial class ImportWindowViewModel : ViewModelBase {
 		RebuildSettingsCards();
 	}
 
-	private void OnSelectionChangedInTree() => RebuildSettingsCards();
-
 	public ObservableCollection<ImportNodeViewModel> ImportNodes { get; } = [];
 	public ObservableCollection<ImporterSettingsCardVM> SettingsCards { get; } = [];
 
 	public TextureImporter.Settings TextureSettings { get; } = new();
 	public PsdImporter.Settings PsdSettings { get; } = new();
 	public GltfImporter.Settings GltfSettings { get; } = new();
+	public AudioStringImporter.Settings AudioStringSettings { get; } = new();
 
-	public void SetWindow(Window window) => m_window = window;
+	private void OnSelectionChangedInTree() {
+		RebuildSettingsCards();
+	}
 
-	partial void OnSearchTextChanged(string value) => ApplyFilter();
-	partial void OnShowImportedChanged(bool value) => ApplyFilter();
+	public void SetWindow(Window window) {
+		m_window = window;
+	}
+
+	partial void OnSearchTextChanged(string value) {
+		ApplyFilter();
+	}
+
+	partial void OnShowImportedChanged(bool value) {
+		ApplyFilter();
+	}
 
 	private void ApplyFilter() {
 		foreach (var node in ImportNodes)
@@ -342,10 +359,14 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	private void ToggleShowImported() => ShowImported = !ShowImported;
+	private void ToggleShowImported() {
+		ShowImported = !ShowImported;
+	}
 
 	[RelayCommand]
-	private void ExpandAll() => SetExpandedAll(ImportNodes, true);
+	private void ExpandAll() {
+		SetExpandedAll(ImportNodes, true);
+	}
 
 	[RelayCommand]
 	private void CollapseAll() {
@@ -355,7 +376,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	}
 
 	private static void CollectSelectedParentPaths(IEnumerable<ImportNodeViewModel> nodes, HashSet<string> paths) {
-		foreach (var node in nodes) {
+		foreach (var node in nodes)
 			if (node is ImportFileViewModel { IsSelected: true } file) {
 				var parent = file.Parent;
 				while (parent != null) {
@@ -365,10 +386,10 @@ public partial class ImportWindowViewModel : ViewModelBase {
 			} else if (node is ImportFolderViewModel folder) {
 				CollectSelectedParentPaths(folder.Children, paths);
 			}
-		}
 	}
 
-	private static void SetExpandedAll(IEnumerable<ImportNodeViewModel> nodes, bool expanded,
+	private static void SetExpandedAll(
+		IEnumerable<ImportNodeViewModel> nodes, bool expanded,
 		HashSet<string>? keepExpanded = null) {
 		foreach (var node in nodes) {
 			if (keepExpanded == null || !keepExpanded.Contains(node.FullPath))
@@ -379,26 +400,34 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	}
 
 	private void RebuildSettingsCards() {
-		var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-		CollectSelectedExtensions(ImportNodes, extensions);
+		var selectedFiles = new List<string>();
+		CollectSelectedFilePaths(ImportNodes, selectedFiles);
 		SettingsCards.Clear();
 		var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
 		foreach (var importer in m_importers) {
-			if (!importer.SupportedExtensions.Any(ext => extensions.Contains(ext))) continue;
-			foreach (var settingsImporter in importer.GetAllSettingsImporters()) {
+			if (!selectedFiles.Any(path => importer.CanHandle(path))) continue;
+
+			foreach (var settingsImporter in importer.GetAllSettingsImporters())
 				if (seenNames.Add(settingsImporter.DisplayName))
 					SettingsCards.Add(new ImporterSettingsCardVM(settingsImporter, m_state));
-			}
 		}
 	}
 
+	private static void CollectSelectedFilePaths(IEnumerable<ImportNodeViewModel> nodes, List<string> result) {
+		foreach (var node in nodes)
+			if (node is ImportFileViewModel { IsSelected: true, IsImported: false } file)
+				result.Add(file.FullPath);
+			else if (node is ImportFolderViewModel folder)
+				CollectSelectedFilePaths(folder.Children, result);
+	}
+
 	private static void CollectSelectedExtensions(IEnumerable<ImportNodeViewModel> nodes, HashSet<string> result) {
-		foreach (var node in nodes) {
+		foreach (var node in nodes)
 			if (node is ImportFileViewModel { IsSelected: true, IsImported: false } file)
 				result.Add(Path.GetExtension(file.FullPath).ToLowerInvariant());
 			else if (node is ImportFolderViewModel folder)
 				CollectSelectedExtensions(folder.Children, result);
-		}
 	}
 
 	[RelayCommand]
@@ -444,7 +473,9 @@ public partial class ImportWindowViewModel : ViewModelBase {
 		try {
 			var destDir = ProjectContext.Resolve(LocationPath);
 			Directory.CreateDirectory(destDir);
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 
 		var (freshFiles, reimportFiles) = GetSelectedFiles(ImportNodes);
 		if (freshFiles.Count == 0 && reimportFiles.Count == 0) return;
@@ -474,7 +505,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 			return;
 		}
 
-		string realSourcePath = ExternalSourcePath;
+		var realSourcePath = ExternalSourcePath;
 
 		if (MoveToArtwork) {
 			// Copy into artwork:// first, then import via the normal path
@@ -482,7 +513,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 			Directory.CreateDirectory(artworkDir);
 			var destFileName = Path.GetFileName(ExternalSourcePath);
 			var artworkDest = Path.Combine(artworkDir, destFileName);
-			File.Copy(ExternalSourcePath, artworkDest, overwrite: true);
+			File.Copy(ExternalSourcePath, artworkDest, true);
 			realSourcePath = artworkDest;
 		}
 
@@ -512,14 +543,16 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	private void Cancel() => m_window?.Close();
+	private void Cancel() {
+		m_window?.Close();
+	}
 
 
 	private async Task ImportSingleFile(string realSourcePath, Action<string> log, Action<double>? progress = null) {
 		try {
 			var sourceVirtual = ProjectContext.ToVirtual(realSourcePath)
-			                    ?? throw new InvalidOperationException(
-				                    $"File is outside artwork path: {realSourcePath}");
+				?? throw new InvalidOperationException(
+					$"File is outside artwork path: {realSourcePath}");
 			log("Checking if up to date...");
 			var hash = AssetDatabase.ComputeHash(realSourcePath);
 			if (AssetDatabase.IsUpToDate(sourceVirtual, hash)) {
@@ -529,7 +562,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 
 			var destDir = ProjectContext.Resolve(LocationPath);
 			var ext = Path.GetExtension(realSourcePath).ToLowerInvariant();
-			var importer = m_importers.First(i => i.SupportedExtensions.Contains(ext));
+			var importer = m_importers.First(i => i.CanHandle(realSourcePath));
 			var ctx = new ImportContext { DestDir = destDir, SourceVirtualPath = sourceVirtual };
 			var uids = await importer.Import(realSourcePath, ctx, log, progress);
 			AssetDatabase.UpdateArtworkDatabase(sourceVirtual, hash, uids);
@@ -541,10 +574,11 @@ public partial class ImportWindowViewModel : ViewModelBase {
 		}
 	}
 
-	private async Task ImportSingleFileAbsolute(string realSourcePath, Action<string> log, Action<double>? progress = null) {
+	private async Task ImportSingleFileAbsolute(
+		string realSourcePath, Action<string> log, Action<double>? progress = null) {
 		try {
 			var ext = Path.GetExtension(realSourcePath).ToLowerInvariant();
-			var importer = m_importers.First(i => i.SupportedExtensions.Contains(ext));
+			var importer = m_importers.First(i => i.CanHandle(realSourcePath));
 			var destDir = ProjectContext.Resolve(LocationPath);
 			// Use a synthetic virtual path so importers don't crash (won't be tracked in DB).
 			var fakeVirtual = "artwork://" + Path.GetFileName(realSourcePath);
@@ -568,15 +602,16 @@ public partial class ImportWindowViewModel : ViewModelBase {
 					if (prop.Name is not ("type" or "version"))
 						result.Add(Path.GetFullPath(ProjectContext.Resolve(prop.Name)));
 		} catch (Exception e) {
-			Engine.Log.Error(e.Message);
+			Log.Error(e.Message);
 		}
+
 		return result;
 	}
 
 	private static (List<string> fresh, List<string> reimport) GetSelectedFiles(IEnumerable<ImportNodeViewModel> nodes) {
 		var fresh = new List<string>();
 		var reimport = new List<string>();
-		foreach (var node in nodes) {
+		foreach (var node in nodes)
 			if (node is ImportFileViewModel { IsSelected: true } file) {
 				if (file.IsImported) reimport.Add(file.FullPath);
 				else fresh.Add(file.FullPath);
@@ -585,7 +620,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 				fresh.AddRange(f);
 				reimport.AddRange(r);
 			}
-		}
+
 		return (fresh, reimport);
 	}
 }

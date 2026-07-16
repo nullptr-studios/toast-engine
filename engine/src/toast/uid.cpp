@@ -1,12 +1,11 @@
 #include "uid.hpp"
 
-#include "toast/log.hpp"
-
 #include <array>
 #include <atomic>
 #include <chrono>
 #include <string>
 #include <string_view>
+#include <toast/log.hpp>
 
 namespace {
 constexpr auto charset = std::to_array("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_");
@@ -56,6 +55,11 @@ auto UID::fromString(std::string_view b64) -> uint64_t {
 		table[static_cast<uint8_t>('/')] = 63;
 		return table;
 	}();
+
+	// empty "" UID is intended, don't show error
+	if (b64.empty()) {
+		return 0;
+	}
 
 	if (b64.size() != 11) {
 		TOAST_ERROR("UID", "Error parsing UID \"{}\"", b64);

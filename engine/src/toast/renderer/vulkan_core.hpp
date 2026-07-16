@@ -6,13 +6,17 @@
 
 #include "vulkan_common.hpp"
 
+#include <external/inc/renderdoc/renderdoc_app.h>
 #include <limits>
 #include <optional>
 #include <span>
 #include <vector>
 
-namespace toast::renderer {
+namespace renderer {
 
+/**
+ * @brief Represents the suitability score of a Vulkan physical device based on various criteria
+ */
 struct DeviceScore {
 	int total = 0;
 	int device_type = 0;
@@ -29,21 +33,20 @@ struct DeviceScore {
 
 	std::vector<std::string> missing_extensions;
 
+	/**
+	 * @brief Converts the device score to a string representation.
+	 * @return A string containing the device score details.
+	 */
 	[[nodiscard]]
-	auto toString() const -> std::string;
+	auto toString() const noexcept -> std::string;
 };
 
+/// @brief Manages Vulkan instance, device initialization, and memory allocation
 class VulkanCore {
 public:
-	/**
-	 * Initializes the Vulkan Core instance.
-	 * @param parameters The configuration parameters.
-	 * @return A reference to the VulkanCore object.
-	 */
-
 	VulkanCore(
 	    std::span<const char* const> required_instance_extensions, std::span<const char* const> required_device_extensions = {}
-	);
+	) noexcept;
 	~VulkanCore() = default;
 
 	// Prevent copying
@@ -51,64 +54,87 @@ public:
 	auto operator=(const VulkanCore&) -> VulkanCore& = delete;
 
 	[[nodiscard]]
-	auto getInstance() const -> const vk::raii::Instance& {
+	auto getInstance() const noexcept -> const vk::raii::Instance& {
 		return m_instance;
 	}
 
 	[[nodiscard]]
-	auto getDevice() const -> const vk::raii::Device& {
+	auto getDevice() const noexcept -> const vk::raii::Device& {
 		return m_device;
 	}
 
 	[[nodiscard]]
-	auto getPhysicalDevice() const -> const vk::raii::PhysicalDevice& {
+	auto getPhysicalDevice() const noexcept -> const vk::raii::PhysicalDevice& {
 		return m_physical_device;
 	}
 
 	[[nodiscard]]
-	auto getAllocator() const -> const vma::raii::Allocator& {
+	auto getAllocator() const noexcept -> const vma::raii::Allocator& {
 		return *m_allocator;
 	}
 
 	[[nodiscard]]
-	auto getGraphicsQueueFamilyIndex() const -> uint32_t {
+	auto getGraphicsQueueFamilyIndex() const noexcept -> uint32_t {
 		return m_graphics_queue_family_index;
 	}
 
 	[[nodiscard]]
-	auto getComputeQueueFamilyIndex() const -> uint32_t {
+	auto getComputeQueueFamilyIndex() const noexcept -> uint32_t {
 		return m_compute_queue_family_index;
 	}
 
 	[[nodiscard]]
-	auto getTransferQueueFamilyIndex() const -> uint32_t {
+	auto getTransferQueueFamilyIndex() const noexcept -> uint32_t {
 		return m_transfer_queue_family_index;
 	}
 
 	[[nodiscard]]
-	auto getGraphicsQueue() const -> vk::Queue {
+	auto getGraphicsQueue() const noexcept -> vk::Queue {
 		return m_graphics_queue;
 	}
 
 	[[nodiscard]]
-	auto getComputeQueue() const -> vk::Queue {
+	auto getComputeQueue() const noexcept -> vk::Queue {
 		return m_compute_queue;
 	}
 
 	[[nodiscard]]
-	auto getTransferQueue() const -> vk::Queue {
+	auto getTransferQueue() const noexcept -> vk::Queue {
 		return m_transfer_queue;
+	}
+
+	[[nodiscard]]
+	auto getRenderDocAPI() const noexcept -> const RENDERDOC_API_1_6_0* {
+		return rdoc_api;
+	}
+
+	/// @brief Whether validation layers are enabled
+	[[nodiscard]]
+	auto validationEnabled() const noexcept -> bool {
+		return m_validation_enabled;
+	}
+
+	/// @brief Whether the selected device supports anisotropic filtering
+	[[nodiscard]]
+	auto supportsSamplerAnisotropy() const noexcept -> bool {
+		return m_sampler_anisotropy_supported;
+	}
+
+	/// @brief Device limit to clamp requested sampler anisotropy against
+	[[nodiscard]]
+	auto maxSamplerAnisotropy() const noexcept -> float {
+		return m_max_sampler_anisotropy;
 	}
 
 private:
 	/**
 	 * Evaluates available Vulkan physical devices and selects the most suitable one
 	 * based on required extension support, queue family constraints, and a calculated suitability score.
-	 * Updates internal state with the selected device and corresponding queue family indices.
-	 * Logs evaluation details, scoring breakdowns, and rejection criteria for each candidate.
+	 * Updates internal state with the selected device and corresponding queue family indices
 	 *
+	 * Logs evaluation details, scoring breakdowns, and rejection criteria for each candidate
 	 * @param required_device_extensions A span of C-string pointers specifying the Vulkan device
-	 *        extensions that must be supported by the selected physical device.
+	 *        extensions that must be supported by the selected physical device
 	 */
 	void pickPhysicalDevice(std::span<const char* const> required_device_extensions);
 	/**
@@ -120,14 +146,18 @@ private:
 	 * Evaluates a Vulkan physical device suitability by computing a weighted score based on device type,
 	 * available memory, hardware limits, feature support, extension availability, API version, and queue
 	 * family configuration. Required extensions are validated against the device, applying penalties for
-	 * missing capabilities and rewards for supported optional extensions and modern Vulkan features.
+	 * missing capabilities and rewards for supported optional extensions and modern Vulkan features
 	 *
 	 * @param device The Vulkan physical device to evaluate.
-	 * @param required_device_extensions A span of required device extension names that the device must support.
-	 * @return A DeviceScore structure containing individual category scores and the aggregated total score.
+	 * @param required_device_extensions A span of required device extension names that the device must support
+	 * @return A DeviceScore structure containing individual category scores and the aggregated total score
 	 */
+	[[nodiscard]]
 	auto calculateDeviceScore(const vk::PhysicalDevice& device, std::span<const char* const> required_device_extensions)
 	    -> DeviceScore;
+
+	[[nodiscard]]
+	auto checkValidationLayerSupport() -> bool;
 
 	bool m_validation_enabled = false;
 
@@ -142,12 +172,17 @@ private:
 
 	std::optional<vma::raii::Allocator> m_allocator;
 
-	// Use a sentinel invalid value so index 0 is a legitimate family index
 	uint32_t m_graphics_queue_family_index = std::numeric_limits<uint32_t>::max();
 	uint32_t m_compute_queue_family_index = std::numeric_limits<uint32_t>::max();
 	uint32_t m_transfer_queue_family_index = std::numeric_limits<uint32_t>::max();
 	vk::Queue m_graphics_queue = nullptr;
 	vk::Queue m_compute_queue = nullptr;
 	vk::Queue m_transfer_queue = nullptr;
+
+	bool m_sampler_anisotropy_supported = false;
+	float m_max_sampler_anisotropy = 1.0f;
+
+	// renderdoc api
+	RENDERDOC_API_1_6_0* rdoc_api = nullptr;
 };
 }

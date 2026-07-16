@@ -4,7 +4,9 @@
 
 #include <memory>
 #include <string_view>
+#include <toast/assets/script.hpp>
 #include <toast/export.hpp>
+#include <toast/scripting/lua_value_codec.hpp>
 
 namespace toast::_detail {
 
@@ -24,6 +26,14 @@ struct TOAST_API WorldTestAccess {
 	// Test-only: make `node` participate in the given tick stage by attaching a fabricated
 	// NodeInfo (the per-instance NodeFunctionTable no longer exists).
 	static void addTickStage(Node& node, TickFunctionList stage);
+
+	// Test-only: appends a script asset to the node and (re)builds its ScriptRuntime;
+	// requires a LuaState to exist
+	static void attachScript(Node& node, const assets::AssetHandle<assets::Script>& script);
+
+	static void applyLuaOverrides(
+	    World& world, Node& node, const assets::Prefab::BasicNode& data, const scripting::NodeResolver& find_node
+	);
 
 	static auto tickSchedule(World& world) noexcept -> _detail::TickSchedule&;
 

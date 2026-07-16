@@ -14,6 +14,7 @@ using Avalonia.Platform.Storage;
 using editor.Assets.Importers;
 using editor.Assets.Types;
 using editor.Components.Modals;
+using editor.Engine;
 using Lucide.Avalonia;
 
 namespace editor.Assets;
@@ -43,7 +44,7 @@ public static class AssetDatabase {
 	public static bool IsUpToDate(string sourceVirtualPath, string hash) {
 		var db = LoadArtworkDatabase();
 		return db[sourceVirtualPath] is JsonObject entry
-		       && entry["last_hash"]?.GetValue<string>() == hash;
+			&& entry["last_hash"]?.GetValue<string>() == hash;
 	}
 
 	public static void UpdateArtworkDatabase(
@@ -61,23 +62,34 @@ public static class AssetDatabase {
 		SaveArtworkDatabase(db);
 	}
 
-	// full re-scan of all .meta files, rewrites database.json from scratch
+	// full re-scan of all .meta files; writes one <db>.json per content database + core.json
 	public static void RebuildAssetDatabase() {
-		var db = new JsonObject {
-			["version"] = 2,
-			["generated_at"] = DateTime.UtcNow.ToString("o")
-		};
+		var now = DateTime.UtcNow.ToString("o");
 
-		ScanDirectory(ProjectContext.AssetsPath, db);
-		ScanDirectory(ProjectContext.CorePath, db);
+		// One manifest file per content database
+		foreach (var db in ProjectContext.Databases) {
+			var obj = new JsonObject { ["version"] = 2, ["generated_at"] = now };
+			ScanDirectory(Path.Combine(ProjectContext.ProjectPath, db), obj);
+			var path = ProjectContext.Resolve($"cache://{db}.json");
+			File.WriteAllText(path, obj.ToJsonString(s_prettyJson));
+		}
 
-		var path = ProjectContext.Resolve("cache://database.json");
-		File.WriteAllText(path, db.ToJsonString(s_prettyJson));
+		// core:// always gets its own manifest
+		{
+			var obj = new JsonObject { ["version"] = 2, ["generated_at"] = now };
+			ScanDirectory(ProjectContext.CorePath, obj);
+			var path = ProjectContext.Resolve("cache://core.json");
+			File.WriteAllText(path, obj.ToJsonString(s_prettyJson));
+		}
+
+		// Remove the legacy combined file if it still exists
+		var legacyPath = ProjectContext.Resolve("cache://database.json");
+		if (File.Exists(legacyPath)) File.Delete(legacyPath);
 
 		s_uidLookup = null; // the on-disk database changed, drop the cached lookup
 
-		if (editor.Engine.ToastEngine.IsEngineReady)
-			editor.Engine.ToastEngine.ReloadManifest();
+		if (ToastEngine.IsEngineReady)
+			ToastEngine.ReloadManifest();
 
 		ReloadedDatabase?.Invoke();
 	}
@@ -123,7 +135,9 @@ public static class AssetDatabase {
 	}
 
 	public static void GenerateMissingMetas(Action<string>? log = null) {
-		foreach (var root in new[] { ProjectContext.AssetsPath, ProjectContext.CorePath }) {
+		// Include all content databases and core
+		var roots = ProjectContext.DatabaseRoots.Append(ProjectContext.CorePath);
+		foreach (var root in roots) {
 			if (!Directory.Exists(root)) continue;
 			foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)) {
 				var ext = AssetTypeRegistry.GetExtension(Path.GetFileName(file));
@@ -240,12 +254,12 @@ public static class AssetDatabase {
 
 			log($"Artwork changed: {sourceVirtual}");
 			var reimport = await ShowChoice(new ModalConfig(
-				Title: "Artwork changed",
-				Message: $"Artwork file {sourceVirtual} has changed, do you wish to reimport the assets generated from it?",
+				"Artwork changed",
+				$"Artwork file {sourceVirtual} has changed, do you wish to reimport the assets generated from it?",
 				ModalButtons.OkCancel,
 				LucideIconKind.RefreshCw,
 				new SolidColorBrush(Color.Parse("#4a9eff")),
-				OkLabel: "Reimport",
+				"Reimport",
 				CancelLabel: "Skip",
 				OkIcon: LucideIconKind.FileInput));
 
@@ -260,7 +274,8 @@ public static class AssetDatabase {
 		if (reimported) RebuildAssetDatabase();
 	}
 
-	public static async Task Reimport(string sourceVirtualPath, Action<string> log,
+	public static async Task Reimport(
+		string sourceVirtualPath, Action<string> log,
 		Action<double>? progress = null) {
 		var db = LoadArtworkDatabase();
 		if (db[sourceVirtualPath] is not JsonObject entry) {
@@ -302,7 +317,8 @@ public static class AssetDatabase {
 	}
 
 	// repoints an asset's UID at a new file by moving its .meta sidecar
-	private static bool RelocateMeta(string oldRealPath, string newRealPath, string uid, string type,
+	private static bool RelocateMeta(
+		string oldRealPath, string newRealPath, string uid, string type,
 		Action<string> log) {
 		var newVirtual = ProjectContext.ToVirtual(newRealPath);
 		if (newVirtual is null) {
@@ -412,13 +428,43 @@ public static class AssetDatabase {
 	}
 
 	private static JsonObject? LoadAssetDatabase() {
-		var path = ProjectContext.Resolve("cache://database.json");
-		if (!File.Exists(path)) return null;
-		try {
-			return JsonNode.Parse(File.ReadAllText(path)) as JsonObject;
-		} catch {
-			return null;
+		// Merge per-database manifests (<db>.json + core.json) into a single JsonObject
+		JsonObject? merged = null;
+
+		var sources = ProjectContext.Databases
+			.Select(db => $"cache://{db}.json")
+			.Append("cache://core.json");
+
+		foreach (var virtualPath in sources) {
+			var path = ProjectContext.Resolve(virtualPath);
+			if (!File.Exists(path)) continue;
+			JsonObject? obj;
+			try {
+				obj = JsonNode.Parse(File.ReadAllText(path)) as JsonObject;
+			} catch {
+				continue;
+			}
+
+			if (obj is null) continue;
+
+			if (merged is null) merged = new JsonObject { ["version"] = 2 };
+
+			// Union the per-type collections (skip metadata keys)
+			foreach (var (type, collectionNode) in obj) {
+				if (type is "version" or "generated_at") continue;
+				if (collectionNode is not JsonObject collection) continue;
+
+				if (merged[type] is not JsonObject target) {
+					target = new JsonObject();
+					merged[type] = target;
+				}
+
+				foreach (var (uid, value) in collection)
+					target[uid] = value?.GetValue<string>() is { } s ? JsonValue.Create(s) : null;
+			}
 		}
+
+		return merged;
 	}
 
 	private static JsonObject LoadArtworkDatabase() {
@@ -430,7 +476,7 @@ public static class AssetDatabase {
 			};
 		try {
 			return JsonNode.Parse(File.ReadAllText(path)) as JsonObject
-			       ?? new JsonObject { ["version"] = 1, ["type"] = "artwork_database" };
+				?? new JsonObject { ["version"] = 1, ["type"] = "artwork_database" };
 		} catch {
 			return new JsonObject { ["version"] = 1, ["type"] = "artwork_database" };
 		}
@@ -461,9 +507,11 @@ public static class AssetDatabase {
 				outputs.RemoveAt(i);
 				changed = true;
 			}
+
 			if (outputs.Count == 0)
 				db.Remove(key);
 		}
+
 		if (changed) SaveArtworkDatabase(db);
 	}
 
@@ -532,7 +580,7 @@ public static class AssetDatabase {
 	private static Window? ActiveWindow() {
 		if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 			return desktop.Windows.FirstOrDefault(w => w.IsActive)
-			       ?? desktop.Windows.FirstOrDefault();
+				?? desktop.Windows.FirstOrDefault();
 		return null;
 	}
 

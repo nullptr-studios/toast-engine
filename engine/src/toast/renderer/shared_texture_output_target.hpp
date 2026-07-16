@@ -4,15 +4,14 @@
 
 #pragma once
 
-#include "output_target.hpp"
+#include "output_target_base.hpp"
 
 #include <atomic>
-#include <cstdint>
 #include <mutex>
 #include <optional>
 #include <vector>
 
-namespace toast::renderer {
+namespace renderer {
 
 class VulkanCore;
 

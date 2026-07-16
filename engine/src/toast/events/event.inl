@@ -8,6 +8,7 @@
 
 namespace event {
 struct InspectorContent;
+struct InspectorLuaContent;
 
 template<typename T>
 void Event<T>::ensureRegistered() noexcept {
@@ -37,9 +38,12 @@ void Event<T>::unsubscribe(iterator_t it) noexcept {
 
 	auto& g = EventSystem::event_data[typeid(T)];
 	{
-		std::scoped_lock _(g.mutex);
+		std::scoped_lock _(EventSystem::deletion_mutex);
 		auto deleter = [](void* p) { delete static_cast<std::move_only_function<bool(T&)>*>(p); };
 		EventSystem::deletion_queue.emplace_back((*it).second, deleter);
+	}
+	{
+		std::scoped_lock _(g.mutex);
 		g.cached = false;
 		g.callbacks.erase(it);
 	}
@@ -83,7 +87,8 @@ void send(Args&&... args) noexcept {
 	ZoneScoped;
 
 	static_assert(std::is_constructible_v<T, Args...>, "Invalid Construtor For Type T");
-	if constexpr (!std::is_same_v<std::decay_t<T>, event::InspectorContent>) {
+	if constexpr (!std::is_same_v<std::decay_t<T>, event::InspectorContent> &&
+	              !std::is_same_v<std::decay_t<T>, event::InspectorLuaContent>) {
 		TOAST_TRACE("Events", "Sending event: {}", typeid(T).name());
 	}
 

@@ -1,21 +1,69 @@
 [
   {
     "attributes": {},
-    "functions": {
-      "begin": false,
-      "destroy": false,
-      "early_tick": false,
-      "end": false,
-      "init": false,
-      "late_tick": false,
-      "load": false,
-      "on_disable": false,
-      "on_enable": false,
-      "post_physics": false,
-      "pre_init": false,
-      "save": false,
-      "tick": false
-    },
+    "fields": [
+      {
+        "attributes": {
+          "Group": [
+            "Settings"
+          ],
+          "Subgroup": [
+            "Audio"
+          ]
+        },
+        "default": null,
+        "field_type": "float_t",
+        "is_array": false,
+        "name": "m_volume",
+        "typename": "float"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Settings"
+          ],
+          "Subgroup": [
+            "Audio"
+          ]
+        },
+        "default": null,
+        "field_type": "float_t",
+        "is_array": false,
+        "name": "m_pitch",
+        "typename": "float"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Settings"
+          ],
+          "Subgroup": [
+            "Video"
+          ]
+        },
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_width",
+        "typename": "int"
+      },
+      {
+        "attributes": {
+          "Group": [
+            "Settings"
+          ],
+          "Subgroup": [
+            "Video"
+          ]
+        },
+        "default": null,
+        "field_type": "int_t",
+        "is_array": false,
+        "name": "m_height",
+        "typename": "int"
+      }
+    ],
+    "functions": [],
     "global_fields": [],
     "groups": [
       {
@@ -95,10 +143,26 @@
         ]
       }
     ],
+    "is_interface": false,
     "methods": [],
     "name": "SubgroupOnlyNode",
     "namespace": null,
     "parent": null,
-    "source_file": "13_subgroup_only.hpp"
+    "source_file": "13_subgroup_only.hpp",
+    "tick_functions": {
+      "begin": false,
+      "destroy": false,
+      "early_tick": false,
+      "end": false,
+      "init": false,
+      "late_tick": false,
+      "load": false,
+      "on_disable": false,
+      "on_enable": false,
+      "post_physics": false,
+      "pre_init": false,
+      "save": false,
+      "tick": false
+    }
   }
 ]

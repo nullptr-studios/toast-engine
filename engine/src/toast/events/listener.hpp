@@ -37,23 +37,22 @@ concept EventCallback = std::is_invocable_r_v<bool, F, TEvent&> ||    // Returns
 /// have the event as a parameter if you dont care about that
 ///
 class TOAST_API Listener {
+	/// std::any is a type-erased Event<T>::iterator_t; std::any so Handle doesn't need to be templated; safe because
+	/// std::multimap never invalidates iterators on insert/erase
 	struct Handle {
 		std::type_index type;
 		std::string name;
-		std::any iterator;    ///< type-erased Event<T>::iterator_t; std::any so Handle doesn't need to be templated; safe because
-		                      ///< std::multimap never invalidates iterators on insert/erase
+		std::any iterator;
 	};
 
 	struct {
 		std::vector<Handle> callbacks;
-		bool enabled;
+		std::atomic<bool>* enabled;
 	} m;
 
 public:
 	Listener();
-
 	Listener(bool state);
-
 	~Listener();
 
 	/// @brief unsubscribes every event in type TEvent with that name
