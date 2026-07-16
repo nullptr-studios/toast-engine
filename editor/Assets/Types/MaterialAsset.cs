@@ -16,10 +16,14 @@ public sealed class MaterialAsset : BaseAsset {
 	public override bool HasThumbnail => false;
 	public override bool CanBeEdited => true;
 	public override string EditorTool => "GenericEditor";
-	public override string SchemaPath => "";
+	public override string SchemaPath => "core://schemas/material.schema.json";
 
 	public override Task CreateAsync(string path) {
-		File.WriteAllText(path, "# Toast Material\n");
+		const string schemaUid = "ZkvMAl6RtQQ";
+		File.WriteAllText(path,
+			$"# Toast Material\n" +
+			$"schema = \"{schemaUid}\"\n" +
+			$"name = \"Unnamed Material\"\n");
 		return Task.CompletedTask;
 	}
 }

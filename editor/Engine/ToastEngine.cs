@@ -143,6 +143,9 @@ public partial class ToastEngine : IDisposable {
 	// copies the latest rendered frame into dst (capacity bytes)
 	// returns 1 = frame copied, 0 = no frame yet, -1 = dst too small
 	public int TryGetViewportFrame(IntPtr dst, uint capacity, out ToastViewportFrame frame) {
+		frame = default;
+		// Guard against late UI-thread ticks calling into a freed engine during shutdown
+		if (!IsEngineReady) return 0;
 		return toast_viewport_get_frame(dst, capacity, out frame);
 	}
 
@@ -204,17 +207,21 @@ public partial class ToastEngine : IDisposable {
 	}
 
 	private void TickLoop(CancellationToken token) {
-		while (!token.IsCancellationRequested && toast_should_close() != 1) {
-			// Wait until the gate is open
-			m_tickGate.Wait(token);
-			if (token.IsCancellationRequested) break;
+		try {
+			while (!token.IsCancellationRequested && toast_should_close() != 1) {
+				// Wait until the gate is open
+				m_tickGate.Wait(token);
+				if (token.IsCancellationRequested) break;
 
-			m_tickIdle.Reset();
-			try {
-				toast_tick();
-			} finally {
-				m_tickIdle.Set();
+				m_tickIdle.Reset();
+				try {
+					toast_tick();
+				} finally {
+					m_tickIdle.Set();
+				}
 			}
+		} catch (OperationCanceledException) {
+			// Dispose() cancels the token while the loop is on m_tickGate
 		}
 	}
 

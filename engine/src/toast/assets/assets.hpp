@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "types.hpp"
+#include "core_types.hpp"
 
 #include <atomic>
 #include <string_view>

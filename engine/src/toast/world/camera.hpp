@@ -7,6 +7,7 @@
  */
 
 #pragma once
+
 #include "node_3d.hpp"
 
 #include <toast/export.hpp>
@@ -17,6 +18,18 @@ public:
 	Camera() = default;
 
 	~Camera() override = default;
+
+public:
+	float fov = 75.f;
+	float near_plane = 0.01f;
+	float far_plane = 100.f;
+
+	void setActiveCamera(bool force = true);
+
+	[[nodiscard]]
+	auto getView() const -> glm::mat4;
+	[[nodiscard]]
+	auto getProjection(float aspect) const -> glm::mat4;
 
 private:
 };

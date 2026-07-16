@@ -22,6 +22,7 @@ find_package(Tracy CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
+find_package(Ktx CONFIG REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(unofficial-vulkan-memory-allocator-hpp CONFIG REQUIRED)
 find_package(slang CONFIG REQUIRED)
@@ -80,9 +81,16 @@ target_include_directories(toast_engine
         PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/ffi" "${CMAKE_CURRENT_SOURCE_DIR}/generated"
 )
 
+# target_compile_definitions(toast_engine PRIVATE VK_NO_PROTOTYPES)
+# target_compile_definitions(toast_engine PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
+
+
 target_link_libraries(toast_engine
-        PRIVATE
-        asio::asio SDL3::SDL3 Vulkan::Vulkan GPUOpen::VulkanMemoryAllocator
+    PRIVATE
+        asio::asio
+        SDL3::SDL3
+        Vulkan::Vulkan
+        KTX::ktx
         unofficial::VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-Hpp
         slang::gfx slang::slang protobuf::libprotobuf tinysplinecxx::tinysplinecxx
         LZ4::lz4
@@ -90,7 +98,7 @@ target_link_libraries(toast_engine
         $<$<NOT:$<CONFIG:Debug>>:${EXTERNAL_LIBS_RELEASE}>
         ${LUA_LIBRARIES}
         PUBLIC
-        Tracy::TracyClient glm::glm nlohmann_json::nlohmann_json
+        Tracy::TracyClient glm::glm nlohmann_json::nlohmann_json GPUOpen::VulkanMemoryAllocator
 )
 
 foreach (config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
@@ -105,10 +113,19 @@ endforeach ()
 
 target_compile_definitions(toast_engine PRIVATE TOAST_EXPORT)
 target_precompile_headers(toast_engine PRIVATE pch.h)
+# vma.cpp defines VMA_IMPLEMENTATION, it must not consume the PCH
+set_source_files_properties(src/toast/renderer/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
+
+# protoc-generated .pb.cc files use file-local symbol names, so avoid UNITY inclusion
+file(GLOB _TOAST_PROTO_SOURCES "generated/*.pb.cc")
+set_source_files_properties(${_TOAST_PROTO_SOURCES} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+set_target_properties(toast_engine PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 8)
+
 target_compile_definitions(toast_engine PUBLIC
         $<$<CONFIG:Debug>:DEBUG>
         $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:NDEBUG>
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TRACY_ENABLE>
+        # $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:TRACY_ON_DEMAND> #Apparently tracy lua lib is precompiled and does not define TRACY_ON_DEMAND in debug builds
 )
 
 if (MSVC)

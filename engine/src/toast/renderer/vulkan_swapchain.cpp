@@ -4,15 +4,14 @@
 
 #include "vulkan_swapchain.hpp"
 
-#include "toast/log.hpp"
-
 #include <algorithm>
 #include <array>
 #include <limits>
 #include <stdexcept>
+#include <toast/log.hpp>
 #include <utility>
 
-namespace toast::renderer {
+namespace renderer {
 namespace {
 
 auto formatUsageFlags(vk::ImageUsageFlags flags) -> std::string {
@@ -185,6 +184,7 @@ auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 	m_swapchain = std::move(new_swapchain);
 	m_images = std::move(new_images);
 	m_present_queue_family_index = present_queue_family_index;
+	m_present_queue = m_core->getDevice().getQueue(m_present_queue_family_index, 0);
 	m_image_format = image_format;
 	m_extent = chosen_extent;
 	m_image_views = std::move(new_image_views);
@@ -215,10 +215,17 @@ auto VulkanSwapchain::selectSurfaceFormat(const std::vector<vk::SurfaceFormatKHR
 }
 
 auto VulkanSwapchain::selectPresentMode(const std::vector<vk::PresentModeKHR>& modes) const -> vk::PresentModeKHR {
+	// Prefer immediate
+	if (std::find(modes.begin(), modes.end(), vk::PresentModeKHR::eImmediate) != modes.end()) {
+		return vk::PresentModeKHR::eImmediate;
+	}
+
+	// Prefer mailbox triple-buffering next
 	if (std::find(modes.begin(), modes.end(), vk::PresentModeKHR::eMailbox) != modes.end()) {
 		return vk::PresentModeKHR::eMailbox;
 	}
 
+	// Fall back to FIFO vsync
 	return vk::PresentModeKHR::eFifo;
 }
 
@@ -236,13 +243,25 @@ auto VulkanSwapchain::selectExtent(const vk::SurfaceCapabilitiesKHR& capabilitie
 
 auto VulkanSwapchain::acquireNextImage(uint64_t timeout, vk::Semaphore image_available, vk::Fence in_flight_fence) const
     -> vk::ResultValue<uint32_t> {
-	return m_swapchain.acquireNextImage(timeout, image_available, in_flight_fence);
+	uint32_t image_index = 0;
+	const VkResult result =
+	    vkAcquireNextImageKHR(*m_core->getDevice(), *m_swapchain, timeout, image_available, in_flight_fence, &image_index);
+	return {static_cast<vk::Result>(result), image_index};
 }
 
 auto VulkanSwapchain::present(uint32_t image_index, vk::Semaphore render_finished) const -> vk::Result {
-	const auto present_queue = m_core->getDevice().getQueue(m_present_queue_family_index, 0);
-	const vk::SwapchainKHR swapchain_handle = *m_swapchain;
-	const vk::PresentInfoKHR present_info(1, &render_finished, 1, &swapchain_handle, &image_index);
-	return present_queue.presentKHR(present_info);
+	const VkSwapchainKHR swapchain_handle = static_cast<VkSwapchainKHR>(*m_swapchain);
+	const VkSemaphore wait_semaphore = static_cast<VkSemaphore>(render_finished);
+
+	VkPresentInfoKHR present_info {};
+	present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	present_info.waitSemaphoreCount = 1;
+	present_info.pWaitSemaphores = &wait_semaphore;
+	present_info.swapchainCount = 1;
+	present_info.pSwapchains = &swapchain_handle;
+	present_info.pImageIndices = &image_index;
+
+	const VkResult result = vkQueuePresentKHR(static_cast<VkQueue>(m_present_queue), &present_info);
+	return static_cast<vk::Result>(result);
 }
 }

@@ -7,6 +7,9 @@ if (BUILD_TESTING)
 	add_executable(toast_tests ${TEST_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/test_runner.cpp")
 	target_include_directories(toast_tests BEFORE PRIVATE ${CMAKE_SOURCE_DIR}/engine/src)
 	target_include_directories(toast_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+	# HACK: DARIO SHOULD FUCKING HAVE SOME INCLUDES ON THE SOURCE FILES RATHER THAN THE HEADERS
+	target_include_directories(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine)
+	target_include_directories(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine/external/inc)
 	target_link_libraries(toast_tests PRIVATE toast_engine)
 	target_compile_definitions(toast_tests PRIVATE UNIT_TESTING TRACY_NO_INVARIANT_CHECK=1)
 

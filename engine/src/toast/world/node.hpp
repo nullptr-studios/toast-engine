@@ -19,6 +19,7 @@
 #include <string>
 #include <string_view>
 #include <toast/assets/prefab.hpp>
+#include <toast/engine_defs.hpp>
 #include <toast/events/listener.hpp>
 #include <toast/export.hpp>
 #include <toast/log.hpp>

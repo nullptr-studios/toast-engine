@@ -17,7 +17,6 @@
 
 #include "assets.hpp"
 #include "pack.hpp"
-#include "toast/events/listener.hpp"
 #include "types.hpp"
 
 #include <filesystem>
@@ -25,6 +24,7 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <toast/events/listener.hpp>
 #include <unordered_map>
 
 namespace assets {
@@ -185,6 +185,7 @@ public:
 	 */
 	void pollModifiedScripts();
 
+	[[nodiscard]]
 	auto getCachePath() const -> const std::filesystem::path&;
 
 	/**

@@ -8,12 +8,12 @@
 
 #pragma once
 #include "base_window.hpp"
-#include "toast/events/listener.hpp"
-#include "toast/log.hpp"
 #include "window_events.hpp"
 
 #include <SDL3/SDL.h>
 #include <memory>
+#include <toast/events/listener.hpp>
+#include <toast/log.hpp>
 
 namespace toast {
 

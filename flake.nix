@@ -74,7 +74,7 @@
 		'';
 
 		cmake-build = pkgs.writeShellScriptBin "cmake-build" ''
-			exec cmake --build ./build/Debug "$@"
+			exec cmake --build ./build/Debug --parallel "$(nproc)" "$@"
 		'';
 
 		editor = pkgs.writeShellScriptBin "editor" ''

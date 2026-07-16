@@ -1,8 +1,6 @@
 #include "workspace.hpp"
 
 #include "node.hpp"
-#include "toast/engine.hpp"
-#include "toast/log.hpp"
 #include "workspace_events.hpp"
 #include "workspace_events.pb.h"
 
@@ -18,6 +16,8 @@
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/assets/prefab.hpp>
+#include <toast/engine.hpp>
+#include <toast/log.hpp>
 #include <toast/scripting/asset_proxy.hpp>
 #include <toast/scripting/lua_types.hpp>
 #include <toast/scripting/lua_value_codec.hpp>

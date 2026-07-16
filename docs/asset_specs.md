@@ -3,7 +3,7 @@
 | Type             | Extension     | Icon              | ChipText | ChipColor | CanBeCreated | Category | HasThumbnail | CanBeEdited | EditorTool    |
 |------------------|---------------|-------------------|----------|-----------|--------------|----------|--------------|-------------|---------------|
 | Node             | .tnode        | Box               | NODE     | Red       | false        |          | false*       | true        | NodeEditor    |
-| Material         | .tmat         | Eclipse           | MAT      | Green     | true         | Visual   | false*       | true        | GenericEditor | (Not implemented)
+| Material         | .tmat         | Eclipse           | MAT      | Green     | true         | Visual   | false*       | true        | GenericEditor |
 | MaterialInstance | .tmi          | Eclipse           | INST     | Green     | true         | Visual   | false*       | true        | GenericEditor | (Not implemented)
 | Shader           | .slang        | WandSparkles      | SHADER   | Green     | true         | Visual   | false        | false       |               |
 | Mesh             | .tmesh        | Shapes            | MESH     | Blue      | false        |          | false*       | false       |               |

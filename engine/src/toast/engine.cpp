@@ -13,11 +13,13 @@
 #include "logger.hpp"
 #include "project_settings.hpp"
 #include "reflect/reflect.hpp"
+#include "renderer/passes/debug_pass.hpp"
+#include "renderer/passes/mesh_pass.hpp"
 #include "renderer/sdl_output_target.hpp"
 #include "renderer/shader_compiler.hpp"
+#include "renderer/shader_layout.hpp"
 #include "renderer/shared_texture_output_target.hpp"
 #include "renderer/vulkan_core.hpp"
-#include "renderer/vulkan_pipeline.hpp"
 #include "renderer/vulkan_renderer.hpp"
 #include "scripting/lua_state.hpp"
 #include "thread_pool.hpp"
@@ -25,6 +27,7 @@
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
+#include "world/camera.hpp"
 #include "world/play_workspace.hpp"
 #include "world/workspace.hpp"
 #include "world/workspace_events.hpp"
@@ -44,35 +47,8 @@ namespace toast {
 
 namespace {
 IApplication* active_application = nullptr;
-
-// FIXME: DEBUGGING PURPORSES
-auto createTrianglePipeline(
-    const renderer::VulkanCore& core, vk::Format color_format, vk::Extent2D extent, std::optional<vk::Format> depth_format
-) -> std::unique_ptr<renderer::VulkanPipeline> {
-	// Compile shader
-	auto shader_spirv = renderer::ShaderCompiler::compileShader("./mirrors.slang");
-
-	// Define our runtime layout payload requirements
-	std::vector<vk::DescriptorSetLayoutBinding> descriptor_bindings;
-	descriptor_bindings.emplace_back(
-	    0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment
-	);
-
-	// Create pipeline using the new generic configuration parameters
-	renderer::VulkanPipeline::Config config {
-	  .debug_name = "triangle Pipeline",
-	  .color_format = color_format,
-	  .extent = extent,
-	  .shader_spirv = shader_spirv,
-	  .depth_format = depth_format,
-	  .descriptor_bindings = descriptor_bindings,
-	  .push_constant_ranges = {},
-	  .cull_mode = vk::CullModeFlagBits::eBack
-	};
-
-	return std::make_unique<renderer::VulkanPipeline>(core, config);
-}
-
+Camera* camera = nullptr;
+float total_time = 0.0;
 double clear_assets_timer = 0.0;
 double lua_memory_plot_timer = 0.0;
 double script_reload_timer = 0.0;
@@ -105,11 +81,6 @@ struct EnginePimpl {
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
 	toast::UID active_workspace {0};
 };
-
-Engine::~Engine() noexcept {
-	delete m;
-	instance = nullptr;
-}
 
 Engine::Engine() noexcept {
 	instance = this;
@@ -186,7 +157,7 @@ void Engine::init() {
 			return false;
 		}
 
-		m->renderer->resize(vk::Extent2D {static_cast<uint32_t>(e.width), static_cast<uint32_t>(e.height)});
+		m->renderer->applyResize(vk::Extent2D {static_cast<uint32_t>(e.width), static_cast<uint32_t>(e.height)});
 		return false;
 	});
 
@@ -220,11 +191,27 @@ void Engine::init() {
 	m->audio_system = std::make_unique<audio::AudioSystem>();
 }
 
-void Engine::refreshNodeInfos() {
-	std::scoped_lock lock(m->owners_mutex);
-	for (const auto& [_, node_owner] : m->owners) {
-		node_owner->refreshNodeInfos();
+Engine::~Engine() noexcept {
+	if (m) {
+		if (m->renderer) {
+			m->renderer->stop();
+		}
+
+		// remove objects before closing
+		{
+			std::scoped_lock lock(m->owners_mutex);
+			m->owners.clear();
+		}
+		m->world.reset();
+		m->asset_manager.reset();
+		m->renderer.reset();
+		m->vulkan_core.reset();
+
+		delete m;
+		m = nullptr;
 	}
+
+	instance = nullptr;
 }
 
 void Engine::reloadSettings() {
@@ -286,21 +273,22 @@ void Engine::tick() {
 		ZoneScopedN("GameLayer::tick()");
 		active_application->tick();
 	}
+	total_time += Time::delta();
+	camera->worldPos(glm::vec3(std::sin(total_time) * 5.0f, std::cos(total_time) * 5.0f, 5));
 
 	if (m->audio_system) {
 		m->audio_system->tick();
 	}
 
-	if (m->renderer) {
-		m->renderer->drawFrame();
-	}
-
-	// TODO: HACK: we should introduce a proper relax mode
-	std::this_thread::sleep_for(std::chrono::milliseconds(5));
-
+	// TODO MOVE THIS
 	clear_assets_timer += Time::delta();
 	if (clear_assets_timer > 30.0) {
 		m->asset_manager->clearUnusedAssets();
+		clear_assets_timer = 0.0;
+	}
+
+	if (m->renderer) {
+		m->renderer->tick(total_time);
 	}
 
 	lua_memory_plot_timer += Time::delta();
@@ -346,11 +334,27 @@ void Engine::createSDLWindow(const char* w_name) {
 	auto color_format = output_target->getColorFormat();
 	auto depth_format = renderer::VulkanRenderer::selectDepthFormat(*m->vulkan_core);
 
+	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
+
+	// FIXME: change this
+	camera = new Camera();
+	camera->worldPos(glm::vec3(0));
+
+	m->renderer->setActiveCamera(camera);
+
 	// create debug pipeline
-	auto pipeline = createTrianglePipeline(*m->vulkan_core, color_format, extent, depth_format);
+	auto pass = std::make_unique<renderer::MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
 
 	// create renderer
-	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target), std::move(pipeline));
+
+	m->renderer->addRenderPass(std::move(pass));
+
+	// m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
+
+	// capped to 240 for now
+	m->renderer->setFrameRateLimit(240.0);
+
+	m->renderer->start();
 }
 
 void Engine::createAvaloniaWindow() {
@@ -363,9 +367,27 @@ void Engine::createAvaloniaWindow() {
 
 	m->shared_target = output_target.get();
 
-	auto pipeline = createTrianglePipeline(*m->vulkan_core, color_format, extent, depth_format);
+	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
 
-	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target), std::move(pipeline));
+	// FIXME: change this
+	camera = new Camera();
+	camera->worldPos(glm::vec3(0));
+
+	m->renderer->setActiveCamera(camera);
+
+	// create debug pipeline
+	auto pass = std::make_unique<renderer::MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
+
+	// create renderer
+
+	m->renderer->addRenderPass(std::move(pass));
+
+	// Editor viewport gets the ground grid / debug lines / gizmo overlay
+	m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
+
+	m->renderer->setFrameRateLimit(240.0);
+
+	m->renderer->start();
 }
 
 auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::string> {
@@ -461,6 +483,13 @@ auto Engine::activeWorkspace() -> UID {
 	return m->active_workspace;
 }
 
+void Engine::refreshNodeInfos() {
+	std::scoped_lock lock(m->owners_mutex);
+	for (const auto& [_, node_owner] : m->owners) {
+		node_owner->refreshNodeInfos();
+	}
+}
+
 auto Engine::getViewportFrame(void* dst, uint32_t dst_capacity, renderer::ViewportFrameDesc* out) -> int {
 	if (!m->shared_target) {
 		return 0;
@@ -536,13 +565,11 @@ void Engine::startGame() {
 		World::loadNode(path, true);
 	}
 }
-
 }
 
 // Tracy memory profiling
 #ifdef DEBUG
 // NOLINTBEGIN(cppcoreguidelines-no-malloc)
-// NOLINTNEXTLINE(readability-inconsistent-declaration-parameter-name)
 auto operator new(std::size_t count) -> void* {
 	auto* ptr = malloc(count);
 	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
@@ -600,7 +627,7 @@ void toast_set_working_directory(
 }
 
 auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) noexcept -> int {
-	toast::renderer::ViewportFrameDesc desc {};
+	renderer::ViewportFrameDesc desc {};
 	const int result = toast::Engine::get()->getViewportFrame(dst, dst_capacity, &desc);
 	if (out) {
 		out->width = desc.width;

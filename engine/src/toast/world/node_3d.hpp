@@ -12,10 +12,11 @@
 #include "box.hpp"
 #include "node.hpp"
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <toast/assets/types.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 
 namespace toast {
 
@@ -165,34 +166,40 @@ protected:
 	 * @return Const reference to the cached matrix; valid until the next setter call
 	 */
 	[[nodiscard]]
-	auto getTransform() noexcept -> const glm::mat4&;
+	auto getTransform() const noexcept -> const glm::mat4&;
 
 	/**
 	 * @brief Returns the world-space 4x4 transform matrix, rebuilding it if m_dirty_world is set
 	 * @return Const reference to the cached matrix; valid until the next setter call on this node or any ancestor
 	 */
 	[[nodiscard]]
-	auto getWorldTransform() noexcept -> const glm::mat4&;
+	auto getWorldTransform() const noexcept -> const glm::mat4&;
 
 private:
-	bool m_dirty_local = true;
-	bool m_dirty_world = true;
+	mutable bool m_dirty_local = true;
+	mutable bool m_dirty_world = true;
 	Box<Node3D> m_transform_parent;
 
 	[[Reflect, Unit("m")]] alignas(16) glm::vec3 m_position = glm::vec3(0.0f);
 	[[Reflect, Unit("°")]] alignas(16) glm::quat m_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	[[Reflect]] alignas(16) glm::vec3 m_scale = glm::vec3(1.0f);
 
-	[[Reflect]]
-	assets::AssetHandle<assets::Mesh> m_mesh;
+	alignas(16) mutable glm::vec3 m_world_position = glm::vec3(0.0f);
+	alignas(16) mutable glm::quat m_world_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	alignas(16) mutable glm::vec3 m_world_scale = glm::vec3(1.0f);
+	mutable glm::mat4 m_transform = glm::mat4(1.0f);
+	mutable glm::mat4 m_world_transform = glm::mat4(1.0f);
 
-	alignas(16) glm::vec3 m_world_position;
-	alignas(16) glm::quat m_world_rotation;
-	alignas(16) glm::vec3 m_world_scale;
-	glm::mat4 m_transform;
-	glm::mat4 m_world_transform;
+	// Snapshot of m_position/m_rotation/m_scale as of the last recalculateTransforms(). Lets us notice edits
+	// that bypass pos()/rot()/scale() - e.g. the reflection system's FieldAccess::set(), which is what the
+	// editor inspector uses and writes the raw members directly - so a stale cached matrix doesn't linger
+	// forever just because the dirty flags were never set.
+	// ... TF IS THIS DARIO
+	alignas(16) mutable glm::vec3 m_cached_position = glm::vec3(0.0f);
+	alignas(16) mutable glm::quat m_cached_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	alignas(16) mutable glm::vec3 m_cached_scale = glm::vec3(1.0f);
 
-	void recalculateTransforms();
+	void recalculateTransforms() const;
 
 	void init();
 };

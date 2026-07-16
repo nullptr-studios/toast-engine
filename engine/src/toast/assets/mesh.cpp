@@ -1,8 +1,26 @@
 #include "mesh.hpp"
 
+#include <toast/renderer/vulkan_renderer.hpp>
+
 namespace assets {
 
-Mesh::Mesh(const std::vector<uint8_t>& data) {
+Mesh::Mesh(std::string_view name, std::vector<renderer::Vertex>&& vertices, std::vector<uint32_t>&& indices)
+    : m_name(name),
+      m_vertices(std::move(vertices)),
+      m_indices(std::move(indices)),
+      m_gpu_mesh(std::make_unique<renderer::VulkanMesh>()) { }
+
+Mesh::~Mesh() = default;
+
+auto Mesh::gpuMesh() const -> const renderer::VulkanMesh& {
+	return *m_gpu_mesh;
+}
+
+auto Mesh::gpuMesh() -> renderer::VulkanMesh& {
+	return *m_gpu_mesh;
+}
+
+Mesh::Mesh(const std::vector<uint8_t>& data) : m_gpu_mesh(std::make_unique<renderer::VulkanMesh>()) {
 	TOAST_ASSERT(data.size() >= sizeof(_detail::MeshFileHeader), "AssetManager", "Mesh data is too small to contain header");
 
 	_detail::MeshFileHeader header;
@@ -23,7 +41,7 @@ Mesh::Mesh(const std::vector<uint8_t>& data) {
 			memcpy(&name_length, data_start, sizeof(name_length));
 
 			size_t expected_size = sizeof(_detail::MeshFileHeader) + sizeof(uint8_t) + name_length +
-			                       (header.vertex_count * sizeof(Vertex)) + (header.index_count * sizeof(uint32_t));
+			                       (header.vertex_count * sizeof(renderer::Vertex)) + (header.index_count * sizeof(uint32_t));
 
 			TOAST_ASSERT(
 			    data.size() == expected_size, "AssetManager", "Mesh data size does not match expected size based on header information"
@@ -41,22 +59,27 @@ Mesh::Mesh(const std::vector<uint8_t>& data) {
 			// Import sizes
 			// clang-format off
 			memcpy(
-			    m_vertices.data(),
-			    data_start,
-			    header.vertex_count * sizeof(Vertex)
+					m_vertices.data(),
+					data_start,
+					header.vertex_count * sizeof(renderer::Vertex)
 			);
-			data_start += header.vertex_count * sizeof(Vertex);
+			data_start += header.vertex_count * sizeof(renderer::Vertex);
 
 			memcpy(
-			    m_indices.data(),
-			    data_start,
-			    header.index_count * sizeof(uint32_t)
+					m_indices.data(),
+					data_start,
+					header.index_count * sizeof(uint32_t)
 			);
 			// clang-format on
 			break;
 		}
 		default: TOAST_ASSERT(false, "AssetManager", "Mesh data has invalid version");
 	}
+
+	// create GPU Side mesh
+	renderer::VulkanRenderer::instance->queueResourceUpload(
+	    std::make_unique<renderer::MeshUpload>(*m_gpu_mesh, renderer::VulkanMesh::UploadData {m_vertices, m_indices}, m_name)
+	);
 }
 
 auto Mesh::toBinary() const -> std::vector<uint8_t> {
@@ -76,7 +99,7 @@ auto Mesh::toBinary() const -> std::vector<uint8_t> {
 
 	// vectors
 	const uint8_t* vertices_start = reinterpret_cast<const uint8_t*>(m_vertices.data());
-	buffer.insert(buffer.end(), vertices_start, vertices_start + (sizeof(Vertex) * m_vertices.size()));
+	buffer.insert(buffer.end(), vertices_start, vertices_start + (sizeof(renderer::Vertex) * m_vertices.size()));
 	const uint8_t* indices_start = reinterpret_cast<const uint8_t*>(m_indices.data());
 	buffer.insert(buffer.end(), indices_start, indices_start + (sizeof(uint32_t) * m_indices.size()));
 

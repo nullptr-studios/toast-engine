@@ -124,7 +124,7 @@ AudioSystem::AudioSystem() noexcept {
 		return;
 	}
 	TOAST_TRACE("Audio", "Loading strings bank from {}", strings_handle.path());
-	loadBankData(strings_asset->get());
+	std::ignore = loadBankData(strings_asset->get());
 
 	auto* master_asset = dynamic_cast<assets::AudioBank*>(&master_handle.get());
 	if (!master_asset) {
@@ -135,7 +135,7 @@ AudioSystem::AudioSystem() noexcept {
 		return;
 	}
 	TOAST_TRACE("Audio", "Loading master bank from {}", master_handle.path());
-	loadBankData(master_asset->get());
+	std::ignore = loadBankData(master_asset->get());
 
 	m_listeners.reserve(8);
 	m_listener_positions.reserve(8);

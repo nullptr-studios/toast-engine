@@ -4,12 +4,14 @@
 
 #include "shared_texture_output_target.hpp"
 
-#include "toast/log.hpp"
 #include "vulkan_core.hpp"
+#include "vulkan_debug.hpp"
 
 #include <cstring>
+#include <format>
+#include <toast/log.hpp>
 
-namespace toast::renderer {
+namespace renderer {
 
 namespace {
 
@@ -37,7 +39,8 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 
 	const vk::DeviceSize staging_size = imageByteSize();
 
-	for (auto& shared : m_images) {
+	for (uint32_t index = 0; index < m_images.size(); ++index) {
+		auto& shared = m_images[index];
 		// Reset any previous resources first
 		shared.mapped = nullptr;
 		shared.view.reset();
@@ -61,6 +64,7 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 		image_alloc_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
 
 		shared.image.emplace(m_core->getAllocator().createImage(image_ci, image_alloc_ci));
+		setDebugName(*m_core, **shared.image, std::format("SharedTextureOutput Image[{}]", index));
 
 		vk::ImageViewCreateInfo view_ci {};
 		view_ci.image = **shared.image;
@@ -68,6 +72,7 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 		view_ci.format = m_color_format;
 		view_ci.subresourceRange = colorSubresourceRange();
 		shared.view.emplace(m_core->getDevice(), view_ci);
+		setDebugName(*m_core, **shared.view, std::format("SharedTextureOutput ImageView[{}]", index));
 
 		// stagingg buffer for CPU readback
 		vk::BufferCreateInfo buffer_ci {};
@@ -80,6 +85,7 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 		buffer_alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessRandom;
 
 		shared.staging.emplace(m_core->getAllocator().createBuffer(buffer_ci, buffer_alloc_ci));
+		setDebugName(*m_core, **shared.staging, std::format("SharedTextureOutput StagingBuffer[{}]", index));
 		shared.mapped = shared.staging->getAllocation().getInfo().pMappedData;
 	}
 

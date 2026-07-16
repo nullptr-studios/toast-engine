@@ -108,6 +108,7 @@ private:
 	FMOD_STUDIO_SYSTEM* m_system;
 	FMOD_SYSTEM* m_core_system;
 
+	[[nodiscard]]
 	auto loadBankData(const std::vector<uint8_t>& data) const -> FMOD_STUDIO_BANK*;
 
 	std::unordered_map<std::string, FMOD_STUDIO_EVENTINSTANCE*> m_active_instances;    ///< 2D events, one instance per GUID

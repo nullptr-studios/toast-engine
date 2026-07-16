@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using editor.Engine;
-using Ktx2Sharp;
 using Proto.Events;
 using Tomlyn;
 using Tomlyn.Model;
@@ -46,7 +45,6 @@ public static class ProjectContext {
 
 		RegisterSchemes();
 		EnsureDirectories();
-		Ktx.Init();
 		IsInitialized = true;
 	}
 

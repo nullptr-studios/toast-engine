@@ -4,16 +4,20 @@
 
 #include "vulkan_core.hpp"
 
-#include "toast/log.hpp"
-
 #include <algorithm>
 #include <format>
 #include <limits>
+#include <toast/log.hpp>
+#include <toast/logger.hpp>
+
+#if defined(__linux__)
+#include <dlfcn.h>
+#endif
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-namespace toast::renderer {
+namespace renderer {
 
 namespace {
 constexpr std::size_t k_gigabyte_bytes = 1024ull * 1024ull * 1024ull;
@@ -206,7 +210,7 @@ auto deviceNameString(const vk::PhysicalDeviceProperties& props) -> std::string 
 }
 }    // namespace
 
-auto DeviceScore::toString() const -> std::string {
+auto DeviceScore::toString() const noexcept -> std::string {
 	std::string str = "Device Score Breakdown:\n";
 	str += "  Device type: " + std::to_string(device_type) + "\n";
 	str += "  Memory: " + std::to_string(memory) + "\n";
@@ -221,13 +225,13 @@ auto DeviceScore::toString() const -> std::string {
 
 VulkanCore::VulkanCore(
     std::span<const char* const> required_instance_extensions, std::span<const char* const> required_device_extensions
-)
+) noexcept {
 #ifdef DEBUG
-    : m_validation_enabled(true)
+	m_validation_enabled = checkValidationLayerSupport();
 #else
-    : m_validation_enabled(false)
+	m_validation_enabled = false;
 #endif
-{
+
 	TOAST_INFO("VulkanCore", "Validation layers: {}", m_validation_enabled ? "enabled" : "disabled");
 	TOAST_TRACE("VulkanCore", "Required instance extensions: {}", joinRequiredExtensions(required_instance_extensions));
 	TOAST_TRACE("VulkanCore", "Required device extensions: {}", joinRequiredExtensions(required_device_extensions));
@@ -261,6 +265,24 @@ VulkanCore::VulkanCore(
 
 	pickPhysicalDevice(required_device_extensions);
 	createLogicalDeviceAndAllocator(required_device_extensions);
+
+	// Renderdoc api
+#if defined(_WIN32)
+	if (HMODULE mod = GetModuleHandleA("renderdoc.dll")) {
+		pRENDERDOC_GetAPI renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(GetProcAddress(mod, "RENDERDOC_GetAPI"));
+		renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
+		TOAST_INFO("VulkanCore", "RenderDoc API detected");
+	}
+#elif defined(__linux__)
+	if (auto* mod = dlopen("librenderdoc.so", RTLD_NOLOAD | RTLD_LAZY)) {
+		auto* renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(dlsym(mod, "RENDERDOC_GetAPI"));
+		if (renderdoc_get_api) {
+			renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
+			TOAST_INFO("VulkanCore", "RenderDoc API detected");
+		}
+		dlclose(mod);
+	}
+#endif
 }
 
 void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device_extensions) {
@@ -335,8 +357,9 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 		}
 
 		if (!queue_families.isDistinct()) {
-			TOAST_WARN("VulkanCore", "  Device rejected: graphics, compute and transfer queues must use distinct families");
-			continue;
+			TOAST_WARN(
+			    "VulkanCore", "  Device Waring: graphics, compute and transfer are not using distinct family queues, PERFORMANCE LOSS"
+			);
 		}
 
 		TOAST_TRACE("VulkanCore", "  Device score: {}", device_score.total);
@@ -419,8 +442,17 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 		queue_create_infos.emplace_back(vk::DeviceQueueCreateInfo({}, family_index, 1, &queue_priority));
 	}
 
+	// Enable antyroscopic filtering
+	const auto device_features = m_physical_device.getFeatures();
+	m_sampler_anisotropy_supported = device_features.samplerAnisotropy == VK_TRUE;
+	m_max_sampler_anisotropy =
+	    m_sampler_anisotropy_supported ? m_physical_device.getProperties().limits.maxSamplerAnisotropy : 1.0f;
+
+	vk::PhysicalDeviceFeatures enabled_features {};
+	enabled_features.samplerAnisotropy = m_sampler_anisotropy_supported ? VK_TRUE : VK_FALSE;
+
 	std::vector<const char*> device_extensions(required_device_extensions.begin(), required_device_extensions.end());
-	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions);
+	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions, &enabled_features);
 	vk::PhysicalDeviceVulkan12Features vulkan12_features {};
 	vk::PhysicalDeviceVulkan13Features vulkan13_features {};
 	vk::PhysicalDeviceVulkan11Features vulkan11_features {};
@@ -685,5 +717,19 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 	score.missing_extensions = required_missing_names;
 
 	return score;
+}
+
+auto VulkanCore::checkValidationLayerSupport() -> bool {
+	{
+		uint32_t layer_count;
+		vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+
+		std::vector<VkLayerProperties> available_layers(layer_count);
+		vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+
+		return std::find_if(available_layers.begin(), available_layers.end(), [](const VkLayerProperties& layer) {
+			       return std::string(layer.layerName) == "VK_LAYER_KHRONOS_validation";
+		       }) != available_layers.end();
+	}
 }
 }

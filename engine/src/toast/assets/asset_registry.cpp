@@ -32,6 +32,11 @@ void AssetRegistry::init() {
 
 	// TOML + Schema loaders
 	s_schema_toml["data"] = [](const toml::table& t, AssetHandle<Schema> s) { return std::make_unique<Data>(t, std::move(s)); };
+	s_schema_toml["material"] = [](const toml::table& t, AssetHandle<Schema> s) {
+		return std::make_unique<Material>(t, std::move(s));
+	};
+
+	// Input assets
 	s_schema_toml["haptic"] = [](const toml::table& t, AssetHandle<Schema> s) { return std::make_unique<Haptic>(t, std::move(s)); };
 	s_schema_toml["input_action"] = [](const toml::table& t, AssetHandle<Schema> s) {
 		return std::make_unique<Action>(t, std::move(s));

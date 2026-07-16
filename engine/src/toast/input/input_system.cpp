@@ -18,6 +18,7 @@
 #include <chrono>
 #include <toast/assets/assets.hpp>
 #include <toast/events/event.hpp>
+#include <toast/input/assets/input_action.hpp>
 #include <toast/log.hpp>
 #include <toast/window/window_events.hpp>
 

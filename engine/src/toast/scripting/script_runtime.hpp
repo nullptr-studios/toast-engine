@@ -9,6 +9,7 @@
 #pragma once
 
 #include <any>
+#include <cstdint>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
 #include <memory>
