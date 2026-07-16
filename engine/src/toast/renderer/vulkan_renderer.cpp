@@ -641,6 +641,23 @@ void VulkanRenderer::mainRenderThread() {
 			m_free_frames.release();
 		}
 
+#ifdef TRACY_ENABLE
+		{
+			const auto memory_props = m_core->getPhysicalDevice().getMemoryProperties();
+			const auto budgets = m_core->getAllocator().getHeapBudgets();
+			uint64_t vram_used = 0;
+			uint64_t vram_budget = 0;
+			for (uint32_t i = 0; i < memory_props.memoryHeapCount && i < budgets.size(); ++i) {
+				if (memory_props.memoryHeaps[i].flags & vk::MemoryHeapFlagBits::eDeviceLocal) {
+					vram_used += budgets[i].usage;
+					vram_budget += budgets[i].budget;
+				}
+			}
+			TracyPlot("VRAM used", static_cast<int64_t>(vram_used));
+			TracyPlot("VRAM budget", static_cast<int64_t>(vram_budget));
+		}
+#endif
+
 		FrameMarkNamed("RenderFrame");
 	}
 }

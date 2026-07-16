@@ -23,6 +23,16 @@ namespace {
 constexpr std::size_t k_gigabyte_bytes = 1024ull * 1024ull * 1024ull;
 constexpr uint32_t k_invalid_queue_family = std::numeric_limits<uint32_t>::max();
 
+#ifdef TRACY_ENABLE
+void tracyVmaAllocate(VmaAllocator, uint32_t, VkDeviceMemory memory, VkDeviceSize size, void*) {
+	TracyAllocN(reinterpret_cast<void*>(memory), size, "VRAM");
+}
+
+void tracyVmaFree(VmaAllocator, uint32_t, VkDeviceMemory memory, VkDeviceSize, void*) {
+	TracyFreeN(reinterpret_cast<void*>(memory), "VRAM");
+}
+#endif
+
 struct QueueFamilySelection {
 	uint32_t graphics = k_invalid_queue_family;
 	uint32_t compute = k_invalid_queue_family;
@@ -477,6 +487,11 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vma::AllocatorCreateInfo allocator_ci {};
 	allocator_ci.vulkanApiVersion = VK_API_VERSION_1_4;
 	allocator_ci.physicalDevice = *m_physical_device;
+
+#ifdef TRACY_ENABLE
+	static constexpr vma::DeviceMemoryCallbacks tracy_memory_callbacks {&tracyVmaAllocate, &tracyVmaFree, nullptr};
+	allocator_ci.pDeviceMemoryCallbacks = &tracy_memory_callbacks;
+#endif
 
 	m_allocator.emplace(m_instance, m_device, allocator_ci);
 }
