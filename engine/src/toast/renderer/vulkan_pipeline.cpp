@@ -74,8 +74,7 @@ auto createGraphicsPipelineImpl(
 	    vk::BlendFactor::eOne,
 	    vk::BlendFactor::eZero,
 	    vk::BlendOp::eAdd,
-	    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB |
-	        vk::ColorComponentFlagBits::eA
+	    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB
 	);
 	const vk::PipelineColorBlendStateCreateInfo color_blend_state_ci(
 	    {}, false, vk::LogicOp::eCopy, 1, &color_blend_attachment, std::array {0.0f, 0.0f, 0.0f, 0.0f}
