@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "core://schemas/color_scheme.schema.json",
+  "title": "Toast Color Scheme (.color)",
+  "description": "Named colors referenced from localization formatting and scripts",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "colors": { "type": "array", "x-toast-type": "entry[]", "default": [], "description": "Named colors" }
+  },
+  "definitions": {
+    "entry": {
+      "type": "object",
+      "required": ["name", "color"],
+      "additionalProperties": false,
+      "properties": {
+        "name":  { "type": "string", "x-toast-type": "string", "description": "Name referenced from ${color:name}" },
+        "color": { "type": "array",  "x-toast-type": "color4", "default": [1.0, 1.0, 1.0, 1.0], "description": "RGBA color" }
+      }
+    }
+  }
+}

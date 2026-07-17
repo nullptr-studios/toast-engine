@@ -9,7 +9,7 @@ public sealed class UIElementAsset : BaseAsset {
 	public override string Type => "ui_element";
 	public override string Extension => ".rml";
 	public override string DisplayName => "UI Element";
-	public override string ChipText => "RML";
+	public override string ChipText => "UI";
 	public override string ChipColor => "Blue";
 	public override LucideIconKind Icon => LucideIconKind.AppWindow;
 	public override bool CanBeCreated => true;

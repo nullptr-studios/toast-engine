@@ -66,6 +66,12 @@ void AssetRegistry::init() {
 	s_schema_toml["audio_vca"] = [](const toml::table& t, AssetHandle<Schema> s) {
 		return std::make_unique<AudioVca>(t, std::move(s));
 	};
+	s_schema_toml["font_family"] = [](const toml::table& t, AssetHandle<Schema> s) {
+		return std::make_unique<FontFamily>(t, std::move(s));
+	};
+	s_schema_toml["color_scheme"] = [](const toml::table& t, AssetHandle<Schema> s) {
+		return std::make_unique<ColorScheme>(t, std::move(s));
+	};
 
 	// Lua global names
 	s_lua_names["mesh"] = "Mesh";
@@ -91,6 +97,8 @@ void AssetRegistry::init() {
 	s_lua_names["ui_style"] = "UIStyle";
 	s_lua_names["font"] = "Font";
 	s_lua_names["ui_image"] = "UIImage";
+	s_lua_names["font_family"] = "FontFamily";
+	s_lua_names["color_scheme"] = "ColorScheme";
 }
 
 void AssetRegistry::registerLuaName(std::string_view type, std::string_view lua_name) {

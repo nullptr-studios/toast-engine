@@ -11,7 +11,7 @@ public sealed class UIStyleAsset : BaseAsset {
 	public override string DisplayName => "UI Style";
 	public override string ChipText => "STYLE";
 	public override string ChipColor => "Blue";
-	public override LucideIconKind Icon => LucideIconKind.SwatchBook;
+	public override LucideIconKind Icon => LucideIconKind.Paintbrush;
 	public override bool CanBeCreated => true;
 	public override string Category => "UI";
 	public override bool HasThumbnail => false;
