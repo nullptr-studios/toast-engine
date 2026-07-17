@@ -207,6 +207,13 @@ auto ShaderCache::compileLocked(toast::UID uid) -> std::shared_ptr<const Entry> 
 	};
 	saveHashIndexLocked();
 
+	for (const auto& dep_uri : entry->dependencies) {
+		if (auto dep_uid = assets::AssetManager::resolveURI(dep_uri)) {
+			m_reverse_deps[dep_uid->data()].insert(uid.data());
+		}
+	}
+
+	TOAST_TRACE("Render", "Shader {} has {} dep(s)", uid.get(), entry->dependencies.size());
 	TOAST_INFO("Render", "Compiled shader {} ({}) -> {} bytes of SPIR-V", uid.get(), source_uri, entry->spirv.size());
 	return entry;
 }
@@ -280,8 +287,21 @@ auto ShaderCache::onShaderSourceReloaded(toast::UID uid) -> bool {
 	}
 
 	m_entries[uid.data()] = std::move(entry);
-
 	event::send<event::ShaderRecompiled>(uid);
+
+	const auto it = m_reverse_deps.find(uid.data());
+	if (it != m_reverse_deps.end()) {
+		for (const auto dep_hash : it->second) {
+			auto dep_entry = compileLocked(toast::UID(dep_hash));
+			if (dep_entry) {
+				m_entries[dep_hash] = std::move(dep_entry);
+				event::send<event::ShaderRecompiled>(toast::UID(dep_hash));
+			} else {
+				TOAST_WARN("Render", "Hot reload of dependent shader (of {}) failed, keeping previous SPIR-V", uid.get());
+			}
+		}
+	}
+
 	return true;
 }
 

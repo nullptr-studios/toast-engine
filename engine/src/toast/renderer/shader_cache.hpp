@@ -18,6 +18,7 @@
 #include <toast/events/listener.hpp>
 #include <toast/uid.hpp>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace event {
@@ -86,6 +87,7 @@ private:
 	std::mutex m_mutex;
 	std::unordered_map<uint64_t, std::shared_ptr<const Entry>> m_entries;
 	std::unordered_map<uint64_t, assets::AssetHandle<assets::Shader>> m_sources;
+	std::unordered_map<uint64_t, std::unordered_set<uint64_t>> m_reverse_deps;
 	nlohmann::json m_hash_index;
 	bool m_hash_index_loaded = false;
 

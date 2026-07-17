@@ -41,6 +41,7 @@
 #include <fstream>
 #include <memory>
 #include <mutex>
+#include <new>
 #include <optional>
 #include <span>
 #include <sstream>
@@ -567,11 +568,38 @@ void Engine::startGame() {
 }
 }
 
-// Tracy memory profiling
-#ifdef DEBUG
+// Tracy memory profiling — gated on TRACY_ENABLE so RelWithDebInfo profiling builds also track RAM
+#ifdef TRACY_ENABLE
 // NOLINTBEGIN(cppcoreguidelines-no-malloc)
 auto operator new(std::size_t count) -> void* {
 	auto* ptr = malloc(count);
+	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
+	return ptr;
+}
+auto operator new[](std::size_t count) -> void* {
+	auto* ptr = malloc(count);
+	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
+	return ptr;
+}
+auto operator new(std::size_t count, std::nothrow_t const&) noexcept -> void* {
+	auto* ptr = malloc(count);
+	if (ptr) tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
+	return ptr;
+}
+auto operator new[](std::size_t count, std::nothrow_t const&) noexcept -> void* {
+	auto* ptr = malloc(count);
+	if (ptr) tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
+	return ptr;
+}
+auto operator new(std::size_t count, std::align_val_t align) -> void* {
+	void* ptr = nullptr;
+	posix_memalign(&ptr, static_cast<std::size_t>(align), count);
+	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
+	return ptr;
+}
+auto operator new[](std::size_t count, std::align_val_t align) -> void* {
+	void* ptr = nullptr;
+	posix_memalign(&ptr, static_cast<std::size_t>(align), count);
 	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
 	return ptr;
 }
@@ -581,7 +609,42 @@ void operator delete(void* ptr) noexcept {
 	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
 	free(ptr);
 }
-
+void operator delete[](void* ptr) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+void operator delete(void* ptr, std::nothrow_t const&) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+void operator delete[](void* ptr, std::nothrow_t const&) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+void operator delete(void* ptr, std::size_t) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+void operator delete[](void* ptr, std::size_t) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+void operator delete(void* ptr, std::align_val_t) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+void operator delete[](void* ptr, std::align_val_t) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+void operator delete(void* ptr, std::size_t, std::align_val_t) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+void operator delete[](void* ptr, std::size_t, std::align_val_t) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
 // NOLINTEND(cppcoreguidelines-no-malloc)
 #endif
 
@@ -609,6 +672,13 @@ void toast_create_avalonia_window() noexcept {
 }
 
 void toast_tick() noexcept {
+#ifdef TRACY_ENABLE
+	// Name the thread that actually runs the tick loop (may be a .NET ThreadPool worker
+	// when driven from the C# editor via Task.Run; Engine::init's SetThreadName lands on
+	// a different pool thread, so we name it here on first invocation instead)
+	static std::once_flag s_thread_named;
+	std::call_once(s_thread_named, [] { tracy::SetThreadName("Main Thread"); });
+#endif
 	toast::Engine::get()->tick();
 }
 
