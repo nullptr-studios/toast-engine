@@ -36,7 +36,10 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable, IRowVisi
 	[ObservableProperty] private string m_name = "";
 	[ObservableProperty] private bool m_nameEditable = true;
 
-	// Asset/node subtype constraint (x-toast-asset-type / x-toast-node-type)
+	// Inspector display name override
+	[ObservableProperty] private string m_displayName = "";
+
+	// Asset/node subtype constraint
 	[ObservableProperty] private string m_refType = "";
 	[ObservableProperty] private string m_refUid = "";
 	[ObservableProperty] private string m_stringVal = "";
@@ -139,12 +142,19 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable, IRowVisi
 		NotifyDirty?.Invoke();
 	}
 
+	public string DisplayLabel => string.IsNullOrEmpty(DisplayName) ? Name : DisplayName;
+
+	partial void OnDisplayNameChanged(string value) {
+		OnPropertyChanged(nameof(DisplayLabel));
+	}
+
 	partial void OnNameChanged(string value) {
 		OnPropertyChanged(nameof(IsNamedScalar));
 		OnPropertyChanged(nameof(IsArrayItem));
 		OnPropertyChanged(nameof(IsNamedField));
 		OnPropertyChanged(nameof(IsUnnamedScalar));
 		OnPropertyChanged(nameof(IsStructRow));
+		OnPropertyChanged(nameof(DisplayLabel));
 		NotifyDirty?.Invoke();
 	}
 
@@ -397,6 +407,9 @@ public record SchemaFieldDescriptor(
 	string RefType,
 	TypeSwitchDescriptor? TypeSwitch
 ) {
+	/// Inspector display name (x-toast-display-name); empty uses the field key
+	public string DisplayName { get; init; } = "";
+
 	public SchemaFieldDescriptor(string Name, string TypeKey, bool IsArray, string DefaultStr, string Description)
 		: this(Name, TypeKey, IsArray, DefaultStr, Description, [], null, null, [], "", null) { }
 

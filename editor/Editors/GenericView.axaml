@@ -121,7 +121,7 @@
 							      ColumnSpacing="8"
 							      IsVisible="{Binding IsScalar}">
 								<TextBlock Classes="lbl"
-								           Text="{Binding Name}" />
+								           Text="{Binding DisplayLabel}" />
 								<Panel Grid.Column="1">
 									<elements:DragFloatBox Value="{Binding FloatVal,  Mode=TwoWay}"
 									                       Minimum="{Binding Minimum}"
@@ -164,7 +164,7 @@
 							<StackPanel Spacing="8"
 							            IsVisible="{Binding IsVectorLayout}">
 								<TextBlock Classes="lbl"
-								           Text="{Binding Name}" />
+								           Text="{Binding DisplayLabel}" />
 								<elements:DragVec2Box X="{Binding X, Mode=TwoWay}"
 								                      Y="{Binding Y, Mode=TwoWay}"
 								                      Minimum="{Binding Minimum}"
@@ -184,7 +184,7 @@
 							        CornerRadius="8"
 							        Padding="8">
 								<StackPanel Spacing="8">
-									<TextBlock Text="{Binding Name}"
+									<TextBlock Text="{Binding DisplayLabel}"
 									           FontWeight="Bold"
 									           HorizontalAlignment="Center"
 									           Margin="0,0,0,4" />
@@ -200,7 +200,7 @@
 							<StackPanel Spacing="4"
 							            IsVisible="{Binding IsArray}">
 								<TextBlock Classes="lbl"
-								           Text="{Binding Name}" />
+								           Text="{Binding DisplayLabel}" />
 								<elements:ArrayBox Background="{StaticResource Bg1}"
 								                   Padding="6"
 								                   Items="{Binding Children, Mode=TwoWay}"

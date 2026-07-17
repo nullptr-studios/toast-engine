@@ -333,6 +333,7 @@ public partial class GenericViewModel : Tool, IAutosavable {
 
 		field.RefType = desc.RefType;
 		field.Variants = desc.Variants;
+		field.DisplayName = desc.DisplayName;
 		field.NameEditable = false;
 
 		if (desc.TypeSwitch is not null)
@@ -748,7 +749,7 @@ public partial class GenericViewModel : Tool, IAutosavable {
 				variants,
 				refType,
 				typeSwitch
-			));
+			) { DisplayName = val?["x-toast-display-name"]?.GetValue<string>() ?? "" });
 		}
 
 		return result;
