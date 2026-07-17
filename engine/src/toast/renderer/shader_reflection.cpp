@@ -200,7 +200,7 @@ auto extractReflection(slang::ProgramLayout* layout) -> ShaderReflection {
 
 		const auto kind = mapBindingKind(type_layout);
 		if (!kind.has_value()) {
-			TOAST_WARN("Vulkan", "Shader reflection skipped parameter '{}' with unsupported type", name);
+			TOAST_WARN("Render", "Shader reflection skipped parameter '{}' with unsupported type", name);
 			continue;
 		}
 
