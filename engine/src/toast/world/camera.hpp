@@ -22,7 +22,7 @@ public:
 public:
 	float fov = 75.f;
 	float near_plane = 0.01f;
-	float far_plane = 100.f;
+	float far_plane = 5000.f;
 
 	void setActiveCamera(bool force = true);
 

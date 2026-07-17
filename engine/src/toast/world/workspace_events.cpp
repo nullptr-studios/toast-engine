@@ -436,6 +436,8 @@ struct ProtoTraits<SetSnapping> {
 
 TOAST_PROTO_EVENT(SetSnapping);
 
+// Cameras
+
 template<>
 struct ProtoTraits<SetCameraMode> {
 	using Proto = proto::events::SetCameraMode;
@@ -451,6 +453,79 @@ struct ProtoTraits<SetCameraMode> {
 };
 
 TOAST_PROTO_EVENT(SetCameraMode);
+
+template<>
+struct ProtoTraits<EditorCameraFlyMode> {
+	using Proto = proto::events::EditorCameraFlyMode;
+	using Event = EditorCameraFlyMode;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_active(e.active);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.active()}; }
+};
+
+TOAST_PROTO_EVENT(EditorCameraFlyMode);
+
+template<>
+struct ProtoTraits<EditorCameraMoveState> {
+	using Proto = proto::events::EditorCameraMoveState;
+	using Event = EditorCameraMoveState;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_forward(e.forward);
+		p.set_back(e.back);
+		p.set_left(e.left);
+		p.set_right(e.right);
+		p.set_up(e.up);
+		p.set_down(e.down);
+		p.set_boost(e.boost);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		return {p.forward(), p.back(), p.left(), p.right(), p.up(), p.down(), p.boost()};
+	}
+};
+
+TOAST_PROTO_EVENT(EditorCameraMoveState);
+
+template<>
+struct ProtoTraits<EditorCameraLook> {
+	using Proto = proto::events::EditorCameraLook;
+	using Event = EditorCameraLook;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_dx(e.dx);
+		p.set_dy(e.dy);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.dx(), p.dy()}; }
+};
+
+TOAST_PROTO_EVENT(EditorCameraLook);
+
+template<>
+struct ProtoTraits<EditorCameraSpeedScroll> {
+	using Proto = proto::events::EditorCameraSpeedScroll;
+	using Event = EditorCameraSpeedScroll;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_delta(e.delta);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.delta()}; }
+};
+
+TOAST_PROTO_EVENT(EditorCameraSpeedScroll);
 
 template<>
 struct ProtoTraits<InspectorContent::InspectorField> {

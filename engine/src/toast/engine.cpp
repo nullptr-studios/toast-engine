@@ -28,6 +28,7 @@
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
 #include "world/camera.hpp"
+#include "world/editor_camera.hpp"
 #include "world/play_workspace.hpp"
 #include "world/workspace.hpp"
 #include "world/workspace_events.hpp"
@@ -65,6 +66,10 @@ struct EnginePimpl {
 	std::unique_ptr<assets::AssetManager> asset_manager = nullptr;
 	std::unique_ptr<input::InputSystem> input_system = nullptr;
 	std::unique_ptr<input::HapticsSystem> haptics_system = nullptr;
+	
+	// TODO: MOVE EDITOR CAMERA SOMEWHERE ELSE
+	std::unique_ptr<EditorCameraController> editor_camera = nullptr;
+	
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
 	std::unique_ptr<audio::AudioSystem> audio_system = nullptr;
@@ -274,7 +279,13 @@ void Engine::tick() {
 		active_application->tick();
 	}
 	total_time += Time::delta();
-	camera->worldPos(glm::vec3(std::sin(total_time) * 5.0f, std::cos(total_time) * 5.0f, 5));
+	
+	//TODO: MOVE THIS ELSEWHERE
+	if (m->editor_camera) {
+		m->editor_camera->tick(static_cast<float>(Time::delta()), camera);
+	} else if (camera) {
+		camera->worldPos(glm::vec3(std::sin(total_time) * 5.0f, std::cos(total_time) * 5.0f, 5));
+	}
 
 	if (m->audio_system) {
 		m->audio_system->tick();
@@ -374,6 +385,7 @@ void Engine::createAvaloniaWindow() {
 	camera->worldPos(glm::vec3(0));
 
 	m->renderer->setActiveCamera(camera);
+	m->editor_camera = std::make_unique<EditorCameraController>();
 
 	// create debug pipeline
 	auto pass = std::make_unique<renderer::MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
