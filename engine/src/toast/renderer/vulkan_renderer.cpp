@@ -520,7 +520,10 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	}
 	submit_info.commandBufferCount = 1;
 	submit_info.pCommandBuffers = &command_buffer;
-	m_core->getGraphicsQueue().submit(submit_info, *frame.in_flight);
+	{
+		std::scoped_lock submit_lock(m_core->graphicsSubmitMutex());
+		m_core->getGraphicsQueue().submit(submit_info, *frame.in_flight);
+	}
 
 	// Present onto target texture
 	const auto present_result = m_output_target->present(image_index, present_sync ? signal_semaphore : vk::Semaphore {});

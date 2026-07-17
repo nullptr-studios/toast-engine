@@ -1,8 +1,8 @@
 #include "ui_system_interface.hpp"
 
+#include <SDL3/SDL.h>
 #include <toast/log.hpp>
 #include <toast/time.hpp>
-#include <SDL3/SDL.h>
 #include <tracy/Tracy.hpp>
 
 namespace ui {

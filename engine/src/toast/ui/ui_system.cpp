@@ -1,11 +1,11 @@
 #include "ui_system.hpp"
 
-#include <toast/log.hpp>
 #include "ui_file_interface.hpp"
 #include "ui_system_interface.hpp"
 
 #include <RmlUi/Core.h>
 #include <cassert>
+#include <toast/log.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace ui {

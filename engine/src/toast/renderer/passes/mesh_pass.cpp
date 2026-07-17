@@ -249,7 +249,10 @@ void MeshPass::createDefaultMaterialResources(const renderer::VulkanCore& core) 
 	vk::SubmitInfo submit {};
 	submit.commandBufferCount = 1;
 	submit.pCommandBuffers = &raw_cmd;
-	core.getGraphicsQueue().submit(submit, *fence);
+	{
+		std::scoped_lock submit_lock(core.graphicsSubmitMutex());
+		core.getGraphicsQueue().submit(submit, *fence);
+	}
 	std::ignore = device.waitForFences(*fence, true, std::numeric_limits<uint64_t>::max());
 
 	m_default_texture.markReady();
