@@ -22,6 +22,36 @@
 			<Setter Property="TextTrimming"
 			        Value="CharacterEllipsis" />
 		</Style>
+		<Style Selector="ToggleButton.hdr">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="4" />
+			<Setter Property="HorizontalAlignment"
+			        Value="Stretch" />
+			<Setter Property="HorizontalContentAlignment"
+			        Value="Stretch" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Text}" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+		</Style>
+		<Style Selector="ToggleButton.hdr /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+		</Style>
+		<Style Selector="ToggleButton.hdr:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ToggleButton.hdr:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
 		<Style Selector="Button.add-btn">
 			<Setter Property="HorizontalAlignment"
 			        Value="Stretch" />
@@ -179,19 +209,28 @@
 								                      IsVisible="{Binding IsVec3}" />
 							</StackPanel>
 
-							<!-- Object (collapsible) -->
-							<Expander IsVisible="{Binding IsObject}"
-							          IsExpanded="{Binding Expanded, Mode=TwoWay}"
-							          Header="{Binding DisplayLabel}"
-							          Background="{StaticResource Bg3}"
-							          CornerRadius="8"
-							          Padding="4">
-								<elements:ArrayBox Background="Transparent"
-								                   Padding="4"
-								                   Items="{Binding Children, Mode=TwoWay}"
-								                   CanReorder="False"
-								                   CanAddRemove="False" />
-							</Expander>
+							<!-- Object (collapsible, class-chip style) -->
+							<Border IsVisible="{Binding IsObject}"
+							        Background="{StaticResource Bg3}"
+							        CornerRadius="8"
+							        Padding="8">
+								<StackPanel>
+									<ToggleButton Classes="hdr"
+									              IsChecked="{Binding Expanded, Mode=TwoWay}">
+										<TextBlock Text="{Binding DisplayLabel}"
+										           FontWeight="Bold"
+										           HorizontalAlignment="Center"
+										           VerticalAlignment="Center" />
+									</ToggleButton>
+									<elements:ArrayBox Margin="0,8,0,0"
+									                   Background="Transparent"
+									                   Padding="0"
+									                   Items="{Binding Children, Mode=TwoWay}"
+									                   CanReorder="False"
+									                   CanAddRemove="False"
+									                   IsVisible="{Binding Expanded}" />
+								</StackPanel>
+							</Border>
 
 							<!-- Array -->
 							<StackPanel Spacing="4"

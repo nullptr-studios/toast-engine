@@ -165,7 +165,8 @@ auto compileModule(std::string_view module_name, std::string_view source_path, s
 		}
 	}
 
-	TOAST_TRACE("Render", "Compiled shader '{}' -> {} bytes of SPIR-V", source_path, spirv_blob->getBufferSize());
+	// we dont want to log this two times
+	// TOAST_TRACE("Render", "Compiled shader '{}' -> {} bytes of SPIR-V", source_path, spirv_blob->getBufferSize());
 	return result;
 }
 

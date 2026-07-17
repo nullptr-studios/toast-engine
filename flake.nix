@@ -105,6 +105,7 @@
 				gdb
 				lldb
 				pkg-config
+				shader-slang
 
 				cmake-gen
 				cmake-build

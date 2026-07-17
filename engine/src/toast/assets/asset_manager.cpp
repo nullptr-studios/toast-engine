@@ -334,6 +334,7 @@ void AssetManager::reloadManifest() {
 
 			load_collection("mesh");
 			load_collection("material");
+			load_collection("material_instance"); 
 			load_collection("texture");
 			load_collection("schema");
 			load_collection("data");
@@ -351,6 +352,7 @@ void AssetManager::reloadManifest() {
 			load_collection("input_layout");
 			load_collection("input_settings");
 			load_collection("script");
+			load_collection("shader");
 		} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse manifest {}: {}", uri, e.what()); }
 	};
 
