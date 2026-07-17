@@ -23,17 +23,17 @@ public:
 	static auto get() -> SlangVfs&;
 
 	// ISlangUnknown
-	SLANG_NO_THROW SlangResult SLANG_MCALL queryInterface(const SlangUUID& uuid, void** out_object) override;
+	SLANG_NO_THROW auto SLANG_MCALL queryInterface(const SlangUUID& uuid, void** out_object) -> SlangResult override;
 
-	SLANG_NO_THROW uint32_t SLANG_MCALL addRef() override { return 1; }
+	SLANG_NO_THROW auto SLANG_MCALL addRef() -> uint32_t override { return 1; }
 
-	SLANG_NO_THROW uint32_t SLANG_MCALL release() override { return 1; }
+	SLANG_NO_THROW auto SLANG_MCALL release() -> uint32_t override { return 1; }
 
 	// ISlangCastable
-	SLANG_NO_THROW void* SLANG_MCALL castAs(const SlangUUID& uuid) override;
+	SLANG_NO_THROW auto SLANG_MCALL castAs(const SlangUUID& uuid) -> void* override;
 
 	// ISlangFileSystem
-	SLANG_NO_THROW SlangResult SLANG_MCALL loadFile(const char* path, ISlangBlob** out_blob) override;
+	SLANG_NO_THROW auto SLANG_MCALL loadFile(const char* path, ISlangBlob** out_blob) -> SlangResult override;
 
 	/// Rebuilds a clean "pack://relative" URI from paths Slang may have mangled
 	static auto normalizeUri(std::string_view path) -> std::string;

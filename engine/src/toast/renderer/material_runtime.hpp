@@ -83,7 +83,7 @@ public:
 		uint32_t set = 0;
 		uint32_t binding = 0;
 		assets::AssetHandle<assets::Texture> texture;
-		vk::Sampler sampler {};
+		vk::Sampler sampler;
 	};
 
 	auto textureSlots() -> const std::vector<TextureSlot>&;

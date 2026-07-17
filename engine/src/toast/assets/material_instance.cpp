@@ -174,7 +174,7 @@ auto MaterialInstance::deltaRoot() const -> DataValue {
 					obj.set(field_key, field_value);
 				}
 			}
-			if (obj.size() > 0) {
+			if (!obj.empty()) {
 				out.set(key, std::move(obj));
 			}
 			continue;

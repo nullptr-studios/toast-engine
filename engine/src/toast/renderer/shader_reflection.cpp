@@ -72,7 +72,7 @@ auto extractInspector(slang::VariableReflection* var) -> ShaderInspectorMeta {
 		return meta;
 	}
 
-	const auto readString = [](slang::Attribute* attribute) -> std::string {
+	const auto read_string = [](slang::Attribute* attribute) -> std::string {
 		size_t size = 0;
 		const char* str = attribute->getArgumentValueString(0, &size);
 		return str != nullptr ? std::string(str, size) : std::string {};
@@ -103,13 +103,13 @@ auto extractInspector(slang::VariableReflection* var) -> ShaderInspectorMeta {
 				meta.range_max = max_value;
 			}
 		} else if (name == "Name") {
-			meta.display_name = readString(attribute);
+			meta.display_name = read_string(attribute);
 		} else if (name == "Group") {
-			meta.group = readString(attribute);
+			meta.group = read_string(attribute);
 		} else if (name == "Subgroup") {
-			meta.subgroup = readString(attribute);
+			meta.subgroup = read_string(attribute);
 		} else if (name == "Unit") {
-			meta.unit = readString(attribute);
+			meta.unit = read_string(attribute);
 		}
 	}
 

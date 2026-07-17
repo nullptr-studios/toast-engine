@@ -334,7 +334,7 @@ void AssetManager::reloadManifest() {
 
 			load_collection("mesh");
 			load_collection("material");
-			load_collection("material_instance"); 
+			load_collection("material_instance");
 			load_collection("texture");
 			load_collection("schema");
 			load_collection("data");

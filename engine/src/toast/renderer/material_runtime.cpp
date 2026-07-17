@@ -146,7 +146,7 @@ void writeMember(std::vector<std::byte>& blob, const ShaderBlockMember& member, 
 		const uint32_t stride = member.element_stride;
 		const size_t count = std::min<size_t>(member.element_count, v.size());
 		for (size_t i = 0; i < count; ++i) {
-			writeScalar(blob, member.type, member.offset + static_cast<uint32_t>(i) * stride, member.inspector, v[i]);
+			writeScalar(blob, member.type, member.offset + (static_cast<uint32_t>(i) * stride), member.inspector, v[i]);
 		}
 		return;
 	}

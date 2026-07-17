@@ -82,7 +82,7 @@ private:
 
 	vk::Format m_color_format = vk::Format::eUndefined;
 	vk::Format m_depth_format = vk::Format::eUndefined;
-	vk::Extent2D m_extent {};
+	vk::Extent2D m_extent;
 
 	MaterialRuntime m_root_runtime;
 	ShaderLayout m_layout;

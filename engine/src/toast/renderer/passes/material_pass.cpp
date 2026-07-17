@@ -212,7 +212,7 @@ void MaterialPass::updateInstanceDescriptors(InstanceResources& res, uint32_t fr
 	}
 
 	// Texture descriptors
-	auto& slots = res.runtime->textureSlots();
+	const auto& slots = res.runtime->textureSlots();
 	if (res.bound_views[frame_index].size() != slots.size()) {
 		res.bound_views[frame_index].assign(slots.size(), vk::ImageView {});
 	}
@@ -226,7 +226,7 @@ void MaterialPass::updateInstanceDescriptors(InstanceResources& res, uint32_t fr
 		vk::ImageView view = VulkanRenderer::instance->getDefaultTextureView();
 		vk::Sampler sampler = slot.sampler ? slot.sampler : VulkanRenderer::instance->getDefaultSampler();
 		if (slot.texture.hasValue()) {
-			auto& gpu_texture = slot.texture->gpuTexture();
+			const auto& gpu_texture = slot.texture->gpuTexture();
 			if (gpu_texture.isReady() && gpu_texture.getView()) {
 				view = gpu_texture.getView();
 			}

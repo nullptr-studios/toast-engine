@@ -19,7 +19,7 @@ class VfsBlob final : public ISlangBlob {
 public:
 	explicit VfsBlob(std::vector<uint8_t> data) : m_data(std::move(data)) { }
 
-	SLANG_NO_THROW SlangResult SLANG_MCALL queryInterface(const SlangUUID& uuid, void** out_object) override {
+	SLANG_NO_THROW auto SLANG_MCALL queryInterface(const SlangUUID& uuid, void** out_object) -> SlangResult override {
 		if (out_object == nullptr) {
 			return SLANG_E_INVALID_ARG;
 		}
@@ -32,9 +32,9 @@ public:
 		return SLANG_E_NO_INTERFACE;
 	}
 
-	SLANG_NO_THROW uint32_t SLANG_MCALL addRef() override { return ++m_refs; }
+	SLANG_NO_THROW auto SLANG_MCALL addRef() -> uint32_t override { return ++m_refs; }
 
-	SLANG_NO_THROW uint32_t SLANG_MCALL release() override {
+	SLANG_NO_THROW auto SLANG_MCALL release() -> uint32_t override {
 		const uint32_t refs = --m_refs;
 		if (refs == 0) {
 			delete this;
@@ -42,9 +42,9 @@ public:
 		return refs;
 	}
 
-	SLANG_NO_THROW const void* SLANG_MCALL getBufferPointer() override { return m_data.data(); }
+	SLANG_NO_THROW auto getBufferPointer() -> const void* SLANG_MCALL override { return m_data.data(); }
 
-	SLANG_NO_THROW size_t SLANG_MCALL getBufferSize() override { return m_data.size(); }
+	SLANG_NO_THROW auto SLANG_MCALL getBufferSize() -> size_t override { return m_data.size(); }
 
 private:
 	std::vector<uint8_t> m_data;
