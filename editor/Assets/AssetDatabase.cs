@@ -301,6 +301,8 @@ public static class AssetDatabase {
 		IAssetImporter importer = ext switch {
 			".psd" => new PsdImporter(textureSettings, SettingsFromMeta(psdSection)),
 			".glb" or ".gltf" => new GltfImporter(SettingsFromMeta(gltfSection), textureSettings),
+			".ttf" => new FontImporter(),
+			".tga" => new UIImageImporter(),
 			_ => new TextureImporter(textureSettings)
 		};
 

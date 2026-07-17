@@ -42,7 +42,9 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	private static readonly IReadOnlyList<IAssetImporter> s_defaultImporters = [
 		new TextureImporter(new TextureImporter.Settings()),
 		new PsdImporter(new TextureImporter.Settings(), new PsdImporter.Settings()),
-		new GltfImporter(new GltfImporter.Settings(), new TextureImporter.Settings())
+		new GltfImporter(new GltfImporter.Settings(), new TextureImporter.Settings()),
+		new FontImporter(),
+		new UIImageImporter()
 	];
 
 	private static readonly HashSet<string> s_artworkExts = new(

@@ -24,6 +24,7 @@
 #include "scripting/lua_state.hpp"
 #include "thread_pool.hpp"
 #include "time.hpp"
+#include "ui/ui_system.hpp"
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
@@ -68,6 +69,7 @@ struct EnginePimpl {
 	std::unique_ptr<renderer::VulkanCore> vulkan_core = nullptr;
 	std::unique_ptr<renderer::VulkanRenderer> renderer = nullptr;
 	std::unique_ptr<audio::AudioSystem> audio_system = nullptr;
+	std::unique_ptr<ui::UISystem> ui_system = nullptr;
 	std::unique_ptr<ProjectSettings> settings = nullptr;
 	std::unique_ptr<scripting::LuaState> lua_state = nullptr;
 	Time time;
@@ -189,6 +191,7 @@ void Engine::init() {
 	});
 
 	m->audio_system = std::make_unique<audio::AudioSystem>();
+	m->ui_system = std::make_unique<ui::UISystem>();
 }
 
 Engine::~Engine() noexcept {
@@ -203,6 +206,7 @@ Engine::~Engine() noexcept {
 			m->owners.clear();
 		}
 		m->world.reset();
+		m->ui_system.reset();
 		m->asset_manager.reset();
 		m->renderer.reset();
 		m->vulkan_core.reset();
@@ -278,6 +282,10 @@ void Engine::tick() {
 
 	if (m->audio_system) {
 		m->audio_system->tick();
+	}
+
+	if (m->ui_system) {
+		m->ui_system->tick();
 	}
 
 	// TODO MOVE THIS

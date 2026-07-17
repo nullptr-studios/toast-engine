@@ -26,6 +26,10 @@ void AssetRegistry::init() {
 	s_raw["audio_bank"] = [](std::vector<uint8_t> d) { return std::make_unique<AudioBank>(std::move(d)); };
 	s_raw["audio_strings"] = [](std::vector<uint8_t> d) { return std::make_unique<AudioStrings>(std::move(d)); };
 	s_raw["script"] = [](std::vector<uint8_t> d) { return std::make_unique<Script>(std::move(d)); };
+	s_raw["ui_element"] = [](std::vector<uint8_t> d) { return std::make_unique<UIElement>(std::move(d)); };
+	s_raw["ui_style"] = [](std::vector<uint8_t> d) { return std::make_unique<UIStyle>(std::move(d)); };
+	s_raw["font"] = [](std::vector<uint8_t> d) { return std::make_unique<Font>(std::move(d)); };
+	s_raw["ui_image"] = [](std::vector<uint8_t> d) { return std::make_unique<UIImage>(std::move(d)); };
 
 	// Plain TOML loaders
 	s_toml["curve"] = [](const toml::table& t) { return Curve::fromToml(t); };
@@ -83,6 +87,10 @@ void AssetRegistry::init() {
 	s_lua_names["audio_port"] = "AudioPort";
 	s_lua_names["audio_snapshot"] = "AudioSnapshot";
 	s_lua_names["audio_vca"] = "AudioVca";
+	s_lua_names["ui_element"] = "UIElement";
+	s_lua_names["ui_style"] = "UIStyle";
+	s_lua_names["font"] = "Font";
+	s_lua_names["ui_image"] = "UIImage";
 }
 
 void AssetRegistry::registerLuaName(std::string_view type, std::string_view lua_name) {
