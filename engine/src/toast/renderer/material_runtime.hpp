@@ -82,7 +82,7 @@ public:
 	struct TextureSlot {
 		uint32_t set = 0;
 		uint32_t binding = 0;
-		assets::AssetHandle<assets::Texture> texture;
+		assets::Handle<assets::Texture> texture;
 		vk::Sampler sampler;
 	};
 

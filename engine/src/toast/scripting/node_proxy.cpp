@@ -32,7 +32,7 @@ auto luaArgToAny(lua_State* l, const luabridge::LuaRef& v, std::string_view cpp_
 	const bool is_vec2 = cpp_type.contains("vec2");
 	const bool is_quat = cpp_type.contains("quat");
 	const bool is_box = cpp_type.contains("Box<");
-	const bool is_asset = cpp_type.contains("AssetHandle<");
+	const bool is_asset = cpp_type.contains("Handle<");
 	// int must come last so it doesn't match "uint64_t" etc. before float/double
 	const bool is_int = !is_float && !is_double && !is_bool &&
 	                    (cpp_type.contains("int") || cpp_type.contains("long") || cpp_type.contains("short") || cpp_type == "char");
@@ -623,7 +623,7 @@ auto anyToLuaRef(lua_State* l, const std::any& value, const toast::FieldInfo& fi
 				}
 				return {l, NodeProxy(*box)};
 			}
-			// AssetHandle
+			// Handle
 			if (const auto* uid = std::any_cast<toast::UID>(&value)) {
 				return {l, AssetProxy(*uid)};
 			}
@@ -1216,7 +1216,7 @@ auto nodeProxyNewindex(NodeProxy& proxy, const luabridge::LuaRef& key, const lua
 				// FieldAccess specialisation narrows back to Box<Derived>
 				any_value = toast::Box<toast::Node>(other.box());
 
-			} else if (!f->is_array && (type_str.starts_with("assets::AssetHandle<") || type_str.starts_with("AssetHandle<"))) {
+			} else if (!f->is_array && (type_str.starts_with("assets::Handle<") || type_str.starts_with("Handle<"))) {
 				if (!value.isInstance<AssetProxy>()) {
 					luaL_error(l, "Field '%s' expects Asset", key_str.c_str());
 				}

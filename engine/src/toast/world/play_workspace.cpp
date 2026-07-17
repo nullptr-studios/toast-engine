@@ -11,7 +11,7 @@ namespace toast {
 PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(handle, EmptyTag {}) {
 	ZoneScoped;
 
-	assets::AssetHandle<assets::Prefab> file(&prefab, handle, "");
+	assets::Handle<assets::Prefab> file(&prefab, handle, "");
 
 	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };

@@ -21,7 +21,7 @@ auto readAssetUID(const DataValue& v) -> toast::UID {
 
 }
 
-Material::Material(const toml::table& table, AssetHandle<Schema> schema) : Data(table, std::move(schema), Data::keep_all_keys) { }
+Material::Material(const toml::table& table, Handle<Schema> schema) : Data(table, std::move(schema), Data::keep_all_keys) { }
 
 Material::~Material() = default;
 
@@ -43,7 +43,7 @@ auto Material::name() const -> std::string {
 	return "Unnamed Material";
 }
 
-auto Material::shaders() const -> const std::vector<AssetHandle<Shader>>& {
+auto Material::shaders() const -> const std::vector<Handle<Shader>>& {
 	if (!m_shaders_dirty) {
 		return m_shader_handles;
 	}

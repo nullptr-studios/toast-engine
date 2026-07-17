@@ -32,6 +32,7 @@ struct TOAST_API UID {
 	 */
 	operator std::string() const noexcept;
 	auto operator<=>(const UID& other) const noexcept -> std::strong_ordering;
+	auto operator==(const UID& other) const noexcept -> bool;
 
 	/**
 	 * @brief Encodes the 64-bit value as an 11-character base64url string

@@ -884,7 +884,7 @@ void toast_haptics_test(const char* toml_text) noexcept {
 	try {
 		toml::table table = toml::parse(std::string_view {toml_text});
 		auto* haptic = new assets::Haptic(table);
-		assets::AssetHandle<assets::Haptic> handle {haptic, toast::UID::make(), "editor://haptic_test"};
+		assets::Handle<assets::Haptic> handle {haptic, toast::UID::make(), "editor://haptic_test"};
 		event::send<event::PlayHapticDirect>(uint32_t {0}, std::move(handle));
 	} catch (const std::exception& e) { TOAST_ERROR("Haptics", "Failed to parse test haptic: {}", e.what()); }
 }

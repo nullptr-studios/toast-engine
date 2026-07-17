@@ -304,7 +304,7 @@ private:
 	event::Listener m_asset_listener;
 
 	/// Fallback material for meshes without one
-	assets::AssetHandle<assets::Material> m_default_material;
+	assets::Handle<assets::Material> m_default_material;
 	bool m_default_material_warned = false;
 
 	/// 1x1 white texture + sampler shared by every material pass as texture fallback

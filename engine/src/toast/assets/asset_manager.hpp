@@ -60,7 +60,7 @@ struct Paths {
  * Assets stay resident in the cache until clearUnusedAssets() is called and their
  * ref count is zero.
  *
- * @see Paths, AssetHandle, setPaths(), registerDatabase()
+ * @see Paths, Handle, setPaths(), registerDatabase()
  */
 class AssetManager {
 public:
@@ -128,7 +128,7 @@ public:
 
 	/**
 	 * @brief Evicts all assets whose ref count is zero from the cache
-	 * @note Assets still referenced by an AssetHandle will not be evicted; safe to call periodically
+	 * @note Assets still referenced by an Handle will not be evicted; safe to call periodically
 	 */
 	void clearUnusedAssets();
 
@@ -175,7 +175,7 @@ public:
 	 * @param query Substring to search for in manifest paths
 	 * @return Loaded asset handles for all matching entries; empty vector if none found
 	 */
-	auto search(std::string_view query) -> std::vector<AssetHandle<Asset>>;
+	auto search(std::string_view query) -> std::vector<Handle<Asset>>;
 
 	auto listByType(std::string_view type) -> std::vector<toast::UID>;
 

@@ -85,7 +85,7 @@ void ShaderCache::saveHashIndexLocked() {
 	}
 }
 
-auto ShaderCache::sourceHandleLocked(toast::UID uid) -> assets::AssetHandle<assets::Shader>& {
+auto ShaderCache::sourceHandleLocked(toast::UID uid) -> assets::Handle<assets::Shader>& {
 	auto [it, inserted] = m_sources.try_emplace(uid.data());
 	if (inserted || !it->second.hasValue()) {
 		it->second = assets::load<assets::Shader>(uid);

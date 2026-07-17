@@ -442,7 +442,7 @@ fn infer_field_type(type_name: &str) -> FieldType {
 
     // both are held by value in C++ but the reflection boundary only exchanges UIDs;
     // the accessor resolves/unresolves the handle on get/set
-    if type_name.contains("AssetHandle<") {
+    if type_name.contains("Handle<") {
         return FieldType::Uid;
     }
     if base.starts_with("Box<") {

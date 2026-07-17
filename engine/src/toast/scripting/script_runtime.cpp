@@ -206,7 +206,7 @@ auto scriptInstanceNewindex(lua_State* l) -> int {
 
 }
 
-ScriptInstance::ScriptInstance(lua_State* l, const assets::AssetHandle<assets::Script>& script, NodeProxy proxy)
+ScriptInstance::ScriptInstance(lua_State* l, const assets::Handle<assets::Script>& script, NodeProxy proxy)
     : m_state(l),
       m_proxy(std::move(proxy)),
       m_name(script.path()) {
@@ -633,7 +633,7 @@ auto ScriptInstance::hasFunction(std::string_view fn_name) const noexcept -> boo
 	return is_fn;
 }
 
-ScriptRuntime::ScriptRuntime(toast::Box<toast::Node> node, const std::vector<assets::AssetHandle<assets::Script>>& scripts) {
+ScriptRuntime::ScriptRuntime(toast::Box<toast::Node> node, const std::vector<assets::Handle<assets::Script>>& scripts) {
 	if (scripts.empty()) {
 		return;
 	}

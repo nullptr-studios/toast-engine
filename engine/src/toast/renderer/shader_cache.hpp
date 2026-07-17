@@ -82,11 +82,11 @@ private:
 	auto isDiskCacheFreshLocked(toast::UID uid, uint64_t source_hash) -> bool;
 	void loadHashIndexLocked();
 	void saveHashIndexLocked();
-	auto sourceHandleLocked(toast::UID uid) -> assets::AssetHandle<assets::Shader>&;
+	auto sourceHandleLocked(toast::UID uid) -> assets::Handle<assets::Shader>&;
 
 	std::mutex m_mutex;
 	std::unordered_map<uint64_t, std::shared_ptr<const Entry>> m_entries;
-	std::unordered_map<uint64_t, assets::AssetHandle<assets::Shader>> m_sources;
+	std::unordered_map<uint64_t, assets::Handle<assets::Shader>> m_sources;
 	std::unordered_map<uint64_t, std::unordered_set<uint64_t>> m_reverse_deps;
 	nlohmann::json m_hash_index;
 	bool m_hash_index_loaded = false;

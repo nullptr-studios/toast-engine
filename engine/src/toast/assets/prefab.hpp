@@ -264,7 +264,7 @@ private:
 	auto writeType(toast::FieldType type, bool is_array = false) const -> std::string;
 
 	auto fieldEquals(toast::FieldType type, bool is_array, const std::any& a, const std::any& b) const -> bool;
-	auto flattenedRootFields(const AssetHandle<Prefab>& source) const -> std::optional<BasicNode>;
+	auto flattenedRootFields(const Handle<Prefab>& source) const -> std::optional<BasicNode>;
 
 	toast::UID m_self_uid;    ///< if this prefab embeds itself, this UID breaks the recursion during instantiation
 	std::unordered_set<uint64_t>

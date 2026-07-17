@@ -226,7 +226,7 @@ auto parseLuaValue(const LuaVarDesc& desc, std::string_view text, const NodeReso
 				std::vector<scripting::AssetProxy> out;
 				for (const auto& t : tokens(' ')) {
 					const toast::UID uid = parse_uid(t);
-					out.push_back(uid.data() != 0 ? scripting::AssetProxy(uid) : scripting::AssetProxy(assets::AssetHandleBase(nullptr)));
+					out.push_back(uid.data() != 0 ? scripting::AssetProxy(uid) : scripting::AssetProxy(assets::HandleBase(nullptr)));
 				}
 				return out;
 			}
@@ -270,7 +270,7 @@ auto parseLuaValue(const LuaVarDesc& desc, std::string_view text, const NodeReso
 		case LuaVarKind::asset_ref: {
 			const toast::UID uid = parse_uid(text);
 			if (uid.data() == 0) {
-				return scripting::AssetProxy(assets::AssetHandleBase(nullptr));
+				return scripting::AssetProxy(assets::HandleBase(nullptr));
 			}
 			return scripting::AssetProxy(uid);
 		}

@@ -48,7 +48,7 @@ struct MaterialSettings {
  */
 class TOAST_API Material : public Data {
 public:
-	explicit Material(const toml::table& table, AssetHandle<Schema> schema = {});
+	explicit Material(const toml::table& table, Handle<Schema> schema = {});
 	~Material() override;
 
 	[[nodiscard]]
@@ -65,7 +65,7 @@ public:
 	auto name() const -> std::string;    ///< @brief Display name of the material
 
 	[[nodiscard]]
-	virtual auto shaders() const -> const std::vector<AssetHandle<Shader>>&;
+	virtual auto shaders() const -> const std::vector<Handle<Shader>>&;
 
 	[[nodiscard]]
 	virtual auto settings() const -> MaterialSettings;
@@ -85,7 +85,7 @@ public:
 	}
 
 private:
-	mutable std::vector<AssetHandle<Shader>> m_shader_handles;
+	mutable std::vector<Handle<Shader>> m_shader_handles;
 	mutable bool m_shaders_dirty = true;
 };
 }

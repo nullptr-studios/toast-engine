@@ -42,7 +42,7 @@ auto readParentUID(const DataValue& root) -> toast::UID {
 
 }
 
-MaterialInstance::MaterialInstance(const toml::table& table, AssetHandle<Schema> schema) : Material(table, std::move(schema)) { }
+MaterialInstance::MaterialInstance(const toml::table& table, Handle<Schema> schema) : Material(table, std::move(schema)) { }
 
 MaterialInstance::~MaterialInstance() = default;
 
@@ -52,12 +52,12 @@ void MaterialInstance::reload(const toml::table& table) {
 	m_merged_objects.clear();
 }
 
-auto MaterialInstance::parent() const -> const AssetHandle<Material>& {
+auto MaterialInstance::parent() const -> const Handle<Material>& {
 	if (m_parent_dirty) {
 		m_parent_dirty = false;
 		m_merged_objects.clear();
 		const toast::UID uid = readParentUID(m_root);
-		m_parent = uid.data() != 0 ? assets::load<Material>(uid) : AssetHandle<Material> {};
+		m_parent = uid.data() != 0 ? assets::load<Material>(uid) : Handle<Material> {};
 	}
 	return m_parent;
 }
@@ -67,7 +67,7 @@ auto MaterialInstance::parentMaterial() const -> Material* {
 	return handle.hasValue() ? const_cast<Material*>(&handle.get()) : nullptr;
 }
 
-auto MaterialInstance::shaders() const -> const std::vector<AssetHandle<Shader>>& {
+auto MaterialInstance::shaders() const -> const std::vector<Handle<Shader>>& {
 	const DepthGuard guard;
 	if (guard.exceeded()) {
 		TOAST_ERROR("Render", "Material instance parent chain too deep (cycle?)");

@@ -20,7 +20,7 @@ namespace assets {
  */
 class TOAST_API MaterialInstance : public Material {
 public:
-	explicit MaterialInstance(const toml::table& table, AssetHandle<Schema> schema = {});
+	explicit MaterialInstance(const toml::table& table, Handle<Schema> schema = {});
 	~MaterialInstance() override;
 
 	[[nodiscard]]
@@ -34,10 +34,10 @@ public:
 	void reload(const toml::table& table) override;
 
 	[[nodiscard]]
-	auto parent() const -> const AssetHandle<Material>&;    ///< @brief The parent material
+	auto parent() const -> const Handle<Material>&;    ///< @brief The parent material
 
 	[[nodiscard]]
-	auto shaders() const -> const std::vector<AssetHandle<Shader>>& override;
+	auto shaders() const -> const std::vector<Handle<Shader>>& override;
 
 	[[nodiscard]]
 	auto settings() const -> MaterialSettings override;
@@ -54,7 +54,7 @@ private:
 	[[nodiscard]]
 	auto deltaRoot() const -> DataValue;
 
-	mutable AssetHandle<Material> m_parent;
+	mutable Handle<Material> m_parent;
 	mutable bool m_parent_dirty = true;
 	mutable std::unordered_map<std::string, DataValue> m_merged_objects;
 };

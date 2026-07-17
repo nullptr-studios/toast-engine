@@ -21,31 +21,31 @@ class [[ToastNode, Icon("MeshItem")]] TOAST_API MeshNode : public Node3D {
 public:
 	MeshNode() = default;
 
-	MeshNode(assets::AssetHandle<assets::Mesh> mesh) : m_mesh(std::move(mesh)) { }
+	MeshNode(assets::Handle<assets::Mesh> mesh) : m_mesh(std::move(mesh)) { }
 
-	MeshNode(assets::AssetHandle<assets::Mesh> mesh, assets::AssetHandle<assets::Material> material)
+	MeshNode(assets::Handle<assets::Mesh> mesh, assets::Handle<assets::Material> material)
 	    : m_mesh(std::move(mesh)),
 	      m_material(std::move(material)) { }
 
 	auto worldTransformForRender() -> const glm::mat4& { return getWorldTransform(); }
 
 	[[nodiscard]]
-	auto getMesh() const -> const assets::AssetHandle<assets::Mesh>& {
+	auto getMesh() const -> const assets::Handle<assets::Mesh>& {
 		return m_mesh;
 	}
 
 	[[nodiscard]]
-	auto getMesh() -> assets::AssetHandle<assets::Mesh>& {
+	auto getMesh() -> assets::Handle<assets::Mesh>& {
 		return m_mesh;
 	}
 
 	[[nodiscard]]
-	auto getMaterial() const -> const assets::AssetHandle<assets::Material>& {
+	auto getMaterial() const -> const assets::Handle<assets::Material>& {
 		return m_material;
 	}
 
 	[[nodiscard]]
-	auto getMaterial() -> assets::AssetHandle<assets::Material>& {
+	auto getMaterial() -> assets::Handle<assets::Material>& {
 		return m_material;
 	}
 
@@ -55,10 +55,10 @@ private:
 	void destroy();
 
 	[[Reflect]]
-	assets::AssetHandle<assets::Mesh> m_mesh;
+	assets::Handle<assets::Mesh> m_mesh;
 
 	[[Reflect]]
-	assets::AssetHandle<assets::Material> m_material;
+	assets::Handle<assets::Material> m_material;
 
 	bool m_registered_proxy = false;
 };
