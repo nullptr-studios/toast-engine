@@ -126,6 +126,7 @@
 									<elements:DragFloatBox Value="{Binding FloatVal,  Mode=TwoWay}"
 									                       Minimum="{Binding Minimum}"
 									                       Maximum="{Binding Maximum}"
+									                       Unit="{Binding Unit}"
 									                       IsVisible="{Binding IsFloat}" />
 									<elements:DragIntBox Value="{Binding IntVal,    Mode=TwoWay}"
 									                     Minimum="{Binding Minimum}"
@@ -178,23 +179,19 @@
 								                      IsVisible="{Binding IsVec3}" />
 							</StackPanel>
 
-							<!-- Object -->
-							<Border IsVisible="{Binding IsObject}"
-							        Background="{StaticResource Bg3}"
-							        CornerRadius="8"
-							        Padding="8">
-								<StackPanel Spacing="8">
-									<TextBlock Text="{Binding DisplayLabel}"
-									           FontWeight="Bold"
-									           HorizontalAlignment="Center"
-									           Margin="0,0,0,4" />
-									<elements:ArrayBox Background="Transparent"
-									                   Padding="0"
-									                   Items="{Binding Children, Mode=TwoWay}"
-									                   CanReorder="False"
-									                   CanAddRemove="False" />
-								</StackPanel>
-							</Border>
+							<!-- Object (collapsible) -->
+							<Expander IsVisible="{Binding IsObject}"
+							          IsExpanded="{Binding Expanded, Mode=TwoWay}"
+							          Header="{Binding DisplayLabel}"
+							          Background="{StaticResource Bg3}"
+							          CornerRadius="8"
+							          Padding="4">
+								<elements:ArrayBox Background="Transparent"
+								                   Padding="4"
+								                   Items="{Binding Children, Mode=TwoWay}"
+								                   CanReorder="False"
+								                   CanAddRemove="False" />
+							</Expander>
 
 							<!-- Array -->
 							<StackPanel Spacing="4"

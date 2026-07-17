@@ -48,6 +48,10 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable, IRowVisi
 
 	[ObservableProperty] private float m_x, m_y, m_z, m_w;
 
+	[ObservableProperty] private string m_unit = "";
+
+	[ObservableProperty] private bool m_expanded = true;
+
 	public IReadOnlyList<string> FieldTypes { get; set; } = AllFieldTypes;
 
 	public IReadOnlyList<string> Variants { get; set; } = [];
@@ -142,7 +146,14 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable, IRowVisi
 		NotifyDirty?.Invoke();
 	}
 
-	public string DisplayLabel => string.IsNullOrEmpty(DisplayName) ? Name : DisplayName;
+	public string DisplayLabel => string.IsNullOrEmpty(DisplayName) ? FormatFieldName(Name) : DisplayName;
+
+	public static string FormatFieldName(string raw) {
+		if (string.IsNullOrEmpty(raw)) return raw;
+		var words = raw.Split('_', StringSplitOptions.RemoveEmptyEntries)
+			.Select(w => w.Length == 0 ? w : char.ToUpperInvariant(w[0]) + w[1..]);
+		return string.Join(' ', words);
+	}
 
 	partial void OnDisplayNameChanged(string value) {
 		OnPropertyChanged(nameof(DisplayLabel));
@@ -409,6 +420,8 @@ public record SchemaFieldDescriptor(
 ) {
 	/// Inspector display name (x-toast-display-name); empty uses the field key
 	public string DisplayName { get; init; } = "";
+
+	public string Unit { get; init; } = "";
 
 	public SchemaFieldDescriptor(string Name, string TypeKey, bool IsArray, string DefaultStr, string Description)
 		: this(Name, TypeKey, IsArray, DefaultStr, Description, [], null, null, [], "", null) { }

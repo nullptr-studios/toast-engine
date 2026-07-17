@@ -96,11 +96,7 @@ public static class MaterialSchemaGenerator {
 				o["unit"]?.GetValue<string>() ?? "");
 		}
 
-		/// Display label with the [Unit] suffix appended
-		public string Label(string fallback) {
-			var label = DisplayName.Length > 0 ? DisplayName : fallback;
-			return Unit.Length > 0 ? $"{label} ({Unit})" : label;
-		}
+		public string Label(string fallback) => DisplayName.Length > 0 ? DisplayName : fallback;
 	}
 
 	private static string BuildDocument(JsonObject properties, JsonObject definitions) {
@@ -287,6 +283,7 @@ public static class MaterialSchemaGenerator {
 				["x-toast-type"] = toastType,
 				["x-toast-display-name"] = meta.Label(name)
 			};
+			if (meta.Unit.Length > 0) prop["x-toast-unit"] = meta.Unit;
 			if (meta.Min.HasValue) prop["minimum"] = meta.Min.Value;
 			if (meta.Max.HasValue) prop["maximum"] = meta.Max.Value;
 
