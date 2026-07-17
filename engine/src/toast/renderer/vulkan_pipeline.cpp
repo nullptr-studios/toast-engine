@@ -66,10 +66,36 @@ auto createGraphicsPipelineImpl(
 	);
 
 	const vk::PipelineMultisampleStateCreateInfo multisample_state_ci({}, vk::SampleCountFlagBits::e1);
+
+	// The legacy blend_enable toggle behaves like the alpha preset
+	using BlendPreset = VulkanPipeline::BlendPreset;
+	auto blend_preset = config.blend_preset;
+	if (blend_preset == BlendPreset::none && config.blend_enable) {
+		blend_preset = BlendPreset::alpha;
+	}
+
+	vk::BlendFactor src_factor = vk::BlendFactor::eOne;
+	vk::BlendFactor dst_factor = vk::BlendFactor::eZero;
+	switch (blend_preset) {
+		case BlendPreset::alpha:
+			src_factor = vk::BlendFactor::eSrcAlpha;
+			dst_factor = vk::BlendFactor::eOneMinusSrcAlpha;
+			break;
+		case BlendPreset::additive:
+			src_factor = vk::BlendFactor::eOne;
+			dst_factor = vk::BlendFactor::eOne;
+			break;
+		case BlendPreset::multiply:
+			src_factor = vk::BlendFactor::eDstColor;
+			dst_factor = vk::BlendFactor::eZero;
+			break;
+		case BlendPreset::none: break;
+	}
+
 	const vk::PipelineColorBlendAttachmentState color_blend_attachment(
-	    config.blend_enable,
-	    config.blend_enable ? vk::BlendFactor::eSrcAlpha : vk::BlendFactor::eOne,
-	    config.blend_enable ? vk::BlendFactor::eOneMinusSrcAlpha : vk::BlendFactor::eZero,
+	    blend_preset != BlendPreset::none,
+	    src_factor,
+	    dst_factor,
 	    vk::BlendOp::eAdd,
 	    vk::BlendFactor::eOne,
 	    vk::BlendFactor::eZero,

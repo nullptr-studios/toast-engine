@@ -278,6 +278,8 @@ auto ShaderCache::onShaderSourceReloaded(toast::UID uid) -> bool {
 	}
 
 	m_entries[uid.data()] = std::move(entry);
+
+	event::send<event::ShaderRecompiled>(uid);
 	return true;
 }
 

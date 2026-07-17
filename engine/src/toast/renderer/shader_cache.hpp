@@ -14,10 +14,24 @@
 #include <string>
 #include <toast/assets/core_types.hpp>
 #include <toast/assets/shader.hpp>
+#include <toast/events/event.hpp>
 #include <toast/events/listener.hpp>
 #include <toast/uid.hpp>
 #include <unordered_map>
 #include <vector>
+
+namespace event {
+
+/**
+ * @brief Fired by the ShaderCache after a hot-reloaded shader finished recompiling
+ */
+struct ShaderRecompiled : public Event<ShaderRecompiled> {
+	toast::UID uid;
+
+	explicit ShaderRecompiled(toast::UID uid) : uid(uid) { }
+};
+
+}
 
 namespace renderer {
 

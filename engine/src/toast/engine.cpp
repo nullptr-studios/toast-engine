@@ -348,12 +348,7 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	m->renderer->setActiveCamera(camera);
 
-	// create debug pipeline
-	auto pass = std::make_unique<renderer::MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
-
-	// create renderer
-
-	m->renderer->addRenderPass(std::move(pass));
+	// Mesh rendering runs through per-material passes
 
 	// m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
 
@@ -381,12 +376,7 @@ void Engine::createAvaloniaWindow() {
 
 	m->renderer->setActiveCamera(camera);
 
-	// create debug pipeline
-	auto pass = std::make_unique<renderer::MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
-
-	// create renderer
-
-	m->renderer->addRenderPass(std::move(pass));
+	// Mesh rendering runs through per-material passes
 
 	// Editor viewport gets the ground grid / debug lines / gizmo overlay
 	m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));

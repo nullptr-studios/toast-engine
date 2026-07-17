@@ -4,6 +4,7 @@
 
 #include "vulkan_renderer.hpp"
 
+#include "passes/material_pass.hpp"
 #include "vulkan_debug.hpp"
 
 #include <algorithm>
@@ -14,6 +15,8 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <toast/assets/assets.hpp>
+#include <toast/assets/material.hpp>
 #include <toast/log.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/time.hpp>
@@ -115,6 +118,29 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 
 	// Create FrameData UBO
 	createFrameResources();
+
+	createDefaultTexture();
+
+	// Material passes react to asset hot reload through atomic flags
+	m_asset_listener.subscribe<event::ClearUnusedAssets>([this] {
+		m_pending_material_pass_clear.store(true, std::memory_order_release);
+		return false;
+	});
+	m_asset_listener.subscribe<event::ShaderRecompiled>([this](const event::ShaderRecompiled&) {
+		std::lock_guard lock(m_pass_mutex);
+		for (auto& [material, pass] : m_material_passes) {
+			pass->markShadersDirty();
+		}
+		return false;
+	});
+	m_asset_listener.subscribe<event::MaterialAssetReloaded>([this](const event::MaterialAssetReloaded&) {
+		// A material file change can alter its shader vector or settings
+		std::lock_guard lock(m_pass_mutex);
+		for (auto& [material, pass] : m_material_passes) {
+			pass->markShadersDirty();
+		}
+		return false;
+	});
 }
 
 VulkanRenderer::~VulkanRenderer() {
@@ -377,7 +403,18 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	// record loop
 	{
 		TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "Passes");
+		std::lock_guard lock(m_pass_mutex);
+		for (auto& [material, pass] : m_material_passes) {
+			if (!pass->isEnabled()) {
+				continue;
+			}
+			TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "MaterialPass");
+			pass->record(*frame.command_buffer, m_current_frame, image_index);
+		}
 		for (auto& pass : m_render_passes) {
+			if (!pass->isEnabled()) {
+				continue;
+			}
 			TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "Pass");
 			pass->record(*frame.command_buffer, m_current_frame, image_index);
 		}
@@ -426,6 +463,136 @@ void VulkanRenderer::createFrameResources() {
 		// no staging buffer
 
 		// Leave descriptor_set empty render passes will allocate and manage their own descriptor sets
+	}
+}
+
+void VulkanRenderer::createDefaultTexture() {
+	const auto& device = m_core->getDevice();
+
+	// 1x1 opaque white pixel used as the fallback for material texture slots
+	VulkanTexture::Params params {};
+	params.format = vk::Format::eR8G8B8A8Unorm;
+	params.extent = vk::Extent3D {1, 1, 1};
+	params.mip_levels = 1;
+	params.layer_count = 1;
+	m_default_texture.create(*m_core, params, "VulkanRenderer DefaultWhiteTexture");
+
+	const std::array<uint8_t, 4> white_pixel {255, 255, 255, 255};
+
+	vk::BufferCreateInfo staging_ci {};
+	staging_ci.size = white_pixel.size();
+	staging_ci.usage = vk::BufferUsageFlagBits::eTransferSrc;
+
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAuto;
+	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+	auto staging_buffer = m_core->getAllocator().createBuffer(staging_ci, alloc_ci);
+	setDebugName(*m_core, *staging_buffer, "VulkanRenderer DefaultWhiteTexture StagingBuffer");
+	std::memcpy(staging_buffer.getAllocation().getInfo().pMappedData, white_pixel.data(), white_pixel.size());
+
+	// Runs once at construction time, before the render thread exists
+	vk::raii::CommandPool one_shot_pool(device, vk::CommandPoolCreateInfo({}, m_core->getGraphicsQueueFamilyIndex()));
+	const vk::CommandBufferAllocateInfo cmd_alloc_info(*one_shot_pool, vk::CommandBufferLevel::ePrimary, 1);
+	auto cmd_buffers = device.allocateCommandBuffers(cmd_alloc_info);
+	vk::raii::CommandBuffer cmd = std::move(cmd_buffers[0]);
+
+	cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+
+	vk::ImageMemoryBarrier to_dst {};
+	to_dst.oldLayout = vk::ImageLayout::eUndefined;
+	to_dst.newLayout = vk::ImageLayout::eTransferDstOptimal;
+	to_dst.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	to_dst.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	to_dst.image = m_default_texture.getImage();
+	to_dst.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+	to_dst.srcAccessMask = {};
+	to_dst.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+	cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, nullptr, to_dst);
+
+	vk::BufferImageCopy region {};
+	region.imageSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
+	region.imageExtent = vk::Extent3D {1, 1, 1};
+	cmd.copyBufferToImage(*staging_buffer, m_default_texture.getImage(), vk::ImageLayout::eTransferDstOptimal, region);
+
+	vk::ImageMemoryBarrier to_read = to_dst;
+	to_read.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+	to_read.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	to_read.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+	to_read.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+	cmd.pipelineBarrier(
+	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, to_read
+	);
+
+	cmd.end();
+
+	const vk::raii::Fence fence(device, vk::FenceCreateInfo {});
+	const vk::CommandBuffer raw_cmd = *cmd;
+	vk::SubmitInfo submit {};
+	submit.commandBufferCount = 1;
+	submit.pCommandBuffers = &raw_cmd;
+	m_core->getGraphicsQueue().submit(submit, *fence);
+	std::ignore = device.waitForFences(*fence, true, std::numeric_limits<uint64_t>::max());
+
+	m_default_texture.markReady();
+
+	vk::SamplerCreateInfo sampler_ci {};
+	sampler_ci.magFilter = vk::Filter::eNearest;
+	sampler_ci.minFilter = vk::Filter::eNearest;
+	sampler_ci.addressModeU = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.addressModeV = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.addressModeW = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
+	m_default_sampler = vk::raii::Sampler(device, sampler_ci);
+	setDebugName(*m_core, *m_default_sampler, "VulkanRenderer DefaultSampler");
+}
+
+void VulkanRenderer::ensureMaterialPasses(RenderFrame& frame_data) {
+	ZoneScoped;
+
+	if (m_pending_material_pass_clear.exchange(false, std::memory_order_acq_rel)) {
+		m_core->getDevice().waitIdle();
+		std::lock_guard lock(m_pass_mutex);
+		m_material_passes.clear();
+	}
+
+	std::lock_guard lock(m_pass_mutex);
+	for (const auto& proxy : frame_data.mesh_instances) {
+		if (proxy.root_material == nullptr || m_material_passes.contains(proxy.root_material)) {
+			continue;
+		}
+		auto pass = std::make_unique<MaterialPass>(
+		    *m_core, proxy.root_material, m_output_target->getColorFormat(), m_depth_format, m_output_target->getExtent()
+		);
+		TOAST_INFO("Vulkan", "Created material pass '{}'", pass->name());
+		m_material_passes.emplace(proxy.root_material, std::move(pass));
+	}
+}
+
+auto VulkanRenderer::listPasses() -> std::vector<PassInfo> {
+	std::lock_guard lock(m_pass_mutex);
+	std::vector<PassInfo> out;
+	out.reserve(m_material_passes.size() + m_render_passes.size());
+	for (auto& [material, pass] : m_material_passes) {
+		out.push_back(PassInfo {.name = std::string(pass->name()), .enabled = pass->isEnabled()});
+	}
+	for (auto& pass : m_render_passes) {
+		out.push_back(PassInfo {.name = std::string(pass->name()), .enabled = pass->isEnabled()});
+	}
+	return out;
+}
+
+void VulkanRenderer::setPassEnabled(std::string_view name, bool enabled) {
+	std::lock_guard lock(m_pass_mutex);
+	for (auto& [material, pass] : m_material_passes) {
+		if (pass->name() == name) {
+			pass->setEnabled(enabled);
+		}
+	}
+	for (auto& pass : m_render_passes) {
+		if (pass->name() == name) {
+			pass->setEnabled(enabled);
+		}
 	}
 }
 
@@ -489,10 +656,17 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	updateFrameResources(m_current_frame, frame_data);    // FIXME: dt
 
 	m_rendering_frame = &frame_data;
+	ensureMaterialPasses(frame_data);
 
 	// Update the Render passes TODO: Move outside of renderloop
-	for (auto& pass : m_render_passes) {
-		pass->update(m_current_frame, Time::renderDelta());
+	{
+		std::lock_guard lock(m_pass_mutex);
+		for (auto& [material, pass] : m_material_passes) {
+			pass->update(m_current_frame, Time::renderDelta());
+		}
+		for (auto& pass : m_render_passes) {
+			pass->update(m_current_frame, Time::renderDelta());
+		}
 	}
 
 	recordFrame(frame, image_index);
@@ -720,8 +894,22 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 
 		auto& material_handle = node->getMaterial();
-		if (material_handle.hasValue()) {
-			material_handle->resolveTextureHandles();
+
+		// Meshes without a material fall back to the engine default material
+		assets::Material* material = material_handle.hasValue() ? &material_handle.get() : nullptr;
+		if (material == nullptr) {
+			if (!m_default_material.hasValue()) {
+				m_default_material = assets::load<assets::Material>("core://material/default.tmat");
+			}
+			if (m_default_material.hasValue()) {
+				material = &m_default_material.get();
+			} else if (!m_default_material_warned) {
+				m_default_material_warned = true;
+				TOAST_WARN("Render", "Default material core://material/default.tmat not found; meshes without a material are skipped");
+			}
+		}
+		if (material == nullptr) {
+			continue;
 		}
 
 		const auto world_transform = node->worldTransformForRender();
@@ -729,7 +917,8 @@ void VulkanRenderer::tick(float time) noexcept {
 		frame.mesh_instances.push_back(
 		    MeshInstanceProxy {
 		      .mesh = &gpu_mesh,
-		      .material = material_handle.hasValue() ? &material_handle.get() : nullptr,
+		      .material = material,
+		      .root_material = material->rootMaterial(),
 		      .model = world_transform,
 		    }
 		);
