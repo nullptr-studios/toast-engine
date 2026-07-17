@@ -91,6 +91,12 @@ public:
 private:
 	void bakeValues();
 	void bakeTextures();
+
+	[[nodiscard]]
+	auto groupTomlKey(const std::string& group) const -> std::string;
+
+	[[nodiscard]]
+	auto resolveMemberValue(const ShaderBlockMember& member) const -> const assets::DataValue*;
 	auto samplerFor(const assets::DataValue* params, std::string_view debug_name) -> vk::Sampler;
 
 	const VulkanCore* m_core = nullptr;

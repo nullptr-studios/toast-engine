@@ -58,25 +58,52 @@ void readFloats(const DataValue& v, float* out, size_t count) {
 	}
 }
 
-void writeMember(std::vector<std::byte>& blob, const ShaderBlockMember& member, const DataValue& v) {
-	if (member.offset + member.size > blob.size()) {
+auto scalarSize(ShaderMemberType type) -> size_t {
+	switch (type) {
+		case ShaderMemberType::float_t:
+		case ShaderMemberType::int_t:
+		case ShaderMemberType::uint_t:
+		case ShaderMemberType::bool_t: return 4;
+		case ShaderMemberType::vec2: return 8;
+		case ShaderMemberType::vec3: return 12;
+		case ShaderMemberType::vec4: return 16;
+		default: return 0;
+	}
+}
+
+void writeScalar(
+    std::vector<std::byte>& blob, ShaderMemberType type, uint32_t offset, const ShaderInspectorMeta& meta, const DataValue& v
+) {
+	const size_t size = scalarSize(type);
+	if (size == 0 || offset + size > blob.size()) {
 		return;
 	}
-	std::byte* dst = blob.data() + member.offset;
+	std::byte* dst = blob.data() + offset;
 
-	switch (member.type) {
+	// [Range(min, max)] clamps numeric values engine-side too
+	const auto clamped = [&meta](double value) {
+		if (meta.range_min.has_value()) {
+			value = std::max(value, static_cast<double>(*meta.range_min));
+		}
+		if (meta.range_max.has_value()) {
+			value = std::min(value, static_cast<double>(*meta.range_max));
+		}
+		return value;
+	};
+
+	switch (type) {
 		case ShaderMemberType::float_t: {
-			const auto value = static_cast<float>(v.value<double>().value_or(0.0));
+			const auto value = static_cast<float>(clamped(v.value<double>().value_or(0.0)));
 			std::memcpy(dst, &value, sizeof(value));
 			return;
 		}
 		case ShaderMemberType::int_t: {
-			const auto value = static_cast<int32_t>(v.value<int64_t>().value_or(0));
+			const auto value = static_cast<int32_t>(clamped(static_cast<double>(v.value<int64_t>().value_or(0))));
 			std::memcpy(dst, &value, sizeof(value));
 			return;
 		}
 		case ShaderMemberType::uint_t: {
-			const auto value = static_cast<uint32_t>(v.value<int64_t>().value_or(0));
+			const auto value = static_cast<uint32_t>(clamped(static_cast<double>(v.value<int64_t>().value_or(0))));
 			std::memcpy(dst, &value, sizeof(value));
 			return;
 		}
@@ -105,6 +132,26 @@ void writeMember(std::vector<std::byte>& blob, const ShaderBlockMember& member, 
 		}
 		default: return;    // matrices and unknowns are engine-written or unsupported
 	}
+}
+
+void writeMember(std::vector<std::byte>& blob, const ShaderBlockMember& member, const DataValue& v) {
+	if (member.offset + member.size > blob.size()) {
+		return;
+	}
+
+	if (member.element_count > 0) {
+		if (!v.isArray()) {
+			return;
+		}
+		const uint32_t stride = member.element_stride;
+		const size_t count = std::min<size_t>(member.element_count, v.size());
+		for (size_t i = 0; i < count; ++i) {
+			writeScalar(blob, member.type, member.offset + static_cast<uint32_t>(i) * stride, member.inspector, v[i]);
+		}
+		return;
+	}
+
+	writeScalar(blob, member.type, member.offset, member.inspector, v);
 }
 
 auto readTextureUID(const DataValue& v) -> toast::UID {
@@ -249,10 +296,12 @@ void MaterialRuntime::bakeValues() {
 		blob.bytes.assign(binding.size, std::byte {0});
 
 		for (const auto& member : binding.members) {
-			if (!member.engine_semantic.empty()) {
+			// Only [Reflect] parameters are material data
+			// Everything else is engine-owned
+			if (!member.engine_semantic.empty() || !member.inspector.reflected) {
 				continue;
 			}
-			if (const DataValue* v = m_material->value(member.name)) {
+			if (const DataValue* v = resolveMemberValue(member)) {
 				writeMember(blob.bytes, member, *v);
 			}
 		}
@@ -272,14 +321,57 @@ void MaterialRuntime::bakeValues() {
 				m_model_offset = member.offset;
 				continue;
 			}
-			if (!member.engine_semantic.empty()) {
+			if (!member.engine_semantic.empty() || !member.inspector.reflected) {
 				continue;
 			}
-			if (const DataValue* v = m_material->value(member.name)) {
+			if (const DataValue* v = resolveMemberValue(member)) {
 				writeMember(m_push_blob, member, *v);
 			}
 		}
 	}
+}
+
+auto MaterialRuntime::groupTomlKey(const std::string& group) const -> std::string {
+	for (const auto& binding : m_merged.bindings) {
+		const bool is_texture =
+		    binding.kind == ShaderBindingKind::combined_image_sampler || binding.kind == ShaderBindingKind::sampled_image;
+		if (!is_texture) {
+			continue;
+		}
+		if (binding.name == group || binding.inspector.display_name == group) {
+			return binding.name;
+		}
+	}
+	return group;
+}
+
+auto MaterialRuntime::resolveMemberValue(const ShaderBlockMember& member) const -> const DataValue* {
+	if (m_material == nullptr) {
+		return nullptr;
+	}
+
+	// Ungrouped parameters are top-level TOML keys
+	if (member.inspector.group.empty()) {
+		return m_material->value(member.name);
+	}
+
+	const DataValue* group = m_material->value(groupTomlKey(member.inspector.group));
+	if (group == nullptr || !group->isObject()) {
+		return nullptr;
+	}
+
+	const DataValue* scope = group;
+	if (!member.inspector.subgroup.empty()) {
+		if (!group->contains(member.inspector.subgroup)) {
+			return nullptr;
+		}
+		scope = &(*group)[member.inspector.subgroup];
+		if (!scope->isObject()) {
+			return nullptr;
+		}
+	}
+
+	return scope->contains(member.name) ? &(*scope)[member.name] : nullptr;
 }
 
 auto MaterialRuntime::textureSlots() -> const std::vector<TextureSlot>& {
