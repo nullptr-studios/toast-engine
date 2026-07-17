@@ -36,6 +36,9 @@ void AssetRegistry::init() {
 	s_schema_toml["material"] = [](const toml::table& t, AssetHandle<Schema> s) {
 		return std::make_unique<Material>(t, std::move(s));
 	};
+	s_schema_toml["material_instance"] = [](const toml::table& t, AssetHandle<Schema> s) {
+		return std::make_unique<MaterialInstance>(t, std::move(s));
+	};
 
 	// Input assets
 	s_schema_toml["haptic"] = [](const toml::table& t, AssetHandle<Schema> s) { return std::make_unique<Haptic>(t, std::move(s)); };
@@ -69,6 +72,7 @@ void AssetRegistry::init() {
 	s_lua_names["texture"] = "Texture";
 	s_lua_names["data"] = "Data";
 	s_lua_names["material"] = "Material";
+	s_lua_names["material_instance"] = "MaterialInstance";
 	s_lua_names["schema"] = "Schema";
 	s_lua_names["node"] = "Prefab";
 	s_lua_names["script"] = "Script";

@@ -56,8 +56,6 @@ struct MaterialSettings {
  */
 class TOAST_API Material : public Data {
 public:
-	static constexpr std::string_view collection = "materials";
-
 	explicit Material(const toml::table& table, AssetHandle<Schema> schema = {});
 	~Material() override;
 

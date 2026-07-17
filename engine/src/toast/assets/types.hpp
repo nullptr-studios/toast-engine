@@ -18,6 +18,7 @@
 #include "data.hpp"
 #include "data_value.hpp"
 #include "material.hpp"
+#include "material_instance.hpp"
 #include "mesh.hpp"
 #include "prefab.hpp"
 #include "schema.hpp"
