@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
@@ -29,6 +30,10 @@ public partial class GenericViewModel : Tool, IAutosavable {
 
 	private bool m_loading;
 	private string m_prevSchemaUid = "";
+
+	// Materials and material instances generate their schema from shader reflection
+	private bool m_dynamicSchema;
+	private bool m_dynamicRebuildQueued;
 	[ObservableProperty] private string m_schemaLabel = "";
 	[ObservableProperty] private bool m_schemaLocked;
 	[ObservableProperty] private string m_schemaUid = "";
@@ -186,7 +191,8 @@ public partial class GenericViewModel : Tool, IAutosavable {
 		Definition = definition;
 		Fields.Clear();
 
-		SchemaLocked = !string.IsNullOrEmpty(definition.SchemaPath);
+		m_dynamicSchema = definition.Type is "material" or "material_instance";
+		SchemaLocked = !string.IsNullOrEmpty(definition.SchemaPath) || m_dynamicSchema;
 
 		var realPath = contentSourceRealPath ?? ProjectContext.Resolve(virtualPath);
 		SchemaUid = "";
@@ -208,7 +214,9 @@ public partial class GenericViewModel : Tool, IAutosavable {
 				OnPropertyChanged(nameof(SchemaUid));
 				OnPropertyChanged(nameof(CanAddFields));
 
-				if (SchemaLocked) {
+				if (m_dynamicSchema) {
+					LoadDynamicSchema(table!);
+				} else if (SchemaLocked) {
 					var schemaPath = ProjectContext.Resolve(definition.SchemaPath);
 					SchemaLabel = Path.GetFileNameWithoutExtension(definition.SchemaPath);
 					if (File.Exists(schemaPath)) {
@@ -478,6 +486,135 @@ public partial class GenericViewModel : Tool, IAutosavable {
 		if (Fields.Count != prevCount) IsDirty = true;
 	}
 
+	/// Builds the schema from shader reflection
+	private void LoadDynamicSchema(TomlTable table) {
+		string schemaJson;
+		if (Definition?.Type == "material_instance") {
+			var parentUid = table.TryGetValue("material", out var m) ? m?.ToString() ?? "" : "";
+			schemaJson = MaterialSchemaGenerator.BuildForInstance(parentUid);
+			SchemaLabel = "(parent material)";
+		} else {
+			schemaJson = MaterialSchemaGenerator.BuildForShaders(MaterialSchemaGenerator.ReadShaderUids(table));
+			SchemaLabel = "(shader reflection)";
+		}
+
+		var (descriptors, definitions) = ParseSchema(schemaJson);
+		LoadSchemaGuided(table, descriptors, definitions);
+		WireDynamicRebuild();
+	}
+
+	/// Rebuilds the field list live when the shaders array or the parent changes
+	private void WireDynamicRebuild() {
+		var triggerName = Definition?.Type == "material_instance" ? "material" : "shaders";
+		var trigger = Fields.FirstOrDefault(f => f.Name == triggerName);
+		if (trigger is null) return;
+
+		void OnItemChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
+			if (e.PropertyName == nameof(GenericFieldVM.RefUid)) ScheduleDynamicRebuild();
+		}
+
+		if (triggerName == "material") {
+			trigger.PropertyChanged += OnItemChanged;
+		} else {
+			foreach (var child in trigger.Children) child.PropertyChanged += OnItemChanged;
+			trigger.Children.CollectionChanged += (_, e) => {
+				if (e.NewItems != null)
+					foreach (GenericFieldVM child in e.NewItems)
+						child.PropertyChanged += OnItemChanged;
+				ScheduleDynamicRebuild();
+			};
+		}
+	}
+
+	private void ScheduleDynamicRebuild() {
+		if (m_loading || !m_dynamicSchema || m_dynamicRebuildQueued) return;
+		m_dynamicRebuildQueued = true;
+		Dispatcher.UIThread.Post(() => {
+			m_dynamicRebuildQueued = false;
+			RebuildDynamicSchema();
+		});
+	}
+
+	private void RebuildDynamicSchema() {
+		if (!m_dynamicSchema || !HasContent) return;
+
+		// Preserve current values across the rebuild
+		var table = new TomlTable();
+		foreach (var field in Fields) table[field.Name] = field.ToTomlValue();
+
+		m_loading = true;
+		Fields.Clear();
+		LoadDynamicSchema(table);
+		m_loading = false;
+		IsDirty = true;
+	}
+
+	/// Material instances save only the values differing from their parent material
+	private string SerializeInstanceDelta() {
+		var table = new TomlTable();
+		var parentUid = Fields.FirstOrDefault(f => f.Name == "material")?.RefUid ?? "";
+		table["material"] = parentUid;
+
+		var parent = MaterialSchemaGenerator.LoadMaterialTable(parentUid);
+		foreach (var field in Fields) {
+			if (field.Name == "material") continue;
+			var value = field.ToTomlValue();
+			object? parentValue = parent != null && parent.TryGetValue(field.Name, out var pv) ? pv : null;
+
+			if (parentValue is null) {
+				table[field.Name] = value;
+				continue;
+			}
+
+			if (value is TomlTable childTable && parentValue is TomlTable parentChild) {
+				// Object parameters diff field by field
+				var delta = new TomlTable();
+				foreach (var (k, v) in childTable)
+					if (!parentChild.TryGetValue(k, out var pcv) || !TomlValuesEqual(v, pcv))
+						delta[k] = v;
+				if (delta.Count > 0) table[field.Name] = delta;
+			} else if (!TomlValuesEqual(value, parentValue)) {
+				table[field.Name] = value;
+			}
+		}
+
+		return TomlSerializer.Serialize(table);
+	}
+
+	private static bool TomlValuesEqual(object? a, object? b) {
+		if (a is null || b is null) return a is null && b is null;
+
+		if (a is TomlArray arrA && b is TomlArray arrB) {
+			if (arrA.Count != arrB.Count) return false;
+			for (var i = 0; i < arrA.Count; i++)
+				if (!TomlValuesEqual(arrA[i], arrB[i]))
+					return false;
+			return true;
+		}
+
+		if (a is TomlTable tblA && b is TomlTable tblB) {
+			if (tblA.Count != tblB.Count) return false;
+			foreach (var (k, v) in tblA) {
+				if (!tblB.TryGetValue(k, out var other) || !TomlValuesEqual(v, other)) return false;
+			}
+
+			return true;
+		}
+
+		// Numbers compare across integer/floating representations
+		if (IsNumber(a) && IsNumber(b)) return Math.Abs(ToDouble(a) - ToDouble(b)) < 1e-6;
+
+		return a.Equals(b);
+
+		static bool IsNumber(object o) {
+			return o is sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal;
+		}
+
+		static double ToDouble(object o) {
+			return Convert.ToDouble(o);
+		}
+	}
+
 	[RelayCommand]
 	private void AddField() {
 		if (SchemaLocked) return;
@@ -508,9 +645,11 @@ public partial class GenericViewModel : Tool, IAutosavable {
 	}
 
 	private string SerializeDocument() {
+		if (m_dynamicSchema && Definition?.Type == "material_instance") return SerializeInstanceDelta();
+
 		var table = new TomlTable();
 
-		// Preserve schema UID reference in free-form mode
+		// Preserve schema UID reference
 		if (!SchemaLocked && !string.IsNullOrEmpty(SchemaUid))
 			table["schema"] = SchemaUid;
 		else if (!SchemaLocked) {
