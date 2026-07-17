@@ -564,7 +564,7 @@ void VulkanRenderer::ensureMaterialPasses(RenderFrame& frame_data) {
 		auto pass = std::make_unique<MaterialPass>(
 		    *m_core, proxy.root_material, m_output_target->getColorFormat(), m_depth_format, m_output_target->getExtent()
 		);
-		TOAST_INFO("Vulkan", "Created material pass '{}'", pass->name());
+		TOAST_INFO("Render", "Created material pass '{}'", pass->name());
 		m_material_passes.emplace(proxy.root_material, std::move(pass));
 	}
 }

@@ -14,6 +14,7 @@
 #include "project_settings.hpp"
 #include "reflect/reflect.hpp"
 #include "renderer/passes/debug_pass.hpp"
+#include "renderer/passes/grid_pass.hpp"
 #include "renderer/render_events.hpp"
 #include "renderer/sdl_output_target.hpp"
 #include "renderer/shader_cache.hpp"
@@ -381,6 +382,7 @@ void Engine::createAvaloniaWindow() {
 	// Mesh rendering runs through per-material passes
 
 	// Editor viewport gets the ground grid / debug lines / gizmo overlay
+	m->renderer->addRenderPass(std::make_unique<renderer::GridPass>(*m->vulkan_core, color_format, depth_format, extent));
 	m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
 
 	m->renderer->setFrameRateLimit(240.0);

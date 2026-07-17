@@ -223,7 +223,7 @@ auto ShaderCache::loadOrCompileLocked(toast::UID uid) -> std::shared_ptr<const E
 
 	if (isDiskCacheFreshLocked(uid, source_hash)) {
 		if (auto entry = loadFromDiskLocked(uid)) {
-			TOAST_TRACE("Render", "Loaded shader {} from disk cache", uid.get());
+			TOAST_TRACE("Render", "Recovered shader {} from disk cache", uid.get());
 			return entry;
 		}
 	}
@@ -243,6 +243,8 @@ void ShaderCache::compileAllAtStartup() {
 		if (auto entry = loadOrCompileLocked(uid)) {
 			m_entries[uid.data()] = std::move(entry);
 			++compiled;
+		} else {
+			TOAST_ERROR("Render", "Failed to load or compile shader {}", uid.get());
 		}
 	}
 

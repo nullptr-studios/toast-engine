@@ -115,47 +115,18 @@ auto acquireShader(std::string_view uri) -> std::shared_ptr<const ShaderCache::E
 }
 
 DebugPass::DebugPass(const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent) {
-	const auto grid_shader = acquireShader("core://shaders/grid.slang");
 	const auto shape_shader = acquireShader("core://shaders/debug_shape.slang");
-
-	// Both debug shaders share the same layout
-	const auto* layout_source = grid_shader ? grid_shader.get() : shape_shader.get();
-	if (layout_source == nullptr) {
+	if (!shape_shader) {
 		TOAST_ERROR("Render", "DebugPass has no usable shaders, the pass will draw nothing");
 		return;
 	}
-	m_shader_layout.rebuild(core, layout_source->reflection, "DebugPass");
-
-	const vk::VertexInputBindingDescription position_only_binding(0, sizeof(glm::vec3), vk::VertexInputRate::eVertex);
-	const std::vector<vk::VertexInputAttributeDescription> position_only_attributes {
-	  vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, 0)
-	};
+	m_shader_layout.rebuild(core, shape_shader->reflection, "DebugPass");
 
 	const vk::VertexInputBindingDescription debug_vertex_binding(0, sizeof(DebugVertex), vk::VertexInputRate::eVertex);
 	const std::vector<vk::VertexInputAttributeDescription> debug_vertex_attributes {
 	  vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(DebugVertex, position)),
 	  vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(DebugVertex, color)),
 	};
-
-	// Ground grid
-	if (grid_shader) {
-		VulkanPipeline::Config config;
-		config.pipeline_type = VulkanPipeline::PipelineType::graphics;
-		config.debug_name = "DebugPass Grid";
-		config.color_format = color_format;
-		config.depth_format = depth_format;
-		config.extent = extent;
-		config.shader_spirv = grid_shader->spirv;
-		config.pipeline_layout = *m_shader_layout.getPipelineLayout();
-		config.vertex_binding = position_only_binding;
-		config.vertex_attributes = position_only_attributes;
-		config.topology = vk::PrimitiveTopology::eTriangleList;
-		config.cull_mode = vk::CullModeFlagBits::eNone;
-		config.depth_test = true;
-		config.depth_write = false;
-		config.blend_enable = true;
-		m_plane_pipeline.rebuild(core, config);
-	}
 
 	// Debug lines
 	if (shape_shader) {
@@ -243,28 +214,6 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	    {}
 	);
 
-	// Ground grid:
-	if (m_grid_enabled && m_plane_pipeline.isReady()) {
-		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_plane_pipeline.getPipeline());
-
-		constexpr float k_grid_half_extent = 1000.0f;    // matches grid.slang's fade-to-zero distance
-		const glm::vec3 cam_pos = frame->frame_data.camera_position;
-
-		DrawPushConstants pc {};
-		pc.model = glm::translate(glm::mat4(1.0f), glm::vec3(cam_pos.x, cam_pos.y, 0.0f)) *
-		           glm::scale(glm::mat4(1.0f), glm::vec3(k_grid_half_extent));
-		cmd.pushConstants(
-		    *m_shader_layout.getPipelineLayout(),
-		    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-		    0,
-		    sizeof(DrawPushConstants),
-		    &pc
-		);
-
-		cmd.bindVertexBuffers(0, std::array<vk::Buffer, 1> {*m_grid_vertex_buffer}, std::array<vk::DeviceSize, 1> {0});
-		cmd.draw(6, 1, 0, 0);
-	}
-
 	// Debug lines
 	const uint32_t line_vertex_count = frame_index < m_line_vertex_counts.size() ? m_line_vertex_counts[frame_index] : 0;
 	if (line_vertex_count > 0 && m_line_pipeline.isReady()) {
@@ -341,34 +290,7 @@ void DebugPass::createResources(const renderer::VulkanCore& core) {
 	m_line_vertex_buffers.resize(VulkanRenderer::k_frames_in_flight);
 	m_line_vertex_counts.assign(VulkanRenderer::k_frames_in_flight, 0);
 
-	createGridGeometry(core);
 	createGizmoGeometry(core);
-}
-
-void DebugPass::createGridGeometry(const renderer::VulkanCore& core) {
-	const std::array<glm::vec3, 6> vertices {
-	  glm::vec3 {-1.0f, -1.0f, 0.0f},
-	  glm::vec3 { 1.0f, -1.0f, 0.0f},
-	  glm::vec3 { 1.0f,  1.0f, 0.0f},
-	  glm::vec3 {-1.0f, -1.0f, 0.0f},
-	  glm::vec3 { 1.0f,  1.0f, 0.0f},
-	  glm::vec3 {-1.0f,  1.0f, 0.0f},
-	};
-
-	vk::BufferCreateInfo buffer_ci {};
-	buffer_ci.size = sizeof(vertices);
-	buffer_ci.usage = vk::BufferUsageFlagBits::eVertexBuffer;
-
-	vma::AllocationCreateInfo alloc_ci {};
-	alloc_ci.usage = vma::MemoryUsage::eAuto;
-	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
-
-	m_grid_vertex_buffer = core.getAllocator().createBuffer(buffer_ci, alloc_ci);
-	setDebugName(core, *m_grid_vertex_buffer, "DebugPass GridVertexBuffer");
-
-	void* mapped = m_grid_vertex_buffer.getAllocation().getInfo().pMappedData;
-	std::memcpy(mapped, vertices.data(), sizeof(vertices));
-	m_grid_vertex_buffer.getAllocation().flush(0, sizeof(vertices));
 }
 
 void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
