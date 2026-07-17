@@ -152,6 +152,7 @@ auto compileModule(std::string_view module_name, std::string_view source_path, s
 
 	CompiledShaderCode result;
 	result.spirv.assign(bytes, bytes + spirv_blob->getBufferSize());
+	result.reflection = extractReflection(program->getLayout());
 	result.program = program;
 
 	// Collect dependencies as virtual URIs

@@ -16,6 +16,7 @@
 #include "renderer/passes/debug_pass.hpp"
 #include "renderer/passes/mesh_pass.hpp"
 #include "renderer/sdl_output_target.hpp"
+#include "renderer/shader_cache.hpp"
 #include "renderer/shader_compiler.hpp"
 #include "renderer/shader_layout.hpp"
 #include "renderer/shared_texture_output_target.hpp"
@@ -145,6 +146,9 @@ void Engine::init() {
 	}
 
 	m->asset_manager = std::make_unique<assets::AssetManager>();
+
+	// Compile every stale shader up front
+	renderer::ShaderCache::get().compileAllAtStartup();
 
 	m->input_system = std::make_unique<input::InputSystem>();
 	m->haptics_system = std::make_unique<input::HapticsSystem>();

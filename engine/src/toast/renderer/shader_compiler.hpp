@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "shader_reflection.hpp"
+
 #include <cstddef>
 #include <filesystem>
 #include <slang-com-ptr.h>
@@ -17,6 +19,7 @@ namespace renderer {
 
 struct CompiledShaderCode {
 	std::vector<std::byte> spirv;
+	ShaderReflection reflection;
 	Slang::ComPtr<slang::IComponentType> program;    // Holds the reflection data!
 	std::vector<std::string> dependencies;           // Virtual URIs the module depends on
 };
