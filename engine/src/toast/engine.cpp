@@ -36,6 +36,7 @@
 #include "world/world.hpp"
 
 #include <SDL3/SDL.h>
+#include <algorithm>
 #include <cassert>
 #include <filesystem>
 #include <fstream>
@@ -570,6 +571,13 @@ void Engine::startGame() {
 
 #ifdef TRACY_ENABLE
 // NOLINTBEGIN(cppcoreguidelines-no-malloc)
+
+#ifdef _WIN32
+#include <malloc.h>
+#else
+#include <cstdlib>
+#endif
+
 auto operator new(std::size_t count) -> void* {
 	auto* ptr = malloc(count);
 	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
@@ -600,14 +608,26 @@ auto operator new[](std::size_t count, const std::nothrow_t&) noexcept -> void* 
 
 auto operator new(std::size_t count, std::align_val_t align) -> void* {
 	void* ptr = nullptr;
-	posix_memalign(&ptr, static_cast<std::size_t>(align), count);
+	std::size_t alignment = static_cast<std::size_t>(align);
+#ifdef _WIN32
+	ptr = _aligned_malloc(count, alignment);
+#else
+	alignment = std::max(alignment, sizeof(void*));
+	posix_memalign(&ptr, alignment, count);
+#endif
 	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
 	return ptr;
 }
 
 auto operator new[](std::size_t count, std::align_val_t align) -> void* {
 	void* ptr = nullptr;
-	posix_memalign(&ptr, static_cast<std::size_t>(align), count);
+	std::size_t alignment = static_cast<std::size_t>(align);
+#ifdef _WIN32
+	ptr = _aligned_malloc(count, alignment);
+#else
+	alignment = std::max(alignment, sizeof(void*));
+	posix_memalign(&ptr, alignment, count);
+#endif
 	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
 	return ptr;
 }
@@ -645,22 +665,38 @@ void operator delete[](void* ptr, std::size_t) noexcept {
 
 void operator delete(void* ptr, std::align_val_t) noexcept {
 	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+#ifdef _WIN32
+	_aligned_free(ptr);
+#else
 	free(ptr);
+#endif
 }
 
 void operator delete[](void* ptr, std::align_val_t) noexcept {
 	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+#ifdef _WIN32
+	_aligned_free(ptr);
+#else
 	free(ptr);
+#endif
 }
 
 void operator delete(void* ptr, std::size_t, std::align_val_t) noexcept {
 	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+#ifdef _WIN32
+	_aligned_free(ptr);
+#else
 	free(ptr);
+#endif
 }
 
 void operator delete[](void* ptr, std::size_t, std::align_val_t) noexcept {
 	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+#ifdef _WIN32
+	_aligned_free(ptr);
+#else
 	free(ptr);
+#endif
 }
 
 // NOLINTEND(cppcoreguidelines-no-malloc)
@@ -691,9 +727,6 @@ void toast_create_avalonia_window() noexcept {
 
 void toast_tick() noexcept {
 #ifdef TRACY_ENABLE
-	// Name the thread that actually runs the tick loop (may be a .NET ThreadPool worker
-	// when driven from the C# editor via Task.Run; Engine::init's SetThreadName lands on
-	// a different pool thread, so we name it here on first invocation instead)
 	static std::once_flag s_thread_named;
 	std::call_once(s_thread_named, [] { tracy::SetThreadName("Main Thread"); });
 #endif
