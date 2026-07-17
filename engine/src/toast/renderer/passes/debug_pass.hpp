@@ -30,6 +30,11 @@ public:
 
 	void update(uint32_t frame_index, float dt) override;
 
+	[[nodiscard]]
+	auto name() const -> std::string_view override {
+		return "Debug";
+	}
+
 	/// @brief Toggles the ground grid
 	void setGridEnabled(bool enabled) { m_grid_enabled = enabled; }
 

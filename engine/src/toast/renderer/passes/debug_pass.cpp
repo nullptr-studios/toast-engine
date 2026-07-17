@@ -4,7 +4,7 @@
 
 #include "debug_pass.hpp"
 
-#include "../shader_compiler.hpp"
+#include "../shader_cache.hpp"
 #include "../vulkan_core.hpp"
 #include "../vulkan_debug.hpp"
 #include "../vulkan_renderer.hpp"
@@ -14,6 +14,7 @@
 #include <cstring>
 #include <format>
 #include <glm/gtc/matrix_transform.hpp>
+#include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
 
 namespace renderer {
@@ -100,8 +101,30 @@ void appendPyramidAlongAxis(
 
 }    // namespace
 
+namespace {
+
+auto acquireShader(std::string_view uri) -> std::shared_ptr<const ShaderCache::Entry> {
+	const auto uid = assets::resolveURI(uri);
+	if (!uid.has_value()) {
+		TOAST_ERROR("Render", "DebugPass shader not found in the asset manifest: {}", uri);
+		return nullptr;
+	}
+	return ShaderCache::get().acquire(*uid);
+}
+
+}
+
 DebugPass::DebugPass(const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent) {
-	m_shader_layout.rebuild(core, "debug");
+	const auto grid_shader = acquireShader("core://shaders/grid.slang");
+	const auto shape_shader = acquireShader("core://shaders/debug_shape.slang");
+
+	// Both debug shaders share the same layout
+	const auto* layout_source = grid_shader ? grid_shader.get() : shape_shader.get();
+	if (layout_source == nullptr) {
+		TOAST_ERROR("Render", "DebugPass has no usable shaders, the pass will draw nothing");
+		return;
+	}
+	m_shader_layout.rebuild(core, layout_source->reflection, "DebugPass");
 
 	const vk::VertexInputBindingDescription position_only_binding(0, sizeof(glm::vec3), vk::VertexInputRate::eVertex);
 	const std::vector<vk::VertexInputAttributeDescription> position_only_attributes {
@@ -115,16 +138,14 @@ DebugPass::DebugPass(const renderer::VulkanCore& core, vk::Format color_format, 
 	};
 
 	// Ground grid
-	{
-		auto shader = renderer::ShaderCompiler::compileShaderModuleFromSource("./grid.slang");
-
+	if (grid_shader) {
 		VulkanPipeline::Config config;
 		config.pipeline_type = VulkanPipeline::PipelineType::graphics;
 		config.debug_name = "DebugPass Grid";
 		config.color_format = color_format;
 		config.depth_format = depth_format;
 		config.extent = extent;
-		config.shader_spirv = std::move(shader.spirv);
+		config.shader_spirv = grid_shader->spirv;
 		config.pipeline_layout = *m_shader_layout.getPipelineLayout();
 		config.vertex_binding = position_only_binding;
 		config.vertex_attributes = position_only_attributes;
@@ -137,16 +158,14 @@ DebugPass::DebugPass(const renderer::VulkanCore& core, vk::Format color_format, 
 	}
 
 	// Debug lines
-	{
-		auto shader = renderer::ShaderCompiler::compileShaderModuleFromSource("./debug_shape.slang");
-
+	if (shape_shader) {
 		VulkanPipeline::Config config;
 		config.pipeline_type = VulkanPipeline::PipelineType::graphics;
 		config.debug_name = "DebugPass Lines";
 		config.color_format = color_format;
 		config.depth_format = depth_format;
 		config.extent = extent;
-		config.shader_spirv = std::move(shader.spirv);
+		config.shader_spirv = shape_shader->spirv;
 		config.pipeline_layout = *m_shader_layout.getPipelineLayout();
 		config.vertex_binding = debug_vertex_binding;
 		config.vertex_attributes = debug_vertex_attributes;
@@ -159,16 +178,14 @@ DebugPass::DebugPass(const renderer::VulkanCore& core, vk::Format color_format, 
 	}
 
 	// Gizmo axis triad
-	{
-		auto shader = renderer::ShaderCompiler::compileShaderModuleFromSource("./debug_shape.slang");
-
+	if (shape_shader) {
 		VulkanPipeline::Config config;
 		config.pipeline_type = VulkanPipeline::PipelineType::graphics;
 		config.debug_name = "DebugPass Gizmo";
 		config.color_format = color_format;
 		config.depth_format = depth_format;
 		config.extent = extent;
-		config.shader_spirv = std::move(shader.spirv);
+		config.shader_spirv = shape_shader->spirv;
 		config.pipeline_layout = *m_shader_layout.getPipelineLayout();
 		config.vertex_binding = debug_vertex_binding;
 		config.vertex_attributes = debug_vertex_attributes;
@@ -236,7 +253,13 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 		DrawPushConstants pc {};
 		pc.model = glm::translate(glm::mat4(1.0f), glm::vec3(cam_pos.x, cam_pos.y, 0.0f)) *
 		           glm::scale(glm::mat4(1.0f), glm::vec3(k_grid_half_extent));
-		cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(DrawPushConstants), &pc);
+		cmd.pushConstants(
+		    *m_shader_layout.getPipelineLayout(),
+		    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
+		    0,
+		    sizeof(DrawPushConstants),
+		    &pc
+		);
 
 		cmd.bindVertexBuffers(0, std::array<vk::Buffer, 1> {*m_grid_vertex_buffer}, std::array<vk::DeviceSize, 1> {0});
 		cmd.draw(6, 1, 0, 0);
@@ -248,7 +271,13 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_line_pipeline.getPipeline());
 
 		const DrawPushConstants pc {};    // identity - line vertices are already in world space
-		cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(DrawPushConstants), &pc);
+		cmd.pushConstants(
+		    *m_shader_layout.getPipelineLayout(),
+		    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
+		    0,
+		    sizeof(DrawPushConstants),
+		    &pc
+		);
 
 		cmd.bindVertexBuffers(
 		    0, std::array<vk::Buffer, 1> {*m_line_vertex_buffers[frame_index].buffer}, std::array<vk::DeviceSize, 1> {0}
@@ -265,7 +294,11 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 			DrawPushConstants pc {};
 			pc.model = transform;
 			cmd.pushConstants(
-			    *m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(DrawPushConstants), &pc
+			    *m_shader_layout.getPipelineLayout(),
+			    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
+			    0,
+			    sizeof(DrawPushConstants),
+			    &pc
 			);
 			cmd.draw(m_gizmo_vertex_count, 1, 0, 0);
 		}
@@ -400,4 +433,4 @@ void DebugPass::ensureLineCapacity(const renderer::VulkanCore& core, DynamicVert
 	setDebugName(core, *buffer.buffer, "DebugPass LineVertexBuffer");
 }
 
-}    // namespace renderer
+}
