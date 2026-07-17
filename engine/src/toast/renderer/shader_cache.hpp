@@ -14,6 +14,7 @@
 #include <string>
 #include <toast/assets/core_types.hpp>
 #include <toast/assets/shader.hpp>
+#include <toast/events/listener.hpp>
 #include <toast/uid.hpp>
 #include <unordered_map>
 #include <vector>
@@ -58,6 +59,8 @@ public:
 	static auto fnv1a(const void* data, size_t size) -> uint64_t;    ///< file hasher
 
 private:
+	ShaderCache();
+
 	auto loadOrCompileLocked(toast::UID uid) -> std::shared_ptr<const Entry>;
 	auto compileLocked(toast::UID uid) -> std::shared_ptr<const Entry>;
 	auto loadFromDiskLocked(toast::UID uid) -> std::shared_ptr<const Entry>;
@@ -71,6 +74,8 @@ private:
 	std::unordered_map<uint64_t, assets::AssetHandle<assets::Shader>> m_sources;
 	nlohmann::json m_hash_index;
 	bool m_hash_index_loaded = false;
+
+	event::Listener m_listener;
 };
 
 }

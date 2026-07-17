@@ -59,9 +59,13 @@ public:
 	[[nodiscard]]
 	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 
+	/// @brief Re-parses the asset contents in place
+	virtual void reload(const toml::table& table);
+
 protected:
 	DataValue m_root;                ///< Object DataValue holding all fields
 	AssetHandle<Schema> m_schema;    ///< optional
+	bool m_keep_all_keys = false;
 
 private:
 	static auto buildRoot(const toml::table& table, const Schema* schema) -> DataValue;

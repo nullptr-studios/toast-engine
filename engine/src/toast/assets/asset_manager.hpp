@@ -186,9 +186,9 @@ public:
 	static auto typeOf(toast::UID uid) -> std::string;
 
 	/**
-	 * @brief Re-reads any cached Script asset whose file changed on disk (hot reload)
+	 * @brief Re-reads any cached script, shader or material asset whose file changed on disk (hot reload)
 	 */
-	void pollModifiedScripts();
+	void pollModifiedAssets();
 
 	[[nodiscard]]
 	auto getCachePath() const -> const std::filesystem::path&;
@@ -221,11 +221,10 @@ private:
 
 	event::Listener listener;
 	std::mutex mutex;
-	std::unordered_map<uint64_t, AssetInfo> manifest;    ///< UID → path+type; populated from the project manifest on construction
-	std::unordered_map<uint64_t, std::unique_ptr<Asset>> cache;    ///< assets stay resident until clearUnusedAssets() is called
-	std::unordered_map<uint64_t, std::filesystem::file_time_type> script_mtimes;    ///< last seen mtime per cached script
+	std::unordered_map<uint64_t, AssetInfo> manifest;
+	std::unordered_map<uint64_t, std::unique_ptr<Asset>> cache;
+	std::unordered_map<uint64_t, std::filesystem::file_time_type> asset_mtimes;
 
-	/// Scheme name (no "://") → filesystem root. Populated by setPaths() + registerDatabase().
 	static inline std::unordered_map<std::string, std::filesystem::path> roots;
 
 	auto resolveVirtualPath(std::string_view virtual_path) -> std::optional<std::filesystem::path>;

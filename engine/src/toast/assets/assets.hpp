@@ -65,14 +65,29 @@ struct ReloadAssetsManifest : public Event<ReloadAssetsManifest> { };
 
 /**
  * @brief Fired after a hot-reload
- *
- * The Script object itself was already mutated in place; listeners rebuild whatever
- * they derived from the old source
  */
 struct ScriptAssetReloaded : public Event<ScriptAssetReloaded> {
 	toast::UID uid;
 
 	explicit ScriptAssetReloaded(toast::UID uid) : uid(uid) { }
+};
+
+/**
+ * @brief Fired after a shader source hot-reload
+ */
+struct ShaderAssetReloaded : public Event<ShaderAssetReloaded> {
+	toast::UID uid;
+
+	explicit ShaderAssetReloaded(toast::UID uid) : uid(uid) { }
+};
+
+/**
+ * @brief Fired after a material or material instance hot-reload
+ */
+struct MaterialAssetReloaded : public Event<MaterialAssetReloaded> {
+	toast::UID uid;
+
+	explicit MaterialAssetReloaded(toast::UID uid) : uid(uid) { }
 };
 
 /**

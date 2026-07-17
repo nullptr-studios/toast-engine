@@ -31,6 +31,13 @@ auto hashToHex(uint64_t hash) -> std::string {
 
 }
 
+ShaderCache::ShaderCache() {
+	m_listener.subscribe<event::ShaderAssetReloaded>([this](const event::ShaderAssetReloaded& e) {
+		onShaderSourceReloaded(e.uid);
+		return false;
+	});
+}
+
 auto ShaderCache::get() -> ShaderCache& {
 	static ShaderCache instance;
 	return instance;

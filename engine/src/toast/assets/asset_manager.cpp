@@ -547,15 +547,24 @@ auto AssetManager::typeOf(toast::UID uid) -> std::string {
 	return it != manager.manifest.end() ? it->second.type : std::string {};
 }
 
-void AssetManager::pollModifiedScripts() {
+void AssetManager::pollModifiedAssets() {
 	ZoneScoped;
 
-	std::vector<toast::UID> changed;
+	struct ChangedAsset {
+		toast::UID uid;
+		std::string type;
+	};
+
+	std::vector<ChangedAsset> changed;
 	{
 		std::lock_guard lock(mutex);
 		for (auto& [id, asset] : cache) {
 			auto manifest_it = manifest.find(id);
-			if (manifest_it == manifest.end() || manifest_it->second.type != "script") {
+			if (manifest_it == manifest.end()) {
+				continue;
+			}
+			const std::string& type = manifest_it->second.type;
+			if (type != "script" && type != "shader" && type != "material" && type != "material_instance") {
 				continue;
 			}
 			auto real_path = resolveVirtualPath(manifest_it->second.path);
@@ -568,22 +577,44 @@ void AssetManager::pollModifiedScripts() {
 			if (ec) {
 				continue;
 			}
-			auto [it, first_seen] = script_mtimes.try_emplace(id, mtime);
+			auto [it, first_seen] = asset_mtimes.try_emplace(id, mtime);
 			if (first_seen || it->second == mtime) {
 				continue;    // unchanged
 			}
 			it->second = mtime;
 
-			if (auto raw = readVirtualPath(manifest_it->second.path)) {
-				static_cast<Script*>(asset.get())->setData(std::move(*raw));
-				changed.emplace_back(id);
+			auto raw = readVirtualPath(manifest_it->second.path);
+			if (!raw) {
+				continue;
 			}
+
+			if (type == "script") {
+				static_cast<Script*>(asset.get())->setData(std::move(*raw));
+			} else if (type == "shader") {
+				static_cast<Shader*>(asset.get())->setSource(std::move(*raw));
+			} else {
+				// Materials re-parse their TOML in place so existing handles stay valid
+				try {
+					const std::string_view toml_str(reinterpret_cast<const char*>(raw->data()), raw->size());
+					static_cast<Data*>(asset.get())->reload(toml::parse(toml_str));
+				} catch (const toml::parse_error& err) {
+					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", manifest_it->second.path, err.description());
+					continue;
+				}
+			}
+			changed.push_back(ChangedAsset {.uid = toast::UID(id), .type = type});
 		}
 	}
 
-	for (toast::UID uid : changed) {
-		TOAST_INFO("AssetManager", "Script changed on disk, reloading: {}", getURI(uid));
-		event::send<event::ScriptAssetReloaded>(uid);
+	for (const auto& [uid, type] : changed) {
+		TOAST_INFO("AssetManager", "Asset changed on disk, reloading: {} ({})", getURI(uid), type);
+		if (type == "script") {
+			event::send<event::ScriptAssetReloaded>(uid);
+		} else if (type == "shader") {
+			event::send<event::ShaderAssetReloaded>(uid);
+		} else {
+			event::send<event::MaterialAssetReloaded>(uid);
+		}
 	}
 }
 

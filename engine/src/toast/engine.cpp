@@ -304,12 +304,12 @@ void Engine::tick() {
 	}
 
 #ifdef DEBUG
-	// dev builds hot-reload script sources edited on disk
+	// dev builds hot-reload scripts, shaders and materials edited on disk
 	script_reload_timer += Time::delta();
 	if (script_reload_timer > 1.0) {
 		script_reload_timer = 0.0;
 		if (m->asset_manager) {
-			m->asset_manager->pollModifiedScripts();
+			m->asset_manager->pollModifiedAssets();
 		}
 	}
 #endif
