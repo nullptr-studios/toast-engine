@@ -1,6 +1,5 @@
 #include "shader_layout.hpp"
 
-#include "hardcoded_pipeline_layouts.hpp"
 #include "vulkan_core.hpp"
 #include "vulkan_debug.hpp"
 
@@ -82,17 +81,6 @@ void ShaderLayout::rebuild(const VulkanCore& core, const ShaderReflection& refle
 
 	m_pipeline_layout = vk::raii::PipelineLayout(device, pipeline_layout_ci);
 	setDebugName(core, *m_pipeline_layout, std::format("{} PipelineLayout", debug_name));
-}
-
-// Hardcoded-only rebuild
-void ShaderLayout::rebuild(const VulkanCore& core, std::string_view shader_key) {
-	m_descriptor_set_layouts.clear();
-	m_push_constant_ranges.clear();
-	m_pipeline_layout = nullptr;
-
-	hardcoded_pipeline_layouts::buildPipelineLayout(
-	    core, shader_key, m_descriptor_set_layouts, m_push_constant_ranges, m_pipeline_layout
-	);
 }
 
 }

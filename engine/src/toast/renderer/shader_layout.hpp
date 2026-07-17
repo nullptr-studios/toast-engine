@@ -25,12 +25,6 @@ public:
 	 */
 	void rebuild(const VulkanCore& core, const ShaderReflection& reflection, std::string_view debug_name);
 
-	/**
-	 * @brief Rebuilds the shader layout from a hardcoded shader key
-	 * @deprecated Only used by passes not yet migrated to reflection data
-	 */
-	void rebuild(const VulkanCore& core, std::string_view shader_key);
-
 	[[nodiscard]]
 	auto getPipelineLayout() const -> const vk::raii::PipelineLayout& {
 		return m_pipeline_layout;

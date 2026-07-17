@@ -14,7 +14,6 @@
 #include "project_settings.hpp"
 #include "reflect/reflect.hpp"
 #include "renderer/passes/debug_pass.hpp"
-#include "renderer/passes/mesh_pass.hpp"
 #include "renderer/sdl_output_target.hpp"
 #include "renderer/shader_cache.hpp"
 #include "renderer/shader_compiler.hpp"

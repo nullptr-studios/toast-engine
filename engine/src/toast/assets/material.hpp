@@ -11,15 +11,7 @@
 #include "data.hpp"
 #include "shader.hpp"
 
-#include <memory>
-#include <vulkan/vulkan_core.h>
-
-namespace renderer {
-class VulkanSampler;
-}
-
 namespace assets {
-class Texture;
 
 enum class BlendMode : uint8_t {
 	opaque,
@@ -92,30 +84,8 @@ public:
 		return this;
 	}
 
-	// Legacy parameter API
-
-	[[nodiscard]]
-	auto albedoMap() const -> AssetHandle<Texture>;
-
-	[[nodiscard]]
-	auto normalMap() const -> AssetHandle<Texture>;
-
-	[[nodiscard]]
-	auto color() const -> glm::vec4;
-
-	[[nodiscard]]
-	auto albedoSampler() const -> VkSampler;
-
-	void resolveTextureHandles();
-
 private:
 	mutable std::vector<AssetHandle<Shader>> m_shader_handles;
 	mutable bool m_shaders_dirty = true;
-
-	// Legacy members
-	mutable AssetHandle<Texture> m_albedo_handle;
-	mutable AssetHandle<Texture> m_normal_handle;
-	bool m_sampler_ready = false;
-	std::unique_ptr<renderer::VulkanSampler> m_albedo_sampler;
 };
 }

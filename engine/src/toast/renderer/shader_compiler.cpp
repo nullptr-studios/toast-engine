@@ -7,8 +7,6 @@
 #include "slang_vfs.hpp"
 
 #include <array>
-#include <fstream>
-#include <iterator>
 #include <slang-com-ptr.h>
 #include <slang.h>
 #include <toast/log.hpp>
@@ -153,7 +151,6 @@ auto compileModule(std::string_view module_name, std::string_view source_path, s
 	CompiledShaderCode result;
 	result.spirv.assign(bytes, bytes + spirv_blob->getBufferSize());
 	result.reflection = extractReflection(program->getLayout());
-	result.program = program;
 
 	// Collect dependencies as virtual URIs
 	const SlangInt32 dependency_count = slang_module->getDependencyFileCount();
@@ -176,38 +173,6 @@ auto compileModule(std::string_view module_name, std::string_view source_path, s
 
 auto ShaderCompiler::compile(toast::UID uid, std::string_view source, std::string_view source_uri) -> CompiledShaderCode {
 	return compileModule(uid.get(), source_uri, source);
-}
-
-auto ShaderCompiler::compileShaderModuleFromSource(const std::filesystem::path& shader_path) -> CompiledShaderCode {
-	std::filesystem::path resolved_path = shader_path;
-	if (!resolved_path.is_absolute()) {
-		auto cwd_path = std::filesystem::current_path() / shader_path;
-		if (std::filesystem::exists(cwd_path)) {
-			resolved_path = cwd_path;
-		}
-	}
-
-	if (!std::filesystem::exists(resolved_path)) {
-		TOAST_CRITICAL(
-		    "Render",
-		    "Shader file not found: {}\nCurrent working directory: {}",
-		    resolved_path.string(),
-		    std::filesystem::current_path().string()
-		);
-	}
-
-	std::ifstream file(resolved_path, std::ios::binary);
-	if (!file) {
-		TOAST_CRITICAL("Render", "Failed to open shader file: {}", resolved_path.string());
-	}
-	std::string source;
-	source.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-
-	auto result = compileModule(shader_path.stem().string(), resolved_path.string(), source);
-	if (result.spirv.empty()) {
-		TOAST_CRITICAL("Render", "Failed to compile shader: {}", resolved_path.string());
-	}
-	return result;
 }
 
 }
