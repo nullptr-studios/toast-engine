@@ -37,12 +37,26 @@ enum class ShaderBindingKind : uint8_t {
 	storage_image,
 };
 
+struct ShaderInspectorMeta {
+	bool reflected = false;    ///< only [Reflect] parameters are material-editable
+	std::optional<float> range_min;
+	std::optional<float> range_max;
+	bool is_color = false;
+	std::string display_name;
+	std::string group;
+	std::string subgroup;
+	std::string unit;
+};
+
 struct ShaderBlockMember {
 	std::string name;
 	ShaderMemberType type = ShaderMemberType::unknown;
 	uint32_t offset = 0;
 	uint32_t size = 0;
-	std::string engine_semantic;    ///< e.g. "model_matrix" for the engine-written model push member
+	uint32_t element_count = 0;     ///< >0 when the member is an array
+	uint32_t element_stride = 0;    ///< byte stride between array elements
+	std::string engine_semantic;
+	ShaderInspectorMeta inspector;
 };
 
 struct ShaderBinding {
@@ -54,6 +68,7 @@ struct ShaderBinding {
 	uint32_t size = 0;                         ///< byte size for uniform buffers
 	std::vector<ShaderBlockMember> members;    ///< uniform buffer contents, in declaration order
 	std::string engine_semantic;               ///< "frame" for engine-reserved set 0 bindings
+	ShaderInspectorMeta inspector;
 };
 
 struct ShaderPushConstants {

@@ -1,3 +1,5 @@
+import toast;
+
 struct CameraUBO
 {
     float4x4 view;
@@ -8,19 +10,19 @@ struct CameraUBO
     float time;
 };
 
-// Set 0 is engine-reserved frame data
 [[vk::binding(0,0)]]
 ConstantBuffer<CameraUBO> gCamera;
 
-// Set 1+ is material data, discovered via reflection and edited in the material editor
 struct MaterialUBO
 {
+    [Reflect] [Color] [Name("Tint")]
     float4 tint;
 };
 
 [[vk::binding(0,1)]]
 ConstantBuffer<MaterialUBO> gMaterial;
 
+[Reflect] [Name("Albedo")]
 [[vk::binding(1,1)]]
 Sampler2D gAlbedo;
 

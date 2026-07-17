@@ -66,6 +66,56 @@ auto mapMemberType(slang::TypeLayoutReflection* type_layout) -> ShaderMemberType
 	return ShaderMemberType::unknown;
 }
 
+auto extractInspector(slang::VariableReflection* var) -> ShaderInspectorMeta {
+	ShaderInspectorMeta meta;
+	if (var == nullptr) {
+		return meta;
+	}
+
+	const auto readString = [](slang::Attribute* attribute) -> std::string {
+		size_t size = 0;
+		const char* str = attribute->getArgumentValueString(0, &size);
+		return str != nullptr ? std::string(str, size) : std::string {};
+	};
+
+	const uint32_t attribute_count = var->getUserAttributeCount();
+	for (uint32_t i = 0; i < attribute_count; ++i) {
+		auto* attribute = var->getUserAttributeByIndex(i);
+		if (attribute == nullptr || attribute->getName() == nullptr) {
+			continue;
+		}
+
+		std::string_view name = attribute->getName();
+		if (name.ends_with("Attribute")) {
+			name.remove_suffix(9);
+		}
+
+		if (name == "Reflect") {
+			meta.reflected = true;
+		} else if (name == "Color") {
+			meta.is_color = true;
+		} else if (name == "Range") {
+			float min_value = 0.0f;
+			float max_value = 0.0f;
+			if (SLANG_SUCCEEDED(attribute->getArgumentValueFloat(0, &min_value)) &&
+			    SLANG_SUCCEEDED(attribute->getArgumentValueFloat(1, &max_value))) {
+				meta.range_min = min_value;
+				meta.range_max = max_value;
+			}
+		} else if (name == "Name") {
+			meta.display_name = readString(attribute);
+		} else if (name == "Group") {
+			meta.group = readString(attribute);
+		} else if (name == "Subgroup") {
+			meta.subgroup = readString(attribute);
+		} else if (name == "Unit") {
+			meta.unit = readString(attribute);
+		}
+	}
+
+	return meta;
+}
+
 auto extractBlockMembers(slang::TypeLayoutReflection* struct_layout) -> std::vector<ShaderBlockMember> {
 	std::vector<ShaderBlockMember> members;
 	if (struct_layout == nullptr || struct_layout->getKind() != slang::TypeReflection::Kind::Struct) {
@@ -83,9 +133,18 @@ auto extractBlockMembers(slang::TypeLayoutReflection* struct_layout) -> std::vec
 		ShaderBlockMember member;
 		member.name = field->getName() != nullptr ? field->getName() : "";
 		member.offset = static_cast<uint32_t>(field->getOffset(SLANG_PARAMETER_CATEGORY_UNIFORM));
+		member.inspector = extractInspector(field->getVariable());
+
 		if (auto* field_type = field->getTypeLayout()) {
 			member.size = static_cast<uint32_t>(field_type->getSize(SLANG_PARAMETER_CATEGORY_UNIFORM));
-			member.type = mapMemberType(field_type);
+
+			if (field_type->getKind() == slang::TypeReflection::Kind::Array) {
+				member.element_count = static_cast<uint32_t>(field_type->getElementCount());
+				member.element_stride = static_cast<uint32_t>(field_type->getElementStride(SLANG_PARAMETER_CATEGORY_UNIFORM));
+				member.type = mapMemberType(field_type->getElementTypeLayout());
+			} else {
+				member.type = mapMemberType(field_type);
+			}
 		}
 
 		// The engine writes the model matrix itself; everything else is material data
@@ -207,6 +266,7 @@ auto extractReflection(slang::ProgramLayout* layout) -> ShaderReflection {
 		ShaderBinding binding;
 		binding.name = name;
 		binding.kind = *kind;
+		binding.inspector = extractInspector(var_layout->getVariable());
 		binding.binding = static_cast<uint32_t>(var_layout->getOffset(slang::ParameterCategory::DescriptorTableSlot));
 		binding.set = static_cast<uint32_t>(var_layout->getBindingSpace(slang::ParameterCategory::DescriptorTableSlot));
 
@@ -308,6 +368,53 @@ auto bindingKindFromString(std::string_view str) -> ShaderBindingKind {
 
 namespace {
 
+auto inspectorToJson(const ShaderInspectorMeta& meta) -> nlohmann::json {
+	nlohmann::json json;
+	json["reflected"] = meta.reflected;
+	if (meta.range_min.has_value()) {
+		json["min"] = *meta.range_min;
+	}
+	if (meta.range_max.has_value()) {
+		json["max"] = *meta.range_max;
+	}
+	if (meta.is_color) {
+		json["color"] = true;
+	}
+	if (!meta.display_name.empty()) {
+		json["display_name"] = meta.display_name;
+	}
+	if (!meta.group.empty()) {
+		json["group"] = meta.group;
+	}
+	if (!meta.subgroup.empty()) {
+		json["subgroup"] = meta.subgroup;
+	}
+	if (!meta.unit.empty()) {
+		json["unit"] = meta.unit;
+	}
+	return json;
+}
+
+auto inspectorFromJson(const nlohmann::json& json) -> ShaderInspectorMeta {
+	ShaderInspectorMeta meta;
+	if (!json.is_object()) {
+		return meta;
+	}
+	meta.reflected = json.value("reflected", false);
+	if (json.contains("min")) {
+		meta.range_min = json["min"].get<float>();
+	}
+	if (json.contains("max")) {
+		meta.range_max = json["max"].get<float>();
+	}
+	meta.is_color = json.value("color", false);
+	meta.display_name = json.value("display_name", "");
+	meta.group = json.value("group", "");
+	meta.subgroup = json.value("subgroup", "");
+	meta.unit = json.value("unit", "");
+	return meta;
+}
+
 auto membersToJson(const std::vector<ShaderBlockMember>& members) -> nlohmann::json {
 	auto json = nlohmann::json::array();
 	for (const auto& member : members) {
@@ -317,9 +424,14 @@ auto membersToJson(const std::vector<ShaderBlockMember>& members) -> nlohmann::j
 		  {"offset",         member.offset},
 		  {  "size",           member.size},
 		};
+		if (member.element_count > 0) {
+			m["count"] = member.element_count;
+			m["stride"] = member.element_stride;
+		}
 		if (!member.engine_semantic.empty()) {
 			m["engine_semantic"] = member.engine_semantic;
 		}
+		m["inspector"] = inspectorToJson(member.inspector);
 		json.push_back(std::move(m));
 	}
 	return json;
@@ -333,7 +445,10 @@ auto membersFromJson(const nlohmann::json& json) -> std::vector<ShaderBlockMembe
 		member.type = memberTypeFromString(m.value("type", "unknown"));
 		member.offset = m.value("offset", 0u);
 		member.size = m.value("size", 0u);
+		member.element_count = m.value("count", 0u);
+		member.element_stride = m.value("stride", 0u);
 		member.engine_semantic = m.value("engine_semantic", "");
+		member.inspector = inspectorFromJson(m.value("inspector", nlohmann::json::object()));
 		members.push_back(std::move(member));
 	}
 	return members;
@@ -367,6 +482,7 @@ auto ShaderReflection::toJson() const -> nlohmann::json {
 		if (!binding.engine_semantic.empty()) {
 			b["engine_semantic"] = binding.engine_semantic;
 		}
+		b["inspector"] = inspectorToJson(binding.inspector);
 		bindings_json.push_back(std::move(b));
 	}
 	json["bindings"] = std::move(bindings_json);
@@ -411,6 +527,7 @@ auto ShaderReflection::fromJson(const nlohmann::json& json) -> std::optional<Sha
 			binding.count = b.value("count", 1u);
 			binding.size = b.value("size", 0u);
 			binding.engine_semantic = b.value("engine_semantic", "");
+			binding.inspector = inspectorFromJson(b.value("inspector", nlohmann::json::object()));
 			binding.members = membersFromJson(b.value("members", nlohmann::json::array()));
 			reflection.bindings.push_back(std::move(binding));
 		}
