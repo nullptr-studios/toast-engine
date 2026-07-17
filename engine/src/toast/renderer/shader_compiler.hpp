@@ -17,7 +17,7 @@ namespace renderer {
 struct CompiledShaderCode {
 	std::vector<std::byte> spirv;
 	ShaderReflection reflection;
-	std::vector<std::string> dependencies;           // Virtual URIs the module depends on
+	std::vector<std::string> dependencies;    // Virtual URIs the module depends on
 };
 
 class ShaderCompiler {

@@ -23,9 +23,9 @@ class VulkanCore;
 
 /**
  * @class MaterialRuntime
- * @brief GPU-facing view of one Material 
+ * @brief GPU-facing view of one Material
  *
- * Merges the reflection of the material's shader vector, bakes the material's 
+ * Merges the reflection of the material's shader vector, bakes the material's
  * DataValues into CPU bytes using reflection offsets, resolves texture handles
  * and owns the VulkanSamplers described by the material's sampler settings
  *

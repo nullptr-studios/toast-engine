@@ -34,7 +34,7 @@ public:
 	void reload(const toml::table& table) override;
 
 	[[nodiscard]]
-	auto parent() const -> const AssetHandle<Material>&; ///< @brief The parent material
+	auto parent() const -> const AssetHandle<Material>&;    ///< @brief The parent material
 
 	[[nodiscard]]
 	auto shaders() const -> const std::vector<AssetHandle<Shader>>& override;

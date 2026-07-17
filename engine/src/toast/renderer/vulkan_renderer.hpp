@@ -318,7 +318,7 @@ private:
 
 	vk::raii::CommandPool m_transfer_command_pool = nullptr;
 
-	TracyVkCtx m_tracy_vk_ctx = nullptr; ///< Tracy GPU profiling context
+	TracyVkCtx m_tracy_vk_ctx = nullptr;    ///< Tracy GPU profiling context
 
 	vk::raii::DescriptorPool m_descriptor_pool = nullptr;
 
