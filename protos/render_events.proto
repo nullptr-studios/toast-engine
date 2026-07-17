@@ -1,0 +1,28 @@
+syntax = "proto3";
+package proto.events;
+
+message RequestRenderPasses {}
+
+message RenderPassInfo {
+  string name = 1;
+  bool enabled = 2;
+}
+
+message RenderPassList {
+  repeated RenderPassInfo passes = 1;
+}
+
+message SetRenderPassEnabled {
+  string name = 1;
+  bool enabled = 2;
+}
+
+message RequestShaderReflection {
+  repeated string shader_uids = 1;
+}
+
+message ShaderReflectionReady {
+  repeated string shader_uids = 1;
+  bool success = 2;
+  string error = 3;
+}

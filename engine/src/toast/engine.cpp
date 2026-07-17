@@ -14,6 +14,7 @@
 #include "project_settings.hpp"
 #include "reflect/reflect.hpp"
 #include "renderer/passes/debug_pass.hpp"
+#include "renderer/render_events.hpp"
 #include "renderer/sdl_output_target.hpp"
 #include "renderer/shader_cache.hpp"
 #include "renderer/shader_compiler.hpp"
@@ -148,6 +149,8 @@ void Engine::init() {
 
 	// Compile every stale shader up front
 	renderer::ShaderCache::get().compileAllAtStartup();
+
+	renderer::registerRenderEvents();
 
 	m->input_system = std::make_unique<input::InputSystem>();
 	m->haptics_system = std::make_unique<input::HapticsSystem>();

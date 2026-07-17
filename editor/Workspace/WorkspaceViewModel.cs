@@ -37,10 +37,27 @@ public partial class WorkspaceViewModel : Document, IAutosavable {
 
 	[ObservableProperty] private bool m_translateSnapEnabled = true;
 
+	private readonly Listener m_renderListener = new();
+
 	private WorkspaceViewModel(ToastEngine? engine = null) {
 		Engine = engine;
 		Title = "Unnamed Node";
 		CanDrag = false;
+
+		m_renderListener.SubscribeOnUiThread<RenderPassList>(SyncRenderPasses);
+	}
+
+	public System.Collections.ObjectModel.ObservableCollection<RenderPassVM> RenderPasses { get; } = [];
+
+	[RelayCommand]
+	private void RefreshRenderPasses() {
+		Events.Send(new RequestRenderPasses());
+	}
+
+	private void SyncRenderPasses(RenderPassList list) {
+		RenderPasses.Clear();
+		foreach (var pass in list.Passes)
+			RenderPasses.Add(new RenderPassVM(pass.Name, pass.Enabled));
 	}
 
 	public ToastEngine? Engine { get; }
@@ -360,5 +377,24 @@ public partial class WorkspaceViewModel : Document, IAutosavable {
 		ws.BindBackingFile(virtualPath, assetUid);
 		ws.m_pendingRootName = Path.GetFileNameWithoutExtension(virtualPath);
 		return ws;
+	}
+}
+
+public partial class RenderPassVM : ObservableObject {
+	[ObservableProperty] private bool m_enabled;
+	private readonly bool m_syncing;
+
+	public RenderPassVM(string name, bool enabled) {
+		m_syncing = true;
+		Name = name;
+		Enabled = enabled;
+		m_syncing = false;
+	}
+
+	public string Name { get; }
+
+	partial void OnEnabledChanged(bool value) {
+		if (m_syncing) return;
+		Events.Send(new SetRenderPassEnabled { Name = Name, Enabled = value });
 	}
 }
