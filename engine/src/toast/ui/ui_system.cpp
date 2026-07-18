@@ -4,6 +4,7 @@
 #include "render/rmlui_renderer_vk.h"
 #include "render/ui_pass.hpp"
 #include "ui_file_interface.hpp"
+#include "ui_input.hpp"
 #include "ui_system_interface.hpp"
 
 #include <RmlUi/Core.h>
@@ -31,6 +32,8 @@ UISystem::UISystem() noexcept {
 		TOAST_ERROR("UI", "RmlUi failed to initialise");
 		return;
 	}
+
+	m_input_router = std::make_unique<UIInputRouter>();
 
 	TOAST_INFO("UI", "RmlUi {} initialised", Rml::GetVersion());
 }
@@ -189,8 +192,17 @@ auto UISystem::createContext(std::string_view name, glm::ivec2 dimensions) -> Rm
 		return nullptr;
 	}
 
+	context->SetDensityIndependentPixelRatio(m_dp_ratio);
+
 	TOAST_TRACE("UI", "Created context '{}' ({}x{})", unique_name, dimensions.x, dimensions.y);
 	return context;
+}
+
+void UISystem::applyDpRatio(float ratio) {
+	m_dp_ratio = ratio;
+	for (int i = 0; i < Rml::GetNumContexts(); i++) {
+		Rml::GetContext(i)->SetDensityIndependentPixelRatio(ratio);
+	}
 }
 
 void UISystem::destroyContext(Rml::Context* context) {

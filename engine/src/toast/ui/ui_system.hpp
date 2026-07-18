@@ -35,6 +35,7 @@ class RenderInterface_VK;
 namespace ui {
 
 class UIFileInterface;
+class UIInputRouter;
 class UISystemInterface;
 
 class UISystem {
@@ -88,6 +89,8 @@ public:
 		return m_world_panels;
 	}
 
+	void applyDpRatio(float ratio);
+
 	[[nodiscard]]
 	auto renderInterface() -> RenderInterface_VK* {
 		return m_render_interface.get();
@@ -99,6 +102,9 @@ private:
 	std::unique_ptr<UIFileInterface> m_file_interface;
 	std::unique_ptr<UISystemInterface> m_system_interface;
 	std::unique_ptr<RenderInterface_VK> m_render_interface;
+	std::unique_ptr<UIInputRouter> m_input_router;
+
+	float m_dp_ratio = 1.0f;
 
 	uint64_t m_next_context_id = 1;    ///< context names must be unique
 	uint64_t m_frame_counter = 0;

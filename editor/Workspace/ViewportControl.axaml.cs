@@ -42,6 +42,7 @@ public partial class ViewportControl : UserControl {
 	private int m_surfaceH;
 
 	private int m_surfaceW;
+	private double m_lastScale;
 	private DispatcherTimer? m_timer;
 	private TopLevel? m_topLevel;
 	private bool m_wasVisible;
@@ -229,6 +230,12 @@ public partial class ViewportControl : UserControl {
 			return;
 
 		var scale = RenderScaling();
+
+		if (Math.Abs(scale - m_lastScale) > 1e-6) {
+			m_lastScale = scale;
+			Events.Send(new WindowDisplayScale { Scale = (float)scale });
+		}
+
 		var width = Math.Max(1, (int)Math.Round(Bounds.Width * scale));
 		var height = Math.Max(1, (int)Math.Round(Bounds.Height * scale));
 
