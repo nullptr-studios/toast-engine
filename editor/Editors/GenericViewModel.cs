@@ -14,7 +14,9 @@ using Dock.Model.Mvvm.Controls;
 using editor.Assets;
 using editor.Assets.Types;
 using editor.Components.Modals;
+using editor.Engine;
 using editor.Workspace;
+using Proto.Events;
 using Tomlyn;
 using Tomlyn.Model;
 
@@ -34,6 +36,7 @@ public partial class GenericViewModel : Tool, IAutosavable {
 	// Materials and material instances generate their schema from shader reflection
 	private bool m_dynamicSchema;
 	private bool m_dynamicRebuildQueued;
+	private readonly Listener m_renderListener = new();
 	[ObservableProperty] private string m_schemaLabel = "";
 	[ObservableProperty] private bool m_schemaLocked;
 	[ObservableProperty] private string m_schemaUid = "";
@@ -42,6 +45,8 @@ public partial class GenericViewModel : Tool, IAutosavable {
 		Fields.CollectionChanged += (_, _) => {
 			if (!m_loading) IsDirty = true;
 		};
+
+		m_renderListener.SubscribeOnUiThread<ShaderRecompiled>(_ => ScheduleDynamicRebuild());
 
 		if (Design.IsDesignMode) InitDesignData();
 	}

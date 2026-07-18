@@ -116,6 +116,22 @@ struct ProtoTraits<ShaderReflectionReady> {
 
 TOAST_PROTO_EVENT(ShaderReflectionReady);
 
+template<>
+struct ProtoTraits<ShaderRecompiled> {
+	using Proto = proto::events::ShaderRecompiled;
+	using Event = ShaderRecompiled;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_uid(e.uid.get());
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return Event(toast::UID(toast::UID::fromString(p.uid()))); }
+};
+
+TOAST_PROTO_EVENT(ShaderRecompiled);
+
 }
 
 namespace renderer {

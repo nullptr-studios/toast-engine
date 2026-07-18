@@ -26,3 +26,7 @@ message ShaderReflectionReady {
   bool success = 2;
   string error = 3;
 }
+
+message ShaderRecompiled {
+  string uid = 1;
+}

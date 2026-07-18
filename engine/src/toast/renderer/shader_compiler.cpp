@@ -14,7 +14,6 @@
 namespace renderer {
 
 static Slang::ComPtr<slang::IGlobalSession> slang_global_session;
-static Slang::ComPtr<slang::ISession> slang_session;
 
 static void ensureSlangGlobalSession() {
 	if (slang_global_session) {
@@ -26,6 +25,10 @@ static void ensureSlangGlobalSession() {
 		TOAST_CRITICAL("Render", "Failed to create Slang global session");
 	}
 	slang_global_session = session;
+}
+
+static auto createSession() -> Slang::ComPtr<slang::ISession> {
+	ensureSlangGlobalSession();
 
 	// Set target to SPIR-V 1.6
 	slang::TargetDesc target {};
@@ -86,10 +89,12 @@ static void ensureSlangGlobalSession() {
 	session_desc.compilerOptionEntries = compiler_options.data();
 	session_desc.compilerOptionEntryCount = SlangInt(compiler_options.size());
 
-	SlangResult r = slang_global_session->createSession(session_desc, slang_session.writeRef());
-	if (SLANG_FAILED(r) || !slang_session) {
+	Slang::ComPtr<slang::ISession> session;
+	SlangResult r = slang_global_session->createSession(session_desc, session.writeRef());
+	if (SLANG_FAILED(r) || !session) {
 		TOAST_CRITICAL("Render", "Failed to create Slang compilation session");
 	}
+	return session;
 }
 
 namespace {
@@ -108,7 +113,8 @@ void logDiagnostics(const Slang::ComPtr<slang::IBlob>& diagnostics, std::string_
 }
 
 auto compileModule(std::string_view module_name, std::string_view source_path, std::string_view source) -> CompiledShaderCode {
-	ensureSlangGlobalSession();
+	// Create a fresh session per compilation
+	auto slang_session = createSession();
 
 	Slang::ComPtr<slang::IModule> slang_module;
 	Slang::ComPtr<slang::IBlob> slang_diagnostics;
