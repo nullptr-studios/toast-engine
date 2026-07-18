@@ -21,6 +21,7 @@ struct PreprocessContext {
 struct DocumentScan {
 	std::string transformed_rml;
 	std::vector<std::string> binds;
+	std::vector<std::string> bool_binds;
 	std::vector<std::string> events;
 };
 

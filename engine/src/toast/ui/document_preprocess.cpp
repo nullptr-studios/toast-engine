@@ -159,6 +159,9 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 					}
 				} else if (name.starts_with("data-") && name != "data-model" && !name.starts_with("data-loc-")) {
 					collectIdentifiers(value, scan.binds);
+					if (name == "data-checked") {
+						collectIdentifiers(value, scan.bool_binds);
+					}
 				}
 			}
 

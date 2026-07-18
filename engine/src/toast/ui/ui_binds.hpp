@@ -8,7 +8,10 @@
 
 #pragma once
 #include <RmlUi/Core/DataModelHandle.h>
+#include <RmlUi/Core/Variant.h>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 
 namespace Rml {
 class Context;
@@ -37,12 +40,30 @@ public:
 		return m_handle;
 	}
 
+	/// @returns true if `name` is one of this panel's bound values
+	[[nodiscard]]
+	auto has(std::string_view name) const -> bool;
+
+	/// @returns the current value of `name`
+	[[nodiscard]]
+	auto get(std::string_view name) const -> Rml::Variant;
+
+	/// Writes `name` from script and notifies the data model to refresh the UI
+	void set(std::string_view name, Rml::Variant value);
+
+	/// @returns the binds owning `node`
+	[[nodiscard]]
+	static auto forNode(const toast::Node* node) -> UIBinds*;
+
 	static constexpr const char* k_model_name = "binds";
 
 private:
 	Rml::Context* m_context = nullptr;
 	toast::Node* m_owner = nullptr;
 	Rml::DataModelHandle m_handle;
+	std::unordered_map<std::string, Rml::Variant> m_store;
+
+	static inline std::unordered_map<const toast::Node*, UIBinds*> s_by_node;
 };
 
 }

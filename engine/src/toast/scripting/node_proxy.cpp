@@ -3,6 +3,7 @@
 #include "asset_proxy.hpp"
 #include "lua_types.hpp"
 #include "script_runtime.hpp"
+#include "ui_binds_proxy.hpp"
 
 #include <algorithm>
 #include <format>
@@ -912,6 +913,15 @@ auto nodeProxyIndex(NodeProxy& proxy, const luabridge::LuaRef& key, lua_State* l
 		return luabridge::LuaRef::fromStack(l);
 	}
 
+	if (key_str == "ui_binds") {
+		return {l, UIBindsProxy(proxy.box())};
+	}
+
+	// self.<bind> sugar
+	if (uiBindsHas(n, key_str)) {
+		return uiBindsGet(n, key_str, l);
+	}
+
 	return {l};
 }
 
@@ -1095,6 +1105,10 @@ auto nodeProxyNewindex(NodeProxy& proxy, const luabridge::LuaRef& key, const lua
 
 	const toast::FieldInfo* f = lookupField(info, key_str);
 	if (!f) {
+		// self.<bind> = value sugar
+		if (uiBindsSet(n, key_str, value, l)) {
+			return {l};
+		}
 		luaL_error(l, "__newindex: no reflected field '%s' on %s", key_str.c_str(), info->type.data());
 		return {l};
 	}
