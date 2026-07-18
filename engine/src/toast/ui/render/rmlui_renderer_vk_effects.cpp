@@ -1,4 +1,3 @@
-#include <toast/renderer/shader_compiler.hpp>
 #include "rmlui_renderer_vk.h"
 
 #include <RmlUi/Core/Core.h>
@@ -9,6 +8,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <toast/renderer/shader_compiler.hpp>
 
 namespace {
 

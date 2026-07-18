@@ -1,11 +1,11 @@
 #include "panel.hpp"
 
-#include <toast/renderer/vulkan_renderer.hpp>
 #include "../document_preprocess.hpp"
 #include "../ui_system.hpp"
 
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/ElementDocument.h>
+#include <toast/renderer/vulkan_renderer.hpp>
 
 namespace toast {
 

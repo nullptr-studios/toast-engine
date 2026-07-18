@@ -169,7 +169,7 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 		i++;
 	}
 
-	//  inject style links and the data model
+	// inject style links and the data model
 	std::string result(rml);
 
 	if (!ctx.style_uris.empty()) {

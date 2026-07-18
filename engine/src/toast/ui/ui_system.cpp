@@ -1,7 +1,7 @@
 #include "ui_system.hpp"
 
-#include "render/rmlui_renderer_vk.h"
 #include "nodes/panels.hpp"
+#include "render/rmlui_renderer_vk.h"
 #include "render/ui_pass.hpp"
 #include "ui_file_interface.hpp"
 #include "ui_system_interface.hpp"
@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <cassert>
 #include <toast/log.hpp>
-#include <project_settings.hpp>
+#include <toast/project_settings.hpp>
 #include <toast/renderer/vulkan_core.hpp>
 #include <tracy/Tracy.hpp>
 
@@ -130,6 +130,18 @@ void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
 
 		if (const VkImageView view = record_context(context)) {
 			frame.ui_output_views.emplace_back(view);
+		}
+	}
+
+	// World panels render to their own textures, drawn by the world UI pass
+	for (toast::Panel3D* panel : m_world_panels) {
+		Rml::Context* context = panel->rmlContext();
+		if (!panel->enabled() || context == nullptr) {
+			continue;
+		}
+
+		if (const VkImageView view = record_context(context)) {
+			frame.ui_world_panels.push_back({.view = vk::ImageView(view), .model = panel->worldTransformForRender()});
 		}
 	}
 }

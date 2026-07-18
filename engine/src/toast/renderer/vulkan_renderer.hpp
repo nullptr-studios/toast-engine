@@ -80,6 +80,12 @@ public:
 		glm::mat4 model = glm::mat4(1.0f);
 	};
 
+	/// @brief One world-space UI panel drawn as a texture quad by ui::WorldUIPass
+	struct UIWorldPanelProxy {
+		vk::ImageView view = nullptr;         ///< panel output image, transitioned for sampling
+		glm::mat4 model = glm::mat4(1.0f);    ///< node world transform; scale gives the metric size
+	};
+
 	/// @brief One vertex of an immediate-mode debug line; two consecutive vertices make one line segment
 	struct DebugVertex {
 		glm::vec<3, float, glm::packed_highp> position;
@@ -101,6 +107,7 @@ public:
 		// Secondary command buffers recorded by ui::UISystem on the main thread
 		std::vector<vk::CommandBuffer> ui_command_buffers;
 		std::vector<vk::ImageView> ui_output_views;
+		std::vector<UIWorldPanelProxy> ui_world_panels;    // drawn by ui::WorldUIPass
 		std::shared_ptr<const void> ui_slot_guard;
 	};
 

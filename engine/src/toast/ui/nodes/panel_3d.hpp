@@ -39,6 +39,11 @@ public:
 	[[nodiscard]]
 	auto pixelSize() const -> glm::ivec2;
 
+	[[nodiscard]]
+	auto worldTransformForRender() -> const glm::mat4& {
+		return getWorldTransform();
+	}
+
 	void reloadDocument();
 
 private:

@@ -60,6 +60,36 @@ auto getLayoutDesc(std::string_view key) -> PipelineLayoutDesc {
 		return desc;
 	}
 
+	if (key == "ui_world") {
+		// set 0 = camera UBO
+		// set 1 = panel texture
+		// push = model matrix
+		SetLayoutDesc set0;
+		DescriptorBindingDesc b0;
+		b0.binding = 0;
+		b0.descriptor_type = vk::DescriptorType::eUniformBuffer;
+		b0.descriptor_count = 1;
+		b0.stage_flags = vk::ShaderStageFlagBits::eAll;
+		set0.bindings.push_back(b0);
+		desc.sets.push_back(std::move(set0));
+
+		SetLayoutDesc set1;
+		DescriptorBindingDesc b1;
+		b1.binding = 0;
+		b1.descriptor_type = vk::DescriptorType::eCombinedImageSampler;
+		b1.descriptor_count = 1;
+		b1.stage_flags = vk::ShaderStageFlagBits::eFragment;
+		set1.bindings.push_back(b1);
+		desc.sets.push_back(std::move(set1));
+
+		vk::PushConstantRange pc {};
+		pc.stageFlags = vk::ShaderStageFlagBits::eVertex;
+		pc.offset = 0;
+		pc.size = 64;
+		desc.push_constants.push_back(pc);
+		return desc;
+	}
+
 	if (key == "ui_composite") {
 		SetLayoutDesc set0;
 		DescriptorBindingDesc b0;
