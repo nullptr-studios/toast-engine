@@ -88,6 +88,9 @@ public static class AssetDatabase {
 
 		s_uidLookup = null; // the on-disk database changed, drop the cached lookup
 
+		// Refresh UI bind stubs so Lua completion tracks .rml edits
+		UIBindStubGenerator.Generate();
+
 		if (ToastEngine.IsEngineReady)
 			ToastEngine.ReloadManifest();
 

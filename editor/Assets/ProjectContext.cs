@@ -68,6 +68,9 @@ public static class ProjectContext {
 			log?.Invoke($"warning: engine lua stubs not found at {src}");
 		}
 
+		// Emit UI bind stubs alongside the engine definitions
+		UIBindStubGenerator.Generate();
+
 		var luarc = Path.Combine(ProjectPath, ".luarc.json");
 		if (File.Exists(luarc)) return;
 		File.WriteAllText(luarc,
