@@ -1,11 +1,14 @@
 #include "ui_system.hpp"
 
+#include "render/rmlui_renderer_vk.h"
+#include "render/ui_pass.hpp"
 #include "ui_file_interface.hpp"
 #include "ui_system_interface.hpp"
 
 #include <RmlUi/Core.h>
 #include <cassert>
 #include <toast/log.hpp>
+#include <toast/renderer/vulkan_core.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace ui {
@@ -30,8 +33,65 @@ UISystem::UISystem() noexcept {
 }
 
 UISystem::~UISystem() noexcept {
+	// RmlUi releases its textures through the render interface
+	// We need to kill it first
 	Rml::Shutdown();
+
+	if (m_render_interface) {
+		m_render_interface->Shutdown();
+		m_render_interface.reset();
+	}
+
 	instance = nullptr;
+}
+
+void UISystem::initializeRenderer(const renderer::VulkanCore& core) {
+	ZoneScoped;
+	TOAST_ASSERT(!m_render_interface, "UI", "UI render backend already initialized");
+
+	const vk::Format stencil_format = UIPass::selectStencilFormat(core);
+
+	m_render_interface = std::make_unique<RenderInterface_VK>();
+	const bool ok = m_render_interface->Initialize(
+	    static_cast<VkInstance>(*core.getInstance()),
+	    static_cast<VkPhysicalDevice>(*core.getPhysicalDevice()),
+	    static_cast<VkDevice>(*core.getDevice()),
+	    core.getGraphicsQueueFamilyIndex(),
+	    static_cast<VkQueue>(core.getGraphicsQueue()),
+	    static_cast<VkFormat>(UIPass::k_color_format),
+	    static_cast<VkFormat>(stencil_format),
+	    &core.graphicsSubmitMutex()
+	);
+
+	if (!ok) {
+		TOAST_ERROR("UI", "Failed to initialize the RmlUi Vulkan backend");
+		m_render_interface.reset();
+		return;
+	}
+
+	TOAST_INFO("UI", "RmlUi Vulkan backend initialized");
+}
+
+void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
+	ZoneScopedN("UISystem::buildDrawFrame");
+
+	if (!m_render_interface || Rml::GetNumContexts() == 0) {
+		return;
+	}
+
+	frame.ui_slot_guard = m_render_interface->OnFrameBegin(static_cast<uint32_t>(m_frame_counter++));
+
+	for (int i = 0; i < Rml::GetNumContexts(); i++) {
+		Rml::Context* context = Rml::GetContext(i);
+		const Rml::Vector2i dims = context->GetDimensions();
+		if (dims.x <= 0 || dims.y <= 0) {
+			continue;
+		}
+
+		m_render_interface->BeginRecording({static_cast<uint32_t>(dims.x), static_cast<uint32_t>(dims.y)});
+		context->Render();
+		frame.ui_command_buffers.push_back(m_render_interface->EndRecording());
+	}
 }
 
 auto UISystem::get() noexcept -> UISystem& {
@@ -71,7 +131,7 @@ void UISystem::tick() noexcept {
 auto UISystem::createContext(std::string_view name, glm::ivec2 dimensions) -> Rml::Context* {
 	// RmlUi requires globally unique context names
 	const auto unique_name = std::format("{}#{}", name, m_next_context_id++);
-	Rml::Context* context = Rml::CreateContext(unique_name, {dimensions.x, dimensions.y});
+	Rml::Context* context = Rml::CreateContext(unique_name, {dimensions.x, dimensions.y}, m_render_interface.get());
 	if (!context) {
 		TOAST_ERROR("UI", "Failed to create context '{}'", unique_name);
 		return nullptr;

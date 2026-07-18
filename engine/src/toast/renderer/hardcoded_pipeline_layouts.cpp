@@ -60,6 +60,18 @@ auto getLayoutDesc(std::string_view key) -> PipelineLayoutDesc {
 		return desc;
 	}
 
+	if (key == "ui_composite") {
+		SetLayoutDesc set0;
+		DescriptorBindingDesc b0;
+		b0.binding = 0;
+		b0.descriptor_type = vk::DescriptorType::eCombinedImageSampler;
+		b0.descriptor_count = 1;
+		b0.stage_flags = vk::ShaderStageFlagBits::eFragment;
+		set0.bindings.push_back(b0);
+		desc.sets.push_back(std::move(set0));
+		return desc;
+	}
+
 	// Default
 	return desc;
 }

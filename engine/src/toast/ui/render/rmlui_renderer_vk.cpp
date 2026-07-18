@@ -640,7 +640,7 @@ void RenderInterface_VK::SetTransform(const Rml::Matrix4f* transform) {
 // In toast the engine renderer owns frame pacing; the UI records secondary command buffers on the
 // main thread and the render thread executes them, so this section is fully rewritten.
 
-void RenderInterface_VK::OnFrameBegin(uint32_t frame_index) {
+std::shared_ptr<const void> RenderInterface_VK::OnFrameBegin(uint32_t frame_index) {
 	m_frame_index = frame_index % kFramesInFlight;
 
 	// The renderer keeps kFramesInFlight frames in flight, so everything retired when this slot
@@ -648,7 +648,7 @@ void RenderInterface_VK::OnFrameBegin(uint32_t frame_index) {
 	Update_PendingForDeletion_Textures_By_Frames();
 	Update_PendingForDeletion_Geometries();
 
-	m_command_buffer_ring.OnBeginFrame(m_frame_index);
+	return m_command_buffer_ring.AcquireSlot();
 }
 
 VkCommandBuffer RenderInterface_VK::BeginRecording(VkExtent2D extent) {
@@ -662,7 +662,8 @@ VkCommandBuffer RenderInterface_VK::BeginRecording(VkExtent2D extent) {
 	info_inheritance_rendering.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO;
 	info_inheritance_rendering.colorAttachmentCount = 1;
 	info_inheritance_rendering.pColorAttachmentFormats = &m_color_attachment_format;
-	info_inheritance_rendering.depthAttachmentFormat = m_depth_stencil_attachment_format;
+	info_inheritance_rendering.depthAttachmentFormat =
+	    m_depth_stencil_attachment_format == VK_FORMAT_S8_UINT ? VK_FORMAT_UNDEFINED : m_depth_stencil_attachment_format;
 	info_inheritance_rendering.stencilAttachmentFormat = m_depth_stencil_attachment_format;
 	info_inheritance_rendering.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
@@ -959,7 +960,8 @@ void RenderInterface_VK::Create_Pipelines() noexcept {
 	info_rendering.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
 	info_rendering.colorAttachmentCount = 1;
 	info_rendering.pColorAttachmentFormats = &m_color_attachment_format;
-	info_rendering.depthAttachmentFormat = m_depth_stencil_attachment_format;
+	info_rendering.depthAttachmentFormat =
+	    m_depth_stencil_attachment_format == VK_FORMAT_S8_UINT ? VK_FORMAT_UNDEFINED : m_depth_stencil_attachment_format;
 	info_rendering.stencilAttachmentFormat = m_depth_stencil_attachment_format;
 
 	VkPipelineInputAssemblyStateCreateInfo info_assembly_state = {};
@@ -1276,63 +1278,84 @@ void RenderInterface_VK::Update_PendingForDeletion_Geometries() noexcept {
 // Upstream kept one primary command buffer per swapchain image. Here every panel context records
 // its own secondary buffer per frame, so pools grow on demand and reset when their slot cycles.
 
-RenderInterface_VK::CommandBufferRing::CommandBufferRing()
-    : m_p_device {},
-      m_frame_index {},
-      m_p_current_frame {},
-      m_frames {} { }
+RenderInterface_VK::CommandBufferRing::CommandBufferRing() : m_p_device {}, m_queue_index {}, m_p_current_slot {} { }
 
 void RenderInterface_VK::CommandBufferRing::Initialize(VkDevice p_device, uint32_t queue_index_graphics) noexcept {
 	RMLUI_VK_ASSERTMSG(p_device, "you can't pass an invalid VkDevice here");
 	RMLUI_VK_ASSERTMSG(!m_p_device, "already initialized");
 
 	m_p_device = p_device;
+	m_queue_index = queue_index_graphics;
 
-	for (CommandBuffersPerFrame& frame : m_frames) {
-		VkCommandPoolCreateInfo info = {};
-		info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		info.pNext = nullptr;
-		info.queueFamilyIndex = queue_index_graphics;
-		info.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-
-		VkResult status = vkCreateCommandPool(m_p_device, &info, nullptr, &frame.m_command_pool);
-		RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkCreateCommandPool");
-
-		frame.m_used = 0;
+	// Create one slot per frame in flight
+	for (uint32_t i = 0; i < kFramesInFlight; i++) {
+		CreateSlot();
 	}
-
-	m_p_current_frame = &m_frames[0];
 }
 
 void RenderInterface_VK::CommandBufferRing::Shutdown() {
-	for (CommandBuffersPerFrame& frame : m_frames) {
-		if (!frame.m_command_buffers.empty()) {
+	for (auto& slot : m_slots) {
+		if (!slot->m_command_buffers.empty()) {
 			vkFreeCommandBuffers(
-			    m_p_device, frame.m_command_pool, static_cast<uint32_t>(frame.m_command_buffers.size()), frame.m_command_buffers.data()
+			    m_p_device, slot->m_command_pool, static_cast<uint32_t>(slot->m_command_buffers.size()), slot->m_command_buffers.data()
 			);
 		}
-		vkDestroyCommandPool(m_p_device, frame.m_command_pool, nullptr);
+		vkDestroyCommandPool(m_p_device, slot->m_command_pool, nullptr);
 	}
 
+	m_slots.clear();
+	m_p_current_slot = nullptr;
 	m_p_device = nullptr;
 }
 
-void RenderInterface_VK::CommandBufferRing::OnBeginFrame(uint32_t frame_index) {
-	m_frame_index = frame_index % kNumFramesToBuffer;
-	m_p_current_frame = &m_frames[m_frame_index];
+RenderInterface_VK::CommandBufferRing::Slot& RenderInterface_VK::CommandBufferRing::CreateSlot() {
+	auto slot = Rml::MakeUnique<Slot>();
 
-	vkResetCommandPool(m_p_device, m_p_current_frame->m_command_pool, 0);
-	m_p_current_frame->m_used = 0;
+	VkCommandPoolCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	info.pNext = nullptr;
+	info.queueFamilyIndex = m_queue_index;
+	info.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+
+	VkResult status = vkCreateCommandPool(m_p_device, &info, nullptr, &slot->m_command_pool);
+	RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkCreateCommandPool");
+
+	slot->m_guard = std::make_shared<const int>(0);
+
+	m_slots.push_back(std::move(slot));
+	return *m_slots.back();
+}
+
+std::shared_ptr<const void> RenderInterface_VK::CommandBufferRing::AcquireSlot() {
+	Slot* p_free = nullptr;
+	for (auto& slot : m_slots) {
+		// use_count == 1 means no references
+		if (slot->m_guard.use_count() == 1) {
+			p_free = slot.get();
+			break;
+		}
+	}
+
+	if (!p_free) {
+		p_free = &CreateSlot();
+	}
+
+	vkResetCommandPool(m_p_device, p_free->m_command_pool, 0);
+	p_free->m_used = 0;
+	m_p_current_slot = p_free;
+
+	return p_free->m_guard;
 }
 
 VkCommandBuffer RenderInterface_VK::CommandBufferRing::GetNextSecondaryBuffer() {
-	CommandBuffersPerFrame& frame = *m_p_current_frame;
+	RMLUI_VK_ASSERTMSG(m_p_current_slot, "AcquireSlot must be called before recording");
+	Slot& slot = *m_p_current_slot;
 
-	if (frame.m_used == frame.m_command_buffers.size()) {
+	if (slot.m_used == slot.m_command_buffers.size()) {
 		VkCommandBufferAllocateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		info.pNext = nullptr;
-		info.commandPool = frame.m_command_pool;
+		info.commandPool = slot.m_command_pool;
 		info.commandBufferCount = 1;
 		info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
 
@@ -1340,10 +1363,10 @@ VkCommandBuffer RenderInterface_VK::CommandBufferRing::GetNextSecondaryBuffer() 
 		VkResult status = vkAllocateCommandBuffers(m_p_device, &info, &p_buffer);
 		RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkAllocateCommandBuffers");
 
-		frame.m_command_buffers.push_back(p_buffer);
+		slot.m_command_buffers.push_back(p_buffer);
 	}
 
-	return frame.m_command_buffers[frame.m_used++];
+	return slot.m_command_buffers[slot.m_used++];
 }
 
 RenderInterface_VK::MemoryPool::MemoryPool()

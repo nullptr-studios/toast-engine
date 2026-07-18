@@ -21,6 +21,17 @@ public:
 	virtual void update(uint32_t frame_index, float dt) { }
 
 	/**
+	 * @brief Records work that must run before the renderer's main scope opens
+	 * @param cmd The command buffer to record commands into
+	 * @param frame_index The index of the current frame in flight
+	 * @param image_index The index of the image to render to
+	 *
+	 * Runs outside beginRendering/endRendering, so passes can render to their own targets
+	 * and transition them for sampling
+	 */
+	virtual void recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) { }
+
+	/**
 	 * @brief Records the render pass commands for the current frame
 	 * @param cmd The command buffer to record commands into
 	 * @param frameIndex The index of the current frame in flight

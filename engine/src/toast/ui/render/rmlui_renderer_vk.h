@@ -12,6 +12,7 @@
 #pragma once
 
 #include <RmlUi/Core/RenderInterface.h>
+#include <memory>
 #include <mutex>
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
@@ -41,7 +42,7 @@ public:
 
 	/// Called once per built frame on the main thread; resets this frame's command pool
 	/// and runs deferred destruction for resources retired kFramesInFlight frames ago
-	void OnFrameBegin(uint32_t frame_index);
+	std::shared_ptr<const void> OnFrameBegin(uint32_t frame_index);
 
 	/// Begins recording a secondary command buffer for one context render target.
 	/// SetViewport() must have been called with the context dimensions beforehand
@@ -302,27 +303,29 @@ private:
 	// frame; pools reset in OnFrameBegin once the render thread is done with that slot
 	class CommandBufferRing {
 	public:
-		static constexpr uint32_t kNumFramesToBuffer = kFramesInFlight;
-
 		CommandBufferRing();
 
 		void Initialize(VkDevice p_device, uint32_t queue_index_graphics) noexcept;
 		void Shutdown();
 
-		void OnBeginFrame(uint32_t frame_index);
+		/// Picks a free slot, resets its pool, and returns its guard
+		std::shared_ptr<const void> AcquireSlot();
 		VkCommandBuffer GetNextSecondaryBuffer();
 
 	private:
-		struct CommandBuffersPerFrame {
-			VkCommandPool m_command_pool;
+		struct Slot {
+			VkCommandPool m_command_pool = nullptr;
 			Rml::Vector<VkCommandBuffer> m_command_buffers;
-			uint32_t m_used;
+			uint32_t m_used = 0;
+			std::shared_ptr<const int> m_guard;
 		};
 
+		Slot& CreateSlot();
+
 		VkDevice m_p_device;
-		uint32_t m_frame_index;
-		CommandBuffersPerFrame* m_p_current_frame;
-		Rml::Array<CommandBuffersPerFrame, kNumFramesToBuffer> m_frames;
+		uint32_t m_queue_index;
+		Slot* m_p_current_slot;
+		Rml::Vector<Rml::UniquePtr<Slot>> m_slots;
 	};
 
 	class DescriptorPoolManager {

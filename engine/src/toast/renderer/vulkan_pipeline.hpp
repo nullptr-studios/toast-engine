@@ -57,7 +57,8 @@ public:
 		// Depth/blend state
 		bool depth_test = true;
 		bool depth_write = true;
-		bool blend_enable = false;    // standard alpha blending (srcAlpha, 1-srcAlpha) when true
+		bool blend_enable = false;           // standard alpha blending (srcAlpha, 1-srcAlpha) when true
+		bool premultiplied_blend = false;    // with blend_enable: (one, 1-srcAlpha) for premultiplied sources
 	};
 
 	VulkanPipeline() = default;

@@ -24,6 +24,7 @@
 #include "scripting/lua_state.hpp"
 #include "thread_pool.hpp"
 #include "time.hpp"
+#include "ui/render/ui_pass.hpp"
 #include "ui/ui_system.hpp"
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
@@ -359,6 +360,15 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	// m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
 
+	// UI composites over everything else
+	m->renderer->addRenderPass(std::make_unique<ui::UIPass>(*m->vulkan_core, color_format, depth_format, extent));
+	if (m->ui_system) {
+		m->ui_system->initializeRenderer(*m->vulkan_core);
+		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::VulkanRenderer::RenderFrame& frame) {
+			ui->buildDrawFrame(frame);
+		});
+	}
+
 	// capped to 240 for now
 	m->renderer->setFrameRateLimit(240.0);
 
@@ -392,6 +402,15 @@ void Engine::createAvaloniaWindow() {
 
 	// Editor viewport gets the ground grid / debug lines / gizmo overlay
 	m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
+
+	// In-game UI composites over everything else
+	m->renderer->addRenderPass(std::make_unique<ui::UIPass>(*m->vulkan_core, color_format, depth_format, extent));
+	if (m->ui_system) {
+		m->ui_system->initializeRenderer(*m->vulkan_core);
+		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::VulkanRenderer::RenderFrame& frame) {
+			ui->buildDrawFrame(frame);
+		});
+	}
 
 	m->renderer->setFrameRateLimit(240.0);
 

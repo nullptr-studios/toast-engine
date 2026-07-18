@@ -47,8 +47,14 @@ auto createGraphicsPipelineImpl(
 		rendering_ci.depthAttachmentFormat = *config.depth_format;
 	}
 
+	// No attributes means the shader generates its vertices
+	const uint32_t vertex_binding_count = config.vertex_attributes.empty() ? 0 : 1;
 	const vk::PipelineVertexInputStateCreateInfo vertex_input_ci(
-	    {}, 1, &config.vertex_binding, static_cast<uint32_t>(config.vertex_attributes.size()), config.vertex_attributes.data()
+	    {},
+	    vertex_binding_count,
+	    &config.vertex_binding,
+	    static_cast<uint32_t>(config.vertex_attributes.size()),
+	    config.vertex_attributes.data()
 	);
 	const vk::PipelineInputAssemblyStateCreateInfo input_assembly_ci({}, config.topology);
 
@@ -68,7 +74,8 @@ auto createGraphicsPipelineImpl(
 	const vk::PipelineMultisampleStateCreateInfo multisample_state_ci({}, vk::SampleCountFlagBits::e1);
 	const vk::PipelineColorBlendAttachmentState color_blend_attachment(
 	    config.blend_enable,
-	    config.blend_enable ? vk::BlendFactor::eSrcAlpha : vk::BlendFactor::eOne,
+	    config.blend_enable ? (config.premultiplied_blend ? vk::BlendFactor::eOne : vk::BlendFactor::eSrcAlpha)
+	                        : vk::BlendFactor::eOne,
 	    config.blend_enable ? vk::BlendFactor::eOneMinusSrcAlpha : vk::BlendFactor::eZero,
 	    vk::BlendOp::eAdd,
 	    vk::BlendFactor::eOne,
