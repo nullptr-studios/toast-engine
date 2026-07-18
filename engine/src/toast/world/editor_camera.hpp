@@ -36,7 +36,7 @@ private:
 	float m_pitch = 0.0f;
 
 	float m_speed = 5.0f;
-	
+
 	static constexpr float k_min_speed = 0.5f;
 	static constexpr float k_max_speed = 50.0f;
 	static constexpr float k_boost_multiplier = 3.0f;

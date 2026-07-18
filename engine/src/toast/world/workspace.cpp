@@ -1,10 +1,14 @@
 #include "workspace.hpp"
 
+#include "camera.hpp"
 #include "node.hpp"
+#include "node_3d.hpp"
 #include "workspace_events.hpp"
 #include "workspace_events.pb.h"
 
+#include <array>
 #include <charconv>
+#include <cmath>
 #include <format>
 #include <functional>
 #include <glm/glm.hpp>
@@ -12,19 +16,239 @@
 #include <glm/trigonometric.hpp>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/assets/prefab.hpp>
 #include <toast/engine.hpp>
 #include <toast/log.hpp>
+#include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/scripting/asset_proxy.hpp>
 #include <toast/scripting/lua_types.hpp>
 #include <toast/scripting/lua_value_codec.hpp>
 #include <toast/scripting/script_runtime.hpp>
 #include <toast/time.hpp>
+#include <toast/window/window_events.hpp>
+#include <tuple>
 
 namespace toast {
+
+namespace {
+
+// TODO: i didnt know where to place the ray picking shit since theres no physics class yet, MOVE THIS SOMEWHERE ELSE!
+
+/// @brief Closest approach between two 3D lines (p1+d1*t1, p2+d2*t2)
+/// @note d1/d2 must be normalized
+/// @return {t1, t2}; falls back to t1=0 when the lines are parallel
+auto closestPointsBetweenLines(const glm::vec3 p1, const glm::vec3 d1, const glm::vec3 p2, const glm::vec3 d2) noexcept
+    -> std::pair<float, float> {
+	const glm::vec3 r = p1 - p2;
+	const float a = glm::dot(d1, d1);
+	const float b = glm::dot(d1, d2);
+	const float c = glm::dot(d2, d2);
+	const float d = glm::dot(d1, r);
+	const float e = glm::dot(d2, r);
+	const float denom = a * c - b * b;
+
+	if (std::abs(denom) < 1e-6f) {
+		return {0.0f, c > 1e-6f ? e / c : 0.0f};
+	}
+
+	const float t1 = (b * e - c * d) / denom;
+	const float t2 = (a * e - b * d) / denom;
+	return {t1, t2};
+}
+
+/// @brief World-space direction for one of the 3 axis handles, shared by Translate/Rotate/Scale
+auto axisDirectionFor(const GizmoHandle handle, const glm::quat& orientation) noexcept -> glm::vec3 {
+	switch (handle) {
+		case GizmoHandle::axis_x: return orientation * glm::vec3(1, 0, 0);
+		case GizmoHandle::axis_y: return orientation * glm::vec3(0, 1, 0);
+		case GizmoHandle::axis_z: return orientation * glm::vec3(0, 0, 1);
+		default: return glm::vec3(0.0f);
+	}
+}
+
+/// @brief Ray-plane intersection, empty if parallel or the hit would be behind the ray origin
+auto rayPlaneIntersect(const Ray& ray, const glm::vec3 plane_point, const glm::vec3 plane_normal) noexcept
+    -> std::optional<float> {
+	const float denom = glm::dot(ray.direction, plane_normal);
+	if (std::abs(denom) < 1e-6f) {
+		return std::nullopt;
+	}
+	const float t = glm::dot(plane_point - ray.origin, plane_normal) / denom;
+	if (t < 0.0f) {
+		return std::nullopt;
+	}
+	return t;
+}
+
+struct GizmoHitResult {
+	GizmoHandle handle = GizmoHandle::none;
+	float t = std::numeric_limits<float>::max();
+};
+
+constexpr std::array<GizmoHandle, 3> k_axis_handles {GizmoHandle::axis_x, GizmoHandle::axis_y, GizmoHandle::axis_z};
+
+/// @brief Ray-vs-center-handle test shared by Translate and Scale: a camera-facing
+/// plane through the origin, hit accepted within k_center_hit_radius of it
+///
+/// Checked before the axis/plane tests, not merged into their nearest-along-ray comparison:
+/// the center handle is small and sits exactly where every axis line converges, so an axis line passing
+/// right behind it would otherwise win on raw ray-distance even when the cursor is squarely over the cube
+auto pickCenterHandle(const Ray& ray, const glm::vec3 origin, const float scale) noexcept -> std::optional<GizmoHitResult> {
+	using namespace gizmo_layout;
+
+	const glm::vec3 to_ray_origin = ray.origin - origin;
+	if (glm::length(to_ray_origin) <= 1e-4f) {
+		return std::nullopt;
+	}
+	const glm::vec3 normal = glm::normalize(to_ray_origin);
+	auto hit_t = rayPlaneIntersect(ray, origin, normal);
+	if (!hit_t.has_value()) {
+		return std::nullopt;
+	}
+	const glm::vec3 hit_point = ray.origin + ray.direction * (*hit_t);
+	if (glm::distance(hit_point, origin) <= k_center_hit_radius * scale) {
+		return GizmoHitResult {GizmoHandle::center, *hit_t};
+	}
+	return std::nullopt;
+}
+
+/// @brief Analytic ray-vs-handle test against all 7 translate-gizmo handles, keeps the nearest hit along the ray
+/// Mirrors the geometry DebugPass draws (see gizmo_layout.hpp) so hit-testing never drifts from what's rendered
+auto pickTranslateHandle(const Ray& ray, const glm::vec3 origin, const std::array<glm::vec3, 3>& axes, const float scale) noexcept
+    -> GizmoHitResult {
+	using namespace gizmo_layout;
+
+	if (auto center_hit = pickCenterHandle(ray, origin, scale)) {
+		return *center_hit;
+	}
+
+	GizmoHitResult best;
+
+	const float axis_len = (k_shaft_length + k_head_length) * scale;
+	const float axis_radius = k_axis_hit_radius * scale;
+
+	for (int i = 0; i < 3; ++i) {
+		const auto [t1, t2] = closestPointsBetweenLines(ray.origin, ray.direction, origin, axes[i]);
+		if (t1 < 0.0f || t2 < 0.0f || t2 > axis_len) {
+			continue;
+		}
+		const glm::vec3 ray_point = ray.origin + ray.direction * t1;
+		const glm::vec3 axis_point = origin + axes[i] * t2;
+		if (glm::distance(ray_point, axis_point) > axis_radius) {
+			continue;
+		}
+		if (t1 < best.t) {
+			best = {k_axis_handles[i], t1};
+		}
+	}
+
+	const std::array<std::tuple<GizmoHandle, int, int>, 3> planes {
+	  {{GizmoHandle::plane_xy, 0, 1}, {GizmoHandle::plane_yz, 1, 2}, {GizmoHandle::plane_xz, 0, 2}}
+	};
+
+	for (const auto& [handle, u, v] : planes) {
+		const glm::vec3 normal = glm::normalize(glm::cross(axes[u], axes[v]));
+		auto hit_t = rayPlaneIntersect(ray, origin, normal);
+		if (!hit_t.has_value()) {
+			continue;
+		}
+		const glm::vec3 hit_point = ray.origin + ray.direction * (*hit_t);
+		const float local_u = glm::dot(hit_point - origin, axes[u]);
+		const float local_v = glm::dot(hit_point - origin, axes[v]);
+		const float lo = k_plane_offset * scale;
+		const float hi = (k_plane_offset + k_plane_size) * scale;
+		if (local_u < lo || local_u > hi || local_v < lo || local_v > hi) {
+			continue;
+		}
+		if (*hit_t < best.t) {
+			best = {handle, *hit_t};
+		}
+	}
+
+	return best;
+}
+
+/// @brief Ray-vs-ring test, each ring lies flat in the plane whose normal is its own axis; a hit is accepted
+/// when the ray-plane intersection lands within the ring's radial band
+auto pickRotateHandle(const Ray& ray, const glm::vec3 origin, const std::array<glm::vec3, 3>& axes, const float scale) noexcept
+    -> GizmoHitResult {
+	using namespace gizmo_layout;
+
+	GizmoHitResult best;
+	const float radius = k_ring_radius * scale;
+	const float band = k_ring_thickness * scale;
+
+	for (int i = 0; i < 3; ++i) {
+		auto hit_t = rayPlaneIntersect(ray, origin, axes[i]);
+		if (!hit_t.has_value()) {
+			continue;
+		}
+		const glm::vec3 hit_point = ray.origin + ray.direction * (*hit_t);
+		if (std::abs(glm::distance(hit_point, origin) - radius) > band) {
+			continue;
+		}
+		if (*hit_t < best.t) {
+			best = {k_axis_handles[i], *hit_t};
+		}
+	}
+
+	return best;
+}
+
+/// @brief Ray-vs-handle test for Scale, shorter axis segments (shaft + cube head) plus the shared center handle
+auto pickScaleHandle(const Ray& ray, const glm::vec3 origin, const std::array<glm::vec3, 3>& axes, const float scale) noexcept
+    -> GizmoHitResult {
+	using namespace gizmo_layout;
+
+	if (auto center_hit = pickCenterHandle(ray, origin, scale)) {
+		return *center_hit;
+	}
+
+	GizmoHitResult best;
+	const float axis_len = (k_shaft_length + 2.0f * k_scale_head_half_size) * scale;
+	const float axis_radius = k_axis_hit_radius * scale;
+
+	for (int i = 0; i < 3; ++i) {
+		const auto [t1, t2] = closestPointsBetweenLines(ray.origin, ray.direction, origin, axes[i]);
+		if (t1 < 0.0f || t2 < 0.0f || t2 > axis_len) {
+			continue;
+		}
+		const glm::vec3 ray_point = ray.origin + ray.direction * t1;
+		const glm::vec3 axis_point = origin + axes[i] * t2;
+		if (glm::distance(ray_point, axis_point) > axis_radius) {
+			continue;
+		}
+		if (t1 < best.t) {
+			best = {k_axis_handles[i], t1};
+		}
+	}
+
+	return best;
+}
+
+/// @brief Dispatches to the hit-test for whichever tool is active
+auto pickGizmoHandle(
+    GizmoTool tool, const Ray& ray, const glm::vec3 origin, const glm::quat orientation, const float scale
+) noexcept -> GizmoHitResult {
+	const std::array<glm::vec3, 3> axes {
+	  orientation * glm::vec3(1, 0, 0),
+	  orientation * glm::vec3(0, 1, 0),
+	  orientation * glm::vec3(0, 0, 1),
+	};
+
+	switch (tool) {
+		case GizmoTool::translate: return pickTranslateHandle(ray, origin, axes, scale);
+		case GizmoTool::rotate: return pickRotateHandle(ray, origin, axes, scale);
+		case GizmoTool::scale: return pickScaleHandle(ray, origin, axes, scale);
+		default: return {};
+	}
+}
+
+}    // namespace
 
 struct VectorStreamBuf : std::streambuf {
 	VectorStreamBuf(const std::vector<uint8_t>& vec) {
@@ -221,6 +445,212 @@ auto Workspace::searchFrom(const Node& origin, std::string_view query) -> std::v
 	// TODO:
 	TOAST_NOT_IMPLEMENTED;
 	return {};
+}
+
+auto Workspace::gizmoOrigin() const -> glm::vec3 {
+	auto node3d = m_focused_node.as<Node3D>();
+	return node3d.exists() ? node3d->worldPos() : glm::vec3(0.0f);
+}
+
+auto Workspace::gizmoOrientation() const -> glm::quat {
+	if (m_world_space) {
+		return {1.0f, 0.0f, 0.0f, 0.0f};
+	}
+	auto node3d = m_focused_node.as<Node3D>();
+	return node3d.exists() ? node3d->worldRotQuat() : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+}
+
+auto Workspace::gizmoScale() const -> float {
+	Camera* camera = renderer::getActiveCamera();
+	if (camera == nullptr) {
+		return 1.0f;
+	}
+	return gizmo_layout::k_screen_size * glm::distance(camera->worldPos(), gizmoOrigin());
+}
+
+void Workspace::gizmoUpdateHover() {
+	// mid-drag, the grabbed handle stays active regardless of what the cursor is over
+	if (m_gizmo_drag != GizmoHandle::none) {
+		return;
+	}
+
+	const bool tool_has_gizmo =
+	    m_gizmo_tool == GizmoTool::translate || m_gizmo_tool == GizmoTool::rotate || m_gizmo_tool == GizmoTool::scale;
+	if (not tool_has_gizmo || not m_focused_node.as<Node3D>().exists()) {
+		m_gizmo_hover = GizmoHandle::none;
+		return;
+	}
+
+	Camera* camera = renderer::getActiveCamera();
+	if (camera == nullptr) {
+		m_gizmo_hover = GizmoHandle::none;
+		return;
+	}
+
+	const auto extent = renderer::getOutputTarget().getExtent();
+	const glm::vec2 viewport_size {static_cast<float>(extent.width), static_cast<float>(extent.height)};
+	const Ray ray = camera->screenPointToRay(m_gizmo_mouse_pos, viewport_size);
+
+	m_gizmo_hover = pickGizmoHandle(m_gizmo_tool, ray, gizmoOrigin(), gizmoOrientation(), gizmoScale()).handle;
+}
+
+void Workspace::gizmoBeginDrag(GizmoHandle handle) {
+	auto node3d = m_focused_node.as<Node3D>();
+	Camera* camera = renderer::getActiveCamera();
+	if (not node3d.exists() || handle == GizmoHandle::none || camera == nullptr) {
+		return;
+	}
+
+	m_gizmo_drag = handle;
+	m_gizmo_drag_start_world_pos = node3d->worldPos();
+	m_gizmo_drag_start_rotation = node3d->worldRotQuat();
+	m_gizmo_drag_start_scale = node3d->worldScale();
+	m_gizmo_drag_current_factor = 1.0f;
+
+	const glm::vec3 origin = m_gizmo_drag_start_world_pos;
+	const glm::quat orientation = gizmoOrientation();
+	const bool is_axis = handle == GizmoHandle::axis_x || handle == GizmoHandle::axis_y || handle == GizmoHandle::axis_z;
+
+	const auto extent = renderer::getOutputTarget().getExtent();
+	const glm::vec2 viewport_size {static_cast<float>(extent.width), static_cast<float>(extent.height)};
+	const Ray ray = camera->screenPointToRay(m_gizmo_mouse_pos, viewport_size);
+
+	if (m_gizmo_tool == GizmoTool::rotate && is_axis) {
+		m_gizmo_drag_axis = axisDirectionFor(handle, orientation);
+		m_gizmo_drag_plane_normal = m_gizmo_drag_axis;
+
+		const auto [basis_u, basis_v] = gizmo_layout::ringBasis(m_gizmo_drag_axis);
+
+		auto hit_t = rayPlaneIntersect(ray, origin, m_gizmo_drag_plane_normal);
+		const glm::vec3 hit = hit_t.has_value() ? (ray.origin + ray.direction * (*hit_t) - origin) : basis_u;
+		m_gizmo_drag_start_angle = std::atan2(glm::dot(hit, basis_v), glm::dot(hit, basis_u));
+		return;
+	}
+
+	if (handle == GizmoHandle::center) {
+		m_gizmo_drag_plane_normal = glm::normalize(camera->worldPos() - origin);
+	} else if (is_axis) {
+		m_gizmo_drag_axis = axisDirectionFor(handle, orientation);
+	} else {
+		switch (handle) {
+			case GizmoHandle::plane_xy: m_gizmo_drag_plane_normal = orientation * glm::vec3(0, 0, 1); break;
+			case GizmoHandle::plane_yz: m_gizmo_drag_plane_normal = orientation * glm::vec3(1, 0, 0); break;
+			case GizmoHandle::plane_xz: m_gizmo_drag_plane_normal = orientation * glm::vec3(0, 1, 0); break;
+			default: break;
+		}
+	}
+
+	if (is_axis) {
+		const auto [_, t2] = closestPointsBetweenLines(ray.origin, ray.direction, origin, m_gizmo_drag_axis);
+		m_gizmo_drag_anchor = origin + m_gizmo_drag_axis * t2;
+	} else {
+		auto hit_t = rayPlaneIntersect(ray, origin, m_gizmo_drag_plane_normal);
+		m_gizmo_drag_anchor = hit_t.has_value() ? ray.origin + ray.direction * (*hit_t) : origin;
+	}
+}
+
+void Workspace::gizmoUpdateDrag() {
+	if (m_gizmo_drag == GizmoHandle::none) {
+		return;
+	}
+
+	auto node3d = m_focused_node.as<Node3D>();
+	Camera* camera = renderer::getActiveCamera();
+	if (not node3d.exists() || camera == nullptr) {
+		gizmoEndDrag();
+		return;
+	}
+
+	const auto extent = renderer::getOutputTarget().getExtent();
+	const glm::vec2 viewport_size {static_cast<float>(extent.width), static_cast<float>(extent.height)};
+	const Ray ray = camera->screenPointToRay(m_gizmo_mouse_pos, viewport_size);
+	const glm::vec3 origin = m_gizmo_drag_start_world_pos;
+	const bool is_axis =
+	    m_gizmo_drag == GizmoHandle::axis_x || m_gizmo_drag == GizmoHandle::axis_y || m_gizmo_drag == GizmoHandle::axis_z;
+
+	if (m_gizmo_tool == GizmoTool::rotate) {
+		auto hit_t = rayPlaneIntersect(ray, origin, m_gizmo_drag_plane_normal);
+		if (not hit_t.has_value()) {
+			return;
+		}
+		const auto [basis_u, basis_v] = gizmo_layout::ringBasis(m_gizmo_drag_axis);
+		const glm::vec3 hit = ray.origin + ray.direction * (*hit_t) - origin;
+		const float angle = std::atan2(glm::dot(hit, basis_v), glm::dot(hit, basis_u));
+
+		float delta_angle = angle - m_gizmo_drag_start_angle;
+		if (m_rotate_snap.enabled && m_rotate_snap.value > 0.0001f) {
+			const float step = glm::radians(m_rotate_snap.value);
+			delta_angle = std::round(delta_angle / step) * step;
+		}
+
+		node3d->worldRotQuat(glm::normalize(glm::angleAxis(delta_angle, m_gizmo_drag_axis) * m_gizmo_drag_start_rotation));
+		return;
+	}
+
+	if (m_gizmo_tool == GizmoTool::scale) {
+		float delta_scalar = 0.0f;
+		if (m_gizmo_drag == GizmoHandle::center) {
+			auto hit_t = rayPlaneIntersect(ray, origin, m_gizmo_drag_plane_normal);
+			if (not hit_t.has_value()) {
+				return;
+			}
+			const glm::vec3 current = ray.origin + ray.direction * (*hit_t);
+			delta_scalar = glm::dot(current - m_gizmo_drag_anchor, camera->up());
+		} else if (is_axis) {
+			const auto [_, t2] = closestPointsBetweenLines(ray.origin, ray.direction, origin, m_gizmo_drag_axis);
+			const glm::vec3 current = origin + m_gizmo_drag_axis * t2;
+			delta_scalar = glm::dot(current - m_gizmo_drag_anchor, m_gizmo_drag_axis);
+		} else {
+			return;
+		}
+
+		// delta_scalar is a world-space distance, convert to a multiplicative factor relative to the
+		// gizmos own on-screen size so a given drag distance feels the same regardless of camera distance
+		const float reference = std::max(gizmoScale(), 0.0001f);
+		float factor = 1.0f + delta_scalar / reference;
+		if (m_scale_snap.enabled && m_scale_snap.value > 0.0001f) {
+			const float s = m_scale_snap.value;
+			factor = std::round(factor / s) * s;
+		}
+		factor = std::max(factor, 0.01f);
+		m_gizmo_drag_current_factor = factor;
+
+		glm::vec3 new_scale = m_gizmo_drag_start_scale;
+		if (m_gizmo_drag == GizmoHandle::center) {
+			new_scale = m_gizmo_drag_start_scale * factor;
+		} else {
+			const auto axis_index = static_cast<int>(m_gizmo_drag) - static_cast<int>(GizmoHandle::axis_x);
+			new_scale[axis_index] = m_gizmo_drag_start_scale[axis_index] * factor;
+		}
+
+		node3d->worldScale(new_scale);
+		return;
+	}
+
+	// translate
+	glm::vec3 delta {0.0f};
+	if (is_axis) {
+		const auto [_, t2] = closestPointsBetweenLines(ray.origin, ray.direction, origin, m_gizmo_drag_axis);
+		const glm::vec3 current = origin + m_gizmo_drag_axis * t2;
+		delta = glm::dot(current - m_gizmo_drag_anchor, m_gizmo_drag_axis) * m_gizmo_drag_axis;
+	} else {
+		auto hit_t = rayPlaneIntersect(ray, origin, m_gizmo_drag_plane_normal);
+		if (not hit_t.has_value()) {
+			return;
+		}
+		delta = (ray.origin + ray.direction * (*hit_t)) - m_gizmo_drag_anchor;
+	}
+
+	if (m_translate_snap.enabled && m_translate_snap.value > 0.0001f) {
+		const float s = m_translate_snap.value;
+		delta = glm::round(delta / s) * s;
+	}
+
+	node3d->worldPos(m_gizmo_drag_start_world_pos + delta);
+}
+
+void Workspace::gizmoEndDrag() {
+	m_gizmo_drag = GizmoHandle::none;
 }
 
 void Workspace::eventSubscriptions() {
@@ -769,7 +1199,41 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 		m_game_camera = e.game;
+		if (e.game) {
+			// entering play, drop any in-progress gizmo interaction
+			m_gizmo_hover = GizmoHandle::none;
+			m_gizmo_drag = GizmoHandle::none;
+		}
 		return true;
+	});
+
+	// Translate-gizmo interaction, driven straight off the raw window mouse events already forwarded by the editor in edit mode
+	m_listener.subscribe<event::WindowMousePosition>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data() || m_game_camera || isPlaying()) {
+			return false;
+		}
+		m_gizmo_mouse_pos = {e.x, e.y};
+		if (m_gizmo_drag != GizmoHandle::none) {
+			gizmoUpdateDrag();
+		} else {
+			gizmoUpdateHover();
+		}
+		return false;
+	});
+
+	m_listener.subscribe<event::WindowMouseButton>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data() || m_game_camera || isPlaying()) {
+			return false;
+		}
+		if (e.button != 1) {
+			return false;
+		}
+		if (e.action == event::window_input_pressed && m_gizmo_hover != GizmoHandle::none) {
+			gizmoBeginDrag(m_gizmo_hover);
+		} else if (e.action == event::window_input_released) {
+			gizmoEndDrag();
+		}
+		return false;
 	});
 
 	m_listener.subscribe<event::WorkspaceCopyNode>([this](const auto& e) {
@@ -931,6 +1395,23 @@ void Workspace::tick() {
 	}
 
 	event::send<event::InspectorLuaContent>(m_focused_node->uid().get(), lua_schema_version, std::move(cards));
+}
+
+auto Workspace::gizmoRenderState() const -> GizmoRenderState {
+	GizmoRenderState state;
+	const bool tool_has_gizmo =
+	    m_gizmo_tool == GizmoTool::translate || m_gizmo_tool == GizmoTool::rotate || m_gizmo_tool == GizmoTool::scale;
+	state.visible = not isPlaying() && tool_has_gizmo && m_focused_node.as<Node3D>().exists();
+	if (not state.visible) {
+		return state;
+	}
+	state.tool = m_gizmo_tool;
+	state.origin = gizmoOrigin();
+	state.orientation = gizmoOrientation();
+	state.hover = m_gizmo_hover;
+	state.active = m_gizmo_drag;
+	state.drag_scale_factor = m_gizmo_drag_current_factor;
+	return state;
 }
 
 }

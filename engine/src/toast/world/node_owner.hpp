@@ -22,6 +22,8 @@
 #include <vector>
 
 namespace toast {
+class Workspace;
+
 class TOAST_API INodeOwner {
 public:
 	INodeOwner() = default;
@@ -29,6 +31,9 @@ public:
 	virtual auto name() -> std::string = 0;
 
 	virtual void tick() = 0;
+
+	/// @brief Downcast helper for owners that need Workspace-specific state
+	virtual auto asWorkspace() -> Workspace* { return nullptr; }
 
 	virtual void registerDependency(Node& from, Node& to) = 0;
 	virtual void unregisterDependency(Node& from, Node& to) = 0;

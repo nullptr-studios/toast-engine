@@ -10,9 +10,11 @@
 #include "../vulkan_renderer.hpp"
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstring>
 #include <format>
+#include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <toast/log.hpp>
 
@@ -96,6 +98,63 @@ void appendPyramidAlongAxis(
 	out.push_back({base[0], color});
 	out.push_back({base[3], color});
 	out.push_back({base[2], color});
+}
+
+/// @brief Appends a flat square quad in the plane whose normal is @p axis (0=X,1=Y,2=Z)
+void appendQuad(std::vector<DebugVertex>& out, int axis, float offset, float size, glm::vec4 color) {
+	const int u = (axis + 1) % 3;
+	const int w = (axis + 2) % 3;
+
+	auto make = [&](float along_u, float along_w) {
+		glm::vec3 p {0.0f, 0.0f, 0.0f};
+		p[u] = along_u;
+		p[w] = along_w;
+		return p;
+	};
+
+	const glm::vec3 a = make(offset, offset);
+	const glm::vec3 b = make(offset + size, offset);
+	const glm::vec3 c = make(offset + size, offset + size);
+	const glm::vec3 d = make(offset, offset + size);
+
+	out.push_back({a, color});
+	out.push_back({b, color});
+	out.push_back({c, color});
+	out.push_back({a, color});
+	out.push_back({c, color});
+	out.push_back({d, color});
+}
+
+/// @brief Appends a flat ring lying in the plane whose normal is @p axis (0=X,1=Y,2=Z)
+void appendRing(std::vector<DebugVertex>& out, int axis, float radius, float thickness, int segments, glm::vec4 color) {
+	const int u = (axis + 1) % 3;
+	const int w = (axis + 2) % 3;
+	const float inner = radius - thickness * 0.5f;
+	const float outer = radius + thickness * 0.5f;
+
+	auto make = [&](float r, float angle) {
+		glm::vec3 p {0.0f, 0.0f, 0.0f};
+		p[u] = r * std::cos(angle);
+		p[w] = r * std::sin(angle);
+		return p;
+	};
+
+	for (int i = 0; i < segments; ++i) {
+		const float a0 = (static_cast<float>(i) / static_cast<float>(segments)) * glm::two_pi<float>();
+		const float a1 = (static_cast<float>(i + 1) / static_cast<float>(segments)) * glm::two_pi<float>();
+
+		const glm::vec3 i0 = make(inner, a0);
+		const glm::vec3 o0 = make(outer, a0);
+		const glm::vec3 i1 = make(inner, a1);
+		const glm::vec3 o1 = make(outer, a1);
+
+		out.push_back({i0, color});
+		out.push_back({o0, color});
+		out.push_back({o1, color});
+		out.push_back({i0, color});
+		out.push_back({o1, color});
+		out.push_back({i1, color});
+	}
 }
 
 }    // namespace
@@ -270,6 +329,66 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 			cmd.draw(m_gizmo_vertex_count, 1, 0, 0);
 		}
 	}
+
+	// Selection's active gizmo (Translate/Rotate/Scale)
+	if (frame->transform_gizmo.visible && m_gizmo_pipeline.isReady()) {
+		vk::Buffer buffer;
+		const std::array<GizmoHandleRange, 7>* handles = nullptr;
+		switch (frame->transform_gizmo.tool) {
+			case toast::GizmoTool::translate:
+				buffer = *m_translate_gizmo_vertex_buffer;
+				handles = &m_translate_gizmo_handles;
+				break;
+			case toast::GizmoTool::rotate:
+				buffer = *m_rotate_gizmo_vertex_buffer;
+				handles = &m_rotate_gizmo_handles;
+				break;
+			case toast::GizmoTool::scale:
+				buffer = *m_scale_gizmo_vertex_buffer;
+				handles = &m_scale_gizmo_handles;
+				break;
+			default: break;
+		}
+
+		if (handles != nullptr) {
+			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_gizmo_pipeline.getPipeline());
+			cmd.bindVertexBuffers(0, std::array<vk::Buffer, 1> {buffer}, std::array<vk::DeviceSize, 1> {0});
+
+			constexpr glm::vec4 k_highlight {1.0f, 0.85f, 0.1f, 1.0f};    // hover, yellow
+
+			for (size_t i = 0; i < handles->size(); ++i) {
+				const auto& range = (*handles)[i];
+				if (range.vertex_count == 0) {
+					continue;
+				}
+				const auto handle = static_cast<toast::GizmoHandle>(i);
+				const bool is_active = handle == frame->transform_gizmo.active;
+				const bool highlighted = handle == frame->transform_gizmo.hover || is_active;
+
+				DrawPushConstants pc {};
+				pc.model = frame->transform_gizmo.model;
+
+				// Scale feedback: stretch just the dragged handle's own local geometry by the live factor,
+				// so it visibly grows/shrinks with the mouse instead of sitting there static during the drag
+				if (frame->transform_gizmo.tool == toast::GizmoTool::scale && is_active) {
+					glm::vec3 stretch {1.0f};
+					if (handle == toast::GizmoHandle::center) {
+						stretch = glm::vec3(frame->transform_gizmo.drag_scale_factor);
+					} else {
+						const auto axis_index = static_cast<int>(handle) - static_cast<int>(toast::GizmoHandle::axis_x);
+						stretch[axis_index] = frame->transform_gizmo.drag_scale_factor;
+					}
+					pc.model = pc.model * glm::scale(glm::mat4(1.0f), stretch);
+				}
+
+				pc.tint = highlighted ? k_highlight : range.base_color;
+				cmd.pushConstants(
+				    *m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(DrawPushConstants), &pc
+				);
+				cmd.draw(range.vertex_count, 1, range.first_vertex, 0);
+			}
+		}
+	}
 }
 
 void DebugPass::createResources(const renderer::VulkanCore& core) {
@@ -310,6 +429,11 @@ void DebugPass::createResources(const renderer::VulkanCore& core) {
 
 	createGridGeometry(core);
 	createGizmoGeometry(core);
+
+	// Gizmos
+	createTranslateGizmoGeometry(core);
+	createRotateGizmoGeometry(core);
+	createScaleGizmoGeometry(core);
 }
 
 void DebugPass::createGridGeometry(const renderer::VulkanCore& core) {
@@ -375,6 +499,172 @@ void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 	void* mapped = m_gizmo_vertex_buffer.getAllocation().getInfo().pMappedData;
 	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
 	m_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
+}
+
+void DebugPass::createTranslateGizmoGeometry(const renderer::VulkanCore& core) {
+	using namespace toast::gizmo_layout;
+
+	constexpr glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
+
+	std::vector<DebugVertex> vertices;
+
+	auto record_handle = [&](toast::GizmoHandle handle, size_t start, glm::vec4 base_color) {
+		m_translate_gizmo_handles[static_cast<size_t>(handle)] = {
+		  static_cast<uint32_t>(start), static_cast<uint32_t>(vertices.size() - start), base_color
+		};
+	};
+
+	// Axis arrows colored red, green, blue
+	constexpr std::array<toast::GizmoHandle, 3> axis_handles {
+	  toast::GizmoHandle::axis_x, toast::GizmoHandle::axis_y, toast::GizmoHandle::axis_z
+	};
+
+	constexpr std::array<glm::vec4, 3> axis_colors {
+	  glm::vec4 { 1.0f, 0.15f, 0.15f, 1.0f},
+     glm::vec4 {0.15f,  1.0f, 0.15f, 1.0f},
+     glm::vec4 {0.15f, 0.15f,  1.0f, 1.0f}
+	};
+
+	for (int axis = 0; axis < 3; ++axis) {
+		const size_t start = vertices.size();
+		appendShaftAlongAxis(vertices, axis, k_shaft_length, k_shaft_half_size, k_white);
+		appendPyramidAlongAxis(vertices, axis, k_shaft_length, k_shaft_length + k_head_length, k_head_half_size, k_white);
+		record_handle(axis_handles[axis], start, axis_colors[axis]);
+	}
+
+	// Plane handles: XY/YZ/XZ, offset from the origin along their own two axes
+	constexpr std::array<toast::GizmoHandle, 3> plane_handles {
+	  toast::GizmoHandle::plane_xy, toast::GizmoHandle::plane_yz, toast::GizmoHandle::plane_xz
+	};
+	constexpr std::array<int, 3> plane_normal_axis {2, 0, 1};    // xy->Z, yz->X, xz->Y
+	constexpr std::array<glm::vec4, 3> plane_colors {
+	  glm::vec4 { 1.0f,  1.0f, 0.15f, 1.0f},
+     glm::vec4 {0.15f,  1.0f,  1.0f, 1.0f},
+     glm::vec4 { 1.0f, 0.15f,  1.0f, 1.0f}
+	};
+	for (int i = 0; i < 3; ++i) {
+		const size_t start = vertices.size();
+		appendQuad(vertices, plane_normal_axis[i], k_plane_offset, k_plane_size, k_white);
+		record_handle(plane_handles[i], start, plane_colors[i]);
+	}
+
+	// Center handle freee move
+	{
+		const size_t start = vertices.size();
+		appendBox(vertices, glm::vec3(-k_center_half_size), glm::vec3(k_center_half_size), k_white);
+		record_handle(toast::GizmoHandle::center, start, glm::vec4(0.9f, 0.9f, 0.9f, 1.0f));
+	}
+
+	vk::BufferCreateInfo buffer_ci {};
+	buffer_ci.size = vertices.size() * sizeof(DebugVertex);
+	buffer_ci.usage = vk::BufferUsageFlagBits::eVertexBuffer;
+
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAuto;
+	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+	m_translate_gizmo_vertex_buffer = core.getAllocator().createBuffer(buffer_ci, alloc_ci);
+	setDebugName(core, *m_translate_gizmo_vertex_buffer, "DebugPass TranslateGizmoVertexBuffer");
+
+	void* mapped = m_translate_gizmo_vertex_buffer.getAllocation().getInfo().pMappedData;
+	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
+	m_translate_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
+}
+
+void DebugPass::createRotateGizmoGeometry(const renderer::VulkanCore& core) {
+	using namespace toast::gizmo_layout;
+	constexpr glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
+
+	std::vector<DebugVertex> vertices;
+
+	constexpr std::array<toast::GizmoHandle, 3> axis_handles {
+	  toast::GizmoHandle::axis_x, toast::GizmoHandle::axis_y, toast::GizmoHandle::axis_z
+	};
+
+	constexpr std::array<glm::vec4, 3> axis_colors {
+	  glm::vec4 { 1.0f, 0.15f, 0.15f, 1.0f},
+     glm::vec4 {0.15f,  1.0f, 0.15f, 1.0f},
+     glm::vec4 {0.15f, 0.15f,  1.0f, 1.0f}
+	};
+
+	for (int axis = 0; axis < 3; ++axis) {
+		const size_t start = vertices.size();
+		appendRing(vertices, axis, k_ring_radius, k_ring_thickness, k_ring_segments, k_white);
+		m_rotate_gizmo_handles[static_cast<size_t>(axis_handles[axis])] = {
+		  static_cast<uint32_t>(start), static_cast<uint32_t>(vertices.size() - start), axis_colors[axis]
+		};
+	}
+
+	vk::BufferCreateInfo buffer_ci {};
+	buffer_ci.size = vertices.size() * sizeof(DebugVertex);
+	buffer_ci.usage = vk::BufferUsageFlagBits::eVertexBuffer;
+
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAuto;
+	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+	m_rotate_gizmo_vertex_buffer = core.getAllocator().createBuffer(buffer_ci, alloc_ci);
+	setDebugName(core, *m_rotate_gizmo_vertex_buffer, "DebugPass RotateGizmoVertexBuffer");
+
+	void* mapped = m_rotate_gizmo_vertex_buffer.getAllocation().getInfo().pMappedData;
+	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
+	m_rotate_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
+}
+
+void DebugPass::createScaleGizmoGeometry(const renderer::VulkanCore& core) {
+	using namespace toast::gizmo_layout;
+	constexpr glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
+
+	std::vector<DebugVertex> vertices;
+
+	constexpr std::array<toast::GizmoHandle, 3> axis_handles {
+	  toast::GizmoHandle::axis_x, toast::GizmoHandle::axis_y, toast::GizmoHandle::axis_z
+	};
+
+	constexpr std::array<glm::vec4, 3> axis_colors {
+	  glm::vec4 { 1.0f, 0.15f, 0.15f, 1.0f},
+     glm::vec4 {0.15f,  1.0f, 0.15f, 1.0f},
+     glm::vec4 {0.15f, 0.15f,  1.0f, 1.0f}
+	};
+
+	for (int axis = 0; axis < 3; ++axis) {
+		const size_t start = vertices.size();
+		appendShaftAlongAxis(vertices, axis, k_shaft_length, k_shaft_half_size, k_white);
+
+		// cube head, sitting right past the shaft tip - the scale-tool equivalent of translate's arrowhead
+		glm::vec3 min(-k_scale_head_half_size);
+		glm::vec3 max(k_scale_head_half_size);
+		min[axis] = k_shaft_length;
+		max[axis] = k_shaft_length + 2.0f * k_scale_head_half_size;
+		appendBox(vertices, min, max, k_white);
+
+		m_scale_gizmo_handles[static_cast<size_t>(axis_handles[axis])] = {
+		  static_cast<uint32_t>(start), static_cast<uint32_t>(vertices.size() - start), axis_colors[axis]
+		};
+	}
+
+	{
+		const size_t start = vertices.size();
+		appendBox(vertices, glm::vec3(-k_center_half_size), glm::vec3(k_center_half_size), k_white);
+		m_scale_gizmo_handles[static_cast<size_t>(toast::GizmoHandle::center)] = {
+		  static_cast<uint32_t>(start), static_cast<uint32_t>(vertices.size() - start), glm::vec4(0.9f, 0.9f, 0.9f, 1.0f)
+		};
+	}
+
+	vk::BufferCreateInfo buffer_ci {};
+	buffer_ci.size = vertices.size() * sizeof(DebugVertex);
+	buffer_ci.usage = vk::BufferUsageFlagBits::eVertexBuffer;
+
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAuto;
+	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+	m_scale_gizmo_vertex_buffer = core.getAllocator().createBuffer(buffer_ci, alloc_ci);
+	setDebugName(core, *m_scale_gizmo_vertex_buffer, "DebugPass ScaleGizmoVertexBuffer");
+
+	void* mapped = m_scale_gizmo_vertex_buffer.getAllocation().getInfo().pMappedData;
+	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
+	m_scale_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
 }
 
 void DebugPass::ensureLineCapacity(const renderer::VulkanCore& core, DynamicVertexBuffer& buffer, size_t required_vertex_count) {

@@ -11,6 +11,8 @@
 #include <chrono>
 #include <cstring>
 #include <format>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -663,6 +665,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	frame.mesh_instances.clear();
 	frame.debug_line_vertices.clear();
 	frame.debug_gizmo_instances.clear();
+	frame.transform_gizmo = TransformGizmoDraw {};
 
 	std::vector<toast::MeshNode*> mesh_nodes_snapshot;
 	{
@@ -700,9 +703,6 @@ void VulkanRenderer::tick(float time) noexcept {
 		      .model = world_transform,
 		    }
 		);
-
-		// DEBUG
-		frame.debug_gizmo_instances.push_back(world_transform);
 	}
 
 	if (m_camera) {
@@ -717,6 +717,19 @@ void VulkanRenderer::tick(float time) noexcept {
 		  .camera_position = m_camera->worldPos(),
 		  .time = time
 		};
+
+		// TODO: compile this out if in non editor build or smth
+		if (m_gizmo_state.visible) {
+			const float scale = toast::gizmo_layout::k_screen_size * glm::distance(m_camera->worldPos(), m_gizmo_state.origin);
+
+			frame.transform_gizmo.visible = true;
+			frame.transform_gizmo.tool = m_gizmo_state.tool;
+			frame.transform_gizmo.model = glm::translate(glm::mat4(1.0f), m_gizmo_state.origin) *
+			                              glm::mat4_cast(m_gizmo_state.orientation) * glm::scale(glm::mat4(1.0f), glm::vec3(scale));
+			frame.transform_gizmo.hover = m_gizmo_state.hover;
+			frame.transform_gizmo.active = m_gizmo_state.active;
+			frame.transform_gizmo.drag_scale_factor = m_gizmo_state.drag_scale_factor;
+		}
 	}
 
 	submitFrame();

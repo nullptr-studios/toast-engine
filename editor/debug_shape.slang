@@ -14,6 +14,7 @@ ConstantBuffer<CameraUBO> gCamera;
 struct PushConstants
 {
     float4x4 model;
+    float4 tint;
 };
 
 [[vk::push_constant]]
@@ -51,7 +52,7 @@ VSOutput vertexMain(VSInput input)
             gCamera.viewProjection,
             worldPos);
 
-    output.color = input.color;
+    output.color = input.color * gPush.tint;
 
     return output;
 }
