@@ -3,6 +3,7 @@
 #include "nodes/panels.hpp"
 #include "render/rmlui_renderer_vk.h"
 #include "render/ui_pass.hpp"
+#include "ui_event_listener.hpp"
 #include "ui_file_interface.hpp"
 #include "ui_input.hpp"
 #include "ui_system_interface.hpp"
@@ -34,6 +35,7 @@ UISystem::UISystem() noexcept {
 	}
 
 	m_input_router = std::make_unique<UIInputRouter>();
+	installEventListenerInstancer();
 
 	TOAST_INFO("UI", "RmlUi {} initialised", Rml::GetVersion());
 }
@@ -339,6 +341,21 @@ void UISystem::registerWorldPanel(toast::Panel3D* panel) {
 
 void UISystem::unregisterWorldPanel(toast::Panel3D* panel) {
 	std::erase(m_world_panels, panel);
+}
+
+void UISystem::registerContextOwner(Rml::Context* context, toast::Node* owner) {
+	if (context != nullptr && owner != nullptr) {
+		m_context_owners[context] = owner;
+	}
+}
+
+void UISystem::unregisterContextOwner(Rml::Context* context) {
+	m_context_owners.erase(context);
+}
+
+auto UISystem::ownerForContext(Rml::Context* context) const -> toast::Node* {
+	const auto it = m_context_owners.find(context);
+	return it != m_context_owners.end() ? it->second : nullptr;
 }
 
 }

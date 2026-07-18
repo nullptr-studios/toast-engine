@@ -1,6 +1,7 @@
 #include "panel_3d.hpp"
 
 #include "../document_preprocess.hpp"
+#include "../ui_binds.hpp"
 #include "../ui_system.hpp"
 
 #include <RmlUi/Core/Context.h>
@@ -8,6 +9,9 @@
 #include <algorithm>
 
 namespace toast {
+
+Panel3D::Panel3D() = default;
+Panel3D::~Panel3D() = default;
 
 auto Panel3D::pixelSize() const -> glm::ivec2 {
 	const glm::vec3 scale = worldScale();
@@ -37,6 +41,7 @@ void Panel3D::init() {
 		return;
 	}
 
+	ui.registerContextOwner(m_context, this);
 	loadDocument();
 	ui.registerWorldPanel(this);
 }
@@ -51,6 +56,7 @@ void Panel3D::destroy() {
 	unloadDocument();
 
 	if (m_context) {
+		ui.unregisterContextOwner(m_context);
 		ui.destroyContext(m_context);
 		m_context = nullptr;
 	}
@@ -96,6 +102,7 @@ void Panel3D::loadDocument() {
 	auto& ui = ui::UISystem::get();
 
 	ui::PreprocessContext preprocess_ctx;
+	preprocess_ctx.inject_data_model = true;
 	preprocess_ctx.style_uris = ui.globalStyleUris();
 	for (const auto& style : m_styles) {
 		if (!style.path().empty()) {
@@ -104,6 +111,10 @@ void Panel3D::loadDocument() {
 	}
 
 	const auto scan = ui::preprocessDocument(m_element->source(), preprocess_ctx);
+
+	if (!scan.events.empty() || !scan.binds.empty()) {
+		m_binds = std::make_unique<ui::UIBinds>(m_context, this, scan);
+	}
 
 	m_document = m_context->LoadDocumentFromMemory(scan.transformed_rml, Rml::String(m_element.path()));
 	if (!m_document) {
@@ -123,6 +134,8 @@ void Panel3D::unloadDocument() {
 		m_context->UnloadDocument(m_document);
 		m_document = nullptr;
 	}
+	// Drop only after the document is gone
+	m_binds.reset();
 }
 
 void Panel3D::reloadDocument() {

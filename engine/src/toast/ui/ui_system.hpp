@@ -15,6 +15,7 @@
 #include <string>
 #include <string_view>
 #include <toast/renderer/vulkan_renderer.hpp>
+#include <unordered_map>
 #include <vector>
 
 namespace Rml {
@@ -26,6 +27,7 @@ class VulkanCore;
 }
 
 namespace toast {
+class Node;
 class Panel;
 class Panel3D;
 }
@@ -78,6 +80,11 @@ public:
 	void unregisterPanel(toast::Panel* panel);
 	void registerWorldPanel(toast::Panel3D* panel);
 	void unregisterWorldPanel(toast::Panel3D* panel);
+	void registerContextOwner(Rml::Context* context, toast::Node* owner);
+	void unregisterContextOwner(Rml::Context* context);
+
+	[[nodiscard]]
+	auto ownerForContext(Rml::Context* context) const -> toast::Node*;
 
 	[[nodiscard]]
 	auto panels() -> const std::vector<toast::Panel*>& {
@@ -111,6 +118,7 @@ private:
 
 	std::vector<toast::Panel*> m_panels;
 	std::vector<toast::Panel3D*> m_world_panels;
+	std::unordered_map<Rml::Context*, toast::Node*> m_context_owners;
 
 	std::vector<assets::AssetHandle<assets::Font>> m_retained_fonts;
 	std::vector<assets::AssetHandle<assets::UIStyle>> m_global_styles;

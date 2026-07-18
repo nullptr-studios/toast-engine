@@ -7,6 +7,7 @@
  */
 
 #pragma once
+#include <memory>
 #include <toast/ui/assets.hpp>
 #include <toast/world/node.hpp>
 
@@ -15,11 +16,16 @@ class Context;
 class ElementDocument;
 }
 
+namespace ui {
+class UIBinds;
+}
+
 namespace toast {
 
 class TOAST_API [[ToastNode, Icon("Window"), Color("Blue")]] Panel : public Node {
 public:
-	Panel() = default;
+	Panel();
+	~Panel() override;
 
 	[[nodiscard]]
 	auto rmlContext() -> Rml::Context* {
@@ -64,6 +70,7 @@ private:
 
 	Rml::Context* m_context = nullptr;
 	Rml::ElementDocument* m_document = nullptr;
+	std::unique_ptr<ui::UIBinds> m_binds;
 };
 
 }
