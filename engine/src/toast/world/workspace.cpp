@@ -49,7 +49,7 @@ auto closestPointsBetweenLines(const glm::vec3 p1, const glm::vec3 d1, const glm
 	const float c = glm::dot(d2, d2);
 	const float d = glm::dot(d1, r);
 	const float e = glm::dot(d2, r);
-	const float denom = a * c - b * b;
+	const float denom = (a * c) - (b * b);
 
 	if (std::abs(denom) < 1e-6f) {
 		return {0.0f, c > 1e-6f ? e / c : 0.0f};
@@ -607,7 +607,7 @@ void Workspace::gizmoUpdateDrag() {
 		// delta_scalar is a world-space distance, convert to a multiplicative factor relative to the
 		// gizmos own on-screen size so a given drag distance feels the same regardless of camera distance
 		const float reference = std::max(gizmoScale(), 0.0001f);
-		float factor = 1.0f + delta_scalar / reference;
+		float factor = 1.0f + (delta_scalar / reference);
 		if (m_scale_snap.enabled && m_scale_snap.value > 0.0001f) {
 			const float s = m_scale_snap.value;
 			factor = std::round(factor / s) * s;

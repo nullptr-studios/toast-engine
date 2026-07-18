@@ -129,8 +129,8 @@ void appendQuad(std::vector<DebugVertex>& out, int axis, float offset, float siz
 void appendRing(std::vector<DebugVertex>& out, int axis, float radius, float thickness, int segments, glm::vec4 color) {
 	const int u = (axis + 1) % 3;
 	const int w = (axis + 2) % 3;
-	const float inner = radius - thickness * 0.5f;
-	const float outer = radius + thickness * 0.5f;
+	const float inner = radius - (thickness * 0.5f);
+	const float outer = radius + (thickness * 0.5f);
 
 	auto make = [&](float r, float angle) {
 		glm::vec3 p {0.0f, 0.0f, 0.0f};
@@ -635,7 +635,7 @@ void DebugPass::createScaleGizmoGeometry(const renderer::VulkanCore& core) {
 		glm::vec3 min(-k_scale_head_half_size);
 		glm::vec3 max(k_scale_head_half_size);
 		min[axis] = k_shaft_length;
-		max[axis] = k_shaft_length + 2.0f * k_scale_head_half_size;
+		max[axis] = k_shaft_length + (2.0f * k_scale_head_half_size);
 		appendBox(vertices, min, max, k_white);
 
 		m_scale_gizmo_handles[static_cast<size_t>(axis_handles[axis])] = {
