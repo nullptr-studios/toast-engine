@@ -32,7 +32,7 @@ EditorCameraController::EditorCameraController() {
 			return true;
 		}
 		m_yaw -= e.dx * k_look_sensitivity;
-		m_pitch = std::clamp(m_pitch - e.dy * k_look_sensitivity, -k_pitch_limit, k_pitch_limit);
+		m_pitch = std::clamp(m_pitch - (e.dy * k_look_sensitivity), -k_pitch_limit, k_pitch_limit);
 		return true;
 	});
 
