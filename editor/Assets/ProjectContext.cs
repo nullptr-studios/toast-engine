@@ -22,6 +22,8 @@ public static class ProjectContext {
 
 	public static IReadOnlyList<string> Databases { get; private set; } = ["assets"];
 
+	public static IReadOnlyList<string> Languages { get; private set; } = ["en"];
+
 	public static IEnumerable<string> DatabaseRoots => Databases.Select(db => Path.Combine(ProjectPath, db));
 
 	// Fired after an import batch completes
@@ -42,6 +44,7 @@ public static class ProjectContext {
 
 		// Read databases from the project .toast file (default to ["assets"])
 		Databases = ReadDatabasesFromProject(ProjectPath);
+		Languages = ReadLanguagesFromProject(ProjectPath);
 
 		RegisterSchemes();
 		EnsureDirectories();
@@ -83,6 +86,7 @@ public static class ProjectContext {
 		if (!IsInitialized) return;
 
 		Databases = ReadDatabasesFromProject(ProjectPath);
+		Languages = ReadLanguagesFromProject(ProjectPath);
 		RegisterSchemes();
 		EnsureDirectories();
 
@@ -171,6 +175,23 @@ public static class ProjectContext {
 		}
 
 		return ["assets"];
+	}
+
+	private static IReadOnlyList<string> ReadLanguagesFromProject(string projectPath) {
+		try {
+			var toastFile = Directory.EnumerateFiles(projectPath, "*.toast").FirstOrDefault();
+			if (toastFile is null) return ["en"];
+
+			var table = TomlSerializer.Deserialize<TomlTable>(File.ReadAllText(toastFile));
+			if (table?["ui"] is TomlTable ui && ui["languages"] is TomlArray langs) {
+				var list = langs.Select(l => l?.ToString() ?? "").Where(s => s.Length > 0).ToList();
+				return list.Count > 0 ? list : ["en"];
+			}
+		} catch {
+			// ignored
+		}
+
+		return ["en"];
 	}
 
 	private static void EnsureDirectories() {

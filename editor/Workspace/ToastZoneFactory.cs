@@ -15,12 +15,14 @@ namespace editor.Workspace;
 public class ToastZoneFactory : Factory {
 	private bool m_curveClosePending;
 	private bool m_hapticsClosePending;
+	private bool m_tableClosePending;
 	private IRootDock? m_rootDock;
 	private ToolDock? m_toolDock;
 
 	public LogsViewModel? LogsVm { get; private set; }
 	public CurveViewModel? CurveEditorVm { get; private set; }
 	public HapticsViewModel? HapticsEditorVm { get; private set; }
+	public TableViewModel? TableEditorVm { get; private set; }
 
 	public override IRootDock CreateLayout() {
 		var assetBrowser = new AssetBrowserViewModel {
@@ -32,10 +34,13 @@ public class ToastZoneFactory : Factory {
 			{ Id = "Haptics", Title = "Haptics Editor", CanPin = false, CanFloat = false };
 		var curveEditor = new CurveViewModel
 			{ Id = "Curve", Title = "Curve Editor", CanPin = false, CanFloat = false };
+		var tableEditor = new TableViewModel
+			{ Id = "Table", Title = "Table Editor", CanPin = false, CanFloat = false };
 
 		LogsVm = logs;
 		HapticsEditorVm = hapticsEditor;
 		CurveEditorVm = curveEditor;
+		TableEditorVm = tableEditor;
 
 		m_toolDock = new ToolDock {
 			AllowedDropOperations = DockOperationMask.Fill | DockOperationMask.Left | DockOperationMask.Right,
@@ -44,7 +49,8 @@ public class ToastZoneFactory : Factory {
 				assetBrowser,
 				logs,
 				hapticsEditor,
-				curveEditor
+				curveEditor,
+				tableEditor
 			),
 			Alignment = Alignment.Bottom,
 			GripMode = GripMode.Visible
@@ -82,6 +88,7 @@ public class ToastZoneFactory : Factory {
 			"Logs" => LogsVm,
 			"Haptics" => HapticsEditorVm,
 			"Curve" => CurveEditorVm,
+			"Table" => TableEditorVm,
 			_ => null
 		};
 	}
@@ -106,12 +113,14 @@ public class ToastZoneFactory : Factory {
 			["AssetBrowser"] = () => layout,
 			["Logs"] = () => layout,
 			["Haptics"] = () => layout,
-			["Curve"] = () => layout
+			["Curve"] = () => layout,
+			["Table"] = () => layout
 		};
 		DockableLocator = new Dictionary<string, Func<IDockable?>> {
 			["Root"] = () => m_rootDock,
 			["Haptics"] = () => HapticsEditorVm,
-			["Curve"] = () => CurveEditorVm
+			["Curve"] = () => CurveEditorVm,
+			["Table"] = () => TableEditorVm
 		};
 		HostWindowLocator = new Dictionary<string, Func<IHostWindow?>> {
 			[nameof(IDockWindow)] = () => new HostWindow()
@@ -130,6 +139,11 @@ public class ToastZoneFactory : Factory {
 
 		if (dockable == HapticsEditorVm && HapticsEditorVm!.IsDirty && !m_hapticsClosePending) {
 			_ = GatedClose(HapticsEditorVm, HapticsEditorVm, v => m_hapticsClosePending = v);
+			return;
+		}
+
+		if (dockable == TableEditorVm && TableEditorVm!.IsDirty && !m_tableClosePending) {
+			_ = GatedClose(TableEditorVm, TableEditorVm, v => m_tableClosePending = v);
 			return;
 		}
 
