@@ -203,6 +203,41 @@ struct SetCameraMode : Event<SetCameraMode> {
 	SetCameraMode(bool game) : game(game) { }
 };
 
+/// @brief editor fly camera toggle, sent on RMB down/up in edit mode
+struct EditorCameraFlyMode : Event<EditorCameraFlyMode> {
+	bool active;
+
+	EditorCameraFlyMode(bool active) : active(active) { }
+};
+
+/// @brief Held-key snapshot for the editor fly camera
+struct EditorCameraMoveState : Event<EditorCameraMoveState> {
+	bool forward, back, left, right, up, down, boost;
+
+	EditorCameraMoveState(bool forward, bool back, bool left, bool right, bool up, bool down, bool boost)
+	    : forward(forward),
+	      back(back),
+	      left(left),
+	      right(right),
+	      up(up),
+	      down(down),
+	      boost(boost) { }
+};
+
+/// @brief Raw mouse delta while the editor fly camera is active
+struct EditorCameraLook : Event<EditorCameraLook> {
+	float dx, dy;
+
+	EditorCameraLook(float dx, float dy) : dx(dx), dy(dy) { }
+};
+
+/// @brief Mouse wheel while flying adjusts fly speed
+struct EditorCameraSpeedScroll : Event<EditorCameraSpeedScroll> {
+	float delta;
+
+	EditorCameraSpeedScroll(float delta) : delta(delta) { }
+};
+
 struct InspectorContent : Event<InspectorContent> {
 	struct InspectorField {
 		std::string name;

@@ -33,6 +33,13 @@ public:
 
 	void tick() override;
 
+protected:
+	///@brief Playmode state
+	[[nodiscard]]
+	auto isPlaying() const -> bool override {
+		return true;
+	}
+
 private:
 	TickScheduler m_scheduler;
 	bool m_paused = false;

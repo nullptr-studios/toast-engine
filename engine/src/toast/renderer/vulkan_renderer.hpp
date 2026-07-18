@@ -15,6 +15,7 @@
 #include <cmath>
 #include <condition_variable>
 #include <glm/gtc/constants.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -23,6 +24,7 @@
 #include <thread>
 #include <toast/events/event.inl>
 #include <toast/events/listener.hpp>
+#include <toast/world/gizmo_layout.hpp>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -87,6 +89,27 @@ public:
 
 	static_assert(std::is_standard_layout_v<DebugVertex>, "DebugVertex must be standard layout");
 
+	/// @brief Editor selection's active gizmo
+	struct TransformGizmoDraw {
+		bool visible = false;
+		toast::GizmoTool tool = toast::GizmoTool::select;
+		glm::mat4 model {1.0f};
+		toast::GizmoHandle hover = toast::GizmoHandle::none;
+		toast::GizmoHandle active = toast::GizmoHandle::none;
+		float drag_scale_factor = 1.0f;    ///< scale tool only: live multiplicative factor for the active handle
+	};
+
+	                                     /// @brief Main-thread-only input to TransformGizmoDraw's, set via setGizmoState()
+	struct GizmoState {
+		bool visible = false;
+		toast::GizmoTool tool = toast::GizmoTool::select;
+		glm::vec3 origin {0.0f};
+		glm::quat orientation {1.0f, 0.0f, 0.0f, 0.0f};
+		toast::GizmoHandle hover = toast::GizmoHandle::none;
+		toast::GizmoHandle active = toast::GizmoHandle::none;
+		float drag_scale_factor = 1.0f;
+	};
+
 	struct RenderFrame {
 		FrameUBO frame_data;
 
@@ -96,6 +119,8 @@ public:
 		// debugDrawAxes() dnd consumed by DebugPass
 		std::vector<DebugVertex> debug_line_vertices;    // consecutive pairs; each pair is one line segment
 		std::vector<glm::mat4> debug_gizmo_instances;    // one axis-triad gizmo draw per entry
+
+		TransformGizmoDraw transform_gizmo;
 	};
 
 	VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> output_target) noexcept;
@@ -182,6 +207,9 @@ public:
 	auto getActiveCamera() -> toast::Camera* {
 		return m_camera;
 	}
+
+	/// @brief Main-thread-only, resolved into RenderFrame::transform_gizmo at the top of the next tick()
+	void setGizmoState(const GizmoState& state) noexcept { m_gizmo_state = state; }
 
 	[[nodiscard]]
 	auto renderingFrame() const -> const RenderFrame* {
@@ -277,6 +305,9 @@ private:
 
 	/// Active camera for the renderer, Can be nullptr if no camera is set
 	toast::Camera* m_camera = nullptr;
+
+	/// Main-thread-only, written by setGizmoState(), read back inside tick() on the same thread
+	GizmoState m_gizmo_state;
 
 	std::mutex m_mesh_proxy_mutex;
 	std::vector<toast::MeshNode*> m_mesh_proxy_nodes;

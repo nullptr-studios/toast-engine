@@ -51,11 +51,11 @@ auto getLayoutDesc(std::string_view key) -> PipelineLayoutDesc {
 		set0.bindings.push_back(b0);
 		desc.sets.push_back(std::move(set0));
 
-		// Push constants for model matrix (64 bytes)
+		// Push constants: model matrix + tint
 		vk::PushConstantRange pc {};
 		pc.stageFlags = vk::ShaderStageFlagBits::eVertex;
 		pc.offset = 0;
-		pc.size = 64;
+		pc.size = 80;    // sizeof(glm::mat4) + sizeof(glm::vec4)
 		desc.push_constants.push_back(pc);
 		return desc;
 	}

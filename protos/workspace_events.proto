@@ -139,6 +139,29 @@ message SetCameraMode {
   bool game = 1;
 }
 
+message EditorCameraFlyMode {
+  bool active = 1;
+}
+
+message EditorCameraMoveState {
+  bool forward = 1;
+  bool back = 2;
+  bool left = 3;
+  bool right = 4;
+  bool up = 5;
+  bool down = 6;
+  bool boost = 7;
+}
+
+message EditorCameraLook {
+  float dx = 1;
+  float dy = 2;
+}
+
+message EditorCameraSpeedScroll {
+  float delta = 1;
+}
+
 message InspectorField {
   string name = 1;
   string value = 2;
