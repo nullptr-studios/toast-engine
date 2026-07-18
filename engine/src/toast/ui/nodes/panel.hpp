@@ -9,6 +9,7 @@
 #pragma once
 #include <memory>
 #include <toast/ui/assets.hpp>
+#include <toast/ui/ui_system.hpp>
 #include <toast/world/node.hpp>
 
 namespace Rml {
@@ -53,6 +54,9 @@ private:
 	void loadDocument();
 	void unloadDocument();
 
+	[[nodiscard]]
+	auto buildLocalizationScope() const -> ui::UISystem::LocalizationScope;
+
 	[[Reflect]]
 	assets::AssetHandle<assets::UIElement> m_element;
 
@@ -67,6 +71,12 @@ private:
 
 	[[Reflect]]
 	assets::AssetHandle<assets::ColorScheme> m_color_scheme;
+
+	[[Reflect]]
+	std::vector<assets::AssetHandle<assets::Localization>> m_localizations;
+
+	[[Reflect]]
+	std::vector<assets::AssetHandle<assets::ImageLocalization>> m_image_localizations;
 
 	Rml::Context* m_context = nullptr;
 	Rml::ElementDocument* m_document = nullptr;

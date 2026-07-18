@@ -1,5 +1,7 @@
 #include "ui_system_interface.hpp"
 
+#include "ui_system.hpp"
+
 #include <SDL3/SDL.h>
 #include <toast/log.hpp>
 #include <toast/time.hpp>
@@ -51,7 +53,12 @@ auto UISystemInterface::GetElapsedTime() -> double {
 }
 
 auto UISystemInterface::TranslateString(Rml::String& translated, const Rml::String& input) -> int {
-	// Localization hooks in once the localization assets exist
+	if (UISystem::exists()) {
+		if (auto localized = UISystem::get().translate(input)) {
+			translated = std::move(*localized);
+			return 1;
+		}
+	}
 	translated = input;
 	return 0;
 }

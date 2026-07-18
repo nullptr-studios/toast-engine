@@ -24,6 +24,12 @@ void PanelContext::init() {
 	for (const auto& scheme : m_color_schemes) {
 		ui.registerGlobalScheme(scheme);
 	}
+	for (const auto& loc : m_localizations) {
+		ui.registerGlobalLocalization(loc);
+	}
+	for (const auto& loc : m_image_localizations) {
+		ui.registerGlobalImageLocalization(loc);
+	}
 
 	TOAST_INFO(
 	    "UI",
@@ -48,6 +54,12 @@ void PanelContext::destroy() {
 
 	for (const auto& scheme : m_color_schemes) {
 		ui.unregisterGlobalScheme(scheme);
+	}
+	for (const auto& loc : m_localizations) {
+		ui.unregisterGlobalLocalization(loc);
+	}
+	for (const auto& loc : m_image_localizations) {
+		ui.unregisterGlobalImageLocalization(loc);
 	}
 }
 

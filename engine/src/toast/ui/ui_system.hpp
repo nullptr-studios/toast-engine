@@ -75,6 +75,33 @@ public:
 	[[nodiscard]]
 	auto colorFromSchemes(std::string_view name) const -> std::optional<glm::vec4>;
 
+	struct LocalizationScope {
+		std::vector<const assets::Localization*> texts;
+		std::vector<const assets::ImageLocalization*> images;
+		const assets::ColorScheme* color_scheme = nullptr;
+	};
+
+	void pushLocalizationScope(LocalizationScope scope);
+	void popLocalizationScope();
+
+	void registerGlobalLocalization(const assets::AssetHandle<assets::Localization>& loc);
+	void unregisterGlobalLocalization(const assets::AssetHandle<assets::Localization>& loc);
+	void registerGlobalImageLocalization(const assets::AssetHandle<assets::ImageLocalization>& loc);
+	void unregisterGlobalImageLocalization(const assets::AssetHandle<assets::ImageLocalization>& loc);
+
+	[[nodiscard]]
+	auto language() const -> const std::string& {
+		return m_language;
+	}
+
+	void setLanguage(std::string language);
+
+	[[nodiscard]]
+	auto translate(std::string_view input) const -> std::optional<std::string>;
+
+	[[nodiscard]]
+	auto localizedImage(std::string_view id) const -> std::string;
+
 	// Panels register themselves on init
 	void registerPanel(toast::Panel* panel);
 	void unregisterPanel(toast::Panel* panel);
@@ -104,6 +131,9 @@ public:
 	}
 
 private:
+	[[nodiscard]]
+	auto currentLanguage() const -> std::string;
+
 	static inline UISystem* instance = nullptr;
 
 	std::unique_ptr<UIFileInterface> m_file_interface;
@@ -123,6 +153,11 @@ private:
 	std::vector<assets::AssetHandle<assets::Font>> m_retained_fonts;
 	std::vector<assets::AssetHandle<assets::UIStyle>> m_global_styles;
 	std::vector<assets::AssetHandle<assets::ColorScheme>> m_global_schemes;
+
+	std::string m_language;
+	std::vector<assets::AssetHandle<assets::Localization>> m_global_localizations;
+	std::vector<assets::AssetHandle<assets::ImageLocalization>> m_global_image_localizations;
+	std::vector<LocalizationScope> m_localization_stack;
 };
 
 }

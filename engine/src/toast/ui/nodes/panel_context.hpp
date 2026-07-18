@@ -31,6 +31,12 @@ private:
 
 	[[Reflect]]
 	std::vector<assets::AssetHandle<assets::ColorScheme>> m_color_schemes;
+
+	[[Reflect]]
+	std::vector<assets::AssetHandle<assets::Localization>> m_localizations;
+
+	[[Reflect]]
+	std::vector<assets::AssetHandle<assets::ImageLocalization>> m_image_localizations;
 };
 
 }

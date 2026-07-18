@@ -30,6 +30,8 @@ void AssetRegistry::init() {
 	s_raw["ui_style"] = [](std::vector<uint8_t> d) { return std::make_unique<UIStyle>(std::move(d)); };
 	s_raw["font"] = [](std::vector<uint8_t> d) { return std::make_unique<Font>(std::move(d)); };
 	s_raw["ui_image"] = [](std::vector<uint8_t> d) { return std::make_unique<UIImage>(std::move(d)); };
+	s_raw["localization"] = [](std::vector<uint8_t> d) { return std::make_unique<Localization>(std::move(d)); };
+	s_raw["image_localization"] = [](std::vector<uint8_t> d) { return std::make_unique<ImageLocalization>(std::move(d)); };
 
 	// Plain TOML loaders
 	s_toml["curve"] = [](const toml::table& t) { return Curve::fromToml(t); };
@@ -99,6 +101,8 @@ void AssetRegistry::init() {
 	s_lua_names["ui_image"] = "UIImage";
 	s_lua_names["font_family"] = "FontFamily";
 	s_lua_names["color_scheme"] = "ColorScheme";
+	s_lua_names["localization"] = "Localization";
+	s_lua_names["image_localization"] = "ImageLocalization";
 }
 
 void AssetRegistry::registerLuaName(std::string_view type, std::string_view lua_name) {

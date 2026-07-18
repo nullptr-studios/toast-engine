@@ -1,6 +1,7 @@
 #include "panel_3d.hpp"
 
 #include "../document_preprocess.hpp"
+#include "../localization_apply.hpp"
 #include "../ui_binds.hpp"
 #include "../ui_system.hpp"
 
@@ -12,6 +13,22 @@ namespace toast {
 
 Panel3D::Panel3D() = default;
 Panel3D::~Panel3D() = default;
+
+auto Panel3D::buildLocalizationScope() const -> ui::UISystem::LocalizationScope {
+	ui::UISystem::LocalizationScope scope;
+	scope.color_scheme = m_color_scheme.hasValue() ? m_color_scheme.operator->() : nullptr;
+	for (const auto& loc : m_localizations) {
+		if (loc.hasValue()) {
+			scope.texts.push_back(loc.operator->());
+		}
+	}
+	for (const auto& loc : m_image_localizations) {
+		if (loc.hasValue()) {
+			scope.images.push_back(loc.operator->());
+		}
+	}
+	return scope;
+}
 
 auto Panel3D::pixelSize() const -> glm::ivec2 {
 	const glm::vec3 scale = worldScale();
@@ -116,7 +133,14 @@ void Panel3D::loadDocument() {
 		m_binds = std::make_unique<ui::UIBinds>(m_context, this, scan);
 	}
 
+	// Localization scope must be active so TranslateString and localized images resolve
+	ui.pushLocalizationScope(buildLocalizationScope());
 	m_document = m_context->LoadDocumentFromMemory(scan.transformed_rml, Rml::String(m_element.path()));
+	if (m_document) {
+		ui::applyImageLocalization(m_document);
+	}
+	ui.popLocalizationScope();
+
 	if (!m_document) {
 		TOAST_ERROR("UI", "Panel3D '{}' failed to load document '{}'", name(), m_element.path());
 		return;

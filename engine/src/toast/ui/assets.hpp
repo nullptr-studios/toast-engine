@@ -13,6 +13,7 @@
 #include "assets/color_scheme.hpp"
 #include "assets/font.hpp"
 #include "assets/font_family.hpp"
+#include "assets/localization.hpp"
 #include "assets/ui_element.hpp"
 #include "assets/ui_image.hpp"
 #include "assets/ui_style.hpp"

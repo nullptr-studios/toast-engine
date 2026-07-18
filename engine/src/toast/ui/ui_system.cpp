@@ -3,6 +3,7 @@
 #include "nodes/panels.hpp"
 #include "render/rmlui_renderer_vk.h"
 #include "render/ui_pass.hpp"
+#include "text_format.hpp"
 #include "ui_event_listener.hpp"
 #include "ui_file_interface.hpp"
 #include "ui_input.hpp"
@@ -11,6 +12,7 @@
 #include <RmlUi/Core.h>
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <toast/log.hpp>
 #include <toast/project_settings.hpp>
 #include <toast/renderer/vulkan_core.hpp>
@@ -321,6 +323,150 @@ auto UISystem::colorFromSchemes(std::string_view name) const -> std::optional<gl
 	}
 
 	return std::nullopt;
+}
+
+void UISystem::pushLocalizationScope(LocalizationScope scope) {
+	m_localization_stack.push_back(std::move(scope));
+}
+
+void UISystem::popLocalizationScope() {
+	if (!m_localization_stack.empty()) {
+		m_localization_stack.pop_back();
+	}
+}
+
+void UISystem::registerGlobalLocalization(const assets::AssetHandle<assets::Localization>& loc) {
+	if (std::ranges::find(m_global_localizations, loc) == m_global_localizations.end()) {
+		m_global_localizations.push_back(loc);
+	}
+}
+
+void UISystem::unregisterGlobalLocalization(const assets::AssetHandle<assets::Localization>& loc) {
+	std::erase(m_global_localizations, loc);
+}
+
+void UISystem::registerGlobalImageLocalization(const assets::AssetHandle<assets::ImageLocalization>& loc) {
+	if (std::ranges::find(m_global_image_localizations, loc) == m_global_image_localizations.end()) {
+		m_global_image_localizations.push_back(loc);
+	}
+}
+
+void UISystem::unregisterGlobalImageLocalization(const assets::AssetHandle<assets::ImageLocalization>& loc) {
+	std::erase(m_global_image_localizations, loc);
+}
+
+auto UISystem::currentLanguage() const -> std::string {
+	if (!m_language.empty()) {
+		return m_language;
+	}
+	// Default to the first project language on first use
+	if (toast::ProjectSettings::get() != nullptr) {
+		const auto& languages = toast::ProjectSettings::uiSettings().languages();
+		if (!languages.empty()) {
+			return languages.front();
+		}
+	}
+	return "en";
+}
+
+void UISystem::setLanguage(std::string language) {
+	if (language == m_language) {
+		return;
+	}
+	m_language = std::move(language);
+	TOAST_INFO("UI", "Switching UI language to '{}'", m_language);
+
+	// Reloading re-runs TranslateString and re-applies localized images with the new language
+	for (toast::Panel* panel : m_panels) {
+		panel->reloadDocument();
+	}
+	for (toast::Panel3D* panel : m_world_panels) {
+		panel->reloadDocument();
+	}
+}
+
+auto UISystem::translate(std::string_view input) const -> std::optional<std::string> {
+	// The whole text node is treated as a candidate id (RmlUi convention)
+	std::string_view id = input;
+	while (!id.empty() && (std::isspace(static_cast<unsigned char>(id.front())) != 0)) {
+		id.remove_prefix(1);
+	}
+	while (!id.empty() && (std::isspace(static_cast<unsigned char>(id.back())) != 0)) {
+		id.remove_suffix(1);
+	}
+	if (id.empty()) {
+		return std::nullopt;
+	}
+
+	const std::string language = currentLanguage();
+
+	auto lookup = [&](const assets::Localization* loc) -> std::optional<std::string> {
+		if (loc != nullptr && loc->has(id)) {
+			return loc->text(id, language);
+		}
+		return std::nullopt;
+	};
+
+	std::optional<std::string> localized;
+	if (!m_localization_stack.empty()) {
+		for (const assets::Localization* loc : m_localization_stack.back().texts) {
+			if ((localized = lookup(loc))) {
+				break;
+			}
+		}
+	}
+	if (!localized) {
+		for (const auto& loc : m_global_localizations) {
+			if ((localized = lookup(loc.hasValue() ? loc.operator->() : nullptr))) {
+				break;
+			}
+		}
+	}
+	if (!localized) {
+		return std::nullopt;
+	}
+
+	// Resolve ${color:...} against the scope scheme first, then the global schemes
+	const assets::ColorScheme* scope_scheme = m_localization_stack.empty() ? nullptr : m_localization_stack.back().color_scheme;
+	TextFormatContext format_ctx;
+	format_ctx.color_resolver = [this, scope_scheme](std::string_view name) -> std::optional<std::string> {
+		if (scope_scheme != nullptr) {
+			if (auto hex = scope_scheme->hex(name)) {
+				return hex;
+			}
+		}
+		if (auto color = colorFromSchemes(name)) {
+			return assets::ColorScheme::toHex(*color);
+		}
+		return std::nullopt;
+	};
+
+	return formatText(*localized, format_ctx);
+}
+
+auto UISystem::localizedImage(std::string_view id) const -> std::string {
+	const std::string language = currentLanguage();
+
+	auto lookup = [&](const assets::ImageLocalization* loc) -> std::string {
+		if (loc != nullptr && loc->has(id)) {
+			return loc->image(id, language);
+		}
+		return {};
+	};
+
+	if (!m_localization_stack.empty()) {
+		for (const assets::ImageLocalization* loc : m_localization_stack.back().images) {
+			if (std::string ref = lookup(loc); !ref.empty()) {
+				return ref;
+			}
+		}
+	}
+	for (const auto& loc : m_global_image_localizations) {
+		if (std::string ref = lookup(loc.hasValue() ? loc.operator->() : nullptr); !ref.empty()) {
+			return ref;
+		}
+	}
+	return {};
 }
 
 void UISystem::registerPanel(toast::Panel* panel) {
