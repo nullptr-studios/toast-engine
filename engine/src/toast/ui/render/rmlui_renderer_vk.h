@@ -27,7 +27,12 @@ class RenderInterface_VK : public Rml::RenderInterface {
 public:
 	// Matches the engine renderer's frames-in-flight; per-frame resources cycle on this
 	static constexpr uint32_t kFramesInFlight = 3;
-	static constexpr VkDeviceSize kVideoMemoryForAllocation = 4 * 1024 * 1024;    // [bytes]
+	static constexpr VkDeviceSize kVideoMemoryForAllocation = 8 * 1024 * 1024;    // [bytes]
+
+	/// Mirrors the EffectsPush block in ui_effects.slang
+	struct effects_push_t {
+		float m_v[6][4] = {};
+	};
 
 	RenderInterface_VK();
 	~RenderInterface_VK();
@@ -44,11 +49,13 @@ public:
 	/// and runs deferred destruction for resources retired kFramesInFlight frames ago
 	std::shared_ptr<const void> OnFrameBegin(uint32_t frame_index);
 
-	/// Begins recording a secondary command buffer for one context render target.
-	/// SetViewport() must have been called with the context dimensions beforehand
+	/// Begins recording a secondary command buffer for one context render target
 	VkCommandBuffer BeginRecording(VkExtent2D extent);
 	/// Ends recording and returns the secondary command buffer for execution on the render thread
 	VkCommandBuffer EndRecording();
+
+	/// View of the image the last recording rendered into
+	VkImageView GetLastOutputView() const { return m_p_last_output_view; }
 
 	void SetViewport(int width, int height);
 
@@ -66,6 +73,33 @@ public:
 	void SetScissorRegion(Rml::Rectanglei region) override;
 
 	void SetTransform(const Rml::Matrix4f* transform) override;
+
+	// RmlUi 6 effects API
+
+	void EnableClipMask(bool enable) override;
+	void RenderToClipMask(
+	    Rml::ClipMaskOperation operation, Rml::CompiledGeometryHandle geometry, Rml::Vector2f translation
+	) override;
+
+	Rml::LayerHandle PushLayer() override;
+	void CompositeLayers(
+	    Rml::LayerHandle source, Rml::LayerHandle destination, Rml::BlendMode blend_mode,
+	    Rml::Span<const Rml::CompiledFilterHandle> filters
+	) override;
+	void PopLayer() override;
+
+	Rml::TextureHandle SaveLayerAsTexture() override;
+	Rml::CompiledFilterHandle SaveLayerAsMaskImage() override;
+
+	Rml::CompiledFilterHandle CompileFilter(const Rml::String& name, const Rml::Dictionary& parameters) override;
+	void ReleaseFilter(Rml::CompiledFilterHandle filter) override;
+
+	Rml::CompiledShaderHandle CompileShader(const Rml::String& name, const Rml::Dictionary& parameters) override;
+	void RenderShader(
+	    Rml::CompiledShaderHandle shader, Rml::CompiledGeometryHandle geometry, Rml::Vector2f translation,
+	    Rml::TextureHandle texture
+	) override;
+	void ReleaseShader(Rml::CompiledShaderHandle shader) override;
 
 private:
 	enum class shader_type_t : int {
@@ -111,6 +145,64 @@ private:
 		VkBuffer m_p_vk_buffer;
 		VmaAllocation m_p_vma_allocation;
 	};
+
+	/// Render target used by the layer stack and postprocess passes
+	struct effect_image_t {
+		VkImage m_p_image = nullptr;
+		VkImageView m_p_view = nullptr;
+		VmaAllocation m_p_allocation = nullptr;
+		VkDescriptorSet m_p_descriptor_set = nullptr;
+		VkImageLayout m_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+	};
+
+	/// All render targets for one extent
+	struct LayerPool {
+		uint64_t m_generation = 0;
+		VkExtent2D m_extent {};
+		Rml::Vector<effect_image_t> m_layers;
+		effect_image_t m_postprocess[3];
+		effect_image_t m_blend_mask;
+		Rml::Vector<effect_image_t> m_outputs;
+		effect_image_t m_stencil;
+		uint32_t m_outputs_used = 0;
+	};
+
+	enum class FilterType {
+		Invalid = 0,
+		Passthrough,
+		Blur,
+		DropShadow,
+		ColorMatrix,
+		MaskImage
+	};
+
+	struct CompiledFilter {
+		FilterType m_type = FilterType::Invalid;
+		float m_blend_factor = 1.f;           // Passthrough
+		float m_sigma = 0.f;                  // Blur / DropShadow
+		Rml::Vector2f m_offset;               // DropShadow
+		Rml::ColourbPremultiplied m_color;    // DropShadow
+		Rml::Matrix4f m_color_matrix;         // ColorMatrix
+	};
+
+	struct CompiledShader {
+		// gradient parameters live in the memory pool for the shader's whole lifetime
+		VkDescriptorBufferInfo m_buffer = {};
+		VmaVirtualAllocation m_allocation = nullptr;
+	};
+
+	/// std140 mirror of GradientData in ui_effects.slang
+	struct gradient_data_std140_t {
+		int32_t m_func = 0;
+		int32_t m_num_stops = 0;
+		float m_p[2] = {};
+		float m_v[2] = {};
+		float m_padding[2] = {};
+		float m_stop_colors[16][4] = {};
+		float m_stop_positions[16] = {};
+	};
+
+	static_assert(sizeof(gradient_data_std140_t) == 352, "must match the std140 layout in ui_effects.slang");
 
 	class UploadResourceManager {
 	public:
@@ -287,6 +379,7 @@ private:
 
 		void Free_GeometryHandle(geometry_handle_t* p_valid_geometry_handle) noexcept;
 		void Free_GeometryHandle_ShaderDataOnly(geometry_handle_t* p_valid_geometry_handle) noexcept;
+		void Free_Allocation(VmaVirtualAllocation allocation) noexcept;
 
 	private:
 		VkDeviceSize m_memory_total_size;
@@ -312,12 +405,16 @@ private:
 		std::shared_ptr<const void> AcquireSlot();
 		VkCommandBuffer GetNextSecondaryBuffer();
 
+		void AddCurrentSlotGeneration(uint64_t generation);
+		bool IsGenerationReferenced(uint64_t generation) const;
+
 	private:
 		struct Slot {
 			VkCommandPool m_command_pool = nullptr;
 			Rml::Vector<VkCommandBuffer> m_command_buffers;
 			uint32_t m_used = 0;
 			std::shared_ptr<const int> m_guard;
+			Rml::Vector<uint64_t> m_generations;
 		};
 
 		Slot& CreateSlot();
@@ -435,6 +532,34 @@ private:
 	void Update_PendingForDeletion_Textures_By_Frames() noexcept;
 	void Update_PendingForDeletion_Geometries() noexcept;
 
+	void CreateEffectResources() noexcept;
+	void DestroyEffectResources() noexcept;
+
+	LayerPool& AcquirePool(VkExtent2D extent);
+	void DestroyPool(LayerPool& pool) noexcept;
+	void RetireUnusedPools() noexcept;
+	effect_image_t CreateEffectImage(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage) noexcept;
+	void DestroyEffectImage(effect_image_t& image) noexcept;
+
+	void TransitionEffectImage(effect_image_t& image, VkImageLayout new_layout);
+	void BeginLayerScope(effect_image_t& target, bool clear_color, bool clear_stencil);
+	void BeginEffectScope(effect_image_t& target, bool clear_color, VkRect2D render_area);
+	void EndScope();
+
+	void SuspendLayerScope();
+	void ResumeLayerScope();
+
+	void RenderFullscreenPass(
+	    VkPipeline pipeline, effect_image_t& destination, effect_image_t& source, effect_image_t* mask, const effects_push_t& push,
+	    bool clear_destination, VkRect2D render_area, VkViewport viewport
+	);
+
+	void RenderFilters(Rml::Span<const Rml::CompiledFilterHandle> filter_handles);
+	void RenderBlur(float sigma, LayerPool& pool, int source_destination, int temp);
+
+	VkRect2D CurrentScissor() const;
+	VkDescriptorSet GetEffectDescriptorSet(effect_image_t& image) noexcept;
+
 private:
 	bool m_is_transform_enabled;
 	bool m_is_apply_to_regular_geometry_stencil;
@@ -487,4 +612,48 @@ private:
 	MemoryPool m_memory_pool;
 	UploadResourceManager m_upload_manager;
 	DescriptorPoolManager m_manager_descriptors;
+
+	uint64_t m_pool_generation = 0;
+	Rml::Vector<Rml::UniquePtr<LayerPool>> m_pools;
+	Rml::Vector<Rml::UniquePtr<LayerPool>> m_retired_pools;
+	LayerPool* m_p_current_pool = nullptr;
+
+	// recording state
+	Rml::Vector<effect_image_t*> m_layer_stack;
+	uint32_t m_stack_layers_used = 0;
+	bool m_scope_active = false;
+	effect_image_t* m_p_scope_target = nullptr;
+	int m_stencil_test_value = 1;
+	VkImageView m_p_last_output_view = nullptr;
+
+	VkSampler m_p_sampler_clamp = nullptr;
+
+	// fullscreen effect pipelines
+	// layout = [texture set, mask set] + 96B push constants
+	VkDescriptorSetLayout m_p_layout_effect_texture = nullptr;
+	VkPipelineLayout m_p_pipeline_layout_effects = nullptr;
+	VkPipeline m_p_pipeline_passthrough_blend = nullptr;
+	VkPipeline m_p_pipeline_passthrough_noblend = nullptr;
+	VkPipeline m_p_pipeline_colormatrix = nullptr;
+	VkPipeline m_p_pipeline_blendmask = nullptr;
+	VkPipeline m_p_pipeline_blur = nullptr;
+	VkPipeline m_p_pipeline_dropshadow = nullptr;
+
+	// gradient pipeline
+	// layout = [vertex transform set, gradient data set]
+	VkDescriptorSetLayout m_p_layout_gradient_data = nullptr;
+	VkPipelineLayout m_p_pipeline_layout_gradient = nullptr;
+	VkPipeline m_p_pipeline_gradient = nullptr;
+	VkPipeline m_p_pipeline_gradient_stencil = nullptr;
+	VkDescriptorSet m_p_descriptor_set_gradient = nullptr;
+
+	// clip mask writes reuse the stencil pipeline
+	// Intersect needs an increment variant
+	VkPipeline m_p_pipeline_clip_write_incr = nullptr;
+	bool m_clip_incr = false;
+	uint32_t m_clip_write_value = 1;
+
+	VkShaderModule m_p_effects_shader_module = nullptr;
+
+	Rml::Vector<CompiledShader*> m_pending_for_deletion_shaders;
 };

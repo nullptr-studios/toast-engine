@@ -253,9 +253,13 @@ void RenderInterface_VK::RenderGeometry(
 	);
 
 	if (m_is_use_stencil_pipeline) {
+		// clip mask writes pick the op and reference set up by RenderToClipMask
 		vkCmdBindPipeline(
-		    m_p_current_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_p_pipeline_stencil_for_region_where_geometry_will_be_drawn
+		    m_p_current_command_buffer,
+		    VK_PIPELINE_BIND_POINT_GRAPHICS,
+		    m_clip_incr ? m_p_pipeline_clip_write_incr : m_p_pipeline_stencil_for_region_where_geometry_will_be_drawn
 		);
+		vkCmdSetStencilReference(m_p_current_command_buffer, VK_STENCIL_FACE_FRONT_AND_BACK, m_clip_write_value);
 	} else {
 		if (p_texture) {
 			if (m_is_apply_to_regular_geometry_stencil) {
@@ -648,7 +652,20 @@ std::shared_ptr<const void> RenderInterface_VK::OnFrameBegin(uint32_t frame_inde
 	Update_PendingForDeletion_Textures_By_Frames();
 	Update_PendingForDeletion_Geometries();
 
-	return m_command_buffer_ring.AcquireSlot();
+	for (CompiledShader* p_shader : m_pending_for_deletion_shaders) {
+		m_memory_pool.Free_Allocation(p_shader->m_allocation);
+		delete p_shader;
+	}
+	m_pending_for_deletion_shaders.clear();
+
+	auto guard = m_command_buffer_ring.AcquireSlot();
+
+	RetireUnusedPools();
+	for (auto& pool : m_pools) {
+		pool->m_outputs_used = 0;
+	}
+
+	return guard;
 }
 
 VkCommandBuffer RenderInterface_VK::BeginRecording(VkExtent2D extent) {
@@ -656,41 +673,59 @@ VkCommandBuffer RenderInterface_VK::BeginRecording(VkExtent2D extent) {
 
 	m_p_current_command_buffer = m_command_buffer_ring.GetNextSecondaryBuffer();
 
-	// Secondary buffers executed inside the UI pass's dynamic rendering scope must describe the
-	// attachments they render into
-	VkCommandBufferInheritanceRenderingInfo info_inheritance_rendering = {};
-	info_inheritance_rendering.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO;
-	info_inheritance_rendering.colorAttachmentCount = 1;
-	info_inheritance_rendering.pColorAttachmentFormats = &m_color_attachment_format;
-	info_inheritance_rendering.depthAttachmentFormat =
-	    m_depth_stencil_attachment_format == VK_FORMAT_S8_UINT ? VK_FORMAT_UNDEFINED : m_depth_stencil_attachment_format;
-	info_inheritance_rendering.stencilAttachmentFormat = m_depth_stencil_attachment_format;
-	info_inheritance_rendering.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
+	// Plain secondary buffer
+	// The backend opens its own dynamic rendering scopes inside so the layer stack and filter passes can switch
+	// render targets freely
 	VkCommandBufferInheritanceInfo info_inheritance = {};
 	info_inheritance.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-	info_inheritance.pNext = &info_inheritance_rendering;
 
 	VkCommandBufferBeginInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	info.pInheritanceInfo = &info_inheritance;
-	info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+	info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 	auto status = vkBeginCommandBuffer(m_p_current_command_buffer, &info);
 	RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkBeginCommandBuffer");
 
 	SetViewport(static_cast<int>(extent.width), static_cast<int>(extent.height));
 
-	vkCmdSetViewport(m_p_current_command_buffer, 0, 1, &m_viewport);
-	vkCmdSetScissor(m_p_current_command_buffer, 0, 1, &m_scissor_original);
-
+	m_is_use_scissor_specified = false;
 	m_is_apply_to_regular_geometry_stencil = false;
+	m_is_use_stencil_pipeline = false;
+	m_stencil_test_value = 1;
+
+	LayerPool& pool = AcquirePool(extent);
+	m_p_current_pool = &pool;
+	m_command_buffer_ring.AddCurrentSlotGeneration(pool.m_generation);
+
+	if (pool.m_outputs_used == pool.m_outputs.size()) {
+		pool.m_outputs.push_back(CreateEffectImage(
+		    pool.m_extent,
+		    m_color_attachment_format,
+		    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+		));
+	}
+	effect_image_t* p_output = &pool.m_outputs[pool.m_outputs_used++];
+
+	m_layer_stack.clear();
+	m_layer_stack.push_back(p_output);
+	m_stack_layers_used = 0;
+
+	BeginLayerScope(*p_output, true, true);
 
 	return m_p_current_command_buffer;
 }
 
 VkCommandBuffer RenderInterface_VK::EndRecording() {
 	RMLUI_VK_ASSERTMSG(m_p_current_command_buffer, "EndRecording called without BeginRecording");
+	RMLUI_VK_ASSERTMSG(m_layer_stack.size() == 1, "layer stack not empty at EndRecording");
+
+	EndScope();
+
+	effect_image_t* p_output = m_layer_stack.front();
+	TransitionEffectImage(*p_output, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	m_p_last_output_view = p_output->m_p_view;
+	m_layer_stack.clear();
 
 	VkCommandBuffer p_recorded = m_p_current_command_buffer;
 
@@ -777,6 +812,7 @@ void RenderInterface_VK::Shutdown() {
 	auto status = vkDeviceWaitIdle(m_p_device);
 	RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "you must have a valid status here");
 
+	DestroyEffectResources();
 	Destroy_Pipelines();
 	Destroy_Resources();
 
@@ -802,6 +838,7 @@ void RenderInterface_VK::Initialize_Resources_Toast(VkQueue queue) noexcept {
 	CreateSamplers();
 	CreateDescriptorSets();
 	Create_Pipelines();
+	CreateEffectResources();
 }
 
 void RenderInterface_VK::Destroy_Resources() noexcept {
@@ -1012,8 +1049,8 @@ void RenderInterface_VK::Create_Pipelines() noexcept {
 	info_depth.back.failOp = VK_STENCIL_OP_KEEP;
 	info_depth.back.depthFailOp = VK_STENCIL_OP_KEEP;
 	info_depth.back.passOp = VK_STENCIL_OP_KEEP;
-	info_depth.back.compareMask = 1;
-	info_depth.back.writeMask = 1;
+	info_depth.back.compareMask = 0xff;
+	info_depth.back.writeMask = 0xff;
 	info_depth.back.reference = 1;
 	info_depth.front = info_depth.back;
 
@@ -1030,7 +1067,10 @@ void RenderInterface_VK::Create_Pipelines() noexcept {
 	info_multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 	info_multisample.flags = 0;
 
-	Rml::Array<VkDynamicState, 2> dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+	// stencil reference is dynamic
+	Rml::Array<VkDynamicState, 3> dynamicStateEnables = {
+	  VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_STENCIL_REFERENCE
+	};
 
 	VkPipelineDynamicStateCreateInfo info_dynamic_state = {};
 	info_dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -1112,8 +1152,8 @@ void RenderInterface_VK::Create_Pipelines() noexcept {
 	info_depth.back.failOp = VK_STENCIL_OP_KEEP;
 	info_depth.back.depthFailOp = VK_STENCIL_OP_KEEP;
 	info_depth.back.compareOp = VK_COMPARE_OP_EQUAL;
-	info_depth.back.compareMask = 1;
-	info_depth.back.writeMask = 1;
+	info_depth.back.compareMask = 0xff;
+	info_depth.back.writeMask = 0xff;
 	info_depth.back.reference = 1;
 	info_depth.front = info_depth.back;
 
@@ -1128,8 +1168,8 @@ void RenderInterface_VK::Create_Pipelines() noexcept {
 	info_depth.back.failOp = VK_STENCIL_OP_KEEP;
 	info_depth.back.depthFailOp = VK_STENCIL_OP_KEEP;
 	info_depth.back.passOp = VK_STENCIL_OP_KEEP;
-	info_depth.back.compareMask = 1;
-	info_depth.back.writeMask = 1;
+	info_depth.back.compareMask = 0xff;
+	info_depth.back.writeMask = 0xff;
 	info_depth.back.reference = 1;
 	info_depth.front = info_depth.back;
 
@@ -1140,8 +1180,8 @@ void RenderInterface_VK::Create_Pipelines() noexcept {
 	info_depth.back.failOp = VK_STENCIL_OP_KEEP;
 	info_depth.back.depthFailOp = VK_STENCIL_OP_KEEP;
 	info_depth.back.compareOp = VK_COMPARE_OP_EQUAL;
-	info_depth.back.compareMask = 1;
-	info_depth.back.writeMask = 1;
+	info_depth.back.compareMask = 0xff;
+	info_depth.back.writeMask = 0xff;
 	info_depth.back.reference = 1;
 	info_depth.front = info_depth.back;
 
@@ -1155,14 +1195,21 @@ void RenderInterface_VK::Create_Pipelines() noexcept {
 	info_depth.back.failOp = VK_STENCIL_OP_KEEP;
 	info_depth.back.depthFailOp = VK_STENCIL_OP_KEEP;
 	info_depth.back.compareOp = VK_COMPARE_OP_ALWAYS;
-	info_depth.back.compareMask = 1;
-	info_depth.back.writeMask = 1;
+	info_depth.back.compareMask = 0xff;
+	info_depth.back.writeMask = 0xff;
 	info_depth.back.reference = 1;
 	info_depth.front = info_depth.back;
 
 	status = vkCreateGraphicsPipelines(
 	    m_p_device, nullptr, 1, &info, nullptr, &m_p_pipeline_stencil_for_region_where_geometry_will_be_drawn
 	);
+	RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkCreateGraphicsPipelines");
+
+	// increment variant for ClipMaskOperation::Intersect
+	info_depth.back.passOp = VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+	info_depth.front = info_depth.back;
+
+	status = vkCreateGraphicsPipelines(m_p_device, nullptr, 1, &info, nullptr, &m_p_pipeline_clip_write_incr);
 	RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkCreateGraphicsPipelines");
 }
 
@@ -1342,6 +1389,7 @@ std::shared_ptr<const void> RenderInterface_VK::CommandBufferRing::AcquireSlot()
 
 	vkResetCommandPool(m_p_device, p_free->m_command_pool, 0);
 	p_free->m_used = 0;
+	p_free->m_generations.clear();
 	m_p_current_slot = p_free;
 
 	return p_free->m_guard;
@@ -1628,4 +1676,30 @@ void RenderInterface_VK::MemoryPool::Free_GeometryHandle_ShaderDataOnly(geometry
 
 	vmaVirtualFree(m_p_block, p_valid_geometry_handle->m_p_shader_allocation);
 	p_valid_geometry_handle->m_p_shader_allocation = nullptr;
+}
+
+void RenderInterface_VK::MemoryPool::Free_Allocation(VmaVirtualAllocation allocation) noexcept {
+	if (allocation) {
+		vmaVirtualFree(m_p_block, allocation);
+	}
+}
+
+void RenderInterface_VK::CommandBufferRing::AddCurrentSlotGeneration(uint64_t generation) {
+	RMLUI_VK_ASSERTMSG(m_p_current_slot, "AcquireSlot must be called first");
+	auto& generations = m_p_current_slot->m_generations;
+	if (std::find(generations.begin(), generations.end(), generation) == generations.end()) {
+		generations.push_back(generation);
+	}
+}
+
+bool RenderInterface_VK::CommandBufferRing::IsGenerationReferenced(uint64_t generation) const {
+	for (const auto& slot : m_slots) {
+		if (slot->m_guard.use_count() <= 1) {
+			continue;
+		}
+		if (std::find(slot->m_generations.begin(), slot->m_generations.end(), generation) != slot->m_generations.end()) {
+			return true;
+		}
+	}
+	return false;
 }

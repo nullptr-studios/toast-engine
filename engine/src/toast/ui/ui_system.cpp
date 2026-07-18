@@ -91,6 +91,7 @@ void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
 		m_render_interface->BeginRecording({static_cast<uint32_t>(dims.x), static_cast<uint32_t>(dims.y)});
 		context->Render();
 		frame.ui_command_buffers.push_back(m_render_interface->EndRecording());
+		frame.ui_output_views.emplace_back(m_render_interface->GetLastOutputView());
 	}
 }
 

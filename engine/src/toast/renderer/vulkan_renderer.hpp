@@ -100,6 +100,7 @@ public:
 
 		// Secondary command buffers recorded by ui::UISystem on the main thread
 		std::vector<vk::CommandBuffer> ui_command_buffers;
+		std::vector<vk::ImageView> ui_output_views;
 		std::shared_ptr<const void> ui_slot_guard;
 	};
 

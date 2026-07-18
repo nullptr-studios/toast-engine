@@ -672,6 +672,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	frame.debug_line_vertices.clear();
 	frame.debug_gizmo_instances.clear();
 	frame.ui_command_buffers.clear();
+	frame.ui_output_views.clear();
 	frame.ui_slot_guard.reset();
 
 	std::vector<toast::MeshNode*> mesh_nodes_snapshot;
