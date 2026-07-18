@@ -1,0 +1,74 @@
+/* Pause menu styling. Exercises clip masks (border-radius + overflow),
+   a drop-shadow filter, and a radial-gradient backdrop */
+
+body {
+	font-family: Display;
+	color: #f5f5f5;
+}
+
+.panel {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 420dp;
+	padding: 28dp;
+	background-color: #1b1d22ee;
+	border-radius: 16dp;
+	/* drop-shadow filter path */
+	box-shadow: #000000aa 0dp 12dp 32dp;
+}
+
+h1 {
+	font-size: 28dp;
+	font-weight: bold;
+	margin-bottom: 16dp;
+}
+
+.btn {
+	display: block;
+	width: 100%;
+	padding: 10dp 14dp;
+	margin-bottom: 8dp;
+	border-radius: 8dp;
+	background-color: #2b2f38;
+	color: #ffffff;
+	font-size: 18dp;
+}
+
+.btn:hover {
+	background-color: #3a3f4b;
+}
+
+.btn:active {
+	background-color: #24d38a;
+}
+
+.row {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	margin: 12dp 0;
+}
+
+.row span {
+	margin-left: 8dp;
+}
+
+.settings {
+	height: 120dp;
+	margin-top: 12dp;
+	border-radius: 10dp;
+	background-color: #00000055;
+	/* rounded overflow clips the scrolling inner content -> stencil clip mask */
+	overflow-y: auto;
+}
+
+.settings-inner {
+	padding: 12dp;
+}
+
+.settings-inner p {
+	margin-bottom: 10dp;
+	color: #c9ccd4;
+}

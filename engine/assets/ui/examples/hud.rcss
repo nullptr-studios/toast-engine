@@ -1,0 +1,54 @@
+/* HUD styling
+	Demonstrates a linear-gradient fill and simple layout
+	Colors that also live in the color scheme are referenced by name from the localized text via ${color:...}
+ */
+
+body {
+	font-family: Display;
+	color: #ffffff;
+	font-size: 18dp;
+}
+
+.status {
+	position: absolute;
+	top: 24dp;
+	left: 24dp;
+	display: flex;
+	flex-direction: row;
+}
+
+.icon {
+	width: 32dp;
+	height: 32dp;
+	margin-right: 8dp;
+}
+
+.bar {
+	position: absolute;
+	top: 72dp;
+	left: 24dp;
+	width: 260dp;
+	height: 18dp;
+	background-color: #00000080;
+	border-radius: 9dp;
+	/* overflow + radius forces a clip mask on the fill */
+	overflow: hidden;
+}
+
+.fill {
+	height: 18dp;
+	/* linear gradient exercises the gradient shader */
+	decorator: linear-gradient(to right, #24d38a, #f2c94c);
+}
+
+.ammo {
+	position: absolute;
+	top: 100dp;
+	left: 24dp;
+}
+
+.ammo .value {
+	font-weight: bold;
+	color: #f2c94c;
+	margin-left: 6dp;
+}

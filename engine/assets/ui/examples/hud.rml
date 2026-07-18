@@ -1,0 +1,27 @@
+<rml>
+<head>
+	<link type="text/rcss" href="hud.rcss"/>
+	<title>HUD</title>
+</head>
+<body data-model="binds">
+	<!-- Localized, formatted status line
+	     The text id resolves through the panel's localization table
+	     ${} directives in the localized string become markup -->
+	<div class="status">
+		<img class="icon" data-loc-image="hud_icon"/>
+		<span>hud_status</span>
+	</div>
+
+	<!-- Health bar
+	     The fill width is a two-way bind driven from Lua each tick -->
+	<div class="bar">
+		<div class="fill" data-style-width="health"/>
+	</div>
+
+	<!-- A localized label followed by a bound numeric value ({{ammo}}) -->
+	<div class="ammo">
+		<span>hud_ammo</span>
+		<span class="value">{{ammo}}</span>
+	</div>
+</body>
+</rml>
