@@ -4,6 +4,7 @@
 
 #include "vulkan_renderer.hpp"
 
+#include "passes/material_pass.hpp"
 #include "vulkan_debug.hpp"
 
 #include <algorithm>
@@ -14,6 +15,8 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <toast/assets/assets.hpp>
+#include <toast/assets/material.hpp>
 #include <toast/log.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/time.hpp>
@@ -82,7 +85,7 @@ auto VulkanRenderer::selectDepthFormat(const VulkanCore& core) -> vk::Format {
 		}
 	}
 
-	TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: Failed to find a supported depth format!");
+	TOAST_CRITICAL("Render", "Toast Engine Error: Failed to find a supported depth format!");
 }
 
 VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> output_target) noexcept
@@ -90,14 +93,14 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
       m_output_target(std::move(output_target)) {
 	instance = this;
 	if (!m_output_target) {
-		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: VulkanRenderer requires an output target!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires an output target!");
 	}
 
 	if (k_frames_in_flight == 0) {
-		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: VulkanRenderer requires at least one frame in flight!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires at least one frame in flight!");
 	}
 
-	TOAST_TRACE("VulkanRenderer", "Creating renderer with {} frame(s) in flight", k_frames_in_flight);
+	TOAST_TRACE("Render", "Creating renderer with {} frame(s) in flight", k_frames_in_flight);
 	m_depth_format = selectDepthFormat(core);
 
 	createGraphicsCommandPool();
@@ -115,6 +118,29 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 
 	// Create FrameData UBO
 	createFrameResources();
+
+	createDefaultTexture();
+
+	// Material passes react to asset hot reload through atomic flags
+	m_asset_listener.subscribe<event::ClearUnusedAssets>([this] {
+		m_pending_material_pass_clear.store(true, std::memory_order_release);
+		return false;
+	});
+	m_asset_listener.subscribe<event::ShaderRecompiled>([this](const event::ShaderRecompiled&) {
+		std::lock_guard lock(m_pass_mutex);
+		for (auto& [material, pass] : m_material_passes) {
+			pass->markShadersDirty();
+		}
+		return false;
+	});
+	m_asset_listener.subscribe<event::MaterialAssetReloaded>([this](const event::MaterialAssetReloaded&) {
+		// A material file change can alter its shader vector or settings
+		std::lock_guard lock(m_pass_mutex);
+		for (auto& [material, pass] : m_material_passes) {
+			pass->markShadersDirty();
+		}
+		return false;
+	});
 }
 
 VulkanRenderer::~VulkanRenderer() {
@@ -128,7 +154,7 @@ auto VulkanRenderer::createGraphicsCommandPool() -> void {
 	);
 	m_command_pool = vk::raii::CommandPool(m_core->getDevice(), pool_ci);
 	setDebugName(*m_core, *m_command_pool, "VulkanRenderer GraphicsCommandPool");
-	TOAST_TRACE("VulkanRenderer", "Graphics command pool created (graphics family {})", m_core->getGraphicsQueueFamilyIndex());
+	TOAST_TRACE("Render", "Graphics command pool created (graphics family {})", m_core->getGraphicsQueueFamilyIndex());
 }
 
 auto VulkanRenderer::createTransferCommandPool() -> void {
@@ -137,7 +163,7 @@ auto VulkanRenderer::createTransferCommandPool() -> void {
 	);
 	m_transfer_command_pool = vk::raii::CommandPool(m_core->getDevice(), pool_ci);
 	setDebugName(*m_core, *m_transfer_command_pool, "VulkanRenderer TransferCommandPool");
-	TOAST_TRACE("VulkanRenderer", "Transfer command pool created (transfer family {})", m_core->getTransferQueueFamilyIndex());
+	TOAST_TRACE("Render", "Transfer command pool created (transfer family {})", m_core->getTransferQueueFamilyIndex());
 }
 
 auto VulkanRenderer::createFrameContexts() -> void {
@@ -177,7 +203,7 @@ auto VulkanRenderer::createFrameContexts() -> void {
 		setDebugName(*m_core, *m_frames[frame_index].in_flight, std::format("VulkanRenderer Frame[{}] InFlightFence", frame_index));
 	}
 
-	TOAST_TRACE("VulkanRenderer", "Frame command buffers created: {}", k_frames_in_flight);
+	TOAST_TRACE("Render", "Frame command buffers created: {}", k_frames_in_flight);
 }
 
 auto VulkanRenderer::createPerImageSync() -> void {
@@ -191,17 +217,17 @@ auto VulkanRenderer::createPerImageSync() -> void {
 		setDebugName(*m_core, *m_render_finished_per_image.back(), std::format("VulkanRenderer RenderFinished[{}]", i));
 	}
 
-	TOAST_TRACE("VulkanRenderer", "Per-image semaphores created: {}", image_count);
+	TOAST_TRACE("Render", "Per-image semaphores created: {}", image_count);
 }
 
 auto VulkanRenderer::createDepthResources() -> void {
 	if (m_depth_format == vk::Format::eUndefined) {
-		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: VulkanRenderer requires a valid depth format!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires a valid depth format!");
 	}
 
 	const auto extent = m_output_target->getExtent();
 	if (extent.width == 0 || extent.height == 0) {
-		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: VulkanRenderer requires a non-zero output extent for depth resources!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires a non-zero output extent for depth resources!");
 	}
 
 	m_depth_resources.view.reset();
@@ -237,11 +263,7 @@ auto VulkanRenderer::createDepthResources() -> void {
 
 	m_depth_layout = vk::ImageLayout::eUndefined;
 	TOAST_TRACE(
-	    "VulkanRenderer",
-	    "Depth resources created at {}x{} with format {}",
-	    extent.width,
-	    extent.height,
-	    vk::to_string(m_depth_format)
+	    "Render", "Depth resources created at {}x{} with format {}", extent.width, extent.height, vk::to_string(m_depth_format)
 	);
 }
 
@@ -267,6 +289,7 @@ void VulkanRenderer::createDescriptorPool() {
 }
 
 auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noexcept -> void {
+	ZoneScoped;
 	frame.command_buffer.reset();
 	const vk::CommandBufferBeginInfo begin_info(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	frame.command_buffer.begin(begin_info);
@@ -383,8 +406,23 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	// }
 
 	// record loop
-	for (auto& pass : m_render_passes) {
-		pass->record(*frame.command_buffer, m_current_frame, image_index);
+	{
+		TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "Passes");
+		std::lock_guard lock(m_pass_mutex);
+		for (auto& [material, pass] : m_material_passes) {
+			if (!pass->isEnabled()) {
+				continue;
+			}
+			TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "MaterialPass");
+			pass->record(*frame.command_buffer, m_current_frame, image_index);
+		}
+		for (auto& pass : m_render_passes) {
+			if (!pass->isEnabled()) {
+				continue;
+			}
+			TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "Pass");
+			pass->record(*frame.command_buffer, m_current_frame, image_index);
+		}
 	}
 
 	// End rendering
@@ -393,6 +431,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	m_output_target->recordFinalize(frame.command_buffer, image_index);
 	m_output_image_layouts.at(image_index) =
 	    m_output_target->usesAcquirePresentSemaphores() ? vk::ImageLayout::ePresentSrcKHR : vk::ImageLayout::eTransferSrcOptimal;
+
+	TracyVkCollect(m_tracy_vk_ctx, *frame.command_buffer);
 
 	// End frame record
 	frame.command_buffer.end();
@@ -431,7 +471,138 @@ void VulkanRenderer::createFrameResources() {
 	}
 }
 
+void VulkanRenderer::createDefaultTexture() {
+	const auto& device = m_core->getDevice();
+
+	// 1x1 opaque white pixel used as the fallback for material texture slots
+	VulkanTexture::Params params {};
+	params.format = vk::Format::eR8G8B8A8Unorm;
+	params.extent = vk::Extent3D {1, 1, 1};
+	params.mip_levels = 1;
+	params.layer_count = 1;
+	m_default_texture.create(*m_core, params, "VulkanRenderer DefaultWhiteTexture");
+
+	const std::array<uint8_t, 4> white_pixel {255, 255, 255, 255};
+
+	vk::BufferCreateInfo staging_ci {};
+	staging_ci.size = white_pixel.size();
+	staging_ci.usage = vk::BufferUsageFlagBits::eTransferSrc;
+
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAuto;
+	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+	auto staging_buffer = m_core->getAllocator().createBuffer(staging_ci, alloc_ci);
+	setDebugName(*m_core, *staging_buffer, "VulkanRenderer DefaultWhiteTexture StagingBuffer");
+	std::memcpy(staging_buffer.getAllocation().getInfo().pMappedData, white_pixel.data(), white_pixel.size());
+
+	// Runs once at construction time, before the render thread exists
+	vk::raii::CommandPool one_shot_pool(device, vk::CommandPoolCreateInfo({}, m_core->getGraphicsQueueFamilyIndex()));
+	const vk::CommandBufferAllocateInfo cmd_alloc_info(*one_shot_pool, vk::CommandBufferLevel::ePrimary, 1);
+	auto cmd_buffers = device.allocateCommandBuffers(cmd_alloc_info);
+	vk::raii::CommandBuffer cmd = std::move(cmd_buffers[0]);
+
+	cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+
+	vk::ImageMemoryBarrier to_dst {};
+	to_dst.oldLayout = vk::ImageLayout::eUndefined;
+	to_dst.newLayout = vk::ImageLayout::eTransferDstOptimal;
+	to_dst.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	to_dst.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	to_dst.image = m_default_texture.getImage();
+	to_dst.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+	to_dst.srcAccessMask = {};
+	to_dst.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+	cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, nullptr, to_dst);
+
+	vk::BufferImageCopy region {};
+	region.imageSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
+	region.imageExtent = vk::Extent3D {1, 1, 1};
+	cmd.copyBufferToImage(*staging_buffer, m_default_texture.getImage(), vk::ImageLayout::eTransferDstOptimal, region);
+
+	vk::ImageMemoryBarrier to_read = to_dst;
+	to_read.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+	to_read.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	to_read.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+	to_read.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+	cmd.pipelineBarrier(
+	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, to_read
+	);
+
+	cmd.end();
+
+	const vk::raii::Fence fence(device, vk::FenceCreateInfo {});
+	const vk::CommandBuffer raw_cmd = *cmd;
+	vk::SubmitInfo submit {};
+	submit.commandBufferCount = 1;
+	submit.pCommandBuffers = &raw_cmd;
+	m_core->getGraphicsQueue().submit(submit, *fence);
+	std::ignore = device.waitForFences(*fence, true, std::numeric_limits<uint64_t>::max());
+
+	m_default_texture.markReady();
+
+	vk::SamplerCreateInfo sampler_ci {};
+	sampler_ci.magFilter = vk::Filter::eNearest;
+	sampler_ci.minFilter = vk::Filter::eNearest;
+	sampler_ci.addressModeU = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.addressModeV = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.addressModeW = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
+	m_default_sampler = vk::raii::Sampler(device, sampler_ci);
+	setDebugName(*m_core, *m_default_sampler, "VulkanRenderer DefaultSampler");
+}
+
+void VulkanRenderer::ensureMaterialPasses(RenderFrame& frame_data) {
+	ZoneScoped;
+
+	if (m_pending_material_pass_clear.exchange(false, std::memory_order_acq_rel)) {
+		m_core->getDevice().waitIdle();
+		std::lock_guard lock(m_pass_mutex);
+		m_material_passes.clear();
+	}
+
+	std::lock_guard lock(m_pass_mutex);
+	for (const auto& proxy : frame_data.mesh_instances) {
+		if (proxy.root_material == nullptr || m_material_passes.contains(proxy.root_material)) {
+			continue;
+		}
+		auto pass = std::make_unique<MaterialPass>(
+		    *m_core, proxy.root_material, m_output_target->getColorFormat(), m_depth_format, m_output_target->getExtent()
+		);
+		TOAST_INFO("Render", "Created material pass '{}'", pass->name());
+		m_material_passes.emplace(proxy.root_material, std::move(pass));
+	}
+}
+
+auto VulkanRenderer::listPasses() -> std::vector<PassInfo> {
+	std::lock_guard lock(m_pass_mutex);
+	std::vector<PassInfo> out;
+	out.reserve(m_material_passes.size() + m_render_passes.size());
+	for (auto& [material, pass] : m_material_passes) {
+		out.push_back(PassInfo {.name = std::string(pass->name()), .enabled = pass->isEnabled()});
+	}
+	for (auto& pass : m_render_passes) {
+		out.push_back(PassInfo {.name = std::string(pass->name()), .enabled = pass->isEnabled()});
+	}
+	return out;
+}
+
+void VulkanRenderer::setPassEnabled(std::string_view name, bool enabled) {
+	std::lock_guard lock(m_pass_mutex);
+	for (auto& [material, pass] : m_material_passes) {
+		if (pass->name() == name) {
+			pass->setEnabled(enabled);
+		}
+	}
+	for (auto& pass : m_render_passes) {
+		if (pass->name() == name) {
+			pass->setEnabled(enabled);
+		}
+	}
+}
+
 void VulkanRenderer::updateFrameResources(uint32_t frame_index, RenderFrame& frame_data) {
+	ZoneScoped;
 	m_frame_ubos[frame_index] = frame_data.frame_data;
 
 	const auto& allocation = m_frame_ubo_res[frame_index].gpu_buffer->getAllocation();
@@ -469,12 +640,12 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	    m_output_target->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.image_available, VK_NULL_HANDLE);
 
 	if (acquired.result == vk::Result::eErrorOutOfDateKHR) {
-		TOAST_WARN("VulkanRenderer", "Swapchain out of date on acquire; recreating");
+		TOAST_WARN("Render", "Swapchain out of date on acquire; recreating");
 		applyResize(m_output_target->getExtent());
 		return;
 	}
 	if (acquired.result != vk::Result::eSuccess && acquired.result != vk::Result::eSuboptimalKHR) {
-		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: Failed to acquire the next output image!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to acquire the next output image!");
 	}
 
 	const uint32_t image_index = acquired.value;
@@ -490,10 +661,17 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	updateFrameResources(m_current_frame, frame_data);    // FIXME: dt
 
 	m_rendering_frame = &frame_data;
+	ensureMaterialPasses(frame_data);
 
 	// Update the Render passes TODO: Move outside of renderloop
-	for (auto& pass : m_render_passes) {
-		pass->update(m_current_frame, Time::renderDelta());
+	{
+		std::lock_guard lock(m_pass_mutex);
+		for (auto& [material, pass] : m_material_passes) {
+			pass->update(m_current_frame, Time::renderDelta());
+		}
+		for (auto& pass : m_render_passes) {
+			pass->update(m_current_frame, Time::renderDelta());
+		}
 	}
 
 	recordFrame(frame, image_index);
@@ -539,13 +717,13 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	m_current_frame = (m_current_frame + 1) % static_cast<uint32_t>(m_frames.size());
 
 	if (present_result == vk::Result::eErrorOutOfDateKHR || present_result == vk::Result::eSuboptimalKHR) {
-		TOAST_WARN("VulkanRenderer", "Swapchain out of date or suboptimal on present; recreating");
+		TOAST_WARN("Render", "Swapchain out of date or suboptimal on present; recreating");
 		m_rendering_frame = nullptr;
 		applyResize(m_output_target->getExtent());
 		return;
 	}
 	if (present_result != vk::Result::eSuccess) {
-		TOAST_CRITICAL("VulkanRenderer", "Toast Engine Error: Failed to present the current output image!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to present the current output image!");
 	}
 
 	m_rendering_frame = nullptr;
@@ -553,6 +731,16 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 
 void VulkanRenderer::mainRenderThread() {
 	tracy::SetThreadName("Renderer Thread");
+
+#ifdef TRACY_ENABLE
+	{
+		// Calibration command buffer, only needed while creating the context
+		const vk::CommandBufferAllocateInfo alloc_info(*m_command_pool, vk::CommandBufferLevel::ePrimary, 1);
+		const auto tracy_cmd_buffers = m_core->getDevice().allocateCommandBuffers(alloc_info);
+		m_tracy_vk_ctx =
+		    TracyVkContext(*m_core->getPhysicalDevice(), *m_core->getDevice(), m_core->getGraphicsQueue(), *tracy_cmd_buffers[0]);
+	}
+#endif
 
 	using clock = std::chrono::steady_clock;
 	auto next_frame_deadline = clock::now();
@@ -634,11 +822,30 @@ void VulkanRenderer::mainRenderThread() {
 		if (consumed_queued_frame) {
 			m_free_frames.release();
 		}
+
+#ifdef TRACY_ENABLE
+		{
+			const auto memory_props = m_core->getPhysicalDevice().getMemoryProperties();
+			const auto budgets = m_core->getAllocator().getHeapBudgets();
+			uint64_t vram_used = 0;
+			uint64_t vram_budget = 0;
+			for (uint32_t i = 0; i < memory_props.memoryHeapCount && i < budgets.size(); ++i) {
+				if (memory_props.memoryHeaps[i].flags & vk::MemoryHeapFlagBits::eDeviceLocal) {
+					vram_used += budgets[i].usage;
+					vram_budget += budgets[i].budget;
+				}
+			}
+			TracyPlot("VRAM used", static_cast<int64_t>(vram_used));
+			TracyPlot("VRAM budget", static_cast<int64_t>(vram_budget));
+		}
+#endif
+
+		FrameMarkNamed("RenderFrame");
 	}
 }
 
 void VulkanRenderer::start() noexcept {
-	TOAST_TRACE("VulkanRenderer", "Starting renderer");
+	TOAST_TRACE("Render", "Starting renderer");
 
 	m_running.store(true, std::memory_order_release);
 
@@ -699,8 +906,22 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 
 		auto& material_handle = node->getMaterial();
-		if (material_handle.hasValue()) {
-			material_handle->resolveTextureHandles();
+
+		// Meshes without a material fall back to the engine default material
+		assets::Material* material = material_handle.hasValue() ? &material_handle.get() : nullptr;
+		if (material == nullptr) {
+			if (!m_default_material.hasValue()) {
+				m_default_material = assets::load<assets::Material>("core://material/default.tmat");
+			}
+			if (m_default_material.hasValue()) {
+				material = &m_default_material.get();
+			} else if (!m_default_material_warned) {
+				m_default_material_warned = true;
+				TOAST_WARN("Render", "Default material core://material/default.tmat not found; meshes without a material are skipped");
+			}
+		}
+		if (material == nullptr) {
+			continue;
 		}
 
 		const auto world_transform = node->worldTransformForRender();
@@ -708,7 +929,8 @@ void VulkanRenderer::tick(float time) noexcept {
 		frame.mesh_instances.push_back(
 		    MeshInstanceProxy {
 		      .mesh = &gpu_mesh,
-		      .material = material_handle.hasValue() ? &material_handle.get() : nullptr,
+		      .material = material,
+		      .root_material = material->rootMaterial(),
 		      .model = world_transform,
 		    }
 		);
@@ -779,6 +1001,13 @@ void VulkanRenderer::stop() {
 	if (m_core) {
 		m_core->getDevice().waitIdle();
 	}
+
+#ifdef TRACY_ENABLE
+	if (m_tracy_vk_ctx != nullptr) {
+		TracyVkDestroy(m_tracy_vk_ctx);
+		m_tracy_vk_ctx = nullptr;
+	}
+#endif
 }
 
 auto VulkanRenderer::applyResize(vk::Extent2D extent) -> void {
@@ -806,9 +1035,7 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 		createPerImageSync();
 		createDepthResources();
 		m_current_frame = 0;
-	} catch (const std::exception& e) {
-		TOAST_CRITICAL("VulkanRenderer", "Failed to recreate output target on resize: {}", e.what());
-	}
+	} catch (const std::exception& e) { TOAST_CRITICAL("Render", "Failed to recreate output target on resize: {}", e.what()); }
 }
 
 void VulkanRenderer::addRenderPass(std::unique_ptr<IRenderPass> pass) {
@@ -830,6 +1057,7 @@ void VulkanRenderer::queueResourceUpload(std::unique_ptr<PendingResourceUpload> 
 }
 
 void VulkanRenderer::processPendingUploads() {
+	ZoneScoped;
 	const auto& device = m_core->getDevice();
 
 	while (!m_pending_uploads.empty()) {
@@ -850,6 +1078,7 @@ void VulkanRenderer::processPendingUploads() {
 }
 
 void VulkanRenderer::flushResourceUploads() {
+	ZoneScoped;
 	std::vector<std::unique_ptr<PendingResourceUpload>> jobs_to_flush;
 	{
 		std::lock_guard<std::mutex> lock(m_upload_mutex);

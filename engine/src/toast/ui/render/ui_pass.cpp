@@ -1,7 +1,8 @@
 #include "ui_pass.hpp"
 
+#include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
-#include <toast/renderer/shader_compiler.hpp>
+#include <toast/renderer/shader_cache.hpp>
 #include <toast/renderer/vulkan_core.hpp>
 #include <toast/renderer/vulkan_debug.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
@@ -31,9 +32,14 @@ UIPass::UIPass(
     const renderer::VulkanCore& core, vk::Format output_color_format, vk::Format output_depth_format, vk::Extent2D extent
 )
     : m_core(&core) {
-	m_shader_layout.rebuild(core, "ui_composite");
+	const auto uid = assets::resolveURI("core://shaders/ui.slang");
+	const auto shader = uid.has_value() ? renderer::ShaderCache::get().acquire(*uid) : nullptr;
+	if (!shader) {
+		TOAST_ERROR("UI", "UIPass shader core://shaders/ui.slang unavailable, the UI will not draw");
+		return;
+	}
 
-	auto shader = renderer::ShaderCompiler::compileShaderModuleFromSource("./ui.slang");
+	m_shader_layout.rebuild(core, shader->reflection, "ui_composite");
 
 	renderer::VulkanPipeline::Config config;
 	config.pipeline_type = renderer::VulkanPipeline::PipelineType::graphics;
@@ -43,14 +49,13 @@ UIPass::UIPass(
 	// pipeline must declare even with depth testing off
 	config.depth_format = output_depth_format;
 	config.extent = extent;
-	config.shader_spirv = std::move(shader.spirv);
+	config.shader_spirv = shader->spirv;
 	config.pipeline_layout = *m_shader_layout.getPipelineLayout();
 	config.topology = vk::PrimitiveTopology::eTriangleList;
 	config.cull_mode = vk::CullModeFlagBits::eNone;
 	config.depth_test = false;
 	config.depth_write = false;
-	config.blend_enable = true;
-	config.premultiplied_blend = true;
+	config.blend_preset = renderer::VulkanPipeline::BlendPreset::premultiplied;
 	m_composite_pipeline.rebuild(core, config);
 
 	vk::SamplerCreateInfo sampler_ci {};

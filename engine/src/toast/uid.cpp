@@ -126,6 +126,10 @@ auto UID::operator<=>(const UID& other) const noexcept -> std::strong_ordering {
 	return value <=> other.value;
 }
 
+auto UID::operator==(const UID& other) const noexcept -> bool {
+	return value == other.value;
+}
+
 auto UID::get() const noexcept -> std::string {
 	return toString(value);
 }

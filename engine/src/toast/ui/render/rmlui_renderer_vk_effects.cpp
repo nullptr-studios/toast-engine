@@ -8,7 +8,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <toast/renderer/shader_compiler.hpp>
+#include <toast/assets/assets.hpp>
+#include <toast/renderer/shader_cache.hpp>
 
 namespace {
 
@@ -69,15 +70,15 @@ VkRect2D FullRect(VkExtent2D extent) {
 }
 
 void RenderInterface_VK::CreateEffectResources() noexcept {
-	// HACK: Need to use shader compiler
-	auto compiled = renderer::ShaderCompiler::compileShaderModuleFromSource("./ui_effects.slang");
-	RMLUI_VK_ASSERTMSG(!compiled.spirv.empty(), "failed to compile ui_effects.slang");
+	const auto uid = assets::resolveURI("core://shaders/ui_effects.slang");
+	const auto entry = uid.has_value() ? renderer::ShaderCache::get().acquire(*uid) : nullptr;
+	RMLUI_VK_ASSERTMSG(entry != nullptr, "failed to acquire ui_effects.slang from shader cache");
 
 	{
 		VkShaderModuleCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		info.pCode = reinterpret_cast<const uint32_t*>(compiled.spirv.data());
-		info.codeSize = compiled.spirv.size();
+		info.pCode = reinterpret_cast<const uint32_t*>(entry->spirv.data());
+		info.codeSize = entry->spirv.size();
 
 		VkResult status = vkCreateShaderModule(m_p_device, &info, nullptr, &m_p_effects_shader_module);
 		RMLUI_VK_ASSERTMSG(status == VK_SUCCESS, "failed to vkCreateShaderModule for ui_effects");

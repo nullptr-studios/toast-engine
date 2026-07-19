@@ -1,22 +1,34 @@
+import toast;
+
 struct CameraUBO
 {
     float4x4 view;
     float4x4 projection;
     float4x4 viewProjection;
-    
+
     float3 position;
     float time;
 };
 
 [[vk::binding(0,0)]]
 ConstantBuffer<CameraUBO> gCamera;
+
+struct MaterialUBO
+{
+    [Reflect] [Color] [Name("Tint")]
+    float4 tint;
+};
+
 [[vk::binding(0,1)]]
-Sampler2D gAlbedoSampler;
+ConstantBuffer<MaterialUBO> gMaterial;
+
+[Reflect] [Name("Albedo")]
+[[vk::binding(1,1)]]
+Sampler2D gAlbedo;
 
 struct PushConstants
 {
     float4x4 model;
-    float4 color;
 };
 
 [[vk::push_constant]]
@@ -35,7 +47,7 @@ struct VSInput
 
     [[vk::location(3)]]
     float4 tangent : TANGENT;
-    
+
     [[vk::location(4)]]
     float3 color : COLOR;
 };
@@ -49,7 +61,7 @@ struct VSOutput
 
     [[vk::location(1)]]
     float2 uv : TEXCOORD0;
-    
+
     [[vk::location(2)]]
     float3 color : COLOR;
 };
@@ -59,25 +71,11 @@ VSOutput vertexMain(VSInput input)
 {
     VSOutput output;
 
-    float4 worldPos =
-        mul(
-            gPush.model,
-            float4(input.position, 1.0));
+    float4 worldPos = mul(gPush.model, float4(input.position, 1.0));
 
-    output.position =
-        mul(
-            gCamera.viewProjection,
-            worldPos);
-
-    output.worldNormal =
-        normalize(
-            mul(
-                (float3x3)gPush.model,
-                input.normal));
-
-    output.uv =
-        input.uv;
-        
+    output.position = mul(gCamera.viewProjection, worldPos);
+    output.worldNormal = normalize(mul((float3x3)gPush.model, input.normal));
+    output.uv = input.uv;
     output.color = input.color;
 
     return output;
@@ -86,13 +84,7 @@ VSOutput vertexMain(VSInput input)
 [shader("fragment")]
 float4 fragmentMain(VSOutput input) : SV_Target0
 {
-    float3 albedo = gAlbedoSampler.Sample(input.uv).rgb;
+    float4 albedo = gAlbedo.Sample(input.uv);
 
-    float intensity = dot(input.worldNormal, float3(1.0, -1.0, 1.0)) * 0.5 + 0.5;
-    float3 color = input.color * albedo * intensity;
-
-    // float3 color =
-    //     input.worldNormal * 0.5 + 0.5;
-
-    return float4(albedo * gPush.color.rgb, gPush.color.a);
+    return float4(albedo.rgb * gMaterial.tint.rgb, albedo.a * gMaterial.tint.a);
 }

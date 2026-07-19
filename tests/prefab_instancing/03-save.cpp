@@ -86,7 +86,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/03-save", test_prefab_i
 		auto world2 = WorldTestAccess::createWorld();
 		INodeOwner::InstantiateContext ctx2;
 		ctx2.resolver = store.resolver();
-		assets::AssetHandle<Prefab> saved_handle(&saved, UID(uidOf(A_ASSET)), "");
+		assets::Handle<Prefab> saved_handle(&saved, UID(uidOf(A_ASSET)), "");
 
 		Box<Node> reloaded = WorldTestAccess::instantiate(*world2, saved_handle, ctx2);
 		assert(reloaded.exists());

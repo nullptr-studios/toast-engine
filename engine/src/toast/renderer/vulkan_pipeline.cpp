@@ -16,12 +16,12 @@ namespace renderer {
 namespace {
 auto createShaderModule(const vk::raii::Device& device, std::span<const std::byte> spirv) -> vk::raii::ShaderModule {
 	if (spirv.empty()) {
-		TOAST_CRITICAL("VulkanPipeline", "Shader SPIR-V bytecode is empty!");
+		TOAST_CRITICAL("Render", "Shader SPIR-V bytecode is empty!");
 	}
 
 	const auto byte_count = spirv.size_bytes();
 	if ((byte_count % sizeof(uint32_t)) != 0) {
-		TOAST_CRITICAL("VulkanPipeline", "Shader SPIR-V bytecode size is not 32-bit aligned!");
+		TOAST_CRITICAL("Render", "Shader SPIR-V bytecode size is not 32-bit aligned!");
 	}
 
 	const auto* words = reinterpret_cast<const uint32_t*>(spirv.data());
@@ -72,11 +72,40 @@ auto createGraphicsPipelineImpl(
 	);
 
 	const vk::PipelineMultisampleStateCreateInfo multisample_state_ci({}, vk::SampleCountFlagBits::e1);
+
+	// The legacy blend_enable toggle behaves like the alpha preset
+	using BlendPreset = VulkanPipeline::BlendPreset;
+	auto blend_preset = config.blend_preset;
+	if (blend_preset == BlendPreset::none && config.blend_enable) {
+		blend_preset = BlendPreset::alpha;
+	}
+
+	vk::BlendFactor src_factor = vk::BlendFactor::eOne;
+	vk::BlendFactor dst_factor = vk::BlendFactor::eZero;
+	switch (blend_preset) {
+		case BlendPreset::alpha:
+			src_factor = vk::BlendFactor::eSrcAlpha;
+			dst_factor = vk::BlendFactor::eOneMinusSrcAlpha;
+			break;
+		case BlendPreset::premultiplied:
+			src_factor = vk::BlendFactor::eOne;
+			dst_factor = vk::BlendFactor::eOneMinusSrcAlpha;
+			break;
+		case BlendPreset::additive:
+			src_factor = vk::BlendFactor::eOne;
+			dst_factor = vk::BlendFactor::eOne;
+			break;
+		case BlendPreset::multiply:
+			src_factor = vk::BlendFactor::eDstColor;
+			dst_factor = vk::BlendFactor::eZero;
+			break;
+		case BlendPreset::none: break;
+	}
+
 	const vk::PipelineColorBlendAttachmentState color_blend_attachment(
-	    config.blend_enable,
-	    config.blend_enable ? (config.premultiplied_blend ? vk::BlendFactor::eOne : vk::BlendFactor::eSrcAlpha)
-	                        : vk::BlendFactor::eOne,
-	    config.blend_enable ? vk::BlendFactor::eOneMinusSrcAlpha : vk::BlendFactor::eZero,
+	    blend_preset != BlendPreset::none,
+	    src_factor,
+	    dst_factor,
 	    vk::BlendOp::eAdd,
 	    vk::BlendFactor::eOne,
 	    vk::BlendFactor::eZero,
@@ -150,18 +179,18 @@ auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> vo
 	m_pipeline_type = config.pipeline_type;
 
 	if (!config.pipeline_layout) {
-		TOAST_CRITICAL("VulkanPipeline", "A valid pipeline_layout must be provided!");
+		TOAST_CRITICAL("Render", "A valid pipeline_layout must be provided!");
 	}
 
 	if (config.depth_format.has_value() && *config.depth_format == vk::Format::eUndefined) {
-		TOAST_CRITICAL("VulkanPipeline", "Pipeline depth format cannot be undefined!");
+		TOAST_CRITICAL("Render", "Pipeline depth format cannot be undefined!");
 	}
 	if (config.pipeline_type == PipelineType::graphics) {
 		if (config.color_format == vk::Format::eUndefined) {
-			TOAST_CRITICAL("VulkanPipeline", "Graphics pipeline requires a valid color format!");
+			TOAST_CRITICAL("Render", "Graphics pipeline requires a valid color format!");
 		}
 		if (config.extent.width == 0 || config.extent.height == 0) {
-			TOAST_CRITICAL("VulkanPipeline", "Graphics pipeline requires a non-zero extent!");
+			TOAST_CRITICAL("Render", "Graphics pipeline requires a non-zero extent!");
 		}
 	}
 

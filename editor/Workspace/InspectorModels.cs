@@ -45,7 +45,7 @@ public static class InspectorFormat {
 			"vec3_t" => WidgetKind.Vec3,
 			"vec4_t" => WidgetKind.Vec4,
 			"quaternion_t" => WidgetKind.Vec3, // shown as euler degrees; engine converts on the inspector path
-			"uid_t" => typeName.Contains("AssetHandle<") ? WidgetKind.AssetRef : WidgetKind.NodeRef,
+			"uid_t" => typeName.Contains("Handle<") ? WidgetKind.AssetRef : WidgetKind.NodeRef,
 			_ => WidgetKind.ReadOnly
 		};
 	}
@@ -103,7 +103,7 @@ public static class InspectorFormat {
 			.ToArray();
 	}
 
-	// the inner T of AssetHandle<T> or Box<T>, bare-named, used for picker/drag filtering
+	// the inner T of Handle<T> or Box<T>, bare-named, used for picker/drag filtering
 	public static string? InnerType(string typeName) {
 		var open = typeName.IndexOf('<');
 		if (open < 0) return null;

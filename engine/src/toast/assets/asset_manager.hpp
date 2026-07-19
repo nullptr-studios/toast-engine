@@ -60,7 +60,7 @@ struct Paths {
  * Assets stay resident in the cache until clearUnusedAssets() is called and their
  * ref count is zero.
  *
- * @see Paths, AssetHandle, setPaths(), registerDatabase()
+ * @see Paths, Handle, setPaths(), registerDatabase()
  */
 class AssetManager {
 public:
@@ -116,6 +116,11 @@ public:
 	auto loadBytes(std::string_view uri) -> std::optional<std::vector<uint8_t>>;
 
 	/**
+	 * @brief Like loadBytes() but silent on misses
+	 */
+	auto tryLoadBytes(std::string_view uri) -> std::optional<std::vector<uint8_t>>;
+
+	/**
 	 * @brief Re-reads the project manifest from disk
 	 * @note Call after importing or creating a new asset; does not evict the asset cache
 	 */
@@ -123,7 +128,7 @@ public:
 
 	/**
 	 * @brief Evicts all assets whose ref count is zero from the cache
-	 * @note Assets still referenced by an AssetHandle will not be evicted; safe to call periodically
+	 * @note Assets still referenced by an Handle will not be evicted; safe to call periodically
 	 */
 	void clearUnusedAssets();
 
@@ -170,7 +175,7 @@ public:
 	 * @param query Substring to search for in manifest paths
 	 * @return Loaded asset handles for all matching entries; empty vector if none found
 	 */
-	auto search(std::string_view query) -> std::vector<AssetHandle<Asset>>;
+	auto search(std::string_view query) -> std::vector<Handle<Asset>>;
 
 	auto listByType(std::string_view type) -> std::vector<toast::UID>;
 
@@ -181,9 +186,9 @@ public:
 	static auto typeOf(toast::UID uid) -> std::string;
 
 	/**
-	 * @brief Re-reads any cached Script asset whose file changed on disk (hot reload)
+	 * @brief Re-reads any cached script, shader or material asset whose file changed on disk (hot reload)
 	 */
-	void pollModifiedScripts();
+	void pollModifiedAssets();
 
 	[[nodiscard]]
 	auto getCachePath() const -> const std::filesystem::path&;
@@ -216,11 +221,10 @@ private:
 
 	event::Listener listener;
 	std::mutex mutex;
-	std::unordered_map<uint64_t, AssetInfo> manifest;    ///< UID → path+type; populated from the project manifest on construction
-	std::unordered_map<uint64_t, std::unique_ptr<Asset>> cache;    ///< assets stay resident until clearUnusedAssets() is called
-	std::unordered_map<uint64_t, std::filesystem::file_time_type> script_mtimes;    ///< last seen mtime per cached script
+	std::unordered_map<uint64_t, AssetInfo> manifest;
+	std::unordered_map<uint64_t, std::unique_ptr<Asset>> cache;
+	std::unordered_map<uint64_t, std::filesystem::file_time_type> asset_mtimes;
 
-	/// Scheme name (no "://") → filesystem root. Populated by setPaths() + registerDatabase().
 	static inline std::unordered_map<std::string, std::filesystem::path> roots;
 
 	auto resolveVirtualPath(std::string_view virtual_path) -> std::optional<std::filesystem::path>;

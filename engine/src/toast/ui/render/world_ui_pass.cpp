@@ -1,8 +1,9 @@
 #include "world_ui_pass.hpp"
 
 #include <format>
+#include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
-#include <toast/renderer/shader_compiler.hpp>
+#include <toast/renderer/shader_cache.hpp>
 #include <toast/renderer/vulkan_core.hpp>
 #include <toast/renderer/vulkan_debug.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
@@ -12,9 +13,14 @@ namespace ui {
 
 WorldUIPass::WorldUIPass(const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent)
     : m_core(&core) {
-	m_shader_layout.rebuild(core, "ui_world");
+	const auto uid = assets::resolveURI("core://shaders/ui_world.slang");
+	const auto shader = uid.has_value() ? renderer::ShaderCache::get().acquire(*uid) : nullptr;
+	if (!shader) {
+		TOAST_ERROR("UI", "WorldUIPass shader core://shaders/ui_world.slang unavailable, world UI panels will not draw");
+		return;
+	}
 
-	auto shader = renderer::ShaderCompiler::compileShaderModuleFromSource("./ui_world.slang");
+	m_shader_layout.rebuild(core, shader->reflection, "ui_world");
 
 	renderer::VulkanPipeline::Config config;
 	config.pipeline_type = renderer::VulkanPipeline::PipelineType::graphics;
@@ -22,14 +28,13 @@ WorldUIPass::WorldUIPass(const renderer::VulkanCore& core, vk::Format color_form
 	config.color_format = color_format;
 	config.depth_format = depth_format;
 	config.extent = extent;
-	config.shader_spirv = std::move(shader.spirv);
+	config.shader_spirv = shader->spirv;
 	config.pipeline_layout = *m_shader_layout.getPipelineLayout();
 	config.topology = vk::PrimitiveTopology::eTriangleList;
 	config.cull_mode = vk::CullModeFlagBits::eNone;
 	config.depth_test = true;
 	config.depth_write = true;
-	config.blend_enable = true;
-	config.premultiplied_blend = true;
+	config.blend_preset = renderer::VulkanPipeline::BlendPreset::premultiplied;
 	m_pipeline.rebuild(core, config);
 
 	vk::SamplerCreateInfo sampler_ci {};

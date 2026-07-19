@@ -24,7 +24,7 @@ public abstract class BaseAsset {
 	public string Uid { get; set; } = "";
 	public TomlTable? Meta { get; set; }
 
-	/// <summary>C++ class names used in AssetHandle&lt;T&gt; in reflection data</summary>
+	/// <summary>C++ class names used in Handle&lt;T&gt; in reflection data</summary>
 	public virtual IReadOnlyList<string> CppTypeNames {
 		get {
 			var parts = Type.Split('_');

@@ -32,57 +32,53 @@ void AssetRegistry::init() {
 	s_raw["ui_image"] = [](std::vector<uint8_t> d) { return std::make_unique<UIImage>(std::move(d)); };
 	s_raw["localization"] = [](std::vector<uint8_t> d) { return std::make_unique<Localization>(std::move(d)); };
 	s_raw["image_localization"] = [](std::vector<uint8_t> d) { return std::make_unique<ImageLocalization>(std::move(d)); };
+	s_raw["shader"] = [](std::vector<uint8_t> d) { return std::make_unique<Shader>(std::move(d)); };
 
 	// Plain TOML loaders
 	s_toml["curve"] = [](const toml::table& t) { return Curve::fromToml(t); };
 
 	// TOML + Schema loaders
-	s_schema_toml["data"] = [](const toml::table& t, AssetHandle<Schema> s) { return std::make_unique<Data>(t, std::move(s)); };
-	s_schema_toml["material"] = [](const toml::table& t, AssetHandle<Schema> s) {
-		return std::make_unique<Material>(t, std::move(s));
+	s_schema_toml["data"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<Data>(t, std::move(s)); };
+	s_schema_toml["material"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<Material>(t, std::move(s)); };
+	s_schema_toml["material_instance"] = [](const toml::table& t, Handle<Schema> s) {
+		return std::make_unique<MaterialInstance>(t, std::move(s));
 	};
 
 	// Input assets
-	s_schema_toml["haptic"] = [](const toml::table& t, AssetHandle<Schema> s) { return std::make_unique<Haptic>(t, std::move(s)); };
-	s_schema_toml["input_action"] = [](const toml::table& t, AssetHandle<Schema> s) {
+	s_schema_toml["haptic"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<Haptic>(t, std::move(s)); };
+	s_schema_toml["input_action"] = [](const toml::table& t, Handle<Schema> s) {
 		return std::make_unique<Action>(t, std::move(s));
 	};
-	s_schema_toml["input_layout"] = [](const toml::table& t, AssetHandle<Schema> s) {
+	s_schema_toml["input_layout"] = [](const toml::table& t, Handle<Schema> s) {
 		return std::make_unique<InputLayout>(t, std::move(s));
 	};
-	s_schema_toml["input_settings"] = [](const toml::table& t, const AssetHandle<Schema>& s) {
+	s_schema_toml["input_settings"] = [](const toml::table& t, const Handle<Schema>& s) {
 		return std::make_unique<InputSettings>(t, s);
 	};
-	s_schema_toml["audio_event"] = [](const toml::table& t, AssetHandle<Schema> s) {
+	s_schema_toml["audio_event"] = [](const toml::table& t, Handle<Schema> s) {
 		return std::make_unique<AudioEvent>(t, std::move(s));
 	};
-	s_schema_toml["audio_bus"] = [](const toml::table& t, AssetHandle<Schema> s) {
-		return std::make_unique<AudioBus>(t, std::move(s));
-	};
-	s_schema_toml["audio_port"] = [](const toml::table& t, AssetHandle<Schema> s) {
+	s_schema_toml["audio_bus"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<AudioBus>(t, std::move(s)); };
+	s_schema_toml["audio_port"] = [](const toml::table& t, Handle<Schema> s) {
 		return std::make_unique<AudioPort>(t, std::move(s));
 	};
-	s_schema_toml["audio_snapshot"] = [](const toml::table& t, AssetHandle<Schema> s) {
+	s_schema_toml["audio_snapshot"] = [](const toml::table& t, Handle<Schema> s) {
 		return std::make_unique<AudioSnapshot>(t, std::move(s));
 	};
-	s_schema_toml["audio_vca"] = [](const toml::table& t, AssetHandle<Schema> s) {
-		return std::make_unique<AudioVca>(t, std::move(s));
-	};
-	s_schema_toml["font_family"] = [](const toml::table& t, AssetHandle<Schema> s) {
-		return std::make_unique<FontFamily>(t, std::move(s));
-	};
-	s_schema_toml["color_scheme"] = [](const toml::table& t, AssetHandle<Schema> s) {
-		return std::make_unique<ColorScheme>(t, std::move(s));
-	};
+	s_schema_toml["audio_vca"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<AudioVca>(t, std::move(s)); };
+	s_schema_toml["font_family"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<FontFamily>(t, std::move(s)); };
+	s_schema_toml["color_scheme"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<ColorScheme>(t, std::move(s)); };
 
 	// Lua global names
 	s_lua_names["mesh"] = "Mesh";
 	s_lua_names["texture"] = "Texture";
 	s_lua_names["data"] = "Data";
 	s_lua_names["material"] = "Material";
+	s_lua_names["material_instance"] = "MaterialInstance";
 	s_lua_names["schema"] = "Schema";
 	s_lua_names["node"] = "Prefab";
 	s_lua_names["script"] = "Script";
+	s_lua_names["shader"] = "Shader";
 	s_lua_names["curve"] = "Curve";
 	s_lua_names["audio_strings"] = "AudioStrings";
 	s_lua_names["audio_bank"] = "AudioBank";
@@ -153,8 +149,7 @@ auto AssetRegistry::createToml(std::string_view type, toml::table table) -> std:
 	return nullptr;
 }
 
-auto AssetRegistry::createSchemaToml(std::string_view type, toml::table table, AssetHandle<Schema> schema)
-    -> std::unique_ptr<Asset> {
+auto AssetRegistry::createSchemaToml(std::string_view type, toml::table table, Handle<Schema> schema) -> std::unique_ptr<Asset> {
 	auto it = s_schema_toml.find(std::string(type));
 	if (it != s_schema_toml.end()) {
 		return it->second(std::move(table), std::move(schema));

@@ -38,7 +38,7 @@ public:
 	 * @brief Parses the layout from a TOML table, keeping all keys for round-trip serialization
 	 * @param table Parsed contents of the .tlayout file
 	 */
-	explicit InputLayout(const toml::table& table, AssetHandle<Schema> schema = {});
+	explicit InputLayout(const toml::table& table, Handle<Schema> schema = {});
 	// clang-format on
 
 	[[nodiscard]]

@@ -230,7 +230,10 @@ public sealed class AssetBox : TemplatedControl {
 
 	private async void OpenPicker() {
 		if (!IsEnabled || App.MainWindow is not { } owner) return;
-		var picked = await new AssetList(NormalizeAssetType(AssetType)).ShowDialog<string?>(owner);
+		var normalized = NormalizeAssetType(AssetType);
+		// A material picker should also show material instances
+		var extra = normalized == "material" ? "material_instance" : null;
+		var picked = await new AssetList(normalized, extra).ShowDialog<string?>(owner);
 		if (picked is not null) Value = picked;
 	}
 
@@ -243,10 +246,16 @@ public sealed class AssetBox : TemplatedControl {
 	}
 
 	private bool IsAcceptable(DragEventArgs e) {
-		return e.DataTransfer.TryGetValue(AssetDragData.Format) is { } a &&
-			(string.IsNullOrEmpty(AssetType) || string.Equals(
-				NormalizeAssetType(AssetType) ?? AssetType,
-				a.Type, StringComparison.OrdinalIgnoreCase));
+		if (e.DataTransfer.TryGetValue(AssetDragData.Format) is not { } a) return false;
+		if (string.IsNullOrEmpty(AssetType)) return true;
+		var normalized = NormalizeAssetType(AssetType) ?? AssetType;
+		return string.Equals(normalized, a.Type, StringComparison.OrdinalIgnoreCase)
+			|| IsCompatibleType(normalized, a.Type);
+	}
+
+	private static bool IsCompatibleType(string boxType, string dragged) {
+		return string.Equals(boxType, "material", StringComparison.OrdinalIgnoreCase)
+			&& string.Equals(dragged, "material_instance", StringComparison.OrdinalIgnoreCase);
 	}
 
 	private void OnDragOver(object? sender, DragEventArgs e) {

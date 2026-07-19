@@ -8,7 +8,7 @@ namespace scripting {
 
 AssetProxy::AssetProxy(toast::UID uid) : m_handle(assets::load(uid)) { }
 
-AssetProxy::AssetProxy(assets::AssetHandleBase handle) : m_handle(std::move(handle)) { }
+AssetProxy::AssetProxy(assets::HandleBase handle) : m_handle(std::move(handle)) { }
 
 auto AssetProxy::path() const -> std::string {
 	return std::string(m_handle.path());
@@ -52,7 +52,7 @@ auto expectedTypeFor(std::string_view field_type) -> std::string {
 		field_type.remove_prefix(12);
 		field_type.remove_suffix(1);
 	}
-	constexpr std::string_view prefix = "assets::AssetHandle<";
+	constexpr std::string_view prefix = "assets::Handle<";
 	if (!field_type.starts_with(prefix) || !field_type.ends_with('>')) {
 		return {};
 	}

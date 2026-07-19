@@ -26,7 +26,7 @@ SharedTextureOutputTarget::SharedTextureOutputTarget(const VulkanCore& core, vk:
       m_extent(preferred_extent),
       m_images(image_count) {
 	if (image_count == 0) {
-		TOAST_CRITICAL("SharedTextureOutput", "Toast Engine Error: Shared texture output target needs at least one image!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: Shared texture output target needs at least one image!");
 	}
 	allocateResources(m_extent);
 }
@@ -34,7 +34,7 @@ SharedTextureOutputTarget::SharedTextureOutputTarget(const VulkanCore& core, vk:
 void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 	m_extent = extent;
 	if (m_extent.width == 0 || m_extent.height == 0) {
-		TOAST_CRITICAL("SharedTextureOutput", "Toast Engine Error: Shared texture output target needs a non-zero extent!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: Shared texture output target needs a non-zero extent!");
 	}
 
 	const vk::DeviceSize staging_size = imageByteSize();
@@ -89,7 +89,7 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 		shared.mapped = shared.staging->getAllocation().getInfo().pMappedData;
 	}
 
-	TOAST_TRACE("SharedTextureOutput", "Allocated {} shared images at {}x{}", m_images.size(), m_extent.width, m_extent.height);
+	TOAST_TRACE("Render", "Allocated {} shared images at {}x{}", m_images.size(), m_extent.width, m_extent.height);
 }
 
 auto SharedTextureOutputTarget::getColorImage(uint32_t index) const -> const vk::Image& {

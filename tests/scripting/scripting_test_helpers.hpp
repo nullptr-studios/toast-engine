@@ -17,7 +17,7 @@ inline auto luaState() -> ::scripting::LuaState& {
 }
 
 /// Builds a Script asset handle from inline source; storage outlives the test
-inline auto makeScript(std::string_view source, uint64_t uid = 1) -> assets::AssetHandle<assets::Script> {
+inline auto makeScript(std::string_view source, uint64_t uid = 1) -> assets::Handle<assets::Script> {
 	static std::vector<std::unique_ptr<assets::Script>> storage;
 	storage.push_back(std::make_unique<assets::Script>(std::vector<uint8_t>(source.begin(), source.end())));
 	return {storage.back().get(), toast::UID {uid}, "test://script.lua"};

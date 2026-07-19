@@ -34,6 +34,7 @@ public:
 	virtual void unregisterDependency(Node& from, Node& to) = 0;
 
 	virtual auto findFrom(const Node& origin, std::string_view query) -> Box<Node> = 0;
+	virtual auto findFrom(const Node& origin, const UID& uid) -> Box<Node> = 0;
 	virtual auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> = 0;
 
 	auto requestRuntimeCreate(Node& parent, std::string_view type) -> Box<Node>;
@@ -45,7 +46,7 @@ public:
 
 	struct InstantiateContext {
 		std::vector<uint64_t> asset_chain;    ///< UIDs of prefabs currently being instantiated; prevents infinite recursion
-		std::function<assets::AssetHandle<assets::Prefab>(toast::UID)> resolver;    ///< injected loader so tests can swap in a fake
+		std::function<assets::Handle<assets::Prefab>(toast::UID)> resolver;    ///< injected loader so tests can swap in a fake
 	};
 
 protected:
@@ -76,10 +77,10 @@ protected:
 	/**
 	 * @brief Assembles a flat list of allocated nodes into a parent/child tree
 	 * @param nodes Flat list in prefab file order; index 0 becomes the tree root
-	 * @param file The source prefab, kept alive until all AssetHandle fields are resolved
+	 * @param file The source prefab, kept alive until all Handle fields are resolved
 	 * @return The root Box<Node>
 	 */
-	auto buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node>;
+	auto buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<assets::Prefab>& file) -> Box<Node>;
 
 	/**
 	 * @brief Allocates and initializes a full node tree from a prefab asset
@@ -92,7 +93,7 @@ protected:
 	 *            asset_chain is mutated during the call and restored on return
 	 * @return The root of the new tree, or an empty box if instantiation fails
 	 */
-	auto instantiate(const assets::AssetHandle<assets::Prefab>& file, InstantiateContext& ctx) -> Box<Node>;
+	auto instantiate(const assets::Handle<assets::Prefab>& file, InstantiateContext& ctx) -> Box<Node>;
 
 	/// Copies reflected field values from the serialized BasicNode onto the live node; skips fields absent from NodeInfo
 	void applyFields(Node& node, const assets::Prefab::BasicNode& data);

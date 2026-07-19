@@ -37,7 +37,7 @@ ProjectSettings::ProjectSettings(const std::filesystem::path& path) {
 		}
 
 		if (auto* gameplay = table["gameplay"].as_table()) {
-			auto make_handle = [](std::string_view uri) -> assets::AssetHandle<assets::Prefab> {
+			auto make_handle = [](std::string_view uri) -> assets::Handle<assets::Prefab> {
 				return {nullptr, toast::UID::make(), uri};
 			};
 			if (auto uri = (*gameplay)["init_scene"].value<std::string>()) {

@@ -3,14 +3,14 @@
 #include "../audio_system.hpp"
 
 namespace toast {
-void AudioContext::addBank(const assets::AssetHandle<assets::AudioBank>& bank) {
+void AudioContext::addBank(const assets::Handle<assets::AudioBank>& bank) {
 	ZoneScoped;
 	TOAST_INFO("Audio", "Added bank to AudioContext {}", box());
 	std::scoped_lock lock(m_load_lock);
 	m_banks.emplace_back(bank);
 }
 
-void AudioContext::removeBank(assets::AssetHandle<assets::AudioBank> bank) {
+void AudioContext::removeBank(assets::Handle<assets::AudioBank> bank) {
 	ZoneScoped;
 	TOAST_INFO("Audio", "Removed bank from AudioContext {}", box());
 	std::scoped_lock lock(m_load_lock);

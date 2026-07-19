@@ -58,7 +58,7 @@ void PlayerController::setLayer(std::string_view layer) {
 	rebuildEnabledActions();
 }
 
-void PlayerController::playHaptic(assets::AssetHandle<assets::Haptic> haptic) const {
+void PlayerController::playHaptic(assets::Handle<assets::Haptic> haptic) const {
 	HapticsSystem::get().play(controller_id, std::move(haptic));
 }
 

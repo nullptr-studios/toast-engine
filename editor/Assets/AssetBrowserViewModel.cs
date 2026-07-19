@@ -334,12 +334,19 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		}
 	}
 
+	private static readonly HashSet<string> s_reservedNames = ["root", "world", "global"];
+
 	private async Task RenameFile(AssetFile file) {
 		if (!IsEditable(file)) return;
 		var window = ActiveWindow();
 		if (window is null) return;
 		var newName = await new RenameModal(file.Name).ShowDialog<string?>(window);
 		if (string.IsNullOrEmpty(newName) || newName == file.Name) return;
+		var stem = Path.GetFileNameWithoutExtension(newName);
+		if (s_reservedNames.Contains(stem)) {
+			await App.Modals.ShowWarning("Reserved Name", $"'{stem}' is a reserved keyword and cannot be used as an asset name.");
+			return;
+		}
 
 		var metaPath = file.Filepath;
 		var oldAssetPath = metaPath[..^5];
@@ -365,6 +372,10 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		if (window is null) return;
 		var newName = await new RenameModal(folder.Name).ShowDialog<string?>(window);
 		if (string.IsNullOrEmpty(newName) || newName == folder.Name) return;
+		if (s_reservedNames.Contains(newName)) {
+			await App.Modals.ShowWarning("Reserved Name", $"'{newName}' is a reserved keyword and cannot be used as a folder name.");
+			return;
+		}
 
 		var dir = Path.GetDirectoryName(folder.Filepath)!;
 		var newPath = Path.Combine(dir, newName);
