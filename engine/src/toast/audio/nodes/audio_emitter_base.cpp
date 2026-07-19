@@ -123,7 +123,7 @@ void AudioEmitterBase::applyProperties() const {
 }
 
 void AudioEmitterBase::begin() {
-	m_last_position = worldPos();
+	m_last_position = world_position;
 }
 
 void AudioEmitterBase::lateTick() {
@@ -136,7 +136,7 @@ void AudioEmitterBase::lateTick() {
 void AudioEmitterBase::update3DState() {
 	const auto& listeners = audio::AudioSystem::get().listenerPositions();
 
-	glm::vec3 transform_pos = worldPos();
+	glm::vec3 transform_pos = world_position;
 	glm::vec3 render_pos = transform_pos;
 	float best_dist = std::numeric_limits<float>::max();
 
@@ -163,7 +163,7 @@ void AudioEmitterBase::update3DState() {
 }
 
 auto AudioEmitterBase::emitterPosition(const glm::vec3&) -> glm::vec3 {
-	return worldPos();
+	return world_position;
 }
 
 auto AudioEmitterBase::emitterForward() -> glm::vec3 {

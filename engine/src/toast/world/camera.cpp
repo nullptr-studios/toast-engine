@@ -12,11 +12,9 @@ void Camera::setActiveCamera(bool force) {
 }
 
 auto Camera::getView() const -> glm::mat4 {
-	glm::mat4 world(1.0f);
+	syncTransform();
 
-	world = glm::lookAt(worldPos(), glm::vec3(0), glm::vec3(0, 0, 1));
-
-	return world;
+	return glm::lookAt(world_position, glm::vec3(0), glm::vec3(0, 0, 1));
 }
 
 auto Camera::getProjection(float aspect) const -> glm::mat4 {

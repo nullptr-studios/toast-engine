@@ -50,6 +50,8 @@ public:
 	};
 
 protected:
+	static void updateTransforms(Node& root);
+
 	/// Assigns a fresh UID to the node; called on every spawned instance to avoid UID collisions
 	static void generateUid(Node& node);
 

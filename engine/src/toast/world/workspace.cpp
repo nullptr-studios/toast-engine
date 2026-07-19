@@ -833,6 +833,10 @@ void Workspace::eventSubscriptions() {
 }
 
 void Workspace::tick() {
+	if (m_root_node.exists()) {
+		INodeOwner::updateTransforms(*m_root_node);
+	}
+
 	// Only the active workspace streams inspector data, and only while a node is focused
 	if (m_handle.data() != Engine::get()->activeWorkspace().data() || not m_focused_node.exists()) {
 		m_inspector_accum = 0.0;

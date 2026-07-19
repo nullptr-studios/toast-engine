@@ -1,6 +1,7 @@
 #include "node_owner.hpp"
 
 #include "node.hpp"
+#include "node_3d.hpp"
 
 #include <algorithm>
 #include <charconv>
@@ -15,6 +16,23 @@
 #include <tracy/Tracy.hpp>
 
 namespace toast {
+
+void INodeOwner::updateTransforms(Node& root) {
+	struct Walker {
+		static void updateNode3D(Node3D& n3d) { n3d.syncTransform(); }
+
+		static void walk(const Node& node) {
+			if (auto* n3d = reflect_cast<Node3D>(const_cast<Node*>(&node))) {
+				updateNode3D(*n3d);
+			}
+			for (auto& child : node.children()) {
+				walk(*child);
+			}
+		}
+	};
+
+	Walker::walk(root);
+}
 
 namespace {
 auto referenceUid(const assets::Prefab::BasicNode& chunk) -> uint64_t {

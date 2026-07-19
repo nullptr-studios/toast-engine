@@ -547,9 +547,23 @@ static void jsonToTnode(const nlohmann::json& scene_json, const std::filesystem:
 			Prefab::Group tg;
 			tg.name = "Transform";
 			const auto& t = n["transform"];
-			const auto& p = t["pos"];
-			const auto& r = t["rot"];
-			const auto& s = t["scl"];
+			auto p = t["pos"];
+			auto r = t["rot"];
+			auto s = t["scl"];
+
+			// If for some reason the transform is null just initialize it to identity matrix
+			if (p.is_null() || p[0].is_null() || p[1].is_null() || p[2].is_null()) {
+				p = json_t::array({0.0, 0.0, 0.0});
+			}
+
+			if (r.is_null() || r[0].is_null() || r[1].is_null() || r[2].is_null() || r[3].is_null()) {
+				r = json_t::array({0.0, 0.0, 0.0, 1.0});
+			}
+
+			if (s.is_null() || s[0].is_null() || s[1].is_null() || s[2].is_null()) {
+				s = json_t::array({1.0, 1.0, 1.0});
+			}
+
 			tg.fields.push_back({
 			  "m_position", toast::FieldType::vec3_t, false, glm::vec3 {p[0].get<float>(), p[1].get<float>(), p[2].get<float>()}
 			});
