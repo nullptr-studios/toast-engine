@@ -411,7 +411,9 @@ void Workspace::eventSubscriptions() {
 	});
 
 	m_listener.subscribe<event::NodeChangeParam>([this](const auto& e) {
-		// Only the workspace that actually owns the focused node applies the change
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
 		if (not m_focused_node.exists()) {
 			return false;
 		}
@@ -449,6 +451,9 @@ void Workspace::eventSubscriptions() {
 
 	// Lua variable edits address "<instance>:group/subgroup/name" through the script schema
 	m_listener.subscribe<event::NodeChangeLuaParam>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
 		if (not m_focused_node.exists()) {
 			return false;
 		}
