@@ -80,7 +80,13 @@ void PlayWorkspace::tick() {
 			computeSchedule();
 			m_schedule_dirty = false;
 		}
-		m_scheduler.run();
+
+		m_scheduler.runPhase(m_scheduler.schedule.early_tick, TickFunctionList::early_tick, "early_tick");
+		INodeOwner::updateTransforms(*m_root_node);
+		m_scheduler.runPhase(m_scheduler.schedule.tick, TickFunctionList::tick, "tick");
+		// TODO: physics step goes between tick and post_physics
+		m_scheduler.runPhase(m_scheduler.schedule.post_physics, TickFunctionList::post_physics, "post_physics");
+		m_scheduler.runPhase(m_scheduler.schedule.late_tick, TickFunctionList::late_tick, "late_tick");
 	}
 
 	// inspector streaming for the focused node

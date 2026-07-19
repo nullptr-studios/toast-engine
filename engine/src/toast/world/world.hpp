@@ -129,13 +129,6 @@ public:
 	 */
 	static void hotReloadScripts(toast::UID script_uid);
 
-	/**
-	 * @brief Invalidates the world transforms of all Node3D nodes that depend on the given node
-	 * @param node The node whose transform changed
-	 * @note Called by Node3D setters; only nodes listed in inverse_connections are dirtied
-	 */
-	static void markNode3DDependantsDirty(const Box<Node>& node) noexcept;
-
 	[[nodiscard]]
 	auto dependencyGraphGraphviz() const -> std::string;
 

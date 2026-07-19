@@ -289,7 +289,7 @@ void Engine::tick() {
 		active_application->tick();
 	}
 	total_time += Time::delta();
-	camera->worldPos(glm::vec3(std::sin(total_time) * 5.0f, std::cos(total_time) * 5.0f, 5));
+	camera->position = glm::vec3(std::sin(total_time) * 5.0f, std::cos(total_time) * 5.0f, 5);
 
 	if (m->audio_system) {
 		m->audio_system->tick();
@@ -359,7 +359,7 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	// FIXME: change this
 	camera = new Camera();
-	camera->worldPos(glm::vec3(0));
+	camera->position = glm::vec3(0);
 
 	m->renderer->setActiveCamera(camera);
 
@@ -397,7 +397,7 @@ void Engine::createAvaloniaWindow() {
 
 	// FIXME: change this
 	camera = new Camera();
-	camera->worldPos(glm::vec3(0));
+	camera->position = glm::vec3(0);
 
 	m->renderer->setActiveCamera(camera);
 

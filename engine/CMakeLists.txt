@@ -126,7 +126,6 @@ target_compile_definitions(toast_engine PUBLIC
         $<$<CONFIG:Debug>:DEBUG>
         $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:NDEBUG>
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TRACY_ENABLE>
-        # $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:TRACY_ON_DEMAND> #Apparently tracy lua lib is precompiled and does not define TRACY_ON_DEMAND in debug builds
 )
 
 if (MSVC)
