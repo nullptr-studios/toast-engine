@@ -18,6 +18,8 @@
 namespace toast {
 
 void INodeOwner::updateTransforms(Node& root) {
+	ZoneScoped;
+
 	struct Walker {
 		static void updateNode3D(Node3D& n3d) { n3d.syncTransform(); }
 
@@ -25,7 +27,7 @@ void INodeOwner::updateTransforms(Node& root) {
 			if (auto* n3d = reflect_cast<Node3D>(const_cast<Node*>(&node))) {
 				updateNode3D(*n3d);
 			}
-			for (auto& child : node.children()) {
+			for (const auto& child : node.children()) {
 				walk(*child);
 			}
 		}

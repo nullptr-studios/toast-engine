@@ -90,6 +90,8 @@ auto Node3D::forward() const -> glm::vec3 {
 }
 
 void Node3D::syncTransform() const {
+	ZoneScoped;
+
 	const bool local_changed = position != m_previous_position || rotation != m_previous_rotation || scale != m_previous_scale;
 	const bool world_changed_by_user = world_position != m_previous_world_position || world_rotation != m_previous_world_rotation ||
 	                                   world_scale != m_previous_world_scale;
@@ -144,7 +146,7 @@ void Node3D::syncTransform() const {
 	}
 
 	if (world_changed) {
-		auto markDependants = [this](const Node& node, auto&& self) -> void {
+		auto mark_dependants = [this](const Node& node, auto&& self) -> void {
 			for (const auto& child : node.children()) {
 				if (auto child3d = child.as<Node3D>()) {
 					if (child3d->m_transform_parent.exists() && &*child3d->m_transform_parent == this) {
@@ -155,7 +157,7 @@ void Node3D::syncTransform() const {
 				}
 			}
 		};
-		markDependants(*this, markDependants);
+		mark_dependants(*this, mark_dependants);
 	}
 }
 
