@@ -14,18 +14,12 @@ fi
 
 echo "Running clang-tidy check..."
 
-mapfile -t files < <(find engine/ \
+find engine/ \
     \( -path "engine/external" -o -path "engine/external/*" \
        -o -path "engine/generated" -o -path "engine/generated/*" \
        -o -path "engine/ffi" -o -path "engine/ffi/*" \) -prune \
-    -o -type f -name "*.cpp" -print | sort)
-
-if [[ ${#files[@]} -eq 0 ]]; then
-    echo "No files matched."
-    exit 0
-fi
-
-echo "Checking ${#files[@]} files..."
-clang-tidy -p "$BUILD_DIR" --warnings-as-errors='*' --header-filter='engine/(src|include)/.*' "${files[@]}"
+    -o -type f -name "*.cpp" -print0 \
+    | xargs -0 -n 1 -P "$(nproc)" clang-tidy -p "$BUILD_DIR" --warnings-as-errors='*' --header-filter='engine/(src|include)/.*'
 
 echo "Style check passed!"
+
