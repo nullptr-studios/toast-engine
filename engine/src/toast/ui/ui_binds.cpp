@@ -1,12 +1,12 @@
 #include "ui_binds.hpp"
 
-#include <toast/log.hpp>
-#include <toast/world/node.hpp>
 #include "document_preprocess.hpp"
 
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Types.h>
 #include <algorithm>
+#include <toast/log.hpp>
+#include <toast/world/node.hpp>
 
 namespace ui {
 

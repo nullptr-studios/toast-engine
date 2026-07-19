@@ -10,8 +10,8 @@ public sealed class ColorSchemeAsset : BaseAsset {
 	public override string Extension => ".tcolor";
 	public override string DisplayName => "Color Scheme";
 	public override string ChipText => "COLOR";
-	public override string ChipColor => "Blue";
-	public override LucideIconKind Icon => LucideIconKind.SwatchBook;
+	public override string ChipColor => "Cyan";
+	public override LucideIconKind Icon => LucideIconKind.Palette;
 	public override bool CanBeCreated => true;
 	public override string Category => "UI";
 	public override bool HasThumbnail => false;

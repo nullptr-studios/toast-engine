@@ -18,7 +18,7 @@ namespace assets {
 
 class TOAST_API ColorScheme : public Data {
 public:
-	explicit ColorScheme(const toml::table& table, AssetHandle<Schema> schema = {}) : Data(table, std::move(schema)) { }
+	explicit ColorScheme(const toml::table& table, Handle<Schema> schema = {}) : Data(table, std::move(schema)) { }
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {

@@ -27,11 +27,11 @@ public:
 	};
 
 	enum class BlendPreset : uint8_t {
-		none,            ///< blending disabled
-		alpha,           ///< srcAlpha, 1-srcAlpha
-		premultiplied,   ///< one, 1-srcAlpha (premultiplied-alpha source)
-		additive,        ///< one, one
-		multiply,        ///< dstColor, zero
+		none,             ///< blending disabled
+		alpha,            ///< srcAlpha, 1-srcAlpha
+		premultiplied,    ///< one, 1-srcAlpha (premultiplied-alpha source)
+		additive,         ///< one, one
+		multiply,         ///< dstColor, zero
 	};
 
 	struct Config {

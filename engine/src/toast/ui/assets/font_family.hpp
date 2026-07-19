@@ -16,7 +16,7 @@ namespace assets {
 
 class TOAST_API FontFamily : public Data {
 public:
-	explicit FontFamily(const toml::table& table, AssetHandle<Schema> schema = {}) : Data(table, std::move(schema)) { }
+	explicit FontFamily(const toml::table& table, Handle<Schema> schema = {}) : Data(table, std::move(schema)) { }
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {

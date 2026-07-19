@@ -49,7 +49,7 @@ public:
 
 private:
 	friend class ProjectSettings;
-	assets::AssetHandle<assets::ColorScheme> m_color_scheme;
+	assets::Handle<assets::ColorScheme> m_color_scheme;
 	std::vector<std::string> m_languages {"en"};
 };
 

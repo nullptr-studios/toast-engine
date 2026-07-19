@@ -21,22 +21,22 @@ private:
 	void destroy();
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::Font>> m_fonts;
+	std::vector<assets::Handle<assets::Font>> m_fonts;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::FontFamily>> m_font_families;
+	std::vector<assets::Handle<assets::FontFamily>> m_font_families;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::UIStyle>> m_styles;
+	std::vector<assets::Handle<assets::UIStyle>> m_styles;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::ColorScheme>> m_color_schemes;
+	std::vector<assets::Handle<assets::ColorScheme>> m_color_schemes;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::Localization>> m_localizations;
+	std::vector<assets::Handle<assets::Localization>> m_localizations;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::ImageLocalization>> m_image_localizations;
+	std::vector<assets::Handle<assets::ImageLocalization>> m_image_localizations;
 };
 
 }

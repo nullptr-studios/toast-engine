@@ -11,8 +11,8 @@ public sealed class ImageLocalizationAsset : BaseAsset {
 	public override string Extension => ".tiloc";
 	public override string DisplayName => "Image Localization";
 	public override string ChipText => "ILOC";
-	public override string ChipColor => "Blue";
-	public override LucideIconKind Icon => LucideIconKind.Grid2x2;
+	public override string ChipColor => "Cyan";
+	public override LucideIconKind Icon => LucideIconKind.Images;
 	public override bool CanBeCreated => true;
 	public override string Category => "UI";
 	public override bool HasThumbnail => false;

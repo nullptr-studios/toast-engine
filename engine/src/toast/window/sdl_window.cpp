@@ -86,7 +86,7 @@ void SDLWindow::pollEvents() {
 
 			case SDL_EVENT_TEXT_INPUT: {
 				// SDL hands over UTF-8
-				//decode and send one event per codepoint so text input works beyond ASCII
+				// decode and send one event per codepoint so text input works beyond ASCII
 				const char* text = event.text.text;
 				size_t i = 0;
 				while (text != nullptr && text[i] != '\0') {

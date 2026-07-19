@@ -11,7 +11,7 @@ public sealed class LocalizationAsset : BaseAsset {
 	public override string Extension => ".tloc";
 	public override string DisplayName => "Localization";
 	public override string ChipText => "LOC";
-	public override string ChipColor => "Blue";
+	public override string ChipColor => "Cyan";
 	public override LucideIconKind Icon => LucideIconKind.Languages;
 	public override bool CanBeCreated => true;
 	public override string Category => "UI";

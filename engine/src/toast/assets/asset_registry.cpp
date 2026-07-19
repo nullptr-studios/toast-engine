@@ -66,8 +66,12 @@ void AssetRegistry::init() {
 		return std::make_unique<AudioSnapshot>(t, std::move(s));
 	};
 	s_schema_toml["audio_vca"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<AudioVca>(t, std::move(s)); };
-	s_schema_toml["font_family"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<FontFamily>(t, std::move(s)); };
-	s_schema_toml["color_scheme"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<ColorScheme>(t, std::move(s)); };
+	s_schema_toml["font_family"] = [](const toml::table& t, Handle<Schema> s) {
+		return std::make_unique<FontFamily>(t, std::move(s));
+	};
+	s_schema_toml["color_scheme"] = [](const toml::table& t, Handle<Schema> s) {
+		return std::make_unique<ColorScheme>(t, std::move(s));
+	};
 
 	// Lua global names
 	s_lua_names["mesh"] = "Mesh";

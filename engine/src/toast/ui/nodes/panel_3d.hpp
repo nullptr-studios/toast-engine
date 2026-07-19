@@ -39,7 +39,7 @@ public:
 	}
 
 	[[nodiscard]]
-	auto colorScheme() const -> const assets::AssetHandle<assets::ColorScheme>& {
+	auto colorScheme() const -> const assets::Handle<assets::ColorScheme>& {
 		return m_color_scheme;
 	}
 
@@ -67,25 +67,25 @@ private:
 	auto buildLocalizationScope() const -> ui::UISystem::LocalizationScope;
 
 	[[Reflect]]
-	assets::AssetHandle<assets::UIElement> m_element;
+	assets::Handle<assets::UIElement> m_element;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::UIStyle>> m_styles;
+	std::vector<assets::Handle<assets::UIStyle>> m_styles;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::Font>> m_fonts;
+	std::vector<assets::Handle<assets::Font>> m_fonts;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::FontFamily>> m_font_families;
+	std::vector<assets::Handle<assets::FontFamily>> m_font_families;
 
 	[[Reflect]]
-	assets::AssetHandle<assets::ColorScheme> m_color_scheme;
+	assets::Handle<assets::ColorScheme> m_color_scheme;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::Localization>> m_localizations;
+	std::vector<assets::Handle<assets::Localization>> m_localizations;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::ImageLocalization>> m_image_localizations;
+	std::vector<assets::Handle<assets::ImageLocalization>> m_image_localizations;
 
 	/// Texture resolution per meter of world scale
 	[[Reflect]]

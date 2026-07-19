@@ -305,7 +305,9 @@ public partial class ImportWindowViewModel : ViewModelBase {
 			new PsdImporter(TextureSettings, PsdSettings),
 			new GltfImporter(GltfSettings, TextureSettings),
 			new AudioBankImporter(),
-			new AudioStringImporter(AudioStringSettings)
+			new AudioStringImporter(AudioStringSettings),
+			new FontImporter(),
+			new UIImageImporter()
 		];
 		m_allowedExtensions = [];
 		foreach (var importer in m_importers)
