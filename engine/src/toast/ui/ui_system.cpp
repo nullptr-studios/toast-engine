@@ -228,7 +228,7 @@ auto UISystem::loadFontFace(std::string_view uri, bool fallback) -> bool {
 	return true;
 }
 
-auto UISystem::loadFontFace(const assets::AssetHandle<assets::Font>& font, bool fallback) -> bool {
+auto UISystem::loadFontFace(const assets::Handle<assets::Font>& font, bool fallback) -> bool {
 	if (font.path().empty()) {
 		return false;
 	}
@@ -236,7 +236,7 @@ auto UISystem::loadFontFace(const assets::AssetHandle<assets::Font>& font, bool 
 	return loadFontFace(font.path(), fallback);
 }
 
-void UISystem::loadFontFamily(const assets::AssetHandle<assets::FontFamily>& family) {
+void UISystem::loadFontFamily(const assets::Handle<assets::FontFamily>& family) {
 	ZoneScoped;
 
 	if (!family.hasValue()) {
@@ -269,13 +269,13 @@ void UISystem::loadFontFamily(const assets::AssetHandle<assets::FontFamily>& fam
 	TOAST_TRACE("UI", "Loaded font family '{}'", family->name());
 }
 
-void UISystem::registerGlobalStyle(const assets::AssetHandle<assets::UIStyle>& style) {
+void UISystem::registerGlobalStyle(const assets::Handle<assets::UIStyle>& style) {
 	if (std::ranges::find(m_global_styles, style) == m_global_styles.end()) {
 		m_global_styles.push_back(style);
 	}
 }
 
-void UISystem::unregisterGlobalStyle(const assets::AssetHandle<assets::UIStyle>& style) {
+void UISystem::unregisterGlobalStyle(const assets::Handle<assets::UIStyle>& style) {
 	std::erase(m_global_styles, style);
 }
 
@@ -290,13 +290,13 @@ auto UISystem::globalStyleUris() const -> std::vector<std::string> {
 	return uris;
 }
 
-void UISystem::registerGlobalScheme(const assets::AssetHandle<assets::ColorScheme>& scheme) {
+void UISystem::registerGlobalScheme(const assets::Handle<assets::ColorScheme>& scheme) {
 	if (std::ranges::find(m_global_schemes, scheme) == m_global_schemes.end()) {
 		m_global_schemes.push_back(scheme);
 	}
 }
 
-void UISystem::unregisterGlobalScheme(const assets::AssetHandle<assets::ColorScheme>& scheme) {
+void UISystem::unregisterGlobalScheme(const assets::Handle<assets::ColorScheme>& scheme) {
 	std::erase(m_global_schemes, scheme);
 }
 
@@ -335,23 +335,23 @@ void UISystem::popLocalizationScope() {
 	}
 }
 
-void UISystem::registerGlobalLocalization(const assets::AssetHandle<assets::Localization>& loc) {
+void UISystem::registerGlobalLocalization(const assets::Handle<assets::Localization>& loc) {
 	if (std::ranges::find(m_global_localizations, loc) == m_global_localizations.end()) {
 		m_global_localizations.push_back(loc);
 	}
 }
 
-void UISystem::unregisterGlobalLocalization(const assets::AssetHandle<assets::Localization>& loc) {
+void UISystem::unregisterGlobalLocalization(const assets::Handle<assets::Localization>& loc) {
 	std::erase(m_global_localizations, loc);
 }
 
-void UISystem::registerGlobalImageLocalization(const assets::AssetHandle<assets::ImageLocalization>& loc) {
+void UISystem::registerGlobalImageLocalization(const assets::Handle<assets::ImageLocalization>& loc) {
 	if (std::ranges::find(m_global_image_localizations, loc) == m_global_image_localizations.end()) {
 		m_global_image_localizations.push_back(loc);
 	}
 }
 
-void UISystem::unregisterGlobalImageLocalization(const assets::AssetHandle<assets::ImageLocalization>& loc) {
+void UISystem::unregisterGlobalImageLocalization(const assets::Handle<assets::ImageLocalization>& loc) {
 	std::erase(m_global_image_localizations, loc);
 }
 

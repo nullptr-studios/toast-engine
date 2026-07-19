@@ -61,16 +61,16 @@ public:
 	void destroyContext(Rml::Context* context);
 
 	auto loadFontFace(std::string_view uri, bool fallback = false) -> bool;
-	auto loadFontFace(const assets::AssetHandle<assets::Font>& font, bool fallback = false) -> bool;
-	void loadFontFamily(const assets::AssetHandle<assets::FontFamily>& family);
+	auto loadFontFace(const assets::Handle<assets::Font>& font, bool fallback = false) -> bool;
+	void loadFontFamily(const assets::Handle<assets::FontFamily>& family);
 
-	void registerGlobalStyle(const assets::AssetHandle<assets::UIStyle>& style);
-	void unregisterGlobalStyle(const assets::AssetHandle<assets::UIStyle>& style);
+	void registerGlobalStyle(const assets::Handle<assets::UIStyle>& style);
+	void unregisterGlobalStyle(const assets::Handle<assets::UIStyle>& style);
 
 	[[nodiscard]]
 	auto globalStyleUris() const -> std::vector<std::string>;
-	void registerGlobalScheme(const assets::AssetHandle<assets::ColorScheme>& scheme);
-	void unregisterGlobalScheme(const assets::AssetHandle<assets::ColorScheme>& scheme);
+	void registerGlobalScheme(const assets::Handle<assets::ColorScheme>& scheme);
+	void unregisterGlobalScheme(const assets::Handle<assets::ColorScheme>& scheme);
 
 	[[nodiscard]]
 	auto colorFromSchemes(std::string_view name) const -> std::optional<glm::vec4>;
@@ -84,10 +84,10 @@ public:
 	void pushLocalizationScope(LocalizationScope scope);
 	void popLocalizationScope();
 
-	void registerGlobalLocalization(const assets::AssetHandle<assets::Localization>& loc);
-	void unregisterGlobalLocalization(const assets::AssetHandle<assets::Localization>& loc);
-	void registerGlobalImageLocalization(const assets::AssetHandle<assets::ImageLocalization>& loc);
-	void unregisterGlobalImageLocalization(const assets::AssetHandle<assets::ImageLocalization>& loc);
+	void registerGlobalLocalization(const assets::Handle<assets::Localization>& loc);
+	void unregisterGlobalLocalization(const assets::Handle<assets::Localization>& loc);
+	void registerGlobalImageLocalization(const assets::Handle<assets::ImageLocalization>& loc);
+	void unregisterGlobalImageLocalization(const assets::Handle<assets::ImageLocalization>& loc);
 
 	[[nodiscard]]
 	auto language() const -> const std::string& {
@@ -150,13 +150,13 @@ private:
 	std::vector<toast::Panel3D*> m_world_panels;
 	std::unordered_map<Rml::Context*, toast::Node*> m_context_owners;
 
-	std::vector<assets::AssetHandle<assets::Font>> m_retained_fonts;
-	std::vector<assets::AssetHandle<assets::UIStyle>> m_global_styles;
-	std::vector<assets::AssetHandle<assets::ColorScheme>> m_global_schemes;
+	std::vector<assets::Handle<assets::Font>> m_retained_fonts;
+	std::vector<assets::Handle<assets::UIStyle>> m_global_styles;
+	std::vector<assets::Handle<assets::ColorScheme>> m_global_schemes;
 
 	std::string m_language;
-	std::vector<assets::AssetHandle<assets::Localization>> m_global_localizations;
-	std::vector<assets::AssetHandle<assets::ImageLocalization>> m_global_image_localizations;
+	std::vector<assets::Handle<assets::Localization>> m_global_localizations;
+	std::vector<assets::Handle<assets::ImageLocalization>> m_global_image_localizations;
 	std::vector<LocalizationScope> m_localization_stack;
 };
 

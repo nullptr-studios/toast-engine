@@ -24,6 +24,7 @@ auto parseCallName(std::string_view value) -> std::string;
  *
  * Hits reflected C++ methods and attached Lua script with zero glue, so `function N:AcceptButton()`
  * in a panel script fires from the element `<button onclick="AcceptButton()">`
+ */
 void dispatchNodeCall(Rml::Context* context, std::string_view method);
 
 /// @brief Registers the global event listener instancer with the RmlUi factory
