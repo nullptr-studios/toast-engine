@@ -76,20 +76,20 @@ auto VulkanSwapchain::recreate(vk::Extent2D preferred_extent) -> void {
 
 auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 	if (!m_core || !m_surface) {
-		TOAST_CRITICAL("VulkanSwapchain", "VulkanSwapchain requires a valid core and surface!");
+		TOAST_CRITICAL("Render", "VulkanSwapchain requires a valid core and surface!");
 	}
 
 	const auto capabilities = m_core->getPhysicalDevice().getSurfaceCapabilitiesKHR(*m_surface);
 	if (capabilities.maxImageExtent.width == 0 || capabilities.maxImageExtent.height == 0 ||
 	    capabilities.maxImageArrayLayers == 0) {
 		TOAST_ERROR(
-		    "VulkanSwapchain",
+		    "Render",
 		    "Invalid surface capabilities: maxExtent {}x{}, maxArrayLayers {}",
 		    capabilities.maxImageExtent.width,
 		    capabilities.maxImageExtent.height,
 		    capabilities.maxImageArrayLayers
 		);
-		TOAST_CRITICAL("VulkanSwapchain", "Invalid surface capabilities for swapchain creation!");
+		TOAST_CRITICAL("Render", "Invalid surface capabilities for swapchain creation!");
 	}
 
 	const auto formats = m_core->getPhysicalDevice().getSurfaceFormatsKHR(*m_surface);
@@ -101,17 +101,14 @@ auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 	const auto present_queue_family_index = findPresentQueueFamilyIndex();
 	const auto image_format = chosen_format.format;
 
-	TOAST_TRACE("VulkanSwapchain", "Surface formats: {}", formats.size());
-	TOAST_TRACE("VulkanSwapchain", "Present modes: {}", present_modes.size());
+	TOAST_TRACE("Render", "Surface formats: {}", formats.size());
+	TOAST_TRACE("Render", "Present modes: {}", present_modes.size());
 	TOAST_TRACE(
-	    "VulkanSwapchain",
-	    "Chosen format: {} (colorspace {})",
-	    vk::to_string(chosen_format.format),
-	    vk::to_string(chosen_format.colorSpace)
+	    "Render", "Chosen format: {} (colorspace {})", vk::to_string(chosen_format.format), vk::to_string(chosen_format.colorSpace)
 	);
-	TOAST_TRACE("VulkanSwapchain", "Chosen present mode: {}", vk::to_string(chosen_present_mode));
+	TOAST_TRACE("Render", "Chosen present mode: {}", vk::to_string(chosen_present_mode));
 	TOAST_TRACE(
-	    "VulkanSwapchain",
+	    "Render",
 	    "Chosen extent: {}x{} (min {}x{}, max {}x{})",
 	    chosen_extent.width,
 	    chosen_extent.height,
@@ -126,8 +123,8 @@ auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 		image_count = capabilities.maxImageCount;
 	}
 
-	TOAST_TRACE("VulkanSwapchain", "Swapchain images: {}", image_count);
-	TOAST_TRACE("VulkanSwapchain", "Supported usage flags: {}", formatUsageFlags(capabilities.supportedUsageFlags));
+	TOAST_TRACE("Render", "Swapchain images: {}", image_count);
+	TOAST_TRACE("Render", "Supported usage flags: {}", formatUsageFlags(capabilities.supportedUsageFlags));
 
 	const auto graphics_family = m_core->getGraphicsQueueFamilyIndex();
 	const bool concurrent_sharing = graphics_family != present_queue_family_index;
@@ -139,7 +136,7 @@ auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 	if (!supportsUsage(capabilities.supportedUsageFlags, vk::ImageUsageFlagBits::eColorAttachment)) {
 		throw std::runtime_error("Toast Engine Error: Surface does not support color attachment usage!");
 	}
-	TOAST_TRACE("VulkanSwapchain", "Swapchain image usage: {}", formatUsageFlags(image_usage));
+	TOAST_TRACE("Render", "Swapchain image usage: {}", formatUsageFlags(image_usage));
 
 	vk::SwapchainCreateInfoKHR swapchain_ci {};
 	swapchain_ci.surface = *m_surface;
@@ -198,12 +195,12 @@ auto VulkanSwapchain::findPresentQueueFamilyIndex() const -> uint32_t {
 		}
 	}
 
-	TOAST_CRITICAL("VulkanSwapchain", "Toast Engine Error: Failed to find a present queue family!");
+	TOAST_CRITICAL("Render", "Toast Engine Error: Failed to find a present queue family!");
 }
 
 auto VulkanSwapchain::selectSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& formats) const -> vk::SurfaceFormatKHR {
 	if (formats.empty()) {
-		TOAST_CRITICAL("VulkanSwapchain", "Toast Engine Error: No surface formats are available!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: No surface formats are available!");
 	}
 
 	const auto preferred = std::find_if(formats.begin(), formats.end(), [](const vk::SurfaceFormatKHR& format) {

@@ -9,22 +9,45 @@
 #pragma once
 #include "core_types.hpp"
 #include "data.hpp"
-
-#include <memory>
-#include <vulkan/vulkan_core.h>
-
-namespace renderer {
-class VulkanSampler;
-}
+#include "shader.hpp"
 
 namespace assets {
-class Texture;
 
-// FIXME: This should be changed and improved, this doess not currently support material reloading
+enum class BlendMode : uint8_t {
+	opaque,
+	alpha,
+	additive,
+	multiply,
+};
+
+enum class CullMode : uint8_t {
+	none,
+	front,
+	back,
+};
+
+/**
+ * @struct MaterialSettings
+ * @brief Fixed-function pipeline state carried by the material's [settings] block
+ */
+struct MaterialSettings {
+	BlendMode blend_mode = BlendMode::opaque;
+	bool depth_test = true;
+	bool depth_write = true;
+	CullMode cull_mode = CullMode::back;
+};
+
+/**
+ * @class Material
+ * @brief Shader-driven material asset
+ *
+ * The @c shaders array defines which shader assets the material renders with; every
+ * other key holds a value for a shader parameter discovered via reflection
+ *
+ * The trailing @c settings table carries fixed-function state
+ */
 class TOAST_API Material : public Data {
 public:
-	static constexpr std::string_view collection = "materials";
-
 	explicit Material(const toml::table& table, Handle<Schema> schema = {});
 	~Material() override;
 
@@ -36,25 +59,33 @@ public:
 	[[nodiscard]]
 	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 
-	[[nodiscard]]
-	auto albedoMap() const -> Handle<Texture>;
+	void reload(const toml::table& table) override;
 
 	[[nodiscard]]
-	auto normalMap() const -> Handle<Texture>;
+	auto name() const -> std::string;    ///< @brief Display name of the material
 
 	[[nodiscard]]
-	auto color() const -> glm::vec4;
+	virtual auto shaders() const -> const std::vector<Handle<Shader>>&;
 
 	[[nodiscard]]
-	auto albedoSampler() const -> VkSampler;
+	virtual auto settings() const -> MaterialSettings;
 
-	void resolveTextureHandles();
+	/**
+	 * @brief Looks up a shader parameter value by name
+	 */
+	[[nodiscard]]
+	virtual auto value(std::string_view key) const -> const DataValue*;
+
+	/**
+	 * @brief The material owning the render pass, instances return their parent
+	 */
+	[[nodiscard]]
+	virtual auto rootMaterial() -> Material* {
+		return this;
+	}
 
 private:
-	mutable Handle<Texture> m_albedo_handle;
-	mutable Handle<Texture> m_normal_handle;
-	bool m_sampler_ready = false;
-
-	std::unique_ptr<renderer::VulkanSampler> m_albedo_sampler;    // THISSHOULDBECREATEDPERIMAGESAMPLER
+	mutable std::vector<Handle<Shader>> m_shader_handles;
+	mutable bool m_shaders_dirty = true;
 };
 }

@@ -9,6 +9,7 @@
 #include "vulkan_core.hpp"
 #include "vulkan_mesh.hpp"
 #include "vulkan_pipeline.hpp"
+#include "vulkan_texture.hpp"
 
 #include <array>
 #include <chrono>
@@ -20,10 +21,15 @@
 #include <optional>
 #include <queue>
 #include <semaphore>
+#include <string>
+#include <string_view>
 #include <thread>
+#include <toast/assets/core_types.hpp>
 #include <toast/events/event.inl>
 #include <toast/events/listener.hpp>
+#include <tracy/TracyVulkan.hpp>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -37,6 +43,8 @@ class MeshNode;
 }
 
 namespace renderer {
+
+class MaterialPass;
 
 /**
  * @brief Coordinates rendering by managing frame submissions, render passes, and GPU synchronization
@@ -76,6 +84,7 @@ public:
 	struct MeshInstanceProxy {
 		VulkanMesh* mesh = nullptr;
 		assets::Material* material = nullptr;
+		assets::Material* root_material = nullptr;
 		glm::mat4 model = glm::mat4(1.0f);
 	};
 
@@ -154,6 +163,28 @@ public:
 	void stop();
 
 	void addRenderPass(std::unique_ptr<IRenderPass> pass);
+
+	struct PassInfo {
+		std::string name;
+		bool enabled = true;
+	};
+
+	[[nodiscard]]
+	auto listPasses() -> std::vector<PassInfo>;
+
+	/// Enables/disables every pass matching @p name
+	void setPassEnabled(std::string_view name, bool enabled);
+
+	/// 1x1 white fallback for material texture slots without a ready texture
+	[[nodiscard]]
+	auto getDefaultTextureView() const noexcept -> vk::ImageView {
+		return m_default_texture.getView();
+	}
+
+	[[nodiscard]]
+	auto getDefaultSampler() const noexcept -> vk::Sampler {
+		return *m_default_sampler;
+	}
 
 	void applyResize(vk::Extent2D extent);
 
@@ -235,6 +266,10 @@ private:
 	void createPerImageSync();
 	void createDepthResources();
 	void createDescriptorPool();
+	void createDefaultTexture();
+
+	/// Creates a MaterialPass for every root material present in the frame
+	void ensureMaterialPasses(RenderFrame& frame_data);
 
 	void recordFrame(FrameContext& frame, uint32_t image_index) noexcept;
 
@@ -259,6 +294,22 @@ private:
 
 	std::unique_ptr<IOutputTarget> m_output_target;
 	std::vector<std::unique_ptr<IRenderPass>> m_render_passes;
+
+	/// One pass per root material
+	std::unordered_map<assets::Material*, std::unique_ptr<MaterialPass>> m_material_passes;
+	/// Guards m_material_passes + m_render_passes against listPasses()/setPassEnabled() from other threads
+	std::mutex m_pass_mutex;
+	/// Set by ClearUnusedAssets
+	std::atomic_bool m_pending_material_pass_clear {false};
+	event::Listener m_asset_listener;
+
+	/// Fallback material for meshes without one
+	assets::Handle<assets::Material> m_default_material;
+	bool m_default_material_warned = false;
+
+	/// 1x1 white texture + sampler shared by every material pass as texture fallback
+	VulkanTexture m_default_texture;
+	vk::raii::Sampler m_default_sampler = nullptr;
 	vk::Format m_depth_format = vk::Format::eUndefined;
 	DepthResources m_depth_resources;
 	vk::ImageLayout m_depth_layout = vk::ImageLayout::eUndefined;
@@ -266,6 +317,8 @@ private:
 	vk::raii::CommandPool m_command_pool = nullptr;
 
 	vk::raii::CommandPool m_transfer_command_pool = nullptr;
+
+	TracyVkCtx m_tracy_vk_ctx = nullptr;    ///< Tracy GPU profiling context
 
 	vk::raii::DescriptorPool m_descriptor_pool = nullptr;
 

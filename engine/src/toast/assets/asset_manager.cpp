@@ -262,6 +262,26 @@ auto AssetManager::loadBytes(std::string_view uri) -> std::optional<std::vector<
 	return openFile(*real_path);
 }
 
+auto AssetManager::tryLoadBytes(std::string_view uri) -> std::optional<std::vector<uint8_t>> {
+	std::lock_guard lock(mutex);
+
+	const auto sep = uri.find("://");
+	if (sep == std::string_view::npos) {
+		return std::nullopt;
+	}
+
+	if (mounts.contains(std::string(uri.substr(0, sep)))) {
+		return readVirtualPath(uri);
+	}
+
+	const auto real_path = resolveVirtualPath(uri);
+	std::error_code ec;
+	if (!real_path || !std::filesystem::exists(*real_path, ec)) {
+		return std::nullopt;
+	}
+	return openFile(*real_path);
+}
+
 void AssetManager::reloadManifest() {
 	ZoneScoped;
 	clearUnusedAssets();
@@ -314,6 +334,7 @@ void AssetManager::reloadManifest() {
 
 			load_collection("mesh");
 			load_collection("material");
+			load_collection("material_instance");
 			load_collection("texture");
 			load_collection("schema");
 			load_collection("data");
@@ -331,6 +352,7 @@ void AssetManager::reloadManifest() {
 			load_collection("input_layout");
 			load_collection("input_settings");
 			load_collection("script");
+			load_collection("shader");
 		} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse manifest {}: {}", uri, e.what()); }
 	};
 
@@ -527,15 +549,24 @@ auto AssetManager::typeOf(toast::UID uid) -> std::string {
 	return it != manager.manifest.end() ? it->second.type : std::string {};
 }
 
-void AssetManager::pollModifiedScripts() {
+void AssetManager::pollModifiedAssets() {
 	ZoneScoped;
 
-	std::vector<toast::UID> changed;
+	struct ChangedAsset {
+		toast::UID uid;
+		std::string type;
+	};
+
+	std::vector<ChangedAsset> changed;
 	{
 		std::lock_guard lock(mutex);
 		for (auto& [id, asset] : cache) {
 			auto manifest_it = manifest.find(id);
-			if (manifest_it == manifest.end() || manifest_it->second.type != "script") {
+			if (manifest_it == manifest.end()) {
+				continue;
+			}
+			const std::string& type = manifest_it->second.type;
+			if (type != "script" && type != "shader" && type != "material" && type != "material_instance") {
 				continue;
 			}
 			auto real_path = resolveVirtualPath(manifest_it->second.path);
@@ -548,22 +579,44 @@ void AssetManager::pollModifiedScripts() {
 			if (ec) {
 				continue;
 			}
-			auto [it, first_seen] = script_mtimes.try_emplace(id, mtime);
+			auto [it, first_seen] = asset_mtimes.try_emplace(id, mtime);
 			if (first_seen || it->second == mtime) {
 				continue;    // unchanged
 			}
 			it->second = mtime;
 
-			if (auto raw = readVirtualPath(manifest_it->second.path)) {
-				static_cast<Script*>(asset.get())->setData(std::move(*raw));
-				changed.emplace_back(id);
+			auto raw = readVirtualPath(manifest_it->second.path);
+			if (!raw) {
+				continue;
 			}
+
+			if (type == "script") {
+				static_cast<Script*>(asset.get())->setData(std::move(*raw));
+			} else if (type == "shader") {
+				static_cast<Shader*>(asset.get())->setSource(std::move(*raw));
+			} else {
+				// Materials re-parse their TOML in place so existing handles stay valid
+				try {
+					const std::string_view toml_str(reinterpret_cast<const char*>(raw->data()), raw->size());
+					static_cast<Data*>(asset.get())->reload(toml::parse(toml_str));
+				} catch (const toml::parse_error& err) {
+					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", manifest_it->second.path, err.description());
+					continue;
+				}
+			}
+			changed.push_back(ChangedAsset {.uid = toast::UID(id), .type = type});
 		}
 	}
 
-	for (toast::UID uid : changed) {
-		TOAST_INFO("AssetManager", "Script changed on disk, reloading: {}", getURI(uid));
-		event::send<event::ScriptAssetReloaded>(uid);
+	for (const auto& [uid, type] : changed) {
+		TOAST_INFO("AssetManager", "Asset changed on disk, reloading: {} ({})", getURI(uid), type);
+		if (type == "script") {
+			event::send<event::ScriptAssetReloaded>(uid);
+		} else if (type == "shader") {
+			event::send<event::ShaderAssetReloaded>(uid);
+		} else {
+			event::send<event::MaterialAssetReloaded>(uid);
+		}
 	}
 }
 

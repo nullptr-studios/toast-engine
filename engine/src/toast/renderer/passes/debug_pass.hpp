@@ -30,12 +30,9 @@ public:
 
 	void update(uint32_t frame_index, float dt) override;
 
-	/// @brief Toggles the ground grid
-	void setGridEnabled(bool enabled) { m_grid_enabled = enabled; }
-
 	[[nodiscard]]
-	auto gridEnabled() const -> bool {
-		return m_grid_enabled;
+	auto name() const -> std::string_view override {
+		return "Debug";
 	}
 
 private:
@@ -51,22 +48,16 @@ private:
 	};
 
 	void createResources(const renderer::VulkanCore& core);
-	void createGridGeometry(const renderer::VulkanCore& core);
 	void createGizmoGeometry(const renderer::VulkanCore& core);
 
 	/// @brief Grows @p buffer so it can hold at least @p required_vertex_count DebugVertex entries
 	void ensureLineCapacity(const renderer::VulkanCore& core, DynamicVertexBuffer& buffer, size_t required_vertex_count);
 
-	VulkanPipeline m_plane_pipeline;
 	VulkanPipeline m_line_pipeline;
 	VulkanPipeline m_gizmo_pipeline;
 
 	ShaderLayout m_shader_layout;
 	std::vector<vk::raii::DescriptorSet> m_frame_descriptor_sets;
-
-	// Ground grid
-	bool m_grid_enabled = true;
-	vma::raii::Buffer m_grid_vertex_buffer = nullptr;
 
 	// Debug lines
 	std::vector<DynamicVertexBuffer> m_line_vertex_buffers;
