@@ -10,7 +10,44 @@
 
 namespace ui {
 
-UIBinds::UIBinds(Rml::Context* context, toast::Node* owner, const DocumentScan& scan) : m_context(context), m_owner(owner) {
+UIBindStore::UIBindStore() = default;
+UIBindStore::~UIBindStore() = default;
+
+void UIBindStore::reconcile(const DocumentScan& scan) {
+	std::unordered_set<std::string_view> active;
+	active.reserve(scan.binds.size());
+	for (const auto& name : scan.binds) {
+		active.emplace(name);
+	}
+
+	std::erase_if(m_values, [&](const auto& entry) { return !active.contains(entry.first); });
+
+	for (const auto& name : scan.binds) {
+		const bool is_bool = std::ranges::find(scan.bool_binds, name) != scan.bool_binds.end();
+		auto [it, inserted] = m_values.try_emplace(name, is_bool ? Rml::Variant(false) : Rml::Variant(Rml::String()));
+		if (!inserted && is_bool && it->second.GetType() != Rml::Variant::BOOL) {
+			it->second = Rml::Variant(false);
+		}
+	}
+}
+
+auto UIBindStore::has(std::string_view name) const -> bool {
+	return m_values.contains(std::string(name));
+}
+
+auto UIBindStore::get(std::string_view name) const -> Rml::Variant {
+	const auto it = m_values.find(std::string(name));
+	return it != m_values.end() ? it->second : Rml::Variant();
+}
+
+void UIBindStore::set(std::string_view name, Rml::Variant value) {
+	m_values[std::string(name)] = std::move(value);
+}
+
+UIBinds::UIBinds(Rml::Context* context, toast::Node* owner, const DocumentScan& scan, UIBindStore& store)
+    : m_context(context),
+      m_owner(owner),
+      m_store(store) {
 	if (context == nullptr || owner == nullptr) {
 		return;
 	}
@@ -31,25 +68,14 @@ UIBinds::UIBinds(Rml::Context* context, toast::Node* owner, const DocumentScan& 
 		);
 	}
 
-	// Data-checked binds returns a bool
-	// Everything else starts as a string
-	for (const auto& name : scan.binds) {
-		const bool is_bool = std::ranges::find(scan.bool_binds, name) != scan.bool_binds.end();
-		m_store.try_emplace(name, is_bool ? Rml::Variant(false) : Rml::Variant(Rml::String()));
-	}
-
 	// Two-way value binds
 	for (const auto& name : scan.binds) {
 		constructor.BindFunc(
 		    name,
-		    [this, name](Rml::Variant& out) {
-			    const auto it = m_store.find(name);
-			    if (it != m_store.end()) {
-				    out = it->second;
-			    }
-		    },
-		    [this, name](const Rml::Variant& in) { m_store[name] = in; }
+		    [this, name](Rml::Variant& out) { out = m_store.get(name); },
+		    [this, name](const Rml::Variant& in) { set(name, in); }
 		);
+		m_dirty_names.emplace(name);
 	}
 
 	m_handle = constructor.GetModelHandle();
@@ -71,19 +97,33 @@ UIBinds::~UIBinds() {
 }
 
 auto UIBinds::has(std::string_view name) const -> bool {
-	return m_store.find(std::string(name)) != m_store.end();
+	return m_store.has(name);
 }
 
 auto UIBinds::get(std::string_view name) const -> Rml::Variant {
-	const auto it = m_store.find(std::string(name));
-	return it != m_store.end() ? it->second : Rml::Variant();
+	return m_store.get(name);
 }
 
 void UIBinds::set(std::string_view name, Rml::Variant value) {
 	const std::string key(name);
-	m_store[key] = std::move(value);
+	m_store.set(key, std::move(value));
+	m_dirty_names.emplace(key);
+}
+
+void UIBinds::flushDirty() {
 	if (m_handle) {
-		m_handle.DirtyVariable(key);
+		for (const auto& name : m_dirty_names) {
+			m_handle.DirtyVariable(name);
+		}
+	}
+	m_dirty_names.clear();
+}
+
+void UIBinds::flushAllDirty() {
+	for (const auto& [_, binds] : s_by_node) {
+		if (binds != nullptr) {
+			binds->flushDirty();
+		}
 	}
 }
 

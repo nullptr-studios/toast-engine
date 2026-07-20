@@ -159,7 +159,10 @@ void RenderInterface_VK::CreateEffectResources() noexcept {
 		status = vkCreatePipelineLayout(m_p_device, &info_layout, nullptr, &m_p_pipeline_layout_gradient);
 		RMLUI_VK_ASSERTMSG(status == VK_SUCCESS, "failed to vkCreatePipelineLayout (gradient)");
 
-		m_manager_descriptors.Alloc_Descriptor(m_p_device, &m_p_layout_gradient_data, &m_p_descriptor_set_gradient);
+		if (!m_manager_descriptors.Alloc_Descriptor(m_p_device, &m_p_layout_gradient_data, &m_p_descriptor_set_gradient)) {
+			Rml::Log::Message(Rml::Log::LT_ERROR, "Failed to allocate the RmlUi gradient descriptor set.");
+			return;
+		}
 		m_memory_pool.SetDescriptorSet(
 		    2, sizeof(gradient_data_std140_t), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, m_p_descriptor_set_gradient
 		);
@@ -169,7 +172,7 @@ void RenderInterface_VK::CreateEffectResources() noexcept {
 	    m_depth_stencil_attachment_format == VK_FORMAT_S8_UINT ? VK_FORMAT_UNDEFINED : m_depth_stencil_attachment_format;
 
 	// Shared state for every fullscreen effect pipeline
-	auto create_fullscreen_pipeline = [&](const char* fragment_entry, bool premultiplied_blend) -> VkPipeline {
+	auto create_fullscreen_pipeline = [&](const char* fragment_entry, bool premultiplied_blend, bool stencil_test) -> VkPipeline {
 		VkPipelineShaderStageCreateInfo stages[2] = {};
 		stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -184,6 +187,10 @@ void RenderInterface_VK::CreateEffectResources() noexcept {
 		info_rendering.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
 		info_rendering.colorAttachmentCount = 1;
 		info_rendering.pColorAttachmentFormats = &m_color_attachment_format;
+		if (stencil_test) {
+			info_rendering.depthAttachmentFormat = depth_format;
+			info_rendering.stencilAttachmentFormat = m_depth_stencil_attachment_format;
+		}
 
 		VkPipelineVertexInputStateCreateInfo info_vertex = {};
 		info_vertex.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -223,11 +230,28 @@ void RenderInterface_VK::CreateEffectResources() noexcept {
 		info_multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 		info_multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-		VkDynamicState dynamic_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+		VkPipelineDepthStencilStateCreateInfo info_depth = {};
+		info_depth.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		info_depth.depthTestEnable = VK_FALSE;
+		info_depth.depthWriteEnable = VK_FALSE;
+		info_depth.stencilTestEnable = stencil_test ? VK_TRUE : VK_FALSE;
+		info_depth.back.compareOp = VK_COMPARE_OP_EQUAL;
+		info_depth.back.failOp = VK_STENCIL_OP_KEEP;
+		info_depth.back.depthFailOp = VK_STENCIL_OP_KEEP;
+		info_depth.back.passOp = VK_STENCIL_OP_KEEP;
+		info_depth.back.compareMask = ~0u;
+		info_depth.back.writeMask = 0;
+		info_depth.front = info_depth.back;
+
+		VkDynamicState dynamic_states[] = {
+		  VK_DYNAMIC_STATE_VIEWPORT,
+		  VK_DYNAMIC_STATE_SCISSOR,
+		  VK_DYNAMIC_STATE_STENCIL_REFERENCE,
+		};
 		VkPipelineDynamicStateCreateInfo info_dynamic = {};
 		info_dynamic.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 		info_dynamic.pDynamicStates = dynamic_states;
-		info_dynamic.dynamicStateCount = 2;
+		info_dynamic.dynamicStateCount = stencil_test ? 3u : 2u;
 
 		VkGraphicsPipelineCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -240,6 +264,7 @@ void RenderInterface_VK::CreateEffectResources() noexcept {
 		info.pRasterizationState = &info_raster;
 		info.pMultisampleState = &info_multisample;
 		info.pColorBlendState = &info_blend;
+		info.pDepthStencilState = stencil_test ? &info_depth : nullptr;
 		info.pDynamicState = &info_dynamic;
 		info.layout = m_p_pipeline_layout_effects;
 
@@ -249,12 +274,14 @@ void RenderInterface_VK::CreateEffectResources() noexcept {
 		return p_pipeline;
 	};
 
-	m_p_pipeline_passthrough_blend = create_fullscreen_pipeline("fsPassthrough", true);
-	m_p_pipeline_passthrough_noblend = create_fullscreen_pipeline("fsPassthrough", false);
-	m_p_pipeline_colormatrix = create_fullscreen_pipeline("fsColorMatrix", false);
-	m_p_pipeline_blendmask = create_fullscreen_pipeline("fsBlendMask", false);
-	m_p_pipeline_blur = create_fullscreen_pipeline("fsBlur", false);
-	m_p_pipeline_dropshadow = create_fullscreen_pipeline("fsDropShadow", false);
+	m_p_pipeline_passthrough_blend = create_fullscreen_pipeline("fsPassthrough", true, false);
+	m_p_pipeline_passthrough_noblend = create_fullscreen_pipeline("fsPassthrough", false, false);
+	m_p_pipeline_passthrough_blend_stencil = create_fullscreen_pipeline("fsPassthrough", true, true);
+	m_p_pipeline_passthrough_noblend_stencil = create_fullscreen_pipeline("fsPassthrough", false, true);
+	m_p_pipeline_colormatrix = create_fullscreen_pipeline("fsColorMatrix", false, false);
+	m_p_pipeline_blendmask = create_fullscreen_pipeline("fsBlendMask", false, false);
+	m_p_pipeline_blur = create_fullscreen_pipeline("fsBlur", false, false);
+	m_p_pipeline_dropshadow = create_fullscreen_pipeline("fsDropShadow", false, false);
 
 	// Gradient pipelines
 	auto create_gradient_pipeline = [&](bool stencil_test) -> VkPipeline {
@@ -382,14 +409,10 @@ void RenderInterface_VK::DestroyEffectResources() noexcept {
 	m_retired_pools.clear();
 	m_p_current_pool = nullptr;
 
-	for (CompiledShader* p_shader : m_pending_for_deletion_shaders) {
-		m_memory_pool.Free_Allocation(p_shader->m_allocation);
-		delete p_shader;
-	}
-	m_pending_for_deletion_shaders.clear();
-
 	vkDestroyPipeline(m_p_device, m_p_pipeline_passthrough_blend, nullptr);
 	vkDestroyPipeline(m_p_device, m_p_pipeline_passthrough_noblend, nullptr);
+	vkDestroyPipeline(m_p_device, m_p_pipeline_passthrough_blend_stencil, nullptr);
+	vkDestroyPipeline(m_p_device, m_p_pipeline_passthrough_noblend_stencil, nullptr);
 	vkDestroyPipeline(m_p_device, m_p_pipeline_colormatrix, nullptr);
 	vkDestroyPipeline(m_p_device, m_p_pipeline_blendmask, nullptr);
 	vkDestroyPipeline(m_p_device, m_p_pipeline_blur, nullptr);
@@ -474,12 +497,14 @@ void RenderInterface_VK::DestroyEffectImage(effect_image_t& image) noexcept {
 RenderInterface_VK::LayerPool& RenderInterface_VK::AcquirePool(VkExtent2D extent) {
 	for (auto& pool : m_pools) {
 		if (pool->m_extent.width == extent.width && pool->m_extent.height == extent.height) {
+			pool->m_last_used_frame = m_pool_frame;
 			return *pool;
 		}
 	}
 
 	auto pool = Rml::MakeUnique<LayerPool>();
 	pool->m_generation = ++m_pool_generation;
+	pool->m_last_used_frame = m_pool_frame;
 	pool->m_extent = extent;
 	pool->m_stencil = CreateEffectImage(extent, m_depth_stencil_attachment_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
@@ -502,6 +527,15 @@ void RenderInterface_VK::DestroyPool(LayerPool& pool) noexcept {
 }
 
 void RenderInterface_VK::RetireUnusedPools() noexcept {
+	for (auto it = m_pools.begin(); it != m_pools.end();) {
+		if ((*it)->m_last_used_frame + 1 < m_pool_frame) {
+			m_retired_pools.push_back(std::move(*it));
+			it = m_pools.erase(it);
+		} else {
+			++it;
+		}
+	}
+
 	for (auto it = m_retired_pools.begin(); it != m_retired_pools.end();) {
 		if (!m_command_buffer_ring.IsGenerationReferenced((*it)->m_generation)) {
 			DestroyPool(**it);
@@ -517,7 +551,10 @@ VkDescriptorSet RenderInterface_VK::GetEffectDescriptorSet(effect_image_t& image
 		return image.m_p_descriptor_set;
 	}
 
-	m_manager_descriptors.Alloc_Descriptor(m_p_device, &m_p_layout_effect_texture, &image.m_p_descriptor_set);
+	if (!m_manager_descriptors.Alloc_Descriptor(m_p_device, &m_p_layout_effect_texture, &image.m_p_descriptor_set)) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "Failed to allocate an RmlUi effect-image descriptor set.");
+		return nullptr;
+	}
 
 	VkDescriptorImageInfo info_image = {};
 	info_image.imageView = image.m_p_view;
@@ -623,10 +660,13 @@ void RenderInterface_VK::BeginLayerScope(effect_image_t& target, bool clear_colo
 	m_p_scope_target = &target;
 }
 
-void RenderInterface_VK::BeginEffectScope(effect_image_t& target, bool clear_color, VkRect2D render_area) {
+void RenderInterface_VK::BeginEffectScope(effect_image_t& target, bool clear_color, VkRect2D render_area, bool use_clip_stencil) {
 	RMLUI_VK_ASSERTMSG(!m_scope_active, "a rendering scope is already open");
 
 	TransitionEffectImage(target, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	if (use_clip_stencil) {
+		TransitionEffectImage(m_p_current_pool->m_stencil, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	}
 
 	VkRenderingAttachmentInfo info_color = {};
 	info_color.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -645,7 +685,23 @@ void RenderInterface_VK::BeginEffectScope(effect_image_t& target, bool clear_col
 	info.colorAttachmentCount = 1;
 	info.pColorAttachments = &info_color;
 
+	VkRenderingAttachmentInfo info_stencil = {};
+	if (use_clip_stencil) {
+		info_stencil.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+		info_stencil.imageView = m_p_current_pool->m_stencil.m_p_view;
+		info_stencil.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		info_stencil.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		info_stencil.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		if (m_depth_stencil_attachment_format != VK_FORMAT_S8_UINT) {
+			info.pDepthAttachment = &info_stencil;
+		}
+		info.pStencilAttachment = &info_stencil;
+	}
+
 	vkCmdBeginRendering(m_p_current_command_buffer, &info);
+	if (use_clip_stencil) {
+		vkCmdSetStencilReference(m_p_current_command_buffer, VK_STENCIL_FACE_FRONT_AND_BACK, uint32_t(m_stencil_test_value));
+	}
 
 	m_scope_active = true;
 	m_p_scope_target = &target;
@@ -672,7 +728,7 @@ VkRect2D RenderInterface_VK::CurrentScissor() const {
 
 void RenderInterface_VK::RenderFullscreenPass(
     VkPipeline pipeline, effect_image_t& destination, effect_image_t& source, effect_image_t* mask, const effects_push_t& push,
-    bool clear_destination, VkRect2D render_area, VkViewport viewport
+    bool clear_destination, VkRect2D render_area, VkViewport viewport, bool use_clip_stencil
 ) {
 	VkCommandBuffer cmd = m_p_current_command_buffer;
 
@@ -684,8 +740,11 @@ void RenderInterface_VK::RenderFullscreenPass(
 	VkDescriptorSet p_sets[] = {
 	  GetEffectDescriptorSet(source), mask ? GetEffectDescriptorSet(*mask) : GetEffectDescriptorSet(source)
 	};
+	if (!p_sets[0] || !p_sets[1] || !pipeline) {
+		return;
+	}
 
-	BeginEffectScope(destination, clear_destination, FullRect(m_p_current_pool->m_extent));
+	BeginEffectScope(destination, clear_destination, FullRect(m_p_current_pool->m_extent), use_clip_stencil);
 
 	vkCmdSetViewport(cmd, 0, 1, &viewport);
 	vkCmdSetScissor(cmd, 0, 1, &render_area);
@@ -820,8 +879,11 @@ void RenderInterface_VK::CompositeLayers(
 		effects_push_t push = {};
 		SetIdentityUv(push);
 		push.m_v[1][0] = 1.f;
+		const bool use_clip_stencil = m_is_apply_to_regular_geometry_stencil;
 		const VkPipeline pipeline =
-		    blend_mode == Rml::BlendMode::Blend ? m_p_pipeline_passthrough_blend : m_p_pipeline_passthrough_noblend;
+		    blend_mode == Rml::BlendMode::Blend
+		        ? (use_clip_stencil ? m_p_pipeline_passthrough_blend_stencil : m_p_pipeline_passthrough_blend)
+		        : (use_clip_stencil ? m_p_pipeline_passthrough_noblend_stencil : m_p_pipeline_passthrough_noblend);
 		RenderFullscreenPass(
 		    pipeline,
 		    *m_layer_stack[size_t(destination)],
@@ -830,7 +892,8 @@ void RenderInterface_VK::CompositeLayers(
 		    push,
 		    false,
 		    scissor,
-		    FullViewport(pool.m_extent)
+		    FullViewport(pool.m_extent),
+		    use_clip_stencil
 		);
 	}
 
@@ -861,7 +924,8 @@ Rml::TextureHandle RenderInterface_VK::SaveLayerAsTexture() {
 	TransitionEffectImage(top, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
 	// Same image setup as CreateTexture but with a GPU copy instead of an upload
-	auto* p_texture = new texture_data_t {};
+	auto texture = std::make_unique<texture_data_t>();
+	auto* p_texture = texture.get();
 
 	VkImageCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -879,7 +943,11 @@ Rml::TextureHandle RenderInterface_VK::SaveLayerAsTexture() {
 
 	VkResult status =
 	    vmaCreateImage(m_p_allocator, &info, &info_allocation, &p_texture->m_p_vk_image, &p_texture->m_p_vma_allocation, nullptr);
-	RMLUI_VK_ASSERTMSG(status == VK_SUCCESS, "failed to vmaCreateImage (SaveLayerAsTexture)");
+	if (status != VK_SUCCESS) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "Failed to create an RmlUi saved-layer texture.");
+		ResumeLayerScope();
+		return {};
+	}
 
 	VkImageSubresourceRange range = {};
 	range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -953,13 +1021,25 @@ Rml::TextureHandle RenderInterface_VK::SaveLayerAsTexture() {
 	info_view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
 	status = vkCreateImageView(m_p_device, &info_view, nullptr, &p_texture->m_p_vk_image_view);
-	RMLUI_VK_ASSERTMSG(status == VK_SUCCESS, "failed to vkCreateImageView (SaveLayerAsTexture)");
+	if (status != VK_SUCCESS) {
+		Destroy_Texture(*p_texture);
+		Rml::Log::Message(Rml::Log::LT_ERROR, "Failed to create an RmlUi saved-layer texture view.");
+		ResumeLayerScope();
+		return {};
+	}
 
 	p_texture->m_p_vk_sampler = m_p_sampler_linear;
 
 	ResumeLayerScope();
 
-	return reinterpret_cast<Rml::TextureHandle>(p_texture);
+	auto owner = std::shared_ptr<texture_data_t>(texture.release(), [this](texture_data_t* resource) {
+		Destroy_Texture(*resource);
+		delete resource;
+	});
+	texture_data_t* handle = owner.get();
+	m_live_resources.emplace(handle, std::move(owner));
+	RetainResource(handle);
+	return reinterpret_cast<Rml::TextureHandle>(handle);
 }
 
 Rml::CompiledFilterHandle RenderInterface_VK::SaveLayerAsMaskImage() {
@@ -1421,19 +1501,29 @@ Rml::CompiledShaderHandle RenderInterface_VK::CompileShader(const Rml::String& n
 	}
 
 	// The parameter block lives in the memory pool for the whole shader lifetime
-	auto* p_shader = new CompiledShader {};
+	auto shader = std::make_unique<CompiledShader>();
+	auto* p_shader = shader.get();
 	void* p_data = nullptr;
 	bool status =
 	    m_memory_pool.Alloc_GeneralBuffer(sizeof(gradient_data_std140_t), &p_data, &p_shader->m_buffer, &p_shader->m_allocation);
-	RMLUI_VK_ASSERTMSG(status, "failed to allocate gradient parameter block");
+	if (!status) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "RmlUi buffer pool exhausted while compiling a gradient.");
+		return {};
+	}
 	memcpy(p_data, &data, sizeof(data));
+	m_memory_pool.Flush(p_shader->m_buffer);
 
-	return reinterpret_cast<Rml::CompiledShaderHandle>(p_shader);
+	auto owner = std::shared_ptr<CompiledShader>(shader.release(), [this](CompiledShader* resource) {
+		m_memory_pool.Free_Allocation(resource->m_allocation);
+		delete resource;
+	});
+	CompiledShader* handle = owner.get();
+	m_live_resources.emplace(handle, std::move(owner));
+	return reinterpret_cast<Rml::CompiledShaderHandle>(handle);
 }
 
 void RenderInterface_VK::RenderShader(
-    Rml::CompiledShaderHandle shader, Rml::CompiledGeometryHandle geometry, Rml::Vector2f translation,
-    Rml::TextureHandle /*texture*/
+    Rml::CompiledShaderHandle shader, Rml::CompiledGeometryHandle geometry, Rml::Vector2f translation, Rml::TextureHandle texture
 ) {
 	if (m_p_current_command_buffer == nullptr || !shader || !geometry) {
 		return;
@@ -1441,27 +1531,31 @@ void RenderInterface_VK::RenderShader(
 
 	const CompiledShader& compiled_shader = *reinterpret_cast<CompiledShader*>(shader);
 	geometry_handle_t* p_geometry = reinterpret_cast<geometry_handle_t*>(geometry);
+	if (!RetainResource(reinterpret_cast<const void*>(shader)) || !RetainResource(p_geometry) ||
+	    (texture && !RetainResource(reinterpret_cast<const void*>(texture)))) {
+		return;
+	}
 
 	// Same scheme as RenderGeometry
 	m_user_data_for_vertex_shader.m_translate = translation;
 
+	VkDescriptorBufferInfo transform_buffer {};
+	VmaVirtualAllocation transform_allocation = nullptr;
 	shader_vertex_user_data_t* p_data = nullptr;
-	if (p_geometry->m_p_shader_allocation != nullptr) {
-		m_memory_pool.Free_GeometryHandle_ShaderDataOnly(p_geometry);
-	}
-
-	bool status = m_memory_pool.Alloc_GeneralBuffer(
-	    sizeof(m_user_data_for_vertex_shader),
-	    reinterpret_cast<void**>(&p_data),
-	    &p_geometry->m_p_shader,
-	    &p_geometry->m_p_shader_allocation
+	const bool status = m_memory_pool.Alloc_GeneralBuffer(
+	    sizeof(m_user_data_for_vertex_shader), reinterpret_cast<void**>(&p_data), &transform_buffer, &transform_allocation
 	);
-	RMLUI_VK_ASSERTMSG(status, "failed to allocate shader uniform data");
+	if (!status) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "RmlUi uniform buffer pool exhausted while rendering a gradient.");
+		return;
+	}
+	m_command_buffer_ring.AddCurrentSlotAllocation(transform_allocation);
 
 	p_data->m_transform = m_user_data_for_vertex_shader.m_transform;
 	p_data->m_translate = m_user_data_for_vertex_shader.m_translate;
+	m_memory_pool.Flush(transform_buffer);
 
-	const uint32_t p_offsets[] = {uint32_t(p_geometry->m_p_shader.offset), uint32_t(compiled_shader.m_buffer.offset)};
+	const uint32_t p_offsets[] = {uint32_t(transform_buffer.offset), uint32_t(compiled_shader.m_buffer.offset)};
 	VkDescriptorSet p_sets[] = {m_p_descriptor_set, m_p_descriptor_set_gradient};
 
 	VkCommandBuffer cmd = m_p_current_command_buffer;
@@ -1476,7 +1570,5 @@ void RenderInterface_VK::RenderShader(
 }
 
 void RenderInterface_VK::ReleaseShader(Rml::CompiledShaderHandle shader) {
-	if (auto* p_shader = reinterpret_cast<CompiledShader*>(shader)) {
-		m_pending_for_deletion_shaders.push_back(p_shader);
-	}
+	ReleaseResource(reinterpret_cast<const void*>(shader));
 }

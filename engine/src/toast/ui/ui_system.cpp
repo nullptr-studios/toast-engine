@@ -4,6 +4,7 @@
 #include "render/rmlui_renderer_vk.h"
 #include "render/ui_pass.hpp"
 #include "text_format.hpp"
+#include "ui_binds.hpp"
 #include "ui_event_listener.hpp"
 #include "ui_file_interface.hpp"
 #include "ui_input.hpp"
@@ -13,6 +14,8 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
+#include <toast/assets/asset_manager.hpp>
+#include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
 #include <toast/project_settings.hpp>
 #include <toast/renderer/vulkan_core.hpp>
@@ -25,7 +28,7 @@ UISystem::UISystem() noexcept {
 	TOAST_ASSERT(not instance, "UI", "UISystem already exists");
 	instance = this;
 
-	m_file_interface = std::make_unique<UIFileInterface>();
+	m_file_interface = std::make_unique<UIFileInterface>([this](std::string_view name) { return colorHex(name); });
 	m_system_interface = std::make_unique<UISystemInterface>();
 
 	Rml::SetFileInterface(m_file_interface.get());
@@ -38,6 +41,15 @@ UISystem::UISystem() noexcept {
 
 	m_input_router = std::make_unique<UIInputRouter>();
 	installEventListenerInstancer();
+	m_asset_listener.subscribe<event::UIAssetReloaded>([this](const event::UIAssetReloaded& e) {
+		TOAST_INFO("UI", "Reloading open documents after {} changed ({})", e.type, e.uid);
+		for (toast::Panel* panel : m_panels) {
+			panel->reloadDocument();
+		}
+		for (toast::Panel3D* panel : m_world_panels) {
+			panel->reloadDocument();
+		}
+	});
 
 	TOAST_INFO("UI", "RmlUi {} initialised", Rml::GetVersion());
 }
@@ -182,6 +194,7 @@ void UISystem::tick() noexcept {
 	 * 4. Submit the command buffer to the graphics queue
 	 */
 
+	UIBinds::flushAllDirty();
 	for (int i = 0; i < Rml::GetNumContexts(); i++) {
 		Rml::GetContext(i)->Update();
 	}
@@ -234,39 +247,6 @@ auto UISystem::loadFontFace(const assets::Handle<assets::Font>& font, bool fallb
 	}
 	// The path reads through the assets manager
 	return loadFontFace(font.path(), fallback);
-}
-
-void UISystem::loadFontFamily(const assets::Handle<assets::FontFamily>& family) {
-	ZoneScoped;
-
-	if (!family.hasValue()) {
-		TOAST_WARN("UI", "Font family '{}' is not loaded", family.path());
-		return;
-	}
-
-	const auto family_name = Rml::String(family->name());
-	for (const toast::UID font_uid : family->fonts()) {
-		auto font = assets::load<assets::Font>(font_uid);
-		if (!font.hasValue()) {
-			TOAST_WARN("UI", "Font family '{}' references missing font {}", family->name(), font_uid);
-			continue;
-		}
-
-		const auto& bytes = font->get();
-		const bool loaded = Rml::LoadFontFace(
-		    {reinterpret_cast<const Rml::byte*>(bytes.data()), bytes.size()}, family_name, Rml::Style::FontStyle::Normal
-		);
-		if (!loaded) {
-			TOAST_WARN("UI", "Failed to load font {} into family '{}'", font_uid, family->name());
-			continue;
-		}
-
-		if (std::ranges::find(m_retained_fonts, font) == m_retained_fonts.end()) {
-			m_retained_fonts.push_back(std::move(font));
-		}
-	}
-
-	TOAST_TRACE("UI", "Loaded font family '{}'", family->name());
 }
 
 void UISystem::registerGlobalStyle(const assets::Handle<assets::UIStyle>& style) {
@@ -322,6 +302,19 @@ auto UISystem::colorFromSchemes(std::string_view name) const -> std::optional<gl
 		}
 	}
 
+	return std::nullopt;
+}
+
+auto UISystem::colorHex(std::string_view name) const -> std::optional<std::string> {
+	const assets::ColorScheme* scope_scheme = m_localization_stack.empty() ? nullptr : m_localization_stack.back().color_scheme;
+	if (scope_scheme != nullptr) {
+		if (auto hex = scope_scheme->hex(name)) {
+			return hex;
+		}
+	}
+	if (auto color = colorFromSchemes(name)) {
+		return assets::ColorScheme::toHex(*color);
+	}
 	return std::nullopt;
 }
 
@@ -426,20 +419,8 @@ auto UISystem::translate(std::string_view input) const -> std::optional<std::str
 		return std::nullopt;
 	}
 
-	// Resolve ${color:...} against the scope scheme first, then the global schemes
-	const assets::ColorScheme* scope_scheme = m_localization_stack.empty() ? nullptr : m_localization_stack.back().color_scheme;
 	TextFormatContext format_ctx;
-	format_ctx.color_resolver = [this, scope_scheme](std::string_view name) -> std::optional<std::string> {
-		if (scope_scheme != nullptr) {
-			if (auto hex = scope_scheme->hex(name)) {
-				return hex;
-			}
-		}
-		if (auto color = colorFromSchemes(name)) {
-			return assets::ColorScheme::toHex(*color);
-		}
-		return std::nullopt;
-	};
+	format_ctx.color_resolver = [this](std::string_view name) { return colorHex(name); };
 
 	return formatText(*localized, format_ctx);
 }
@@ -457,12 +438,24 @@ auto UISystem::localizedImage(std::string_view id) const -> std::string {
 	if (!m_localization_stack.empty()) {
 		for (const assets::ImageLocalization* loc : m_localization_stack.back().images) {
 			if (std::string ref = lookup(loc); !ref.empty()) {
+				if (ref.contains("://")) {
+					return ref;
+				}
+				if (ref.size() == 11) {
+					return assets::AssetManager::getURI(toast::UID(toast::UID::fromString(ref)));
+				}
 				return ref;
 			}
 		}
 	}
 	for (const auto& loc : m_global_image_localizations) {
 		if (std::string ref = lookup(loc.hasValue() ? loc.operator->() : nullptr); !ref.empty()) {
+			if (ref.contains("://")) {
+				return ref;
+			}
+			if (ref.size() == 11) {
+				return assets::AssetManager::getURI(toast::UID(toast::UID::fromString(ref)));
+			}
 			return ref;
 		}
 	}

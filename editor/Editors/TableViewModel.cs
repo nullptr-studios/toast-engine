@@ -31,6 +31,7 @@ public partial class TableViewModel : Tool, IToastZoneEditor, IAutosavable {
 	[ObservableProperty] private string m_fileName = "";
 	[ObservableProperty] private bool m_isDirty;
 	[ObservableProperty] private bool m_hasContent;
+	[ObservableProperty] private bool m_usesAssetCells;
 
 	private bool m_loading;
 
@@ -61,6 +62,7 @@ public partial class TableViewModel : Tool, IToastZoneEditor, IAutosavable {
 			var text = File.ReadAllText(contentSourceRealPath ?? ProjectContext.Resolve(virtualPath));
 			CurrentUid = uid;
 			CurrentPath = virtualPath;
+			UsesAssetCells = definition.Type == "image_localization";
 			LoadTable(text, virtualPath);
 		} catch (Exception e) {
 			Log.Error($"Table Editor: failed to open '{virtualPath}': {e.Message}");
@@ -119,7 +121,7 @@ public partial class TableViewModel : Tool, IToastZoneEditor, IAutosavable {
 	private TableRowVM MakeRow(IReadOnlyList<string> cells) {
 		var row = new TableRowVM(OnCellEdited);
 		for (var c = 0; c < Columns.Count; c++)
-			row.Cells.Add(new TableCellVM(row, c < cells.Count ? cells[c] : ""));
+			row.Cells.Add(new TableCellVM(row, c < cells.Count ? cells[c] : "", UsesAssetCells && c > 0));
 		return row;
 	}
 
@@ -130,6 +132,7 @@ public partial class TableViewModel : Tool, IToastZoneEditor, IAutosavable {
 		Columns.Clear();
 		Rows.Clear();
 		HasContent = false;
+		UsesAssetCells = false;
 		UpdateTitle();
 	}
 
@@ -167,7 +170,7 @@ public partial class TableViewModel : Tool, IToastZoneEditor, IAutosavable {
 		var sb = new StringBuilder();
 		AppendCsvRow(sb, Columns);
 		foreach (var row in Rows)
-			AppendCsvRow(sb, row.Cells.Select(c => c.Value));
+			AppendCsvRow(sb, row.Cells.Select(c => c.Value ?? ""));
 		return sb.ToString();
 	}
 
@@ -272,14 +275,17 @@ public sealed partial class TableRowVM : ObservableObject {
 
 public sealed partial class TableCellVM : ObservableObject {
 	private readonly TableRowVM m_row;
-	[ObservableProperty] private string m_value;
+	[ObservableProperty] private string? m_value;
 
-	public TableCellVM(TableRowVM row, string value) {
+	public TableCellVM(TableRowVM row, string value, bool isAssetReference) {
 		m_row = row;
 		m_value = value;
+		IsAssetReference = isAssetReference;
 	}
 
-	partial void OnValueChanged(string value) {
+	public bool IsAssetReference { get; }
+
+	partial void OnValueChanged(string? value) {
 		m_row.NotifyEdited();
 	}
 }

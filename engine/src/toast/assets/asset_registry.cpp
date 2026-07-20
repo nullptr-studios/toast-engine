@@ -66,9 +66,6 @@ void AssetRegistry::init() {
 		return std::make_unique<AudioSnapshot>(t, std::move(s));
 	};
 	s_schema_toml["audio_vca"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<AudioVca>(t, std::move(s)); };
-	s_schema_toml["font_family"] = [](const toml::table& t, Handle<Schema> s) {
-		return std::make_unique<FontFamily>(t, std::move(s));
-	};
 	s_schema_toml["color_scheme"] = [](const toml::table& t, Handle<Schema> s) {
 		return std::make_unique<ColorScheme>(t, std::move(s));
 	};
@@ -99,7 +96,6 @@ void AssetRegistry::init() {
 	s_lua_names["ui_style"] = "UIStyle";
 	s_lua_names["font"] = "Font";
 	s_lua_names["ui_image"] = "UIImage";
-	s_lua_names["font_family"] = "FontFamily";
 	s_lua_names["color_scheme"] = "ColorScheme";
 	s_lua_names["localization"] = "Localization";
 	s_lua_names["image_localization"] = "ImageLocalization";

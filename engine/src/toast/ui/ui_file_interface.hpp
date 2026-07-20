@@ -9,6 +9,10 @@
 #pragma once
 #include <RmlUi/Core/FileInterface.h>
 #include <cstdint>
+#include <functional>
+#include <optional>
+#include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -22,6 +26,10 @@ namespace ui {
  */
 class UIFileInterface final : public Rml::FileInterface {
 public:
+	using ColorResolver = std::function<std::optional<std::string>(std::string_view)>;
+
+	explicit UIFileInterface(ColorResolver color_resolver);
+
 	auto Open(const Rml::String& path) -> Rml::FileHandle override;
 	void Close(Rml::FileHandle file) override;
 
@@ -38,6 +46,7 @@ private:
 
 	Rml::FileHandle m_next_handle = 1;
 	std::unordered_map<Rml::FileHandle, OpenFile> m_open_files;
+	ColorResolver m_color_resolver;
 };
 
 }

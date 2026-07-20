@@ -91,6 +91,44 @@ auto findCaseInsensitive(std::string_view haystack, std::string_view needle, siz
 
 }
 
+auto resolveColorReferences(std::string_view source, const ColorResolver& resolver) -> std::string {
+	if (!resolver) {
+		return std::string(source);
+	}
+
+	std::string result;
+	result.reserve(source.size());
+
+	size_t cursor = 0;
+	while (cursor < source.size()) {
+		const size_t marker = source.find("${color:", cursor);
+		if (marker == std::string_view::npos) {
+			result.append(source.substr(cursor));
+			break;
+		}
+
+		result.append(source.substr(cursor, marker - cursor));
+		const size_t name_start = marker + 8;
+		const size_t end = source.find('}', name_start);
+		if (end == std::string_view::npos) {
+			result.append(source.substr(marker));
+			break;
+		}
+
+		const std::string_view name = source.substr(name_start, end - name_start);
+		if (name.empty()) {
+			result.append(source.substr(marker, end - marker + 1));
+		} else if (auto color = resolver(name)) {
+			result.append(*color);
+		} else {
+			result.append(name);
+		}
+		cursor = end + 1;
+	}
+
+	return result;
+}
+
 auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> DocumentScan {
 	DocumentScan scan;
 
@@ -173,7 +211,7 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 	}
 
 	// inject style links and the data model
-	std::string result(rml);
+	std::string result = resolveColorReferences(rml, ctx.color_resolver);
 
 	if (!ctx.style_uris.empty()) {
 		std::string links;

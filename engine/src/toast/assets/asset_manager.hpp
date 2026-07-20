@@ -186,7 +186,7 @@ public:
 	static auto typeOf(toast::UID uid) -> std::string;
 
 	/**
-	 * @brief Re-reads any cached script, shader or material asset whose file changed on disk (hot reload)
+	 * @brief Re-reads hot-reloadable assets whose files changed on disk
 	 */
 	void pollModifiedAssets();
 

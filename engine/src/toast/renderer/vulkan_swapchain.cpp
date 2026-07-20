@@ -258,6 +258,7 @@ auto VulkanSwapchain::present(uint32_t image_index, vk::Semaphore render_finishe
 	present_info.pSwapchains = &swapchain_handle;
 	present_info.pImageIndices = &image_index;
 
+	std::scoped_lock queue_lock(m_core->graphicsSubmitMutex());
 	const VkResult result = vkQueuePresentKHR(static_cast<VkQueue>(m_present_queue), &present_info);
 	return static_cast<vk::Result>(result);
 }

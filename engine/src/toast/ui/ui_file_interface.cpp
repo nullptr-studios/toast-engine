@@ -1,11 +1,18 @@
 #include "ui_file_interface.hpp"
 
+#include "document_preprocess.hpp"
+
+#include <algorithm>
+#include <cctype>
 #include <cstring>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/log.hpp>
 #include <tracy/Tracy.hpp>
+#include <utility>
 
 namespace ui {
+
+UIFileInterface::UIFileInterface(ColorResolver color_resolver) : m_color_resolver(std::move(color_resolver)) { }
 
 auto UIFileInterface::Open(const Rml::String& path) -> Rml::FileHandle {
 	ZoneScoped;
@@ -19,6 +26,17 @@ auto UIFileInterface::Open(const Rml::String& path) -> Rml::FileHandle {
 	if (!bytes) {
 		TOAST_WARN("UI", "Failed to open '{}'", path);
 		return 0;
+	}
+
+	constexpr std::string_view rcss_extension = ".rcss";
+	const bool is_rcss = path.size() >= rcss_extension.size() &&
+	                     std::equal(rcss_extension.rbegin(), rcss_extension.rend(), path.rbegin(), [](char a, char b) {
+		                     return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b));
+	                     });
+	if (is_rcss) {
+		const std::string_view source(reinterpret_cast<const char*>(bytes->data()), bytes->size());
+		std::string transformed = resolveColorReferences(source, m_color_resolver);
+		bytes = std::vector<uint8_t>(transformed.begin(), transformed.end());
 	}
 
 	const Rml::FileHandle handle = m_next_handle++;

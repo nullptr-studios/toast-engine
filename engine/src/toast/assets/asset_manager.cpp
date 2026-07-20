@@ -353,7 +353,6 @@ void AssetManager::reloadManifest() {
 			load_collection("input_settings");
 			load_collection("color_scheme");
 			load_collection("font");
-			load_collection("font_family");
 			load_collection("ui_image");
 			load_collection("ui_element");
 			load_collection("ui_style");
@@ -566,16 +565,17 @@ void AssetManager::pollModifiedAssets() {
 	std::vector<ChangedAsset> changed;
 	{
 		std::lock_guard lock(mutex);
-		for (auto& [id, asset] : cache) {
-			auto manifest_it = manifest.find(id);
-			if (manifest_it == manifest.end()) {
+		for (const auto& [id, info] : manifest) {
+			const std::string& type = info.type;
+			const bool is_ui = type == "ui_element" || type == "ui_style" || type == "color_scheme";
+			auto asset_it = cache.find(id);
+			if (!is_ui && asset_it == cache.end()) {
 				continue;
 			}
-			const std::string& type = manifest_it->second.type;
-			if (type != "script" && type != "shader" && type != "material" && type != "material_instance") {
+			if (type != "script" && type != "shader" && type != "material" && type != "material_instance" && !is_ui) {
 				continue;
 			}
-			auto real_path = resolveVirtualPath(manifest_it->second.path);
+			auto real_path = resolveVirtualPath(info.path);
 			if (!real_path) {
 				continue;
 			}
@@ -591,22 +591,36 @@ void AssetManager::pollModifiedAssets() {
 			}
 			it->second = mtime;
 
-			auto raw = readVirtualPath(manifest_it->second.path);
+			auto raw = readVirtualPath(info.path);
 			if (!raw) {
 				continue;
 			}
 
-			if (type == "script") {
-				static_cast<Script*>(asset.get())->setData(std::move(*raw));
+			if (is_ui && asset_it == cache.end()) {
+				// .rcss files are reloaded directly through the VFS
+			} else if (type == "script") {
+				static_cast<Script*>(asset_it->second.get())->setData(std::move(*raw));
 			} else if (type == "shader") {
-				static_cast<Shader*>(asset.get())->setSource(std::move(*raw));
+				static_cast<Shader*>(asset_it->second.get())->setSource(std::move(*raw));
+			} else if (type == "ui_element") {
+				static_cast<UIElement*>(asset_it->second.get())->setSource(std::move(*raw));
+			} else if (type == "ui_style") {
+				static_cast<UIStyle*>(asset_it->second.get())->setSource(std::move(*raw));
+			} else if (type == "color_scheme") {
+				try {
+					const std::string_view toml_str(reinterpret_cast<const char*>(raw->data()), raw->size());
+					static_cast<ColorScheme*>(asset_it->second.get())->reload(toml::parse(toml_str));
+				} catch (const toml::parse_error& err) {
+					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", info.path, err.description());
+					continue;
+				}
 			} else {
 				// Materials re-parse their TOML in place so existing handles stay valid
 				try {
 					const std::string_view toml_str(reinterpret_cast<const char*>(raw->data()), raw->size());
-					static_cast<Data*>(asset.get())->reload(toml::parse(toml_str));
+					static_cast<Data*>(asset_it->second.get())->reload(toml::parse(toml_str));
 				} catch (const toml::parse_error& err) {
-					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", manifest_it->second.path, err.description());
+					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", info.path, err.description());
 					continue;
 				}
 			}
@@ -620,6 +634,8 @@ void AssetManager::pollModifiedAssets() {
 			event::send<event::ScriptAssetReloaded>(uid);
 		} else if (type == "shader") {
 			event::send<event::ShaderAssetReloaded>(uid);
+		} else if (type == "ui_element" || type == "ui_style" || type == "color_scheme") {
+			event::send<event::UIAssetReloaded>(uid, type);
 		} else {
 			event::send<event::MaterialAssetReloaded>(uid);
 		}

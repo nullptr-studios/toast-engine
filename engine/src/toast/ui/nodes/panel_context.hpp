@@ -24,9 +24,6 @@ private:
 	std::vector<assets::Handle<assets::Font>> m_fonts;
 
 	[[Reflect]]
-	std::vector<assets::Handle<assets::FontFamily>> m_font_families;
-
-	[[Reflect]]
 	std::vector<assets::Handle<assets::UIStyle>> m_styles;
 
 	[[Reflect]]

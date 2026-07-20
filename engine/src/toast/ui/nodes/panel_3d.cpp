@@ -11,7 +11,12 @@
 
 namespace toast {
 
-Panel3D::Panel3D() = default;
+Panel3D::Panel3D() {
+	m_bind_store = std::make_unique<ui::UIBindStore>();
+	m_element.onChangeCallback([this] { reloadDocument(); });
+	m_color_scheme.onChangeCallback([this] { reloadDocument(); });
+}
+
 Panel3D::~Panel3D() = default;
 
 auto Panel3D::buildLocalizationScope() const -> ui::UISystem::LocalizationScope {
@@ -31,7 +36,7 @@ auto Panel3D::buildLocalizationScope() const -> ui::UISystem::LocalizationScope 
 }
 
 auto Panel3D::pixelSize() const -> glm::ivec2 {
-	const glm::vec3 scale = worldScale();
+	const glm::vec3 scale = world_scale;
 	const int width = std::max(static_cast<int>(scale.x * m_pixels_per_meter), 1);
 	const int height = std::max(static_cast<int>(scale.y * m_pixels_per_meter), 1);
 	// Clamp to a sane texture ceiling
@@ -49,10 +54,6 @@ void Panel3D::init() {
 	for (const auto& font : m_fonts) {
 		ui.loadFontFace(font);
 	}
-	for (const auto& family : m_font_families) {
-		ui.loadFontFamily(family);
-	}
-
 	m_context = ui.createContext(name(), pixelSize());
 	if (!m_context) {
 		return;
@@ -117,24 +118,21 @@ void Panel3D::loadDocument() {
 	}
 
 	auto& ui = ui::UISystem::get();
+	ui.pushLocalizationScope(buildLocalizationScope());
 
 	ui::PreprocessContext preprocess_ctx;
 	preprocess_ctx.inject_data_model = true;
 	preprocess_ctx.style_uris = ui.globalStyleUris();
-	for (const auto& style : m_styles) {
-		if (!style.path().empty()) {
-			preprocess_ctx.style_uris.emplace_back(style.path());
-		}
-	}
+	preprocess_ctx.color_resolver = [&ui](std::string_view name) { return ui.colorHex(name); };
 
 	const auto scan = ui::preprocessDocument(m_element->source(), preprocess_ctx);
+	m_bind_store->reconcile(scan);
 
 	if (!scan.events.empty() || !scan.binds.empty()) {
-		m_binds = std::make_unique<ui::UIBinds>(m_context, this, scan);
+		m_binds = std::make_unique<ui::UIBinds>(m_context, this, scan, *m_bind_store);
 	}
 
 	// Localization scope must be active so TranslateString and localized images resolve
-	ui.pushLocalizationScope(buildLocalizationScope());
 	m_document = m_context->LoadDocumentFromMemory(scan.transformed_rml, Rml::String(m_element.path()));
 	if (m_document) {
 		ui::applyImageLocalization(m_document);

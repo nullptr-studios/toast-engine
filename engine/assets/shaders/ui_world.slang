@@ -38,7 +38,7 @@ VSOutput vertexMain(uint vertex_id : SV_VertexID) {
     float2 corner = corners[vertex_id];
 
     VSOutput output;
-    float4 world_pos = mul(gWorldPush.model, float4(corner.x, 0.0, corner.y, 1.0));
+    float4 world_pos = mul(gWorldPush.model, float4(corner.x, corner.y, 0.0, 1.0));
     output.position = mul(gCamera.viewProjection, world_pos);
     output.uv = float2(corner.x + 0.5, 0.5 - corner.y);
     return output;
@@ -46,5 +46,7 @@ VSOutput vertexMain(uint vertex_id : SV_VertexID) {
 
 [shader("fragment")]
 float4 fragmentMain(VSOutput input) : SV_Target0 {
-    return gPanelTexture.Sample(input.uv);
+    const float4 color = gPanelTexture.Sample(input.uv);
+    clip(color.a - 0.001);
+    return color;
 }

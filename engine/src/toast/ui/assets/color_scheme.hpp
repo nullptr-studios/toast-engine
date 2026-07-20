@@ -25,6 +25,8 @@ public:
 		return "color_scheme";
 	}
 
+	void reload(const toml::table& table) override;
+
 	/// Looks a color up by name
 	[[nodiscard]]
 	auto color(std::string_view name) const -> std::optional<glm::vec4>;

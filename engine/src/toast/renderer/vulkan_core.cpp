@@ -431,19 +431,14 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_transfer_queue_family_index].queueFlags)
 	);
 
+	const auto queue_family_properties = m_physical_device.getQueueFamilyProperties();
 	std::vector<uint32_t> unique_queue_families;
-	auto push_unique = [&](uint32_t family_index) {
-		if (family_index == k_invalid_queue_family) {
-			return;
-		}
-		if (std::find(unique_queue_families.begin(), unique_queue_families.end(), family_index) == unique_queue_families.end()) {
+	unique_queue_families.reserve(queue_family_properties.size());
+	for (uint32_t family_index = 0; family_index < static_cast<uint32_t>(queue_family_properties.size()); family_index++) {
+		if (queue_family_properties[family_index].queueCount > 0) {
 			unique_queue_families.push_back(family_index);
 		}
-	};
-
-	push_unique(m_graphics_queue_family_index);
-	push_unique(m_compute_queue_family_index);
-	push_unique(m_transfer_queue_family_index);
+	}
 
 	float queue_priority = 1.0f;
 	std::vector<vk::DeviceQueueCreateInfo> queue_create_infos;

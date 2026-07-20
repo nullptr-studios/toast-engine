@@ -11,7 +11,12 @@
 
 namespace toast {
 
-Panel::Panel() = default;
+Panel::Panel() {
+	m_bind_store = std::make_unique<ui::UIBindStore>();
+	m_element.onChangeCallback([this] { reloadDocument(); });
+	m_color_scheme.onChangeCallback([this] { reloadDocument(); });
+}
+
 Panel::~Panel() = default;
 
 auto Panel::buildLocalizationScope() const -> ui::UISystem::LocalizationScope {
@@ -41,10 +46,6 @@ void Panel::init() {
 	for (const auto& font : m_fonts) {
 		ui.loadFontFace(font);
 	}
-	for (const auto& family : m_font_families) {
-		ui.loadFontFamily(family);
-	}
-
 	// Viewport-sized context
 	glm::ivec2 dims {1920, 1080};
 	if (renderer::VulkanRenderer::instance) {
@@ -105,24 +106,21 @@ void Panel::loadDocument() {
 	}
 
 	auto& ui = ui::UISystem::get();
+	ui.pushLocalizationScope(buildLocalizationScope());
 
 	ui::PreprocessContext preprocess_ctx;
 	preprocess_ctx.inject_data_model = true;
 	preprocess_ctx.style_uris = ui.globalStyleUris();
-	for (const auto& style : m_styles) {
-		if (!style.path().empty()) {
-			preprocess_ctx.style_uris.emplace_back(style.path());
-		}
-	}
+	preprocess_ctx.color_resolver = [&ui](std::string_view name) { return ui.colorHex(name); };
 
 	const auto scan = ui::preprocessDocument(m_element->source(), preprocess_ctx);
+	m_bind_store->reconcile(scan);
 
 	if (!scan.events.empty() || !scan.binds.empty()) {
-		m_binds = std::make_unique<ui::UIBinds>(m_context, this, scan);
+		m_binds = std::make_unique<ui::UIBinds>(m_context, this, scan, *m_bind_store);
 	}
 
 	// Localization scope must be active so TranslateString and localized images resolve
-	ui.pushLocalizationScope(buildLocalizationScope());
 	m_document = m_context->LoadDocumentFromMemory(scan.transformed_rml, Rml::String(m_element.path()));
 	if (m_document) {
 		ui::applyImageLocalization(m_document);

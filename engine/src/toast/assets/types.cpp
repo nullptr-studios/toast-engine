@@ -48,8 +48,8 @@ auto HandleBase::operator=(const HandleBase& other) -> HandleBase& {
 		m_uri = other.m_uri;
 		if (m_asset) {
 			m_asset->addRef();
-			dispatchOnChange();
 		}
+		dispatchOnChange();
 	}
 	return *this;
 }

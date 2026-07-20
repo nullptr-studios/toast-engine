@@ -11,7 +11,9 @@
 #include <RmlUi/Core/Variant.h>
 #include <string>
 #include <string_view>
+#include <toast/export.hpp>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace Rml {
 class Context;
@@ -25,9 +27,31 @@ namespace ui {
 
 struct DocumentScan;
 
+/**
+ * @brief Persistent values shared by Lua and the active RmlUi data model
+ */
+class TOAST_API UIBindStore {
+public:
+	UIBindStore();
+	~UIBindStore();
+
+	void reconcile(const DocumentScan& scan);
+
+	[[nodiscard]]
+	auto has(std::string_view name) const -> bool;
+
+	[[nodiscard]]
+	auto get(std::string_view name) const -> Rml::Variant;
+
+	void set(std::string_view name, Rml::Variant value);
+
+private:
+	std::unordered_map<std::string, Rml::Variant> m_values;
+};
+
 class UIBinds {
 public:
-	UIBinds(Rml::Context* context, toast::Node* owner, const DocumentScan& scan);
+	UIBinds(Rml::Context* context, toast::Node* owner, const DocumentScan& scan, UIBindStore& store);
 	~UIBinds();
 
 	UIBinds(const UIBinds&) = delete;
@@ -51,6 +75,9 @@ public:
 	/// Writes `name` from script and notifies the data model to refresh the UI
 	void set(std::string_view name, Rml::Variant value);
 
+	void flushDirty();
+	static void flushAllDirty();
+
 	/// @returns the binds owning `node`
 	[[nodiscard]]
 	static auto forNode(const toast::Node* node) -> UIBinds*;
@@ -61,7 +88,8 @@ private:
 	Rml::Context* m_context = nullptr;
 	toast::Node* m_owner = nullptr;
 	Rml::DataModelHandle m_handle;
-	std::unordered_map<std::string, Rml::Variant> m_store;
+	UIBindStore& m_store;
+	std::unordered_set<std::string> m_dirty_names;
 
 	static inline std::unordered_map<const toast::Node*, UIBinds*> s_by_node;
 };

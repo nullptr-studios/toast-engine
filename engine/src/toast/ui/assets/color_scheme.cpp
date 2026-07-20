@@ -5,6 +5,12 @@
 
 namespace assets {
 
+void ColorScheme::reload(const toml::table& table) {
+	Data::reload(table);
+	m_lookup.clear();
+	m_built = false;
+}
+
 void ColorScheme::buildLookup() const {
 	if (m_built) {
 		return;

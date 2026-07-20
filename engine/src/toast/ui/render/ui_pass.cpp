@@ -75,14 +75,15 @@ void UIPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 
 	m_draw_count = 0;
 
+	auto& executing_guard = m_executing_guards[frame_index % m_executing_guards.size()];
+	executing_guard.reset();
+
 	const auto* frame = renderer::VulkanRenderer::instance->renderingFrame();
 	if (frame == nullptr || frame->ui_command_buffers.empty()) {
 		return;
 	}
 
-	// The renderer waited this frame context's fence before recording, so whatever guard was
-	// stored here previously is no longer executing on the GPU
-	m_executing_guards[frame_index % m_executing_guards.size()] = frame->ui_slot_guard;
+	executing_guard = frame->ui_slot_guard;
 
 	// The secondary buffers open their own rendering scopes, so they execute outside the main one
 	cmd.executeCommands(frame->ui_command_buffers);

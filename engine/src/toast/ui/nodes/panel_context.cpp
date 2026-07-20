@@ -15,9 +15,6 @@ void PanelContext::init() {
 	for (const auto& font : m_fonts) {
 		ui.loadFontFace(font);
 	}
-	for (const auto& family : m_font_families) {
-		ui.loadFontFamily(family);
-	}
 	for (const auto& style : m_styles) {
 		ui.registerGlobalStyle(style);
 	}
@@ -32,12 +29,7 @@ void PanelContext::init() {
 	}
 
 	TOAST_INFO(
-	    "UI",
-	    "PanelContext registered {} fonts, {} families, {} styles, {} schemes",
-	    m_fonts.size(),
-	    m_font_families.size(),
-	    m_styles.size(),
-	    m_color_schemes.size()
+	    "UI", "PanelContext registered {} fonts, {} styles, {} schemes", m_fonts.size(), m_styles.size(), m_color_schemes.size()
 	);
 }
 

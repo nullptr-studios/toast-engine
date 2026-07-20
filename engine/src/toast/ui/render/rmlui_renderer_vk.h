@@ -12,8 +12,14 @@
 #pragma once
 
 #include <RmlUi/Core/RenderInterface.h>
+#include <algorithm>
+#include <array>
+#include <deque>
 #include <memory>
 #include <mutex>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
@@ -27,7 +33,7 @@ class RenderInterface_VK : public Rml::RenderInterface {
 public:
 	// Matches the engine renderer's frames-in-flight; per-frame resources cycle on this
 	static constexpr uint32_t kFramesInFlight = 3;
-	static constexpr VkDeviceSize kVideoMemoryForAllocation = 8 * 1024 * 1024;    // [bytes]
+	static constexpr VkDeviceSize kVideoMemoryForAllocation = 64 * 1024 * 1024;    // [bytes]
 
 	/// Mirrors the EffectsPush block in ui_effects.slang
 	struct effects_push_t {
@@ -132,13 +138,11 @@ private:
 
 		VkDescriptorBufferInfo m_p_vertex;
 		VkDescriptorBufferInfo m_p_index;
-		VkDescriptorBufferInfo m_p_shader;
 
 		// @ this is for freeing our logical blocks for VMA
 		// see https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/virtual_allocator.html
 		VmaVirtualAllocation m_p_vertex_allocation;
 		VmaVirtualAllocation m_p_index_allocation;
-		VmaVirtualAllocation m_p_shader_allocation;
 	};
 
 	struct buffer_data_t {
@@ -158,8 +162,9 @@ private:
 	/// All render targets for one extent
 	struct LayerPool {
 		uint64_t m_generation = 0;
+		uint64_t m_last_used_frame = 0;
 		VkExtent2D m_extent {};
-		Rml::Vector<effect_image_t> m_layers;
+		std::deque<effect_image_t> m_layers;
 		effect_image_t m_postprocess[3];
 		effect_image_t m_blend_mask;
 		Rml::Vector<effect_image_t> m_outputs;
@@ -366,6 +371,7 @@ private:
 		    uint32_t number_of_elements, uint32_t stride_in_bytes, void** p_data, VkDescriptorBufferInfo* p_out,
 		    VmaVirtualAllocation* p_alloc
 		) noexcept;
+		void Flush(const VkDescriptorBufferInfo& range) noexcept;
 
 		void
 		    SetDescriptorSet(uint32_t binding_index, uint32_t size, VkDescriptorType descriptor_type, VkDescriptorSet p_set) noexcept;
@@ -378,7 +384,6 @@ private:
 		) noexcept;
 
 		void Free_GeometryHandle(geometry_handle_t* p_valid_geometry_handle) noexcept;
-		void Free_GeometryHandle_ShaderDataOnly(geometry_handle_t* p_valid_geometry_handle) noexcept;
 		void Free_Allocation(VmaVirtualAllocation allocation) noexcept;
 
 	private:
@@ -399,13 +404,15 @@ private:
 		CommandBufferRing();
 
 		void Initialize(VkDevice p_device, uint32_t queue_index_graphics) noexcept;
-		void Shutdown();
+		void Shutdown(MemoryPool& memory_pool);
 
 		/// Picks a free slot, resets its pool, and returns its guard
-		std::shared_ptr<const void> AcquireSlot();
+		std::shared_ptr<const void> AcquireSlot(MemoryPool& memory_pool);
 		VkCommandBuffer GetNextSecondaryBuffer();
 
+		void AddCurrentSlotAllocation(VmaVirtualAllocation allocation);
 		void AddCurrentSlotGeneration(uint64_t generation);
+		void AddCurrentSlotResource(std::shared_ptr<const void> resource);
 		bool IsGenerationReferenced(uint64_t generation) const;
 
 	private:
@@ -414,7 +421,9 @@ private:
 			Rml::Vector<VkCommandBuffer> m_command_buffers;
 			uint32_t m_used = 0;
 			std::shared_ptr<const int> m_guard;
+			Rml::Vector<VmaVirtualAllocation> m_transient_allocations;
 			Rml::Vector<uint64_t> m_generations;
+			Rml::Vector<std::shared_ptr<const void>> m_resources;
 		};
 
 		Slot& CreateSlot();
@@ -427,10 +436,10 @@ private:
 
 	class DescriptorPoolManager {
 	public:
-		DescriptorPoolManager() : m_allocated_descriptor_count {}, m_p_descriptor_pool {} { }
+		DescriptorPoolManager() = default;
 
 		~DescriptorPoolManager() {
-			RMLUI_VK_ASSERTMSG(m_allocated_descriptor_count <= 0, "something is wrong. You didn't free some VkDescriptorSet");
+			RMLUI_VK_ASSERTMSG(m_allocations.empty(), "something is wrong. You didn't free some VkDescriptorSet");
 		}
 
 		void Initialize(
@@ -438,33 +447,30 @@ private:
 		    uint32_t count_storage_buffer
 		) noexcept {
 			RMLUI_VK_ASSERTMSG(p_device, "you can't pass an invalid VkDevice here");
-
-			Rml::Array<VkDescriptorPoolSize, 5> sizes;
-			sizes[0] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, count_uniform_buffer};
-			sizes[1] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, count_uniform_buffer};
-			sizes[2] = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, count_image_sampler};
-			sizes[3] = {VK_DESCRIPTOR_TYPE_SAMPLER, count_sampler};
-			sizes[4] = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, count_storage_buffer};
-
-			VkDescriptorPoolCreateInfo info = {};
-			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-			info.pNext = nullptr;
-			info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-			info.maxSets = 1000;
-			info.poolSizeCount = static_cast<uint32_t>(sizes.size());
-			info.pPoolSizes = sizes.data();
-
-			auto status = vkCreateDescriptorPool(p_device, &info, nullptr, &m_p_descriptor_pool);
-			RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkCreateDescriptorPool");
+			m_p_device = p_device;
+			m_pool_sizes = {
+			  VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, count_uniform_buffer},
+			  VkDescriptorPoolSize {        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, count_uniform_buffer},
+			  VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  count_image_sampler},
+			  VkDescriptorPoolSize {               VK_DESCRIPTOR_TYPE_SAMPLER,        count_sampler},
+			  VkDescriptorPoolSize {        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, count_storage_buffer},
+			};
+			m_max_sets_per_pool =
+			    std::max<uint32_t>(count_uniform_buffer + count_image_sampler + count_sampler + count_storage_buffer, 64);
+			RMLUI_VK_ASSERTMSG(CreatePool(), "failed to create the initial descriptor pool");
 		}
 
 		void Shutdown(VkDevice p_device) {
 			RMLUI_VK_ASSERTMSG(p_device, "you can't pass an invalid VkDevice here");
-
-			vkDestroyDescriptorPool(p_device, m_p_descriptor_pool, nullptr);
+			for (VkDescriptorPool pool : m_pools) {
+				vkDestroyDescriptorPool(p_device, pool, nullptr);
+			}
+			m_allocations.clear();
+			m_pools.clear();
+			m_p_device = nullptr;
 		}
 
-		uint32_t Get_AllocatedDescriptorCount() const noexcept { return m_allocated_descriptor_count; }
+		uint32_t Get_AllocatedDescriptorCount() const noexcept { return static_cast<uint32_t>(m_allocations.size()); }
 
 		bool Alloc_Descriptor(
 		    VkDevice p_device, VkDescriptorSetLayout* p_layouts, VkDescriptorSet* p_sets, uint32_t descriptor_count_for_creation = 1
@@ -473,34 +479,100 @@ private:
 			    p_layouts, "you have to pass a valid and initialized VkDescriptorSetLayout (probably you must create it)"
 			);
 			RMLUI_VK_ASSERTMSG(p_device, "you must pass a valid VkDevice here");
+			if (!p_layouts || !p_sets || descriptor_count_for_creation == 0) {
+				return false;
+			}
 
 			VkDescriptorSetAllocateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 			info.pNext = nullptr;
-			info.descriptorPool = m_p_descriptor_pool;
 			info.descriptorSetCount = descriptor_count_for_creation;
 			info.pSetLayouts = p_layouts;
 
-			auto status = vkAllocateDescriptorSets(p_device, &info, p_sets);
-			RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkAllocateDescriptorSets");
+			auto try_allocate = [&](VkDescriptorPool pool) {
+				info.descriptorPool = pool;
+				const VkResult status = vkAllocateDescriptorSets(p_device, &info, p_sets);
+				if (status == VK_SUCCESS) {
+					for (uint32_t i = 0; i < descriptor_count_for_creation; i++) {
+						m_allocations.push_back({p_sets[i], pool});
+					}
+				}
+				return status;
+			};
 
-			m_allocated_descriptor_count += descriptor_count_for_creation;
+			for (VkDescriptorPool pool : m_pools) {
+				const VkResult status = try_allocate(pool);
+				if (status == VK_SUCCESS) {
+					return true;
+				}
+				if (status != VK_ERROR_OUT_OF_POOL_MEMORY && status != VK_ERROR_FRAGMENTED_POOL) {
+					RMLUI_VK_ASSERTMSG(false, "failed to vkAllocateDescriptorSets");
+					return false;
+				}
+			}
 
-			return status == VkResult::VK_SUCCESS;
+			if (!CreatePool()) {
+				return false;
+			}
+			return try_allocate(m_pools.back()) == VK_SUCCESS;
 		}
 
 		void Free_Descriptors(VkDevice p_device, VkDescriptorSet* p_sets, uint32_t descriptor_count = 1) noexcept {
 			RMLUI_VK_ASSERTMSG(p_device, "you must pass a valid VkDevice here");
 
-			if (p_sets) {
-				m_allocated_descriptor_count -= descriptor_count;
-				vkFreeDescriptorSets(p_device, m_p_descriptor_pool, descriptor_count, p_sets);
+			if (!p_sets) {
+				return;
+			}
+
+			for (uint32_t i = 0; i < descriptor_count; i++) {
+				const VkDescriptorSet set = p_sets[i];
+				if (!set) {
+					continue;
+				}
+
+				auto allocation = std::find_if(m_allocations.begin(), m_allocations.end(), [set](const Allocation& candidate) {
+					return candidate.m_set == set;
+				});
+				if (allocation == m_allocations.end()) {
+					RMLUI_VK_ASSERTMSG(false, "descriptor set was not allocated by this manager");
+					continue;
+				}
+
+				vkFreeDescriptorSets(p_device, allocation->m_pool, 1, &set);
+				m_allocations.erase(allocation);
+				p_sets[i] = nullptr;
 			}
 		}
 
 	private:
-		int m_allocated_descriptor_count;
-		VkDescriptorPool m_p_descriptor_pool;
+		struct Allocation {
+			VkDescriptorSet m_set = nullptr;
+			VkDescriptorPool m_pool = nullptr;
+		};
+
+		bool CreatePool() noexcept {
+			VkDescriptorPoolCreateInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+			info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+			info.maxSets = m_max_sets_per_pool;
+			info.poolSizeCount = static_cast<uint32_t>(m_pool_sizes.size());
+			info.pPoolSizes = m_pool_sizes.data();
+
+			VkDescriptorPool pool = nullptr;
+			const VkResult status = vkCreateDescriptorPool(m_p_device, &info, nullptr, &pool);
+			if (status != VK_SUCCESS) {
+				RMLUI_VK_ASSERTMSG(false, "failed to vkCreateDescriptorPool");
+				return false;
+			}
+			m_pools.push_back(pool);
+			return true;
+		}
+
+		VkDevice m_p_device = nullptr;
+		uint32_t m_max_sets_per_pool = 0;
+		std::array<VkDescriptorPoolSize, 5> m_pool_sizes {};
+		Rml::Vector<VkDescriptorPool> m_pools;
+		Rml::Vector<Allocation> m_allocations;
 	};
 
 private:
@@ -519,18 +591,14 @@ private:
 	buffer_data_t CreateResource_StagingBuffer(VkDeviceSize size, VkBufferUsageFlags flags) noexcept;
 	void DestroyResource_StagingBuffer(const buffer_data_t& data) noexcept;
 
-	void Destroy_Textures() noexcept;
-	void Destroy_Geometries() noexcept;
-
 	void Destroy_Texture(const texture_data_t& p_texture) noexcept;
+	bool RetainResource(const void* resource);
+	void ReleaseResource(const void* resource);
 
 	void Destroy_Pipelines() noexcept;
 	void DestroyDescriptorSets() noexcept;
 	void DestroyPipelineLayout() noexcept;
 	void DestroySamplers() noexcept;
-
-	void Update_PendingForDeletion_Textures_By_Frames() noexcept;
-	void Update_PendingForDeletion_Geometries() noexcept;
 
 	void CreateEffectResources() noexcept;
 	void DestroyEffectResources() noexcept;
@@ -543,7 +611,7 @@ private:
 
 	void TransitionEffectImage(effect_image_t& image, VkImageLayout new_layout);
 	void BeginLayerScope(effect_image_t& target, bool clear_color, bool clear_stencil);
-	void BeginEffectScope(effect_image_t& target, bool clear_color, VkRect2D render_area);
+	void BeginEffectScope(effect_image_t& target, bool clear_color, VkRect2D render_area, bool use_clip_stencil = false);
 	void EndScope();
 
 	void SuspendLayerScope();
@@ -551,7 +619,7 @@ private:
 
 	void RenderFullscreenPass(
 	    VkPipeline pipeline, effect_image_t& destination, effect_image_t& source, effect_image_t* mask, const effects_push_t& push,
-	    bool clear_destination, VkRect2D render_area, VkViewport viewport
+	    bool clear_destination, VkRect2D render_area, VkViewport viewport, bool use_clip_stencil = false
 	);
 
 	void RenderFilters(Rml::Span<const Rml::CompiledFilterHandle> filter_handles);
@@ -561,7 +629,6 @@ private:
 	VkDescriptorSet GetEffectDescriptorSet(effect_image_t& image) noexcept;
 
 private:
-	bool m_is_transform_enabled;
 	bool m_is_apply_to_regular_geometry_stencil;
 	bool m_is_use_scissor_specified;
 	bool m_is_use_stencil_pipeline;
@@ -603,10 +670,7 @@ private:
 
 	Rml::Matrix4f m_projection;
 	Rml::Vector<VkShaderModule> m_shaders;
-	Rml::Array<Rml::Vector<texture_data_t*>, kFramesInFlight> m_pending_for_deletion_textures_by_frames;
-
-	// vma handles that thing, so there's no need for frame splitting
-	Rml::Vector<geometry_handle_t*> m_pending_for_deletion_geometries;
+	std::unordered_map<const void*, std::shared_ptr<const void>> m_live_resources;
 
 	CommandBufferRing m_command_buffer_ring;
 	MemoryPool m_memory_pool;
@@ -614,6 +678,7 @@ private:
 	DescriptorPoolManager m_manager_descriptors;
 
 	uint64_t m_pool_generation = 0;
+	uint64_t m_pool_frame = 0;
 	Rml::Vector<Rml::UniquePtr<LayerPool>> m_pools;
 	Rml::Vector<Rml::UniquePtr<LayerPool>> m_retired_pools;
 	LayerPool* m_p_current_pool = nullptr;
@@ -634,6 +699,8 @@ private:
 	VkPipelineLayout m_p_pipeline_layout_effects = nullptr;
 	VkPipeline m_p_pipeline_passthrough_blend = nullptr;
 	VkPipeline m_p_pipeline_passthrough_noblend = nullptr;
+	VkPipeline m_p_pipeline_passthrough_blend_stencil = nullptr;
+	VkPipeline m_p_pipeline_passthrough_noblend_stencil = nullptr;
 	VkPipeline m_p_pipeline_colormatrix = nullptr;
 	VkPipeline m_p_pipeline_blendmask = nullptr;
 	VkPipeline m_p_pipeline_blur = nullptr;
@@ -654,6 +721,4 @@ private:
 	uint32_t m_clip_write_value = 1;
 
 	VkShaderModule m_p_effects_shader_module = nullptr;
-
-	Rml::Vector<CompiledShader*> m_pending_for_deletion_shaders;
 };

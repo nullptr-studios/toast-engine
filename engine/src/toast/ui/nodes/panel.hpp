@@ -19,6 +19,7 @@ class ElementDocument;
 
 namespace ui {
 class UIBinds;
+class UIBindStore;
 }
 
 namespace toast {
@@ -61,25 +62,20 @@ private:
 	assets::Handle<assets::UIElement> m_element;
 
 	[[Reflect]]
-	std::vector<assets::Handle<assets::UIStyle>> m_styles;
+	assets::Handle<assets::ColorScheme> m_color_scheme;
 
 	[[Reflect]]
 	std::vector<assets::Handle<assets::Font>> m_fonts;
 
-	[[Reflect]]
-	std::vector<assets::Handle<assets::FontFamily>> m_font_families;
-
-	[[Reflect]]
-	assets::Handle<assets::ColorScheme> m_color_scheme;
-
-	[[Reflect]]
+	[[Reflect, Group("Data"), Name("Table")]]
 	std::vector<assets::Handle<assets::Localization>> m_localizations;
 
-	[[Reflect]]
+	[[Reflect, Group("Data"), Name("Image table")]]
 	std::vector<assets::Handle<assets::ImageLocalization>> m_image_localizations;
 
 	Rml::Context* m_context = nullptr;
 	Rml::ElementDocument* m_document = nullptr;
+	std::unique_ptr<ui::UIBindStore> m_bind_store;
 	std::unique_ptr<ui::UIBinds> m_binds;
 };
 

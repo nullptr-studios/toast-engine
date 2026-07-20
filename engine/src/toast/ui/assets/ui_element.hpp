@@ -28,6 +28,8 @@ public:
 		return m_source;
 	}
 
+	void setSource(std::vector<uint8_t> data) { m_source.assign(reinterpret_cast<const char*>(data.data()), data.size()); }
+
 private:
 	std::string m_source;
 };

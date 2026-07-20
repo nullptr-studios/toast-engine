@@ -14,6 +14,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <toast/events/listener.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <unordered_map>
 #include <vector>
@@ -62,7 +63,6 @@ public:
 
 	auto loadFontFace(std::string_view uri, bool fallback = false) -> bool;
 	auto loadFontFace(const assets::Handle<assets::Font>& font, bool fallback = false) -> bool;
-	void loadFontFamily(const assets::Handle<assets::FontFamily>& family);
 
 	void registerGlobalStyle(const assets::Handle<assets::UIStyle>& style);
 	void unregisterGlobalStyle(const assets::Handle<assets::UIStyle>& style);
@@ -74,6 +74,8 @@ public:
 
 	[[nodiscard]]
 	auto colorFromSchemes(std::string_view name) const -> std::optional<glm::vec4>;
+	[[nodiscard]]
+	auto colorHex(std::string_view name) const -> std::optional<std::string>;
 
 	struct LocalizationScope {
 		std::vector<const assets::Localization*> texts;
@@ -140,6 +142,7 @@ private:
 	std::unique_ptr<UISystemInterface> m_system_interface;
 	std::unique_ptr<RenderInterface_VK> m_render_interface;
 	std::unique_ptr<UIInputRouter> m_input_router;
+	event::Listener m_asset_listener;
 
 	float m_dp_ratio = 1.0f;
 
@@ -150,7 +153,6 @@ private:
 	std::vector<toast::Panel3D*> m_world_panels;
 	std::unordered_map<Rml::Context*, toast::Node*> m_context_owners;
 
-	std::vector<assets::Handle<assets::Font>> m_retained_fonts;
 	std::vector<assets::Handle<assets::UIStyle>> m_global_styles;
 	std::vector<assets::Handle<assets::ColorScheme>> m_global_schemes;
 
