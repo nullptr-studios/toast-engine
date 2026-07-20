@@ -342,6 +342,9 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	// get window handle
 	auto* sdl_window = static_cast<SDL_Window*>(m->window->nativeHandle());
+	if (m->ui_system) {
+		m->ui_system->setSDLWindow(sdl_window);
+	}
 	auto instance_extensions = renderer::SDLOutputTarget::getRequiredInstanceExtensions(sdl_window);
 	auto device_extensions = renderer::SDLOutputTarget::getRequiredDeviceExtensions();
 	// create vulkan core

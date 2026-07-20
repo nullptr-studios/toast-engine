@@ -105,9 +105,9 @@
 								</ItemsPanelTemplate>
 							</ItemsControl.ItemsPanel>
 							<ItemsControl.ItemTemplate>
-								<DataTemplate x:DataType="x:String">
-									<Border Classes="head-cell">
-										<TextBlock Text="{Binding}"
+								<DataTemplate x:DataType="vm:TableColumnVM">
+									<Border Classes="head-cell" IsVisible="{Binding IsVisible}">
+										<TextBlock Text="{Binding Name}"
 										           FontWeight="Bold"
 										           TextTrimming="CharacterEllipsis"/>
 									</Border>
@@ -142,7 +142,7 @@
 										</ItemsControl.ItemsPanel>
 										<ItemsControl.ItemTemplate>
 											<DataTemplate x:DataType="vm:TableCellVM">
-												<Panel Width="180" Margin="0,0,2,2">
+												<Panel Width="180" Margin="0,0,2,2" IsVisible="{Binding IsVisible}">
 													<TextBox Classes="cell"
 													         Width="180"
 													         Margin="0"

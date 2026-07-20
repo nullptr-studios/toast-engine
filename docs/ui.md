@@ -164,6 +164,11 @@ styles are retained on the `PanelContext` to avoid reloading.
 - `02-text_format` — the `${}` formatter: each directive, combined directives, `${data:}`
   substitution, `$$` escaping, markup escaping, scheme vs literal colors, and unknown-tag
   stripping.
+- `03-bind_store` — bind discovery, checkbox boolean typing, value preservation across reload,
+  and removal of stale variables.
+- `04-document_preprocess` — model injection, event/bind scanning, stylesheet normalization,
+  and color replacement.
+- `05-localization_and_paths` — language fallback and relative/absolute VFS path joining.
 
 Run them for both Debug and Release (asserts differ between configs).
 
@@ -171,15 +176,16 @@ Run them for both Debug and Release (asserts differ between configs).
 
 - **World-space input.** World panels render but do not yet receive input; a ray-to-panel
   hit test feeding `Context::ProcessMouse*` would close that gap.
+- **Native controller navigation.** Input actions can drive reflected menu commands, but RmlUi
+  focus does not yet consume D-pad/stick/submit/cancel events directly.
 - **RmlUi debugger.** RmlUi ships an in-context debugger (`Rml::Debugger`) that could be
   toggled behind a dev flag for live inspection of the element tree and styles.
-- **Image-localization pickers.** The Table Editor currently edits `.tiloc` cells as plain
-  asset references; a drag-drop asset picker would match the inspector's control.
 
 ## Changelog
 
-Initial version: asset pipeline (`.rml`/`.rcss`/`.ttf`/`.tga`, `.tff`/`.color`,
+Initial version: asset pipeline (`.rml`/`.rcss`/`.ttf`/`.tga`, `.tcolor`,
 `.tloc`/`.tiloc`), `Panel`/`Panel3D`/`PanelContext` nodes, the vendored-and-expanded Vulkan
 backend with clip masks/filters/shaders, the UI and World UI passes, input with high-DPI and
 clipboard, Lua events and two-way data binds, localization with `${}` formatting, the Avalonia
-Table Editor, generated Lua bind stubs, and the example content under `engine/assets/ui/examples/`.
+Table Editor, generated Lua bind stubs, and the example content under
+`demo_engine/assets/examples/`.

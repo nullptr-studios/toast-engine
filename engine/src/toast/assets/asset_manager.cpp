@@ -356,6 +356,8 @@ void AssetManager::reloadManifest() {
 			load_collection("ui_image");
 			load_collection("ui_element");
 			load_collection("ui_style");
+			load_collection("localization");
+			load_collection("image_localization");
 			load_collection("script");
 			load_collection("shader");
 		} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse manifest {}: {}", uri, e.what()); }
@@ -436,7 +438,8 @@ auto AssetManager::readVirtualPath(std::string_view virtual_path) -> std::option
 			return data;
 		}
 		// Not found in pack
-		TOAST_WARN("AssetManager", "Pack mount '{}://' does not contain '{}', falling back to filesystem", scheme, rel);
+		TOAST_ERROR("AssetManager", "Pack mount '{}://' does not contain '{}'", scheme, rel);
+		return std::nullopt;
 	}
 
 	// Filesystem fallback
@@ -567,7 +570,8 @@ void AssetManager::pollModifiedAssets() {
 		std::lock_guard lock(mutex);
 		for (const auto& [id, info] : manifest) {
 			const std::string& type = info.type;
-			const bool is_ui = type == "ui_element" || type == "ui_style" || type == "color_scheme";
+			const bool is_ui = type == "ui_element" || type == "ui_style" || type == "color_scheme" || type == "localization" ||
+			                   type == "image_localization";
 			auto asset_it = cache.find(id);
 			if (!is_ui && asset_it == cache.end()) {
 				continue;
@@ -614,6 +618,10 @@ void AssetManager::pollModifiedAssets() {
 					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", info.path, err.description());
 					continue;
 				}
+			} else if (type == "localization") {
+				static_cast<Localization*>(asset_it->second.get())->reload(std::move(*raw));
+			} else if (type == "image_localization") {
+				static_cast<ImageLocalization*>(asset_it->second.get())->reload(std::move(*raw));
 			} else {
 				// Materials re-parse their TOML in place so existing handles stay valid
 				try {
@@ -634,7 +642,10 @@ void AssetManager::pollModifiedAssets() {
 			event::send<event::ScriptAssetReloaded>(uid);
 		} else if (type == "shader") {
 			event::send<event::ShaderAssetReloaded>(uid);
-		} else if (type == "ui_element" || type == "ui_style" || type == "color_scheme") {
+		} else if (
+		    type == "ui_element" || type == "ui_style" || type == "color_scheme" || type == "localization" ||
+		    type == "image_localization"
+		) {
 			event::send<event::UIAssetReloaded>(uid, type);
 		} else {
 			event::send<event::MaterialAssetReloaded>(uid);

@@ -28,6 +28,8 @@ public static class ProjectContext {
 
 	// Fired after an import batch completes
 	public static event Action? AssetsChanged;
+	// Fired after project settings have been saved and the configured language list was changed
+	public static event Action? LanguagesChanged;
 
 	public static void RaiseAssetsChanged() {
 		AssetsChanged?.Invoke();
@@ -49,6 +51,8 @@ public static class ProjectContext {
 		RegisterSchemes();
 		EnsureDirectories();
 		IsInitialized = true;
+		UIBindStubGenerator.Generate();
+		UIBindStubGenerator.StartWatching();
 	}
 
 	public static void SyncLuaDefinitions(Action<string>? log = null) {
@@ -92,6 +96,7 @@ public static class ProjectContext {
 		Languages = ReadLanguagesFromProject(ProjectPath);
 		RegisterSchemes();
 		EnsureDirectories();
+		LanguagesChanged?.Invoke();
 
 		ToastEngine.ReloadProjectSettings();
 		AssetDatabase.RebuildAssetDatabase();

@@ -27,7 +27,7 @@ auto dispatchToPanels(F&& fn) -> bool {
 	bool consumed = false;
 	for (toast::Panel* panel : std::views::reverse(UISystem::get().panels())) {
 		Rml::Context* context = panel->rmlContext();
-		if (!panel->enabled() || context == nullptr) {
+		if (!panel->enabled() || !panel->participatesIn(toast::NodeOwnerParticipation::runtime_input) || context == nullptr) {
 			continue;
 		}
 

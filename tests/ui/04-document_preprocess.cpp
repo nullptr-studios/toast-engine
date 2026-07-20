@@ -18,8 +18,7 @@ TOAST_TEST_NAMED("UI", "ui/04-document_preprocess", test_ui_04_document_preproce
 	    R"(<rml><head><style>body { color: ${color:accent}; }</style></head><body style="background: ${color:black}">{{title}}</body></rml>)",
 	    context
 	);
-
-	assert(scan.transformed_rml.contains("<link type=\"text/rcss\" href=\"assets://ui/global.rcss\"/>"));
+	assert(scan.transformed_rml.contains("<link type=\"text/css\" href=\"assets://ui/global.rcss\"/>"));
 	assert(scan.transformed_rml.contains("color: #336699ff"));
 	assert(scan.transformed_rml.contains("background: black"));
 	assert(scan.transformed_rml.contains("data-model=\"binds\""));
@@ -34,4 +33,15 @@ TOAST_TEST_NAMED("UI", "ui/04-document_preprocess", test_ui_04_document_preproce
 
 	const std::string malformed = ui::resolveColorReferences("color: ${color:accent", context.color_resolver);
 	assert(malformed == "color: ${color:accent");
+
+	const auto legacy = ui::preprocessDocument(
+	    R"(<rml><head><link type="text/rcss" href="../styles/UI Style.rcss"/></head><body/></rml>)", {}
+	);
+	assert(legacy.transformed_rml.contains("type=\"text/css\""));
+	assert(legacy.transformed_rml.contains("../styles/UI Style.rcss"));
+
+	const auto invalid = ui::preprocessDocument(
+	    R"(<rml><head><link type="text/css" href="assets://ui/not-a-style.png"/></head><body/></rml>)", {}
+	);
+	assert(!invalid.transformed_rml.contains("not-a-style.png"));
 }

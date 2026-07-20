@@ -185,9 +185,20 @@ void Workspace::registerDependency(Node& from, Node& to) {
 
 void Workspace::unregisterDependency(Node& from, Node& to) { }
 
+auto Workspace::isActiveWorkspace() const noexcept -> bool {
+	Engine* engine = Engine::get();
+	return engine != nullptr && m_handle.data() == engine->activeWorkspace().data();
+}
+
+auto Workspace::participatesIn(NodeOwnerParticipation use) const noexcept -> bool {
+	return use == NodeOwnerParticipation::render && isActiveWorkspace();
+}
+
 auto Workspace::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
-	auto search = [query](this auto&& self, const Node& node) -> Box<Node> {
-		if (node.name() == query) {
+	const bool search_workspace_root = query.starts_with("root/");
+	const std::string_view target = search_workspace_root ? query.substr(5) : query;
+	auto search = [target](this auto&& self, const Node& node) -> Box<Node> {
+		if (node.name() == target) {
 			return node.box();
 		}
 		for (const auto& c : node.m_children) {
@@ -198,7 +209,7 @@ auto Workspace::findFrom(const Node& origin, std::string_view query) -> Box<Node
 		return {};
 	};
 
-	return search(origin);
+	return search(search_workspace_root ? *m_root_node : origin);
 }
 
 auto Workspace::findFrom(const Node& origin, const UID& uid) -> Box<Node> {
@@ -441,6 +452,7 @@ void Workspace::eventSubscriptions() {
 		}
 
 		field->set(&*m_focused_node, value);
+		m_focused_node->onReflectedFieldChanged(field->name);
 
 		if (field->name == "m_scripts") {
 			m_focused_node->reloadScripts();

@@ -63,6 +63,13 @@ UIBinds::UIBinds(Rml::Context* context, toast::Node* owner, const DocumentScan& 
 		constructor.BindEventCallback(
 		    event_name,
 		    [owner, event_name](Rml::DataModelHandle /*handle*/, Rml::Event& /*event*/, const Rml::VariantList& /*args*/) {
+			    if (!owner->participatesIn(toast::NodeOwnerParticipation::runtime_input)) {
+				    return;
+			    }
+			    if (!owner->hasCallable(event_name)) {
+				    TOAST_WARN("UI", "UI event '{}' has no matching C++ or Lua method on panel '{}'", event_name, owner->name());
+				    return;
+			    }
 			    owner->call<void>(event_name);
 		    }
 		);

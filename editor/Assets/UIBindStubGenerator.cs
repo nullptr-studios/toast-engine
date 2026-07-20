@@ -8,36 +8,73 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace editor.Assets;
 
 public static class UIBindStubGenerator {
 	private static readonly HashSet<string> ExpressionKeywords =
 		["true", "false", "and", "or", "not", "it", "it_index", "ev"];
+	private static readonly List<FileSystemWatcher> Watchers = [];
+	private static readonly object WatchLock = new();
+	private static Timer? s_debounceTimer;
+	private const int DebounceMilliseconds = 250;
+
+	public static void StartWatching() {
+		lock (WatchLock) {
+			foreach (var watcher in Watchers) watcher.Dispose();
+			Watchers.Clear();
+
+			foreach (var root in ProjectContext.DatabaseRoots.Append(ProjectContext.CorePath).Distinct(StringComparer.OrdinalIgnoreCase)) {
+				if (!Directory.Exists(root)) continue;
+				var watcher = new FileSystemWatcher(root, "*.rml") {
+					IncludeSubdirectories = true,
+					NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime,
+					EnableRaisingEvents = true
+				};
+				watcher.Changed += OnRmlChanged;
+				watcher.Created += OnRmlChanged;
+				watcher.Deleted += OnRmlChanged;
+				watcher.Renamed += OnRmlChanged;
+				Watchers.Add(watcher);
+			}
+		}
+	}
+
+	private static void OnRmlChanged(object sender, FileSystemEventArgs e) {
+		lock (WatchLock) {
+			s_debounceTimer?.Dispose();
+			s_debounceTimer = new Timer(_ => {
+				try { Generate(); } catch { /* a partial editor write will trigger another change */ }
+			}, null, DebounceMilliseconds, Timeout.Infinite);
+		}
+	}
 
 	// Writes {project}/.toast/lua/ui_binds.d.lua covering every .rml under the content and core roots
 	public static void Generate() {
 		if (!ProjectContext.IsInitialized) return;
 
 		var classes = new List<string>();
-		var seenStems = new HashSet<string>(StringComparer.Ordinal);
+		var documents = EnumerateRmlFiles()
+			.Select(file => new DocumentInfo(file, ProjectContext.ToVirtual(file) ?? Path.GetFullPath(file).Replace('\\', '/'),
+				SanitizeStem(Path.GetFileNameWithoutExtension(file))))
+			.OrderBy(d => d.VirtualPath, StringComparer.Ordinal)
+			.ToList();
+		var stemCounts = documents.GroupBy(d => d.Stem, StringComparer.Ordinal)
+			.ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
 
-		foreach (var file in EnumerateRmlFiles()) {
+		foreach (var document in documents) {
 			string text;
 			try {
-				text = File.ReadAllText(file);
+				text = File.ReadAllText(document.FilePath);
 			} catch {
 				continue;
 			}
 
 			var (binds, boolBinds, events) = Scan(text);
-			if (binds.Count == 0 && events.Count == 0) continue;
-
-			// Keep class names unique and Lua-identifier safe
-			var stem = SanitizeStem(Path.GetFileNameWithoutExtension(file));
-			var name = stem;
-			var n = 1;
-			while (!seenStems.Add(name)) name = $"{stem}_{n++}";
+			var name = stemCounts[document.Stem] == 1
+				? document.Stem
+				: $"{document.Stem}_{StableSuffix(document.VirtualPath)}";
 
 			classes.Add(EmitClass(name, binds, boolBinds, events));
 		}
@@ -60,8 +97,17 @@ public static class UIBindStubGenerator {
 
 		var dstDir = Path.Combine(ProjectContext.CachePath, "lua");
 		Directory.CreateDirectory(dstDir);
-		File.WriteAllText(Path.Combine(dstDir, "ui_binds.d.lua"), sb.ToString());
+		var dst = Path.Combine(dstDir, "ui_binds.d.lua");
+		var temp = dst + ".tmp." + Guid.NewGuid().ToString("N");
+		try {
+			File.WriteAllText(temp, sb.ToString());
+			File.Move(temp, dst, true);
+		} finally {
+			if (File.Exists(temp)) File.Delete(temp);
+		}
 	}
+
+	private sealed record DocumentInfo(string FilePath, string VirtualPath, string Stem);
 
 	private static IEnumerable<string> EnumerateRmlFiles() {
 		var roots = ProjectContext.DatabaseRoots.Append(ProjectContext.CorePath);
@@ -92,6 +138,12 @@ public static class UIBindStubGenerator {
 		var result = sb.ToString();
 		if (result.Length == 0 || char.IsDigit(result[0])) result = "_" + result;
 		return result;
+	}
+
+	private static string StableSuffix(string virtualPath) {
+		uint hash = 2166136261;
+		foreach (var b in Encoding.UTF8.GetBytes(virtualPath)) hash = (hash ^ b) * 16777619;
+		return hash.ToString("x8");
 	}
 
 	private static (List<string> binds, HashSet<string> boolBinds, List<string> events) Scan(string rml) {

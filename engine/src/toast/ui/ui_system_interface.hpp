@@ -9,13 +9,15 @@
 #pragma once
 #include <RmlUi/Core/SystemInterface.h>
 #include <string>
+#include <toast/export.hpp>
 #include <unordered_map>
 
 struct SDL_Cursor;
+struct SDL_Window;
 
 namespace ui {
 
-class UISystemInterface final : public Rml::SystemInterface {
+class TOAST_API UISystemInterface final : public Rml::SystemInterface {
 public:
 	UISystemInterface() = default;
 	~UISystemInterface() override;
@@ -28,9 +30,14 @@ public:
 	void SetMouseCursor(const Rml::String& cursor_name) override;
 	void SetClipboardText(const Rml::String& text) override;
 	void GetClipboardText(Rml::String& text) override;
+	void ActivateKeyboard(Rml::Vector2f caret_position, float line_height) override;
+	void DeactivateKeyboard() override;
+
+	void setWindow(SDL_Window* window) { m_window = window; }
 
 private:
 	std::unordered_map<std::string, SDL_Cursor*> m_cursors;
+	SDL_Window* m_window = nullptr;
 };
 
 }

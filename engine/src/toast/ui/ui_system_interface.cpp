@@ -3,9 +3,12 @@
 #include "ui_system.hpp"
 
 #include <SDL3/SDL.h>
+#include <algorithm>
+#include <cmath>
 #include <toast/log.hpp>
 #include <toast/time.hpp>
 #include <tracy/Tracy.hpp>
+#include <vector>
 
 namespace ui {
 
@@ -64,34 +67,47 @@ auto UISystemInterface::TranslateString(Rml::String& translated, const Rml::Stri
 }
 
 void UISystemInterface::JoinPath(Rml::String& translated_path, const Rml::String& document_path, const Rml::String& path) {
-	// Absolute VFS URIs stay untouched so documents can link resources across schemes
-	if (path.find("://") != Rml::String::npos) {
-		translated_path = path;
-		return;
-	}
-
-	// Relative paths resolve against the document's own URI
-	const size_t last_slash = document_path.find_last_of('/');
-	if (last_slash == Rml::String::npos) {
-		translated_path = path;
-		return;
-	}
-
-	Rml::String base = document_path.substr(0, last_slash + 1);
-	Rml::String rest = path;
-	while (rest.starts_with("../")) {
-		// Pop one directory per "../", never crossing the scheme root
-		const size_t scheme_end = base.find("://");
-		const size_t root = scheme_end != Rml::String::npos ? scheme_end + 3 : 0;
-		const size_t parent_slash = base.find_last_of('/', base.size() - 2);
-		if (parent_slash == Rml::String::npos || parent_slash + 1 <= root) {
-			break;
+	auto normalize = [](Rml::String value) {
+		std::replace(value.begin(), value.end(), '\\', '/');
+		const size_t scheme_end = value.find("://");
+		Rml::String prefix = scheme_end == Rml::String::npos ? Rml::String() : value.substr(0, scheme_end + 3);
+		Rml::String remainder = scheme_end == Rml::String::npos ? value : value.substr(scheme_end + 3);
+		std::vector<Rml::String> segments;
+		size_t cursor = 0;
+		while (cursor <= remainder.size()) {
+			const size_t slash = remainder.find('/', cursor);
+			const Rml::String segment = remainder.substr(cursor, slash == Rml::String::npos ? Rml::String::npos : slash - cursor);
+			if (!segment.empty() && segment != ".") {
+				if (segment == "..") {
+					if (!segments.empty()) {
+						segments.pop_back();
+					}
+				} else {
+					segments.push_back(segment);
+				}
+			}
+			if (slash == Rml::String::npos) {
+				break;
+			}
+			cursor = slash + 1;
 		}
-		base = base.substr(0, parent_slash + 1);
-		rest = rest.substr(3);
-	}
+		Rml::String result = prefix;
+		for (size_t i = 0; i < segments.size(); i++) {
+			if (i > 0) {
+				result += '/';
+			}
+			result += segments[i];
+		}
+		return result;
+	};
 
-	translated_path = base + rest;
+	if (path.find("://") != Rml::String::npos) {
+		translated_path = normalize(path);
+	} else {
+		const size_t last_slash = document_path.find_last_of('/');
+		translated_path =
+		    normalize((last_slash == Rml::String::npos ? Rml::String() : document_path.substr(0, last_slash + 1)) + path);
+	}
 }
 
 auto UISystemInterface::LogMessage(Rml::Log::Type type, const Rml::String& message) -> bool {
@@ -125,13 +141,36 @@ void UISystemInterface::SetMouseCursor(const Rml::String& cursor_name) {
 	SDL_SetCursor(it->second);
 }
 
-// TODO: Handle avalonia clipboard
 void UISystemInterface::SetClipboardText(const Rml::String& text) {
 	if (!sdlAvailable()) {
 		TOAST_WARN("UI", "Clipboard is unavailable without an SDL window");
 		return;
 	}
 	SDL_SetClipboardText(text.c_str());
+}
+
+void UISystemInterface::ActivateKeyboard(Rml::Vector2f caret_position, float line_height) {
+	if (!m_window) {
+		return;
+	}
+	SDL_Rect area {
+	  static_cast<int>(std::lround(caret_position.x)),
+	  static_cast<int>(std::lround(caret_position.y)),
+	  1,
+	  std::max(1, static_cast<int>(std::lround(line_height)))
+	};
+	if (!SDL_SetTextInputArea(m_window, &area, 0)) {
+		TOAST_WARN("UI", "SDL_SetTextInputArea failed: {}", SDL_GetError());
+	}
+	if (!SDL_StartTextInput(m_window)) {
+		TOAST_WARN("UI", "SDL_StartTextInput failed: {}", SDL_GetError());
+	}
+}
+
+void UISystemInterface::DeactivateKeyboard() {
+	if (m_window && !SDL_StopTextInput(m_window)) {
+		TOAST_WARN("UI", "SDL_StopTextInput failed: {}", SDL_GetError());
+	}
 }
 
 void UISystemInterface::GetClipboardText(Rml::String& text) {

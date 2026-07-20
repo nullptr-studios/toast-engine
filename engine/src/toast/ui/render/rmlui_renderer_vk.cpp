@@ -11,6 +11,7 @@
 #include <RmlUi/Core/Profiling.h>
 #include <algorithm>
 #include <string.h>
+#include <tracy/Tracy.hpp>
 
 // AlignUp(314, 256) = 512
 template<typename T>
@@ -630,9 +631,20 @@ std::shared_ptr<const void> RenderInterface_VK::OnFrameBegin(uint32_t frame_inde
 }
 
 VkCommandBuffer RenderInterface_VK::BeginRecording(VkExtent2D extent) {
+	ZoneScopedN("UI context recording");
 	RMLUI_VK_ASSERTMSG(m_p_current_command_buffer == nullptr, "BeginRecording called twice without EndRecording");
+	if (m_p_current_command_buffer != nullptr || extent.width == 0 || extent.height == 0 || !m_p_device) {
+		Rml::Log::Message(
+		    Rml::Log::LT_ERROR, "BeginRecording rejected invalid UI context extent or device (%ux%u).", extent.width, extent.height
+		);
+		return nullptr;
+	}
 
 	m_p_current_command_buffer = m_command_buffer_ring.GetNextSecondaryBuffer();
+	if (!m_p_current_command_buffer) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "vkAllocateCommandBuffers failed for a UI context command buffer.");
+		return nullptr;
+	}
 
 	// Plain secondary buffer
 	// The backend opens its own dynamic rendering scopes inside so the layer stack and filter passes can switch
@@ -646,7 +658,11 @@ VkCommandBuffer RenderInterface_VK::BeginRecording(VkExtent2D extent) {
 	info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
 	auto status = vkBeginCommandBuffer(m_p_current_command_buffer, &info);
-	RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkBeginCommandBuffer");
+	if (status != VK_SUCCESS) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "vkBeginCommandBuffer failed for UI context recording (VkResult=%d).", int(status));
+		m_p_current_command_buffer = nullptr;
+		return nullptr;
+	}
 
 	SetViewport(static_cast<int>(extent.width), static_cast<int>(extent.height));
 
@@ -657,6 +673,13 @@ VkCommandBuffer RenderInterface_VK::BeginRecording(VkExtent2D extent) {
 
 	LayerPool& pool = AcquirePool(extent);
 	m_p_current_pool = &pool;
+	if (!IsValidEffectImage(pool.m_stencil)) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "UI context recording aborted because stencil image creation failed.");
+		vkEndCommandBuffer(m_p_current_command_buffer);
+		m_p_current_command_buffer = nullptr;
+		m_p_current_pool = nullptr;
+		return nullptr;
+	}
 	m_command_buffer_ring.AddCurrentSlotGeneration(pool.m_generation);
 
 	if (pool.m_outputs_used == pool.m_outputs.size()) {
@@ -667,20 +690,43 @@ VkCommandBuffer RenderInterface_VK::BeginRecording(VkExtent2D extent) {
 		));
 	}
 	effect_image_t* p_output = &pool.m_outputs[pool.m_outputs_used++];
+	if (!IsValidEffectImage(*p_output)) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "UI context recording aborted because output image creation failed.");
+		pool.m_outputs_used--;
+		if (pool.m_outputs_used < pool.m_outputs.size()) {
+			pool.m_outputs.erase(pool.m_outputs.begin() + pool.m_outputs_used);
+		}
+		vkEndCommandBuffer(m_p_current_command_buffer);
+		m_p_current_command_buffer = nullptr;
+		m_p_current_pool = nullptr;
+		return nullptr;
+	}
 
 	m_layer_stack.clear();
 	m_layer_stack.push_back(p_output);
 	m_stack_layers_used = 0;
 
 	BeginLayerScope(*p_output, true, true);
+	if (!m_scope_active) {
+		vkEndCommandBuffer(m_p_current_command_buffer);
+		m_p_current_command_buffer = nullptr;
+		m_p_current_pool = nullptr;
+		m_layer_stack.clear();
+		return nullptr;
+	}
 
 	return m_p_current_command_buffer;
 }
 
 VkCommandBuffer RenderInterface_VK::EndRecording() {
+	ZoneScopedN("UI context recording end");
 	RMLUI_VK_ASSERTMSG(m_p_current_command_buffer, "EndRecording called without BeginRecording");
 	RMLUI_VK_ASSERTMSG(m_layer_stack.size() == 1, "layer stack not empty at EndRecording");
 
+	if (!m_p_current_command_buffer || m_layer_stack.size() != 1 || !m_scope_active) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "EndRecording rejected invalid UI recording state.");
+		return nullptr;
+	}
 	EndScope();
 
 	effect_image_t* p_output = m_layer_stack.front();
@@ -691,9 +737,13 @@ VkCommandBuffer RenderInterface_VK::EndRecording() {
 	VkCommandBuffer p_recorded = m_p_current_command_buffer;
 
 	auto status = vkEndCommandBuffer(p_recorded);
-	RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkEndCommandBuffer");
+	if (status != VK_SUCCESS) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "vkEndCommandBuffer failed for UI context recording (VkResult=%d).", int(status));
+		p_recorded = nullptr;
+	}
 
 	m_p_current_command_buffer = nullptr;
+	m_p_current_pool = nullptr;
 	return p_recorded;
 }
 

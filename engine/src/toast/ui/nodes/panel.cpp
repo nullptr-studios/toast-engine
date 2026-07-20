@@ -8,6 +8,7 @@
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/ElementDocument.h>
 #include <toast/renderer/vulkan_renderer.hpp>
+#include <utility>
 
 namespace toast {
 
@@ -19,20 +20,18 @@ Panel::Panel() {
 
 Panel::~Panel() = default;
 
-auto Panel::buildLocalizationScope() const -> ui::UISystem::LocalizationScope {
-	ui::UISystem::LocalizationScope scope;
-	scope.color_scheme = m_color_scheme.hasValue() ? m_color_scheme.operator->() : nullptr;
-	for (const auto& loc : m_localizations) {
-		if (loc.hasValue()) {
-			scope.texts.push_back(loc.operator->());
-		}
+void Panel::onReflectedFieldChanged(std::string_view field_name) {
+	if (!ui::UISystem::exists()) {
+		return;
 	}
-	for (const auto& loc : m_image_localizations) {
-		if (loc.hasValue()) {
-			scope.images.push_back(loc.operator->());
+	if (field_name == "m_fonts") {
+		for (const auto& font : m_fonts) {
+			ui::UISystem::get().loadFontFace(font);
 		}
+		reloadDocument();
+	} else if (field_name == "m_localizations" || field_name == "m_image_localizations") {
+		reloadDocument();
 	}
-	return scope;
 }
 
 void Panel::init() {
@@ -106,7 +105,19 @@ void Panel::loadDocument() {
 	}
 
 	auto& ui = ui::UISystem::get();
-	ui.pushLocalizationScope(buildLocalizationScope());
+	ui::UISystem::LocalizationScope scope;
+	scope.color_scheme = m_color_scheme.hasValue() ? m_color_scheme.operator->() : nullptr;
+	for (const auto& loc : m_localizations) {
+		if (loc.hasValue()) {
+			scope.texts.push_back(loc.operator->());
+		}
+	}
+	for (const auto& loc : m_image_localizations) {
+		if (loc.hasValue()) {
+			scope.images.push_back(loc.operator->());
+		}
+	}
+	ui.pushLocalizationScope(std::move(scope));
 
 	ui::PreprocessContext preprocess_ctx;
 	preprocess_ctx.inject_data_model = true;

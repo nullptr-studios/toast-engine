@@ -17,8 +17,11 @@ public:
 	PanelContext() = default;
 
 private:
+	void onReflectedFieldChanged(std::string_view field_name) override;
 	void init();
 	void destroy();
+	void registerAssets();
+	void unregisterAssets();
 
 	[[Reflect]]
 	std::vector<assets::Handle<assets::Font>> m_fonts;
@@ -34,6 +37,11 @@ private:
 
 	[[Reflect]]
 	std::vector<assets::Handle<assets::ImageLocalization>> m_image_localizations;
+
+	std::vector<assets::Handle<assets::UIStyle>> m_registered_styles;
+	std::vector<assets::Handle<assets::ColorScheme>> m_registered_color_schemes;
+	std::vector<assets::Handle<assets::Localization>> m_registered_localizations;
+	std::vector<assets::Handle<assets::ImageLocalization>> m_registered_image_localizations;
 };
 
 }

@@ -1,8 +1,8 @@
-uid = "gxpgWz3ygHk"
+uid = "Ma35nEdEU-4"
 type = "mesh"
 source = "artwork://Default meshes.glb"
-created_at = "2026-07-20T10:21:25.0701594Z"
-modified_at = "2026-07-20T10:21:25.0701607Z"
+created_at = "2026-07-20T10:21:25.0754573Z"
+modified_at = "2026-07-20T10:21:25.0754581Z"
 [gltf]
 create_folder = false
 import_materials = false

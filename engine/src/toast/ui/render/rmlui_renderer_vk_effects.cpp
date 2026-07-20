@@ -10,6 +10,7 @@
 #include <cstring>
 #include <toast/assets/assets.hpp>
 #include <toast/renderer/shader_cache.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace {
 
@@ -67,6 +68,21 @@ VkRect2D FullRect(VkExtent2D extent) {
 	};
 }
 
+VkRect2D ClampRect(VkRect2D rect, VkExtent2D extent) {
+	const int64_t x0 = std::clamp<int64_t>(rect.offset.x, 0, extent.width);
+	const int64_t y0 = std::clamp<int64_t>(rect.offset.y, 0, extent.height);
+	const int64_t x1 = std::clamp<int64_t>(int64_t(rect.offset.x) + rect.extent.width, x0, extent.width);
+	const int64_t y1 = std::clamp<int64_t>(int64_t(rect.offset.y) + rect.extent.height, y0, extent.height);
+	return {
+	  {	    static_cast<int32_t>(x0),       static_cast<int32_t>(y0)},
+    {static_cast<uint32_t>(x1 - x0), static_cast<uint32_t>(y1 - y0)}
+	};
+}
+
+}
+
+bool RenderInterface_VK::IsValidEffectImage(const effect_image_t& image) {
+	return image.m_p_image != nullptr && image.m_p_view != nullptr && image.m_p_allocation != nullptr;
 }
 
 void RenderInterface_VK::CreateEffectResources() noexcept {
@@ -437,6 +453,46 @@ void RenderInterface_VK::DestroyEffectResources() noexcept {
 RenderInterface_VK::effect_image_t
     RenderInterface_VK::CreateEffectImage(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage) noexcept {
 	effect_image_t image;
+	if (!m_p_device || !m_p_physical_device || !m_p_allocator || extent.width == 0 || extent.height == 0 ||
+	    format == VK_FORMAT_UNDEFINED || usage == 0) {
+		Rml::Log::Message(
+		    Rml::Log::LT_ERROR,
+		    "UI effect image rejected: invalid handles/extent/format/usage (%ux%u, format=%d, usage=0x%x).",
+		    extent.width,
+		    extent.height,
+		    int(format),
+		    usage
+		);
+		return image;
+	}
+
+	VkFormatFeatureFlags required_features = 0;
+	if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+		required_features |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+	}
+	if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+		required_features |= VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	}
+	if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
+		required_features |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+	}
+	if (usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) {
+		required_features |= VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
+	}
+	if (usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) {
+		required_features |= VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+	}
+	VkFormatProperties format_properties {};
+	vkGetPhysicalDeviceFormatProperties(m_p_physical_device, format, &format_properties);
+	if ((format_properties.optimalTilingFeatures & required_features) != required_features) {
+		Rml::Log::Message(
+		    Rml::Log::LT_ERROR,
+		    "UI effect image rejected: format %d does not support usage 0x%x with optimal tiling.",
+		    int(format),
+		    usage
+		);
+		return image;
+	}
 
 	VkImageCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -454,7 +510,11 @@ RenderInterface_VK::effect_image_t
 	info_allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
 	VkResult status = vmaCreateImage(m_p_allocator, &info, &info_allocation, &image.m_p_image, &image.m_p_allocation, nullptr);
-	RMLUI_VK_ASSERTMSG(status == VK_SUCCESS, "failed to vmaCreateImage (effect image)");
+	if (status != VK_SUCCESS || !image.m_p_image || !image.m_p_allocation) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "vmaCreateImage failed for UI effect image (VkResult=%d).", int(status));
+		image = {};
+		return image;
+	}
 
 	const bool is_depth_stencil = (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
 
@@ -475,13 +535,17 @@ RenderInterface_VK::effect_image_t
 	}
 
 	status = vkCreateImageView(m_p_device, &info_view, nullptr, &image.m_p_view);
-	RMLUI_VK_ASSERTMSG(status == VK_SUCCESS, "failed to vkCreateImageView (effect image)");
+	if (status != VK_SUCCESS || !image.m_p_view) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "vkCreateImageView failed for UI effect image (VkResult=%d).", int(status));
+		vmaDestroyImage(m_p_allocator, image.m_p_image, image.m_p_allocation);
+		image = {};
+	}
 
 	return image;
 }
 
 void RenderInterface_VK::DestroyEffectImage(effect_image_t& image) noexcept {
-	if (!image.m_p_image) {
+	if (!image.m_p_image && !image.m_p_view && !image.m_p_allocation && !image.m_p_descriptor_set) {
 		return;
 	}
 
@@ -489,8 +553,12 @@ void RenderInterface_VK::DestroyEffectImage(effect_image_t& image) noexcept {
 		m_manager_descriptors.Free_Descriptors(m_p_device, &image.m_p_descriptor_set);
 	}
 
-	vkDestroyImageView(m_p_device, image.m_p_view, nullptr);
-	vmaDestroyImage(m_p_allocator, image.m_p_image, image.m_p_allocation);
+	if (m_p_device && image.m_p_view) {
+		vkDestroyImageView(m_p_device, image.m_p_view, nullptr);
+	}
+	if (m_p_allocator && image.m_p_image && image.m_p_allocation) {
+		vmaDestroyImage(m_p_allocator, image.m_p_image, image.m_p_allocation);
+	}
 	image = {};
 }
 
@@ -498,6 +566,10 @@ RenderInterface_VK::LayerPool& RenderInterface_VK::AcquirePool(VkExtent2D extent
 	for (auto& pool : m_pools) {
 		if (pool->m_extent.width == extent.width && pool->m_extent.height == extent.height) {
 			pool->m_last_used_frame = m_pool_frame;
+			if (!IsValidEffectImage(pool->m_stencil)) {
+				pool->m_stencil =
+				    CreateEffectImage(extent, m_depth_stencil_attachment_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+			}
 			return *pool;
 		}
 	}
@@ -547,6 +619,10 @@ void RenderInterface_VK::RetireUnusedPools() noexcept {
 }
 
 VkDescriptorSet RenderInterface_VK::GetEffectDescriptorSet(effect_image_t& image) noexcept {
+	if (!IsValidEffectImage(image) || !m_p_device || !m_p_sampler_clamp || !m_p_layout_effect_texture) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "Cannot describe an invalid UI effect image.");
+		return nullptr;
+	}
 	if (image.m_p_descriptor_set) {
 		return image.m_p_descriptor_set;
 	}
@@ -574,6 +650,10 @@ VkDescriptorSet RenderInterface_VK::GetEffectDescriptorSet(effect_image_t& image
 }
 
 void RenderInterface_VK::TransitionEffectImage(effect_image_t& image, VkImageLayout new_layout) {
+	if (!m_p_current_command_buffer || !m_p_current_pool || !IsValidEffectImage(image)) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "Skipping UI image transition: command buffer, pool, or image is invalid.");
+		return;
+	}
 	if (image.m_layout == new_layout) {
 		return;
 	}
@@ -614,7 +694,13 @@ void RenderInterface_VK::TransitionEffectImage(effect_image_t& image, VkImageLay
 }
 
 void RenderInterface_VK::BeginLayerScope(effect_image_t& target, bool clear_color, bool clear_stencil) {
+	ZoneScopedN("UI layer scope");
 	RMLUI_VK_ASSERTMSG(!m_scope_active, "a rendering scope is already open");
+	if (m_scope_active || !m_p_current_command_buffer || !m_p_current_pool || !IsValidEffectImage(target) ||
+	    !IsValidEffectImage(m_p_current_pool->m_stencil)) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "Cannot begin UI layer scope with invalid render resources.");
+		return;
+	}
 
 	LayerPool& pool = *m_p_current_pool;
 	TransitionEffectImage(target, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -661,7 +747,17 @@ void RenderInterface_VK::BeginLayerScope(effect_image_t& target, bool clear_colo
 }
 
 void RenderInterface_VK::BeginEffectScope(effect_image_t& target, bool clear_color, VkRect2D render_area, bool use_clip_stencil) {
+	ZoneScopedN("UI effect scope");
 	RMLUI_VK_ASSERTMSG(!m_scope_active, "a rendering scope is already open");
+	if (m_scope_active || !m_p_current_command_buffer || !m_p_current_pool || !IsValidEffectImage(target) ||
+	    (use_clip_stencil && !IsValidEffectImage(m_p_current_pool->m_stencil))) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "Cannot begin UI effect scope with invalid render resources.");
+		return;
+	}
+	render_area = ClampRect(render_area, m_p_current_pool->m_extent);
+	if (render_area.extent.width == 0 || render_area.extent.height == 0) {
+		return;
+	}
 
 	TransitionEffectImage(target, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	if (use_clip_stencil) {
@@ -709,6 +805,9 @@ void RenderInterface_VK::BeginEffectScope(effect_image_t& target, bool clear_col
 
 void RenderInterface_VK::EndScope() {
 	RMLUI_VK_ASSERTMSG(m_scope_active, "no rendering scope to end");
+	if (!m_scope_active || !m_p_current_command_buffer) {
+		return;
+	}
 	vkCmdEndRendering(m_p_current_command_buffer);
 	m_scope_active = false;
 	m_p_scope_target = nullptr;
@@ -723,14 +822,25 @@ void RenderInterface_VK::ResumeLayerScope() {
 }
 
 VkRect2D RenderInterface_VK::CurrentScissor() const {
-	return m_is_use_scissor_specified ? m_scissor : m_scissor_original;
+	const VkRect2D requested = m_is_use_scissor_specified ? m_scissor : m_scissor_original;
+	return m_p_current_pool ? ClampRect(requested, m_p_current_pool->m_extent) : VkRect2D {};
 }
 
 void RenderInterface_VK::RenderFullscreenPass(
     VkPipeline pipeline, effect_image_t& destination, effect_image_t& source, effect_image_t* mask, const effects_push_t& push,
     bool clear_destination, VkRect2D render_area, VkViewport viewport, bool use_clip_stencil
 ) {
+	ZoneScopedN("UI fullscreen effect pass");
 	VkCommandBuffer cmd = m_p_current_command_buffer;
+	render_area = m_p_current_pool ? ClampRect(render_area, m_p_current_pool->m_extent) : VkRect2D {};
+	if (!cmd || !m_p_current_pool || !pipeline || !m_p_pipeline_layout_effects || !IsValidEffectImage(destination) ||
+	    !IsValidEffectImage(source) || (mask && !IsValidEffectImage(*mask)) || render_area.extent.width == 0 ||
+	    render_area.extent.height == 0) {
+		Rml::Log::Message(
+		    Rml::Log::LT_ERROR, "Skipping UI fullscreen pass because a command, pipeline, image, or scissor is invalid."
+		);
+		return;
+	}
 
 	TransitionEffectImage(source, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	if (mask) {
@@ -740,11 +850,15 @@ void RenderInterface_VK::RenderFullscreenPass(
 	VkDescriptorSet p_sets[] = {
 	  GetEffectDescriptorSet(source), mask ? GetEffectDescriptorSet(*mask) : GetEffectDescriptorSet(source)
 	};
-	if (!p_sets[0] || !p_sets[1] || !pipeline) {
+	if (!p_sets[0] || !p_sets[1]) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "Skipping UI fullscreen pass because descriptor allocation failed.");
 		return;
 	}
 
-	BeginEffectScope(destination, clear_destination, FullRect(m_p_current_pool->m_extent), use_clip_stencil);
+	BeginEffectScope(destination, clear_destination, render_area, use_clip_stencil);
+	if (!m_scope_active) {
+		return;
+	}
 
 	vkCmdSetViewport(cmd, 0, 1, &viewport);
 	vkCmdSetScissor(cmd, 0, 1, &render_area);
@@ -826,6 +940,11 @@ void RenderInterface_VK::RenderToClipMask(
 }
 
 Rml::LayerHandle RenderInterface_VK::PushLayer() {
+	ZoneScopedN("UI push layer");
+	if (!m_p_current_pool || !m_scope_active || m_layer_stack.empty()) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "PushLayer rejected invalid UI layer state.");
+		return {};
+	}
 	LayerPool& pool = *m_p_current_pool;
 
 	EndScope();
@@ -839,6 +958,12 @@ Rml::LayerHandle RenderInterface_VK::PushLayer() {
 	}
 
 	effect_image_t* p_layer = &pool.m_layers[m_stack_layers_used++];
+	if (!IsValidEffectImage(*p_layer)) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "PushLayer failed because layer image creation failed.");
+		m_stack_layers_used--;
+		ResumeLayerScope();
+		return {};
+	}
 	m_layer_stack.push_back(p_layer);
 
 	BeginLayerScope(*p_layer, true, false);
@@ -850,10 +975,31 @@ void RenderInterface_VK::CompositeLayers(
     Rml::LayerHandle source, Rml::LayerHandle destination, Rml::BlendMode blend_mode,
     Rml::Span<const Rml::CompiledFilterHandle> filters
 ) {
+	ZoneScopedN("UI composite layers");
+	if (!m_p_current_pool || !m_scope_active || size_t(source) >= m_layer_stack.size() ||
+	    size_t(destination) >= m_layer_stack.size()) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "CompositeLayers rejected invalid UI layer handles or state.");
+		return;
+	}
 	LayerPool& pool = *m_p_current_pool;
 	const VkRect2D scissor = CurrentScissor();
+	if (scissor.extent.width == 0 || scissor.extent.height == 0) {
+		return;
+	}
 
 	SuspendLayerScope();
+	for (int i = 0; i < 2; i++) {
+		if (!IsValidEffectImage(pool.m_postprocess[i])) {
+			pool.m_postprocess[i] = CreateEffectImage(
+			    pool.m_extent, m_color_attachment_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+			);
+		}
+		if (!IsValidEffectImage(pool.m_postprocess[i])) {
+			Rml::Log::Message(Rml::Log::LT_ERROR, "CompositeLayers aborted because a postprocess image could not be created.");
+			ResumeLayerScope();
+			return;
+		}
+	}
 
 	// Copy the source layer into the primary postprocess buffer
 	{
@@ -1172,6 +1318,12 @@ void RenderInterface_VK::ReleaseFilter(Rml::CompiledFilterHandle filter) {
 }
 
 void RenderInterface_VK::RenderBlur(float sigma, LayerPool& pool, int source_destination, int temp) {
+	ZoneScopedN("UI blur");
+	if (pool.m_extent.width == 0 || pool.m_extent.height == 0 || source_destination < 0 || source_destination >= 3 || temp < 0 ||
+	    temp >= 3 || !IsValidEffectImage(pool.m_postprocess[source_destination]) || !IsValidEffectImage(pool.m_postprocess[temp])) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "RenderBlur rejected invalid extent or effect images.");
+		return;
+	}
 	int pass_level = 0;
 	SigmaToParameters(sigma, pass_level, sigma);
 
@@ -1255,6 +1407,7 @@ void RenderInterface_VK::RenderBlur(float sigma, LayerPool& pool, int source_des
 		padded.offset.y = std::max(padded.offset.y - 1, 0);
 		padded.extent.width += 2;
 		padded.extent.height += 2;
+		padded = ClampRect(padded, extent);
 
 		effects_push_t push = make_blur_push(1.f / float(extent.width), 0.f);
 
@@ -1263,8 +1416,15 @@ void RenderInterface_VK::RenderBlur(float sigma, LayerPool& pool, int source_des
 
 		TransitionEffectImage(src, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		VkDescriptorSet p_sets[] = {GetEffectDescriptorSet(src), GetEffectDescriptorSet(src)};
+		if (!p_sets[0] || !p_sets[1] || !m_p_pipeline_blur || !m_p_current_command_buffer) {
+			Rml::Log::Message(Rml::Log::LT_ERROR, "Horizontal UI blur pass rejected invalid descriptors, pipeline, or command buffer.");
+			return;
+		}
 
-		BeginEffectScope(dst, false, FullRect(extent));
+		BeginEffectScope(dst, false, padded);
+		if (!m_scope_active) {
+			return;
+		}
 
 		VkClearAttachment clear = {};
 		clear.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1329,19 +1489,31 @@ void RenderInterface_VK::RenderBlur(float sigma, LayerPool& pool, int source_des
 }
 
 void RenderInterface_VK::RenderFilters(Rml::Span<const Rml::CompiledFilterHandle> filter_handles) {
+	ZoneScopedN("UI filter passes");
+	if (!m_p_current_pool || !m_p_current_command_buffer) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "RenderFilters rejected invalid UI recording state.");
+		return;
+	}
 	LayerPool& pool = *m_p_current_pool;
 	const VkRect2D scissor = CurrentScissor();
 	const VkViewport viewport = FullViewport(pool.m_extent);
 
 	for (int i = 0; i < 2; i++) {
-		if (!pool.m_postprocess[i].m_p_image) {
+		if (!IsValidEffectImage(pool.m_postprocess[i])) {
 			pool.m_postprocess[i] = CreateEffectImage(
 			    pool.m_extent, m_color_attachment_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
 			);
 		}
+		if (!IsValidEffectImage(pool.m_postprocess[i])) {
+			return;
+		}
 	}
 
 	for (const Rml::CompiledFilterHandle filter_handle : filter_handles) {
+		if (!filter_handle) {
+			Rml::Log::Message(Rml::Log::LT_WARNING, "Skipping null compiled UI filter.");
+			continue;
+		}
 		const CompiledFilter& filter = *reinterpret_cast<const CompiledFilter*>(filter_handle);
 
 		switch (filter.m_type) {
@@ -1358,10 +1530,14 @@ void RenderInterface_VK::RenderFilters(Rml::Span<const Rml::CompiledFilterHandle
 				RenderBlur(filter.m_sigma, pool, 0, 1);
 			} break;
 			case FilterType::DropShadow: {
-				if (!pool.m_postprocess[2].m_p_image) {
+				ZoneScopedN("UI drop shadow");
+				if (!IsValidEffectImage(pool.m_postprocess[2])) {
 					pool.m_postprocess[2] = CreateEffectImage(
 					    pool.m_extent, m_color_attachment_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
 					);
+				}
+				if (!IsValidEffectImage(pool.m_postprocess[2])) {
+					break;
 				}
 
 				// Shadow silhouette into the secondary buffer

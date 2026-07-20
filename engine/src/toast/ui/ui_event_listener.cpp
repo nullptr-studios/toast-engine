@@ -18,11 +18,30 @@ auto parseCallName(std::string_view value) -> std::string {
 	while (start < value.size() && (std::isspace(static_cast<unsigned char>(value[start])) != 0)) {
 		start++;
 	}
+	if (start >= value.size() || (!(std::isalpha(static_cast<unsigned char>(value[start])) != 0) && value[start] != '_')) {
+		return {};
+	}
 	size_t end = start;
 	while (end < value.size() && ((std::isalnum(static_cast<unsigned char>(value[end])) != 0) || value[end] == '_')) {
 		end++;
 	}
-	return std::string(value.substr(start, end - start));
+	size_t cursor = end;
+	while (cursor < value.size() && std::isspace(static_cast<unsigned char>(value[cursor])) != 0) {
+		cursor++;
+	}
+	if (cursor >= value.size() || value[cursor++] != '(') {
+		return {};
+	}
+	while (cursor < value.size() && std::isspace(static_cast<unsigned char>(value[cursor])) != 0) {
+		cursor++;
+	}
+	if (cursor >= value.size() || value[cursor++] != ')') {
+		return {};
+	}
+	while (cursor < value.size() && std::isspace(static_cast<unsigned char>(value[cursor])) != 0) {
+		cursor++;
+	}
+	return cursor == value.size() ? std::string(value.substr(start, end - start)) : std::string();
 }
 
 void dispatchNodeCall(Rml::Context* context, std::string_view method) {
@@ -33,6 +52,13 @@ void dispatchNodeCall(Rml::Context* context, std::string_view method) {
 	toast::Node* owner = UISystem::exists() ? UISystem::get().ownerForContext(context) : nullptr;
 	if (owner == nullptr) {
 		TOAST_WARN("UI", "UI event '{}' has no owning panel", method);
+		return;
+	}
+	if (!owner->participatesIn(toast::NodeOwnerParticipation::runtime_input)) {
+		return;
+	}
+	if (!owner->hasCallable(method)) {
+		TOAST_WARN("UI", "UI event '{}' has no matching C++ or Lua method on panel '{}'", method, owner->name());
 		return;
 	}
 
@@ -61,6 +87,7 @@ public:
 	auto InstanceEventListener(const Rml::String& value, Rml::Element* /*element*/) -> Rml::EventListener* override {
 		std::string method = parseCallName(value);
 		if (method.empty()) {
+			TOAST_WARN("UI", "Ignoring invalid inline UI event call '{}'; expected Method()", value);
 			return nullptr;
 		}
 		return new NodeCallListener(std::move(method));

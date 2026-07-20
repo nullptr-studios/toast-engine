@@ -159,6 +159,9 @@ private:
 		VkImageLayout m_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 	};
 
+	[[nodiscard]]
+	static bool IsValidEffectImage(const effect_image_t& image);
+
 	/// All render targets for one extent
 	struct LayerPool {
 		uint64_t m_generation = 0;

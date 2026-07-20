@@ -34,12 +34,14 @@ public partial class TableViewModel : Tool, IToastZoneEditor, IAutosavable {
 	[ObservableProperty] private bool m_usesAssetCells;
 
 	private bool m_loading;
+	private readonly List<string> m_storageHeaders = [];
 
 	public TableViewModel() {
+		ProjectContext.LanguagesChanged += OnLanguagesChanged;
 		if (Design.IsDesignMode) InitDesignData();
 	}
 
-	public ObservableCollection<string> Columns { get; } = [];
+	public ObservableCollection<TableColumnVM> Columns { get; } = [];
 	public ObservableCollection<TableRowVM> Rows { get; } = [];
 
 	public bool IsAutosaveDirty => IsDirty && HasContent;
@@ -59,7 +61,10 @@ public partial class TableViewModel : Tool, IToastZoneEditor, IAutosavable {
 		m_loading = true;
 		var recovered = contentSourceRealPath != null;
 		try {
-			var text = File.ReadAllText(contentSourceRealPath ?? ProjectContext.Resolve(virtualPath));
+			var realPath = ProjectContext.Resolve(virtualPath);
+			if (File.Exists(realPath)) ReconcileFileOnDisk(realPath);
+			var text = File.ReadAllText(contentSourceRealPath ?? realPath);
+			text = ReconcileCsvForLanguages(text, ProjectContext.Languages, out _);
 			CurrentUid = uid;
 			CurrentPath = virtualPath;
 			UsesAssetCells = definition.Type == "image_localization";
@@ -99,14 +104,15 @@ public partial class TableViewModel : Tool, IToastZoneEditor, IAutosavable {
 		var table = ParseCsv(csv);
 		Columns.Clear();
 		Rows.Clear();
+		m_storageHeaders.Clear();
 
-		// Header row is generated
 		if (table.Count > 0 && table[0].Count > 0) {
-			foreach (var col in table[0]) Columns.Add(col);
+			m_storageHeaders.AddRange(table[0]);
 		} else {
-			Columns.Add("id");
-			foreach (var lang in ProjectContext.Languages) Columns.Add(lang);
+			m_storageHeaders.Add("id");
+			m_storageHeaders.AddRange(ProjectContext.Languages);
 		}
+		RebuildColumns();
 
 		for (var r = 1; r < table.Count; r++)
 			Rows.Add(MakeRow(table[r]));
@@ -120,9 +126,78 @@ public partial class TableViewModel : Tool, IToastZoneEditor, IAutosavable {
 
 	private TableRowVM MakeRow(IReadOnlyList<string> cells) {
 		var row = new TableRowVM(OnCellEdited);
-		for (var c = 0; c < Columns.Count; c++)
-			row.Cells.Add(new TableCellVM(row, c < cells.Count ? cells[c] : "", UsesAssetCells && c > 0));
+		foreach (var column in Columns) {
+			var value = column.StorageIndex < cells.Count ? cells[column.StorageIndex] : "";
+			row.Cells.Add(new TableCellVM(row, column.StorageIndex, value,
+				UsesAssetCells && column.StorageIndex > 0, column.IsVisible));
+		}
 		return row;
+	}
+
+	private void RebuildColumns() {
+		Columns.Clear();
+		var configured = new HashSet<string>(ProjectContext.Languages, StringComparer.Ordinal);
+
+		void AddColumn(string name, bool visible) {
+			var index = m_storageHeaders.IndexOf(name);
+			if (index >= 0) Columns.Add(new TableColumnVM(name, index, visible));
+		}
+
+		AddColumn("id", true);
+		foreach (var language in ProjectContext.Languages) AddColumn(language, true);
+		foreach (var header in m_storageHeaders)
+			if (header != "id" && !configured.Contains(header)) AddColumn(header, false);
+	}
+
+	private void OnLanguagesChanged() {
+		if (!HasContent || string.IsNullOrEmpty(CurrentPath)) return;
+		var dirty = IsDirty;
+		try {
+			ReconcileFileOnDisk(ProjectContext.Resolve(CurrentPath));
+			ReconcileOpenRows();
+		} catch (Exception e) {
+			Log.Error($"Table Editor: failed to reconcile languages for '{CurrentPath}': {e.Message}");
+		} finally {
+			IsDirty = dirty;
+		}
+	}
+
+	private void ReconcileOpenRows() {
+		m_loading = true;
+		try {
+			var storedRows = Rows.Select(row => {
+				var values = Enumerable.Repeat("", m_storageHeaders.Count).ToList();
+				foreach (var cell in row.Cells)
+					if (cell.StorageIndex < values.Count) values[cell.StorageIndex] = cell.Value ?? "";
+				return values;
+			}).ToList();
+
+			if (m_storageHeaders.Count == 0) m_storageHeaders.Add("id");
+			var idIndex = m_storageHeaders.IndexOf("id");
+			if (idIndex < 0) {
+				m_storageHeaders.Insert(0, "id");
+				foreach (var row in storedRows) row.Insert(0, "");
+			} else if (idIndex > 0) {
+				m_storageHeaders.RemoveAt(idIndex);
+				m_storageHeaders.Insert(0, "id");
+				foreach (var row in storedRows) {
+					var id = idIndex < row.Count ? row[idIndex] : "";
+					if (idIndex < row.Count) row.RemoveAt(idIndex);
+					row.Insert(0, id);
+				}
+			}
+			foreach (var language in ProjectContext.Languages)
+				if (!m_storageHeaders.Contains(language, StringComparer.Ordinal)) {
+					m_storageHeaders.Add(language);
+					foreach (var row in storedRows) row.Add("");
+				}
+
+			RebuildColumns();
+			Rows.Clear();
+			foreach (var values in storedRows) Rows.Add(MakeRow(values));
+		} finally {
+			m_loading = false;
+		}
 	}
 
 	private void CloseCurrent() {
@@ -131,6 +206,7 @@ public partial class TableViewModel : Tool, IToastZoneEditor, IAutosavable {
 		FileName = "";
 		Columns.Clear();
 		Rows.Clear();
+		m_storageHeaders.Clear();
 		HasContent = false;
 		UsesAssetCells = false;
 		UpdateTitle();
@@ -168,9 +244,69 @@ public partial class TableViewModel : Tool, IToastZoneEditor, IAutosavable {
 
 	private string Serialize() {
 		var sb = new StringBuilder();
-		AppendCsvRow(sb, Columns);
-		foreach (var row in Rows)
-			AppendCsvRow(sb, row.Cells.Select(c => c.Value ?? ""));
+		AppendCsvRow(sb, m_storageHeaders);
+		foreach (var row in Rows) {
+			var stored = Enumerable.Repeat("", m_storageHeaders.Count).ToArray();
+			foreach (var cell in row.Cells)
+				if (cell.StorageIndex < stored.Length) stored[cell.StorageIndex] = cell.Value ?? "";
+			AppendCsvRow(sb, stored);
+		}
+		return sb.ToString();
+	}
+
+	private static void ReconcileFileOnDisk(string realPath) {
+		var original = File.ReadAllText(realPath);
+		var reconciled = ReconcileCsvForLanguages(original, ProjectContext.Languages, out var changed);
+		if (!changed) return;
+
+		var temp = realPath + ".tmp." + Guid.NewGuid().ToString("N");
+		try {
+			File.WriteAllText(temp, reconciled);
+			File.Move(temp, realPath, true);
+		} finally {
+			if (File.Exists(temp)) File.Delete(temp);
+		}
+	}
+
+	internal static string ReconcileCsvForLanguages(string csv, IReadOnlyList<string> languages, out bool changed) {
+		var table = ParseCsv(csv);
+		changed = false;
+		if (table.Count == 0) {
+			table.Add(["id"]);
+			changed = true;
+		}
+		if (table[0].Count == 0) {
+			table[0].Add("id");
+			changed = true;
+		}
+
+		var header = table[0];
+		var idIndex = header.IndexOf("id");
+		if (idIndex < 0) {
+			header.Insert(0, "id");
+			for (var r = 1; r < table.Count; r++) table[r].Insert(0, "");
+			changed = true;
+		} else if (idIndex > 0) {
+			header.RemoveAt(idIndex);
+			header.Insert(0, "id");
+			for (var r = 1; r < table.Count; r++) {
+				var id = idIndex < table[r].Count ? table[r][idIndex] : "";
+				if (idIndex < table[r].Count) table[r].RemoveAt(idIndex);
+				table[r].Insert(0, id);
+			}
+			changed = true;
+		}
+
+		foreach (var language in languages)
+			if (!header.Contains(language, StringComparer.Ordinal)) {
+				header.Add(language);
+				for (var r = 1; r < table.Count; r++) table[r].Add("");
+				changed = true;
+			}
+
+		if (!changed) return csv;
+		var sb = new StringBuilder();
+		foreach (var row in table) AppendCsvRow(sb, row);
 		return sb.ToString();
 	}
 
@@ -277,15 +413,21 @@ public sealed partial class TableCellVM : ObservableObject {
 	private readonly TableRowVM m_row;
 	[ObservableProperty] private string? m_value;
 
-	public TableCellVM(TableRowVM row, string value, bool isAssetReference) {
+	public TableCellVM(TableRowVM row, int storageIndex, string value, bool isAssetReference, bool isVisible) {
 		m_row = row;
+		StorageIndex = storageIndex;
 		m_value = value;
 		IsAssetReference = isAssetReference;
+		IsVisible = isVisible;
 	}
 
+	public int StorageIndex { get; }
 	public bool IsAssetReference { get; }
+	public bool IsVisible { get; }
 
 	partial void OnValueChanged(string? value) {
 		m_row.NotifyEdited();
 	}
 }
+
+public sealed record TableColumnVM(string Name, int StorageIndex, bool IsVisible);

@@ -7,6 +7,13 @@
 namespace assets {
 
 LocalizationBase::LocalizationBase(std::vector<uint8_t> data) {
+	reload(std::move(data));
+}
+
+void LocalizationBase::reload(std::vector<uint8_t> data) {
+	m_languages.clear();
+	m_ids.clear();
+	m_rows.clear();
 	const std::string_view text(reinterpret_cast<const char*>(data.data()), data.size());
 	const ui::CsvTable table = ui::parseCsv(text);
 

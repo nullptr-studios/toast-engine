@@ -25,6 +25,7 @@ namespace assets {
 class TOAST_API LocalizationBase : public Asset {
 public:
 	explicit LocalizationBase(std::vector<uint8_t> data);
+	void reload(std::vector<uint8_t> data);
 
 	[[nodiscard]]
 	auto languages() const noexcept -> const std::vector<std::string>& {

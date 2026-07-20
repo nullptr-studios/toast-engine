@@ -1,7 +1,57 @@
 #include "sdl_window.hpp"
 
 #include <SDL3/SDL_vulkan.h>
+#include <string_view>
 #include <tracy/Tracy.hpp>
+
+namespace {
+
+void forwardUtf8(std::string_view text) {
+	for (size_t i = 0; i < text.size();) {
+		const auto lead = static_cast<unsigned char>(text[i]);
+		uint32_t codepoint = 0;
+		size_t length = 0;
+		if (lead <= 0x7f) {
+			codepoint = lead;
+			length = 1;
+		} else if (lead >= 0xc2 && lead <= 0xdf) {
+			codepoint = lead & 0x1fu;
+			length = 2;
+		} else if (lead >= 0xe0 && lead <= 0xef) {
+			codepoint = lead & 0x0fu;
+			length = 3;
+		} else if (lead >= 0xf0 && lead <= 0xf4) {
+			codepoint = lead & 0x07u;
+			length = 4;
+		}
+
+		bool valid = length > 0 && i + length <= text.size();
+		for (size_t j = 1; valid && j < length; j++) {
+			const auto byte = static_cast<unsigned char>(text[i + j]);
+			valid = (byte & 0xc0u) == 0x80u;
+			codepoint = (codepoint << 6) | (byte & 0x3fu);
+		}
+		if (valid && length == 3) {
+			const auto second = static_cast<unsigned char>(text[i + 1]);
+			valid = !((lead == 0xe0 && second < 0xa0) || (lead == 0xed && second >= 0xa0));
+		}
+		if (valid && length == 4) {
+			const auto second = static_cast<unsigned char>(text[i + 1]);
+			valid = !((lead == 0xf0 && second < 0x90) || (lead == 0xf4 && second >= 0x90));
+		}
+		valid = valid && codepoint <= 0x10ffff && !(codepoint >= 0xd800 && codepoint <= 0xdfff);
+
+		if (valid) {
+			event::send<event::WindowChar>(codepoint);
+			i += length;
+		} else {
+			TOAST_WARN("UI", "Discarding invalid UTF-8 byte in SDL text input");
+			i++;
+		}
+	}
+}
+
+}
 
 namespace toast {
 
@@ -85,38 +135,8 @@ void SDLWindow::pollEvents() {
 			}
 
 			case SDL_EVENT_TEXT_INPUT: {
-				// SDL hands over UTF-8
-				// decode and send one event per codepoint so text input works beyond ASCII
-				const char* text = event.text.text;
-				size_t i = 0;
-				while (text != nullptr && text[i] != '\0') {
-					const auto byte = static_cast<unsigned char>(text[i]);
-					unsigned codepoint = 0;
-					size_t length = 1;
-					if (byte < 0x80) {
-						codepoint = byte;
-					} else if ((byte & 0xE0) == 0xC0) {
-						codepoint = byte & 0x1Fu;
-						length = 2;
-					} else if ((byte & 0xF0) == 0xE0) {
-						codepoint = byte & 0x0Fu;
-						length = 3;
-					} else if ((byte & 0xF8) == 0xF0) {
-						codepoint = byte & 0x07u;
-						length = 4;
-					} else {
-						i++;    // stray continuation byte
-						continue;
-					}
-
-					size_t j = 1;
-					for (; j < length && (static_cast<unsigned char>(text[i + j]) & 0xC0) == 0x80; j++) {
-						codepoint = (codepoint << 6) | (static_cast<unsigned char>(text[i + j]) & 0x3Fu);
-					}
-					if (j == length) {
-						event::send<event::WindowChar>(codepoint);
-					}
-					i += j;
+				if (event.text.text) {
+					forwardUtf8(event.text.text);
 				}
 				break;
 			}

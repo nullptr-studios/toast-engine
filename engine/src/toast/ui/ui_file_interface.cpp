@@ -22,7 +22,7 @@ auto UIFileInterface::Open(const Rml::String& path) -> Rml::FileHandle {
 		return 0;
 	}
 
-	auto bytes = assets::AssetManager::get().loadBytes(path);
+	auto bytes = assets::AssetManager::get().tryLoadBytes(path);
 	if (!bytes) {
 		TOAST_WARN("UI", "Failed to open '{}'", path);
 		return 0;

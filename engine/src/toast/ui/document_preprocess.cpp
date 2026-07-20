@@ -1,6 +1,7 @@
 #include "document_preprocess.hpp"
 
 #include "../log.hpp"
+#include "ui_event_listener.hpp"
 
 #include <algorithm>
 #include <array>
@@ -65,16 +66,11 @@ void collectIdentifiers(std::string_view expression, std::vector<std::string>& o
 }
 
 void collectEventName(std::string_view value, std::vector<std::string>& out) {
-	size_t start = 0;
-	while (start < value.size() && (std::isspace(static_cast<unsigned char>(value[start])) != 0)) {
-		start++;
-	}
-	size_t end = start;
-	while (end < value.size() && isIdentChar(value[end])) {
-		end++;
-	}
-	if (end > start) {
-		pushUnique(out, std::string(value.substr(start, end - start)));
+	std::string method = parseCallName(value);
+	if (!method.empty()) {
+		pushUnique(out, std::move(method));
+	} else {
+		TOAST_WARN("UI", "Ignoring invalid UI event call '{}'; expected Method()", value);
 	}
 }
 
@@ -87,6 +83,64 @@ auto findCaseInsensitive(std::string_view haystack, std::string_view needle, siz
 	    [](char a, char b) { return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b)); }
 	);
 	return it == haystack.end() ? std::string_view::npos : static_cast<size_t>(it - haystack.begin());
+}
+
+auto attributeValue(std::string_view tag, std::string_view name) -> std::optional<std::string_view> {
+	const size_t pos = findCaseInsensitive(tag, name);
+	if (pos == std::string_view::npos) {
+		return std::nullopt;
+	}
+	size_t cursor = pos + name.size();
+	while (cursor < tag.size() && std::isspace(static_cast<unsigned char>(tag[cursor])) != 0) {
+		cursor++;
+	}
+	if (cursor >= tag.size() || tag[cursor++] != '=') {
+		return std::nullopt;
+	}
+	while (cursor < tag.size() && std::isspace(static_cast<unsigned char>(tag[cursor])) != 0) {
+		cursor++;
+	}
+	if (cursor >= tag.size() || (tag[cursor] != '"' && tag[cursor] != '\'')) {
+		return std::nullopt;
+	}
+	const char quote = tag[cursor++];
+	const size_t end = tag.find(quote, cursor);
+	return end == std::string_view::npos ? std::nullopt : std::optional(tag.substr(cursor, end - cursor));
+}
+
+auto normalizeStylesheetLinks(std::string source) -> std::string {
+	size_t cursor = 0;
+	while ((cursor = findCaseInsensitive(source, "<link", cursor)) != std::string::npos) {
+		const size_t end = source.find('>', cursor);
+		if (end == std::string::npos) {
+			break;
+		}
+		const std::string_view tag(source.data() + cursor, end - cursor + 1);
+		const auto type = attributeValue(tag, "type");
+		if (!type || (*type != "text/css" && *type != "text/rcss")) {
+			cursor = end + 1;
+			continue;
+		}
+		const auto href = attributeValue(tag, "href");
+		static constexpr std::string_view extension = ".rcss";
+		const bool is_rcss = href && href->size() >= extension.size() &&
+		                     std::ranges::equal(href->substr(href->size() - extension.size()), extension, [](char a, char b) {
+			                     return std::tolower(static_cast<unsigned char>(a)) == b;
+		                     });
+		if (!is_rcss) {
+			TOAST_WARN("UI", "Rejecting stylesheet link '{}': target must be an .rcss resource", href.value_or("<missing>"));
+			source.erase(cursor, end - cursor + 1);
+			continue;
+		}
+		if (*type == "text/rcss") {
+			const size_t type_pos = findCaseInsensitive(source, "text/rcss", cursor);
+			if (type_pos < end) {
+				source.replace(type_pos, 9, "text/css");
+			}
+		}
+		cursor = source.find('>', cursor) + 1;
+	}
+	return source;
 }
 
 }
@@ -156,34 +210,50 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 			const size_t tag_end = rml.find('>', i);
 			const std::string_view tag = rml.substr(i, tag_end == std::string_view::npos ? rml.size() - i : tag_end - i);
 
-			size_t a = 0;
+			size_t a = tag.find_first_of(" \t\r\n");
+			if (a == std::string_view::npos) {
+				i = tag_end == std::string_view::npos ? rml.size() : tag_end + 1;
+				continue;
+			}
 			while (a < tag.size()) {
 				// find attribute="value" pairs
-				while (a < tag.size() && (std::isspace(static_cast<unsigned char>(tag[a])) == 0)) {
+				while (a < tag.size() && ((std::isspace(static_cast<unsigned char>(tag[a])) != 0) || tag[a] == '/')) {
 					a++;
 				}
-				while (a < tag.size() && (std::isspace(static_cast<unsigned char>(tag[a])) != 0)) {
-					a++;
+				if (a >= tag.size()) {
+					break;
 				}
 				const size_t name_start = a;
-				while (a < tag.size() && tag[a] != '=' && (std::isspace(static_cast<unsigned char>(tag[a])) == 0)) {
+				while (a < tag.size() && tag[a] != '=' && tag[a] != '/' && (std::isspace(static_cast<unsigned char>(tag[a])) == 0)) {
 					a++;
 				}
 				const std::string_view name = tag.substr(name_start, a - name_start);
-				if (a >= tag.size() || tag[a] != '=') {
+				while (a < tag.size() && (std::isspace(static_cast<unsigned char>(tag[a])) != 0)) {
+					a++;
+				}
+				if (name.empty() || a >= tag.size() || tag[a] != '=') {
+					if (a < tag.size()) {
+						a++;
+					}
 					continue;
 				}
 				a++;
-				if (a >= tag.size() || tag[a] != '"') {
+				while (a < tag.size() && (std::isspace(static_cast<unsigned char>(tag[a])) != 0)) {
+					a++;
+				}
+				if (a >= tag.size() || (tag[a] != '"' && tag[a] != '\'')) {
 					continue;
 				}
+				const char quote = tag[a];
 				a++;
 				const size_t value_start = a;
-				while (a < tag.size() && tag[a] != '"') {
+				while (a < tag.size() && tag[a] != quote) {
 					a++;
 				}
 				const std::string_view value = tag.substr(value_start, a - value_start);
-				a++;
+				if (a < tag.size()) {
+					a++;
+				}
 
 				if (name.starts_with("data-event-")) {
 					collectEventName(value, scan.events);
@@ -211,12 +281,16 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 	}
 
 	// inject style links and the data model
-	std::string result = resolveColorReferences(rml, ctx.color_resolver);
+	std::string result = normalizeStylesheetLinks(resolveColorReferences(rml, ctx.color_resolver));
 
 	if (!ctx.style_uris.empty()) {
 		std::string links;
 		for (const auto& uri : ctx.style_uris) {
-			links += std::format("<link type=\"text/rcss\" href=\"{}\"/>", uri);
+			if (!std::string_view(uri).ends_with(".rcss")) {
+				TOAST_WARN("UI", "Rejecting global stylesheet '{}': target must end in .rcss", uri);
+				continue;
+			}
+			links += std::format("<link type=\"text/css\" href=\"{}\"/>", uri);
 		}
 
 		const size_t head = findCaseInsensitive(result, "<head>");

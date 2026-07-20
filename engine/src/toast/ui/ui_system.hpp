@@ -9,6 +9,7 @@
 #pragma once
 #include "assets.hpp"
 
+#include <cstdint>
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
@@ -17,6 +18,7 @@
 #include <toast/events/listener.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace Rml {
@@ -58,7 +60,8 @@ public:
 	void buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame);
 
 	[[nodiscard]]
-	auto createContext(std::string_view name, glm::ivec2 dimensions) -> Rml::Context*;
+	auto createContext(std::string_view name, glm::ivec2 dimensions, std::optional<float> fixed_dp_ratio = std::nullopt)
+	    -> Rml::Context*;
 	void destroyContext(Rml::Context* context);
 
 	auto loadFontFace(std::string_view uri, bool fallback = false) -> bool;
@@ -97,9 +100,12 @@ public:
 	}
 
 	void setLanguage(std::string language);
+	void reloadAllDocuments();
 
 	[[nodiscard]]
 	auto translate(std::string_view input) const -> std::optional<std::string>;
+	[[nodiscard]]
+	auto lookupLocalizationRaw(std::string_view id) const -> std::optional<std::string>;
 
 	[[nodiscard]]
 	auto localizedImage(std::string_view id) const -> std::string;
@@ -126,6 +132,7 @@ public:
 	}
 
 	void applyDpRatio(float ratio);
+	void setSDLWindow(void* window);
 
 	[[nodiscard]]
 	auto renderInterface() -> RenderInterface_VK* {
@@ -152,14 +159,22 @@ private:
 	std::vector<toast::Panel*> m_panels;
 	std::vector<toast::Panel3D*> m_world_panels;
 	std::unordered_map<Rml::Context*, toast::Node*> m_context_owners;
+	std::unordered_set<Rml::Context*> m_display_density_contexts;
 
 	std::vector<assets::Handle<assets::UIStyle>> m_global_styles;
 	std::vector<assets::Handle<assets::ColorScheme>> m_global_schemes;
+	std::unordered_map<uint64_t, size_t> m_global_style_refs;
+	std::unordered_map<uint64_t, size_t> m_global_scheme_refs;
 
 	std::string m_language;
 	std::vector<assets::Handle<assets::Localization>> m_global_localizations;
 	std::vector<assets::Handle<assets::ImageLocalization>> m_global_image_localizations;
+	std::unordered_map<uint64_t, size_t> m_global_localization_refs;
+	std::unordered_map<uint64_t, size_t> m_global_image_localization_refs;
 	std::vector<LocalizationScope> m_localization_stack;
+
+	bool m_documents_reload_pending = false;
+	bool m_stylesheet_cache_dirty = false;
 };
 
 }

@@ -9,7 +9,6 @@
 #pragma once
 #include <memory>
 #include <toast/ui/assets.hpp>
-#include <toast/ui/ui_system.hpp>
 #include <toast/world/node.hpp>
 
 namespace Rml {
@@ -47,6 +46,7 @@ public:
 	void reloadDocument();
 
 private:
+	void onReflectedFieldChanged(std::string_view field_name) override;
 	void init();
 	void destroy();
 	void onEnable();
@@ -54,9 +54,6 @@ private:
 
 	void loadDocument();
 	void unloadDocument();
-
-	[[nodiscard]]
-	auto buildLocalizationScope() const -> ui::UISystem::LocalizationScope;
 
 	[[Reflect]]
 	assets::Handle<assets::UIElement> m_element;
