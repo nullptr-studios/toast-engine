@@ -21,6 +21,7 @@
 #include <unordered_set>
 #include <vector>
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 namespace Rml {
 class Context;
 }
@@ -35,6 +36,7 @@ class Panel;
 class Panel3D;
 }
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 class RenderInterface_VK;
 
 namespace ui {

@@ -56,7 +56,7 @@ auto LocalizationBase::languageIndex(std::string_view language) const -> int {
 }
 
 auto LocalizationBase::has(std::string_view id) const -> bool {
-	return m_rows.find(std::string(id)) != m_rows.end();
+	return m_rows.contains(std::string(id));
 }
 
 auto LocalizationBase::cell(std::string_view id, std::string_view language) const -> std::optional<std::string> {

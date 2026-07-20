@@ -1,6 +1,7 @@
 #include "color_scheme.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <format>
 
 namespace assets {
@@ -54,7 +55,7 @@ auto ColorScheme::hex(std::string_view name) const -> std::optional<std::string>
 }
 
 auto ColorScheme::toHex(glm::vec4 color) -> std::string {
-	auto channel = [](float v) { return static_cast<uint32_t>(std::clamp(v, 0.0f, 1.0f) * 255.0f + 0.5f); };
+	auto channel = [](float v) { return static_cast<uint32_t>(std::lround(std::clamp(v, 0.0f, 1.0f) * 255.0f)); };
 	return std::format("#{:02x}{:02x}{:02x}{:02x}", channel(color.r), channel(color.g), channel(color.b), channel(color.a));
 }
 

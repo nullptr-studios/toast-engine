@@ -133,7 +133,7 @@ void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
 		}
 		context->Render();
 		if (VkCommandBuffer command = m_render_interface->EndRecording()) {
-			frame.ui_command_buffers.push_back(command);
+			frame.ui_command_buffers.emplace_back(command);
 		} else {
 			return nullptr;
 		}

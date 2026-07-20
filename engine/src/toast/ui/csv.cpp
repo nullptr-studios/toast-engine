@@ -9,13 +9,13 @@ auto parseCsv(std::string_view text) -> CsvTable {
 	bool in_quotes = false;
 	bool field_started = false;    // distinguishes an empty trailing line from a real empty field
 
-	auto pushField = [&] {
+	auto push_field = [&] {
 		row.push_back(std::move(field));
 		field.clear();
 		field_started = false;
 	};
-	auto pushRow = [&] {
-		pushField();
+	auto push_row = [&] {
+		push_field();
 		table.push_back(std::move(row));
 		row.clear();
 	};
@@ -43,14 +43,14 @@ auto parseCsv(std::string_view text) -> CsvTable {
 				field_started = true;
 				break;
 			case ',':
-				pushField();
+				push_field();
 				field_started = true;    // a field follows the separator
 				break;
 			case '\r': break;          // fold CRLF into LF handling
 			case '\n':
 				// A blank line at EOF should not become a one-empty-field row
 				if (!row.empty() || field_started || !field.empty()) {
-					pushRow();
+					push_row();
 				}
 				break;
 			default:
@@ -62,7 +62,7 @@ auto parseCsv(std::string_view text) -> CsvTable {
 
 	// Flush a final row without a trailing newline
 	if (!row.empty() || field_started || !field.empty()) {
-		pushRow();
+		push_row();
 	}
 
 	return table;

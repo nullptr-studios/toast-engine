@@ -1,3 +1,5 @@
+// NOLINTBEGIN
+
 #include "rmlui_renderer_vk.h"
 
 #include "../tga_decode.hpp"
@@ -1712,3 +1714,5 @@ bool RenderInterface_VK::CommandBufferRing::IsGenerationReferenced(uint64_t gene
 	}
 	return false;
 }
+
+// NOLINTEND

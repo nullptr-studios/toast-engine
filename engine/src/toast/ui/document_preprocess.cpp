@@ -75,6 +75,7 @@ void collectEventName(std::string_view value, std::vector<std::string>& out) {
 }
 
 auto findCaseInsensitive(std::string_view haystack, std::string_view needle, size_t offset = 0) -> size_t {
+	// NOLINTNEXTLINE(readability-qualified-auto)
 	const auto it = std::search(
 	    haystack.begin() + static_cast<ptrdiff_t>(std::min(offset, haystack.size())),
 	    haystack.end(),
@@ -255,11 +256,9 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 					a++;
 				}
 
-				if (name.starts_with("data-event-")) {
-					collectEventName(value, scan.events);
-				} else if (name.starts_with("on") && value.find('(') != std::string_view::npos) {
-					collectEventName(value, scan.events);
-				} else if (name == "data-for") {
+			if (name.starts_with("data-event-") || (name.starts_with("on") && value.find('(') != std::string_view::npos)) {
+				collectEventName(value, scan.events);
+			} else if (name == "data-for") {
 					// "item : items" or "item, index : items" binds the container
 					const size_t colon = value.find(':');
 					if (colon != std::string_view::npos) {
@@ -290,7 +289,7 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 				TOAST_WARN("UI", "Rejecting global stylesheet '{}': target must end in .rcss", uri);
 				continue;
 			}
-			links += std::format("<link type=\"text/css\" href=\"{}\"/>", uri);
+			links += std::format(R"(<link type="text/css" href="{}"/>)", uri);
 		}
 
 		const size_t head = findCaseInsensitive(result, "<head>");

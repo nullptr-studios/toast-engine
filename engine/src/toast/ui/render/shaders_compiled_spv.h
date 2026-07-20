@@ -3,7 +3,7 @@
 // File was downloaded from the RmlUI official GitHub repo
 // ============================================================
 
-// NOLINTBEGIN()
+// NOLINTBEGIN
 
 // RmlUi SPIR-V Vulkan shaders compiled using command: 'python compile_shaders.py'. Do not edit manually.
 
@@ -178,4 +178,4 @@ alignas(uint32_t) static const unsigned char shader_vert[] = {
   0x03, 0x00, 0x35, 0x00, 0x00, 0x00, 0x34, 0x00, 0x00, 0x00, 0xFD, 0x00, 0x01, 0x00, 0x38, 0x00, 0x01, 0x00,
 };
 
-// NOLINTEND()
+// NOLINTEND

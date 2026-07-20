@@ -86,22 +86,22 @@ auto decodeTga(std::span<const uint8_t> data) -> std::optional<TgaImage> {
 				cursor += bytes_per_pixel;
 			} else {
 				// count literal pixels
-				if (cursor + static_cast<size_t>(count) * bytes_per_pixel > data.size()) {
+				if (cursor + (static_cast<size_t>(count) * bytes_per_pixel) > data.size()) {
 					return std::nullopt;
 				}
 				for (uint32_t i = 0; i < count; i++) {
-					writePixel(&image.pixels[(written + i) * 4], &data[cursor + static_cast<size_t>(i) * bytes_per_pixel], bytes_per_pixel);
+					writePixel(&image.pixels[(written + i) * 4], &data[cursor + (static_cast<size_t>(i) * bytes_per_pixel)], bytes_per_pixel);
 				}
 				cursor += static_cast<size_t>(count) * bytes_per_pixel;
 			}
 			written += count;
 		}
 	} else {
-		if (cursor + pixel_count * bytes_per_pixel > data.size()) {
+		if (cursor + (pixel_count * bytes_per_pixel) > data.size()) {
 			return std::nullopt;
 		}
 		for (size_t i = 0; i < pixel_count; i++) {
-			writePixel(&image.pixels[i * 4], &data[cursor + i * bytes_per_pixel], bytes_per_pixel);
+			writePixel(&image.pixels[i * 4], &data[cursor + (i * bytes_per_pixel)], bytes_per_pixel);
 		}
 	}
 

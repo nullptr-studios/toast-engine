@@ -1,3 +1,5 @@
+// NOLINTBEGIN
+
 #include "rmlui_renderer_vk.h"
 
 #include <RmlUi/Core/Core.h>
@@ -1748,3 +1750,5 @@ void RenderInterface_VK::RenderShader(
 void RenderInterface_VK::ReleaseShader(Rml::CompiledShaderHandle shader) {
 	ReleaseResource(reinterpret_cast<const void*>(shader));
 }
+
+// NOLINTEND

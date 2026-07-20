@@ -77,7 +77,7 @@ auto UIFileInterface::Seek(Rml::FileHandle file, long offset, int origin) -> boo
 		default: return false;
 	}
 
-	if (target < 0 || target > static_cast<int64_t>(data.size())) {
+	if (target < 0 || static_cast<size_t>(target) > data.size()) {
 		return false;
 	}
 	cursor = static_cast<size_t>(target);

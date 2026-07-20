@@ -1,3 +1,4 @@
+// NOLINTBEGIN
 /*
  * This source file is part of RmlUi, the HTML/CSS Interface Middleware
  * https://github.com/mikke89/RmlUi — vendored at tag 6.2 and adapted for toast-engine,
@@ -725,3 +726,4 @@ private:
 
 	VkShaderModule m_p_effects_shader_module = nullptr;
 };
+// NOLINTEND

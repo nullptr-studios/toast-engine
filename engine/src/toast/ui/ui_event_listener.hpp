@@ -10,6 +10,7 @@
 #include <string>
 #include <string_view>
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 namespace Rml {
 class Context;
 }
