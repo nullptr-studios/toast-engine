@@ -1,5 +1,6 @@
 #include "workspace.hpp"
 
+#include "camera.hpp"
 #include "node.hpp"
 #include "workspace_events.hpp"
 #include "workspace_events.pb.h"
@@ -18,6 +19,7 @@
 #include <toast/assets/prefab.hpp>
 #include <toast/engine.hpp>
 #include <toast/log.hpp>
+#include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/scripting/asset_proxy.hpp>
 #include <toast/scripting/lua_types.hpp>
 #include <toast/scripting/lua_value_codec.hpp>
@@ -41,11 +43,15 @@ using scripting::stringifyLuaValue;
 static std::unique_ptr<assets::Prefab> s_clipboard;
 
 Workspace::Workspace(UID handle, EmptyTag) : m_handle(handle) {
+	m_editor_camera = std::make_unique<Camera>();
+	m_editor_camera->position = {0.0f, -10.0f, 10.0f};
 	eventSubscriptions();
 }
 
 Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	ZoneScoped;
+	m_editor_camera = std::make_unique<Camera>();
+	m_editor_camera->position = {0.0f, -10.0f, 10.0f};
 	eventSubscriptions();
 
 	// Allocation
@@ -72,6 +78,8 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 }
 
 Workspace::Workspace(UID uid) : m_handle(uid) {
+	m_editor_camera = std::make_unique<Camera>();
+	m_editor_camera->position = {0.0f, -10.0f, 10.0f};
 	eventSubscriptions();
 
 	// open file
@@ -88,6 +96,7 @@ Workspace::Workspace(UID uid) : m_handle(uid) {
 }
 
 Workspace::Workspace(UID uid, std::string_view source_uri) : m_handle(uid) {
+	m_editor_camera = std::make_unique<Camera>();
 	eventSubscriptions();
 
 	auto bytes = assets::AssetManager::get().loadBytes(source_uri);
@@ -133,6 +142,17 @@ void Workspace::initFromPrefab(const assets::Handle<assets::Prefab>& file) {
 	node->propagateEnable();
 
 	m_root_node = node;
+}
+
+void Workspace::applyActiveCamera() {
+	if (!isActiveWorkspace()) {
+		return;
+	}
+	if (m_game_camera) {
+		renderer::setActiveCamera(activeCamera().exists() ? &*activeCamera() : nullptr);
+	} else {
+		renderer::setActiveCamera(m_editor_camera.get());
+	}
 }
 
 Workspace::~Workspace() {
@@ -786,7 +806,15 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 		m_game_camera = e.game;
+		applyActiveCamera();
 		return true;
+	});
+
+	m_listener.subscribe<event::SetActiveWorkspace>([this](const auto& e) {
+		if (e.handle == m_handle.data()) {
+			applyActiveCamera();
+		}
+		return false;
 	});
 
 	m_listener.subscribe<event::WorkspaceCopyNode>([this](const auto& e) {

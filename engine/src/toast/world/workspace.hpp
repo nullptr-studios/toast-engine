@@ -12,6 +12,7 @@
 
 #include "node_owner.hpp"
 
+#include <memory>
 #include <toast/events/listener.hpp>
 
 namespace toast {
@@ -101,6 +102,7 @@ protected:
 	SnapSetting m_rotate_snap {true, 30.0f};
 	SnapSetting m_scale_snap {true, 0.10f};
 	bool m_game_camera = false;    ///< false = editor camera
+	std::unique_ptr<Camera> m_editor_camera;
 
 	[[nodiscard]]
 	auto isActiveWorkspace() const noexcept -> bool;
@@ -109,6 +111,7 @@ protected:
 
 	/// instantiates the prefab and sets up the root node
 	void initFromPrefab(const assets::Handle<assets::Prefab>& file);
+	void applyActiveCamera() override;
 
 private:
 	double m_inspector_accum = 0.0;

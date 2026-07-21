@@ -642,8 +642,10 @@ void AssetManager::pollModifiedAssets() {
 			event::send<event::ScriptAssetReloaded>(uid);
 		} else if (type == "shader") {
 			event::send<event::ShaderAssetReloaded>(uid);
-		} else if (type == "ui_element" || type == "ui_style" || type == "color_scheme" || type == "localization" ||
-		           type == "image_localization") {
+		} else if (
+		    type == "ui_element" || type == "ui_style" || type == "color_scheme" || type == "localization" ||
+		    type == "image_localization"
+		) {
 			event::send<event::UIAssetReloaded>(uid, type);
 		} else {
 			event::send<event::MaterialAssetReloaded>(uid);

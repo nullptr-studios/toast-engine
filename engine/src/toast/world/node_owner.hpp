@@ -23,6 +23,7 @@
 #include <vector>
 
 namespace toast {
+class Camera;
 enum class NodeOwnerParticipation : uint8_t {
 	render,
 	runtime_input,
@@ -47,6 +48,9 @@ public:
 	virtual auto findFrom(const Node& origin, std::string_view query) -> Box<Node> = 0;
 	virtual auto findFrom(const Node& origin, const UID& uid) -> Box<Node> = 0;
 	virtual auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> = 0;
+
+	void activateCamera(Camera& camera);
+	void deactivateCamera(Camera& camera);
 
 	auto requestRuntimeCreate(Node& parent, std::string_view type) -> Box<Node>;
 	auto requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node>;
@@ -122,6 +126,13 @@ protected:
 	/// Sweeps the nodes set and erases any ControlBox whose ref count is zero; short-circuits if tombstones == 0
 	void reapTombstones() noexcept;
 
+	void findCamera();
+	void findCameraController();
+
+	[[nodiscard]]
+	auto activeCamera() noexcept -> Box<Camera>&;
+	virtual void applyActiveCamera() = 0;
+
 	template<typename Fn>
 	void forEachNode(Fn&& fn) const {
 		for (const auto& cb : nodes) {
@@ -134,6 +145,8 @@ protected:
 
 private:
 	std::unordered_set<_detail::ControlBox> nodes;
+	Box<Camera> m_active_camera;
+	bool m_has_camera_controller = false;
 };
 
 }

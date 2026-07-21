@@ -142,6 +142,7 @@ private:
 
 	/// Rebuilds the dependency graph from the current node set and recomputes the tick schedule
 	void computeDependencyGraph();
+	void applyActiveCamera() override;
 
 	/// Atomically replaces the world root; the old root is returned as a cached node
 	auto swapRoot(Node& node) -> Box<Node>;

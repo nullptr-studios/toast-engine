@@ -882,6 +882,16 @@ void VulkanRenderer::tick(float time) noexcept {
 	frame.ui_output_views.clear();
 	frame.ui_world_panels.clear();
 	frame.ui_slot_guard.reset();
+	frame.frame_data = {};
+
+	if (!m_camera) {
+		if (m_ui_frame_builder) {
+			m_ui_frame_builder(frame);
+		}
+		frame.ui_world_panels.clear();
+		submitFrame();
+		return;
+	}
 
 	std::vector<toast::MeshNode*> mesh_nodes_snapshot;
 	{
@@ -939,19 +949,17 @@ void VulkanRenderer::tick(float time) noexcept {
 		frame.debug_gizmo_instances.push_back(world_transform);
 	}
 
-	if (m_camera) {
-		const auto extent = m_output_target->getExtent();
-		const float aspect =
-		    extent.height > 0 ? static_cast<float>(extent.width) / static_cast<float>(extent.height) : (1080.0f / 720.0f);
+	const auto extent = m_output_target->getExtent();
+	const float aspect =
+	    extent.height > 0 ? static_cast<float>(extent.width) / static_cast<float>(extent.height) : (1080.0f / 720.0f);
 
-		frame.frame_data = FrameUBO {
-		  .view = m_camera->getView(),
-		  .projection = m_camera->getProjection(aspect),
-		  .view_projection = m_camera->getProjection(aspect) * m_camera->getView(),
-		  .camera_position = m_camera->world_position,
-		  .time = time
-		};
-	}
+	frame.frame_data = FrameUBO {
+	  .view = m_camera->getView(),
+	  .projection = m_camera->getProjection(aspect),
+	  .view_projection = m_camera->getProjection(aspect) * m_camera->getView(),
+	  .camera_position = m_camera->world_position,
+	  .time = time
+	};
 
 	// UI contexts update and record their draw data on the main thread
 	if (m_ui_frame_builder) {

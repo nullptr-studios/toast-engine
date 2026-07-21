@@ -1,5 +1,6 @@
 #include "node_owner.hpp"
 
+#include "camera.hpp"
 #include "node.hpp"
 #include "node_3d.hpp"
 
@@ -34,6 +35,54 @@ void INodeOwner::updateTransforms(Node& root) {
 	};
 
 	Walker::walk(root);
+}
+
+void INodeOwner::activateCamera(Camera& camera) {
+	if (m_active_camera.exists() || (camera.m_state != NodeState::root && camera.m_state != NodeState::global) ||
+	    !camera.enabled()) {
+		return;
+	}
+
+	m_active_camera = camera.box().as<Camera>();
+	m_active_camera->m_is_active = true;
+	applyActiveCamera();
+}
+
+void INodeOwner::deactivateCamera(Camera& camera) {
+	if (!m_active_camera.exists() || m_active_camera.rid() != camera.box().rid()) {
+		return;
+	}
+
+	camera.m_is_active = false;
+	m_active_camera = {};
+	findCamera();
+	applyActiveCamera();
+}
+
+void INodeOwner::findCamera() {
+	if (m_active_camera.exists()) {
+		return;
+	}
+
+	Box<Camera> candidate;
+	{
+		std::scoped_lock lock(nodes_mutex);
+		forEachNode([&candidate](const _detail::ControlBox& control) {
+			if (candidate.exists() || control.node == nullptr || !control.node->enabled()) {
+				return;
+			}
+			if (control.node->state() == NodeState::root || control.node->state() == NodeState::global) {
+				candidate = control.node->box().as<Camera>();
+			}
+		});
+	}
+	if (candidate.exists()) {
+		activateCamera(*candidate);
+	}
+}
+
+auto INodeOwner::activeCamera() noexcept -> Box<Camera>& {
+	return m_active_camera;
 }
 
 namespace {

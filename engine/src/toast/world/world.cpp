@@ -8,6 +8,7 @@
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/assets/types.hpp>
+#include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/uri_handler.hpp>
 #include <utility>
@@ -731,6 +732,10 @@ void World::computeDependencyGraph() {
 	}
 
 	m_scheduler.compute(all_nodes);
+}
+
+void World::applyActiveCamera() {
+	renderer::setActiveCamera(activeCamera().exists() ? &*activeCamera() : nullptr);
 }
 
 auto World::swapRoot(Node& node) -> Box<Node> {

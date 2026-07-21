@@ -73,13 +73,13 @@ public:
 	};
 
 	struct FrameUBO {
-		glm::mat4 view;
-		glm::mat4 projection;
-		glm::mat4 view_projection;
+		glm::mat4 view {1.0f};
+		glm::mat4 projection {1.0f};
+		glm::mat4 view_projection {1.0f};
 
-		glm::vec3 camera_position;
+		glm::vec3 camera_position {};
 
-		float time;
+		float time = 0.0f;
 	};
 
 	struct MeshInstanceProxy {
@@ -387,6 +387,10 @@ inline void submitFrame() {
 
 inline auto getActiveCamera() -> toast::Camera* {
 	return VulkanRenderer::instance->getActiveCamera();
+}
+
+inline void setActiveCamera(toast::Camera& camera) {
+	VulkanRenderer::instance->setActiveCamera(&camera);
 }
 
 inline void setActiveCamera(toast::Camera* camera) {

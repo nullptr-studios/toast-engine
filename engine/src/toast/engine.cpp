@@ -32,7 +32,6 @@
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
 #include "window/window_events.hpp"
-#include "world/camera.hpp"
 #include "world/play_workspace.hpp"
 #include "world/workspace.hpp"
 #include "world/workspace_events.hpp"
@@ -54,7 +53,6 @@ namespace toast {
 
 namespace {
 IApplication* active_application = nullptr;
-Camera* camera = nullptr;
 float total_time = 0.0;
 double clear_assets_timer = 0.0;
 double lua_memory_plot_timer = 0.0;
@@ -289,7 +287,6 @@ void Engine::tick() {
 		active_application->tick();
 	}
 	total_time += Time::delta();
-	camera->position = glm::vec3(std::sin(total_time) * 5.0f, std::cos(total_time) * 5.0f, 5);
 
 	if (m->audio_system) {
 		m->audio_system->tick();
@@ -360,12 +357,6 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
 
-	// FIXME: change this
-	camera = new Camera();
-	camera->position = glm::vec3(0);
-
-	m->renderer->setActiveCamera(camera);
-
 	// Mesh rendering runs through per-material passes
 
 	// m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
@@ -397,12 +388,6 @@ void Engine::createAvaloniaWindow() {
 	m->shared_target = output_target.get();
 
 	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
-
-	// FIXME: change this
-	camera = new Camera();
-	camera->position = glm::vec3(0);
-
-	m->renderer->setActiveCamera(camera);
 
 	// Mesh rendering runs through per-material passes
 
