@@ -90,7 +90,9 @@ auto decodeTga(std::span<const uint8_t> data) -> std::optional<TgaImage> {
 					return std::nullopt;
 				}
 				for (uint32_t i = 0; i < count; i++) {
-					writePixel(&image.pixels[(written + i) * 4], &data[cursor + (static_cast<size_t>(i) * bytes_per_pixel)], bytes_per_pixel);
+					writePixel(
+					    &image.pixels[(written + i) * 4], &data[cursor + (static_cast<size_t>(i) * bytes_per_pixel)], bytes_per_pixel
+					);
 				}
 				cursor += static_cast<size_t>(count) * bytes_per_pixel;
 			}

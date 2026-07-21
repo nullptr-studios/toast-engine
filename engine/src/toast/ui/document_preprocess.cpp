@@ -256,9 +256,9 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 					a++;
 				}
 
-			if (name.starts_with("data-event-") || (name.starts_with("on") && value.find('(') != std::string_view::npos)) {
-				collectEventName(value, scan.events);
-			} else if (name == "data-for") {
+				if (name.starts_with("data-event-") || (name.starts_with("on") && value.find('(') != std::string_view::npos)) {
+					collectEventName(value, scan.events);
+				} else if (name == "data-for") {
 					// "item : items" or "item, index : items" binds the container
 					const size_t colon = value.find(':');
 					if (colon != std::string_view::npos) {

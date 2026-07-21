@@ -726,4 +726,5 @@ private:
 
 	VkShaderModule m_p_effects_shader_module = nullptr;
 };
+
 // NOLINTEND
