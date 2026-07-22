@@ -51,6 +51,7 @@ auto World::newNode(std::string_view type) -> Node* {
 - `[[Subgroup("str")]]`: adds attribute to a given subgroup (must have a valid Group attribute)
 - `[[Range(int, int)]]`: limits the range in the Inspector panel
 - `[[Unit("m/s")]]`: displays units on the attribute
+- `[[Enum("Option", ...)]]`: edits a scalar C++ enum with an Inspector dropdown
 - `[[InspectorNoModify]]`: value will appear as read-only on the Inspector, but it will be serialized
 (prefer using `ReadOnly` instead)
 
@@ -59,48 +60,36 @@ auto World::newNode(std::string_view type) -> Node* {
 - `[[Reflect]]`: marks a function to be reflected
 - `[[Button("name")]]`: creates a button for a void fn(void) function, name is optional
 
-## Reflecting functions
+Invalid `Button` annotations are retained as reflection metadata but ignored by the Inspector and runtime button-event handler.
 
-Member functions can also be reflected. Mark any member function with `[[Reflect]]` (the same
-attribute used for fields) and the generator records its name, return type, and parameters
-(name, type, and default value if any). Functions can be public or private; the generated code
-uses the same member access pattern as fields.
+## Reflecting enum fields
 
-```c++
-class [[ToastNode]] Enemy : public Node {
-public:
-    [[Reflect, Group("Combat")]] int m_health = 100;
-
-    [[Reflect]] int takeDamage(int amount, bool crit = false);
-    [[Reflect]] void teleport(glm::vec3 destination);
-};
-```
-
-Reflected functions are called by name through `NodeInfo::call()`, mirroring how field accessors
-hang off the reflection data rather than the `Node` itself. The return type is supplied as a
-template parameter and the arguments are forwarded as variadics, so custom structs can be passed
-directly:
+Scalar C++ enum fields use the `Enum` attribute to define their Inspector labels. The labels can use either implicit values,
+assigned in declaration order starting at zero:
 
 ```c++
-int hp = node->info()->call<int>(node, "takeDamage", 25, true);
-node->info()->call(node, "teleport", glm::vec3 {1, 2, 3}); // R defaults to void
+enum class TransitionType : uint8_t { linear = 0, spherical = 1 };
+
+[[Reflect, Enum("Linear", "Spherical")]]
+TransitionType transition_type = TransitionType::linear;
 ```
 
-The argument and return types must match the reflected signature after decay (top-level `const`,
-references, and so on are stripped for matching). A mismatch in arity or type logs a warning before
-invoking (and asserts in debug builds), then proceeds, which is undefined behavior. Calling a name
-that is not reflected logs a warning, asserts in debug, and returns a default-constructed `R`.
-Because arguments are passed by value through a generated trampoline, mutable reference parameters
-do not write back to the caller.
-
-Function metadata is also available through `info()`:
+or explicit integer values:
 
 ```c++
-const FunctionInfo* fn = node->info()->getMethod("takeDamage");
-if (fn) {
-    // fn->name, fn->return_type, and fn->parameters (name, type, default_value)
-}
+enum class Quality : int { low = 3, high = 10 };
+
+[[Reflect, Enum("Low=3", "High=10")]]
+Quality quality = Quality::low;
 ```
+
+All entries in one attribute must use the same form. Empty labels, malformed integers, mixed implicit/explicit entries,
+or duplicate labels/values make the dropdown metadata invalid; the Inspector then falls back to numeric integer editing.
+Unknown numeric values remain visible as numbers and are not silently changed to a listed option.
+
+At the reflection boundary the generated accessor converts the enum to its underlying integral value and converts numeric
+updates back to the declared enum. Prefab files, binary node data, and Inspector events continue to use the existing numeric
+`int_t` encoding. Explicit values must fit that encoding. Enum arrays are not currently supported.
 
 ## Reflecting functions
 

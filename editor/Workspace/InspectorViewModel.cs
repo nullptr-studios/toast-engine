@@ -384,7 +384,16 @@ public partial class InspectorViewModel : Tool {
 			card.Groups.Add(group);
 		}
 
-		// TODO: function reflection needed to expose [[Button]] void fn(void) methods -> card.Buttons
+		foreach (var method in info.Methods) {
+			if (!ReflectionDatabase.HasAttr(method.Attributes, "Button") ||
+			    method.ReturnType.Trim() != "void" || method.Parameters.Length != 0)
+				continue;
+			var customLabel = ReflectionDatabase.GetAttr(method.Attributes, "Button");
+			var label = string.IsNullOrWhiteSpace(customLabel)
+				? InspectorFormat.MethodDisplayName(method.Name)
+				: customLabel;
+			card.Buttons.Add(new ButtonVM(label, method.Name, OnButtonInvoked));
+		}
 		return card;
 	}
 
@@ -399,6 +408,11 @@ public partial class InspectorViewModel : Tool {
 	private void OnFieldEdited(FieldVM field, string value) {
 		if (field.IsLua) Events.Send(new NodeChangeLuaParam { Path = field.ParameterName, Value = value });
 		else Events.Send(new NodeChangeParam { Parameter = field.ParameterName, Value = value });
+		WorkspaceState.MarkModified();
+	}
+
+	private static void OnButtonInvoked(string function) {
+		Events.Send(new NodeCallFunction { Function = function });
 		WorkspaceState.MarkModified();
 	}
 

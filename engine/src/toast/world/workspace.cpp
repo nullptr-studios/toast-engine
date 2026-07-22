@@ -552,10 +552,21 @@ void Workspace::eventSubscriptions() {
 		return true;
 	});
 
-	// TODO: needs function reflection for this
-	// m_listener.subscribe<event::NodeCallFunction>([this](const auto& e) {
-	// 	m_focused_node->info()->call(e.function);
-	// });
+	m_listener.subscribe<event::NodeCallFunction>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data() || not m_focused_node.exists()) {
+			return false;
+		}
+
+		const FunctionInfo* method = m_focused_node->info()->getMethod(e.function);
+		if (method == nullptr || not method->hasAttribute("Button") || method->return_type != "void" ||
+		    not method->parameters.empty()) {
+			TOAST_WARN("World", "NodeCallFunction: '{}' is not an inspector button", e.function);
+			return true;
+		}
+
+		m_focused_node->info()->call(&*m_focused_node, e.function);
+		return true;
+	});
 
 	m_listener.subscribe<event::NodeEnabled>([this](const auto& e) {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {

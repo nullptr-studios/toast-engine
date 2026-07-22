@@ -25,14 +25,14 @@ enum class TransitionType : uint8_t {
 
 /**
  * @brief Manages switching between different active cameras
- * 
+ *
  * By default the World will just pick whatever camera was activated first until that camera
  * is deactivated and only then it will search for the next available camera
- * 
+ *
  * However, if more control over the cameras is needed on the project, this node will
  * override the default engine behaviour allowing to select the current camera and its
  * transition method
- * 
+ *
  * Switching cameras can also be done by sending an event
  */
 class [[ToastNode, Icon("Camera")]] TOAST_API CameraController : public Node {

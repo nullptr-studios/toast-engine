@@ -51,7 +51,9 @@ public record FunctionInfo(
 	[property: JsonPropertyName("return_type")]
 	string ReturnType,
 	[property: JsonPropertyName("parameters")]
-	ParameterInfo[] Parameters
+	ParameterInfo[] Parameters,
+	[property: JsonPropertyName("attributes")]
+	JsonElement Attributes
 );
 
 public record NodeInfo(

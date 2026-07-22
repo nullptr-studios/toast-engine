@@ -19,7 +19,9 @@
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 #include <toast/world/box.hpp>
+#include <type_traits>
 #include <typeinfo>
+#include <utility>
 
 namespace toast {
 
@@ -139,8 +141,39 @@ struct TOAST_API FunctionInfo {
 	std::string_view return_type;            // C++ return type name, as spelled in the header
 	const std::type_info* return_type_id;    // typeid(std::decay_t<return>), for call-time validation
 	std::span<const ParameterInfo> parameters;
+	nlohmann::json attributes;
 	Invoker invoke = nullptr;
 	DynamicInvoker invoke_dynamic = nullptr;
+
+	[[nodiscard]]
+	auto attributeMap() const -> const nlohmann::json* {
+		if (attributes.is_object()) {
+			return &attributes;
+		}
+		if (attributes.is_array() && attributes.size() == 1 && attributes.front().is_object()) {
+			return &attributes.front();
+		}
+		return nullptr;
+	}
+
+	[[nodiscard]]
+	auto hasAttribute(std::string_view attr_name) const -> bool {
+		const auto* map = attributeMap();
+		return map != nullptr && map->contains(std::string(attr_name));
+	}
+
+	[[nodiscard]]
+	auto getAttribute(std::string_view attr_name) const -> std::string {
+		const auto* map = attributeMap();
+		if (map == nullptr) {
+			return "";
+		}
+		auto it = map->find(std::string(attr_name));
+		if (it == map->end() || !it->is_array() || it->empty()) {
+			return "";
+		}
+		return it->at(0).get<std::string>();
+	}
 
 	template<typename R = void, typename... Args>
 	auto call(void* obj, Args&&... args) const -> R {
@@ -257,6 +290,60 @@ struct FieldAccess {
 				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member =
 				    static_cast<FieldType>(std::any_cast<unsigned char>(value));
 			}
+		}
+	}
+};
+
+/**
+ * @brief Field accessor that exchanges enum values through their int representation
+ */
+template<class Class, typename FieldType, typename Tag>
+struct EnumFieldAccess {
+	static auto get(void* obj) -> std::any {
+		if constexpr (std::is_enum_v<FieldType>) {
+			using Underlying = std::underlying_type_t<FieldType>;
+			const Underlying value = static_cast<Underlying>(static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member);
+			if constexpr (std::is_signed_v<Underlying>) {
+				return std::any {static_cast<int64_t>(value)};
+			} else {
+				return std::any {static_cast<uint64_t>(value)};
+			}
+		} else {
+			return FieldAccess<Class, FieldType, Tag>::get(obj);
+		}
+	}
+
+	static void set(void* obj, std::any value) {
+		if constexpr (std::is_enum_v<FieldType>) {
+			auto assign = [obj](auto numeric) {
+				using Underlying = std::underlying_type_t<FieldType>;
+				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member =
+				    static_cast<FieldType>(static_cast<Underlying>(numeric));
+			};
+
+			if (const auto* v = std::any_cast<int>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<unsigned int>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<int64_t>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<uint64_t>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<long>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<unsigned long>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<short>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<unsigned short>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<char>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<unsigned char>(&value)) {
+				assign(*v);
+			}
+		} else {
+			FieldAccess<Class, FieldType, Tag>::set(obj, std::move(value));
 		}
 	}
 };
