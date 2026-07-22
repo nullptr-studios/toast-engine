@@ -21,6 +21,7 @@
 #include <toast/assets/prefab.hpp>
 #include <toast/engine_defs.hpp>
 #include <toast/events/listener.hpp>
+#include <toast/events/signals.hpp>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 #include <toast/reflect/reflect_node.hpp>
@@ -71,6 +72,9 @@ class [[ToastNode, Icon("Circle")]] TOAST_API Node {
 	friend struct toast::_detail::WorldTestAccess;
 
 public:
+	[[Reflect]]
+	signals::Signal<Node> on_destroy;
+
 	Node();
 	virtual ~Node();
 
@@ -418,3 +422,4 @@ auto reflect_cast(toast::Node* n) -> T* {    // NOLINT
 }
 
 #include <node.generated.hpp>
+#include <toast/events/signals.inl>
