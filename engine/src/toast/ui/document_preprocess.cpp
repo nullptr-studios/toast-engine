@@ -256,7 +256,7 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 					a++;
 				}
 
-				if (name.starts_with("data-event-") || (name.starts_with("on") && value.find('(') != std::string_view::npos)) {
+				if (name.starts_with("data-event-") || (name.starts_with("on") && value.contains('('))) {
 					collectEventName(value, scan.events);
 				} else if (name == "data-for") {
 					// "item : items" or "item, index : items" binds the container
@@ -310,7 +310,7 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 		if (body != std::string::npos) {
 			const size_t body_end = result.find('>', body);
 			const std::string_view body_tag = std::string_view(result).substr(body, body_end - body);
-			if (body_end != std::string::npos && body_tag.find("data-model") == std::string_view::npos) {
+			if (body_end != std::string::npos && !body_tag.contains("data-model")) {
 				result.insert(body + 5, " data-model=\"binds\"");
 			}
 		}

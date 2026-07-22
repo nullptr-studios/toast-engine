@@ -17,7 +17,7 @@ UIFileInterface::UIFileInterface(ColorResolver color_resolver) : m_color_resolve
 auto UIFileInterface::Open(const Rml::String& path) -> Rml::FileHandle {
 	ZoneScoped;
 
-	if (path.find("://") == Rml::String::npos) {
+	if (path.contains("://")) {
 		TOAST_WARN("UI", "Refusing to open '{}': UI resources must use asset paths", path);
 		return 0;
 	}

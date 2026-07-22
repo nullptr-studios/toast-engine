@@ -101,7 +101,7 @@ void UISystemInterface::JoinPath(Rml::String& translated_path, const Rml::String
 		return result;
 	};
 
-	if (path.find("://") != Rml::String::npos) {
+	if (path.contains("://")) {
 		translated_path = normalize(path);
 	} else {
 		const size_t last_slash = document_path.find_last_of('/');

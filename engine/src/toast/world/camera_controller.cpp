@@ -15,14 +15,14 @@ constexpr float transition_epsilon = 0.0001f;
 auto cubicHermite(float p0, float tangent0, float p1, float tangent1, float t) -> float {
 	const float t2 = t * t;
 	const float t3 = t2 * t;
-	return (2.0f * t3 - 3.0f * t2 + 1.0f) * p0 + (t3 - 2.0f * t2 + t) * tangent0 + (-2.0f * t3 + 3.0f * t2) * p1 +
-	       (t3 - t2) * tangent1;
+	return (((2.0f * t3) - (3.0f * t2) + 1.0f) * p0) + (t3 - (((2.0f * t2) + t) * tangent0)) + (((-2.0f * t3) + (3.0f * t2)) * p1) +
+	       ((t3 - t2) * tangent1);
 }
 
 auto easeTransition(float progress, float ease_in, float ease_out) -> float {
 	const float in_portion = std::clamp(ease_in, 0.0f, 50.0f) / 100.0f;
 	const float out_portion = std::clamp(ease_out, 0.0f, 50.0f) / 100.0f;
-	const float middle_speed = 1.0f / (1.0f - (in_portion + out_portion) * 0.5f);
+	const float middle_speed = 1.0f / (1.0f - ((in_portion + out_portion) * 0.5f));
 	const float in_distance = middle_speed * in_portion * 0.5f;
 	const float out_distance = middle_speed * out_portion * 0.5f;
 
@@ -35,7 +35,7 @@ auto easeTransition(float progress, float ease_in, float ease_out) -> float {
 		return cubicHermite(1.0f - out_distance, middle_speed * out_portion, 1.0f, 0.0f, t);
 	}
 
-	return in_distance + middle_speed * (progress - in_portion);
+	return in_distance + (middle_speed * (progress - in_portion));
 }
 
 auto sphericalPosition(glm::vec3 start, glm::vec3 end, glm::vec3 center, float progress) -> glm::vec3 {
